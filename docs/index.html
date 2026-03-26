@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🪨 Vugg Simulator</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0a0a08;
+  color: #d4a843;
+  font-family: 'Courier New', 'Lucida Console', Monaco, monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+
+h1 {
+  font-size: 2rem;
+  color: #f0c050;
+  text-shadow: 0 0 12px rgba(240,192,80,0.3);
+  margin-top: 1rem;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #8a7a40;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  max-width: 800px;
+  width: 100%;
+}
+
+.controls label {
+  color: #a89040;
+  font-size: 0.8rem;
+}
+
+.controls select,
+.controls input {
+  background: #1a1a14;
+  color: #d4a843;
+  border: 1px solid #3a3520;
+  padding: 0.4rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  border-radius: 3px;
+}
+
+.controls select:focus,
+.controls input:focus {
+  outline: none;
+  border-color: #d4a843;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+button {
+  background: #2a2510;
+  color: #f0c050;
+  border: 1px solid #5a4a20;
+  padding: 0.5rem 1.2rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+button:hover {
+  background: #3a3518;
+  border-color: #d4a843;
+}
+
+button:active {
+  background: #4a4520;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-grow {
+  background: #2a3510;
+  border-color: #5a7a20;
+}
+
+.btn-grow:hover {
+  background: #3a4518;
+  border-color: #90c040;
+}
+
+.btn-random {
+  background: #351a2a;
+  border-color: #7a3060;
+}
+
+.btn-random:hover {
+  background: #451a3a;
+  border-color: #c050a0;
+}
+
+.btn-copy {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.8rem;
+}
+
+#output-container {
+  max-width: 900px;
+  width: 100%;
+  flex: 1;
+  position: relative;
+}
+
+#output {
+  background: #0e0e0a;
+  border: 1px solid #2a2518;
+  padding: 1rem;
+  min-height: 300px;
+  max-height: 70vh;
+  overflow-y: auto;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-radius: 4px;
+}
+
+#output::-webkit-scrollbar { width: 8px; }
+#output::-webkit-scrollbar-track { background: #0e0e0a; }
+#output::-webkit-scrollbar-thumb { background: #3a3520; border-radius: 4px; }
+
+.line-event { color: #ff6a3a; font-weight: bold; }
+.line-nucleation { color: #50e0c0; font-weight: bold; }
+.line-header { color: #a89040; }
+.line-dissolution { color: #cc4444; }
+
+.narrative-box {
+  border: 1px solid #5a4a20;
+  padding: 0.8rem 1rem;
+  margin: 0.5rem 0;
+  background: #12120c;
+  border-radius: 3px;
+  color: #c0a848;
+  line-height: 1.7;
+}
+
+.narrative-box .narrative-title {
+  color: #f0c050;
+  font-weight: bold;
+  margin-bottom: 0.4rem;
+}
+
+footer {
+  margin-top: 2rem;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #5a4a30;
+}
+
+footer a {
+  color: #8a7a40;
+  text-decoration: none;
+}
+
+footer a:hover {
+  color: #d4a843;
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 1.4rem; }
+  .controls { gap: 0.5rem; }
+  #output { font-size: 0.7rem; max-height: 60vh; padding: 0.6rem; }
+  body { padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<h1>🪨 Vugg Simulator</h1>
+<div class="subtitle">A text-based crystal growth engine</div>
+
+<div class="controls">
+  <div class="control-group">
+    <label for="scenario">Scenario</label>
+    <select id="scenario">
+      <option value="cooling">cooling</option>
+      <option value="pulse">pulse</option>
+      <option value="mvt">mvt</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label for="seed">Seed (optional)</label>
+    <input type="number" id="seed" placeholder="random" style="width:100px">
+  </div>
+  <div class="control-group">
+    <label for="steps">Steps (optional)</label>
+    <input type="number" id="steps" placeholder="default" style="width:100px">
+  </div>
+  <div style="display:flex;gap:0.5rem;align-items:flex-end;padding-top:0.8rem">
+    <button class="btn-grow" id="btn-grow" onclick="runSimulation()">Grow</button>
+    <button class="btn-random" id="btn-random" onclick="runRandom()">Random</button>
+    <button class="btn-copy" id="btn-copy" onclick="copyOutput()">Copy to clipboard</button>
+  </div>
+</div>
+
+<div id="output-container">
+  <div id="output">Welcome to the Vugg Simulator.
+
+Select a scenario and press Grow, or hit Random for a surprise.
+
+Scenarios:
+  cooling — Simple cooling: hot fluid cools slowly in a vug
+  pulse   — Cooling with a mid-growth fluid pulse event
+  mvt     — Mississippi Valley-type: fluid mixing produces sphalerite + calcite + fluorite
+</div>
+</div>
+
+<footer>
+  Built by 🪨✍️ (StonePhilosopher) with Professor
+  &nbsp;·&nbsp;
+  <a href="https://github.com/StonePhilosopher/whole-mind" target="_blank" rel="noopener">github.com/StonePhilosopher/whole-mind</a>
+</footer>
+
+<script>
+// ============================================================
+// SEEDED PRNG (Mulberry32)
+// ============================================================
+class SeededRandom {
+  constructor(seed) {
+    this.state = seed >>> 0;
+  }
+  next() {
+    let t = (this.state += 0x6D2B79F5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  uniform(lo, hi) {
+    return lo + this.next() * (hi - lo);
+  }
+  random() {
+    return this.next();
+  }
+}
+
+let rng = new SeededRandom(Date.now());
+
+// ============================================================
+// PHYSICAL CONSTANTS AND MODELS
+// ============================================================
+
+class FluidChemistry {
+  constructor(opts = {}) {
+    this.SiO2 = opts.SiO2 ?? 500.0;
+    this.Ca = opts.Ca ?? 200.0;
+    this.CO3 = opts.CO3 ?? 150.0;
+    this.F = opts.F ?? 10.0;
+    this.Zn = opts.Zn ?? 0.0;
+    this.S = opts.S ?? 0.0;
+    this.Fe = opts.Fe ?? 5.0;
+    this.Mn = opts.Mn ?? 2.0;
+    this.Al = opts.Al ?? 3.0;
+    this.Ti = opts.Ti ?? 0.5;
+    this.Pb = opts.Pb ?? 0.0;
+    this.pH = opts.pH ?? 6.5;
+    this.salinity = opts.salinity ?? 5.0;
+  }
+
+  describe() {
+    const parts = [];
+    if (this.SiO2 > 300) parts.push(`silica-rich (${this.SiO2.toFixed(0)} ppm SiO₂)`);
+    if (this.Ca > 100) parts.push(`Ca²⁺ ${this.Ca.toFixed(0)} ppm`);
+    if (this.Fe > 20) parts.push(`Fe-bearing (${this.Fe.toFixed(0)} ppm)`);
+    if (this.Mn > 5) parts.push(`Mn-bearing (${this.Mn.toFixed(0)} ppm)`);
+    if (this.Zn > 50) parts.push(`Zn-rich (${this.Zn.toFixed(0)} ppm)`);
+    if (this.S > 50) parts.push(`sulfur-bearing (${this.S.toFixed(0)} ppm)`);
+    if (this.F > 20) parts.push(`fluorine-rich (${this.F.toFixed(0)} ppm)`);
+    if (this.pH < 5) parts.push(`acidic (pH ${this.pH.toFixed(1)})`);
+    else if (this.pH > 8) parts.push(`alkaline (pH ${this.pH.toFixed(1)})`);
+    return parts.length ? parts.join(', ') : 'dilute';
+  }
+}
+
+class VugConditions {
+  constructor(opts = {}) {
+    this.temperature = opts.temperature ?? 350.0;
+    this.pressure = opts.pressure ?? 1.5;
+    this.fluid = opts.fluid || new FluidChemistry();
+    this.flow_rate = opts.flow_rate ?? 1.0;
+  }
+
+  supersaturation_quartz() {
+    const eq = 50.0 * Math.exp(0.008 * this.temperature);
+    if (eq <= 0) return 0;
+    return this.fluid.SiO2 / eq;
+  }
+
+  supersaturation_calcite() {
+    const eq = 300.0 * Math.exp(-0.005 * this.temperature);
+    if (eq <= 0) return 0;
+    const ca_co3 = Math.min(this.fluid.Ca, this.fluid.CO3);
+    return ca_co3 / eq;
+  }
+
+  supersaturation_fluorite() {
+    if (this.fluid.Ca < 10 || this.fluid.F < 5) return 0;
+    const product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
+    return product * Math.exp(-0.003 * this.temperature);
+  }
+
+  supersaturation_sphalerite() {
+    if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
+    const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
+    return product * 2.0 * Math.exp(-0.004 * this.temperature);
+  }
+}
+
+// ============================================================
+// CRYSTAL MODELS
+// ============================================================
+
+class GrowthZone {
+  constructor(opts = {}) {
+    this.step = opts.step ?? 0;
+    this.temperature = opts.temperature ?? 0;
+    this.thickness_um = opts.thickness_um ?? 0;
+    this.growth_rate = opts.growth_rate ?? 0;
+    this.trace_Fe = opts.trace_Fe ?? 0;
+    this.trace_Mn = opts.trace_Mn ?? 0;
+    this.trace_Al = opts.trace_Al ?? 0;
+    this.trace_Ti = opts.trace_Ti ?? 0;
+    this.fluid_inclusion = opts.fluid_inclusion ?? false;
+    this.inclusion_type = opts.inclusion_type ?? '';
+    this.note = opts.note ?? '';
+  }
+}
+
+class Crystal {
+  constructor(opts = {}) {
+    this.mineral = opts.mineral ?? '';
+    this.crystal_id = opts.crystal_id ?? 0;
+    this.nucleation_step = opts.nucleation_step ?? 0;
+    this.nucleation_temp = opts.nucleation_temp ?? 0;
+    this.position = opts.position ?? 'vug wall';
+    this.c_length_mm = 0;
+    this.a_width_mm = 0;
+    this.habit = opts.habit ?? 'prismatic';
+    this.dominant_forms = opts.dominant_forms ? [...opts.dominant_forms] : [];
+    this.twinned = false;
+    this.twin_law = '';
+    this.zones = [];
+    this.total_growth_um = 0;
+    this.active = true;
+    this.dissolved = false;
+  }
+
+  add_zone(zone) {
+    this.zones.push(zone);
+    this.total_growth_um += zone.thickness_um;
+    this.c_length_mm = this.total_growth_um / 1000.0;
+    if (this.habit === 'prismatic') this.a_width_mm = this.c_length_mm * 0.4;
+    else if (this.habit === 'tabular') this.a_width_mm = this.c_length_mm * 1.5;
+    else if (this.habit === 'acicular') this.a_width_mm = this.c_length_mm * 0.15;
+    else if (this.habit === 'rhombohedral') this.a_width_mm = this.c_length_mm * 0.8;
+    else this.a_width_mm = this.c_length_mm * 0.5;
+  }
+
+  describe_morphology() {
+    const forms = this.dominant_forms.length ? this.dominant_forms.join(', ') : this.habit;
+    const twin_str = this.twinned ? `, ${this.twin_law} twin` : '';
+    const size = `${this.c_length_mm.toFixed(1)} × ${this.a_width_mm.toFixed(1)} mm`;
+    return `${this.habit} [${forms}]${twin_str}, ${size}`;
+  }
+
+  describe_latest_zone() {
+    if (!this.zones.length) return 'no growth';
+    const z = this.zones[this.zones.length - 1];
+    const parts = [`+${z.thickness_um.toFixed(1)} µm`];
+    const traces = [];
+    if (z.trace_Fe > 1) traces.push(`Fe ${z.trace_Fe.toFixed(1)}`);
+    if (z.trace_Mn > 0.5) traces.push(`Mn ${z.trace_Mn.toFixed(1)}`);
+    if (z.trace_Ti > 0.1) traces.push(`Ti ${z.trace_Ti.toFixed(2)}`);
+    if (z.trace_Al > 1) traces.push(`Al ${z.trace_Al.toFixed(1)}`);
+    if (traces.length) parts.push(`traces: ${traces.join(', ')} ppm`);
+    if (z.fluid_inclusion) parts.push(`fluid inclusion (${z.inclusion_type})`);
+    if (z.note) parts.push(z.note);
+    return parts.join('; ');
+  }
+
+  predict_fluorescence() {
+    const n = Math.max(this.zones.length, 1);
+    const avg_Mn = this.zones.reduce((s, z) => s + z.trace_Mn, 0) / n;
+    const avg_Fe = this.zones.reduce((s, z) => s + z.trace_Fe, 0) / n;
+
+    if (this.mineral === 'calcite') {
+      if (avg_Mn > 2 && avg_Fe < 10) return 'orange-red (Mn²⁺ activated)';
+      if (avg_Mn > 2 && avg_Fe > 10) return 'weak/quenched (Fe²⁺ quenching Mn²⁺ emission)';
+      return 'non-fluorescent';
+    }
+    if (this.mineral === 'fluorite') return 'blue-violet (REE/defect centers)';
+    if (this.mineral === 'quartz') {
+      const avg_Al = this.zones.reduce((s, z) => s + z.trace_Al, 0) / n;
+      if (avg_Al > 5) return 'weak blue (Al-related defects)';
+      return 'non-fluorescent';
+    }
+    return 'unknown';
+  }
+}
+
+// ============================================================
+// MINERAL GROWTH ENGINES
+// ============================================================
+
+function grow_quartz(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_quartz();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10) {
+      crystal.dissolved = true;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -5.0, growth_rate: -5.0,
+        note: 'dissolution — etching on prism faces'
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  let rate;
+  if (excess < 0.5) rate = 8.0 * excess * excess;
+  else rate = 4.0 * excess;
+
+  rate *= Math.exp(-3000.0 / (conditions.temperature + 273.15)) * 50.0;
+  rate *= rng.uniform(0.7, 1.3);
+
+  if (rate < 0.1) return null;
+
+  const Ti_partition = 0.01 * Math.exp(0.005 * conditions.temperature);
+  const trace_Ti = conditions.fluid.Ti * Ti_partition;
+  const Al_partition = 0.02 * (1 + 0.5 * excess);
+  const trace_Al = conditions.fluid.Al * Al_partition;
+  const trace_Fe = conditions.fluid.Fe * 0.005;
+  const trace_Mn = conditions.fluid.Mn * 0.003;
+
+  let fi = false, fi_type = '';
+  if (rate > 15 && rng.random() < 0.3) {
+    fi = true;
+    if (conditions.temperature > 300) fi_type = '2-phase (liquid + vapor)';
+    else if (conditions.temperature > 200) fi_type = '2-phase (liquid-dominant)';
+    else fi_type = 'single-phase liquid';
+  }
+
+  if (conditions.temperature > 400) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['m{100} prism', 'r{101} rhombohedron'];
+  } else if (conditions.temperature > 250) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['m{100} prism', 'r{101}', 'z{011}'];
+  } else if (conditions.temperature > 150) {
+    crystal.dominant_forms = ['m{100}', 'r{101}', 'z{011} dominant'];
+    if (excess > 1.0) crystal.habit = 'scepter overgrowth possible';
+  } else {
+    crystal.dominant_forms = ['m{100}', 'r{101}', 'z{011}'];
+    if (excess > 1.5) crystal.habit = 'skeletal/fenster';
+  }
+
+  if (!crystal.twinned && crystal.zones.length > 5) {
+    if (crystal.zones.length >= 2) {
+      const prev_T = crystal.zones[crystal.zones.length - 1].temperature;
+      const delta_T = Math.abs(conditions.temperature - prev_T);
+      if (delta_T > 30 && rng.random() < 0.4) {
+        crystal.twinned = true;
+        crystal.twin_law = 'Dauphiné';
+      }
+    }
+  }
+
+  let note = '';
+  if (excess > 1.5) note = 'rapid growth — growth hillocks developing on prism faces';
+  else if (excess > 1.0) note = 'moderate supersaturation — clean layer growth';
+  else if (excess < 0.2) note = 'near-equilibrium — very slow, high-quality growth';
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Mn, trace_Al, trace_Ti,
+    fluid_inclusion: fi, inclusion_type: fi_type, note
+  });
+}
+
+function grow_calcite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_calcite();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  let rate = 5.0 * excess * rng.uniform(0.8, 1.2);
+
+  const Mn_partition = 0.1 * (1 + excess * 0.5);
+  const trace_Mn = conditions.fluid.Mn * Mn_partition;
+  const Fe_partition = 0.08;
+  const trace_Fe = conditions.fluid.Fe * Fe_partition;
+
+  if (conditions.temperature > 200) {
+    crystal.habit = 'scalenohedral';
+    crystal.dominant_forms = ['v{211} scalenohedron', 'dog-tooth'];
+  } else if (conditions.temperature > 100) {
+    crystal.habit = 'rhombohedral';
+    crystal.dominant_forms = ['e{104} rhombohedron'];
+  } else {
+    crystal.habit = 'rhombohedral';
+    crystal.dominant_forms = ['e{104}', 'possibly nail-head'];
+  }
+
+  if (!crystal.twinned && rng.random() < 0.1) {
+    crystal.twinned = true;
+    crystal.twin_law = 'c-twin {001}';
+  }
+
+  let note = '';
+  if (trace_Mn > 1.0 && trace_Fe < 2.0) note = 'Mn-rich zone — will fluoresce orange under UV';
+  else if (trace_Mn > 1.0 && trace_Fe > 2.0) note = 'Fe quenching Mn fluorescence — dark CL zone';
+
+  let fi = false, fi_type = '';
+  if (rate > 8 && rng.random() < 0.2) {
+    fi = true;
+    fi_type = conditions.temperature > 150 ? '2-phase' : 'single-phase';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Mn,
+    fluid_inclusion: fi, inclusion_type: fi_type, note
+  });
+}
+
+function grow_sphalerite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_sphalerite();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  let rate = 6.0 * excess * rng.uniform(0.7, 1.3);
+
+  const Fe_mol_percent = Math.min(conditions.fluid.Fe * 0.1 * (conditions.temperature / 300.0), 30.0);
+  const trace_Fe = Fe_mol_percent * 10;
+
+  crystal.habit = 'tetrahedral';
+  crystal.dominant_forms = ['{111} tetrahedron'];
+
+  let color_note;
+  if (Fe_mol_percent > 15) color_note = 'black (marmatite — high Fe)';
+  else if (Fe_mol_percent > 8) color_note = 'dark brown';
+  else if (Fe_mol_percent > 3) color_note = 'honey/amber';
+  else color_note = 'pale yellow (cleiophane — gem quality)';
+
+  if (!crystal.twinned && rng.random() < 0.15) {
+    crystal.twinned = true;
+    crystal.twin_law = 'spinel-law {111}';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe,
+    note: `color: ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
+  });
+}
+
+function grow_fluorite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_fluorite();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  let rate = 7.0 * excess * rng.uniform(0.8, 1.2);
+
+  crystal.habit = 'cubic';
+  crystal.dominant_forms = ['{100} cube'];
+
+  let color;
+  if (conditions.fluid.Fe > 10) color = 'green';
+  else if (conditions.fluid.Mn > 5) color = 'purple';
+  else if (conditions.temperature > 200) color = 'colorless';
+  else color = 'blue-violet';
+
+  if (!crystal.twinned && rng.random() < 0.08) {
+    crystal.twinned = true;
+    crystal.twin_law = 'penetration twin {111}';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.02,
+    trace_Mn: conditions.fluid.Mn * 0.05,
+    note: `color zone: ${color}`
+  });
+}
+
+const MINERAL_ENGINES = {
+  quartz: grow_quartz,
+  calcite: grow_calcite,
+  sphalerite: grow_sphalerite,
+  fluorite: grow_fluorite,
+};
+
+// ============================================================
+// EVENT SYSTEM
+// ============================================================
+
+function event_fluid_pulse(conditions) {
+  conditions.fluid.SiO2 *= 1.8;
+  conditions.fluid.Fe *= 3.0;
+  conditions.fluid.Mn *= 2.5;
+  conditions.fluid.pH -= 0.5;
+  conditions.flow_rate = 5.0;
+  return 'Fresh hydrothermal fluid floods the vug. Silica and metals spike.';
+}
+
+function event_cooling_pulse(conditions) {
+  conditions.temperature -= 50;
+  conditions.fluid.SiO2 *= 0.6;
+  conditions.flow_rate = 3.0;
+  return `Meteoric water incursion. Temperature drops to ${conditions.temperature.toFixed(0)}°C.`;
+}
+
+function event_tectonic_shock(conditions) {
+  conditions.pressure += 0.5;
+  conditions.temperature += 15;
+  return 'Tectonic event. Pressure spike. Crystals may twin.';
+}
+
+function event_fluid_mixing(conditions) {
+  conditions.fluid.Zn = 150.0;
+  conditions.fluid.S = 120.0;
+  conditions.fluid.Ca += 100.0;
+  conditions.fluid.F += 15.0;
+  conditions.fluid.Fe += 30.0;
+  conditions.temperature -= 20;
+  return 'Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite and fluorite become possible.';
+}
+
+// ============================================================
+// SCENARIOS
+// ============================================================
+
+function scenario_cooling() {
+  const conditions = new VugConditions({
+    temperature: 380.0, pressure: 1.5,
+    fluid: new FluidChemistry({ SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 4 })
+  });
+  return { conditions, events: [], defaultSteps: 100 };
+}
+
+function scenario_pulse() {
+  const conditions = new VugConditions({
+    temperature: 350.0, pressure: 1.2,
+    fluid: new FluidChemistry({ SiO2: 500, Ca: 200, CO3: 120, Fe: 5, Mn: 2, Ti: 0.5, Al: 3 })
+  });
+  const events = [
+    { step: 40, name: 'Fluid Pulse', description: 'Fresh hydrothermal fluid', apply_fn: event_fluid_pulse },
+    { step: 70, name: 'Cooling Pulse', description: 'Meteoric water mixing', apply_fn: event_cooling_pulse },
+  ];
+  return { conditions, events, defaultSteps: 100 };
+}
+
+function scenario_mvt() {
+  const conditions = new VugConditions({
+    temperature: 180.0, pressure: 0.3,
+    fluid: new FluidChemistry({
+      SiO2: 100, Ca: 300, CO3: 250, Fe: 15, Mn: 8,
+      Zn: 0, S: 0, F: 5, pH: 7.2, salinity: 15.0
+    })
+  });
+  const events = [
+    { step: 20, name: 'Fluid Mixing', description: 'Brine meets groundwater', apply_fn: event_fluid_mixing },
+    { step: 60, name: 'Second Pulse', description: 'Another mixing event', apply_fn: event_fluid_pulse },
+    { step: 80, name: 'Tectonic', description: 'Minor seismic event', apply_fn: event_tectonic_shock },
+  ];
+  return { conditions, events, defaultSteps: 120 };
+}
+
+const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt };
+
+// ============================================================
+// SIMULATION ENGINE
+// ============================================================
+
+class VugSimulator {
+  constructor(conditions, events) {
+    this.conditions = conditions;
+    this.events = (events || []).slice().sort((a, b) => a.step - b.step);
+    this.crystals = [];
+    this.crystal_counter = 0;
+    this.step = 0;
+    this.log = [];
+  }
+
+  nucleate(mineral, position = 'vug wall') {
+    this.crystal_counter++;
+    const crystal = new Crystal({
+      mineral, crystal_id: this.crystal_counter,
+      nucleation_step: this.step,
+      nucleation_temp: this.conditions.temperature,
+      position
+    });
+    if (mineral === 'quartz') {
+      crystal.habit = 'prismatic';
+      crystal.dominant_forms = ['m{100} prism', 'r{101} rhombohedron'];
+    } else if (mineral === 'calcite') {
+      crystal.habit = 'rhombohedral';
+      crystal.dominant_forms = ['e{104} rhombohedron'];
+    } else if (mineral === 'sphalerite') {
+      crystal.habit = 'tetrahedral';
+      crystal.dominant_forms = ['{111} tetrahedron'];
+    } else if (mineral === 'fluorite') {
+      crystal.habit = 'cubic';
+      crystal.dominant_forms = ['{100} cube'];
+    }
+    this.crystals.push(crystal);
+    return crystal;
+  }
+
+  check_nucleation() {
+    const sigma_q = this.conditions.supersaturation_quartz();
+    const existing_quartz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    if (sigma_q > 1.2 && existing_quartz.length < 3) {
+      if (!existing_quartz.length || (sigma_q > 2.0 && rng.random() < 0.3)) {
+        const c = this.nucleate('quartz');
+        this.log.push(`  ✦ NUCLEATION: Quartz #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_q.toFixed(2)})`);
+      }
+    }
+
+    const sigma_c = this.conditions.supersaturation_calcite();
+    const existing_calcite = this.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    if (sigma_c > 1.3 && !existing_calcite.length) {
+      const c = this.nucleate('calcite');
+      this.log.push(`  ✦ NUCLEATION: Calcite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_c.toFixed(2)})`);
+    }
+
+    const sigma_s = this.conditions.supersaturation_sphalerite();
+    const existing_sph = this.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
+    if (sigma_s > 1.0 && !existing_sph.length) {
+      const c = this.nucleate('sphalerite', 'vug wall');
+      this.log.push(`  ✦ NUCLEATION: Sphalerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_s.toFixed(2)})`);
+    }
+
+    const sigma_f = this.conditions.supersaturation_fluorite();
+    const existing_fl = this.crystals.filter(c => c.mineral === 'fluorite' && c.active);
+    if (sigma_f > 1.2 && !existing_fl.length) {
+      const c = this.nucleate('fluorite', 'vug wall');
+      this.log.push(`  ✦ NUCLEATION: Fluorite #${c.crystal_id} on ${c.position}`);
+    }
+  }
+
+  apply_events() {
+    for (const event of this.events) {
+      if (event.step === this.step) {
+        const result = event.apply_fn(this.conditions);
+        this.log.push('');
+        this.log.push(`  ⚡ EVENT: ${event.name}`);
+        this.log.push(`     ${result}`);
+        this.log.push('');
+      }
+    }
+  }
+
+  ambient_cooling(rate = 1.5) {
+    this.conditions.temperature -= rate * rng.uniform(0.8, 1.2);
+    this.conditions.temperature = Math.max(this.conditions.temperature, 25);
+    if (this.conditions.flow_rate > 1.0) this.conditions.flow_rate *= 0.9;
+    const active_quartz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    if (active_quartz.length) {
+      const depletion = active_quartz.reduce((s, c) => s + (c.zones.length ? c.zones[c.zones.length - 1].thickness_um : 0), 0) * 0.1;
+      this.conditions.fluid.SiO2 = Math.max(this.conditions.fluid.SiO2 - depletion, 10);
+    }
+  }
+
+  run_step() {
+    this.log = [];
+    this.step++;
+    this.apply_events();
+    this.check_nucleation();
+    for (const crystal of this.crystals) {
+      if (!crystal.active) continue;
+      const engine = MINERAL_ENGINES[crystal.mineral];
+      if (!engine) continue;
+      const zone = engine(crystal, this.conditions, this.step);
+      if (zone) {
+        crystal.add_zone(zone);
+        if (zone.thickness_um < 0) {
+          this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
+        } else if (Math.abs(zone.thickness_um) > 0.5) {
+          this.log.push(`  ▲ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: ${crystal.describe_latest_zone()}`);
+        }
+      }
+    }
+    this.ambient_cooling();
+    return this.log;
+  }
+
+  format_header() {
+    const c = this.conditions;
+    const sigma_q = c.supersaturation_quartz();
+    const sigma_c = c.supersaturation_calcite();
+    return `═══ Step ${String(this.step).padStart(3)} │ T=${this.conditions.temperature.toFixed(1).padStart(6)}°C │ P=${c.pressure.toFixed(2)} kbar │ pH=${c.fluid.pH.toFixed(1)} │ σ(Qz)=${sigma_q.toFixed(2)} σ(Cal)=${sigma_c.toFixed(2)} │ Fluid: ${c.fluid.describe()}`;
+  }
+
+  format_summary() {
+    const lines = [];
+    lines.push('');
+    lines.push('═'.repeat(70));
+    lines.push('FINAL VUG INVENTORY');
+    lines.push('═'.repeat(70));
+
+    for (const c of this.crystals) {
+      lines.push('');
+      lines.push(`${c.mineral.toUpperCase()} #${c.crystal_id}`);
+      lines.push(`  Nucleated: step ${c.nucleation_step} at ${c.nucleation_temp.toFixed(0)}°C`);
+      lines.push(`  Position: ${c.position}`);
+      lines.push(`  Morphology: ${c.describe_morphology()}`);
+      lines.push(`  Growth zones: ${c.zones.length}`);
+      lines.push(`  Total growth: ${c.total_growth_um.toFixed(0)} µm (${c.c_length_mm.toFixed(1)} mm)`);
+
+      const fi_count = c.zones.filter(z => z.fluid_inclusion).length;
+      if (fi_count) {
+        const fi_types = [...new Set(c.zones.filter(z => z.fluid_inclusion).map(z => z.inclusion_type))];
+        lines.push(`  Fluid inclusions: ${fi_count} (${fi_types.join(', ')})`);
+      }
+      if (c.twinned) lines.push(`  Twinning: ${c.twin_law}`);
+      if (c.dissolved) lines.push(`  Note: partially dissolved (late-stage undersaturation)`);
+
+      const fl = c.predict_fluorescence();
+      if (fl !== 'non-fluorescent') lines.push(`  Predicted UV fluorescence: ${fl}`);
+
+      if (c.zones.length) {
+        const temps = c.zones.map(z => z.temperature);
+        const minT = Math.min(...temps), maxT = Math.max(...temps);
+        lines.push(`  Growth temperature range: ${minT.toFixed(0)}–${maxT.toFixed(0)}°C`);
+        if (c.mineral === 'quartz') {
+          const ti_vals = c.zones.filter(z => z.trace_Ti > 0).map(z => z.trace_Ti);
+          if (ti_vals.length) {
+            const avg_ti = ti_vals.reduce((a, b) => a + b, 0) / ti_vals.length;
+            lines.push(`  Avg Ti-in-quartz: ${avg_ti.toFixed(3)} ppm (TitaniQ range: ${minT.toFixed(0)}–${maxT.toFixed(0)}°C)`);
+          }
+        }
+      }
+    }
+
+    lines.push('');
+    lines.push('═'.repeat(70));
+
+    const narrative = this.narrate();
+    if (narrative) {
+      lines.push('');
+      lines.push('GEOLOGICAL HISTORY');
+      lines.push('─'.repeat(70));
+      lines.push(narrative);
+      lines.push('═'.repeat(70));
+    }
+
+    return lines;
+  }
+
+  narrate() {
+    if (!this.crystals.length) return 'The vug remained empty. No minerals precipitated under these conditions.';
+
+    const paragraphs = [];
+    const first_crystal = this.crystals[0];
+    const start_T = first_crystal.nucleation_temp;
+    const mineral_names = [...new Set(this.crystals.map(c => c.mineral))];
+
+    let setting;
+    if (start_T > 300) setting = 'deep hydrothermal';
+    else if (start_T > 150) setting = 'moderate-temperature hydrothermal';
+    else setting = 'low-temperature';
+
+    paragraphs.push(
+      `This vug records a ${setting} crystallization history beginning at ${start_T.toFixed(0)}°C. ${this.crystals.length} crystals grew across ${this.step} time steps, producing an assemblage of ${mineral_names.join(', ')}.`
+    );
+
+    const first_step = Math.min(...this.crystals.map(c => c.nucleation_step));
+    const first_minerals = this.crystals.filter(c => c.nucleation_step === first_step);
+
+    for (const c of first_minerals) {
+      if (c.mineral === 'calcite') {
+        paragraphs.push(
+          `Calcite was the first mineral to crystallize, nucleating on the vug wall at ${c.nucleation_temp.toFixed(0)}°C. ` + this._narrate_calcite(c)
+        );
+      } else if (c.mineral === 'quartz') {
+        paragraphs.push(
+          `Quartz nucleated first at ${c.nucleation_temp.toFixed(0)}°C on the vug wall. ` + this._narrate_quartz(c)
+        );
+      } else {
+        paragraphs.push(`${capitalize(c.mineral)} nucleated at ${c.nucleation_temp.toFixed(0)}°C.`);
+      }
+    }
+
+    const later_crystals = this.crystals.filter(c => c.nucleation_step > first_step);
+    if (later_crystals.length) {
+      const nuc_steps = [...new Set(later_crystals.map(c => c.nucleation_step))].sort((a, b) => a - b);
+      for (const ns of nuc_steps) {
+        const batch = later_crystals.filter(c => c.nucleation_step === ns);
+        const batch_names = batch.map(c => c.mineral);
+        let triggering_event = null;
+        for (const e of this.events) {
+          if (Math.abs(e.step - ns) <= 2) { triggering_event = e; break; }
+        }
+
+        if (triggering_event) {
+          if (triggering_event.name.toLowerCase().includes('mixing')) {
+            paragraphs.push(
+              `A fluid mixing event at step ${triggering_event.step} transformed the vug's chemistry. ` + this._narrate_mixing_event(batch, triggering_event)
+            );
+          } else if (triggering_event.name.toLowerCase().includes('pulse')) {
+            paragraphs.push(
+              `A fresh pulse of hydrothermal fluid at step ${triggering_event.step} introduced new chemistry. ${[...new Set(batch_names)].map(capitalize).join(', ')} nucleated in response.`
+            );
+          } else if (triggering_event.name.toLowerCase().includes('tectonic')) {
+            paragraphs.push(
+              `A tectonic event at step ${triggering_event.step} produced a pressure spike.` + this._narrate_tectonic(batch)
+            );
+          }
+        } else {
+          paragraphs.push(
+            `As temperature continued to fall, ${[...new Set(batch_names)].join(' and ')} nucleated at step ${ns} (${batch[0].nucleation_temp.toFixed(0)}°C).`
+          );
+        }
+      }
+    }
+
+    const significant = this.crystals.filter(c => c.total_growth_um > 100);
+    for (const c of significant) {
+      let story = '';
+      if (c.mineral === 'quartz') story = this._narrate_quartz(c);
+      else if (c.mineral === 'calcite') story = this._narrate_calcite(c);
+      else if (c.mineral === 'sphalerite') story = this._narrate_sphalerite(c);
+      else if (c.mineral === 'fluorite') story = this._narrate_fluorite(c);
+      if (story && !first_minerals.includes(c)) paragraphs.push(story);
+    }
+
+    paragraphs.push(this._narrate_collectors_view());
+    return paragraphs.join('\n\n');
+  }
+
+  _narrate_calcite(c) {
+    const parts = [];
+    if (c.zones.length) {
+      const mn_zones = c.zones.filter(z => z.trace_Mn > 1.0 && z.trace_Fe < 2.0);
+      const fe_zones = c.zones.filter(z => z.trace_Fe > 3.0);
+      if (mn_zones.length && fe_zones.length) {
+        const mn_end = mn_zones[mn_zones.length - 1].step;
+        const fe_start = fe_zones[0].step;
+        if (fe_start > mn_end - 5) {
+          parts.push(`Early growth zones are manganese-rich and would fluoresce orange under UV light. After step ${fe_start}, iron flooded the system and quenched the fluorescence — later zones would appear dark under cathodoluminescence. The boundary between glowing and dark records the moment the fluid chemistry changed.`);
+        }
+      } else if (mn_zones.length) {
+        parts.push(`The crystal incorporated manganese throughout growth and would fluoresce orange under shortwave UV — a classic Mn²⁺-activated calcite.`);
+      }
+    }
+    if (c.twinned) {
+      parts.push(`The crystal is twinned on ${c.twin_law}, a common deformation twin in calcite that can form during growth or post-crystallization stress.`);
+    }
+    const size_desc = c.c_length_mm < 0.5 ? 'microscopic' : c.c_length_mm < 2 ? 'small' : 'well-developed';
+    parts.push(`Final size: ${size_desc} (${c.c_length_mm.toFixed(1)} mm), ${c.habit} habit.`);
+    return parts.join(' ');
+  }
+
+  _narrate_quartz(c) {
+    const parts = [];
+    if (!c.zones.length) return `Quartz #${c.crystal_id} nucleated but failed to develop — growth kinetics were too slow at ${c.nucleation_temp.toFixed(0)}°C.`;
+
+    const ti_vals = c.zones.filter(z => z.trace_Ti > 0).map(z => z.trace_Ti);
+    if (ti_vals.length && Math.max(...ti_vals) > 0.01) {
+      parts.push(`Titanium incorporation decreases through the growth zones from ${Math.max(...ti_vals).toFixed(3)} to ${Math.min(...ti_vals).toFixed(3)} ppm, recording the cooling history via the TitaniQ geothermometer.`);
+    }
+
+    const fi_zones = c.zones.filter(z => z.fluid_inclusion);
+    if (fi_zones.length) {
+      const fi_types = [...new Set(fi_zones.map(z => z.inclusion_type))];
+      parts.push(`The crystal trapped ${fi_zones.length} fluid inclusions (${fi_types.join(', ')}), preserving samples of the parent fluid at the moment of entrapment.`);
+    }
+
+    if (c.twinned) {
+      parts.push(`A ${c.twin_law} twin formed during growth — likely triggered by a thermal shock event that introduced a rotational domain boundary.`);
+    }
+
+    const fast_zones = c.zones.filter(z => z.growth_rate > 15);
+    const slow_zones = c.zones.filter(z => z.growth_rate > 0 && z.growth_rate < 2);
+    if (fast_zones.length && slow_zones.length) {
+      parts.push(`Growth alternated between rapid pulses (up to ${Math.max(...fast_zones.map(z => z.growth_rate)).toFixed(0)} µm/step, producing growth hillocks) and slow, high-quality periods near equilibrium. This oscillation would be visible as alternating clear and milky zones.`);
+    }
+
+    const size_desc = c.c_length_mm < 0.5 ? 'microscopic' : c.c_length_mm < 5 ? 'thumbnail' : 'cabinet-sized';
+    parts.push(`Final size: ${size_desc} (${c.c_length_mm.toFixed(1)} × ${c.a_width_mm.toFixed(1)} mm).`);
+    return parts.join(' ');
+  }
+
+  _narrate_sphalerite(c) {
+    const parts = [`Sphalerite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.zones.length) {
+      const fe_vals = c.zones.filter(z => z.trace_Fe > 0).map(z => z.trace_Fe);
+      if (fe_vals.length) {
+        const max_fe = Math.max(...fe_vals), min_fe = Math.min(...fe_vals);
+        if (max_fe > min_fe * 1.5) {
+          const third = Math.max(Math.floor(c.zones.length / 3), 1);
+          const early_fe = c.zones.slice(0, third).reduce((s, z) => s + z.trace_Fe, 0) / third;
+          const late_fe = c.zones.slice(-third).reduce((s, z) => s + z.trace_Fe, 0) / third;
+          if (early_fe < late_fe) {
+            parts.push(`Iron content increased through growth — early zones are pale (low Fe, cleiophane variety) grading to darker amber or brown as the fluid became more iron-rich. This color zoning would be visible in a polished cross-section.`);
+          } else {
+            parts.push(`Iron content decreased through growth — the crystal darkened early (higher Fe, approaching marmatite) then cleared as iron was depleted from the fluid.`);
+          }
+        }
+      }
+    }
+    if (c.twinned) {
+      parts.push(`Twinned on the ${c.twin_law} — a common growth twin in sphalerite that creates triangular re-entrant faces.`);
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_fluorite(c) {
+    const parts = [`Fluorite #${c.crystal_id} grew as ${c.habit} crystals to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.zones.length) {
+      const colors = new Set();
+      for (const z of c.zones) {
+        if (z.note && z.note.includes('color zone:')) {
+          colors.add(z.note.split('color zone:')[1].trim());
+        }
+      }
+      if (colors.size > 1) {
+        parts.push(`Color zoning present: ${[...colors].join(', ')} zones reflecting changing trace element chemistry during growth.`);
+      } else if (colors.size === 1) {
+        parts.push(`Uniformly ${[...colors][0]}.`);
+      }
+    }
+    if (c.twinned) parts.push(`Shows ${c.twin_law} twinning — two interpenetrating cubes.`);
+    const fl = c.predict_fluorescence();
+    if (fl !== 'non-fluorescent') parts.push(`Would show ${fl} under UV excitation.`);
+    return parts.join(' ');
+  }
+
+  _narrate_mixing_event(batch, event) {
+    const mineral_names = new Set(batch.map(c => c.mineral));
+    const parts = [];
+    if (mineral_names.has('sphalerite') && mineral_names.has('fluorite')) {
+      parts.push("When metal-bearing brine met sulfur-bearing groundwater, sphalerite (ZnS) and fluorite (CaF₂) nucleated simultaneously — a classic Mississippi Valley-type precipitation event. The zinc and sulfur couldn't coexist in solution; they combined on contact and the minerals fell out of the fluid like rain.");
+    } else if (mineral_names.has('sphalerite')) {
+      parts.push("Sphalerite nucleated as zinc-bearing brine mixed with sulfur-rich groundwater. The two fluids were stable apart; together, ZnS became insoluble.");
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_tectonic(batch) {
+    const twinned = this.crystals.filter(c => c.twinned);
+    if (twinned.length) {
+      const names = twinned.map(c => `${c.mineral} #${c.crystal_id}`);
+      return ` The stress may have induced twinning in ${names.join(', ')}. Twin planes formed as the crystal lattice accommodated the sudden strain — a record of the event frozen in the structure.`;
+    }
+    return ' No visible twinning resulted, but the pressure change altered subsequent growth conditions.';
+  }
+
+  _narrate_collectors_view() {
+    const parts = ['A collector examining this specimen would find:'];
+    for (const c of this.crystals) {
+      if (c.total_growth_um < 10 && !c.zones.length) continue;
+
+      if (c.mineral === 'quartz') {
+        if (c.c_length_mm > 2) {
+          let desc = `a ${c.c_length_mm.toFixed(1)}mm quartz crystal`;
+          if (c.twinned) desc += ` (${c.twin_law} twinned)`;
+          const fi_count = c.zones.filter(z => z.fluid_inclusion).length;
+          if (fi_count > 3) desc += ' with visible fluid inclusions';
+          parts.push(`  • ${desc}`);
+        } else if (c.c_length_mm > 0.1) {
+          parts.push('  • tiny quartz crystals on the vug wall');
+        }
+      } else if (c.mineral === 'calcite') {
+        const fl = c.predict_fluorescence();
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm ${c.habit} calcite`;
+        if (c.twinned) desc += ' (twinned)';
+        if (fl.includes('orange')) desc += ' — glows orange under UV';
+        else if (fl.includes('quenched')) desc += " — patchy UV response (Mn zones glow, Fe zones dark)";
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'sphalerite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm sphalerite`;
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        if (c.zones.length) {
+          const last_note = c.zones[c.zones.length - 1].note;
+          if (last_note.includes('color:')) {
+            const color = last_note.split('color:')[1].split(',')[0].trim();
+            desc += `, ${color}`;
+          }
+        }
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'fluorite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm fluorite cube`;
+        if (c.twinned) desc += ' (penetration twin)';
+        const fl = c.predict_fluorescence();
+        if (fl !== 'non-fluorescent') desc += ` — fluoresces ${fl.split('(')[0].trim()}`;
+        parts.push(`  • ${desc}`);
+      }
+    }
+
+    if (parts.length === 1) return "The vug produced only microscopic crystals — a thin crust on the cavity wall.";
+    return parts.join('\n');
+  }
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+
+function capitalize(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// ============================================================
+// UI LOGIC
+// ============================================================
+
+let running = false;
+
+function runSimulation() {
+  if (running) return;
+  const scenarioName = document.getElementById('scenario').value;
+  const seedInput = document.getElementById('seed').value;
+  const stepsInput = document.getElementById('steps').value;
+
+  const seed = seedInput ? parseInt(seedInput, 10) : Math.floor(Math.random() * 2147483647);
+  rng = new SeededRandom(seed);
+
+  const { conditions, events, defaultSteps } = SCENARIOS[scenarioName]();
+  const totalSteps = stepsInput ? parseInt(stepsInput, 10) : defaultSteps;
+
+  const allLines = [];
+
+  allLines.push(`🪨 Vugg Simulator — ${scenarioName} scenario (seed: ${seed})`);
+  allLines.push(`   ${totalSteps} time steps, starting at ${conditions.temperature.toFixed(0)}°C, ${conditions.pressure.toFixed(1)} kbar`);
+  allLines.push(`   Initial fluid: ${conditions.fluid.describe()}`);
+  allLines.push(`   Events: ${events.length}`);
+  for (const e of events) allLines.push(`     Step ${e.step}: ${e.name}`);
+  allLines.push('═'.repeat(70));
+
+  const sim = new VugSimulator(conditions, events);
+
+  for (let s = 0; s < totalSteps; s++) {
+    const log = sim.run_step();
+    const show = (s % 5 === 0) || log.some(l => l.includes('EVENT') || l.includes('NUCLEATION'));
+    if (show && log.length) {
+      allLines.push(sim.format_header());
+      for (const line of log) allLines.push(line);
+    }
+  }
+
+  const summaryLines = sim.format_summary();
+  allLines.push(...summaryLines);
+
+  displayLines(allLines);
+}
+
+function runRandom() {
+  const scenarios = ['cooling', 'pulse', 'mvt'];
+  const pick = scenarios[Math.floor(Math.random() * scenarios.length)];
+  document.getElementById('scenario').value = pick;
+  const seed = Math.floor(Math.random() * 2147483647);
+  document.getElementById('seed').value = seed;
+  document.getElementById('steps').value = '';
+  runSimulation();
+}
+
+function displayLines(lines) {
+  running = true;
+  document.getElementById('btn-grow').disabled = true;
+  document.getElementById('btn-random').disabled = true;
+  const output = document.getElementById('output');
+  output.innerHTML = '';
+
+  let i = 0;
+  const narrativeStart = lines.indexOf('GEOLOGICAL HISTORY');
+  const narrativeSep = narrativeStart >= 0 ? narrativeStart + 1 : -1; // the ─ line after it
+  let inNarrative = false;
+  let narrativeEl = null;
+
+  function addLine() {
+    if (i >= lines.length) {
+      running = false;
+      document.getElementById('btn-grow').disabled = false;
+      document.getElementById('btn-random').disabled = false;
+      return;
+    }
+
+    const line = lines[i];
+    i++;
+
+    // Detect narrative section
+    if (line === 'GEOLOGICAL HISTORY') {
+      const box = document.createElement('div');
+      box.className = 'narrative-box';
+      const title = document.createElement('div');
+      title.className = 'narrative-title';
+      title.textContent = 'GEOLOGICAL HISTORY';
+      box.appendChild(title);
+      narrativeEl = document.createElement('div');
+      box.appendChild(narrativeEl);
+      output.appendChild(box);
+      inNarrative = true;
+      output.scrollTop = output.scrollHeight;
+      setTimeout(addLine, 20);
+      return;
+    }
+
+    // End narrative on the closing ═ line after it started
+    if (inNarrative && line.startsWith('═'.repeat(10))) {
+      inNarrative = false;
+      // Add the closing bar outside the box
+      const span = document.createElement('div');
+      span.textContent = line;
+      span.className = 'line-header';
+      output.appendChild(span);
+      output.scrollTop = output.scrollHeight;
+      setTimeout(addLine, 20);
+      return;
+    }
+
+    // Skip the ─ separator after GEOLOGICAL HISTORY title (already in the box)
+    if (inNarrative && line.startsWith('─'.repeat(10))) {
+      setTimeout(addLine, 5);
+      return;
+    }
+
+    if (inNarrative) {
+      const span = document.createElement('div');
+      span.textContent = line;
+      span.style.marginBottom = line === '' ? '0.5em' : '0';
+      narrativeEl.appendChild(span);
+      output.scrollTop = output.scrollHeight;
+      setTimeout(addLine, 20);
+      return;
+    }
+
+    const span = document.createElement('div');
+    span.textContent = line;
+
+    if (line.includes('⚡')) span.className = 'line-event';
+    else if (line.includes('✦')) span.className = 'line-nucleation';
+    else if (line.includes('═══ Step') || line.startsWith('═')) span.className = 'line-header';
+    else if (line.includes('⬇') || line.includes('DISSOLUTION')) span.className = 'line-dissolution';
+
+    output.appendChild(span);
+    output.scrollTop = output.scrollHeight;
+    setTimeout(addLine, 18);
+  }
+
+  addLine();
+}
+
+function copyOutput() {
+  const output = document.getElementById('output');
+  const text = output.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+</script>
+</body>
+</html>
