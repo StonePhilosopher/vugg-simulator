@@ -883,7 +883,12 @@ class VugSimulator {
   }
 
   narrate() {
-    if (!this.crystals.length) return 'The vug remained empty. No minerals precipitated under these conditions.';
+    if (!this.crystals.length) return 'The vug remained empty. No minerals precipitated under these conditions. The fluid passed through without leaving a trace — still too hot, too undersaturated, or too brief. Given more time, this story might begin differently.';
+
+    const totalGrowth = this.crystals.reduce((sum, c) => sum + c.total_growth_um, 0);
+    if (totalGrowth < 5) {
+      return `The vug barely began its story. Over ${this.step} steps, conditions shifted but nothing had time to grow beyond a thin film on the cavity wall. This is the very beginning — the fluid is still finding its equilibrium. Run more steps to see what this vug becomes.`;
+    }
 
     const paragraphs = [];
     const first_crystal = this.crystals[0];
@@ -1153,7 +1158,7 @@ function runSimulation() {
 
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName]();
   const parsedSteps = stepsInput ? parseInt(stepsInput, 10) : NaN;
-  const totalSteps = (parsedSteps && parsedSteps >= 20) ? parsedSteps : defaultSteps;
+  const totalSteps = (parsedSteps && parsedSteps > 0) ? parsedSteps : defaultSteps;
 
   const allLines = [];
 
