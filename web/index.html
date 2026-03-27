@@ -214,7 +214,7 @@ footer a:hover {
   </div>
   <div class="control-group">
     <label for="steps">Steps (optional)</label>
-    <input type="number" id="steps" placeholder="default" style="width:100px">
+    <input type="number" id="steps" placeholder="default" min="20" style="width:100px">
   </div>
   <div style="display:flex;gap:0.5rem;align-items:flex-end;padding-top:0.8rem">
     <button class="btn-grow" id="btn-grow" onclick="runSimulation()">Grow</button>
@@ -1152,7 +1152,7 @@ function runSimulation() {
   rng = new SeededRandom(seed);
 
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName]();
-  const totalSteps = stepsInput ? parseInt(stepsInput, 10) : defaultSteps;
+  const totalSteps = stepsInput ? Math.max(parseInt(stepsInput, 10), 20) : defaultSteps;
 
   const allLines = [];
 
