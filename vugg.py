@@ -11,6 +11,7 @@ Usage:
   python3 vugg.py --scenario cooling       # simple cooling scenario  
   python3 vugg.py --scenario pulse         # fluid pulse event
   python3 vugg.py --scenario mvt           # Mississippi Valley-type deposit
+  python3 vugg.py --scenario reactive_wall # Acid pulses dissolve limestone walls
   python3 vugg.py --steps 200             # more time steps
   python3 vugg.py --interactive           # manual control mode
 
@@ -80,6 +81,80 @@ class FluidChemistry:
         return ", ".join(parts) if parts else "dilute"
 
 
+@dataclass
+class VugWall:
+    """Reactive carbonate wall of the vug.
+    
+    In real MVT systems, the vug wall IS the host limestone/dolomite.
+    Acid dissolves it, releasing Ca²⁺ and CO₃²⁻, neutralizing pH,
+    and enlarging the cavity. The dissolved carbonate can then 
+    reprecipitate on existing crystals during the pH recovery —
+    creating rapid growth bursts.
+    """
+    composition: str = "limestone"    # "limestone" or "dolomite"
+    thickness_mm: float = 500.0       # wall thickness (effectively infinite for our purposes)
+    vug_diameter_mm: float = 50.0     # initial cavity diameter
+    total_dissolved_mm: float = 0.0   # cumulative wall dissolution
+    
+    # Trace elements in the host rock (released during dissolution)
+    wall_Fe_ppm: float = 2000.0       # iron in the limestone/dolomite
+    wall_Mn_ppm: float = 500.0        # manganese in host rock
+    wall_Mg_ppm: float = 1000.0       # magnesium (higher if dolomite)
+    
+    def dissolve(self, acid_strength: float, fluid: 'FluidChemistry') -> dict:
+        """Dissolve wall rock in response to acid conditions.
+        
+        CaCO₃ + 2H⁺ → Ca²⁺ + H₂O + CO₂
+        
+        Returns dict of what happened.
+        """
+        if acid_strength <= 0:
+            return {"dissolved": False}
+        
+        # Dissolution rate scales with acid strength and available wall
+        # More acid = more dissolution, but it's self-limiting (neutralization)
+        rate_mm = min(acid_strength * 0.5, 2.0)  # max 2mm per step
+        
+        if self.thickness_mm < rate_mm:
+            rate_mm = self.thickness_mm  # can't dissolve more than exists
+        
+        self.thickness_mm -= rate_mm
+        self.total_dissolved_mm += rate_mm
+        self.vug_diameter_mm += rate_mm * 2  # expands both sides
+        
+        # Released chemistry — proportional to volume dissolved
+        # 1mm of limestone wall = significant Ca and CO3 release
+        ca_released = rate_mm * 15.0      # ppm contribution to fluid
+        co3_released = rate_mm * 12.0     # slightly less (some escapes as CO2 gas)
+        fe_released = rate_mm * (self.wall_Fe_ppm / 1000.0) * 0.5
+        mn_released = rate_mm * (self.wall_Mn_ppm / 1000.0) * 0.5
+        
+        # pH neutralization — the wall IS the buffer
+        # Each mm of dissolution neutralizes significant acid
+        ph_recovery = rate_mm * 0.8
+        
+        # Apply to fluid
+        fluid.Ca += ca_released
+        fluid.CO3 += co3_released
+        fluid.Fe += fe_released
+        fluid.Mn += mn_released
+        fluid.pH += ph_recovery
+        fluid.pH = min(fluid.pH, 8.5)  # can't go above carbonate buffered equilibrium
+        
+        return {
+            "dissolved": True,
+            "rate_mm": rate_mm,
+            "ca_released": ca_released,
+            "co3_released": co3_released,
+            "fe_released": fe_released,
+            "mn_released": mn_released,
+            "ph_before": fluid.pH - ph_recovery,
+            "ph_after": fluid.pH,
+            "vug_diameter": self.vug_diameter_mm,
+            "total_dissolved": self.total_dissolved_mm,
+        }
+
+
 @dataclass 
 class VugConditions:
     """Current physical/chemical conditions in the vug."""
@@ -87,6 +162,7 @@ class VugConditions:
     pressure: float = 1.5         # kbar
     fluid: FluidChemistry = field(default_factory=FluidChemistry)
     flow_rate: float = 1.0        # relative (0 = stagnant, 1 = normal, 5 = flood)
+    wall: VugWall = field(default_factory=VugWall)  # reactive wall
     
     def supersaturation_quartz(self) -> float:
         """Calculate quartz supersaturation (simplified).
@@ -860,11 +936,98 @@ def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
     return conditions, events, 120
 
 
+def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
+    """Reactive wall scenario — acid pulses dissolve limestone, feed crystal growth.
+    
+    Professor's insight: acid entering a carbonate vug doesn't just dissolve crystals —
+    it dissolves the WALL. The wall neutralizes the acid AND releases Ca²⁺/CO₃²⁻ 
+    back into solution. When pH recovers, that dissolved carbonate supersaturates 
+    and precipitates as rapid growth bands on existing crystals. The acid is both 
+    destroyer and creator. The vug enlarges as the crystals grow.
+    
+    This scenario models repeated acid pulses into a limestone-hosted vug,
+    showing the dissolution→supersaturation→growth burst cycle.
+    """
+    conditions = VugConditions(
+        temperature=140.0,
+        pressure=0.2,
+        fluid=FluidChemistry(
+            SiO2=50, Ca=250, CO3=200, Fe=8, Mn=5,
+            Zn=80, S=60, F=8, pH=7.0, salinity=18.0
+        ),
+        wall=VugWall(
+            composition="limestone",
+            thickness_mm=500.0,
+            vug_diameter_mm=40.0,
+            wall_Fe_ppm=3000.0,   # iron-bearing limestone
+            wall_Mn_ppm=800.0,    # Mn in the host rock
+        )
+    )
+    
+    def acid_pulse_1(cond):
+        """First acid pulse — CO₂-rich brine from depth."""
+        cond.fluid.pH = 3.5
+        cond.fluid.S += 40.0
+        cond.fluid.Zn += 60.0
+        cond.fluid.Fe += 15.0
+        cond.flow_rate = 4.0
+        return ("CO₂-saturated brine surges into the vug. pH crashes to 3.5. "
+                "The limestone walls begin to fizz — carbonate dissolving on contact.")
+    
+    def acid_pulse_2(cond):
+        """Second acid pulse — stronger, with metals."""
+        cond.fluid.pH = 3.0
+        cond.fluid.S += 50.0
+        cond.fluid.Zn += 80.0
+        cond.fluid.Fe += 25.0
+        cond.fluid.Mn += 10.0
+        cond.flow_rate = 5.0
+        return ("Second acid pulse — stronger than the first. pH drops to 3.0. "
+                "Metal-bearing brine floods the vug. The walls are being eaten alive, "
+                "but every Ca²⁺ released is a future growth band waiting to happen.")
+    
+    def acid_pulse_3(cond):
+        """Third, weaker pulse — system running out of steam."""
+        cond.fluid.pH = 4.0
+        cond.fluid.S += 20.0
+        cond.fluid.Zn += 30.0
+        cond.flow_rate = 3.0
+        return ("Third acid pulse — weaker now. pH only drops to 4.0. "
+                "The fluid system is exhausting. But the wall still has carbonate to give.")
+    
+    def seal_event(cond):
+        """Fracture seals — fluid stops flowing, final equilibration."""
+        cond.flow_rate = 0.1
+        cond.fluid.pH += 0.5
+        cond.fluid.pH = min(cond.fluid.pH, 8.0)
+        return ("The feeding fracture seals. Flow stops. The vug becomes a closed system. "
+                "Whatever's dissolved will precipitate until equilibrium.")
+    
+    events = [
+        Event(15, "First Acid Pulse", "CO₂-saturated brine", 
+              Event(0, "", "", acid_pulse_1).apply_fn if False else acid_pulse_1),
+        Event(40, "Second Acid Pulse", "Stronger metal-bearing brine", acid_pulse_2),
+        Event(70, "Third Acid Pulse", "Weakening system", acid_pulse_3),
+        Event(90, "Fracture Seal", "Flow stops", seal_event),
+    ]
+    
+    # Fix event wrapping
+    events = [
+        Event(15, "First Acid Pulse", "CO₂-saturated brine", acid_pulse_1),
+        Event(40, "Second Acid Pulse", "Stronger metal-bearing brine", acid_pulse_2),
+        Event(70, "Third Acid Pulse", "Weakening system", acid_pulse_3),
+        Event(90, "Fracture Seal", "Flow stops", seal_event),
+    ]
+    
+    return conditions, events, 120
+
+
 SCENARIOS = {
     "cooling": scenario_cooling,
     "pulse": scenario_pulse,
     "mvt": scenario_mvt,
     "porphyry": scenario_porphyry,
+    "reactive_wall": scenario_reactive_wall,
 }
 
 
@@ -985,6 +1148,11 @@ class VugSimulator:
         self.conditions.temperature -= rate * random.uniform(0.8, 1.2)
         self.conditions.temperature = max(self.conditions.temperature, 25)
         
+        # pH recovery toward carbonate-buffered equilibrium when not being actively acidified
+        # This is the "resting state" between acid pulses — pH drifts back toward neutral
+        if self.conditions.fluid.pH < 6.5 and self.conditions.flow_rate < 2.0:
+            self.conditions.fluid.pH += 0.1  # gradual recovery from wall buffering
+        
         # Flow rate decays toward normal
         if self.conditions.flow_rate > 1.0:
             self.conditions.flow_rate *= 0.9
@@ -1007,6 +1175,44 @@ class VugSimulator:
                 if c.mineral == "sphalerite":
                     self.conditions.fluid.Zn = max(self.conditions.fluid.Zn - dep * 0.8, 0)
     
+    def dissolve_wall(self):
+        """Check if acid conditions are dissolving the vug wall.
+        
+        This is the key feedback loop Professor identified:
+        Acid enters → dissolves carbonate wall → neutralizes acid + 
+        releases Ca²⁺/CO₃²⁻ → supersaturates fluid → rapid crystal growth.
+        The vug enlarges as its crystals grow. The room makes the furniture.
+        """
+        wall = self.conditions.wall
+        
+        # Only dissolve if pH is acidic enough to attack carbonate
+        if self.conditions.fluid.pH >= 5.5:
+            return
+        
+        acid_strength = 5.5 - self.conditions.fluid.pH  # 0 to ~3.5
+        
+        # Record pre-dissolution supersaturation for comparison
+        pre_sigma_cal = self.conditions.supersaturation_calcite()
+        pre_Ca = self.conditions.fluid.Ca
+        
+        result = wall.dissolve(acid_strength, self.conditions.fluid)
+        
+        if result["dissolved"]:
+            post_sigma_cal = self.conditions.supersaturation_calcite()
+            
+            self.log.append(f"  🧱 WALL DISSOLUTION: {result['rate_mm']:.2f} mm of {wall.composition} dissolved")
+            self.log.append(f"     pH {result['ph_before']:.1f} → {result['ph_after']:.1f} (carbonate buffering)")
+            self.log.append(f"     Released: Ca²⁺ +{result['ca_released']:.0f} ppm, "
+                          f"CO₃²⁻ +{result['co3_released']:.0f} ppm, "
+                          f"Fe +{result['fe_released']:.1f}, Mn +{result['mn_released']:.1f}")
+            self.log.append(f"     Vug diameter: {result['vug_diameter']:.1f} mm "
+                          f"(+{result['total_dissolved']:.1f} mm total enlargement)")
+            
+            # Flag the supersaturation spike if significant
+            if post_sigma_cal > pre_sigma_cal * 1.3 and post_sigma_cal > 1.0:
+                self.log.append(f"     ⚡ SUPERSATURATION SPIKE: σ(Cal) {pre_sigma_cal:.2f} → "
+                              f"{post_sigma_cal:.2f} — rapid calcite growth expected!")
+    
     def run_step(self) -> List[str]:
         """Execute one time step."""
         self.log = []
@@ -1014,6 +1220,10 @@ class VugSimulator:
         
         # Apply events first
         self.apply_events()
+        
+        # Wall dissolution BEFORE crystal growth — this is the feedback loop
+        # Acid attacks wall → releases Ca/CO3 → supersaturates → crystals grow fast
+        self.dissolve_wall()
         
         # Check for new nucleation
         self.check_nucleation()
@@ -1047,11 +1257,15 @@ class VugSimulator:
         c = self.conditions
         sigma_q = c.supersaturation_quartz()
         sigma_c = c.supersaturation_calcite()
+        wall_info = ""
+        if c.wall.total_dissolved_mm > 0:
+            wall_info = f" │ Vug: {c.wall.vug_diameter_mm:.0f}mm (+{c.wall.total_dissolved_mm:.1f})"
         header = (f"═══ Step {self.step:3d} │ "
                  f"T={c.temperature:6.1f}°C │ "
                  f"P={c.pressure:.2f} kbar │ "
                  f"pH={c.fluid.pH:.1f} │ "
-                 f"σ(Qz)={sigma_q:.2f} σ(Cal)={sigma_c:.2f} │ "
+                 f"σ(Qz)={sigma_q:.2f} σ(Cal)={sigma_c:.2f}"
+                 f"{wall_info} │ "
                  f"Fluid: {c.fluid.describe()}")
         return header
     
@@ -1060,6 +1274,17 @@ class VugSimulator:
         lines = ["\n" + "═" * 70]
         lines.append("FINAL VUG INVENTORY")
         lines.append("═" * 70)
+        
+        # Vug wall stats if dissolution occurred
+        w = self.conditions.wall
+        if w.total_dissolved_mm > 0:
+            orig_diam = w.vug_diameter_mm - w.total_dissolved_mm * 2
+            lines.append(f"\nVUG CAVITY")
+            lines.append(f"  Host rock: {w.composition}")
+            lines.append(f"  Original diameter: {orig_diam:.0f} mm")
+            lines.append(f"  Final diameter: {w.vug_diameter_mm:.0f} mm")
+            lines.append(f"  Total wall dissolved: {w.total_dissolved_mm:.1f} mm")
+            lines.append(f"  The acid made the room. The room grew the crystals.")
         
         for c in self.crystals:
             lines.append(f"\n{c.mineral.upper()} #{c.crystal_id}")
@@ -1130,11 +1355,20 @@ class VugSimulator:
         else:
             setting = "low-temperature"
         
+        vug_growth = ""
+        if self.conditions.wall.total_dissolved_mm > 0:
+            vug_growth = (
+                f" The cavity itself expanded from {self.conditions.wall.vug_diameter_mm - self.conditions.wall.total_dissolved_mm * 2:.0f}mm "
+                f"to {self.conditions.wall.vug_diameter_mm:.0f}mm diameter as acid pulses "
+                f"dissolved {self.conditions.wall.total_dissolved_mm:.1f}mm of the "
+                f"{self.conditions.wall.composition} host rock."
+            )
+        
         paragraphs.append(
             f"This vug records a {setting} crystallization history beginning at "
             f"{start_T:.0f}°C. {len(self.crystals)} crystals grew across "
             f"{self.step} time steps, producing an assemblage of "
-            f"{', '.join(mineral_names)}."
+            f"{', '.join(mineral_names)}.{vug_growth}"
         )
         
         # Tell the story phase by phase
