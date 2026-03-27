@@ -448,6 +448,22 @@ button:disabled {
 }
 .action-btn.act-flood:hover { background: #103a3a; border-color: #2a7a7a; }
 
+/* Acidify — red/orange */
+.action-btn.act-acid {
+  background: #3a1a0a;
+  border-color: #7a3a10;
+  color: #ff6633;
+}
+.action-btn.act-acid:hover { background: #4a2510; border-color: #cc5520; }
+
+/* Alkalinize — blue/purple */
+.action-btn.act-alkaline {
+  background: #1a0a3a;
+  border-color: #3a1a7a;
+  color: #8866ff;
+}
+.action-btn.act-alkaline:hover { background: #2a1a4a; border-color: #5a30aa; }
+
 .end-btns {
   display: flex;
   gap: 0.5rem;
@@ -781,8 +797,13 @@ Scenarios:
         <input type="range" id="f-s" min="0" max="200" value="0" oninput="document.getElementById('f-s-val').textContent=this.value+' ppm'">
         <span class="range-val" id="f-s-val">0 ppm</span>
       </div>
+      <div class="setup-row">
+        <label style="width:60px">pH</label>
+        <input type="range" id="f-ph" min="20" max="100" value="65" step="5" oninput="document.getElementById('f-ph-val').textContent=(this.value/10).toFixed(1)">
+        <span class="range-val" id="f-ph-val">6.5</span>
+      </div>
       <div style="color:#5a4a30;font-size:0.65rem;margin-top:0.3rem;font-style:italic;">
-        Iron quenches calcite fluorescence and darkens sphalerite. Mn activates fluorescence. Cu+S+Fe = chalcopyrite. Fe+S = pyrite.
+        Iron quenches calcite fluorescence and darkens sphalerite. Mn activates fluorescence. Cu+S+Fe = chalcopyrite. Fe+S = pyrite. Low pH dissolves carbonates; high pH favors them.
       </div>
     </div>
 
@@ -816,6 +837,8 @@ Scenarios:
       <button class="action-btn act-oxidize" onclick="fortressStep('oxidize')" title="Oxidizing meteoric water — sulfides unstable">🟡 Oxidize</button>
       <button class="action-btn act-tectonic" onclick="fortressStep('tectonic')" title="Pressure spike, twinning trigger">🌋 Tectonic Shock</button>
       <button class="action-btn act-flood" onclick="fortressStep('flood')" title="High flow rate, fresh fluid pulse">🌊 Flood</button>
+      <button class="action-btn act-acid" onclick="fortressStep('acidify')" title="pH −2 — dissolves carbonates, attacks silicates with fluorine">🧪 Acidify</button>
+      <button class="action-btn act-alkaline" onclick="fortressStep('alkalinize')" title="pH +2 — favors carbonate precipitation">⚗️ Alkalinize</button>
     </div>
     <div class="end-btns">
       <button class="btn-finish" onclick="fortressFinish()">📜 Finish &amp; Narrate</button>
@@ -928,14 +951,34 @@ class VugConditions {
   supersaturation_quartz() {
     const eq = 50.0 * Math.exp(0.008 * this.temperature);
     if (eq <= 0) return 0;
-    return this.fluid.SiO2 / eq;
+    let sigma = this.fluid.SiO2 / eq;
+
+    // HF attack on quartz: low pH + high F = dissolution
+    if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
+      const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
+      sigma -= hf_attack;
+    }
+
+    return Math.max(sigma, 0);
   }
 
   supersaturation_calcite() {
     const eq = 300.0 * Math.exp(-0.005 * this.temperature);
     if (eq <= 0) return 0;
     const ca_co3 = Math.min(this.fluid.Ca, this.fluid.CO3);
-    return ca_co3 / eq;
+    let sigma = ca_co3 / eq;
+
+    // Acid dissolution of carbonates
+    if (this.fluid.pH < 5.5) {
+      const acid_attack = (5.5 - this.fluid.pH) * 0.5;
+      sigma -= acid_attack;
+    }
+    // Alkaline conditions favor carbonate precipitation
+    else if (this.fluid.pH > 7.5) {
+      sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.15;
+    }
+
+    return Math.max(sigma, 0);
   }
 
   supersaturation_fluorite() {
@@ -1072,10 +1115,22 @@ function grow_quartz(crystal, conditions, step) {
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 10) {
       crystal.dissolved = true;
+      const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.1);
+      // RECYCLING: dissolved SiO2 returns to fluid
+      conditions.fluid.SiO2 += dissolved_um * 0.8;
+
+      // Determine dissolution type
+      let note;
+      if (conditions.fluid.pH < 4.0 && conditions.fluid.F > 20) {
+        note = 'HF etching — trigonal etch pits on prism faces, SiO₂ dissolved as SiF₄';
+      } else {
+        note = 'dissolution — etching on prism faces';
+      }
+
       return new GrowthZone({
         step, temperature: conditions.temperature,
-        thickness_um: -5.0, growth_rate: -5.0,
-        note: 'dissolution — etching on prism faces'
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note
       });
     }
     return null;
@@ -1146,7 +1201,30 @@ function grow_quartz(crystal, conditions, step) {
 
 function grow_calcite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_calcite();
-  if (sigma < 1.0) return null;
+  if (sigma < 1.0) {
+    // Acid dissolution — calcite dissolves easily in acid
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.15);
+      // RECYCLING: Ca, CO3, and trace elements return to fluid
+      conditions.fluid.Ca += dissolved_um * 0.5;
+      conditions.fluid.CO3 += dissolved_um * 0.3;
+      // Mn and Fe that were in the crystal go back into solution
+      if (crystal.zones.length) {
+        const recentZones = crystal.zones.slice(-3);
+        const avg_mn = recentZones.reduce((s, z) => s + z.trace_Mn, 0) / recentZones.length;
+        const avg_fe = recentZones.reduce((s, z) => s + z.trace_Fe, 0) / recentZones.length;
+        conditions.fluid.Mn += avg_mn * 0.5;
+        conditions.fluid.Fe += avg_fe * 0.5;
+      }
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Ca²⁺ + CO₃²⁻ released back to fluid`
+      });
+    }
+    return null;
+  }
 
   const excess = sigma - 1.0;
   let rate = 5.0 * excess * rng.uniform(0.8, 1.2);
@@ -1256,12 +1334,28 @@ function grow_pyrite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_pyrite();
 
   if (sigma < 1.0) {
+    // Check for oxidation/dissolution
     if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 1.0) {
       crystal.dissolved = true;
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.1);
+      // RECYCLING: Fe and S return to fluid
+      conditions.fluid.Fe += dissolved_um * 1.0;
+      conditions.fluid.S += dissolved_um * 0.5;
       return new GrowthZone({
         step, temperature: conditions.temperature,
-        thickness_um: -3.0, growth_rate: -3.0,
-        note: 'oxidizing — pyrite weathering to goethite/limonite'
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'oxidizing — pyrite weathering to goethite/limonite, Fe²⁺ released to fluid'
+      });
+    }
+    // Also dissolves in strong acid
+    if (crystal.total_growth_um > 10 && conditions.fluid.pH < 3.0) {
+      crystal.dissolved = true;
+      conditions.fluid.Fe += 2.0;
+      conditions.fluid.S += 1.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -2.0, growth_rate: -2.0,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Fe + S released`
       });
     }
     return null;
@@ -1313,10 +1407,15 @@ function grow_chalcopyrite(crystal, conditions, step) {
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 1.0) {
       crystal.dissolved = true;
+      const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.1);
+      // RECYCLING: Cu, Fe, S return to fluid
+      conditions.fluid.Cu += dissolved_um * 0.8;
+      conditions.fluid.Fe += dissolved_um * 0.5;
+      conditions.fluid.S += dissolved_um * 0.3;
       return new GrowthZone({
         step, temperature: conditions.temperature,
-        thickness_um: -4.0, growth_rate: -4.0,
-        note: 'oxidizing — chalcopyrite weathering (→ malachite/azurite at surface)'
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'oxidizing — chalcopyrite weathering, Cu²⁺ + Fe²⁺ released (→ malachite/azurite at surface)'
       });
     }
     return null;
@@ -1401,6 +1500,18 @@ function event_oxidation(conditions) {
   conditions.fluid.S *= 0.3;
   conditions.temperature -= 40;
   return `Oxidizing meteoric water infiltrates. Sulfides becoming unstable. T drops to ${conditions.temperature.toFixed(0)}°C.`;
+}
+
+function event_acidify(conditions) {
+  conditions.fluid.pH -= 2.0;
+  conditions.fluid.pH = Math.max(conditions.fluid.pH, 2.0);
+  return `Acidic fluid incursion. pH drops to ${conditions.fluid.pH.toFixed(1)}. Carbonates becoming unstable — calcite may dissolve.`;
+}
+
+function event_alkalinize(conditions) {
+  conditions.fluid.pH += 2.0;
+  conditions.fluid.pH = Math.min(conditions.fluid.pH, 10.0);
+  return `Alkaline fluid incursion. pH rises to ${conditions.fluid.pH.toFixed(1)}. Carbonate precipitation favored.`;
 }
 
 function event_fluid_mixing(conditions) {
@@ -2247,6 +2358,8 @@ function selectPreset(preset) {
   document.getElementById('f-cu-val').textContent = f.Cu + ' ppm';
   document.getElementById('f-s').value = f.S;
   document.getElementById('f-s-val').textContent = f.S + ' ppm';
+  document.getElementById('f-ph').value = Math.round(f.pH * 10);
+  document.getElementById('f-ph-val').textContent = f.pH.toFixed(1);
 }
 
 function fortressBegin() {
@@ -2259,6 +2372,7 @@ function fortressBegin() {
   fluidParams.Mn = parseFloat(document.getElementById('f-mn').value);
   fluidParams.Cu = parseFloat(document.getElementById('f-cu').value);
   fluidParams.S = parseFloat(document.getElementById('f-s').value);
+  fluidParams.pH = parseFloat(document.getElementById('f-ph').value) / 10;
   const fluid = new FluidChemistry(fluidParams);
   const conditions = new VugConditions({ temperature: temp, pressure, fluid });
 
@@ -2379,6 +2493,12 @@ function fortressStep(action) {
       c.fluid.CO3 *= 1.2;
       c.fluid.pH += 0.3;
       actionDesc = '🌊 Flood — fresh fluid pulse, silica diluted, carbonates refreshed';
+      break;
+    case 'acidify':
+      actionDesc = '🧪 ' + event_acidify(c);
+      break;
+    case 'alkalinize':
+      actionDesc = '⚗️ ' + event_alkalinize(c);
       break;
   }
 
@@ -2625,6 +2745,8 @@ function fortressReset() {
   document.getElementById('f-temp-val').textContent = '300°C';
   document.getElementById('f-pressure').value = 15;
   document.getElementById('f-pressure-val').textContent = '1.5 kbar';
+  document.getElementById('f-ph').value = 65;
+  document.getElementById('f-ph-val').textContent = '6.5';
   selectPreset('silica');
 }
 
