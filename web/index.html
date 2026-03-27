@@ -210,7 +210,7 @@ footer a:hover {
   </div>
   <div class="control-group">
     <label for="seed">Seed (optional)</label>
-    <input type="number" id="seed" placeholder="random" style="width:100px">
+    <input type="number" id="seed" placeholder="random" style="width:140px">
   </div>
   <div class="control-group">
     <label for="steps">Steps (optional)</label>
@@ -1152,7 +1152,8 @@ function runSimulation() {
   rng = new SeededRandom(seed);
 
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName]();
-  const totalSteps = stepsInput ? Math.max(parseInt(stepsInput, 10), 20) : defaultSteps;
+  const parsedSteps = stepsInput ? parseInt(stepsInput, 10) : NaN;
+  const totalSteps = (parsedSteps && parsedSteps >= 20) ? parsedSteps : defaultSteps;
 
   const allLines = [];
 
@@ -1187,6 +1188,7 @@ function runRandom() {
   const seed = Math.floor(Math.random() * 2147483647);
   document.getElementById('seed').value = seed;
   document.getElementById('steps').value = '';
+  document.getElementById('steps').setAttribute('value', '');
   runSimulation();
 }
 
