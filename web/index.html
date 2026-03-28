@@ -1230,8 +1230,14 @@ class VugConditions {
 
   supersaturation_fluorite() {
     if (this.fluid.Ca < 10 || this.fluid.F < 5) return 0;
-    const product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
-    return product * Math.exp(-0.003 * this.temperature);
+    let product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
+    let sigma = product * Math.exp(-0.003 * this.temperature);
+    // Acid dissolution — fluorite dissolves in strong acid
+    if (this.fluid.pH < 5.0) {
+      const acid_attack = (5.0 - this.fluid.pH) * 0.4;
+      sigma -= acid_attack;
+    }
+    return Math.max(sigma, 0);
   }
 
   supersaturation_sphalerite() {

@@ -223,12 +223,21 @@ class VugConditions:
         return max(sigma, 0)
     
     def supersaturation_fluorite(self) -> float:
-        """Fluorite (CaF2) supersaturation. Precipitates when Ca and F meet."""
+        """Fluorite (CaF2) supersaturation. Precipitates when Ca and F meet.
+        
+        Fluorite dissolves in strong acid: CaF₂ + 2H⁺ → Ca²⁺ + 2HF
+        pH below 5.0 progressively destabilizes fluorite.
+        """
         if self.fluid.Ca < 10 or self.fluid.F < 5:
             return 0
         # Simple product model
         product = (self.fluid.Ca / 200.0) * (self.fluid.F / 20.0)
-        return product * math.exp(-0.003 * self.temperature)
+        sigma = product * math.exp(-0.003 * self.temperature)
+        # Acid attack on fluorite
+        if self.fluid.pH < 5.0:
+            acid_attack = (5.0 - self.fluid.pH) * 0.4
+            sigma -= acid_attack
+        return max(sigma, 0)
     
     def supersaturation_sphalerite(self) -> float:
         """Sphalerite (ZnS) supersaturation. Needs Zn + S."""
