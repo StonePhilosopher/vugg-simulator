@@ -1328,6 +1328,57 @@ class VugSimulator:
                 host.enclosed_crystals.pop(i)
                 host.enclosed_at_step.pop(i)
     
+    def check_liberation(self):
+        """Check if dissolution of a host crystal frees enclosed inclusions.
+        
+        Professor's insight: if you track enclosures, you need to track
+        liberation too. When the enclosing crystal dissolves back past
+        the point where it swallowed the inclusion, the inclusion is freed
+        and can resume growing. The outer enclosures dissolve first —
+        last in, first out.
+        """
+        for host in self.crystals:
+            if not host.enclosed_crystals:
+                continue
+            if not host.dissolved:
+                continue
+            
+            # Check if dissolution has eaten back enough to free inclusions
+            # Compare current size to size at time of enclosure
+            # Liberation happens when the host shrinks below the size it was
+            # when it swallowed the inclusion
+            to_free = []
+            for enc_id, enc_step in zip(host.enclosed_crystals, host.enclosed_at_step):
+                # Estimate host size at enclosure time
+                # (sum of growth up to that step)
+                size_at_enclosure = 0
+                for z in host.zones:
+                    if z.step <= enc_step:
+                        size_at_enclosure += z.thickness_um
+                
+                # If host has dissolved back past enclosure size, free the inclusion
+                if host.total_growth_um < size_at_enclosure * 0.8:  # 80% threshold
+                    to_free.append(enc_id)
+            
+            for enc_id in to_free:
+                enc_crystal = next((c for c in self.crystals if c.crystal_id == enc_id), None)
+                if enc_crystal:
+                    enc_crystal.enclosed_by = None
+                    enc_crystal.active = True  # can grow again!
+                    
+                    # Remove from host's enclosure lists (paired removal)
+                    if enc_id in host.enclosed_crystals:
+                        idx = host.enclosed_crystals.index(enc_id)
+                        host.enclosed_crystals.pop(idx)
+                        if idx < len(host.enclosed_at_step):
+                            host.enclosed_at_step.pop(idx)
+                    
+                    self.log.append(
+                        f"  🔓 LIBERATION: {enc_crystal.mineral} #{enc_id} freed from "
+                        f"dissolving {host.mineral} #{host.crystal_id}! "
+                        f"The {enc_crystal.mineral} can grow again."
+                    )
+    
     def dissolve_wall(self):
         """Check if acid conditions are dissolving the vug wall.
         
