@@ -967,7 +967,7 @@ Scenarios:
 
   <div class="action-panel" id="fortress-actions">
     <div class="action-grid">
-      <button class="action-btn act-wait" onclick="fortressStep('wait')" title="Ambient cooling, nothing special">⏳ Wait</button>
+      <button class="action-btn act-wait" onclick="fortressStep('wait')" title="Advance one time step with current conditions" style="min-width:140px;font-weight:bold">⏳ Advance Step</button>
       <button class="action-btn act-heat" onclick="fortressStep('heat')" title="Temperature +25°C">🔥 Heat +25°C</button>
       <button class="action-btn act-cool" onclick="fortressStep('cool')" title="Temperature -25°C">❄️ Cool −25°C</button>
       <button class="action-btn act-chem" onclick="fortressStep('silica')" title="Boost SiO₂ significantly">🔮 Inject Silica</button>
@@ -3312,19 +3312,25 @@ function fortressStep(action) {
       break;
   }
 
-  // Run one step
-  const log = fortressSim.run_step();
-
-  // Build output
   const logEl = document.getElementById('fortress-log');
   const lines = [];
-  lines.push('');
-  lines.push(`── ${actionDesc}`);
-  lines.push(fortressSim.format_header());
-  if (log.length) {
-    for (const l of log) lines.push(l);
+
+  if (action === 'wait') {
+    // ONLY Wait advances time — all other buttons just modify conditions
+    const log = fortressSim.run_step();
+    lines.push('');
+    lines.push(`── ⏳ Step ${fortressSim.step}`);
+    lines.push(fortressSim.format_header());
+    if (log.length) {
+      for (const l of log) lines.push(l);
+    } else {
+      lines.push('  (no growth or events this step)');
+    }
+    updateFortressInventory();
   } else {
-    lines.push('  (no growth or events this step)');
+    // Non-wait actions: modify conditions but DON'T advance time
+    // Log what changed so the player can stack multiple changes
+    lines.push(`  ⚙️ ${actionDesc}`);
   }
 
   lines.forEach(line => {
@@ -3334,7 +3340,6 @@ function fortressStep(action) {
 
   logEl.scrollTop = logEl.scrollHeight;
   updateFortressStatus();
-  updateFortressInventory();
   syncBrothSliders();
 }
 
