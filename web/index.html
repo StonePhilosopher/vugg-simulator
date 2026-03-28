@@ -183,6 +183,7 @@ button:disabled {
 .line-nucleation { color: #50e0c0; font-weight: bold; }
 .line-header { color: #a89040; }
 .line-dissolution { color: #cc4444; }
+.line-wall { color: #cc8844; font-weight: bold; }
 
 .narrative-box {
   border: 1px solid #5a4a20;
@@ -845,6 +846,7 @@ footer a:hover {
       <option value="pulse">pulse</option>
       <option value="mvt">mvt</option>
       <option value="porphyry">porphyry</option>
+      <option value="reactive_wall">reactive_wall</option>
     </select>
   </div>
   <div class="control-group">
@@ -870,10 +872,11 @@ Select a scenario and press Grow, or hit Random for a surprise.
 Switch to 🏰 Fortress Mode for step-by-step interactive control.
 
 Scenarios:
-  cooling  — Simple cooling: hot fluid cools slowly in a vug
-  pulse    — Cooling with a mid-growth fluid pulse event
-  mvt      — Mississippi Valley-type: fluid mixing produces sphalerite + calcite + fluorite
-  porphyry — Copper porphyry deposit: Cu pulses + oxidation → pyrite + chalcopyrite
+  cooling       — Simple cooling: hot fluid cools slowly in a vug
+  pulse         — Cooling with a mid-growth fluid pulse event
+  mvt           — Mississippi Valley-type: fluid mixing produces sphalerite + calcite + fluorite
+  porphyry      — Copper porphyry deposit: Cu pulses + oxidation → pyrite + chalcopyrite
+  reactive_wall — Acid pulses dissolve limestone walls, feed crystal growth
 </div>
 </div>
 
@@ -956,6 +959,7 @@ Scenarios:
       <div class="cond-item"><span class="cond-label">Press</span> <span id="f-stat-press">—</span></div>
       <div class="cond-item"><span class="cond-label">pH</span> <span id="f-stat-ph">—</span></div>
       <div class="cond-item"><span class="cond-label">Flow</span> <span id="f-stat-flow">—</span></div>
+      <div class="cond-item" id="f-stat-vug-container" style="display:none"><span class="cond-label">Vug</span> <span id="f-stat-vug">—</span></div>
     </div>
     <div class="supersaturation-bar" id="f-sat-bar"></div>
   </div>
@@ -1187,12 +1191,66 @@ class FluidChemistry {
   }
 }
 
+class VugWall {
+  constructor(opts = {}) {
+    this.composition = opts.composition ?? 'limestone';
+    this.thickness_mm = opts.thickness_mm ?? 500.0;
+    this.vug_diameter_mm = opts.vug_diameter_mm ?? 50.0;
+    this.total_dissolved_mm = opts.total_dissolved_mm ?? 0.0;
+    this.wall_Fe_ppm = opts.wall_Fe_ppm ?? 2000.0;
+    this.wall_Mn_ppm = opts.wall_Mn_ppm ?? 500.0;
+    this.wall_Mg_ppm = opts.wall_Mg_ppm ?? 1000.0;
+    this.ca_from_wall_total = opts.ca_from_wall_total ?? 0.0;
+  }
+
+  dissolve(acid_strength, fluid) {
+    if (acid_strength <= 0) return { dissolved: false };
+
+    let rate_mm = Math.min(acid_strength * 0.5, 2.0);
+    if (this.thickness_mm < rate_mm) rate_mm = this.thickness_mm;
+
+    this.thickness_mm -= rate_mm;
+    this.total_dissolved_mm += rate_mm;
+    this.vug_diameter_mm += rate_mm * 2;
+
+    const ca_released = rate_mm * 15.0;
+    const co3_released = rate_mm * 12.0;
+    const fe_released = rate_mm * (this.wall_Fe_ppm / 1000.0) * 0.5;
+    const mn_released = rate_mm * (this.wall_Mn_ppm / 1000.0) * 0.5;
+    const ph_recovery = rate_mm * 0.8;
+
+    const ph_before = fluid.pH;
+    fluid.Ca += ca_released;
+    fluid.CO3 += co3_released;
+    fluid.Fe += fe_released;
+    fluid.Mn += mn_released;
+    fluid.pH += ph_recovery;
+    fluid.pH = Math.min(fluid.pH, 8.5);
+
+    this.ca_from_wall_total += ca_released;
+
+    return {
+      dissolved: true,
+      rate_mm,
+      ca_released,
+      co3_released,
+      fe_released,
+      mn_released,
+      ph_before,
+      ph_after: fluid.pH,
+      vug_diameter: this.vug_diameter_mm,
+      total_dissolved: this.total_dissolved_mm,
+    };
+  }
+}
+
 class VugConditions {
   constructor(opts = {}) {
     this.temperature = opts.temperature ?? 350.0;
     this.pressure = opts.pressure ?? 1.5;
     this.fluid = opts.fluid || new FluidChemistry();
     this.flow_rate = opts.flow_rate ?? 1.0;
+    this.wall = opts.wall || new VugWall();
   }
 
   supersaturation_quartz() {
@@ -1280,6 +1338,10 @@ class GrowthZone {
     this.fluid_inclusion = opts.fluid_inclusion ?? false;
     this.inclusion_type = opts.inclusion_type ?? '';
     this.note = opts.note ?? '';
+    this.ca_from_wall = opts.ca_from_wall ?? 0.0;
+    this.ca_from_fluid = opts.ca_from_fluid ?? 0.0;
+    this.is_phantom = opts.is_phantom ?? false;
+    this.dissolution_depth_um = opts.dissolution_depth_um ?? 0.0;
   }
 }
 
@@ -1300,9 +1362,20 @@ class Crystal {
     this.total_growth_um = 0;
     this.active = true;
     this.dissolved = false;
+    this.phantom_surfaces = [];
+    this.phantom_count = 0;
   }
 
   add_zone(zone) {
+    // Detect phantom boundaries
+    if (zone.thickness_um < 0) {
+      zone.is_phantom = true;
+      zone.dissolution_depth_um = Math.abs(zone.thickness_um);
+      this.phantom_surfaces.push(this.zones.length);
+      this.phantom_count++;
+    } else if (this.zones.length && this.zones[this.zones.length - 1].thickness_um < 0 && zone.thickness_um > 0) {
+      zone.note = (zone.note + ' [phantom boundary — growing over dissolution surface]').trim();
+    }
     this.zones.push(zone);
     this.total_growth_um += zone.thickness_um;
     this.c_length_mm = this.total_growth_um / 1000.0;
@@ -1487,6 +1560,16 @@ function grow_calcite(crystal, conditions, step) {
   const Fe_partition = 0.08;
   const trace_Fe = conditions.fluid.Fe * Fe_partition;
 
+  // Provenance tracking — what fraction of Ca came from the wall?
+  const wall = conditions.wall;
+  const total_ca = conditions.fluid.Ca;
+  let ca_wall_fraction = 0.0;
+  let ca_fluid_fraction = 1.0;
+  if (total_ca > 0 && wall.ca_from_wall_total > 0) {
+    ca_wall_fraction = Math.min(wall.ca_from_wall_total / total_ca, 1.0);
+    ca_fluid_fraction = 1.0 - ca_wall_fraction;
+  }
+
   if (conditions.temperature > 200) {
     crystal.habit = 'scalenohedral';
     crystal.dominant_forms = ['v{211} scalenohedron', 'dog-tooth'];
@@ -1507,6 +1590,12 @@ function grow_calcite(crystal, conditions, step) {
   if (trace_Mn > 1.0 && trace_Fe < 2.0) note = 'Mn-rich zone — will fluoresce orange under UV';
   else if (trace_Mn > 1.0 && trace_Fe > 2.0) note = 'Fe quenching Mn fluorescence — dark CL zone';
 
+  // Provenance note when significant wall-derived material
+  if (ca_wall_fraction > 0.3) {
+    const prov_note = `[${(ca_wall_fraction * 100).toFixed(0)}% recycled wall rock]`;
+    note = note ? `${note} ${prov_note}` : prov_note;
+  }
+
   let fi = false, fi_type = '';
   if (rate > 8 && rng.random() < 0.2) {
     fi = true;
@@ -1517,7 +1606,9 @@ function grow_calcite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
-    fluid_inclusion: fi, inclusion_type: fi_type, note
+    fluid_inclusion: fi, inclusion_type: fi_type, note,
+    ca_from_wall: ca_wall_fraction,
+    ca_from_fluid: ca_fluid_fraction,
   });
 }
 
@@ -1849,7 +1940,67 @@ function scenario_porphyry() {
   return { conditions, events, defaultSteps: 120 };
 }
 
-const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry };
+function scenario_reactive_wall() {
+  const conditions = new VugConditions({
+    temperature: 140.0, pressure: 0.2,
+    fluid: new FluidChemistry({
+      SiO2: 50, Ca: 250, CO3: 200, Fe: 8, Mn: 5,
+      Zn: 80, S: 60, F: 8, pH: 7.0, salinity: 18.0
+    }),
+    wall: new VugWall({
+      composition: 'limestone',
+      thickness_mm: 500.0,
+      vug_diameter_mm: 40.0,
+      wall_Fe_ppm: 3000.0,
+      wall_Mn_ppm: 800.0,
+    })
+  });
+
+  function acid_pulse_1(cond) {
+    cond.fluid.pH = 3.5;
+    cond.fluid.S += 40.0;
+    cond.fluid.Zn += 60.0;
+    cond.fluid.Fe += 15.0;
+    cond.flow_rate = 4.0;
+    return 'CO₂-saturated brine surges into the vug. pH crashes to 3.5. The limestone walls begin to fizz — carbonate dissolving on contact.';
+  }
+
+  function acid_pulse_2(cond) {
+    cond.fluid.pH = 3.0;
+    cond.fluid.S += 50.0;
+    cond.fluid.Zn += 80.0;
+    cond.fluid.Fe += 25.0;
+    cond.fluid.Mn += 10.0;
+    cond.flow_rate = 5.0;
+    return 'Second acid pulse — stronger than the first. pH drops to 3.0. Metal-bearing brine floods the vug. The walls are being eaten alive, but every Ca²⁺ released is a future growth band waiting to happen.';
+  }
+
+  function acid_pulse_3(cond) {
+    cond.fluid.pH = 4.0;
+    cond.fluid.S += 20.0;
+    cond.fluid.Zn += 30.0;
+    cond.flow_rate = 3.0;
+    return 'Third acid pulse — weaker now. pH only drops to 4.0. The fluid system is exhausting. But the wall still has carbonate to give.';
+  }
+
+  function seal_event(cond) {
+    cond.flow_rate = 0.1;
+    cond.fluid.pH += 0.5;
+    cond.fluid.pH = Math.min(cond.fluid.pH, 8.0);
+    return 'The feeding fracture seals. Flow stops. The vug becomes a closed system. Whatever\'s dissolved will precipitate until equilibrium.';
+  }
+
+  const events = [
+    { step: 15, name: 'First Acid Pulse', description: 'CO₂-saturated brine', apply_fn: acid_pulse_1 },
+    { step: 40, name: 'Second Acid Pulse', description: 'Stronger metal-bearing brine', apply_fn: acid_pulse_2 },
+    { step: 70, name: 'Third Acid Pulse', description: 'Weakening system', apply_fn: acid_pulse_3 },
+    { step: 90, name: 'Fracture Seal', description: 'Flow stops', apply_fn: seal_event },
+  ];
+
+  return { conditions, events, defaultSteps: 120 };
+}
+
+const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall };
 
 // ============================================================
 // SIMULATION ENGINE
@@ -1965,9 +2116,39 @@ class VugSimulator {
     }
   }
 
+  dissolve_wall() {
+    const wall = this.conditions.wall;
+    if (this.conditions.fluid.pH >= 5.5) return;
+
+    const acid_strength = 5.5 - this.conditions.fluid.pH;
+    const pre_sigma_cal = this.conditions.supersaturation_calcite();
+    const pre_Ca = this.conditions.fluid.Ca;
+
+    const result = wall.dissolve(acid_strength, this.conditions.fluid);
+
+    if (result.dissolved) {
+      const post_sigma_cal = this.conditions.supersaturation_calcite();
+
+      this.log.push(`  🧱 WALL DISSOLUTION: ${result.rate_mm.toFixed(2)} mm of ${wall.composition} dissolved`);
+      this.log.push(`     pH ${result.ph_before.toFixed(1)} → ${result.ph_after.toFixed(1)} (carbonate buffering)`);
+      this.log.push(`     Released: Ca²⁺ +${result.ca_released.toFixed(0)} ppm, CO₃²⁻ +${result.co3_released.toFixed(0)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
+      this.log.push(`     Vug diameter: ${result.vug_diameter.toFixed(1)} mm (+${result.total_dissolved.toFixed(1)} mm total enlargement)`);
+
+      if (post_sigma_cal > pre_sigma_cal * 1.3 && post_sigma_cal > 1.0) {
+        this.log.push(`     ⚡ SUPERSATURATION SPIKE: σ(Cal) ${pre_sigma_cal.toFixed(2)} → ${post_sigma_cal.toFixed(2)} — rapid calcite growth expected!`);
+      }
+    }
+  }
+
   ambient_cooling(rate = 1.5) {
     this.conditions.temperature -= rate * rng.uniform(0.8, 1.2);
     this.conditions.temperature = Math.max(this.conditions.temperature, 25);
+
+    // pH recovery toward carbonate-buffered equilibrium when not being actively acidified
+    if (this.conditions.fluid.pH < 6.5 && this.conditions.flow_rate < 2.0) {
+      this.conditions.fluid.pH += 0.1;
+    }
+
     if (this.conditions.flow_rate > 1.0) this.conditions.flow_rate *= 0.9;
     const active_quartz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
     if (active_quartz.length) {
@@ -1996,6 +2177,7 @@ class VugSimulator {
     this.log = [];
     this.step++;
     this.apply_events();
+    this.dissolve_wall();
     this.check_nucleation();
     for (const crystal of this.crystals) {
       if (!crystal.active) continue;
@@ -2019,7 +2201,11 @@ class VugSimulator {
     const c = this.conditions;
     const sigma_q = c.supersaturation_quartz();
     const sigma_c = c.supersaturation_calcite();
-    return `═══ Step ${String(this.step).padStart(3)} │ T=${this.conditions.temperature.toFixed(1).padStart(6)}°C │ P=${c.pressure.toFixed(2)} kbar │ pH=${c.fluid.pH.toFixed(1)} │ σ(Qz)=${sigma_q.toFixed(2)} σ(Cal)=${sigma_c.toFixed(2)} │ Fluid: ${c.fluid.describe()}`;
+    let wall_info = '';
+    if (c.wall.total_dissolved_mm > 0) {
+      wall_info = ` │ Vug: ${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+    }
+    return `═══ Step ${String(this.step).padStart(3)} │ T=${this.conditions.temperature.toFixed(1).padStart(6)}°C │ P=${c.pressure.toFixed(2)} kbar │ pH=${c.fluid.pH.toFixed(1)} │ σ(Qz)=${sigma_q.toFixed(2)} σ(Cal)=${sigma_c.toFixed(2)}${wall_info} │ Fluid: ${c.fluid.describe()}`;
   }
 
   format_summary() {
@@ -2028,6 +2214,19 @@ class VugSimulator {
     lines.push('═'.repeat(70));
     lines.push('FINAL VUG INVENTORY');
     lines.push('═'.repeat(70));
+
+    // Vug wall stats if dissolution occurred
+    const w = this.conditions.wall;
+    if (w.total_dissolved_mm > 0) {
+      const orig_diam = w.vug_diameter_mm - w.total_dissolved_mm * 2;
+      lines.push('');
+      lines.push('VUG CAVITY');
+      lines.push(`  Host rock: ${w.composition}`);
+      lines.push(`  Original diameter: ${orig_diam.toFixed(0)} mm`);
+      lines.push(`  Final diameter: ${w.vug_diameter_mm.toFixed(0)} mm`);
+      lines.push(`  Total wall dissolved: ${w.total_dissolved_mm.toFixed(1)} mm`);
+      lines.push('  The acid made the room. The room grew the crystals.');
+    }
 
     for (const c of this.crystals) {
       lines.push('');
@@ -2045,6 +2244,24 @@ class VugSimulator {
       }
       if (c.twinned) lines.push(`  Twinning: ${c.twin_law}`);
       if (c.dissolved) lines.push(`  Note: partially dissolved (late-stage undersaturation)`);
+      if (c.phantom_count > 0) {
+        lines.push(`  Phantom boundaries: ${c.phantom_count} (dissolution surfaces preserved inside crystal)`);
+      }
+
+      // Provenance (for calcite with wall dissolution)
+      if (c.mineral === 'calcite' && c.zones.length) {
+        const wall_zones = c.zones.filter(z => z.ca_from_wall > 0.1);
+        if (wall_zones.length) {
+          const avg_wall = wall_zones.reduce((s, z) => s + z.ca_from_wall, 0) / wall_zones.length;
+          const max_wall = Math.max(...wall_zones.map(z => z.ca_from_wall));
+          lines.push(`  Provenance: ${wall_zones.length}/${c.zones.length} zones contain wall-derived Ca²⁺`);
+          lines.push(`    Average wall contribution: ${(avg_wall * 100).toFixed(0)}%, peak: ${(max_wall * 100).toFixed(0)}%`);
+          const first_wall_zone = c.zones.find(z => z.ca_from_wall > 0.1);
+          if (first_wall_zone) {
+            lines.push(`    Wall-derived Ca first appears at step ${first_wall_zone.step} (T=${first_wall_zone.temperature.toFixed(0)}°C)`);
+          }
+        }
+      }
 
       const fl = c.predict_fluorescence();
       if (fl !== 'non-fluorescent') lines.push(`  Predicted UV fluorescence: ${fl}`);
@@ -2096,8 +2313,14 @@ class VugSimulator {
     else if (start_T > 150) setting = 'moderate-temperature hydrothermal';
     else setting = 'low-temperature';
 
+    let vug_growth = '';
+    if (this.conditions.wall.total_dissolved_mm > 0) {
+      const w = this.conditions.wall;
+      vug_growth = ` The cavity itself expanded from ${(w.vug_diameter_mm - w.total_dissolved_mm * 2).toFixed(0)}mm to ${w.vug_diameter_mm.toFixed(0)}mm diameter as acid pulses dissolved ${w.total_dissolved_mm.toFixed(1)}mm of the ${w.composition} host rock.`;
+    }
+
     paragraphs.push(
-      `This vug records a ${setting} crystallization history beginning at ${start_T.toFixed(0)}°C. ${this.crystals.length} crystals grew across ${this.step} time steps, producing an assemblage of ${mineral_names.join(', ')}.`
+      `This vug records a ${setting} crystallization history beginning at ${start_T.toFixed(0)}°C. ${this.crystals.length} crystals grew across ${this.step} time steps, producing an assemblage of ${mineral_names.join(', ')}.${vug_growth}`
     );
 
     const first_step = Math.min(...this.crystals.map(c => c.nucleation_step));
@@ -2160,6 +2383,33 @@ class VugSimulator {
       else if (c.mineral === 'pyrite') story = this._narrate_pyrite(c);
       else if (c.mineral === 'chalcopyrite') story = this._narrate_chalcopyrite(c);
       if (story && !first_minerals.includes(c)) paragraphs.push(story);
+    }
+
+    // Phantom growth narrative
+    const phantom_crystals = this.crystals.filter(c => c.phantom_count > 0);
+    for (const c of phantom_crystals) {
+      if (c.phantom_count >= 2) {
+        paragraphs.push(
+          `${capitalize(c.mineral)} #${c.crystal_id} shows ${c.phantom_count} phantom boundaries — internal surfaces where acid dissolved the crystal before new growth covered the damage. Each phantom preserves the shape of the crystal at the moment the acid arrived. In a polished section, these appear as ghost outlines nested inside the final crystal — the crystal's autobiography, written in dissolution and regrowth.`
+        );
+      } else if (c.phantom_count === 1) {
+        paragraphs.push(
+          `${capitalize(c.mineral)} #${c.crystal_id} contains a single phantom surface — a dissolution boundary where the crystal was partially eaten and then regrew over the wound. The phantom preserves the crystal's earlier shape as a ghost outline inside the final form.`
+        );
+      }
+    }
+
+    // Provenance narrative for calcite
+    for (const c of this.crystals) {
+      if (c.mineral === 'calcite' && c.zones.length) {
+        const wall_zones = c.zones.filter(z => z.ca_from_wall > 0.3);
+        const fluid_zones = c.zones.filter(z => z.ca_from_wall < 0.1 && z.thickness_um > 0);
+        if (wall_zones.length && fluid_zones.length) {
+          paragraphs.push(
+            `The calcite tells two stories in one crystal. Early growth zones are built from the original fluid — Ca²⁺ that traveled through the basin. Later zones are built from recycled wall rock — limestone that was dissolved by acid and reprecipitated. The trace element signature shifts at the boundary: wall-derived zones carry the host rock's Fe and Mn signature, distinct from the fluid-derived zones. A microprobe traverse across this crystal would show the moment the vug started eating itself to feed its children.`
+          );
+        }
+      }
     }
 
     paragraphs.push(this._narrate_collectors_view());
@@ -2420,7 +2670,7 @@ function runSimulation() {
 
   for (let s = 0; s < totalSteps; s++) {
     const log = sim.run_step();
-    const show = (s % 5 === 0) || log.some(l => l.includes('EVENT') || l.includes('NUCLEATION'));
+    const show = (s % 5 === 0) || log.some(l => l.includes('EVENT') || l.includes('NUCLEATION') || l.includes('🧱'));
     if (show && log.length) {
       allLines.push(sim.format_header());
       for (const line of log) allLines.push(line);
@@ -2511,7 +2761,8 @@ function displayLines(lines) {
     const span = document.createElement('div');
     span.textContent = line;
 
-    if (line.includes('⚡')) span.className = 'line-event';
+    if (line.includes('🧱')) span.className = 'line-wall';
+    else if (line.includes('⚡')) span.className = 'line-event';
     else if (line.includes('✦')) span.className = 'line-nucleation';
     else if (line.includes('═══ Step') || line.startsWith('═')) span.className = 'line-header';
     else if (line.includes('⬇') || line.includes('DISSOLUTION')) span.className = 'line-dissolution';
@@ -2641,7 +2892,16 @@ function fortressBegin() {
   fluidParams.S = parseFloat(document.getElementById('f-s').value);
   fluidParams.pH = parseFloat(document.getElementById('f-ph').value) / 10;
   const fluid = new FluidChemistry(fluidParams);
-  const conditions = new VugConditions({ temperature: temp, pressure, fluid });
+
+  // Initialize wall based on preset
+  let wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50, wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000 };
+  if (selectedPreset === 'mvt') {
+    wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 40, wall_Fe_ppm: 3000, wall_Mn_ppm: 800, wall_Mg_ppm: 1000 };
+  } else if (selectedPreset === 'carbonate') {
+    wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 30, wall_Fe_ppm: 1500, wall_Mn_ppm: 600, wall_Mg_ppm: 800 };
+  }
+  const wall = new VugWall(wallOpts);
+  const conditions = new VugConditions({ temperature: temp, pressure, fluid, wall });
 
   rng = new SeededRandom(Date.now());
   fortressSim = new VugSimulator(conditions, []);
@@ -2809,7 +3069,8 @@ function fortressStep(action) {
 function appendFortressLine(container, line) {
   const span = document.createElement('div');
   span.textContent = line;
-  if (line.includes('⚡')) span.className = 'line-event';
+  if (line.includes('🧱')) span.className = 'line-wall';
+  else if (line.includes('⚡')) span.className = 'line-event';
   else if (line.includes('✦')) span.className = 'line-nucleation';
   else if (line.includes('═══ Step') || (line.startsWith('═') && line.length > 5)) span.className = 'line-header';
   else if (line.includes('⬇') || line.includes('DISSOLUTION')) span.className = 'line-dissolution';
@@ -2825,6 +3086,15 @@ function updateFortressStatus() {
   document.getElementById('f-stat-press').textContent = c.pressure.toFixed(2) + ' kbar';
   document.getElementById('f-stat-ph').textContent = c.fluid.pH.toFixed(1);
   document.getElementById('f-stat-flow').textContent = c.flow_rate.toFixed(1);
+
+  // Show vug diameter when dissolution has occurred
+  const vugContainer = document.getElementById('f-stat-vug-container');
+  if (c.wall.total_dissolved_mm > 0) {
+    vugContainer.style.display = '';
+    document.getElementById('f-stat-vug').textContent = `${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+  } else {
+    vugContainer.style.display = 'none';
+  }
 
   // Supersaturation indicators
   const satBar = document.getElementById('f-sat-bar');
