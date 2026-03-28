@@ -274,6 +274,39 @@ class VugConditions:
         product = (self.fluid.Cu / 80.0) * (self.fluid.Fe / 50.0) * (self.fluid.S / 80.0)
         T_factor = 1.2 if 150 < self.temperature < 350 else 0.6
         return product * T_factor * (1.5 - self.fluid.O2)
+    
+    def supersaturation_hematite(self) -> float:
+        """Hematite (Fe₂O₃) supersaturation. Needs Fe + oxidizing conditions.
+        
+        Hematite is the quintessential iron oxide — steel-gray specular plates
+        at high T, botryoidal masses at low T, red earthy powder in between.
+        Needs OXIDIZING conditions. Won't form under reducing (pyrite wins instead).
+        """
+        if self.fluid.Fe < 20 or self.fluid.O2 < 0.5:
+            return 0
+        sigma = (self.fluid.Fe / 100.0) * (self.fluid.O2 / 1.0) * math.exp(-0.002 * self.temperature)
+        # Acid penalty — hematite dissolves in strong acid
+        if self.fluid.pH < 3.5:
+            sigma -= (3.5 - self.fluid.pH) * 0.3
+        return max(sigma, 0)
+    
+    def supersaturation_malachite(self) -> float:
+        """Malachite (Cu₂(CO₃)(OH)₂) supersaturation. Needs Cu + CO₃ + oxidizing.
+        
+        The classic green copper carbonate — botryoidal, banded, gorgeous.
+        Low-temperature mineral. Forms from oxidation of primary copper sulfides.
+        Dissolves easily in acid (fizzes — it's a carbonate).
+        """
+        if self.fluid.Cu < 5 or self.fluid.CO3 < 20 or self.fluid.O2 < 0.3:
+            return 0
+        sigma = (self.fluid.Cu / 50.0) * (self.fluid.CO3 / 200.0) * (self.fluid.O2 / 1.0)
+        # Temperature penalty at high T — malachite is a LOW temperature mineral
+        if self.temperature > 50:
+            sigma *= math.exp(-0.005 * (self.temperature - 50))
+        # Acid penalty — malachite dissolves easily (it fizzes!)
+        if self.fluid.pH < 4.5:
+            sigma -= (4.5 - self.fluid.pH) * 0.5
+        return max(sigma, 0)
 
 
 # ============================================================
@@ -458,6 +491,34 @@ class Crystal:
             else:
                 return "blue-violet to colorless"
         
+        elif self.mineral == "hematite":
+            # Color depends on habit (recorded in zone notes)
+            specular_zones = [z for z in self.zones if "specular" in z.note or "steel-gray" in z.note]
+            iridescent_zones = [z for z in self.zones if "iridescent" in z.note]
+            if iridescent_zones:
+                return "iridescent (thin-plate interference colors, streak always red)"
+            elif specular_zones:
+                return "steel-gray metallic (specular, streak red)"
+            else:
+                return "red earthy (massive/botryoidal, streak red)"
+        
+        elif self.mineral == "malachite":
+            # Always green — the question is what kind of green
+            zone_count = len(self.zones)
+            avg_cu_note = ""
+            if self.zones:
+                # Check for banding
+                banded = any("banded" in z.note for z in self.zones)
+                vivid = any("vivid" in z.note for z in self.zones)
+                pale = any("pale" in z.note for z in self.zones)
+                if banded:
+                    return "banded green (alternating light/dark concentric layers)"
+                elif vivid:
+                    return "vivid green (high Cu)"
+                elif pale:
+                    return "pale green (Cu-depleted)"
+            return "green (classic malachite)"
+        
         return "typical for species"
     
     def predict_fluorescence(self) -> str:
@@ -481,6 +542,10 @@ class Crystal:
             return "non-fluorescent"
         elif self.mineral in ("pyrite", "chalcopyrite"):
             return "non-fluorescent (opaque sulfide)"
+        elif self.mineral == "hematite":
+            return "non-fluorescent (opaque oxide)"
+        elif self.mineral == "malachite":
+            return "non-fluorescent"
         return "unknown"
 
 
@@ -912,6 +977,159 @@ def grow_chalcopyrite(crystal: Crystal, conditions: VugConditions, step: int) ->
     )
 
 
+def grow_hematite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Hematite (Fe₂O₃) growth model.
+    
+    The most important iron oxide. Specular hematite at high T is stunning —
+    metallic silver-black plates that flash like mirrors. At low T, botryoidal
+    masses with kidney-ore texture. The red streak is diagnostic regardless of habit.
+    """
+    sigma = conditions.supersaturation_hematite()
+    
+    if sigma < 1.0:
+        # Strong acid dissolves hematite
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 3.0:
+            crystal.dissolved = True
+            dissolved_um = min(4.0, crystal.total_growth_um * 0.1)
+            # RECYCLING: Fe returns to fluid
+            conditions.fluid.Fe += dissolved_um * 1.5
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f}) — Fe²⁺ released back to fluid"
+            )
+        return None
+    
+    excess = sigma - 1.0
+    rate = 4.0 * excess * random.uniform(0.8, 1.2)
+    
+    if rate < 0.1:
+        return None
+    
+    # Habit varies with temperature — this is well-documented
+    if conditions.temperature > 300:
+        crystal.habit = "specular"
+        crystal.dominant_forms = ["{001} basal plates", "metallic platy"]
+    elif conditions.temperature > 150:
+        crystal.habit = "rhombohedral"
+        crystal.dominant_forms = ["{101} rhombohedron"]
+    else:
+        if excess > 0.5:
+            crystal.habit = "botryoidal"
+            crystal.dominant_forms = ["kidney-ore texture"]
+        else:
+            crystal.habit = "earthy/massive"
+            crystal.dominant_forms = ["microcrystalline aggregate"]
+    
+    # Width depends on habit
+    if crystal.habit == "specular":
+        crystal.a_width_mm = crystal.c_length_mm * 2.0  # plates are wide
+    elif crystal.habit == "botryoidal":
+        crystal.a_width_mm = crystal.c_length_mm * 1.2
+    
+    # Trace Mn incorporation
+    trace_Mn = conditions.fluid.Mn * 0.04
+    trace_Fe = conditions.fluid.Fe * 0.2  # it IS an iron mineral
+    
+    # Twinning — rare, penetration twin on {001}
+    if not crystal.twinned and random.random() < 0.005:
+        crystal.twinned = True
+        crystal.twin_law = "penetration twin {001}"
+    
+    # Color prediction note
+    if crystal.habit == "specular":
+        if random.random() < 0.03:
+            color_note = "iridescent (very thin plates — interference colors)"
+        else:
+            color_note = "steel-gray metallic"
+    elif crystal.habit in ("earthy/massive", "botryoidal"):
+        color_note = "red earthy"
+    else:
+        color_note = "dark gray metallic"
+    
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe, trace_Mn=trace_Mn,
+        note=f"{crystal.habit} habit, {color_note}"
+    )
+
+
+def grow_malachite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Malachite (Cu₂(CO₃)(OH)₂) growth model.
+    
+    The green copper carbonate. Always green — vivid, banded, botryoidal.
+    Forms from oxidation of copper sulfides. Classic paragenesis:
+    chalcopyrite → covellite → malachite/azurite. Low temperature only.
+    Dissolves in acid with effervescence (it's a carbonate!).
+    """
+    sigma = conditions.supersaturation_malachite()
+    
+    if sigma < 1.0:
+        # Acid dissolution — malachite dissolves easily (fizzes!)
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.5:
+            crystal.dissolved = True
+            dissolved_um = min(6.0, crystal.total_growth_um * 0.15)
+            # RECYCLING: Cu²⁺ and CO₃²⁻ return to fluid
+            conditions.fluid.Cu += dissolved_um * 0.8
+            conditions.fluid.CO3 += dissolved_um * 0.5
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f}) — fizzing! Cu²⁺ + CO₃²⁻ released"
+            )
+        return None
+    
+    excess = sigma - 1.0
+    rate = 6.0 * excess * random.uniform(0.8, 1.2)
+    
+    if rate < 0.1:
+        return None
+    
+    # Habit depends on growth rate and history
+    zone_count = len(crystal.zones)
+    if zone_count >= 20:
+        crystal.habit = "banded"
+        crystal.dominant_forms = ["banded botryoidal", "concentric layers"]
+    elif rate > 8:
+        crystal.habit = "fibrous/acicular"
+        crystal.dominant_forms = ["acicular sprays", "fibrous radiating"]
+    else:
+        crystal.habit = "botryoidal"
+        crystal.dominant_forms = ["botryoidal masses", "mammillary"]
+    
+    # Width for botryoidal/banded forms
+    if crystal.habit in ("botryoidal", "banded"):
+        crystal.a_width_mm = crystal.c_length_mm * 1.5
+    elif crystal.habit == "fibrous/acicular":
+        crystal.a_width_mm = crystal.c_length_mm * 0.2
+    
+    # Cu consumption — each growth step depletes Cu from fluid
+    conditions.fluid.Cu -= rate * 0.01
+    conditions.fluid.Cu = max(conditions.fluid.Cu, 0)
+    
+    # No twinning for malachite (doesn't typically twin visibly)
+    
+    # Color — ALWAYS green
+    if zone_count >= 20:
+        color_note = "banded green (alternating light/dark)"
+    elif conditions.fluid.Cu > 30:
+        color_note = "vivid green"
+    elif conditions.fluid.Cu < 10:
+        color_note = "pale green"
+    else:
+        color_note = "green"
+    
+    trace_Fe = conditions.fluid.Fe * 0.01  # trace iron
+    
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe,
+        note=f"{crystal.habit}, {color_note}, Cu fluid: {conditions.fluid.Cu:.0f} ppm"
+    )
+
+
 # Mineral registry
 MINERAL_ENGINES = {
     "quartz": grow_quartz,
@@ -920,6 +1138,8 @@ MINERAL_ENGINES = {
     "fluorite": grow_fluorite,
     "pyrite": grow_pyrite,
     "chalcopyrite": grow_chalcopyrite,
+    "hematite": grow_hematite,
+    "malachite": grow_malachite,
 }
 
 
@@ -1216,6 +1436,12 @@ class VugSimulator:
         elif mineral == "chalcopyrite":
             crystal.habit = "disphenoidal"
             crystal.dominant_forms = ["{112} disphenoid"]
+        elif mineral == "hematite":
+            crystal.habit = "specular"
+            crystal.dominant_forms = ["{001} basal plates"]
+        elif mineral == "malachite":
+            crystal.habit = "botryoidal"
+            crystal.dominant_forms = ["botryoidal masses"]
         self.crystals.append(crystal)
         return crystal
     
@@ -1223,8 +1449,9 @@ class VugSimulator:
         """Check if new crystals should nucleate."""
         # Quartz nucleation
         sigma_q = self.conditions.supersaturation_quartz()
-        existing_quartz = [c for c in self.crystals if c.mineral == "quartz" and c.active]
-        if sigma_q > 1.2 and len(existing_quartz) < 3:
+        all_quartz = [c for c in self.crystals if c.mineral == "quartz"]
+        existing_quartz = [c for c in all_quartz if c.active]
+        if sigma_q > 1.2 and len(all_quartz) < 3:
             if not existing_quartz or (sigma_q > 2.0 and random.random() < 0.3):
                 c = self.nucleate("quartz")
                 self.log.append(f"  ✦ NUCLEATION: Quartz #{c.crystal_id} on {c.position} "
@@ -1276,6 +1503,38 @@ class VugSimulator:
             c = self.nucleate("chalcopyrite", position=pos)
             self.log.append(f"  ✦ NUCLEATION: Chalcopyrite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cp:.2f})")
+        
+        # Hematite nucleation — needs sigma > 1.2 (harder to nucleate)
+        sigma_hem = self.conditions.supersaturation_hematite()
+        existing_hem = [c for c in self.crystals if c.mineral == "hematite" and c.active]
+        total_hem = len([c for c in self.crystals if c.mineral == "hematite"])
+        if sigma_hem > 1.2 and not existing_hem and total_hem < 3:
+            pos = "vug wall"
+            # Can nucleate on existing quartz
+            if existing_quartz and random.random() < 0.4:
+                pos = f"on quartz #{existing_quartz[0].crystal_id}"
+            c = self.nucleate("hematite", position=pos)
+            self.log.append(f"  ✦ NUCLEATION: Hematite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_hem:.2f})")
+        
+        # Malachite nucleation — needs sigma > 1.0
+        sigma_mal = self.conditions.supersaturation_malachite()
+        existing_mal = [c for c in self.crystals if c.mineral == "malachite" and c.active]
+        total_mal = len([c for c in self.crystals if c.mineral == "malachite"])
+        if sigma_mal > 1.0 and not existing_mal and total_mal < 3:
+            pos = "vug wall"
+            # Preference for chalcopyrite surface (classic! oxidation paragenesis)
+            dissolving_cp = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.dissolved]
+            active_cp = [c for c in self.crystals if c.mineral == "chalcopyrite"]
+            if dissolving_cp and random.random() < 0.7:
+                pos = f"on chalcopyrite #{dissolving_cp[0].crystal_id}"
+            elif active_cp and random.random() < 0.4:
+                pos = f"on chalcopyrite #{active_cp[0].crystal_id}"
+            elif existing_hem and random.random() < 0.3:
+                pos = f"on hematite #{existing_hem[0].crystal_id}"
+            c = self.nucleate("malachite", position=pos)
+            self.log.append(f"  ✦ NUCLEATION: Malachite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mal:.2f})")
     
     def apply_events(self):
         """Apply any events scheduled for this step."""
@@ -1797,6 +2056,10 @@ class VugSimulator:
                 story = self._narrate_pyrite(c)
             elif c.mineral == "chalcopyrite":
                 story = self._narrate_chalcopyrite(c)
+            elif c.mineral == "hematite":
+                story = self._narrate_hematite(c)
+            elif c.mineral == "malachite":
+                story = self._narrate_malachite(c)
             else:
                 story = ""
             if story and c not in first_minerals:
@@ -2097,6 +2360,101 @@ class VugSimulator:
         
         return " ".join(parts)
     
+    def _narrate_hematite(self, c: Crystal) -> str:
+        """Narrate a hematite crystal's story."""
+        parts = [f"Hematite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        
+        if c.habit == "specular":
+            parts.append(
+                "The high temperature produced specular hematite — brilliant metallic "
+                "plates that flash like mirrors, the most sought-after habit. The thin "
+                "{001} basal plates grew parallel to each other, creating the characteristic "
+                "'iron rose' or 'specularite' texture."
+            )
+            # Check for iridescence
+            if c.zones and any("iridescent" in z.note for z in c.zones):
+                parts.append(
+                    "Some plates are thin enough to show iridescent interference colors — "
+                    "rainbow hematite, a collector favorite."
+                )
+        elif c.habit == "rhombohedral":
+            parts.append(
+                "Moderate temperatures produced rhombohedral hematite — sharp-edged "
+                "crystals with {101} faces, dark metallic gray with a red streak."
+            )
+        elif c.habit == "botryoidal":
+            parts.append(
+                "Low-temperature growth produced botryoidal hematite — kidney-ore "
+                "texture with smooth, rounded surfaces. Classic 'kidney iron ore' "
+                "that has been mined since antiquity."
+            )
+        elif c.habit == "earthy/massive":
+            parts.append(
+                "Low supersaturation produced earthy, massive hematite — red "
+                "microcrystalline aggregate. The red ochre pigment that humans have "
+                "used for 100,000 years."
+            )
+        
+        if c.twinned:
+            parts.append(
+                f"Shows a rare {c.twin_law} — two crystals interpenetrating "
+                f"through the basal plane."
+            )
+        
+        if c.dissolved:
+            parts.append(
+                "Late-stage acid attack dissolved some of the hematite, releasing "
+                "iron back to the fluid."
+            )
+        
+        return " ".join(parts)
+    
+    def _narrate_malachite(self, c: Crystal) -> str:
+        """Narrate a malachite crystal's story."""
+        parts = [f"Malachite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        
+        # Check paragenesis — did it grow on chalcopyrite?
+        if "chalcopyrite" in c.position:
+            parts.append(
+                "It nucleated directly on chalcopyrite — the classic oxidation "
+                "paragenesis. As oxygenated water attacked the copper sulfide, "
+                "Cu²⁺ was liberated and combined with carbonate to form malachite. "
+                "This is the green stain that led ancient prospectors to copper deposits."
+            )
+        
+        if c.habit == "banded":
+            parts.append(
+                "The crystal developed the famous banded texture — concentric layers "
+                "of alternating light and dark green, each band recording a pulse of "
+                "growth. This is the texture prized in decorative stonework since "
+                "the Bronze Age, from Russian palaces to Egyptian amulets."
+            )
+        elif c.habit == "botryoidal":
+            parts.append(
+                "Botryoidal habit — smooth, rounded green masses that gleam like "
+                "polished jade. Cross-sections would reveal concentric banding."
+            )
+        elif c.habit == "fibrous/acicular":
+            parts.append(
+                "Rapid growth produced fibrous, acicular malachite — sprays of "
+                "needle-like green crystals radiating from nucleation points. "
+                "Delicate and sparkling, a different beauty from the massive variety."
+            )
+        
+        if c.dissolved:
+            parts.append(
+                "Acid attack dissolved some malachite — it fizzes in acid like "
+                "calcite, releasing Cu²⁺ and CO₂. The green stain on the fingers "
+                "of anyone who handles it with acidic sweat."
+            )
+        
+        # Color summary
+        color = c.predict_color()
+        if color:
+            parts.append(f"Color: {color}.")
+        
+        return " ".join(parts)
+    
     def _narrate_mixing_event(self, batch: List[Crystal], event: Event) -> str:
         """Narrate what happened after a fluid mixing event."""
         mineral_names = set(c.mineral for c in batch)
@@ -2205,6 +2563,44 @@ class VugSimulator:
                 desc += " — brassy yellow, greenish tint"
                 if c.dissolved:
                     desc += ", oxidation rind (green Cu carbonate staining)"
+                parts.append(f"  • {desc}")
+            
+            elif c.mineral == "hematite":
+                if c.habit == "specular":
+                    desc = f"a {c.c_length_mm:.1f}mm specular hematite"
+                    if any("iridescent" in z.note for z in c.zones):
+                        desc += " — iridescent rainbow plates"
+                    else:
+                        desc += " — brilliant metallic silver-black plates"
+                elif c.habit == "botryoidal":
+                    desc = f"a {c.c_length_mm:.1f}mm botryoidal hematite — kidney-ore, dark metallic"
+                elif c.habit == "rhombohedral":
+                    desc = f"a {c.c_length_mm:.1f}mm rhombohedral hematite — sharp dark crystals"
+                else:
+                    desc = f"earthy red hematite mass"
+                if c.twinned:
+                    desc += f" ({c.twin_law})"
+                if c.dissolved:
+                    desc += ", partially dissolved"
+                parts.append(f"  • {desc}")
+            
+            elif c.mineral == "malachite":
+                desc = f"a {c.c_length_mm:.1f}mm malachite"
+                if c.habit == "banded":
+                    desc += " — banded green, concentric layers"
+                elif c.habit == "fibrous/acicular":
+                    desc += " — sprays of acicular green needles"
+                else:
+                    desc += " — botryoidal green masses"
+                color = c.predict_color()
+                if "vivid" in color:
+                    desc += ", vivid green"
+                elif "pale" in color:
+                    desc += ", pale green"
+                if c.dissolved:
+                    desc += ", partially dissolved (acid attack)"
+                if "chalcopyrite" in c.position:
+                    desc += " (growing on chalcopyrite — classic oxidation paragenesis)"
                 parts.append(f"  • {desc}")
         
         if len(parts) == 1:

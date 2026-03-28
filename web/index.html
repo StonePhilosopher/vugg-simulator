@@ -907,6 +907,7 @@ Scenarios:
         <button class="preset-btn" data-preset="mvt" onclick="selectPreset('mvt')">⚗️ MVT Brine</button>
         <button class="preset-btn" data-preset="clean" onclick="selectPreset('clean')">💧 Clean/Dilute</button>
         <button class="preset-btn" data-preset="porphyry" onclick="selectPreset('porphyry')">🟠 Copper Porphyry</button>
+        <button class="preset-btn" data-preset="oxidized_cu" onclick="selectPreset('oxidized_cu')">🟢 Oxidized Copper</button>
       </div>
     </div>
 
@@ -942,7 +943,7 @@ Scenarios:
         <span class="range-val" id="f-ph-val">6.5</span>
       </div>
       <div style="color:#5a4a30;font-size:0.65rem;margin-top:0.3rem;font-style:italic;">
-        Iron quenches calcite fluorescence and darkens sphalerite. Mn activates fluorescence. Cu+S+Fe = chalcopyrite. Fe+S = pyrite. Low pH dissolves carbonates; high pH favors them.
+        Iron quenches calcite fluorescence and darkens sphalerite. Mn activates fluorescence. Cu+S+Fe = chalcopyrite. Fe+S = pyrite. Fe+O₂ = hematite. Cu+CO₃+O₂ = malachite (low T). Low pH dissolves carbonates; high pH favors them.
       </div>
     </div>
 
@@ -974,7 +975,7 @@ Scenarios:
       <button class="action-btn act-chem" onclick="fortressStep('brine')" title="Inject Zn + S (sphalerite potential)">⚗️ Mix Brine</button>
       <button class="action-btn act-chem" onclick="fortressStep('fluorine')" title="Boost F + Ca (fluorite potential)">💎 Add Fluorine</button>
       <button class="action-btn act-copper" onclick="fortressStep('copper')" title="Inject Cu-bearing magmatic fluid">🟠 Inject Copper</button>
-      <button class="action-btn act-oxidize" onclick="fortressStep('oxidize')" title="Oxidizing meteoric water — sulfides unstable">🟡 Oxidize</button>
+      <button class="action-btn act-oxidize" onclick="fortressStep('oxidize')" title="Oxidizing meteoric water — sulfides unstable, hematite + malachite possible">🟡 Oxidize</button>
       <button class="action-btn act-tectonic" onclick="fortressStep('tectonic')" title="Pressure spike, twinning trigger">🌋 Tectonic Shock</button>
       <button class="action-btn act-flood" onclick="fortressStep('flood')" title="High flow rate, fresh fluid pulse">🌊 Flood</button>
       <button class="action-btn act-acid" onclick="fortressStep('acidify')" title="pH −2 — dissolves carbonates, attacks silicates with fluorine">🧪 Acidify</button>
@@ -1319,6 +1320,27 @@ class VugConditions {
     const T_factor = (150 < this.temperature && this.temperature < 350) ? 1.2 : 0.6;
     return product * T_factor * (1.5 - this.fluid.O2);
   }
+
+  supersaturation_hematite() {
+    if (this.fluid.Fe < 20 || this.fluid.O2 < 0.5) return 0;
+    let sigma = (this.fluid.Fe / 100.0) * (this.fluid.O2 / 1.0) * Math.exp(-0.002 * this.temperature);
+    if (this.fluid.pH < 3.5) {
+      sigma -= (3.5 - this.fluid.pH) * 0.3;
+    }
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_malachite() {
+    if (this.fluid.Cu < 5 || this.fluid.CO3 < 20 || this.fluid.O2 < 0.3) return 0;
+    let sigma = (this.fluid.Cu / 50.0) * (this.fluid.CO3 / 200.0) * (this.fluid.O2 / 1.0);
+    if (this.temperature > 50) {
+      sigma *= Math.exp(-0.005 * (this.temperature - 50));
+    }
+    if (this.fluid.pH < 4.5) {
+      sigma -= (4.5 - this.fluid.pH) * 0.5;
+    }
+    return Math.max(sigma, 0);
+  }
 }
 
 // ============================================================
@@ -1426,6 +1448,12 @@ class Crystal {
     }
     if (this.mineral === 'pyrite' || this.mineral === 'chalcopyrite') {
       return 'non-fluorescent (opaque sulfide)';
+    }
+    if (this.mineral === 'hematite') {
+      return 'non-fluorescent (opaque oxide)';
+    }
+    if (this.mineral === 'malachite') {
+      return 'non-fluorescent';
     }
     return 'unknown';
   }
@@ -1807,6 +1835,134 @@ function grow_chalcopyrite(crystal, conditions, step) {
   });
 }
 
+function grow_hematite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_hematite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 3.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.1);
+      conditions.fluid.Fe += dissolved_um * 1.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Fe²⁺ released back to fluid`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  let rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  if (conditions.temperature > 300) {
+    crystal.habit = 'specular';
+    crystal.dominant_forms = ['{001} basal plates', 'metallic platy'];
+  } else if (conditions.temperature > 150) {
+    crystal.habit = 'rhombohedral';
+    crystal.dominant_forms = ['{101} rhombohedron'];
+  } else {
+    if (excess > 0.5) {
+      crystal.habit = 'botryoidal';
+      crystal.dominant_forms = ['kidney-ore texture'];
+    } else {
+      crystal.habit = 'earthy/massive';
+      crystal.dominant_forms = ['microcrystalline aggregate'];
+    }
+  }
+
+  if (crystal.habit === 'specular') crystal.a_width_mm = crystal.c_length_mm * 2.0;
+  else if (crystal.habit === 'botryoidal') crystal.a_width_mm = crystal.c_length_mm * 1.2;
+
+  const trace_Mn = conditions.fluid.Mn * 0.04;
+  const trace_Fe = conditions.fluid.Fe * 0.2;
+
+  if (!crystal.twinned && rng.random() < 0.005) {
+    crystal.twinned = true;
+    crystal.twin_law = 'penetration twin {001}';
+  }
+
+  let color_note;
+  if (crystal.habit === 'specular') {
+    color_note = rng.random() < 0.03 ? 'iridescent (very thin plates — interference colors)' : 'steel-gray metallic';
+  } else if (crystal.habit === 'earthy/massive' || crystal.habit === 'botryoidal') {
+    color_note = 'red earthy';
+  } else {
+    color_note = 'dark gray metallic';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Mn,
+    note: `${crystal.habit} habit, ${color_note}`
+  });
+}
+
+function grow_malachite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_malachite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.15);
+      conditions.fluid.Cu += dissolved_um * 0.8;
+      conditions.fluid.CO3 += dissolved_um * 0.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — fizzing! Cu²⁺ + CO₃²⁻ released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  let rate = 6.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const zone_count = crystal.zones.length;
+  if (zone_count >= 20) {
+    crystal.habit = 'banded';
+    crystal.dominant_forms = ['banded botryoidal', 'concentric layers'];
+  } else if (rate > 8) {
+    crystal.habit = 'fibrous/acicular';
+    crystal.dominant_forms = ['acicular sprays', 'fibrous radiating'];
+  } else {
+    crystal.habit = 'botryoidal';
+    crystal.dominant_forms = ['botryoidal masses', 'mammillary'];
+  }
+
+  if (crystal.habit === 'botryoidal' || crystal.habit === 'banded') {
+    crystal.a_width_mm = crystal.c_length_mm * 1.5;
+  } else if (crystal.habit === 'fibrous/acicular') {
+    crystal.a_width_mm = crystal.c_length_mm * 0.2;
+  }
+
+  // Cu consumption
+  conditions.fluid.Cu -= rate * 0.01;
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu, 0);
+
+  let color_note;
+  if (zone_count >= 20) {
+    color_note = 'banded green (alternating light/dark)';
+  } else if (conditions.fluid.Cu > 30) {
+    color_note = 'vivid green';
+  } else if (conditions.fluid.Cu < 10) {
+    color_note = 'pale green';
+  } else {
+    color_note = 'green';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.01,
+    note: `${crystal.habit}, ${color_note}, Cu fluid: ${conditions.fluid.Cu.toFixed(0)} ppm`
+  });
+}
+
 const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
@@ -1814,6 +1970,8 @@ const MINERAL_ENGINES = {
   fluorite: grow_fluorite,
   pyrite: grow_pyrite,
   chalcopyrite: grow_chalcopyrite,
+  hematite: grow_hematite,
+  malachite: grow_malachite,
 };
 
 // ============================================================
@@ -2042,6 +2200,12 @@ class VugSimulator {
     } else if (mineral === 'chalcopyrite') {
       crystal.habit = 'disphenoidal';
       crystal.dominant_forms = ['{112} disphenoid'];
+    } else if (mineral === 'hematite') {
+      crystal.habit = 'specular';
+      crystal.dominant_forms = ['{001} basal plates'];
+    } else if (mineral === 'malachite') {
+      crystal.habit = 'botryoidal';
+      crystal.dominant_forms = ['botryoidal masses'];
     }
     this.crystals.push(crystal);
     return crystal;
@@ -2101,6 +2265,39 @@ class VugSimulator {
       }
       const c = this.nucleate('chalcopyrite', pos);
       this.log.push(`  ✦ NUCLEATION: Chalcopyrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cp.toFixed(2)})`);
+    }
+
+    // Hematite nucleation — needs sigma > 1.2 (harder to nucleate)
+    const sigma_hem = this.conditions.supersaturation_hematite();
+    const existing_hem = this.crystals.filter(c => c.mineral === 'hematite' && c.active);
+    const total_hem = this.crystals.filter(c => c.mineral === 'hematite').length;
+    if (sigma_hem > 1.2 && !existing_hem.length && total_hem < 3) {
+      let pos = 'vug wall';
+      if (existing_quartz.length && rng.random() < 0.4) {
+        pos = `on quartz #${existing_quartz[0].crystal_id}`;
+      }
+      const c = this.nucleate('hematite', pos);
+      this.log.push(`  ✦ NUCLEATION: Hematite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_hem.toFixed(2)})`);
+    }
+
+    // Malachite nucleation — needs sigma > 1.0
+    const sigma_mal = this.conditions.supersaturation_malachite();
+    const existing_mal = this.crystals.filter(c => c.mineral === 'malachite' && c.active);
+    const total_mal = this.crystals.filter(c => c.mineral === 'malachite').length;
+    if (sigma_mal > 1.0 && !existing_mal.length && total_mal < 3) {
+      let pos = 'vug wall';
+      // Preference for chalcopyrite surface (classic oxidation paragenesis!)
+      const dissolving_cp = this.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
+      const active_cp_all = this.crystals.filter(c => c.mineral === 'chalcopyrite');
+      if (dissolving_cp.length && rng.random() < 0.7) {
+        pos = `on chalcopyrite #${dissolving_cp[0].crystal_id}`;
+      } else if (active_cp_all.length && rng.random() < 0.4) {
+        pos = `on chalcopyrite #${active_cp_all[0].crystal_id}`;
+      } else if (existing_hem.length && rng.random() < 0.3) {
+        pos = `on hematite #${existing_hem[0].crystal_id}`;
+      }
+      const c = this.nucleate('malachite', pos);
+      this.log.push(`  ✦ NUCLEATION: Malachite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mal.toFixed(2)})`);
     }
   }
 
@@ -2382,6 +2579,8 @@ class VugSimulator {
       else if (c.mineral === 'fluorite') story = this._narrate_fluorite(c);
       else if (c.mineral === 'pyrite') story = this._narrate_pyrite(c);
       else if (c.mineral === 'chalcopyrite') story = this._narrate_chalcopyrite(c);
+      else if (c.mineral === 'hematite') story = this._narrate_hematite(c);
+      else if (c.mineral === 'malachite') story = this._narrate_malachite(c);
       if (story && !first_minerals.includes(c)) paragraphs.push(story);
     }
 
@@ -2544,6 +2743,41 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_hematite(c) {
+    const parts = [`Hematite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.habit === 'specular') {
+      parts.push('The high temperature produced specular hematite — brilliant metallic plates that flash like mirrors. The thin {001} basal plates grew parallel, creating the characteristic iron rose texture.');
+      if (c.zones && c.zones.some(z => z.note && z.note.includes('iridescent'))) {
+        parts.push('Some plates are thin enough to show iridescent interference colors — rainbow hematite, a collector favorite.');
+      }
+    } else if (c.habit === 'rhombohedral') {
+      parts.push('Moderate temperatures produced rhombohedral hematite — sharp-edged crystals with {101} faces, dark metallic gray with a red streak.');
+    } else if (c.habit === 'botryoidal') {
+      parts.push('Low-temperature growth produced botryoidal hematite — kidney-ore texture with smooth, rounded surfaces. Classic kidney iron ore mined since antiquity.');
+    } else if (c.habit === 'earthy/massive') {
+      parts.push('Low supersaturation produced earthy, massive hematite — red microcrystalline aggregate. The red ochre pigment humans have used for 100,000 years.');
+    }
+    if (c.twinned) parts.push(`Shows a rare ${c.twin_law}.`);
+    if (c.dissolved) parts.push('Late-stage acid attack dissolved some of the hematite, releasing iron back to the fluid.');
+    return parts.join(' ');
+  }
+
+  _narrate_malachite(c) {
+    const parts = [`Malachite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.position.includes('chalcopyrite')) {
+      parts.push('It nucleated directly on chalcopyrite — the classic oxidation paragenesis. As oxygenated water attacked the copper sulfide, Cu²⁺ combined with carbonate to form malachite. This is the green stain that led ancient prospectors to copper deposits.');
+    }
+    if (c.habit === 'banded') {
+      parts.push('The crystal developed the famous banded texture — concentric layers of alternating light and dark green, prized in decorative stonework since the Bronze Age.');
+    } else if (c.habit === 'botryoidal') {
+      parts.push('Botryoidal habit — smooth, rounded green masses. Cross-sections would reveal concentric banding.');
+    } else if (c.habit === 'fibrous/acicular') {
+      parts.push('Rapid growth produced fibrous, acicular malachite — sprays of needle-like green crystals radiating from nucleation points.');
+    }
+    if (c.dissolved) parts.push('Acid attack dissolved some malachite — it fizzes in acid like calcite, releasing Cu²⁺ and CO₂.');
+    return parts.join(' ');
+  }
+
   _narrate_mixing_event(batch, event) {
     const mineral_names = new Set(batch.map(c => c.mineral));
     const parts = [];
@@ -2621,6 +2855,37 @@ class VugSimulator {
         if (c.twinned) desc += ` (${c.twin_law})`;
         desc += ' — brassy yellow, greenish tint';
         if (c.dissolved) desc += ', oxidation rind (green Cu carbonate staining)';
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'hematite') {
+        let desc;
+        if (c.habit === 'specular') {
+          desc = `a ${c.c_length_mm.toFixed(1)}mm specular hematite`;
+          if (c.zones.some(z => z.note && z.note.includes('iridescent'))) {
+            desc += ' — iridescent rainbow plates';
+          } else {
+            desc += ' — brilliant metallic silver-black plates';
+          }
+        } else if (c.habit === 'botryoidal') {
+          desc = `a ${c.c_length_mm.toFixed(1)}mm botryoidal hematite — kidney-ore, dark metallic`;
+        } else if (c.habit === 'rhombohedral') {
+          desc = `a ${c.c_length_mm.toFixed(1)}mm rhombohedral hematite — sharp dark crystals`;
+        } else {
+          desc = 'earthy red hematite mass';
+        }
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        if (c.dissolved) desc += ', partially dissolved';
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'malachite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm malachite`;
+        if (c.habit === 'banded') {
+          desc += ' — banded green, concentric layers';
+        } else if (c.habit === 'fibrous/acicular') {
+          desc += ' — sprays of acicular green needles';
+        } else {
+          desc += ' — botryoidal green masses';
+        }
+        if (c.dissolved) desc += ', partially dissolved (acid attack)';
+        if (c.position.includes('chalcopyrite')) desc += ' (on chalcopyrite — oxidation paragenesis)';
         parts.push(`  • ${desc}`);
       }
     }
@@ -2852,6 +3117,11 @@ const FLUID_PRESETS = {
     label: 'Copper Porphyry',
     desc: 'Cu-Fe-S bearing magmatic fluid (Cu 100, Fe 40, S 80 ppm), reducing. Pyrite + chalcopyrite potential.',
     fluid: { SiO2: 500, Ca: 80, CO3: 50, Fe: 40, Mn: 2, Ti: 0.5, Al: 3, F: 5, Zn: 0, S: 80, Cu: 100, O2: 0.2, pH: 4.5, salinity: 10.0 }
+  },
+  oxidized_cu: {
+    label: 'Oxidized Copper',
+    desc: 'Cu-bearing oxidized fluid (Cu 60, Fe 40, O₂ 1.5), CO₃-rich. Malachite + hematite potential. Low temperature favored.',
+    fluid: { SiO2: 100, Ca: 150, CO3: 200, Fe: 40, Mn: 3, Ti: 0.2, Al: 1, F: 5, Zn: 0, S: 5, Cu: 60, O2: 1.5, pH: 6.0, salinity: 5.0 }
   }
 };
 
@@ -3020,6 +3290,8 @@ function fortressStep(action) {
           else if (crystal.mineral === 'fluorite') crystal.twin_law = 'penetration twin {111}';
           else if (crystal.mineral === 'pyrite') crystal.twin_law = 'iron cross {110}';
           else if (crystal.mineral === 'chalcopyrite') crystal.twin_law = 'penetration twin {112}';
+          else if (crystal.mineral === 'hematite') crystal.twin_law = 'penetration twin {001}';
+          // malachite doesn't twin visibly
         }
       }
       actionDesc = '🌋 Tectonic shock — P +0.5 kbar, T +15°C. Crystals stressed!';
@@ -3107,6 +3379,8 @@ function updateFortressStatus() {
     { name: 'Sphalerite', sigma: c.supersaturation_sphalerite() },
     { name: 'Pyrite', sigma: c.supersaturation_pyrite() },
     { name: 'Chalcopyrite', sigma: c.supersaturation_chalcopyrite() },
+    { name: 'Hematite', sigma: c.supersaturation_hematite() },
+    { name: 'Malachite', sigma: c.supersaturation_malachite() },
   ];
 
   for (const m of minerals) {
