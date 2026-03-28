@@ -855,7 +855,7 @@ footer a:hover {
   </div>
   <div class="control-group">
     <label for="steps">Time Steps (optional)</label>
-    <input type="number" id="steps" placeholder="default" style="width:100px" title="Each step = one tick of geological time. More steps = longer cooling history. Default: 100-120 depending on scenario.">
+    <input type="number" id="steps" placeholder="default" style="width:100px" min="1" step="1" title="Each step = one tick of geological time. More steps = longer cooling history. Default: 100-120 depending on scenario." oninput="if(this.value<1&&this.value!=='')this.value=1">
   </div>
   <div style="display:flex;gap:0.5rem;align-items:flex-end;padding-top:0.8rem">
     <button class="btn-grow" id="btn-grow" onclick="runSimulation()">Grow</button>
