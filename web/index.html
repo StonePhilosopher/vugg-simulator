@@ -483,6 +483,142 @@ button:disabled {
 }
 .btn-reset:hover { background: #452020; border-color: #aa4040; }
 
+/* ---- Broth Control Panel ---- */
+.broth-panel {
+  margin: 0.8rem 0;
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  background: #0e0e0a;
+  overflow: hidden;
+}
+
+.broth-toggle {
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 1rem;
+  background: #12120c;
+  border: none;
+  border-bottom: 1px solid #2a2518;
+  color: #f0c050;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.broth-toggle:hover { background: #1a1a14; }
+
+.broth-toggle .broth-arrow {
+  transition: transform 0.2s;
+  font-size: 0.7rem;
+  color: #8a7a40;
+}
+
+.broth-toggle.open .broth-arrow { transform: rotate(90deg); }
+
+.broth-body {
+  display: none;
+  padding: 0.8rem 1rem;
+}
+
+.broth-body.open { display: block; }
+
+.broth-group {
+  margin-bottom: 0.8rem;
+}
+
+.broth-group-label {
+  color: #8a7a40;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid #1a1a14;
+  padding-bottom: 0.2rem;
+}
+
+.broth-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.broth-slider-row label {
+  color: #a89040;
+  font-size: 0.75rem;
+  min-width: 70px;
+  text-align: right;
+}
+
+.broth-slider-row input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1a1a14;
+  height: 5px;
+  border-radius: 3px;
+  outline: none;
+  flex: 1;
+  min-width: 100px;
+}
+
+.broth-slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d4a843;
+  cursor: pointer;
+}
+
+.broth-slider-row input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d4a843;
+  cursor: pointer;
+  border: none;
+}
+
+.broth-slider-row .broth-val {
+  color: #d4a843;
+  font-size: 0.75rem;
+  min-width: 65px;
+  text-align: left;
+}
+
+.broth-snapshot-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #1a1a14;
+  align-items: center;
+}
+
+.broth-snapshot-btn {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.8rem;
+  background: #1a2a1a;
+  border: 1px solid #2a5a2a;
+  color: #60cc60;
+}
+
+.broth-snapshot-btn:hover { background: #2a3a2a; border-color: #40aa40; }
+
+.broth-preset-btn {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  background: #1a1a14;
+  border: 1px solid #3a3520;
+  color: #a89040;
+}
+
+.broth-preset-btn:hover { background: #2a2510; color: #d4a843; border-color: #5a4a20; }
+
 /* ---- Fortress Layout: log + inventory side by side ---- */
 .fortress-main {
   display: none;
@@ -840,6 +976,117 @@ Scenarios:
       <button class="action-btn act-acid" onclick="fortressStep('acidify')" title="pH −2 — dissolves carbonates, attacks silicates with fluorine">🧪 Acidify</button>
       <button class="action-btn act-alkaline" onclick="fortressStep('alkalinize')" title="pH +2 — favors carbonate precipitation">⚗️ Alkalinize</button>
     </div>
+    <!-- Broth Control Panel -->
+    <div class="broth-panel" id="broth-panel">
+      <button class="broth-toggle" id="broth-toggle" onclick="toggleBrothPanel()">
+        🧪 Broth Control <span class="broth-arrow">▶</span>
+      </button>
+      <div class="broth-body" id="broth-body">
+
+        <div class="broth-group">
+          <div class="broth-group-label">🌡️ Temperature &amp; Pressure</div>
+          <div class="broth-slider-row">
+            <label>Temp</label>
+            <input type="range" id="broth-temp" min="25" max="600" value="300" step="1"
+              oninput="setBrothValue('temp',this.value)">
+            <span class="broth-val" id="broth-temp-val">300 °C</span>
+          </div>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label">⚗️ Major Elements</div>
+          <div class="broth-slider-row">
+            <label>SiO₂</label>
+            <input type="range" id="broth-sio2" min="0" max="2000" value="500" step="1"
+              oninput="setBrothValue('sio2',this.value)">
+            <span class="broth-val" id="broth-sio2-val">500 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Ca</label>
+            <input type="range" id="broth-ca" min="0" max="1000" value="200" step="1"
+              oninput="setBrothValue('ca',this.value)">
+            <span class="broth-val" id="broth-ca-val">200 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>CO₃</label>
+            <input type="range" id="broth-co3" min="0" max="500" value="150" step="1"
+              oninput="setBrothValue('co3',this.value)">
+            <span class="broth-val" id="broth-co3-val">150 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>pH</label>
+            <input type="range" id="broth-ph" min="20" max="100" value="65" step="1"
+              oninput="setBrothValue('ph',this.value)">
+            <span class="broth-val" id="broth-ph-val">6.5</span>
+          </div>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label">⚙️ Trace Metals</div>
+          <div class="broth-slider-row">
+            <label>Fe</label>
+            <input type="range" id="broth-fe" min="0" max="200" value="5" step="1"
+              oninput="setBrothValue('fe',this.value)">
+            <span class="broth-val" id="broth-fe-val">5 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Mn</label>
+            <input type="range" id="broth-mn" min="0" max="100" value="2" step="1"
+              oninput="setBrothValue('mn',this.value)">
+            <span class="broth-val" id="broth-mn-val">2 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Cu</label>
+            <input type="range" id="broth-cu" min="0" max="200" value="0" step="1"
+              oninput="setBrothValue('cu',this.value)">
+            <span class="broth-val" id="broth-cu-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Zn</label>
+            <input type="range" id="broth-zn" min="0" max="500" value="0" step="1"
+              oninput="setBrothValue('zn',this.value)">
+            <span class="broth-val" id="broth-zn-val">0 ppm</span>
+          </div>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label">💨 Volatiles</div>
+          <div class="broth-slider-row">
+            <label>S</label>
+            <input type="range" id="broth-s" min="0" max="500" value="0" step="1"
+              oninput="setBrothValue('s',this.value)">
+            <span class="broth-val" id="broth-s-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>F</label>
+            <input type="range" id="broth-f" min="0" max="100" value="10" step="1"
+              oninput="setBrothValue('f',this.value)">
+            <span class="broth-val" id="broth-f-val">10 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>O₂</label>
+            <input type="range" id="broth-o2" min="0" max="20" value="0" step="1"
+              oninput="setBrothValue('o2',this.value)">
+            <span class="broth-val" id="broth-o2-val">0.0</span>
+          </div>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label">🌊 Flow</div>
+          <div class="broth-slider-row">
+            <label>Flow rate</label>
+            <input type="range" id="broth-flow" min="0" max="50" value="10" step="1"
+              oninput="setBrothValue('flow',this.value)">
+            <span class="broth-val" id="broth-flow-val">1.0</span>
+          </div>
+        </div>
+
+        <div class="broth-snapshot-row" id="broth-snapshots">
+          <button class="broth-snapshot-btn" onclick="takeBrothSnapshot()">📸 Snapshot</button>
+        </div>
+      </div>
+    </div>
+
     <div class="end-btns">
       <button class="btn-finish" onclick="fortressFinish()">📜 Finish &amp; Narrate</button>
       <button class="btn-reset" onclick="fortressReset()">↩️ Reset</button>
@@ -2406,6 +2653,7 @@ function fortressBegin() {
 
   updateFortressStatus();
   updateFortressInventory();
+  syncBrothSliders();
 }
 
 function fortressStep(action) {
@@ -2415,6 +2663,16 @@ function fortressStep(action) {
   let actionDesc = '';
 
   // Apply action modifications BEFORE running the step
+  // Apply current broth slider values to sim state before processing
+  // (sliders are live-bound, so this is already done via oninput,
+  //  but ensure any manual slider changes are captured)
+  if (fortressSim) {
+    for (const [key, m] of Object.entries(BROTH_MAP)) {
+      const slider = document.getElementById('broth-' + key);
+      if (slider) m.set(m.parse(slider.value));
+    }
+  }
+
   switch (action) {
     case 'wait':
       actionDesc = '⏳ Waiting — ambient cooling';
@@ -2525,6 +2783,7 @@ function fortressStep(action) {
   logEl.scrollTop = logEl.scrollHeight;
   updateFortressStatus();
   updateFortressInventory();
+  syncBrothSliders();
 }
 
 function appendFortressLine(container, line) {
@@ -2728,6 +2987,20 @@ function fortressReset() {
   fortressSim = null;
   fortressActive = false;
   fortressLogLines = [];
+  brothSnapshots = [];
+
+  // Reset broth panel
+  const brothToggle = document.getElementById('broth-toggle');
+  const brothBody = document.getElementById('broth-body');
+  if (brothToggle) brothToggle.classList.remove('open');
+  if (brothBody) brothBody.classList.remove('open');
+  // Clear snapshot buttons (keep the 📸 button)
+  const snapRow = document.getElementById('broth-snapshots');
+  if (snapRow) {
+    const firstBtn = snapRow.querySelector('.broth-snapshot-btn');
+    snapRow.innerHTML = '';
+    if (firstBtn) snapRow.appendChild(firstBtn);
+  }
 
   // Reset UI
   document.getElementById('fortress-setup').style.display = 'block';
@@ -2768,6 +3041,95 @@ function copyFortressLog() {
     document.execCommand('copy');
     document.body.removeChild(ta);
   });
+}
+
+// ============================================================
+// BROTH CONTROL PANEL
+// ============================================================
+
+let brothSnapshots = [];
+
+function toggleBrothPanel() {
+  const toggle = document.getElementById('broth-toggle');
+  const body = document.getElementById('broth-body');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// Map slider ids to sim state paths
+const BROTH_MAP = {
+  temp:  { get: () => fortressSim.conditions.temperature,     set: v => fortressSim.conditions.temperature = v,     fmt: v => v.toFixed(0) + ' °C',  parse: v => parseFloat(v) },
+  sio2:  { get: () => fortressSim.conditions.fluid.SiO2,      set: v => fortressSim.conditions.fluid.SiO2 = v,      fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  ca:    { get: () => fortressSim.conditions.fluid.Ca,         set: v => fortressSim.conditions.fluid.Ca = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  co3:   { get: () => fortressSim.conditions.fluid.CO3,        set: v => fortressSim.conditions.fluid.CO3 = v,        fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  ph:    { get: () => fortressSim.conditions.fluid.pH,         set: v => fortressSim.conditions.fluid.pH = v,         fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
+  fe:    { get: () => fortressSim.conditions.fluid.Fe,         set: v => fortressSim.conditions.fluid.Fe = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  mn:    { get: () => fortressSim.conditions.fluid.Mn,         set: v => fortressSim.conditions.fluid.Mn = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  cu:    { get: () => fortressSim.conditions.fluid.Cu,         set: v => fortressSim.conditions.fluid.Cu = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  zn:    { get: () => fortressSim.conditions.fluid.Zn,         set: v => fortressSim.conditions.fluid.Zn = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  s:     { get: () => fortressSim.conditions.fluid.S,          set: v => fortressSim.conditions.fluid.S = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  f:     { get: () => fortressSim.conditions.fluid.F,          set: v => fortressSim.conditions.fluid.F = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  o2:    { get: () => fortressSim.conditions.fluid.O2,         set: v => fortressSim.conditions.fluid.O2 = v,         fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
+  flow:  { get: () => fortressSim.conditions.flow_rate,        set: v => fortressSim.conditions.flow_rate = v,        fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
+};
+
+function setBrothValue(key, sliderVal) {
+  if (!fortressSim || !fortressActive) return;
+  const m = BROTH_MAP[key];
+  const realVal = m.parse(sliderVal);
+  m.set(realVal);
+  document.getElementById('broth-' + key + '-val').textContent = m.fmt(realVal);
+  // Also update the status bar live
+  updateFortressStatus();
+}
+
+function syncBrothSliders() {
+  if (!fortressSim) return;
+  for (const [key, m] of Object.entries(BROTH_MAP)) {
+    const val = m.get();
+    const sliderVal = m.toSlider ? m.toSlider(val) : Math.round(val);
+    const slider = document.getElementById('broth-' + key);
+    if (slider) {
+      // Clamp to slider range
+      const clamped = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), sliderVal));
+      slider.value = clamped;
+    }
+    const valEl = document.getElementById('broth-' + key + '-val');
+    if (valEl) valEl.textContent = m.fmt(val);
+  }
+}
+
+function takeBrothSnapshot() {
+  if (!fortressSim) return;
+  const name = prompt('Name this broth snapshot:', 'Step ' + fortressSim.step);
+  if (!name) return;
+
+  const snapshot = { name };
+  for (const [key, m] of Object.entries(BROTH_MAP)) {
+    snapshot[key] = m.get();
+  }
+  brothSnapshots.push(snapshot);
+
+  // Add button to snapshot row
+  const row = document.getElementById('broth-snapshots');
+  const btn = document.createElement('button');
+  btn.className = 'broth-preset-btn';
+  btn.textContent = name;
+  btn.title = 'Restore: ' + name;
+  const idx = brothSnapshots.length - 1;
+  btn.onclick = () => restoreBrothSnapshot(idx);
+  row.appendChild(btn);
+}
+
+function restoreBrothSnapshot(idx) {
+  if (!fortressSim || !fortressActive) return;
+  const snap = brothSnapshots[idx];
+  if (!snap) return;
+  for (const [key, m] of Object.entries(BROTH_MAP)) {
+    if (snap[key] !== undefined) m.set(snap[key]);
+  }
+  syncBrothSliders();
+  updateFortressStatus();
 }
 
 // Handle Escape key for zone modal

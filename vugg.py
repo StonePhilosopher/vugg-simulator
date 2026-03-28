@@ -383,6 +383,74 @@ class Crystal:
             parts.append(z.note)
         return "; ".join(parts)
     
+    def predict_color(self) -> str:
+        """Predict visible color based on trace element history and mineral type."""
+        if not self.zones:
+            return "colorless"
+        
+        avg_Fe = sum(z.trace_Fe for z in self.zones) / len(self.zones)
+        avg_Mn = sum(z.trace_Mn for z in self.zones) / len(self.zones)
+        avg_Al = sum(z.trace_Al for z in self.zones) / len(self.zones)
+        avg_Ti = sum(z.trace_Ti for z in self.zones) / len(self.zones)
+        
+        if self.mineral == "quartz":
+            # Quartz color depends on trace elements + radiation history
+            # Fe³⁺ → amethyst (with radiation), citrine (with heat or no radiation)
+            # Al + radiation → smoky quartz
+            # Ti → rutilated (but that's inclusions, not substitution)
+            # Pure → colorless/milky
+            if avg_Fe > 3.0 and avg_Al > 3.0:
+                return ("iron+aluminum bearing — amethyst if irradiated (Fe³⁺ color centers), "
+                        "smoky if Al-dominated radiation damage, citrine if heated")
+            elif avg_Fe > 3.0:
+                return ("iron-bearing — potential amethyst (needs radiation to activate "
+                        "Fe³⁺ color centers), citrine if heated, colorless without radiation")
+            elif avg_Al > 5.0:
+                return "aluminum-bearing — smoky quartz if irradiated (Al-hole color centers)"
+            elif avg_Fe > 1.0:
+                return "trace iron — pale citrine possible, likely colorless"
+            else:
+                return "water-clear (low trace elements)"
+        
+        elif self.mineral == "calcite":
+            # Calcite color: Fe = amber/brown/black, Mn = pink/orange, pure = white/colorless
+            # This is Professor's observation about amber/black calcite
+            if avg_Fe > 5.0:
+                if avg_Fe > 15.0:
+                    return "dark brown to black (high iron — opaque in thick sections)"
+                elif avg_Fe > 8.0:
+                    return "amber to brown (moderate iron)"
+                else:
+                    return "pale amber/honey (low iron)"
+            elif avg_Mn > 3.0 and avg_Fe < 3.0:
+                return "pink to salmon (Mn²⁺ without Fe quenching)"
+            elif avg_Mn > 1.0:
+                return "cream to pale yellow"
+            else:
+                return "colorless to white"
+        
+        elif self.mineral == "sphalerite":
+            # Already handled in growth zones, but summarize here
+            if avg_Fe > 100:
+                return "black (marmatite — high Fe substitution)"
+            elif avg_Fe > 50:
+                return "dark brown to ruby jack"
+            elif avg_Fe > 20:
+                return "honey/amber"
+            else:
+                return "pale yellow to colorless (cleiophane — gem quality)"
+        
+        elif self.mineral == "fluorite":
+            # Color from zones
+            if avg_Fe > 2:
+                return "green (iron-related color centers)"
+            elif avg_Mn > 2:
+                return "purple (Mn-related)"
+            else:
+                return "blue-violet to colorless"
+        
+        return "typical for species"
+    
     def predict_fluorescence(self) -> str:
         """Predict UV fluorescence based on trace element history."""
         avg_Mn = sum(z.trace_Mn for z in self.zones) / max(len(self.zones), 1)
@@ -1555,6 +1623,11 @@ class VugSimulator:
                     if first_wall_zone:
                         lines.append(f"    Wall-derived Ca first appears at step {first_wall_zone.step} "
                                    f"(T={first_wall_zone.temperature:.0f}°C)")
+            
+            # Color prediction
+            color = c.predict_color()
+            if color != "typical for species":
+                lines.append(f"  Color: {color}")
             
             # Fluorescence prediction
             fl = c.predict_fluorescence()
