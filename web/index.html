@@ -1549,7 +1549,21 @@ function grow_sphalerite(crystal, conditions, step) {
 
 function grow_fluorite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_fluorite();
-  if (sigma < 1.0) return null;
+  if (sigma < 1.0) {
+    // Acid dissolution: CaF₂ + 2HCl → CaCl₂ + 2HF (releases hydrofluoric acid!)
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.12);
+      conditions.fluid.Ca += dissolved_um * 0.4;
+      conditions.fluid.F += dissolved_um * 0.6;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — CaF₂ + 2H⁺ → Ca²⁺ + 2HF (⚠️ releases hydrofluoric acid)`
+      });
+    }
+    return null;
+  }
 
   const excess = sigma - 1.0;
   let rate = 7.0 * excess * rng.uniform(0.8, 1.2);

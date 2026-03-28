@@ -724,10 +724,27 @@ def grow_sphalerite(crystal: Crystal, conditions: VugConditions, step: int) -> O
 
 
 def grow_fluorite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
-    """Fluorite (CaF2) growth model."""
+    """Fluorite (CaF2) growth model.
+    
+    Fluorite dissolves in strong acid: CaF₂ + 2HCl → CaCl₂ + 2HF
+    This is genuinely dangerous — it releases hydrofluoric acid.
+    Also dissolves at very low pH regardless of acid type.
+    """
     sigma = conditions.supersaturation_fluorite()
     
     if sigma < 1.0:
+        # Acid dissolution of fluorite
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.0:
+            crystal.dissolved = True
+            dissolved_um = min(6.0, crystal.total_growth_um * 0.12)
+            # Release Ca and F back to fluid
+            conditions.fluid.Ca += dissolved_um * 0.4
+            conditions.fluid.F += dissolved_um * 0.6
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f}) — CaF₂ + 2H⁺ → Ca²⁺ + 2HF (⚠️ releases hydrofluoric acid)"
+            )
         return None
     
     excess = sigma - 1.0
