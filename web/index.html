@@ -867,7 +867,8 @@ footer a:hover {
 </div>
 
 <!-- Legends Mode Output -->
-<div id="output-container">
+<div id="output-container" style="display:flex;gap:1rem;align-items:flex-start;">
+  <div style="flex:1;min-width:0;">
   <div id="output">Welcome to the Vugg Simulator.
 
 Select a scenario and press Grow, or hit Random for a surprise.
@@ -881,6 +882,13 @@ Scenarios:
   reactive_wall — Acid pulses dissolve limestone walls, feed crystal growth
   radioactive_pegmatite — Uraninite + galena in a hot pegmatite. Deep time. ☢️ radiation damage.
 </div>
+  </div>
+  <div class="inventory-col" id="legends-inventory-col" style="display:none;">
+    <div class="inventory-panel" id="legends-inventory">
+      <h4>💎 Crystal Inventory</h4>
+      <div class="inv-empty">Run a simulation to see crystals here.</div>
+    </div>
+  </div>
 </div>
 
 <!-- Fortress Mode Panel -->
@@ -3181,6 +3189,9 @@ function runSimulation() {
   allLines.push(...summaryLines);
 
   displayLines(allLines);
+
+  // Populate Legends Mode inventory panel
+  updateLegendsInventory(sim);
 }
 
 function runRandom() {
@@ -3655,6 +3666,47 @@ function updateFortressStatus() {
   }
 }
 
+function updateLegendsInventory(sim) {
+  const col = document.getElementById('legends-inventory-col');
+  const panel = document.getElementById('legends-inventory');
+  if (!col || !panel || !sim) return;
+
+  panel.innerHTML = '<h4>💎 Crystal Inventory</h4>';
+
+  if (!sim.crystals.length) {
+    const empty = document.createElement('div');
+    empty.className = 'inv-empty';
+    empty.textContent = 'No crystals grew in this simulation.';
+    panel.appendChild(empty);
+    col.style.display = 'none';
+    return;
+  }
+
+  col.style.display = '';
+  for (const crystal of sim.crystals) {
+    const el = document.createElement('div');
+    el.className = 'inv-crystal';
+    el.onclick = () => showZoneHistory(crystal);
+
+    let displayName = crystal.mineral;
+    if (crystal.mineral === 'quartz' && crystal.radiation_damage > 0.3) {
+      displayName = 'quartz (smoky)';
+    }
+
+    let html = `<div class="inv-mineral">${displayName} #${crystal.crystal_id}</div>`;
+    html += `<div class="inv-size">${crystal.c_length_mm.toFixed(1)} × ${crystal.a_width_mm.toFixed(1)} mm</div>`;
+    html += `<div class="inv-habit">${crystal.habit}`;
+    if (crystal.dominant_forms.length) html += ` [${crystal.dominant_forms[0]}]`;
+    html += `</div>`;
+    if (crystal.twinned) html += `<div class="inv-twin">⟁ ${crystal.twin_law}</div>`;
+    if (crystal.radiation_damage > 0) html += `<div style="color:#50ff50;font-size:0.65rem">☢️ radiation damage: ${crystal.radiation_damage.toFixed(2)}</div>`;
+    html += `<div style="color:#5a4a30;font-size:0.65rem;margin-top:0.2rem">${crystal.zones.length} zones · tap for history</div>`;
+
+    el.innerHTML = html;
+    panel.appendChild(el);
+  }
+}
+
 function updateFortressInventory() {
   if (!fortressSim) return;
   const panel = document.getElementById('fortress-inventory');
@@ -3673,12 +3725,18 @@ function updateFortressInventory() {
     el.className = 'inv-crystal';
     el.onclick = () => showZoneHistory(crystal);
 
-    let html = `<div class="inv-mineral">${crystal.mineral} #${crystal.crystal_id}</div>`;
+    let displayName = crystal.mineral;
+    if (crystal.mineral === 'quartz' && crystal.radiation_damage > 0.3) {
+      displayName = 'quartz (smoky)';
+    }
+
+    let html = `<div class="inv-mineral">${displayName} #${crystal.crystal_id}</div>`;
     html += `<div class="inv-size">${crystal.c_length_mm.toFixed(1)} × ${crystal.a_width_mm.toFixed(1)} mm</div>`;
     html += `<div class="inv-habit">${crystal.habit}`;
     if (crystal.dominant_forms.length) html += ` [${crystal.dominant_forms[0]}]`;
     html += `</div>`;
     if (crystal.twinned) html += `<div class="inv-twin">⟁ ${crystal.twin_law}</div>`;
+    if (crystal.radiation_damage > 0) html += `<div style="color:#50ff50;font-size:0.65rem">☢️ radiation damage: ${crystal.radiation_damage.toFixed(2)}</div>`;
     html += `<div style="color:#5a4a30;font-size:0.65rem;margin-top:0.2rem">${crystal.zones.length} zones · tap for history</div>`;
 
     el.innerHTML = html;
