@@ -183,6 +183,8 @@ button:disabled {
 .line-nucleation { color: #50e0c0; font-weight: bold; }
 .line-header { color: #a89040; }
 .line-dissolution { color: #cc4444; }
+.line-wall { color: #cc8844; font-weight: bold; }
+.line-radiation { color: #50ff50; font-weight: bold; text-shadow: 0 0 4px rgba(80,255,80,0.3); }
 
 .narrative-box {
   border: 1px solid #5a4a20;
@@ -483,6 +485,142 @@ button:disabled {
 }
 .btn-reset:hover { background: #452020; border-color: #aa4040; }
 
+/* ---- Broth Control Panel ---- */
+.broth-panel {
+  margin: 0.8rem 0;
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  background: #0e0e0a;
+  overflow: hidden;
+}
+
+.broth-toggle {
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 1rem;
+  background: #12120c;
+  border: none;
+  border-bottom: 1px solid #2a2518;
+  color: #f0c050;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.broth-toggle:hover { background: #1a1a14; }
+
+.broth-toggle .broth-arrow {
+  transition: transform 0.2s;
+  font-size: 0.7rem;
+  color: #8a7a40;
+}
+
+.broth-toggle.open .broth-arrow { transform: rotate(90deg); }
+
+.broth-body {
+  display: none;
+  padding: 0.8rem 1rem;
+}
+
+.broth-body.open { display: block; }
+
+.broth-group {
+  margin-bottom: 0.8rem;
+}
+
+.broth-group-label {
+  color: #8a7a40;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid #1a1a14;
+  padding-bottom: 0.2rem;
+}
+
+.broth-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.broth-slider-row label {
+  color: #a89040;
+  font-size: 0.75rem;
+  min-width: 70px;
+  text-align: right;
+}
+
+.broth-slider-row input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1a1a14;
+  height: 5px;
+  border-radius: 3px;
+  outline: none;
+  flex: 1;
+  min-width: 100px;
+}
+
+.broth-slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d4a843;
+  cursor: pointer;
+}
+
+.broth-slider-row input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d4a843;
+  cursor: pointer;
+  border: none;
+}
+
+.broth-slider-row .broth-val {
+  color: #d4a843;
+  font-size: 0.75rem;
+  min-width: 65px;
+  text-align: left;
+}
+
+.broth-snapshot-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #1a1a14;
+  align-items: center;
+}
+
+.broth-snapshot-btn {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.8rem;
+  background: #1a2a1a;
+  border: 1px solid #2a5a2a;
+  color: #60cc60;
+}
+
+.broth-snapshot-btn:hover { background: #2a3a2a; border-color: #40aa40; }
+
+.broth-preset-btn {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  background: #1a1a14;
+  border: 1px solid #3a3520;
+  color: #a89040;
+}
+
+.broth-preset-btn:hover { background: #2a2510; color: #d4a843; border-color: #5a4a20; }
+
 /* ---- Fortress Layout: log + inventory side by side ---- */
 .fortress-main {
   display: none;
@@ -709,6 +847,8 @@ footer a:hover {
       <option value="pulse">pulse</option>
       <option value="mvt">mvt</option>
       <option value="porphyry">porphyry</option>
+      <option value="reactive_wall">reactive_wall</option>
+      <option value="radioactive_pegmatite">radioactive_pegmatite</option>
     </select>
   </div>
   <div class="control-group">
@@ -717,7 +857,7 @@ footer a:hover {
   </div>
   <div class="control-group">
     <label for="steps">Time Steps (optional)</label>
-    <input type="number" id="steps" placeholder="default" style="width:100px" title="Each step = one tick of geological time. More steps = longer cooling history. Default: 100-120 depending on scenario.">
+    <input type="number" id="steps" placeholder="default" style="width:100px" min="1" step="1" title="Each step = one tick of geological time. More steps = longer cooling history. Default: 100-120 depending on scenario." oninput="if(this.value<1&&this.value!=='')this.value=1">
   </div>
   <div style="display:flex;gap:0.5rem;align-items:flex-end;padding-top:0.8rem">
     <button class="btn-grow" id="btn-grow" onclick="runSimulation()">Grow</button>
@@ -734,10 +874,12 @@ Select a scenario and press Grow, or hit Random for a surprise.
 Switch to 🏰 Fortress Mode for step-by-step interactive control.
 
 Scenarios:
-  cooling  — Simple cooling: hot fluid cools slowly in a vug
-  pulse    — Cooling with a mid-growth fluid pulse event
-  mvt      — Mississippi Valley-type: fluid mixing produces sphalerite + calcite + fluorite
-  porphyry — Copper porphyry deposit: Cu pulses + oxidation → pyrite + chalcopyrite
+  cooling       — Simple cooling: hot fluid cools slowly in a vug
+  pulse         — Cooling with a mid-growth fluid pulse event
+  mvt           — Mississippi Valley-type: fluid mixing produces sphalerite + calcite + fluorite
+  porphyry      — Copper porphyry deposit: Cu pulses + oxidation → pyrite + chalcopyrite
+  reactive_wall — Acid pulses dissolve limestone walls, feed crystal growth
+  radioactive_pegmatite — Uraninite + galena in a hot pegmatite. Deep time. ☢️ radiation damage.
 </div>
 </div>
 
@@ -768,6 +910,8 @@ Scenarios:
         <button class="preset-btn" data-preset="mvt" onclick="selectPreset('mvt')">⚗️ MVT Brine</button>
         <button class="preset-btn" data-preset="clean" onclick="selectPreset('clean')">💧 Clean/Dilute</button>
         <button class="preset-btn" data-preset="porphyry" onclick="selectPreset('porphyry')">🟠 Copper Porphyry</button>
+        <button class="preset-btn" data-preset="oxidized_cu" onclick="selectPreset('oxidized_cu')">🟢 Oxidized Copper</button>
+        <button class="preset-btn" data-preset="radioactive" onclick="selectPreset('radioactive')">☢️ Radioactive Pegmatite</button>
       </div>
     </div>
 
@@ -798,12 +942,22 @@ Scenarios:
         <span class="range-val" id="f-s-val">0 ppm</span>
       </div>
       <div class="setup-row">
+        <label style="width:60px">Uranium</label>
+        <input type="range" id="f-u" min="0" max="200" value="0" oninput="document.getElementById('f-u-val').textContent=this.value+' ppm'">
+        <span class="range-val" id="f-u-val">0 ppm</span>
+      </div>
+      <div class="setup-row">
+        <label style="width:60px">Lead</label>
+        <input type="range" id="f-pb" min="0" max="200" value="0" oninput="document.getElementById('f-pb-val').textContent=this.value+' ppm'">
+        <span class="range-val" id="f-pb-val">0 ppm</span>
+      </div>
+      <div class="setup-row">
         <label style="width:60px">pH</label>
         <input type="range" id="f-ph" min="20" max="100" value="65" step="5" oninput="document.getElementById('f-ph-val').textContent=(this.value/10).toFixed(1)">
         <span class="range-val" id="f-ph-val">6.5</span>
       </div>
       <div style="color:#5a4a30;font-size:0.65rem;margin-top:0.3rem;font-style:italic;">
-        Iron quenches calcite fluorescence and darkens sphalerite. Mn activates fluorescence. Cu+S+Fe = chalcopyrite. Fe+S = pyrite. Low pH dissolves carbonates; high pH favors them.
+        Iron quenches calcite fluorescence and darkens sphalerite. Mn activates fluorescence. Cu+S+Fe = chalcopyrite. Fe+S = pyrite. Fe+O₂ = hematite. Cu+CO₃+O₂ = malachite (low T). U = uraninite (high T). Pb+S = galena. Low pH dissolves carbonates; high pH favors them.
       </div>
     </div>
 
@@ -820,13 +974,15 @@ Scenarios:
       <div class="cond-item"><span class="cond-label">Press</span> <span id="f-stat-press">—</span></div>
       <div class="cond-item"><span class="cond-label">pH</span> <span id="f-stat-ph">—</span></div>
       <div class="cond-item"><span class="cond-label">Flow</span> <span id="f-stat-flow">—</span></div>
+      <div class="cond-item" id="f-stat-vug-container" style="display:none"><span class="cond-label">Vug</span> <span id="f-stat-vug">—</span></div>
+      <div class="cond-item" id="f-stat-radiation-container" style="display:none"><span class="cond-label">Radiation</span> <span id="f-stat-radiation" style="color:#50ff50;text-shadow:0 0 4px rgba(80,255,80,0.3)">—</span></div>
     </div>
     <div class="supersaturation-bar" id="f-sat-bar"></div>
   </div>
 
   <div class="action-panel" id="fortress-actions">
     <div class="action-grid">
-      <button class="action-btn act-wait" onclick="fortressStep('wait')" title="Ambient cooling, nothing special">⏳ Wait</button>
+      <button class="action-btn act-wait" onclick="fortressStep('wait')" title="Advance one time step with current conditions" style="min-width:140px;font-weight:bold">⏳ Advance Step</button>
       <button class="action-btn act-heat" onclick="fortressStep('heat')" title="Temperature +25°C">🔥 Heat +25°C</button>
       <button class="action-btn act-cool" onclick="fortressStep('cool')" title="Temperature -25°C">❄️ Cool −25°C</button>
       <button class="action-btn act-chem" onclick="fortressStep('silica')" title="Boost SiO₂ significantly">🔮 Inject Silica</button>
@@ -834,12 +990,135 @@ Scenarios:
       <button class="action-btn act-chem" onclick="fortressStep('brine')" title="Inject Zn + S (sphalerite potential)">⚗️ Mix Brine</button>
       <button class="action-btn act-chem" onclick="fortressStep('fluorine')" title="Boost F + Ca (fluorite potential)">💎 Add Fluorine</button>
       <button class="action-btn act-copper" onclick="fortressStep('copper')" title="Inject Cu-bearing magmatic fluid">🟠 Inject Copper</button>
-      <button class="action-btn act-oxidize" onclick="fortressStep('oxidize')" title="Oxidizing meteoric water — sulfides unstable">🟡 Oxidize</button>
+      <button class="action-btn act-oxidize" onclick="fortressStep('oxidize')" title="Oxidizing meteoric water — sulfides unstable, hematite + malachite possible">🟡 Oxidize</button>
       <button class="action-btn act-tectonic" onclick="fortressStep('tectonic')" title="Pressure spike, twinning trigger">🌋 Tectonic Shock</button>
       <button class="action-btn act-flood" onclick="fortressStep('flood')" title="High flow rate, fresh fluid pulse">🌊 Flood</button>
       <button class="action-btn act-acid" onclick="fortressStep('acidify')" title="pH −2 — dissolves carbonates, attacks silicates with fluorine">🧪 Acidify</button>
       <button class="action-btn act-alkaline" onclick="fortressStep('alkalinize')" title="pH +2 — favors carbonate precipitation">⚗️ Alkalinize</button>
     </div>
+    <!-- Broth Control Panel -->
+    <div class="broth-panel" id="broth-panel">
+      <button class="broth-toggle" id="broth-toggle" onclick="toggleBrothPanel()">
+        🧪 Broth Control <span class="broth-arrow">▶</span>
+      </button>
+      <div class="broth-body" id="broth-body">
+
+        <div class="broth-group">
+          <div class="broth-group-label">🌡️ Temperature &amp; Pressure</div>
+          <div class="broth-slider-row">
+            <label>Temp</label>
+            <input type="range" id="broth-temp" min="25" max="600" value="300" step="1"
+              oninput="setBrothValue('temp',this.value)">
+            <span class="broth-val" id="broth-temp-val">300 °C</span>
+          </div>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label">⚗️ Major Elements</div>
+          <div class="broth-slider-row">
+            <label>SiO₂</label>
+            <input type="range" id="broth-sio2" min="0" max="2000" value="500" step="1"
+              oninput="setBrothValue('sio2',this.value)">
+            <span class="broth-val" id="broth-sio2-val">500 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Ca</label>
+            <input type="range" id="broth-ca" min="0" max="1000" value="200" step="1"
+              oninput="setBrothValue('ca',this.value)">
+            <span class="broth-val" id="broth-ca-val">200 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>CO₃</label>
+            <input type="range" id="broth-co3" min="0" max="500" value="150" step="1"
+              oninput="setBrothValue('co3',this.value)">
+            <span class="broth-val" id="broth-co3-val">150 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>pH</label>
+            <input type="range" id="broth-ph" min="20" max="100" value="65" step="1"
+              oninput="setBrothValue('ph',this.value)">
+            <span class="broth-val" id="broth-ph-val">6.5</span>
+          </div>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label">⚙️ Trace Metals</div>
+          <div class="broth-slider-row">
+            <label>Fe</label>
+            <input type="range" id="broth-fe" min="0" max="200" value="5" step="1"
+              oninput="setBrothValue('fe',this.value)">
+            <span class="broth-val" id="broth-fe-val">5 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Mn</label>
+            <input type="range" id="broth-mn" min="0" max="100" value="2" step="1"
+              oninput="setBrothValue('mn',this.value)">
+            <span class="broth-val" id="broth-mn-val">2 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Cu</label>
+            <input type="range" id="broth-cu" min="0" max="200" value="0" step="1"
+              oninput="setBrothValue('cu',this.value)">
+            <span class="broth-val" id="broth-cu-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Zn</label>
+            <input type="range" id="broth-zn" min="0" max="500" value="0" step="1"
+              oninput="setBrothValue('zn',this.value)">
+            <span class="broth-val" id="broth-zn-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>U</label>
+            <input type="range" id="broth-u" min="0" max="200" value="0" step="1"
+              oninput="setBrothValue('u',this.value)">
+            <span class="broth-val" id="broth-u-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>Pb</label>
+            <input type="range" id="broth-pb" min="0" max="200" value="0" step="1"
+              oninput="setBrothValue('pb',this.value)">
+            <span class="broth-val" id="broth-pb-val">0 ppm</span>
+          </div>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label">💨 Volatiles</div>
+          <div class="broth-slider-row">
+            <label>S</label>
+            <input type="range" id="broth-s" min="0" max="500" value="0" step="1"
+              oninput="setBrothValue('s',this.value)">
+            <span class="broth-val" id="broth-s-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>F</label>
+            <input type="range" id="broth-f" min="0" max="100" value="10" step="1"
+              oninput="setBrothValue('f',this.value)">
+            <span class="broth-val" id="broth-f-val">10 ppm</span>
+          </div>
+          <div class="broth-slider-row">
+            <label>O₂</label>
+            <input type="range" id="broth-o2" min="0" max="20" value="0" step="1"
+              oninput="setBrothValue('o2',this.value)">
+            <span class="broth-val" id="broth-o2-val">0.0</span>
+          </div>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label">🌊 Flow</div>
+          <div class="broth-slider-row">
+            <label>Flow rate</label>
+            <input type="range" id="broth-flow" min="0" max="50" value="10" step="1"
+              oninput="setBrothValue('flow',this.value)">
+            <span class="broth-val" id="broth-flow-val">1.0</span>
+          </div>
+        </div>
+
+        <div class="broth-snapshot-row" id="broth-snapshots">
+          <button class="broth-snapshot-btn" onclick="takeBrothSnapshot()">📸 Snapshot</button>
+        </div>
+      </div>
+    </div>
+
     <div class="end-btns">
       <button class="btn-finish" onclick="fortressFinish()">📜 Finish &amp; Narrate</button>
       <button class="btn-reset" onclick="fortressReset()">↩️ Reset</button>
@@ -916,6 +1195,7 @@ class FluidChemistry {
     this.Al = opts.Al ?? 3.0;
     this.Ti = opts.Ti ?? 0.5;
     this.Pb = opts.Pb ?? 0.0;
+    this.U = opts.U ?? 0.0;
     this.Cu = opts.Cu ?? 0.0;
     this.O2 = opts.O2 ?? 0.0;
     this.pH = opts.pH ?? 6.5;
@@ -931,6 +1211,8 @@ class FluidChemistry {
     if (this.Zn > 50) parts.push(`Zn-rich (${this.Zn.toFixed(0)} ppm)`);
     if (this.S > 50) parts.push(`sulfur-bearing (${this.S.toFixed(0)} ppm)`);
     if (this.Cu > 20) parts.push(`Cu-bearing (${this.Cu.toFixed(0)} ppm)`);
+    if (this.Pb > 10) parts.push(`Pb-bearing (${this.Pb.toFixed(0)} ppm)`);
+    if (this.U > 20) parts.push(`U-bearing (${this.U.toFixed(0)} ppm)`);
     if (this.F > 20) parts.push(`fluorine-rich (${this.F.toFixed(0)} ppm)`);
     if (this.O2 > 1.0) parts.push('oxidizing');
     else if (this.O2 < 0.3 && (this.S > 20 || this.Fe > 20)) parts.push('reducing');
@@ -940,12 +1222,66 @@ class FluidChemistry {
   }
 }
 
+class VugWall {
+  constructor(opts = {}) {
+    this.composition = opts.composition ?? 'limestone';
+    this.thickness_mm = opts.thickness_mm ?? 500.0;
+    this.vug_diameter_mm = opts.vug_diameter_mm ?? 50.0;
+    this.total_dissolved_mm = opts.total_dissolved_mm ?? 0.0;
+    this.wall_Fe_ppm = opts.wall_Fe_ppm ?? 2000.0;
+    this.wall_Mn_ppm = opts.wall_Mn_ppm ?? 500.0;
+    this.wall_Mg_ppm = opts.wall_Mg_ppm ?? 1000.0;
+    this.ca_from_wall_total = opts.ca_from_wall_total ?? 0.0;
+  }
+
+  dissolve(acid_strength, fluid) {
+    if (acid_strength <= 0) return { dissolved: false };
+
+    let rate_mm = Math.min(acid_strength * 0.5, 2.0);
+    if (this.thickness_mm < rate_mm) rate_mm = this.thickness_mm;
+
+    this.thickness_mm -= rate_mm;
+    this.total_dissolved_mm += rate_mm;
+    this.vug_diameter_mm += rate_mm * 2;
+
+    const ca_released = rate_mm * 15.0;
+    const co3_released = rate_mm * 12.0;
+    const fe_released = rate_mm * (this.wall_Fe_ppm / 1000.0) * 0.5;
+    const mn_released = rate_mm * (this.wall_Mn_ppm / 1000.0) * 0.5;
+    const ph_recovery = rate_mm * 0.8;
+
+    const ph_before = fluid.pH;
+    fluid.Ca += ca_released;
+    fluid.CO3 += co3_released;
+    fluid.Fe += fe_released;
+    fluid.Mn += mn_released;
+    fluid.pH += ph_recovery;
+    fluid.pH = Math.min(fluid.pH, 8.5);
+
+    this.ca_from_wall_total += ca_released;
+
+    return {
+      dissolved: true,
+      rate_mm,
+      ca_released,
+      co3_released,
+      fe_released,
+      mn_released,
+      ph_before,
+      ph_after: fluid.pH,
+      vug_diameter: this.vug_diameter_mm,
+      total_dissolved: this.total_dissolved_mm,
+    };
+  }
+}
+
 class VugConditions {
   constructor(opts = {}) {
     this.temperature = opts.temperature ?? 350.0;
     this.pressure = opts.pressure ?? 1.5;
     this.fluid = opts.fluid || new FluidChemistry();
     this.flow_rate = opts.flow_rate ?? 1.0;
+    this.wall = opts.wall || new VugWall();
   }
 
   supersaturation_quartz() {
@@ -983,8 +1319,14 @@ class VugConditions {
 
   supersaturation_fluorite() {
     if (this.fluid.Ca < 10 || this.fluid.F < 5) return 0;
-    const product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
-    return product * Math.exp(-0.003 * this.temperature);
+    let product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
+    let sigma = product * Math.exp(-0.003 * this.temperature);
+    // Acid dissolution — fluorite dissolves in strong acid
+    if (this.fluid.pH < 5.0) {
+      const acid_attack = (5.0 - this.fluid.pH) * 0.4;
+      sigma -= acid_attack;
+    }
+    return Math.max(sigma, 0);
   }
 
   supersaturation_sphalerite() {
@@ -1008,6 +1350,43 @@ class VugConditions {
     const T_factor = (150 < this.temperature && this.temperature < 350) ? 1.2 : 0.6;
     return product * T_factor * (1.5 - this.fluid.O2);
   }
+
+  supersaturation_hematite() {
+    if (this.fluid.Fe < 20 || this.fluid.O2 < 0.5) return 0;
+    let sigma = (this.fluid.Fe / 100.0) * (this.fluid.O2 / 1.0) * Math.exp(-0.002 * this.temperature);
+    if (this.fluid.pH < 3.5) {
+      sigma -= (3.5 - this.fluid.pH) * 0.3;
+    }
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_malachite() {
+    if (this.fluid.Cu < 5 || this.fluid.CO3 < 20 || this.fluid.O2 < 0.3) return 0;
+    let sigma = (this.fluid.Cu / 50.0) * (this.fluid.CO3 / 200.0) * (this.fluid.O2 / 1.0);
+    if (this.temperature > 50) {
+      sigma *= Math.exp(-0.005 * (this.temperature - 50));
+    }
+    if (this.fluid.pH < 4.5) {
+      sigma -= (4.5 - this.fluid.pH) * 0.5;
+    }
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_uraninite() {
+    if (this.fluid.U < 50 || this.temperature < 300) return 0;
+    return (this.fluid.U / 100.0) * Math.exp(-0.003 * Math.abs(this.temperature - 500));
+  }
+
+  supersaturation_galena() {
+    if (this.fluid.Pb < 10 || this.fluid.S < 10) return 0;
+    let sigma = (this.fluid.Pb / 80.0) * (this.fluid.S / 100.0);
+    if (this.temperature >= 200 && this.temperature <= 400) {
+      sigma *= 1.3;
+    } else if (this.temperature > 500) {
+      sigma *= 0.5;
+    }
+    return sigma;
+  }
 }
 
 // ============================================================
@@ -1027,6 +1406,10 @@ class GrowthZone {
     this.fluid_inclusion = opts.fluid_inclusion ?? false;
     this.inclusion_type = opts.inclusion_type ?? '';
     this.note = opts.note ?? '';
+    this.ca_from_wall = opts.ca_from_wall ?? 0.0;
+    this.ca_from_fluid = opts.ca_from_fluid ?? 0.0;
+    this.is_phantom = opts.is_phantom ?? false;
+    this.dissolution_depth_um = opts.dissolution_depth_um ?? 0.0;
   }
 }
 
@@ -1047,9 +1430,20 @@ class Crystal {
     this.total_growth_um = 0;
     this.active = true;
     this.dissolved = false;
+    this.phantom_surfaces = [];
+    this.phantom_count = 0;
   }
 
   add_zone(zone) {
+    // Detect phantom boundaries
+    if (zone.thickness_um < 0) {
+      zone.is_phantom = true;
+      zone.dissolution_depth_um = Math.abs(zone.thickness_um);
+      this.phantom_surfaces.push(this.zones.length);
+      this.phantom_count++;
+    } else if (this.zones.length && this.zones[this.zones.length - 1].thickness_um < 0 && zone.thickness_um > 0) {
+      zone.note = (zone.note + ' [phantom boundary — growing over dissolution surface]').trim();
+    }
     this.zones.push(zone);
     this.total_growth_um += zone.thickness_um;
     this.c_length_mm = this.total_growth_um / 1000.0;
@@ -1099,6 +1493,18 @@ class Crystal {
       return 'non-fluorescent';
     }
     if (this.mineral === 'pyrite' || this.mineral === 'chalcopyrite') {
+      return 'non-fluorescent (opaque sulfide)';
+    }
+    if (this.mineral === 'hematite') {
+      return 'non-fluorescent (opaque oxide)';
+    }
+    if (this.mineral === 'malachite') {
+      return 'non-fluorescent';
+    }
+    if (this.mineral === 'uraninite') {
+      return 'non-fluorescent (radioactive, opaque)';
+    }
+    if (this.mineral === 'galena') {
       return 'non-fluorescent (opaque sulfide)';
     }
     return 'unknown';
@@ -1234,6 +1640,16 @@ function grow_calcite(crystal, conditions, step) {
   const Fe_partition = 0.08;
   const trace_Fe = conditions.fluid.Fe * Fe_partition;
 
+  // Provenance tracking — what fraction of Ca came from the wall?
+  const wall = conditions.wall;
+  const total_ca = conditions.fluid.Ca;
+  let ca_wall_fraction = 0.0;
+  let ca_fluid_fraction = 1.0;
+  if (total_ca > 0 && wall.ca_from_wall_total > 0) {
+    ca_wall_fraction = Math.min(wall.ca_from_wall_total / total_ca, 1.0);
+    ca_fluid_fraction = 1.0 - ca_wall_fraction;
+  }
+
   if (conditions.temperature > 200) {
     crystal.habit = 'scalenohedral';
     crystal.dominant_forms = ['v{211} scalenohedron', 'dog-tooth'];
@@ -1245,7 +1661,7 @@ function grow_calcite(crystal, conditions, step) {
     crystal.dominant_forms = ['e{104}', 'possibly nail-head'];
   }
 
-  if (!crystal.twinned && rng.random() < 0.1) {
+  if (!crystal.twinned && rng.random() < 0.01) {
     crystal.twinned = true;
     crystal.twin_law = 'c-twin {001}';
   }
@@ -1253,6 +1669,12 @@ function grow_calcite(crystal, conditions, step) {
   let note = '';
   if (trace_Mn > 1.0 && trace_Fe < 2.0) note = 'Mn-rich zone — will fluoresce orange under UV';
   else if (trace_Mn > 1.0 && trace_Fe > 2.0) note = 'Fe quenching Mn fluorescence — dark CL zone';
+
+  // Provenance note when significant wall-derived material
+  if (ca_wall_fraction > 0.3) {
+    const prov_note = `[${(ca_wall_fraction * 100).toFixed(0)}% recycled wall rock]`;
+    note = note ? `${note} ${prov_note}` : prov_note;
+  }
 
   let fi = false, fi_type = '';
   if (rate > 8 && rng.random() < 0.2) {
@@ -1264,7 +1686,9 @@ function grow_calcite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
-    fluid_inclusion: fi, inclusion_type: fi_type, note
+    fluid_inclusion: fi, inclusion_type: fi_type, note,
+    ca_from_wall: ca_wall_fraction,
+    ca_from_fluid: ca_fluid_fraction,
   });
 }
 
@@ -1287,7 +1711,7 @@ function grow_sphalerite(crystal, conditions, step) {
   else if (Fe_mol_percent > 3) color_note = 'honey/amber';
   else color_note = 'pale yellow (cleiophane — gem quality)';
 
-  if (!crystal.twinned && rng.random() < 0.15) {
+  if (!crystal.twinned && rng.random() < 0.015) {
     crystal.twinned = true;
     crystal.twin_law = 'spinel-law {111}';
   }
@@ -1302,7 +1726,21 @@ function grow_sphalerite(crystal, conditions, step) {
 
 function grow_fluorite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_fluorite();
-  if (sigma < 1.0) return null;
+  if (sigma < 1.0) {
+    // Acid dissolution: CaF₂ + 2HCl → CaCl₂ + 2HF (releases hydrofluoric acid!)
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.12);
+      conditions.fluid.Ca += dissolved_um * 0.4;
+      conditions.fluid.F += dissolved_um * 0.6;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — CaF₂ + 2H⁺ → Ca²⁺ + 2HF (⚠️ releases hydrofluoric acid)`
+      });
+    }
+    return null;
+  }
 
   const excess = sigma - 1.0;
   let rate = 7.0 * excess * rng.uniform(0.8, 1.2);
@@ -1316,7 +1754,7 @@ function grow_fluorite(crystal, conditions, step) {
   else if (conditions.temperature > 200) color = 'colorless';
   else color = 'blue-violet';
 
-  if (!crystal.twinned && rng.random() < 0.08) {
+  if (!crystal.twinned && rng.random() < 0.008) {
     crystal.twinned = true;
     crystal.twin_law = 'penetration twin {111}';
   }
@@ -1388,7 +1826,7 @@ function grow_pyrite(crystal, conditions, step) {
     trace_note += ', Cu traces (may exsolve chalcopyrite inclusions)';
   }
 
-  if (!crystal.twinned && rng.random() < 0.08) {
+  if (!crystal.twinned && rng.random() < 0.008) {
     crystal.twinned = true;
     crystal.twin_law = 'iron cross {110}';
   }
@@ -1436,7 +1874,7 @@ function grow_chalcopyrite(crystal, conditions, step) {
 
   const trace_Cu = conditions.fluid.Cu * 0.1;
 
-  if (!crystal.twinned && rng.random() < 0.12) {
+  if (!crystal.twinned && rng.random() < 0.012) {
     crystal.twinned = true;
     crystal.twin_law = 'penetration twin {112}';
   }
@@ -1449,6 +1887,199 @@ function grow_chalcopyrite(crystal, conditions, step) {
   });
 }
 
+function grow_hematite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_hematite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 3.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.1);
+      conditions.fluid.Fe += dissolved_um * 1.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Fe²⁺ released back to fluid`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  let rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  if (conditions.temperature > 300) {
+    crystal.habit = 'specular';
+    crystal.dominant_forms = ['{001} basal plates', 'metallic platy'];
+  } else if (conditions.temperature > 150) {
+    crystal.habit = 'rhombohedral';
+    crystal.dominant_forms = ['{101} rhombohedron'];
+  } else {
+    if (excess > 0.5) {
+      crystal.habit = 'botryoidal';
+      crystal.dominant_forms = ['kidney-ore texture'];
+    } else {
+      crystal.habit = 'earthy/massive';
+      crystal.dominant_forms = ['microcrystalline aggregate'];
+    }
+  }
+
+  if (crystal.habit === 'specular') crystal.a_width_mm = crystal.c_length_mm * 2.0;
+  else if (crystal.habit === 'botryoidal') crystal.a_width_mm = crystal.c_length_mm * 1.2;
+
+  const trace_Mn = conditions.fluid.Mn * 0.04;
+  const trace_Fe = conditions.fluid.Fe * 0.2;
+
+  if (!crystal.twinned && rng.random() < 0.005) {
+    crystal.twinned = true;
+    crystal.twin_law = 'penetration twin {001}';
+  }
+
+  let color_note;
+  if (crystal.habit === 'specular') {
+    color_note = rng.random() < 0.03 ? 'iridescent (very thin plates — interference colors)' : 'steel-gray metallic';
+  } else if (crystal.habit === 'earthy/massive' || crystal.habit === 'botryoidal') {
+    color_note = 'red earthy';
+  } else {
+    color_note = 'dark gray metallic';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Mn,
+    note: `${crystal.habit} habit, ${color_note}`
+  });
+}
+
+function grow_malachite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_malachite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.15);
+      conditions.fluid.Cu += dissolved_um * 0.8;
+      conditions.fluid.CO3 += dissolved_um * 0.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — fizzing! Cu²⁺ + CO₃²⁻ released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  let rate = 6.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const zone_count = crystal.zones.length;
+  if (zone_count >= 20) {
+    crystal.habit = 'banded';
+    crystal.dominant_forms = ['banded botryoidal', 'concentric layers'];
+  } else if (rate > 8) {
+    crystal.habit = 'fibrous/acicular';
+    crystal.dominant_forms = ['acicular sprays', 'fibrous radiating'];
+  } else {
+    crystal.habit = 'botryoidal';
+    crystal.dominant_forms = ['botryoidal masses', 'mammillary'];
+  }
+
+  if (crystal.habit === 'botryoidal' || crystal.habit === 'banded') {
+    crystal.a_width_mm = crystal.c_length_mm * 1.5;
+  } else if (crystal.habit === 'fibrous/acicular') {
+    crystal.a_width_mm = crystal.c_length_mm * 0.2;
+  }
+
+  // Cu consumption
+  conditions.fluid.Cu -= rate * 0.01;
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu, 0);
+
+  let color_note;
+  if (zone_count >= 20) {
+    color_note = 'banded green (alternating light/dark)';
+  } else if (conditions.fluid.Cu > 30) {
+    color_note = 'vivid green';
+  } else if (conditions.fluid.Cu < 10) {
+    color_note = 'pale green';
+  } else {
+    color_note = 'green';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.01,
+    note: `${crystal.habit}, ${color_note}, Cu fluid: ${conditions.fluid.Cu.toFixed(0)} ppm`
+  });
+}
+
+function grow_uraninite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_uraninite();
+  if (sigma < 1.0) return null;
+
+  const rate = 0.008 * sigma * 1000 * rng.uniform(0.8, 1.2); // scale to µm
+  if (rate < 0.1) return null;
+
+  crystal.habit = 'cubic';
+  crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
+
+  // U consumption
+  conditions.fluid.U -= rate * 0.005;
+  conditions.fluid.U = Math.max(conditions.fluid.U, 0);
+
+  let color_note = 'black to dark green, submetallic luster';
+  if (conditions.temperature > 450) {
+    color_note = 'pitch-black, vitreous to submetallic';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.01,
+    note: `${color_note}, U fluid: ${conditions.fluid.U.toFixed(0)} ppm`
+  });
+}
+
+function grow_galena(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_galena();
+  if (sigma < 1.0) return null;
+
+  let rate = 0.015 * sigma * 1000 * rng.uniform(0.8, 1.2); // scale to µm
+  // Faster at 200-400°C
+  if (conditions.temperature >= 200 && conditions.temperature <= 400) {
+    rate *= 1.2;
+  }
+  if (rate < 0.1) return null;
+
+  crystal.habit = 'cubic';
+  crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
+
+  // Pb and S consumption
+  conditions.fluid.Pb -= rate * 0.005;
+  conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
+  conditions.fluid.S -= rate * 0.003;
+  conditions.fluid.S = Math.max(conditions.fluid.S, 0);
+
+  if (!crystal.twinned && rng.random() < 0.008) {
+    crystal.twinned = true;
+    crystal.twin_law = 'spinel-law {111}';
+  }
+
+  let color_note = 'lead-gray, bright metallic luster';
+  if (conditions.fluid.Ag > 5) {
+    color_note += ', possible Ag inclusions';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.005,
+    note: `${color_note}, Pb fluid: ${conditions.fluid.Pb.toFixed(0)} ppm`
+  });
+}
+
 const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
@@ -1456,6 +2087,10 @@ const MINERAL_ENGINES = {
   fluorite: grow_fluorite,
   pyrite: grow_pyrite,
   chalcopyrite: grow_chalcopyrite,
+  hematite: grow_hematite,
+  malachite: grow_malachite,
+  uraninite: grow_uraninite,
+  galena: grow_galena,
 };
 
 // ============================================================
@@ -1553,7 +2188,7 @@ function scenario_mvt() {
     temperature: 180.0, pressure: 0.3,
     fluid: new FluidChemistry({
       SiO2: 100, Ca: 300, CO3: 250, Fe: 15, Mn: 8,
-      Zn: 0, S: 0, F: 5, pH: 7.2, salinity: 15.0
+      Zn: 0, S: 0, F: 5, Pb: 40, pH: 7.2, salinity: 15.0
     })
   });
   const events = [
@@ -1582,7 +2217,95 @@ function scenario_porphyry() {
   return { conditions, events, defaultSteps: 120 };
 }
 
-const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry };
+function scenario_reactive_wall() {
+  const conditions = new VugConditions({
+    temperature: 140.0, pressure: 0.2,
+    fluid: new FluidChemistry({
+      SiO2: 50, Ca: 250, CO3: 200, Fe: 8, Mn: 5,
+      Zn: 80, S: 60, F: 8, pH: 7.0, salinity: 18.0
+    }),
+    wall: new VugWall({
+      composition: 'limestone',
+      thickness_mm: 500.0,
+      vug_diameter_mm: 40.0,
+      wall_Fe_ppm: 3000.0,
+      wall_Mn_ppm: 800.0,
+    })
+  });
+
+  function acid_pulse_1(cond) {
+    cond.fluid.pH = 3.5;
+    cond.fluid.S += 40.0;
+    cond.fluid.Zn += 60.0;
+    cond.fluid.Fe += 15.0;
+    cond.flow_rate = 4.0;
+    return 'CO₂-saturated brine surges into the vug. pH crashes to 3.5. The limestone walls begin to fizz — carbonate dissolving on contact.';
+  }
+
+  function acid_pulse_2(cond) {
+    cond.fluid.pH = 3.0;
+    cond.fluid.S += 50.0;
+    cond.fluid.Zn += 80.0;
+    cond.fluid.Fe += 25.0;
+    cond.fluid.Mn += 10.0;
+    cond.flow_rate = 5.0;
+    return 'Second acid pulse — stronger than the first. pH drops to 3.0. Metal-bearing brine floods the vug. The walls are being eaten alive, but every Ca²⁺ released is a future growth band waiting to happen.';
+  }
+
+  function acid_pulse_3(cond) {
+    cond.fluid.pH = 4.0;
+    cond.fluid.S += 20.0;
+    cond.fluid.Zn += 30.0;
+    cond.flow_rate = 3.0;
+    return 'Third acid pulse — weaker now. pH only drops to 4.0. The fluid system is exhausting. But the wall still has carbonate to give.';
+  }
+
+  function seal_event(cond) {
+    cond.flow_rate = 0.1;
+    cond.fluid.pH += 0.5;
+    cond.fluid.pH = Math.min(cond.fluid.pH, 8.0);
+    return 'The feeding fracture seals. Flow stops. The vug becomes a closed system. Whatever\'s dissolved will precipitate until equilibrium.';
+  }
+
+  const events = [
+    { step: 15, name: 'First Acid Pulse', description: 'CO₂-saturated brine', apply_fn: acid_pulse_1 },
+    { step: 40, name: 'Second Acid Pulse', description: 'Stronger metal-bearing brine', apply_fn: acid_pulse_2 },
+    { step: 70, name: 'Third Acid Pulse', description: 'Weakening system', apply_fn: acid_pulse_3 },
+    { step: 90, name: 'Fracture Seal', description: 'Flow stops', apply_fn: seal_event },
+  ];
+
+  return { conditions, events, defaultSteps: 120 };
+}
+
+function scenario_radioactive_pegmatite() {
+  const conditions = new VugConditions({
+    temperature: 600.0, pressure: 2.0,
+    fluid: new FluidChemistry({
+      SiO2: 800, Ca: 50, CO3: 20, Fe: 40, Mn: 5,
+      Zn: 0, S: 30, F: 15, Cu: 0, U: 100, Pb: 20,
+      O2: 0, pH: 6.0, salinity: 5.0
+    })
+  });
+  const events = [
+    { step: 30, name: 'Deep Time', description: 'Eons pass — radiation accumulates', apply_fn: (cond) => {
+      return 'Deep time passes. The uraninite sits in its cradle of cooling rock, silently emitting alpha particles. Each decay transmutes one atom of uranium into lead. The quartz growing nearby doesn\'t know it yet, but it\'s darkening.';
+    }},
+    { step: 60, name: 'Oxidizing Fluids', description: 'Late-stage meteoric water', apply_fn: (cond) => {
+      cond.fluid.O2 += 0.8;
+      cond.temperature = Math.max(cond.temperature, 80);
+      cond.flow_rate = 1.5;
+      return 'Oxidizing meteoric fluids seep through fractures. The reducing environment shifts. Sulfides become unstable. The uraninite endures — it has been enduring for millions of years.';
+    }},
+    { step: 90, name: 'Final Cooling', description: 'System approaches ambient', apply_fn: (cond) => {
+      cond.temperature = 50;
+      cond.flow_rate = 0.1;
+      return 'The system cools to near-ambient. What remains is a pegmatite pocket: black uraninite cubes, smoky quartz darkened by radiation, and galena crystallized from the lead that uranium became. Time wrote this assemblage. Chemistry just held the pen.';
+    }},
+  ];
+  return { conditions, events, defaultSteps: 120 };
+}
+
+const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite };
 
 // ============================================================
 // SIMULATION ENGINE
@@ -1624,6 +2347,18 @@ class VugSimulator {
     } else if (mineral === 'chalcopyrite') {
       crystal.habit = 'disphenoidal';
       crystal.dominant_forms = ['{112} disphenoid'];
+    } else if (mineral === 'hematite') {
+      crystal.habit = 'specular';
+      crystal.dominant_forms = ['{001} basal plates'];
+    } else if (mineral === 'malachite') {
+      crystal.habit = 'botryoidal';
+      crystal.dominant_forms = ['botryoidal masses'];
+    } else if (mineral === 'uraninite') {
+      crystal.habit = 'cubic';
+      crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
+    } else if (mineral === 'galena') {
+      crystal.habit = 'cubic';
+      crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
     }
     this.crystals.push(crystal);
     return crystal;
@@ -1684,6 +2419,66 @@ class VugSimulator {
       const c = this.nucleate('chalcopyrite', pos);
       this.log.push(`  ✦ NUCLEATION: Chalcopyrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cp.toFixed(2)})`);
     }
+
+    // Hematite nucleation — needs sigma > 1.2 (harder to nucleate)
+    const sigma_hem = this.conditions.supersaturation_hematite();
+    const existing_hem = this.crystals.filter(c => c.mineral === 'hematite' && c.active);
+    const total_hem = this.crystals.filter(c => c.mineral === 'hematite').length;
+    if (sigma_hem > 1.2 && !existing_hem.length && total_hem < 3) {
+      let pos = 'vug wall';
+      if (existing_quartz.length && rng.random() < 0.4) {
+        pos = `on quartz #${existing_quartz[0].crystal_id}`;
+      }
+      const c = this.nucleate('hematite', pos);
+      this.log.push(`  ✦ NUCLEATION: Hematite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_hem.toFixed(2)})`);
+    }
+
+    // Malachite nucleation — needs sigma > 1.0
+    const sigma_mal = this.conditions.supersaturation_malachite();
+    const existing_mal = this.crystals.filter(c => c.mineral === 'malachite' && c.active);
+    const total_mal = this.crystals.filter(c => c.mineral === 'malachite').length;
+    if (sigma_mal > 1.0 && !existing_mal.length && total_mal < 3) {
+      let pos = 'vug wall';
+      // Preference for chalcopyrite surface (classic oxidation paragenesis!)
+      const dissolving_cp = this.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
+      const active_cp_all = this.crystals.filter(c => c.mineral === 'chalcopyrite');
+      if (dissolving_cp.length && rng.random() < 0.7) {
+        pos = `on chalcopyrite #${dissolving_cp[0].crystal_id}`;
+      } else if (active_cp_all.length && rng.random() < 0.4) {
+        pos = `on chalcopyrite #${active_cp_all[0].crystal_id}`;
+      } else if (existing_hem.length && rng.random() < 0.3) {
+        pos = `on hematite #${existing_hem[0].crystal_id}`;
+      }
+      const c = this.nucleate('malachite', pos);
+      this.log.push(`  ✦ NUCLEATION: Malachite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mal.toFixed(2)})`);
+    }
+
+    // Uraninite nucleation — needs sigma > 1.5, max 3 active / 5 total
+    const sigma_urn = this.conditions.supersaturation_uraninite();
+    const existing_urn = this.crystals.filter(c => c.mineral === 'uraninite' && c.active);
+    const total_urn = this.crystals.filter(c => c.mineral === 'uraninite').length;
+    if (sigma_urn > 1.5 && existing_urn.length < 3 && total_urn < 5) {
+      if (!existing_urn.length || (sigma_urn > 2.5 && rng.random() < 0.3)) {
+        const c = this.nucleate('uraninite', 'vug wall');
+        this.log.push(`  ✦ NUCLEATION: ☢️ Uraninite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_urn.toFixed(2)}) — radioactive!`);
+      }
+    }
+
+    // Galena nucleation — needs sigma > 1.0, max 4 active / 8 total
+    const sigma_gal = this.conditions.supersaturation_galena();
+    const existing_gal = this.crystals.filter(c => c.mineral === 'galena' && c.active);
+    const total_gal = this.crystals.filter(c => c.mineral === 'galena').length;
+    if (sigma_gal > 1.0 && existing_gal.length < 4 && total_gal < 8) {
+      if (!existing_gal.length || (sigma_gal > 2.0 && rng.random() < 0.3)) {
+        let pos = 'vug wall';
+        const existing_sph3 = this.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
+        if (existing_sph3.length && rng.random() < 0.4) {
+          pos = `on sphalerite #${existing_sph3[0].crystal_id}`;
+        }
+        const c = this.nucleate('galena', pos);
+        this.log.push(`  ✦ NUCLEATION: Galena #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_gal.toFixed(2)})`);
+      }
+    }
   }
 
   apply_events() {
@@ -1698,9 +2493,39 @@ class VugSimulator {
     }
   }
 
+  dissolve_wall() {
+    const wall = this.conditions.wall;
+    if (this.conditions.fluid.pH >= 5.5) return;
+
+    const acid_strength = 5.5 - this.conditions.fluid.pH;
+    const pre_sigma_cal = this.conditions.supersaturation_calcite();
+    const pre_Ca = this.conditions.fluid.Ca;
+
+    const result = wall.dissolve(acid_strength, this.conditions.fluid);
+
+    if (result.dissolved) {
+      const post_sigma_cal = this.conditions.supersaturation_calcite();
+
+      this.log.push(`  🧱 WALL DISSOLUTION: ${result.rate_mm.toFixed(2)} mm of ${wall.composition} dissolved`);
+      this.log.push(`     pH ${result.ph_before.toFixed(1)} → ${result.ph_after.toFixed(1)} (carbonate buffering)`);
+      this.log.push(`     Released: Ca²⁺ +${result.ca_released.toFixed(0)} ppm, CO₃²⁻ +${result.co3_released.toFixed(0)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
+      this.log.push(`     Vug diameter: ${result.vug_diameter.toFixed(1)} mm (+${result.total_dissolved.toFixed(1)} mm total enlargement)`);
+
+      if (post_sigma_cal > pre_sigma_cal * 1.3 && post_sigma_cal > 1.0) {
+        this.log.push(`     ⚡ SUPERSATURATION SPIKE: σ(Cal) ${pre_sigma_cal.toFixed(2)} → ${post_sigma_cal.toFixed(2)} — rapid calcite growth expected!`);
+      }
+    }
+  }
+
   ambient_cooling(rate = 1.5) {
     this.conditions.temperature -= rate * rng.uniform(0.8, 1.2);
     this.conditions.temperature = Math.max(this.conditions.temperature, 25);
+
+    // pH recovery toward carbonate-buffered equilibrium when not being actively acidified
+    if (this.conditions.fluid.pH < 6.5 && this.conditions.flow_rate < 2.0) {
+      this.conditions.fluid.pH += 0.1;
+    }
+
     if (this.conditions.flow_rate > 1.0) this.conditions.flow_rate *= 0.9;
     const active_quartz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
     if (active_quartz.length) {
@@ -1729,6 +2554,7 @@ class VugSimulator {
     this.log = [];
     this.step++;
     this.apply_events();
+    this.dissolve_wall();
     this.check_nucleation();
     for (const crystal of this.crystals) {
       if (!crystal.active) continue;
@@ -1744,6 +2570,40 @@ class VugSimulator {
         }
       }
     }
+    // ---- Radiation damage processing ----
+    const active_uraninite = this.crystals.filter(c => c.mineral === 'uraninite' && c.active);
+    if (active_uraninite.length) {
+      if (!this.radiation_dose) this.radiation_dose = 0;
+      if (!this._smoky_logged) this._smoky_logged = false;
+      if (!this._metamict_logged) this._metamict_logged = false;
+
+      for (const u_crystal of active_uraninite) {
+        const u_size = u_crystal.c_length_mm;
+        // Uraninite produces Pb into fluid via radioactive decay
+        this.conditions.fluid.Pb += 0.1 * u_size;
+        this.radiation_dose += 0.01 * u_size;
+
+        // Radiation damages all OTHER crystals
+        for (const other of this.crystals) {
+          if (other === u_crystal || !other.active) continue;
+          if (!other.radiation_damage) other.radiation_damage = 0;
+          other.radiation_damage += 0.02 * u_size;
+
+          // Smoky quartz check
+          if (other.mineral === 'quartz' && other.radiation_damage > 0.3 && !this._smoky_logged) {
+            this.log.push(`  ☢️ Quartz #${other.crystal_id} is turning smoky — radiation damage from nearby uraninite is displacing Al³⁺ in the lattice, creating color centers`);
+            this._smoky_logged = true;
+          }
+
+          // Metamictization check
+          if (other.radiation_damage > 0.8 && !this._metamict_logged) {
+            this.log.push(`  ☢️ ${capitalize(other.mineral)} #${other.crystal_id} is becoming metamict — alpha radiation is destroying the crystal lattice`);
+            this._metamict_logged = true;
+          }
+        }
+      }
+    }
+
     this.ambient_cooling();
     return this.log;
   }
@@ -1752,7 +2612,11 @@ class VugSimulator {
     const c = this.conditions;
     const sigma_q = c.supersaturation_quartz();
     const sigma_c = c.supersaturation_calcite();
-    return `═══ Step ${String(this.step).padStart(3)} │ T=${this.conditions.temperature.toFixed(1).padStart(6)}°C │ P=${c.pressure.toFixed(2)} kbar │ pH=${c.fluid.pH.toFixed(1)} │ σ(Qz)=${sigma_q.toFixed(2)} σ(Cal)=${sigma_c.toFixed(2)} │ Fluid: ${c.fluid.describe()}`;
+    let wall_info = '';
+    if (c.wall.total_dissolved_mm > 0) {
+      wall_info = ` │ Vug: ${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+    }
+    return `═══ Step ${String(this.step).padStart(3)} │ T=${this.conditions.temperature.toFixed(1).padStart(6)}°C │ P=${c.pressure.toFixed(2)} kbar │ pH=${c.fluid.pH.toFixed(1)} │ σ(Qz)=${sigma_q.toFixed(2)} σ(Cal)=${sigma_c.toFixed(2)}${wall_info} │ Fluid: ${c.fluid.describe()}`;
   }
 
   format_summary() {
@@ -1761,6 +2625,19 @@ class VugSimulator {
     lines.push('═'.repeat(70));
     lines.push('FINAL VUG INVENTORY');
     lines.push('═'.repeat(70));
+
+    // Vug wall stats if dissolution occurred
+    const w = this.conditions.wall;
+    if (w.total_dissolved_mm > 0) {
+      const orig_diam = w.vug_diameter_mm - w.total_dissolved_mm * 2;
+      lines.push('');
+      lines.push('VUG CAVITY');
+      lines.push(`  Host rock: ${w.composition}`);
+      lines.push(`  Original diameter: ${orig_diam.toFixed(0)} mm`);
+      lines.push(`  Final diameter: ${w.vug_diameter_mm.toFixed(0)} mm`);
+      lines.push(`  Total wall dissolved: ${w.total_dissolved_mm.toFixed(1)} mm`);
+      lines.push('  The acid made the room. The room grew the crystals.');
+    }
 
     for (const c of this.crystals) {
       lines.push('');
@@ -1778,6 +2655,24 @@ class VugSimulator {
       }
       if (c.twinned) lines.push(`  Twinning: ${c.twin_law}`);
       if (c.dissolved) lines.push(`  Note: partially dissolved (late-stage undersaturation)`);
+      if (c.phantom_count > 0) {
+        lines.push(`  Phantom boundaries: ${c.phantom_count} (dissolution surfaces preserved inside crystal)`);
+      }
+
+      // Provenance (for calcite with wall dissolution)
+      if (c.mineral === 'calcite' && c.zones.length) {
+        const wall_zones = c.zones.filter(z => z.ca_from_wall > 0.1);
+        if (wall_zones.length) {
+          const avg_wall = wall_zones.reduce((s, z) => s + z.ca_from_wall, 0) / wall_zones.length;
+          const max_wall = Math.max(...wall_zones.map(z => z.ca_from_wall));
+          lines.push(`  Provenance: ${wall_zones.length}/${c.zones.length} zones contain wall-derived Ca²⁺`);
+          lines.push(`    Average wall contribution: ${(avg_wall * 100).toFixed(0)}%, peak: ${(max_wall * 100).toFixed(0)}%`);
+          const first_wall_zone = c.zones.find(z => z.ca_from_wall > 0.1);
+          if (first_wall_zone) {
+            lines.push(`    Wall-derived Ca first appears at step ${first_wall_zone.step} (T=${first_wall_zone.temperature.toFixed(0)}°C)`);
+          }
+        }
+      }
 
       const fl = c.predict_fluorescence();
       if (fl !== 'non-fluorescent') lines.push(`  Predicted UV fluorescence: ${fl}`);
@@ -1829,8 +2724,14 @@ class VugSimulator {
     else if (start_T > 150) setting = 'moderate-temperature hydrothermal';
     else setting = 'low-temperature';
 
+    let vug_growth = '';
+    if (this.conditions.wall.total_dissolved_mm > 0) {
+      const w = this.conditions.wall;
+      vug_growth = ` The cavity itself expanded from ${(w.vug_diameter_mm - w.total_dissolved_mm * 2).toFixed(0)}mm to ${w.vug_diameter_mm.toFixed(0)}mm diameter as acid pulses dissolved ${w.total_dissolved_mm.toFixed(1)}mm of the ${w.composition} host rock.`;
+    }
+
     paragraphs.push(
-      `This vug records a ${setting} crystallization history beginning at ${start_T.toFixed(0)}°C. ${this.crystals.length} crystals grew across ${this.step} time steps, producing an assemblage of ${mineral_names.join(', ')}.`
+      `This vug records a ${setting} crystallization history beginning at ${start_T.toFixed(0)}°C. ${this.crystals.length} crystals grew across ${this.step} time steps, producing an assemblage of ${mineral_names.join(', ')}.${vug_growth}`
     );
 
     const first_step = Math.min(...this.crystals.map(c => c.nucleation_step));
@@ -1892,7 +2793,57 @@ class VugSimulator {
       else if (c.mineral === 'fluorite') story = this._narrate_fluorite(c);
       else if (c.mineral === 'pyrite') story = this._narrate_pyrite(c);
       else if (c.mineral === 'chalcopyrite') story = this._narrate_chalcopyrite(c);
+      else if (c.mineral === 'hematite') story = this._narrate_hematite(c);
+      else if (c.mineral === 'malachite') story = this._narrate_malachite(c);
+      else if (c.mineral === 'uraninite') story = `Uraninite #${c.crystal_id}: ${c.describe_morphology()}. Dense, black, radioactive. Each atom of U-238 is a clock counting down to lead.`;
+      else if (c.mineral === 'galena') story = `Galena #${c.crystal_id}: ${c.describe_morphology()}. Lead-gray with bright metallic luster. Perfect cubic cleavage — break it and you get smaller cubes.`;
       if (story && !first_minerals.includes(c)) paragraphs.push(story);
+    }
+
+    // Phantom growth narrative
+    const phantom_crystals = this.crystals.filter(c => c.phantom_count > 0);
+    for (const c of phantom_crystals) {
+      if (c.phantom_count >= 2) {
+        paragraphs.push(
+          `${capitalize(c.mineral)} #${c.crystal_id} shows ${c.phantom_count} phantom boundaries — internal surfaces where acid dissolved the crystal before new growth covered the damage. Each phantom preserves the shape of the crystal at the moment the acid arrived. In a polished section, these appear as ghost outlines nested inside the final crystal — the crystal's autobiography, written in dissolution and regrowth.`
+        );
+      } else if (c.phantom_count === 1) {
+        paragraphs.push(
+          `${capitalize(c.mineral)} #${c.crystal_id} contains a single phantom surface — a dissolution boundary where the crystal was partially eaten and then regrew over the wound. The phantom preserves the crystal's earlier shape as a ghost outline inside the final form.`
+        );
+      }
+    }
+
+    // Provenance narrative for calcite
+    for (const c of this.crystals) {
+      if (c.mineral === 'calcite' && c.zones.length) {
+        const wall_zones = c.zones.filter(z => z.ca_from_wall > 0.3);
+        const fluid_zones = c.zones.filter(z => z.ca_from_wall < 0.1 && z.thickness_um > 0);
+        if (wall_zones.length && fluid_zones.length) {
+          paragraphs.push(
+            `The calcite tells two stories in one crystal. Early growth zones are built from the original fluid — Ca²⁺ that traveled through the basin. Later zones are built from recycled wall rock — limestone that was dissolved by acid and reprecipitated. The trace element signature shifts at the boundary: wall-derived zones carry the host rock's Fe and Mn signature, distinct from the fluid-derived zones. A microprobe traverse across this crystal would show the moment the vug started eating itself to feed its children.`
+          );
+        }
+      }
+    }
+
+    // Radiation narrative
+    if (this.radiation_dose > 0) {
+      const smoky_crystals = this.crystals.filter(c => c.mineral === 'quartz' && c.radiation_damage > 0.3);
+      const metamict_crystals = this.crystals.filter(c => c.radiation_damage > 0.8);
+      let rad_text = `☢️ Radiation has left its mark on this vug. Total accumulated dose: ${this.radiation_dose.toFixed(2)}.`;
+      if (smoky_crystals.length) {
+        rad_text += ` ${smoky_crystals.length} quartz crystal${smoky_crystals.length > 1 ? 's have' : ' has'} turned smoky — aluminum impurities in the lattice were knocked loose by alpha particles from nearby uraninite, creating the color centers that give smoky quartz its signature darkness.`;
+      }
+      if (metamict_crystals.length) {
+        rad_text += ` ${metamict_crystals.length} crystal${metamict_crystals.length > 1 ? 's have' : ' has'} become metamict — the crystal structure itself is destroyed by accumulated radiation damage, leaving an amorphous glass where ordered atoms once stood.`;
+      }
+      const uraninite_crystals = this.crystals.filter(c => c.mineral === 'uraninite');
+      const galena_from_decay = this.crystals.filter(c => c.mineral === 'galena');
+      if (uraninite_crystals.length && galena_from_decay.length) {
+        rad_text += ` The galena in this assemblage crystallized in part from lead produced by uraninite decay — U-238 → Pb-206, the same chain used to date the age of rocks.`;
+      }
+      paragraphs.push(rad_text);
     }
 
     paragraphs.push(this._narrate_collectors_view());
@@ -2027,6 +2978,41 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_hematite(c) {
+    const parts = [`Hematite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.habit === 'specular') {
+      parts.push('The high temperature produced specular hematite — brilliant metallic plates that flash like mirrors. The thin {001} basal plates grew parallel, creating the characteristic iron rose texture.');
+      if (c.zones && c.zones.some(z => z.note && z.note.includes('iridescent'))) {
+        parts.push('Some plates are thin enough to show iridescent interference colors — rainbow hematite, a collector favorite.');
+      }
+    } else if (c.habit === 'rhombohedral') {
+      parts.push('Moderate temperatures produced rhombohedral hematite — sharp-edged crystals with {101} faces, dark metallic gray with a red streak.');
+    } else if (c.habit === 'botryoidal') {
+      parts.push('Low-temperature growth produced botryoidal hematite — kidney-ore texture with smooth, rounded surfaces. Classic kidney iron ore mined since antiquity.');
+    } else if (c.habit === 'earthy/massive') {
+      parts.push('Low supersaturation produced earthy, massive hematite — red microcrystalline aggregate. The red ochre pigment humans have used for 100,000 years.');
+    }
+    if (c.twinned) parts.push(`Shows a rare ${c.twin_law}.`);
+    if (c.dissolved) parts.push('Late-stage acid attack dissolved some of the hematite, releasing iron back to the fluid.');
+    return parts.join(' ');
+  }
+
+  _narrate_malachite(c) {
+    const parts = [`Malachite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.position.includes('chalcopyrite')) {
+      parts.push('It nucleated directly on chalcopyrite — the classic oxidation paragenesis. As oxygenated water attacked the copper sulfide, Cu²⁺ combined with carbonate to form malachite. This is the green stain that led ancient prospectors to copper deposits.');
+    }
+    if (c.habit === 'banded') {
+      parts.push('The crystal developed the famous banded texture — concentric layers of alternating light and dark green, prized in decorative stonework since the Bronze Age.');
+    } else if (c.habit === 'botryoidal') {
+      parts.push('Botryoidal habit — smooth, rounded green masses. Cross-sections would reveal concentric banding.');
+    } else if (c.habit === 'fibrous/acicular') {
+      parts.push('Rapid growth produced fibrous, acicular malachite — sprays of needle-like green crystals radiating from nucleation points.');
+    }
+    if (c.dissolved) parts.push('Acid attack dissolved some malachite — it fizzes in acid like calcite, releasing Cu²⁺ and CO₂.');
+    return parts.join(' ');
+  }
+
   _narrate_mixing_event(batch, event) {
     const mineral_names = new Set(batch.map(c => c.mineral));
     const parts = [];
@@ -2105,6 +3091,37 @@ class VugSimulator {
         desc += ' — brassy yellow, greenish tint';
         if (c.dissolved) desc += ', oxidation rind (green Cu carbonate staining)';
         parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'hematite') {
+        let desc;
+        if (c.habit === 'specular') {
+          desc = `a ${c.c_length_mm.toFixed(1)}mm specular hematite`;
+          if (c.zones.some(z => z.note && z.note.includes('iridescent'))) {
+            desc += ' — iridescent rainbow plates';
+          } else {
+            desc += ' — brilliant metallic silver-black plates';
+          }
+        } else if (c.habit === 'botryoidal') {
+          desc = `a ${c.c_length_mm.toFixed(1)}mm botryoidal hematite — kidney-ore, dark metallic`;
+        } else if (c.habit === 'rhombohedral') {
+          desc = `a ${c.c_length_mm.toFixed(1)}mm rhombohedral hematite — sharp dark crystals`;
+        } else {
+          desc = 'earthy red hematite mass';
+        }
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        if (c.dissolved) desc += ', partially dissolved';
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'malachite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm malachite`;
+        if (c.habit === 'banded') {
+          desc += ' — banded green, concentric layers';
+        } else if (c.habit === 'fibrous/acicular') {
+          desc += ' — sprays of acicular green needles';
+        } else {
+          desc += ' — botryoidal green masses';
+        }
+        if (c.dissolved) desc += ', partially dissolved (acid attack)';
+        if (c.position.includes('chalcopyrite')) desc += ' (on chalcopyrite — oxidation paragenesis)';
+        parts.push(`  • ${desc}`);
       }
     }
 
@@ -2153,7 +3170,7 @@ function runSimulation() {
 
   for (let s = 0; s < totalSteps; s++) {
     const log = sim.run_step();
-    const show = (s % 5 === 0) || log.some(l => l.includes('EVENT') || l.includes('NUCLEATION'));
+    const show = (s % 5 === 0) || log.some(l => l.includes('EVENT') || l.includes('NUCLEATION') || l.includes('🧱'));
     if (show && log.length) {
       allLines.push(sim.format_header());
       for (const line of log) allLines.push(line);
@@ -2244,7 +3261,8 @@ function displayLines(lines) {
     const span = document.createElement('div');
     span.textContent = line;
 
-    if (line.includes('⚡')) span.className = 'line-event';
+    if (line.includes('🧱')) span.className = 'line-wall';
+    else if (line.includes('⚡')) span.className = 'line-event';
     else if (line.includes('✦')) span.className = 'line-nucleation';
     else if (line.includes('═══ Step') || line.startsWith('═')) span.className = 'line-header';
     else if (line.includes('⬇') || line.includes('DISSOLUTION')) span.className = 'line-dissolution';
@@ -2334,6 +3352,16 @@ const FLUID_PRESETS = {
     label: 'Copper Porphyry',
     desc: 'Cu-Fe-S bearing magmatic fluid (Cu 100, Fe 40, S 80 ppm), reducing. Pyrite + chalcopyrite potential.',
     fluid: { SiO2: 500, Ca: 80, CO3: 50, Fe: 40, Mn: 2, Ti: 0.5, Al: 3, F: 5, Zn: 0, S: 80, Cu: 100, O2: 0.2, pH: 4.5, salinity: 10.0 }
+  },
+  oxidized_cu: {
+    label: 'Oxidized Copper',
+    desc: 'Cu-bearing oxidized fluid (Cu 60, Fe 40, O₂ 1.5), CO₃-rich. Malachite + hematite potential. Low temperature favored.',
+    fluid: { SiO2: 100, Ca: 150, CO3: 200, Fe: 40, Mn: 3, Ti: 0.2, Al: 1, F: 5, Zn: 0, S: 5, Cu: 60, O2: 1.5, pH: 6.0, salinity: 5.0 }
+  },
+  radioactive: {
+    label: 'Radioactive Pegmatite',
+    desc: 'U-bearing pegmatite: high silica, uranium-rich. Uraninite crystallizes first, quartz grows around it, radiation darkens quartz over deep time. ☢️',
+    fluid: { SiO2: 800, Ca: 50, CO3: 20, Fe: 40, Mn: 5, Ti: 0.5, Al: 3, F: 15, Zn: 0, S: 30, Cu: 0, U: 100, Pb: 20, O2: 0, pH: 6.0, salinity: 5.0 }
   }
 };
 
@@ -2358,6 +3386,10 @@ function selectPreset(preset) {
   document.getElementById('f-cu-val').textContent = f.Cu + ' ppm';
   document.getElementById('f-s').value = f.S;
   document.getElementById('f-s-val').textContent = f.S + ' ppm';
+  document.getElementById('f-u').value = f.U || 0;
+  document.getElementById('f-u-val').textContent = (f.U || 0) + ' ppm';
+  document.getElementById('f-pb').value = f.Pb || 0;
+  document.getElementById('f-pb-val').textContent = (f.Pb || 0) + ' ppm';
   document.getElementById('f-ph').value = Math.round(f.pH * 10);
   document.getElementById('f-ph-val').textContent = f.pH.toFixed(1);
 }
@@ -2372,9 +3404,20 @@ function fortressBegin() {
   fluidParams.Mn = parseFloat(document.getElementById('f-mn').value);
   fluidParams.Cu = parseFloat(document.getElementById('f-cu').value);
   fluidParams.S = parseFloat(document.getElementById('f-s').value);
+  fluidParams.U = parseFloat(document.getElementById('f-u').value);
+  fluidParams.Pb = parseFloat(document.getElementById('f-pb').value);
   fluidParams.pH = parseFloat(document.getElementById('f-ph').value) / 10;
   const fluid = new FluidChemistry(fluidParams);
-  const conditions = new VugConditions({ temperature: temp, pressure, fluid });
+
+  // Initialize wall based on preset
+  let wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50, wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000 };
+  if (selectedPreset === 'mvt') {
+    wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 40, wall_Fe_ppm: 3000, wall_Mn_ppm: 800, wall_Mg_ppm: 1000 };
+  } else if (selectedPreset === 'carbonate') {
+    wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 30, wall_Fe_ppm: 1500, wall_Mn_ppm: 600, wall_Mg_ppm: 800 };
+  }
+  const wall = new VugWall(wallOpts);
+  const conditions = new VugConditions({ temperature: temp, pressure, fluid, wall });
 
   rng = new SeededRandom(Date.now());
   fortressSim = new VugSimulator(conditions, []);
@@ -2406,6 +3449,7 @@ function fortressBegin() {
 
   updateFortressStatus();
   updateFortressInventory();
+  syncBrothSliders();
 }
 
 function fortressStep(action) {
@@ -2415,6 +3459,16 @@ function fortressStep(action) {
   let actionDesc = '';
 
   // Apply action modifications BEFORE running the step
+  // Apply current broth slider values to sim state before processing
+  // (sliders are live-bound, so this is already done via oninput,
+  //  but ensure any manual slider changes are captured)
+  if (fortressSim) {
+    for (const [key, m] of Object.entries(BROTH_MAP)) {
+      const slider = document.getElementById('broth-' + key);
+      if (slider) m.set(m.parse(slider.value));
+    }
+  }
+
   switch (action) {
     case 'wait':
       actionDesc = '⏳ Waiting — ambient cooling';
@@ -2474,7 +3528,7 @@ function fortressStep(action) {
       c.temperature += 15;
       // Force twinning check on existing crystals
       for (const crystal of fortressSim.crystals) {
-        if (!crystal.twinned && crystal.zones.length > 2 && rng.random() < 0.4) {
+        if (!crystal.twinned && crystal.zones.length > 2 && rng.random() < 0.15) {
           crystal.twinned = true;
           if (crystal.mineral === 'quartz') crystal.twin_law = 'Dauphiné';
           else if (crystal.mineral === 'calcite') crystal.twin_law = 'c-twin {001}';
@@ -2482,6 +3536,8 @@ function fortressStep(action) {
           else if (crystal.mineral === 'fluorite') crystal.twin_law = 'penetration twin {111}';
           else if (crystal.mineral === 'pyrite') crystal.twin_law = 'iron cross {110}';
           else if (crystal.mineral === 'chalcopyrite') crystal.twin_law = 'penetration twin {112}';
+          else if (crystal.mineral === 'hematite') crystal.twin_law = 'penetration twin {001}';
+          // malachite doesn't twin visibly
         }
       }
       actionDesc = '🌋 Tectonic shock — P +0.5 kbar, T +15°C. Crystals stressed!';
@@ -2502,19 +3558,25 @@ function fortressStep(action) {
       break;
   }
 
-  // Run one step
-  const log = fortressSim.run_step();
-
-  // Build output
   const logEl = document.getElementById('fortress-log');
   const lines = [];
-  lines.push('');
-  lines.push(`── ${actionDesc}`);
-  lines.push(fortressSim.format_header());
-  if (log.length) {
-    for (const l of log) lines.push(l);
+
+  if (action === 'wait') {
+    // ONLY Wait advances time — all other buttons just modify conditions
+    const log = fortressSim.run_step();
+    lines.push('');
+    lines.push(`── ⏳ Step ${fortressSim.step}`);
+    lines.push(fortressSim.format_header());
+    if (log.length) {
+      for (const l of log) lines.push(l);
+    } else {
+      lines.push('  (no growth or events this step)');
+    }
+    updateFortressInventory();
   } else {
-    lines.push('  (no growth or events this step)');
+    // Non-wait actions: modify conditions but DON'T advance time
+    // Log what changed so the player can stack multiple changes
+    lines.push(`  ⚙️ ${actionDesc}`);
   }
 
   lines.forEach(line => {
@@ -2524,13 +3586,14 @@ function fortressStep(action) {
 
   logEl.scrollTop = logEl.scrollHeight;
   updateFortressStatus();
-  updateFortressInventory();
+  syncBrothSliders();
 }
 
 function appendFortressLine(container, line) {
   const span = document.createElement('div');
   span.textContent = line;
-  if (line.includes('⚡')) span.className = 'line-event';
+  if (line.includes('🧱')) span.className = 'line-wall';
+  else if (line.includes('⚡')) span.className = 'line-event';
   else if (line.includes('✦')) span.className = 'line-nucleation';
   else if (line.includes('═══ Step') || (line.startsWith('═') && line.length > 5)) span.className = 'line-header';
   else if (line.includes('⬇') || line.includes('DISSOLUTION')) span.className = 'line-dissolution';
@@ -2547,6 +3610,24 @@ function updateFortressStatus() {
   document.getElementById('f-stat-ph').textContent = c.fluid.pH.toFixed(1);
   document.getElementById('f-stat-flow').textContent = c.flow_rate.toFixed(1);
 
+  // Show vug diameter when dissolution has occurred
+  const vugContainer = document.getElementById('f-stat-vug-container');
+  if (c.wall.total_dissolved_mm > 0) {
+    vugContainer.style.display = '';
+    document.getElementById('f-stat-vug').textContent = `${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+  } else {
+    vugContainer.style.display = 'none';
+  }
+
+  // Show radiation dose when uraninite present
+  const radContainer = document.getElementById('f-stat-radiation-container');
+  if (fortressSim.radiation_dose > 0) {
+    radContainer.style.display = '';
+    document.getElementById('f-stat-radiation').textContent = `☢️ ${fortressSim.radiation_dose.toFixed(2)}`;
+  } else {
+    radContainer.style.display = 'none';
+  }
+
   // Supersaturation indicators
   const satBar = document.getElementById('f-sat-bar');
   satBar.innerHTML = '';
@@ -2558,6 +3639,10 @@ function updateFortressStatus() {
     { name: 'Sphalerite', sigma: c.supersaturation_sphalerite() },
     { name: 'Pyrite', sigma: c.supersaturation_pyrite() },
     { name: 'Chalcopyrite', sigma: c.supersaturation_chalcopyrite() },
+    { name: 'Hematite', sigma: c.supersaturation_hematite() },
+    { name: 'Malachite', sigma: c.supersaturation_malachite() },
+    { name: '☢️ Uraninite', sigma: c.supersaturation_uraninite() },
+    { name: 'Galena', sigma: c.supersaturation_galena() },
   ];
 
   for (const m of minerals) {
@@ -2728,6 +3813,20 @@ function fortressReset() {
   fortressSim = null;
   fortressActive = false;
   fortressLogLines = [];
+  brothSnapshots = [];
+
+  // Reset broth panel
+  const brothToggle = document.getElementById('broth-toggle');
+  const brothBody = document.getElementById('broth-body');
+  if (brothToggle) brothToggle.classList.remove('open');
+  if (brothBody) brothBody.classList.remove('open');
+  // Clear snapshot buttons (keep the 📸 button)
+  const snapRow = document.getElementById('broth-snapshots');
+  if (snapRow) {
+    const firstBtn = snapRow.querySelector('.broth-snapshot-btn');
+    snapRow.innerHTML = '';
+    if (firstBtn) snapRow.appendChild(firstBtn);
+  }
 
   // Reset UI
   document.getElementById('fortress-setup').style.display = 'block';
@@ -2768,6 +3867,97 @@ function copyFortressLog() {
     document.execCommand('copy');
     document.body.removeChild(ta);
   });
+}
+
+// ============================================================
+// BROTH CONTROL PANEL
+// ============================================================
+
+let brothSnapshots = [];
+
+function toggleBrothPanel() {
+  const toggle = document.getElementById('broth-toggle');
+  const body = document.getElementById('broth-body');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// Map slider ids to sim state paths
+const BROTH_MAP = {
+  temp:  { get: () => fortressSim.conditions.temperature,     set: v => fortressSim.conditions.temperature = v,     fmt: v => v.toFixed(0) + ' °C',  parse: v => parseFloat(v) },
+  sio2:  { get: () => fortressSim.conditions.fluid.SiO2,      set: v => fortressSim.conditions.fluid.SiO2 = v,      fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  ca:    { get: () => fortressSim.conditions.fluid.Ca,         set: v => fortressSim.conditions.fluid.Ca = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  co3:   { get: () => fortressSim.conditions.fluid.CO3,        set: v => fortressSim.conditions.fluid.CO3 = v,        fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  ph:    { get: () => fortressSim.conditions.fluid.pH,         set: v => fortressSim.conditions.fluid.pH = v,         fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
+  fe:    { get: () => fortressSim.conditions.fluid.Fe,         set: v => fortressSim.conditions.fluid.Fe = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  mn:    { get: () => fortressSim.conditions.fluid.Mn,         set: v => fortressSim.conditions.fluid.Mn = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  cu:    { get: () => fortressSim.conditions.fluid.Cu,         set: v => fortressSim.conditions.fluid.Cu = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  zn:    { get: () => fortressSim.conditions.fluid.Zn,         set: v => fortressSim.conditions.fluid.Zn = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  s:     { get: () => fortressSim.conditions.fluid.S,          set: v => fortressSim.conditions.fluid.S = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  f:     { get: () => fortressSim.conditions.fluid.F,          set: v => fortressSim.conditions.fluid.F = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  o2:    { get: () => fortressSim.conditions.fluid.O2,         set: v => fortressSim.conditions.fluid.O2 = v,         fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
+  flow:  { get: () => fortressSim.conditions.flow_rate,        set: v => fortressSim.conditions.flow_rate = v,        fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
+  u:     { get: () => fortressSim.conditions.fluid.U,          set: v => fortressSim.conditions.fluid.U = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  pb:    { get: () => fortressSim.conditions.fluid.Pb,         set: v => fortressSim.conditions.fluid.Pb = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+};
+
+function setBrothValue(key, sliderVal) {
+  if (!fortressSim || !fortressActive) return;
+  const m = BROTH_MAP[key];
+  const realVal = m.parse(sliderVal);
+  m.set(realVal);
+  document.getElementById('broth-' + key + '-val').textContent = m.fmt(realVal);
+  // Also update the status bar live
+  updateFortressStatus();
+}
+
+function syncBrothSliders() {
+  if (!fortressSim) return;
+  for (const [key, m] of Object.entries(BROTH_MAP)) {
+    const val = m.get();
+    const sliderVal = m.toSlider ? m.toSlider(val) : Math.round(val);
+    const slider = document.getElementById('broth-' + key);
+    if (slider) {
+      // Clamp to slider range
+      const clamped = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), sliderVal));
+      slider.value = clamped;
+    }
+    const valEl = document.getElementById('broth-' + key + '-val');
+    if (valEl) valEl.textContent = m.fmt(val);
+  }
+}
+
+function takeBrothSnapshot() {
+  if (!fortressSim) return;
+  const name = prompt('Name this broth snapshot:', 'Step ' + fortressSim.step);
+  if (!name) return;
+
+  const snapshot = { name };
+  for (const [key, m] of Object.entries(BROTH_MAP)) {
+    snapshot[key] = m.get();
+  }
+  brothSnapshots.push(snapshot);
+
+  // Add button to snapshot row
+  const row = document.getElementById('broth-snapshots');
+  const btn = document.createElement('button');
+  btn.className = 'broth-preset-btn';
+  btn.textContent = name;
+  btn.title = 'Restore: ' + name;
+  const idx = brothSnapshots.length - 1;
+  btn.onclick = () => restoreBrothSnapshot(idx);
+  row.appendChild(btn);
+}
+
+function restoreBrothSnapshot(idx) {
+  if (!fortressSim || !fortressActive) return;
+  const snap = brothSnapshots[idx];
+  if (!snap) return;
+  for (const [key, m] of Object.entries(BROTH_MAP)) {
+    if (snap[key] !== undefined) m.set(snap[key]);
+  }
+  syncBrothSliders();
+  updateFortressStatus();
 }
 
 // Handle Escape key for zone modal
