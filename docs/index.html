@@ -1382,9 +1382,9 @@ Scenarios:
           oninput="grooveUpdateDensity(this.value)">
         <div class="groove-speed-val" id="groove-density-val">1 rev / 10 steps</div>
         <label>Wobble amplitude</label>
-        <input type="range" id="groove-amplitude" min="5" max="60" value="25" step="1"
+        <input type="range" id="groove-amplitude" min="5" max="80" value="40" step="1"
           oninput="grooveUpdateAmplitude(this.value)">
-        <div class="groove-speed-val" id="groove-amplitude-val">25 px</div>
+        <div class="groove-speed-val" id="groove-amplitude-val">40 px</div>
         <div class="groove-play-btns">
           <button id="groove-play-btn" onclick="grooveTogglePlay()">▶ Play</button>
           <button onclick="grooveReset()">⏮ Reset</button>
@@ -4312,7 +4312,7 @@ let grooveAnimFrame = null;
 let grooveProgress = 0; // 0..1 (fraction of zones drawn)
 let grooveSpeed = 8; // zones per second
 let grooveDensity = 10; // steps per revolution
-let grooveAmplitude = 25; // max wobble in px
+let grooveAmplitude = 40; // max wobble in px
 let grooveLastTime = 0;
 let groovePoints = []; // precomputed [{x,y,zone,angle,radius}]
 
@@ -4449,19 +4449,26 @@ function grooveComputePoints() {
     const baseRadius = minRadius + t * (maxRadius - minRadius);
     const angle = (i / stepsPerRev) * Math.PI * 2;
 
-    // Compute wobble: sum of normalized parameters projected onto their axis angles
+    // Compute wobble: each parameter modulates radius independently
+    // based on which "sector" of the spiral we're in (angle mod axes)
     const nAxes = GROOVE_AXES.length;
-    let wobbleX = 0, wobbleY = 0;
     const vals = [nTemp[i], nThick[i], nFe[i], nMn[i], nAl[i], nTi[i]];
+
+    // Method: composite wobble from all parameters
+    // Each axis contributes a sine wave at its own frequency,
+    // amplitude proportional to that parameter's normalized value.
+    // This creates a complex waveform — the "sound" of the crystal.
+    let wobbleR = 0;
     for (let a = 0; a < nAxes; a++) {
-      const axisAngle = (a / nAxes) * Math.PI * 2;
-      const v = vals[a] * grooveAmplitude;
-      wobbleX += Math.cos(axisAngle) * v;
-      wobbleY += Math.sin(axisAngle) * v;
+      // Each axis oscillates at a different frequency along the spiral
+      const freq = a + 1; // frequencies 1,2,3,4,5,6
+      const phase = (a / nAxes) * Math.PI * 2;
+      // Deviation from 0.5 (center) — amplifies CHANGE, not absolute value
+      const deviation = (vals[a] - 0.5) * 2; // range -1 to 1
+      wobbleR += deviation * Math.sin(angle * freq + phase) * grooveAmplitude * 0.4;
     }
-    // Average to prevent over-wobble
-    wobbleX /= nAxes;
-    wobbleY /= nAxes;
+    const wobbleX = wobbleR * Math.cos(angle + Math.PI / 2);
+    const wobbleY = wobbleR * Math.sin(angle + Math.PI / 2);
 
     // Dissolution zones dip inward
     let dissolutionDip = 0;
@@ -4512,12 +4519,8 @@ function grooveDraw() {
   }
   ctx.globalAlpha = 1.0;
 
-  // Draw the groove path up to current progress
+  // Draw the groove path up to current progress — segment by segment with color
   if (drawUpTo >= 2) {
-    // Build the path using Catmull-Rom → Bezier conversion for smoothness
-    ctx.beginPath();
-    ctx.moveTo(groovePoints[0].x, groovePoints[0].y);
-
     for (let i = 0; i < drawUpTo - 1; i++) {
       const p0 = groovePoints[Math.max(0, i - 1)];
       const p1 = groovePoints[i];
@@ -4531,15 +4534,30 @@ function grooveDraw() {
       const cp2x = p2.x - (p3.x - p1.x) * tension;
       const cp2y = p2.y - (p3.y - p1.y) * tension;
 
-      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-    }
+      // Color based on dominant parameter at this point
+      const v = p1.vals;
+      let maxVal = 0, maxIdx = 0;
+      for (let a = 0; a < v.length; a++) {
+        const dev = Math.abs(v[a] - 0.5);
+        if (dev > maxVal) { maxVal = dev; maxIdx = a; }
+      }
+      // Blend between gold base and the dominant axis color
+      const blend = Math.min(1, maxVal * 3); // how strong the tint is
+      const axisColor = GROOVE_AXES[maxIdx].color;
+      const segColor = blend > 0.15 ? axisColor : '#d4a843';
+      const segAlpha = 0.6 + blend * 0.4;
 
-    // Main groove stroke with glow
-    ctx.strokeStyle = '#d4a843';
-    ctx.lineWidth = 1.5;
-    ctx.shadowColor = 'rgba(212, 168, 67, 0.4)';
-    ctx.shadowBlur = 6;
-    ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      ctx.strokeStyle = segColor;
+      ctx.globalAlpha = segAlpha;
+      ctx.lineWidth = 1.5 + blend * 1.5; // thicker when parameter is extreme
+      ctx.shadowColor = segColor.replace(')', ', 0.3)').replace('rgb', 'rgba');
+      ctx.shadowBlur = 4;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
     ctx.shadowBlur = 0;
   }
 
