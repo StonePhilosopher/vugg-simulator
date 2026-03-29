@@ -796,6 +796,214 @@ button:disabled {
   font-size: 1rem;
 }
 
+/* ---- Record Groove Mode ---- */
+#groove-panel {
+  max-width: 900px;
+  width: 100%;
+  display: none;
+}
+
+.groove-container {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.groove-canvas-wrap {
+  flex: 1;
+  min-width: 300px;
+  max-width: 640px;
+}
+
+.groove-canvas-wrap canvas {
+  width: 100%;
+  height: auto;
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  background: #070706;
+  cursor: crosshair;
+}
+
+.groove-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.groove-controls {
+  background: #0e0e0a;
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.groove-controls h4 {
+  color: #f0c050;
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px solid #2a2518;
+  padding-bottom: 0.3rem;
+}
+
+.groove-controls label {
+  color: #a89040;
+  font-size: 0.75rem;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.groove-controls select,
+.groove-controls input[type="range"] {
+  width: 100%;
+  margin-bottom: 0.6rem;
+}
+
+.groove-controls select {
+  background: #1a1a14;
+  color: #d4a843;
+  border: 1px solid #3a3520;
+  padding: 0.4rem;
+  font-size: 0.75rem;
+  border-radius: 3px;
+}
+
+.groove-controls input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1a1a14;
+  height: 5px;
+  border-radius: 3px;
+  outline: none;
+}
+
+.groove-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d4a843;
+  cursor: pointer;
+}
+
+.groove-controls input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d4a843;
+  cursor: pointer;
+  border: none;
+}
+
+.groove-play-btns {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.groove-play-btns button {
+  flex: 1;
+  padding: 0.4rem;
+  font-size: 0.8rem;
+  background: #1a1a14;
+  border: 1px solid #3a3520;
+  color: #d4a843;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.groove-play-btns button:hover {
+  background: #2a2510;
+  border-color: #5a4a20;
+}
+
+.groove-play-btns button.groove-playing {
+  background: #2a3510;
+  border-color: #5a7a20;
+  color: #90c040;
+}
+
+.groove-speed-val {
+  color: #8a7a40;
+  font-size: 0.7rem;
+  text-align: right;
+  margin-top: -0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.groove-legend {
+  background: #0e0e0a;
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  padding: 0.8rem;
+}
+
+.groove-legend h4 {
+  color: #f0c050;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #2a2518;
+  padding-bottom: 0.3rem;
+}
+
+.groove-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: #a89040;
+  margin-bottom: 0.3rem;
+}
+
+.groove-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.groove-tooltip {
+  position: absolute;
+  background: #1a1a14;
+  border: 1px solid #5a4a20;
+  border-radius: 4px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.7rem;
+  color: #d4a843;
+  pointer-events: none;
+  z-index: 200;
+  max-width: 220px;
+  line-height: 1.4;
+  display: none;
+}
+
+.groove-no-data {
+  color: #5a4a30;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.85rem;
+}
+
+.groove-crystal-info {
+  background: #0e0e0a;
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.75rem;
+  color: #c0a848;
+  line-height: 1.5;
+}
+
+.groove-crystal-info .gci-mineral {
+  color: #50e0c0;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
 footer {
   margin-top: 2rem;
   padding: 1rem;
@@ -824,6 +1032,9 @@ footer a:hover {
   .action-grid { flex-direction: column; }
   .action-btn { width: 100%; justify-content: center; }
   .setup-row input[type="range"] { width: 120px; }
+  .groove-container { flex-direction: column; }
+  .groove-sidebar { width: 100%; }
+  .groove-canvas-wrap { max-width: 100%; }
 }
 </style>
 </head>
@@ -836,6 +1047,7 @@ footer a:hover {
 <div class="mode-toggle">
   <button id="mode-legends" class="active" onclick="switchMode('legends')">⛏️ Legends Mode</button>
   <button id="mode-fortress" onclick="switchMode('fortress')">🏰 Fortress Mode</button>
+  <button id="mode-groove" onclick="switchMode('groove')">📀 Record Groove</button>
 </div>
 
 <!-- Legends Mode Controls (existing) -->
@@ -1142,6 +1354,59 @@ Scenarios:
       <div class="inventory-panel" id="fortress-inventory">
         <h4>💎 Crystal Inventory</h4>
         <div class="inv-empty">No crystals yet. Begin and take actions to grow your vug.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Record Groove Panel -->
+<div id="groove-panel">
+  <div class="groove-crystal-info" id="groove-crystal-info" style="display:none"></div>
+  <div class="groove-container">
+    <div class="groove-canvas-wrap">
+      <div class="groove-no-data" id="groove-no-data">
+        Run a simulation in ⛏️ Legends or 🏰 Fortress mode first, then come here to play the record.
+      </div>
+      <canvas id="groove-canvas" width="640" height="640" style="display:none"></canvas>
+      <div class="groove-tooltip" id="groove-tooltip"></div>
+    </div>
+    <div class="groove-sidebar">
+      <div class="groove-controls">
+        <h4>📀 Turntable</h4>
+        <label>Crystal</label>
+        <select id="groove-crystal-select" onchange="grooveSelectCrystal()">
+          <option value="">— no crystals —</option>
+        </select>
+        <label>Revolutions per 10 steps</label>
+        <input type="range" id="groove-density" min="5" max="30" value="10" step="1"
+          oninput="grooveUpdateDensity(this.value)">
+        <div class="groove-speed-val" id="groove-density-val">1 rev / 10 steps</div>
+        <label>Wobble amplitude</label>
+        <input type="range" id="groove-amplitude" min="5" max="60" value="25" step="1"
+          oninput="grooveUpdateAmplitude(this.value)">
+        <div class="groove-speed-val" id="groove-amplitude-val">25 px</div>
+        <div class="groove-play-btns">
+          <button id="groove-play-btn" onclick="grooveTogglePlay()">▶ Play</button>
+          <button onclick="grooveReset()">⏮ Reset</button>
+        </div>
+        <label>Playback speed</label>
+        <input type="range" id="groove-speed" min="1" max="20" value="8" step="1"
+          oninput="grooveUpdateSpeed(this.value)">
+        <div class="groove-speed-val" id="groove-speed-val">8 zones/sec</div>
+      </div>
+      <div class="groove-legend">
+        <h4>🧭 Groove Axes</h4>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#ff8844"></div> Temperature</div>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#50e0c0"></div> Growth rate</div>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#cc6644"></div> Fe trace</div>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#ffaa44"></div> Mn trace</div>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#8888cc"></div> Al trace</div>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#88cc88"></div> Ti trace</div>
+        <h4 style="margin-top:0.6rem">🔖 Events</h4>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#cc4444"></div> Dissolution (dip inward)</div>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#bb66ee"></div> Twin event</div>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#50e0c0;border-radius:50%"></div> Fluid inclusion</div>
+        <div class="groove-legend-item"><div class="groove-legend-swatch" style="background:#5a4a30"></div> Phantom boundary</div>
       </div>
     </div>
   </div>
@@ -3151,6 +3416,8 @@ function capitalize(s) {
 // ============================================================
 
 let running = false;
+let legendsSim = null;
+let grooveModalCrystal = null;
 
 function runSimulation() {
   if (running) return;
@@ -3175,6 +3442,7 @@ function runSimulation() {
   allLines.push('═'.repeat(70));
 
   const sim = new VugSimulator(conditions, events);
+  legendsSim = sim;
 
   for (let s = 0; s < totalSteps; s++) {
     const log = sim.run_step();
@@ -3316,21 +3584,30 @@ function switchMode(mode) {
   const legendsControls = document.getElementById('legends-controls');
   const outputContainer = document.getElementById('output-container');
   const fortressPanel = document.getElementById('fortress-panel');
+  const groovePanel = document.getElementById('groove-panel');
   const modeLegends = document.getElementById('mode-legends');
   const modeFortress = document.getElementById('mode-fortress');
+  const modeGroove = document.getElementById('mode-groove');
+
+  legendsControls.style.display = 'none';
+  outputContainer.style.display = 'none';
+  fortressPanel.style.display = 'none';
+  groovePanel.style.display = 'none';
+  modeLegends.classList.remove('active');
+  modeFortress.classList.remove('active');
+  modeGroove.classList.remove('active');
 
   if (mode === 'legends') {
     legendsControls.style.display = 'flex';
     outputContainer.style.display = 'block';
-    fortressPanel.style.display = 'none';
     modeLegends.classList.add('active');
-    modeFortress.classList.remove('active');
-  } else {
-    legendsControls.style.display = 'none';
-    outputContainer.style.display = 'none';
+  } else if (mode === 'fortress') {
     fortressPanel.style.display = 'block';
-    modeLegends.classList.remove('active');
     modeFortress.classList.add('active');
+  } else if (mode === 'groove') {
+    groovePanel.style.display = 'block';
+    modeGroove.classList.add('active');
+    groovePopulateCrystals();
   }
 }
 
@@ -3762,7 +4039,9 @@ function showZoneHistory(crystal) {
     ${crystal.twinned ? `<div style="color:#bb66ee">Twinned: ${crystal.twin_law}</div>` : ''}
     ${crystal.dissolved ? `<div style="color:#cc4444">Partially dissolved</div>` : ''}
     <div>Fluorescence: ${crystal.predict_fluorescence()}</div>
+    <div style="margin-top:0.5rem"><button onclick="grooveFromModal()" style="background:#2a2510;border:1px solid #5a4a20;color:#d4a843;padding:0.3rem 0.8rem;font-size:0.75rem;border-radius:3px;cursor:pointer">📀 Play Record</button></div>
   `;
+  grooveModalCrystal = crystal;
   body.appendChild(summary);
 
   if (!crystal.zones.length) {
@@ -4022,6 +4301,493 @@ function restoreBrothSnapshot(idx) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeZoneModal();
 });
+
+// ============================================================
+// RECORD GROOVE MODE — The Turntable
+// ============================================================
+
+let grooveCrystal = null;
+let groovePlaying = false;
+let grooveAnimFrame = null;
+let grooveProgress = 0; // 0..1 (fraction of zones drawn)
+let grooveSpeed = 8; // zones per second
+let grooveDensity = 10; // steps per revolution
+let grooveAmplitude = 25; // max wobble in px
+let grooveLastTime = 0;
+let groovePoints = []; // precomputed [{x,y,zone,angle,radius}]
+
+// Parameter axes — evenly spaced around 360°
+const GROOVE_AXES = [
+  { name: 'Temperature', key: 'temperature', color: '#ff8844' },
+  { name: 'Growth rate', key: 'thickness_um', color: '#50e0c0' },
+  { name: 'Fe', key: 'trace_Fe', color: '#cc6644' },
+  { name: 'Mn', key: 'trace_Mn', color: '#ffaa44' },
+  { name: 'Al', key: 'trace_Al', color: '#8888cc' },
+  { name: 'Ti', key: 'trace_Ti', color: '#88cc88' },
+];
+
+function grooveGetAvailableCrystals() {
+  // Prefer fortress (most recent interactive), fall back to legends
+  if (fortressSim && fortressSim.crystals && fortressSim.crystals.length) {
+    return { sim: fortressSim, crystals: fortressSim.crystals, source: 'Fortress' };
+  }
+  if (legendsSim && legendsSim.crystals && legendsSim.crystals.length) {
+    return { sim: legendsSim, crystals: legendsSim.crystals, source: 'Legends' };
+  }
+  return null;
+}
+
+function groovePopulateCrystals() {
+  const select = document.getElementById('groove-crystal-select');
+  const noData = document.getElementById('groove-no-data');
+  const canvas = document.getElementById('groove-canvas');
+  const info = document.getElementById('groove-crystal-info');
+
+  select.innerHTML = '';
+  const data = grooveGetAvailableCrystals();
+
+  if (!data) {
+    select.innerHTML = '<option value="">— no crystals —</option>';
+    noData.style.display = 'block';
+    canvas.style.display = 'none';
+    info.style.display = 'none';
+    return;
+  }
+
+  for (let i = 0; i < data.crystals.length; i++) {
+    const c = data.crystals[i];
+    const opt = document.createElement('option');
+    opt.value = i;
+    let label = `${capitalize(c.mineral)} #${c.crystal_id} — ${c.c_length_mm.toFixed(1)}mm, ${c.zones.length} zones`;
+    if (c.twinned) label += ' ⟁';
+    opt.textContent = label;
+    select.appendChild(opt);
+  }
+
+  // Auto-select first or the one we came from modal with
+  if (grooveCrystal && data.crystals.includes(grooveCrystal)) {
+    select.value = data.crystals.indexOf(grooveCrystal);
+  } else {
+    select.value = 0;
+  }
+  grooveSelectCrystal();
+}
+
+function grooveSelectCrystal() {
+  const select = document.getElementById('groove-crystal-select');
+  const noData = document.getElementById('groove-no-data');
+  const canvas = document.getElementById('groove-canvas');
+  const info = document.getElementById('groove-crystal-info');
+  const data = grooveGetAvailableCrystals();
+
+  if (!data || select.value === '') {
+    noData.style.display = 'block';
+    canvas.style.display = 'none';
+    info.style.display = 'none';
+    return;
+  }
+
+  const idx = parseInt(select.value);
+  grooveCrystal = data.crystals[idx];
+  noData.style.display = 'none';
+  canvas.style.display = 'block';
+
+  // Show crystal info
+  info.style.display = 'block';
+  let infoHtml = `<span class="gci-mineral">${grooveCrystal.mineral} #${grooveCrystal.crystal_id}</span>`;
+  infoHtml += ` — ${grooveCrystal.describe_morphology()}`;
+  infoHtml += `<br>${grooveCrystal.zones.length} growth zones, nucleated step ${grooveCrystal.nucleation_step} at ${grooveCrystal.nucleation_temp.toFixed(0)}°C`;
+  if (grooveCrystal.twinned) infoHtml += `<br><span style="color:#bb66ee">⟁ ${grooveCrystal.twin_law}</span>`;
+  infoHtml += `<br>Fluorescence: ${grooveCrystal.predict_fluorescence()}`;
+  infoHtml += `<br><span style="color:#5a4a30;font-size:0.65rem">Source: ${data.source} mode</span>`;
+  info.innerHTML = infoHtml;
+
+  // Reset playback
+  grooveStop();
+  grooveProgress = 0;
+  grooveComputePoints();
+  grooveDraw();
+}
+
+function grooveComputePoints() {
+  groovePoints = [];
+  if (!grooveCrystal || !grooveCrystal.zones.length) return;
+
+  const zones = grooveCrystal.zones;
+  const n = zones.length;
+
+  // Compute normalization ranges
+  const temps = zones.map(z => z.temperature);
+  const thicks = zones.map(z => Math.abs(z.thickness_um));
+  const fes = zones.map(z => z.trace_Fe);
+  const mns = zones.map(z => z.trace_Mn);
+  const als = zones.map(z => z.trace_Al);
+  const tis = zones.map(z => z.trace_Ti);
+
+  const norm = (arr) => {
+    const mn = Math.min(...arr);
+    const mx = Math.max(...arr);
+    const range = mx - mn || 1;
+    return arr.map(v => (v - mn) / range);
+  };
+
+  const nTemp = norm(temps);
+  const nThick = norm(thicks);
+  const nFe = norm(fes);
+  const nMn = norm(mns);
+  const nAl = norm(als);
+  const nTi = norm(tis);
+
+  const cx = 320, cy = 320;
+  const maxRadius = 280;
+  const minRadius = 30;
+  const stepsPerRev = grooveDensity;
+
+  for (let i = 0; i < n; i++) {
+    const z = zones[i];
+    const t = i / Math.max(n - 1, 1); // 0..1 through the crystal
+    const baseRadius = minRadius + t * (maxRadius - minRadius);
+    const angle = (i / stepsPerRev) * Math.PI * 2;
+
+    // Compute wobble: sum of normalized parameters projected onto their axis angles
+    const nAxes = GROOVE_AXES.length;
+    let wobbleX = 0, wobbleY = 0;
+    const vals = [nTemp[i], nThick[i], nFe[i], nMn[i], nAl[i], nTi[i]];
+    for (let a = 0; a < nAxes; a++) {
+      const axisAngle = (a / nAxes) * Math.PI * 2;
+      const v = vals[a] * grooveAmplitude;
+      wobbleX += Math.cos(axisAngle) * v;
+      wobbleY += Math.sin(axisAngle) * v;
+    }
+    // Average to prevent over-wobble
+    wobbleX /= nAxes;
+    wobbleY /= nAxes;
+
+    // Dissolution zones dip inward
+    let dissolutionDip = 0;
+    if (z.thickness_um < 0) {
+      dissolutionDip = -Math.min(Math.abs(z.thickness_um) * 0.5, grooveAmplitude * 0.8);
+    }
+
+    const r = baseRadius + dissolutionDip;
+    const x = cx + (r * Math.cos(angle)) + wobbleX;
+    const y = cy + (r * Math.sin(angle)) + wobbleY;
+
+    groovePoints.push({
+      x, y, zone: z, index: i, angle, radius: r,
+      baseRadius, t,
+      vals,
+      isDissolution: z.thickness_um < 0,
+      isPhantom: z.is_phantom,
+      hasInclusion: z.fluid_inclusion,
+      isTwin: !!(z.note && z.note.toLowerCase().includes('twin')),
+    });
+  }
+}
+
+function grooveDraw() {
+  const canvas = document.getElementById('groove-canvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  // Clear
+  ctx.fillStyle = '#070706';
+  ctx.fillRect(0, 0, w, h);
+
+  if (!groovePoints.length) return;
+
+  const drawUpTo = Math.max(1, Math.floor(grooveProgress * groovePoints.length));
+
+  // Draw axis guides (faint)
+  const cx = 320, cy = 320;
+  ctx.globalAlpha = 0.08;
+  for (let a = 0; a < GROOVE_AXES.length; a++) {
+    const axisAngle = (a / GROOVE_AXES.length) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + 300 * Math.cos(axisAngle), cy + 300 * Math.sin(axisAngle));
+    ctx.strokeStyle = GROOVE_AXES[a].color;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1.0;
+
+  // Draw the groove path up to current progress
+  if (drawUpTo >= 2) {
+    // Build the path using Catmull-Rom → Bezier conversion for smoothness
+    ctx.beginPath();
+    ctx.moveTo(groovePoints[0].x, groovePoints[0].y);
+
+    for (let i = 0; i < drawUpTo - 1; i++) {
+      const p0 = groovePoints[Math.max(0, i - 1)];
+      const p1 = groovePoints[i];
+      const p2 = groovePoints[Math.min(groovePoints.length - 1, i + 1)];
+      const p3 = groovePoints[Math.min(groovePoints.length - 1, i + 2)];
+
+      // Catmull-Rom to cubic bezier control points
+      const tension = 0.3;
+      const cp1x = p1.x + (p2.x - p0.x) * tension;
+      const cp1y = p1.y + (p2.y - p0.y) * tension;
+      const cp2x = p2.x - (p3.x - p1.x) * tension;
+      const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+
+    // Main groove stroke with glow
+    ctx.strokeStyle = '#d4a843';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = 'rgba(212, 168, 67, 0.4)';
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // Draw dissolution segments in red (overlay)
+  for (let i = 1; i < drawUpTo; i++) {
+    if (groovePoints[i].isDissolution) {
+      ctx.beginPath();
+      ctx.moveTo(groovePoints[i - 1].x, groovePoints[i - 1].y);
+      ctx.lineTo(groovePoints[i].x, groovePoints[i].y);
+      ctx.strokeStyle = '#cc4444';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = 'rgba(204, 68, 68, 0.5)';
+      ctx.shadowBlur = 4;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  // Draw phantom boundaries
+  for (let i = 0; i < drawUpTo; i++) {
+    if (groovePoints[i].isPhantom) {
+      const p = groovePoints[i];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(90, 74, 48, 0.8)';
+      ctx.fill();
+      ctx.strokeStyle = '#5a4a30';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  // Draw fluid inclusions as teal dots
+  for (let i = 0; i < drawUpTo; i++) {
+    if (groovePoints[i].hasInclusion) {
+      const p = groovePoints[i];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#50e0c0';
+      ctx.shadowColor = 'rgba(80, 224, 192, 0.6)';
+      ctx.shadowBlur = 5;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  // Draw twin events as purple flashes
+  for (let i = 0; i < drawUpTo; i++) {
+    if (groovePoints[i].isTwin) {
+      const p = groovePoints[i];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#bb66ee';
+      ctx.shadowColor = 'rgba(187, 102, 238, 0.7)';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Cross marker
+      ctx.beginPath();
+      ctx.moveTo(p.x - 4, p.y); ctx.lineTo(p.x + 4, p.y);
+      ctx.moveTo(p.x, p.y - 4); ctx.lineTo(p.x, p.y + 4);
+      ctx.strokeStyle = '#ddaaff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  // Draw center dot (nucleation point)
+  const center = groovePoints[0];
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#f0c050';
+  ctx.shadowColor = 'rgba(240, 192, 80, 0.6)';
+  ctx.shadowBlur = 8;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Draw needle (current position during playback)
+  if (groovePlaying || grooveProgress > 0 && grooveProgress < 1) {
+    const needleIdx = Math.min(drawUpTo - 1, groovePoints.length - 1);
+    if (needleIdx >= 0) {
+      const np = groovePoints[needleIdx];
+      ctx.beginPath();
+      ctx.arc(np.x, np.y, 6, 0, Math.PI * 2);
+      ctx.strokeStyle = '#f0c050';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(np.x, np.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#f0c050';
+      ctx.fill();
+    }
+  }
+
+  // Label: zone count / total
+  ctx.fillStyle = '#5a4a30';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(`Zone ${drawUpTo} / ${groovePoints.length}`, w - 10, h - 10);
+
+  // Label nucleation
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8a7a40';
+  ctx.font = '10px monospace';
+  ctx.fillText('nucleation', center.x, center.y + 16);
+}
+
+function grooveTogglePlay() {
+  if (groovePlaying) {
+    grooveStop();
+  } else {
+    groovePlay();
+  }
+}
+
+function groovePlay() {
+  if (!groovePoints.length) return;
+  if (grooveProgress >= 1) grooveProgress = 0;
+  groovePlaying = true;
+  document.getElementById('groove-play-btn').textContent = '⏸ Pause';
+  document.getElementById('groove-play-btn').classList.add('groove-playing');
+  grooveLastTime = performance.now();
+  grooveAnimate();
+}
+
+function grooveStop() {
+  groovePlaying = false;
+  if (grooveAnimFrame) cancelAnimationFrame(grooveAnimFrame);
+  grooveAnimFrame = null;
+  const btn = document.getElementById('groove-play-btn');
+  if (btn) {
+    btn.textContent = '▶ Play';
+    btn.classList.remove('groove-playing');
+  }
+}
+
+function grooveReset() {
+  grooveStop();
+  grooveProgress = 0;
+  grooveDraw();
+}
+
+function grooveAnimate(now) {
+  if (!groovePlaying) return;
+  if (!now) now = performance.now();
+  const dt = (now - grooveLastTime) / 1000;
+  grooveLastTime = now;
+
+  const zonesPerSec = grooveSpeed;
+  const increment = (zonesPerSec * dt) / Math.max(groovePoints.length, 1);
+  grooveProgress = Math.min(1, grooveProgress + increment);
+
+  grooveDraw();
+
+  if (grooveProgress >= 1) {
+    grooveStop();
+    return;
+  }
+
+  grooveAnimFrame = requestAnimationFrame(grooveAnimate);
+}
+
+function grooveUpdateDensity(val) {
+  grooveDensity = parseInt(val);
+  document.getElementById('groove-density-val').textContent = `1 rev / ${val} steps`;
+  grooveComputePoints();
+  grooveDraw();
+}
+
+function grooveUpdateAmplitude(val) {
+  grooveAmplitude = parseInt(val);
+  document.getElementById('groove-amplitude-val').textContent = `${val} px`;
+  grooveComputePoints();
+  grooveDraw();
+}
+
+function grooveUpdateSpeed(val) {
+  grooveSpeed = parseInt(val);
+  document.getElementById('groove-speed-val').textContent = `${val} zones/sec`;
+}
+
+function grooveFromModal() {
+  if (grooveModalCrystal) {
+    grooveCrystal = grooveModalCrystal;
+    closeZoneModal();
+    switchMode('groove');
+  }
+}
+
+// Tooltip on hover
+(function() {
+  const canvas = document.getElementById('groove-canvas');
+  const tooltip = document.getElementById('groove-tooltip');
+
+  canvas.addEventListener('mousemove', function(e) {
+    if (!groovePoints.length) { tooltip.style.display = 'none'; return; }
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    const drawUpTo = Math.max(1, Math.floor(grooveProgress * groovePoints.length));
+
+    // Find nearest point
+    let bestDist = 20; // pixel threshold
+    let bestPt = null;
+    for (let i = 0; i < drawUpTo; i++) {
+      const p = groovePoints[i];
+      const dx = p.x - mx, dy = p.y - my;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestDist) {
+        bestDist = d;
+        bestPt = p;
+      }
+    }
+
+    if (bestPt) {
+      const z = bestPt.zone;
+      let html = `<b>Zone ${bestPt.index + 1}</b> · Step ${z.step}<br>`;
+      html += `🌡️ ${z.temperature.toFixed(0)}°C<br>`;
+      if (z.thickness_um >= 0) {
+        html += `📏 +${z.thickness_um.toFixed(1)} µm<br>`;
+      } else {
+        html += `<span style="color:#cc4444">📏 ${z.thickness_um.toFixed(1)} µm (dissolution)</span><br>`;
+      }
+      if (z.trace_Fe > 0.5) html += `Fe: ${z.trace_Fe.toFixed(1)} ppm · `;
+      if (z.trace_Mn > 0.3) html += `Mn: ${z.trace_Mn.toFixed(1)} · `;
+      if (z.trace_Al > 0.5) html += `Al: ${z.trace_Al.toFixed(1)} · `;
+      if (z.trace_Ti > 0.01) html += `Ti: ${z.trace_Ti.toFixed(3)} · `;
+      html = html.replace(/ · $/, '<br>');
+      if (z.fluid_inclusion) html += `💧 ${z.inclusion_type}<br>`;
+      if (z.note) html += `<span style="color:#8a7a40">${z.note}</span>`;
+
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    } else {
+      tooltip.style.display = 'none';
+    }
+  });
+
+  canvas.addEventListener('mouseleave', function() {
+    tooltip.style.display = 'none';
+  });
+})();
 </script>
 </body>
 </html>
