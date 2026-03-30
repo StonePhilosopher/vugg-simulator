@@ -58,6 +58,7 @@ class FluidChemistry {
     this.Pb = opts.Pb ?? 0.0;
     this.U = opts.U ?? 0.0;
     this.Cu = opts.Cu ?? 0.0;
+    this.Mo = opts.Mo ?? 0.0;
     this.O2 = opts.O2 ?? 0.0;
     this.pH = opts.pH ?? 6.5;
     this.salinity = opts.salinity ?? 5.0;
@@ -73,6 +74,7 @@ class FluidChemistry {
     if (this.S > 50) parts.push(`sulfur-bearing (${this.S.toFixed(0)} ppm)`);
     if (this.Cu > 20) parts.push(`Cu-bearing (${this.Cu.toFixed(0)} ppm)`);
     if (this.Pb > 10) parts.push(`Pb-bearing (${this.Pb.toFixed(0)} ppm)`);
+    if (this.Mo > 10) parts.push(`Mo-bearing (${this.Mo.toFixed(0)} ppm)`);
     if (this.U > 20) parts.push(`U-bearing (${this.U.toFixed(0)} ppm)`);
     if (this.F > 20) parts.push(`fluorine-rich (${this.F.toFixed(0)} ppm)`);
     if (this.O2 > 1.0) parts.push('oxidizing');
@@ -145,17 +147,23 @@ class VugConditions {
     this.wall = opts.wall || new VugWall();
   }
 
+  // Mo flux effect: Mo > 20 ppm = minerals nucleate as if temp 15% higher
+  get effectiveTemperature() {
+    if (this.fluid.Mo > 20) {
+      const boost = 1.0 + 0.15 * Math.min((this.fluid.Mo - 20) / 40, 1.0);
+      return this.temperature * boost;
+    }
+    return this.temperature;
+  }
+
   supersaturation_quartz() {
-    const eq = 50.0 * Math.exp(0.008 * this.temperature);
+    const eq = 50.0 * Math.exp(0.008 * this.effectiveTemperature);
     if (eq <= 0) return 0;
     let sigma = this.fluid.SiO2 / eq;
-
-    // HF attack on quartz: low pH + high F = dissolution
     if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
       const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
       sigma -= hf_attack;
     }
-
     return Math.max(sigma, 0);
   }
 
@@ -164,17 +172,12 @@ class VugConditions {
     if (eq <= 0) return 0;
     const ca_co3 = Math.min(this.fluid.Ca, this.fluid.CO3);
     let sigma = ca_co3 / eq;
-
-    // Acid dissolution of carbonates
     if (this.fluid.pH < 5.5) {
       const acid_attack = (5.5 - this.fluid.pH) * 0.5;
       sigma -= acid_attack;
-    }
-    // Alkaline conditions favor carbonate precipitation
-    else if (this.fluid.pH > 7.5) {
+    } else if (this.fluid.pH > 7.5) {
       sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.15;
     }
-
     return Math.max(sigma, 0);
   }
 
@@ -182,7 +185,6 @@ class VugConditions {
     if (this.fluid.Ca < 10 || this.fluid.F < 5) return 0;
     let product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
     let sigma = product * Math.exp(-0.003 * this.temperature);
-    // Acid dissolution — fluorite dissolves in strong acid
     if (this.fluid.pH < 5.0) {
       const acid_attack = (5.0 - this.fluid.pH) * 0.4;
       sigma -= acid_attack;
@@ -200,7 +202,8 @@ class VugConditions {
     if (this.fluid.Fe < 5 || this.fluid.S < 10) return 0;
     if (this.fluid.O2 > 1.5) return 0;
     const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
-    const T_factor = (100 < this.temperature && this.temperature < 400) ? 1.0 : 0.5;
+    const eT = this.effectiveTemperature;
+    const T_factor = (100 < eT && eT < 400) ? 1.0 : 0.5;
     return product * T_factor * (1.5 - this.fluid.O2);
   }
 
@@ -208,7 +211,8 @@ class VugConditions {
     if (this.fluid.Cu < 10 || this.fluid.Fe < 5 || this.fluid.S < 15) return 0;
     if (this.fluid.O2 > 1.5) return 0;
     const product = (this.fluid.Cu / 80.0) * (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
-    const T_factor = (150 < this.temperature && this.temperature < 350) ? 1.2 : 0.6;
+    const eT = this.effectiveTemperature;
+    const T_factor = (150 < eT && eT < 350) ? 1.2 : 0.6;
     return product * T_factor * (1.5 - this.fluid.O2);
   }
 
@@ -234,19 +238,44 @@ class VugConditions {
   }
 
   supersaturation_uraninite() {
-    if (this.fluid.U < 50 || this.temperature < 300) return 0;
-    return (this.fluid.U / 100.0) * Math.exp(-0.003 * Math.abs(this.temperature - 500));
+    const eT = this.effectiveTemperature;
+    if (this.fluid.U < 50 || eT < 300) return 0;
+    return (this.fluid.U / 100.0) * Math.exp(-0.003 * Math.abs(eT - 500));
   }
 
   supersaturation_galena() {
     if (this.fluid.Pb < 10 || this.fluid.S < 10) return 0;
     let sigma = (this.fluid.Pb / 80.0) * (this.fluid.S / 100.0);
-    if (this.temperature >= 200 && this.temperature <= 400) {
+    const eT = this.effectiveTemperature;
+    if (eT >= 200 && eT <= 400) {
       sigma *= 1.3;
-    } else if (this.temperature > 500) {
+    } else if (eT > 500) {
       sigma *= 0.5;
     }
     return sigma;
+  }
+
+  supersaturation_smithsonite() {
+    if (this.fluid.Zn < 20 || this.fluid.CO3 < 50 || this.fluid.O2 < 0.2) return 0;
+    if (this.temperature > 200) return 0;
+    if (this.fluid.pH < 5) return 0;
+    let sigma = (this.fluid.Zn / 80.0) * (this.fluid.CO3 / 200.0) * (this.fluid.O2 / 1.0);
+    if (this.temperature > 100) {
+      sigma *= Math.exp(-0.008 * (this.temperature - 100));
+    }
+    if (this.fluid.pH > 7) sigma *= 1.2;
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_wulfenite() {
+    if (this.fluid.Pb < 10 || this.fluid.Mo < 5 || this.fluid.O2 < 0.2) return 0;
+    if (this.temperature > 250) return 0;
+    if (this.fluid.pH < 4 || this.fluid.pH > 7) return 0;
+    let sigma = (this.fluid.Pb / 60.0) * (this.fluid.Mo / 30.0) * (this.fluid.O2 / 1.0);
+    if (this.temperature > 150) {
+      sigma *= Math.exp(-0.006 * (this.temperature - 150));
+    }
+    return Math.max(sigma, 0);
   }
 }
 
@@ -377,6 +406,12 @@ class Crystal {
     }
     if (this.mineral === 'galena') {
       return 'non-fluorescent (opaque sulfide)';
+    }
+    if (this.mineral === 'smithsonite') {
+      return 'blue-green to pale blue (SW UV)';
+    }
+    if (this.mineral === 'wulfenite') {
+      return 'non-fluorescent';
     }
     return 'unknown';
   }
@@ -951,6 +986,62 @@ function grow_galena(crystal, conditions, step) {
   });
 }
 
+function grow_smithsonite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_smithsonite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.12);
+      conditions.fluid.Zn += dissolved_um * 0.6;
+      conditions.fluid.CO3 += dissolved_um * 0.4;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -dissolved_um, growth_rate: -dissolved_um, note: `acid dissolution — smithsonite fizzes weakly, releasing Zn²⁺` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  let rate = 5.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  const zone_count = crystal.zones.length;
+  if (zone_count >= 15) { crystal.habit = 'botryoidal/stalactitic'; crystal.dominant_forms = ['botryoidal crusts', 'stalactitic masses']; }
+  else if (rate > 6) { crystal.habit = 'rhombohedral'; crystal.dominant_forms = ['{10̄11} rhombohedron', 'curved faces']; }
+  else { crystal.habit = 'botryoidal'; crystal.dominant_forms = ['grape-like clusters', 'reniform masses']; }
+  if (crystal.habit === 'botryoidal' || crystal.habit === 'botryoidal/stalactitic') crystal.a_width_mm = crystal.c_length_mm * 1.8;
+  conditions.fluid.Zn -= rate * 0.008; conditions.fluid.Zn = Math.max(conditions.fluid.Zn, 0);
+  conditions.fluid.CO3 -= rate * 0.005; conditions.fluid.CO3 = Math.max(conditions.fluid.CO3, 0);
+  if (!crystal.twinned && rng.random() < 0.01) { crystal.twinned = true; crystal.twin_law = 'cyclic {01̄12}'; }
+  let color_note;
+  if (conditions.fluid.Cu > 15) color_note = 'apple-green (Cu impurity)';
+  else if (conditions.fluid.Fe > 20) color_note = 'yellow-brown (Fe impurity)';
+  else if (conditions.fluid.Mn > 10) color_note = 'pink (Mn impurity)';
+  else color_note = rng.random() < 0.4 ? 'blue-green' : 'white to pale blue';
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.01, note: `${crystal.habit}, ${color_note}, Zn fluid: ${conditions.fluid.Zn.toFixed(0)} ppm` });
+}
+
+function grow_wulfenite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_wulfenite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 3.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Pb += dissolved_um * 0.5; conditions.fluid.Mo += dissolved_um * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -dissolved_um, growth_rate: -dissolved_um, note: `acid dissolution — wulfenite dissolves, releasing Pb²⁺ and MoO₄²⁻` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  let rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  crystal.habit = 'tabular'; crystal.dominant_forms = ['{001} tabular plates', 'square outline'];
+  crystal.a_width_mm = crystal.c_length_mm * 3.0;
+  conditions.fluid.Pb -= rate * 0.006; conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
+  conditions.fluid.Mo -= rate * 0.004; conditions.fluid.Mo = Math.max(conditions.fluid.Mo, 0);
+  if (!crystal.twinned && rng.random() < 0.03) { crystal.twinned = true; crystal.twin_law = 'penetration twin {001}/{100}'; }
+  let color_note;
+  if (rate > 5) color_note = 'honey-yellow, translucent';
+  else color_note = rng.random() < 0.5 ? 'orange tabular plates' : 'honey-orange, vitreous luster';
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.005, note: `${color_note}, Pb: ${conditions.fluid.Pb.toFixed(0)} Mo: ${conditions.fluid.Mo.toFixed(0)} ppm` });
+}
+
 const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
@@ -962,6 +1053,8 @@ const MINERAL_ENGINES = {
   malachite: grow_malachite,
   uraninite: grow_uraninite,
   galena: grow_galena,
+  smithsonite: grow_smithsonite,
+  wulfenite: grow_wulfenite,
 };
 
 // ============================================================
@@ -1345,6 +1438,34 @@ class VugSimulator {
       }
     }
 
+    // Smithsonite nucleation — oxidized Zn environment
+    const sigma_sm = this.conditions.supersaturation_smithsonite();
+    const existing_sm = this.crystals.filter(c => c.mineral === 'smithsonite' && c.active);
+    const total_sm = this.crystals.filter(c => c.mineral === 'smithsonite').length;
+    if (sigma_sm > 1.0 && !existing_sm.length && total_sm < 3) {
+      let pos = 'vug wall';
+      const dissolved_sph = this.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved);
+      const any_sph = this.crystals.filter(c => c.mineral === 'sphalerite');
+      if (dissolved_sph.length && rng.random() < 0.7) pos = `on sphalerite #${dissolved_sph[0].crystal_id} (oxidized)`;
+      else if (any_sph.length && rng.random() < 0.3) pos = `on sphalerite #${any_sph[0].crystal_id}`;
+      const c = this.nucleate('smithsonite', pos);
+      this.log.push(`  ✦ NUCLEATION: Smithsonite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_sm.toFixed(2)}) — zinc carbonate from oxidized sphalerite`);
+    }
+
+    // Wulfenite nucleation — RARE: needs Pb AND Mo
+    const sigma_wulf = this.conditions.supersaturation_wulfenite();
+    const existing_wulf = this.crystals.filter(c => c.mineral === 'wulfenite' && c.active);
+    const total_wulf = this.crystals.filter(c => c.mineral === 'wulfenite').length;
+    if (sigma_wulf > 1.2 && !existing_wulf.length && total_wulf < 2) {
+      let pos = 'vug wall';
+      const dissolved_gal = this.crystals.filter(c => c.mineral === 'galena' && c.dissolved);
+      const any_gal = this.crystals.filter(c => c.mineral === 'galena');
+      if (dissolved_gal.length && rng.random() < 0.7) pos = `on galena #${dissolved_gal[0].crystal_id} (oxidized)`;
+      else if (any_gal.length && rng.random() < 0.3) pos = `on galena #${any_gal[0].crystal_id}`;
+      const c = this.nucleate('wulfenite', pos);
+      this.log.push(`  ✦ NUCLEATION: 🟠 Wulfenite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_wulf.toFixed(2)}) — the collector's prize!`);
+    }
+
     // Galena nucleation — needs sigma > 1.0, max 4 active / 8 total
     const sigma_gal = this.conditions.supersaturation_galena();
     const existing_gal = this.crystals.filter(c => c.mineral === 'galena' && c.active);
@@ -1705,6 +1826,8 @@ class VugSimulator {
       else if (c.mineral === 'malachite') story = this._narrate_malachite(c);
       else if (c.mineral === 'uraninite') story = `Uraninite #${c.crystal_id}: ${c.describe_morphology()}. Dense, black, radioactive. Each atom of U-238 is a clock counting down to lead.`;
       else if (c.mineral === 'galena') story = `Galena #${c.crystal_id}: ${c.describe_morphology()}. Lead-gray with bright metallic luster. Perfect cubic cleavage — break it and you get smaller cubes.`;
+      else if (c.mineral === 'smithsonite') story = this._narrate_smithsonite(c);
+      else if (c.mineral === 'wulfenite') story = this._narrate_wulfenite(c);
       if (story && !first_minerals.includes(c)) paragraphs.push(story);
     }
 
@@ -1921,6 +2044,39 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_smithsonite(c) {
+    const parts = [`Smithsonite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.position.includes('sphalerite')) {
+      if (c.position.includes('oxidized')) parts.push('It nucleated on oxidized sphalerite — zinc carbonate born from destroyed zinc sulfide. The grape-like clusters grew from the corpse of the sphalerite that donated its zinc.');
+      else parts.push('It nucleated on sphalerite, the zinc source. Smithsonite is the oxidized alter ego of sphalerite — same zinc, different anion, different world.');
+    }
+    if (c.habit === 'botryoidal' || c.habit === 'botryoidal/stalactitic') parts.push('Botryoidal habit — grape-like clusters of rounded, bubbly masses.');
+    else if (c.habit === 'rhombohedral') parts.push('Rhombohedral crystals with curved, pearly faces — the "dry bone" ore.');
+    const lastZone = c.zones.length ? c.zones[c.zones.length - 1] : null;
+    if (lastZone && lastZone.note) {
+      if (lastZone.note.includes('apple-green')) parts.push('Copper impurities give it an apple-green color.');
+      else if (lastZone.note.includes('pink')) parts.push('Manganese impurities lend a rare pink color.');
+      else if (lastZone.note.includes('blue-green')) parts.push('A blue-green translucence that collectors prize.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_wulfenite(c) {
+    const parts = [`Wulfenite #${c.crystal_id} — the collector's prize.`];
+    parts.push(`Thin, square, tabular plates (${c.c_length_mm.toFixed(1)} mm) with a vitreous luster that catches light like stacked playing cards.`);
+    if (c.position.includes('galena')) {
+      if (c.position.includes('oxidized')) parts.push('It nucleated on oxidized galena — lead molybdate born from the death of lead sulfide. Destruction made the room; the room grew the prize.');
+      else parts.push('It grew on galena, drawing lead from the same source mineral.');
+    }
+    const lastZone = c.zones.length ? c.zones[c.zones.length - 1] : null;
+    if (lastZone && lastZone.note) {
+      if (lastZone.note.includes('honey')) parts.push('Honey-orange and translucent — light passes through the plates like stained glass.');
+    }
+    if (c.twinned) parts.push(`Penetration twinned (${c.twin_law}) — two plates interpenetrating, forming a butterfly shape.`);
+    parts.push('Wulfenite requires both lead AND molybdenum in an oxidized environment — a narrow window that rewards destroying sulfides in a Mo-bearing system.');
+    return parts.join(' ');
+  }
+
   _narrate_mixing_event(batch, event) {
     const mineral_names = new Set(batch.map(c => c.mineral));
     const parts = [];
@@ -2067,8 +2223,8 @@ const FLUID_PRESETS = {
   },
   mvt: {
     label: 'MVT Brine',
-    desc: 'Zinc + sulfur-bearing brine (Zn 150, S 120 ppm), high Ca + F. Sphalerite + fluorite potential.',
-    fluid: { SiO2: 100, Ca: 350, CO3: 200, Fe: 25, Mn: 5, Ti: 0.3, Al: 2, F: 30, Zn: 150, S: 120, Cu: 0, O2: 0, pH: 5.5, salinity: 18.0 }
+    desc: 'Zinc + sulfur-bearing brine (Zn 150, S 120 ppm), high Ca + F. Sphalerite + fluorite + smithsonite potential. Mo flux.',
+    fluid: { SiO2: 100, Ca: 350, CO3: 200, Fe: 25, Mn: 5, Ti: 0.3, Al: 2, F: 30, Zn: 150, S: 120, Cu: 0, Mo: 20, O2: 0, pH: 5.5, salinity: 18.0 }
   },
   clean: {
     label: 'Clean/Dilute',
@@ -2148,6 +2304,8 @@ function getState() {
       malachite: +c.supersaturation_malachite().toFixed(2),
       uraninite: +c.supersaturation_uraninite().toFixed(2),
       galena: +c.supersaturation_galena().toFixed(2),
+      smithsonite: +c.supersaturation_smithsonite().toFixed(2),
+      wulfenite: +c.supersaturation_wulfenite().toFixed(2),
     },
     vug_diameter_mm: +c.wall.vug_diameter_mm.toFixed(1),
     wall_dissolved_mm: +c.wall.total_dissolved_mm.toFixed(1),
