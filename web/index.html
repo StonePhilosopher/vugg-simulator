@@ -2606,6 +2606,7 @@ const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scena
 class VugSimulator {
   constructor(conditions, events) {
     this.conditions = conditions;
+    this._startTemp = conditions.temperature; // remember initial T for thermal pulse ceiling
     this.events = (events || []).slice().sort((a, b) => a.step - b.step);
     this.crystals = [];
     this.crystal_counter = 0;
@@ -2812,6 +2813,33 @@ class VugSimulator {
   ambient_cooling(rate = 1.5) {
     this.conditions.temperature -= rate * rng.uniform(0.8, 1.2);
     this.conditions.temperature = Math.max(this.conditions.temperature, 25);
+
+    // ---- Thermal pulses: episodic fluid injection ----
+    // Real hydrothermal systems don't cool monotonically. Hot fluid pulses
+    // arrive through fractures — fast, dramatic, then bleed heat back out.
+    // Probability scales with how far we've cooled (more fractures open as
+    // rock contracts) and inversely with how hot we still are (already-hot
+    // systems don't notice small pulses).
+    const cooledFraction = 1 - (this.conditions.temperature - 25) / Math.max(this._startTemp || 400, 100);
+    const pulseChance = 0.04 + cooledFraction * 0.06; // 4-10% per step
+    if (rng.random() < pulseChance && this.conditions.temperature < (this._startTemp || 400) * 0.8) {
+      // Spike: 30-150°C above current, but not above original start temp
+      const spike = rng.uniform(30, 150);
+      const newTemp = Math.min(this.conditions.temperature + spike, (this._startTemp || 400) * 0.95);
+      const actualSpike = newTemp - this.conditions.temperature;
+      if (actualSpike > 15) {
+        this.conditions.temperature = newTemp;
+        // Fresh fluid pulse brings chemistry
+        this.conditions.fluid.SiO2 += rng.uniform(50, 300);
+        this.conditions.fluid.Fe += rng.uniform(2, 15);
+        this.conditions.fluid.Mn += rng.uniform(1, 5);
+        this.conditions.flow_rate = rng.uniform(1.5, 3.0);
+        // pH shift from new fluid (slightly acidic hydrothermal)
+        this.conditions.fluid.pH = Math.max(4.0, this.conditions.fluid.pH - rng.uniform(0.3, 1.0));
+        this.log.push(`  🌡️ THERMAL PULSE: +${actualSpike.toFixed(0)}°C — hot fluid injection through fracture! T=${newTemp.toFixed(0)}°C`);
+        this.log.push(`     Fresh fluid: SiO₂↑, Fe↑, Mn↑, pH↓ — new growth expected`);
+      }
+    }
 
     // pH recovery toward carbonate-buffered equilibrium when not being actively acidified
     if (this.conditions.fluid.pH < 6.5 && this.conditions.flow_rate < 2.0) {
