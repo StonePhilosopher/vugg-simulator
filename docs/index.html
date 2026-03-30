@@ -4566,56 +4566,58 @@ function grooveDraw() {
   }
   ctx.globalAlpha = 1.0;
 
-  // Draw the groove — Mellan technique (Sudarium of Saint Veronica, 1649).
-  // Six continuous spiral lines, one per parameter axis, each in its own color.
-  // Line weight varies along the spiral based on that parameter's prominence.
-  // The image of the crystal emerges from the interplay of thicknesses.
+  // Draw the groove — Rainbow Mellan: six parallel lanes running side by side
+  // along the spiral, each pulsing in width based on its parameter's prominence.
+  // No overlap. All six visible simultaneously like a ribbon cable.
   if (drawUpTo >= 2) {
-    // Pre-compute bezier control points for all segments
-    const segments = [];
+    const nAxes = GROOVE_AXES.length;
+    const laneSpacing = 2.5; // px between lane centers
+    const totalRibbonWidth = (nAxes - 1) * laneSpacing;
+    const maxLineWidth = 4;
+    const minLineWidth = 0.3;
+
+    // For each segment, compute the perpendicular direction to offset lanes
     for (let i = 0; i < drawUpTo - 1; i++) {
-      const p0 = groovePoints[Math.max(0, i - 1)];
       const p1 = groovePoints[i];
       const p2 = groovePoints[Math.min(groovePoints.length - 1, i + 1)];
+
+      // Direction vector along the groove
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+
+      // Perpendicular (normal) — rotate 90° CCW
+      const nx = -dy / len;
+      const ny = dx / len;
+
+      // Bezier control points (same Catmull-Rom as before)
+      const p0 = groovePoints[Math.max(0, i - 1)];
       const p3 = groovePoints[Math.min(groovePoints.length - 1, i + 2)];
       const tension = 0.3;
-      segments.push({
-        p1, p2,
-        cp1x: p1.x + (p2.x - p0.x) * tension,
-        cp1y: p1.y + (p2.y - p0.y) * tension,
-        cp2x: p2.x - (p3.x - p1.x) * tension,
-        cp2y: p2.y - (p3.y - p1.y) * tension,
-      });
-    }
 
-    const maxLineWidth = 6;
-    const minLineWidth = 0.2;
+      // Draw each lane offset perpendicular to the groove direction
+      for (let a = 0; a < nAxes; a++) {
+        const laneOffset = (a - (nAxes - 1) / 2) * laneSpacing; // centered ribbon
+        const ox = nx * laneOffset;
+        const oy = ny * laneOffset;
 
-    // Six passes — one continuous spiral per parameter axis
-    // Draw from back (least prominent overall) to front (most prominent)
-    // so dominant parameters sit on top visually
-    const axisAvgs = GROOVE_AXES.map((ax, idx) => {
-      let sum = 0;
-      for (let i = 0; i < drawUpTo; i++) sum += groovePoints[i].vals[idx];
-      return { idx, avg: sum / drawUpTo };
-    }).sort((a, b) => a.avg - b.avg); // least prominent first (drawn first = behind)
-
-    for (const { idx } of axisAvgs) {
-      ctx.strokeStyle = GROOVE_AXES[idx].color;
-
-      // Draw each segment with varying line width for this axis
-      for (const seg of segments) {
-        const val = seg.p1.vals[idx]; // 0..1 normalized value for this axis
+        const val = p1.vals[a];
         const width = minLineWidth + val * val * (maxLineWidth - minLineWidth);
-        // val² gives more contrast — quiet parameters get very thin,
-        // dominant ones swell dramatically
+        if (width < 0.15) continue;
 
-        if (width < 0.15) continue; // skip invisible
+        // Offset all four control points by the same perpendicular
+        const s1x = p1.x + ox, s1y = p1.y + oy;
+        const s2x = p2.x + ox, s2y = p2.y + oy;
+        const cp1x = s1x + (p2.x + ox - (p0.x + ox)) * tension;
+        const cp1y = s1y + (p2.y + oy - (p0.y + oy)) * tension;
+        const cp2x = s2x - (p3.x + ox - (p1.x + ox)) * tension;
+        const cp2y = s2y - (p3.y + oy - (p1.y + oy)) * tension;
 
         ctx.beginPath();
-        ctx.moveTo(seg.p1.x, seg.p1.y);
-        ctx.bezierCurveTo(seg.cp1x, seg.cp1y, seg.cp2x, seg.cp2y, seg.p2.x, seg.p2.y);
-        ctx.globalAlpha = 0.3 + val * 0.6;
+        ctx.moveTo(s1x, s1y);
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, s2x, s2y);
+        ctx.strokeStyle = GROOVE_AXES[a].color;
+        ctx.globalAlpha = 0.4 + val * 0.6;
         ctx.lineWidth = width;
         ctx.stroke();
       }
