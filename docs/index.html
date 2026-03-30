@@ -2561,25 +2561,34 @@ function scenario_reactive_wall() {
 }
 
 function scenario_radioactive_pegmatite() {
+  // Pegmatitic fluids are silica-saturated melts — SiO2 must be well above
+  // equilibrium (eq at 600°C ≈ 6000 ppm in our model). Real pegmatites
+  // have extreme silica activity. U and Pb for uraninite + galena.
   const conditions = new VugConditions({
     temperature: 600.0, pressure: 2.0,
     fluid: new FluidChemistry({
-      SiO2: 800, Ca: 50, CO3: 20, Fe: 40, Mn: 5,
-      Zn: 0, S: 30, F: 15, Cu: 0, U: 100, Pb: 20,
-      O2: 0, pH: 6.0, salinity: 5.0
+      SiO2: 12000, Ca: 50, CO3: 20, Fe: 60, Mn: 8,
+      Zn: 0, S: 40, F: 25, Cu: 0, U: 150, Pb: 30,
+      O2: 0, pH: 6.5, salinity: 8.0
     })
   });
   const events = [
-    { step: 30, name: 'Deep Time', description: 'Eons pass — radiation accumulates', apply_fn: (cond) => {
+    { step: 20, name: 'Pegmatite Crystallization', description: 'Main crystallization pulse', apply_fn: (cond) => {
+      cond.temperature = 450;
+      cond.fluid.SiO2 += 3000; // late-stage silica release from melt
+      return 'The pegmatite melt differentiates. Volatile-rich residual fluid floods the pocket. Quartz begins to grow in earnest — large, clear crystals claiming space. Uraninite cubes nucleate where uranium concentration is highest.';
+    }},
+    { step: 50, name: 'Deep Time', description: 'Eons pass — radiation accumulates', apply_fn: (cond) => {
+      cond.temperature = 300;
       return 'Deep time passes. The uraninite sits in its cradle of cooling rock, silently emitting alpha particles. Each decay transmutes one atom of uranium into lead. The quartz growing nearby doesn\'t know it yet, but it\'s darkening.';
     }},
-    { step: 60, name: 'Oxidizing Fluids', description: 'Late-stage meteoric water', apply_fn: (cond) => {
+    { step: 80, name: 'Oxidizing Fluids', description: 'Late-stage meteoric water', apply_fn: (cond) => {
       cond.fluid.O2 += 0.8;
-      cond.temperature = Math.max(cond.temperature, 80);
+      cond.temperature = 120;
       cond.flow_rate = 1.5;
       return 'Oxidizing meteoric fluids seep through fractures. The reducing environment shifts. Sulfides become unstable. The uraninite endures — it has been enduring for millions of years.';
     }},
-    { step: 90, name: 'Final Cooling', description: 'System approaches ambient', apply_fn: (cond) => {
+    { step: 100, name: 'Final Cooling', description: 'System approaches ambient', apply_fn: (cond) => {
       cond.temperature = 50;
       cond.flow_rate = 0.1;
       return 'The system cools to near-ambient. What remains is a pegmatite pocket: black uraninite cubes, smoky quartz darkened by radiation, and galena crystallized from the lead that uranium became. Time wrote this assemblage. Chemistry just held the pen.';
