@@ -4538,46 +4538,62 @@ function grooveDraw() {
   }
   ctx.globalAlpha = 1.0;
 
-  // Draw the groove path up to current progress — segment by segment with color
+  // Draw the groove path — rainbow ribbon where each parameter's color
+  // width reflects its prominence. Widest (most dominant) drawn first,
+  // narrowest (quietest) layered on top. All 6 colors visible.
   if (drawUpTo >= 2) {
+    // Pre-compute bezier control points for all segments
+    const segments = [];
     for (let i = 0; i < drawUpTo - 1; i++) {
       const p0 = groovePoints[Math.max(0, i - 1)];
       const p1 = groovePoints[i];
       const p2 = groovePoints[Math.min(groovePoints.length - 1, i + 1)];
       const p3 = groovePoints[Math.min(groovePoints.length - 1, i + 2)];
-
-      // Catmull-Rom to cubic bezier control points
       const tension = 0.3;
-      const cp1x = p1.x + (p2.x - p0.x) * tension;
-      const cp1y = p1.y + (p2.y - p0.y) * tension;
-      const cp2x = p2.x - (p3.x - p1.x) * tension;
-      const cp2y = p2.y - (p3.y - p1.y) * tension;
+      segments.push({
+        p1, p2,
+        cp1x: p1.x + (p2.x - p0.x) * tension,
+        cp1y: p1.y + (p2.y - p0.y) * tension,
+        cp2x: p2.x - (p3.x - p1.x) * tension,
+        cp2y: p2.y - (p3.y - p1.y) * tension,
+      });
+    }
 
-      // Color based on dominant parameter at this point
-      const v = p1.vals;
-      let maxVal = 0, maxIdx = 0;
-      for (let a = 0; a < v.length; a++) {
-        const dev = Math.abs(v[a] - 0.5);
-        if (dev > maxVal) { maxVal = dev; maxIdx = a; }
+    // Draw 6 passes — one per axis, sorted by prominence (widest first)
+    // For each pass, draw ALL segments in that axis's color at that axis's width
+    const maxLineWidth = 7;
+    const minLineWidth = 0.5;
+
+    // Build sorted axis order per segment (we'll iterate passes by global rank)
+    // For efficiency: do 6 full passes, each drawing all segments at one axis
+    for (let pass = 0; pass < GROOVE_AXES.length; pass++) {
+      // On each pass, draw this axis's contribution for every segment
+      // To get widest-first ordering, we sort and draw in reverse prominence
+      // Actually: draw all 6 axes per segment, widest first.
+      // More efficient: iterate segments once per pass. Draw pass=0 as widest layer.
+    }
+
+    // Better approach: for each segment, sort axes by value and draw widest first
+    for (const seg of segments) {
+      const v = seg.p1.vals;
+      // Create array of {index, value} and sort descending
+      const ranked = v.map((val, idx) => ({ idx, val }))
+        .sort((a, b) => b.val - a.val);
+
+      for (const { idx, val } of ranked) {
+        const width = minLineWidth + val * (maxLineWidth - minLineWidth);
+        if (width < 0.3) continue; // skip invisible traces
+
+        ctx.beginPath();
+        ctx.moveTo(seg.p1.x, seg.p1.y);
+        ctx.bezierCurveTo(seg.cp1x, seg.cp1y, seg.cp2x, seg.cp2y, seg.p2.x, seg.p2.y);
+        ctx.strokeStyle = GROOVE_AXES[idx].color;
+        ctx.globalAlpha = 0.5 + val * 0.5;
+        ctx.lineWidth = width;
+        ctx.stroke();
       }
-      // Blend between gold base and the dominant axis color
-      const blend = Math.min(1, maxVal * 3); // how strong the tint is
-      const axisColor = GROOVE_AXES[maxIdx].color;
-      const segColor = blend > 0.15 ? axisColor : '#d4a843';
-      const segAlpha = 0.6 + blend * 0.4;
-
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-      ctx.strokeStyle = segColor;
-      ctx.globalAlpha = segAlpha;
-      ctx.lineWidth = 1.5 + blend * 1.5; // thicker when parameter is extreme
-      ctx.shadowColor = segColor.replace(')', ', 0.3)').replace('rgb', 'rgba');
-      ctx.shadowBlur = 4;
-      ctx.stroke();
     }
     ctx.globalAlpha = 1.0;
-    ctx.shadowBlur = 0;
   }
 
   // Draw dissolution segments in red (overlay)
