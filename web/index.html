@@ -4538,9 +4538,10 @@ function grooveDraw() {
   }
   ctx.globalAlpha = 1.0;
 
-  // Draw the groove path — rainbow ribbon where each parameter's color
-  // width reflects its prominence. Widest (most dominant) drawn first,
-  // narrowest (quietest) layered on top. All 6 colors visible.
+  // Draw the groove — Mellan technique (Sudarium of Saint Veronica, 1649).
+  // Six continuous spiral lines, one per parameter axis, each in its own color.
+  // Line weight varies along the spiral based on that parameter's prominence.
+  // The image of the crystal emerges from the interplay of thicknesses.
   if (drawUpTo >= 2) {
     // Pre-compute bezier control points for all segments
     const segments = [];
@@ -4559,36 +4560,34 @@ function grooveDraw() {
       });
     }
 
-    // Draw 6 passes — one per axis, sorted by prominence (widest first)
-    // For each pass, draw ALL segments in that axis's color at that axis's width
-    const maxLineWidth = 7;
-    const minLineWidth = 0.5;
+    const maxLineWidth = 6;
+    const minLineWidth = 0.2;
 
-    // Build sorted axis order per segment (we'll iterate passes by global rank)
-    // For efficiency: do 6 full passes, each drawing all segments at one axis
-    for (let pass = 0; pass < GROOVE_AXES.length; pass++) {
-      // On each pass, draw this axis's contribution for every segment
-      // To get widest-first ordering, we sort and draw in reverse prominence
-      // Actually: draw all 6 axes per segment, widest first.
-      // More efficient: iterate segments once per pass. Draw pass=0 as widest layer.
-    }
+    // Six passes — one continuous spiral per parameter axis
+    // Draw from back (least prominent overall) to front (most prominent)
+    // so dominant parameters sit on top visually
+    const axisAvgs = GROOVE_AXES.map((ax, idx) => {
+      let sum = 0;
+      for (let i = 0; i < drawUpTo; i++) sum += groovePoints[i].vals[idx];
+      return { idx, avg: sum / drawUpTo };
+    }).sort((a, b) => a.avg - b.avg); // least prominent first (drawn first = behind)
 
-    // Better approach: for each segment, sort axes by value and draw widest first
-    for (const seg of segments) {
-      const v = seg.p1.vals;
-      // Create array of {index, value} and sort descending
-      const ranked = v.map((val, idx) => ({ idx, val }))
-        .sort((a, b) => b.val - a.val);
+    for (const { idx } of axisAvgs) {
+      ctx.strokeStyle = GROOVE_AXES[idx].color;
 
-      for (const { idx, val } of ranked) {
-        const width = minLineWidth + val * (maxLineWidth - minLineWidth);
-        if (width < 0.3) continue; // skip invisible traces
+      // Draw each segment with varying line width for this axis
+      for (const seg of segments) {
+        const val = seg.p1.vals[idx]; // 0..1 normalized value for this axis
+        const width = minLineWidth + val * val * (maxLineWidth - minLineWidth);
+        // val² gives more contrast — quiet parameters get very thin,
+        // dominant ones swell dramatically
+
+        if (width < 0.15) continue; // skip invisible
 
         ctx.beginPath();
         ctx.moveTo(seg.p1.x, seg.p1.y);
         ctx.bezierCurveTo(seg.cp1x, seg.cp1y, seg.cp2x, seg.cp2y, seg.p2.x, seg.p2.y);
-        ctx.strokeStyle = GROOVE_AXES[idx].color;
-        ctx.globalAlpha = 0.5 + val * 0.5;
+        ctx.globalAlpha = 0.3 + val * 0.6;
         ctx.lineWidth = width;
         ctx.stroke();
       }
