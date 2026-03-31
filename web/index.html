@@ -202,6 +202,79 @@ button:disabled {
   margin-bottom: 0.4rem;
 }
 
+/* ---- Title Screen ---- */
+.title-screen {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+.title-intro {
+  color: #a89040;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.title-intro p {
+  margin-bottom: 0.8rem;
+}
+
+.title-modes {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.title-mode-card {
+  flex: 1;
+  min-width: 200px;
+  max-width: 260px;
+  background: #0e0e0a;
+  border: 1px solid #2a2518;
+  border-radius: 6px;
+  padding: 1.2rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.title-mode-card:hover {
+  border-color: #d4a843;
+  background: #1a1a14;
+  transform: translateY(-2px);
+}
+
+.title-mode-card h3 {
+  color: #f0c050;
+  font-size: 1.1rem;
+  margin-bottom: 0.6rem;
+  text-align: center;
+}
+
+.title-mode-card p {
+  color: #8a7a40;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.mode-home-btn {
+  background: transparent;
+  border: 1px solid #2a2518;
+  color: #5a4a30;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 0.85rem;
+}
+
+.mode-home-btn:hover {
+  border-color: #5a4a30;
+  color: #a89040;
+}
+
 /* ---- Fortress Mode Styles ---- */
 #fortress-panel {
   max-width: 900px;
@@ -1132,11 +1205,34 @@ footer a:hover {
 <h1>🪨 Vugg Simulator</h1>
 <div class="subtitle">A text-based crystal growth engine</div>
 
+<!-- Title Screen -->
+<div id="title-screen" class="title-screen">
+  <div class="title-intro">
+    <p>A vugg is a small cavity in rock where crystals grow in the dark over thousands of years. Temperature shifts, chemical pulses, and tectonic shocks leave their signatures in the crystal's growth zones — a geological record written in mineral.</p>
+    <p>This simulator lets you watch that process unfold, control it, or read the record afterward. Choose a mode:</p>
+  </div>
+  <div class="title-modes">
+    <div class="title-mode-card" onclick="switchMode('legends')">
+      <h3>🔬 Simulation</h3>
+      <p>Play preset scenarios based on real geological settings. Watch crystals nucleate, grow, dissolve, and twin as temperature and chemistry evolve. The vugg tells its own story — you observe.</p>
+    </div>
+    <div class="title-mode-card" onclick="switchMode('fortress')">
+      <h3>🏰 Creative</h3>
+      <p>You control the variables. Adjust temperature, inject silica, flood with brine, trigger tectonic shocks. You have the freedom to decide the vugg's fate. Will you help it prosper, or will it sleep silently?</p>
+    </div>
+    <div class="title-mode-card" onclick="switchMode('groove')">
+      <h3>📀 Record Player</h3>
+      <p>View a visual representation of a crystal's life journey. Like tree rings, the spiral pattern reveals repeating motifs that shaped the crystal into what it became.</p>
+    </div>
+  </div>
+</div>
+
 <!-- Mode Toggle -->
-<div class="mode-toggle">
-  <button id="mode-legends" class="active" onclick="switchMode('legends')">⛏️ Legends Mode</button>
-  <button id="mode-fortress" onclick="switchMode('fortress')">🏰 Fortress Mode</button>
-  <button id="mode-groove" onclick="switchMode('groove')">📀 Record Groove</button>
+<div class="mode-toggle" id="mode-toggle" style="display:none">
+  <button id="mode-legends" onclick="switchMode('legends')">🔬 Simulation</button>
+  <button id="mode-fortress" onclick="switchMode('fortress')">🏰 Creative</button>
+  <button id="mode-groove" onclick="switchMode('groove')">📀 Record Player</button>
+  <button class="mode-home-btn" onclick="showTitleScreen()">🏠</button>
 </div>
 
 <!-- Legends Mode Controls (existing) -->
@@ -1173,7 +1269,7 @@ footer a:hover {
   <div id="output">Welcome to the Vugg Simulator.
 
 Select a scenario and press Grow, or hit Random for a surprise.
-Switch to 🏰 Fortress Mode for step-by-step interactive control.
+Switch to 🏰 Creative Mode for step-by-step interactive control.
 
 Scenarios:
   cooling       — Simple cooling: hot fluid cools slowly in a vug
@@ -1197,7 +1293,7 @@ Scenarios:
 
   <!-- Setup Phase -->
   <div class="fortress-setup" id="fortress-setup">
-    <h3>🏰 Fortress Mode — Build Your Vug</h3>
+    <h3>🏰 Creative Mode — Build Your Vug</h3>
 
     <div class="setup-row">
       <label>Temperature</label>
@@ -1465,7 +1561,7 @@ Scenarios:
   <div class="groove-container">
     <div class="groove-canvas-wrap">
       <div class="groove-no-data" id="groove-no-data">
-        Run a simulation in ⛏️ Legends or 🏰 Fortress mode first, then come here to play the record.
+        Run a simulation in 🔬 Simulation or 🏰 Creative mode first, then come here to play the record.
       </div>
       <canvas id="groove-canvas" width="640" height="640" style="display:none"></canvas>
       <div class="groove-tooltip" id="groove-tooltip"></div>
@@ -4091,7 +4187,25 @@ function copyOutput() {
 // MODE SWITCHING
 // ============================================================
 
+function showTitleScreen() {
+  const titleScreen = document.getElementById('title-screen');
+  const modeToggle = document.getElementById('mode-toggle');
+  const legendsControls = document.getElementById('legends-controls');
+  const outputContainer = document.getElementById('output-container');
+  const fortressPanel = document.getElementById('fortress-panel');
+  const groovePanel = document.getElementById('groove-panel');
+
+  titleScreen.style.display = 'block';
+  modeToggle.style.display = 'none';
+  legendsControls.style.display = 'none';
+  outputContainer.style.display = 'none';
+  fortressPanel.style.display = 'none';
+  groovePanel.style.display = 'none';
+}
+
 function switchMode(mode) {
+  const titleScreen = document.getElementById('title-screen');
+  const modeToggle = document.getElementById('mode-toggle');
   const legendsControls = document.getElementById('legends-controls');
   const outputContainer = document.getElementById('output-container');
   const fortressPanel = document.getElementById('fortress-panel');
@@ -4099,6 +4213,10 @@ function switchMode(mode) {
   const modeLegends = document.getElementById('mode-legends');
   const modeFortress = document.getElementById('mode-fortress');
   const modeGroove = document.getElementById('mode-groove');
+
+  // Hide title screen, show mode toggle
+  titleScreen.style.display = 'none';
+  modeToggle.style.display = 'flex';
 
   legendsControls.style.display = 'none';
   outputContainer.style.display = 'none';
@@ -4237,7 +4355,7 @@ function fortressBegin() {
   const logEl = document.getElementById('fortress-log');
   logEl.innerHTML = '';
   const initLines = [
-    `🏰 Fortress Mode — Your Vug Awaits`,
+    `🏰 Creative Mode — Your Vug Awaits`,
     `   Temperature: ${temp.toFixed(0)}°C | Pressure: ${pressure.toFixed(1)} kbar`,
     `   Fluid: ${presetData.label} — ${fluid.describe()}`,
     `═`.repeat(60),
