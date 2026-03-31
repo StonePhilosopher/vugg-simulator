@@ -2718,7 +2718,14 @@ function renderGrooveSVG(crystal, outputPath) {
   const dir = pathMod.dirname(outputPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(outputPath, svg);
-  return { ok: true, path: outputPath, size: svg.length, format: 'svg' };
+  return {
+    ok: true, path: outputPath, size: svg.length, format: 'svg',
+    mime: 'image/svg+xml',
+    data_base64: Buffer.from(svg).toString('base64'),
+    crystal_id: crystal.crystal_id,
+    mineral: crystal.mineral,
+    zone_count: zones.length,
+  };
 }
 
 function renderGroovePNG(crystal, outputPath) {
@@ -2933,7 +2940,14 @@ function renderGroovePNG(crystal, outputPath) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const buffer = canvas.toBuffer('image/png');
   fs.writeFileSync(outputPath, buffer);
-  return { ok: true, path: outputPath, size: buffer.length };
+  return {
+    ok: true, path: outputPath, size: buffer.length, format: 'png',
+    mime: 'image/png',
+    data_base64: buffer.toString('base64'),
+    crystal_id: crystal.crystal_id,
+    mineral: crystal.mineral,
+    zone_count: zones.length,
+  };
 }
 
 // ============================================================
@@ -3053,7 +3067,7 @@ rl.on('line', (line) => {
           start: 'Begin a new game. Options: preset, temperature, pressure, seed, fluid (overrides)',
           action: 'Take an action. Types: wait, heat, cool, silica, metals, brine, fluorine, copper, oxidize, tectonic, flood, acidify, alkalinize. Only "wait" advances time.',
           status: 'Get current state without advancing.',
-          finish: 'End the game. Returns full summary, crystal data with zones, and Record Groove PNGs.',
+          finish: 'End the game. Returns full summary, crystal data with zones, and Record Groove images (PNG or SVG). Each groove includes data_base64 for inline display/attachment.',
           help: 'Show this help.',
         },
         presets: Object.keys(FLUID_PRESETS).map(k => ({ id: k, label: FLUID_PRESETS[k].label, desc: FLUID_PRESETS[k].desc })),
