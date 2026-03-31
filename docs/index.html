@@ -837,7 +837,7 @@ button:disabled {
 
 .groove-detail-strip h4 {
   color: #f0c050;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid #2a2518;
   padding-bottom: 0.3rem;
@@ -845,7 +845,7 @@ button:disabled {
 
 .groove-detail-strip .detail-hint {
   color: #5a4a30;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   margin-bottom: 0.4rem;
   font-style: italic;
 }
@@ -868,17 +868,27 @@ button:disabled {
 
 .groove-detail-zone {
   flex-shrink: 0;
-  width: 52px;
-  padding: 0.25rem 0.15rem;
+  width: 72px;
+  padding: 0.35rem 0.25rem;
   border-right: 1px solid #1a1a14;
   font-family: monospace;
-  font-size: 0.55rem;
-  line-height: 1.4;
+  font-size: 0.75rem;
+  line-height: 1.5;
   color: #a89040;
+  cursor: default;
+  transition: background 0.15s;
+}
+
+.groove-detail-zone:hover {
+  background: rgba(240, 192, 80, 0.08);
 }
 
 .groove-detail-zone.dissolution {
   background: rgba(204, 68, 68, 0.1);
+}
+
+.groove-detail-zone.dissolution:hover {
+  background: rgba(204, 68, 68, 0.18);
 }
 
 .groove-detail-zone.has-event {
@@ -888,8 +898,8 @@ button:disabled {
 .groove-detail-zone .dz-header {
   color: #f0c050;
   font-weight: bold;
-  font-size: 0.6rem;
-  margin-bottom: 0.15rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.2rem;
   white-space: nowrap;
 }
 
@@ -899,8 +909,8 @@ button:disabled {
 .groove-detail-zone .dz-mn { color: #ffaa44; }
 .groove-detail-zone .dz-al { color: #8888cc; }
 .groove-detail-zone .dz-ti { color: #88cc88; }
-.groove-detail-zone .dz-event { color: #bb66ee; font-size: 0.5rem; }
-.groove-detail-zone .dz-note { color: #5a4a30; font-size: 0.5rem; word-break: break-word; }
+.groove-detail-zone .dz-event { color: #bb66ee; font-size: 0.7rem; }
+.groove-detail-zone .dz-note { color: #5a4a30; font-size: 0.65rem; word-break: break-word; }
 
 .groove-sidebar {
   width: 220px;
@@ -5405,10 +5415,10 @@ function renderDetailStrip(startIdx, endIdx) {
 
     // Lane label
     ctx.fillStyle = GROOVE_AXES[a].color;
-    ctx.globalAlpha = 0.5;
-    ctx.font = '8px monospace';
+    ctx.globalAlpha = 0.7;
+    ctx.font = '11px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(GROOVE_AXES[a].name, 3, y0 + 9);
+    ctx.fillText(GROOVE_AXES[a].name, 3, y0 + 12);
     ctx.globalAlpha = 1;
 
     // Lane separator
@@ -5419,6 +5429,41 @@ function renderDetailStrip(startIdx, endIdx) {
     ctx.stroke();
   }
 
+  // Add hover tooltip to the detail canvas
+  detailCanvas.onmousemove = function(e) {
+    const rect = detailCanvas.getBoundingClientRect();
+    const scaleX = detailCanvas.width / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const zoneIdx = Math.floor(mx / zoneW);
+    const tooltip = document.getElementById('groove-tooltip');
+
+    if (zoneIdx >= 0 && zoneIdx < nZones) {
+      const z = zones[zoneIdx];
+      const globalIdx = startIdx + zoneIdx;
+      let html = `<b>Zone ${globalIdx + 1}</b> · Step ${z.step}<br>`;
+      html += `🌡️ ${z.temperature.toFixed(0)}°C<br>`;
+      html += z.thickness_um >= 0
+        ? `📏 +${z.thickness_um.toFixed(1)} µm<br>`
+        : `<span style="color:#cc4444">📏 ${z.thickness_um.toFixed(1)} µm (dissolution)</span><br>`;
+      html += `<span style="color:#cc6644">Fe: ${z.trace_Fe.toFixed(1)}</span> · `;
+      html += `<span style="color:#ffaa44">Mn: ${z.trace_Mn.toFixed(1)}</span> · `;
+      html += `<span style="color:#8888cc">Al: ${z.trace_Al.toFixed(1)}</span> · `;
+      html += `<span style="color:#88cc88">Ti: ${z.trace_Ti.toFixed(3)}</span><br>`;
+      if (z.fluid_inclusion) html += `💧 ${z.inclusion_type}<br>`;
+      if (z.note) html += `<span style="color:#8a7a40">${z.note}</span>`;
+
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    } else {
+      tooltip.style.display = 'none';
+    }
+  };
+  detailCanvas.onmouseleave = function() {
+    document.getElementById('groove-tooltip').style.display = 'none';
+  };
+
   // Render the number readouts below
   zonesDiv.innerHTML = '';
   for (let i = 0; i < nZones; i++) {
@@ -5428,6 +5473,17 @@ function renderDetailStrip(startIdx, endIdx) {
     div.className = 'groove-detail-zone';
     if (z.thickness_um < 0) div.classList.add('dissolution');
     if (z.fluid_inclusion || (z.note && z.note.toLowerCase().includes('twin'))) div.classList.add('has-event');
+
+    // Title tooltip for the whole zone card
+    let titleParts = [`Zone ${globalIdx + 1} · Step ${z.step}`, `T: ${z.temperature.toFixed(0)}°C`];
+    titleParts.push(z.thickness_um >= 0 ? `Growth: +${z.thickness_um.toFixed(1)} µm` : `Dissolution: ${z.thickness_um.toFixed(1)} µm`);
+    if (z.trace_Fe > 0.1) titleParts.push(`Fe: ${z.trace_Fe.toFixed(1)} ppm`);
+    if (z.trace_Mn > 0.05) titleParts.push(`Mn: ${z.trace_Mn.toFixed(1)} ppm`);
+    if (z.trace_Al > 0.1) titleParts.push(`Al: ${z.trace_Al.toFixed(1)} ppm`);
+    if (z.trace_Ti > 0.005) titleParts.push(`Ti: ${z.trace_Ti.toFixed(3)} ppm`);
+    if (z.fluid_inclusion) titleParts.push(`Inclusion: ${z.inclusion_type}`);
+    if (z.note) titleParts.push(z.note);
+    div.title = titleParts.join('\n');
 
     let html = `<div class="dz-header">Z${globalIdx + 1}</div>`;
     html += `<div class="dz-temp">🌡${z.temperature.toFixed(0)}°</div>`;
