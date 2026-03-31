@@ -2562,10 +2562,10 @@ function renderGrooveSVG(crystal, outputPath) {
   const zones = crystal.zones;
   if (!zones.length) return { ok: false, error: 'Crystal has no zones' };
 
-  const W = 640, H = 640;
+  const W = 320, H = 320;
   const n = zones.length;
-  const cx = 320, cy = 320;
-  const maxRadius = 280, minRadius = 30;
+  const cx = 160, cy = 160;
+  const maxRadius = 140, minRadius = 15;
   const stepsPerRev = 5;
   const amplitude = 40;
 
@@ -2630,8 +2630,8 @@ function renderGrooveSVG(crystal, outputPath) {
   const nAxes = GROOVE_AXES.length;
   for (let a = 0; a < nAxes; a++) {
     const axisAngle = (a / nAxes) * Math.PI * 2;
-    const ex = cx + 300 * Math.cos(axisAngle);
-    const ey = cy + 300 * Math.sin(axisAngle);
+    const ex = cx + (maxRadius + 10) * Math.cos(axisAngle);
+    const ey = cy + (maxRadius + 10) * Math.sin(axisAngle);
     svg += `<line x1="${cx}" y1="${cy}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${GROOVE_AXES[a].color}" stroke-width="1" opacity="0.08"/>`;
   }
 
@@ -2709,7 +2709,7 @@ function renderGrooveSVG(crystal, outputPath) {
   }
 
   // Label
-  svg += `<text x="${W-10}" y="${H-10}" fill="#5a4a30" font-family="monospace" font-size="11" text-anchor="end">${crystal.mineral} #${crystal.crystal_id} — ${zones.length} zones</text>`;
+  svg += `<text x="${W-10}" y="${H-10}" fill="#5a4a30" font-family="monospace" font-size="9" text-anchor="end">${crystal.mineral} #${crystal.crystal_id} — ${zones.length} zones</text>`;
 
   svg += '</svg>';
 
@@ -2738,7 +2738,7 @@ function renderGroovePNG(crystal, outputPath) {
     return renderGrooveSVG(crystal, svgPath);
   }
 
-  const W = 640, H = 640;
+  const W = 320, H = 320;
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
 
@@ -2750,8 +2750,8 @@ function renderGroovePNG(crystal, outputPath) {
   if (!zones.length) return { ok: false, error: 'Crystal has no zones' };
 
   const n = zones.length;
-  const cx = 320, cy = 320;
-  const maxRadius = 280, minRadius = 30;
+  const cx = 160, cy = 160;
+  const maxRadius = 140, minRadius = 15;
   const stepsPerRev = 5; // 1 revolution per 5 zones
   const amplitude = 40;
 
@@ -2815,7 +2815,7 @@ function renderGroovePNG(crystal, outputPath) {
     const axisAngle = (a / GROOVE_AXES.length) * Math.PI * 2;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + 300 * Math.cos(axisAngle), cy + 300 * Math.sin(axisAngle));
+    ctx.lineTo(cx + (maxRadius + 10) * Math.cos(axisAngle), cy + (maxRadius + 10) * Math.sin(axisAngle));
     ctx.strokeStyle = GROOVE_AXES[a].color;
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -2929,7 +2929,7 @@ function renderGroovePNG(crystal, outputPath) {
 
   // Zone count label
   ctx.fillStyle = '#5a4a30';
-  ctx.font = '11px monospace';
+  ctx.font = '9px monospace';
   ctx.textAlign = 'right';
   ctx.fillText(`${crystal.mineral} #${crystal.crystal_id} — ${zones.length} zones`, W - 10, H - 10);
 
