@@ -6449,7 +6449,7 @@ function idleDrawPie() {
   if (labelEl) {
     const mineralList = slices
       .filter(s => s.label !== 'open' && s.pct > 0.001)
-      .map(s => s.pct >= 0.1 ? `${s.label} ${s.pct.toFixed(1)}%` : `${s.label} <0.1%`)
+      .map(s => s.pct >= 0.1 ? `${s.label} ${s.pct.toFixed(1)}%` : `${s.label} microcrystals`)
       .join(' · ');
     labelEl.textContent = mineralList || 'empty vug';
     // Agate detection!
