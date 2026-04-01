@@ -5300,7 +5300,10 @@ const GROOVE_AXES = [
 ];
 
 function grooveGetAvailableCrystals() {
-  // Prefer fortress (most recent interactive), fall back to legends
+  // Prefer idle (The Groove), then fortress, then legends — most recent first
+  if (idleSim && idleSim.crystals && idleSim.crystals.length) {
+    return { sim: idleSim, crystals: idleSim.crystals, source: 'The Groove' };
+  }
   if (fortressSim && fortressSim.crystals && fortressSim.crystals.length) {
     return { sim: fortressSim, crystals: fortressSim.crystals, source: 'Fortress' };
   }
