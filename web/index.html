@@ -5011,6 +5011,7 @@ function showZoneHistory(crystal) {
     ${crystal.twinned ? `<div style="color:#bb66ee">Twinned: ${crystal.twin_law}</div>` : ''}
     ${crystal.dissolved ? `<div style="color:#cc4444">Partially dissolved</div>` : ''}
     <div>Fluorescence: ${crystal.predict_fluorescence()}</div>
+    ${MINERAL_THUMBS[crystal.mineral] ? `<div style="margin:0.8rem 0;text-align:center">${mineralThumbHTML(crystal.mineral, 160)}</div>` : ''}
     <div style="margin-top:0.5rem"><button onclick="grooveFromModal()" style="background:#2a2510;border:1px solid #5a4a20;color:#d4a843;padding:0.3rem 0.8rem;font-size:0.75rem;border-radius:3px;cursor:pointer">📀 Play Record</button></div>
   `;
   grooveModalCrystal = crystal;
