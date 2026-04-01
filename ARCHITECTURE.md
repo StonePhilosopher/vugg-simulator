@@ -201,3 +201,36 @@ web/index.html
 - [ ] Spiral encoding validation — experimental design at `research/spiral-encoding-experiment.md`
 - [ ] Multi-vug systems (connected chambers with different conditions)
 - [ ] 3D crystal rendering (WebGL)
+
+## The Fourth Door — Vadose Breach (2026-03-31)
+*Professor's insight: caves opening to the surface are the fourth door of diagenesis.*
+
+### Concept
+The vug can breach the surface, connecting the sealed hydrothermal system to the atmosphere. Two paths:
+
+**Path A — Vadose Trough (rare spawn, 5-10%)**
+Vug generates with a pre-existing surface connection. Vadose fluid: low-temperature, oxygenated, CO₂-rich (soil zone). Calcite precipitates by CO₂ degassing, not cooling. Stalactites at drip point. Seasonal cycling (wet/dry → flood/evaporate). Mixing zone where vadose meets hydrothermal = supergene enrichment, secondary copper minerals.
+
+**Path B — Acid Breach (mid-game event)**
+Player's acid dissolution eats through ceiling. When wall thickness → 0 at top, system breaches. Player-caused: aggressive pH lowering has consequences. The sealed system gets a skylight.
+
+### Chemistry Changes on Breach
+- Temperature: hydrothermal → ambient (crash)
+- Redox: reducing → oxidizing (O₂ floods in)
+- pH: buffered → rainwater acidity
+- CO₂: low → soil-zone high (drives carbonate precipitation)
+- Biology: sterile → organic acids, bacterial sulfate reduction
+- Stability: crystals grown in sealed conditions become metastable
+
+### What Survives
+- Quartz: stable (inert at surface T)
+- Calcite: dissolves or re-precipitates as speleothems
+- Pyrite: rusts → goethite/limonite
+- Chalcopyrite: oxidizes → malachite/azurite (Cu carbonates bloom)
+- Galena: oxidizes → cerussite/anglesite
+- Fluorite: relatively stable
+
+### Memory Architecture Parallel
+Diagenesis fourth door = when private memory meets public air. Internal crystal (grown in sealed session) gets exposed to external scrutiny. Colette naming her crystal at step 23 = the breach. The test isn't growth — it's survival under new conditions.
+
+### Status: NOTED — not yet built. Both paths approved by Professor.

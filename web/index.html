@@ -871,6 +871,150 @@ button:disabled {
   font-size: 1rem;
 }
 
+/* ---- The Groove (Idle Mode) ---- */
+#idle-panel {
+  max-width: 960px;
+  width: 100%;
+  display: none;
+}
+
+.idle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.idle-top-bar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.idle-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.idle-controls button {
+  background: #1a1a14;
+  color: #d4a843;
+  border: 1px solid #3a3520;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.idle-controls button:hover {
+  background: #2a2510;
+  color: #f0c050;
+}
+
+.idle-controls button.active {
+  background: #3a3518;
+  color: #f0c050;
+  text-shadow: 0 0 6px rgba(240,192,80,0.3);
+}
+
+.idle-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.idle-speed {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #a89040;
+  font-size: 0.8rem;
+}
+
+.idle-speed input[type="range"] {
+  width: 80px;
+  accent-color: #d4a843;
+}
+
+.idle-scenario-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #a89040;
+  font-size: 0.8rem;
+}
+
+.idle-scenario-pick select {
+  background: #1a1a14;
+  color: #d4a843;
+  border: 1px solid #3a3520;
+  padding: 0.3rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  border-radius: 3px;
+}
+
+.idle-step-counter {
+  color: #8a7a40;
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+.idle-chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.idle-chart-wrap canvas {
+  width: 100%;
+  height: 300px;
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  background: #070706;
+}
+
+.idle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  font-size: 0.7rem;
+}
+
+.idle-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #8a7a40;
+}
+
+.idle-legend-swatch {
+  width: 12px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.idle-log {
+  background: #0f0f0c;
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  padding: 0.6rem;
+  max-height: 250px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #a89040;
+}
+
+.idle-log .log-step { color: #f0c050; }
+.idle-log .log-nucleation { color: #50e0c0; }
+.idle-log .log-growth { color: #88aa44; }
+.idle-log .log-dissolution { color: #cc4444; }
+.idle-log .log-event { color: #bb66ee; }
+.idle-log .log-drift { color: #6688aa; }
+
 /* ---- Record Groove Mode ---- */
 #groove-panel {
   max-width: 900px;
@@ -1195,6 +1339,8 @@ footer a:hover {
   .action-btn { width: 100%; justify-content: center; }
   .setup-row input[type="range"] { width: 120px; }
   .groove-container { flex-direction: column; }
+  .idle-top-bar { flex-direction: column; align-items: flex-start; }
+  .idle-step-counter { margin-left: 0; }
   .groove-sidebar { width: 100%; }
   .groove-canvas-wrap { max-width: 100%; }
 }
@@ -1224,6 +1370,10 @@ footer a:hover {
       <h3>📀 Record Player</h3>
       <p>View a visual representation of a crystal's life journey. Like tree rings, the spiral pattern reveals repeating motifs that shaped the crystal into what it became.</p>
     </div>
+    <div class="title-mode-card" onclick="switchMode('idle')">
+      <h3>🌀 The Groove</h3>
+      <p>An idle vug that runs forever. Temperature drifts, chemistry shifts, crystals come and go. Leave it running overnight — come back to see what grew. Screensaver for geologists.</p>
+    </div>
   </div>
 </div>
 
@@ -1232,6 +1382,7 @@ footer a:hover {
   <button id="mode-legends" onclick="switchMode('legends')">🔬 Simulation</button>
   <button id="mode-fortress" onclick="switchMode('fortress')">🏰 Creative</button>
   <button id="mode-groove" onclick="switchMode('groove')">📀 Record Player</button>
+  <button id="mode-idle" onclick="switchMode('idle')">🌀 The Groove</button>
   <button class="mode-home-btn" onclick="showTitleScreen()">🏠</button>
 </div>
 
@@ -1621,6 +1772,43 @@ Scenarios:
     <button class="zone-close" onclick="closeZoneModal()">✕</button>
     <h3 id="zone-modal-title">Crystal Zone History</h3>
     <div id="zone-modal-body"></div>
+  </div>
+</div>
+
+<!-- The Groove (Idle Mode) -->
+<div id="idle-panel">
+  <div class="idle-container">
+    <div class="idle-top-bar">
+      <div class="idle-controls">
+        <button id="idle-play-btn" onclick="idleTogglePlay()">▶️ Play</button>
+        <button id="idle-pause-btn" onclick="idleTogglePause()" disabled>⏸️ Pause</button>
+        <button id="idle-finish-btn" onclick="idleFinish()" disabled>🏁 Finish</button>
+      </div>
+      <div class="idle-speed">
+        <label>Speed:</label>
+        <input type="range" id="idle-speed-slider" min="0" max="4" value="1" oninput="idleUpdateSpeed(this.value)">
+        <span id="idle-speed-val">1 step/s</span>
+      </div>
+      <div class="idle-scenario-pick">
+        <label>Start:</label>
+        <select id="idle-scenario" onchange="idlePickScenario(this.value)">
+          <option value="random">🎲 Random</option>
+          <option value="cooling">Cooling</option>
+          <option value="pulse">Pulse</option>
+          <option value="mvt">MVT</option>
+          <option value="porphyry">Porphyry</option>
+          <option value="reactive_wall">Reactive Wall</option>
+        </select>
+      </div>
+      <div class="idle-step-counter" id="idle-step-counter">Step 0 · 0 crystals · 0°C</div>
+    </div>
+    <div class="idle-chart-wrap">
+      <canvas id="idle-chart" width="700" height="300"></canvas>
+    </div>
+    <div class="idle-legend" id="idle-legend"></div>
+    <div class="idle-log" id="idle-log">
+      <div style="color:#5a4a30; font-style:italic; text-align:center; padding:1rem;">Press ▶️ Play to start the simulation. Temperature will drift, chemistry will shift, crystals will come and go.</div>
+    </div>
   </div>
 </div>
 
@@ -4207,6 +4395,7 @@ function showTitleScreen() {
   const outputContainer = document.getElementById('output-container');
   const fortressPanel = document.getElementById('fortress-panel');
   const groovePanel = document.getElementById('groove-panel');
+  const idlePanel = document.getElementById('idle-panel');
 
   titleScreen.style.display = 'block';
   modeToggle.style.display = 'none';
@@ -4214,6 +4403,8 @@ function showTitleScreen() {
   outputContainer.style.display = 'none';
   fortressPanel.style.display = 'none';
   groovePanel.style.display = 'none';
+  if (idlePanel) idlePanel.style.display = 'none';
+  idleStop(); // stop any running idle simulation
 }
 
 function switchMode(mode) {
@@ -4223,9 +4414,11 @@ function switchMode(mode) {
   const outputContainer = document.getElementById('output-container');
   const fortressPanel = document.getElementById('fortress-panel');
   const groovePanel = document.getElementById('groove-panel');
+  const idlePanel = document.getElementById('idle-panel');
   const modeLegends = document.getElementById('mode-legends');
   const modeFortress = document.getElementById('mode-fortress');
   const modeGroove = document.getElementById('mode-groove');
+  const modeIdle = document.getElementById('mode-idle');
 
   // Hide title screen, show mode toggle
   titleScreen.style.display = 'none';
@@ -4235,9 +4428,11 @@ function switchMode(mode) {
   outputContainer.style.display = 'none';
   fortressPanel.style.display = 'none';
   groovePanel.style.display = 'none';
+  if (idlePanel) idlePanel.style.display = 'none';
   modeLegends.classList.remove('active');
   modeFortress.classList.remove('active');
   modeGroove.classList.remove('active');
+  if (modeIdle) modeIdle.classList.remove('active');
 
   if (mode === 'legends') {
     legendsControls.style.display = 'flex';
@@ -4253,6 +4448,11 @@ function switchMode(mode) {
     modeGroove.classList.add('active');
     groovePopulateCrystals();
     timeScale = 1.0; // ~10,000 years per step (real-time geological pace)
+  } else if (mode === 'idle') {
+    if (idlePanel) idlePanel.style.display = 'block';
+    if (modeIdle) modeIdle.classList.add('active');
+    timeScale = 1.0; // ~10,000 years per step
+    idleInit();
   }
 }
 
@@ -5700,6 +5900,510 @@ function renderDetailStrip(startIdx, endIdx) {
     tooltip.style.display = 'none';
   });
 })();
+
+// ============================================================
+// THE GROOVE — IDLE MODE
+// ============================================================
+
+const IDLE_MINERAL_COLORS = {
+  quartz: '#e8e8e8', calcite: '#ffd699', fluorite: '#b088dd',
+  pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0',
+  hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
+  goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
+  wulfenite: '#ff8833'
+};
+
+const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second
+
+let idleSim = null;
+let idleRunning = false;
+let idlePaused = false;
+let idleAnimFrame = null;
+let idleLastTick = 0;
+let idleSpeed = 1; // index into IDLE_SPEED_MAP
+let idleHistory = []; // array of { step, supersats: { mineral: value }, temp }
+let idleMaxHistory = 200;
+let idleDrift = { tempTarget: 0, tempRate: 0, driftTimer: 0 };
+let idleEvents = []; // active temporary events
+
+function idleInit() {
+  // Build legend
+  const legendEl = document.getElementById('idle-legend');
+  if (legendEl && !legendEl.children.length) {
+    for (const [mineral, color] of Object.entries(IDLE_MINERAL_COLORS)) {
+      const item = document.createElement('div');
+      item.className = 'idle-legend-item';
+      item.innerHTML = `<span class="idle-legend-swatch" style="background:${color}"></span>${mineral}`;
+      legendEl.appendChild(item);
+    }
+  }
+}
+
+function idleCreateSim(scenarioKey) {
+  if (scenarioKey === 'random') {
+    const keys = Object.keys(SCENARIOS);
+    scenarioKey = keys[Math.floor(Math.random() * keys.length)];
+  }
+  const scenario = SCENARIOS[scenarioKey];
+  if (!scenario) return null;
+
+  rng = new SeededRandom(Date.now());
+  const conditions = new VugConditions({
+    temperature: scenario.temperature,
+    pressure: scenario.pressure || 1.0,
+    fluid: new FluidChemistry(scenario.fluid),
+    wall: new VugWall(scenario.wall || { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50, wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000 })
+  });
+
+  const sim = new VugSimulator(conditions, []); // no scripted events
+  idleDrift.tempTarget = scenario.temperature;
+  idleDrift.tempRate = 0;
+  idleDrift.driftTimer = 0;
+  idleHistory = [];
+  idleEvents = [];
+  return sim;
+}
+
+function idleApplyDrift() {
+  if (!idleSim) return;
+  const c = idleSim.conditions;
+
+  // Temperature: Brownian walk with mean-reversion
+  const meanRevStrength = 0.02;
+  const noiseScale = 3.0;
+  const noise = (rng.random() - 0.5) * noiseScale * 2;
+  const revert = (idleDrift.tempTarget - c.temperature) * meanRevStrength;
+  c.temperature += noise + revert;
+  c.temperature = Math.max(25, Math.min(600, c.temperature));
+
+  // Fluid chemistry: slow drift on major species
+  const species = ['SiO2', 'Ca', 'CO3', 'Fe', 'Mn', 'F', 'Zn', 'S', 'Cu'];
+  for (const sp of species) {
+    if (c.fluid[sp] === undefined || c.fluid[sp] <= 0) continue;
+    const drift = (rng.random() - 0.5) * c.fluid[sp] * 0.03;
+    c.fluid[sp] = Math.max(0, c.fluid[sp] + drift);
+  }
+
+  // pH drift
+  c.fluid.pH += (rng.random() - 0.5) * 0.05;
+  c.fluid.pH = Math.max(3.0, Math.min(9.0, c.fluid.pH));
+
+  // Random events (2% chance per step)
+  if (rng.random() < 0.02) {
+    idleFireRandomEvent();
+  }
+
+  // Process active temporary events
+  for (let i = idleEvents.length - 1; i >= 0; i--) {
+    const evt = idleEvents[i];
+    evt.remaining--;
+    if (evt.type === 'thermal_pulse') {
+      c.temperature += evt.decayRate;
+    }
+    if (evt.remaining <= 0) idleEvents.splice(i, 1);
+  }
+}
+
+function idleFireRandomEvent() {
+  if (!idleSim) return;
+  const c = idleSim.conditions;
+  const roll = rng.random();
+  const logEl = document.getElementById('idle-log');
+
+  if (roll < 0.25) {
+    // Thermal pulse
+    const spike = 40 + rng.random() * 80;
+    c.temperature += spike;
+    c.temperature = Math.min(600, c.temperature);
+    const duration = 5 + Math.floor(rng.random() * 10);
+    idleEvents.push({ type: 'thermal_pulse', remaining: duration, decayRate: -spike / duration });
+    idleAppendLog(logEl, `🔥 THERMAL PULSE — Temperature surges +${spike.toFixed(0)}°C to ${c.temperature.toFixed(0)}°C`, 'log-event');
+  } else if (roll < 0.50) {
+    // Fluid injection — random species spike
+    const targets = ['SiO2', 'Ca', 'CO3', 'Fe', 'Mn', 'Cu', 'Zn', 'S', 'F'];
+    const target = targets[Math.floor(rng.random() * targets.length)];
+    const multiplier = 2 + rng.random() * 4;
+    const oldVal = c.fluid[target] || 0;
+    c.fluid[target] = Math.max(c.fluid[target] || 0, 10) * multiplier;
+    idleAppendLog(logEl, `💧 FLUID INJECTION — ${target} surges ×${multiplier.toFixed(1)} (${oldVal.toFixed(0)} → ${c.fluid[target].toFixed(0)} ppm)`, 'log-event');
+  } else if (roll < 0.70) {
+    // Tectonic crack — pH shift + pressure change
+    const pHShift = (rng.random() - 0.5) * 1.5;
+    c.fluid.pH += pHShift;
+    c.fluid.pH = Math.max(3.0, Math.min(9.0, c.fluid.pH));
+    c.pressure += (rng.random() - 0.5) * 0.5;
+    c.pressure = Math.max(0.1, Math.min(5.0, c.pressure));
+    idleAppendLog(logEl, `⚡ TECTONIC CRACK — pH shifts to ${c.fluid.pH.toFixed(1)}, pressure ${c.pressure.toFixed(2)} kbar`, 'log-event');
+  } else if (roll < 0.85) {
+    // Cooling pulse — meteoric water incursion
+    const drop = 30 + rng.random() * 50;
+    c.temperature -= drop;
+    c.temperature = Math.max(25, c.temperature);
+    c.fluid.SiO2 *= 0.6;
+    idleAppendLog(logEl, `❄️ METEORIC INCURSION — Temperature drops ${drop.toFixed(0)}°C to ${c.temperature.toFixed(0)}°C`, 'log-event');
+  } else {
+    // Quiet period — reduce drift for a while
+    idleDrift.tempRate = 0;
+    idleAppendLog(logEl, `🌙 QUIET PERIOD — system reaches temporary equilibrium`, 'log-event');
+  }
+}
+
+function idleRecordHistory() {
+  if (!idleSim) return;
+  const c = idleSim.conditions;
+  const supersats = {};
+  if (typeof c.supersaturation_quartz === 'function') supersats.quartz = c.supersaturation_quartz();
+  if (typeof c.supersaturation_calcite === 'function') supersats.calcite = c.supersaturation_calcite();
+  if (typeof c.supersaturation_fluorite === 'function') supersats.fluorite = c.supersaturation_fluorite();
+  if (typeof c.supersaturation_pyrite === 'function') supersats.pyrite = c.supersaturation_pyrite();
+  if (typeof c.supersaturation_chalcopyrite === 'function') supersats.chalcopyrite = c.supersaturation_chalcopyrite();
+  if (typeof c.supersaturation_hematite === 'function') supersats.hematite = c.supersaturation_hematite();
+  if (typeof c.supersaturation_sphalerite === 'function') supersats.sphalerite = c.supersaturation_sphalerite();
+  if (typeof c.supersaturation_galena === 'function') supersats.galena = c.supersaturation_galena();
+  // malachite, goethite, smithsonite, wulfenite — check if methods exist
+  try { supersats.malachite = c.supersaturation_malachite(); } catch(e) {}
+  try { supersats.goethite = c.supersaturation_goethite(); } catch(e) {}
+  try { supersats.smithsonite = c.supersaturation_smithsonite(); } catch(e) {}
+  try { supersats.wulfenite = c.supersaturation_wulfenite(); } catch(e) {}
+
+  idleHistory.push({
+    step: idleSim.step,
+    supersats,
+    temp: c.temperature,
+    crystalCount: idleSim.crystals.filter(cr => cr.active).length
+  });
+
+  if (idleHistory.length > idleMaxHistory) {
+    idleHistory.shift();
+  }
+}
+
+function idleDrawChart() {
+  const canvas = document.getElementById('idle-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#070706';
+  ctx.fillRect(0, 0, W, H);
+
+  if (idleHistory.length < 2) return;
+
+  const padding = { left: 50, right: 15, top: 15, bottom: 30 };
+  const chartW = W - padding.left - padding.right;
+  const chartH = H - padding.top - padding.bottom;
+
+  // Find Y range — supersaturation typically 0 to ~5, but can spike
+  let maxSigma = 3.0;
+  for (const h of idleHistory) {
+    for (const val of Object.values(h.supersats)) {
+      if (val > maxSigma) maxSigma = Math.min(val, 15);
+    }
+  }
+  maxSigma = Math.ceil(maxSigma);
+
+  const xScale = chartW / (idleMaxHistory - 1);
+  const yScale = chartH / maxSigma;
+
+  // Grid lines
+  ctx.strokeStyle = '#1a1a14';
+  ctx.lineWidth = 0.5;
+  for (let y = 0; y <= maxSigma; y++) {
+    const py = padding.top + chartH - y * yScale;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, py);
+    ctx.lineTo(W - padding.right, py);
+    ctx.stroke();
+
+    ctx.fillStyle = '#5a4a30';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(y.toString(), padding.left - 5, py + 3);
+  }
+
+  // Nucleation threshold line at σ = 1.0
+  const threshY = padding.top + chartH - 1.0 * yScale;
+  ctx.strokeStyle = '#3a3520';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(padding.left, threshY);
+  ctx.lineTo(W - padding.right, threshY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#5a4a30';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('σ=1 nucleation', W - padding.right - 80, threshY - 4);
+
+  // X axis labels (step numbers)
+  ctx.fillStyle = '#5a4a30';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'center';
+  if (idleHistory.length > 0) {
+    const first = idleHistory[0].step;
+    const last = idleHistory[idleHistory.length - 1].step;
+    ctx.fillText(String(first), padding.left, H - 5);
+    ctx.fillText(String(last), W - padding.right, H - 5);
+    if (idleHistory.length > 50) {
+      const mid = idleHistory[Math.floor(idleHistory.length / 2)].step;
+      ctx.fillText(String(mid), padding.left + chartW / 2, H - 5);
+    }
+  }
+
+  // Y axis label
+  ctx.save();
+  ctx.fillStyle = '#5a4a30';
+  ctx.font = '9px monospace';
+  ctx.translate(12, padding.top + chartH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.fillText('Supersaturation (σ)', 0, 0);
+  ctx.restore();
+
+  // Draw lines for each mineral
+  const startIdx = Math.max(0, idleHistory.length - idleMaxHistory);
+  for (const [mineral, color] of Object.entries(IDLE_MINERAL_COLORS)) {
+    const points = [];
+    for (let i = startIdx; i < idleHistory.length; i++) {
+      const val = idleHistory[i].supersats[mineral];
+      if (val === undefined) continue;
+      const x = padding.left + (i - startIdx) * xScale;
+      const y = padding.top + chartH - Math.min(val, maxSigma) * yScale;
+      points.push({ x, y });
+    }
+    if (points.length < 2) continue;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+  }
+
+  // Temperature overlay (right side, subtle)
+  if (idleHistory.length > 1) {
+    let minT = 600, maxT = 25;
+    for (const h of idleHistory) {
+      if (h.temp < minT) minT = h.temp;
+      if (h.temp > maxT) maxT = h.temp;
+    }
+    const tRange = Math.max(maxT - minT, 10);
+
+    ctx.strokeStyle = '#ff884422';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = startIdx; i < idleHistory.length; i++) {
+      const x = padding.left + (i - startIdx) * xScale;
+      const y = padding.top + chartH - ((idleHistory[i].temp - minT) / tRange) * chartH;
+      if (i === startIdx) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Temperature label
+    ctx.fillStyle = '#ff884466';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    const lastT = idleHistory[idleHistory.length - 1].temp;
+    ctx.fillText(`${lastT.toFixed(0)}°C`, W - padding.right, padding.top + 10);
+  }
+}
+
+function idleAppendLog(logEl, text, className) {
+  if (!logEl) return;
+  const line = document.createElement('div');
+  line.className = 'idle-log-line' + (className ? ' ' + className : '');
+  line.textContent = text;
+  logEl.appendChild(line);
+  // Keep only last 100 lines
+  while (logEl.children.length > 100) {
+    logEl.removeChild(logEl.firstChild);
+  }
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function idleUpdateStatus() {
+  const el = document.getElementById('idle-step-counter');
+  if (!el || !idleSim) return;
+  const activeCrystals = idleSim.crystals.filter(c => c.active).length;
+  const totalCrystals = idleSim.crystals.length;
+  const yearsPerStep = timeScale * 10000;
+  const totalYears = idleSim.step * yearsPerStep;
+  const timeStr = totalYears >= 1e6 ? `${(totalYears / 1e6).toFixed(1)}My` : `${(totalYears / 1000).toFixed(0)}ky`;
+  el.textContent = `Step ${idleSim.step} · ${activeCrystals}/${totalCrystals} crystals · ${idleSim.conditions.temperature.toFixed(0)}°C · ${timeStr}`;
+}
+
+function idleTogglePlay() {
+  if (idleRunning && !idlePaused) return;
+
+  if (!idleSim) {
+    const scenario = document.getElementById('idle-scenario').value;
+    idleSim = idleCreateSim(scenario);
+    if (!idleSim) return;
+    const logEl = document.getElementById('idle-log');
+    logEl.innerHTML = '';
+    idleAppendLog(logEl, `🌀 The Groove — endless crystal growth begins`, 'log-step');
+    idleAppendLog(logEl, `   Starting at ${idleSim.conditions.temperature.toFixed(0)}°C, pH ${idleSim.conditions.fluid.pH.toFixed(1)}`, '');
+    idleAppendLog(logEl, `   ${idleSim.conditions.fluid.describe()}`, '');
+    idleAppendLog(logEl, `${'═'.repeat(60)}`, '');
+  }
+
+  idleRunning = true;
+  idlePaused = false;
+  idleLastTick = performance.now();
+
+  document.getElementById('idle-play-btn').classList.add('active');
+  document.getElementById('idle-play-btn').disabled = true;
+  document.getElementById('idle-pause-btn').disabled = false;
+  document.getElementById('idle-pause-btn').classList.remove('active');
+  document.getElementById('idle-finish-btn').disabled = false;
+  document.getElementById('idle-scenario').disabled = true;
+
+  idleAnimFrame = requestAnimationFrame(idleTick);
+}
+
+function idleTogglePause() {
+  if (!idleRunning) return;
+  idlePaused = !idlePaused;
+
+  const pauseBtn = document.getElementById('idle-pause-btn');
+  const playBtn = document.getElementById('idle-play-btn');
+
+  if (idlePaused) {
+    pauseBtn.classList.add('active');
+    pauseBtn.textContent = '⏸️ Paused';
+    playBtn.disabled = false;
+    playBtn.classList.remove('active');
+    if (idleAnimFrame) cancelAnimationFrame(idleAnimFrame);
+  } else {
+    pauseBtn.classList.remove('active');
+    pauseBtn.textContent = '⏸️ Pause';
+    playBtn.disabled = true;
+    playBtn.classList.add('active');
+    idleLastTick = performance.now();
+    idleAnimFrame = requestAnimationFrame(idleTick);
+  }
+}
+
+function idleStop() {
+  idleRunning = false;
+  idlePaused = false;
+  if (idleAnimFrame) {
+    cancelAnimationFrame(idleAnimFrame);
+    idleAnimFrame = null;
+  }
+}
+
+function idleFinish() {
+  idleStop();
+  const logEl = document.getElementById('idle-log');
+
+  if (idleSim) {
+    idleAppendLog(logEl, '', '');
+    idleAppendLog(logEl, `${'═'.repeat(60)}`, '');
+    const summary = idleSim.format_summary();
+    for (const line of summary.split('\n')) {
+      idleAppendLog(logEl, line, '');
+    }
+
+    // Make finished game available to Record Player
+    if (typeof groovePopulateCrystals === 'function') {
+      groovePopulateCrystals();
+    }
+  }
+
+  // Reset buttons
+  document.getElementById('idle-play-btn').classList.remove('active');
+  document.getElementById('idle-play-btn').disabled = false;
+  document.getElementById('idle-play-btn').textContent = '▶️ New';
+  document.getElementById('idle-pause-btn').disabled = true;
+  document.getElementById('idle-pause-btn').classList.remove('active');
+  document.getElementById('idle-pause-btn').textContent = '⏸️ Pause';
+  document.getElementById('idle-finish-btn').disabled = true;
+  document.getElementById('idle-scenario').disabled = false;
+
+  idleSim = null;
+}
+
+function idleTick(now) {
+  if (!idleRunning || idlePaused) return;
+
+  const speed = IDLE_SPEED_MAP[idleSpeed];
+  const interval = 1000 / speed;
+
+  if (now - idleLastTick >= interval) {
+    idleLastTick = now;
+    idleDoStep();
+  }
+
+  idleAnimFrame = requestAnimationFrame(idleTick);
+}
+
+function idleDoStep() {
+  if (!idleSim) return;
+
+  // Apply stochastic drift before physics
+  idleApplyDrift();
+
+  // Run the physics step
+  const prevCrystalCount = idleSim.crystals.length;
+  const log = idleSim.run_step();
+
+  // Record supersaturation history
+  idleRecordHistory();
+
+  // Log output
+  const logEl = document.getElementById('idle-log');
+  if (idleSim.step % 10 === 0 || log.length > 0) {
+    if (idleSim.step % 25 === 0) {
+      idleAppendLog(logEl, `── Step ${idleSim.step} │ T=${idleSim.conditions.temperature.toFixed(0)}°C │ pH=${idleSim.conditions.fluid.pH.toFixed(1)} │ ${idleSim.crystals.filter(c => c.active).length} crystals`, 'log-step');
+    }
+    for (const line of log) {
+      let cls = '';
+      if (line.includes('NUCLEATION')) cls = 'log-nucleation';
+      else if (line.includes('DISSOLUTION') || line.includes('⬇')) cls = 'log-dissolution';
+      else if (line.includes('▲')) cls = 'log-growth';
+      idleAppendLog(logEl, line, cls);
+    }
+  }
+
+  // Update chart and status
+  idleDrawChart();
+  idleUpdateStatus();
+}
+
+function idleUpdateSpeed(val) {
+  idleSpeed = parseInt(val);
+  document.getElementById('idle-speed-val').textContent = IDLE_SPEED_MAP[idleSpeed] + ' step/s';
+}
+
+function idlePickScenario(val) {
+  // Reset if not running
+  if (!idleRunning) {
+    idleSim = null;
+    idleHistory = [];
+    const logEl = document.getElementById('idle-log');
+    logEl.innerHTML = '<div style="color:#5a4a30; font-style:italic; text-align:center; padding:1rem;">Press ▶️ Play to start the simulation.</div>';
+    document.getElementById('idle-step-counter').textContent = 'Step 0 · 0 crystals · 0°C';
+    document.getElementById('idle-play-btn').textContent = '▶️ Play';
+    const canvas = document.getElementById('idle-chart');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#070706';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+}
+
 </script>
 </body>
 </html>
