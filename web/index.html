@@ -3385,7 +3385,23 @@ class VugSimulator {
     return crystal;
   }
 
-  check_nucleation() {
+  get_vug_fill() {
+    const vugR = this.conditions.wall.vug_diameter_mm / 2;
+    const vugVol = (4 / 3) * Math.PI * Math.pow(vugR, 3);
+    if (vugVol <= 0) return 0;
+    let crystalVol = 0;
+    for (const c of this.crystals) {
+      if (!c.active) continue;
+      const a = c.c_length_mm / 2;
+      const b = c.a_width_mm / 2;
+      crystalVol += (4 / 3) * Math.PI * a * b * b;
+    }
+    return crystalVol / vugVol;
+  }
+
+  check_nucleation(vugFill) {
+    // No new crystals if vug is full
+    if (vugFill !== undefined && vugFill >= 0.95) return;
     const sigma_q = this.conditions.supersaturation_quartz();
     const existing_quartz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
     if (sigma_q > 1.2 && existing_quartz.length < 3) {
@@ -3639,9 +3655,46 @@ class VugSimulator {
     this.step++;
     this.apply_events();
     this.dissolve_wall();
-    this.check_nucleation();
+
+    // Calculate vug fill percentage — stop growth when full
+    const vugFill = this.get_vug_fill();
+
+    if (vugFill >= 1.0 && !this._vug_sealed) {
+      this._vug_sealed = true;
+      // Determine dominant mineral
+      const mineralVols = {};
+      for (const c of this.crystals) {
+        if (!c.active) continue;
+        const a = c.c_length_mm / 2, b = c.a_width_mm / 2;
+        const v = (4/3) * Math.PI * a * b * b;
+        mineralVols[c.mineral] = (mineralVols[c.mineral] || 0) + v;
+      }
+      const sorted = Object.entries(mineralVols).sort((a,b) => b[1] - a[1]);
+      const dominant = sorted[0] ? sorted[0][0] : 'mineral';
+      let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
+      if (dominant === 'quartz' && sorted[0][1] / Object.values(mineralVols).reduce((a,b)=>a+b,0) > 0.8) {
+        sealMsg += ` — AGATE (>80% quartz)`;
+      } else if (sorted.length > 1) {
+        sealMsg += ` — dominant: ${dominant}, with ${sorted.slice(1).map(s=>s[0]).join(', ')}`;
+      }
+      this.log.push(sealMsg);
+    }
+
+    this.check_nucleation(vugFill);
     for (const crystal of this.crystals) {
       if (!crystal.active) continue;
+      // If vug is full, no more growth (dissolution still allowed)
+      if (vugFill >= 1.0) {
+        // Still allow dissolution (negative zones)
+        const engine = MINERAL_ENGINES[crystal.mineral];
+        if (!engine) continue;
+        const zone = engine(crystal, this.conditions, this.step);
+        if (zone && zone.thickness_um < 0) {
+          crystal.add_zone(zone);
+          this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
+        }
+        continue;
+      }
       const engine = MINERAL_ENGINES[crystal.mineral];
       if (!engine) continue;
       const zone = engine(crystal, this.conditions, this.step);
@@ -6332,8 +6385,9 @@ function idleDrawPie() {
     totalCrystalVolume += vol;
   }
 
-  const fillPct = Math.min(100, (totalCrystalVolume / vugVolume) * 100);
-  const openPct = 100 - fillPct;
+  const rawFillPct = (totalCrystalVolume / vugVolume) * 100;
+  const fillPct = Math.min(100, rawFillPct);
+  const openPct = Math.max(0, 100 - fillPct);
 
   // Build slices: minerals + open space
   const slices = [];
@@ -6347,11 +6401,16 @@ function idleDrawPie() {
   // Add open space
   slices.push({ label: 'open', pct: Math.max(0, openPct), color: '#1a1a14' });
 
-  // Draw pie
+  // Draw pie — minimum visible angle for tiny minerals
+  const minAngle = 0.05; // ~3 degrees, enough to see a sliver
   let startAngle = -Math.PI / 2;
   for (const slice of slices) {
     if (slice.pct <= 0) continue;
-    const sweepAngle = (slice.pct / 100) * 2 * Math.PI;
+    let sweepAngle = (slice.pct / 100) * 2 * Math.PI;
+    // Ensure non-open slices are visible even when tiny
+    if (slice.label !== 'open' && sweepAngle < minAngle && sweepAngle > 0) {
+      sweepAngle = minAngle;
+    }
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, radius, startAngle, startAngle + sweepAngle);
