@@ -1669,6 +1669,18 @@ Scenarios:
               oninput="setBrothValue('mo',this.value)">
             <span class="broth-val" id="broth-mo-val">0 ppm</span>
           </div>
+          <div class="broth-slider-row" title="Potassium (ppm). Forms K-feldspar (sanidine/orthoclase/microcline). With Pb: amazonite. The most abundant mineral on Earth.">
+            <label>K</label>
+            <input type="range" id="broth-k" min="0" max="200" value="0" step="1"
+              oninput="setBrothValue('k',this.value)">
+            <span class="broth-val" id="broth-k-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row" title="Sodium (ppm). Forms albite (Na-feldspar). With K-feldspar + slow cooling: perthite/moonstone.">
+            <label>Na</label>
+            <input type="range" id="broth-na" min="0" max="200" value="0" step="1"
+              oninput="setBrothValue('na',this.value)">
+            <span class="broth-val" id="broth-na-val">0 ppm</span>
+          </div>
         </div>
 
         <div class="broth-group">
@@ -1891,7 +1903,7 @@ const MINERAL_GAME_COLORS = {
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
-  wulfenite: '#ff8833'
+  wulfenite: '#ff8833', selenite: '#e8e0d8', feldspar: '#f0d0b0'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -1981,6 +1993,24 @@ function crystalColor(crystal) {
       if (crystal.zones.some(z => z.trace_Fe > 2)) return '#88aa88';
       return '#88bbcc';
 
+    case 'feldspar':
+      // Color depends on polymorph and trace elements
+      const display = crystal.mineral_display || '';
+      // Amazonite: microcline with Pb
+      if (display === 'microcline' && crystal.zones.some(z => z.note && z.note.includes('amazonite'))) {
+        return '#44bb88'; // green
+      }
+      // Pink orthoclase: Fe inclusions
+      if (avgFe > 2) return '#e0a8a0'; // pink/salmon
+      // Smoky from radiation
+      if (radDmg > 0.2) return '#a09080';
+      // Sanidine: glassy/colorless
+      if (display === 'sanidine') return '#d8d4cc';
+      // Albite: white
+      if (display === 'albite') return '#e0ddd8';
+      // Default: warm cream
+      return '#f0d0b0';
+
     case 'wulfenite':
       return '#ff8833';
 
@@ -2030,6 +2060,15 @@ function crystalDisplayName(crystal) {
     const avgFe = crystal.zones.reduce((s, z) => s + (z.trace_Fe || 0), 0) / n;
     if (avgFe > 10) name = 'sphalerite (marmatite)';
     else if (avgFe < 3) name = 'sphalerite (honey)';
+  }
+
+  if (crystal.mineral === 'feldspar') {
+    const display = crystal.mineral_display || '';
+    if (display === 'microcline' && crystal.zones.some(z => z.note && z.note.includes('amazonite'))) {
+      name = 'amazonite';
+    } else if (display) {
+      name = display;
+    }
   }
 
   if (crystal.mineral === 'selenite') {
@@ -2084,6 +2123,8 @@ class FluidChemistry {
     this.U = opts.U ?? 0.0;
     this.Cu = opts.Cu ?? 0.0;
     this.Mo = opts.Mo ?? 0.0;
+    this.K = opts.K ?? 0.0;      // potassium — feldspar
+    this.Na = opts.Na ?? 0.0;     // sodium — albite, perthite
     this.O2 = opts.O2 ?? 0.0;
     this.pH = opts.pH ?? 6.5;
     this.salinity = opts.salinity ?? 5.0;
@@ -2100,6 +2141,8 @@ class FluidChemistry {
     if (this.Cu > 20) parts.push(`Cu-bearing (${this.Cu.toFixed(0)} ppm)`);
     if (this.Pb > 10) parts.push(`Pb-bearing (${this.Pb.toFixed(0)} ppm)`);
     if (this.Mo > 10) parts.push(`Mo-bearing (${this.Mo.toFixed(0)} ppm)`);
+    if (this.K > 20) parts.push(`K-bearing (${this.K.toFixed(0)} ppm)`);
+    if (this.Na > 20) parts.push(`Na-bearing (${this.Na.toFixed(0)} ppm)`);
     if (this.U > 20) parts.push(`U-bearing (${this.U.toFixed(0)} ppm)`);
     if (this.F > 20) parts.push(`fluorine-rich (${this.F.toFixed(0)} ppm)`);
     if (this.O2 > 1.0) parts.push('oxidizing');
@@ -2361,6 +2404,29 @@ class VugConditions {
     let sigma = (this.fluid.Pb / 60.0) * (this.fluid.Mo / 30.0) * (this.fluid.O2 / 1.0);
     if (this.temperature > 150) {
       sigma *= Math.exp(-0.006 * (this.temperature - 150));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Feldspar (KAlSi3O8 / NaAlSi3O8) — the most abundant mineral on Earth
+  // Temperature determines polymorph: sanidine (>500°C) → orthoclase (300-500°C) → microcline (<300°C)
+  // Needs K or Na + Al + Si in fluid
+  supersaturation_feldspar() {
+    const hasK = this.fluid.K > 15;
+    const hasNa = this.fluid.Na > 15;
+    if (!hasK && !hasNa) return 0;
+    if (this.fluid.Al < 5) return 0;
+    if (this.fluid.SiO2 < 100) return 0;
+    // Forms across a wide temperature range (150-800°C)
+    if (this.temperature < 150 || this.temperature > 800) return 0;
+    // Near-neutral to alkaline pH
+    if (this.fluid.pH < 5.5 || this.fluid.pH > 9) return 0;
+    
+    const alkali = Math.max(this.fluid.K, this.fluid.Na);
+    let sigma = (alkali / 80.0) * (this.fluid.Al / 20.0) * (this.fluid.SiO2 / 400.0);
+    // Favored at moderate temperatures
+    if (this.temperature > 250 && this.temperature < 500) {
+      sigma *= 1.3;
     }
     return Math.max(sigma, 0);
   }
@@ -3266,6 +3332,169 @@ function grow_wulfenite(crystal, conditions, step) {
   });
 }
 
+// Feldspar — KAlSi3O8 / NaAlSi3O8
+// Temperature determines polymorph: sanidine (>500) → orthoclase (300-500) → microcline (<300)
+// Pb in fluid + microcline = amazonite (green)
+// The mineral that IS a thermometer
+function grow_feldspar(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_feldspar();
+
+  if (sigma < 1.0) {
+    // Feldspar weathers to clay (kaolinite) in acidic conditions
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.08);
+      conditions.fluid.K += dissolved_um * 0.3;
+      conditions.fluid.Al += dissolved_um * 0.4;
+      conditions.fluid.SiO2 += dissolved_um * 0.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid weathering — feldspar dissolving to kaolinite clay, releasing K⁺, Al³⁺, and SiO₂`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  let rate = 3.0 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+
+  const T = conditions.temperature;
+  const isKrich = conditions.fluid.K >= conditions.fluid.Na;
+
+  // Determine polymorph from temperature
+  let polymorph, crystal_system;
+  if (isKrich) {
+    if (T > 500) {
+      polymorph = 'sanidine';
+      crystal_system = 'monoclinic';
+      crystal.habit = 'tabular';
+      crystal.dominant_forms = ['{010} tabular', '{001} pinacoid'];
+    } else if (T > 300) {
+      polymorph = 'orthoclase';
+      crystal_system = 'monoclinic';
+      crystal.habit = 'prismatic';
+      crystal.dominant_forms = ['{010} pinacoid', '{001} pinacoid', '{110} prism'];
+    } else {
+      polymorph = 'microcline';
+      crystal_system = 'triclinic';
+      crystal.habit = 'prismatic';
+      crystal.dominant_forms = ['{010} pinacoid', '{001} pinacoid', '{110} prism'];
+      // Adularia habit in hydrothermal veins at low T
+      if (T < 250 && rate < 2) {
+        polymorph = 'adularia';
+        crystal.habit = 'pseudo-orthorhombic';
+        crystal.dominant_forms = ['{110} prism', '{101} dome'];
+      }
+    }
+  } else {
+    // Na-rich → albite
+    polymorph = 'albite';
+    crystal_system = 'triclinic';
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['{010} tabular', '{001} pinacoid'];
+    if (conditions.fluid.Na > 60 && T < 400) {
+      crystal.habit = 'platy (cleavelandite)';
+      crystal.dominant_forms = ['{010} platy blades'];
+    }
+  }
+
+  // Store polymorph on crystal for display
+  crystal.mineral_display = polymorph;
+
+  // Consume K/Na, Al, Si
+  if (isKrich) {
+    conditions.fluid.K -= rate * 0.005;
+    conditions.fluid.K = Math.max(conditions.fluid.K, 0);
+  } else {
+    conditions.fluid.Na -= rate * 0.005;
+    conditions.fluid.Na = Math.max(conditions.fluid.Na, 0);
+  }
+  conditions.fluid.Al -= rate * 0.004;
+  conditions.fluid.Al = Math.max(conditions.fluid.Al, 0);
+  conditions.fluid.SiO2 -= rate * 0.006;
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2, 0);
+
+  // Twinning — feldspars have the richest twinning of any mineral
+  if (!crystal.twinned) {
+    if (polymorph === 'sanidine' || polymorph === 'orthoclase') {
+      // Carlsbad twins common in K-feldspars
+      if (rng.random() < 0.12) {
+        crystal.twinned = true;
+        crystal.twin_law = 'Carlsbad twin [001]';
+      } else if (rng.random() < 0.04) {
+        crystal.twinned = true;
+        crystal.twin_law = 'Baveno twin {021}';
+      } else if (rng.random() < 0.02) {
+        crystal.twinned = true;
+        crystal.twin_law = 'Manebach twin {001}';
+      }
+    } else if (polymorph === 'microcline') {
+      // Cross-hatched twinning diagnostic of microcline
+      if (rng.random() < 0.15) {
+        crystal.twinned = true;
+        crystal.twin_law = 'cross-hatched (albite + pericline)';
+      } else if (rng.random() < 0.08) {
+        crystal.twinned = true;
+        crystal.twin_law = 'Carlsbad twin [001]';
+      }
+    } else if (polymorph === 'albite') {
+      // Albite polysynthetic twinning
+      if (rng.random() < 0.20) {
+        crystal.twinned = true;
+        crystal.twin_law = 'albite polysynthetic {010}';
+      } else if (rng.random() < 0.05) {
+        crystal.twinned = true;
+        crystal.twin_law = 'pericline twin [010]';
+      }
+    }
+  }
+
+  // Perthite exsolution — if K-feldspar cools through the solvus with Na present
+  let perthite = false;
+  if (isKrich && conditions.fluid.Na > 10 && T < 400 && crystal.zones.length > 2) {
+    const prevT = crystal.zones[crystal.zones.length - 1]?.temperature || T;
+    if (prevT > 450 && T < 400) {
+      perthite = true; // Slow cooling through solvus
+    }
+  }
+
+  // Fluid inclusions
+  let fi = false, fi_type = '';
+  if (rate > 4 && rng.random() < 0.2) {
+    fi = true;
+    fi_type = 'primary (alkali-rich brine)';
+  }
+
+  // Trace elements
+  const trace_Fe = conditions.fluid.Fe * 0.003;
+  const trace_Pb = (conditions.fluid.Pb || 0) * 0.01; // Pb partitions into microcline
+
+  // Color and note
+  let note;
+  if (polymorph === 'microcline' && trace_Pb > 0.1) {
+    note = `amazonite (Pb²⁺ = ${trace_Pb.toFixed(2)} ppm) — green from lead substituting for potassium`;
+  } else if (perthite) {
+    note = `${polymorph} with perthite exsolution — Na-rich lamellae unmixing during cooling. If submicroscopic: moonstone adularescence`;
+  } else if (polymorph === 'adularia') {
+    note = `adularia — low-T hydrothermal, pseudo-orthorhombic habit, the alpine cleft feldspar`;
+  } else if (polymorph === 'albite' && crystal.habit.includes('cleavelandite')) {
+    note = `cleavelandite albite — platy blades, classic pegmatite habit`;
+  } else {
+    note = `${polymorph} (${crystal_system}), T=${T.toFixed(0)}°C, K: ${conditions.fluid.K.toFixed(0)} Na: ${conditions.fluid.Na.toFixed(0)} ppm`;
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe,
+    trace_Al: conditions.fluid.Al * 0.1,
+    fluid_inclusion: fi, inclusion_type: fi_type,
+    note
+  });
+}
+
 // Selenite (gypsum variety) — CaSO4·2H2O
 // Forms at low temperature in oxidizing, evaporative environments
 // The crystal that grows when everything else is ending
@@ -3363,6 +3592,7 @@ const MINERAL_ENGINES = {
   smithsonite: grow_smithsonite,
   wulfenite: grow_wulfenite,
   selenite: grow_selenite,
+  feldspar: grow_feldspar,
 };
 
 // ============================================================
@@ -3438,7 +3668,7 @@ function event_fluid_mixing(conditions) {
 function scenario_cooling() {
   const conditions = new VugConditions({
     temperature: 380.0, pressure: 1.5,
-    fluid: new FluidChemistry({ SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 4 })
+    fluid: new FluidChemistry({ SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 8, K: 30, Na: 15 })
   });
   return { conditions, events: [], defaultSteps: 100 };
 }
@@ -3477,6 +3707,7 @@ function scenario_porphyry() {
     fluid: new FluidChemistry({
       SiO2: 700, Ca: 80, CO3: 50, Fe: 30, Mn: 2,
       Zn: 0, S: 60, F: 5, Cu: 0, O2: 0.2,
+      K: 40, Na: 25, Al: 15,
       pH: 4.5, salinity: 10.0
     })
   });
@@ -3558,6 +3789,7 @@ function scenario_radioactive_pegmatite() {
     fluid: new FluidChemistry({
       SiO2: 12000, Ca: 50, CO3: 20, Fe: 60, Mn: 8,
       Zn: 0, S: 40, F: 25, Cu: 0, U: 150, Pb: 30,
+      K: 80, Na: 50, Al: 30,
       O2: 0, pH: 6.5, salinity: 8.0
     })
   });
@@ -3644,6 +3876,9 @@ class VugSimulator {
     } else if (mineral === 'selenite') {
       crystal.habit = 'tabular blades';
       crystal.dominant_forms = ['{010} blades', '{110} prism'];
+    } else if (mineral === 'feldspar') {
+      crystal.habit = 'prismatic';
+      crystal.dominant_forms = ['{010} pinacoid', '{110} prism'];
     }
     this.crystals.push(crystal);
     return crystal;
@@ -3819,6 +4054,25 @@ class VugSimulator {
         }
         const c = this.nucleate('selenite', pos);
         this.log.push(`  ✦ NUCLEATION: 💎 Selenite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_sel.toFixed(2)}) — gypsum blades forming in the cooling, oxidizing fluid`);
+      }
+    }
+
+    // Feldspar nucleation — needs sigma > 1.0, K or Na + Al + Si
+    const sigma_feld = this.conditions.supersaturation_feldspar();
+    const existing_feld = this.crystals.filter(c => c.mineral === 'feldspar' && c.active);
+    const total_feld = this.crystals.filter(c => c.mineral === 'feldspar').length;
+    if (sigma_feld > 1.0 && existing_feld.length < 3 && total_feld < 6) {
+      if (!existing_feld.length || (sigma_feld > 1.8 && rng.random() < 0.3)) {
+        let pos = 'vug wall';
+        // Can nucleate on quartz in pegmatite conditions
+        if (existing_quartz.length && rng.random() < 0.3) {
+          pos = `on quartz #${existing_quartz[0].crystal_id}`;
+        }
+        const c = this.nucleate('feldspar', pos);
+        const T = this.conditions.temperature;
+        const polyName = T > 500 ? 'sanidine' : (T > 300 ? 'orthoclase' : 'microcline');
+        c.mineral_display = polyName;
+        this.log.push(`  ✦ NUCLEATION: Feldspar #${c.crystal_id} (${polyName}) on ${c.position} (T=${T.toFixed(0)}°C, σ=${sigma_feld.toFixed(2)}) — ${T > 500 ? 'disordered high-T form' : T > 300 ? 'partially ordered' : 'fully ordered triclinic'}`);
       }
     }
 
@@ -4228,6 +4482,7 @@ class VugSimulator {
       else if (c.mineral === 'smithsonite') story = this._narrate_smithsonite(c);
       else if (c.mineral === 'wulfenite') story = this._narrate_wulfenite(c);
       else if (c.mineral === 'selenite') story = this._narrate_selenite(c);
+      else if (c.mineral === 'feldspar') story = this._narrate_feldspar(c);
       if (story && !first_minerals.includes(c)) paragraphs.push(story);
     }
 
@@ -4491,6 +4746,50 @@ class VugSimulator {
       parts.push(`Penetration twinned (${c.twin_law}) — two plates interpenetrating at right angles, forming a cross or butterfly shape.`);
     }
     parts.push('Wulfenite is rare in nature and rare in the game. It requires both lead AND molybdenum in an oxidized environment — a narrow window that rewards players who built sulfides and then had the courage to destroy them.');
+    return parts.join(' ');
+  }
+
+  _narrate_feldspar(c) {
+    const polymorph = c.mineral_display || 'feldspar';
+    const parts = [`${capitalize(polymorph)} #${c.crystal_id} — the most abundant mineral on Earth, and a thermometer frozen in crystal form.`];
+    
+    if (polymorph === 'sanidine') {
+      parts.push(`High-temperature, disordered — aluminum and silicon are randomly distributed across the framework. This crystal formed hot and cooled fast, locking in the chaos. Sanidine is the snapshot of a volcanic moment.`);
+    } else if (polymorph === 'orthoclase') {
+      parts.push(`Partially ordered — aluminum is beginning to sort itself into preferred sites, but the crystal cooled before the ordering could complete. Orthoclase is the interrupted conversation between order and disorder.`);
+    } else if (polymorph === 'microcline') {
+      parts.push(`Fully ordered — every aluminum atom found its preferred site. This takes time. Microcline is patience crystallized, the reward for slow cooling in deep rock.`);
+    } else if (polymorph === 'adularia') {
+      parts.push(`Low-temperature hydrothermal form with a distinctive pseudo-orthorhombic habit. Found in alpine clefts alongside quartz and chlorite — the classic Swiss mineral assemblage. The mountains' own crystal.`);
+    } else if (polymorph === 'albite') {
+      parts.push(`Sodium feldspar — the Na-rich end of the plagioclase series. White, glassy, often twinned with fine parallel striations visible under a lens.`);
+    }
+
+    // Check for amazonite
+    if (c.zones.some(z => z.note && z.note.includes('amazonite'))) {
+      parts.push('Green from lead — Pb²⁺ substituting for K⁺ in the crystal lattice. The lead that colored this crystal may have come from dissolved galena. One mineral\'s death becomes another mineral\'s identity.');
+    }
+
+    // Check for perthite
+    if (c.zones.some(z => z.note && z.note.includes('perthite'))) {
+      parts.push('Perthite texture — as the crystal cooled through the solvus (~660°C), the solid solution of K and Na feldspar became unstable. The two compositions unmixed into alternating lamellae, like oil separating from water. If the lamellae are thin enough, they scatter light: moonstone.');
+    }
+
+    if (c.twinned) {
+      if (c.twin_law.includes('Carlsbad')) {
+        parts.push(`Carlsbad twinned — two individuals growing in opposite directions along the c-axis. The most common feldspar twin, recognized since the 18th century in the granite of Karlovy Vary.`);
+      } else if (c.twin_law.includes('Baveno')) {
+        parts.push(`Baveno twinned — a mirror twin that creates a distinctive heart-shaped cross-section. Named for the granite quarries of Baveno on the shores of Lago Maggiore.`);
+      } else if (c.twin_law.includes('cross-hatched')) {
+        parts.push(`Cross-hatched twinning — the diagnostic feature of microcline. Albite and pericline twin laws operating simultaneously create a tartan-plaid pattern visible under crossed polars. No other mineral does this.`);
+      } else if (c.twin_law.includes('albite')) {
+        parts.push(`Albite polysynthetic twinning — fine parallel lamellae that create subtle striations on cleavage surfaces. Each stripe is a twin boundary where the crystal structure mirrors itself.`);
+      } else {
+        parts.push(`Twinned (${c.twin_law}).`);
+      }
+    }
+
+    parts.push(`The feldspar polymorph records the temperature at which it formed. ${polymorph === 'sanidine' ? 'Hot and fast.' : polymorph === 'microcline' ? 'Cool and slow.' : 'The temperature is written in the crystal structure itself.'} Read the feldspar and you read the vug's thermal history.`);
     return parts.join(' ');
   }
 
@@ -5204,6 +5503,7 @@ function updateFortressStatus() {
     { name: 'Smithsonite', sigma: c.supersaturation_smithsonite() },
     { name: '🟠 Wulfenite', sigma: c.supersaturation_wulfenite() },
     { name: '💎 Selenite', sigma: c.supersaturation_selenite() },
+    { name: '🏔️ Feldspar', sigma: c.supersaturation_feldspar() },
   ];
 
   for (const m of minerals) {
@@ -5517,6 +5817,8 @@ const BROTH_MAP = {
   u:     { get: () => fortressSim.conditions.fluid.U,          set: v => fortressSim.conditions.fluid.U = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
   pb:    { get: () => fortressSim.conditions.fluid.Pb,         set: v => fortressSim.conditions.fluid.Pb = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
   mo:    { get: () => fortressSim.conditions.fluid.Mo,         set: v => fortressSim.conditions.fluid.Mo = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  k:     { get: () => fortressSim.conditions.fluid.K,          set: v => fortressSim.conditions.fluid.K = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  na:    { get: () => fortressSim.conditions.fluid.Na,         set: v => fortressSim.conditions.fluid.Na = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
 };
 
 function setBrothValue(key, sliderVal) {
@@ -6343,7 +6645,7 @@ const IDLE_MINERAL_COLORS = {
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
-  wulfenite: '#ff8833', selenite: '#e8e0d8'
+  wulfenite: '#ff8833', selenite: '#e8e0d8', feldspar: '#f0d0b0'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second
@@ -6504,6 +6806,7 @@ function idleRecordHistory() {
   try { supersats.smithsonite = c.supersaturation_smithsonite(); } catch(e) {}
   try { supersats.wulfenite = c.supersaturation_wulfenite(); } catch(e) {}
   try { supersats.selenite = c.supersaturation_selenite(); } catch(e) {}
+  try { supersats.feldspar = c.supersaturation_feldspar(); } catch(e) {}
 
   idleHistory.push({
     step: idleSim.step,
