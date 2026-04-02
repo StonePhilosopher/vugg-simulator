@@ -4934,6 +4934,58 @@ class VugSimulator {
         if (c.dissolved) desc += ', partially dissolved (acid attack)';
         if (c.position.includes('chalcopyrite')) desc += ' (on chalcopyrite — oxidation paragenesis)';
         parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'uraninite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm uraninite cube — dense, black, radioactive`;
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        parts.push(`  • ☢️ ${desc}`);
+      } else if (c.mineral === 'galena') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm galena — lead-gray, perfect cubic cleavage`;
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        if (c.dissolved) desc += ', partially oxidized';
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'smithsonite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm smithsonite`;
+        const lastNote = c.zones.length ? c.zones[c.zones.length - 1].note : '';
+        if (lastNote.includes('blue-green')) desc += ' — blue-green (Cu impurity)';
+        else if (lastNote.includes('pink')) desc += ' — pink (Mn impurity)';
+        else if (lastNote.includes('yellow')) desc += ' — yellow-brown (Fe impurity)';
+        else desc += ' — white to pale blue';
+        if (c.position.includes('sphalerite')) desc += ' (on oxidized sphalerite)';
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'wulfenite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm wulfenite — bright orange tabular plates`;
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        if (c.position.includes('galena')) desc += ' (on galena)';
+        parts.push(`  • 🟠 ${desc}`);
+      } else if (c.mineral === 'selenite') {
+        const dName = crystalDisplayName(c);
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm ${dName}`;
+        if (c.habit === 'rosette') desc += ' — lenticular plates with sand inclusions';
+        else if (c.habit && c.habit.includes('fibrous')) desc += ' — chatoyant silky fibers';
+        else desc += ' — transparent blades, pearly luster';
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        if (c.position.includes('pyrite') || c.position.includes('chalcopyrite')) desc += ' (on oxidized sulfide surface)';
+        parts.push(`  • 💎 ${desc}`);
+      } else if (c.mineral === 'feldspar') {
+        const dName = crystalDisplayName(c);
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm ${dName}`;
+        if (dName === 'amazonite') desc += ' — green from Pb²⁺ substitution';
+        else if (c.mineral_display === 'albite' && c.habit.includes('cleavelandite')) desc += ' — platy white blades';
+        else if (c.mineral_display === 'sanidine') desc += ' — glassy, high-temperature';
+        else if (c.mineral_display === 'adularia') desc += ' — pseudo-orthorhombic, alpine habit';
+        else if (c.mineral_display === 'orthoclase') desc += ' — prismatic, partially ordered';
+        else if (c.mineral_display === 'microcline') desc += ' — fully ordered, triclinic';
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        if (c.zones.some(z => z.note && z.note.includes('perthite'))) desc += ' with perthite exsolution (possible moonstone)';
+        parts.push(`  • 🏔️ ${desc}`);
+      } else if (c.mineral === 'goethite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm goethite — earthy brown-yellow`;
+        parts.push(`  • ${desc}`);
+      } else {
+        // Catch-all for any future minerals
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm ${c.mineral}`;
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        parts.push(`  • ${desc}`);
       }
     }
 
