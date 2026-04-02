@@ -1669,6 +1669,12 @@ Scenarios:
               oninput="setBrothValue('mo',this.value)">
             <span class="broth-val" id="broth-mo-val">0 ppm</span>
           </div>
+          <div class="broth-slider-row" title="Aluminum (ppm). Required for feldspar (K/Na + Al + Si). Also creates color centers in quartz when irradiated → smoky quartz.">
+            <label>Al</label>
+            <input type="range" id="broth-al" min="0" max="100" value="3" step="1"
+              oninput="setBrothValue('al',this.value)">
+            <span class="broth-val" id="broth-al-val">3 ppm</span>
+          </div>
           <div class="broth-slider-row" title="Potassium (ppm). Forms K-feldspar (sanidine/orthoclase/microcline). With Pb: amazonite. The most abundant mineral on Earth.">
             <label>K</label>
             <input type="range" id="broth-k" min="0" max="200" value="0" step="1"
@@ -5898,6 +5904,7 @@ const BROTH_MAP = {
   u:     { get: () => fortressSim.conditions.fluid.U,          set: v => fortressSim.conditions.fluid.U = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
   pb:    { get: () => fortressSim.conditions.fluid.Pb,         set: v => fortressSim.conditions.fluid.Pb = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
   mo:    { get: () => fortressSim.conditions.fluid.Mo,         set: v => fortressSim.conditions.fluid.Mo = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+  al:    { get: () => fortressSim.conditions.fluid.Al,         set: v => fortressSim.conditions.fluid.Al = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
   k:     { get: () => fortressSim.conditions.fluid.K,          set: v => fortressSim.conditions.fluid.K = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
   na:    { get: () => fortressSim.conditions.fluid.Na,         set: v => fortressSim.conditions.fluid.Na = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
 };
