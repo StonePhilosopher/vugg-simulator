@@ -475,7 +475,7 @@ class VugConditions:
         return max(sigma, 0)
 
     def supersaturation_feldspar(self) -> float:
-        """Feldspar supersaturation. Needs K (or Na) + Al + SiO₂.
+        """K-feldspar supersaturation. Needs K + Al + SiO₂.
 
         The most common minerals in Earth's crust.
         Temperature determines the polymorph:
@@ -483,14 +483,27 @@ class VugConditions:
         - Moderate T (400-600°C): orthoclase (monoclinic)
         - Low T (<400°C): microcline (triclinic, cross-hatched twinning)
         Pb + microcline = amazonite (green, from Pb²⁺ substituting for K⁺).
-        Albite (Na-feldspar) from Na instead of K.
         """
-        # Need either K or Na, plus Al and SiO₂
-        alkali = max(self.fluid.K, self.fluid.Na)
-        if alkali < 10 or self.fluid.Al < 3 or self.fluid.SiO2 < 200:
+        if self.fluid.K < 10 or self.fluid.Al < 3 or self.fluid.SiO2 < 200:
             return 0
-        sigma = (alkali / 40.0) * (self.fluid.Al / 10.0) * (self.fluid.SiO2 / 400.0)
+        sigma = (self.fluid.K / 40.0) * (self.fluid.Al / 10.0) * (self.fluid.SiO2 / 400.0)
         # Feldspars need HIGH temperature — they're igneous/metamorphic
+        if self.temperature < 300:
+            sigma *= math.exp(-0.01 * (300 - self.temperature))
+        return max(sigma, 0)
+
+    def supersaturation_albite(self) -> float:
+        """Albite (NaAlSi₃O₈) supersaturation. Needs Na + Al + SiO₂.
+
+        The sodium end-member of the plagioclase series.
+        Forms at similar conditions to K-feldspar but prefers Na-rich fluids.
+        At T < 450°C, albite orders to low-albite (fully ordered Al/Si).
+        Peristerite intergrowth (albite + oligoclase) creates moonstone sheen.
+        """
+        if self.fluid.Na < 10 or self.fluid.Al < 3 or self.fluid.SiO2 < 200:
+            return 0
+        sigma = (self.fluid.Na / 35.0) * (self.fluid.Al / 10.0) * (self.fluid.SiO2 / 400.0)
+        # Same high-T preference as K-feldspar
         if self.temperature < 300:
             sigma *= math.exp(-0.01 * (300 - self.temperature))
         return max(sigma, 0)
@@ -568,6 +581,7 @@ class GrowthZone:
     trace_Mn: float = 0.0
     trace_Al: float = 0.0
     trace_Ti: float = 0.0
+    trace_Pb: float = 0.0       # Pb — amazonite, galena inclusions
     fluid_inclusion: bool = False
     inclusion_type: str = ""     # "2-phase", "3-phase", "vapor-rich"
     note: str = ""
@@ -763,6 +777,33 @@ class Crystal:
                     return "pale green (Cu-depleted)"
             return "green (classic malachite)"
         
+        elif self.mineral == "feldspar":
+            # K-feldspar color: amazonite (Pb), orthoclase (flesh), adularia (moonstone)
+            amazonite_zones = [z for z in self.zones if "amazonite" in z.note]
+            adularia_zones = [z for z in self.zones if "adularia" in z.note]
+            perthite_zones = [z for z in self.zones if "perthite" in z.note]
+            if amazonite_zones:
+                return "amazonite blue-green (Pb²⁺ → K⁺ substitution in microcline)"
+            elif adularia_zones and any("moonstone" in z.note for z in adularia_zones):
+                return "adularescent moonstone (thin albite intergrowths scatter light)"
+            elif adularia_zones:
+                return "colorless adularia"
+            elif perthite_zones:
+                return "perthite — flesh-colored host with white albite stringers"
+            else:
+                return "flesh-colored to white (typical orthoclase/microcline)"
+        
+        elif self.mineral == "albite":
+            # Albite color: usually white/colorless, but peristerite = moonstone
+            cleavelandite_zones = [z for z in self.zones if "cleavelandite" in z.note]
+            peristerite_zones = [z for z in self.zones if "peristerite" in z.note]
+            if peristerite_zones:
+                return "peristerite moonstone (blue-white adularescence from exsolution lamellae)"
+            elif cleavelandite_zones:
+                return "white cleavelandite (platy lamellar)"
+            else:
+                return "white to colorless"
+        
         return "typical for species"
     
     def predict_fluorescence(self) -> str:
@@ -790,6 +831,13 @@ class Crystal:
             return "non-fluorescent (opaque oxide)"
         elif self.mineral == "malachite":
             return "non-fluorescent"
+        elif self.mineral == "feldspar":
+            # Amazonite can fluoresce yellow-green under LW UV
+            if any("amazonite" in z.note for z in self.zones):
+                return "yellow-green under LW UV (Pb²⁺ activator in amazonite)"
+            return "non-fluorescent or weak white under SW"
+        elif self.mineral == "albite":
+            return "weak white under LW UV (common for Na-feldspar)"
         return "unknown"
 
 
@@ -1530,6 +1578,252 @@ def grow_mimetite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     )
 
 
+def grow_feldspar(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """K-feldspar (KAlSi₃O₈) growth model.
+
+    The most abundant mineral group in Earth's crust.
+    Temperature determines the polymorph:
+    - Sanidine (>600°C): monoclinic, disordered Al/Si — found in volcanic rocks
+    - Orthoclase (400-600°C): monoclinic, partially ordered — common in granites
+    - Microcline (<400°C): triclinic, fully ordered — characteristic cross-hatch twinning
+
+    Pb²⁺ substituting for K⁺ in microcline produces amazonite (blue-green).
+    Adularia: low-T habit variant with pseudo-orthorhombic shape, moonstone adularescence.
+    Carlsbad twin: most common K-spar twin law, rotation on c-axis.
+    Baveno twin: rarer, reflection on {021}.
+    Manebach twin: reflection on {001}, least common.
+    """
+    sigma = conditions.supersaturation_feldspar()
+
+    if sigma < 1.0:
+        # Kaolinization: acidic weathering of feldspar → kaolinite
+        if crystal.total_growth_um > 10 and conditions.fluid.pH < 4.0:
+            crystal.dissolved = True
+            dissolved_um = min(4.0, crystal.total_growth_um * 0.08)
+            conditions.fluid.K += dissolved_um * 0.3
+            conditions.fluid.Al += dissolved_um * 0.2
+            conditions.fluid.SiO2 += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"kaolinization (pH {conditions.fluid.pH:.1f}) — KAlSi₃O₈ → kaolinite + K⁺"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.5 * excess * random.uniform(0.8, 1.2)
+
+    if rate < 0.1:
+        return None
+
+    T = conditions.temperature
+
+    # Temperature determines polymorph
+    if T > 600:
+        polymorph = "sanidine"
+        crystal.habit = "prismatic"
+        crystal.dominant_forms = ["{010} platy", "{001} cleavage", "short prismatic"]
+    elif T > 400:
+        polymorph = "orthoclase"
+        crystal.habit = "prismatic"
+        crystal.dominant_forms = ["{001} cleavage", "{010} face", "Carlsbad twin"]
+    else:
+        polymorph = "microcline"
+        crystal.habit = "prismatic"
+        crystal.dominant_forms = ["{001} cleavage", "cross-hatch twinning", "{010} face"]
+
+    # Amazonite detection: Pb in microcline
+    amazonite = False
+    if polymorph == "microcline" and conditions.fluid.Pb > 5:
+        if random.random() < 0.3 * (conditions.fluid.Pb / 50.0):
+            amazonite = True
+
+    # Adularia detection: low-T, moderate K, specific fluid chemistry
+    adularia = False
+    if T < 350 and conditions.fluid.K > 20 and conditions.fluid.Na > 5:
+        if random.random() < 0.15:
+            adularia = True
+            crystal.habit = "adularia (pseudo-orthorhombic)"
+            crystal.dominant_forms = ["rhombic cross-section", "pseudo-orthorhombic faces"]
+
+    # Twinning — K-feldspar has three common twin laws
+    if not crystal.twinned:
+        twin_roll = random.random()
+        if twin_roll < 0.12:
+            crystal.twinned = True
+            crystal.twin_law = "Carlsbad twin (rotation on c-axis)"
+        elif twin_roll < 0.16:
+            crystal.twinned = True
+            crystal.twin_law = "Baveno twin (reflection {021})"
+        elif twin_roll < 0.18:
+            crystal.twinned = True
+            crystal.twin_law = "Manebach twin (reflection {001})"
+
+    # Perthite exsolution check
+    # At high T, K and Na are fully miscible in alkali feldspar.
+    # On cooling below ~500°C, they unmix: Na-rich albite lamellae exsolve from K-spar host.
+    perthite = False
+    if (polymorph in ("orthoclase", "microcline")
+            and conditions.fluid.Na > 8
+            and crystal.total_growth_um > 20
+            and T < 500):
+        if random.random() < 0.2 * (conditions.fluid.Na / 30.0):
+            perthite = True
+            # Na gets consumed to form albite lamellae within the K-spar
+            conditions.fluid.Na -= rate * 0.05
+            conditions.fluid.Na = max(conditions.fluid.Na, 0)
+
+    # Color determination
+    if amazonite:
+        color_note = "amazonite blue-green (Pb²⁺ → K⁺ substitution)"
+    elif adularia:
+        # Moonstone adularescence from thin albite intergrowths
+        if conditions.fluid.Na > 10:
+            color_note = "adularescent moonstone (thin albite intergrowths scatter light)"
+        else:
+            color_note = "colorless adularia"
+    else:
+        color_note = " flesh-colored to white"
+
+    # Deplete K, Al, SiO₂ from fluid
+    conditions.fluid.K -= rate * 0.012
+    conditions.fluid.K = max(conditions.fluid.K, 0)
+    conditions.fluid.Al -= rate * 0.006
+    conditions.fluid.Al = max(conditions.fluid.Al, 0)
+    conditions.fluid.SiO2 -= rate * 0.010
+    conditions.fluid.SiO2 = max(conditions.fluid.SiO2, 0)
+
+    # Build zone note
+    parts = [polymorph]
+    if amazonite:
+        parts.append("amazonite")
+    if adularia:
+        parts.append("adularia")
+    if perthite:
+        parts.append("perthite exsolution (albite lamellae)")
+    parts.append(color_note)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Al=conditions.fluid.Al * 0.03,
+        trace_Pb=conditions.fluid.Pb * 0.01 if amazonite else 0,
+        note=", ".join(parts)
+    )
+
+
+def grow_albite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Albite (NaAlSi₃O₈) growth model.
+
+    The sodium end-member of the plagioclase series.
+    Na-feldspar: the other half of the alkali feldspar family.
+
+    High T (>450°C): monalbite (monoclinic, disordered Al/Si)
+    Low T (<450°C): low-albite (triclinic, fully ordered)
+
+    Twinning:
+    - Albite law: reflection on {010} — most common, produces polysynthetic twins
+    - Pericline law: rotation on b-axis — produces "pericline" striations
+    - Both together: produces the characteristic grid of pericline + albite twins
+
+    Peristerite: intergrowth of albite + oligoclase (Ab₉₀An₁₀) at low T.
+    Creates moonstone adularescence — blue-white schiller from light scattering
+    on submicroscopic exsolution lamellae.
+
+    Cleavelandite: platy, lamellar albite habit from low-T hydrothermal fluids.
+    """
+    sigma = conditions.supersaturation_albite()
+
+    if sigma < 1.0:
+        # Albite is very stable — resists weathering better than K-spar
+        if crystal.total_growth_um > 10 and conditions.fluid.pH < 3.0:
+            crystal.dissolved = True
+            dissolved_um = min(3.0, crystal.total_growth_um * 0.06)
+            conditions.fluid.Na += dissolved_um * 0.3
+            conditions.fluid.Al += dissolved_um * 0.2
+            conditions.fluid.SiO2 += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"albite dissolution (pH {conditions.fluid.pH:.1f})"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.0 * excess * random.uniform(0.8, 1.2)
+
+    if rate < 0.1:
+        return None
+
+    T = conditions.temperature
+
+    # Temperature determines ordering state
+    if T > 450:
+        ordering = "high-albite (monalbite, disordered Al/Si)"
+        crystal.habit = "prismatic"
+        crystal.dominant_forms = ["{001} cleavage", "{010} face", "{110} prism"]
+    else:
+        ordering = "low-albite (fully ordered)"
+        crystal.habit = "prismatic"
+        crystal.dominant_forms = ["{001} cleavage", "{010} face", "polysynthetic twinning"]
+
+    # Cleavelandite: platy lamellar habit from low-T hydrothermal conditions
+    cleavelandite = False
+    if T < 350 and rate < 3.0:
+        if random.random() < 0.25:
+            cleavelandite = True
+            crystal.habit = "cleavelandite (platy lamellar)"
+            crystal.dominant_forms = ["thin platy lamellae", "curved aggregates"]
+
+    # Twinning — albite has two main twin laws
+    if not crystal.twinned:
+        twin_roll = random.random()
+        if twin_roll < 0.20:
+            crystal.twinned = True
+            crystal.twin_law = "albite twin (reflection {010})"
+        elif twin_roll < 0.25:
+            crystal.twinned = True
+            crystal.twin_law = "pericline twin (rotation on b-axis)"
+
+    # Peristerite / moonstone check
+    # Albite + oligoclase intergrowth creates adularescence
+    peristerite = False
+    if T < 400 and conditions.fluid.Ca > 2:
+        if random.random() < 0.15:
+            peristerite = True
+
+    # Color
+    if peristerite:
+        color_note = "peristerite moonstone (blue-white adularescence from exsolution)"
+    elif cleavelandite:
+        color_note = "white, lamellar"
+    else:
+        color_note = "white to colorless"
+
+    # Deplete Na, Al, SiO₂ from fluid
+    conditions.fluid.Na -= rate * 0.012
+    conditions.fluid.Na = max(conditions.fluid.Na, 0)
+    conditions.fluid.Al -= rate * 0.006
+    conditions.fluid.Al = max(conditions.fluid.Al, 0)
+    conditions.fluid.SiO2 -= rate * 0.010
+    conditions.fluid.SiO2 = max(conditions.fluid.SiO2, 0)
+
+    # Build zone note
+    parts = [ordering]
+    if cleavelandite:
+        parts.append("cleavelandite")
+    if peristerite:
+        parts.append("peristerite intergrowth")
+    parts.append(color_note)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Al=conditions.fluid.Al * 0.03,
+        note=", ".join(parts)
+    )
+
+
 # Mineral registry
 MINERAL_ENGINES = {
     "quartz": grow_quartz,
@@ -1542,6 +1836,8 @@ MINERAL_ENGINES = {
     "malachite": grow_malachite,
     "adamite": grow_adamite,
     "mimetite": grow_mimetite,
+    "feldspar": grow_feldspar,
+    "albite": grow_albite,
 }
 
 
@@ -1570,6 +1866,7 @@ THERMAL_DECOMPOSITION = {
     "wulfenite":   (1120, "PbMoO₄ → Pb + MoO₃ (decomposition)",                         {"Pb": 0.4, "Mo": 0.3}),
     "selenite":    (150,  "CaSO₄·2H₂O → CaSO₄ (anhydrite) + H₂O",                       {"Ca": 0.3, "S": 0.2}),
     "feldspar":    (1170, "KAlSi₃O₈ melting — feldspar is refractory",                    {"K": 0.3, "Al": 0.2, "SiO2": 0.3}),
+    "albite":      (1118, "NaAlSi₃O₈ melting — albite slightly less refractory",                {"Na": 0.3, "Al": 0.2, "SiO2": 0.3}),
     "uraninite":   (2800, "UO₂ — one of the most refractory oxides",                      {"U": 0.5}),
     "goethite":    (300,  "FeO(OH) → Fe₂O₃ + H₂O (dehydrates to hematite)",              {"Fe": 0.5}),
     "molybdenite": (1185, "MoS₂ decomposition",                                         {"Mo": 0.4, "S": 0.4}),
@@ -1941,6 +2238,9 @@ class VugSimulator:
         elif mineral == "feldspar":
             crystal.habit = "prismatic"
             crystal.dominant_forms = ["{001} cleavage", "{010} face", "Carlsbad twin"]
+        elif mineral == "albite":
+            crystal.habit = "prismatic"
+            crystal.dominant_forms = ["{001} cleavage", "{010} face", "albite twin"]
         elif mineral == "uraninite":
             crystal.habit = "massive"
             crystal.dominant_forms = ["massive pitchy aggregates"]
@@ -2082,6 +2382,36 @@ class VugSimulator:
             c = self.nucleate("mimetite", position=pos)
             self.log.append(f"  ✦ NUCLEATION: Mimetite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mim:.2f})")
+        
+        # Feldspar nucleation — K-feldspar (orthoclase/microcline/sanidine)
+        # Needs high T, limits to 2 crystals
+        sigma_fsp = self.conditions.supersaturation_feldspar()
+        all_fsp = [c for c in self.crystals if c.mineral == "feldspar"]
+        existing_fsp = [c for c in all_fsp if c.active]
+        if sigma_fsp > 1.0 and not existing_fsp and len(all_fsp) < 2:
+            pos = "vug wall"
+            # Feldspar can nucleate on quartz — common in pegmatites
+            if existing_quartz and random.random() < 0.4:
+                pos = f"on quartz #{existing_quartz[0].crystal_id}"
+            c = self.nucleate("feldspar", position=pos)
+            self.log.append(f"  ✦ NUCLEATION: K-feldspar #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_fsp:.2f})")
+        
+        # Albite nucleation — Na-feldspar
+        # Can coexist with K-feldspar (perthite pair)
+        sigma_ab = self.conditions.supersaturation_albite()
+        all_ab = [c for c in self.crystals if c.mineral == "albite"]
+        existing_ab = [c for c in all_ab if c.active]
+        if sigma_ab > 1.0 and not existing_ab and len(all_ab) < 2:
+            pos = "vug wall"
+            # Albite often nucleates on feldspar — the perthite association
+            if existing_fsp and random.random() < 0.5:
+                pos = f"on feldspar #{existing_fsp[0].crystal_id}"
+            elif existing_quartz and random.random() < 0.3:
+                pos = f"on quartz #{existing_quartz[0].crystal_id}"
+            c = self.nucleate("albite", position=pos)
+            self.log.append(f"  ✦ NUCLEATION: Albite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ab:.2f})")
     
     def apply_events(self):
         """Apply any events scheduled for this step."""
@@ -3153,6 +3483,41 @@ class VugSimulator:
                     desc += ", partially dissolved (acid attack)"
                 if "chalcopyrite" in c.position:
                     desc += " (growing on chalcopyrite — classic oxidation paragenesis)"
+                parts.append(f"  • {desc}")
+            
+            elif c.mineral == "feldspar":
+                desc = f"a {c.c_length_mm:.1f}mm feldspar"
+                color = c.predict_color()
+                if "amazonite" in color:
+                    desc += " — amazonite, blue-green microcline"
+                elif "moonstone" in color:
+                    desc += " — moonstone with adularescence"
+                elif "perthite" in color:
+                    desc += " — perthite with albite stringers"
+                else:
+                    desc += " — flesh-colored to white"
+                if c.twinned:
+                    desc += f" ({c.twin_law})"
+                fl = c.predict_fluorescence()
+                if "yellow-green" in fl:
+                    desc += ", fluoresces yellow-green under LW UV"
+                if "on quartz" in c.position:
+                    desc += " (on quartz — pegmatitic texture)"
+                parts.append(f"  • {desc}")
+            
+            elif c.mineral == "albite":
+                desc = f"a {c.c_length_mm:.1f}mm albite"
+                color = c.predict_color()
+                if "moonstone" in color:
+                    desc += " — peristerite moonstone, blue adularescence"
+                elif "cleavelandite" in color:
+                    desc += " — cleavelandite, platy lamellar habit"
+                else:
+                    desc += " — white to colorless"
+                if c.twinned:
+                    desc += f" ({c.twin_law})"
+                if "on feldspar" in c.position:
+                    desc += " (on feldspar — perthite pair)"
                 parts.append(f"  • {desc}")
         
         if len(parts) == 1:
