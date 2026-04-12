@@ -1968,6 +1968,7 @@ def event_copper_injection(conditions: VugConditions) -> str:
     conditions.fluid.Fe += 40.0
     conditions.fluid.S += 80.0
     conditions.fluid.SiO2 += 200.0
+    conditions.fluid.Pb += 20.0  # porphyry fluids carry Pb too
     conditions.fluid.O2 = 0.3  # reducing, sulfide-stable
     conditions.temperature += 30
     conditions.flow_rate = 4.0
@@ -1999,6 +2000,22 @@ def event_alkalinize(conditions: VugConditions) -> str:
     conditions.fluid.pH = min(conditions.fluid.pH, 10.0)
     return (f"Alkaline fluid incursion. pH rises to {conditions.fluid.pH:.1f}. "
             f"Carbonate precipitation favored.")
+
+
+def event_molybdenum_pulse(conditions: VugConditions) -> str:
+    """Late-stage molybdenum pulse — separate from Cu in porphyry systems.
+
+    Per Seo et al. 2012 (Bingham Canyon), Mo arrives in a distinct later
+    pulse from Cu. This is what makes wulfenite possible: you need BOTH
+    galena (Pb) and molybdenite (Mo) to oxidize in the same vug.
+    """
+    conditions.fluid.Mo = 80.0
+    conditions.fluid.S += 40.0
+    conditions.fluid.O2 = 0.3  # reducing — molybdenite stable
+    conditions.temperature += 15
+    return (f"Late-stage molybdenum fluid arrives separately from Cu. "
+            f"Mo spikes to {conditions.fluid.Mo:.0f} ppm. T rises to {conditions.temperature:.0f}°C. "
+            f"Molybdenite may form — future wulfenite precursor.")
 
 
 def event_fluid_mixing(conditions: VugConditions) -> str:
@@ -2066,12 +2083,13 @@ def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
         pressure=2.0,
         fluid=FluidChemistry(
             SiO2=700, Ca=80, CO3=50, Fe=30, Mn=2,
-            Zn=0, S=60, F=5, Cu=0, O2=0.2,
+            Zn=0, S=60, F=5, Cu=0, Pb=15, O2=0.2,
             pH=4.5, salinity=10.0
         )
     )
     events = [
         Event(25, "Copper Pulse", "Magmatic copper fluid arrives", event_copper_injection),
+        Event(45, "Molybdenum Pulse", "Late-stage Mo fluid (Seo et al. 2012)", event_molybdenum_pulse),
         Event(60, "Second Cu Pulse", "Another copper surge", event_copper_injection),
         Event(85, "Oxidation", "Meteoric water infiltrates", event_oxidation),
         Event(95, "Cooling", "Rapid cooling event", event_cooling_pulse),
@@ -2412,7 +2430,33 @@ class VugSimulator:
             c = self.nucleate("albite", position=pos)
             self.log.append(f"  ✦ NUCLEATION: Albite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ab:.2f})")
-    
+
+        # Molybdenite nucleation (rare — porphyry systems don't flood the vug)
+        sigma_mol = self.conditions.supersaturation_molybdenite()
+        existing_mol = len([c for c in self.crystals if c.mineral == "molybdenite"])
+        if sigma_mol > 2.0 and existing_mol < 3:
+            if random.random() < 0.08:
+                c = self.nucleate("molybdenite", position="vug wall")
+                self.log.append(f"  ✦ NUCLEATION: Molybdenite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mol:.2f})")
+
+        # Galena nucleation
+        sigma_gal = self.conditions.supersaturation_galena()
+        existing_gal = len([c for c in self.crystals if c.mineral == "galena"])
+        if sigma_gal > 1.5 and existing_gal < 4:
+            if random.random() < 0.12:
+                c = self.nucleate("galena", position="vug wall")
+                self.log.append(f"  ✦ NUCLEATION: Galena #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_gal:.2f})")
+
+        # Wulfenite nucleation — needs both Pb AND Mo oxidized (late-stage)
+        sigma_wul = self.conditions.supersaturation_wulfenite()
+        if sigma_wul > 1.3:
+            if random.random() < 0.15:
+                c = self.nucleate("wulfenite", position="vug wall")
+                self.log.append(f"  ✦ NUCLEATION: Wulfenite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_wul:.2f})")
+
     def apply_events(self):
         """Apply any events scheduled for this step."""
         for event in self.events:
