@@ -64,6 +64,176 @@ h1 {
   color: #d4a843;
 }
 
+/* ============== LIBRARY MODE ============== */
+.library-panel {
+  display: none;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.5rem;
+}
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  background: #1a1a14;
+  border: 1px solid #3a3520;
+  border-radius: 6px;
+  align-items: end;
+}
+.library-filters label {
+  color: #a89040;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.library-filters select,
+.library-filters input[type="text"] {
+  background: #0f0f08;
+  color: #d4a843;
+  border: 1px solid #3a3520;
+  padding: 0.35rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  border-radius: 3px;
+}
+.library-filters .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.library-filters .filter-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.library-filters button {
+  background: #2a2510;
+  color: #d4a843;
+  border: 1px solid #3a3520;
+  padding: 0.4rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.library-filters button:hover {
+  background: #3a3518;
+  color: #f0c050;
+}
+.library-count {
+  color: #8a7a40;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+.mineral-card {
+  background: linear-gradient(145deg, #1c1c12, #12120a);
+  border: 1px solid #3a3520;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: border-color 0.2s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mineral-card:hover {
+  border-color: #8a7a40;
+  transform: translateY(-1px);
+}
+.mineral-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.mineral-card-name {
+  color: #f0c050;
+  font-size: 1.15rem;
+  font-weight: bold;
+  text-shadow: 0 0 4px rgba(240,192,80,0.2);
+}
+.mineral-card-formula {
+  color: #8a7a40;
+  font-size: 0.9rem;
+  font-family: ui-monospace, Menlo, monospace;
+}
+.mineral-card-class {
+  display: inline-block;
+  font-size: 0.65rem;
+  color: #c0a030;
+  background: rgba(212,168,67,0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mineral-card-desc {
+  color: #b89c60;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.mineral-card-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 0.8rem;
+  font-size: 0.75rem;
+  color: #8a7a40;
+  margin-top: 0.3rem;
+}
+.mineral-card-stats .stat-key {
+  color: #6a5a30;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.mineral-card-stats .stat-val {
+  color: #d4a843;
+  font-family: ui-monospace, Menlo, monospace;
+}
+.mineral-card-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  color: #80c0ff;
+  background: rgba(128,192,255,0.08);
+  border: 1px solid rgba(128,192,255,0.2);
+  padding: 2px 5px;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+.mineral-card-badge.FL { color: #b0ff80; border-color: rgba(176,255,128,0.25); background: rgba(176,255,128,0.08); }
+.mineral-card-badge.acid { color: #ff9090; border-color: rgba(255,144,144,0.25); background: rgba(255,144,144,0.08); }
+.mineral-card-badge.twin { color: #d8a8f0; border-color: rgba(216,168,240,0.25); background: rgba(216,168,240,0.08); }
+.mineral-card-scenarios {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  color: #6a5a30;
+}
+.mineral-card-scenarios .scenario-chip {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(138,122,64,0.15);
+  color: #a89040;
+  border-radius: 3px;
+  margin: 2px 3px 0 0;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.68rem;
+}
+.library-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #5a4a30;
+  font-style: italic;
+}
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -1397,6 +1567,10 @@ footer a:hover {
       <h3>🌀 The Groove</h3>
       <p>An idle vug that runs forever. Temperature drifts, chemistry shifts, crystals come and go. Leave it running overnight — come back to see what grew. Screensaver for geologists.</p>
     </div>
+    <div class="title-mode-card" onclick="switchMode('library')">
+      <h3>📚 Library</h3>
+      <p>Browse every mineral the simulator knows. Filter by class, fluorescence, or element; look up what grows in each scenario, or what conditions a mineral needs. Reference — no simulation.</p>
+    </div>
   </div>
 </div>
 
@@ -1406,6 +1580,7 @@ footer a:hover {
   <button id="mode-fortress" onclick="switchMode('fortress')">🏰 Creative</button>
   <button id="mode-groove" onclick="switchMode('groove')">📀 Record Player</button>
   <button id="mode-idle" onclick="switchMode('idle')">🌀 The Groove</button>
+  <button id="mode-library" onclick="switchMode('library')">📚 Library</button>
   <button class="mode-home-btn" onclick="showTitleScreen()">🏠</button>
 </div>
 
@@ -2098,6 +2273,56 @@ Scenarios:
   </div>
 </div>
 
+<!-- Library Mode -->
+<div class="library-panel" id="library-panel">
+  <div class="library-filters">
+    <div class="filter-group">
+      <label for="lib-class">Class</label>
+      <select id="lib-class" onchange="libraryRender()">
+        <option value="all">All classes</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="lib-fluor">Fluorescence</label>
+      <select id="lib-fluor" onchange="libraryRender()">
+        <option value="all">Any</option>
+        <option value="yes">Fluorescent</option>
+        <option value="no">Non-fluorescent</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="lib-temp">Temperature</label>
+      <select id="lib-temp" onchange="libraryRender()">
+        <option value="all">Any</option>
+        <option value="low">Low (&lt;100°C)</option>
+        <option value="mid">Medium (100–400°C)</option>
+        <option value="high">High (&gt;400°C)</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="lib-element">Contains element</label>
+      <select id="lib-element" onchange="libraryRender()">
+        <option value="all">Any</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="lib-scenario">What grows in…</label>
+      <select id="lib-scenario" onchange="libraryRender()">
+        <option value="all">Any scenario</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="lib-search">Search</label>
+      <input type="text" id="lib-search" placeholder="name or formula…" oninput="libraryRender()">
+    </div>
+    <div class="filter-actions">
+      <span class="library-count" id="library-count"></span>
+      <button onclick="libraryResetFilters()">Reset</button>
+    </div>
+  </div>
+  <div class="library-grid" id="library-grid"></div>
+</div>
+
 <footer>
   Built by 🪨✍️ (StonePhilosopher) with Professor
   &nbsp;·&nbsp;
@@ -2106,15 +2331,17 @@ Scenarios:
 
 <script>
 // ============================================================
-// MINERAL SPEC — mirror of ../data/minerals.json
+// MINERAL SPEC — single source of truth is ../data/minerals.json
 // ============================================================
-// Single source of truth (data/minerals.json) for vugg.py. This embed
-// is kept in sync manually for the browser runtime. Declares every
-// template field per mineral (max_size_cm, thermal_decomp_C,
-// fluorescence, twin_laws, acid_dissolution, …). Runtime reads
-// max_size_cm to enforce the 2× world-record cap — the fix for the
-// 321,248% runaway growth bug.
-const MINERAL_SPEC = {
+// At startup the browser fetches data/minerals.json and assigns the
+// result to MINERAL_SPEC. This inline FALLBACK block only exists so
+// that if the fetch fails (file:// protocol, offline), the simulator's
+// size-cap and nucleation threshold logic can still function. The
+// Library Mode always waits for the fetched version.
+//
+// Keep MINERAL_SPEC_FALLBACK in sync with data/minerals.json via
+// `node tools/sync-spec.js` — the drift checker will flag mismatches.
+const MINERAL_SPEC_FALLBACK = {
   quartz: { formula: "SiO2", nucleation_sigma: 1.0, max_size_cm: 1200, growth_rate_mult: 0.3, thermal_decomp_C: 1713, fluorescence: { activator: "Al", threshold_ppm: 5, color: "weak_blue_LW" }, twin_laws: [{ name: "Dauphine", probability: 0.15 }], acid_dissolution: { pH_threshold: 4.0, requires: { F: 20 } } },
   calcite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 2000, growth_rate_mult: 1.0, thermal_decomp_C: 840, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_red", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "c_twin", probability: 0.10 }], acid_dissolution: { pH_threshold: 5.5 } },
   sphalerite: { formula: "ZnS", nucleation_sigma: 1.0, max_size_cm: 80, growth_rate_mult: 0.6, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "spinel_law", probability: 0.015 }], acid_dissolution: { pH_threshold: 2.0 } },
@@ -2135,6 +2362,43 @@ const MINERAL_SPEC = {
   selenite: { formula: "CaSO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 2400, growth_rate_mult: 0.7, thermal_decomp_C: 150, fluorescence: null, twin_laws: [{ name: "swallowtail", probability: 0.08 }], acid_dissolution: { pH_threshold: 5.0 } },
   goethite: { formula: "FeO(OH)", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.4, thermal_decomp_C: 300, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 }, nucleation_preferences: { grows_on: ["pyrite", "chalcopyrite", "marcasite"], forms_pseudomorph_after: ["pyrite"] } },
 };
+
+// Live spec — swapped in by the fetch below if data/minerals.json loads.
+let MINERAL_SPEC = MINERAL_SPEC_FALLBACK;
+let MINERAL_SPEC_READY = false;
+const _specListeners = [];
+
+function onSpecReady(cb) {
+  if (MINERAL_SPEC_READY) cb(MINERAL_SPEC);
+  else _specListeners.push(cb);
+}
+
+// Fetch real spec; replaces MINERAL_SPEC with the full JSON (description,
+// class, scenarios, habit_variants, full fluorescence structure, etc.).
+// Safe to call before other init: MINERAL_SPEC_FALLBACK covers the gap.
+// Try multiple paths so it works from /web/ during local dev, from /docs/
+// on GitHub Pages, and from repo root when served flat.
+async function _loadSpec(paths) {
+  for (const p of paths) {
+    try {
+      const r = await fetch(p);
+      if (r.ok) return { doc: await r.json(), path: p };
+    } catch (e) { /* try next */ }
+  }
+  throw new Error('all spec paths failed');
+}
+_loadSpec(['./data/minerals.json', '../data/minerals.json', '/data/minerals.json'])
+  .then(({ doc, path }) => {
+    MINERAL_SPEC = doc.minerals;
+    MINERAL_SPEC_READY = true;
+    console.info(`[spec] loaded ${Object.keys(MINERAL_SPEC).length} minerals from ${path}`);
+    _specListeners.splice(0).forEach(cb => { try { cb(MINERAL_SPEC); } catch (e) { console.error(e); } });
+  })
+  .catch(err => {
+    MINERAL_SPEC_READY = true; // resolve with fallback
+    console.warn(`[spec] fetch failed (${err.message}); using compact fallback — Library Mode will render with limited data`);
+    _specListeners.splice(0).forEach(cb => { try { cb(MINERAL_SPEC); } catch (e) { console.error(e); } });
+  });
 
 function maxSizeCm(mineral) {
   const entry = MINERAL_SPEC[mineral];
@@ -2805,6 +3069,14 @@ class VugConditions {
     let sigma = (this.fluid.Fe / 60.0) * (this.fluid.O2 / 1.0);
     if (this.temperature > 150) sigma *= Math.exp(-0.015 * (this.temperature - 150));
     if (this.fluid.pH < 3.0) sigma -= (3.0 - this.fluid.pH) * 0.5;
+    return Math.max(sigma, 0);
+  }
+
+  // Albite (NaAlSi₃O₈) — plagioclase end-member, pegmatite staple.
+  supersaturation_albite() {
+    if (this.fluid.Na < 10 || this.fluid.Al < 3 || this.fluid.SiO2 < 200) return 0;
+    let sigma = (this.fluid.Na / 35.0) * (this.fluid.Al / 10.0) * (this.fluid.SiO2 / 400.0);
+    if (this.temperature < 300) sigma *= Math.exp(-0.01 * (300 - this.temperature));
     return Math.max(sigma, 0);
   }
 }
@@ -4072,6 +4344,58 @@ function grow_goethite(crystal, conditions, step) {
   });
 }
 
+// Albite (NaAlSi₃O₈) — Na-feldspar, cleavelandite platy habit in pegmatites.
+function grow_albite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_albite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.pH < 3.0) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.06);
+      conditions.fluid.Na += d * 0.3;
+      conditions.fluid.Al += d * 0.2;
+      conditions.fluid.SiO2 += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `albite dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — slow kaolinization` });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const T = conditions.temperature;
+  const ordering = T > 450 ? 'high-albite (disordered)' : 'low-albite (fully ordered)';
+  crystal.habit = 'prismatic';
+  crystal.dominant_forms = ['{001} cleavage', '{010} face', '{110} prism'];
+
+  // Cleavelandite platy habit at low T
+  let cleavelandite = false;
+  if (T < 350 && rate < 3.0 && rng.random() < 0.25) {
+    cleavelandite = true;
+    crystal.habit = 'cleavelandite_platy';
+    crystal.dominant_forms = ['thin platy lamellae', 'curved aggregates'];
+  }
+
+  // Twin laws
+  if (!crystal.twinned) {
+    if (rng.random() < 0.20) { crystal.twinned = true; crystal.twin_law = 'albite polysynthetic {010}'; }
+    else if (rng.random() < 0.05) { crystal.twinned = true; crystal.twin_law = 'pericline [010]'; }
+  }
+
+  // Peristerite moonstone — Ca trace creates the sheen
+  let peristerite = false;
+  if (conditions.fluid.Ca > 2 && T < 400 && rng.random() < 0.15) peristerite = true;
+
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.012, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.006, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.010, 0);
+
+  let note = ordering;
+  if (cleavelandite) note += ', cleavelandite platy habit';
+  if (peristerite) note += ', peristerite intergrowth (moonstone adularescence)';
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Al: conditions.fluid.Al * 0.03, note });
+}
+
 const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
@@ -4091,6 +4415,7 @@ const MINERAL_ENGINES = {
   adamite: grow_adamite,
   mimetite: grow_mimetite,
   goethite: grow_goethite,
+  albite: grow_albite,
 };
 
 function grow_adamite(crystal, conditions, step) {
@@ -4245,13 +4570,16 @@ function event_alkalinize(conditions) {
 }
 
 function event_fluid_mixing(conditions) {
+  // Phase-3: sync with vugg.py — F bumped 15→40 (Cave-in-Rock fluid-inclusion
+  // data) so fluorite actually crosses σ=1.2. Pb added so galena nucleates.
   conditions.fluid.Zn = 150.0;
   conditions.fluid.S = 120.0;
   conditions.fluid.Ca += 100.0;
-  conditions.fluid.F += 15.0;
+  conditions.fluid.F += 40.0;
+  conditions.fluid.Pb += 25.0;
   conditions.fluid.Fe += 30.0;
   conditions.temperature -= 20;
-  return 'Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite and fluorite become possible.';
+  return 'Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite, fluorite, and galena become possible.';
 }
 
 // ============================================================
@@ -4673,6 +5001,21 @@ class VugSimulator {
         const polyName = T > 500 ? 'sanidine' : (T > 300 ? 'orthoclase' : 'microcline');
         c.mineral_display = polyName;
         this.log.push(`  ✦ NUCLEATION: Feldspar #${c.crystal_id} (${polyName}) on ${c.position} (T=${T.toFixed(0)}°C, σ=${sigma_feld.toFixed(2)}) — ${T > 500 ? 'disordered high-T form' : T > 300 ? 'partially ordered' : 'fully ordered triclinic'}`);
+      }
+    }
+
+    // Albite nucleation — Na-feldspar, often co-occurs with K-feldspar in pegmatites.
+    const sigma_alb = this.conditions.supersaturation_albite();
+    const existing_alb = this.crystals.filter(c => c.mineral === 'albite' && c.active);
+    const total_alb = this.crystals.filter(c => c.mineral === 'albite').length;
+    if (sigma_alb > 1.0 && existing_alb.length < 2 && total_alb < 4) {
+      if (!existing_alb.length || (sigma_alb > 1.5 && rng.random() < 0.25)) {
+        let pos = 'vug wall';
+        // Classic perthite association — albite on feldspar host
+        if (existing_feld.length && rng.random() < 0.5) pos = `on feldspar #${existing_feld[0].crystal_id}`;
+        else if (existing_quartz.length && rng.random() < 0.3) pos = `on quartz #${existing_quartz[0].crystal_id}`;
+        const c = this.nucleate('albite', pos);
+        this.log.push(`  ✦ NUCLEATION: Albite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_alb.toFixed(2)})`);
       }
     }
 
@@ -5495,6 +5838,25 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_albite(c) {
+    const parts = [`Albite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("NaAlSi₃O₈ — sodium end-member of the plagioclase series. At T < 450°C, albite orders to 'low-albite' (fully ordered Al/Si). Platy cleavelandite habit is the pegmatite signature.");
+    const peristerite = c.zones.some(z => (z.note || '').includes('peristerite'));
+    if (peristerite) {
+      parts.push('Ca²⁺ intergrowth produced peristerite — fine albite/oligoclase exsolution lamellae that scatter light into blue-white adularescence. The moonstone shimmer.');
+    }
+    if (c.habit && c.habit.includes('cleavelandite')) {
+      parts.push('Cleavelandite habit — platy, lamellar blades curved like book-pages, the low-T hydrothermal signature.');
+    }
+    if (c.twinned) {
+      parts.push(`Twinned on the ${c.twin_law} — polysynthetic albite twinning creates the characteristic striped appearance of plagioclase in thin section.`);
+    }
+    if (c.dissolved) {
+      parts.push('Acid released Na⁺, Al³⁺, and SiO₂ — albite is slightly more resistant than K-feldspar but still weathers to kaolinite under persistent acid attack.');
+    }
+    return parts.join(' ');
+  }
+
   _narrate_selenite(c) {
     const parts = [`Selenite #${c.crystal_id} — the crystal that grows when everything else is ending.`];
     if (c.habit === 'rosette') {
@@ -5990,6 +6352,7 @@ function showTitleScreen() {
   const fortressPanel = document.getElementById('fortress-panel');
   const groovePanel = document.getElementById('groove-panel');
   const idlePanel = document.getElementById('idle-panel');
+  const libraryPanel = document.getElementById('library-panel');
 
   titleScreen.style.display = 'block';
   modeToggle.style.display = 'none';
@@ -5998,6 +6361,7 @@ function showTitleScreen() {
   fortressPanel.style.display = 'none';
   groovePanel.style.display = 'none';
   if (idlePanel) idlePanel.style.display = 'none';
+  if (libraryPanel) libraryPanel.style.display = 'none';
   idleStop(); // stop any running idle simulation
 }
 
@@ -6009,10 +6373,12 @@ function switchMode(mode) {
   const fortressPanel = document.getElementById('fortress-panel');
   const groovePanel = document.getElementById('groove-panel');
   const idlePanel = document.getElementById('idle-panel');
+  const libraryPanel = document.getElementById('library-panel');
   const modeLegends = document.getElementById('mode-legends');
   const modeFortress = document.getElementById('mode-fortress');
   const modeGroove = document.getElementById('mode-groove');
   const modeIdle = document.getElementById('mode-idle');
+  const modeLibrary = document.getElementById('mode-library');
 
   // Hide title screen, show mode toggle
   titleScreen.style.display = 'none';
@@ -6023,10 +6389,12 @@ function switchMode(mode) {
   fortressPanel.style.display = 'none';
   groovePanel.style.display = 'none';
   if (idlePanel) idlePanel.style.display = 'none';
+  if (libraryPanel) libraryPanel.style.display = 'none';
   modeLegends.classList.remove('active');
   modeFortress.classList.remove('active');
   modeGroove.classList.remove('active');
   if (modeIdle) modeIdle.classList.remove('active');
+  if (modeLibrary) modeLibrary.classList.remove('active');
 
   if (mode === 'legends') {
     legendsControls.style.display = 'flex';
@@ -6047,7 +6415,163 @@ function switchMode(mode) {
     if (modeIdle) modeIdle.classList.add('active');
     timeScale = 1.0; // ~10,000 years per step
     idleInit();
+  } else if (mode === 'library') {
+    if (libraryPanel) libraryPanel.style.display = 'flex';
+    if (modeLibrary) modeLibrary.classList.add('active');
+    libraryInit();
   }
+}
+
+// ============================================================
+// LIBRARY MODE — mineral reference browser (reads MINERAL_SPEC)
+// ============================================================
+let _libraryInitialized = false;
+
+function libraryInit() {
+  // Populate filter dropdowns from MINERAL_SPEC; wait for fetch if needed.
+  onSpecReady(() => {
+    if (!_libraryInitialized) {
+      const classSet = new Set();
+      const elementSet = new Set();
+      const scenarioSet = new Set();
+      for (const m of Object.values(MINERAL_SPEC)) {
+        if (m.class) classSet.add(m.class);
+        if (m.required_ingredients) Object.keys(m.required_ingredients).forEach(e => elementSet.add(e));
+        if (m.trace_ingredients) Object.keys(m.trace_ingredients).forEach(e => elementSet.add(e));
+        if (Array.isArray(m.scenarios)) m.scenarios.forEach(s => scenarioSet.add(s));
+      }
+      const classSel = document.getElementById('lib-class');
+      [...classSet].sort().forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; classSel.appendChild(o); });
+      const elSel = document.getElementById('lib-element');
+      [...elementSet].sort().forEach(e => { const o = document.createElement('option'); o.value = e; o.textContent = e; elSel.appendChild(o); });
+      const scSel = document.getElementById('lib-scenario');
+      [...scenarioSet].sort().forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; scSel.appendChild(o); });
+      _libraryInitialized = true;
+    }
+    libraryRender();
+  });
+}
+
+function libraryResetFilters() {
+  ['lib-class','lib-fluor','lib-temp','lib-element','lib-scenario'].forEach(id => { const el = document.getElementById(id); if (el) el.value = 'all'; });
+  const s = document.getElementById('lib-search'); if (s) s.value = '';
+  libraryRender();
+}
+
+function libraryMatches(mineral, m, filters) {
+  if (filters.cls !== 'all' && m.class !== filters.cls) return false;
+  if (filters.fluor === 'yes' && !m.fluorescence) return false;
+  if (filters.fluor === 'no'  && m.fluorescence) return false;
+  if (filters.temp !== 'all') {
+    const range = m.T_range_C || [0, 1000];
+    const opt = m.T_optimum_C || range;
+    const mid = (opt[0] + opt[1]) / 2;
+    if (filters.temp === 'low' && mid >= 100) return false;
+    if (filters.temp === 'mid' && (mid < 100 || mid > 400)) return false;
+    if (filters.temp === 'high' && mid <= 400) return false;
+  }
+  if (filters.element !== 'all') {
+    const reqHas = m.required_ingredients && filters.element in m.required_ingredients;
+    const trcHas = m.trace_ingredients && filters.element in m.trace_ingredients;
+    if (!reqHas && !trcHas) return false;
+  }
+  if (filters.scenario !== 'all') {
+    if (!Array.isArray(m.scenarios) || !m.scenarios.includes(filters.scenario)) return false;
+  }
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    if (!mineral.toLowerCase().includes(q) && !(m.formula || '').toLowerCase().includes(q) && !(m.description || '').toLowerCase().includes(q)) return false;
+  }
+  return true;
+}
+
+function fluorescenceSummary(fl) {
+  if (!fl) return null;
+  const color = (fl.color || '').replace(/_/g, ' ');
+  const activator = fl.activator || 'intrinsic';
+  const q = fl.quencher && fl.quencher.species ? ` (quenched by ${fl.quencher.species})` : '';
+  return `${color} — ${activator}${q}`;
+}
+
+function renderIngredientChips(obj) {
+  if (!obj || !Object.keys(obj).length) return '—';
+  return Object.entries(obj).map(([k,v]) => `<span class="mineral-card-badge">${k}${typeof v === 'number' ? ` ≥${v}` : ''}</span>`).join('');
+}
+
+function libraryBuildCard(name, m) {
+  const Tmin = m.T_range_C ? m.T_range_C[0] : '?';
+  const Tmax = m.T_range_C ? m.T_range_C[1] : '?';
+  const Topt = m.T_optimum_C ? `${m.T_optimum_C[0]}–${m.T_optimum_C[1]}` : '—';
+  const fl = fluorescenceSummary(m.fluorescence);
+  const badges = [];
+  if (m.fluorescence) badges.push('<span class="mineral-card-badge FL">FL</span>');
+  if (m.acid_dissolution) badges.push('<span class="mineral-card-badge acid">acid</span>');
+  if (Array.isArray(m.twin_laws) && m.twin_laws.length) badges.push('<span class="mineral-card-badge twin">twins</span>');
+  const scenarioChips = (m.scenarios || []).map(s => `<span class="scenario-chip">${s}</span>`).join('');
+  const twinText = Array.isArray(m.twin_laws) && m.twin_laws.length
+    ? m.twin_laws.map(t => t.name + (t.probability ? ` (${(t.probability*100).toFixed(1)}%)` : '')).join(', ')
+    : '—';
+  const acidText = m.acid_dissolution ? `pH &lt; ${m.acid_dissolution.pH_threshold}` : '—';
+  const decompText = m.thermal_decomp_C ? `${m.thermal_decomp_C}°C` : '—';
+
+  return `
+    <div class="mineral-card" data-mineral="${name}">
+      <div class="mineral-card-header">
+        <div>
+          <div class="mineral-card-name">${name}</div>
+          <div class="mineral-card-formula">${m.formula || ''}</div>
+        </div>
+        <div>${badges.join(' ')} <span class="mineral-card-class">${m.class || '?'}</span></div>
+      </div>
+      <div class="mineral-card-desc">${m.description || '<em>No description.</em>'}</div>
+      <div class="mineral-card-stats">
+        <div class="stat-key">Habits</div>
+        <div class="stat-val">${(m.habit_variants || [m.habit || '?']).join(', ')}</div>
+        <div class="stat-key">T window</div>
+        <div class="stat-val">${Tmin}–${Tmax}°C (optimum ${Topt})</div>
+        <div class="stat-key">Requires</div>
+        <div class="stat-val">${renderIngredientChips(m.required_ingredients)}</div>
+        <div class="stat-key">Traces</div>
+        <div class="stat-val">${renderIngredientChips(m.trace_ingredients)}</div>
+        <div class="stat-key">Fluorescence</div>
+        <div class="stat-val">${fl || 'non-fluorescent'}</div>
+        <div class="stat-key">Twin laws</div>
+        <div class="stat-val">${twinText}</div>
+        <div class="stat-key">Acid dissolution</div>
+        <div class="stat-val">${acidText}</div>
+        <div class="stat-key">Thermal decomp</div>
+        <div class="stat-val">${decompText}</div>
+      </div>
+      <div class="mineral-card-scenarios">Grows in: ${scenarioChips || '<em style="color:#5a4a30">no scenarios listed</em>'}</div>
+    </div>
+  `;
+}
+
+function libraryRender() {
+  const grid = document.getElementById('library-grid');
+  const count = document.getElementById('library-count');
+  if (!grid) return;
+  if (!MINERAL_SPEC_READY) {
+    grid.innerHTML = '<div class="library-empty">Loading spec…</div>';
+    return;
+  }
+  const filters = {
+    cls:      document.getElementById('lib-class').value,
+    fluor:    document.getElementById('lib-fluor').value,
+    temp:     document.getElementById('lib-temp').value,
+    element:  document.getElementById('lib-element').value,
+    scenario: document.getElementById('lib-scenario').value,
+    search:   document.getElementById('lib-search').value.trim(),
+  };
+  const entries = Object.entries(MINERAL_SPEC)
+    .filter(([name, m]) => libraryMatches(name, m, filters))
+    .sort(([a], [b]) => a.localeCompare(b));
+  if (!entries.length) {
+    grid.innerHTML = '<div class="library-empty">No minerals match these filters.</div>';
+  } else {
+    grid.innerHTML = entries.map(([n, m]) => libraryBuildCard(n, m)).join('');
+  }
+  count.textContent = `${entries.length} of ${Object.keys(MINERAL_SPEC).length} minerals`;
 }
 
 // ============================================================

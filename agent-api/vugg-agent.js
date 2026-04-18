@@ -71,6 +71,16 @@ class FluidChemistry {
     this.U = opts.U ?? 0.0;
     this.Cu = opts.Cu ?? 0.0;
     this.Mo = opts.Mo ?? 0.0;
+    // Phase-3 additions: fields needed by adamite / mimetite / feldspar /
+    // albite / selenite engines. Default 0 so existing scenarios unchanged.
+    this.K = opts.K ?? 0.0;
+    this.Na = opts.Na ?? 0.0;
+    this.As = opts.As ?? 0.0;
+    this.Cl = opts.Cl ?? 0.0;
+    this.Cr = opts.Cr ?? 0.0;
+    this.V = opts.V ?? 0.0;
+    this.Ag = opts.Ag ?? 0.0;
+    this.Mg = opts.Mg ?? 0.0;
     this.O2 = opts.O2 ?? 0.0;
     this.pH = opts.pH ?? 6.5;
     this.salinity = opts.salinity ?? 5.0;
@@ -337,6 +347,60 @@ class VugConditions {
     let sigma = (this.fluid.Fe / 60.0) * (this.fluid.O2 / 1.0);
     if (this.temperature > 150) sigma *= Math.exp(-0.015 * (this.temperature - 150));
     if (this.fluid.pH < 3.0) sigma -= (3.0 - this.fluid.pH) * 0.5;
+    return Math.max(sigma, 0);
+  }
+
+  // Molybdenite (MoS₂) — porphyry sulfide, Mo source for wulfenite paragenesis.
+  supersaturation_molybdenite() {
+    if ((this.fluid.Mo || 0) < 3 || this.fluid.S < 10) return 0;
+    if (this.fluid.O2 > 1.2) return 0;
+    let sigma = (this.fluid.Mo / 15.0) * (this.fluid.S / 60.0) * (1.5 - this.fluid.O2);
+    if (this.temperature < 150) sigma *= Math.exp(-0.01 * (150 - this.temperature));
+    else if (this.temperature > 300 && this.temperature < 500) sigma *= 1.3;
+    return Math.max(sigma, 0);
+  }
+
+  // Feldspar (KAlSi₃O₈) — the polymorph clock. High-T igneous/pegmatite.
+  supersaturation_feldspar() {
+    if ((this.fluid.K || 0) < 10 || (this.fluid.Al || 0) < 3 || this.fluid.SiO2 < 200) return 0;
+    let sigma = (this.fluid.K / 40.0) * (this.fluid.Al / 10.0) * (this.fluid.SiO2 / 400.0);
+    if (this.temperature < 300) sigma *= Math.exp(-0.01 * (300 - this.temperature));
+    return Math.max(sigma, 0);
+  }
+
+  // Albite (NaAlSi₃O₈) — Na plagioclase, pegmatite cleavelandite.
+  supersaturation_albite() {
+    if ((this.fluid.Na || 0) < 10 || (this.fluid.Al || 0) < 3 || this.fluid.SiO2 < 200) return 0;
+    let sigma = (this.fluid.Na / 35.0) * (this.fluid.Al / 10.0) * (this.fluid.SiO2 / 400.0);
+    if (this.temperature < 300) sigma *= Math.exp(-0.01 * (300 - this.temperature));
+    return Math.max(sigma, 0);
+  }
+
+  // Selenite (CaSO₄·2H₂O) — low-T evaporite, Naica's giant crystals.
+  supersaturation_selenite() {
+    if (this.fluid.Ca < 20 || this.fluid.S < 15 || this.fluid.O2 < 0.2) return 0;
+    let sigma = (this.fluid.Ca / 60.0) * (this.fluid.S / 50.0) * (this.fluid.O2 / 0.5);
+    if (this.temperature > 60) sigma *= Math.exp(-0.06 * (this.temperature - 60));
+    if (this.fluid.pH < 5.0) sigma -= (5.0 - this.fluid.pH) * 0.2;
+    return Math.max(sigma, 0);
+  }
+
+  // Adamite (Zn₂(AsO₄)(OH)) — supergene arsenate, cuproadamite fluoresces green.
+  supersaturation_adamite() {
+    if (this.fluid.Zn < 10 || (this.fluid.As || 0) < 5 || this.fluid.O2 < 0.3) return 0;
+    let sigma = (this.fluid.Zn / 50.0) * (this.fluid.As / 25.0) * (this.fluid.O2 / 1.0);
+    if (this.temperature > 100) sigma *= Math.exp(-0.02 * (this.temperature - 100));
+    if (this.fluid.pH < 4.0) sigma -= (4.0 - this.fluid.pH) * 0.5;
+    else if (this.fluid.pH > 8.0) sigma -= (this.fluid.pH - 8.0) * 0.3;
+    return Math.max(sigma, 0);
+  }
+
+  // Mimetite (Pb₅(AsO₄)₃Cl) — the mimic, campylite barrels.
+  supersaturation_mimetite() {
+    if (this.fluid.Pb < 5 || (this.fluid.As || 0) < 3 || (this.fluid.Cl || 0) < 2 || this.fluid.O2 < 0.3) return 0;
+    let sigma = (this.fluid.Pb / 60.0) * (this.fluid.As / 25.0) * (this.fluid.Cl / 30.0) * (this.fluid.O2 / 1.0);
+    if (this.temperature > 150) sigma *= Math.exp(-0.015 * (this.temperature - 150));
+    if (this.fluid.pH < 3.5) sigma -= (3.5 - this.fluid.pH) * 0.5;
     return Math.max(sigma, 0);
   }
 }
@@ -1187,6 +1251,155 @@ function grow_goethite(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.02, note: colorNote });
 }
 
+// Molybdenite (MoS₂) — porphyry sulfide, Mo source for wulfenite.
+function grow_molybdenite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_molybdenite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.O2 > 0.3) {
+      crystal.dissolved = true;
+      const d = Math.min(4.0, crystal.total_growth_um * 0.15);
+      conditions.fluid.Mo += d * 0.8;
+      conditions.fluid.S += d * 0.2;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: 'oxidation — molybdenite releases MoO₄²⁻' });
+    }
+    return null;
+  }
+  let rate = 4.0 * sigma * rng.uniform(0.8, 1.2);
+  if (conditions.temperature >= 300 && conditions.temperature <= 500) rate *= 1.3;
+  if (rate < 0.1) return null;
+  crystal.habit = 'hexagonal platy';
+  conditions.fluid.Mo = Math.max(conditions.fluid.Mo - rate * 0.004, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: 'bluish-gray metallic, platy habit, sectile' });
+}
+
+// Feldspar (KAlSi₃O₈) — polymorph by T: sanidine/orthoclase/microcline.
+function grow_feldspar(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_feldspar();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.08);
+      conditions.fluid.K += d * 0.3;
+      conditions.fluid.Al += d * 0.4;
+      conditions.fluid.SiO2 += d * 0.5;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: 'acid weathering — feldspar → kaolinite, releases K⁺, Al³⁺, SiO₂' });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+  const T = conditions.temperature;
+  const polymorph = T > 500 ? 'sanidine' : (T > 300 ? 'orthoclase' : 'microcline');
+  crystal.habit = T > 500 ? 'tabular' : 'prismatic';
+  crystal.mineral_display = polymorph;
+  if (!crystal.twinned && rng.random() < 0.12) { crystal.twinned = true; crystal.twin_law = 'Carlsbad [001]'; }
+  conditions.fluid.K = Math.max(conditions.fluid.K - rate * 0.005, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.004, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.006, 0);
+  const amazonite = conditions.fluid.Pb > 5 && polymorph === 'microcline';
+  const note = amazonite ? `${polymorph} — amazonite (Pb²⁺ → K⁺)` : `${polymorph} (T=${T.toFixed(0)}°C)`;
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Al: conditions.fluid.Al * 0.1, note });
+}
+
+// Albite (NaAlSi₃O₈) — Na-feldspar, cleavelandite platy in pegmatites.
+function grow_albite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_albite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.pH < 3.0) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.06);
+      conditions.fluid.Na += d * 0.3;
+      conditions.fluid.Al += d * 0.2;
+      conditions.fluid.SiO2 += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `albite dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  crystal.habit = (conditions.temperature < 350 && rate < 3.0 && rng.random() < 0.25) ? 'cleavelandite_platy' : 'prismatic';
+  if (!crystal.twinned && rng.random() < 0.20) { crystal.twinned = true; crystal.twin_law = 'albite polysynthetic {010}'; }
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.012, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.006, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.010, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Al: conditions.fluid.Al * 0.03, note: crystal.habit });
+}
+
+// Selenite (CaSO₄·2H₂O) — low-T evaporite, Naica cathedral blade.
+function grow_selenite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_selenite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(5.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Ca += d * 0.4;
+      conditions.fluid.S += d * 0.4;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `selenite acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  let rate = 6.0 * excess * rng.uniform(0.8, 1.2);
+  if (conditions.temperature >= 55 && conditions.temperature <= 58) rate *= 1.4;
+  if (rate < 0.1) return null;
+  const zoneCount = crystal.zones.length;
+  crystal.habit = zoneCount >= 30 ? 'cathedral_blade' : (rate > 8 ? 'tabular' : 'prismatic');
+  if (!crystal.twinned && rng.random() < 0.08) { crystal.twinned = true; crystal.twin_law = 'swallowtail {100}'; }
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.008, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: 'water-clear selenite' });
+}
+
+// Adamite (Zn₂(AsO₄)(OH)) — supergene arsenate; cuproadamite green FL.
+function grow_adamite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_adamite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 3.5) {
+      crystal.dissolved = true;
+      const d = Math.min(4.0, crystal.total_growth_um * 0.12);
+      conditions.fluid.Zn += d * 0.5;
+      conditions.fluid.As += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  crystal.habit = 'prismatic';
+  conditions.fluid.Zn = Math.max(conditions.fluid.Zn - rate * 0.006, 0);
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.004, 0);
+  const trace_Cu = conditions.fluid.Cu * 0.05;
+  const colorNote = trace_Cu > 0.5 ? 'cuproadamite (green, SW-UV fluorescent)' : 'yellow-green adamite';
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Cu, note: colorNote });
+}
+
+// Mimetite (Pb₅(AsO₄)₃Cl) — the 'mimic' of pyromorphite; campylite barrels.
+function grow_mimetite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_mimetite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 3.0) {
+      crystal.dissolved = true;
+      const d = Math.min(4.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Pb += d * 0.4;
+      conditions.fluid.As += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `mimetite acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  crystal.habit = (conditions.fluid.Cu > 2 && rng.random() < 0.4) ? 'campylite_barrel' : 'hexagonal_prism';
+  conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.005, 0);
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.003, 0);
+  conditions.fluid.Cl = Math.max(conditions.fluid.Cl - rate * 0.001, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: crystal.habit === 'campylite_barrel' ? 'yellow-orange campylite barrels' : 'yellow-orange hexagonal prisms' });
+}
+
 const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
@@ -1201,6 +1414,12 @@ const MINERAL_ENGINES = {
   smithsonite: grow_smithsonite,
   wulfenite: grow_wulfenite,
   goethite: grow_goethite,
+  molybdenite: grow_molybdenite,
+  feldspar: grow_feldspar,
+  albite: grow_albite,
+  selenite: grow_selenite,
+  adamite: grow_adamite,
+  mimetite: grow_mimetite,
 };
 
 // ============================================================
@@ -1260,13 +1479,16 @@ function event_alkalinize(conditions) {
 }
 
 function event_fluid_mixing(conditions) {
+  // Phase-3: sync with vugg.py — F bumped 15→40 (Cave-in-Rock fluid-inclusion
+  // data) so fluorite actually crosses σ=1.2. Pb added so galena nucleates.
   conditions.fluid.Zn = 150.0;
   conditions.fluid.S = 120.0;
   conditions.fluid.Ca += 100.0;
-  conditions.fluid.F += 15.0;
+  conditions.fluid.F += 40.0;
+  conditions.fluid.Pb += 25.0;
   conditions.fluid.Fe += 30.0;
   conditions.temperature -= 20;
-  return 'Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite and fluorite become possible.';
+  return 'Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite, fluorite, and galena become possible.';
 }
 
 // ============================================================
@@ -1645,6 +1867,57 @@ class VugSimulator {
       else if (active_hem.length && rng.random() < 0.3) pos = `on hematite #${active_hem[0].crystal_id}`;
       const c = this.nucleate('goethite', pos);
       this.log.push(`  ✦ NUCLEATION: Goethite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_goe.toFixed(2)})`);
+    }
+
+    // Phase-3 ports: molybdenite, feldspar, albite, selenite, adamite, mimetite
+    const sigma_moly = this.conditions.supersaturation_molybdenite();
+    const total_moly = this.crystals.filter(c => c.mineral === 'molybdenite').length;
+    if (sigma_moly > 1.5 && total_moly < 3 && rng.random() < 0.15) {
+      const c = this.nucleate('molybdenite', 'vug wall');
+      this.log.push(`  ✦ NUCLEATION: Molybdenite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_moly.toFixed(2)})`);
+    }
+
+    const sigma_feld = this.conditions.supersaturation_feldspar();
+    const existing_feld = this.crystals.filter(c => c.mineral === 'feldspar' && c.active);
+    if (sigma_feld > 1.0 && !existing_feld.length) {
+      const c = this.nucleate('feldspar', 'vug wall');
+      this.log.push(`  ✦ NUCLEATION: Feldspar #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_feld.toFixed(2)})`);
+    }
+
+    const sigma_alb = this.conditions.supersaturation_albite();
+    const existing_alb = this.crystals.filter(c => c.mineral === 'albite' && c.active);
+    if (sigma_alb > 1.0 && !existing_alb.length) {
+      let pos = 'vug wall';
+      if (existing_feld.length && rng.random() < 0.5) pos = `on feldspar #${existing_feld[0].crystal_id}`;
+      const c = this.nucleate('albite', pos);
+      this.log.push(`  ✦ NUCLEATION: Albite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_alb.toFixed(2)})`);
+    }
+
+    const sigma_sel = this.conditions.supersaturation_selenite();
+    const total_sel = this.crystals.filter(c => c.mineral === 'selenite').length;
+    if (sigma_sel > 1.0 && total_sel < 4 && rng.random() < 0.12) {
+      const c = this.nucleate('selenite', 'vug wall');
+      this.log.push(`  ✦ NUCLEATION: Selenite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_sel.toFixed(2)})`);
+    }
+
+    const sigma_adam = this.conditions.supersaturation_adamite();
+    const existing_adam = this.crystals.filter(c => c.mineral === 'adamite' && c.active);
+    if (sigma_adam > 1.0 && !existing_adam.length) {
+      let pos = 'vug wall';
+      const existing_goe_adam = this.crystals.filter(c => c.mineral === 'goethite' && c.active);
+      if (existing_goe_adam.length && rng.random() < 0.6) pos = `on goethite #${existing_goe_adam[0].crystal_id}`;
+      const c = this.nucleate('adamite', pos);
+      this.log.push(`  ✦ NUCLEATION: Adamite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_adam.toFixed(2)})`);
+    }
+
+    const sigma_mim = this.conditions.supersaturation_mimetite();
+    const existing_mim = this.crystals.filter(c => c.mineral === 'mimetite' && c.active);
+    if (sigma_mim > 1.0 && !existing_mim.length) {
+      let pos = 'vug wall';
+      const existing_gal_mim = this.crystals.filter(c => c.mineral === 'galena');
+      if (existing_gal_mim.length && rng.random() < 0.6) pos = `on galena #${existing_gal_mim[0].crystal_id}`;
+      const c = this.nucleate('mimetite', pos);
+      this.log.push(`  ✦ NUCLEATION: Mimetite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mim.toFixed(2)})`);
     }
   }
 
