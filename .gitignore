@@ -1,1 +1,8 @@
 agent-api/game*-grooves/
+
+# Python bytecode — regenerated on every run
+__pycache__/
+*.pyc
+
+# Editor / tooling local config
+.claude/
