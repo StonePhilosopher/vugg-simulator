@@ -2751,6 +2751,229 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
     return conditions, events, 180
 
 
+def scenario_random() -> Tuple[VugConditions, List[Event], int]:
+    """Procedurally-generated vugg — each run a different discovery.
+
+    Picks a random geological archetype, then generates realistic but
+    randomized fluid chemistry within it. The narrative layer treats the
+    resulting specimen like a collector's tag: where it likely came from,
+    what the dominant paragenesis is, what trace elements hint at.
+
+    Archetypes:
+      hydrothermal   — moderate-T vein, mixed metal sulfides
+      pegmatite      — high-T granite pocket, K/Na/Al/SiO₂ + rare elements
+      supergene      — low-T oxidation zone, Pb/Zn/Cu secondaries
+      mvt            — Mississippi Valley-type carbonate-hosted brine
+      porphyry       — magmatic-hydrothermal Cu-Fe-Mo sulfides
+      evaporite      — cool Ca-SO₄-rich water-table crust
+      mixed          — two generations of fluid, overprinted
+    """
+    archetypes = ["hydrothermal", "pegmatite", "supergene", "mvt",
+                  "porphyry", "evaporite", "mixed"]
+    archetype = random.choice(archetypes)
+
+    # Trace garnish — elements the engine tracks but no mineral currently
+    # consumes. Sprinkled into most archetypes so the narrator has hints
+    # about "what the fluid almost did." Each is optional, per-archetype.
+    def sprinkle_traces(fluid, pool):
+        for elem, prob, rng in pool:
+            if random.random() < prob:
+                setattr(fluid, elem, random.uniform(*rng))
+
+    if archetype == "hydrothermal":
+        T = random.uniform(220, 380)
+        fluid = FluidChemistry(
+            SiO2=random.uniform(350, 850),
+            Ca=random.uniform(60, 240),
+            CO3=random.uniform(40, 180),
+            Fe=random.uniform(8, 45),
+            Mn=random.uniform(1, 10),
+            Al=random.uniform(2, 6),
+            Ti=random.uniform(0.3, 1.2),
+            Zn=random.uniform(0, 80) if random.random() < 0.5 else 0.0,
+            S=random.uniform(30, 90) if random.random() < 0.6 else 0.0,
+            Cu=random.uniform(0, 50) if random.random() < 0.4 else 0.0,
+            Pb=random.uniform(0, 35) if random.random() < 0.4 else 0.0,
+            F=random.uniform(4, 20),
+            pH=random.uniform(5.5, 7.2),
+            O2=random.uniform(0, 0.6),
+        )
+        sprinkle_traces(fluid, [
+            ("Ba", 0.30, (5, 40)),     # barite-hint
+            ("Sr", 0.25, (3, 25)),     # celestine-hint
+            ("Ag", 0.20, (0.5, 8)),    # argentiferous hint
+            ("Sb", 0.15, (1, 10)),
+        ])
+        events = [Event(random.randint(40, 60), "Fluid Pulse", "Fresh hydrothermal fluid", event_fluid_pulse)]
+        steps = random.randint(100, 140)
+
+    elif archetype == "pegmatite":
+        T = random.uniform(520, 780)
+        fluid = FluidChemistry(
+            SiO2=random.uniform(4000, 14000),
+            Ca=random.uniform(20, 100),
+            CO3=random.uniform(5, 40),
+            K=random.uniform(50, 130),
+            Na=random.uniform(35, 90),
+            Al=random.uniform(20, 50),
+            Fe=random.uniform(20, 80),
+            Mn=random.uniform(3, 15),
+            F=random.uniform(10, 40),
+            Pb=random.uniform(5, 35) if random.random() < 0.4 else 0.0,
+            U=random.uniform(30, 180) if random.random() < 0.35 else 0.0,
+            pH=random.uniform(6.0, 7.5),
+            O2=random.uniform(0, 0.2),
+        )
+        sprinkle_traces(fluid, [
+            ("Be", 0.40, (5, 40)),     # beryl country
+            ("Li", 0.40, (10, 80)),    # spodumene/lepidolite
+            ("B",  0.35, (5, 50)),     # tourmaline-hint
+            ("Cs", 0.10, (1, 10)),     # pollucite? not tracked, but could be
+            ("P",  0.20, (2, 15)),
+        ])
+        events = [
+            Event(random.randint(25, 40), "Crystallization", "Melt differentiates",
+                  lambda c: (setattr(c, "temperature", max(c.temperature - 120, 350)),
+                             setattr(c.fluid, "SiO2", c.fluid.SiO2 + 2500))[0] or
+                             "Pegmatite melt differentiates; volatile-rich residual fluid floods the pocket."),
+        ]
+        steps = random.randint(120, 180)
+
+    elif archetype == "supergene":
+        T = random.uniform(18, 55)
+        fluid = FluidChemistry(
+            SiO2=random.uniform(20, 80),
+            Ca=random.uniform(80, 200),
+            CO3=random.uniform(60, 200),
+            Fe=random.uniform(20, 60),
+            Mn=random.uniform(2, 12),
+            Zn=random.uniform(40, 140) if random.random() < 0.7 else 0.0,
+            S=random.uniform(20, 70),
+            Cu=random.uniform(10, 60) if random.random() < 0.6 else 0.0,
+            Pb=random.uniform(15, 60) if random.random() < 0.6 else 0.0,
+            Mo=random.uniform(5, 25) if random.random() < 0.4 else 0.0,
+            As=random.uniform(3, 18) if random.random() < 0.5 else 0.0,
+            Cl=random.uniform(5, 30),
+            F=random.uniform(1, 8),
+            O2=random.uniform(1.5, 2.3),
+            pH=random.uniform(5.8, 7.2),
+        )
+        sprinkle_traces(fluid, [
+            ("V",  0.20, (1, 10)),     # vanadinite country
+            ("Cr", 0.15, (0.5, 6)),    # redgo wulfenite color
+            ("Co", 0.15, (0.5, 5)),    # pink smithsonite
+            ("Cd", 0.10, (0.2, 3)),    # yellow sphalerite/smithsonite
+        ])
+        events = []
+        steps = random.randint(140, 200)
+
+    elif archetype == "mvt":
+        T = random.uniform(90, 170)
+        fluid = FluidChemistry(
+            SiO2=random.uniform(60, 180),
+            Ca=random.uniform(250, 450),
+            CO3=random.uniform(150, 280),
+            Fe=random.uniform(15, 45),
+            Mn=random.uniform(4, 12),
+            Zn=random.uniform(100, 200),
+            S=random.uniform(80, 150),
+            Pb=random.uniform(20, 60),
+            F=random.uniform(25, 55),
+            pH=random.uniform(5.5, 7.0),
+            O2=random.uniform(0, 0.4),
+            salinity=random.uniform(15, 22),
+        )
+        sprinkle_traces(fluid, [
+            ("Ba", 0.45, (15, 60)),    # barite in MVT is classic
+            ("Ag", 0.25, (1, 8)),      # argentiferous galena
+            ("Cd", 0.30, (0.5, 4)),    # honey sphalerite
+        ])
+        events = [Event(random.randint(20, 35), "Fluid Mixing", "Brine meets groundwater", event_fluid_mixing)]
+        steps = random.randint(100, 150)
+
+    elif archetype == "porphyry":
+        T = random.uniform(350, 520)
+        fluid = FluidChemistry(
+            SiO2=random.uniform(500, 900),
+            Ca=random.uniform(50, 150),
+            CO3=random.uniform(30, 80),
+            Fe=random.uniform(30, 80),
+            Mn=random.uniform(1, 6),
+            S=random.uniform(50, 120),
+            Cu=random.uniform(60, 180),
+            Mo=random.uniform(10, 60) if random.random() < 0.7 else 0.0,
+            Pb=random.uniform(10, 40),
+            F=random.uniform(2, 12),
+            O2=random.uniform(0, 0.3),
+            pH=random.uniform(4.5, 6.2),
+        )
+        sprinkle_traces(fluid, [
+            ("Ag", 0.30, (1, 8)),
+            ("Au", 0.15, (0.1, 2)),    # gold in porphyry — rare but classic
+            ("Bi", 0.20, (0.5, 5)),
+            ("W",  0.15, (0.5, 6)),    # scheelite-adjacent
+        ])
+        events = [Event(random.randint(40, 70), "Late Cu Pulse", "Magmatic copper surge", event_copper_injection)]
+        steps = random.randint(120, 160)
+
+    elif archetype == "evaporite":
+        T = random.uniform(25, 58)  # below gypsum → anhydrite transition
+        fluid = FluidChemistry(
+            SiO2=random.uniform(15, 60),
+            Ca=random.uniform(180, 350),
+            CO3=random.uniform(40, 120),
+            Fe=random.uniform(2, 20),
+            Mn=random.uniform(0.5, 4),
+            S=random.uniform(90, 180),
+            O2=random.uniform(0.8, 1.8),
+            pH=random.uniform(6.8, 7.8),
+            salinity=random.uniform(5, 14),
+        )
+        sprinkle_traces(fluid, [
+            ("Sr", 0.45, (10, 50)),    # celestine in evaporites
+            ("Mg", 0.50, (20, 80)),    # dolomite/epsomite hint
+            ("Cl", 0.55, (15, 60)),    # halite-adjacent
+        ])
+        events = []
+        steps = random.randint(160, 220)
+
+    else:  # mixed — two-generation vugg
+        T = random.uniform(280, 420)
+        fluid = FluidChemistry(
+            SiO2=random.uniform(400, 700),
+            Ca=random.uniform(100, 250),
+            CO3=random.uniform(50, 180),
+            Fe=random.uniform(20, 60),
+            Mn=random.uniform(3, 12),
+            Zn=random.uniform(40, 120),
+            S=random.uniform(50, 120),
+            Cu=random.uniform(20, 80) if random.random() < 0.5 else 0.0,
+            Pb=random.uniform(15, 50),
+            F=random.uniform(8, 25),
+            pH=random.uniform(5.5, 7.0),
+            O2=random.uniform(0, 0.4),
+        )
+        sprinkle_traces(fluid, [
+            ("Ba", 0.30, (5, 40)),
+            ("Sr", 0.20, (3, 20)),
+            ("As", 0.30, (3, 15)),
+            ("Ag", 0.20, (0.5, 5)),
+        ])
+        # Two-stage: primary sulfides, then late oxidation pulse.
+        events = [
+            Event(random.randint(30, 50), "Primary Pulse", "Metal-bearing fluid",
+                  event_fluid_pulse),
+            Event(random.randint(80, 110), "Oxidizing Overprint", "Meteoric water incursion",
+                  event_oxidation),
+        ]
+        steps = random.randint(160, 220)
+
+    conditions = VugConditions(temperature=T, pressure=random.uniform(0.3, 2.0), fluid=fluid)
+    # Side-channel for the narrator to read after simulation.
+    conditions._random_archetype = archetype
+    return conditions, events, steps
+
+
 SCENARIOS = {
     "cooling": scenario_cooling,
     "pulse": scenario_pulse,
@@ -2759,6 +2982,7 @@ SCENARIOS = {
     "reactive_wall": scenario_reactive_wall,
     "radioactive_pegmatite": scenario_radioactive_pegmatite,
     "supergene_oxidation": scenario_supergene_oxidation,
+    "random": scenario_random,
 }
 
 
@@ -3687,8 +3911,131 @@ class VugSimulator:
         
         # Closing — what would a collector see?
         paragraphs.append(self._narrate_collectors_view())
-        
+
+        # Random scenarios earn a procedural "discovery" paragraph.
+        archetype = getattr(self.conditions, "_random_archetype", None)
+        if archetype:
+            disc = self._narrate_discovery(archetype)
+            if disc:
+                paragraphs.append(disc)
+
         return "\n\n".join(paragraphs)
+
+    def _narrate_discovery(self, archetype: str) -> str:
+        """Procedural discovery flavor for the random scenario.
+
+        Reads the resulting assemblage + archetype + trace-element fluid
+        and assembles a collector's-tag paragraph: where it probably came
+        from, what the dominant paragenesis is, what trace elements hint
+        at even if no mineral consumed them, and which classic locality
+        the assemblage recalls.
+        """
+        from collections import Counter
+        by_mineral = Counter(c.mineral for c in self.crystals if c.total_growth_um > 0)
+        if not by_mineral:
+            return ("*Discovery tag —* The cavity was opened, and nothing had grown. "
+                    "Sometimes that is the whole story: a chamber where the fluid "
+                    "arrived, lingered, and left without leaving a signature.")
+
+        fluid = self.conditions.fluid
+
+        setting = {
+            "hydrothermal": "a fracture-fed solution cavity in altered country rock",
+            "pegmatite":    "the cooled core of a granite pegmatite pocket",
+            "supergene":    "a shallow oxidation-zone pocket just below the water table",
+            "mvt":          "a karst dissolution cavity in Paleozoic limestone",
+            "porphyry":     "a late-stage vug in a porphyry copper stockwork",
+            "evaporite":    "a desiccated Ca-SO₄ crust near an ancient playa margin",
+            "mixed":        "an overprinted pocket with two generations of fluid",
+        }.get(archetype, "an unnamed cavity")
+
+        # Sort minerals by biggest crystal for each
+        mineral_sizes = {}
+        for c in self.crystals:
+            s = c.c_length_mm
+            if s > mineral_sizes.get(c.mineral, 0):
+                mineral_sizes[c.mineral] = s
+        by_size = sorted(mineral_sizes.items(), key=lambda kv: -kv[1])
+
+        parts = [f"*Discovery tag —* This specimen was recovered from {setting}."]
+
+        # Primary + subordinates
+        if by_size:
+            primary, psize = by_size[0]
+            if len(by_size) == 1:
+                parts.append(f"The pocket is a single-mineral chamber: {primary} reached {psize:.1f} mm and claimed the whole vug.")
+            else:
+                subs = ", ".join(f"{m}" for m, _ in by_size[1:4])
+                parts.append(f"The dominant mineral is {primary} ({psize:.1f} mm), with subordinate {subs}.")
+
+        assemblage = set(by_mineral)
+
+        # Paragenetic call-outs
+        if "goethite" in assemblage and any(c.mineral == "goethite" and "pseudomorph" in c.position for c in self.crystals):
+            parts.append("Goethite boxwork pseudomorphs after pyrite record a weathering front that moved through the vug long after the primary sulfides formed.")
+        if "wulfenite" in assemblage:
+            parts.append("The wulfenite is the prize — bright tablets that only formed because both galena and molybdenite oxidized together (Seo et al. 2012).")
+        if {"malachite", "chalcopyrite"} <= assemblage:
+            parts.append("A malachite-after-chalcopyrite pathway is evident: the copper walked out of the sulfide and met carbonate on its way to the wall.")
+        if "uraninite" in assemblage and "quartz" in assemblage:
+            parts.append("The quartz near the uraninite carries alpha-damage; if this specimen sat in its cradle long enough, the clear crystals darkened into smoky.")
+        if "selenite" in assemblage and archetype == "evaporite":
+            parts.append("The selenite blades are the clock: they grew slowly at a steady sub-60°C, the Naica chemistry in miniature.")
+        if "adamite" in assemblage and "mimetite" in assemblage:
+            parts.append("Adamite and mimetite together place this pocket near an arsenopyrite weathering body — Zn and Pb fighting over the same arsenate.")
+
+        # Trace-element hints — lets untapped fields speak
+        trace_lines = []
+        if getattr(fluid, "Ba", 0) > 15:
+            trace_lines.append("The fluid carried enough Ba that barite was a near miss — look in the matrix for the missing sulfate")
+        if getattr(fluid, "Sr", 0) > 15:
+            trace_lines.append("Strontium above typical MVT values suggests a celestine-bearing parent brine somewhere upstream")
+        if getattr(fluid, "Li", 0) > 20 or getattr(fluid, "B", 0) > 20 or getattr(fluid, "Be", 0) > 15:
+            trace_lines.append("Trace Li/B/Be hints that the pegmatite parent fluid ran toward the rare-element side of the LCT family")
+        if getattr(fluid, "Au", 0) > 0.5:
+            trace_lines.append("Invisible gold in the pyrite is likely — the fluid ran Au-enriched even if no native gold crystallized here")
+        if getattr(fluid, "Ag", 0) > 3:
+            trace_lines.append("The galena is argentiferous; thin-section microprobe traces would light up with silver")
+        if getattr(fluid, "Cr", 0) > 3:
+            trace_lines.append("Chromium in the fluid would have shifted wulfenite toward the classic blood-orange Red Cloud hue")
+        if getattr(fluid, "Co", 0) > 1:
+            trace_lines.append("Cobalt traces would pink up any smithsonite that grew here")
+        if getattr(fluid, "Mg", 0) > 30 and archetype == "evaporite":
+            trace_lines.append("High Mg suggests dolomite-adjacent chemistry; epsomite could bloom if the crust evaporated a bit further")
+
+        if trace_lines:
+            parts.append(trace_lines[0] + ".")
+            if len(trace_lines) > 1:
+                parts.append("Secondary traces: " + "; ".join(trace_lines[1:3]) + ".")
+
+        # Locality hint
+        locality = None
+        if {"adamite", "goethite"} <= assemblage or ({"mimetite", "goethite"} <= assemblage):
+            locality = "Ojuela Mine at Mapimí, Durango — the classic oxidation-zone type locality"
+        elif "wulfenite" in assemblage and "hematite" in assemblage:
+            locality = "Los Lamentos or Red Cloud Mine — the wulfenite capitals"
+        elif {"sphalerite", "galena", "fluorite"} <= assemblage:
+            locality = "Cave-in-Rock, Illinois — MVT paragenesis at its textbook best"
+        elif {"chalcopyrite", "pyrite", "quartz"} <= assemblage and archetype == "porphyry":
+            locality = "Bingham Canyon or Butte — porphyry copper's ground truth"
+        elif "uraninite" in assemblage and "feldspar" in assemblage:
+            locality = "the Bancroft district, Ontario — uraninite-bearing pegmatites"
+        elif {"calcite", "sphalerite", "galena"} <= assemblage:
+            locality = "the Tri-State district (Joplin, MO)"
+        if locality:
+            parts.append(f"The assemblage recalls {locality}.")
+
+        # Closing
+        closing_options = [
+            "What the rock held, the rock now reveals.",
+            "The fluid is long gone; only the crystals remember.",
+            "Every face was drawn in slow ink, one layer at a time.",
+            "This is what the dark grew when no one was watching.",
+            "The cavity is a museum and a letter.",
+        ]
+        parts.append(random.choice(closing_options))
+
+        return " ".join(parts)
     
     def _narrate_calcite(self, c: Crystal) -> str:
         """Narrate a calcite crystal's story."""

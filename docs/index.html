@@ -1571,6 +1571,10 @@ footer a:hover {
       <h3>📚 Library</h3>
       <p>Browse every mineral the simulator knows. Filter by class, fluorescence, or element; look up what grows in each scenario, or what conditions a mineral needs. Reference — no simulation.</p>
     </div>
+    <div class="title-mode-card" onclick="switchMode('random')">
+      <h3>🎲 Random Vugg</h3>
+      <p>Roll a specimen. Each run picks a random geological archetype — pegmatite, supergene, MVT, evaporite — and generates plausible fluid chemistry within it. What grew, what didn't, what trace elements hint at. Feels like a discovery because it is one.</p>
+    </div>
   </div>
 </div>
 
@@ -1581,6 +1585,7 @@ footer a:hover {
   <button id="mode-groove" onclick="switchMode('groove')">📀 Record Player</button>
   <button id="mode-idle" onclick="switchMode('idle')">🌀 The Groove</button>
   <button id="mode-library" onclick="switchMode('library')">📚 Library</button>
+  <button id="mode-random" onclick="switchMode('random')">🎲 Random Vugg</button>
   <button class="mode-home-btn" onclick="showTitleScreen()">🏠</button>
 </div>
 
@@ -1595,6 +1600,7 @@ footer a:hover {
       <option value="porphyry">porphyry</option>
       <option value="reactive_wall">reactive_wall</option>
       <option value="radioactive_pegmatite">radioactive_pegmatite</option>
+      <option value="supergene_oxidation">supergene_oxidation</option>
     </select>
   </div>
   <div class="control-group">
@@ -1627,6 +1633,7 @@ Scenarios:
   porphyry      — Copper porphyry deposit: Cu pulses + oxidation → pyrite + chalcopyrite
   reactive_wall — Acid pulses dissolve limestone walls, feed crystal growth
   radioactive_pegmatite — Uraninite + galena in a hot pegmatite. Deep time. ☢️ radiation damage.
+  supergene_oxidation — Cold, oxidized water-table zone. Pb+Mo+Zn+As → wulfenite + smithsonite + adamite + mimetite + goethite.
 </div>
   </div>
   <div class="inventory-col" id="legends-inventory-col" style="display:none;">
@@ -2271,6 +2278,31 @@ Scenarios:
       <div style="color:#5a4a30; font-style:italic; text-align:center; padding:1rem;">Press ▶️ Play to start the simulation. Temperature will drift, chemistry will shift, crystals will come and go.</div>
     </div>
   </div>
+</div>
+
+<!-- Random Vugg Mode -->
+<div id="random-panel" style="display:none">
+  <div class="controls">
+    <div class="control-group">
+      <label for="random-archetype">Archetype</label>
+      <select id="random-archetype">
+        <option value="any">🎲 Any (surprise me)</option>
+        <option value="hydrothermal">hydrothermal vein</option>
+        <option value="pegmatite">granite pegmatite</option>
+        <option value="supergene">supergene oxidation zone</option>
+        <option value="mvt">MVT brine cavity</option>
+        <option value="porphyry">porphyry stockwork</option>
+        <option value="evaporite">evaporite crust</option>
+        <option value="mixed">overprinted / mixed</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="random-seed">Seed (blank = fresh)</label>
+      <input type="text" id="random-seed" placeholder="optional integer" style="width:10rem">
+    </div>
+    <button onclick="runRandomVugg()" style="background:#3a3518; color:#f0c050; border:1px solid #6a5420; padding:0.55rem 1.2rem; font-family:inherit; border-radius:4px; cursor:pointer;">🎲 Generate Vugg</button>
+  </div>
+  <div id="random-output" class="log" style="max-width:1100px;margin:1rem auto"></div>
 </div>
 
 <!-- Library Mode -->
@@ -4739,7 +4771,30 @@ function scenario_radioactive_pegmatite() {
   return { conditions, events, defaultSteps: 120 };
 }
 
-const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite };
+// Supergene oxidation scenario — mirrors vugg.py scenario_supergene_oxidation
+// (low-T Pb+Mo+Zn+As+Cu oxidation zone; produces wulfenite + smithsonite +
+// adamite + mimetite + goethite). Five staged events over 180 steps.
+function scenario_supergene_oxidation() {
+  const conditions = new VugConditions({
+    temperature: 35.0, pressure: 0.05,
+    fluid: new FluidChemistry({
+      SiO2: 30, Ca: 120, CO3: 80, Fe: 40, Mn: 6, Mg: 5,
+      Zn: 90, S: 50, F: 3, Cu: 25, Pb: 35, Mo: 15,
+      As: 12, Cl: 20,
+      O2: 1.8, pH: 6.8, salinity: 2.0,
+    }),
+  });
+  const events = [
+    { step: 20,  name: 'Meteoric Flush',   description: 'Oxygenated rainwater', apply_fn: (c) => { c.fluid.O2 = 2.2; c.fluid.CO3 += 30; c.fluid.pH = 6.2; c.flow_rate = 1.5; return 'Rain infiltrates the soil zone and percolates down, picking up CO₂ and oxygen. Fresh supergene brine — cold, oxygen-rich, slightly acidic.'; } },
+    { step: 40,  name: 'Pb+Mo Pulse',      description: 'Galena+molybdenite weathering', apply_fn: (c) => { c.fluid.Pb += 40; c.fluid.Mo += 25; c.fluid.O2 = 2.0; c.flow_rate = 2.0; return 'A weathering rind breaches: Pb²⁺ and MoO₄²⁻ released simultaneously — the Seo et al. (2012) condition for wulfenite formation is met.'; } },
+    { step: 70,  name: 'Dry Spell',        description: 'Evaporation concentrates sulfate', apply_fn: (c) => { c.fluid.Ca += 40; c.fluid.S += 30; c.fluid.O2 = 1.5; c.temperature = 50; c.flow_rate = 0.3; return 'Dry season. Flow slows, evaporation concentrates the brine. Ca²⁺ and SO₄²⁻ climb toward selenite\u2019s window.'; } },
+    { step: 95,  name: 'Arsenic Seep',     description: 'Zn/Pb arsenate saturation', apply_fn: (c) => { c.fluid.As += 8; c.fluid.Cl += 10; c.fluid.Zn += 20; c.fluid.pH = 6.0; return 'An arsenic-bearing seep arrives from a weathering arsenopyrite body upslope. Adamite and mimetite saturate.'; } },
+    { step: 140, name: 'Fracture Seal',    description: 'System closes', apply_fn: (c) => { c.flow_rate = 0.05; c.fluid.O2 = 1.0; return 'The feeding fractures seal. The vug becomes a closed cold oxidizing system.'; } },
+  ];
+  return { conditions, events, defaultSteps: 180 };
+}
+
+const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite, supergene_oxidation: scenario_supergene_oxidation };
 
 // ============================================================
 // SIMULATION ENGINE
@@ -6390,11 +6445,15 @@ function switchMode(mode) {
   groovePanel.style.display = 'none';
   if (idlePanel) idlePanel.style.display = 'none';
   if (libraryPanel) libraryPanel.style.display = 'none';
+  const randomPanel = document.getElementById('random-panel');
+  if (randomPanel) randomPanel.style.display = 'none';
   modeLegends.classList.remove('active');
   modeFortress.classList.remove('active');
   modeGroove.classList.remove('active');
   if (modeIdle) modeIdle.classList.remove('active');
   if (modeLibrary) modeLibrary.classList.remove('active');
+  const modeRandom = document.getElementById('mode-random');
+  if (modeRandom) modeRandom.classList.remove('active');
 
   if (mode === 'legends') {
     legendsControls.style.display = 'flex';
@@ -6419,6 +6478,12 @@ function switchMode(mode) {
     if (libraryPanel) libraryPanel.style.display = 'flex';
     if (modeLibrary) modeLibrary.classList.add('active');
     libraryInit();
+  } else if (mode === 'random') {
+    const rp = document.getElementById('random-panel');
+    if (rp) rp.style.display = 'block';
+    const mr = document.getElementById('mode-random');
+    if (mr) mr.classList.add('active');
+    timeScale = 5.0;
   }
 }
 
@@ -6572,6 +6637,241 @@ function libraryRender() {
     grid.innerHTML = entries.map(([n, m]) => libraryBuildCard(n, m)).join('');
   }
   count.textContent = `${entries.length} of ${Object.keys(MINERAL_SPEC).length} minerals`;
+}
+
+// ============================================================
+// RANDOM VUGG — procedural scenario + discovery narrative
+// ============================================================
+// Mirrors vugg.py's scenario_random + _narrate_discovery. Each press of
+// "Generate Vugg" picks a geological archetype (or uses the forced one)
+// and builds realistic-but-random fluid chemistry. The sim runs; the
+// narrative layer reads the resulting assemblage like a specimen tag.
+const RANDOM_ARCHETYPES = [
+  "hydrothermal", "pegmatite", "supergene", "mvt", "porphyry", "evaporite", "mixed"
+];
+const ARCHETYPE_SETTING = {
+  hydrothermal: "a fracture-fed solution cavity in altered country rock",
+  pegmatite:    "the cooled core of a granite pegmatite pocket",
+  supergene:    "a shallow oxidation-zone pocket just below the water table",
+  mvt:          "a karst dissolution cavity in Paleozoic limestone",
+  porphyry:     "a late-stage vug in a porphyry copper stockwork",
+  evaporite:    "a desiccated Ca-SO₄ crust near an ancient playa margin",
+  mixed:        "an overprinted pocket with two generations of fluid",
+};
+function _rU(a, b) { return a + rng.uniform(0, 1) * (b - a); }
+function _rMaybe(prob, val) { return rng.uniform(0, 1) < prob ? val : 0; }
+function _sprinkle(fluid, pool) {
+  for (const [elem, prob, lo, hi] of pool) {
+    if (rng.uniform(0, 1) < prob) fluid[elem] = _rU(lo, hi);
+  }
+}
+
+function buildRandomScenario(forcedArchetype) {
+  const archetype = (forcedArchetype && forcedArchetype !== 'any')
+    ? forcedArchetype
+    : RANDOM_ARCHETYPES[Math.floor(rng.uniform(0, RANDOM_ARCHETYPES.length))];
+
+  let T, fluid, events = [], steps;
+  if (archetype === 'hydrothermal') {
+    T = _rU(220, 380);
+    fluid = new FluidChemistry({
+      SiO2: _rU(350, 850), Ca: _rU(60, 240), CO3: _rU(40, 180),
+      Fe: _rU(8, 45), Mn: _rU(1, 10), Al: _rU(2, 6), Ti: _rU(0.3, 1.2),
+      Zn: _rMaybe(0.5, _rU(20, 80)), S: _rMaybe(0.6, _rU(30, 90)),
+      Cu: _rMaybe(0.4, _rU(10, 50)), Pb: _rMaybe(0.4, _rU(10, 35)),
+      F: _rU(4, 20), pH: _rU(5.5, 7.2), O2: _rU(0, 0.6),
+    });
+    _sprinkle(fluid, [["Ba",0.30,5,40],["Sr",0.25,3,25],["Ag",0.20,0.5,8],["Sb",0.15,1,10]]);
+    events = [{ step: Math.floor(_rU(40,60)), name: 'Fluid Pulse', description: 'Fresh hydrothermal fluid', apply_fn: event_fluid_pulse }];
+    steps = Math.floor(_rU(100, 140));
+  } else if (archetype === 'pegmatite') {
+    T = _rU(520, 780);
+    fluid = new FluidChemistry({
+      SiO2: _rU(4000, 14000), Ca: _rU(20, 100), CO3: _rU(5, 40),
+      K: _rU(50, 130), Na: _rU(35, 90), Al: _rU(20, 50),
+      Fe: _rU(20, 80), Mn: _rU(3, 15), F: _rU(10, 40),
+      Pb: _rMaybe(0.4, _rU(5, 35)), U: _rMaybe(0.35, _rU(30, 180)),
+      pH: _rU(6.0, 7.5), O2: _rU(0, 0.2),
+    });
+    _sprinkle(fluid, [["Be",0.40,5,40],["Li",0.40,10,80],["B",0.35,5,50],["P",0.20,2,15]]);
+    events = [{ step: Math.floor(_rU(25,40)), name: 'Crystallization', description: 'Melt differentiates', apply_fn: (c) => { c.temperature = Math.max(c.temperature - 120, 350); c.fluid.SiO2 += 2500; return 'Pegmatite melt differentiates; volatile-rich residual fluid floods the pocket.'; } }];
+    steps = Math.floor(_rU(120, 180));
+  } else if (archetype === 'supergene') {
+    T = _rU(18, 55);
+    fluid = new FluidChemistry({
+      SiO2: _rU(20, 80), Ca: _rU(80, 200), CO3: _rU(60, 200),
+      Fe: _rU(20, 60), Mn: _rU(2, 12),
+      Zn: _rMaybe(0.7, _rU(40, 140)), S: _rU(20, 70),
+      Cu: _rMaybe(0.6, _rU(10, 60)), Pb: _rMaybe(0.6, _rU(15, 60)),
+      Mo: _rMaybe(0.4, _rU(5, 25)), As: _rMaybe(0.5, _rU(3, 18)),
+      Cl: _rU(5, 30), F: _rU(1, 8),
+      O2: _rU(1.5, 2.3), pH: _rU(5.8, 7.2),
+    });
+    _sprinkle(fluid, [["V",0.20,1,10],["Cr",0.15,0.5,6],["Co",0.15,0.5,5],["Cd",0.10,0.2,3]]);
+    steps = Math.floor(_rU(140, 200));
+  } else if (archetype === 'mvt') {
+    T = _rU(90, 170);
+    fluid = new FluidChemistry({
+      SiO2: _rU(60, 180), Ca: _rU(250, 450), CO3: _rU(150, 280),
+      Fe: _rU(15, 45), Mn: _rU(4, 12),
+      Zn: _rU(100, 200), S: _rU(80, 150), Pb: _rU(20, 60),
+      F: _rU(25, 55), pH: _rU(5.5, 7.0), O2: _rU(0, 0.4),
+      salinity: _rU(15, 22),
+    });
+    _sprinkle(fluid, [["Ba",0.45,15,60],["Ag",0.25,1,8],["Cd",0.30,0.5,4]]);
+    events = [{ step: Math.floor(_rU(20,35)), name: 'Fluid Mixing', description: 'Brine meets groundwater', apply_fn: event_fluid_mixing }];
+    steps = Math.floor(_rU(100, 150));
+  } else if (archetype === 'porphyry') {
+    T = _rU(350, 520);
+    fluid = new FluidChemistry({
+      SiO2: _rU(500, 900), Ca: _rU(50, 150), CO3: _rU(30, 80),
+      Fe: _rU(30, 80), Mn: _rU(1, 6), S: _rU(50, 120),
+      Cu: _rU(60, 180), Mo: _rMaybe(0.7, _rU(10, 60)),
+      Pb: _rU(10, 40), F: _rU(2, 12),
+      O2: _rU(0, 0.3), pH: _rU(4.5, 6.2),
+    });
+    _sprinkle(fluid, [["Ag",0.30,1,8],["Au",0.15,0.1,2],["Bi",0.20,0.5,5],["W",0.15,0.5,6]]);
+    events = [{ step: Math.floor(_rU(40,70)), name: 'Late Cu Pulse', description: 'Magmatic copper surge', apply_fn: event_copper_injection }];
+    steps = Math.floor(_rU(120, 160));
+  } else if (archetype === 'evaporite') {
+    T = _rU(25, 58);
+    fluid = new FluidChemistry({
+      SiO2: _rU(15, 60), Ca: _rU(180, 350), CO3: _rU(40, 120),
+      Fe: _rU(2, 20), Mn: _rU(0.5, 4), S: _rU(90, 180),
+      O2: _rU(0.8, 1.8), pH: _rU(6.8, 7.8),
+      salinity: _rU(5, 14),
+    });
+    _sprinkle(fluid, [["Sr",0.45,10,50],["Mg",0.50,20,80],["Cl",0.55,15,60]]);
+    steps = Math.floor(_rU(160, 220));
+  } else { // mixed
+    T = _rU(280, 420);
+    fluid = new FluidChemistry({
+      SiO2: _rU(400, 700), Ca: _rU(100, 250), CO3: _rU(50, 180),
+      Fe: _rU(20, 60), Mn: _rU(3, 12),
+      Zn: _rU(40, 120), S: _rU(50, 120),
+      Cu: _rMaybe(0.5, _rU(20, 80)), Pb: _rU(15, 50),
+      F: _rU(8, 25), pH: _rU(5.5, 7.0), O2: _rU(0, 0.4),
+    });
+    _sprinkle(fluid, [["Ba",0.30,5,40],["Sr",0.20,3,20],["As",0.30,3,15],["Ag",0.20,0.5,5]]);
+    events = [
+      { step: Math.floor(_rU(30,50)), name: 'Primary Pulse', description: 'Metal-bearing fluid', apply_fn: event_fluid_pulse },
+      { step: Math.floor(_rU(80,110)), name: 'Oxidizing Overprint', description: 'Meteoric water incursion', apply_fn: event_oxidation },
+    ];
+    steps = Math.floor(_rU(160, 220));
+  }
+
+  const conditions = new VugConditions({ temperature: T, pressure: _rU(0.3, 2.0), fluid });
+  conditions._random_archetype = archetype;
+  return { conditions, events, defaultSteps: steps, archetype };
+}
+
+function narrateDiscovery(sim, archetype) {
+  const grown = sim.crystals.filter(c => c.total_growth_um > 0);
+  if (!grown.length) {
+    return "*Discovery tag —* The cavity was opened, and nothing had grown. Sometimes that is the whole story: a chamber where the fluid arrived, lingered, and left without leaving a signature.";
+  }
+  const fluid = sim.conditions.fluid;
+  const setting = ARCHETYPE_SETTING[archetype] || "an unnamed cavity";
+  const mineralSize = {};
+  for (const c of grown) {
+    mineralSize[c.mineral] = Math.max(mineralSize[c.mineral] || 0, c.c_length_mm);
+  }
+  const bySize = Object.entries(mineralSize).sort((a, b) => b[1] - a[1]);
+  const assemblage = new Set(bySize.map(([m]) => m));
+
+  const parts = [`*Discovery tag —* This specimen was recovered from ${setting}.`];
+
+  if (bySize.length === 1) {
+    const [primary, psize] = bySize[0];
+    parts.push(`The pocket is a single-mineral chamber: ${primary} reached ${psize.toFixed(1)} mm and claimed the whole vug.`);
+  } else {
+    const [primary, psize] = bySize[0];
+    const subs = bySize.slice(1, 4).map(([m]) => m).join(', ');
+    parts.push(`The dominant mineral is ${primary} (${psize.toFixed(1)} mm), with subordinate ${subs}.`);
+  }
+
+  if (assemblage.has('goethite') && sim.crystals.some(c => c.mineral === 'goethite' && c.position.includes('pseudomorph'))) {
+    parts.push('Goethite boxwork pseudomorphs after pyrite record a weathering front that moved through the vug long after the primary sulfides formed.');
+  }
+  if (assemblage.has('wulfenite')) {
+    parts.push('The wulfenite is the prize — bright tablets that only formed because both galena and molybdenite oxidized together (Seo et al. 2012).');
+  }
+  if (assemblage.has('malachite') && assemblage.has('chalcopyrite')) {
+    parts.push('A malachite-after-chalcopyrite pathway is evident: the copper walked out of the sulfide and met carbonate on its way to the wall.');
+  }
+  if (assemblage.has('uraninite') && assemblage.has('quartz')) {
+    parts.push('The quartz near the uraninite carries alpha-damage; if this specimen sat in its cradle long enough, the clear crystals darkened into smoky.');
+  }
+  if (assemblage.has('selenite') && archetype === 'evaporite') {
+    parts.push('The selenite blades are the clock: they grew slowly at a steady sub-60°C, the Naica chemistry in miniature.');
+  }
+  if (assemblage.has('adamite') && assemblage.has('mimetite')) {
+    parts.push('Adamite and mimetite together place this pocket near an arsenopyrite weathering body — Zn and Pb fighting over the same arsenate.');
+  }
+
+  const traces = [];
+  if ((fluid.Ba || 0) > 15) traces.push("The fluid carried enough Ba that barite was a near miss — look in the matrix for the missing sulfate");
+  if ((fluid.Sr || 0) > 15) traces.push("Strontium above typical MVT values suggests a celestine-bearing parent brine somewhere upstream");
+  if ((fluid.Li || 0) > 20 || (fluid.B || 0) > 20 || (fluid.Be || 0) > 15) traces.push("Trace Li/B/Be hints that the pegmatite parent fluid ran toward the rare-element side of the LCT family");
+  if ((fluid.Au || 0) > 0.5) traces.push("Invisible gold in the pyrite is likely — the fluid ran Au-enriched even if no native gold crystallized here");
+  if ((fluid.Ag || 0) > 3) traces.push("The galena is argentiferous; a thin-section microprobe traverse would light up with silver");
+  if ((fluid.Cr || 0) > 3) traces.push("Chromium in the fluid would have shifted wulfenite toward the classic blood-orange Red Cloud hue");
+  if ((fluid.Co || 0) > 1) traces.push("Cobalt traces would pink up any smithsonite that grew here");
+  if ((fluid.Mg || 0) > 30 && archetype === 'evaporite') traces.push("High Mg suggests dolomite-adjacent chemistry; epsomite could bloom if the crust evaporated a bit further");
+  if (traces.length) {
+    parts.push(traces[0] + '.');
+    if (traces.length > 1) parts.push('Secondary traces: ' + traces.slice(1, 3).join('; ') + '.');
+  }
+
+  let locality = null;
+  const has = (...ms) => ms.every(m => assemblage.has(m));
+  if (has('adamite','goethite') || has('mimetite','goethite'))  locality = "Ojuela Mine at Mapimí, Durango — the classic oxidation-zone type locality";
+  else if (assemblage.has('wulfenite') && assemblage.has('hematite')) locality = "Los Lamentos or Red Cloud Mine — the wulfenite capitals";
+  else if (has('sphalerite','galena','fluorite'))              locality = "Cave-in-Rock, Illinois — MVT paragenesis at its textbook best";
+  else if (has('chalcopyrite','pyrite','quartz') && archetype === 'porphyry') locality = "Bingham Canyon or Butte — porphyry copper's ground truth";
+  else if (has('uraninite','feldspar'))                        locality = "the Bancroft district, Ontario — uraninite-bearing pegmatites";
+  else if (has('calcite','sphalerite','galena'))               locality = "the Tri-State district (Joplin, Missouri)";
+  if (locality) parts.push(`The assemblage recalls ${locality}.`);
+
+  const closings = [
+    "What the rock held, the rock now reveals.",
+    "The fluid is long gone; only the crystals remember.",
+    "Every face was drawn in slow ink, one layer at a time.",
+    "This is what the dark grew when no one was watching.",
+    "The cavity is a museum and a letter.",
+  ];
+  parts.push(closings[Math.floor(rng.uniform(0, closings.length))]);
+  return parts.join(' ');
+}
+
+function runRandomVugg() {
+  const out = document.getElementById('random-output');
+  if (!out) return;
+  const seedRaw = document.getElementById('random-seed').value.trim();
+  const seed = seedRaw && !isNaN(parseInt(seedRaw, 10)) ? parseInt(seedRaw, 10) : Date.now();
+  rng = new SeededRandom(seed);
+  const forced = document.getElementById('random-archetype').value;
+
+  const scen = buildRandomScenario(forced);
+  const sim = new VugSimulator(scen.conditions, scen.events);
+  for (let i = 0; i < scen.defaultSteps; i++) sim.run_step();
+
+  const discovery = narrateDiscovery(sim, scen.archetype);
+  const full = sim.narrate ? sim.narrate() : '';
+
+  const crystalList = sim.crystals
+    .filter(c => c.total_growth_um > 0)
+    .sort((a, b) => b.c_length_mm - a.c_length_mm)
+    .map(c => `  • ${c.mineral} #${c.crystal_id} — ${c.c_length_mm.toFixed(2)} mm, ${c.habit}${c.twinned ? ', twinned (' + c.twin_law + ')' : ''}`)
+    .join('\n');
+
+  const header = `═══ 🎲 Random Vugg — archetype: ${scen.archetype} — seed: ${seed} ═══\n\n` +
+                 `T = ${scen.conditions.temperature.toFixed(1)}°C · P = ${scen.conditions.pressure.toFixed(2)} kbar · pH = ${scen.conditions.fluid.pH.toFixed(1)} · ran ${scen.defaultSteps} steps\n` +
+                 `Fluid: ${scen.conditions.fluid.describe ? scen.conditions.fluid.describe() : ''}\n\n`;
+  const inventory = crystalList ? `CRYSTALS\n${crystalList}\n\n` : 'CRYSTALS\n  (nothing nucleated)\n\n';
+
+  out.textContent = header + inventory + discovery + '\n\n' + (full || '');
+  out.scrollTop = 0;
 }
 
 // ============================================================
