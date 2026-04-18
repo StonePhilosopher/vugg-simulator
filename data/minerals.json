@@ -1,6 +1,6 @@
 {
   "$schema_version": "1.0.0",
-  "last_updated": "2026-04-17",
+  "last_updated": "2026-04-17 (phase-2: metadata refresh + habit variants)",
   "source_of_truth_for": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
   "_schema": {
     "formula": "Chemical formula.",
@@ -21,7 +21,8 @@
     "fluorescence": "{activator, threshold_ppm, color, quencher} or null if non-fluorescent.",
     "twin_laws": "[{name, miller_indices, trigger, probability}] or [] if none known.",
     "acid_dissolution": "{pH_threshold, reaction, products} or null if acid-stable.",
-    "habit": "Crystal habit.",
+    "habit": "Crystal habit (primary/default).",
+    "habit_variants": "Array of 2-5 common habits this mineral exhibits in nature. Growth engines select from these based on T/rate/substrate.",
     "color_rules": "{variant: {trigger}} or null if single color.",
     "narrate_function": "Name of dedicated _narrate_* function. null = inline flavor, needs refactor.",
     "runtimes_present": "Files where growth engine currently exists.",
@@ -29,12 +30,28 @@
   },
   "_audit_summary": {
     "total_minerals": 19,
-    "missing_max_size_before_this_spec": 19,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit.",
+    "missing_growth_engine": [],
+    "missing_narrate_function": [],
+    "missing_from_vugg_py_registry": [],
+    "missing_from_web_index": ["albite"],
+    "missing_from_agent_api": ["adamite", "mimetite", "feldspar", "albite", "selenite", "molybdenite"],
+    "scenarios_that_can_nucleate": {
+      "cooling": ["calcite", "quartz"],
+      "pulse": ["calcite", "quartz"],
+      "mvt": ["calcite", "pyrite", "quartz", "sphalerite", "fluorite", "galena"],
+      "porphyry": ["calcite", "chalcopyrite", "galena", "goethite", "hematite", "malachite", "molybdenite", "pyrite", "quartz"],
+      "reactive_wall": ["calcite", "pyrite", "sphalerite"],
+      "radioactive_pegmatite": ["uraninite", "quartz", "feldspar", "albite", "galena"],
+      "supergene_oxidation": ["goethite", "smithsonite", "wulfenite", "adamite", "mimetite", "selenite", "malachite"]
+    }
+  },
+  "_initial_audit": {
+    "_note": "Frozen snapshot of the pre-phase-1 audit. For historical reference only.",
+    "missing_max_size_before_phase_1": 19,
     "missing_growth_engine": ["goethite"],
     "missing_narrate_function": ["adamite", "mimetite", "feldspar", "albite", "uraninite", "molybdenite", "galena", "smithsonite", "wulfenite", "selenite", "goethite"],
-    "missing_from_vugg_py_registry": ["adamite", "mimetite", "feldspar", "albite", "galena", "smithsonite", "wulfenite", "selenite", "uraninite", "molybdenite", "goethite"],
-    "missing_from_web_index": ["albite", "goethite"],
-    "missing_from_agent_api": ["adamite", "mimetite", "feldspar", "albite", "selenite", "molybdenite", "goethite"]
+    "missing_from_vugg_py_registry": ["adamite", "mimetite", "feldspar", "albite", "galena", "smithsonite", "wulfenite", "selenite", "uraninite", "molybdenite", "goethite"]
   },
   "minerals": {
     "quartz": {
@@ -42,6 +59,7 @@
       "nucleation_sigma": 1.0,
       "max_size_cm": 1200,
       "growth_rate_mult": 0.3,
+      "habit_variants": ["prismatic", "scepter_overgrowth", "skeletal_fenster", "amethyst_druse"],
       "T_range_C": [50, 1713],
       "T_optimum_C": [200, 400],
       "T_behavior": "prograde_solubility",
@@ -74,6 +92,7 @@
       "nucleation_sigma": 1.0,
       "max_size_cm": 2000,
       "growth_rate_mult": 1.0,
+      "habit_variants": ["scalenohedral_dogtooth", "rhombohedral_nailhead", "prismatic", "botryoidal", "flos-ferri_acicular"],
       "T_range_C": [0, 840],
       "T_optimum_C": [50, 200],
       "T_behavior": "retrograde_solubility",
@@ -104,6 +123,7 @@
       "nucleation_sigma": 1.0,
       "max_size_cm": 80,
       "growth_rate_mult": 0.6,
+      "habit_variants": ["tetrahedral", "dodecahedral", "cleiophane_massive", "marmatite_black"],
       "T_range_C": [60, 350],
       "T_optimum_C": [80, 250],
       "T_behavior": "retrograde_solubility",
@@ -135,6 +155,7 @@
       "nucleation_sigma": 1.0,
       "max_size_cm": 400,
       "growth_rate_mult": 0.5,
+      "habit_variants": ["cubic", "octahedral", "cubo-octahedral", "penetration-twinned"],
       "T_range_C": [50, 300],
       "T_optimum_C": [100, 250],
       "T_behavior": "retrograde_solubility",
@@ -167,6 +188,7 @@
       "nucleation_sigma": 1.0,
       "max_size_cm": 40,
       "growth_rate_mult": 0.3,
+      "habit_variants": ["cubic_striated", "pyritohedral", "octahedral", "framboidal", "radiating_sun"],
       "T_range_C": [25, 700],
       "T_optimum_C": [100, 400],
       "T_behavior": "wide",
@@ -196,6 +218,7 @@
       "nucleation_sigma": 1.0,
       "max_size_cm": 30,
       "growth_rate_mult": 0.3,
+      "habit_variants": ["disphenoidal", "massive_vein", "iridescent_tarnished"],
       "T_range_C": [100, 600],
       "T_optimum_C": [300, 500],
       "T_behavior": "window",
@@ -226,6 +249,7 @@
       "nucleation_sigma": 1.5,
       "max_size_cm": 60,
       "growth_rate_mult": 0.5,
+      "habit_variants": ["specular_platy", "rhombohedral", "botryoidal_kidney_ore", "earthy_red_ochre", "rosette_iron-rose"],
       "T_range_C": [25, 700],
       "T_optimum_C": [50, 400],
       "T_behavior": "wide",
@@ -255,6 +279,7 @@
       "nucleation_sigma": 1.0,
       "max_size_cm": 200,
       "growth_rate_mult": 0.8,
+      "habit_variants": ["botryoidal", "acicular_spray", "banded_massive", "pseudomorph_after_azurite", "stalactitic"],
       "T_range_C": [5, 100],
       "T_optimum_C": [10, 50],
       "T_behavior": "retrograde_solubility",
@@ -282,6 +307,7 @@
       "nucleation_sigma": 1.5,
       "max_size_cm": 10,
       "growth_rate_mult": 0.1,
+      "habit_variants": ["cubic", "octahedral", "pitchblende_massive", "botryoidal_reniform"],
       "T_range_C": [200, 800],
       "T_optimum_C": [300, 600],
       "T_behavior": "wide",
@@ -301,15 +327,16 @@
         "black": {"default": true},
         "dark_green": {"trigger": "altered"}
       },
-      "narrate_function": null,
-      "runtimes_present": ["web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "needs _narrate_uraninite (currently inline flavor); not in vugg.py MINERAL_ENGINES; emits radiation each step"
+      "narrate_function": "_narrate_uraninite",
+      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Emits radiation each step."
     },
     "galena": {
       "formula": "PbS",
       "nucleation_sigma": 1.0,
       "max_size_cm": 60,
       "growth_rate_mult": 0.5,
+      "habit_variants": ["cubic", "octahedral", "cubo-octahedral", "skeletal_hopper"],
       "T_range_C": [50, 450],
       "T_optimum_C": [100, 400],
       "T_behavior": "wide",
@@ -328,15 +355,16 @@
       "color_rules": {
         "lead_gray_metallic": {"default": true}
       },
-      "narrate_function": null,
-      "runtimes_present": ["web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "needs _narrate_galena (currently inline flavor); T_optimum broadened downward per audit (was 200-400)"
+      "narrate_function": "_narrate_galena",
+      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). T_optimum 100-400°C per mineral-accuracy-audit.md."
     },
     "smithsonite": {
       "formula": "ZnCO3",
       "nucleation_sigma": 1.0,
       "max_size_cm": 60,
       "growth_rate_mult": 0.7,
+      "habit_variants": ["botryoidal", "rhombohedral_scalenohedral", "mammillary", "stalactitic_turquoise"],
       "T_range_C": [5, 150],
       "T_optimum_C": [15, 80],
       "T_behavior": "retrograde_solubility",
@@ -358,15 +386,16 @@
         "pink": {"trigger": "Co > 0.5"},
         "yellow": {"trigger": "Cd > 0.5"}
       },
-      "narrate_function": null,
-      "runtimes_present": ["web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "needs _narrate_smithsonite; not in vugg.py MINERAL_ENGINES"
+      "narrate_function": "_narrate_smithsonite",
+      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes)."
     },
     "wulfenite": {
       "formula": "PbMoO4",
       "nucleation_sigma": 1.0,
       "max_size_cm": 20,
       "growth_rate_mult": 0.2,
+      "habit_variants": ["tabular_square", "pyramidal", "pseudo-octahedral", "thin_plate_honey"],
       "T_range_C": [5, 120],
       "T_optimum_C": [20, 80],
       "T_behavior": "window",
@@ -386,15 +415,16 @@
         "orange_yellow": {"default": true},
         "red": {"trigger": "Cr > 0.5"}
       },
-      "narrate_function": null,
-      "runtimes_present": ["web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "requires both galena AND molybdenite to have oxidized first (Seo et al. 2012)"
+      "narrate_function": "_narrate_wulfenite",
+      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Requires both galena AND molybdenite to have oxidized first (Seo et al. 2012)."
     },
     "molybdenite": {
       "formula": "MoS2",
       "nucleation_sigma": 1.0,
       "max_size_cm": 40,
       "growth_rate_mult": 0.3,
+      "habit_variants": ["hexagonal_platy", "massive_foliated", "rosette"],
       "T_range_C": [150, 600],
       "T_optimum_C": [300, 500],
       "T_behavior": "window",
@@ -413,15 +443,16 @@
       "color_rules": {
         "silver_gray_metallic": {"default": true}
       },
-      "narrate_function": null,
-      "runtimes_present": ["web/index.html"],
-      "audit_status": "needs _narrate_molybdenite; missing from vugg.py MINERAL_ENGINES and agent-api"
+      "narrate_function": "_narrate_molybdenite",
+      "runtimes_present": ["vugg.py", "web/index.html"],
+      "audit_status": "ok (phase-2: wired in vugg.py). Still missing from agent-api/vugg-agent.js — deferred."
     },
     "adamite": {
       "formula": "Zn2(AsO4)(OH)",
       "nucleation_sigma": 1.0,
       "max_size_cm": 10,
       "growth_rate_mult": 0.3,
+      "habit_variants": ["prismatic", "rosette_spray", "druzy_crust", "cuproadamite_green"],
       "T_range_C": [5, 150],
       "T_optimum_C": [20, 80],
       "T_behavior": "retrograde_solubility",
@@ -442,15 +473,16 @@
         "bright_green": {"trigger": "Cu 0.5-5"},
         "purple": {"trigger": "Co > 0.5"}
       },
-      "narrate_function": null,
+      "narrate_function": "_narrate_adamite",
       "runtimes_present": ["vugg.py", "web/index.html"],
-      "audit_status": "needs _narrate_adamite; not in vugg.py MINERAL_ENGINES registry; missing from agent-api"
+      "audit_status": "ok (phase-2: narrator added, registry wired). Still missing from agent-api/vugg-agent.js — deferred."
     },
     "mimetite": {
       "formula": "Pb5(AsO4)3Cl",
       "nucleation_sigma": 1.0,
       "max_size_cm": 10,
       "growth_rate_mult": 0.3,
+      "habit_variants": ["hexagonal_prism", "campylite_barrel", "globular_mammillary"],
       "T_range_C": [5, 180],
       "T_optimum_C": [20, 120],
       "T_behavior": "retrograde_solubility",
@@ -470,15 +502,16 @@
         "yellow_orange": {"default": true},
         "campylite_barrel": {"trigger": "Cu_present"}
       },
-      "narrate_function": null,
+      "narrate_function": "_narrate_mimetite",
       "runtimes_present": ["vugg.py", "web/index.html"],
-      "audit_status": "needs _narrate_mimetite; not in vugg.py MINERAL_ENGINES; missing from agent-api"
+      "audit_status": "ok (phase-2: narrator added, registry wired). Still missing from agent-api/vugg-agent.js — deferred."
     },
     "feldspar": {
       "formula": "KAlSi3O8",
       "nucleation_sigma": 1.0,
       "max_size_cm": 1400,
       "growth_rate_mult": 0.4,
+      "habit_variants": ["prismatic_blocky", "tabular_sanidine", "Carlsbad_twinned", "cross-hatched_microcline", "adularia_pseudo-orthorhombic", "amazonite_blue-green"],
       "T_range_C": [250, 1170],
       "T_optimum_C": [400, 700],
       "T_behavior": "prograde_solubility",
@@ -503,15 +536,16 @@
         "amazonite_blue_green": {"trigger": "Pb > 5 and radiation"},
         "moonstone": {"trigger": "Na_perthite_intergrowth"}
       },
-      "narrate_function": null,
+      "narrate_function": "_narrate_feldspar",
       "runtimes_present": ["vugg.py", "web/index.html"],
-      "audit_status": "needs _narrate_feldspar; not in vugg.py MINERAL_ENGINES; missing from agent-api"
+      "audit_status": "ok (phase-2: narrator added, registry wired). Still missing from agent-api/vugg-agent.js — deferred."
     },
     "albite": {
       "formula": "NaAlSi3O8",
       "nucleation_sigma": 1.0,
       "max_size_cm": 40,
       "growth_rate_mult": 0.4,
+      "habit_variants": ["tabular", "cleavelandite_platy", "polysynthetic_striated", "peristerite_moonstone"],
       "T_range_C": [250, 1118],
       "T_optimum_C": [350, 700],
       "T_behavior": "prograde_solubility",
@@ -534,15 +568,16 @@
         "white": {"default": true},
         "peristerite_moonstone": {"trigger": "Ca > 2"}
       },
-      "narrate_function": null,
+      "narrate_function": "_narrate_albite",
       "runtimes_present": ["vugg.py"],
-      "audit_status": "needs _narrate_albite; not in vugg.py MINERAL_ENGINES; MISSING FROM web/index.html and agent-api (port required)"
+      "audit_status": "ok in vugg.py (phase-2: narrator added, registry wired). MISSING FROM web/index.html and agent-api — port deferred."
     },
     "selenite": {
       "formula": "CaSO4·2H2O",
       "nucleation_sigma": 1.0,
       "max_size_cm": 2400,
       "growth_rate_mult": 0.7,
+      "habit_variants": ["tabular", "prismatic", "fibrous_satin_spar", "swallowtail_twin", "cathedral_blade", "desert_rose"],
       "T_range_C": [5, 60],
       "T_optimum_C": [20, 58],
       "T_behavior": "retrograde_solubility",
@@ -564,15 +599,16 @@
         "colorless": {"default": true},
         "white": {"trigger": "inclusions"}
       },
-      "narrate_function": null,
-      "runtimes_present": ["web/index.html"],
-      "audit_status": "Naica giant crystals at T~58C for 500000 years; above 60C anhydrite is stable instead; needs _narrate_selenite; missing from vugg.py and agent-api"
+      "narrate_function": "_narrate_selenite",
+      "runtimes_present": ["vugg.py", "web/index.html"],
+      "audit_status": "ok in vugg.py + web/ (phase-2). Naica giant crystals at T~58°C for 500,000 years; above 60°C anhydrite wins. Missing from agent-api — deferred."
     },
     "goethite": {
       "formula": "FeO(OH)",
       "nucleation_sigma": 1.0,
       "max_size_cm": 60,
       "growth_rate_mult": 0.4,
+      "habit_variants": ["botryoidal_black", "mammillary", "fibrous_acicular", "pseudomorph_after_sulfide", "earthy_ochre", "stalactitic"],
       "T_range_C": [5, 150],
       "T_optimum_C": [15, 80],
       "T_behavior": "retrograde_solubility",
@@ -598,9 +634,9 @@
         "forms_pseudomorph_after": ["pyrite"],
         "note": "classic weathering rind; Egyptian Prophecy Stones = goethite after marcasite"
       },
-      "narrate_function": null,
-      "runtimes_present": [],
-      "audit_status": "GHOST MINERAL — supersaturation exists at vugg.py:527 but NO growth engine in any runtime; this spec entry authorizes building grow_goethite + _narrate_goethite + nucleation checks across all three runtimes"
+      "narrate_function": "_narrate_goethite",
+      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
+      "audit_status": "ok (phase-1: ghost fix complete — grow_goethite + _narrate_goethite + pseudomorph-after-sulfide nucleation in all 3 runtimes)."
     }
   }
 }

@@ -1885,7 +1885,7 @@ def grow_galena(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
     sigma = conditions.supersaturation_galena()
 
     if sigma < 1.0:
-        # Oxidative dissolution under O2 — becomes Pb-sulfate/carbonate pathway
+        # Oxidative dissolution under O2 — the dominant pathway (path to cerussite/anglesite/wulfenite)
         if crystal.total_growth_um > 3 and conditions.fluid.O2 > 1.0:
             crystal.dissolved = True
             dissolved_um = min(4.0, crystal.total_growth_um * 0.12)
@@ -1895,6 +1895,18 @@ def grow_galena(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
                 step=step, temperature=conditions.temperature,
                 thickness_um=-dissolved_um, growth_rate=-dissolved_um,
                 note="oxidation — galena dissolving, releasing Pb²⁺ (path to cerussite/anglesite)"
+            )
+        # Strong-acid dissolution (per spec acid_dissolution.pH_threshold = 2.0).
+        # PbS + 2H⁺ → Pb²⁺ + H₂S — slow, non-oxidative, classic lab reaction.
+        if crystal.total_growth_um > 3 and conditions.fluid.pH < 2.0:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.05)  # slower than oxidative
+            conditions.fluid.Pb += dissolved_um * 0.3
+            conditions.fluid.S += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"strong-acid dissolution (pH {conditions.fluid.pH:.1f}) — PbS + 2H⁺ → Pb²⁺ + H₂S"
             )
         return None
 
@@ -2430,14 +2442,20 @@ def event_molybdenum_pulse(conditions: VugConditions) -> str:
 
 
 def event_fluid_mixing(conditions: VugConditions) -> str:
-    """Two fluids meet — classic MVT mechanism."""
+    """Two fluids meet — classic MVT mechanism.
+
+    Note on F: real MVT brines from Mississippi Valley / Cave-in-Rock carry
+    tens of ppm F. Bumping from 15 → 40 so fluorite actually crosses σ=1.2
+    in the MVT scenario (Task 3 audit finding, phase 2).
+    """
     conditions.fluid.Zn = 150.0
     conditions.fluid.S = 120.0
     conditions.fluid.Ca += 100.0
-    conditions.fluid.F += 15.0
+    conditions.fluid.F += 40.0
+    conditions.fluid.Pb += 25.0   # MVT fluids carry Pb too — enables galena
     conditions.fluid.Fe += 30.0
     conditions.temperature -= 20
-    return "Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite and fluorite become possible."
+    return "Fluid mixing event. Metal-bearing brine meets sulfur-bearing groundwater. Sphalerite, fluorite, and galena become possible."
 
 
 # ============================================================
@@ -2594,12 +2612,153 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
     return conditions, events, 120
 
 
+def scenario_radioactive_pegmatite() -> Tuple[VugConditions, List[Event], int]:
+    """Radioactive pegmatite — high-T alkali granite pocket.
+
+    Pegmatitic fluids are silica-saturated melts with abundant K+Na+Al+U.
+    Grows uraninite, smoky quartz (from radiation), feldspar/albite,
+    and late-stage galena from radiogenic Pb. Already declared in web/;
+    ported to vugg.py so uraninite / feldspar / albite actually nucleate.
+    """
+    conditions = VugConditions(
+        temperature=600.0,
+        pressure=2.0,
+        fluid=FluidChemistry(
+            SiO2=12000, Ca=50, CO3=20, Fe=60, Mn=8,
+            S=40, F=25, U=150, Pb=30,
+            K=80, Na=50, Al=30,
+            O2=0.0, pH=6.5, salinity=8.0,
+        )
+    )
+
+    def ev_pegmatite_crystallization(cond):
+        cond.temperature = 450
+        cond.fluid.SiO2 += 3000
+        return ("The pegmatite melt differentiates. Volatile-rich residual "
+                "fluid floods the pocket. Quartz begins to grow in earnest. "
+                "Uraninite cubes nucleate where uranium is concentrated.")
+
+    def ev_deep_time(cond):
+        cond.temperature = 300
+        return ("Deep time passes. The uraninite sits in its cradle of "
+                "cooling rock, silently emitting alpha particles. Each decay "
+                "transmutes one atom of uranium into lead. The quartz "
+                "growing nearby doesn't know it yet, but it's darkening.")
+
+    def ev_oxidizing(cond):
+        cond.fluid.O2 += 0.8
+        cond.temperature = 120
+        cond.flow_rate = 1.5
+        return ("Oxidizing meteoric fluids seep through fractures. "
+                "The reducing environment shifts. Sulfides become unstable. "
+                "The uraninite endures — it has been enduring for millions of years.")
+
+    def ev_final_cooling(cond):
+        cond.temperature = 50
+        cond.flow_rate = 0.1
+        return ("The system cools to near-ambient. What remains is a "
+                "pegmatite pocket: black uraninite cubes, smoky quartz "
+                "darkened by radiation, galena crystallized from the lead "
+                "that uranium became. Time wrote this assemblage.")
+
+    events = [
+        Event(20, "Pegmatite Crystallization", "Main crystallization pulse", ev_pegmatite_crystallization),
+        Event(50, "Deep Time", "Eons pass — radiation accumulates", ev_deep_time),
+        Event(80, "Oxidizing Fluids", "Late-stage meteoric water", ev_oxidizing),
+        Event(100, "Final Cooling", "System approaches ambient", ev_final_cooling),
+    ]
+    return conditions, events, 120
+
+
+def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
+    """Supergene oxidation — low-T, oxidizing water-table zone.
+
+    The cold, oxygenated domain where primary sulfides weather into secondary
+    minerals. Pb+Mo → wulfenite. Zn+CO₃ → smithsonite. Zn+As → adamite.
+    Pb+As+Cl → mimetite. Fe → goethite. Ca+SO₄ → selenite. Cu+CO₃ → malachite.
+    Fills the gap flagged in TASK-BRIEF-2: wulfenite etc. can't reach their
+    <80°C stability window in the hydrothermal scenarios.
+    """
+    conditions = VugConditions(
+        temperature=35.0,          # shallow water-table zone
+        pressure=0.05,             # near-surface
+        fluid=FluidChemistry(
+            SiO2=30, Ca=120, CO3=80, Fe=40, Mn=6, Mg=5,
+            Zn=90, S=50, F=3,
+            Cu=25, Pb=35, Mo=15,
+            As=12, Cl=20,
+            O2=1.8, pH=6.8, salinity=2.0,
+        )
+    )
+
+    def ev_meteoric_flush(cond):
+        """Rain-fed oxygenated water recharges the aquifer."""
+        cond.fluid.O2 = 2.2
+        cond.fluid.CO3 += 30
+        cond.fluid.pH = 6.2
+        cond.flow_rate = 1.5
+        return ("Rain infiltrates the soil zone and percolates down, picking "
+                "up CO₂ and oxygen. Fresh supergene brine — cold, oxygen-rich, "
+                "slightly acidic. Any remaining primary sulfides are on borrowed time.")
+
+    def ev_pb_mo_pulse(cond):
+        """A fracture opens to a primary galena/molybdenite source — Pb and Mo surge."""
+        cond.fluid.Pb += 40
+        cond.fluid.Mo += 25
+        cond.fluid.O2 = 2.0
+        cond.flow_rate = 2.0
+        return ("A weathering rind breaches: Pb²⁺ and MoO₄²⁻ released "
+                "simultaneously from an oxidizing galena+molybdenite lens. "
+                "The Seo et al. (2012) condition for wulfenite formation — "
+                "both parents dying at once — is met.")
+
+    def ev_dry_spell(cond):
+        """Evaporation concentrates sulfate → selenite potential."""
+        cond.fluid.Ca += 40
+        cond.fluid.S += 30
+        cond.fluid.O2 = 1.5
+        cond.temperature = 50  # slight warming, still well below 60°C anhydrite line
+        cond.flow_rate = 0.3
+        return ("Dry season. Flow slows, evaporation concentrates the brine. "
+                "Ca²⁺ and SO₄²⁻ climb toward selenite's window — the desert-rose "
+                "chemistry, the Naica chemistry.")
+
+    def ev_as_rich_seep(cond):
+        """Arsenic-bearing seep — feeds adamite + mimetite."""
+        cond.fluid.As += 8
+        cond.fluid.Cl += 10
+        cond.fluid.Zn += 20
+        cond.fluid.pH = 6.0
+        return ("An arsenic-bearing seep arrives from a weathering "
+                "arsenopyrite body upslope. Zn²⁺ + AsO₄³⁻ begins to saturate "
+                "for adamite; Pb²⁺ + AsO₄³⁻ + Cl⁻ for mimetite.")
+
+    def ev_fracture_seal(cond):
+        """System seals — final equilibration."""
+        cond.flow_rate = 0.05
+        cond.fluid.O2 = 1.0
+        return ("The feeding fractures seal. The vug becomes a closed cold "
+                "oxidizing system. Whatever is supersaturated will precipitate; "
+                "whatever is undersaturated will quietly corrode.")
+
+    events = [
+        Event(20, "Meteoric Flush", "Oxygenated rainwater recharges", ev_meteoric_flush),
+        Event(40, "Pb+Mo Pulse", "Galena+molybdenite weathering", ev_pb_mo_pulse),
+        Event(70, "Dry Spell", "Evaporation concentrates sulfate", ev_dry_spell),
+        Event(95, "Arsenic Seep", "Zn/Pb arsenate saturation", ev_as_rich_seep),
+        Event(140, "Fracture Seal", "System closes", ev_fracture_seal),
+    ]
+    return conditions, events, 180
+
+
 SCENARIOS = {
     "cooling": scenario_cooling,
     "pulse": scenario_pulse,
     "mvt": scenario_mvt,
     "porphyry": scenario_porphyry,
     "reactive_wall": scenario_reactive_wall,
+    "radioactive_pegmatite": scenario_radioactive_pegmatite,
+    "supergene_oxidation": scenario_supergene_oxidation,
 }
 
 
