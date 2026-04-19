@@ -6724,6 +6724,8 @@ function crystalsOfMineral(mineral) {
 }
 
 // Turn a live Crystal + the run it came from into a persistent record.
+// Stores the full zones array so the Record Player can spiral the
+// crystal later — without this the Groove would have nothing to draw.
 function buildCrystalRecord(crystal, meta) {
   const titleBase = meta.archetype
     ? `${meta.archetype.replace(/_/g, ' ')} vugg`
@@ -6731,6 +6733,25 @@ function buildCrystalRecord(crystal, meta) {
   const defaultName = `${capitalize(crystal.mineral)} from ${titleBase}`;
   const fl = typeof crystal.predict_fluorescence === 'function'
     ? crystal.predict_fluorescence() : null;
+
+  // Serialize zones with the fields the Groove visualization reads.
+  // Everything else on a GrowthZone is recomputable or decorative.
+  const zones = (crystal.zones || []).map(z => ({
+    step: z.step,
+    temperature: z.temperature,
+    thickness_um: z.thickness_um,
+    growth_rate: z.growth_rate,
+    trace_Fe: z.trace_Fe || 0,
+    trace_Mn: z.trace_Mn || 0,
+    trace_Al: z.trace_Al || 0,
+    trace_Ti: z.trace_Ti || 0,
+    trace_Pb: z.trace_Pb || 0,
+    trace_Cu: z.trace_Cu || 0,
+    fluid_inclusion: !!z.fluid_inclusion,
+    inclusion_type: z.inclusion_type || '',
+    note: z.note || '',
+    is_phantom: !!z.is_phantom,
+  }));
 
   return {
     id: `cry-${Date.now().toString(36)}-${Math.floor(Math.random() * 46656).toString(36)}`,
@@ -6753,10 +6774,62 @@ function buildCrystalRecord(crystal, meta) {
     twin_law: crystal.twin_law || null,
     position: crystal.position || '',
     fluorescence: fl,
-    zones: (crystal.zones || []).length,
+    zones,
+    zone_count: zones.length,
     total_growth_um: +(crystal.total_growth_um || 0).toFixed(1),
     radiation_damage: crystal.radiation_damage || 0,
   };
+}
+
+// Build a Crystal-shaped stand-in from a persisted record — enough for the
+// Groove visualization and the zone-history modal to treat it like a live
+// crystal. Does not connect to a VugSimulator; purely for display.
+function reconstructCrystalFromRecord(rec) {
+  const zones = (rec.zones || []).map(z => Object.assign({}, z));
+  const stand = {
+    mineral: rec.mineral,
+    crystal_id: `C${(rec.id || '').slice(-4)}`,
+    nucleation_step: rec.source?.nucleation_step ?? 0,
+    nucleation_temp: rec.source?.nucleation_temp ?? 0,
+    position: rec.position || '',
+    c_length_mm: rec.mm,
+    a_width_mm: rec.a_mm || rec.mm,
+    habit: rec.habit || '',
+    dominant_forms: (rec.forms || []).slice(),
+    twinned: !!rec.twinned,
+    twin_law: rec.twin_law || '',
+    zones,
+    total_growth_um: rec.total_growth_um || 0,
+    radiation_damage: rec.radiation_damage || 0,
+    active: false,
+    dissolved: false,
+    enclosed_crystals: [],
+    enclosed_at_step: [],
+    phantom_surfaces: [],
+    phantom_count: zones.filter(z => z.is_phantom).length,
+    _fromCollectionRecord: rec,
+    predict_fluorescence() {
+      return rec.fluorescence || 'non-fluorescent';
+    },
+    predict_color() {
+      return rec.habit && rec.habit.includes('smoky') ? 'smoky' : 'typical for species';
+    },
+    describe_morphology() {
+      const parts = [this.habit || 'massive'];
+      if (this.dominant_forms && this.dominant_forms.length) {
+        parts.push(`[${this.dominant_forms.slice(0, 2).join(', ')}]`);
+      }
+      if (this.twinned) parts.push(`⟁ ${this.twin_law}`);
+      parts.push(`${this.c_length_mm.toFixed(1)} × ${this.a_width_mm.toFixed(1)} mm`);
+      return parts.join(' ');
+    },
+    describe_latest_zone() {
+      const z = this.zones[this.zones.length - 1];
+      if (!z) return '';
+      return `step ${z.step}, T=${z.temperature.toFixed(1)}°C, +${z.thickness_um.toFixed(1)} µm`;
+    },
+  };
+  return stand;
 }
 
 function collectCrystal(crystal, meta) {
@@ -6936,6 +7009,13 @@ function switchMode(mode) {
     if (mr) mr.classList.add('active');
     timeScale = 5.0;
   }
+
+  // Leaving Groove (or opening any non-groove mode) drops any
+  // library-loaded stand-in so live-sim crystals show up again
+  // next time the user opens the Record Player.
+  if (mode !== 'groove' && typeof clearGrooveCollection === 'function') {
+    clearGrooveCollection();
+  }
 }
 
 // ============================================================
@@ -7027,13 +7107,19 @@ function renderCollectedForMineral(name) {
       const src = c.source && (c.source.scenario || c.source.archetype || c.source.mode) || '';
       const seed = c.source && c.source.seed != null ? ` · seed ${c.source.seed}` : '';
       const safeName = (c.name || '').replace(/"/g, '&quot;');
+      const zoneCount = Array.isArray(c.zones) ? c.zones.length : (c.zone_count || 0);
+      const canPlay = zoneCount > 0;
+      const playBtn = canPlay
+        ? `<button onclick="playCollectedInGroove('${c.id}')" title="Open this crystal in the Record Player">▶ Play</button>`
+        : `<button disabled title="No zone data saved — collect a fresh one">▶ Play</button>`;
       return `<div class="collected-row">
         <div class="collected-row-head">
           <span class="collected-name" title="${safeName}">${c.name}</span>
           <span class="collected-size">${c.mm.toFixed(2)} mm</span>
         </div>
-        <div class="collected-row-meta">${c.habit}${twin} · ${src}${seed} · ${c.zones} zones</div>
+        <div class="collected-row-meta">${c.habit}${twin} · ${src}${seed} · ${zoneCount} zones</div>
         <div class="collected-row-actions">
+          ${playBtn}
           <button onclick="renameCollectedCrystal('${c.id}')">✎ Rename</button>
           <button onclick="deleteCollectedCrystal('${c.id}')" class="danger">🗑 Delete</button>
         </div>
@@ -8356,8 +8442,17 @@ const GROOVE_AXES = [
   { name: 'Ti', key: 'trace_Ti', color: '#88cc88' },
 ];
 
+// Loaded-from-collection stand-ins, set by playCollectedInGroove. Takes
+// priority over live sims when present so the user actually sees the
+// crystal they asked for.
+let grooveCollectionCrystals = null;
+
 function grooveGetAvailableCrystals() {
-  // Prefer idle (The Groove), then fortress, then legends — most recent first
+  // Collection-loaded crystals take priority — user explicitly requested them.
+  if (grooveCollectionCrystals && grooveCollectionCrystals.length) {
+    return { crystals: grooveCollectionCrystals, source: 'Library' };
+  }
+  // Otherwise prefer idle (The Groove), then fortress, then legends, then random.
   if (idleSim && idleSim.crystals && idleSim.crystals.length) {
     return { sim: idleSim, crystals: idleSim.crystals, source: 'The Groove' };
   }
@@ -8367,7 +8462,32 @@ function grooveGetAvailableCrystals() {
   if (legendsSim && legendsSim.crystals && legendsSim.crystals.length) {
     return { sim: legendsSim, crystals: legendsSim.crystals, source: 'Legends' };
   }
+  if (randomSim && randomSim.crystals && randomSim.crystals.length) {
+    return { sim: randomSim, crystals: randomSim.crystals, source: 'Random Vugg' };
+  }
   return null;
+}
+
+// Called by the ▶ Play button on each Library collected row.
+// Stashes the reconstructed stand-in, switches to Groove, and selects it.
+function playCollectedInGroove(id) {
+  const rec = loadCrystals().find(c => c.id === id);
+  if (!rec) { alert('Collected crystal not found.'); return; }
+  if (!rec.zones || !rec.zones.length) {
+    alert('This specimen was collected before zone data was saved, so the Record Player has nothing to spiral. Collect a fresh one to play it.');
+    return;
+  }
+  const stand = reconstructCrystalFromRecord(rec);
+  stand._libraryName = rec.name;
+  grooveCollectionCrystals = [stand];
+  grooveCrystal = stand;
+  switchMode('groove');
+}
+
+// When leaving Groove, drop the collection pointer so live sims show up
+// again next time. Called from switchMode.
+function clearGrooveCollection() {
+  grooveCollectionCrystals = null;
 }
 
 function groovePopulateCrystals() {
@@ -8427,12 +8547,15 @@ function grooveSelectCrystal() {
 
   // Show crystal info
   info.style.display = 'block';
-  let infoHtml = `<span class="gci-mineral">${grooveCrystal.mineral} #${grooveCrystal.crystal_id}</span>`;
+  const libraryName = grooveCrystal._libraryName
+    ? `<span class="gci-mineral">“${grooveCrystal._libraryName}”</span><br>`
+    : '';
+  let infoHtml = libraryName + `<span class="gci-mineral">${grooveCrystal.mineral} #${grooveCrystal.crystal_id}</span>`;
   infoHtml += ` — ${grooveCrystal.describe_morphology()}`;
   infoHtml += `<br>${grooveCrystal.zones.length} growth zones, nucleated step ${grooveCrystal.nucleation_step} at ${grooveCrystal.nucleation_temp.toFixed(0)}°C`;
   if (grooveCrystal.twinned) infoHtml += `<br><span style="color:#bb66ee">⟁ ${grooveCrystal.twin_law}</span>`;
   infoHtml += `<br>Fluorescence: ${grooveCrystal.predict_fluorescence()}`;
-  infoHtml += `<br><span style="color:#5a4a30;font-size:0.65rem">Source: ${data.source} mode</span>`;
+  infoHtml += `<br><span style="color:#5a4a30;font-size:0.65rem">Source: ${data.source}${data.source === 'Library' ? ' collection' : ' mode'}</span>`;
   info.innerHTML = infoHtml;
 
   // Reset playback
