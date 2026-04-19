@@ -234,166 +234,125 @@ h1 {
   font-style: italic;
 }
 
-/* ============== SAVE BUTTONS + COLLECTION VIEWER ============== */
-.btn-save {
+/* ============== COLLECT BUTTON (per-crystal, in inventory) ============== */
+.inv-collect-row {
+  margin-top: 0.5rem;
+  text-align: right;
+}
+.inv-collect-btn {
   background: #1a1a14;
   color: #d4a843;
   border: 1px solid #3a3520;
-  padding: 0.5rem 0.9rem;
+  padding: 0.3rem 0.7rem;
   font-family: inherit;
-  font-size: 0.85rem;
-  border-radius: 4px;
+  font-size: 0.75rem;
+  border-radius: 3px;
   cursor: pointer;
+  letter-spacing: 0.05em;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
-.btn-save:hover:not(:disabled) {
+.inv-collect-btn:hover:not(:disabled) {
   border-color: #f0c050;
   color: #f0c050;
   background: #2a2510;
 }
-.btn-save:disabled {
-  color: #5a4a30;
-  cursor: not-allowed;
+.inv-collect-btn:disabled {
+  color: #6a5a30;
+  cursor: default;
+  opacity: 0.65;
 }
 
-.collection-viewer {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(5, 5, 4, 0.92);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
+.random-inventory {
+  color: inherit;
 }
-.collection-modal {
-  background: #0e0e0a;
-  border: 1px solid #3a3520;
-  border-radius: 8px;
-  width: min(1200px, 100%);
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.random-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.6rem;
 }
-.collection-head {
-  padding: 0.8rem 1.2rem;
-  border-bottom: 1px solid #2a2518;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.collection-head h2 {
-  color: #f0c050;
-  margin: 0;
-  font-size: 1.25rem;
-  letter-spacing: 0.08em;
-}
-.collection-head .collection-progress {
-  color: #a89040;
-  font-size: 0.82rem;
-  font-style: italic;
-}
-.collection-close {
-  background: transparent;
-  color: #8a7a40;
-  border: 1px solid #3a3520;
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
-  font-family: inherit;
-  cursor: pointer;
-}
-.collection-close:hover { color: #f0c050; border-color: #f0c050; }
-.collection-body {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-}
-.collection-list {
-  width: 38%;
-  border-right: 1px solid #2a2518;
-  overflow-y: auto;
-  padding: 0.6rem;
-}
-.collection-detail {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem 1.4rem;
-}
-.spec-row {
-  padding: 0.7rem 0.9rem;
+.random-inventory-grid .inv-crystal {
+  background: #12120a;
   border: 1px solid #2a2518;
   border-radius: 5px;
-  margin-bottom: 0.5rem;
+  padding: 0.6rem 0.8rem;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
 }
-.spec-row:hover { border-color: #8a7a40; background: #15150e; }
-.spec-row-head {
+
+/* ============== LIBRARY CARD — collected specimens section ============== */
+.mineral-card-badge.collected {
+  color: #f0c050;
+  background: rgba(240,192,80,0.15);
+  border: 1px solid rgba(240,192,80,0.3);
+}
+.card-collection {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed #2a2518;
+}
+.card-collection.empty {
+  color: #5a4a30;
+  font-style: italic;
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+.card-collection-head {
+  color: #a89040;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+}
+.collected-row {
+  background: #0f0f08;
+  border: 1px solid #2a2518;
+  border-radius: 3px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.35rem;
+}
+.collected-row-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 0.5rem;
-  margin-bottom: 0.35rem;
 }
-.spec-name { color: #f0c050; font-weight: bold; font-size: 0.92rem; }
-.spec-date { color: #5a4a30; font-size: 0.72rem; font-style: italic; white-space: nowrap; }
-.spec-row-body { font-size: 0.75rem; color: #8a7a40; }
-.spec-chip {
-  display: inline-block;
-  padding: 2px 6px;
-  background: rgba(138,122,64,0.14);
-  color: #a89040;
-  border-radius: 3px;
-  margin-right: 4px;
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 0.7rem;
-}
-.collection-detail h3 {
-  color: #f0c050;
-  margin: 0 0 0.3rem 0;
-  letter-spacing: 0.04em;
-}
-.collection-detail .spec-meta {
-  color: #6a5a30;
-  font-size: 0.78rem;
-  margin-bottom: 1rem;
-  font-style: italic;
-}
-.spec-crystals {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 1rem;
-}
-.spec-crystal {
-  border: 1px solid #2a2518;
-  border-radius: 4px;
-  padding: 0.5rem 0.8rem;
-  background: #12120a;
-}
-.spec-crystal-name {
-  color: #f0c050;
-  text-transform: capitalize;
+.collected-name {
+  color: #d4a843;
+  font-size: 0.82rem;
   font-weight: bold;
-  margin-right: 0.6rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
-.spec-crystal-size { color: #d4a843; font-family: ui-monospace, Menlo, monospace; font-size: 0.85rem; }
-.spec-crystal-details { color: #8a7a40; font-size: 0.75rem; margin-top: 0.2rem; }
-.spec-actions { text-align: right; }
-.spec-actions button {
+.collected-size {
+  color: #a89040;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+.collected-row-meta {
+  color: #6a5a30;
+  font-size: 0.7rem;
+  margin-top: 0.15rem;
+}
+.collected-row-actions {
+  margin-top: 0.3rem;
+  display: flex;
+  gap: 0.4rem;
+}
+.collected-row-actions button {
   background: transparent;
-  color: #8a5a40;
-  border: 1px solid #3a3520;
-  padding: 0.35rem 0.8rem;
-  border-radius: 4px;
+  color: #8a7a40;
+  border: 1px solid #2a2518;
+  padding: 0.2rem 0.55rem;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.68rem;
+  border-radius: 3px;
   cursor: pointer;
 }
-.spec-actions button:hover { color: #ff9090; border-color: #8a5a40; }
+.collected-row-actions button:hover { color: #f0c050; border-color: #8a7a40; }
+.collected-row-actions button.danger:hover { color: #ff9090; border-color: #8a5a40; }
 
 .controls {
   display: flex;
@@ -1920,7 +1879,6 @@ footer a:hover {
     <button class="btn-grow" id="btn-grow" onclick="runSimulation()">Grow</button>
     <button class="btn-random" id="btn-random" onclick="runRandom()">Random</button>
     <button class="btn-copy" id="btn-copy" onclick="copyOutput()">Copy to clipboard</button>
-    <button class="btn-save" id="btn-save-legends" onclick="saveCurrentLegends()" disabled title="Run a scenario first">💾 Save</button>
   </div>
 </div>
 
@@ -2456,7 +2414,6 @@ Scenarios:
 
     <div class="end-btns">
       <button class="btn-finish" onclick="fortressFinish()">📜 Finish &amp; Narrate</button>
-      <button class="btn-save" onclick="saveCurrentFortress()">💾 Save to Collection</button>
       <button class="btn-reset" onclick="fortressReset()">↩️ Reset</button>
       <button class="btn-copy" onclick="copyFortressLog()">Copy to clipboard</button>
     </div>
@@ -2608,24 +2565,9 @@ Scenarios:
       <input type="text" id="random-seed" placeholder="optional integer" style="width:10rem">
     </div>
     <button onclick="runRandomVugg()" style="background:#3a3518; color:#f0c050; border:1px solid #6a5420; padding:0.55rem 1.2rem; font-family:inherit; border-radius:4px; cursor:pointer;">🎲 Generate Vugg</button>
-    <button id="random-save-btn" onclick="saveCurrentRandom()" disabled title="Roll a vugg first" style="background:#1a1a14; color:#d4a843; border:1px solid #3a3520; padding:0.55rem 1rem; font-family:inherit; border-radius:4px; cursor:pointer;">💾 Save to Collection</button>
   </div>
   <div id="random-output" class="log" style="max-width:1100px;margin:1rem auto"></div>
-</div>
-
-<!-- Collection Viewer (modal, opens from title-screen Load Game button) -->
-<div class="collection-viewer" id="collection-viewer" onclick="if(event.target===this)closeCollectionViewer()">
-  <div class="collection-modal">
-    <div class="collection-head">
-      <h2>💎 YOUR COLLECTION</h2>
-      <span class="collection-progress" id="collection-progress"></span>
-      <button class="collection-close" onclick="closeCollectionViewer()">Close</button>
-    </div>
-    <div class="collection-body">
-      <div class="collection-list" id="collection-list"></div>
-      <div class="collection-detail" id="collection-detail"></div>
-    </div>
-  </div>
+  <div id="random-inventory" class="random-inventory" style="max-width:1100px;margin:0 auto 1rem auto"></div>
 </div>
 
 <!-- Library Mode -->
@@ -6585,8 +6527,6 @@ function runSimulation() {
 
   const sim = new VugSimulator(conditions, events);
   legendsSim = sim;
-  const legendsSaveBtn = document.getElementById('btn-save-legends');
-  if (legendsSaveBtn) { legendsSaveBtn.disabled = false; legendsSaveBtn.title = 'Save this run to your collection'; }
 
   for (let s = 0; s < totalSteps; s++) {
     const log = sim.run_step();
@@ -6746,248 +6686,188 @@ function showTitleScreen() {
   if (libraryPanel) libraryPanel.style.display = 'none';
   if (randomPanel) randomPanel.style.display = 'none';
   idleStop(); // stop any running idle simulation
-  // Update the Load Game button state based on saved state presence.
-  try {
-    const btn = document.getElementById('title-btn-load');
-    if (btn) {
-      const items = loadCollection();
-      const hasItems = items.length > 0;
-      btn.disabled = !hasItems;
-      btn.title = hasItems
-        ? `Open your collection (${items.length} specimen${items.length === 1 ? '' : 's'})`
-        : 'No specimens saved yet — grow a vugg and press Save';
-    }
-  } catch (e) { /* localStorage unavailable (private browsing); leave button enabled */ }
+  refreshTitleLoadButton();
 }
 
 // ============================================================
-// SPECIMEN COLLECTION — persistent records of every vugg you save
+// CRYSTAL COLLECTION — per-crystal persistent records
 // ============================================================
-// A "specimen" is a snapshot of a finished run: what grew, how big,
-// in what habit, under what scenario/archetype. Saves are appended
-// to localStorage['vugg-collection-v1']. The Load Game button opens
-// a browser that lists every saved specimen and tracks which minerals
-// you've 'unlocked' (grown at least once across any saved run).
-const COLLECTION_KEY = 'vugg-collection-v1';
+// Each entry is ONE individual crystal the user chose to collect
+// (not a whole run). Stored as an array in localStorage under
+// 'vugg-crystals-v1'. The Library shows each species' collection
+// directly on its card; the title-screen Load Game button opens
+// the Library.
+const CRYSTAL_KEY = 'vugg-crystals-v1';
 
-function loadCollection() {
+function loadCrystals() {
   try {
-    const raw = localStorage.getItem(COLLECTION_KEY);
+    const raw = localStorage.getItem(CRYSTAL_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
-    console.warn('collection parse failed:', e);
+    console.warn('crystal collection parse failed:', e);
     return [];
   }
 }
-function persistCollection(items) {
-  try { localStorage.setItem(COLLECTION_KEY, JSON.stringify(items)); return true; }
-  catch (e) { console.error('collection persist failed:', e); return false; }
+function persistCrystals(items) {
+  try { localStorage.setItem(CRYSTAL_KEY, JSON.stringify(items)); return true; }
+  catch (e) { console.error('crystal persist failed:', e); return false; }
 }
-function uniqueMineralsDiscovered() {
+function uniqueCollectedMinerals() {
   const seen = new Set();
-  for (const sp of loadCollection()) {
-    for (const c of (sp.crystals || [])) seen.add(c.mineral);
-  }
+  for (const c of loadCrystals()) seen.add(c.mineral);
   return seen;
 }
+function crystalsOfMineral(mineral) {
+  return loadCrystals().filter(c => c.mineral === mineral);
+}
 
-// Convert a live VugSimulator into a lightweight specimen record.
-function buildSpecimenRecord(sim, meta) {
-  const crystals = (sim.crystals || [])
-    .filter(c => c.total_growth_um > 0 || (c.zones && c.zones.length))
-    .map(c => ({
-      mineral: c.mineral,
-      id: c.crystal_id,
-      mm: +c.c_length_mm.toFixed(3),
-      a_mm: +((c.a_width_mm || 0).toFixed(3)),
-      habit: c.habit || '',
-      forms: c.dominant_forms || [],
-      twinned: !!c.twinned,
-      twin_law: c.twin_law || null,
-      position: c.position || '',
-      zones: (c.zones || []).length,
-      fluorescence: typeof c.predict_fluorescence === 'function' ? c.predict_fluorescence() : null,
-    }));
-
-  // Friendly auto-name: "Porphyry · 7 crystals" or "Pegmatite specimen · 5"
-  const base = meta.archetype
-    ? meta.archetype.replace(/_/g, ' ')
-    : (meta.scenario || meta.mode || 'vugg');
-  const displayName = `${base[0].toUpperCase() + base.slice(1)} · ${crystals.length} crystal${crystals.length === 1 ? '' : 's'}`;
+// Turn a live Crystal + the run it came from into a persistent record.
+function buildCrystalRecord(crystal, meta) {
+  const titleBase = meta.archetype
+    ? `${meta.archetype.replace(/_/g, ' ')} vugg`
+    : (meta.scenario ? `${meta.scenario} scenario` : meta.mode || 'unknown');
+  const defaultName = `${capitalize(crystal.mineral)} from ${titleBase}`;
+  const fl = typeof crystal.predict_fluorescence === 'function'
+    ? crystal.predict_fluorescence() : null;
 
   return {
-    id: `spec-${Date.now().toString(36)}-${Math.floor(Math.random() * 1296).toString(36)}`,
-    saved_at: new Date().toISOString(),
-    name: meta.name || displayName,
-    mode: meta.mode || 'simulation',
-    scenario: meta.scenario || null,
-    archetype: meta.archetype || null,
-    seed: meta.seed ?? null,
-    steps: sim.step || 0,
-    final_T: sim.conditions ? +sim.conditions.temperature.toFixed(1) : null,
-    pH: sim.conditions ? +sim.conditions.fluid.pH.toFixed(2) : null,
-    crystal_count: crystals.length,
-    crystals,
+    id: `cry-${Date.now().toString(36)}-${Math.floor(Math.random() * 46656).toString(36)}`,
+    collected_at: new Date().toISOString(),
+    name: meta.name || defaultName,
+    mineral: crystal.mineral,
+    source: {
+      mode: meta.mode || 'unknown',
+      scenario: meta.scenario || null,
+      archetype: meta.archetype || null,
+      seed: meta.seed ?? null,
+      nucleation_step: crystal.nucleation_step,
+      nucleation_temp: +crystal.nucleation_temp.toFixed(1),
+    },
+    mm: +crystal.c_length_mm.toFixed(3),
+    a_mm: +((crystal.a_width_mm || 0).toFixed(3)),
+    habit: crystal.habit || '',
+    forms: (crystal.dominant_forms || []).slice(),
+    twinned: !!crystal.twinned,
+    twin_law: crystal.twin_law || null,
+    position: crystal.position || '',
+    fluorescence: fl,
+    zones: (crystal.zones || []).length,
+    total_growth_um: +(crystal.total_growth_um || 0).toFixed(1),
+    radiation_damage: crystal.radiation_damage || 0,
   };
 }
 
-function saveSpecimen(sim, meta) {
-  if (!sim || !sim.crystals) {
-    alert('Nothing to save — no simulation has run yet.');
+function collectCrystal(crystal, meta) {
+  if (!crystal) return false;
+  if ((crystal.total_growth_um || 0) < 0.1 && (crystal.zones || []).length === 0) {
+    alert('This crystal has no growth zones yet — let it grow first.');
     return false;
   }
-  const grown = sim.crystals.filter(c => c.total_growth_um > 0);
-  if (!grown.length) {
-    if (!confirm('No crystals grew in this run. Save the empty specimen anyway?')) return false;
-  }
-  const rec = buildSpecimenRecord(sim, meta);
-  const newlyDiscovered = Array.from(new Set(rec.crystals.map(c => c.mineral)))
-    .filter(m => !uniqueMineralsDiscovered().has(m));
-  const items = loadCollection();
+  const rec = buildCrystalRecord(crystal, meta);
+  const defaultName = rec.name;
+  const chosen = prompt(`Name this ${crystal.mineral}:`, defaultName);
+  if (chosen === null) return false; // cancelled
+  rec.name = chosen.trim() || defaultName;
+
+  const already = uniqueCollectedMinerals();
+  const items = loadCrystals();
   items.push(rec);
-  if (!persistCollection(items)) {
+  if (!persistCrystals(items)) {
     alert('Could not save — localStorage is full or unavailable.');
     return false;
   }
-  // Update the title-screen Load Game button if present.
-  const btn = document.getElementById('title-btn-load');
-  if (btn) btn.disabled = false;
-  const discoveryMsg = newlyDiscovered.length
-    ? `\n\n🆕 First time growing: ${newlyDiscovered.join(', ')}`
-    : '';
-  alert(`Saved "${rec.name}" to your collection.${discoveryMsg}`);
+  const isNewSpecies = !already.has(rec.mineral);
+  // Update any open Library view and the title-screen Load button.
+  if (typeof libraryRender === 'function' && document.getElementById('library-panel') &&
+      document.getElementById('library-panel').style.display !== 'none') {
+    libraryRender();
+  }
+  refreshTitleLoadButton();
+  // Mark the crystal in the live inventory so the Collect button disables.
+  crystal._collectedRecordId = rec.id;
+  const newMsg = isNewSpecies ? `\n\n🆕 First ${rec.mineral} in your collection — a species unlocked.` : '';
+  alert(`Collected "${rec.name}".${newMsg}`);
   return true;
 }
 
-function deleteSpecimen(id) {
-  const items = loadCollection().filter(s => s.id !== id);
-  persistCollection(items);
-  if (!items.length) {
-    const btn = document.getElementById('title-btn-load');
-    if (btn) btn.disabled = true;
+function renameCollectedCrystal(id) {
+  const items = loadCrystals();
+  const rec = items.find(c => c.id === id);
+  if (!rec) return;
+  const next = prompt('Rename crystal:', rec.name);
+  if (next === null) return;
+  rec.name = next.trim() || rec.name;
+  persistCrystals(items);
+  if (typeof libraryRender === 'function') libraryRender();
+}
+function deleteCollectedCrystal(id) {
+  if (!confirm('Delete this specimen from your collection?')) return;
+  const items = loadCrystals().filter(c => c.id !== id);
+  persistCrystals(items);
+  if (typeof libraryRender === 'function') libraryRender();
+  refreshTitleLoadButton();
+}
+
+function refreshTitleLoadButton() {
+  const btn = document.getElementById('title-btn-load');
+  if (!btn) return;
+  try {
+    const items = loadCrystals();
+    const n = items.length;
+    btn.disabled = n === 0;
+    btn.title = n
+      ? `Open Library (${n} collected crystal${n === 1 ? '' : 's'})`
+      : 'No crystals collected yet — grow a vugg and tap Collect';
+  } catch (e) { /* localStorage unavailable */ }
+}
+
+// Called by the per-crystal Collect button in each mode's inventory.
+// The button stops propagation so the parent row's click (zone history
+// modal) doesn't also fire.
+function collectFromLegends(crystalIdx, ev) {
+  if (ev) ev.stopPropagation();
+  if (!legendsSim) return;
+  const crystal = legendsSim.crystals[crystalIdx];
+  const scenario = document.getElementById('scenario').value;
+  const seedInput = document.getElementById('seed').value;
+  if (collectCrystal(crystal, {
+    mode: 'simulation',
+    scenario,
+    seed: seedInput ? parseInt(seedInput, 10) : null,
+  })) {
+    updateLegendsInventory(legendsSim);
   }
 }
-
-// ============================================================
-// COLLECTION VIEWER — opened from the title-screen Load Game button
-// ============================================================
-function openCollectionViewer() {
-  const items = loadCollection();
-  const wrap = document.getElementById('collection-viewer');
-  const list = document.getElementById('collection-list');
-  const progress = document.getElementById('collection-progress');
-  const detail = document.getElementById('collection-detail');
-
-  // Progress line: X of N unique minerals grown
-  const discovered = uniqueMineralsDiscovered();
-  const totalSpecies = typeof MINERAL_SPEC === 'object' ? Object.keys(MINERAL_SPEC).length : 19;
-  progress.textContent = `${discovered.size} of ${totalSpecies} mineral species unlocked · ${items.length} specimen${items.length === 1 ? '' : 's'} in collection`;
-
-  if (!items.length) {
-    list.innerHTML = '<div class="library-empty">Nothing saved yet. Grow a vugg, then press Save.</div>';
-    detail.innerHTML = '';
-  } else {
-    list.innerHTML = items
-      .slice()
-      .reverse()
-      .map(s => {
-        const d = new Date(s.saved_at);
-        const dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        const mins = [...new Set((s.crystals || []).map(c => c.mineral))];
-        const chips = mins.slice(0, 4).map(m => `<span class="spec-chip">${m}</span>`).join('') + (mins.length > 4 ? `<span class="spec-chip">+${mins.length - 4}</span>` : '');
-        return `<div class="spec-row" data-id="${s.id}" onclick="showSpecimen('${s.id}')">
-          <div class="spec-row-head">
-            <span class="spec-name">${s.name}</span>
-            <span class="spec-date">${dateStr}</span>
-          </div>
-          <div class="spec-row-body">${chips || '<em>(empty)</em>'}</div>
-        </div>`;
-      }).join('');
-    // Auto-open most recent
-    const latest = items[items.length - 1];
-    if (latest) showSpecimen(latest.id);
+function collectFromFortress(crystalIdx, ev) {
+  if (ev) ev.stopPropagation();
+  if (!fortressSim) return;
+  const crystal = fortressSim.crystals[crystalIdx];
+  if (collectCrystal(crystal, { mode: 'creative' })) updateFortressInventory();
+}
+function collectFromRandom(crystalIdx, ev) {
+  if (ev) ev.stopPropagation();
+  if (!randomSim) return;
+  const crystal = randomSim.crystals[crystalIdx];
+  if (collectCrystal(crystal, {
+    mode: 'random',
+    archetype: randomSimArchetype,
+    seed: randomSimSeed,
+  })) {
+    renderRandomInventory();
   }
-  wrap.style.display = 'flex';
-}
-
-function closeCollectionViewer() {
-  document.getElementById('collection-viewer').style.display = 'none';
-}
-
-function showSpecimen(id) {
-  const spec = loadCollection().find(s => s.id === id);
-  const detail = document.getElementById('collection-detail');
-  if (!spec) { detail.innerHTML = '<div class="library-empty">Specimen not found.</div>'; return; }
-  const d = new Date(spec.saved_at);
-  const header = [
-    `<h3>${spec.name}</h3>`,
-    `<div class="spec-meta">${d.toLocaleString()} · ${spec.mode}`,
-    spec.scenario ? ` · scenario: ${spec.scenario}` : '',
-    spec.archetype ? ` · archetype: ${spec.archetype}` : '',
-    spec.seed != null ? ` · seed: ${spec.seed}` : '',
-    ` · ran ${spec.steps} steps · final T ${spec.final_T}°C · pH ${spec.pH}`,
-    '</div>',
-  ].join('');
-
-  const crystals = (spec.crystals || [])
-    .slice()
-    .sort((a, b) => b.mm - a.mm)
-    .map(c => {
-      const twin = c.twinned ? ` · twinned (${c.twin_law || 'unknown law'})` : '';
-      const pos = c.position ? ` · ${c.position}` : '';
-      const fl = c.fluorescence && c.fluorescence !== 'non-fluorescent' ? ` · ${c.fluorescence}` : '';
-      return `<div class="spec-crystal">
-        <span class="spec-crystal-name">${c.mineral}</span>
-        <span class="spec-crystal-size">${c.mm.toFixed(2)} mm</span>
-        <div class="spec-crystal-details">${c.habit}${twin}${pos}${fl} · ${c.zones} growth zones</div>
-      </div>`;
-    }).join('');
-
-  detail.innerHTML = header +
-    (crystals ? `<div class="spec-crystals">${crystals}</div>` : '<div class="library-empty">No crystals recorded.</div>') +
-    `<div class="spec-actions"><button onclick="if(confirm('Delete this specimen from your collection?')){deleteSpecimen('${spec.id}'); openCollectionViewer();}">🗑 Delete</button></div>`;
 }
 
 // Title screen button handlers.
-function titleNewGame() {
-  // Primary entry: Simulation mode (scenario dropdown). User can switch to
-  // Creative via the mode-toggle bar once they're in.
-  switchMode('legends');
-}
+function titleNewGame() { switchMode('legends'); }
 function titleQuickPlay() {
-  // Jump straight into Random Vugg mode and roll a specimen on arrival.
   switchMode('random');
   try { runRandomVugg(); } catch (e) { console.error('Quick Play failed to roll:', e); }
 }
 function titleLoadGame() {
-  // Opens the Collection viewer: list of saved specimens + unlocked mineral progress.
-  openCollectionViewer();
-}
-
-// Save handlers per mode — called by the in-mode Save buttons.
-function saveCurrentLegends() {
-  if (!legendsSim) { alert('Nothing to save — press Grow first.'); return; }
-  const scenario = document.getElementById('scenario').value;
-  const seedInput = document.getElementById('seed').value;
-  saveSpecimen(legendsSim, {
-    mode: 'simulation',
-    scenario,
-    seed: seedInput ? parseInt(seedInput, 10) : null,
-  });
-}
-function saveCurrentFortress() {
-  if (!fortressSim) { alert('Nothing to save — start a run first.'); return; }
-  saveSpecimen(fortressSim, { mode: 'creative' });
-}
-function saveCurrentRandom() {
-  if (!randomSim) { alert('Nothing to save — press Generate first.'); return; }
-  saveSpecimen(randomSim, {
-    mode: 'random',
-    archetype: randomSimArchetype,
-    seed: randomSimSeed,
-  });
+  // Open the Library — that's where the collection lives.
+  switchMode('library');
 }
 
 function switchMode(mode) {
@@ -7134,6 +7014,37 @@ function renderIngredientChips(obj) {
   return Object.entries(obj).map(([k,v]) => `<span class="mineral-card-badge">${k}${typeof v === 'number' ? ` ≥${v}` : ''}</span>`).join('');
 }
 
+function renderCollectedForMineral(name) {
+  const items = crystalsOfMineral(name);
+  if (!items.length) {
+    return `<div class="card-collection empty">📦 Not yet collected — the next ${name} is yours to claim.</div>`;
+  }
+  const rows = items
+    .slice()
+    .sort((a, b) => new Date(b.collected_at) - new Date(a.collected_at))
+    .map(c => {
+      const twin = c.twinned ? ` · ⟁ ${c.twin_law || ''}` : '';
+      const src = c.source && (c.source.scenario || c.source.archetype || c.source.mode) || '';
+      const seed = c.source && c.source.seed != null ? ` · seed ${c.source.seed}` : '';
+      const safeName = (c.name || '').replace(/"/g, '&quot;');
+      return `<div class="collected-row">
+        <div class="collected-row-head">
+          <span class="collected-name" title="${safeName}">${c.name}</span>
+          <span class="collected-size">${c.mm.toFixed(2)} mm</span>
+        </div>
+        <div class="collected-row-meta">${c.habit}${twin} · ${src}${seed} · ${c.zones} zones</div>
+        <div class="collected-row-actions">
+          <button onclick="renameCollectedCrystal('${c.id}')">✎ Rename</button>
+          <button onclick="deleteCollectedCrystal('${c.id}')" class="danger">🗑 Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  return `<div class="card-collection">
+    <div class="card-collection-head">📦 Your collection (${items.length})</div>
+    ${rows}
+  </div>`;
+}
+
 function libraryBuildCard(name, m) {
   const Tmin = m.T_range_C ? m.T_range_C[0] : '?';
   const Tmax = m.T_range_C ? m.T_range_C[1] : '?';
@@ -7149,6 +7060,10 @@ function libraryBuildCard(name, m) {
     : '—';
   const acidText = m.acid_dissolution ? `pH &lt; ${m.acid_dissolution.pH_threshold}` : '—';
   const decompText = m.thermal_decomp_C ? `${m.thermal_decomp_C}°C` : '—';
+  const collectedCount = crystalsOfMineral(name).length;
+  const collectedBadge = collectedCount
+    ? `<span class="mineral-card-badge collected">📦 ${collectedCount}</span>`
+    : '';
 
   return `
     <div class="mineral-card" data-mineral="${name}">
@@ -7157,7 +7072,7 @@ function libraryBuildCard(name, m) {
           <div class="mineral-card-name">${name}</div>
           <div class="mineral-card-formula">${m.formula || ''}</div>
         </div>
-        <div>${badges.join(' ')} <span class="mineral-card-class">${m.class || '?'}</span></div>
+        <div>${collectedBadge} ${badges.join(' ')} <span class="mineral-card-class">${m.class || '?'}</span></div>
       </div>
       <div class="mineral-card-desc">${m.description || '<em>No description.</em>'}</div>
       <div class="mineral-card-stats">
@@ -7179,6 +7094,7 @@ function libraryBuildCard(name, m) {
         <div class="stat-val">${decompText}</div>
       </div>
       <div class="mineral-card-scenarios">Grows in: ${scenarioChips || '<em style="color:#5a4a30">no scenarios listed</em>'}</div>
+      ${renderCollectedForMineral(name)}
     </div>
   `;
 }
@@ -7555,8 +7471,6 @@ function runRandomVugg() {
   randomSim = sim;
   randomSimArchetype = scen.archetype;
   randomSimSeed = seed;
-  const saveBtn = document.getElementById('random-save-btn');
-  if (saveBtn) saveBtn.disabled = false;
 
   const discovery = narrateDiscovery(sim, scen.archetype);
   const full = sim.narrate ? sim.narrate() : '';
@@ -7577,6 +7491,9 @@ function runRandomVugg() {
 
   out.textContent = header + preambleBlock + inventory + discoveryBlock + fullBlock;
   out.scrollTop = 0;
+
+  // Build interactive inventory below the text output (per-crystal Collect).
+  renderRandomInventory();
 }
 
 // ============================================================
@@ -8009,6 +7926,44 @@ function updateFortressStatus() {
   }
 }
 
+// Shared renderer — builds the crystal row HTML + wires click-for-zones
+// + per-crystal Collect button. `onCollect` takes (index, event) so
+// the caller can route to the right mode's collect helper.
+function renderCrystalRow(crystal, idx, onCollect) {
+  const el = document.createElement('div');
+  el.className = 'inv-crystal';
+  el.onclick = () => showZoneHistory(crystal);
+
+  const displayName = crystalDisplayName(crystal);
+  const cColor = crystalColor(crystal);
+
+  let html = `<div style="display:flex;gap:0.6rem;align-items:flex-start">`;
+  html += mineralThumbHTML(crystal.mineral, 56, crystal);
+  html += `<div style="flex:1;min-width:0">`;
+  html += `<div class="inv-mineral" style="color:${cColor}">${displayName} #${crystal.crystal_id}</div>`;
+  html += `<div class="inv-size">${crystal.c_length_mm.toFixed(1)} × ${crystal.a_width_mm.toFixed(1)} mm</div>`;
+  html += `<div class="inv-habit">${crystal.habit}`;
+  if (crystal.dominant_forms.length) html += ` [${crystal.dominant_forms[0]}]`;
+  html += `</div>`;
+  if (crystal.twinned) html += `<div class="inv-twin">⟁ ${crystal.twin_law}</div>`;
+  if (crystal.radiation_damage > 0) html += `<div style="color:#50ff50;font-size:0.65rem">☢️ radiation damage: ${crystal.radiation_damage.toFixed(2)}</div>`;
+  html += `<div style="color:#5a4a30;font-size:0.65rem;margin-top:0.2rem">${crystal.zones.length} zones · tap for history</div>`;
+  html += `</div></div>`;
+
+  // Collect button — disabled if already collected this session, or if nothing grew.
+  const already = !!crystal._collectedRecordId;
+  const canCollect = (crystal.total_growth_um || 0) > 0.1 || (crystal.zones || []).length > 0;
+  const btnLabel = already ? '✓ Collected' : '💎 Collect';
+  const btnAttrs = already || !canCollect ? 'disabled' : '';
+  const btnTitle = already
+    ? 'Already in your collection'
+    : (canCollect ? 'Add to your collection' : 'No growth yet');
+  html += `<div class="inv-collect-row"><button class="inv-collect-btn" ${btnAttrs} title="${btnTitle}" onclick="${onCollect}(${idx}, event)">${btnLabel}</button></div>`;
+  // The Collect button is in .inv-collect-row — we need to swap in handler
+  el.innerHTML = html;
+  return el;
+}
+
 function updateLegendsInventory(sim) {
   const col = document.getElementById('legends-inventory-col');
   const panel = document.getElementById('legends-inventory');
@@ -8026,30 +7981,9 @@ function updateLegendsInventory(sim) {
   }
 
   col.style.display = '';
-  for (const crystal of sim.crystals) {
-    const el = document.createElement('div');
-    el.className = 'inv-crystal';
-    el.onclick = () => showZoneHistory(crystal);
-
-    const displayName = crystalDisplayName(crystal);
-    const cColor = crystalColor(crystal);
-
-    let html = `<div style="display:flex;gap:0.6rem;align-items:flex-start">`;
-    html += mineralThumbHTML(crystal.mineral, 56, crystal);
-    html += `<div style="flex:1;min-width:0">`;
-    html += `<div class="inv-mineral" style="color:${cColor}">${displayName} #${crystal.crystal_id}</div>`;
-    html += `<div class="inv-size">${crystal.c_length_mm.toFixed(1)} × ${crystal.a_width_mm.toFixed(1)} mm</div>`;
-    html += `<div class="inv-habit">${crystal.habit}`;
-    if (crystal.dominant_forms.length) html += ` [${crystal.dominant_forms[0]}]`;
-    html += `</div>`;
-    if (crystal.twinned) html += `<div class="inv-twin">⟁ ${crystal.twin_law}</div>`;
-    if (crystal.radiation_damage > 0) html += `<div style="color:#50ff50;font-size:0.65rem">☢️ radiation damage: ${crystal.radiation_damage.toFixed(2)}</div>`;
-    html += `<div style="color:#5a4a30;font-size:0.65rem;margin-top:0.2rem">${crystal.zones.length} zones · tap for history</div>`;
-    html += `</div></div>`;
-
-    el.innerHTML = html;
-    panel.appendChild(el);
-  }
+  sim.crystals.forEach((crystal, idx) => {
+    panel.appendChild(renderCrystalRow(crystal, idx, 'collectFromLegends'));
+  });
 }
 
 function updateFortressInventory() {
@@ -8065,30 +7999,29 @@ function updateFortressInventory() {
     return;
   }
 
-  for (const crystal of fortressSim.crystals) {
-    const el = document.createElement('div');
-    el.className = 'inv-crystal';
-    el.onclick = () => showZoneHistory(crystal);
+  fortressSim.crystals.forEach((crystal, idx) => {
+    panel.appendChild(renderCrystalRow(crystal, idx, 'collectFromFortress'));
+  });
+}
 
-    const displayName = crystalDisplayName(crystal);
-    const cColor = crystalColor(crystal);
+function renderRandomInventory() {
+  const panel = document.getElementById('random-inventory');
+  if (!panel) return;
+  panel.innerHTML = '';
+  if (!randomSim || !randomSim.crystals.length) return;
 
-    let html = `<div style="display:flex;gap:0.6rem;align-items:flex-start">`;
-    html += mineralThumbHTML(crystal.mineral, 56, crystal);
-    html += `<div style="flex:1;min-width:0">`;
-    html += `<div class="inv-mineral" style="color:${cColor}">${displayName} #${crystal.crystal_id}</div>`;
-    html += `<div class="inv-size">${crystal.c_length_mm.toFixed(1)} × ${crystal.a_width_mm.toFixed(1)} mm</div>`;
-    html += `<div class="inv-habit">${crystal.habit}`;
-    if (crystal.dominant_forms.length) html += ` [${crystal.dominant_forms[0]}]`;
-    html += `</div>`;
-    if (crystal.twinned) html += `<div class="inv-twin">⟁ ${crystal.twin_law}</div>`;
-    if (crystal.radiation_damage > 0) html += `<div style="color:#50ff50;font-size:0.65rem">☢️ radiation damage: ${crystal.radiation_damage.toFixed(2)}</div>`;
-    html += `<div style="color:#5a4a30;font-size:0.65rem;margin-top:0.2rem">${crystal.zones.length} zones · tap for history</div>`;
-    html += `</div></div>`;
+  const header = document.createElement('h4');
+  header.textContent = '💎 Crystal Inventory';
+  header.style.cssText = 'color:#f0c050;margin:0.8rem 0 0.5rem 0;letter-spacing:0.08em';
+  panel.appendChild(header);
 
-    el.innerHTML = html;
-    panel.appendChild(el);
-  }
+  const grid = document.createElement('div');
+  grid.className = 'random-inventory-grid';
+  randomSim.crystals.forEach((crystal, idx) => {
+    if ((crystal.total_growth_um || 0) <= 0) return;
+    grid.appendChild(renderCrystalRow(crystal, idx, 'collectFromRandom'));
+  });
+  panel.appendChild(grid);
 }
 
 function showZoneHistory(crystal) {
@@ -9768,18 +9701,9 @@ function idlePickScenario(val) {
 }
 
 // On initial page load, update the title-screen Load Game button state
-// based on whether the specimen collection has any entries.
+// based on whether any individual crystals are in the collection.
 (function titleInit() {
-  try {
-    const btn = document.getElementById('title-btn-load');
-    if (!btn) return;
-    const items = (typeof loadCollection === 'function') ? loadCollection() : [];
-    const hasItems = items.length > 0;
-    btn.disabled = !hasItems;
-    btn.title = hasItems
-      ? `Open your collection (${items.length} specimen${items.length === 1 ? '' : 's'})`
-      : 'No specimens saved yet — grow a vugg and press Save';
-  } catch (e) { /* localStorage unavailable; leave default */ }
+  try { refreshTitleLoadButton(); } catch (e) { /* ignore */ }
 })();
 
 </script>
