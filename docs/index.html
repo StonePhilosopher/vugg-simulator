@@ -593,6 +593,75 @@ body.title-on > .subtitle {
   font-style: italic;
 }
 
+/* ---- Menu pages (New Game menu, Scenarios picker) ---- */
+.menu-panel {
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem 2rem 1rem;
+  text-align: center;
+}
+.menu-heading {
+  font-family: "Courier New", ui-monospace, Menlo, monospace;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  letter-spacing: 0.4em;
+  color: #f0c050;
+  text-shadow: 0 0 10px rgba(240, 192, 80, 0.22);
+  padding-left: 0.4em; /* offset for letter-spacing */
+  margin-bottom: 0.3rem;
+  font-weight: 700;
+}
+.menu-subheading {
+  color: #8a7a40;
+  font-style: italic;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.8rem;
+}
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: stretch;
+}
+.menu-buttons button {
+  background: #0e0e0a;
+  color: #d4a843;
+  border: 1px solid #3a3520;
+  padding: 0.9rem 1.2rem;
+  font-family: "Courier New", ui-monospace, Menlo, monospace;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+.menu-buttons button:hover:not(:disabled) {
+  border-color: #f0c050;
+  background: #1a1a14;
+  color: #f0c050;
+  transform: translateY(-1px);
+}
+.menu-buttons button.menu-home {
+  margin-top: 0.6rem;
+  background: transparent;
+  color: #8a7a40;
+  border-color: #2a2518;
+  font-size: 0.88rem;
+  letter-spacing: 0.06em;
+  padding: 0.65rem 1rem;
+}
+.menu-buttons button.menu-home:hover:not(:disabled) {
+  color: #d4a843;
+  border-color: #8a7a40;
+  background: #15150e;
+}
+@media (max-width: 600px) {
+  .menu-panel { padding: 1.4rem 0.8rem; }
+  .menu-heading { letter-spacing: 0.28em; }
+  .menu-buttons button { padding: 0.75rem 0.9rem; font-size: 0.9rem; }
+}
+
 .title-more {
   margin-top: 1rem;
   color: #6a5a30;
@@ -1840,6 +1909,35 @@ footer a:hover {
       </div>
     </div>
   </details>
+</div>
+
+<!-- New Game Menu (opened from title screen's "New Game" button) -->
+<div id="new-game-panel" class="menu-panel" style="display:none">
+  <div class="menu-heading">Begin</div>
+  <div class="menu-subheading">Where do you want to start?</div>
+  <div class="menu-buttons">
+    <button onclick="openScenariosPicker()">Scenarios.</button>
+    <button onclick="menuGo('fortress')">Creative mode.</button>
+    <button onclick="menuGo('legends')">Simulation.</button>
+    <button onclick="menuGo('idle')">The Groove.</button>
+    <button class="menu-home" onclick="showTitleScreen()">Home.</button>
+  </div>
+</div>
+
+<!-- Scenarios Picker (opened from New Game Menu's "Scenarios" button) -->
+<div id="scenarios-panel" class="menu-panel" style="display:none">
+  <div class="menu-heading">Scenarios</div>
+  <div class="menu-subheading">Each one plays in Creative mode — events fire on their scheduled steps.</div>
+  <div class="menu-buttons">
+    <button onclick="startScenarioInCreative('cooling')">Cooling.</button>
+    <button onclick="startScenarioInCreative('pulse')">Fluid Pulse.</button>
+    <button onclick="startScenarioInCreative('mvt')">Mississippi Valley-type.</button>
+    <button onclick="startScenarioInCreative('porphyry')">Porphyry Copper.</button>
+    <button onclick="startScenarioInCreative('reactive_wall')">Reactive Wall.</button>
+    <button onclick="startScenarioInCreative('radioactive_pegmatite')">Radioactive Pegmatite.</button>
+    <button onclick="startScenarioInCreative('supergene_oxidation')">Supergene Oxidation.</button>
+    <button class="menu-home" onclick="openNewGameMenu()">← Back.</button>
+  </div>
 </div>
 
 <!-- Mode Toggle -->
@@ -6665,26 +6763,10 @@ function copyOutput() {
 // ============================================================
 
 function showTitleScreen() {
-  const titleScreen = document.getElementById('title-screen');
-  const modeToggle = document.getElementById('mode-toggle');
-  const legendsControls = document.getElementById('legends-controls');
-  const outputContainer = document.getElementById('output-container');
-  const fortressPanel = document.getElementById('fortress-panel');
-  const groovePanel = document.getElementById('groove-panel');
-  const idlePanel = document.getElementById('idle-panel');
-  const libraryPanel = document.getElementById('library-panel');
-  const randomPanel = document.getElementById('random-panel');
-
+  hideAllMenuAndModePanels();
   document.body.classList.add('title-on');
-  titleScreen.style.display = 'block';
-  modeToggle.style.display = 'none';
-  legendsControls.style.display = 'none';
-  outputContainer.style.display = 'none';
-  fortressPanel.style.display = 'none';
-  groovePanel.style.display = 'none';
-  if (idlePanel) idlePanel.style.display = 'none';
-  if (libraryPanel) libraryPanel.style.display = 'none';
-  if (randomPanel) randomPanel.style.display = 'none';
+  const titleScreen = document.getElementById('title-screen');
+  if (titleScreen) titleScreen.style.display = 'block';
   idleStop(); // stop any running idle simulation
   refreshTitleLoadButton();
 }
@@ -6932,8 +7014,106 @@ function collectFromRandom(crystalIdx, ev) {
   }
 }
 
+// ============================================================
+// MENU PAGES — New Game menu + Scenarios picker
+// ============================================================
+function hideAllMenuAndModePanels() {
+  const ids = [
+    'title-screen', 'new-game-panel', 'scenarios-panel',
+    'legends-controls', 'output-container',
+    'fortress-panel', 'groove-panel', 'idle-panel',
+    'library-panel', 'random-panel',
+  ];
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  }
+  const modeToggle = document.getElementById('mode-toggle');
+  if (modeToggle) modeToggle.style.display = 'none';
+}
+
+function openNewGameMenu() {
+  hideAllMenuAndModePanels();
+  document.body.classList.add('title-on');
+  const panel = document.getElementById('new-game-panel');
+  if (panel) panel.style.display = 'block';
+  idleStop();
+  refreshTitleLoadButton();
+}
+
+function openScenariosPicker() {
+  hideAllMenuAndModePanels();
+  document.body.classList.add('title-on');
+  const panel = document.getElementById('scenarios-panel');
+  if (panel) panel.style.display = 'block';
+  idleStop();
+}
+
+// Router for the New Game menu's non-scenario buttons.
+function menuGo(modeName) { switchMode(modeName); }
+
+// Take a SCENARIOS[name] entry and run it inside Creative/Fortress so the
+// player steps through it interactively; events fire on their scheduled
+// step numbers as the sim advances.
+function startScenarioInCreative(scenarioName) {
+  const make = SCENARIOS[scenarioName];
+  if (!make) { alert('Unknown scenario: ' + scenarioName); return; }
+  switchMode('fortress');
+  fortressBeginFromScenario(scenarioName);
+}
+
+// Parallel to fortressBegin() but uses a scenario's conditions + events
+// instead of the setup sliders. The sim is pre-wired with events so they
+// fire automatically on Wait/Heat/Cool/etc. advances.
+function fortressBeginFromScenario(scenarioName) {
+  const make = SCENARIOS[scenarioName];
+  if (!make) return;
+  const { conditions, events, defaultSteps } = make();
+
+  rng = new SeededRandom(Date.now());
+  fortressSim = new VugSimulator(conditions, events);
+  fortressActive = true;
+  fortressLogLines = [];
+
+  document.getElementById('fortress-setup').style.display = 'none';
+  document.getElementById('fortress-status').style.display = 'block';
+  document.getElementById('fortress-actions').style.display = 'block';
+  const main = document.getElementById('fortress-main');
+  main.style.display = 'flex';
+
+  const prettyName = scenarioName.replace(/_/g, ' ');
+  const logEl = document.getElementById('fortress-log');
+  logEl.innerHTML = '';
+  const initLines = [
+    `🏰 Creative Mode — Scenario: ${prettyName}`,
+    `   Temperature: ${conditions.temperature.toFixed(0)}°C | Pressure: ${conditions.pressure.toFixed(2)} kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
+    `   Fluid: ${conditions.fluid.describe()}`,
+  ];
+  if (events && events.length) {
+    initLines.push(`   Events scheduled (will fire as you advance steps):`);
+    for (const ev of events) {
+      initLines.push(`     Step ${ev.step}: ${ev.name}${ev.description ? ' — ' + ev.description : ''}`);
+    }
+  } else {
+    initLines.push(`   No scripted events — only your actions + ambient drift will shape this vug.`);
+  }
+  initLines.push('═'.repeat(60), '', 'Advance with Wait. Intervene with Heat/Cool/Inject/Tectonic/etc. at any time.');
+  initLines.forEach(line => {
+    fortressLogLines.push(line);
+    appendFortressLine(logEl, line);
+  });
+
+  updateFortressStatus();
+  updateFortressInventory();
+  if (typeof syncBrothSliders === 'function') syncBrothSliders();
+}
+
 // Title screen button handlers.
-function titleNewGame() { switchMode('legends'); }
+function titleNewGame() {
+  // Opens the intermediate menu: Scenarios / Creative / Simulation /
+  // The Groove / Home.
+  openNewGameMenu();
+}
 function titleQuickPlay() {
   switchMode('random');
   try { runRandomVugg(); } catch (e) { console.error('Quick Play failed to roll:', e); }
@@ -6971,6 +7151,10 @@ function switchMode(mode) {
   if (libraryPanel) libraryPanel.style.display = 'none';
   const randomPanel = document.getElementById('random-panel');
   if (randomPanel) randomPanel.style.display = 'none';
+  const newGamePanel = document.getElementById('new-game-panel');
+  if (newGamePanel) newGamePanel.style.display = 'none';
+  const scenariosPanel = document.getElementById('scenarios-panel');
+  if (scenariosPanel) scenariosPanel.style.display = 'none';
   modeLegends.classList.remove('active');
   modeFortress.classList.remove('active');
   modeGroove.classList.remove('active');
