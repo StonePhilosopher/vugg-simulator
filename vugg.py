@@ -300,25 +300,30 @@ class WallCell:
 
 @dataclass
 class WallState:
-    """Unwrapped topographic map of the vug interior.
+    """Topographic map of the vug interior, rendered as an irregular
+    circle viewed from above.
 
     The data model is 2D: rings × cells. v1 only populates ring[0] (the
-    wall surface) and only ring[0] is rendered, but the structure holds
-    `ring_count` rings so that a future 3D view can slice depth without
-    reshaping the storage. A crystal with `void_reach = 0.9` will one day
-    paint onto ring[0] *and* fill inward through ~90% of the radius.
+    wall surface); the `ring_count` dimension stays for a future
+    depth-slice view. Each cell is a wedge of angular arc, with its own
+    `wall_depth` — how much acid has pushed that chunk of wall outward.
 
-    Defaults: 120 cells around a 50mm vug circumference (~1.3mm of arc
-    per cell). Use `update_diameter()` when the wall dissolves to keep
-    the cell-arc calculation current.
+    Dissolution is per-cell: cells covered by an acid-resistant crystal
+    shield their wall slice, so dissolution pushes unblocked cells
+    outward more aggressively (total acid budget conserved) and the
+    wall ends up shaped like the deposit history rather than a perfect
+    circle.
     """
     cells_per_ring: int = 120
     ring_count: int = 1
     vug_diameter_mm: float = 50.0
+    initial_radius_mm: float = 25.0
     ring_spacing_mm: float = 1.0
     rings: List[List[WallCell]] = field(default_factory=list)
 
     def __post_init__(self):
+        if self.initial_radius_mm <= 0:
+            self.initial_radius_mm = self.vug_diameter_mm / 2.0
         if not self.rings:
             self.rings = [
                 [WallCell() for _ in range(self.cells_per_ring)]
@@ -327,14 +332,60 @@ class WallState:
 
     @property
     def cell_arc_mm(self) -> float:
-        """Wall arc length represented by one cell, in millimeters."""
-        return math.pi * self.vug_diameter_mm / max(self.cells_per_ring, 1)
+        """Wall arc length represented by one cell, in millimeters.
+        Uses mean current radius so the arc metric tracks dissolution."""
+        ring0 = self.rings[0] if self.rings else []
+        if ring0:
+            mean_r = self.initial_radius_mm + sum(c.wall_depth for c in ring0) / len(ring0)
+        else:
+            mean_r = self.initial_radius_mm
+        return 2.0 * math.pi * mean_r / max(self.cells_per_ring, 1)
+
+    def cell_radius_mm(self, cell_idx: int) -> float:
+        """Outer radius of a specific ring-0 cell, including dissolution."""
+        cell = self.rings[0][cell_idx % self.cells_per_ring]
+        return self.initial_radius_mm + cell.wall_depth
+
+    def mean_diameter_mm(self) -> float:
+        """Effective vug diameter, averaged across all cells."""
+        ring0 = self.rings[0]
+        if not ring0:
+            return self.vug_diameter_mm
+        mean_r = self.initial_radius_mm + sum(c.wall_depth for c in ring0) / len(ring0)
+        return 2.0 * mean_r
 
     def update_diameter(self, new_diameter_mm: float) -> None:
+        """Keep the nominal diameter in sync with the host sim's global
+        measure. Per-cell `wall_depth` is the authoritative shape."""
         self.vug_diameter_mm = new_diameter_mm
 
+    def erode_cells(self, rate_mm: float, blocked: set) -> int:
+        """Distribute a radial dissolution amount across unblocked cells.
+
+        `rate_mm` is the average radial depth dissolved (what
+        VugWall.dissolve() reports). Blocked cells contribute zero, so
+        the acid budget concentrates on unblocked cells — physically,
+        the fluid still attacks the same total wall area, just focused
+        where nothing's in the way.
+
+        Returns the number of cells eroded (useful for logging)."""
+        if rate_mm <= 0:
+            return 0
+        ring0 = self.rings[0]
+        N = len(ring0)
+        unblocked = [i for i in range(N) if i not in blocked]
+        if not unblocked:
+            return 0
+        # Conservation: total acid attack is rate_mm × N, spread over
+        # unblocked cells only.
+        per_cell = rate_mm * N / len(unblocked)
+        for i in unblocked:
+            ring0[i].wall_depth += per_cell
+        return len(unblocked)
+
     def clear(self) -> None:
-        """Reset per-step occupancy before repainting all crystals."""
+        """Reset per-step occupancy before repainting all crystals.
+        Wall depth is cumulative — don't reset it."""
         for ring in self.rings:
             for cell in ring:
                 cell.crystal_id = None
@@ -348,7 +399,8 @@ class WallState:
         the paint deeper."""
         if crystal.wall_center_cell is None or crystal.total_growth_um <= 0:
             return
-        # Lateral arc coverage grows with size × wall_spread.
+        # Lateral arc coverage grows with size × wall_spread. Convert mm
+        # of arc to cells using the current mean cell_arc_mm.
         arc_mm = (crystal.total_growth_um / 1000.0) * max(crystal.wall_spread, 0.01)
         half_cells = max(1, int(round(arc_mm / self.cell_arc_mm / 2.0)))
         ring0 = self.rings[0]
@@ -3191,8 +3243,13 @@ class VugSimulator:
         self.log: List[str] = []
         # Unwrapped topo-map state. v1 uses ring[0] only; the multi-ring
         # structure is there so the future 3D view can slice depth without
-        # reshaping the storage.
-        self.wall_state = WallState(vug_diameter_mm=conditions.wall.vug_diameter_mm)
+        # reshaping the storage. `initial_radius_mm` freezes the pre-run
+        # starting point so later per-cell wall_depth readings are
+        # interpretable as "how much this slice of wall has retreated."
+        self.wall_state = WallState(
+            vug_diameter_mm=conditions.wall.vug_diameter_mm,
+            initial_radius_mm=conditions.wall.vug_diameter_mm / 2.0,
+        )
     
     def nucleate(self, mineral: str, position: str = "vug wall",
                  sigma: float = 1.0) -> Crystal:
@@ -3314,6 +3371,33 @@ class VugSimulator:
             if crystal.dissolved:
                 continue
             self.wall_state.paint_crystal(crystal)
+
+    def _wall_cells_blocked_by_crystals(self) -> set:
+        """Which ring-0 cells are shielded from wall dissolution.
+
+        A cell is shielded when it's occupied by a non-dissolved crystal
+        that is stable at the current pH — either the mineral has no
+        acid_dissolution rule in the spec (permanently acid-stable, e.g.
+        uraninite / molybdenite) or the current pH is above its
+        threshold.
+        """
+        ph = self.conditions.fluid.pH
+        by_id = {c.crystal_id: c for c in self.crystals}
+        blocked = set()
+        for i, cell in enumerate(self.wall_state.rings[0]):
+            if cell.crystal_id is None:
+                continue
+            crystal = by_id.get(cell.crystal_id)
+            if not crystal or crystal.dissolved:
+                continue
+            acid = MINERAL_SPEC.get(crystal.mineral, {}).get('acid_dissolution')
+            if acid is None:
+                blocked.add(i)
+                continue
+            threshold = acid.get('pH_threshold')
+            if threshold is None or ph >= threshold:
+                blocked.add(i)
+        return blocked
 
     def _apply_radiation_dose(self) -> None:
         """Accumulate α-damage on every quartz growth zone while any uraninite
@@ -3784,11 +3868,20 @@ class VugSimulator:
         pre_Ca = self.conditions.fluid.Ca
         
         result = wall.dissolve(acid_strength, self.conditions.fluid)
-        
+
         if result["dissolved"]:
+            # Distribute the radial dissolution across unblocked wall cells.
+            # Cells shielded by acid-resistant crystal growth don't erode,
+            # concentrating the acid attack on the exposed slices — the
+            # vug becomes lopsided as the deposit history accrues.
+            blocked = self._wall_cells_blocked_by_crystals()
+            self.wall_state.erode_cells(result['rate_mm'], blocked)
+
             post_sigma_cal = self.conditions.supersaturation_calcite()
-            
+
             self.log.append(f"  🧱 WALL DISSOLUTION: {result['rate_mm']:.2f} mm of {wall.composition} dissolved")
+            if blocked:
+                self.log.append(f"     {len(blocked)} cell{'s' if len(blocked) != 1 else ''} shielded by acid-resistant crystal growth")
             self.log.append(f"     pH {result['ph_before']:.1f} → {result['ph_after']:.1f} (carbonate buffering)")
             self.log.append(f"     Released: Ca²⁺ +{result['ca_released']:.0f} ppm, "
                           f"CO₃²⁻ +{result['co3_released']:.0f} ppm, "

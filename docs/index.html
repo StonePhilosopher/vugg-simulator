@@ -114,7 +114,7 @@ h1 {
 #topo-canvas {
   display: block;
   width: 100%;
-  height: 120px;
+  height: 340px;
   background: #050504;
   border: 1px solid #1a1a14;
   border-radius: 3px;
@@ -154,7 +154,7 @@ h1 {
   display: inline-block;
 }
 @media (max-width: 600px) {
-  #topo-canvas { height: 90px; }
+  #topo-canvas { height: 260px; }
   .topo-legend { font-size: 0.65rem; gap: 0.25rem 0.6rem; }
 }
 
@@ -3352,14 +3352,18 @@ class WallCell {
   }
 }
 
-// Unwrapped topographic map of the vug interior. v1 only populates /
-// renders ring[0], but the 2D rings×cells structure is present so the
-// future 3D view can slice depth without reshaping storage.
+// Topographic map of the vug interior, rendered as an irregular circle
+// viewed from above. Each cell is a wedge of angular arc with its own
+// wall_depth (how much acid has pushed that chunk of wall outward).
+// Dissolution is per-cell: cells covered by acid-resistant crystals
+// shield their slice, so unblocked cells erode faster — the wall ends
+// up shaped like the deposit history rather than a perfect circle.
 class WallState {
   constructor(opts = {}) {
     this.cells_per_ring = opts.cells_per_ring ?? 120;
     this.ring_count = opts.ring_count ?? 1;
     this.vug_diameter_mm = opts.vug_diameter_mm ?? 50.0;
+    this.initial_radius_mm = opts.initial_radius_mm ?? (this.vug_diameter_mm / 2);
     this.ring_spacing_mm = opts.ring_spacing_mm ?? 1.0;
     this.rings = [];
     for (let r = 0; r < this.ring_count; r++) {
@@ -3369,13 +3373,54 @@ class WallState {
     }
   }
 
+  // Wall arc length for one cell — uses current mean radius so the
+  // metric tracks the vug as it enlarges.
   get cell_arc_mm() {
-    return Math.PI * this.vug_diameter_mm / Math.max(this.cells_per_ring, 1);
+    const ring0 = this.rings[0] || [];
+    let meanR = this.initial_radius_mm;
+    if (ring0.length) {
+      let sum = 0;
+      for (const c of ring0) sum += c.wall_depth;
+      meanR = this.initial_radius_mm + sum / ring0.length;
+    }
+    return 2 * Math.PI * meanR / Math.max(this.cells_per_ring, 1);
+  }
+
+  // Outer radius of a specific ring-0 cell, including dissolution.
+  cellRadiusMm(cellIdx) {
+    const N = this.cells_per_ring;
+    const cell = this.rings[0][((cellIdx % N) + N) % N];
+    return this.initial_radius_mm + cell.wall_depth;
+  }
+
+  meanDiameterMm() {
+    const ring0 = this.rings[0];
+    if (!ring0 || !ring0.length) return this.vug_diameter_mm;
+    let sum = 0;
+    for (const c of ring0) sum += c.wall_depth;
+    return 2 * (this.initial_radius_mm + sum / ring0.length);
   }
 
   updateDiameter(newDiameter) { this.vug_diameter_mm = newDiameter; }
 
+  // Distribute a radial dissolution amount across unblocked cells.
+  // Blocked cells (Set of cell indices) contribute zero — the acid
+  // budget concentrates on exposed slices. Returns the number of
+  // cells eroded.
+  erodeCells(rateMm, blocked) {
+    if (!(rateMm > 0)) return 0;
+    const ring0 = this.rings[0];
+    const N = ring0.length;
+    const unblocked = [];
+    for (let i = 0; i < N; i++) if (!blocked.has(i)) unblocked.push(i);
+    if (!unblocked.length) return 0;
+    const perCell = rateMm * N / unblocked.length;
+    for (const i of unblocked) ring0[i].wall_depth += perCell;
+    return unblocked.length;
+  }
+
   clear() {
+    // Reset per-step occupancy but preserve wall_depth (cumulative).
     for (const ring of this.rings) {
       for (const cell of ring) {
         cell.crystal_id = null;
@@ -5412,8 +5457,11 @@ class VugSimulator {
     this.log = [];
     // Unwrapped topo-map state. v1 uses ring[0] only; the multi-ring
     // structure is in place so future depth-slice rendering doesn't
-    // require reshaping storage.
-    this.wall_state = new WallState({ vug_diameter_mm: this.conditions.wall.vug_diameter_mm });
+    // require reshaping storage. initial_radius_mm is frozen at sim
+    // start so later per-cell wall_depth reads as "this slice retreated
+    // N mm from where it started."
+    const d0 = this.conditions.wall.vug_diameter_mm;
+    this.wall_state = new WallState({ vug_diameter_mm: d0, initial_radius_mm: d0 / 2 });
   }
 
   nucleate(mineral, position = 'vug wall', sigma = 1.0) {
@@ -5520,6 +5568,29 @@ class VugSimulator {
       if (crystal.dissolved) continue;
       this.wall_state.paintCrystal(crystal);
     }
+  }
+
+  _wallCellsBlockedByCrystals() {
+    // Which ring-0 cells are shielded from wall dissolution. A cell
+    // blocks when it holds a non-dissolved crystal whose mineral is
+    // stable at the current pH — either permanently acid-stable
+    // (acid_dissolution == null, e.g. uraninite/molybdenite) or the
+    // current pH is above its threshold.
+    const ph = this.conditions.fluid.pH;
+    const byId = new Map(this.crystals.map(c => [c.crystal_id, c]));
+    const blocked = new Set();
+    const ring0 = this.wall_state.rings[0];
+    for (let i = 0; i < ring0.length; i++) {
+      const cell = ring0[i];
+      if (cell.crystal_id == null) continue;
+      const crystal = byId.get(cell.crystal_id);
+      if (!crystal || crystal.dissolved) continue;
+      const acid = MINERAL_SPEC[crystal.mineral]?.acid_dissolution;
+      if (acid == null) { blocked.add(i); continue; }
+      const threshold = acid.pH_threshold;
+      if (threshold == null || ph >= threshold) blocked.add(i);
+    }
+    return blocked;
   }
 
   get_vug_fill() {
@@ -5855,9 +5926,17 @@ class VugSimulator {
     const result = wall.dissolve(acid_strength, this.conditions.fluid);
 
     if (result.dissolved) {
+      // Distribute the erosion per-cell. Cells shielded by acid-resistant
+      // crystals don't budge, concentrating the attack elsewhere — the
+      // vug grows lopsided in whatever direction the deposit left bare.
+      const blocked = this._wallCellsBlockedByCrystals();
+      this.wall_state.erodeCells(result.rate_mm, blocked);
       const post_sigma_cal = this.conditions.supersaturation_calcite();
 
       this.log.push(`  🧱 WALL DISSOLUTION: ${result.rate_mm.toFixed(2)} mm of ${wall.composition} dissolved`);
+      if (blocked.size) {
+        this.log.push(`     ${blocked.size} cell${blocked.size === 1 ? '' : 's'} shielded by acid-resistant crystal growth`);
+      }
       this.log.push(`     pH ${result.ph_before.toFixed(1)} → ${result.ph_after.toFixed(1)} (carbonate buffering)`);
       this.log.push(`     Released: Ca²⁺ +${result.ca_released.toFixed(0)} ppm, CO₃²⁻ +${result.co3_released.toFixed(0)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
       this.log.push(`     Vug diameter: ${result.vug_diameter.toFixed(1)} mm (+${result.total_dissolved.toFixed(1)} mm total enlargement)`);
@@ -9981,8 +10060,8 @@ function idleRecordHistory() {
 // width proportional to crystal thickness. Hover → tooltip.
 
 const TOPO_WALL_COLOR = '#D2691E';   // warm amber — the wall's color. No mineral touches this hue.
-const TOPO_MAX_STROKE_PX = 28;        // cap crystal thickness display so the line stays a line
-const TOPO_BARE_STROKE_PX = 2;
+const TOPO_CRYSTAL_CAP_FRAC = 0.85;   // crystals can fill at most this fraction of a cell's radius
+const TOPO_WALL_STROKE_PX = 2;
 
 // The 12-class order from the topo palette in the brief. Used by the
 // legend. We render all 12 even if not all present in the current run so
@@ -9993,8 +10072,15 @@ const TOPO_CLASS_ORDER = [
 ];
 
 function topoActiveSim() {
-  // Pick whichever simulator is currently on-screen. Mirrors the ordering
-  // in pickGrooveCollection() so Record Player replay uses the same source.
+  // Prefer the simulator whose mode is currently on-screen. Without this
+  // a stale sim from a previous mode (e.g. randomSim from a Quick Play
+  // before switching to Simulation) wins and the topo shows stale data.
+  const mode = (typeof currentGameMode === 'string') ? currentGameMode : null;
+  if (mode === 'fortress' && typeof fortressSim !== 'undefined' && fortressSim) return fortressSim;
+  if (mode === 'idle'     && typeof idleSim     !== 'undefined' && idleSim)     return idleSim;
+  if (mode === 'random'   && typeof randomSim   !== 'undefined' && randomSim)   return randomSim;
+  if (mode === 'legends'  && typeof legendsSim  !== 'undefined' && legendsSim)  return legendsSim;
+  // Fallback: any sim at all.
   if (typeof fortressSim !== 'undefined' && fortressSim) return fortressSim;
   if (typeof idleSim !== 'undefined' && idleSim) return idleSim;
   if (typeof randomSim !== 'undefined' && randomSim) return randomSim;
@@ -10044,6 +10130,12 @@ function _topoResize(canvas) {
   return { cssW: rect.width, cssH: rect.height, dpr };
 }
 
+// Cell i maps to an angle around the vug. 0 starts at the top (12 o'clock)
+// and increases clockwise so left-right hover motion feels natural.
+function _topoAngleFor(i, N) {
+  return -Math.PI / 2 + (i / N) * 2 * Math.PI;
+}
+
 function topoRender(optOverrideRing) {
   const canvas = document.getElementById('topo-canvas');
   const panel = document.getElementById('topo-panel');
@@ -10062,100 +10154,168 @@ function topoRender(optOverrideRing) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
 
-  const padX = 12;
-  const scaleBarH = 18;
-  const drawW = cssW - 2 * padX;
-  const drawH = cssH - scaleBarH - 4;
-  const cy = 4 + drawH / 2;
   const N = ring0.length;
-  const cellW = drawW / N;
+  const initR = wall ? wall.initial_radius_mm : 25;
 
-  // Background faint gridline to anchor the line.
-  ctx.strokeStyle = '#1a1a14';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padX, cy);
-  ctx.lineTo(padX + drawW, cy);
-  ctx.stroke();
+  // Scale the view so the widest point of the current wall fills ~82%
+  // of the shorter canvas dimension. As the vug dissolves outward, the
+  // scale re-tightens so the full shape stays visible.
+  let maxWallR = initR;
+  for (const c of ring0) {
+    const r = initR + c.wall_depth;
+    if (r > maxWallR) maxWallR = r;
+  }
+  const centerPad = 48;  // leave room for the scale bar and legend
+  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
+  const mmToPx = fit / maxWallR;
 
-  // Scale for stroke width — proportional to thickness but capped.
-  // Use a reference that scales with the largest crystal on screen so
-  // modest vugs and cathedral vugs both read well.
-  let maxT = 0;
-  for (const c of ring0) if (c.thickness_um > maxT) maxT = c.thickness_um;
-  if (maxT <= 0) maxT = 1;
+  const cx = cssW / 2;
+  const cy = (cssH - centerPad) / 2 + 8;
 
-  // Draw each cell as a single horizontal segment from x0 to x1. Round
-  // line caps let same-mineral neighbors merge visually; stepped color
-  // or thickness breaks the line at boundaries — that's the feature.
-  ctx.lineCap = 'round';
+  // Per-cell outer radius in px, plus the Cartesian point for that cell.
+  const cellR = new Array(N);
   for (let i = 0; i < N; i++) {
-    const cell = ring0[i];
-    const x0 = padX + i * cellW;
-    const x1 = x0 + cellW;
-    let stroke, width;
-    if (cell.crystal_id == null) {
-      stroke = TOPO_WALL_COLOR;
-      width = TOPO_BARE_STROKE_PX;
-    } else {
-      stroke = topoClassColor(cell.mineral);
-      const t = Math.min(cell.thickness_um / maxT, 1);
-      width = TOPO_BARE_STROKE_PX + t * (TOPO_MAX_STROKE_PX - TOPO_BARE_STROKE_PX);
-    }
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = width;
-    ctx.beginPath();
-    ctx.moveTo(x0, cy);
-    ctx.lineTo(x1, cy);
-    ctx.stroke();
+    cellR[i] = (initR + ring0[i].wall_depth) * mmToPx;
   }
 
-  // Scale bar along the bottom: ticks every 10mm of wall arc.
-  const circMm = wall ? Math.PI * wall.vug_diameter_mm : 0;
+  // Draw each cell as a wedge. Bare cells stroke the outer edge in
+  // amber (the wall's reserved color). Occupied cells fill a radial
+  // band from the wall inward by (total_growth × void_reach) in the
+  // mineral's class_color. Crystals that would completely fill the
+  // cell are capped at TOPO_CRYSTAL_CAP_FRAC so a ring of interior
+  // void is always legible.
+  const arcStep = 2 * Math.PI / N;
+  for (let i = 0; i < N; i++) {
+    const a0 = _topoAngleFor(i, N) - arcStep / 2;
+    const a1 = a0 + arcStep;
+    const cell = ring0[i];
+    const rOuter = cellR[i];
+
+    if (cell.crystal_id == null) continue;  // bare handled below as one stroke
+
+    // Crystal inward extent: thickness × void_reach, capped by cell radius.
+    const crystal = sim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
+    const voidReach = crystal ? Math.max(crystal.void_reach, 0.05) : 0.5;
+    const inwardMm = (cell.thickness_um / 1000.0) * voidReach;
+    const inwardPx = Math.min(inwardMm * mmToPx, rOuter * TOPO_CRYSTAL_CAP_FRAC);
+    const rInner = rOuter - Math.max(inwardPx, TOPO_WALL_STROKE_PX + 1);
+
+    ctx.fillStyle = topoClassColor(cell.mineral);
+    ctx.beginPath();
+    ctx.arc(cx, cy, rOuter, a0, a1);
+    ctx.arc(cx, cy, rInner, a1, a0, true);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Wall outline — a single polygon around the current shape. Bare
+  // cells stroke in amber; cells under a crystal stroke in a dimmer
+  // tone so the crystal colors dominate.
+  ctx.lineWidth = TOPO_WALL_STROKE_PX;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = TOPO_WALL_COLOR;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const a = _topoAngleFor(i % N, N);
+    const r = cellR[i % N];
+    const x = cx + r * Math.cos(a);
+    const y = cy + r * Math.sin(a);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+
+  // Dim the initial-radius reference ring so dissolution is obvious
+  // at a glance. Dotted so it doesn't compete with the wall.
+  ctx.save();
+  ctx.setLineDash([3, 4]);
+  ctx.strokeStyle = '#2a2518';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, initR * mmToPx, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.restore();
+
+  // Scale bar across the bottom: total wall circumference in mm.
+  const circMm = wall ? Math.PI * wall.meanDiameterMm() : 0;
   if (circMm > 0) {
-    const pxPerMm = drawW / circMm;
-    const barY = cssH - scaleBarH + 4;
-    ctx.strokeStyle = '#3a3520';
+    // A horizontal 10mm reference stripe below the vug
+    const barY = cssH - 18;
+    const tenPx = 10 * mmToPx;
+    const barX0 = cssW / 2 - tenPx / 2;
+    ctx.strokeStyle = '#5a4a30';
+    ctx.fillStyle = '#5a4a30';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(padX, barY);
-    ctx.lineTo(padX + drawW, barY);
+    ctx.moveTo(barX0, barY);
+    ctx.lineTo(barX0 + tenPx, barY);
+    ctx.moveTo(barX0, barY - 3);
+    ctx.lineTo(barX0, barY + 3);
+    ctx.moveTo(barX0 + tenPx, barY - 3);
+    ctx.lineTo(barX0 + tenPx, barY + 3);
     ctx.stroke();
-    ctx.fillStyle = '#5a4a30';
     ctx.font = '10px "Courier New", monospace';
     ctx.textAlign = 'center';
-    const step = circMm > 200 ? 50 : circMm > 80 ? 20 : 10;  // mm
-    for (let mm = 0; mm <= circMm; mm += step) {
-      const x = padX + mm * pxPerMm;
-      ctx.beginPath();
-      ctx.moveTo(x, barY);
-      ctx.lineTo(x, barY + 4);
-      ctx.stroke();
-      ctx.fillText(`${mm}mm`, x, barY + 14);
-    }
+    ctx.fillText('10 mm', cssW / 2, barY + 14);
+    // Overall diameter readout
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#6a5a30';
+    ctx.fillText(`⌀ ${wall.meanDiameterMm().toFixed(1)} mm`, 8, barY + 14);
   }
 }
 
-// Hover: show a tooltip with the cell's crystal info.
+// Hover: translate mouse position into a polar angle around the vug
+// and look up the corresponding wall cell.
 function _topoTooltipFromEvent(ev) {
   const canvas = document.getElementById('topo-canvas');
   const tip = document.getElementById('topo-tooltip');
   const sim = topoActiveSim();
   if (!canvas || !tip || !sim) return;
   const ring0 = sim.wall_state.rings[0];
-  if (!ring0 || !ring0.length) return;
+  if (!ring0 || !ring0.length) { tip.style.display = 'none'; return; }
   const rect = canvas.getBoundingClientRect();
-  const x = ev.clientX - rect.left;
-  const padX = 12;
-  const drawW = rect.width - 2 * padX;
-  if (x < padX || x > padX + drawW) { tip.style.display = 'none'; return; }
+  const mx = ev.clientX - rect.left;
+  const my = ev.clientY - rect.top;
+
+  // Reconstruct the render's center + scale (same logic as topoRender)
+  const cssW = rect.width, cssH = rect.height;
   const N = ring0.length;
-  const idx = Math.min(N - 1, Math.max(0, Math.floor((x - padX) / (drawW / N))));
+  const initR = sim.wall_state.initial_radius_mm;
+  let maxWallR = initR;
+  for (const c of ring0) {
+    const r = initR + c.wall_depth;
+    if (r > maxWallR) maxWallR = r;
+  }
+  const centerPad = 48;
+  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
+  const mmToPx = fit / maxWallR;
+  const cx = cssW / 2;
+  const cy = (cssH - centerPad) / 2 + 8;
+
+  const dx = mx - cx, dy = my - cy;
+  const rMouse = Math.hypot(dx, dy);
+  // Only show tooltip when the cursor is near the wall (inside outer
+  // boundary plus a little slop, and not deep in the center void).
+  const cellAngle = Math.atan2(dy, dx);
+  // Map angle back to cell index: angle 0 of cell i was -π/2 + i·Δ.
+  let a = cellAngle + Math.PI / 2;
+  while (a < 0) a += 2 * Math.PI;
+  while (a >= 2 * Math.PI) a -= 2 * Math.PI;
+  const idx = Math.min(N - 1, Math.max(0, Math.round((a / (2 * Math.PI)) * N) % N));
+  const cellOuterPx = (initR + ring0[idx].wall_depth) * mmToPx;
+  if (rMouse > cellOuterPx + 10 || rMouse < cellOuterPx * 0.15) {
+    tip.style.display = 'none';
+    return;
+  }
+
   const cell = ring0[idx];
+  const wallDepthMm = cell.wall_depth;
   let html;
   if (cell.crystal_id == null) {
+    const depthNote = wallDepthMm > 0.1 ? ` · eroded +${wallDepthMm.toFixed(1)}mm` : '';
     html = `<b style="color:${TOPO_WALL_COLOR}">${sim.conditions.wall.composition || 'wall'}</b><br>` +
-           `bare wall at ${(idx * (Math.PI * sim.wall_state.vug_diameter_mm) / N).toFixed(1)}mm`;
+           `bare wall${depthNote}`;
   } else {
     const crystal = sim.crystals.find(c => c.crystal_id === cell.crystal_id);
     const spec = MINERAL_SPEC[cell.mineral] || {};
@@ -10172,8 +10332,9 @@ function _topoTooltipFromEvent(ev) {
   tip.style.display = 'block';
   const wrapRect = canvas.parentElement.getBoundingClientRect();
   const tipX = Math.min(wrapRect.width - tip.offsetWidth - 6, Math.max(6, ev.clientX - wrapRect.left + 12));
+  const tipY = Math.min(wrapRect.height - 40, Math.max(6, ev.clientY - wrapRect.top + 12));
   tip.style.left = `${tipX}px`;
-  tip.style.top = `6px`;
+  tip.style.top = `${tipY}px`;
 }
 
 function _topoHideTooltip() {
