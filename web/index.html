@@ -2782,7 +2782,10 @@ function onSpecReady(cb) {
 async function _loadSpec(paths) {
   for (const p of paths) {
     try {
-      const r = await fetch(p);
+      // cache: 'no-store' — the spec changes during development and the
+      // browser's disk cache was masking updates (stale habit_variants,
+      // missing class_color, etc.). Always pull fresh.
+      const r = await fetch(p, { cache: 'no-store' });
       if (r.ok) return { doc: await r.json(), path: p };
     } catch (e) { /* try next */ }
   }
@@ -2804,6 +2807,55 @@ _loadSpec(['./data/minerals.json', '../data/minerals.json', '/data/minerals.json
 function maxSizeCm(mineral) {
   const entry = MINERAL_SPEC[mineral];
   return entry ? entry.max_size_cm : null;
+}
+
+// Pick a habit variant for a nucleating crystal based on current σ / T / space.
+// Mirrors select_habit_variant in vugg.py: triggers like "low σ" / "high σ" /
+// "moderate T" are matched against current conditions; vectors ("coating"
+// vs "projecting") are weighed against how crowded the vug is. Returns
+// the chosen variant dict, or null if the mineral has no variant objects.
+function selectHabitVariant(mineral, sigma, temperature, spaceConstrained) {
+  const entry = MINERAL_SPEC[mineral];
+  if (!entry) return null;
+  const variants = (entry.habit_variants || []).filter(v => v && typeof v === 'object');
+  if (!variants.length) return null;
+
+  const score = (v) => {
+    const trig = (v.trigger || '').toLowerCase();
+    let s = 1.0;
+    if (trig.includes('very high σ')) s += sigma > 4.0 ? 2.0 : -1.5;
+    else if (trig.includes('high σ')) s += sigma > 3.0 ? 1.5 : -1.0;
+    else if (trig.includes('moderate-high σ') || trig.includes('moderate σ')) s += (sigma >= 1.5 && sigma <= 3.5) ? 1.5 : -0.5;
+    else if (trig.includes('low-moderate σ')) s += (sigma >= 1.0 && sigma <= 2.2) ? 1.2 : -0.4;
+    else if (trig.includes('low σ')) s += sigma < 2.0 ? 1.2 : -0.8;
+
+    if (trig.includes('high t')) s += temperature > 300 ? 1.0 : -0.6;
+    else if (trig.includes('moderate t')) s += (temperature >= 150 && temperature <= 300) ? 1.0 : -0.4;
+    else if (trig.includes('low t')) s += temperature < 150 ? 1.0 : -0.6;
+
+    const vec = (v.vector || '').toLowerCase();
+    if (spaceConstrained) {
+      if (vec === 'projecting') s -= 0.8;
+      else if (vec === 'coating') s += 0.6;
+      else if (vec === 'tabular') s += 0.3;
+    }
+    if (trig.startsWith('default')) s += 0.3;
+
+    return Math.max(s, 0.05);
+  };
+
+  const weights = variants.map(v => {
+    const sc = score(v);
+    return sc * sc;
+  });
+  const total = weights.reduce((a, b) => a + b, 0);
+  if (total <= 0) return variants[0];
+  let r = rng.random() * total;
+  for (let i = 0; i < variants.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return variants[i];
+  }
+  return variants[variants.length - 1];
 }
 
 // ============================================================
@@ -3522,6 +3574,13 @@ class Crystal {
     this.dominant_forms = opts.dominant_forms ? [...opts.dominant_forms] : [];
     this.twinned = false;
     this.twin_law = '';
+    // Growth-vector footprint (chosen from MINERAL_SPEC habit_variants at
+    // nucleation time). Drives the topo map: wall_spread = lateral coverage,
+    // void_reach = projection into the vug interior. vector is the
+    // categorical style (projecting / coating / tabular / equant / dendritic).
+    this.wall_spread = opts.wall_spread ?? 0.5;
+    this.void_reach = opts.void_reach ?? 0.5;
+    this.vector = opts.vector ?? 'equant';
     this.zones = [];
     this.total_growth_um = 0;
     this.active = true;
@@ -5183,7 +5242,7 @@ class VugSimulator {
     this.log = [];
   }
 
-  nucleate(mineral, position = 'vug wall') {
+  nucleate(mineral, position = 'vug wall', sigma = 1.0) {
     this.crystal_counter++;
     const crystal = new Crystal({
       mineral, crystal_id: this.crystal_counter,
@@ -5191,45 +5250,57 @@ class VugSimulator {
       nucleation_temp: this.conditions.temperature,
       position
     });
+
+    // Pick a growth-vector variant from the spec. Its name sets the habit
+    // and its wall_spread/void_reach/vector populate the topo-map
+    // footprint. Falls back to legacy defaults below if the mineral has
+    // no variant objects in the spec.
+    const variant = selectHabitVariant(
+      mineral, sigma, this.conditions.temperature, this._spaceIsCrowded()
+    );
+    if (variant) {
+      crystal.habit = variant.name || crystal.habit;
+      crystal.wall_spread = Number(variant.wall_spread ?? 0.5);
+      crystal.void_reach = Number(variant.void_reach ?? 0.5);
+      crystal.vector = variant.vector || 'equant';
+    }
+
+    // Dominant-form strings describe crystallographic faces and aren't
+    // governed by the habit variant; keep per-mineral defaults.
     if (mineral === 'quartz') {
-      crystal.habit = 'prismatic';
       crystal.dominant_forms = ['m{100} prism', 'r{101} rhombohedron'];
     } else if (mineral === 'calcite') {
-      crystal.habit = 'rhombohedral';
       crystal.dominant_forms = ['e{104} rhombohedron'];
     } else if (mineral === 'sphalerite') {
-      crystal.habit = 'tetrahedral';
       crystal.dominant_forms = ['{111} tetrahedron'];
     } else if (mineral === 'fluorite') {
-      crystal.habit = 'cubic';
       crystal.dominant_forms = ['{100} cube'];
     } else if (mineral === 'pyrite') {
-      crystal.habit = 'cubic';
       crystal.dominant_forms = ['{100} cube'];
     } else if (mineral === 'chalcopyrite') {
-      crystal.habit = 'disphenoidal';
       crystal.dominant_forms = ['{112} disphenoid'];
     } else if (mineral === 'hematite') {
-      crystal.habit = 'specular';
       crystal.dominant_forms = ['{001} basal plates'];
     } else if (mineral === 'malachite') {
-      crystal.habit = 'botryoidal';
       crystal.dominant_forms = ['botryoidal masses'];
     } else if (mineral === 'uraninite') {
-      crystal.habit = 'cubic';
       crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
     } else if (mineral === 'galena') {
-      crystal.habit = 'cubic';
       crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
     } else if (mineral === 'selenite') {
-      crystal.habit = 'tabular blades';
       crystal.dominant_forms = ['{010} blades', '{110} prism'];
     } else if (mineral === 'feldspar') {
-      crystal.habit = 'prismatic';
       crystal.dominant_forms = ['{010} pinacoid', '{110} prism'];
     }
     this.crystals.push(crystal);
     return crystal;
+  }
+
+  _spaceIsCrowded() {
+    // Crude proxy for 'vug is filling up'. Counts surviving crystals;
+    // will be replaced by ring-based fill fraction once the wall-state
+    // model lands in part (c).
+    return this.crystals.filter(c => c.active && !c.dissolved).length >= 8;
   }
 
   get_vug_fill() {
@@ -5253,7 +5324,7 @@ class VugSimulator {
     const existing_quartz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
     if (sigma_q > 1.2 && existing_quartz.length < 3) {
       if (!existing_quartz.length || (sigma_q > 2.0 && rng.random() < 0.3)) {
-        const c = this.nucleate('quartz');
+        const c = this.nucleate('quartz', 'vug wall', sigma_q);
         this.log.push(`  ✦ NUCLEATION: Quartz #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_q.toFixed(2)})`);
       }
     }
@@ -5261,21 +5332,21 @@ class VugSimulator {
     const sigma_c = this.conditions.supersaturation_calcite();
     const existing_calcite = this.crystals.filter(c => c.mineral === 'calcite' && c.active);
     if (sigma_c > 1.3 && !existing_calcite.length) {
-      const c = this.nucleate('calcite');
+      const c = this.nucleate('calcite', 'vug wall', sigma_c);
       this.log.push(`  ✦ NUCLEATION: Calcite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_c.toFixed(2)})`);
     }
 
     const sigma_s = this.conditions.supersaturation_sphalerite();
     const existing_sph = this.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
     if (sigma_s > 1.0 && !existing_sph.length) {
-      const c = this.nucleate('sphalerite', 'vug wall');
+      const c = this.nucleate('sphalerite', 'vug wall', sigma_s);
       this.log.push(`  ✦ NUCLEATION: Sphalerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_s.toFixed(2)})`);
     }
 
     const sigma_f = this.conditions.supersaturation_fluorite();
     const existing_fl = this.crystals.filter(c => c.mineral === 'fluorite' && c.active);
     if (sigma_f > 1.2 && !existing_fl.length) {
-      const c = this.nucleate('fluorite', 'vug wall');
+      const c = this.nucleate('fluorite', 'vug wall', sigma_f);
       this.log.push(`  ✦ NUCLEATION: Fluorite #${c.crystal_id} on ${c.position}`);
     }
 
@@ -5288,7 +5359,7 @@ class VugSimulator {
       if (existing_sph2.length && rng.random() < 0.5) {
         pos = `on sphalerite #${existing_sph2[0].crystal_id}`;
       }
-      const c = this.nucleate('pyrite', pos);
+      const c = this.nucleate('pyrite', pos, sigma_py);
       this.log.push(`  ✦ NUCLEATION: Pyrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_py.toFixed(2)})`);
     }
 
@@ -5300,7 +5371,7 @@ class VugSimulator {
       if (existing_py.length && rng.random() < 0.4) {
         pos = `on pyrite #${existing_py[0].crystal_id}`;
       }
-      const c = this.nucleate('chalcopyrite', pos);
+      const c = this.nucleate('chalcopyrite', pos, sigma_cp);
       this.log.push(`  ✦ NUCLEATION: Chalcopyrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cp.toFixed(2)})`);
     }
 
@@ -5313,7 +5384,7 @@ class VugSimulator {
       if (existing_quartz.length && rng.random() < 0.4) {
         pos = `on quartz #${existing_quartz[0].crystal_id}`;
       }
-      const c = this.nucleate('hematite', pos);
+      const c = this.nucleate('hematite', pos, sigma_hem);
       this.log.push(`  ✦ NUCLEATION: Hematite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_hem.toFixed(2)})`);
     }
 
@@ -5333,7 +5404,7 @@ class VugSimulator {
       } else if (existing_hem.length && rng.random() < 0.3) {
         pos = `on hematite #${existing_hem[0].crystal_id}`;
       }
-      const c = this.nucleate('malachite', pos);
+      const c = this.nucleate('malachite', pos, sigma_mal);
       this.log.push(`  ✦ NUCLEATION: Malachite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mal.toFixed(2)})`);
     }
 
@@ -5343,7 +5414,7 @@ class VugSimulator {
     const total_urn = this.crystals.filter(c => c.mineral === 'uraninite').length;
     if (sigma_urn > 1.5 && existing_urn.length < 3 && total_urn < 5) {
       if (!existing_urn.length || (sigma_urn > 2.5 && rng.random() < 0.3)) {
-        const c = this.nucleate('uraninite', 'vug wall');
+        const c = this.nucleate('uraninite', 'vug wall', sigma_urn);
         this.log.push(`  ✦ NUCLEATION: ☢️ Uraninite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_urn.toFixed(2)}) — radioactive!`);
       }
     }
@@ -5362,7 +5433,7 @@ class VugSimulator {
       } else if (any_sph.length && rng.random() < 0.3) {
         pos = `on sphalerite #${any_sph[0].crystal_id}`;
       }
-      const c = this.nucleate('smithsonite', pos);
+      const c = this.nucleate('smithsonite', pos, sigma_sm);
       this.log.push(`  ✦ NUCLEATION: Smithsonite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_sm.toFixed(2)}) — zinc carbonate from oxidized sphalerite`);
     }
 
@@ -5387,7 +5458,7 @@ class VugSimulator {
       } else if (any_gal.length && rng.random() < 0.3) {
         pos = `on galena #${any_gal[0].crystal_id}`;
       }
-      const c = this.nucleate('wulfenite', pos);
+      const c = this.nucleate('wulfenite', pos, sigma_wulf);
       this.log.push(`  ✦ NUCLEATION: 🟠 Wulfenite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_wulf.toFixed(2)}) — the collector's prize!`);
     }
 
@@ -5407,7 +5478,7 @@ class VugSimulator {
         } else if (dissolved_cp.length && rng.random() < 0.5) {
           pos = `on chalcopyrite #${dissolved_cp[0].crystal_id} (oxidized)`;
         }
-        const c = this.nucleate('selenite', pos);
+        const c = this.nucleate('selenite', pos, sigma_sel);
         this.log.push(`  ✦ NUCLEATION: 💎 Selenite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_sel.toFixed(2)}) — gypsum blades forming in the cooling, oxidizing fluid`);
       }
     }
@@ -5423,7 +5494,7 @@ class VugSimulator {
         if (existing_quartz.length && rng.random() < 0.3) {
           pos = `on quartz #${existing_quartz[0].crystal_id}`;
         }
-        const c = this.nucleate('feldspar', pos);
+        const c = this.nucleate('feldspar', pos, sigma_feld);
         const T = this.conditions.temperature;
         const polyName = T > 500 ? 'sanidine' : (T > 300 ? 'orthoclase' : 'microcline');
         c.mineral_display = polyName;
@@ -5441,7 +5512,7 @@ class VugSimulator {
         // Classic perthite association — albite on feldspar host
         if (existing_feld.length && rng.random() < 0.5) pos = `on feldspar #${existing_feld[0].crystal_id}`;
         else if (existing_quartz.length && rng.random() < 0.3) pos = `on quartz #${existing_quartz[0].crystal_id}`;
-        const c = this.nucleate('albite', pos);
+        const c = this.nucleate('albite', pos, sigma_alb);
         this.log.push(`  ✦ NUCLEATION: Albite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_alb.toFixed(2)})`);
       }
     }
@@ -5457,7 +5528,7 @@ class VugSimulator {
         if (existing_sph3.length && rng.random() < 0.4) {
           pos = `on sphalerite #${existing_sph3[0].crystal_id}`;
         }
-        const c = this.nucleate('galena', pos);
+        const c = this.nucleate('galena', pos, sigma_gal);
         this.log.push(`  ✦ NUCLEATION: Galena #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_gal.toFixed(2)})`);
       }
     }
@@ -5477,7 +5548,7 @@ class VugSimulator {
         } else if (existing_py2.length && rng.random() < 0.3) {
           pos = `on pyrite #${existing_py2[0].crystal_id}`;
         }
-        const c = this.nucleate('molybdenite', pos);
+        const c = this.nucleate('molybdenite', pos, sigma_moly);
         this.log.push(`  ✦ NUCLEATION: Molybdenite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_moly.toFixed(2)}) — Mo pulse arriving`);
       }
     }
@@ -5499,7 +5570,7 @@ class VugSimulator {
       } else if (active_hem.length && rng.random() < 0.3) {
         pos = `on hematite #${active_hem[0].crystal_id}`;
       }
-      const c = this.nucleate('goethite', pos);
+      const c = this.nucleate('goethite', pos, sigma_goe);
       this.log.push(`  ✦ NUCLEATION: Goethite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_goe.toFixed(2)})`);
     }
 
@@ -5515,11 +5586,11 @@ class VugSimulator {
       } else if (existing_hem.length && rng.random() < 0.4) {
         pos = `on hematite #${existing_hem[0].crystal_id}`;
       }
-      const c = this.nucleate('adamite', pos);
+      const c = this.nucleate('adamite', pos, sigma_adam);
       this.log.push(`  ✦ NUCLEATION: Adamite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_adam.toFixed(2)})`);
       // Second crystal — fluorescent/non-fluorescent pair
       if (sigma_adam > 1.3 && rng.random() < 0.5) {
-        const c2 = this.nucleate('adamite', pos);
+        const c2 = this.nucleate('adamite', pos, sigma_adam);
         this.log.push(`  ✦ NUCLEATION: Adamite #${c2.crystal_id} alongside #${c.crystal_id} — will one fluoresce and the other stay dark?`);
       }
     }
@@ -5537,7 +5608,7 @@ class VugSimulator {
       } else if (existing_goe2.length && rng.random() < 0.3) {
         pos = `on goethite #${existing_goe2[0].crystal_id}`;
       }
-      const c = this.nucleate('mimetite', pos);
+      const c = this.nucleate('mimetite', pos, sigma_mim);
       this.log.push(`  ✦ NUCLEATION: Mimetite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mim.toFixed(2)})`);
     }
   }

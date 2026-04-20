@@ -54,6 +54,82 @@ def max_size_cm(mineral: str) -> float:
     return MINERAL_SPEC[mineral]["max_size_cm"]
 
 
+def select_habit_variant(mineral: str, sigma: float, temperature: float,
+                         space_constrained: bool = False) -> Optional[dict]:
+    """Pick a habit variant for a nucleating crystal based on current conditions.
+
+    Reads habit_variants from data/minerals.json. Scores each variant by:
+      - trigger keywords ("low σ" / "moderate σ" / "high σ" / "very high σ",
+        and likewise for T) against the actual σ and T;
+      - vector preference vs. available wall space (projecting habits
+        penalized when the vug is crowded; coating habits favored).
+
+    The top-scoring variant wins, with a tie-breaking weighted random so
+    two habits that both look plausible don't always produce the same
+    outcome. Returns the variant dict, or None if the mineral has no
+    variants declared.
+    """
+    variants = MINERAL_SPEC.get(mineral, {}).get("habit_variants", [])
+    variants = [v for v in variants if isinstance(v, dict)]
+    if not variants:
+        return None
+
+    def score(v: dict) -> float:
+        trig = (v.get("trigger") or "").lower()
+        s = 1.0
+        # Supersaturation bands. The spec uses "σ" so we match on unicode.
+        if "very high σ" in trig:
+            s += 2.0 if sigma > 4.0 else -1.5
+        elif "high σ" in trig:
+            s += 1.5 if sigma > 3.0 else -1.0
+        elif "moderate-high σ" in trig or "moderate σ" in trig:
+            s += 1.5 if 1.5 <= sigma <= 3.5 else -0.5
+        elif "low-moderate σ" in trig:
+            s += 1.2 if 1.0 <= sigma <= 2.2 else -0.4
+        elif "low σ" in trig:
+            s += 1.2 if sigma < 2.0 else -0.8
+
+        # Temperature bands.
+        if "high T" in trig:
+            s += 1.0 if temperature > 300 else -0.6
+        elif "moderate T" in trig:
+            s += 1.0 if 150 <= temperature <= 300 else -0.4
+        elif "low T" in trig:
+            s += 1.0 if temperature < 150 else -0.6
+
+        # Space-vs-vector preference. When the vug is crowded, projecting
+        # habits have nowhere to go; coating habits read as wall deposits.
+        vec = (v.get("vector") or "").lower()
+        if space_constrained:
+            if vec == "projecting":
+                s -= 0.8
+            elif vec == "coating":
+                s += 0.6
+            elif vec == "tabular":
+                s += 0.3  # tabulars lay flat against the wall
+
+        # "default" triggers are the baseline for the mineral — pick them
+        # when nothing else matches well.
+        if trig.startswith("default"):
+            s += 0.3
+
+        return max(s, 0.05)  # avoid hard-zero so weighted draw always works
+
+    scored = [(v, score(v)) for v in variants]
+    # Weighted random over score^2 to favor strong matches but keep variety.
+    weights = [w * w for _, w in scored]
+    total = sum(weights)
+    if total <= 0:
+        return variants[0]
+    r = random.random() * total
+    acc = 0.0
+    for (v, _), w in zip(scored, weights):
+        acc += w
+        if r <= acc:
+            return v
+    return scored[-1][0]
+
+
 # ============================================================
 # PHYSICAL CONSTANTS AND MODELS
 # ============================================================
@@ -645,6 +721,14 @@ class Crystal:
     dominant_forms: List[str] = field(default_factory=list)
     twinned: bool = False
     twin_law: str = ""
+    # Growth-vector footprint (chosen from data/minerals.json habit_variants
+    # at nucleation time based on σ / T / available space). Drives the topo
+    # map: wall_spread governs lateral coverage along the wall, void_reach
+    # governs projection into the vug interior. `vector` is the categorical
+    # style (projecting / coating / tabular / equant / dendritic).
+    wall_spread: float = 0.5
+    void_reach: float = 0.5
+    vector: str = "equant"
     
     # Growth history
     zones: List[GrowthZone] = field(default_factory=list)
@@ -3026,8 +3110,10 @@ class VugSimulator:
         self.step = 0
         self.log: List[str] = []
     
-    def nucleate(self, mineral: str, position: str = "vug wall") -> Crystal:
-        """Nucleate a new crystal."""
+    def nucleate(self, mineral: str, position: str = "vug wall",
+                 sigma: float = 1.0) -> Crystal:
+        """Nucleate a new crystal. `sigma` (current supersaturation for this
+        mineral) is used to pick a habit variant from data/minerals.json."""
         self.crystal_counter += 1
         crystal = Crystal(
             mineral=mineral,
@@ -3036,59 +3122,70 @@ class VugSimulator:
             nucleation_temp=self.conditions.temperature,
             position=position
         )
+
+        # Pick a growth-vector variant from the spec. The variant's name
+        # overrides the legacy per-mineral habit string below when present,
+        # and its wall_spread/void_reach/vector populate the topo-map
+        # footprint. Falls back to legacy defaults if the spec lacks
+        # variants for this mineral.
+        variant = select_habit_variant(
+            mineral, sigma, self.conditions.temperature,
+            space_constrained=self._space_is_crowded(),
+        )
+        if variant:
+            crystal.habit = variant.get("name", crystal.habit)
+            crystal.wall_spread = float(variant.get("wall_spread", 0.5))
+            crystal.void_reach = float(variant.get("void_reach", 0.5))
+            crystal.vector = variant.get("vector", "equant")
+
+        # Dominant-form strings are still per-mineral — they describe
+        # crystallographic faces, not the habit variant, so the growth-vector
+        # selector leaves them alone. The fallback `habit` (when the spec
+        # has no variants) is the first value in each arm.
         if mineral == "quartz":
-            crystal.habit = "prismatic"
             crystal.dominant_forms = ["m{100} prism", "r{101} rhombohedron"]
         elif mineral == "calcite":
-            crystal.habit = "rhombohedral"
             crystal.dominant_forms = ["e{104} rhombohedron"]
         elif mineral == "sphalerite":
-            crystal.habit = "tetrahedral"
             crystal.dominant_forms = ["{111} tetrahedron"]
         elif mineral == "fluorite":
-            crystal.habit = "cubic"
             crystal.dominant_forms = ["{100} cube"]
         elif mineral == "pyrite":
-            crystal.habit = "cubic"
             crystal.dominant_forms = ["{100} cube"]
         elif mineral == "chalcopyrite":
-            crystal.habit = "disphenoidal"
             crystal.dominant_forms = ["{112} disphenoid"]
         elif mineral == "hematite":
-            crystal.habit = "specular"
             crystal.dominant_forms = ["{001} basal plates"]
         elif mineral == "malachite":
-            crystal.habit = "botryoidal"
             crystal.dominant_forms = ["botryoidal masses"]
         elif mineral == "galena":
-            crystal.habit = "cubic"
             crystal.dominant_forms = ["{100} cube"]
         elif mineral == "smithsonite":
-            crystal.habit = "botryoidal"
             crystal.dominant_forms = ["botryoidal masses", "{101̅4} scalenohedra"]
         elif mineral == "wulfenite":
-            crystal.habit = "tabular"
             crystal.dominant_forms = ["{001} thin square plates"]
         elif mineral == "selenite":
-            crystal.habit = "tabular"
             crystal.dominant_forms = ["{010} plates", "swallow-tail twins"]
         elif mineral == "feldspar":
-            crystal.habit = "prismatic"
             crystal.dominant_forms = ["{001} cleavage", "{010} face", "Carlsbad twin"]
         elif mineral == "albite":
-            crystal.habit = "prismatic"
             crystal.dominant_forms = ["{001} cleavage", "{010} face", "albite twin"]
         elif mineral == "uraninite":
-            crystal.habit = "massive"
             crystal.dominant_forms = ["massive pitchy aggregates"]
         elif mineral == "goethite":
-            crystal.habit = "botryoidal"
             crystal.dominant_forms = ["botryoidal masses", "velvety surface"]
         elif mineral == "molybdenite":
-            crystal.habit = "platy"
             crystal.dominant_forms = ["{0001} basal plates", "hexagonal outline"]
         self.crystals.append(crystal)
         return crystal
+
+    def _space_is_crowded(self) -> bool:
+        """Crude proxy for 'the vug is filling up' — feeds habit selection.
+        Once the ring wall-state model lands we'll compute fill fraction
+        from occupied cells, but for now count surviving crystals and call
+        it crowded past a threshold."""
+        active = sum(1 for c in self.crystals if c.active and not c.dissolved)
+        return active >= 8
 
     def _apply_radiation_dose(self) -> None:
         """Accumulate α-damage on every quartz growth zone while any uraninite
@@ -3128,7 +3225,7 @@ class VugSimulator:
         existing_quartz = [c for c in self.crystals if c.mineral == "quartz" and c.active]
         if sigma_q > 1.2 and not self._at_nucleation_cap("quartz"):
             if not existing_quartz or (sigma_q > 2.0 and random.random() < 0.3):
-                c = self.nucleate("quartz")
+                c = self.nucleate("quartz", sigma=sigma_q)
                 self.log.append(f"  ✦ NUCLEATION: Quartz #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_q:.2f})")
         
@@ -3136,7 +3233,7 @@ class VugSimulator:
         sigma_c = self.conditions.supersaturation_calcite()
         existing_calcite = [c for c in self.crystals if c.mineral == "calcite" and c.active]
         if sigma_c > 1.3 and not existing_calcite and not self._at_nucleation_cap("calcite"):
-            c = self.nucleate("calcite")
+            c = self.nucleate("calcite", sigma=sigma_c)
             self.log.append(f"  ✦ NUCLEATION: Calcite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_c:.2f})")
         
@@ -3144,7 +3241,7 @@ class VugSimulator:
         sigma_s = self.conditions.supersaturation_sphalerite()
         existing_sph = [c for c in self.crystals if c.mineral == "sphalerite" and c.active]
         if sigma_s > 1.0 and not existing_sph and not self._at_nucleation_cap("sphalerite"):
-            c = self.nucleate("sphalerite", position="vug wall")
+            c = self.nucleate("sphalerite", position="vug wall", sigma=sigma_s)
             self.log.append(f"  ✦ NUCLEATION: Sphalerite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_s:.2f})")
         
@@ -3152,7 +3249,7 @@ class VugSimulator:
         sigma_f = self.conditions.supersaturation_fluorite()
         existing_fl = [c for c in self.crystals if c.mineral == "fluorite" and c.active]
         if sigma_f > 1.2 and not existing_fl and not self._at_nucleation_cap("fluorite"):
-            c = self.nucleate("fluorite", position="vug wall")
+            c = self.nucleate("fluorite", position="vug wall", sigma=sigma_f)
             self.log.append(f"  ✦ NUCLEATION: Fluorite #{c.crystal_id} on {c.position}")
         
         # Pyrite nucleation — microcrystalline swarms aren't interesting individually
@@ -3164,7 +3261,7 @@ class VugSimulator:
             existing_sph = [c for c in self.crystals if c.mineral == "sphalerite" and c.active]
             if existing_sph and random.random() < 0.5:
                 pos = f"on sphalerite #{existing_sph[0].crystal_id}"
-            c = self.nucleate("pyrite", position=pos)
+            c = self.nucleate("pyrite", position=pos, sigma=sigma_py)
             self.log.append(f"  ✦ NUCLEATION: Pyrite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_py:.2f})")
         
@@ -3175,7 +3272,7 @@ class VugSimulator:
             pos = "vug wall"
             if existing_py and random.random() < 0.4:
                 pos = f"on pyrite #{existing_py[0].crystal_id}"
-            c = self.nucleate("chalcopyrite", position=pos)
+            c = self.nucleate("chalcopyrite", position=pos, sigma=sigma_cp)
             self.log.append(f"  ✦ NUCLEATION: Chalcopyrite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cp:.2f})")
         
@@ -3187,7 +3284,7 @@ class VugSimulator:
             # Can nucleate on existing quartz
             if existing_quartz and random.random() < 0.4:
                 pos = f"on quartz #{existing_quartz[0].crystal_id}"
-            c = self.nucleate("hematite", position=pos)
+            c = self.nucleate("hematite", position=pos, sigma=sigma_hem)
             self.log.append(f"  ✦ NUCLEATION: Hematite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_hem:.2f})")
         
@@ -3205,7 +3302,7 @@ class VugSimulator:
                 pos = f"on chalcopyrite #{active_cp[0].crystal_id}"
             elif existing_hem and random.random() < 0.3:
                 pos = f"on hematite #{existing_hem[0].crystal_id}"
-            c = self.nucleate("malachite", position=pos)
+            c = self.nucleate("malachite", position=pos, sigma=sigma_mal)
             self.log.append(f"  ✦ NUCLEATION: Malachite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mal:.2f})")
         
@@ -3222,12 +3319,12 @@ class VugSimulator:
             elif existing_hem and random.random() < 0.4:
                 pos = f"on hematite #{existing_hem[0].crystal_id}"
             # Nucleate multiple crystals — adamite forms sprays
-            c = self.nucleate("adamite", position=pos)
+            c = self.nucleate("adamite", position=pos, sigma=sigma_adam)
             self.log.append(f"  ✦ NUCLEATION: Adamite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_adam:.2f})")
             # Second crystal often nucleates nearby — the fluorescent/non-fluorescent pair
             if sigma_adam > 1.3 and random.random() < 0.5 and not self._at_nucleation_cap("adamite"):
-                c2 = self.nucleate("adamite", position=pos)
+                c2 = self.nucleate("adamite", position=pos, sigma=sigma_adam)
                 self.log.append(f"  ✦ NUCLEATION: Adamite #{c2.crystal_id} alongside #{c.crystal_id} "
                               f"— will one fluoresce and the other stay dark?")
         
@@ -3242,7 +3339,7 @@ class VugSimulator:
                 pos = f"on galena #{existing_galena[0].crystal_id}"
             elif existing_goethite and random.random() < 0.3:
                 pos = f"on goethite #{existing_goethite[0].crystal_id}"
-            c = self.nucleate("mimetite", position=pos)
+            c = self.nucleate("mimetite", position=pos, sigma=sigma_mim)
             self.log.append(f"  ✦ NUCLEATION: Mimetite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mim:.2f})")
         
@@ -3254,7 +3351,7 @@ class VugSimulator:
             # Feldspar can nucleate on quartz — common in pegmatites
             if existing_quartz and random.random() < 0.4:
                 pos = f"on quartz #{existing_quartz[0].crystal_id}"
-            c = self.nucleate("feldspar", position=pos)
+            c = self.nucleate("feldspar", position=pos, sigma=sigma_fsp)
             self.log.append(f"  ✦ NUCLEATION: K-feldspar #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_fsp:.2f})")
         
@@ -3269,7 +3366,7 @@ class VugSimulator:
                 pos = f"on feldspar #{existing_fsp[0].crystal_id}"
             elif existing_quartz and random.random() < 0.3:
                 pos = f"on quartz #{existing_quartz[0].crystal_id}"
-            c = self.nucleate("albite", position=pos)
+            c = self.nucleate("albite", position=pos, sigma=sigma_ab)
             self.log.append(f"  ✦ NUCLEATION: Albite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ab:.2f})")
 
@@ -3277,7 +3374,7 @@ class VugSimulator:
         sigma_mol = self.conditions.supersaturation_molybdenite()
         if sigma_mol > 2.0 and not self._at_nucleation_cap("molybdenite"):
             if random.random() < 0.08:
-                c = self.nucleate("molybdenite", position="vug wall")
+                c = self.nucleate("molybdenite", position="vug wall", sigma=sigma_mol)
                 self.log.append(f"  ✦ NUCLEATION: Molybdenite #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mol:.2f})")
 
@@ -3285,7 +3382,7 @@ class VugSimulator:
         sigma_gal = self.conditions.supersaturation_galena()
         if sigma_gal > 1.5 and not self._at_nucleation_cap("galena"):
             if random.random() < 0.12:
-                c = self.nucleate("galena", position="vug wall")
+                c = self.nucleate("galena", position="vug wall", sigma=sigma_gal)
                 self.log.append(f"  ✦ NUCLEATION: Galena #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_gal:.2f})")
 
@@ -3293,14 +3390,14 @@ class VugSimulator:
         sigma_wul = self.conditions.supersaturation_wulfenite()
         if sigma_wul > 1.3 and not self._at_nucleation_cap("wulfenite"):
             if random.random() < 0.15:
-                c = self.nucleate("wulfenite", position="vug wall")
+                c = self.nucleate("wulfenite", position="vug wall", sigma=sigma_wul)
                 self.log.append(f"  ✦ NUCLEATION: Wulfenite #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_wul:.2f})")
 
         # Uraninite nucleation — strongly reducing, U-bearing. Emits radiation each step.
         sigma_ur = self.conditions.supersaturation_uraninite()
         if sigma_ur > 1.5 and not self._at_nucleation_cap("uraninite") and random.random() < 0.08:
-            c = self.nucleate("uraninite", position="vug wall")
+            c = self.nucleate("uraninite", position="vug wall", sigma=sigma_ur)
             self.log.append(f"  ✦ NUCLEATION: Uraninite #{c.crystal_id} on {c.position} "
                           f"☢️  (T={self.conditions.temperature:.0f}°C, σ={sigma_ur:.2f})")
 
@@ -3319,7 +3416,7 @@ class VugSimulator:
                 pos = f"pseudomorph after chalcopyrite #{dissolving_cp[0].crystal_id}"
             elif active_hem and random.random() < 0.3:
                 pos = f"on hematite #{active_hem[0].crystal_id}"
-            c = self.nucleate("goethite", position=pos)
+            c = self.nucleate("goethite", position=pos, sigma=sigma_goe)
             self.log.append(f"  ✦ NUCLEATION: Goethite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_goe:.2f})")
 
@@ -3331,14 +3428,14 @@ class VugSimulator:
             dissolving_sph = [c for c in self.crystals if c.mineral == "sphalerite" and c.dissolved]
             if dissolving_sph and random.random() < 0.6:
                 pos = f"on sphalerite #{dissolving_sph[0].crystal_id}"
-            c = self.nucleate("smithsonite", position=pos)
+            c = self.nucleate("smithsonite", position=pos, sigma=sigma_sm)
             self.log.append(f"  ✦ NUCLEATION: Smithsonite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_sm:.2f})")
 
         # Selenite nucleation — low-T evaporite, needs oxidized Ca-SO4 fluid
         sigma_sel = self.conditions.supersaturation_selenite()
         if sigma_sel > 1.0 and not self._at_nucleation_cap("selenite") and random.random() < 0.12:
-            c = self.nucleate("selenite", position="vug wall")
+            c = self.nucleate("selenite", position="vug wall", sigma=sigma_sel)
             self.log.append(f"  ✦ NUCLEATION: Selenite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_sel:.2f})")
 
