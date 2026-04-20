@@ -3239,6 +3239,71 @@ class VugWall {
   }
 }
 
+// One cell of the topo-map wall state. Every (ring, cell) pair has one —
+// the renderer walks the cells in order and draws a line whose color and
+// thickness come from the crystal occupying that cell.
+class WallCell {
+  constructor() {
+    this.wall_depth = 0;       // dissolution depth, mm (negative = eroded)
+    this.crystal_id = null;    // id of the crystal occupying this cell
+    this.mineral = null;       // mineral name for class_color lookup
+    this.thickness_um = 0;     // crystal thickness at this cell, µm
+  }
+}
+
+// Unwrapped topographic map of the vug interior. v1 only populates /
+// renders ring[0], but the 2D rings×cells structure is present so the
+// future 3D view can slice depth without reshaping storage.
+class WallState {
+  constructor(opts = {}) {
+    this.cells_per_ring = opts.cells_per_ring ?? 120;
+    this.ring_count = opts.ring_count ?? 1;
+    this.vug_diameter_mm = opts.vug_diameter_mm ?? 50.0;
+    this.ring_spacing_mm = opts.ring_spacing_mm ?? 1.0;
+    this.rings = [];
+    for (let r = 0; r < this.ring_count; r++) {
+      const ring = [];
+      for (let c = 0; c < this.cells_per_ring; c++) ring.push(new WallCell());
+      this.rings.push(ring);
+    }
+  }
+
+  get cell_arc_mm() {
+    return Math.PI * this.vug_diameter_mm / Math.max(this.cells_per_ring, 1);
+  }
+
+  updateDiameter(newDiameter) { this.vug_diameter_mm = newDiameter; }
+
+  clear() {
+    for (const ring of this.rings) {
+      for (const cell of ring) {
+        cell.crystal_id = null;
+        cell.mineral = null;
+        cell.thickness_um = 0;
+      }
+    }
+  }
+
+  // Mark the cells this crystal occupies with its id / mineral / thickness.
+  // Only ring[0] in v1; multi-ring paint will follow void_reach later.
+  paintCrystal(crystal) {
+    if (crystal.wall_center_cell == null || crystal.total_growth_um <= 0) return;
+    const arcMm = (crystal.total_growth_um / 1000.0) * Math.max(crystal.wall_spread, 0.01);
+    const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
+    const ring0 = this.rings[0];
+    const N = this.cells_per_ring;
+    for (let offset = -halfCells; offset <= halfCells; offset++) {
+      const idx = ((crystal.wall_center_cell + offset) % N + N) % N;
+      const cell = ring0[idx];
+      if (cell.thickness_um < crystal.total_growth_um) {
+        cell.crystal_id = crystal.crystal_id;
+        cell.mineral = crystal.mineral;
+        cell.thickness_um = crystal.total_growth_um;
+      }
+    }
+  }
+}
+
 class VugConditions {
   constructor(opts = {}) {
     this.temperature = opts.temperature ?? 350.0;
@@ -3581,6 +3646,10 @@ class Crystal {
     this.wall_spread = opts.wall_spread ?? 0.5;
     this.void_reach = opts.void_reach ?? 0.5;
     this.vector = opts.vector ?? 'equant';
+    // Anchor cell on ring 0 where this crystal nucleated. WallState
+    // paints outward from here by wall_spread × total_growth. null for
+    // crystals that haven't been anchored yet.
+    this.wall_center_cell = opts.wall_center_cell ?? null;
     this.zones = [];
     this.total_growth_um = 0;
     this.active = true;
@@ -5240,6 +5309,10 @@ class VugSimulator {
     this.crystal_counter = 0;
     this.step = 0;
     this.log = [];
+    // Unwrapped topo-map state. v1 uses ring[0] only; the multi-ring
+    // structure is in place so future depth-slice rendering doesn't
+    // require reshaping storage.
+    this.wall_state = new WallState({ vug_diameter_mm: this.conditions.wall.vug_diameter_mm });
   }
 
   nucleate(mineral, position = 'vug wall', sigma = 1.0) {
@@ -5264,6 +5337,11 @@ class VugSimulator {
       crystal.void_reach = Number(variant.void_reach ?? 0.5);
       crystal.vector = variant.vector || 'equant';
     }
+
+    // Anchor on the wall. Crystals that nucleated on another crystal
+    // (position "on <mineral> #<id>") inherit the host's cell so
+    // pseudomorphs/overgrowths paint alongside it.
+    crystal.wall_center_cell = this._assignWallCell(position);
 
     // Dominant-form strings describe crystallographic faces and aren't
     // governed by the habit variant; keep per-mineral defaults.
@@ -5297,10 +5375,50 @@ class VugSimulator {
   }
 
   _spaceIsCrowded() {
-    // Crude proxy for 'vug is filling up'. Counts surviving crystals;
-    // will be replaced by ring-based fill fraction once the wall-state
-    // model lands in part (c).
-    return this.crystals.filter(c => c.active && !c.dissolved).length >= 8;
+    // Fraction of ring-0 cells already claimed. Habit selection uses
+    // this to penalize projecting variants when the vug is filling up.
+    const ring0 = this.wall_state?.rings?.[0];
+    if (!ring0 || !ring0.length) return false;
+    const occupied = ring0.reduce((n, c) => n + (c.crystal_id != null ? 1 : 0), 0);
+    return (occupied / ring0.length) >= 0.5;
+  }
+
+  _assignWallCell(position) {
+    // Host-substrate overgrowths inherit the host's cell; free-wall
+    // nucleations claim a random empty cell (or a random cell at all
+    // if the wall is full — overlaps paint the larger crystal on top).
+    let hostId = null;
+    const hashIdx = position.indexOf(' #');
+    if (hashIdx >= 0) {
+      const num = parseInt(position.slice(hashIdx + 2), 10);
+      if (!Number.isNaN(num)) hostId = num;
+    }
+    if (hostId != null) {
+      const host = this.crystals.find(c => c.crystal_id === hostId);
+      if (host && host.wall_center_cell != null) return host.wall_center_cell;
+    }
+    const N = this.wall_state.cells_per_ring;
+    const ring0 = this.wall_state.rings[0];
+    const empty = [];
+    for (let i = 0; i < ring0.length; i++) {
+      if (ring0[i].crystal_id == null) empty.push(i);
+    }
+    if (empty.length) return empty[Math.floor(rng.random() * empty.length)];
+    return Math.floor(rng.random() * N);
+  }
+
+  _repaintWallState() {
+    // Rebuild ring-0 occupancy from the crystal list. Cheap (~120 × ~20)
+    // and keeps per-cell thickness consistent with dissolution / enclosure.
+    this.wall_state.updateDiameter(this.conditions.wall.vug_diameter_mm);
+    this.wall_state.clear();
+    // Paint smallest-first so biggest crystals win overlaps — that's
+    // what a viewer would see from outside the vug.
+    const sorted = [...this.crystals].sort((a, b) => a.total_growth_um - b.total_growth_um);
+    for (const crystal of sorted) {
+      if (crystal.dissolved) continue;
+      this.wall_state.paintCrystal(crystal);
+    }
   }
 
   get_vug_fill() {
@@ -5834,6 +5952,9 @@ class VugSimulator {
         }
       }
     }
+
+    // Refresh the topo-map wall state from the current crystal list.
+    this._repaintWallState();
 
     this.ambient_cooling();
     return this.log;

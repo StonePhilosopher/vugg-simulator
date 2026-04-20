@@ -287,7 +287,82 @@ class VugWall:
         }
 
 
-@dataclass 
+@dataclass
+class WallCell:
+    """One cell of the topo-map wall state. Every (ring, cell) pair has
+    one — the topo renderer walks the cells in order and draws a line
+    whose color and thickness come from the crystal occupying that cell."""
+    wall_depth: float = 0.0            # dissolution depth, mm (negative = eroded)
+    crystal_id: Optional[int] = None   # id of the crystal occupying this cell
+    mineral: Optional[str] = None      # mineral name for class_color lookup
+    thickness_um: float = 0.0          # crystal thickness at this cell, µm
+
+
+@dataclass
+class WallState:
+    """Unwrapped topographic map of the vug interior.
+
+    The data model is 2D: rings × cells. v1 only populates ring[0] (the
+    wall surface) and only ring[0] is rendered, but the structure holds
+    `ring_count` rings so that a future 3D view can slice depth without
+    reshaping the storage. A crystal with `void_reach = 0.9` will one day
+    paint onto ring[0] *and* fill inward through ~90% of the radius.
+
+    Defaults: 120 cells around a 50mm vug circumference (~1.3mm of arc
+    per cell). Use `update_diameter()` when the wall dissolves to keep
+    the cell-arc calculation current.
+    """
+    cells_per_ring: int = 120
+    ring_count: int = 1
+    vug_diameter_mm: float = 50.0
+    ring_spacing_mm: float = 1.0
+    rings: List[List[WallCell]] = field(default_factory=list)
+
+    def __post_init__(self):
+        if not self.rings:
+            self.rings = [
+                [WallCell() for _ in range(self.cells_per_ring)]
+                for _ in range(self.ring_count)
+            ]
+
+    @property
+    def cell_arc_mm(self) -> float:
+        """Wall arc length represented by one cell, in millimeters."""
+        return math.pi * self.vug_diameter_mm / max(self.cells_per_ring, 1)
+
+    def update_diameter(self, new_diameter_mm: float) -> None:
+        self.vug_diameter_mm = new_diameter_mm
+
+    def clear(self) -> None:
+        """Reset per-step occupancy before repainting all crystals."""
+        for ring in self.rings:
+            for cell in ring:
+                cell.crystal_id = None
+                cell.mineral = None
+                cell.thickness_um = 0.0
+
+    def paint_crystal(self, crystal: 'Crystal') -> None:
+        """Mark the cells this crystal occupies with its id / mineral /
+        thickness. Called after growth each step. Only ring[0] is painted
+        in v1; when multi-ring rendering arrives, void_reach will extend
+        the paint deeper."""
+        if crystal.wall_center_cell is None or crystal.total_growth_um <= 0:
+            return
+        # Lateral arc coverage grows with size × wall_spread.
+        arc_mm = (crystal.total_growth_um / 1000.0) * max(crystal.wall_spread, 0.01)
+        half_cells = max(1, int(round(arc_mm / self.cell_arc_mm / 2.0)))
+        ring0 = self.rings[0]
+        N = self.cells_per_ring
+        for offset in range(-half_cells, half_cells + 1):
+            idx = (crystal.wall_center_cell + offset) % N
+            cell = ring0[idx]
+            if cell.thickness_um < crystal.total_growth_um:
+                cell.crystal_id = crystal.crystal_id
+                cell.mineral = crystal.mineral
+                cell.thickness_um = crystal.total_growth_um
+
+
+@dataclass
 class VugConditions:
     """Current physical/chemical conditions in the vug."""
     temperature: float = 350.0    # °C
@@ -729,6 +804,11 @@ class Crystal:
     wall_spread: float = 0.5
     void_reach: float = 0.5
     vector: str = "equant"
+    # Anchor cell on the wall (ring 0) where this crystal nucleated.
+    # WallState.paint_crystal() grows outward from here by wall_spread ×
+    # total_growth. None for crystals that nucleated on another crystal
+    # rather than the wall — those follow their host's cell.
+    wall_center_cell: Optional[int] = None
     
     # Growth history
     zones: List[GrowthZone] = field(default_factory=list)
@@ -3109,6 +3189,10 @@ class VugSimulator:
         self.crystal_counter = 0
         self.step = 0
         self.log: List[str] = []
+        # Unwrapped topo-map state. v1 uses ring[0] only; the multi-ring
+        # structure is there so the future 3D view can slice depth without
+        # reshaping the storage.
+        self.wall_state = WallState(vug_diameter_mm=conditions.wall.vug_diameter_mm)
     
     def nucleate(self, mineral: str, position: str = "vug wall",
                  sigma: float = 1.0) -> Crystal:
@@ -3137,6 +3221,12 @@ class VugSimulator:
             crystal.wall_spread = float(variant.get("wall_spread", 0.5))
             crystal.void_reach = float(variant.get("void_reach", 0.5))
             crystal.vector = variant.get("vector", "equant")
+
+        # Anchor on the wall. Crystals that nucleated on another crystal
+        # (position string like "on pyrite #3") inherit the host's cell so
+        # they paint over/next to it. Everything else gets a fresh random
+        # cell on ring 0.
+        crystal.wall_center_cell = self._assign_wall_cell(position)
 
         # Dominant-form strings are still per-mineral — they describe
         # crystallographic faces, not the habit variant, so the growth-vector
@@ -3180,12 +3270,50 @@ class VugSimulator:
         return crystal
 
     def _space_is_crowded(self) -> bool:
-        """Crude proxy for 'the vug is filling up' — feeds habit selection.
-        Once the ring wall-state model lands we'll compute fill fraction
-        from occupied cells, but for now count surviving crystals and call
-        it crowded past a threshold."""
-        active = sum(1 for c in self.crystals if c.active and not c.dissolved)
-        return active >= 8
+        """Fraction of ring-0 cells already claimed by another crystal.
+        Habit selection uses this to penalize projecting habits when the
+        vug is filling up and to reward coating habits."""
+        ring0 = self.wall_state.rings[0]
+        if not ring0:
+            return False
+        occupied = sum(1 for c in ring0 if c.crystal_id is not None)
+        return (occupied / len(ring0)) >= 0.5
+
+    def _assign_wall_cell(self, position: str) -> int:
+        """Pick a ring-0 cell for a nucleating crystal.
+
+        Host-substrate crystals (position 'on <mineral> #<id>') inherit
+        the host's cell so pseudomorphs / overgrowths paint in the same
+        place. Everything else gets a random empty cell if one exists,
+        otherwise a random cell (overlaps are fine — paint_crystal picks
+        the larger occupant)."""
+        host_id = None
+        if " #" in position:
+            try:
+                host_id = int(position.rsplit("#", 1)[1].split()[0])
+            except ValueError:
+                host_id = None
+        if host_id is not None:
+            host = next((c for c in self.crystals if c.crystal_id == host_id), None)
+            if host and host.wall_center_cell is not None:
+                return host.wall_center_cell
+        N = self.wall_state.cells_per_ring
+        ring0 = self.wall_state.rings[0]
+        empty = [i for i, cell in enumerate(ring0) if cell.crystal_id is None]
+        return random.choice(empty) if empty else random.randrange(N)
+
+    def _repaint_wall_state(self) -> None:
+        """Rebuild ring-0 occupancy from the current crystal list. Runs
+        once per step, after growth. Larger crystals overwrite smaller
+        ones at the same cell (`paint_crystal` guards on thickness)."""
+        self.wall_state.update_diameter(self.conditions.wall.vug_diameter_mm)
+        self.wall_state.clear()
+        # Paint smallest-first so the biggest crystals win ties — they're
+        # what the viewer would actually see from outside.
+        for crystal in sorted(self.crystals, key=lambda c: c.total_growth_um):
+            if crystal.dissolved:
+                continue
+            self.wall_state.paint_crystal(crystal)
 
     def _apply_radiation_dose(self) -> None:
         """Accumulate α-damage on every quartz growth zone while any uraninite
@@ -3723,6 +3851,11 @@ class VugSimulator:
         # Each existing zone accumulates dose per step — damage is permanent,
         # persisting even after the uraninite later dissolves away.
         self._apply_radiation_dose()
+
+        # Refresh the topo-map wall state from the current crystal list.
+        # Cheap (~120 cells × ~20 crystals/step) and keeps per-cell
+        # occupancy consistent with dissolution / enclosure changes below.
+        self._repaint_wall_state()
 
         # Check for enclosure events — larger crystals swallowing smaller ones
         self.check_enclosure()
