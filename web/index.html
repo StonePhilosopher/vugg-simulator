@@ -10136,7 +10136,8 @@ function idleRecordHistory() {
 
 const TOPO_WALL_COLOR = '#D2691E';   // warm amber — the wall's color. No mineral touches this hue.
 const TOPO_CRYSTAL_CAP_FRAC = 0.85;   // crystals can fill at most this fraction of a cell's radius
-const TOPO_WALL_STROKE_PX = 2;
+const TOPO_WALL_STROKE_PX = 2;        // bare wall stroke width
+const TOPO_WALL_STROKE_MAX_PX = 10;   // cell stroke width ceiling when a crystal sits on the wall
 
 // The 12-class order from the topo palette in the brief. Used by the
 // legend. We render all 12 even if not all present in the current run so
@@ -10258,28 +10259,28 @@ function topoRender(optOverrideRing) {
     cellR[i] = (initR + ring0[i].wall_depth) * mmToPx;
   }
 
-  // Draw each cell as a wedge. Bare cells stroke the outer edge in
-  // amber (the wall's reserved color). Occupied cells fill a radial
-  // band from the wall inward by (total_growth × void_reach) in the
-  // mineral's class_color. Crystals that would completely fill the
-  // cell are capped at TOPO_CRYSTAL_CAP_FRAC so a ring of interior
-  // void is always legible.
+  // Find the heaviest crystal on the wall so stroke widths scale to
+  // something meaningful (1 big crystal vs. 1 microcrystal).
+  let maxT = 0;
+  for (const c of ring0) if (c.thickness_um > maxT) maxT = c.thickness_um;
+  if (maxT <= 0) maxT = 1;
+
   const arcStep = 2 * Math.PI / N;
+
+  // Radial wedges: for each occupied cell, fill a band from the wall
+  // inward by (thickness × void_reach) in the class_color. Capped at
+  // TOPO_CRYSTAL_CAP_FRAC so a center void always reads.
   for (let i = 0; i < N; i++) {
+    const cell = ring0[i];
+    if (cell.crystal_id == null) continue;
     const a0 = _topoAngleFor(i, N) - arcStep / 2;
     const a1 = a0 + arcStep;
-    const cell = ring0[i];
     const rOuter = cellR[i];
-
-    if (cell.crystal_id == null) continue;  // bare handled below as one stroke
-
-    // Crystal inward extent: thickness × void_reach, capped by cell radius.
     const crystal = sim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
     const voidReach = crystal ? Math.max(crystal.void_reach, 0.05) : 0.5;
     const inwardMm = (cell.thickness_um / 1000.0) * voidReach;
     const inwardPx = Math.min(inwardMm * mmToPx, rOuter * TOPO_CRYSTAL_CAP_FRAC);
     const rInner = rOuter - Math.max(inwardPx, TOPO_WALL_STROKE_PX + 1);
-
     ctx.fillStyle = topoClassColor(cell.mineral);
     ctx.beginPath();
     ctx.arc(cx, cy, rOuter, a0, a1);
@@ -10288,23 +10289,32 @@ function topoRender(optOverrideRing) {
     ctx.fill();
   }
 
-  // Wall outline — a single polygon around the current shape. Bare
-  // cells stroke in amber; cells under a crystal stroke in a dimmer
-  // tone so the crystal colors dominate.
-  ctx.lineWidth = TOPO_WALL_STROKE_PX;
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = TOPO_WALL_COLOR;
-  ctx.beginPath();
-  for (let i = 0; i <= N; i++) {
-    const a = _topoAngleFor(i % N, N);
-    const r = cellR[i % N];
-    const x = cx + r * Math.cos(a);
-    const y = cy + r * Math.sin(a);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+  // Wall outline — draw per-cell arc segments so each slice of wall
+  // takes the color of whatever crystal is shielding it. Bare cells
+  // stroke thin amber; occupied cells stroke thicker in the mineral's
+  // class_color, scaled to crystal thickness so chunky coatings read
+  // heavier than microcrystals.
+  ctx.lineCap = 'round';
+  for (let i = 0; i < N; i++) {
+    const a0 = _topoAngleFor(i, N) - arcStep / 2;
+    const a1 = a0 + arcStep;
+    const rOuter = cellR[i];
+    const cell = ring0[i];
+    let stroke, width;
+    if (cell.crystal_id == null) {
+      stroke = TOPO_WALL_COLOR;
+      width = TOPO_WALL_STROKE_PX;
+    } else {
+      stroke = topoClassColor(cell.mineral);
+      const t = Math.min(cell.thickness_um / maxT, 1);
+      width = TOPO_WALL_STROKE_PX + t * (TOPO_WALL_STROKE_MAX_PX - TOPO_WALL_STROKE_PX);
+    }
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rOuter, a0, a1);
+    ctx.stroke();
   }
-  ctx.closePath();
-  ctx.stroke();
 
   // Dim the initial-radius reference ring so dissolution is obvious
   // at a glance. Dotted so it doesn't compete with the wall.
