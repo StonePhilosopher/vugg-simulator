@@ -1,6 +1,6 @@
 {
   "$schema_version": "1.0.0",
-  "last_updated": "2026-04-20 (+growth vectors: wall_spread/void_reach per habit variant)",
+  "last_updated": "2026-04-20 (+class_color per mineral, 12-hue color wheel for topo map)",
   "source_of_truth_for": [
     "vugg.py",
     "web/index.html",
@@ -33,7 +33,8 @@
     "color_rules": "{variant: {trigger}} or null if single color.",
     "narrate_function": "Name of dedicated _narrate_* function. null = inline flavor, needs refactor.",
     "runtimes_present": "Files where growth engine currently exists.",
-    "audit_status": "ok | notes on current gaps."
+    "audit_status": "ok | notes on current gaps.",
+    "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
     "total_minerals": 19,
@@ -245,7 +246,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok"
+      "audit_status": "ok",
+      "class_color": "#1313eb"
     },
     "calcite": {
       "formula": "CaCO3",
@@ -367,7 +369,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok — most complete implementation, use as template"
+      "audit_status": "ok — most complete implementation, use as template",
+      "class_color": "#eb7f13"
     },
     "sphalerite": {
       "formula": "ZnS",
@@ -482,7 +485,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok"
+      "audit_status": "ok",
+      "class_color": "#7feb13"
     },
     "fluorite": {
       "formula": "CaF2",
@@ -594,7 +598,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok"
+      "audit_status": "ok",
+      "class_color": "#7f13eb"
     },
     "pyrite": {
       "formula": "FeS2",
@@ -700,7 +705,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok"
+      "audit_status": "ok",
+      "class_color": "#7feb13"
     },
     "chalcopyrite": {
       "formula": "CuFeS2",
@@ -797,7 +803,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "T_optimum shifted per mineral-accuracy-audit.md (was 150-350, now 300-500)"
+      "audit_status": "T_optimum shifted per mineral-accuracy-audit.md (was 150-350, now 300-500)",
+      "class_color": "#7feb13"
     },
     "hematite": {
       "formula": "Fe2O3",
@@ -895,7 +902,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok"
+      "audit_status": "ok",
+      "class_color": "#eb1313"
     },
     "malachite": {
       "formula": "Cu2(CO3)(OH)2",
@@ -994,7 +1002,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "max_size is for single-crystal; botryoidal aggregates can exceed this"
+      "audit_status": "max_size is for single-crystal; botryoidal aggregates can exceed this",
+      "class_color": "#eb7f13"
     },
     "uraninite": {
       "formula": "UO2",
@@ -1084,7 +1093,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Emits radiation each step."
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Emits radiation each step.",
+      "class_color": "#eb1313"
     },
     "galena": {
       "formula": "PbS",
@@ -1177,7 +1187,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). T_optimum 100-400°C per mineral-accuracy-audit.md."
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). T_optimum 100-400°C per mineral-accuracy-audit.md.",
+      "class_color": "#7feb13"
     },
     "smithsonite": {
       "formula": "ZnCO3",
@@ -1284,7 +1295,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes)."
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes).",
+      "class_color": "#eb7f13"
     },
     "wulfenite": {
       "formula": "PbMoO4",
@@ -1379,7 +1391,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Requires both galena AND molybdenite to have oxidized first (Seo et al. 2012)."
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Requires both galena AND molybdenite to have oxidized first (Seo et al. 2012).",
+      "class_color": "#137feb"
     },
     "molybdenite": {
       "formula": "MoS2",
@@ -1454,7 +1467,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok — all 3 runtimes (phase-3)."
+      "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#7feb13"
     },
     "adamite": {
       "formula": "Zn2(AsO4)(OH)",
@@ -1560,7 +1574,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok — all 3 runtimes (phase-3)."
+      "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#ebeb13"
     },
     "mimetite": {
       "formula": "Pb5(AsO4)3Cl",
@@ -1655,7 +1670,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok — all 3 runtimes (phase-3)."
+      "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#ebeb13"
     },
     "feldspar": {
       "formula": "KAlSi3O8",
@@ -1794,7 +1810,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok — all 3 runtimes (phase-3)."
+      "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#1313eb"
     },
     "albite": {
       "formula": "NaAlSi3O8",
@@ -1908,7 +1925,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok — all 3 runtimes (phase-3). Pegmatite albite + perthite association wired in each."
+      "audit_status": "ok — all 3 runtimes (phase-3). Pegmatite albite + perthite association wired in each.",
+      "class_color": "#1313eb"
     },
     "selenite": {
       "formula": "CaSO4·2H2O",
@@ -2023,7 +2041,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok — all 3 runtimes (phase-3). Naica giant crystals at T~58°C for 500,000 years; above 60°C anhydrite wins."
+      "audit_status": "ok — all 3 runtimes (phase-3). Naica giant crystals at T~58°C for 500,000 years; above 60°C anhydrite wins.",
+      "class_color": "#eb137f"
     },
     "goethite": {
       "formula": "FeO(OH)",
@@ -2143,7 +2162,8 @@
         "web/index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok (phase-1: ghost fix complete — grow_goethite + _narrate_goethite + pseudomorph-after-sulfide nucleation in all 3 runtimes)."
+      "audit_status": "ok (phase-1: ghost fix complete — grow_goethite + _narrate_goethite + pseudomorph-after-sulfide nucleation in all 3 runtimes).",
+      "class_color": "#13ebeb"
     }
   }
 }
