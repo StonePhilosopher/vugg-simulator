@@ -5919,32 +5919,82 @@ class VugSimulator {
 
     const later_crystals = this.crystals.filter(c => c.nucleation_step > first_step);
     if (later_crystals.length) {
+      const triggeringEvent = (step) => {
+        for (const e of this.events) {
+          if (Math.abs(e.step - step) <= 2) return e;
+        }
+        return null;
+      };
+
+      // Event-triggered batches come out step-by-step. Untriggered
+      // nucleations defer and get consolidated per-mineral so a mineral
+      // that re-nucleates dozens of times in a stable brine reads as one
+      // sentence instead of thirty repeating lines.
       const nuc_steps = [...new Set(later_crystals.map(c => c.nucleation_step))].sort((a, b) => a - b);
+      const untriggeredByMineral = {};
       for (const ns of nuc_steps) {
         const batch = later_crystals.filter(c => c.nucleation_step === ns);
         const batch_names = batch.map(c => c.mineral);
-        let triggering_event = null;
-        for (const e of this.events) {
-          if (Math.abs(e.step - ns) <= 2) { triggering_event = e; break; }
-        }
+        const triggering_event = triggeringEvent(ns);
 
         if (triggering_event) {
-          if (triggering_event.name.toLowerCase().includes('mixing')) {
+          const name = triggering_event.name.toLowerCase();
+          if (name.includes('mixing')) {
             paragraphs.push(
               `A fluid mixing event at step ${triggering_event.step} transformed the vug's chemistry. ` + this._narrate_mixing_event(batch, triggering_event)
             );
-          } else if (triggering_event.name.toLowerCase().includes('pulse')) {
+          } else if (name.includes('pulse')) {
             paragraphs.push(
               `A fresh pulse of hydrothermal fluid at step ${triggering_event.step} introduced new chemistry. ${[...new Set(batch_names)].map(capitalize).join(', ')} nucleated in response.`
             );
-          } else if (triggering_event.name.toLowerCase().includes('tectonic')) {
+          } else if (name.includes('tectonic')) {
             paragraphs.push(
               `A tectonic event at step ${triggering_event.step} produced a pressure spike.` + this._narrate_tectonic(batch)
             );
+          } else {
+            for (const c of batch) (untriggeredByMineral[c.mineral] ||= []).push(c);
           }
         } else {
+          for (const c of batch) (untriggeredByMineral[c.mineral] ||= []).push(c);
+        }
+      }
+
+      const ref_T = first_minerals.length ? first_minerals[0].nucleation_temp : null;
+
+      for (const [mineral, crystals] of Object.entries(untriggeredByMineral)) {
+        crystals.sort((a, b) => a.nucleation_step - b.nucleation_step);
+        const temps = crystals.map(c => c.nucleation_temp);
+        const t_min = Math.min(...temps), t_max = Math.max(...temps);
+        const s_min = crystals[0].nucleation_step;
+        const s_max = crystals[crystals.length - 1].nucleation_step;
+        const mineralCap = capitalize(mineral);
+
+        if (crystals.length === 1) {
+          const c = crystals[0];
+          if (ref_T !== null && Math.abs(c.nucleation_temp - ref_T) <= 2) {
+            paragraphs.push(
+              `At ${c.nucleation_temp.toFixed(0)}°C, ${mineral} nucleated at step ${c.nucleation_step} — the brine had held its window long enough for saturation to tip over.`
+            );
+          } else if (ref_T !== null && c.nucleation_temp < ref_T - 2) {
+            paragraphs.push(
+              `As temperature continued to fall, ${mineral} nucleated at step ${c.nucleation_step} (${c.nucleation_temp.toFixed(0)}°C).`
+            );
+          } else {
+            paragraphs.push(
+              `${mineralCap} nucleated at step ${c.nucleation_step} (${c.nucleation_temp.toFixed(0)}°C).`
+            );
+          }
+          continue;
+        }
+
+        if (t_max - t_min <= 4) {
           paragraphs.push(
-            `As temperature continued to fall, ${[...new Set(batch_names)].join(' and ')} nucleated at step ${ns} (${batch[0].nucleation_temp.toFixed(0)}°C).`
+            `Between step ${s_min} and step ${s_max}, ${mineral} nucleated ${crystals.length} times as conditions held steady around ${t_min.toFixed(0)}°C — the window stayed open.`
+          );
+        } else {
+          const direction = crystals[0].nucleation_temp > crystals[crystals.length - 1].nucleation_temp ? 'cooled' : 'warmed';
+          paragraphs.push(
+            `${mineralCap} nucleated ${crystals.length} times between step ${s_min} (${crystals[0].nucleation_temp.toFixed(0)}°C) and step ${s_max} (${crystals[crystals.length - 1].nucleation_temp.toFixed(0)}°C) as the fluid ${direction} through its window.`
           );
         }
       }

@@ -3831,19 +3831,24 @@ class VugSimulator:
         # Subsequent minerals — what triggered them?
         later_crystals = [c for c in self.crystals if c.nucleation_step > first_step]
         if later_crystals:
-            # Group by nucleation step
+            def _triggering_event(step: int):
+                for e in self.events:
+                    if abs(e.step - step) <= 2:
+                        return e
+                return None
+
+            # Event-triggered batches come out step-by-step (their language
+            # references the specific event). Untriggered nucleations are
+            # deferred and then consolidated per-mineral below so a mineral
+            # that re-nucleates 30× in a stable brine reads as one sentence
+            # instead of 30 repeating lines.
             nuc_steps = sorted(set(c.nucleation_step for c in later_crystals))
+            untriggered_by_mineral: Dict[str, List[Crystal]] = {}
             for ns in nuc_steps:
                 batch = [c for c in later_crystals if c.nucleation_step == ns]
                 batch_names = [c.mineral for c in batch]
-                
-                # Check if an event triggered this
-                triggering_event = None
-                for e in self.events:
-                    if abs(e.step - ns) <= 2:
-                        triggering_event = e
-                        break
-                
+                triggering_event = _triggering_event(ns)
+
                 if triggering_event:
                     if "mixing" in triggering_event.name.lower():
                         paragraphs.append(
@@ -3862,11 +3867,61 @@ class VugSimulator:
                             f"A tectonic event at step {triggering_event.step} produced a "
                             f"pressure spike." + self._narrate_tectonic(batch)
                         )
+                    else:
+                        for c in batch:
+                            untriggered_by_mineral.setdefault(c.mineral, []).append(c)
                 else:
+                    for c in batch:
+                        untriggered_by_mineral.setdefault(c.mineral, []).append(c)
+
+            # Reference temp for "stable vs. falling" language: the starting
+            # temperature of the first mineral to nucleate.
+            ref_T = first_minerals[0].nucleation_temp if first_minerals else None
+
+            for mineral, crystals in untriggered_by_mineral.items():
+                crystals.sort(key=lambda c: c.nucleation_step)
+                temps = [c.nucleation_temp for c in crystals]
+                t_min, t_max = min(temps), max(temps)
+                s_min = crystals[0].nucleation_step
+                s_max = crystals[-1].nucleation_step
+                mineral_cap = mineral.capitalize()
+
+                if len(crystals) == 1:
+                    c = crystals[0]
+                    # Describe the thermal context of this single event.
+                    if ref_T is not None and abs(c.nucleation_temp - ref_T) <= 2:
+                        paragraphs.append(
+                            f"At {c.nucleation_temp:.0f}°C, {mineral} nucleated at step "
+                            f"{c.nucleation_step} — the brine had held its window long "
+                            f"enough for saturation to tip over."
+                        )
+                    elif ref_T is not None and c.nucleation_temp < ref_T - 2:
+                        paragraphs.append(
+                            f"As temperature continued to fall, {mineral} nucleated at step "
+                            f"{c.nucleation_step} ({c.nucleation_temp:.0f}°C)."
+                        )
+                    else:
+                        paragraphs.append(
+                            f"{mineral_cap} nucleated at step {c.nucleation_step} "
+                            f"({c.nucleation_temp:.0f}°C)."
+                        )
+                    continue
+
+                # Multiple nucleations of the same mineral with no event
+                # attached — consolidate into one sentence.
+                if t_max - t_min <= 4:
                     paragraphs.append(
-                        f"As temperature continued to fall, "
-                        f"{' and '.join(set(batch_names))} nucleated at step {ns} "
-                        f"({batch[0].nucleation_temp:.0f}°C)."
+                        f"Between step {s_min} and step {s_max}, {mineral} nucleated "
+                        f"{len(crystals)} times as conditions held steady around "
+                        f"{t_min:.0f}°C — the window stayed open."
+                    )
+                else:
+                    direction = "cooled" if crystals[0].nucleation_temp > crystals[-1].nucleation_temp else "warmed"
+                    paragraphs.append(
+                        f"{mineral_cap} nucleated {len(crystals)} times between step "
+                        f"{s_min} ({crystals[0].nucleation_temp:.0f}°C) and step "
+                        f"{s_max} ({crystals[-1].nucleation_temp:.0f}°C) as the fluid "
+                        f"{direction} through its window."
                     )
         
         # Narrate individual crystal stories for the larger ones.
