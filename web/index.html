@@ -95,17 +95,33 @@ h1 {
   text-transform: uppercase;
 }
 .topo-replay {
-  background: #1a1a14;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  background: rgba(20, 20, 14, 0.75);
   color: #d4a843;
   border: 1px solid #3a3520;
-  padding: 0.3rem 0.8rem;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  backdrop-filter: blur(2px);
+  z-index: 5;
 }
-.topo-replay:hover { border-color: #f0c050; color: #f0c050; }
-.topo-replay.playing { border-color: #f0c050; color: #f0c050; background: #2a2510; }
+.topo-replay:hover { border-color: #f0c050; color: #f0c050; background: rgba(42, 37, 16, 0.85); }
+.topo-replay.playing {
+  border-color: #f0c050;
+  color: #f0c050;
+  background: rgba(42, 37, 16, 0.9);
+}
 .topo-canvas-wrap {
   position: relative;
   width: 100%;
@@ -2049,10 +2065,10 @@ footer a:hover {
 <div id="topo-panel" style="display:none">
   <div class="topo-header">
     <span class="topo-title">Wall Profile</span>
-    <button id="topo-replay-btn" class="topo-replay" onclick="topoReplay()" style="display:none" title="Replay wall history">▶ Replay</button>
   </div>
   <div class="topo-canvas-wrap">
     <canvas id="topo-canvas" width="1100" height="120"></canvas>
+    <button id="topo-replay-btn" class="topo-replay" onclick="topoReplay()" title="Replay wall history">▶</button>
     <div id="topo-tooltip" class="topo-tooltip" style="display:none"></div>
   </div>
   <div class="topo-legend" id="topo-legend"></div>
@@ -5462,6 +5478,10 @@ class VugSimulator {
     // N mm from where it started."
     const d0 = this.conditions.wall.vug_diameter_mm;
     this.wall_state = new WallState({ vug_diameter_mm: d0, initial_radius_mm: d0 / 2 });
+    // Per-step snapshot of ring[0] for the Replay button. Captured at
+    // the end of each step; small (~120 cells × ~4 numbers × 100-200
+    // steps), so the memory cost of a whole run is trivial.
+    this.wall_state_history = [];
   }
 
   nucleate(mineral, position = 'vug wall', sigma = 1.0) {
@@ -5568,6 +5588,19 @@ class VugSimulator {
       if (crystal.dissolved) continue;
       this.wall_state.paintCrystal(crystal);
     }
+    // Snapshot ring[0] for the Replay button. Shallow clone of each
+    // cell's four render-relevant fields.
+    const snap = new Array(this.wall_state.rings[0].length);
+    for (let i = 0; i < snap.length; i++) {
+      const c = this.wall_state.rings[0][i];
+      snap[i] = {
+        wall_depth: c.wall_depth,
+        crystal_id: c.crystal_id,
+        mineral: c.mineral,
+        thickness_um: c.thickness_um,
+      };
+    }
+    this.wall_state_history.push(snap);
   }
 
   _wallCellsBlockedByCrystals() {
@@ -7602,6 +7635,13 @@ function switchMode(mode) {
   if (randomPanel) randomPanel.style.display = 'none';
   const topoPanel = document.getElementById('topo-panel');
   if (topoPanel) topoPanel.style.display = 'none';
+  // Stop any topo replay in flight — the canvas is about to be hidden.
+  if (_topoPlaybackTimer) {
+    clearInterval(_topoPlaybackTimer);
+    _topoPlaybackTimer = null;
+    const replayBtn = document.getElementById('topo-replay-btn');
+    if (replayBtn) { replayBtn.textContent = '▶'; replayBtn.classList.remove('playing'); }
+  }
   const newGamePanel = document.getElementById('new-game-panel');
   if (newGamePanel) newGamePanel.style.display = 'none';
   const scenariosPanel = document.getElementById('scenarios-panel');
@@ -10147,6 +10187,10 @@ function topoRender(optOverrideRing) {
   const ring0 = optOverrideRing || (wall && wall.rings[0]);
   if (!ring0 || !ring0.length) return;
 
+  // Only show the Replay button once there's history to play back.
+  const btn = document.getElementById('topo-replay-btn');
+  if (btn) btn.style.display = (sim && sim.wall_state_history && sim.wall_state_history.length) ? 'flex' : 'none';
+
   topoBuildLegend();
 
   const ctx = canvas.getContext('2d');
@@ -10354,8 +10398,48 @@ function topoEnsureWired() {
   _topoWired = true;
 }
 
-// Stub — the replay button is hooked up in the Record Mode commit (part e).
-function topoReplay() { /* v1: no-op; part (e) implements replay */ }
+// Replay: walk the per-step ring[0] snapshots captured during the run,
+// rendering each one in sequence so the player watches the wall evolve
+// from bare rock to the current state. Click again to stop — the live
+// view restores automatically.
+let _topoPlaybackTimer = null;
+
+function topoReplay() {
+  const btn = document.getElementById('topo-replay-btn');
+  const sim = topoActiveSim();
+  if (!sim || !sim.wall_state_history || !sim.wall_state_history.length) return;
+
+  // Toggle: already playing → stop and restore the live view.
+  if (_topoPlaybackTimer) {
+    clearInterval(_topoPlaybackTimer);
+    _topoPlaybackTimer = null;
+    if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+    topoRender();
+    return;
+  }
+
+  const history = sim.wall_state_history;
+  const totalSteps = history.length;
+  // Target ~4s total for long runs, but never slower than 40ms/frame and
+  // never faster than 16ms/frame. Scales gracefully from 20-step to
+  // 200-step runs without feeling laggy or strobing.
+  const frameMs = Math.max(16, Math.min(40, Math.round(4000 / totalSteps)));
+  let idx = 0;
+
+  if (btn) { btn.textContent = '⏹'; btn.classList.add('playing'); }
+  _topoPlaybackTimer = setInterval(() => {
+    if (idx >= history.length) {
+      clearInterval(_topoPlaybackTimer);
+      _topoPlaybackTimer = null;
+      if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+      // Snap back to live so any new growth lands immediately.
+      topoRender();
+      return;
+    }
+    topoRender(history[idx]);
+    idx++;
+  }, frameMs);
+}
 
 function idleDrawChart() {
   const canvas = document.getElementById('idle-chart');
