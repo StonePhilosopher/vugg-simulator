@@ -1,10 +1,15 @@
 {
   "$schema_version": "1.0.0",
-  "last_updated": "2026-04-17 (phase-3: +class/description/scenarios, Library Mode data)",
-  "source_of_truth_for": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
+  "last_updated": "2026-04-20 (+class_color per mineral, 12-hue color wheel for topo map)",
+  "source_of_truth_for": [
+    "vugg.py",
+    "web/index.html",
+    "agent-api/vugg-agent.js"
+  ],
   "_schema": {
     "formula": "Chemical formula.",
     "nucleation_sigma": "Minimum supersaturation for nucleation.",
+    "max_nucleation_count": "Maximum number of crystals of this species that can ever nucleate in a single run. Counted across the whole simulation (active + dissolved). Keeps common minerals like wulfenite from producing microcrystalline swarms that get immediately swallowed by other phases.",
     "max_size_cm": "Hard cap on crystal size — 2x world record per research/mineral-accuracy-audit.md. Growth halts when reached; this is the fix for the 321248% bug.",
     "growth_rate_mult": "Relative growth rate, calcite=1.0 baseline. Multiply the runtime base rate.",
     "T_range_C": "[min, max] temperature window for growth (C). null,null = unbounded.",
@@ -22,14 +27,15 @@
     "twin_laws": "[{name, miller_indices, trigger, probability}] or [] if none known.",
     "acid_dissolution": "{pH_threshold, reaction, products} or null if acid-stable.",
     "habit": "Crystal habit (primary/default).",
-    "habit_variants": "Array of 2-6 common habits this mineral exhibits in nature. Growth engines select from these based on T/rate/substrate.",
+    "habit_variants": "Array of habit objects. Each has: name, wall_spread (0-1, lateral spread on wall), void_reach (0-1, projection into vug), vector (projecting|coating|tabular|equant|dendritic), trigger (conditions that favor this habit). Growth engine selects habit based on σ, T, and space.",
     "class": "Mineralogical class for filtering/library UI: sulfide | carbonate | oxide | silicate | sulfate | phosphate | hydroxide | halide | arsenate | molybdate | tungstate | native.",
     "description": "2-3 sentence geological description for library mode. Learning-audience voice; not flavor text.",
     "scenarios": "Array of scenario IDs (from SCENARIOS registry) in which this mineral can nucleate. Empirically verified with seed 42.",
     "color_rules": "{variant: {trigger}} or null if single color.",
     "narrate_function": "Name of dedicated _narrate_* function. null = inline flavor, needs refactor.",
     "runtimes_present": "Files where growth engine currently exists.",
-    "audit_status": "ok | notes on current gaps."
+    "audit_status": "ok | notes on current gaps.",
+    "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
     "total_minerals": 19,
@@ -40,663 +46,2144 @@
     "missing_from_web_index": [],
     "missing_from_agent_api": [],
     "scenarios_that_can_nucleate": {
-      "cooling": ["calcite", "quartz"],
-      "pulse": ["calcite", "quartz"],
-      "mvt": ["calcite", "pyrite", "quartz", "sphalerite", "fluorite", "galena"],
-      "porphyry": ["calcite", "chalcopyrite", "galena", "goethite", "hematite", "malachite", "molybdenite", "pyrite", "quartz"],
-      "reactive_wall": ["calcite", "pyrite", "sphalerite"],
-      "radioactive_pegmatite": ["uraninite", "quartz", "feldspar", "albite", "galena"],
-      "supergene_oxidation": ["goethite", "smithsonite", "wulfenite", "adamite", "mimetite", "selenite", "malachite"]
+      "cooling": [
+        "calcite",
+        "quartz"
+      ],
+      "pulse": [
+        "calcite",
+        "quartz"
+      ],
+      "mvt": [
+        "calcite",
+        "pyrite",
+        "quartz",
+        "sphalerite",
+        "fluorite",
+        "galena"
+      ],
+      "porphyry": [
+        "calcite",
+        "chalcopyrite",
+        "galena",
+        "goethite",
+        "hematite",
+        "malachite",
+        "molybdenite",
+        "pyrite",
+        "quartz"
+      ],
+      "reactive_wall": [
+        "calcite",
+        "pyrite",
+        "sphalerite"
+      ],
+      "radioactive_pegmatite": [
+        "uraninite",
+        "quartz",
+        "feldspar",
+        "albite",
+        "galena"
+      ],
+      "supergene_oxidation": [
+        "goethite",
+        "smithsonite",
+        "wulfenite",
+        "adamite",
+        "mimetite",
+        "selenite",
+        "malachite"
+      ]
     }
   },
   "_initial_audit": {
     "_note": "Frozen snapshot of the pre-phase-1 audit. For historical reference only.",
     "missing_max_size_before_phase_1": 19,
-    "missing_growth_engine": ["goethite"],
-    "missing_narrate_function": ["adamite", "mimetite", "feldspar", "albite", "uraninite", "molybdenite", "galena", "smithsonite", "wulfenite", "selenite", "goethite"],
-    "missing_from_vugg_py_registry": ["adamite", "mimetite", "feldspar", "albite", "galena", "smithsonite", "wulfenite", "selenite", "uraninite", "molybdenite", "goethite"]
+    "missing_growth_engine": [
+      "goethite"
+    ],
+    "missing_narrate_function": [
+      "adamite",
+      "mimetite",
+      "feldspar",
+      "albite",
+      "uraninite",
+      "molybdenite",
+      "galena",
+      "smithsonite",
+      "wulfenite",
+      "selenite",
+      "goethite"
+    ],
+    "missing_from_vugg_py_registry": [
+      "adamite",
+      "mimetite",
+      "feldspar",
+      "albite",
+      "galena",
+      "smithsonite",
+      "wulfenite",
+      "selenite",
+      "uraninite",
+      "molybdenite",
+      "goethite"
+    ]
   },
   "minerals": {
     "quartz": {
       "formula": "SiO2",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 10,
       "max_size_cm": 1200,
       "growth_rate_mult": 0.3,
-      "habit_variants": ["prismatic", "scepter_overgrowth", "skeletal_fenster", "amethyst_druse"],
+      "habit_variants": [
+        {
+          "name": "prismatic",
+          "wall_spread": 0.2,
+          "void_reach": 0.9,
+          "vector": "projecting",
+          "trigger": "low σ, steady growth"
+        },
+        {
+          "name": "scepter_overgrowth",
+          "wall_spread": 0.3,
+          "void_reach": 0.95,
+          "vector": "projecting",
+          "trigger": "σ pulse after initial prism growth"
+        },
+        {
+          "name": "skeletal_fenster",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "dendritic",
+          "trigger": "high σ, rapid cooling"
+        },
+        {
+          "name": "amethyst_druse",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "high σ, Fe³⁺ present, space-constrained"
+        }
+      ],
       "class": "silicate",
       "description": "The most abundant vug-lining mineral on Earth. Silica dissolved in hot fluid crystallizes on cooling — clear, smoky when irradiated, amethyst when Fe-bearing and irradiated together. The canvas on which most other vug minerals grow.",
-      "scenarios": ["cooling", "pulse", "mvt", "porphyry", "radioactive_pegmatite"],
-      "T_range_C": [50, 1713],
-      "T_optimum_C": [200, 400],
+      "scenarios": [
+        "cooling",
+        "pulse",
+        "mvt",
+        "porphyry",
+        "radioactive_pegmatite"
+      ],
+      "T_range_C": [
+        50,
+        1713
+      ],
+      "T_optimum_C": [
+        200,
+        400
+      ],
       "T_behavior": "prograde_solubility",
       "pH_dissolution_below": 4.0,
       "pH_dissolution_above": null,
       "redox_requirement": "any",
-      "required_ingredients": {"SiO2": 50},
-      "trace_ingredients": {"Ti": "TitaniQ geothermometer", "Al": "smoky precursor", "Fe": "amethyst with radiation", "Mn": "trace"},
+      "required_ingredients": {
+        "SiO2": 50
+      },
+      "trace_ingredients": {
+        "Ti": "TitaniQ geothermometer",
+        "Al": "smoky precursor",
+        "Fe": "amethyst with radiation",
+        "Mn": "trace"
+      },
       "thermal_decomp_C": 1713,
       "thermal_decomp_reaction": "SiO2 melting point — takes hell itself",
-      "thermal_decomp_products": {"SiO2": 0.3},
-      "fluorescence": {"activator": "Al", "threshold_ppm": 5, "color": "weak_blue_LW", "quencher": null},
+      "thermal_decomp_products": {
+        "SiO2": 0.3
+      },
+      "fluorescence": {
+        "activator": "Al",
+        "threshold_ppm": 5,
+        "color": "weak_blue_LW",
+        "quencher": null
+      },
       "twin_laws": [
-        {"name": "Dauphine", "miller_indices": "{001}", "trigger": "thermal_shock", "probability": 0.15, "min_delta_T_C": 30}
+        {
+          "name": "Dauphine",
+          "miller_indices": "{001}",
+          "trigger": "thermal_shock",
+          "probability": 0.15,
+          "min_delta_T_C": 30
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 4.0, "requires": {"F": 20}, "reaction": "HF etching", "products": {"SiO2": 0.2, "F": 0.3}},
+      "acid_dissolution": {
+        "pH_threshold": 4.0,
+        "requires": {
+          "F": 20
+        },
+        "reaction": "HF etching",
+        "products": {
+          "SiO2": 0.2,
+          "F": 0.3
+        }
+      },
       "habit": "prismatic",
       "color_rules": {
-        "clear": {"default": true},
-        "smoky": {"trigger": "radiation_damage > 0.3"},
-        "amethyst": {"trigger": "Fe > 2 and radiation_damage > 0.1"},
-        "citrine": {"trigger": "heated_amethyst"}
+        "clear": {
+          "default": true
+        },
+        "smoky": {
+          "trigger": "radiation_damage > 0.3"
+        },
+        "amethyst": {
+          "trigger": "Fe > 2 and radiation_damage > 0.1"
+        },
+        "citrine": {
+          "trigger": "heated_amethyst"
+        }
       },
       "narrate_function": "_narrate_quartz",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok"
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok",
+      "class_color": "#1313eb"
     },
     "calcite": {
       "formula": "CaCO3",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 10,
       "max_size_cm": 2000,
       "growth_rate_mult": 1.0,
-      "habit_variants": ["scalenohedral_dogtooth", "rhombohedral_nailhead", "prismatic", "botryoidal", "flos-ferri_acicular"],
+      "habit_variants": [
+        {
+          "name": "scalenohedral_dogtooth",
+          "wall_spread": 0.2,
+          "void_reach": 0.95,
+          "vector": "projecting",
+          "trigger": "low-moderate σ, lower T"
+        },
+        {
+          "name": "rhombohedral_nailhead",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "moderate σ, higher T"
+        },
+        {
+          "name": "prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "moderate σ"
+        },
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.9,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "high σ, rapid deposition, Mn-rich"
+        },
+        {
+          "name": "flos-ferri_acicular",
+          "wall_spread": 0.15,
+          "void_reach": 0.85,
+          "vector": "projecting",
+          "trigger": "very high σ, thin needle growth"
+        }
+      ],
       "class": "carbonate",
       "description": "Retrograde solubility makes calcite the giant-maker of vugs: hotter fluid holds less Ca+CO₃, so heating precipitates calcite. Fizzes in acid. Mn²⁺ activates orange fluorescence; Fe²⁺ quenches it — the boundary between glowing and dark zones records a fluid-chemistry shift.",
-      "scenarios": ["cooling", "pulse", "mvt", "porphyry", "reactive_wall", "radioactive_pegmatite", "supergene_oxidation"],
-      "T_range_C": [0, 840],
-      "T_optimum_C": [50, 200],
+      "scenarios": [
+        "cooling",
+        "pulse",
+        "mvt",
+        "porphyry",
+        "reactive_wall",
+        "radioactive_pegmatite",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        840
+      ],
+      "T_optimum_C": [
+        50,
+        200
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": 5.5,
       "pH_dissolution_above": null,
       "redox_requirement": "any",
-      "required_ingredients": {"Ca": 10, "CO3": 10},
-      "trace_ingredients": {"Mn": "orange FL activator", "Fe": "FL quencher", "Mg": "Mg-calcite transition"},
+      "required_ingredients": {
+        "Ca": 10,
+        "CO3": 10
+      },
+      "trace_ingredients": {
+        "Mn": "orange FL activator",
+        "Fe": "FL quencher",
+        "Mg": "Mg-calcite transition"
+      },
       "thermal_decomp_C": 840,
       "thermal_decomp_reaction": "CaCO3 -> CaO + CO2 (calcination)",
-      "thermal_decomp_products": {"Ca": 0.5, "CO3": 0.4},
-      "fluorescence": {"activator": "Mn", "threshold_ppm": 2, "color": "orange_red", "quencher": {"species": "Fe", "threshold_ppm": 10}},
+      "thermal_decomp_products": {
+        "Ca": 0.5,
+        "CO3": 0.4
+      },
+      "fluorescence": {
+        "activator": "Mn",
+        "threshold_ppm": 2,
+        "color": "orange_red",
+        "quencher": {
+          "species": "Fe",
+          "threshold_ppm": 10
+        }
+      },
       "twin_laws": [
-        {"name": "c_twin", "miller_indices": "{0001}", "trigger": "stress_or_growth", "probability": 0.10}
+        {
+          "name": "c_twin",
+          "miller_indices": "{0001}",
+          "trigger": "stress_or_growth",
+          "probability": 0.1
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 5.5, "reaction": "CaCO3 + 2H+ -> Ca2+ + H2O + CO2 (fizzes)", "products": {"Ca": 0.6, "CO3": 0.5}},
+      "acid_dissolution": {
+        "pH_threshold": 5.5,
+        "reaction": "CaCO3 + 2H+ -> Ca2+ + H2O + CO2 (fizzes)",
+        "products": {
+          "Ca": 0.6,
+          "CO3": 0.5
+        }
+      },
       "habit": "scalenohedral_or_rhombohedral",
       "color_rules": {
-        "white": {"default": true},
-        "orange_FL": {"trigger": "Mn > 2 and Fe < 10"}
+        "white": {
+          "default": true
+        },
+        "orange_FL": {
+          "trigger": "Mn > 2 and Fe < 10"
+        }
       },
       "narrate_function": "_narrate_calcite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok — most complete implementation, use as template"
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok — most complete implementation, use as template",
+      "class_color": "#eb7f13"
     },
     "sphalerite": {
       "formula": "ZnS",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
       "max_size_cm": 80,
       "growth_rate_mult": 0.6,
-      "habit_variants": ["tetrahedral", "dodecahedral", "cleiophane_massive", "marmatite_black"],
+      "habit_variants": [
+        {
+          "name": "tetrahedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low σ, low Fe"
+        },
+        {
+          "name": "dodecahedral",
+          "wall_spread": 0.35,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "moderate σ"
+        },
+        {
+          "name": "cleiophane_massive",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "low Fe, high σ"
+        },
+        {
+          "name": "marmatite_black",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "high Fe (>10%), high σ"
+        }
+      ],
       "class": "sulfide",
       "description": "ZnS, the dominant zinc ore. Classic MVT mineral — forms at 60-200°C where metal brines meet H₂S-bearing groundwater. Iron substitution darkens the color from pale yellow (low-Fe cleiophane) through honey-brown to nearly black marmatite.",
-      "scenarios": ["mvt", "reactive_wall"],
-      "T_range_C": [60, 350],
-      "T_optimum_C": [80, 250],
+      "scenarios": [
+        "mvt",
+        "reactive_wall"
+      ],
+      "T_range_C": [
+        60,
+        350
+      ],
+      "T_optimum_C": [
+        80,
+        250
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": null,
       "pH_dissolution_above": null,
       "redox_requirement": "reducing",
-      "required_ingredients": {"Zn": 10, "S": 10},
-      "trace_ingredients": {"Fe": "color darkening to marmatite (>15% Fe)", "Cd": "yellow tint", "Mn": "pink tint"},
+      "required_ingredients": {
+        "Zn": 10,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Fe": "color darkening to marmatite (>15% Fe)",
+        "Cd": "yellow tint",
+        "Mn": "pink tint"
+      },
       "thermal_decomp_C": 1020,
       "thermal_decomp_reaction": "ZnS sublimes at 1020C",
-      "thermal_decomp_products": {"Zn": 0.3, "S": 0.5},
-      "fluorescence": {"activator": "Mn", "threshold_ppm": 5, "color": "orange_or_blue_variable", "quencher": {"species": "Fe", "threshold_ppm": 10}, "status": "newly_added"},
+      "thermal_decomp_products": {
+        "Zn": 0.3,
+        "S": 0.5
+      },
+      "fluorescence": {
+        "activator": "Mn",
+        "threshold_ppm": 5,
+        "color": "orange_or_blue_variable",
+        "quencher": {
+          "species": "Fe",
+          "threshold_ppm": 10
+        },
+        "status": "newly_added"
+      },
       "twin_laws": [
-        {"name": "spinel_law", "miller_indices": "{111}", "trigger": "growth", "probability": 0.015}
+        {
+          "name": "spinel_law",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.015
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 2.0, "reaction": "ZnS + 2H+ -> Zn2+ + H2S (slow, only in strong acid)", "products": {"Zn": 0.3, "S": 0.3}, "status": "newly_added"},
+      "acid_dissolution": {
+        "pH_threshold": 2.0,
+        "reaction": "ZnS + 2H+ -> Zn2+ + H2S (slow, only in strong acid)",
+        "products": {
+          "Zn": 0.3,
+          "S": 0.3
+        },
+        "status": "newly_added"
+      },
       "habit": "tetrahedral",
       "color_rules": {
-        "pale_yellow": {"trigger": "Fe < 2"},
-        "honey_brown": {"trigger": "Fe 2-10"},
-        "black_marmatite": {"trigger": "Fe > 15"}
+        "pale_yellow": {
+          "trigger": "Fe < 2"
+        },
+        "honey_brown": {
+          "trigger": "Fe 2-10"
+        },
+        "black_marmatite": {
+          "trigger": "Fe > 15"
+        }
       },
       "narrate_function": "_narrate_sphalerite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok"
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok",
+      "class_color": "#7feb13"
     },
     "fluorite": {
       "formula": "CaF2",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
       "max_size_cm": 400,
       "growth_rate_mult": 0.5,
-      "habit_variants": ["cubic", "octahedral", "cubo-octahedral", "penetration-twinned"],
+      "habit_variants": [
+        {
+          "name": "cubic",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "low σ"
+        },
+        {
+          "name": "octahedral",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "equant",
+          "trigger": "moderate σ"
+        },
+        {
+          "name": "cubo-octahedral",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "equant",
+          "trigger": "moderate σ, impurity influence"
+        },
+        {
+          "name": "penetration-twinned",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "σ allowing twin nucleation"
+        }
+      ],
       "class": "halide",
       "description": "CaF₂, a cubic halide with retrograde solubility. Classic MVT companion to sphalerite and galena. The word 'fluorescent' derives from fluorite — blue-violet under both LW and SW UV, driven by REE substitution and radiation-damage color centers.",
-      "scenarios": ["mvt"],
-      "T_range_C": [50, 300],
-      "T_optimum_C": [100, 250],
+      "scenarios": [
+        "mvt"
+      ],
+      "T_range_C": [
+        50,
+        300
+      ],
+      "T_optimum_C": [
+        100,
+        250
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": 4.0,
       "pH_dissolution_above": null,
       "redox_requirement": "any",
-      "required_ingredients": {"Ca": 10, "F": 5},
-      "trace_ingredients": {"REE": "color variation", "Y": "yttrofluorite", "radiation": "purple centers"},
+      "required_ingredients": {
+        "Ca": 10,
+        "F": 5
+      },
+      "trace_ingredients": {
+        "REE": "color variation",
+        "Y": "yttrofluorite",
+        "radiation": "purple centers"
+      },
       "thermal_decomp_C": 1360,
       "thermal_decomp_reaction": "CaF2 melting — extremely refractory",
-      "thermal_decomp_products": {"Ca": 0.4, "F": 0.4},
-      "fluorescence": {"activator": "REE_or_defects", "threshold_ppm": 0, "color": "blue_violet_LW_and_SW", "quencher": null},
+      "thermal_decomp_products": {
+        "Ca": 0.4,
+        "F": 0.4
+      },
+      "fluorescence": {
+        "activator": "REE_or_defects",
+        "threshold_ppm": 0,
+        "color": "blue_violet_LW_and_SW",
+        "quencher": null
+      },
       "twin_laws": [
-        {"name": "penetration", "miller_indices": "{111}", "trigger": "growth", "probability": 0.008}
+        {
+          "name": "penetration",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.008
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 4.0, "reaction": "CaF2 + 2H+ -> Ca2+ + 2HF (releases HF — dangerous)", "products": {"Ca": 0.5, "F": 0.5}},
+      "acid_dissolution": {
+        "pH_threshold": 4.0,
+        "reaction": "CaF2 + 2H+ -> Ca2+ + 2HF (releases HF — dangerous)",
+        "products": {
+          "Ca": 0.5,
+          "F": 0.5
+        }
+      },
       "habit": "cubic_or_octahedral",
       "color_rules": {
-        "purple": {"trigger": "radiation + REE"},
-        "green": {"trigger": "Sm"},
-        "blue": {"trigger": "Y"},
-        "colorless": {"default": true}
+        "purple": {
+          "trigger": "radiation + REE"
+        },
+        "green": {
+          "trigger": "Sm"
+        },
+        "blue": {
+          "trigger": "Y"
+        },
+        "colorless": {
+          "default": true
+        }
       },
       "narrate_function": "_narrate_fluorite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok"
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok",
+      "class_color": "#7f13eb"
     },
     "pyrite": {
       "formula": "FeS2",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 3,
       "max_size_cm": 40,
       "growth_rate_mult": 0.3,
-      "habit_variants": ["cubic_striated", "pyritohedral", "octahedral", "framboidal", "radiating_sun"],
+      "habit_variants": [
+        {
+          "name": "cubic_striated",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "low S, low σ"
+        },
+        {
+          "name": "pyritohedral",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "equant",
+          "trigger": "high σ, S-saturated"
+        },
+        {
+          "name": "octahedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "moderate-high σ, S-saturated"
+        },
+        {
+          "name": "framboidal",
+          "wall_spread": 0.6,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "very high σ, colloidal precipitation"
+        },
+        {
+          "name": "radiating_sun",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "moderate σ, radiating nucleation"
+        }
+      ],
       "class": "sulfide",
       "description": "FeS₂, fool's gold. Enormous T range (25-700°C), always reducing. Oxidation produces goethite/limonite plus sulfuric acid — the acid-mine-drainage reaction. Three common habits: cubic with striated faces, 12-face pyritohedral, and raspberry-shaped framboidal aggregates from sedimentary microbial sulfate reduction.",
-      "scenarios": ["mvt", "porphyry", "reactive_wall"],
-      "T_range_C": [25, 700],
-      "T_optimum_C": [100, 400],
+      "scenarios": [
+        "mvt",
+        "porphyry",
+        "reactive_wall"
+      ],
+      "T_range_C": [
+        25,
+        700
+      ],
+      "T_optimum_C": [
+        100,
+        400
+      ],
       "T_behavior": "wide",
       "pH_dissolution_below": 3.0,
       "pH_dissolution_above": null,
       "redox_requirement": "reducing",
-      "required_ingredients": {"Fe": 5, "S": 10},
-      "trace_ingredients": {"Au": "invisible gold in pyrite", "As": "arsenian pyrite"},
+      "required_ingredients": {
+        "Fe": 5,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Au": "invisible gold in pyrite",
+        "As": "arsenian pyrite"
+      },
       "thermal_decomp_C": 743,
       "thermal_decomp_reaction": "FeS2 -> FeS + S (sulfur driven off)",
-      "thermal_decomp_products": {"Fe": 0.5, "S": 0.4},
+      "thermal_decomp_products": {
+        "Fe": 0.5,
+        "S": 0.4
+      },
       "fluorescence": null,
       "twin_laws": [
-        {"name": "iron_cross", "miller_indices": "{110}", "trigger": "growth", "probability": 0.008}
+        {
+          "name": "iron_cross",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.008
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 3.0, "reaction": "oxidative dissolution — pyrite + O2 + H2O -> Fe2+ + SO4 + H+ (acid mine drainage)", "products": {"Fe": 0.4, "S": 0.3}},
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "oxidative dissolution — pyrite + O2 + H2O -> Fe2+ + SO4 + H+ (acid mine drainage)",
+        "products": {
+          "Fe": 0.4,
+          "S": 0.3
+        }
+      },
       "habit": "cubic_or_pyritohedral",
       "color_rules": {
-        "brassy_yellow": {"default": true}
+        "brassy_yellow": {
+          "default": true
+        }
       },
       "narrate_function": "_narrate_pyrite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok"
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok",
+      "class_color": "#7feb13"
     },
     "chalcopyrite": {
       "formula": "CuFeS2",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
       "max_size_cm": 30,
       "growth_rate_mult": 0.3,
-      "habit_variants": ["disphenoidal", "massive_vein", "iridescent_tarnished"],
+      "habit_variants": [
+        {
+          "name": "disphenoidal",
+          "wall_spread": 0.25,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ"
+        },
+        {
+          "name": "massive_vein",
+          "wall_spread": 0.85,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "high σ, space-filling"
+        },
+        {
+          "name": "iridescent_tarnished",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "moderate σ, surface oxidation"
+        }
+      ],
       "class": "sulfide",
       "description": "CuFeS₂, the primary copper ore. Forms in porphyry systems at 200-600°C, peaking 300-500°C during K-silicate alteration. Its oxidation feeds malachite, azurite, and the whole secondary copper-carbonate paragenesis. Tarnished surfaces show iridescent 'peacock ore' colors.",
-      "scenarios": ["porphyry"],
-      "T_range_C": [100, 600],
-      "T_optimum_C": [300, 500],
+      "scenarios": [
+        "porphyry"
+      ],
+      "T_range_C": [
+        100,
+        600
+      ],
+      "T_optimum_C": [
+        300,
+        500
+      ],
       "T_behavior": "window",
       "pH_dissolution_below": 3.0,
       "pH_dissolution_above": null,
       "redox_requirement": "reducing",
-      "required_ingredients": {"Cu": 10, "Fe": 5, "S": 15},
-      "trace_ingredients": {"Zn": "minor", "Ag": "minor"},
+      "required_ingredients": {
+        "Cu": 10,
+        "Fe": 5,
+        "S": 15
+      },
+      "trace_ingredients": {
+        "Zn": "minor",
+        "Ag": "minor"
+      },
       "thermal_decomp_C": 880,
       "thermal_decomp_reaction": "CuFeS2 -> Cu-Fe-S phase separation",
-      "thermal_decomp_products": {"Cu": 0.3, "Fe": 0.3, "S": 0.4},
+      "thermal_decomp_products": {
+        "Cu": 0.3,
+        "Fe": 0.3,
+        "S": 0.4
+      },
       "fluorescence": null,
       "twin_laws": [
-        {"name": "penetration", "miller_indices": "{112}", "trigger": "growth", "probability": 0.012}
+        {
+          "name": "penetration",
+          "miller_indices": "{112}",
+          "trigger": "growth",
+          "probability": 0.012
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 3.0, "reaction": "oxidative — CuFeS2 + O2 -> Cu2+ + Fe3+ + SO4 (leads to malachite pathway)", "products": {"Cu": 0.4, "Fe": 0.3, "S": 0.3}, "status": "newly_added"},
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "oxidative — CuFeS2 + O2 -> Cu2+ + Fe3+ + SO4 (leads to malachite pathway)",
+        "products": {
+          "Cu": 0.4,
+          "Fe": 0.3,
+          "S": 0.3
+        },
+        "status": "newly_added"
+      },
       "habit": "disphenoidal_{112}",
       "color_rules": {
-        "brassy_yellow_green": {"default": true},
-        "iridescent": {"trigger": "tarnish"}
+        "brassy_yellow_green": {
+          "default": true
+        },
+        "iridescent": {
+          "trigger": "tarnish"
+        }
       },
       "narrate_function": "_narrate_chalcopyrite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "T_optimum shifted per mineral-accuracy-audit.md (was 150-350, now 300-500)"
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "T_optimum shifted per mineral-accuracy-audit.md (was 150-350, now 300-500)",
+      "class_color": "#7feb13"
     },
     "hematite": {
       "formula": "Fe2O3",
       "nucleation_sigma": 1.5,
+      "max_nucleation_count": 3,
       "max_size_cm": 60,
       "growth_rate_mult": 0.5,
-      "habit_variants": ["specular_platy", "rhombohedral", "botryoidal_kidney_ore", "earthy_red_ochre", "rosette_iron-rose"],
+      "habit_variants": [
+        {
+          "name": "specular_platy",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high T, moderate σ"
+        },
+        {
+          "name": "rhombohedral",
+          "wall_spread": 0.35,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "moderate T, low σ"
+        },
+        {
+          "name": "botryoidal_kidney_ore",
+          "wall_spread": 0.9,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "low T, high σ"
+        },
+        {
+          "name": "earthy_red_ochre",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "weathering, very high σ"
+        },
+        {
+          "name": "rosette_iron-rose",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "moderate σ, tabular aggregation"
+        }
+      ],
       "class": "oxide",
       "description": "Fe₂O₃, the ferric iron oxide. Habit changes with T: specular-platy above 300°C, botryoidal kidney-ore below 150°C, earthy red-ochre at surface. The rosette iron-rose is a metamorphic-hydrothermal classic from the Swiss Alps.",
-      "scenarios": ["porphyry"],
-      "T_range_C": [25, 700],
-      "T_optimum_C": [50, 400],
+      "scenarios": [
+        "porphyry"
+      ],
+      "T_range_C": [
+        25,
+        700
+      ],
+      "T_optimum_C": [
+        50,
+        400
+      ],
       "T_behavior": "wide",
       "pH_dissolution_below": 3.0,
       "pH_dissolution_above": null,
       "redox_requirement": "oxidizing",
-      "required_ingredients": {"Fe": 20, "O2": 0.5},
-      "trace_ingredients": {"Ti": "Ti-hematite"},
+      "required_ingredients": {
+        "Fe": 20,
+        "O2": 0.5
+      },
+      "trace_ingredients": {
+        "Ti": "Ti-hematite"
+      },
       "thermal_decomp_C": 1560,
       "thermal_decomp_reaction": "Fe2O3 — very refractory, barely melts",
       "thermal_decomp_products": {},
       "fluorescence": null,
       "twin_laws": [],
-      "acid_dissolution": {"pH_threshold": 3.0, "reaction": "Fe2O3 + 6H+ -> 2Fe3+ + 3H2O (slow)", "products": {"Fe": 0.5}},
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "Fe2O3 + 6H+ -> 2Fe3+ + 3H2O (slow)",
+        "products": {
+          "Fe": 0.5
+        }
+      },
       "habit": "rhombohedral_or_tabular_or_botryoidal",
       "color_rules": {
-        "specular_metallic_gray": {"trigger": "T > 300"},
-        "red_earthy": {"trigger": "T < 150"},
-        "botryoidal_black": {"trigger": "low_T_supergene"}
+        "specular_metallic_gray": {
+          "trigger": "T > 300"
+        },
+        "red_earthy": {
+          "trigger": "T < 150"
+        },
+        "botryoidal_black": {
+          "trigger": "low_T_supergene"
+        }
       },
       "narrate_function": "_narrate_hematite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok"
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok",
+      "class_color": "#eb1313"
     },
     "malachite": {
       "formula": "Cu2(CO3)(OH)2",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 3,
       "max_size_cm": 200,
       "growth_rate_mult": 0.8,
-      "habit_variants": ["botryoidal", "acicular_spray", "banded_massive", "pseudomorph_after_azurite", "stalactitic"],
+      "habit_variants": [
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.9,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "default — Cu²⁺ + CO₃²⁻, nearly always coating"
+        },
+        {
+          "name": "acicular_spray",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "rare, low σ, open space"
+        },
+        {
+          "name": "banded_massive",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "pulsating fluid chemistry"
+        },
+        {
+          "name": "pseudomorph_after_azurite",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "azurite replacement, inherits shape"
+        },
+        {
+          "name": "stalactitic",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "dripping water, gravity-directed growth"
+        }
+      ],
       "class": "carbonate",
       "description": "Cu₂(CO₃)(OH)₂, the green copper carbonate. Low-T supergene — forms where chalcopyrite oxidizes in CO₂-rich groundwater. Banded botryoidal masses have been prized for decoration since the Bronze Age, from Egyptian amulets to Russian palace columns.",
-      "scenarios": ["porphyry", "supergene_oxidation"],
-      "T_range_C": [5, 100],
-      "T_optimum_C": [10, 50],
+      "scenarios": [
+        "porphyry",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        100
+      ],
+      "T_optimum_C": [
+        10,
+        50
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": 4.5,
       "pH_dissolution_above": null,
       "redox_requirement": "oxidizing",
-      "required_ingredients": {"Cu": 5, "CO3": 20, "O2": 0.3},
-      "trace_ingredients": {"Zn": "aurichalcite transition", "Co": "blue shift"},
+      "required_ingredients": {
+        "Cu": 5,
+        "CO3": 20,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Zn": "aurichalcite transition",
+        "Co": "blue shift"
+      },
       "thermal_decomp_C": 200,
       "thermal_decomp_reaction": "Cu2CO3(OH)2 -> CuO + CO2 + H2O",
-      "thermal_decomp_products": {"Cu": 0.6, "CO3": 0.3},
+      "thermal_decomp_products": {
+        "Cu": 0.6,
+        "CO3": 0.3
+      },
       "fluorescence": null,
       "twin_laws": [],
-      "acid_dissolution": {"pH_threshold": 4.5, "reaction": "malachite + 4H+ -> 2Cu2+ + CO2 + 3H2O (fizzes like calcite)", "products": {"Cu": 0.6, "CO3": 0.4}},
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "malachite + 4H+ -> 2Cu2+ + CO2 + 3H2O (fizzes like calcite)",
+        "products": {
+          "Cu": 0.6,
+          "CO3": 0.4
+        }
+      },
       "habit": "botryoidal_or_acicular",
       "color_rules": {
-        "green_banded": {"default": true}
+        "green_banded": {
+          "default": true
+        }
       },
       "narrate_function": "_narrate_malachite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "max_size is for single-crystal; botryoidal aggregates can exceed this"
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "max_size is for single-crystal; botryoidal aggregates can exceed this",
+      "class_color": "#eb7f13"
     },
     "uraninite": {
       "formula": "UO2",
       "nucleation_sigma": 1.5,
+      "max_nucleation_count": 3,
       "max_size_cm": 10,
       "growth_rate_mult": 0.1,
-      "habit_variants": ["cubic", "octahedral", "pitchblende_massive", "botryoidal_reniform"],
+      "habit_variants": [
+        {
+          "name": "cubic",
+          "wall_spread": 0.3,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "high T pegmatitic"
+        },
+        {
+          "name": "octahedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "moderate T"
+        },
+        {
+          "name": "pitchblende_massive",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low T, hydrothermal vein"
+        },
+        {
+          "name": "botryoidal_reniform",
+          "wall_spread": 0.85,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "low T, colloidal precipitation"
+        }
+      ],
       "class": "oxide",
       "description": "UO₂, the primary uranium mineral. Pitch-black, extremely dense, radioactive. Forms under strongly reducing conditions — any oxygen converts it to yellow secondary uranium minerals. Each decay turns a U atom into Pb; old uraninite accumulates radiogenic lead that eventually precipitates as nearby galena.",
-      "scenarios": ["radioactive_pegmatite"],
-      "T_range_C": [200, 800],
-      "T_optimum_C": [300, 600],
+      "scenarios": [
+        "radioactive_pegmatite"
+      ],
+      "T_range_C": [
+        200,
+        800
+      ],
+      "T_optimum_C": [
+        300,
+        600
+      ],
       "T_behavior": "wide",
       "pH_dissolution_below": null,
       "pH_dissolution_above": null,
       "redox_requirement": "reducing",
-      "required_ingredients": {"U": 5},
-      "trace_ingredients": {"Th": "minor", "Pb": "radiogenic_daughter"},
+      "required_ingredients": {
+        "U": 5
+      },
+      "trace_ingredients": {
+        "Th": "minor",
+        "Pb": "radiogenic_daughter"
+      },
       "thermal_decomp_C": 2800,
       "thermal_decomp_reaction": "UO2 — most refractory oxide known",
-      "thermal_decomp_products": {"U": 0.5},
-      "fluorescence": {"activator": "U", "threshold_ppm": 0, "color": "green_yellow_LW_and_SW", "quencher": null, "status": "newly_added — uraninite itself weakly fluoresces, daughter minerals strongly"},
+      "thermal_decomp_products": {
+        "U": 0.5
+      },
+      "fluorescence": {
+        "activator": "U",
+        "threshold_ppm": 0,
+        "color": "green_yellow_LW_and_SW",
+        "quencher": null,
+        "status": "newly_added — uraninite itself weakly fluoresces, daughter minerals strongly"
+      },
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "cubic",
       "color_rules": {
-        "black": {"default": true},
-        "dark_green": {"trigger": "altered"}
+        "black": {
+          "default": true
+        },
+        "dark_green": {
+          "trigger": "altered"
+        }
       },
       "narrate_function": "_narrate_uraninite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Emits radiation each step."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Emits radiation each step.",
+      "class_color": "#eb1313"
     },
     "galena": {
       "formula": "PbS",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
       "max_size_cm": 60,
       "growth_rate_mult": 0.5,
-      "habit_variants": ["cubic", "octahedral", "cubo-octahedral", "skeletal_hopper"],
+      "habit_variants": [
+        {
+          "name": "cubic",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "low σ"
+        },
+        {
+          "name": "octahedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.55,
+          "vector": "equant",
+          "trigger": "moderate σ"
+        },
+        {
+          "name": "cubo-octahedral",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "equant",
+          "trigger": "moderate σ"
+        },
+        {
+          "name": "skeletal_hopper",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "dendritic",
+          "trigger": "very high σ, rapid growth"
+        }
+      ],
       "class": "sulfide",
       "description": "PbS, the densest common sulfide (SG 7.6). Perfect cubic cleavage — tap it and it shatters into tiny cubes. Argentiferous galena was the historic source of most of the world's silver: Potosí, Leadville, Broken Hill.",
-      "scenarios": ["mvt", "porphyry", "radioactive_pegmatite"],
-      "T_range_C": [50, 450],
-      "T_optimum_C": [100, 400],
+      "scenarios": [
+        "mvt",
+        "porphyry",
+        "radioactive_pegmatite"
+      ],
+      "T_range_C": [
+        50,
+        450
+      ],
+      "T_optimum_C": [
+        100,
+        400
+      ],
       "T_behavior": "wide",
       "pH_dissolution_below": null,
       "pH_dissolution_above": null,
       "redox_requirement": "reducing",
-      "required_ingredients": {"Pb": 5, "S": 10},
-      "trace_ingredients": {"Ag": "argentiferous_galena", "Sb": "minor"},
+      "required_ingredients": {
+        "Pb": 5,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Ag": "argentiferous_galena",
+        "Sb": "minor"
+      },
       "thermal_decomp_C": 1115,
       "thermal_decomp_reaction": "PbS -> Pb + S (melting)",
-      "thermal_decomp_products": {"Pb": 0.5, "S": 0.4},
+      "thermal_decomp_products": {
+        "Pb": 0.5,
+        "S": 0.4
+      },
       "fluorescence": null,
       "twin_laws": [],
-      "acid_dissolution": {"pH_threshold": 2.0, "reaction": "PbS + 2H+ -> Pb2+ + H2S (slow)", "products": {"Pb": 0.3, "S": 0.3}, "status": "newly_added"},
+      "acid_dissolution": {
+        "pH_threshold": 2.0,
+        "reaction": "PbS + 2H+ -> Pb2+ + H2S (slow)",
+        "products": {
+          "Pb": 0.3,
+          "S": 0.3
+        },
+        "status": "newly_added"
+      },
       "habit": "cubic",
       "color_rules": {
-        "lead_gray_metallic": {"default": true}
+        "lead_gray_metallic": {
+          "default": true
+        }
       },
       "narrate_function": "_narrate_galena",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). T_optimum 100-400°C per mineral-accuracy-audit.md."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). T_optimum 100-400°C per mineral-accuracy-audit.md.",
+      "class_color": "#7feb13"
     },
     "smithsonite": {
       "formula": "ZnCO3",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 3,
       "max_size_cm": 60,
       "growth_rate_mult": 0.7,
-      "habit_variants": ["botryoidal", "rhombohedral_scalenohedral", "mammillary", "stalactitic_turquoise"],
+      "habit_variants": [
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.9,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "default — supergene, Zn²⁺ + CO₃²⁻"
+        },
+        {
+          "name": "rhombohedral_scalenohedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "rare, low σ, open space"
+        },
+        {
+          "name": "mammillary",
+          "wall_spread": 0.85,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "moderate-high σ"
+        },
+        {
+          "name": "stalactitic_turquoise",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "gravity-directed, Cu-rich variety"
+        }
+      ],
       "class": "carbonate",
       "description": "ZnCO₃, zinc's carbonate heir: forms when sphalerite oxidizes in CO₂-bearing groundwater. Named for James Smithson, founder of the Smithsonian. Botryoidal habit is typical; trace Cu gives prized turquoise-blue, Co gives pink, Cd gives yellow.",
-      "scenarios": ["supergene_oxidation"],
-      "T_range_C": [5, 150],
-      "T_optimum_C": [15, 80],
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        150
+      ],
+      "T_optimum_C": [
+        15,
+        80
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": 4.0,
       "pH_dissolution_above": null,
       "redox_requirement": "oxidizing",
-      "required_ingredients": {"Zn": 15, "CO3": 30, "O2": 0.3},
-      "trace_ingredients": {"Cu": "blue-green_turkish", "Co": "pink", "Cd": "yellow"},
+      "required_ingredients": {
+        "Zn": 15,
+        "CO3": 30,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Cu": "blue-green_turkish",
+        "Co": "pink",
+        "Cd": "yellow"
+      },
       "thermal_decomp_C": 300,
       "thermal_decomp_reaction": "ZnCO3 -> ZnO + CO2 (calcination)",
-      "thermal_decomp_products": {"Zn": 0.4, "CO3": 0.4},
-      "fluorescence": {"activator": "Mn", "threshold_ppm": 2, "color": "pink_LW", "quencher": null, "status": "newly_added"},
+      "thermal_decomp_products": {
+        "Zn": 0.4,
+        "CO3": 0.4
+      },
+      "fluorescence": {
+        "activator": "Mn",
+        "threshold_ppm": 2,
+        "color": "pink_LW",
+        "quencher": null,
+        "status": "newly_added"
+      },
       "twin_laws": [],
-      "acid_dissolution": {"pH_threshold": 4.0, "reaction": "ZnCO3 + 2H+ -> Zn2+ + H2O + CO2 (fizzes)", "products": {"Zn": 0.5, "CO3": 0.5}},
+      "acid_dissolution": {
+        "pH_threshold": 4.0,
+        "reaction": "ZnCO3 + 2H+ -> Zn2+ + H2O + CO2 (fizzes)",
+        "products": {
+          "Zn": 0.5,
+          "CO3": 0.5
+        }
+      },
       "habit": "botryoidal_or_rhombohedral",
       "color_rules": {
-        "white": {"default": true},
-        "blue_green": {"trigger": "Cu > 1"},
-        "pink": {"trigger": "Co > 0.5"},
-        "yellow": {"trigger": "Cd > 0.5"}
+        "white": {
+          "default": true
+        },
+        "blue_green": {
+          "trigger": "Cu > 1"
+        },
+        "pink": {
+          "trigger": "Co > 0.5"
+        },
+        "yellow": {
+          "trigger": "Cd > 0.5"
+        }
       },
       "narrate_function": "_narrate_smithsonite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes)."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes).",
+      "class_color": "#eb7f13"
     },
     "wulfenite": {
       "formula": "PbMoO4",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
       "max_size_cm": 20,
       "growth_rate_mult": 0.2,
-      "habit_variants": ["tabular_square", "pyramidal", "pseudo-octahedral", "thin_plate_honey"],
+      "habit_variants": [
+        {
+          "name": "tabular_square",
+          "wall_spread": 0.6,
+          "void_reach": 0.15,
+          "vector": "tabular",
+          "trigger": "default — thin plates on wall"
+        },
+        {
+          "name": "pyramidal",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "projecting",
+          "trigger": "lower σ, thicker crystals"
+        },
+        {
+          "name": "pseudo-octahedral",
+          "wall_spread": 0.35,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "rare, specific chemistry"
+        },
+        {
+          "name": "thin_plate_honey",
+          "wall_spread": 0.7,
+          "void_reach": 0.1,
+          "vector": "tabular",
+          "trigger": "high σ, rapid growth, very thin"
+        }
+      ],
       "class": "molybdate",
       "description": "PbMoO₄, the sunset caught in stone. Thin tabular plates in honey-yellow to blood-orange. Requires BOTH galena AND molybdenite to have oxidized in the same oxidation zone (Seo et al. 2012) — a narrow paragenetic window that makes specimens collector-prized.",
-      "scenarios": ["supergene_oxidation"],
-      "T_range_C": [5, 120],
-      "T_optimum_C": [20, 80],
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        120
+      ],
+      "T_optimum_C": [
+        20,
+        80
+      ],
       "T_behavior": "window",
       "pH_dissolution_below": 3.5,
       "pH_dissolution_above": 9.0,
       "redox_requirement": "oxidizing",
-      "required_ingredients": {"Pb": 5, "Mo": 2, "O2": 0.5},
-      "trace_ingredients": {"Cr": "orange_deepening", "V": "yellow"},
+      "required_ingredients": {
+        "Pb": 5,
+        "Mo": 2,
+        "O2": 0.5
+      },
+      "trace_ingredients": {
+        "Cr": "orange_deepening",
+        "V": "yellow"
+      },
       "thermal_decomp_C": 1120,
       "thermal_decomp_reaction": "PbMoO4 -> Pb + MoO3",
-      "thermal_decomp_products": {"Pb": 0.4, "Mo": 0.3},
+      "thermal_decomp_products": {
+        "Pb": 0.4,
+        "Mo": 0.3
+      },
       "fluorescence": null,
       "twin_laws": [],
-      "acid_dissolution": {"pH_threshold": 3.5, "reaction": "dissolves in strong acid", "products": {"Pb": 0.3, "Mo": 0.3}, "status": "newly_added"},
+      "acid_dissolution": {
+        "pH_threshold": 3.5,
+        "reaction": "dissolves in strong acid",
+        "products": {
+          "Pb": 0.3,
+          "Mo": 0.3
+        },
+        "status": "newly_added"
+      },
       "habit": "tabular_square",
       "color_rules": {
-        "orange_yellow": {"default": true},
-        "red": {"trigger": "Cr > 0.5"}
+        "orange_yellow": {
+          "default": true
+        },
+        "red": {
+          "trigger": "Cr > 0.5"
+        }
       },
       "narrate_function": "_narrate_wulfenite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Requires both galena AND molybdenite to have oxidized first (Seo et al. 2012)."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Requires both galena AND molybdenite to have oxidized first (Seo et al. 2012).",
+      "class_color": "#137feb"
     },
     "molybdenite": {
       "formula": "MoS2",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 3,
       "max_size_cm": 40,
       "growth_rate_mult": 0.3,
-      "habit_variants": ["hexagonal_platy", "massive_foliated", "rosette"],
+      "habit_variants": [
+        {
+          "name": "hexagonal_platy",
+          "wall_spread": 0.5,
+          "void_reach": 0.05,
+          "vector": "tabular",
+          "trigger": "default — basal pinacoid, lays flat"
+        },
+        {
+          "name": "massive_foliated",
+          "wall_spread": 0.85,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "high σ, space-filling"
+        },
+        {
+          "name": "rosette",
+          "wall_spread": 0.6,
+          "void_reach": 0.1,
+          "vector": "tabular",
+          "trigger": "radiating from point, still flat"
+        }
+      ],
       "class": "sulfide",
       "description": "MoS₂, the primary molybdenum ore. Soft hexagonal platy crystals (Mohs 1-1.5), bluish-gray, greasy — looks like graphite but with a greenish streak. In porphyry systems Mo arrives in a SEPARATE pulse from Cu (Bingham Canyon, Seo et al. 2012), a late magmatic fluid delivering molybdenum on its own timeline.",
-      "scenarios": ["porphyry"],
-      "T_range_C": [150, 600],
-      "T_optimum_C": [300, 500],
+      "scenarios": [
+        "porphyry"
+      ],
+      "T_range_C": [
+        150,
+        600
+      ],
+      "T_optimum_C": [
+        300,
+        500
+      ],
       "T_behavior": "window",
       "pH_dissolution_below": null,
       "pH_dissolution_above": null,
       "redox_requirement": "reducing",
-      "required_ingredients": {"Mo": 3, "S": 10},
-      "trace_ingredients": {"Re": "rhenium enrichment"},
+      "required_ingredients": {
+        "Mo": 3,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Re": "rhenium enrichment"
+      },
       "thermal_decomp_C": 1185,
       "thermal_decomp_reaction": "MoS2 decomposition",
-      "thermal_decomp_products": {"Mo": 0.4, "S": 0.4},
+      "thermal_decomp_products": {
+        "Mo": 0.4,
+        "S": 0.4
+      },
       "fluorescence": null,
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "hexagonal_platy",
       "color_rules": {
-        "silver_gray_metallic": {"default": true}
+        "silver_gray_metallic": {
+          "default": true
+        }
       },
       "narrate_function": "_narrate_molybdenite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok — all 3 runtimes (phase-3)."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#7feb13"
     },
     "adamite": {
       "formula": "Zn2(AsO4)(OH)",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
       "max_size_cm": 10,
       "growth_rate_mult": 0.3,
-      "habit_variants": ["prismatic", "rosette_spray", "druzy_crust", "cuproadamite_green"],
+      "habit_variants": [
+        {
+          "name": "prismatic",
+          "wall_spread": 0.2,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low σ, open space"
+        },
+        {
+          "name": "rosette_spray",
+          "wall_spread": 0.5,
+          "void_reach": 0.4,
+          "vector": "projecting",
+          "trigger": "moderate σ, radiating"
+        },
+        {
+          "name": "druzy_crust",
+          "wall_spread": 0.85,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "high σ, coating matrix"
+        },
+        {
+          "name": "cuproadamite_green",
+          "wall_spread": 0.25,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "Cu trace, moderate σ"
+        }
+      ],
       "class": "arsenate",
       "description": "Zn₂(AsO₄)(OH), a supergene arsenate from oxidizing Zn-As sulfide ores. Classic Ojuela Mine (Mexico) habit: yellow-green prismatic sprays. Cu-substituted zones (cuproadamite) fluoresce brilliant apple-green under SW UV — but heavy Cu quenches the glow, creating striking fluorescent/non-fluorescent crystal pairs.",
-      "scenarios": ["supergene_oxidation"],
-      "T_range_C": [5, 150],
-      "T_optimum_C": [20, 80],
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        150
+      ],
+      "T_optimum_C": [
+        20,
+        80
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": 3.5,
       "pH_dissolution_above": 8.5,
       "redox_requirement": "oxidizing",
-      "required_ingredients": {"Zn": 10, "As": 5, "O2": 0.3},
-      "trace_ingredients": {"Cu": "cuproadamite_green_FL_activator", "Co": "purple_cobaltoadamite"},
+      "required_ingredients": {
+        "Zn": 10,
+        "As": 5,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Cu": "cuproadamite_green_FL_activator",
+        "Co": "purple_cobaltoadamite"
+      },
       "thermal_decomp_C": 500,
       "thermal_decomp_reaction": "Zn2AsO4OH decomposition",
-      "thermal_decomp_products": {"Zn": 0.4, "As": 0.3},
-      "fluorescence": {"activator": "U_or_intrinsic", "threshold_ppm": 0, "color": "green_yellow_SW_UV", "quencher": {"species": "Cu", "threshold_ppm": 10, "note": "heavy Cu turns off FL"}},
+      "thermal_decomp_products": {
+        "Zn": 0.4,
+        "As": 0.3
+      },
+      "fluorescence": {
+        "activator": "U_or_intrinsic",
+        "threshold_ppm": 0,
+        "color": "green_yellow_SW_UV",
+        "quencher": {
+          "species": "Cu",
+          "threshold_ppm": 10,
+          "note": "heavy Cu turns off FL"
+        }
+      },
       "twin_laws": [],
-      "acid_dissolution": {"pH_threshold": 3.5, "reaction": "dissolves in acid", "products": {"Zn": 0.3, "As": 0.3}},
+      "acid_dissolution": {
+        "pH_threshold": 3.5,
+        "reaction": "dissolves in acid",
+        "products": {
+          "Zn": 0.3,
+          "As": 0.3
+        }
+      },
       "habit": "prismatic_or_rosette",
       "color_rules": {
-        "yellow_green": {"default": true},
-        "bright_green": {"trigger": "Cu 0.5-5"},
-        "purple": {"trigger": "Co > 0.5"}
+        "yellow_green": {
+          "default": true
+        },
+        "bright_green": {
+          "trigger": "Cu 0.5-5"
+        },
+        "purple": {
+          "trigger": "Co > 0.5"
+        }
       },
       "narrate_function": "_narrate_adamite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok — all 3 runtimes (phase-3)."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#ebeb13"
     },
     "mimetite": {
       "formula": "Pb5(AsO4)3Cl",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 3,
       "max_size_cm": 10,
       "growth_rate_mult": 0.3,
-      "habit_variants": ["hexagonal_prism", "campylite_barrel", "globular_mammillary"],
+      "habit_variants": [
+        {
+          "name": "hexagonal_prism",
+          "wall_spread": 0.2,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low-moderate σ"
+        },
+        {
+          "name": "campylite_barrel",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "equant",
+          "trigger": "moderate σ, curved faces"
+        },
+        {
+          "name": "globular_mammillary",
+          "wall_spread": 0.8,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "high σ, colloidal"
+        }
+      ],
       "class": "arsenate",
       "description": "Pb₅(AsO₄)₃Cl — the 'mimic,' so named because it's isostructural with pyromorphite and distinguishable only by chemistry. Hexagonal prisms and the famous campylite barrels (Cumbria). Supergene product of galena oxidation in As-bearing groundwater.",
-      "scenarios": ["supergene_oxidation"],
-      "T_range_C": [5, 180],
-      "T_optimum_C": [20, 120],
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        180
+      ],
+      "T_optimum_C": [
+        20,
+        120
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": 3.0,
       "pH_dissolution_above": null,
       "redox_requirement": "oxidizing",
-      "required_ingredients": {"Pb": 5, "As": 3, "Cl": 2, "O2": 0.3},
-      "trace_ingredients": {"V": "mimetite-vanadinite series", "P": "pyromorphite-mimetite series"},
+      "required_ingredients": {
+        "Pb": 5,
+        "As": 3,
+        "Cl": 2,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "V": "mimetite-vanadinite series",
+        "P": "pyromorphite-mimetite series"
+      },
       "thermal_decomp_C": 400,
       "thermal_decomp_reaction": "Pb5Cl(AsO4)3 decomposition",
-      "thermal_decomp_products": {"Pb": 0.5, "As": 0.3, "Cl": 0.1},
-      "fluorescence": {"activator": "intrinsic", "threshold_ppm": 0, "color": "orange_SW_UV", "quencher": null, "status": "newly_added"},
+      "thermal_decomp_products": {
+        "Pb": 0.5,
+        "As": 0.3,
+        "Cl": 0.1
+      },
+      "fluorescence": {
+        "activator": "intrinsic",
+        "threshold_ppm": 0,
+        "color": "orange_SW_UV",
+        "quencher": null,
+        "status": "newly_added"
+      },
       "twin_laws": [],
-      "acid_dissolution": {"pH_threshold": 3.0, "reaction": "dissolves in strong acid", "products": {"Pb": 0.4, "As": 0.3}},
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "dissolves in strong acid",
+        "products": {
+          "Pb": 0.4,
+          "As": 0.3
+        }
+      },
       "habit": "hexagonal_prism_or_botryoidal_campylite",
       "color_rules": {
-        "yellow_orange": {"default": true},
-        "campylite_barrel": {"trigger": "Cu_present"}
+        "yellow_orange": {
+          "default": true
+        },
+        "campylite_barrel": {
+          "trigger": "Cu_present"
+        }
       },
       "narrate_function": "_narrate_mimetite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok — all 3 runtimes (phase-3)."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#ebeb13"
     },
     "feldspar": {
       "formula": "KAlSi3O8",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 2,
       "max_size_cm": 1400,
       "growth_rate_mult": 0.4,
-      "habit_variants": ["prismatic_blocky", "tabular_sanidine", "Carlsbad_twinned", "cross-hatched_microcline", "adularia_pseudo-orthorhombic", "amazonite_blue-green"],
+      "habit_variants": [
+        {
+          "name": "prismatic_blocky",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ, pegmatitic"
+        },
+        {
+          "name": "tabular_sanidine",
+          "wall_spread": 0.6,
+          "void_reach": 0.2,
+          "vector": "tabular",
+          "trigger": "high T volcanic"
+        },
+        {
+          "name": "Carlsbad_twinned",
+          "wall_spread": 0.35,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "moderate σ, twin nucleation"
+        },
+        {
+          "name": "cross-hatched_microcline",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "slow cooling, low σ"
+        },
+        {
+          "name": "adularia_pseudo-orthorhombic",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "low T hydrothermal"
+        },
+        {
+          "name": "amazonite_blue-green",
+          "wall_spread": 0.35,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "Pb trace, moderate σ"
+        }
+      ],
       "class": "silicate",
       "description": "Potassium feldspar — the most abundant mineral in Earth's crust. The polymorph records T: sanidine (>500°C) → orthoclase (300-500°C) → microcline (<300°C, with diagnostic cross-hatched twinning). Pb substitution for K creates amazonite, the green pegmatite feldspar.",
-      "scenarios": ["radioactive_pegmatite"],
-      "T_range_C": [250, 1170],
-      "T_optimum_C": [400, 700],
+      "scenarios": [
+        "radioactive_pegmatite"
+      ],
+      "T_range_C": [
+        250,
+        1170
+      ],
+      "T_optimum_C": [
+        400,
+        700
+      ],
       "T_behavior": "prograde_solubility",
       "pH_dissolution_below": 4.0,
       "pH_dissolution_above": null,
       "redox_requirement": "any",
-      "required_ingredients": {"K": 10, "Al": 3, "SiO2": 200},
-      "trace_ingredients": {"Pb": "amazonite_blue_green_with_radiation", "Na": "perthite_intergrowth", "Ba": "hyalophane", "Fe": "iron_stain"},
+      "required_ingredients": {
+        "K": 10,
+        "Al": 3,
+        "SiO2": 200
+      },
+      "trace_ingredients": {
+        "Pb": "amazonite_blue_green_with_radiation",
+        "Na": "perthite_intergrowth",
+        "Ba": "hyalophane",
+        "Fe": "iron_stain"
+      },
       "thermal_decomp_C": 1170,
       "thermal_decomp_reaction": "KAlSi3O8 melting — refractory",
-      "thermal_decomp_products": {"K": 0.3, "Al": 0.2, "SiO2": 0.3},
-      "fluorescence": {"activator": "Pb_amazonite", "threshold_ppm": 5, "color": "weak_yellow_green_or_white", "quencher": null},
+      "thermal_decomp_products": {
+        "K": 0.3,
+        "Al": 0.2,
+        "SiO2": 0.3
+      },
+      "fluorescence": {
+        "activator": "Pb_amazonite",
+        "threshold_ppm": 5,
+        "color": "weak_yellow_green_or_white",
+        "quencher": null
+      },
       "twin_laws": [
-        {"name": "Carlsbad", "miller_indices": "{010}_penetration", "trigger": "growth", "probability": 0.12},
-        {"name": "Baveno", "miller_indices": "{021}", "trigger": "growth", "probability": 0.04},
-        {"name": "Manebach", "miller_indices": "{001}", "trigger": "growth", "probability": 0.02}
+        {
+          "name": "Carlsbad",
+          "miller_indices": "{010}_penetration",
+          "trigger": "growth",
+          "probability": 0.12
+        },
+        {
+          "name": "Baveno",
+          "miller_indices": "{021}",
+          "trigger": "growth",
+          "probability": 0.04
+        },
+        {
+          "name": "Manebach",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.02
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 4.0, "reaction": "kaolinization — KAlSi3O8 + H+ -> kaolinite + K+ + SiO2", "products": {"K": 0.4, "Al": 0.1, "SiO2": 0.3}},
+      "acid_dissolution": {
+        "pH_threshold": 4.0,
+        "reaction": "kaolinization — KAlSi3O8 + H+ -> kaolinite + K+ + SiO2",
+        "products": {
+          "K": 0.4,
+          "Al": 0.1,
+          "SiO2": 0.3
+        }
+      },
       "habit": "prismatic_or_blocky",
       "color_rules": {
-        "pink_orthoclase": {"default": true},
-        "amazonite_blue_green": {"trigger": "Pb > 5 and radiation"},
-        "moonstone": {"trigger": "Na_perthite_intergrowth"}
+        "pink_orthoclase": {
+          "default": true
+        },
+        "amazonite_blue_green": {
+          "trigger": "Pb > 5 and radiation"
+        },
+        "moonstone": {
+          "trigger": "Na_perthite_intergrowth"
+        }
       },
       "narrate_function": "_narrate_feldspar",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok — all 3 runtimes (phase-3)."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#1313eb"
     },
     "albite": {
       "formula": "NaAlSi3O8",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 2,
       "max_size_cm": 40,
       "growth_rate_mult": 0.4,
-      "habit_variants": ["tabular", "cleavelandite_platy", "polysynthetic_striated", "peristerite_moonstone"],
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.55,
+          "void_reach": 0.2,
+          "vector": "tabular",
+          "trigger": "default — flattened on wall"
+        },
+        {
+          "name": "cleavelandite_platy",
+          "wall_spread": 0.7,
+          "void_reach": 0.1,
+          "vector": "tabular",
+          "trigger": "high σ, late-stage pegmatitic"
+        },
+        {
+          "name": "polysynthetic_striated",
+          "wall_spread": 0.5,
+          "void_reach": 0.25,
+          "vector": "tabular",
+          "trigger": "twin-controlled growth"
+        },
+        {
+          "name": "peristerite_moonstone",
+          "wall_spread": 0.45,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "Na-K exsolution, adularescence"
+        }
+      ],
       "class": "silicate",
       "description": "NaAlSi₃O₈, the sodium end-member of the plagioclase series. Platy cleavelandite is the pegmatite signature habit. Fine albite/oligoclase exsolution lamellae scatter light into blue-white adularescence — the moonstone shimmer.",
-      "scenarios": ["radioactive_pegmatite"],
-      "T_range_C": [250, 1118],
-      "T_optimum_C": [350, 700],
+      "scenarios": [
+        "radioactive_pegmatite"
+      ],
+      "T_range_C": [
+        250,
+        1118
+      ],
+      "T_optimum_C": [
+        350,
+        700
+      ],
       "T_behavior": "prograde_solubility",
       "pH_dissolution_below": 3.0,
       "pH_dissolution_above": null,
       "redox_requirement": "any",
-      "required_ingredients": {"Na": 10, "Al": 3, "SiO2": 200},
-      "trace_ingredients": {"Ca": "peristerite_moonstone", "K": "perthite_intergrowth"},
+      "required_ingredients": {
+        "Na": 10,
+        "Al": 3,
+        "SiO2": 200
+      },
+      "trace_ingredients": {
+        "Ca": "peristerite_moonstone",
+        "K": "perthite_intergrowth"
+      },
       "thermal_decomp_C": 1118,
       "thermal_decomp_reaction": "NaAlSi3O8 melting",
-      "thermal_decomp_products": {"Na": 0.3, "Al": 0.2, "SiO2": 0.3},
-      "fluorescence": {"activator": "intrinsic", "threshold_ppm": 0, "color": "weak_white_LW", "quencher": null},
+      "thermal_decomp_products": {
+        "Na": 0.3,
+        "Al": 0.2,
+        "SiO2": 0.3
+      },
+      "fluorescence": {
+        "activator": "intrinsic",
+        "threshold_ppm": 0,
+        "color": "weak_white_LW",
+        "quencher": null
+      },
       "twin_laws": [
-        {"name": "albite", "miller_indices": "{010}", "trigger": "growth", "probability": 0.20},
-        {"name": "pericline", "miller_indices": "b_axis", "trigger": "growth", "probability": 0.05}
+        {
+          "name": "albite",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.2
+        },
+        {
+          "name": "pericline",
+          "miller_indices": "b_axis",
+          "trigger": "growth",
+          "probability": 0.05
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 3.0, "reaction": "slow kaolinization", "products": {"Na": 0.3, "Al": 0.1, "SiO2": 0.3}},
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "slow kaolinization",
+        "products": {
+          "Na": 0.3,
+          "Al": 0.1,
+          "SiO2": 0.3
+        }
+      },
       "habit": "tabular",
       "color_rules": {
-        "white": {"default": true},
-        "peristerite_moonstone": {"trigger": "Ca > 2"}
+        "white": {
+          "default": true
+        },
+        "peristerite_moonstone": {
+          "trigger": "Ca > 2"
+        }
       },
       "narrate_function": "_narrate_albite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok — all 3 runtimes (phase-3). Pegmatite albite + perthite association wired in each."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok — all 3 runtimes (phase-3). Pegmatite albite + perthite association wired in each.",
+      "class_color": "#1313eb"
     },
     "selenite": {
       "formula": "CaSO4·2H2O",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 10,
       "max_size_cm": 2400,
       "growth_rate_mult": 0.7,
-      "habit_variants": ["tabular", "prismatic", "fibrous_satin_spar", "swallowtail_twin", "cathedral_blade", "desert_rose"],
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "moderate σ"
+        },
+        {
+          "name": "prismatic",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "low σ, open space"
+        },
+        {
+          "name": "fibrous_satin_spar",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "fibrous, parallel growth"
+        },
+        {
+          "name": "swallowtail_twin",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "twin-controlled, common in vugs"
+        },
+        {
+          "name": "cathedral_blade",
+          "wall_spread": 0.2,
+          "void_reach": 0.9,
+          "vector": "projecting",
+          "trigger": "sustained σ, Naica conditions"
+        },
+        {
+          "name": "desert_rose",
+          "wall_spread": 0.85,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "arid, evaporation-driven, sand inclusion"
+        }
+      ],
       "class": "sulfate",
       "description": "CaSO₄·2H₂O, the dihydrate form of gypsum — glassy, water-clear, soft enough to cleave with a fingernail. Stable only below ~60°C, where anhydrite takes over. Naica's cathedral blades grew at a steady 58°C for half a million years, producing the largest natural crystals on Earth.",
-      "scenarios": ["radioactive_pegmatite", "supergene_oxidation"],
-      "T_range_C": [5, 60],
-      "T_optimum_C": [20, 58],
+      "scenarios": [
+        "radioactive_pegmatite",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        60
+      ],
+      "T_optimum_C": [
+        20,
+        58
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": 5.0,
       "pH_dissolution_above": null,
       "redox_requirement": "oxidizing",
-      "required_ingredients": {"Ca": 20, "S": 15, "O2": 0.2},
+      "required_ingredients": {
+        "Ca": 20,
+        "S": 15,
+        "O2": 0.2
+      },
       "trace_ingredients": {},
       "thermal_decomp_C": 150,
       "thermal_decomp_reaction": "CaSO4·2H2O -> CaSO4 + 2H2O (dehydration to anhydrite)",
-      "thermal_decomp_products": {"Ca": 0.3, "S": 0.2},
+      "thermal_decomp_products": {
+        "Ca": 0.3,
+        "S": 0.2
+      },
       "fluorescence": null,
       "twin_laws": [
-        {"name": "swallowtail", "miller_indices": "{100}", "trigger": "growth", "probability": 0.08, "status": "newly_added"}
+        {
+          "name": "swallowtail",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.08,
+          "status": "newly_added"
+        }
       ],
-      "acid_dissolution": {"pH_threshold": 5.0, "reaction": "slow dissolution in acid", "products": {"Ca": 0.4, "S": 0.4}, "status": "newly_added"},
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "slow dissolution in acid",
+        "products": {
+          "Ca": 0.4,
+          "S": 0.4
+        },
+        "status": "newly_added"
+      },
       "habit": "tabular_or_prismatic_or_fibrous",
       "color_rules": {
-        "colorless": {"default": true},
-        "white": {"trigger": "inclusions"}
+        "colorless": {
+          "default": true
+        },
+        "white": {
+          "trigger": "inclusions"
+        }
       },
       "narrate_function": "_narrate_selenite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok — all 3 runtimes (phase-3). Naica giant crystals at T~58°C for 500,000 years; above 60°C anhydrite wins."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok — all 3 runtimes (phase-3). Naica giant crystals at T~58°C for 500,000 years; above 60°C anhydrite wins.",
+      "class_color": "#eb137f"
     },
     "goethite": {
       "formula": "FeO(OH)",
       "nucleation_sigma": 1.0,
+      "max_nucleation_count": 3,
       "max_size_cm": 60,
       "growth_rate_mult": 0.4,
-      "habit_variants": ["botryoidal_black", "mammillary", "fibrous_acicular", "pseudomorph_after_sulfide", "earthy_ochre", "stalactitic"],
+      "habit_variants": [
+        {
+          "name": "botryoidal_black",
+          "wall_spread": 0.9,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "default — oxidation zone, Fe³⁺ precipitation"
+        },
+        {
+          "name": "mammillary",
+          "wall_spread": 0.85,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "moderate-high σ"
+        },
+        {
+          "name": "fibrous_acicular",
+          "wall_spread": 0.2,
+          "void_reach": 0.75,
+          "vector": "projecting",
+          "trigger": "lower σ, radiating needles"
+        },
+        {
+          "name": "pseudomorph_after_sulfide",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "replaces pyrite/marcasite, inherits shape"
+        },
+        {
+          "name": "earthy_ochre",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "weathering, very fine-grained"
+        },
+        {
+          "name": "stalactitic",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "gravity-directed, dripping water"
+        }
+      ],
       "class": "hydroxide",
       "description": "FeO(OH), rust with a crystal name. Low-T oxidation product of Fe-sulfides and Fe²⁺ fluids. Velvety-black botryoidal surfaces and the classic boxwork pseudomorph after pyrite — the Egyptian Prophecy Stones are goethite after marcasite. Dehydrates to hematite above 300°C.",
-      "scenarios": ["porphyry", "supergene_oxidation"],
-      "T_range_C": [5, 150],
-      "T_optimum_C": [15, 80],
+      "scenarios": [
+        "porphyry",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        150
+      ],
+      "T_optimum_C": [
+        15,
+        80
+      ],
       "T_behavior": "retrograde_solubility",
       "pH_dissolution_below": 3.0,
       "pH_dissolution_above": null,
       "redox_requirement": "oxidizing",
-      "required_ingredients": {"Fe": 15, "O2": 0.4},
-      "trace_ingredients": {"Mn": "darker_brown", "Al": "alumogoethite"},
+      "required_ingredients": {
+        "Fe": 15,
+        "O2": 0.4
+      },
+      "trace_ingredients": {
+        "Mn": "darker_brown",
+        "Al": "alumogoethite"
+      },
       "thermal_decomp_C": 300,
       "thermal_decomp_reaction": "2 FeO(OH) -> Fe2O3 + H2O (dehydrates to hematite)",
-      "thermal_decomp_products": {"Fe": 0.5},
+      "thermal_decomp_products": {
+        "Fe": 0.5
+      },
       "fluorescence": null,
       "twin_laws": [],
-      "acid_dissolution": {"pH_threshold": 3.0, "reaction": "FeO(OH) + 3H+ -> Fe3+ + 2H2O", "products": {"Fe": 0.5}},
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "FeO(OH) + 3H+ -> Fe3+ + 2H2O",
+        "products": {
+          "Fe": 0.5
+        }
+      },
       "habit": "botryoidal_or_mammillary_or_fibrous",
       "color_rules": {
-        "yellow_brown": {"default": true},
-        "black_lustrous": {"trigger": "botryoidal_polished"},
-        "earthy_orange": {"trigger": "limonite_mixture"}
+        "yellow_brown": {
+          "default": true
+        },
+        "black_lustrous": {
+          "trigger": "botryoidal_polished"
+        },
+        "earthy_orange": {
+          "trigger": "limonite_mixture"
+        }
       },
       "nucleation_preferences": {
-        "grows_on": ["pyrite", "chalcopyrite", "marcasite"],
-        "forms_pseudomorph_after": ["pyrite"],
+        "grows_on": [
+          "pyrite",
+          "chalcopyrite",
+          "marcasite"
+        ],
+        "forms_pseudomorph_after": [
+          "pyrite"
+        ],
         "note": "classic weathering rind; Egyptian Prophecy Stones = goethite after marcasite"
       },
       "narrate_function": "_narrate_goethite",
-      "runtimes_present": ["vugg.py", "web/index.html", "agent-api/vugg-agent.js"],
-      "audit_status": "ok (phase-1: ghost fix complete — grow_goethite + _narrate_goethite + pseudomorph-after-sulfide nucleation in all 3 runtimes)."
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html",
+        "agent-api/vugg-agent.js"
+      ],
+      "audit_status": "ok (phase-1: ghost fix complete — grow_goethite + _narrate_goethite + pseudomorph-after-sulfide nucleation in all 3 runtimes).",
+      "class_color": "#13ebeb"
     }
   }
 }
