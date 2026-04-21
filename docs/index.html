@@ -94,6 +94,44 @@ h1 {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+.topo-zoom-ctrls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(20, 20, 14, 0.75);
+  border: 1px solid #3a3520;
+  border-radius: 16px;
+  padding: 2px 6px;
+  backdrop-filter: blur(2px);
+  z-index: 5;
+}
+.topo-zoom-btn {
+  background: transparent;
+  color: #d4a843;
+  border: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+.topo-zoom-btn:hover { color: #f0c050; background: rgba(42, 37, 16, 0.6); }
+.topo-zoom-label {
+  color: #8a7a40;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  min-width: 2.6rem;
+  text-align: center;
+  user-select: none;
+}
+
 .topo-replay {
   position: absolute;
   right: 10px;
@@ -2113,6 +2151,11 @@ footer a:hover {
     </details>
     <div class="topo-canvas-wrap">
       <canvas id="topo-canvas" width="1100" height="120"></canvas>
+      <div class="topo-zoom-ctrls">
+        <button class="topo-zoom-btn" onclick="topoZoom(-1)" title="Zoom out">−</button>
+        <span id="topo-zoom-label" class="topo-zoom-label">100%</span>
+        <button class="topo-zoom-btn" onclick="topoZoom(+1)" title="Zoom in">+</button>
+      </div>
       <button id="topo-replay-btn" class="topo-replay" onclick="topoReplay()" title="Replay wall history">▶</button>
       <div id="topo-tooltip" class="topo-tooltip" style="display:none"></div>
     </div>
@@ -10183,6 +10226,10 @@ const TOPO_WALL_COLOR = '#D2691E';   // warm amber — the wall's color. No mine
 const TOPO_CRYSTAL_CAP_FRAC = 0.85;   // crystals can fill at most this fraction of a cell's radius
 const TOPO_WALL_STROKE_PX = 2;        // bare wall stroke width
 const TOPO_WALL_STROKE_MAX_PX = 10;   // cell stroke width ceiling when a crystal sits on the wall
+const TOPO_ZOOM_MIN = 0.3;
+const TOPO_ZOOM_MAX = 6.0;
+const TOPO_ZOOM_STEP = 1.25;          // one click / wheel tick multiplies by this
+let _topoZoom = 1.0;                  // multiplier applied to mmToPx in the renderer
 
 // The 12-class order from the topo palette in the brief. Used by the
 // legend. We render all 12 even if not all present in the current run so
@@ -10293,7 +10340,7 @@ function topoRender(optOverrideRing) {
   if (wall && maxWallR > wall.max_seen_radius_mm) wall.max_seen_radius_mm = maxWallR;
   const centerPad = 48;  // leave room for the scale bar and legend
   const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
-  const mmToPx = fit / maxWallR;
+  const mmToPx = (fit / maxWallR) * _topoZoom;
 
   const cx = cssW / 2;
   const cy = (cssH - centerPad) / 2 + 8;
@@ -10424,7 +10471,7 @@ function _topoTooltipFromEvent(ev) {
   }
   const centerPad = 48;
   const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
-  const mmToPx = fit / maxWallR;
+  const mmToPx = (fit / maxWallR) * _topoZoom;
   const cx = cssW / 2;
   const cy = (cssH - centerPad) / 2 + 8;
 
@@ -10477,7 +10524,16 @@ function _topoHideTooltip() {
   if (tip) tip.style.display = 'none';
 }
 
-// Wire hover once — called from the panel's first show. Idempotent.
+// Zoom — multiplies mmToPx in the renderer. `dir` is +1 (in) or -1 (out).
+function topoZoom(dir) {
+  const factor = dir > 0 ? TOPO_ZOOM_STEP : (1 / TOPO_ZOOM_STEP);
+  _topoZoom = Math.max(TOPO_ZOOM_MIN, Math.min(TOPO_ZOOM_MAX, _topoZoom * factor));
+  const label = document.getElementById('topo-zoom-label');
+  if (label) label.textContent = `${Math.round(_topoZoom * 100)}%`;
+  topoRender();
+}
+
+// Wire hover + zoom wheel once — called from the panel's first show. Idempotent.
 let _topoWired = false;
 function topoEnsureWired() {
   if (_topoWired) return;
@@ -10485,6 +10541,12 @@ function topoEnsureWired() {
   if (!canvas) return;
   canvas.addEventListener('mousemove', _topoTooltipFromEvent);
   canvas.addEventListener('mouseleave', _topoHideTooltip);
+  // Wheel = zoom. Preventing default so the page doesn't scroll past
+  // the canvas while the player is framing the vug.
+  canvas.addEventListener('wheel', (ev) => {
+    ev.preventDefault();
+    topoZoom(ev.deltaY < 0 ? +1 : -1);
+  }, { passive: false });
   window.addEventListener('resize', () => topoRender());
   _topoWired = true;
 }
