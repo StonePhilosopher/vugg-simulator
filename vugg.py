@@ -958,6 +958,78 @@ class VugConditions:
             sigma *= 1.3
         return max(sigma, 0)
 
+    def supersaturation_cuprite(self) -> float:
+        """Cuprite (Cu₂O) supersaturation. Cu + narrow O₂ window.
+
+        The Eh-boundary mineral. Too reducing → native copper; too
+        oxidizing → malachite/tenorite. Cuprite exists in the narrow
+        band between. Low T (<100°C). The O₂ sweet spot is 0.3–1.2 —
+        on either side, the thermodynamics push elsewhere.
+        """
+        if self.fluid.Cu < 20 or self.fluid.O2 < 0.3 or self.fluid.O2 > 1.2:
+            return 0
+        cu_f = min(self.fluid.Cu / 50.0, 2.0)
+        # Eh window: peak at O2 ≈ 0.7, falling on both sides
+        o_f = max(0.3, 1.0 - abs(self.fluid.O2 - 0.7) * 1.4)
+        sigma = cu_f * o_f
+        if self.temperature > 100:
+            sigma *= math.exp(-0.03 * (self.temperature - 100))
+        if self.fluid.pH < 3.5:
+            sigma -= (3.5 - self.fluid.pH) * 0.3
+        return max(sigma, 0)
+
+    def supersaturation_azurite(self) -> float:
+        """Azurite (Cu₃(CO₃)₂(OH)₂) supersaturation. Cu + high CO₃ + O₂.
+
+        Needs HIGHER carbonate than malachite — that's why high-pCO₂
+        groundwater produces azurite in limestone-hosted copper vugs
+        but malachite dominates otherwise. When CO₃ drops during the
+        run, grow_azurite flags the crystal for malachite conversion.
+        """
+        if (self.fluid.Cu < 20 or self.fluid.CO3 < 120 or
+                self.fluid.O2 < 1.0):
+            return 0
+        cu_f = min(self.fluid.Cu / 40.0, 2.0)
+        co_f = min(self.fluid.CO3 / 150.0, 1.8)   # CO3 is the gate
+        o_f  = min(self.fluid.O2 / 1.5, 1.3)
+        sigma = cu_f * co_f * o_f
+        if self.temperature > 50:
+            sigma *= math.exp(-0.06 * (self.temperature - 50))
+        if self.fluid.pH < 5.0:
+            sigma -= (5.0 - self.fluid.pH) * 0.4
+        return max(sigma, 0)
+
+    def supersaturation_native_copper(self) -> float:
+        """Native copper (Cu) supersaturation. Very high Cu + strongly reducing.
+
+        Only forms when S²⁻ is low enough not to make sulfides AND Eh
+        is strongly reducing (O₂ < 0.4 in our scale). Wide T stability
+        (up to 300°C). High σ threshold (1.6) because the specific
+        chemistry window is narrow.
+        """
+        if (self.fluid.Cu < 50 or self.fluid.O2 > 0.4 or
+                self.fluid.S > 30):
+            return 0
+        cu_f = min(self.fluid.Cu / 80.0, 2.5)
+        # Reducing preference — stronger than bornite/chalcocite
+        red_f = max(0.4, 1.0 - self.fluid.O2 * 2.0)
+        # Sulfide-suppression — any S lowers yield
+        s_f = max(0.3, 1.0 - self.fluid.S / 40.0)
+        sigma = cu_f * red_f * s_f
+        T = self.temperature
+        if 20 <= T <= 150:
+            T_factor = 1.0
+        elif T < 20:
+            T_factor = 0.7
+        elif T <= 300:
+            T_factor = max(0.4, 1.0 - 0.004 * (T - 150))
+        else:
+            T_factor = 0.2
+        sigma *= T_factor
+        if self.fluid.pH < 4.0:
+            sigma -= (4.0 - self.fluid.pH) * 0.3
+        return max(sigma, 0)
+
     def supersaturation_bornite(self) -> float:
         """Bornite (Cu₅FeS₄) supersaturation. Cu + Fe + S + reducing.
 
@@ -2951,6 +3023,180 @@ def grow_spodumene(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_cuprite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Cuprite (Cu₂O) growth — the Eh-boundary mineral.
+
+    Four habit variants depending on σ and space:
+    - octahedral: slow growth, open vug
+    - chalcotrichite (plush/hair): very fast directional, high σ
+    - massive earthy ("tile ore"): rapid, space-constrained
+    - spinel-law twin: rare, moderate σ
+    """
+    sigma = conditions.supersaturation_cuprite()
+    if sigma < 1.0:
+        # Strong acid or pushed past the Eh window → dissolves
+        if crystal.total_growth_um > 5 and (conditions.fluid.pH < 3.5 or conditions.fluid.O2 > 1.5):
+            crystal.dissolved = True
+            d = min(2.0, crystal.total_growth_um * 0.07)
+            conditions.fluid.Cu += d * 0.5
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"dissolution — Eh window exceeded (pH {conditions.fluid.pH:.1f}, O₂ {conditions.fluid.O2:.1f})"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    if excess > 1.5:
+        crystal.habit = "chalcotrichite"
+        crystal.dominant_forms = ["hair-like {100} whiskers", "plush velvet texture"]
+        color_note = f"chalcotrichite — hair-like Cu₂O whiskers (σ {sigma:.2f}, rapid directional growth)"
+    elif excess > 0.8:
+        crystal.habit = "massive_earthy"
+        crystal.dominant_forms = ["massive earthy 'tile ore'", "dark red-brown"]
+        color_note = "massive earthy — 'tile ore' in dark red-brown (rapid growth in tight space)"
+    elif not crystal.twinned and 0.3 < excess < 0.8 and random.random() < 0.05:
+        crystal.twinned = True
+        crystal.twin_law = "spinel law {111}"
+        crystal.habit = "spinel_twin"
+        crystal.dominant_forms = ["{111} octahedron (spinel-law twinned)", "reentrant angles"]
+        color_note = "dark red octahedron with spinel-law penetration twin"
+    else:
+        crystal.habit = "octahedral"
+        crystal.dominant_forms = ["{111} octahedron", "dark red to black with ruby internal reflection"]
+        color_note = "dark red octahedral (ruby-red internal reflection in thin crystals)"
+
+    f.Cu = max(f.Cu - rate * 0.035, 0)
+    # Cuprite growth slightly consumes O2 (Cu metal + oxygen → Cu oxide)
+    f.O2 = max(f.O2 - rate * 0.002, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=color_note,
+    )
+
+
+def grow_azurite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Azurite (Cu₃(CO₃)₂(OH)₂) growth — deep blue copper carbonate.
+
+    Azurite → malachite conversion mechanic: if CO₃ drops below a
+    threshold during azurite's lifetime, the crystal is marked dissolved
+    and its chemistry is released to fluid — the pseudomorph would then
+    form when malachite nucleates on the same wall cell.
+    """
+    sigma = conditions.supersaturation_azurite()
+    if sigma < 1.0:
+        # Acid dissolution (carbonate fizzes)
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 5.0:
+            crystal.dissolved = True
+            d = min(3.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Cu += d * 0.5
+            conditions.fluid.CO3 += d * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"carbonate dissolution (pH {conditions.fluid.pH:.1f}) — fizzes, Cu²⁺ + CO₃²⁻ released"
+            )
+        # Azurite → malachite conversion: CO3 dropped below high-pCO2 threshold
+        if crystal.total_growth_um > 5 and conditions.fluid.CO3 < 80:
+            crystal.dissolved = True
+            d = min(2.5, crystal.total_growth_um * 0.08)
+            conditions.fluid.Cu += d * 0.5
+            conditions.fluid.CO3 += d * 0.3   # less than full dissolve — some CO2 escapes
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"azurite → malachite conversion (CO₃ {conditions.fluid.CO3:.0f} ppm drops below pseudomorph threshold)"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.0:
+        crystal.habit = "azurite_sun"
+        crystal.dominant_forms = ["radiating flat disc", "azurite-sun in fracture"]
+        color_note = "deep blue azurite-sun — radiating disc habit in narrow fracture"
+    elif excess > 0.4:
+        crystal.habit = "rosette_bladed"
+        crystal.dominant_forms = ["radiating bladed crystals", "rosette"]
+        color_note = "deep blue rosette of radiating blades"
+    else:
+        crystal.habit = "deep_blue_prismatic"
+        crystal.dominant_forms = ["monoclinic prismatic", "deep azure/midnight blue"]
+        color_note = "deep azure-blue monoclinic prism"
+
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.025, 0)
+    conditions.fluid.CO3 = max(conditions.fluid.CO3 - rate * 0.018, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=color_note,
+    )
+
+
+def grow_native_copper(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Native copper (Cu) growth — the elemental metal."""
+    sigma = conditions.supersaturation_native_copper()
+    if sigma < 1.0:
+        # Oxidative dissolution if conditions shift — native Cu becomes
+        # cuprite surface film, eventually malachite coating
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 0.7:
+            crystal.dissolved = True
+            d = min(2.0, crystal.total_growth_um * 0.05)
+            conditions.fluid.Cu += d * 0.5
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"oxidation (O₂ {conditions.fluid.O2:.1f}) — forms cuprite surface film, then malachite if CO₃ is present"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 2.0 * excess * random.uniform(0.8, 1.2)   # slow
+    if rate < 0.1:
+        return None
+
+    # Habit selection: narrow channel = wire, open space + fast = sheet,
+    # moderate = arborescent, rare slow = cubic/dodecahedral
+    crowded = any(c.active and c.crystal_id != crystal.crystal_id for c in []) if False else False
+    # Simplified — just use excess value as proxy. Real-world native Cu
+    # habits depend on pore geometry which the sim doesn't model.
+    if excess > 1.5:
+        crystal.habit = "massive_sheet"
+        crystal.dominant_forms = ["massive sheet copper", "fills large void"]
+        color_note = "massive sheet copper (rapid precipitation in open void)"
+    elif excess > 0.6:
+        crystal.habit = "arborescent_dendritic"
+        crystal.dominant_forms = ["arborescent branching growth", "dendritic {100}"]
+        color_note = "arborescent dendritic — tree-like branching copper"
+    elif excess > 0.25:
+        crystal.habit = "wire_copper"
+        crystal.dominant_forms = ["wire growth along narrow channel", "filamentary Cu"]
+        color_note = "wire copper — filamentary growth in narrow channel"
+    else:
+        crystal.habit = "cubic_dodecahedral"
+        crystal.dominant_forms = ["{100} cube", "{110} rhombic dodecahedron", "rare well-formed crystal"]
+        color_note = "cubic/dodecahedral well-formed native copper (rare)"
+
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.04, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=color_note,
+    )
+
+
 def grow_bornite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Bornite (Cu₅FeS₄) growth — peacock ore.
 
@@ -3753,6 +3999,9 @@ MINERAL_ENGINES = {
     "bornite": grow_bornite,
     "chalcocite": grow_chalcocite,
     "covellite": grow_covellite,
+    "cuprite": grow_cuprite,
+    "azurite": grow_azurite,
+    "native_copper": grow_native_copper,
 }
 
 
@@ -4184,7 +4433,11 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
         temperature=35.0,          # shallow water-table zone
         pressure=0.05,             # near-surface
         fluid=FluidChemistry(
-            SiO2=30, Ca=120, CO3=80, Fe=40, Mn=6, Mg=5,
+            # CO3 80 → 110 so azurite's high-pCO2 gate (CO3 ≥ 120 after
+            # meteoric flush adds 30) can be reached in a limestone-
+            # hosted supergene vug. Real azurite localities (Bisbee,
+            # Chessy, Tsumeb) all have limestone or dolomite wall rock.
+            SiO2=30, Ca=120, CO3=110, Fe=40, Mn=6, Mg=5,
             Zn=90, S=50, F=3,
             # Cu 25 → 55: enough to feed chalcocite/bornite at supergene
             # enrichment zones (real supergene fluids run 50–200 ppm Cu²⁺
@@ -5007,6 +5260,12 @@ class VugSimulator:
             crystal.dominant_forms = ["{110} prism", "pseudo-hexagonal if twinned"]
         elif mineral == "covellite":
             crystal.dominant_forms = ["{0001} basal plate", "perfect basal cleavage"]
+        elif mineral == "cuprite":
+            crystal.dominant_forms = ["{111} octahedron", "dark red with ruby internal reflections"]
+        elif mineral == "azurite":
+            crystal.dominant_forms = ["monoclinic prism", "deep azure-blue"]
+        elif mineral == "native_copper":
+            crystal.dominant_forms = ["arborescent branching", "copper-red metallic"]
         self.crystals.append(crystal)
         return crystal
 
@@ -5407,6 +5666,62 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Beryl #{c.crystal_id} ({tag}) on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ber:.2f}, "
                               f"Be={f.Be:.0f} ppm, Cr={f.Cr:.2f}, Fe={f.Fe:.0f})")
+
+        # Cuprite nucleation — Cu + narrow O₂ window.
+        # Prefers native copper substrate (next step in the oxidation
+        # sequence) or chalcocite.
+        sigma_cpr = self.conditions.supersaturation_cuprite()
+        existing_cpr = [c for c in self.crystals if c.mineral == "cuprite" and c.active]
+        if sigma_cpr > 1.2 and not self._at_nucleation_cap("cuprite"):
+            if not existing_cpr or (sigma_cpr > 1.8 and random.random() < 0.2):
+                pos = "vug wall"
+                active_nc = [c for c in self.crystals if c.mineral == "native_copper" and c.active]
+                active_chc_cpr = [c for c in self.crystals if c.mineral == "chalcocite" and c.active]
+                if active_nc and random.random() < 0.6:
+                    pos = f"on native_copper #{active_nc[0].crystal_id}"
+                elif active_chc_cpr and random.random() < 0.3:
+                    pos = f"on chalcocite #{active_chc_cpr[0].crystal_id}"
+                c = self.nucleate("cuprite", position=pos, sigma=sigma_cpr)
+                self.log.append(f"  ✦ NUCLEATION: Cuprite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cpr:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, O₂={self.conditions.fluid.O2:.1f})")
+
+        # Azurite nucleation — Cu + high CO₃ + O₂.
+        # Grows on cuprite or free on wall.
+        sigma_azr = self.conditions.supersaturation_azurite()
+        existing_azr = [c for c in self.crystals if c.mineral == "azurite" and c.active]
+        if sigma_azr > 1.4 and not self._at_nucleation_cap("azurite"):
+            if not existing_azr or (sigma_azr > 2.0 and random.random() < 0.25):
+                pos = "vug wall"
+                active_cpr_azr = [c for c in self.crystals if c.mineral == "cuprite" and c.active]
+                active_nc_azr = [c for c in self.crystals if c.mineral == "native_copper" and c.active]
+                if active_cpr_azr and random.random() < 0.4:
+                    pos = f"on cuprite #{active_cpr_azr[0].crystal_id}"
+                elif active_nc_azr and random.random() < 0.3:
+                    pos = f"on native_copper #{active_nc_azr[0].crystal_id}"
+                c = self.nucleate("azurite", position=pos, sigma=sigma_azr)
+                self.log.append(f"  ✦ NUCLEATION: Azurite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_azr:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, CO₃={self.conditions.fluid.CO3:.0f})")
+
+        # Native copper nucleation — Cu + strongly reducing + low S.
+        # Grows on chalcocite/bornite or free on wall when the fluid is
+        # very reducing.
+        sigma_nc = self.conditions.supersaturation_native_copper()
+        existing_nc_nuc = [c for c in self.crystals if c.mineral == "native_copper" and c.active]
+        if sigma_nc > 1.6 and not self._at_nucleation_cap("native_copper"):
+            if not existing_nc_nuc or (sigma_nc > 2.2 and random.random() < 0.15):
+                pos = "vug wall"
+                active_chc_nc = [c for c in self.crystals if c.mineral == "chalcocite" and c.active]
+                active_brn_nc = [c for c in self.crystals if c.mineral == "bornite" and c.active]
+                if active_chc_nc and random.random() < 0.4:
+                    pos = f"on chalcocite #{active_chc_nc[0].crystal_id}"
+                elif active_brn_nc and random.random() < 0.3:
+                    pos = f"on bornite #{active_brn_nc[0].crystal_id}"
+                c = self.nucleate("native_copper", position=pos, sigma=sigma_nc)
+                self.log.append(f"  ✦ NUCLEATION: Native copper #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_nc:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, O₂={self.conditions.fluid.O2:.2f})")
 
         # Bornite nucleation — Cu + Fe + S, Cu:Fe > 2:1 (competes with
         # chalcopyrite for the same elements).
@@ -7992,6 +8307,151 @@ class VugSimulator:
                 "Oxidative dissolution — the Cu²⁺ will find malachite "
                 "or azurite; the S oxidized to sulfate."
             )
+        return " ".join(parts)
+
+    def _narrate_cuprite(self, c: Crystal) -> str:
+        """Narrate a cuprite crystal — the Eh-boundary oxide."""
+        parts = [f"Cuprite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₂O — 88.8% Cu by weight, dark red with ruby-red internal "
+            "reflections in thin slices. Forms at the Eh boundary between "
+            "more-reducing native copper and more-oxidizing malachite/"
+            "tenorite. The window is narrow, which is why cuprite tends to "
+            "appear as thin layers between native Cu and green malachite "
+            "coats — each zone captures a different depth in the Eh profile."
+        )
+        if c.habit == "chalcotrichite":
+            parts.append(
+                "Chalcotrichite — hair-like plush texture. Rapid "
+                "directional growth in open fracture space produced "
+                "whisker crystals instead of octahedra. The Morenci "
+                "(Arizona) and Chessy (France) localities produced the "
+                "best specimens — bright red velvet on matrix."
+            )
+        elif "massive" in (c.habit or ""):
+            parts.append(
+                "Massive 'tile ore' — dark red-brown rapidly-precipitated "
+                "cuprite filling tight pore space. Less photogenic than "
+                "octahedra, but this is how most cuprite actually occurs "
+                "in the field."
+            )
+        elif c.twinned and "spinel" in (c.twin_law or ""):
+            parts.append(
+                "Spinel-law penetration twin — two octahedra intergrown "
+                "with a {111} reentrant angle between them. Rare."
+            )
+        else:
+            parts.append(
+                "Classic octahedral habit, dark red with glassy-to-"
+                "adamantine luster. Tsumeb (Namibia) and the Mashamba "
+                "West mine (Congo) have produced gem-grade octahedra "
+                "to 15+ cm."
+            )
+        if c.dissolved:
+            parts.append(
+                "Crystal dissolved — the Eh window shifted out from "
+                "under it. If the fluid tilted reducing, Cu probably "
+                "went to native copper; if oxidizing and carbonated, to "
+                "malachite."
+            )
+        return " ".join(parts)
+
+    def _narrate_azurite(self, c: Crystal) -> str:
+        """Narrate an azurite crystal — the deep-blue carbonate."""
+        parts = [f"Azurite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₃(CO₃)₂(OH)₂ — the deepest blue in the common mineral "
+            "kingdom. Requires high pCO₂ groundwater — typically a "
+            "limestone-hosted supergene system where CO₂ stays elevated "
+            "under the impermeable carbonate cap. Chessy-les-Mines "
+            "(France) gave us 'chessylite', an old synonym; Tsumeb and "
+            "Bisbee (Arizona) produced the showpiece blue prisms."
+        )
+        if c.habit == "azurite_sun":
+            parts.append(
+                "Azurite-sun — radiating flat disc, grown in a narrow "
+                "fracture where crystallographic c-axis was forced "
+                "perpendicular to the fracture plane. The Malbunka "
+                "(Australia) azurite-suns in siltstone are the classic."
+            )
+        elif c.habit == "rosette_bladed":
+            parts.append(
+                "Radiating rosette — multiple blades nucleating at a "
+                "common center. Each blade preserves its own growth "
+                "zoning, visible as color intensity gradients under "
+                "strong light."
+            )
+        else:
+            parts.append(
+                "Monoclinic prismatic — the flagship azurite habit. "
+                "Deep blue trending to midnight-blue in thick crystals; "
+                "transparent thin slices are a deep indigo."
+            )
+        has_conversion = any("→ malachite" in (z.note or "") for z in c.zones)
+        if has_conversion:
+            parts.append(
+                "Azurite → malachite conversion — CO₂ has been escaping "
+                "from the pocket fluid and the CO₃ inventory dropped "
+                "below azurite's stability. The crystal shape will "
+                "persist (pseudomorph after azurite) but fill with the "
+                "green lower-carbonate mineral. Most Chessy and Morenci "
+                "azurite sits frozen mid-conversion — half blue, half "
+                "green — the geochemist's equivalent of a butterfly "
+                "emerging."
+            )
+        if c.dissolved and not has_conversion:
+            parts.append(
+                "Acid dissolution — fizzes like calcite because it's a "
+                "carbonate. Cu²⁺ and CO₃²⁻ released to fluid."
+            )
+        return " ".join(parts)
+
+    def _narrate_native_copper(self, c: Crystal) -> str:
+        """Narrate a native copper crystal — the elemental metal."""
+        parts = [f"Native copper #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu — elemental copper. Only forms when the fluid is "
+            "strongly reducing AND low in sulfur (otherwise it would "
+            "precipitate as sulfide). The Michigan Keweenaw peninsula "
+            "basalt vesicles produced 500-ton masses — the Ontonagon "
+            "boulder, now at the Smithsonian, is 1.7 tons. Copper-red "
+            "fresh, tarnishes brown (cuprite surface film), eventually "
+            "green (malachite patina)."
+        )
+        if c.habit == "massive_sheet":
+            parts.append(
+                "Massive sheet copper — the Lake Superior basin signature. "
+                "Rapid precipitation in open basalt vesicles produced "
+                "sheets tens of centimeters thick. This is where "
+                "industrial copper mining began in the Western hemisphere, "
+                "~5000 BC with Lake Superior Old Copper Culture tool-"
+                "making."
+            )
+        elif c.habit == "arborescent_dendritic":
+            parts.append(
+                "Arborescent dendritic — tree-like branching, the "
+                "collector's ideal. Each branch is a single crystal "
+                "oriented along {100}; the aggregate approximates "
+                "isotropic growth only macroscopically. Bisbee and "
+                "Chino (New Mexico) produced the best."
+            )
+        elif c.habit == "wire_copper":
+            parts.append(
+                "Wire copper — filamentary growth in narrow channels. "
+                "The Ray mine (Arizona) and the Chino stockwork produced "
+                "the delicate wires that rock shops sell individually."
+            )
+        else:
+            parts.append(
+                "Cubic/dodecahedral well-formed crystal — rare for "
+                "native copper, which usually grows as dendrites. "
+                "Tsumeb produced the best sharp cubes."
+            )
+        parts.append(
+            "The Statue of Liberty's iconic green patina is malachite "
+            "growing on native copper — the mineralogical fate of most "
+            "surface copper, given enough time and rain."
+        )
         return " ".join(parts)
 
     def _narrate_mixing_event(self, batch: List[Crystal], event: Event) -> str:

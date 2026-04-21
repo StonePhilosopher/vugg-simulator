@@ -2984,6 +2984,9 @@ const MINERAL_SPEC_FALLBACK = {
   bornite: { formula: "Cu5FeS4", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.4, thermal_decomp_C: 550, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
   chalcocite: { formula: "Cu2S", nucleation_sigma: 1.1, max_size_cm: 15, growth_rate_mult: 0.6, thermal_decomp_C: 1130, fluorescence: null, twin_laws: [{ name: "cyclic_sixling", probability: 0.15 }], acid_dissolution: { pH_threshold: 3.0 } },
   covellite: { formula: "CuS", nucleation_sigma: 1.2, max_size_cm: 10, growth_rate_mult: 0.45, thermal_decomp_C: 507, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
+  cuprite: { formula: "Cu2O", nucleation_sigma: 1.2, max_size_cm: 15, growth_rate_mult: 0.35, thermal_decomp_C: 1235, fluorescence: null, twin_laws: [{ name: "spinel_law", probability: 0.05 }], acid_dissolution: { pH_threshold: 3.5 } },
+  azurite: { formula: "Cu3(CO3)2(OH)2", nucleation_sigma: 1.4, max_size_cm: 25, growth_rate_mult: 0.3, thermal_decomp_C: 220, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 5.0 } },
+  native_copper: { formula: "Cu", nucleation_sigma: 1.6, max_size_cm: 300, growth_rate_mult: 0.2, thermal_decomp_C: 1083, fluorescence: null, twin_laws: [{ name: "spinel_law", probability: 0.04 }], acid_dissolution: { pH_threshold: 4.0 } },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3922,6 +3925,47 @@ class VugConditions {
     else if (T > 700) T_factor = 0.2;
     else T_factor = Math.max(0.1, 0.5 - 0.008 * (400 - T));
     sigma *= T_factor;
+    return Math.max(sigma, 0);
+  }
+
+  // Cuprite (Cu₂O) — the Eh-boundary oxide.
+  supersaturation_cuprite() {
+    if (this.fluid.Cu < 20 || this.fluid.O2 < 0.3 || this.fluid.O2 > 1.2) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 50.0, 2.0);
+    const o_f = Math.max(0.3, 1.0 - Math.abs(this.fluid.O2 - 0.7) * 1.4);
+    let sigma = cu_f * o_f;
+    if (this.temperature > 100) sigma *= Math.exp(-0.03 * (this.temperature - 100));
+    if (this.fluid.pH < 3.5) sigma -= (3.5 - this.fluid.pH) * 0.3;
+    return Math.max(sigma, 0);
+  }
+
+  // Azurite (Cu₃(CO₃)₂(OH)₂) — deep-blue Cu carbonate, high pCO₂.
+  supersaturation_azurite() {
+    if (this.fluid.Cu < 20 || this.fluid.CO3 < 120 || this.fluid.O2 < 1.0) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 40.0, 2.0);
+    const co_f = Math.min(this.fluid.CO3 / 150.0, 1.8);
+    const o_f  = Math.min(this.fluid.O2 / 1.5, 1.3);
+    let sigma = cu_f * co_f * o_f;
+    if (this.temperature > 50) sigma *= Math.exp(-0.06 * (this.temperature - 50));
+    if (this.fluid.pH < 5.0) sigma -= (5.0 - this.fluid.pH) * 0.4;
+    return Math.max(sigma, 0);
+  }
+
+  // Native copper (Cu) — elemental, strongly reducing + low S.
+  supersaturation_native_copper() {
+    if (this.fluid.Cu < 50 || this.fluid.O2 > 0.4 || this.fluid.S > 30) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
+    const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 2.0);
+    const s_f = Math.max(0.3, 1.0 - this.fluid.S / 40.0);
+    let sigma = cu_f * red_f * s_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 20 && T <= 150) T_factor = 1.0;
+    else if (T < 20) T_factor = 0.7;
+    else if (T <= 300) T_factor = Math.max(0.4, 1.0 - 0.004 * (T - 150));
+    else T_factor = 0.2;
+    sigma *= T_factor;
+    if (this.fluid.pH < 4.0) sigma -= (4.0 - this.fluid.pH) * 0.3;
     return Math.max(sigma, 0);
   }
 
@@ -5426,6 +5470,85 @@ function grow_albite(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Al: conditions.fluid.Al * 0.03, note });
 }
 
+function grow_cuprite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_cuprite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && (conditions.fluid.pH < 3.5 || conditions.fluid.O2 > 1.5)) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.07);
+      conditions.fluid.Cu += d * 0.5;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `dissolution — Eh window exceeded (pH ${conditions.fluid.pH.toFixed(1)}, O₂ ${conditions.fluid.O2.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  const f = conditions.fluid;
+  let color_note;
+  if (excess > 1.5) { crystal.habit = 'chalcotrichite'; crystal.dominant_forms = ['hair-like {100} whiskers', 'plush velvet texture']; color_note = `chalcotrichite — hair-like Cu₂O whiskers (σ ${sigma.toFixed(2)}, rapid directional growth)`; }
+  else if (excess > 0.8) { crystal.habit = 'massive_earthy'; crystal.dominant_forms = ['massive earthy "tile ore"', 'dark red-brown']; color_note = "massive earthy — 'tile ore' in dark red-brown (rapid growth in tight space)"; }
+  else if (!crystal.twinned && excess > 0.3 && excess < 0.8 && rng.random() < 0.05) { crystal.twinned = true; crystal.twin_law = 'spinel law {111}'; crystal.habit = 'spinel_twin'; crystal.dominant_forms = ['{111} octahedron (spinel-law twinned)', 'reentrant angles']; color_note = 'dark red octahedron with spinel-law penetration twin'; }
+  else { crystal.habit = 'octahedral'; crystal.dominant_forms = ['{111} octahedron', 'dark red to black with ruby internal reflection']; color_note = 'dark red octahedral (ruby-red internal reflection in thin crystals)'; }
+  f.Cu = Math.max(f.Cu - rate * 0.035, 0);
+  f.O2 = Math.max(f.O2 - rate * 0.002, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
+}
+
+function grow_azurite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_azurite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Cu += d * 0.5;
+      conditions.fluid.CO3 += d * 0.4;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `carbonate dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — fizzes, Cu²⁺ + CO₃²⁻ released` });
+    }
+    if (crystal.total_growth_um > 5 && conditions.fluid.CO3 < 80) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.08);
+      conditions.fluid.Cu += d * 0.5;
+      conditions.fluid.CO3 += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `azurite → malachite conversion (CO₃ ${conditions.fluid.CO3.toFixed(0)} ppm drops below pseudomorph threshold)` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  let color_note;
+  if (excess > 1.0) { crystal.habit = 'azurite_sun'; crystal.dominant_forms = ['radiating flat disc', 'azurite-sun in fracture']; color_note = 'deep blue azurite-sun — radiating disc habit in narrow fracture'; }
+  else if (excess > 0.4) { crystal.habit = 'rosette_bladed'; crystal.dominant_forms = ['radiating bladed crystals', 'rosette']; color_note = 'deep blue rosette of radiating blades'; }
+  else { crystal.habit = 'deep_blue_prismatic'; crystal.dominant_forms = ['monoclinic prismatic', 'deep azure/midnight blue']; color_note = 'deep azure-blue monoclinic prism'; }
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.025, 0);
+  conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.018, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
+}
+
+function grow_native_copper(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_native_copper();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.05);
+      conditions.fluid.Cu += d * 0.5;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `oxidation (O₂ ${conditions.fluid.O2.toFixed(1)}) — forms cuprite film, then malachite if CO₃ is present` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  let color_note;
+  if (excess > 1.5) { crystal.habit = 'massive_sheet'; crystal.dominant_forms = ['massive sheet copper', 'fills large void']; color_note = 'massive sheet copper (rapid precipitation in open void)'; }
+  else if (excess > 0.6) { crystal.habit = 'arborescent_dendritic'; crystal.dominant_forms = ['arborescent branching growth', 'dendritic {100}']; color_note = 'arborescent dendritic — tree-like branching copper'; }
+  else if (excess > 0.25) { crystal.habit = 'wire_copper'; crystal.dominant_forms = ['wire growth along narrow channel', 'filamentary Cu']; color_note = 'wire copper — filamentary growth in narrow channel'; }
+  else { crystal.habit = 'cubic_dodecahedral'; crystal.dominant_forms = ['{100} cube', '{110} rhombic dodecahedron', 'rare well-formed crystal']; color_note = 'cubic/dodecahedral well-formed native copper (rare)'; }
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.04, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
+}
+
 function grow_bornite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_bornite();
   if (sigma < 1.0) {
@@ -6009,6 +6132,9 @@ const MINERAL_ENGINES = {
   bornite: grow_bornite,
   chalcocite: grow_chalcocite,
   covellite: grow_covellite,
+  cuprite: grow_cuprite,
+  azurite: grow_azurite,
+  native_copper: grow_native_copper,
 };
 
 function grow_adamite(crystal, conditions, step) {
@@ -6347,7 +6473,9 @@ function scenario_supergene_oxidation() {
   const conditions = new VugConditions({
     temperature: 35.0, pressure: 0.05,
     fluid: new FluidChemistry({
-      SiO2: 30, Ca: 120, CO3: 80, Fe: 40, Mn: 6, Mg: 5,
+      // CO3 80 → 110 so azurite's high-pCO2 gate (≥120 after meteoric
+      // flush adds 30) can be reached in a limestone-hosted vug.
+      SiO2: 30, Ca: 120, CO3: 110, Fe: 40, Mn: 6, Mg: 5,
       Zn: 90, S: 50, F: 3,
       // Cu 25 → 55 so chalcocite/bornite can saturate at the enrichment
       // zone. Pb 35 → 60 so anglesite/cerussite/pyromorphite can saturate.
@@ -6631,6 +6759,12 @@ class VugSimulator {
       crystal.dominant_forms = ['{110} prism', 'pseudo-hexagonal if twinned'];
     } else if (mineral === 'covellite') {
       crystal.dominant_forms = ['{0001} basal plate', 'perfect basal cleavage'];
+    } else if (mineral === 'cuprite') {
+      crystal.dominant_forms = ['{111} octahedron', 'dark red with ruby internal reflections'];
+    } else if (mineral === 'azurite') {
+      crystal.dominant_forms = ['monoclinic prism', 'deep azure-blue'];
+    } else if (mineral === 'native_copper') {
+      crystal.dominant_forms = ['arborescent branching', 'copper-red metallic'];
     }
     this.crystals.push(crystal);
     return crystal;
@@ -7049,6 +7183,51 @@ class VugSimulator {
       }
       const c = this.nucleate('mimetite', pos, sigma_mim);
       this.log.push(`  ✦ NUCLEATION: Mimetite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mim.toFixed(2)})`);
+    }
+
+    // Cuprite nucleation — Cu + narrow O₂ window (Eh-boundary mineral).
+    const sigma_cpr = this.conditions.supersaturation_cuprite();
+    const existing_cpr = this.crystals.filter(c => c.mineral === 'cuprite' && c.active);
+    if (sigma_cpr > 1.2 && !this._atNucleationCap('cuprite')) {
+      if (!existing_cpr.length || (sigma_cpr > 1.8 && rng.random() < 0.2)) {
+        let pos = 'vug wall';
+        const active_nc_cpr = this.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+        const active_chc_cpr = this.crystals.filter(c => c.mineral === 'chalcocite' && c.active);
+        if (active_nc_cpr.length && rng.random() < 0.6) pos = `on native_copper #${active_nc_cpr[0].crystal_id}`;
+        else if (active_chc_cpr.length && rng.random() < 0.3) pos = `on chalcocite #${active_chc_cpr[0].crystal_id}`;
+        const c = this.nucleate('cuprite', pos, sigma_cpr);
+        this.log.push(`  ✦ NUCLEATION: Cuprite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cpr.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, O₂=${this.conditions.fluid.O2.toFixed(1)})`);
+      }
+    }
+
+    // Azurite nucleation — Cu + high CO₃ + O₂ (limestone-hosted Cu deposit).
+    const sigma_azr = this.conditions.supersaturation_azurite();
+    const existing_azr = this.crystals.filter(c => c.mineral === 'azurite' && c.active);
+    if (sigma_azr > 1.4 && !this._atNucleationCap('azurite')) {
+      if (!existing_azr.length || (sigma_azr > 2.0 && rng.random() < 0.25)) {
+        let pos = 'vug wall';
+        const active_cpr_azr = this.crystals.filter(c => c.mineral === 'cuprite' && c.active);
+        const active_nc_azr = this.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+        if (active_cpr_azr.length && rng.random() < 0.4) pos = `on cuprite #${active_cpr_azr[0].crystal_id}`;
+        else if (active_nc_azr.length && rng.random() < 0.3) pos = `on native_copper #${active_nc_azr[0].crystal_id}`;
+        const c = this.nucleate('azurite', pos, sigma_azr);
+        this.log.push(`  ✦ NUCLEATION: Azurite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_azr.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, CO₃=${this.conditions.fluid.CO3.toFixed(0)})`);
+      }
+    }
+
+    // Native copper nucleation — Cu + strongly reducing + low S.
+    const sigma_nc = this.conditions.supersaturation_native_copper();
+    const existing_nc_nuc = this.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+    if (sigma_nc > 1.6 && !this._atNucleationCap('native_copper')) {
+      if (!existing_nc_nuc.length || (sigma_nc > 2.2 && rng.random() < 0.15)) {
+        let pos = 'vug wall';
+        const active_chc_nc = this.crystals.filter(c => c.mineral === 'chalcocite' && c.active);
+        const active_brn_nc = this.crystals.filter(c => c.mineral === 'bornite' && c.active);
+        if (active_chc_nc.length && rng.random() < 0.4) pos = `on chalcocite #${active_chc_nc[0].crystal_id}`;
+        else if (active_brn_nc.length && rng.random() < 0.3) pos = `on bornite #${active_brn_nc[0].crystal_id}`;
+        const c = this.nucleate('native_copper', pos, sigma_nc);
+        this.log.push(`  ✦ NUCLEATION: Native copper #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_nc.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, O₂=${this.conditions.fluid.O2.toFixed(2)})`);
+      }
     }
 
     // Bornite nucleation — Cu + Fe + S, Cu:Fe > 2:1.
@@ -8403,6 +8582,56 @@ class VugSimulator {
       parts.push('Radiating rosette — plates nucleating outward from a common center. High supersaturation triggered multiple nucleation sites on the substrate at once, and the crystals grew into each other until the void was paved blue.');
     }
     parts.push("S:Cu ratio = 1:1, twice that of chalcocite. Covellite forms where sulfur activity is high enough to push past chalcocite's stoichiometry — typically the transition layer between oxidized caprock and reduced primary sulfides below.");
+    return parts.join(' ');
+  }
+
+  _narrate_cuprite(c) {
+    const parts = [`Cuprite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Cu₂O — 88.8% Cu by weight, dark red with ruby-red internal reflections in thin slices. Forms at the Eh boundary between more-reducing native copper and more-oxidizing malachite/tenorite. The window is narrow, which is why cuprite tends to appear as thin layers between native Cu and green malachite coats.');
+    if (c.habit === 'chalcotrichite') {
+      parts.push('Chalcotrichite — hair-like plush texture. Rapid directional growth in open fracture space produced whisker crystals instead of octahedra. Morenci (Arizona) and Chessy (France) produced the best specimens.');
+    } else if ((c.habit || '').includes('massive')) {
+      parts.push("Massive 'tile ore' — dark red-brown rapidly-precipitated cuprite filling tight pore space.");
+    } else if (c.twinned && (c.twin_law || '').includes('spinel')) {
+      parts.push('Spinel-law penetration twin — two octahedra intergrown with a {111} reentrant angle between them. Rare.');
+    } else {
+      parts.push('Classic octahedral habit, dark red with glassy-to-adamantine luster. Tsumeb (Namibia) and Mashamba West mine (Congo) produced gem-grade octahedra to 15+ cm.');
+    }
+    if (c.dissolved) parts.push('Crystal dissolved — the Eh window shifted out from under it.');
+    return parts.join(' ');
+  }
+
+  _narrate_azurite(c) {
+    const parts = [`Azurite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Cu₃(CO₃)₂(OH)₂ — the deepest blue in the common mineral kingdom. Requires high pCO₂ groundwater — typically a limestone-hosted supergene system. Chessy-les-Mines (France) gave us 'chessylite', an old synonym; Tsumeb and Bisbee (Arizona) produced the showpiece blue prisms.");
+    if (c.habit === 'azurite_sun') {
+      parts.push('Azurite-sun — radiating flat disc, grown in a narrow fracture where the c-axis was forced perpendicular to the fracture plane. The Malbunka (Australia) azurite-suns in siltstone are the classic.');
+    } else if (c.habit === 'rosette_bladed') {
+      parts.push('Radiating rosette — multiple blades nucleating at a common center.');
+    } else {
+      parts.push('Monoclinic prismatic — the flagship azurite habit. Deep blue trending to midnight-blue in thick crystals.');
+    }
+    const has_conversion = c.zones.some(z => (z.note || '').includes('→ malachite'));
+    if (has_conversion) {
+      parts.push("Azurite → malachite conversion — CO₂ has been escaping from the pocket fluid and the CO₃ inventory dropped below azurite's stability. The crystal shape will persist (pseudomorph after azurite) but fill with the green lower-carbonate mineral. Most Chessy and Morenci azurite sits frozen mid-conversion — half blue, half green — the geochemist's equivalent of a butterfly emerging.");
+    }
+    if (c.dissolved && !has_conversion) parts.push('Acid dissolution — fizzes like calcite. Cu²⁺ and CO₃²⁻ released.');
+    return parts.join(' ');
+  }
+
+  _narrate_native_copper(c) {
+    const parts = [`Native copper #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Cu — elemental copper. Only forms when the fluid is strongly reducing AND low in sulfur. The Michigan Keweenaw peninsula basalt vesicles produced 500-ton masses — the Ontonagon boulder, now at the Smithsonian, is 1.7 tons. Copper-red fresh, tarnishes brown (cuprite surface film), eventually green (malachite patina).');
+    if (c.habit === 'massive_sheet') {
+      parts.push('Massive sheet copper — the Lake Superior basin signature. Rapid precipitation in open basalt vesicles produced sheets tens of centimeters thick. This is where industrial copper mining began in the Western hemisphere, ~5000 BC with the Old Copper Culture.');
+    } else if (c.habit === 'arborescent_dendritic') {
+      parts.push("Arborescent dendritic — tree-like branching, the collector's ideal. Each branch is a single crystal oriented along {100}.");
+    } else if (c.habit === 'wire_copper') {
+      parts.push('Wire copper — filamentary growth in narrow channels. Ray and Chino (Arizona) produced the delicate wires.');
+    } else {
+      parts.push('Cubic/dodecahedral well-formed crystal — rare for native copper, which usually grows as dendrites.');
+    }
+    parts.push("The Statue of Liberty's iconic green patina is malachite growing on native copper — the mineralogical fate of most surface copper, given enough time and rain.");
     return parts.join(' ');
   }
 

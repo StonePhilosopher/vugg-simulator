@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 30,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (supergene Pb oxidation), +bornite/chalcocite/covellite (supergene Cu sulfide enrichment).",
+    "total_minerals": 33,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (supergene Pb oxidation), +bornite/chalcocite/covellite (supergene Cu sulfide enrichment), +cuprite/azurite/native_copper (supergene Cu oxide-native).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -55,7 +55,10 @@
       "vanadinite",
       "bornite",
       "chalcocite",
-      "covellite"
+      "covellite",
+      "cuprite",
+      "azurite",
+      "native_copper"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -115,7 +118,10 @@
         "vanadinite",
         "bornite",
         "chalcocite",
-        "covellite"
+        "covellite",
+        "cuprite",
+        "azurite",
+        "native_copper"
       ],
       "ouro_preto": [
         "quartz",
@@ -3373,6 +3379,315 @@
       ],
       "audit_status": "new (supergene round 2). The only common naturally blue mineral. Not in agent-api/vugg-agent.js.",
       "class_color": "#7feb13"
+    },
+    "cuprite": {
+      "formula": "Cu2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 4,
+      "max_size_cm": 15,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "octahedral",
+          "wall_spread": 0.25,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "low σ, low T, slow growth"
+        },
+        {
+          "name": "chalcotrichite_plush",
+          "wall_spread": 0.1,
+          "void_reach": 0.9,
+          "vector": "projecting",
+          "trigger": "high σ, low T, rapid directional growth"
+        },
+        {
+          "name": "massive_earthy",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "moderate-high σ, low T, space-constrained"
+        },
+        {
+          "name": "spinel_law_twin",
+          "wall_spread": 0.3,
+          "void_reach": 0.55,
+          "vector": "equant",
+          "trigger": "low-moderate σ, low T, rare"
+        },
+        {
+          "name": "default_octahedral",
+          "wall_spread": 0.25,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "default — octahedral {111}"
+        }
+      ],
+      "class": "oxide",
+      "description": "Cu₂O — 88.8% Cu by weight. Forms at the Eh boundary between native copper (more reducing) and tenorite/malachite (more oxidizing): a narrow redox window controls its existence. Dark red to nearly black with ruby-red internal reflections (from refraction, not fluorescence). Classic habits include octahedral crystals, 'chalcotrichite' hair-like plush, and massive 'tile ore'. Often occurs with native copper and malachite in supergene Cu deposits.",
+      "scenarios": [
+        "supergene_oxidation",
+        "porphyry"
+      ],
+      "T_range_C": [
+        0,
+        100
+      ],
+      "T_optimum_C": [
+        15,
+        60
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 3.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "mildly_reducing",
+      "required_ingredients": {
+        "Cu": 20,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Fe": "variant iron red",
+        "Bi": "minor cupromarcasite trace"
+      },
+      "thermal_decomp_C": 1235,
+      "thermal_decomp_reaction": "Cu₂O → 2CuO + Cu (above 1235°C)",
+      "thermal_decomp_products": {
+        "Cu": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "spinel_law",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.05
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 3.5,
+        "reaction": "Cu₂O + 2H⁺ → 2Cu²⁺ + H₂O",
+        "products": {
+          "Cu": 0.5
+        }
+      },
+      "habit": "octahedral",
+      "color_rules": {
+        "dark_red_black": {
+          "default": true
+        },
+        "ruby_red_internal": {
+          "trigger": "transparent thin crystals"
+        }
+      },
+      "narrate_function": "_narrate_cuprite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 3, Cu oxide/native suite). Forms at the narrow Eh window between reducing and oxidizing. Not in agent-api/vugg-agent.js.",
+      "class_color": "#eb1313"
+    },
+    "azurite": {
+      "formula": "Cu3(CO3)2(OH)2",
+      "nucleation_sigma": 1.4,
+      "max_nucleation_count": 4,
+      "max_size_cm": 25,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "deep_blue_prismatic",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "low σ, low T, high pCO₂"
+        },
+        {
+          "name": "rosette_bladed",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "moderate σ, low T, radiating"
+        },
+        {
+          "name": "azurite_sun_disc",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "moderate-high σ, low T, thin fracture"
+        },
+        {
+          "name": "default_prismatic",
+          "wall_spread": 0.25,
+          "void_reach": 0.75,
+          "vector": "projecting",
+          "trigger": "default — deep azure-blue prismatic"
+        }
+      ],
+      "class": "carbonate",
+      "description": "Cu₃(CO₃)₂(OH)₂ — deep azure to midnight blue, the deepest blue in the common mineral kingdom. Forms in supergene oxidation zones where high pCO₂ groundwater meets Cu²⁺. Most azurite is born to become malachite: CO₂ escapes from solution over time and the higher-carbonate azurite converts to lower-carbonate malachite, preserving the original crystal shape as a green pseudomorph. Requires carbonate country rock (limestone host) for the high pCO₂ conditions.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        50
+      ],
+      "T_optimum_C": [
+        10,
+        35
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 20,
+        "CO3": 120,
+        "O2": 1.0
+      },
+      "trace_ingredients": {
+        "Zn": "aurichalcite-adjacent variant"
+      },
+      "thermal_decomp_C": 220,
+      "thermal_decomp_reaction": "Cu₃(CO₃)₂(OH)₂ → CuO + CO₂ + H₂O",
+      "thermal_decomp_products": {
+        "Cu": 0.4,
+        "CO3": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "Cu₃(CO₃)₂(OH)₂ + 6H⁺ → 3Cu²⁺ + 2H₂O + 2CO₂ (fizzes like calcite)",
+        "products": {
+          "Cu": 0.5,
+          "CO3": 0.4
+        }
+      },
+      "habit": "deep_blue_prismatic",
+      "color_rules": {
+        "deep_azure": {
+          "default": true
+        },
+        "midnight_blue": {
+          "trigger": "thick prisms, high Cu"
+        }
+      },
+      "narrate_function": "_narrate_azurite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 3). Azurite→malachite conversion mechanic implemented via CO3 depletion check in grow_azurite. Not in agent-api/vugg-agent.js.",
+      "class_color": "#eb7f13"
+    },
+    "native_copper": {
+      "formula": "Cu",
+      "nucleation_sigma": 1.6,
+      "max_nucleation_count": 3,
+      "max_size_cm": 300,
+      "growth_rate_mult": 0.2,
+      "habit_variants": [
+        {
+          "name": "cubic_dodecahedral",
+          "wall_spread": 0.25,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "low σ, low T, open vesicle"
+        },
+        {
+          "name": "arborescent_dendritic",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "dendritic",
+          "trigger": "moderate σ, low T, fracture-fill"
+        },
+        {
+          "name": "wire_copper",
+          "wall_spread": 0.1,
+          "void_reach": 0.95,
+          "vector": "projecting",
+          "trigger": "low σ, low T, narrow channel"
+        },
+        {
+          "name": "massive_sheet",
+          "wall_spread": 0.8,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "high σ, low T, large void fill"
+        },
+        {
+          "name": "default_arborescent",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "dendritic",
+          "trigger": "default — arborescent branching growth"
+        }
+      ],
+      "class": "native",
+      "description": "Cu — elemental native copper. Only forms when S²⁻ is absent (otherwise precipitates as sulfide) AND Eh is strongly reducing (otherwise oxidizes to cuprite/malachite). The Michigan Keweenaw peninsula basalt vesicles produced 500-ton masses from basalt-hosted brines. Copper-red fresh, tarnishes brown, eventually green (malachite coating). The Statue of Liberty's iconic patina IS malachite growing on native copper — the reverse of supergene ore formation, where rain and air turn metal into mineral in front of us.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        300
+      ],
+      "T_optimum_C": [
+        20,
+        150
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "strongly_reducing",
+      "required_ingredients": {
+        "Cu": 50
+      },
+      "trace_ingredients": {
+        "Ag": "silver-copper alloy (native-silver series)",
+        "As": "minor arsenide substitution"
+      },
+      "thermal_decomp_C": 1083,
+      "thermal_decomp_reaction": "Cu melts at 1083°C (mineral itself stable well below)",
+      "thermal_decomp_products": {
+        "Cu": 0.5
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "spinel_law",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.04
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 4.0,
+        "reaction": "Cu + oxidizing acid → Cu²⁺ (slow)",
+        "products": {
+          "Cu": 0.5
+        }
+      },
+      "habit": "arborescent",
+      "color_rules": {
+        "copper_red_fresh": {
+          "default": true
+        },
+        "brown_tarnish": {
+          "trigger": "mild oxidation (cuprite surface)"
+        },
+        "green_patina": {
+          "trigger": "CO3 present + O2 (malachite surface)"
+        }
+      },
+      "narrate_function": "_narrate_native_copper",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 3). First native-element mineral. Shares native-hue class_color with future native bismuth. Not in agent-api/vugg-agent.js.",
+      "class_color": "#eb13eb"
     }
   }
 }
