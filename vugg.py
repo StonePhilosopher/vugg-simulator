@@ -765,6 +765,48 @@ class VugConditions:
             sigma *= math.exp(-0.01 * (300 - self.temperature))
         return max(sigma, 0)
 
+    def supersaturation_topaz(self) -> float:
+        """Topaz (Al₂SiO₄(F,OH)₂) supersaturation. Needs Al + SiO₂ + F.
+
+        Topaz is a nesosilicate whose structure demands fluorine (or OH) in
+        every other anion site. The F channel is what gates nucleation —
+        fluorine is incompatible early in hydrothermal evolution, so it
+        accumulates in residual fluid until it crosses a saturation threshold.
+        Morteani et al. 2002 put Ouro Preto imperial topaz at ~360°C, 3.5 kbar.
+        T_optimum 340–400°C; falls off outside that window. Very stable —
+        only strong acid (pH < 2) attacks it, and slowly.
+        """
+        # Hard F threshold: below this the structure simply can't form.
+        # This is the mechanism that delays topaz in the ouro_preto scenario —
+        # early quartz grows alone while F climbs past the gate.
+        if self.fluid.F < 20 or self.fluid.Al < 3 or self.fluid.SiO2 < 200:
+            return 0
+        # Cap each factor so pegmatite-level Al/SiO₂ (thousands of ppm each)
+        # doesn't explode sigma into runaway nucleation territory. Topaz
+        # only needs its anion components above threshold, not bazillions
+        # of them; the limiter is the F channel and temperature window.
+        al_f = min(self.fluid.Al / 8.0, 2.0)
+        si_f = min(self.fluid.SiO2 / 400.0, 1.5)
+        f_f  = min(self.fluid.F / 25.0, 1.5)
+        sigma = al_f * si_f * f_f
+        # Temperature window — sweet spot 340-400°C, decays outside.
+        T = self.temperature
+        if 340 <= T <= 400:
+            T_factor = 1.0
+        elif 300 <= T < 340:
+            T_factor = 0.6 + 0.01 * (T - 300)   # 0.6 → 1.0 across the lower ramp
+        elif 400 < T <= 500:
+            T_factor = max(0.2, 1.0 - 0.008 * (T - 400))
+        elif 500 < T <= 600:
+            T_factor = max(0.1, 0.4 - 0.003 * (T - 500))
+        else:
+            T_factor = 0.1  # outside published range — starved
+        sigma *= T_factor
+        # Strong-acid dissolution (pH < 2) eats topaz, slowly.
+        if self.fluid.pH < 2.0:
+            sigma -= (2.0 - self.fluid.pH) * 0.4
+        return max(sigma, 0)
+
     def supersaturation_uraninite(self) -> float:
         """Uraninite (UO₂) supersaturation. Needs U + reducing conditions.
 
@@ -2144,6 +2186,117 @@ def grow_albite(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
     )
 
 
+def grow_topaz(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Topaz (Al₂SiO₄(F,OH)₂) growth model.
+
+    Orthorhombic nesosilicate, prismatic with steep pyramidal terminations and
+    perfect basal {001} cleavage. F-gated supersaturation: the crystal won't
+    nucleate or grow until fluorine passes a saturation threshold.
+
+    Imperial color: trace Cr³⁺ (sourced from ultramafic country rock, NOT
+    from the main pegmatite fluid) substitutes for Al³⁺ in the structure.
+    - Cr < 3 ppm → colorless to pale blue (F-rich) or pale yellow
+    - Cr 3–8 ppm → imperial golden-orange (the Ouro Preto signature)
+    - Cr > 8 ppm → pink imperial (rarest, can be intensified by radiation)
+
+    Fluid inclusions at growth-zone boundaries are the main geothermometer —
+    the homogenization temperature of a 2-phase inclusion captures the T at
+    which that zone grew.
+    """
+    sigma = conditions.supersaturation_topaz()
+
+    if sigma < 1.0:
+        # Very stable — only strong acid (pH < 2) dissolves topaz.
+        if crystal.total_growth_um > 10 and conditions.fluid.pH < 2.0:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.04)
+            conditions.fluid.Al += dissolved_um * 0.3
+            conditions.fluid.SiO2 += dissolved_um * 0.2
+            conditions.fluid.F += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"strong-acid dissolution (pH {conditions.fluid.pH:.1f}) — Al³⁺, SiO₂, F⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    T = conditions.temperature
+
+    # Habit cues from the variant selector are set at nucleation. Here we
+    # refine dominant_forms based on thermal regime — higher T favors
+    # stubbier equant forms, lower T gives steep pyramidal terminations.
+    if T > 450:
+        crystal.dominant_forms = ["m{110} prism", "y{041} pyramid", "c{001} pinacoid", "stubby"]
+    elif T > 380:
+        crystal.dominant_forms = ["m{110} prism", "y{041} pyramid", "{021} pyramid"]
+    else:
+        crystal.dominant_forms = ["m{110} prism", "steep {021}+{041} pyramids", "c{001} basal cleavage"]
+
+    # Imperial color flag from trace Cr. Real imperial topaz takes up Cr³⁺
+    # as a direct substitute for Al³⁺; the Ouro Preto threshold is sub-ppm
+    # in the crystal but needs ~few ppm in the fluid to deposit enough.
+    Cr_fluid = conditions.fluid.Cr
+    F_fluid = conditions.fluid.F
+    if Cr_fluid > 8.0:
+        color_note = f"pink imperial (Cr³⁺ {Cr_fluid:.1f} ppm — rare, Cr⁴⁺ oxidation-state coloring)"
+        crystal.habit = "prismatic_imperial_pink"
+    elif Cr_fluid > 3.0:
+        color_note = f"imperial golden-orange (Cr³⁺ {Cr_fluid:.1f} ppm — the Ouro Preto signature)"
+        crystal.habit = "prismatic_imperial"
+    elif F_fluid > 40 and conditions.fluid.Fe < 5 and Cr_fluid < 0.5:
+        color_note = "pale blue (F-rich fluid, no Cr chromophore)"
+    elif conditions.fluid.Fe > 15:
+        color_note = "pale yellow to brown (Fe³⁺ substitution)"
+    else:
+        color_note = "colorless to water-clear"
+
+    # Trace element incorporation (rough partition coefficients)
+    trace_Fe = conditions.fluid.Fe * 0.008
+    trace_Al = conditions.fluid.Al * 0.02  # mostly structural, recorded as trace
+    trace_Ti = conditions.fluid.Ti * 0.015  # rutile microinclusions, "sagenite" look
+
+    # Fluid inclusions — topaz is famous for well-preserved 2-phase inclusions.
+    # Primary inclusions trap growth fluid; homogenization T is the
+    # geothermometer that pinned Ouro Preto at 360°C (Morteani 2002).
+    fi = False
+    fi_type = ""
+    if rate > 4 and random.random() < 0.25:
+        fi = True
+        if T > 350:
+            fi_type = "2-phase (liquid + vapor) — geothermometer primary"
+        elif T > 150:
+            fi_type = "2-phase (liquid-dominant)"
+        else:
+            fi_type = "single-phase liquid (late, low-T)"
+
+    # Deplete fluid. Stoichiometry is approximate — we're tracking
+    # incompatible-element drawdown, not mass balance.
+    conditions.fluid.Al = max(conditions.fluid.Al - rate * 0.015, 0)
+    conditions.fluid.SiO2 = max(conditions.fluid.SiO2 - rate * 0.012, 0)
+    conditions.fluid.F = max(conditions.fluid.F - rate * 0.018, 0)
+
+    note_parts = [color_note]
+    if excess > 1.0:
+        note_parts.append("rapid growth — potential growth hillocks on prism faces")
+    elif excess < 0.2:
+        note_parts.append("near-equilibrium — clean layer growth, gem-quality potential")
+    if crystal.twinned:
+        note_parts.append(f"{crystal.twin_law} present")
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe, trace_Al=trace_Al, trace_Ti=trace_Ti,
+        fluid_inclusion=fi, inclusion_type=fi_type,
+        note=", ".join(note_parts),
+    )
+
+
 def grow_galena(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Galena (PbS) growth. Cubic lead sulfide, bright metallic luster, very dense."""
     sigma = conditions.supersaturation_galena()
@@ -2525,6 +2678,7 @@ MINERAL_ENGINES = {
     "smithsonite": grow_smithsonite,
     "wulfenite": grow_wulfenite,
     "selenite": grow_selenite,
+    "topaz": grow_topaz,
 }
 
 
@@ -3024,6 +3178,138 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
     return conditions, events, 180
 
 
+def scenario_ouro_preto() -> Tuple[VugConditions, List[Event], int]:
+    """Ouro Preto Imperial Topaz Veins — Minas Gerais, Brazil (Variant B).
+
+    Hydrothermal veins cutting Precambrian phyllite and quartzite in the
+    Ouro Preto district. Fluid inclusion data (Morteani et al. 2002) puts
+    crystallization at ~360°C, 3.5 kbar from metamorphic brines derived
+    from devolatilization of phyllite.
+
+    Single clean cooling curve — 360°C → 50°C — the "anti-flash-quench"
+    of the gem-pegmatite scenarios. No thermal events, no pressure spikes.
+    One exhalation from the granite cooling below.
+
+    The gate: topaz can't nucleate until fluorine accumulates past a
+    saturation threshold. Early quartz grows alone. A mid-scenario
+    metamorphic dehydration event pumps F from the phyllite micas into
+    the fluid, and the vein transitions to imperial topaz territory. The
+    imperial color — golden-orange to pink — depends on Cr³⁺ dissolved
+    out of nearby ultramafic bodies; without chromium the topaz is
+    colorless or pale blue.
+    """
+    conditions = VugConditions(
+        temperature=360.0,
+        pressure=3.5,
+        fluid=FluidChemistry(
+            # Quartz-saturated metamorphic brine from devolatilizing phyllite.
+            # SiO2 1200 ppm is enough to supersaturate quartz at 360°C
+            # (silica_equilibrium at 360°C ≈ 1050 ppm) — quartz lines the
+            # vein walls first, as per real Ouro Preto paragenesis.
+            SiO2=1200, Ca=40, CO3=20, Fe=6, Mn=2, Al=15,
+            # Starts below F-threshold (20 ppm) — topaz waits for the pulse.
+            F=12,
+            # Trace Cr from nearby ultramafic contact. Starts sub-threshold;
+            # ev_cr_leach bumps it into the imperial-color window (3–8 ppm).
+            # Random seeds can push it past 8 (pink imperial) if the Cr leach
+            # lands on an already-elevated baseline.
+            Cr=0.5,
+            Ti=0.6,
+            O2=0.3, pH=6.5, salinity=3.0,
+        )
+    )
+
+    def ev_vein_opening(cond):
+        """First fracture propagation — fresh hot fluid floods a narrow slot."""
+        cond.fluid.SiO2 += 150   # fresh silica supply
+        cond.temperature = 380
+        cond.flow_rate = 1.5
+        return ("The fracture opens. Fluid pressure exceeded lithostatic "
+                "pressure and the vein propagated upward — narrow, barely "
+                "wider than your hand. Fresh hot brine floods in at 380°C "
+                "and quartz starts lining the walls. The fluorine in the "
+                "fluid is still below saturation; topaz holds its breath.")
+
+    def ev_f_pulse(cond):
+        """Metamorphic dehydration of phyllite micas releases fluorine.
+        This is the gate-opener: F jumps past the topaz saturation threshold."""
+        cond.fluid.F += 30.0
+        cond.fluid.Al += 8.0
+        cond.temperature = 365
+        cond.flow_rate = 1.2
+        return ("A deeper wall of phyllite reaches the dehydration point. "
+                "Fluorine-bearing micas break down and release F⁻ into the "
+                f"vein fluid — F jumps to {cond.fluid.F:.0f} ppm, past the "
+                "topaz saturation threshold. The chemistry has just tipped. "
+                "Imperial topaz is now thermodynamically inevitable.")
+
+    def ev_cr_leach(cond):
+        """Fluid pathway crosses an ultramafic dike — Cr leaches in."""
+        cond.fluid.Cr += 4.0
+        cond.temperature = 340
+        return ("The vein system intersects an ultramafic dike on its way "
+                f"up. Chromium leaches into the fluid — Cr now {cond.fluid.Cr:.1f} ppm, "
+                "above the imperial-color window. Any topaz growing from "
+                "this pulse forward will catch Cr³⁺ in its structure. "
+                "Golden-orange is committed to the crystal.")
+
+    def ev_steady_cooling(cond):
+        """Main growth phase — slow steady cooling through the topaz window."""
+        cond.temperature = 320
+        cond.flow_rate = 1.0
+        return ("The main topaz growth phase. The vein cools steadily — "
+                "320°C now — and topaz is happily projecting from the "
+                "quartz-lined walls. Slow, clean layer-by-layer growth. "
+                "The crystals are recording the thermal history in their "
+                "growth zones and fluid inclusions; a microprobe traverse "
+                "across one of these crystals would read like a barometer.")
+
+    def ev_late_hydrothermal(cond):
+        """Dilute late fluid — F drops, kaolinite begins to form from feldspar."""
+        cond.temperature = 220
+        cond.fluid.pH = 5.5
+        cond.flow_rate = 0.6
+        return ("Late-stage dilute hydrothermal fluid — pH falling, F "
+                "depleted by topaz growth. Kaolinite begins replacing any "
+                "remaining feldspar in the wall rock; the vein walls soften. "
+                "Topaz's perfect basal cleavage means any shift in the "
+                "wall can snap a crystal off its base. Cleavage fragments "
+                "will accumulate on the pocket floor.")
+
+    def ev_oxidation_stain(cond):
+        """System opens to oxidizing surface water — goethite staining."""
+        cond.temperature = 90
+        cond.fluid.O2 = 1.6
+        cond.fluid.Fe += 20
+        cond.flow_rate = 0.3
+        return ("Surface water finds the vein. The system oxidizes — "
+                "meteoric O₂ reaches the pocket, iron precipitates as "
+                "goethite, and the final topaz generation sits in a "
+                "limonite-stained matrix. The assemblage that garimpeiros "
+                "will find in 400 Ma is now fully set.")
+
+    def ev_final_cooling(cond):
+        """System reaches near-ambient temperature — story ends."""
+        cond.temperature = 50
+        cond.flow_rate = 0.05
+        return ("The vein cools to near-ambient. What remains is the "
+                "assemblage: milky quartz lining the walls, imperial topaz "
+                "prisms projecting inward, fluid inclusion planes across "
+                "every crystal, iron-stained fractures. The exhalation has "
+                "finished. The vug now waits for time.")
+
+    events = [
+        Event(5,   "Vein Opening",       "Fracture propagates, fresh brine", ev_vein_opening),
+        Event(35,  "F-Pulse",             "Phyllite dehydration — F crosses saturation", ev_f_pulse),
+        Event(55,  "Cr Leach",            "Ultramafic dike contributes chromium", ev_cr_leach),
+        Event(90,  "Steady Cooling",      "Main topaz growth phase", ev_steady_cooling),
+        Event(150, "Late Hydrothermal",   "Kaolinite softening, F depleted", ev_late_hydrothermal),
+        Event(200, "Oxidation Stain",     "Goethite staining, surface water", ev_oxidation_stain),
+        Event(240, "Final Cooling",       "System approaches ambient", ev_final_cooling),
+    ]
+    return conditions, events, 260
+
+
 def scenario_random() -> Tuple[VugConditions, List[Event], int]:
     """Procedurally-generated vugg — each run a different discovery.
 
@@ -3255,6 +3541,7 @@ SCENARIOS = {
     "reactive_wall": scenario_reactive_wall,
     "radioactive_pegmatite": scenario_radioactive_pegmatite,
     "supergene_oxidation": scenario_supergene_oxidation,
+    "ouro_preto": scenario_ouro_preto,
     "random": scenario_random,
 }
 
@@ -3355,6 +3642,8 @@ class VugSimulator:
             crystal.dominant_forms = ["botryoidal masses", "velvety surface"]
         elif mineral == "molybdenite":
             crystal.dominant_forms = ["{0001} basal plates", "hexagonal outline"]
+        elif mineral == "topaz":
+            crystal.dominant_forms = ["m{110} prism", "y{041} pyramid", "c{001} basal cleavage"]
         self.crystals.append(crystal)
         return crystal
 
@@ -3699,6 +3988,27 @@ class VugSimulator:
             c = self.nucleate("selenite", position="vug wall", sigma=sigma_sel)
             self.log.append(f"  ✦ NUCLEATION: Selenite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_sel:.2f})")
+
+        # Topaz nucleation — Al + SiO₂ + F (F-gated).
+        # Threshold nucleation_sigma=1.4 is the Ouro Preto gate — early
+        # quartz grows alone while fluorine accumulates; only when F
+        # crosses saturation does topaz appear. Can nucleate on quartz
+        # (vein-lining paragenesis — quartz first, topaz grows on the
+        # quartz surface after F-rich fluid arrives).
+        sigma_tpz = self.conditions.supersaturation_topaz()
+        existing_tpz = [c for c in self.crystals if c.mineral == "topaz" and c.active]
+        if sigma_tpz > 1.4 and not self._at_nucleation_cap("topaz"):
+            if not existing_tpz or (sigma_tpz > 2.0 and random.random() < 0.3):
+                pos = "vug wall"
+                if existing_quartz and random.random() < 0.5:
+                    pos = f"on quartz #{existing_quartz[0].crystal_id}"
+                c = self.nucleate("topaz", position=pos, sigma=sigma_tpz)
+                imperial = (self.conditions.fluid.Cr > 3.0)
+                flag = " ✨ imperial color window open" if imperial else ""
+                self.log.append(f"  ✦ NUCLEATION: Topaz #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_tpz:.2f}, "
+                              f"F={self.conditions.fluid.F:.0f} ppm, "
+                              f"Cr={self.conditions.fluid.Cr:.1f} ppm){flag}")
 
     def apply_events(self):
         """Apply any events scheduled for this step."""
@@ -5489,6 +5799,103 @@ class VugSimulator:
                 "Acid released Na⁺, Al³⁺, and SiO₂ — albite is slightly more "
                 "resistant than K-feldspar but still weathers to kaolinite "
                 "under persistent acid attack."
+            )
+
+        return " ".join(parts)
+
+    def _narrate_topaz(self, c: Crystal) -> str:
+        """Narrate a topaz crystal's story — the fluorine-bearing nesosilicate."""
+        parts = [f"Topaz #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+
+        parts.append(
+            "Al₂SiO₄(F,OH)₂ — orthorhombic, prismatic with steep pyramidal "
+            "terminations and perfect basal {001} cleavage. Fluorine sits in "
+            "every other anion site of the structure; the crystal cannot "
+            "nucleate until dissolved F crosses a saturation threshold. "
+            "Ouro Preto imperial topaz crystallized at ~360°C, 3.5 kbar from "
+            "metamorphic hydrothermal fluids (Morteani et al. 2002)."
+        )
+
+        imperial_pink = any("pink imperial" in z.note for z in c.zones)
+        imperial_gold = any("imperial golden-orange" in z.note for z in c.zones)
+        pale_blue = any("pale blue" in z.note for z in c.zones)
+        pale_yellow = any("pale yellow" in z.note for z in c.zones)
+
+        if imperial_pink:
+            parts.append(
+                "Pink imperial — the rarest topaz coloration. Cr³⁺ substituted "
+                "for Al³⁺ in deep concentration, and the fluid's oxidation "
+                "state tipped some chromium into the pink-producing Cr⁴⁺ state. "
+                "A handful of specimens per year reach gem-grade at this depth."
+            )
+        elif imperial_gold:
+            parts.append(
+                "Imperial golden-orange — Cr³⁺ substituting for Al³⁺ in the "
+                "topaz structure. The chromium came not from the main fluid "
+                "but from nearby ultramafic country rock dissolving in trace. "
+                "This is the signature of Ouro Preto / Capão do Lana — the "
+                "only place on Earth where it's a commercial color."
+            )
+        elif pale_blue:
+            parts.append(
+                "Pale blue, F-rich and Cr-starved. In nature, this coloration "
+                "is often enhanced by subsequent radiation exposure producing "
+                "the sky-blue topaz flooded onto the market after Iapetos-age "
+                "pegmatites started being deliberately irradiated."
+            )
+        elif pale_yellow:
+            parts.append(
+                "Pale yellow from Fe³⁺ in the Al site — the common 'imperial' "
+                "knockoff. Without the Cr chromophore, this color is merely "
+                "pretty, not legendary."
+            )
+        else:
+            parts.append(
+                "Colorless — the default for topaz grown in a Cr-poor, Fe-poor "
+                "fluid. Gem-quality nonetheless; topaz is always hard (Mohs 8) "
+                "and always transparent."
+            )
+
+        inclusion_zones = [z for z in c.zones if z.fluid_inclusion]
+        if inclusion_zones:
+            geothermometer = any("geothermometer" in z.inclusion_type for z in inclusion_zones)
+            if geothermometer:
+                avg_T = sum(z.temperature for z in inclusion_zones) / len(inclusion_zones)
+                parts.append(
+                    f"{len(inclusion_zones)} fluid inclusion horizons preserved in "
+                    f"the growth zones — primary 2-phase inclusions at "
+                    f"~{avg_T:.0f}°C. Microthermometry would read them as "
+                    "the thermometer that pinned Ouro Preto at 360°C."
+                )
+            else:
+                parts.append(
+                    f"{len(inclusion_zones)} fluid inclusion horizons preserved — "
+                    "the topaz kept a record of every pulse of growth fluid."
+                )
+
+        avg_Ti = sum(z.trace_Ti for z in c.zones) / max(len(c.zones), 1)
+        if avg_Ti > 0.05:
+            parts.append(
+                "Trace Ti hints at microscopic rutile needles — protogenetic "
+                "inclusions formed before the topaz grew, then enveloped as "
+                "the crystal advanced. Diagnostic for Ouro Preto topaz under "
+                "Raman spectroscopy (Serrinha pegmatite, 2016)."
+            )
+
+        if c.phantom_count >= 1:
+            parts.append(
+                "Perfect basal {001} cleavage means partial dissolution along "
+                "that plane can produce ghost surfaces inside the crystal. "
+                f"{c.phantom_count} phantom boundary{'ies' if c.phantom_count > 1 else ''} "
+                "preserved — the crystal's autobiography written in growth "
+                "and regrowth."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Strong acid attack etched the surface — topaz is very "
+                "resistant, but pH below 2 with long exposure releases Al³⁺, "
+                "SiO₂, and F⁻ slowly back into the fluid."
             )
 
         return " ".join(parts)

@@ -38,13 +38,15 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 19,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit.",
+    "total_minerals": 20,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (Minas Gerais B).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
     "missing_from_web_index": [],
-    "missing_from_agent_api": [],
+    "missing_from_agent_api": [
+      "topaz"
+    ],
     "scenarios_that_can_nucleate": {
       "cooling": [
         "calcite",
@@ -93,6 +95,11 @@
         "mimetite",
         "selenite",
         "malachite"
+      ],
+      "ouro_preto": [
+        "quartz",
+        "topaz",
+        "goethite"
       ]
     }
   },
@@ -2184,6 +2191,118 @@
       ],
       "audit_status": "ok (phase-1: ghost fix complete — grow_goethite + _narrate_goethite + pseudomorph-after-sulfide nucleation in all 3 runtimes).",
       "class_color": "#13ebeb"
+    },
+    "topaz": {
+      "formula": "Al2SiO4(F,OH)2",
+      "nucleation_sigma": 1.4,
+      "max_nucleation_count": 6,
+      "max_size_cm": 200,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "prismatic_pyramidal",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "low σ, steady growth, moderate T"
+        },
+        {
+          "name": "columnar_f_rich",
+          "wall_spread": 0.15,
+          "void_reach": 0.9,
+          "vector": "projecting",
+          "trigger": "low σ, F-rich fluid, moderate T"
+        },
+        {
+          "name": "tabular_broad",
+          "wall_spread": 0.5,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "high σ, space-constrained"
+        },
+        {
+          "name": "stubby_equant",
+          "wall_spread": 0.3,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "moderate σ, high T"
+        },
+        {
+          "name": "default_prismatic",
+          "wall_spread": 0.25,
+          "void_reach": 0.75,
+          "vector": "projecting",
+          "trigger": "default — prismatic with steep pyramidal termination"
+        }
+      ],
+      "class": "silicate",
+      "description": "Al₂SiO₄(F,OH)₂ — orthorhombic, prismatic with steep pyramidal terminations and perfect basal cleavage {001}. Imperial topaz from Ouro Preto crystallized at ~360°C, 3.5 kbar from metamorphic hydrothermal fluids (Morteani et al. 2002). Golden-orange to pinkish color from trace Cr³⁺ sourced from nearby ultramafic bodies. Colorless to pale blue when Cr is absent. F/OH ratio in the crystal records fluid composition at growth time. Crystals can snap cleanly along basal cleavage — pocket floors littered with cleavage fragments are diagnostic.",
+      "scenarios": [
+        "ouro_preto"
+      ],
+      "T_range_C": [
+        300,
+        600
+      ],
+      "T_optimum_C": [
+        340,
+        400
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 2.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Al": 8,
+        "SiO2": 30,
+        "F": 25
+      },
+      "trace_ingredients": {
+        "Cr": "imperial golden-orange (>3 ppm), pink (>8 ppm with radiation)",
+        "Fe": "pale blue (F-rich, no Cr)",
+        "Ti": "inclusions visible in crystal (rutile needles)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": null,
+      "fluorescence": {
+        "activator": "trace Ti",
+        "threshold_ppm": 2,
+        "color": "weak_greenish_LW",
+        "quencher": null
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 2.0,
+        "reaction": "very resistant — only strong mineral acids attack Al₂SiO₄(F,OH)₂ slowly",
+        "products": {
+          "Al": 0.3,
+          "SiO2": 0.2,
+          "F": 0.4
+        }
+      },
+      "habit": "prismatic",
+      "color_rules": {
+        "colorless": {
+          "default": true
+        },
+        "pale_blue": {
+          "trigger": "F-rich fluid, low Cr"
+        },
+        "golden_orange": {
+          "trigger": "Cr > 3 ppm (imperial topaz)"
+        },
+        "pink_imperial": {
+          "trigger": "Cr > 8 ppm (pink imperial — rarest)"
+        }
+      },
+      "narrate_function": "_narrate_topaz",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (Minas Gerais Variant B, Ouro Preto Imperial Topaz). F-threshold gated nucleation; Cr³⁺ trace drives imperial color. Not yet in agent-api/vugg-agent.js.",
+      "class_color": "#1313eb"
     }
   }
 }

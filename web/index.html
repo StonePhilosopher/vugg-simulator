@@ -2124,6 +2124,7 @@ footer a:hover {
     <button onclick="startScenarioInCreative('reactive_wall')">Reactive Wall.</button>
     <button onclick="startScenarioInCreative('radioactive_pegmatite')">Radioactive Pegmatite.</button>
     <button onclick="startScenarioInCreative('supergene_oxidation')">Supergene Oxidation.</button>
+    <button onclick="startScenarioInCreative('ouro_preto')">Ouro Preto (Imperial Topaz).</button>
     <button class="menu-home" onclick="openNewGameMenu()">← Back.</button>
   </div>
 </div>
@@ -2174,6 +2175,7 @@ footer a:hover {
       <option value="reactive_wall">reactive_wall</option>
       <option value="radioactive_pegmatite">radioactive_pegmatite</option>
       <option value="supergene_oxidation">supergene_oxidation</option>
+      <option value="ouro_preto">ouro_preto</option>
     </select>
   </div>
   <div class="control-group">
@@ -2207,6 +2209,7 @@ Scenarios:
   reactive_wall — Acid pulses dissolve limestone walls, feed crystal growth
   radioactive_pegmatite — Uraninite + galena in a hot pegmatite. Deep time. ☢️ radiation damage.
   supergene_oxidation — Cold, oxidized water-table zone. Pb+Mo+Zn+As → wulfenite + smithsonite + adamite + mimetite + goethite.
+  ouro_preto — Imperial topaz veins, Minas Gerais. 360°C metamorphic brine, F-gated topaz nucleation. Cr³⁺ trace → golden-orange imperial color.
 </div>
   </div>
   <div class="inventory-col" id="legends-inventory-col" style="display:none;">
@@ -2967,6 +2970,7 @@ const MINERAL_SPEC_FALLBACK = {
   albite: { formula: "NaAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.4, thermal_decomp_C: 1118, fluorescence: { activator: "intrinsic", color: "weak_white_LW" }, twin_laws: [{ name: "albite", probability: 0.20 }, { name: "pericline", probability: 0.05 }], acid_dissolution: { pH_threshold: 3.0 } },
   selenite: { formula: "CaSO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 2400, growth_rate_mult: 0.7, thermal_decomp_C: 150, fluorescence: null, twin_laws: [{ name: "swallowtail", probability: 0.08 }], acid_dissolution: { pH_threshold: 5.0 } },
   goethite: { formula: "FeO(OH)", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.4, thermal_decomp_C: 300, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 }, nucleation_preferences: { grows_on: ["pyrite", "chalcopyrite", "marcasite"], forms_pseudomorph_after: ["pyrite"] } },
+  topaz: { formula: "Al2SiO4(F,OH)2", nucleation_sigma: 1.4, max_size_cm: 200, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: { activator: "trace Ti", threshold_ppm: 2, color: "weak_greenish_LW" }, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3875,6 +3879,29 @@ class VugConditions {
     if (this.fluid.Na < 10 || this.fluid.Al < 3 || this.fluid.SiO2 < 200) return 0;
     let sigma = (this.fluid.Na / 35.0) * (this.fluid.Al / 10.0) * (this.fluid.SiO2 / 400.0);
     if (this.temperature < 300) sigma *= Math.exp(-0.01 * (300 - this.temperature));
+    return Math.max(sigma, 0);
+  }
+
+  // Topaz (Al₂SiO₄(F,OH)₂) — F-gated nesosilicate. Imperial topaz at Ouro
+  // Preto grew at ~360°C, 3.5 kbar (Morteani 2002). Hard F threshold
+  // (20 ppm) below which the structure can't form — delays nucleation
+  // until fluorine accumulates. Factors are capped so pegmatite-level
+  // Al/SiO₂ (thousands of ppm) doesn't blow sigma into runaway territory.
+  supersaturation_topaz() {
+    if (this.fluid.F < 20 || this.fluid.Al < 3 || this.fluid.SiO2 < 200) return 0;
+    const al_f = Math.min(this.fluid.Al / 8.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 400.0, 1.5);
+    const f_f  = Math.min(this.fluid.F / 25.0, 1.5);
+    let sigma = al_f * si_f * f_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 340 && T <= 400) T_factor = 1.0;
+    else if (T >= 300 && T < 340) T_factor = 0.6 + 0.01 * (T - 300);
+    else if (T > 400 && T <= 500) T_factor = Math.max(0.2, 1.0 - 0.008 * (T - 400));
+    else if (T > 500 && T <= 600) T_factor = Math.max(0.1, 0.4 - 0.003 * (T - 500));
+    else T_factor = 0.1;
+    sigma *= T_factor;
+    if (this.fluid.pH < 2.0) sigma -= (2.0 - this.fluid.pH) * 0.4;
     return Math.max(sigma, 0);
   }
 }
@@ -5211,6 +5238,91 @@ function grow_albite(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Al: conditions.fluid.Al * 0.03, note });
 }
 
+function grow_topaz(crystal, conditions, step) {
+  // Topaz (Al₂SiO₄(F,OH)₂) — orthorhombic nesosilicate. F-gated nucleation.
+  // Imperial color (Cr³⁺ substitution) kicks in when fluid Cr > 3 ppm; pink
+  // imperial (Cr-rich + oxidizing conditions) above 8 ppm. Perfect basal
+  // cleavage means partial dissolution can leave phantom surfaces inside.
+  const sigma = conditions.supersaturation_topaz();
+
+  if (sigma < 1.0) {
+    // Very acid-resistant — only pH < 2 touches topaz, and slowly.
+    if (crystal.total_growth_um > 10 && conditions.fluid.pH < 2.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.04);
+      conditions.fluid.Al += d * 0.3;
+      conditions.fluid.SiO2 += d * 0.2;
+      conditions.fluid.F += d * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d,
+        note: `strong-acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Al³⁺, SiO₂, F⁻ released`,
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const T = conditions.temperature;
+  if (T > 450) crystal.dominant_forms = ['m{110} prism', 'y{041} pyramid', 'c{001} pinacoid', 'stubby'];
+  else if (T > 380) crystal.dominant_forms = ['m{110} prism', 'y{041} pyramid', '{021} pyramid'];
+  else crystal.dominant_forms = ['m{110} prism', 'steep {021}+{041} pyramids', 'c{001} basal cleavage'];
+
+  // Imperial color flag — the Ouro Preto signature comes from trace Cr³⁺
+  // leached from nearby ultramafic country rock, NOT from the main pegmatite
+  // or metamorphic fluid itself.
+  const Cr_fluid = conditions.fluid.Cr;
+  const F_fluid = conditions.fluid.F;
+  let color_note;
+  if (Cr_fluid > 8.0) {
+    color_note = `pink imperial (Cr³⁺ ${Cr_fluid.toFixed(1)} ppm — rare, Cr⁴⁺ oxidation-state coloring)`;
+    crystal.habit = 'prismatic_imperial_pink';
+  } else if (Cr_fluid > 3.0) {
+    color_note = `imperial golden-orange (Cr³⁺ ${Cr_fluid.toFixed(1)} ppm — the Ouro Preto signature)`;
+    crystal.habit = 'prismatic_imperial';
+  } else if (F_fluid > 40 && conditions.fluid.Fe < 5 && Cr_fluid < 0.5) {
+    color_note = 'pale blue (F-rich fluid, no Cr chromophore)';
+  } else if (conditions.fluid.Fe > 15) {
+    color_note = 'pale yellow to brown (Fe³⁺ substitution)';
+  } else {
+    color_note = 'colorless to water-clear';
+  }
+
+  const trace_Fe = conditions.fluid.Fe * 0.008;
+  const trace_Al = conditions.fluid.Al * 0.02;
+  const trace_Ti = conditions.fluid.Ti * 0.015;
+
+  // Fluid inclusions at growth-zone boundaries — topaz is famous for them.
+  // Morteani 2002 pinned Ouro Preto at 360°C via microthermometry.
+  let fi = false, fi_type = '';
+  if (rate > 4 && rng.random() < 0.25) {
+    fi = true;
+    if (T > 350) fi_type = '2-phase (liquid + vapor) — geothermometer primary';
+    else if (T > 150) fi_type = '2-phase (liquid-dominant)';
+    else fi_type = 'single-phase liquid (late, low-T)';
+  }
+
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.015, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.012, 0);
+  conditions.fluid.F = Math.max(conditions.fluid.F - rate * 0.018, 0);
+
+  const parts = [color_note];
+  if (excess > 1.0) parts.push('rapid growth — potential growth hillocks');
+  else if (excess < 0.2) parts.push('near-equilibrium — gem-quality potential');
+  if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Al, trace_Ti,
+    fluid_inclusion: fi, inclusion_type: fi_type,
+    note: parts.join(', '),
+  });
+}
+
 const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
@@ -5231,6 +5343,7 @@ const MINERAL_ENGINES = {
   mimetite: grow_mimetite,
   goethite: grow_goethite,
   albite: grow_albite,
+  topaz: grow_topaz,
 };
 
 function grow_adamite(crystal, conditions, step) {
@@ -5585,7 +5698,77 @@ function scenario_supergene_oxidation() {
   return { conditions, events, defaultSteps: 180 };
 }
 
-const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite, supergene_oxidation: scenario_supergene_oxidation };
+// Ouro Preto Imperial Topaz Veins — Minas Gerais, Brazil (Variant B).
+// Hydrothermal veins cutting Precambrian phyllite and quartzite at ~360°C,
+// 3.5 kbar (Morteani et al. 2002). Quartz first, then F-gated topaz once
+// phyllite dehydration pulses fluorine into the fluid. Imperial color
+// (Cr³⁺ from ultramafic country rock) lands the Ouro Preto signature.
+function scenario_ouro_preto() {
+  const conditions = new VugConditions({
+    temperature: 360.0,
+    pressure: 3.5,
+    fluid: new FluidChemistry({
+      SiO2: 1200, Ca: 40, CO3: 20, Fe: 6, Mn: 2, Al: 15,
+      F: 12,      // below topaz threshold — quartz lines vein walls first
+      Cr: 0.5,    // sub-threshold Cr; ev_cr_leach bumps into imperial window
+      Ti: 0.6,
+      O2: 0.3, pH: 6.5, salinity: 3.0,
+    }),
+  });
+  const events = [
+    { step: 5,   name: 'Vein Opening',     description: 'Fracture propagates, fresh brine',
+      apply_fn: (c) => {
+        c.fluid.SiO2 += 150;
+        c.temperature = 380;
+        c.flow_rate = 1.5;
+        return 'The fracture opens. Fluid pressure exceeded lithostatic pressure and the vein propagated upward — narrow, barely wider than your hand. Fresh hot brine floods in at 380°C and quartz starts lining the walls. The fluorine in the fluid is still below saturation; topaz holds its breath.';
+      } },
+    { step: 35,  name: 'F-Pulse',          description: 'Phyllite dehydration — F crosses saturation',
+      apply_fn: (c) => {
+        c.fluid.F += 30.0;
+        c.fluid.Al += 8.0;
+        c.temperature = 365;
+        c.flow_rate = 1.2;
+        return `A deeper wall of phyllite reaches the dehydration point. Fluorine-bearing micas break down and release F⁻ into the vein fluid — F jumps to ${c.fluid.F.toFixed(0)} ppm, past the topaz saturation threshold. The chemistry has just tipped. Imperial topaz is now thermodynamically inevitable.`;
+      } },
+    { step: 55,  name: 'Cr Leach',         description: 'Ultramafic dike contributes chromium',
+      apply_fn: (c) => {
+        c.fluid.Cr += 4.0;
+        c.temperature = 340;
+        return `The vein system intersects an ultramafic dike on its way up. Chromium leaches into the fluid — Cr now ${c.fluid.Cr.toFixed(1)} ppm, above the imperial-color window. Any topaz growing from this pulse forward will catch Cr³⁺ in its structure. Golden-orange is committed to the crystal.`;
+      } },
+    { step: 90,  name: 'Steady Cooling',   description: 'Main topaz growth phase',
+      apply_fn: (c) => {
+        c.temperature = 320;
+        c.flow_rate = 1.0;
+        return 'The main topaz growth phase. The vein cools steadily — 320°C now — and topaz is happily projecting from the quartz-lined walls. Slow, clean layer-by-layer growth. The crystals are recording the thermal history in their growth zones and fluid inclusions; a microprobe traverse across one of these crystals would read like a barometer.';
+      } },
+    { step: 150, name: 'Late Hydrothermal', description: 'Kaolinite softening, F depleted',
+      apply_fn: (c) => {
+        c.temperature = 220;
+        c.fluid.pH = 5.5;
+        c.flow_rate = 0.6;
+        return "Late-stage dilute hydrothermal fluid — pH falling, F depleted by topaz growth. Kaolinite begins replacing any remaining feldspar in the wall rock; the vein walls soften. Topaz's perfect basal cleavage means any shift in the wall can snap a crystal off its base. Cleavage fragments will accumulate on the pocket floor.";
+      } },
+    { step: 200, name: 'Oxidation Stain',  description: 'Goethite staining, surface water',
+      apply_fn: (c) => {
+        c.temperature = 90;
+        c.fluid.O2 = 1.6;
+        c.fluid.Fe += 20;
+        c.flow_rate = 0.3;
+        return 'Surface water finds the vein. The system oxidizes — meteoric O₂ reaches the pocket, iron precipitates as goethite, and the final topaz generation sits in a limonite-stained matrix. The assemblage that garimpeiros will find in 400 Ma is now fully set.';
+      } },
+    { step: 240, name: 'Final Cooling',    description: 'System approaches ambient',
+      apply_fn: (c) => {
+        c.temperature = 50;
+        c.flow_rate = 0.05;
+        return 'The vein cools to near-ambient. What remains is the assemblage: milky quartz lining the walls, imperial topaz prisms projecting inward, fluid inclusion planes across every crystal, iron-stained fractures. The exhalation has finished. The vug now waits for time.';
+      } },
+  ];
+  return { conditions, events, defaultSteps: 260 };
+}
+
+const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite, supergene_oxidation: scenario_supergene_oxidation, ouro_preto: scenario_ouro_preto };
 
 // ============================================================
 // SIMULATION ENGINE
@@ -5667,6 +5850,8 @@ class VugSimulator {
       crystal.dominant_forms = ['{010} blades', '{110} prism'];
     } else if (mineral === 'feldspar') {
       crystal.dominant_forms = ['{010} pinacoid', '{110} prism'];
+    } else if (mineral === 'topaz') {
+      crystal.dominant_forms = ['m{110} prism', 'y{041} pyramid', 'c{001} basal cleavage'];
     }
     this.crystals.push(crystal);
     return crystal;
@@ -6085,6 +6270,26 @@ class VugSimulator {
       }
       const c = this.nucleate('mimetite', pos, sigma_mim);
       this.log.push(`  ✦ NUCLEATION: Mimetite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mim.toFixed(2)})`);
+    }
+
+    // Topaz nucleation — Al + SiO₂ + F (F-gated, nucleation_sigma=1.4).
+    // Threshold is the Ouro Preto gate: early quartz grows alone while
+    // fluorine accumulates; topaz appears only when F crosses saturation.
+    // Often grows on quartz (vein-lining paragenesis).
+    const sigma_tpz = this.conditions.supersaturation_topaz();
+    const existing_tpz = this.crystals.filter(c => c.mineral === 'topaz' && c.active);
+    if (sigma_tpz > 1.4 && !this._atNucleationCap('topaz')) {
+      if (!existing_tpz.length || (sigma_tpz > 2.0 && rng.random() < 0.3)) {
+        let pos = 'vug wall';
+        const existing_qtz_tpz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
+        if (existing_qtz_tpz.length && rng.random() < 0.5) {
+          pos = `on quartz #${existing_qtz_tpz[0].crystal_id}`;
+        }
+        const c = this.nucleate('topaz', pos, sigma_tpz);
+        const imperial = this.conditions.fluid.Cr > 3.0;
+        const flag = imperial ? ' ✨ imperial color window open' : '';
+        this.log.push(`  ✦ NUCLEATION: Topaz #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_tpz.toFixed(2)}, F=${this.conditions.fluid.F.toFixed(0)} ppm, Cr=${this.conditions.fluid.Cr.toFixed(1)} ppm)${flag}`);
+      }
     }
   }
 
@@ -6970,6 +7175,54 @@ class VugSimulator {
     if (c.dissolved) {
       parts.push('Acid released Na⁺, Al³⁺, and SiO₂ — albite is slightly more resistant than K-feldspar but still weathers to kaolinite under persistent acid attack.');
     }
+    return parts.join(' ');
+  }
+
+  _narrate_topaz(c) {
+    const parts = [`Topaz #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Al₂SiO₄(F,OH)₂ — orthorhombic, prismatic with steep pyramidal terminations and perfect basal {001} cleavage. Fluorine occupies every other anion site; the crystal cannot nucleate until dissolved F crosses a saturation threshold. Ouro Preto imperial topaz crystallized at ~360°C, 3.5 kbar from metamorphic hydrothermal fluids (Morteani et al. 2002).');
+
+    const imperial_pink = c.zones.some(z => (z.note || '').includes('pink imperial'));
+    const imperial_gold = c.zones.some(z => (z.note || '').includes('imperial golden-orange'));
+    const pale_blue = c.zones.some(z => (z.note || '').includes('pale blue'));
+    const pale_yellow = c.zones.some(z => (z.note || '').includes('pale yellow'));
+
+    if (imperial_pink) {
+      parts.push("Pink imperial — the rarest topaz coloration. Cr³⁺ substituted for Al³⁺ in deep concentration, and the fluid's oxidation state tipped some chromium into the pink-producing Cr⁴⁺ state. A handful of specimens per year reach gem-grade at this depth.");
+    } else if (imperial_gold) {
+      parts.push('Imperial golden-orange — Cr³⁺ substituting for Al³⁺ in the topaz structure. The chromium came not from the main fluid but from nearby ultramafic country rock dissolving in trace. This is the signature of Ouro Preto / Capão do Lana — the only place on Earth where it\u2019s a commercial color.');
+    } else if (pale_blue) {
+      parts.push('Pale blue, F-rich and Cr-starved. In nature this coloration is often enhanced by subsequent radiation exposure — the sky-blue topaz flooded onto the market after Iapetos-age pegmatites started being deliberately irradiated.');
+    } else if (pale_yellow) {
+      parts.push("Pale yellow from Fe³⁺ in the Al site — the common 'imperial' knockoff. Without the Cr chromophore, this color is merely pretty, not legendary.");
+    } else {
+      parts.push('Colorless — the default for topaz grown in a Cr-poor, Fe-poor fluid. Gem-quality nonetheless; topaz is always hard (Mohs 8) and always transparent.');
+    }
+
+    const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
+    if (inclusion_zones.length) {
+      const geothermometer = inclusion_zones.some(z => (z.inclusion_type || '').includes('geothermometer'));
+      if (geothermometer) {
+        const avg_T = inclusion_zones.reduce((s, z) => s + z.temperature, 0) / inclusion_zones.length;
+        parts.push(`${inclusion_zones.length} fluid inclusion horizons preserved in the growth zones — primary 2-phase inclusions at ~${avg_T.toFixed(0)}°C. Microthermometry would read them as the thermometer that pinned Ouro Preto at 360°C.`);
+      } else {
+        parts.push(`${inclusion_zones.length} fluid inclusion horizons preserved — the topaz kept a record of every pulse of growth fluid.`);
+      }
+    }
+
+    const avg_Ti = c.zones.reduce((s, z) => s + (z.trace_Ti || 0), 0) / Math.max(c.zones.length, 1);
+    if (avg_Ti > 0.05) {
+      parts.push('Trace Ti hints at microscopic rutile needles — protogenetic inclusions formed before the topaz grew, then enveloped as the crystal advanced. Diagnostic for Ouro Preto topaz under Raman spectroscopy (Serrinha pegmatite, 2016).');
+    }
+
+    if (c.phantom_count >= 1) {
+      parts.push(`Perfect basal {001} cleavage means partial dissolution along that plane can produce ghost surfaces inside the crystal. ${c.phantom_count} phantom boundar${c.phantom_count > 1 ? 'ies' : 'y'} preserved — the crystal's autobiography written in growth and regrowth.`);
+    }
+
+    if (c.dissolved) {
+      parts.push('Strong acid attack etched the surface — topaz is very resistant, but pH below 2 with long exposure releases Al³⁺, SiO₂, and F⁻ slowly back into the fluid.');
+    }
+
     return parts.join(' ');
   }
 
