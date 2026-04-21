@@ -3428,17 +3428,19 @@ class VugWall {
     this.wall_Mg_ppm = opts.wall_Mg_ppm ?? 1000.0;
     this.ca_from_wall_total = opts.ca_from_wall_total ?? 0.0;
     // Phase-1 naturalistic void shape (visual only — growth engines
-    // still read meanDiameterMm). See WallState._buildProfile() for
-    // how these compose into per-cell base radii.
-    //   void_style: one of 'gas_bubble', 'dissolution_cavity',
-    //     'fracture_pocket', 'vein', 'reactive_front'. Picks the
-    //     harmonic palette used by the Fourier profile.
-    //   irregularity: 0.0 perfect circle, 1.0 wild.
-    //   aspect: cross-section ellipse ratio (>=1, area-preserving).
-    //   shape_seed: deterministic seed for the Fourier coefficients.
-    this.void_style = opts.void_style ?? 'gas_bubble';
-    this.irregularity = opts.irregularity ?? 0.15;
-    this.aspect = opts.aspect ?? 1.0;
+    // still read meanDiameterMm). Bubble-merge model: N random circles
+    // overlap to form a botryoidal dissolution cavity with natural
+    // alcoves (where bubbles overlap from inside) and promontories
+    // (where they don't). See WallState._buildProfile() for the
+    // geometry.
+    //   bubble_count: number of overlapping circles (1 = perfect
+    //     circle after rescale, 4–12 typical).
+    //   bubble_size_range: [min, max] bubble radius as fraction of
+    //     initial_radius_mm. Tight ranges read spherical; wide ranges
+    //     read botryoidal.
+    //   shape_seed: deterministic seed for bubble positions / radii.
+    this.bubble_count = opts.bubble_count ?? 6;
+    this.bubble_size_range = opts.bubble_size_range ?? [0.2, 0.6];
     this.shape_seed = opts.shape_seed ?? 0;
   }
 
@@ -3513,33 +3515,12 @@ class WallCell {
 // Dissolution is per-cell: cells covered by acid-resistant crystals
 // shield their slice, so unblocked cells erode faster — the wall ends
 // up shaped like the deposit history rather than a perfect circle.
-// Per-style harmonic palette for the Fourier profile. Each entry is
-// (n, weight) — weight biases a harmonic up/down relative to the style's
-// baseline amp budget. Low-n harmonics dominate (smooth shapes) with
-// style-specific accents. Must mirror WallState._VOID_STYLE_HARMONICS
-// in vugg.py.
-const VOID_STYLE_HARMONICS = {
-  gas_bubble:         [[2, 1.0]],
-  dissolution_cavity: [[2, 1.0], [3, 0.9], [4, 0.7], [5, 0.5]],
-  fracture_pocket:    [[2, 2.0], [3, 0.9], [4, 0.7], [5, 0.5]],
-  vein:               [[2, 0.8], [3, 0.6]],
-  reactive_front:     [[2, 0.9], [3, 0.9], [4, 0.8], [5, 0.8],
-                       [6, 0.6], [7, 0.5]],
-};
-const VOID_STYLE_AMP_MAX = {
-  gas_bubble:         0.08,
-  dissolution_cavity: 0.16,
-  fracture_pocket:    0.18,
-  vein:               0.08,
-  reactive_front:     0.22,
-};
-
 // Minimal mulberry32 PRNG — 32-bit seed in, [0,1) out. Same seed always
 // produces the same stream. Used so JS + Python produce *different*
-// concrete coefficients (their RNGs don't share streams) but both are
-// deterministic per their own shape_seed. For exact cross-runtime shape
-// parity we'd mirror Python's Mersenne Twister, but Phase 1 doesn't
-// require that — only reproducibility within a runtime.
+// concrete bubble placements (their RNGs don't share streams) but both
+// are deterministic per their own shape_seed. For exact cross-runtime
+// shape parity we'd mirror Python's Mersenne Twister; Phase 1 only
+// requires reproducibility within a runtime.
 function _mulberry32(seed) {
   let s = (seed | 0) >>> 0;
   return function() {
@@ -3559,12 +3540,11 @@ class WallState {
     this.initial_radius_mm = opts.initial_radius_mm ?? (this.vug_diameter_mm / 2);
     this.ring_spacing_mm = opts.ring_spacing_mm ?? 1.0;
     // Phase-1 naturalistic void shape parameters (see VugWall).
-    this.void_style = opts.void_style ?? 'gas_bubble';
-    this.irregularity = opts.irregularity ?? 0.0;
-    this.aspect = opts.aspect ?? 1.0;
+    this.bubble_count = opts.bubble_count ?? 6;
+    this.bubble_size_range = opts.bubble_size_range ?? [0.2, 0.6];
     this.shape_seed = opts.shape_seed ?? 0;
-    this.fourier_coeffs = [];
-    this._theta_offset = 0;
+    // Populated by _buildProfile() — [[cx, cy, r], …] in mm after rescale.
+    this.bubbles = [];
 
     this.rings = [];
     for (let r = 0; r < this.ring_count; r++) {
@@ -3572,9 +3552,9 @@ class WallState {
       for (let c = 0; c < this.cells_per_ring; c++) ring.push(new WallCell());
       this.rings.push(ring);
     }
-    // Bake the per-cell base_radius_mm from the Fourier profile. Must
-    // happen before max_seen_radius_mm is seeded so the largest bulge
-    // contributes.
+    // Bake per-cell base_radius_mm from the bubble-merge profile. Must
+    // happen before max_seen_radius_mm is seeded so promontories
+    // contribute.
     this._buildProfile();
 
     // Monotonic scale reference for the renderer. Starts generously
@@ -3588,45 +3568,88 @@ class WallState {
     this.max_seen_radius_mm = maxBase * 2;
   }
 
-  // Phase 1: compute per-cell base_radius_mm from void_style +
-  // irregularity + aspect + shape_seed. Ellipse modulation (area-
-  // preserving) + Fourier harmonic sum, both deterministic per seed.
+  // Phase 1: compute per-cell base_radius_mm via bubble merging.
+  // Algorithm (per the bubble-void brief):
+  //   1. Place bubble 0 at origin with radius = mid(bubble_size_range).
+  //      Guarantees the union is connected through the sampling centre
+  //      so every ray at t=0 is inside at least one bubble.
+  //   2. Place bubble_count - 1 additional bubbles at seed points
+  //      uniformly sampled (by area) within the bounding disk, with
+  //      radii drawn from bubble_size_range × initial_radius_mm.
+  //   3. At each of cells_per_ring angles θ, compute wall distance as
+  //      the maximum t where (t·cosθ, t·sinθ) is inside the union AND
+  //      connected to the origin through it. Ray-circle intersection
+  //      per bubble, sort by entry t, merge overlapping intervals from
+  //      t=0 — the first merged segment's endpoint is the wall.
+  //   4. Rescale uniformly so the mean wall radius equals
+  //      initial_radius_mm, keeping mean_diameter_mm correct for the
+  //      growth engines and the vug visually sized to nominal.
   // Mirrors WallState._build_profile in vugg.py (same math, different
-  // RNG — see _mulberry32 note).
+  // RNG — see _mulberry32 note above).
   _buildProfile() {
     const rng = _mulberry32(this.shape_seed | 0);
-    const palette = VOID_STYLE_HARMONICS[this.void_style]
-                 || VOID_STYLE_HARMONICS.gas_bubble;
-    const ampMax = VOID_STYLE_AMP_MAX[this.void_style] ?? 0.08;
-    const irreg = Math.max(0, Math.min(1, this.irregularity));
-    const ampBudget = ampMax * irreg;
+    const R = this.initial_radius_mm;
+    let lo = this.bubble_size_range[0], hi = this.bubble_size_range[1];
+    if (lo > hi) { const t = lo; lo = hi; hi = t; }
 
-    const coeffs = [];
-    for (const [n, weight] of palette) {
-      const amp = ampBudget * weight * (0.5 + 0.5 * rng()) / Math.sqrt(n);
-      const phase = rng() * 2 * Math.PI;
-      coeffs.push([n, amp * Math.cos(phase), amp * Math.sin(phase)]);
+    // Bubble 0: at origin, mid-range radius. Guarantees origin coverage.
+    const r0 = R * (lo + hi) * 0.5;
+    const bubbles = [[0, 0, r0]];
+    // Remaining bubbles: uniform-by-area seed in bounding disk, random
+    // radius in range.
+    for (let k = 0; k < Math.max(0, (this.bubble_count | 0) - 1); k++) {
+      const d = R * Math.sqrt(rng());
+      const phi = rng() * 2 * Math.PI;
+      const cx = d * Math.cos(phi);
+      const cy = d * Math.sin(phi);
+      const r = R * (lo + (hi - lo) * rng());
+      bubbles.push([cx, cy, r]);
     }
-    this.fourier_coeffs = coeffs;
-
-    let A = (this.aspect && this.aspect > 0) ? this.aspect : 1.0;
-    if (A < 1.0) A = 1.0 / A;
-    const semiA = Math.sqrt(A);
-    const semiB = 1 / Math.sqrt(A);
-    this._theta_offset = rng() * 2 * Math.PI;
 
     const N = this.cells_per_ring;
+    const rawRadii = new Array(N);
+
+    for (let i = 0; i < N; i++) {
+      const theta = 2 * Math.PI * i / N;
+      const cosT = Math.cos(theta), sinT = Math.sin(theta);
+      // Ray/bubble intersection intervals, clipped to t >= 0.
+      const intervals = [];
+      for (const [cx, cy, r] of bubbles) {
+        const b = cx * cosT + cy * sinT;
+        const c = cx * cx + cy * cy - r * r;
+        const disc = b * b - c;
+        if (disc < 0) continue;         // ray misses this bubble
+        const rt = Math.sqrt(disc);
+        const tEnter = b - rt;
+        const tExit = b + rt;
+        if (tExit <= 0) continue;       // bubble entirely behind origin
+        intervals.push([Math.max(0, tEnter), tExit]);
+      }
+      if (!intervals.length) { rawRadii[i] = R; continue; }
+
+      // Merge intervals starting from 0. Sort by entry t; extend wall
+      // as long as next interval overlaps current reach. Stop at the
+      // first gap — disconnected-from-origin segments don't count.
+      intervals.sort((a, b) => a[0] - b[0]);
+      let wall = intervals[0][1];
+      for (let j = 1; j < intervals.length; j++) {
+        const [start, end] = intervals[j];
+        if (start <= wall) { if (end > wall) wall = end; }
+        else break;
+      }
+      rawRadii[i] = wall;
+    }
+
+    // Rescale so mean wall radius matches nominal. Bubbles rescale too
+    // so `this.bubbles` reflects what the renderer actually draws.
+    let meanRaw = 0;
+    for (const v of rawRadii) meanRaw += v;
+    meanRaw /= Math.max(rawRadii.length, 1);
+    const scale = meanRaw > 1e-6 ? R / meanRaw : 1.0;
+    this.bubbles = bubbles.map(([cx, cy, r]) => [cx * scale, cy * scale, r * scale]);
     for (const ring of this.rings) {
-      for (let i = 0; i < ring.length; i++) {
-        const theta = (2 * Math.PI * i / N) - this._theta_offset;
-        const ca = Math.cos(theta), sa = Math.sin(theta);
-        const ellipseR = (semiA * semiB)
-            / Math.sqrt((semiB * ca) ** 2 + (semiA * sa) ** 2);
-        let pert = 0;
-        for (const [n, acoef, bcoef] of coeffs) {
-          pert += acoef * Math.cos(n * theta) + bcoef * Math.sin(n * theta);
-        }
-        ring[i].base_radius_mm = this.initial_radius_mm * ellipseR * (1 + pert);
+      for (let j = 0; j < ring.length; j++) {
+        ring[j].base_radius_mm = rawRadii[j] * scale;
       }
     }
   }
@@ -6680,7 +6703,7 @@ function scenario_cooling() {
     temperature: 380.0, pressure: 1.5,
     fluid: new FluidChemistry({ SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 8, K: 30, Na: 15 }),
     // Phase-1 void shape: gentle gas-bubble profile.
-    wall: new VugWall({ void_style: 'gas_bubble', irregularity: 0.15, aspect: 1.0, shape_seed: 1 }),
+    wall: new VugWall({ bubble_count: 4, bubble_size_range: [0.4, 0.5], shape_seed: 1 }),
   });
   return { conditions, events: [], defaultSteps: 100 };
 }
@@ -6689,7 +6712,7 @@ function scenario_pulse() {
   const conditions = new VugConditions({
     temperature: 350.0, pressure: 1.2,
     fluid: new FluidChemistry({ SiO2: 500, Ca: 200, CO3: 120, Fe: 5, Mn: 2, Ti: 0.5, Al: 3 }),
-    wall: new VugWall({ void_style: 'gas_bubble', irregularity: 0.15, aspect: 1.0, shape_seed: 2 }),
+    wall: new VugWall({ bubble_count: 4, bubble_size_range: [0.4, 0.5], shape_seed: 2 }),
   });
   const events = [
     { step: 40, name: 'Fluid Pulse', description: 'Fresh hydrothermal fluid', apply_fn: event_fluid_pulse },
@@ -6706,7 +6729,7 @@ function scenario_mvt() {
       Zn: 0, S: 0, F: 5, Pb: 40, pH: 7.2, salinity: 15.0
     }),
     // MVT dissolution cavity in limestone — all-axis lumpiness.
-    wall: new VugWall({ void_style: 'dissolution_cavity', irregularity: 0.4, aspect: 1.1, shape_seed: 3 }),
+    wall: new VugWall({ bubble_count: 8, bubble_size_range: [0.2, 0.6], shape_seed: 3 }),
   });
   const events = [
     { step: 20, name: 'Fluid Mixing', description: 'Brine meets groundwater', apply_fn: event_fluid_mixing },
@@ -6729,7 +6752,7 @@ function scenario_porphyry() {
       pH: 4.5, salinity: 10.0
     }),
     // Porphyry veins — elongated cross-section, modest harmonics.
-    wall: new VugWall({ void_style: 'vein', irregularity: 0.35, aspect: 1.8, shape_seed: 4 }),
+    wall: new VugWall({ bubble_count: 6, bubble_size_range: [0.25, 0.55], shape_seed: 4 }),
   });
   const events = [
     { step: 25, name: 'Copper Pulse', description: 'Magmatic copper fluid arrives', apply_fn: event_copper_injection },
@@ -6757,10 +6780,10 @@ function scenario_reactive_wall() {
       vug_diameter_mm: 40.0,
       wall_Fe_ppm: 3000.0,
       wall_Mn_ppm: 800.0,
-      // Aggressive acid dissolution etches a ragged front.
-      void_style: 'reactive_front',
-      irregularity: 0.65,
-      aspect: 1.2,
+      // Aggressive acid dissolution — many bubbles, wide range for a
+      // deeply lobed cavity with multiple alcoves.
+      bubble_count: 10,
+      bubble_size_range: [0.2, 0.6],
       shape_seed: 5,
     })
   });
@@ -6826,7 +6849,7 @@ function scenario_radioactive_pegmatite() {
       O2: 0, pH: 6.5, salinity: 8.0
     }),
     // Pegmatite pockets are fracture-controlled — n=2 "slot" profile.
-    wall: new VugWall({ void_style: 'fracture_pocket', irregularity: 0.5, aspect: 1.5, shape_seed: 6 }),
+    wall: new VugWall({ bubble_count: 5, bubble_size_range: [0.25, 0.55], shape_seed: 6 }),
   });
   const events = [
     { step: 20, name: 'Pegmatite Crystallization', description: 'Main crystallization pulse', apply_fn: (cond) => {
@@ -6875,7 +6898,7 @@ function scenario_supergene_oxidation() {
       O2: 1.8, pH: 6.8, salinity: 2.0,
     }),
     // Supergene meteoric dissolution cavity — broad all-axis lumpiness.
-    wall: new VugWall({ void_style: 'dissolution_cavity', irregularity: 0.55, aspect: 1.0, shape_seed: 7 }),
+    wall: new VugWall({ bubble_count: 7, bubble_size_range: [0.2, 0.6], shape_seed: 7 }),
   });
   const events = [
     { step: 20,  name: 'Meteoric Flush',   description: 'Oxygenated rainwater', apply_fn: (c) => { c.fluid.O2 = 2.2; c.fluid.CO3 += 30; c.fluid.pH = 6.2; c.flow_rate = 1.5; return 'Rain infiltrates the soil zone and percolates down, picking up CO₂ and oxygen. Fresh supergene brine — cold, oxygen-rich, slightly acidic.'; } },
@@ -6907,11 +6930,10 @@ function scenario_gem_pegmatite() {
       composition: 'pegmatite',
       thickness_mm: 500.0,
       vug_diameter_mm: 50.0,
-      // Miarolitic pocket — strong n=2 slot profile, elongated along
-      // the fracture plane.
-      void_style: 'fracture_pocket',
-      irregularity: 0.6,
-      aspect: 1.6,
+      // Miarolitic pocket — moderate bubble count + range, cohesive
+      // gem pocket feel.
+      bubble_count: 5,
+      bubble_size_range: [0.25, 0.55],
       shape_seed: 8,
     }),
     fluid: new FluidChemistry({
@@ -7000,8 +7022,9 @@ function scenario_ouro_preto() {
       Ti: 0.6,
       O2: 0.3, pH: 6.5, salinity: 3.0,
     }),
-    // Ouro Preto topaz veins — narrow prolate fractures, aspect 2.2.
-    wall: new VugWall({ void_style: 'vein', irregularity: 0.4, aspect: 2.2, shape_seed: 9 }),
+    // Ouro Preto topaz vein — few bubbles, tight size range; the
+    // hydrothermal vein in quartzite reads as a small cohesive pocket.
+    wall: new VugWall({ bubble_count: 5, bubble_size_range: [0.4, 0.5], shape_seed: 9 }),
   });
   const events = [
     { step: 5,   name: 'Vein Opening',     description: 'Fracture propagates, fresh brine',
@@ -7080,13 +7103,12 @@ class VugSimulator {
     this.wall_state = new WallState({
       vug_diameter_mm: d0,
       initial_radius_mm: d0 / 2,
-      // Phase-1 naturalistic void shape. Scenarios set these on
-      // VugWall; defaults (gas_bubble, irr=0.15, aspect=1.0) give a
-      // gentle bubble so scenarios that don't opt in still get a mild
-      // organic outline rather than a perfect circle.
-      void_style: this.conditions.wall.void_style,
-      irregularity: this.conditions.wall.irregularity,
-      aspect: this.conditions.wall.aspect,
+      // Phase-1 bubble-merge void shape. Scenarios set these on
+      // VugWall; default (6 bubbles, [0.2, 0.6]) gives a botryoidal
+      // dissolution cavity so scenarios that don't opt in still get
+      // an organic outline rather than a perfect circle.
+      bubble_count: this.conditions.wall.bubble_count,
+      bubble_size_range: this.conditions.wall.bubble_size_range,
       shape_seed: this.conditions.wall.shape_seed,
     });
     // Per-step snapshot of ring[0] for the Replay button. Captured at
@@ -12713,7 +12735,8 @@ function topoRender(optOverrideRing) {
   // Boundary radii — average the two adjacent cell radii so each cell's
   // wedge shares its endpoints with its neighbors'. Without this the
   // outline would render as disconnected circular arcs with radial
-  // "teeth" at every cell boundary once Fourier irregularity is in play.
+  // "teeth" at every cell boundary once the bubble-merge profile puts
+  // neighbouring cells at different radii.
   const boundaryR = new Array(N);
   for (let i = 0; i < N; i++) {
     const prev = (i - 1 + N) % N;
