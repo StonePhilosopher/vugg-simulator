@@ -9,14 +9,21 @@
 
 Replace the current Fourier-based irregular profile with a **bubble-merge** algorithm that produces botryoidal dissolution cavities.
 
-### Algorithm
+### Algorithm — Two-Stage Dissolution
 
-1. **Plot N random seed points** (N = 4–12, configurable per scenario via `bubble_count` parameter) within a bounding circle of diameter `vug_diameter_mm`
-2. **Grow a circle around each seed point** to a random radius (range: 20–60% of vug diameter, configurable via `bubble_size_range`)
-3. **Union all circles** — the void is the combined area of all overlapping circles
-4. **Sample the union boundary** at `cells_per_ring` (120) evenly-spaced angles to produce per-cell wall distances
+**Stage 1: Primary void** (2–5 large circles)
+1. Plot N random seed points (`primary_bubbles`, default 3, range 2–5) within a bounding circle of diameter `vug_diameter_mm`
+2. Grow a circle around each seed point to a random radius (40–70% of vug diameter)
+3. Union all primary circles — this is the main cavity
 
-The result: a lumpy, botryoidal void that looks like dissolution bubbles merging — not a wobbly circle.
+**Stage 2: Secondary dissolution** (several small bubbles on outer edges)
+4. For each primary circle boundary, spawn M random satellite points (`secondary_bubbles`, default 6, range 3–10) on or near the outer edge of the primary surface
+5. Grow a small circle around each satellite (10–30% of vug diameter)
+6. Union secondary circles with primary surface
+
+**Final step:** Sample the combined union boundary at `cells_per_ring` (120) evenly-spaced angles to produce per-cell wall distances.
+
+The result: a lumpy void with a clear primary cavity and smaller satellite alcoves dissolved out from the edges — exactly how real vugs form when primary dissolution is followed by percolating fluids eating out the walls.
 
 ### Why This Works
 
@@ -31,29 +38,35 @@ The result: a lumpy, botryoidal void that looks like dissolution bubbles merging
 Add to scenario definitions:
 
 ```python
-"bubble_count": 6,           # number of seed points (4-12)
-"bubble_size_range": [0.2, 0.6],  # min/max radius as fraction of vug diameter
+"primary_bubbles": 3,              # 2-5 large circles forming main cavity
+"secondary_bubbles": 6,           # 3-10 small satellite circles on edges
+"primary_size_range": [0.4, 0.7], # min/max radius as fraction of vug diameter
+"secondary_size_range": [0.1, 0.3], # smaller satellites
 ```
 
 Suggested defaults by scenario:
-- Cooling/pulse: bubble_count=4, tight range (near-spherical gas bubble)
-- MVT: bubble_count=8, wide range (dissolution cavities in limestone)
-- Porphyry: bubble_count=6, moderate range (stockwork veins merging)
-- Pegmatite: bubble_count=5, moderate range (fracture-controlled pocket)
-- Reactive wall: bubble_count=10, wide range (aggressive acid dissolution)
-- Supergene: bubble_count=7, wide range (complex oxidation front)
-- Ouro Preto: bubble_count=5, tight range (hydrothermal vein in quartzite)
+- Cooling/pulse: primary=2, secondary=3, tight ranges (near-spherical gas bubble)
+- MVT: primary=3, secondary=8, wide secondary range (limestone dissolution)
+- Porphyry: primary=3, secondary=6, moderate ranges (stockwork veins)
+- Pegmatite: primary=4, secondary=5, moderate ranges (fracture pocket)
+- Reactive wall: primary=3, secondary=10, wide ranges (aggressive acid)
+- Supergene: primary=3, secondary=7, wide secondary range (complex oxidation)
+- Ouro Preto: primary=2, secondary=4, tight ranges (vein in quartzite)
 
 ### Implementation
 
 **In `WallState` constructor:**
-1. Generate N random points (seed-locked) within bounding circle
-2. Generate N random radii (seed-locked)
-3. For each of 120 cell angles θ:
+1. Generate N primary seed points (seed-locked) within bounding circle
+2. Generate N primary radii (seed-locked)
+3. Union all primary circles — this is the main cavity
+4. For each primary circle, spawn M satellite points along its outer boundary (seed-locked), offset slightly outward
+5. Generate M small secondary radii (seed-locked)
+6. Union secondary circles with primary surface
+7. For each of 120 cell angles θ:
    - Cast a ray from center at angle θ
-   - Find the intersection with the union boundary of all circles
+   - Find the intersection with the combined union boundary
    - That intersection distance = wall distance for that cell
-4. Store per-cell radius in `rings[0][cell_idx].depth_mm`
+8. Store per-cell radius in `rings[0][cell_idx].depth_mm`
 
 **Ray-circle intersection:** For each ray at angle θ, find the maximum distance where the ray exits any circle. The outermost boundary point is the wall. This is standard computational geometry.
 
