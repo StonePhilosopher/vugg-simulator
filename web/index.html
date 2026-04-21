@@ -12755,8 +12755,19 @@ function topoRender(optOverrideRing) {
   // from the shared boundary at a0, through the cell's own midpoint
   // radius, to the shared boundary at a1, then back on the inner edge.
   // Using polygons (not arcs) keeps the outer silhouette continuous
-  // across cells with different base_radius_mm. Inner edge mirrors the
-  // outer edge proportionally so the inward band hugs the profile.
+  // across cells with different base_radius_mm.
+  //
+  // Inner edge uses an *absolute* inward offset (thickness × void_reach
+  // in mm, scaled to pixels), not a proportional shrink. Two reasons:
+  //   1. Adjacent cells painted by the same crystal share a thickness,
+  //      so they share an inwardPx — inner edges match at shared
+  //      boundaries and the band stays annular.
+  //   2. Proportional shrink goes pathological when the bubble-merge
+  //      profile puts a dip cell next to a bulge cell: the dip's inner
+  //      point collapses toward origin while the bulge's stays far out,
+  //      producing the "fan from center" artifact.
+  // Inner edge is floored at 15% of each point's outer radius so a
+  // very thick crystal in a dip cell still leaves a visible void.
   for (let i = 0; i < N; i++) {
     const cell = ring0[i];
     if (cell.crystal_id == null) continue;
@@ -12769,11 +12780,13 @@ function topoRender(optOverrideRing) {
     const crystal = sim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
     const voidReach = crystal ? Math.max(crystal.void_reach, 0.05) : 0.5;
     const inwardMm = (cell.thickness_um / 1000.0) * voidReach;
-    const inwardPx = Math.min(inwardMm * mmToPx, rMid * TOPO_CRYSTAL_CAP_FRAC);
-    const shrink = (rMid - Math.max(inwardPx, TOPO_WALL_STROKE_PX + 1)) / Math.max(rMid, 0.001);
-    const rStartIn = rStart * shrink;
-    const rMidIn = rMid * shrink;
-    const rEndIn = rEnd * shrink;
+    // Absolute displacement in pixels, capped so very thick crystals
+    // still leave some void at the most-local cell (not a hard crystal-
+    // wide cap — that would collapse in dip cells).
+    const inwardPx = Math.max(inwardMm * mmToPx, TOPO_WALL_STROKE_PX + 1);
+    const rStartIn = Math.max(rStart - inwardPx, rStart * (1 - TOPO_CRYSTAL_CAP_FRAC));
+    const rMidIn = Math.max(rMid - inwardPx, rMid * (1 - TOPO_CRYSTAL_CAP_FRAC));
+    const rEndIn = Math.max(rEnd - inwardPx, rEnd * (1 - TOPO_CRYSTAL_CAP_FRAC));
     ctx.fillStyle = topoClassColor(cell.mineral);
     ctx.beginPath();
     ctx.moveTo(cx + rStart * Math.cos(a0), cy + rStart * Math.sin(a0));
@@ -12835,8 +12848,11 @@ function topoRender(optOverrideRing) {
       const rHostOuter = (hostBaseR + hostCell.wall_depth) * mmToPx;
       const voidReach = Math.max(host.void_reach, 0.05);
       const inwardMm = (hostCell.thickness_um / 1000.0) * voidReach;
-      const inwardPx = Math.min(inwardMm * mmToPx, rHostOuter * TOPO_CRYSTAL_CAP_FRAC);
-      const rHostInner = rHostOuter - Math.max(inwardPx, TOPO_WALL_STROKE_PX + 1);
+      // Same absolute-offset pattern as the wedge fill — inclusion dots
+      // sit at the midpoint of the host's band, floored so a thick host
+      // in a dip cell still leaves a visible inner edge.
+      const inwardPx = Math.max(inwardMm * mmToPx, TOPO_WALL_STROKE_PX + 1);
+      const rHostInner = Math.max(rHostOuter - inwardPx, rHostOuter * (1 - TOPO_CRYSTAL_CAP_FRAC));
       const rMid = (rHostOuter + rHostInner) / 2;
       const allIds = host.enclosed_crystals;
       // Cap visible dots per host — real Sweetwater-style calcite can
