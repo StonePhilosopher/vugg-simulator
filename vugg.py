@@ -232,14 +232,26 @@ class VugWall:
     
     def dissolve(self, acid_strength: float, fluid: 'FluidChemistry') -> dict:
         """Dissolve wall rock in response to acid conditions.
-        
+
         CaCO₃ + 2H⁺ → Ca²⁺ + H₂O + CO₂
-        
+
+        Only reactive carbonate walls (limestone, dolomite) buffer acid
+        this way. Silicate host rocks (pegmatite, granite, gneiss,
+        quartzite, phyllite) are effectively inert on sim timescales —
+        they don't dissolve in mildly acidic hydrothermal fluids, don't
+        release cations at a useful rate, and don't buffer pH. Return
+        {"dissolved": False} for those so pH can actually drop and
+        mineral kaolinization can proceed on the pocket's crystals.
+
         Returns dict of what happened.
         """
         if acid_strength <= 0:
             return {"dissolved": False}
-        
+
+        # Gate by composition — only carbonate walls are acid-reactive.
+        if self.composition not in ("limestone", "dolomite"):
+            return {"dissolved": False}
+
         # Dissolution rate scales with acid strength and available wall
         # More acid = more dissolution, but it's self-limiting (neutralization)
         rate_mm = min(acid_strength * 0.5, 2.0)  # max 2mm per step
@@ -740,6 +752,12 @@ class VugConditions:
         - Moderate T (400-600°C): orthoclase (monoclinic)
         - Low T (<400°C): microcline (triclinic, cross-hatched twinning)
         Pb + microcline = amazonite (green, from Pb²⁺ substituting for K⁺).
+
+        Acidic fluids destabilize feldspar irreversibly: KAlSi₃O₈ + H⁺ →
+        kaolinite + K⁺ + SiO₂. The sim doesn't model kaolinite as a
+        mineral (it's an implicit sink), so below pH 4 we drive sigma
+        hard negative — this keeps released K+Al+SiO₂ from re-feeding
+        feldspar growth and matches the real-world one-way conversion.
         """
         if self.fluid.K < 10 or self.fluid.Al < 3 or self.fluid.SiO2 < 200:
             return 0
@@ -747,6 +765,10 @@ class VugConditions:
         # Feldspars need HIGH temperature — they're igneous/metamorphic
         if self.temperature < 300:
             sigma *= math.exp(-0.01 * (300 - self.temperature))
+        # Acid destabilization — the kaolinization regime. Mirrors the
+        # dissolution threshold in grow_feldspar (pH < 4).
+        if self.fluid.pH < 4.0:
+            sigma -= (4.0 - self.fluid.pH) * 2.0
         return max(sigma, 0)
 
     def supersaturation_albite(self) -> float:
@@ -763,6 +785,11 @@ class VugConditions:
         # Same high-T preference as K-feldspar
         if self.temperature < 300:
             sigma *= math.exp(-0.01 * (300 - self.temperature))
+        # Acid destabilization — albite kaolinizes at lower pH than
+        # microcline (plagioclase is more acid-resistant, the field
+        # observation). Mirrors grow_albite's pH < 3 dissolution gate.
+        if self.fluid.pH < 3.0:
+            sigma -= (3.0 - self.fluid.pH) * 2.0
         return max(sigma, 0)
 
     def supersaturation_spodumene(self) -> float:
@@ -2066,17 +2093,23 @@ def grow_feldspar(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     sigma = conditions.supersaturation_feldspar()
 
     if sigma < 1.0:
-        # Kaolinization: acidic weathering of feldspar → kaolinite
+        # Kaolinization: acidic weathering of feldspar → kaolinite.
+        # Balanced reaction: 2 KAlSi₃O₈ + 2 H⁺ + H₂O → kaolinite +
+        # 2 K⁺ + 4 SiO₂. All Al stays in the new kaolinite phase; only
+        # K and SiO₂ go back to the fluid (and a little Al from crystal-
+        # edge effects and pore fluid, ~5% partition).
+        # The sim doesn't track kaolinite as a distinct mineral — it's
+        # an implicit Al sink. This partition is the honest chemistry.
         if crystal.total_growth_um > 10 and conditions.fluid.pH < 4.0:
             crystal.dissolved = True
             dissolved_um = min(4.0, crystal.total_growth_um * 0.08)
             conditions.fluid.K += dissolved_um * 0.3
-            conditions.fluid.Al += dissolved_um * 0.2
+            conditions.fluid.Al += dissolved_um * 0.05   # most Al stays in kaolinite
             conditions.fluid.SiO2 += dissolved_um * 0.3
             return GrowthZone(
                 step=step, temperature=conditions.temperature,
                 thickness_um=-dissolved_um, growth_rate=-dissolved_um,
-                note=f"kaolinization (pH {conditions.fluid.pH:.1f}) — KAlSi₃O₈ → kaolinite + K⁺"
+                note=f"kaolinization (pH {conditions.fluid.pH:.1f}) — KAlSi₃O₈ → kaolinite + K⁺ + SiO₂; Al conserved in kaolinite"
             )
         return None
 
@@ -2205,17 +2238,20 @@ def grow_albite(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
     sigma = conditions.supersaturation_albite()
 
     if sigma < 1.0:
-        # Albite is very stable — resists weathering better than K-spar
+        # Albite kaolinization: 2 NaAlSi₃O₈ + 2 H⁺ + H₂O → kaolinite +
+        # 2 Na⁺ + 4 SiO₂. Al stays in the kaolinite phase (Al sink);
+        # only Na and SiO₂ go back to the fluid. Albite is more
+        # acid-resistant than K-feldspar (pH threshold 3 vs 4).
         if crystal.total_growth_um > 10 and conditions.fluid.pH < 3.0:
             crystal.dissolved = True
             dissolved_um = min(3.0, crystal.total_growth_um * 0.06)
             conditions.fluid.Na += dissolved_um * 0.3
-            conditions.fluid.Al += dissolved_um * 0.2
+            conditions.fluid.Al += dissolved_um * 0.05   # most Al stays in kaolinite
             conditions.fluid.SiO2 += dissolved_um * 0.3
             return GrowthZone(
                 step=step, temperature=conditions.temperature,
                 thickness_um=-dissolved_um, growth_rate=-dissolved_um,
-                note=f"albite dissolution (pH {conditions.fluid.pH:.1f})"
+                note=f"albite kaolinization (pH {conditions.fluid.pH:.1f}) — Na⁺ + SiO₂ released, Al conserved in kaolinite"
             )
         return None
 
@@ -3636,14 +3672,29 @@ def scenario_gem_pegmatite() -> Tuple[VugConditions, List[Event], int]:
     conditions = VugConditions(
         temperature=650.0,
         pressure=3.0,
+        # Pegmatite country rock — silicate host (the granite shell around
+        # the miarolitic cavity). Not acid-reactive on sim timescales, so
+        # when the pocket fluid turns mildly acidic in phase 3 the pH
+        # actually stays low instead of getting buffered by carbonate
+        # dissolution. That's what lets grow_feldspar's kaolinization
+        # branch fire on the microcline crystal.
+        wall=VugWall(
+            composition="pegmatite",
+            thickness_mm=500.0,
+            vug_diameter_mm=50.0,
+        ),
         fluid=FluidChemistry(
             # Pegmatite-level silica saturation — far above the quartz
             # equilibrium at any T, so quartz is supersaturated throughout.
             SiO2=8000,
-            # Al starts high so six competing silicate engines can all
-            # draw on it for the scenario's duration. 80 ppm keeps Al
-            # above topaz's 3 ppm threshold at phase-3 handoff.
-            Ca=30, CO3=15, Fe=50, Mn=8, Al=80,
+            # Al starts high enough that six competing silicate engines
+            # (feldspar, albite, quartz, tourmaline, beryl, spodumene)
+            # can all draw on it for the full scenario AND leave enough
+            # residual for topaz to nucleate in phase 3. 150 ppm is on
+            # the upper end of realistic pegmatite pocket fluid Al but
+            # within published ranges (London 2008, pegmatite fluid
+            # chemistry).
+            Ca=30, CO3=15, Fe=50, Mn=8, Al=150,
             # Alkali feldspar chemistry — microcline first, then
             # ev_albitization flips K → Na.
             K=80, Na=40,
@@ -3733,38 +3784,48 @@ def scenario_gem_pegmatite() -> Tuple[VugConditions, List[Event], int]:
                 "depletes and lithium takes its place.")
 
     def ev_late_hydrothermal(cond):
-        """Phase 3: below ~400°C, topaz window opens. Late hydrothermal
-        fluid picks up Al from breakdown of wall-zone feldspars, giving
-        topaz enough Al to nucleate even after the incompatible-element
-        silicates have had their turn. If F survived earlier phases
-        (nothing else consumes it), topaz fires."""
+        """Phase 3: below ~400°C, topaz window opens. Enough residual Al
+        survives in the pocket fluid (scenario started at 150 ppm, a
+        pegmatite-realistic level) for topaz to cross its σ threshold
+        once T drops into the optimum window."""
         cond.temperature = 360
-        cond.fluid.pH = 6.0
+        cond.fluid.pH = 5.5
         cond.flow_rate = 0.5
-        cond.fluid.Al += 12.0   # Al recovers from wall-feldspar breakdown
-        return ("Late hydrothermal phase. Temperature drops into the topaz "
-                "window. Feldspars in the wall zone are breaking down, "
-                "releasing aluminum back into the pocket fluid. Fluorine "
-                "has been sitting unused — nothing else in this pocket "
-                "wanted it. Now both Al and F are present in the right "
-                "range at the right temperature, and topaz finally has "
-                "its moment — projecting from the quartz lining or "
-                "filling gaps between the bigger crystals.")
+        return ("Late hydrothermal phase. Temperature drops into topaz's "
+                "optimum window (340–400°C). Fluorine has been sitting "
+                "unused — nothing else in this pocket consumed it — and "
+                "enough Al remains in the residual pocket fluid after "
+                "the main silicate crop has taken its share. Topaz "
+                "nucleates, projecting from the quartz lining.")
 
     def ev_clay_softening(cond):
-        """Phase 3: kaolinite forms from feldspar breakdown; pocket
-        walls soften. Doesn't dissolve crystals here, but changes the
-        'texture' of the pocket described in the narrator."""
+        """Phase 3: the kaolinization event. pH drops past microcline's
+        stability threshold (pH < 4); the grow_feldspar engine
+        dissolution branch fires, breaking the K-feldspar crystal down
+        into kaolinite + K⁺ + SiO₂. Al is conserved in the new
+        kaolinite phase (the sim doesn't track kaolinite as a distinct
+        mineral — it's an implicit Al sink), so this event liberates K
+        and SiO₂ back to the fluid but NOT Al. Albite is more
+        acid-resistant (pH threshold 3) and survives at pH 3.5,
+        matching the field observation.
+
+        The narrative consequence: the pocket walls soften mechanically
+        as microcline → kaolinite, but the fluid's Al inventory stays
+        roughly the same. Late topaz already got its Al earlier when
+        the residual pocket fluid carried it."""
         cond.temperature = 320
-        cond.fluid.pH = 5.5
+        cond.fluid.pH = 3.5   # crosses microcline kaolinization threshold
+                              # (feldspar engine dissolves at pH < 4.0)
         cond.flow_rate = 0.3
-        return ("Cooler now. Kaolinite begins replacing any remaining "
-                "microcline in the pocket walls — the signature soft "
-                "'gloop' that coats every Minas Gerais gem pocket by "
-                "the time garimpeiros crack it open. Spodumene and topaz "
-                "snap cleanly along their perfect cleavages when the "
-                "wall shifts. Cleavage fragments accumulate on the floor "
-                "of the pocket.")
+        return ("pH drops into the kaolinization window. Microcline in "
+                "the pocket walls starts breaking down into kaolinite — "
+                "the signature 'clay gloop' that coats every Minas "
+                "Gerais gem pocket by the time garimpeiros crack it "
+                "open. The reaction 2 KAlSi₃O₈ + 2 H⁺ + H₂O → kaolinite "
+                "+ 2 K⁺ + 4 SiO₂ releases potassium and silica to the "
+                "fluid, but the aluminum stays locked in the new "
+                "kaolinite. Albite is more acid-resistant and survives "
+                "intact — a field observation preserved in the sim.")
 
     def ev_final(cond):
         """Phase 3 end: system cools to 300°C and then ambient over
@@ -4729,11 +4790,18 @@ class VugSimulator:
         """Default ambient cooling per step."""
         self.conditions.temperature -= rate * random.uniform(0.8, 1.2)
         self.conditions.temperature = max(self.conditions.temperature, 25)
-        
-        # pH recovery toward carbonate-buffered equilibrium when not being actively acidified
-        # This is the "resting state" between acid pulses — pH drifts back toward neutral
-        if self.conditions.fluid.pH < 6.5 and self.conditions.flow_rate < 2.0:
-            self.conditions.fluid.pH += 0.1  # gradual recovery from wall buffering
+
+        # pH recovery toward equilibrium — scaled by flow rate.
+        # Fresh fluid flushing through the vug dilutes acid and restores
+        # pH; a sealed pocket can't exchange fluid, so acidity persists
+        # until mineral reactions buffer it. Recovery rate 0.1/step at
+        # flow_rate=1.0, scaling down to near-zero at flow_rate~0.1
+        # (sealed pocket). This preserves realistic kaolinization
+        # windows in pegmatite pockets without breaking scenarios that
+        # have quick acid pulses at normal flow.
+        if self.conditions.fluid.pH < 6.5:
+            recovery = 0.1 * min(self.conditions.flow_rate / 1.0, 2.0)
+            self.conditions.fluid.pH += recovery
         
         # Flow rate decays toward normal
         if self.conditions.flow_rate > 1.0:

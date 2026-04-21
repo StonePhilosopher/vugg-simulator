@@ -3416,6 +3416,13 @@ class VugWall {
   dissolve(acid_strength, fluid) {
     if (acid_strength <= 0) return { dissolved: false };
 
+    // Only reactive carbonate walls (limestone, dolomite) buffer acid
+    // by dissolving. Silicate host rocks (pegmatite, granite, gneiss,
+    // quartzite, phyllite) are effectively inert on sim timescales.
+    if (this.composition !== 'limestone' && this.composition !== 'dolomite') {
+      return { dissolved: false };
+    }
+
     let rate_mm = Math.min(acid_strength * 0.5, 2.0);
     if (this.thickness_mm < rate_mm) rate_mm = this.thickness_mm;
 
@@ -3885,6 +3892,9 @@ class VugConditions {
     if (this.fluid.Na < 10 || this.fluid.Al < 3 || this.fluid.SiO2 < 200) return 0;
     let sigma = (this.fluid.Na / 35.0) * (this.fluid.Al / 10.0) * (this.fluid.SiO2 / 400.0);
     if (this.temperature < 300) sigma *= Math.exp(-0.01 * (300 - this.temperature));
+    // Acid destabilization — albite kaolinizes at pH < 3 (more
+    // resistant than K-feldspar). Mirrors grow_albite dissolution gate.
+    if (this.fluid.pH < 3.0) sigma -= (3.0 - this.fluid.pH) * 2.0;
     return Math.max(sigma, 0);
   }
 
@@ -4951,17 +4961,22 @@ function grow_feldspar(crystal, conditions, step) {
   const sigma = conditions.supersaturation_feldspar();
 
   if (sigma < 1.0) {
-    // Feldspar weathers to clay (kaolinite) in acidic conditions
+    // Feldspar kaolinization in acidic conditions. Balanced reaction:
+    // 2 KAlSi₃O₈ + 2 H⁺ + H₂O → kaolinite + 2 K⁺ + 4 SiO₂.
+    // Al is conserved in the new kaolinite phase; only K and SiO₂ go
+    // to the fluid (with a small Al pore-fluid contribution, ~5%).
+    // The sim doesn't track kaolinite as a distinct mineral — it's an
+    // implicit Al sink.
     if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.08);
       conditions.fluid.K += dissolved_um * 0.3;
-      conditions.fluid.Al += dissolved_um * 0.4;
+      conditions.fluid.Al += dissolved_um * 0.05;   // most Al stays in kaolinite
       conditions.fluid.SiO2 += dissolved_um * 0.5;
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
-        note: `acid weathering — feldspar dissolving to kaolinite clay, releasing K⁺, Al³⁺, and SiO₂`
+        note: `kaolinization (pH ${conditions.fluid.pH.toFixed(1)}) — KAlSi₃O₈ → kaolinite + K⁺ + SiO₂; Al conserved in kaolinite`
       });
     }
     return null;
@@ -5259,13 +5274,17 @@ function grow_goethite(crystal, conditions, step) {
 function grow_albite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_albite();
   if (sigma < 1.0) {
+    // Albite kaolinization (pH < 3 — more acid-resistant than K-spar):
+    // 2 NaAlSi₃O₈ + 2 H⁺ + H₂O → kaolinite + 2 Na⁺ + 4 SiO₂.
+    // Al conserved in the kaolinite phase (only ~5% pore partition to
+    // fluid); Na and SiO₂ go back to the pocket.
     if (crystal.total_growth_um > 10 && conditions.fluid.pH < 3.0) {
       crystal.dissolved = true;
       const d = Math.min(3.0, crystal.total_growth_um * 0.06);
       conditions.fluid.Na += d * 0.3;
-      conditions.fluid.Al += d * 0.2;
+      conditions.fluid.Al += d * 0.05;   // most Al stays in kaolinite
       conditions.fluid.SiO2 += d * 0.3;
-      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `albite dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — slow kaolinization` });
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `albite kaolinization (pH ${conditions.fluid.pH.toFixed(1)}) — Na⁺ + SiO₂ released, Al conserved in kaolinite` });
     }
     return null;
   }
@@ -6000,9 +6019,17 @@ function scenario_gem_pegmatite() {
   const conditions = new VugConditions({
     temperature: 650.0,
     pressure: 3.0,
+    // Pegmatite country rock — silicate, not acid-reactive. When the
+    // pocket fluid turns mildly acidic in phase 3, pH actually stays
+    // low instead of being buffered by carbonate dissolution. That's
+    // what lets the grow_feldspar kaolinization branch fire.
+    wall: new VugWall({ composition: 'pegmatite', thickness_mm: 500.0, vug_diameter_mm: 50.0 }),
     fluid: new FluidChemistry({
       SiO2: 8000,
-      Ca: 30, CO3: 15, Fe: 50, Mn: 8, Al: 80,
+      // Al 150 — upper end of realistic pegmatite pocket fluid. Six
+      // competing silicate engines plus late topaz all need Al, so the
+      // starting budget has to be generous (London 2008).
+      Ca: 30, CO3: 15, Fe: 50, Mn: 8, Al: 150,
       K: 80, Na: 40,
       Be: 25, B: 35, Li: 35, F: 25,
       Cr: 2.5, Cu: 0.3, V: 2.0, Ti: 0.8,
@@ -6043,20 +6070,19 @@ function scenario_gem_pegmatite() {
         c.fluid.Fe = Math.max(c.fluid.Fe - 20, 5);
         return "Temperature drops into the 400s. Lithium, which has been accumulating since the beginning, is now abundant enough to nucleate Li-bearing minerals. Spodumene will take most of it — the Li pyroxene wants its own crystals. Any remaining Li goes into elbaite overgrowths on the schorl cores: the crystals become color-zoned as iron depletes and lithium takes its place.";
       } },
-    { step: 160, name: 'Late Hydrothermal', description: 'Topaz window opens — F survivors fire',
+    { step: 160, name: 'Late Hydrothermal', description: 'Topaz window opens — residual Al + F meet',
       apply_fn: (c) => {
         c.temperature = 360;
-        c.fluid.pH = 6.0;
+        c.fluid.pH = 5.5;
         c.flow_rate = 0.5;
-        c.fluid.Al += 12.0;
-        return "Late hydrothermal phase. Temperature drops into the topaz window. Feldspars in the wall zone are breaking down, releasing aluminum back into the pocket fluid. Fluorine has been sitting unused — nothing else in this pocket wanted it. Now both Al and F are present in the right range at the right temperature, and topaz finally has its moment — projecting from the quartz lining or filling gaps between the bigger crystals.";
+        return "Late hydrothermal phase. Temperature drops into topaz's optimum window (340–400°C). Fluorine has been sitting unused — nothing else in this pocket consumed it — and enough Al remains in the residual pocket fluid after the main silicate crop has taken its share. Topaz nucleates, projecting from the quartz lining.";
       } },
-    { step: 190, name: 'Clay Softening',    description: 'Kaolinite replaces pocket walls',
+    { step: 190, name: 'Kaolinization',    description: 'Microcline → kaolinite + K⁺ + SiO₂',
       apply_fn: (c) => {
         c.temperature = 320;
-        c.fluid.pH = 5.5;
+        c.fluid.pH = 3.5;   // below microcline stability (pH < 4 threshold)
         c.flow_rate = 0.3;
-        return "Cooler now. Kaolinite begins replacing any remaining microcline in the pocket walls — the signature soft 'gloop' that coats every Minas Gerais gem pocket by the time garimpeiros crack it open. Spodumene and topaz snap cleanly along their perfect cleavages when the wall shifts. Cleavage fragments accumulate on the floor of the pocket.";
+        return "pH drops into the kaolinization window. Microcline in the pocket walls starts breaking down into kaolinite — the signature 'clay gloop' that coats every Minas Gerais gem pocket by the time garimpeiros crack it open. The reaction 2 KAlSi₃O₈ + 2 H⁺ + H₂O → kaolinite + 2 K⁺ + 4 SiO₂ releases potassium and silica to the fluid, but the aluminum stays locked in the new kaolinite. Albite is more acid-resistant (pH threshold 3) and survives intact — a field observation preserved in the sim.";
       } },
     { step: 215, name: 'Final Cooling',    description: 'System approaches 300°C floor',
       apply_fn: (c) => {
@@ -6830,9 +6856,14 @@ class VugSimulator {
       }
     }
 
-    // pH recovery toward carbonate-buffered equilibrium when not being actively acidified
-    if (this.conditions.fluid.pH < 6.5 && this.conditions.flow_rate < 2.0) {
-      this.conditions.fluid.pH += 0.1;
+    // pH recovery toward equilibrium — scaled by flow rate.
+    // Fresh fluid flushing through the vug dilutes acid and restores
+    // pH; a sealed pocket can't exchange fluid, so acidity persists
+    // until mineral reactions buffer it. Recovery 0.1/step at
+    // flow_rate=1.0, near-zero at flow_rate~0.1 (sealed pocket).
+    if (this.conditions.fluid.pH < 6.5) {
+      const recovery = 0.1 * Math.min(this.conditions.flow_rate / 1.0, 2.0);
+      this.conditions.fluid.pH += recovery;
     }
 
     if (this.conditions.flow_rate > 1.0) this.conditions.flow_rate *= 0.9;
