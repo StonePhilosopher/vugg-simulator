@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 23,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (Minas Gerais B), +tourmaline/beryl/spodumene (Minas Gerais A — commits 1-3).",
+    "total_minerals": 27,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (supergene round 1 — Pb oxidation suite).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -48,7 +48,11 @@
       "topaz",
       "tourmaline",
       "beryl",
-      "spodumene"
+      "spodumene",
+      "anglesite",
+      "cerussite",
+      "pyromorphite",
+      "vanadinite"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -100,7 +104,11 @@
         "adamite",
         "mimetite",
         "selenite",
-        "malachite"
+        "malachite",
+        "anglesite",
+        "cerussite",
+        "pyromorphite",
+        "vanadinite"
       ],
       "ouro_preto": [
         "quartz",
@@ -2645,6 +2653,421 @@
       ],
       "audit_status": "new (Minas Gerais Variant A, spodumene). First Li consumer — Li has been tracked as pegmatite trace since phase-2 but had no sink until now. Not yet in agent-api/vugg-agent.js.",
       "class_color": "#1313eb"
+    },
+    "anglesite": {
+      "formula": "PbSO4",
+      "nucleation_sigma": 1.1,
+      "max_nucleation_count": 4,
+      "max_size_cm": 15,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "prismatic_orthorhombic",
+          "wall_spread": 0.25,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low σ, low T, steady growth"
+        },
+        {
+          "name": "pseudomorph_after_galena",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "low-moderate σ, low T, galena host"
+        },
+        {
+          "name": "druzy_coating",
+          "wall_spread": 0.7,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "high σ, low T, space-constrained"
+        },
+        {
+          "name": "default_prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — orthorhombic prismatic"
+        }
+      ],
+      "class": "sulfate",
+      "description": "PbSO₄ — orthorhombic, brilliant adamantine luster (one of the most lustrous non-metallic minerals). Intermediate step in the lead oxidation sequence: galena → anglesite → cerussite. Forms at the first wave of oxidation when sulfide-S becomes sulfate-S; transient in carbonate groundwater, where it dissolves and reprecipitates as cerussite. Named for Anglesey island (Wales) where the type specimens were found.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        80
+      ],
+      "T_optimum_C": [
+        15,
+        50
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 2.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Pb": 15,
+        "S": 15,
+        "O2": 0.8
+      },
+      "trace_ingredients": {
+        "Fe": "yellow to amber tint",
+        "Cu": "pale blue-green tint"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": null,
+      "fluorescence": {
+        "activator": "intrinsic",
+        "threshold_ppm": 0,
+        "color": "weak_yellow_LW",
+        "quencher": null,
+        "note": "inconsistent, many specimens show no response"
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 2.0,
+        "reaction": "PbSO₄ + 2H⁺ → Pb²⁺ + HSO₄⁻ (slow, only strong acid)",
+        "products": {
+          "Pb": 0.3,
+          "S": 0.3
+        }
+      },
+      "habit": "prismatic_orthorhombic",
+      "color_rules": {
+        "colorless_to_white": {
+          "default": true
+        },
+        "yellow_amber": {
+          "trigger": "Fe > 3 ppm"
+        },
+        "pale_blue_green": {
+          "trigger": "Cu > 2 ppm"
+        }
+      },
+      "narrate_function": "_narrate_anglesite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 1, lead oxidation sequence). Not in agent-api/vugg-agent.js.",
+      "class_color": "#eb137f"
+    },
+    "cerussite": {
+      "formula": "PbCO3",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 20,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "stellate_sixling_twin",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "moderate σ, low T, cyclic twinning"
+        },
+        {
+          "name": "tabular_single",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "tabular",
+          "trigger": "low σ, low T, untwinned"
+        },
+        {
+          "name": "acicular_needles",
+          "wall_spread": 0.15,
+          "void_reach": 0.75,
+          "vector": "projecting",
+          "trigger": "high σ, low T, rapid growth"
+        },
+        {
+          "name": "pseudomorph_after_galena",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "low σ, low T, galena host"
+        },
+        {
+          "name": "default_stellate",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — stellate cyclic twin (six-rayed star)"
+        }
+      ],
+      "class": "carbonate",
+      "description": "PbCO₃ — orthorhombic lead carbonate. Water-clear with adamantine luster and extreme birefringence (a thin slice shows doubled images). Final stable product of the lead oxidation sequence in carbonate-rich environments: galena → anglesite → cerussite. Stellate six-ray twin (cyclic twin on {110}) is among mineralogy's most iconic forms — three individuals intergrown at 120° angles producing a perfect star. Named for Latin 'cerussa' (white lead).",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        80
+      ],
+      "T_optimum_C": [
+        15,
+        50
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Pb": 15,
+        "CO3": 30
+      },
+      "trace_ingredients": {
+        "Ag": "argentiferous cerussite (Broken Hill)",
+        "Cu": "blue-green aurichalcite-adjacent tint"
+      },
+      "thermal_decomp_C": 315,
+      "thermal_decomp_reaction": "PbCO₃ → PbO + CO₂",
+      "thermal_decomp_products": {
+        "Pb": 0.4,
+        "CO3": 0.3
+      },
+      "fluorescence": {
+        "activator": "intrinsic",
+        "threshold_ppm": 0,
+        "color": "weak_yellow_LW",
+        "quencher": null,
+        "note": "occasional, often weak"
+      },
+      "twin_laws": [
+        {
+          "name": "cyclic_sixling",
+          "miller_indices": "{110}",
+          "trigger": "moderate σ, growth-driven",
+          "probability": 0.4
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 4.0,
+        "reaction": "PbCO₃ + 2H⁺ → Pb²⁺ + H₂O + CO₂ (fizzes)",
+        "products": {
+          "Pb": 0.5,
+          "CO3": 0.4
+        }
+      },
+      "habit": "stellate_sixling",
+      "color_rules": {
+        "colorless_white": {
+          "default": true
+        },
+        "blue_green": {
+          "trigger": "Cu > 5 ppm (plumbogummite-adjacent)"
+        }
+      },
+      "narrate_function": "_narrate_cerussite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 1, lead oxidation sequence). Classic cyclic twins. Not in agent-api/vugg-agent.js.",
+      "class_color": "#eb7f13"
+    },
+    "pyromorphite": {
+      "formula": "Pb5(PO4)3Cl",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 6,
+      "max_size_cm": 15,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "hexagonal_barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low σ, low T, steady growth"
+        },
+        {
+          "name": "hoppered_hexagonal",
+          "wall_spread": 0.35,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "moderate-high σ, low T, rapid edge growth"
+        },
+        {
+          "name": "botryoidal_coating",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "high σ, low T, space-constrained"
+        },
+        {
+          "name": "acicular_needle",
+          "wall_spread": 0.15,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "very high σ, low T, nucleation burst"
+        },
+        {
+          "name": "default_hex_barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "default — hexagonal barrel-shaped prism"
+        }
+      ],
+      "class": "phosphate",
+      "description": "Pb₅(PO₄)₃Cl — hexagonal apatite-group phosphate. Barrel-shaped prisms in olive-green, yellow-green, brown, or orange. Forms in supergene oxidation zones when phosphate-bearing meteoric water meets existing Pb minerals — galena, anglesite, cerussite can all be pseudomorphed. Apatite-group solid-solution end-member: pyromorphite–mimetite–vanadinite is one of mineralogy's most complete compositional series. Low toxicity (stable Pb) — pyromorphite is used in environmental remediation of Pb-contaminated soils by feeding the soil phosphate.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        80
+      ],
+      "T_optimum_C": [
+        15,
+        50
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 2.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Pb": 20,
+        "P": 2,
+        "Cl": 5
+      },
+      "trace_ingredients": {
+        "Cr": "green (chromate substitution, rare)",
+        "Ca": "lighter olive (phosphoapatite series)",
+        "As": "mimetite series (pyromorphite-mimetite solid solution)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": null,
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 2.5,
+        "reaction": "Pb₅(PO₄)₃Cl + 10H⁺ → 5Pb²⁺ + 3H₃PO₄ + Cl⁻",
+        "products": {
+          "Pb": 0.3,
+          "P": 0.2,
+          "Cl": 0.3
+        }
+      },
+      "habit": "hexagonal_barrel",
+      "color_rules": {
+        "olive_green": {
+          "default": true
+        },
+        "yellow_orange": {
+          "trigger": "trace Ca (phosphoapatite)"
+        },
+        "brown": {
+          "trigger": "Fe > 5 ppm"
+        }
+      },
+      "narrate_function": "_narrate_pyromorphite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 1). First P consumer in the sim. Apatite-group cousin of existing mimetite + new vanadinite. Not in agent-api/vugg-agent.js.",
+      "class_color": "#13eb7f"
+    },
+    "vanadinite": {
+      "formula": "Pb5(VO4)3Cl",
+      "nucleation_sigma": 1.3,
+      "max_nucleation_count": 6,
+      "max_size_cm": 10,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "hexagonal_prism_hairlike",
+          "wall_spread": 0.15,
+          "void_reach": 0.85,
+          "vector": "projecting",
+          "trigger": "low σ, low T, slow growth"
+        },
+        {
+          "name": "stout_hexagonal_barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "moderate σ, low T"
+        },
+        {
+          "name": "acicular_tuft",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "high σ, low T, sprays"
+        },
+        {
+          "name": "default_hex_prism",
+          "wall_spread": 0.25,
+          "void_reach": 0.75,
+          "vector": "projecting",
+          "trigger": "default — hexagonal prism"
+        }
+      ],
+      "class": "phosphate",
+      "description": "Pb₅(VO₄)₃Cl — hexagonal apatite-group vanadate. Bright red-orange to brown-orange hexagonal prisms, one of the most recognizable minerals in a collector case. Vanadate end-member of the pyromorphite-mimetite-vanadinite series. Vanadium comes from oxidation of V-bearing sediments (red-bed ironstones, roll-fronts) in arid climates — the ACF mines of Morocco and the Arizona desert have produced the finest specimens. Classified here under phosphate (apatite-group structure); the 12-hue palette has no vanadate class so we fold with P/As/V together.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        80
+      ],
+      "T_optimum_C": [
+        15,
+        50
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 2.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Pb": 20,
+        "V": 2,
+        "Cl": 5
+      },
+      "trace_ingredients": {
+        "As": "endlichite (vanadinite-mimetite solid solution)",
+        "P": "minor substitution"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": null,
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 2.5,
+        "reaction": "Pb₅(VO₄)₃Cl + 10H⁺ → 5Pb²⁺ + 3H₃VO₄ + Cl⁻",
+        "products": {
+          "Pb": 0.3,
+          "V": 0.2,
+          "Cl": 0.3
+        }
+      },
+      "habit": "hexagonal_prism",
+      "color_rules": {
+        "bright_red_orange": {
+          "default": true
+        },
+        "brown_orange": {
+          "trigger": "Fe > 5 ppm"
+        },
+        "yellow": {
+          "trigger": "As > 2 ppm (endlichite)"
+        }
+      },
+      "narrate_function": "_narrate_vanadinite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 1). First V consumer in the sim. Apatite-group cousin of pyromorphite + mimetite. Folded into phosphate class (no vanadate hue in 12-wheel). Not in agent-api/vugg-agent.js.",
+      "class_color": "#13eb7f"
     }
   }
 }

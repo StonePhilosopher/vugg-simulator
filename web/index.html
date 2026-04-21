@@ -2977,6 +2977,10 @@ const MINERAL_SPEC_FALLBACK = {
   tourmaline: { formula: "Na(Fe,Li,Al)3Al6(BO3)3Si6O18(OH)4", nucleation_sigma: 1.3, max_size_cm: 300, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   beryl: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.8, max_size_cm: 1200, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   spodumene: { formula: "LiAlSi2O6", nucleation_sigma: 1.5, max_size_cm: 1400, growth_rate_mult: 0.35, thermal_decomp_C: null, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "strong_pink_orange_SW" }, twin_laws: [], acid_dissolution: null },
+  anglesite: { formula: "PbSO4", nucleation_sigma: 1.1, max_size_cm: 15, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: { activator: "intrinsic", color: "weak_yellow_LW" }, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
+  cerussite: { formula: "PbCO3", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.3, thermal_decomp_C: 315, fluorescence: { activator: "intrinsic", color: "weak_yellow_LW" }, twin_laws: [{ name: "cyclic_sixling", probability: 0.4 }], acid_dissolution: { pH_threshold: 4.0 } },
+  pyromorphite: { formula: "Pb5(PO4)3Cl", nucleation_sigma: 1.2, max_size_cm: 15, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 2.5 } },
+  vanadinite: { formula: "Pb5(VO4)3Cl", nucleation_sigma: 1.3, max_size_cm: 10, growth_rate_mult: 0.35, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 2.5 } },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3915,6 +3919,54 @@ class VugConditions {
     else if (T > 700) T_factor = 0.2;
     else T_factor = Math.max(0.1, 0.5 - 0.008 * (400 - T));
     sigma *= T_factor;
+    return Math.max(sigma, 0);
+  }
+
+  // Anglesite (PbSO₄) — orthorhombic lead sulfate, supergene intermediate.
+  supersaturation_anglesite() {
+    if (this.fluid.Pb < 15 || this.fluid.S < 15 || this.fluid.O2 < 0.8) return 0;
+    const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
+    const s_f  = Math.min(this.fluid.S / 40.0, 1.5);
+    const o_f  = Math.min(this.fluid.O2 / 1.0, 1.5);
+    let sigma = pb_f * s_f * o_f;
+    if (this.temperature > 80) sigma *= Math.exp(-0.04 * (this.temperature - 80));
+    if (this.fluid.pH < 2.0) sigma -= (2.0 - this.fluid.pH) * 0.3;
+    return Math.max(sigma, 0);
+  }
+
+  // Cerussite (PbCO₃) — orthorhombic lead carbonate, stellate sixling twins.
+  supersaturation_cerussite() {
+    if (this.fluid.Pb < 15 || this.fluid.CO3 < 30) return 0;
+    const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
+    const co_f = Math.min(this.fluid.CO3 / 80.0, 1.5);
+    let sigma = pb_f * co_f;
+    if (this.temperature > 80) sigma *= Math.exp(-0.04 * (this.temperature - 80));
+    if (this.fluid.pH < 4.0) sigma -= (4.0 - this.fluid.pH) * 0.4;
+    else if (this.fluid.pH > 7.0) sigma *= 1.0 + (this.fluid.pH - 7.0) * 0.1;
+    return Math.max(sigma, 0);
+  }
+
+  // Pyromorphite (Pb₅(PO₄)₃Cl) — hexagonal apatite-group phosphate.
+  supersaturation_pyromorphite() {
+    if (this.fluid.Pb < 20 || this.fluid.P < 2 || this.fluid.Cl < 5) return 0;
+    const pb_f = Math.min(this.fluid.Pb / 30.0, 1.8);
+    const p_f  = Math.min(this.fluid.P / 5.0, 2.0);
+    const cl_f = Math.min(this.fluid.Cl / 15.0, 1.3);
+    let sigma = pb_f * p_f * cl_f;
+    if (this.temperature > 80) sigma *= Math.exp(-0.04 * (this.temperature - 80));
+    if (this.fluid.pH < 2.5) sigma -= (2.5 - this.fluid.pH) * 0.4;
+    return Math.max(sigma, 0);
+  }
+
+  // Vanadinite (Pb₅(VO₄)₃Cl) — hexagonal apatite-group vanadate.
+  supersaturation_vanadinite() {
+    if (this.fluid.Pb < 20 || this.fluid.V < 2 || this.fluid.Cl < 5) return 0;
+    const pb_f = Math.min(this.fluid.Pb / 30.0, 1.8);
+    const v_f  = Math.min(this.fluid.V / 6.0, 2.0);
+    const cl_f = Math.min(this.fluid.Cl / 15.0, 1.3);
+    let sigma = pb_f * v_f * cl_f;
+    if (this.temperature > 80) sigma *= Math.exp(-0.04 * (this.temperature - 80));
+    if (this.fluid.pH < 2.5) sigma -= (2.5 - this.fluid.pH) * 0.4;
     return Math.max(sigma, 0);
   }
 
@@ -5326,6 +5378,155 @@ function grow_albite(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Al: conditions.fluid.Al * 0.03, note });
 }
 
+function grow_anglesite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_anglesite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 2.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.05);
+      conditions.fluid.Pb += d * 0.3;
+      conditions.fluid.S += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    if (crystal.total_growth_um > 5 && conditions.fluid.CO3 > 150) {
+      crystal.dissolved = true;
+      const d = Math.min(1.5, crystal.total_growth_um * 0.04);
+      conditions.fluid.Pb += d * 0.3;
+      conditions.fluid.S += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `anglesite → cerussite (CO₃ ${conditions.fluid.CO3.toFixed(0)} ppm overwhelms)` });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  let color_note;
+  if (f.Fe > 3.0) color_note = `yellow-amber tint (Fe ${f.Fe.toFixed(0)} ppm)`;
+  else if (f.Cu > 2.0) color_note = `pale blue-green tint (Cu ${f.Cu.toFixed(1)} ppm)`;
+  else color_note = "colorless to white, adamantine luster";
+
+  crystal.dominant_forms = ['b{010} pinacoid', 'm{110} prism', 'o{011} orthorhombic dome'];
+  const trace_Fe = f.Fe * 0.015;
+  const trace_Pb = f.Pb * 0.015;
+  f.Pb = Math.max(f.Pb - rate * 0.02, 0);
+  f.S = Math.max(f.S - rate * 0.018, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, trace_Pb, note: color_note });
+}
+
+function grow_cerussite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_cerussite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.1);
+      conditions.fluid.Pb += d * 0.5;
+      conditions.fluid.CO3 += d * 0.4;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `carbonate dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — fizzes` });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  if (!crystal.twinned && excess > 0.3 && excess < 1.5 && rng.random() < 0.4) {
+    crystal.twinned = true;
+    crystal.twin_law = 'cyclic sixling {110}';
+  }
+
+  let color_note = f.Cu > 5.0 ? `blue-green tint (Cu ${f.Cu.toFixed(1)} ppm)` : 'colorless to white, adamantine, extreme birefringence';
+  if (crystal.twinned && (crystal.twin_law || '').includes('sixling')) color_note += ' — six-ray stellate twin';
+
+  if (crystal.twinned && (crystal.twin_law || '').includes('sixling')) {
+    crystal.habit = 'stellate_sixling';
+    crystal.dominant_forms = ['cyclic {110} sixling twin', 'pseudo-hexagonal outline'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'acicular';
+    crystal.dominant_forms = ['fine {110} needles', 'radiating sprays'];
+  } else {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['b{010} pinacoid', 'm{110} prism'];
+  }
+
+  const trace_Pb = f.Pb * 0.015;
+  f.Pb = Math.max(f.Pb - rate * 0.02, 0);
+  f.CO3 = Math.max(f.CO3 - rate * 0.015, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Pb, note: color_note });
+}
+
+function grow_pyromorphite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_pyromorphite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 2.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      conditions.fluid.Pb += d * 0.3;
+      conditions.fluid.P += d * 0.2;
+      conditions.fluid.Cl += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  let color_note;
+  if (f.Fe > 5.0) { color_note = `brown to olive-brown (Fe ${f.Fe.toFixed(0)} ppm)`; crystal.habit = 'brown_hex_barrel'; }
+  else if (f.Ca > 80.0) { color_note = `pale yellow-orange (phosphoapatite-adjacent, Ca ${f.Ca.toFixed(0)} ppm)`; crystal.habit = 'yellow_hex_barrel'; }
+  else { color_note = 'classic olive-green hexagonal barrel'; crystal.habit = 'olive_hex_barrel'; }
+
+  if (excess > 1.5) crystal.dominant_forms = ['hoppered {10̄10} hexagonal prism', 'step-faced edges'];
+  else crystal.dominant_forms = ['{10̄10} hexagonal prism', 'c{0001} flat pinacoid', 'barrel profile'];
+
+  const trace_Fe = f.Fe * 0.015;
+  const trace_Pb = f.Pb * 0.015;
+  f.Pb = Math.max(f.Pb - rate * 0.025, 0);
+  f.P = Math.max(f.P - rate * 0.008, 0);
+  f.Cl = Math.max(f.Cl - rate * 0.005, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, trace_Pb, note: color_note });
+}
+
+function grow_vanadinite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_vanadinite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 2.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      conditions.fluid.Pb += d * 0.3;
+      conditions.fluid.V += d * 0.2;
+      conditions.fluid.Cl += d * 0.3;
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  let color_note;
+  if (f.As > 2.0) { color_note = `yellow endlichite (As ${f.As.toFixed(1)} + V ${f.V.toFixed(1)} mix)`; crystal.habit = 'endlichite_yellow'; }
+  else if (f.Fe > 5.0) { color_note = `brown-orange (Fe ${f.Fe.toFixed(0)} ppm)`; crystal.habit = 'brown_hex_prism'; }
+  else { color_note = `bright red-orange (V⁵⁺ ${f.V.toFixed(1)} ppm — the signature)`; crystal.habit = 'red_hex_prism'; }
+
+  crystal.dominant_forms = ['{10̄10} hexagonal prism', 'c{0001} pinacoid', 'flat basal termination'];
+  const trace_Fe = f.Fe * 0.010;
+  const trace_Pb = f.Pb * 0.015;
+  f.Pb = Math.max(f.Pb - rate * 0.025, 0);
+  f.V = Math.max(f.V - rate * 0.008, 0);
+  f.Cl = Math.max(f.Cl - rate * 0.005, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, trace_Pb, note: color_note });
+}
+
 function grow_spodumene(crystal, conditions, step) {
   // Spodumene (LiAlSi₂O₆) — monoclinic pyroxene, "book shape" flattened
   // tabular habit, two ~87° cleavages. No practical acid dissolution.
@@ -5656,6 +5857,10 @@ const MINERAL_ENGINES = {
   tourmaline: grow_tourmaline,
   beryl: grow_beryl,
   spodumene: grow_spodumene,
+  anglesite: grow_anglesite,
+  cerussite: grow_cerussite,
+  pyromorphite: grow_pyromorphite,
+  vanadinite: grow_vanadinite,
 };
 
 function grow_adamite(crystal, conditions, step) {
@@ -5995,8 +6200,14 @@ function scenario_supergene_oxidation() {
     temperature: 35.0, pressure: 0.05,
     fluid: new FluidChemistry({
       SiO2: 30, Ca: 120, CO3: 80, Fe: 40, Mn: 6, Mg: 5,
-      Zn: 90, S: 50, F: 3, Cu: 25, Pb: 35, Mo: 15,
+      Zn: 90, S: 50, F: 3, Cu: 25,
+      // Pb bumped 35 → 60 so anglesite/cerussite/pyromorphite can saturate
+      Pb: 60, Mo: 15,
       As: 12, Cl: 20,
+      // V trace — roll-front / red-bed signature. Low start; ev_v_bearing_seep bumps past threshold.
+      V: 1.5,
+      // P trace — meteoric water typically carries <1 ppm P; pyromorphite waits for ev_phosphate_seep.
+      P: 0.5,
       O2: 1.8, pH: 6.8, salinity: 2.0,
     }),
   });
@@ -6005,9 +6216,11 @@ function scenario_supergene_oxidation() {
     { step: 40,  name: 'Pb+Mo Pulse',      description: 'Galena+molybdenite weathering', apply_fn: (c) => { c.fluid.Pb += 40; c.fluid.Mo += 25; c.fluid.O2 = 2.0; c.flow_rate = 2.0; return 'A weathering rind breaches: Pb²⁺ and MoO₄²⁻ released simultaneously — the Seo et al. (2012) condition for wulfenite formation is met.'; } },
     { step: 70,  name: 'Dry Spell',        description: 'Evaporation concentrates sulfate', apply_fn: (c) => { c.fluid.Ca += 40; c.fluid.S += 30; c.fluid.O2 = 1.5; c.temperature = 50; c.flow_rate = 0.3; return 'Dry season. Flow slows, evaporation concentrates the brine. Ca²⁺ and SO₄²⁻ climb toward selenite\u2019s window.'; } },
     { step: 95,  name: 'Arsenic Seep',     description: 'Zn/Pb arsenate saturation', apply_fn: (c) => { c.fluid.As += 8; c.fluid.Cl += 10; c.fluid.Zn += 20; c.fluid.pH = 6.0; return 'An arsenic-bearing seep arrives from a weathering arsenopyrite body upslope. Adamite and mimetite saturate.'; } },
-    { step: 140, name: 'Fracture Seal',    description: 'System closes', apply_fn: (c) => { c.flow_rate = 0.05; c.fluid.O2 = 1.0; return 'The feeding fractures seal. The vug becomes a closed cold oxidizing system.'; } },
+    { step: 115, name: 'Phosphate Seep',   description: 'Soil-zone PO₄ enables pyromorphite', apply_fn: (c) => { c.fluid.P += 6.0; c.fluid.Cl += 5.0; c.fluid.pH = 6.4; return 'A phosphate-bearing groundwater seeps in from the soil zone — organic decay, weathered apatite bedrock, bat guano from above. P jumps past pyromorphite\u2019s saturation threshold, and any Pb still in solution has a new home.'; } },
+    { step: 130, name: 'V-bearing Seep',   description: 'Red-bed V leaches in, vanadinite fires', apply_fn: (c) => { c.fluid.V += 6.0; c.fluid.Cl += 8.0; c.temperature = 45; return "A vanadium-bearing seep arrives from a weathering red-bed ironstone upslope. V⁵⁺ leaches from oxidizing roll-front vanadates, and at Pb + V + Cl saturation the bright red-orange vanadinite nucleates — the classic 'vanadinite on goethite' habit of the Morocco / Arizona desert deposits."; } },
+    { step: 160, name: 'Fracture Seal',    description: 'System closes', apply_fn: (c) => { c.flow_rate = 0.05; c.fluid.O2 = 1.0; return 'The feeding fractures seal. The vug becomes a closed cold oxidizing system.'; } },
   ];
-  return { conditions, events, defaultSteps: 180 };
+  return { conditions, events, defaultSteps: 200 };
 }
 
 // Minas Gerais Gem Pegmatite Pocket — Variant A.
@@ -6254,6 +6467,14 @@ class VugSimulator {
       crystal.dominant_forms = ['m{10̄10} hex prism', 'c{0001} flat basal pinacoid'];
     } else if (mineral === 'spodumene') {
       crystal.dominant_forms = ['m{110} prism', 'a{100} + b{010} pinacoids', '~87° pyroxene cleavages'];
+    } else if (mineral === 'anglesite') {
+      crystal.dominant_forms = ['b{010} pinacoid', 'm{110} prism', 'o{011} orthorhombic dome'];
+    } else if (mineral === 'cerussite') {
+      crystal.dominant_forms = ['b{010} pinacoid', 'm{110} prism', 'pseudo-hexagonal if twinned'];
+    } else if (mineral === 'pyromorphite') {
+      crystal.dominant_forms = ['{10̄10} hexagonal prism', 'c{0001} pinacoid', 'barrel profile'];
+    } else if (mineral === 'vanadinite') {
+      crystal.dominant_forms = ['{10̄10} hexagonal prism', 'c{0001} pinacoid', 'flat basal termination'];
     }
     this.crystals.push(crystal);
     return crystal;
@@ -6672,6 +6893,70 @@ class VugSimulator {
       }
       const c = this.nucleate('mimetite', pos, sigma_mim);
       this.log.push(`  ✦ NUCLEATION: Mimetite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mim.toFixed(2)})`);
+    }
+
+    // Anglesite nucleation — Pb + oxidized S + O₂ (supergene).
+    const sigma_ang = this.conditions.supersaturation_anglesite();
+    const existing_ang = this.crystals.filter(c => c.mineral === 'anglesite' && c.active);
+    if (sigma_ang > 1.1 && !this._atNucleationCap('anglesite')) {
+      if (!existing_ang.length || (sigma_ang > 1.8 && rng.random() < 0.25)) {
+        let pos = 'vug wall';
+        const dissolving_gal = this.crystals.filter(c => c.mineral === 'galena' && (c.dissolved || rng.random() < 0.6));
+        const active_gal_ang = this.crystals.filter(c => c.mineral === 'galena' && c.active);
+        if (dissolving_gal.length && rng.random() < 0.6) pos = `on galena #${dissolving_gal[0].crystal_id}`;
+        else if (active_gal_ang.length && rng.random() < 0.4) pos = `on galena #${active_gal_ang[0].crystal_id}`;
+        const c = this.nucleate('anglesite', pos, sigma_ang);
+        this.log.push(`  ✦ NUCLEATION: Anglesite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ang.toFixed(2)}, Pb=${this.conditions.fluid.Pb.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)})`);
+      }
+    }
+
+    // Cerussite nucleation — Pb + CO₃ (supergene).
+    const sigma_cer = this.conditions.supersaturation_cerussite();
+    const existing_cer = this.crystals.filter(c => c.mineral === 'cerussite' && c.active);
+    if (sigma_cer > 1.0 && !this._atNucleationCap('cerussite')) {
+      if (!existing_cer.length || (sigma_cer > 1.8 && rng.random() < 0.3)) {
+        let pos = 'vug wall';
+        const dissolving_ang = this.crystals.filter(c => c.mineral === 'anglesite' && c.dissolved);
+        const dissolving_gal_c = this.crystals.filter(c => c.mineral === 'galena' && c.dissolved);
+        const active_gal_c = this.crystals.filter(c => c.mineral === 'galena' && c.active);
+        if (dissolving_ang.length && rng.random() < 0.7) pos = `on anglesite #${dissolving_ang[0].crystal_id}`;
+        else if (dissolving_gal_c.length && rng.random() < 0.5) pos = `on galena #${dissolving_gal_c[0].crystal_id}`;
+        else if (active_gal_c.length && rng.random() < 0.3) pos = `on galena #${active_gal_c[0].crystal_id}`;
+        const c = this.nucleate('cerussite', pos, sigma_cer);
+        this.log.push(`  ✦ NUCLEATION: Cerussite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cer.toFixed(2)}, Pb=${this.conditions.fluid.Pb.toFixed(0)}, CO3=${this.conditions.fluid.CO3.toFixed(0)})`);
+      }
+    }
+
+    // Pyromorphite nucleation — Pb + P + Cl (supergene, P-gated).
+    const sigma_pyr = this.conditions.supersaturation_pyromorphite();
+    const existing_pyr = this.crystals.filter(c => c.mineral === 'pyromorphite' && c.active);
+    if (sigma_pyr > 1.2 && !this._atNucleationCap('pyromorphite')) {
+      if (!existing_pyr.length || (sigma_pyr > 1.8 && rng.random() < 0.3)) {
+        let pos = 'vug wall';
+        const dissolving_cer_p = this.crystals.filter(c => c.mineral === 'cerussite' && c.dissolved);
+        const active_cer_p = this.crystals.filter(c => c.mineral === 'cerussite' && c.active);
+        const existing_goe_pyr = this.crystals.filter(c => c.mineral === 'goethite' && c.active);
+        if (dissolving_cer_p.length && rng.random() < 0.6) pos = `on cerussite #${dissolving_cer_p[0].crystal_id}`;
+        else if (active_cer_p.length && rng.random() < 0.3) pos = `on cerussite #${active_cer_p[0].crystal_id}`;
+        else if (existing_goe_pyr.length && rng.random() < 0.3) pos = `on goethite #${existing_goe_pyr[0].crystal_id}`;
+        const c = this.nucleate('pyromorphite', pos, sigma_pyr);
+        this.log.push(`  ✦ NUCLEATION: Pyromorphite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_pyr.toFixed(2)}, P=${this.conditions.fluid.P.toFixed(1)}, Cl=${this.conditions.fluid.Cl.toFixed(0)})`);
+      }
+    }
+
+    // Vanadinite nucleation — Pb + V + Cl (supergene, V-gated).
+    const sigma_vnd = this.conditions.supersaturation_vanadinite();
+    const existing_vnd = this.crystals.filter(c => c.mineral === 'vanadinite' && c.active);
+    if (sigma_vnd > 1.3 && !this._atNucleationCap('vanadinite')) {
+      if (!existing_vnd.length || (sigma_vnd > 1.8 && rng.random() < 0.3)) {
+        let pos = 'vug wall';
+        const existing_goe_vnd = this.crystals.filter(c => c.mineral === 'goethite' && c.active);
+        const dissolving_cer_v = this.crystals.filter(c => c.mineral === 'cerussite' && c.dissolved);
+        if (existing_goe_vnd.length && rng.random() < 0.7) pos = `on goethite #${existing_goe_vnd[0].crystal_id}`;
+        else if (dissolving_cer_v.length && rng.random() < 0.4) pos = `on cerussite #${dissolving_cer_v[0].crystal_id}`;
+        const c = this.nucleate('vanadinite', pos, sigma_vnd);
+        this.log.push(`  ✦ NUCLEATION: Vanadinite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_vnd.toFixed(2)}, V=${this.conditions.fluid.V.toFixed(1)}, Pb=${this.conditions.fluid.Pb.toFixed(0)})`);
+      }
     }
 
     // Spodumene nucleation — Li + Al + SiO₂ (Li-gated, σ > 1.5).
@@ -7818,6 +8103,60 @@ class VugSimulator {
     }
 
     parts.push('A cross-section of this crystal perpendicular to the c-axis would show the pyroxene chain silicate structure: SiO₄ tetrahedra linked into single chains along c, with Li and Al occupying the M1 and M2 octahedral sites between them.');
+    return parts.join(' ');
+  }
+
+  _narrate_anglesite(c) {
+    const parts = [`Anglesite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('PbSO₄ — orthorhombic lead sulfate, brilliant adamantine luster. Intermediate step in the galena → anglesite → cerussite oxidation sequence. Named for Anglesey, the Welsh island where the type specimens were found in the 1830s.');
+    if ((c.position || '').includes('galena')) {
+      parts.push('This crystal grew directly on a dissolving galena — the classic pseudomorphic relationship. The cubic outline of galena is gradually replaced from the outside in as Pb²⁺ and SO₄²⁻ recrystallize into the orthorhombic anglesite structure.');
+    }
+    if (c.zones.some(z => (z.note || '').includes('→ cerussite'))) {
+      parts.push("Converting to cerussite. Carbonate-bearing groundwater destabilizes anglesite in favor of the lead carbonate — Pb²⁺ + CO₃²⁻ is more stable than Pb²⁺ + SO₄²⁻ at low T. Anglesite is a 'letter written in passing' in the lead oxidation story.");
+    }
+    if (c.dissolved) {
+      parts.push('The crystal has dissolved. If the pocket\u2019s chemistry continues to evolve the released Pb²⁺ will find a new home — cerussite if carbonate is present, pyromorphite if phosphate arrives.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_cerussite(c) {
+    const parts = [`Cerussite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("PbCO₃ — orthorhombic lead carbonate. Water-clear with adamantine luster and extreme birefringence — a thin slice doubles every image behind it. Final stable product of the lead oxidation sequence in carbonate-rich water. The Latin name 'cerussa' means 'white lead', a pigment used since antiquity (and poisonous — painters\u2019 death).");
+    if (c.twinned && (c.twin_law || '').includes('sixling')) {
+      parts.push('Six-ray stellate cyclic twin — three individuals intergrown at 120° on {110}. Among mineralogy\u2019s most iconic forms; a sharp cerussite star commands four-figure prices at a show. This twin happened because growth ran at moderate supersaturation for a sustained window — fast enough to initiate the twin, slow enough to let it develop cleanly.');
+    }
+    if ((c.position || '').includes('galena')) {
+      parts.push('Pseudomorphs after galena — the cube outline survives as cerussite precipitates into it. Occasionally galena relics persist inside, slowly oxidizing.');
+    }
+    if (c.dissolved) {
+      parts.push('Acid dissolution — cerussite is a carbonate and fizzes in acid just like calcite: PbCO₃ + 2H⁺ → Pb²⁺ + H₂O + CO₂. Any released Pb may find pyromorphite or vanadinite if P or V is available.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_pyromorphite(c) {
+    const parts = [`Pyromorphite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Pb₅(PO₄)₃Cl — hexagonal apatite-group phosphate. Barrel-shaped hexagonal prisms in olive-green, yellow, orange, or brown. Forms in supergene oxidation zones when phosphate-bearing meteoric water encounters a Pb-bearing horizon. The name is Greek 'pyros morphos' — 'fire form' — because the crystals re-form into a spherical droplet when melted.");
+    if ((c.habit || '').includes('olive')) {
+      parts.push('Classic olive-green barrel crystals. Found at the type locality of Leadhills (Scotland), at Dognacska (Romania), and — best of all — at Les Farges (France) where millimeter-sharp brilliant-green crystals set the world standard.');
+    } else if ((c.habit || '').includes('yellow') || (c.habit || '').includes('brown')) {
+      parts.push('Non-canonical color — the pocket fluid substituted Ca for some Pb (pale yellow-orange, phosphoapatite-adjacent) or carried Fe trace (brown-olive).');
+    }
+    parts.push('Pyromorphite is used in environmental remediation: dump phosphate fertilizer onto lead-contaminated soil and the toxic Pb precipitates as pyromorphite — stable, insoluble, and harmless. Mineralogy as a cleanup tool.');
+    return parts.join(' ');
+  }
+
+  _narrate_vanadinite(c) {
+    const parts = [`Vanadinite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Pb₅(VO₄)₃Cl — hexagonal apatite-group vanadate. Bright red-orange prisms with flat basal terminations, sitting atop goethite-stained matrix. Vanadium-end-member of the pyromorphite–mimetite–vanadinite series, arguably mineralogy\u2019s most complete solid-solution triangle.');
+    if ((c.habit || '').includes('endlichite')) {
+      parts.push('Endlichite — intermediate vanadinite-mimetite composition with significant As⁵⁺ substituting for V⁵⁺. The color shifts toward yellow as As dominates. The compositional series is continuous.');
+    } else if ((c.habit || '').includes('red')) {
+      parts.push("The signature red-orange. This is the chromophore pegged to V⁵⁺ in the crystal structure — no other common mineral produces this particular red. The Moroccan Mibladen and Touissit deposits have produced the world\u2019s finest specimens, growing on goethite crust in near-surface oxidation pockets.");
+    }
+    parts.push("Classic desert mineral. V comes from oxidation of V-bearing red-bed sediments (roll-front uranium deposits, ironstones) — an arid-climate signature. The rock-shop cliché 'vanadinite on goethite' is geologically accurate.");
     return parts.join(' ');
   }
 

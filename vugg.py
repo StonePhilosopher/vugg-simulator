@@ -958,6 +958,97 @@ class VugConditions:
             sigma *= 1.3
         return max(sigma, 0)
 
+    def supersaturation_anglesite(self) -> float:
+        """Anglesite (PbSO₄) supersaturation. Needs Pb + oxidized S + O₂.
+
+        Intermediate step in the lead-oxidation paragenesis. Galena
+        oxidizes to Pb²⁺ + SO₄²⁻ → anglesite, which is transient in
+        carbonate-bearing groundwater (dissolves and re-precipitates as
+        cerussite). Strict low-T window (< 80°C) — anglesite is a
+        supergene mineral only.
+        """
+        if (self.fluid.Pb < 15 or self.fluid.S < 15 or
+                self.fluid.O2 < 0.8):
+            return 0
+        pb_f = min(self.fluid.Pb / 40.0, 2.0)
+        s_f  = min(self.fluid.S / 40.0, 1.5)
+        o_f  = min(self.fluid.O2 / 1.0, 1.5)
+        sigma = pb_f * s_f * o_f
+        # Low-T window — anglesite disappears fast above ~80°C
+        if self.temperature > 80:
+            sigma *= math.exp(-0.04 * (self.temperature - 80))
+        # Acid dissolution (pH < 2) — slow
+        if self.fluid.pH < 2.0:
+            sigma -= (2.0 - self.fluid.pH) * 0.3
+        return max(sigma, 0)
+
+    def supersaturation_cerussite(self) -> float:
+        """Cerussite (PbCO₃) supersaturation. Needs Pb + CO₃.
+
+        Final stable product of the lead-oxidation sequence in
+        carbonate-rich water. Outcompetes anglesite when CO₃ is
+        abundant. Stellate cyclic twins on {110} are iconic — "six-ray
+        stars" growing as three individuals rotated 120° apart.
+        Low-T mineral; dissolves in acid (it's a carbonate, fizzes).
+        """
+        if self.fluid.Pb < 15 or self.fluid.CO3 < 30:
+            return 0
+        pb_f = min(self.fluid.Pb / 40.0, 2.0)
+        co_f = min(self.fluid.CO3 / 80.0, 1.5)
+        sigma = pb_f * co_f
+        # Low-T preference — cerussite is strictly supergene
+        if self.temperature > 80:
+            sigma *= math.exp(-0.04 * (self.temperature - 80))
+        # Acid dissolution (pH < 4) — fizzes like calcite
+        if self.fluid.pH < 4.0:
+            sigma -= (4.0 - self.fluid.pH) * 0.4
+        # Alkaline promotes cerussite precipitation (carbonate buffering)
+        elif self.fluid.pH > 7.0:
+            sigma *= 1.0 + (self.fluid.pH - 7.0) * 0.1
+        return max(sigma, 0)
+
+    def supersaturation_pyromorphite(self) -> float:
+        """Pyromorphite (Pb₅(PO₄)₃Cl) supersaturation. Needs Pb + P + Cl.
+
+        Apatite-group phosphate, barrel-shaped hexagonal prisms.
+        Phosphate is often rare in oxidation-zone fluids — the P
+        threshold is the natural gate. When phosphate arrives via
+        meteoric water meeting an oxidizing Pb mineral, pyromorphite
+        replaces cerussite or coats galena pseudomorphically.
+        """
+        if self.fluid.Pb < 20 or self.fluid.P < 2 or self.fluid.Cl < 5:
+            return 0
+        pb_f = min(self.fluid.Pb / 30.0, 1.8)
+        p_f  = min(self.fluid.P / 5.0, 2.0)      # P is the gate
+        cl_f = min(self.fluid.Cl / 15.0, 1.3)
+        sigma = pb_f * p_f * cl_f
+        if self.temperature > 80:
+            sigma *= math.exp(-0.04 * (self.temperature - 80))
+        if self.fluid.pH < 2.5:
+            sigma -= (2.5 - self.fluid.pH) * 0.4
+        return max(sigma, 0)
+
+    def supersaturation_vanadinite(self) -> float:
+        """Vanadinite (Pb₅(VO₄)₃Cl) supersaturation. Needs Pb + V + Cl.
+
+        Vanadate end-member of the apatite-group Pb-trio (pyromorphite
+        P / mimetite As / vanadinite V). Vanadium comes from oxidation
+        of V-bearing red-bed sediments — arid-climate signature. The V
+        threshold is the gate; vanadate is otherwise rare in
+        oxidation-zone fluids.
+        """
+        if self.fluid.Pb < 20 or self.fluid.V < 2 or self.fluid.Cl < 5:
+            return 0
+        pb_f = min(self.fluid.Pb / 30.0, 1.8)
+        v_f  = min(self.fluid.V / 6.0, 2.0)      # V is the gate
+        cl_f = min(self.fluid.Cl / 15.0, 1.3)
+        sigma = pb_f * v_f * cl_f
+        if self.temperature > 80:
+            sigma *= math.exp(-0.04 * (self.temperature - 80))
+        if self.fluid.pH < 2.5:
+            sigma -= (2.5 - self.fluid.pH) * 0.4
+        return max(sigma, 0)
+
     def supersaturation_goethite(self) -> float:
         """Goethite (FeO(OH)) supersaturation. Needs Fe + oxidizing + moderate pH.
 
@@ -2760,6 +2851,251 @@ def grow_spodumene(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_anglesite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Anglesite (PbSO₄) growth — orthorhombic lead sulfate.
+
+    Intermediate in the lead oxidation sequence. Tends to pseudomorph
+    galena (inherits cube shape) when it nucleates on a dissolving
+    galena crystal. Adamantine luster — one of the most visually
+    brilliant non-metallic minerals.
+    """
+    sigma = conditions.supersaturation_anglesite()
+    if sigma < 1.0:
+        # Slow acid dissolution
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 2.0:
+            crystal.dissolved = True
+            d = min(2.0, crystal.total_growth_um * 0.05)
+            conditions.fluid.Pb += d * 0.3
+            conditions.fluid.S += d * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f})"
+            )
+        # Carbonate replacement — when CO3 is high, anglesite recrystallizes
+        # to cerussite. The sim doesn't "transform" crystals, but we can
+        # mark anglesite for dissolution when carbonate is overwhelming.
+        if crystal.total_growth_um > 5 and conditions.fluid.CO3 > 150:
+            crystal.dissolved = True
+            d = min(1.5, crystal.total_growth_um * 0.04)
+            conditions.fluid.Pb += d * 0.3
+            conditions.fluid.S += d * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"anglesite → cerussite (CO₃ {conditions.fluid.CO3:.0f} ppm overwhelms)"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    if f.Fe > 3.0:
+        color_note = f"yellow-amber tint (Fe {f.Fe:.0f} ppm)"
+    elif f.Cu > 2.0:
+        color_note = f"pale blue-green tint (Cu {f.Cu:.1f} ppm)"
+    else:
+        color_note = "colorless to white, adamantine luster"
+
+    crystal.dominant_forms = ["b{010} pinacoid", "m{110} prism", "o{011} orthorhombic dome"]
+
+    trace_Fe = f.Fe * 0.015
+    trace_Pb = f.Pb * 0.015
+
+    f.Pb = max(f.Pb - rate * 0.02, 0)
+    f.S = max(f.S - rate * 0.018, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe, trace_Pb=trace_Pb,
+        note=color_note,
+    )
+
+
+def grow_cerussite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Cerussite (PbCO₃) growth — orthorhombic lead carbonate.
+
+    Stellate cyclic twin on {110} is the diagnostic habit: three
+    individuals intergrown at 120° producing a perfect six-ray star.
+    Twin probability is high at moderate σ (spec: 0.4).
+    """
+    sigma = conditions.supersaturation_cerussite()
+    if sigma < 1.0:
+        # Carbonate — fizzes in acid (pH < 4)
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.0:
+            crystal.dissolved = True
+            d = min(3.0, crystal.total_growth_um * 0.1)
+            conditions.fluid.Pb += d * 0.5
+            conditions.fluid.CO3 += d * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"carbonate dissolution (pH {conditions.fluid.pH:.1f}) — PbCO₃ + 2H⁺ → Pb²⁺ + H₂O + CO₂, fizzes"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    # Cyclic sixling twin — the diagnostic habit of cerussite. High
+    # probability at moderate σ.
+    if not crystal.twinned and 0.3 < excess < 1.5 and random.random() < 0.4:
+        crystal.twinned = True
+        crystal.twin_law = "cyclic sixling {110}"
+
+    if f.Cu > 5.0:
+        color_note = f"blue-green tint (Cu {f.Cu:.1f} ppm)"
+    else:
+        color_note = "colorless to white, adamantine, extreme birefringence"
+    if crystal.twinned and "sixling" in (crystal.twin_law or ""):
+        color_note += " — six-ray stellate twin"
+
+    if crystal.twinned and "sixling" in (crystal.twin_law or ""):
+        crystal.habit = "stellate_sixling"
+        crystal.dominant_forms = ["cyclic {110} sixling twin", "pseudo-hexagonal outline"]
+    elif excess > 1.2:
+        crystal.habit = "acicular"
+        crystal.dominant_forms = ["fine {110} needles", "radiating sprays"]
+    else:
+        crystal.habit = "tabular"
+        crystal.dominant_forms = ["b{010} pinacoid", "m{110} prism"]
+
+    trace_Pb = f.Pb * 0.015
+
+    f.Pb = max(f.Pb - rate * 0.02, 0)
+    f.CO3 = max(f.CO3 - rate * 0.015, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Pb=trace_Pb,
+        note=color_note,
+    )
+
+
+def grow_pyromorphite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Pyromorphite (Pb₅(PO₄)₃Cl) growth — hexagonal apatite-group phosphate.
+
+    Barrel-shaped hexagonal prisms. Olive-green to yellow. Classic
+    supergene mineral — P and Cl in meteoric water meet residual Pb
+    from an oxidizing Pb-bearing horizon. Can pseudomorph cerussite
+    and galena.
+    """
+    sigma = conditions.supersaturation_pyromorphite()
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 2.5:
+            crystal.dissolved = True
+            d = min(2.0, crystal.total_growth_um * 0.06)
+            conditions.fluid.Pb += d * 0.3
+            conditions.fluid.P += d * 0.2
+            conditions.fluid.Cl += d * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f})"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    if f.Fe > 5.0:
+        color_note = f"brown to olive-brown (Fe {f.Fe:.0f} ppm)"
+        crystal.habit = "brown_hex_barrel"
+    elif f.Ca > 80.0:
+        color_note = f"pale yellow-orange (phosphoapatite-adjacent, Ca {f.Ca:.0f} ppm)"
+        crystal.habit = "yellow_hex_barrel"
+    else:
+        color_note = "classic olive-green hexagonal barrel"
+        crystal.habit = "olive_hex_barrel"
+
+    # Hoppered habit at high σ — edges grow faster than faces
+    if excess > 1.5:
+        crystal.dominant_forms = ["hoppered {10̄10} hexagonal prism", "step-faced edges"]
+    else:
+        crystal.dominant_forms = ["{10̄10} hexagonal prism", "c{0001} flat pinacoid", "barrel profile"]
+
+    trace_Fe = f.Fe * 0.015
+    trace_Pb = f.Pb * 0.015
+
+    f.Pb = max(f.Pb - rate * 0.025, 0)
+    f.P = max(f.P - rate * 0.008, 0)
+    f.Cl = max(f.Cl - rate * 0.005, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe, trace_Pb=trace_Pb,
+        note=color_note,
+    )
+
+
+def grow_vanadinite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Vanadinite (Pb₅(VO₄)₃Cl) growth — hexagonal apatite-group vanadate.
+
+    Bright red-orange hexagonal prisms. Classic desert supergene
+    mineral — V from oxidizing red-bed ironstones, Pb from galena.
+    Color mechanism: V⁵⁺ in the crystal field produces the red-orange;
+    trace As substitutes to give endlichite (yellow).
+    """
+    sigma = conditions.supersaturation_vanadinite()
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 2.5:
+            crystal.dissolved = True
+            d = min(2.0, crystal.total_growth_um * 0.06)
+            conditions.fluid.Pb += d * 0.3
+            conditions.fluid.V += d * 0.2
+            conditions.fluid.Cl += d * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f})"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    if f.As > 2.0:
+        color_note = f"yellow endlichite (As {f.As:.1f} + V {f.V:.1f} mix)"
+        crystal.habit = "endlichite_yellow"
+    elif f.Fe > 5.0:
+        color_note = f"brown-orange (Fe {f.Fe:.0f} ppm)"
+        crystal.habit = "brown_hex_prism"
+    else:
+        color_note = f"bright red-orange (V⁵⁺ {f.V:.1f} ppm — the signature)"
+        crystal.habit = "red_hex_prism"
+
+    crystal.dominant_forms = ["{10̄10} hexagonal prism", "c{0001} pinacoid", "flat basal termination"]
+
+    trace_Fe = f.Fe * 0.010
+    trace_Pb = f.Pb * 0.015
+
+    f.Pb = max(f.Pb - rate * 0.025, 0)
+    f.V = max(f.V - rate * 0.008, 0)
+    f.Cl = max(f.Cl - rate * 0.005, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe, trace_Pb=trace_Pb,
+        note=color_note,
+    )
+
+
 def grow_galena(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Galena (PbS) growth. Cubic lead sulfide, bright metallic luster, very dense."""
     sigma = conditions.supersaturation_galena()
@@ -3145,6 +3481,10 @@ MINERAL_ENGINES = {
     "tourmaline": grow_tourmaline,
     "beryl": grow_beryl,
     "spodumene": grow_spodumene,
+    "anglesite": grow_anglesite,
+    "cerussite": grow_cerussite,
+    "pyromorphite": grow_pyromorphite,
+    "vanadinite": grow_vanadinite,
 }
 
 
@@ -3578,8 +3918,15 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
         fluid=FluidChemistry(
             SiO2=30, Ca=120, CO3=80, Fe=40, Mn=6, Mg=5,
             Zn=90, S=50, F=3,
-            Cu=25, Pb=35, Mo=15,
+            Cu=25, Pb=60, Mo=15,    # Pb bumped 35 → 60 so anglesite/cerussite/pyromorphite can saturate
             As=12, Cl=20,
+            # Vanadium trace — roll-front / red-bed signature. Low
+            # starting value; bumped later by ev_v_bearing_seep.
+            V=1.5,
+            # Phosphorus trace — meteoric water typically carries <1 ppm P;
+            # pyromorphite's gate is P>2, so it waits for a phosphate
+            # event later in the scenario.
+            P=0.5,
             O2=1.8, pH=6.8, salinity=2.0,
         )
     )
@@ -3626,6 +3973,28 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
                 "arsenopyrite body upslope. Zn²⁺ + AsO₄³⁻ begins to saturate "
                 "for adamite; Pb²⁺ + AsO₄³⁻ + Cl⁻ for mimetite.")
 
+    def ev_phosphate_seep(cond):
+        """Phosphate-bearing groundwater — enables pyromorphite."""
+        cond.fluid.P += 6.0
+        cond.fluid.Cl += 5.0
+        cond.fluid.pH = 6.4
+        return ("A phosphate-bearing groundwater seeps in from the soil "
+                "zone — organic decay, weathered apatite bedrock, bat guano "
+                "from above. P jumps past pyromorphite's saturation "
+                "threshold, and any Pb still in solution has a new home.")
+
+    def ev_v_bearing_seep(cond):
+        """V-bearing fluid from red-bed sediments — enables vanadinite."""
+        cond.fluid.V += 6.0
+        cond.fluid.Cl += 8.0
+        cond.temperature = 45   # late dry phase, slight warming
+        return ("A vanadium-bearing seep arrives from a weathering red-bed "
+                "ironstone upslope. V⁵⁺ leaches from oxidizing roll-front "
+                "vanadates, and at Pb + V + Cl saturation the bright "
+                "red-orange vanadinite nucleates — the classic "
+                "'vanadinite on goethite' habit of the Morocco / Arizona "
+                "desert deposits.")
+
     def ev_fracture_seal(cond):
         """System seals — final equilibration."""
         cond.flow_rate = 0.05
@@ -3635,13 +4004,15 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
                 "whatever is undersaturated will quietly corrode.")
 
     events = [
-        Event(20, "Meteoric Flush", "Oxygenated rainwater recharges", ev_meteoric_flush),
-        Event(40, "Pb+Mo Pulse", "Galena+molybdenite weathering", ev_pb_mo_pulse),
-        Event(70, "Dry Spell", "Evaporation concentrates sulfate", ev_dry_spell),
-        Event(95, "Arsenic Seep", "Zn/Pb arsenate saturation", ev_as_rich_seep),
-        Event(140, "Fracture Seal", "System closes", ev_fracture_seal),
+        Event(20,  "Meteoric Flush",  "Oxygenated rainwater recharges",       ev_meteoric_flush),
+        Event(40,  "Pb+Mo Pulse",     "Galena+molybdenite weathering",         ev_pb_mo_pulse),
+        Event(70,  "Dry Spell",       "Evaporation concentrates sulfate",      ev_dry_spell),
+        Event(95,  "Arsenic Seep",    "Zn/Pb arsenate saturation",             ev_as_rich_seep),
+        Event(115, "Phosphate Seep",  "Soil-zone PO₄ enables pyromorphite",    ev_phosphate_seep),
+        Event(130, "V-bearing Seep",  "Red-bed V leaches in, vanadinite fires", ev_v_bearing_seep),
+        Event(160, "Fracture Seal",   "System closes",                          ev_fracture_seal),
     ]
-    return conditions, events, 180
+    return conditions, events, 200
 
 
 def scenario_gem_pegmatite() -> Tuple[VugConditions, List[Event], int]:
@@ -4325,6 +4696,14 @@ class VugSimulator:
             crystal.dominant_forms = ["m{10̄10} hex prism", "c{0001} flat basal pinacoid"]
         elif mineral == "spodumene":
             crystal.dominant_forms = ["m{110} prism", "a{100} + b{010} pinacoids", "~87° pyroxene cleavages"]
+        elif mineral == "anglesite":
+            crystal.dominant_forms = ["b{010} pinacoid", "m{110} prism", "o{011} orthorhombic dome"]
+        elif mineral == "cerussite":
+            crystal.dominant_forms = ["b{010} pinacoid", "m{110} prism", "pseudo-hexagonal if twinned"]
+        elif mineral == "pyromorphite":
+            crystal.dominant_forms = ["{10̄10} hexagonal prism", "c{0001} pinacoid", "barrel profile"]
+        elif mineral == "vanadinite":
+            crystal.dominant_forms = ["{10̄10} hexagonal prism", "c{0001} pinacoid", "flat basal termination"]
         self.crystals.append(crystal)
         return crystal
 
@@ -4566,10 +4945,11 @@ class VugSimulator:
             pos = "vug wall"
             # Preference for galena surface (classic! mimetite replaces/coats galena)
             existing_galena = [c for c in self.crystals if c.mineral == "galena"]
+            existing_goethite_mim = [c for c in self.crystals if c.mineral == "goethite" and c.active]
             if existing_galena and random.random() < 0.6:
                 pos = f"on galena #{existing_galena[0].crystal_id}"
-            elif existing_goethite and random.random() < 0.3:
-                pos = f"on goethite #{existing_goethite[0].crystal_id}"
+            elif existing_goethite_mim and random.random() < 0.3:
+                pos = f"on goethite #{existing_goethite_mim[0].crystal_id}"
             c = self.nucleate("mimetite", position=pos, sigma=sigma_mim)
             self.log.append(f"  ✦ NUCLEATION: Mimetite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mim:.2f})")
@@ -4724,6 +5104,87 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Beryl #{c.crystal_id} ({tag}) on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ber:.2f}, "
                               f"Be={f.Be:.0f} ppm, Cr={f.Cr:.2f}, Fe={f.Fe:.0f})")
+
+        # Anglesite nucleation — Pb + oxidized S + O₂ (supergene).
+        # Strongly paragenetic — prefers dissolving/oxidizing galena.
+        sigma_ang = self.conditions.supersaturation_anglesite()
+        existing_ang = [c for c in self.crystals if c.mineral == "anglesite" and c.active]
+        if sigma_ang > 1.1 and not self._at_nucleation_cap("anglesite"):
+            if not existing_ang or (sigma_ang > 1.8 and random.random() < 0.25):
+                pos = "vug wall"
+                dissolving_gal = [c for c in self.crystals if c.mineral == "galena" and (c.dissolved or random.random() < 0.6)]
+                active_gal = [c for c in self.crystals if c.mineral == "galena" and c.active]
+                if dissolving_gal and random.random() < 0.6:
+                    pos = f"on galena #{dissolving_gal[0].crystal_id}"
+                elif active_gal and random.random() < 0.4:
+                    pos = f"on galena #{active_gal[0].crystal_id}"
+                c = self.nucleate("anglesite", position=pos, sigma=sigma_ang)
+                self.log.append(f"  ✦ NUCLEATION: Anglesite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ang:.2f}, "
+                              f"Pb={self.conditions.fluid.Pb:.0f}, S={self.conditions.fluid.S:.0f})")
+
+        # Cerussite nucleation — Pb + CO₃ (supergene).
+        # Final stable Pb phase in carbonate groundwater. Prefers
+        # anglesite or galena hosts (replacement pseudomorph).
+        sigma_cer = self.conditions.supersaturation_cerussite()
+        existing_cer = [c for c in self.crystals if c.mineral == "cerussite" and c.active]
+        if sigma_cer > 1.0 and not self._at_nucleation_cap("cerussite"):
+            if not existing_cer or (sigma_cer > 1.8 and random.random() < 0.3):
+                pos = "vug wall"
+                dissolving_ang = [c for c in self.crystals if c.mineral == "anglesite" and c.dissolved]
+                dissolving_gal_c = [c for c in self.crystals if c.mineral == "galena" and c.dissolved]
+                active_gal_c = [c for c in self.crystals if c.mineral == "galena" and c.active]
+                if dissolving_ang and random.random() < 0.7:
+                    pos = f"on anglesite #{dissolving_ang[0].crystal_id}"
+                elif dissolving_gal_c and random.random() < 0.5:
+                    pos = f"on galena #{dissolving_gal_c[0].crystal_id}"
+                elif active_gal_c and random.random() < 0.3:
+                    pos = f"on galena #{active_gal_c[0].crystal_id}"
+                c = self.nucleate("cerussite", position=pos, sigma=sigma_cer)
+                self.log.append(f"  ✦ NUCLEATION: Cerussite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cer:.2f}, "
+                              f"Pb={self.conditions.fluid.Pb:.0f}, CO3={self.conditions.fluid.CO3:.0f})")
+
+        # Pyromorphite nucleation — Pb + P + Cl (supergene, P-gated).
+        # Can replace existing cerussite or galena when P-bearing water
+        # arrives. max_nucleation_count=6 — these often form in groups.
+        sigma_pyr = self.conditions.supersaturation_pyromorphite()
+        existing_pyr = [c for c in self.crystals if c.mineral == "pyromorphite" and c.active]
+        if sigma_pyr > 1.2 and not self._at_nucleation_cap("pyromorphite"):
+            if not existing_pyr or (sigma_pyr > 1.8 and random.random() < 0.3):
+                pos = "vug wall"
+                dissolving_cer = [c for c in self.crystals if c.mineral == "cerussite" and c.dissolved]
+                active_cer = [c for c in self.crystals if c.mineral == "cerussite" and c.active]
+                existing_goe_pyr = [c for c in self.crystals if c.mineral == "goethite" and c.active]
+                if dissolving_cer and random.random() < 0.6:
+                    pos = f"on cerussite #{dissolving_cer[0].crystal_id}"
+                elif active_cer and random.random() < 0.3:
+                    pos = f"on cerussite #{active_cer[0].crystal_id}"
+                elif existing_goe_pyr and random.random() < 0.3:
+                    pos = f"on goethite #{existing_goe_pyr[0].crystal_id}"
+                c = self.nucleate("pyromorphite", position=pos, sigma=sigma_pyr)
+                self.log.append(f"  ✦ NUCLEATION: Pyromorphite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_pyr:.2f}, "
+                              f"P={self.conditions.fluid.P:.1f}, Cl={self.conditions.fluid.Cl:.0f})")
+
+        # Vanadinite nucleation — Pb + V + Cl (supergene, V-gated).
+        # Classic iron-oxide-on-goethite habit. Grows on goethite or
+        # free on wall.
+        sigma_vnd = self.conditions.supersaturation_vanadinite()
+        existing_vnd = [c for c in self.crystals if c.mineral == "vanadinite" and c.active]
+        if sigma_vnd > 1.3 and not self._at_nucleation_cap("vanadinite"):
+            if not existing_vnd or (sigma_vnd > 1.8 and random.random() < 0.3):
+                pos = "vug wall"
+                existing_goe_vnd = [c for c in self.crystals if c.mineral == "goethite" and c.active]
+                dissolving_cer_v = [c for c in self.crystals if c.mineral == "cerussite" and c.dissolved]
+                if existing_goe_vnd and random.random() < 0.7:
+                    pos = f"on goethite #{existing_goe_vnd[0].crystal_id}"
+                elif dissolving_cer_v and random.random() < 0.4:
+                    pos = f"on cerussite #{dissolving_cer_v[0].crystal_id}"
+                c = self.nucleate("vanadinite", position=pos, sigma=sigma_vnd)
+                self.log.append(f"  ✦ NUCLEATION: Vanadinite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_vnd:.2f}, "
+                              f"V={self.conditions.fluid.V:.1f}, Pb={self.conditions.fluid.Pb:.0f})")
 
         # Tourmaline nucleation — Na + B + Al + SiO₂ (B-gated).
         # Threshold nucleation_sigma=1.3 is the pegmatite gate: needs
@@ -6910,6 +7371,144 @@ class VugSimulator:
             "occupying the M1 and M2 octahedral sites between them."
         )
 
+        return " ".join(parts)
+
+    def _narrate_anglesite(self, c: Crystal) -> str:
+        """Narrate an anglesite crystal — the transient lead sulfate."""
+        parts = [f"Anglesite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "PbSO₄ — orthorhombic lead sulfate, brilliant adamantine luster. "
+            "Intermediate step in the galena → anglesite → cerussite "
+            "oxidation sequence. Named for Anglesey, the Welsh island "
+            "where the type specimens were found in the 1830s."
+        )
+        if "galena" in (c.position or ""):
+            parts.append(
+                "This crystal grew directly on a dissolving galena — "
+                "the classic pseudomorphic relationship. The cubic outline "
+                "of galena is gradually replaced from the outside in as "
+                "Pb²⁺ and SO₄²⁻ recrystallize into the orthorhombic "
+                "anglesite structure."
+            )
+        if any("→ cerussite" in (z.note or "") for z in c.zones):
+            parts.append(
+                "Converting to cerussite. Carbonate-bearing groundwater "
+                "destabilizes anglesite in favor of the lead carbonate — "
+                "Pb²⁺ + CO₃²⁻ is more stable than Pb²⁺ + SO₄²⁻ at low T. "
+                "Anglesite is a 'letter written in passing' in the lead "
+                "oxidation story."
+            )
+        if c.dissolved:
+            parts.append(
+                "The crystal has dissolved. If the pocket's chemistry "
+                "continues to evolve the released Pb²⁺ will find a new "
+                "home — cerussite if carbonate is present, pyromorphite "
+                "if phosphate arrives."
+            )
+        return " ".join(parts)
+
+    def _narrate_cerussite(self, c: Crystal) -> str:
+        """Narrate a cerussite crystal — the star-twin lead carbonate."""
+        parts = [f"Cerussite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "PbCO₃ — orthorhombic lead carbonate. Water-clear with "
+            "adamantine luster and extreme birefringence — a thin "
+            "slice doubles every image behind it. Final stable product "
+            "of the lead oxidation sequence in carbonate-rich water. "
+            "The Latin name 'cerussa' means 'white lead', a pigment "
+            "used since antiquity (and poisonous — painters' death)."
+        )
+        if c.twinned and "sixling" in (c.twin_law or ""):
+            parts.append(
+                "Six-ray stellate cyclic twin — three individuals "
+                "intergrown at 120° on {110}. Among mineralogy's most "
+                "iconic forms; a sharp cerussite star commands four-"
+                "figure prices at a show. This twin happened because "
+                "growth ran at moderate supersaturation for a sustained "
+                "window — fast enough to initiate the twin, slow enough "
+                "to let it develop cleanly."
+            )
+        if "galena" in (c.position or ""):
+            parts.append(
+                "Pseudomorphs after galena — the cube outline survives "
+                "as cerussite precipitates into it. Occasionally "
+                "galena relics persist inside, slowly oxidizing."
+            )
+        if c.dissolved:
+            parts.append(
+                "Acid dissolution — cerussite is a carbonate and fizzes "
+                "in acid just like calcite: PbCO₃ + 2H⁺ → Pb²⁺ + H₂O "
+                "+ CO₂. Any released Pb may find pyromorphite or "
+                "vanadinite if P or V is available."
+            )
+        return " ".join(parts)
+
+    def _narrate_pyromorphite(self, c: Crystal) -> str:
+        """Narrate a pyromorphite crystal — the phosphate lead apatite."""
+        parts = [f"Pyromorphite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Pb₅(PO₄)₃Cl — hexagonal apatite-group phosphate. "
+            "Barrel-shaped hexagonal prisms in olive-green, yellow, "
+            "orange, or brown. Forms in supergene oxidation zones when "
+            "phosphate-bearing meteoric water encounters a Pb-bearing "
+            "horizon. The name is Greek 'pyros morphos' — 'fire form' "
+            "— because the crystals re-form into a spherical droplet "
+            "when melted."
+        )
+        if "olive" in (c.habit or ""):
+            parts.append(
+                "Classic olive-green barrel crystals. Found at the "
+                "type locality of Leadhills (Scotland), at Dognacska "
+                "(Romania), and — best of all — at Les Farges (France) "
+                "where millimeter-sharp brilliant-green crystals set "
+                "the world standard."
+            )
+        elif "yellow" in (c.habit or "") or "brown" in (c.habit or ""):
+            parts.append(
+                "Non-canonical color — the pocket fluid substituted "
+                "Ca for some Pb (pale yellow-orange, phosphoapatite-"
+                "adjacent) or carried Fe trace (brown-olive)."
+            )
+        parts.append(
+            "Pyromorphite is used in environmental remediation: dump "
+            "phosphate fertilizer onto lead-contaminated soil and the "
+            "toxic Pb precipitates as pyromorphite — stable, insoluble, "
+            "and harmless. Mineralogy as a cleanup tool."
+        )
+        return " ".join(parts)
+
+    def _narrate_vanadinite(self, c: Crystal) -> str:
+        """Narrate a vanadinite crystal — the red desert lead vanadate."""
+        parts = [f"Vanadinite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Pb₅(VO₄)₃Cl — hexagonal apatite-group vanadate. Bright "
+            "red-orange prisms with flat basal terminations, sitting "
+            "atop goethite-stained matrix. Vanadium-end-member of the "
+            "pyromorphite–mimetite–vanadinite series, arguably "
+            "mineralogy's most complete solid-solution triangle."
+        )
+        if "endlichite" in (c.habit or ""):
+            parts.append(
+                "Endlichite — intermediate vanadinite-mimetite composition "
+                "with significant As⁵⁺ substituting for V⁵⁺. The color "
+                "shifts toward yellow as As dominates. The compositional "
+                "series is continuous."
+            )
+        elif "red" in (c.habit or ""):
+            parts.append(
+                "The signature red-orange. This is the chromophore "
+                "pegged to V⁵⁺ in the crystal structure — no other "
+                "common mineral produces this particular red. The "
+                "Moroccan Mibladen and Touissit deposits have produced "
+                "the world's finest specimens, growing on goethite "
+                "crust in near-surface oxidation pockets."
+            )
+        parts.append(
+            "Classic desert mineral. V comes from oxidation of "
+            "V-bearing red-bed sediments (roll-front uranium deposits, "
+            "ironstones) — an arid-climate signature. The rock-shop "
+            "cliché 'vanadinite on goethite' is geologically accurate."
+        )
         return " ".join(parts)
 
     def _narrate_mixing_event(self, batch: List[Crystal], event: Event) -> str:
