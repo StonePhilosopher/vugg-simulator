@@ -5674,16 +5674,24 @@ class VugSimulator {
   }
 
   _atNucleationCap(mineral) {
-    // True if the mineral has hit its spec max_nucleation_count. Counts
-    // every crystal of this species ever nucleated in the run (active +
-    // enclosed + dissolved) — without this, enclosure lets a fresh one
-    // re-nucleate every step and the vug fills with hundreds of
-    // identical chadacrysts.
+    // True if the mineral has hit its spec max_nucleation_count for
+    // crystals *still exposed on the wall* — enclosed and dissolved
+    // crystals don't count toward the cap because the surface they
+    // held is effectively gone (buried by the host, or etched away).
+    //
+    // This is what lets a classic MVT calcite accumulate dense
+    // chalcopyrite inclusion trails: the sulfide nucleates, grows a
+    // little, gets enveloped, and fresh bare wall from the host's
+    // advancing front becomes available for another sulfide to
+    // nucleate. Real specimens can carry hundreds of inclusions.
     const cap = MINERAL_SPEC[mineral]?.max_nucleation_count;
     if (cap == null) return false;
     let n = 0;
     for (const c of this.crystals) {
-      if (c.mineral === mineral) { n++; if (n >= cap) return true; }
+      if (c.mineral !== mineral) continue;
+      if (c.enclosed_by != null || c.dissolved) continue;
+      n++;
+      if (n >= cap) return true;
     }
     return false;
   }
@@ -6332,11 +6340,16 @@ class VugSimulator {
           candidate.position === grower.position
           || candidate.position.includes(`#${grower.crystal_id}`)
         );
-        let slowing = true;
-        if (candidate.zones && candidate.zones.length >= 3) {
-          const recent = candidate.zones.slice(-3).reduce((s, z) => s + z.thickness_um, 0);
-          slowing = recent < 3.0;
-        }
+        // Require the candidate to have actually lived a bit before it
+        // can be swallowed. Without this, a just-nucleated crystal with
+        // zero zones qualifies on step 1 and gets enveloped before it
+        // grows a single face — 600 inclusions pile up in a loop of
+        // nucleate-then-instantly-enclose. Real Sweetwater-style
+        // pyrite needs time to exhaust its chemistry and stop growing
+        // before the calcite takes it.
+        if (!candidate.zones || candidate.zones.length < 3) continue;
+        const recent = candidate.zones.slice(-3).reduce((s, z) => s + z.thickness_um, 0);
+        const slowing = recent < 3.0;
         if (sizeRatio > 3.0 && adjacent && slowing) {
           grower.enclosed_crystals.push(candidate.crystal_id);
           grower.enclosed_at_step.push(this.step);
@@ -10532,10 +10545,11 @@ function topoRender(optOverrideRing) {
       const rHostInner = rHostOuter - Math.max(inwardPx, TOPO_WALL_STROKE_PX + 1);
       const rMid = (rHostOuter + rHostInner) / 2;
       const allIds = host.enclosed_crystals;
-      // Cap visible dots per host — runaway enclosure can produce
-      // hundreds of swallowed crystals (fractured pyrite swarms etc.)
-      // and a dot per one makes the canvas unreadable.
-      const MAX_PER_HOST = 12;
+      // Cap visible dots per host — real Sweetwater-style calcite can
+      // carry hundreds of pyrite or chalcopyrite inclusions and a
+      // pointillist cluster reads as "this crystal is full of them."
+      // Still cap high enough to avoid the canvas turning into noise.
+      const MAX_PER_HOST = 80;
       const renderedIds = allIds.length > MAX_PER_HOST
         ? allIds.slice(0, MAX_PER_HOST)
         : allIds;

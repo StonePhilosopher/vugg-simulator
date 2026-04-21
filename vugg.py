@@ -3445,13 +3445,30 @@ class VugSimulator:
                     zone.radiation_damage += dose
 
     def _at_nucleation_cap(self, mineral: str) -> bool:
-        """True if the mineral has reached its spec max_nucleation_count.
-        Counts every crystal of the species in self.crystals (active + dissolved),
-        so swarms stay capped even as earlier crystals dissolve away."""
+        """True if the mineral has reached its spec max_nucleation_count
+        for crystals *still exposed on the wall* — enclosed and
+        dissolved crystals don't count toward the cap because the
+        surface they held is effectively gone (buried by the host, or
+        etched away).
+
+        This is what lets a classic MVT calcite accumulate dense
+        chalcopyrite inclusion trails: the sulfide nucleates, grows a
+        little, gets enveloped, and fresh bare wall from the host's
+        advancing front becomes available for another sulfide to
+        nucleate. Real specimens can carry hundreds of inclusions."""
         cap = MINERAL_SPEC.get(mineral, {}).get("max_nucleation_count")
         if cap is None:
             return False
-        return sum(1 for c in self.crystals if c.mineral == mineral) >= cap
+        n = 0
+        for c in self.crystals:
+            if c.mineral != mineral:
+                continue
+            if c.enclosed_by is not None or c.dissolved:
+                continue
+            n += 1
+            if n >= cap:
+                return True
+        return False
 
     def check_nucleation(self):
         """Check if new crystals should nucleate."""
@@ -3753,11 +3770,19 @@ class VugSimulator:
                     grower.position == candidate.position  # same spot
                 )
                 
-                # Candidate should be relatively inactive (slow/stopped growth)
-                candidate_slowing = True
-                if candidate.zones and len(candidate.zones) >= 3:
-                    recent_growth = sum(z.thickness_um for z in candidate.zones[-3:])
-                    candidate_slowing = recent_growth < 3.0  # barely growing
+                # Require the candidate to have actually lived a bit
+                # before it can be swallowed. Without this, a just-
+                # nucleated crystal with zero zones qualifies on step 1
+                # and gets enveloped before it grows a single face — a
+                # loop of nucleate-then-instantly-enclose piles up
+                # hundreds of inclusions in a handful of steps. Real
+                # Sweetwater-style pyrite needs time to exhaust its
+                # chemistry and stop growing before the calcite takes
+                # it.
+                if not candidate.zones or len(candidate.zones) < 3:
+                    continue
+                recent_growth = sum(z.thickness_um for z in candidate.zones[-3:])
+                candidate_slowing = recent_growth < 3.0  # barely growing
                 
                 if size_ratio > 3.0 and adjacent and candidate_slowing:
                     # Enclosure event!
