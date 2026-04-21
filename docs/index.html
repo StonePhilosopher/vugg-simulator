@@ -5461,7 +5461,11 @@ function scenario_reactive_wall() {
     temperature: 140.0, pressure: 0.2,
     fluid: new FluidChemistry({
       SiO2: 50, Ca: 250, CO3: 200, Fe: 8, Mn: 5,
-      Zn: 80, S: 60, F: 8, pH: 7.0, salinity: 18.0
+      // Polymetallic limestone brine — real Zn-bearing carbonate-
+      // hosted vugs almost always carry Pb too (galena travels with
+      // sphalerite), and Ba is classic (barite is a common late phase).
+      Zn: 80, Pb: 30, Ba: 25, S: 60, F: 8,
+      pH: 7.0, salinity: 18.0
     }),
     wall: new VugWall({
       composition: 'limestone',
@@ -5526,6 +5530,10 @@ function scenario_radioactive_pegmatite() {
       SiO2: 12000, Ca: 50, CO3: 20, Fe: 60, Mn: 8,
       Zn: 0, S: 40, F: 25, Cu: 0, U: 150, Pb: 30,
       K: 80, Na: 50, Al: 30,
+      // Classic pegmatite-defining trace indicators — no current
+      // mineral consumes them, but the narrator reads them as
+      // beryl/spodumene/tourmaline/apatite country.
+      Be: 20, Li: 40, B: 25, P: 8,
       O2: 0, pH: 6.5, salinity: 8.0
     })
   });

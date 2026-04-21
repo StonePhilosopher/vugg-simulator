@@ -2807,7 +2807,12 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
         pressure=0.2,
         fluid=FluidChemistry(
             SiO2=50, Ca=250, CO3=200, Fe=8, Mn=5,
-            Zn=80, S=60, F=8, pH=7.0, salinity=18.0
+            # Polymetallic limestone brine — real Zn-bearing carbonate-
+            # hosted vugs almost always carry Pb too (galena travels
+            # with sphalerite), and Ba is classic (barite is a common
+            # late-stage phase).
+            Zn=80, Pb=30, Ba=25, S=60, F=8,
+            pH=7.0, salinity=18.0
         ),
         wall=VugWall(
             composition="limestone",
@@ -2891,6 +2896,10 @@ def scenario_radioactive_pegmatite() -> Tuple[VugConditions, List[Event], int]:
             SiO2=12000, Ca=50, CO3=20, Fe=60, Mn=8,
             S=40, F=25, U=150, Pb=30,
             K=80, Na=50, Al=30,
+            # Classic pegmatite-defining trace indicators — no current
+            # mineral consumes them, but the narrator reads them as
+            # beryl/spodumene/tourmaline/apatite country.
+            Be=20, Li=40, B=25, P=8,
             O2=0.0, pH=6.5, salinity=8.0,
         )
     )
