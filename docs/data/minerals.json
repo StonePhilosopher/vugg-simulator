@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 27,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (supergene round 1 — Pb oxidation suite).",
+    "total_minerals": 30,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (supergene Pb oxidation), +bornite/chalcocite/covellite (supergene Cu sulfide enrichment).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -52,7 +52,10 @@
       "anglesite",
       "cerussite",
       "pyromorphite",
-      "vanadinite"
+      "vanadinite",
+      "bornite",
+      "chalcocite",
+      "covellite"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -80,7 +83,8 @@
         "malachite",
         "molybdenite",
         "pyrite",
-        "quartz"
+        "quartz",
+        "bornite"
       ],
       "reactive_wall": [
         "calcite",
@@ -108,7 +112,10 @@
         "anglesite",
         "cerussite",
         "pyromorphite",
-        "vanadinite"
+        "vanadinite",
+        "bornite",
+        "chalcocite",
+        "covellite"
       ],
       "ouro_preto": [
         "quartz",
@@ -3068,6 +3075,304 @@
       ],
       "audit_status": "new (supergene round 1). First V consumer in the sim. Apatite-group cousin of pyromorphite + mimetite. Folded into phosphate class (no vanadate hue in 12-wheel). Not in agent-api/vugg-agent.js.",
       "class_color": "#13eb7f"
+    },
+    "bornite": {
+      "formula": "Cu5FeS4",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 3,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "pseudo_cubic_high_T",
+          "wall_spread": 0.35,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "moderate σ, high T, order-disorder above 228°C"
+        },
+        {
+          "name": "massive_granular_low_T",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "moderate σ, low-moderate T, ordered below 228°C"
+        },
+        {
+          "name": "peacock_iridescent",
+          "wall_spread": 0.5,
+          "void_reach": 0.4,
+          "vector": "coating",
+          "trigger": "low σ, low T, oxidation boundary"
+        },
+        {
+          "name": "default_massive",
+          "wall_spread": 0.55,
+          "void_reach": 0.35,
+          "vector": "coating",
+          "trigger": "default — massive granular"
+        }
+      ],
+      "class": "sulfide",
+      "description": "Cu₅FeS₄ — the 228°C order-disorder transition mineral. Above 228°C, Cu and Fe randomly occupy the cation sites (pseudo-cubic, high-T form); below, they order (orthorhombic). Fresh bronze-copper color on a broken surface, but the mineral tarnishes rapidly to the iridescent blue/purple/green/gold 'peacock ore' from thin-film interference on sulfide surface products. Forms both hypogene (hydrothermal, ~200–500°C) and supergene (cooler, as an enrichment mineral replacing chalcopyrite). Competes with chalcopyrite for Cu+Fe+S at different Cu:Fe ratios.",
+      "scenarios": [
+        "porphyry",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        20,
+        500
+      ],
+      "T_optimum_C": [
+        80,
+        300
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Cu": 25,
+        "Fe": 8,
+        "S": 20
+      },
+      "trace_ingredients": {
+        "Ag": "argentiferous bornite",
+        "Bi": "minor substitution"
+      },
+      "thermal_decomp_C": 550,
+      "thermal_decomp_reaction": "Cu₅FeS₄ → Cu₂S + CuFeS₂ (exsolution)",
+      "thermal_decomp_products": {
+        "Cu": 0.3,
+        "Fe": 0.2,
+        "S": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "Cu₅FeS₄ + O₂ + acid → Cu²⁺ + Fe³⁺ + S (supergene oxidation)",
+        "products": {
+          "Cu": 0.4,
+          "Fe": 0.2,
+          "S": 0.3
+        }
+      },
+      "habit": "massive_granular",
+      "color_rules": {
+        "bronze_fresh": {
+          "default": true
+        },
+        "peacock_iridescent": {
+          "trigger": "oxidation tarnish (Cu²⁺ surface products)"
+        }
+      },
+      "narrate_function": "_narrate_bornite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 2, Cu-sulfide suite). Competes with chalcopyrite. Not in agent-api/vugg-agent.js.",
+      "class_color": "#7feb13"
+    },
+    "chalcocite": {
+      "formula": "Cu2S",
+      "nucleation_sigma": 1.1,
+      "max_nucleation_count": 5,
+      "max_size_cm": 15,
+      "growth_rate_mult": 0.6,
+      "habit_variants": [
+        {
+          "name": "pseudohex_stellate_twin",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "moderate σ, low T, cyclic twinning"
+        },
+        {
+          "name": "tabular_prismatic",
+          "wall_spread": 0.25,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low σ, low T, steady growth"
+        },
+        {
+          "name": "pseudomorph_after_cuFe_sulfide",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "moderate σ, low T, chalcopyrite/bornite host"
+        },
+        {
+          "name": "massive_sooty",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "high σ, low T, supergene enrichment blanket"
+        },
+        {
+          "name": "default_tabular",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — tabular to prismatic"
+        }
+      ],
+      "class": "sulfide",
+      "description": "Cu₂S — 79.8% Cu by weight, one of the richest copper ores. The pseudomorph thief: replaces chalcopyrite and bornite atom-by-atom in the supergene enrichment blanket, keeping the host's outline while swapping the chemistry. Forms dark gray to black metallic crystals. Pseudo-hexagonal stellate twins (cyclic sixlings on {110}) are the collector's prize. The supergene enrichment zone is where mineable copper ore gets made — weathering concentrates Cu into a layer richer than the primary sulfide above it.",
+      "scenarios": [
+        "porphyry",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        150
+      ],
+      "T_optimum_C": [
+        15,
+        80
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Cu": 30,
+        "S": 15
+      },
+      "trace_ingredients": {
+        "Ag": "argentiferous chalcocite",
+        "Fe": "trace — chalcocite→bornite series"
+      },
+      "thermal_decomp_C": 1130,
+      "thermal_decomp_reaction": "Cu₂S (high-T cubic) ↔ Cu₂S (low-T orthorhombic) phase transition at 103°C",
+      "thermal_decomp_products": {
+        "Cu": 0.3,
+        "S": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "cyclic_sixling",
+          "miller_indices": "{110}",
+          "trigger": "moderate σ, pseudo-hexagonal",
+          "probability": 0.15
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "Cu₂S + 2H⁺ + ½O₂ → 2Cu²⁺ + H₂O + S (oxidative)",
+        "products": {
+          "Cu": 0.5,
+          "S": 0.3
+        }
+      },
+      "habit": "tabular",
+      "color_rules": {
+        "dark_gray_black": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_chalcocite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 2). Pseudomorph thief after chalcopyrite/bornite. Not in agent-api/vugg-agent.js.",
+      "class_color": "#7feb13"
+    },
+    "covellite": {
+      "formula": "CuS",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 4,
+      "max_size_cm": 10,
+      "growth_rate_mult": 0.45,
+      "habit_variants": [
+        {
+          "name": "thin_hex_plate",
+          "wall_spread": 0.5,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "low σ, low T, default hexagonal"
+        },
+        {
+          "name": "rosette_radiating",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "moderate σ, low T, radiating plates"
+        },
+        {
+          "name": "iridescent_coating",
+          "wall_spread": 0.6,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "moderate-high σ, low T, oxidation boundary"
+        },
+        {
+          "name": "default_hex_plate",
+          "wall_spread": 0.5,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "default — hexagonal micaceous plates"
+        }
+      ],
+      "class": "sulfide",
+      "description": "CuS — indigo-blue, the only common naturally blue mineral. Micaceous perfect basal cleavage (peels into flexible sheets like mica). Higher S:Cu ratio than chalcocite (1:1 vs 1:2), so it forms where sulfide activity is higher — at the boundary between the supergene oxidation zone and the reduced primary sulfides below. Decomposes to chalcocite + sulfur at 507°C. The name is Latin 'covellite' (for Niccolo Covelli, who discovered the Vesuvius fumarole specimens in 1833).",
+      "scenarios": [
+        "porphyry",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        0,
+        100
+      ],
+      "T_optimum_C": [
+        15,
+        60
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Cu": 20,
+        "S": 25
+      },
+      "trace_ingredients": {
+        "Fe": "subtle bronze-sheen shift"
+      },
+      "thermal_decomp_C": 507,
+      "thermal_decomp_reaction": "CuS → Cu₂S + S (above 507°C)",
+      "thermal_decomp_products": {
+        "Cu": 0.3,
+        "S": 0.5
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "CuS + 2H⁺ + ½O₂ → Cu²⁺ + H₂O + S",
+        "products": {
+          "Cu": 0.4,
+          "S": 0.4
+        }
+      },
+      "habit": "hex_plate",
+      "color_rules": {
+        "indigo_blue": {
+          "default": true
+        },
+        "iridescent_purple_green": {
+          "trigger": "oxidation tarnish on fresh cleavage"
+        }
+      },
+      "narrate_function": "_narrate_covellite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (supergene round 2). The only common naturally blue mineral. Not in agent-api/vugg-agent.js.",
+      "class_color": "#7feb13"
     }
   }
 }

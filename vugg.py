@@ -958,6 +958,106 @@ class VugConditions:
             sigma *= 1.3
         return max(sigma, 0)
 
+    def supersaturation_bornite(self) -> float:
+        """Bornite (Cu₅FeS₄) supersaturation. Cu + Fe + S + reducing.
+
+        Wide T stability (20–500°C). Competes with chalcopyrite for
+        Cu+Fe+S — bornite wins when Cu:Fe ratio > 3:1. The 228°C order-
+        disorder transition (pseudo-cubic above, orthorhombic below)
+        is recorded in `grow_bornite` via dominant_forms.
+        """
+        # Hard cap at very high O2 (bornite dissolves oxidatively above
+        # this). Supergene enrichment of Cu²⁺ descending onto reduced
+        # primary sulfides is conceptually a "local reducing" event at
+        # an oxidizing level; the sim's 1D O2 can't represent the
+        # gradient, so we allow up to 1.8 and rely on the Cu:Fe ratio
+        # gate for specificity.
+        if (self.fluid.Cu < 25 or self.fluid.Fe < 8 or self.fluid.S < 20 or
+                self.fluid.O2 > 1.8):
+            return 0
+        # Needs Cu-rich relative to Fe (Cu/Fe > 2 for bornite structure)
+        cu_fe_ratio = self.fluid.Cu / max(self.fluid.Fe, 1)
+        if cu_fe_ratio < 2.0:
+            return 0
+        cu_f = min(self.fluid.Cu / 80.0, 2.0)
+        fe_f = min(self.fluid.Fe / 30.0, 1.3)
+        s_f  = min(self.fluid.S / 60.0, 1.5)
+        sigma = cu_f * fe_f * s_f
+        # Wide T stability — slight decline outside optimum
+        T = self.temperature
+        if 80 <= T <= 300:
+            T_factor = 1.0
+        elif T < 80:
+            T_factor = 0.6 + 0.005 * T        # supergene still OK
+        elif T <= 500:
+            T_factor = max(0.5, 1.0 - 0.003 * (T - 300))
+        else:
+            T_factor = 0.2
+        sigma *= T_factor
+        # Reducing preference, but retains 0.3 floor for supergene
+        # enrichment which is nominally oxidizing
+        sigma *= max(0.3, 1.5 - self.fluid.O2)
+        if self.fluid.pH < 3.0:
+            sigma -= (3.0 - self.fluid.pH) * 0.3
+        return max(sigma, 0)
+
+    def supersaturation_chalcocite(self) -> float:
+        """Chalcocite (Cu₂S) supersaturation. Cu-rich + S + low T + reducing.
+
+        Supergene enrichment mineral — forms where Cu²⁺-rich descending
+        fluids meet reducing conditions and replace chalcopyrite/bornite
+        atom-by-atom. 79.8% Cu by weight. Low-T window (< 150°C).
+        """
+        # O2 ≤ 2.0 — chalcocite forms at the supergene enrichment
+        # boundary, which is nominally oxidizing in our 1D O2 model.
+        # The mineral is actually stable only under locally reducing
+        # conditions (at the interface with primary sulfides below);
+        # the 1.9 cap + check_nucleation's preference for chalcopyrite/
+        # bornite substrate approximates this.
+        if self.fluid.Cu < 30 or self.fluid.S < 15 or self.fluid.O2 > 1.9:
+            return 0
+        cu_f = min(self.fluid.Cu / 60.0, 2.0)    # Cu-gate, tuned to
+                                                 # chalcocite's supergene
+                                                 # Cu-enrichment habit
+        s_f  = min(self.fluid.S / 50.0, 1.5)
+        sigma = cu_f * s_f
+        # Strict low-T window
+        T = self.temperature
+        if T > 150:
+            sigma *= math.exp(-0.03 * (T - 150))
+        # Reducing preference, floored at 0.3 so supergene-zone
+        # chemistry can still fire
+        sigma *= max(0.3, 1.4 - self.fluid.O2)
+        if self.fluid.pH < 3.0:
+            sigma -= (3.0 - self.fluid.pH) * 0.3
+        return max(sigma, 0)
+
+    def supersaturation_covellite(self) -> float:
+        """Covellite (CuS) supersaturation. Cu + S-rich + low T.
+
+        Forms at the boundary between reduction and oxidation zones —
+        higher S:Cu ratio than chalcocite (1:1 vs 1:2). Decomposes to
+        chalcocite + S above 507°C.
+        """
+        # Transition-zone mineral between reduction and oxidation —
+        # gate O2 ≤ 2.0 so it can nucleate on chalcocite/chalcopyrite
+        # substrate in supergene zones.
+        if self.fluid.Cu < 20 or self.fluid.S < 25 or self.fluid.O2 > 2.0:
+            return 0
+        cu_f = min(self.fluid.Cu / 50.0, 2.0)
+        s_f  = min(self.fluid.S / 60.0, 1.8)    # S is the gate
+                                                # (covellite has 2× S of chalcocite)
+        sigma = cu_f * s_f
+        T = self.temperature
+        if T > 100:
+            sigma *= math.exp(-0.03 * (T - 100))
+        # Transition-zone mineral — likes moderate O2 (the Eh boundary
+        # between chalcocite's reduced regime and full oxidation)
+        sigma *= max(0.3, 1.3 - abs(self.fluid.O2 - 0.8))
+        if self.fluid.pH < 3.0:
+            sigma -= (3.0 - self.fluid.pH) * 0.3
+        return max(sigma, 0)
+
     def supersaturation_anglesite(self) -> float:
         """Anglesite (PbSO₄) supersaturation. Needs Pb + oxidized S + O₂.
 
@@ -2851,6 +2951,171 @@ def grow_spodumene(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_bornite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Bornite (Cu₅FeS₄) growth — peacock ore.
+
+    228°C order-disorder transition flag in dominant_forms. Iridescent
+    tarnish on oxidizing surfaces is a cosmetic flag (recorded in
+    zone note). Competes with chalcopyrite for Cu+Fe+S.
+    """
+    sigma = conditions.supersaturation_bornite()
+    if sigma < 1.0:
+        # Oxidative dissolution — sulfides go to Cu²⁺ + Fe³⁺ at O2 > 1
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 1.3:
+            crystal.dissolved = True
+            d = min(3.0, crystal.total_growth_um * 0.08)
+            conditions.fluid.Cu += d * 0.4
+            conditions.fluid.Fe += d * 0.2
+            conditions.fluid.S += d * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"oxidative dissolution (O₂ {conditions.fluid.O2:.1f}) — releases Cu²⁺, Fe³⁺, S"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    T = conditions.temperature
+    if T > 228:
+        crystal.habit = "pseudo_cubic"
+        crystal.dominant_forms = ["pseudo-cubic {100}", "disordered high-T form"]
+        color_note = f"bronze fresh (high-T disordered Cu/Fe, T={T:.0f}°C)"
+    elif T > 80:
+        crystal.habit = "massive_granular"
+        crystal.dominant_forms = ["massive granular", "low-T orthorhombic, ordered Cu/Fe"]
+        color_note = f"bronze fresh (ordered low-T form, T={T:.0f}°C)"
+    else:
+        crystal.habit = "peacock_iridescent"
+        crystal.dominant_forms = ["peacock tarnish on ordered bornite", "thin-film iridescence"]
+        color_note = f"peacock iridescent tarnish (Cu²⁺ surface products, T={T:.0f}°C)"
+
+    trace_Fe = f.Fe * 0.02
+    f.Cu = max(f.Cu - rate * 0.03, 0)
+    f.Fe = max(f.Fe - rate * 0.008, 0)
+    f.S = max(f.S - rate * 0.018, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe,
+        note=color_note,
+    )
+
+
+def grow_chalcocite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Chalcocite (Cu₂S) growth — the supergene Cu enrichment mineral.
+
+    Pseudo-hexagonal cyclic sixling twins fire at moderate σ. The
+    'pseudomorph thief' habit is flagged when the crystal grows on
+    chalcopyrite or bornite (via position string from nucleate()).
+    """
+    sigma = conditions.supersaturation_chalcocite()
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 1.0:
+            crystal.dissolved = True
+            d = min(3.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Cu += d * 0.5
+            conditions.fluid.S += d * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"oxidative dissolution (O₂ {conditions.fluid.O2:.1f}) — Cu²⁺, S released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    # Cyclic sixling twin at moderate σ (chalcocite's iconic collector form)
+    if not crystal.twinned and 0.4 < excess < 1.5 and random.random() < 0.15:
+        crystal.twinned = True
+        crystal.twin_law = "cyclic sixling {110}"
+
+    if crystal.twinned and "sixling" in (crystal.twin_law or ""):
+        crystal.habit = "stellate_sixling"
+        crystal.dominant_forms = ["pseudo-hexagonal sixling twin", "dark gray metallic"]
+        color_note = "pseudo-hexagonal sixling twin — the collector habit"
+    elif "chalcopyrite" in (crystal.position or "") or "bornite" in (crystal.position or ""):
+        crystal.habit = "pseudomorph"
+        crystal.dominant_forms = ["pseudomorph after host — inherits outline", "Cu-enriched replacement"]
+        color_note = "pseudomorphic — replaced host atom-by-atom (Cu enrichment blanket)"
+    elif excess > 1.2:
+        crystal.habit = "sooty_massive"
+        crystal.dominant_forms = ["sooty microcrystalline aggregate", "supergene enrichment blanket"]
+        color_note = "sooty microcrystalline black (rapid enrichment precipitation)"
+    else:
+        crystal.habit = "tabular"
+        crystal.dominant_forms = ["{110} prism", "tabular habit"]
+        color_note = "dark gray metallic tabular"
+
+    f.Cu = max(f.Cu - rate * 0.04, 0)   # chalcocite is a Cu sink
+    f.S = max(f.S - rate * 0.018, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=color_note,
+    )
+
+
+def grow_covellite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Covellite (CuS) growth — the only common naturally blue mineral.
+
+    Hexagonal platy habit. Iridescent tarnish on fresh cleavage is
+    flagged when the crystal is near an oxidation boundary (O₂ mid-
+    range 0.5–1.2).
+    """
+    sigma = conditions.supersaturation_covellite()
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 1.2:
+            crystal.dissolved = True
+            d = min(3.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Cu += d * 0.4
+            conditions.fluid.S += d * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-d, growth_rate=-d,
+                note=f"oxidative dissolution (O₂ {conditions.fluid.O2:.1f}) — Cu²⁺ + S released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    if excess > 1.0:
+        crystal.habit = "rosette_radiating"
+        crystal.dominant_forms = ["radiating hexagonal plates", "rosette"]
+        color_note = "indigo-blue radiating rosette"
+    elif 0.5 < f.O2 < 1.2:
+        crystal.habit = "iridescent_coating"
+        crystal.dominant_forms = ["iridescent cleavage {0001}", "purple-green thin-film interference"]
+        color_note = f"indigo-blue with iridescent purple-green tarnish (near oxidation boundary, O₂ {f.O2:.1f})"
+    else:
+        crystal.habit = "hex_plate"
+        crystal.dominant_forms = ["{0001} hexagonal basal plate", "perfect basal cleavage — peels like mica"]
+        color_note = "indigo-blue hexagonal plate — the only common blue mineral"
+
+    f.Cu = max(f.Cu - rate * 0.03, 0)
+    f.S = max(f.S - rate * 0.03, 0)   # covellite has 2× S of chalcocite
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=color_note,
+    )
+
+
 def grow_anglesite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Anglesite (PbSO₄) growth — orthorhombic lead sulfate.
 
@@ -3485,6 +3750,9 @@ MINERAL_ENGINES = {
     "cerussite": grow_cerussite,
     "pyromorphite": grow_pyromorphite,
     "vanadinite": grow_vanadinite,
+    "bornite": grow_bornite,
+    "chalcocite": grow_chalcocite,
+    "covellite": grow_covellite,
 }
 
 
@@ -3918,7 +4186,11 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
         fluid=FluidChemistry(
             SiO2=30, Ca=120, CO3=80, Fe=40, Mn=6, Mg=5,
             Zn=90, S=50, F=3,
-            Cu=25, Pb=60, Mo=15,    # Pb bumped 35 → 60 so anglesite/cerussite/pyromorphite can saturate
+            # Cu 25 → 55: enough to feed chalcocite/bornite at supergene
+            # enrichment zones (real supergene fluids run 50–200 ppm Cu²⁺
+            # above the enrichment blanket). Pb bumped 35 → 60 for
+            # anglesite/cerussite/pyromorphite saturation.
+            Cu=55, Pb=60, Mo=15,
             As=12, Cl=20,
             # Vanadium trace — roll-front / red-bed signature. Low
             # starting value; bumped later by ev_v_bearing_seep.
@@ -3973,6 +4245,30 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
                 "arsenopyrite body upslope. Zn²⁺ + AsO₄³⁻ begins to saturate "
                 "for adamite; Pb²⁺ + AsO₄³⁻ + Cl⁻ for mimetite.")
 
+    def ev_cu_enrichment(cond):
+        """Primary chalcopyrite weathers upslope — Cu²⁺ descends.
+        Representative of the supergene enrichment zone's feed: Cu
+        released from an oxidizing chalcopyrite lens travels with the
+        water table, accumulates above reducing substrates below, and
+        precipitates as bornite/chalcocite/covellite.
+
+        Drops fluid O2 to 0.6 for a window — the sim's 1D O2 can't
+        directly model the Eh gradient between the oxidized cap and
+        reduced substrate, so we brute-force simulate 'Cu-rich fluid
+        hit the reducing layer' by briefly pulling fluid O2 down.
+        Ambient cooling will re-oxidize it within ~10 steps."""
+        cond.fluid.Cu += 50.0
+        cond.fluid.S += 30.0   # chalcopyrite is 35% S — significant release
+        cond.fluid.Fe += 10.0
+        cond.fluid.O2 = 0.6   # local reducing pulse at the enrichment zone
+        return ("A primary chalcopyrite lens upslope finishes oxidizing. "
+                "Cu²⁺ descends with the water table and hits the reducing "
+                "layer below — the supergene enrichment blanket, where "
+                "mineable copper ore gets made. Bornite precipitates on "
+                "the upgradient edge, chalcocite in the core, covellite "
+                "where S activity is highest. Real orebodies are often "
+                "5–10× richer here than in the primary sulfide below.")
+
     def ev_phosphate_seep(cond):
         """Phosphate-bearing groundwater — enables pyromorphite."""
         cond.fluid.P += 6.0
@@ -4004,13 +4300,14 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
                 "whatever is undersaturated will quietly corrode.")
 
     events = [
-        Event(20,  "Meteoric Flush",  "Oxygenated rainwater recharges",       ev_meteoric_flush),
-        Event(40,  "Pb+Mo Pulse",     "Galena+molybdenite weathering",         ev_pb_mo_pulse),
-        Event(70,  "Dry Spell",       "Evaporation concentrates sulfate",      ev_dry_spell),
-        Event(95,  "Arsenic Seep",    "Zn/Pb arsenate saturation",             ev_as_rich_seep),
-        Event(115, "Phosphate Seep",  "Soil-zone PO₄ enables pyromorphite",    ev_phosphate_seep),
-        Event(130, "V-bearing Seep",  "Red-bed V leaches in, vanadinite fires", ev_v_bearing_seep),
-        Event(160, "Fracture Seal",   "System closes",                          ev_fracture_seal),
+        Event(20,  "Meteoric Flush",  "Oxygenated rainwater recharges",          ev_meteoric_flush),
+        Event(40,  "Pb+Mo Pulse",     "Galena+molybdenite weathering",           ev_pb_mo_pulse),
+        Event(55,  "Cu Enrichment",   "Primary chalcopyrite upslope weathers",   ev_cu_enrichment),
+        Event(70,  "Dry Spell",       "Evaporation concentrates sulfate",        ev_dry_spell),
+        Event(95,  "Arsenic Seep",    "Zn/Pb arsenate saturation",               ev_as_rich_seep),
+        Event(115, "Phosphate Seep",  "Soil-zone PO₄ enables pyromorphite",      ev_phosphate_seep),
+        Event(130, "V-bearing Seep",  "Red-bed V leaches in, vanadinite fires",  ev_v_bearing_seep),
+        Event(160, "Fracture Seal",   "System closes",                            ev_fracture_seal),
     ]
     return conditions, events, 200
 
@@ -4704,6 +5001,12 @@ class VugSimulator:
             crystal.dominant_forms = ["{10̄10} hexagonal prism", "c{0001} pinacoid", "barrel profile"]
         elif mineral == "vanadinite":
             crystal.dominant_forms = ["{10̄10} hexagonal prism", "c{0001} pinacoid", "flat basal termination"]
+        elif mineral == "bornite":
+            crystal.dominant_forms = ["massive granular", "iridescent tarnish"]
+        elif mineral == "chalcocite":
+            crystal.dominant_forms = ["{110} prism", "pseudo-hexagonal if twinned"]
+        elif mineral == "covellite":
+            crystal.dominant_forms = ["{0001} basal plate", "perfect basal cleavage"]
         self.crystals.append(crystal)
         return crystal
 
@@ -5104,6 +5407,67 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Beryl #{c.crystal_id} ({tag}) on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ber:.2f}, "
                               f"Be={f.Be:.0f} ppm, Cr={f.Cr:.2f}, Fe={f.Fe:.0f})")
+
+        # Bornite nucleation — Cu + Fe + S, Cu:Fe > 2:1 (competes with
+        # chalcopyrite for the same elements).
+        sigma_brn = self.conditions.supersaturation_bornite()
+        existing_brn = [c for c in self.crystals if c.mineral == "bornite" and c.active]
+        if sigma_brn > 1.0 and not self._at_nucleation_cap("bornite"):
+            if not existing_brn or (sigma_brn > 1.7 and random.random() < 0.2):
+                pos = "vug wall"
+                dissolving_cp_brn = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.dissolved]
+                active_cp_brn = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.active]
+                if dissolving_cp_brn and random.random() < 0.5:
+                    pos = f"on chalcopyrite #{dissolving_cp_brn[0].crystal_id}"
+                elif active_cp_brn and random.random() < 0.3:
+                    pos = f"on chalcopyrite #{active_cp_brn[0].crystal_id}"
+                c = self.nucleate("bornite", position=pos, sigma=sigma_brn)
+                self.log.append(f"  ✦ NUCLEATION: Bornite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_brn:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, Fe={self.conditions.fluid.Fe:.0f})")
+
+        # Chalcocite nucleation — Cu-rich + S + low T + reducing.
+        # The pseudomorph thief: prefers chalcopyrite or bornite hosts
+        # to replace them atom-by-atom (the supergene enrichment story).
+        sigma_chc = self.conditions.supersaturation_chalcocite()
+        existing_chc = [c for c in self.crystals if c.mineral == "chalcocite" and c.active]
+        if sigma_chc > 1.1 and not self._at_nucleation_cap("chalcocite"):
+            if not existing_chc or (sigma_chc > 1.7 and random.random() < 0.25):
+                pos = "vug wall"
+                dissolving_cp_chc = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.dissolved]
+                active_cp_chc = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.active]
+                dissolving_brn = [c for c in self.crystals if c.mineral == "bornite" and c.dissolved]
+                active_brn = [c for c in self.crystals if c.mineral == "bornite" and c.active]
+                if dissolving_cp_chc and random.random() < 0.6:
+                    pos = f"on chalcopyrite #{dissolving_cp_chc[0].crystal_id}"
+                elif active_cp_chc and random.random() < 0.4:
+                    pos = f"on chalcopyrite #{active_cp_chc[0].crystal_id}"
+                elif dissolving_brn and random.random() < 0.6:
+                    pos = f"on bornite #{dissolving_brn[0].crystal_id}"
+                elif active_brn and random.random() < 0.4:
+                    pos = f"on bornite #{active_brn[0].crystal_id}"
+                c = self.nucleate("chalcocite", position=pos, sigma=sigma_chc)
+                self.log.append(f"  ✦ NUCLEATION: Chalcocite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_chc:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, S={self.conditions.fluid.S:.0f})")
+
+        # Covellite nucleation — Cu + S-rich + low T (transition zone).
+        # Often nucleates on chalcocite at the S-Cu stoichiometry break.
+        sigma_cov = self.conditions.supersaturation_covellite()
+        existing_cov = [c for c in self.crystals if c.mineral == "covellite" and c.active]
+        if sigma_cov > 1.2 and not self._at_nucleation_cap("covellite"):
+            if not existing_cov or (sigma_cov > 1.7 and random.random() < 0.2):
+                pos = "vug wall"
+                active_chc = [c for c in self.crystals if c.mineral == "chalcocite" and c.active]
+                active_cp_cov = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.active]
+                if active_chc and random.random() < 0.5:
+                    pos = f"on chalcocite #{active_chc[0].crystal_id}"
+                elif active_cp_cov and random.random() < 0.3:
+                    pos = f"on chalcopyrite #{active_cp_cov[0].crystal_id}"
+                c = self.nucleate("covellite", position=pos, sigma=sigma_cov)
+                self.log.append(f"  ✦ NUCLEATION: Covellite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cov:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, S={self.conditions.fluid.S:.0f})")
 
         # Anglesite nucleation — Pb + oxidized S + O₂ (supergene).
         # Strongly paragenetic — prefers dissolving/oxidizing galena.
@@ -7509,6 +7873,125 @@ class VugSimulator:
             "ironstones) — an arid-climate signature. The rock-shop "
             "cliché 'vanadinite on goethite' is geologically accurate."
         )
+        return " ".join(parts)
+
+    def _narrate_bornite(self, c: Crystal) -> str:
+        """Narrate a bornite crystal — the 228°C order-disorder mineral."""
+        parts = [f"Bornite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₅FeS₄ — bronze-colored fresh, famous for the iridescent "
+            "'peacock ore' tarnish from thin-film interference on surface "
+            "oxidation products. The 228°C order-disorder transition is "
+            "one of mineralogy's cleanest structural changes: above, Cu "
+            "and Fe randomly occupy the cation sites (pseudo-cubic); "
+            "below, they order into the orthorhombic arrangement."
+        )
+        if "pseudo_cubic" in (c.habit or ""):
+            parts.append(
+                "Grew at T > 228°C — crystal has the disordered "
+                "pseudo-cubic structure preserved. If this specimen is "
+                "cooled slowly below 228°C without being reheated, the "
+                "Cu and Fe will gradually order into orthorhombic "
+                "domains, sometimes visible as texture under reflected "
+                "light."
+            )
+        elif "peacock" in (c.habit or ""):
+            parts.append(
+                "Peacock iridescent — thin-film interference on an "
+                "oxidation crust. Fresh bornite bronze under the film. "
+                "Strike it with a steel hammer and the fresh surface "
+                "shows through; leave it in air for a week and the "
+                "rainbow comes back. This is why bornite tumbled in "
+                "rock-shop displays is often enhanced with heat or "
+                "acid."
+            )
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — Cu²⁺ and Fe³⁺ went back to "
+                "the fluid, probably to find malachite/azurite "
+                "(for Cu) or goethite (for Fe). The S²⁻ oxidized too "
+                "and may reappear as sulfate in anglesite or selenite."
+            )
+        return " ".join(parts)
+
+    def _narrate_chalcocite(self, c: Crystal) -> str:
+        """Narrate a chalcocite crystal — the pseudomorph thief."""
+        parts = [f"Chalcocite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₂S — 79.8% Cu by weight, one of the richest copper ores "
+            "ever mined. Forms in the supergene enrichment blanket, "
+            "where descending Cu²⁺-rich meteoric fluids meet reducing "
+            "conditions at the water table. This is where mineable "
+            "copper ore gets made: weathering concentrates Cu into a "
+            "layer ten times richer than the primary sulfide above it."
+        )
+        if c.twinned and "sixling" in (c.twin_law or ""):
+            parts.append(
+                "Pseudo-hexagonal cyclic sixling twin — chalcocite's "
+                "collector habit. Three orthorhombic individuals "
+                "intergrown at ~60° approximate a hexagonal symmetry "
+                "the mineral doesn't actually have. Butte, Cornwall, "
+                "and Bristol Cliff produced sharp sixlings; most "
+                "specimens at rock shows came from one of those three."
+            )
+        if "pseudomorph" in (c.habit or ""):
+            parts.append(
+                "Pseudomorph — this chalcocite replaced a primary sulfide "
+                "(chalcopyrite or bornite) atom-by-atom while preserving "
+                "the host's external form. Copper diffused in, iron and "
+                "excess sulfur diffused out, leaving a ghost outline "
+                "in dark gray Cu₂S. The cube is galena's; the disphenoid "
+                "is chalcopyrite's; here the identity has been overwritten."
+            )
+        if "sooty" in (c.habit or ""):
+            parts.append(
+                "Sooty microcrystalline texture — rapid precipitation "
+                "at the oxidation/reduction interface. Individual "
+                "crystals too small to see; the aggregate looks like "
+                "black soot smeared on the host rock."
+            )
+        return " ".join(parts)
+
+    def _narrate_covellite(self, c: Crystal) -> str:
+        """Narrate a covellite crystal — the only common blue mineral."""
+        parts = [f"Covellite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "CuS — indigo-blue, the only common naturally blue mineral "
+            "(azurite aside). Named for Niccolo Covelli, who first "
+            "described the Vesuvius fumarole specimens in 1833. "
+            "Hexagonal, with perfect basal cleavage — the fresh plates "
+            "peel like mica, and the cleavage surfaces flash purple-"
+            "green iridescence from thin-film interference."
+        )
+        if "iridescent" in (c.habit or ""):
+            parts.append(
+                "Iridescent coating — this covellite grew at the "
+                "boundary between the oxidation and reduction zones. "
+                "The fluid oscillated across the Eh boundary just "
+                "enough to produce Cu²⁺ surface products on the "
+                "forming crystal. Summerville (Italy), Butte, and "
+                "the Sardinia localities show this habit best."
+            )
+        elif "rosette" in (c.habit or ""):
+            parts.append(
+                "Radiating rosette — plates nucleating outward from a "
+                "common center. High supersaturation triggered multiple "
+                "nucleation sites on the substrate at once, and the "
+                "crystals grew into each other until the void was "
+                "paved blue."
+            )
+        parts.append(
+            "S:Cu ratio = 1:1, twice that of chalcocite. Covellite "
+            "forms where sulfur activity is high enough to push past "
+            "chalcocite's stoichiometry — typically the transition "
+            "layer between oxidized caprock and reduced primary "
+            "sulfides below."
+        )
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — the Cu²⁺ will find malachite "
+                "or azurite; the S oxidized to sulfate."
+            )
         return " ".join(parts)
 
     def _narrate_mixing_event(self, batch: List[Crystal], event: Event) -> str:
