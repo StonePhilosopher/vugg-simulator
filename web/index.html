@@ -12775,21 +12775,17 @@ function topoRender(optOverrideRing) {
 
   const arcStep = 2 * Math.PI / N;
 
-  // Radial wedges: for each occupied cell, fill a polygon that runs
-  // from the shared boundary at a0, through the cell's own midpoint
-  // radius, to the shared boundary at a1, then back on the inner edge.
-  // Using polygons (not arcs) keeps the outer silhouette continuous
-  // across cells with different base_radius_mm.
+  // Radial wedges: each occupied cell gets a Bezier-bounded wedge.
+  // Outer edge arcs from boundary_start → cell_midpoint → boundary_end
+  // via quadraticCurveTo (cell midpoint = control point), which matches
+  // the next cell's starting boundary and yields a smooth curve through
+  // the cell instead of a V-shaped two-segment polyline. Inner edge
+  // mirrors the outer with an absolute inward offset.
   //
-  // Inner edge uses an *absolute* inward offset (thickness × void_reach
-  // in mm, scaled to pixels), not a proportional shrink. Two reasons:
-  //   1. Adjacent cells painted by the same crystal share a thickness,
-  //      so they share an inwardPx — inner edges match at shared
-  //      boundaries and the band stays annular.
-  //   2. Proportional shrink goes pathological when the bubble-merge
-  //      profile puts a dip cell next to a bulge cell: the dip's inner
-  //      point collapses toward origin while the bulge's stays far out,
-  //      producing the "fan from center" artifact.
+  // Inner offset is thickness × void_reach in mm, scaled to pixels.
+  // Adjacent cells painted by the same crystal share thickness, so they
+  // share the inward offset → inner edges line up at shared boundaries
+  // and the band stays annular even across dip/bulge neighbours.
   // Inner edge is floored at 15% of each point's outer radius so a
   // very thick crystal in a dip cell still leaves a visible void.
   for (let i = 0; i < N; i++) {
@@ -12804,30 +12800,43 @@ function topoRender(optOverrideRing) {
     const crystal = sim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
     const voidReach = crystal ? Math.max(crystal.void_reach, 0.05) : 0.5;
     const inwardMm = (cell.thickness_um / 1000.0) * voidReach;
-    // Absolute displacement in pixels, capped so very thick crystals
-    // still leave some void at the most-local cell (not a hard crystal-
-    // wide cap — that would collapse in dip cells).
     const inwardPx = Math.max(inwardMm * mmToPx, TOPO_WALL_STROKE_PX + 1);
     const rStartIn = Math.max(rStart - inwardPx, rStart * (1 - TOPO_CRYSTAL_CAP_FRAC));
     const rMidIn = Math.max(rMid - inwardPx, rMid * (1 - TOPO_CRYSTAL_CAP_FRAC));
     const rEndIn = Math.max(rEnd - inwardPx, rEnd * (1 - TOPO_CRYSTAL_CAP_FRAC));
+    // The Bezier control point needs to be PLACED so the curve actually
+    // passes through (rMid, aMid). For a quadratic Bezier parametrised
+    // at t=0.5, the curve point = (start + 2·control + end) / 4. So
+    // control = 2·target − (start + end)/2. Applied to each of outer
+    // and inner edges.
+    const sx = cx + rStart * Math.cos(a0), sy = cy + rStart * Math.sin(a0);
+    const mx = cx + rMid * Math.cos(aMid), my = cy + rMid * Math.sin(aMid);
+    const ex = cx + rEnd * Math.cos(a1), ey = cy + rEnd * Math.sin(a1);
+    const outerCpX = 2 * mx - (sx + ex) / 2;
+    const outerCpY = 2 * my - (sy + ey) / 2;
+    const sxIn = cx + rStartIn * Math.cos(a0), syIn = cy + rStartIn * Math.sin(a0);
+    const mxIn = cx + rMidIn * Math.cos(aMid), myIn = cy + rMidIn * Math.sin(aMid);
+    const exIn = cx + rEndIn * Math.cos(a1), eyIn = cy + rEndIn * Math.sin(a1);
+    const innerCpX = 2 * mxIn - (sxIn + exIn) / 2;
+    const innerCpY = 2 * myIn - (syIn + eyIn) / 2;
     ctx.fillStyle = topoClassColor(cell.mineral);
     ctx.beginPath();
-    ctx.moveTo(cx + rStart * Math.cos(a0), cy + rStart * Math.sin(a0));
-    ctx.lineTo(cx + rMid * Math.cos(aMid), cy + rMid * Math.sin(aMid));
-    ctx.lineTo(cx + rEnd * Math.cos(a1), cy + rEnd * Math.sin(a1));
-    ctx.lineTo(cx + rEndIn * Math.cos(a1), cy + rEndIn * Math.sin(a1));
-    ctx.lineTo(cx + rMidIn * Math.cos(aMid), cy + rMidIn * Math.sin(aMid));
-    ctx.lineTo(cx + rStartIn * Math.cos(a0), cy + rStartIn * Math.sin(a0));
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(outerCpX, outerCpY, ex, ey);
+    ctx.lineTo(exIn, eyIn);
+    ctx.quadraticCurveTo(innerCpX, innerCpY, sxIn, syIn);
     ctx.closePath();
     ctx.fill();
   }
 
-  // Wall outline — two-segment polyline per cell (boundary → midpoint
-  // → next boundary) so adjacent cells share endpoints and the outline
-  // flows continuously around the irregular Fourier profile. Bare
-  // cells stroke thin amber; occupied cells stroke thicker in the
-  // mineral's class_color, scaled to crystal thickness.
+  // Wall outline — one quadratic Bezier per cell, with the cell's
+  // midpoint as the de-facto pass-through. Control point is placed so
+  // the curve passes exactly through (rMid, aMid) at t=0.5:
+  //   control = 2·midpoint − (start + end)/2
+  // Adjacent cells share boundary endpoints, so the outline flows as
+  // a smooth continuous curve instead of a V-polyline. Bare cells
+  // stroke thin amber; occupied cells stroke thicker in the mineral's
+  // class_color, scaled to crystal thickness.
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   for (let i = 0; i < N; i++) {
@@ -12849,10 +12858,14 @@ function topoRender(optOverrideRing) {
     }
     ctx.strokeStyle = stroke;
     ctx.lineWidth = width;
+    const sx = cx + rStart * Math.cos(a0), sy = cy + rStart * Math.sin(a0);
+    const mx = cx + rMid * Math.cos(aMid), my = cy + rMid * Math.sin(aMid);
+    const ex = cx + rEnd * Math.cos(a1), ey = cy + rEnd * Math.sin(a1);
+    const cpX = 2 * mx - (sx + ex) / 2;
+    const cpY = 2 * my - (sy + ey) / 2;
     ctx.beginPath();
-    ctx.moveTo(cx + rStart * Math.cos(a0), cy + rStart * Math.sin(a0));
-    ctx.lineTo(cx + rMid * Math.cos(aMid), cy + rMid * Math.sin(aMid));
-    ctx.lineTo(cx + rEnd * Math.cos(a1), cy + rEnd * Math.sin(a1));
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(cpX, cpY, ex, ey);
     ctx.stroke();
   }
 
@@ -12913,16 +12926,11 @@ function topoRender(optOverrideRing) {
     }
   }
 
-  // Dim the initial-radius reference ring so dissolution is obvious
-  // at a glance. Dotted so it doesn't compete with the wall.
-  ctx.save();
-  ctx.setLineDash([3, 4]);
-  ctx.strokeStyle = '#2a2518';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.arc(cx, cy, initR * mmToPx, 0, 2 * Math.PI);
-  ctx.stroke();
-  ctx.restore();
+  // (Removed the dotted initial-radius reference ring — with the
+  // bubble-merge profile the wall is already irregular from t=0, so a
+  // perfect-circle reference at initial_radius_mm misleads the eye
+  // into reading crystals on near-nominal cells as "on the circle"
+  // rather than "on the wall.")
 
   // Scale bar across the bottom: total wall circumference in mm.
   const circMm = wall ? Math.PI * wall.meanDiameterMm() : 0;
