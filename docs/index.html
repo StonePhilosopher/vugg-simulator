@@ -200,6 +200,27 @@ h1 {
 .topo-canvas-wrap.is-3d {
   overflow: visible;
 }
+
+/* Fixed readouts in the wrap corners. Positioned outside the canvas
+   so they don't rotate with the 3D transform — they describe the
+   slice, not the slice content. */
+.topo-info-label {
+  position: absolute;
+  z-index: 5;
+  color: #8a7a40;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  background: rgba(20, 20, 14, 0.75);
+  padding: 2px 6px;
+  border-radius: 3px;
+  user-select: none;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+}
+.topo-info-label.bottom-left {
+  left: 10px;
+  bottom: 10px;
+}
 #topo-canvas {
   display: block;
   width: 100%;
@@ -2200,6 +2221,7 @@ footer a:hover {
         <button class="topo-zoom-btn" onclick="topoRecenter()" title="Recenter (reset pan and rotation)">⊙</button>
       </div>
       <button id="topo-replay-btn" class="topo-replay" onclick="topoReplay()" title="Replay wall history">▶</button>
+      <div id="topo-vug-size" class="topo-info-label bottom-left" title="Vug diameter"></div>
       <div id="topo-tooltip" class="topo-tooltip" style="display:none"></div>
     </div>
   </div>
@@ -14962,7 +14984,13 @@ function topoRender(optOverrideRing) {
   }
   if (wall && maxWallR > wall.max_seen_radius_mm) wall.max_seen_radius_mm = maxWallR;
   const centerPad = 48;  // leave room for the scale bar and legend
-  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
+  // In 3D mode, shrink the slice so perspective + tilt have room to
+  // extend past the untransformed footprint without hitting the canvas
+  // buffer edge. 0.6 gives ~40% margin on each side — enough for the
+  // max tilts the UI allows without the disc visibly clipping its own
+  // content. 2D mode is unchanged (factor = 1.0).
+  const threeDShrink = _topoView3D ? 0.6 : 1.0;
+  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2 * threeDShrink;
   const mmToPx = (fit / maxWallR) * _topoZoom;
 
   // Pan offsets let the user drag the vug around the canvas. Hit-test
@@ -15226,10 +15254,15 @@ function topoRender(optOverrideRing) {
     ctx.font = '10px "Courier New", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('10 mm', cssW / 2, barY + 14);
-    // Overall diameter readout
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#6a5a30';
-    ctx.fillText(`⌀ ${wall.meanDiameterMm().toFixed(1)} mm`, 8, barY + 14);
+    // Overall diameter readout lives OUTSIDE the canvas — as an HTML
+    // overlay on the wrap — so it stays fixed to the background while
+    // the slice rotates in 3D mode. It's a description of the slice,
+    // not content of the slice.
+  }
+  const sizeLabel = document.getElementById('topo-vug-size');
+  if (sizeLabel) {
+    if (wall) sizeLabel.textContent = `Vug ⌀ ${wall.meanDiameterMm().toFixed(1)} mm`;
+    else sizeLabel.textContent = '';
   }
 }
 
