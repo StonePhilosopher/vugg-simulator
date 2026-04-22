@@ -14567,15 +14567,30 @@ function _topoAngleFor(i, N) {
 // fall through to 'smooth' (the existing Bezier — no visible change).
 // Populated incrementally per stage. See
 // proposals/PROPOSAL-EDGE-TEXTURES.md.
+// Habit-keyed defaults applied to any mineral. Mineral-specific
+// overrides go in HABIT_TO_TEXTURE_BY_MINERAL below and take priority.
 const HABIT_TO_TEXTURE = {
   // Stage 1 — calcite habits.
   'scalenohedral':       'dogtooth',  // sharp tall triangles (T>200°C; "dog-tooth spar")
   'rhombohedral':        'rhomb',     // broader, shorter triangles (T<200°C, e.g. MVT)
   // Stage 2 — cubic / isometric habits.
-  'cubic':               'cube_edge', // pyrite, galena, halite, fluorite, native Cu
+  'cubic':               'cube_edge', // pyrite, halite, fluorite, native Cu (galena overridden below)
   'pyritohedral':        'cube_edge', // pyrite alt — pentagonal faces, still blocky
   'cubo-pyritohedral':   'cube_edge', // pyrite mixed
   'pseudo_cubic':        'cube_edge', // chalcopyrite high-T
+};
+
+// Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
+// wins over HABIT_TO_TEXTURE[habit]. Used when one habit string covers
+// minerals that should look distinct (e.g. galena's cubic cleavage is
+// deeper / more stepped than pyrite's compact cube faces).
+const HABIT_TO_TEXTURE_BY_MINERAL = {
+  galena: {
+    'cubic': 'cube_edge_deep',   // taller V's — stepped cubic cleavage signature
+  },
+  fluorite: {
+    'cubic': 'cube_edge_deep',   // fluorite cube cleavage is similarly bold
+  },
 };
 
 // Per-texture parameters. amplitude_factor scales tooth height from
@@ -14587,9 +14602,10 @@ const HABIT_TO_TEXTURE = {
 // (ratio 0.5) so they don't render as needles on thick crystals;
 // scalenohedra are unbounded (cap omitted) so they can elongate fully.
 const TEXTURE_PARAMS = {
-  dogtooth:  { amplitude_factor: 1.5, pitch_mm: 2.0 },
-  rhomb:     { amplitude_factor: 0.7, pitch_mm: 2.0 },
-  cube_edge: { amplitude_factor: 1.0, pitch_mm: 1.5, max_amplitude_pitch_ratio: 0.5 },
+  dogtooth:       { amplitude_factor: 1.5, pitch_mm: 2.0 },
+  rhomb:          { amplitude_factor: 0.7, pitch_mm: 2.0 },
+  cube_edge:      { amplitude_factor: 1.0, pitch_mm: 1.5, max_amplitude_pitch_ratio: 0.5 },
+  cube_edge_deep: { amplitude_factor: 1.5, pitch_mm: 1.5, max_amplitude_pitch_ratio: 1.0 },
 };
 
 // Draw the inner (fluid-facing) edge of a wedge from (fromX,fromY) to
@@ -14602,8 +14618,12 @@ const TEXTURE_PARAMS = {
 //
 // thicknessMm/cellArcMm bound the texture amplitude; (cx,cy) gives the
 // vug center so textures can compute the inward (toward-void) normal.
-function drawHabitTexture(ctx, habit, fromX, fromY, toX, toY, controlX, controlY, thicknessMm, cellArcMm, mmToPx, cx, cy) {
-  const texture = HABIT_TO_TEXTURE[habit] || 'smooth';
+// `mineral` enables per-mineral overrides where one habit string is
+// shared by minerals that should look distinct (e.g. galena vs pyrite,
+// both 'cubic').
+function drawHabitTexture(ctx, mineral, habit, fromX, fromY, toX, toY, controlX, controlY, thicknessMm, cellArcMm, mmToPx, cx, cy) {
+  const byMineral = mineral && HABIT_TO_TEXTURE_BY_MINERAL[mineral];
+  const texture = (byMineral && byMineral[habit]) || HABIT_TO_TEXTURE[habit] || 'smooth';
   switch (texture) {
     case 'dogtooth':
       _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.dogtooth);
@@ -14613,6 +14633,9 @@ function drawHabitTexture(ctx, habit, fromX, fromY, toX, toY, controlX, controlY
       return;
     case 'cube_edge':
       _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.cube_edge);
+      return;
+    case 'cube_edge_deep':
+      _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.cube_edge_deep);
       return;
     case 'smooth':
     default:
@@ -14797,7 +14820,7 @@ function topoRender(optOverrideRing) {
     // arcs the chord/arc difference is <0.5%, visually invisible.
     const thicknessMmForTex = cell.thickness_um / 1000.0;
     const cellArcMmForTex = (rMidIn * arcStep) / mmToPx;
-    drawHabitTexture(ctx, crystal?.habit, exIn, eyIn, sxIn, syIn, innerCpX, innerCpY, thicknessMmForTex, cellArcMmForTex, mmToPx, cx, cy);
+    drawHabitTexture(ctx, cell.mineral, crystal?.habit, exIn, eyIn, sxIn, syIn, innerCpX, innerCpY, thicknessMmForTex, cellArcMmForTex, mmToPx, cx, cy);
     ctx.closePath();
     ctx.fill();
   }
