@@ -231,3 +231,81 @@ Estimated engineering time: **~3-4 weeks** of focused work, plus the chemistry a
 ---
 
 Commit when proposal is agreed upon: split into per-phase task briefs (`TASK-BRIEF-3D-PHASE-1-DATA-MODEL.md`, etc.) so each phase has a specific scope. Do NOT push — boss reviews and merges.
+
+---
+
+---
+
+# BOSS REVIEW OUTCOMES
+
+**Added:** 2026-04-22, post-review
+
+Four open questions in the original proposal all answered. Reproducing verbatim:
+
+## Q1 — Ring count
+
+> **N=16 for Phase 1, target N=32 long-term.**
+
+MVP ships with 16. The architecture should not hardcode 16 anywhere; ring count is a parameter. Bumping later is a config change, not a refactor.
+
+## Q2 — Scenario reproducibility policy
+
+> **Archive old scenarios with version tag, don't rewrite.**
+
+Add a top-level `sim_version` constant. Current state = `sim_version: 2`. Phase 1 of 3D sim bumps to `sim_version: 3`. Scenario output logs, saved states, and any screenshot references carry the tag. Old scenario briefs (e.g. "sabkha seed 42 produces 8 dolomites and 2 aragonites") explicitly note `sim_version: 2` so future-you can tell at a glance whether an empirical claim still holds.
+
+The `sim_version: 2` tag should be added NOW, as part of the chemistry audit commits, so it's already in place when Phase 1 lands.
+
+## Q3 — Priority vs chemistry audit
+
+> **Chemistry audit first, then Phase 1.**
+
+The audit makes existing single-ring scenarios honest. 3D scenarios will want those same literature-backed fluid compositions as starting state for each ring. Audit is the foundation; 3D is the building.
+
+Practical impact: I'm writing the chemistry audit commits (per-scenario, starting with `cooling`/Herkimer) before the Phase 1 data model work begins. Phase 1 task brief can be drafted after ~3-4 scenarios have been audited so the brief reflects the real chemistry shape.
+
+## Q4 — agent-api
+
+> **Let agent-api lag, don't upgrade it yet.**
+
+Agent-api already fell behind on mineral rounds. It's headless; it can catch up later or be formally deprecated. No 3D work goes into agent-api until that decision.
+
+---
+
+## Related Work Status
+
+### Tier 1 Viewer — SHIPPED (separate commits)
+
+A lightweight CSS-3D-transform-based tilted-plane viewer shipped this session alongside the camera controls (commits `740a44e`, `5b4b4b5`, `4d94012`). Forward-compatible with multi-ring data; currently shows single-ring data tilted. See `PROPOSAL-3D-TOPO-VUG.md` postscript for implementation details and known limits.
+
+Implication for Tier 3 sequencing: Phase 1 (multi-ring data model, identical rings) gains immediate visual payoff via the existing Tier 1 viewer — even before Phase 2 (per-ring chemistry) makes the rings differ, the viewer can ring-slide / cycle through rings to prove the data model works.
+
+### Edge Textures — SHIPPED (6 textures)
+
+Independent work stream, completed earlier this session. Dispatches on `(mineral, habit)` with fuzzy fallback. Works per-cell regardless of ring, so no changes needed when 3D sim lands — every texture continues to work, just rendered on more cells.
+
+---
+
+## Sim-Version Tag: Concrete Proposal
+
+Add to `vugg.py` and `web/index.html` (both):
+
+```python
+SIM_VERSION = 2  # current single-ring state
+```
+
+Every `VugSim` instance carries `self.sim_version = SIM_VERSION`. Serialized state (saves, replays, screenshots metadata) includes it. Scenario docstrings and `proposals/SCENARIO-LOCATIONS.md` entries get a `sim_version_tested: 2` field.
+
+When Phase 1 of 3D lands, bump to 3. Ship a migration note: "sabkha_dolomitization seed 42 under sim_version 2 produced X; under sim_version 3 produces Y; both are geologically defensible but the seeds aren't transferable." That's the contract.
+
+---
+
+## Updated Sequencing
+
+1. **Chemistry audit** (in progress — `cooling` / Herkimer first, then 10 more scenarios). Adds `sim_version: 2` tag. ~2 weeks.
+2. **Phase 1 task brief** drafted after ~3-4 audit scenarios are done. Incorporates lessons from audit about per-locality chemistry shape.
+3. **Phase 1 implementation**: multi-ring data model, identical rings. `sim_version` bumps to 3. Tier 1 viewer can already render this.
+4. **Phase 2**: per-ring chemistry with inter-ring diffusion. First visually interesting multi-ring scenario.
+5. **Phase 3+**: orientation tags, fluid levels, vertical crystal spans, convection — as described in main proposal.
+
+Months of work, properly sequenced. The audit gates everything; no 3D phase starts until the chemistry is honest.

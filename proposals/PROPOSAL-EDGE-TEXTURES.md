@@ -247,3 +247,107 @@ Bonus: a `texture_gallery` dev-only page that lays every texture on a uniform wh
 ---
 
 Commit per logical chunk (schema migration, per-crystal refactor, template library, dispatch, verification harness) — five commits, easy to bisect if anything regresses. Do NOT push — boss reviews and merges.
+
+---
+
+---
+
+# POST-IMPLEMENTATION NOTES
+
+**Added:** 2026-04-22, after stages 0-5 shipped
+**What shipped:** commits `f49cb4d` (Stage 0 infrastructure) through `5673c27` (Stage 4 acicular) and `d194d70` (Stage 5 saddle_rhomb), plus `96630cb` (amplitude tune), `dd33915` (galena/fluorite override), `a18c819` (docs mirror catch-up)
+
+## What Actually Got Built
+
+Six visible textures, not seventeen:
+
+- `smooth` — the original Bezier (fallthrough default)
+- `dogtooth` / `rhomb` — shared `_texture_sawtooth` function, different params
+- `cube_edge` / `cube_edge_deep` — shared `_texture_sawtooth`, different pitch/amplitude
+- `botryoidal` — `_texture_botryoidal` (smooth half-circles via quadratic Bezier per bump)
+- `acicular` — PLACEHOLDER, clones dogtooth params pending its own design
+- `saddle_rhomb` — `_texture_saddle_rhomb` (quadratic Bezier per half-tooth with chord-direction bulge; the dolomite headline)
+
+The remaining ~10 templates from the original enum (`prismatic_hex`, `octahedral`, `bladed`, `tabular`, `spherulitic`, `dendritic`, `fibrous`, `drusy`, `flos_ferri`, `cyclic_twin_hex`, `pyritohedron_edge`) are not implemented. Coverage is still broad because the fuzzy fallback (see below) catches variants that fold into the implemented family.
+
+## Key Design Changes vs. Original Proposal
+
+### 1. Data layer pivot: no `edge_texture` field on minerals
+
+The proposal said to add `edge_texture` to every mineral entry in `data/minerals.json` plus per-habit-variant overrides. **Not what shipped.** Instead, dispatch is driven entirely by JS constants in `web/index.html`:
+
+```js
+const HABIT_TO_TEXTURE = { 'scalenohedral': 'dogtooth', 'cubic': 'cube_edge', ... };
+const HABIT_TO_TEXTURE_BY_MINERAL = { galena: {'cubic': 'cube_edge_deep'}, ... };
+```
+
+Zero changes to `data/minerals.json`. Zero changes to `vugg.py`. Python doesn't know textures exist; Python doesn't render, so Python doesn't care. This eliminated an entire sync-spec dimension and meant the whole feature shipped in `web/index.html` + `docs/index.html` only. Simplification recommendation from the "leaner version" review proved correct.
+
+### 2. Mineral-specific override layer — new, wasn't in the original
+
+When pyrite cube and galena cube both dispatched to `cube_edge`, the feedback was immediate: galena should be more dramatic (deeper valleys) than pyrite. The proposal's single `(mineral, habit) → texture` lookup didn't express this because it dispatched on `habit` only.
+
+**Fix:** added `HABIT_TO_TEXTURE_BY_MINERAL` override layer. Resolution order in `_resolveTexture`:
+
+1. `HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]` — mineral-specific override
+2. `HABIT_TO_TEXTURE[habit]` — habit default
+3. Fuzzy substring match on habit string
+4. `'smooth'` fallthrough
+
+This is now the canonical dispatch pattern. Any future "mineral X should look different from others sharing its habit" feedback lands in layer 1.
+
+### 3. Fuzzy substring fallback — new, wasn't in the original
+
+Habit strings in the sim turn out to be far more varied than the proposal's enum anticipated: `'botryoidal_crust'`, `'reniform_globules'`, `'botryoidal/stalactitic'`, `'fibrous_acicular'`, `'elongated_prism_blade'`, `'plumose_rosette'`, `'acicular sprays'` (with a space). Enumerating every one as an explicit map entry is brittle and misses new habits added by future mineral rounds.
+
+**Fix:** `_resolveTexture` does a substring scan against known descriptor keywords as a last-resort fallback:
+
+```js
+if (h.includes('botryoidal') || h.includes('reniform') || h.includes('globule') || h.includes('framboidal')) return 'botryoidal';
+if (h.includes('acicular') || h.includes('needle') || h.includes('radiating') || h.includes('spray') ...) return 'acicular';
+```
+
+Any habit string containing these keywords lands on the right texture without explicit enumeration. Keeps the explicit map for the common cases (clarity) while handling the long tail automatically.
+
+### 4. Geometric cap dropped
+
+The proposal capped tooth amplitude at `0.45 × cell_arc_mm` to prevent teeth from crashing through wedge boundaries. In practice this clamped teeth to fractions of a millimeter because cell arcs are narrow (~5°). Real scalenohedra are 3:1+ height-to-base. Dropping the cap was the first user-visible tuning — "teeth should be visible from across the room, not under a magnifying glass."
+
+**Replacement:** a different cap, `max_amplitude_pitch_ratio`, on textures that SHOULD be bounded (cube faces want ~90° peaks, not needle spikes). dogtooth and rhomb omit it (scalenohedra can elongate freely). cube_edge caps at 0.5 (90° peaks max). cube_edge_deep at 1.0 (45°).
+
+### 5. Per-cell on local chord, no crystal-level accumulator
+
+The proposal flagged as "biggest engineering risk" the need to refactor the inner-edge rendering to per-crystal so tooth phase would be continuous across a crystal's painted footprint. **Didn't need it.** Adjacent same-crystal cells share thickness → same amplitude → visually continuous. Each cell draws its own teeth on its own 5° chord; chord-vs-arc difference is sub-0.5%. No refactor. No discontinuities visible.
+
+This was the single biggest implementation-time savings vs the original proposal.
+
+### 6. Placeholder pattern for acicular
+
+Acicular covers ~13 habit strings (`acicular`, `acicular_needle`, `radiating_*`, `cockscomb`, `spearhead`, etc.). Rather than build its own function up front, the dispatcher uses `_texture_sawtooth` with dogtooth-cloned params. The user explicitly opted into this ("use the same graphic as calcite for those right now, but just label it as something else to future proof it").
+
+**Swap cost later:** one line in the dispatcher (`case 'acicular':`), one entry in `TEXTURE_PARAMS.acicular`. Dispatch token is already distinct. The placeholder strategy — ship coverage now, iterate geometry later — should be reused for the next token that isn't yet distinct (probably `dendritic`, `spherulitic`, or `flos_ferri` when those get built).
+
+## Process Learning: docs/ Mirror Must Ship In Every Commit
+
+Three commits into the work, the user reported "no visual change." The root cause: I had edited `web/index.html` in each commit but not `docs/index.html`. GitHub Pages serves from `docs/`. `ARCHITECTURE.md` states this as a hard requirement ("MUST sync `web/index.html` → `docs/index.html` on every push"). I missed that line and the user watched 3 commits of work fail to deploy.
+
+**Fix:** every commit that touches `web/index.html` now also touches `docs/index.html` in the same commit. No separate "mirror" stages. Recorded this as an explicit TODO in subsequent sessions. Worth codifying in the project conventions / CLAUDE.md.
+
+## Observed Bugs / Known Issues
+
+None specific to edge textures as of this writing. Amplitude tuning has been iterative (user-feedback driven); the shipped values (dogtooth 1.5/2.0, cube_edge 1.0/1.5 capped at 0.5, etc.) are working empirically but haven't been stress-tested across all scenarios.
+
+One texture confusion worth noting: **the current sawtooth (dogtooth) shape reads as quartz pyramidal terminations to a geologist, not dogtooth calcite.** Real dogtooth scalenohedra are asymmetric ("scalene"). User flagged this explicitly. Possible Tier 2 polish: differentiate scalenohedral as asymmetric (each tooth's apex offset 30% to one side, giving a leaning-teeth feel) distinct from quartz's symmetric pyramid. Not blocking.
+
+## What's Still Pending From The Original Proposal
+
+- **Stage 6: Visibility floor** (`<2px` amplitude → fall through to smooth). Not shipped. Low priority — no reports of visual noise at low zoom.
+- **Amplitude polish pass** across all textures at once. Also not shipped. Same reason — each texture was tuned to satisfaction in its introducing commit.
+- **Twin-law textures.** The proposal envisioned `cyclic_twin_hex` for twinned aragonite etc. Twin tracking exists on crystals but the dispatch doesn't yet distinguish twinned from untwinned geometry. Deferred to future polish.
+- **Additional textures** for habits not yet covered (hexagonal prismatic quartz, tabular gypsum, bladed kyanite, dendritic native Cu). Each is a ~1-hour commit following the established pattern. Can ship individually as use-cases arise.
+
+## Revised Estimate For Full Coverage
+
+Original: ~1 week after chemistry audit. **Actual for 6 textures: ~1 day** (7 commits, all shipped the same session). Full coverage of the original 17-template enum would probably be another 1-2 days, but only if motivated by specific scenarios needing them.
+
+The data-layer simplification (no `edge_texture` in minerals.json) and the per-cell-no-refactor win account for most of the under-estimate.

@@ -204,3 +204,74 @@ Both read from the same `wall_state` data. No duplication.
 ---
 
 *This proposal covers both parts but they can be implemented independently. Phase 1 (naturalistic 2D void) is a prerequisite for Phase 2 (3D map) since the 3D shape is generated from the same Fourier profile.*
+
+---
+
+---
+
+# TIER 1 MVP IMPLEMENTATION NOTES
+
+**Added:** 2026-04-22
+**What shipped:** commits `740a44e` (scaffolding), `5b4b4b5` (drag-to-rotate), `4d94012` (explicit mode buttons)
+
+## What Tier 1 Actually Is
+
+The original proposal envisioned Three.js for Phase 2 of 3D. In practice a lighter "Tier 1" shipped first — a tilted-plane view of the existing `ring[0]` data, no Three.js, no mesh. The user request was: "have this two dimensional object be a 3d plane that you can rotate and view from all different angles."
+
+Implementation: CSS 3D transform applied to the canvas element.
+
+```js
+canvas.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+```
+
+The canvas's internal drawing stays 2D; the GPU rotates the canvas element itself. Entire feature is ~100 lines of JS and ~20 lines of CSS. No new dependencies.
+
+## What It Looks Like
+
+A disc (ring[0]) in 3D space. Tilt pitch (rotateX) lifts the far edge up; yaw (rotateY) spins the disc around its vertical axis. At 0/0 tilt it's indistinguishable from 2D mode — which is the point.
+
+The disc is literally a 2D slice. Since only `ring[0]` is populated in the simulation, the top and bottom of the tilted disc show the same data edge-on. **Tier 1 is a 3D VIEWER for 1D of volumetric data.** That's intentional and honest — the viewer is forward-compatible with real multi-ring data (see `PROPOSAL-3D-SIMULATION.md`, Phase 1) so the UI can ship before the simulation catches up.
+
+## UI: Explicit Camera Mode Buttons
+
+An early design had an implicit "3D mode" toggle that inferred drag behavior from view state. User feedback preferred explicit mode buttons. Ships as a three-button cluster positioned next to the play button (bottom-right of canvas):
+
+- **↻ Rotate** — drag from anywhere orbits the 3D tilted canvas
+- **✥ Pan** — drag from anywhere moves the camera (no rotation). Ignores the crystal hit-test so user can drag starting over a wedge
+- **⊙ Recenter** — resets pan and tilt to zero. Preserves zoom
+
+Mode buttons are mutually exclusive; clicking the active one returns to **default** mode, which is the pre-existing 2D hit-test-aware behavior (drag on non-crystal → pan, click on crystal → tooltip/highlight).
+
+Internally: `_topoDragMode = 'default' | 'rotate' | 'pan'`, with `_topoView3D` derived as `(mode === 'rotate')`. The drag handler branches on mode.
+
+## Known Tier 1 Limits
+
+1. **Hit-tests disabled in rotate mode.** Tooltip, click, legend-highlight — all are computed against the untransformed canvas coordinate system. Under CSS 3D transform the visible position of a cell doesn't correspond to its canvas coordinate. For MVP: don't try. Future polish: either invert the CSS transform matrix analytically, or swap to manual 3D projection in canvas drawing (more code, exact picking).
+
+2. **Tooltip handler still fires on mousemove during rotate drags.** It may display tooltips at positions that don't match what the user sees. Not audited. Likely visual glitch when hovering during a rotate drag.
+
+3. **Extreme tilt angles can look blurry** on some browsers due to CSS transform smoothing. Chrome handles it fine; Safari less crisp. Not investigated.
+
+4. **Canvas may overlap adjacent UI at steep tilts.** If the tilted canvas projects outside its container bounds, it can cover surrounding elements. Not reported as a bug but worth checking if layout looks off.
+
+5. **Mode state persists across scenario changes.** If user has rotate mode active and switches scenarios, the new scenario renders in 3D. Arguably a feature (state preservation) but can surprise. No reset on scenario change currently.
+
+6. **Tilt X clamped to ±(π/2 − 0.05).** Can't flip past vertical-edge-on. Prevents the disc from going "behind" the viewer. Arguably too restrictive — the user can never see the back of the disc. Relax if real 3D data arrives via Tier 3 and users want to look at the "bottom ring" from below.
+
+7. **No inertia / damping on drag.** Mouseup stops movement instantly. Feels a bit abrupt. Easy polish.
+
+## What Tier 2 Would Add
+
+(From the original proposal, updated with Tier 1 lessons.)
+
+- **Three.js scene** replacing the CSS transform. Each crystal becomes a mesh; lighting gives proper shading; raycasting gives accurate hit-tests at any angle. ~1-2 weeks of work.
+- **Multi-ring rendering** — prerequisite: Phase 1 of Tier 3 must ship. Without it Tier 2 is only marginally more interesting than Tier 1.
+- **Proper orbit controls** — Three.js `OrbitControls` is the de-facto standard, with damping / inertia / zoom-to-cursor for free.
+- **Edge textures in 3D** — the sawtooth/botryoidal/saddle polylines currently drawn per-cell would become extruded mesh geometry on each wedge's inner face. Non-trivial but mechanical.
+- **Inside-out view** — fly camera inside the vug to see walls from within. Free with Three.js camera.
+
+## Sequencing Implication
+
+Tier 1 ships NOW with existing data. Tier 2 (WebGL / Three.js) waits on Tier 3's Phase 1 (multi-ring data model). That gating is honest: a WebGL viewer showing one repeated ring isn't worth the dependency cost. Once rings differ meaningfully, Tier 2 becomes a compelling upgrade.
+
+In the meantime, Tier 1 serves as a "it works end-to-end" proof that answered the user's question ("can we see it in 3D?") without committing to the bigger piece.
