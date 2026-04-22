@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 49,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates), +tetrahedrite/tennantite (round-2: paired fahlore Sb/As sulfosalts), +apophyllite (round-2: zeolite-facies silicate, hematite-phantom 'bloody apophyllite' habit, deccan_zeolite scenario added), +aragonite (round-3: orthorhombic CaCO3, Mg/Ca-driven polymorph competition with calcite per Folk 1974/Morse 1997), +rhodochrosite (round-3: Mn carbonate, biggest collection-weight miss at 35 specimens).",
+    "total_minerals": 50,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates), +tetrahedrite/tennantite (round-2: paired fahlore Sb/As sulfosalts), +apophyllite (round-2: zeolite-facies silicate, hematite-phantom 'bloody apophyllite' habit, deccan_zeolite scenario added), +aragonite (round-3: orthorhombic CaCO3, Mg/Ca-driven polymorph competition with calcite per Folk 1974/Morse 1997), +rhodochrosite (round-3: Mn carbonate, biggest collection-weight miss at 35 specimens), +siderite (round-3: Fe carbonate, oxidation breakdown to goethite is the diagenetic pseudomorph mechanism).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -74,7 +74,8 @@
       "tennantite",
       "apophyllite",
       "aragonite",
-      "rhodochrosite"
+      "rhodochrosite",
+      "siderite"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -93,7 +94,8 @@
         "wurtzite",
         "fluorite",
         "galena",
-        "rhodochrosite"
+        "rhodochrosite",
+        "siderite"
       ],
       "porphyry": [
         "calcite",
@@ -574,6 +576,127 @@
         "web/index.html"
       ],
       "audit_status": "ok (round-3 add: orthorhombic CaCO3 polymorph, Mg/Ca dominant control per Folk 1974/Morse 1997, polymorphic conversion to calcite at T>100°C, four habits including iconic cyclic twin and flos ferri). Scenarios array empty until SCENARIO-CHEMISTRY-AUDIT brief runs — none of the existing scenarios have realistic enough Mg/Ca (>1.5) to nucleate aragonite at seed 42; existing scenarios use realistic low-Mg brines that correctly favor calcite. Aragonite gate is verified working with manually elevated Mg.",
+      "class_color": "#eb7f13"
+    },
+    "siderite": {
+      "formula": "FeCO3",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 20,
+      "growth_rate_mult": 0.5,
+      "_collection_specimens": 3,
+      "habit_variants": [
+        {
+          "name": "rhombohedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "equant",
+          "trigger": "moderate σ — curved 'saddle' rhombs (the {104} faces bow outward), the diagnostic siderite habit"
+        },
+        {
+          "name": "scalenohedral",
+          "wall_spread": 0.25,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high σ — sharp brown 'dog-tooth' v{211} crystals"
+        },
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.7,
+          "void_reach": 0.25,
+          "vector": "coating",
+          "trigger": "very high σ — colloidal mammillary crusts on fracture walls"
+        },
+        {
+          "name": "spherulitic",
+          "wall_spread": 0.5,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "low T (<80°C), high σ — sedimentary 'spherosiderite' concretions in coal seams and Fe-rich shales"
+        }
+      ],
+      "class": "carbonate",
+      "description": "FeCO₃ — the iron carbonate, a calcite-group mineral (R3̄c) with Fe²⁺ in the Ca site. Tan to deep brown depending on Fe content and trace substitution (manganosiderite ↔ rhodochrosite, ankerite ↔ dolomite). Hard-gated to REDUCING conditions because Fe²⁺ must stay reduced to be soluble; rising O₂ progressively converts siderite to goethite/limonite — the diagenetic 'limonite cube after siderite' pseudomorph mechanism. Forms in MVT veins (accessory), sedimentary ironstone formations, hydrothermal Fe veins, and coal-seam concretions (spherosiderite).",
+      "scenarios": [
+        "mvt"
+      ],
+      "T_range_C": [
+        20,
+        300
+      ],
+      "T_optimum_C": [
+        50,
+        150
+      ],
+      "T_behavior": "retrograde_solubility",
+      "pH_dissolution_below": 5.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Fe": 10,
+        "CO3": 20
+      },
+      "trace_ingredients": {
+        "Mn": "manganosiderite intermediate (pinkish-brown shift toward rhodochrosite)",
+        "Ca": "ankerite intermediate (pale brown shift toward dolomite)",
+        "Mg": "Mg-bearing variety",
+        "Zn": "Zn-bearing variety (smithsonite intermediate)"
+      },
+      "thermal_decomp_C": 550,
+      "thermal_decomp_reaction": "FeCO3 -> Fe3O4/FeO + CO2 (decarbonation; oxidation route at low T -> goethite)",
+      "thermal_decomp_products": {
+        "Fe": 0.5,
+        "CO3": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "polysynthetic",
+          "miller_indices": "{012}",
+          "trigger": "growth or stress",
+          "probability": 0.02
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 5.5,
+        "reaction": "FeCO3 + 2H+ -> Fe2+ + H2O + CO2 (fizzes — same as calcite)",
+        "products": {
+          "Fe": 0.6,
+          "CO3": 0.5
+        }
+      },
+      "oxidation_breakdown": {
+        "O2_threshold": 0.5,
+        "reaction": "FeCO3 + O2 -> Fe2O3·H2O (goethite/limonite) + CO2",
+        "note": "The textbook diagenetic story. Rising O2 pushes Fe²⁺ → Fe³⁺ (insoluble as carbonate); the lattice collapses and Fe + CO3 move on to grow goethite or limonite elsewhere. Mechanism behind 'limonite cube after siderite' pseudomorphs."
+      },
+      "habit": "rhombohedral_or_botryoidal",
+      "color_rules": {
+        "deep_brown": {
+          "default": true,
+          "trigger": "Fe-dominant end-member"
+        },
+        "pinkish_brown": {
+          "trigger": "Mn-bearing manganosiderite"
+        },
+        "pale_brown": {
+          "trigger": "Ca-bearing ankerite intermediate"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "pyrite",
+          "sphalerite",
+          "vug wall"
+        ],
+        "note": "Pyrite substrate is classic — Fe-rich sulfide oxidation upstream feeds Fe²⁺ into the carbonate-saturating fluid. In MVT systems, siderite often coats earlier sphalerite + galena as the system cools and CO3 climbs."
+      },
+      "narrate_function": "_narrate_siderite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-3 add: Fe carbonate, R3̄c calcite-group structure, four habits including spherosiderite, oxidation breakdown to goethite/limonite — the diagenetic pseudomorph mechanism). Empirically verified in mvt at seed 42.",
       "class_color": "#eb7f13"
     },
     "rhodochrosite": {

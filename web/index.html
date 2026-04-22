@@ -2970,6 +2970,7 @@ const MINERAL_SPEC_FALLBACK = {
   calcite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 2000, growth_rate_mult: 1.0, thermal_decomp_C: 840, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_red", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "c_twin", probability: 0.10 }], acid_dissolution: { pH_threshold: 5.5 } },
   aragonite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.5, thermal_decomp_C: 520, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_yellow", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "cyclic_sextet", probability: 0.40 }], acid_dissolution: { pH_threshold: 5.5 } },
   rhodochrosite: { formula: "MnCO3", nucleation_sigma: 1.0, max_size_cm: 25, growth_rate_mult: 0.5, thermal_decomp_C: 600, fluorescence: { activator: "intrinsic", color: "red_pink_LW" }, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 5.5 } },
+  siderite: { formula: "FeCO3", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.5, thermal_decomp_C: 550, fluorescence: null, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 5.5 } },
   sphalerite: { formula: "ZnS", nucleation_sigma: 1.0, max_size_cm: 80, growth_rate_mult: 0.6, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "spinel_law", probability: 0.015 }], acid_dissolution: { pH_threshold: 2.0 } },
   wurtzite: { formula: "(Zn,Fe)S", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.55, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "basal_contact", probability: 0.008 }], acid_dissolution: { pH_threshold: 2.0 } },
   fluorite: { formula: "CaF2", nucleation_sigma: 1.0, max_size_cm: 400, growth_rate_mult: 0.5, thermal_decomp_C: 1360, fluorescence: { activator: "REE_or_defects", color: "blue_violet_LW_and_SW" }, twin_laws: [{ name: "penetration", probability: 0.008 }], acid_dissolution: { pH_threshold: 4.0 } },
@@ -3894,6 +3895,22 @@ class VugConditions {
     const mg_inhibition = 1.0 / (1.0 + Math.exp(-(mg_ratio - 2.0) / 0.5));
     sigma *= (1.0 - 0.85 * mg_inhibition);
 
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_siderite() {
+    // FeCO3 — iron carbonate. Reducing conditions only (Fe²⁺ stability).
+    if (this.fluid.Fe < 10 || this.fluid.CO3 < 20) return 0;
+    if (this.temperature < 20 || this.temperature > 300) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 9.0) return 0;
+    if (this.fluid.O2 > 0.8) return 0;  // hard reducing gate
+    const eq_fe = 80.0 * Math.exp(-0.005 * this.temperature);
+    if (eq_fe <= 0) return 0;
+    const fe_co3 = Math.min(this.fluid.Fe, this.fluid.CO3);
+    let sigma = fe_co3 / eq_fe;
+    if (this.fluid.pH < 5.5) sigma -= (5.5 - this.fluid.pH) * 0.5;
+    else if (this.fluid.pH > 7.5) sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
+    if (this.fluid.O2 > 0.3) sigma *= Math.max(0.2, 1.0 - (this.fluid.O2 - 0.3) * 1.5);
     return Math.max(sigma, 0);
   }
 
@@ -5082,6 +5099,70 @@ function grow_aragonite(crystal, conditions, step) {
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
     note,
+  });
+}
+
+function grow_siderite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_siderite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.13);
+      conditions.fluid.Fe += dissolved_um * 0.5;
+      conditions.fluid.CO3 += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidative breakdown (O₂=${conditions.fluid.O2.toFixed(2)}) — Fe²⁺ → Fe³⁺, siderite converting to goethite/limonite (classic diagenetic pseudomorph)`
+      });
+    }
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.15);
+      conditions.fluid.Fe += dissolved_um * 0.5;
+      conditions.fluid.CO3 += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Fe²⁺ + CO₃²⁻ released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 5.0 * excess * rng.uniform(0.7, 1.3);
+
+  if (excess > 1.5) {
+    crystal.habit = 'botryoidal';
+    crystal.dominant_forms = ['botryoidal mammillary crusts', 'tan-brown rounded aggregates'];
+  } else if (excess > 1.0 && conditions.temperature < 80) {
+    crystal.habit = 'spherulitic';
+    crystal.dominant_forms = ["spherulitic concretions ('spherosiderite')", 'radial fibrous interior'];
+  } else if (excess > 0.6) {
+    crystal.habit = 'scalenohedral';
+    crystal.dominant_forms = ['v{211} scalenohedral', 'sharp brown crystals'];
+  } else {
+    crystal.habit = 'rhombohedral';
+    crystal.dominant_forms = ["e{104} curved 'saddle' rhombohedron", 'tan to brown'];
+  }
+
+  let color_note;
+  if (conditions.fluid.Mn > 5) color_note = 'pinkish-brown (Mn-bearing manganosiderite)';
+  else if (conditions.fluid.Ca > 100) color_note = 'tan to pale brown (Ca-bearing intermediate toward ankerite)';
+  else color_note = 'deep brown (Fe-dominant end-member)';
+
+  if (!crystal.twinned && rng.random() < 0.02) {
+    crystal.twinned = true;
+    crystal.twin_law = 'polysynthetic {012}';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.4,
+    trace_Mn: conditions.fluid.Mn * 0.05,
+    note: `${crystal.habit} — ${color_note}`,
   });
 }
 
@@ -7036,6 +7117,7 @@ const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
   aragonite: grow_aragonite,
+  siderite: grow_siderite,
   rhodochrosite: grow_rhodochrosite,
   sphalerite: grow_sphalerite,
   wurtzite: grow_wurtzite,
@@ -8141,6 +8223,8 @@ class VugSimulator {
       crystal.dominant_forms = ['columnar prisms', '{110} cyclic twin (six-pointed)'];
     } else if (mineral === 'rhodochrosite') {
       crystal.dominant_forms = ["e{104} curved 'button' rhombohedron", 'rose-pink'];
+    } else if (mineral === 'siderite') {
+      crystal.dominant_forms = ["e{104} curved 'saddle' rhombohedron", 'tan to brown'];
     } else if (mineral === 'sphalerite') {
       crystal.dominant_forms = ['{111} tetrahedron'];
     } else if (mineral === 'wurtzite') {
@@ -8375,6 +8459,19 @@ class VugSimulator {
       const mg_ratio = this.conditions.fluid.Mg / Math.max(this.conditions.fluid.Ca, 0.01);
       const c = this.nucleate('aragonite', pos, sigma_arag);
       this.log.push(`  ✦ NUCLEATION: Aragonite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_arag.toFixed(2)})`);
+    }
+
+    // Siderite nucleation — Fe carbonate, brown rhomb. Reducing only.
+    const sigma_sid = this.conditions.supersaturation_siderite();
+    const existing_sid = this.crystals.filter(c => c.mineral === 'siderite' && c.active);
+    if (sigma_sid > 1.0 && !existing_sid.length && !this._atNucleationCap('siderite')) {
+      let pos = 'vug wall';
+      const existing_py_s = this.crystals.filter(c => c.mineral === 'pyrite' && c.active);
+      const existing_sph_s = this.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
+      if (existing_py_s.length && rng.random() < 0.4) pos = `on pyrite #${existing_py_s[0].crystal_id}`;
+      else if (existing_sph_s.length && rng.random() < 0.3) pos = `on sphalerite #${existing_sph_s[0].crystal_id}`;
+      const c = this.nucleate('siderite', pos, sigma_sid);
+      this.log.push(`  ✦ NUCLEATION: Siderite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, Fe=${this.conditions.fluid.Fe.toFixed(0)}, σ=${sigma_sid.toFixed(2)})`);
     }
 
     // Rhodochrosite nucleation — Mn carbonate, the pink mineral.
@@ -9798,6 +9895,29 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_siderite(c) {
+    const parts = [`Siderite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("FeCO₃ — the iron carbonate, a calcite-group mineral (R3̄c) with Fe²⁺ in the Ca site. Tan to deep brown, depending on Fe content and trace substitution. Forms only in REDUCING conditions because Fe²⁺ must stay reduced to be soluble; the moment O₂ rises above ~0.5, siderite begins converting to goethite/limonite.");
+    if (c.habit === 'rhombohedral') {
+      parts.push("Curved 'saddle' rhombohedra — the diagnostic siderite habit. The {104} faces aren't flat; they bow outward into a saddle shape, parallel to the curved-rhomb signature shared with rhodochrosite and dolomite.");
+    } else if (c.habit === 'scalenohedral') {
+      parts.push("Sharp scalenohedral 'dog-tooth' crystals — the high-σ habit. Less common than the rhombohedral form; sharp brown crystals that resemble brown calcite at distance.");
+    } else if (c.habit === 'botryoidal') {
+      parts.push('Botryoidal mammillary crusts — the colloidal habit, formed when supersaturation outruns ordered crystal growth. Tan-brown rounded aggregates, often coating fracture walls.');
+    } else {
+      parts.push("Spherulitic concretions — sedimentary 'spherosiderite,' the concretionary habit found in coal seams and Fe-rich shales. Each sphere is a radial fibrous internal structure capped by a thin smooth surface.");
+    }
+    if (c.dissolved) {
+      const note = c.zones.length ? c.zones[c.zones.length - 1].note : '';
+      if (note && note.includes('oxidative breakdown')) {
+        parts.push("Oxidative breakdown destroyed the crystal — the textbook diagenetic story. Rising O₂ pushed Fe²⁺ → Fe³⁺, which is insoluble as carbonate; the lattice collapsed and Fe + CO₃ moved on to grow goethite/limonite elsewhere. In nature this is the mechanism behind the 'limonite cube after siderite' diagenetic pseudomorphs.");
+      } else {
+        parts.push('Acid attack dissolved the crystal — like all calcite-group carbonates, siderite fizzes in HCl. Fe²⁺ + CO₃²⁻ released.');
+      }
+    }
+    return parts.join(' ');
+  }
+
   _narrate_rhodochrosite(c) {
     const parts = [`Rhodochrosite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
     parts.push("MnCO₃ — the rosy manganese carbonate, structurally identical to calcite (R3̄c) but with Mn²⁺ replacing Ca²⁺. The pink-to-raspberry color is intrinsic to the Mn²⁺ chromophore, not a trace activator. Forms in epithermal Mn-bearing veins (Capillitas, Sweet Home), metamorphosed Mn sediments (N'Chwaning), and low-T carbonate replacement zones.");
@@ -10765,6 +10885,16 @@ class VugSimulator {
         if (c.twinned) desc += ` (${c.twin_law})`;
         desc += ' — pink to raspberry-red MnCO₃';
         if (c.dissolved) desc += ', oxidized to black Mn-oxide rind';
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'siderite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm siderite`;
+        if (c.habit === 'rhombohedral') desc += " 'saddle' rhombohedron";
+        else if (c.habit === 'scalenohedral') desc += " scalenohedral";
+        else if (c.habit === 'spherulitic') desc = `spherosiderite concretion, ${c.c_length_mm.toFixed(1)}mm`;
+        else desc += ' botryoidal crust';
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        desc += ' — tan to brown FeCO₃';
+        if (c.dissolved) desc += ', oxidized to goethite/limonite (diagenetic pseudomorph)';
         parts.push(`  • ${desc}`);
       } else if (c.mineral === 'sphalerite') {
         let desc = `a ${c.c_length_mm.toFixed(1)}mm sphalerite`;
@@ -12591,6 +12721,7 @@ function updateFortressStatus() {
     { name: 'Quartz', sigma: c.supersaturation_quartz() },
     { name: 'Calcite', sigma: c.supersaturation_calcite() },
     { name: 'Aragonite', sigma: c.supersaturation_aragonite() },
+    { name: 'Siderite', sigma: c.supersaturation_siderite() },
     { name: 'Rhodochrosite', sigma: c.supersaturation_rhodochrosite() },
     { name: 'Fluorite', sigma: c.supersaturation_fluorite() },
     { name: 'Sphalerite', sigma: c.supersaturation_sphalerite() },
@@ -13979,6 +14110,7 @@ function idleRecordHistory() {
   if (typeof c.supersaturation_quartz === 'function') supersats.quartz = c.supersaturation_quartz();
   if (typeof c.supersaturation_calcite === 'function') supersats.calcite = c.supersaturation_calcite();
   if (typeof c.supersaturation_aragonite === 'function') supersats.aragonite = c.supersaturation_aragonite();
+  if (typeof c.supersaturation_siderite === 'function') supersats.siderite = c.supersaturation_siderite();
   if (typeof c.supersaturation_rhodochrosite === 'function') supersats.rhodochrosite = c.supersaturation_rhodochrosite();
   if (typeof c.supersaturation_fluorite === 'function') supersats.fluorite = c.supersaturation_fluorite();
   if (typeof c.supersaturation_pyrite === 'function') supersats.pyrite = c.supersaturation_pyrite();

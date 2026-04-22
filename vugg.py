@@ -705,6 +705,52 @@ class VugConditions:
 
         return max(sigma, 0)
 
+    def supersaturation_siderite(self) -> float:
+        """Siderite (FeCO₃) — the iron carbonate, the brown rhomb.
+
+        Trigonal carbonate, calcite-group structure (R3̄c) with Fe²⁺ in the
+        Ca site. Forms only in REDUCING conditions — Fe must stay Fe²⁺ to
+        be soluble and precipitate as carbonate. Above O₂ ~0.5, Fe oxidizes
+        to Fe³⁺ and locks up as goethite/hematite instead.
+
+        Habit signature: curved rhombohedral 'saddle' faces (the {104} faces
+        bow, like rhodochrosite's button rhombs). Tan to dark brown with Fe
+        content. Sedimentary spherosiderite forms spherulitic concretions in
+        coal seams; hydrothermal siderite forms vein crystals.
+
+        Oxidation breakdown is the textbook diagenetic story: siderite →
+        goethite → hematite as the system progressively oxidizes. In the
+        simulator, rising O₂ dissolves the siderite and releases Fe + CO₃
+        for downstream Fe-oxide precipitation.
+        """
+        if self.fluid.Fe < 10 or self.fluid.CO3 < 20:
+            return 0
+        if self.temperature < 20 or self.temperature > 300:
+            return 0
+        if self.fluid.pH < 5.0 or self.fluid.pH > 9.0:
+            return 0
+        # Hard reducing gate — Fe²⁺ must stay reduced
+        if self.fluid.O2 > 0.8:
+            return 0
+
+        equilibrium_Fe = 80.0 * math.exp(-0.005 * self.temperature)
+        if equilibrium_Fe <= 0:
+            return 0
+        fe_co3 = min(self.fluid.Fe, self.fluid.CO3)
+        sigma = fe_co3 / equilibrium_Fe
+
+        # Acid dissolution
+        if self.fluid.pH < 5.5:
+            sigma -= (5.5 - self.fluid.pH) * 0.5
+        elif self.fluid.pH > 7.5:
+            sigma *= 1.0 + (self.fluid.pH - 7.5) * 0.1
+
+        # Mild oxidation rolloff in 0.3-0.8 O2 window
+        if self.fluid.O2 > 0.3:
+            sigma *= max(0.2, 1.0 - (self.fluid.O2 - 0.3) * 1.5)
+
+        return max(sigma, 0)
+
     def supersaturation_rhodochrosite(self) -> float:
         """Rhodochrosite (MnCO₃) — the manganese carbonate, the pink mineral.
 
@@ -2591,6 +2637,85 @@ def grow_aragonite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
         thickness_um=rate, growth_rate=rate,
         trace_Fe=trace_Fe, trace_Mn=trace_Mn,
         note=note,
+    )
+
+
+def grow_siderite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Siderite (FeCO₃) growth — the iron carbonate.
+
+    Habits: rhombohedral (default — curved 'saddle' rhombs are diagnostic),
+    scalenohedral (high σ), botryoidal (fast growth, colloidal), spherulitic
+    (sedimentary 'spherosiderite' concretions).
+
+    Oxidation pseudomorphism: when O₂ climbs above 0.5, Fe²⁺ → Fe³⁺ and
+    siderite progressively converts to goethite/limonite. Models the
+    classic 'limonite cube after pyrite' diagenetic story (here goethite
+    after siderite). Fe + CO₃ are released to drive Fe-oxide growth
+    elsewhere in the simulator.
+    """
+    sigma = conditions.supersaturation_siderite()
+
+    if sigma < 1.0:
+        # Oxidative dissolution — the textbook siderite-to-goethite story
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 0.5:
+            crystal.dissolved = True
+            dissolved_um = min(5.0, crystal.total_growth_um * 0.13)
+            conditions.fluid.Fe += dissolved_um * 0.5
+            conditions.fluid.CO3 += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"oxidative breakdown (O₂={conditions.fluid.O2:.2f}) — Fe²⁺ → Fe³⁺, siderite converting to goethite/limonite (the classic diagenetic pseudomorph)"
+            )
+        # Acid dissolution
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 5.5:
+            crystal.dissolved = True
+            dissolved_um = min(6.0, crystal.total_growth_um * 0.15)
+            conditions.fluid.Fe += dissolved_um * 0.5
+            conditions.fluid.CO3 += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f}) — Fe²⁺ + CO₃²⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 5.0 * excess * random.uniform(0.7, 1.3)
+
+    # Habit selection
+    if excess > 1.5:
+        crystal.habit = "botryoidal"
+        crystal.dominant_forms = ["botryoidal mammillary crusts", "tan-brown rounded aggregates"]
+    elif excess > 1.0 and conditions.temperature < 80:
+        crystal.habit = "spherulitic"
+        crystal.dominant_forms = ["spherulitic concretions ('spherosiderite')", "radial fibrous interior"]
+    elif excess > 0.6:
+        crystal.habit = "scalenohedral"
+        crystal.dominant_forms = ["v{211} scalenohedral", "sharp brown crystals"]
+    else:
+        crystal.habit = "rhombohedral"
+        crystal.dominant_forms = ["e{104} curved 'saddle' rhombohedron", "tan to brown"]
+
+    # Color depends on Fe content vs trace Mn/Ca substitution
+    if conditions.fluid.Mn > 5:
+        # Manganosiderite intermediate — toward rhodochrosite
+        color_note = "pinkish-brown (Mn-bearing manganosiderite)"
+    elif conditions.fluid.Ca > 100:
+        color_note = "tan to pale brown (Ca-bearing intermediate toward ankerite)"
+    else:
+        color_note = "deep brown (Fe-dominant end-member)"
+
+    if not crystal.twinned and random.random() < 0.02:
+        crystal.twinned = True
+        crystal.twin_law = "polysynthetic {012}"
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.4,  # siderite IS Fe — high uptake
+        trace_Mn=conditions.fluid.Mn * 0.05,
+        note=f"{crystal.habit} — {color_note}",
     )
 
 
@@ -5610,6 +5735,7 @@ MINERAL_ENGINES = {
     "quartz": grow_quartz,
     "calcite": grow_calcite,
     "aragonite": grow_aragonite,
+    "siderite": grow_siderite,
     "rhodochrosite": grow_rhodochrosite,
     "sphalerite": grow_sphalerite,
     "wurtzite": grow_wurtzite,
@@ -5672,6 +5798,7 @@ THERMAL_DECOMPOSITION = {
     "calcite":    (840,  "CaCO₃ → CaO + CO₂ (calcination)",                     {"Ca": 0.5, "CO3": 0.4}),
     "aragonite":  (520,  "orthorhombic CaCO₃ → calcite (polymorphic conversion before calcination)", {"Ca": 0.5, "CO3": 0.4}),
     "rhodochrosite": (600, "MnCO₃ → MnO + CO₂ (calcination, lower than calcite)", {"Mn": 0.5, "CO3": 0.4}),
+    "siderite":     (550, "FeCO₃ → Fe₃O₄/FeO + CO₂ (decarbonation; oxidation route → goethite at low T)", {"Fe": 0.5, "CO3": 0.4}),
     "malachite":  (200,  "Cu₂CO₃(OH)₂ → CuO + CO₂ + H₂O",                      {"Cu": 0.6, "CO3": 0.3}),
     "sphalerite": (1020, "ZnS → Zn + S (sublimes)",                              {"Zn": 0.3, "S": 0.5}),
     "wurtzite":   (1020, "hexagonal ZnS → sublimation (shares sphalerite decomposition)", {"Zn": 0.3, "S": 0.5}),
@@ -7327,6 +7454,8 @@ class VugSimulator:
             crystal.dominant_forms = ["columnar prisms", "{110} cyclic twin (six-pointed)"]
         elif mineral == "rhodochrosite":
             crystal.dominant_forms = ["e{104} curved 'button' rhombohedron", "rose-pink"]
+        elif mineral == "siderite":
+            crystal.dominant_forms = ["e{104} curved 'saddle' rhombohedron", "tan to brown"]
         elif mineral == "sphalerite":
             crystal.dominant_forms = ["{111} tetrahedron"]
         elif mineral == "wurtzite":
@@ -7574,6 +7703,23 @@ class VugSimulator:
             c = self.nucleate("aragonite", position=pos, sigma=sigma_arag)
             self.log.append(f"  ✦ NUCLEATION: Aragonite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, Mg/Ca={mg_ratio:.2f}, σ={sigma_arag:.2f})")
+
+        # Siderite nucleation — Fe carbonate, the brown rhomb. Reducing only.
+        sigma_sid = self.conditions.supersaturation_siderite()
+        existing_sid = [c for c in self.crystals if c.mineral == "siderite" and c.active]
+        if sigma_sid > 1.0 and not existing_sid and not self._at_nucleation_cap("siderite"):
+            pos = "vug wall"
+            # Substrate: pyrite (concentrated Fe), sphalerite (Fe-bearing host
+            # in MVT systems), or wall.
+            existing_py_s = [c for c in self.crystals if c.mineral == "pyrite" and c.active]
+            existing_sph_s = [c for c in self.crystals if c.mineral == "sphalerite" and c.active]
+            if existing_py_s and random.random() < 0.4:
+                pos = f"on pyrite #{existing_py_s[0].crystal_id}"
+            elif existing_sph_s and random.random() < 0.3:
+                pos = f"on sphalerite #{existing_sph_s[0].crystal_id}"
+            c = self.nucleate("siderite", position=pos, sigma=sigma_sid)
+            self.log.append(f"  ✦ NUCLEATION: Siderite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, Fe={self.conditions.fluid.Fe:.0f}, σ={sigma_sid:.2f})")
 
         # Rhodochrosite nucleation — Mn carbonate, the pink mineral.
         sigma_rho = self.conditions.supersaturation_rhodochrosite()
@@ -9536,6 +9682,63 @@ class VugSimulator:
                 "from hot springs it converts to calcite in centuries to millennia."
             )
 
+        return " ".join(parts)
+
+    def _narrate_siderite(self, c: Crystal) -> str:
+        """Narrate a siderite crystal's story — the iron carbonate."""
+        parts = [f"Siderite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "FeCO₃ — the iron carbonate, a calcite-group mineral (R3̄c) with "
+            "Fe²⁺ in the Ca site. Tan to deep brown, depending on Fe content "
+            "and trace substitution. Forms only in REDUCING conditions because "
+            "Fe²⁺ must stay reduced to be soluble; the moment O₂ rises above "
+            "~0.5, siderite begins converting to goethite/limonite."
+        )
+
+        if c.habit == "rhombohedral":
+            parts.append(
+                "Curved 'saddle' rhombohedra — the diagnostic siderite habit. "
+                "The {104} faces aren't flat; they bow outward into a saddle "
+                "shape, parallel to the curved-rhomb signature shared with "
+                "rhodochrosite and dolomite (the calcite-group tells include "
+                "this faceting tic)."
+            )
+        elif c.habit == "scalenohedral":
+            parts.append(
+                "Sharp scalenohedral 'dog-tooth' crystals — the high-σ habit. "
+                "Less common than the rhombohedral form; sharp brown crystals "
+                "that resemble brown calcite at distance."
+            )
+        elif c.habit == "botryoidal":
+            parts.append(
+                "Botryoidal mammillary crusts — the colloidal habit, formed "
+                "when supersaturation outruns ordered crystal growth. Tan-brown "
+                "rounded aggregates, often coating fracture walls."
+            )
+        else:
+            parts.append(
+                "Spherulitic concretions — sedimentary 'spherosiderite,' the "
+                "concretionary habit found in coal seams and Fe-rich shales. "
+                "Each sphere is a radial fibrous internal structure capped by "
+                "a thin smooth surface."
+            )
+
+        if c.dissolved:
+            note = c.zones[-1].note if c.zones else ""
+            if "oxidative breakdown" in note:
+                parts.append(
+                    "Oxidative breakdown destroyed the crystal — the textbook "
+                    "diagenetic story. Rising O₂ pushed Fe²⁺ → Fe³⁺, which is "
+                    "insoluble as carbonate; the lattice collapsed and Fe + CO₃ "
+                    "moved on to grow goethite/limonite elsewhere. In nature "
+                    "this is the mechanism behind the 'limonite cube after "
+                    "siderite' diagenetic pseudomorphs."
+                )
+            else:
+                parts.append(
+                    "Acid attack dissolved the crystal — like all calcite-group "
+                    "carbonates, siderite fizzes in HCl. Fe²⁺ + CO₃²⁻ released."
+                )
         return " ".join(parts)
 
     def _narrate_rhodochrosite(self, c: Crystal) -> str:
