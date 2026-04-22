@@ -14569,16 +14569,27 @@ function _topoAngleFor(i, N) {
 // proposals/PROPOSAL-EDGE-TEXTURES.md.
 const HABIT_TO_TEXTURE = {
   // Stage 1 — calcite habits.
-  'scalenohedral': 'dogtooth',  // sharp tall triangles (T>200°C; "dog-tooth spar")
-  'rhombohedral':  'rhomb',     // broader, shorter triangles (T<200°C, e.g. MVT)
+  'scalenohedral':       'dogtooth',  // sharp tall triangles (T>200°C; "dog-tooth spar")
+  'rhombohedral':        'rhomb',     // broader, shorter triangles (T<200°C, e.g. MVT)
+  // Stage 2 — cubic / isometric habits.
+  'cubic':               'cube_edge', // pyrite, galena, halite, fluorite, native Cu
+  'pyritohedral':        'cube_edge', // pyrite alt — pentagonal faces, still blocky
+  'cubo-pyritohedral':   'cube_edge', // pyrite mixed
+  'pseudo_cubic':        'cube_edge', // chalcopyrite high-T
 };
 
 // Per-texture parameters. amplitude_factor scales tooth height from
 // crystal thickness (real scalenohedra are 3:1+ height:base, so factors
 // >1 are correct, not exuberant); pitch_mm sets tooth spacing.
+//
+// max_amplitude_pitch_ratio (optional) caps amplitude at pitch × ratio,
+// to enforce a maximum aspect ratio. cube faces want ~90° peaks
+// (ratio 0.5) so they don't render as needles on thick crystals;
+// scalenohedra are unbounded (cap omitted) so they can elongate fully.
 const TEXTURE_PARAMS = {
-  dogtooth: { amplitude_factor: 1.5, pitch_mm: 2.0 },
-  rhomb:    { amplitude_factor: 0.7, pitch_mm: 2.0 },
+  dogtooth:  { amplitude_factor: 1.5, pitch_mm: 2.0 },
+  rhomb:     { amplitude_factor: 0.7, pitch_mm: 2.0 },
+  cube_edge: { amplitude_factor: 1.0, pitch_mm: 1.5, max_amplitude_pitch_ratio: 0.5 },
 };
 
 // Draw the inner (fluid-facing) edge of a wedge from (fromX,fromY) to
@@ -14600,6 +14611,9 @@ function drawHabitTexture(ctx, habit, fromX, fromY, toX, toY, controlX, controlY
     case 'rhomb':
       _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.rhomb);
       return;
+    case 'cube_edge':
+      _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.cube_edge);
+      return;
     case 'smooth':
     default:
       ctx.quadraticCurveTo(controlX, controlY, toX, toY);
@@ -14607,13 +14621,17 @@ function drawHabitTexture(ctx, habit, fromX, fromY, toX, toY, controlX, controlY
   }
 }
 
-// Texture amplitude in mm. Bounded only by physical thickness × factor;
-// real scalenohedra and similar habits extend many times their base
-// width into the void, so a per-cell-arc geometric cap was wrong-headed.
-// Adjacent same-crystal cells share thickness and so render at the
-// same amplitude — no visible discontinuity at cell boundaries.
-function _textureAmplitudeMm(thicknessMm, cellArcMm, amplitudeFactor) {
-  return thicknessMm * amplitudeFactor;
+// Texture amplitude in mm. Primary control is physical (thickness ×
+// factor). Optional max_amplitude_pitch_ratio caps amplitude to a
+// fixed fraction of the pitch — e.g. cube_edge sets it to 0.5 to
+// enforce ≤90° peaks (height ≤ half-base) so thick cubic crystals
+// render as blocky-square rather than needle-spike.
+function _textureAmplitudeMm(thicknessMm, cellArcMm, params) {
+  let amp = thicknessMm * params.amplitude_factor;
+  if (params.max_amplitude_pitch_ratio != null) {
+    amp = Math.min(amp, params.pitch_mm * params.max_amplitude_pitch_ratio);
+  }
+  return amp;
 }
 
 // Sawtooth — shared by 'dogtooth' (sharp tall, T>200°C scalenohedral
@@ -14632,7 +14650,7 @@ function _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, 
   const inX = cx - midX, inY = cy - midY;
   const inLen = Math.sqrt(inX * inX + inY * inY) || 1;
   const nx = inX / inLen, ny = inY / inLen;
-  const amplitudeMm = _textureAmplitudeMm(thicknessMm, cellArcMm, params.amplitude_factor);
+  const amplitudeMm = _textureAmplitudeMm(thicknessMm, cellArcMm, params);
   const amplitudePx = amplitudeMm * mmToPx;
   const pitchPx = params.pitch_mm * mmToPx;
   const nTeeth = Math.max(1, Math.round(len / pitchPx));
