@@ -14574,15 +14574,12 @@ const HABIT_TO_TEXTURE = {
 };
 
 // Per-texture parameters. amplitude_factor scales tooth height from
-// crystal thickness; pitch_mm sets tooth spacing.
+// crystal thickness (real scalenohedra are 3:1+ height:base, so factors
+// >1 are correct, not exuberant); pitch_mm sets tooth spacing.
 const TEXTURE_PARAMS = {
-  dogtooth: { amplitude_factor: 0.6, pitch_mm: 0.8 },
-  rhomb:    { amplitude_factor: 0.3, pitch_mm: 1.2 },
+  dogtooth: { amplitude_factor: 1.5, pitch_mm: 2.0 },
+  rhomb:    { amplitude_factor: 0.7, pitch_mm: 2.0 },
 };
-
-// Geometric cap: tooth amplitude can't exceed this fraction of the
-// cell's arc length, or teeth crash through the wedge boundaries.
-const TEXTURE_MAX_AMPLITUDE_FRAC = 0.45;
 
 // Draw the inner (fluid-facing) edge of a wedge from (fromX,fromY) to
 // (toX,toY). For 'smooth', emits the existing quadratic Bezier through
@@ -14610,12 +14607,13 @@ function drawHabitTexture(ctx, habit, fromX, fromY, toX, toY, controlX, controlY
   }
 }
 
-// Compute texture amplitude in mm, capped by both physical (crystal
-// thickness × factor) and geometric (cell arc × max-frac) limits.
+// Texture amplitude in mm. Bounded only by physical thickness × factor;
+// real scalenohedra and similar habits extend many times their base
+// width into the void, so a per-cell-arc geometric cap was wrong-headed.
+// Adjacent same-crystal cells share thickness and so render at the
+// same amplitude — no visible discontinuity at cell boundaries.
 function _textureAmplitudeMm(thicknessMm, cellArcMm, amplitudeFactor) {
-  const physical = thicknessMm * amplitudeFactor;
-  const geometric = cellArcMm * TEXTURE_MAX_AMPLITUDE_FRAC;
-  return Math.min(physical, geometric);
+  return thicknessMm * amplitudeFactor;
 }
 
 // Sawtooth — shared by 'dogtooth' (sharp tall, T>200°C scalenohedral
