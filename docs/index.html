@@ -7868,10 +7868,16 @@ function scenario_cooling() {
   return { conditions, events: [], defaultSteps: 100 };
 }
 
+// Generic testing scenario — not anchored to a real locality. Slightly
+// more interesting twin of `cooling`. Audit gap-fill (Apr 2026): only
+// Mg=8 added (brief-required non-zero Mg baseline for cooling-class
+// fluids). See vugg.py scenario_pulse docstring.
 function scenario_pulse() {
   const conditions = new VugConditions({
     temperature: 350.0, pressure: 1.2,
-    fluid: new FluidChemistry({ SiO2: 500, Ca: 200, CO3: 120, Fe: 5, Mn: 2, Ti: 0.5, Al: 3 }),
+    fluid: new FluidChemistry({ SiO2: 500, Ca: 200, CO3: 120, Fe: 5, Mn: 2, Ti: 0.5, Al: 3,
+      Mg: 8,            // brief-required non-zero Mg (cooling-class baseline)
+    }),
     wall: new VugWall({ primary_bubbles: 2, secondary_bubbles: 3, shape_seed: 2 }),
   });
   const events = [

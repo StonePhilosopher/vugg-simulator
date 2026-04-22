@@ -6329,11 +6329,24 @@ def scenario_cooling() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_pulse() -> Tuple[VugConditions, List[Event], int]:
-    """Cooling with a fluid pulse event mid-growth."""
+    """Cooling with a fluid pulse event mid-growth.
+
+    Generic testing scenario — not anchored to a real locality. Acts as
+    a slightly more interesting twin of `cooling`: a single fluid pulse
+    plus a cooling pulse halfway through to test event-driven chemistry
+    perturbation. Audit treats this as a testing scaffold (per the
+    user's clarification on the audit brief), so the only gap-fill
+    here is the brief-required non-zero Mg.
+    """
     conditions = VugConditions(
         temperature=350.0,
         pressure=1.2,
-        fluid=FluidChemistry(SiO2=500, Ca=200, CO3=120, Fe=5, Mn=2, Ti=0.5, Al=3),
+        # Mg=8 audit gap-fill (Apr 2026): the brief requires every
+        # scenario have non-zero Mg. 8 ppm is the meteoric / generic
+        # cooling-fluid baseline from the brief's per-archetype Mg
+        # range table. No other gap-fills since this is a testing
+        # scaffold.
+        fluid=FluidChemistry(SiO2=500, Ca=200, CO3=120, Fe=5, Mn=2, Ti=0.5, Al=3, Mg=8),
         wall=VugWall(primary_bubbles=2, secondary_bubbles=3, shape_seed=2),
     )
     events = [
