@@ -14392,6 +14392,20 @@ const TOPO_ZOOM_MIN = 0.3;
 const TOPO_ZOOM_MAX = 6.0;
 const TOPO_ZOOM_STEP = 1.25;          // one click / wheel tick multiplies by this
 let _topoZoom = 1.0;                  // multiplier applied to mmToPx in the renderer
+// Pan offsets — added to (cx, cy) so the user can drag the vug
+// around the canvas. Set by the pan drag handlers in topoEnsureWired.
+let _topoPanX = 0;
+let _topoPanY = 0;
+// Drag state. Drag starts on mousedown over a non-crystal area and
+// ends on mouseup (or mouseleave). Document-level handlers are
+// attached only while a drag is in flight so they don't interfere
+// with other UI when idle.
+let _topoDragging = false;
+let _topoDragStartClientX = 0;
+let _topoDragStartClientY = 0;
+let _topoDragOriginPanX = 0;
+let _topoDragOriginPanY = 0;
+const TOPO_DRAG_THRESHOLD_PX = 4;     // movement before drag starts (lets clicks still fire)
 // Cache of inclusion-dot hitboxes built each render. Hover checks
 // this first so the tooltip shows the enclosed crystal instead of
 // falling through to the host's wall cell.
@@ -14890,8 +14904,11 @@ function topoRender(optOverrideRing) {
   const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
 
-  const cx = cssW / 2;
-  const cy = (cssH - centerPad) / 2 + 8;
+  // Pan offsets let the user drag the vug around the canvas. Hit-test
+  // and tooltip code below MUST apply the same offsets or clicks will
+  // miss what the user sees on screen.
+  const cx = cssW / 2 + _topoPanX;
+  const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
 
   // Per-cell outer radius in px. Phase 1: each cell has its own
   // base_radius_mm baked from the Fourier profile, so cellR[i] already
@@ -15192,8 +15209,8 @@ function _topoHitTest(ev) {
   const centerPad = 48;
   const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
-  const cx = cssW / 2;
-  const cy = (cssH - centerPad) / 2 + 8;
+  const cx = cssW / 2 + _topoPanX;
+  const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
 
   const dx = mx - cx, dy = my - cy;
   const rMouse = Math.hypot(dx, dy);
@@ -15271,8 +15288,8 @@ function _topoTooltipFromEvent(ev) {
   const centerPad = 48;
   const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
-  const cx = cssW / 2;
-  const cy = (cssH - centerPad) / 2 + 8;
+  const cx = cssW / 2 + _topoPanX;
+  const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
 
   const dx = mx - cx, dy = my - cy;
   const rMouse = Math.hypot(dx, dy);
@@ -15349,7 +15366,8 @@ function topoZoom(dir) {
   topoRender();
 }
 
-// Wire hover + zoom wheel once — called from the panel's first show. Idempotent.
+// Wire hover + zoom wheel + click-drag pan once — called from the
+// panel's first show. Idempotent.
 let _topoWired = false;
 function topoEnsureWired() {
   if (_topoWired) return;
@@ -15364,8 +15382,59 @@ function topoEnsureWired() {
     ev.preventDefault();
     topoZoom(ev.deltaY < 0 ? +1 : -1);
   }, { passive: false });
+  // Click-drag pan. Only starts on mousedown over a NON-crystal area
+  // (void, bare wall, or outside vug) — clicks on crystals fall through
+  // to the existing tooltip / click handlers.
+  canvas.addEventListener('mousedown', _topoPanMouseDown);
   window.addEventListener('resize', () => topoRender());
   _topoWired = true;
+}
+
+// Pan drag start. _topoHitTest returns null for void / outside, or
+// {mineral: null, ...} for bare wall, or {mineral: 'something', ...}
+// for a crystal. We allow drag in all cases EXCEPT clicks on a
+// crystal — that's "non-crystal part of the map" per the brief.
+function _topoPanMouseDown(ev) {
+  if (ev.button !== 0) return;  // left button only
+  const hit = _topoHitTest(ev);
+  if (hit && hit.mineral) return;  // click was on a crystal — no pan
+  _topoDragging = false;          // becomes true once movement exceeds threshold
+  _topoDragStartClientX = ev.clientX;
+  _topoDragStartClientY = ev.clientY;
+  _topoDragOriginPanX = _topoPanX;
+  _topoDragOriginPanY = _topoPanY;
+  document.addEventListener('mousemove', _topoPanMouseMove);
+  document.addEventListener('mouseup', _topoPanMouseUp);
+}
+
+// Document-level mousemove during a candidate drag. Only commits to a
+// real drag once movement exceeds TOPO_DRAG_THRESHOLD_PX, which lets
+// short clicks fall through to the existing click handler unchanged.
+function _topoPanMouseMove(ev) {
+  const dx = ev.clientX - _topoDragStartClientX;
+  const dy = ev.clientY - _topoDragStartClientY;
+  if (!_topoDragging) {
+    if (Math.hypot(dx, dy) < TOPO_DRAG_THRESHOLD_PX) return;
+    _topoDragging = true;
+    const canvas = document.getElementById('topo-canvas');
+    if (canvas) canvas.style.cursor = 'grabbing';
+  }
+  _topoPanX = _topoDragOriginPanX + dx;
+  _topoPanY = _topoDragOriginPanY + dy;
+  topoRender();
+}
+
+// Mouseup ends the drag and tears down the document-level listeners.
+// If the user never crossed the movement threshold, the click event
+// will still fire on the canvas (browser default behavior).
+function _topoPanMouseUp() {
+  document.removeEventListener('mousemove', _topoPanMouseMove);
+  document.removeEventListener('mouseup', _topoPanMouseUp);
+  if (_topoDragging) {
+    _topoDragging = false;
+    const canvas = document.getElementById('topo-canvas');
+    if (canvas) canvas.style.cursor = '';
+  }
 }
 
 // Replay: walk the per-step ring[0] snapshots captured during the run,
