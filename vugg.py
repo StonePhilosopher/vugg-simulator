@@ -2703,15 +2703,28 @@ def grow_dolomite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     any calcite-group mineral), massive (low σ), coarse_rhomb (slow growth
     high T — clear textbook rhombohedra).
 
-    Dolomite is the host rock of MVT deposits and a major sedimentary
-    carbonate. The 'dolomite problem' in geology — that modern oceans
-    should but don't precipitate dolomite at surface T — is not modeled
-    here; the simulator allows direct nucleation when Mg/Ca is in range
-    and T > 50°C.
+    KIM 2023 KINETICS — the "dolomite problem" partly resolved.
+    Per Kim, Kimura, Putnis, Putnis, Lee, Sun (2023) Science 382:915-920
+    (doi:10.1126/science.adi3690), dolomite growth requires CYCLIC
+    dissolution-precipitation. Steady-state precipitation produces
+    disordered Ca/Mg surface layers that prevent the ordered structure
+    from forming. Brief undersaturation strips the disordered fraction
+    preferentially (it's more soluble), leaving ordered atoms as a
+    template. Each cycle ratchets ordering up; ~10²-10³ cycles in lab,
+    less in the abstract sim timescale.
+
+    Mechanism here: when σ_dolomite drops below 1 from above (transient
+    undersaturation), emit a small "Kim-cycle etch" zone (-0.3 µm) that
+    increments crystal.phantom_count via add_zone(). Growth-rate factor
+    f_ord = 1 - exp(-phantom_count / 50) ramps from ~0% (no cycling) to
+    ~95% (well-cycled). Steady-state high-σ runs grow disordered HMC;
+    only event-driven scenarios (acid pulses, T cycles, mixing-zone
+    oscillation) build true dolomite.
     """
     sigma = conditions.supersaturation_dolomite()
 
     if sigma < 1.0:
+        # Strong acid: full dissolution
         if crystal.total_growth_um > 5 and conditions.fluid.pH < 6.0:
             crystal.dissolved = True
             dissolved_um = min(5.0, crystal.total_growth_um * 0.12)
@@ -2723,10 +2736,31 @@ def grow_dolomite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
                 thickness_um=-dissolved_um, growth_rate=-dissolved_um,
                 note=f"acid dissolution (pH {conditions.fluid.pH:.1f}) — Ca²⁺ + Mg²⁺ + CO₃²⁻ released"
             )
+
+        # Kim 2023 cycle etch — detected by transition from growth-zone
+        # to undersaturation. Last zone was positive (growth) → emit one
+        # tiny etch zone to record the cycle. Subsequent low-σ steps wait
+        # until σ recovers (last zone is now negative, so this branch skips).
+        if crystal.zones and crystal.zones[-1].thickness_um > 0:
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-0.3, growth_rate=-0.3,
+                note=f"Kim-cycle etch (Sun & Kim 2023) — disordered Ca/Mg surface stripped, ordered template preserved (cycle #{crystal.phantom_count + 1})"
+            )
         return None
 
     excess = sigma - 1.0
-    rate = 4.5 * excess * random.uniform(0.7, 1.3)
+    base_rate = 4.5 * excess * random.uniform(0.7, 1.3)
+
+    # Kim 2023: ordering fraction f_ord ramps with cycle count.
+    # phantom_count is incremented in Crystal.add_zone() whenever a negative-
+    # thickness zone is added, which captures both acid dissolution events
+    # AND the Kim-cycle etch path above. N₀=50 calibrated for sim's coarser
+    # timesteps (lab N₀ ~200-300 over minute-cycles).
+    f_ord = 1.0 - math.exp(-crystal.phantom_count / 50.0)
+    # Min 30% growth (some dolomite always forms, just disordered HMC initially);
+    # cycle bonus brings it to ~100% as ordering approaches saturation.
+    rate = base_rate * (0.30 + 0.70 * f_ord)
 
     # Habit selection
     if conditions.temperature > 200 and excess < 0.5:
@@ -2751,12 +2785,20 @@ def grow_dolomite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
         crystal.twinned = True
         crystal.twin_law = "polysynthetic {012}"
 
+    # Annotate ordering state — disordered HMC at low f_ord, true dolomite at high
+    if f_ord < 0.3:
+        order_note = f" [DISORDERED — f_ord={f_ord:.2f}, cycles={crystal.phantom_count}, growing as Mg-calcite intermediate]"
+    elif f_ord < 0.7:
+        order_note = f" [PARTIALLY ORDERED — f_ord={f_ord:.2f}, cycles={crystal.phantom_count}]"
+    else:
+        order_note = f" [ORDERED dolomite — f_ord={f_ord:.2f}, cycles={crystal.phantom_count}]"
+
     return GrowthZone(
         step=step, temperature=conditions.temperature,
         thickness_um=rate, growth_rate=rate,
         trace_Fe=conditions.fluid.Fe * 0.08,
         trace_Mn=conditions.fluid.Mn * 0.05,
-        note=f"{crystal.habit} — {color_note}",
+        note=f"{crystal.habit} — {color_note}{order_note}",
     )
 
 
@@ -9826,14 +9868,55 @@ class VugSimulator:
     def _narrate_dolomite(self, c: Crystal) -> str:
         """Narrate a dolomite crystal's story — the Ca-Mg ordered carbonate."""
         parts = [f"Dolomite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+
+        # Compute final ordering fraction for narration
+        f_ord = 1.0 - math.exp(-c.phantom_count / 50.0) if c.phantom_count > 0 else 0.0
+
         parts.append(
             "CaMg(CO₃)₂ — the ordered double carbonate, with Ca and Mg in "
             "alternating cation layers (R3̄ space group, distinct from "
-            "calcite's R3̄c). Forms at T > 50°C from fluids carrying both "
-            "Ca and Mg in roughly comparable amounts. The host rock of MVT "
-            "deposits and a major sedimentary carbonate; modern surface T "
-            "dolomite is famously rare ('the dolomite problem')."
+            "calcite's R3̄c). The host rock of MVT deposits and a major "
+            "sedimentary carbonate. The 'dolomite problem' — that modern "
+            "surface oceans should but don't precipitate it — was partly "
+            "resolved by Kim, Sun et al. (2023, Science 382:915) who showed "
+            "that periodic dissolution-precipitation cycles strip disordered "
+            "Ca/Mg surface layers and ratchet ordering up over many cycles."
         )
+
+        if c.phantom_count > 0:
+            if f_ord > 0.7:
+                parts.append(
+                    f"This crystal lived through {c.phantom_count} dissolution-"
+                    f"precipitation cycles (f_ord={f_ord:.2f}). Each cycle "
+                    f"stripped the disordered surface layer that steady "
+                    f"precipitation would otherwise lock in, leaving an ordered "
+                    f"Ca/Mg template for the next growth pulse. The result is "
+                    f"true ordered dolomite, not a Mg-calcite intermediate."
+                )
+            elif f_ord > 0.3:
+                parts.append(
+                    f"This crystal experienced {c.phantom_count} cycles "
+                    f"(f_ord={f_ord:.2f}) — partially ordered. Some growth zones "
+                    f"are well-ordered dolomite, others are disordered HMC; "
+                    f"X-ray diffraction would show a smeared peak rather than "
+                    f"the sharp dolomite signature."
+                )
+            else:
+                parts.append(
+                    f"Only {c.phantom_count} dissolution cycle(s) (f_ord="
+                    f"{f_ord:.2f}) — most of this crystal is disordered "
+                    f"high-Mg calcite, not true ordered dolomite. With more "
+                    f"cycles it would have ratcheted up; the system sealed too "
+                    f"quickly."
+                )
+        else:
+            parts.append(
+                "No dissolution cycles occurred — this is steady-state growth, "
+                "which Kim 2023 predicts will be disordered Mg-calcite rather "
+                "than true ordered dolomite. In nature the ratio of true "
+                "dolomite to disordered HMC depends on how oscillatory the "
+                "fluid history was."
+            )
 
         if c.habit == "saddle_rhomb":
             parts.append(

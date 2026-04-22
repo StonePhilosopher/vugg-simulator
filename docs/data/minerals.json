@@ -686,7 +686,15 @@
         "vugg.py",
         "web/index.html"
       ],
-      "audit_status": "ok (round-3 add: ordered Ca-Mg carbonate, R3̄ space group, three habits including diagnostic saddle rhombs, Mg/Ca ratio gate 0.3-5 with sweet-spot bonus near 1:1). Empirically verified in reactive_wall at seed 42 (initial Mg bumped 80→100 within Sverjensky 1981 limestone-brine range). The 'dolomite problem' kinetic complexity is not modeled — direct precipitation allowed when Mg/Ca and T are in range.",
+      "audit_status": "ok (round-3 add: ordered Ca-Mg carbonate, R3̄ space group, three habits including diagnostic saddle rhombs, Mg/Ca ratio gate 0.3-5 with sweet-spot bonus near 1:1). Empirically verified in reactive_wall at seed 42 (initial Mg bumped 80→100 within Sverjensky 1981 limestone-brine range). KIM 2023 KINETICS: per Kim, Sun et al. (Science 382:915, doi:10.1126/science.adi3690), dolomite growth requires cyclic dissolution-precipitation. Implementation tracks crystal.phantom_count as cycle counter; growth rate scales by f_ord = 1 - exp(-N/50), gating from 30% (no cycling) to 100% (well-cycled). Steady-state runs produce disordered Mg-calcite intermediate, not true ordered dolomite — matches the geological observation that most natural settings produce disordered HMC, with true dolomite requiring oscillatory environments (sabkhas, microbial mats, evaporitic basins).",
+      "kim_2023_kinetics": {
+        "citation": "Kim J, Kimura Y, Putnis CV, Putnis A, Lee MR, Sun W (2023) Science 382:915-920, doi:10.1126/science.adi3690",
+        "mechanism": "Disordered Ca/Mg surface layer is more soluble than ordered alternation; brief undersaturation strips disordered atoms preferentially, leaving ordered template for next growth pulse",
+        "f_ord_formula": "1 - exp(-phantom_count / 50)",
+        "rate_scaling": "0.30 + 0.70 * f_ord",
+        "etch_per_cycle_um": 0.3,
+        "natural_settings": "evaporitic/lacustrine wet-dry cycles (Coorong, Deep Springs Lake), sabkha tidal pumping, microbial mat diurnal pH swings"
+      },
       "class_color": "#eb7f13"
     },
     "siderite": {

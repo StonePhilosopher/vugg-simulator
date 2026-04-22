@@ -5125,8 +5125,11 @@ function grow_aragonite(crystal, conditions, step) {
 }
 
 function grow_dolomite(crystal, conditions, step) {
+  // Kim 2023 kinetics — see Python grow_dolomite for full citation.
+  // Cycling required for true ordered dolomite; phantom_count tracks cycles.
   const sigma = conditions.supersaturation_dolomite();
   if (sigma < 1.0) {
+    // Strong acid dissolution
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.12);
@@ -5139,11 +5142,26 @@ function grow_dolomite(crystal, conditions, step) {
         note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Ca²⁺ + Mg²⁺ + CO₃²⁻ released`
       });
     }
+    // Kim-cycle etch — transition from growth → undersaturation strips
+    // the disordered Ca/Mg surface layer. Only emit on the FIRST low-σ
+    // step after a growth step (last zone positive); subsequent low-σ
+    // steps wait until σ recovers.
+    if (crystal.zones.length && crystal.zones[crystal.zones.length - 1].thickness_um > 0) {
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -0.3, growth_rate: -0.3,
+        note: `Kim-cycle etch (Sun & Kim 2023) — disordered Ca/Mg surface stripped, ordered template preserved (cycle #${crystal.phantom_count + 1})`
+      });
+    }
     return null;
   }
 
   const excess = sigma - 1.0;
-  const rate = 4.5 * excess * rng.uniform(0.7, 1.3);
+  const base_rate = 4.5 * excess * rng.uniform(0.7, 1.3);
+
+  // Kim 2023: ordering fraction f_ord ramps with cycle count.
+  const f_ord = 1.0 - Math.exp(-crystal.phantom_count / 50.0);
+  const rate = base_rate * (0.30 + 0.70 * f_ord);
 
   if (conditions.temperature > 200 && excess < 0.5) {
     crystal.habit = 'coarse_rhomb';
@@ -5166,12 +5184,17 @@ function grow_dolomite(crystal, conditions, step) {
     crystal.twin_law = 'polysynthetic {012}';
   }
 
+  let order_note;
+  if (f_ord < 0.3) order_note = ` [DISORDERED — f_ord=${f_ord.toFixed(2)}, cycles=${crystal.phantom_count}, growing as Mg-calcite intermediate]`;
+  else if (f_ord < 0.7) order_note = ` [PARTIALLY ORDERED — f_ord=${f_ord.toFixed(2)}, cycles=${crystal.phantom_count}]`;
+  else order_note = ` [ORDERED dolomite — f_ord=${f_ord.toFixed(2)}, cycles=${crystal.phantom_count}]`;
+
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.08,
     trace_Mn: conditions.fluid.Mn * 0.05,
-    note: `${crystal.habit} — ${color_note}`,
+    note: `${crystal.habit} — ${color_note}${order_note}`,
   });
 }
 
@@ -9986,7 +10009,15 @@ class VugSimulator {
 
   _narrate_dolomite(c) {
     const parts = [`Dolomite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("CaMg(CO₃)₂ — the ordered double carbonate, with Ca and Mg in alternating cation layers (R3̄ space group, distinct from calcite's R3̄c). Forms at T > 50°C from fluids carrying both Ca and Mg in roughly comparable amounts. The host rock of MVT deposits and a major sedimentary carbonate; modern surface T dolomite is famously rare ('the dolomite problem').");
+    const f_ord = c.phantom_count > 0 ? 1.0 - Math.exp(-c.phantom_count / 50.0) : 0.0;
+    parts.push("CaMg(CO₃)₂ — the ordered double carbonate, with Ca and Mg in alternating cation layers (R3̄ space group, distinct from calcite's R3̄c). The host rock of MVT deposits and a major sedimentary carbonate. The 'dolomite problem' — that modern surface oceans should but don't precipitate it — was partly resolved by Kim, Sun et al. (2023, Science 382:915) who showed that periodic dissolution-precipitation cycles strip disordered Ca/Mg surface layers and ratchet ordering up over many cycles.");
+    if (c.phantom_count > 0) {
+      if (f_ord > 0.7) parts.push(`This crystal lived through ${c.phantom_count} dissolution-precipitation cycles (f_ord=${f_ord.toFixed(2)}). Each cycle stripped the disordered surface that steady precipitation would lock in, leaving an ordered Ca/Mg template for the next growth pulse. The result is true ordered dolomite, not a Mg-calcite intermediate.`);
+      else if (f_ord > 0.3) parts.push(`This crystal experienced ${c.phantom_count} cycles (f_ord=${f_ord.toFixed(2)}) — partially ordered. Some growth zones are well-ordered dolomite, others disordered HMC; X-ray diffraction would show a smeared peak rather than the sharp dolomite signature.`);
+      else parts.push(`Only ${c.phantom_count} dissolution cycle(s) (f_ord=${f_ord.toFixed(2)}) — most of this crystal is disordered high-Mg calcite, not true ordered dolomite. With more cycles it would have ratcheted up; the system sealed too quickly.`);
+    } else {
+      parts.push("No dissolution cycles occurred — this is steady-state growth, which Kim 2023 predicts will be disordered Mg-calcite rather than true ordered dolomite. In nature the ratio of true dolomite to disordered HMC depends on how oscillatory the fluid history was.");
+    }
     if (c.habit === 'saddle_rhomb') {
       parts.push("Saddle-shaped curved rhombohedra — the most extreme example of the calcite-group curved-face signature. Each {104} face bows so sharply that the crystal looks twisted, which it isn't — it's the lattice strain from cation ordering expressed in surface geometry.");
     } else if (c.habit === 'coarse_rhomb') {
