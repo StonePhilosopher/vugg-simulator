@@ -132,6 +132,23 @@ h1 {
   user-select: none;
 }
 
+/* Camera mode cluster — sits to the LEFT of the play button. Rotate
+   / Pan are mutually-exclusive drag modes; Recenter resets pan+tilt. */
+.topo-camera-ctrls {
+  position: absolute;
+  right: 52px;          /* play button = 32px wide at right:10 → edge at 42; +10 gap */
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(20, 20, 14, 0.75);
+  border: 1px solid #3a3520;
+  border-radius: 16px;
+  padding: 2px 6px;
+  backdrop-filter: blur(2px);
+  z-index: 5;
+}
+
 .topo-replay {
   position: absolute;
   right: 10px;
@@ -2160,8 +2177,11 @@ footer a:hover {
         <button class="topo-zoom-btn" onclick="topoZoom(-1)" title="Zoom out">−</button>
         <span id="topo-zoom-label" class="topo-zoom-label">100%</span>
         <button class="topo-zoom-btn" onclick="topoZoom(+1)" title="Zoom in">+</button>
-        <button class="topo-zoom-btn" id="topo-3d-btn" onclick="topoToggle3D()" title="Toggle 3D tilt view (drag to rotate)">3D</button>
-        <button class="topo-zoom-btn" onclick="topoRecenter()" title="Reset pan and rotation">⊙</button>
+      </div>
+      <div class="topo-camera-ctrls">
+        <button class="topo-zoom-btn" id="topo-rotate-btn" onclick="topoSetDragMode('rotate')" title="Rotate camera (drag to orbit in 3D)">↻</button>
+        <button class="topo-zoom-btn" id="topo-pan-btn" onclick="topoSetDragMode('pan')" title="Pan camera (drag to move without rotating)">✥</button>
+        <button class="topo-zoom-btn" onclick="topoRecenter()" title="Recenter (reset pan and rotation)">⊙</button>
       </div>
       <button id="topo-replay-btn" class="topo-replay" onclick="topoReplay()" title="Replay wall history">▶</button>
       <div id="topo-tooltip" class="topo-tooltip" style="display:none"></div>
@@ -14408,9 +14428,16 @@ let _topoDragStartClientY = 0;
 let _topoDragOriginPanX = 0;
 let _topoDragOriginPanY = 0;
 const TOPO_DRAG_THRESHOLD_PX = 4;     // movement before drag starts (lets clicks still fire)
-// 3D tilt state. When _topoView3D is true, the canvas element gets a
-// CSS 3D rotation applied (rotateX, rotateY) and click-drag rotates
-// the disc instead of panning. Tilts in radians.
+// Camera drag mode. 'default' = current 2D hit-test-aware behavior
+// (drag on non-crystal pans; click on crystal tooltips). 'rotate' =
+// drag from anywhere rotates the 3D tilted canvas. 'pan' = drag from
+// anywhere pans (ignores hit-test so user can drag even when starting
+// over a crystal). Mode buttons are in the .topo-camera-ctrls cluster
+// next to the play button; clicking an already-active button returns
+// to 'default'.
+let _topoDragMode = 'default';
+// _topoView3D is derived: true iff _topoDragMode === 'rotate'. Kept
+// around as a variable because render/hit-test still read it.
 let _topoView3D = false;
 let _topoTiltX = 0;                   // pitch (viewer above/below)
 let _topoTiltY = 0;                   // yaw   (viewer left/right of disc)
@@ -15375,16 +15402,21 @@ function topoZoom(dir) {
   topoRender();
 }
 
-// Toggle 3D tilt view. When active, the canvas gets a CSS 3D rotation
-// applied via _topoApplyTransform and click-drag rotates the disc
-// instead of panning. Hit-tests (tooltip, click) are disabled in 3D
-// mode — this is MVP scope; a future tier can swap to manual 3D
-// projection for accurate picking.
-function topoToggle3D() {
-  _topoView3D = !_topoView3D;
-  const btn = document.getElementById('topo-3d-btn');
-  if (btn) btn.style.color = _topoView3D ? '#f0c050' : '';
+// Set the camera drag mode ('rotate' | 'pan') or toggle it off by
+// re-clicking the currently-active one. Updates button highlights,
+// flips _topoView3D for the renderer, and applies/clears the CSS 3D
+// transform on the canvas.
+function topoSetDragMode(mode) {
+  // Toggle behavior: re-clicking the active mode returns to default.
+  if (_topoDragMode === mode) mode = 'default';
+  _topoDragMode = mode;
+  _topoView3D = (mode === 'rotate');
+  const rotateBtn = document.getElementById('topo-rotate-btn');
+  const panBtn = document.getElementById('topo-pan-btn');
+  if (rotateBtn) rotateBtn.style.color = (mode === 'rotate') ? '#f0c050' : '';
+  if (panBtn) panBtn.style.color = (mode === 'pan') ? '#f0c050' : '';
   _topoApplyTransform();
+  topoRender();
 }
 
 // Reset pan and tilt to zero. Zoom is preserved (user probably wants
@@ -15451,7 +15483,9 @@ let _topoDragOriginTiltX = 0;
 let _topoDragOriginTiltY = 0;
 function _topoPanMouseDown(ev) {
   if (ev.button !== 0) return;  // left button only
-  if (!_topoView3D) {
+  // In 'default' mode, clicks on a crystal go to tooltip/click, not drag.
+  // In 'rotate' or 'pan' modes, drag starts from anywhere on the canvas.
+  if (_topoDragMode === 'default') {
     const hit = _topoHitTest(ev);
     if (hit && hit.mineral) return;  // click on a crystal — let tooltip/click win
   }
@@ -15480,7 +15514,7 @@ function _topoPanMouseMove(ev) {
     const canvas = document.getElementById('topo-canvas');
     if (canvas) canvas.style.cursor = 'grabbing';
   }
-  if (_topoView3D) {
+  if (_topoDragMode === 'rotate') {
     // Vertical drag → rotateX (pitch); horizontal drag → rotateY (yaw).
     // Negative dy gives intuitive "pull up to tilt toward viewer" feel.
     _topoTiltX = _topoDragOriginTiltX + (-dy) * TOPO_DRAG_ROTATE_RAD_PER_PX;
@@ -15488,6 +15522,7 @@ function _topoPanMouseMove(ev) {
     _topoTiltX = Math.max(-TOPO_TILT_X_MAX, Math.min(TOPO_TILT_X_MAX, _topoTiltX));
     _topoApplyTransform();
   } else {
+    // 'default' or 'pan' mode — both translate pan offsets.
     _topoPanX = _topoDragOriginPanX + dx;
     _topoPanY = _topoDragOriginPanY + dy;
     topoRender();
