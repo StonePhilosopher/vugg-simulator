@@ -6536,16 +6536,34 @@ def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
-    """Reactive wall scenario — acid pulses dissolve limestone, feed crystal growth.
-    
-    Professor's insight: acid entering a carbonate vug doesn't just dissolve crystals —
-    it dissolves the WALL. The wall neutralizes the acid AND releases Ca²⁺/CO₃²⁻ 
-    back into solution. When pH recovers, that dissolved carbonate supersaturates 
-    and precipitates as rapid growth bands on existing crystals. The acid is both 
-    destroyer and creator. The vug enlarges as the crystals grow.
-    
-    This scenario models repeated acid pulses into a limestone-hosted vug,
-    showing the dissolution→supersaturation→growth burst cycle.
+    """Reactive wall scenario — anchored to the Sweetwater Mine, Viburnum
+    Trend, Missouri.
+
+    Anchor: Sweetwater Mine (Reynolds County, MO), part of the Viburnum
+    Trend Pb-Zn district. Host = Cambrian Bonneterre Formation
+    dolomitic limestone. Viburnum is a Ba-rich MVT endmember
+    (Stoffell et al. 2008 distinguishes it from the lower-Ba, higher-Ag
+    Tri-State district). Classic acid-into-carbonate paragenesis:
+    sphalerite-galena-marcasite ± barite, dolomite-calcite gangue.
+    Sverjensky 1981 (Econ. Geol. 76) and Leach et al. 2010 are the
+    primary geochemistry sources.
+
+    Mechanic: acid entering a carbonate vug doesn't just dissolve
+    crystals — it dissolves the WALL. The wall neutralizes the acid
+    AND releases Ca²⁺/CO₃²⁻ back into solution. When pH recovers,
+    that dissolved carbonate supersaturates and precipitates as rapid
+    growth bands on existing crystals. The acid is both destroyer and
+    creator. The vug enlarges as the crystals grow. Repeated acid
+    pulses model the Viburnum dissolution→supersaturation→growth
+    burst cycle.
+
+    Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl
+    (NaCl-CaCl2 brine baseline that was missing), Ag (Viburnum
+    galena is less argentiferous than Tri-State but still carries
+    Ag), Sr (basinal-brine tracer + minor celestine documented in
+    Viburnum). Existing chemistry (SiO2, Ca, CO3, Fe, Mn, Zn, Pb,
+    Ba, S, F, Mg, pH, salinity) and the four-pulse event sequence
+    preserved untouched.
     """
     conditions = VugConditions(
         temperature=140.0,
@@ -6555,7 +6573,8 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
             # Polymetallic limestone brine — real Zn-bearing carbonate-
             # hosted vugs almost always carry Pb too (galena travels
             # with sphalerite), and Ba is classic (barite is a common
-            # late-stage phase).
+            # late-stage phase). Viburnum is the high-Ba MVT endmember
+            # per Stoffell et al. 2008.
             Zn=80, Pb=30, Ba=25, S=60, F=8,
             # Limestone-hosted brines (Sweetwater / Viburnum Trend per
             # Sverjensky 1981) carry Mg ~50–150 ppm. Mg=100 sets Mg/Ca
@@ -6563,6 +6582,26 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
             # fire. Calcite still dominates (Mg-poisoning at 0.4 ratio
             # is mild); aragonite stays absent (its threshold is ~1.5).
             Mg=100,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Na=70, K=12: NaCl-CaCl2 basinal brine baseline. Viburnum
+            # brines per Sverjensky 1981 + Stoffell 2008 are 50-80,000
+            # ppm Na raw, K/Na ~0.2. Sim-scale abstraction (slightly
+            # below Tri-State Na=80 to reflect Viburnum's somewhat lower
+            # Pb-Zn-Ag tenor / different basin source).
+            Na=70, K=12,
+            # Cl=200: brine anion paired with Na+K. salinity=18 wt%
+            # NaCl-eq remains bulk indicator; free Cl enables Pb-Cl
+            # (pyromorphite-laurionite) chemistry where Pb is present.
+            Cl=200,
+            # Ag=3: Viburnum galena carries Ag at lower abundance than
+            # Tri-State (Stoffell 2008 LA-ICP-MS shows Ag content
+            # broadly distinguishes the two MVT districts). Sim-scale
+            # below Tri-State's Ag=5.
+            Ag=3,
+            # Sr=12: basinal-brine tracer (Hanor 1994); minor celestine
+            # documented in the Viburnum carbonate gangue.
+            Sr=12,
+            # ──────────────────────────────────────────────────────────
             pH=7.0, salinity=18.0
         ),
         wall=VugWall(

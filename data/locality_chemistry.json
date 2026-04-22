@@ -151,6 +151,38 @@
           "minerals_unlocked": ["greenockite", "hawleyite", "Cd-trace in sphalerite"]
         }
       }
+    },
+    "sweetwater_viburnum": {
+      "scenario_id": "reactive_wall",
+      "audit_status": "anchored",
+      "display_name": "Sweetwater Mine, Viburnum Trend, Reynolds County, Missouri",
+      "host_formation": "Cambrian Bonneterre Formation dolomitic limestone",
+      "fluid_event_summary": "Late Pennsylvanian-Early Permian basinal brine expulsion driven by Ouachita orogeny dewatering. NaCl-CaCl2 brine, 18-24 wt% NaCl-eq, 90-150 C ore stage. Viburnum is the high-Ba / lower-Ag MVT endmember (Stoffell et al. 2008 LA-ICP-MS contrast with Tri-State). The 'reactive wall' mechanic models repeated acid pulses dissolving the carbonate host and triggering pH-recovery growth bursts on existing crystals — the diagnostic Viburnum Pb-Zn paragenesis (sphalerite + galena + marcasite ± barite, with dolomite-calcite gangue).",
+      "audit_pass": "gap-fill (Apr 2026) — added Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (Viburnum galena trace, lower than Tri-State), Sr (basinal-brine tracer). No drift between Python and JS (both runtimes already consistent). Existing chemistry preserved (no retuning).",
+      "fluid": {
+        "Na": {"value": 70, "note": "Slightly below Tri-State Na=80 reflecting Viburnum's somewhat lower Pb-Zn-Ag tenor and different basin source [Sverjensky 1981; Stoffell 2008]."},
+        "K": {"value": 12, "note": "K/Na ~0.2 typical basinal brine [Hanor 1994]."},
+        "Cl": {"value": 200, "note": "Brine anion paired with Na+K. salinity=18 wt% NaCl-eq remains bulk indicator; free Cl enables Pb-Cl chemistry."},
+        "Ag": {"value": 3, "note": "Viburnum galena carries Ag at lower abundance than Tri-State (Stoffell 2008 LA-ICP-MS contrast). Sweetwater historically not a major Ag producer."},
+        "Sr": {"value": 12, "note": "Basinal-brine tracer (Hanor 1994); minor celestine documented in Viburnum carbonate gangue."}
+      },
+      "preserved_intentional_values": {
+        "SiO2": 50, "Ca": 250, "CO3": 200, "Fe": 8, "Mn": 5,
+        "Zn": 80, "Pb": 30, "Ba": 25, "S": 60, "F": 8,
+        "Mg": 100, "pH": 7.0, "salinity": 18.0,
+        "Mg_note": "Mg=100 sets Mg/Ca ~0.4, above dolomite gate (0.3); calcite still wins by Mg-poisoning math. Aragonite stays absent (its threshold is ~1.5).",
+        "Ba_note": "Ba=25 reflects Viburnum's high-Ba MVT endmember status; barite is a documented late gangue."
+      },
+      "references": [
+        "Sverjensky, D.A. (1981). The origin of a Mississippi Valley-type deposit in the Viburnum Trend, southeast Missouri. Econ. Geol. 76(7): 1848-1872. [Primary Viburnum/Sweetwater geochemistry source]",
+        "Leach, D.L., Sangster, D.F., Kelley, K.D., Large, R.R., Garven, G., Allen, C.R., Gutzmer, J., Walters, S. (2010). Sediment-hosted lead-zinc deposits in Earth history. Econ. Geol. 105(3): 593-625. [MVT review with Viburnum case study]",
+        "Stoffell, B., Appold, M.S., Wilkinson, J.J., McClean, N.A., Jeffries, T.E. (2008). Geochemistry and Evolution of Mississippi Valley-Type Mineralizing Brines from the Tri-State and Northern Arkansas Districts Determined by LA-ICP-MS Microanalysis of Fluid Inclusions. Econ. Geol. 103(7): 1411-1435. [Tri-State vs Viburnum contrast: Tri-State higher Ag, Viburnum higher Ba]",
+        "Hanor, J.S. (1994). Origin of saline fluids in sedimentary basins. Geol. Soc. London Spec. Pub. 78: 151-174. [Basinal-brine compendium for Sr / minor element ratios]"
+      ],
+      "data_gaps": [
+        "Sweetwater-specific (vs district-wide Viburnum) fluid-inclusion LA-ICP-MS data is sparse; trace-element values are inferred from district averages.",
+        "The 'acid pulse' mechanic is an abstraction — real Viburnum mineralization is interpreted as continuous brine flow with pH evolving via wallrock buffering, not discrete acid injections. The pulse model preserves the dissolution-precipitation cycle pedagogically."
+      ]
     }
   }
 }

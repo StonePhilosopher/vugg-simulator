@@ -7966,6 +7966,12 @@ function scenario_porphyry() {
   return { conditions, events, defaultSteps: 120 };
 }
 
+// Sweetwater Mine, Viburnum Trend MO. Cambrian Bonneterre Formation
+// dolomitic-limestone host. Viburnum is the high-Ba / lower-Ag MVT
+// endmember vs Tri-State (Stoffell et al. 2008). Acid-into-carbonate
+// paragenesis: sphalerite + galena + marcasite ± barite, dolomite-calcite
+// gangue. See vugg.py scenario_reactive_wall docstring + locality
+// _chemistry.json#sweetwater_viburnum for full citation tags.
 function scenario_reactive_wall() {
   const conditions = new VugConditions({
     temperature: 140.0, pressure: 0.2,
@@ -7976,7 +7982,13 @@ function scenario_reactive_wall() {
       // sphalerite), and Ba is classic (barite is a common late phase).
       Zn: 80, Pb: 30, Ba: 25, S: 60, F: 8,
       // Mg=100 → Mg/Ca ~0.4, above dolomite gate (0.3); calcite still wins by Mg-poisoning math.
-      Mg: 100, pH: 7.0, salinity: 18.0
+      Mg: 100,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Na: 70, K: 12,      // NaCl-CaCl2 brine baseline [Sverjensky 1981; Stoffell 2008]
+      Cl: 200,            // brine anion match for Na+K
+      Ag: 3,              // Viburnum galena Ag (lower than Tri-State per Stoffell 2008)
+      Sr: 12,             // basinal-brine tracer + minor celestine [Hanor 1994]
+      pH: 7.0, salinity: 18.0
     }),
     wall: new VugWall({
       composition: 'limestone',
