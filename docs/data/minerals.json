@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 42,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph).",
+    "total_minerals": 44,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -67,7 +67,9 @@
       "clinobisvanite",
       "chrysocolla",
       "marcasite",
-      "wurtzite"
+      "wurtzite",
+      "erythrite",
+      "annabergite"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -1966,6 +1968,223 @@
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok — all 3 runtimes (phase-3).",
+      "class_color": "#ebeb13"
+    },
+    "erythrite": {
+      "formula": "Co3(AsO4)2·8H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "cobalt_bloom",
+          "wall_spread": 0.75,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "low σ — earthy crimson-pink crust, the field bloom"
+        },
+        {
+          "name": "bladed_crystal",
+          "wall_spread": 0.25,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high σ — rare striated {010} blades, transparent crimson-pink"
+        },
+        {
+          "name": "radiating_fibrous",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "grown on primary Co-arsenide substrate — stellate fibrous sprays"
+        },
+        {
+          "name": "botryoidal_crust",
+          "wall_spread": 0.65,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "moderate-high σ — rounded pink aggregates"
+        }
+      ],
+      "class": "arsenate",
+      "description": "Co₃(AsO₄)₂·8H₂O — the crimson-pink 'cobalt bloom' of medieval miners. A low-T supergene arsenate formed by oxidation of primary cobalt arsenides (cobaltite, skutterudite). Shares the vivianite-group structure with annabergite (Ni), and forms a continuous solid solution: Ni substitution for Co pales the color from crimson-pink through purplish-pink toward apple-green. Dehydrates above 200°C.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        50
+      ],
+      "T_optimum_C": [
+        10,
+        30
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Co": 2,
+        "As": 5,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Ni": "solid-solution toward annabergite (color shift)",
+        "Mg": "Mg-bearing variety (kottigite)",
+        "Mn": "trace color modifier"
+      },
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Co3(AsO4)2·8H2O → Co3(AsO4)2 (loses 8 lattice waters; lattice collapses)",
+      "thermal_decomp_products": {
+        "Co": 0.5,
+        "As": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "erythrite + 6H+ → 3 Co²⁺ + 2 H3AsO4 + 8 H2O (dissolves in moderately acidic fluids)",
+        "products": {
+          "Co": 0.6,
+          "As": 0.4
+        }
+      },
+      "habit": "cobalt_bloom_or_botryoidal",
+      "color_rules": {
+        "crimson_pink": {
+          "default": true
+        },
+        "purplish_pink": {
+          "trigger": "trace Ni in solid solution"
+        },
+        "dusty_pink": {
+          "trigger": "higher Ni content"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "goethite",
+          "adamite",
+          "cobaltite",
+          "skutterudite",
+          "vug wall"
+        ],
+        "note": "Paired with annabergite (Ni equivalent). The vivianite-group sibling — same structure, different metal. Classic Schneeberg and Bou Azzer association directly on weathering Co-arsenides."
+      },
+      "narrate_function": "_narrate_erythrite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: paired with annabergite, low-T oxidizing arsenate, solid-solution color modeling).",
+      "class_color": "#ebeb13"
+    },
+    "annabergite": {
+      "formula": "Ni3(AsO4)2·8H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "nickel_bloom",
+          "wall_spread": 0.75,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "low σ — apple-green earthy crust, the field bloom"
+        },
+        {
+          "name": "capillary_crystal",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "very high σ — rare hair-like capillary fibers"
+        },
+        {
+          "name": "cabrerite",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "Mg-substituted — pale green to white (Sierra Cabrera variety)"
+        },
+        {
+          "name": "co_bearing",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "Co present — pinkish-green intermediate along erythrite-annabergite solid solution"
+        }
+      ],
+      "class": "arsenate",
+      "description": "Ni₃(AsO₄)₂·8H₂O — 'nickel bloom,' the apple-green Ni equivalent of erythrite. Same vivianite-group structure, same supergene origin; nickel substitutes for cobalt and the color shifts from crimson to apple-green. Mg substitution produces the pale cabrerite variety; Co substitution pinks it toward erythrite. Dehydrates above 200°C.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        50
+      ],
+      "T_optimum_C": [
+        10,
+        30
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Ni": 2,
+        "As": 5,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Co": "solid-solution toward erythrite (color shift to pinkish-green)",
+        "Mg": "Mg-bearing cabrerite variety (pale green to white)"
+      },
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Ni3(AsO4)2·8H2O → Ni3(AsO4)2 (loses 8 lattice waters; lattice collapses)",
+      "thermal_decomp_products": {
+        "Ni": 0.5,
+        "As": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "annabergite + 6H+ → 3 Ni²⁺ + 2 H3AsO4 + 8 H2O",
+        "products": {
+          "Ni": 0.6,
+          "As": 0.4
+        }
+      },
+      "habit": "nickel_bloom_or_capillary",
+      "color_rules": {
+        "apple_green": {
+          "default": true
+        },
+        "pinkish_green": {
+          "trigger": "Co present (transition toward erythrite)"
+        },
+        "pale_green_to_white": {
+          "trigger": "Mg present (cabrerite variety)"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "goethite",
+          "erythrite",
+          "niccolite",
+          "gersdorffite",
+          "vug wall"
+        ],
+        "note": "Paired with erythrite (Co equivalent). Apple-green crust on weathering Ni-arsenides. The solid-solution with erythrite means field-identification by color is diagnostic of Ni/Co ratio."
+      },
+      "narrate_function": "_narrate_annabergite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: paired with erythrite, same vivianite-group structure, low-T oxidizing arsenate).",
       "class_color": "#ebeb13"
     },
     "feldspar": {

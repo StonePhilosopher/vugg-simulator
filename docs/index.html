@@ -2981,6 +2981,8 @@ const MINERAL_SPEC_FALLBACK = {
   molybdenite: { formula: "MoS2", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.3, thermal_decomp_C: 1185, fluorescence: null, twin_laws: [], acid_dissolution: null },
   adamite: { formula: "Zn2(AsO4)(OH)", nucleation_sigma: 1.0, max_size_cm: 10, growth_rate_mult: 0.3, thermal_decomp_C: 500, fluorescence: { activator: "intrinsic", color: "green_yellow_SW", quencher: { species: "Cu", threshold_ppm: 10 } }, twin_laws: [], acid_dissolution: { pH_threshold: 3.5 } },
   mimetite: { formula: "Pb5(AsO4)3Cl", nucleation_sigma: 1.0, max_size_cm: 10, growth_rate_mult: 0.3, thermal_decomp_C: 400, fluorescence: { activator: "intrinsic", color: "orange_SW" }, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
+  erythrite: { formula: "Co3(AsO4)2·8H2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.25, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
+  annabergite: { formula: "Ni3(AsO4)2·8H2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.25, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
   feldspar: { formula: "KAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 1400, growth_rate_mult: 0.4, thermal_decomp_C: 1170, fluorescence: { activator: "Pb_amazonite", threshold_ppm: 5, color: "weak_yellow_green" }, twin_laws: [{ name: "Carlsbad", probability: 0.12 }, { name: "Baveno", probability: 0.04 }, { name: "Manebach", probability: 0.02 }], acid_dissolution: { pH_threshold: 4.0 } },
   albite: { formula: "NaAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.4, thermal_decomp_C: 1118, fluorescence: { activator: "intrinsic", color: "weak_white_LW" }, twin_laws: [{ name: "albite", probability: 0.20 }, { name: "pericline", probability: 0.05 }], acid_dissolution: { pH_threshold: 3.0 } },
   selenite: { formula: "CaSO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 2400, growth_rate_mult: 0.7, thermal_decomp_C: 150, fluorescence: null, twin_laws: [{ name: "swallowtail", probability: 0.08 }], acid_dissolution: { pH_threshold: 5.0 } },
@@ -4082,6 +4084,26 @@ class VugConditions {
     let sigma = (this.fluid.Ca / 100.0) * (this.fluid.S / 50.0) * (this.fluid.O2 / 1.0);
     if (this.temperature < 40) sigma *= 1.5;
     return Math.max(sigma, 0);
+  }
+
+  supersaturation_erythrite() {
+    // Co3(AsO4)2·8H2O — cobalt bloom. Shared vivianite-group gating with annabergite.
+    if (this.fluid.Co < 2 || this.fluid.As < 5 || this.fluid.O2 < 0.3) return 0;
+    if (this.temperature < 5 || this.temperature > 50) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+    const product = (this.fluid.Co / 20.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+    const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
+    return product * T_factor;
+  }
+
+  supersaturation_annabergite() {
+    // Ni3(AsO4)2·8H2O — nickel bloom. Ni equivalent of erythrite.
+    if (this.fluid.Ni < 2 || this.fluid.As < 5 || this.fluid.O2 < 0.3) return 0;
+    if (this.temperature < 5 || this.temperature > 50) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+    const product = (this.fluid.Ni / 20.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+    const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
+    return product * T_factor;
   }
 
   supersaturation_adamite() {
@@ -6777,6 +6799,8 @@ const MINERAL_ENGINES = {
   feldspar: grow_feldspar,
   adamite: grow_adamite,
   mimetite: grow_mimetite,
+  erythrite: grow_erythrite,
+  annabergite: grow_annabergite,
   goethite: grow_goethite,
   albite: grow_albite,
   topaz: grow_topaz,
@@ -6801,6 +6825,126 @@ const MINERAL_ENGINES = {
   native_bismuth: grow_native_bismuth,
   clinobisvanite: grow_clinobisvanite,
 };
+
+function grow_erythrite(crystal, conditions, step) {
+  // Thermal dehydration above 200°C
+  if (crystal.total_growth_um > 5 && conditions.temperature > 200) {
+    crystal.dissolved = true;
+    conditions.fluid.Co += 0.4;
+    conditions.fluid.As += 0.3;
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -1.0, growth_rate: -1.0,
+      note: 'thermal dehydration — Co3(AsO4)2·8H2O loses water, breaks down above 200°C'
+    });
+  }
+
+  const sigma = conditions.supersaturation_erythrite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      conditions.fluid.Co += 0.6;
+      conditions.fluid.As += 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -1.2, growth_rate: -1.2,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Co²⁺ + AsO₄³⁻ released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.7, 1.3);
+
+  const pos = crystal.position || '';
+  const on_primary = typeof pos === 'string' && (pos.includes('cobaltite') || pos.includes('skutterudite') || pos.includes('arsenide'));
+  if (on_primary) {
+    crystal.habit = 'radiating_fibrous';
+    crystal.dominant_forms = ['radiating fibrous sprays', 'stellate clusters'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'bladed_crystal';
+    crystal.dominant_forms = ['striated prismatic {010} blades', 'crimson-pink transparent'];
+  } else if (excess > 0.5) {
+    crystal.habit = 'botryoidal_crust';
+    crystal.dominant_forms = ['botryoidal rounded aggregates', 'pink-red crust'];
+  } else {
+    crystal.habit = 'cobalt_bloom';
+    crystal.dominant_forms = ['earthy crimson-pink crust', 'cobalt bloom'];
+  }
+
+  const ni_fraction = conditions.fluid.Ni / Math.max(conditions.fluid.Co + conditions.fluid.Ni, 0.01);
+  let color_note;
+  if (ni_fraction > 0.3) color_note = 'purplish-pink (mixed Co-Ni composition)';
+  else if (ni_fraction > 0.1) color_note = 'dusty crimson (trace Ni)';
+  else color_note = 'crimson-pink (Co-dominant — cobalt bloom)';
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Mn: conditions.fluid.Mn * 0.01,
+    note: `${crystal.habit} — ${color_note}`
+  });
+}
+
+function grow_annabergite(crystal, conditions, step) {
+  if (crystal.total_growth_um > 5 && conditions.temperature > 200) {
+    crystal.dissolved = true;
+    conditions.fluid.Ni += 0.4;
+    conditions.fluid.As += 0.3;
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -1.0, growth_rate: -1.0,
+      note: 'thermal dehydration — Ni3(AsO4)2·8H2O loses water, breaks down above 200°C'
+    });
+  }
+
+  const sigma = conditions.supersaturation_annabergite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      conditions.fluid.Ni += 0.6;
+      conditions.fluid.As += 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -1.2, growth_rate: -1.2,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Ni²⁺ + AsO₄³⁻ released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.7, 1.3);
+
+  const co_fraction = conditions.fluid.Co / Math.max(conditions.fluid.Co + conditions.fluid.Ni, 0.01);
+  const mg_fraction = conditions.fluid.Mg / Math.max(conditions.fluid.Mg + conditions.fluid.Ni, 0.01);
+
+  let color_note;
+  if (co_fraction > 0.25) {
+    crystal.habit = 'co_bearing';
+    crystal.dominant_forms = ['pinkish-green intermediate crust'];
+    color_note = 'pinkish-green (Co-bearing annabergite, transitioning to erythrite)';
+  } else if (mg_fraction > 0.3) {
+    crystal.habit = 'cabrerite';
+    crystal.dominant_forms = ['pale green to white crust', 'Mg-bearing cabrerite variety'];
+    color_note = 'pale green to white (cabrerite — Mg substitution)';
+  } else if (excess > 1.5) {
+    crystal.habit = 'capillary_crystal';
+    crystal.dominant_forms = ['capillary hair-like fibers', 'green silky sprays'];
+    color_note = 'bright apple-green capillaries';
+  } else {
+    crystal.habit = 'nickel_bloom';
+    crystal.dominant_forms = ['apple-green earthy crust', 'nickel bloom'];
+    color_note = 'apple-green (Ni-dominant — nickel bloom)';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `${crystal.habit} — ${color_note}`
+  });
+}
 
 function grow_adamite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_adamite();
@@ -7177,7 +7321,7 @@ function scenario_supergene_oxidation() {
     { step: 40,  name: 'Pb+Mo Pulse',      description: 'Galena+molybdenite weathering', apply_fn: (c) => { c.fluid.Pb += 40; c.fluid.Mo += 25; c.fluid.O2 = 2.0; c.flow_rate = 2.0; return 'A weathering rind breaches: Pb²⁺ and MoO₄²⁻ released simultaneously — the Seo et al. (2012) condition for wulfenite formation is met.'; } },
     { step: 55,  name: 'Cu Enrichment',    description: 'Primary chalcopyrite upslope weathers', apply_fn: (c) => { c.fluid.Cu += 50; c.fluid.S += 30; c.fluid.Fe += 10; c.fluid.O2 = 0.6; return 'A primary chalcopyrite lens upslope finishes oxidizing. Cu²⁺ descends with the water table and hits the reducing layer below — the supergene enrichment blanket, where mineable copper ore gets made. Bornite precipitates on the upgradient edge, chalcocite in the core, covellite where S activity is highest. Real orebodies are often 5–10× richer here than in the primary sulfide below.'; } },
     { step: 70,  name: 'Dry Spell',        description: 'Evaporation concentrates sulfate', apply_fn: (c) => { c.fluid.Ca += 40; c.fluid.S += 30; c.fluid.O2 = 1.5; c.temperature = 50; c.flow_rate = 0.3; return 'Dry season. Flow slows, evaporation concentrates the brine. Ca²⁺ and SO₄²⁻ climb toward selenite\u2019s window.'; } },
-    { step: 95,  name: 'Arsenic Seep',     description: 'Zn/Pb arsenate saturation', apply_fn: (c) => { c.fluid.As += 8; c.fluid.Cl += 10; c.fluid.Zn += 20; c.fluid.pH = 6.0; return 'An arsenic-bearing seep arrives from a weathering arsenopyrite body upslope. Adamite and mimetite saturate.'; } },
+    { step: 95,  name: 'Arsenic Seep',     description: 'Zn/Pb arsenate saturation + Co/Ni bloom', apply_fn: (c) => { c.fluid.As += 8; c.fluid.Cl += 10; c.fluid.Zn += 20; c.fluid.Co += 8; c.fluid.Ni += 8; c.fluid.pH = 6.0; c.temperature = 25; return 'An arsenic-bearing seep arrives from a weathering arsenopyrite body upslope, carrying trace cobalt and nickel from parallel oxidizing arsenides. Adamite and mimetite saturate; Co²⁺ and Ni²⁺ begin to bloom as crimson erythrite and apple-green annabergite.'; } },
     { step: 115, name: 'Phosphate Seep',   description: 'Soil-zone PO₄ enables pyromorphite', apply_fn: (c) => { c.fluid.P += 6.0; c.fluid.Cl += 5.0; c.fluid.pH = 6.4; return 'A phosphate-bearing groundwater seeps in from the soil zone — organic decay, weathered apatite bedrock, bat guano from above. P jumps past pyromorphite\u2019s saturation threshold, and any Pb still in solution has a new home.'; } },
     { step: 130, name: 'V-bearing Seep',   description: 'Red-bed V leaches in, vanadinite fires', apply_fn: (c) => { c.fluid.V += 6.0; c.fluid.Cl += 8.0; c.temperature = 45; return "A vanadium-bearing seep arrives from a weathering red-bed ironstone upslope. V⁵⁺ leaches from oxidizing roll-front vanadates, and at Pb + V + Cl saturation the bright red-orange vanadinite nucleates — the classic 'vanadinite on goethite' habit of the Morocco / Arizona desert deposits."; } },
     { step: 160, name: 'Fracture Seal',    description: 'System closes', apply_fn: (c) => { c.flow_rate = 0.05; c.fluid.O2 = 1.0; return 'The feeding fractures seal. The vug becomes a closed cold oxidizing system.'; } },
@@ -7584,6 +7728,10 @@ class VugSimulator {
       crystal.dominant_forms = ['{10̄10} hexagonal prism', 'c{0001} pinacoid', 'barrel profile'];
     } else if (mineral === 'vanadinite') {
       crystal.dominant_forms = ['{10̄10} hexagonal prism', 'c{0001} pinacoid', 'flat basal termination'];
+    } else if (mineral === 'erythrite') {
+      crystal.dominant_forms = ['earthy crimson-pink crust', 'cobalt bloom'];
+    } else if (mineral === 'annabergite') {
+      crystal.dominant_forms = ['apple-green earthy crust', 'nickel bloom'];
     } else if (mineral === 'bornite') {
       crystal.dominant_forms = ['massive granular', 'iridescent tarnish'];
     } else if (mineral === 'chalcocite') {
@@ -8054,6 +8202,38 @@ class VugSimulator {
       }
       const c = this.nucleate('mimetite', pos, sigma_mim);
       this.log.push(`  ✦ NUCLEATION: Mimetite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mim.toFixed(2)})`);
+    }
+
+    // Erythrite nucleation — the cobalt bloom, low-T oxidation of Co arsenides.
+    const sigma_ery = this.conditions.supersaturation_erythrite();
+    const existing_ery = this.crystals.filter(c => c.mineral === 'erythrite' && c.active);
+    if (sigma_ery > 1.0 && !existing_ery.length && !this._atNucleationCap('erythrite')) {
+      let pos = 'vug wall';
+      const existing_goe_e = this.crystals.filter(c => c.mineral === 'goethite' && c.active);
+      const existing_adam_e = this.crystals.filter(c => c.mineral === 'adamite' && c.active);
+      if (existing_goe_e.length && rng.random() < 0.5) {
+        pos = `on goethite #${existing_goe_e[0].crystal_id}`;
+      } else if (existing_adam_e.length && rng.random() < 0.3) {
+        pos = `on adamite #${existing_adam_e[0].crystal_id}`;
+      }
+      const c = this.nucleate('erythrite', pos, sigma_ery);
+      this.log.push(`  ✦ NUCLEATION: Erythrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ery.toFixed(2)})`);
+    }
+
+    // Annabergite nucleation — the nickel bloom, Ni equivalent of erythrite.
+    const sigma_ann = this.conditions.supersaturation_annabergite();
+    const existing_ann = this.crystals.filter(c => c.mineral === 'annabergite' && c.active);
+    if (sigma_ann > 1.0 && !existing_ann.length && !this._atNucleationCap('annabergite')) {
+      let pos = 'vug wall';
+      const existing_goe_a = this.crystals.filter(c => c.mineral === 'goethite' && c.active);
+      const existing_ery_a = this.crystals.filter(c => c.mineral === 'erythrite' && c.active);
+      if (existing_goe_a.length && rng.random() < 0.5) {
+        pos = `on goethite #${existing_goe_a[0].crystal_id}`;
+      } else if (existing_ery_a.length && rng.random() < 0.3) {
+        pos = `alongside erythrite #${existing_ery_a[0].crystal_id}`;
+      }
+      const c = this.nucleate('annabergite', pos, sigma_ann);
+      this.log.push(`  ✦ NUCLEATION: Annabergite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ann.toFixed(2)})`);
     }
 
     // Magnetite nucleation — Fe + moderate O2 (HM buffer).
@@ -9772,6 +9952,45 @@ class VugSimulator {
       parts.push('Growing on galena — its parent mineral. Galena (PbS) oxidizes, liberating lead into solution. That lead meets arsenic and chlorine in the oxidation zone and reprecipitates as mimetite. The child grows on the corpse of the parent. Every mimetite crystal is a record of galena\'s death.');
     }
     parts.push('Mimetite\'s name means "imitator" — it was confused with pyromorphite for centuries because they\'re isostructural. Only chemistry tells them apart. The mineral that pretends to be something else, growing on the foundation of something that used to be.');
+    return parts.join(' ');
+  }
+
+  _narrate_erythrite(c) {
+    const parts = [`Erythrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Co₃(AsO₄)₂·8H₂O — the crimson-pink cobalt arsenate, known to medieval miners as 'cobalt bloom.' A supergene product: primary cobalt arsenides (cobaltite, skutterudite) oxidized in surface waters, releasing Co²⁺ and arsenate that recombined in damp fractures.");
+    if (c.habit === 'radiating_fibrous') {
+      parts.push('Radiating fibrous sprays directly on a primary Co-arsenide substrate — the classic Schneeberg and Bou Azzer habit: the outer shell of an oxidizing cobaltite or skutterudite vein blooms pink.');
+    } else if (c.habit === 'bladed_crystal') {
+      parts.push('Striated prismatic {010} blades, transparent crimson — the rare and prized erythrite crystal form, sharp enough to be mistaken for a kämmererite until the pink hue settles the identification.');
+    } else if (c.habit === 'botryoidal_crust') {
+      parts.push('Botryoidal rounded aggregates — high-supersaturation coating, mineral grape clusters spreading across the fracture wall.');
+    } else {
+      parts.push("Earthy pink crust — the classic 'cobalt bloom' field appearance, the first hint to a prospector that a cobalt arsenide is weathering nearby.");
+    }
+    if (c.position && (c.position.includes('cobaltite') || c.position.includes('arsenide'))) {
+      parts.push(`Growing on ${c.position} — direct replacement texture, the cobalt is moving centimeters at a time from primary sulfide to secondary arsenate.`);
+    }
+    if (c.dissolved) {
+      parts.push('Dehydration or acid dissolution broke down the crystal — erythrite holds eight waters of crystallization in its structure, and they go first: above 200°C or below pH 4.5, the lattice collapses.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_annabergite(c) {
+    const parts = [`Annabergite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Ni₃(AsO₄)₂·8H₂O — 'nickel bloom,' the pale apple-green counterpart to erythrite. Same vivianite-group structure, nickel substitutes for cobalt, and the color shifts from crimson to green. Formed by oxidation of primary Ni-arsenides like niccolite and gersdorffite.");
+    if (c.habit === 'cabrerite') {
+      parts.push('Mg substituted for Ni — this is cabrerite, the pale-green to white variety, named for the Sierra Cabrera in Spain. The Mg content bleaches the color toward off-white.');
+    } else if (c.habit === 'co_bearing') {
+      parts.push('Co was also present in the fluid — the crystal shifted toward a pinkish-green intermediate, physically tracking the Ni/Co ratio along the erythrite-annabergite solid solution.');
+    } else if (c.habit === 'capillary_crystal') {
+      parts.push("Capillary hair-like fibers — the rare high-σ habit. Silky sprays of apple-green filaments, a collector's prize when intact.");
+    } else {
+      parts.push('Earthy apple-green crust — the field appearance, an unmistakable green stain in the oxidation zone of any nickel-arsenide deposit.');
+    }
+    if (c.dissolved) {
+      parts.push('Dehydration or acid dissolution consumed the crystal — like erythrite, annabergite is a hydrated arsenate with eight lattice waters and little stability outside a narrow T/pH window.');
+    }
     return parts.join(' ');
   }
 
@@ -11720,6 +11939,8 @@ function updateFortressStatus() {
     { name: '🏔️ Feldspar', sigma: c.supersaturation_feldspar() },
     { name: '💚 Adamite', sigma: c.supersaturation_adamite() },
     { name: '🟡 Mimetite', sigma: c.supersaturation_mimetite() },
+    { name: 'Erythrite', sigma: c.supersaturation_erythrite() },
+    { name: 'Annabergite', sigma: c.supersaturation_annabergite() },
   ];
 
   for (const m of minerals) {
@@ -13102,6 +13323,8 @@ function idleRecordHistory() {
   try { supersats.feldspar = c.supersaturation_feldspar(); } catch(e) {}
   try { supersats.adamite = c.supersaturation_adamite(); } catch(e) {}
   try { supersats.mimetite = c.supersaturation_mimetite(); } catch(e) {}
+  try { supersats.erythrite = c.supersaturation_erythrite(); } catch(e) {}
+  try { supersats.annabergite = c.supersaturation_annabergite(); } catch(e) {}
 
   idleHistory.push({
     step: idleSim.step,

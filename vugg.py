@@ -876,6 +876,42 @@ class VugConditions:
         return max(sigma, 0)
 
 
+    def supersaturation_erythrite(self) -> float:
+        """Erythrite (Co₃(AsO₄)₂·8H₂O) — the cobalt bloom.
+
+        Low-T (5-50°C, optimum 10-30°C) supergene arsenate from oxidizing
+        Co-arsenides (cobaltite, skutterudite). Paired with annabergite
+        (Ni equivalent) — same vivianite-group structure, Co vs Ni changes
+        the color from crimson-pink to apple-green. Dehydrates > 200°C.
+        """
+        if self.fluid.Co < 2 or self.fluid.As < 5 or self.fluid.O2 < 0.3:
+            return 0
+        if self.temperature < 5 or self.temperature > 50:
+            return 0
+        if self.fluid.pH < 5.0 or self.fluid.pH > 8.0:
+            return 0
+        product = (self.fluid.Co / 20.0) * (self.fluid.As / 30.0) * (self.fluid.O2 / 1.0)
+        T_factor = 1.2 if 10 <= self.temperature <= 30 else 0.7
+        return product * T_factor
+
+    def supersaturation_annabergite(self) -> float:
+        """Annabergite (Ni₃(AsO₄)₂·8H₂O) — the nickel bloom.
+
+        Ni equivalent of erythrite. Same vivianite-group structure, same
+        gating conditions, same habit families — only the metal and color
+        change. Apple-green to pale green; Mg substitution (cabrerite) pales
+        toward white, Co substitution shifts toward pink.
+        """
+        if self.fluid.Ni < 2 or self.fluid.As < 5 or self.fluid.O2 < 0.3:
+            return 0
+        if self.temperature < 5 or self.temperature > 50:
+            return 0
+        if self.fluid.pH < 5.0 or self.fluid.pH > 8.0:
+            return 0
+        product = (self.fluid.Ni / 20.0) * (self.fluid.As / 30.0) * (self.fluid.O2 / 1.0)
+        T_factor = 1.2 if 10 <= self.temperature <= 30 else 0.7
+        return product * T_factor
+
     def supersaturation_adamite(self) -> float:
         """Adamite (Zn₂(AsO₄)(OH)) supersaturation. Needs Zn + As + oxidizing + low T.
         
@@ -2790,6 +2826,139 @@ def grow_malachite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
         thickness_um=rate, growth_rate=rate,
         trace_Fe=trace_Fe,
         note=f"{crystal.habit}, {color_note}, Cu fluid: {conditions.fluid.Cu:.0f} ppm"
+    )
+
+
+def grow_erythrite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Erythrite (Co₃(AsO₄)₂·8H₂O) growth — the cobalt bloom.
+
+    Low-T supergene arsenate. Four habits: cobalt_bloom (earthy pink crust,
+    default), bladed_crystal (rare striated blades when σ high), radiating_fibrous
+    (when grown on a primary Co-arsenide substrate), botryoidal_crust (high σ).
+    Dehydrates above 200°C. Dissolves in acid.
+    """
+    # Thermal dehydration — loses its lattice water above 200°C
+    if crystal.total_growth_um > 5 and conditions.temperature > 200:
+        crystal.dissolved = True
+        conditions.fluid.Co += 0.4
+        conditions.fluid.As += 0.3
+        return GrowthZone(
+            step=step, temperature=conditions.temperature,
+            thickness_um=-1.0, growth_rate=-1.0,
+            note="thermal dehydration — Co3(AsO4)2·8H2O loses water, breaks down above 200°C"
+        )
+
+    sigma = conditions.supersaturation_erythrite()
+
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.5:
+            crystal.dissolved = True
+            conditions.fluid.Co += 0.6
+            conditions.fluid.As += 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-1.2, growth_rate=-1.2,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f}) — Co²⁺ + AsO₄³⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.7, 1.3)
+
+    # Substrate-aware habit: if growing on a primary Co-arsenide, fibrous spray
+    on_primary = isinstance(crystal.position, str) and (
+        "cobaltite" in crystal.position or "skutterudite" in crystal.position or "arsenide" in crystal.position
+    )
+    if on_primary:
+        crystal.habit = "radiating_fibrous"
+        crystal.dominant_forms = ["radiating fibrous sprays", "stellate clusters"]
+    elif excess > 1.2:
+        crystal.habit = "bladed_crystal"
+        crystal.dominant_forms = ["striated prismatic {010} blades", "crimson-pink transparent"]
+    elif excess > 0.5:
+        crystal.habit = "botryoidal_crust"
+        crystal.dominant_forms = ["botryoidal rounded aggregates", "pink-red crust"]
+    else:
+        crystal.habit = "cobalt_bloom"
+        crystal.dominant_forms = ["earthy crimson-pink crust", "cobalt bloom"]
+
+    # Color depends on Co:Ni ratio — Co-dominant is pink, Ni-bearing shifts greenish
+    ni_fraction = conditions.fluid.Ni / max(conditions.fluid.Co + conditions.fluid.Ni, 0.01)
+    if ni_fraction > 0.3:
+        color_note = "purplish-pink (mixed Co-Ni composition)"
+    elif ni_fraction > 0.1:
+        color_note = "dusty crimson (trace Ni)"
+    else:
+        color_note = "crimson-pink (Co-dominant — cobalt bloom)"
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Mn=conditions.fluid.Mn * 0.01,
+        note=f"{crystal.habit} — {color_note}"
+    )
+
+
+def grow_annabergite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Annabergite (Ni₃(AsO₄)₂·8H₂O) growth — the nickel bloom.
+
+    Ni equivalent of erythrite. Habits: nickel_bloom (apple-green earthy crust,
+    default), capillary_crystal (hair-like fibers at high σ), cabrerite (Mg
+    substitution paling to white), co_bearing (Co substitution shifting pink).
+    Dehydrates above 200°C. Dissolves in acid.
+    """
+    if crystal.total_growth_um > 5 and conditions.temperature > 200:
+        crystal.dissolved = True
+        conditions.fluid.Ni += 0.4
+        conditions.fluid.As += 0.3
+        return GrowthZone(
+            step=step, temperature=conditions.temperature,
+            thickness_um=-1.0, growth_rate=-1.0,
+            note="thermal dehydration — Ni3(AsO4)2·8H2O loses water, breaks down above 200°C"
+        )
+
+    sigma = conditions.supersaturation_annabergite()
+
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.5:
+            crystal.dissolved = True
+            conditions.fluid.Ni += 0.6
+            conditions.fluid.As += 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-1.2, growth_rate=-1.2,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f}) — Ni²⁺ + AsO₄³⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.7, 1.3)
+
+    # Composition-dependent habit: Co-bearing vs Mg-bearing vs pure Ni
+    co_fraction = conditions.fluid.Co / max(conditions.fluid.Co + conditions.fluid.Ni, 0.01)
+    mg_fraction = conditions.fluid.Mg / max(conditions.fluid.Mg + conditions.fluid.Ni, 0.01)
+
+    if co_fraction > 0.25:
+        crystal.habit = "co_bearing"
+        crystal.dominant_forms = ["pinkish-green intermediate crust"]
+        color_note = "pinkish-green (Co-bearing annabergite, transitioning to erythrite)"
+    elif mg_fraction > 0.3:
+        crystal.habit = "cabrerite"
+        crystal.dominant_forms = ["pale green to white crust", "Mg-bearing cabrerite variety"]
+        color_note = "pale green to white (cabrerite — Mg substitution)"
+    elif excess > 1.5:
+        crystal.habit = "capillary_crystal"
+        crystal.dominant_forms = ["capillary hair-like fibers", "green silky sprays"]
+        color_note = "bright apple-green capillaries"
+    else:
+        crystal.habit = "nickel_bloom"
+        crystal.dominant_forms = ["apple-green earthy crust", "nickel bloom"]
+        color_note = "apple-green (Ni-dominant — nickel bloom)"
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=f"{crystal.habit} — {color_note}"
     )
 
 
@@ -4910,6 +5079,8 @@ MINERAL_ENGINES = {
     "malachite": grow_malachite,
     "adamite": grow_adamite,
     "mimetite": grow_mimetite,
+    "erythrite": grow_erythrite,
+    "annabergite": grow_annabergite,
     "feldspar": grow_feldspar,
     "albite": grow_albite,
     "galena": grow_galena,
@@ -4965,6 +5136,8 @@ THERMAL_DECOMPOSITION = {
     "quartz":     (1713, "SiO₂ melting — takes hell itself to melt quartz",       {"SiO2": 0.3}),
     "adamite":    (500,  "Zn₂AsO₄OH → decomposition",                            {"Zn": 0.4, "As": 0.3}),
     "mimetite":   (400,  "Pb₅Cl(AsO₄)₃ → decomposition",                         {"Pb": 0.5, "As": 0.3, "Cl": 0.1}),
+    "erythrite":  (200,  "Co₃(AsO₄)₂·8H₂O → dehydration (lattice water lost)",    {"Co": 0.5, "As": 0.3}),
+    "annabergite": (200, "Ni₃(AsO₄)₂·8H₂O → dehydration (lattice water lost)",    {"Ni": 0.5, "As": 0.3}),
     "galena":     (1115, "PbS → Pb + S (melting)",                                     {"Pb": 0.5, "S": 0.4}),
     "smithsonite": (300,  "ZnCO₃ → ZnO + CO₂ (calcination)",                            {"Zn": 0.4, "CO3": 0.4}),
     "wulfenite":   (1120, "PbMoO₄ → Pb + MoO₃ (decomposition)",                         {"Pb": 0.4, "Mo": 0.3}),
@@ -5456,14 +5629,22 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
                 "chemistry, the Naica chemistry.")
 
     def ev_as_rich_seep(cond):
-        """Arsenic-bearing seep — feeds adamite + mimetite."""
+        """Arsenic-bearing seep — feeds adamite + mimetite + erythrite + annabergite."""
         cond.fluid.As += 8
         cond.fluid.Cl += 10
         cond.fluid.Zn += 20
+        # Cobalt + nickel arsenide weathering delivers Co²⁺ and Ni²⁺ alongside
+        # the arsenate flood — the erythrite/annabergite cobalt-and-nickel bloom
+        # couple only saturate when this event fires.
+        cond.fluid.Co += 20
+        cond.fluid.Ni += 20
         cond.fluid.pH = 6.0
+        cond.temperature = 25   # cool to the erythrite/annabergite optimum window
         return ("An arsenic-bearing seep arrives from a weathering "
-                "arsenopyrite body upslope. Zn²⁺ + AsO₄³⁻ begins to saturate "
-                "for adamite; Pb²⁺ + AsO₄³⁻ + Cl⁻ for mimetite.")
+                "arsenopyrite body upslope, carrying trace cobalt and "
+                "nickel from parallel oxidizing arsenides. Zn²⁺ saturates "
+                "adamite; Pb²⁺ saturates mimetite; Co²⁺ and Ni²⁺ begin "
+                "to bloom as crimson erythrite and apple-green annabergite.")
 
     def ev_cu_enrichment(cond):
         """Primary chalcopyrite weathers upslope — Cu²⁺ descends.
@@ -6505,6 +6686,10 @@ class VugSimulator:
             crystal.dominant_forms = ["{10̄10} hexagonal prism", "c{0001} pinacoid", "barrel profile"]
         elif mineral == "vanadinite":
             crystal.dominant_forms = ["{10̄10} hexagonal prism", "c{0001} pinacoid", "flat basal termination"]
+        elif mineral == "erythrite":
+            crystal.dominant_forms = ["earthy crimson-pink crust", "cobalt bloom"]
+        elif mineral == "annabergite":
+            crystal.dominant_forms = ["apple-green earthy crust", "nickel bloom"]
         elif mineral == "bornite":
             crystal.dominant_forms = ["massive granular", "iridescent tarnish"]
         elif mineral == "chalcocite":
@@ -6804,7 +6989,38 @@ class VugSimulator:
             c = self.nucleate("mimetite", position=pos, sigma=sigma_mim)
             self.log.append(f"  ✦ NUCLEATION: Mimetite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mim:.2f})")
-        
+
+        # Erythrite nucleation — the cobalt bloom, low-T oxidation of Co arsenides.
+        sigma_ery = self.conditions.supersaturation_erythrite()
+        existing_ery = [c for c in self.crystals if c.mineral == "erythrite" and c.active]
+        if sigma_ery > 1.0 and not existing_ery and not self._at_nucleation_cap("erythrite"):
+            pos = "vug wall"
+            # Substrate preference: goethite (limonite), then existing arsenate coatings.
+            existing_goe_e = [c for c in self.crystals if c.mineral == "goethite" and c.active]
+            existing_adam_e = [c for c in self.crystals if c.mineral == "adamite" and c.active]
+            if existing_goe_e and random.random() < 0.5:
+                pos = f"on goethite #{existing_goe_e[0].crystal_id}"
+            elif existing_adam_e and random.random() < 0.3:
+                pos = f"on adamite #{existing_adam_e[0].crystal_id}"
+            c = self.nucleate("erythrite", position=pos, sigma=sigma_ery)
+            self.log.append(f"  ✦ NUCLEATION: Erythrite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ery:.2f})")
+
+        # Annabergite nucleation — the nickel bloom, Ni equivalent of erythrite.
+        sigma_ann = self.conditions.supersaturation_annabergite()
+        existing_ann = [c for c in self.crystals if c.mineral == "annabergite" and c.active]
+        if sigma_ann > 1.0 and not existing_ann and not self._at_nucleation_cap("annabergite"):
+            pos = "vug wall"
+            existing_goe_a = [c for c in self.crystals if c.mineral == "goethite" and c.active]
+            existing_ery_a = [c for c in self.crystals if c.mineral == "erythrite" and c.active]
+            if existing_goe_a and random.random() < 0.5:
+                pos = f"on goethite #{existing_goe_a[0].crystal_id}"
+            elif existing_ery_a and random.random() < 0.3:
+                pos = f"alongside erythrite #{existing_ery_a[0].crystal_id}"
+            c = self.nucleate("annabergite", position=pos, sigma=sigma_ann)
+            self.log.append(f"  ✦ NUCLEATION: Annabergite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ann:.2f})")
+
         # Feldspar nucleation — K-feldspar (orthoclase/microcline/sanidine)
         sigma_fsp = self.conditions.supersaturation_feldspar()
         existing_fsp = [c for c in self.crystals if c.mineral == "feldspar" and c.active]
@@ -9159,6 +9375,96 @@ class VugSimulator:
             parts.append(
                 "Acid dissolution released Pb²⁺ and arsenate back to the fluid — "
                 "mimetite is stable only in a narrow oxidizing, near-neutral window."
+            )
+
+        return " ".join(parts)
+
+    def _narrate_erythrite(self, c: Crystal) -> str:
+        """Narrate an erythrite crystal's story — the cobalt bloom."""
+        parts = [f"Erythrite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Co₃(AsO₄)₂·8H₂O — the crimson-pink cobalt arsenate, known to medieval "
+            "miners as 'cobalt bloom.' A supergene product: primary cobalt arsenides "
+            "(cobaltite, skutterudite) oxidized in surface waters, releasing Co²⁺ and "
+            "arsenate that recombined in damp fractures."
+        )
+
+        if c.habit == "radiating_fibrous":
+            parts.append(
+                "Radiating fibrous sprays directly on a primary Co-arsenide substrate — "
+                "the classic Schneeberg and Bou Azzer habit: the outer shell of an "
+                "oxidizing cobaltite or skutterudite vein blooms pink."
+            )
+        elif c.habit == "bladed_crystal":
+            parts.append(
+                "Striated prismatic {010} blades, transparent crimson — the rare and "
+                "prized erythrite crystal form, sharp enough to be mistaken for a "
+                "kämmererite until the pink hue settles the identification."
+            )
+        elif c.habit == "botryoidal_crust":
+            parts.append(
+                "Botryoidal rounded aggregates — high-supersaturation coating, mineral "
+                "grape clusters spreading across the fracture wall."
+            )
+        else:
+            parts.append(
+                "Earthy pink crust — the classic 'cobalt bloom' field appearance, the "
+                "first hint to a prospector that a cobalt arsenide is weathering nearby."
+            )
+
+        if "cobaltite" in c.position or "arsenide" in c.position:
+            parts.append(
+                f"Growing on {c.position} — direct replacement texture, the cobalt is "
+                f"moving centimeters at a time from primary sulfide to secondary arsenate."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Dehydration or acid dissolution broke down the crystal — erythrite "
+                "holds eight waters of crystallization in its structure, and they go "
+                "first: above 200°C or below pH 4.5, the lattice collapses."
+            )
+
+        return " ".join(parts)
+
+    def _narrate_annabergite(self, c: Crystal) -> str:
+        """Narrate an annabergite crystal's story — the nickel bloom."""
+        parts = [f"Annabergite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Ni₃(AsO₄)₂·8H₂O — 'nickel bloom,' the pale apple-green counterpart to "
+            "erythrite. Same vivianite-group structure, nickel substitutes for cobalt, "
+            "and the color shifts from crimson to green. Formed by oxidation of primary "
+            "Ni-arsenides like niccolite and gersdorffite."
+        )
+
+        if c.habit == "cabrerite":
+            parts.append(
+                "Mg substituted for Ni — this is cabrerite, the pale-green to white "
+                "variety, named for the Sierra Cabrera in Spain. The Mg content bleaches "
+                "the color toward off-white."
+            )
+        elif c.habit == "co_bearing":
+            parts.append(
+                "Co was also present in the fluid — the crystal shifted toward a "
+                "pinkish-green intermediate, physically tracking the Ni/Co ratio along "
+                "the erythrite-annabergite solid solution."
+            )
+        elif c.habit == "capillary_crystal":
+            parts.append(
+                "Capillary hair-like fibers — the rare high-σ habit. Silky sprays of "
+                "apple-green filaments, a collector's prize when intact."
+            )
+        else:
+            parts.append(
+                "Earthy apple-green crust — the field appearance, an unmistakable green "
+                "stain in the oxidation zone of any nickel-arsenide deposit."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Dehydration or acid dissolution consumed the crystal — like erythrite, "
+                "annabergite is a hydrated arsenate with eight lattice waters and little "
+                "stability outside a narrow T/pH window."
             )
 
         return " ".join(parts)
