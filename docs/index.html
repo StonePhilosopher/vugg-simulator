@@ -181,25 +181,33 @@ h1 {
 .topo-canvas-wrap {
   position: relative;
   width: 100%;
+  height: 340px;
   overflow: hidden;
-  /* Background lives HERE, not on the canvas itself, so the dark void
-     stays fixed while the canvas (the slice) rotates in 3D. Creates
-     the illusion of a physical object floating in space rather than
-     a tilting black box. */
+  /* The wrap IS the "viewing window". Background lives here (fixed),
+     overflow:hidden clips the oversized canvas inside to the window
+     bounds. The canvas+slice can render at full scale and rotate in
+     3D freely; only the window shows what's behind it. Illusion: a
+     physical disc floating in a fixed dark chamber, viewed through
+     a rectangular porthole. */
   background: #050504;
   border: 1px solid #1a1a14;
   border-radius: 3px;
 }
-/* When 3D mode is active, let the tilted slice extend past the wrap's
-   bounds — perspective scaling makes the near edge bigger than the
-   layout box, and clipping it back into the box ruins the "physical
-   object in space" illusion. The fixed zoom/camera buttons sit above
-   the wrap (z-index:5) so they remain visible no matter how far the
-   slice overflows. Trade-off: at extreme tilts + high zoom the slice
-   can visually bleed into adjacent UI. User can recenter to fix. */
-.topo-canvas-wrap.is-3d {
-  overflow: visible;
+/* The stage is an oversized (200%) container centered in the wrap.
+   Canvas fills the stage, so the canvas is 2× bigger than the window.
+   When tilted in 3D, the slice has headroom to extend past the window
+   bounds without the canvas-buffer itself clipping anything. The
+   wrap's overflow:hidden then clips the view to the window. */
+.topo-canvas-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
+.topo-canvas-stage > * { pointer-events: auto; }
 
 /* Fixed readouts in the wrap corners. Positioned outside the canvas
    so they don't rotate with the 3D transform — they describe the
@@ -224,7 +232,7 @@ h1 {
 #topo-canvas {
   display: block;
   width: 100%;
-  height: 340px;
+  height: 100%;    /* fills the stage (which is 200% of wrap) */
   background: transparent;
   cursor: crosshair;
 }
@@ -2169,20 +2177,36 @@ footer a:hover {
 <!-- Scenarios Picker (opened from New Game Menu's "Scenarios" button) -->
 <div id="scenarios-panel" class="menu-panel" style="display:none">
   <div class="menu-heading">Scenarios</div>
-  <div class="menu-subheading">Each one plays in Creative mode — events fire on their scheduled steps.</div>
+
+  <div class="menu-subheading">Real-locality scenarios — chemistry anchored to a named locality with cited fluid-inclusion / brine references. Events fire on their scheduled steps.</div>
   <div class="menu-buttons">
-    <button onclick="startScenarioInCreative('cooling')">Cooling.</button>
-    <button onclick="startScenarioInCreative('pulse')">Fluid Pulse.</button>
-    <button onclick="startScenarioInCreative('mvt')">Mississippi Valley-type.</button>
-    <button onclick="startScenarioInCreative('porphyry')">Porphyry Copper.</button>
-    <button onclick="startScenarioInCreative('reactive_wall')">Reactive Wall.</button>
-    <button onclick="startScenarioInCreative('radioactive_pegmatite')">Radioactive Pegmatite.</button>
-    <button onclick="startScenarioInCreative('supergene_oxidation')">Supergene Oxidation.</button>
-    <button onclick="startScenarioInCreative('ouro_preto')">Ouro Preto (Imperial Topaz).</button>
-    <button onclick="startScenarioInCreative('gem_pegmatite')">Gem Pegmatite Pocket (Minas Gerais).</button>
-    <button onclick="startScenarioInCreative('bisbee')">Bisbee (Warren District Cu Oxidation).</button>
-    <button onclick="startScenarioInCreative('deccan_zeolite')">Deccan Traps Zeolite Vesicle (Apophyllite).</button>
-    <button onclick="startScenarioInCreative('sabkha_dolomitization')">Coorong Sabkha (Kim 2023 Cycled Dolomite).</button>
+    <button onclick="startScenarioInCreative('cooling')">❄️ Cooling — Herkimer "diamond" pocket (Middleville, NY).</button>
+    <button onclick="startScenarioInCreative('mvt')">⚗️ Mississippi Valley-type — Tri-State district (Joplin / Picher, MO-KS-OK).</button>
+    <button onclick="startScenarioInCreative('reactive_wall')">🪨 Reactive Wall — Sweetwater Mine, Viburnum Trend (MO).</button>
+    <button onclick="startScenarioInCreative('porphyry')">🟠 Porphyry Copper — Bingham Canyon (UT).</button>
+    <button onclick="startScenarioInCreative('bisbee')">🔵 Bisbee Cu Oxidation Cascade — Warren District (Cochise County, AZ).</button>
+    <button onclick="startScenarioInCreative('supergene_oxidation')">💎 Supergene Oxidation — Tsumeb (Namibia).</button>
+    <button onclick="startScenarioInCreative('ouro_preto')">🟡 Imperial Topaz Veins — Ouro Preto (Minas Gerais, Brazil).</button>
+    <button onclick="startScenarioInCreative('gem_pegmatite')">💚 Gem Pegmatite Pocket — Cruzeiro Mine, Doce Valley (Minas Gerais, Brazil).</button>
+    <button onclick="startScenarioInCreative('deccan_zeolite')">🔷 Deccan Apophyllite Vesicle — Nashik / Aurangabad (Maharashtra, India).</button>
+    <button onclick="startScenarioInCreative('sabkha_dolomitization')">🌊 Coorong Cycled Dolomite (Kim 2023) — Coorong lagoon (South Australia).</button>
+  </div>
+
+  <div class="menu-subheading">Test scenarios — generic event-driven scenarios not anchored to a real locality. Use as sandboxes for chemistry experimentation.</div>
+  <div class="menu-buttons">
+    <button onclick="startScenarioInCreative('pulse')">🧪 Fluid Pulse (cooling + mid-growth fluid pulse).</button>
+    <button onclick="startScenarioInCreative('radioactive_pegmatite')">☢️ Radioactive Pegmatite (high-T alkali granite + uraninite).</button>
+  </div>
+
+  <div class="menu-subheading">Starter Fluids — generic test recipes representing what leaks naturally from the host rock. No events; perturb in-game.</div>
+  <div class="menu-buttons">
+    <button onclick="startStarterFluidInCreative('silica')">🔮 Silica-rich.</button>
+    <button onclick="startStarterFluidInCreative('carbonate')">🧪 Carbonate.</button>
+    <button onclick="startStarterFluidInCreative('clean')">💧 Clean / Dilute.</button>
+    <button onclick="startStarterFluidInCreative('oxidized_cu')">🟢 Oxidized Copper.</button>
+  </div>
+
+  <div class="menu-buttons">
     <button class="menu-home" onclick="openNewGameMenu()">← Back.</button>
   </div>
 </div>
@@ -2209,7 +2233,9 @@ footer a:hover {
       <div class="topo-legend" id="topo-legend"></div>
     </details>
     <div class="topo-canvas-wrap">
-      <canvas id="topo-canvas" width="1100" height="120"></canvas>
+      <div class="topo-canvas-stage">
+        <canvas id="topo-canvas" width="1100" height="120"></canvas>
+      </div>
       <div class="topo-zoom-ctrls">
         <button class="topo-zoom-btn" onclick="topoZoom(-1)" title="Zoom out">−</button>
         <span id="topo-zoom-label" class="topo-zoom-label">100%</span>
@@ -2308,11 +2334,17 @@ Scenarios:
       <span class="range-val" id="f-pressure-val">1.5 kbar</span>
     </div>
 
+    <div class="setup-row" title="Multiplier on wall dissolution rate. 0 = inert (no dissolution even with strong acid — equivalent to a silicate wall); 1 = default limestone (current behavior); 2 = fast-dissolving fresh limestone with mild water-only dissolution. Only affects carbonate walls (limestone, dolomite); silicate walls stay inert regardless.">
+      <label>Wall reactivity</label>
+      <input type="range" id="f-wall-reactivity" min="0" max="20" value="10" step="1" oninput="(function(){var v=parseFloat(this.value)/10;var lbl;if(v===0)lbl='inert / silicate-like';else if(v<0.6)lbl='sluggish';else if(v<1.4)lbl='default limestone';else if(v<1.7)lbl='reactive';else lbl='fresh / fast';document.getElementById('f-wall-reactivity-val').textContent=v.toFixed(1)+'× ('+lbl+')';}).call(this)">
+      <span class="range-val" id="f-wall-reactivity-val">1.0× (default limestone)</span>
+    </div>
+
     <div class="setup-row" style="flex-direction:column;align-items:flex-start">
       <label>Fluid Chemistry Preset</label>
       <div class="preset-grid" id="preset-grid">
         <button class="preset-btn selected" data-preset="silica" onclick="selectPreset('silica')">🔮 Silica-rich</button>
-        <button class="preset-btn" data-preset="carbonate" onclick="selectPreset('carbonate')">�ite Carbonate</button>
+        <button class="preset-btn" data-preset="carbonate" onclick="selectPreset('carbonate')">🧪 Carbonate</button>
         <button class="preset-btn" data-preset="mvt" onclick="selectPreset('mvt')">⚗️ MVT Brine</button>
         <button class="preset-btn" data-preset="clean" onclick="selectPreset('clean')">💧 Clean/Dilute</button>
         <button class="preset-btn" data-preset="porphyry" onclick="selectPreset('porphyry')">🟠 Copper Porphyry</button>
@@ -3434,6 +3466,18 @@ let rng = new SeededRandom(Date.now());
 let timeScale = 5.0;
 
 // ============================================================
+// SIM VERSION
+// ============================================================
+// Monotonic version tag bumped by any change that could shift seed-42
+// output for any scenario. Mirrors SIM_VERSION in vugg.py.
+//   v1 — pre-audit: generic FluidChemistry defaults, Mg=0 in most scenarios
+//   v2 — scenario-chemistry audit (Apr 2026): every scenario anchored to a
+//        named locality with cited fluid values; locality_chemistry.json
+//        is the data-source-of-truth.
+const SIM_VERSION = 2;
+
+
+// ============================================================
 // PHYSICAL CONSTANTS AND MODELS
 // ============================================================
 
@@ -3529,19 +3573,32 @@ class VugWall {
     this.primary_bubbles = opts.primary_bubbles ?? 3;
     this.secondary_bubbles = opts.secondary_bubbles ?? 6;
     this.shape_seed = opts.shape_seed ?? 0;
+    // Player-tunable wall reactivity multiplier (Creative-mode slider).
+    // 0=inert, 1=default limestone (current behavior), 2=fast-dissolving
+    // fresh limestone with mild water-only dissolution. Only affects
+    // carbonate walls; silicate composition stays inert regardless.
+    // See vugg.py VugWall docstring for the full table.
+    this.reactivity = opts.reactivity ?? 1.0;
   }
 
   dissolve(acid_strength, fluid) {
-    if (acid_strength <= 0) return { dissolved: false };
-
-    // Only reactive carbonate walls (limestone, dolomite) buffer acid
-    // by dissolving. Silicate host rocks (pegmatite, granite, gneiss,
-    // quartzite, phyllite) are effectively inert on sim timescales.
+    // Gate by composition first — silicate walls are inert regardless
+    // of reactivity (real silicate dissolution at sim T-P-time scales
+    // is geologically negligible).
     if (this.composition !== 'limestone' && this.composition !== 'dolomite') {
       return { dissolved: false };
     }
 
-    let rate_mm = Math.min(acid_strength * 0.5, 2.0);
+    // Acid attack — scales with acid strength × reactivity.
+    const acid_rate = Math.max(0.0, acid_strength) * 0.5 * this.reactivity;
+
+    // Water-only baseline — fires regardless of pH but slow. Only
+    // meaningful when reactivity > 1.0 (Creative-mode slider above
+    // default). Models accelerated CO2-charged-groundwater dissolution.
+    const water_rate = Math.max(0.0, this.reactivity - 1.0) * 0.05;
+
+    let rate_mm = Math.min(acid_rate + water_rate, 2.0);
+    if (rate_mm <= 0.0) return { dissolved: false };
     if (this.thickness_mm < rate_mm) rate_mm = this.thickness_mm;
 
     this.thickness_mm -= rate_mm;
@@ -4930,7 +4987,14 @@ function grow_quartz(crystal, conditions, step) {
   if (excess < 0.5) rate = 8.0 * excess * excess;
   else rate = 4.0 * excess;
 
-  rate *= Math.exp(-3000.0 / (conditions.temperature + 273.15)) * 50.0;
+  // Arrhenius rescaled so prefactor ~= 1.0 at 200 C (sim's most-common
+  // working temperature). Previous exp(-3000/T_K) * 50 was calibrated
+  // for 400 C porphyry quartz and collapsed to 0.03-0.09 at Herkimer /
+  // MVT / Alpine temperatures, starving quartz below the 0.1 um cutoff.
+  // New slope keeps real T-dependence (400:100 ratio ~3.3x) without
+  // suppressing mid-T growth. See vugg.py grow_quartz comment for full
+  // rationale and the look-up table.
+  rate *= Math.exp(-1000.0 / (conditions.temperature + 273.15)) * 8.27;
   rate *= rng.uniform(0.7, 1.3);
 
   if (rate < 0.1) return null;
@@ -7734,10 +7798,25 @@ function event_copper_injection(conditions) {
   conditions.fluid.Fe += 40.0;
   conditions.fluid.S += 80.0;
   conditions.fluid.SiO2 += 200.0;
+  // Drift-fix: Python event also bumps Pb +20 (porphyry fluids carry Pb).
+  // Was missing from JS.
+  conditions.fluid.Pb += 20.0;
   conditions.fluid.O2 = 0.3;
   conditions.temperature += 30;
   conditions.flow_rate = 4.0;
   return `Copper-bearing magmatic fluid surges into the vug. Cu spikes to ${conditions.fluid.Cu.toFixed(0)} ppm. T rises to ${conditions.temperature.toFixed(0)}°C. Reducing conditions — sulfides stable.`;
+}
+
+// Late-stage Mo pulse — separate from Cu in porphyry systems. Per Seo et
+// al. 2012 (Bingham Canyon), Mo arrives in a distinct later pulse from Cu.
+// This mirror was added to JS in the porphyry chemistry-audit pass — the
+// Python equivalent has existed since carbonate round 3.
+function event_molybdenum_pulse(conditions) {
+  conditions.fluid.Mo = 80.0;
+  conditions.fluid.S += 40.0;
+  conditions.fluid.O2 = 0.3;
+  conditions.temperature += 15;
+  return `Late-stage molybdenum fluid arrives separately from Cu. Mo spikes to ${conditions.fluid.Mo.toFixed(0)} ppm. T rises to ${conditions.temperature.toFixed(0)}°C. Molybdenite may form — future wulfenite precursor.`;
 }
 
 function event_oxidation(conditions) {
@@ -7780,20 +7859,48 @@ function event_fluid_mixing(conditions) {
 // SCENARIOS
 // ============================================================
 
+// Herkimer "diamond" pocket, Middleville, NY. Host: Little Falls Formation
+// (Upper Cambrian dolostone). Quartz event: Carboniferous Alleghenian burial
+// diagenesis (~140-200 C, ~3.5 km depth). Signature: clear, doubly-terminated
+// quartz in silica-overpressured pockets also saturated with petroleum and
+// saline basinal brine. See data/locality_chemistry.json#herkimer_middleville
+// and the vugg.py scenario_cooling docstring for full citation tags
+// (Hanor 1994, Harris et al. 1978, Friedman & Sanders 1982, Rimstidt 1997,
+// Selleck 1978, Wark & Watson 2006).
 function scenario_cooling() {
   const conditions = new VugConditions({
-    temperature: 380.0, pressure: 1.5,
-    fluid: new FluidChemistry({ SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 8, K: 30, Na: 15 }),
-    // Phase-1 void shape: gentle gas-bubble profile.
-    wall: new VugWall({ primary_bubbles: 2, secondary_bubbles: 3, shape_seed: 1 }),
+    // T=180 C: Alleghenian peak burial T [Harris et al. 1978; Friedman &
+    // Sanders 1982]. Prior pre-audit value was 380 C, a generic default.
+    // P=1.0 kbar: ~3.5 km burial depth [Selleck 1978].
+    temperature: 180.0, pressure: 1.0,
+    fluid: new FluidChemistry({
+      SiO2: 260,          // mildly over Qz equilibrium (~220 ppm at 180 C [Rimstidt 1997]); tuned for prismatic (not skeletal) habit
+      Ca: 80,             // low; Ca sequestered in host dolomite cement [Hanor 1994]
+      CO3: 30,            // residual only; most carbonate migrated to dolomite cement
+      Mg: 50,             // dolomitic-aquifer Mg/Ca ~0.6 [Hanor 1994]; brief-required non-zero Mg
+      Na: 80, K: 20,      // NaCl-CaCl2 brine type, K/Na ~0.25 [Hanor 1994]
+      Fe: 5, Mn: 2,       // trace from dolomite host
+      Al: 4, Ti: 0.5,     // Ti drives TitaniQ thermometer [Wark & Watson 2006]
+      pH: 6.8,            // near-neutral basinal brine [Hanor 1994]
+      salinity: 18.0,     // Appalachian-basin burial brine band 15-25 wt% NaCl-eq [Hanor 1994]
+      O2: 0.1,            // reducing — hydrocarbons coexist (diagnostic Herkimer enhydros)
+    }),
+    // Wall is dolomite (Little Falls Formation), not limestone.
+    wall: new VugWall({ composition: 'dolomite', primary_bubbles: 2, secondary_bubbles: 3, shape_seed: 1 }),
   });
   return { conditions, events: [], defaultSteps: 100 };
 }
 
+// Generic testing scenario — not anchored to a real locality. Slightly
+// more interesting twin of `cooling`. Audit gap-fill (Apr 2026): only
+// Mg=8 added (brief-required non-zero Mg baseline for cooling-class
+// fluids). See vugg.py scenario_pulse docstring.
 function scenario_pulse() {
   const conditions = new VugConditions({
     temperature: 350.0, pressure: 1.2,
-    fluid: new FluidChemistry({ SiO2: 500, Ca: 200, CO3: 120, Fe: 5, Mn: 2, Ti: 0.5, Al: 3 }),
+    fluid: new FluidChemistry({ SiO2: 500, Ca: 200, CO3: 120, Fe: 5, Mn: 2, Ti: 0.5, Al: 3,
+      Mg: 8,            // brief-required non-zero Mg (cooling-class baseline)
+    }),
     wall: new VugWall({ primary_bubbles: 2, secondary_bubbles: 3, shape_seed: 2 }),
   });
   const events = [
@@ -7803,13 +7910,32 @@ function scenario_pulse() {
   return { conditions, events, defaultSteps: 100 };
 }
 
+// Tri-State Pb-Zn-Ag district (Joplin / Picher / Galena, MO-KS-OK).
+// Host: Mississippian Boone Formation cherty limestone. Brines are
+// NaCl-CaCl2 basinal type, 18-24 wt% NaCl-eq (Stoffell et al. 2008
+// LA-ICP-MS). Galena is argentiferous. See vugg.py scenario_mvt
+// docstring + data/locality_chemistry.json#tri_state for full citations.
 function scenario_mvt() {
   const conditions = new VugConditions({
     temperature: 180.0, pressure: 0.3,
     fluid: new FluidChemistry({
       // Mn=25 within Tri-State district brine range (Roedder 1976) — pushes rhodochrosite saturation late in run.
       SiO2: 100, Ca: 300, CO3: 250, Fe: 15, Mn: 25,
-      Zn: 0, S: 0, F: 5, Pb: 40, Mg: 30, pH: 7.2, salinity: 15.0
+      Zn: 0, S: 0, F: 5, Pb: 40, Mg: 30,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Na: 80, K: 15,      // NaCl-CaCl2 brine, K/Na ~0.2 [Stoffell 2008]
+      Cl: 200,            // brine anion match for Na+K [Roedder 1976]
+      Ag: 5,              // argentiferous Tri-State galena signature
+      Ba: 20,             // local barite gangue
+      Sr: 15,             // basinal-brine tracer + minor celestine [Hanor 1994]
+      Cu: 3,              // trace chalcopyrite is documented at Tri-State
+      // Pre-researched, pending FluidChemistry schema:
+      //   When Cd is added, set Cd: 2. Tri-State sphalerite carries Cd
+      //   substituting for Zn; greenockite (CdS) is the diagnostic
+      //   yellow coating. Source: Schwartz 2000 Econ. Geol. 95.
+      //   See vugg.py scenario_mvt comment + locality_chemistry.json
+      //   tri_state.pending_schema_additions for full note.
+      pH: 7.2, salinity: 15.0
     }),
     // MVT dissolution cavity in limestone — all-axis lumpiness.
     wall: new VugWall({ primary_bubbles: 3, secondary_bubbles: 8, shape_seed: 3 }),
@@ -7822,16 +7948,36 @@ function scenario_mvt() {
   return { conditions, events, defaultSteps: 120 };
 }
 
+// Bingham Canyon Cu-Mo-Au porphyry, Oquirrh Mountains UT. Late-Eocene
+// quartz-monzonite intrusion, classic potassic/phyllic/propylitic zoning.
+// Fluid evolution per Landtwing et al. 2010 (Econ. Geol. 105) LA-ICP-MS.
+// Mo arrives in a separate later pulse from Cu (Seo et al. 2012) — encoded
+// in the molybdenum_pulse event below. See vugg.py scenario_porphyry
+// docstring + data/locality_chemistry.json for full citation tags.
 function scenario_porphyry() {
   const conditions = new VugConditions({
     temperature: 400.0, pressure: 2.0,
     fluid: new FluidChemistry({
       SiO2: 700, Ca: 80, CO3: 50, Fe: 30, Mn: 2,
       Zn: 0, S: 60, F: 5, Cu: 0, O2: 0.2,
+      // Drift-fix: Pb=15 was set in Python (porphyry fluids carry Pb)
+      // but missing from JS until this audit pass.
+      Pb: 15,
       K: 40, Na: 25, Al: 15,
       // Sb + Bi traces — greisen signature. Enough to nucleate
       // stibnite + bismuthinite at a handful of sites each.
       Sb: 25, As: 15, Bi: 30,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Cl: 600,            // NaCl-KCl brine, anion match for Na+K [Landtwing 2010]
+      Mg: 40,             // wallrock interaction, Bingham brine Mg 50-200 ppm raw
+      Ag: 8,              // argentiferous Cu signature [Heinrich 2007]
+      Te: 2,              // epithermal-cap telluride trace
+      // Pre-researched, pending FluidChemistry schema:
+      //   When Au is added to the FluidChemistry class, set Au: 2.
+      //   Landtwing et al. 2010 LA-ICP-MS: ~1 ppm Au in porphyry Cu-Au
+      //   fluid inclusions; sim-scale 2 matches Te=2 trace abstraction.
+      //   See vugg.py scenario_porphyry comment + locality_chemistry
+      //   .json bingham_canyon.pending_schema_additions for full note.
       pH: 4.5, salinity: 10.0
     }),
     // Porphyry veins — elongated cross-section, modest harmonics.
@@ -7839,6 +7985,9 @@ function scenario_porphyry() {
   });
   const events = [
     { step: 25, name: 'Copper Pulse', description: 'Magmatic copper fluid arrives', apply_fn: event_copper_injection },
+    // Drift-fix: Python had this molybdenum_pulse event since Seo et al.
+    // 2012 was incorporated; JS was missing it. Added in audit pass.
+    { step: 45, name: 'Molybdenum Pulse', description: 'Late-stage Mo fluid (Seo et al. 2012)', apply_fn: event_molybdenum_pulse },
     { step: 60, name: 'Second Cu Pulse', description: 'Another copper surge', apply_fn: event_copper_injection },
     { step: 85, name: 'Oxidation', description: 'Meteoric water infiltrates', apply_fn: event_oxidation },
     { step: 95, name: 'Cooling', description: 'Rapid cooling event', apply_fn: event_cooling_pulse },
@@ -7846,6 +7995,12 @@ function scenario_porphyry() {
   return { conditions, events, defaultSteps: 120 };
 }
 
+// Sweetwater Mine, Viburnum Trend MO. Cambrian Bonneterre Formation
+// dolomitic-limestone host. Viburnum is the high-Ba / lower-Ag MVT
+// endmember vs Tri-State (Stoffell et al. 2008). Acid-into-carbonate
+// paragenesis: sphalerite + galena + marcasite ± barite, dolomite-calcite
+// gangue. See vugg.py scenario_reactive_wall docstring + locality
+// _chemistry.json#sweetwater_viburnum for full citation tags.
 function scenario_reactive_wall() {
   const conditions = new VugConditions({
     temperature: 140.0, pressure: 0.2,
@@ -7856,7 +8011,13 @@ function scenario_reactive_wall() {
       // sphalerite), and Ba is classic (barite is a common late phase).
       Zn: 80, Pb: 30, Ba: 25, S: 60, F: 8,
       // Mg=100 → Mg/Ca ~0.4, above dolomite gate (0.3); calcite still wins by Mg-poisoning math.
-      Mg: 100, pH: 7.0, salinity: 18.0
+      Mg: 100,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Na: 70, K: 12,      // NaCl-CaCl2 brine baseline [Sverjensky 1981; Stoffell 2008]
+      Cl: 200,            // brine anion match for Na+K
+      Ag: 3,              // Viburnum galena Ag (lower than Tri-State per Stoffell 2008)
+      Sr: 12,             // basinal-brine tracer + minor celestine [Hanor 1994]
+      pH: 7.0, salinity: 18.0
     }),
     wall: new VugWall({
       composition: 'limestone',
@@ -7930,6 +8091,7 @@ function scenario_radioactive_pegmatite() {
       // mineral consumes them, but the narrator reads them as
       // beryl/spodumene/tourmaline/apatite country.
       Be: 20, Li: 40, B: 25, P: 8,
+      Mg: 5,            // audit gap-fill: brief-required non-zero Mg (pegmatite-pocket low value)
       O2: 0, pH: 6.5, salinity: 8.0
     }),
     // Pegmatite pockets are fracture-controlled — n=2 "slot" profile.
@@ -7963,6 +8125,12 @@ function scenario_radioactive_pegmatite() {
 // Supergene oxidation scenario — mirrors vugg.py scenario_supergene_oxidation
 // (low-T Pb+Mo+Zn+As+Cu oxidation zone; produces wulfenite + smithsonite +
 // adamite + mimetite + goethite). Five staged events over 180 steps.
+// Tsumeb mine, Otavi Mountain Land, Namibia. ~280 species documented;
+// type locality for germanium. 1st-stage gossan = uppermost supergene
+// zone where mimetite/anglesite/cerussite/willemite/Ge-phases occur.
+// Audit gap-fills (Apr 2026): Ag, Ge, Sb (Tsumeb's silver + Ge suite),
+// Na/K (groundwater traces). See vugg.py + locality_chemistry.json
+// #tsumeb for full citations.
 function scenario_supergene_oxidation() {
   const conditions = new VugConditions({
     temperature: 35.0, pressure: 0.05,
@@ -7979,6 +8147,11 @@ function scenario_supergene_oxidation() {
       V: 1.5,
       // P trace — meteoric water typically carries <1 ppm P; pyromorphite waits for ev_phosphate_seep.
       P: 0.5,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Ag: 8,            // Tsumeb argentiferous galena + native Ag + ruby silvers [Pinch & Wilson 1977]
+      Ge: 5,            // Tsumeb is THE Ge type locality — germanite, renierite, briartite [Melcher 2003]
+      Sb: 5,            // proustite/pyrargyrite (ruby silvers) + tetrahedrite enabling
+      Na: 30, K: 10,    // minor groundwater cation traces
       O2: 1.8, pH: 6.8, salinity: 2.0,
     }),
     // Supergene meteoric dissolution cavity — broad all-axis lumpiness.
@@ -8002,6 +8175,12 @@ function scenario_supergene_oxidation() {
 // craton margin. The outer shell has already crystallized; this vug is
 // the residual pocket where Be/B/Li/F accumulate past saturation. Eight
 // events walk a 230-step cooling path through the pegmatite paragenesis.
+// Cruzeiro mine, São José da Safira, Doce Valley, Minas Gerais. Type-
+// locality for fine schorl-elbaite + smoky quartz pockets, with beryl,
+// spodumene, lepidolite, and accessory apatite. Brasiliano-age (700-450
+// Ma) pegmatite cutting Macaúbas Group. Audit gap-fills (Apr 2026):
+// P=8 (apatite-enabling) + Mg=5 (brief baseline). See vugg.py docstring
+// + locality_chemistry.json#cruzeiro_doce_valley.
 function scenario_gem_pegmatite() {
   const conditions = new VugConditions({
     temperature: 650.0,
@@ -8029,6 +8208,9 @@ function scenario_gem_pegmatite() {
       K: 80, Na: 40,
       Be: 25, B: 35, Li: 35, F: 25,
       Cr: 2.5, Cu: 0.3, V: 2.0, Ti: 0.8,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      P: 8,             // pegmatite residual P; enables Cruzeiro accessory apatite
+      Mg: 5,            // brief-required non-zero Mg (pegmatite pocket Mg-poor baseline)
       O2: 0.1, pH: 6.8, salinity: 6.0,
     }),
   });
@@ -8095,6 +8277,12 @@ function scenario_gem_pegmatite() {
 // 3.5 kbar (Morteani et al. 2002). Quartz first, then F-gated topaz once
 // phyllite dehydration pulses fluorine into the fluid. Imperial color
 // (Cr³⁺ from ultramafic country rock) lands the Ouro Preto signature.
+// Ouro Preto Imperial Topaz veins, Minas Gerais, Brazil. Hydrothermal
+// veins in Precambrian phyllite + quartzite. Metamorphic brine ex
+// devolatilizing phyllite per Morteani et al. 2002. Audit gap-fills
+// (Apr 2026): Na, K, Mg added — phyllite devolatilization releases
+// alkali cations from muscovite/biotite/albite breakdown. See vugg.py
+// scenario_ouro_preto + locality_chemistry.json#ouro_preto.
 function scenario_ouro_preto() {
   const conditions = new VugConditions({
     temperature: 360.0,
@@ -8104,6 +8292,9 @@ function scenario_ouro_preto() {
       F: 12,      // below topaz threshold — quartz lines vein walls first
       Cr: 0.5,    // sub-threshold Cr; ev_cr_leach bumps into imperial window
       Ti: 0.6,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Na: 60, K: 40,    // phyllite muscovite/albite breakdown [Morteani 2002]
+      Mg: 15,           // phyllite chlorite/biotite, brief-required non-zero Mg
       O2: 0.3, pH: 6.5, salinity: 3.0,
     }),
     // Ouro Preto topaz vein — few bubbles, tight size range; the
@@ -8171,6 +8362,13 @@ function scenario_ouro_preto() {
 // contribution from the Sacramento Hill quartz-monzonite porphyry —
 // represented as `limestone` wall + SiO₂ injected by ev_silica_seep.
 // Mirrors scenario_bisbee in vugg.py.
+// Bisbee, Arizona — Warren Mining District, Cochise County. Laramide
+// quartz-monzonite porphyry intruding Paleozoic Escabrosa Limestone +
+// Abrigo Formation. Major Cu-Ag-Au district (~8 Mt Cu, ~25 Moz Ag,
+// ~3 Moz Au historically). Centerpiece mechanic: azurite ↔ malachite
+// ↔ chrysocolla cascade tracking pCO2 evolution. See vugg.py
+// scenario_bisbee docstring + locality_chemistry.json#warren_district
+// for full citation tags.
 function scenario_bisbee() {
   const conditions = new VugConditions({
     temperature: 400.0,
@@ -8180,6 +8378,16 @@ function scenario_bisbee() {
       Cu: 400, S: 150, F: 6, Cl: 400, Pb: 15,
       K: 80, Na: 120, Al: 20,
       As: 8, Bi: 2,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Ag: 40,             // Warren District ~25 Moz Ag [Graeme et al. 2019]
+      Mg: 50,             // Escabrosa Limestone host (dolomitic in places)
+      P: 5,               // enables pyromorphite (Pb+Cl+P now all present)
+      Sb: 5,              // tetrahedrite-tennantite sulfosalt trace
+      // Pre-researched, pending FluidChemistry schema:
+      //   When Au is added, set Au: 3. Bisbee ~3 Moz Au historically;
+      //   slightly higher than Bingham's Au=2 reflecting Bisbee's well-
+      //   preserved supergene Au accumulation. See vugg.py comment +
+      //   locality_chemistry.json warren_district.pending_schema_additions.
       O2: 0.05, pH: 5.0, salinity: 30.0,
     }),
     wall: new VugWall({
@@ -8292,6 +8500,7 @@ function scenario_deccan_zeolite() {
     fluid: new FluidChemistry({
       SiO2: 900, Ca: 180, CO3: 80, Fe: 180, Mn: 4, Mg: 8, Al: 15,
       K: 2, Na: 40, F: 1,
+      Sr: 2,            // audit gap-fill: zeolites carry Sr substituting for Ca
       O2: 1.5, pH: 8.2, salinity: 2.0
     }),
     wall: new VugWall({
@@ -9493,9 +9702,13 @@ class VugSimulator {
 
   dissolve_wall() {
     const wall = this.conditions.wall;
-    if (this.conditions.fluid.pH >= 5.5) return;
+    // Acid strength = how far below the carbonate-attack threshold pH we
+    // are. Negative when pH ≥ 5.5; clipped to 0 inside wall.dissolve().
+    const acid_strength = Math.max(0.0, 5.5 - this.conditions.fluid.pH);
+    // Skip the call entirely when there's no work to do — neutral fluid
+    // AND default reactivity. Avoids logging noise.
+    if (acid_strength <= 0.0 && wall.reactivity <= 1.0) return;
 
-    const acid_strength = 5.5 - this.conditions.fluid.pH;
     const pre_sigma_cal = this.conditions.supersaturation_calcite();
     const pre_Ca = this.conditions.fluid.Ca;
 
@@ -11845,6 +12058,69 @@ function startScenarioInCreative(scenarioName) {
   fortressBeginFromScenario(scenarioName);
 }
 
+// Take a FLUID_PRESETS[id] starter fluid and run it inside Creative as a
+// no-event sim. The starter fluid represents what would naturally leak
+// from the host rock; the player perturbs it via in-game actions
+// (Heat / Cool / Inject / Tectonic). No scripted events fire.
+function startStarterFluidInCreative(presetId) {
+  const preset = FLUID_PRESETS[presetId];
+  if (!preset) { alert('Unknown starter fluid: ' + presetId); return; }
+  switchMode('fortress');
+  fortressBeginFromStarterFluid(presetId);
+}
+
+// Parallel to fortressBeginFromScenario but uses a FLUID_PRESETS entry
+// rather than a full scenario. Defaults T/P/wall to mid-range generics
+// since starter fluids don't carry that metadata. Player can intervene
+// from step 1.
+function fortressBeginFromStarterFluid(presetId) {
+  const preset = FLUID_PRESETS[presetId];
+  if (!preset) return;
+
+  const fluid = new FluidChemistry(Object.assign({}, preset.fluid));
+  // Generic mid-range conditions — see Creative-mode rework backlog item
+  // for surfacing T/P/wall as starter-fluid-level controls.
+  const wall = new VugWall({
+    composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50,
+    wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000,
+    primary_bubbles: 3, secondary_bubbles: 5, shape_seed: Date.now() & 0xff
+  });
+  const conditions = new VugConditions({
+    temperature: 200.0, pressure: 1.0, fluid, wall
+  });
+
+  rng = new SeededRandom(Date.now());
+  fortressSim = new VugSimulator(conditions, []);
+  fortressActive = true;
+  fortressLogLines = [];
+
+  document.getElementById('fortress-setup').style.display = 'none';
+  document.getElementById('fortress-status').style.display = 'block';
+  document.getElementById('fortress-actions').style.display = 'block';
+  const main = document.getElementById('fortress-main');
+  main.style.display = 'flex';
+
+  const logEl = document.getElementById('fortress-log');
+  logEl.innerHTML = '';
+  const initLines = [
+    `🏰 Creative Mode — Starter Fluid: ${preset.label}`,
+    `   Temperature: 200°C | Pressure: 1.00 kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
+    `   Fluid: ${conditions.fluid.describe()}`,
+    `   ${preset.desc}`,
+    `   No scripted events — only your actions + ambient drift will shape this vug.`,
+    '═'.repeat(60), '',
+    'Advance with Wait. Intervene with Heat/Cool/Inject/Tectonic/etc. at any time.'
+  ];
+  initLines.forEach(line => {
+    fortressLogLines.push(line);
+    appendFortressLine(logEl, line);
+  });
+
+  updateFortressStatus();
+  updateFortressInventory();
+  if (typeof syncBrothSliders === 'function') syncBrothSliders();
+}
+
 // Parallel to fortressBegin() but uses a scenario's conditions + events
 // instead of the setup sliders. The sim is pre-wired with events so they
 // fire automatically on Wait/Heat/Cool/etc. advances.
@@ -12605,41 +12881,65 @@ function runRandomVugg() {
 // FORTRESS MODE
 // ============================================================
 
+// FLUID_PRESETS: starting-fluid recipes shown in the Creative-mode setup
+// preset bar AND under "Starter Fluids" in the Scenarios picker. Two
+// flavors:
+//   * Generic test recipes (silica, carbonate, clean, oxidized_cu) — not
+//     anchored to any locality; tuned by feel as broad mineral-class
+//     starting points. Edit freely.
+//   * Synced-to-scenario recipes (mvt, porphyry, radioactive) — these
+//     pull their fluid from the corresponding scenario_* function via
+//     getter so they cannot drift. Edit the scenario, the preset
+//     follows.
+//
+// Every preset must declare every FluidChemistry field the scenario
+// would set, so the Creative-mode setup sliders see them and can
+// over-ride. (Sliders that are blank for a preset's missing field still
+// inherit the FluidChemistry constructor default, which is 0 for most
+// trace elements — that's the "starter-fluid hidden chemistry" issue
+// flagged for the Creative-mode rework backlog.)
+function _scenarioFluidParams(scenarioName) {
+  const f = SCENARIOS[scenarioName]().conditions.fluid;
+  // Spread own enumerable properties of the FluidChemistry instance
+  // into a plain object that fortressBegin's Object.assign() can copy.
+  return Object.assign({}, f);
+}
+
 const FLUID_PRESETS = {
   silica: {
     label: 'Silica-rich',
-    desc: 'High silica (600 ppm SiO₂), moderate Ca, low metals. Quartz-dominant growth.',
+    desc: 'Test recipe — high silica (600 ppm SiO₂), moderate Ca, low metals. Quartz-dominant growth. Generic; not anchored to a locality.',
     fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 4, F: 10, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
   },
   carbonate: {
     label: 'Carbonate',
-    desc: 'Ca-CO₃ rich fluid (Ca 300, CO₃ 250 ppm), moderate Mn. Calcite-dominant.',
+    desc: 'Test recipe — Ca-CO₃ rich fluid (Ca 300, CO₃ 250 ppm), moderate Mn. Calcite-dominant. Generic; not anchored to a locality.',
     fluid: { SiO2: 80, Ca: 300, CO3: 250, Fe: 10, Mn: 8, Ti: 0.2, Al: 1, F: 5, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 7.0, salinity: 8.0 }
   },
   mvt: {
-    label: 'MVT Brine',
-    desc: 'Zinc + sulfur-bearing brine (Zn 150, S 120 ppm), high Ca + F. Sphalerite + fluorite + smithsonite potential. Mo flux.',
-    fluid: { SiO2: 100, Ca: 350, CO3: 200, Fe: 25, Mn: 5, Ti: 0.3, Al: 2, F: 30, Zn: 150, S: 120, Cu: 0, Mo: 20, O2: 0, pH: 5.5, salinity: 18.0 }
+    label: 'MVT Brine (synced to scenario_mvt)',
+    desc: 'Mirrors scenario_mvt. Edit the scenario in vugg.py / web/index.html to change this preset.',
+    get fluid() { return _scenarioFluidParams('mvt'); }
   },
   clean: {
     label: 'Clean/Dilute',
-    desc: 'Low-concentration fluid. Slow growth, high purity crystals. Near-equilibrium conditions.',
+    desc: 'Test recipe — low-concentration fluid. Slow growth, high-purity crystals. Near-equilibrium conditions. Generic; not anchored to a locality.',
     fluid: { SiO2: 200, Ca: 80, CO3: 60, Fe: 2, Mn: 1, Ti: 0.1, Al: 1, F: 3, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 7.0, salinity: 2.0 }
   },
   porphyry: {
-    label: 'Copper Porphyry',
-    desc: 'Cu-Fe-S bearing magmatic fluid (Cu 100, Fe 40, S 80 ppm), reducing. Pyrite + chalcopyrite potential.',
-    fluid: { SiO2: 500, Ca: 80, CO3: 50, Fe: 40, Mn: 2, Ti: 0.5, Al: 3, F: 5, Zn: 0, S: 80, Cu: 100, O2: 0.2, pH: 4.5, salinity: 10.0 }
+    label: 'Copper Porphyry (synced to scenario_porphyry)',
+    desc: 'Mirrors scenario_porphyry. Edit the scenario to change this preset.',
+    get fluid() { return _scenarioFluidParams('porphyry'); }
   },
   oxidized_cu: {
     label: 'Oxidized Copper',
-    desc: 'Cu-bearing oxidized fluid (Cu 60, Fe 40, O₂ 1.5), CO₃-rich. Malachite + hematite potential. Low temperature favored.',
+    desc: 'Test recipe — Cu-bearing oxidized fluid (Cu 60, Fe 40, O₂ 1.5), CO₃-rich. Malachite + hematite potential. Low temperature favored. Generic; not anchored to a locality.',
     fluid: { SiO2: 100, Ca: 150, CO3: 200, Fe: 40, Mn: 3, Ti: 0.2, Al: 1, F: 5, Zn: 0, S: 5, Cu: 60, O2: 1.5, pH: 6.0, salinity: 5.0 }
   },
   radioactive: {
-    label: 'Radioactive Pegmatite',
-    desc: 'U-bearing pegmatite: high silica, uranium-rich. Uraninite crystallizes first, quartz grows around it, radiation darkens quartz over deep time. ☢️',
-    fluid: { SiO2: 800, Ca: 50, CO3: 20, Fe: 40, Mn: 5, Ti: 0.5, Al: 3, F: 15, Zn: 0, S: 30, Cu: 0, U: 100, Pb: 20, O2: 0, pH: 6.0, salinity: 5.0 }
+    label: 'Radioactive Pegmatite (synced to scenario_radioactive_pegmatite)',
+    desc: 'Mirrors scenario_radioactive_pegmatite. Edit the scenario to change this preset. ☢️',
+    get fluid() { return _scenarioFluidParams('radioactive_pegmatite'); }
   }
 };
 
@@ -12707,6 +13007,13 @@ function fortressBegin() {
     wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 40, wall_Fe_ppm: 3000, wall_Mn_ppm: 800, wall_Mg_ppm: 1000 };
   } else if (selectedPreset === 'carbonate') {
     wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 30, wall_Fe_ppm: 1500, wall_Mn_ppm: 600, wall_Mg_ppm: 800 };
+  }
+  // Read the wall-reactivity slider (Creative-mode only). Range 0-20
+  // in slider units → 0.0-2.0× multiplier on dissolution rate.
+  // See VugWall.dissolve and VugWall constructor for the full table.
+  const wallReactivityEl = document.getElementById('f-wall-reactivity');
+  if (wallReactivityEl) {
+    wallOpts.reactivity = parseFloat(wallReactivityEl.value) / 10;
   }
   const wall = new VugWall(wallOpts);
   const conditions = new VugConditions({ temperature: temp, pressure, fluid, wall });
@@ -14466,6 +14773,11 @@ let _topoDragStartClientY = 0;
 let _topoDragOriginPanX = 0;
 let _topoDragOriginPanY = 0;
 const TOPO_DRAG_THRESHOLD_PX = 4;     // movement before drag starts (lets clicks still fire)
+// Canvas lives inside a stage that's this multiple of the wrap's size.
+// The extra area gives 3D-rotated content room to extend past the
+// visible window without clipping against the canvas buffer edge.
+// MUST match the CSS width/height percentages on .topo-canvas-stage.
+const TOPO_STAGE_SCALE = 2;
 // Camera drag mode. 'default' = current 2D hit-test-aware behavior
 // (drag on non-crystal pans; click on crystal tooltips). 'rotate' =
 // drag from anywhere rotates the 3D tilted canvas. 'pan' = drag from
@@ -14984,13 +15296,15 @@ function topoRender(optOverrideRing) {
   }
   if (wall && maxWallR > wall.max_seen_radius_mm) wall.max_seen_radius_mm = maxWallR;
   const centerPad = 48;  // leave room for the scale bar and legend
-  // In 3D mode, shrink the slice so perspective + tilt have room to
-  // extend past the untransformed footprint without hitting the canvas
-  // buffer edge. 0.6 gives ~40% margin on each side — enough for the
-  // max tilts the UI allows without the disc visibly clipping its own
-  // content. 2D mode is unchanged (factor = 1.0).
-  const threeDShrink = _topoView3D ? 0.6 : 1.0;
-  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2 * threeDShrink;
+  // The canvas lives inside a 2×-sized stage inside the overflow:hidden
+  // wrap. cssW/cssH are the CANVAS buffer dimensions (2× the visible
+  // window); fit the slice to the VISIBLE window (cssW/STAGE, cssH/STAGE)
+  // so it occupies the same on-screen area as before. The extra canvas
+  // area becomes "rotation headroom" — slice can tilt freely within the
+  // buffer and the wrap's overflow:hidden clips the view to the window.
+  const viewW = cssW / TOPO_STAGE_SCALE;
+  const viewH = cssH / TOPO_STAGE_SCALE;
+  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
 
   // Pan offsets let the user drag the vug around the canvas. Hit-test
@@ -15236,8 +15550,11 @@ function topoRender(optOverrideRing) {
   // Scale bar across the bottom: total wall circumference in mm.
   const circMm = wall ? Math.PI * wall.meanDiameterMm() : 0;
   if (circMm > 0) {
-    // A horizontal 10mm reference stripe below the vug
-    const barY = cssH - 18;
+    // Scale bar sits at the bottom of the VISIBLE window (wrap), not
+    // the bottom of the oversized canvas. Visible window is vertically
+    // centered in the canvas; its bottom edge is at cssH/2 + viewH/2
+    // = (cssH + viewH)/2.
+    const barY = (cssH + viewH) / 2 - 18;
     const tenPx = 10 * mmToPx;
     const barX0 = cssW / 2 - tenPx / 2;
     ctx.strokeStyle = '#5a4a30';
@@ -15301,7 +15618,12 @@ function _topoHitTest(ev) {
     if (r > maxWallR) maxWallR = r;
   }
   const centerPad = 48;
-  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
+  // Match topoRender: fit to VISIBLE window (cssW/STAGE, cssH/STAGE),
+  // not the full canvas buffer, so hit coords land on the same cells
+  // the user actually sees.
+  const viewW = cssW / TOPO_STAGE_SCALE;
+  const viewH = cssH / TOPO_STAGE_SCALE;
+  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
   const cx = cssW / 2 + _topoPanX;
   const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
@@ -15380,7 +15702,12 @@ function _topoTooltipFromEvent(ev) {
     if (r > maxWallR) maxWallR = r;
   }
   const centerPad = 48;
-  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
+  // Match topoRender: fit to VISIBLE window (cssW/STAGE, cssH/STAGE),
+  // not the full canvas buffer, so hit coords land on the same cells
+  // the user actually sees.
+  const viewW = cssW / TOPO_STAGE_SCALE;
+  const viewH = cssH / TOPO_STAGE_SCALE;
+  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
   const cx = cssW / 2 + _topoPanX;
   const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
@@ -15473,10 +15800,6 @@ function topoSetDragMode(mode) {
   const panBtn = document.getElementById('topo-pan-btn');
   if (rotateBtn) rotateBtn.style.color = (mode === 'rotate') ? '#f0c050' : '';
   if (panBtn) panBtn.style.color = (mode === 'pan') ? '#f0c050' : '';
-  // Flip the wrap's overflow so the tilted slice can extend past the
-  // layout box in 3D mode (illusion of physical object in space).
-  const wrap = document.querySelector('.topo-canvas-wrap');
-  if (wrap) wrap.classList.toggle('is-3d', _topoView3D);
   _topoApplyTransform();
   topoRender();
 }

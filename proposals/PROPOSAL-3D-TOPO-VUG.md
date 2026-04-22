@@ -260,18 +260,80 @@ Internally: `_topoDragMode = 'default' | 'rotate' | 'pan'`, with `_topoView3D` d
 
 7. **No inertia / damping on drag.** Mouseup stops movement instantly. Feels a bit abrupt. Easy polish.
 
+## Tier 1.5 — Canvas-Vector 3D Projection (next step after Tier 1)
+
+**Motivation:** the whole topo rendering is vector (canvas path ops — no bitmap assets), so the computer already does per-vertex math on every frame. Adding a 3D→2D projection matrix to that math is a small addition, not a rewrite. Moving the 3D transform from CSS onto the canvas's own vector math removes a pile of workarounds that only exist because CSS transform is opaque to the canvas drawing code.
+
+### What Tier 1.5 replaces
+
+- The 2×-sized stage-in-wrap "window" workaround (currently needed because CSS transform can't be inspected by the hit-test code; the stage gives rotated content room to extend past the visible window without clipping)
+- Hit-test disabled in rotate mode (CSS transforms don't expose their matrix in a way the hit-test can easily invert; moving 3D into canvas fixes this)
+- Tilt-X clamp at ±86° (no mathematical need; only exists because CSS transform's own edge cases get weird past vertical)
+- Any "canvas got blurry at steep angles" (different browsers' CSS transform smoothing vs. our exact per-vertex projection)
+- The overflow-on-wrap stacking-context dance
+
+### The math
+
+For each vertex `(x, y, z=0)` on the disc (the disc is a flat plane, so z is zero at rest):
+
+```
+1. Apply 3D rotation:
+   (x, y, z) → RotX(tiltX) · RotY(tiltY) · (x, y, z)
+
+2. Project perspective:
+   scale = focalLength / (focalLength - z_rotated)
+   screenX = centerX + x_rotated * scale
+   screenY = centerY + y_rotated * scale
+```
+
+Roughly 6 multiplies + 1 divide per vertex. For a typical topo render with ~10k vertices (wall outline + crystal wedges + edge-texture polyline tips) that's ~70k ops per frame — GPU-negligible. **No performance concern.**
+
+### What changes in the renderer
+
+Every canvas path operation that currently writes `(x, y)` in canvas coords becomes `project3D(x, y, 0)` → `(screenX, screenY)`. That's:
+- Wall outline Bezier endpoints and control points
+- Wedge fill path points (outer + inner edges)
+- Edge texture polyline vertices (sawtooth tips, bump control points, saddle-rhomb Beziers)
+- Inclusion dot centers
+- Scale bar line (stays on the slice — projects with it)
+- The diameter readout — stays as an HTML overlay, doesn't project
+
+A single `project3D` helper + 3×3 rotation matrix recomputed per render on tilt change is all the new code.
+
+### What Tier 1.5 unlocks for free
+
+- **Hit-testing works at any tilt.** Given a screen-space mouse coord, invert the rotation matrix and project back onto the disc plane. Standard linear algebra, ~10 lines.
+- **Depth-sorted wedges.** Sort wedges by their projected Z before painting; near wedges overpaint far ones. This is what Three.js does automatically; we do it with one `Array.sort()` pass on the wedge list.
+- **True orbit.** No tilt clamp — user can spin the disc through vertical and beyond. (Would want to add inertia for this to feel right.)
+- **Stage + wrap collapse back to a single element.** Canvas returns to being the same size as the visible window. Much simpler DOM.
+
+### What Tier 1.5 does NOT give you
+
+- **Lighting / shading.** Wedges stay flat-colored. Three.js (Tier 2) adds surface normals, specular, ambient — you can't do that economically with per-vertex canvas math.
+- **Per-crystal extruded geometry.** Each crystal stays a 2D wedge rotated in 3D. Real 3D mesh (crystals sticking out of the wall as prisms) is Tier 2 work.
+- **Inside-out view.** Camera staying outside the disc's plane. Technically possible in canvas but awkward; Three.js is the right tool for that.
+
+### Sizing
+
+- **Implementation:** ~1-2 days. Small enough to do in a single working session; small enough to revert if it doesn't pan out.
+- **Prerequisite:** none — can ship against current single-ring data. Benefits compound when Phase 1 of Tier 3 lands (then each ring projects at a different Z).
+- **Files:** `web/index.html` (topoRender + _topoHitTest + _topoTooltipFromEvent), `docs/index.html` (mirror). No new dependencies.
+
 ## What Tier 2 Would Add
 
-(From the original proposal, updated with Tier 1 lessons.)
+(From the original proposal, updated with Tier 1 + 1.5 lessons.)
 
-- **Three.js scene** replacing the CSS transform. Each crystal becomes a mesh; lighting gives proper shading; raycasting gives accurate hit-tests at any angle. ~1-2 weeks of work.
-- **Multi-ring rendering** — prerequisite: Phase 1 of Tier 3 must ship. Without it Tier 2 is only marginally more interesting than Tier 1.
-- **Proper orbit controls** — Three.js `OrbitControls` is the de-facto standard, with damping / inertia / zoom-to-cursor for free.
+- **Three.js scene** replacing canvas projection. Each crystal becomes a mesh; lighting gives proper shading; raycasting gives accurate hit-tests at any angle. ~1-2 weeks of work.
+- **Multi-ring rendering** — prerequisite: Phase 1 of Tier 3 must ship. Without it Tier 2 is only marginally more interesting than Tier 1.5.
+- **Proper orbit controls** — Three.js `OrbitControls` is the de-facto standard, with damping / inertia / zoom-to-cursor for free. (Tier 1.5 can hand-roll orbit + inertia for cheap; Tier 2 gets them industrial-strength.)
 - **Edge textures in 3D** — the sawtooth/botryoidal/saddle polylines currently drawn per-cell would become extruded mesh geometry on each wedge's inner face. Non-trivial but mechanical.
 - **Inside-out view** — fly camera inside the vug to see walls from within. Free with Three.js camera.
 
 ## Sequencing Implication
 
-Tier 1 ships NOW with existing data. Tier 2 (WebGL / Three.js) waits on Tier 3's Phase 1 (multi-ring data model). That gating is honest: a WebGL viewer showing one repeated ring isn't worth the dependency cost. Once rings differ meaningfully, Tier 2 becomes a compelling upgrade.
+1. **Tier 1** — shipped (CSS transform + stage workaround). Answers "can we see it in 3D?" end-to-end.
+2. **Tier 1.5** — next step. Canvas-vector 3D projection removes the workarounds and restores hit-testing. Small enough to ship alongside chemistry-audit scenarios as one-off refactoring when attention allows.
+3. **Tier 3 Phase 1** — multi-ring data model, identical rings. Proves the 3D simulation infrastructure.
+4. **Tier 2** — WebGL / Three.js upgrade, gated on multi-ring data being meaningful (Phase 2+ of Tier 3).
 
-In the meantime, Tier 1 serves as a "it works end-to-end" proof that answered the user's question ("can we see it in 3D?") without committing to the bigger piece.
+The honest version: **Tier 1 proved the concept, Tier 1.5 cleans up the implementation, Tier 2 replaces it outright when the simulation catches up.** Each tier is shippable standalone and each one retires a workaround the previous tier needed.

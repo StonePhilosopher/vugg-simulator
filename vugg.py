@@ -30,6 +30,22 @@ from typing import List, Dict, Optional, Tuple
 
 
 # ============================================================
+# SIM VERSION
+# ============================================================
+# Monotonic version tag bumped by any change that could shift seed-42
+# output for any scenario (chemistry retune, engine change, new mineral,
+# new event, new mechanic). Used by the scenario-chemistry audit and
+# later by the multi-ring 3D simulation (see PROPOSAL-3D-SIMULATION.md)
+# to distinguish v1 (pre-audit) from v2 (post-audit) output streams.
+#
+#   v1 — pre-audit: generic FluidChemistry defaults, Mg=0 in most scenarios
+#   v2 — scenario-chemistry audit (Apr 2026): every scenario anchored to a
+#        named locality with cited fluid values; locality_chemistry.json
+#        is the data-source-of-truth.
+SIM_VERSION = 2
+
+
+# ============================================================
 # MINERAL SPEC — single source of truth
 # ============================================================
 # Loaded from data/minerals.json. Every mineral declares every
@@ -246,33 +262,61 @@ class VugWall:
     primary_bubbles: int = 3
     secondary_bubbles: int = 6
     shape_seed: int = 0
-    
+
+    # Player-tunable wall reactivity multiplier (Creative mode slider).
+    # Scales the acid-driven dissolution rate and gates a small water-
+    # only dissolution path:
+    #   0.0  → totally inert (no dissolution even with strong acid)
+    #   0.5  → sluggish, dolomite-like (acid takes ~2× longer to enlarge the cavity)
+    #   1.0  → DEFAULT, current limestone behavior used by all scenarios
+    #   1.5  → reactive limestone (fast acid attack + mild water dissolution)
+    #   2.0  → fresh / high-surface-area limestone (max acid + meaningful water dissolution)
+    # Only affects carbonate walls (limestone, dolomite); silicate
+    # composition still returns {"dissolved": False} regardless of
+    # reactivity, because real silicate dissolution at sim T-P-time
+    # scales is geologically negligible.
+    reactivity: float = 1.0
+
     def dissolve(self, acid_strength: float, fluid: 'FluidChemistry') -> dict:
-        """Dissolve wall rock in response to acid conditions.
+        """Dissolve wall rock in response to acid AND (high-reactivity) water.
 
-        CaCO₃ + 2H⁺ → Ca²⁺ + H₂O + CO₂
+        CaCO₃ + 2H⁺ → Ca²⁺ + H₂O + CO₂  (acid path)
+        CaCO₃ + H₂CO₃ → Ca²⁺ + 2HCO₃⁻   (water path — slow, reactivity-gated)
 
-        Only reactive carbonate walls (limestone, dolomite) buffer acid
-        this way. Silicate host rocks (pegmatite, granite, gneiss,
-        quartzite, phyllite) are effectively inert on sim timescales —
-        they don't dissolve in mildly acidic hydrothermal fluids, don't
-        release cations at a useful rate, and don't buffer pH. Return
+        Only reactive carbonate walls (limestone, dolomite) buffer this
+        way. Silicate host rocks (pegmatite, granite, gneiss, quartzite,
+        phyllite) are effectively inert on sim timescales — they don't
+        dissolve in mildly acidic hydrothermal fluids, don't release
+        cations at a useful rate, and don't buffer pH. Return
         {"dissolved": False} for those so pH can actually drop and
         mineral kaolinization can proceed on the pocket's crystals.
 
+        Two contributions to the per-step dissolution rate:
+          • acid_rate = acid_strength × 0.5 × reactivity
+          • water_rate = max(0, reactivity − 1.0) × 0.05
+        Sum is capped at 2.0 mm/step.
+
         Returns dict of what happened.
         """
-        if acid_strength <= 0:
-            return {"dissolved": False}
-
-        # Gate by composition — only carbonate walls are acid-reactive.
+        # Gate by composition first — silicate walls are inert.
         if self.composition not in ("limestone", "dolomite"):
             return {"dissolved": False}
 
-        # Dissolution rate scales with acid strength and available wall
-        # More acid = more dissolution, but it's self-limiting (neutralization)
-        rate_mm = min(acid_strength * 0.5, 2.0)  # max 2mm per step
-        
+        # Acid attack — scales with how far below the carbonate-attack
+        # threshold pH we are, multiplied by the wall's reactivity.
+        acid_rate = max(0.0, acid_strength) * 0.5 * self.reactivity
+
+        # Water-only baseline — fires regardless of pH but is slow.
+        # Only meaningful when reactivity is set above default (real
+        # carbonate dissolution by mildly aggressive groundwater happens
+        # over Ma timescales; the slider lets Creative mode players
+        # accelerate that to compressed sim-step time).
+        water_rate = max(0.0, self.reactivity - 1.0) * 0.05
+
+        rate_mm = min(acid_rate + water_rate, 2.0)
+        if rate_mm <= 0.0:
+            return {"dissolved": False}
+
         if self.thickness_mm < rate_mm:
             rate_mm = self.thickness_mm  # can't dissolve more than exists
         
@@ -2465,9 +2509,32 @@ def grow_quartz(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
         rate = 8.0 * excess * excess  # slow, orderly spiral growth
     else:
         rate = 4.0 * excess           # faster, may produce growth hillocks
-    
-    # Temperature effect on rate
-    rate *= math.exp(-3000.0 / (conditions.temperature + 273.15)) * 50.0
+
+    # Temperature effect on rate.
+    #
+    # History: previous formulation was exp(-3000/T_K) * 50, which was
+    # calibrated for hot porphyry-style hydrothermal quartz (~400°C). At
+    # mid-T (150-250°C, typical of MVT / Herkimer / Alpine / basinal
+    # brines) it collapsed the prefactor to 0.03-0.09, suppressing growth
+    # below the 0.1 µm "negligible" cutoff and starving scenarios where
+    # quartz is actually the most prolific mineral in the field
+    # (Herkimer crystals are cm-scale; sim was producing µm-scale
+    # micro-crust). The BCF σ²-scaling was left alone — that is
+    # physically correct, and real low-σ quartz IS slower than calcite
+    # at the same σ.
+    #
+    # New formulation is normalised so the prefactor ≈ 1.0 at 200°C
+    # (the sim's most-common working temperature), with a gentler slope
+    # (activation energy ~8 kJ/mol vs 25 kJ/mol previously) that keeps
+    # real T-dependence (400°C grows ~3× faster than 100°C) without
+    # suppressing mid-T output:
+    #   T(°C):   400    300    250    200    180    150    100    50
+    #   factor: 1.87   1.44   1.22   1.00   0.90   0.78   0.56  0.38
+    # The low activation energy is sim-appropriate — one step compresses
+    # ~10,000 yr of real time, so quartz T-sensitivity is effectively
+    # integrated down. See proposals TODO for a future refactor that
+    # properly separates kinetic rate from step-duration scaling.
+    rate *= math.exp(-1000.0 / (conditions.temperature + 273.15)) * 8.27
     
     # Add some natural variation
     rate *= random.uniform(0.7, 1.3)
@@ -6198,25 +6265,116 @@ def event_fluid_mixing(conditions: VugConditions) -> str:
 # ============================================================
 
 def scenario_cooling() -> Tuple[VugConditions, List[Event], int]:
-    """Simple cooling scenario — hot fluid cools slowly in a vug."""
+    """Cooling scenario anchored at the Herkimer "diamond" pocket, Middleville, NY.
+
+    Anchor: Herkimer-type double-terminated quartz crystals occur in isolated
+    vugs of the Little Falls Formation, an Upper Cambrian dolostone in the
+    Mohawk Valley. (Note: the audit brief drafted "Lockport Dolostone" — that
+    is Silurian and hosts different mineralization; Herkimer's host is the
+    Little Falls Formation, confirmed by Selleck 1978 and multiple state
+    geological summaries.) The quartz itself crystallized much later,
+    during Alleghenian burial diagenesis in the Carboniferous (~340-300 Ma),
+    when the section reached >3 km depth and ~140-200°C. Silica was liberated
+    by pressure solution and hydrocarbon cracking in adjacent shales, then
+    precipitated free-floating crystals in silica-overpressured pockets
+    that were also saturated with petroleum and saline basinal brine —
+    hence the two-phase enhydro + anthraxolite inclusions diagnostic of
+    Herkimer specimens.
+
+    All fluid values cite locality_chemistry.json#localities.herkimer_middleville.
+    The sim uses abstracted sim-scale ppm, not raw brine concentrations.
+
+    Signature: clear, doubly-terminated quartz. Minimal carbonate competition
+    (most Ca/CO3 has sequestered as dolomite cement in the host rock).
+
+    Data gaps (see locality_chemistry.json): no widely-indexed modern
+    microthermometry study publishes Th and Tm_ice specifically for
+    Herkimer pocket quartz; the 140-200°C window is inferred from regional
+    Alleghenian thermal maturity (Harris et al. 1978; Friedman & Sanders 1982).
+    LA-ICP-MS of Herkimer fluid inclusions has not appeared in open
+    literature; ratios are imported from Hanor 1994 Appalachian-basin averages.
+    """
     conditions = VugConditions(
-        temperature=380.0,
-        pressure=1.5,
-        fluid=FluidChemistry(SiO2=600, Ca=150, CO3=100, Fe=8, Mn=3, Ti=0.8, Al=4),
-        # Phase-1 void shape: gas-bubble cavity — few primaries, minimal
-        # satellite dissolution.
-        wall=VugWall(primary_bubbles=2, secondary_bubbles=3, shape_seed=1),
+        # T=180°C: Alleghenian peak burial for the Cambrian-Ordovician section
+        # of the Appalachian basin [Harris et al. 1978 USGS PP 1197;
+        # Friedman & Sanders 1982 Geology 10]. Prior pre-audit value was 380°C
+        # which was a generic "hot hydrothermal" default with no locality basis.
+        temperature=180.0,
+        # P=1.0 kbar: ~3.5 km burial depth at time of quartz event
+        # [Selleck 1978 on Mohawk Valley stratigraphy + lithostatic calc].
+        pressure=1.0,
+        fluid=FluidChemistry(
+            # SiO2=260: mildly elevated over quartz equilibrium at 180°C
+            # (Rimstidt 1997 gives ~220 ppm) — gives σ(Qz) in the 1.1-1.3
+            # range at nucleation, which produces prismatic well-formed
+            # doubly-terminated crystals rather than skeletal/fenster
+            # habits (those are a high-supersaturation artefact). Herkimer
+            # signature requires slow, ordered growth — low-σ nucleation.
+            SiO2=260,
+            # Ca=80: lower than a typical Appalachian-basin brine
+            # (Hanor 1994 compendium: 5000-20000 ppm raw) because most Ca is
+            # sequestered in surrounding dolomite cement — the pocket is the
+            # silica-overpressured residue.
+            Ca=80,
+            # CO3=30: residual only; most carbonate migrated out as dolomite
+            # cement.
+            CO3=30,
+            # Mg=50: dolomitic-aquifer signature, Mg/Ca ~0.6 — matches the
+            # audit brief's 'hydrothermal' band (50-500 ppm) and fulfills the
+            # brief's core requirement that no scenario should run with Mg=0.
+            # [Hanor 1994 for Appalachian-basin Mg/Ca ratios]
+            Mg=50,
+            # Na=80, K=20: NaCl-CaCl2 brine type, K/Na ~0.25 [Hanor 1994].
+            Na=80, K=20,
+            # Trace metals from the dolomite host.
+            Fe=5, Mn=2,
+            Al=4,
+            # Ti=0.5 ppm in solution controls the TitaniQ thermometer signal
+            # in the precipitated quartz [Wark & Watson 2006].
+            Ti=0.5,
+            # pH=6.8: near-neutral basinal brine, CO2-buffered [Hanor 1994].
+            pH=6.8,
+            # Salinity=18 wt% NaCl-eq: mid-range of the 15-25 wt% Appalachian
+            # basin burial brine band [Hanor 1994]. Fluid inclusions in
+            # Herkimer quartz are commonly two-phase (brine + petroleum),
+            # consistent with a saline parent fluid.
+            salinity=18.0,
+            # O2=0.1: reducing environment — hydrocarbon coexists (solid
+            # anthraxolite + liquid petroleum inclusions are diagnostic of
+            # Herkimer).
+            O2=0.1,
+        ),
+        # Wall is dolomite, not limestone — matches the Cambrian Little Falls
+        # Formation host. wall_Mg_ppm default (1000) already reflects
+        # dolomite-higher-Mg in the VugWall schema.
+        wall=VugWall(
+            composition="dolomite",
+            primary_bubbles=2, secondary_bubbles=3, shape_seed=1,
+        ),
     )
     events = []
     return conditions, events, 100
 
 
 def scenario_pulse() -> Tuple[VugConditions, List[Event], int]:
-    """Cooling with a fluid pulse event mid-growth."""
+    """Cooling with a fluid pulse event mid-growth.
+
+    Generic testing scenario — not anchored to a real locality. Acts as
+    a slightly more interesting twin of `cooling`: a single fluid pulse
+    plus a cooling pulse halfway through to test event-driven chemistry
+    perturbation. Audit treats this as a testing scaffold (per the
+    user's clarification on the audit brief), so the only gap-fill
+    here is the brief-required non-zero Mg.
+    """
     conditions = VugConditions(
         temperature=350.0,
         pressure=1.2,
-        fluid=FluidChemistry(SiO2=500, Ca=200, CO3=120, Fe=5, Mn=2, Ti=0.5, Al=3),
+        # Mg=8 audit gap-fill (Apr 2026): the brief requires every
+        # scenario have non-zero Mg. 8 ppm is the meteoric / generic
+        # cooling-fluid baseline from the brief's per-archetype Mg
+        # range table. No other gap-fills since this is a testing
+        # scaffold.
+        fluid=FluidChemistry(SiO2=500, Ca=200, CO3=120, Fe=5, Mn=2, Ti=0.5, Al=3, Mg=8),
         wall=VugWall(primary_bubbles=2, secondary_bubbles=3, shape_seed=2),
     )
     events = [
@@ -6227,13 +6385,26 @@ def scenario_pulse() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_mvt() -> Tuple[VugConditions, List[Event], int]:
-    """Mississippi Valley-type deposit — fluid mixing produces sphalerite + calcite + fluorite.
+    """Mississippi Valley-type deposit — anchored to the Tri-State district
+    (Joplin / Picher / Galena MO-KS-OK).
 
-    Anchor: Tri-State district (Joplin / Picher) Sr-Pb-Zn brines. Per Roedder 1976
-    and Ohle 1959, Tri-State brines are >200,000 mg/L TDS, Mg/Ca ~0.05–0.1
-    (low-Mg → favors calcite, not aragonite). Mg ~30 ppm at our scaled
-    abstraction keeps that ratio realistic and lets the audit brief (the
-    SCENARIO-CHEMISTRY-AUDIT.md task) sharpen it later.
+    Anchor: Tri-State Pb-Zn-Ag mining district, host = Mississippian
+    Boone Formation cherty limestone. Brines per Roedder 1976, Ohle 1959,
+    Hagni 1976, and the Stoffell et al. 2008 LA-ICP-MS fluid-inclusion
+    study: NaCl-CaCl2 basinal brine, 18-24 wt% NaCl-eq total salinity,
+    150-200,000 ppm Cl raw, Mg/Ca ~0.05-0.1 (low-Mg → favors calcite over
+    aragonite). Tri-State galena is documented argentiferous; Ag was
+    historically a meaningful smelter byproduct alongside Pb-Zn.
+
+    Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl (the
+    NaCl-CaCl2 brine baseline), Ag (argentiferous-galena signature),
+    Ba (barite documented locally), Sr (basinal-brine tracer + minor
+    celestine), Cu (trace chalcopyrite). Also drift-fixed Pb=40 from
+    JS-side intent into Python init.
+
+    Existing values (SiO2, Ca, CO3, Fe, Mn, F, Mg, pH, salinity) and
+    the event sequence (fluid_mixing step 20, fluid_pulse step 60,
+    tectonic_shock step 80) preserved untouched — gap-fill only.
     """
     conditions = VugConditions(
         temperature=180.0,
@@ -6245,6 +6416,53 @@ def scenario_mvt() -> Tuple[VugConditions, List[Event], int]:
             # late in the run as carbonate concentrates.
             SiO2=100, Ca=300, CO3=250, Fe=15, Mn=25,
             Zn=0, S=0, F=5, Mg=30,  # realistic Tri-State Mg/Ca ratio
+            # Drift-fix: JS scenario_mvt has carried Pb=40 in init since
+            # round 2 but Python had it at default 0. Mirroring JS intent
+            # (combined with event_fluid_mixing's +=25, post-event Pb=65
+            # in both runtimes — enables galena from initial fluid, not
+            # only from event spike).
+            Pb=40,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Na=80, K=15: NaCl-CaCl2 basinal brine type. Stoffell et al.
+            # 2008 LA-ICP-MS reports Na 50-80,000 ppm raw, K/Na ~0.2 in
+            # Tri-State fluid inclusions. Sim-scale abstraction.
+            Na=80, K=15,
+            # Cl=200: paired with Na+K. Tri-State raw brine is 120-220,000
+            # ppm Cl (NaCl-rich endmember to CaCl2-rich endmember).
+            # salinity=15 wt% NaCl-eq remains the bulk indicator;
+            # free-trace Cl lets pyromorphite (Pb-Cl) and chlorargyrite
+            # (Ag-Cl) chemistry engage where Pb+Ag are present.
+            Cl=200,
+            # Ag=5: argentiferous-galena signature. Tri-State galena
+            # commonly carries 50-300 ppm Ag in the mineral; brine-stage
+            # fluid Ag is much lower but non-zero. Historical Joplin
+            # smelters recovered Ag as a Pb byproduct.
+            Ag=5,
+            # Ba=20: Tri-State has barite as a local late-stage gangue.
+            # Brine Ba moderate (sulfate-buffered when S delivered by
+            # event_fluid_mixing — barite then nucleates).
+            Ba=20,
+            # Sr=15: classic basinal-brine tracer (Hanor 1994); Tri-State
+            # has minor celestine. Sub-ppm raw → 15 sim-scale.
+            Sr=15,
+            # Cu=3: trace chalcopyrite is documented at Tri-State even
+            # though Cu is not a primary commodity. Low init keeps the
+            # Pb-Zn signature dominant.
+            Cu=3,
+            # ── Pre-researched, pending FluidChemistry schema ─────────
+            # When Cd is added to FluidChemistry, set:
+            #     Cd=2,
+            # Justification: Tri-State sphalerite carries Cd substituting
+            # for Zn (typically 1000-5000 ppm Cd in mineral, raw fluid Cd
+            # ~1-10 ppm). The yellow Cd-rich coatings on Tri-State
+            # sphalerite are greenockite (CdS) — would unlock its
+            # nucleation. Sim-scale 2 matches the Sr/Ag trace abstraction.
+            # Source: Schwartz 2000 (Econ. Geol. 95) on Cd in MVT
+            # sphalerite. Procedure: add Cd field to FluidChemistry +
+            # mirror to JS, add grow_greenockite (CdS) + minerals.json
+            # entry, uncomment the line above. Same template as
+            # bingham_canyon Au pending-schema entry.
+            # ──────────────────────────────────────────────────────────
             pH=7.2, salinity=15.0
         ),
         # MVT — dissolution cavity in limestone. Cohesive primary void
@@ -6260,7 +6478,29 @@ def scenario_mvt() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
-    """Copper porphyry deposit — magmatic fluid with copper, then oxidation."""
+    """Copper porphyry deposit — anchored to Bingham Canyon, Utah.
+
+    Anchor: Bingham Canyon Cu-Mo-Au deposit, Oquirrh Mountains, UT.
+    Late-Eocene (~38 Ma) quartz-monzonite-porphyry intrusion with
+    classic potassic-core / phyllic-shell / propylitic-rim alteration
+    zoning. Fluid evolution from the Landtwing et al. 2010 (Econ. Geol.
+    105) LA-ICP-MS study: deep central brine ~7 wt% NaCl-eq with
+    subequal Na/K/Fe/Cu, upper brine endmember ~45 wt% NaCl-eq
+    coexisting with a low-density vapor (~0.2 g/cm³). Mo arrives in a
+    distinct later pulse from Cu (Seo et al. 2012; already encoded in
+    event_molybdenum_pulse).
+
+    Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl, Mg, Ag,
+    Te to populate the brine-element baseline that was missing from
+    the original scenario. Initial Cu and Mo remain at zero by design
+    — they are delivered by event_copper_injection (step 25, 60) and
+    event_molybdenum_pulse (step 45) respectively, modeling the
+    discrete pulse pattern documented at Bingham.
+
+    Existing values (SiO2, Ca, CO3, Fe, Mn, Pb, Sb, As, Bi, S, F,
+    pH, salinity, O2) were intentional and were not retuned. This is
+    a gap-fill audit, not a rewrite.
+    """
     conditions = VugConditions(
         temperature=400.0,
         pressure=2.0,
@@ -6275,6 +6515,51 @@ def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
             # activity in epithermal Cu systems). Enables the tetrahedrite
             # (Cu-Sb-S) / tennantite (Cu-As-S) fahlore pair.
             Sb=25, As=15, Bi=30,
+            # ── Drift-consistency: mirror JS-side intentional values ─
+            # Na=25, K=40, Al=15: the JS scenario_porphyry has carried
+            # these since round 2 but Python had them at default 0.
+            # Drift bug, not gap. Mirroring the JS values rather than
+            # imposing literature numbers (Landtwing 2010 would suggest
+            # Na/K ~10x higher) so existing non-zero intent is preserved.
+            # See the audit brief's consistency-check directive.
+            Na=25, K=40, Al=15,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Cl=600: porphyry brines are NaCl-KCl rich. The salinity
+            # field already encodes 10 wt% NaCl-eq, but Cl as a free
+            # trace lets halite/chlorargyrite/atacamite chemistry engage
+            # if downstream events push that direction. Landtwing et al.
+            # 2010 LA-ICP-MS at Bingham confirms Cl as the dominant
+            # anion in the deep-center brine.
+            Cl=600,
+            # Mg=40: porphyry brines pick up Mg through wallrock
+            # interaction, especially against mafic or carbonate host.
+            # Bingham's Pennsylvanian-Permian sediment + intrusive
+            # contact yields fluid Mg in the 50-200 ppm range raw;
+            # 40 sim-ppm is mid-range conservative. Brief-required
+            # non-zero Mg.
+            Mg=40,
+            # Ag=8: argentiferous-Cu signature. Bingham galena and
+            # tetrahedrite carry Ag; brine-stage fluid Ag 1-50 ppm raw
+            # in published porphyry-fluid LA-ICP-MS (Heinrich 2007).
+            Ag=8,
+            # Te=2: epithermal-cap trace. Bingham's upper levels carry
+            # tellurides (calaverite, sylvanite) — fluid Te is low but
+            # non-zero in the porphyry-distal apron.
+            Te=2,
+            # ── Pre-researched, pending FluidChemistry schema ─────────
+            # When Au is added to the FluidChemistry dataclass, set:
+            #     Au=2,
+            # Justification: Landtwing et al. 2010 LA-ICP-MS reports ~1
+            # ppm Au in fluid inclusions across multiple porphyry Cu-Au
+            # systems including Bingham; the Au-Cu-rich center near the
+            # top of the orebody is the diagnostic vapor-plume target.
+            # Sim-scale Au=2 matches the Te=2 trace abstraction. No
+            # further research needed — just add the field to the
+            # schema, uncomment the line above, plus mirror to JS and
+            # web/docs. Same procedure for the bingham_canyon entry in
+            # data/locality_chemistry.json (pending_schema_additions
+            # block already populated with the value).
+            # ──────────────────────────────────────────────────────────
             O2=0.2, pH=4.5, salinity=10.0
         ),
         # Porphyry stockwork — primary void plus a moderate set of
@@ -6292,16 +6577,34 @@ def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
-    """Reactive wall scenario — acid pulses dissolve limestone, feed crystal growth.
-    
-    Professor's insight: acid entering a carbonate vug doesn't just dissolve crystals —
-    it dissolves the WALL. The wall neutralizes the acid AND releases Ca²⁺/CO₃²⁻ 
-    back into solution. When pH recovers, that dissolved carbonate supersaturates 
-    and precipitates as rapid growth bands on existing crystals. The acid is both 
-    destroyer and creator. The vug enlarges as the crystals grow.
-    
-    This scenario models repeated acid pulses into a limestone-hosted vug,
-    showing the dissolution→supersaturation→growth burst cycle.
+    """Reactive wall scenario — anchored to the Sweetwater Mine, Viburnum
+    Trend, Missouri.
+
+    Anchor: Sweetwater Mine (Reynolds County, MO), part of the Viburnum
+    Trend Pb-Zn district. Host = Cambrian Bonneterre Formation
+    dolomitic limestone. Viburnum is a Ba-rich MVT endmember
+    (Stoffell et al. 2008 distinguishes it from the lower-Ba, higher-Ag
+    Tri-State district). Classic acid-into-carbonate paragenesis:
+    sphalerite-galena-marcasite ± barite, dolomite-calcite gangue.
+    Sverjensky 1981 (Econ. Geol. 76) and Leach et al. 2010 are the
+    primary geochemistry sources.
+
+    Mechanic: acid entering a carbonate vug doesn't just dissolve
+    crystals — it dissolves the WALL. The wall neutralizes the acid
+    AND releases Ca²⁺/CO₃²⁻ back into solution. When pH recovers,
+    that dissolved carbonate supersaturates and precipitates as rapid
+    growth bands on existing crystals. The acid is both destroyer and
+    creator. The vug enlarges as the crystals grow. Repeated acid
+    pulses model the Viburnum dissolution→supersaturation→growth
+    burst cycle.
+
+    Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl
+    (NaCl-CaCl2 brine baseline that was missing), Ag (Viburnum
+    galena is less argentiferous than Tri-State but still carries
+    Ag), Sr (basinal-brine tracer + minor celestine documented in
+    Viburnum). Existing chemistry (SiO2, Ca, CO3, Fe, Mn, Zn, Pb,
+    Ba, S, F, Mg, pH, salinity) and the four-pulse event sequence
+    preserved untouched.
     """
     conditions = VugConditions(
         temperature=140.0,
@@ -6311,7 +6614,8 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
             # Polymetallic limestone brine — real Zn-bearing carbonate-
             # hosted vugs almost always carry Pb too (galena travels
             # with sphalerite), and Ba is classic (barite is a common
-            # late-stage phase).
+            # late-stage phase). Viburnum is the high-Ba MVT endmember
+            # per Stoffell et al. 2008.
             Zn=80, Pb=30, Ba=25, S=60, F=8,
             # Limestone-hosted brines (Sweetwater / Viburnum Trend per
             # Sverjensky 1981) carry Mg ~50–150 ppm. Mg=100 sets Mg/Ca
@@ -6319,6 +6623,26 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
             # fire. Calcite still dominates (Mg-poisoning at 0.4 ratio
             # is mild); aragonite stays absent (its threshold is ~1.5).
             Mg=100,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Na=70, K=12: NaCl-CaCl2 basinal brine baseline. Viburnum
+            # brines per Sverjensky 1981 + Stoffell 2008 are 50-80,000
+            # ppm Na raw, K/Na ~0.2. Sim-scale abstraction (slightly
+            # below Tri-State Na=80 to reflect Viburnum's somewhat lower
+            # Pb-Zn-Ag tenor / different basin source).
+            Na=70, K=12,
+            # Cl=200: brine anion paired with Na+K. salinity=18 wt%
+            # NaCl-eq remains bulk indicator; free Cl enables Pb-Cl
+            # (pyromorphite-laurionite) chemistry where Pb is present.
+            Cl=200,
+            # Ag=3: Viburnum galena carries Ag at lower abundance than
+            # Tri-State (Stoffell 2008 LA-ICP-MS shows Ag content
+            # broadly distinguishes the two MVT districts). Sim-scale
+            # below Tri-State's Ag=5.
+            Ag=3,
+            # Sr=12: basinal-brine tracer (Hanor 1994); minor celestine
+            # documented in the Viburnum carbonate gangue.
+            Sr=12,
+            # ──────────────────────────────────────────────────────────
             pH=7.0, salinity=18.0
         ),
         wall=VugWall(
@@ -6396,10 +6720,17 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
 def scenario_radioactive_pegmatite() -> Tuple[VugConditions, List[Event], int]:
     """Radioactive pegmatite — high-T alkali granite pocket.
 
-    Pegmatitic fluids are silica-saturated melts with abundant K+Na+Al+U.
-    Grows uraninite, smoky quartz (from radiation), feldspar/albite,
-    and late-stage galena from radiogenic Pb. Already declared in web/;
-    ported to vugg.py so uraninite / feldspar / albite actually nucleate.
+    Generic testing scenario — not anchored to a real locality (per the
+    user's clarification on the audit brief). Pegmatitic fluids are
+    silica-saturated melts with abundant K+Na+Al+U. Grows uraninite,
+    smoky quartz (from radiation), feldspar/albite, and late-stage
+    galena from radiogenic Pb. Already declared in web/; ported to
+    vugg.py so uraninite / feldspar / albite actually nucleate.
+
+    Audit gap-fill (Apr 2026): Mg=5 added — brief-required non-zero
+    Mg baseline. Pegmatite pocket fluids are Mg-poor (Mg partitions
+    into outer-shell biotite/chlorite during pegmatite differentiation),
+    matches the gem_pegmatite scenario's Mg=5 abstraction.
     """
     conditions = VugConditions(
         temperature=600.0,
@@ -6412,6 +6743,10 @@ def scenario_radioactive_pegmatite() -> Tuple[VugConditions, List[Event], int]:
             # mineral consumes them, but the narrator reads them as
             # beryl/spodumene/tourmaline/apatite country.
             Be=20, Li=40, B=25, P=8,
+            # Audit gap-fill (Apr 2026): brief-required non-zero Mg.
+            # Pegmatite-pocket appropriate low value matching
+            # gem_pegmatite's Mg=5.
+            Mg=5,
             O2=0.0, pH=6.5, salinity=8.0,
         ),
         # Pegmatite pocket — 4 primaries form a fracture-controlled
@@ -6459,13 +6794,33 @@ def scenario_radioactive_pegmatite() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
-    """Supergene oxidation — low-T, oxidizing water-table zone.
+    """Supergene oxidation — anchored to Tsumeb, Namibia (1st-stage gossan).
 
     The cold, oxygenated domain where primary sulfides weather into secondary
     minerals. Pb+Mo → wulfenite. Zn+CO₃ → smithsonite. Zn+As → adamite.
     Pb+As+Cl → mimetite. Fe → goethite. Ca+SO₄ → selenite. Cu+CO₃ → malachite.
     Fills the gap flagged in TASK-BRIEF-2: wulfenite etc. can't reach their
     <80°C stability window in the hydrothermal scenarios.
+
+    Anchor: Tsumeb mine (Otavi Mountain Land, Namibia). One of the most
+    mineralogically diverse deposits ever discovered — ~280 species
+    documented, including the type locality for germanium (germanite,
+    renierite, briartite). Pipe-shaped Pb-Zn-Cu sulfide body in
+    Neoproterozoic dolomite, with three distinct supergene oxidation
+    zones developed during Mesozoic-Cenozoic uplift. The 1st-stage
+    gossan (this scenario) is the high-Pb-As-Cl uppermost zone where
+    mimetite, anglesite, cerussite, smithsonite, willemite,
+    arsenocrandallite, and the Ge-bearing oxidation phases occur.
+    Argentiferous (native Ag, proustite, pyrargyrite, argentiferous
+    galena). References: Pinch & Wilson 1977 (the canonical Tsumeb
+    monograph), Lombaard et al. 1986 (geology), Melcher 2003 (Ge
+    geochemistry).
+
+    Chemistry-audit gap-fill pass (Apr 2026): added Ag (Tsumeb's
+    silver suite), Ge (the type-locality element), Sb (proustite-
+    pyrargyrite + tetrahedrite enabling), Na/K (minor groundwater
+    cation traces). Existing 8-event sequence preserved; existing
+    Mg=5, Co/Ni-via-event preserved.
     """
     conditions = VugConditions(
         temperature=35.0,          # shallow water-table zone
@@ -6490,6 +6845,29 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
             # pyromorphite's gate is P>2, so it waits for a phosphate
             # event later in the scenario.
             P=0.5,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Ag=8: Tsumeb is one of the most argentiferous deposits
+            # ever — native silver, argentiferous galena, proustite,
+            # pyrargyrite, stephanite. Existing Cl=20 + new Ag=8
+            # supports chlorargyrite chemistry too [Pinch & Wilson 1977].
+            Ag=8,
+            # Ge=5: Tsumeb is THE type locality for germanium.
+            # Germanite (Cu26Fe4Ge4S32), renierite (Cu,Zn)11(Ge,As)2Fe4S16,
+            # and briartite were all first described from Tsumeb.
+            # FluidChemistry's Ge field has carried a "Tsumeb speciality"
+            # comment since the schema was written — this audit finally
+            # populates it [Melcher 2003 — Tsumeb Ge geochemistry].
+            Ge=5,
+            # Sb=5: enables proustite (Ag3SbS3) and pyrargyrite (Ag3SbS3)
+            # — the ruby silvers — plus tetrahedrite. Mirrors the
+            # Bisbee-style Sb-As-Bi greisen-trace abstraction at lower
+            # supergene-zone abundance.
+            Sb=5,
+            # Na=30, K=10: minor groundwater cation traces. Supergene
+            # meteoric water is dilute (salinity stays at 2 wt%) but
+            # carries some Na/K from soil-zone weathering.
+            Na=30, K=10,
+            # ──────────────────────────────────────────────────────────
             O2=1.8, pH=6.8, salinity=2.0,
         ),
         # Supergene oxidation front — 3 primary + 7 secondary bubbles
@@ -6615,7 +6993,8 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_gem_pegmatite() -> Tuple[VugConditions, List[Event], int]:
-    """Minas Gerais Gem Pegmatite Pocket — Variant A.
+    """Minas Gerais Gem Pegmatite Pocket — anchored to the Cruzeiro mine,
+    Doce Valley, Minas Gerais (Variant A).
 
     A miarolitic cavity in a complex zoned pegmatite at the São Francisco
     craton margin. Brasiliano orogeny, 700–450 Ma. The outer pegmatite
@@ -6623,6 +7002,14 @@ def scenario_gem_pegmatite() -> Tuple[VugConditions, List[Event], int]:
     crystallized; this vug is the residual pocket where incompatible
     elements (Be, B, Li, F) accumulate beyond belief before crossing
     saturation and nucleating their exotic species.
+
+    Anchor: Cruzeiro mine (São José da Safira, Doce Valley, MG) — the
+    type-locality for fine schorl-elbaite tourmaline + smoky quartz
+    pockets, with documented beryl, spodumene, lepidolite, and
+    accessory apatite. Brasiliano-age (Neoproterozoic) pegmatite field
+    cutting Macaúbas Group meta-sediments. Morteani et al. 2002 covers
+    fluid chemistry; Cassedanne (1991) and Proctor (1985) cover the
+    Cruzeiro-specific paragenesis.
 
     Thermal regime: 650 → 300°C over ~220 steps in three phases.
     Phase 1 (650–550°C): wall-zone crystallization (microcline, quartz,
@@ -6685,6 +7072,20 @@ def scenario_gem_pegmatite() -> Tuple[VugConditions, List[Event], int]:
             # Mn for morganite/kunzite/rubellite; Cu for the Paraíba long-
             # shot (1 in 20 scenarios lands it given seed variance).
             Cr=2.5, Cu=0.3, V=2.0, Ti=0.8,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # P=8: pegmatite residual pocket fluids are P-enriched —
+            # apatite (Ca5(PO4)3F) is a documented Cruzeiro accessory
+            # alongside the gem species. Existing Ca=30 + F=25 already
+            # support apatite chemistry; P=0 was the gate. Conservative
+            # value — apatite should nucleate as a minor accessory, not
+            # dominate the gem signature [Cassedanne 1991].
+            P=8,
+            # Mg=5: pegmatite residual pocket fluids are Mg-poor (Mg
+            # partitions strongly into outer-shell biotite/chlorite
+            # during pegmatite differentiation). Conservative; brief-
+            # required non-zero Mg.
+            Mg=5,
+            # ──────────────────────────────────────────────────────────
             O2=0.1, pH=6.8, salinity=6.0,
         )
     )
@@ -6864,6 +7265,21 @@ def scenario_ouro_preto() -> Tuple[VugConditions, List[Event], int]:
             # lands on an already-elevated baseline.
             Cr=0.5,
             Ti=0.6,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Na=60, K=40: phyllite devolatilization releases Na and K
+            # from breakdown of muscovite (KAl2[AlSi3O10](OH)2), biotite,
+            # and albite. Morteani et al. 2002 fluid inclusion data for
+            # Ouro Preto reports moderate-salinity metamorphic brines
+            # with Na > K (typical phyllite-devolatilization signature).
+            # The very-low salinity=3 stays — these values are
+            # consistent with low-TDS metamorphic brines, just need the
+            # individual cation accounting.
+            Na=60, K=40,
+            # Mg=15: phyllite chlorite + biotite breakdown. Conservative
+            # — Ouro Preto fluid is not Mg-rich (the host is quartzite +
+            # phyllite, not mafic). Brief-required non-zero Mg.
+            Mg=15,
+            # ──────────────────────────────────────────────────────────
             O2=0.3, pH=6.5, salinity=3.0,
         ),
         # Ouro Preto topaz vein — 2 primary + 4 secondary bubbles;
@@ -7008,6 +7424,42 @@ def scenario_bisbee() -> Tuple[VugConditions, List[Event], int]:
             # Trace — arsenic from arsenopyrite, bismuth greisen
             # signature (Bisbee has documented bismuth enrichment).
             As=8, Bi=2,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Ag=40: Bisbee / Warren District was a major Ag producer
+            # (~25 Moz historically) alongside Cu and Au. Argentiferous
+            # galena + tetrahedrite + argentite + minor native Ag are
+            # documented [Graeme et al. 2019]. Higher than the prior
+            # MVT scenarios (Tri-State Ag=5, Sweetwater Ag=3) reflecting
+            # Bisbee's Ag-rich character.
+            Ag=40,
+            # Mg=50: Escabrosa Limestone host is dolomitic in places;
+            # brine Mg from carbonate dissolution. Conservative —
+            # Bisbee doesn't have prominent dolomitization, but the
+            # brief requires every scenario have non-zero Mg.
+            Mg=50,
+            # P=5: enables pyromorphite (Pb-Cl-PO4) given existing
+            # Pb=15 + Cl=400 + supergene oxidation events. Bisbee has
+            # documented pyromorphite as a minor supergene Pb species
+            # alongside cerussite and anglesite [Graeme et al. 2019].
+            P=5,
+            # Sb=5: tetrahedrite (Cu-Sb-S) is the documented sulfosalt
+            # at Bisbee. Bi=2 is already set; mirroring with comparable
+            # low Sb completes the Sb-As-Bi greisen-trace triplet.
+            Sb=5,
+            # ── Pre-researched, pending FluidChemistry schema ─────────
+            # When Au is added to the FluidChemistry dataclass, set:
+            #     Au=3,
+            # Justification: Bisbee was a moderate Au producer (~3 Moz
+            # historically), classic Cu-Au porphyry. Lower than Bingham's
+            # Au=2 in some sense (Bingham is the type Cu-Au porphyry)
+            # but Bisbee's preserved Au is documented in the supergene
+            # zone as native gold + auriferous chalcocite. Sim-scale
+            # Au=3 slightly higher than Bingham reflecting Bisbee's
+            # preserved oxidation zone where Au accumulates.
+            # Source: Graeme et al. 2019 + USGS Bisbee bulletins.
+            # Procedure: same as bingham_canyon Au — add field, mirror,
+            # uncomment, re-run seed-42.
+            # ──────────────────────────────────────────────────────────
             # Very reducing primary — chalcopyrite/bornite-stable.
             O2=0.05, pH=5.0, salinity=30.0
         ),
@@ -7230,6 +7682,12 @@ def scenario_deccan_zeolite() -> Tuple[VugConditions, List[Event], int]:
             # needles before Stage III brings apophyllite.
             SiO2=900, Ca=180, CO3=80, Fe=180, Mn=4, Mg=8, Al=15,
             K=2, Na=40, F=1,
+            # Audit gap-fill (Apr 2026): Sr=2 — Deccan zeolites
+            # (heulandite, stilbite, mesolite) carry Sr substituting
+            # for Ca, sometimes 100s of ppm in the mineral. Sim-scale
+            # 2 ppm in the parent fluid documents the source. Brief-
+            # required non-zero Mg already covered by Mg=8.
+            Sr=2,
             O2=1.5, pH=8.2, salinity=2.0,
         ),
         # Vesicle in basalt — a single primary cavity with minor
@@ -9027,19 +9485,28 @@ class VugSimulator:
     
     def dissolve_wall(self):
         """Check if acid conditions are dissolving the vug wall.
-        
+
         This is the key feedback loop Professor identified:
-        Acid enters → dissolves carbonate wall → neutralizes acid + 
+        Acid enters → dissolves carbonate wall → neutralizes acid +
         releases Ca²⁺/CO₃²⁻ → supersaturates fluid → rapid crystal growth.
         The vug enlarges as its crystals grow. The room makes the furniture.
+
+        Always calls wall.dissolve() so the wall's reactivity slider
+        (Creative mode) can drive a small water-only dissolution path
+        even at neutral pH. wall.dissolve() short-circuits when
+        reactivity=1.0 (default) AND pH ≥ 5.5, so non-reactive scenarios
+        are unaffected.
         """
         wall = self.conditions.wall
-        
-        # Only dissolve if pH is acidic enough to attack carbonate
-        if self.conditions.fluid.pH >= 5.5:
+
+        # Acid strength is the gap below the carbonate-attack pH threshold.
+        # Negative when pH ≥ 5.5; clipped to 0 in wall.dissolve().
+        acid_strength = max(0.0, 5.5 - self.conditions.fluid.pH)
+
+        # Skip the call entirely when there is no work to do — neutral
+        # fluid AND default reactivity. Avoids logging noise.
+        if acid_strength <= 0.0 and wall.reactivity <= 1.0:
             return
-        
-        acid_strength = 5.5 - self.conditions.fluid.pH  # 0 to ~3.5
         
         # Record pre-dissolution supersaturation for comparison
         pre_sigma_cal = self.conditions.supersaturation_calcite()
