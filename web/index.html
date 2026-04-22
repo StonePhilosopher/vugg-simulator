@@ -181,14 +181,19 @@ h1 {
   position: relative;
   width: 100%;
   overflow: hidden;
+  /* Background lives HERE, not on the canvas itself, so the dark void
+     stays fixed while the canvas (the slice) rotates in 3D. Creates
+     the illusion of a physical object floating in space rather than
+     a tilting black box. */
+  background: #050504;
+  border: 1px solid #1a1a14;
+  border-radius: 3px;
 }
 #topo-canvas {
   display: block;
   width: 100%;
   height: 340px;
-  background: #050504;
-  border: 1px solid #1a1a14;
-  border-radius: 3px;
+  background: transparent;
   cursor: crosshair;
 }
 .topo-tooltip {
