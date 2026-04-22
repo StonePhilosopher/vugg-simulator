@@ -7881,13 +7881,32 @@ function scenario_pulse() {
   return { conditions, events, defaultSteps: 100 };
 }
 
+// Tri-State Pb-Zn-Ag district (Joplin / Picher / Galena, MO-KS-OK).
+// Host: Mississippian Boone Formation cherty limestone. Brines are
+// NaCl-CaCl2 basinal type, 18-24 wt% NaCl-eq (Stoffell et al. 2008
+// LA-ICP-MS). Galena is argentiferous. See vugg.py scenario_mvt
+// docstring + data/locality_chemistry.json#tri_state for full citations.
 function scenario_mvt() {
   const conditions = new VugConditions({
     temperature: 180.0, pressure: 0.3,
     fluid: new FluidChemistry({
       // Mn=25 within Tri-State district brine range (Roedder 1976) — pushes rhodochrosite saturation late in run.
       SiO2: 100, Ca: 300, CO3: 250, Fe: 15, Mn: 25,
-      Zn: 0, S: 0, F: 5, Pb: 40, Mg: 30, pH: 7.2, salinity: 15.0
+      Zn: 0, S: 0, F: 5, Pb: 40, Mg: 30,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Na: 80, K: 15,      // NaCl-CaCl2 brine, K/Na ~0.2 [Stoffell 2008]
+      Cl: 200,            // brine anion match for Na+K [Roedder 1976]
+      Ag: 5,              // argentiferous Tri-State galena signature
+      Ba: 20,             // local barite gangue
+      Sr: 15,             // basinal-brine tracer + minor celestine [Hanor 1994]
+      Cu: 3,              // trace chalcopyrite is documented at Tri-State
+      // Pre-researched, pending FluidChemistry schema:
+      //   When Cd is added, set Cd: 2. Tri-State sphalerite carries Cd
+      //   substituting for Zn; greenockite (CdS) is the diagnostic
+      //   yellow coating. Source: Schwartz 2000 Econ. Geol. 95.
+      //   See vugg.py scenario_mvt comment + locality_chemistry.json
+      //   tri_state.pending_schema_additions for full note.
+      pH: 7.2, salinity: 15.0
     }),
     // MVT dissolution cavity in limestone — all-axis lumpiness.
     wall: new VugWall({ primary_bubbles: 3, secondary_bubbles: 8, shape_seed: 3 }),

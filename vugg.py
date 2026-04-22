@@ -6344,13 +6344,26 @@ def scenario_pulse() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_mvt() -> Tuple[VugConditions, List[Event], int]:
-    """Mississippi Valley-type deposit — fluid mixing produces sphalerite + calcite + fluorite.
+    """Mississippi Valley-type deposit — anchored to the Tri-State district
+    (Joplin / Picher / Galena MO-KS-OK).
 
-    Anchor: Tri-State district (Joplin / Picher) Sr-Pb-Zn brines. Per Roedder 1976
-    and Ohle 1959, Tri-State brines are >200,000 mg/L TDS, Mg/Ca ~0.05–0.1
-    (low-Mg → favors calcite, not aragonite). Mg ~30 ppm at our scaled
-    abstraction keeps that ratio realistic and lets the audit brief (the
-    SCENARIO-CHEMISTRY-AUDIT.md task) sharpen it later.
+    Anchor: Tri-State Pb-Zn-Ag mining district, host = Mississippian
+    Boone Formation cherty limestone. Brines per Roedder 1976, Ohle 1959,
+    Hagni 1976, and the Stoffell et al. 2008 LA-ICP-MS fluid-inclusion
+    study: NaCl-CaCl2 basinal brine, 18-24 wt% NaCl-eq total salinity,
+    150-200,000 ppm Cl raw, Mg/Ca ~0.05-0.1 (low-Mg → favors calcite over
+    aragonite). Tri-State galena is documented argentiferous; Ag was
+    historically a meaningful smelter byproduct alongside Pb-Zn.
+
+    Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl (the
+    NaCl-CaCl2 brine baseline), Ag (argentiferous-galena signature),
+    Ba (barite documented locally), Sr (basinal-brine tracer + minor
+    celestine), Cu (trace chalcopyrite). Also drift-fixed Pb=40 from
+    JS-side intent into Python init.
+
+    Existing values (SiO2, Ca, CO3, Fe, Mn, F, Mg, pH, salinity) and
+    the event sequence (fluid_mixing step 20, fluid_pulse step 60,
+    tectonic_shock step 80) preserved untouched — gap-fill only.
     """
     conditions = VugConditions(
         temperature=180.0,
@@ -6362,6 +6375,53 @@ def scenario_mvt() -> Tuple[VugConditions, List[Event], int]:
             # late in the run as carbonate concentrates.
             SiO2=100, Ca=300, CO3=250, Fe=15, Mn=25,
             Zn=0, S=0, F=5, Mg=30,  # realistic Tri-State Mg/Ca ratio
+            # Drift-fix: JS scenario_mvt has carried Pb=40 in init since
+            # round 2 but Python had it at default 0. Mirroring JS intent
+            # (combined with event_fluid_mixing's +=25, post-event Pb=65
+            # in both runtimes — enables galena from initial fluid, not
+            # only from event spike).
+            Pb=40,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Na=80, K=15: NaCl-CaCl2 basinal brine type. Stoffell et al.
+            # 2008 LA-ICP-MS reports Na 50-80,000 ppm raw, K/Na ~0.2 in
+            # Tri-State fluid inclusions. Sim-scale abstraction.
+            Na=80, K=15,
+            # Cl=200: paired with Na+K. Tri-State raw brine is 120-220,000
+            # ppm Cl (NaCl-rich endmember to CaCl2-rich endmember).
+            # salinity=15 wt% NaCl-eq remains the bulk indicator;
+            # free-trace Cl lets pyromorphite (Pb-Cl) and chlorargyrite
+            # (Ag-Cl) chemistry engage where Pb+Ag are present.
+            Cl=200,
+            # Ag=5: argentiferous-galena signature. Tri-State galena
+            # commonly carries 50-300 ppm Ag in the mineral; brine-stage
+            # fluid Ag is much lower but non-zero. Historical Joplin
+            # smelters recovered Ag as a Pb byproduct.
+            Ag=5,
+            # Ba=20: Tri-State has barite as a local late-stage gangue.
+            # Brine Ba moderate (sulfate-buffered when S delivered by
+            # event_fluid_mixing — barite then nucleates).
+            Ba=20,
+            # Sr=15: classic basinal-brine tracer (Hanor 1994); Tri-State
+            # has minor celestine. Sub-ppm raw → 15 sim-scale.
+            Sr=15,
+            # Cu=3: trace chalcopyrite is documented at Tri-State even
+            # though Cu is not a primary commodity. Low init keeps the
+            # Pb-Zn signature dominant.
+            Cu=3,
+            # ── Pre-researched, pending FluidChemistry schema ─────────
+            # When Cd is added to FluidChemistry, set:
+            #     Cd=2,
+            # Justification: Tri-State sphalerite carries Cd substituting
+            # for Zn (typically 1000-5000 ppm Cd in mineral, raw fluid Cd
+            # ~1-10 ppm). The yellow Cd-rich coatings on Tri-State
+            # sphalerite are greenockite (CdS) — would unlock its
+            # nucleation. Sim-scale 2 matches the Sr/Ag trace abstraction.
+            # Source: Schwartz 2000 (Econ. Geol. 95) on Cd in MVT
+            # sphalerite. Procedure: add Cd field to FluidChemistry +
+            # mirror to JS, add grow_greenockite (CdS) + minerals.json
+            # entry, uncomment the line above. Same template as
+            # bingham_canyon Au pending-schema entry.
+            # ──────────────────────────────────────────────────────────
             pH=7.2, salinity=15.0
         ),
         # MVT — dissolution cavity in limestone. Cohesive primary void

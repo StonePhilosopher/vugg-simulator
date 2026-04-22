@@ -105,6 +105,52 @@
           "minerals_unlocked": ["native_gold", "calaverite", "sylvanite", "krennerite (potentially)"]
         }
       }
+    },
+    "tri_state": {
+      "scenario_id": "mvt",
+      "audit_status": "anchored",
+      "display_name": "Tri-State Pb-Zn-Ag district (Joplin / Picher / Galena, MO-KS-OK)",
+      "host_formation": "Mississippian Boone Formation cherty limestone (and Reeds Spring / St. Joe formations locally)",
+      "fluid_event_summary": "Late Pennsylvanian-Early Permian basinal brine expulsion; NaCl-CaCl2 brines, 18-24 wt% NaCl-eq, 90-150 C ore stage. Stoffell et al. 2008 LA-ICP-MS shows Tri-State and Northern Arkansas brines were chemically distinct from Viburnum Trend, with Tri-State having higher Pb-Zn-Ag and lower Ba relative to the Viburnum brines. Ore deposition by sulfide saturation when metal-bearing brine met sulfur-bearing groundwater.",
+      "audit_pass": "gap-fill (Apr 2026) — added Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (argentiferous-galena), Ba (local barite gangue), Sr (basinal-brine tracer), Cu (trace chalcopyrite). Drift-fix: Pb=40 mirrored from JS init into Python init. Existing chemistry preserved (no retuning).",
+      "fluid": {
+        "Na": {"value": 80, "note": "NaCl-CaCl2 basinal brine; raw 50-80,000 ppm [Stoffell 2008]; sim-scale abstraction."},
+        "K": {"value": 15, "note": "K/Na ~0.2 typical basinal brine [Hanor 1994]."},
+        "Cl": {"value": 200, "note": "Brine anion paired with Na+K. Tri-State raw fluid 120-220,000 ppm Cl. salinity=15 wt% NaCl-eq remains bulk indicator; free Cl enables pyromorphite/chlorargyrite."},
+        "Ag": {"value": 5, "note": "Argentiferous-galena signature. Tri-State galena 50-300 ppm Ag in mineral; brine Ag much lower. Historical Joplin smelters recovered Ag as Pb byproduct."},
+        "Ba": {"value": 20, "note": "Local barite gangue at Tri-State (less than Viburnum Trend, which is the high-Ba MVT endmember per Stoffell 2008)."},
+        "Sr": {"value": 15, "note": "Basinal-brine tracer (Hanor 1994); minor celestine documented at Tri-State."},
+        "Cu": {"value": 3, "note": "Trace chalcopyrite documented at Tri-State even though Cu is not a primary commodity."}
+      },
+      "preserved_intentional_values": {
+        "SiO2": 100, "Ca": 300, "CO3": 250, "Fe": 15, "Mn": 25, "F": 5, "Mg": 30, "Pb": 40,
+        "pH": 7.2, "salinity": 15.0,
+        "Zn_note": "Zn=0 at init by design; delivered by event_fluid_mixing at step 20 (Zn=150).",
+        "S_note": "S=0 at init by design; delivered by event_fluid_mixing at step 20 (S=120). The low-S initial fluid is what makes MVT 'fluid mixing' the depositional mechanism (not single-fluid cooling)."
+      },
+      "references": [
+        "Roedder, E. (1976). Fluid inclusions as samples of ore-forming fluids. In: Wolf, K.H. (ed.), Handbook of Strata-bound and Stratiform Ore Deposits, vol. 2, Elsevier, p. 67-110. [Tri-State fluid-inclusion microthermometry baseline]",
+        "Ohle, E.L. (1959). Some considerations in determining the origin of ore deposits of the Mississippi Valley type. Econ. Geol. 54: 769-789. [Genetic model for MVT brine flow]",
+        "Hagni, R.D. (1976). Tri-State ore deposits: the character of their host rocks and their genesis. In: Wolf (ed.), Handbook vol. 6, p. 457-494. [Detailed Tri-State mineralogy and paragenesis]",
+        "Stoffell, B., Appold, M.S., Wilkinson, J.J., McClean, N.A., Jeffries, T.E. (2008). Geochemistry and Evolution of Mississippi Valley-Type Mineralizing Brines from the Tri-State and Northern Arkansas Districts Determined by LA-ICP-MS Microanalysis of Fluid Inclusions. Econ. Geol. 103(7): 1411-1435. [Primary LA-ICP-MS brine compositions for Tri-State]",
+        "Hanor, J.S. (1994). Origin of saline fluids in sedimentary basins. Geol. Soc. London Spec. Pub. 78: 151-174. [Basinal-brine compositional compendium]",
+        "Leach, D.L., Sangster, D.F. (1993). Mississippi Valley-type lead-zinc deposits. Geol. Assoc. Canada Spec. Paper 40: 289-314. [MVT classification + genetic synthesis]"
+      ],
+      "data_gaps": [
+        "Stoffell et al. 2008 PDF was not machine-extractable in this audit pass — exact LA-ICP-MS sample-by-sample numbers were not retrieved; gap-fills use the paper's reported ranges + general MVT-brine compendium data.",
+        "Ore-stage T (90-150 C) is below scenario T=180 — preserved scenario T as intentional simulation-time choice."
+      ],
+      "pending_schema_additions": {
+        "_purpose": "Values pre-researched and ready to plug in once the corresponding FluidChemistry schema field exists.",
+        "Cd": {
+          "value": 2,
+          "unit": "ppm (sim-scale, matches Sr/Ag trace abstraction)",
+          "rationale": "Tri-State sphalerite carries Cd substituting for Zn — typically 1000-5000 ppm Cd in the mineral, raw fluid Cd ~1-10 ppm. Greenockite (CdS) is the diagnostic yellow coating on Tri-State sphalerite. Adding Cd to the schema would unlock greenockite nucleation as a discrete late-stage phase, plus enable Cd-trace tracking in sphalerite growth zones (TitaniQ-analog Cd-in-sphalerite thermometer).",
+          "source": "Schwartz, M.O. (2000). Cadmium in zinc deposits: economic geology of a polluting element. Internat. Geol. Rev. 42: 445-469. Plus general Tri-State greenockite occurrence in Hagni 1976.",
+          "blockers": "FluidChemistry has no Cd field. Need: Cd field in dataclass + JS class, grow_greenockite (CdS) implementation, minerals.json entry, optionally Cd-in-sphalerite trace tracking in grow_sphalerite.",
+          "minerals_unlocked": ["greenockite", "hawleyite", "Cd-trace in sphalerite"]
+        }
+      }
     }
   }
 }
