@@ -6445,6 +6445,19 @@ def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
             # tellurides (calaverite, sylvanite) — fluid Te is low but
             # non-zero in the porphyry-distal apron.
             Te=2,
+            # ── Pre-researched, pending FluidChemistry schema ─────────
+            # When Au is added to the FluidChemistry dataclass, set:
+            #     Au=2,
+            # Justification: Landtwing et al. 2010 LA-ICP-MS reports ~1
+            # ppm Au in fluid inclusions across multiple porphyry Cu-Au
+            # systems including Bingham; the Au-Cu-rich center near the
+            # top of the orebody is the diagnostic vapor-plume target.
+            # Sim-scale Au=2 matches the Te=2 trace abstraction. No
+            # further research needed — just add the field to the
+            # schema, uncomment the line above, plus mirror to JS and
+            # web/docs. Same procedure for the bingham_canyon entry in
+            # data/locality_chemistry.json (pending_schema_additions
+            # block already populated with the value).
             # ──────────────────────────────────────────────────────────
             O2=0.2, pH=4.5, salinity=10.0
         ),

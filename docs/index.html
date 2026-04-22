@@ -7924,6 +7924,12 @@ function scenario_porphyry() {
       Mg: 40,             // wallrock interaction, Bingham brine Mg 50-200 ppm raw
       Ag: 8,              // argentiferous Cu signature [Heinrich 2007]
       Te: 2,              // epithermal-cap telluride trace
+      // Pre-researched, pending FluidChemistry schema:
+      //   When Au is added to the FluidChemistry class, set Au: 2.
+      //   Landtwing et al. 2010 LA-ICP-MS: ~1 ppm Au in porphyry Cu-Au
+      //   fluid inclusions; sim-scale 2 matches Te=2 trace abstraction.
+      //   See vugg.py scenario_porphyry comment + locality_chemistry
+      //   .json bingham_canyon.pending_schema_additions for full note.
       pH: 4.5, salinity: 10.0
     }),
     // Porphyry veins — elongated cross-section, modest harmonics.
