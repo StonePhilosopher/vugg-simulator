@@ -14578,6 +14578,12 @@ const HABIT_TO_TEXTURE = {
   'pyritohedral':        'cube_edge', // pyrite alt — pentagonal faces, still blocky
   'cubo-pyritohedral':   'cube_edge', // pyrite mixed
   'pseudo_cubic':        'cube_edge', // chalcopyrite high-T
+  // Stage 3 — botryoidal / globular / framboidal (rounded aggregates).
+  'botryoidal':          'botryoidal', // chrysocolla, malachite, hematite kidney ore, smithsonite
+  'spherulitic':         'botryoidal', // mesolite-style radial bundles read as scalloped on edge
+  'framboidal':          'botryoidal', // pyrite microspheres (sweetwater style)
+  'reniform_globules':   'botryoidal', // chrysocolla — bigger lobes, same family
+  'botryoidal_crust':    'botryoidal', // chrysocolla
 };
 
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
@@ -14606,6 +14612,10 @@ const TEXTURE_PARAMS = {
   rhomb:          { amplitude_factor: 0.7, pitch_mm: 2.0 },
   cube_edge:      { amplitude_factor: 1.0, pitch_mm: 1.5, max_amplitude_pitch_ratio: 0.5 },
   cube_edge_deep: { amplitude_factor: 1.5, pitch_mm: 1.5, max_amplitude_pitch_ratio: 1.0 },
+  // Botryoidal: max ratio 0.5 means at saturation each bump is a perfect
+  // half-circle (amplitude = pitch/2). Below saturation bumps flatten into
+  // gentle scallops — still reads as round, just less plump.
+  botryoidal:     { amplitude_factor: 1.0, pitch_mm: 2.5, max_amplitude_pitch_ratio: 0.5 },
 };
 
 // Draw the inner (fluid-facing) edge of a wedge from (fromX,fromY) to
@@ -14622,8 +14632,7 @@ const TEXTURE_PARAMS = {
 // shared by minerals that should look distinct (e.g. galena vs pyrite,
 // both 'cubic').
 function drawHabitTexture(ctx, mineral, habit, fromX, fromY, toX, toY, controlX, controlY, thicknessMm, cellArcMm, mmToPx, cx, cy) {
-  const byMineral = mineral && HABIT_TO_TEXTURE_BY_MINERAL[mineral];
-  const texture = (byMineral && byMineral[habit]) || HABIT_TO_TEXTURE[habit] || 'smooth';
+  const texture = _resolveTexture(mineral, habit);
   switch (texture) {
     case 'dogtooth':
       _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.dogtooth);
@@ -14637,11 +14646,32 @@ function drawHabitTexture(ctx, mineral, habit, fromX, fromY, toX, toY, controlX,
     case 'cube_edge_deep':
       _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.cube_edge_deep);
       return;
+    case 'botryoidal':
+      _texture_botryoidal(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.botryoidal);
+      return;
     case 'smooth':
     default:
       ctx.quadraticCurveTo(controlX, controlY, toX, toY);
       return;
   }
+}
+
+// Resolve a (mineral, habit) pair to a texture token. Priority:
+//   1. mineral-specific override (HABIT_TO_TEXTURE_BY_MINERAL)
+//   2. exact habit match (HABIT_TO_TEXTURE)
+//   3. fuzzy substring fallback (catches variant strings like
+//      'botryoidal_crust', 'reniform_globules', 'botryoidal/stalactitic'
+//      without enumerating every permutation)
+//   4. 'smooth' default
+function _resolveTexture(mineral, habit) {
+  const byMineral = mineral && HABIT_TO_TEXTURE_BY_MINERAL[mineral];
+  if (byMineral && byMineral[habit]) return byMineral[habit];
+  if (habit && HABIT_TO_TEXTURE[habit]) return HABIT_TO_TEXTURE[habit];
+  if (habit) {
+    const h = habit.toLowerCase();
+    if (h.includes('botryoidal') || h.includes('reniform') || h.includes('globule') || h.includes('framboidal')) return 'botryoidal';
+  }
+  return 'smooth';
 }
 
 // Texture amplitude in mm. Primary control is physical (thickness ×
@@ -14655,6 +14685,46 @@ function _textureAmplitudeMm(thicknessMm, cellArcMm, params) {
     amp = Math.min(amp, params.pitch_mm * params.max_amplitude_pitch_ratio);
   }
   return amp;
+}
+
+// Botryoidal — series of smooth half-circle bumps along the chord,
+// each pushed inward toward the void. Uses one quadratic Bezier per
+// bump with the control point at amplitude × 2 inward (so the curve
+// at t=0.5 lands at exactly amplitude inward, giving a clean scallop).
+// At amplitude saturation (max_amplitude_pitch_ratio = 0.5) each bump
+// is a perfect half-circle ⌒⌒⌒. Below saturation, gentle scallops.
+//
+// Used by chrysocolla, malachite, hematite kidney ore, framboidal
+// pyrite, smithsonite — anywhere the habit string suggests "round
+// blobs on the wall" rather than crystalline points or faces.
+function _texture_botryoidal(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, params) {
+  const dx = toX - fromX, dy = toY - fromY;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 1) { ctx.lineTo(toX, toY); return; }
+  const ux = dx / len, uy = dy / len;
+  const midX = (fromX + toX) / 2, midY = (fromY + toY) / 2;
+  const inX = cx - midX, inY = cy - midY;
+  const inLen = Math.sqrt(inX * inX + inY * inY) || 1;
+  const nx = inX / inLen, ny = inY / inLen;
+  const amplitudeMm = _textureAmplitudeMm(thicknessMm, cellArcMm, params);
+  const amplitudePx = amplitudeMm * mmToPx;
+  const pitchPx = params.pitch_mm * mmToPx;
+  const nBumps = Math.max(1, Math.round(len / pitchPx));
+  const bumpLen = len / nBumps;
+  // Pen at (fromX,fromY); emit a quadratic Bezier per bump → (toX,toY).
+  // Control point at segment midpoint pushed inward by 2×amplitude so
+  // the Bezier passes through (chord_mid + amplitude × inward_normal)
+  // at t=0.5. (Quadratic at t=0.5 = (start + 2·control + end)/4.)
+  for (let i = 0; i < nBumps; i++) {
+    const t0 = i * bumpLen;
+    const t1 = (i + 1) * bumpLen;
+    const startX = fromX + t0 * ux, startY = fromY + t0 * uy;
+    const endX   = fromX + t1 * ux, endY   = fromY + t1 * uy;
+    const segMidX = (startX + endX) / 2, segMidY = (startY + endY) / 2;
+    const cpX = segMidX + nx * amplitudePx * 2;
+    const cpY = segMidY + ny * amplitudePx * 2;
+    ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+  }
 }
 
 // Sawtooth — shared by 'dogtooth' (sharp tall, T>200°C scalenohedral
