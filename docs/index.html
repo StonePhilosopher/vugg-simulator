@@ -2967,6 +2967,7 @@ const MINERAL_SPEC_FALLBACK = {
   quartz: { formula: "SiO2", nucleation_sigma: 1.0, max_size_cm: 1200, growth_rate_mult: 0.3, thermal_decomp_C: 1713, fluorescence: { activator: "Al", threshold_ppm: 5, color: "weak_blue_LW" }, twin_laws: [{ name: "Dauphine", probability: 0.15 }], acid_dissolution: { pH_threshold: 4.0, requires: { F: 20 } } },
   calcite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 2000, growth_rate_mult: 1.0, thermal_decomp_C: 840, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_red", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "c_twin", probability: 0.10 }], acid_dissolution: { pH_threshold: 5.5 } },
   sphalerite: { formula: "ZnS", nucleation_sigma: 1.0, max_size_cm: 80, growth_rate_mult: 0.6, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "spinel_law", probability: 0.015 }], acid_dissolution: { pH_threshold: 2.0 } },
+  wurtzite: { formula: "(Zn,Fe)S", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.55, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "basal_contact", probability: 0.008 }], acid_dissolution: { pH_threshold: 2.0 } },
   fluorite: { formula: "CaF2", nucleation_sigma: 1.0, max_size_cm: 400, growth_rate_mult: 0.5, thermal_decomp_C: 1360, fluorescence: { activator: "REE_or_defects", color: "blue_violet_LW_and_SW" }, twin_laws: [{ name: "penetration", probability: 0.008 }], acid_dissolution: { pH_threshold: 4.0 } },
   pyrite: { formula: "FeS2", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.3, thermal_decomp_C: 743, fluorescence: null, twin_laws: [{ name: "iron_cross", probability: 0.008 }], acid_dissolution: { pH_threshold: 3.0 } },
   marcasite: { formula: "FeS2", nucleation_sigma: 1.0, max_size_cm: 15, growth_rate_mult: 0.3, thermal_decomp_C: 240, fluorescence: null, twin_laws: [{ name: "spearhead", probability: 0.05 }], acid_dissolution: { pH_threshold: 1.5 } },
@@ -3903,7 +3904,23 @@ class VugConditions {
   supersaturation_sphalerite() {
     if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
     const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
-    return product * 2.0 * Math.exp(-0.004 * this.temperature);
+    // Below 95°C: full sigma. Above: accelerated decay (wurtzite field).
+    const T_factor = this.temperature <= 95
+      ? 2.0 * Math.exp(-0.004 * this.temperature)
+      : 2.0 * Math.exp(-0.01 * this.temperature);
+    return product * T_factor;
+  }
+
+  supersaturation_wurtzite() {
+    // Hexagonal (Zn,Fe)S — high-T dimorph of sphalerite. Hard gate at T<=95.
+    if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
+    if (this.temperature <= 95) return 0;
+    const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
+    let T_factor;
+    if (this.temperature < 150) T_factor = (this.temperature - 95) / 55.0;
+    else if (this.temperature <= 300) T_factor = 1.4;
+    else T_factor = 1.4 * Math.exp(-0.005 * (this.temperature - 300));
+    return product * T_factor;
   }
 
   supersaturation_pyrite() {
@@ -4584,7 +4601,7 @@ class Crystal {
       if (avg_Al > 5) return 'weak blue (Al-related defects)';
       return 'non-fluorescent';
     }
-    if (this.mineral === 'sphalerite') {
+    if (this.mineral === 'sphalerite' || this.mineral === 'wurtzite') {
       // Mn activates, Fe quenches — same as calcite
       if (avg_Mn > 5 && avg_Fe < 10) return 'orange or blue (Mn²⁺-activated; color varies by site)';
       if (avg_Mn > 5 && avg_Fe > 10) return 'quenched (Fe²⁺ masks Mn²⁺ emission)';
@@ -4891,6 +4908,60 @@ function grow_sphalerite(crystal, conditions, step) {
     thickness_um: rate, growth_rate: rate,
     trace_Fe,
     note: `color: ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
+  });
+}
+
+function grow_wurtzite(crystal, conditions, step) {
+  // Polymorphic inversion on cooling below 95°C
+  if (crystal.total_growth_um > 10 && conditions.temperature <= 95) {
+    crystal.dissolved = true;
+    conditions.fluid.Zn += 1.5;
+    conditions.fluid.S += 1.2;
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -1.5, growth_rate: -1.5,
+      note: 'polymorphic inversion — T dropped below 95°C, hexagonal (Zn,Fe)S converting to cubic sphalerite'
+    });
+  }
+
+  const sigma = conditions.supersaturation_wurtzite();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  const rate = 5.5 * excess * rng.uniform(0.7, 1.3);
+
+  const Fe_mol_percent = Math.min(conditions.fluid.Fe * 0.12 * (conditions.temperature / 300.0), 35.0);
+  const trace_Fe = Fe_mol_percent * 10;
+
+  if (excess > 1.5) {
+    crystal.habit = 'fibrous_coating';
+    crystal.dominant_forms = ['fibrous crust', '{0001} parallel columns'];
+  } else if (excess > 0.8) {
+    crystal.habit = 'radiating_columnar';
+    crystal.dominant_forms = ['radiating hexagonal columns', 'stellate aggregates'];
+  } else if (excess > 0.3) {
+    crystal.habit = 'hemimorphic_crystal';
+    crystal.dominant_forms = ['hemimorphic hexagonal pyramid', '{0001} + {101̄1}'];
+  } else {
+    crystal.habit = 'platy_massive';
+    crystal.dominant_forms = ['{0001} tabular plate', 'micaceous'];
+  }
+
+  let color_note;
+  if (Fe_mol_percent > 15) color_note = 'black metallic (Fe-rich wurtzite)';
+  else if (Fe_mol_percent > 5) color_note = 'brownish-black';
+  else color_note = 'yellowish-brown to dark brown';
+
+  if (crystal.habit === 'hemimorphic_crystal' && !crystal.twinned && rng.random() < 0.008) {
+    crystal.twinned = true;
+    crystal.twin_law = 'basal {0001} contact';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe,
+    note: `hemimorphic hexagonal (Zn,Fe)S — ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
   });
 }
 
@@ -6690,6 +6761,7 @@ const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
   sphalerite: grow_sphalerite,
+  wurtzite: grow_wurtzite,
   fluorite: grow_fluorite,
   pyrite: grow_pyrite,
   marcasite: grow_marcasite,
@@ -7474,6 +7546,8 @@ class VugSimulator {
       crystal.dominant_forms = ['e{104} rhombohedron'];
     } else if (mineral === 'sphalerite') {
       crystal.dominant_forms = ['{111} tetrahedron'];
+    } else if (mineral === 'wurtzite') {
+      crystal.dominant_forms = ['hemimorphic hexagonal pyramid', '{0001} + {101̄1}'];
     } else if (mineral === 'fluorite') {
       crystal.dominant_forms = ['{100} cube'];
     } else if (mineral === 'pyrite') {
@@ -7687,6 +7761,14 @@ class VugSimulator {
     if (sigma_s > 1.0 && !existing_sph.length && !this._atNucleationCap('sphalerite')) {
       const c = this.nucleate('sphalerite', 'vug wall', sigma_s);
       this.log.push(`  ✦ NUCLEATION: Sphalerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_s.toFixed(2)})`);
+    }
+
+    // Wurtzite nucleation — T>95°C hexagonal ZnS dimorph
+    const sigma_wz = this.conditions.supersaturation_wurtzite();
+    const existing_wz = this.crystals.filter(c => c.mineral === 'wurtzite' && c.active);
+    if (sigma_wz > 1.0 && !existing_wz.length && !this._atNucleationCap('wurtzite')) {
+      const c = this.nucleate('wurtzite', 'vug wall', sigma_wz);
+      this.log.push(`  ✦ NUCLEATION: Wurtzite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_wz.toFixed(2)})`);
     }
 
     const sigma_f = this.conditions.supersaturation_fluorite();
@@ -9035,6 +9117,37 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_wurtzite(c) {
+    const parts = [`Wurtzite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.habit === 'hemimorphic_crystal') {
+      parts.push('Hemimorphic hexagonal pyramid — one end pointed, the other flat. The P6₃mc space group has no inversion center, so the c-axis is polar and the two terminations are crystallographically distinct. This is the diagnostic wurtzite shape, absent from cubic sphalerite.');
+    } else if (c.habit === 'radiating_columnar') {
+      parts.push('Radiating hexagonal columns forming stellate clusters — a classic high-supersaturation wurtzite texture. Hot metal-rich fluids eating into an acid-etched fracture.');
+    } else if (c.habit === 'fibrous_coating') {
+      parts.push("Fibrous crust on the wall — fast growth along {0001} producing parallel columnar fibers. Wurtzite's polarity lets each fiber terminate differently at base vs. tip.");
+    } else {
+      parts.push('Tabular {0001} plates with a slight micaceous layering — slow-growth wurtzite aggregates that sometimes get mistaken for molybdenite until the color and chemistry rule it out.');
+    }
+    if (c.zones && c.zones.length) {
+      const fe_vals = c.zones.filter(z => z.trace_Fe > 0).map(z => z.trace_Fe);
+      if (fe_vals.length) {
+        const max_fe_pct = Math.max(...fe_vals) / 10.0;
+        if (max_fe_pct > 10) {
+          parts.push(`Fe content up to ${max_fe_pct.toFixed(0)} mol% — wurtzite happily hosts iron, like its cubic cousin, darkening toward black.`);
+        }
+      }
+    }
+    if (c.twinned) {
+      parts.push(`Shows the ${c.twin_law} twin — less common than sphalerite's spinel twinning because the hexagonal space group forbids the {111} operation.`);
+    }
+    if (c.dissolved) {
+      parts.push('Polymorphic inversion destroyed the crystal — cooling below 95°C pushed (Zn,Fe)S into the cubic sphalerite field. Over geologic time wurtzite usually converts down to sphalerite; sphalerite rarely goes back.');
+    } else {
+      parts.push('As long as the fluid stays above 95°C, the crystal is stable in the wurtzite structure; cooling through that threshold would trigger conversion to sphalerite.');
+    }
+    return parts.join(' ');
+  }
+
   _narrate_fluorite(c) {
     const parts = [`Fluorite #${c.crystal_id} grew as ${c.habit} crystals to ${c.c_length_mm.toFixed(1)} mm.`];
     if (c.zones.length) {
@@ -9776,6 +9889,16 @@ class VugSimulator {
             desc += `, ${color}`;
           }
         }
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'wurtzite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm wurtzite`;
+        if (c.habit === 'hemimorphic_crystal') desc += ' hexagonal pyramid';
+        else if (c.habit === 'radiating_columnar') desc = `radiating wurtzite columns, ${c.c_length_mm.toFixed(1)}mm across`;
+        else if (c.habit === 'fibrous_coating') desc = `fibrous wurtzite crust, ${c.c_length_mm.toFixed(1)}mm thick`;
+        else desc += ' tabular plate';
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        desc += ' — hexagonal (Zn,Fe)S, darker than cubic sphalerite';
+        if (c.dissolved) desc += ', inverted to sphalerite on cooling';
         parts.push(`  • ${desc}`);
       } else if (c.mineral === 'fluorite') {
         let desc = `a ${c.c_length_mm.toFixed(1)}mm fluorite cube`;
@@ -11582,6 +11705,7 @@ function updateFortressStatus() {
     { name: 'Calcite', sigma: c.supersaturation_calcite() },
     { name: 'Fluorite', sigma: c.supersaturation_fluorite() },
     { name: 'Sphalerite', sigma: c.supersaturation_sphalerite() },
+    { name: 'Wurtzite', sigma: c.supersaturation_wurtzite() },
     { name: 'Pyrite', sigma: c.supersaturation_pyrite() },
     { name: 'Marcasite', sigma: c.supersaturation_marcasite() },
     { name: 'Chalcopyrite', sigma: c.supersaturation_chalcopyrite() },
@@ -12966,6 +13090,7 @@ function idleRecordHistory() {
   if (typeof c.supersaturation_chalcopyrite === 'function') supersats.chalcopyrite = c.supersaturation_chalcopyrite();
   if (typeof c.supersaturation_hematite === 'function') supersats.hematite = c.supersaturation_hematite();
   if (typeof c.supersaturation_sphalerite === 'function') supersats.sphalerite = c.supersaturation_sphalerite();
+  if (typeof c.supersaturation_wurtzite === 'function') supersats.wurtzite = c.supersaturation_wurtzite();
   if (typeof c.supersaturation_galena === 'function') supersats.galena = c.supersaturation_galena();
   // malachite, goethite, smithsonite, wulfenite — check if methods exist
   try { supersats.malachite = c.supersaturation_malachite(); } catch(e) {}

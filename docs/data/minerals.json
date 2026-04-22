@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 41,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph).",
+    "total_minerals": 42,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -66,7 +66,8 @@
       "native_bismuth",
       "clinobisvanite",
       "chrysocolla",
-      "marcasite"
+      "marcasite",
+      "wurtzite"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -82,6 +83,7 @@
         "pyrite",
         "quartz",
         "sphalerite",
+        "wurtzite",
         "fluorite",
         "galena"
       ],
@@ -548,6 +550,116 @@
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok",
+      "class_color": "#7feb13"
+    },
+    "wurtzite": {
+      "formula": "(Zn,Fe)S",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 20,
+      "growth_rate_mult": 0.55,
+      "habit_variants": [
+        {
+          "name": "hemimorphic_crystal",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ — hexagonal pyramid with polar c-axis, one end pointed one end flat"
+        },
+        {
+          "name": "radiating_columnar",
+          "wall_spread": 0.35,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "high σ — radiating hexagonal columns in stellate clusters"
+        },
+        {
+          "name": "fibrous_coating",
+          "wall_spread": 0.75,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "very high σ, fast growth — fibrous crust on fracture walls"
+        },
+        {
+          "name": "platy_massive",
+          "wall_spread": 0.6,
+          "void_reach": 0.25,
+          "vector": "tabular",
+          "trigger": "low σ — tabular {0001} plates, micaceous aggregates"
+        }
+      ],
+      "class": "sulfide",
+      "description": "(Zn,Fe)S, the hexagonal high-temperature dimorph of sphalerite — same composition, different crystal structure. Above 95°C, cubic sphalerite gives way to hexagonal wurtzite with the distinctive hemimorphic habit (one end pointed, one end flat, due to the non-centrosymmetric P6₃mc space group). On cooling below 95°C, wurtzite converts to sphalerite — but sphalerite rarely goes back. The asymmetric dimorphism means finding wurtzite is diagnostic of rapid cooling from the hexagonal field.",
+      "scenarios": [
+        "mvt"
+      ],
+      "T_range_C": [
+        95,
+        600
+      ],
+      "T_optimum_C": [
+        150,
+        300
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 2.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Zn": 10,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Fe": "substitutes for Zn, darkens color (same as sphalerite, but hotter so more Fe uptake)",
+        "Cd": "yellow tint",
+        "Mn": "possible pink tint"
+      },
+      "thermal_decomp_C": 1020,
+      "thermal_decomp_reaction": "hexagonal ZnS → sublimation (shares sphalerite decomposition)",
+      "thermal_decomp_products": {
+        "Zn": 0.3,
+        "S": 0.5
+      },
+      "fluorescence": {
+        "activator": "Mn",
+        "threshold_ppm": 5,
+        "color": "orange_or_blue_variable",
+        "quencher": {
+          "species": "Fe",
+          "threshold_ppm": 10
+        }
+      },
+      "twin_laws": [
+        {
+          "name": "basal_contact",
+          "miller_indices": "{0001}",
+          "trigger": "growth in hemimorphic habit",
+          "probability": 0.008
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 2.0,
+        "reaction": "(Zn,Fe)S + 2H+ → Zn2+ + H2S (slow, only in strong acid — same as sphalerite)",
+        "products": {
+          "Zn": 0.3,
+          "S": 0.3
+        }
+      },
+      "habit": "hemimorphic_hexagonal",
+      "color_rules": {
+        "yellowish_brown": {
+          "default": true
+        },
+        "black_metallic": {
+          "trigger": "Fe > 15 mol%"
+        }
+      },
+      "narrate_function": "_narrate_wurtzite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: T>95 sphalerite dimorph, hexagonal P6₃mc, hemimorphic habit, polymorphic inversion handled).",
       "class_color": "#7feb13"
     },
     "fluorite": {

@@ -733,11 +733,45 @@ class VugConditions:
         return max(sigma, 0)
     
     def supersaturation_sphalerite(self) -> float:
-        """Sphalerite (ZnS) supersaturation. Needs Zn + S."""
+        """Sphalerite (ZnS) supersaturation. Needs Zn + S.
+
+        Sphalerite is the low-T polymorph of ZnS. Above ~95°C, the hexagonal
+        dimorph wurtzite is favored. The T factor below the 95°C transition
+        favors sphalerite; above it, sigma decays faster so wurtzite wins.
+        """
         if self.fluid.Zn < 10 or self.fluid.S < 10:
             return 0
         product = (self.fluid.Zn / 100.0) * (self.fluid.S / 100.0)
-        return product * 2.0 * math.exp(-0.004 * self.temperature)
+        # Below 95°C: full sigma. Above: accelerated decay (wurtzite field).
+        if self.temperature <= 95:
+            T_factor = 2.0 * math.exp(-0.004 * self.temperature)
+        else:
+            T_factor = 2.0 * math.exp(-0.01 * self.temperature)
+        return product * T_factor
+
+    def supersaturation_wurtzite(self) -> float:
+        """Wurtzite ((Zn,Fe)S) — hexagonal dimorph of sphalerite, high-T.
+
+        Same (Zn,Fe)S composition as sphalerite, different crystal structure.
+        Above 95°C, (Zn,Fe)S favors the hexagonal wurtzite form; below 95°C,
+        cubic sphalerite is stable. On cooling, wurtzite can convert to
+        sphalerite but sphalerite rarely inverts back — asymmetric dimorphism.
+
+        Hard gate at T≤95 returns zero; between 100–300°C the σ rises.
+        """
+        if self.fluid.Zn < 10 or self.fluid.S < 10:
+            return 0
+        if self.temperature <= 95:
+            return 0
+        product = (self.fluid.Zn / 100.0) * (self.fluid.S / 100.0)
+        # Peak in the 150–250°C window; falls off either side
+        if self.temperature < 150:
+            T_factor = (self.temperature - 95) / 55.0  # 0 → 1 across 95-150
+        elif self.temperature <= 300:
+            T_factor = 1.4  # broad peak
+        else:
+            T_factor = 1.4 * math.exp(-0.005 * (self.temperature - 300))
+        return product * T_factor
     
     def supersaturation_pyrite(self) -> float:
         """Pyrite (FeS2) supersaturation. Needs Fe + S, reducing conditions.
@@ -1985,7 +2019,7 @@ class Crystal:
             return "non-fluorescent"
         elif self.mineral in ("pyrite", "marcasite", "chalcopyrite", "galena", "molybdenite"):
             return "non-fluorescent (opaque sulfide)"
-        elif self.mineral == "sphalerite":
+        elif self.mineral in ("sphalerite", "wurtzite"):
             # Mn²⁺ activates, Fe quenches — same as calcite
             if avg_Mn > 5 and avg_Fe < 10:
                 return "orange or blue (Mn²⁺-activated; color varies by site)"
@@ -2274,6 +2308,73 @@ def grow_sphalerite(crystal: Crystal, conditions: VugConditions, step: int) -> O
         thickness_um=rate, growth_rate=rate,
         trace_Fe=trace_Fe,
         note=f"color: {color_note}, Fe: {Fe_mol_percent:.1f} mol%"
+    )
+
+
+def grow_wurtzite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Wurtzite ((Zn,Fe)S) growth model — hexagonal dimorph of sphalerite.
+
+    The high-T polymorph. On cooling below 95°C, wurtzite can convert to
+    cubic sphalerite — handled here as a dissolution event with Zn+S
+    recycled to the fluid (letting a new sphalerite seed nucleate).
+    Hemimorphic habit: one end pointed, one end flat — diagnostic of
+    the lack of an inversion center in the hexagonal P6₃mc space group.
+    """
+    # Polymorphic inversion on cooling below 95°C
+    if crystal.total_growth_um > 10 and conditions.temperature <= 95:
+        crystal.dissolved = True
+        conditions.fluid.Zn += 1.5
+        conditions.fluid.S += 1.2
+        return GrowthZone(
+            step=step, temperature=conditions.temperature,
+            thickness_um=-1.5, growth_rate=-1.5,
+            note="polymorphic inversion — T dropped below 95°C, hexagonal (Zn,Fe)S converting to cubic sphalerite"
+        )
+
+    sigma = conditions.supersaturation_wurtzite()
+
+    if sigma < 1.0:
+        return None
+
+    excess = sigma - 1.0
+    rate = 5.5 * excess * random.uniform(0.7, 1.3)
+
+    # Fe substitution — same as sphalerite but at higher T
+    Fe_mol_percent = min(conditions.fluid.Fe * 0.12 * (conditions.temperature / 300.0), 35.0)
+    trace_Fe = Fe_mol_percent * 10
+
+    # Habit selection — σ + T control the form
+    if excess > 1.5:
+        crystal.habit = "fibrous_coating"
+        crystal.dominant_forms = ["fibrous crust", "{0001} parallel columns"]
+    elif excess > 0.8:
+        crystal.habit = "radiating_columnar"
+        crystal.dominant_forms = ["radiating hexagonal columns", "stellate aggregates"]
+    elif excess > 0.3:
+        crystal.habit = "hemimorphic_crystal"
+        crystal.dominant_forms = ["hemimorphic hexagonal pyramid", "{0001} + {101̄1}"]
+    else:
+        crystal.habit = "platy_massive"
+        crystal.dominant_forms = ["{0001} tabular plate", "micaceous"]
+
+    # Color from Fe content — darker than sphalerite at same Fe
+    if Fe_mol_percent > 15:
+        color_note = "black metallic (Fe-rich wurtzite)"
+    elif Fe_mol_percent > 5:
+        color_note = "brownish-black"
+    else:
+        color_note = "yellowish-brown to dark brown"
+
+    # Wurtzite rarely twins the same way sphalerite does — different space group
+    if crystal.habit == "hemimorphic_crystal" and not crystal.twinned and random.random() < 0.008:
+        crystal.twinned = True
+        crystal.twin_law = "basal {0001} contact"
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe,
+        note=f"hemimorphic hexagonal (Zn,Fe)S — {color_note}, Fe: {Fe_mol_percent:.1f} mol%"
     )
 
 
@@ -4800,6 +4901,7 @@ MINERAL_ENGINES = {
     "quartz": grow_quartz,
     "calcite": grow_calcite,
     "sphalerite": grow_sphalerite,
+    "wurtzite": grow_wurtzite,
     "fluorite": grow_fluorite,
     "pyrite": grow_pyrite,
     "marcasite": grow_marcasite,
@@ -4854,6 +4956,7 @@ THERMAL_DECOMPOSITION = {
     "calcite":    (840,  "CaCO₃ → CaO + CO₂ (calcination)",                     {"Ca": 0.5, "CO3": 0.4}),
     "malachite":  (200,  "Cu₂CO₃(OH)₂ → CuO + CO₂ + H₂O",                      {"Cu": 0.6, "CO3": 0.3}),
     "sphalerite": (1020, "ZnS → Zn + S (sublimes)",                              {"Zn": 0.3, "S": 0.5}),
+    "wurtzite":   (1020, "hexagonal ZnS → sublimation (shares sphalerite decomposition)", {"Zn": 0.3, "S": 0.5}),
     "fluorite":   (1360, "CaF₂ melting — extremely refractory",                   {"Ca": 0.4, "F": 0.4}),
     "pyrite":     (743,  "FeS₂ → FeS + S (sulfur driven off)",                    {"Fe": 0.5, "S": 0.4}),
     "marcasite":  (240,  "orthorhombic FeS₂ → cubic FeS₂ (pyrite) — metastable inversion", {"Fe": 0.4, "S": 0.3}),
@@ -6354,6 +6457,8 @@ class VugSimulator:
             crystal.dominant_forms = ["e{104} rhombohedron"]
         elif mineral == "sphalerite":
             crystal.dominant_forms = ["{111} tetrahedron"]
+        elif mineral == "wurtzite":
+            crystal.dominant_forms = ["hemimorphic hexagonal pyramid", "{0001} + {101̄1}"]
         elif mineral == "fluorite":
             crystal.dominant_forms = ["{100} cube"]
         elif mineral == "pyrite":
@@ -6576,6 +6681,14 @@ class VugSimulator:
             c = self.nucleate("sphalerite", position="vug wall", sigma=sigma_s)
             self.log.append(f"  ✦ NUCLEATION: Sphalerite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_s:.2f})")
+
+        # Wurtzite nucleation — T>95°C hexagonal ZnS dimorph
+        sigma_wz = self.conditions.supersaturation_wurtzite()
+        existing_wz = [c for c in self.crystals if c.mineral == "wurtzite" and c.active]
+        if sigma_wz > 1.0 and not existing_wz and not self._at_nucleation_cap("wurtzite"):
+            c = self.nucleate("wurtzite", position="vug wall", sigma=sigma_wz)
+            self.log.append(f"  ✦ NUCLEATION: Wurtzite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_wz:.2f})")
         
         # Fluorite nucleation
         sigma_f = self.conditions.supersaturation_fluorite()
@@ -8470,9 +8583,70 @@ class VugSimulator:
                 f"Twinned on the {c.twin_law} — a common growth twin in sphalerite "
                 f"that creates triangular re-entrant faces."
             )
-        
+
         return " ".join(parts)
-    
+
+    def _narrate_wurtzite(self, c: Crystal) -> str:
+        """Narrate a wurtzite crystal's story — the high-T hexagonal ZnS dimorph."""
+        parts = [f"Wurtzite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+
+        if c.habit == "hemimorphic_crystal":
+            parts.append(
+                "Hemimorphic hexagonal pyramid — one end pointed, the other flat. "
+                "The P6₃mc space group has no inversion center, so the c-axis is "
+                "polar and the two terminations are crystallographically distinct. "
+                "This is the diagnostic wurtzite shape, absent from cubic sphalerite."
+            )
+        elif c.habit == "radiating_columnar":
+            parts.append(
+                "Radiating hexagonal columns forming stellate clusters — a classic "
+                "high-supersaturation wurtzite texture. Hot metal-rich fluids eating "
+                "into an acid-etched fracture."
+            )
+        elif c.habit == "fibrous_coating":
+            parts.append(
+                "Fibrous crust on the wall — fast growth along {0001} producing "
+                "parallel columnar fibers. Wurtzite's polarity lets each fiber "
+                "terminate differently at base vs. tip."
+            )
+        else:
+            parts.append(
+                "Tabular {0001} plates with a slight micaceous layering — slow-growth "
+                "wurtzite aggregates that sometimes get mistaken for molybdenite until "
+                "the color and chemistry rule it out."
+            )
+
+        if c.zones:
+            fe_vals = [z.trace_Fe for z in c.zones if z.trace_Fe > 0]
+            if fe_vals:
+                max_fe_pct = max(fe_vals) / 10.0  # reverse the *10 ppm scaling
+                if max_fe_pct > 10:
+                    parts.append(
+                        f"Fe content up to {max_fe_pct:.0f} mol% — wurtzite happily "
+                        f"hosts iron, like its cubic cousin, darkening toward black."
+                    )
+
+        if c.twinned:
+            parts.append(
+                f"Shows the {c.twin_law} twin — less common than sphalerite's spinel "
+                f"twinning because the hexagonal space group forbids the {{111}} operation."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Polymorphic inversion destroyed the crystal — cooling below 95°C "
+                "pushed (Zn,Fe)S into the cubic sphalerite field. Over geologic time "
+                "wurtzite usually converts down to sphalerite; sphalerite rarely goes back."
+            )
+        else:
+            parts.append(
+                "As long as the fluid stays above 95°C, the crystal is stable in "
+                "the wurtzite structure; cooling through that threshold would trigger "
+                "conversion to sphalerite."
+            )
+
+        return " ".join(parts)
+
     def _narrate_fluorite(self, c: Crystal) -> str:
         """Narrate a fluorite crystal's story."""
         parts = [f"Fluorite #{c.crystal_id} grew as {c.habit} crystals to {c.c_length_mm:.1f} mm."]
@@ -10112,7 +10286,24 @@ class VugSimulator:
                         color = last_note.split("color:")[1].split(",")[0].strip()
                         desc += f", {color}"
                 parts.append(f"  • {desc}")
-            
+
+            elif c.mineral == "wurtzite":
+                desc = f"a {c.c_length_mm:.1f}mm wurtzite"
+                if c.habit == "hemimorphic_crystal":
+                    desc += " hexagonal pyramid"
+                elif c.habit == "radiating_columnar":
+                    desc = f"radiating wurtzite columns, {c.c_length_mm:.1f}mm across"
+                elif c.habit == "fibrous_coating":
+                    desc = f"fibrous wurtzite crust, {c.c_length_mm:.1f}mm thick"
+                else:
+                    desc += " tabular plate"
+                if c.twinned:
+                    desc += f" ({c.twin_law})"
+                desc += " — hexagonal (Zn,Fe)S, darker than cubic sphalerite"
+                if c.dissolved:
+                    desc += ", inverted to sphalerite on cooling"
+                parts.append(f"  • {desc}")
+
             elif c.mineral == "fluorite":
                 desc = f"a {c.c_length_mm:.1f}mm fluorite cube"
                 if c.twinned:
