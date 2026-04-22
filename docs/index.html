@@ -2971,6 +2971,7 @@ const MINERAL_SPEC_FALLBACK = {
   aragonite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.5, thermal_decomp_C: 520, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_yellow", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "cyclic_sextet", probability: 0.40 }], acid_dissolution: { pH_threshold: 5.5 } },
   rhodochrosite: { formula: "MnCO3", nucleation_sigma: 1.0, max_size_cm: 25, growth_rate_mult: 0.5, thermal_decomp_C: 600, fluorescence: { activator: "intrinsic", color: "red_pink_LW" }, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 5.5 } },
   siderite: { formula: "FeCO3", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.5, thermal_decomp_C: 550, fluorescence: null, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 5.5 } },
+  dolomite: { formula: "CaMg(CO3)2", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.45, thermal_decomp_C: 700, fluorescence: null, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 6.0 } },
   sphalerite: { formula: "ZnS", nucleation_sigma: 1.0, max_size_cm: 80, growth_rate_mult: 0.6, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "spinel_law", probability: 0.015 }], acid_dissolution: { pH_threshold: 2.0 } },
   wurtzite: { formula: "(Zn,Fe)S", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.55, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "basal_contact", probability: 0.008 }], acid_dissolution: { pH_threshold: 2.0 } },
   fluorite: { formula: "CaF2", nucleation_sigma: 1.0, max_size_cm: 400, growth_rate_mult: 0.5, thermal_decomp_C: 1360, fluorescence: { activator: "REE_or_defects", color: "blue_violet_LW_and_SW" }, twin_laws: [{ name: "penetration", probability: 0.008 }], acid_dissolution: { pH_threshold: 4.0 } },
@@ -3911,6 +3912,27 @@ class VugConditions {
     if (this.fluid.pH < 5.5) sigma -= (5.5 - this.fluid.pH) * 0.5;
     else if (this.fluid.pH > 7.5) sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
     if (this.fluid.O2 > 0.3) sigma *= Math.max(0.2, 1.0 - (this.fluid.O2 - 0.3) * 1.5);
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_dolomite() {
+    // CaMg(CO3)2 — ordered Ca-Mg carbonate. T > 50°C, pH 6.5-10, Mg/Ca in 0.3-5.0.
+    if (this.fluid.Mg < 25 || this.fluid.Ca < 30 || this.fluid.CO3 < 20) return 0;
+    if (this.temperature < 50 || this.temperature > 400) return 0;
+    if (this.fluid.pH < 6.5 || this.fluid.pH > 10.0) return 0;
+    const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
+    if (mg_ratio < 0.3 || mg_ratio > 5.0) return 0;
+    const eq = 200.0 * Math.exp(-0.005 * this.temperature);
+    if (eq <= 0) return 0;
+    const ca_mg = Math.sqrt(this.fluid.Ca * this.fluid.Mg);
+    const co3_limit = this.fluid.CO3 * 2.0;
+    const product = Math.min(ca_mg, co3_limit);
+    let sigma = product / eq;
+    const ratio_distance = Math.abs(Math.log10(mg_ratio));
+    sigma *= Math.exp(-ratio_distance * 1.0);
+    if (this.temperature < 100) sigma *= 0.5 + 0.5 * (this.temperature - 50) / 50.0;
+    else if (this.temperature > 250) sigma *= Math.max(0.3, 1.0 - (this.temperature - 250) / 200.0);
+    if (this.fluid.pH < 6.5) sigma -= (6.5 - this.fluid.pH) * 0.3;
     return Math.max(sigma, 0);
   }
 
@@ -5099,6 +5121,57 @@ function grow_aragonite(crystal, conditions, step) {
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
     note,
+  });
+}
+
+function grow_dolomite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_dolomite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.12);
+      conditions.fluid.Ca += dissolved_um * 0.3;
+      conditions.fluid.Mg += dissolved_um * 0.3;
+      conditions.fluid.CO3 += dissolved_um * 0.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Ca²⁺ + Mg²⁺ + CO₃²⁻ released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 4.5 * excess * rng.uniform(0.7, 1.3);
+
+  if (conditions.temperature > 200 && excess < 0.5) {
+    crystal.habit = 'coarse_rhomb';
+    crystal.dominant_forms = ['coarse rhombohedral {104}', 'transparent to white textbook crystals'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'massive';
+    crystal.dominant_forms = ['massive granular', 'white to gray sugary aggregate'];
+  } else {
+    crystal.habit = 'saddle_rhomb';
+    crystal.dominant_forms = ['e{104} saddle-shaped curved rhombohedron', 'the diagnostic dolomite habit (curved-face signature)'];
+  }
+
+  let color_note;
+  if (conditions.fluid.Fe > 30) color_note = 'tan to brown (Fe-rich, approaching ankerite intermediate)';
+  else if (conditions.fluid.Mn > 10) color_note = 'pinkish-white (Mn-bearing kutnohorite-dolomite intermediate)';
+  else color_note = 'white to colorless (Ca-Mg end-member dolomite)';
+
+  if (!crystal.twinned && rng.random() < 0.02) {
+    crystal.twinned = true;
+    crystal.twin_law = 'polysynthetic {012}';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.08,
+    trace_Mn: conditions.fluid.Mn * 0.05,
+    note: `${crystal.habit} — ${color_note}`,
   });
 }
 
@@ -7119,6 +7192,7 @@ const MINERAL_ENGINES = {
   aragonite: grow_aragonite,
   siderite: grow_siderite,
   rhodochrosite: grow_rhodochrosite,
+  dolomite: grow_dolomite,
   sphalerite: grow_sphalerite,
   wurtzite: grow_wurtzite,
   fluorite: grow_fluorite,
@@ -7672,7 +7746,8 @@ function scenario_reactive_wall() {
       // hosted vugs almost always carry Pb too (galena travels with
       // sphalerite), and Ba is classic (barite is a common late phase).
       Zn: 80, Pb: 30, Ba: 25, S: 60, F: 8,
-      Mg: 80, pH: 7.0, salinity: 18.0
+      // Mg=100 → Mg/Ca ~0.4, above dolomite gate (0.3); calcite still wins by Mg-poisoning math.
+      Mg: 100, pH: 7.0, salinity: 18.0
     }),
     wall: new VugWall({
       composition: 'limestone',
@@ -8225,6 +8300,8 @@ class VugSimulator {
       crystal.dominant_forms = ["e{104} curved 'button' rhombohedron", 'rose-pink'];
     } else if (mineral === 'siderite') {
       crystal.dominant_forms = ["e{104} curved 'saddle' rhombohedron", 'tan to brown'];
+    } else if (mineral === 'dolomite') {
+      crystal.dominant_forms = ['e{104} saddle-shaped curved rhombohedron', 'white to colorless'];
     } else if (mineral === 'sphalerite') {
       crystal.dominant_forms = ['{111} tetrahedron'];
     } else if (mineral === 'wurtzite') {
@@ -8459,6 +8536,18 @@ class VugSimulator {
       const mg_ratio = this.conditions.fluid.Mg / Math.max(this.conditions.fluid.Ca, 0.01);
       const c = this.nucleate('aragonite', pos, sigma_arag);
       this.log.push(`  ✦ NUCLEATION: Aragonite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_arag.toFixed(2)})`);
+    }
+
+    // Dolomite nucleation — Ca-Mg carbonate, needs both cations + T > 50°C.
+    const sigma_dol = this.conditions.supersaturation_dolomite();
+    const existing_dol = this.crystals.filter(c => c.mineral === 'dolomite' && c.active);
+    if (sigma_dol > 1.0 && !existing_dol.length && !this._atNucleationCap('dolomite')) {
+      let pos = 'vug wall';
+      const existing_cal_d = this.crystals.filter(c => c.mineral === 'calcite' && c.active);
+      if (existing_cal_d.length && rng.random() < 0.4) pos = `on calcite #${existing_cal_d[0].crystal_id}`;
+      const mg_ratio = this.conditions.fluid.Mg / Math.max(this.conditions.fluid.Ca, 0.01);
+      const c = this.nucleate('dolomite', pos, sigma_dol);
+      this.log.push(`  ✦ NUCLEATION: Dolomite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_dol.toFixed(2)})`);
     }
 
     // Siderite nucleation — Fe carbonate, brown rhomb. Reducing only.
@@ -9895,6 +9984,25 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_dolomite(c) {
+    const parts = [`Dolomite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("CaMg(CO₃)₂ — the ordered double carbonate, with Ca and Mg in alternating cation layers (R3̄ space group, distinct from calcite's R3̄c). Forms at T > 50°C from fluids carrying both Ca and Mg in roughly comparable amounts. The host rock of MVT deposits and a major sedimentary carbonate; modern surface T dolomite is famously rare ('the dolomite problem').");
+    if (c.habit === 'saddle_rhomb') {
+      parts.push("Saddle-shaped curved rhombohedra — the most extreme example of the calcite-group curved-face signature. Each {104} face bows so sharply that the crystal looks twisted, which it isn't — it's the lattice strain from cation ordering expressed in surface geometry.");
+    } else if (c.habit === 'coarse_rhomb') {
+      parts.push('Coarse textbook rhombohedra — the slow-growth high-T form. Transparent to white, the crystal looks like calcite at first glance until you check the cleavage and density.');
+    } else {
+      parts.push('Massive granular aggregate — the rock-forming form. White to gray sugary texture, no individual crystal faces visible.');
+    }
+    if (c.position && c.position.includes('calcite')) {
+      parts.push(`Growing on calcite — classic dolomitization texture, the Mg-bearing fluid converting earlier calcite to dolomite as the system evolves.`);
+    }
+    if (c.dissolved) {
+      parts.push('Acid attack dissolved the crystal — dolomite is somewhat more acid-resistant than calcite (the Mg slows the reaction), but pH < 6 still releases Ca²⁺ + Mg²⁺ + 2 CO₃²⁻.');
+    }
+    return parts.join(' ');
+  }
+
   _narrate_siderite(c) {
     const parts = [`Siderite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
     parts.push("FeCO₃ — the iron carbonate, a calcite-group mineral (R3̄c) with Fe²⁺ in the Ca site. Tan to deep brown, depending on Fe content and trace substitution. Forms only in REDUCING conditions because Fe²⁺ must stay reduced to be soluble; the moment O₂ rises above ~0.5, siderite begins converting to goethite/limonite.");
@@ -10885,6 +10993,15 @@ class VugSimulator {
         if (c.twinned) desc += ` (${c.twin_law})`;
         desc += ' — pink to raspberry-red MnCO₃';
         if (c.dissolved) desc += ', oxidized to black Mn-oxide rind';
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'dolomite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm dolomite`;
+        if (c.habit === 'saddle_rhomb') desc += ' saddle-shaped curved rhomb';
+        else if (c.habit === 'coarse_rhomb') desc += ' coarse rhombohedron';
+        else desc += ' massive granular';
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        desc += ' — white CaMg(CO₃)₂';
+        if (c.dissolved) desc += ', acid-dissolved';
         parts.push(`  • ${desc}`);
       } else if (c.mineral === 'siderite') {
         let desc = `a ${c.c_length_mm.toFixed(1)}mm siderite`;
@@ -12723,6 +12840,7 @@ function updateFortressStatus() {
     { name: 'Aragonite', sigma: c.supersaturation_aragonite() },
     { name: 'Siderite', sigma: c.supersaturation_siderite() },
     { name: 'Rhodochrosite', sigma: c.supersaturation_rhodochrosite() },
+    { name: 'Dolomite', sigma: c.supersaturation_dolomite() },
     { name: 'Fluorite', sigma: c.supersaturation_fluorite() },
     { name: 'Sphalerite', sigma: c.supersaturation_sphalerite() },
     { name: 'Wurtzite', sigma: c.supersaturation_wurtzite() },
@@ -14112,6 +14230,7 @@ function idleRecordHistory() {
   if (typeof c.supersaturation_aragonite === 'function') supersats.aragonite = c.supersaturation_aragonite();
   if (typeof c.supersaturation_siderite === 'function') supersats.siderite = c.supersaturation_siderite();
   if (typeof c.supersaturation_rhodochrosite === 'function') supersats.rhodochrosite = c.supersaturation_rhodochrosite();
+  if (typeof c.supersaturation_dolomite === 'function') supersats.dolomite = c.supersaturation_dolomite();
   if (typeof c.supersaturation_fluorite === 'function') supersats.fluorite = c.supersaturation_fluorite();
   if (typeof c.supersaturation_pyrite === 'function') supersats.pyrite = c.supersaturation_pyrite();
   if (typeof c.supersaturation_marcasite === 'function') supersats.marcasite = c.supersaturation_marcasite();

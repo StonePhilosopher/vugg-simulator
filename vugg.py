@@ -705,6 +705,61 @@ class VugConditions:
 
         return max(sigma, 0)
 
+    def supersaturation_dolomite(self) -> float:
+        """Dolomite (CaMg(CO₃)₂) — the ordered Ca-Mg double carbonate.
+
+        Trigonal carbonate (R3̄) with alternating Ca and Mg layers — distinct
+        from calcite (R3̄c, all Ca). Forms at T > 50°C from fluids carrying
+        substantial Mg alongside Ca; surface-T dolomite is rare ('dolomite
+        problem' in geology — modern oceans should produce it but don't,
+        for kinetic reasons that a vug simulator doesn't try to capture).
+
+        Mg/Ca ratio gate: needs roughly 0.5 < Mg/Ca < 5 (Mg present in
+        significant quantity but not so dominant it leaves no Ca). Outside
+        that window, calcite (low Mg) or magnesite (no Ca) wins.
+        """
+        if self.fluid.Mg < 25 or self.fluid.Ca < 30 or self.fluid.CO3 < 20:
+            return 0
+        if self.temperature < 50 or self.temperature > 400:
+            return 0
+        if self.fluid.pH < 6.5 or self.fluid.pH > 10.0:
+            return 0
+
+        # Mg/Ca window — dolomite needs both
+        mg_ratio = self.fluid.Mg / max(self.fluid.Ca, 0.01)
+        if mg_ratio < 0.3 or mg_ratio > 5.0:
+            return 0
+
+        # Equilibrium product — both cations matter
+        equilibrium = 200.0 * math.exp(-0.005 * self.temperature)
+        if equilibrium <= 0:
+            return 0
+        # Geometric mean of Ca and Mg, capped by CO3 availability
+        ca_mg = math.sqrt(self.fluid.Ca * self.fluid.Mg)
+        co3_limit = self.fluid.CO3 * 2.0  # dolomite uses 2 CO3 per Ca+Mg
+        product = min(ca_mg, co3_limit)
+        sigma = product / equilibrium
+
+        # Mg/Ca = 1 is the sweet spot — gentle sigmoid bonus near unity ratio.
+        # exp(-x*1.0) gives ~0.6 at ratio=0.4 or 2.5, ~0.4 at ratio=0.16 or 6 —
+        # enough to favor 1:1 fluids but not so harsh it kills the gate at
+        # the realistic 0.4 ratio of MVT brines.
+        ratio_distance = abs(math.log10(mg_ratio))  # 0 at Mg/Ca=1
+        ratio_factor = math.exp(-ratio_distance * 1.0)
+        sigma *= ratio_factor
+
+        # T-window — dolomite kinetics improve with temperature
+        if self.temperature < 100:
+            sigma *= 0.5 + 0.5 * (self.temperature - 50) / 50.0
+        elif self.temperature > 250:
+            sigma *= max(0.3, 1.0 - (self.temperature - 250) / 200.0)
+
+        # Acid dissolution
+        if self.fluid.pH < 6.5:
+            sigma -= (6.5 - self.fluid.pH) * 0.3
+
+        return max(sigma, 0)
+
     def supersaturation_siderite(self) -> float:
         """Siderite (FeCO₃) — the iron carbonate, the brown rhomb.
 
@@ -2637,6 +2692,71 @@ def grow_aragonite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
         thickness_um=rate, growth_rate=rate,
         trace_Fe=trace_Fe, trace_Mn=trace_Mn,
         note=note,
+    )
+
+
+def grow_dolomite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Dolomite (CaMg(CO₃)₂) growth — the Ca-Mg ordered carbonate.
+
+    Habits: saddle_rhomb (default — curved 'saddle-shaped' rhombs are the
+    diagnostic dolomite habit, the most extreme curved-face expression of
+    any calcite-group mineral), massive (low σ), coarse_rhomb (slow growth
+    high T — clear textbook rhombohedra).
+
+    Dolomite is the host rock of MVT deposits and a major sedimentary
+    carbonate. The 'dolomite problem' in geology — that modern oceans
+    should but don't precipitate dolomite at surface T — is not modeled
+    here; the simulator allows direct nucleation when Mg/Ca is in range
+    and T > 50°C.
+    """
+    sigma = conditions.supersaturation_dolomite()
+
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 6.0:
+            crystal.dissolved = True
+            dissolved_um = min(5.0, crystal.total_growth_um * 0.12)
+            conditions.fluid.Ca += dissolved_um * 0.3
+            conditions.fluid.Mg += dissolved_um * 0.3
+            conditions.fluid.CO3 += dissolved_um * 0.5
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH {conditions.fluid.pH:.1f}) — Ca²⁺ + Mg²⁺ + CO₃²⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.5 * excess * random.uniform(0.7, 1.3)
+
+    # Habit selection
+    if conditions.temperature > 200 and excess < 0.5:
+        crystal.habit = "coarse_rhomb"
+        crystal.dominant_forms = ["coarse rhombohedral {104}", "transparent to white textbook crystals"]
+    elif excess > 1.2:
+        crystal.habit = "massive"
+        crystal.dominant_forms = ["massive granular", "white to gray sugary aggregate"]
+    else:
+        crystal.habit = "saddle_rhomb"
+        crystal.dominant_forms = ["e{104} saddle-shaped curved rhombohedron", "the diagnostic dolomite habit (curved-face signature)"]
+
+    # Color by Fe content (Fe-rich dolomite = ankerite intermediate)
+    if conditions.fluid.Fe > 30:
+        color_note = "tan to brown (Fe-rich, approaching ankerite intermediate)"
+    elif conditions.fluid.Mn > 10:
+        color_note = "pinkish-white (Mn-bearing kutnohorite-dolomite intermediate)"
+    else:
+        color_note = "white to colorless (Ca-Mg end-member dolomite)"
+
+    if not crystal.twinned and random.random() < 0.02:
+        crystal.twinned = True
+        crystal.twin_law = "polysynthetic {012}"
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.08,
+        trace_Mn=conditions.fluid.Mn * 0.05,
+        note=f"{crystal.habit} — {color_note}",
     )
 
 
@@ -5737,6 +5857,7 @@ MINERAL_ENGINES = {
     "aragonite": grow_aragonite,
     "siderite": grow_siderite,
     "rhodochrosite": grow_rhodochrosite,
+    "dolomite": grow_dolomite,
     "sphalerite": grow_sphalerite,
     "wurtzite": grow_wurtzite,
     "fluorite": grow_fluorite,
@@ -5799,6 +5920,7 @@ THERMAL_DECOMPOSITION = {
     "aragonite":  (520,  "orthorhombic CaCO₃ → calcite (polymorphic conversion before calcination)", {"Ca": 0.5, "CO3": 0.4}),
     "rhodochrosite": (600, "MnCO₃ → MnO + CO₂ (calcination, lower than calcite)", {"Mn": 0.5, "CO3": 0.4}),
     "siderite":     (550, "FeCO₃ → Fe₃O₄/FeO + CO₂ (decarbonation; oxidation route → goethite at low T)", {"Fe": 0.5, "CO3": 0.4}),
+    "dolomite":     (700, "CaMg(CO₃)₂ → CaO + MgO + 2CO₂ (decarbonation in two stages: MgCO₃ first ~500°C, CaCO₃ at ~840°C)", {"Ca": 0.4, "Mg": 0.4, "CO3": 0.4}),
     "malachite":  (200,  "Cu₂CO₃(OH)₂ → CuO + CO₂ + H₂O",                      {"Cu": 0.6, "CO3": 0.3}),
     "sphalerite": (1020, "ZnS → Zn + S (sublimes)",                              {"Zn": 0.3, "S": 0.5}),
     "wurtzite":   (1020, "hexagonal ZnS → sublimation (shares sphalerite decomposition)", {"Zn": 0.3, "S": 0.5}),
@@ -6110,10 +6232,11 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
             # late-stage phase).
             Zn=80, Pb=30, Ba=25, S=60, F=8,
             # Limestone-hosted brines (Sweetwater / Viburnum Trend per
-            # Sverjensky 1981) carry Mg ~50–150 ppm. Mg/Ca ~0.3 stays
-            # calcite-favoring on average; the late acid pulses can
-            # raise the ratio enough to flip aragonite for the right seed.
-            Mg=80,
+            # Sverjensky 1981) carry Mg ~50–150 ppm. Mg=100 sets Mg/Ca
+            # ~0.4, above dolomite's ratio gate so dolomitization can
+            # fire. Calcite still dominates (Mg-poisoning at 0.4 ratio
+            # is mild); aragonite stays absent (its threshold is ~1.5).
+            Mg=100,
             pH=7.0, salinity=18.0
         ),
         wall=VugWall(
@@ -7456,6 +7579,8 @@ class VugSimulator:
             crystal.dominant_forms = ["e{104} curved 'button' rhombohedron", "rose-pink"]
         elif mineral == "siderite":
             crystal.dominant_forms = ["e{104} curved 'saddle' rhombohedron", "tan to brown"]
+        elif mineral == "dolomite":
+            crystal.dominant_forms = ["e{104} saddle-shaped curved rhombohedron", "white to colorless"]
         elif mineral == "sphalerite":
             crystal.dominant_forms = ["{111} tetrahedron"]
         elif mineral == "wurtzite":
@@ -7703,6 +7828,20 @@ class VugSimulator:
             c = self.nucleate("aragonite", position=pos, sigma=sigma_arag)
             self.log.append(f"  ✦ NUCLEATION: Aragonite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, Mg/Ca={mg_ratio:.2f}, σ={sigma_arag:.2f})")
+
+        # Dolomite nucleation — Ca-Mg carbonate, needs both cations + T > 50°C.
+        sigma_dol = self.conditions.supersaturation_dolomite()
+        existing_dol = [c for c in self.crystals if c.mineral == "dolomite" and c.active]
+        if sigma_dol > 1.0 and not existing_dol and not self._at_nucleation_cap("dolomite"):
+            pos = "vug wall"
+            # Often grows on calcite as the system evolves toward dolomitization
+            existing_cal_d = [c for c in self.crystals if c.mineral == "calcite" and c.active]
+            if existing_cal_d and random.random() < 0.4:
+                pos = f"on calcite #{existing_cal_d[0].crystal_id}"
+            mg_ratio = self.conditions.fluid.Mg / max(self.conditions.fluid.Ca, 0.01)
+            c = self.nucleate("dolomite", position=pos, sigma=sigma_dol)
+            self.log.append(f"  ✦ NUCLEATION: Dolomite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, Mg/Ca={mg_ratio:.2f}, σ={sigma_dol:.2f})")
 
         # Siderite nucleation — Fe carbonate, the brown rhomb. Reducing only.
         sigma_sid = self.conditions.supersaturation_siderite()
@@ -9682,6 +9821,53 @@ class VugSimulator:
                 "from hot springs it converts to calcite in centuries to millennia."
             )
 
+        return " ".join(parts)
+
+    def _narrate_dolomite(self, c: Crystal) -> str:
+        """Narrate a dolomite crystal's story — the Ca-Mg ordered carbonate."""
+        parts = [f"Dolomite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "CaMg(CO₃)₂ — the ordered double carbonate, with Ca and Mg in "
+            "alternating cation layers (R3̄ space group, distinct from "
+            "calcite's R3̄c). Forms at T > 50°C from fluids carrying both "
+            "Ca and Mg in roughly comparable amounts. The host rock of MVT "
+            "deposits and a major sedimentary carbonate; modern surface T "
+            "dolomite is famously rare ('the dolomite problem')."
+        )
+
+        if c.habit == "saddle_rhomb":
+            parts.append(
+                "Saddle-shaped curved rhombohedra — the most extreme example "
+                "of the calcite-group curved-face signature. Each {104} face "
+                "bows so sharply that the crystal looks twisted, which it "
+                "isn't — it's the lattice strain from cation ordering "
+                "expressed in surface geometry."
+            )
+        elif c.habit == "coarse_rhomb":
+            parts.append(
+                "Coarse textbook rhombohedra — the slow-growth high-T form. "
+                "Transparent to white, the crystal looks like calcite at "
+                "first glance until you check the cleavage and density."
+            )
+        else:
+            parts.append(
+                "Massive granular aggregate — the rock-forming form. White "
+                "to gray sugary texture, no individual crystal faces visible."
+            )
+
+        if "calcite" in c.position:
+            parts.append(
+                f"Growing on calcite — classic dolomitization texture, the "
+                f"Mg-bearing fluid converting earlier calcite to dolomite "
+                f"as the system evolves."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Acid attack dissolved the crystal — dolomite is somewhat "
+                "more acid-resistant than calcite (the Mg slows the reaction), "
+                "but pH < 6 still releases Ca²⁺ + Mg²⁺ + 2 CO₃²⁻."
+            )
         return " ".join(parts)
 
     def _narrate_siderite(self, c: Crystal) -> str:

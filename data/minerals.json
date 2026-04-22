@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 50,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates), +tetrahedrite/tennantite (round-2: paired fahlore Sb/As sulfosalts), +apophyllite (round-2: zeolite-facies silicate, hematite-phantom 'bloody apophyllite' habit, deccan_zeolite scenario added), +aragonite (round-3: orthorhombic CaCO3, Mg/Ca-driven polymorph competition with calcite per Folk 1974/Morse 1997), +rhodochrosite (round-3: Mn carbonate, biggest collection-weight miss at 35 specimens), +siderite (round-3: Fe carbonate, oxidation breakdown to goethite is the diagenetic pseudomorph mechanism).",
+    "total_minerals": 51,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates), +tetrahedrite/tennantite (round-2: paired fahlore Sb/As sulfosalts), +apophyllite (round-2: zeolite-facies silicate, hematite-phantom 'bloody apophyllite' habit, deccan_zeolite scenario added), +aragonite (round-3: orthorhombic CaCO3, Mg/Ca-driven polymorph competition with calcite per Folk 1974/Morse 1997), +rhodochrosite (round-3: Mn carbonate, biggest collection-weight miss at 35 specimens), +siderite (round-3: Fe carbonate, oxidation breakdown to goethite is the diagenetic pseudomorph mechanism), +dolomite (round-3: Ca-Mg ordered carbonate, completes the carbonate quartet calcite/aragonite/rhodochrosite/siderite/dolomite).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -75,7 +75,8 @@
       "apophyllite",
       "aragonite",
       "rhodochrosite",
-      "siderite"
+      "siderite",
+      "dolomite"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -115,7 +116,8 @@
         "calcite",
         "pyrite",
         "marcasite",
-        "sphalerite"
+        "sphalerite",
+        "dolomite"
       ],
       "radioactive_pegmatite": [
         "uraninite",
@@ -576,6 +578,115 @@
         "web/index.html"
       ],
       "audit_status": "ok (round-3 add: orthorhombic CaCO3 polymorph, Mg/Ca dominant control per Folk 1974/Morse 1997, polymorphic conversion to calcite at T>100°C, four habits including iconic cyclic twin and flos ferri). Scenarios array empty until SCENARIO-CHEMISTRY-AUDIT brief runs — none of the existing scenarios have realistic enough Mg/Ca (>1.5) to nucleate aragonite at seed 42; existing scenarios use realistic low-Mg brines that correctly favor calcite. Aragonite gate is verified working with manually elevated Mg.",
+      "class_color": "#eb7f13"
+    },
+    "dolomite": {
+      "formula": "CaMg(CO3)2",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 30,
+      "growth_rate_mult": 0.45,
+      "_collection_specimens": 7,
+      "habit_variants": [
+        {
+          "name": "saddle_rhomb",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "equant",
+          "trigger": "moderate σ — saddle-shaped curved rhombohedra, the diagnostic dolomite habit (most extreme curved-face expression of any calcite-group carbonate)"
+        },
+        {
+          "name": "coarse_rhomb",
+          "wall_spread": 0.25,
+          "void_reach": 0.7,
+          "vector": "equant",
+          "trigger": "T > 200°C and low σ — coarse textbook rhombohedra, transparent to white"
+        },
+        {
+          "name": "massive",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "equant",
+          "trigger": "high σ — massive granular, white to gray sugary aggregate (rock-forming form)"
+        }
+      ],
+      "class": "carbonate",
+      "description": "CaMg(CO₃)₂ — the ordered double carbonate, with Ca and Mg in alternating cation layers (R3̄ space group, distinct from calcite's R3̄c). Rarely forms at surface temperature ('dolomite problem' in geology — modern oceans should but don't precipitate it for kinetic reasons). Above 50°C with both Ca and Mg present in roughly comparable amounts (Mg/Ca ratio 0.3-5, optimum 1:1), dolomite competes with calcite (low Mg) and theoretical magnesite (no Ca, not modeled). The host rock of MVT deposits and a major sedimentary carbonate. Saddle-shaped curved rhombohedra are the diagnostic habit — the lattice strain from cation ordering shows in the surface geometry.",
+      "scenarios": [
+        "reactive_wall"
+      ],
+      "T_range_C": [
+        50,
+        400
+      ],
+      "T_optimum_C": [
+        100,
+        250
+      ],
+      "T_behavior": "retrograde_solubility",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Mg": 25,
+        "Ca": 30,
+        "CO3": 20
+      },
+      "trace_ingredients": {
+        "Fe": "ankerite intermediate (tan-brown when Fe-rich)",
+        "Mn": "kutnohorite-dolomite intermediate (pinkish when Mn-bearing)",
+        "Zn": "minrecordite intermediate"
+      },
+      "thermal_decomp_C": 700,
+      "thermal_decomp_reaction": "CaMg(CO3)2 -> CaO + MgO + 2 CO2 (decarbonation in two stages: MgCO3 first ~500°C, CaCO3 at ~840°C)",
+      "thermal_decomp_products": {
+        "Ca": 0.4,
+        "Mg": 0.4,
+        "CO3": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "polysynthetic",
+          "miller_indices": "{012}",
+          "trigger": "growth or stress",
+          "probability": 0.02
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "CaMg(CO3)2 + 4H+ -> Ca2+ + Mg2+ + 2 H2O + 2 CO2 (slower than calcite — Mg slows the kinetics)",
+        "products": {
+          "Ca": 0.5,
+          "Mg": 0.5,
+          "CO3": 0.5
+        }
+      },
+      "habit": "saddle_rhomb_or_massive",
+      "color_rules": {
+        "white_to_colorless": {
+          "default": true
+        },
+        "tan_brown": {
+          "trigger": "Fe-rich (Fe > 30 ppm) — ankerite intermediate"
+        },
+        "pinkish_white": {
+          "trigger": "Mn-bearing — kutnohorite-dolomite intermediate"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "calcite",
+          "vug wall"
+        ],
+        "note": "Calcite substrate is the classic dolomitization texture — Mg-bearing fluid replaces earlier calcite as Mg/Ca ratio climbs. Direct vug-wall nucleation also common in Mg-rich brines."
+      },
+      "narrate_function": "_narrate_dolomite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-3 add: ordered Ca-Mg carbonate, R3̄ space group, three habits including diagnostic saddle rhombs, Mg/Ca ratio gate 0.3-5 with sweet-spot bonus near 1:1). Empirically verified in reactive_wall at seed 42 (initial Mg bumped 80→100 within Sverjensky 1981 limestone-brine range). The 'dolomite problem' kinetic complexity is not modeled — direct precipitation allowed when Mg/Ca and T are in range.",
       "class_color": "#eb7f13"
     },
     "siderite": {
