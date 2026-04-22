@@ -14584,6 +14584,22 @@ const HABIT_TO_TEXTURE = {
   'framboidal':          'botryoidal', // pyrite microspheres (sweetwater style)
   'reniform_globules':   'botryoidal', // chrysocolla — bigger lobes, same family
   'botryoidal_crust':    'botryoidal', // chrysocolla
+  // Stage 4 — acicular / needle / radiating bundles.
+  // PLACEHOLDER: dispatches to sawtooth with dogtooth-cloned params
+  // pending its own design (true acicular wants a denser, spikier feel).
+  'acicular':            'acicular',   // apatite, hemimorphite alt
+  'acicular_needle':     'acicular',   // aragonite, bismuthinite low-T
+  'acicular sprays':     'acicular',   // (with-space variant)
+  'radiating_blade':     'acicular',   // marcasite
+  'radiating_columnar':  'acicular',   // hemimorphite
+  'radiating_cluster':   'acicular',   // bismuthinite
+  'radiating_spray':     'acicular',   // stibnite
+  'radiating_fibrous':   'acicular',   // erythrite on cobaltite, etc.
+  'cockscomb':           'acicular',   // marcasite — iconic habit name
+  'spearhead':           'acicular',   // marcasite
+  'elongated_prism_blade': 'acicular', // stibnite Ichinokawa
+  'fibrous_acicular':    'acicular',   // chalcedony-style fibrous, also annabergite
+  'plumose_rosette':     'acicular',   // erythrite plumose
 };
 
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
@@ -14616,6 +14632,11 @@ const TEXTURE_PARAMS = {
   // half-circle (amplitude = pitch/2). Below saturation bumps flatten into
   // gentle scallops — still reads as round, just less plump.
   botryoidal:     { amplitude_factor: 1.0, pitch_mm: 2.5, max_amplitude_pitch_ratio: 0.5 },
+  // Acicular PLACEHOLDER — clones dogtooth's params pending its own
+  // design. Future polish: denser pitch, taller amplitude, possibly
+  // a "needle bundle" function that draws many tightly-packed spikes
+  // instead of a sawtooth. Token kept distinct so swap is one line.
+  acicular:       { amplitude_factor: 1.5, pitch_mm: 2.0 },
 };
 
 // Draw the inner (fluid-facing) edge of a wedge from (fromX,fromY) to
@@ -14649,6 +14670,11 @@ function drawHabitTexture(ctx, mineral, habit, fromX, fromY, toX, toY, controlX,
     case 'botryoidal':
       _texture_botryoidal(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.botryoidal);
       return;
+    case 'acicular':
+      // PLACEHOLDER: same _texture_sawtooth as dogtooth pending its own
+      // design. Swap this line when a real acicular function arrives.
+      _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.acicular);
+      return;
     case 'smooth':
     default:
       ctx.quadraticCurveTo(controlX, controlY, toX, toY);
@@ -14670,6 +14696,7 @@ function _resolveTexture(mineral, habit) {
   if (habit) {
     const h = habit.toLowerCase();
     if (h.includes('botryoidal') || h.includes('reniform') || h.includes('globule') || h.includes('framboidal')) return 'botryoidal';
+    if (h.includes('acicular') || h.includes('needle') || h.includes('radiating') || h.includes('spray') || h.includes('cockscomb') || h.includes('plumose')) return 'acicular';
   }
   return 'smooth';
 }
