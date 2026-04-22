@@ -59,7 +59,10 @@
       "data_gaps": [
         "No modern peer-reviewed microthermometry study with both Th and Tm_ice specifically for Herkimer pocket quartz appears to be widely indexed; the 140-200 C window is inferred from regional Alleghenian thermal maturity, not directly measured on Herkimer quartz. A dedicated FI study (the type done for Joplin brines in Roedder 1976) remains a gap.",
         "LA-ICP-MS of Herkimer fluid inclusions is not in the open literature; basinal-brine ratios are imported from Hanor 1994 Appalachian-basin averages."
-      ]
+      ],
+      "intentionally_zero": {
+        "Au": "Burial-diagenetic quartz at 140-200 C in basinal brine; no Au geochemistry. The Mohawk Valley Cambrian-Ordovician section is unrelated to gold deposits. Au=0 is correct, not a gap."
+      }
     },
     "bingham_canyon": {
       "scenario_id": "porphyry",
@@ -140,6 +143,9 @@
         "Stoffell et al. 2008 PDF was not machine-extractable in this audit pass — exact LA-ICP-MS sample-by-sample numbers were not retrieved; gap-fills use the paper's reported ranges + general MVT-brine compendium data.",
         "Ore-stage T (90-150 C) is below scenario T=180 — preserved scenario T as intentional simulation-time choice."
       ],
+      "intentionally_zero": {
+        "Au": "MVT brines transport Pb-Zn-Ba-F-Ag but not Au — Au has different transport chemistry (needs higher T or Au-Cl/Au-HS complexes that the cool basinal brine doesn't sustain). Stoffell 2008 LA-ICP-MS doesn't report Au from Tri-State fluid inclusions. Au=0 is correct, not a gap."
+      },
       "pending_schema_additions": {
         "_purpose": "Values pre-researched and ready to plug in once the corresponding FluidChemistry schema field exists.",
         "Cd": {
@@ -182,7 +188,10 @@
       "data_gaps": [
         "Sweetwater-specific (vs district-wide Viburnum) fluid-inclusion LA-ICP-MS data is sparse; trace-element values are inferred from district averages.",
         "The 'acid pulse' mechanic is an abstraction — real Viburnum mineralization is interpreted as continuous brine flow with pH evolving via wallrock buffering, not discrete acid injections. The pulse model preserves the dissolution-precipitation cycle pedagogically."
-      ]
+      ],
+      "intentionally_zero": {
+        "Au": "Same MVT-brine context as Tri-State — basinal brines don't carry Au. Au=0 is correct, not a gap."
+      }
     },
     "warren_district": {
       "scenario_id": "bisbee",
@@ -258,7 +267,10 @@
       "data_gaps": [
         "Morteani et al. 2002 covers Brazilian pegmatite-hydrothermal systems broadly; Ouro-Preto-specific LA-ICP-MS fluid-inclusion data is sparse.",
         "Cr source attribution to 'nearby ultramafic dikes' is geologically reasonable but not directly traced in the published literature for individual mines."
-      ]
+      ],
+      "intentionally_zero": {
+        "Au": "The region is famously auriferous — 'Ouro Preto' literally means 'Black Gold', and the Iron Quadrangle was the center of the Brazilian gold rush. BUT this scenario simulates the Imperial Topaz veins (Capão / Boa Vista mines) specifically, which are a separate paragenesis from the regional gold-bearing veins (Mariana, Sabará, Nova Lima, Morro Velho). The topaz mines are not gold producers. Au=0 is correct for the topaz-vein-specific scenario, not a gap. A future scenario simulating an Iron Quadrangle gold vein would carry Au."
+      }
     },
     "cruzeiro_doce_valley": {
       "scenario_id": "gem_pegmatite",
@@ -291,7 +303,10 @@
       "data_gaps": [
         "P=8 enables apatite nucleation but real Cruzeiro pocket fluid P content is not directly published in fluid-inclusion analyses; conservative estimate.",
         "Cu=0.3 (the Paraíba long-shot) is a deliberately-low value to make cuprian elbaite a rare seed-roll; not a real Cruzeiro Cu measurement."
-      ]
+      ],
+      "intentionally_zero": {
+        "Au": "Pegmatite incompatible-element partitioning excludes Au — gold doesn't fit any pegmatite-mineral structure and stays in the residual melt or escapes via late hydrothermal phase. No Brazilian pegmatite is a gold producer, including Cruzeiro. Au=0 is correct, not a gap."
+      }
     },
     "tsumeb": {
       "scenario_id": "supergene_oxidation",
@@ -306,7 +321,8 @@
         "Ge": {"value": 5, "note": "Tsumeb is THE type locality for germanium. Germanite (Cu26Fe4Ge4S32), renierite, and briartite were all first described here. FluidChemistry's Ge field has carried a 'Tsumeb speciality' comment since the schema was written — this audit finally populates it [Melcher 2003 Tsumeb Ge geochemistry]."},
         "Sb": {"value": 5, "note": "Enables proustite (Ag3SbS3) and pyrargyrite (Ag3SbS3) — the ruby silvers — plus tetrahedrite. Mirrors the Bisbee-style Sb-As-Bi greisen-trace abstraction at lower supergene-zone abundance."},
         "Na": {"value": 30, "note": "Minor groundwater cation trace; supergene meteoric water is dilute (salinity stays at 2 wt%) but carries some Na from soil-zone weathering."},
-        "K": {"value": 10, "note": "K/Na ~0.3, meteoric-groundwater ratio."}
+        "K": {"value": 10, "note": "K/Na ~0.3, meteoric-groundwater ratio."},
+        "Au": {"value": 0.3, "note": "Rare native gold IS documented at Tsumeb [Pinch & Wilson 1977] though it's not a primary commodity. Sub-0.5-ppm threshold (grow_native_gold's nucleation cutoff) means no gold crystals nucleate — the 0.3 value documents the reported trace chemistry without producing gold the locality doesn't actually produce in quantity. Added when the Au field landed (post grow_native_gold engine)."}
       },
       "preserved_intentional_values": {
         "SiO2": 30, "Ca": 120, "CO3": 110, "Fe": 40, "Mn": 6, "Mg": 5,
@@ -357,7 +373,10 @@
       "data_gaps": [
         "Sr=2 is a sim-scale documentation value; direct fluid-inclusion Sr quantification for Deccan vesicle waters is not widely published.",
         "Stage I/II/III timing in the scenario (events at steps 20/35/70/110/160) is a simplification of the much longer ~21-58 Ma real timeline."
-      ]
+      ],
+      "intentionally_zero": {
+        "Au": "Deccan basalts are not Au-bearing. Surface-T alkaline groundwater percolating through cooled basalt vesicles doesn't transport Au — wrong T, wrong complex chemistry. Au=0 is correct, not a gap."
+      }
     },
     "coorong_sabkha": {
       "scenario_id": "sabkha_dolomitization",
@@ -381,7 +400,10 @@
       ],
       "data_gaps": [
         "None for the declared mineralogy. The scenario covers all relevant elements at realistic concentrations."
-      ]
+      ],
+      "intentionally_zero": {
+        "Au": "Surface evaporite from seawater concentration. No Au pathway — seawater Au is sub-ppb, evaporative concentration up to 100x still leaves Au at sub-ppm levels. Au=0 is correct, not a gap."
+      }
     }
   }
 }

@@ -6984,6 +6984,13 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
             # meteoric water is dilute (salinity stays at 2 wt%) but
             # carries some Na/K from soil-zone weathering.
             Na=30, K=10,
+            # Au=0.3: rare native gold IS documented at Tsumeb [Pinch
+            # & Wilson 1977] though it is not a primary commodity.
+            # Sub-threshold (grow_native_gold's Au < 0.5 ppm cutoff)
+            # so no nucleation expected — documents the trace chemistry
+            # without producing gold the locality doesn't actually
+            # produce in quantity.
+            Au=0.3,
             # ──────────────────────────────────────────────────────────
             O2=1.8, pH=6.8, salinity=2.0,
         ),
