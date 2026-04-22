@@ -189,6 +189,7 @@ class FluidChemistry:
     Te: float = 0.0            # ppm — tellurium (calaverite, sylvanite — Au-Te tellurides)
     Se: float = 0.0            # ppm — selenium (clausthalite, naumannite — often with Ag)
     Ge: float = 0.0            # ppm — germanium (renierite — Tsumeb speciality, Zn sphalerite trace)
+    Au: float = 0.0            # ppm — gold (native gold; Bingham/Bisbee porphyry-Cu-Au; eventually calaverite/sylvanite when Te-Au coupling lands)
     O2: float = 0.0            # relative oxygen fugacity (0=reducing, 1=neutral, 2=oxidizing)
     pH: float = 6.5
     salinity: float = 5.0      # wt% NaCl equivalent
@@ -1868,6 +1869,59 @@ class VugConditions:
             ph_f = max(0.4, 1.0 - (pH - 7.5) * 0.6)
 
         sigma = cu_f * si_f * o_f * t_f * ph_f
+        return max(sigma, 0)
+
+    def supersaturation_native_gold(self) -> float:
+        """Native gold (Au) supersaturation.
+
+        Au has extreme affinity for the native form across most natural
+        conditions — equilibrium Au activity in any aqueous fluid is
+        sub-ppb, so even fractional ppm Au in the broth is hugely
+        supersaturated against equilibrium. The threshold here (Au ≥
+        0.5 ppm) is the practical sim minimum; below that level the
+        gold stays partitioned in solution as Au-Cl or Au-HS complexes
+        without nucleating distinct crystals.
+
+        Two precipitation pathways the model collapses into one σ:
+          1. High-T magmatic-hydrothermal — Au-Cl complex destabilizes
+             at boiling / decompression / cooling. The Bingham
+             vapor-plume Au mechanism (Landtwing et al. 2010).
+          2. Low-T supergene — Au-Cl reduces to Au0 at the redox
+             interface, often coupled with chalcocite enrichment. The
+             Bisbee oxidation-cap mechanism (Graeme et al. 2019).
+
+        Unlike native_copper, gold tolerates BOTH oxidizing AND
+        reducing fluids because the two transport complexes (Au-Cl
+        oxidizing vs Au-HS reducing) cover both regimes — there's no
+        Eh window where gold can't deposit if Au activity is high.
+
+        Sulfur suppression is the main competing factor: above
+        ~100 ppm S, Au stays in Au-HS solution and/or partitions into
+        coexisting Au-Te species (when Te is also present) instead of
+        nucleating native gold.
+        """
+        if self.fluid.Au < 0.5:
+            return 0
+        # Au activity factor — even small Au is hugely supersaturated.
+        # Cap at 4× to keep extreme Au from blowing out the dispatcher.
+        au_f = min(self.fluid.Au / 1.0, 4.0)
+        # Sulfur suppression — high S keeps Au in Au(HS)2- complex.
+        # Above ~100 ppm S the suppression dominates.
+        s_f = max(0.2, 1.0 - self.fluid.S / 200.0)
+        sigma = au_f * s_f
+        # Wide T tolerance — gold deposits span 25-700°C (porphyry to
+        # placer to epithermal). Mild dropoff above 400°C and below
+        # 20°C.
+        T = self.temperature
+        if 20 <= T <= 400:
+            T_factor = 1.0
+        elif T < 20:
+            T_factor = 0.5
+        elif T <= 700:
+            T_factor = max(0.5, 1.0 - 0.001 * (T - 400))
+        else:
+            T_factor = 0.3
+        sigma *= T_factor
         return max(sigma, 0)
 
     def supersaturation_native_copper(self) -> float:
@@ -5176,6 +5230,72 @@ def grow_chrysocolla(crystal: Crystal, conditions: VugConditions, step: int) -> 
     )
 
 
+def grow_native_gold(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Native gold (Au) growth — the noble metal.
+
+    Gold doesn't dissolve in surface or hydrothermal conditions (it's
+    famously inert; the only natural dissolver is HCl + HNO3 + heat,
+    which doesn't occur in vugs). So no acid-dissolution branch — once
+    a gold crystal forms it persists indefinitely.
+
+    Habit selection follows the σ excess gradient and gets a color
+    note when alloying elements (Cu, Ag) are present in the parent
+    fluid. Future Au-Te or Au-Cu coupling could fork this into native
+    gold vs calaverite/sylvanite vs cuproauride, but that needs the
+    Te-mineral engines to land first.
+    """
+    sigma = conditions.supersaturation_native_gold()
+    if sigma < 1.0:
+        return None  # Au is essentially indestructible — no dissolution path
+
+    excess = sigma - 1.0
+    # Gold growth is intrinsically slow (low Au activity even when
+    # supersaturated). 1.5x base rate vs native_copper's 2.0x reflects
+    # gold's lower free-fluid concentration.
+    rate = 1.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.05:
+        return None
+
+    # Habit by σ excess (parallels native_copper habit logic):
+    #   high σ → nugget / massive
+    #   moderate σ → dendritic / spongy
+    #   low σ → octahedral well-formed
+    if excess > 1.5:
+        crystal.habit = "nugget"
+        crystal.dominant_forms = ["rounded nugget", "massive native gold"]
+        habit_note = "nugget — rapid precipitation in pocket"
+    elif excess > 0.5:
+        crystal.habit = "dendritic"
+        crystal.dominant_forms = ["dendritic {111} branching", "spongy gold"]
+        habit_note = "dendritic / spongy native gold (the fishbone-and-leaf habit of supergene Au)"
+    else:
+        crystal.habit = "octahedral"
+        crystal.dominant_forms = ["{111} octahedron", "rare well-formed crystal"]
+        habit_note = "octahedral well-formed native gold (rare — slow growth)"
+
+    # Alloying elements present in parent fluid set color note.
+    # Real-world ranges: Au-Ag electrum < 80% Au is "electrum" proper;
+    # Au-Cu rose-gold and cuproauride are diagnostic of Cu-rich systems
+    # like Bisbee. The sim picks one note based on which alloying
+    # element is dominant; doesn't model both at once.
+    if conditions.fluid.Ag > conditions.fluid.Cu * 0.5 and conditions.fluid.Ag > 5:
+        habit_note += "; Ag-alloyed (electrum, pale yellow tint)"
+    elif conditions.fluid.Cu > 50:
+        habit_note += "; Cu-alloyed (rose-gold tint, cuproauride affinity)"
+
+    # Au consumption from the fluid — small because Au activity is low.
+    # 0.05 ratio is conservative; high-rate growth still drains the Au
+    # pool but slowly enough that Bingham/Bisbee Au=2-3 ppm can sustain
+    # multiple crystals.
+    conditions.fluid.Au = max(conditions.fluid.Au - rate * 0.05, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_native_copper(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Native copper (Cu) growth — the elemental metal."""
     sigma = conditions.supersaturation_native_copper()
@@ -6046,6 +6166,7 @@ MINERAL_ENGINES = {
     "azurite": grow_azurite,
     "chrysocolla": grow_chrysocolla,
     "native_copper": grow_native_copper,
+    "native_gold": grow_native_gold,
     "magnetite": grow_magnetite,
     "lepidocrocite": grow_lepidocrocite,
     "stibnite": grow_stibnite,
@@ -6546,19 +6667,15 @@ def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
             # tellurides (calaverite, sylvanite) — fluid Te is low but
             # non-zero in the porphyry-distal apron.
             Te=2,
-            # ── Pre-researched, pending FluidChemistry schema ─────────
-            # When Au is added to the FluidChemistry dataclass, set:
-            #     Au=2,
-            # Justification: Landtwing et al. 2010 LA-ICP-MS reports ~1
-            # ppm Au in fluid inclusions across multiple porphyry Cu-Au
-            # systems including Bingham; the Au-Cu-rich center near the
-            # top of the orebody is the diagnostic vapor-plume target.
-            # Sim-scale Au=2 matches the Te=2 trace abstraction. No
-            # further research needed — just add the field to the
-            # schema, uncomment the line above, plus mirror to JS and
-            # web/docs. Same procedure for the bingham_canyon entry in
-            # data/locality_chemistry.json (pending_schema_additions
-            # block already populated with the value).
+            # Au=2: porphyry-Cu-Au signature. Landtwing et al. 2010
+            # LA-ICP-MS reports ~1 ppm Au in fluid inclusions across
+            # multiple porphyry Cu-Au systems including Bingham; the
+            # Au-Cu-rich center near the top of the orebody is the
+            # diagnostic vapor-plume target. Bingham has produced
+            # ~200 t Au cumulatively, making Au a defining metal
+            # alongside Cu and Mo. Activated when grow_native_gold
+            # landed (was previously in pending_schema_additions).
+            Au=2,
             # ──────────────────────────────────────────────────────────
             O2=0.2, pH=4.5, salinity=10.0
         ),
@@ -7446,19 +7563,14 @@ def scenario_bisbee() -> Tuple[VugConditions, List[Event], int]:
             # at Bisbee. Bi=2 is already set; mirroring with comparable
             # low Sb completes the Sb-As-Bi greisen-trace triplet.
             Sb=5,
-            # ── Pre-researched, pending FluidChemistry schema ─────────
-            # When Au is added to the FluidChemistry dataclass, set:
-            #     Au=3,
-            # Justification: Bisbee was a moderate Au producer (~3 Moz
-            # historically), classic Cu-Au porphyry. Lower than Bingham's
-            # Au=2 in some sense (Bingham is the type Cu-Au porphyry)
-            # but Bisbee's preserved Au is documented in the supergene
-            # zone as native gold + auriferous chalcocite. Sim-scale
-            # Au=3 slightly higher than Bingham reflecting Bisbee's
-            # preserved oxidation zone where Au accumulates.
-            # Source: Graeme et al. 2019 + USGS Bisbee bulletins.
-            # Procedure: same as bingham_canyon Au — add field, mirror,
-            # uncomment, re-run seed-42.
+            # Au=3: Bisbee was a moderate Au producer (~3 Moz
+            # historically), classic Cu-Au porphyry. Slightly higher
+            # than Bingham's Au=2 reflecting Bisbee's well-preserved
+            # supergene zone where Au accumulates as native gold +
+            # auriferous chalcocite [Graeme et al. 2019]. Activated
+            # when grow_native_gold landed (was previously in
+            # pending_schema_additions).
+            Au=3,
             # ──────────────────────────────────────────────────────────
             # Very reducing primary — chalcopyrite/bornite-stable.
             O2=0.05, pH=5.0, salinity=30.0
@@ -9077,6 +9189,29 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Native copper #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_nc:.2f}, "
                               f"Cu={self.conditions.fluid.Cu:.0f}, O₂={self.conditions.fluid.O2:.2f})")
+
+        # Native gold nucleation — Au + tolerant of both Eh regimes.
+        # Substrate preference: chalcocite (Bisbee supergene Au often
+        # rides on the chalcocite enrichment blanket) > pyrite (orogenic
+        # gold-on-pyrite habit) > bornite > free vug wall.
+        sigma_au = self.conditions.supersaturation_native_gold()
+        existing_au = [c for c in self.crystals if c.mineral == "native_gold" and c.active]
+        if sigma_au > 1.0 and not self._at_nucleation_cap("native_gold"):
+            if not existing_au or (sigma_au > 1.5 and random.random() < 0.2):
+                pos = "vug wall"
+                active_chc_au = [c for c in self.crystals if c.mineral == "chalcocite" and c.active]
+                active_py_au = [c for c in self.crystals if c.mineral == "pyrite" and c.active]
+                active_brn_au = [c for c in self.crystals if c.mineral == "bornite" and c.active]
+                if active_chc_au and random.random() < 0.4:
+                    pos = f"on chalcocite #{active_chc_au[0].crystal_id}"
+                elif active_py_au and random.random() < 0.25:
+                    pos = f"on pyrite #{active_py_au[0].crystal_id}"
+                elif active_brn_au and random.random() < 0.2:
+                    pos = f"on bornite #{active_brn_au[0].crystal_id}"
+                c = self.nucleate("native_gold", position=pos, sigma=sigma_au)
+                self.log.append(f"  ✦ NUCLEATION: Native gold #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_au:.2f}, "
+                              f"Au={self.conditions.fluid.Au:.2f} ppm)")
 
         # Bornite nucleation — Cu + Fe + S, Cu:Fe > 2:1 (competes with
         # chalcopyrite for the same elements).

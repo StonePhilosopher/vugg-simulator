@@ -5087,6 +5087,103 @@
       "audit_status": "new (supergene round 3). First native-element mineral. Shares native-hue class_color with future native bismuth. Not in agent-api/vugg-agent.js.",
       "class_color": "#eb13eb"
     },
+    "native_gold": {
+      "formula": "Au",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 30,
+      "growth_rate_mult": 0.15,
+      "habit_variants": [
+        {
+          "name": "octahedral",
+          "wall_spread": 0.2,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "low σ, slow growth — well-formed crystal"
+        },
+        {
+          "name": "dendritic",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "dendritic",
+          "trigger": "moderate σ, supergene reduction — spongy / fishbone gold"
+        },
+        {
+          "name": "nugget",
+          "wall_spread": 0.7,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "high σ, rapid precipitation — rounded massive nugget"
+        },
+        {
+          "name": "default_dendritic",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "dendritic",
+          "trigger": "default — dendritic supergene gold"
+        }
+      ],
+      "class": "native",
+      "description": "Au — elemental native gold, the noble metal. Two precipitation pathways the sim collapses into one supersaturation function: (1) high-T magmatic-hydrothermal Au-Cl complex destabilization at boiling/decompression (Bingham vapor-plume mechanism per Landtwing et al. 2010), and (2) low-T supergene Au-Cl reduction at the redox interface, often coupled with chalcocite enrichment (Bisbee oxidation-cap mechanism per Graeme et al. 2019). Tolerates both oxidizing AND reducing fluids because the two transport complexes (Au-Cl and Au-HS) cover both Eh regimes. Crystal habits range from octahedral {111} (slow growth, rare) through dendritic / spongy (the diagnostic supergene Au) to massive nuggets (rapid precipitation in pockets). Color goes from rich yellow at pure Au through pale yellow electrum (>10% Ag alloy) to rose-gold cuproauride affinity (Cu-rich systems like Bisbee). Essentially indestructible in surface conditions — no acid-dissolution path in the engine.",
+      "scenarios": [
+        "porphyry",
+        "bisbee"
+      ],
+      "T_range_C": [
+        20,
+        700
+      ],
+      "T_optimum_C": [
+        25,
+        400
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "tolerant_both",
+      "required_ingredients": {
+        "Au": 0.5
+      },
+      "trace_ingredients": {
+        "Ag": "Ag-Au electrum (pale-yellow alloy >10% Ag)",
+        "Cu": "Cu-Au cuproauride / rose-gold affinity (Cu-rich systems)",
+        "Te": "Au-Te telluride competition (calaverite/sylvanite if Te + S available — future engine)"
+      },
+      "thermal_decomp_C": 1064,
+      "thermal_decomp_reaction": "Au melts at 1064°C; mineral itself stable at all sim T (no thermal decomposition path)",
+      "thermal_decomp_products": {
+        "Au": 0.5
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "spinel_law",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.05
+        }
+      ],
+      "acid_dissolution": null,
+      "habit": "dendritic",
+      "color_rules": {
+        "rich_yellow": {
+          "default": true
+        },
+        "pale_yellow_electrum": {
+          "trigger": "Ag-alloy (Ag > 5 ppm and Ag dominant over Cu)"
+        },
+        "rose_gold": {
+          "trigger": "Cu-alloy (Cu > 50 ppm)"
+        }
+      },
+      "narrate_function": "_narrate_native_gold",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "new (Au field + grow_native_gold landed via Bingham/Bisbee pending_schema_additions promotion). Activates Bingham Au=2 and Bisbee Au=3 fluid values that were pre-researched during the chemistry audit. Not in agent-api/vugg-agent.js.",
+      "class_color": "#ffd700"
+    },
     "magnetite": {
       "formula": "Fe3O4",
       "nucleation_sigma": 1.0,

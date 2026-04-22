@@ -68,12 +68,13 @@
       "host_formation": "Late-Eocene (~38 Ma) quartz-monzonite-porphyry intruding Pennsylvanian-Permian sediments",
       "alteration_zoning": "potassic core, phyllic shell, propylitic rim",
       "fluid_event_summary": "Magmatic-hydrothermal evolution from deep-center brine (~7 wt% NaCl-eq, subequal Na/K/Fe/Cu) to upper-level brine endmember (~45 wt% NaCl-eq) coexisting with low-density vapor (~0.2 g/cm3). Discrete pulses: early Cu, late Mo (Seo et al. 2012), epithermal Au-Te-Ag cap. Vug-stage fluid is interpreted as the cooled, vapor-condensate-mixed residue of the brine plume.",
-      "audit_pass": "gap-fill (Apr 2026) — added Cl, Mg, Ag, Te to populate the brine-element baseline. Drift fixes between Python and JS scenario_porphyry: Pb=15 mirrored from Python to JS, Na/K/Al mirrored from JS to Python, event_molybdenum_pulse mirrored from Python to JS, event_copper_injection Pb increment mirrored from Python to JS. Existing chemistry preserved (no retuning).",
+      "audit_pass": "gap-fill (Apr 2026) — added Cl, Mg, Ag, Te to populate the brine-element baseline. Drift fixes between Python and JS scenario_porphyry: Pb=15 mirrored from Python to JS, Na/K/Al mirrored from JS to Python, event_molybdenum_pulse mirrored from Python to JS, event_copper_injection Pb increment mirrored from Python to JS. Au=2 added later when the Au field + grow_native_gold engine landed (previously held in pending_schema_additions). Existing chemistry preserved (no retuning).",
       "fluid": {
         "Cl": {"value": 600, "note": "NaCl-KCl brine anion, paired with existing Na+K. salinity=10 wt% NaCl-eq remains the bulk indicator [Landtwing et al. 2010]."},
         "Mg": {"value": 40, "note": "Wallrock interaction; Bingham brine fluid Mg 50-200 ppm raw [Landtwing et al. 2010]; sim-scale conservative. Brief-required non-zero Mg."},
         "Ag": {"value": 8, "note": "Argentiferous-Cu signature; brine-stage fluid Ag 1-50 ppm raw in published porphyry-fluid LA-ICP-MS [Heinrich 2007]."},
-        "Te": {"value": 2, "note": "Epithermal-cap telluride trace (calaverite, sylvanite at Bingham upper levels)."}
+        "Te": {"value": 2, "note": "Epithermal-cap telluride trace (calaverite, sylvanite at Bingham upper levels)."},
+        "Au": {"value": 2, "note": "Porphyry-Cu-Au signature — Bingham produced ~200 t Au cumulatively. ~1 ppm Au in fluid inclusions per Landtwing et al. 2010 LA-ICP-MS; sim-scale 2 matches Te=2 trace abstraction. Activated when grow_native_gold engine landed."}
       },
       "preserved_intentional_values": {
         "SiO2": 700, "Ca": 80, "CO3": 50, "Fe": 30, "Mn": 2,
@@ -92,17 +93,16 @@
         "Klemm, L.M., Pettke, T., Heinrich, C.A. (2007). Hydrothermal evolution of the El Teniente deposit, Chile: porphyry Cu-Mo ore deposition from low-salinity magmatic fluids. Econ. Geol. 102(6): 1021-1045. [Comparison brine compositions]"
       ],
       "data_gaps": [
-        "Te trace is asserted from epithermal-cap evidence; direct Te quantification from Bingham core fluid inclusions is not widely published."
+        "Te trace is asserted from epithermal-cap evidence; direct Te quantification from Bingham core fluid inclusions is not widely published.",
+        "Au=2 is now active in the scenario (grow_native_gold engine landed). Calaverite/sylvanite (Au-Te tellurides) remain in pending — their engines aren't implemented yet, so the existing Au+Te coexistence in Bingham init only produces native_gold currently, not the Au-Te species that real Bingham upper levels host."
       ],
       "pending_schema_additions": {
-        "_purpose": "Values pre-researched and ready to plug in once the corresponding FluidChemistry schema field exists. When the field lands, copy the value into the scenario, uncomment the marker line in vugg.py / web/index.html, and re-run seed-42 to verify mineral nucleation. No further literature work needed — just engineering and testing.",
-        "Au": {
-          "value": 2,
-          "unit": "ppm (sim-scale, matches Te=2 trace abstraction)",
-          "rationale": "Landtwing et al. 2010 LA-ICP-MS reports ~1 ppm Au in fluid inclusions across multiple porphyry Cu-Au systems including Bingham. The Au-Cu-rich center near the top of the orebody is the diagnostic vapor-plume target. Bingham has produced ~200 t Au cumulatively, making Au a defining metal of the deposit alongside Cu and Mo.",
-          "source": "Landtwing, M.R. et al. (2010). The Bingham Canyon Porphyry Cu-Mo-Au Deposit. III. Zoned Copper-Gold Ore Deposition by Magmatic Vapor Expansion. Econ. Geol. 105(1): 91-118.",
-          "blockers": "FluidChemistry dataclass in vugg.py does not yet expose Au as a field. Adding it would also need a grow_native_gold (and possibly grow_calaverite, grow_sylvanite for Au-Te coupling) implementation, plus minerals.json entries.",
-          "minerals_unlocked": ["native_gold", "calaverite", "sylvanite", "krennerite (potentially)"]
+        "_purpose": "Values pre-researched and ready to plug in once the corresponding mineral engine exists. Au itself is now active.",
+        "calaverite_sylvanite": {
+          "blockers": "Au+Te coexistence in Bingham init (Au=2, Te=2) would naturally produce Au-Te telluride species (calaverite AuTe2, sylvanite (Au,Ag)Te2) in real Bingham upper levels, but grow_calaverite / grow_sylvanite engines are not implemented yet. When they land, no fluid-chemistry change needed; the Au+Te+Ag chemistry is already present.",
+          "rationale": "Bingham upper-level epithermal cap hosts these tellurides per Landtwing 2010. Currently the sim deposits all the Au as native_gold; adding Au-Te competition in grow_native_gold would partition some Au into telluride growth instead.",
+          "source": "Landtwing et al. 2010 + Cook et al. 2009 (Au-Ag-Te systematics in porphyry caps).",
+          "minerals_unlocked": ["calaverite", "sylvanite", "krennerite"]
         }
       }
     },
@@ -191,12 +191,13 @@
       "host_formation": "Laramide (Late Cretaceous - Early Tertiary, ~70-65 Ma) quartz-monzonite porphyry intruding Paleozoic Escabrosa Limestone + Abrigo Formation",
       "production_history": "~8 Mt Cu, ~25 Moz Ag, ~3 Moz Au historically (1880-1975). Type-locality for the supergene Cu paragenesis cascade (chalcopyrite -> chalcocite -> cuprite -> native Cu -> azurite -> malachite -> chrysocolla).",
       "fluid_event_summary": "Three-phase history: (1) primary Laramide magmatic-hydrothermal phase, hot reducing brine, chalcopyrite-bornite-pyrite-magnetite assemblage; (2) Mesozoic-Cenozoic uplift exposes ore to meteoric water, pyrite oxidation drops pH, Cu^2+ leaches and descends; (3) supergene cascade: chalcocite enrichment blanket -> cuprite -> native Cu -> azurite (high pCO2 monsoon) -> malachite (pCO2 drop) -> chrysocolla (silica seep). Each step corresponds to a documented Bisbee specimen type.",
-      "audit_pass": "gap-fill (Apr 2026) — added Ag (~25 Moz Ag historical production), Mg (Escabrosa Limestone host), P (enables pyromorphite given Pb+Cl already present), Sb (tetrahedrite-tennantite sulfosalt trace). No drift between Python and JS init (both already consistent). Existing chemistry preserved (no retuning); event sequence (9 events spanning 340 steps) preserved.",
+      "audit_pass": "gap-fill (Apr 2026) — added Ag (~25 Moz Ag historical production), Mg (Escabrosa Limestone host), P (enables pyromorphite given Pb+Cl already present), Sb (tetrahedrite-tennantite sulfosalt trace). No drift between Python and JS init (both already consistent). Existing chemistry preserved (no retuning); event sequence (9 events spanning 340 steps) preserved. Au=3 added later when the Au field + grow_native_gold engine landed (previously held in pending_schema_additions).",
       "fluid": {
         "Ag": {"value": 40, "note": "Warren District produced ~25 Moz Ag historically — argentiferous galena + tetrahedrite + argentite + minor native Ag. Higher than the prior MVT scenarios (Tri-State Ag=5, Sweetwater Ag=3) reflecting Bisbee's Ag-rich character."},
         "Mg": {"value": 50, "note": "Escabrosa Limestone host is dolomitic in places; brine Mg from carbonate dissolution. Conservative — Bisbee doesn't have prominent dolomitization."},
         "P": {"value": 5, "note": "Enables pyromorphite (Pb-Cl-PO4) given existing Pb=15 + Cl=400 + supergene oxidation events. Pyromorphite is a documented minor Bisbee supergene Pb species alongside cerussite + anglesite."},
-        "Sb": {"value": 5, "note": "Tetrahedrite (Cu-Sb-S) is the documented sulfosalt at Bisbee. Mirrors the existing Bi=2 / As=8 greisen-trace triplet."}
+        "Sb": {"value": 5, "note": "Tetrahedrite (Cu-Sb-S) is the documented sulfosalt at Bisbee. Mirrors the existing Bi=2 / As=8 greisen-trace triplet."},
+        "Au": {"value": 3, "note": "Bisbee ~3 Moz Au historically; supergene-preserved native Au + auriferous chalcocite throughout the oxidation zone [Graeme et al. 2019]. Slightly higher than Bingham's Au=2 reflecting Bisbee's well-preserved supergene zone where Au accumulates. Activated when grow_native_gold engine landed."}
       },
       "preserved_intentional_values": {
         "SiO2": 500, "Ca": 60, "CO3": 30, "Fe": 200, "Mn": 4,
@@ -220,14 +221,12 @@
         "Sb=5 mirrors the Bi/As traces conservatively; Bisbee tetrahedrite Sb content is well-documented in mineral analyses but fluid-stage Sb is not."
       ],
       "pending_schema_additions": {
-        "_purpose": "Values pre-researched and ready to plug in once the corresponding FluidChemistry schema field exists.",
-        "Au": {
-          "value": 3,
-          "unit": "ppm (sim-scale, slightly higher than Bingham's pending Au=2)",
-          "rationale": "Bisbee was a moderate Au producer (~3 Moz historically). Higher sim-scale Au than Bingham reflects Bisbee's well-preserved supergene Au accumulation: native gold + auriferous chalcocite are documented throughout the oxidation zone (Graeme et al. 2019). The same Au field that lands for Bingham unlocks Bisbee's gold paragenesis automatically.",
-          "source": "Graeme, R.W. et al. (2019); USGS Bisbee bulletins; production statistics from the Phelps Dodge / Freeport-McMoRan archive.",
-          "blockers": "Same as bingham_canyon Au — needs Au field in FluidChemistry + grow_native_gold (and ideally an auriferous-chalcocite trace tracker).",
-          "minerals_unlocked": ["native_gold", "auriferous chalcocite trace"]
+        "_purpose": "Values pre-researched and ready to plug in once the corresponding mineral engine exists. Au itself is now active.",
+        "auriferous_chalcocite_trace": {
+          "blockers": "Bisbee's supergene Au literature (Graeme et al. 2019) emphasizes that much of the Au is hosted as a trace within chalcocite rather than as discrete native_gold crystals. Adding an Au-trace tracker on grow_chalcocite (parallel to how Mn/Fe traces are tracked in calcite) would let the sim record this dual mode. Currently all Au in Bisbee precipitates as discrete native_gold instead of partitioning into chalcocite.",
+          "rationale": "Faithful Bisbee paragenesis would record both native gold pockets AND ppm-Au-bearing chalcocite zones, with the latter being the more economically significant mode.",
+          "source": "Graeme et al. 2019.",
+          "minerals_unlocked": ["auriferous chalcocite trace recording"]
         }
       }
     },

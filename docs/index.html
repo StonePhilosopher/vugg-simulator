@@ -3519,6 +3519,7 @@ class FluidChemistry {
     this.Te = opts.Te ?? 0.0;    // tellurium — calaverite
     this.Se = opts.Se ?? 0.0;    // selenium — clausthalite
     this.Ge = opts.Ge ?? 0.0;    // germanium — Tsumeb sphalerite
+    this.Au = opts.Au ?? 0.0;    // gold — native gold; Bingham/Bisbee porphyry-Cu-Au
     this.O2 = opts.O2 ?? 0.0;
     this.pH = opts.pH ?? 6.5;
     this.salinity = opts.salinity ?? 5.0;
@@ -4586,6 +4587,26 @@ class VugConditions {
     else if (pH < 6.0) ph_f = Math.max(0.4, 1.0 - (6.0 - pH) * 0.6);
     else ph_f = Math.max(0.4, 1.0 - (pH - 7.5) * 0.6);
     const sigma = cu_f * si_f * o_f * t_f * ph_f;
+    return Math.max(sigma, 0);
+  }
+
+  // Native gold (Au) — noble metal. Two precipitation paths collapsed
+  // into one σ: high-T Au-Cl decomplexation (Bingham vapor plume) and
+  // low-T Au-Cl reduction at supergene redox interface (Bisbee oxidation
+  // cap). Tolerates both Eh regimes — only S-suppression and Au activity
+  // matter. See vugg.py supersaturation_native_gold for full rationale.
+  supersaturation_native_gold() {
+    if (this.fluid.Au < 0.5) return 0;
+    const au_f = Math.min(this.fluid.Au / 1.0, 4.0);
+    const s_f = Math.max(0.2, 1.0 - this.fluid.S / 200.0);
+    let sigma = au_f * s_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 20 && T <= 400) T_factor = 1.0;
+    else if (T < 20) T_factor = 0.5;
+    else if (T <= 700) T_factor = Math.max(0.5, 1.0 - 0.001 * (T - 400));
+    else T_factor = 0.3;
+    sigma *= T_factor;
     return Math.max(sigma, 0);
   }
 
@@ -6784,6 +6805,39 @@ function grow_chrysocolla(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
+// Native gold (Au) — noble metal. No acid-dissolution path; gold is
+// indestructible under sim conditions. See vugg.py grow_native_gold for
+// full habit / alloying / σ rationale.
+function grow_native_gold(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_native_gold();
+  if (sigma < 1.0) return null;
+  const excess = sigma - 1.0;
+  const rate = 1.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.05) return null;
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'nugget';
+    crystal.dominant_forms = ['rounded nugget', 'massive native gold'];
+    habit_note = 'nugget — rapid precipitation in pocket';
+  } else if (excess > 0.5) {
+    crystal.habit = 'dendritic';
+    crystal.dominant_forms = ['dendritic {111} branching', 'spongy gold'];
+    habit_note = 'dendritic / spongy native gold (the fishbone-and-leaf habit of supergene Au)';
+  } else {
+    crystal.habit = 'octahedral';
+    crystal.dominant_forms = ['{111} octahedron', 'rare well-formed crystal'];
+    habit_note = 'octahedral well-formed native gold (rare — slow growth)';
+  }
+  // Alloying note — pick whichever alloying element is dominant.
+  if (conditions.fluid.Ag > conditions.fluid.Cu * 0.5 && conditions.fluid.Ag > 5) {
+    habit_note += '; Ag-alloyed (electrum, pale yellow tint)';
+  } else if (conditions.fluid.Cu > 50) {
+    habit_note += '; Cu-alloyed (rose-gold tint, cuproauride affinity)';
+  }
+  conditions.fluid.Au = Math.max(conditions.fluid.Au - rate * 0.05, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
+}
+
 function grow_native_copper(crystal, conditions, step) {
   const sigma = conditions.supersaturation_native_copper();
   if (sigma < 1.0) {
@@ -7405,6 +7459,7 @@ const MINERAL_ENGINES = {
   azurite: grow_azurite,
   chrysocolla: grow_chrysocolla,
   native_copper: grow_native_copper,
+  native_gold: grow_native_gold,
   magnetite: grow_magnetite,
   lepidocrocite: grow_lepidocrocite,
   stibnite: grow_stibnite,
@@ -7972,12 +8027,7 @@ function scenario_porphyry() {
       Mg: 40,             // wallrock interaction, Bingham brine Mg 50-200 ppm raw
       Ag: 8,              // argentiferous Cu signature [Heinrich 2007]
       Te: 2,              // epithermal-cap telluride trace
-      // Pre-researched, pending FluidChemistry schema:
-      //   When Au is added to the FluidChemistry class, set Au: 2.
-      //   Landtwing et al. 2010 LA-ICP-MS: ~1 ppm Au in porphyry Cu-Au
-      //   fluid inclusions; sim-scale 2 matches Te=2 trace abstraction.
-      //   See vugg.py scenario_porphyry comment + locality_chemistry
-      //   .json bingham_canyon.pending_schema_additions for full note.
+      Au: 2,              // porphyry-Cu-Au signature [Landtwing 2010]; Bingham produced ~200 t Au cumulatively
       pH: 4.5, salinity: 10.0
     }),
     // Porphyry veins — elongated cross-section, modest harmonics.
@@ -8383,11 +8433,7 @@ function scenario_bisbee() {
       Mg: 50,             // Escabrosa Limestone host (dolomitic in places)
       P: 5,               // enables pyromorphite (Pb+Cl+P now all present)
       Sb: 5,              // tetrahedrite-tennantite sulfosalt trace
-      // Pre-researched, pending FluidChemistry schema:
-      //   When Au is added, set Au: 3. Bisbee ~3 Moz Au historically;
-      //   slightly higher than Bingham's Au=2 reflecting Bisbee's well-
-      //   preserved supergene Au accumulation. See vugg.py comment +
-      //   locality_chemistry.json warren_district.pending_schema_additions.
+      Au: 3,              // Bisbee ~3 Moz Au historically; supergene-preserved native Au + auriferous chalcocite [Graeme et al. 2019]
       O2: 0.05, pH: 5.0, salinity: 30.0,
     }),
     wall: new VugWall({
@@ -9465,6 +9511,26 @@ class VugSimulator {
         else if (active_brn_nc.length && rng.random() < 0.3) pos = `on bornite #${active_brn_nc[0].crystal_id}`;
         const c = this.nucleate('native_copper', pos, sigma_nc);
         this.log.push(`  ✦ NUCLEATION: Native copper #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_nc.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, O₂=${this.conditions.fluid.O2.toFixed(2)})`);
+      }
+    }
+
+    // Native gold nucleation — Au + tolerant of both Eh regimes.
+    // Substrate preference: chalcocite (supergene Au-on-chalcocite,
+    // Bisbee enrichment-blanket habit) > pyrite (orogenic gold-on-pyrite)
+    // > bornite > free vug wall.
+    const sigma_au = this.conditions.supersaturation_native_gold();
+    const existing_au = this.crystals.filter(c => c.mineral === 'native_gold' && c.active);
+    if (sigma_au > 1.0 && !this._atNucleationCap('native_gold')) {
+      if (!existing_au.length || (sigma_au > 1.5 && rng.random() < 0.2)) {
+        let pos = 'vug wall';
+        const active_chc_au = this.crystals.filter(c => c.mineral === 'chalcocite' && c.active);
+        const active_py_au = this.crystals.filter(c => c.mineral === 'pyrite' && c.active);
+        const active_brn_au = this.crystals.filter(c => c.mineral === 'bornite' && c.active);
+        if (active_chc_au.length && rng.random() < 0.4) pos = `on chalcocite #${active_chc_au[0].crystal_id}`;
+        else if (active_py_au.length && rng.random() < 0.25) pos = `on pyrite #${active_py_au[0].crystal_id}`;
+        else if (active_brn_au.length && rng.random() < 0.2) pos = `on bornite #${active_brn_au[0].crystal_id}`;
+        const c = this.nucleate('native_gold', pos, sigma_au);
+        this.log.push(`  ✦ NUCLEATION: Native gold #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_au.toFixed(2)}, Au=${this.conditions.fluid.Au.toFixed(2)} ppm)`);
       }
     }
 
