@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 44,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates).",
+    "total_minerals": 46,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates), +tetrahedrite/tennantite (round-2: paired fahlore Sb/As sulfosalts).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -69,7 +69,9 @@
       "marcasite",
       "wurtzite",
       "erythrite",
-      "annabergite"
+      "annabergite",
+      "tetrahedrite",
+      "tennantite"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -99,7 +101,9 @@
         "molybdenite",
         "pyrite",
         "quartz",
-        "bornite"
+        "bornite",
+        "tetrahedrite",
+        "tennantite"
       ],
       "reactive_wall": [
         "calcite",
@@ -2186,6 +2190,216 @@
       ],
       "audit_status": "ok (round-2 add: paired with erythrite, same vivianite-group structure, low-T oxidizing arsenate).",
       "class_color": "#ebeb13"
+    },
+    "tetrahedrite": {
+      "formula": "Cu12Sb4S13",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 12,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tetrahedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "low-moderate σ — classic {111} tetrahedra"
+        },
+        {
+          "name": "massive",
+          "wall_spread": 0.55,
+          "void_reach": 0.3,
+          "vector": "equant",
+          "trigger": "moderate-high σ — granular massive aggregates"
+        },
+        {
+          "name": "crustiform",
+          "wall_spread": 0.8,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "high σ, on fracture walls — banded crust"
+        },
+        {
+          "name": "druzy_coating",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "very high σ — fine-grained drusy microcrystals"
+        }
+      ],
+      "class": "sulfide",
+      "description": "Cu₁₂Sb₄S₁₃ — the Sb-endmember 'fahlore,' German miner's term for the steel-gray copper sulfosalts that paid in silver as much as in copper. Hydrothermal 100-400°C, optimum 200-300°C. Cubic I4̄3m space group produces diagnostic {111} tetrahedra. Paired with tennantite (As endmember) in a continuous solid solution: the Sb:As ratio of an ore fluid is recorded directly in the composition. Ag substitutes for Cu to produce the silver ore variety 'freibergite.'",
+      "scenarios": [
+        "porphyry"
+      ],
+      "T_range_C": [
+        100,
+        400
+      ],
+      "T_optimum_C": [
+        200,
+        300
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Cu": 10,
+        "Sb": 3,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Ag": "freibergite variety — silver ore (up to 18% Ag)",
+        "Fe": "substitutes for Cu",
+        "Zn": "substitutes for Cu",
+        "Hg": "mercury-bearing schwazite variety"
+      },
+      "thermal_decomp_C": 650,
+      "thermal_decomp_reaction": "Cu12Sb4S13 → Cu + Sb + S (oxidative roast)",
+      "thermal_decomp_products": {
+        "Cu": 0.4,
+        "Sb": 0.3,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "oxidative dissolution — Cu²⁺ + Sb³⁺ released (→ secondary Sb oxides, malachite/azurite downstream)",
+        "products": {
+          "Cu": 0.6,
+          "Sb": 0.3,
+          "S": 0.4
+        }
+      },
+      "habit": "tetrahedral_or_massive",
+      "color_rules": {
+        "steel_gray": {
+          "default": true
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "chalcopyrite",
+          "pyrite",
+          "vug wall"
+        ],
+        "note": "Paired with tennantite (As endmember). Classic porphyry-to-epithermal transition mineral — grows on earlier chalcopyrite as the fluid cools and Sb activity climbs."
+      },
+      "narrate_function": "_narrate_tetrahedrite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: paired with tennantite, same cubic structure, Sb endmember fahlore).",
+      "class_color": "#7feb13"
+    },
+    "tennantite": {
+      "formula": "Cu12As4S13",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 12,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tetrahedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "moderate σ — gray-black tetrahedra (indistinguishable from tetrahedrite except by the cherry-red thin-edge transmission test)"
+        },
+        {
+          "name": "massive",
+          "wall_spread": 0.55,
+          "void_reach": 0.3,
+          "vector": "equant",
+          "trigger": "high σ — compact granular"
+        },
+        {
+          "name": "crustiform",
+          "wall_spread": 0.8,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "high σ, fracture-wall — banded gray-black crust"
+        },
+        {
+          "name": "druzy_coating",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "very high σ — fine-grained drusy microcrystals"
+        }
+      ],
+      "class": "sulfide",
+      "description": "Cu₁₂As₄S₁₃ — the As-endmember fahlore, paired with tetrahedrite. Same cubic I4̄3m structure; arsenic replaces antimony. Visually indistinguishable from tetrahedrite except by the cherry-red thin-fragment transmission test (tennantite transmits; tetrahedrite stays opaque). On oxidation releases Cu + AsO₄³⁻, feeding the secondary arsenate paragenesis: adamite, erythrite, annabergite, mimetite. Closes the loop between primary copper sulfosalts and downstream supergene arsenates.",
+      "scenarios": [
+        "porphyry"
+      ],
+      "T_range_C": [
+        100,
+        400
+      ],
+      "T_optimum_C": [
+        150,
+        300
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Cu": 10,
+        "As": 3,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Ag": "silver substitution (argentian tennantite)",
+        "Fe": "substitutes for Cu",
+        "Zn": "substitutes for Cu"
+      },
+      "thermal_decomp_C": 620,
+      "thermal_decomp_reaction": "Cu12As4S13 → Cu + As + S (oxidative roast)",
+      "thermal_decomp_products": {
+        "Cu": 0.4,
+        "As": 0.3,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "oxidative dissolution — Cu²⁺ + AsO₄³⁻ released (→ adamite, erythrite, annabergite, mimetite downstream)",
+        "products": {
+          "Cu": 0.6,
+          "As": 0.3,
+          "S": 0.4
+        }
+      },
+      "habit": "tetrahedral_or_massive",
+      "color_rules": {
+        "gray_black": {
+          "default": true
+        },
+        "cherry_red_transmission": {
+          "trigger": "thin edge under strong backlight — diagnostic for tennantite vs tetrahedrite"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "chalcopyrite",
+          "tetrahedrite",
+          "vug wall"
+        ],
+        "note": "Paired with tetrahedrite. Epithermal/porphyry transition mineral that feeds the entire downstream arsenate chain when it oxidizes."
+      },
+      "narrate_function": "_narrate_tennantite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: paired with tetrahedrite, As endmember fahlore).",
+      "class_color": "#7feb13"
     },
     "feldspar": {
       "formula": "KAlSi3O8",

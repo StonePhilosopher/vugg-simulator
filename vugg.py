@@ -876,6 +876,58 @@ class VugConditions:
         return max(sigma, 0)
 
 
+    def supersaturation_tetrahedrite(self) -> float:
+        """Tetrahedrite (Cu₁₂Sb₄S₁₃) — the Sb-endmember fahlore sulfosalt.
+
+        Hydrothermal Cu-Sb-S sulfosalt forming 100-400°C, optimum 200-300°C.
+        Paired with tennantite (As endmember) — same cubic structure, continuous
+        solid solution. Ag substitutes for Cu, making Ag-rich tetrahedrite
+        ('freibergite') an important silver ore.
+        """
+        if self.fluid.Cu < 10 or self.fluid.Sb < 3 or self.fluid.S < 10:
+            return 0
+        if self.fluid.O2 > 1.5:
+            return 0
+        if self.fluid.pH < 3.0 or self.fluid.pH > 7.0:
+            return 0
+        if self.temperature < 100 or self.temperature > 400:
+            return 0
+        product = (self.fluid.Cu / 40.0) * (self.fluid.Sb / 15.0) * (self.fluid.S / 40.0)
+        # T-window centered on 200-300°C
+        if 200 <= self.temperature <= 300:
+            T_factor = 1.3
+        elif 150 <= self.temperature < 200 or 300 < self.temperature <= 350:
+            T_factor = 1.0
+        else:
+            T_factor = 0.6
+        return product * T_factor * (1.5 - self.fluid.O2)
+
+    def supersaturation_tennantite(self) -> float:
+        """Tennantite (Cu₁₂As₄S₁₃) — the As-endmember fahlore sulfosalt.
+
+        As counterpart to tetrahedrite; same cubic structure, continuous solid
+        solution. Optimum 150-300°C — slightly lower-T than tetrahedrite. Thin
+        fragments transmit cherry-red light, the diagnostic. Oxidation releases
+        AsO₄³⁻, feeding the secondary arsenate paragenesis (adamite, erythrite,
+        annabergite, mimetite).
+        """
+        if self.fluid.Cu < 10 or self.fluid.As < 3 or self.fluid.S < 10:
+            return 0
+        if self.fluid.O2 > 1.5:
+            return 0
+        if self.fluid.pH < 3.0 or self.fluid.pH > 7.0:
+            return 0
+        if self.temperature < 100 or self.temperature > 400:
+            return 0
+        product = (self.fluid.Cu / 40.0) * (self.fluid.As / 15.0) * (self.fluid.S / 40.0)
+        if 150 <= self.temperature <= 300:
+            T_factor = 1.3
+        elif 100 <= self.temperature < 150 or 300 < self.temperature <= 350:
+            T_factor = 1.0
+        else:
+            T_factor = 0.6
+        return product * T_factor * (1.5 - self.fluid.O2)
+
     def supersaturation_erythrite(self) -> float:
         """Erythrite (Co₃(AsO₄)₂·8H₂O) — the cobalt bloom.
 
@@ -2053,7 +2105,7 @@ class Crystal:
             if avg_Al > 5:
                 return "weak blue (Al-related defects)"
             return "non-fluorescent"
-        elif self.mineral in ("pyrite", "marcasite", "chalcopyrite", "galena", "molybdenite"):
+        elif self.mineral in ("pyrite", "marcasite", "chalcopyrite", "galena", "molybdenite", "tetrahedrite", "tennantite"):
             return "non-fluorescent (opaque sulfide)"
         elif self.mineral in ("sphalerite", "wurtzite"):
             # Mn²⁺ activates, Fe quenches — same as calcite
@@ -2826,6 +2878,112 @@ def grow_malachite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
         thickness_um=rate, growth_rate=rate,
         trace_Fe=trace_Fe,
         note=f"{crystal.habit}, {color_note}, Cu fluid: {conditions.fluid.Cu:.0f} ppm"
+    )
+
+
+def grow_tetrahedrite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Tetrahedrite (Cu₁₂Sb₄S₁₃) growth — the Sb-endmember fahlore.
+
+    Habits: tetrahedral (moderate σ), massive (high σ default), crustiform
+    (on fracture walls), druzy_coating (fast growth). Silver substitution
+    (freibergite variety) when Ag > 10 ppm. Oxidizes to release Cu²⁺, Sb³⁺
+    for secondary minerals.
+    """
+    sigma = conditions.supersaturation_tetrahedrite()
+
+    if sigma < 1.0:
+        if crystal.total_growth_um > 10 and conditions.fluid.O2 > 1.0:
+            crystal.dissolved = True
+            dissolved_um = min(3.0, crystal.total_growth_um * 0.1)
+            conditions.fluid.Cu += dissolved_um * 0.6
+            conditions.fluid.Sb += dissolved_um * 0.3
+            conditions.fluid.S += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note="oxidative dissolution — Cu²⁺ + Sb³⁺ released (feeds secondary Sb oxides)"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.5 * excess * random.uniform(0.7, 1.3)
+
+    # Habit selection — σ + setting controls the form
+    on_wall = isinstance(crystal.position, str) and ("wall" in crystal.position or "fracture" in crystal.position)
+    if excess > 1.2:
+        if on_wall:
+            crystal.habit = "crustiform"
+            crystal.dominant_forms = ["crustiform banded crust", "fracture-wall coating"]
+        else:
+            crystal.habit = "druzy_coating"
+            crystal.dominant_forms = ["fine-grained drusy surface", "sparkling steel-gray"]
+    elif excess > 0.6:
+        crystal.habit = "massive"
+        crystal.dominant_forms = ["massive granular", "steel-gray metallic"]
+    else:
+        crystal.habit = "tetrahedral"
+        crystal.dominant_forms = ["{111} tetrahedron", "classic steel-gray tetrahedra"]
+
+    # Silver substitution — freibergite variety
+    ag_note = ""
+    if conditions.fluid.Ag > 10:
+        ag_note = f", Ag-rich (freibergite — Ag as ore)"
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.05,
+        note=f"{crystal.habit} Cu12Sb4S13 — steel-gray metallic{ag_note}"
+    )
+
+
+def grow_tennantite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Tennantite (Cu₁₂As₄S₁₃) growth — the As-endmember fahlore.
+
+    Same structure as tetrahedrite, As in place of Sb. Habits: tetrahedral
+    (moderate σ), massive (default), crustiform (on fracture walls). Thin
+    fragments transmit cherry-red light — the diagnostic. Oxidation releases
+    Cu + arsenate, feeding adamite/erythrite/annabergite downstream.
+    """
+    sigma = conditions.supersaturation_tennantite()
+
+    if sigma < 1.0:
+        if crystal.total_growth_um > 10 and conditions.fluid.O2 > 1.0:
+            crystal.dissolved = True
+            dissolved_um = min(3.0, crystal.total_growth_um * 0.1)
+            conditions.fluid.Cu += dissolved_um * 0.6
+            conditions.fluid.As += dissolved_um * 0.3
+            conditions.fluid.S += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note="oxidative dissolution — Cu²⁺ + AsO₄³⁻ released (feeds secondary arsenates: adamite, erythrite, etc.)"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.5 * excess * random.uniform(0.7, 1.3)
+
+    on_wall = isinstance(crystal.position, str) and ("wall" in crystal.position or "fracture" in crystal.position)
+    if excess > 1.2:
+        if on_wall:
+            crystal.habit = "crustiform"
+            crystal.dominant_forms = ["crustiform banded crust", "gray-black fracture coating"]
+        else:
+            crystal.habit = "druzy_coating"
+            crystal.dominant_forms = ["fine-grained drusy surface", "sparkling gray-black"]
+    elif excess > 0.6:
+        crystal.habit = "massive"
+        crystal.dominant_forms = ["massive granular", "gray-black compact"]
+    else:
+        crystal.habit = "tetrahedral"
+        crystal.dominant_forms = ["{111} tetrahedron", "gray-black tetrahedra with cherry-red thin-edge transmission"]
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.05,
+        note=f"{crystal.habit} Cu12As4S13 — gray-black metallic, cherry-red transmission in thin fragments"
     )
 
 
@@ -5081,6 +5239,8 @@ MINERAL_ENGINES = {
     "mimetite": grow_mimetite,
     "erythrite": grow_erythrite,
     "annabergite": grow_annabergite,
+    "tetrahedrite": grow_tetrahedrite,
+    "tennantite": grow_tennantite,
     "feldspar": grow_feldspar,
     "albite": grow_albite,
     "galena": grow_galena,
@@ -5138,6 +5298,8 @@ THERMAL_DECOMPOSITION = {
     "mimetite":   (400,  "Pb₅Cl(AsO₄)₃ → decomposition",                         {"Pb": 0.5, "As": 0.3, "Cl": 0.1}),
     "erythrite":  (200,  "Co₃(AsO₄)₂·8H₂O → dehydration (lattice water lost)",    {"Co": 0.5, "As": 0.3}),
     "annabergite": (200, "Ni₃(AsO₄)₂·8H₂O → dehydration (lattice water lost)",    {"Ni": 0.5, "As": 0.3}),
+    "tetrahedrite": (650, "Cu₁₂Sb₄S₁₃ → decomposition (Cu + Sb + S released)",    {"Cu": 0.4, "Sb": 0.3, "S": 0.3}),
+    "tennantite":  (620, "Cu₁₂As₄S₁₃ → decomposition (Cu + As + S released)",    {"Cu": 0.4, "As": 0.3, "S": 0.3}),
     "galena":     (1115, "PbS → Pb + S (melting)",                                     {"Pb": 0.5, "S": 0.4}),
     "smithsonite": (300,  "ZnCO₃ → ZnO + CO₂ (calcination)",                            {"Zn": 0.4, "CO3": 0.4}),
     "wulfenite":   (1120, "PbMoO₄ → Pb + MoO₃ (decomposition)",                         {"Pb": 0.4, "Mo": 0.3}),
@@ -5374,12 +5536,14 @@ def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
         fluid=FluidChemistry(
             SiO2=700, Ca=80, CO3=50, Fe=30, Mn=2,
             Zn=0, S=60, F=5, Cu=0, Pb=15,
-            # Sb + Bi traces — porphyries carry a greisen signature
+            # Sb + As + Bi traces — porphyries carry a greisen signature
             # when the late hydrothermal phase taps tin-tungsten-
-            # arsenic-bearing granites. 25 ppm Sb and 30 ppm Bi are in
-            # the published range for Sb-Bi-bearing porphyry fluids
-            # (see Heinrich 2007 greisen fluid chemistry).
-            Sb=25, Bi=30,
+            # arsenic-bearing granites. 25 ppm Sb, 15 ppm As, 30 ppm Bi
+            # are in the published range for polymetallic porphyry
+            # fluids (Heinrich 2007; Kouzmanov & Pokrovski 2012 for As
+            # activity in epithermal Cu systems). Enables the tetrahedrite
+            # (Cu-Sb-S) / tennantite (Cu-As-S) fahlore pair.
+            Sb=25, As=15, Bi=30,
             O2=0.2, pH=4.5, salinity=10.0
         ),
         # Porphyry stockwork — primary void plus a moderate set of
@@ -6690,6 +6854,10 @@ class VugSimulator:
             crystal.dominant_forms = ["earthy crimson-pink crust", "cobalt bloom"]
         elif mineral == "annabergite":
             crystal.dominant_forms = ["apple-green earthy crust", "nickel bloom"]
+        elif mineral == "tetrahedrite":
+            crystal.dominant_forms = ["{111} tetrahedron", "steel-gray metallic"]
+        elif mineral == "tennantite":
+            crystal.dominant_forms = ["{111} tetrahedron", "gray-black metallic with cherry-red transmission"]
         elif mineral == "bornite":
             crystal.dominant_forms = ["massive granular", "iridescent tarnish"]
         elif mineral == "chalcocite":
@@ -6921,7 +7089,37 @@ class VugSimulator:
             c = self.nucleate("chalcopyrite", position=pos, sigma=sigma_cp)
             self.log.append(f"  ✦ NUCLEATION: Chalcopyrite #{c.crystal_id} on {c.position} "
                           f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cp:.2f})")
-        
+
+        # Tetrahedrite nucleation — Sb-endmember fahlore, Cu-Sb-S hydrothermal.
+        sigma_td = self.conditions.supersaturation_tetrahedrite()
+        existing_td = [c for c in self.crystals if c.mineral == "tetrahedrite" and c.active]
+        if sigma_td > 1.0 and not existing_td and not self._at_nucleation_cap("tetrahedrite"):
+            pos = "vug wall"
+            existing_cp2 = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.active]
+            existing_py2 = [c for c in self.crystals if c.mineral == "pyrite" and c.active]
+            if existing_cp2 and random.random() < 0.5:
+                pos = f"on chalcopyrite #{existing_cp2[0].crystal_id}"
+            elif existing_py2 and random.random() < 0.3:
+                pos = f"on pyrite #{existing_py2[0].crystal_id}"
+            c = self.nucleate("tetrahedrite", position=pos, sigma=sigma_td)
+            self.log.append(f"  ✦ NUCLEATION: Tetrahedrite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_td:.2f})")
+
+        # Tennantite nucleation — As-endmember fahlore, paired with tetrahedrite.
+        sigma_tn = self.conditions.supersaturation_tennantite()
+        existing_tn = [c for c in self.crystals if c.mineral == "tennantite" and c.active]
+        if sigma_tn > 1.0 and not existing_tn and not self._at_nucleation_cap("tennantite"):
+            pos = "vug wall"
+            existing_cp3 = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.active]
+            existing_td3 = [c for c in self.crystals if c.mineral == "tetrahedrite" and c.active]
+            if existing_cp3 and random.random() < 0.4:
+                pos = f"on chalcopyrite #{existing_cp3[0].crystal_id}"
+            elif existing_td3 and random.random() < 0.3:
+                pos = f"alongside tetrahedrite #{existing_td3[0].crystal_id}"
+            c = self.nucleate("tennantite", position=pos, sigma=sigma_tn)
+            self.log.append(f"  ✦ NUCLEATION: Tennantite #{c.crystal_id} on {c.position} "
+                          f"(T={self.conditions.temperature:.0f}°C, σ={sigma_tn:.2f})")
+
         # Hematite nucleation — needs sigma > 1.2 (harder to nucleate)
         sigma_hem = self.conditions.supersaturation_hematite()
         existing_hem = [c for c in self.crystals if c.mineral == "hematite" and c.active]
@@ -9377,6 +9575,104 @@ class VugSimulator:
                 "mimetite is stable only in a narrow oxidizing, near-neutral window."
             )
 
+        return " ".join(parts)
+
+    def _narrate_tetrahedrite(self, c: Crystal) -> str:
+        """Narrate a tetrahedrite crystal's story — the Sb-endmember fahlore."""
+        parts = [f"Tetrahedrite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₁₂Sb₄S₁₃ — steel-gray metallic, the Sb-endmember of the fahlore "
+            "solid-solution series. 'Fahlore' is German for 'dull ore,' the miner's "
+            "term for the gray copper sulfosalts that gave little back to the roaster "
+            "but carried silver as a quiet bonus."
+        )
+
+        if c.habit == "tetrahedral":
+            parts.append(
+                "Classic {111} tetrahedra — the namesake habit. Cubic symmetry, "
+                "but the tetrahedral space group I4̄3m gives only four-fold faces "
+                "per octant, visually distinctive from galena or pyrite cubes."
+            )
+        elif c.habit == "crustiform":
+            parts.append(
+                "Crustiform banding on the fracture wall — deposition from a flowing "
+                "hydrothermal fluid, each band a slightly different Cu/Sb/Ag ratio "
+                "recording the evolution of the ore fluid."
+            )
+        elif c.habit == "druzy_coating":
+            parts.append(
+                "Fine-grained drusy surface — a sparkling coating of microcrystals "
+                "from high-supersaturation growth. The sparkle is diagnostic of "
+                "unweathered, unoxidized tetrahedrite."
+            )
+        else:
+            parts.append(
+                "Massive granular aggregates — the form most tetrahedrite ore takes, "
+                "filling vein fractures without developing free-standing crystals."
+            )
+
+        if "chalcopyrite" in c.position:
+            parts.append(
+                "Growing on chalcopyrite — the classic porphyry-to-epithermal "
+                "transition assemblage: the Cu-Fe sulfide feeds into the Cu-Sb "
+                "sulfosalt as the fluid cools and antimony activity climbs."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — Cu²⁺ and Sb³⁺ released to the fluid. In "
+                "nature this produces secondary Sb oxides (valentinite, kermesite) "
+                "and feeds the malachite/azurite copper-carbonate paragenesis downstream."
+            )
+        return " ".join(parts)
+
+    def _narrate_tennantite(self, c: Crystal) -> str:
+        """Narrate a tennantite crystal's story — the As-endmember fahlore."""
+        parts = [f"Tennantite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₁₂As₄S₁₃ — the As counterpart to tetrahedrite, same structure, different "
+            "poison. Visually indistinguishable from tetrahedrite except in one diagnostic: "
+            "thin splinters of tennantite transmit cherry-red light when held to a bright "
+            "source. Tetrahedrite stays opaque. Ray Strickland wrote that's what you reach "
+            "for when the X-ray fluorescence lab is three time zones away."
+        )
+
+        if c.habit == "tetrahedral":
+            parts.append(
+                "Classic {111} tetrahedra — the fahlore habit. Gray to nearly black, with "
+                "that cherry-red glow visible on thin edges under strong backlight."
+            )
+        elif c.habit == "crustiform":
+            parts.append(
+                "Crustiform banded crust on the fracture wall — arsenic-rich pulses "
+                "alternating with lower-σ growth periods, each band recording a step "
+                "in the ore fluid's evolution."
+            )
+        elif c.habit == "druzy_coating":
+            parts.append(
+                "Fine-grained drusy surface — high-σ coating. The sparkle here is "
+                "slightly duller than tetrahedrite's, an optical consequence of the "
+                "different filled-orbital chemistry of As vs Sb."
+            )
+        else:
+            parts.append(
+                "Massive granular — the bulk form, often carrying silver as invisible "
+                "substitution for copper."
+            )
+
+        if "tetrahedrite" in c.position:
+            parts.append(
+                f"Growing alongside tetrahedrite — physical evidence that the fluid "
+                f"straddled the As/Sb transition, a solid-solution record in an "
+                f"epithermal vein."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — Cu²⁺ and AsO₄³⁻ released to the fluid. The "
+                "arsenate then feeds downstream secondary minerals: adamite (Zn+AsO₄), "
+                "erythrite (Co+AsO₄), annabergite (Ni+AsO₄), mimetite (Pb+AsO₄+Cl)."
+            )
         return " ".join(parts)
 
     def _narrate_erythrite(self, c: Crystal) -> str:
