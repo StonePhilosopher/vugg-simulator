@@ -8101,6 +8101,12 @@ function scenario_radioactive_pegmatite() {
 // Supergene oxidation scenario — mirrors vugg.py scenario_supergene_oxidation
 // (low-T Pb+Mo+Zn+As+Cu oxidation zone; produces wulfenite + smithsonite +
 // adamite + mimetite + goethite). Five staged events over 180 steps.
+// Tsumeb mine, Otavi Mountain Land, Namibia. ~280 species documented;
+// type locality for germanium. 1st-stage gossan = uppermost supergene
+// zone where mimetite/anglesite/cerussite/willemite/Ge-phases occur.
+// Audit gap-fills (Apr 2026): Ag, Ge, Sb (Tsumeb's silver + Ge suite),
+// Na/K (groundwater traces). See vugg.py + locality_chemistry.json
+// #tsumeb for full citations.
 function scenario_supergene_oxidation() {
   const conditions = new VugConditions({
     temperature: 35.0, pressure: 0.05,
@@ -8117,6 +8123,11 @@ function scenario_supergene_oxidation() {
       V: 1.5,
       // P trace — meteoric water typically carries <1 ppm P; pyromorphite waits for ev_phosphate_seep.
       P: 0.5,
+      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
+      Ag: 8,            // Tsumeb argentiferous galena + native Ag + ruby silvers [Pinch & Wilson 1977]
+      Ge: 5,            // Tsumeb is THE Ge type locality — germanite, renierite, briartite [Melcher 2003]
+      Sb: 5,            // proustite/pyrargyrite (ruby silvers) + tetrahedrite enabling
+      Na: 30, K: 10,    // minor groundwater cation traces
       O2: 1.8, pH: 6.8, salinity: 2.0,
     }),
     // Supergene meteoric dissolution cavity — broad all-axis lumpiness.

@@ -293,6 +293,45 @@
         "P=8 enables apatite nucleation but real Cruzeiro pocket fluid P content is not directly published in fluid-inclusion analyses; conservative estimate.",
         "Cu=0.3 (the Paraíba long-shot) is a deliberately-low value to make cuprian elbaite a rare seed-roll; not a real Cruzeiro Cu measurement."
       ]
+    },
+    "tsumeb": {
+      "scenario_id": "supergene_oxidation",
+      "audit_status": "anchored",
+      "display_name": "Tsumeb mine, Otavi Mountain Land, Namibia",
+      "host_formation": "Pipe-shaped Pb-Zn-Cu sulfide body in Neoproterozoic dolomite (Otavi Group)",
+      "production_history": "Active 1905-1996. Primary commodities Pb-Zn-Cu-Ag-Ge-Cd. ~280 species documented — among the most mineralogically diverse deposits ever discovered. Type locality for germanium (germanite, renierite, briartite).",
+      "fluid_event_summary": "1st-stage gossan = uppermost of three Mesozoic-Cenozoic supergene oxidation zones, ~35 C, oxidizing meteoric brine in dolomitic carbonate cavity. Repeated soil-zone flushes deliver Pb+Mo, As+Co+Ni, P, V in sequential pulses, each unlocking a different mineral assemblage (wulfenite, mimetite/erythrite/annabergite, pyromorphite, vanadinite). Argentiferous throughout; Ge-bearing minerals are the Tsumeb signature.",
+      "audit_pass": "gap-fill (Apr 2026) — added Ag (Tsumeb's silver suite: native Ag, proustite, pyrargyrite), Ge (the type-locality element; FluidChemistry.Ge field has carried a 'Tsumeb speciality' comment since the schema was written, this audit finally populates it), Sb (proustite/pyrargyrite/tetrahedrite enabling), Na/K (minor groundwater cation traces). Existing chemistry preserved (Mg=5, V=1.5, P=0.5, etc.); 8-event sequence preserved; Co/Ni-via-event preserved.",
+      "fluid": {
+        "Ag": {"value": 8, "note": "Tsumeb is one of the most argentiferous deposits ever — native silver, argentiferous galena, proustite, pyrargyrite, stephanite. Existing Cl=20 + new Ag=8 also supports chlorargyrite chemistry [Pinch & Wilson 1977]."},
+        "Ge": {"value": 5, "note": "Tsumeb is THE type locality for germanium. Germanite (Cu26Fe4Ge4S32), renierite, and briartite were all first described here. FluidChemistry's Ge field has carried a 'Tsumeb speciality' comment since the schema was written — this audit finally populates it [Melcher 2003 Tsumeb Ge geochemistry]."},
+        "Sb": {"value": 5, "note": "Enables proustite (Ag3SbS3) and pyrargyrite (Ag3SbS3) — the ruby silvers — plus tetrahedrite. Mirrors the Bisbee-style Sb-As-Bi greisen-trace abstraction at lower supergene-zone abundance."},
+        "Na": {"value": 30, "note": "Minor groundwater cation trace; supergene meteoric water is dilute (salinity stays at 2 wt%) but carries some Na from soil-zone weathering."},
+        "K": {"value": 10, "note": "K/Na ~0.3, meteoric-groundwater ratio."}
+      },
+      "preserved_intentional_values": {
+        "SiO2": 30, "Ca": 120, "CO3": 110, "Fe": 40, "Mn": 6, "Mg": 5,
+        "Zn": 90, "S": 50, "F": 3,
+        "Cu": 55, "Pb": 60, "Mo": 15,
+        "As": 12, "Cl": 20, "V": 1.5, "P": 0.5,
+        "O2": 1.8, "pH": 6.8, "salinity": 2.0,
+        "Co_note": "Co=0 at init by design; delivered by event_as_rich_seep at step 95 (+20). Erythrite (Co arsenate) requires As + Co coincident.",
+        "Ni_note": "Ni=0 at init by design; same delivery pattern as Co. Annabergite (Ni arsenate) requires As + Ni coincident.",
+        "P_note": "P=0.5 is sub-pyromorphite-threshold by design; ev_phosphate_seep at step 115 adds +6 to gate pyromorphite nucleation.",
+        "V_note": "V=1.5 is sub-vanadinite-threshold by design; ev_v_bearing_seep at step 130 adds +6 to gate vanadinite nucleation.",
+        "CO3_note": "CO3=110 is just below azurite's high-pCO2 gate (CO3 >= 120); ev_meteoric_flush at step 20 adds +30 to push past threshold."
+      },
+      "references": [
+        "Pinch, W.W., Wilson, W.E. (1977). Minerals of the Tsumeb mine. Mineralogical Record 8(3): 17-37 [special issue]. [Canonical Tsumeb mineralogy and paragenesis monograph]",
+        "Lombaard, A.F., Gunzel, A., Innes, J., Kruger, T.L. (1986). The Tsumeb lead-copper-zinc-silver deposit, South West Africa/Namibia. In: Anhaeusser, C.R., Maske, S. (eds.), Mineral Deposits of Southern Africa, Geol. Soc. South Africa, p. 1761-1787. [District geology]",
+        "Melcher, F. (2003). The Otavi Mountain Land in Namibia: Tsumeb, germanium and snowball Earth. Mitt. Osterr. Mineral. Gesell. 148: 413-435. [Ge geochemistry — primary source for the Ge=5 gap-fill value]",
+        "Hughes, F.E. (1987). Tsumeb (Tsumcorp Mine), Namibia. Econ. Geol. 82(7): 1739-1771. [Three supergene oxidation zones]",
+        "Frenzel, M., Hirsch, T., Gutzmer, J. (2016). Gallium, germanium, indium, and other trace and minor elements in sphalerite as a function of deposit type — A meta-analysis. Ore Geology Reviews 76: 52-78. [Modern Ge geochemistry framework]"
+      ],
+      "data_gaps": [
+        "Ag, Ge, Sb values are Tsumeb-relevant orders-of-magnitude estimates derived from district mineralogy + general supergene-fluid Ag/Ge/Sb ranges; direct fluid-inclusion LA-ICP-MS for Tsumeb supergene fluids is not in the standard literature (most published Ge work is on solid-mineral Ge content, not paleo-fluid Ge content).",
+        "The 'three oxidation zones' of Tsumeb (1st/2nd/3rd stage gossan) are collapsed to a single supergene scenario; sub-zone differentiation is out of scope."
+      ]
     }
   }
 }

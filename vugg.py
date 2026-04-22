@@ -6755,13 +6755,33 @@ def scenario_radioactive_pegmatite() -> Tuple[VugConditions, List[Event], int]:
 
 
 def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
-    """Supergene oxidation — low-T, oxidizing water-table zone.
+    """Supergene oxidation — anchored to Tsumeb, Namibia (1st-stage gossan).
 
     The cold, oxygenated domain where primary sulfides weather into secondary
     minerals. Pb+Mo → wulfenite. Zn+CO₃ → smithsonite. Zn+As → adamite.
     Pb+As+Cl → mimetite. Fe → goethite. Ca+SO₄ → selenite. Cu+CO₃ → malachite.
     Fills the gap flagged in TASK-BRIEF-2: wulfenite etc. can't reach their
     <80°C stability window in the hydrothermal scenarios.
+
+    Anchor: Tsumeb mine (Otavi Mountain Land, Namibia). One of the most
+    mineralogically diverse deposits ever discovered — ~280 species
+    documented, including the type locality for germanium (germanite,
+    renierite, briartite). Pipe-shaped Pb-Zn-Cu sulfide body in
+    Neoproterozoic dolomite, with three distinct supergene oxidation
+    zones developed during Mesozoic-Cenozoic uplift. The 1st-stage
+    gossan (this scenario) is the high-Pb-As-Cl uppermost zone where
+    mimetite, anglesite, cerussite, smithsonite, willemite,
+    arsenocrandallite, and the Ge-bearing oxidation phases occur.
+    Argentiferous (native Ag, proustite, pyrargyrite, argentiferous
+    galena). References: Pinch & Wilson 1977 (the canonical Tsumeb
+    monograph), Lombaard et al. 1986 (geology), Melcher 2003 (Ge
+    geochemistry).
+
+    Chemistry-audit gap-fill pass (Apr 2026): added Ag (Tsumeb's
+    silver suite), Ge (the type-locality element), Sb (proustite-
+    pyrargyrite + tetrahedrite enabling), Na/K (minor groundwater
+    cation traces). Existing 8-event sequence preserved; existing
+    Mg=5, Co/Ni-via-event preserved.
     """
     conditions = VugConditions(
         temperature=35.0,          # shallow water-table zone
@@ -6786,6 +6806,29 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
             # pyromorphite's gate is P>2, so it waits for a phosphate
             # event later in the scenario.
             P=0.5,
+            # ── Audit gap-fills (Apr 2026) ────────────────────────────
+            # Ag=8: Tsumeb is one of the most argentiferous deposits
+            # ever — native silver, argentiferous galena, proustite,
+            # pyrargyrite, stephanite. Existing Cl=20 + new Ag=8
+            # supports chlorargyrite chemistry too [Pinch & Wilson 1977].
+            Ag=8,
+            # Ge=5: Tsumeb is THE type locality for germanium.
+            # Germanite (Cu26Fe4Ge4S32), renierite (Cu,Zn)11(Ge,As)2Fe4S16,
+            # and briartite were all first described from Tsumeb.
+            # FluidChemistry's Ge field has carried a "Tsumeb speciality"
+            # comment since the schema was written — this audit finally
+            # populates it [Melcher 2003 — Tsumeb Ge geochemistry].
+            Ge=5,
+            # Sb=5: enables proustite (Ag3SbS3) and pyrargyrite (Ag3SbS3)
+            # — the ruby silvers — plus tetrahedrite. Mirrors the
+            # Bisbee-style Sb-As-Bi greisen-trace abstraction at lower
+            # supergene-zone abundance.
+            Sb=5,
+            # Na=30, K=10: minor groundwater cation traces. Supergene
+            # meteoric water is dilute (salinity stays at 2 wt%) but
+            # carries some Na/K from soil-zone weathering.
+            Na=30, K=10,
+            # ──────────────────────────────────────────────────────────
             O2=1.8, pH=6.8, salinity=2.0,
         ),
         # Supergene oxidation front — 3 primary + 7 secondary bubbles
