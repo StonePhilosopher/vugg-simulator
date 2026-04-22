@@ -181,25 +181,33 @@ h1 {
 .topo-canvas-wrap {
   position: relative;
   width: 100%;
+  height: 340px;
   overflow: hidden;
-  /* Background lives HERE, not on the canvas itself, so the dark void
-     stays fixed while the canvas (the slice) rotates in 3D. Creates
-     the illusion of a physical object floating in space rather than
-     a tilting black box. */
+  /* The wrap IS the "viewing window". Background lives here (fixed),
+     overflow:hidden clips the oversized canvas inside to the window
+     bounds. The canvas+slice can render at full scale and rotate in
+     3D freely; only the window shows what's behind it. Illusion: a
+     physical disc floating in a fixed dark chamber, viewed through
+     a rectangular porthole. */
   background: #050504;
   border: 1px solid #1a1a14;
   border-radius: 3px;
 }
-/* When 3D mode is active, let the tilted slice extend past the wrap's
-   bounds — perspective scaling makes the near edge bigger than the
-   layout box, and clipping it back into the box ruins the "physical
-   object in space" illusion. The fixed zoom/camera buttons sit above
-   the wrap (z-index:5) so they remain visible no matter how far the
-   slice overflows. Trade-off: at extreme tilts + high zoom the slice
-   can visually bleed into adjacent UI. User can recenter to fix. */
-.topo-canvas-wrap.is-3d {
-  overflow: visible;
+/* The stage is an oversized (200%) container centered in the wrap.
+   Canvas fills the stage, so the canvas is 2× bigger than the window.
+   When tilted in 3D, the slice has headroom to extend past the window
+   bounds without the canvas-buffer itself clipping anything. The
+   wrap's overflow:hidden then clips the view to the window. */
+.topo-canvas-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
+.topo-canvas-stage > * { pointer-events: auto; }
 
 /* Fixed readouts in the wrap corners. Positioned outside the canvas
    so they don't rotate with the 3D transform — they describe the
@@ -224,7 +232,7 @@ h1 {
 #topo-canvas {
   display: block;
   width: 100%;
-  height: 340px;
+  height: 100%;    /* fills the stage (which is 200% of wrap) */
   background: transparent;
   cursor: crosshair;
 }
@@ -2209,7 +2217,9 @@ footer a:hover {
       <div class="topo-legend" id="topo-legend"></div>
     </details>
     <div class="topo-canvas-wrap">
-      <canvas id="topo-canvas" width="1100" height="120"></canvas>
+      <div class="topo-canvas-stage">
+        <canvas id="topo-canvas" width="1100" height="120"></canvas>
+      </div>
       <div class="topo-zoom-ctrls">
         <button class="topo-zoom-btn" onclick="topoZoom(-1)" title="Zoom out">−</button>
         <span id="topo-zoom-label" class="topo-zoom-label">100%</span>
@@ -14466,6 +14476,11 @@ let _topoDragStartClientY = 0;
 let _topoDragOriginPanX = 0;
 let _topoDragOriginPanY = 0;
 const TOPO_DRAG_THRESHOLD_PX = 4;     // movement before drag starts (lets clicks still fire)
+// Canvas lives inside a stage that's this multiple of the wrap's size.
+// The extra area gives 3D-rotated content room to extend past the
+// visible window without clipping against the canvas buffer edge.
+// MUST match the CSS width/height percentages on .topo-canvas-stage.
+const TOPO_STAGE_SCALE = 2;
 // Camera drag mode. 'default' = current 2D hit-test-aware behavior
 // (drag on non-crystal pans; click on crystal tooltips). 'rotate' =
 // drag from anywhere rotates the 3D tilted canvas. 'pan' = drag from
@@ -14984,13 +14999,15 @@ function topoRender(optOverrideRing) {
   }
   if (wall && maxWallR > wall.max_seen_radius_mm) wall.max_seen_radius_mm = maxWallR;
   const centerPad = 48;  // leave room for the scale bar and legend
-  // In 3D mode, shrink the slice so perspective + tilt have room to
-  // extend past the untransformed footprint without hitting the canvas
-  // buffer edge. 0.6 gives ~40% margin on each side — enough for the
-  // max tilts the UI allows without the disc visibly clipping its own
-  // content. 2D mode is unchanged (factor = 1.0).
-  const threeDShrink = _topoView3D ? 0.6 : 1.0;
-  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2 * threeDShrink;
+  // The canvas lives inside a 2×-sized stage inside the overflow:hidden
+  // wrap. cssW/cssH are the CANVAS buffer dimensions (2× the visible
+  // window); fit the slice to the VISIBLE window (cssW/STAGE, cssH/STAGE)
+  // so it occupies the same on-screen area as before. The extra canvas
+  // area becomes "rotation headroom" — slice can tilt freely within the
+  // buffer and the wrap's overflow:hidden clips the view to the window.
+  const viewW = cssW / TOPO_STAGE_SCALE;
+  const viewH = cssH / TOPO_STAGE_SCALE;
+  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
 
   // Pan offsets let the user drag the vug around the canvas. Hit-test
@@ -15236,8 +15253,11 @@ function topoRender(optOverrideRing) {
   // Scale bar across the bottom: total wall circumference in mm.
   const circMm = wall ? Math.PI * wall.meanDiameterMm() : 0;
   if (circMm > 0) {
-    // A horizontal 10mm reference stripe below the vug
-    const barY = cssH - 18;
+    // Scale bar sits at the bottom of the VISIBLE window (wrap), not
+    // the bottom of the oversized canvas. Visible window is vertically
+    // centered in the canvas; its bottom edge is at cssH/2 + viewH/2
+    // = (cssH + viewH)/2.
+    const barY = (cssH + viewH) / 2 - 18;
     const tenPx = 10 * mmToPx;
     const barX0 = cssW / 2 - tenPx / 2;
     ctx.strokeStyle = '#5a4a30';
@@ -15301,7 +15321,12 @@ function _topoHitTest(ev) {
     if (r > maxWallR) maxWallR = r;
   }
   const centerPad = 48;
-  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
+  // Match topoRender: fit to VISIBLE window (cssW/STAGE, cssH/STAGE),
+  // not the full canvas buffer, so hit coords land on the same cells
+  // the user actually sees.
+  const viewW = cssW / TOPO_STAGE_SCALE;
+  const viewH = cssH / TOPO_STAGE_SCALE;
+  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
   const cx = cssW / 2 + _topoPanX;
   const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
@@ -15380,7 +15405,12 @@ function _topoTooltipFromEvent(ev) {
     if (r > maxWallR) maxWallR = r;
   }
   const centerPad = 48;
-  const fit = Math.min(cssW, cssH - centerPad) * 0.82 / 2;
+  // Match topoRender: fit to VISIBLE window (cssW/STAGE, cssH/STAGE),
+  // not the full canvas buffer, so hit coords land on the same cells
+  // the user actually sees.
+  const viewW = cssW / TOPO_STAGE_SCALE;
+  const viewH = cssH / TOPO_STAGE_SCALE;
+  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
   const mmToPx = (fit / maxWallR) * _topoZoom;
   const cx = cssW / 2 + _topoPanX;
   const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
@@ -15473,10 +15503,6 @@ function topoSetDragMode(mode) {
   const panBtn = document.getElementById('topo-pan-btn');
   if (rotateBtn) rotateBtn.style.color = (mode === 'rotate') ? '#f0c050' : '';
   if (panBtn) panBtn.style.color = (mode === 'pan') ? '#f0c050' : '';
-  // Flip the wrap's overflow so the tilted slice can extend past the
-  // layout box in 3D mode (illusion of physical object in space).
-  const wrap = document.querySelector('.topo-canvas-wrap');
-  if (wrap) wrap.classList.toggle('is-3d', _topoView3D);
   _topoApplyTransform();
   topoRender();
 }
