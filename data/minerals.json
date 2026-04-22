@@ -38,8 +38,8 @@
     "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
   },
   "_audit_summary": {
-    "total_minerals": 40,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite).",
+    "total_minerals": 47,
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates), +tetrahedrite/tennantite (round-2: paired fahlore Sb/As sulfosalts), +apophyllite (round-2: zeolite-facies silicate, hematite-phantom 'bloody apophyllite' habit, deccan_zeolite scenario added).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -65,7 +65,14 @@
       "bismuthinite",
       "native_bismuth",
       "clinobisvanite",
-      "chrysocolla"
+      "chrysocolla",
+      "marcasite",
+      "wurtzite",
+      "erythrite",
+      "annabergite",
+      "tetrahedrite",
+      "tennantite",
+      "apophyllite"
     ],
     "scenarios_that_can_nucleate": {
       "cooling": [
@@ -81,6 +88,7 @@
         "pyrite",
         "quartz",
         "sphalerite",
+        "wurtzite",
         "fluorite",
         "galena"
       ],
@@ -94,11 +102,14 @@
         "molybdenite",
         "pyrite",
         "quartz",
-        "bornite"
+        "bornite",
+        "tetrahedrite",
+        "tennantite"
       ],
       "reactive_wall": [
         "calcite",
         "pyrite",
+        "marcasite",
         "sphalerite"
       ],
       "radioactive_pegmatite": [
@@ -149,6 +160,11 @@
       ],
       "bisbee": [
         "chrysocolla"
+      ],
+      "deccan_zeolite": [
+        "apophyllite",
+        "hematite",
+        "quartz"
       ]
     }
   },
@@ -548,6 +564,116 @@
       "audit_status": "ok",
       "class_color": "#7feb13"
     },
+    "wurtzite": {
+      "formula": "(Zn,Fe)S",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 20,
+      "growth_rate_mult": 0.55,
+      "habit_variants": [
+        {
+          "name": "hemimorphic_crystal",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ — hexagonal pyramid with polar c-axis, one end pointed one end flat"
+        },
+        {
+          "name": "radiating_columnar",
+          "wall_spread": 0.35,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "high σ — radiating hexagonal columns in stellate clusters"
+        },
+        {
+          "name": "fibrous_coating",
+          "wall_spread": 0.75,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "very high σ, fast growth — fibrous crust on fracture walls"
+        },
+        {
+          "name": "platy_massive",
+          "wall_spread": 0.6,
+          "void_reach": 0.25,
+          "vector": "tabular",
+          "trigger": "low σ — tabular {0001} plates, micaceous aggregates"
+        }
+      ],
+      "class": "sulfide",
+      "description": "(Zn,Fe)S, the hexagonal high-temperature dimorph of sphalerite — same composition, different crystal structure. Above 95°C, cubic sphalerite gives way to hexagonal wurtzite with the distinctive hemimorphic habit (one end pointed, one end flat, due to the non-centrosymmetric P6₃mc space group). On cooling below 95°C, wurtzite converts to sphalerite — but sphalerite rarely goes back. The asymmetric dimorphism means finding wurtzite is diagnostic of rapid cooling from the hexagonal field.",
+      "scenarios": [
+        "mvt"
+      ],
+      "T_range_C": [
+        95,
+        600
+      ],
+      "T_optimum_C": [
+        150,
+        300
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 2.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Zn": 10,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Fe": "substitutes for Zn, darkens color (same as sphalerite, but hotter so more Fe uptake)",
+        "Cd": "yellow tint",
+        "Mn": "possible pink tint"
+      },
+      "thermal_decomp_C": 1020,
+      "thermal_decomp_reaction": "hexagonal ZnS → sublimation (shares sphalerite decomposition)",
+      "thermal_decomp_products": {
+        "Zn": 0.3,
+        "S": 0.5
+      },
+      "fluorescence": {
+        "activator": "Mn",
+        "threshold_ppm": 5,
+        "color": "orange_or_blue_variable",
+        "quencher": {
+          "species": "Fe",
+          "threshold_ppm": 10
+        }
+      },
+      "twin_laws": [
+        {
+          "name": "basal_contact",
+          "miller_indices": "{0001}",
+          "trigger": "growth in hemimorphic habit",
+          "probability": 0.008
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 2.0,
+        "reaction": "(Zn,Fe)S + 2H+ → Zn2+ + H2S (slow, only in strong acid — same as sphalerite)",
+        "products": {
+          "Zn": 0.3,
+          "S": 0.3
+        }
+      },
+      "habit": "hemimorphic_hexagonal",
+      "color_rules": {
+        "yellowish_brown": {
+          "default": true
+        },
+        "black_metallic": {
+          "trigger": "Fe > 15 mol%"
+        }
+      },
+      "narrate_function": "_narrate_wurtzite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: T>95 sphalerite dimorph, hexagonal P6₃mc, hemimorphic habit, polymorphic inversion handled).",
+      "class_color": "#7feb13"
+    },
     "fluorite": {
       "formula": "CaF2",
       "nucleation_sigma": 1.0,
@@ -768,6 +894,115 @@
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok",
+      "class_color": "#7feb13"
+    },
+    "marcasite": {
+      "formula": "FeS2",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 15,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "cockscomb",
+          "wall_spread": 0.6,
+          "void_reach": 0.35,
+          "vector": "projecting",
+          "trigger": "moderate σ, acid fluid — tabular plates crested like a rooster's comb"
+        },
+        {
+          "name": "spearhead",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "moderate σ — swallowtail {101} twins with pyramidal terminations"
+        },
+        {
+          "name": "radiating_blade",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "high σ, low T (<100°C) — fibrous stellate sprays from a common center"
+        },
+        {
+          "name": "tabular_plate",
+          "wall_spread": 0.55,
+          "void_reach": 0.2,
+          "vector": "tabular",
+          "trigger": "low σ, slow growth — flat {010} plates"
+        }
+      ],
+      "class": "sulfide",
+      "description": "FeS₂, the orthorhombic dimorph of pyrite — same formula, different crystal structure. Acidic (pH<5), low-T (<240°C) fluids switch FeS₂ from cubic pyrite to orthorhombic marcasite. Diagnostic cockscomb and spearhead habits, paler brass than pyrite with iridescent tarnish. Metastable: converts to pyrite over geologic time or on heating, and rots in humid air to sulfuric acid and iron sulfate (the classic museum-specimen problem).",
+      "scenarios": [
+        "reactive_wall"
+      ],
+      "T_range_C": [
+        5,
+        240
+      ],
+      "T_optimum_C": [
+        20,
+        120
+      ],
+      "T_behavior": "retrograde_solubility",
+      "pH_dissolution_below": 1.5,
+      "pH_dissolution_above": 5.0,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Fe": 5,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "As": "arsenian marcasite (greenish tarnish)",
+        "Cu": "minor Cu substitution (rarely)"
+      },
+      "thermal_decomp_C": 240,
+      "thermal_decomp_reaction": "orthorhombic FeS2 → cubic FeS2 (pyrite) — metastable inversion, not true decomposition",
+      "thermal_decomp_products": {
+        "Fe": 0.4,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "spearhead",
+          "miller_indices": "{101}",
+          "trigger": "growth in spearhead habit",
+          "probability": 0.05
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 1.5,
+        "reaction": "oxidative breakdown in humid air — FeS2 + O2 + H2O → FeSO4 + H2SO4 (museum rot); extreme acid dissolves directly",
+        "products": {
+          "Fe": 0.5,
+          "S": 0.3
+        }
+      },
+      "habit": "cockscomb_or_spearhead",
+      "color_rules": {
+        "pale_brass_yellow": {
+          "default": true
+        },
+        "iridescent_tarnish": {
+          "trigger": "surface oxidation"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "sphalerite",
+          "galena",
+          "vug wall"
+        ],
+        "note": "Acid-loving FeS2 dimorph. In MVT deposits marcasite often coats earlier sphalerite/galena. Subsurface goethite/limonite pseudomorphs after marcasite are the classic Egyptian Prophecy Stones."
+      },
+      "narrate_function": "_narrate_marcasite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: pH<5 & T<240 dimorph of pyrite, full habit set, metastable inversion handled).",
       "class_color": "#7feb13"
     },
     "chalcopyrite": {
@@ -1744,6 +1979,542 @@
       ],
       "audit_status": "ok — all 3 runtimes (phase-3).",
       "class_color": "#ebeb13"
+    },
+    "erythrite": {
+      "formula": "Co3(AsO4)2·8H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "cobalt_bloom",
+          "wall_spread": 0.75,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "low σ — earthy crimson-pink crust, the field bloom"
+        },
+        {
+          "name": "bladed_crystal",
+          "wall_spread": 0.25,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high σ — rare striated {010} blades, transparent crimson-pink"
+        },
+        {
+          "name": "radiating_fibrous",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "grown on primary Co-arsenide substrate — stellate fibrous sprays"
+        },
+        {
+          "name": "botryoidal_crust",
+          "wall_spread": 0.65,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "moderate-high σ — rounded pink aggregates"
+        }
+      ],
+      "class": "arsenate",
+      "description": "Co₃(AsO₄)₂·8H₂O — the crimson-pink 'cobalt bloom' of medieval miners. A low-T supergene arsenate formed by oxidation of primary cobalt arsenides (cobaltite, skutterudite). Shares the vivianite-group structure with annabergite (Ni), and forms a continuous solid solution: Ni substitution for Co pales the color from crimson-pink through purplish-pink toward apple-green. Dehydrates above 200°C.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        50
+      ],
+      "T_optimum_C": [
+        10,
+        30
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Co": 2,
+        "As": 5,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Ni": "solid-solution toward annabergite (color shift)",
+        "Mg": "Mg-bearing variety (kottigite)",
+        "Mn": "trace color modifier"
+      },
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Co3(AsO4)2·8H2O → Co3(AsO4)2 (loses 8 lattice waters; lattice collapses)",
+      "thermal_decomp_products": {
+        "Co": 0.5,
+        "As": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "erythrite + 6H+ → 3 Co²⁺ + 2 H3AsO4 + 8 H2O (dissolves in moderately acidic fluids)",
+        "products": {
+          "Co": 0.6,
+          "As": 0.4
+        }
+      },
+      "habit": "cobalt_bloom_or_botryoidal",
+      "color_rules": {
+        "crimson_pink": {
+          "default": true
+        },
+        "purplish_pink": {
+          "trigger": "trace Ni in solid solution"
+        },
+        "dusty_pink": {
+          "trigger": "higher Ni content"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "goethite",
+          "adamite",
+          "cobaltite",
+          "skutterudite",
+          "vug wall"
+        ],
+        "note": "Paired with annabergite (Ni equivalent). The vivianite-group sibling — same structure, different metal. Classic Schneeberg and Bou Azzer association directly on weathering Co-arsenides."
+      },
+      "narrate_function": "_narrate_erythrite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: paired with annabergite, low-T oxidizing arsenate, solid-solution color modeling).",
+      "class_color": "#ebeb13"
+    },
+    "annabergite": {
+      "formula": "Ni3(AsO4)2·8H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "nickel_bloom",
+          "wall_spread": 0.75,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "low σ — apple-green earthy crust, the field bloom"
+        },
+        {
+          "name": "capillary_crystal",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "very high σ — rare hair-like capillary fibers"
+        },
+        {
+          "name": "cabrerite",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "Mg-substituted — pale green to white (Sierra Cabrera variety)"
+        },
+        {
+          "name": "co_bearing",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "Co present — pinkish-green intermediate along erythrite-annabergite solid solution"
+        }
+      ],
+      "class": "arsenate",
+      "description": "Ni₃(AsO₄)₂·8H₂O — 'nickel bloom,' the apple-green Ni equivalent of erythrite. Same vivianite-group structure, same supergene origin; nickel substitutes for cobalt and the color shifts from crimson to apple-green. Mg substitution produces the pale cabrerite variety; Co substitution pinks it toward erythrite. Dehydrates above 200°C.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        50
+      ],
+      "T_optimum_C": [
+        10,
+        30
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Ni": 2,
+        "As": 5,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Co": "solid-solution toward erythrite (color shift to pinkish-green)",
+        "Mg": "Mg-bearing cabrerite variety (pale green to white)"
+      },
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Ni3(AsO4)2·8H2O → Ni3(AsO4)2 (loses 8 lattice waters; lattice collapses)",
+      "thermal_decomp_products": {
+        "Ni": 0.5,
+        "As": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "annabergite + 6H+ → 3 Ni²⁺ + 2 H3AsO4 + 8 H2O",
+        "products": {
+          "Ni": 0.6,
+          "As": 0.4
+        }
+      },
+      "habit": "nickel_bloom_or_capillary",
+      "color_rules": {
+        "apple_green": {
+          "default": true
+        },
+        "pinkish_green": {
+          "trigger": "Co present (transition toward erythrite)"
+        },
+        "pale_green_to_white": {
+          "trigger": "Mg present (cabrerite variety)"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "goethite",
+          "erythrite",
+          "niccolite",
+          "gersdorffite",
+          "vug wall"
+        ],
+        "note": "Paired with erythrite (Co equivalent). Apple-green crust on weathering Ni-arsenides. The solid-solution with erythrite means field-identification by color is diagnostic of Ni/Co ratio."
+      },
+      "narrate_function": "_narrate_annabergite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: paired with erythrite, same vivianite-group structure, low-T oxidizing arsenate).",
+      "class_color": "#ebeb13"
+    },
+    "tetrahedrite": {
+      "formula": "Cu12Sb4S13",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 12,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tetrahedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "low-moderate σ — classic {111} tetrahedra"
+        },
+        {
+          "name": "massive",
+          "wall_spread": 0.55,
+          "void_reach": 0.3,
+          "vector": "equant",
+          "trigger": "moderate-high σ — granular massive aggregates"
+        },
+        {
+          "name": "crustiform",
+          "wall_spread": 0.8,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "high σ, on fracture walls — banded crust"
+        },
+        {
+          "name": "druzy_coating",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "very high σ — fine-grained drusy microcrystals"
+        }
+      ],
+      "class": "sulfide",
+      "description": "Cu₁₂Sb₄S₁₃ — the Sb-endmember 'fahlore,' German miner's term for the steel-gray copper sulfosalts that paid in silver as much as in copper. Hydrothermal 100-400°C, optimum 200-300°C. Cubic I4̄3m space group produces diagnostic {111} tetrahedra. Paired with tennantite (As endmember) in a continuous solid solution: the Sb:As ratio of an ore fluid is recorded directly in the composition. Ag substitutes for Cu to produce the silver ore variety 'freibergite.'",
+      "scenarios": [
+        "porphyry"
+      ],
+      "T_range_C": [
+        100,
+        400
+      ],
+      "T_optimum_C": [
+        200,
+        300
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Cu": 10,
+        "Sb": 3,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Ag": "freibergite variety — silver ore (up to 18% Ag)",
+        "Fe": "substitutes for Cu",
+        "Zn": "substitutes for Cu",
+        "Hg": "mercury-bearing schwazite variety"
+      },
+      "thermal_decomp_C": 650,
+      "thermal_decomp_reaction": "Cu12Sb4S13 → Cu + Sb + S (oxidative roast)",
+      "thermal_decomp_products": {
+        "Cu": 0.4,
+        "Sb": 0.3,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "oxidative dissolution — Cu²⁺ + Sb³⁺ released (→ secondary Sb oxides, malachite/azurite downstream)",
+        "products": {
+          "Cu": 0.6,
+          "Sb": 0.3,
+          "S": 0.4
+        }
+      },
+      "habit": "tetrahedral_or_massive",
+      "color_rules": {
+        "steel_gray": {
+          "default": true
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "chalcopyrite",
+          "pyrite",
+          "vug wall"
+        ],
+        "note": "Paired with tennantite (As endmember). Classic porphyry-to-epithermal transition mineral — grows on earlier chalcopyrite as the fluid cools and Sb activity climbs."
+      },
+      "narrate_function": "_narrate_tetrahedrite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: paired with tennantite, same cubic structure, Sb endmember fahlore).",
+      "class_color": "#7feb13"
+    },
+    "tennantite": {
+      "formula": "Cu12As4S13",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 12,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tetrahedral",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "moderate σ — gray-black tetrahedra (indistinguishable from tetrahedrite except by the cherry-red thin-edge transmission test)"
+        },
+        {
+          "name": "massive",
+          "wall_spread": 0.55,
+          "void_reach": 0.3,
+          "vector": "equant",
+          "trigger": "high σ — compact granular"
+        },
+        {
+          "name": "crustiform",
+          "wall_spread": 0.8,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "high σ, fracture-wall — banded gray-black crust"
+        },
+        {
+          "name": "druzy_coating",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "very high σ — fine-grained drusy microcrystals"
+        }
+      ],
+      "class": "sulfide",
+      "description": "Cu₁₂As₄S₁₃ — the As-endmember fahlore, paired with tetrahedrite. Same cubic I4̄3m structure; arsenic replaces antimony. Visually indistinguishable from tetrahedrite except by the cherry-red thin-fragment transmission test (tennantite transmits; tetrahedrite stays opaque). On oxidation releases Cu + AsO₄³⁻, feeding the secondary arsenate paragenesis: adamite, erythrite, annabergite, mimetite. Closes the loop between primary copper sulfosalts and downstream supergene arsenates.",
+      "scenarios": [
+        "porphyry"
+      ],
+      "T_range_C": [
+        100,
+        400
+      ],
+      "T_optimum_C": [
+        150,
+        300
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Cu": 10,
+        "As": 3,
+        "S": 10
+      },
+      "trace_ingredients": {
+        "Ag": "silver substitution (argentian tennantite)",
+        "Fe": "substitutes for Cu",
+        "Zn": "substitutes for Cu"
+      },
+      "thermal_decomp_C": 620,
+      "thermal_decomp_reaction": "Cu12As4S13 → Cu + As + S (oxidative roast)",
+      "thermal_decomp_products": {
+        "Cu": 0.4,
+        "As": 0.3,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "reaction": "oxidative dissolution — Cu²⁺ + AsO₄³⁻ released (→ adamite, erythrite, annabergite, mimetite downstream)",
+        "products": {
+          "Cu": 0.6,
+          "As": 0.3,
+          "S": 0.4
+        }
+      },
+      "habit": "tetrahedral_or_massive",
+      "color_rules": {
+        "gray_black": {
+          "default": true
+        },
+        "cherry_red_transmission": {
+          "trigger": "thin edge under strong backlight — diagnostic for tennantite vs tetrahedrite"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "chalcopyrite",
+          "tetrahedrite",
+          "vug wall"
+        ],
+        "note": "Paired with tetrahedrite. Epithermal/porphyry transition mineral that feeds the entire downstream arsenate chain when it oxidizes."
+      },
+      "narrate_function": "_narrate_tennantite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: paired with tetrahedrite, As endmember fahlore).",
+      "class_color": "#7feb13"
+    },
+    "apophyllite": {
+      "formula": "KCa4Si8O20(F,OH)·8H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 18,
+      "growth_rate_mult": 0.5,
+      "habit_variants": [
+        {
+          "name": "prismatic_tabular",
+          "wall_spread": 0.3,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "moderate σ — pseudo-cubic tabular {001}+{110} blocks, transparent to pearly"
+        },
+        {
+          "name": "hopper_growth",
+          "wall_spread": 0.35,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "high σ — stepped/terraced {001} faces, skeletal hopper habit"
+        },
+        {
+          "name": "druzy_crust",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "very high σ — fine-grained drusy coating, sparkling colorless"
+        },
+        {
+          "name": "chalcedony_pseudomorph",
+          "wall_spread": 0.6,
+          "void_reach": 0.25,
+          "vector": "tabular",
+          "trigger": "low σ — chalcedony pseudomorph after earlier zeolite blade (stilbite/scolecite)"
+        }
+      ],
+      "class": "silicate",
+      "description": "KCa₄Si₈O₂₀(F,OH)·8H₂O — a tetragonal sheet silicate (technically phyllosilicate) classed with the zeolites for its hydrated, low-T vesicle-filling behavior. Stage III Deccan Traps mineral per Ottens et al. 2019: forms 21–58 Ma post-eruption when alkaline groundwater finally percolates through cooled basalt vesicles. Pseudo-cubic tabular blocks with perfect {001} cleavage. Hematite-needle phantom inclusions produce the prized 'bloody apophyllite' variety from Nashik.",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        50,
+        250
+      ],
+      "T_optimum_C": [
+        100,
+        200
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "K": 5,
+        "Ca": 30,
+        "SiO2": 800,
+        "F": 2
+      },
+      "trace_ingredients": {
+        "Na": "trace substitution for K",
+        "Fe": "hematite needle phantom inclusions ('bloody apophyllite' from Nashik)",
+        "OH": "OH/F substitution at the F site"
+      },
+      "thermal_decomp_C": 350,
+      "thermal_decomp_reaction": "KCa4Si8O20(F,OH)·8H2O → dehydration (loses 8 lattice waters; phyllosilicate framework collapses)",
+      "thermal_decomp_products": {
+        "K": 0.3,
+        "Ca": 0.4,
+        "SiO2": 0.4,
+        "F": 0.2
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "alkaline-stable phase — dissolves in acid releasing K, Ca, SiO2, F",
+        "products": {
+          "K": 0.3,
+          "Ca": 0.4,
+          "SiO2": 0.4,
+          "F": 0.2
+        }
+      },
+      "habit": "prismatic_tabular_pseudo_cubic",
+      "color_rules": {
+        "transparent_pearly": {
+          "default": true
+        },
+        "bloody_apophyllite": {
+          "trigger": "hematite needle phantom inclusions (Fe>8 + O2>0.2 during growth)"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "hematite",
+          "quartz",
+          "vug wall"
+        ],
+        "note": "Nashik bloody apophyllite forms when apophyllite nucleates on/grows around pre-existing hematite needles. Requires alkaline pH (7-10), low-pressure vesicle conditions (<0.5 kbar), K+Ca+Si+F-rich fluid."
+      },
+      "narrate_function": "_narrate_apophyllite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "ok (round-2 add: zeolite-facies basalt vesicle filling, hematite phantom inclusion mechanic, deccan_zeolite scenario added).",
+      "class_color": "#1313eb"
     },
     "feldspar": {
       "formula": "KAlSi3O8",

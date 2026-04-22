@@ -2127,6 +2127,7 @@ footer a:hover {
     <button onclick="startScenarioInCreative('ouro_preto')">Ouro Preto (Imperial Topaz).</button>
     <button onclick="startScenarioInCreative('gem_pegmatite')">Gem Pegmatite Pocket (Minas Gerais).</button>
     <button onclick="startScenarioInCreative('bisbee')">Bisbee (Warren District Cu Oxidation).</button>
+    <button onclick="startScenarioInCreative('deccan_zeolite')">Deccan Traps Zeolite Vesicle (Apophyllite).</button>
     <button class="menu-home" onclick="openNewGameMenu()">← Back.</button>
   </div>
 </div>
@@ -2180,6 +2181,7 @@ footer a:hover {
       <option value="ouro_preto">ouro_preto</option>
       <option value="gem_pegmatite">gem_pegmatite</option>
       <option value="bisbee">bisbee</option>
+      <option value="deccan_zeolite">deccan_zeolite</option>
     </select>
   </div>
   <div class="control-group">
@@ -2967,8 +2969,10 @@ const MINERAL_SPEC_FALLBACK = {
   quartz: { formula: "SiO2", nucleation_sigma: 1.0, max_size_cm: 1200, growth_rate_mult: 0.3, thermal_decomp_C: 1713, fluorescence: { activator: "Al", threshold_ppm: 5, color: "weak_blue_LW" }, twin_laws: [{ name: "Dauphine", probability: 0.15 }], acid_dissolution: { pH_threshold: 4.0, requires: { F: 20 } } },
   calcite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 2000, growth_rate_mult: 1.0, thermal_decomp_C: 840, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_red", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "c_twin", probability: 0.10 }], acid_dissolution: { pH_threshold: 5.5 } },
   sphalerite: { formula: "ZnS", nucleation_sigma: 1.0, max_size_cm: 80, growth_rate_mult: 0.6, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "spinel_law", probability: 0.015 }], acid_dissolution: { pH_threshold: 2.0 } },
+  wurtzite: { formula: "(Zn,Fe)S", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.55, thermal_decomp_C: 1020, fluorescence: { activator: "Mn", threshold_ppm: 5, color: "orange_or_blue_variable", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "basal_contact", probability: 0.008 }], acid_dissolution: { pH_threshold: 2.0 } },
   fluorite: { formula: "CaF2", nucleation_sigma: 1.0, max_size_cm: 400, growth_rate_mult: 0.5, thermal_decomp_C: 1360, fluorescence: { activator: "REE_or_defects", color: "blue_violet_LW_and_SW" }, twin_laws: [{ name: "penetration", probability: 0.008 }], acid_dissolution: { pH_threshold: 4.0 } },
   pyrite: { formula: "FeS2", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.3, thermal_decomp_C: 743, fluorescence: null, twin_laws: [{ name: "iron_cross", probability: 0.008 }], acid_dissolution: { pH_threshold: 3.0 } },
+  marcasite: { formula: "FeS2", nucleation_sigma: 1.0, max_size_cm: 15, growth_rate_mult: 0.3, thermal_decomp_C: 240, fluorescence: null, twin_laws: [{ name: "spearhead", probability: 0.05 }], acid_dissolution: { pH_threshold: 1.5 } },
   chalcopyrite: { formula: "CuFeS2", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.3, thermal_decomp_C: 880, fluorescence: null, twin_laws: [{ name: "penetration", probability: 0.012 }], acid_dissolution: { pH_threshold: 3.0 } },
   hematite: { formula: "Fe2O3", nucleation_sigma: 1.5, max_size_cm: 60, growth_rate_mult: 0.5, thermal_decomp_C: 1560, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
   malachite: { formula: "Cu2(CO3)(OH)2", nucleation_sigma: 1.0, max_size_cm: 200, growth_rate_mult: 0.8, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
@@ -2979,6 +2983,11 @@ const MINERAL_SPEC_FALLBACK = {
   molybdenite: { formula: "MoS2", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.3, thermal_decomp_C: 1185, fluorescence: null, twin_laws: [], acid_dissolution: null },
   adamite: { formula: "Zn2(AsO4)(OH)", nucleation_sigma: 1.0, max_size_cm: 10, growth_rate_mult: 0.3, thermal_decomp_C: 500, fluorescence: { activator: "intrinsic", color: "green_yellow_SW", quencher: { species: "Cu", threshold_ppm: 10 } }, twin_laws: [], acid_dissolution: { pH_threshold: 3.5 } },
   mimetite: { formula: "Pb5(AsO4)3Cl", nucleation_sigma: 1.0, max_size_cm: 10, growth_rate_mult: 0.3, thermal_decomp_C: 400, fluorescence: { activator: "intrinsic", color: "orange_SW" }, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
+  erythrite: { formula: "Co3(AsO4)2·8H2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.25, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
+  annabergite: { formula: "Ni3(AsO4)2·8H2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.25, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
+  tetrahedrite: { formula: "Cu12Sb4S13", nucleation_sigma: 1.0, max_size_cm: 12, growth_rate_mult: 0.4, thermal_decomp_C: 650, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
+  tennantite: { formula: "Cu12As4S13", nucleation_sigma: 1.0, max_size_cm: 12, growth_rate_mult: 0.4, thermal_decomp_C: 620, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
+  apophyllite: { formula: "KCa4Si8O20(F,OH)·8H2O", nucleation_sigma: 1.0, max_size_cm: 18, growth_rate_mult: 0.5, thermal_decomp_C: 350, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 5.0 } },
   feldspar: { formula: "KAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 1400, growth_rate_mult: 0.4, thermal_decomp_C: 1170, fluorescence: { activator: "Pb_amazonite", threshold_ppm: 5, color: "weak_yellow_green" }, twin_laws: [{ name: "Carlsbad", probability: 0.12 }, { name: "Baveno", probability: 0.04 }, { name: "Manebach", probability: 0.02 }], acid_dissolution: { pH_threshold: 4.0 } },
   albite: { formula: "NaAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.4, thermal_decomp_C: 1118, fluorescence: { activator: "intrinsic", color: "weak_white_LW" }, twin_laws: [{ name: "albite", probability: 0.20 }, { name: "pericline", probability: 0.05 }], acid_dissolution: { pH_threshold: 3.0 } },
   selenite: { formula: "CaSO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 2400, growth_rate_mult: 0.7, thermal_decomp_C: 150, fluorescence: null, twin_laws: [{ name: "swallowtail", probability: 0.08 }], acid_dissolution: { pH_threshold: 5.0 } },
@@ -3902,7 +3911,23 @@ class VugConditions {
   supersaturation_sphalerite() {
     if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
     const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
-    return product * 2.0 * Math.exp(-0.004 * this.temperature);
+    // Below 95°C: full sigma. Above: accelerated decay (wurtzite field).
+    const T_factor = this.temperature <= 95
+      ? 2.0 * Math.exp(-0.004 * this.temperature)
+      : 2.0 * Math.exp(-0.01 * this.temperature);
+    return product * T_factor;
+  }
+
+  supersaturation_wurtzite() {
+    // Hexagonal (Zn,Fe)S — high-T dimorph of sphalerite. Hard gate at T<=95.
+    if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
+    if (this.temperature <= 95) return 0;
+    const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
+    let T_factor;
+    if (this.temperature < 150) T_factor = (this.temperature - 95) / 55.0;
+    else if (this.temperature <= 300) T_factor = 1.4;
+    else T_factor = 1.4 * Math.exp(-0.005 * (this.temperature - 300));
+    return product * T_factor;
   }
 
   supersaturation_pyrite() {
@@ -3911,7 +3936,24 @@ class VugConditions {
     const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
     const eT = this.effectiveTemperature; // Mo flux widens T window
     const T_factor = (100 < eT && eT < 400) ? 1.0 : 0.5;
-    return product * T_factor * (1.5 - this.fluid.O2);
+    // pH rolloff below 5 — marcasite (orthorhombic FeS2) wins in acid
+    let pH_factor = 1.0;
+    if (this.fluid.pH < 5.0) {
+      pH_factor = Math.max(0.3, (this.fluid.pH - 3.5) / 1.5);
+    }
+    return product * T_factor * pH_factor * (1.5 - this.fluid.O2);
+  }
+
+  supersaturation_marcasite() {
+    // Orthorhombic FeS2 dimorph of pyrite. pH<5 AND T<240 hard gates.
+    if (this.fluid.Fe < 5 || this.fluid.S < 10) return 0;
+    if (this.fluid.O2 > 1.5) return 0;
+    if (this.fluid.pH >= 5.0) return 0;
+    if (this.temperature > 240) return 0;
+    const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
+    const pH_factor = Math.min(1.4, (5.0 - this.fluid.pH) / 1.2);
+    const T_factor = this.temperature < 150 ? 1.2 : 0.6;
+    return product * pH_factor * T_factor * (1.5 - this.fluid.O2);
   }
 
   supersaturation_chalcopyrite() {
@@ -4047,6 +4089,66 @@ class VugConditions {
     let sigma = (this.fluid.Ca / 100.0) * (this.fluid.S / 50.0) * (this.fluid.O2 / 1.0);
     if (this.temperature < 40) sigma *= 1.5;
     return Math.max(sigma, 0);
+  }
+
+  supersaturation_apophyllite() {
+    if (this.fluid.K < 5 || this.fluid.Ca < 30 || this.fluid.SiO2 < 800 || this.fluid.F < 2) return 0;
+    if (this.temperature < 50 || this.temperature > 250) return 0;
+    if (this.fluid.pH < 7.0 || this.fluid.pH > 10.0) return 0;
+    if (this.pressure > 0.5) return 0;
+    const product = (this.fluid.K / 30.0) * (this.fluid.Ca / 100.0) * (this.fluid.SiO2 / 1500.0) * (this.fluid.F / 8.0);
+    let T_factor;
+    if (this.temperature >= 100 && this.temperature <= 200) T_factor = 1.4;
+    else if ((this.temperature >= 80 && this.temperature < 100) || (this.temperature > 200 && this.temperature <= 230)) T_factor = 1.0;
+    else T_factor = 0.6;
+    const pH_factor = (this.fluid.pH >= 7.5 && this.fluid.pH <= 9.0) ? 1.2 : 0.8;
+    return product * T_factor * pH_factor;
+  }
+
+  supersaturation_tetrahedrite() {
+    if (this.fluid.Cu < 10 || this.fluid.Sb < 3 || this.fluid.S < 10) return 0;
+    if (this.fluid.O2 > 1.5) return 0;
+    if (this.fluid.pH < 3.0 || this.fluid.pH > 7.0) return 0;
+    if (this.temperature < 100 || this.temperature > 400) return 0;
+    const product = (this.fluid.Cu / 40.0) * (this.fluid.Sb / 15.0) * (this.fluid.S / 40.0);
+    let T_factor;
+    if (this.temperature >= 200 && this.temperature <= 300) T_factor = 1.3;
+    else if ((this.temperature >= 150 && this.temperature < 200) || (this.temperature > 300 && this.temperature <= 350)) T_factor = 1.0;
+    else T_factor = 0.6;
+    return product * T_factor * (1.5 - this.fluid.O2);
+  }
+
+  supersaturation_tennantite() {
+    if (this.fluid.Cu < 10 || this.fluid.As < 3 || this.fluid.S < 10) return 0;
+    if (this.fluid.O2 > 1.5) return 0;
+    if (this.fluid.pH < 3.0 || this.fluid.pH > 7.0) return 0;
+    if (this.temperature < 100 || this.temperature > 400) return 0;
+    const product = (this.fluid.Cu / 40.0) * (this.fluid.As / 15.0) * (this.fluid.S / 40.0);
+    let T_factor;
+    if (this.temperature >= 150 && this.temperature <= 300) T_factor = 1.3;
+    else if ((this.temperature >= 100 && this.temperature < 150) || (this.temperature > 300 && this.temperature <= 350)) T_factor = 1.0;
+    else T_factor = 0.6;
+    return product * T_factor * (1.5 - this.fluid.O2);
+  }
+
+  supersaturation_erythrite() {
+    // Co3(AsO4)2·8H2O — cobalt bloom. Shared vivianite-group gating with annabergite.
+    if (this.fluid.Co < 2 || this.fluid.As < 5 || this.fluid.O2 < 0.3) return 0;
+    if (this.temperature < 5 || this.temperature > 50) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+    const product = (this.fluid.Co / 20.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+    const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
+    return product * T_factor;
+  }
+
+  supersaturation_annabergite() {
+    // Ni3(AsO4)2·8H2O — nickel bloom. Ni equivalent of erythrite.
+    if (this.fluid.Ni < 2 || this.fluid.As < 5 || this.fluid.O2 < 0.3) return 0;
+    if (this.temperature < 5 || this.temperature > 50) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+    const product = (this.fluid.Ni / 20.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+    const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
+    return product * T_factor;
   }
 
   supersaturation_adamite() {
@@ -4566,13 +4668,13 @@ class Crystal {
       if (avg_Al > 5) return 'weak blue (Al-related defects)';
       return 'non-fluorescent';
     }
-    if (this.mineral === 'sphalerite') {
+    if (this.mineral === 'sphalerite' || this.mineral === 'wurtzite') {
       // Mn activates, Fe quenches — same as calcite
       if (avg_Mn > 5 && avg_Fe < 10) return 'orange or blue (Mn²⁺-activated; color varies by site)';
       if (avg_Mn > 5 && avg_Fe > 10) return 'quenched (Fe²⁺ masks Mn²⁺ emission)';
       return 'non-fluorescent';
     }
-    if (this.mineral === 'pyrite' || this.mineral === 'chalcopyrite' || this.mineral === 'galena' || this.mineral === 'molybdenite') {
+    if (this.mineral === 'pyrite' || this.mineral === 'marcasite' || this.mineral === 'chalcopyrite' || this.mineral === 'galena' || this.mineral === 'molybdenite' || this.mineral === 'tetrahedrite' || this.mineral === 'tennantite') {
       return 'non-fluorescent (opaque sulfide)';
     }
     if (this.mineral === 'hematite') {
@@ -4876,6 +4978,60 @@ function grow_sphalerite(crystal, conditions, step) {
   });
 }
 
+function grow_wurtzite(crystal, conditions, step) {
+  // Polymorphic inversion on cooling below 95°C
+  if (crystal.total_growth_um > 10 && conditions.temperature <= 95) {
+    crystal.dissolved = true;
+    conditions.fluid.Zn += 1.5;
+    conditions.fluid.S += 1.2;
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -1.5, growth_rate: -1.5,
+      note: 'polymorphic inversion — T dropped below 95°C, hexagonal (Zn,Fe)S converting to cubic sphalerite'
+    });
+  }
+
+  const sigma = conditions.supersaturation_wurtzite();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  const rate = 5.5 * excess * rng.uniform(0.7, 1.3);
+
+  const Fe_mol_percent = Math.min(conditions.fluid.Fe * 0.12 * (conditions.temperature / 300.0), 35.0);
+  const trace_Fe = Fe_mol_percent * 10;
+
+  if (excess > 1.5) {
+    crystal.habit = 'fibrous_coating';
+    crystal.dominant_forms = ['fibrous crust', '{0001} parallel columns'];
+  } else if (excess > 0.8) {
+    crystal.habit = 'radiating_columnar';
+    crystal.dominant_forms = ['radiating hexagonal columns', 'stellate aggregates'];
+  } else if (excess > 0.3) {
+    crystal.habit = 'hemimorphic_crystal';
+    crystal.dominant_forms = ['hemimorphic hexagonal pyramid', '{0001} + {101̄1}'];
+  } else {
+    crystal.habit = 'platy_massive';
+    crystal.dominant_forms = ['{0001} tabular plate', 'micaceous'];
+  }
+
+  let color_note;
+  if (Fe_mol_percent > 15) color_note = 'black metallic (Fe-rich wurtzite)';
+  else if (Fe_mol_percent > 5) color_note = 'brownish-black';
+  else color_note = 'yellowish-brown to dark brown';
+
+  if (crystal.habit === 'hemimorphic_crystal' && !crystal.twinned && rng.random() < 0.008) {
+    crystal.twinned = true;
+    crystal.twin_law = 'basal {0001} contact';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe,
+    note: `hemimorphic hexagonal (Zn,Fe)S — ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
+  });
+}
+
 function grow_fluorite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_fluorite();
   if (sigma < 1.0) {
@@ -4981,6 +5137,83 @@ function grow_pyrite(crystal, conditions, step) {
   if (!crystal.twinned && rng.random() < 0.008) {
     crystal.twinned = true;
     crystal.twin_law = 'iron cross {110}';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.15,
+    note: trace_note
+  });
+}
+
+function grow_marcasite(crystal, conditions, step) {
+  // Metastable inversion to pyrite if pH rises above 5 or T exceeds 240
+  if (crystal.total_growth_um > 10 && (conditions.fluid.pH >= 5.0 || conditions.temperature > 240)) {
+    crystal.dissolved = true;
+    conditions.fluid.Fe += 1.5;
+    conditions.fluid.S += 1.2;
+    const trigger = conditions.fluid.pH >= 5.0 ? 'pH rose above 5' : 'T exceeded 240°C';
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -1.5, growth_rate: -1.5,
+      note: `metastable inversion — ${trigger}, orthorhombic FeS2 converting to pyrite`
+    });
+  }
+
+  const sigma = conditions.supersaturation_marcasite();
+
+  if (sigma < 1.0) {
+    // Oxidative breakdown — the classic museum rot
+    if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 0.8) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.12);
+      conditions.fluid.Fe += dissolved_um * 1.0;
+      conditions.fluid.S += dissolved_um * 0.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'oxidative breakdown — FeS2 + O2 + H2O → FeSO4 + H2SO4 (the museum rot)'
+      });
+    }
+    if (crystal.total_growth_um > 10 && conditions.fluid.pH < 1.5) {
+      crystal.dissolved = true;
+      conditions.fluid.Fe += 2.0;
+      conditions.fluid.S += 1.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -2.0, growth_rate: -2.0,
+        note: `extreme-acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 4.5 * excess * rng.uniform(0.7, 1.3);
+
+  if (excess > 1.5 && conditions.temperature < 100) {
+    crystal.habit = 'radiating_blade';
+    crystal.dominant_forms = ['radiating blades', 'fibrous stellate clusters'];
+  } else if (excess > 0.8) {
+    crystal.habit = 'cockscomb';
+    crystal.dominant_forms = ['cockscomb aggregate', 'crested tabular {010}'];
+  } else if (excess > 0.3) {
+    crystal.habit = 'spearhead';
+    crystal.dominant_forms = ['spearhead twins', 'pyramidal terminations'];
+  } else {
+    crystal.habit = 'tabular_plate';
+    crystal.dominant_forms = ['{010} tabular plate'];
+  }
+
+  let trace_note = 'pale brass-yellow metallic, tarnishing iridescent';
+  if (conditions.fluid.pH < 3.5) {
+    trace_note += ' (strong acid — extra-rapid cockscomb growth)';
+  }
+
+  if (crystal.habit === 'spearhead' && !crystal.twinned && rng.random() < 0.05) {
+    crystal.twinned = true;
+    crystal.twin_law = 'spearhead {101}';
   }
 
   return new GrowthZone({
@@ -6595,8 +6828,10 @@ const MINERAL_ENGINES = {
   quartz: grow_quartz,
   calcite: grow_calcite,
   sphalerite: grow_sphalerite,
+  wurtzite: grow_wurtzite,
   fluorite: grow_fluorite,
   pyrite: grow_pyrite,
+  marcasite: grow_marcasite,
   chalcopyrite: grow_chalcopyrite,
   hematite: grow_hematite,
   malachite: grow_malachite,
@@ -6609,6 +6844,11 @@ const MINERAL_ENGINES = {
   feldspar: grow_feldspar,
   adamite: grow_adamite,
   mimetite: grow_mimetite,
+  erythrite: grow_erythrite,
+  annabergite: grow_annabergite,
+  tetrahedrite: grow_tetrahedrite,
+  tennantite: grow_tennantite,
+  apophyllite: grow_apophyllite,
   goethite: grow_goethite,
   albite: grow_albite,
   topaz: grow_topaz,
@@ -6633,6 +6873,269 @@ const MINERAL_ENGINES = {
   native_bismuth: grow_native_bismuth,
   clinobisvanite: grow_clinobisvanite,
 };
+
+function grow_apophyllite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_apophyllite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      conditions.fluid.K += 0.5;
+      conditions.fluid.Ca += 2.0;
+      conditions.fluid.SiO2 += 8.0;
+      conditions.fluid.F += 0.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -2.0, growth_rate: -2.0,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — K, Ca, SiO₂, F released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 5.0 * excess * rng.uniform(0.7, 1.3);
+
+  if (excess > 1.8) {
+    crystal.habit = 'druzy_crust';
+    crystal.dominant_forms = ['fine-grained drusy coating', 'sparkling colorless'];
+  } else if (excess > 1.0) {
+    crystal.habit = 'hopper_growth';
+    crystal.dominant_forms = ['stepped/terraced {001} faces', 'skeletal hopper crystals'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'prismatic_tabular';
+    crystal.dominant_forms = ['pseudo-cubic tabular {001} + {110}', 'transparent to pearly'];
+  } else {
+    crystal.habit = 'chalcedony_pseudomorph';
+    crystal.dominant_forms = ['chalcedony pseudomorph after earlier zeolite blade', 'massive milky'];
+  }
+
+  let hematite_note = '';
+  if (conditions.fluid.Fe > 8 && conditions.fluid.O2 > 0.2 && rng.random() < 0.4) {
+    hematite_note = " (hematite needle phantoms — bloody apophyllite zone)";
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.05,
+    note: `${crystal.habit} K-Ca-Si zeolite${hematite_note}`
+  });
+}
+
+function grow_tetrahedrite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_tetrahedrite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 1.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.1);
+      conditions.fluid.Cu += dissolved_um * 0.6;
+      conditions.fluid.Sb += dissolved_um * 0.3;
+      conditions.fluid.S += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'oxidative dissolution — Cu²⁺ + Sb³⁺ released (feeds secondary Sb oxides)'
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 4.5 * excess * rng.uniform(0.7, 1.3);
+
+  const on_wall = typeof crystal.position === 'string' && (crystal.position.includes('wall') || crystal.position.includes('fracture'));
+  if (excess > 1.2) {
+    if (on_wall) {
+      crystal.habit = 'crustiform';
+      crystal.dominant_forms = ['crustiform banded crust', 'fracture-wall coating'];
+    } else {
+      crystal.habit = 'druzy_coating';
+      crystal.dominant_forms = ['fine-grained drusy surface', 'sparkling steel-gray'];
+    }
+  } else if (excess > 0.6) {
+    crystal.habit = 'massive';
+    crystal.dominant_forms = ['massive granular', 'steel-gray metallic'];
+  } else {
+    crystal.habit = 'tetrahedral';
+    crystal.dominant_forms = ['{111} tetrahedron', 'classic steel-gray tetrahedra'];
+  }
+
+  let ag_note = '';
+  if (conditions.fluid.Ag > 10) ag_note = ', Ag-rich (freibergite — Ag as ore)';
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.05,
+    note: `${crystal.habit} Cu12Sb4S13 — steel-gray metallic${ag_note}`
+  });
+}
+
+function grow_tennantite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_tennantite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 1.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.1);
+      conditions.fluid.Cu += dissolved_um * 0.6;
+      conditions.fluid.As += dissolved_um * 0.3;
+      conditions.fluid.S += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'oxidative dissolution — Cu²⁺ + AsO₄³⁻ released (feeds secondary arsenates: adamite, erythrite, etc.)'
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 4.5 * excess * rng.uniform(0.7, 1.3);
+
+  const on_wall = typeof crystal.position === 'string' && (crystal.position.includes('wall') || crystal.position.includes('fracture'));
+  if (excess > 1.2) {
+    if (on_wall) {
+      crystal.habit = 'crustiform';
+      crystal.dominant_forms = ['crustiform banded crust', 'gray-black fracture coating'];
+    } else {
+      crystal.habit = 'druzy_coating';
+      crystal.dominant_forms = ['fine-grained drusy surface', 'sparkling gray-black'];
+    }
+  } else if (excess > 0.6) {
+    crystal.habit = 'massive';
+    crystal.dominant_forms = ['massive granular', 'gray-black compact'];
+  } else {
+    crystal.habit = 'tetrahedral';
+    crystal.dominant_forms = ['{111} tetrahedron', 'gray-black tetrahedra with cherry-red thin-edge transmission'];
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.05,
+    note: `${crystal.habit} Cu12As4S13 — gray-black metallic, cherry-red transmission in thin fragments`
+  });
+}
+
+function grow_erythrite(crystal, conditions, step) {
+  // Thermal dehydration above 200°C
+  if (crystal.total_growth_um > 5 && conditions.temperature > 200) {
+    crystal.dissolved = true;
+    conditions.fluid.Co += 0.4;
+    conditions.fluid.As += 0.3;
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -1.0, growth_rate: -1.0,
+      note: 'thermal dehydration — Co3(AsO4)2·8H2O loses water, breaks down above 200°C'
+    });
+  }
+
+  const sigma = conditions.supersaturation_erythrite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      conditions.fluid.Co += 0.6;
+      conditions.fluid.As += 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -1.2, growth_rate: -1.2,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Co²⁺ + AsO₄³⁻ released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.7, 1.3);
+
+  const pos = crystal.position || '';
+  const on_primary = typeof pos === 'string' && (pos.includes('cobaltite') || pos.includes('skutterudite') || pos.includes('arsenide'));
+  if (on_primary) {
+    crystal.habit = 'radiating_fibrous';
+    crystal.dominant_forms = ['radiating fibrous sprays', 'stellate clusters'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'bladed_crystal';
+    crystal.dominant_forms = ['striated prismatic {010} blades', 'crimson-pink transparent'];
+  } else if (excess > 0.5) {
+    crystal.habit = 'botryoidal_crust';
+    crystal.dominant_forms = ['botryoidal rounded aggregates', 'pink-red crust'];
+  } else {
+    crystal.habit = 'cobalt_bloom';
+    crystal.dominant_forms = ['earthy crimson-pink crust', 'cobalt bloom'];
+  }
+
+  const ni_fraction = conditions.fluid.Ni / Math.max(conditions.fluid.Co + conditions.fluid.Ni, 0.01);
+  let color_note;
+  if (ni_fraction > 0.3) color_note = 'purplish-pink (mixed Co-Ni composition)';
+  else if (ni_fraction > 0.1) color_note = 'dusty crimson (trace Ni)';
+  else color_note = 'crimson-pink (Co-dominant — cobalt bloom)';
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Mn: conditions.fluid.Mn * 0.01,
+    note: `${crystal.habit} — ${color_note}`
+  });
+}
+
+function grow_annabergite(crystal, conditions, step) {
+  if (crystal.total_growth_um > 5 && conditions.temperature > 200) {
+    crystal.dissolved = true;
+    conditions.fluid.Ni += 0.4;
+    conditions.fluid.As += 0.3;
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -1.0, growth_rate: -1.0,
+      note: 'thermal dehydration — Ni3(AsO4)2·8H2O loses water, breaks down above 200°C'
+    });
+  }
+
+  const sigma = conditions.supersaturation_annabergite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      conditions.fluid.Ni += 0.6;
+      conditions.fluid.As += 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -1.2, growth_rate: -1.2,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Ni²⁺ + AsO₄³⁻ released`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.7, 1.3);
+
+  const co_fraction = conditions.fluid.Co / Math.max(conditions.fluid.Co + conditions.fluid.Ni, 0.01);
+  const mg_fraction = conditions.fluid.Mg / Math.max(conditions.fluid.Mg + conditions.fluid.Ni, 0.01);
+
+  let color_note;
+  if (co_fraction > 0.25) {
+    crystal.habit = 'co_bearing';
+    crystal.dominant_forms = ['pinkish-green intermediate crust'];
+    color_note = 'pinkish-green (Co-bearing annabergite, transitioning to erythrite)';
+  } else if (mg_fraction > 0.3) {
+    crystal.habit = 'cabrerite';
+    crystal.dominant_forms = ['pale green to white crust', 'Mg-bearing cabrerite variety'];
+    color_note = 'pale green to white (cabrerite — Mg substitution)';
+  } else if (excess > 1.5) {
+    crystal.habit = 'capillary_crystal';
+    crystal.dominant_forms = ['capillary hair-like fibers', 'green silky sprays'];
+    color_note = 'bright apple-green capillaries';
+  } else {
+    crystal.habit = 'nickel_bloom';
+    crystal.dominant_forms = ['apple-green earthy crust', 'nickel bloom'];
+    color_note = 'apple-green (Ni-dominant — nickel bloom)';
+  }
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `${crystal.habit} — ${color_note}`
+  });
+}
 
 function grow_adamite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_adamite();
@@ -6852,7 +7355,7 @@ function scenario_porphyry() {
       K: 40, Na: 25, Al: 15,
       // Sb + Bi traces — greisen signature. Enough to nucleate
       // stibnite + bismuthinite at a handful of sites each.
-      Sb: 25, Bi: 30,
+      Sb: 25, As: 15, Bi: 30,
       pH: 4.5, salinity: 10.0
     }),
     // Porphyry veins — elongated cross-section, modest harmonics.
@@ -7009,7 +7512,7 @@ function scenario_supergene_oxidation() {
     { step: 40,  name: 'Pb+Mo Pulse',      description: 'Galena+molybdenite weathering', apply_fn: (c) => { c.fluid.Pb += 40; c.fluid.Mo += 25; c.fluid.O2 = 2.0; c.flow_rate = 2.0; return 'A weathering rind breaches: Pb²⁺ and MoO₄²⁻ released simultaneously — the Seo et al. (2012) condition for wulfenite formation is met.'; } },
     { step: 55,  name: 'Cu Enrichment',    description: 'Primary chalcopyrite upslope weathers', apply_fn: (c) => { c.fluid.Cu += 50; c.fluid.S += 30; c.fluid.Fe += 10; c.fluid.O2 = 0.6; return 'A primary chalcopyrite lens upslope finishes oxidizing. Cu²⁺ descends with the water table and hits the reducing layer below — the supergene enrichment blanket, where mineable copper ore gets made. Bornite precipitates on the upgradient edge, chalcocite in the core, covellite where S activity is highest. Real orebodies are often 5–10× richer here than in the primary sulfide below.'; } },
     { step: 70,  name: 'Dry Spell',        description: 'Evaporation concentrates sulfate', apply_fn: (c) => { c.fluid.Ca += 40; c.fluid.S += 30; c.fluid.O2 = 1.5; c.temperature = 50; c.flow_rate = 0.3; return 'Dry season. Flow slows, evaporation concentrates the brine. Ca²⁺ and SO₄²⁻ climb toward selenite\u2019s window.'; } },
-    { step: 95,  name: 'Arsenic Seep',     description: 'Zn/Pb arsenate saturation', apply_fn: (c) => { c.fluid.As += 8; c.fluid.Cl += 10; c.fluid.Zn += 20; c.fluid.pH = 6.0; return 'An arsenic-bearing seep arrives from a weathering arsenopyrite body upslope. Adamite and mimetite saturate.'; } },
+    { step: 95,  name: 'Arsenic Seep',     description: 'Zn/Pb arsenate saturation + Co/Ni bloom', apply_fn: (c) => { c.fluid.As += 8; c.fluid.Cl += 10; c.fluid.Zn += 20; c.fluid.Co += 20; c.fluid.Ni += 20; c.fluid.pH = 6.0; c.temperature = 25; return 'An arsenic-bearing seep arrives from a weathering arsenopyrite body upslope, carrying trace cobalt and nickel from parallel oxidizing arsenides. Adamite and mimetite saturate; Co²⁺ and Ni²⁺ begin to bloom as crimson erythrite and apple-green annabergite.'; } },
     { step: 115, name: 'Phosphate Seep',   description: 'Soil-zone PO₄ enables pyromorphite', apply_fn: (c) => { c.fluid.P += 6.0; c.fluid.Cl += 5.0; c.fluid.pH = 6.4; return 'A phosphate-bearing groundwater seeps in from the soil zone — organic decay, weathered apatite bedrock, bat guano from above. P jumps past pyromorphite\u2019s saturation threshold, and any Pb still in solution has a new home.'; } },
     { step: 130, name: 'V-bearing Seep',   description: 'Red-bed V leaches in, vanadinite fires', apply_fn: (c) => { c.fluid.V += 6.0; c.fluid.Cl += 8.0; c.temperature = 45; return "A vanadium-bearing seep arrives from a weathering red-bed ironstone upslope. V⁵⁺ leaches from oxidizing roll-front vanadates, and at Pb + V + Cl saturation the bright red-orange vanadinite nucleates — the classic 'vanadinite on goethite' habit of the Morocco / Arizona desert deposits."; } },
     { step: 160, name: 'Fracture Seal',    description: 'System closes', apply_fn: (c) => { c.flow_rate = 0.05; c.fluid.O2 = 1.0; return 'The feeding fractures seal. The vug becomes a closed cold oxidizing system.'; } },
@@ -7304,7 +7807,54 @@ function scenario_bisbee() {
   return { conditions, events, defaultSteps: 340 };
 }
 
-const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite, supergene_oxidation: scenario_supergene_oxidation, ouro_preto: scenario_ouro_preto, gem_pegmatite: scenario_gem_pegmatite, bisbee: scenario_bisbee };
+function scenario_deccan_zeolite() {
+  // Stage III Deccan Traps zeolite vesicle (~21–58 Ma post-eruption)
+  const conditions = new VugConditions({
+    temperature: 250.0,
+    pressure: 0.05,
+    fluid: new FluidChemistry({
+      SiO2: 900, Ca: 180, CO3: 80, Fe: 180, Mn: 4, Mg: 8, Al: 15,
+      K: 2, Na: 40, F: 1,
+      O2: 1.5, pH: 8.2, salinity: 2.0
+    }),
+    wall: new VugWall({
+      composition: 'basalt',
+      thickness_mm: 200.0,
+      vug_diameter_mm: 50.0,
+      wall_Fe_ppm: 8000.0,
+      wall_Mn_ppm: 400.0,
+      primary_bubbles: 2,
+      secondary_bubbles: 3,
+      shape_seed: 21,
+    })
+  });
+
+  const events = [
+    { step: 20, name: 'Silica Veneer', description: 'Stage I early chalcedony coating', apply_fn: (c) => {
+      c.fluid.SiO2 += 400; c.fluid.Fe += 50; c.fluid.O2 = 0.9; c.temperature = 200;
+      return "Stage I — hot post-eruption hydrothermal fluid coats the vesicle wall with chalcedony. Silica activity peaks; iron stripped from the basalt groundmass deposits as hematite needles on the chalcedony rind. These needles will become the seeds for the 'bloody apophyllite' phantom inclusions in Stage III.";
+    }},
+    { step: 35, name: 'Hematite Pulse', description: 'Iron seeds the vesicle wall', apply_fn: (c) => {
+      c.fluid.Fe += 80; c.fluid.O2 = 1.0; c.temperature = 175;
+      return "An iron-bearing pulse threads through the vesicle. Hematite needles seed the surfaces of any growing apophyllite. When the apophyllite resumes crystallization, those needles get trapped in the next growth zone — the Nashik 'bloody apophyllite' phantom band.";
+    }},
+    { step: 70, name: 'Zeolite Stage II', description: 'Stilbite + heulandite + calcite blades', apply_fn: (c) => {
+      c.fluid.Ca += 80; c.fluid.K += 10; c.fluid.SiO2 += 200; c.fluid.pH = 8.5; c.temperature = 130;
+      return 'Stage II — zeolite blades begin to fill the vesicle. Stilbite, scolecite, heulandite (modeled here as the zeolite paragenesis pH/Si signature). Calcite forms as a late-stage carbonate. The vug is filling slowly.';
+    }},
+    { step: 110, name: 'Apophyllite Stage III', description: 'Alkaline K-Ca-Si-F pulse', apply_fn: (c) => {
+      c.fluid.K += 25; c.fluid.Ca += 50; c.fluid.SiO2 += 300; c.fluid.F += 4; c.fluid.pH = 8.8; c.temperature = 150;
+      return "Stage III — the apophyllite-bearing pulse arrives, alkaline K-Ca-Si-F groundwater. Per Ottens et al. 2019 this is the long-lasting late stage, 21–58 Ma after the original eruption. The pseudo-cubic apophyllite tablets begin to crystallize on the wall, on the chalcedony, on the hematite needles already present — wherever a nucleation site offers itself.";
+    }},
+    { step: 160, name: 'Late Cooling', description: 'System cools toward ambient', apply_fn: (c) => {
+      c.temperature = 80; c.fluid.pH = 8.0; c.flow_rate = 0.1;
+      return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. Time, not chemistry, becomes the limiting reagent.';
+    }},
+  ];
+  return { conditions, events, defaultSteps: 200 };
+}
+
+const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite, supergene_oxidation: scenario_supergene_oxidation, ouro_preto: scenario_ouro_preto, gem_pegmatite: scenario_gem_pegmatite, bisbee: scenario_bisbee, deccan_zeolite: scenario_deccan_zeolite };
 
 // ============================================================
 // SIMULATION ENGINE
@@ -7378,10 +7928,14 @@ class VugSimulator {
       crystal.dominant_forms = ['e{104} rhombohedron'];
     } else if (mineral === 'sphalerite') {
       crystal.dominant_forms = ['{111} tetrahedron'];
+    } else if (mineral === 'wurtzite') {
+      crystal.dominant_forms = ['hemimorphic hexagonal pyramid', '{0001} + {101̄1}'];
     } else if (mineral === 'fluorite') {
       crystal.dominant_forms = ['{100} cube'];
     } else if (mineral === 'pyrite') {
       crystal.dominant_forms = ['{100} cube'];
+    } else if (mineral === 'marcasite') {
+      crystal.dominant_forms = ['cockscomb aggregate', '{010} tabular crests'];
     } else if (mineral === 'chalcopyrite') {
       crystal.dominant_forms = ['{112} disphenoid'];
     } else if (mineral === 'hematite') {
@@ -7412,6 +7966,16 @@ class VugSimulator {
       crystal.dominant_forms = ['{10̄10} hexagonal prism', 'c{0001} pinacoid', 'barrel profile'];
     } else if (mineral === 'vanadinite') {
       crystal.dominant_forms = ['{10̄10} hexagonal prism', 'c{0001} pinacoid', 'flat basal termination'];
+    } else if (mineral === 'erythrite') {
+      crystal.dominant_forms = ['earthy crimson-pink crust', 'cobalt bloom'];
+    } else if (mineral === 'annabergite') {
+      crystal.dominant_forms = ['apple-green earthy crust', 'nickel bloom'];
+    } else if (mineral === 'tetrahedrite') {
+      crystal.dominant_forms = ['{111} tetrahedron', 'steel-gray metallic'];
+    } else if (mineral === 'tennantite') {
+      crystal.dominant_forms = ['{111} tetrahedron', 'gray-black metallic with cherry-red transmission'];
+    } else if (mineral === 'apophyllite') {
+      crystal.dominant_forms = ['pseudo-cubic tabular {001} + {110}', 'transparent to pearly'];
     } else if (mineral === 'bornite') {
       crystal.dominant_forms = ['massive granular', 'iridescent tarnish'];
     } else if (mineral === 'chalcocite') {
@@ -7591,6 +8155,14 @@ class VugSimulator {
       this.log.push(`  ✦ NUCLEATION: Sphalerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_s.toFixed(2)})`);
     }
 
+    // Wurtzite nucleation — T>95°C hexagonal ZnS dimorph
+    const sigma_wz = this.conditions.supersaturation_wurtzite();
+    const existing_wz = this.crystals.filter(c => c.mineral === 'wurtzite' && c.active);
+    if (sigma_wz > 1.0 && !existing_wz.length && !this._atNucleationCap('wurtzite')) {
+      const c = this.nucleate('wurtzite', 'vug wall', sigma_wz);
+      this.log.push(`  ✦ NUCLEATION: Wurtzite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_wz.toFixed(2)})`);
+    }
+
     const sigma_f = this.conditions.supersaturation_fluorite();
     const existing_fl = this.crystals.filter(c => c.mineral === 'fluorite' && c.active);
     if (sigma_f > 1.2 && !existing_fl.length && !this._atNucleationCap('fluorite')) {
@@ -7611,6 +8183,22 @@ class VugSimulator {
       this.log.push(`  ✦ NUCLEATION: Pyrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_py.toFixed(2)})`);
     }
 
+    // Marcasite nucleation — pH<5, T<240. The acidic dimorph.
+    const sigma_mc = this.conditions.supersaturation_marcasite();
+    const existing_mc = this.crystals.filter(c => c.mineral === 'marcasite' && c.active);
+    if (sigma_mc > 1.0 && !existing_mc.length && !this._atNucleationCap('marcasite')) {
+      let pos = 'vug wall';
+      const existing_sph3 = this.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
+      const existing_gal = this.crystals.filter(c => c.mineral === 'galena' && c.active);
+      if (existing_sph3.length && rng.random() < 0.5) {
+        pos = `on sphalerite #${existing_sph3[0].crystal_id}`;
+      } else if (existing_gal.length && rng.random() < 0.4) {
+        pos = `on galena #${existing_gal[0].crystal_id}`;
+      }
+      const c = this.nucleate('marcasite', pos, sigma_mc);
+      this.log.push(`  ✦ NUCLEATION: Marcasite #${c.crystal_id} on ${c.position} (pH=${this.conditions.fluid.pH.toFixed(1)}, σ=${sigma_mc.toFixed(2)})`);
+    }
+
     // Chalcopyrite nucleation
     const sigma_cp = this.conditions.supersaturation_chalcopyrite();
     const existing_cp = this.crystals.filter(c => c.mineral === 'chalcopyrite' && c.active);
@@ -7621,6 +8209,48 @@ class VugSimulator {
       }
       const c = this.nucleate('chalcopyrite', pos, sigma_cp);
       this.log.push(`  ✦ NUCLEATION: Chalcopyrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cp.toFixed(2)})`);
+    }
+
+    // Tetrahedrite nucleation — Sb-endmember fahlore, Cu-Sb-S hydrothermal.
+    const sigma_td = this.conditions.supersaturation_tetrahedrite();
+    const existing_td = this.crystals.filter(c => c.mineral === 'tetrahedrite' && c.active);
+    if (sigma_td > 1.0 && !existing_td.length && !this._atNucleationCap('tetrahedrite')) {
+      let pos = 'vug wall';
+      const existing_cp2 = this.crystals.filter(c => c.mineral === 'chalcopyrite' && c.active);
+      const existing_py2 = this.crystals.filter(c => c.mineral === 'pyrite' && c.active);
+      if (existing_cp2.length && rng.random() < 0.5) pos = `on chalcopyrite #${existing_cp2[0].crystal_id}`;
+      else if (existing_py2.length && rng.random() < 0.3) pos = `on pyrite #${existing_py2[0].crystal_id}`;
+      const c = this.nucleate('tetrahedrite', pos, sigma_td);
+      this.log.push(`  ✦ NUCLEATION: Tetrahedrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_td.toFixed(2)})`);
+    }
+
+    // Tennantite nucleation — As-endmember fahlore.
+    const sigma_tn = this.conditions.supersaturation_tennantite();
+    const existing_tn = this.crystals.filter(c => c.mineral === 'tennantite' && c.active);
+    if (sigma_tn > 1.0 && !existing_tn.length && !this._atNucleationCap('tennantite')) {
+      let pos = 'vug wall';
+      const existing_cp3 = this.crystals.filter(c => c.mineral === 'chalcopyrite' && c.active);
+      const existing_td3 = this.crystals.filter(c => c.mineral === 'tetrahedrite' && c.active);
+      if (existing_cp3.length && rng.random() < 0.4) pos = `on chalcopyrite #${existing_cp3[0].crystal_id}`;
+      else if (existing_td3.length && rng.random() < 0.3) pos = `alongside tetrahedrite #${existing_td3[0].crystal_id}`;
+      const c = this.nucleate('tennantite', pos, sigma_tn);
+      this.log.push(`  ✦ NUCLEATION: Tennantite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_tn.toFixed(2)})`);
+    }
+
+    // Apophyllite nucleation — alkaline silicate, low-T zeolite vesicle filling.
+    const sigma_ap = this.conditions.supersaturation_apophyllite();
+    const existing_ap = this.crystals.filter(c => c.mineral === 'apophyllite' && c.active);
+    if (sigma_ap > 1.0 && !existing_ap.length && !this._atNucleationCap('apophyllite')) {
+      let pos = 'vug wall';
+      const existing_q_ap = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
+      const existing_hem_ap = this.crystals.filter(c => c.mineral === 'hematite' && c.active);
+      if (existing_hem_ap.length && rng.random() < 0.4) {
+        pos = `on hematite #${existing_hem_ap[0].crystal_id}`;
+      } else if (existing_q_ap.length && rng.random() < 0.3) {
+        pos = `on quartz #${existing_q_ap[0].crystal_id}`;
+      }
+      const c = this.nucleate('apophyllite', pos, sigma_ap);
+      this.log.push(`  ✦ NUCLEATION: Apophyllite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ap.toFixed(2)})`);
     }
 
     // Hematite nucleation — needs sigma > 1.2 (harder to nucleate)
@@ -7858,6 +8488,38 @@ class VugSimulator {
       }
       const c = this.nucleate('mimetite', pos, sigma_mim);
       this.log.push(`  ✦ NUCLEATION: Mimetite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mim.toFixed(2)})`);
+    }
+
+    // Erythrite nucleation — the cobalt bloom, low-T oxidation of Co arsenides.
+    const sigma_ery = this.conditions.supersaturation_erythrite();
+    const existing_ery = this.crystals.filter(c => c.mineral === 'erythrite' && c.active);
+    if (sigma_ery > 1.0 && !existing_ery.length && !this._atNucleationCap('erythrite')) {
+      let pos = 'vug wall';
+      const existing_goe_e = this.crystals.filter(c => c.mineral === 'goethite' && c.active);
+      const existing_adam_e = this.crystals.filter(c => c.mineral === 'adamite' && c.active);
+      if (existing_goe_e.length && rng.random() < 0.5) {
+        pos = `on goethite #${existing_goe_e[0].crystal_id}`;
+      } else if (existing_adam_e.length && rng.random() < 0.3) {
+        pos = `on adamite #${existing_adam_e[0].crystal_id}`;
+      }
+      const c = this.nucleate('erythrite', pos, sigma_ery);
+      this.log.push(`  ✦ NUCLEATION: Erythrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ery.toFixed(2)})`);
+    }
+
+    // Annabergite nucleation — the nickel bloom, Ni equivalent of erythrite.
+    const sigma_ann = this.conditions.supersaturation_annabergite();
+    const existing_ann = this.crystals.filter(c => c.mineral === 'annabergite' && c.active);
+    if (sigma_ann > 1.0 && !existing_ann.length && !this._atNucleationCap('annabergite')) {
+      let pos = 'vug wall';
+      const existing_goe_a = this.crystals.filter(c => c.mineral === 'goethite' && c.active);
+      const existing_ery_a = this.crystals.filter(c => c.mineral === 'erythrite' && c.active);
+      if (existing_goe_a.length && rng.random() < 0.5) {
+        pos = `on goethite #${existing_goe_a[0].crystal_id}`;
+      } else if (existing_ery_a.length && rng.random() < 0.3) {
+        pos = `alongside erythrite #${existing_ery_a[0].crystal_id}`;
+      }
+      const c = this.nucleate('annabergite', pos, sigma_ann);
+      this.log.push(`  ✦ NUCLEATION: Annabergite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ann.toFixed(2)})`);
     }
 
     // Magnetite nucleation — Fe + moderate O2 (HM buffer).
@@ -8921,6 +9583,37 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_wurtzite(c) {
+    const parts = [`Wurtzite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.habit === 'hemimorphic_crystal') {
+      parts.push('Hemimorphic hexagonal pyramid — one end pointed, the other flat. The P6₃mc space group has no inversion center, so the c-axis is polar and the two terminations are crystallographically distinct. This is the diagnostic wurtzite shape, absent from cubic sphalerite.');
+    } else if (c.habit === 'radiating_columnar') {
+      parts.push('Radiating hexagonal columns forming stellate clusters — a classic high-supersaturation wurtzite texture. Hot metal-rich fluids eating into an acid-etched fracture.');
+    } else if (c.habit === 'fibrous_coating') {
+      parts.push("Fibrous crust on the wall — fast growth along {0001} producing parallel columnar fibers. Wurtzite's polarity lets each fiber terminate differently at base vs. tip.");
+    } else {
+      parts.push('Tabular {0001} plates with a slight micaceous layering — slow-growth wurtzite aggregates that sometimes get mistaken for molybdenite until the color and chemistry rule it out.');
+    }
+    if (c.zones && c.zones.length) {
+      const fe_vals = c.zones.filter(z => z.trace_Fe > 0).map(z => z.trace_Fe);
+      if (fe_vals.length) {
+        const max_fe_pct = Math.max(...fe_vals) / 10.0;
+        if (max_fe_pct > 10) {
+          parts.push(`Fe content up to ${max_fe_pct.toFixed(0)} mol% — wurtzite happily hosts iron, like its cubic cousin, darkening toward black.`);
+        }
+      }
+    }
+    if (c.twinned) {
+      parts.push(`Shows the ${c.twin_law} twin — less common than sphalerite's spinel twinning because the hexagonal space group forbids the {111} operation.`);
+    }
+    if (c.dissolved) {
+      parts.push('Polymorphic inversion destroyed the crystal — cooling below 95°C pushed (Zn,Fe)S into the cubic sphalerite field. Over geologic time wurtzite usually converts down to sphalerite; sphalerite rarely goes back.');
+    } else {
+      parts.push('As long as the fluid stays above 95°C, the crystal is stable in the wurtzite structure; cooling through that threshold would trigger conversion to sphalerite.');
+    }
+    return parts.join(' ');
+  }
+
   _narrate_fluorite(c) {
     const parts = [`Fluorite #${c.crystal_id} grew as ${c.habit} crystals to ${c.c_length_mm.toFixed(1)} mm.`];
     if (c.zones.length) {
@@ -8956,6 +9649,28 @@ class VugSimulator {
     }
     if (c.dissolved) {
       parts.push('Late-stage oxidation attacked the pyrite — in nature this would produce a limonite/goethite boxwork pseudomorph, the rusty ghost of the original crystal.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_marcasite(c) {
+    const parts = [`Marcasite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    if (c.habit === 'cockscomb') {
+      parts.push("The crystal developed the classic cockscomb habit — aggregated tabular plates on {010}, edges ridged like a rooster's comb. This shape is the diagnostic fingerprint: pyrite never crests like this.");
+    } else if (c.habit === 'spearhead') {
+      parts.push('Spearhead twins — paired tabular crystals tapered to pyramidal tips. The {101} twin law produces a swallowtail shape unique to marcasite.');
+    } else if (c.habit === 'radiating_blade') {
+      parts.push('Radiating blades sprayed outward from a common center — low-temperature, high-supersaturation growth in acid fluids, the same style that gives sedimentary marcasite nodules their stellate fracture patterns.');
+    } else {
+      parts.push('Flat tabular {010} plates — the slow-growth marcasite form, pale brass already starting to iridesce as surface sulfur oxidizes.');
+    }
+    if (c.twinned) {
+      parts.push(`Shows the ${c.twin_law} swallowtail twin, diagnostic of marcasite and absent from its cubic cousin pyrite.`);
+    }
+    if (c.dissolved) {
+      parts.push('Metastable inversion or oxidative breakdown destroyed the crystal — marcasite is the unstable FeS₂ dimorph. Over geologic time it converts to pyrite; on museum shelves it rots to sulfuric acid and iron sulfate.');
+    } else {
+      parts.push('The pH/T regime kept it in the orthorhombic field; given geologic time or a temperature excursion above 240°C, this crystal would invert to pyrite.');
     }
     return parts.join(' ');
   }
@@ -9526,6 +10241,112 @@ class VugSimulator {
     return parts.join(' ');
   }
 
+  _narrate_apophyllite(c) {
+    const parts = [`Apophyllite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("KCa₄Si₈O₂₀(F,OH)·8H₂O — a tetragonal sheet silicate, technically a phyllosilicate that's classed with the zeolites because of its hydrated, vesicle-filling behavior. Stage III Deccan Traps mineral per Ottens et al. 2019: forms tens of millions of years after the basalt eruption, when groundwater finally percolates into the cooled vesicles.");
+    if (c.habit === 'prismatic_tabular') {
+      parts.push('Pseudo-cubic tabular habit — the hallmark apophyllite block: {001} basal pinacoid combined with {110} prism faces, transparent to pearly. The c-axis cleavage is famously perfect — split a crystal along {001} and the surface is pure mirror.');
+    } else if (c.habit === 'hopper_growth') {
+      parts.push('Stepped/terraced faces — high-supersaturation hopper habit. The crystal grew so fast that the corners outpaced the centers, producing skeletal terraces visible on every face.');
+    } else if (c.habit === 'druzy_crust') {
+      parts.push('Fine-grained drusy coating — the very-high-σ form, microcrystals carpeting the vesicle wall in a sparkling colorless crust.');
+    } else {
+      parts.push("Chalcedony pseudomorph — at low σ the crystal grew over an earlier zeolite blade (stilbite or scolecite typically) and replaced its habit, producing massive milky chalcedony shapes that preserve the predecessor's blade outlines.");
+    }
+    const hematite_zones = c.zones.filter(z => z.note && z.note.includes('hematite needle phantom'));
+    if (hematite_zones.length) {
+      parts.push(`${hematite_zones.length} growth zones carry hematite needle phantoms — this is the 'bloody apophyllite' variety from Nashik. The needles trapped during growth give the otherwise colorless crystal a distinct reddish ghost zone visible by transmitted light.`);
+    }
+    if (c.position && c.position.includes('hematite')) {
+      parts.push('Nucleated directly on a pre-existing hematite — the iron oxide became the seed for vesicle filling, and the apophyllite grew around it as a colorless cap.');
+    }
+    if (c.dissolved) {
+      parts.push('Acid attack dissolved the crystal — apophyllite is an alkaline-stable phase, intolerant of pH below 5. K, Ca, SiO₂, and F all returned to the fluid, available for downstream zeolite or carbonate growth.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_tetrahedrite(c) {
+    const parts = [`Tetrahedrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Cu₁₂Sb₄S₁₃ — steel-gray metallic, the Sb-endmember of the fahlore solid-solution series. 'Fahlore' is German for 'dull ore,' the miner's term for the gray copper sulfosalts that carried silver as a quiet bonus.");
+    if (c.habit === 'tetrahedral') {
+      parts.push('Classic {111} tetrahedra — the namesake habit. Cubic symmetry in I4̄3m space group, four-fold faces per octant, visually distinctive from galena or pyrite cubes.');
+    } else if (c.habit === 'crustiform') {
+      parts.push('Crustiform banding on the fracture wall — each band a slightly different Cu/Sb/Ag ratio recording the evolution of the ore fluid.');
+    } else if (c.habit === 'druzy_coating') {
+      parts.push('Fine-grained drusy surface — sparkling microcrystals from high-σ growth. Diagnostic of unoxidized tetrahedrite.');
+    } else {
+      parts.push('Massive granular aggregates — the form most tetrahedrite ore takes, filling vein fractures without developing free-standing crystals.');
+    }
+    if (c.position && c.position.includes('chalcopyrite')) {
+      parts.push('Growing on chalcopyrite — the classic porphyry-to-epithermal transition assemblage: the Cu-Fe sulfide feeds into the Cu-Sb sulfosalt as the fluid cools and antimony activity climbs.');
+    }
+    if (c.dissolved) {
+      parts.push('Oxidative dissolution — Cu²⁺ and Sb³⁺ released to the fluid, feeding secondary Sb oxides (valentinite, kermesite) and the downstream Cu-carbonate paragenesis.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_tennantite(c) {
+    const parts = [`Tennantite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Cu₁₂As₄S₁₃ — the As counterpart to tetrahedrite, same structure, different poison. Thin splinters of tennantite transmit cherry-red light when held to a bright source. Tetrahedrite stays opaque. That one test identifies the pair in the field.");
+    if (c.habit === 'tetrahedral') {
+      parts.push('Classic {111} tetrahedra — the fahlore habit. Gray to nearly black, with that cherry-red glow visible on thin edges under strong backlight.');
+    } else if (c.habit === 'crustiform') {
+      parts.push('Crustiform banded crust — arsenic-rich pulses alternating with lower-σ growth, each band a step in the ore fluid\'s evolution.');
+    } else if (c.habit === 'druzy_coating') {
+      parts.push('Fine-grained drusy surface — high-σ coating. Slightly duller sparkle than tetrahedrite\'s, an optical consequence of As vs Sb orbital chemistry.');
+    } else {
+      parts.push('Massive granular — the bulk form, often carrying silver as invisible substitution for copper.');
+    }
+    if (c.position && c.position.includes('tetrahedrite')) {
+      parts.push('Growing alongside tetrahedrite — physical evidence that the fluid straddled the As/Sb transition, a solid-solution record in an epithermal vein.');
+    }
+    if (c.dissolved) {
+      parts.push('Oxidative dissolution — Cu²⁺ and AsO₄³⁻ released. The arsenate feeds downstream secondary minerals: adamite, erythrite, annabergite, mimetite.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_erythrite(c) {
+    const parts = [`Erythrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Co₃(AsO₄)₂·8H₂O — the crimson-pink cobalt arsenate, known to medieval miners as 'cobalt bloom.' A supergene product: primary cobalt arsenides (cobaltite, skutterudite) oxidized in surface waters, releasing Co²⁺ and arsenate that recombined in damp fractures.");
+    if (c.habit === 'radiating_fibrous') {
+      parts.push('Radiating fibrous sprays directly on a primary Co-arsenide substrate — the classic Schneeberg and Bou Azzer habit: the outer shell of an oxidizing cobaltite or skutterudite vein blooms pink.');
+    } else if (c.habit === 'bladed_crystal') {
+      parts.push('Striated prismatic {010} blades, transparent crimson — the rare and prized erythrite crystal form, sharp enough to be mistaken for a kämmererite until the pink hue settles the identification.');
+    } else if (c.habit === 'botryoidal_crust') {
+      parts.push('Botryoidal rounded aggregates — high-supersaturation coating, mineral grape clusters spreading across the fracture wall.');
+    } else {
+      parts.push("Earthy pink crust — the classic 'cobalt bloom' field appearance, the first hint to a prospector that a cobalt arsenide is weathering nearby.");
+    }
+    if (c.position && (c.position.includes('cobaltite') || c.position.includes('arsenide'))) {
+      parts.push(`Growing on ${c.position} — direct replacement texture, the cobalt is moving centimeters at a time from primary sulfide to secondary arsenate.`);
+    }
+    if (c.dissolved) {
+      parts.push('Dehydration or acid dissolution broke down the crystal — erythrite holds eight waters of crystallization in its structure, and they go first: above 200°C or below pH 4.5, the lattice collapses.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_annabergite(c) {
+    const parts = [`Annabergite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Ni₃(AsO₄)₂·8H₂O — 'nickel bloom,' the pale apple-green counterpart to erythrite. Same vivianite-group structure, nickel substitutes for cobalt, and the color shifts from crimson to green. Formed by oxidation of primary Ni-arsenides like niccolite and gersdorffite.");
+    if (c.habit === 'cabrerite') {
+      parts.push('Mg substituted for Ni — this is cabrerite, the pale-green to white variety, named for the Sierra Cabrera in Spain. The Mg content bleaches the color toward off-white.');
+    } else if (c.habit === 'co_bearing') {
+      parts.push('Co was also present in the fluid — the crystal shifted toward a pinkish-green intermediate, physically tracking the Ni/Co ratio along the erythrite-annabergite solid solution.');
+    } else if (c.habit === 'capillary_crystal') {
+      parts.push("Capillary hair-like fibers — the rare high-σ habit. Silky sprays of apple-green filaments, a collector's prize when intact.");
+    } else {
+      parts.push('Earthy apple-green crust — the field appearance, an unmistakable green stain in the oxidation zone of any nickel-arsenide deposit.');
+    }
+    if (c.dissolved) {
+      parts.push('Dehydration or acid dissolution consumed the crystal — like erythrite, annabergite is a hydrated arsenate with eight lattice waters and little stability outside a narrow T/pH window.');
+    }
+    return parts.join(' ');
+  }
+
   _narrate_goethite(c) {
     const parts = [`Goethite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
     if (c.position.includes('pseudomorph after pyrite')) {
@@ -9641,6 +10462,16 @@ class VugSimulator {
           }
         }
         parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'wurtzite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm wurtzite`;
+        if (c.habit === 'hemimorphic_crystal') desc += ' hexagonal pyramid';
+        else if (c.habit === 'radiating_columnar') desc = `radiating wurtzite columns, ${c.c_length_mm.toFixed(1)}mm across`;
+        else if (c.habit === 'fibrous_coating') desc = `fibrous wurtzite crust, ${c.c_length_mm.toFixed(1)}mm thick`;
+        else desc += ' tabular plate';
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        desc += ' — hexagonal (Zn,Fe)S, darker than cubic sphalerite';
+        if (c.dissolved) desc += ', inverted to sphalerite on cooling';
+        parts.push(`  • ${desc}`);
       } else if (c.mineral === 'fluorite') {
         let desc = `a ${c.c_length_mm.toFixed(1)}mm fluorite cube`;
         if (c.twinned) desc += ' (penetration twin)';
@@ -9659,6 +10490,21 @@ class VugSimulator {
         if (c.twinned) desc += ` (${c.twin_law})`;
         desc += ' — bright metallic luster';
         if (c.dissolved) desc += ', partially oxidized (limonite staining)';
+        parts.push(`  • ${desc}`);
+      } else if (c.mineral === 'marcasite') {
+        let desc = `a ${c.c_length_mm.toFixed(1)}mm marcasite`;
+        if (c.habit === 'cockscomb') {
+          desc += ' cockscomb';
+        } else if (c.habit === 'spearhead') {
+          desc += ' spearhead';
+        } else if (c.habit === 'radiating_blade') {
+          desc = `radiating marcasite blades, ${c.c_length_mm.toFixed(1)}mm across`;
+        } else {
+          desc += ' tabular plate';
+        }
+        if (c.twinned) desc += ` (${c.twin_law})`;
+        desc += ' — pale brass, iridescent tarnish';
+        if (c.dissolved) desc += ', partially replaced by pyrite (metastable inversion)';
         parts.push(`  • ${desc}`);
       } else if (c.mineral === 'chalcopyrite') {
         let desc = `a ${c.c_length_mm.toFixed(1)}mm chalcopyrite`;
@@ -11431,7 +12277,9 @@ function updateFortressStatus() {
     { name: 'Calcite', sigma: c.supersaturation_calcite() },
     { name: 'Fluorite', sigma: c.supersaturation_fluorite() },
     { name: 'Sphalerite', sigma: c.supersaturation_sphalerite() },
+    { name: 'Wurtzite', sigma: c.supersaturation_wurtzite() },
     { name: 'Pyrite', sigma: c.supersaturation_pyrite() },
+    { name: 'Marcasite', sigma: c.supersaturation_marcasite() },
     { name: 'Chalcopyrite', sigma: c.supersaturation_chalcopyrite() },
     { name: 'Hematite', sigma: c.supersaturation_hematite() },
     { name: 'Malachite', sigma: c.supersaturation_malachite() },
@@ -11444,6 +12292,11 @@ function updateFortressStatus() {
     { name: '🏔️ Feldspar', sigma: c.supersaturation_feldspar() },
     { name: '💚 Adamite', sigma: c.supersaturation_adamite() },
     { name: '🟡 Mimetite', sigma: c.supersaturation_mimetite() },
+    { name: 'Erythrite', sigma: c.supersaturation_erythrite() },
+    { name: 'Annabergite', sigma: c.supersaturation_annabergite() },
+    { name: 'Tetrahedrite', sigma: c.supersaturation_tetrahedrite() },
+    { name: 'Tennantite', sigma: c.supersaturation_tennantite() },
+    { name: 'Apophyllite', sigma: c.supersaturation_apophyllite() },
   ];
 
   for (const m of minerals) {
@@ -12810,9 +13663,11 @@ function idleRecordHistory() {
   if (typeof c.supersaturation_calcite === 'function') supersats.calcite = c.supersaturation_calcite();
   if (typeof c.supersaturation_fluorite === 'function') supersats.fluorite = c.supersaturation_fluorite();
   if (typeof c.supersaturation_pyrite === 'function') supersats.pyrite = c.supersaturation_pyrite();
+  if (typeof c.supersaturation_marcasite === 'function') supersats.marcasite = c.supersaturation_marcasite();
   if (typeof c.supersaturation_chalcopyrite === 'function') supersats.chalcopyrite = c.supersaturation_chalcopyrite();
   if (typeof c.supersaturation_hematite === 'function') supersats.hematite = c.supersaturation_hematite();
   if (typeof c.supersaturation_sphalerite === 'function') supersats.sphalerite = c.supersaturation_sphalerite();
+  if (typeof c.supersaturation_wurtzite === 'function') supersats.wurtzite = c.supersaturation_wurtzite();
   if (typeof c.supersaturation_galena === 'function') supersats.galena = c.supersaturation_galena();
   // malachite, goethite, smithsonite, wulfenite — check if methods exist
   try { supersats.malachite = c.supersaturation_malachite(); } catch(e) {}
@@ -12824,6 +13679,11 @@ function idleRecordHistory() {
   try { supersats.feldspar = c.supersaturation_feldspar(); } catch(e) {}
   try { supersats.adamite = c.supersaturation_adamite(); } catch(e) {}
   try { supersats.mimetite = c.supersaturation_mimetite(); } catch(e) {}
+  try { supersats.erythrite = c.supersaturation_erythrite(); } catch(e) {}
+  try { supersats.annabergite = c.supersaturation_annabergite(); } catch(e) {}
+  try { supersats.tetrahedrite = c.supersaturation_tetrahedrite(); } catch(e) {}
+  try { supersats.tennantite = c.supersaturation_tennantite(); } catch(e) {}
+  try { supersats.apophyllite = c.supersaturation_apophyllite(); } catch(e) {}
 
   idleHistory.push({
     step: idleSim.step,
