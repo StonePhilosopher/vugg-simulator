@@ -2334,6 +2334,12 @@ Scenarios:
       <span class="range-val" id="f-pressure-val">1.5 kbar</span>
     </div>
 
+    <div class="setup-row" title="Multiplier on wall dissolution rate. 0 = inert (no dissolution even with strong acid); 1 = default limestone (current behavior); 2 = fast-dissolving fresh limestone with mild water-only dissolution. Only affects carbonate walls (limestone, dolomite); silicate walls stay inert regardless.">
+      <label>Wall reactivity</label>
+      <input type="range" id="f-wall-reactivity" min="0" max="20" value="10" step="1" oninput="(function(){var v=parseFloat(this.value)/10;var lbl;if(v===0)lbl='inert';else if(v<0.6)lbl='sluggish';else if(v<1.4)lbl='default';else if(v<1.7)lbl='reactive';else lbl='fresh';document.getElementById('f-wall-reactivity-val').textContent=v.toFixed(1)+'× ('+lbl+')';}).call(this)">
+      <span class="range-val" id="f-wall-reactivity-val">1.0× (default)</span>
+    </div>
+
     <div class="setup-row" style="flex-direction:column;align-items:flex-start">
       <label>Fluid Chemistry Preset</label>
       <div class="preset-grid" id="preset-grid">
@@ -3567,19 +3573,32 @@ class VugWall {
     this.primary_bubbles = opts.primary_bubbles ?? 3;
     this.secondary_bubbles = opts.secondary_bubbles ?? 6;
     this.shape_seed = opts.shape_seed ?? 0;
+    // Player-tunable wall reactivity multiplier (Creative-mode slider).
+    // 0=inert, 1=default limestone (current behavior), 2=fast-dissolving
+    // fresh limestone with mild water-only dissolution. Only affects
+    // carbonate walls; silicate composition stays inert regardless.
+    // See vugg.py VugWall docstring for the full table.
+    this.reactivity = opts.reactivity ?? 1.0;
   }
 
   dissolve(acid_strength, fluid) {
-    if (acid_strength <= 0) return { dissolved: false };
-
-    // Only reactive carbonate walls (limestone, dolomite) buffer acid
-    // by dissolving. Silicate host rocks (pegmatite, granite, gneiss,
-    // quartzite, phyllite) are effectively inert on sim timescales.
+    // Gate by composition first — silicate walls are inert regardless
+    // of reactivity (real silicate dissolution at sim T-P-time scales
+    // is geologically negligible).
     if (this.composition !== 'limestone' && this.composition !== 'dolomite') {
       return { dissolved: false };
     }
 
-    let rate_mm = Math.min(acid_strength * 0.5, 2.0);
+    // Acid attack — scales with acid strength × reactivity.
+    const acid_rate = Math.max(0.0, acid_strength) * 0.5 * this.reactivity;
+
+    // Water-only baseline — fires regardless of pH but slow. Only
+    // meaningful when reactivity > 1.0 (Creative-mode slider above
+    // default). Models accelerated CO2-charged-groundwater dissolution.
+    const water_rate = Math.max(0.0, this.reactivity - 1.0) * 0.05;
+
+    let rate_mm = Math.min(acid_rate + water_rate, 2.0);
+    if (rate_mm <= 0.0) return { dissolved: false };
     if (this.thickness_mm < rate_mm) rate_mm = this.thickness_mm;
 
     this.thickness_mm -= rate_mm;
@@ -9683,9 +9702,13 @@ class VugSimulator {
 
   dissolve_wall() {
     const wall = this.conditions.wall;
-    if (this.conditions.fluid.pH >= 5.5) return;
+    // Acid strength = how far below the carbonate-attack threshold pH we
+    // are. Negative when pH ≥ 5.5; clipped to 0 inside wall.dissolve().
+    const acid_strength = Math.max(0.0, 5.5 - this.conditions.fluid.pH);
+    // Skip the call entirely when there's no work to do — neutral fluid
+    // AND default reactivity. Avoids logging noise.
+    if (acid_strength <= 0.0 && wall.reactivity <= 1.0) return;
 
-    const acid_strength = 5.5 - this.conditions.fluid.pH;
     const pre_sigma_cal = this.conditions.supersaturation_calcite();
     const pre_Ca = this.conditions.fluid.Ca;
 
@@ -12984,6 +13007,13 @@ function fortressBegin() {
     wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 40, wall_Fe_ppm: 3000, wall_Mn_ppm: 800, wall_Mg_ppm: 1000 };
   } else if (selectedPreset === 'carbonate') {
     wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 30, wall_Fe_ppm: 1500, wall_Mn_ppm: 600, wall_Mg_ppm: 800 };
+  }
+  // Read the wall-reactivity slider (Creative-mode only). Range 0-20
+  // in slider units → 0.0-2.0× multiplier on dissolution rate.
+  // See VugWall.dissolve and VugWall constructor for the full table.
+  const wallReactivityEl = document.getElementById('f-wall-reactivity');
+  if (wallReactivityEl) {
+    wallOpts.reactivity = parseFloat(wallReactivityEl.value) / 10;
   }
   const wall = new VugWall(wallOpts);
   const conditions = new VugConditions({ temperature: temp, pressure, fluid, wall });

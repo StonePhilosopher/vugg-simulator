@@ -262,33 +262,61 @@ class VugWall:
     primary_bubbles: int = 3
     secondary_bubbles: int = 6
     shape_seed: int = 0
-    
+
+    # Player-tunable wall reactivity multiplier (Creative mode slider).
+    # Scales the acid-driven dissolution rate and gates a small water-
+    # only dissolution path:
+    #   0.0  → totally inert (no dissolution even with strong acid)
+    #   0.5  → sluggish, dolomite-like (acid takes ~2× longer to enlarge the cavity)
+    #   1.0  → DEFAULT, current limestone behavior used by all scenarios
+    #   1.5  → reactive limestone (fast acid attack + mild water dissolution)
+    #   2.0  → fresh / high-surface-area limestone (max acid + meaningful water dissolution)
+    # Only affects carbonate walls (limestone, dolomite); silicate
+    # composition still returns {"dissolved": False} regardless of
+    # reactivity, because real silicate dissolution at sim T-P-time
+    # scales is geologically negligible.
+    reactivity: float = 1.0
+
     def dissolve(self, acid_strength: float, fluid: 'FluidChemistry') -> dict:
-        """Dissolve wall rock in response to acid conditions.
+        """Dissolve wall rock in response to acid AND (high-reactivity) water.
 
-        CaCO₃ + 2H⁺ → Ca²⁺ + H₂O + CO₂
+        CaCO₃ + 2H⁺ → Ca²⁺ + H₂O + CO₂  (acid path)
+        CaCO₃ + H₂CO₃ → Ca²⁺ + 2HCO₃⁻   (water path — slow, reactivity-gated)
 
-        Only reactive carbonate walls (limestone, dolomite) buffer acid
-        this way. Silicate host rocks (pegmatite, granite, gneiss,
-        quartzite, phyllite) are effectively inert on sim timescales —
-        they don't dissolve in mildly acidic hydrothermal fluids, don't
-        release cations at a useful rate, and don't buffer pH. Return
+        Only reactive carbonate walls (limestone, dolomite) buffer this
+        way. Silicate host rocks (pegmatite, granite, gneiss, quartzite,
+        phyllite) are effectively inert on sim timescales — they don't
+        dissolve in mildly acidic hydrothermal fluids, don't release
+        cations at a useful rate, and don't buffer pH. Return
         {"dissolved": False} for those so pH can actually drop and
         mineral kaolinization can proceed on the pocket's crystals.
 
+        Two contributions to the per-step dissolution rate:
+          • acid_rate = acid_strength × 0.5 × reactivity
+          • water_rate = max(0, reactivity − 1.0) × 0.05
+        Sum is capped at 2.0 mm/step.
+
         Returns dict of what happened.
         """
-        if acid_strength <= 0:
-            return {"dissolved": False}
-
-        # Gate by composition — only carbonate walls are acid-reactive.
+        # Gate by composition first — silicate walls are inert.
         if self.composition not in ("limestone", "dolomite"):
             return {"dissolved": False}
 
-        # Dissolution rate scales with acid strength and available wall
-        # More acid = more dissolution, but it's self-limiting (neutralization)
-        rate_mm = min(acid_strength * 0.5, 2.0)  # max 2mm per step
-        
+        # Acid attack — scales with how far below the carbonate-attack
+        # threshold pH we are, multiplied by the wall's reactivity.
+        acid_rate = max(0.0, acid_strength) * 0.5 * self.reactivity
+
+        # Water-only baseline — fires regardless of pH but is slow.
+        # Only meaningful when reactivity is set above default (real
+        # carbonate dissolution by mildly aggressive groundwater happens
+        # over Ma timescales; the slider lets Creative mode players
+        # accelerate that to compressed sim-step time).
+        water_rate = max(0.0, self.reactivity - 1.0) * 0.05
+
+        rate_mm = min(acid_rate + water_rate, 2.0)
+        if rate_mm <= 0.0:
+            return {"dissolved": False}
+
         if self.thickness_mm < rate_mm:
             rate_mm = self.thickness_mm  # can't dissolve more than exists
         
@@ -9457,19 +9485,28 @@ class VugSimulator:
     
     def dissolve_wall(self):
         """Check if acid conditions are dissolving the vug wall.
-        
+
         This is the key feedback loop Professor identified:
-        Acid enters → dissolves carbonate wall → neutralizes acid + 
+        Acid enters → dissolves carbonate wall → neutralizes acid +
         releases Ca²⁺/CO₃²⁻ → supersaturates fluid → rapid crystal growth.
         The vug enlarges as its crystals grow. The room makes the furniture.
+
+        Always calls wall.dissolve() so the wall's reactivity slider
+        (Creative mode) can drive a small water-only dissolution path
+        even at neutral pH. wall.dissolve() short-circuits when
+        reactivity=1.0 (default) AND pH ≥ 5.5, so non-reactive scenarios
+        are unaffected.
         """
         wall = self.conditions.wall
-        
-        # Only dissolve if pH is acidic enough to attack carbonate
-        if self.conditions.fluid.pH >= 5.5:
+
+        # Acid strength is the gap below the carbonate-attack pH threshold.
+        # Negative when pH ≥ 5.5; clipped to 0 in wall.dissolve().
+        acid_strength = max(0.0, 5.5 - self.conditions.fluid.pH)
+
+        # Skip the call entirely when there is no work to do — neutral
+        # fluid AND default reactivity. Avoids logging noise.
+        if acid_strength <= 0.0 and wall.reactivity <= 1.0:
             return
-        
-        acid_strength = 5.5 - self.conditions.fluid.pH  # 0 to ~3.5
         
         # Record pre-dissolution supersaturation for comparison
         pre_sigma_cal = self.conditions.supersaturation_calcite()
