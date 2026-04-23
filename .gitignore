@@ -4,5 +4,8 @@ agent-api/game*-grooves/
 __pycache__/
 *.pyc
 
+# pytest — local cache, regenerated per run
+.pytest_cache/
+
 # Editor / tooling local config
 .claude/
