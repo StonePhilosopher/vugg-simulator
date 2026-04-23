@@ -3107,6 +3107,9 @@ const MINERAL_SPEC_FALLBACK = {
   aquamarine: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.3, max_size_cm: 200, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   morganite: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.4, max_size_cm: 80, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   heliodor: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.4, max_size_cm: 60, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  corundum: { formula: "Al2O3", nucleation_sigma: 1.3, max_size_cm: 30, growth_rate_mult: 0.35, thermal_decomp_C: null, fluorescence: null, twin_laws: ["0001 basal (polysynthetic)", "10̄11 rhombohedral"], acid_dissolution: null },
+  ruby: { formula: "Al2O3", nucleation_sigma: 1.5, max_size_cm: 20, growth_rate_mult: 0.35, thermal_decomp_C: null, fluorescence: "strong red under LW + SW UV (Cr³⁺ emission at 694 nm) — diagnostic", twin_laws: ["0001 basal (polysynthetic)", "10̄11 rhombohedral"], acid_dissolution: null },
+  sapphire: { formula: "Al2O3", nucleation_sigma: 1.4, max_size_cm: 25, growth_rate_mult: 0.35, thermal_decomp_C: null, fluorescence: "weak — Fe quenches emission; yellow sapphire shows weak orange (Fe³⁺)", twin_laws: ["0001 basal", "10̄11 rhombohedral"], acid_dissolution: null },
   spodumene: { formula: "LiAlSi2O6", nucleation_sigma: 1.5, max_size_cm: 1400, growth_rate_mult: 0.35, thermal_decomp_C: null, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "strong_pink_orange_SW" }, twin_laws: [], acid_dissolution: null },
   anglesite: { formula: "PbSO4", nucleation_sigma: 1.1, max_size_cm: 15, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: { activator: "intrinsic", color: "weak_yellow_LW" }, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
   cerussite: { formula: "PbCO3", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.3, thermal_decomp_C: 315, fluorescence: { activator: "intrinsic", color: "weak_yellow_LW" }, twin_laws: [{ name: "cyclic_sixling", probability: 0.4 }], acid_dissolution: { pH_threshold: 4.0 } },
@@ -3266,7 +3269,8 @@ const MINERAL_GAME_COLORS = {
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
   wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
-  emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858'
+  emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
+  corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -3515,7 +3519,7 @@ let timeScale = 5.0;
 //        commit, separate): early ev_supergene_acidification at
 //        step 5 + Al 3→15 to unlock scorodite + jarosite + alunite
 //        in their early acid window.
-const SIM_VERSION = 6;
+const SIM_VERSION = 7;
 
 
 // ============================================================
@@ -5112,6 +5116,57 @@ class VugConditions {
     const fe_f = Math.min(f.Fe / 20.0, 1.6);
     const o2_f = Math.min(f.O2 / 1.0, 1.3);
     return base * fe_f * o2_f;
+  }
+
+  // ---- Corundum family (Al₂O₃) — FIRST UPPER-BOUND GATE IN THE SIM ----
+  // SiO₂ < 50 is the defining constraint: with silica present at normal
+  // crustal concentrations, Al + SiO₂ drives to feldspar/Al₂SiO₅ instead.
+  _corundum_base_sigma() {
+    if (this.fluid.Al < 15) return 0;
+    if (this.fluid.SiO2 > 50) return 0;  // UPPER gate — defining constraint
+    if (this.fluid.pH < 6 || this.fluid.pH > 10) return 0;
+    const T = this.temperature;
+    if (T < 400 || T > 1000) return 0;
+    const al_f = Math.min(this.fluid.Al / 25.0, 2.0);
+    let sigma = al_f;
+    let T_factor;
+    if (T >= 600 && T <= 900) T_factor = 1.0;
+    else if (T >= 400 && T < 600) T_factor = 0.4 + 0.003 * (T - 400);
+    else if (T > 900 && T <= 1000) T_factor = Math.max(0.3, 1.0 - 0.007 * (T - 900));
+    else T_factor = 0.2;
+    sigma *= T_factor;
+    const pH_factor = (this.fluid.pH >= 7 && this.fluid.pH <= 9) ? 1.0 : 0.6;
+    sigma *= pH_factor;
+    return Math.max(sigma, 0);
+  }
+
+  // Corundum — colorless/generic; fires when no chromophore variety's gate is met.
+  supersaturation_corundum() {
+    const f = this.fluid;
+    if (f.Cr >= 2.0) return 0;  // ruby priority
+    if (f.Fe >= 5) return 0;    // sapphire priority
+    return this._corundum_base_sigma();
+  }
+
+  // Ruby — Cr³⁺ red variety; top priority in corundum-family dispatch.
+  supersaturation_ruby() {
+    if (this.fluid.Cr < 2.0) return 0;
+    const base = this._corundum_base_sigma();
+    if (base <= 0) return 0;
+    const cr_f = Math.min(this.fluid.Cr / 5.0, 2.0);
+    return base * cr_f;
+  }
+
+  // Sapphire — Fe is the universal chromophore (blue Fe+Ti IVCT; yellow Fe alone).
+  supersaturation_sapphire() {
+    const f = this.fluid;
+    if (f.Cr >= 2.0) return 0;  // ruby priority
+    if (f.Fe < 5) return 0;
+    const base = this._corundum_base_sigma();
+    if (base <= 0) return 0;
+    let chrom_f = Math.min(f.Fe / 15.0, 1.5);
+    if (f.Ti >= 0.5) chrom_f *= Math.min(f.Ti / 1.5, 1.3);
+    return base * chrom_f;
   }
 
   // Tourmaline (Na(Fe,Li,Al)₃Al₆(BO₃)₃Si₆O₁₈(OH)₄) — B-gated cyclosilicate.
@@ -8402,6 +8457,180 @@ function grow_heliodor(crystal, conditions, step) {
   });
 }
 
+// ============================================================
+// CORUNDUM FAMILY (Al₂O₃) — first UPPER-gate mineral in the sim
+// ============================================================
+
+function _corundum_family_habit(conditions, excess) {
+  const T = conditions.temperature;
+  if (T > 700 && excess > 0.5) {
+    return ['barrel', ['c{0001} short basal', 'n{22̄43} steep dipyramid', 'barrel profile']];
+  } else if (T < 600) {
+    return ['tabular', ['c{0001} flat basal pinacoid', 'm{10̄10} subordinate prism', 'flat tabular']];
+  }
+  return ['prism', ['m{10̄10} hexagonal prism', 'c{0001} flat basal', 'short hexagonal']];
+}
+
+function grow_corundum(crystal, conditions, step) {
+  // Al₂O₃ colorless/generic — SiO₂-undersaturated Al-rich chemistry.
+  // Acid-inert; no dissolution branch.
+  const sigma = conditions.supersaturation_corundum();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  const [habit, forms] = _corundum_family_habit(conditions, excess);
+  crystal.habit = habit;
+  crystal.dominant_forms = forms;
+
+  let color_note = 'colorless corundum (no chromophore above variety gate)';
+  if (f.Ti > 0.1 && f.Ti < 0.5) color_note = `pale grey corundum (trace Ti ${f.Ti.toFixed(2)} ppm)`;
+  else if (f.Fe > 1 && f.Fe < 5) color_note = `pale brown corundum (trace Fe ${f.Fe.toFixed(1)} ppm, below sapphire gate)`;
+
+  const trace_Fe = f.Fe * 0.008;
+  const trace_Ti = f.Ti * 0.020;
+  const trace_Al = f.Al * 0.025;
+
+  f.Al = Math.max(f.Al - rate * 0.015, 0);
+
+  const parts = [color_note];
+  if (excess > 1.0) parts.push('rapid growth — contact metamorphic pulse');
+  else if (excess < 0.2) parts.push('near-equilibrium — gem-clarity interior');
+  if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Ti, trace_Al,
+    note: parts.join(', '),
+  });
+}
+
+function grow_ruby(crystal, conditions, step) {
+  // Al₂O₃ + Cr³⁺ — red chromium variety. Asterism via rutile-needle trigger.
+  const sigma = conditions.supersaturation_ruby();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  const [habit, forms] = _corundum_family_habit(conditions, excess);
+  crystal.habit = habit;
+  crystal.dominant_forms = forms;
+
+  if (f.Ti > 0.3 && excess > 0.5 && rng.random() < 0.08) {
+    crystal.habit = 'asterated';
+    crystal.dominant_forms = ['c{0001} basal dominant', 'aligned rutile needles', '6-rayed asterism'];
+  }
+
+  let color_note;
+  if (f.Cr > 10.0) color_note = `cherry-red ruby (Cr³⁺ ${f.Cr.toFixed(1)} ppm — deep saturation)`;
+  else if (f.Cr > 5.0 && f.Fe > 1.0) color_note = `pigeon's blood ruby (Cr³⁺ ${f.Cr.toFixed(1)} + trace Fe — Mogok signature)`;
+  else if (f.Cr > 3.0) color_note = `Mogok ruby red (Cr³⁺ ${f.Cr.toFixed(1)} ppm)`;
+  else color_note = `pinkish ruby (Cr³⁺ ${f.Cr.toFixed(1)} ppm — near threshold)`;
+
+  const trace_Fe = f.Fe * 0.008;
+  const trace_Ti = f.Ti * 0.025;
+  const trace_Al = f.Al * 0.025;
+
+  f.Al = Math.max(f.Al - rate * 0.015, 0);
+  f.Cr = Math.max(f.Cr - rate * 0.003, 0);
+
+  const parts = [color_note];
+  if (crystal.habit === 'asterated') parts.push('6-rayed asterism — rutile needle inclusions aligned along basal');
+  if (excess > 1.0) parts.push('rapid growth — peak metamorphic pulse');
+  else if (excess < 0.2) parts.push('near-equilibrium — gem-clarity interior');
+  if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Ti, trace_Al,
+    note: parts.join(', '),
+  });
+}
+
+function grow_sapphire(crystal, conditions, step) {
+  // Al₂O₃ + Fe (+ optional Ti) — non-red corundum color family.
+  const sigma = conditions.supersaturation_sapphire();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  const [habit, forms] = _corundum_family_habit(conditions, excess);
+  crystal.habit = habit;
+  crystal.dominant_forms = forms;
+
+  if (f.Ti > 0.5 && excess > 0.5 && rng.random() < 0.06) {
+    crystal.habit = 'asterated';
+    crystal.dominant_forms = ['c{0001} basal dominant', 'aligned rutile needles', '6-rayed star sapphire'];
+  }
+
+  // Color sub-dispatch — priority: padparadscha > blue > yellow > pink > green
+  let color_note, variety;
+  if (f.Cr >= 0.5 && f.Cr < 2.0 && f.Fe >= 2 && f.Fe < 10) {
+    color_note = `padparadscha (Cr³⁺ ${f.Cr.toFixed(2)} + Fe ${f.Fe.toFixed(1)} — pink-orange)`;
+    variety = 'padparadscha';
+  } else if (f.Fe >= 5 && f.Ti >= 0.5) {
+    if (f.Fe < 10 && f.Ti < 1.5) {
+      color_note = `cornflower blue sapphire (Fe ${f.Fe.toFixed(1)} + Ti ${f.Ti.toFixed(2)} — Kashmir-type)`;
+      variety = 'cornflower_kashmir';
+    } else {
+      color_note = `royal blue sapphire (Fe ${f.Fe.toFixed(1)} + Ti ${f.Ti.toFixed(2)} — Fe-Ti intervalence)`;
+      variety = 'royal_blue';
+    }
+  } else if (f.Fe >= 20) {
+    color_note = `yellow sapphire (Fe³⁺ ${f.Fe.toFixed(0)} — Fe alone)`;
+    variety = 'yellow';
+  } else if (f.Cr > 0.5 && f.Cr < 2.0) {
+    color_note = `pink sapphire (Cr³⁺ ${f.Cr.toFixed(2)} — sub-ruby threshold)`;
+    variety = 'pink_sapphire';
+  } else {
+    color_note = `green sapphire (Fe ${f.Fe.toFixed(1)} — no Ti, oxidation-dependent)`;
+    variety = 'green';
+  }
+
+  const trace_Fe = f.Fe * 0.012;
+  const trace_Ti = f.Ti * 0.025;
+  const trace_Al = f.Al * 0.025;
+
+  f.Al = Math.max(f.Al - rate * 0.015, 0);
+  if (variety === 'cornflower_kashmir' || variety === 'royal_blue') {
+    f.Fe = Math.max(f.Fe - rate * 0.004, 0);
+    f.Ti = Math.max(f.Ti - rate * 0.002, 0);
+  } else if (variety === 'yellow') {
+    f.Fe = Math.max(f.Fe - rate * 0.005, 0);
+  } else if (variety === 'padparadscha') {
+    f.Cr = Math.max(f.Cr - rate * 0.002, 0);
+    f.Fe = Math.max(f.Fe - rate * 0.002, 0);
+  } else if (variety === 'pink_sapphire') {
+    f.Cr = Math.max(f.Cr - rate * 0.002, 0);
+  } else {
+    f.Fe = Math.max(f.Fe - rate * 0.003, 0);
+  }
+
+  const parts = [color_note];
+  if (crystal.habit === 'asterated') parts.push('6-rayed asterism — aligned rutile inclusions along basal');
+  if (excess > 1.0) parts.push('rapid growth — peak metamorphic pulse');
+  else if (excess < 0.2) parts.push('near-equilibrium — gem-clarity interior');
+  if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Ti, trace_Al,
+    note: parts.join(', '),
+  });
+}
+
 function grow_tourmaline(crystal, conditions, step) {
   // Tourmaline (schorl→elbaite series). Cyclosilicate — no practical
   // dissolution path in this simplified model. Color is chosen per-zone
@@ -8613,6 +8842,9 @@ const MINERAL_ENGINES = {
   aquamarine: grow_aquamarine,  // Fe²⁺ reducing variety
   morganite: grow_morganite,  // Mn²⁺ variety
   heliodor: grow_heliodor,    // Fe³⁺ oxidizing variety
+  corundum: grow_corundum,    // Al2O3 colorless/generic (SiO2-undersaturated)
+  ruby: grow_ruby,            // Al2O3 + Cr chromium variety
+  sapphire: grow_sapphire,    // Al2O3 + Fe/Ti multi-color variety
   spodumene: grow_spodumene,
   anglesite: grow_anglesite,
   cerussite: grow_cerussite,
@@ -9838,7 +10070,74 @@ function scenario_sabkha_dolomitization() {
   return { conditions, events, defaultSteps: 260 };
 }
 
-const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite, supergene_oxidation: scenario_supergene_oxidation, ouro_preto: scenario_ouro_preto, gem_pegmatite: scenario_gem_pegmatite, bisbee: scenario_bisbee, deccan_zeolite: scenario_deccan_zeolite, sabkha_dolomitization: scenario_sabkha_dolomitization };
+// Mogok Stone Tract — marble-hosted contact metamorphic vug. The type
+// locality for "pigeon's blood" ruby (2000+ years of production).
+// Chemistry signature: SiO2-undersaturated, Al-rich, Ca-rich (dolomitic
+// marble host), alkaline pH, with Cr/Fe/Ti trace for ruby + sapphire.
+// Sources: Garnier et al. 2008; Peretti et al. 2018; Searle et al. 2007.
+function scenario_marble_contact_metamorphism() {
+  const conditions = new VugConditions({
+    temperature: 500.0,
+    pressure: 3.0,
+    wall: new VugWall({
+      composition: 'limestone',  // proxy for dolomitic marble
+      thickness_mm: 1200.0,
+      vug_diameter_mm: 40.0,
+      wall_Fe_ppm: 200.0,
+      wall_Mn_ppm: 50.0,
+      wall_Mg_ppm: 15000.0,
+      primary_bubbles: 3,
+      secondary_bubbles: 6,
+      shape_seed: 11,
+    }),
+    fluid: new FluidChemistry({
+      // Defining chemistry: Al-rich, SiO2-poor (novel upper-bound gate).
+      Al: 50,
+      SiO2: 20,
+      Ca: 800,
+      CO3: 50,
+      Mg: 120,
+      // Corundum-family chromophore traces
+      Cr: 3,
+      Fe: 8,
+      Ti: 1,
+      V: 0.5,
+      Mn: 0.5,
+      Na: 20, K: 8,
+      B: 0,
+      F: 3,
+      pH: 8.0,
+      salinity: 2.0,
+      O2: 0.3,
+    }),
+  });
+
+  const events = [];
+  events.push({ step: 20, name: 'Peak Metamorphism', description: 'Leucogranite intrusion at contact', apply_fn: (c) => {
+    c.temperature = 700.0;
+    c.fluid.Al += 15;
+    c.fluid.SiO2 += 8;
+    c.fluid.Cr += 1.5;
+    c.flow_rate = 2.5;
+    return "Contact metamorphic peak: a leucogranite dyke 50 m away pumps 700°C fluid into the marble interface. Skarn alteration zones expand outward; corundum family crystals begin to nucleate in the most Si-undersaturated patches. Pigeon's blood ruby paragenesis underway.";
+  }});
+  events.push({ step: 60, name: 'Retrograde Cooling', description: 'Slow cooling, main ruby growth window', apply_fn: (c) => {
+    c.temperature = 500.0;
+    c.fluid.Al = Math.max(c.fluid.Al * 0.9, 30);
+    c.flow_rate = 1.2;
+    return "Retrograde cooling begins. The leucogranite intrusion stalls; the fluid slowly retreats through the skarn envelope, depositing corundum at every fracture it finds. T drops from 700 to 500°C. This is the main ruby/sapphire growth window.";
+  }});
+  events.push({ step: 150, name: 'Fracture Seal', description: 'System closes', apply_fn: (c) => {
+    c.temperature = 350.0;
+    c.flow_rate = 0.1;
+    c.fluid.pH = Math.min(c.fluid.pH + 0.3, 9.0);
+    return "The feeding fracture seals. The Mogok pocket is now a closed system. Whatever corundum family crystals are still undersaturated will continue to consume the remaining Al pool until equilibrium. Everything else is frozen.";
+  }});
+
+  return { conditions, events, defaultSteps: 180 };
+}
+
+const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite, supergene_oxidation: scenario_supergene_oxidation, ouro_preto: scenario_ouro_preto, gem_pegmatite: scenario_gem_pegmatite, bisbee: scenario_bisbee, deccan_zeolite: scenario_deccan_zeolite, sabkha_dolomitization: scenario_sabkha_dolomitization, marble_contact_metamorphism: scenario_marble_contact_metamorphism };
 
 // ============================================================
 // SIMULATION ENGINE
@@ -9948,6 +10247,8 @@ class VugSimulator {
       crystal.dominant_forms = ['m{10̄10} trigonal prism', 'striated faces', 'slightly rounded triangular cross-section'];
     } else if (mineral === 'beryl' || mineral === 'emerald' || mineral === 'aquamarine' || mineral === 'morganite' || mineral === 'heliodor') {
       crystal.dominant_forms = ['m{10̄10} hex prism', 'c{0001} flat basal pinacoid'];
+    } else if (mineral === 'corundum' || mineral === 'ruby' || mineral === 'sapphire') {
+      crystal.dominant_forms = ['c{0001} flat basal pinacoid', 'n{22̄43} steep dipyramid', 'hexagonal prism or barrel'];
     } else if (mineral === 'spodumene') {
       crystal.dominant_forms = ['m{110} prism', 'a{100} + b{010} pinacoids', '~87° pyroxene cleavages'];
     } else if (mineral === 'anglesite') {
@@ -11116,6 +11417,26 @@ class VugSimulator {
       const speciesCap = species.charAt(0).toUpperCase() + species.slice(1);
       this.log.push(`  ✦ NUCLEATION: ${speciesCap} #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_bf.toFixed(2)}, Be=${f.Be.toFixed(0)} ppm, Cr=${f.Cr.toFixed(2)}, Fe=${f.Fe.toFixed(0)}, Mn=${f.Mn.toFixed(2)})`);
       break;  // only one beryl-family nucleation per step
+    }
+
+    // Corundum family nucleation — Al₂O₃ with SiO₂-undersaturation upper gate.
+    // Priority: ruby > sapphire > corundum. One per step (shared Al pool).
+    const corundum_family_candidates = [
+      ['ruby', this.conditions.supersaturation_ruby(), 1.5],
+      ['sapphire', this.conditions.supersaturation_sapphire(), 1.4],
+      ['corundum', this.conditions.supersaturation_corundum(), 1.3],
+    ];
+    for (const [species, sigma_cf, threshold] of corundum_family_candidates) {
+      if (sigma_cf <= threshold) continue;
+      if (this._atNucleationCap(species)) continue;
+      const existing_sp = this.crystals.filter(c => c.mineral === species && c.active);
+      if (existing_sp.length && !(sigma_cf > threshold + 0.5 && rng.random() < 0.2)) continue;
+      const pos = 'vug wall';
+      const c = this.nucleate(species, pos, sigma_cf);
+      const f = this.conditions.fluid;
+      const speciesCap = species.charAt(0).toUpperCase() + species.slice(1);
+      this.log.push(`  ✦ NUCLEATION: ${speciesCap} #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cf.toFixed(2)}, Al=${f.Al.toFixed(0)}, SiO2=${f.SiO2.toFixed(0)}, Cr=${f.Cr.toFixed(2)}, Fe=${f.Fe.toFixed(1)}, Ti=${f.Ti.toFixed(2)})`);
+      break;  // only one corundum-family nucleation per step
     }
 
     // Tourmaline nucleation — Na + B + Al + SiO₂ (B-gated, σ=1.3).
@@ -12385,6 +12706,72 @@ class VugSimulator {
     parts.push('Color stability note: natural heliodor is radiation-sensitive. Deep-yellow specimens often lose color on heating above 400°C, reverting to goshenite. The inverse also happens — irradiation can deepen pale-yellow heliodor.');
     if (c.dissolved) {
       parts.push('HF-assisted dissolution etched the surface — heliodor shares beryl\'s acid resistance; dissolution means a late fluorine-rich acid pulse.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_corundum(c) {
+    const parts = [`Corundum #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Al₂O₃ — trigonal close-packed oxide, hardness 9 (the benchmark below diamond). This is the colorless/generic variety: no chromophore trace above the ruby (Cr ≥ 2 ppm) or sapphire (Fe ≥ 5) gates. The defining chemical constraint the crystal met: SiO₂ was undersaturated (< 50 ppm). With any more silica in the fluid, Al + SiO₂ would have driven toward feldspar or the Al₂SiO₅ polymorphs (kyanite, andalusite, sillimanite) instead, and no corundum could have nucleated.');
+    if (c.habit === 'tabular') {
+      parts.push('Flat tabular hexagonal plate — the Mogok marble-hosted contact-metamorphic habit. Basal pinacoid dominates over the prism.');
+    } else if (c.habit === 'barrel') {
+      parts.push('Steep dipyramidal "barrel" — the high-T (>700°C) habit diagnostic of basalt-hosted xenocrysts. Thailand and Mozambique corundum most often takes this form.');
+    }
+    const avg_Ti = c.zones.reduce((s, z) => s + (z.trace_Ti || 0), 0) / Math.max(c.zones.length, 1);
+    if (avg_Ti > 0.05) {
+      parts.push("Trace Ti in the zones — microscale rutile partitioning that did not reach the asterism-inclusion threshold. In bigger crystals this Ti would be visible as the 'silk' inside Kashmir sapphires; here, just a pale grey cast.");
+    }
+    if (c.dissolved) {
+      parts.push('Unusual — corundum is essentially acid-inert in all sim conditions. Dissolution here would require a geological process outside the simulated range.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_ruby(c) {
+    const parts = [`Ruby #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Al₂O₃ + Cr³⁺ — the red chromium-bearing variety of corundum. Cr substitutes for Al in the octahedral site at 100-5000 ppm; the Cr d-d transitions absorb blue-green, transmit red, and fluoresce strongly red under UV. That fluorescence is the reason 'pigeon's blood' Mogok Burma rubies look lit-from-within: daylight contains enough UV to excite the emission in the Fe-poor Mogok marble paragenesis.");
+    const notes = c.zones.map(z => (z.note || ''));
+    if (notes.some(n => n.includes("pigeon"))) {
+      parts.push("Pigeon's blood — the Mogok color grade. Cr combined with trace Fe and strong fluorescence yields the medium-dark red with blue undertone that defines top-grade ruby in the gem trade. A 1-carat pigeon's blood ruby currently sells for $1-2 million at auction.");
+    } else if (notes.some(n => n.includes('cherry'))) {
+      parts.push("Cherry-red — deep Cr saturation, darker tone than Mogok 'pigeon's blood'. The Burma classical grade.");
+    } else if (notes.some(n => n.includes('pinkish'))) {
+      parts.push('Pinkish ruby — Cr just above the 2 ppm gate. In a different pocket this chemistry would have produced pink sapphire instead; this crystal is right at the industry-contentious boundary.');
+    }
+    if (c.habit === 'asterated') {
+      parts.push('6-rayed asterism — rutile (TiO₂) needle inclusions aligned along the basal plane from slow exsolution during retrograde cooling. Star ruby cut en cabochon shows a 6-ray asterism from this feature; very rare 12-rayed stars occur when two sets of rutile needles align at 60° to each other.');
+    } else if (c.habit === 'barrel') {
+      parts.push('Steep dipyramidal "barrel" — Mozambique/Madagascar basalt-hosted habit. The ruby crystallized in deep mafic rock, got entrained in erupting alkali basalt, and ended up in this pocket as a xenocryst — similar transport mechanism to diamond in kimberlite, but at crustal rather than mantle depths.');
+    } else if (c.habit === 'tabular') {
+      parts.push('Flat hexagonal plate — the Mogok marble-hosted signature. Forms in the contact-metamorphic aureole where leucogranite dykes drive skarn alteration in Cambro-Ordovician dolomitic marble.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_sapphire(c) {
+    const parts = [`Sapphire #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Al₂O₃ with Fe/Ti trace — the non-red corundum varieties. Color comes from the specific chromophore or charge-transfer mechanism: blue from Fe²⁺-Ti⁴⁺ intervalence charge transfer (IVCT), yellow from Fe³⁺ alone, pink from sub-ruby Cr, padparadscha from Cr + trace Fe. Shares the SiO₂-undersaturated upper gate with corundum + ruby.');
+    const notes = c.zones.map(z => (z.note || ''));
+    if (notes.some(n => n.includes('cornflower'))) {
+      parts.push("Cornflower blue — the Kashmir type. Mined out 1880s-1930s; remaining specimens are heirloom auction pieces. The 'velvet' appearance comes from microscale silk inclusions scattering transmitted light.");
+    } else if (notes.some(n => n.includes('royal blue'))) {
+      parts.push('Royal blue — deeper Fe than Kashmir cornflower, more saturated. Burma and Ceylon classic.');
+    } else if (notes.some(n => n.includes('padparadscha'))) {
+      parts.push('Padparadscha — the pink-orange corundum named for the Sinhalese word for lotus blossom. Exquisite and rare; Sri Lanka is the historical source, Madagascar modern. The Cr + trace Fe chemistry is on a knife edge between pink sapphire and padparadscha.');
+    } else if (notes.some(n => n.includes('yellow'))) {
+      parts.push('Yellow sapphire — Fe³⁺ in the Al site, no Ti partner. Sri Lanka + Montana Yogo are the classic sources; Yogo yellow + blue co-occur in the same basaltic host.');
+    } else if (notes.some(n => n.includes('pink'))) {
+      parts.push('Pink sapphire — Cr just below the 2 ppm ruby gate. Industry boundary case; some trade houses call it ruby, others pink sapphire. The gem language is contentious.');
+    } else if (notes.some(n => n.includes('green'))) {
+      parts.push('Green sapphire — Fe alone, no Ti partner. Australia + Montana alluvial deposits are the sources. Less commercially prized than blue or yellow.');
+    }
+    if (c.habit === 'asterated') {
+      parts.push('6-rayed star sapphire — rutile needles aligned along basal plane. Sri Lanka star blue and Burma black star are the famous cabochon gems.');
+    } else if (c.habit === 'barrel') {
+      parts.push('Steep dipyramidal "barrel" — basalt-hosted xenocryst signature. Montana Yogo, Thailand/Cambodia, and Australia basalt-hosted sapphire mostly crystallize in this habit.');
+    } else if (c.habit === 'tabular') {
+      parts.push('Flat hexagonal plate — Mogok marble-hosted, the dominant habit in metamorphic contact sapphire.');
     }
     return parts.join(' ');
   }
@@ -16078,7 +16465,8 @@ const IDLE_MINERAL_COLORS = {
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
   wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
-  emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858'
+  emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
+  corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

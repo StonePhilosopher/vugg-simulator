@@ -6993,6 +6993,295 @@
       ],
       "audit_status": "Round 7 Option-A split. Fires when Fe ≥ 15 AND O2 > 0.5 with no higher-priority chromophore (Cr/V/Mn). Takes precedence over aquamarine when Fe is both high and oxidized.",
       "class_color": "#1313eb"
+    },
+    "corundum": {
+      "formula": "Al2O3",
+      "nucleation_sigma": 1.3,
+      "max_nucleation_count": 4,
+      "max_size_cm": 30.0,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "default marble-hosted — flat hexagonal plate, basal pinacoid"
+        },
+        {
+          "name": "barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high-T (>700°C) — steep dipyramidal barrel, basalt-hosted signature"
+        },
+        {
+          "name": "prism",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "moderate σ — short hexagonal prism"
+        },
+        {
+          "name": "rhombohedral",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "rare late — skewed trigonal form"
+        }
+      ],
+      "class": "oxide",
+      "description": "Al₂O₃ — trigonal close-packed oxide. The structural parent of ruby + sapphire, and the hardness-9 abrasive mineral (emery is Al₂O₃ + magnetite). **Corundum is SiO₂-undersaturated**: if any significant silica is present, Al + SiO₂ drives toward the Al₂SiO₅ polymorphs (kyanite/andalusite/sillimanite) or feldspar, not corundum. The defining constraint is SiO₂ < 50 ppm — the first upper-bound gate in this simulator. Forms in amphibolite-to-granulite-facies marble contact metamorphism (Mogok-type) and in basalt-hosted xenocrysts.",
+      "scenarios": [
+        "marble_contact_metamorphism"
+      ],
+      "T_range_C": [
+        400,
+        1000
+      ],
+      "T_optimum_C": [
+        600,
+        900
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Al": 15
+      },
+      "trace_ingredients": {
+        "Fe": "pale brown (below ruby gate)",
+        "Ti": "pale grey (below sapphire gate)",
+        "Cr": "trace colorless at <2 ppm (above becomes ruby)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [
+        "0001 basal (polysynthetic)",
+        "10̄11 rhombohedral"
+      ],
+      "acid_dissolution": null,
+      "habit": "tabular",
+      "color_rules": {
+        "white_colorless": {
+          "default": true,
+          "trigger": "pure Al2O3 — no chromophore trace"
+        },
+        "grey_ti_trace": {
+          "trigger": "trace Ti — pale grey corundum"
+        },
+        "brown_fe_trace": {
+          "trigger": "trace Fe — pale brown corundum"
+        }
+      },
+      "narrate_function": "_narrate_corundum",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Commit 3. First upper-bound-gated mineral in the sim: SiO2 < 50 blocks nucleation. Anchored to Mogok marble contact metamorphism scenario via gate + scenarios entry.",
+      "class_color": "#eb1313"
+    },
+    "ruby": {
+      "formula": "Al2O3",
+      "nucleation_sigma": 1.5,
+      "max_nucleation_count": 4,
+      "max_size_cm": 20.0,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "default Mogok marble-hosted — flat hexagonal plate"
+        },
+        {
+          "name": "barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "Mozambique/Madagascar basalt-hosted — steep dipyramid"
+        },
+        {
+          "name": "asterated",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "rutile-inclusion trigger — 6-rayed star ruby, rare 12-rayed"
+        }
+      ],
+      "class": "oxide",
+      "description": "Al₂O₃ + Cr³⁺ — the red chromium-bearing variety of corundum. Cr substitutes for Al at the 100-5000 ppm level in the Al octahedral site; the d-d transitions absorb blue-green and transmit red, plus fluoresce strongly red under UV (the 'ruby laser' physics). Top gem 'pigeon's blood' ruby from Mogok Burma shows medium-dark red with blue undertone from trace Fe + strong Cr fluorescence. Requires SiO₂ undersaturation (shared corundum constraint) AND Cr >= 2 ppm. Below Cr=2 the same corundum crystal would be pink sapphire or colorless.",
+      "scenarios": [
+        "marble_contact_metamorphism"
+      ],
+      "T_range_C": [
+        500,
+        1000
+      ],
+      "T_optimum_C": [
+        700,
+        900
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Al": 15,
+        "Cr": 2
+      },
+      "trace_ingredients": {
+        "Cr": "principal chromophore (Al-site Cr³⁺, 100-5000 ppm)",
+        "Fe": "trace — modulates fluorescence (low Fe = strong red fluorescence, Mogok signature)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": "strong red under LW + SW UV (Cr³⁺ emission at 694 nm) — diagnostic",
+      "twin_laws": [
+        "0001 basal (polysynthetic)",
+        "10̄11 rhombohedral"
+      ],
+      "acid_dissolution": null,
+      "habit": "tabular",
+      "color_rules": {
+        "red": {
+          "default": true,
+          "trigger": "Cr 100-5000 ppm; Mogok gem standard"
+        },
+        "pigeons_blood": {
+          "trigger": "Cr + trace Fe, strong fluorescence (Mogok signature)"
+        },
+        "cherry_red": {
+          "trigger": "higher Cr concentration, deeper saturation"
+        },
+        "pinkish_ruby": {
+          "trigger": "lower Cr (2-5 ppm), lighter saturation"
+        }
+      },
+      "narrate_function": "_narrate_ruby",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Commit 3. Shares the SiO2 < 50 upper gate with corundum family. Priority over pink-sapphire + colorless-corundum when Cr >= 2 ppm.",
+      "class_color": "#eb1313"
+    },
+    "sapphire": {
+      "formula": "Al2O3",
+      "nucleation_sigma": 1.4,
+      "max_nucleation_count": 4,
+      "max_size_cm": 25.0,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "default basalt-hosted — steep dipyramid, Montana Yogo habit"
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "marble-hosted — flat hex plate"
+        },
+        {
+          "name": "prism",
+          "wall_spread": 0.25,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "intermediate σ — short hex prism"
+        },
+        {
+          "name": "asterated",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "rutile-inclusion trigger — 6-rayed or 12-rayed star sapphire"
+        }
+      ],
+      "class": "oxide",
+      "description": "Al₂O₃ with Fe + Ti (blue), Fe alone (yellow), V (violet), or trace Cr (pink-orange padparadscha) — the non-red corundum varieties. Blue sapphire's color is the Fe²⁺-Ti⁴⁺ intervalence charge transfer (IVCT), a well-characterized gem mechanism requiring both cations at the right concentration. Kashmir 'cornflower blue' is the classic; Montana Yogo, Sri Lanka, Madagascar, Thailand/Cambodia are active sources. Shares the SiO₂ < 50 upper gate with corundum + ruby.",
+      "scenarios": [
+        "marble_contact_metamorphism"
+      ],
+      "T_range_C": [
+        500,
+        1000
+      ],
+      "T_optimum_C": [
+        700,
+        900
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Al": 15,
+        "Fe": 5
+      },
+      "trace_ingredients": {
+        "Fe": "principal blue/yellow chromophore (Fe³⁺ or Fe²⁺-Ti⁴⁺ IVCT)",
+        "Ti": "blue sapphire partner (Fe+Ti intervalence charge transfer)",
+        "V": "violet sapphire chromophore (Tanzania) at higher concentration",
+        "Cr": "pink/padparadscha below ruby gate (Cr < 2)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": "weak — Fe quenches Cr/V emission; yellow sapphire shows weak orange (Fe³⁺)",
+      "twin_laws": [
+        "0001 basal",
+        "10̄11 rhombohedral"
+      ],
+      "acid_dissolution": null,
+      "habit": "barrel",
+      "color_rules": {
+        "blue": {
+          "default": true,
+          "trigger": "Fe + Ti IVCT (Fe>=5 AND Ti>=0.5)"
+        },
+        "cornflower_kashmir": {
+          "trigger": "low Fe + perfect Ti balance; microscale silk scatters light"
+        },
+        "royal_blue": {
+          "trigger": "deeper Fe, Burma/Ceylon"
+        },
+        "yellow": {
+          "trigger": "Fe³⁺ alone (Fe >= 20, no Ti) — Sri Lanka, Montana"
+        },
+        "green": {
+          "trigger": "Fe alone no Ti, specific oxidation — Australia, Montana"
+        },
+        "pink_sapphire": {
+          "trigger": "Cr < 2 ppm (sub-ruby threshold)"
+        },
+        "padparadscha": {
+          "trigger": "Cr + trace Fe — pink-orange, Sri Lanka + Madagascar"
+        },
+        "violet": {
+          "trigger": "V >= 2 ppm — Tanzania"
+        },
+        "color_change": {
+          "trigger": "Cr + V + Fe combination — Umba Valley Tanzania"
+        }
+      },
+      "narrate_function": "_narrate_sapphire",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Commit 3. Multi-color dispatch: blue (Fe+Ti), yellow (Fe alone ≥ 20), pink (Cr < 2), padparadscha (Cr + trace Fe), violet (V ≥ 2). Shares SiO2 < 50 upper gate with corundum/ruby.",
+      "class_color": "#eb1313"
     }
   }
 }

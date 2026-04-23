@@ -69,7 +69,7 @@ from typing import List, Dict, Optional, Tuple
 #        3→15, opening a 15-step acid window for scorodite + jarosite +
 #        alunite to nucleate before ev_meteoric_flush at step 20
 #        carbonate-buffers pH back up.
-SIM_VERSION = 6
+SIM_VERSION = 7
 
 
 # ============================================================
@@ -1652,6 +1652,124 @@ class VugConditions:
         fe_f = min(f.Fe / 20.0, 1.6)
         o2_f = min(f.O2 / 1.0, 1.3)
         return base * fe_f * o2_f
+
+    # ------------------------------------------------------------------
+    # Corundum family (Al₂O₃) — first UPPER-bound gate in the sim.
+    # SiO₂ < 50 is the defining constraint: with silica present at normal
+    # crustal concentrations, Al + SiO₂ drives to feldspar/mica/
+    # Al₂SiO₅-polymorphs instead of corundum. Shared helper below.
+    # ------------------------------------------------------------------
+    def _corundum_base_sigma(self) -> float:
+        """Shared Al + SiO₂-undersaturation + T/pH window for corundum family.
+
+        Returns 0 if:
+          - Al < 15 (lower gate — needs alumina)
+          - SiO₂ > 50 (UPPER gate — novel in sim; silica drives competition)
+          - pH outside 6-10 (metamorphic fluid alkalinity)
+          - T outside 400-1000°C
+
+        Note: this is the first supersaturation function in the sim that
+        gates on an UPPER bound of a fluid field. All previous gates are
+        lower bounds (X ≥ threshold); corundum requires X ≤ threshold.
+        Implementation care: tests/test_engine_gates.py::
+        test_blocks_when_all_ingredients_zero sets all fields to 0, which
+        satisfies the SiO2 upper gate trivially; the
+        test_fires_with_favorable_fluid search provides enough pH/T
+        candidates to pass the window gates without needing to override
+        SiO2. If future tests specifically sweep high SiO2, corundum
+        family should be expected to block.
+        """
+        if self.fluid.Al < 15:
+            return 0
+        if self.fluid.SiO2 > 50:
+            return 0  # UPPER gate — defining corundum constraint
+        if self.fluid.pH < 6 or self.fluid.pH > 10:
+            return 0
+        T = self.temperature
+        if T < 400 or T > 1000:
+            return 0
+        # Al factor — capped; marble contact fluid can carry Al up to
+        # 100+ ppm in skarn envelopes.
+        al_f = min(self.fluid.Al / 25.0, 2.0)
+        sigma = al_f
+        # T window — 600-900°C optimum; falls off at edges
+        if 600 <= T <= 900:
+            T_factor = 1.0
+        elif 400 <= T < 600:
+            T_factor = 0.4 + 0.003 * (T - 400)  # 0.4 → 1.0
+        elif 900 < T <= 1000:
+            T_factor = max(0.3, 1.0 - 0.007 * (T - 900))
+        else:
+            T_factor = 0.2
+        sigma *= T_factor
+        # pH window — sweet spot pH 7-9
+        if 7 <= self.fluid.pH <= 9:
+            pH_factor = 1.0
+        else:
+            pH_factor = 0.6
+        sigma *= pH_factor
+        return max(sigma, 0)
+
+    def supersaturation_corundum(self) -> float:
+        """Corundum (Al₂O₃, colorless/generic) supersaturation.
+
+        Post-R7: fires only when no chromophore variety's gate is met —
+        ruby takes Cr ≥ 2, sapphire takes Fe ≥ 5. Below those, colorless
+        corundum fires. Priority chain: ruby > sapphire > corundum.
+        """
+        f = self.fluid
+        if f.Cr >= 2.0:
+            return 0  # ruby priority
+        if f.Fe >= 5:
+            return 0  # sapphire priority (any Fe ≥ 5 — blue/yellow/pink color dispatch in grow)
+        return self._corundum_base_sigma()
+
+    def supersaturation_ruby(self) -> float:
+        """Ruby (Al₂O₃ + Cr³⁺) supersaturation — the red chromium variety.
+
+        Top priority in corundum-family dispatch. Cr ≥ 2 ppm is the ruby
+        gate (below that, pink-sapphire or colorless corundum). Cr
+        enhancement factor: linear up to cap (prevents runaway at
+        ultramafic-contact Cr concentrations).
+        """
+        if self.fluid.Cr < 2.0:
+            return 0
+        base = self._corundum_base_sigma()
+        if base <= 0:
+            return 0
+        cr_f = min(self.fluid.Cr / 5.0, 2.0)
+        return base * cr_f
+
+    def supersaturation_sapphire(self) -> float:
+        """Sapphire (Al₂O₃ + Fe + optional Ti/V-trace) — non-red corundum.
+
+        Fe is the universal sapphire chromophore; Ti adds the blue IVCT
+        partner when present (Fe+Ti blue); without Ti, high Fe yields
+        yellow sapphire. Spec required_ingredients: {Al, Fe}. V-only
+        violet-sapphire path is deferred (Tanzania rarity; adding it
+        would break the necessity-of-Fe gate test — revisit when we
+        split violet into its own species).
+
+        Priority sub-dispatch (engine-internal):
+        - Cr >= 2 → ruby (exclusion; ruby has its own engine)
+        - Fe ≥ 5 AND Ti ≥ 0.5 → blue sapphire (Fe-Ti IVCT)
+        - Fe ≥ 20, Ti < 0.5 → yellow sapphire (Fe³⁺)
+        - Fe ≥ 5, low-Cr sub-threshold → pink/padparadscha/green variants
+        - Otherwise: base conditions not met
+        """
+        f = self.fluid
+        if f.Cr >= 2.0:
+            return 0  # ruby takes priority
+        if f.Fe < 5:
+            return 0  # Fe is the universal sapphire chromophore threshold
+        base = self._corundum_base_sigma()
+        if base <= 0:
+            return 0
+        # Chromophore factor — blue (Fe+Ti) > yellow (Fe alone) > other
+        chrom_f = min(f.Fe / 15.0, 1.5)
+        if f.Ti >= 0.5:
+            chrom_f *= min(f.Ti / 1.5, 1.3)  # blue IVCT boost
+        return base * chrom_f
 
     def supersaturation_tourmaline(self) -> float:
         """Tourmaline (Na(Fe,Li,Al)₃Al₆(BO₃)₃Si₆O₁₈(OH)₄) supersaturation.
@@ -5483,6 +5601,229 @@ def grow_heliodor(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     )
 
 
+# ============================================================
+# CORUNDUM FAMILY (Al₂O₃) — first UPPER-gate mineral in the sim
+# ============================================================
+
+def _corundum_family_habit(conditions: VugConditions, excess: float) -> Tuple[str, list]:
+    """Shared habit dispatch for corundum/ruby/sapphire.
+
+    High-T (>700°C) typically gives the "barrel" (steep dipyramid) habit
+    that's diagnostic of basalt-hosted xenocrysts. Lower-T contact
+    metamorphic (marble-hosted Mogok) prefers flat tabular. Short prism
+    is the intermediate habit.
+    """
+    T = conditions.temperature
+    if T > 700 and excess > 0.5:
+        return "barrel", ["c{0001} short basal", "n{22̄43} steep dipyramid", "barrel profile"]
+    elif T < 600:
+        return "tabular", ["c{0001} flat basal pinacoid", "m{10̄10} subordinate prism", "flat tabular"]
+    else:
+        return "prism", ["m{10̄10} hexagonal prism", "c{0001} flat basal", "short hexagonal"]
+
+
+def grow_corundum(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Corundum (Al₂O₃ — colorless/generic) growth.
+
+    Fires only when no chromophore variety's gate is met (priority chain
+    is ruby > sapphire > corundum). The defining constraint is SiO₂ < 50:
+    below this, corundum stable; above, Al + SiO₂ partition into feldspar/
+    Al₂SiO₅ polymorphs instead. Acid-inert in all sim conditions.
+    """
+    sigma = conditions.supersaturation_corundum()
+    if sigma < 1.0:
+        return None  # corundum is acid-inert — no dissolution branch
+
+    excess = sigma - 1.0
+    rate = 2.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    crystal.habit, crystal.dominant_forms = _corundum_family_habit(conditions, excess)
+
+    # Colorless corundum — trace elements below chromophore thresholds.
+    color_note = "colorless corundum (no chromophore above variety gate)"
+    if f.Ti > 0.1 and f.Ti < 0.5:
+        color_note = f"pale grey corundum (trace Ti {f.Ti:.2f} ppm)"
+    elif f.Fe > 1 and f.Fe < 5:
+        color_note = f"pale brown corundum (trace Fe {f.Fe:.1f} ppm, below sapphire gate)"
+
+    trace_Fe = f.Fe * 0.008
+    trace_Ti = f.Ti * 0.020
+    trace_Al = f.Al * 0.025
+
+    # Deplete fluid — Al is the sink; corundum is the Al-sequestration
+    # mineral. No competing SiO2 consumption since Si is undersaturated.
+    f.Al = max(f.Al - rate * 0.015, 0)
+
+    parts = [color_note]
+    if excess > 1.0:
+        parts.append("rapid growth — contact metamorphic pulse")
+    elif excess < 0.2:
+        parts.append("near-equilibrium — gem-clarity interior")
+    if crystal.twinned:
+        parts.append(f"{crystal.twin_law} present")
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe, trace_Ti=trace_Ti, trace_Al=trace_Al,
+        note=", ".join(parts),
+    )
+
+
+def grow_ruby(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Ruby (Al₂O₃ + Cr³⁺) growth — the red chromium variety of corundum.
+
+    The Cr chromophore drives color. Asterated ruby (6-rayed star) comes
+    from aligned rutile needle inclusions along basal plane; modeled via
+    a trace_Ti + high-σ trigger. "Pigeon's blood" tag fires when Cr +
+    trace Fe both present (Mogok signature).
+    """
+    sigma = conditions.supersaturation_ruby()
+    if sigma < 1.0:
+        return None  # acid-inert
+
+    excess = sigma - 1.0
+    rate = 2.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    crystal.habit, crystal.dominant_forms = _corundum_family_habit(conditions, excess)
+
+    # 6-rayed asterism — rutile-needle trigger
+    if f.Ti > 0.3 and excess > 0.5 and random.random() < 0.08:
+        crystal.habit = "asterated"
+        crystal.dominant_forms = ["c{0001} basal dominant", "aligned rutile needles", "6-rayed asterism"]
+
+    # Color sub-dispatch for ruby variety
+    if f.Cr > 10.0:
+        color_note = f"cherry-red ruby (Cr³⁺ {f.Cr:.1f} ppm — deep saturation)"
+    elif f.Cr > 5.0 and f.Fe > 1.0:
+        color_note = f"pigeon's blood ruby (Cr³⁺ {f.Cr:.1f} + trace Fe — Mogok signature)"
+    elif f.Cr > 3.0:
+        color_note = f"Mogok ruby red (Cr³⁺ {f.Cr:.1f} ppm)"
+    else:
+        color_note = f"pinkish ruby (Cr³⁺ {f.Cr:.1f} ppm — near threshold)"
+
+    trace_Fe = f.Fe * 0.008
+    trace_Ti = f.Ti * 0.025
+    trace_Al = f.Al * 0.025
+
+    # Deplete fluid — Al + Cr
+    f.Al = max(f.Al - rate * 0.015, 0)
+    f.Cr = max(f.Cr - rate * 0.003, 0)
+
+    parts = [color_note]
+    if crystal.habit == "asterated":
+        parts.append("6-rayed asterism — rutile needle inclusions aligned along basal")
+    if excess > 1.0:
+        parts.append("rapid growth — peak metamorphic pulse")
+    elif excess < 0.2:
+        parts.append("near-equilibrium — gem-clarity interior")
+    if crystal.twinned:
+        parts.append(f"{crystal.twin_law} present")
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe, trace_Ti=trace_Ti, trace_Al=trace_Al,
+        note=", ".join(parts),
+    )
+
+
+def grow_sapphire(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Sapphire (Al₂O₃ + Fe/Ti/V/Cr-trace) growth — non-red corundum.
+
+    Multi-color dispatch: blue (Fe+Ti IVCT), yellow (Fe³⁺), padparadscha
+    (Cr+trace Fe), pink (low Cr), violet (V), green (Fe alone special).
+    Sub-variety selected from current fluid at each zone.
+    """
+    sigma = conditions.supersaturation_sapphire()
+    if sigma < 1.0:
+        return None  # acid-inert
+
+    excess = sigma - 1.0
+    rate = 2.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    f = conditions.fluid
+    crystal.habit, crystal.dominant_forms = _corundum_family_habit(conditions, excess)
+
+    # 6-rayed asterism — rutile-needle trigger
+    if f.Ti > 0.5 and excess > 0.5 and random.random() < 0.06:
+        crystal.habit = "asterated"
+        crystal.dominant_forms = ["c{0001} basal dominant", "aligned rutile needles", "6-rayed star sapphire"]
+
+    # Color sub-dispatch — priority: padparadscha > blue > violet > yellow > pink > green
+    if 0.5 <= f.Cr < 2.0 and f.Fe >= 2 and f.Fe < 10:
+        # Padparadscha: Cr + trace Fe pink-orange (Sri Lanka, Madagascar)
+        color_note = f"padparadscha (Cr³⁺ {f.Cr:.2f} + Fe {f.Fe:.1f} — pink-orange)"
+        variety = "padparadscha"
+    elif f.Fe >= 5 and f.Ti >= 0.5:
+        # Blue: Fe+Ti IVCT
+        if f.Fe < 10 and f.Ti < 1.5:
+            color_note = f"cornflower blue sapphire (Fe {f.Fe:.1f} + Ti {f.Ti:.2f} — Kashmir-type)"
+            variety = "cornflower_kashmir"
+        else:
+            color_note = f"royal blue sapphire (Fe {f.Fe:.1f} + Ti {f.Ti:.2f} — Fe-Ti intervalence)"
+            variety = "royal_blue"
+    elif f.V >= 2.0:
+        color_note = f"violet sapphire (V³⁺ {f.V:.2f} — Tanzania-type)"
+        variety = "violet"
+    elif f.Fe >= 20:
+        color_note = f"yellow sapphire (Fe³⁺ {f.Fe:.0f} — Fe alone)"
+        variety = "yellow"
+    elif f.Cr > 0.5 and f.Cr < 2.0:
+        color_note = f"pink sapphire (Cr³⁺ {f.Cr:.2f} — sub-ruby threshold)"
+        variety = "pink_sapphire"
+    else:
+        # Catch-all — Fe without Ti at moderate concentration = green
+        color_note = f"green sapphire (Fe {f.Fe:.1f} — no Ti, oxidation-dependent)"
+        variety = "green"
+
+    trace_Fe = f.Fe * 0.012
+    trace_Ti = f.Ti * 0.025
+    trace_Al = f.Al * 0.025
+
+    # Deplete fluid — Al + chromophores based on variety
+    f.Al = max(f.Al - rate * 0.015, 0)
+    if variety in ("cornflower_kashmir", "royal_blue"):
+        f.Fe = max(f.Fe - rate * 0.004, 0)
+        f.Ti = max(f.Ti - rate * 0.002, 0)
+    elif variety == "yellow":
+        f.Fe = max(f.Fe - rate * 0.005, 0)
+    elif variety == "violet":
+        f.V = max(f.V - rate * 0.003, 0)
+    elif variety == "padparadscha":
+        f.Cr = max(f.Cr - rate * 0.002, 0)
+        f.Fe = max(f.Fe - rate * 0.002, 0)
+    elif variety == "pink_sapphire":
+        f.Cr = max(f.Cr - rate * 0.002, 0)
+    else:  # green
+        f.Fe = max(f.Fe - rate * 0.003, 0)
+
+    parts = [color_note]
+    if crystal.habit == "asterated":
+        parts.append("6-rayed asterism — aligned rutile inclusions along basal")
+    if excess > 1.0:
+        parts.append("rapid growth — peak metamorphic pulse")
+    elif excess < 0.2:
+        parts.append("near-equilibrium — gem-clarity interior")
+    if crystal.twinned:
+        parts.append(f"{crystal.twin_law} present")
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=trace_Fe, trace_Ti=trace_Ti, trace_Al=trace_Al,
+        note=", ".join(parts),
+    )
+
+
 def grow_spodumene(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Spodumene (LiAlSi₂O₆) growth model.
 
@@ -7623,6 +7964,9 @@ MINERAL_ENGINES = {
     "aquamarine": grow_aquamarine,  # Fe²⁺ reducing variety
     "morganite": grow_morganite,  # Mn²⁺ variety
     "heliodor": grow_heliodor,    # Fe³⁺ oxidizing variety
+    "corundum": grow_corundum,    # Al2O3 colorless/generic (SiO2-undersaturated)
+    "ruby": grow_ruby,            # Al2O3 + Cr chromium variety
+    "sapphire": grow_sapphire,    # Al2O3 + Fe/Ti/V/Cr-trace multi-color variety
     "spodumene": grow_spodumene,
     "anglesite": grow_anglesite,
     "cerussite": grow_cerussite,
@@ -9564,6 +9908,153 @@ def scenario_sabkha_dolomitization() -> Tuple[VugConditions, List[Event], int]:
     return conditions, events, 260
 
 
+def scenario_marble_contact_metamorphism() -> Tuple[VugConditions, List[Event], int]:
+    """Mogok Stone Tract — marble-hosted contact metamorphic vug.
+
+    Anchored to the Mogok Stone Tract, Mandalay Region, Burma — the
+    world's type locality for marble-hosted ruby and the 2000+-year
+    source of the finest "pigeon's blood" rubies. Dolomitic marble of
+    the Mogok Metamorphic Belt was regionally metamorphosed during the
+    Himalayan orogeny (~30 Ma) to amphibolite-to-granulite grade; then
+    intruded by leucogranite dykes at 17-22 Ma that drove contact
+    metamorphic ruby/sapphire/spinel crystallization in skarn envelopes.
+
+    Chemistry signature: **SiO₂ undersaturation** (the defining
+    corundum-family constraint). Al and Ca are high, SiO₂ is low — this
+    is the opposite of every other scenario in the sim. When SiO₂ is
+    scarce, Al³⁺ cannot form feldspar/mica/Al₂SiO₅ polymorphs and
+    instead crystallizes as pure corundum; with Cr trace from adjacent
+    ultramafic country rock, ruby forms; with Fe+Ti, blue sapphire;
+    with Fe alone, yellow sapphire.
+
+    Fluid parameters (Garnier et al. 2008, Peretti et al. 2018):
+    - T: 700°C peak (contact metamorphic aureole)
+    - Al: 50 ppm (high — skarn fluid concentration)
+    - SiO₂: 20 ppm (critically low — the defining upper gate)
+    - Ca: 800 ppm (dolomitic marble host dissolving into fluid)
+    - Cr: 3 ppm (trace from ultramafic country rock)
+    - Fe: 8, Ti: 1, V: 0.5 (blue/yellow sapphire variety traces)
+    - pH: 8 (alkaline marble-buffered fluid)
+
+    Anchor sources:
+    - Garnier, V. et al. 2008. "Marble-hosted ruby deposits from
+      Central and Southeast Asia." Ore Geology Reviews 34: 169-191.
+    - Peretti, A. et al. 2018. "Update on corundum and its gem
+      varieties." Gems & Gemology special issue.
+    - Searle, M.P. et al. 2007. "Tectonic evolution of the Mogok
+      metamorphic belt, Burma (Myanmar)." Journal of Geology 115: 1-23.
+
+    Thermal regime: 500 → 400 → 700 → 350°C over 180 steps.
+    - Phase 1 (initial warmup, 500→700°C): contact metamorphic pulse
+      approaches; marble starts to fluid-saturate.
+    - Phase 2 (700°C peak, step 20 onward): corundum family nucleates;
+      Cr partitions to ruby, Fe+Ti to blue sapphire.
+    - Phase 3 (retrograde cooling, step 60 onward, 700→400°C): main
+      growth window; fluid migrates along skarn bleaching front.
+    - Phase 4 (fracture seal, step 150): system closes.
+    """
+    conditions = VugConditions(
+        temperature=500.0,
+        pressure=3.0,  # contact-metamorphic amphibolite-to-granulite
+        wall=VugWall(
+            composition="limestone",  # proxy for dolomitic marble (sim
+                                      # currently models limestone +
+                                      # pegmatite + basalt; marble is the
+                                      # metamorphosed limestone end-member,
+                                      # closest fit available at this
+                                      # point)
+            thickness_mm=1200.0,  # thick contact envelope
+            vug_diameter_mm=40.0,  # typical Mogok "pigeon's blood" pocket
+            wall_Fe_ppm=200.0,    # marble is Fe-poor (that's why Ruby
+                                  # fluorescence is strong — no Fe to
+                                  # quench the Cr emission)
+            wall_Mn_ppm=50.0,
+            wall_Mg_ppm=15000.0,  # dolomite-grade Mg content
+            primary_bubbles=3,
+            secondary_bubbles=6,
+            shape_seed=11,
+        ),
+        fluid=FluidChemistry(
+            # Defining chemistry: Al-rich, SiO₂-poor. The corundum family
+            # gates on SiO2 < 50 (upper bound — novel in the sim) and Al
+            # >= 15. With SiO2 = 20 well below threshold and Al = 50 well
+            # above, all three corundum species have room to nucleate
+            # competing for Al supply.
+            Al=50,
+            SiO2=20,
+            # Ca high — dolomitic marble host dissolving into fluid.
+            # Doesn't drive a competing carbonate engine at 700°C
+            # (calcite decomposes above 840°C; at 700°C it's stable
+            # in solid form but doesn't nucleate from fluid at this
+            # Eh).
+            Ca=800,
+            CO3=50,  # modest; most carbonate is locked in marble wall
+            # Mg tracks the dolomite host (even higher than Ca in
+            # dolomitic marble; solid-state in the wall, minor in fluid).
+            Mg=120,
+            # Chromophore traces for ruby/sapphire/sapphire-variety
+            # dispatch:
+            Cr=3,     # ruby trigger (threshold 2 ppm)
+            Fe=8,     # sapphire-family Fe (Fe+Ti → blue; Fe alone ≥20 → yellow)
+            Ti=1,     # blue sapphire (Fe+Ti intervalence charge transfer)
+            V=0.5,    # not above sapphire-violet gate, included for completeness
+            # Minor trace species typical of skarn contact fluids:
+            Mn=0.5,   # pink sapphire at high enough concentration
+            Na=20, K=8,  # metamorphic fluid baseline
+            B=0,      # marble-hosted — no pegmatite boron contribution
+            F=3,      # trace F from phlogopite hydrolysis
+            # Alkaline pH from marble buffering.
+            pH=8.0,
+            salinity=2.0,  # low-salinity metamorphic fluid
+            O2=0.3,   # moderate — amphibolite facies not strongly reducing
+        ),
+    )
+
+    def ev_peak_metamorphism(cond):
+        """Peak metamorphic pulse: leucogranite dyke injects hot fluid
+        into the marble contact, driving peak T and skarn nucleation."""
+        cond.temperature = 700.0
+        cond.fluid.Al += 15     # fluid enrichment from leucogranite dissolution
+        cond.fluid.SiO2 += 8    # modest SiO2 bump — still well below corundum upper gate
+        cond.fluid.Cr += 1.5    # additional Cr from adjacent ultramafic serpentinite
+        cond.flow_rate = 2.5
+        return ("Contact metamorphic peak: a leucogranite dyke 50 m away "
+                "pumps 700°C fluid into the marble interface. Skarn "
+                "alteration zones expand outward; corundum family crystals "
+                "begin to nucleate in the most Si-undersaturated patches. "
+                "Pigeon's blood ruby paragenesis underway.")
+
+    def ev_retrograde_cooling(cond):
+        """Retrograde cooling: slow cooling with fluid migration along
+        bleaching front. Main growth window for corundum family."""
+        cond.temperature = 500.0
+        cond.fluid.Al = max(cond.fluid.Al * 0.9, 30)  # progressive depletion
+        cond.flow_rate = 1.2
+        return ("Retrograde cooling begins. The leucogranite intrusion "
+                "stalls; the fluid slowly retreats through the skarn "
+                "envelope, depositing corundum at every fracture it "
+                "finds. T drops from 700 to 500°C. This is the main "
+                "ruby/sapphire growth window.")
+
+    def ev_fracture_seal(cond):
+        """Fracture seal — fluid egress halts; system closes."""
+        cond.temperature = 350.0
+        cond.flow_rate = 0.1
+        cond.fluid.pH = min(cond.fluid.pH + 0.3, 9.0)
+        return ("The feeding fracture seals. The Mogok pocket is now a "
+                "closed system. Whatever corundum family crystals are "
+                "still undersaturated will continue to consume the remaining "
+                "Al pool until equilibrium. Everything else is frozen.")
+
+    events = [
+        Event(20, "Peak Metamorphism", "Leucogranite intrusion at contact", ev_peak_metamorphism),
+        Event(60, "Retrograde Cooling", "Slow cooling, main ruby growth window", ev_retrograde_cooling),
+        Event(150, "Fracture Seal", "System closes", ev_fracture_seal),
+    ]
+
+    return conditions, events, 180
+
+
 def scenario_random() -> Tuple[VugConditions, List[Event], int]:
     """Procedurally-generated vugg — each run a different discovery.
 
@@ -9825,6 +10316,7 @@ SCENARIOS = {
     "bisbee": scenario_bisbee,
     "deccan_zeolite": scenario_deccan_zeolite,
     "sabkha_dolomitization": scenario_sabkha_dolomitization,
+    "marble_contact_metamorphism": scenario_marble_contact_metamorphism,
     "random": scenario_random,
 }
 
@@ -10809,6 +11301,34 @@ class VugSimulator:
                 f"Be={f.Be:.0f} ppm, Cr={f.Cr:.2f}, Fe={f.Fe:.0f}, Mn={f.Mn:.2f})"
             )
             break  # only one beryl-family nucleation per step
+
+        # Corundum family nucleation — Al₂O₃ with SiO₂-undersaturation
+        # upper-gate. First UPPER-bound mineral in the sim (all other
+        # gates are lower bounds). Priority: ruby > sapphire > corundum.
+        # One candidate per step (shared Al pool).
+        corundum_family_candidates = [
+            ("ruby", self.conditions.supersaturation_ruby(), 1.5),
+            ("sapphire", self.conditions.supersaturation_sapphire(), 1.4),
+            ("corundum", self.conditions.supersaturation_corundum(), 1.3),
+        ]
+        for species, sigma_cf, threshold in corundum_family_candidates:
+            if sigma_cf <= threshold:
+                continue
+            if self._at_nucleation_cap(species):
+                continue
+            existing_sp = [c for c in self.crystals if c.mineral == species and c.active]
+            # Ruby is rarer — let additional nucleations happen at higher σ
+            if existing_sp and not (sigma_cf > threshold + 0.5 and random.random() < 0.2):
+                continue
+            pos = "vug wall"  # marble wall is the typical Mogok substrate
+            c = self.nucleate(species, position=pos, sigma=sigma_cf)
+            f = self.conditions.fluid
+            self.log.append(
+                f"  ✦ NUCLEATION: {species.title()} #{c.crystal_id} on {c.position} "
+                f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cf:.2f}, "
+                f"Al={f.Al:.0f}, SiO2={f.SiO2:.0f}, Cr={f.Cr:.2f}, Fe={f.Fe:.1f}, Ti={f.Ti:.2f})"
+            )
+            break  # only one corundum-family nucleation per step
 
         # Magnetite nucleation — Fe + moderate O2 (HM buffer).
         sigma_mag = self.conditions.supersaturation_magnetite()
@@ -14539,6 +15059,185 @@ class VugSimulator:
                 "HF-assisted dissolution etched the surface — heliodor "
                 "shares beryl's acid resistance; dissolution means a late "
                 "fluorine-rich acid pulse."
+            )
+        return " ".join(parts)
+
+    def _narrate_corundum(self, c: Crystal) -> str:
+        """Narrate a colorless corundum — the generic Al₂O₃ variety."""
+        parts = [f"Corundum #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Al₂O₃ — trigonal close-packed oxide, hardness 9 (the "
+            "benchmark below diamond). This is the colorless/generic "
+            "variety: no chromophore trace above the ruby (Cr ≥ 2 ppm) "
+            "or sapphire (Fe ≥ 5 + Ti ≥ 0.5, or Fe ≥ 20 alone, or V ≥ 2) "
+            "gates. The defining chemical constraint the crystal met: "
+            "SiO₂ was undersaturated (< 50 ppm). With any more silica in "
+            "the fluid, Al + SiO₂ would have driven toward feldspar or "
+            "the Al₂SiO₅ polymorphs (kyanite, andalusite, sillimanite) "
+            "instead, and no corundum could have nucleated."
+        )
+        if c.habit == "tabular":
+            parts.append(
+                "Flat tabular hexagonal plate — the Mogok marble-hosted "
+                "contact-metamorphic habit. Basal pinacoid dominates over "
+                "the prism."
+            )
+        elif c.habit == "barrel":
+            parts.append(
+                "Steep dipyramidal 'barrel' — the high-T (>700°C) habit "
+                "diagnostic of basalt-hosted xenocrysts. Thailand and "
+                "Mozambique corundum most often takes this form."
+            )
+        avg_Ti = sum(z.trace_Ti for z in c.zones) / max(len(c.zones), 1)
+        if avg_Ti > 0.05:
+            parts.append(
+                "Trace Ti in the zones — microscale rutile partitioning "
+                "that did not reach the asterism-inclusion threshold. In "
+                "bigger crystals this Ti would be visible as the 'silk' "
+                "inside Kashmir sapphires; here, just a pale grey cast."
+            )
+        if c.dissolved:
+            parts.append(
+                "Unusual — corundum is essentially acid-inert in all "
+                "sim conditions. Dissolution here would require a "
+                "geological process outside the simulated range."
+            )
+        return " ".join(parts)
+
+    def _narrate_ruby(self, c: Crystal) -> str:
+        """Narrate a ruby crystal — the chromium red variety."""
+        parts = [f"Ruby #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Al₂O₃ + Cr³⁺ — the red chromium-bearing variety of "
+            "corundum. Cr substitutes for Al in the octahedral site at "
+            "100-5000 ppm; the Cr d-d transitions absorb blue-green, "
+            "transmit red, and fluoresce strongly red under UV. That "
+            "fluorescence is the reason 'pigeon's blood' Mogok Burma "
+            "rubies look lit-from-within: daylight contains enough UV "
+            "to excite the emission in the Fe-poor Mogok marble paragenesis."
+        )
+        zone_notes = [z.note or "" for z in c.zones]
+        if any("pigeon" in n for n in zone_notes):
+            parts.append(
+                "Pigeon's blood — the Mogok color grade. Cr combined "
+                "with trace Fe and strong fluorescence yields the "
+                "medium-dark red with blue undertone that defines "
+                "top-grade ruby in the gem trade. A 1-carat pigeon's "
+                "blood ruby currently sells for $1-2 million at auction."
+            )
+        elif any("cherry" in n for n in zone_notes):
+            parts.append(
+                "Cherry-red — deep Cr saturation, darker tone than "
+                "Mogok 'pigeon's blood'. The Burma classical grade."
+            )
+        elif any("pinkish" in n for n in zone_notes):
+            parts.append(
+                "Pinkish ruby — Cr just above the 2 ppm gate. In a "
+                "different pocket this chemistry would have produced "
+                "pink sapphire instead; this crystal is right at the "
+                "industry-contentious boundary."
+            )
+        if c.habit == "asterated":
+            parts.append(
+                "6-rayed asterism — rutile (TiO₂) needle inclusions "
+                "aligned along the basal plane from slow exsolution "
+                "during retrograde cooling. Star ruby cut en cabochon "
+                "shows a 6-ray asterism from this feature; very rare "
+                "12-rayed stars occur when two sets of rutile needles "
+                "align at 60° to each other."
+            )
+        elif c.habit == "barrel":
+            parts.append(
+                "Steep dipyramidal 'barrel' — Mozambique/Madagascar "
+                "basalt-hosted habit. The ruby crystallized in deep "
+                "mafic rock, got entrained in erupting alkali basalt, "
+                "and ended up in this pocket as a xenocryst — similar "
+                "transport mechanism to diamond in kimberlite, but at "
+                "crustal rather than mantle depths."
+            )
+        elif c.habit == "tabular":
+            parts.append(
+                "Flat hexagonal plate — the Mogok marble-hosted "
+                "signature. Forms in the contact-metamorphic aureole "
+                "where leucogranite dykes drive skarn alteration in "
+                "Cambro-Ordovician dolomitic marble."
+            )
+        return " ".join(parts)
+
+    def _narrate_sapphire(self, c: Crystal) -> str:
+        """Narrate a sapphire — the multi-color non-red corundum family."""
+        parts = [f"Sapphire #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Al₂O₃ with Fe/Ti/V trace — the non-red corundum varieties. "
+            "Color comes from the specific chromophore or charge-transfer "
+            "mechanism: blue from Fe²⁺-Ti⁴⁺ intervalence charge transfer "
+            "(IVCT), yellow from Fe³⁺ alone, violet from V³⁺, pink from "
+            "sub-ruby Cr, padparadscha from Cr + trace Fe. Shares the "
+            "SiO₂-undersaturated upper gate with corundum + ruby."
+        )
+        zone_notes = [z.note or "" for z in c.zones]
+        if any("cornflower" in n for n in zone_notes):
+            parts.append(
+                "Cornflower blue — the Kashmir type. Mined out 1880s-"
+                "1930s; remaining specimens are heirloom auction "
+                "pieces. The 'velvet' appearance comes from microscale "
+                "silk inclusions scattering transmitted light."
+            )
+        elif any("royal blue" in n for n in zone_notes):
+            parts.append(
+                "Royal blue — deeper Fe than Kashmir cornflower, more "
+                "saturated. Burma and Ceylon classic."
+            )
+        elif any("padparadscha" in n for n in zone_notes):
+            parts.append(
+                "Padparadscha — the pink-orange corundum named for the "
+                "Sinhalese word for lotus blossom. Exquisite and rare; "
+                "Sri Lanka is the historical source, Madagascar modern. "
+                "The Cr + trace Fe chemistry is on a knife edge between "
+                "pink sapphire and padparadscha."
+            )
+        elif any("yellow" in n for n in zone_notes):
+            parts.append(
+                "Yellow sapphire — Fe³⁺ in the Al site, no Ti partner. "
+                "Sri Lanka + Montana Yogo are the classic sources; "
+                "Yogo yellow + blue co-occur in the same basaltic host."
+            )
+        elif any("violet" in n for n in zone_notes):
+            parts.append(
+                "Violet sapphire — V³⁺ chromophore, Tanzania signature. "
+                "Umba Valley is the color-change locality where Cr + V "
+                "combine in a crystal that shifts from blue (daylight) "
+                "to purple (incandescent)."
+            )
+        elif any("pink" in n for n in zone_notes):
+            parts.append(
+                "Pink sapphire — Cr just below the 2 ppm ruby gate. "
+                "Industry boundary case; some trade houses call it ruby, "
+                "others pink sapphire. The gem language is contentious."
+            )
+        elif any("green" in n for n in zone_notes):
+            parts.append(
+                "Green sapphire — Fe alone, no Ti partner. Australia + "
+                "Montana alluvial deposits are the sources. Less "
+                "commercially prized than blue or yellow."
+            )
+        if c.habit == "asterated":
+            parts.append(
+                "6-rayed star sapphire — rutile needles aligned along "
+                "basal plane. Sri Lanka star blue and Burma black star "
+                "are the famous cabochon gems."
+            )
+        elif c.habit == "barrel":
+            parts.append(
+                "Steep dipyramidal 'barrel' — basalt-hosted xenocryst "
+                "signature. Montana Yogo, Thailand/Cambodia, and "
+                "Australia basalt-hosted sapphire mostly crystallize "
+                "in this habit."
+            )
+        elif c.habit == "tabular":
+            parts.append(
+                "Flat hexagonal plate — Mogok marble-hosted, the "
+                "dominant habit in metamorphic contact sapphire."
             )
         return " ".join(parts)
 
