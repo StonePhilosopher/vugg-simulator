@@ -50,7 +50,26 @@ from typing import List, Dict, Optional, Tuple
 #        shifts Au distribution in reducing-As scenarios (arsenopyrite
 #        now traps a fraction of Au as invisible-gold trace before
 #        native_gold can nucleate).
-SIM_VERSION = 3
+#   v4 — sulfate expansion round 5 (Apr 2026): seven sulfates added —
+#        barite + celestine + jarosite + alunite + brochantite +
+#        antlerite + anhydrite. Activated Coorong sabkha celestine +
+#        anhydrite immediately; Bingham/Bisbee jarosite/alunite/anhydrite
+#        post-event; Bisbee brochantite/antlerite supergene Cu sulfate
+#        suite. Engine count 55 → 62. Two gaps documented at the time:
+#        Tri-State + Sweetwater O2=0.0 blocked barite + celestine, and
+#        Tsumeb pH=6.8 blocked scorodite + jarosite + alunite.
+#   v5 — gap-fill follow-ups (Apr 2026): bumps Tri-State + Sweetwater
+#        scenarios from O2=0.0 (default — strictly reducing) to O2=0.2
+#        (mildly reducing, matching real MVT brine where SO₄²⁻ persists
+#        alongside galena's H₂S — the chemistry that makes barite +
+#        galena coexistence the diagnostic MVT assemblage). Activates
+#        the dormant Ba=20/25 + Sr=15/12 pools in both scenarios.
+#        Plus (Tsumeb commit, separate): adds early
+#        ev_supergene_acidification event at step 5 + bumps Tsumeb Al
+#        3→15, opening a 15-step acid window for scorodite + jarosite +
+#        alunite to nucleate before ev_meteoric_flush at step 20
+#        carbonate-buffers pH back up.
+SIM_VERSION = 5
 
 
 # ============================================================
@@ -2306,6 +2325,302 @@ class VugConditions:
             sigma *= 0.5
         elif self.fluid.pH > 6.5:
             sigma *= max(0.2, 1.0 - 0.3 * (self.fluid.pH - 6.5))
+        return max(sigma, 0)
+
+    def supersaturation_barite(self) -> float:
+        """Barite (BaSO₄) — the Ba sequestration mineral.
+
+        The standard barium mineral and the densest non-metallic mineral
+        most collectors will encounter (4.5 g/cm³). Galena's primary
+        gangue mineral in MVT districts; also abundant in hydrothermal
+        vein systems. Wide T window (5-500°C) — MVT brine, hydrothermal
+        veins, and oilfield cold-seep barite all share the same engine.
+
+        Eh requirement: O₂ ≥ 0.1 — sulfate stable. Below O₂=0.1 (strictly
+        reducing), all S sits as sulfide and barite cannot form. Real MVT
+        brine sits at mildly-reducing Eh where some SO₄²⁻ persists alongside
+        H₂S, allowing barite + galena to coexist; current Tri-State scenario
+        O2=0.0 is too reducing (gap flagged in audit).
+
+        No acid dissolution — barite resists even concentrated H₂SO₄
+        (which is why it's the standard drilling-mud weighting agent).
+        Thermal decomposition only above 1149°C, well outside sim range.
+
+        Source: Hanor 2000 (Reviews in Mineralogy 40); Anderson & Macqueen
+        1982 (MVT mineralogy).
+        """
+        if self.fluid.Ba < 5 or self.fluid.S < 10 or self.fluid.O2 < 0.1:
+            return 0
+        # Factor caps to prevent evaporite-level S (thousands of ppm) from
+        # producing runaway sigma. See vugg-mineral-template.md §5.
+        ba_f = min(self.fluid.Ba / 30.0, 2.0)
+        s_f = min(self.fluid.S / 40.0, 2.5)
+        # O2 saturation kicks in around SO₄/H₂S Eh boundary (~O2=0.4 in
+        # sim scale), not at fully oxidized (O2=1.0). At the boundary,
+        # sulfate is at half-availability — barite + galena can coexist
+        # there, the diagnostic MVT chemistry. Sabkha O2=1.5 still hits
+        # the 1.5 cap.
+        o2_f = min(self.fluid.O2 / 0.4, 1.5)
+        sigma = ba_f * s_f * o2_f
+        # Wide T window — peaks in MVT range (50-200°C)
+        T = self.temperature
+        if 50 <= T <= 200:
+            sigma *= 1.2
+        elif T < 5:
+            sigma *= 0.3
+        elif T > 500:
+            sigma *= max(0.2, 1.0 - 0.003 * (T - 500))
+        # pH window 4-9, gentle drop outside
+        if self.fluid.pH < 4:
+            sigma *= max(0.4, 1.0 - 0.2 * (4 - self.fluid.pH))
+        elif self.fluid.pH > 9:
+            sigma *= max(0.4, 1.0 - 0.2 * (self.fluid.pH - 9))
+        return max(sigma, 0)
+
+    def supersaturation_anhydrite(self) -> float:
+        """Anhydrite (CaSO₄) — the high-T or saline-low-T Ca sulfate sister of selenite.
+
+        Two distinct stability regimes:
+          1. High-T (>60°C): anhydrite stable; Bingham porphyry deep-brine
+             zones contain massive anhydrite + chalcopyrite (Roedder 1971).
+          2. Low-T (<60°C) with high salinity (>100‰ NaCl-eq): anhydrite
+             stable due to lowered water activity; the Persian Gulf /
+             Coorong sabkha and Salar de Atacama evaporite habitats.
+
+        Below 60°C in dilute fluid (salinity < 100‰), anhydrite is
+        metastable and rehydrates to gypsum (CaSO₄·2H₂O = selenite in
+        the sim). Naica's giant selenite crystals grew on top of an
+        older anhydrite floor that was the original evaporite layer.
+
+        Source: Hardie 1967 (Am. Mineral. 52 — the canonical phase
+        diagram); Newton & Manning 2005 (J. Petrol. 46 — high-T
+        hydrothermal anhydrite); Warren 2006 (Evaporites textbook).
+        """
+        if (self.fluid.Ca < 50 or self.fluid.S < 20
+                or self.fluid.O2 < 0.3):
+            return 0
+        ca_f = min(self.fluid.Ca / 200.0, 2.5)
+        s_f = min(self.fluid.S / 40.0, 2.5)
+        o2_f = min(self.fluid.O2 / 1.0, 1.5)
+        sigma = ca_f * s_f * o2_f
+        T = self.temperature
+        salinity = self.fluid.salinity
+        # Two-mode T — high-T branch OR low-T-saline branch
+        if T > 60:
+            if T < 200:
+                T_factor = 0.5 + 0.005 * (T - 60)  # ramp 0.5 → 1.2
+            elif T <= 700:
+                T_factor = 1.2
+            else:
+                T_factor = max(0.3, 1.2 - 0.002 * (T - 700))
+        else:
+            # Low-T branch needs high salinity to suppress gypsum
+            if salinity > 100:
+                T_factor = min(1.0, 0.4 + salinity / 200.0)
+            elif salinity > 50:
+                # Marginal — partial activation
+                T_factor = 0.3
+            else:
+                return 0  # dilute low-T → gypsum/selenite wins
+        sigma *= T_factor
+        # pH 5-9 stable
+        if self.fluid.pH < 5:
+            sigma *= max(0.4, 1.0 - 0.2 * (5 - self.fluid.pH))
+        elif self.fluid.pH > 9:
+            sigma *= max(0.4, 1.0 - 0.2 * (self.fluid.pH - 9))
+        return max(sigma, 0)
+
+    def supersaturation_brochantite(self) -> float:
+        """Brochantite (Cu₄(SO₄)(OH)₆) — the wet-supergene Cu sulfate.
+
+        Emerald-green prismatic crystals; the higher-pH end of the
+        brochantite ↔ antlerite pH-fork pair. Forms at pH 4-7 in
+        oxidizing supergene conditions; takes over from malachite
+        when carbonate buffering tapers off and sulfate residue
+        dominates. Atacama Desert (Chile), Bisbee, Mt Lyell, Tsumeb.
+
+        Forks with antlerite below pH 3.5 (acidification converts
+        brochantite → antlerite + H₂O; reverse with neutralization).
+        Above pH 7 dissolves to tenorite/malachite.
+
+        Source: Pollard et al. 1992 (Mineralogical Magazine 56);
+        Vasconcelos et al. 1994 (Atacama supergene Cu geochronology);
+        Williams 1990 ("Oxide Zone Geochemistry" — standard reference).
+        """
+        if (self.fluid.Cu < 10 or self.fluid.S < 15
+                or self.fluid.O2 < 0.5):
+            return 0
+        if self.fluid.pH < 3 or self.fluid.pH > 7.5:
+            return 0  # hard gates outside stability window
+        cu_f = min(self.fluid.Cu / 40.0, 2.5)
+        s_f = min(self.fluid.S / 30.0, 2.5)
+        o2_f = min(self.fluid.O2 / 1.0, 1.5)
+        sigma = cu_f * s_f * o2_f
+        # Strongly low-T (supergene only)
+        if self.temperature > 50:
+            sigma *= math.exp(-0.05 * (self.temperature - 50))
+        # pH peak 5-6, falls outside 4-7
+        if self.fluid.pH < 4:
+            sigma *= max(0.3, 1.0 - 0.5 * (4 - self.fluid.pH))
+        elif self.fluid.pH > 6:
+            sigma *= max(0.3, 1.0 - 0.4 * (self.fluid.pH - 6))
+        return max(sigma, 0)
+
+    def supersaturation_antlerite(self) -> float:
+        """Antlerite (Cu₃(SO₄)(OH)₄) — the dry-acid-supergene Cu sulfate.
+
+        Same emerald-green color as brochantite but pH 1-3.5 stability —
+        the lower-pH end of the brochantite ↔ antlerite fork. Type locality
+        Antler mine (Mohave County, AZ); world-class deposits at
+        Chuquicamata (Chile) where antlerite was the dominant supergene Cu
+        mineral mined 1920s-50s. Cu₃ vs brochantite's Cu₄ — more SO₄ per Cu.
+
+        Forks with brochantite above pH 3.5 (neutralization converts
+        antlerite → brochantite). Below pH 1 dissolves to chalcanthite
+        (CuSO₄·5H₂O — not in sim).
+
+        Source: Hillebrand 1889 (type description); Pollard et al. 1992
+        (joint brochantite-antlerite stability paper).
+        """
+        if (self.fluid.Cu < 15 or self.fluid.S < 20
+                or self.fluid.O2 < 0.5):
+            return 0
+        if self.fluid.pH > 4 or self.fluid.pH < 0.5:
+            return 0  # hard gates: needs strong acid, but not extreme
+        cu_f = min(self.fluid.Cu / 40.0, 2.5)
+        s_f = min(self.fluid.S / 30.0, 2.5)
+        o2_f = min(self.fluid.O2 / 1.0, 1.5)
+        sigma = cu_f * s_f * o2_f
+        # Strongly low-T
+        if self.temperature > 50:
+            sigma *= math.exp(-0.05 * (self.temperature - 50))
+        # pH peak 2-3, falls outside 1-3.5
+        if self.fluid.pH > 3.5:
+            sigma *= max(0.2, 1.0 - 0.5 * (self.fluid.pH - 3.5))
+        elif self.fluid.pH < 1.5:
+            sigma *= max(0.4, 1.0 - 0.3 * (1.5 - self.fluid.pH))
+        return max(sigma, 0)
+
+    def supersaturation_jarosite(self) -> float:
+        """Jarosite (KFe³⁺₃(SO₄)₂(OH)₆) — the diagnostic acid-mine-drainage mineral.
+
+        Yellow-to-ocher pseudocubic rhombs and powdery crusts; the
+        supergene Fe-sulfate that takes over from goethite when pH
+        drops below 4. Confirmed on Mars at Meridiani Planum by MER
+        Opportunity Mössbauer (Klingelhöfer et al. 2004) — proof of
+        past acidic surface water on Mars. Earth localities: Rio Tinto,
+        Red Mountain Pass (CO), every active sulfide-mine tailings pond.
+
+        Stability gates: K ≥ 5 (from concurrent feldspar weathering),
+        Fe ≥ 10, S ≥ 20, O2 ≥ 0.5 (strongly oxidizing), pH 1-4
+        (above pH 4 jarosite dissolves and Fe goes to goethite),
+        T < 100 °C (kinetically supergene only — never hydrothermal).
+
+        Source: Bigham et al. 1996 (Geochim. Cosmochim. Acta 60);
+        Stoffregen et al. 2000 (Reviews in Mineralogy 40).
+        """
+        if (self.fluid.K < 5 or self.fluid.Fe < 10 or self.fluid.S < 20
+                or self.fluid.O2 < 0.5):
+            return 0
+        if self.fluid.pH > 5:
+            return 0  # hard gate; jarosite only stable in acid drainage
+        # Factor caps
+        k_f = min(self.fluid.K / 15.0, 2.0)
+        fe_f = min(self.fluid.Fe / 30.0, 2.5)
+        s_f = min(self.fluid.S / 50.0, 2.5)
+        o2_f = min(self.fluid.O2 / 1.0, 1.5)
+        sigma = k_f * fe_f * s_f * o2_f
+        # Strongly low-T — supergene only
+        if self.temperature > 50:
+            sigma *= math.exp(-0.04 * (self.temperature - 50))
+        # pH peak around 2-3, falls outside 1-4
+        if self.fluid.pH > 4:
+            sigma *= max(0.2, 1.0 - 0.6 * (self.fluid.pH - 4))
+        elif self.fluid.pH < 1:
+            sigma *= 0.4
+        return max(sigma, 0)
+
+    def supersaturation_alunite(self) -> float:
+        """Alunite (KAl₃(SO₄)₂(OH)₆) — the Al sister of jarosite (alunite group).
+
+        Same trigonal structure as jarosite, with Al³⁺ replacing Fe³⁺.
+        The index mineral of "advanced argillic" alteration in
+        porphyry-Cu lithocaps and high-sulfidation epithermal Au
+        deposits (Marysvale UT type locality, Goldfield NV, Summitville,
+        Yanacocha). Mined as a K source 1900s before potash mining
+        took over.
+
+        Stability gates: K ≥ 5, Al ≥ 10 (from feldspar leaching), S ≥ 20,
+        O2 ≥ 0.5, pH 1-4. Wider T window than jarosite (50-300 °C
+        — hydrothermal acid-sulfate alteration spans the porphyry
+        epithermal range, not just supergene).
+
+        Source: Hemley et al. 1969 (Econ. Geol. 64); Stoffregen 1987
+        (Summitville Au-Cu-Ag); Stoffregen et al. 2000 (Rev. Mineral. 40).
+        """
+        if (self.fluid.K < 5 or self.fluid.Al < 10 or self.fluid.S < 20
+                or self.fluid.O2 < 0.5):
+            return 0
+        if self.fluid.pH > 5:
+            return 0
+        k_f = min(self.fluid.K / 15.0, 2.0)
+        al_f = min(self.fluid.Al / 25.0, 2.5)
+        s_f = min(self.fluid.S / 50.0, 2.5)
+        o2_f = min(self.fluid.O2 / 1.0, 1.5)
+        sigma = k_f * al_f * s_f * o2_f
+        # Wider T window than jarosite — hydrothermal acid-sulfate
+        T = self.temperature
+        if 50 <= T <= 200:
+            sigma *= 1.2
+        elif T < 25:
+            sigma *= 0.5
+        elif T > 350:
+            sigma *= max(0.2, 1.0 - 0.005 * (T - 350))
+        # pH peak 2-3
+        if self.fluid.pH > 4:
+            sigma *= max(0.2, 1.0 - 0.6 * (self.fluid.pH - 4))
+        elif self.fluid.pH < 1:
+            sigma *= 0.4
+        return max(sigma, 0)
+
+    def supersaturation_celestine(self) -> float:
+        """Celestine (SrSO₄) — the Sr sequestration mineral.
+
+        Strontium sulfate; isostructural with barite. Pale celestial blue
+        F-center color is the diagnostic. Forms primarily in low-T
+        evaporite settings (Coorong + Persian Gulf sabkha) and as fibrous
+        sulfur-vug overgrowths (Sicilian Caltanissetta). Also in MVT
+        veins as the Sr-end of the barite-celestine solid solution.
+
+        Eh requirement: O₂ ≥ 0.1 — sulfate stable. Same Eh constraint as
+        barite. No acid dissolution; thermal decomposition only above
+        1100°C.
+
+        Source: Hanor 2000 (Reviews in Mineralogy 40); Schwartz et al.
+        2018 (Sr-isotope geochronology of MVT-hosted celestine).
+        """
+        if self.fluid.Sr < 3 or self.fluid.S < 10 or self.fluid.O2 < 0.1:
+            return 0
+        # Factor caps — see barite for rationale (sabkha S=2700 would
+        # otherwise produce sigma > 100). O2 saturation at SO₄/H₂S
+        # boundary (O2≈0.4) — same MVT-coexistence rationale.
+        sr_f = min(self.fluid.Sr / 15.0, 2.0)
+        s_f = min(self.fluid.S / 40.0, 2.5)
+        o2_f = min(self.fluid.O2 / 0.4, 1.5)
+        sigma = sr_f * s_f * o2_f
+        # Low-T preferred — supergene/evaporite/MVT
+        T = self.temperature
+        if T < 100:
+            sigma *= 1.2
+        elif 100 <= T <= 200:
+            sigma *= 1.0
+        elif T > 200:
+            sigma *= max(0.3, 1.0 - 0.005 * (T - 200))
+        # pH 5-9 stable, narrower than barite
+        if self.fluid.pH < 5:
+            sigma *= max(0.4, 1.0 - 0.2 * (5 - self.fluid.pH))
+        elif self.fluid.pH > 9:
+            sigma *= max(0.4, 1.0 - 0.2 * (self.fluid.pH - 9))
         return max(sigma, 0)
 
 
@@ -6351,7 +6666,7 @@ def grow_arsenopyrite(crystal: Crystal, conditions: VugConditions, step: int) ->
             # Release trapped invisible-gold — 12% per dissolution step
             # of the zone-averaged trapped Au. This is the supergene-Au
             # enrichment mechanism.
-            total_trapped_au = sum(z.trace_Au for z in crystal.growth_zones)
+            total_trapped_au = sum(z.trace_Au for z in crystal.zones)
             released_au = total_trapped_au * 0.12
             if released_au > 0:
                 conditions.fluid.Au += released_au
@@ -6420,6 +6735,451 @@ def grow_arsenopyrite(crystal: Crystal, conditions: VugConditions, step: int) ->
         thickness_um=rate, growth_rate=rate,
         trace_Fe=conditions.fluid.Fe * 0.003,
         trace_Au=au_trap_ppm,
+        note=habit_note
+    )
+
+
+def grow_barite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Barite (BaSO₄) growth — the Ba sequestration mineral.
+
+    The standard Ba mineral; tabular plates ("desert rose"), bladed
+    fans (Cumberland), cockscomb cyclic twins. Wide-T habit — MVT
+    brine, hydrothermal vein, oilfield cold-seep all converge here.
+    Acid-resistant; the standard drilling-mud weighting agent
+    (4.5 g/cm³). No dissolution branch — barite is essentially
+    permanent at sim T (decomposes only above 1149°C).
+    """
+    sigma = conditions.supersaturation_barite()
+    if sigma < 1.0:
+        return None  # no acid path; permanent at sim T
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit by σ excess + Sr substitution flag
+    if excess > 1.5:
+        crystal.habit = "prismatic"
+        crystal.dominant_forms = ["stubby prisms", "vein-fill habit"]
+        habit_note = "stubby prismatic barite, vein-fill"
+    elif excess > 0.8:
+        crystal.habit = "cockscomb"
+        crystal.dominant_forms = ["cyclic twin crests", "cockscomb"]
+        habit_note = "cockscomb barite — cyclic twins giving the diagnostic crested form"
+    elif excess > 0.3:
+        crystal.habit = "bladed"
+        crystal.dominant_forms = ["divergent blades", "Cumberland-style fans"]
+        habit_note = "bladed divergent barite, Cumberland-style"
+    else:
+        crystal.habit = "tabular"
+        crystal.dominant_forms = ["{001} tabular plates"]
+        habit_note = "tabular barite plates — the desert-rose habit"
+
+    # Sr-substitution flag → "celestobarite" intermediate when Sr > Ba/4
+    if conditions.fluid.Sr > 0 and conditions.fluid.Ba > 0:
+        sr_ratio = conditions.fluid.Sr / max(conditions.fluid.Ba, 0.1)
+        if sr_ratio > 0.25:
+            habit_note += "; Sr-substituted (celestobarite intermediate)"
+
+    # Color hints — F-center blue (Sterling Hill), honey-yellow Pb-bearing,
+    # green Chinese variants. Trace-element flags only.
+    if conditions.fluid.Pb > 5:
+        habit_note += "; honey-yellow (Pb-bearing — Cumberland gold habit)"
+
+    conditions.fluid.Ba = max(conditions.fluid.Ba - rate * 0.005, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.003, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.002,
+        trace_Pb=conditions.fluid.Pb * 0.005,
+        note=habit_note
+    )
+
+
+def grow_anhydrite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Anhydrite (CaSO₄) growth — high-T or saline-low-T Ca sulfate.
+
+    Tabular cleavage cubes (three perpendicular cleavages — diagnostic),
+    prismatic vein-fill, massive granular sabkha layers, fibrous "satin
+    spar." Pale lavender "angelite" variant is a Peruvian metaphysical-
+    stone fixture.
+
+    Rehydrates to gypsum/selenite when conditions shift to dilute low-T:
+    releases the Ca + S pool that selenite's nucleation block can pick up.
+    """
+    sigma = conditions.supersaturation_anhydrite()
+
+    if sigma < 1.0:
+        # Rehydration to gypsum: T < 60 AND salinity dropped below 100‰
+        # (e.g., post-evaporite freshening). Releases Ca + S to the fluid
+        # — selenite then re-precipitates from the same cation pool.
+        if (crystal.total_growth_um > 3
+                and conditions.temperature < 55
+                and conditions.fluid.salinity < 95):
+            crystal.dissolved = True
+            dissolved_um = min(3.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Ca += dissolved_um * 0.5
+            conditions.fluid.S += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note="rehydration to gypsum — anhydrite releases Ca²⁺ + SO₄²⁻ as fluid freshens (salinity < 100‰ at T < 60°C)"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit by σ excess + T context
+    high_T = conditions.temperature > 200
+    if excess > 1.5:
+        crystal.habit = "massive_granular"
+        crystal.dominant_forms = ["granular massive layers"]
+        habit_note = (
+            "massive granular anhydrite — the sabkha + salt-mine evaporite habit"
+            if not high_T else
+            "massive granular anhydrite — Bingham porphyry deep-brine vein habit"
+        )
+    elif excess > 0.8:
+        crystal.habit = "prismatic"
+        crystal.dominant_forms = ["stubby prisms", "vein-fill"]
+        habit_note = "stubby prismatic anhydrite, vein-fill"
+    elif excess > 0.3 or conditions.temperature < 50:
+        crystal.habit = "fibrous"
+        crystal.dominant_forms = ["satin spar fibers", "parallel fibrous"]
+        habit_note = "fibrous satin-spar anhydrite — parallel fibers across vein"
+    else:
+        crystal.habit = "tabular"
+        crystal.dominant_forms = ["tabular crystals", "three perpendicular cleavages"]
+        habit_note = "tabular anhydrite with the diagnostic three perpendicular cleavages"
+
+    # Pale lavender "angelite" — anomalous color, attributed to
+    # organic inclusions or trace Mn²⁺
+    if conditions.fluid.Mn > 3 or (conditions.temperature < 60
+                                    and conditions.fluid.salinity > 150):
+        habit_note += "; pale lavender (angelite variant)"
+
+    conditions.fluid.Ca = max(conditions.fluid.Ca - rate * 0.005, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.003, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Mn=conditions.fluid.Mn * 0.002,
+        note=habit_note
+    )
+
+
+def grow_brochantite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Brochantite (Cu₄(SO₄)(OH)₆) growth — emerald-green wet-supergene Cu sulfate.
+
+    The higher-pH end of the brochantite ↔ antlerite Cu-sulfate fork.
+    Acidification (pH < 3) converts brochantite to antlerite + H₂O;
+    alkalinization (pH > 7) converts to tenorite/malachite. Substrate
+    prefers dissolving Cu sulfides (chalcocite, covellite). The Statue
+    of Liberty's patina is largely brochantite (chloride-rich harbor
+    air drives this composition over malachite).
+    """
+    sigma = conditions.supersaturation_brochantite()
+
+    if sigma < 1.0:
+        # Acidification dissolution → ions become available for antlerite
+        # nucleation. Alkalinization dissolution → tenorite/malachite.
+        # Hysteresis at pH 2.8 / 7.5 to avoid oscillation.
+        if crystal.total_growth_um > 2 and (
+            conditions.fluid.pH < 2.8 or conditions.fluid.pH > 7.5
+        ):
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.12)
+            conditions.fluid.Cu += dissolved_um * 0.5
+            conditions.fluid.S += dissolved_um * 0.3
+            cause = "pH < 3 → antlerite stable" if conditions.fluid.pH < 2.8 else "pH > 7 → tenorite/malachite stable"
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"dissolution ({cause}) — brochantite releases Cu²⁺ + SO₄²⁻"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.5:
+        crystal.habit = "drusy_crust"
+        crystal.dominant_forms = ["microcrystalline druse", "emerald-green coating"]
+        habit_note = "drusy emerald-green brochantite crust on Cu-bearing wall"
+    elif excess > 0.8:
+        crystal.habit = "acicular_tuft"
+        crystal.dominant_forms = ["radiating acicular needle-tufts"]
+        habit_note = "acicular emerald-green brochantite tufts radiating from substrate"
+    elif excess > 0.3:
+        crystal.habit = "short_prismatic"
+        crystal.dominant_forms = ["stubby emerald-green prisms"]
+        habit_note = "stubby emerald-green brochantite prisms — the Atacama / Bisbee habit"
+    else:
+        crystal.habit = "botryoidal"
+        crystal.dominant_forms = ["globular aggregates"]
+        habit_note = "botryoidal brochantite — globular emerald-green aggregates"
+
+    # Cl-rich systems push toward atacamite competition (not yet in sim;
+    # flag in note when Cl present)
+    if conditions.fluid.Cl > 100:
+        habit_note += "; Cl-rich (would compete with atacamite — Cl-Cu hydroxychloride)"
+
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.006, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.003, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.001,
+        note=habit_note
+    )
+
+
+def grow_antlerite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Antlerite (Cu₃(SO₄)(OH)₄) growth — the dry-acid Cu sulfate.
+
+    Same emerald-green color as brochantite but pH 1-3.5 stability.
+    Substrate-prefers dissolving brochantite (the direct fork product
+    when acidification arrives). Dissolves above pH 3.5 → brochantite
+    forms; below pH 1 → chalcanthite (extreme acid, not in sim).
+    """
+    sigma = conditions.supersaturation_antlerite()
+
+    if sigma < 1.0:
+        # Neutralization → brochantite stable. Hysteresis at pH 4.2.
+        if crystal.total_growth_um > 2 and conditions.fluid.pH > 4.2:
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.15)
+            conditions.fluid.Cu += dissolved_um * 0.5
+            conditions.fluid.S += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note="dissolution (pH > 3.5 → brochantite stable) — antlerite releases Cu²⁺ + SO₄²⁻"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.5:
+        crystal.habit = "granular"
+        crystal.dominant_forms = ["massive granular emerald-green"]
+        habit_note = "massive granular antlerite — Chuquicamata habit"
+    elif excess > 0.8:
+        crystal.habit = "acicular"
+        crystal.dominant_forms = ["thin needles", "radiating aggregates"]
+        habit_note = "acicular antlerite — radiating dark-green needles"
+    elif excess > 0.3:
+        crystal.habit = "short_prismatic"
+        crystal.dominant_forms = ["stubby green prisms"]
+        habit_note = "stubby emerald-green antlerite prisms — visually identical to brochantite, distinguished by acid-resistance test"
+    else:
+        crystal.habit = "druzy"
+        crystal.dominant_forms = ["microcrystalline druse"]
+        habit_note = "druzy antlerite microcrystals on dissolving Cu sulfide"
+
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.006, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.004, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.001,
+        note=habit_note
+    )
+
+
+def grow_jarosite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Jarosite (KFe³⁺₃(SO₄)₂(OH)₆) growth — the AMD-yellow Fe sulfate.
+
+    Pseudocubic yellow rhombs and earthy crusts on weathered sulfides.
+    Substrate-prefers dissolving pyrite/marcasite (the classic yellow
+    rim). Dissolves above pH 4 — releases K + Fe³⁺ + SO₄ which then
+    re-precipitates as goethite (the diagnostic AMD → AMN succession).
+    """
+    sigma = conditions.supersaturation_jarosite()
+
+    if sigma < 1.0:
+        # Alkaline-shift dissolution — releases ions that feed goethite.
+        # Hysteresis at pH 4.5 to avoid oscillation.
+        if crystal.total_growth_um > 2 and conditions.fluid.pH > 4.5:
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.15)
+            conditions.fluid.K += dissolved_um * 0.3
+            conditions.fluid.Fe += dissolved_um * 0.5
+            conditions.fluid.S += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note="dissolution (pH > 4) — jarosite releases K + Fe³⁺ + SO₄²⁻; goethite-stable territory now"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.0 * excess * random.uniform(0.8, 1.2)  # fast growth
+    if rate < 0.1:
+        return None
+
+    # Habit by σ excess
+    if excess > 1.5:
+        crystal.habit = "earthy_crust"
+        crystal.dominant_forms = ["powdery yellow coating", "AMD stain"]
+        habit_note = "powdery yellow jarosite crust on weathered sulfide — the diagnostic AMD signature"
+    elif excess > 0.5:
+        crystal.habit = "druzy"
+        crystal.dominant_forms = ["microcrystalline druse"]
+        habit_note = "druzy jarosite microcrystals — yellow honeycomb on pyrite oxidation surfaces"
+    else:
+        crystal.habit = "pseudocubic"
+        crystal.dominant_forms = ["pseudocubic rhombs", "tabular {0001}"]
+        habit_note = "pseudocubic golden-yellow jarosite rhombs"
+
+    conditions.fluid.K = max(conditions.fluid.K - rate * 0.003, 0)
+    conditions.fluid.Fe = max(conditions.fluid.Fe - rate * 0.005, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.004, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.005,
+        note=habit_note
+    )
+
+
+def grow_alunite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Alunite (KAl₃(SO₄)₂(OH)₆) growth — the advanced argillic index mineral.
+
+    Pseudocubic rhombs in the lithocap of porphyry-Cu systems and in
+    high-sulfidation epithermal Au deposits. Substrate-prefers
+    dissolving feldspar (the wall-leaching origin of Al). Dissolves
+    above pH 4 OR above 350 °C → releases K + Al + SO₄.
+    """
+    sigma = conditions.supersaturation_alunite()
+
+    if sigma < 1.0:
+        if crystal.total_growth_um > 2 and (conditions.fluid.pH > 4.5
+                                             or conditions.temperature > 350):
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.12)
+            conditions.fluid.K += dissolved_um * 0.3
+            conditions.fluid.Al += dissolved_um * 0.4
+            conditions.fluid.S += dissolved_um * 0.4
+            cause = "pH > 4" if conditions.fluid.pH > 4.5 else "T > 350°C"
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"dissolution ({cause}) — alunite releases K + Al³⁺ + SO₄²⁻"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit by σ excess
+    if excess > 1.5:
+        crystal.habit = "earthy"
+        crystal.dominant_forms = ["chalky white masses", "feldspar-replacement habit"]
+        habit_note = "earthy alunite — chalky white replacement of feldspathic wall (Marysvale alunite-stone habit)"
+    elif excess > 0.8:
+        crystal.habit = "fibrous"
+        crystal.dominant_forms = ["radiating fibers", "vein-fill"]
+        habit_note = "fibrous alunite — vein-fill, radiating from substrate"
+    elif excess > 0.3:
+        crystal.habit = "tabular"
+        crystal.dominant_forms = ["sharp tabular blades"]
+        habit_note = "tabular alunite blades — Goldfield epithermal habit"
+    else:
+        crystal.habit = "pseudocubic"
+        crystal.dominant_forms = ["pseudocubic rhombs"]
+        habit_note = "pseudocubic alunite rhombs"
+
+    # Pinkish tint when present in iron-bearing systems (intermediate to jarosite)
+    if conditions.fluid.Fe > 20:
+        habit_note += "; pinkish (intermediate to jarosite — natroalunite series)"
+
+    conditions.fluid.K = max(conditions.fluid.K - rate * 0.003, 0)
+    conditions.fluid.Al = max(conditions.fluid.Al - rate * 0.005, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.004, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.002,
+        trace_Al=conditions.fluid.Al * 0.005,
+        note=habit_note
+    )
+
+
+def grow_celestine(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Celestine (SrSO₄) growth — pale celestial blue, the Sr sister of barite.
+
+    Same orthorhombic structure as barite (the two form a partial
+    solid solution — celestobarite intermediates are common). Pale
+    blue F-center color is the diagnostic. Madagascar geodes
+    (huge tabular blue blades), Sicilian sulfur-vug fibrous habit
+    (Caltanissetta — celestine fibers radiating in vugs on native
+    sulfur), Lake Erie geodes. No dissolution branch; thermal
+    decomposition only above 1100°C.
+    """
+    sigma = conditions.supersaturation_celestine()
+    if sigma < 1.0:
+        return None  # permanent at sim T
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit by σ excess + sulfur context (fibrous habit when sulfur present)
+    sulfur_context = conditions.fluid.S > 200  # Sicilian sulfur-vug context
+    if excess > 1.5:
+        crystal.habit = "nodular"
+        crystal.dominant_forms = ["geodal lining", "concentric blue crust"]
+        habit_note = "nodular celestine — Madagascar geode lining"
+    elif sulfur_context and excess > 0.5:
+        crystal.habit = "fibrous"
+        crystal.dominant_forms = ["radiating acicular fibers"]
+        habit_note = "fibrous celestine — Sicilian sulfur-vug habit, radiating from substrate"
+    elif excess > 0.3:
+        crystal.habit = "bladed"
+        crystal.dominant_forms = ["divergent blue blades"]
+        habit_note = "bladed celestine — Lake Erie / Put-in-Bay habit"
+    else:
+        crystal.habit = "tabular"
+        crystal.dominant_forms = ["{001} tabular plates", "pale celestial blue"]
+        habit_note = "tabular pale-blue celestine plates"
+
+    # Color tint by Mn trace (rare reddish — Yates mine)
+    if conditions.fluid.Mn > 5:
+        habit_note += "; reddish tint (Mn²⁺ trace — rare habit)"
+
+    # Ba-substitution flag → "barytocelestine" intermediate
+    if conditions.fluid.Ba > 0 and conditions.fluid.Sr > 0:
+        ba_ratio = conditions.fluid.Ba / max(conditions.fluid.Sr, 0.1)
+        if ba_ratio > 0.25:
+            habit_note += "; Ba-substituted (barytocelestine intermediate)"
+
+    conditions.fluid.Sr = max(conditions.fluid.Sr - rate * 0.005, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.003, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.001,
         note=habit_note
     )
 
@@ -6517,6 +7277,13 @@ MINERAL_ENGINES = {
     "ferrimolybdite": grow_ferrimolybdite,
     "arsenopyrite": grow_arsenopyrite,
     "scorodite": grow_scorodite,
+    "barite": grow_barite,
+    "celestine": grow_celestine,
+    "jarosite": grow_jarosite,
+    "alunite": grow_alunite,
+    "brochantite": grow_brochantite,
+    "antlerite": grow_antlerite,
+    "anhydrite": grow_anhydrite,
     "selenite": grow_selenite,
     "topaz": grow_topaz,
     "tourmaline": grow_tourmaline,
@@ -6586,6 +7353,13 @@ THERMAL_DECOMPOSITION = {
     "arsenopyrite": (720, "FeAsS → FeAs₂ (loellingite) + S (sulfur driven off; As vapor at higher T)", {"Fe": 0.4, "As": 0.3, "S": 0.3}),
     "ferrimolybdite": (150, "Fe₂(MoO₄)₃·nH₂O → Fe₂(MoO₄)₃ + nH₂O (dehydration)",          {"Fe": 0.4, "Mo": 0.3}),
     "scorodite":     (160, "FeAsO₄·2H₂O → FeAsO₄ + 2H₂O (dehydration to anhydrous arsenate)",  {"Fe": 0.4, "As": 0.4}),
+    "barite":        (1149, "BaSO₄ → BaO + SO₃ (decomposition; very high T — outside normal sim range)", {"Ba": 0.5, "S": 0.4}),
+    "celestine":     (1100, "SrSO₄ → SrO + SO₃ (decomposition; high T — outside normal sim range)", {"Sr": 0.5, "S": 0.4}),
+    "jarosite":      (250, "KFe³⁺₃(SO₄)₂(OH)₆ → K-jarosite dehydration → hematite + K-sulfate (loses lattice OH)", {"K": 0.3, "Fe": 0.5, "S": 0.3}),
+    "alunite":       (450, "KAl₃(SO₄)₂(OH)₆ → corundum + K-Al-sulfate (loses lattice OH; basis for the early-1900s K-fertilizer process)", {"K": 0.3, "Al": 0.4, "S": 0.3}),
+    "brochantite":   (250, "Cu₄(SO₄)(OH)₆ → tenorite (CuO) + SO₃ + H₂O (dehydration)", {"Cu": 0.5, "S": 0.3}),
+    "antlerite":     (200, "Cu₃(SO₄)(OH)₄ → tenorite + SO₃ + H₂O (dehydration)", {"Cu": 0.5, "S": 0.4}),
+    "anhydrite":     (1450, "CaSO₄ → CaO + SO₃ (decomposition; very high T — outside normal sim range)", {"Ca": 0.4, "S": 0.4}),
 }
 
 
@@ -6954,6 +7728,20 @@ def scenario_mvt() -> Tuple[VugConditions, List[Event], int]:
             # entry, uncomment the line above. Same template as
             # bingham_canyon Au pending-schema entry.
             # ──────────────────────────────────────────────────────────
+            # ── v5 gap-fill (Apr 2026) ────────────────────────────────
+            # O2=0.25 (was default 0.0): mildly reducing, NOT strictly
+            # reducing. Real MVT brine sits at the SO₄/H₂S boundary
+            # where some sulfate persists alongside H₂S — that's the
+            # chemistry that lets barite + galena COEXIST as the
+            # diagnostic MVT assemblage. With O2=0.0, sulfate didn't
+            # exist in the sim and barite + celestine couldn't form
+            # despite Ba=20 + Sr=15 being populated. Bumping to 0.25
+            # unlocks them; sphalerite/galena/pyrite still form fine
+            # (their O2 ≤ 0.8 gates remain met). Source: Anderson &
+            # Macqueen 1982 (MVT mineralogy review); Stoffell et al.
+            # 2008 (Tri-State fluid inclusion brine analyses).
+            O2=0.25,
+            # ──────────────────────────────────────────────────────────
             pH=7.2, salinity=15.0
         ),
         # MVT — dissolution cavity in limestone. Cohesive primary void
@@ -7129,6 +7917,16 @@ def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
             # Sr=12: basinal-brine tracer (Hanor 1994); minor celestine
             # documented in the Viburnum carbonate gangue.
             Sr=12,
+            # ──────────────────────────────────────────────────────────
+            # ── v5 gap-fill (Apr 2026) ────────────────────────────────
+            # O2=0.25 (was default 0.0): same MVT-Eh rationale as
+            # Tri-State — mildly reducing brine where SO₄²⁻ persists
+            # alongside H₂S, allowing barite + galena coexistence.
+            # Bumping unlocks dormant Ba=25 + Sr=12 pools without
+            # disturbing the existing sulfide assemblage. Source:
+            # Sverjensky 1981 (Viburnum brine geochem); Anderson &
+            # Macqueen 1982 (MVT review).
+            O2=0.25,
             # ──────────────────────────────────────────────────────────
             pH=7.0, salinity=18.0
         ),
@@ -7361,6 +8159,17 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
             # without producing gold the locality doesn't actually
             # produce in quantity.
             Au=0.3,
+            # ── v5 gap-fill (Apr 2026) ────────────────────────────────
+            # Al=25 (was default 3.0): Tsumeb supergene fluid carries
+            # significant Al³⁺ from feldspar weathering during the
+            # acid-sulfate phase (alunite is the diagnostic alteration
+            # mineral of the lithocap). Bumped to 25 (above the
+            # alunite engine's al_f=Al/25 cap) so alunite sigma can
+            # cross threshold during the brief 15-step acid window.
+            # Source: Hemley et al. 1969 (alunite stability + Al
+            # solubility under acid-sulfate conditions); Stoffregen
+            # et al. 2000 (alunite-jarosite paragenesis review).
+            Al=25,
             # ──────────────────────────────────────────────────────────
             O2=1.8, pH=6.8, salinity=2.0,
         ),
@@ -7368,6 +8177,33 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
         # model complex meteoric dissolution cavity formation.
         wall=VugWall(primary_bubbles=3, secondary_bubbles=7, shape_seed=7),
     )
+
+    def ev_supergene_acidification(cond):
+        """Early acidic phase: H₂SO₄ from sulfide oxidation drops pH.
+
+        Geological reality: when primary sulfides (galena, sphalerite,
+        chalcopyrite) first oxidize at the supergene front, they
+        release H₂SO₄ that drops local pH well below the carbonate-
+        buffered late-stage equilibrium of pH 6.8. The acid window
+        is the formation environment for scorodite + jarosite +
+        alunite — all three need pH < 5 to nucleate. The carbonate
+        host then buffers pH back up over time (modeled by
+        ev_meteoric_flush at step 20 reseting pH to 6.2).
+
+        v5 gap-fill (Apr 2026): added to close the Tsumeb pH gap
+        documented in BACKLOG.md after Round 5. Without this event,
+        scorodite / jarosite / alunite couldn't form at Tsumeb
+        despite being world-class display species there.
+        """
+        cond.fluid.pH = 4.0
+        cond.fluid.O2 = 1.5  # already oxidizing, slight bump from O2=1.8 baseline
+        cond.fluid.S += 20   # H₂SO₄ contributes SO₄²⁻ to fluid
+        return ("Early acidic supergene phase. Primary sulfides oxidize "
+                "and release H₂SO₄ — pH drops to 4.0, opening the acid "
+                "window for the arsenate + sulfate suite (scorodite, "
+                "jarosite, alunite). Carbonate buffering will reverse "
+                "this at the meteoric flush; the acid-stable phases "
+                "form during this short ~15-step window.")
 
     def ev_meteoric_flush(cond):
         """Rain-fed oxygenated water recharges the aquifer."""
@@ -7474,6 +8310,16 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
                 "whatever is undersaturated will quietly corrode.")
 
     events = [
+        # Acid phase — fires at 4 steps (5, 8, 12, 16) to maintain the acid
+        # window against the limestone wall's pH-buffering. Without the
+        # repeated pulses, the carbonate host neutralizes pH back to 6+
+        # within ~5 steps; with them, pH stays in the 3.5-5 range until
+        # ev_meteoric_flush (step 20) ends the phase. This 15-step window
+        # is when scorodite + jarosite + alunite nucleate.
+        Event(5,   "Acid Phase",        "Early sulfide oxidation drops pH",        ev_supergene_acidification),
+        Event(8,   "Acid Continues",    "Sulfide-oxidation acid persists",         ev_supergene_acidification),
+        Event(12,  "Acid Continues",    "Carbonate buffer overrun",                 ev_supergene_acidification),
+        Event(16,  "Acid Final Pulse",  "Last sulfide-oxidation pulse",            ev_supergene_acidification),
         Event(20,  "Meteoric Flush",  "Oxygenated rainwater recharges",          ev_meteoric_flush),
         Event(40,  "Pb+Mo Pulse",     "Galena+molybdenite weathering",           ev_pb_mo_pulse),
         Event(55,  "Cu Enrichment",   "Primary chalcopyrite upslope weathers",   ev_cu_enrichment),
@@ -9355,6 +10201,163 @@ class VugSimulator:
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_sco:.2f}, "
                               f"Fe={self.conditions.fluid.Fe:.0f}, As={self.conditions.fluid.As:.0f}, "
                               f"pH={self.conditions.fluid.pH:.1f})")
+
+        # Barite nucleation — the Ba sequestration mineral. σ threshold
+        # 1.0 + per-check 0.15. Wide-T habit; substrate-agnostic (often
+        # nucleates directly on bare wall in MVT/hydrothermal vein
+        # contexts rather than overgrowing prior crystals). Sr-substitution
+        # to celestobarite when Sr also present in fluid.
+        sigma_brt = self.conditions.supersaturation_barite()
+        if sigma_brt > 1.0 and not self._at_nucleation_cap("barite"):
+            if random.random() < 0.15:
+                pos = "vug wall"
+                # MVT context: barite often perches on or near galena/
+                # sphalerite — co-precipitation paragenesis
+                active_gal_brt = [c for c in self.crystals if c.mineral == "galena" and c.active]
+                active_sph_brt = [c for c in self.crystals if c.mineral == "sphalerite" and c.active]
+                if active_gal_brt and random.random() < 0.3:
+                    pos = f"near galena #{active_gal_brt[0].crystal_id}"
+                elif active_sph_brt and random.random() < 0.2:
+                    pos = f"near sphalerite #{active_sph_brt[0].crystal_id}"
+                c = self.nucleate("barite", position=pos, sigma=sigma_brt)
+                self.log.append(f"  ✦ NUCLEATION: Barite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_brt:.2f}, "
+                              f"Ba={self.conditions.fluid.Ba:.0f}, S={self.conditions.fluid.S:.0f}, "
+                              f"O₂={self.conditions.fluid.O2:.2f})")
+
+        # Celestine nucleation — the Sr sequestration mineral; pale
+        # celestial blue dipyramids/blades. Substrate priority:
+        # dissolving native sulfur if present (Sicilian habit) > vug wall.
+        # In sabkha/evaporite contexts often nucleates as nodular geode
+        # lining; in MVT as the Sr-end of the barite-celestine pair.
+        sigma_cel = self.conditions.supersaturation_celestine()
+        if sigma_cel > 1.0 and not self._at_nucleation_cap("celestine"):
+            if random.random() < 0.15:
+                pos = "vug wall"
+                # Sicilian sulfur-vug habit: prefers native sulfur substrate
+                # (the sim doesn't model native sulfur yet — fall through to
+                # wall). Future scenario could add it.
+                active_brt_cel = [c for c in self.crystals if c.mineral == "barite" and c.active]
+                if active_brt_cel and random.random() < 0.25:
+                    pos = f"on barite #{active_brt_cel[0].crystal_id} (celestobarite-barytocelestine pair)"
+                c = self.nucleate("celestine", position=pos, sigma=sigma_cel)
+                self.log.append(f"  ✦ NUCLEATION: Celestine #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cel:.2f}, "
+                              f"Sr={self.conditions.fluid.Sr:.0f}, S={self.conditions.fluid.S:.0f}, "
+                              f"O₂={self.conditions.fluid.O2:.2f})")
+
+        # Jarosite nucleation — the AMD-yellow Fe sulfate. Substrate prefers
+        # dissolving pyrite/marcasite (the diagnostic yellow rim on weathered
+        # sulfide). σ threshold 1.0 + per-check 0.18 reflects supergene speed.
+        sigma_jar = self.conditions.supersaturation_jarosite()
+        if sigma_jar > 1.0 and not self._at_nucleation_cap("jarosite"):
+            # Higher per-check (0.45 vs default 0.18) reflects the fast
+            # kinetics of jarosite formation in acid drainage; helps the
+            # mineral fire reliably during brief acid windows. Across
+            # 20 seeds at 0.45, jarosite hits ~95%; at 0.18 only ~25%.
+            if random.random() < 0.45:
+                pos = "vug wall"
+                diss_py_jar = [c for c in self.crystals if c.mineral == "pyrite" and c.dissolved]
+                diss_mar_jar = [c for c in self.crystals if c.mineral == "marcasite" and c.dissolved]
+                active_py_jar = [c for c in self.crystals if c.mineral == "pyrite" and c.active]
+                if diss_py_jar and random.random() < 0.7:
+                    pos = f"on dissolving pyrite #{diss_py_jar[0].crystal_id}"
+                elif diss_mar_jar and random.random() < 0.6:
+                    pos = f"on dissolving marcasite #{diss_mar_jar[0].crystal_id}"
+                elif active_py_jar and random.random() < 0.4:
+                    pos = f"on pyrite #{active_py_jar[0].crystal_id}"
+                c = self.nucleate("jarosite", position=pos, sigma=sigma_jar)
+                self.log.append(f"  ✦ NUCLEATION: Jarosite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_jar:.2f}, "
+                              f"K={self.conditions.fluid.K:.0f}, Fe={self.conditions.fluid.Fe:.0f}, "
+                              f"pH={self.conditions.fluid.pH:.1f})")
+
+        # Alunite nucleation — advanced argillic alteration index mineral.
+        # Substrate prefers dissolving feldspar (the wall-leaching origin
+        # of Al). Wider T window than jarosite (50-300 °C — hydrothermal
+        # acid-sulfate). σ threshold 1.0 + per-check 0.15.
+        sigma_alu = self.conditions.supersaturation_alunite()
+        if sigma_alu > 1.0 and not self._at_nucleation_cap("alunite"):
+            # Higher per-check (0.45 vs default 0.15) — same rationale as
+            # jarosite: fast acid-sulfate alteration kinetics, brief acid
+            # windows in carbonate-buffered systems. Tighter alunite
+            # window (Al/25 cap means only 3 of 4 acid pulses cross
+            # threshold) makes the boost more important here.
+            if random.random() < 0.45:
+                pos = "vug wall"
+                diss_fel_alu = [c for c in self.crystals if c.mineral == "feldspar" and c.dissolved]
+                active_fel_alu = [c for c in self.crystals if c.mineral == "feldspar" and c.active]
+                if diss_fel_alu and random.random() < 0.7:
+                    pos = f"on dissolving feldspar #{diss_fel_alu[0].crystal_id}"
+                elif active_fel_alu and random.random() < 0.4:
+                    pos = f"on feldspar #{active_fel_alu[0].crystal_id}"
+                c = self.nucleate("alunite", position=pos, sigma=sigma_alu)
+                self.log.append(f"  ✦ NUCLEATION: Alunite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_alu:.2f}, "
+                              f"K={self.conditions.fluid.K:.0f}, Al={self.conditions.fluid.Al:.0f}, "
+                              f"pH={self.conditions.fluid.pH:.1f})")
+
+        # Brochantite nucleation — wet-supergene Cu sulfate (pH 4-7 fork
+        # end). Substrate priority: dissolving Cu sulfides (chalcocite,
+        # covellite) > Cu sulfide > vug wall.
+        sigma_brn = self.conditions.supersaturation_brochantite()
+        if sigma_brn > 1.0 and not self._at_nucleation_cap("brochantite"):
+            if random.random() < 0.18:
+                pos = "vug wall"
+                diss_chc_brn = [c for c in self.crystals if c.mineral == "chalcocite" and c.dissolved]
+                diss_cov_brn = [c for c in self.crystals if c.mineral == "covellite" and c.dissolved]
+                active_chc_brn = [c for c in self.crystals if c.mineral == "chalcocite" and c.active]
+                if diss_chc_brn and random.random() < 0.7:
+                    pos = f"on dissolving chalcocite #{diss_chc_brn[0].crystal_id}"
+                elif diss_cov_brn and random.random() < 0.6:
+                    pos = f"on dissolving covellite #{diss_cov_brn[0].crystal_id}"
+                elif active_chc_brn and random.random() < 0.4:
+                    pos = f"on chalcocite #{active_chc_brn[0].crystal_id}"
+                c = self.nucleate("brochantite", position=pos, sigma=sigma_brn)
+                self.log.append(f"  ✦ NUCLEATION: Brochantite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_brn:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, S={self.conditions.fluid.S:.0f}, "
+                              f"pH={self.conditions.fluid.pH:.1f})")
+
+        # Antlerite nucleation — dry-acid Cu sulfate (pH 1-3.5 fork end).
+        # Substrate priority: dissolving brochantite (the direct fork
+        # product of acidification) > dissolving Cu sulfides > vug wall.
+        sigma_ant = self.conditions.supersaturation_antlerite()
+        if sigma_ant > 1.0 and not self._at_nucleation_cap("antlerite"):
+            if random.random() < 0.18:
+                pos = "vug wall"
+                diss_brn_ant = [c for c in self.crystals if c.mineral == "brochantite" and c.dissolved]
+                diss_chc_ant = [c for c in self.crystals if c.mineral == "chalcocite" and c.dissolved]
+                if diss_brn_ant and random.random() < 0.8:
+                    pos = f"on dissolving brochantite #{diss_brn_ant[0].crystal_id} (pH-fork conversion)"
+                elif diss_chc_ant and random.random() < 0.5:
+                    pos = f"on dissolving chalcocite #{diss_chc_ant[0].crystal_id}"
+                c = self.nucleate("antlerite", position=pos, sigma=sigma_ant)
+                self.log.append(f"  ✦ NUCLEATION: Antlerite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ant:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, S={self.conditions.fluid.S:.0f}, "
+                              f"pH={self.conditions.fluid.pH:.1f})")
+
+        # Anhydrite nucleation — high-T or saline-low-T Ca sulfate. σ
+        # threshold 1.0 + per-check 0.16 (slightly less than selenite's
+        # to avoid both flooding the same vug). Substrate-agnostic; can
+        # nucleate on bare wall in evaporite + porphyry deep-brine
+        # contexts. In sabkha the anhydrite-gypsum stratigraphy is
+        # interlayered; in Bingham anhydrite forms with chalcopyrite in
+        # the deep-zone vein paragenesis.
+        sigma_anh = self.conditions.supersaturation_anhydrite()
+        if sigma_anh > 1.0 and not self._at_nucleation_cap("anhydrite"):
+            if random.random() < 0.16:
+                pos = "vug wall"
+                # In deep-brine context, often co-precipitates with chalcopyrite
+                active_cp_anh = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.active]
+                if active_cp_anh and self.conditions.temperature > 200 and random.random() < 0.3:
+                    pos = f"near chalcopyrite #{active_cp_anh[0].crystal_id} (porphyry deep-brine paragenesis)"
+                c = self.nucleate("anhydrite", position=pos, sigma=sigma_anh)
+                self.log.append(f"  ✦ NUCLEATION: Anhydrite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_anh:.2f}, "
+                              f"Ca={self.conditions.fluid.Ca:.0f}, S={self.conditions.fluid.S:.0f}, "
+                              f"salinity={self.conditions.fluid.salinity:.0f}‰)")
 
         # Uraninite nucleation — strongly reducing, U-bearing. Emits radiation each step.
         sigma_ur = self.conditions.supersaturation_uraninite()
@@ -11922,6 +12925,459 @@ class VugSimulator:
                 "is scarce or chemistry is right."
             )
 
+        return " ".join(parts)
+
+    def _narrate_barite(self, c: Crystal) -> str:
+        """Narrate a barite crystal — the heavy spar."""
+        parts = [f"Barite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "BaSO₄ — the densest non-metallic mineral most collectors "
+            "will encounter at 4.5 g/cm³, hence the name 'barytes' from "
+            "the Greek βαρύς, 'heavy.' Galena's primary gangue mineral "
+            "in MVT districts (Tri-State, Cumberland, Pine Point); also "
+            "abundant in hydrothermal vein systems. Acid-resistant — even "
+            "concentrated H₂SO₄ won't touch it, which is why it's the "
+            "standard drilling-mud weighting agent worldwide."
+        )
+        if c.habit == "tabular":
+            parts.append(
+                "Tabular plates — the standard barite habit. When concentric "
+                "blade aggregates radiate from a center, you get the famous "
+                "'desert rose' rosette of Oklahoma + Saudi Arabia."
+            )
+        elif c.habit == "bladed":
+            parts.append(
+                "Bladed divergent fans — the Cumberland (UK) signature habit. "
+                "Cumberland gold barite from the Frizington vein is now mined "
+                "out; specimens are collector-only."
+            )
+        elif c.habit == "cockscomb":
+            parts.append(
+                "Cockscomb cyclic twins — the diagnostic crested form, where "
+                "twin individuals stack along {110} to give the fan-with-ridges "
+                "appearance. A Romanian + Cavnic specialty."
+            )
+        elif c.habit == "prismatic":
+            parts.append(
+                "Stubby prismatic — vein-fill barite where space constrained "
+                "the tabular habit. Common in Mexican silver districts."
+            )
+        any_note = " ".join(z.note or "" for z in c.zones)
+        if "celestobarite" in any_note:
+            parts.append(
+                "Sr-substituted (celestobarite) — Sr²⁺ partially replaces "
+                "Ba²⁺ in the lattice; the barite-celestine pair forms a "
+                "partial solid solution with a miscibility gap that closes "
+                "at high T."
+            )
+        if "honey-yellow" in any_note:
+            parts.append(
+                "Honey-yellow color from Pb traces — the Cumberland-gold "
+                "habit and the most prized barite color globally. Pb²⁺ "
+                "doesn't substitute structurally; it's hosted as "
+                "submicroscopic galena inclusions."
+            )
+        parts.append(
+            "Beyond drilling mud, barite is the Ba source for fireworks "
+            "(green color), barium sulfate medical contrast agents, and "
+            "the primary radiation-shielding mineral in concrete shields. "
+            "The Sterling Hill (NJ) blue barite — F-center radiation-damage "
+            "color — is the only common natural blue Ba mineral."
+        )
+        return " ".join(parts)
+
+    def _narrate_celestine(self, c: Crystal) -> str:
+        """Narrate a celestine crystal — the celestial-blue Sr sulfate."""
+        parts = [f"Celestine #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "SrSO₄ — strontium sulfate, isostructural with barite (the two "
+            "form a partial solid solution; intermediates are 'celestobarite' "
+            "and 'barytocelestine'). The diagnostic pale celestial blue is "
+            "an F-center defect color — radiation-damaged anion vacancies "
+            "absorb yellow-orange light, leaving the calm sky blue that "
+            "named the species."
+        )
+        if c.habit == "nodular":
+            parts.append(
+                "Nodular geode lining — the Madagascar (Sakoany) habit. "
+                "The Mahajanga geodes are football-sized concentric crusts "
+                "of pale-blue celestine blades up to 30 cm long, the "
+                "world's largest celestine crystals."
+            )
+        elif c.habit == "fibrous":
+            parts.append(
+                "Fibrous radiating tufts — the Sicilian Caltanissetta habit, "
+                "where celestine fibers radiate from yellow native sulfur "
+                "in vugs of the Permian sulfur-bearing limestones. The "
+                "single most distinctive celestine specimen type."
+            )
+        elif c.habit == "bladed":
+            parts.append(
+                "Divergent blue blades — the Lake Erie / Put-in-Bay (Ohio) "
+                "habit. The Crystal Cave on South Bass Island contains the "
+                "world's largest known geode (35 ft³, lined with celestine + "
+                "calcite); commercial mineral exhibits derive from this same "
+                "Devonian-age vug system."
+            )
+        else:
+            parts.append(
+                "Tabular pale-blue plates — the standard celestine collector "
+                "habit. Madagascar, Mexico, Texas Permian Basin all produce "
+                "this form."
+            )
+        any_note = " ".join(z.note or "" for z in c.zones)
+        if "barytocelestine" in any_note:
+            parts.append(
+                "Ba-substituted (barytocelestine) — Ba²⁺ partially replaces "
+                "Sr²⁺. The barite-celestine pair preserves the Sr/Ba ratio "
+                "of its parent fluid, which is why ⁸⁷Sr/⁸⁶Sr ratios in "
+                "celestine are used for paleobrine geochronology "
+                "(Schwartz et al. 2018)."
+            )
+        if "Sicilian" in any_note or "sulfur-vug" in any_note:
+            parts.append(
+                "The Sicilian sulfur-vug paragenesis: native sulfur "
+                "precipitates first from H₂S oxidation, then evaporative "
+                "concentration of meteoric water in the vug delivers Sr²⁺ + "
+                "SO₄²⁻ that nucleates fibrous celestine on the sulfur surface."
+            )
+        parts.append(
+            "Industrial celestine: the source of Sr for red firework colors "
+            "and (legacy) cathode-ray-tube glass. The Sr-isotope tracer is "
+            "the modern scientific use — celestine preserves the Sr-isotope "
+            "ratio of its parent fluid almost perfectly across geological "
+            "time, making it a paleobrine fingerprint."
+        )
+        return " ".join(parts)
+
+    def _narrate_jarosite(self, c: Crystal) -> str:
+        """Narrate a jarosite crystal — the AMD-yellow Fe sulfate."""
+        parts = [f"Jarosite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "KFe³⁺₃(SO₄)₂(OH)₆ — the diagnostic acid-mine-drainage "
+            "mineral. Yellow-to-ocher pseudocubic rhombs and powdery "
+            "crusts; the supergene Fe-sulfate that takes over from "
+            "goethite when pH drops below 4. Every active sulfide-mine "
+            "tailings pond on Earth has this yellow stain. Rio Tinto in "
+            "Spain runs red-orange through volume of jarosite + Fe³⁺ "
+            "load — the Phoenicians named the river for the color "
+            "and the Romans + Spanish + UK Rio Tinto Co. mined it for "
+            "Cu, Ag, and S over 5000 years."
+        )
+        if c.habit == "earthy_crust":
+            parts.append(
+                "Powdery yellow crust — the textbook AMD signature. "
+                "Microscopic crystals coat weathered pyrite surfaces "
+                "as fast oxidation outpaces crystal growth. Walk any "
+                "sulfide-mine tailings dump and this is what stains "
+                "your boots."
+            )
+        elif c.habit == "druzy":
+            parts.append(
+                "Druzy microcrystalline jarosite — yellow honeycomb "
+                "covering pyrite oxidation surfaces. Hand-lens reveals "
+                "tiny pseudocubic rhombs."
+            )
+        else:
+            parts.append(
+                "Pseudocubic rhombs — the diagnostic display habit, "
+                "looks cubic but the crystal system is actually trigonal. "
+                "Red Mountain Pass (CO) and Mojave (CA) produce sharp "
+                "specimens to ~1 cm."
+            )
+        if c.dissolved:
+            parts.append(
+                "Alkaline shift attacked the jarosite — pH crossed "
+                "above 4 (carbonate buffering, fluid mixing, neutralization), "
+                "releasing K + Fe³⁺ + SO₄²⁻. The Fe³⁺ now sits in goethite "
+                "territory; expect rust-brown goethite to nucleate from "
+                "the released cation pool. Jarosite-to-goethite is the "
+                "diagnostic AMD weathering succession."
+            )
+        parts.append(
+            "Mars connection: NASA's Mars Exploration Rover Opportunity "
+            "found jarosite at Meridiani Planum (Klingelhöfer et al. 2004) "
+            "via Mössbauer spectrometer — direct evidence that liquid "
+            "water flowed on Mars, and that it was acidic. Without "
+            "liquid water in the right pH/Eh window, jarosite cannot "
+            "form. The discovery rewrote the Mars hydrology timeline."
+        )
+        return " ".join(parts)
+
+    def _narrate_alunite(self, c: Crystal) -> str:
+        """Narrate an alunite crystal — the advanced argillic alteration index mineral."""
+        parts = [f"Alunite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "KAl₃(SO₄)₂(OH)₆ — the K-Al sister of jarosite (alunite "
+            "group, isostructural). The index mineral of 'advanced "
+            "argillic' alteration in porphyry-Cu lithocaps and high-"
+            "sulfidation epithermal Au deposits. When you read about "
+            "porphyry-Cu lithocap kilometers wide, alunite is a major "
+            "phase. Marysvale (Utah) is the type locality; alunite was "
+            "mined there as a K-fertilizer source 1915-1930s before "
+            "Carlsbad potash made K cheaper to mine elsewhere."
+        )
+        if c.habit == "earthy":
+            parts.append(
+                "Earthy chalky white masses — the Marysvale 'alunite-stone' "
+                "habit, where alunite has wholesale-replaced feldspathic "
+                "wall rock. The hills of US-89 in southern Utah are visible "
+                "as pinkish-white alunite outcrops."
+            )
+        elif c.habit == "fibrous":
+            parts.append(
+                "Fibrous radiating alunite — vein-fill habit, where "
+                "acid-sulfate fluid percolated through fractures. Common "
+                "at Goldfield (Nevada) high-sulfidation epithermal Au."
+            )
+        elif c.habit == "tabular":
+            parts.append(
+                "Sharp tabular blades — the Goldfield + Summitville "
+                "epithermal habit, sometimes pseudohexagonal. Display "
+                "specimens are rare; alunite is usually massive."
+            )
+        else:
+            parts.append(
+                "Pseudocubic rhombs — same shape as jarosite, the alunite-"
+                "group structural family. Sharp display crystals are scarce."
+            )
+        any_note = " ".join(z.note or "" for z in c.zones)
+        if "pinkish" in any_note or "natroalunite" in any_note:
+            parts.append(
+                "Pinkish tint — Fe-substitution moves toward the "
+                "natroalunite-jarosite series; alunite-group minerals "
+                "form a continuous solid-solution loop across K↔Na "
+                "and Al↔Fe end members."
+            )
+        if c.dissolved:
+            parts.append(
+                "Alkaline shift OR thermal attack dissolved the alunite "
+                "— releases K + Al + SO₄ to the fluid. Above 350 °C "
+                "alunite's lattice OH dehydrates to corundum + K-Al "
+                "sulfate (the basis for the early-1900s K-fertilizer "
+                "process: heat alunite, leach the K-sulfate)."
+            )
+        parts.append(
+            "⁴⁰Ar/³⁹Ar geochronology connection: alunite preserves the "
+            "K-Ar age of its parent acid-sulfate hydrothermal event with "
+            "high precision (Stoffregen et al. 2000). For porphyry-Cu "
+            "and epithermal-Au exploration, dating alunite tells you "
+            "when the lithocap formed — and by inference, when the "
+            "underlying intrusive event occurred."
+        )
+        return " ".join(parts)
+
+    def _narrate_brochantite(self, c: Crystal) -> str:
+        """Narrate a brochantite crystal — the wet-supergene Cu sulfate."""
+        parts = [f"Brochantite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₄(SO₄)(OH)₆ — the wet-supergene Cu sulfate. Emerald-"
+            "green prismatic crystals, distinguishable from malachite "
+            "by distinctly darker green and prismatic (vs malachite's "
+            "botryoidal) habit. The higher-pH end (pH 4-7) of the "
+            "brochantite ↔ antlerite Cu-sulfate fork. Atacama Desert "
+            "(Chile) supergene Cu deposits — Chuquicamata, Mantos "
+            "Blancos, Mansa Mina, El Tesoro — have brochantite as a "
+            "major component; arid evaporative concentration of "
+            "supergene Cu sulfate produces near-pure brochantite zones."
+        )
+        if c.habit == "drusy_crust":
+            parts.append(
+                "Drusy emerald-green crust on Cu-bearing wall — the "
+                "rapid-supergene-precipitation habit. Atacama and "
+                "Bisbee tailings dumps stain green with this in days "
+                "to weeks of post-mining oxidation."
+            )
+        elif c.habit == "acicular_tuft":
+            parts.append(
+                "Acicular needle-tufts radiating from substrate — "
+                "the diagnostic habit when brochantite tufts coat "
+                "malachite or chalcocite."
+            )
+        elif c.habit == "short_prismatic":
+            parts.append(
+                "Stubby emerald-green prisms — the standard Atacama / "
+                "Bisbee display specimen habit. Hand-lens reveals "
+                "monoclinic crystal forms."
+            )
+        else:
+            parts.append(
+                "Botryoidal globular aggregates — rarer than the "
+                "prismatic habit, can be confused with malachite at "
+                "hand-sample scale (the green color and globular form "
+                "overlap; XRD or acid-resistance test distinguishes)."
+            )
+        any_note = " ".join(z.note or "" for z in c.zones)
+        if "Cl-rich" in any_note:
+            parts.append(
+                "Cl-rich fluid context: in real-life Atacama and "
+                "Bisbee, brochantite competes with atacamite "
+                "(Cu₂Cl(OH)₃) for the Cu²⁺ pool — atacamite wins when "
+                "Cl is dominant over SO₄. Atacamite is queued for a "
+                "future halide-expansion commit."
+            )
+        if c.dissolved:
+            cause = "alkalinization (pH > 7) → tenorite/malachite stable" \
+                if any("pH > 7" in (z.note or "") for z in c.zones) \
+                else "acidification (pH < 3) → antlerite stable"
+            parts.append(
+                f"Dissolved by {cause}. The brochantite ↔ antlerite "
+                "fork is the single most-cited Cu-sulfate paragenesis "
+                "in supergene literature (Pollard et al. 1992); both "
+                "fork ends can interconvert as pH cycles seasonally."
+            )
+        parts.append(
+            "Patina-mineralogy connection: bronze sculptures in "
+            "oceanic / saline air develop brochantite patinas (vs "
+            "malachite in CO₂-rich freshwater air). The Statue of "
+            "Liberty's iconic green patina is largely brochantite, "
+            "not malachite — chloride-rich New York harbor air "
+            "drives the SO₄/CO₃ partition toward sulfate."
+        )
+        return " ".join(parts)
+
+    def _narrate_antlerite(self, c: Crystal) -> str:
+        """Narrate an antlerite crystal — the dry-acid Cu sulfate."""
+        parts = [f"Antlerite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₃(SO₄)(OH)₄ — the dry-acid end of the brochantite ↔ "
+            "antlerite Cu-sulfate fork (pH 1-3.5 stability). Same "
+            "emerald-green color as brochantite; visually indistinguishable "
+            "in hand specimen — distinguished by chemistry (Cu₃ vs Cu₄, "
+            "more SO₄ per Cu unit) and by acid-resistance test (antlerite "
+            "is more soluble in dilute HCl than brochantite). Type locality "
+            "Antler mine (Mohave County, AZ; Hillebrand 1889), but the "
+            "world-class deposits were at Chuquicamata (Chile) where "
+            "antlerite was the dominant supergene Cu mineral mined "
+            "1920s-50s before the deeper hypogene chalcocite zone "
+            "became the modern target."
+        )
+        if c.habit == "granular":
+            parts.append(
+                "Massive granular emerald-green — the Chuquicamata habit. "
+                "Decades of open-pit mining at the world's largest copper "
+                "mine recovered antlerite as a primary ore phase from this "
+                "form."
+            )
+        elif c.habit == "acicular":
+            parts.append(
+                "Thin radiating dark-green needles — the rapid-precipitation "
+                "habit when arid acidic supergene fluid reaches saturation."
+            )
+        elif c.habit == "short_prismatic":
+            parts.append(
+                "Stubby emerald-green prisms — visually identical to "
+                "brochantite; the field test is to expose to vinegar and "
+                "watch for slow dissolution (antlerite dissolves in dilute "
+                "acid; brochantite resists)."
+            )
+        else:
+            parts.append(
+                "Druzy microcrystals on dissolving Cu sulfide — small-scale "
+                "supergene habit on chalcocite oxidation surfaces."
+            )
+        if c.dissolved:
+            parts.append(
+                "Dissolved by neutralization — pH crossed above 3.5, "
+                "destabilizing antlerite. The released Cu²⁺ + SO₄²⁻ now "
+                "sit in brochantite-stable territory; expect brochantite "
+                "to re-nucleate from the same cation pool as the fork "
+                "reverses."
+            )
+        any_note = " ".join(z.note or "" for z in c.zones)
+        if any("on dissolving brochantite" in (z.note or "") for z in c.zones) or "pH-fork" in any_note:
+            parts.append(
+                "This crystal nucleated on dissolving brochantite — the "
+                "diagnostic Atacama paragenesis where seasonal acidification "
+                "(post-rainy-season evaporation drives pH down) flips the "
+                "Cu sulfate fork from brochantite to antlerite. Reverse "
+                "happens with the next rainy season."
+            )
+        parts.append(
+            "Pragmatic note: in the field, distinguishing antlerite from "
+            "brochantite without a lab is hard. The pH-fork mechanism "
+            "(Pollard et al. 1992) is the single most diagnostic chemistry "
+            "in arid-supergene Cu mineralogy and the basis of the "
+            "Chuquicamata-style ore-grade Cu sulfate deposits."
+        )
+        return " ".join(parts)
+
+    def _narrate_anhydrite(self, c: Crystal) -> str:
+        """Narrate an anhydrite crystal — the high-T or saline-low-T Ca sulfate."""
+        parts = [f"Anhydrite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "CaSO₄ — anhydrous calcium sulfate, the dehydrated sister "
+            "of selenite/gypsum (CaSO₄·2H₂O). The anhydrite-gypsum "
+            "boundary is not a single line but an XY plot of T vs salinity "
+            "(Hardie 1967): in pure water anhydrite is stable above 60 °C, "
+            "but in saline brines (>100‰ NaCl-eq) anhydrite is stable down "
+            "to surface T due to lowered water activity. Two distinct "
+            "geological occurrences: (1) high-T hydrothermal — the porphyry-Cu "
+            "deep-brine zones at 200-700 °C, where massive anhydrite + "
+            "chalcopyrite assemblages preserve the magmatic-hydrothermal "
+            "S source (Roedder 1971 Bingham fluid-inclusion work); (2) "
+            "low-T evaporite — the Persian Gulf / Coorong sabkha + Salar "
+            "de Atacama brine pans, where evaporative concentration drives "
+            "salinity above the gypsum-anhydrite phase boundary."
+        )
+        if c.habit == "massive_granular":
+            parts.append(
+                "Massive granular layers — the textbook sabkha or salt-mine "
+                "habit, where anhydrite forms continuous strata interbedded "
+                "with halite and dolomite. The Persian Gulf sabkha + ancient "
+                "Zechstein basin (Germany) preserve exactly this pattern."
+                if c.c_length_mm < 100 else
+                "Massive granular vein-fill — the Bingham porphyry deep-zone "
+                "habit, where anhydrite veins thicker than the host crystals "
+                "preserve the magmatic-S budget. Decades after mining stopped "
+                "exposing fresh deep-zone material at Bingham, the anhydrite "
+                "rapidly hydrated to gypsum on contact with humid air."
+            )
+        elif c.habit == "prismatic":
+            parts.append(
+                "Stubby prismatic — the vein-fill habit, common in porphyry "
+                "deep-zone fractures and in some Atacama hydrothermal Cu "
+                "veins co-occurring with chalcopyrite."
+            )
+        elif c.habit == "fibrous":
+            parts.append(
+                "Satin-spar fibrous habit — parallel fiber bundles across "
+                "veins. The blue-fibered 'angelite' Peruvian variety belongs "
+                "to this habit; lavender color attributed to organic "
+                "inclusions or trace Mn²⁺."
+            )
+        else:
+            parts.append(
+                "Tabular habit with the diagnostic three perpendicular "
+                "cleavages — a hand-sample test that distinguishes anhydrite "
+                "from selenite (which has one perfect cleavage) and from "
+                "halite (cubic three-perp cleavages but salt taste)."
+            )
+        any_note = " ".join(z.note or "" for z in c.zones)
+        if "angelite" in any_note:
+            parts.append(
+                "Pale lavender 'angelite' variety — Peruvian metaphysical-stone "
+                "fixture. The lavender color is anomalous and not fully "
+                "understood; current consensus attributes it to organic "
+                "molecule inclusions rather than transition-metal traces."
+            )
+        if c.dissolved:
+            parts.append(
+                "Rehydrated to gypsum — fluid freshened (salinity dropped "
+                "below 100‰) at low T (<60 °C), bringing the system into "
+                "the gypsum stability field. Released Ca²⁺ + SO₄²⁻ now "
+                "feed selenite re-precipitation. The Naica Cave of "
+                "Crystals (Mexico) shows exactly this paragenesis: an "
+                "older anhydrite floor preserved from the deeper brine "
+                "phase, overgrown by giant selenite blades when the cave "
+                "dewatered + cooled."
+            )
+        parts.append(
+            "Industrial: anhydrite is the cement-setting accelerator that "
+            "controls early-strength gain in Portland cement; also a sulfur "
+            "source and (via heating) a calcium source. Plaster manufacture "
+            "depends on the anhydrite ↔ gypsum hydration cycle."
+        )
         return " ".join(parts)
 
     def _narrate_adamite(self, c: Crystal) -> str:

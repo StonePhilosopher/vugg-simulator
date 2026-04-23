@@ -3092,6 +3092,13 @@ const MINERAL_SPEC_FALLBACK = {
   feldspar: { formula: "KAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 1400, growth_rate_mult: 0.4, thermal_decomp_C: 1170, fluorescence: { activator: "Pb_amazonite", threshold_ppm: 5, color: "weak_yellow_green" }, twin_laws: [{ name: "Carlsbad", probability: 0.12 }, { name: "Baveno", probability: 0.04 }, { name: "Manebach", probability: 0.02 }], acid_dissolution: { pH_threshold: 4.0 } },
   albite: { formula: "NaAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.4, thermal_decomp_C: 1118, fluorescence: { activator: "intrinsic", color: "weak_white_LW" }, twin_laws: [{ name: "albite", probability: 0.20 }, { name: "pericline", probability: 0.05 }], acid_dissolution: { pH_threshold: 3.0 } },
   selenite: { formula: "CaSO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 2400, growth_rate_mult: 0.7, thermal_decomp_C: 150, fluorescence: null, twin_laws: [{ name: "swallowtail", probability: 0.08 }], acid_dissolution: { pH_threshold: 5.0 } },
+  barite: { formula: "BaSO4", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.3, thermal_decomp_C: 1149, fluorescence: { activator: "intrinsic", color: "creamy_white_SW_Sterling" }, twin_laws: [{ name: "cyclic_cockscomb", probability: 0.05 }], acid_dissolution: null },
+  celestine: { formula: "SrSO4", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.3, thermal_decomp_C: 1100, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  jarosite: { formula: "KFe3(SO4)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 3, growth_rate_mult: 0.4, thermal_decomp_C: 250, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  alunite: { formula: "KAl3(SO4)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.35, thermal_decomp_C: 450, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  brochantite: { formula: "Cu4(SO4)(OH)6", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.35, thermal_decomp_C: 250, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  antlerite: { formula: "Cu3(SO4)(OH)4", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.35, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  anhydrite: { formula: "CaSO4", nucleation_sigma: 1.0, max_size_cm: 200, growth_rate_mult: 0.35, thermal_decomp_C: 1450, fluorescence: null, twin_laws: [], acid_dissolution: null },
   goethite: { formula: "FeO(OH)", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.4, thermal_decomp_C: 300, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 }, nucleation_preferences: { grows_on: ["pyrite", "chalcopyrite", "marcasite"], forms_pseudomorph_after: ["pyrite"] } },
   topaz: { formula: "Al2SiO4(F,OH)2", nucleation_sigma: 1.4, max_size_cm: 200, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: { activator: "trace Ti", threshold_ppm: 2, color: "weak_greenish_LW" }, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
   tourmaline: { formula: "Na(Fe,Li,Al)3Al6(BO3)3Si6O18(OH)4", nucleation_sigma: 1.3, max_size_cm: 300, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
@@ -3254,7 +3261,7 @@ const MINERAL_GAME_COLORS = {
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0', molybdenite: '#707888',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
-  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', feldspar: '#f0d0b0'
+  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -3486,7 +3493,24 @@ let timeScale = 5.0;
 //        and shifts Au distribution in reducing-As scenarios
 //        (arsenopyrite now traps a fraction of Au as invisible-gold
 //        trace before native_gold can nucleate).
-const SIM_VERSION = 3;
+//   v4 — sulfate expansion round 5 (Apr 2026): seven sulfates added
+//        — barite + celestine + jarosite + alunite + brochantite +
+//        antlerite + anhydrite. Coorong sabkha celestine + anhydrite
+//        immediate; Bingham/Bisbee jarosite/alunite/anhydrite
+//        post-event; Bisbee brochantite/antlerite supergene Cu suite.
+//        Engine count 55 → 62.
+//   v5 — gap-fill follow-ups (Apr 2026): Tri-State + Sweetwater O2
+//        bumped 0.0 → 0.25 (mildly reducing, matching real MVT brine
+//        at the SO₄/H₂S boundary where sulfate persists alongside
+//        H₂S — barite + galena coexist as the diagnostic MVT
+//        assemblage). Activates dormant Ba=20/25 + Sr=15/12. Plus
+//        barite + celestine supersaturation O2 saturation tuned from
+//        O2/1.0 to O2/0.4 (saturates at SO₄/H₂S boundary, not at
+//        fully oxidized — geochemically correct). Plus (Tsumeb
+//        commit, separate): early ev_supergene_acidification at
+//        step 5 + Al 3→15 to unlock scorodite + jarosite + alunite
+//        in their early acid window.
+const SIM_VERSION = 5;
 
 
 // ============================================================
@@ -4319,6 +4343,198 @@ class VugConditions {
       sigma *= Math.max(0.2, 1.0 - 0.2 * (this.fluid.pH - 7));
     } else if (this.fluid.pH < 3) {
       sigma *= Math.max(0.3, 1.0 - 0.25 * (3 - this.fluid.pH));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Barite (BaSO₄) — the Ba sequestration mineral. Densest non-metallic
+  // mineral collectors will encounter (4.5 g/cm³). Galena's primary gangue
+  // mineral in MVT districts; also abundant in hydrothermal vein systems.
+  // No acid dissolution (the standard drilling-mud weighting agent for a
+  // reason); thermal decomposition only above 1149°C. Eh ≥ 0.1 — needs
+  // sulfate (SO₄²⁻), not sulfide (H₂S).
+  supersaturation_barite() {
+    if (this.fluid.Ba < 5 || this.fluid.S < 10 || this.fluid.O2 < 0.1) return 0;
+    // Factor caps to prevent evaporite-level S from runaway sigma.
+    const ba_f = Math.min(this.fluid.Ba / 30.0, 2.0);
+    const s_f  = Math.min(this.fluid.S  / 40.0, 2.5);
+    // O2 saturation at SO₄/H₂S Eh boundary (~O2=0.4), not at fully
+    // oxidized. Allows barite + galena coexistence (MVT diagnostic).
+    const o2_f = Math.min(this.fluid.O2 / 0.4, 1.5);
+    let sigma = ba_f * s_f * o2_f;
+    const T = this.temperature;
+    if (T >= 50 && T <= 200) {
+      sigma *= 1.2;
+    } else if (T < 5) {
+      sigma *= 0.3;
+    } else if (T > 500) {
+      sigma *= Math.max(0.2, 1.0 - 0.003 * (T - 500));
+    }
+    if (this.fluid.pH < 4) {
+      sigma *= Math.max(0.4, 1.0 - 0.2 * (4 - this.fluid.pH));
+    } else if (this.fluid.pH > 9) {
+      sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Anhydrite (CaSO₄) — high-T or saline-low-T Ca sulfate sister of selenite.
+  // Two stability regimes: T > 60°C (high-T branch) OR T < 60°C with salinity
+  // > 100‰ (low-T saline branch — sabkha evaporite). Below 60°C in dilute
+  // fluid, anhydrite is metastable and rehydrates to gypsum.
+  supersaturation_anhydrite() {
+    if (this.fluid.Ca < 50 || this.fluid.S < 20 || this.fluid.O2 < 0.3) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 200.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 40.0, 2.5);
+    const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+    let sigma = ca_f * s_f * o2_f;
+    const T = this.temperature;
+    const salinity = this.fluid.salinity;
+    let T_factor;
+    if (T > 60) {
+      if (T < 200) {
+        T_factor = 0.5 + 0.005 * (T - 60);
+      } else if (T <= 700) {
+        T_factor = 1.2;
+      } else {
+        T_factor = Math.max(0.3, 1.2 - 0.002 * (T - 700));
+      }
+    } else {
+      if (salinity > 100) {
+        T_factor = Math.min(1.0, 0.4 + salinity / 200.0);
+      } else if (salinity > 50) {
+        T_factor = 0.3;
+      } else {
+        return 0;  // dilute low-T → gypsum/selenite wins
+      }
+    }
+    sigma *= T_factor;
+    if (this.fluid.pH < 5) {
+      sigma *= Math.max(0.4, 1.0 - 0.2 * (5 - this.fluid.pH));
+    } else if (this.fluid.pH > 9) {
+      sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Brochantite (Cu₄(SO₄)(OH)₆) — wet-supergene Cu sulfate; emerald-green
+  // prismatic crystals. The higher-pH end (pH 4-7) of the brochantite ↔
+  // antlerite fork. Statue of Liberty patina mineral.
+  supersaturation_brochantite() {
+    if (this.fluid.Cu < 10 || this.fluid.S < 15 || this.fluid.O2 < 0.5) return 0;
+    if (this.fluid.pH < 3 || this.fluid.pH > 7.5) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 40.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 30.0, 2.5);
+    const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+    let sigma = cu_f * s_f * o2_f;
+    if (this.temperature > 50) {
+      sigma *= Math.exp(-0.05 * (this.temperature - 50));
+    }
+    if (this.fluid.pH < 4) {
+      sigma *= Math.max(0.3, 1.0 - 0.5 * (4 - this.fluid.pH));
+    } else if (this.fluid.pH > 6) {
+      sigma *= Math.max(0.3, 1.0 - 0.4 * (this.fluid.pH - 6));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Antlerite (Cu₃(SO₄)(OH)₄) — dry-acid Cu sulfate; pH 1-3.5 stability.
+  // The lower-pH end of the brochantite ↔ antlerite fork. Chuquicamata
+  // type ore phase.
+  supersaturation_antlerite() {
+    if (this.fluid.Cu < 15 || this.fluid.S < 20 || this.fluid.O2 < 0.5) return 0;
+    if (this.fluid.pH > 4 || this.fluid.pH < 0.5) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 40.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 30.0, 2.5);
+    const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+    let sigma = cu_f * s_f * o2_f;
+    if (this.temperature > 50) {
+      sigma *= Math.exp(-0.05 * (this.temperature - 50));
+    }
+    if (this.fluid.pH > 3.5) {
+      sigma *= Math.max(0.2, 1.0 - 0.5 * (this.fluid.pH - 3.5));
+    } else if (this.fluid.pH < 1.5) {
+      sigma *= Math.max(0.4, 1.0 - 0.3 * (1.5 - this.fluid.pH));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Jarosite (KFe³⁺₃(SO₄)₂(OH)₆) — the diagnostic acid-mine-drainage mineral.
+  // Yellow rhombs/crusts; supergene Fe-sulfate that takes over from goethite
+  // when pH drops below 4. Confirmed on Mars (Klingelhöfer et al. 2004).
+  // Stability: K, Fe, S, O2; pH 1-5 (above pH 5 dissolves to feed goethite).
+  // Strongly low-T — supergene only.
+  supersaturation_jarosite() {
+    if (this.fluid.K < 5 || this.fluid.Fe < 10 || this.fluid.S < 20
+        || this.fluid.O2 < 0.5) return 0;
+    if (this.fluid.pH > 5) return 0;
+    const k_f  = Math.min(this.fluid.K  / 15.0, 2.0);
+    const fe_f = Math.min(this.fluid.Fe / 30.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 50.0, 2.5);
+    const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+    let sigma = k_f * fe_f * s_f * o2_f;
+    if (this.temperature > 50) {
+      sigma *= Math.exp(-0.04 * (this.temperature - 50));
+    }
+    if (this.fluid.pH > 4) {
+      sigma *= Math.max(0.2, 1.0 - 0.6 * (this.fluid.pH - 4));
+    } else if (this.fluid.pH < 1) {
+      sigma *= 0.4;
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Alunite (KAl₃(SO₄)₂(OH)₆) — the Al sister of jarosite (alunite group).
+  // The index mineral of advanced argillic alteration in porphyry-Cu lithocaps
+  // and high-sulfidation epithermal Au deposits. Marysvale UT type locality.
+  // Wider T window than jarosite (50-300 °C — hydrothermal acid-sulfate spans
+  // the porphyry-epithermal range, not just supergene).
+  supersaturation_alunite() {
+    if (this.fluid.K < 5 || this.fluid.Al < 10 || this.fluid.S < 20
+        || this.fluid.O2 < 0.5) return 0;
+    if (this.fluid.pH > 5) return 0;
+    const k_f  = Math.min(this.fluid.K  / 15.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 25.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 50.0, 2.5);
+    const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+    let sigma = k_f * al_f * s_f * o2_f;
+    const T = this.temperature;
+    if (T >= 50 && T <= 200) {
+      sigma *= 1.2;
+    } else if (T < 25) {
+      sigma *= 0.5;
+    } else if (T > 350) {
+      sigma *= Math.max(0.2, 1.0 - 0.005 * (T - 350));
+    }
+    if (this.fluid.pH > 4) {
+      sigma *= Math.max(0.2, 1.0 - 0.6 * (this.fluid.pH - 4));
+    } else if (this.fluid.pH < 1) {
+      sigma *= 0.4;
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Celestine (SrSO₄) — the Sr sister of barite (isostructural). Pale
+  // celestial blue from F-center defects. Madagascar geodes, Sicilian
+  // sulfur-vug fibrous habit, Lake Erie. No acid dissolution; thermal
+  // decomposition >1100°C.
+  supersaturation_celestine() {
+    if (this.fluid.Sr < 3 || this.fluid.S < 10 || this.fluid.O2 < 0.1) return 0;
+    const sr_f = Math.min(this.fluid.Sr / 15.0, 2.0);
+    const s_f  = Math.min(this.fluid.S  / 40.0, 2.5);
+    // O2 saturation at SO₄/H₂S boundary — same MVT-coexistence rationale.
+    const o2_f = Math.min(this.fluid.O2 / 0.4, 1.5);
+    let sigma = sr_f * s_f * o2_f;
+    const T = this.temperature;
+    if (T < 100) {
+      sigma *= 1.2;
+    } else if (T > 200) {
+      sigma *= Math.max(0.3, 1.0 - 0.005 * (T - 200));
+    }
+    if (this.fluid.pH < 5) {
+      sigma *= Math.max(0.4, 1.0 - 0.2 * (5 - this.fluid.pH));
+    } else if (this.fluid.pH > 9) {
+      sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
     }
     return Math.max(sigma, 0);
   }
@@ -6416,7 +6632,7 @@ function grow_arsenopyrite(crystal, conditions, step) {
       conditions.fluid.S += dissolved_um * 0.4;
       conditions.fluid.pH = Math.max(2.0, conditions.fluid.pH - dissolved_um * 0.02);
       // Release 12% of zone-summed trapped invisible-gold per step.
-      const total_trapped_au = crystal.growth_zones.reduce((sum, z) => sum + (z.trace_Au || 0), 0);
+      const total_trapped_au = (crystal.zones || []).reduce((sum, z) => sum + (z.trace_Au || 0), 0);
       const released_au = total_trapped_au * 0.12;
       if (released_au > 0) {
         conditions.fluid.Au += released_au;
@@ -6482,6 +6698,415 @@ function grow_arsenopyrite(crystal, conditions, step) {
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.003,
     trace_Au: au_trap_ppm,
+    note: habit_note
+  });
+}
+
+// Barite — BaSO4
+// The Ba sequestration mineral; tabular plates ("desert rose"), bladed
+// fans (Cumberland), cockscomb cyclic twins. Acid-resistant, permanent
+// at sim T (decomposes only > 1149°C). MVT primary gangue.
+function grow_barite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_barite();
+  if (sigma < 1.0) return null;  // no acid path; permanent at sim T
+
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['stubby prisms', 'vein-fill habit'];
+    habit_note = 'stubby prismatic barite, vein-fill';
+  } else if (excess > 0.8) {
+    crystal.habit = 'cockscomb';
+    crystal.dominant_forms = ['cyclic twin crests', 'cockscomb'];
+    habit_note = 'cockscomb barite — cyclic twins giving the diagnostic crested form';
+  } else if (excess > 0.3) {
+    crystal.habit = 'bladed';
+    crystal.dominant_forms = ['divergent blades', 'Cumberland-style fans'];
+    habit_note = 'bladed divergent barite, Cumberland-style';
+  } else {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['{001} tabular plates'];
+    habit_note = 'tabular barite plates — the desert-rose habit';
+  }
+
+  if (conditions.fluid.Sr > 0 && conditions.fluid.Ba > 0) {
+    const sr_ratio = conditions.fluid.Sr / Math.max(conditions.fluid.Ba, 0.1);
+    if (sr_ratio > 0.25) {
+      habit_note += '; Sr-substituted (celestobarite intermediate)';
+    }
+  }
+  if (conditions.fluid.Pb > 5) {
+    habit_note += '; honey-yellow (Pb-bearing — Cumberland gold habit)';
+  }
+
+  conditions.fluid.Ba = Math.max(conditions.fluid.Ba - rate * 0.005, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.002,
+    trace_Pb: conditions.fluid.Pb * 0.005,
+    note: habit_note
+  });
+}
+
+// Celestine — SrSO4
+// Pale celestial-blue Sr sulfate; isostructural with barite. Madagascar
+// geodes, Sicilian sulfur-vug fibrous habit, Lake Erie blue blades.
+// Permanent at sim T (decomposes > 1100°C).
+function grow_celestine(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_celestine();
+  if (sigma < 1.0) return null;
+
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const sulfur_context = conditions.fluid.S > 200;
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'nodular';
+    crystal.dominant_forms = ['geodal lining', 'concentric blue crust'];
+    habit_note = 'nodular celestine — Madagascar geode lining';
+  } else if (sulfur_context && excess > 0.5) {
+    crystal.habit = 'fibrous';
+    crystal.dominant_forms = ['radiating acicular fibers'];
+    habit_note = 'fibrous celestine — Sicilian sulfur-vug habit, radiating from substrate';
+  } else if (excess > 0.3) {
+    crystal.habit = 'bladed';
+    crystal.dominant_forms = ['divergent blue blades'];
+    habit_note = 'bladed celestine — Lake Erie / Put-in-Bay habit';
+  } else {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['{001} tabular plates', 'pale celestial blue'];
+    habit_note = 'tabular pale-blue celestine plates';
+  }
+
+  if (conditions.fluid.Mn > 5) {
+    habit_note += '; reddish tint (Mn²⁺ trace — rare habit)';
+  }
+  if (conditions.fluid.Ba > 0 && conditions.fluid.Sr > 0) {
+    const ba_ratio = conditions.fluid.Ba / Math.max(conditions.fluid.Sr, 0.1);
+    if (ba_ratio > 0.25) {
+      habit_note += '; Ba-substituted (barytocelestine intermediate)';
+    }
+  }
+
+  conditions.fluid.Sr = Math.max(conditions.fluid.Sr - rate * 0.005, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.001,
+    note: habit_note
+  });
+}
+
+// Anhydrite — CaSO4
+// High-T or saline-low-T Ca sulfate. Sabkha evaporite + Bingham deep brine.
+// Rehydrates to gypsum/selenite when T<60 AND salinity<100‰.
+function grow_anhydrite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_anhydrite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3
+        && conditions.temperature < 55
+        && conditions.fluid.salinity < 95) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Ca += dissolved_um * 0.5;
+      conditions.fluid.S  += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'rehydration to gypsum — anhydrite releases Ca²⁺ + SO₄²⁻ as fluid freshens (salinity < 100‰ at T < 60°C)'
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const high_T = conditions.temperature > 200;
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['granular massive layers'];
+    habit_note = high_T
+      ? 'massive granular anhydrite — Bingham porphyry deep-brine vein habit'
+      : 'massive granular anhydrite — the sabkha + salt-mine evaporite habit';
+  } else if (excess > 0.8) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['stubby prisms', 'vein-fill'];
+    habit_note = 'stubby prismatic anhydrite, vein-fill';
+  } else if (excess > 0.3 || conditions.temperature < 50) {
+    crystal.habit = 'fibrous';
+    crystal.dominant_forms = ['satin spar fibers', 'parallel fibrous'];
+    habit_note = 'fibrous satin-spar anhydrite — parallel fibers across vein';
+  } else {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['tabular crystals', 'three perpendicular cleavages'];
+    habit_note = 'tabular anhydrite with the diagnostic three perpendicular cleavages';
+  }
+
+  if (conditions.fluid.Mn > 3 || (conditions.temperature < 60
+                                    && conditions.fluid.salinity > 150)) {
+    habit_note += '; pale lavender (angelite variant)';
+  }
+
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.005, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Mn: conditions.fluid.Mn * 0.002,
+    note: habit_note
+  });
+}
+
+// Brochantite — Cu4(SO4)(OH)6
+// Wet-supergene Cu sulfate; emerald-green prismatic. Forks with antlerite
+// at pH 3.5. Substrate prefers dissolving Cu sulfides (chalcocite/covellite).
+function grow_brochantite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_brochantite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 2 && (
+      conditions.fluid.pH < 2.8 || conditions.fluid.pH > 7.5
+    )) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.12);
+      conditions.fluid.Cu += dissolved_um * 0.5;
+      conditions.fluid.S  += dissolved_um * 0.3;
+      const cause = conditions.fluid.pH < 2.8
+        ? 'pH < 3 → antlerite stable'
+        : 'pH > 7 → tenorite/malachite stable';
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `dissolution (${cause}) — brochantite releases Cu²⁺ + SO₄²⁻`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'drusy_crust';
+    crystal.dominant_forms = ['microcrystalline druse', 'emerald-green coating'];
+    habit_note = 'drusy emerald-green brochantite crust on Cu-bearing wall';
+  } else if (excess > 0.8) {
+    crystal.habit = 'acicular_tuft';
+    crystal.dominant_forms = ['radiating acicular needle-tufts'];
+    habit_note = 'acicular emerald-green brochantite tufts radiating from substrate';
+  } else if (excess > 0.3) {
+    crystal.habit = 'short_prismatic';
+    crystal.dominant_forms = ['stubby emerald-green prisms'];
+    habit_note = 'stubby emerald-green brochantite prisms — the Atacama / Bisbee habit';
+  } else {
+    crystal.habit = 'botryoidal';
+    crystal.dominant_forms = ['globular aggregates'];
+    habit_note = 'botryoidal brochantite — globular emerald-green aggregates';
+  }
+
+  if (conditions.fluid.Cl > 100) {
+    habit_note += '; Cl-rich (would compete with atacamite — Cl-Cu hydroxychloride)';
+  }
+
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.001,
+    note: habit_note
+  });
+}
+
+// Antlerite — Cu3(SO4)(OH)4
+// Dry-acid Cu sulfate; pH 1-3.5 stability. Substrate-prefers dissolving
+// brochantite (the direct fork product when acidification arrives).
+function grow_antlerite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_antlerite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 2 && conditions.fluid.pH > 4.2) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.15);
+      conditions.fluid.Cu += dissolved_um * 0.5;
+      conditions.fluid.S  += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'dissolution (pH > 3.5 → brochantite stable) — antlerite releases Cu²⁺ + SO₄²⁻'
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'granular';
+    crystal.dominant_forms = ['massive granular emerald-green'];
+    habit_note = 'massive granular antlerite — Chuquicamata habit';
+  } else if (excess > 0.8) {
+    crystal.habit = 'acicular';
+    crystal.dominant_forms = ['thin needles', 'radiating aggregates'];
+    habit_note = 'acicular antlerite — radiating dark-green needles';
+  } else if (excess > 0.3) {
+    crystal.habit = 'short_prismatic';
+    crystal.dominant_forms = ['stubby green prisms'];
+    habit_note = 'stubby emerald-green antlerite prisms — visually identical to brochantite, distinguished by acid-resistance test';
+  } else {
+    crystal.habit = 'druzy';
+    crystal.dominant_forms = ['microcrystalline druse'];
+    habit_note = 'druzy antlerite microcrystals on dissolving Cu sulfide';
+  }
+
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.004, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.001,
+    note: habit_note
+  });
+}
+
+// Jarosite — KFe³⁺₃(SO4)2(OH)6
+// Yellow AMD Fe-sulfate; substrate-prefers dissolving pyrite/marcasite.
+// Dissolves above pH 4 → releases K + Fe³⁺ + SO4 (jarosite-to-goethite
+// AMN succession when pH neutralizes).
+function grow_jarosite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_jarosite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 2 && conditions.fluid.pH > 4.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.15);
+      conditions.fluid.K  += dissolved_um * 0.3;
+      conditions.fluid.Fe += dissolved_um * 0.5;
+      conditions.fluid.S  += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'dissolution (pH > 4) — jarosite releases K + Fe³⁺ + SO₄²⁻; goethite-stable territory now'
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'earthy_crust';
+    crystal.dominant_forms = ['powdery yellow coating', 'AMD stain'];
+    habit_note = 'powdery yellow jarosite crust on weathered sulfide — the diagnostic AMD signature';
+  } else if (excess > 0.5) {
+    crystal.habit = 'druzy';
+    crystal.dominant_forms = ['microcrystalline druse'];
+    habit_note = 'druzy jarosite microcrystals — yellow honeycomb on pyrite oxidation surfaces';
+  } else {
+    crystal.habit = 'pseudocubic';
+    crystal.dominant_forms = ['pseudocubic rhombs', 'tabular {0001}'];
+    habit_note = 'pseudocubic golden-yellow jarosite rhombs';
+  }
+
+  conditions.fluid.K  = Math.max(conditions.fluid.K  - rate * 0.003, 0);
+  conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.005, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.004, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.005,
+    note: habit_note
+  });
+}
+
+// Alunite — KAl3(SO4)2(OH)6
+// Advanced argillic alteration index mineral; substrate-prefers dissolving
+// feldspar. Wider T than jarosite (hydrothermal acid-sulfate). Dissolves
+// above pH 4 OR above 350°C.
+function grow_alunite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_alunite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 2 && (conditions.fluid.pH > 4.5
+                                         || conditions.temperature > 350)) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.12);
+      conditions.fluid.K  += dissolved_um * 0.3;
+      conditions.fluid.Al += dissolved_um * 0.4;
+      conditions.fluid.S  += dissolved_um * 0.4;
+      const cause = conditions.fluid.pH > 4.5 ? 'pH > 4' : 'T > 350°C';
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `dissolution (${cause}) — alunite releases K + Al³⁺ + SO₄²⁻`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'earthy';
+    crystal.dominant_forms = ['chalky white masses', 'feldspar-replacement habit'];
+    habit_note = 'earthy alunite — chalky white replacement of feldspathic wall (Marysvale alunite-stone habit)';
+  } else if (excess > 0.8) {
+    crystal.habit = 'fibrous';
+    crystal.dominant_forms = ['radiating fibers', 'vein-fill'];
+    habit_note = 'fibrous alunite — vein-fill, radiating from substrate';
+  } else if (excess > 0.3) {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['sharp tabular blades'];
+    habit_note = 'tabular alunite blades — Goldfield epithermal habit';
+  } else {
+    crystal.habit = 'pseudocubic';
+    crystal.dominant_forms = ['pseudocubic rhombs'];
+    habit_note = 'pseudocubic alunite rhombs';
+  }
+
+  if (conditions.fluid.Fe > 20) {
+    habit_note += '; pinkish (intermediate to jarosite — natroalunite series)';
+  }
+
+  conditions.fluid.K  = Math.max(conditions.fluid.K  - rate * 0.003, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.005, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.004, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.002,
+    trace_Al: conditions.fluid.Al * 0.005,
     note: habit_note
   });
 }
@@ -7732,6 +8357,13 @@ const MINERAL_ENGINES = {
   ferrimolybdite: grow_ferrimolybdite,
   arsenopyrite: grow_arsenopyrite,
   scorodite: grow_scorodite,
+  barite: grow_barite,
+  celestine: grow_celestine,
+  jarosite: grow_jarosite,
+  alunite: grow_alunite,
+  brochantite: grow_brochantite,
+  antlerite: grow_antlerite,
+  anhydrite: grow_anhydrite,
   selenite: grow_selenite,
   feldspar: grow_feldspar,
   adamite: grow_adamite,
@@ -8289,6 +8921,14 @@ function scenario_mvt() {
       //   yellow coating. Source: Schwartz 2000 Econ. Geol. 95.
       //   See vugg.py scenario_mvt comment + locality_chemistry.json
       //   tri_state.pending_schema_additions for full note.
+      // ── v5 gap-fill (Apr 2026) ────────────────────────────────────
+      // O2: 0.25 (was default 0.0). Mildly reducing, NOT strictly
+      // reducing. Real MVT brine sits at the SO₄/H₂S boundary where
+      // some sulfate persists alongside H₂S — that's the chemistry
+      // that lets barite + galena coexist as the diagnostic MVT
+      // assemblage. Unlocks dormant Ba=20 + Sr=15. Sphalerite/
+      // galena/pyrite gates remain met (O2 ≤ 0.8).
+      O2: 0.25,
       pH: 7.2, salinity: 15.0
     }),
     // MVT dissolution cavity in limestone — all-axis lumpiness.
@@ -8366,6 +9006,13 @@ function scenario_reactive_wall() {
       Cl: 200,            // brine anion match for Na+K
       Ag: 3,              // Viburnum galena Ag (lower than Tri-State per Stoffell 2008)
       Sr: 12,             // basinal-brine tracer + minor celestine [Hanor 1994]
+      // ── v5 gap-fill (Apr 2026) ────────────────────────────────────
+      // O2: 0.25 (was default 0.0). Same MVT-Eh rationale as Tri-State
+      // — mildly reducing brine where SO₄²⁻ persists alongside H₂S
+      // (barite + galena coexistence). Unlocks dormant Ba=25 + Sr=12
+      // pools without disturbing the existing sulfide assemblage.
+      // Source: Sverjensky 1981; Anderson & Macqueen 1982.
+      O2: 0.25,
       pH: 7.0, salinity: 18.0
     }),
     wall: new VugWall({
@@ -8502,12 +9149,34 @@ function scenario_supergene_oxidation() {
       Sb: 5,            // proustite/pyrargyrite (ruby silvers) + tetrahedrite enabling
       Na: 30, K: 10,    // minor groundwater cation traces
       Au: 0.3,          // rare native gold documented [Pinch & Wilson 1977]; sub-0.5-ppm threshold so no nucleation, just chemistry trace
+      // ── v5 gap-fill (Apr 2026) ────────────────────────────────────
+      // Al: 25 (was default 3.0). Tsumeb supergene fluid carries
+      // significant Al³⁺ from feldspar weathering during the acid-
+      // sulfate phase; bumped above the alunite engine's al_f=Al/25
+      // cap so alunite sigma can cross threshold during the brief
+      // acid window. Source: Hemley 1969 + Stoffregen 2000.
+      Al: 25,
       O2: 1.8, pH: 6.8, salinity: 2.0,
     }),
     // Supergene meteoric dissolution cavity — broad all-axis lumpiness.
     wall: new VugWall({ primary_bubbles: 3, secondary_bubbles: 7, shape_seed: 7 }),
   });
+  // v5 gap-fill (Apr 2026): early ev_supergene_acidification fires 4×
+  // (steps 5, 8, 12, 16) to hold pH near 4 against the limestone wall's
+  // carbonate buffering. Without it, scorodite + jarosite + alunite
+  // can't form at Tsumeb's late-stage carbonate-buffered pH=6.8 despite
+  // being world-class display species there.
+  const ev_supergene_acidification = (c) => {
+    c.fluid.pH = 4.0;
+    c.fluid.O2 = 1.5;
+    c.fluid.S += 20;
+    return 'Early acidic supergene phase. Primary sulfides oxidize and release H₂SO₄ — pH drops to 4.0, opening the acid window for the arsenate + sulfate suite (scorodite, jarosite, alunite). Carbonate buffering will reverse this at the meteoric flush.';
+  };
   const events = [
+    { step: 5,   name: 'Acid Phase',        description: 'Early sulfide oxidation drops pH', apply_fn: ev_supergene_acidification },
+    { step: 8,   name: 'Acid Continues',    description: 'Sulfide-oxidation acid persists', apply_fn: ev_supergene_acidification },
+    { step: 12,  name: 'Acid Continues',    description: 'Carbonate buffer overrun', apply_fn: ev_supergene_acidification },
+    { step: 16,  name: 'Acid Final Pulse',  description: 'Last sulfide-oxidation pulse', apply_fn: ev_supergene_acidification },
     { step: 20,  name: 'Meteoric Flush',   description: 'Oxygenated rainwater', apply_fn: (c) => { c.fluid.O2 = 2.2; c.fluid.CO3 += 30; c.fluid.pH = 6.2; c.flow_rate = 1.5; return 'Rain infiltrates the soil zone and percolates down, picking up CO₂ and oxygen. Fresh supergene brine — cold, oxygen-rich, slightly acidic.'; } },
     { step: 40,  name: 'Pb+Mo Pulse',      description: 'Galena+molybdenite weathering', apply_fn: (c) => { c.fluid.Pb += 40; c.fluid.Mo += 25; c.fluid.O2 = 2.0; c.flow_rate = 2.0; return 'A weathering rind breaches: Pb²⁺ and MoO₄²⁻ released simultaneously — the Seo et al. (2012) condition for wulfenite formation is met.'; } },
     { step: 55,  name: 'Cu Enrichment',    description: 'Primary chalcopyrite upslope weathers', apply_fn: (c) => { c.fluid.Cu += 50; c.fluid.S += 30; c.fluid.Fe += 10; c.fluid.O2 = 0.6; return 'A primary chalcopyrite lens upslope finishes oxidizing. Cu²⁺ descends with the water table and hits the reducing layer below — the supergene enrichment blanket, where mineable copper ore gets made. Bornite precipitates on the upgradient edge, chalcocite in the core, covellite where S activity is highest. Real orebodies are often 5–10× richer here than in the primary sulfide below.'; } },
@@ -9548,6 +10217,142 @@ class VugSimulator {
         }
         const c = this.nucleate('scorodite', pos, sigma_sco);
         this.log.push(`  ✦ NUCLEATION: 💎 Scorodite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_sco.toFixed(2)}, Fe=${this.conditions.fluid.Fe.toFixed(0)}, As=${this.conditions.fluid.As.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — pale blue-green dipyramids, sequesters arsenic`);
+      }
+    }
+
+    // Barite nucleation — the Ba sequestration mineral. σ threshold 1.0
+    // + per-check 0.15. Wide-T habit; substrate-agnostic but in MVT often
+    // perches near galena/sphalerite (co-precipitation paragenesis).
+    const sigma_brt = this.conditions.supersaturation_barite();
+    if (sigma_brt > 1.0 && !this._atNucleationCap('barite')) {
+      if (rng.random() < 0.15) {
+        let pos = 'vug wall';
+        const active_gal_brt = this.crystals.filter(c => c.mineral === 'galena' && c.active);
+        const active_sph_brt = this.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
+        if (active_gal_brt.length && rng.random() < 0.3) {
+          pos = `near galena #${active_gal_brt[0].crystal_id}`;
+        } else if (active_sph_brt.length && rng.random() < 0.2) {
+          pos = `near sphalerite #${active_sph_brt[0].crystal_id}`;
+        }
+        const c = this.nucleate('barite', pos, sigma_brt);
+        this.log.push(`  ✦ NUCLEATION: ⚪ Barite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_brt.toFixed(2)}, Ba=${this.conditions.fluid.Ba.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)}, O₂=${this.conditions.fluid.O2.toFixed(2)}) — heavy spar, MVT gangue`);
+      }
+    }
+
+    // Celestine nucleation — the Sr sequestration mineral; pale celestial
+    // blue. Substrate priority: existing barite (celestobarite-barytocelestine
+    // pair) > vug wall.
+    const sigma_cel = this.conditions.supersaturation_celestine();
+    if (sigma_cel > 1.0 && !this._atNucleationCap('celestine')) {
+      if (rng.random() < 0.15) {
+        let pos = 'vug wall';
+        const active_brt_cel = this.crystals.filter(c => c.mineral === 'barite' && c.active);
+        if (active_brt_cel.length && rng.random() < 0.25) {
+          pos = `on barite #${active_brt_cel[0].crystal_id} (celestobarite-barytocelestine pair)`;
+        }
+        const c = this.nucleate('celestine', pos, sigma_cel);
+        this.log.push(`  ✦ NUCLEATION: 🟦 Celestine #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cel.toFixed(2)}, Sr=${this.conditions.fluid.Sr.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)}, O₂=${this.conditions.fluid.O2.toFixed(2)}) — pale celestial blue, Sr sulfate`);
+      }
+    }
+
+    // Jarosite nucleation — the AMD-yellow Fe sulfate. Substrate prefers
+    // dissolving pyrite/marcasite (the diagnostic yellow rim).
+    const sigma_jar = this.conditions.supersaturation_jarosite();
+    if (sigma_jar > 1.0 && !this._atNucleationCap('jarosite')) {
+      // v5: per-check 0.45 (was 0.18) so jarosite fires reliably (~95%)
+      // during brief acid windows in carbonate-buffered systems like
+      // Tsumeb (where ev_supergene_acidification holds pH near 4 for
+      // only ~15 steps before meteoric flush neutralizes).
+      if (rng.random() < 0.45) {
+        let pos = 'vug wall';
+        const diss_py_jar = this.crystals.filter(c => c.mineral === 'pyrite' && c.dissolved);
+        const diss_mar_jar = this.crystals.filter(c => c.mineral === 'marcasite' && c.dissolved);
+        const active_py_jar = this.crystals.filter(c => c.mineral === 'pyrite' && c.active);
+        if (diss_py_jar.length && rng.random() < 0.7) {
+          pos = `on dissolving pyrite #${diss_py_jar[0].crystal_id}`;
+        } else if (diss_mar_jar.length && rng.random() < 0.6) {
+          pos = `on dissolving marcasite #${diss_mar_jar[0].crystal_id}`;
+        } else if (active_py_jar.length && rng.random() < 0.4) {
+          pos = `on pyrite #${active_py_jar[0].crystal_id}`;
+        }
+        const c = this.nucleate('jarosite', pos, sigma_jar);
+        this.log.push(`  ✦ NUCLEATION: 🟡 Jarosite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_jar.toFixed(2)}, K=${this.conditions.fluid.K.toFixed(0)}, Fe=${this.conditions.fluid.Fe.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — AMD yellow, Mars-class mineral`);
+      }
+    }
+
+    // Alunite nucleation — advanced argillic alteration; substrate prefers
+    // dissolving feldspar (the wall-leaching origin of Al).
+    const sigma_alu = this.conditions.supersaturation_alunite();
+    if (sigma_alu > 1.0 && !this._atNucleationCap('alunite')) {
+      // v5: per-check 0.45 (was 0.15) — same rationale as jarosite,
+      // tighter alunite window (Al/25 cap means only 3 of 4 acid
+      // pulses cross threshold).
+      if (rng.random() < 0.45) {
+        let pos = 'vug wall';
+        const diss_fel_alu = this.crystals.filter(c => c.mineral === 'feldspar' && c.dissolved);
+        const active_fel_alu = this.crystals.filter(c => c.mineral === 'feldspar' && c.active);
+        if (diss_fel_alu.length && rng.random() < 0.7) {
+          pos = `on dissolving feldspar #${diss_fel_alu[0].crystal_id}`;
+        } else if (active_fel_alu.length && rng.random() < 0.4) {
+          pos = `on feldspar #${active_fel_alu[0].crystal_id}`;
+        }
+        const c = this.nucleate('alunite', pos, sigma_alu);
+        this.log.push(`  ✦ NUCLEATION: ⚪ Alunite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_alu.toFixed(2)}, K=${this.conditions.fluid.K.toFixed(0)}, Al=${this.conditions.fluid.Al.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — advanced argillic alteration index`);
+      }
+    }
+
+    // Brochantite nucleation — wet-supergene Cu sulfate (pH 4-7 fork end).
+    // Substrate priority: dissolving Cu sulfides > active Cu sulfides > vug wall.
+    const sigma_brn_sulf = this.conditions.supersaturation_brochantite();
+    if (sigma_brn_sulf > 1.0 && !this._atNucleationCap('brochantite')) {
+      if (rng.random() < 0.18) {
+        let pos = 'vug wall';
+        const diss_chc_brn = this.crystals.filter(c => c.mineral === 'chalcocite' && c.dissolved);
+        const diss_cov_brn = this.crystals.filter(c => c.mineral === 'covellite' && c.dissolved);
+        const active_chc_brn = this.crystals.filter(c => c.mineral === 'chalcocite' && c.active);
+        if (diss_chc_brn.length && rng.random() < 0.7) {
+          pos = `on dissolving chalcocite #${diss_chc_brn[0].crystal_id}`;
+        } else if (diss_cov_brn.length && rng.random() < 0.6) {
+          pos = `on dissolving covellite #${diss_cov_brn[0].crystal_id}`;
+        } else if (active_chc_brn.length && rng.random() < 0.4) {
+          pos = `on chalcocite #${active_chc_brn[0].crystal_id}`;
+        }
+        const c = this.nucleate('brochantite', pos, sigma_brn_sulf);
+        this.log.push(`  ✦ NUCLEATION: 🟢 Brochantite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_brn_sulf.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — emerald-green Cu sulfate`);
+      }
+    }
+
+    // Antlerite nucleation — dry-acid Cu sulfate (pH 1-3.5 fork end).
+    // Substrate-prefers dissolving brochantite (pH-fork conversion).
+    const sigma_ant = this.conditions.supersaturation_antlerite();
+    if (sigma_ant > 1.0 && !this._atNucleationCap('antlerite')) {
+      if (rng.random() < 0.18) {
+        let pos = 'vug wall';
+        const diss_brn_ant = this.crystals.filter(c => c.mineral === 'brochantite' && c.dissolved);
+        const diss_chc_ant = this.crystals.filter(c => c.mineral === 'chalcocite' && c.dissolved);
+        if (diss_brn_ant.length && rng.random() < 0.8) {
+          pos = `on dissolving brochantite #${diss_brn_ant[0].crystal_id} (pH-fork conversion)`;
+        } else if (diss_chc_ant.length && rng.random() < 0.5) {
+          pos = `on dissolving chalcocite #${diss_chc_ant[0].crystal_id}`;
+        }
+        const c = this.nucleate('antlerite', pos, sigma_ant);
+        this.log.push(`  ✦ NUCLEATION: 🟢 Antlerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ant.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — dry-acid Chuquicamata Cu sulfate`);
+      }
+    }
+
+    // Anhydrite nucleation — high-T or saline-low-T Ca sulfate.
+    // Substrate-agnostic; in Bingham deep-zone often co-precipitates
+    // with chalcopyrite (porphyry deep-brine paragenesis).
+    const sigma_anh = this.conditions.supersaturation_anhydrite();
+    if (sigma_anh > 1.0 && !this._atNucleationCap('anhydrite')) {
+      if (rng.random() < 0.16) {
+        let pos = 'vug wall';
+        const active_cp_anh = this.crystals.filter(c => c.mineral === 'chalcopyrite' && c.active);
+        if (active_cp_anh.length && this.conditions.temperature > 200 && rng.random() < 0.3) {
+          pos = `near chalcopyrite #${active_cp_anh[0].crystal_id} (porphyry deep-brine paragenesis)`;
+        }
+        const c = this.nucleate('anhydrite', pos, sigma_anh);
+        this.log.push(`  ✦ NUCLEATION: ⚪ Anhydrite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_anh.toFixed(2)}, Ca=${this.conditions.fluid.Ca.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)}, salinity=${this.conditions.fluid.salinity.toFixed(0)}‰)`);
       }
     }
 
@@ -14988,7 +15793,7 @@ const IDLE_MINERAL_COLORS = {
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
-  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', feldspar: '#f0d0b0'
+  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

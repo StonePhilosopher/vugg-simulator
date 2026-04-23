@@ -123,7 +123,37 @@
           "reason": "No Mo in fluid; no porphyry-Mo signature in this clean Cambrian dolostone."
         }
       },
-      "audit_pass": " | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock)."
+      "audit_pass": " | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite.",
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "not_applicable",
+          "reason": "No Ba in fluid; Cambrian dolostone diagenesis is reducing (O2=0.1) anyway."
+        },
+        "celestine": {
+          "status": "not_applicable",
+          "reason": "No Sr in fluid."
+        },
+        "jarosite": {
+          "status": "not_applicable",
+          "reason": "No K + reducing fluid; pH=6.8 outside acid window."
+        },
+        "alunite": {
+          "status": "not_applicable",
+          "reason": "No K + Al + S sulfate; reducing dolostone diagenesis is wrong Eh regime."
+        },
+        "brochantite": {
+          "status": "not_applicable",
+          "reason": "No Cu in fluid."
+        },
+        "antlerite": {
+          "status": "not_applicable",
+          "reason": "No Cu; pH=6.8 way too high anyway."
+        },
+        "anhydrite": {
+          "status": "not_applicable",
+          "reason": "No S in fluid (Cambrian dolostone is sulfate-poor); T=180 would otherwise be in range."
+        }
+      }
     },
     "bingham_canyon": {
       "scenario_id": "porphyry",
@@ -132,7 +162,7 @@
       "host_formation": "Late-Eocene (~38 Ma) quartz-monzonite-porphyry intruding Pennsylvanian-Permian sediments",
       "alteration_zoning": "potassic core, phyllic shell, propylitic rim",
       "fluid_event_summary": "Magmatic-hydrothermal evolution from deep-center brine (~7 wt% NaCl-eq, subequal Na/K/Fe/Cu) to upper-level brine endmember (~45 wt% NaCl-eq) coexisting with low-density vapor (~0.2 g/cm3). Discrete pulses: early Cu, late Mo (Seo et al. 2012), epithermal Au-Te-Ag cap. Vug-stage fluid is interpreted as the cooled, vapor-condensate-mixed residue of the brine plume.",
-      "audit_pass": "gap-fill (Apr 2026) — added Cl, Mg, Ag, Te to populate the brine-element baseline. Drift fixes between Python and JS scenario_porphyry: Pb=15 mirrored from Python to JS, Na/K/Al mirrored from JS to Python, event_molybdenum_pulse mirrored from Python to JS, event_copper_injection Pb increment mirrored from Python to JS. Au=2 added later when the Au field + grow_native_gold engine landed (previously held in pending_schema_additions). Existing chemistry preserved (no retuning). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "gap-fill (Apr 2026) — added Cl, Mg, Ag, Te to populate the brine-element baseline. Drift fixes between Python and JS scenario_porphyry: Pb=15 mirrored from Python to JS, Na/K/Al mirrored from JS to Python, event_molybdenum_pulse mirrored from Python to JS, event_copper_injection Pb increment mirrored from Python to JS. Au=2 added later when the Au field + grow_native_gold engine landed (previously held in pending_schema_additions). Existing chemistry preserved (no retuning). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite.",
       "fluid": {
         "Cl": {
           "value": 600,
@@ -220,6 +250,39 @@
           "event_dependency": "event_molybdenum_pulse (step 45) + event_oxidation (step 85)",
           "real_locality_evidence": "Ferrimolybdite documented at Bingham oxidation cap (Climax-Bingham comparable porphyry-Mo geology); under-represented in collection lists because powdery yellow fuzz vs collector-prized wulfenite."
         }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "not_applicable",
+          "reason": "Ba=0 in init (porphyry brine is not Ba-rich); no Ba-delivering event."
+        },
+        "celestine": {
+          "status": "not_applicable",
+          "reason": "Sr=0; same reason as barite."
+        },
+        "jarosite": {
+          "status": "active_post_event",
+          "reason": "K=40, Fe=30, S=60 all sufficient. Init pH=4.5 borderline (gate is 5); event_oxidation (step 85) raises O2 to oxidizing range. Once pH drops below 4 from H2SO4 production, jarosite fires.",
+          "event_dependency": "event_oxidation (step 85) for O2; pH drop must follow from sulfide oxidation"
+        },
+        "alunite": {
+          "status": "active_post_event",
+          "reason": "K=40, Al=15, S=60 all sufficient — the textbook porphyry advanced argillic alteration cap. Same event dependency as jarosite (needs O2 + acid).",
+          "event_dependency": "event_oxidation (step 85) + acid pH from H2SO4 production"
+        },
+        "brochantite": {
+          "status": "not_applicable",
+          "reason": "Cu pulse at step 25 + 60 produces Cu, but it's consumed by chalcopyrite/bornite/chalcocite formation in the reducing primary phase. Post-oxidation Cu sulfide oxidation could yield brochantite but the supergene Cu pool is small."
+        },
+        "antlerite": {
+          "status": "not_applicable",
+          "reason": "Same as brochantite — no Cu sulfate niche in Bingham scenario."
+        },
+        "anhydrite": {
+          "status": "active_post_event",
+          "reason": "T=400 init perfect for high-T anhydrite, BUT init O2=0.2 is below the 0.3 gate. Fires after event_oxidation raises O2. Bingham porphyry deep-zone anhydrite + chalcopyrite paragenesis (Roedder 1971) is the geological reference.",
+          "event_dependency": "event_oxidation (step 85) for O2 above 0.3"
+        }
       }
     },
     "tri_state": {
@@ -228,7 +291,7 @@
       "display_name": "Tri-State Pb-Zn-Ag district (Joplin / Picher / Galena, MO-KS-OK)",
       "host_formation": "Mississippian Boone Formation cherty limestone (and Reeds Spring / St. Joe formations locally)",
       "fluid_event_summary": "Late Pennsylvanian-Early Permian basinal brine expulsion; NaCl-CaCl2 brines, 18-24 wt% NaCl-eq, 90-150 C ore stage. Stoffell et al. 2008 LA-ICP-MS shows Tri-State and Northern Arkansas brines were chemically distinct from Viburnum Trend, with Tri-State having higher Pb-Zn-Ag and lower Ba relative to the Viburnum brines. Ore deposition by sulfide saturation when metal-bearing brine met sulfur-bearing groundwater.",
-      "audit_pass": "gap-fill (Apr 2026) — added Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (argentiferous-galena), Ba (local barite gangue), Sr (basinal-brine tracer), Cu (trace chalcopyrite). Drift-fix: Pb=40 mirrored from JS init into Python init. Existing chemistry preserved (no retuning). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "gap-fill (Apr 2026) — added Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (argentiferous-galena), Ba (local barite gangue), Sr (basinal-brine tracer), Cu (trace chalcopyrite). Drift-fix: Pb=40 mirrored from JS init into Python init. Existing chemistry preserved (no retuning). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite. | v5-gap-fill (Apr 2026) — O2 bumped 0.0 → 0.25 to match real MVT mildly-reducing chemistry at the SO₄/H₂S boundary. Activates dormant Ba/Sr pools for barite + celestine. Plus supersat O2 saturation retuned to /0.4 (matches the SO₄/H₂S boundary).",
       "fluid": {
         "Na": {
           "value": 80,
@@ -257,6 +320,10 @@
         "Cu": {
           "value": 3,
           "note": "Trace chalcopyrite documented at Tri-State even though Cu is not a primary commodity."
+        },
+        "O2": {
+          "value": 0.25,
+          "note": "O2 bumped 0.0 → 0.25 (v5 gap-fill, Apr 2026): real MVT brine sits at the SO₄/H₂S Eh boundary where some sulfate persists alongside H₂S — barite + galena coexistence is the diagnostic MVT assemblage. Bumping from default 0.0 to 0.25 unlocks dormant barite + celestine without destabilizing existing sulfide assemblages (sulfide gates are O2 ≤ 0.8). Plus barite + celestine supersaturation O2 saturation tuned from O2/1.0 to O2/0.4 (saturates at the SO₄/H₂S boundary, geochemically correct). Source: Anderson & Macqueen 1982 (MVT review); Stoffell et al. 2008 (Tri-State LA-ICP-MS brine analyses)."
         }
       },
       "preserved_intentional_values": {
@@ -316,6 +383,38 @@
           "status": "not_applicable",
           "reason": "No Mo in MVT signature. Ozark MVT lacks porphyry-Mo affinity."
         }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "active",
+          "reason": "Ba=20, S=120 (post event_fluid_mixing step 20), O2=0.25 (v5 bump). Verified seed-42: 6 active barite crystals, max 32 µm. The barite + galena MVT-diagnostic coexistence now reproduces in the sim.",
+          "audit_action": "Resolved by v5 commit. O2 bump + supersat O2/0.4 retune both required."
+        },
+        "celestine": {
+          "status": "active",
+          "reason": "Sr=15, S=120, O2=0.25. Verified seed-42: 10 celestine crystals, max 111 µm. Minor celestine in Tri-State carbonate gangue (Hanor 1994) now reproduces.",
+          "audit_action": "Resolved by v5 commit."
+        },
+        "jarosite": {
+          "status": "not_applicable",
+          "reason": "T=180 above the 100°C supergene window; pH=7.2 above acid window."
+        },
+        "alunite": {
+          "status": "not_applicable",
+          "reason": "Al=3 below the 10 ppm gate; pH=7.2 too high."
+        },
+        "brochantite": {
+          "status": "not_applicable",
+          "reason": "Cu=3 below the 10 ppm gate (Tri-State is Pb-Zn-Ba, not Cu)."
+        },
+        "antlerite": {
+          "status": "not_applicable",
+          "reason": "Cu and pH both wrong."
+        },
+        "anhydrite": {
+          "status": "not_applicable",
+          "reason": "Ca=80 (selenite-equivalent), T=180 → above selenite range but salinity=18 too low for low-T branch and high-T branch needs O2≥0.3 (Tri-State has O2=0). Could fire if both O2 and salinity bumped."
+        }
       }
     },
     "sweetwater_viburnum": {
@@ -324,7 +423,7 @@
       "display_name": "Sweetwater Mine, Viburnum Trend, Reynolds County, Missouri",
       "host_formation": "Cambrian Bonneterre Formation dolomitic limestone",
       "fluid_event_summary": "Late Pennsylvanian-Early Permian basinal brine expulsion driven by Ouachita orogeny dewatering. NaCl-CaCl2 brine, 18-24 wt% NaCl-eq, 90-150 C ore stage. Viburnum is the high-Ba / lower-Ag MVT endmember (Stoffell et al. 2008 LA-ICP-MS contrast with Tri-State). The 'reactive wall' mechanic models repeated acid pulses dissolving the carbonate host and triggering pH-recovery growth bursts on existing crystals — the diagnostic Viburnum Pb-Zn paragenesis (sphalerite + galena + marcasite ± barite, with dolomite-calcite gangue).",
-      "audit_pass": "gap-fill (Apr 2026) — added Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (Viburnum galena trace, lower than Tri-State), Sr (basinal-brine tracer). No drift between Python and JS (both runtimes already consistent). Existing chemistry preserved (no retuning). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "gap-fill (Apr 2026) — added Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (Viburnum galena trace, lower than Tri-State), Sr (basinal-brine tracer). No drift between Python and JS (both runtimes already consistent). Existing chemistry preserved (no retuning). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite. | v5-gap-fill (Apr 2026) — O2 bumped 0.0 → 0.25 to match real MVT mildly-reducing chemistry at the SO₄/H₂S boundary. Activates dormant Ba/Sr pools for barite + celestine. Plus supersat O2 saturation retuned to /0.4 (matches the SO₄/H₂S boundary).",
       "fluid": {
         "Na": {
           "value": 70,
@@ -345,6 +444,10 @@
         "Sr": {
           "value": 12,
           "note": "Basinal-brine tracer (Hanor 1994); minor celestine documented in Viburnum carbonate gangue."
+        },
+        "O2": {
+          "value": 0.25,
+          "note": "O2 bumped 0.0 → 0.25 (v5 gap-fill, Apr 2026): real MVT brine sits at the SO₄/H₂S Eh boundary where some sulfate persists alongside H₂S — barite + galena coexistence is the diagnostic MVT assemblage. Bumping from default 0.0 to 0.25 unlocks dormant barite + celestine without destabilizing existing sulfide assemblages (sulfide gates are O2 ≤ 0.8). Plus barite + celestine supersaturation O2 saturation tuned from O2/1.0 to O2/0.4 (saturates at the SO₄/H₂S boundary, geochemically correct). Source: Anderson & Macqueen 1982 (MVT review); Stoffell et al. 2008 (Tri-State LA-ICP-MS brine analyses)."
         }
       },
       "preserved_intentional_values": {
@@ -390,6 +493,38 @@
           "status": "not_applicable",
           "reason": "No Mo. Sweetwater is a Pb-Zn district, no Mo affinity."
         }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "active_strong",
+          "reason": "Ba=25, S=60+ (init + acid_pulse events deliver more), O2=0.25. Verified seed-42: 14 active barite crystals, max 63 µm. Viburnum is the high-Ba MVT endmember (Stoffell 2008) — the barite gangue assemblage now reproduces.",
+          "audit_action": "Resolved by v5 commit."
+        },
+        "celestine": {
+          "status": "active",
+          "reason": "Sr=12, S=60+, O2=0.25. Verified seed-42: 8 celestine crystals, max 56 µm.",
+          "audit_action": "Resolved by v5 commit."
+        },
+        "jarosite": {
+          "status": "not_applicable",
+          "reason": "T=140 above supergene window; pH=7.0 above acid window."
+        },
+        "alunite": {
+          "status": "not_applicable",
+          "reason": "Al=3 below gate; pH=7 too high."
+        },
+        "brochantite": {
+          "status": "not_applicable",
+          "reason": "No Cu (Sweetwater is Pb-Zn district, not Cu)."
+        },
+        "antlerite": {
+          "status": "not_applicable",
+          "reason": "No Cu."
+        },
+        "anhydrite": {
+          "status": "not_applicable",
+          "reason": "Ca only 100 ppm or so; same O2 gate; selenite+gypsum is the appropriate phase."
+        }
       }
     },
     "warren_district": {
@@ -399,7 +534,7 @@
       "host_formation": "Laramide (Late Cretaceous - Early Tertiary, ~70-65 Ma) quartz-monzonite porphyry intruding Paleozoic Escabrosa Limestone + Abrigo Formation",
       "production_history": "~8 Mt Cu, ~25 Moz Ag, ~3 Moz Au historically (1880-1975). Type-locality for the supergene Cu paragenesis cascade (chalcopyrite -> chalcocite -> cuprite -> native Cu -> azurite -> malachite -> chrysocolla).",
       "fluid_event_summary": "Three-phase history: (1) primary Laramide magmatic-hydrothermal phase, hot reducing brine, chalcopyrite-bornite-pyrite-magnetite assemblage; (2) Mesozoic-Cenozoic uplift exposes ore to meteoric water, pyrite oxidation drops pH, Cu^2+ leaches and descends; (3) supergene cascade: chalcocite enrichment blanket -> cuprite -> native Cu -> azurite (high pCO2 monsoon) -> malachite (pCO2 drop) -> chrysocolla (silica seep). Each step corresponds to a documented Bisbee specimen type.",
-      "audit_pass": "gap-fill (Apr 2026) — added Ag (~25 Moz Ag historical production), Mg (Escabrosa Limestone host), P (enables pyromorphite given Pb+Cl already present), Sb (tetrahedrite-tennantite sulfosalt trace). No drift between Python and JS init (both already consistent). Existing chemistry preserved (no retuning); event sequence (9 events spanning 340 steps) preserved. Au=3 added later when the Au field + grow_native_gold engine landed (previously held in pending_schema_additions). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "gap-fill (Apr 2026) — added Ag (~25 Moz Ag historical production), Mg (Escabrosa Limestone host), P (enables pyromorphite given Pb+Cl already present), Sb (tetrahedrite-tennantite sulfosalt trace). No drift between Python and JS init (both already consistent). Existing chemistry preserved (no retuning); event sequence (9 events spanning 340 steps) preserved. Au=3 added later when the Au field + grow_native_gold engine landed (previously held in pending_schema_additions). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite.",
       "fluid": {
         "Ag": {
           "value": 40,
@@ -484,6 +619,41 @@
           "status": "not_applicable",
           "reason": "No Mo in Warren District fluid (init Mo=0; no Mo-delivering event). Bisbee is Cu-Pb-Zn-Au, not Cu-Mo. Mineral not expected at this locality."
         }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "not_applicable",
+          "reason": "Ba=0 in Bisbee fluid; not a documented Bisbee species in significant amounts."
+        },
+        "celestine": {
+          "status": "not_applicable",
+          "reason": "Sr=0."
+        },
+        "jarosite": {
+          "status": "active_post_event",
+          "reason": "K=80, Fe=200 (very high), S=150 all sufficient. After ev_uplift_weathering (step 65) drops pH and raises O2, jarosite fires strongly. The yellow rim on weathered Bisbee pyrite is the diagnostic AMD signature.",
+          "event_dependency": "ev_uplift_weathering (step 65)"
+        },
+        "alunite": {
+          "status": "active_post_event",
+          "reason": "K=80, Al=20, S=150 all sufficient. Same trigger as jarosite. Bisbee oxidation cap may include alunite though it's less famous than the Cu suite.",
+          "event_dependency": "ev_uplift_weathering (step 65)"
+        },
+        "brochantite": {
+          "status": "active_post_event",
+          "reason": "Cu (delivered by primary cooling event) + S=150 + post-uplift O2 rise. Bisbee brochantite is well-documented — emerald-green prisms on the famous 'Bisbee blue azurite' assemblages.",
+          "event_dependency": "Primary cooling delivers Cu; ev_uplift_weathering provides O2"
+        },
+        "antlerite": {
+          "status": "active_conditional",
+          "reason": "Will fire IF pH drops below 3.5 during the supergene phase. Less common than brochantite at Bisbee (which is more Cu-S-OH neutral) but possible.",
+          "event_dependency": "Strong acidification needed (pH < 3.5)"
+        },
+        "anhydrite": {
+          "status": "active_post_event",
+          "reason": "T=400 init + Ca=60 + S=150, but init O2=0.05 well below gate. Fires after supergene events raise O2 above 0.3.",
+          "event_dependency": "ev_uplift_weathering or ev_oxidation_zone"
+        }
       }
     },
     "ouro_preto": {
@@ -492,7 +662,7 @@
       "display_name": "Ouro Preto Imperial Topaz veins, Minas Gerais, Brazil",
       "host_formation": "Precambrian phyllite + quartzite (Brasília fold belt)",
       "fluid_event_summary": "Hydrothermal veins cutting Precambrian phyllite. Crystallization at ~360 C, 3.5 kbar from metamorphic brines derived from devolatilization of phyllite (Morteani et al. 2002 fluid-inclusion study). The diagnostic imperial color (golden-orange to pink) requires Cr from nearby ultramafic bodies; without Cr the topaz is colorless or pale blue. Single clean cooling curve 360 C -> 50 C; F-pulse mid-scenario gates topaz nucleation.",
-      "audit_pass": "gap-fill (Apr 2026) — added Na, K (phyllite-devolatilization signature: muscovite + biotite + albite breakdown releases alkali cations), Mg (phyllite chlorite/biotite breakdown). No drift between Python and JS init. Existing chemistry preserved (no retuning); 6-event cooling cascade preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "gap-fill (Apr 2026) — added Na, K (phyllite-devolatilization signature: muscovite + biotite + albite breakdown releases alkali cations), Mg (phyllite chlorite/biotite breakdown). No drift between Python and JS init. Existing chemistry preserved (no retuning); 6-event cooling cascade preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite.",
       "fluid": {
         "Na": {
           "value": 60,
@@ -549,6 +719,36 @@
           "status": "not_applicable",
           "reason": "No Mo."
         }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "not_applicable",
+          "reason": "No Ba; topaz pegmatite scenario."
+        },
+        "celestine": {
+          "status": "not_applicable",
+          "reason": "No Sr."
+        },
+        "jarosite": {
+          "status": "not_applicable",
+          "reason": "Pegmatite chemistry — no K-Fe-acid combination."
+        },
+        "alunite": {
+          "status": "not_applicable",
+          "reason": "Pegmatite chemistry; pH=6.5 borderline."
+        },
+        "brochantite": {
+          "status": "not_applicable",
+          "reason": "No Cu."
+        },
+        "antlerite": {
+          "status": "not_applicable",
+          "reason": "No Cu."
+        },
+        "anhydrite": {
+          "status": "not_applicable",
+          "reason": "No S in pegmatite."
+        }
       }
     },
     "cruzeiro_doce_valley": {
@@ -558,7 +758,7 @@
       "host_formation": "Brasiliano-age (Neoproterozoic, 700-450 Ma) granite-pegmatite cutting Macaúbas Group meta-sediments, eastern São Francisco craton margin",
       "production_history": "Type-locality for fine schorl-elbaite tourmaline + smoky quartz + beryl pockets. Active since the early 20th century, still producing world-class specimens.",
       "fluid_event_summary": "Miarolitic gem cavity in the residual pocket of a complex zoned pegmatite. Crystallization 650 -> 300 C across 7 events: outer-shell wall zone, schorl arrival, albitization (K -> Na), Be saturation (beryl), Li phase (spodumene + elbaite), late hydrothermal (topaz), kaolinization (microcline -> kaolinite). Apatite is a documented Cruzeiro accessory mineral [Cassedanne 1991].",
-      "audit_pass": "gap-fill (Apr 2026) — added P (apatite-enabling, was the gate keeping a documented Cruzeiro accessory from nucleating), Mg (brief-required non-zero baseline, pegmatite-pocket-appropriate low value). No drift between Python and JS init. Existing chemistry (Be, B, Li, F, Cr, Cu, V, Ti, K, Na, Al, etc.) preserved; 7-event cooling cascade preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "gap-fill (Apr 2026) — added P (apatite-enabling, was the gate keeping a documented Cruzeiro accessory from nucleating), Mg (brief-required non-zero baseline, pegmatite-pocket-appropriate low value). No drift between Python and JS init. Existing chemistry (Be, B, Li, F, Cr, Cu, V, Ti, K, Na, Al, etc.) preserved; 7-event cooling cascade preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite.",
       "fluid": {
         "P": {
           "value": 8,
@@ -619,6 +819,36 @@
           "status": "not_applicable",
           "reason": "No Mo."
         }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "not_applicable",
+          "reason": "No Ba; gem pegmatite scenario."
+        },
+        "celestine": {
+          "status": "not_applicable",
+          "reason": "No Sr."
+        },
+        "jarosite": {
+          "status": "not_applicable",
+          "reason": "Pegmatite chemistry; no acid drainage."
+        },
+        "alunite": {
+          "status": "not_applicable",
+          "reason": "Pegmatite chemistry."
+        },
+        "brochantite": {
+          "status": "not_applicable",
+          "reason": "No Cu."
+        },
+        "antlerite": {
+          "status": "not_applicable",
+          "reason": "No Cu."
+        },
+        "anhydrite": {
+          "status": "not_applicable",
+          "reason": "No S."
+        }
       }
     },
     "tsumeb": {
@@ -628,7 +858,7 @@
       "host_formation": "Pipe-shaped Pb-Zn-Cu sulfide body in Neoproterozoic dolomite (Otavi Group)",
       "production_history": "Active 1905-1996. Primary commodities Pb-Zn-Cu-Ag-Ge-Cd. ~280 species documented — among the most mineralogically diverse deposits ever discovered. Type locality for germanium (germanite, renierite, briartite).",
       "fluid_event_summary": "1st-stage gossan = uppermost of three Mesozoic-Cenozoic supergene oxidation zones, ~35 C, oxidizing meteoric brine in dolomitic carbonate cavity. Repeated soil-zone flushes deliver Pb+Mo, As+Co+Ni, P, V in sequential pulses, each unlocking a different mineral assemblage (wulfenite, mimetite/erythrite/annabergite, pyromorphite, vanadinite). Argentiferous throughout; Ge-bearing minerals are the Tsumeb signature.",
-      "audit_pass": "gap-fill (Apr 2026) — added Ag (Tsumeb's silver suite: native Ag, proustite, pyrargyrite), Ge (the type-locality element; FluidChemistry.Ge field has carried a 'Tsumeb speciality' comment since the schema was written, this audit finally populates it), Sb (proustite/pyrargyrite/tetrahedrite enabling), Na/K (minor groundwater cation traces). Existing chemistry preserved (Mg=5, V=1.5, P=0.5, etc.); 8-event sequence preserved; Co/Ni-via-event preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "gap-fill (Apr 2026) — added Ag (Tsumeb's silver suite: native Ag, proustite, pyrargyrite), Ge (the type-locality element; FluidChemistry.Ge field has carried a 'Tsumeb speciality' comment since the schema was written, this audit finally populates it), Sb (proustite/pyrargyrite/tetrahedrite enabling), Na/K (minor groundwater cation traces). Existing chemistry preserved (Mg=5, V=1.5, P=0.5, etc.); 8-event sequence preserved; Co/Ni-via-event preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite. | v5-gap-fill (Apr 2026, Tsumeb) — added ev_supergene_acidification event (4 pulses at steps 5/8/12/16) to maintain the early acidic supergene phase against limestone wall buffering. Bumped Al 3 → 25. Bumped jarosite + alunite per-check probability 0.18/0.15 → 0.45. Unlocks scorodite + jarosite + alunite + brochantite in the simulator (4 of 4 BACKLOG'd Tsumeb-pH-gap minerals; antlerite correctly remains absent as Tsumeb is brochantite-dominant per geology).",
       "fluid": {
         "Ag": {
           "value": 8,
@@ -653,6 +883,10 @@
         "Au": {
           "value": 0.3,
           "note": "Rare native gold IS documented at Tsumeb [Pinch & Wilson 1977] though it's not a primary commodity. Sub-0.5-ppm threshold (grow_native_gold's nucleation cutoff) means no gold crystals nucleate — the 0.3 value documents the reported trace chemistry without producing gold the locality doesn't actually produce in quantity. Added when the Au field landed (post grow_native_gold engine)."
+        },
+        "Al": {
+          "value": 25,
+          "note": "v5 gap-fill (Apr 2026): two coordinated changes unlock four supergene minerals at Tsumeb. (1) Al bumped 3.0 → 25 to clear the alunite engine's Al/25 cap. (2) New ev_supergene_acidification event scheduled at steps 5, 8, 12, 16 (4 pulses to overrun the limestone wall's pH-buffering) drops pH to 4.0, opening a ~15-step acid window before ev_meteoric_flush (step 20) carbonate-buffers pH back to 6.2. The acid window is when scorodite + jarosite + alunite nucleate. Plus jarosite + alunite per-check probability bumped 0.18/0.15 → 0.45 to reflect their fast acid-sulfate kinetics in brief acid windows. Source: Hemley 1969 + Stoffregen 2000 (alunite/jarosite stability + paragenesis); Pinch & Wilson 1977 (Tsumeb mineralogy)."
         }
       },
       "preserved_intentional_values": {
@@ -700,17 +934,48 @@
           "real_locality_evidence": "Tsumeb primary arsenopyrite did exist (deeper in the orebody) but the Tsumeb-2 collection-zone the scenario simulates is the supergene-oxidation product zone."
         },
         "scorodite": {
-          "status": "geologically_documented_but_blocked",
-          "reason": "Tsumeb is the world-class scorodite locality (Groebner & Becker 1973 — deep blue-green dipyramids to 5+ cm) but the current scenario pH=6.8 is ABOVE scorodite stability gate (pH<6 nucleation). Geologically, Tsumeb scorodite formed during the early acidic supergene phase BEFORE carbonate buffering raised pH to 6.8 (the late-stage phase the scenario captures). Future scenario tune: add an early-phase event_supergene_acidification to drop pH transiently to 4-5 for ~20 steps, allowing scorodite to nucleate before carbonate buffer kicks in. Currently scorodite is correctly blocked by current pH.",
-          "event_dependency": "NEEDED: early-phase pH-drop event (not currently in scenario)",
-          "real_locality_evidence": "Tsumeb is the type-locality-quality scorodite source per Groebner & Becker 1973 + Bartelke 1976. Documented as part of secondary arsenate oxidation suite alongside mimetite/adamite (already implemented).",
-          "audit_action": "Document gap; do not retune. A future scenario_tsumeb refinement to add early-acidic-phase event would unlock scorodite. Tracked in BACKLOG.md as 'Tsumeb scorodite pH gap'."
+          "status": "active_during_acid_window",
+          "reason": "After v5 ev_supergene_acidification (steps 5/8/12/16) drops pH to 4.0, scorodite nucleates during the ~15-step acid window before ev_meteoric_flush carbonate-buffers pH back to 6.2. Verified seed-42: 1 scorodite crystal forms (max 15 µm). Across 20 seeds the realization rate is ~95% — Tsumeb scorodite is now part of the simulator's supergene assemblage.",
+          "audit_action": "Resolved by v5 commit. The ev_supergene_acidification event mirrors the geological reality of the early acidic supergene phase before carbonate buffering raised pH to the late-stage 6.8."
         },
         "ferrimolybdite": {
           "status": "active",
           "reason": "Tsumeb has Mo=15, Fe=40, O2=1.8, pH=6.8, T=low -> sigma >5 if T low. Will nucleate readily. Substrate prefers existing molybdenite (none in scene) so wall-nucleation dominant.",
           "event_dependency": null,
           "real_locality_evidence": "Tsumeb molybdates documented; ferrimolybdite is the lower-display-value-but-common Mo-oxidation cousin to wulfenite (which IS reported at Tsumeb)."
+        }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "not_applicable",
+          "reason": "Ba=0 in Tsumeb fluid; primary mineral suite is dominantly Pb-Zn-Cu-Ge-As-Sb. Barite is reported at Tsumeb but in earlier paragenetic stages not modeled by this scenario."
+        },
+        "celestine": {
+          "status": "not_applicable",
+          "reason": "Sr=0; same reason as barite."
+        },
+        "jarosite": {
+          "status": "active_during_acid_window",
+          "reason": "After v5 ev_supergene_acidification, K=10 + Fe=40 + S=70 (post-acid) + O2=1.5 + pH=4.0 → sigma 1.06–2.03 across the 4 acid pulses. Per-check bumped to 0.45 for reliable nucleation. Verified seed-42: 1 jarosite crystal (max 2 µm). 20-seed hit rate ~95%. Tsumeb jarosite was world-class but blocked at pH=6.8 pre-v5.",
+          "audit_action": "Resolved by v5 commit (combined with scorodite + alunite via the same single fix)."
+        },
+        "alunite": {
+          "status": "active_during_acid_window",
+          "reason": "After v5 Al bump (3→25) + ev_supergene_acidification, K=10 + Al=25 + S=70 + O2=1.5 + pH=4.0 → sigma 0.79–1.46 across acid pulses (lower than jarosite due to K/15 cap). Per-check bumped to 0.45. Verified seed-42: 1 alunite crystal (max 2 µm). 20-seed hit rate ~70%. Closes the advanced argillic alteration gap at Tsumeb.",
+          "audit_action": "Resolved by v5 commit. Both Al chemistry bump and acid-window event were required."
+        },
+        "brochantite": {
+          "status": "active_strong",
+          "reason": "Cu (delivered by ev_cu_enrichment) + S=50+ + O2=1.5–2.2 + pH 4.7–6.5 (the brochantite window). Verified seed-42: 15 active brochantite crystals, max 410 µm — significant supergene Cu sulfate yield. Bisbee/Atacama/Tsumeb brochantite paragenesis now reproduces."
+        },
+        "antlerite": {
+          "status": "not_applicable_correctly",
+          "reason": "Antlerite gate is pH ≤ 4 (gate strict). The v5 acid window holds pH at ~4.7 (limestone wall buffers from 4.0 toward 6); antlerite never sees pH ≤ 4 in the buffered regime. This is geologically correct: Tsumeb is brochantite-dominant for supergene Cu-sulfate, not antlerite-dominant (antlerite is the Atacama/Chuquicamata signature, not Tsumeb's).",
+          "audit_action": "Not a gap — Tsumeb chemistry correctly favors brochantite (which IS active at Tsumeb post-v5)."
+        },
+        "anhydrite": {
+          "status": "not_applicable",
+          "reason": "T=35, salinity=2 → low-T dilute branch returns 0 (gypsum/selenite is the appropriate phase). Selenite already in scenario."
         }
       }
     },
@@ -720,7 +985,7 @@
       "display_name": "Deccan Traps zeolite vesicle, Nashik / Aurangabad area, Maharashtra, India",
       "host_formation": "Late-Cretaceous Deccan basalt flow vesicles (~66 Ma flood basalt province)",
       "fluid_event_summary": "Stage III apophyllite-bearing vesicles (~21-58 Ma post-eruption per Ottens et al. 2019). Alkaline K-Ca-Si-F groundwater percolating through cooled basalt vesicles, crystallizing pseudo-cubic apophyllite blocks, sometimes carrying hematite-needle phantom inclusions (the 'bloody apophyllite' of Nashik). 5-stage event sequence: silica veneer (Stage I) -> hematite seeds -> zeolites + calcite (Stage II) -> apophyllite (Stage III) -> late cooling.",
-      "audit_pass": "gap-fill (Apr 2026) — added Sr=2. Deccan zeolites (heulandite, stilbite, mesolite) carry Sr substituting for Ca, sometimes 100s of ppm in the mineral; documenting the parent-fluid source. Existing Mg=8 already meets brief-required non-zero Mg. Drift check: Python and JS init values identical, no fixes needed. Existing chemistry preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "gap-fill (Apr 2026) — added Sr=2. Deccan zeolites (heulandite, stilbite, mesolite) carry Sr substituting for Ca, sometimes 100s of ppm in the mineral; documenting the parent-fluid source. Existing Mg=8 already meets brief-required non-zero Mg. Drift check: Python and JS init values identical, no fixes needed. Existing chemistry preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite.",
       "fluid": {
         "Sr": {
           "value": 2,
@@ -769,6 +1034,36 @@
           "status": "not_applicable",
           "reason": "No Mo. Zeolite-stage fluid lacks porphyry-Mo affinity."
         }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "not_applicable",
+          "reason": "Zeolite-stage basalt vesicle chemistry; no Ba."
+        },
+        "celestine": {
+          "status": "not_applicable",
+          "reason": "No Sr."
+        },
+        "jarosite": {
+          "status": "not_applicable",
+          "reason": "pH=8.2 alkaline — opposite end of stability range."
+        },
+        "alunite": {
+          "status": "not_applicable",
+          "reason": "pH=8.2 alkaline."
+        },
+        "brochantite": {
+          "status": "not_applicable",
+          "reason": "No Cu."
+        },
+        "antlerite": {
+          "status": "not_applicable",
+          "reason": "No Cu; pH wrong."
+        },
+        "anhydrite": {
+          "status": "not_applicable",
+          "reason": "Low Ca + low salinity; selenite-territory if anything."
+        }
       }
     },
     "coorong_sabkha": {
@@ -777,7 +1072,7 @@
       "display_name": "Coorong lagoon system, South Australia (and Persian Gulf sabkhas)",
       "host_formation": "Modern lagoonal carbonate sediment + evaporite host",
       "fluid_event_summary": "Surface-T evaporative brine cycling (~25 C, ~120 wt% NaCl-eq sabkha endmember), 12 flood/evap pulses over 240 steps drive Omega across the dolomite saturation boundary repeatedly. Per Kim, Sun et al. (2023, Science 382:915), this cyclic Omega modulation is what's needed to produce ORDERED dolomite at ambient T (the geological prize the paper made accessible). f_ord reaches >0.7 by mid-scenario.",
-      "audit_pass": "consistency check (Apr 2026) — no gap-fills needed. The scenario was already exceptionally well-tuned for its specific story. All major sabkha-brine elements present (Mg=1400, Ca=400, CO3=300, Na=10500, K=380, S=2700, Cl=18000, Sr=20, F=2). Drift check: Python and JS init values identical. No changes made. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock).",
+      "audit_pass": "consistency check (Apr 2026) — no gap-fills needed. The scenario was already exceptionally well-tuned for its specific story. All major sabkha-brine elements present (Mg=1400, Ca=400, CO3=300, Na=10500, K=380, S=2700, Cl=18000, Sr=20, F=2). Drift check: Python and JS init values identical. No changes made. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite.",
       "preserved_intentional_values": {
         "SiO2": 20,
         "Ca": 400,
@@ -821,6 +1116,40 @@
         "ferrimolybdite": {
           "status": "not_applicable",
           "reason": "No Mo. Coorong sabkha is dolomite-gypsum-halite, no molybdate signature."
+        }
+      },
+      "mineral_realizations_v4_sulfate_expansion": {
+        "barite": {
+          "status": "not_applicable",
+          "reason": "Ba=0 in Coorong sabkha (correctly absent — sabkha is Sr-dominant, not Ba)."
+        },
+        "celestine": {
+          "status": "active_strong",
+          "reason": "Sr=20 ✓, S=2700 (massive) ✓, O2=1.5 ✓, T=25 + low T-branch fires through the Sr-celestine path. **THIS IS THE SEED-42 SHIFT THAT JUSTIFIED SIM_VERSION 3→4 BUMP.** Verified: 18 celestine crystals form across the run.",
+          "event_dependency": null,
+          "real_locality_evidence": "Modern Persian Gulf + Coorong + Salar de Atacama sabkhas all produce celestine alongside dolomite + halite + gypsum/anhydrite stratigraphy. Madagascar Sakoany geodes are the world-class display source."
+        },
+        "jarosite": {
+          "status": "not_applicable",
+          "reason": "pH=8.3 alkaline; jarosite is acid-only."
+        },
+        "alunite": {
+          "status": "not_applicable",
+          "reason": "pH=8.3 alkaline; no Al-rich substrate."
+        },
+        "brochantite": {
+          "status": "not_applicable",
+          "reason": "No Cu."
+        },
+        "antlerite": {
+          "status": "not_applicable",
+          "reason": "No Cu; pH wrong."
+        },
+        "anhydrite": {
+          "status": "active_strong",
+          "reason": "T=25 + salinity=120 (above 100‰ threshold) + Ca=400 + S=2700 + O2=1.5. Sigma=7.5; verified seed-42: 8 anhydrite crystals up to 952 µm. Sabkha now produces the textbook gypsum + anhydrite + celestine + dolomite + aragonite assemblage. The low-T saline-branch anhydrite paragenesis (Persian Gulf sabkha analog).",
+          "event_dependency": null,
+          "real_locality_evidence": "Persian Gulf sabkha + Coorong + Salar de Atacama all preserve interlayered anhydrite-gypsum-halite stratigraphy. Hardie 1967 phase diagram is the canonical reference."
         }
       }
     }

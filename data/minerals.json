@@ -542,7 +542,7 @@
           "name": "cyclic_sextet",
           "miller_indices": "{110}",
           "trigger": "growth in twinned_cyclic habit",
-          "probability": 0.40
+          "probability": 0.4
         },
         {
           "name": "contact",
@@ -2217,14 +2217,14 @@
           "name": "acicular_tuft",
           "wall_spread": 0.5,
           "void_reach": 0.6,
-          "vector": "radiating",
+          "vector": "projecting",
           "trigger": "default — classic canary-yellow radiating hair-tufts"
         },
         {
           "name": "fibrous_mat",
           "wall_spread": 0.85,
           "void_reach": 0.2,
-          "vector": "felted",
+          "vector": "coating",
           "trigger": "high σ — dense mats on dissolving molybdenite"
         },
         {
@@ -2301,7 +2301,7 @@
           "name": "striated_prism",
           "wall_spread": 0.35,
           "void_reach": 0.5,
-          "vector": "prismatic",
+          "vector": "projecting",
           "trigger": "default — diamond-cross-section prisms with deep longitudinal striations"
         },
         {
@@ -2315,7 +2315,7 @@
           "name": "acicular",
           "wall_spread": 0.4,
           "void_reach": 0.65,
-          "vector": "needle",
+          "vector": "projecting",
           "trigger": "fast growth, high σ — thin needle-like aggregates"
         },
         {
@@ -2388,6 +2388,698 @@
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-UNIMPLEMENTED.md. The #1 gold-trapping mineral — Au-trapping mechanic consumes fluid Au (30% of 5%/step) and records as trace_Au on GrowthZone; supergene oxidation releases 12%/step back to fluid (feeds scorodite + native_gold supergene enrichment). Competes with grow_native_gold for fluid Au in reducing high-T scenarios.",
       "class_color": "#c8c0b8"
     },
+    "barite": {
+      "formula": "BaSO4",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 6,
+      "max_size_cm": 60,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "default — desert-rose tabular plates, the standard barite habit"
+        },
+        {
+          "name": "bladed",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low σ — divergent blades, Cumberland-style fans"
+        },
+        {
+          "name": "cockscomb",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "moderate σ, twin-controlled — cyclic twins giving the diagnostic crested form"
+        },
+        {
+          "name": "prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "high σ, space-constrained — stubby vein-fill prisms"
+        }
+      ],
+      "class": "sulfate",
+      "description": "BaSO₄, the densest non-metallic mineral collectors will encounter at 4.5 g/cm³ (the name 'barytes' from Greek βαρύς, 'heavy'). Galena's primary gangue mineral in MVT districts (Tri-State, Cumberland, Pine Point) and abundant in hydrothermal vein systems (Cavnic, Wegscheid, Sterling Hill). Acid-resistant — even concentrated H₂SO₄ won't touch it, the basis for its industrial use as drilling-mud weighting agent. Forms a partial solid solution with celestine (BaSO₄ ↔ SrSO₄); intermediates 'celestobarite' and 'barytocelestine' are common when both Ba and Sr present in the parent fluid. Famous habits: tabular 'desert rose' (Oklahoma + Saudi Arabia), bladed Cumberland fans, cockscomb cyclic twins (Romania), honey-yellow Pb-bearing variants (Cumberland gold).",
+      "scenarios": [
+        "mvt",
+        "porphyry",
+        "reactive_wall",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        500
+      ],
+      "T_optimum_C": [
+        50,
+        200
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Ba": 5,
+        "S": 10,
+        "O2": 0.1
+      },
+      "trace_ingredients": {
+        "Sr": "celestobarite intermediate (Sr²⁺ substitutes for Ba²⁺)",
+        "Pb": "honey-yellow Cumberland-gold habit (submicroscopic galena inclusions)"
+      },
+      "thermal_decomp_C": 1149,
+      "thermal_decomp_reaction": "BaSO4 -> BaO + SO3 (decomposition; very high T — outside normal sim range)",
+      "thermal_decomp_products": {
+        "Ba": 0.5,
+        "S": 0.4
+      },
+      "fluorescence": {
+        "activator": "intrinsic",
+        "color": "creamy_white_SW (Sterling Hill only)",
+        "note": "Most barite non-fluorescent; the Sterling Hill / Franklin (NJ) zinc-mineral co-occurrence is the only common fluorescent locality."
+      },
+      "twin_laws": [
+        {
+          "name": "cyclic_cockscomb",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.05
+        }
+      ],
+      "acid_dissolution": null,
+      "habit": "tabular",
+      "color_rules": {
+        "white_colorless": {
+          "default": true
+        },
+        "honey_yellow": {
+          "trigger": "Pb > 5 (Cumberland gold)"
+        },
+        "blue": {
+          "trigger": "Sterling Hill F-center radiation-damage variants (rare)"
+        }
+      },
+      "narrate_function": "_narrate_barite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Ba sequestration mineral; activates the dormant fluid.Ba pool. Tri-State Ba=20 currently dormant due to scenario O2=0.0 (gap flagged in audit). Sabkha Ba=0 (correctly absent — sabkha is Sr-dominant). Real activation: porphyry post-oxidation; future MVT chemistry tweak (O2 0→0.2) would unlock Tri-State barite.",
+      "class_color": "#eb137f"
+    },
+    "celestine": {
+      "formula": "SrSO4",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 6,
+      "max_size_cm": 30,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "default — pale celestial blue tabular plates"
+        },
+        {
+          "name": "bladed",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low σ — divergent blue blades, Lake Erie / Put-in-Bay habit"
+        },
+        {
+          "name": "fibrous",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "moderate σ, low T, sulfur-vug context — Sicilian Caltanissetta radiating fibers"
+        },
+        {
+          "name": "nodular",
+          "wall_spread": 0.85,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "high σ — nodular geode lining, Madagascar (Sakoany) habit"
+        }
+      ],
+      "class": "sulfate",
+      "description": "SrSO₄, the strontium sulfate; isostructural with barite (the two form a partial solid solution; intermediates 'celestobarite' and 'barytocelestine' common in mixed-cation fluids). The diagnostic pale celestial blue is an F-center defect color — radiation-damaged anion vacancies absorb yellow-orange light, leaving the calm sky blue that named the species. Famous occurrences: Madagascar Sakoany geodes (football-sized, 30 cm pale-blue tabular plates — world's largest), Sicilian Caltanissetta sulfur-vug fibrous habit (radiating fibers on yellow native sulfur), Lake Erie / Put-in-Bay (Crystal Cave on South Bass Island — world's largest known geode at 35 ft³). Industrial use: source of Sr for red firework colors; ⁸⁷Sr/⁸⁶Sr-isotope tracer for paleobrine geochronology (Schwartz et al. 2018).",
+      "scenarios": [
+        "mvt",
+        "supergene_oxidation",
+        "sabkha_dolomitization"
+      ],
+      "T_range_C": [
+        5,
+        300
+      ],
+      "T_optimum_C": [
+        15,
+        100
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Sr": 3,
+        "S": 10,
+        "O2": 0.1
+      },
+      "trace_ingredients": {
+        "Ba": "barytocelestine intermediate (Ba²⁺ substitutes for Sr²⁺)",
+        "Mn": "rare reddish tint (Yates mine, Quebec)"
+      },
+      "thermal_decomp_C": 1100,
+      "thermal_decomp_reaction": "SrSO4 -> SrO + SO3 (decomposition; high T — outside normal sim range)",
+      "thermal_decomp_products": {
+        "Sr": 0.5,
+        "S": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "tabular",
+      "color_rules": {
+        "pale_celestial_blue": {
+          "default": true
+        },
+        "white_colorless": {
+          "trigger": "high-purity samples, no F-center defects"
+        },
+        "reddish": {
+          "trigger": "Mn > 5 (rare — Yates mine variant)"
+        }
+      },
+      "narrate_function": "_narrate_celestine",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Sr sequestration mineral; activates the dormant fluid.Sr pool. **Coorong sabkha (Sr=20, S=2700, O2=1.5) produces immediate strong celestine activation — the seed-42 shift driving the SIM_VERSION 3→4 bump.** Tri-State Sr=15 + Sweetwater Sr=12 currently dormant due to O2=0.0 (gap flagged in audit alongside barite).",
+      "class_color": "#eb137f"
+    },
+    "jarosite": {
+      "formula": "KFe3(SO4)2(OH)6",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 6,
+      "max_size_cm": 3,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "pseudocubic",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "default — pseudocubic golden-yellow rhombs (looks cubic, actually trigonal)"
+        },
+        {
+          "name": "druzy",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "moderate σ — yellow honeycomb microcrystalline druse on pyrite oxidation surface"
+        },
+        {
+          "name": "earthy_crust",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "high σ, fast growth — powdery yellow AMD stain"
+        }
+      ],
+      "class": "sulfate",
+      "description": "KFe³⁺₃(SO₄)₂(OH)₆, the diagnostic acid-mine-drainage mineral. Yellow-to-ocher pseudocubic rhombs and powdery crusts; the supergene Fe-sulfate that takes over from goethite when pH drops below 4. Confirmed on Mars at Meridiani Planum by NASA's MER Opportunity Mössbauer spectrometer in 2004 (Klingelhöfer et al. 2004) — the first confirmation of past liquid water + acidic conditions on Mars. Earth localities: Rio Tinto (Spain — the Phoenician + Roman + Spanish + Rio Tinto Co. mining district that names the red-orange river), Red Mountain Pass (Colorado), Mojave acid drainage sites, every active sulfide-mine tailings pond. Above pH 4 dissolves and the released Fe³⁺ goes to goethite — the diagnostic AMD weathering succession.",
+      "scenarios": [
+        "porphyry",
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        100
+      ],
+      "T_optimum_C": [
+        15,
+        50
+      ],
+      "T_behavior": "supergene_window",
+      "pH_dissolution_above": 4.5,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "K": 5,
+        "Fe": 10,
+        "S": 20,
+        "O2": 0.5
+      },
+      "trace_ingredients": {
+        "Na": "natrojarosite (Na replaces K) — common in salty AMD",
+        "Pb": "plumbojarosite (Pb in K site) — at Pb-rich AMD localities",
+        "Ag": "argentojarosite (Ag in K site) — rare"
+      },
+      "thermal_decomp_C": 250,
+      "thermal_decomp_reaction": "KFe3(SO4)2(OH)6 -> hematite + K-sulfate + H2O (loses lattice OH)",
+      "thermal_decomp_products": {
+        "K": 0.3,
+        "Fe": 0.5,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "dissolves above pH 4 (alkaline-side dissolution, not acid), releasing K + Fe³⁺ + SO₄²⁻; goethite-stable territory now",
+        "products": {
+          "K": 0.3,
+          "Fe": 0.5,
+          "S": 0.4
+        },
+        "status": "newly_added",
+        "note": "jarosite is the acid mineral; pH > 4 destabilizes it. Inverse of typical acid_dissolution semantics (same as scorodite)."
+      },
+      "habit": "pseudocubic",
+      "color_rules": {
+        "golden_yellow": {
+          "default": true
+        },
+        "ocher_brown": {
+          "trigger": "Fe³⁺ overload or partial goethitization"
+        },
+        "pale_yellow": {
+          "trigger": "high purity / low Fe"
+        }
+      },
+      "narrate_function": "_narrate_jarosite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Mars-class AMD mineral. Activates after Bingham event_oxidation (step 85) and Bisbee ev_uplift_weathering (step 65) when pH drops + O2 rises. Tsumeb pH=6.8 too high (same Tsumeb pH-gap as scorodite — flagged in audit). Closes a known modeling gap: previously all oxidized Fe in Bingham/Bisbee went to goethite, missing the diagnostic acid-drainage yellow.",
+      "class_color": "#eb137f"
+    },
+    "alunite": {
+      "formula": "KAl3(SO4)2(OH)6",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "pseudocubic",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "default — pseudocubic rhombs (alunite-group structure, isostructural with jarosite)"
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.4,
+          "vector": "tabular",
+          "trigger": "low σ — sharp tabular blades, Goldfield epithermal habit"
+        },
+        {
+          "name": "fibrous",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "moderate σ — radiating fibers, vein-fill habit"
+        },
+        {
+          "name": "earthy",
+          "wall_spread": 0.9,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "high σ — chalky white Marysvale alunite-stone replacement of feldspathic wall"
+        }
+      ],
+      "class": "sulfate",
+      "description": "KAl₃(SO₄)₂(OH)₆, the K-Al sister of jarosite (alunite group, isostructural). The index mineral of 'advanced argillic' alteration in porphyry-Cu lithocaps and high-sulfidation epithermal Au deposits — when geologists say a porphyry has a 'lithocap', alunite + kaolinite + pyrophyllite + dickite are the diagnostic phases of the kilometers-wide acid-altered horizon above the intrusion. Type locality Marysvale (Utah), where alunite was mined as a K-fertilizer source 1915-1930s before Carlsbad potash made K cheaper to mine elsewhere. World-class epithermal-Au localities: Goldfield (Nevada), Summitville (Colorado), Tambo (Chile), Yanacocha (Peru), Nansatsu district (Japan). ⁴⁰Ar/³⁹Ar geochronology preserves the K-Ar age of the acid-sulfate hydrothermal event, critical for porphyry-system timing (Stoffregen et al. 2000).",
+      "scenarios": [
+        "porphyry",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        25,
+        450
+      ],
+      "T_optimum_C": [
+        50,
+        200
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_above": 4.5,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "K": 5,
+        "Al": 10,
+        "S": 20,
+        "O2": 0.5
+      },
+      "trace_ingredients": {
+        "Na": "natroalunite (Na replaces K) — high-sulfidation epithermal common variant",
+        "Fe": "natroalunite-jarosite intermediate (pinkish tint at Fe > 20)"
+      },
+      "thermal_decomp_C": 450,
+      "thermal_decomp_reaction": "KAl3(SO4)2(OH)6 -> corundum + K-Al-sulfate (loses lattice OH; basis for the early-1900s K-fertilizer process)",
+      "thermal_decomp_products": {
+        "K": 0.3,
+        "Al": 0.4,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "dissolves above pH 4 OR above 350°C, releasing K + Al³⁺ + SO₄²⁻",
+        "products": {
+          "K": 0.3,
+          "Al": 0.4,
+          "S": 0.4
+        },
+        "status": "newly_added",
+        "note": "alunite is the acid mineral; pH > 4 destabilizes it. Same inverse semantics as jarosite."
+      },
+      "habit": "pseudocubic",
+      "color_rules": {
+        "white": {
+          "default": true
+        },
+        "pinkish": {
+          "trigger": "Marysvale type locality OR Fe > 20 (intermediate to jarosite, natroalunite series)"
+        },
+        "pale_yellow": {
+          "trigger": "minor Fe substitution"
+        }
+      },
+      "narrate_function": "_narrate_alunite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The advanced argillic alteration index mineral. Activates after Bingham event_oxidation when both pH drops AND O2 rises (porphyry lithocap simulation). Tsumeb K=10 borderline + Al=3 too low + pH=6.8 too high — won't form there. Bisbee K=80 + Al=20 + S=150 strong but needs ev_uplift_weathering for the right pH/O2 window. Closes a known modeling gap: previously the sim had no representation of advanced argillic alteration (the kilometers-wide lithocap above porphyry-Cu intrusions).",
+      "class_color": "#eb137f"
+    },
+    "brochantite": {
+      "formula": "Cu4(SO4)(OH)6",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "short_prismatic",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "default — stubby emerald-green prisms (Atacama / Bisbee display habit)"
+        },
+        {
+          "name": "acicular_tuft",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ — radiating acicular needle-tufts"
+        },
+        {
+          "name": "drusy_crust",
+          "wall_spread": 0.85,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "high σ — emerald-green microcrystalline druse on Cu-bearing wall"
+        },
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "low σ, low T — globular emerald-green aggregates (rarer; can be confused with malachite)"
+        }
+      ],
+      "class": "sulfate",
+      "description": "Cu₄(SO₄)(OH)₆, the wet-supergene Cu sulfate. Emerald-green prismatic crystals, distinguishable from malachite by distinctly darker green and prismatic habit (vs malachite's botryoidal). The higher-pH end (pH 4-7) of the brochantite ↔ antlerite Cu-sulfate fork — acidification (pH < 3) converts brochantite to antlerite + H₂O; alkalinization (pH > 7) converts to tenorite/malachite. Atacama Desert (Chile) supergene Cu deposits — Chuquicamata, Mansa Mina, Mantos Blancos, El Tesoro — have brochantite as a major component. Bisbee, Mt Lyell (Tasmania), Cap Garonne (France), Cananea (Mexico) all have well-known specimens. Statue of Liberty's iconic green patina is largely brochantite (chloride-rich harbor air drives the SO₄/CO₃ partition toward sulfate, not malachite).",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        80
+      ],
+      "T_optimum_C": [
+        15,
+        40
+      ],
+      "T_behavior": "supergene_window",
+      "pH_dissolution_below": 2.8,
+      "pH_dissolution_above": 7.5,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 10,
+        "S": 15,
+        "O2": 0.5
+      },
+      "trace_ingredients": {
+        "Cl": "atacamite competition (Cu hydroxychloride wins when Cl > SO4)"
+      },
+      "thermal_decomp_C": 250,
+      "thermal_decomp_reaction": "Cu4(SO4)(OH)6 -> tenorite (CuO) + SO3 + H2O (dehydration)",
+      "thermal_decomp_products": {
+        "Cu": 0.5,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 2.8,
+        "reaction": "dissolves below pH 3 (acidification → antlerite stable) OR above pH 7.5 (alkalinization → tenorite/malachite stable). Two-sided fork dissolution.",
+        "products": {
+          "Cu": 0.5,
+          "S": 0.3
+        },
+        "status": "newly_added",
+        "note": "Two-sided pH fork: brochantite stable pH 3-7. Outside that window dissolves into either antlerite or tenorite/malachite cation pool."
+      },
+      "habit": "short_prismatic",
+      "color_rules": {
+        "emerald_green": {
+          "default": true
+        },
+        "dark_green": {
+          "trigger": "massive prismatic (Atacama habit)"
+        }
+      },
+      "narrate_function": "_narrate_brochantite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The wet-supergene Cu sulfate; higher-pH end of brochantite ↔ antlerite fork. Activates in Bisbee after ev_uplift_weathering when Cu (delivered by primary cooling event) sits in oxidizing pH 4-7 fluid. Cl > 100 flag triggers atacamite-competition note (atacamite is a queued halide-expansion target).",
+      "class_color": "#eb137f"
+    },
+    "antlerite": {
+      "formula": "Cu3(SO4)(OH)4",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "short_prismatic",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "default — stubby emerald-green prisms (visually identical to brochantite)"
+        },
+        {
+          "name": "acicular",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ — radiating thin dark-green needles"
+        },
+        {
+          "name": "granular",
+          "wall_spread": 0.9,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "high σ — massive granular emerald-green (Chuquicamata habit)"
+        },
+        {
+          "name": "druzy",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — microcrystalline druse on dissolving Cu sulfide"
+        }
+      ],
+      "class": "sulfate",
+      "description": "Cu₃(SO₄)(OH)₄, the dry-acid end of the brochantite ↔ antlerite Cu-sulfate fork (pH 1-3.5 stability). Same emerald-green color as brochantite — visually indistinguishable in hand specimen — distinguished by chemistry (Cu₃ vs Cu₄, more SO₄ per Cu unit) and acid-resistance test (antlerite dissolves in dilute HCl; brochantite resists). Type locality Antler mine (Mohave County, Arizona — Hillebrand 1889). World-class deposits at Chuquicamata (Chile) where antlerite was the dominant supergene Cu mineral mined 1920s-50s before the deeper hypogene chalcocite zone became the modern target. Coexists with brochantite + atacamite + chalcanthite at most Atacama supergene Cu deposits. The pH-fork mechanism (Pollard et al. 1992) is the most diagnostic chemistry in arid-supergene Cu mineralogy.",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        80
+      ],
+      "T_optimum_C": [
+        15,
+        40
+      ],
+      "T_behavior": "supergene_window",
+      "pH_dissolution_above": 4.2,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 15,
+        "S": 20,
+        "O2": 0.5
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Cu3(SO4)(OH)4 -> tenorite + SO3 + H2O (dehydration)",
+      "thermal_decomp_products": {
+        "Cu": 0.5,
+        "S": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.2,
+        "reaction": "dissolves above pH 3.5 (neutralization → brochantite stable). Below pH 1 → chalcanthite (extreme acid; not in sim).",
+        "products": {
+          "Cu": 0.5,
+          "S": 0.4
+        },
+        "status": "newly_added",
+        "note": "Inverse acid_dissolution semantics: antlerite is the acid-side mineral; alkalinization destabilizes it. Same pattern as scorodite/jarosite/alunite."
+      },
+      "habit": "short_prismatic",
+      "color_rules": {
+        "emerald_green": {
+          "default": true
+        },
+        "dark_green": {
+          "trigger": "massive granular Chuquicamata habit"
+        }
+      },
+      "narrate_function": "_narrate_antlerite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The dry-acid Cu sulfate; lower-pH end of brochantite ↔ antlerite fork. Activates in Bisbee post-ev_uplift_weathering if pH drops below 3.5 (acidification). The brochantite ↔ antlerite reversible conversion (substrate priority on dissolving brochantite at 80%) implements the Atacama / Chuquicamata pH-cycling paragenesis.",
+      "class_color": "#eb137f"
+    },
+    "anhydrite": {
+      "formula": "CaSO4",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 8,
+      "max_size_cm": 200,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "default — tabular crystals with the diagnostic three perpendicular cleavages"
+        },
+        {
+          "name": "prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "moderate σ — stubby vein-fill prisms (porphyry deep-zone habit)"
+        },
+        {
+          "name": "fibrous",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "low σ, low T — satin-spar fibrous habit (parallel fibers across vein); includes pale-lavender 'angelite' Peruvian variant"
+        },
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "high σ — granular massive layers (sabkha evaporite + Bingham deep-brine vein habits)"
+        }
+      ],
+      "class": "sulfate",
+      "description": "CaSO₄, the anhydrous calcium sulfate; sister of selenite/gypsum (CaSO₄·2H₂O). The anhydrite-gypsum boundary is not a single line but an XY plot of T vs salinity (Hardie 1967): in pure water anhydrite stable above 60°C, but in saline brines (>100‰ NaCl-eq) anhydrite stable down to surface T due to lowered water activity. Two distinct geological occurrences: (1) high-T hydrothermal (porphyry-Cu deep-brine zones at 200-700°C — Bingham Roedder 1971); (2) low-T evaporite (Persian Gulf / Coorong sabkha + Salar de Atacama — anhydrite + halite + dolomite stratigraphy). Below 60°C in dilute fluid, anhydrite is metastable and rehydrates to gypsum/selenite. Naica's Cave of Crystals shows exactly this: an older anhydrite floor preserved from the deeper brine phase, overgrown by giant selenite blades when the cave dewatered + cooled. Industrial: cement-setting accelerator, sulfur source, plaster manufacture (anhydrite ↔ gypsum hydration cycle). Pale-lavender 'angelite' Peruvian variety is a metaphysical-stone fixture.",
+      "scenarios": [
+        "porphyry",
+        "sabkha_dolomitization",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        25,
+        700
+      ],
+      "T_optimum_C": [
+        80,
+        500
+      ],
+      "T_behavior": "two_mode_T_or_salinity",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Ca": 50,
+        "S": 20,
+        "O2": 0.3
+      },
+      "trace_ingredients": {
+        "Mn": "pale-lavender angelite variant trace",
+        "Sr": "Sr-substitution toward celestine-anhydrite series"
+      },
+      "thermal_decomp_C": 1450,
+      "thermal_decomp_reaction": "CaSO4 -> CaO + SO3 (decomposition; very high T — outside normal sim range)",
+      "thermal_decomp_products": {
+        "Ca": 0.4,
+        "S": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": null,
+        "reaction": "rehydrates to gypsum (CaSO4·2H2O = selenite in sim) at T<60°C AND salinity<100‰; releases Ca²⁺ + SO₄²⁻ to feed selenite re-precipitation",
+        "products": {
+          "Ca": 0.5,
+          "S": 0.4
+        },
+        "status": "newly_added",
+        "note": "Not acid-dissolution — REHYDRATION to gypsum. The anhydrite ↔ gypsum cycle is the diagnostic Naica paragenesis. Hysteresis at salinity<95‰ to avoid oscillation."
+      },
+      "habit": "tabular",
+      "color_rules": {
+        "white_colorless": {
+          "default": true
+        },
+        "pale_lavender_angelite": {
+          "trigger": "Mn > 3 OR (T < 60 AND salinity > 150) — Peruvian metaphysical-stone variant"
+        },
+        "pale_blue": {
+          "trigger": "rare massive Salzburg specimens"
+        }
+      },
+      "narrate_function": "_narrate_anhydrite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. Two-mode T behavior: high-T branch (>60°C) for Bingham porphyry deep brine, low-T saline branch (T<60 AND salinity>100‰) for Coorong sabkha evaporite. Sabkha activates immediately (T=25, salinity=120, S=2700, Ca=400 → sigma 7.5). Bingham init O2=0.2 below the 0.3 gate (anhydrite blocked at startup); fires after event_oxidation raises O2. Tsumeb dilute low-T (sal=2) correctly blocked. Closes the Bingham porphyry deep-brine + Coorong sabkha evaporite niches that selenite alone couldn't cover.",
+      "class_color": "#eb137f"
+    },
     "scorodite": {
       "formula": "FeAsO4·2H2O",
       "nucleation_sigma": 1.0,
@@ -2413,7 +3105,7 @@
           "name": "crystallized_on_arsenopyrite",
           "wall_spread": 0.4,
           "void_reach": 0.5,
-          "vector": "perched",
+          "vector": "projecting",
           "trigger": "substrate present — distinct crystals nucleating directly on parent mineral"
         }
       ],
@@ -3854,9 +4546,9 @@
       "pH_dissolution_above": null,
       "redox_requirement": "any",
       "required_ingredients": {
-        "Al": 8,
-        "SiO2": 30,
-        "F": 25
+        "Al": 3,
+        "SiO2": 200,
+        "F": 20
       },
       "trace_ingredients": {
         "Cr": "imperial golden-orange (>3 ppm), pink (>8 ppm with radiation)",

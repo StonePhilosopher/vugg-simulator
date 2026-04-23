@@ -158,6 +158,47 @@ if (docsSrc && docsSrc !== webSrc) {
   }
 }
 
+// ---- Check 3b: docs/data/minerals.json mirrors data/minerals.json ----
+// GitHub Pages serves docs/, so docs/data/minerals.json is the public spec
+// when the runtime fetches it. Prior to this check, this file silently
+// drifted across multiple round-of-engines updates (last touched at
+// commit 8d2cb52, before the v3+v4 rounds). Adding this catch.
+const DOCS_SPEC_PATH = path.join(REPO, 'docs', 'data', 'minerals.json');
+const docsSpecRaw = readOrNull(DOCS_SPEC_PATH);
+if (docsSpecRaw === null) {
+  warn('docs/data/minerals.json missing — GitHub Pages will fail to load full spec');
+} else {
+  let docsSpec;
+  try {
+    docsSpec = JSON.parse(docsSpecRaw);
+  } catch (e) {
+    record(`docs/data/minerals.json: JSON parse error — ${e.message}`);
+  }
+  if (docsSpec) {
+    const dataKeys  = Object.keys(spec.minerals).sort().join(',');
+    const docsKeys  = Object.keys(docsSpec.minerals || {}).sort().join(',');
+    if (dataKeys !== docsKeys) {
+      record(
+        `docs/data/minerals.json: key set differs from data/minerals.json. ` +
+        `Run: cp data/minerals.json docs/data/minerals.json`
+      );
+    } else {
+      // Compare sizes — same keys but different content means drift
+      if (docsSpecRaw.length !== fs.readFileSync(SPEC_PATH, 'utf8').length) {
+        // Full byte-level comparison of canonical JSON
+        const dataCanon = JSON.stringify(spec, null, 2);
+        const docsCanon = JSON.stringify(docsSpec, null, 2);
+        if (dataCanon !== docsCanon) {
+          record(
+            `docs/data/minerals.json: content drifts from data/minerals.json ` +
+            `(same keys, different values). Run: cp data/minerals.json docs/data/minerals.json`
+          );
+        }
+      }
+    }
+  }
+}
+
 // ---- Check 4: agent-api/vugg-agent.js loads the spec ----
 if (!/require\(['"]\.\.\/data\/minerals\.json['"]\)/.test(agentSrc)) {
   record("agent-api/vugg-agent.js: no require('../data/minerals.json') found — agent-api should read the spec directly");
