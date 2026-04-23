@@ -3103,6 +3103,10 @@ const MINERAL_SPEC_FALLBACK = {
   topaz: { formula: "Al2SiO4(F,OH)2", nucleation_sigma: 1.4, max_size_cm: 200, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: { activator: "trace Ti", threshold_ppm: 2, color: "weak_greenish_LW" }, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
   tourmaline: { formula: "Na(Fe,Li,Al)3Al6(BO3)3Si6O18(OH)4", nucleation_sigma: 1.3, max_size_cm: 300, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   beryl: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.8, max_size_cm: 1200, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  emerald: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.6, max_size_cm: 120, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: "weak red (Cr³⁺ emission)", twin_laws: [], acid_dissolution: null },
+  aquamarine: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.3, max_size_cm: 200, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  morganite: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.4, max_size_cm: 80, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  heliodor: { formula: "Be3Al2Si6O18", nucleation_sigma: 1.4, max_size_cm: 60, growth_rate_mult: 0.25, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   spodumene: { formula: "LiAlSi2O6", nucleation_sigma: 1.5, max_size_cm: 1400, growth_rate_mult: 0.35, thermal_decomp_C: null, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "strong_pink_orange_SW" }, twin_laws: [], acid_dissolution: null },
   anglesite: { formula: "PbSO4", nucleation_sigma: 1.1, max_size_cm: 15, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: { activator: "intrinsic", color: "weak_yellow_LW" }, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
   cerussite: { formula: "PbCO3", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.3, thermal_decomp_C: 315, fluorescence: { activator: "intrinsic", color: "weak_yellow_LW" }, twin_laws: [{ name: "cyclic_sixling", probability: 0.4 }], acid_dissolution: { pH_threshold: 4.0 } },
@@ -3261,7 +3265,8 @@ const MINERAL_GAME_COLORS = {
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0', molybdenite: '#707888',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
-  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0'
+  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
+  emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -3510,7 +3515,7 @@ let timeScale = 5.0;
 //        commit, separate): early ev_supergene_acidification at
 //        step 5 + Al 3→15 to unlock scorodite + jarosite + alunite
 //        in their early acid window.
-const SIM_VERSION = 5;
+const SIM_VERSION = 6;
 
 
 // ============================================================
@@ -5030,7 +5035,9 @@ class VugConditions {
   // accumulates in pegmatite fluid until σ finally crosses 1.8. Slow
   // growth rate (growth_rate_mult 0.25) but rides the supersaturation
   // for many steps, producing meter-scale crystals in real pegmatites.
-  supersaturation_beryl() {
+  // Shared Be + Al + SiO2 + T-window core for the beryl family
+  // (goshenite/beryl + emerald + aquamarine + morganite + heliodor).
+  _beryl_base_sigma() {
     if (this.fluid.Be < 10 || this.fluid.Al < 6 || this.fluid.SiO2 < 50) return 0;
     const be_f = Math.min(this.fluid.Be / 15.0, 2.5);
     const al_f = Math.min(this.fluid.Al / 12.0, 1.5);
@@ -5045,6 +5052,66 @@ class VugConditions {
     else T_factor = Math.max(0.1, 0.6 - 0.006 * (300 - T));
     sigma *= T_factor;
     return Math.max(sigma, 0);
+  }
+
+  // Beryl/goshenite — colorless/generic; fires only when no chromophore
+  // variety's gate is met (post-Round-7 architecture).
+  supersaturation_beryl() {
+    const f = this.fluid;
+    if (f.Cr >= 0.5 || f.V >= 1.0) return 0;       // emerald priority
+    if (f.Mn >= 2.0) return 0;                     // morganite priority
+    if (f.Fe >= 15 && f.O2 > 0.5) return 0;        // heliodor priority
+    if (f.Fe >= 8) return 0;                       // aquamarine priority
+    return this._beryl_base_sigma();
+  }
+
+  // Emerald — Cr³⁺/V³⁺ variety; top priority in beryl-family dispatch.
+  supersaturation_emerald() {
+    if (this.fluid.Cr < 0.5 && this.fluid.V < 1.0) return 0;
+    const base = this._beryl_base_sigma();
+    if (base <= 0) return 0;
+    const chrom_f = Math.max(
+      Math.min(this.fluid.Cr / 1.5, 1.8),
+      Math.min(this.fluid.V / 3.0, 1.5)
+    );
+    return base * chrom_f;
+  }
+
+  // Aquamarine — Fe²⁺ reducing variety; excludes emerald/morganite/heliodor.
+  supersaturation_aquamarine() {
+    const f = this.fluid;
+    if (f.Fe < 8) return 0;
+    if (f.Cr >= 0.5 || f.V >= 1.0) return 0;   // emerald
+    if (f.Mn >= 2.0) return 0;                 // morganite
+    if (f.Fe >= 15 && f.O2 > 0.5) return 0;    // heliodor
+    const base = this._beryl_base_sigma();
+    if (base <= 0) return 0;
+    const fe_f = Math.min(f.Fe / 12.0, 1.8);
+    return base * fe_f;
+  }
+
+  // Morganite — Mn²⁺ variety; priority over aquamarine/heliodor, under emerald.
+  supersaturation_morganite() {
+    const f = this.fluid;
+    if (f.Mn < 2.0) return 0;
+    if (f.Cr >= 0.5 || f.V >= 1.0) return 0;   // emerald
+    const base = this._beryl_base_sigma();
+    if (base <= 0) return 0;
+    const mn_f = Math.min(f.Mn / 4.0, 1.8);
+    return base * mn_f;
+  }
+
+  // Heliodor — Fe³⁺ oxidizing variety; narrower window than aquamarine.
+  supersaturation_heliodor() {
+    const f = this.fluid;
+    if (f.Fe < 15 || f.O2 <= 0.5) return 0;
+    if (f.Cr >= 0.5 || f.V >= 1.0) return 0;   // emerald
+    if (f.Mn >= 2.0) return 0;                 // morganite
+    const base = this._beryl_base_sigma();
+    if (base <= 0) return 0;
+    const fe_f = Math.min(f.Fe / 20.0, 1.6);
+    const o2_f = Math.min(f.O2 / 1.0, 1.3);
+    return base * fe_f * o2_f;
   }
 
   // Tourmaline (Na(Fe,Li,Al)₃Al₆(BO₃)₃Si₆O₁₈(OH)₄) — B-gated cyclosilicate.
@@ -8083,63 +8150,51 @@ function grow_spodumene(crystal, conditions, step) {
   });
 }
 
-function grow_beryl(crystal, conditions, step) {
-  // Beryl (Be₃Al₂Si₆O₁₈). Dissolves only in strong HF. Variety flag set
-  // per growth zone from current fluid chemistry; a single crystal can
-  // span goshenite→aquamarine→morganite zones if the fluid evolves.
-  const sigma = conditions.supersaturation_beryl();
-  if (sigma < 1.0) {
-    if (crystal.total_growth_um > 20 && conditions.fluid.pH < 3.0 && conditions.fluid.F > 30) {
-      crystal.dissolved = true;
-      const d = Math.min(1.5, crystal.total_growth_um * 0.03);
-      conditions.fluid.Be += d * 0.2;
-      conditions.fluid.Al += d * 0.2;
-      conditions.fluid.SiO2 += d * 0.4;
-      return new GrowthZone({
-        step, temperature: conditions.temperature,
-        thickness_um: -d, growth_rate: -d,
-        note: `HF-assisted dissolution (pH ${conditions.fluid.pH.toFixed(1)}, F ${conditions.fluid.F.toFixed(0)}) — Be²⁺, Al³⁺, SiO₂ released`,
-      });
-    }
-    return null;
+// Shared habit-form list for the beryl family (T-binned).
+function _beryl_family_habit_forms(T) {
+  if (T > 500) return ['m{10̄10} hex prism', 'c{0001} basal pinacoid', 'elongated'];
+  if (T > 380) return ['m{10̄10} hex prism', 'c{0001} flat pinacoid', 'classic hexagonal'];
+  return ['m{10̄10} hex prism', 'c{0001} pinacoid', 'stubby tabular'];
+}
+
+// Shared HF-only dissolution path for all beryl-family crystals.
+function _beryl_family_dissolution(crystal, conditions, step) {
+  if (crystal.total_growth_um > 20 && conditions.fluid.pH < 3.0 && conditions.fluid.F > 30) {
+    crystal.dissolved = true;
+    const d = Math.min(1.5, crystal.total_growth_um * 0.03);
+    conditions.fluid.Be += d * 0.2;
+    conditions.fluid.Al += d * 0.2;
+    conditions.fluid.SiO2 += d * 0.4;
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -d, growth_rate: -d,
+      note: `HF-assisted dissolution (pH ${conditions.fluid.pH.toFixed(1)}, F ${conditions.fluid.F.toFixed(0)}) — Be²⁺, Al³⁺, SiO₂ released`,
+    });
   }
+  return null;
+}
+
+function grow_beryl(crystal, conditions, step) {
+  // Beryl/goshenite — post-Round-7 the colorless/generic variety; fires
+  // only when no chromophore variety's gate is met. Dissolves only in HF.
+  const sigma = conditions.supersaturation_beryl();
+  if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
 
   const excess = sigma - 1.0;
   const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
   const f = conditions.fluid;
-  let variety, color_note;
-  if (f.Cr > 0.5 || f.V > 1.0) {
-    variety = 'emerald';
-    color_note = `emerald green (${f.Cr > 0.5 ? 'Cr³⁺' : 'V³⁺'} — the ultramafic-pegmatite paradox met)`;
-  } else if (f.Mn > 2.0) {
-    variety = 'morganite';
-    color_note = `morganite pink (Mn²⁺ ${f.Mn.toFixed(1)} ppm)`;
-  } else if (f.Fe > 15 && f.O2 > 0.5) {
-    variety = 'heliodor';
-    color_note = `heliodor yellow (Fe³⁺ ${f.Fe.toFixed(0)} ppm, oxidized)`;
-  } else if (f.Fe > 8) {
-    variety = 'aquamarine';
-    color_note = `aquamarine blue (Fe²⁺ ${f.Fe.toFixed(0)} ppm, reducing)`;
-  } else {
-    variety = 'goshenite';
-    color_note = 'goshenite colorless (pure beryl — no chromophore)';
-  }
+  crystal.habit = 'goshenite';
+  crystal.dominant_forms = _beryl_family_habit_forms(conditions.temperature);
 
-  crystal.habit = variety;
-  const T = conditions.temperature;
-  if (T > 500) crystal.dominant_forms = ['m{10̄10} hex prism', 'c{0001} basal pinacoid', 'elongated'];
-  else if (T > 380) crystal.dominant_forms = ['m{10̄10} hex prism', 'c{0001} flat pinacoid', 'classic hexagonal'];
-  else crystal.dominant_forms = ['m{10̄10} hex prism', 'c{0001} pinacoid', 'stubby tabular'];
-
-  const trace_Fe = f.Fe * 0.015;
-  const trace_Mn = f.Mn * 0.02;
+  const trace_Fe = f.Fe * 0.010;
   const trace_Al = f.Al * 0.025;
 
   let fi = false, fi_type = '';
   if (rate > 3 && rng.random() < 0.22) {
     fi = true;
+    const T = conditions.temperature;
     if (T > 350) fi_type = '2-phase (liquid + vapor) — beryl geothermometer';
     else if (T > 150) fi_type = '2-phase (liquid-dominant)';
     else fi_type = 'single-phase liquid (late)';
@@ -8148,16 +8203,8 @@ function grow_beryl(crystal, conditions, step) {
   f.Be = Math.max(f.Be - rate * 0.025, 0);
   f.Al = Math.max(f.Al - rate * 0.010, 0);
   f.SiO2 = Math.max(f.SiO2 - rate * 0.015, 0);
-  if (variety === 'emerald') {
-    if (f.Cr > 0.5) f.Cr = Math.max(f.Cr - rate * 0.004, 0);
-    else f.V = Math.max(f.V - rate * 0.005, 0);
-  } else if (variety === 'morganite') {
-    f.Mn = Math.max(f.Mn - rate * 0.006, 0);
-  } else if (variety === 'aquamarine' || variety === 'heliodor') {
-    f.Fe = Math.max(f.Fe - rate * 0.008, 0);
-  }
 
-  const parts = [color_note];
+  const parts = ['goshenite colorless (pure beryl — no chromophore above variety gate)'];
   if (excess > 1.0) parts.push('rapid growth — wider growth ring, thermal history recorder');
   else if (excess < 0.2) parts.push('near-equilibrium — clean gem-grade interior');
   if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
@@ -8165,7 +8212,191 @@ function grow_beryl(crystal, conditions, step) {
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Al,
+    fluid_inclusion: fi, inclusion_type: fi_type,
+    note: parts.join(', '),
+  });
+}
+
+function grow_emerald(crystal, conditions, step) {
+  // Emerald — Cr/V variety; the "ultramafic-pegmatite paradox" mineral.
+  const sigma = conditions.supersaturation_emerald();
+  if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
+  const excess = sigma - 1.0;
+  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  // Rare trapiche pattern (Colombian Muzo specialty)
+  if (excess > 1.2 && rng.random() < 0.05) crystal.habit = 'trapiche';
+  else crystal.habit = 'hex_prism';
+  crystal.dominant_forms = _beryl_family_habit_forms(conditions.temperature);
+
+  const color_note = (f.Cr > 0.5)
+    ? `emerald green (Cr³⁺ ${f.Cr.toFixed(2)} ppm — the ultramafic-pegmatite paradox met)`
+    : `emerald green (V³⁺ ${f.V.toFixed(2)} ppm — Colombian-type chromophore)`;
+
+  const trace_Fe = f.Fe * 0.010;
+  const trace_Mn = f.Mn * 0.010;
+  const trace_Al = f.Al * 0.025;
+
+  let fi = false, fi_type = '';
+  if (rate > 3 && rng.random() < 0.30) {
+    fi = true;
+    fi_type = '2-phase (liquid + vapor) — emerald signature';
+  }
+
+  f.Be = Math.max(f.Be - rate * 0.025, 0);
+  f.Al = Math.max(f.Al - rate * 0.010, 0);
+  f.SiO2 = Math.max(f.SiO2 - rate * 0.015, 0);
+  if (f.Cr > 0.5) f.Cr = Math.max(f.Cr - rate * 0.004, 0);
+  else f.V = Math.max(f.V - rate * 0.005, 0);
+
+  const parts = [color_note];
+  if (crystal.habit === 'trapiche') parts.push('trapiche pattern — 6-spoke sector growth with black inclusion rays (Colombian Muzo)');
+  if (excess > 1.0) parts.push('rapid growth — wider growth ring');
+  else if (excess < 0.2) parts.push('near-equilibrium — clean gem-grade interior');
+  if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn, trace_Al,
+    fluid_inclusion: fi, inclusion_type: fi_type,
+    note: parts.join(', '),
+  });
+}
+
+function grow_aquamarine(crystal, conditions, step) {
+  // Aquamarine — Fe²⁺ variety; the most abundant gem beryl.
+  const sigma = conditions.supersaturation_aquamarine();
+  if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
+  const excess = sigma - 1.0;
+  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  const T = conditions.temperature;
+  if (T < 380) crystal.habit = 'stubby_tabular';
+  else crystal.habit = 'hex_prism_long';
+  crystal.dominant_forms = _beryl_family_habit_forms(T);
+
+  const color_note = (f.Fe > 12)
+    ? `Santa Maria deep blue (Fe²⁺ ${f.Fe.toFixed(1)} ppm, high-Fe reducing)`
+    : `aquamarine blue (Fe²⁺ ${f.Fe.toFixed(1)} ppm, reducing/moderate-O2)`;
+
+  const trace_Fe = f.Fe * 0.015;
+  const trace_Al = f.Al * 0.025;
+
+  let fi = false, fi_type = '';
+  if (rate > 3 && rng.random() < 0.22) {
+    fi = true;
+    fi_type = '2-phase (liquid + vapor) — beryl geothermometer';
+  }
+
+  f.Be = Math.max(f.Be - rate * 0.025, 0);
+  f.Al = Math.max(f.Al - rate * 0.010, 0);
+  f.SiO2 = Math.max(f.SiO2 - rate * 0.015, 0);
+  f.Fe = Math.max(f.Fe - rate * 0.008, 0);
+
+  const parts = [color_note];
+  if (excess > 1.0) parts.push('rapid growth — thermal history recorder');
+  else if (excess < 0.2) parts.push('near-equilibrium — clean gem-grade interior');
+  if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Al,
+    fluid_inclusion: fi, inclusion_type: fi_type,
+    note: parts.join(', '),
+  });
+}
+
+function grow_morganite(crystal, conditions, step) {
+  // Morganite — Mn²⁺ pink variety; late-stage pegmatite.
+  const sigma = conditions.supersaturation_morganite();
+  if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
+  const excess = sigma - 1.0;
+  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  if (excess > 0.5) crystal.habit = 'tabular_hex';
+  else crystal.habit = 'stubby_prism';
+  crystal.dominant_forms = _beryl_family_habit_forms(conditions.temperature);
+
+  const color_note = (f.Mn < 3)
+    ? `peach morganite (Mn²⁺ ${f.Mn.toFixed(1)} ppm, pre-irradiation state)`
+    : `morganite pink (Mn²⁺/Mn³⁺ ${f.Mn.toFixed(1)} ppm, irradiation-oxidized)`;
+
+  const trace_Mn = f.Mn * 0.020;
+  const trace_Al = f.Al * 0.025;
+
+  let fi = false, fi_type = '';
+  if (rate > 3 && rng.random() < 0.22) {
+    fi = true;
+    fi_type = '2-phase (liquid + vapor) — late-stage pegmatite signature';
+  }
+
+  f.Be = Math.max(f.Be - rate * 0.025, 0);
+  f.Al = Math.max(f.Al - rate * 0.010, 0);
+  f.SiO2 = Math.max(f.SiO2 - rate * 0.015, 0);
+  f.Mn = Math.max(f.Mn - rate * 0.006, 0);
+
+  const parts = [color_note];
+  if (excess > 1.0) parts.push('rapid growth — late-stage pocket concentration');
+  else if (excess < 0.2) parts.push('near-equilibrium — clean gem-grade interior');
+  if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Mn, trace_Al,
+    fluid_inclusion: fi, inclusion_type: fi_type,
+    note: parts.join(', '),
+  });
+}
+
+function grow_heliodor(crystal, conditions, step) {
+  // Heliodor — Fe³⁺ oxidized yellow variety.
+  const sigma = conditions.supersaturation_heliodor();
+  if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
+  const excess = sigma - 1.0;
+  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const f = conditions.fluid;
+  crystal.habit = 'hex_prism';
+  crystal.dominant_forms = _beryl_family_habit_forms(conditions.temperature);
+
+  const color_note = (f.Fe > 25)
+    ? `Namibian deep-yellow heliodor (Fe³⁺ ${f.Fe.toFixed(0)} ppm, strongly oxidized)`
+    : `heliodor yellow (Fe³⁺ ${f.Fe.toFixed(0)} ppm, oxidized)`;
+
+  const trace_Fe = f.Fe * 0.015;
+  const trace_Al = f.Al * 0.025;
+
+  let fi = false, fi_type = '';
+  if (rate > 3 && rng.random() < 0.20) {
+    fi = true;
+    fi_type = '2-phase (liquid + vapor) — oxidizing pocket signature';
+  }
+
+  f.Be = Math.max(f.Be - rate * 0.025, 0);
+  f.Al = Math.max(f.Al - rate * 0.010, 0);
+  f.SiO2 = Math.max(f.SiO2 - rate * 0.015, 0);
+  f.Fe = Math.max(f.Fe - rate * 0.008, 0);
+
+  const parts = [color_note];
+  if (excess > 1.0) parts.push('rapid growth under oxidizing pulse');
+  else if (excess < 0.2) parts.push('near-equilibrium — clean gem-grade interior');
+  if (crystal.twinned) parts.push(`${crystal.twin_law} present`);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Al,
     fluid_inclusion: fi, inclusion_type: fi_type,
     note: parts.join(', '),
   });
@@ -8377,7 +8608,11 @@ const MINERAL_ENGINES = {
   albite: grow_albite,
   topaz: grow_topaz,
   tourmaline: grow_tourmaline,
-  beryl: grow_beryl,
+  beryl: grow_beryl,          // goshenite / generic colorless (post-R7)
+  emerald: grow_emerald,      // Cr/V chromophore variety
+  aquamarine: grow_aquamarine,  // Fe²⁺ reducing variety
+  morganite: grow_morganite,  // Mn²⁺ variety
+  heliodor: grow_heliodor,    // Fe³⁺ oxidizing variety
   spodumene: grow_spodumene,
   anglesite: grow_anglesite,
   cerussite: grow_cerussite,
@@ -9711,7 +9946,7 @@ class VugSimulator {
       crystal.dominant_forms = ['m{110} prism', 'y{041} pyramid', 'c{001} basal cleavage'];
     } else if (mineral === 'tourmaline') {
       crystal.dominant_forms = ['m{10̄10} trigonal prism', 'striated faces', 'slightly rounded triangular cross-section'];
-    } else if (mineral === 'beryl') {
+    } else if (mineral === 'beryl' || mineral === 'emerald' || mineral === 'aquamarine' || mineral === 'morganite' || mineral === 'heliodor') {
       crystal.dominant_forms = ['m{10̄10} hex prism', 'c{0001} flat basal pinacoid'];
     } else if (mineral === 'spodumene') {
       crystal.dominant_forms = ['m{110} prism', 'a{100} + b{010} pinacoids', '~87° pyroxene cleavages'];
@@ -10849,33 +11084,38 @@ class VugSimulator {
       }
     }
 
-    // Beryl nucleation — Be + Al + SiO₂ (Be-gated, high σ threshold 1.8).
-    // Beryllium accumulates freely in pegmatite fluid (no other Be sink);
-    // when σ finally crosses the threshold there's a lot of Be waiting,
-    // which is the real-world mechanism for meter-scale beryl crystals.
-    // max_nucleation_count=4 keeps the count low and realistic.
-    const sigma_ber = this.conditions.supersaturation_beryl();
-    const existing_ber = this.crystals.filter(c => c.mineral === 'beryl' && c.active);
-    if (sigma_ber > 1.8 && !this._atNucleationCap('beryl')) {
-      if (!existing_ber.length || (sigma_ber > 2.5 && rng.random() < 0.15)) {
-        let pos = 'vug wall';
-        const existing_qtz_ber = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
-        const existing_feld_ber = this.crystals.filter(c => c.mineral === 'feldspar' && c.active);
-        if (existing_qtz_ber.length && rng.random() < 0.4) {
-          pos = `on quartz #${existing_qtz_ber[0].crystal_id}`;
-        } else if (existing_feld_ber.length && rng.random() < 0.4) {
-          pos = `on feldspar #${existing_feld_ber[0].crystal_id}`;
-        }
-        const c = this.nucleate('beryl', pos, sigma_ber);
-        const f = this.conditions.fluid;
-        let tag;
-        if (f.Cr > 0.5 || f.V > 1.0) tag = 'emerald';
-        else if (f.Mn > 2.0) tag = 'morganite';
-        else if (f.Fe > 15 && f.O2 > 0.5) tag = 'heliodor';
-        else if (f.Fe > 8) tag = 'aquamarine';
-        else tag = 'goshenite';
-        this.log.push(`  ✦ NUCLEATION: Beryl #${c.crystal_id} (${tag}) on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ber.toFixed(2)}, Be=${f.Be.toFixed(0)} ppm, Cr=${f.Cr.toFixed(2)}, Fe=${f.Fe.toFixed(0)})`);
+    // Beryl family nucleation — Be + Al + SiO₂ with chromophore dispatch.
+    // Post-Round-7: 5 species (emerald/morganite/heliodor/aquamarine/
+    // goshenite(beryl)) each nucleate via their own supersaturation
+    // function, which encodes the priority chain through exclusion
+    // preconditions. Dispatch evaluates each in priority order and fires
+    // AT MOST ONE per step — the shared Be pool would otherwise let two
+    // siblings over-nucleate.
+    const beryl_family_candidates = [
+      ['emerald', this.conditions.supersaturation_emerald(), 1.4],
+      ['morganite', this.conditions.supersaturation_morganite(), 1.4],
+      ['heliodor', this.conditions.supersaturation_heliodor(), 1.4],
+      ['aquamarine', this.conditions.supersaturation_aquamarine(), 1.3],
+      ['beryl', this.conditions.supersaturation_beryl(), 1.8],
+    ];
+    const existing_qtz_ber = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    const existing_feld_ber = this.crystals.filter(c => c.mineral === 'feldspar' && c.active);
+    for (const [species, sigma_bf, threshold] of beryl_family_candidates) {
+      if (sigma_bf <= threshold) continue;
+      if (this._atNucleationCap(species)) continue;
+      const existing_sp = this.crystals.filter(c => c.mineral === species && c.active);
+      if (existing_sp.length && !(sigma_bf > threshold + 0.7 && rng.random() < 0.15)) continue;
+      let pos = 'vug wall';
+      if (existing_qtz_ber.length && rng.random() < 0.4) {
+        pos = `on quartz #${existing_qtz_ber[0].crystal_id}`;
+      } else if (existing_feld_ber.length && rng.random() < 0.4) {
+        pos = `on feldspar #${existing_feld_ber[0].crystal_id}`;
       }
+      const c = this.nucleate(species, pos, sigma_bf);
+      const f = this.conditions.fluid;
+      const speciesCap = species.charAt(0).toUpperCase() + species.slice(1);
+      this.log.push(`  ✦ NUCLEATION: ${speciesCap} #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_bf.toFixed(2)}, Be=${f.Be.toFixed(0)} ppm, Cr=${f.Cr.toFixed(2)}, Fe=${f.Fe.toFixed(0)}, Mn=${f.Mn.toFixed(2)})`);
+      break;  // only one beryl-family nucleation per step
     }
 
     // Tourmaline nucleation — Na + B + Al + SiO₂ (B-gated, σ=1.3).
@@ -12064,44 +12304,88 @@ class VugSimulator {
   }
 
   _narrate_beryl(c) {
-    const parts = [`Beryl #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("Be₃Al₂Si₆O₁₈ — hexagonal cyclosilicate. Beryllium is the most incompatible common element in magmatic systems: no rock-forming mineral will take it, so Be accumulates in residual pegmatite fluid until beryl finally nucleates at high threshold. That's why beryl crystals can be enormous — by the time the first crystal fires, there's a lot of beryllium waiting.");
-
-    const notes = c.zones.map(z => (z.note || '').toLowerCase());
-    const varieties = new Set();
-    for (const n of notes) {
-      if (n.includes('emerald')) varieties.add('emerald');
-      if (n.includes('morganite')) varieties.add('morganite');
-      if (n.includes('heliodor')) varieties.add('heliodor');
-      if (n.includes('aquamarine')) varieties.add('aquamarine');
-      if (n.includes('goshenite')) varieties.add('goshenite');
-    }
-
-    if (varieties.has('emerald')) {
-      parts.push('Emerald — the chromium variety. The Cr³⁺ (or V³⁺) in this crystal came from ultramafic country rock dissolving in trace, meeting Be that could only come from the pegmatite fluid. Two different rock types had to intersect in space for this one crystal to form. That\u2019s the emerald paradox, and it\u2019s why emerald is the rarest major gemstone.');
-    } else if (varieties.has('morganite')) {
-      parts.push('Morganite — the Mn²⁺ variety, pink to peach. Named for J.P. Morgan by George Kunz of Tiffany & Co., who named half the gem-grade pegmatite minerals after the men who could afford them. Minas Gerais produces the world\u2019s best.');
-    } else if (varieties.has('heliodor') && varieties.has('aquamarine')) {
-      parts.push('Color-zoned between heliodor (Fe³⁺, oxidizing) and aquamarine (Fe²⁺, reducing) — the crystal recorded a redox shift in the pocket fluid. Iron stayed in solution, but its oxidation state flipped partway through growth, and the color zoning captures that moment.');
-    } else if (varieties.has('heliodor')) {
-      parts.push('Heliodor — the yellow Fe³⁺ variety. Oxidizing conditions during growth locked iron in the Fe³⁺ state rather than Fe²⁺. A late-stage pocket characteristic.');
-    } else if (varieties.has('aquamarine')) {
-      parts.push('Aquamarine — the Fe²⁺ variety, sky blue. The pegmatite fluid stayed reducing throughout growth. Aquamarine is the classic Minas Gerais beryl — Governador Valadares and Araçuaí alone have produced more aquamarine than the rest of the world combined.');
-    } else if (varieties.has('goshenite')) {
-      parts.push('Goshenite — pure colorless beryl. No chromophore found the crystal\u2019s Al site. Rare because trace elements are almost always present somewhere in the fluid; when the pocket stayed truly clean, goshenite is what grew.');
-    }
-
+    // Post-Round-7: goshenite / generic colorless fallback; variety crystals
+    // are emerald/aquamarine/morganite/heliodor (their own narrators).
+    const parts = [`Goshenite (beryl) #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Be₃Al₂Si₆O₁₈ — hexagonal cyclosilicate, colorless variety. Beryllium is the most incompatible common element in magmatic systems: no rock-forming mineral will take it, so Be accumulates in residual pegmatite fluid until beryl finally nucleates at high threshold. That's why beryl crystals can be enormous — by the time the first crystal fires, there's a lot of beryllium waiting.");
+    parts.push('Goshenite is the truly colorless beryl: no chromophore above the variety-gate thresholds (Cr < 0.5 ppm, Mn < 2 ppm, Fe < 8 ppm, V < 1 ppm). This pocket stayed clean of ultramafic Cr influx (which would have made emerald), the Mn never accumulated sufficiently (morganite), and Fe stayed below aquamarine gate. Rarer in the collector market than its colored siblings because trace elements are almost always present somewhere in a real pegmatite; when the pocket did stay this clean, goshenite is what grew.');
     const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
     if (inclusion_zones.length) {
-      parts.push(`${inclusion_zones.length} fluid inclusion horizons preserved at growth-zone boundaries — beryl is notorious for these, including the stepped "growth tubes" that make aquamarine cat's-eyes possible.`);
+      parts.push(`${inclusion_zones.length} fluid inclusion horizons preserved at growth-zone boundaries — beryl is notorious for these, including the stepped "growth tubes" that make hexagonal cat's-eye chatoyancy possible.`);
     }
-
-    parts.push('If you sliced this beryl perpendicular to the c-axis, the growth rings would map the thermal history. Wider bands mark warmer, faster growth; tight bands mark slow cool periods.');
-
+    parts.push('If you sliced this goshenite perpendicular to the c-axis, the growth rings would map the pegmatite\'s thermal history. Wider bands mark warmer, faster growth; tight bands mark slow cool periods.');
     if (c.dissolved) {
       parts.push('HF-assisted dissolution etched the surface — beryl is very resistant, but fluoride-rich acid fluids will eventually eat it, releasing Be²⁺ and SiO₂ back to the pocket.');
     }
+    return parts.join(' ');
+  }
 
+  _narrate_emerald(c) {
+    const parts = [`Emerald #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Be₃Al₂Si₆O₁₈ + Cr³⁺ (or V³⁺) — the chromium variety of beryl. The 'emerald paradox': Cr is an ultramafic element (peridotite/komatiite), Be is the most incompatible of common pegmatitic elements. These two chemistries almost never coexist in the same fluid. Emerald only forms where pegmatite hydrothermal fluid meets ultramafic country rock — Colombia Muzo (black-shale-hosted), Zambia Kagem (schist-hosted), Cruzeiro Brazil (pegmatite-only with biotite-schist wall rock). Top Colombian gem emerald is rarer than diamond as gem material.");
+    const is_trapiche = c.zones.some(z => (z.note || '').includes('trapiche')) || c.habit === 'trapiche';
+    if (is_trapiche) {
+      parts.push('Trapiche pattern — the 6-spoke wheel of dark inclusion rays between six green sector-crystals. A Colombian Muzo specialty. The pattern captures the moment Cr influx outpaced the crystal\'s ability to keep pace, causing the growth front to trap carbon-rich matrix as radial dendritic arms.');
+    }
+    const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
+    if (inclusion_zones.length) {
+      parts.push(`${inclusion_zones.length} fluid inclusion horizons preserved — emerald is famous for its 'jardin' (French for garden), the dense field of primary 3-phase fluid inclusions that every natural emerald carries. Gemologists use the jardin as a natural-origin certificate; lab-grown emerald is cleaner.`);
+    }
+    if (c.dissolved) {
+      parts.push('HF-assisted dissolution etched the surface — emerald shares beryl\'s acid resistance and only dissolves under fluoride.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_aquamarine(c) {
+    const parts = [`Aquamarine #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Be₃Al₂Si₆O₁₈ + Fe²⁺ — the blue variety of beryl. Most abundant gem beryl variety; every gem-producing pegmatite yields aquamarine. Fe²⁺ substitutes in the channel sites and the Al octahedral site. The pegmatite fluid stayed reducing (or at least non-oxidizing) throughout growth, so iron held its Fe²⁺ state rather than flipping to Fe³⁺ (which would have made heliodor instead). Governador Valadares and Araçuaí (Minas Gerais) alone have produced more aquamarine than the rest of the world combined.');
+    const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
+    if (inclusion_zones.length) {
+      parts.push(`${inclusion_zones.length} fluid inclusion horizons at zone boundaries. Aquamarine's 'growth tubes' — stepped hexagonal negative-crystal voids — are what make the cat's-eye chatoyancy effect possible when the crystal is cut en cabochon.`);
+    }
+    if (c.habit === 'stubby_tabular') {
+      parts.push('Stubby tabular habit — late-stage, T < 380°C. The flat basal pinacoid dominates over the hexagonal prism, making this crystal look more like a squat bar than the cigarette-shape of hotter Cruzeiro aquamarines.');
+    } else if (c.habit === 'hex_prism_long') {
+      parts.push("Long hexagonal-prism habit — the Cruzeiro 'cigarette' shape. Classic higher-T (>400°C) pegmatite pocket signature, where the c-axis growth outpaces the a-axis by a factor of several.");
+    }
+    if (c.dissolved) {
+      parts.push('HF-assisted dissolution etched the surface — aquamarine shares beryl\'s acid resistance.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_morganite(c) {
+    const parts = [`Morganite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Be₃Al₂Si₆O₁₈ + Mn²⁺ — the pink-to-peach variety of beryl. Mn²⁺ substitutes in the Al octahedral site; over geologic time, natural alpha-particle irradiation from trace U/Th in the surrounding pegmatite partially oxidizes Mn²⁺ to Mn³⁺, and the Mn³⁺ d-d transitions are what produce the pink hue. Named by George F. Kunz of Tiffany & Co (1911) after J.P. Morgan.');
+    parts.push('Morganite is late in the pegmatite sequence. Mn accumulates in residual fluid while earlier phases (feldspar, quartz, aquamarine) crystallize — when the pocket is finally late enough for Mn > 2 ppm, morganite fires. Pala District California, Madagascar, and Minas Gerais Brazil are the top gem sources.');
+    if (c.habit === 'tabular_hex') {
+      parts.push("Tabular hexagonal habit — morganite's signature flat pinacoid-dominated plate, unlike the prismatic habit of aquamarine and emerald. The Urucum pocket (Minas Gerais, 1995) yielded the largest gem morganite crystal at 35+ kg in this habit.");
+    }
+    const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
+    if (inclusion_zones.length) {
+      parts.push(`${inclusion_zones.length} fluid inclusion horizons — morganite is usually cleaner than aquamarine or emerald because it grew so late in the pegmatite sequence; the pocket fluid had already deposited its other load.`);
+    }
+    if (c.dissolved) {
+      parts.push('HF-assisted dissolution etched the surface. Unusual for morganite — the pocket must have received a late fluorine-rich acid pulse after the main morganite growth ceased.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_heliodor(c) {
+    const parts = [`Heliodor #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Be₃Al₂Si₆O₁₈ + Fe³⁺ — the yellow variety of beryl. Same iron as aquamarine but oxidized to the Fe³⁺ state; the aquamarine/heliodor split is the cleanest redox record in the gem world. A zoned crystal with aquamarine core and heliodor rim captures a pocket fluid that went from reducing to oxidizing mid-growth. Volodarsk (Namibia) is the type locality for deep-yellow "Namibian heliodor"; Urals (Russia) historically, Minas Gerais (Brazil) also.');
+    if (c.zones.some(z => (z.note || '').includes('Namibian'))) {
+      parts.push('Namibian deep-yellow — high-Fe strongly-oxidizing pocket signature. The Volodarsk pegmatite cross-cuts Fe-rich country rock, delivering both the Fe source and the late oxidizing pulse that converts Fe²⁺ to Fe³⁺.');
+    }
+    const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
+    if (inclusion_zones.length) {
+      parts.push(`${inclusion_zones.length} fluid inclusion horizons — the oxidizing pocket often contains primary CO₂-rich 2-phase inclusions, distinguishing heliodor from the more aqueous-inclusion-rich aquamarine.`);
+    }
+    parts.push('Color stability note: natural heliodor is radiation-sensitive. Deep-yellow specimens often lose color on heating above 400°C, reverting to goshenite. The inverse also happens — irradiation can deepen pale-yellow heliodor.');
+    if (c.dissolved) {
+      parts.push('HF-assisted dissolution etched the surface — heliodor shares beryl\'s acid resistance; dissolution means a late fluorine-rich acid pulse.');
+    }
     return parts.join(' ');
   }
 
@@ -15793,7 +16077,8 @@ const IDLE_MINERAL_COLORS = {
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
-  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0'
+  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
+  emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second
