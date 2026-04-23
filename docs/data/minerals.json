@@ -4756,7 +4756,7 @@
         }
       ],
       "class": "silicate",
-      "description": "Be₃Al₂Si₆O₁₈ — hexagonal cyclosilicate; in this simulator's post-Round-7 architecture the `beryl` entry represents **goshenite** and the generic colorless/pale beryl that fires when no chromophore trace is above threshold. Emerald (Cr/V), morganite (Mn), heliodor (Fe+oxidizing), and aquamarine (Fe reducing/moderate) are each first-class species with their own engines. Beryllium is the most incompatible common element in magmatic systems: no rock-forming mineral takes it, so Be accumulates in residual pegmatite fluid until beryl finally nucleates at high threshold. That's why beryl crystals can be enormous — by the time the first crystal fires, there's a lot of Be waiting.",
+      "description": "Be₃Al₂Si₆O₁₈ — hexagonal cyclosilicate; in this simulator's post-Round-7 architecture the beryl entry represents goshenite and the generic colorless/pale beryl that fires when no chromophore trace is above threshold. Emerald (Cr/V), morganite (Mn), heliodor (Fe+oxidizing), and aquamarine (Fe reducing/moderate) are each first-class species with their own engines. Beryllium is the most incompatible common element in magmatic systems: no rock-forming mineral takes it, so Be accumulates in residual pegmatite fluid until beryl finally nucleates at high threshold. That's why beryl crystals can be enormous — by the time the first crystal fires, there's a lot of Be waiting.",
       "scenarios": [
         "gem_pegmatite",
         "radioactive_pegmatite"
@@ -7031,7 +7031,7 @@
         }
       ],
       "class": "oxide",
-      "description": "Al₂O₃ — trigonal close-packed oxide. The structural parent of ruby + sapphire, and the hardness-9 abrasive mineral (emery is Al₂O₃ + magnetite). **Corundum is SiO₂-undersaturated**: if any significant silica is present, Al + SiO₂ drives toward the Al₂SiO₅ polymorphs (kyanite/andalusite/sillimanite) or feldspar, not corundum. The defining constraint is SiO₂ < 50 ppm — the first upper-bound gate in this simulator. Forms in amphibolite-to-granulite-facies marble contact metamorphism (Mogok-type) and in basalt-hosted xenocrysts.",
+      "description": "Al₂O₃ — trigonal close-packed oxide. The structural parent of ruby + sapphire, and the hardness-9 abrasive mineral (emery is Al₂O₃ + magnetite). Corundum is SiO₂-undersaturated: if any significant silica is present, Al + SiO₂ drives toward the Al₂SiO₅ polymorphs (kyanite/andalusite/sillimanite) or feldspar, not corundum. The defining constraint is SiO₂ < 50 ppm — the first upper-bound gate in this simulator. Forms in amphibolite-to-granulite-facies marble contact metamorphism (Mogok-type) and in basalt-hosted xenocrysts.",
       "scenarios": [
         "marble_contact_metamorphism"
       ],
