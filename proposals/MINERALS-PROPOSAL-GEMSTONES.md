@@ -1,6 +1,20 @@
 # Design Proposal — Adding Marquee Gemstones
 
-**Status:** design proposal, awaiting decisions before implementation.
+**Status:** design proposal **APPROVED** (Apr 2026). Decisions captured below. Implementation paused pre-compaction; ready to resume in a future session.
+
+## ✅ Decisions made (user-confirmed, this session)
+
+1. **Beryl family architecture: Option A (full split).** 5 first-class species — the existing `beryl` entry becomes/stays **goshenite** (generic/colorless), plus 4 new siblings: **emerald, aquamarine, morganite, heliodor**. Each gets its own supersaturation gate, grow function, narrator, tests. UX payoff: Library + idle-legends + scenario logs all show e.g. "Emerald" as its own entry, not "Beryl (green variant)".
+
+2. **Corundum family architecture: Option A (full split).** 3 first-class species — **corundum** (colorless), **ruby** (Cr-gated), **sapphire** (Fe+Ti or Fe-alone gated). Shared helper for the distinctive SiO₂-undersaturated constraint.
+
+3. **Diamond: D3 (full carbon + pressure plumbing), deferred to end of 200-mineral list.** Adjacent slots ~185-200 reserved for the ~20 minerals that share the plumbing investment — documented fully in `proposals/BACKLOG.md` §"Round ~end-of-list". Bridge option (D2 xenocryst event) available if visible-diamond becomes urgent before then, but default is: wait for the plumbing round.
+
+4. **Phase order: beryl + corundum together** as the next implementation round (call it Round 7). One cohesive commit series.
+
+5. **Alexandrite, tanzanite, chrysoberyl, garnet group, jade: deferred** to future rounds. Alexandrite specifically lives in the Round-7-adjacent "mantle cluster" since chrysoberyl chemistry (BeAl₂O₄ — Be+Al oxide, Si-undersaturated like corundum) and its color-change Cr trace make it a natural neighbor to ruby. Might get folded into Round 8 if it's a clean carve-out, otherwise D3 plumbing round.
+
+## Summary
 
 **Scope:** ruby, sapphire, emerald, the rest of the beryl family (aquamarine, morganite, heliodor), and a diamond feasibility analysis.
 
@@ -330,12 +344,163 @@ If D2: `scenario_kimberlite` + `ev_diamond_xenocryst` + narrator explaining xeno
 
 ---
 
-## Questions for you before I start
+---
 
-1. **Beryl varieties: hybrid A+B as proposed, or pure A (split all 5), or B (all redirect)?**
-2. **Corundum: ruby + sapphire as separate species (recommended), or one `corundum` with color_rules (faster)?**
-3. **Diamond: which option (D1/D2/D3)?**
-4. **Phase order: do we go Phase 1 → 2 → 3 in sequence, or start with Phase 2 (corundum is the bigger win, bigger ship for your boss to show off)?**
-5. **Beyond this doc: interested in alexandrite + tanzanite + chrysoberyl + garnet group as a future round? These are the other "big name" gems not yet in proposal.**
+## 🚀 Implementation kickoff — pick up from here
 
-I'll write the full research doc + start implementation once these are answered.
+When resuming this work, follow the steps below. All decisions from the "Decisions made" section at the top are locked.
+
+### Pre-flight (5 minutes)
+
+```bash
+# 1. Verify state is clean
+cd vugg-simulator
+git status                           # should be clean
+python -m pytest                     # expect 754 passed + 7 skipped
+node tools/sync-spec.js              # expect no drift
+python -c "import vugg; print(vugg.SIM_VERSION)"  # expect 5
+```
+
+If any of those don't pass, stop and diagnose — something drifted since this proposal was written.
+
+### Implementation plan — 5 atomic commits
+
+#### Commit 1 — Write full research doc `proposals/MINERALS-RESEARCH-GEMSTONES.md`
+
+Mirror the shape of `proposals/MINERALS-RESEARCH-SULFATES.md`. Seven mineral sections (goshenite, emerald, aquamarine, morganite, heliodor, corundum, ruby, sapphire — actually 8 since goshenite stays) + three paragenetic-group sections + implementation notes + sources.
+
+Why write the research doc even though the design proposal has most of the content: the sulfates workflow taught that a dedicated research compendium (separate from the design proposal) is what future builders reach for. Design proposal = "what are we doing and why"; research doc = "here are the chemistry facts for each species."
+
+Current `grow_beryl` (vugg.py ~line 5043) already has citation-worthy chemistry for all 5 beryl varieties inline — extract that into the research doc. For corundum family, the major sources to cite:
+- Garnier et al. 2008 (Mogok Stone Tract geology + ruby paragenesis)
+- Peretti et al. 2018 (marble-hosted ruby worldwide)
+- Simonet et al. 2008 (basalt-hosted sapphire; BGM dealer-science review)
+- Chemical Geology 2010+ volumes on corundum trace-element geochem
+
+#### Commit 2 — Beryl family split (5 minerals, 1 scenario tweak)
+
+Use `tools/new-mineral.py` for each non-existing species:
+
+```bash
+# Emerald — gate on Cr (priority over Fe/Mn per geology)
+python tools/new-mineral.py \
+  --name emerald --formula "Be3Al2Si6O18" --class silicate \
+  --required "Be=10,Al=6,SiO2=50,Cr=0.5" \
+  --scenarios gem_pegmatite \
+  --T-range 300,650 --T-optimum 350,550 \
+  --redox any --idle-color "#2e8b57" --narrate
+
+# Aquamarine — Fe gate (Fe>8, Cr must be low)
+python tools/new-mineral.py \
+  --name aquamarine --formula "Be3Al2Si6O18" --class silicate \
+  --required "Be=10,Al=6,SiO2=50,Fe=8" \
+  --scenarios gem_pegmatite \
+  --T-range 300,650 --T-optimum 350,550 \
+  --redox any --idle-color "#7fb8d4" --narrate
+
+# Morganite — Mn gate
+python tools/new-mineral.py \
+  --name morganite --formula "Be3Al2Si6O18" --class silicate \
+  --required "Be=10,Al=6,SiO2=50,Mn=2" \
+  --scenarios gem_pegmatite \
+  --T-range 300,650 --T-optimum 350,550 \
+  --redox any --idle-color "#eb6b9e" --narrate
+
+# Heliodor — Fe high + oxidizing
+python tools/new-mineral.py \
+  --name heliodor --formula "Be3Al2Si6O18" --class silicate \
+  --required "Be=10,Al=6,SiO2=50,Fe=15,O2=0.8" \
+  --scenarios gem_pegmatite \
+  --T-range 300,650 --T-optimum 350,550 \
+  --redox oxidizing --idle-color "#eed858" --narrate
+```
+
+Then **manually in vugg.py**: refactor `grow_beryl` — currently does inline variety detection (Cr/V → emerald, Mn → morganite, Fe → aquamarine, Fe+O2 → heliodor). Options:
+
+- **Option A (clean)**: strip the variety logic out of `grow_beryl` entirely; it becomes the goshenite engine (no trace > threshold → grow as colorless). The 4 new species each have their own gate — they'll out-compete `grow_beryl` naturally via their lower σ thresholds or tighter gate precedence.
+- **Option B (cautious)**: leave `grow_beryl` as-is, but lower its nucleation probability so the new variety engines pick up the Cr/Fe/Mn cases. Risk: dual-nucleation (both `beryl` and `emerald` firing in the same step).
+
+Recommend **Option A** with an explicit priority: emerald > morganite > heliodor > aquamarine > goshenite (beryl). Each variety's supersaturation function should check "no higher-priority variety's trace is above threshold" as a pre-condition. That bakes the geology (emerald is rarer than aquamarine, Cr wins the priority contest in the color hierarchy) into the engines.
+
+Update `scenario_gem_pegmatite` (Cruzeiro) with a small Cr bump — enough to clear the emerald threshold. Current Cruzeiro fluid: check `data/locality_chemistry.json:cruzeiro_doce_valley`. Geological justification: Cruzeiro pegmatite cuts biotite-schist country rock; biotite carries trace Cr. Already noted in the beryl `trace_ingredients` comment: "emerald (green) — requires ultramafic country-rock contact."
+
+SIM_VERSION 5 → 6 (seed-42 shift: Cruzeiro now produces variety-named crystals instead of "beryl"). Run `python tests/gen_baselines.py` to capture new baseline.
+
+#### Commit 3 — Corundum family (3 minerals, 1 scenario NEW)
+
+Three species. Corundum is the parent, ruby and sapphire share the SiO₂-undersaturated gate:
+
+```bash
+python tools/new-mineral.py \
+  --name corundum --formula "Al2O3" --class oxide \
+  --required "Al=15" \
+  --scenarios marble_contact_metamorphism \
+  --T-range 400,1000 --T-optimum 600,900 \
+  --redox any --idle-color "#c8c8c8" --narrate
+
+python tools/new-mineral.py \
+  --name ruby --formula "Al2O3" --class oxide \
+  --required "Al=15,Cr=2" \
+  --scenarios marble_contact_metamorphism \
+  --T-range 500,1000 --T-optimum 700,900 \
+  --redox any --idle-color "#c03030" --narrate
+
+python tools/new-mineral.py \
+  --name sapphire --formula "Al2O3" --class oxide \
+  --required "Al=15,Fe=5,Ti=0.5" \
+  --scenarios marble_contact_metamorphism \
+  --T-range 500,1000 --T-optimum 700,900 \
+  --redox any --idle-color "#304068" --narrate
+```
+
+**Critical manual edit** in each supersaturation_X: add the **SiO₂ < 50 gate** (this is the defining chemistry; the scaffolding tool won't know to add it):
+
+```python
+if self.fluid.SiO2 > 50:
+    return 0  # corundum is Si-undersaturated; SiO2 + Al2O3 → feldspar/mica/sillimanite
+```
+
+Also sapphire needs a pH gate (pH 6-10, metamorphic fluid alkalinity). And the color_rules fork for sapphire variety (cornflower blue vs yellow vs padparadscha vs pink) should go in `grow_sapphire` habit logic.
+
+SIM_VERSION 6 → 7 (new scenario adds minerals). Regenerate baseline.
+
+#### Commit 4 — `scenario_marble_contact_metamorphism` (Mogok-anchored)
+
+New scenario function. Template from `scenario_gem_pegmatite` shape but with:
+- T_init = 700°C (contact metamorphism peak)
+- Fluid: Al = 50, SiO₂ = 20 (critical low), Ca = 800 (dolomitic marble), Cr = 3 (trace from ultramafic country rock), Fe = 8, Ti = 1, pH = 8, salinity = 3
+- Wall: `composition="marble"` (if that composition is supported; else limestone)
+- Events:
+  - `ev_peak_metamorphism` at step 20 — T peaks at 800°C for a few steps
+  - `ev_retrograde_cooling` at step 60 — T drops to ~400°C, fluids move
+  - `ev_fracture_seal` at step 150 — system closes
+- Scientific anchor: Mogok Stone Tract, Burma. Primary source: Garnier et al. 2008 (Contributions to Mineralogy and Petrology).
+
+Add entries to `data/locality_chemistry.json` + `proposals/SCENARIO-LOCATIONS.md` (or the equivalent) if those exist.
+
+#### Commit 5 — Audit + SIM_VERSION bump + baseline regen + BACKLOG cleanup
+
+Per established discipline:
+- Run `python tests/gen_baselines.py` — captures seed-42 output at new SIM_VERSION
+- Run `python -m pytest` — all green (new minerals auto-covered by parameterized tests)
+- Run `node tools/sync-spec.js` — no drift
+- Write `mineral_realizations_v7_gemstones` blocks in `data/locality_chemistry.json` for each anchored locality (following the v3 and v4 patterns)
+- Update `proposals/BACKLOG.md` §SIM_VERSION with v7 history
+- Remove the "Round 7+ (in progress)" section from BACKLOG (the round is now shipped)
+
+### Test expectations after Round 7
+
+- Total species: 62 + 7 = **69** (goshenite replaces `beryl` namespace — not a net-new entry; emerald/aquamarine/morganite/heliodor are net-new 4, corundum/ruby/sapphire are net-new 3 = 7)
+- Tests: 754 + ~56 new (7 species × 8 parameterized tests each) = **~810**
+- Scenario regression baselines cover: previous 12 scenarios + 1 new (marble_contact_metamorphism) = 13
+- Drift: still 0
+
+### Known risks + mitigations
+
+- **Beryl refactor is backward-compat risk.** Existing `grow_beryl` behavior is that any variety is stored as `crystal.mineral = "beryl"`. Splitting means post-Round-7 crystals will identify as "emerald" etc. Any downstream narrative/rendering logic that keys on `crystal.mineral == "beryl"` will miss the variety crystals. Mitigation: grep for `== "beryl"` across the codebase before refactoring; update each occurrence OR add a helper like `is_beryl_family(mineral)` that returns True for the 5 names.
+- **SiO₂ < 50 gate is novel.** No other mineral in the sim gates on the UPPER bound of a fluid field (all other gates are lower bounds: "X ≥ threshold"). Make sure the gate tests in `tests/test_engine_gates.py` handle this correctly — the `test_blocks_when_all_ingredients_zero` test zeros SiO₂, which satisfies the `< 50` upper gate, so the test shouldn't break. But the favorable-fluid search might try high-SiO₂ candidates; verify corundum family passes.
+- **Cruzeiro Cr bump may shift aquamarine/morganite seed-42 output.** Need to verify the bump doesn't over-deplete — i.e., that emerald's consumption of Cr still leaves Fe + Mn available for aquamarine + morganite nucleation in later steps. Parameterized scenario tests at the end will catch this.
+
+### If context runs out during implementation
+
+Everything in this doc is self-contained. Start from pre-flight checks, work the 5 commits in order, check tests green after each commit, push after each. The scaffolding tool does most of the heavy lifting; the manual bits are the SiO₂ upper-gate for corundum family and the variety-priority precedence for beryl family.
