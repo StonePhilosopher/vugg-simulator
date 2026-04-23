@@ -1,6 +1,12 @@
 # Design Proposal — Adding Marquee Gemstones
 
-**Status:** design proposal **APPROVED** (Apr 2026). Decisions captured below. Implementation paused pre-compaction; ready to resume in a future session.
+**Status:** ✅ **SHIPPED (Apr 2026, Round 7)**. Implementation complete in 4 commits: `a5fbaf6` (research doc) → `a2f8f94` (beryl family, SIM_VERSION 5→6) → `97cb088` (corundum family + Mogok scenario, SIM_VERSION 6→7) → round-closeout commit with locality chemistry + BACKLOG updates. Engine count 62 → 69. Diamond + mantle/high-P cluster still reserved for end-of-list per original decision.
+
+Kept below for historical reference of the architectural analysis + decisions.
+
+---
+
+**Status (pre-ship):** design proposal **APPROVED** (Apr 2026). Decisions captured below. Implementation paused pre-compaction; ready to resume in a future session.
 
 ## ✅ Decisions made (user-confirmed, this session)
 
