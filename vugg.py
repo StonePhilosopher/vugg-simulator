@@ -8159,6 +8159,17 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
             # without producing gold the locality doesn't actually
             # produce in quantity.
             Au=0.3,
+            # ── v5 gap-fill (Apr 2026) ────────────────────────────────
+            # Al=25 (was default 3.0): Tsumeb supergene fluid carries
+            # significant Al³⁺ from feldspar weathering during the
+            # acid-sulfate phase (alunite is the diagnostic alteration
+            # mineral of the lithocap). Bumped to 25 (above the
+            # alunite engine's al_f=Al/25 cap) so alunite sigma can
+            # cross threshold during the brief 15-step acid window.
+            # Source: Hemley et al. 1969 (alunite stability + Al
+            # solubility under acid-sulfate conditions); Stoffregen
+            # et al. 2000 (alunite-jarosite paragenesis review).
+            Al=25,
             # ──────────────────────────────────────────────────────────
             O2=1.8, pH=6.8, salinity=2.0,
         ),
@@ -8166,6 +8177,33 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
         # model complex meteoric dissolution cavity formation.
         wall=VugWall(primary_bubbles=3, secondary_bubbles=7, shape_seed=7),
     )
+
+    def ev_supergene_acidification(cond):
+        """Early acidic phase: H₂SO₄ from sulfide oxidation drops pH.
+
+        Geological reality: when primary sulfides (galena, sphalerite,
+        chalcopyrite) first oxidize at the supergene front, they
+        release H₂SO₄ that drops local pH well below the carbonate-
+        buffered late-stage equilibrium of pH 6.8. The acid window
+        is the formation environment for scorodite + jarosite +
+        alunite — all three need pH < 5 to nucleate. The carbonate
+        host then buffers pH back up over time (modeled by
+        ev_meteoric_flush at step 20 reseting pH to 6.2).
+
+        v5 gap-fill (Apr 2026): added to close the Tsumeb pH gap
+        documented in BACKLOG.md after Round 5. Without this event,
+        scorodite / jarosite / alunite couldn't form at Tsumeb
+        despite being world-class display species there.
+        """
+        cond.fluid.pH = 4.0
+        cond.fluid.O2 = 1.5  # already oxidizing, slight bump from O2=1.8 baseline
+        cond.fluid.S += 20   # H₂SO₄ contributes SO₄²⁻ to fluid
+        return ("Early acidic supergene phase. Primary sulfides oxidize "
+                "and release H₂SO₄ — pH drops to 4.0, opening the acid "
+                "window for the arsenate + sulfate suite (scorodite, "
+                "jarosite, alunite). Carbonate buffering will reverse "
+                "this at the meteoric flush; the acid-stable phases "
+                "form during this short ~15-step window.")
 
     def ev_meteoric_flush(cond):
         """Rain-fed oxygenated water recharges the aquifer."""
@@ -8272,6 +8310,16 @@ def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
                 "whatever is undersaturated will quietly corrode.")
 
     events = [
+        # Acid phase — fires at 4 steps (5, 8, 12, 16) to maintain the acid
+        # window against the limestone wall's pH-buffering. Without the
+        # repeated pulses, the carbonate host neutralizes pH back to 6+
+        # within ~5 steps; with them, pH stays in the 3.5-5 range until
+        # ev_meteoric_flush (step 20) ends the phase. This 15-step window
+        # is when scorodite + jarosite + alunite nucleate.
+        Event(5,   "Acid Phase",        "Early sulfide oxidation drops pH",        ev_supergene_acidification),
+        Event(8,   "Acid Continues",    "Sulfide-oxidation acid persists",         ev_supergene_acidification),
+        Event(12,  "Acid Continues",    "Carbonate buffer overrun",                 ev_supergene_acidification),
+        Event(16,  "Acid Final Pulse",  "Last sulfide-oxidation pulse",            ev_supergene_acidification),
         Event(20,  "Meteoric Flush",  "Oxygenated rainwater recharges",          ev_meteoric_flush),
         Event(40,  "Pb+Mo Pulse",     "Galena+molybdenite weathering",           ev_pb_mo_pulse),
         Event(55,  "Cu Enrichment",   "Primary chalcopyrite upslope weathers",   ev_cu_enrichment),
@@ -10203,7 +10251,11 @@ class VugSimulator:
         # sulfide). σ threshold 1.0 + per-check 0.18 reflects supergene speed.
         sigma_jar = self.conditions.supersaturation_jarosite()
         if sigma_jar > 1.0 and not self._at_nucleation_cap("jarosite"):
-            if random.random() < 0.18:
+            # Higher per-check (0.45 vs default 0.18) reflects the fast
+            # kinetics of jarosite formation in acid drainage; helps the
+            # mineral fire reliably during brief acid windows. Across
+            # 20 seeds at 0.45, jarosite hits ~95%; at 0.18 only ~25%.
+            if random.random() < 0.45:
                 pos = "vug wall"
                 diss_py_jar = [c for c in self.crystals if c.mineral == "pyrite" and c.dissolved]
                 diss_mar_jar = [c for c in self.crystals if c.mineral == "marcasite" and c.dissolved]
@@ -10226,7 +10278,12 @@ class VugSimulator:
         # acid-sulfate). σ threshold 1.0 + per-check 0.15.
         sigma_alu = self.conditions.supersaturation_alunite()
         if sigma_alu > 1.0 and not self._at_nucleation_cap("alunite"):
-            if random.random() < 0.15:
+            # Higher per-check (0.45 vs default 0.15) — same rationale as
+            # jarosite: fast acid-sulfate alteration kinetics, brief acid
+            # windows in carbonate-buffered systems. Tighter alunite
+            # window (Al/25 cap means only 3 of 4 acid pulses cross
+            # threshold) makes the boost more important here.
+            if random.random() < 0.45:
                 pos = "vug wall"
                 diss_fel_alu = [c for c in self.crystals if c.mineral == "feldspar" and c.dissolved]
                 active_fel_alu = [c for c in self.crystals if c.mineral == "feldspar" and c.active]

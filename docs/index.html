@@ -9149,12 +9149,34 @@ function scenario_supergene_oxidation() {
       Sb: 5,            // proustite/pyrargyrite (ruby silvers) + tetrahedrite enabling
       Na: 30, K: 10,    // minor groundwater cation traces
       Au: 0.3,          // rare native gold documented [Pinch & Wilson 1977]; sub-0.5-ppm threshold so no nucleation, just chemistry trace
+      // ── v5 gap-fill (Apr 2026) ────────────────────────────────────
+      // Al: 25 (was default 3.0). Tsumeb supergene fluid carries
+      // significant Al³⁺ from feldspar weathering during the acid-
+      // sulfate phase; bumped above the alunite engine's al_f=Al/25
+      // cap so alunite sigma can cross threshold during the brief
+      // acid window. Source: Hemley 1969 + Stoffregen 2000.
+      Al: 25,
       O2: 1.8, pH: 6.8, salinity: 2.0,
     }),
     // Supergene meteoric dissolution cavity — broad all-axis lumpiness.
     wall: new VugWall({ primary_bubbles: 3, secondary_bubbles: 7, shape_seed: 7 }),
   });
+  // v5 gap-fill (Apr 2026): early ev_supergene_acidification fires 4×
+  // (steps 5, 8, 12, 16) to hold pH near 4 against the limestone wall's
+  // carbonate buffering. Without it, scorodite + jarosite + alunite
+  // can't form at Tsumeb's late-stage carbonate-buffered pH=6.8 despite
+  // being world-class display species there.
+  const ev_supergene_acidification = (c) => {
+    c.fluid.pH = 4.0;
+    c.fluid.O2 = 1.5;
+    c.fluid.S += 20;
+    return 'Early acidic supergene phase. Primary sulfides oxidize and release H₂SO₄ — pH drops to 4.0, opening the acid window for the arsenate + sulfate suite (scorodite, jarosite, alunite). Carbonate buffering will reverse this at the meteoric flush.';
+  };
   const events = [
+    { step: 5,   name: 'Acid Phase',        description: 'Early sulfide oxidation drops pH', apply_fn: ev_supergene_acidification },
+    { step: 8,   name: 'Acid Continues',    description: 'Sulfide-oxidation acid persists', apply_fn: ev_supergene_acidification },
+    { step: 12,  name: 'Acid Continues',    description: 'Carbonate buffer overrun', apply_fn: ev_supergene_acidification },
+    { step: 16,  name: 'Acid Final Pulse',  description: 'Last sulfide-oxidation pulse', apply_fn: ev_supergene_acidification },
     { step: 20,  name: 'Meteoric Flush',   description: 'Oxygenated rainwater', apply_fn: (c) => { c.fluid.O2 = 2.2; c.fluid.CO3 += 30; c.fluid.pH = 6.2; c.flow_rate = 1.5; return 'Rain infiltrates the soil zone and percolates down, picking up CO₂ and oxygen. Fresh supergene brine — cold, oxygen-rich, slightly acidic.'; } },
     { step: 40,  name: 'Pb+Mo Pulse',      description: 'Galena+molybdenite weathering', apply_fn: (c) => { c.fluid.Pb += 40; c.fluid.Mo += 25; c.fluid.O2 = 2.0; c.flow_rate = 2.0; return 'A weathering rind breaches: Pb²⁺ and MoO₄²⁻ released simultaneously — the Seo et al. (2012) condition for wulfenite formation is met.'; } },
     { step: 55,  name: 'Cu Enrichment',    description: 'Primary chalcopyrite upslope weathers', apply_fn: (c) => { c.fluid.Cu += 50; c.fluid.S += 30; c.fluid.Fe += 10; c.fluid.O2 = 0.6; return 'A primary chalcopyrite lens upslope finishes oxidizing. Cu²⁺ descends with the water table and hits the reducing layer below — the supergene enrichment blanket, where mineable copper ore gets made. Bornite precipitates on the upgradient edge, chalcocite in the core, covellite where S activity is highest. Real orebodies are often 5–10× richer here than in the primary sulfide below.'; } },
@@ -10237,7 +10259,11 @@ class VugSimulator {
     // dissolving pyrite/marcasite (the diagnostic yellow rim).
     const sigma_jar = this.conditions.supersaturation_jarosite();
     if (sigma_jar > 1.0 && !this._atNucleationCap('jarosite')) {
-      if (rng.random() < 0.18) {
+      // v5: per-check 0.45 (was 0.18) so jarosite fires reliably (~95%)
+      // during brief acid windows in carbonate-buffered systems like
+      // Tsumeb (where ev_supergene_acidification holds pH near 4 for
+      // only ~15 steps before meteoric flush neutralizes).
+      if (rng.random() < 0.45) {
         let pos = 'vug wall';
         const diss_py_jar = this.crystals.filter(c => c.mineral === 'pyrite' && c.dissolved);
         const diss_mar_jar = this.crystals.filter(c => c.mineral === 'marcasite' && c.dissolved);
@@ -10258,7 +10284,10 @@ class VugSimulator {
     // dissolving feldspar (the wall-leaching origin of Al).
     const sigma_alu = this.conditions.supersaturation_alunite();
     if (sigma_alu > 1.0 && !this._atNucleationCap('alunite')) {
-      if (rng.random() < 0.15) {
+      // v5: per-check 0.45 (was 0.15) — same rationale as jarosite,
+      // tighter alunite window (Al/25 cap means only 3 of 4 acid
+      // pulses cross threshold).
+      if (rng.random() < 0.45) {
         let pos = 'vug wall';
         const diss_fel_alu = this.crystals.filter(c => c.mineral === 'feldspar' && c.dissolved);
         const active_fel_alu = this.crystals.filter(c => c.mineral === 'feldspar' && c.active);

@@ -858,7 +858,7 @@
       "host_formation": "Pipe-shaped Pb-Zn-Cu sulfide body in Neoproterozoic dolomite (Otavi Group)",
       "production_history": "Active 1905-1996. Primary commodities Pb-Zn-Cu-Ag-Ge-Cd. ~280 species documented — among the most mineralogically diverse deposits ever discovered. Type locality for germanium (germanite, renierite, briartite).",
       "fluid_event_summary": "1st-stage gossan = uppermost of three Mesozoic-Cenozoic supergene oxidation zones, ~35 C, oxidizing meteoric brine in dolomitic carbonate cavity. Repeated soil-zone flushes deliver Pb+Mo, As+Co+Ni, P, V in sequential pulses, each unlocking a different mineral assemblage (wulfenite, mimetite/erythrite/annabergite, pyromorphite, vanadinite). Argentiferous throughout; Ge-bearing minerals are the Tsumeb signature.",
-      "audit_pass": "gap-fill (Apr 2026) — added Ag (Tsumeb's silver suite: native Ag, proustite, pyrargyrite), Ge (the type-locality element; FluidChemistry.Ge field has carried a 'Tsumeb speciality' comment since the schema was written, this audit finally populates it), Sb (proustite/pyrargyrite/tetrahedrite enabling), Na/K (minor groundwater cation traces). Existing chemistry preserved (Mg=5, V=1.5, P=0.5, etc.); 8-event sequence preserved; Co/Ni-via-event preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite.",
+      "audit_pass": "gap-fill (Apr 2026) — added Ag (Tsumeb's silver suite: native Ag, proustite, pyrargyrite), Ge (the type-locality element; FluidChemistry.Ge field has carried a 'Tsumeb speciality' comment since the schema was written, this audit finally populates it), Sb (proustite/pyrargyrite/tetrahedrite enabling), Na/K (minor groundwater cation traces). Existing chemistry preserved (Mg=5, V=1.5, P=0.5, etc.); 8-event sequence preserved; Co/Ni-via-event preserved. | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite. | v5-gap-fill (Apr 2026, Tsumeb) — added ev_supergene_acidification event (4 pulses at steps 5/8/12/16) to maintain the early acidic supergene phase against limestone wall buffering. Bumped Al 3 → 25. Bumped jarosite + alunite per-check probability 0.18/0.15 → 0.45. Unlocks scorodite + jarosite + alunite + brochantite in the simulator (4 of 4 BACKLOG'd Tsumeb-pH-gap minerals; antlerite correctly remains absent as Tsumeb is brochantite-dominant per geology).",
       "fluid": {
         "Ag": {
           "value": 8,
@@ -883,6 +883,10 @@
         "Au": {
           "value": 0.3,
           "note": "Rare native gold IS documented at Tsumeb [Pinch & Wilson 1977] though it's not a primary commodity. Sub-0.5-ppm threshold (grow_native_gold's nucleation cutoff) means no gold crystals nucleate — the 0.3 value documents the reported trace chemistry without producing gold the locality doesn't actually produce in quantity. Added when the Au field landed (post grow_native_gold engine)."
+        },
+        "Al": {
+          "value": 25,
+          "note": "v5 gap-fill (Apr 2026): two coordinated changes unlock four supergene minerals at Tsumeb. (1) Al bumped 3.0 → 25 to clear the alunite engine's Al/25 cap. (2) New ev_supergene_acidification event scheduled at steps 5, 8, 12, 16 (4 pulses to overrun the limestone wall's pH-buffering) drops pH to 4.0, opening a ~15-step acid window before ev_meteoric_flush (step 20) carbonate-buffers pH back to 6.2. The acid window is when scorodite + jarosite + alunite nucleate. Plus jarosite + alunite per-check probability bumped 0.18/0.15 → 0.45 to reflect their fast acid-sulfate kinetics in brief acid windows. Source: Hemley 1969 + Stoffregen 2000 (alunite/jarosite stability + paragenesis); Pinch & Wilson 1977 (Tsumeb mineralogy)."
         }
       },
       "preserved_intentional_values": {
@@ -930,11 +934,9 @@
           "real_locality_evidence": "Tsumeb primary arsenopyrite did exist (deeper in the orebody) but the Tsumeb-2 collection-zone the scenario simulates is the supergene-oxidation product zone."
         },
         "scorodite": {
-          "status": "geologically_documented_but_blocked",
-          "reason": "Tsumeb is the world-class scorodite locality (Groebner & Becker 1973 — deep blue-green dipyramids to 5+ cm) but the current scenario pH=6.8 is ABOVE scorodite stability gate (pH<6 nucleation). Geologically, Tsumeb scorodite formed during the early acidic supergene phase BEFORE carbonate buffering raised pH to 6.8 (the late-stage phase the scenario captures). Future scenario tune: add an early-phase event_supergene_acidification to drop pH transiently to 4-5 for ~20 steps, allowing scorodite to nucleate before carbonate buffer kicks in. Currently scorodite is correctly blocked by current pH.",
-          "event_dependency": "NEEDED: early-phase pH-drop event (not currently in scenario)",
-          "real_locality_evidence": "Tsumeb is the type-locality-quality scorodite source per Groebner & Becker 1973 + Bartelke 1976. Documented as part of secondary arsenate oxidation suite alongside mimetite/adamite (already implemented).",
-          "audit_action": "Document gap; do not retune. A future scenario_tsumeb refinement to add early-acidic-phase event would unlock scorodite. Tracked in BACKLOG.md as 'Tsumeb scorodite pH gap'."
+          "status": "active_during_acid_window",
+          "reason": "After v5 ev_supergene_acidification (steps 5/8/12/16) drops pH to 4.0, scorodite nucleates during the ~15-step acid window before ev_meteoric_flush carbonate-buffers pH back to 6.2. Verified seed-42: 1 scorodite crystal forms (max 15 µm). Across 20 seeds the realization rate is ~95% — Tsumeb scorodite is now part of the simulator's supergene assemblage.",
+          "audit_action": "Resolved by v5 commit. The ev_supergene_acidification event mirrors the geological reality of the early acidic supergene phase before carbonate buffering raised pH to the late-stage 6.8."
         },
         "ferrimolybdite": {
           "status": "active",
@@ -953,21 +955,23 @@
           "reason": "Sr=0; same reason as barite."
         },
         "jarosite": {
-          "status": "geologically_documented_but_blocked",
-          "reason": "Tsumeb supergene oxidation IS the textbook setting for jarosite, and Tsumeb chemistry has K=10 + Fe=40 + S=50 + O2=1.8 — three of the four gates met. BUT pH=6.8 is well above the 5 hard gate. Same Tsumeb pH-gap as scorodite (Round 4 audit). An early event_supergene_acidification would unlock jarosite alongside scorodite + alunite.",
-          "audit_action": "Same fix as scorodite pH gap — see existing BACKLOG.md entry. Adding the early-acid event would unlock all three minerals at Tsumeb."
+          "status": "active_during_acid_window",
+          "reason": "After v5 ev_supergene_acidification, K=10 + Fe=40 + S=70 (post-acid) + O2=1.5 + pH=4.0 → sigma 1.06–2.03 across the 4 acid pulses. Per-check bumped to 0.45 for reliable nucleation. Verified seed-42: 1 jarosite crystal (max 2 µm). 20-seed hit rate ~95%. Tsumeb jarosite was world-class but blocked at pH=6.8 pre-v5.",
+          "audit_action": "Resolved by v5 commit (combined with scorodite + alunite via the same single fix)."
         },
         "alunite": {
-          "status": "blocked_by_chemistry_AND_pH",
-          "reason": "K=10 ✓, Al=3 BELOW gate (need 10), pH=6.8 above acid window. Two gaps: even with the pH fix (above), Tsumeb Al would need bumping for alunite."
+          "status": "active_during_acid_window",
+          "reason": "After v5 Al bump (3→25) + ev_supergene_acidification, K=10 + Al=25 + S=70 + O2=1.5 + pH=4.0 → sigma 0.79–1.46 across acid pulses (lower than jarosite due to K/15 cap). Per-check bumped to 0.45. Verified seed-42: 1 alunite crystal (max 2 µm). 20-seed hit rate ~70%. Closes the advanced argillic alteration gap at Tsumeb.",
+          "audit_action": "Resolved by v5 commit. Both Al chemistry bump and acid-window event were required."
         },
         "brochantite": {
-          "status": "active_marginal",
-          "reason": "Tsumeb has Cu in the supergene assemblage (Cu = ~30 ppm post early Cu-release events). pH=6.8 is at the edge of brochantite stability (gate is pH 3-7.5; 6.8 is just inside). Likely fires marginally."
+          "status": "active_strong",
+          "reason": "Cu (delivered by ev_cu_enrichment) + S=50+ + O2=1.5–2.2 + pH 4.7–6.5 (the brochantite window). Verified seed-42: 15 active brochantite crystals, max 410 µm — significant supergene Cu sulfate yield. Bisbee/Atacama/Tsumeb brochantite paragenesis now reproduces."
         },
         "antlerite": {
-          "status": "not_applicable",
-          "reason": "pH=6.8 way too high for antlerite (gate ≤ 4)."
+          "status": "not_applicable_correctly",
+          "reason": "Antlerite gate is pH ≤ 4 (gate strict). The v5 acid window holds pH at ~4.7 (limestone wall buffers from 4.0 toward 6); antlerite never sees pH ≤ 4 in the buffered regime. This is geologically correct: Tsumeb is brochantite-dominant for supergene Cu-sulfate, not antlerite-dominant (antlerite is the Atacama/Chuquicamata signature, not Tsumeb's).",
+          "audit_action": "Not a gap — Tsumeb chemistry correctly favors brochantite (which IS active at Tsumeb post-v5)."
         },
         "anhydrite": {
           "status": "not_applicable",
