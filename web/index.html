@@ -15314,6 +15314,14 @@ function updateFortressStatus() {
 function crystalThumbHTML(crystal, size) {
   size = size || 56;
   const cColor = crystalColor(crystal);
+  // Twin is crystal-level metadata, not zone-level data — by design
+  // (Phase 1b boss call). Render as a small ⟁ badge overlaid on the
+  // thumbnail corner so twin status reads at a glance in every surface
+  // the thumbnail appears (inventory cards + Library collected rows)
+  // without polluting the bar graph itself.
+  const twinBadge = crystal && crystal.twinned
+    ? `<div style="position:absolute;top:1px;right:1px;background:#3a2044;color:#bb66ee;font-size:${Math.max(9, size*0.22)}px;line-height:1;padding:1px 3px;border-radius:2px;pointer-events:none;font-weight:bold" title="Twinned: ${crystal.twin_law || 'yes'}">⟁</div>`
+    : '';
   if (crystal && crystal.zones && crystal.zones.length >= 2) {
     const thumbCanvas = document.createElement('canvas');
     renderZoneBarCanvas(thumbCanvas, crystal.zones, {
@@ -15325,11 +15333,17 @@ function crystalThumbHTML(crystal, size) {
       showFIGlyphs: true,
     });
     const dataUrl = thumbCanvas.toDataURL();
-    return `<div style="width:${size}px;height:${size}px;border-radius:4px;overflow:hidden;flex-shrink:0;border:1px solid ${cColor}44;background:#070706" title="${crystal.mineral} · ${crystal.zones.length} zones">
+    return `<div style="width:${size}px;height:${size}px;border-radius:4px;overflow:hidden;flex-shrink:0;border:1px solid ${cColor}44;background:#070706;position:relative" title="${crystal.mineral} · ${crystal.zones.length} zones">
       <img src="${dataUrl}" style="width:100%;height:100%;display:block;image-rendering:pixelated" alt="${crystal.mineral} growth history">
+      ${twinBadge}
     </div>`;
   }
-  return mineralThumbHTML(crystal.mineral, size, crystal);
+  // Photo/placeholder fallback — also overlay the twin badge. Wrap the
+  // returned HTML in a positioned container so the absolute-positioned
+  // badge anchors correctly.
+  const base = mineralThumbHTML(crystal.mineral, size, crystal);
+  if (!twinBadge) return base;
+  return `<div style="position:relative;display:inline-block">${base}${twinBadge}</div>`;
 }
 
 // Shared renderer — builds the crystal row HTML + wires click-for-zones
@@ -16496,6 +16510,28 @@ function renderZoneBarCanvas(canvas, zones, opts = {}) {
       ctx.arc(cx, 3, Math.max(1.5, Math.min(2.5, zoneW / 3)), 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
+    }
+  }
+
+  // Phase 1b: phantom-boundary tick — a thin gray vertical line through
+  // all lanes marking zones where growth paused and resumed, leaving a
+  // ghost surface inside the crystal. Semantically correct to overlay
+  // every axis since the phantom is a whole-crystal event at that zone,
+  // not a lane-specific signal. Uses zone.is_phantom (already captured
+  // per-zone by buildCrystalRecord; no schema change needed).
+  if (opts.showPhantomTicks !== false) {
+    for (let i = 0; i < nZones; i++) {
+      if (!zones[i].is_phantom) continue;
+      const cx = i * zoneW + Math.floor(zoneW / 2);
+      ctx.strokeStyle = '#aaaaaa';
+      ctx.globalAlpha = 0.7;
+      ctx.lineWidth = Math.max(1, Math.min(2, zoneW * 0.5));
+      ctx.beginPath();
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, H);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = 1;
     }
   }
 }
