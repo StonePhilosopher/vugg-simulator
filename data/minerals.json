@@ -4756,7 +4756,7 @@
         }
       ],
       "class": "silicate",
-      "description": "Be₃Al₂Si₆O₁₈ — hexagonal cyclosilicate, prismatic crystals that can exceed a meter in length. Beryllium is the most incompatible common element in magmatic systems: it refuses to fit into any rock-forming mineral and accumulates in residual pegmatite fluid until beryl finally nucleates. That's why the crystals are enormous — by the time the threshold is reached, there's a lot of Be waiting to crystallize. Color requires trace elements from country rock, not from the pegmatite itself: Fe²⁺ → aquamarine (blue), Mn²⁺ → morganite (pink), Cr³⁺/V³⁺ → emerald (green). The emerald paradox: you need BOTH pegmatite fluid (Be source) AND ultramafic wall rock (Cr source) to meet.",
+      "description": "Be₃Al₂Si₆O₁₈ — hexagonal cyclosilicate; in this simulator's post-Round-7 architecture the `beryl` entry represents **goshenite** and the generic colorless/pale beryl that fires when no chromophore trace is above threshold. Emerald (Cr/V), morganite (Mn), heliodor (Fe+oxidizing), and aquamarine (Fe reducing/moderate) are each first-class species with their own engines. Beryllium is the most incompatible common element in magmatic systems: no rock-forming mineral takes it, so Be accumulates in residual pegmatite fluid until beryl finally nucleates at high threshold. That's why beryl crystals can be enormous — by the time the first crystal fires, there's a lot of Be waiting.",
       "scenarios": [
         "gem_pegmatite",
         "radioactive_pegmatite"
@@ -4779,11 +4779,8 @@
         "SiO2": 50
       },
       "trace_ingredients": {
-        "Fe": "aquamarine (blue)",
-        "Cr": "emerald (green) — requires ultramafic country-rock contact",
-        "V": "emerald (green, Cr alternative)",
-        "Mn": "morganite (pink)",
-        "Cs": "red beryl (extremely rare, not tracked here)"
+        "Fe": "pale tint if below aquamarine gate (Fe < 8 ppm); goshenite remains colorless otherwise",
+        "Cs": "red beryl / bixbite (extremely rare, not tracked here)"
       },
       "thermal_decomp_C": null,
       "thermal_decomp_reaction": null,
@@ -4800,25 +4797,14 @@
         "colorless_goshenite": {
           "default": true
         },
-        "blue_aquamarine": {
-          "trigger": "Fe > 8 ppm, no Cr/Mn"
-        },
-        "pink_morganite": {
-          "trigger": "Mn > 2 ppm"
-        },
-        "green_emerald": {
-          "trigger": "Cr > 0.5 ppm or V > 1 ppm (ultramafic contact)"
-        },
-        "yellow_heliodor": {
-          "trigger": "Fe > 15 ppm with oxidizing fluid"
-        }
+        "note": "Chromophore varieties (aquamarine/morganite/emerald/heliodor) now fire as their own engines; see data/minerals.json entries for each."
       },
       "narrate_function": "_narrate_beryl",
       "runtimes_present": [
         "vugg.py",
         "web/index.html"
       ],
-      "audit_status": "new (Minas Gerais Variant A, beryl). First Be consumer — Be is the incompatible element that accumulates forever until beryl threshold. Not yet in agent-api/vugg-agent.js.",
+      "audit_status": "Round 7 goshenite narrowing. Pre-R7 this entry was the variety dispatcher; R7 split emerald/aquamarine/morganite/heliodor out as first-class species. beryl/goshenite now fires only when no chromophore (Cr/V/Mn/Fe) is above its respective variety gate.",
       "class_color": "#1313eb"
     },
     "spodumene": {
@@ -6695,6 +6681,607 @@
       ],
       "audit_status": "new (round 4). Bi-vanadate — folded into phosphate class_color per 12-hue palette. End of the Bi oxidation sequence. Photocatalyst for water-splitting research. Not in agent-api/vugg-agent.js.",
       "class_color": "#13eb7f"
+    },
+    "emerald": {
+      "formula": "Be3Al2Si6O18",
+      "nucleation_sigma": 1.6,
+      "max_nucleation_count": 4,
+      "max_size_cm": 120.0,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "hex_prism",
+          "wall_spread": 0.2,
+          "void_reach": 0.9,
+          "vector": "projecting",
+          "trigger": "default — hexagonal prism, flat basal pinacoid (Cruzeiro/Muzo standard)"
+        },
+        {
+          "name": "trapiche",
+          "wall_spread": 0.3,
+          "void_reach": 0.6,
+          "vector": "tabular",
+          "trigger": "rare — 6-spoke wheel pattern, Colombian Muzo specialty"
+        }
+      ],
+      "class": "silicate",
+      "description": "Be₃Al₂Si₆O₁₈ with Cr³⁺ (or V³⁺) substituting for Al — the green variety of beryl. The 'emerald paradox': Cr is ultramafic, Be is pegmatitic; these chemistries almost never coexist. Emerald forms where pegmatite fluid meets ultramafic country rock (Colombia Muzo shale-hosted, Zambia Kagem schist-hosted, Cruzeiro pegmatite-only). Top Colombian gem emerald is rarer than diamond as gem material.",
+      "scenarios": [
+        "gem_pegmatite"
+      ],
+      "T_range_C": [
+        300,
+        650
+      ],
+      "T_optimum_C": [
+        350,
+        550
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Be": 10,
+        "Al": 6,
+        "SiO2": 50,
+        "Cr": 0.5
+      },
+      "trace_ingredients": {
+        "Cr": "principal chromophore (Al-site substitution, 100-3000 ppm)",
+        "V": "alternative chromophore (V³⁺, dominant in Colombian emerald)",
+        "Fe": "trace; present in all natural emeralds, not a chromophore at low levels"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": "weak red (Cr³⁺ emission, overlaps ruby but much weaker)",
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "hex_prism",
+      "color_rules": {
+        "green_emerald": {
+          "default": true,
+          "trigger": "Cr³⁺ 100-3000 ppm in Al site produces the saturated green"
+        },
+        "bluish_green_colombian": {
+          "trigger": "V³⁺-dominant (Muzo signature)"
+        },
+        "yellowish_green_zambian": {
+          "trigger": "Fe + Cr combination (Sandawana/Kagem)"
+        }
+      },
+      "narrate_function": "_narrate_emerald",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Option-A split from inline beryl variety detector. Fires when Cr ≥ 0.5 OR V ≥ 1.0 with beryl base conditions met. Highest priority in beryl-family chromophore dispatch.",
+      "class_color": "#1313eb"
+    },
+    "aquamarine": {
+      "formula": "Be3Al2Si6O18",
+      "nucleation_sigma": 1.3,
+      "max_nucleation_count": 4,
+      "max_size_cm": 200.0,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "hex_prism_long",
+          "wall_spread": 0.15,
+          "void_reach": 0.95,
+          "vector": "projecting",
+          "trigger": "default — long hexagonal prism, the Cruzeiro 'cigarette' habit"
+        },
+        {
+          "name": "stubby_tabular",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "late/cool stage — T < 380°C, flat pinacoid dominant"
+        },
+        {
+          "name": "etched",
+          "wall_spread": 0.3,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "late dissolution — hexagonal with pit texture from final acidic pulse"
+        }
+      ],
+      "class": "silicate",
+      "description": "Be₃Al₂Si₆O₁₈ with Fe²⁺ — the blue variety of beryl. Most abundant gem beryl variety; every gem-producing pegmatite yields aquamarine. Santa Maria (Pakistan Shigar) is the deep-blue benchmark; Cruzeiro and Padre Paraíso (Brazil Minas Gerais) are the volume producers. Fires when Fe ≥ 8 ppm in the Fe²⁺ state (non-oxidizing).",
+      "scenarios": [
+        "gem_pegmatite"
+      ],
+      "T_range_C": [
+        300,
+        650
+      ],
+      "T_optimum_C": [
+        350,
+        550
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Be": 10,
+        "Al": 6,
+        "SiO2": 50,
+        "Fe": 8
+      },
+      "trace_ingredients": {
+        "Fe": "principal chromophore (Fe²⁺, channel + Al sites)",
+        "Al": "structural"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "hex_prism_long",
+      "color_rules": {
+        "blue_aquamarine": {
+          "default": true,
+          "trigger": "Fe²⁺ in channel + Al sites"
+        },
+        "santa_maria": {
+          "trigger": "high Fe reducing, deep blue (Shigar Pakistan)"
+        },
+        "pale_seawater": {
+          "trigger": "low-moderate Fe, the standard collector habit"
+        }
+      },
+      "narrate_function": "_narrate_aquamarine",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Option-A split. Fires when Fe ≥ 8 with no higher-priority chromophore (Cr < 0.5, V < 1.0, Mn < 2.0) AND not in the heliodor band (Fe ≥ 15 AND O2 > 0.5 → heliodor takes priority).",
+      "class_color": "#1313eb"
+    },
+    "morganite": {
+      "formula": "Be3Al2Si6O18",
+      "nucleation_sigma": 1.4,
+      "max_nucleation_count": 4,
+      "max_size_cm": 80.0,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "tabular_hex",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "default — morganite's signature flat pinacoid-dominated plate"
+        },
+        {
+          "name": "stubby_prism",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ — stubby hexagonal prism"
+        }
+      ],
+      "class": "silicate",
+      "description": "Be₃Al₂Si₆O₁₈ with Mn²⁺ — the pink-to-peach variety of beryl. Mn²⁺ sits in the Al octahedral site; natural irradiation over geologic time partially oxidizes it to Mn³⁺, producing the pink hue. Named by George F. Kunz of Tiffany & Co (1911) for J.P. Morgan. Late-stage pegmatite mineral — Mn accumulates in fluid while earlier phases (feldspar, quartz, aquamarine) crystallize. Pala District CA, Madagascar, Minas Gerais are top sources.",
+      "scenarios": [
+        "gem_pegmatite"
+      ],
+      "T_range_C": [
+        300,
+        650
+      ],
+      "T_optimum_C": [
+        350,
+        550
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Be": 10,
+        "Al": 6,
+        "SiO2": 50,
+        "Mn": 2
+      },
+      "trace_ingredients": {
+        "Mn": "principal chromophore (Al-site Mn²⁺/Mn³⁺)",
+        "Cs": "minor — red-beryl/bixbite is Mn³⁺+Cs, extremely rare"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "tabular_hex",
+      "color_rules": {
+        "pink_morganite": {
+          "default": true,
+          "trigger": "Mn²⁺/Mn³⁺ mixed (irradiated), the standard collector habit"
+        },
+        "peach_morganite": {
+          "trigger": "Mn²⁺ dominant, less irradiation"
+        },
+        "salmon": {
+          "trigger": "intermediate Mn²⁺/Mn³⁺"
+        }
+      },
+      "narrate_function": "_narrate_morganite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Option-A split. Fires when Mn ≥ 2.0 with no Cr/V above emerald gate (Cr < 0.5, V < 1.0). Takes precedence over heliodor/aquamarine in the beryl-family chromophore dispatch.",
+      "class_color": "#1313eb"
+    },
+    "heliodor": {
+      "formula": "Be3Al2Si6O18",
+      "nucleation_sigma": 1.4,
+      "max_nucleation_count": 4,
+      "max_size_cm": 60.0,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "hex_prism",
+          "wall_spread": 0.2,
+          "void_reach": 0.9,
+          "vector": "projecting",
+          "trigger": "default — medium-length hexagonal prism"
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "late stage — rare flat pinacoid habit"
+        }
+      ],
+      "class": "silicate",
+      "description": "Be₃Al₂Si₆O₁₈ with Fe³⁺ (oxidized) — the yellow variety of beryl. Same Fe cation as aquamarine but in the 3+ oxidation state; the aquamarine/heliodor split is the cleanest redox record in the gem world. Volodarsk (Namibia) is the type locality for deep-yellow 'Namibian heliodor'; Urals (Russia) and Minas Gerais (Brazil) also produce.",
+      "scenarios": [
+        "gem_pegmatite"
+      ],
+      "T_range_C": [
+        300,
+        650
+      ],
+      "T_optimum_C": [
+        350,
+        550
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Be": 10,
+        "Al": 6,
+        "SiO2": 50,
+        "Fe": 15,
+        "O2": 0.5
+      },
+      "trace_ingredients": {
+        "Fe": "principal chromophore (Fe³⁺, oxidized state)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "hex_prism",
+      "color_rules": {
+        "yellow_heliodor": {
+          "default": true,
+          "trigger": "Fe³⁺ (oxidizing, Fe ≥ 15 + O2 > 0.5)"
+        },
+        "golden_namibian": {
+          "trigger": "Volodarsk deep-yellow signature"
+        },
+        "greenish_yellow": {
+          "trigger": "low-moderate Fe³⁺"
+        }
+      },
+      "narrate_function": "_narrate_heliodor",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Option-A split. Fires when Fe ≥ 15 AND O2 > 0.5 with no higher-priority chromophore (Cr/V/Mn). Takes precedence over aquamarine when Fe is both high and oxidized.",
+      "class_color": "#1313eb"
+    },
+    "corundum": {
+      "formula": "Al2O3",
+      "nucleation_sigma": 1.3,
+      "max_nucleation_count": 4,
+      "max_size_cm": 30.0,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "default marble-hosted — flat hexagonal plate, basal pinacoid"
+        },
+        {
+          "name": "barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high-T (>700°C) — steep dipyramidal barrel, basalt-hosted signature"
+        },
+        {
+          "name": "prism",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "moderate σ — short hexagonal prism"
+        },
+        {
+          "name": "rhombohedral",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "rare late — skewed trigonal form"
+        }
+      ],
+      "class": "oxide",
+      "description": "Al₂O₃ — trigonal close-packed oxide. The structural parent of ruby + sapphire, and the hardness-9 abrasive mineral (emery is Al₂O₃ + magnetite). **Corundum is SiO₂-undersaturated**: if any significant silica is present, Al + SiO₂ drives toward the Al₂SiO₅ polymorphs (kyanite/andalusite/sillimanite) or feldspar, not corundum. The defining constraint is SiO₂ < 50 ppm — the first upper-bound gate in this simulator. Forms in amphibolite-to-granulite-facies marble contact metamorphism (Mogok-type) and in basalt-hosted xenocrysts.",
+      "scenarios": [
+        "marble_contact_metamorphism"
+      ],
+      "T_range_C": [
+        400,
+        1000
+      ],
+      "T_optimum_C": [
+        600,
+        900
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Al": 15
+      },
+      "trace_ingredients": {
+        "Fe": "pale brown (below ruby gate)",
+        "Ti": "pale grey (below sapphire gate)",
+        "Cr": "trace colorless at <2 ppm (above becomes ruby)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [
+        "0001 basal (polysynthetic)",
+        "10̄11 rhombohedral"
+      ],
+      "acid_dissolution": null,
+      "habit": "tabular",
+      "color_rules": {
+        "white_colorless": {
+          "default": true,
+          "trigger": "pure Al2O3 — no chromophore trace"
+        },
+        "grey_ti_trace": {
+          "trigger": "trace Ti — pale grey corundum"
+        },
+        "brown_fe_trace": {
+          "trigger": "trace Fe — pale brown corundum"
+        }
+      },
+      "narrate_function": "_narrate_corundum",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Commit 3. First upper-bound-gated mineral in the sim: SiO2 < 50 blocks nucleation. Anchored to Mogok marble contact metamorphism scenario via gate + scenarios entry.",
+      "class_color": "#eb1313"
+    },
+    "ruby": {
+      "formula": "Al2O3",
+      "nucleation_sigma": 1.5,
+      "max_nucleation_count": 4,
+      "max_size_cm": 20.0,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "default Mogok marble-hosted — flat hexagonal plate"
+        },
+        {
+          "name": "barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "Mozambique/Madagascar basalt-hosted — steep dipyramid"
+        },
+        {
+          "name": "asterated",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "rutile-inclusion trigger — 6-rayed star ruby, rare 12-rayed"
+        }
+      ],
+      "class": "oxide",
+      "description": "Al₂O₃ + Cr³⁺ — the red chromium-bearing variety of corundum. Cr substitutes for Al at the 100-5000 ppm level in the Al octahedral site; the d-d transitions absorb blue-green and transmit red, plus fluoresce strongly red under UV (the 'ruby laser' physics). Top gem 'pigeon's blood' ruby from Mogok Burma shows medium-dark red with blue undertone from trace Fe + strong Cr fluorescence. Requires SiO₂ undersaturation (shared corundum constraint) AND Cr >= 2 ppm. Below Cr=2 the same corundum crystal would be pink sapphire or colorless.",
+      "scenarios": [
+        "marble_contact_metamorphism"
+      ],
+      "T_range_C": [
+        500,
+        1000
+      ],
+      "T_optimum_C": [
+        700,
+        900
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Al": 15,
+        "Cr": 2
+      },
+      "trace_ingredients": {
+        "Cr": "principal chromophore (Al-site Cr³⁺, 100-5000 ppm)",
+        "Fe": "trace — modulates fluorescence (low Fe = strong red fluorescence, Mogok signature)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": "strong red under LW + SW UV (Cr³⁺ emission at 694 nm) — diagnostic",
+      "twin_laws": [
+        "0001 basal (polysynthetic)",
+        "10̄11 rhombohedral"
+      ],
+      "acid_dissolution": null,
+      "habit": "tabular",
+      "color_rules": {
+        "red": {
+          "default": true,
+          "trigger": "Cr 100-5000 ppm; Mogok gem standard"
+        },
+        "pigeons_blood": {
+          "trigger": "Cr + trace Fe, strong fluorescence (Mogok signature)"
+        },
+        "cherry_red": {
+          "trigger": "higher Cr concentration, deeper saturation"
+        },
+        "pinkish_ruby": {
+          "trigger": "lower Cr (2-5 ppm), lighter saturation"
+        }
+      },
+      "narrate_function": "_narrate_ruby",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Commit 3. Shares the SiO2 < 50 upper gate with corundum family. Priority over pink-sapphire + colorless-corundum when Cr >= 2 ppm.",
+      "class_color": "#eb1313"
+    },
+    "sapphire": {
+      "formula": "Al2O3",
+      "nucleation_sigma": 1.4,
+      "max_nucleation_count": 4,
+      "max_size_cm": 25.0,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "barrel",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "default basalt-hosted — steep dipyramid, Montana Yogo habit"
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "marble-hosted — flat hex plate"
+        },
+        {
+          "name": "prism",
+          "wall_spread": 0.25,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "intermediate σ — short hex prism"
+        },
+        {
+          "name": "asterated",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "rutile-inclusion trigger — 6-rayed or 12-rayed star sapphire"
+        }
+      ],
+      "class": "oxide",
+      "description": "Al₂O₃ with Fe + Ti (blue), Fe alone (yellow), V (violet), or trace Cr (pink-orange padparadscha) — the non-red corundum varieties. Blue sapphire's color is the Fe²⁺-Ti⁴⁺ intervalence charge transfer (IVCT), a well-characterized gem mechanism requiring both cations at the right concentration. Kashmir 'cornflower blue' is the classic; Montana Yogo, Sri Lanka, Madagascar, Thailand/Cambodia are active sources. Shares the SiO₂ < 50 upper gate with corundum + ruby.",
+      "scenarios": [
+        "marble_contact_metamorphism"
+      ],
+      "T_range_C": [
+        500,
+        1000
+      ],
+      "T_optimum_C": [
+        700,
+        900
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Al": 15,
+        "Fe": 5
+      },
+      "trace_ingredients": {
+        "Fe": "principal blue/yellow chromophore (Fe³⁺ or Fe²⁺-Ti⁴⁺ IVCT)",
+        "Ti": "blue sapphire partner (Fe+Ti intervalence charge transfer)",
+        "V": "violet sapphire chromophore (Tanzania) at higher concentration",
+        "Cr": "pink/padparadscha below ruby gate (Cr < 2)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": "weak — Fe quenches Cr/V emission; yellow sapphire shows weak orange (Fe³⁺)",
+      "twin_laws": [
+        "0001 basal",
+        "10̄11 rhombohedral"
+      ],
+      "acid_dissolution": null,
+      "habit": "barrel",
+      "color_rules": {
+        "blue": {
+          "default": true,
+          "trigger": "Fe + Ti IVCT (Fe>=5 AND Ti>=0.5)"
+        },
+        "cornflower_kashmir": {
+          "trigger": "low Fe + perfect Ti balance; microscale silk scatters light"
+        },
+        "royal_blue": {
+          "trigger": "deeper Fe, Burma/Ceylon"
+        },
+        "yellow": {
+          "trigger": "Fe³⁺ alone (Fe >= 20, no Ti) — Sri Lanka, Montana"
+        },
+        "green": {
+          "trigger": "Fe alone no Ti, specific oxidation — Australia, Montana"
+        },
+        "pink_sapphire": {
+          "trigger": "Cr < 2 ppm (sub-ruby threshold)"
+        },
+        "padparadscha": {
+          "trigger": "Cr + trace Fe — pink-orange, Sri Lanka + Madagascar"
+        },
+        "violet": {
+          "trigger": "V >= 2 ppm — Tanzania"
+        },
+        "color_change": {
+          "trigger": "Cr + V + Fe combination — Umba Valley Tanzania"
+        }
+      },
+      "narrate_function": "_narrate_sapphire",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 7 Commit 3. Multi-color dispatch: blue (Fe+Ti), yellow (Fe alone ≥ 20), pink (Cr < 2), padparadscha (Cr + trace Fe), violet (V ≥ 2). Shares SiO2 < 50 upper gate with corundum/ruby.",
+      "class_color": "#eb1313"
     }
   }
 }

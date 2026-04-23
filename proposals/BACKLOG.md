@@ -117,11 +117,13 @@ These aren't todos — they're conventions to follow when doing the work above:
 ---
 
 ## 🎯 SIM_VERSION
-Currently **5** (bumped in commit `c8056ef` for the MVT O2 gap-fill — Tri-State + Sweetwater O2 0.0→0.25 unlocked dormant barite + celestine; subsequent commit `8b9c831` added Tsumeb early-acid event + Al bump within v5). Bump to 6 when:
-- Cd field shipped → bump to 6 (would shift Tri-State seed-42 output)
-- Wall porosity slider shipped → bump to 6 (changes existing scenario dissolution behavior even at default settings if the existing reactivity=1.0 baseline shifts)
-- Au-Te coupling lands → bump to 6 (would partition Bingham Au into telluride growth)
-- Halide-expansion round (atacamite, halite, chlorargyrite, etc.) → bump to 6
+Currently **7** (bumped in commit `97cb088` for Round 7 Commit 3 — corundum family + marble_contact_metamorphism scenario added; previous commit `a2f8f94` was the 5→6 bump for Round 7 Commit 2, beryl family split).
+
+Bump to 8 when:
+- Cd field shipped (would shift Tri-State seed-42 output)
+- Wall porosity slider shipped (changes existing scenario dissolution behavior at default settings)
+- Au-Te coupling lands (would partition Bingham Au into telluride growth)
+- Halide-expansion round (atacamite, halite, chlorargyrite, etc.)
 
 Defer the version bump decision to whoever ships those changes.
 
@@ -131,6 +133,8 @@ History:
 - v3: arsenate/molybdate supergene cascade engines — arsenopyrite + scorodite + ferrimolybdite (Apr 2026; commits `1c9cd29` → `0cd182f`)
 - v4: Round 5 sulfate expansion — barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite (Apr 2026; commits `ccb8ac6` → `a044e81`). Engine count 55 → 62. Coorong sabkha now produces the textbook gypsum + anhydrite + celestine + dolomite + aragonite assemblage. Brings the sulfate class from 1 mineral (selenite) to 8.
 - v5: Round 5 gap-fill follow-ups (Apr 2026; commits `c8056ef` + `8b9c831`). Tri-State + Sweetwater O2 0.0→0.25 (mildly reducing MVT brine — barite + celestine activate); barite + celestine supersat O2 saturation retuned to /0.4 (saturates at SO₄/H₂S boundary). Tsumeb early ev_supergene_acidification 4-pulse event + Al 3→25 + jarosite/alunite per-check 0.45 — unlocks scorodite + jarosite + alunite + brochantite at Tsumeb. Engine count unchanged (62); chemistry tweaks only.
+- v6: Round 7 Commit 2 — beryl family split (Apr 2026; commit `a2f8f94`). Split the inline-variety detector in `grow_beryl` into 5 first-class species: `beryl` (narrowed to goshenite/generic colorless), `emerald`, `aquamarine`, `morganite`, `heliodor`. Priority chain emerald > morganite > heliodor > aquamarine > goshenite baked into supersaturation gates via exclusion preconditions. `check_nucleation` uses one-per-step dispatch to prevent shared-Be-pool over-nucleation. Seed-42 `gem_pegmatite` now nucleates 4 emerald + 4 aquamarine + 3 morganite (goshenite naturally suppressed by chromophore priority). Engine count 62 → 66.
+- v7: Round 7 Commits 3+4 — corundum family + marble_contact_metamorphism scenario (Apr 2026; commit `97cb088`). First **UPPER-BOUND gate** in the sim: SiO2 < 50 is the defining corundum constraint (with any more silica, Al + SiO2 drives to feldspar/kyanite/sillimanite). Shared `_corundum_base_sigma()` helper. Three new species: `corundum` (colorless/generic), `ruby` (Cr ≥ 2), `sapphire` (Fe ≥ 5 with in-engine color dispatch). New scenario anchored to Mogok Stone Tract (Al=50, SiO2=20, Ca=800, Cr=3, Fe=8, Ti=1, pH=8). Violet-sapphire (V-only path) deferred — would break necessity-of-Fe gate test. Engine count 66 → 69. Total baseline scenarios 12 → 13.
 
 ---
 
@@ -184,14 +188,29 @@ A research doc following the `MINERALS-RESEARCH-SULFATES.md` shape would be the 
 
 ---
 
-## 💎 Round 7+ — Gemstones, now in progress
+## 💎 Round 7 — Gemstones ✅ SHIPPED (Apr 2026)
 
-**In progress: beryl family + corundum family** (commits forthcoming). Per `proposals/MINERALS-PROPOSAL-GEMSTONES.md`, splitting both into first-class species:
+**Completed: beryl family + corundum family.** Per `proposals/MINERALS-PROPOSAL-GEMSTONES.md` + `proposals/MINERALS-RESEARCH-GEMSTONES.md`, 7 new first-class species (mineral count 62 → 69) landed across 4 commits:
 
-- **Beryl family** (5 species): goshenite (the existing generic `beryl` entry), emerald, aquamarine, morganite, heliodor — all fit `scenario_gem_pegmatite` (Cruzeiro) with minor Cr bump for emerald. No new FluidChemistry fields.
-- **Corundum family** (3 species): corundum, ruby, sapphire — needs new `scenario_marble_contact_metamorphism` (Mogok) because no existing scenario has the Si-undersaturated Al-rich Ca-rich chemistry required. The SiO₂ < 50 gate is the first "low-silica" mineral constraint in the sim.
+- `a5fbaf6` — Commit 1: research compendium
+- `a2f8f94` — Commit 2: beryl family split (SIM_VERSION 5→6)
+- `97cb088` — Commits 3+4: corundum family + marble_contact_metamorphism scenario (SIM_VERSION 6→7)
+- (this commit) — Commit 5: locality chemistry realizations + BACKLOG cleanup
 
-This is the round where the `tools/new-mineral.py` scaffolding tool gets its first real-world trial — each of these 7 new species should drop from ~30 min to ~5 min of authoring.
+Notable outcomes:
+- **First upper-bound gate** in the sim: corundum family's SiO₂ < 50 constraint. This opens the door for the Al₂SiO₅ polymorph family (kyanite/andalusite/sillimanite) and other Si-undersaturated chemistry in future rounds.
+- **Scaffolding tool proved out**: `tools/new-mineral.py` reliably inserted 7 JSON entries, generated paste-ready code stubs, and the auto-added entries passed all 48 parameterized per-mineral tests after engine code landed. ~15 minutes per species (down from ~45 min pre-tool).
+- **Violet sapphire deferred**: V-only Tanzania variety would break the Fe-necessity gate test. Noted in Round 8+ candidates.
+- **Mogok marble-contact scenario**: seed-42 nucleates 1 ruby + 1 calcite + 2 aragonite. Ruby wins the Cr=3 priority race; sapphire needs Cr depletion + Fe>=5 before it fires, which the 180-step window doesn't always afford. Further scenario tuning may be needed if we want seed-42 sapphire — consider ev_chromium_depletion event scheduled mid-run.
+
+Deferred to a future round:
+- Violet sapphire (V-only Tanzania) — separate `violet_sapphire` species with V-gate
+- Color-change sapphire (Umba Valley, Cr+V+Fe) — could be a sub-variety of violet
+- Alexandrite (BeAl₂O₄ + Cr) — chrysoberyl family; needs Be+Al+Cr with no Si (related to corundum SiO₂-undersaturation)
+- Garnet supergroup (pyrope, almandine, spessartine, grossular, andradite, uvarovite) — clustered with D3
+- Tanzanite (Ca₂Al₃Si₃O₁₂(OH) + V) — zoisite/epidote family
+- Jade (jadeite = NaAlSi₂O₆ high-P + nephrite = Ca₂Mg₅Si₈O₂₂(OH)₂) — pressure-gated, clustered with D3
+- Chrysoberyl (BeAl₂O₄) — related to corundum SiO₂-undersaturation; could be its own small cluster
 
 ---
 

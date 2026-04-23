@@ -849,6 +849,39 @@
           "status": "not_applicable",
           "reason": "No S."
         }
+      },
+      "mineral_realizations_v7_gemstones": {
+        "emerald": {
+          "status": "active",
+          "seed_42_hit_rate": "100% (4 crystals nucleated, max ~44 µm)",
+          "chemistry_citation": "Cr=2.5 ppm in Cruzeiro fluid — from biotite-schist country rock contact (the 'pegmatite-only' emerald paragenesis type, per Giuliani et al. 2019 §3.3). Emerald engine fires first in the beryl-family chromophore priority chain via Cr/V gate. V³⁺ alternative path available (V=2 in Cruzeiro fluid is above the V≥1.0 secondary gate, but Cr wins the chromophore race because it's 100× more efficient at equal ppm).",
+          "reference": "Giuliani et al. 2019 (emerald classification); Cassedanne 1991 (Cruzeiro paragenesis)"
+        },
+        "aquamarine": {
+          "status": "active",
+          "seed_42_hit_rate": "100% (4 crystals, max ~170 µm)",
+          "chemistry_citation": "Fe=50 ppm reducing — but aquamarine gate checks Fe ≥ 8 AND NOT (Fe ≥ 15 AND O2 > 0.5). Cruzeiro O2=0.1 (reducing), so aquamarine wins over heliodor. In fluid above Fe=15, only the low O2 keeps it as aquamarine — a classic Cruzeiro/Minas Gerais signature.",
+          "reference": "Černý 2002 (pegmatite beryl); Adamo et al. 2008 (Fe oxidation)"
+        },
+        "morganite": {
+          "status": "active",
+          "seed_42_hit_rate": "100% (3 crystals, max ~31 µm)",
+          "chemistry_citation": "Mn=8 ppm — well above morganite Mn≥2.0 gate. Morganite late-stage Mn accumulation signature matches Cruzeiro's gem-pocket paragenesis per Cassedanne 1991.",
+          "reference": "Hawthorne et al. 2014 (Mn partitioning); Cassedanne 1991 (Cruzeiro)"
+        },
+        "heliodor": {
+          "status": "absent",
+          "reason": "Cruzeiro O2=0.1 (reducing) never rises to the heliodor O2>0.5 gate. A different pegmatite with oxidizing pocket fluid (Volodarsk Namibia type) would fire heliodor from similar Fe chemistry."
+        },
+        "beryl_goshenite": {
+          "status": "absent",
+          "reason": "Cr=2.5, Mn=8, Fe=50 — every chromophore gate is met, so the beryl/goshenite engine is always suppressed by priority exclusion. Goshenite would only fire in a Be-rich pocket that remained chromophore-clean."
+        },
+        "notes": [
+          "Priority chain in effect: emerald > morganite > heliodor > aquamarine > goshenite.",
+          "One beryl-family nucleation per step (shared Be pool) — dispatch evaluates candidates in priority order.",
+          "Seed-42 gem_pegmatite at SIM_VERSION=7 produces: 4 emerald, 4 aquamarine, 3 morganite (0 heliodor, 0 goshenite). The absence of heliodor/goshenite is a geological truth about this locality, not a bug."
+        ]
       }
     },
     "tsumeb": {
@@ -1152,6 +1185,70 @@
           "real_locality_evidence": "Persian Gulf sabkha + Coorong + Salar de Atacama all preserve interlayered anhydrite-gypsum-halite stratigraphy. Hardie 1967 phase diagram is the canonical reference."
         }
       }
+    },
+    "mogok_stone_tract": {
+      "display_name": "Mogok Stone Tract, Mandalay Region, Burma (Myanmar)",
+      "scenario_id": "marble_contact_metamorphism",
+      "host_formation": "Mogok Metamorphic Belt — Cambro-Ordovician dolomitic marble regionally metamorphosed at amphibolite-to-granulite facies during the Himalayan orogeny (~30 Ma), then intruded by leucogranite dykes at 17-22 Ma. The contact-metamorphic aureole between leucogranite and marble is the corundum (ruby/sapphire/spinel) paragenesis host.",
+      "production_history": "World's source of finest ruby for ~2000+ years. Mogok rubies have been exported since at least the 6th century; Mughal and Chinese imperial courts both prized them. 19th-century British colonial period saw industrialized extraction; modern production continues through the Burma state enterprise + small-scale mining. Mong Hsu district (1990s-discovered) expanded the Mogok-type paragenesis.",
+      "fluid": {
+        "Al": 50,
+        "SiO2": 20,
+        "Ca": 800,
+        "CO3": 50,
+        "Mg": 120,
+        "Cr": 3,
+        "Fe": 8,
+        "Ti": 1,
+        "V": 0.5,
+        "Mn": 0.5,
+        "Na": 20,
+        "K": 8,
+        "B": 0,
+        "F": 3,
+        "pH": 8.0,
+        "salinity": 2.0,
+        "O2": 0.3,
+        "temperature_C": 700,
+        "pressure_kbar": 3.0
+      },
+      "fluid_event_summary": "T profile 500 → 700 (peak) → 500 → 350°C over 180 steps. Peak metamorphism event at step 20 pumps fluid + bumps Cr +1.5 (additional from ultramafic serpentinite contact). Retrograde cooling at step 60. Fracture seal at step 150.",
+      "intentionally_zero": {
+        "B": "marble-hosted fluids carry no boron (no pegmatite contribution). B=0 is the correct baseline.",
+        "Be": "no beryllium source in dolomitic marble; beryl doesn't form here.",
+        "Li": "metamorphic fluid — lithium depleted relative to pegmatite fluids.",
+        "S": "non-sulfide regime; Mogok rubies don't coexist with sulfides."
+      },
+      "mineral_realizations_v7_gemstones": {
+        "ruby": {
+          "status": "active",
+          "seed_42_hit_rate": "100% (1 crystal nucleated at seed-42, max ~62 µm in 180 steps)",
+          "chemistry_citation": "Cr=3 ppm + 1.5 bump from peak_metamorphism event = 4.5 peak Cr. Well above ruby Cr≥2.0 gate. Takes priority over sapphire in the corundum-family chromophore priority chain — sapphire gate requires Fe ≥ 5 but is suppressed by Cr ≥ 2 until Cr depletes. Seed-42 run stays Cr-dominant throughout the growth window; sapphire does not fire. Color tag fires 'Mogok ruby red' at Cr 3-5 ppm; 'pigeon's blood' tag requires Cr > 5 AND Fe > 1 — achievable in the 700°C peak pulse.",
+          "reference": "Garnier et al. 2008 (marble-hosted ruby); Peretti et al. 2018"
+        },
+        "sapphire": {
+          "status": "absent_at_seed_42",
+          "reason": "Cr=3 (and event bump +1.5) holds above ruby gate throughout the 180-step window; sapphire priority exclusion prevents nucleation. Sapphire-blue gate (Fe ≥ 5 AND Ti ≥ 0.5) IS met by the fluid (Fe=8, Ti=1), but ruby takes precedence.",
+          "future_work": "To get sapphire nucleation visible in seed-42, one option is a scenario variant where Cr is locally depleted (e.g., split pocket where Cr arrives earlier and rubies deplete it before sapphire nucleation window opens). Alternatively, add a Kashmir-type sapphire scenario with Cr=0 (the real Kashmir paragenesis is Cr-poor)."
+        },
+        "corundum": {
+          "status": "absent_at_seed_42",
+          "reason": "Both Cr >= 2 (ruby) and Fe >= 5 (sapphire) conditions are met; colorless corundum has no path to fire. Corundum (colorless) fires only in Cr-poor AND Fe-poor marble contact fluids."
+        },
+        "notes": [
+          "Marble-hosted corundum paragenesis: the Mogok Stone Tract is the world's type locality. Gem ruby since at least 6th century CE.",
+          "Phlogopite, spinel, chondrodite, graphite, and rutile (as needle inclusions) are the typical Mogok accessory minerals — future scenario iterations could add them for paragenetic completeness.",
+          "Calcite + aragonite also nucleate at seed-42 (from Ca=800, CO3=50) — these are the 'marble' part of the marble-hosted ruby paragenesis; not a bug."
+        ]
+      },
+      "references": [
+        "Garnier, V. et al. 2008. 'Marble-hosted ruby deposits from Central and Southeast Asia: Towards a new genetic model.' Ore Geology Reviews 34: 169-191.",
+        "Peretti, A. et al. 2018. 'Update on corundum and its gem varieties.' Gems & Gemology special issue.",
+        "Searle, M.P. et al. 2007. 'Tectonic evolution of the Mogok metamorphic belt, Burma (Myanmar) constrained by U-Th-Pb dating of metamorphic and magmatic rocks.' Journal of Geology 115: 1-23.",
+        "Themelis, T. 2008. Gems & Mines of Mogok. Yangon: A&T Publishing. [Comprehensive Mogok mining history]"
+      ],
+      "audit_status": "Round 7 new locality. Fluid chemistry cross-referenced with scenario_marble_contact_metamorphism in vugg.py + web/index.html. Pending schema additions: none.",
+      "audit_pass": "R7-C5"
     }
   }
 }
