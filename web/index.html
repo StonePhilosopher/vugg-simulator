@@ -3096,6 +3096,8 @@ const MINERAL_SPEC_FALLBACK = {
   celestine: { formula: "SrSO4", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.3, thermal_decomp_C: 1100, fluorescence: null, twin_laws: [], acid_dissolution: null },
   jarosite: { formula: "KFe3(SO4)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 3, growth_rate_mult: 0.4, thermal_decomp_C: 250, fluorescence: null, twin_laws: [], acid_dissolution: null },
   alunite: { formula: "KAl3(SO4)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.35, thermal_decomp_C: 450, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  brochantite: { formula: "Cu4(SO4)(OH)6", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.35, thermal_decomp_C: 250, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  antlerite: { formula: "Cu3(SO4)(OH)4", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.35, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: null },
   goethite: { formula: "FeO(OH)", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.4, thermal_decomp_C: 300, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 }, nucleation_preferences: { grows_on: ["pyrite", "chalcopyrite", "marcasite"], forms_pseudomorph_after: ["pyrite"] } },
   topaz: { formula: "Al2SiO4(F,OH)2", nucleation_sigma: 1.4, max_size_cm: 200, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: { activator: "trace Ti", threshold_ppm: 2, color: "weak_greenish_LW" }, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
   tourmaline: { formula: "Na(Fe,Li,Al)3Al6(BO3)3Si6O18(OH)4", nucleation_sigma: 1.3, max_size_cm: 300, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
@@ -3258,7 +3260,7 @@ const MINERAL_GAME_COLORS = {
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0', molybdenite: '#707888',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
-  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', feldspar: '#f0d0b0'
+  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', feldspar: '#f0d0b0'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -4361,6 +4363,48 @@ class VugConditions {
       sigma *= Math.max(0.4, 1.0 - 0.2 * (4 - this.fluid.pH));
     } else if (this.fluid.pH > 9) {
       sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Brochantite (Cu₄(SO₄)(OH)₆) — wet-supergene Cu sulfate; emerald-green
+  // prismatic crystals. The higher-pH end (pH 4-7) of the brochantite ↔
+  // antlerite fork. Statue of Liberty patina mineral.
+  supersaturation_brochantite() {
+    if (this.fluid.Cu < 10 || this.fluid.S < 15 || this.fluid.O2 < 0.5) return 0;
+    if (this.fluid.pH < 3 || this.fluid.pH > 7.5) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 40.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 30.0, 2.5);
+    const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+    let sigma = cu_f * s_f * o2_f;
+    if (this.temperature > 50) {
+      sigma *= Math.exp(-0.05 * (this.temperature - 50));
+    }
+    if (this.fluid.pH < 4) {
+      sigma *= Math.max(0.3, 1.0 - 0.5 * (4 - this.fluid.pH));
+    } else if (this.fluid.pH > 6) {
+      sigma *= Math.max(0.3, 1.0 - 0.4 * (this.fluid.pH - 6));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Antlerite (Cu₃(SO₄)(OH)₄) — dry-acid Cu sulfate; pH 1-3.5 stability.
+  // The lower-pH end of the brochantite ↔ antlerite fork. Chuquicamata
+  // type ore phase.
+  supersaturation_antlerite() {
+    if (this.fluid.Cu < 15 || this.fluid.S < 20 || this.fluid.O2 < 0.5) return 0;
+    if (this.fluid.pH > 4 || this.fluid.pH < 0.5) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 40.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 30.0, 2.5);
+    const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+    let sigma = cu_f * s_f * o2_f;
+    if (this.temperature > 50) {
+      sigma *= Math.exp(-0.05 * (this.temperature - 50));
+    }
+    if (this.fluid.pH > 3.5) {
+      sigma *= Math.max(0.2, 1.0 - 0.5 * (this.fluid.pH - 3.5));
+    } else if (this.fluid.pH < 1.5) {
+      sigma *= Math.max(0.4, 1.0 - 0.3 * (1.5 - this.fluid.pH));
     }
     return Math.max(sigma, 0);
   }
@@ -6713,6 +6757,125 @@ function grow_celestine(crystal, conditions, step) {
   });
 }
 
+// Brochantite — Cu4(SO4)(OH)6
+// Wet-supergene Cu sulfate; emerald-green prismatic. Forks with antlerite
+// at pH 3.5. Substrate prefers dissolving Cu sulfides (chalcocite/covellite).
+function grow_brochantite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_brochantite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 2 && (
+      conditions.fluid.pH < 2.8 || conditions.fluid.pH > 7.5
+    )) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.12);
+      conditions.fluid.Cu += dissolved_um * 0.5;
+      conditions.fluid.S  += dissolved_um * 0.3;
+      const cause = conditions.fluid.pH < 2.8
+        ? 'pH < 3 → antlerite stable'
+        : 'pH > 7 → tenorite/malachite stable';
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `dissolution (${cause}) — brochantite releases Cu²⁺ + SO₄²⁻`
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'drusy_crust';
+    crystal.dominant_forms = ['microcrystalline druse', 'emerald-green coating'];
+    habit_note = 'drusy emerald-green brochantite crust on Cu-bearing wall';
+  } else if (excess > 0.8) {
+    crystal.habit = 'acicular_tuft';
+    crystal.dominant_forms = ['radiating acicular needle-tufts'];
+    habit_note = 'acicular emerald-green brochantite tufts radiating from substrate';
+  } else if (excess > 0.3) {
+    crystal.habit = 'short_prismatic';
+    crystal.dominant_forms = ['stubby emerald-green prisms'];
+    habit_note = 'stubby emerald-green brochantite prisms — the Atacama / Bisbee habit';
+  } else {
+    crystal.habit = 'botryoidal';
+    crystal.dominant_forms = ['globular aggregates'];
+    habit_note = 'botryoidal brochantite — globular emerald-green aggregates';
+  }
+
+  if (conditions.fluid.Cl > 100) {
+    habit_note += '; Cl-rich (would compete with atacamite — Cl-Cu hydroxychloride)';
+  }
+
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.001,
+    note: habit_note
+  });
+}
+
+// Antlerite — Cu3(SO4)(OH)4
+// Dry-acid Cu sulfate; pH 1-3.5 stability. Substrate-prefers dissolving
+// brochantite (the direct fork product when acidification arrives).
+function grow_antlerite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_antlerite();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 2 && conditions.fluid.pH > 4.2) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.15);
+      conditions.fluid.Cu += dissolved_um * 0.5;
+      conditions.fluid.S  += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: 'dissolution (pH > 3.5 → brochantite stable) — antlerite releases Cu²⁺ + SO₄²⁻'
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'granular';
+    crystal.dominant_forms = ['massive granular emerald-green'];
+    habit_note = 'massive granular antlerite — Chuquicamata habit';
+  } else if (excess > 0.8) {
+    crystal.habit = 'acicular';
+    crystal.dominant_forms = ['thin needles', 'radiating aggregates'];
+    habit_note = 'acicular antlerite — radiating dark-green needles';
+  } else if (excess > 0.3) {
+    crystal.habit = 'short_prismatic';
+    crystal.dominant_forms = ['stubby green prisms'];
+    habit_note = 'stubby emerald-green antlerite prisms — visually identical to brochantite, distinguished by acid-resistance test';
+  } else {
+    crystal.habit = 'druzy';
+    crystal.dominant_forms = ['microcrystalline druse'];
+    habit_note = 'druzy antlerite microcrystals on dissolving Cu sulfide';
+  }
+
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.004, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.001,
+    note: habit_note
+  });
+}
+
 // Jarosite — KFe³⁺₃(SO4)2(OH)6
 // Yellow AMD Fe-sulfate; substrate-prefers dissolving pyrite/marcasite.
 // Dissolves above pH 4 → releases K + Fe³⁺ + SO4 (jarosite-to-goethite
@@ -8082,6 +8245,8 @@ const MINERAL_ENGINES = {
   celestine: grow_celestine,
   jarosite: grow_jarosite,
   alunite: grow_alunite,
+  brochantite: grow_brochantite,
+  antlerite: grow_antlerite,
   selenite: grow_selenite,
   feldspar: grow_feldspar,
   adamite: grow_adamite,
@@ -9972,6 +10137,45 @@ class VugSimulator {
         }
         const c = this.nucleate('alunite', pos, sigma_alu);
         this.log.push(`  ✦ NUCLEATION: ⚪ Alunite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_alu.toFixed(2)}, K=${this.conditions.fluid.K.toFixed(0)}, Al=${this.conditions.fluid.Al.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — advanced argillic alteration index`);
+      }
+    }
+
+    // Brochantite nucleation — wet-supergene Cu sulfate (pH 4-7 fork end).
+    // Substrate priority: dissolving Cu sulfides > active Cu sulfides > vug wall.
+    const sigma_brn_sulf = this.conditions.supersaturation_brochantite();
+    if (sigma_brn_sulf > 1.0 && !this._atNucleationCap('brochantite')) {
+      if (rng.random() < 0.18) {
+        let pos = 'vug wall';
+        const diss_chc_brn = this.crystals.filter(c => c.mineral === 'chalcocite' && c.dissolved);
+        const diss_cov_brn = this.crystals.filter(c => c.mineral === 'covellite' && c.dissolved);
+        const active_chc_brn = this.crystals.filter(c => c.mineral === 'chalcocite' && c.active);
+        if (diss_chc_brn.length && rng.random() < 0.7) {
+          pos = `on dissolving chalcocite #${diss_chc_brn[0].crystal_id}`;
+        } else if (diss_cov_brn.length && rng.random() < 0.6) {
+          pos = `on dissolving covellite #${diss_cov_brn[0].crystal_id}`;
+        } else if (active_chc_brn.length && rng.random() < 0.4) {
+          pos = `on chalcocite #${active_chc_brn[0].crystal_id}`;
+        }
+        const c = this.nucleate('brochantite', pos, sigma_brn_sulf);
+        this.log.push(`  ✦ NUCLEATION: 🟢 Brochantite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_brn_sulf.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — emerald-green Cu sulfate`);
+      }
+    }
+
+    // Antlerite nucleation — dry-acid Cu sulfate (pH 1-3.5 fork end).
+    // Substrate-prefers dissolving brochantite (pH-fork conversion).
+    const sigma_ant = this.conditions.supersaturation_antlerite();
+    if (sigma_ant > 1.0 && !this._atNucleationCap('antlerite')) {
+      if (rng.random() < 0.18) {
+        let pos = 'vug wall';
+        const diss_brn_ant = this.crystals.filter(c => c.mineral === 'brochantite' && c.dissolved);
+        const diss_chc_ant = this.crystals.filter(c => c.mineral === 'chalcocite' && c.dissolved);
+        if (diss_brn_ant.length && rng.random() < 0.8) {
+          pos = `on dissolving brochantite #${diss_brn_ant[0].crystal_id} (pH-fork conversion)`;
+        } else if (diss_chc_ant.length && rng.random() < 0.5) {
+          pos = `on dissolving chalcocite #${diss_chc_ant[0].crystal_id}`;
+        }
+        const c = this.nucleate('antlerite', pos, sigma_ant);
+        this.log.push(`  ✦ NUCLEATION: 🟢 Antlerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ant.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — dry-acid Chuquicamata Cu sulfate`);
       }
     }
 
@@ -15412,7 +15616,7 @@ const IDLE_MINERAL_COLORS = {
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
-  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', feldspar: '#f0d0b0'
+  wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', feldspar: '#f0d0b0'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

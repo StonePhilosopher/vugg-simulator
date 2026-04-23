@@ -2787,6 +2787,197 @@
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The advanced argillic alteration index mineral. Activates after Bingham event_oxidation when both pH drops AND O2 rises (porphyry lithocap simulation). Tsumeb K=10 borderline + Al=3 too low + pH=6.8 too high — won't form there. Bisbee K=80 + Al=20 + S=150 strong but needs ev_uplift_weathering for the right pH/O2 window. Closes a known modeling gap: previously the sim had no representation of advanced argillic alteration (the kilometers-wide lithocap above porphyry-Cu intrusions).",
       "class_color": "#eb137f"
     },
+    "brochantite": {
+      "formula": "Cu4(SO4)(OH)6",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "short_prismatic",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "default — stubby emerald-green prisms (Atacama / Bisbee display habit)"
+        },
+        {
+          "name": "acicular_tuft",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ — radiating acicular needle-tufts"
+        },
+        {
+          "name": "drusy_crust",
+          "wall_spread": 0.85,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "high σ — emerald-green microcrystalline druse on Cu-bearing wall"
+        },
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "low σ, low T — globular emerald-green aggregates (rarer; can be confused with malachite)"
+        }
+      ],
+      "class": "sulfate",
+      "description": "Cu₄(SO₄)(OH)₆, the wet-supergene Cu sulfate. Emerald-green prismatic crystals, distinguishable from malachite by distinctly darker green and prismatic habit (vs malachite's botryoidal). The higher-pH end (pH 4-7) of the brochantite ↔ antlerite Cu-sulfate fork — acidification (pH < 3) converts brochantite to antlerite + H₂O; alkalinization (pH > 7) converts to tenorite/malachite. Atacama Desert (Chile) supergene Cu deposits — Chuquicamata, Mansa Mina, Mantos Blancos, El Tesoro — have brochantite as a major component. Bisbee, Mt Lyell (Tasmania), Cap Garonne (France), Cananea (Mexico) all have well-known specimens. Statue of Liberty's iconic green patina is largely brochantite (chloride-rich harbor air drives the SO₄/CO₃ partition toward sulfate, not malachite).",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        80
+      ],
+      "T_optimum_C": [
+        15,
+        40
+      ],
+      "T_behavior": "supergene_window",
+      "pH_dissolution_below": 2.8,
+      "pH_dissolution_above": 7.5,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 10,
+        "S": 15,
+        "O2": 0.5
+      },
+      "trace_ingredients": {
+        "Cl": "atacamite competition (Cu hydroxychloride wins when Cl > SO4)"
+      },
+      "thermal_decomp_C": 250,
+      "thermal_decomp_reaction": "Cu4(SO4)(OH)6 -> tenorite (CuO) + SO3 + H2O (dehydration)",
+      "thermal_decomp_products": {
+        "Cu": 0.5,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 2.8,
+        "reaction": "dissolves below pH 3 (acidification → antlerite stable) OR above pH 7.5 (alkalinization → tenorite/malachite stable). Two-sided fork dissolution.",
+        "products": {
+          "Cu": 0.5,
+          "S": 0.3
+        },
+        "status": "newly_added",
+        "note": "Two-sided pH fork: brochantite stable pH 3-7. Outside that window dissolves into either antlerite or tenorite/malachite cation pool."
+      },
+      "habit": "short_prismatic",
+      "color_rules": {
+        "emerald_green": {
+          "default": true
+        },
+        "dark_green": {
+          "trigger": "massive prismatic (Atacama habit)"
+        }
+      },
+      "narrate_function": "_narrate_brochantite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The wet-supergene Cu sulfate; higher-pH end of brochantite ↔ antlerite fork. Activates in Bisbee after ev_uplift_weathering when Cu (delivered by primary cooling event) sits in oxidizing pH 4-7 fluid. Cl > 100 flag triggers atacamite-competition note (atacamite is a queued halide-expansion target).",
+      "class_color": "#eb137f"
+    },
+    "antlerite": {
+      "formula": "Cu3(SO4)(OH)4",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "short_prismatic",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "default — stubby emerald-green prisms (visually identical to brochantite)"
+        },
+        {
+          "name": "acicular",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "moderate σ — radiating thin dark-green needles"
+        },
+        {
+          "name": "granular",
+          "wall_spread": 0.9,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "high σ — massive granular emerald-green (Chuquicamata habit)"
+        },
+        {
+          "name": "druzy",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — microcrystalline druse on dissolving Cu sulfide"
+        }
+      ],
+      "class": "sulfate",
+      "description": "Cu₃(SO₄)(OH)₄, the dry-acid end of the brochantite ↔ antlerite Cu-sulfate fork (pH 1-3.5 stability). Same emerald-green color as brochantite — visually indistinguishable in hand specimen — distinguished by chemistry (Cu₃ vs Cu₄, more SO₄ per Cu unit) and acid-resistance test (antlerite dissolves in dilute HCl; brochantite resists). Type locality Antler mine (Mohave County, Arizona — Hillebrand 1889). World-class deposits at Chuquicamata (Chile) where antlerite was the dominant supergene Cu mineral mined 1920s-50s before the deeper hypogene chalcocite zone became the modern target. Coexists with brochantite + atacamite + chalcanthite at most Atacama supergene Cu deposits. The pH-fork mechanism (Pollard et al. 1992) is the most diagnostic chemistry in arid-supergene Cu mineralogy.",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        80
+      ],
+      "T_optimum_C": [
+        15,
+        40
+      ],
+      "T_behavior": "supergene_window",
+      "pH_dissolution_above": 4.2,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 15,
+        "S": 20,
+        "O2": 0.5
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Cu3(SO4)(OH)4 -> tenorite + SO3 + H2O (dehydration)",
+      "thermal_decomp_products": {
+        "Cu": 0.5,
+        "S": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.2,
+        "reaction": "dissolves above pH 3.5 (neutralization → brochantite stable). Below pH 1 → chalcanthite (extreme acid; not in sim).",
+        "products": {
+          "Cu": 0.5,
+          "S": 0.4
+        },
+        "status": "newly_added",
+        "note": "Inverse acid_dissolution semantics: antlerite is the acid-side mineral; alkalinization destabilizes it. Same pattern as scorodite/jarosite/alunite."
+      },
+      "habit": "short_prismatic",
+      "color_rules": {
+        "emerald_green": {
+          "default": true
+        },
+        "dark_green": {
+          "trigger": "massive granular Chuquicamata habit"
+        }
+      },
+      "narrate_function": "_narrate_antlerite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The dry-acid Cu sulfate; lower-pH end of brochantite ↔ antlerite fork. Activates in Bisbee post-ev_uplift_weathering if pH drops below 3.5 (acidification). The brochantite ↔ antlerite reversible conversion (substrate priority on dissolving brochantite at 80%) implements the Atacama / Chuquicamata pH-cycling paragenesis.",
+      "class_color": "#eb137f"
+    },
     "scorodite": {
       "formula": "FeAsO4·2H2O",
       "nucleation_sigma": 1.0,

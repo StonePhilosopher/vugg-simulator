@@ -2363,6 +2363,77 @@ class VugConditions:
             sigma *= max(0.4, 1.0 - 0.2 * (self.fluid.pH - 9))
         return max(sigma, 0)
 
+    def supersaturation_brochantite(self) -> float:
+        """Brochantite (Cu₄(SO₄)(OH)₆) — the wet-supergene Cu sulfate.
+
+        Emerald-green prismatic crystals; the higher-pH end of the
+        brochantite ↔ antlerite pH-fork pair. Forms at pH 4-7 in
+        oxidizing supergene conditions; takes over from malachite
+        when carbonate buffering tapers off and sulfate residue
+        dominates. Atacama Desert (Chile), Bisbee, Mt Lyell, Tsumeb.
+
+        Forks with antlerite below pH 3.5 (acidification converts
+        brochantite → antlerite + H₂O; reverse with neutralization).
+        Above pH 7 dissolves to tenorite/malachite.
+
+        Source: Pollard et al. 1992 (Mineralogical Magazine 56);
+        Vasconcelos et al. 1994 (Atacama supergene Cu geochronology);
+        Williams 1990 ("Oxide Zone Geochemistry" — standard reference).
+        """
+        if (self.fluid.Cu < 10 or self.fluid.S < 15
+                or self.fluid.O2 < 0.5):
+            return 0
+        if self.fluid.pH < 3 or self.fluid.pH > 7.5:
+            return 0  # hard gates outside stability window
+        cu_f = min(self.fluid.Cu / 40.0, 2.5)
+        s_f = min(self.fluid.S / 30.0, 2.5)
+        o2_f = min(self.fluid.O2 / 1.0, 1.5)
+        sigma = cu_f * s_f * o2_f
+        # Strongly low-T (supergene only)
+        if self.temperature > 50:
+            sigma *= math.exp(-0.05 * (self.temperature - 50))
+        # pH peak 5-6, falls outside 4-7
+        if self.fluid.pH < 4:
+            sigma *= max(0.3, 1.0 - 0.5 * (4 - self.fluid.pH))
+        elif self.fluid.pH > 6:
+            sigma *= max(0.3, 1.0 - 0.4 * (self.fluid.pH - 6))
+        return max(sigma, 0)
+
+    def supersaturation_antlerite(self) -> float:
+        """Antlerite (Cu₃(SO₄)(OH)₄) — the dry-acid-supergene Cu sulfate.
+
+        Same emerald-green color as brochantite but pH 1-3.5 stability —
+        the lower-pH end of the brochantite ↔ antlerite fork. Type locality
+        Antler mine (Mohave County, AZ); world-class deposits at
+        Chuquicamata (Chile) where antlerite was the dominant supergene Cu
+        mineral mined 1920s-50s. Cu₃ vs brochantite's Cu₄ — more SO₄ per Cu.
+
+        Forks with brochantite above pH 3.5 (neutralization converts
+        antlerite → brochantite). Below pH 1 dissolves to chalcanthite
+        (CuSO₄·5H₂O — not in sim).
+
+        Source: Hillebrand 1889 (type description); Pollard et al. 1992
+        (joint brochantite-antlerite stability paper).
+        """
+        if (self.fluid.Cu < 15 or self.fluid.S < 20
+                or self.fluid.O2 < 0.5):
+            return 0
+        if self.fluid.pH > 4 or self.fluid.pH < 0.5:
+            return 0  # hard gates: needs strong acid, but not extreme
+        cu_f = min(self.fluid.Cu / 40.0, 2.5)
+        s_f = min(self.fluid.S / 30.0, 2.5)
+        o2_f = min(self.fluid.O2 / 1.0, 1.5)
+        sigma = cu_f * s_f * o2_f
+        # Strongly low-T
+        if self.temperature > 50:
+            sigma *= math.exp(-0.05 * (self.temperature - 50))
+        # pH peak 2-3, falls outside 1-3.5
+        if self.fluid.pH > 3.5:
+            sigma *= max(0.2, 1.0 - 0.5 * (self.fluid.pH - 3.5))
+        elif self.fluid.pH < 1.5:
+            sigma *= max(0.4, 1.0 - 0.3 * (1.5 - self.fluid.pH))
+        return max(sigma, 0)
+
     def supersaturation_jarosite(self) -> float:
         """Jarosite (KFe³⁺₃(SO₄)₂(OH)₆) — the diagnostic acid-mine-drainage mineral.
 
@@ -6660,6 +6731,132 @@ def grow_barite(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
     )
 
 
+def grow_brochantite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Brochantite (Cu₄(SO₄)(OH)₆) growth — emerald-green wet-supergene Cu sulfate.
+
+    The higher-pH end of the brochantite ↔ antlerite Cu-sulfate fork.
+    Acidification (pH < 3) converts brochantite to antlerite + H₂O;
+    alkalinization (pH > 7) converts to tenorite/malachite. Substrate
+    prefers dissolving Cu sulfides (chalcocite, covellite). The Statue
+    of Liberty's patina is largely brochantite (chloride-rich harbor
+    air drives this composition over malachite).
+    """
+    sigma = conditions.supersaturation_brochantite()
+
+    if sigma < 1.0:
+        # Acidification dissolution → ions become available for antlerite
+        # nucleation. Alkalinization dissolution → tenorite/malachite.
+        # Hysteresis at pH 2.8 / 7.5 to avoid oscillation.
+        if crystal.total_growth_um > 2 and (
+            conditions.fluid.pH < 2.8 or conditions.fluid.pH > 7.5
+        ):
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.12)
+            conditions.fluid.Cu += dissolved_um * 0.5
+            conditions.fluid.S += dissolved_um * 0.3
+            cause = "pH < 3 → antlerite stable" if conditions.fluid.pH < 2.8 else "pH > 7 → tenorite/malachite stable"
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"dissolution ({cause}) — brochantite releases Cu²⁺ + SO₄²⁻"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.5:
+        crystal.habit = "drusy_crust"
+        crystal.dominant_forms = ["microcrystalline druse", "emerald-green coating"]
+        habit_note = "drusy emerald-green brochantite crust on Cu-bearing wall"
+    elif excess > 0.8:
+        crystal.habit = "acicular_tuft"
+        crystal.dominant_forms = ["radiating acicular needle-tufts"]
+        habit_note = "acicular emerald-green brochantite tufts radiating from substrate"
+    elif excess > 0.3:
+        crystal.habit = "short_prismatic"
+        crystal.dominant_forms = ["stubby emerald-green prisms"]
+        habit_note = "stubby emerald-green brochantite prisms — the Atacama / Bisbee habit"
+    else:
+        crystal.habit = "botryoidal"
+        crystal.dominant_forms = ["globular aggregates"]
+        habit_note = "botryoidal brochantite — globular emerald-green aggregates"
+
+    # Cl-rich systems push toward atacamite competition (not yet in sim;
+    # flag in note when Cl present)
+    if conditions.fluid.Cl > 100:
+        habit_note += "; Cl-rich (would compete with atacamite — Cl-Cu hydroxychloride)"
+
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.006, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.003, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.001,
+        note=habit_note
+    )
+
+
+def grow_antlerite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Antlerite (Cu₃(SO₄)(OH)₄) growth — the dry-acid Cu sulfate.
+
+    Same emerald-green color as brochantite but pH 1-3.5 stability.
+    Substrate-prefers dissolving brochantite (the direct fork product
+    when acidification arrives). Dissolves above pH 3.5 → brochantite
+    forms; below pH 1 → chalcanthite (extreme acid, not in sim).
+    """
+    sigma = conditions.supersaturation_antlerite()
+
+    if sigma < 1.0:
+        # Neutralization → brochantite stable. Hysteresis at pH 4.2.
+        if crystal.total_growth_um > 2 and conditions.fluid.pH > 4.2:
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.15)
+            conditions.fluid.Cu += dissolved_um * 0.5
+            conditions.fluid.S += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note="dissolution (pH > 3.5 → brochantite stable) — antlerite releases Cu²⁺ + SO₄²⁻"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.5:
+        crystal.habit = "granular"
+        crystal.dominant_forms = ["massive granular emerald-green"]
+        habit_note = "massive granular antlerite — Chuquicamata habit"
+    elif excess > 0.8:
+        crystal.habit = "acicular"
+        crystal.dominant_forms = ["thin needles", "radiating aggregates"]
+        habit_note = "acicular antlerite — radiating dark-green needles"
+    elif excess > 0.3:
+        crystal.habit = "short_prismatic"
+        crystal.dominant_forms = ["stubby green prisms"]
+        habit_note = "stubby emerald-green antlerite prisms — visually identical to brochantite, distinguished by acid-resistance test"
+    else:
+        crystal.habit = "druzy"
+        crystal.dominant_forms = ["microcrystalline druse"]
+        habit_note = "druzy antlerite microcrystals on dissolving Cu sulfide"
+
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.006, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.004, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        trace_Fe=conditions.fluid.Fe * 0.001,
+        note=habit_note
+    )
+
+
 def grow_jarosite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Jarosite (KFe³⁺₃(SO₄)₂(OH)₆) growth — the AMD-yellow Fe sulfate.
 
@@ -6940,6 +7137,8 @@ MINERAL_ENGINES = {
     "celestine": grow_celestine,
     "jarosite": grow_jarosite,
     "alunite": grow_alunite,
+    "brochantite": grow_brochantite,
+    "antlerite": grow_antlerite,
     "selenite": grow_selenite,
     "topaz": grow_topaz,
     "tourmaline": grow_tourmaline,
@@ -7013,6 +7212,8 @@ THERMAL_DECOMPOSITION = {
     "celestine":     (1100, "SrSO₄ → SrO + SO₃ (decomposition; high T — outside normal sim range)", {"Sr": 0.5, "S": 0.4}),
     "jarosite":      (250, "KFe³⁺₃(SO₄)₂(OH)₆ → K-jarosite dehydration → hematite + K-sulfate (loses lattice OH)", {"K": 0.3, "Fe": 0.5, "S": 0.3}),
     "alunite":       (450, "KAl₃(SO₄)₂(OH)₆ → corundum + K-Al-sulfate (loses lattice OH; basis for the early-1900s K-fertilizer process)", {"K": 0.3, "Al": 0.4, "S": 0.3}),
+    "brochantite":   (250, "Cu₄(SO₄)(OH)₆ → tenorite (CuO) + SO₃ + H₂O (dehydration)", {"Cu": 0.5, "S": 0.3}),
+    "antlerite":     (200, "Cu₃(SO₄)(OH)₄ → tenorite + SO₃ + H₂O (dehydration)", {"Cu": 0.5, "S": 0.4}),
 }
 
 
@@ -9869,6 +10070,47 @@ class VugSimulator:
                               f"K={self.conditions.fluid.K:.0f}, Al={self.conditions.fluid.Al:.0f}, "
                               f"pH={self.conditions.fluid.pH:.1f})")
 
+        # Brochantite nucleation — wet-supergene Cu sulfate (pH 4-7 fork
+        # end). Substrate priority: dissolving Cu sulfides (chalcocite,
+        # covellite) > Cu sulfide > vug wall.
+        sigma_brn = self.conditions.supersaturation_brochantite()
+        if sigma_brn > 1.0 and not self._at_nucleation_cap("brochantite"):
+            if random.random() < 0.18:
+                pos = "vug wall"
+                diss_chc_brn = [c for c in self.crystals if c.mineral == "chalcocite" and c.dissolved]
+                diss_cov_brn = [c for c in self.crystals if c.mineral == "covellite" and c.dissolved]
+                active_chc_brn = [c for c in self.crystals if c.mineral == "chalcocite" and c.active]
+                if diss_chc_brn and random.random() < 0.7:
+                    pos = f"on dissolving chalcocite #{diss_chc_brn[0].crystal_id}"
+                elif diss_cov_brn and random.random() < 0.6:
+                    pos = f"on dissolving covellite #{diss_cov_brn[0].crystal_id}"
+                elif active_chc_brn and random.random() < 0.4:
+                    pos = f"on chalcocite #{active_chc_brn[0].crystal_id}"
+                c = self.nucleate("brochantite", position=pos, sigma=sigma_brn)
+                self.log.append(f"  ✦ NUCLEATION: Brochantite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_brn:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, S={self.conditions.fluid.S:.0f}, "
+                              f"pH={self.conditions.fluid.pH:.1f})")
+
+        # Antlerite nucleation — dry-acid Cu sulfate (pH 1-3.5 fork end).
+        # Substrate priority: dissolving brochantite (the direct fork
+        # product of acidification) > dissolving Cu sulfides > vug wall.
+        sigma_ant = self.conditions.supersaturation_antlerite()
+        if sigma_ant > 1.0 and not self._at_nucleation_cap("antlerite"):
+            if random.random() < 0.18:
+                pos = "vug wall"
+                diss_brn_ant = [c for c in self.crystals if c.mineral == "brochantite" and c.dissolved]
+                diss_chc_ant = [c for c in self.crystals if c.mineral == "chalcocite" and c.dissolved]
+                if diss_brn_ant and random.random() < 0.8:
+                    pos = f"on dissolving brochantite #{diss_brn_ant[0].crystal_id} (pH-fork conversion)"
+                elif diss_chc_ant and random.random() < 0.5:
+                    pos = f"on dissolving chalcocite #{diss_chc_ant[0].crystal_id}"
+                c = self.nucleate("antlerite", position=pos, sigma=sigma_ant)
+                self.log.append(f"  ✦ NUCLEATION: Antlerite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ant:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, S={self.conditions.fluid.S:.0f}, "
+                              f"pH={self.conditions.fluid.pH:.1f})")
+
         # Uraninite nucleation — strongly reducing, U-bearing. Emits radiation each step.
         sigma_ur = self.conditions.supersaturation_uraninite()
         if sigma_ur > 1.5 and not self._at_nucleation_cap("uraninite") and random.random() < 0.08:
@@ -12674,6 +12916,141 @@ class VugSimulator:
             "and epithermal-Au exploration, dating alunite tells you "
             "when the lithocap formed — and by inference, when the "
             "underlying intrusive event occurred."
+        )
+        return " ".join(parts)
+
+    def _narrate_brochantite(self, c: Crystal) -> str:
+        """Narrate a brochantite crystal — the wet-supergene Cu sulfate."""
+        parts = [f"Brochantite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₄(SO₄)(OH)₆ — the wet-supergene Cu sulfate. Emerald-"
+            "green prismatic crystals, distinguishable from malachite "
+            "by distinctly darker green and prismatic (vs malachite's "
+            "botryoidal) habit. The higher-pH end (pH 4-7) of the "
+            "brochantite ↔ antlerite Cu-sulfate fork. Atacama Desert "
+            "(Chile) supergene Cu deposits — Chuquicamata, Mantos "
+            "Blancos, Mansa Mina, El Tesoro — have brochantite as a "
+            "major component; arid evaporative concentration of "
+            "supergene Cu sulfate produces near-pure brochantite zones."
+        )
+        if c.habit == "drusy_crust":
+            parts.append(
+                "Drusy emerald-green crust on Cu-bearing wall — the "
+                "rapid-supergene-precipitation habit. Atacama and "
+                "Bisbee tailings dumps stain green with this in days "
+                "to weeks of post-mining oxidation."
+            )
+        elif c.habit == "acicular_tuft":
+            parts.append(
+                "Acicular needle-tufts radiating from substrate — "
+                "the diagnostic habit when brochantite tufts coat "
+                "malachite or chalcocite."
+            )
+        elif c.habit == "short_prismatic":
+            parts.append(
+                "Stubby emerald-green prisms — the standard Atacama / "
+                "Bisbee display specimen habit. Hand-lens reveals "
+                "monoclinic crystal forms."
+            )
+        else:
+            parts.append(
+                "Botryoidal globular aggregates — rarer than the "
+                "prismatic habit, can be confused with malachite at "
+                "hand-sample scale (the green color and globular form "
+                "overlap; XRD or acid-resistance test distinguishes)."
+            )
+        any_note = " ".join(z.note or "" for z in c.zones)
+        if "Cl-rich" in any_note:
+            parts.append(
+                "Cl-rich fluid context: in real-life Atacama and "
+                "Bisbee, brochantite competes with atacamite "
+                "(Cu₂Cl(OH)₃) for the Cu²⁺ pool — atacamite wins when "
+                "Cl is dominant over SO₄. Atacamite is queued for a "
+                "future halide-expansion commit."
+            )
+        if c.dissolved:
+            cause = "alkalinization (pH > 7) → tenorite/malachite stable" \
+                if any("pH > 7" in (z.note or "") for z in c.zones) \
+                else "acidification (pH < 3) → antlerite stable"
+            parts.append(
+                f"Dissolved by {cause}. The brochantite ↔ antlerite "
+                "fork is the single most-cited Cu-sulfate paragenesis "
+                "in supergene literature (Pollard et al. 1992); both "
+                "fork ends can interconvert as pH cycles seasonally."
+            )
+        parts.append(
+            "Patina-mineralogy connection: bronze sculptures in "
+            "oceanic / saline air develop brochantite patinas (vs "
+            "malachite in CO₂-rich freshwater air). The Statue of "
+            "Liberty's iconic green patina is largely brochantite, "
+            "not malachite — chloride-rich New York harbor air "
+            "drives the SO₄/CO₃ partition toward sulfate."
+        )
+        return " ".join(parts)
+
+    def _narrate_antlerite(self, c: Crystal) -> str:
+        """Narrate an antlerite crystal — the dry-acid Cu sulfate."""
+        parts = [f"Antlerite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu₃(SO₄)(OH)₄ — the dry-acid end of the brochantite ↔ "
+            "antlerite Cu-sulfate fork (pH 1-3.5 stability). Same "
+            "emerald-green color as brochantite; visually indistinguishable "
+            "in hand specimen — distinguished by chemistry (Cu₃ vs Cu₄, "
+            "more SO₄ per Cu unit) and by acid-resistance test (antlerite "
+            "is more soluble in dilute HCl than brochantite). Type locality "
+            "Antler mine (Mohave County, AZ; Hillebrand 1889), but the "
+            "world-class deposits were at Chuquicamata (Chile) where "
+            "antlerite was the dominant supergene Cu mineral mined "
+            "1920s-50s before the deeper hypogene chalcocite zone "
+            "became the modern target."
+        )
+        if c.habit == "granular":
+            parts.append(
+                "Massive granular emerald-green — the Chuquicamata habit. "
+                "Decades of open-pit mining at the world's largest copper "
+                "mine recovered antlerite as a primary ore phase from this "
+                "form."
+            )
+        elif c.habit == "acicular":
+            parts.append(
+                "Thin radiating dark-green needles — the rapid-precipitation "
+                "habit when arid acidic supergene fluid reaches saturation."
+            )
+        elif c.habit == "short_prismatic":
+            parts.append(
+                "Stubby emerald-green prisms — visually identical to "
+                "brochantite; the field test is to expose to vinegar and "
+                "watch for slow dissolution (antlerite dissolves in dilute "
+                "acid; brochantite resists)."
+            )
+        else:
+            parts.append(
+                "Druzy microcrystals on dissolving Cu sulfide — small-scale "
+                "supergene habit on chalcocite oxidation surfaces."
+            )
+        if c.dissolved:
+            parts.append(
+                "Dissolved by neutralization — pH crossed above 3.5, "
+                "destabilizing antlerite. The released Cu²⁺ + SO₄²⁻ now "
+                "sit in brochantite-stable territory; expect brochantite "
+                "to re-nucleate from the same cation pool as the fork "
+                "reverses."
+            )
+        any_note = " ".join(z.note or "" for z in c.zones)
+        if any("on dissolving brochantite" in (z.note or "") for z in c.zones) or "pH-fork" in any_note:
+            parts.append(
+                "This crystal nucleated on dissolving brochantite — the "
+                "diagnostic Atacama paragenesis where seasonal acidification "
+                "(post-rainy-season evaporation drives pH down) flips the "
+                "Cu sulfate fork from brochantite to antlerite. Reverse "
+                "happens with the next rainy season."
+            )
+        parts.append(
+            "Pragmatic note: in the field, distinguishing antlerite from "
+            "brochantite without a lab is hard. The pH-fork mechanism "
+            "(Pollard et al. 1992) is the single most diagnostic chemistry "
+            "in arid-supergene Cu mineralogy and the basis of the "
+            "Chuquicamata-style ore-grade Cu sulfate deposits."
         )
         return " ".join(parts)
 
