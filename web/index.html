@@ -15552,6 +15552,54 @@ function showZoneHistory(crystal) {
       if (tooltip) tooltip.style.display = 'none';
     };
 
+    // UV bar — the "ghost under the lamp" view. Same stratigraphic
+    // primitive as the chem bar but each segment represents a
+    // fluorescence regime instead of a visible-color regime.
+    const uvHeader = document.createElement('div');
+    uvHeader.style.cssText = 'color:#8a7a40;font-size:0.7rem;border-bottom:1px solid #2a2518;padding-bottom:0.3rem;margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:baseline';
+    uvHeader.innerHTML = `
+      <span>Under UV — fluorescence response</span>
+      <span style="font-size:0.65rem;color:#5a4a30">${uvSummary(crystal.mineral)}</span>
+    `;
+    body.appendChild(uvHeader);
+    const uvCanvas = document.createElement('canvas');
+    uvCanvas.style.cssText = 'display:block;width:100%;max-width:600px;height:auto;background:#181822;border:1px solid #1a1a14;border-radius:3px;margin-bottom:0.8rem';
+    body.appendChild(uvCanvas);
+    const uvSegs = renderUVBar(uvCanvas, crystal, { width: 600, height: 36 });
+
+    // Hover tooltip for UV-bar segments — shows whether the segment
+    // emits, what color, what activator/quencher likely caused it.
+    uvCanvas.onmousemove = function(e) {
+      const tooltip = document.getElementById('groove-tooltip');
+      if (!tooltip) return;
+      const rect = uvCanvas.getBoundingClientRect();
+      const scaleX = uvCanvas.width / rect.width;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const hit = uvSegs.find(s => mx >= s.x && mx < s.x + s.w);
+      if (!hit) { tooltip.style.display = 'none'; return; }
+      const seg = hit.seg;
+      const firstZ = seg.zones[0];
+      const lastZ = seg.zones[seg.zones.length - 1];
+      let html = `<b>${seg.color ? 'Fluorescent regime' : 'Inert under UV'}</b><br>`;
+      html += `${seg.zones.length} zone${seg.zones.length > 1 ? 's' : ''} · `;
+      html += `step ${firstZ.step}–${lastZ.step}<br>`;
+      if (seg.color) {
+        html += `<span style="display:inline-block;width:10px;height:10px;background:${seg.color};border:1px solid #555;vertical-align:middle"></span> `;
+        html += `emission ${seg.color}<br>`;
+      } else {
+        html += `<span style="color:#888">no emission — activator below threshold or quencher present</span><br>`;
+      }
+      html += `±${seg.totalThickness.toFixed(1)} µm cumulative`;
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    };
+    uvCanvas.onmouseleave = function() {
+      const tooltip = document.getElementById('groove-tooltip');
+      if (tooltip) tooltip.style.display = 'none';
+    };
+
     // Dashboard bar — the "data" view. 6 stacked lanes per zone.
     const barHeader = document.createElement('div');
     barHeader.style.cssText = 'color:#8a7a40;font-size:0.7rem;border-bottom:1px solid #2a2518;padding-bottom:0.3rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:baseline';
@@ -16601,6 +16649,188 @@ function renderChemistryBar(canvas, crystal, opts = {}) {
     x += w;
   }
   return segGeom;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// UV-response zone bar — the "ghost of growth under the lamp" view.
+// Same stratigraphic primitive as the chemistry bar, but the segments
+// represent fluorescence behavior under shortwave/longwave UV instead of
+// visible-light color.
+//
+// Per-mineral activator/quencher physics:
+//  - Calcite: Mn²⁺ activates the Franklin/Sterling-Hill red SW emission;
+//    Fe quenches above ~5 ppm (why most calcite outside Franklin is dim)
+//  - Ruby/corundum: Cr³⁺ d-d emission at 694 nm; Fe quenches (Mogok =
+//    low Fe → bright; Thai basalt-hosted = high Fe → dim)
+//  - Fluorite: REE + radiation defects → blue/violet; rare U → green
+//  - Adamite: Cu activator → diagnostic apple-green
+//  - Scheelite: tungstate intrinsic blue-white (always fluoresces)
+//  - Aragonite: organic activators sometimes produce yellow but sim
+//    doesn't model organics → inert in this rendering
+//  - Most others: inert
+//
+// First-cut palette is intentionally narrow — the famous fluorescent
+// minerals get rules, everything else renders as "lamp on, no emission"
+// (dark) which is the honest answer.
+// ─────────────────────────────────────────────────────────────────────────
+
+function zoneFluorescence(zone, mineral, crystal) {
+  // Returns either a hex color string (the UV emission) or null (inert).
+  const Fe = zone.trace_Fe || 0;
+  const Mn = zone.trace_Mn || 0;
+  const Ti = zone.trace_Ti || 0;
+  const Al = zone.trace_Al || 0;
+  const radDmg = (crystal && crystal.radiation_damage) || 0;
+
+  switch (mineral) {
+    case 'calcite':
+      // Franklin red SW: Mn²⁺ activates, Fe quenches.
+      if (Mn > 1.0 && Fe < 5.0) return '#ff4040';
+      return null;
+
+    case 'aragonite':
+      // Some specimens fluoresce yellow from organic activators which
+      // we don't model. Honest rendering = inert.
+      return null;
+
+    case 'ruby':
+    case 'corundum':
+    case 'sapphire':
+      // Cr³⁺ red SW + LW. Fe quenches strongly above ~10 ppm.
+      // Reading trace_Cr: not in the standard zone fields list, so check
+      // both the trace_Cr field (if present) and infer from notes.
+      const Cr = zone.trace_Cr || 0;
+      const noteCr = zone.note && /Cr|chromium|emerald|ruby/i.test(zone.note);
+      if ((Cr > 1.0 || (mineral === 'ruby' && noteCr)) && Fe < 10.0) {
+        return '#ff5050';
+      }
+      return null;
+
+    case 'fluorite':
+      // Mn or radiation defects → blue/violet emission.
+      if (Mn > 0.5 || radDmg > 0.1) return '#5588ff';
+      return null;
+
+    case 'scheelite':
+      // Tungstate intrinsic — bright blue-white, every zone.
+      return '#ddddff';
+
+    case 'adamite':
+      // Cu activator → apple-green; diagnostic for cuproadamite.
+      if (zone.note && zone.note.includes('cuproadamite')) return '#aaff44';
+      // Pure adamite is yellow-green under SW.
+      return '#88dd66';
+
+    case 'willemite':
+      // Franklin classic — Mn²⁺ → bright green SW. (Sim doesn't ship
+      // willemite yet but reserve the rule for when it lands.)
+      if (Mn > 0.1) return '#88ff44';
+      return null;
+
+    case 'autunite':
+    case 'uraninite':
+      // Uranyl ion → diagnostic green. Uraninite's color comes from
+      // U not radiation, so always-on rather than gated.
+      return '#aaff66';
+
+    case 'wulfenite':
+      // Some specimens fluoresce orange under SW but most don't reliably.
+      return null;
+
+    case 'apophyllite':
+      // Variable — Mn-bearing zones fluoresce; clean ones don't.
+      if (Mn > 0.3) return '#ffaa66';
+      return null;
+
+    // Beryl family — emerald has weak red Cr³⁺ emission; aquamarine/
+    // morganite/heliodor are largely inert. Goshenite spec lists null.
+    case 'emerald':
+      // Cr-bearing → weak red, much dimmer than ruby.
+      if (Fe < 5.0) return '#cc4040';  // dimmer red than ruby
+      return null;
+
+    default:
+      return null;
+  }
+}
+
+function groupZonesByFluorescence(zones, mineral, crystal) {
+  if (!zones || !zones.length) return [];
+  const segs = [];
+  let current = null;
+  for (const z of zones) {
+    const color = zoneFluorescence(z, mineral, crystal);
+    const key = color || '__inert__';
+    if (current && current.key === key) {
+      current.totalThickness += Math.abs(z.thickness_um || 1);
+      current.zones.push(z);
+    } else {
+      if (current) segs.push(current);
+      current = {
+        key,
+        color,           // null for inert segments
+        totalThickness: Math.abs(z.thickness_um || 1),
+        zones: [z],
+      };
+    }
+  }
+  if (current) segs.push(current);
+  return segs;
+}
+
+function renderUVBar(canvas, crystal, opts = {}) {
+  const zones = crystal && crystal.zones;
+  if (!zones || !zones.length) return [];
+  const { width = 600, height = 36 } = opts;
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+
+  // Background — deep cool gray suggesting "lamp on, dark room, no
+  // emission yet". Inert segments stay this color.
+  ctx.fillStyle = '#181822';
+  ctx.fillRect(0, 0, width, height);
+
+  const segs = groupZonesByFluorescence(zones, crystal.mineral, crystal);
+  const totalT = segs.reduce((s, g) => s + g.totalThickness, 0) || 1;
+
+  let x = 0;
+  const segGeom = [];
+  for (const seg of segs) {
+    const w = Math.max(1, (seg.totalThickness / totalT) * width);
+    if (seg.color) {
+      // Glow effect — fill + soft halo so emission segments look like
+      // they're shining rather than just colored.
+      ctx.shadowColor = seg.color;
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = seg.color;
+      ctx.fillRect(x, 4, w, height - 8);
+      ctx.shadowBlur = 0;
+      // Bright inner highlight so the segment reads as hot
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+      ctx.fillRect(x, 4, w, Math.max(2, (height - 8) * 0.35));
+    }
+    if (x > 0) {
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    segGeom.push({ x, w, seg });
+    x += w;
+  }
+  return segGeom;
+}
+
+// Lookup of the per-mineral expected fluorescence narrator string from
+// the spec's `fluorescence` field — used as the modal header subtitle.
+function uvSummary(mineral) {
+  const spec = MINERAL_SPEC[mineral];
+  if (!spec || !spec.fluorescence) return 'inert under UV';
+  return spec.fluorescence;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
