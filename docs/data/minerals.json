@@ -2282,7 +2282,7 @@
           "default": true
         }
       },
-      "narrate_function": null,
+      "narrate_function": "_narrate_ferrimolybdite",
       "runtimes_present": [
         "vugg.py",
         "web/index.html"
@@ -2380,7 +2380,7 @@
           "trigger": "Co > 2"
         }
       },
-      "narrate_function": null,
+      "narrate_function": "_narrate_arsenopyrite",
       "runtimes_present": [
         "vugg.py",
         "web/index.html"
@@ -3163,7 +3163,7 @@
           "trigger": "earthy_crust habit (high σ powder)"
         }
       },
-      "narrate_function": null,
+      "narrate_function": "_narrate_scorodite",
       "runtimes_present": [
         "vugg.py",
         "web/index.html"

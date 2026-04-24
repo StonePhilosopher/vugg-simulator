@@ -15934,6 +15934,159 @@ class VugSimulator:
             )
         return " ".join(parts)
 
+    def _narrate_arsenopyrite(self, c: Crystal) -> str:
+        """Narrate arsenopyrite — the arsenic gateway sulfide + invisible-gold trap."""
+        parts = [f"Arsenopyrite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "FeAsS — the most common arsenic mineral and a primary "
+            "mesothermal sulfide. Silver-white on fresh fracture, tarnishes "
+            "brassy in hours. Striated prisms with a diamond-shaped cross-"
+            "section are the diagnostic habit; Panasqueira (Portugal), "
+            "Kam Kotia (Ontario), and Llallagua (Bolivia) produced the "
+            "classical display specimens."
+        )
+
+        total_trapped_au = sum(z.trace_Au for z in c.zones)
+        if total_trapped_au > 0.01:
+            parts.append(
+                f"Invisible gold — {total_trapped_au:.3f} ppm Au trapped "
+                "structurally in the arsenopyrite lattice across the crystal's "
+                "zones. Reich et al. 2005 showed arsenopyrite can hold up to "
+                "1500 ppm Au as solid-solution Au¹⁺ in the Fe/As sites. "
+                "Invisible to the eye but measurable by SEM-EDS or secondary-"
+                "ion mass spectrometry. At the Bisbee district, this is the "
+                "reason the deep hypogene sulfide ore assays higher than "
+                "visual inspection predicts."
+            )
+
+        if c.habit == "striated_prism":
+            parts.append(
+                "Striated prismatic — the display habit. The striations are "
+                "parallel to the c-axis and come from repeated oscillatory "
+                "face steps during slow growth. Flash a light across the "
+                "crystal and the striations sparkle like a diffraction grating."
+            )
+        elif c.habit == "rhombic_blade":
+            parts.append(
+                "Rhombic blade — flattened habit characteristic of slightly "
+                "higher supersaturation than the classical prisms. Less "
+                "ornamental but still forms well-defined faces."
+            )
+        elif c.habit == "acicular":
+            parts.append(
+                "Acicular — thin needles, fast-growth habit at high σ. "
+                "Radiating sprays resemble stibnite at a glance but are "
+                "harder (Mohs 6 vs 2) and lack stibnite's lead-gray streak."
+            )
+        else:
+            parts.append(
+                "Massive granular — bread-and-butter form. No crystal faces, "
+                "but still the dominant economic As source at most modern mines."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Oxidation front — surface attack by O₂-bearing meteoric fluid. "
+                "arsenopyrite + O₂ + H₂O → Fe³⁺ + AsO₄³⁻ + H₂SO₄. The released "
+                "AsO₄³⁻ feeds scorodite downstream, and crucially the invisible "
+                "gold comes back out: dissolved arsenopyrite releases its "
+                "trapped Au into the supergene fluid, where it can re-nucleate "
+                "as native_gold at grain boundaries. This is the supergene-Au-"
+                "enrichment mechanism that built Bisbee's oxide cap (Graeme "
+                "et al. 2019)."
+            )
+        return " ".join(parts)
+
+    def _narrate_scorodite(self, c: Crystal) -> str:
+        """Narrate scorodite — the arsenic sequestration arsenate."""
+        parts = [f"Scorodite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "FeAsO₄·2H₂O — the arsenic sequestration mineral. Forms when "
+            "arsenopyrite (or any As-bearing sulfide) oxidizes at the water "
+            "table; the liberated AsO₄³⁻ combines with Fe³⁺ in the hydrated "
+            "arsenate lattice. Environmentally important — scorodite locks "
+            "As in a stable crystalline form as long as pH stays below ~5, "
+            "which is why modern AMD remediation deliberately induces "
+            "scorodite precipitation."
+        )
+
+        if c.habit == "dipyramidal":
+            avg_Fe = sum(z.trace_Fe for z in c.zones) / max(len(c.zones), 1)
+            if avg_Fe > 0.15:
+                parts.append(
+                    "Deep blue-green dipyramids — Fe-rich, the Tsumeb display "
+                    "signature. The Ojuela (Mexico) and Tsumeb (Namibia) "
+                    "specimens are the gem-quality pseudo-octahedra that "
+                    "collectors chase: transparent, vivid, perfectly formed."
+                )
+            else:
+                parts.append(
+                    "Pale blue-green dipyramids — the classic pseudo-octahedral "
+                    "habit. Scorodite is orthorhombic but the dipyramid form "
+                    "projects as near-octahedral, fooling the eye."
+                )
+        else:
+            parts.append(
+                "Earthy greenish-brown crust — the high-σ rapid-precipitation "
+                "habit, formed when acidic mine drainage deposits scorodite "
+                "faster than it can organize crystal faces. This is how most "
+                "environmental scorodite looks in the field."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Dissolution — pH rose above 5 (or T rose above 160°C), and "
+                "scorodite gave back its AsO₄³⁻ to the fluid. In nature, this "
+                "is how arsenic re-mobilizes from acid-mine-drainage scorodite "
+                "deposits when the local chemistry buffers toward neutral, and "
+                "the classical pathway by which downstream higher-pH arsenates "
+                "(adamite, mimetite, pharmacosiderite) can eventually form."
+            )
+        return " ".join(parts)
+
+    def _narrate_ferrimolybdite(self, c: Crystal) -> str:
+        """Narrate ferrimolybdite — the canary-yellow no-lead Mo oxidation product."""
+        parts = [f"Ferrimolybdite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Fe₂(MoO₄)₃·nH₂O — the \"no-lead branch\" of molybdenite oxidation. "
+            "When molybdenite weathers in a system that doesn't carry Pb "
+            "(porphyry-Cu oxidation zones, most Climax-type Mo deposits), the "
+            "liberated MoO₄²⁻ meets Fe³⁺ instead of Pb²⁺, and ferrimolybdite "
+            "forms instead of wulfenite. Mohs 1-2 — soft enough to crumble "
+            "under a fingernail — and rarely forms display-grade specimens."
+        )
+
+        if c.habit == "acicular tuft":
+            parts.append(
+                "Acicular radiating tufts — the classic habit. Hair-like fibers "
+                "fanning outward from a nucleation point on weathered "
+                "molybdenite. Looks like a tiny sulfur-yellow starburst under "
+                "the loupe."
+            )
+        elif c.habit == "fibrous mat":
+            parts.append(
+                "Fibrous mat — denser felted aggregate, moderate supersaturation. "
+                "Coats the weathered Mo-bearing surface uniformly; no single "
+                "orientation dominates."
+            )
+        else:
+            parts.append(
+                "Powdery earthy crust — the high-σ mass-accretion habit. No "
+                "crystal form, just canary-yellow coloring on the substrate. "
+                "This is how ferrimolybdite looks in most porphyry oxide caps."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Dehydration — ferrimolybdite is metastable; a modest T rise "
+                "above ~150°C or pH drop below 2 is enough to strip the "
+                "structural water and release MoO₄²⁻ back to the fluid. If Pb "
+                "arrives in that fluid, a second generation of wulfenite can "
+                "nucleate — this is the classical paragenetic sequence at "
+                "Chuquicamata and other porphyry supergene caps."
+            )
+        return " ".join(parts)
+
     def _narrate_bismuthinite(self, c: Crystal) -> str:
         parts = [f"Bismuthinite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
         parts.append(

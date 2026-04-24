@@ -2024,7 +2024,16 @@ body.title-on > .subtitle {
 }
 
 .groove-tooltip {
-  position: absolute;
+  /* Must be `fixed` (not `absolute`) because all 5 call sites position
+     it via e.clientX / e.clientY — viewport-relative coordinates. With
+     `absolute`, the tooltip positioned relative to its nearest
+     positioned ancestor (the groove-canvas-wrap, which lives inside
+     the Record Player panel that's usually hidden when the Zone History
+     modal is what the user is hovering over). That placed the tooltip
+     far from the cursor. Fixed-positioning aligns with clientX/clientY
+     directly so the tooltip always follows the pointer regardless of
+     which panel is visible. */
+  position: fixed;
   background: #1a1a14;
   border: 1px solid #5a4a20;
   border-radius: 4px;
@@ -12973,6 +12982,55 @@ class VugSimulator {
     else if (c.habit === 'plumose_rosette') parts.push('Plumose rosette — radiating platy blades. Cornwall and Siegerland (Germany) produced the best.');
     else parts.push('Fibrous micaceous — very rapid growth, coarser particle size, rust-brown color.');
     parts.push('Given geological time, lepidocrocite converts to goethite (the thermodynamically stable dimorph).');
+    return parts.join(' ');
+  }
+
+  _narrate_arsenopyrite(c) {
+    const parts = [`Arsenopyrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("FeAsS — the most common arsenic mineral and a primary mesothermal sulfide. Silver-white on fresh fracture, tarnishes brassy in hours. Striated prisms with a diamond-shaped cross-section are the diagnostic habit; Panasqueira (Portugal), Kam Kotia (Ontario), and Llallagua (Bolivia) produced the classical display specimens.");
+    const trappedAu = (c.zones || []).reduce((s, z) => s + (z.trace_Au || 0), 0);
+    if (trappedAu > 0.01) {
+      parts.push(`Invisible gold — ${trappedAu.toFixed(3)} ppm Au trapped structurally in the arsenopyrite lattice. Reich et al. 2005 showed arsenopyrite can hold up to 1500 ppm Au as solid-solution Au¹⁺ in the Fe/As sites. Invisible to the eye but measurable by SEM-EDS. At Bisbee, this is why deep hypogene sulfide ore assays higher than visual inspection predicts.`);
+    }
+    if (c.habit === 'striated_prism') parts.push('Striated prismatic — the display habit. Striations parallel to the c-axis come from repeated oscillatory face steps during slow growth. Flash a light across the crystal and the striations sparkle like a diffraction grating.');
+    else if (c.habit === 'rhombic_blade') parts.push('Rhombic blade — flattened habit at slightly higher supersaturation than classical prisms. Less ornamental but still well-defined.');
+    else if (c.habit === 'acicular') parts.push('Acicular — thin needles, fast-growth habit at high σ. Radiating sprays resemble stibnite at a glance but are harder (Mohs 6 vs 2) and lack stibnite\'s lead-gray streak.');
+    else parts.push('Massive granular — bread-and-butter form. No crystal faces, but still the dominant economic As source at most modern mines.');
+    if (c.dissolved) {
+      parts.push("Oxidation front — arsenopyrite + O₂ + H₂O → Fe³⁺ + AsO₄³⁻ + H₂SO₄. The released AsO₄³⁻ feeds scorodite downstream, and crucially the invisible gold comes back out: dissolved arsenopyrite releases its trapped Au into the supergene fluid, where it can re-nucleate as native_gold at grain boundaries. This is the supergene-Au-enrichment mechanism that built Bisbee's oxide cap (Graeme et al. 2019).");
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_scorodite(c) {
+    const parts = [`Scorodite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("FeAsO₄·2H₂O — the arsenic sequestration mineral. Forms when arsenopyrite oxidizes at the water table; liberated AsO₄³⁻ combines with Fe³⁺ in the hydrated arsenate lattice. Environmentally important — scorodite locks As in a stable crystalline form as long as pH stays below ~5, which is why modern AMD remediation deliberately induces scorodite precipitation.");
+    if (c.habit === 'dipyramidal') {
+      const nZ = c.zones ? c.zones.length : 1;
+      const avgFe = nZ ? c.zones.reduce((s, z) => s + (z.trace_Fe || 0), 0) / nZ : 0;
+      if (avgFe > 0.15) {
+        parts.push("Deep blue-green dipyramids — Fe-rich, the Tsumeb display signature. The Ojuela (Mexico) and Tsumeb (Namibia) specimens are the gem-quality pseudo-octahedra that collectors chase: transparent, vivid, perfectly formed.");
+      } else {
+        parts.push("Pale blue-green dipyramids — the classic pseudo-octahedral habit. Scorodite is orthorhombic but the dipyramid form projects as near-octahedral, fooling the eye.");
+      }
+    } else {
+      parts.push("Earthy greenish-brown crust — the high-σ rapid-precipitation habit, formed when acidic mine drainage deposits scorodite faster than it can organize crystal faces. This is how most environmental scorodite looks in the field.");
+    }
+    if (c.dissolved) {
+      parts.push("Dissolution — pH rose above 5 (or T above 160°C), and scorodite gave back its AsO₄³⁻ to the fluid. In nature, this is how arsenic re-mobilizes from acid-mine-drainage scorodite when the local chemistry buffers toward neutral, and the classical pathway by which downstream higher-pH arsenates (adamite, mimetite) can eventually form.");
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_ferrimolybdite(c) {
+    const parts = [`Ferrimolybdite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Fe₂(MoO₄)₃·nH₂O — the \"no-lead branch\" of molybdenite oxidation. When molybdenite weathers in a system that doesn't carry Pb (porphyry-Cu oxidation zones, most Climax-type Mo deposits), the liberated MoO₄²⁻ meets Fe³⁺ instead of Pb²⁺, and ferrimolybdite forms instead of wulfenite. Mohs 1-2 — soft enough to crumble under a fingernail.");
+    if (c.habit === 'acicular tuft') parts.push('Acicular radiating tufts — the classic habit. Hair-like fibers fanning outward from a nucleation point on weathered molybdenite. Looks like a tiny sulfur-yellow starburst under the loupe.');
+    else if (c.habit === 'fibrous mat') parts.push('Fibrous mat — denser felted aggregate, moderate supersaturation. Coats the weathered Mo-bearing surface uniformly.');
+    else parts.push('Powdery earthy crust — the high-σ mass-accretion habit. No crystal form, just canary-yellow coloring on the substrate. This is how ferrimolybdite looks in most porphyry oxide caps.');
+    if (c.dissolved) {
+      parts.push("Dehydration — ferrimolybdite is metastable; a modest T rise above ~150°C or pH drop below 2 is enough to strip the structural water and release MoO₄²⁻ back to the fluid. If Pb arrives in that fluid, a second generation of wulfenite can nucleate — the classical paragenetic sequence at Chuquicamata and other porphyry supergene caps.");
+    }
     return parts.join(' ');
   }
 
