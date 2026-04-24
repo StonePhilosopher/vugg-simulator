@@ -2024,7 +2024,16 @@ body.title-on > .subtitle {
 }
 
 .groove-tooltip {
-  position: absolute;
+  /* Must be `fixed` (not `absolute`) because all 5 call sites position
+     it via e.clientX / e.clientY — viewport-relative coordinates. With
+     `absolute`, the tooltip positioned relative to its nearest
+     positioned ancestor (the groove-canvas-wrap, which lives inside
+     the Record Player panel that's usually hidden when the Zone History
+     modal is what the user is hovering over). That placed the tooltip
+     far from the cursor. Fixed-positioning aligns with clientX/clientY
+     directly so the tooltip always follows the pointer regardless of
+     which panel is visible. */
+  position: fixed;
   background: #1a1a14;
   border: 1px solid #5a4a20;
   border-radius: 4px;
