@@ -28,6 +28,16 @@
 
 **The driver:** Oxygen infiltrates as the water table descends. Each sulfide gives up its metal in turn: Cu migrates downward, encounters remaining sulfide, re-precipitates as enrichment-blanket sulfides. Above the water table, Cu²⁺ meets atmospheric O₂ and CO₂ — oxides form first (cuprite, tenorite), then carbonates (malachite, azurite), then sulfates and silicates as the chemistry evolves. Trapped invisible-gold returns at the very end.
 
+**How each step makes the next possible:**
+
+*Hypogene → Enrichment blanket:* Hypogene oxidation releases Cu²⁺ + acid into descending groundwater. The Cu²⁺ migrates down, meets unreacted hypogene sulfide below the water table, and replaces iron atom-for-atom: CuFeS₂ + Cu²⁺ → Cu₂S + Fe²⁺. The blanket is the same copper, twice — first as chalcopyrite, then re-precipitated lower as chalcocite. Without the original hypogene pile to oxidize and to react against, no blanket.
+
+*Enrichment blanket → Oxide cap:* Continued uplift drops the water table below the blanket. Chalcocite is now exposed and oxidizes too — Cu²⁺ released here meets atmospheric O₂ above the water table, making cuprite (Cu₂O) and tenorite (CuO). Native copper forms in a thin reducing Eh window, usually right against the limestone wall.
+
+*Oxide cap → Carbonates and silicates:* Cu²⁺ from continuing oxidation meets CO₃²⁻ from limestone dissolution. Without a carbonate host wall, the cap would stop at oxides. The Naco Group limestone is why Bisbee has malachite + azurite specimens and porphyry mines in granite hosts don't.
+
+*Through-runs to native gold:* Arsenopyrite trapped Au¹⁺ as solid solution at hypogene crystallization (~1500 ppm; Reich et al. 2005). When arsenopyrite oxidizes much later, the trapped gold is released. It re-precipitates as native metal at grain boundaries where the fluid encounters residual reductant. Three chained events: trap → release → re-precipitate. Without ALL of them, no supergene gold cap.
+
 **Notable specimens:**
 - Bisbee azurite (deep blue prismatic crystals with malachite pseudomorphs) — Mineralogical Record's most-photographed locality specimen
 - Native copper "wires" up to 30 cm
@@ -60,6 +70,18 @@
 | **Late carbonates / silicates** | malachite, azurite, dioptase, willemite, plancheite | Cu₂CO₃(OH)₂, Cu₃(CO₃)₂(OH)₂, CuSiO₃·H₂O, Zn₂SiO₄, Cu₈Si₈O₂₂(OH)₄·H₂O | Final neutralized stage; CO₃/SiO₂ from dolostone |
 
 **The driver:** A pH cascade. Tsumeb's secondary suite is layered by *acidity*, not depth. Descending meteoric fluid acidified by sulfide oxidation reaches the deeper sulfide ore body and progressively mobilizes Pb, Zn, Cu, As. The dolostone host wall buffers the fluid back toward neutral; the resulting pH gradient drives different mineral generations to precipitate at different depths and times. Each species has a stability window — galena dissolves in acidic fluid, but cerussite forms only when pH rises past ~5; jarosite forms below pH 3, alunite below pH 4, but both dissolve above pH 5.
+
+**How each step makes the next possible:**
+
+*Primary sulfides → Acid front:* Sulfide oxidation generates H₂SO₄ (FeS₂ + O₂ + H₂O → Fe³⁺ + SO₄²⁻ + H⁺). Without the original sulfide pipe, no acid. The 1km depth of Tsumeb's oxidation profile is directly proportional to how much sulfide there was to oxidize — more sulfide, more acid, deeper attack.
+
+*Acid front → Anglesite / Cerussite:* Acidic descending fluid attacks galena (PbS → Pb²⁺ + dissolved S). Where the fluid is still acidic, anglesite (PbSO₄) precipitates. Where the fluid migrates further from the sulfide source and meets dolostone wall, dolomite buffers pH up: Pb²⁺ + CO₃²⁻ → cerussite (PbCO₃). Same Pb, two destinations, governed by where in the pH gradient the fluid is when it saturates.
+
+*Acid sulfate suite → Phosphate / arsenate suite:* Brochantite, jarosite, alunite need pH 1-4 to form. As the dolostone continues buffering fluid past pH 5, those minerals dissolve. The released Cu²⁺ meets re-arrived AsO₄³⁻ (from arsenopyrite/tennantite oxidation) at higher pH → adamite (Zn-AsO₄), mimetite (Pb-AsO₄). The arsenate suite is literally the dissolution products of the acid sulfate suite, redirected by pH rise.
+
+*Late carbonates and silicates:* By the time the fluid is fully neutralized (pH 7+), Cu²⁺ that's still in solution meets CO₃²⁻ from continued dolostone dissolution → malachite, azurite. SiO₂ that traveled with the meteoric fluid meets remaining Cu²⁺ → dioptase. Tsumeb's late stage is the full neutralization point — the fluid has finally reached chemical equilibrium with its host.
+
+*Reading backward:* without the original deep sulfide pipe, no acid — and without acid, the dolostone wall couldn't be involved. The 250+ species at Tsumeb exist because the meteoric fluid had to traverse a kilometer of pH gradient to reach equilibrium, and every species has its stability window somewhere along that gradient.
 
 **Notable specimens:**
 - Cerussite "cyclic twins" — sixling pseudo-hexagonal aggregates, the type-locality habit
@@ -98,6 +120,16 @@
 
 **The driver:** Mixing exhaustion. The sequence is governed by *what runs out first*. H₂S is the limiting reagent for sulfides; once depleted, the system can't make any more galena or sphalerite no matter how much Pb²⁺ keeps arriving. SO₄²⁻ persists alongside the residual H₂S at low Eh — this Eh boundary is exactly where Ba²⁺ and Sr²⁺ saturate as barite and celestine. The Round 5 v5 gap-fix (O₂ = 0.25 instead of 0.0) put the sim's scenarios at this boundary specifically to enable both sulfide and sulfate generations.
 
+**How each step makes the next possible:**
+
+*Brine arrival → Sulfide pulse:* The basin brine carries Pb²⁺, Zn²⁺, Ba²⁺, Sr²⁺ but no S²⁻. The limestone host carries connate H₂S — produced 100+ million years earlier by microbes reducing seawater SO₄²⁻ in buried sediments. When the two fluids mix, metal sulfides supersaturate instantly. The H₂S that took bacteria 100 Ma to make is consumed in days to years.
+
+*Sulfide pulse → Sulfate gangue:* Once H₂S is exhausted, only SO₄²⁻ remains in the brine. Ba²⁺ and Sr²⁺ couldn't precipitate before — Ba/Sr sulfides are unstable, plus the H₂S environment was reducing. Now: Ba²⁺ + SO₄²⁻ → barite. Sr²⁺ + SO₄²⁻ → celestine. The sulfates exist *because* the sulfides used up the H₂S first. They're chemically prevented while H₂S is around.
+
+*Sulfate gangue → Carbonate gangue:* After barite/celestine, the residual fluid is mostly Ca²⁺ and Mg²⁺ from limestone dissolution (the brine ate some host rock on its way through). At this temperature (~80-150°C) saddle-rhomb dolomite forms first, calcite later as the system cools. The carbonate gangue is the limestone slowly digesting itself in the basin's last act.
+
+*Reading backward:* without microbial sulfate reduction in marine sediments 100+ Ma ago, no H₂S in the connate water. Without H₂S in the limestone, no sulfide precipitation when the brine arrives. Without sulfide precipitation consuming the H₂S, no sulfates (Ba/Sr can't precipitate as sulfides). Without sulfates depleting the metals/Ba/Sr, no clean carbonate gangue at the end. Each step depends on the previous having run to exhaustion — the cascade is reagent-by-reagent draining.
+
 **Notable specimens:**
 - Tri-State galena cubes to 25 cm + sphalerite "ruby jack" cherry-red transparent crystals
 - Sweetwater barite "amber gold" tabular crystals + cockscomb crests
@@ -131,6 +163,18 @@
 | **Goethite (rare)** | <300°C | goethite | FeO(OH) | Late oxidation of any remaining Fe-sulfides |
 
 **The driver:** Cooling + concentration. Unlike the other three cascades (which are driven by oxidation, acid attack, or fluid mixing), Cruzeiro is governed by *thermal differentiation*. As the pegmatite melt cools, common elements crystallize first into the outer shell; rare-element-saturated residual fluid migrates inward to the gem pocket. The rarer the element, the later it precipitates — beryl waits longer than feldspar because Be is more incompatible; topaz waits longer than beryl because F survives even further into the cooling history. By the time the rarest phases fire, the residual fluid has been concentrating Be, Li, B, F for thousands of years — which is why beryl crystals at Cruzeiro can reach 1+ meter (Itatiaia mine giant aquamarine: 110 cm × 38 cm).
+
+**How each step makes the next possible:**
+
+*Outer shell → Mid-stage:* Microcline + quartz crystallize first at high temperature (650→600°C) and consume most of the K, Si, Al. The residual fluid's composition shifts: incompatible elements (Be, Li, B, F, Cs) that didn't fit into feldspar/quartz lattices accumulate. Beryl can't form until residual Be reaches saturation — which only happens AFTER feldspar and quartz have crystallized enough to remove competitors and fluid volume. Beryl exists because everything else crystallized first.
+
+*Mid-stage → Albitization:* Continued quartz crystallization consumes Si. Microcline crystallization consumes K. The residual fluid's K/Na ratio inverts — Na becomes dominant. Now Na-feldspar (albite) becomes thermodynamically favored over K-feldspar (microcline), and existing microcline starts dissolving. Tourmaline shifts the same way: schorl (Fe-rich) gives way to elbaite (Li-rich) because Fe was eaten by earlier schorl + biotite while Li (incompatible) accumulated.
+
+*Mid-stage → Spodumene:* Li reaches saturation later than Be. Spodumene fires AFTER beryl because Li accumulates more slowly than Be in the residual. Both are incompatible — Be just gets there first.
+
+*Late hydrothermal → Topaz:* F is even more incompatible than Be or Li. Most pegmatite minerals carry no F, so it accumulates in residual fluid for the entire cooling history. By the time T drops to ~360°C, F has built up enough to clear topaz threshold, and Al + Si are still around. Topaz forms LAST because nothing wanted F until topaz did.
+
+*Reading backward:* without quartz consuming Si throughout the cooling, the residual K/Na ratio doesn't shift, and no albitization. Without earlier schorl removing Fe, no Li-rich elbaite. Without later beryl removing Be, no spodumene (the two compete for the same residual fluid; Be saturates first and dominates while it's around). The whole pegmatite is a chain of "first one crystallizes, removing its element, which raises the relative concentration of the next, which then crystallizes, removing ITS element..." — concentration-by-removal, governed by which element is least wanted by the major rock-forming minerals.
 
 **Notable specimens:**
 - Cruzeiro schorl tourmaline → elbaite color-zoned crystals to 30 cm (the "watermelon tourmaline" type-locality habit)
