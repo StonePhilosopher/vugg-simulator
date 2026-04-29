@@ -3152,6 +3152,7 @@ const MINERAL_SPEC_FALLBACK = {
   acanthite: { formula: "Ag2S", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   argentite: { formula: "Ag2S", nucleation_sigma: 1.0, max_size_cm: 3.0, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "spinel_111", description: "Penetration twin on {111} (spinel law)", habits: ["octahedral"] }], acid_dissolution: null },
   native_silver: { formula: "Ag", nucleation_sigma: 1.2, max_size_cm: 30.0, growth_rate_mult: 0.5, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "111_penetration", description: "Penetration twin on {111}", habits: ["cubic_crystal"] }], acid_dissolution: null },
+  native_arsenic: { formula: "As", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: 615, fluorescence: null, twin_laws: [], acid_dissolution: null },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3294,7 +3295,8 @@ const MINERAL_GAME_COLORS = {
   wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
-  acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4'
+  acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4',
+  native_arsenic: '#888888'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -4643,6 +4645,36 @@ class VugConditions {
     sigma *= T_factor;
     if (this.fluid.pH < 4 || this.fluid.pH > 9) sigma *= 0.5;
     if (this.fluid.Cu > 30) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  // Native arsenic (As⁰) — the residual-overflow native element.
+  // Hard gates: S>10 (overflows to realgar/arsenopyrite), Fe>50 (arsenopyrite),
+  // O2>0.5 (arsenate). Source: research-native-arsenic.md.
+  supersaturation_native_arsenic() {
+    if (this.fluid.As < 5) return 0;
+    if (this.fluid.S > 10.0) return 0;
+    if (this.fluid.Fe > 50.0) return 0;
+    if (this.fluid.O2 > 0.5) return 0;
+    const as_f = Math.min(this.fluid.As / 30.0, 3.0);
+    const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.8);
+    const s_suppr = Math.max(0.4, 1.0 - this.fluid.S / 12.0);
+    let sigma = as_f * red_f * s_suppr;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 150 && T <= 300) {
+      T_factor = 1.2;
+    } else if (T < 100) {
+      T_factor = 0.3;
+    } else if (T < 150) {
+      T_factor = 0.3 + 0.018 * (T - 100);
+    } else if (T <= 350) {
+      T_factor = Math.max(0.5, 1.2 - 0.014 * (T - 300));
+    } else {
+      T_factor = 0.3;
+    }
+    sigma *= T_factor;
+    if (this.fluid.pH < 3 || this.fluid.pH > 8) sigma *= 0.6;
     return Math.max(sigma, 0);
   }
 
@@ -7164,6 +7196,68 @@ function grow_argentite(crystal, conditions, step) {
   });
 }
 
+// Native arsenic — As (residual-overflow native element)
+function grow_native_arsenic(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_native_arsenic();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.10);
+      conditions.fluid.As += dissolved_um * 0.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — As released as AsO₄³⁻ into fluid`,
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const bi_present = conditions.fluid.Bi > 5.0;
+  const T = conditions.temperature;
+  let habit_note;
+
+  if (bi_present && excess > 0.5) {
+    crystal.habit = 'arsenolamprite';
+    crystal.dominant_forms = ['Bi-rich orthorhombic As', 'lamellar'];
+    habit_note = `arsenolamprite — Bi-rich variety (Bi=${conditions.fluid.Bi.toFixed(0)} ppm in fluid)`;
+  } else if (excess > 1.5) {
+    crystal.habit = 'reniform';
+    crystal.dominant_forms = ['botryoidal kidney crust', 'concentric layers'];
+    habit_note = 'reniform native arsenic — Akatani botryoidal habit';
+  } else if (T > 250 && excess < 0.6) {
+    crystal.habit = 'rhombohedral_crystal';
+    crystal.dominant_forms = ['{0001} basal pinacoid', '{1011} rhombohedron'];
+    habit_note = 'rhombohedral native arsenic — RARE high-T crystal habit';
+  } else {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['granular crust', 'tin-white metallic mass'];
+    habit_note = 'massive granular native arsenic — Freiberg ore form';
+  }
+
+  if (crystal.zones && crystal.zones.length > 8) {
+    habit_note += '; arsenolite tarnish (As₂O₃ surface bloom)';
+  } else {
+    habit_note += '; tin-white metallic, fresh fracture';
+  }
+  if (conditions.fluid.Sb > 10) {
+    habit_note += '; Sb-substituted (As-Sb solid solution, up to ~3% Sb)';
+  }
+
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.012, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
 // Native silver — Ag (Kongsberg wire-silver mineral, S-depletion gate)
 function grow_native_silver(crystal, conditions, step) {
   const sigma = conditions.supersaturation_native_silver();
@@ -9168,6 +9262,7 @@ const MINERAL_ENGINES = {
   acanthite: grow_acanthite,
   argentite: grow_argentite,
   native_silver: grow_native_silver,
+  native_arsenic: grow_native_arsenic,
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -11493,6 +11588,19 @@ class VugSimulator {
       }
     }
 
+    // Native arsenic nucleation — As + strongly_reducing + S<10 + Fe<50.
+    // The residual-overflow mineral.
+    const sigma_nas = this.conditions.supersaturation_native_arsenic();
+    if (sigma_nas > 1.0 && !this._atNucleationCap('native_arsenic')) {
+      if (rng.random() < 0.16) {
+        let pos = 'vug wall';
+        const dissolving_apy_nas = this.crystals.filter(c => c.mineral === 'arsenopyrite' && c.dissolved);
+        if (dissolving_apy_nas.length && rng.random() < 0.5) pos = `on arsenopyrite #${dissolving_apy_nas[0].crystal_id}`;
+        const c = this.nucleate('native_arsenic', pos, sigma_nas);
+        this.log.push(`  ✦ NUCLEATION: Native arsenic #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_nas.toFixed(2)}, As=${this.conditions.fluid.As.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(1)}, Fe=${this.conditions.fluid.Fe.toFixed(0)})`);
+      }
+    }
+
     // Native silver nucleation — Ag + strongly_reducing + S < 2.
     // The depletion mineral. Substrate preferences track the geological
     // pathway: dissolving acanthite (supergene Ag-enrichment route at
@@ -13472,6 +13580,26 @@ class VugSimulator {
       parts.push("Oxidative dissolution — strong O₂ in the fluid is etching the surface. Ag is going back into solution as Ag⁺, and the released ions migrate down the redox gradient to re-precipitate as native silver in deeper reducing pockets. This is the supergene Ag-enrichment mechanism (Boyle 1968) — the same chemistry that made Tsumeb's secondary ore zone.");
     } else if (c.zones && c.zones.length > 15) {
       parts.push('Tarnish — surface oxidation has darkened the original lead-gray luster to deep iron-black. Even in a sealed vug, atmospheric S compounds eventually reach the surface.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_native_arsenic(c) {
+    const parts = [`Native arsenic #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("As — elemental arsenic, the pariah of the periodic table. Trigonal (R3̄m), Mohs 3-4, perfect basal {0001} cleavage that splits like dark mica. Tin-white to steel-gray on fresh fracture, tarnishes to arsenolite (As₂O₃) within hours of exposure. Forms only when every other As-consumer in the fluid (Fe → arsenopyrite, Ni → nickeline, Co → safflorite, S → realgar/orpiment) has already had its share — the residual overflow.");
+    if (c.habit === 'reniform') {
+      parts.push('Reniform / botryoidal — kidney-shaped crusts with concentric growth layers, the Akatani Mine signature. The botryoidal habit emerges when high σ produces nucleation faster than diffusion supply.');
+    } else if (c.habit === 'rhombohedral_crystal') {
+      parts.push('Rhombohedral crystal — RARE habit. {0001} basal pinacoid with {1011} rhombohedron faces, barrel-shaped at higher T. Most native-arsenic specimens are massive; well-formed crystals are collector-grade rare.');
+    } else if (c.habit === 'arsenolamprite') {
+      parts.push('Arsenolamprite — the Bi-rich variety (up to 12% Bi). Possibly distinct from native arsenic at high Bi loadings (orthorhombic instead of trigonal, per Schiferl 1969).');
+    } else {
+      parts.push('Massive granular — the Freiberg ore form. Tin-white metallic mass, no crystal faces. Hand specimens have a characteristic garlic odor when freshly fractured (arsine gas, As-H₃).');
+    }
+    if (c.dissolved) {
+      parts.push('Oxidative dissolution — O₂-bearing fluid is etching the surface. As goes back to solution as AsO₄³⁻ and migrates downstream to feed the supergene arsenate cascade: scorodite, pharmacolite, erythrite, annabergite, olivenite, mimetite. The same As atoms passing through one mineral after another.');
+    } else if (c.zones && c.zones.length > 8) {
+      parts.push('Arsenolite tarnish — the surface is blooming with a crust of As₂O₃ crystals: white, powdery, dramatically more toxic than the metalloid beneath.');
     }
     return parts.join(' ');
   }
@@ -17853,7 +17981,8 @@ const IDLE_MINERAL_COLORS = {
   wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
-  acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4'
+  acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4',
+  native_arsenic: '#888888'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

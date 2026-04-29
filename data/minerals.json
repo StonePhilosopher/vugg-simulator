@@ -7509,7 +7509,9 @@
         {
           "name": "111_penetration",
           "description": "Penetration twin on {111}",
-          "habits": ["cubic_crystal"]
+          "habits": [
+            "cubic_crystal"
+          ]
         }
       ],
       "acid_dissolution": null,
@@ -7525,6 +7527,84 @@
         "web/index.html"
       ],
       "audit_status": "Round 8a-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The first depletion-gate engine in the sim: native silver fires only when fluid.S < 2 ppm AND fluid.O2 < 0.3 — the geological signature of every Kongsberg-type wire-silver locality. Engine includes tarnish branch (when S returns to fluid > 5 ppm, the surface skins over with acanthite as a dissolution event). Habit variants: wire (low T + high σ, Kongsberg), dendritic (mid σ, Cobalt-Ontario), massive (low σ, Keweenaw), cubic_crystal (rare hypogene primary with {111} penetration twin). Activates the dormant Ag pool at Tsumeb supergene + Bisbee oxidation cap, where dissolving acanthite/tetrahedrite releases Ag⁺ that meets a deeper reducing pocket. Tarnish-clock mechanic (per-step acanthite-rind accumulation regardless of S availability) is deferred to 8a-3b alongside the same mechanic for native_arsenic / native_tellurium / native_bismuth. Sources: Boyle 1968 (GSA Bulletin 79), Bjørlykke 1959 (NGU 207), Kissin & Mango 2014 (CIM SV 54), boss research file research/research-native-silver.md.",
+      "class_color": "#eb13eb"
+    },
+    "native_arsenic": {
+      "formula": "As",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5.0,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "low-mid σ — Freiberg ore form, granular crusts; tin-white metallic mass; the dominant economic habit"
+        },
+        {
+          "name": "reniform",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "coating",
+          "trigger": "high σ — botryoidal kidney-shaped crusts with concentric layers, the Akatani Mine habit"
+        },
+        {
+          "name": "rhombohedral_crystal",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "high T (>250°C) + low σ — RARE rhombohedral crystals with {0001} basal pinacoid + {1011} faces"
+        },
+        {
+          "name": "arsenolamprite",
+          "wall_spread": 0.5,
+          "void_reach": 0.4,
+          "vector": "tabular",
+          "trigger": "Bi-rich fluid (Bi>5) + mid σ — the Bi-substituted variety, possibly orthorhombic; up to 12% Bi"
+        }
+      ],
+      "class": "native",
+      "description": "As — elemental arsenic, the residual-overflow native element. Trigonal (R3̄m), Mohs 3-4, perfect basal {0001} cleavage that splits like dark mica. Tin-white to steel-gray metallic on fresh fracture, tarnishes to arsenolite (As₂O₃) within hours. Forms only when every other As-consumer in the fluid (Fe → arsenopyrite, Ni → nickeline, Co → safflorite, S → realgar/orpiment) has had its share — the leftover phase. Famous Co-Ni-Ag vein districts (Freiberg Saxony, Sainte-Marie-aux-Mines Alsace, Příbram Czech) host native arsenic as the residual after the Co/Ni/Ag captured the metals and S was already locked in. Sources: research/research-native-arsenic.md (boss commit f2939da), Schiferl 1969 (Acta Cryst. B25), Petruk 1971 (Cobalt-Ag paragenesis).",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        100,
+        350
+      ],
+      "T_optimum_C": [
+        150,
+        300
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "strongly_reducing",
+      "required_ingredients": {
+        "As": 5
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": 615,
+      "thermal_decomp_reaction": "As (s) → As (vapor) — sublimes at 615°C and 1 atm without melting",
+      "thermal_decomp_products": {"As": 0.4},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "massive_granular",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_native_arsenic",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8b-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The residual-overflow native element: hard gates at S>10 (overflows to realgar/orpiment/arsenopyrite), Fe>50 (overflows to arsenopyrite), O₂>0.5 (overflows to arsenate suite). Habit variants: massive_granular (Freiberg ore form), reniform (Akatani botryoidal), rhombohedral_crystal (rare high-T crystals), arsenolamprite (Bi-rich variety). Engine includes oxidative-dissolution branch when O₂>0.7 (As goes back to fluid as AsO₄³⁻, feeds the supergene arsenate cascade: scorodite/erythrite/annabergite/olivenite/mimetite). Tarnish-clock for the As₂O₃ surface bloom is deferred to 8a-3b alongside other native-element tarnish mechanics. Sources: Schiferl 1969 (Acta Cryst. B25), Petruk 1971 (Cobalt-Ag paragenesis), boss research file research/research-native-arsenic.md.",
       "class_color": "#eb13eb"
     }
   }

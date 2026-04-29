@@ -2976,6 +2976,68 @@ class VugConditions:
             sigma *= 0.6
         return max(sigma, 0)
 
+    def supersaturation_native_arsenic(self) -> float:
+        """Native arsenic (As⁰) — the residual-overflow native element.
+
+        The "leftovers" mineral: native As only forms when As is in
+        the fluid AND every other element that wants As (Fe → arsenopyrite,
+        Ni → nickeline, Co → safflorite, S → realgar/orpiment) has
+        already had its share. Same depletion-overflow logic as
+        native_silver, but the gates are reversed: instead of needing
+        S to be absent, we need *all the As consumers* to be absent.
+
+        Hard gates:
+          • S > 10 → 0 (As goes into realgar/orpiment/arsenopyrite)
+          • Fe > 50 → 0 (As goes into arsenopyrite preferentially)
+          • O₂ > 0.5 → 0 (oxidizing fluid takes As to scorodite/AsO₄)
+        Soft preference: pH 4-7, T 150-300°C optimum.
+
+        Geologically: every famous native-As locality (Freiberg
+        Saxony, Sainte-Marie-aux-Mines Alsace, Příbram Czech) is a
+        Co-Ni-Ag vein deposit where Co/Ni/Ag captured the metals first
+        and S was already locked into other arsenides — so the residual
+        As had nothing to bond with except itself.
+
+        Source: research/research-native-arsenic.md (boss commit
+        f2939da); Petruk 1971 (Cobalt-Ag paragenesis).
+        """
+        if self.fluid.As < 5:
+            return 0
+        # S overflow gate — As goes to realgar/orpiment/arsenopyrite first.
+        if self.fluid.S > 10.0:
+            return 0
+        # Fe overflow gate — As goes to arsenopyrite preferentially.
+        if self.fluid.Fe > 50.0:
+            return 0
+        # Strongly reducing — oxidizing fluid takes As to arsenate.
+        if self.fluid.O2 > 0.5:
+            return 0
+        # Activity factor — high As required to overcome the kinetic
+        # barrier to native-metalloid nucleation.
+        as_f = min(self.fluid.As / 30.0, 3.0)
+        # Reducing preference.
+        red_f = max(0.4, 1.0 - self.fluid.O2 * 1.8)
+        # Soft S suppression — even sub-threshold S lowers yield.
+        s_suppr = max(0.4, 1.0 - self.fluid.S / 12.0)
+        sigma = as_f * red_f * s_suppr
+        # T window — peak 150-300°C.
+        T = self.temperature
+        if 150 <= T <= 300:
+            T_factor = 1.2
+        elif T < 100:
+            T_factor = 0.3
+        elif T < 150:
+            T_factor = 0.3 + 0.018 * (T - 100)
+        elif T <= 350:
+            T_factor = max(0.5, 1.2 - 0.014 * (T - 300))
+        else:
+            T_factor = 0.3
+        sigma *= T_factor
+        # pH preference 4-7.
+        if self.fluid.pH < 3 or self.fluid.pH > 8:
+            sigma *= 0.6
+        return max(sigma, 0)
+
     def supersaturation_native_silver(self) -> float:
         """Native silver (Ag⁰) — the Kongsberg wire-silver mineral.
 
@@ -8194,6 +8256,85 @@ def grow_argentite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_native_arsenic(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Native arsenic (As⁰) — the residual-overflow native element.
+
+    Tin-white to steel-gray metallic on fresh fracture, tarnishes to
+    arsenolite (As₂O₃) within hours of exposure. Perfect basal {0001}
+    cleavage — splits into papery sheets like dark mica.
+
+    Habit selection:
+      - high σ → reniform (botryoidal kidney-shaped crusts, the
+        Akatani Mine signature)
+      - mid σ → massive (granular crusts, the Freiberg ore form)
+      - low σ + high T → rhombohedral_crystal (rare {0001} +
+        {1011} crystals)
+      - Bi presence → arsenolamprite variety (Bi-rich, possibly
+        orthorhombic)
+
+    Source: research/research-native-arsenic.md (boss commit f2939da).
+    """
+    sigma = conditions.supersaturation_native_arsenic()
+
+    if sigma < 1.0:
+        # Oxidative dissolution — As goes back to fluid as AsO₄³⁻.
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 0.7:
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.10)
+            conditions.fluid.As += dissolved_um * 0.5
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"oxidative dissolution (O₂={conditions.fluid.O2:.2f}) — As released as AsO₄³⁻ into fluid"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 2.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    bi_present = conditions.fluid.Bi > 5.0
+    T = conditions.temperature
+
+    if bi_present and excess > 0.5:
+        crystal.habit = "arsenolamprite"
+        crystal.dominant_forms = ["Bi-rich orthorhombic As", "lamellar"]
+        habit_note = f"arsenolamprite — Bi-rich variety (Bi={conditions.fluid.Bi:.0f} ppm in fluid)"
+    elif excess > 1.5:
+        crystal.habit = "reniform"
+        crystal.dominant_forms = ["botryoidal kidney crust", "concentric layers"]
+        habit_note = "reniform native arsenic — Akatani botryoidal habit"
+    elif T > 250 and excess < 0.6:
+        crystal.habit = "rhombohedral_crystal"
+        crystal.dominant_forms = ["{0001} basal pinacoid", "{1011} rhombohedron"]
+        habit_note = "rhombohedral native arsenic — RARE high-T crystal habit"
+    else:
+        crystal.habit = "massive_granular"
+        crystal.dominant_forms = ["granular crust", "tin-white metallic mass"]
+        habit_note = "massive granular native arsenic — Freiberg ore form"
+
+    # Color note — fresh tin-white tarnishes to arsenolite within steps.
+    if len(crystal.zones) > 8:
+        habit_note += "; arsenolite tarnish (As₂O₃ surface bloom)"
+    else:
+        habit_note += "; tin-white metallic, fresh fracture"
+
+    # Garlic-odor note (research file flags this as diagnostic — flavor only)
+    # Sb solid solution
+    if conditions.fluid.Sb > 10:
+        habit_note += "; Sb-substituted (As-Sb solid solution, up to ~3% Sb)"
+
+    # Deplete As — note no S consumed (S>10 was the gate)
+    conditions.fluid.As = max(conditions.fluid.As - rate * 0.012, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_native_silver(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Native silver (Ag⁰) — the Kongsberg wire-silver mineral.
 
@@ -8413,6 +8554,7 @@ MINERAL_ENGINES = {
     "acanthite": grow_acanthite,
     "argentite": grow_argentite,
     "native_silver": grow_native_silver,
+    "native_arsenic": grow_native_arsenic,
 }
 
 
@@ -8466,6 +8608,7 @@ THERMAL_DECOMPOSITION = {
     "brochantite":   (250, "Cu₄(SO₄)(OH)₆ → tenorite (CuO) + SO₃ + H₂O (dehydration)", {"Cu": 0.5, "S": 0.3}),
     "antlerite":     (200, "Cu₃(SO₄)(OH)₄ → tenorite + SO₃ + H₂O (dehydration)", {"Cu": 0.5, "S": 0.4}),
     "anhydrite":     (1450, "CaSO₄ → CaO + SO₃ (decomposition; very high T — outside normal sim range)", {"Ca": 0.4, "S": 0.4}),
+    "native_arsenic": (615, "As (s) → As (vapor) — sublimes at 615°C and 1 atm without melting", {"As": 0.4}),
 }
 
 
@@ -11903,6 +12046,24 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Argentite #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_arg:.2f}, "
                               f"Ag={self.conditions.fluid.Ag:.2f}, S={self.conditions.fluid.S:.0f})")
+
+        # Native arsenic nucleation — As + strongly_reducing + S<10 + Fe<50.
+        # The residual-overflow mineral. Substrate preference: dissolving
+        # arsenopyrite (the supergene route — when arsenopyrite oxidizes,
+        # the freed As that doesn't go to scorodite can re-precipitate
+        # as native As if the local pocket stays reducing), or bare wall.
+        sigma_nas = self.conditions.supersaturation_native_arsenic()
+        if sigma_nas > 1.0 and not self._at_nucleation_cap("native_arsenic"):
+            if random.random() < 0.16:
+                pos = "vug wall"
+                dissolving_apy = [c for c in self.crystals if c.mineral == "arsenopyrite" and c.dissolved]
+                if dissolving_apy and random.random() < 0.5:
+                    pos = f"on arsenopyrite #{dissolving_apy[0].crystal_id}"
+                c = self.nucleate("native_arsenic", position=pos, sigma=sigma_nas)
+                self.log.append(f"  ✦ NUCLEATION: Native arsenic #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_nas:.2f}, "
+                              f"As={self.conditions.fluid.As:.0f}, S={self.conditions.fluid.S:.1f}, "
+                              f"Fe={self.conditions.fluid.Fe:.0f})")
 
         # Native silver nucleation — Ag + strongly_reducing + S < 2.
         # The depletion mineral. Substrate preferences track the
@@ -16803,6 +16964,74 @@ class VugSimulator:
                 "vug, atmospheric S compounds eventually reach the "
                 "surface. Display specimens are usually re-polished "
                 "before sale."
+            )
+        return " ".join(parts)
+
+    def _narrate_native_arsenic(self, c: Crystal) -> str:
+        """Narrate native arsenic — the residual-overflow native element."""
+        parts = [f"Native arsenic #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "As — elemental arsenic, the pariah of the periodic table. "
+            "Trigonal (R3̄m), Mohs 3-4, perfect basal {0001} cleavage that "
+            "splits like dark mica. Tin-white to steel-gray on fresh "
+            "fracture, tarnishes to arsenolite (As₂O₃) within hours of "
+            "exposure. Forms only when every other As-consumer in the "
+            "fluid (Fe → arsenopyrite, Ni → nickeline, Co → safflorite, "
+            "S → realgar/orpiment) has already had its share — the "
+            "residual overflow. Famous Co-Ni-Ag vein districts (Freiberg "
+            "Saxony, Sainte-Marie-aux-Mines Alsace, Příbram Czech) all "
+            "host native As as the leftover phase."
+        )
+
+        if c.habit == "reniform":
+            parts.append(
+                "Reniform / botryoidal — kidney-shaped crusts with concentric "
+                "growth layers, the Akatani Mine signature. The botryoidal "
+                "habit emerges when high σ produces nucleation faster than "
+                "diffusion supply, so the growth front splits into rounded "
+                "lobes that overlap and merge. Polished slabs reveal "
+                "spectacular concentric banding."
+            )
+        elif c.habit == "rhombohedral_crystal":
+            parts.append(
+                "Rhombohedral crystal — RARE habit. {0001} basal pinacoid "
+                "with {1011} rhombohedron faces, barrel-shaped at higher T "
+                "where slow growth lets the crystal develop properly. "
+                "Most native-arsenic specimens are massive; well-formed "
+                "crystals are collector-grade rare."
+            )
+        elif c.habit == "arsenolamprite":
+            parts.append(
+                "Arsenolamprite — the Bi-rich variety (up to 12% Bi). "
+                "Possibly distinct from native arsenic at high Bi loadings "
+                "(orthorhombic instead of trigonal, per Schiferl 1969). "
+                "Rare in nature; appears here because the host fluid "
+                "carries enough Bi to substitute into the As lattice."
+            )
+        else:
+            parts.append(
+                "Massive granular — the Freiberg ore form, dominant economic "
+                "habit. Tin-white metallic mass, no crystal faces but still "
+                "chemically distinct from the surrounding gangue. Hand "
+                "specimens have a characteristic garlic odor when freshly "
+                "fractured (arsine gas, As-H₃)."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — O₂-bearing fluid is etching the "
+                "surface. As goes back to solution as AsO₄³⁻ and migrates "
+                "downstream to feed the supergene arsenate cascade: scorodite "
+                "(Fe), pharmacolite (Ca), erythrite (Co), annabergite (Ni), "
+                "olivenite (Cu), mimetite (Pb). The same As atoms passing "
+                "through one mineral after another."
+            )
+        elif len(c.zones) > 8:
+            parts.append(
+                "Arsenolite tarnish — the surface is blooming with a crust "
+                "of As₂O₃ crystals: white, powdery, dramatically more toxic "
+                "than the metalloid beneath. Geological inevitability — "
+                "every native-arsenic specimen tarnishes."
             )
         return " ".join(parts)
 
