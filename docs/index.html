@@ -3560,24 +3560,43 @@ let timeScale = 5.0;
 //        commit, separate): early ev_supergene_acidification at
 //        step 5 + Al 3→15 to unlock scorodite + jarosite + alunite
 //        in their early acid window.
-//   v8 — Round 8 mineral expansion (Apr 2026, in progress):
-//        Silver suite (8a, complete):
-//        • acanthite (Ag₂S, monoclinic, T<173°C) — first Ag mineral.
-//          Activates dormant Ag at MVT, Sweetwater, Tsumeb, Bisbee.
-//          Hits seed-42 in mvt + reactive_wall + bisbee.
-//        • argentite (Ag₂S, cubic, T>173°C) + 173°C paramorph mechanic.
-//          First non-destructive polymorph: argentite crystals cooling
-//          past 173°C convert in-place to acanthite while preserving
-//          habit + dominant_forms + zones. PARAMORPH_TRANSITIONS dict
+//   v8 — Round 8 mineral expansion (Apr 2026, COMPLETE): 15 new species
+//        across 5 sub-rounds, engine count 69 → 84, tests 842 → 1037.
+//
+//        Silver suite (8a, 3 species):
+//        • acanthite (Ag₂S, monoclinic) — first Ag mineral.
+//        • argentite (Ag₂S, cubic) + 173°C PARAMORPH MECHANIC. First
+//          non-destructive polymorph in the sim — cools to acanthite
+//          while preserving habit + zones. PARAMORPH_TRANSITIONS dict
 //          + applyParamorphTransitions hook in run_step. Bisbee shows
-//          the trick: 5 argentite + 2 acanthite-after-argentite
-//          paramorphs at seed-42. Porphyry stays >173°C: 8 pure argentite.
-//        • native_silver (Ag, S-depletion gate) — first depletion-gate
-//          engine. Fires only when S<2 AND O2<0.3 (inverse of normal
-//          supersaturation). Wire / dendritic / massive / cubic_crystal
-//          habits. Currently absent_at_seed_42 in declared scenarios.
-//        Engine count 69 → 72.
-//        Round 8 block expands as sub-rounds 8b/8c/8d/8e land.
+//          5 argentite + 2 acanthite-after-argentite paramorphs;
+//          porphyry stays >173°C with 8 pure argentite.
+//        • native_silver (Ag) — S-DEPLETION GATE engine, the first
+//          inverse-supersaturation engine in the sim.
+//
+//        Native element trio (8b, 3 species):
+//        • native_arsenic (As) — S+Fe overflow gates.
+//        • native_sulfur (S) — synproportionation Eh window (0.1<O2<0.7).
+//        • native_tellurium (Te) — Au+Ag overflow gates.
+//
+//        Ni-Co sulfarsenide cascade (8c, 3 species + Bisbee Co=80/Ni=70):
+//        • nickeline (NiAs), millerite (NiS, mutual-exclusion gate with
+//          nickeline), cobaltite (CoAsS, THREE-ELEMENT GATE — first in sim).
+//        • Erythrite + annabergite narrators surface cobaltite/nickeline
+//          as paragenetic parents.
+//
+//        VTA suite (8d, 5 species + Tsumeb W=20):
+//        • descloizite/mottramite Cu/Zn-RATIO FORK dispatcher.
+//        • raspite/stolzite KINETIC-PREFERENCE dispatcher (~90% stolzite).
+//        • olivenite/adamite Cu/Zn fork (existing adamite retrofitted).
+//        • Pb thresholds tuned 100→40 for real supergene fluid concentrations.
+//
+//        Chalcanthite (8e, 1 species + WATER-SOLUBILITY MECHANIC):
+//        • chalcanthite (CuSO₄·5H₂O) — terminal Cu-sulfate phase.
+//        • Per-step run_step hook re-dissolves crystals when
+//          fluid.salinity<4 OR fluid.pH>5. First re-dissolvable mineral.
+//
+//        Engine count 69 → 84 (+15). Tests 842 → 1037 (+195).
 const SIM_VERSION = 8;
 
 

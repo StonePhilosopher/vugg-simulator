@@ -214,6 +214,40 @@ Deferred to a future round:
 
 ---
 
+## 🪨 Round 8 — Mineral expansion ✅ SHIPPED (Apr 2026)
+
+**Completed: 15 new species across 5 sub-rounds.** Per the boss's 61-file research drop (canonical commit `f2939da`) + `proposals/ROUND-8-IMPLEMENTATION-KICKOFF.md`, mineral count 69 → 84, tests 842 → 1037 (+195), SIM_VERSION 7 → 8.
+
+**Sub-rounds shipped:**
+- 8a — silver suite (acanthite, argentite + 173°C paramorph mechanic, native_silver) — commits `3345bf1` → `aebeea6`
+- 8b — native element trio (native_arsenic, native_sulfur synproportionation, native_tellurium) — commits `da76464` → `1b29ba0`
+- 8c — Ni-Co sulfarsenide cascade (nickeline, millerite, cobaltite three-element gate + Bisbee Co=80/Ni=70) — commit `f050bb3`
+- 8d — VTA suite (descloizite, mottramite, raspite, stolzite, olivenite + Tsumeb W=20) — commit `afc41e6`
+- 8e — chalcanthite + water-solubility metastability mechanic — commit `a017844`
+
+**Three new mineral-mechanic patterns added to the sim:**
+1. **PARAMORPH_TRANSITIONS** (8a-2) — module-level dict + apply_paramorph_transitions hook in run_step. First non-destructive polymorph mechanic: argentite cooling past 173°C converts in-place to acanthite while preserving habit + dominant_forms + zones. Distinct from THERMAL_DECOMPOSITION (which destroys the crystal). 10 regression tests in `tests/test_paramorph_transitions.py`.
+2. **Three-element gate** (8c-4) — cobaltite (CoAsS) requires Co + As + S all present simultaneously at minimum thresholds. First three-reagent gate; pattern available for future minerals (e.g., proustite Ag₃AsS₃, pyrargyrite Ag₃SbS₃).
+3. **Water-solubility metastability** (8e) — chalcanthite re-dissolves when fluid.salinity<4 OR fluid.pH>5. Per-step hook in run_step distinct from THERMAL_DECOMPOSITION + PARAMORPH_TRANSITIONS — this is just chemistry. 5 regression tests in `tests/test_metastability.py`.
+
+**Five new chemistry-dispatch patterns:**
+1. **Depletion / overflow gate** (8a-3, 8b) — native_silver (S<2), native_arsenic (S+Fe<thresholds), native_tellurium (Au+Ag<thresholds). Inverse of normal supersaturation logic.
+2. **Synproportionation Eh window** (8b-2) — native_sulfur fires only in the H₂S/SO₄²⁻ boundary (0.1<O2<0.7). First Eh-window engine.
+3. **Mutual-exclusion priority gate** (8c-3) — millerite (NiS) returns 0 when As>30 + T>200 (nickeline NiAs takes priority).
+4. **Cu/Zn-ratio fork** (8d) — descloizite/mottramite + olivenite/adamite both use Cu>Zn vs Zn≥Cu dispatchers.
+5. **Kinetic-preference dispatcher** (8d-2) — raspite/stolzite both PbWO₄, kinetic preference favors stolzite ~90% of rolls.
+
+**Backlog items unblocked or ready:**
+- **Au-Te coupling round** (calaverite + sylvanite + hessite + altaite + tetradymite + coloradoite) — natural Round 9 lift. Te is now plumbed in FluidChemistry; native_tellurium's Au>1 gate becomes the dispatcher's Au-rich path → calaverite. Hg field needed for coloradoite (HgTe). Once Au is consumed by calaverite, residual Te will fire as native_tellurium.
+- **Tarnish clock for native silver/arsenic/tellurium** (deferred from 8a + 8b) — per-step acanthite/arsenolite/tellurite-rind accumulation regardless of S availability. Should also apply to existing native_bismuth.
+- **Cobalt-Ontario / Freiberg silver vein scenario** — would activate the primary nickeline + cobaltite + native_silver suite at seed-42 (currently absent; Bisbee chemistry isn't As-rich enough for sulfarsenide formation).
+- **Acid mine drainage scenario** — would activate chalcanthite at seed-42 (currently absent_at_seed_42 in declared scenarios).
+
+**Outstanding work from the boss's research drop (NOT in Round 8):**
+- 41 expanded-research narrator refresh sweep — the boss's 61-file commit included richer research for 41 already-shipped species. Folding the new detail into existing narrators is a multi-session task; lower priority than next-round species expansion.
+
+---
+
 ## 💎💎 Round ~end-of-list (positions ~185-200) — Diamond + mantle/high-P plumbing cluster
 
 **RESERVED SLOTS**: diamond is the last mineral on the target list of 200, and ~15-20 slots adjacent to it are reserved for minerals that share the same plumbing investment (the "D3 option" from `proposals/MINERALS-PROPOSAL-GEMSTONES.md`). Rationale: the infrastructure to model diamond (carbon field in FluidChemistry + pressure-as-chemistry-driver + mantle T+P regime) is heavy; single-use for diamond would be wasteful. Clustering lets the plumbing pay for itself ~15-20 times.

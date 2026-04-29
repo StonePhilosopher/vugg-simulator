@@ -69,32 +69,83 @@ from typing import List, Dict, Optional, Tuple
 #        3→15, opening a 15-step acid window for scorodite + jarosite +
 #        alunite to nucleate before ev_meteoric_flush at step 20
 #        carbonate-buffers pH back up.
-#   v8 — Round 8 mineral expansion (Apr 2026, in progress):
-#        Silver suite (8a, complete):
-#          • acanthite (Ag₂S, monoclinic, T<173°C) — first Ag mineral.
-#            Activates dormant Ag at MVT (Tri-State Ag=5), Sweetwater
-#            Viburnum (Ag=3), Tsumeb (trace), Bisbee (tetrahedrite
-#            oxidation). Hits seed-42 in mvt + reactive_wall + bisbee.
-#          • argentite (Ag₂S, cubic, T>173°C) + 173°C paramorph mechanic.
-#            First non-destructive polymorph in the sim — argentite
-#            crystals cooling past 173°C convert in-place to acanthite
-#            while preserving habit + dominant_forms + zones (the
-#            external shape and growth history). Implemented via
-#            module-level PARAMORPH_TRANSITIONS dict + apply_paramorph_
-#            transitions hook in run_step. Hits seed-42 in bisbee
-#            (5 argentite + 2 acanthite-after-argentite paramorphs)
-#            and porphyry (8 pure argentite, never cools below 173).
-#          • native_silver (Ag, S-depletion gate) — first depletion-
-#            gate engine in the sim. Fires only when S<2 AND O2<0.3 —
-#            the inverse of normal supersaturation logic. Habit variants
-#            include the Kongsberg wire (max 30 cm, the collector's
-#            prize). Tarnish branch when S returns to fluid. Currently
-#            absent_at_seed_42 in declared scenarios (bisbee + supergene_
-#            oxidation both have S >= 2 ppm even after sulfide
-#            oxidation); future Kongsberg-type calcite-vein scenario
-#            will unlock it.
-#        Engine count 69 → 72.
-#        [Round 8 block expands as sub-rounds 8b/8c/8d/8e land.]
+#   v8 — Round 8 mineral expansion (Apr 2026, COMPLETE): 15 new species
+#        across 5 sub-rounds, engine count 69 → 84, tests 842 → 1037.
+#        Three new mineral-mechanic patterns added to the sim plus
+#        five new chemistry-dispatch patterns.
+#
+#        Silver suite (8a, 3 species):
+#          • acanthite (Ag₂S, monoclinic) — first Ag mineral. Hits
+#            seed-42 in mvt/reactive_wall/bisbee.
+#          • argentite (Ag₂S, cubic) + 173°C PARAMORPH MECHANIC. First
+#            non-destructive polymorph in the sim — argentite crystals
+#            cooling past 173°C convert in-place to acanthite while
+#            preserving habit + dominant_forms + zones. Module-level
+#            PARAMORPH_TRANSITIONS dict + apply_paramorph_transitions
+#            hook in run_step. Bisbee shows 5 argentite + 2 paramorphic
+#            acanthite-after-argentite at seed-42; porphyry stays >173°C
+#            with 8 pure argentite.
+#          • native_silver (Ag) — S-DEPLETION GATE engine. Fires only
+#            when S<2 AND O2<0.3 (inverse of normal supersaturation).
+#            Habit variants include the Kongsberg 30-cm wire.
+#
+#        Native element trio (8b, 3 species):
+#          • native_arsenic (As) — S+Fe overflow gates (S>10 → realgar/
+#            arsenopyrite; Fe>50 → arsenopyrite).
+#          • native_sulfur (S) — synproportionation Eh-window engine
+#            (0.1<O2<0.7), the H₂S/SO₄²⁻ boundary chemistry. First Eh-
+#            window engine; pH<5 + Fe+Cu+Pb+Zn<100 base-metal-poverty
+#            gates.
+#          • native_tellurium (Te) — Au+Ag overflow gates (Au>1 →
+#            calaverite; Ag>5 → hessite). Au-Te coupling round now
+#            unblocked.
+#
+#        Ni-Co sulfarsenide cascade (8c, 3 species + Bisbee scenario):
+#          • nickeline (NiAs) — high-T Ni arsenide.
+#          • millerite (NiS) — capillary brass-yellow needles. Mutual-
+#            exclusion gate with nickeline (As>30 + T>200 → 0).
+#          • cobaltite (CoAsS) — THREE-ELEMENT GATE engine, the first
+#            in the sim (Co + As + S all required simultaneously).
+#          • Bisbee scenario chemistry: Co=80 + Ni=70 added (citing
+#            Graeme et al. 2019). Activates the supergene erythrite +
+#            annabergite cascade at seed-42 (1 + 4 crystals in bisbee,
+#            18 + 19 in supergene_oxidation).
+#          • Erythrite + annabergite narrators refreshed to surface
+#            cobaltite/nickeline/millerite as paragenetic parents.
+#
+#        VTA suite (8d, 5 species + Tsumeb W chemistry):
+#          • descloizite (PbZnVO₄(OH)) + mottramite (PbCu(VO₄)(OH)) —
+#            Cu/Zn-RATIO FORK dispatcher (Cu>Zn → mottramite, Zn≥Cu →
+#            descloizite). The Tsumeb cherry-red / olive-green pair.
+#          • raspite (PbWO₄, monoclinic) + stolzite (PbWO₄, tetragonal)
+#            — KINETIC-PREFERENCE DISPATCHER (when both gates clear,
+#            stolzite wins ~90% of rolls, reflecting natural ~10:1
+#            occurrence ratio). First kinetic-preference engine.
+#          • olivenite (Cu₂AsO₄(OH)) — Cu/Zn fork with adamite (the
+#            existing Zn arsenate). Adamite engine retrofitted with
+#            inverse Cu>Zn gate for symmetric dispatch.
+#          • supergene_oxidation scenario: W=20 added (Strunz 1959 —
+#            Tsumeb deep oxidation hosts minor scheelite + lead-
+#            tungstate suite). Pb thresholds tuned 100→40 to match real
+#            supergene fluid concentrations.
+#          • Vanadinite + adamite narrators refreshed to surface the
+#            descloizite/mottramite + olivenite companions.
+#          • Seed-42 hits: bisbee olivenite=10, porphyry olivenite=3,
+#            supergene_oxidation stolzite=9 (kinetic winner over
+#            raspite) + adamite=1 + vanadinite=5.
+#
+#        Chalcanthite (8e, 1 species + water-solubility mechanic):
+#          • chalcanthite (CuSO₄·5H₂O) — bright blue water-soluble
+#            terminal Cu-sulfate phase.
+#          • WATER-SOLUBILITY METASTABILITY MECHANIC: per-step hook in
+#            run_step re-dissolves chalcanthite when fluid.salinity<4
+#            OR fluid.pH>5. When growth<0.5µm, asymptotic decay
+#            collapses to full dissolution. Distinct from THERMAL_
+#            DECOMPOSITION (high-T destruction) and PARAMORPH_
+#            TRANSITIONS (in-place mineral conversion). First re-
+#            dissolvable mineral.
+#
+#        Engine count 69 → 84 (+15). Tests 842 → 1037 (+195).
 SIM_VERSION = 8
 
 
