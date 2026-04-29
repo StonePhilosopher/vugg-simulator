@@ -3155,6 +3155,9 @@ const MINERAL_SPEC_FALLBACK = {
   native_arsenic: { formula: "As", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: 615, fluorescence: null, twin_laws: [], acid_dissolution: null },
   native_sulfur: { formula: "S", nucleation_sigma: 1.0, max_size_cm: 30.0, growth_rate_mult: 0.4, thermal_decomp_C: 115, fluorescence: null, twin_laws: [], acid_dissolution: null },
   native_tellurium: { formula: "Te", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: 449, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  nickeline: { formula: "NiAs", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  millerite: { formula: "NiS", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  cobaltite: { formula: "CoAsS", nucleation_sigma: 1.2, max_size_cm: 3.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3298,7 +3301,8 @@ const MINERAL_GAME_COLORS = {
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
   acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4',
-  native_arsenic: '#888888', native_sulfur: '#f5d030', native_tellurium: '#b8b8c8'
+  native_arsenic: '#888888', native_sulfur: '#f5d030', native_tellurium: '#b8b8c8',
+  nickeline: '#d49080', millerite: '#c8b860', cobaltite: '#d8d4cc'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -4647,6 +4651,69 @@ class VugConditions {
     sigma *= T_factor;
     if (this.fluid.pH < 4 || this.fluid.pH > 9) sigma *= 0.5;
     if (this.fluid.Cu > 30) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  // Nickeline (NiAs) — high-T pale-copper-red Ni arsenide.
+  supersaturation_nickeline() {
+    if (this.fluid.Ni < 40 || this.fluid.As < 40) return 0;
+    if (this.fluid.O2 > 0.6) return 0;
+    const ni_f = Math.min(this.fluid.Ni / 60.0, 2.5);
+    const as_f = Math.min(this.fluid.As / 80.0, 2.5);
+    const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.5);
+    let sigma = ni_f * as_f * red_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 300 && T <= 450) T_factor = 1.3;
+    else if (T < 200) T_factor = 0.3;
+    else if (T < 300) T_factor = 0.3 + 0.010 * (T - 200);
+    else if (T <= 500) T_factor = Math.max(0.5, 1.3 - 0.012 * (T - 450));
+    else T_factor = 0.4;
+    sigma *= T_factor;
+    if (this.fluid.pH < 3 || this.fluid.pH > 8) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  // Millerite (NiS) — capillary brass-yellow nickel sulfide. Mutual-exclusion
+  // gate: nickeline takes priority when As>30 + T>200.
+  supersaturation_millerite() {
+    if (this.fluid.Ni < 50 || this.fluid.S < 30) return 0;
+    if (this.fluid.O2 > 0.6) return 0;
+    if (this.fluid.As > 30.0 && this.temperature > 200) return 0;
+    const ni_f = Math.min(this.fluid.Ni / 80.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 60.0, 2.5);
+    const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.5);
+    let sigma = ni_f * s_f * red_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 200 && T <= 350) T_factor = 1.2;
+    else if (T < 100) T_factor = 0.3;
+    else if (T < 200) T_factor = 0.3 + 0.009 * (T - 100);
+    else if (T <= 400) T_factor = Math.max(0.4, 1.2 - 0.013 * (T - 350));
+    else T_factor = 0.3;
+    sigma *= T_factor;
+    if (this.fluid.pH < 3 || this.fluid.pH > 8) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  // Cobaltite (CoAsS) — three-element-gate sulfarsenide.
+  supersaturation_cobaltite() {
+    if (this.fluid.Co < 50 || this.fluid.As < 100 || this.fluid.S < 50) return 0;
+    if (this.fluid.O2 > 0.5) return 0;
+    const co_f = Math.min(this.fluid.Co / 80.0, 2.5);
+    const as_f = Math.min(this.fluid.As / 120.0, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 80.0, 2.5);
+    const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.5);
+    let sigma = co_f * as_f * s_f * red_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 400 && T <= 500) T_factor = 1.3;
+    else if (T < 300) T_factor = 0.3;
+    else if (T < 400) T_factor = 0.3 + 0.010 * (T - 300);
+    else if (T <= 600) T_factor = Math.max(0.4, 1.3 - 0.012 * (T - 500));
+    else T_factor = 0.3;
+    sigma *= T_factor;
+    if (this.fluid.pH < 3 || this.fluid.pH > 8) sigma *= 0.6;
     return Math.max(sigma, 0);
   }
 
@@ -7259,6 +7326,128 @@ function grow_argentite(crystal, conditions, step) {
   });
 }
 
+// Nickeline — NiAs (high-T pale-copper-red Ni arsenide)
+function grow_nickeline(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_nickeline();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.8) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.10);
+      conditions.fluid.Ni += dissolved_um * 0.4;
+      conditions.fluid.As += dissolved_um * 0.4;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Ni²⁺ + AsO₄³⁻ to fluid; downstream annabergite forming`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'reniform';
+    crystal.dominant_forms = ['botryoidal copper-red crust', 'concentric layers'];
+    habit_note = 'reniform nickeline — Cobalt-Ontario botryoidal habit';
+  } else if (excess > 0.6) {
+    crystal.habit = 'columnar';
+    crystal.dominant_forms = ['{0001} columnar', 'vertical aggregate'];
+    habit_note = 'columnar nickeline — vertical hexagonal stacks';
+  } else {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['granular massive', 'pale copper-red metallic'];
+    habit_note = 'massive granular nickeline — primary ore form';
+  }
+  if (crystal.zones && crystal.zones.length > 12) habit_note += '; tarnished to darker copper-rose';
+  conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.010, 0);
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
+}
+
+// Millerite — NiS (capillary brass-yellow Ni sulfide)
+function grow_millerite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_millerite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.8) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Ni += dissolved_um * 0.4;
+      conditions.fluid.S += dissolved_um * 0.3;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Ni²⁺ released to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  let habit_note;
+  if (excess > 1.0) {
+    crystal.habit = 'capillary';
+    crystal.dominant_forms = ['hair-fine acicular needle', 'radiating spray'];
+    habit_note = 'capillary millerite — Halls Gap geode habit, hair-thin brass-yellow needles';
+  } else if (excess > 0.4) {
+    crystal.habit = 'acicular';
+    crystal.dominant_forms = ['thin prismatic needle', 'diverging cluster'];
+    habit_note = 'acicular millerite — slender brass-yellow prisms';
+  } else {
+    crystal.habit = 'massive';
+    crystal.dominant_forms = ['massive granular', 'brass-yellow metallic'];
+    habit_note = 'massive millerite — granular ore form';
+  }
+  conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.010, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
+}
+
+// Cobaltite — CoAsS (three-element-gate sulfarsenide)
+function grow_cobaltite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_cobaltite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.10);
+      conditions.fluid.Co += dissolved_um * 0.4;
+      conditions.fluid.As += dissolved_um * 0.4;
+      conditions.fluid.S = Math.max(conditions.fluid.S - dissolved_um * 0.1, 0);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Co²⁺ + AsO₄³⁻ to fluid; erythrite forming downstream`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'reniform';
+    crystal.dominant_forms = ['botryoidal crust', 'concentric'];
+    habit_note = 'reniform cobaltite — high-σ botryoidal habit';
+  } else if (excess > 0.5) {
+    crystal.habit = 'pyritohedral';
+    crystal.dominant_forms = ['{210} pyritohedron', 'striated faces'];
+    habit_note = 'pyritohedral cobaltite — Cobalt Ontario diagnostic habit';
+  } else {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['granular', 'tin-white-with-pink-blush'];
+    habit_note = 'massive granular cobaltite — Tunaberg ore form';
+  }
+  if (conditions.fluid.Fe > 100) habit_note += '; Fe-rich (glaucodot series — (Co,Fe)AsS)';
+  if (crystal.zones && crystal.zones.length > 10) habit_note += '; pinkish-blush surface tarnish (Co oxide skin)';
+  conditions.fluid.Co = Math.max(conditions.fluid.Co - rate * 0.012, 0);
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.008, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
+}
+
 // Native tellurium — Te (metal-telluride-overflow engine)
 function grow_native_tellurium(crystal, conditions, step) {
   const sigma = conditions.supersaturation_native_tellurium();
@@ -9432,6 +9621,9 @@ const MINERAL_ENGINES = {
   native_arsenic: grow_native_arsenic,
   native_sulfur: grow_native_sulfur,
   native_tellurium: grow_native_tellurium,
+  nickeline: grow_nickeline,
+  millerite: grow_millerite,
+  cobaltite: grow_cobaltite,
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -10438,6 +10630,7 @@ function scenario_bisbee() {
       P: 5,               // enables pyromorphite (Pb+Cl+P now all present)
       Sb: 5,              // tetrahedrite-tennantite sulfosalt trace
       Au: 3,              // Bisbee ~3 Moz Au historically; supergene-preserved native Au + auriferous chalcocite [Graeme et al. 2019]
+      Co: 80, Ni: 70,     // Round 8c-1 — minor Co/Ni-bearing sulfarsenides documented at depth [Graeme et al. 2019, Bryant 1968]; activates cobaltite + nickeline + millerite engines and feeds existing erythrite + annabergite supergene cascade
       O2: 0.05, pH: 5.0, salinity: 30.0,
     }),
     wall: new VugWall({
@@ -11754,6 +11947,42 @@ class VugSimulator {
         if (active_galena_arg.length && rng.random() < 0.4) pos = `on galena #${active_galena_arg[0].crystal_id}`;
         const c = this.nucleate('argentite', pos, sigma_arg);
         this.log.push(`  ✦ NUCLEATION: Argentite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_arg.toFixed(2)}, Ag=${this.conditions.fluid.Ag.toFixed(2)}, S=${this.conditions.fluid.S.toFixed(0)})`);
+      }
+    }
+
+    // Nickeline nucleation — Ni + As + reducing + high T.
+    const sigma_nik = this.conditions.supersaturation_nickeline();
+    if (sigma_nik > 1.0 && !this._atNucleationCap('nickeline')) {
+      if (rng.random() < 0.18) {
+        let pos = 'vug wall';
+        const active_apy_nik = this.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
+        if (active_apy_nik.length && rng.random() < 0.4) pos = `on arsenopyrite #${active_apy_nik[0].crystal_id}`;
+        const c = this.nucleate('nickeline', pos, sigma_nik);
+        this.log.push(`  ✦ NUCLEATION: Nickeline #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_nik.toFixed(2)}, Ni=${this.conditions.fluid.Ni.toFixed(0)}, As=${this.conditions.fluid.As.toFixed(0)})`);
+      }
+    }
+
+    // Millerite nucleation — Ni + S + reducing + As-poor.
+    const sigma_mil = this.conditions.supersaturation_millerite();
+    if (sigma_mil > 1.0 && !this._atNucleationCap('millerite')) {
+      if (rng.random() < 0.18) {
+        let pos = 'vug wall';
+        const active_pyr_mil = this.crystals.filter(c => c.mineral === 'pyrite' && c.active);
+        if (active_pyr_mil.length && rng.random() < 0.3) pos = `on pyrite #${active_pyr_mil[0].crystal_id}`;
+        const c = this.nucleate('millerite', pos, sigma_mil);
+        this.log.push(`  ✦ NUCLEATION: Millerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_mil.toFixed(2)}, Ni=${this.conditions.fluid.Ni.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)})`);
+      }
+    }
+
+    // Cobaltite nucleation — three-element gate Co+As+S + reducing + high T.
+    const sigma_cob = this.conditions.supersaturation_cobaltite();
+    if (sigma_cob > 1.2 && !this._atNucleationCap('cobaltite')) {
+      if (rng.random() < 0.16) {
+        let pos = 'vug wall';
+        const active_apy_cob = this.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
+        if (active_apy_cob.length && rng.random() < 0.5) pos = `on arsenopyrite #${active_apy_cob[0].crystal_id}`;
+        const c = this.nucleate('cobaltite', pos, sigma_cob);
+        this.log.push(`  ✦ NUCLEATION: Cobaltite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cob.toFixed(2)}, Co=${this.conditions.fluid.Co.toFixed(0)}, As=${this.conditions.fluid.As.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)})`);
       }
     }
 
@@ -13777,6 +14006,56 @@ class VugSimulator {
       parts.push("Oxidative dissolution — strong O₂ in the fluid is etching the surface. Ag is going back into solution as Ag⁺, and the released ions migrate down the redox gradient to re-precipitate as native silver in deeper reducing pockets. This is the supergene Ag-enrichment mechanism (Boyle 1968) — the same chemistry that made Tsumeb's secondary ore zone.");
     } else if (c.zones && c.zones.length > 15) {
       parts.push('Tarnish — surface oxidation has darkened the original lead-gray luster to deep iron-black. Even in a sealed vug, atmospheric S compounds eventually reach the surface.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_nickeline(c) {
+    const parts = [`Nickeline #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("NiAs — hexagonal nickel arsenide, the namesake of the NiAs structure-type. Pale copper-red metallic on fresh fracture, the diagnostic color that fooled early miners ('kupfernickel' = copper-devil) into mistaking it for copper ore. Mohs 5-5.5, SG 7.8. Forms in high-T reducing veins where Ni and As are present together.");
+    if (c.habit === 'reniform') {
+      parts.push('Reniform / botryoidal — concentric copper-red layers, the Cobalt-Ontario signature.');
+    } else if (c.habit === 'columnar') {
+      parts.push('Columnar — vertical {0001} aggregates, intermediate between massive and well-formed crystals (which are rare for nickeline).');
+    } else {
+      parts.push('Massive granular — the dominant ore form. Compact pale copper-red mass; well-formed crystals are unusual.');
+    }
+    if (c.dissolved) {
+      parts.push('Oxidative dissolution — Ni²⁺ and AsO₄³⁻ go to fluid; downstream they recombine as annabergite (Ni₃(AsO₄)₂·8H₂O), the apple-green supergene Ni arsenate. Same Ni atoms, different mineral.');
+    } else if (c.zones && c.zones.length > 12) {
+      parts.push('Tarnish — the fresh copper-red is darkening to a deeper rose color from surface oxidation.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_millerite(c) {
+    const parts = [`Millerite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow metallic. Mohs 3-3.5, the rare nickel mineral that grows as hair-thin acicular needles in geode cavities. Forms in lower-T regimes than nickeline (NiAs); when As is depleted and Ni + S remain, NiS takes the field.");
+    if (c.habit === 'capillary') {
+      parts.push('Capillary — the diagnostic habit. Hair-thin acicular needles, often forming dense radiating sprays in vugs. Halls Gap (KY), Sterling Hill (NJ), and Glamorgan (Wales) produce showcase specimens with sprays exceeding 8 cm radius.');
+    } else if (c.habit === 'acicular') {
+      parts.push('Acicular — slender prismatic needles, longer and stouter than capillary.');
+    } else {
+      parts.push('Massive granular — the bulk ore form. Brass-yellow granular mass.');
+    }
+    if (c.dissolved) {
+      parts.push('Oxidative dissolution — Ni²⁺ goes back to fluid; downstream feeds annabergite or supergene Ni arsenate.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_cobaltite(c) {
+    const parts = [`Cobaltite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("CoAsS — orthorhombic cobalt sulfarsenide (pseudo-cubic), the cobalt analog of arsenopyrite (FeAsS). Tin-white with a diagnostic pinkish blush from surface Co oxidation, Mohs 5.5. The three-element gate (Co + As + S all required simultaneously) makes this rare. Indian jewellers used powdered cobaltite ('sehta') to make blue enamel on gold ornaments — the source of the first Co ever isolated.");
+    if (c.habit === 'pyritohedral') {
+      parts.push('Pyritohedral — {210} faces, the diagnostic primary habit. Striations parallel to the cube edges; from a distance these crystals look like pyrite, the pinkish blush on aged surfaces is the discriminating clue.');
+    } else if (c.habit === 'reniform') {
+      parts.push('Reniform — high-σ botryoidal habit, less common than pyritohedra.');
+    } else {
+      parts.push('Massive granular — the bulk ore form. Tin-white granular mass with the diagnostic pink-blush surface tarnish.');
+    }
+    if (c.dissolved) {
+      parts.push("Oxidative dissolution — the surface is going to fluid as Co²⁺ + AsO₄³⁻ + SO₄²⁻. Downstream the Co + As recombines as erythrite (Co₃(AsO₄)₂·8H₂O), the magenta-pink Co arsenate. Cobaltite is THE primary source for the medieval miners' 'cobalt bloom' supergene cascade.");
     }
     return parts.join(' ');
   }
@@ -18221,7 +18500,8 @@ const IDLE_MINERAL_COLORS = {
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
   acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4',
-  native_arsenic: '#888888', native_sulfur: '#f5d030', native_tellurium: '#b8b8c8'
+  native_arsenic: '#888888', native_sulfur: '#f5d030', native_tellurium: '#b8b8c8',
+  nickeline: '#d49080', millerite: '#c8b860', cobaltite: '#d8d4cc'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

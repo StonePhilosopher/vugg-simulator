@@ -2976,6 +2976,124 @@ class VugConditions:
             sigma *= 0.6
         return max(sigma, 0)
 
+    def supersaturation_nickeline(self) -> float:
+        """Nickeline (NiAs) — the high-T Ni-arsenide.
+
+        Pale copper-red metallic, the diagnostic color of the Cobalt-
+        Ontario veins. Hexagonal NiAs structure (the namesake), Mohs
+        5-5.5. Forms in high-T hydrothermal veins where both Ni and As
+        are available together; cooler T pushes the chemistry to
+        millerite (NiS) instead. Hard pH/Eh window is reducing-only.
+
+        Source: research/research-nickeline.md (boss commit f2939da);
+        Petruk 1971 (Co-Ni-Ag paragenesis).
+        """
+        if self.fluid.Ni < 40 or self.fluid.As < 40:
+            return 0
+        if self.fluid.O2 > 0.6:
+            return 0
+        ni_f = min(self.fluid.Ni / 60.0, 2.5)
+        as_f = min(self.fluid.As / 80.0, 2.5)
+        red_f = max(0.4, 1.0 - self.fluid.O2 * 1.5)
+        sigma = ni_f * as_f * red_f
+        T = self.temperature
+        if 300 <= T <= 450:
+            T_factor = 1.3
+        elif T < 200:
+            T_factor = 0.3
+        elif T < 300:
+            T_factor = 0.3 + 0.010 * (T - 200)
+        elif T <= 500:
+            T_factor = max(0.5, 1.3 - 0.012 * (T - 450))
+        else:
+            T_factor = 0.4
+        sigma *= T_factor
+        if self.fluid.pH < 3 or self.fluid.pH > 8:
+            sigma *= 0.6
+        return max(sigma, 0)
+
+    def supersaturation_millerite(self) -> float:
+        """Millerite (NiS) — the capillary nickel sulfide.
+
+        Brass-yellow to bronze-yellow capillary needles, the diagnostic
+        habit forming radiating sprays in geode cavities. Trigonal NiS,
+        Mohs 3-3.5. Forms in lower-T hydrothermal regimes than nickeline
+        (NiAs) — when As is depleted, NiS takes the field. Mutual
+        exclusion with nickeline: in As-rich fluid above 200°C, nickeline
+        wins (NiAs more stable than NiS at high T + As-saturation).
+
+        Source: research/research-millerite.md (boss commit f2939da);
+        Bayliss 1969 (Geochim. Cosmochim. Acta 33, on NiS-NiAs
+        equilibria).
+        """
+        if self.fluid.Ni < 50 or self.fluid.S < 30:
+            return 0
+        if self.fluid.O2 > 0.6:
+            return 0
+        # Mutual-exclusion gate — nickeline takes priority when As is
+        # plentiful AND T is high (the NiAs stability field).
+        if self.fluid.As > 30.0 and self.temperature > 200:
+            return 0
+        ni_f = min(self.fluid.Ni / 80.0, 2.5)
+        s_f  = min(self.fluid.S  / 60.0, 2.5)
+        red_f = max(0.4, 1.0 - self.fluid.O2 * 1.5)
+        sigma = ni_f * s_f * red_f
+        T = self.temperature
+        if 200 <= T <= 350:
+            T_factor = 1.2
+        elif T < 100:
+            T_factor = 0.3
+        elif T < 200:
+            T_factor = 0.3 + 0.009 * (T - 100)
+        elif T <= 400:
+            T_factor = max(0.4, 1.2 - 0.013 * (T - 350))
+        else:
+            T_factor = 0.3
+        sigma *= T_factor
+        if self.fluid.pH < 3 or self.fluid.pH > 8:
+            sigma *= 0.6
+        return max(sigma, 0)
+
+    def supersaturation_cobaltite(self) -> float:
+        """Cobaltite (CoAsS) — the three-element-gate sulfarsenide.
+
+        Reddish-silver-white pseudocubic crystals (orthorhombic but
+        very nearly cubic — pyritohedral habit), Mohs 5.5, the cobalt
+        analog of arsenopyrite. The three-element gate is the chemistry
+        novelty: Co + As + S must ALL be present simultaneously. Forms
+        in high-T hydrothermal veins (Cobalt Ontario, Tunaberg Sweden,
+        Skutterud Norway) and contact-metamorphic skarns. The classic
+        primary phase that weathers to erythrite (Co arsenate).
+
+        Source: research/research-cobaltite.md (boss commit f2939da);
+        Bayliss 1968 (Mineral. Mag. 36, on cobaltite-arsenopyrite
+        substitution).
+        """
+        if self.fluid.Co < 50 or self.fluid.As < 100 or self.fluid.S < 50:
+            return 0
+        if self.fluid.O2 > 0.5:
+            return 0
+        co_f = min(self.fluid.Co / 80.0, 2.5)
+        as_f = min(self.fluid.As / 120.0, 2.5)
+        s_f  = min(self.fluid.S  / 80.0, 2.5)
+        red_f = max(0.4, 1.0 - self.fluid.O2 * 1.5)
+        sigma = co_f * as_f * s_f * red_f
+        T = self.temperature
+        if 400 <= T <= 500:
+            T_factor = 1.3
+        elif T < 300:
+            T_factor = 0.3
+        elif T < 400:
+            T_factor = 0.3 + 0.010 * (T - 300)
+        elif T <= 600:
+            T_factor = max(0.4, 1.3 - 0.012 * (T - 500))
+        else:
+            T_factor = 0.3
+        sigma *= T_factor
+        if self.fluid.pH < 3 or self.fluid.pH > 8:
+            sigma *= 0.6
+        return max(sigma, 0)
+
     def supersaturation_native_tellurium(self) -> float:
         """Native tellurium (Te⁰) — the metal-telluride-overflow native element.
 
@@ -8390,6 +8508,186 @@ def grow_argentite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_nickeline(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Nickeline (NiAs) — high-T Ni arsenide. Pale copper-red metallic.
+
+    The Cobalt-Ontario habit. Rare as well-formed crystals; usually
+    massive granular or columnar. Tarnishes to a darker copper-rose
+    color, eventually becoming the supergene annabergite (green).
+
+    Habit selection by σ:
+      - high σ → reniform (botryoidal copper-red crusts)
+      - mid σ → columnar (vertical aggregates)
+      - low σ → massive granular
+    """
+    sigma = conditions.supersaturation_nickeline()
+
+    if sigma < 1.0:
+        # Oxidative dissolution → annabergite cascade
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 0.8:
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.10)
+            conditions.fluid.Ni += dissolved_um * 0.4
+            conditions.fluid.As += dissolved_um * 0.4
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"oxidative dissolution (O₂={conditions.fluid.O2:.2f}) — Ni²⁺ + AsO₄³⁻ to fluid; downstream annabergite forming"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 3.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.5:
+        crystal.habit = "reniform"
+        crystal.dominant_forms = ["botryoidal copper-red crust", "concentric layers"]
+        habit_note = "reniform nickeline — Cobalt-Ontario botryoidal habit"
+    elif excess > 0.6:
+        crystal.habit = "columnar"
+        crystal.dominant_forms = ["{0001} columnar", "vertical aggregate"]
+        habit_note = "columnar nickeline — vertical hexagonal stacks"
+    else:
+        crystal.habit = "massive_granular"
+        crystal.dominant_forms = ["granular massive", "pale copper-red metallic"]
+        habit_note = "massive granular nickeline — primary ore form"
+
+    if len(crystal.zones) > 12:
+        habit_note += "; tarnished to darker copper-rose"
+
+    conditions.fluid.Ni = max(conditions.fluid.Ni - rate * 0.010, 0)
+    conditions.fluid.As = max(conditions.fluid.As - rate * 0.010, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
+def grow_millerite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Millerite (NiS) — capillary brass-yellow needles in geode cavities.
+
+    Distinctive habit: hair-thin to thread-thin acicular needles
+    radiating from a wall point, often forming dense radiating sprays.
+    Brass-yellow to bronze-yellow color from intrinsic NiS metallic
+    bonding. The classic Sterling Hill / Halls Gap geode habit.
+
+    Habit selection by σ:
+      - high σ → capillary (hair-fine needles, the diagnostic habit)
+      - mid σ → acicular (longer prismatic needles)
+      - low σ → massive
+    """
+    sigma = conditions.supersaturation_millerite()
+
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 0.8:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Ni += dissolved_um * 0.4
+            conditions.fluid.S += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"oxidative dissolution (O₂={conditions.fluid.O2:.2f}) — Ni²⁺ released to fluid"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.0:
+        crystal.habit = "capillary"
+        crystal.dominant_forms = ["hair-fine acicular needle", "radiating spray"]
+        habit_note = "capillary millerite — Halls Gap geode habit, hair-thin brass-yellow needles"
+    elif excess > 0.4:
+        crystal.habit = "acicular"
+        crystal.dominant_forms = ["thin prismatic needle", "diverging cluster"]
+        habit_note = "acicular millerite — slender brass-yellow prisms"
+    else:
+        crystal.habit = "massive"
+        crystal.dominant_forms = ["massive granular", "brass-yellow metallic"]
+        habit_note = "massive millerite — granular ore form"
+
+    conditions.fluid.Ni = max(conditions.fluid.Ni - rate * 0.010, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.005, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
+def grow_cobaltite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Cobaltite (CoAsS) — pseudocubic tin-white-with-pink primary ore.
+
+    Three-element gate (Co + As + S) makes this rare; the Cobalt
+    Ontario type locality is one of the few places it forms in
+    well-developed crystals. Pyritohedral habit with striations
+    on {210} faces. Tarnishes to a diagnostic pinkish-blush from Co
+    surface oxidation, distinguishing it from pyrite at a glance.
+
+    Habit selection by σ:
+      - high σ → reniform (botryoidal at very high σ)
+      - mid σ → pyritohedral (the diagnostic primary habit)
+      - low σ → massive granular
+    """
+    sigma = conditions.supersaturation_cobaltite()
+
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 0.7:
+            crystal.dissolved = True
+            dissolved_um = min(2.5, crystal.total_growth_um * 0.10)
+            conditions.fluid.Co += dissolved_um * 0.4
+            conditions.fluid.As += dissolved_um * 0.4
+            conditions.fluid.S = max(conditions.fluid.S - dissolved_um * 0.1, 0)
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"oxidative dissolution (O₂={conditions.fluid.O2:.2f}) — Co²⁺ + AsO₄³⁻ to fluid; erythrite forming downstream"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 2.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.5:
+        crystal.habit = "reniform"
+        crystal.dominant_forms = ["botryoidal crust", "concentric"]
+        habit_note = "reniform cobaltite — high-σ botryoidal habit"
+    elif excess > 0.5:
+        crystal.habit = "pyritohedral"
+        crystal.dominant_forms = ["{210} pyritohedron", "striated faces"]
+        habit_note = "pyritohedral cobaltite — Cobalt Ontario diagnostic habit"
+    else:
+        crystal.habit = "massive_granular"
+        crystal.dominant_forms = ["granular", "tin-white-with-pink-blush"]
+        habit_note = "massive granular cobaltite — Tunaberg ore form"
+
+    # Glaucodot series — Fe substitutes for Co up to ~50%
+    if conditions.fluid.Fe > 100:
+        habit_note += "; Fe-rich (glaucodot series — (Co,Fe)AsS)"
+    if len(crystal.zones) > 10:
+        habit_note += "; pinkish-blush surface tarnish (Co oxide skin)"
+
+    conditions.fluid.Co = max(conditions.fluid.Co - rate * 0.012, 0)
+    conditions.fluid.As = max(conditions.fluid.As - rate * 0.008, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.005, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_native_tellurium(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Native tellurium (Te⁰) — the metal-telluride-overflow native element.
 
@@ -8826,6 +9124,9 @@ MINERAL_ENGINES = {
     "native_arsenic": grow_native_arsenic,
     "native_sulfur": grow_native_sulfur,
     "native_tellurium": grow_native_tellurium,
+    "nickeline": grow_nickeline,
+    "millerite": grow_millerite,
+    "cobaltite": grow_cobaltite,
 }
 
 
@@ -10368,6 +10669,17 @@ def scenario_bisbee() -> Tuple[VugConditions, List[Event], int]:
             # when grow_native_gold landed (was previously in
             # pending_schema_additions).
             Au=3,
+            # Co=80, Ni=70 — Round 8c-1 (Apr 2026). Bisbee's deep
+            # primary sulfide assemblage includes minor Co/Ni-bearing
+            # sulfarsenide phases (cobaltite + nickeline + safflorite)
+            # documented in the historical assays [Graeme et al. 2019,
+            # citing Bryant 1968]. Activates the dormant Co/Ni pools
+            # for the new sulfarsenide engines (cobaltite, nickeline,
+            # millerite) and feeds the existing erythrite + annabergite
+            # supergene arsenates further down the cascade. SIM_VERSION
+            # already at 8 from Round 8a; baseline shifts captured by
+            # the existing v8 baseline regen.
+            Co=80, Ni=70,
             # ──────────────────────────────────────────────────────────
             # Very reducing primary — chalcopyrite/bornite-stable.
             O2=0.05, pH=5.0, salinity=30.0
@@ -12319,6 +12631,51 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Argentite #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_arg:.2f}, "
                               f"Ag={self.conditions.fluid.Ag:.2f}, S={self.conditions.fluid.S:.0f})")
+
+        # Nickeline nucleation — Ni + As + reducing + high T.
+        sigma_nik = self.conditions.supersaturation_nickeline()
+        if sigma_nik > 1.0 and not self._at_nucleation_cap("nickeline"):
+            if random.random() < 0.18:
+                pos = "vug wall"
+                active_apy_nik = [c for c in self.crystals if c.mineral == "arsenopyrite" and c.active]
+                if active_apy_nik and random.random() < 0.4:
+                    pos = f"on arsenopyrite #{active_apy_nik[0].crystal_id}"
+                c = self.nucleate("nickeline", position=pos, sigma=sigma_nik)
+                self.log.append(f"  ✦ NUCLEATION: Nickeline #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_nik:.2f}, "
+                              f"Ni={self.conditions.fluid.Ni:.0f}, As={self.conditions.fluid.As:.0f})")
+
+        # Millerite nucleation — Ni + S + reducing + As-poor.
+        # The capillary brass-yellow needles in geode cavities.
+        sigma_mil = self.conditions.supersaturation_millerite()
+        if sigma_mil > 1.0 and not self._at_nucleation_cap("millerite"):
+            if random.random() < 0.18:
+                pos = "vug wall"
+                # Often nucleates inside geode cavities; substrate
+                # preference for pyrite (the geological companion).
+                active_pyr_mil = [c for c in self.crystals if c.mineral == "pyrite" and c.active]
+                if active_pyr_mil and random.random() < 0.3:
+                    pos = f"on pyrite #{active_pyr_mil[0].crystal_id}"
+                c = self.nucleate("millerite", position=pos, sigma=sigma_mil)
+                self.log.append(f"  ✦ NUCLEATION: Millerite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_mil:.2f}, "
+                              f"Ni={self.conditions.fluid.Ni:.0f}, S={self.conditions.fluid.S:.0f})")
+
+        # Cobaltite nucleation — three-element gate (Co + As + S) +
+        # reducing + high T. Substrate preference: arsenopyrite (the
+        # paragenetic predecessor at most Cobalt-Ontario veins).
+        sigma_cob = self.conditions.supersaturation_cobaltite()
+        if sigma_cob > 1.2 and not self._at_nucleation_cap("cobaltite"):
+            if random.random() < 0.16:
+                pos = "vug wall"
+                active_apy_cob = [c for c in self.crystals if c.mineral == "arsenopyrite" and c.active]
+                if active_apy_cob and random.random() < 0.5:
+                    pos = f"on arsenopyrite #{active_apy_cob[0].crystal_id}"
+                c = self.nucleate("cobaltite", position=pos, sigma=sigma_cob)
+                self.log.append(f"  ✦ NUCLEATION: Cobaltite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cob:.2f}, "
+                              f"Co={self.conditions.fluid.Co:.0f}, As={self.conditions.fluid.As:.0f}, "
+                              f"S={self.conditions.fluid.S:.0f})")
 
         # Native tellurium nucleation — Te + reducing + telluride-metal-poor.
         # Substrate preference: native gold (the Au-Te epithermal pair —
@@ -15541,6 +15898,20 @@ class VugSimulator:
                 f"moving centimeters at a time from primary sulfide to secondary arsenate."
             )
 
+        # Round 8c addition: cobaltite is now plumbed as the primary
+        # source for erythrite. If a dissolving cobaltite exists in the
+        # vug, this erythrite is downstream from it.
+        dissolving_cob = [cb for cb in self.crystals if cb.mineral == "cobaltite" and cb.dissolved]
+        if dissolving_cob and "cobaltite" not in c.position:
+            parts.append(
+                f"Paragenetic source — there's a dissolving cobaltite (#{dissolving_cob[0].crystal_id}) "
+                f"in this vug. The reaction at the dissolution front is "
+                f"4CoAsS + 13O₂ + 6H₂O → 4Co²⁺ + 4H₃AsO₄ + 4SO₄²⁻; downstream, "
+                f"the Co²⁺ and AsO₄³⁻ recombined as the erythrite you're looking at. "
+                f"Same Co atoms, different mineral — the medieval miners' 'cobalt "
+                f"bloom' was always a memory of cobaltite at depth."
+            )
+
         if c.dissolved:
             parts.append(
                 "Dehydration or acid dissolution broke down the crystal — erythrite "
@@ -15581,6 +15952,27 @@ class VugSimulator:
             parts.append(
                 "Earthy apple-green crust — the field appearance, an unmistakable green "
                 "stain in the oxidation zone of any nickel-arsenide deposit."
+            )
+
+        # Round 8c addition: nickeline is now plumbed as a primary
+        # source for annabergite (alongside the older niccolite/
+        # gersdorffite mention above). Note also possible millerite
+        # contribution at lower-T systems.
+        dissolving_nik = [nk for nk in self.crystals if nk.mineral == "nickeline" and nk.dissolved]
+        dissolving_mil = [ml for ml in self.crystals if ml.mineral == "millerite" and ml.dissolved]
+        if dissolving_nik:
+            parts.append(
+                f"Paragenetic source — a dissolving nickeline (#{dissolving_nik[0].crystal_id}) "
+                f"in this vug fed the Ni²⁺ + AsO₄³⁻ for this annabergite. The pale "
+                f"apple-green here is downstream of the pale copper-red there; the "
+                f"same Ni atoms have shifted from arsenide to arsenate over geological "
+                f"time."
+            )
+        elif dissolving_mil:
+            parts.append(
+                f"Paragenetic source — a dissolving millerite (#{dissolving_mil[0].crystal_id}) "
+                f"contributed Ni²⁺ to this growth. The annabergite green is the "
+                f"oxidation memory of yesterday's brass-yellow capillary needles."
             )
 
         if c.dissolved:
@@ -17276,6 +17668,146 @@ class VugSimulator:
                 "vug, atmospheric S compounds eventually reach the "
                 "surface. Display specimens are usually re-polished "
                 "before sale."
+            )
+        return " ".join(parts)
+
+    def _narrate_nickeline(self, c: Crystal) -> str:
+        """Narrate nickeline — the high-T pale-copper-red Ni arsenide."""
+        parts = [f"Nickeline #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "NiAs — hexagonal nickel arsenide, the namesake of the NiAs "
+            "structure-type. Pale copper-red metallic on fresh fracture, "
+            "the diagnostic color that gave Cobalt-Ontario its early name "
+            "'Niccolite' and led miners to mistake it for actual copper "
+            "ore. Mohs 5-5.5, SG 7.8 (heavy). Forms in high-T reducing "
+            "veins where both Ni and As are present together; cooler / "
+            "As-poor regimes push the chemistry to millerite (NiS) or "
+            "annabergite (the Ni arsenate)."
+        )
+        if c.habit == "reniform":
+            parts.append(
+                "Reniform / botryoidal — the high-σ habit. Concentric "
+                "copper-red layers, the Cobalt-Ontario signature."
+            )
+        elif c.habit == "columnar":
+            parts.append(
+                "Columnar — vertical {0001} aggregates, an intermediate "
+                "habit between massive and well-formed crystals (which are "
+                "rare for nickeline)."
+            )
+        else:
+            parts.append(
+                "Massive granular — the dominant ore form. Compact pale "
+                "copper-red mass; well-formed crystals are unusual at "
+                "any locality."
+            )
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — NiAs surface is oxidizing. Ni²⁺ "
+                "and AsO₄³⁻ go to fluid; downstream the Ni²⁺ + AsO₄³⁻ "
+                "recombine as annabergite (Ni₃(AsO₄)₂·8H₂O), the apple-"
+                "green supergene Ni arsenate. Same Ni atoms, different "
+                "mineral, more visible from the surface."
+            )
+        elif len(c.zones) > 12:
+            parts.append(
+                "Tarnish — the fresh copper-red is darkening to a deeper "
+                "rose color from surface oxidation."
+            )
+        return " ".join(parts)
+
+    def _narrate_millerite(self, c: Crystal) -> str:
+        """Narrate millerite — the capillary brass-yellow nickel sulfide."""
+        parts = [f"Millerite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow "
+            "metallic. Mohs 3-3.5, the rare nickel mineral that grows as "
+            "hair-thin acicular needles in geode cavities. Forms in "
+            "lower-T regimes than nickeline (NiAs); when As is depleted "
+            "and Ni + S remain, NiS takes the field. The capillary habit "
+            "is so distinctive that 'millerite' is shorthand among "
+            "collectors for any radiating-needle sulfide."
+        )
+        if c.habit == "capillary":
+            parts.append(
+                "Capillary — the diagnostic habit. Hair-thin to thread-"
+                "thin acicular needles, often forming dense radiating "
+                "sprays in vugs. Halls Gap (Kentucky), Sterling Hill (NJ), "
+                "and Glamorgan (Wales) produce the showcase specimens. "
+                "Some sprays exceed 8 cm radius — geodal cavities full "
+                "of brass-yellow filigree."
+            )
+        elif c.habit == "acicular":
+            parts.append(
+                "Acicular — slender prismatic needles, longer and "
+                "stouter than capillary. The intermediate-σ habit."
+            )
+        else:
+            parts.append(
+                "Massive granular — the bulk ore form. Brass-yellow "
+                "granular mass, no crystal faces, but still chemically "
+                "millerite (NiS)."
+            )
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — Ni²⁺ goes back to fluid; "
+                "downstream feeds annabergite or supergene Ni arsenate."
+            )
+        return " ".join(parts)
+
+    def _narrate_cobaltite(self, c: Crystal) -> str:
+        """Narrate cobaltite — the three-element-gate sulfarsenide."""
+        parts = [f"Cobaltite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "CoAsS — orthorhombic cobalt sulfarsenide (pseudo-cubic), "
+            "the cobalt analog of arsenopyrite (FeAsS). Tin-white with "
+            "a diagnostic pinkish blush from surface Co oxidation, Mohs "
+            "5.5. The three-element gate (Co + As + S all required "
+            "simultaneously) makes this rare — the Cobalt-Ontario type "
+            "locality is one of the few places it forms in well-developed "
+            "crystals. Pyritohedral {210} faces with prominent striations. "
+            "Indian jewellers used powdered cobaltite ('sehta') to make "
+            "blue enamel on gold ornaments — the Co was the first cobalt "
+            "ever isolated from a non-arsenide source."
+        )
+        if c.habit == "pyritohedral":
+            parts.append(
+                "Pyritohedral — {210} faces, the diagnostic primary habit. "
+                "Striations parallel to the cube edges are visible at "
+                "low angle. From a distance these crystals look like "
+                "pyrite; the pinkish blush on aged surfaces is the "
+                "discriminating clue."
+            )
+        elif c.habit == "reniform":
+            parts.append(
+                "Reniform — high-σ botryoidal habit. Less common than "
+                "pyritohedra, forms where supersaturation outruns the "
+                "diffusion-limited growth of well-faceted crystals."
+            )
+        else:
+            parts.append(
+                "Massive granular — the bulk ore form. Tin-white granular "
+                "mass with the diagnostic pink-blush surface tarnish."
+            )
+
+        avg_Fe_proxy = sum(z.trace_Fe for z in c.zones) / max(len(c.zones), 1)
+        if avg_Fe_proxy > 0.3:
+            parts.append(
+                "Glaucodot series — Fe substituted into the Co site, up to "
+                "~50% replacement. (Co,Fe)AsS — the iron-rich end of the "
+                "cobaltite-glaucodot solid solution. Skutterud (Norway) is "
+                "the type for these Fe-bearing intermediates."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — the surface is going to fluid as "
+                "Co²⁺ + AsO₄³⁻ + SO₄²⁻. Downstream the Co + As recombines "
+                "as erythrite (Co₃(AsO₄)₂·8H₂O), the magenta-pink Co "
+                "arsenate. This is THE primary source for erythrite in any "
+                "Cobalt-Ontario-style supergene cascade — the colorful "
+                "secondary mineral that miners called 'cobalt bloom' was "
+                "originally cobaltite at depth."
             )
         return " ".join(parts)
 

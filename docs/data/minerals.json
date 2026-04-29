@@ -7734,7 +7734,9 @@
       "trace_ingredients": {},
       "thermal_decomp_C": 449,
       "thermal_decomp_reaction": "Te (s) → Te (l) — melts at 449.5°C; boils at 988°C",
-      "thermal_decomp_products": {"Te": 0.4},
+      "thermal_decomp_products": {
+        "Te": 0.4
+      },
       "fluorescence": null,
       "twin_laws": [],
       "acid_dissolution": null,
@@ -7751,6 +7753,222 @@
       ],
       "audit_status": "Round 8b-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The metal-telluride-overflow engine: hard gates at Au>1 (overflows to calaverite/sylvanite), Ag>5 (overflows to hessite), O₂>0.5 (overflows to tellurite/tellurate). Soft suppressors for Pb (altaite) and Bi (tetradymite). Hg not currently tracked in FluidChemistry; coloradoite (HgTe) gate deferred to a future Hg-plumbing round. Habit variants: prismatic_hex (high-T striated prisms, the Kalgoorlie museum habit), granular (Cripple Creek ore form), reticulated (low-T filiform). Engine includes oxidative-dissolution branch. THERMAL_DECOMPOSITION at 449°C melting point. Currently absent_at_seed_42: porphyry has Au=2 (above gate of >1) and Ag=8 (above gate of >5), so Te stays in solution destined for calaverite/sylvanite/hessite — those engines don't exist yet. The Au-Te coupling round (calaverite + sylvanite + hessite + altaite + tetradymite + coloradoite) is now unblocked — telluride engines are the natural Round 9 lift; once Au is locked in calaverite, residual Te will be free to fire as native. Sources: Spry & Thieben 1996 (Mineralium Deposita 31), boss research file research/research-native-tellurium.md.",
       "class_color": "#eb13eb"
+    },
+    "nickeline": {
+      "formula": "NiAs",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5.0,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "low σ — granular massive ore form, the dominant habit"
+        },
+        {
+          "name": "columnar",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "moderate σ — vertical hexagonal {0001} aggregates"
+        },
+        {
+          "name": "reniform",
+          "wall_spread": 0.6,
+          "void_reach": 0.5,
+          "vector": "coating",
+          "trigger": "high σ — botryoidal copper-red crusts with concentric layers, the Cobalt-Ontario signature"
+        }
+      ],
+      "class": "sulfide",
+      "description": "NiAs — hexagonal nickel arsenide, the namesake of the NiAs structure-type. Pale copper-red metallic on fresh fracture, the diagnostic color that fooled early miners into mistaking it for copper ore (the 'kupfernickel' = copper-devil etymology). Mohs 5-5.5, SG 7.8. Forms in high-T reducing veins where Ni and As are present together; cooler / As-poor regimes push the chemistry to millerite (NiS) or annabergite (the supergene Ni arsenate). Type-locality habit at Cobalt, Ontario; also documented at Schneeberg (Saxony), Příbram (Czech), and Tunaberg (Sweden). Sources: research/research-nickeline.md (boss commit f2939da), Petruk 1971.",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        200,
+        500
+      ],
+      "T_optimum_C": [
+        300,
+        450
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Ni": 40,
+        "As": 40
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "default_habit",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_nickeline",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8c-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Ni+As required + reducing (O₂<0.6) + T 200-500°C with peak 300-450. Substrate preference: arsenopyrite (the paragenetic predecessor). Engine includes oxidative-dissolution branch that releases Ni²⁺ + AsO₄³⁻ to fluid, feeding the supergene annabergite cascade. Activates with Round 8c-1 Bisbee Ni=70 + As=8 chemistry; expected to fire in seed-42 Bisbee primary stages and supergene_oxidation supergene cascade. Mutual-priority dispatcher with millerite: when As>30 + T>200, nickeline takes priority (NiAs more stable than NiS at high-T As-saturation). Sources: Petruk 1971 (Co-Ni-Ag paragenesis), boss research file research/research-nickeline.md.",
+      "class_color": "#7feb13"
+    },
+    "millerite": {
+      "formula": "NiS",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5.0,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "massive",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — granular ore form, the bulk habit"
+        },
+        {
+          "name": "acicular",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "mid σ — slender brass-yellow prismatic needles"
+        },
+        {
+          "name": "capillary",
+          "wall_spread": 0.2,
+          "void_reach": 0.9,
+          "vector": "dendritic",
+          "trigger": "high σ + As-poor fluid — hair-fine acicular needles in radiating sprays, the Halls Gap geode habit; the most distinctive millerite morphology"
+        }
+      ],
+      "class": "sulfide",
+      "description": "NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow metallic. Mohs 3-3.5, the rare nickel mineral that grows as hair-thin acicular needles in geode cavities. Forms in lower-T regimes than nickeline (NiAs); when As is depleted and Ni + S remain, NiS takes the field. The capillary habit is so distinctive that 'millerite' is shorthand among collectors for any radiating-needle sulfide. Showcase localities: Halls Gap (Kentucky), Sterling Hill (NJ), Glamorgan (Wales). Sources: research/research-millerite.md (boss commit f2939da), Bayliss 1969 (Geochim. Cosmochim. Acta 33).",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        100,
+        400
+      ],
+      "T_optimum_C": [
+        200,
+        350
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Ni": 50,
+        "S": 30
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "default_habit",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_millerite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8c-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Ni+S required + reducing (O₂<0.6) + T 100-400°C with peak 200-350. Mutual-exclusion gate with nickeline: when As>30 AND T>200, returns 0 (nickeline takes priority — NiAs more stable than NiS at high-T As-saturation). The capillary habit (hair-fine brass-yellow needles in radiating sprays) is the diagnostic morphology — Halls Gap KY, Sterling Hill NJ, Glamorgan Wales produce showcase specimens. Substrate preference: pyrite (the geological companion). Activates with Round 8c-1 Bisbee Ni=70 chemistry; expected to fire in supergene_oxidation when As is depleted from earlier scorodite/erythrite/annabergite. Sources: Bayliss 1969 (NiS-NiAs equilibria), boss research file research/research-millerite.md.",
+      "class_color": "#7feb13"
+    },
+    "cobaltite": {
+      "formula": "CoAsS",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 4,
+      "max_size_cm": 3.0,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — granular ore form, tin-white-with-pink-blush"
+        },
+        {
+          "name": "pyritohedral",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "mid σ — {210} pyritohedral crystals with diagnostic striations parallel to cube edges; the Cobalt Ontario primary habit"
+        },
+        {
+          "name": "reniform",
+          "wall_spread": 0.6,
+          "void_reach": 0.5,
+          "vector": "coating",
+          "trigger": "high σ — botryoidal crusts when supersaturation outruns diffusion-limited growth"
+        }
+      ],
+      "class": "sulfide",
+      "description": "CoAsS — orthorhombic cobalt sulfarsenide (pseudo-cubic, pyritohedral habit). Tin-white with diagnostic pinkish blush from surface Co oxidation, Mohs 5.5. The cobalt analog of arsenopyrite. The three-element gate (Co + As + S all required simultaneously) makes this rare; the Cobalt-Ontario type locality is one of the few places it forms in well-developed crystals. Indian jewellers used powdered cobaltite ('sehta') to make blue enamel on gold ornaments — the source of the first Co ever isolated from a non-arsenide mineral. Sources: research/research-cobaltite.md (boss commit f2939da), Bayliss 1968 (Mineral. Mag. 36, on cobaltite-arsenopyrite substitution).",
+      "scenarios": [
+        "bisbee"
+      ],
+      "T_range_C": [
+        300,
+        600
+      ],
+      "T_optimum_C": [
+        400,
+        500
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Co": 50,
+        "As": 100,
+        "S": 50
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "default_habit",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_cobaltite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8c-4 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. THREE-ELEMENT GATE engine: Co + As + S all required simultaneously at minimum thresholds (Co≥50, As≥100, S≥50). First three-element gate in the sim. Reducing (O₂<0.5) + T 300-600°C with peak 400-500. Substrate preference: arsenopyrite (the paragenetic predecessor). Habit variants: massive_granular (low σ, ore form), pyritohedral (mid σ, {210} striated faces — Cobalt Ontario diagnostic), reniform (high σ, botryoidal). Glaucodot series captured in narrator: Fe>100 in fluid yields '(Co,Fe)AsS' note — the iron-rich end of the cobaltite-glaucodot solid solution (Skutterud type). Engine includes oxidative-dissolution branch: when O₂>0.7, releases Co²⁺ + AsO₄³⁻ + SO₄²⁻ to fluid, feeding the existing erythrite engine downstream — this is THE primary source for the magenta-pink 'cobalt bloom' supergene cascade. Activates with Round 8c-1 Bisbee Co=80 + As=8 + S=150 chemistry; expected to fire in seed-42 Bisbee primary stage. Sources: Bayliss 1968 (cobaltite-arsenopyrite substitution), boss research file research/research-cobaltite.md.",
+      "class_color": "#7feb13"
     }
   }
 }
