@@ -2976,6 +2976,71 @@ class VugConditions:
             sigma *= 0.6
         return max(sigma, 0)
 
+    def supersaturation_native_tellurium(self) -> float:
+        """Native tellurium (Te⁰) — the metal-telluride-overflow native element.
+
+        The rarest of the native-element overflow trio. Te is rarer
+        than platinum in Earth's crust — when it does appear in
+        epithermal gold systems, every metal in the broth covets it
+        desperately: Au makes calaverite (AuTe₂) and sylvanite, Ag
+        makes hessite (Ag₂Te), Pb makes altaite (PbTe), Bi makes
+        tetradymite (Bi₂Te₂S), Hg makes coloradoite (HgTe). Native
+        Te only crystallizes when every telluride-forming metal has
+        had its fill and there's still Te left over.
+
+        Hard gates:
+          • Au > 1.0 → 0 (Au consumes Te as calaverite/sylvanite)
+          • Ag > 5.0 → 0 (Ag consumes Te as hessite)
+          • Hg > 0.5 → 0 (Hg consumes Te as coloradoite)
+          • O₂ > 0.5 → 0 (oxidizing fluid takes Te to tellurite/tellurate)
+        Soft preferences: T 150-300°C optimum (epithermal range), pH 4-7.
+
+        Geological motifs (research file):
+          • Cripple Creek epithermal Au-Te veins
+          • Kalgoorlie golden-mile (richest Au-Te ore on Earth)
+          • Emperor Mine Vatukoula Fiji
+
+        Source: research/research-native-tellurium.md (boss commit
+        f2939da); Spry & Thieben 1996 (Mineralium Deposita 31).
+        """
+        if self.fluid.Te < 0.5:
+            return 0
+        # Telluride-forming metal gates — hard zeros.
+        if self.fluid.Au > 1.0:
+            return 0
+        if self.fluid.Ag > 5.0:
+            return 0
+        # Hg not currently tracked in FluidChemistry; coloradoite (HgTe)
+        # gate would go here when Hg is plumbed in a future round.
+        # Reducing requirement.
+        if self.fluid.O2 > 0.5:
+            return 0
+        # Activity factor — Te is so rare that even sub-ppm levels are
+        # supersaturated against equilibrium.
+        te_f = min(self.fluid.Te / 2.0, 3.5)
+        # Soft Pb/Bi suppression — these also form tellurides but the
+        # dispatcher gives native Te a chance at lower base-metal levels.
+        pb_suppr = max(0.5, 1.0 - self.fluid.Pb / 200.0)
+        bi_suppr = max(0.5, 1.0 - self.fluid.Bi / 60.0)
+        red_f = max(0.4, 1.0 - self.fluid.O2 * 1.8)
+        sigma = te_f * pb_suppr * bi_suppr * red_f
+        # T window — peak 150-300°C epithermal optimum.
+        T = self.temperature
+        if 150 <= T <= 300:
+            T_factor = 1.2
+        elif T < 100:
+            T_factor = 0.3
+        elif T < 150:
+            T_factor = 0.3 + 0.018 * (T - 100)
+        elif T <= 400:
+            T_factor = max(0.4, 1.2 - 0.008 * (T - 300))
+        else:
+            T_factor = 0.2
+        sigma *= T_factor
+        if self.fluid.pH < 3 or self.fluid.pH > 8:
+            sigma *= 0.6
+        return max(sigma, 0)
+
     def supersaturation_native_sulfur(self) -> float:
         """Native sulfur (S₈) — the synproportionation native element.
 
@@ -8325,6 +8390,73 @@ def grow_argentite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_native_tellurium(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Native tellurium (Te⁰) — the metal-telluride-overflow native element.
+
+    Tin-white to steel-gray hexagonal prisms with perfect prismatic
+    cleavage on {1010}. Trigonal (P3₁21), Mohs 2-2.5, SG 6.2 (heavy
+    for a metalloid). Epithermal Au-Te veins are the type setting —
+    Cripple Creek, Kalgoorlie, Emperor Mine. Tarnishes to TeO₂ within
+    days of exposure.
+
+    Habit selection by T:
+      - high T (>250°C) → prismatic_hex (well-formed striated prisms)
+      - mid T (200-250°C) → granular (massive ore form)
+      - low T (<200°C) → reticulated (filiform interconnected mass)
+
+    Source: research/research-native-tellurium.md (boss commit f2939da).
+    """
+    sigma = conditions.supersaturation_native_tellurium()
+
+    if sigma < 1.0:
+        # Oxidative dissolution — Te goes to TeO₃²⁻ tellurite.
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 0.7:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Te += dissolved_um * 0.5
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"oxidative dissolution (O₂={conditions.fluid.O2:.2f}) — Te oxidizing to TeO₃²⁻ tellurite"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 2.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    T = conditions.temperature
+
+    if T > 250 and excess < 1.5:
+        crystal.habit = "prismatic_hex"
+        crystal.dominant_forms = ["{1010} striated prism", "{1011} rhombohedron termination"]
+        habit_note = "prismatic native tellurium — well-formed hexagonal prisms, the Kalgoorlie habit"
+    elif T < 200:
+        crystal.habit = "reticulated"
+        crystal.dominant_forms = ["filiform mass", "interconnected wire network"]
+        habit_note = "reticulated native tellurium — low-T filamentous habit"
+    else:
+        crystal.habit = "granular"
+        crystal.dominant_forms = ["massive granular", "tin-white metallic mass"]
+        habit_note = "granular native tellurium — Cripple Creek ore form"
+
+    if len(crystal.zones) > 6:
+        habit_note += "; tellurite tarnish (TeO₂ surface bloom)"
+    else:
+        habit_note += "; tin-white metallic, fresh fracture"
+
+    # Note brownish iridescence on tarnish (research file flag — narrative)
+    # Deplete Te
+    conditions.fluid.Te = max(conditions.fluid.Te - rate * 0.005, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_native_sulfur(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Native sulfur (S₈) — the synproportionation native element.
 
@@ -8693,6 +8825,7 @@ MINERAL_ENGINES = {
     "native_silver": grow_native_silver,
     "native_arsenic": grow_native_arsenic,
     "native_sulfur": grow_native_sulfur,
+    "native_tellurium": grow_native_tellurium,
 }
 
 
@@ -8748,6 +8881,7 @@ THERMAL_DECOMPOSITION = {
     "anhydrite":     (1450, "CaSO₄ → CaO + SO₃ (decomposition; very high T — outside normal sim range)", {"Ca": 0.4, "S": 0.4}),
     "native_arsenic": (615, "As (s) → As (vapor) — sublimes at 615°C and 1 atm without melting", {"As": 0.4}),
     "native_sulfur":  (115, "S (s) → S (l) — melts at 115.2°C; burns to SO₂ at ~250°C in air", {"S": 0.6}),
+    "native_tellurium": (449, "Te (s) → Te (l) — melts at 449.5°C; boils at 988°C", {"Te": 0.4}),
 }
 
 
@@ -12185,6 +12319,22 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Argentite #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_arg:.2f}, "
                               f"Ag={self.conditions.fluid.Ag:.2f}, S={self.conditions.fluid.S:.0f})")
+
+        # Native tellurium nucleation — Te + reducing + telluride-metal-poor.
+        # Substrate preference: native gold (the Au-Te epithermal pair —
+        # when Au-Te fluid passes the boundary where Au has been
+        # exhausted but Te remains, native Te accretes onto the gold).
+        sigma_nte = self.conditions.supersaturation_native_tellurium()
+        if sigma_nte > 1.0 and not self._at_nucleation_cap("native_tellurium"):
+            if random.random() < 0.16:
+                pos = "vug wall"
+                active_au_nte = [c for c in self.crystals if c.mineral == "native_gold" and c.active]
+                if active_au_nte and random.random() < 0.4:
+                    pos = f"on native_gold #{active_au_nte[0].crystal_id}"
+                c = self.nucleate("native_tellurium", position=pos, sigma=sigma_nte)
+                self.log.append(f"  ✦ NUCLEATION: Native tellurium #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_nte:.2f}, "
+                              f"Te={self.conditions.fluid.Te:.2f}, Au={self.conditions.fluid.Au:.2f})")
 
         # Native sulfur nucleation — S + Eh window + acidic + low base metals.
         # The synproportionation mineral. Substrate preferences:
@@ -17126,6 +17276,70 @@ class VugSimulator:
                 "vug, atmospheric S compounds eventually reach the "
                 "surface. Display specimens are usually re-polished "
                 "before sale."
+            )
+        return " ".join(parts)
+
+    def _narrate_native_tellurium(self, c: Crystal) -> str:
+        """Narrate native tellurium — the metal-telluride-overflow native element."""
+        parts = [f"Native tellurium #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Te — elemental tellurium, the rarest of the residual-overflow "
+            "native trio. Trigonal (P3₁21), Mohs 2-2.5, SG 6.2, perfect "
+            "{1010} prismatic cleavage. Tellurium is rarer than platinum "
+            "in Earth's crust; when it does appear in epithermal gold "
+            "veins, every metal in the broth covets it: Au makes calaverite "
+            "(AuTe₂) and sylvanite, Ag makes hessite (Ag₂Te), Pb makes "
+            "altaite (PbTe), Bi makes tetradymite (Bi₂Te₂S), Hg makes "
+            "coloradoite (HgTe). Native Te only crystallizes when every "
+            "telluride-forming metal has had its fill — a relic of excess. "
+            "Tin-white metallic, tarnishes to TeO₂ within days."
+        )
+
+        if c.habit == "prismatic_hex":
+            parts.append(
+                "Hexagonal prismatic — the Kalgoorlie habit, well-formed "
+                "{1010} prisms with diagnostic c-axis striations terminating "
+                "at {1011} rhombohedron faces. Cripple Creek and Zod Mine "
+                "(Armenia) produce museum-grade specimens."
+            )
+        elif c.habit == "reticulated":
+            parts.append(
+                "Reticulated / filiform — interconnected wire network, "
+                "the low-T habit. Forms when slow growth kinetics produce "
+                "branching threads instead of compact crystals."
+            )
+        else:
+            parts.append(
+                "Granular massive — the dominant ore form. Cripple Creek "
+                "shipped this habit by the kilogram during the 1890s "
+                "Colorado gold rush; the Te tarnish was the diagnostic "
+                "that distinguished telluride ore from quartz at the assay "
+                "stamp mill."
+            )
+
+        if "native_gold" in (c.position or ""):
+            parts.append(
+                "Note position — this crystal nucleated on native gold. "
+                "The Au-Te paragenetic boundary: when an Au-Te-bearing "
+                "fluid crosses the equilibrium where calaverite/sylvanite "
+                "have already consumed the available Au, residual Te "
+                "drops out as native onto the existing Au surfaces. The "
+                "Cripple Creek epithermal vein-system signature."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — TeO₃²⁻ tellurite is going back "
+                "to fluid. In supergene zones this becomes secondary "
+                "tellurate minerals (tellurite TeO₂, paratellurite); "
+                "Te recycling is rare because the abundance is so low "
+                "it rarely accumulates."
+            )
+        elif len(c.zones) > 6:
+            parts.append(
+                "Tellurite tarnish — TeO₂ surface bloom darkening the "
+                "fresh metallic luster. Faster-tarnishing than native Ag "
+                "or As; Te oxidizes within hours of exposure."
             )
         return " ".join(parts)
 

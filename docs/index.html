@@ -3154,6 +3154,7 @@ const MINERAL_SPEC_FALLBACK = {
   native_silver: { formula: "Ag", nucleation_sigma: 1.2, max_size_cm: 30.0, growth_rate_mult: 0.5, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "111_penetration", description: "Penetration twin on {111}", habits: ["cubic_crystal"] }], acid_dissolution: null },
   native_arsenic: { formula: "As", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: 615, fluorescence: null, twin_laws: [], acid_dissolution: null },
   native_sulfur: { formula: "S", nucleation_sigma: 1.0, max_size_cm: 30.0, growth_rate_mult: 0.4, thermal_decomp_C: 115, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  native_tellurium: { formula: "Te", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: 449, fluorescence: null, twin_laws: [], acid_dissolution: null },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3297,7 +3298,7 @@ const MINERAL_GAME_COLORS = {
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
   acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4',
-  native_arsenic: '#888888', native_sulfur: '#f5d030'
+  native_arsenic: '#888888', native_sulfur: '#f5d030', native_tellurium: '#b8b8c8'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -4646,6 +4647,37 @@ class VugConditions {
     sigma *= T_factor;
     if (this.fluid.pH < 4 || this.fluid.pH > 9) sigma *= 0.5;
     if (this.fluid.Cu > 30) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  // Native tellurium (Te⁰) — metal-telluride-overflow engine.
+  // Hard gates: Au>1, Ag>5, Hg>0.5, O2>0.5. Source: research-native-tellurium.md.
+  supersaturation_native_tellurium() {
+    if (this.fluid.Te < 0.5) return 0;
+    if (this.fluid.Au > 1.0) return 0;
+    if (this.fluid.Ag > 5.0) return 0;
+    // Hg not currently tracked; coloradoite gate deferred.
+    if (this.fluid.O2 > 0.5) return 0;
+    const te_f = Math.min(this.fluid.Te / 2.0, 3.5);
+    const pb_suppr = Math.max(0.5, 1.0 - this.fluid.Pb / 200.0);
+    const bi_suppr = Math.max(0.5, 1.0 - this.fluid.Bi / 60.0);
+    const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.8);
+    let sigma = te_f * pb_suppr * bi_suppr * red_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 150 && T <= 300) {
+      T_factor = 1.2;
+    } else if (T < 100) {
+      T_factor = 0.3;
+    } else if (T < 150) {
+      T_factor = 0.3 + 0.018 * (T - 100);
+    } else if (T <= 400) {
+      T_factor = Math.max(0.4, 1.2 - 0.008 * (T - 300));
+    } else {
+      T_factor = 0.2;
+    }
+    sigma *= T_factor;
+    if (this.fluid.pH < 3 || this.fluid.pH > 8) sigma *= 0.6;
     return Math.max(sigma, 0);
   }
 
@@ -7227,6 +7259,60 @@ function grow_argentite(crystal, conditions, step) {
   });
 }
 
+// Native tellurium — Te (metal-telluride-overflow engine)
+function grow_native_tellurium(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_native_tellurium();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Te += dissolved_um * 0.5;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Te oxidizing to TeO₃²⁻ tellurite`,
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const T = conditions.temperature;
+  let habit_note;
+
+  if (T > 250 && excess < 1.5) {
+    crystal.habit = 'prismatic_hex';
+    crystal.dominant_forms = ['{1010} striated prism', '{1011} rhombohedron termination'];
+    habit_note = 'prismatic native tellurium — well-formed hexagonal prisms, the Kalgoorlie habit';
+  } else if (T < 200) {
+    crystal.habit = 'reticulated';
+    crystal.dominant_forms = ['filiform mass', 'interconnected wire network'];
+    habit_note = 'reticulated native tellurium — low-T filamentous habit';
+  } else {
+    crystal.habit = 'granular';
+    crystal.dominant_forms = ['massive granular', 'tin-white metallic mass'];
+    habit_note = 'granular native tellurium — Cripple Creek ore form';
+  }
+
+  if (crystal.zones && crystal.zones.length > 6) {
+    habit_note += '; tellurite tarnish (TeO₂ surface bloom)';
+  } else {
+    habit_note += '; tin-white metallic, fresh fracture';
+  }
+
+  conditions.fluid.Te = Math.max(conditions.fluid.Te - rate * 0.005, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
 // Native sulfur — S (synproportionation Eh-window engine)
 function grow_native_sulfur(crystal, conditions, step) {
   const sigma = conditions.supersaturation_native_sulfur();
@@ -9345,6 +9431,7 @@ const MINERAL_ENGINES = {
   native_silver: grow_native_silver,
   native_arsenic: grow_native_arsenic,
   native_sulfur: grow_native_sulfur,
+  native_tellurium: grow_native_tellurium,
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -11670,6 +11757,18 @@ class VugSimulator {
       }
     }
 
+    // Native tellurium nucleation — Te + reducing + telluride-metal-poor.
+    const sigma_nte = this.conditions.supersaturation_native_tellurium();
+    if (sigma_nte > 1.0 && !this._atNucleationCap('native_tellurium')) {
+      if (rng.random() < 0.16) {
+        let pos = 'vug wall';
+        const active_au_nte = this.crystals.filter(c => c.mineral === 'native_gold' && c.active);
+        if (active_au_nte.length && rng.random() < 0.4) pos = `on native_gold #${active_au_nte[0].crystal_id}`;
+        const c = this.nucleate('native_tellurium', pos, sigma_nte);
+        this.log.push(`  ✦ NUCLEATION: Native tellurium #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_nte.toFixed(2)}, Te=${this.conditions.fluid.Te.toFixed(2)}, Au=${this.conditions.fluid.Au.toFixed(2)})`);
+      }
+    }
+
     // Native sulfur nucleation — synproportionation Eh window + acidic + low base metals.
     const sigma_nsu = this.conditions.supersaturation_native_sulfur();
     if (sigma_nsu > 1.0 && !this._atNucleationCap('native_sulfur')) {
@@ -13678,6 +13777,27 @@ class VugSimulator {
       parts.push("Oxidative dissolution — strong O₂ in the fluid is etching the surface. Ag is going back into solution as Ag⁺, and the released ions migrate down the redox gradient to re-precipitate as native silver in deeper reducing pockets. This is the supergene Ag-enrichment mechanism (Boyle 1968) — the same chemistry that made Tsumeb's secondary ore zone.");
     } else if (c.zones && c.zones.length > 15) {
       parts.push('Tarnish — surface oxidation has darkened the original lead-gray luster to deep iron-black. Even in a sealed vug, atmospheric S compounds eventually reach the surface.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_native_tellurium(c) {
+    const parts = [`Native tellurium #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Te — elemental tellurium, the rarest of the residual-overflow native trio. Trigonal (P3₁21), Mohs 2-2.5, SG 6.2, perfect {1010} prismatic cleavage. Tellurium is rarer than platinum in Earth's crust; when it does appear in epithermal gold veins, every metal in the broth covets it: Au makes calaverite (AuTe₂) and sylvanite, Ag makes hessite (Ag₂Te), Pb makes altaite (PbTe), Bi makes tetradymite, Hg makes coloradoite. Native Te only crystallizes when every telluride-forming metal has had its fill.");
+    if (c.habit === 'prismatic_hex') {
+      parts.push('Hexagonal prismatic — the Kalgoorlie habit, well-formed {1010} prisms with c-axis striations terminating at {1011} rhombohedron. Cripple Creek and Zod Mine (Armenia) produce museum-grade specimens.');
+    } else if (c.habit === 'reticulated') {
+      parts.push('Reticulated / filiform — interconnected wire network, the low-T habit. Forms when slow growth kinetics produce branching threads instead of compact crystals.');
+    } else {
+      parts.push('Granular massive — the Cripple Creek ore form. Te tarnish was the diagnostic that distinguished telluride ore from quartz at the 1890s Colorado assay stamp mill.');
+    }
+    if ((c.position || '').includes('native_gold')) {
+      parts.push('Note position — this crystal nucleated on native gold. The Au-Te paragenetic boundary: when an Au-Te-bearing fluid crosses the equilibrium where calaverite/sylvanite have already consumed the available Au, residual Te drops out as native onto the existing Au surfaces.');
+    }
+    if (c.dissolved) {
+      parts.push('Oxidative dissolution — TeO₃²⁻ tellurite is going back to fluid. Te recycling is rare because the abundance is so low it rarely accumulates.');
+    } else if (c.zones && c.zones.length > 6) {
+      parts.push('Tellurite tarnish — TeO₂ surface bloom darkening the fresh metallic luster. Te oxidizes within hours of exposure.');
     }
     return parts.join(' ');
   }
@@ -18101,7 +18221,7 @@ const IDLE_MINERAL_COLORS = {
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
   acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4',
-  native_arsenic: '#888888', native_sulfur: '#f5d030'
+  native_arsenic: '#888888', native_sulfur: '#f5d030', native_tellurium: '#b8b8c8'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

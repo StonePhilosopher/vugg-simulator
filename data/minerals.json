@@ -7662,7 +7662,9 @@
       "trace_ingredients": {},
       "thermal_decomp_C": 115,
       "thermal_decomp_reaction": "S (s) → S (l) — melts at 115.2°C; burns to SO₂ at ~250°C in air",
-      "thermal_decomp_products": {"S": 0.6},
+      "thermal_decomp_products": {
+        "S": 0.6
+      },
       "fluorescence": null,
       "twin_laws": [],
       "acid_dissolution": null,
@@ -7678,6 +7680,76 @@
         "web/index.html"
       ],
       "audit_status": "Round 8b-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The synproportionation Eh-window engine: native S fires only when 0.1<O₂<0.7 (the H₂S/SO₄²⁻ boundary), pH<5 (H₂S dominant regime), and Fe+Cu+Pb+Zn<100 (base-metal sulfide capture gate). Habit variants: bipyramidal_alpha (T<95°C, Sicilian Agrigento), prismatic_beta (95-119°C, RARE — converts to α with cracking), sublimation_crust (high σ + T>60°C, fumarole habit). Engine includes oxidative-dissolution branch (O₂>0.9 returns S to fluid as SO₄²⁻) and per-step pH acidification (synproportionation releases minor H⁺). THERMAL_DECOMPOSITION at 115°C (melting point) — outside most scenario T ranges. Sources: Holland 1965 (Econ. Geol. 60), boss research file research/research-native-sulfur.md.",
+      "class_color": "#eb13eb"
+    },
+    "native_tellurium": {
+      "formula": "Te",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5.0,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "prismatic_hex",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high T (>250°C) + low-mid σ — well-formed striated hexagonal prisms with {1010} faces and {1011} terminations; the Kalgoorlie habit"
+        },
+        {
+          "name": "granular",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "moderate T + mid σ — Cripple Creek ore form, granular massive tin-white"
+        },
+        {
+          "name": "reticulated",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "dendritic",
+          "trigger": "low T (<200°C) + mid σ — interconnected wire/filiform habit"
+        }
+      ],
+      "class": "native",
+      "description": "Te — elemental tellurium, the rarest of the residual-overflow native trio. Trigonal (P3₁21), Mohs 2-2.5, SG 6.2, perfect {1010} prismatic cleavage. Tin-white to steel-gray metallic, tarnishes to TeO₂ within days of exposure. Tellurium is rarer than platinum in Earth's crust; native Te only crystallizes when every telluride-forming metal (Au → calaverite/sylvanite, Ag → hessite, Pb → altaite, Bi → tetradymite, Hg → coloradoite) has had its fill — a relic of excess. Type localities: Cripple Creek (Colorado), Kalgoorlie (Western Australia, the richest Au-Te deposit on Earth), Emperor Mine (Vatukoula, Fiji). Sources: research/research-native-tellurium.md (boss commit f2939da), Spry & Thieben 1996 (Mineralium Deposita 31).",
+      "scenarios": [
+        "porphyry"
+      ],
+      "T_range_C": [
+        100,
+        400
+      ],
+      "T_optimum_C": [
+        150,
+        300
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Te": 0.5
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": 449,
+      "thermal_decomp_reaction": "Te (s) → Te (l) — melts at 449.5°C; boils at 988°C",
+      "thermal_decomp_products": {"Te": 0.4},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "prismatic_hex",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_native_tellurium",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8b-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The metal-telluride-overflow engine: hard gates at Au>1 (overflows to calaverite/sylvanite), Ag>5 (overflows to hessite), O₂>0.5 (overflows to tellurite/tellurate). Soft suppressors for Pb (altaite) and Bi (tetradymite). Hg not currently tracked in FluidChemistry; coloradoite (HgTe) gate deferred to a future Hg-plumbing round. Habit variants: prismatic_hex (high-T striated prisms, the Kalgoorlie museum habit), granular (Cripple Creek ore form), reticulated (low-T filiform). Engine includes oxidative-dissolution branch. THERMAL_DECOMPOSITION at 449°C melting point. Currently absent_at_seed_42: porphyry has Au=2 (above gate of >1) and Ag=8 (above gate of >5), so Te stays in solution destined for calaverite/sylvanite/hessite — those engines don't exist yet. The Au-Te coupling round (calaverite + sylvanite + hessite + altaite + tetradymite + coloradoite) is now unblocked — telluride engines are the natural Round 9 lift; once Au is locked in calaverite, residual Te will be free to fire as native. Sources: Spry & Thieben 1996 (Mineralium Deposita 31), boss research file research/research-native-tellurium.md.",
       "class_color": "#eb13eb"
     }
   }
