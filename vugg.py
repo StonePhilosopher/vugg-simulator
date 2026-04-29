@@ -69,7 +69,14 @@ from typing import List, Dict, Optional, Tuple
 #        3→15, opening a 15-step acid window for scorodite + jarosite +
 #        alunite to nucleate before ev_meteoric_flush at step 20
 #        carbonate-buffers pH back up.
-SIM_VERSION = 7
+#   v8 — Round 8 mineral expansion (Apr 2026, in progress):
+#        8a-1 acanthite (Ag₂S, monoclinic, low-T) — first Ag mineral in
+#        the sim. Activates dormant Ag pool at MVT (Tri-State Ag=5),
+#        Sweetwater Viburnum (Ag=3), Tsumeb (trace), and Bisbee (released
+#        by tetrahedrite oxidation). Hard upper-T gate at 173°C — above
+#        that, argentite forms (8a-2, pending). Engine count 69 → 70.
+#        [Round 8 block expands as sub-rounds 8a-2/8a-3/8b/8c/8d/8e land.]
+SIM_VERSION = 8
 
 
 # ============================================================
@@ -2843,6 +2850,56 @@ class VugConditions:
             sigma *= max(0.4, 1.0 - 0.2 * (5 - self.fluid.pH))
         elif self.fluid.pH > 9:
             sigma *= max(0.4, 1.0 - 0.2 * (self.fluid.pH - 9))
+        return max(sigma, 0)
+
+    def supersaturation_acanthite(self) -> float:
+        """Acanthite (Ag₂S, monoclinic) — the low-T silver sulfide.
+
+        First Ag mineral in the sim. Activates the dormant Ag pool at
+        Tri-State (5 ppm), Sweetwater Viburnum (3 ppm), Tsumeb (trace),
+        and Bisbee (released by tetrahedrite oxidation). Acanthite is
+        the cold-storage form of Ag₂S — above 173°C the same composition
+        crystallizes as cubic argentite (handled by its own engine);
+        below 173°C, only the monoclinic structure is stable.
+
+        Hard-gated above 173°C: that regime belongs to argentite. Below
+        that, σ rises with √(Ag·S) inside an 80–150°C optimum window
+        (epithermal sweet spot). Reducing only — sulfide chemistry. Mild
+        Fe + Cu inhibition reflects diversion of Ag into tetrahedrite /
+        polybasite at higher base-metal loadings (Petruk et al. 1974).
+
+        Source: Hayba & Bethke 1985 (Reviews in Economic Geology 2);
+        boss research file research/research-acanthite.md.
+        """
+        if self.fluid.Ag < 0.5 or self.fluid.S < 5:
+            return 0
+        # Hard upper-T gate — argentite handles >173°C.
+        if self.temperature > 173:
+            return 0
+        # Reducing requirement — oxidizing fluid puts Ag back in solution.
+        if self.fluid.O2 > 0.5:
+            return 0
+        # Activity factors — Ag is a trace metal; even fractions of a ppm
+        # are heavily supersaturated against equilibrium.
+        ag_f = min(self.fluid.Ag / 2.5, 2.5)
+        s_f = min(self.fluid.S / 25.0, 2.5)
+        sigma = ag_f * s_f
+        # T window — peak 80-150°C epithermal optimum, falls off either side.
+        T = self.temperature
+        if 80 <= T <= 150:
+            T_factor = 1.2
+        elif T < 80:
+            T_factor = max(0.4, 1.0 - 0.012 * (80 - T))  # 50°C → ~0.64
+        else:  # 150 < T ≤ 173
+            T_factor = max(0.5, 1.0 - 0.020 * (T - 150))
+        sigma *= T_factor
+        # pH preference — neutral to mildly acidic (5-7 sweet spot).
+        if self.fluid.pH < 4 or self.fluid.pH > 9:
+            sigma *= 0.5
+        # Inhibitor — high Fe + high Cu divert Ag into tetrahedrite /
+        # polybasite. Soft mid-range gate, not a hard zero.
+        if self.fluid.Fe > 30 and self.fluid.Cu > 20:
+            sigma *= 0.6
         return max(sigma, 0)
 
 
@@ -7856,6 +7913,87 @@ def grow_celestine(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_acanthite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Acanthite (Ag₂S, monoclinic) — the low-T silver sulfide.
+
+    First-class engine for the cold-storage form of Ag₂S. Most acanthite
+    in nature is a paramorph after cooled argentite (handled in §8a-2's
+    apply_paramorph_transitions hook); the engine here covers the
+    primary low-T thorn / massive habits that nucleate without a high-T
+    cubic precursor. Lead-gray to iron-black, metallic, Mohs 2-2.5.
+
+    Habit selection by σ excess:
+      - high σ → thorn (the species' name; ακανθα = thorn)
+      - mid σ → prismatic (elongated)
+      - low σ → massive granular (the dominant economic form)
+
+    Tarnish — surface oxidation darkens fresh metallic gray to deeper
+    black over geological time. Hand-waved as a note for now; a per-step
+    tarnish counter is deferred to Round 8a-3b alongside native_silver.
+
+    Source: research/research-acanthite.md (boss commit f2939da);
+    Petruk et al. 1974 (Canadian Mineralogist 12).
+    """
+    sigma = conditions.supersaturation_acanthite()
+
+    if sigma < 1.0:
+        # Strong oxidation re-dissolves acanthite — Ag goes back into
+        # solution, S oxidizes to sulfate. This is the supergene
+        # enrichment mechanism (Boyle 1968).
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 1.2:
+            crystal.dissolved = True
+            dissolved_um = min(3.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Ag += dissolved_um * 0.4
+            conditions.fluid.S = max(conditions.fluid.S - dissolved_um * 0.1, 0)
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"oxidative dissolution (O₂={conditions.fluid.O2:.2f}) — Ag⁺ released to solution"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 2.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit selection — research file lists thorn (primary), pseudo-cubic
+    # (paramorph — handled elsewhere), massive granular (most common).
+    if excess > 1.5:
+        crystal.habit = "thorn"
+        crystal.dominant_forms = ["spiky prismatic projections", "thorn-like aggregates"]
+        habit_note = "thorn-habit acanthite — the species' diagnostic"
+    elif excess > 0.6:
+        crystal.habit = "prismatic"
+        crystal.dominant_forms = ["elongated {110} prism", "distorted pseudo-orthorhombic"]
+        habit_note = "prismatic acanthite — primary low-T growth"
+    else:
+        crystal.habit = "massive_granular"
+        crystal.dominant_forms = ["granular vein filling", "disseminated"]
+        habit_note = "massive granular acanthite — economic ore form"
+
+    # Color — lead-gray to iron-black, depends on tarnish accumulation.
+    # Long-lived crystals tarnish darker.
+    if len(crystal.zones) > 15:
+        habit_note += "; tarnished to iron-black"
+    else:
+        habit_note += "; lead-gray metallic"
+
+    # Selenium substitution — research file flags Se partial substitution
+    # for S, producing the aguilarite series (Ag₂(S,Se)). If Se is in the
+    # fluid (currently absent — future field), record as habit_note.
+
+    # Deplete Ag + S
+    conditions.fluid.Ag = max(conditions.fluid.Ag - rate * 0.008, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.003, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_selenite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Selenite / Gypsum (CaSO₄·2H₂O) growth. Low-T evaporite, Naica's giant crystals."""
     sigma = conditions.supersaturation_selenite()
@@ -7986,6 +8124,7 @@ MINERAL_ENGINES = {
     "bismuthinite": grow_bismuthinite,
     "native_bismuth": grow_native_bismuth,
     "clinobisvanite": grow_clinobisvanite,
+    "acanthite": grow_acanthite,
 }
 
 
@@ -11405,6 +11544,28 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Native bismuth #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_nbi:.2f}, "
                               f"Bi={self.conditions.fluid.Bi:.0f}, S={self.conditions.fluid.S:.0f})")
+
+        # Acanthite nucleation — Ag + S + reducing + T < 173°C.
+        # Substrate preference: galena (the classic Ag-bearing sulfide
+        # parent), tetrahedrite (often the dissolving Ag source in
+        # supergene fluid), or bare wall when Ag has been delivered by
+        # diffusion alone. First Ag mineral in the sim — paragenetic
+        # successor to galena/tetrahedrite/proustite, predecessor to
+        # native_silver in S-depleted reducing pockets.
+        sigma_aca = self.conditions.supersaturation_acanthite()
+        if sigma_aca > 1.0 and not self._at_nucleation_cap("acanthite"):
+            if random.random() < 0.18:
+                pos = "vug wall"
+                active_galena = [c for c in self.crystals if c.mineral == "galena" and c.active]
+                dissolving_tet = [c for c in self.crystals if c.mineral == "tetrahedrite" and c.dissolved]
+                if active_galena and random.random() < 0.4:
+                    pos = f"on galena #{active_galena[0].crystal_id}"
+                elif dissolving_tet and random.random() < 0.6:
+                    pos = f"on tetrahedrite #{dissolving_tet[0].crystal_id}"
+                c = self.nucleate("acanthite", position=pos, sigma=sigma_aca)
+                self.log.append(f"  ✦ NUCLEATION: Acanthite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_aca:.2f}, "
+                              f"Ag={self.conditions.fluid.Ag:.2f}, S={self.conditions.fluid.S:.0f})")
 
         # Clinobisvanite nucleation — Bi + V + oxidizing + low T.
         sigma_cbv = self.conditions.supersaturation_clinobisvanite()
@@ -16165,6 +16326,67 @@ class VugSimulator:
             "afterthought is being engineered to make hydrogen fuel "
             "from sunlight. Nature had it first."
         )
+        return " ".join(parts)
+
+    def _narrate_acanthite(self, c: Crystal) -> str:
+        """Narrate acanthite — the cold-storage form of Ag₂S."""
+        parts = [f"Acanthite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Ag₂S — monoclinic silver sulfide, the most important silver "
+            "ore on Earth at 87% Ag by weight. The cold-storage form: "
+            "above 173°C the same composition crystallizes as cubic "
+            "argentite, and most acanthite in nature is paramorphic "
+            "after cooled argentite, retaining the cubic external form "
+            "while the lattice underneath quietly inverts to monoclinic. "
+            "Lead-gray to iron-black, metallic, Mohs 2-2.5. Cuts like "
+            "lead — a soft, dense, sectile mineral that the assayer's "
+            "knife slices through cleanly."
+        )
+
+        if c.habit == "thorn":
+            parts.append(
+                "Thorn-habit — the species' diagnostic. The name comes "
+                "from the Greek ακανθα (thorn): spiky prismatic "
+                "projections aggregated into frost-like masses. Rare in "
+                "well-formed crystals; most thorn acanthite occurs as "
+                "interlocking sprays in a vug roof. Guanajuato (Mexico) "
+                "produced the historical references."
+            )
+        elif c.habit == "prismatic":
+            parts.append(
+                "Elongated prismatic — primary low-T growth, formed "
+                "directly from a hydrothermal fluid that never crossed "
+                "173°C on the way down. Distinguishes from paramorphic "
+                "pseudo-cubic acanthite (the same species but inheriting "
+                "the cubic shape of an argentite parent)."
+            )
+        else:
+            parts.append(
+                "Massive granular — the dominant economic form. Vein "
+                "fillings, disseminations in gangue, the kind of "
+                "acanthite that historic silver districts (Freiberg, "
+                "Potosí, Comstock Lode) shipped by the ton. No crystal "
+                "faces, but every gram is a 1.7-gram silver assay."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — strong O₂ in the fluid is "
+                "etching the surface. Ag is going back into solution as "
+                "Ag⁺, and the released ions migrate down the redox "
+                "gradient to re-precipitate as native silver in deeper "
+                "reducing pockets. This is the supergene Ag-enrichment "
+                "mechanism (Boyle 1968) — the same chemistry that made "
+                "Tsumeb's secondary ore zone."
+            )
+        elif len(c.zones) > 15:
+            parts.append(
+                "Tarnish — surface oxidation has darkened the original "
+                "lead-gray luster to deep iron-black. Even in a sealed "
+                "vug, atmospheric S compounds eventually reach the "
+                "surface. Display specimens are usually re-polished "
+                "before sale."
+            )
         return " ".join(parts)
 
     def _narrate_mixing_event(self, batch: List[Crystal], event: Event) -> str:

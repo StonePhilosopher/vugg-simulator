@@ -7282,6 +7282,87 @@
       ],
       "audit_status": "Round 7 Commit 3. Multi-color dispatch: blue (Fe+Ti), yellow (Fe alone ≥ 20), pink (Cr < 2), padparadscha (Cr + trace Fe), violet (V ≥ 2). Shares SiO2 < 50 upper gate with corundum/ruby.",
       "class_color": "#eb1313"
+    },
+    "acanthite": {
+      "formula": "Ag2S",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5.0,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.6,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — granular vein filling, the dominant economic form of Ag₂S"
+        },
+        {
+          "name": "prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "mid σ — primary low-T elongated prismatic growth"
+        },
+        {
+          "name": "thorn",
+          "wall_spread": 0.2,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high σ — spiky prismatic projections, the species' diagnostic (ακανθα = thorn)"
+        },
+        {
+          "name": "pseudo_cubic",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "paramorph — set by apply_paramorph_transitions when an argentite crystal cools below 173°C; retains the cubic external form of its high-T parent"
+        }
+      ],
+      "class": "sulfide",
+      "description": "Ag₂S — monoclinic silver sulfide and the most important silver ore on Earth at 87% Ag by weight. Lead-gray to iron-black metallic, Mohs 2-2.5, sectile (cuts like lead). The cold-storage form: above 173°C the same composition crystallizes as cubic argentite, and most acanthite in nature is paramorphic after cooled argentite, retaining the cubic external form while the lattice underneath inverts to monoclinic (Petruk et al. 1974, Canadian Mineralogist 12). Forms in low-sulfidation epithermal veins, mesothermal silver veins, and supergene enrichment zones; classic localities include Guanajuato (Mexico, pseudo-cubic crystals), Freiberg (Saxony), and Kongsberg (Norway).",
+      "scenarios": [
+        "mvt",
+        "reactive_wall",
+        "supergene_oxidation",
+        "bisbee"
+      ],
+      "T_range_C": [
+        50,
+        170
+      ],
+      "T_optimum_C": [
+        80,
+        150
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Ag": 0.5,
+        "S": 5
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "default_habit",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_acanthite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8a-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Habit variants: massive_granular (low σ, dominant economic form), prismatic (mid σ), thorn (high σ), pseudo_cubic (paramorph hook — set in 8a-2 when argentite cools through 173°C). Sources: Petruk et al. 1974 (Canadian Mineralogist 12: 365-369), Hayba & Bethke 1985 (Reviews in Economic Geology 2). Activates dormant Ag pool at MVT/Sweetwater/Tsumeb/Bisbee. First Ag mineral in the sim.",
+      "class_color": "#7feb13"
     }
   }
 }

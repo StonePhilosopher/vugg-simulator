@@ -3149,6 +3149,7 @@ const MINERAL_SPEC_FALLBACK = {
   bismuthinite: { formula: "Bi2S3", nucleation_sigma: 1.3, max_size_cm: 5, growth_rate_mult: 0.4, thermal_decomp_C: 760, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
   native_bismuth: { formula: "Bi", nucleation_sigma: 1.4, max_size_cm: 5, growth_rate_mult: 0.4, thermal_decomp_C: 271, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
   clinobisvanite: { formula: "BiVO4", nucleation_sigma: 1.5, max_size_cm: 0.1, growth_rate_mult: 0.2, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 2.5 } },
+  acanthite: { formula: "Ag2S", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3290,7 +3291,8 @@ const MINERAL_GAME_COLORS = {
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
   wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
-  corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068'
+  corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
+  acanthite: '#404040'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -3539,7 +3541,13 @@ let timeScale = 5.0;
 //        commit, separate): early ev_supergene_acidification at
 //        step 5 + Al 3→15 to unlock scorodite + jarosite + alunite
 //        in their early acid window.
-const SIM_VERSION = 7;
+//   v8 — Round 8 mineral expansion (Apr 2026, in progress):
+//        8a-1 acanthite (Ag₂S, monoclinic, low-T) — first Ag mineral
+//        in the sim. Activates dormant Ag pool at MVT, Sweetwater,
+//        Tsumeb, Bisbee. Hard upper-T gate at 173°C (above that,
+//        argentite forms — 8a-2, pending). Engine count 69 → 70.
+//        Round 8 block expands as sub-rounds 8a-2/8a-3/8b/8c/8d/8e land.
+const SIM_VERSION = 8;
 
 
 // ============================================================
@@ -4564,6 +4572,35 @@ class VugConditions {
       sigma *= Math.max(0.4, 1.0 - 0.2 * (5 - this.fluid.pH));
     } else if (this.fluid.pH > 9) {
       sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
+    }
+    return Math.max(sigma, 0);
+  }
+
+  // Acanthite (Ag₂S, monoclinic) — the low-T silver sulfide. First Ag mineral
+  // in the sim. Hard upper-T gate at 173°C (above that, argentite forms).
+  // Reducing only. Source: research/research-acanthite.md, Petruk et al. 1974.
+  supersaturation_acanthite() {
+    if (this.fluid.Ag < 0.5 || this.fluid.S < 5) return 0;
+    if (this.temperature > 173) return 0;
+    if (this.fluid.O2 > 0.5) return 0;
+    const ag_f = Math.min(this.fluid.Ag / 2.5, 2.5);
+    const s_f  = Math.min(this.fluid.S  / 25.0, 2.5);
+    let sigma = ag_f * s_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 80 && T <= 150) {
+      T_factor = 1.2;
+    } else if (T < 80) {
+      T_factor = Math.max(0.4, 1.0 - 0.012 * (80 - T));
+    } else {  // 150 < T ≤ 173
+      T_factor = Math.max(0.5, 1.0 - 0.020 * (T - 150));
+    }
+    sigma *= T_factor;
+    if (this.fluid.pH < 4 || this.fluid.pH > 9) {
+      sigma *= 0.5;
+    }
+    if (this.fluid.Fe > 30 && this.fluid.Cu > 20) {
+      sigma *= 0.6;
     }
     return Math.max(sigma, 0);
   }
@@ -6950,6 +6987,66 @@ function grow_celestine(crystal, conditions, step) {
   });
 }
 
+// Acanthite — Ag2S (monoclinic, low-T)
+// First-class engine for the cold-storage form of Ag2S. Most acanthite in
+// nature is paramorphic after cooled argentite (set by apply_paramorph_transitions
+// in 8a-2); the engine here covers primary low-T thorn / massive habits.
+// Lead-gray to iron-black, Mohs 2-2.5, sectile.
+function grow_acanthite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_acanthite();
+
+  if (sigma < 1.0) {
+    // Oxidative dissolution — strong O2 puts Ag back in solution (supergene
+    // enrichment mechanism, Boyle 1968).
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 1.2) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Ag += dissolved_um * 0.4;
+      conditions.fluid.S = Math.max(conditions.fluid.S - dissolved_um * 0.1, 0);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Ag⁺ released to solution`,
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'thorn';
+    crystal.dominant_forms = ['spiky prismatic projections', 'thorn-like aggregates'];
+    habit_note = "thorn-habit acanthite — the species' diagnostic";
+  } else if (excess > 0.6) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['elongated {110} prism', 'distorted pseudo-orthorhombic'];
+    habit_note = 'prismatic acanthite — primary low-T growth';
+  } else {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['granular vein filling', 'disseminated'];
+    habit_note = 'massive granular acanthite — economic ore form';
+  }
+
+  if (crystal.zones && crystal.zones.length > 15) {
+    habit_note += '; tarnished to iron-black';
+  } else {
+    habit_note += '; lead-gray metallic';
+  }
+
+  conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.008, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
 // Anhydrite — CaSO4
 // High-T or saline-low-T Ca sulfate. Sabkha evaporite + Bingham deep brine.
 // Rehydrates to gypsum/selenite when T<60 AND salinity<100‰.
@@ -8884,6 +8981,7 @@ const MINERAL_ENGINES = {
   bismuthinite: grow_bismuthinite,
   native_bismuth: grow_native_bismuth,
   clinobisvanite: grow_clinobisvanite,
+  acanthite: grow_acanthite,
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -11163,6 +11261,24 @@ class VugSimulator {
       }
     }
 
+    // Acanthite nucleation — Ag + S + reducing + T < 173°C.
+    // Substrate preference: galena (the classic Ag-bearing parent),
+    // dissolving tetrahedrite (often the supergene Ag source), or bare wall.
+    // First Ag mineral in the sim — paragenetic successor to galena/
+    // tetrahedrite/proustite, predecessor to native_silver in S-depleted pockets.
+    const sigma_aca = this.conditions.supersaturation_acanthite();
+    if (sigma_aca > 1.0 && !this._atNucleationCap('acanthite')) {
+      if (rng.random() < 0.18) {
+        let pos = 'vug wall';
+        const active_galena_aca = this.crystals.filter(c => c.mineral === 'galena' && c.active);
+        const dissolving_tet_aca = this.crystals.filter(c => c.mineral === 'tetrahedrite' && c.dissolved);
+        if (active_galena_aca.length && rng.random() < 0.4) pos = `on galena #${active_galena_aca[0].crystal_id}`;
+        else if (dissolving_tet_aca.length && rng.random() < 0.6) pos = `on tetrahedrite #${dissolving_tet_aca[0].crystal_id}`;
+        const c = this.nucleate('acanthite', pos, sigma_aca);
+        this.log.push(`  ✦ NUCLEATION: Acanthite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_aca.toFixed(2)}, Ag=${this.conditions.fluid.Ag.toFixed(2)}, S=${this.conditions.fluid.S.toFixed(0)})`);
+      }
+    }
+
     // Clinobisvanite nucleation — Bi + V + oxidizing + low T.
     const sigma_cbv = this.conditions.supersaturation_clinobisvanite();
     const existing_cbv = this.crystals.filter(c => c.mineral === 'clinobisvanite' && c.active);
@@ -13065,6 +13181,24 @@ class VugSimulator {
     const parts = [`Clinobisvanite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
     parts.push('BiVO₄ — bright yellow to orange-yellow monoclinic Bi-vanadate. End of the bismuth oxidation sequence: bismuthinite → native bismuth → bismite/bismutite → clinobisvanite. Microscopic — the crystals are individually sub-millimeter.');
     parts.push('And: BiVO₄ is a photocatalyst for solar-driven water splitting. The same mineral that forms as a supergene afterthought is being engineered to make hydrogen fuel from sunlight.');
+    return parts.join(' ');
+  }
+
+  _narrate_acanthite(c) {
+    const parts = [`Acanthite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push('Ag₂S — monoclinic silver sulfide, the most important silver ore on Earth at 87% Ag by weight. The cold-storage form: above 173°C the same composition crystallizes as cubic argentite, and most acanthite in nature is paramorphic after cooled argentite, retaining the cubic external form while the lattice underneath inverts to monoclinic. Lead-gray to iron-black, metallic, Mohs 2-2.5, sectile (cuts like lead).');
+    if (c.habit === 'thorn') {
+      parts.push("Thorn-habit — the species' diagnostic. The name comes from the Greek ακανθα (thorn): spiky prismatic projections aggregated into frost-like masses. Rare in well-formed crystals; Guanajuato (Mexico) produced the historical references.");
+    } else if (c.habit === 'prismatic') {
+      parts.push('Elongated prismatic — primary low-T growth, formed directly from a hydrothermal fluid that never crossed 173°C on the way down. Distinguishes from paramorphic pseudo-cubic acanthite (the same species but inheriting the cubic shape of an argentite parent).');
+    } else {
+      parts.push('Massive granular — the dominant economic form. Vein fillings, disseminations in gangue, the kind of acanthite that historic silver districts (Freiberg, Potosí, Comstock Lode) shipped by the ton.');
+    }
+    if (c.dissolved) {
+      parts.push("Oxidative dissolution — strong O₂ in the fluid is etching the surface. Ag is going back into solution as Ag⁺, and the released ions migrate down the redox gradient to re-precipitate as native silver in deeper reducing pockets. This is the supergene Ag-enrichment mechanism (Boyle 1968) — the same chemistry that made Tsumeb's secondary ore zone.");
+    } else if (c.zones && c.zones.length > 15) {
+      parts.push('Tarnish — surface oxidation has darkened the original lead-gray luster to deep iron-black. Even in a sealed vug, atmospheric S compounds eventually reach the surface.');
+    }
     return parts.join(' ');
   }
 
@@ -17402,7 +17536,8 @@ const IDLE_MINERAL_COLORS = {
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
   wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
-  corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068'
+  corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
+  acanthite: '#404040'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second
