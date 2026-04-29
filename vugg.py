@@ -2983,6 +2983,68 @@ class VugConditions:
             sigma *= 0.6
         return max(sigma, 0)
 
+    def supersaturation_chalcanthite(self) -> float:
+        """Chalcanthite (CuSO₄·5H₂O) — the bright-blue water-soluble Cu sulfate.
+
+        The terminal mineral of the Cu sulfate oxidation cascade
+        (chalcopyrite → bornite → chalcocite → covellite → cuprite →
+        brochantite → antlerite → chalcanthite). Lives only in arid,
+        strongly oxidizing, very acidic, salt-concentrated drainage —
+        Chuquicamata mine walls, Rio Tinto AMD seeps, Atacama desert
+        evaporite crusts.
+
+        Hard gates:
+          • Cu < 30 or S < 50 → 0 (needs concentrated Cu²⁺ + SO₄²⁻)
+          • pH > 4 → 0 (the most acid-loving of the Cu sulfates)
+          • O₂ < 0.8 → 0 (must be fully oxidizing)
+          • salinity < 6 → 0 (needs concentrated drainage to overcome
+            the ~20 g/100mL solubility)
+
+        The water-solubility metastability mechanic lives in
+        VugSimulator.run_step (per-step hook): chalcanthite crystals
+        re-dissolve when fluid.salinity < 4 OR fluid.pH > 5. First
+        re-dissolvable mineral in the sim — distinct from
+        THERMAL_DECOMPOSITION (which destroys + releases at high T)
+        and PARAMORPH_TRANSITIONS (which converts in place). Geological
+        truth: every chalcanthite specimen is a temporary victory over
+        entropy.
+
+        Source: research/research-chalcanthite.md (boss commit f2939da);
+        Bandy 1938 (Am. Mineral. 23, on chalcanthite paragenesis).
+        """
+        if self.fluid.Cu < 30 or self.fluid.S < 50:
+            return 0
+        if self.fluid.pH > 4:
+            return 0
+        if self.fluid.O2 < 0.8:
+            return 0
+        # Salinity gate — needs concentrated drainage (>= 5 wt%, the
+        # FluidChemistry default; arid AMD seeps and Bisbee primary
+        # brine clear easily; supergene_oxidation at 2.0 stays below).
+        if self.fluid.salinity < 5.0:
+            return 0
+        cu_f = min(self.fluid.Cu / 80.0, 3.0)
+        s_f  = min(self.fluid.S  / 100.0, 3.0)
+        ox_f = min(self.fluid.O2 / 1.5, 2.0)
+        # Salinity factor — the more concentrated, the higher σ.
+        sal_f = min(self.fluid.salinity / 30.0, 3.0)
+        # Acidic preference — strongest at pH < 2.
+        ph_f = max(0.5, 1.0 + (3.0 - self.fluid.pH) * 0.2)
+        sigma = cu_f * s_f * ox_f * sal_f * ph_f
+        T = self.temperature
+        if 20 <= T <= 40:
+            T_factor = 1.3
+        elif T < 10:
+            T_factor = 0.4
+        elif T < 20:
+            T_factor = 0.4 + 0.09 * (T - 10)
+        elif T <= 50:
+            T_factor = max(0.4, 1.3 - 0.06 * (T - 40))
+        else:
+            T_factor = 0.2
+        sigma *= T_factor
+        return max(sigma, 0)
+
     def supersaturation_descloizite(self) -> float:
         """Descloizite (Pb(Zn,Cu)VO₄(OH)) — the Zn end of the descloizite-
         mottramite series.
@@ -8706,6 +8768,66 @@ def grow_argentite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_chalcanthite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Chalcanthite (CuSO₄·5H₂O) — the bright-blue water-soluble Cu sulfate.
+
+    The terminal Cu-sulfate oxidation phase. Sky-blue to Berlin-blue,
+    Mohs 2.5, the [Cu(H₂O)₅]²⁺ chromophore makes it one of the most
+    intensely-colored minerals. Triclinic; natural crystals are RARE
+    because most specimens dissolve before reaching collection.
+
+    Habit selection by σ excess:
+      - high σ → stalactitic (mine-wall drip, the Chuquicamata habit)
+      - mid σ → tabular (rare prismatic blue crystals)
+      - low σ → efflorescent_crust (powdery surface bloom)
+
+    The water-solubility mechanic lives in VugSimulator.run_step (the
+    per-step hook re-dissolves crystals when salinity drops or pH
+    rises). The grow function only handles the active growth path.
+
+    Source: research/research-chalcanthite.md (boss commit f2939da).
+    """
+    sigma = conditions.supersaturation_chalcanthite()
+
+    if sigma < 1.0:
+        return None
+
+    excess = sigma - 1.0
+    rate = 5.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    if excess > 1.5:
+        crystal.habit = "stalactitic"
+        crystal.dominant_forms = ["sky-blue stalactitic drip", "blue cone"]
+        habit_note = "stalactitic chalcanthite — Chuquicamata mine-wall habit, sky-blue dripstones"
+    elif excess > 0.6:
+        crystal.habit = "tabular"
+        crystal.dominant_forms = ["{110} prismatic", "Berlin-blue triclinic"]
+        habit_note = "tabular chalcanthite — RARE prismatic blue crystals; most natural specimens are stalactitic"
+    else:
+        crystal.habit = "efflorescent_crust"
+        crystal.dominant_forms = ["powdery blue bloom", "fibrous mass"]
+        habit_note = "efflorescent crust chalcanthite — high-evaporation arid habit"
+
+    # Water-solubility flag in habit_note — every chalcanthite is fragile
+    if random.random() < 0.04 and not crystal.twinned:
+        crystal.twinned = True
+        crystal.twin_law = "{110} cruciform"
+        habit_note += "; cruciform twin (rare {110} cross-shaped twin)"
+
+    # Deplete Cu, S; salinity stays unchanged (crystal carries away
+    # cation+anion together, doesn't change ionic strength much)
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.012, 0)
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.020, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_descloizite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Descloizite (PbZnVO₄(OH)) — the Zn end of the descloizite-mottramite series.
 
@@ -9500,6 +9622,7 @@ MINERAL_ENGINES = {
     "raspite": grow_raspite,
     "stolzite": grow_stolzite,
     "olivenite": grow_olivenite,
+    "chalcanthite": grow_chalcanthite,
 }
 
 
@@ -13011,6 +13134,26 @@ class VugSimulator:
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_arg:.2f}, "
                               f"Ag={self.conditions.fluid.Ag:.2f}, S={self.conditions.fluid.S:.0f})")
 
+        # Chalcanthite nucleation — Cu + S + acidic + oxidizing + concentrated.
+        # The terminal Cu-sulfate phase. Substrate preference: dissolving
+        # brochantite or antlerite (the next-step-back basic Cu sulfates),
+        # or bare wall.
+        sigma_cha = self.conditions.supersaturation_chalcanthite()
+        if sigma_cha > 1.0 and not self._at_nucleation_cap("chalcanthite"):
+            if random.random() < 0.20:
+                pos = "vug wall"
+                dissolving_brh = [c for c in self.crystals if c.mineral == "brochantite" and c.dissolved]
+                dissolving_atl = [c for c in self.crystals if c.mineral == "antlerite" and c.dissolved]
+                if dissolving_brh and random.random() < 0.5:
+                    pos = f"on brochantite #{dissolving_brh[0].crystal_id}"
+                elif dissolving_atl and random.random() < 0.4:
+                    pos = f"on antlerite #{dissolving_atl[0].crystal_id}"
+                c = self.nucleate("chalcanthite", position=pos, sigma=sigma_cha)
+                self.log.append(f"  ✦ NUCLEATION: Chalcanthite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_cha:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, S={self.conditions.fluid.S:.0f}, "
+                              f"pH={self.conditions.fluid.pH:.1f}, salinity={self.conditions.fluid.salinity:.1f})")
+
         # Descloizite nucleation — Pb + Zn + V + oxidizing.
         sigma_des = self.conditions.supersaturation_descloizite()
         if sigma_des > 1.0 and not self._at_nucleation_cap("descloizite"):
@@ -13879,6 +14022,43 @@ class VugSimulator:
                     f"→ {new_m} (T dropped to {self.conditions.temperature:.0f}°C, "
                     f"crossed {old_m}/{new_m} phase boundary; cubic external form preserved)"
                 )
+
+        # Water-solubility metastability — Round 8e (Apr 2026). Chalcanthite
+        # (CuSO₄·5H₂O) is the most water-soluble mineral in the sim;
+        # specimens re-dissolve when the host fluid becomes more dilute
+        # (salinity < 4) OR less acidic (pH > 5). Distinct from
+        # THERMAL_DECOMPOSITION (high-T destruction) and PARAMORPH_
+        # TRANSITIONS (in-place mineral change) — this is just
+        # solubility, the geological truth that every chalcanthite
+        # is a temporary victory over entropy.
+        for crystal in self.crystals:
+            if crystal.mineral != "chalcanthite" or crystal.dissolved or not crystal.active:
+                continue
+            if self.conditions.fluid.salinity < 4.0 or self.conditions.fluid.pH > 5.0:
+                # 40%/step decay, with a 0.5-µm absolute floor below which
+                # the asymptotic decay collapses to full dissolution
+                # (otherwise total_growth_um decays toward 0 forever).
+                dissolved_um = min(5.0, crystal.total_growth_um * 0.4)
+                if crystal.total_growth_um < 0.5:
+                    dissolved_um = crystal.total_growth_um
+                crystal.total_growth_um -= dissolved_um
+                crystal.c_length_mm = max(crystal.total_growth_um / 1000.0, 0)
+                self.conditions.fluid.Cu += dissolved_um * 0.5
+                self.conditions.fluid.S += dissolved_um * 0.5
+                if crystal.total_growth_um <= 0:
+                    crystal.dissolved = True
+                    crystal.active = False
+                    self.log.append(
+                        f"  💧 RE-DISSOLVED: Chalcanthite #{crystal.crystal_id} "
+                        f"completely returned to solution (salinity={self.conditions.fluid.salinity:.1f}, "
+                        f"pH={self.conditions.fluid.pH:.1f}) — Cu²⁺ + SO₄²⁻ back in fluid"
+                    )
+                else:
+                    self.log.append(
+                        f"  💧 Chalcanthite #{crystal.crystal_id}: re-dissolving "
+                        f"({dissolved_um:.1f} µm lost; salinity={self.conditions.fluid.salinity:.1f}, "
+                        f"pH={self.conditions.fluid.pH:.1f})"
+                    )
 
         # Alpha-damage any quartz present while uraninite exists in the vug.
         # Each existing zone accumulates dose per step — damage is permanent,
@@ -18154,6 +18334,66 @@ class VugSimulator:
                 "vug, atmospheric S compounds eventually reach the "
                 "surface. Display specimens are usually re-polished "
                 "before sale."
+            )
+        return " ".join(parts)
+
+    def _narrate_chalcanthite(self, c: Crystal) -> str:
+        """Narrate chalcanthite — the bright-blue water-soluble Cu sulfate."""
+        parts = [f"Chalcanthite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "CuSO₄·5H₂O — the bright sky-blue Cu sulfate, the [Cu(H₂O)₅]²⁺ "
+            "chromophore one of the most intensely-colored minerals "
+            "anywhere. Triclinic, Mohs 2.5, perfect {110} cleavage. The "
+            "name is Greek for 'copper flower' — and like a flower, it "
+            "doesn't last. Chalcanthite is the most water-soluble mineral "
+            "in the sim (20.7 g per 100 mL at 20°C); every specimen is "
+            "a temporary victory over entropy. Forms only in arid, "
+            "strongly oxidizing, very acidic, salt-concentrated drainage: "
+            "Chuquicamata mine walls, Rio Tinto AMD seeps, Atacama "
+            "evaporite crusts. The terminal phase of the Cu sulfate "
+            "oxidation cascade — chalcopyrite eventually becomes this."
+        )
+
+        if c.habit == "stalactitic":
+            parts.append(
+                "Stalactitic — the Chuquicamata mine-wall habit. Sky-blue "
+                "drips and cones formed where acidic Cu-rich fluid trickles "
+                "down a vug wall and evaporates faster than it can run "
+                "off. Each drip is a slow record of the mine's atmosphere."
+            )
+        elif c.habit == "tabular":
+            parts.append(
+                "Tabular prismatic — RARE. Most natural chalcanthite is "
+                "stalactitic or efflorescent; well-formed prismatic "
+                "crystals are collector-grade. The triclinic symmetry is "
+                "visible in the {110} prism faces. Most 'crystals' on the "
+                "market are lab-grown."
+            )
+        else:  # efflorescent_crust
+            parts.append(
+                "Efflorescent crust — powdery blue surface bloom. Forms "
+                "in arid mine atmospheres where evaporation is fast and "
+                "growth has no time to develop crystal faces. Will weep "
+                "into solution again the moment humidity rises."
+            )
+
+        if c.twinned and "cruciform" in (c.twin_law or ""):
+            parts.append(
+                "Cruciform twin — RARE {110} cross-shaped twin. One of "
+                "the more striking twin morphologies in mineralogy when "
+                "a chalcanthite specimen survives long enough to display "
+                "it."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Re-dissolved — the host fluid became more dilute (or "
+                "less acidic) and the crystal returned to solution. Cu²⁺ "
+                "and SO₄²⁻ are back in the fluid; they may recombine "
+                "as chalcanthite again the next time conditions return "
+                "to arid + acidic + concentrated. This cyclic dissolution-"
+                "regrowth is the chalcanthite signature: the only mineral "
+                "in the vug that respects the seasons."
             )
         return " ".join(parts)
 

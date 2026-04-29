@@ -8308,6 +8308,86 @@
       ],
       "audit_status": "Round 8d-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Cu/Zn ratio dispatch with adamite (when Zn>Cu → adamite, when Cu≥Zn → olivenite). Adamite engine also updated with the inverse dispatch (returns 0 when Cu>Zn). Cu+As+oxidizing, T 10-50°C peak 20-40. Substrate preference: malachite (the Cu-carbonate companion). Activates with existing Tsumeb supergene_oxidation Cu=55 + As=12 chemistry. Source: boss research file.",
       "class_color": "#13eb13"
+    },
+    "chalcanthite": {
+      "formula": "CuSO4·5H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 10.0,
+      "growth_rate_mult": 0.5,
+      "habit_variants": [
+        {
+          "name": "stalactitic",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high σ — sky-blue stalactitic drips, the Chuquicamata mine-wall habit; the dominant natural form"
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "tabular",
+          "trigger": "mid σ + sheltered vug — RARE tabular prismatic blue crystals; most natural specimens are stalactitic or efflorescent"
+        },
+        {
+          "name": "efflorescent_crust",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ + arid surface — powdery blue surface bloom from rapid evaporation"
+        }
+      ],
+      "class": "sulfate",
+      "description": "CuSO₄·5H₂O — the bright sky-blue water-soluble Cu sulfate, the [Cu(H₂O)₅]²⁺ chromophore one of the most intensely-colored minerals. Triclinic (P1̄), Mohs 2.5, perfect {110} cleavage. The most water-soluble mineral in the sim — re-dissolves when fluid salinity drops below 4 OR pH rises above 5 (per-step hook in VugSimulator.run_step). Geologically authentic: every chalcanthite specimen is a temporary victory over entropy. The terminal phase of the Cu-sulfate oxidation cascade (chalcopyrite → bornite → chalcocite → covellite → cuprite → brochantite → antlerite → chalcanthite). Forms in arid strongly-oxidizing very-acidic salt-concentrated drainage: Chuquicamata mine walls (Chile), Rio Tinto AMD seeps (Spain), Atacama desert evaporite crusts. Most 'natural' specimens on the market are lab-grown. Sources: research/research-chalcanthite.md (boss commit f2939da), Bandy 1938 (Am. Mineral. 23).",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        10,
+        50
+      ],
+      "T_optimum_C": [
+        20,
+        40
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": 4.0,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 30,
+        "S": 50
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "cruciform_110",
+          "description": "Rare {110} cross-shaped twin",
+          "habits": [
+            "tabular"
+          ]
+        }
+      ],
+      "acid_dissolution": null,
+      "habit": "stalactitic",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_chalcanthite",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8e (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The water-solubility metastability mechanic: per-step hook in VugSimulator.run_step re-dissolves chalcanthite crystals when fluid.salinity < 4 OR fluid.pH > 5. Distinct from THERMAL_DECOMPOSITION (high-T destruction) and PARAMORPH_TRANSITIONS (in-place mineral change) — this is just chemistry, the geological truth that every chalcanthite is a temporary victory over entropy. Habit variants: stalactitic (high σ, the Chuquicamata mine-wall drip habit), tabular (RARE prismatic crystals), efflorescent_crust (low σ powdery bloom). Salinity gate: salinity < 6 → 0 (needs concentrated drainage to overcome ~20 g/100mL solubility). pH gate: pH > 4 → 0 (the most acid-loving Cu sulfate). Source: boss research file research-chalcanthite.md.",
+      "class_color": "#eb137f"
     }
   }
 }

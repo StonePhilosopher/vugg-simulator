@@ -3163,6 +3163,7 @@ const MINERAL_SPEC_FALLBACK = {
   raspite: { formula: "PbWO4", nucleation_sigma: 1.4, max_size_cm: 1.0, growth_rate_mult: 0.2, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   stolzite: { formula: "PbWO4", nucleation_sigma: 1.0, max_size_cm: 2.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   olivenite: { formula: "Cu2AsO4(OH)", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  chalcanthite: { formula: "CuSO4·5H2O", nucleation_sigma: 1.0, max_size_cm: 10.0, growth_rate_mult: 0.5, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "cruciform_110", description: "Rare {110} cross-shaped twin", habits: ["tabular"] }], acid_dissolution: null },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3309,7 +3310,8 @@ const MINERAL_GAME_COLORS = {
   native_arsenic: '#888888', native_sulfur: '#f5d030', native_tellurium: '#b8b8c8',
   nickeline: '#d49080', millerite: '#c8b860', cobaltite: '#d8d4cc',
   descloizite: '#8a3020', mottramite: '#8a9a40',
-  raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030'
+  raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030',
+  chalcanthite: '#2a40c8'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -4658,6 +4660,30 @@ class VugConditions {
     sigma *= T_factor;
     if (this.fluid.pH < 4 || this.fluid.pH > 9) sigma *= 0.5;
     if (this.fluid.Cu > 30) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  // Chalcanthite (CuSO4·5H2O) — water-soluble Cu sulfate, the terminal
+  // Cu-sulfate oxidation phase. Source: research-chalcanthite.md.
+  supersaturation_chalcanthite() {
+    if (this.fluid.Cu < 30 || this.fluid.S < 50) return 0;
+    if (this.fluid.pH > 4) return 0;
+    if (this.fluid.O2 < 0.8) return 0;
+    if (this.fluid.salinity < 5.0) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 80.0, 3.0);
+    const s_f  = Math.min(this.fluid.S  / 100.0, 3.0);
+    const ox_f = Math.min(this.fluid.O2 / 1.5, 2.0);
+    const sal_f = Math.min(this.fluid.salinity / 30.0, 3.0);
+    const ph_f = Math.max(0.5, 1.0 + (3.0 - this.fluid.pH) * 0.2);
+    let sigma = cu_f * s_f * ox_f * sal_f * ph_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 20 && T <= 40) T_factor = 1.3;
+    else if (T < 10) T_factor = 0.4;
+    else if (T < 20) T_factor = 0.4 + 0.09 * (T - 10);
+    else if (T <= 50) T_factor = Math.max(0.4, 1.3 - 0.06 * (T - 40));
+    else T_factor = 0.2;
+    sigma *= T_factor;
     return Math.max(sigma, 0);
   }
 
@@ -7442,6 +7468,37 @@ function grow_argentite(crystal, conditions, step) {
   });
 }
 
+// Chalcanthite — CuSO4·5H2O (water-soluble Cu sulfate, terminal cascade phase)
+function grow_chalcanthite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_chalcanthite();
+  if (sigma < 1.0) return null;
+  const excess = sigma - 1.0;
+  const rate = 5.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  let habit_note;
+  if (excess > 1.5) {
+    crystal.habit = 'stalactitic';
+    crystal.dominant_forms = ['sky-blue stalactitic drip', 'blue cone'];
+    habit_note = 'stalactitic chalcanthite — Chuquicamata mine-wall habit, sky-blue dripstones';
+  } else if (excess > 0.6) {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['{110} prismatic', 'Berlin-blue triclinic'];
+    habit_note = 'tabular chalcanthite — RARE prismatic blue crystals; most natural specimens are stalactitic';
+  } else {
+    crystal.habit = 'efflorescent_crust';
+    crystal.dominant_forms = ['powdery blue bloom', 'fibrous mass'];
+    habit_note = 'efflorescent crust chalcanthite — high-evaporation arid habit';
+  }
+  if (rng.random() < 0.04 && !crystal.twinned) {
+    crystal.twinned = true;
+    crystal.twin_law = '{110} cruciform';
+    habit_note += '; cruciform twin (rare {110} cross-shaped twin)';
+  }
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
+}
+
 // Descloizite — Pb(Zn,Cu)VO4(OH) (Zn end of descloizite-mottramite series)
 function grow_descloizite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_descloizite();
@@ -9874,6 +9931,7 @@ const MINERAL_ENGINES = {
   raspite: grow_raspite,
   stolzite: grow_stolzite,
   olivenite: grow_olivenite,
+  chalcanthite: grow_chalcanthite,
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -12201,6 +12259,20 @@ class VugSimulator {
       }
     }
 
+    // Chalcanthite nucleation — Cu + S + acidic + oxidizing + concentrated.
+    const sigma_cha = this.conditions.supersaturation_chalcanthite();
+    if (sigma_cha > 1.0 && !this._atNucleationCap('chalcanthite')) {
+      if (rng.random() < 0.20) {
+        let pos = 'vug wall';
+        const dissolving_brh_cha = this.crystals.filter(c => c.mineral === 'brochantite' && c.dissolved);
+        const dissolving_atl_cha = this.crystals.filter(c => c.mineral === 'antlerite' && c.dissolved);
+        if (dissolving_brh_cha.length && rng.random() < 0.5) pos = `on brochantite #${dissolving_brh_cha[0].crystal_id}`;
+        else if (dissolving_atl_cha.length && rng.random() < 0.4) pos = `on antlerite #${dissolving_atl_cha[0].crystal_id}`;
+        const c = this.nucleate('chalcanthite', pos, sigma_cha);
+        this.log.push(`  ✦ NUCLEATION: Chalcanthite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_cha.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, S=${this.conditions.fluid.S.toFixed(0)}, pH=${this.conditions.fluid.pH.toFixed(1)}, salinity=${this.conditions.fluid.salinity.toFixed(1)})`);
+      }
+    }
+
     // Descloizite nucleation — Pb + Zn + V + oxidizing.
     const sigma_des = this.conditions.supersaturation_descloizite();
     if (sigma_des > 1.0 && !this._atNucleationCap('descloizite')) {
@@ -12919,6 +12991,38 @@ class VugSimulator {
           `(T dropped to ${this.conditions.temperature.toFixed(0)}°C, crossed ${oldM}/${newM} ` +
           `phase boundary; cubic external form preserved)`
         );
+      }
+    }
+
+    // Water-solubility metastability — Round 8e (Apr 2026). Chalcanthite
+    // re-dissolves when fluid.salinity < 4 OR fluid.pH > 5. The geological
+    // truth: every chalcanthite is a temporary victory over entropy.
+    for (const crystal of this.crystals) {
+      if (crystal.mineral !== 'chalcanthite' || crystal.dissolved || !crystal.active) continue;
+      if (this.conditions.fluid.salinity < 4.0 || this.conditions.fluid.pH > 5.0) {
+        // 40%/step decay, with a 0.5-µm absolute floor below which we
+        // collapse to full dissolution (asymptotic decay otherwise).
+        let dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.4);
+        if (crystal.total_growth_um < 0.5) dissolved_um = crystal.total_growth_um;
+        crystal.total_growth_um -= dissolved_um;
+        crystal.c_length_mm = Math.max(crystal.total_growth_um / 1000.0, 0);
+        this.conditions.fluid.Cu += dissolved_um * 0.5;
+        this.conditions.fluid.S += dissolved_um * 0.5;
+        if (crystal.total_growth_um <= 0) {
+          crystal.dissolved = true;
+          crystal.active = false;
+          this.log.push(
+            `  💧 RE-DISSOLVED: Chalcanthite #${crystal.crystal_id} ` +
+            `completely returned to solution (salinity=${this.conditions.fluid.salinity.toFixed(1)}, ` +
+            `pH=${this.conditions.fluid.pH.toFixed(1)}) — Cu²⁺ + SO₄²⁻ back in fluid`
+          );
+        } else {
+          this.log.push(
+            `  💧 Chalcanthite #${crystal.crystal_id}: re-dissolving ` +
+            `(${dissolved_um.toFixed(1)} µm lost; salinity=${this.conditions.fluid.salinity.toFixed(1)}, ` +
+            `pH=${this.conditions.fluid.pH.toFixed(1)})`
+          );
+        }
       }
     }
 
@@ -14313,6 +14417,25 @@ class VugSimulator {
       parts.push("Oxidative dissolution — strong O₂ in the fluid is etching the surface. Ag is going back into solution as Ag⁺, and the released ions migrate down the redox gradient to re-precipitate as native silver in deeper reducing pockets. This is the supergene Ag-enrichment mechanism (Boyle 1968) — the same chemistry that made Tsumeb's secondary ore zone.");
     } else if (c.zones && c.zones.length > 15) {
       parts.push('Tarnish — surface oxidation has darkened the original lead-gray luster to deep iron-black. Even in a sealed vug, atmospheric S compounds eventually reach the surface.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_chalcanthite(c) {
+    const parts = [`Chalcanthite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("CuSO₄·5H₂O — the bright sky-blue Cu sulfate, the [Cu(H₂O)₅]²⁺ chromophore one of the most intensely-colored minerals anywhere. Triclinic, Mohs 2.5, perfect {110} cleavage. The name is Greek for 'copper flower' — and like a flower, it doesn't last. The most water-soluble mineral in the sim (20.7 g per 100 mL at 20°C); every specimen is a temporary victory over entropy. Forms only in arid, strongly oxidizing, very acidic, salt-concentrated drainage: Chuquicamata mine walls, Rio Tinto AMD seeps, Atacama desert evaporite crusts.");
+    if (c.habit === 'stalactitic') {
+      parts.push('Stalactitic — the Chuquicamata mine-wall habit. Sky-blue drips and cones formed where acidic Cu-rich fluid trickles down a vug wall and evaporates faster than it can run off.');
+    } else if (c.habit === 'tabular') {
+      parts.push('Tabular prismatic — RARE. Most natural chalcanthite is stalactitic or efflorescent; well-formed prismatic crystals are collector-grade. Most "crystals" on the market are lab-grown.');
+    } else {
+      parts.push('Efflorescent crust — powdery blue surface bloom. Forms in arid mine atmospheres where evaporation is fast; will weep into solution again the moment humidity rises.');
+    }
+    if (c.twinned && (c.twin_law || '').includes('cruciform')) {
+      parts.push('Cruciform twin — RARE {110} cross-shaped twin. One of the more striking twin morphologies in mineralogy when a chalcanthite specimen survives long enough to display it.');
+    }
+    if (c.dissolved) {
+      parts.push('Re-dissolved — the host fluid became more dilute (or less acidic) and the crystal returned to solution. Cu²⁺ and SO₄²⁻ are back in the fluid; they may recombine as chalcanthite again the next time conditions return to arid + acidic + concentrated. This cyclic dissolution-regrowth is the chalcanthite signature: the only mineral in the vug that respects the seasons.');
     }
     return parts.join(' ');
   }
@@ -18851,7 +18974,8 @@ const IDLE_MINERAL_COLORS = {
   native_arsenic: '#888888', native_sulfur: '#f5d030', native_tellurium: '#b8b8c8',
   nickeline: '#d49080', millerite: '#c8b860', cobaltite: '#d8d4cc',
   descloizite: '#8a3020', mottramite: '#8a9a40',
-  raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030'
+  raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030',
+  chalcanthite: '#2a40c8'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second
