@@ -2957,6 +2957,70 @@ class VugConditions:
             sigma *= 0.6
         return max(sigma, 0)
 
+    def supersaturation_native_silver(self) -> float:
+        """Native silver (Ag⁰) — the Kongsberg wire-silver mineral.
+
+        The S-depletion mineral: native silver only forms where every
+        sulfur atom is already claimed (the Ag-HS complex equilibrium
+        breaks down) AND the fluid is strongly reducing (Ag⁺ → Ag⁰).
+        Geologically authentic — every famous wire-silver locality
+        sits in a sulfide-depleted reducing pocket: Kongsberg's
+        calcite-vein basement (no nearby sulfide source), Cobalt
+        Ontario's cobalt-nickel-arsenide veins (Co/Ni/As consume S
+        before Ag arrives), Keweenaw's basalt amygdules (no S in
+        the host).
+
+        This is the *inverse* of the priority chains in the
+        beryl/corundum families. There the high-priority variant
+        fires when its chromophore is present; here native_silver
+        fires when its competitor's reagent (S²⁻) is *absent*. First
+        depletion-gate engine in the sim.
+
+        Source: research/research-native-silver.md (boss commit
+        f2939da); Boyle 1968 (GSA Bulletin 79); Kissin & Mango 2014
+        (CIM Special Volume 54, on Cobalt-Ag deposits).
+        """
+        # Hard threshold — Ag must be supersaturated enough to overcome
+        # the kinetic barrier to native-metal nucleation.
+        if self.fluid.Ag < 1.0:
+            return 0
+        # S-depletion gate — the chemistry novelty. Above 2 ppm S, all
+        # available Ag goes into acanthite first (preferred sulfide
+        # stability). Hard zero, no soft rolloff.
+        if self.fluid.S > 2.0:
+            return 0
+        # Strongly reducing — Ag⁺ → Ag⁰ requires a low-Eh fluid. Above
+        # 0.3 the Ag stays in solution as Ag⁺ (or as Ag-Cl complexes).
+        if self.fluid.O2 > 0.3:
+            return 0
+        # Ag activity factor — even fractional ppm is hugely
+        # supersaturated against native-metal equilibrium.
+        ag_f = min(self.fluid.Ag / 2.0, 3.0)
+        # Reducing preference — stronger than acanthite, mirrors
+        # native_copper.
+        red_f = max(0.3, 1.0 - self.fluid.O2 * 2.5)
+        # Sulfide suppression — any residual S lowers yield.
+        s_f = max(0.2, 1.0 - self.fluid.S / 4.0)
+        sigma = ag_f * red_f * s_f
+        # T window — peak 100-200°C (epithermal wire-silver), tapers above.
+        T = self.temperature
+        if 100 <= T <= 200:
+            T_factor = 1.2
+        elif T < 50:
+            T_factor = 0.4
+        elif T < 100:
+            T_factor = 0.4 + 0.016 * (T - 50)  # 50→0.4 ramps to 100→1.2
+        elif T <= 300:
+            T_factor = max(0.4, 1.2 - 0.008 * (T - 200))
+        else:
+            T_factor = 0.3
+        sigma *= T_factor
+        # pH preference — neutral 5-7 sweet spot, narrower than acanthite
+        # because native metals tend to be acid-sensitive.
+        if self.fluid.pH < 4 or self.fluid.pH > 9:
+            sigma *= 0.6
+        return max(sigma, 0)
+
 
 # ============================================================
 # CRYSTAL MODELS
@@ -8111,6 +8175,92 @@ def grow_argentite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_native_silver(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Native silver (Ag⁰) — the Kongsberg wire-silver mineral.
+
+    Forms only where S is depleted below 2 ppm AND the fluid is
+    strongly reducing. Wire silver is the showcase habit, requiring
+    open vug space at low T (epithermal); dendritic at moderate T;
+    massive nuggets at high Ag concentration regardless of T. Real
+    wire specimens at Kongsberg reach 30+ cm — max_size_cm is set
+    accordingly.
+
+    Habit selection by σ excess + T window:
+      - low T + high σ → wire (the Kongsberg signature, max 30 cm)
+      - mid T + mid σ → dendritic (Cobalt-Ontario fern-plates)
+      - any T + low σ → massive (Keweenaw nugget)
+      - rare modifier: cubic/octahedral when σ is just above threshold
+        and T is high (>200°C) — primary hypogene crystal habit
+
+    Source: research/research-native-silver.md (boss commit f2939da).
+    """
+    sigma = conditions.supersaturation_native_silver()
+
+    if sigma < 1.0:
+        # Tarnish — when S re-enters the fluid, the surface skins
+        # over with acanthite. Treat as a slow surface dissolution
+        # for now; the proper acanthite-rind overlay is deferred to
+        # 8a-3b (the tarnish clock — boss-flagged future feature).
+        if crystal.total_growth_um > 5 and conditions.fluid.S > 5:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.04)
+            conditions.fluid.Ag = max(conditions.fluid.Ag - dissolved_um * 0.3, 0)
+            conditions.fluid.S = max(conditions.fluid.S - dissolved_um * 0.4, 0)
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"tarnish — S returned to fluid (S={conditions.fluid.S:.1f}); surface skinning to acanthite"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    T = conditions.temperature
+    is_open_low_T = T < 150
+    is_high_T_primary = T > 200 and excess < 0.6
+
+    if is_high_T_primary:
+        crystal.habit = "cubic_crystal"
+        crystal.dominant_forms = ["{100} cube", "modified by {111}"]
+        habit_note = "cubic native silver — rare hypogene primary crystal habit"
+    elif is_open_low_T and excess > 1.0:
+        crystal.habit = "wire"
+        crystal.dominant_forms = ["epithermal wire", "curling thread of metal"]
+        habit_note = "wire silver — Kongsberg habit, the collector's prize"
+    elif excess > 0.6:
+        crystal.habit = "dendritic"
+        crystal.dominant_forms = ["dendritic plates", "fern-like branches"]
+        habit_note = "dendritic native silver — Cobalt-Ontario fern habit"
+    else:
+        crystal.habit = "massive"
+        crystal.dominant_forms = ["hackly massive", "metallic nugget"]
+        habit_note = "massive native silver — Keweenaw nugget habit"
+
+    # Penetration twin on {111} — research file lists this as common.
+    if crystal.habit == "cubic_crystal" and not crystal.twinned and random.random() < 0.05:
+        crystal.twinned = True
+        crystal.twin_law = "{111} penetration"
+        habit_note += "; {111} penetration twin"
+
+    # Color note — fresh metallic silver, tarnishes inevitably.
+    if len(crystal.zones) > 20:
+        habit_note += "; tarnishing — acanthite rind beginning to form"
+    else:
+        habit_note += "; bright silver-white metallic luster"
+
+    # Deplete Ag — note no S consumed (this is the depletion mineral)
+    conditions.fluid.Ag = max(conditions.fluid.Ag - rate * 0.012, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_selenite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Selenite / Gypsum (CaSO₄·2H₂O) growth. Low-T evaporite, Naica's giant crystals."""
     sigma = conditions.supersaturation_selenite()
@@ -8243,6 +8393,7 @@ MINERAL_ENGINES = {
     "clinobisvanite": grow_clinobisvanite,
     "acanthite": grow_acanthite,
     "argentite": grow_argentite,
+    "native_silver": grow_native_silver,
 }
 
 
@@ -11733,6 +11884,31 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Argentite #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_arg:.2f}, "
                               f"Ag={self.conditions.fluid.Ag:.2f}, S={self.conditions.fluid.S:.0f})")
+
+        # Native silver nucleation — Ag + strongly_reducing + S < 2.
+        # The depletion mineral. Substrate preferences track the
+        # geological pathway: dissolving acanthite (the supergene
+        # enrichment route at Tsumeb), dissolving tetrahedrite
+        # (oxidation released Ag now meeting reducing pocket), or
+        # native_copper (the Keweenaw co-precipitation — both metals
+        # native in S-poor basalt amygdules).
+        sigma_nag = self.conditions.supersaturation_native_silver()
+        if sigma_nag > 1.2 and not self._at_nucleation_cap("native_silver"):
+            if random.random() < 0.16:
+                pos = "vug wall"
+                dissolving_aca = [c for c in self.crystals if c.mineral == "acanthite" and c.dissolved]
+                dissolving_tet_nag = [c for c in self.crystals if c.mineral == "tetrahedrite" and c.dissolved]
+                active_ncopper = [c for c in self.crystals if c.mineral == "native_copper" and c.active]
+                if dissolving_aca and random.random() < 0.6:
+                    pos = f"on acanthite #{dissolving_aca[0].crystal_id}"
+                elif dissolving_tet_nag and random.random() < 0.5:
+                    pos = f"on tetrahedrite #{dissolving_tet_nag[0].crystal_id}"
+                elif active_ncopper and random.random() < 0.4:
+                    pos = f"on native_copper #{active_ncopper[0].crystal_id}"
+                c = self.nucleate("native_silver", position=pos, sigma=sigma_nag)
+                self.log.append(f"  ✦ NUCLEATION: Native silver #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_nag:.2f}, "
+                              f"Ag={self.conditions.fluid.Ag:.2f}, S={self.conditions.fluid.S:.1f})")
 
         # Acanthite nucleation — Ag + S + reducing + T < 173°C.
         # Substrate preference: galena (the classic Ag-bearing sulfide
@@ -16608,6 +16784,95 @@ class VugSimulator:
                 "vug, atmospheric S compounds eventually reach the "
                 "surface. Display specimens are usually re-polished "
                 "before sale."
+            )
+        return " ".join(parts)
+
+    def _narrate_native_silver(self, c: Crystal) -> str:
+        """Narrate native silver — the Kongsberg wire mineral and the
+        S-depletion paragenetic outcome."""
+        parts = [f"Native silver #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Ag — elemental silver, the only native element bright enough "
+            "to make you rich just by looking at it wrong. Cubic isometric "
+            "(Fm3̄m), Mohs 2.5-3, specific gravity 10.5 (one of the heaviest "
+            "native metals). The chemistry novelty: native silver only "
+            "forms where every sulfur atom is already claimed and the "
+            "fluid is strongly reducing — the inverse of normal "
+            "supersaturation logic. Every Kongsberg wire grew in a "
+            "calcite-vein basement pocket where no sulfide source was "
+            "anywhere nearby."
+        )
+
+        if c.habit == "wire":
+            parts.append(
+                "Wire silver — the collector's prize. Epithermal, low-T, "
+                "open-vug habit; the thread of metal curls through the void "
+                "as the depletion-driven supersaturation is exhausted along "
+                "the growth front. Kongsberg's wires reach 30+ cm and are "
+                "considered the finest native-element specimens in the "
+                "world (Bjørlykke 1959). At a finer scale the wires show "
+                "the herringbone surface texture diagnostic of Ag⁰ "
+                "epitaxial growth."
+            )
+        elif c.habit == "dendritic":
+            parts.append(
+                "Dendritic silver — fern-like plates, the Cobalt-Ontario "
+                "habit. Branching pattern emerges when the diffusion-"
+                "limited growth front outruns the depletion zone, splits, "
+                "and self-replicates in two dimensions. The same mechanism "
+                "that produces ferns also produces silver dendrites — a "
+                "morphology the geometry doesn't care about the substrate."
+            )
+        elif c.habit == "cubic_crystal":
+            parts.append(
+                "Cubic crystal — RARE habit. Native silver almost never "
+                "grows as well-formed isometric crystals; the diffusion-"
+                "limited geometry of low-S reducing fluid favors wires and "
+                "dendrites. Cubes appear only under specific high-T "
+                "primary-hypogene conditions where the fluid stays "
+                "supersaturated long enough for the growth front to fill "
+                "the {100} faces."
+            )
+        else:  # massive
+            parts.append(
+                "Massive native silver — hackly metallic mass, the Keweenaw "
+                "Peninsula nugget habit. Forms when Ag concentration is "
+                "high enough that the depletion zone is locally exhausted "
+                "before delicate wire / dendrite morphologies can develop. "
+                "The historic mining district shipped it by the ton, often "
+                "alongside native copper in the basalt amygdules."
+            )
+
+        if c.twinned and "{111}" in (c.twin_law or ""):
+            parts.append(
+                "{111} penetration twin — two cubes interlocked along a "
+                "{111} composition plane. Diagnostic when present, rare "
+                "in nature."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Tarnishing — S has returned to the fluid and is skinning "
+                "the surface with acanthite. Geologically inevitable: every "
+                "native-silver specimen eventually develops a dark "
+                "acanthite rind from atmospheric H₂S, even in a sealed "
+                "vug. Display specimens are usually re-polished."
+            )
+        elif len(c.zones) > 20:
+            parts.append(
+                "The fresh-broken metallic luster has begun to dull — "
+                "atmospheric S is reaching the surface and the first "
+                "molecular layer of acanthite is forming."
+            )
+
+        if "acanthite" in (c.position or ""):
+            parts.append(
+                "Note position — this crystal nucleated on a dissolving "
+                "acanthite. That's the supergene Ag-enrichment cycle: "
+                "primary acanthite oxidizes, releases Ag⁺, the Ag⁺ "
+                "migrates down the redox gradient and re-precipitates as "
+                "native silver in a deeper reducing pocket. Same Ag atoms, "
+                "different mineral, same vug."
             )
         return " ".join(parts)
 

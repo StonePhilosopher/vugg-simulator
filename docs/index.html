@@ -3151,6 +3151,7 @@ const MINERAL_SPEC_FALLBACK = {
   clinobisvanite: { formula: "BiVO4", nucleation_sigma: 1.5, max_size_cm: 0.1, growth_rate_mult: 0.2, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 2.5 } },
   acanthite: { formula: "Ag2S", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   argentite: { formula: "Ag2S", nucleation_sigma: 1.0, max_size_cm: 3.0, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "spinel_111", description: "Penetration twin on {111} (spinel law)", habits: ["octahedral"] }], acid_dissolution: null },
+  native_silver: { formula: "Ag", nucleation_sigma: 1.2, max_size_cm: 30.0, growth_rate_mult: 0.5, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "111_penetration", description: "Penetration twin on {111}", habits: ["cubic_crystal"] }], acid_dissolution: null },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3293,7 +3294,7 @@ const MINERAL_GAME_COLORS = {
   wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
-  acanthite: '#404040', argentite: '#303030'
+  acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -4630,6 +4631,35 @@ class VugConditions {
     sigma *= T_factor;
     if (this.fluid.pH < 4 || this.fluid.pH > 9) sigma *= 0.5;
     if (this.fluid.Cu > 30) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  // Native silver (Ag⁰) — the Kongsberg wire-silver mineral.
+  // First depletion-gate engine in the sim: fires only when S < 2 AND O2 < 0.3.
+  // Source: research/research-native-silver.md, Boyle 1968.
+  supersaturation_native_silver() {
+    if (this.fluid.Ag < 1.0) return 0;
+    if (this.fluid.S > 2.0) return 0;
+    if (this.fluid.O2 > 0.3) return 0;
+    const ag_f = Math.min(this.fluid.Ag / 2.0, 3.0);
+    const red_f = Math.max(0.3, 1.0 - this.fluid.O2 * 2.5);
+    const s_f = Math.max(0.2, 1.0 - this.fluid.S / 4.0);
+    let sigma = ag_f * red_f * s_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 100 && T <= 200) {
+      T_factor = 1.2;
+    } else if (T < 50) {
+      T_factor = 0.4;
+    } else if (T < 100) {
+      T_factor = 0.4 + 0.016 * (T - 50);
+    } else if (T <= 300) {
+      T_factor = Math.max(0.4, 1.2 - 0.008 * (T - 200));
+    } else {
+      T_factor = 0.3;
+    }
+    sigma *= T_factor;
+    if (this.fluid.pH < 4 || this.fluid.pH > 9) sigma *= 0.6;
     return Math.max(sigma, 0);
   }
 
@@ -7122,6 +7152,73 @@ function grow_argentite(crystal, conditions, step) {
   });
 }
 
+// Native silver — Ag (Kongsberg wire-silver mineral, S-depletion gate)
+function grow_native_silver(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_native_silver();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.S > 5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.04);
+      conditions.fluid.Ag = Math.max(conditions.fluid.Ag - dissolved_um * 0.3, 0);
+      conditions.fluid.S = Math.max(conditions.fluid.S - dissolved_um * 0.4, 0);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `tarnish — S returned to fluid (S=${conditions.fluid.S.toFixed(1)}); surface skinning to acanthite`,
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 4.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const T = conditions.temperature;
+  const is_open_low_T = T < 150;
+  const is_high_T_primary = T > 200 && excess < 0.6;
+
+  let habit_note;
+  if (is_high_T_primary) {
+    crystal.habit = 'cubic_crystal';
+    crystal.dominant_forms = ['{100} cube', 'modified by {111}'];
+    habit_note = 'cubic native silver — rare hypogene primary crystal habit';
+  } else if (is_open_low_T && excess > 1.0) {
+    crystal.habit = 'wire';
+    crystal.dominant_forms = ['epithermal wire', 'curling thread of metal'];
+    habit_note = "wire silver — Kongsberg habit, the collector's prize";
+  } else if (excess > 0.6) {
+    crystal.habit = 'dendritic';
+    crystal.dominant_forms = ['dendritic plates', 'fern-like branches'];
+    habit_note = 'dendritic native silver — Cobalt-Ontario fern habit';
+  } else {
+    crystal.habit = 'massive';
+    crystal.dominant_forms = ['hackly massive', 'metallic nugget'];
+    habit_note = 'massive native silver — Keweenaw nugget habit';
+  }
+
+  if (crystal.habit === 'cubic_crystal' && !crystal.twinned && rng.random() < 0.05) {
+    crystal.twinned = true;
+    crystal.twin_law = '{111} penetration';
+    habit_note += '; {111} penetration twin';
+  }
+
+  if (crystal.zones && crystal.zones.length > 20) {
+    habit_note += '; tarnishing — acanthite rind beginning to form';
+  } else {
+    habit_note += '; bright silver-white metallic luster';
+  }
+
+  conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.012, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
 // Anhydrite — CaSO4
 // High-T or saline-low-T Ca sulfate. Sabkha evaporite + Bingham deep brine.
 // Rehydrates to gypsum/selenite when T<60 AND salinity<100‰.
@@ -9058,6 +9155,7 @@ const MINERAL_ENGINES = {
   clinobisvanite: grow_clinobisvanite,
   acanthite: grow_acanthite,
   argentite: grow_argentite,
+  native_silver: grow_native_silver,
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -11383,6 +11481,26 @@ class VugSimulator {
       }
     }
 
+    // Native silver nucleation — Ag + strongly_reducing + S < 2.
+    // The depletion mineral. Substrate preferences track the geological
+    // pathway: dissolving acanthite (supergene Ag-enrichment route at
+    // Tsumeb), dissolving tetrahedrite, or native_copper (Keweenaw
+    // co-precipitation in S-poor basalt amygdules).
+    const sigma_nag = this.conditions.supersaturation_native_silver();
+    if (sigma_nag > 1.2 && !this._atNucleationCap('native_silver')) {
+      if (rng.random() < 0.16) {
+        let pos = 'vug wall';
+        const dissolving_aca_nag = this.crystals.filter(c => c.mineral === 'acanthite' && c.dissolved);
+        const dissolving_tet_nag = this.crystals.filter(c => c.mineral === 'tetrahedrite' && c.dissolved);
+        const active_ncopper_nag = this.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+        if (dissolving_aca_nag.length && rng.random() < 0.6) pos = `on acanthite #${dissolving_aca_nag[0].crystal_id}`;
+        else if (dissolving_tet_nag.length && rng.random() < 0.5) pos = `on tetrahedrite #${dissolving_tet_nag[0].crystal_id}`;
+        else if (active_ncopper_nag.length && rng.random() < 0.4) pos = `on native_copper #${active_ncopper_nag[0].crystal_id}`;
+        const c = this.nucleate('native_silver', pos, sigma_nag);
+        this.log.push(`  ✦ NUCLEATION: Native silver #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_nag.toFixed(2)}, Ag=${this.conditions.fluid.Ag.toFixed(2)}, S=${this.conditions.fluid.S.toFixed(1)})`);
+      }
+    }
+
     // Acanthite nucleation — Ag + S + reducing + T < 173°C.
     // Substrate preference: galena (the classic Ag-bearing parent),
     // dissolving tetrahedrite (often the supergene Ag source), or bare wall.
@@ -13342,6 +13460,32 @@ class VugSimulator {
       parts.push("Oxidative dissolution — strong O₂ in the fluid is etching the surface. Ag is going back into solution as Ag⁺, and the released ions migrate down the redox gradient to re-precipitate as native silver in deeper reducing pockets. This is the supergene Ag-enrichment mechanism (Boyle 1968) — the same chemistry that made Tsumeb's secondary ore zone.");
     } else if (c.zones && c.zones.length > 15) {
       parts.push('Tarnish — surface oxidation has darkened the original lead-gray luster to deep iron-black. Even in a sealed vug, atmospheric S compounds eventually reach the surface.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_native_silver(c) {
+    const parts = [`Native silver #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Ag — elemental silver, the only native element bright enough to make you rich just by looking at it wrong. Cubic isometric (Fm3̄m), Mohs 2.5-3, specific gravity 10.5 (one of the heaviest native metals). The chemistry novelty: native silver only forms where every sulfur atom is already claimed and the fluid is strongly reducing — the inverse of normal supersaturation logic. Every Kongsberg wire grew in a calcite-vein basement pocket where no sulfide source was anywhere nearby.");
+    if (c.habit === 'wire') {
+      parts.push("Wire silver — the collector's prize. Epithermal, low-T, open-vug habit; the thread of metal curls through the void as the depletion-driven supersaturation is exhausted along the growth front. Kongsberg's wires reach 30+ cm (Bjørlykke 1959).");
+    } else if (c.habit === 'dendritic') {
+      parts.push('Dendritic silver — fern-like plates, the Cobalt-Ontario habit. Branching emerges when diffusion-limited growth outruns the depletion zone, splits, and self-replicates in two dimensions.');
+    } else if (c.habit === 'cubic_crystal') {
+      parts.push("Cubic crystal — RARE habit. Native silver almost never grows as well-formed isometric crystals; the diffusion-limited geometry of low-S reducing fluid favors wires and dendrites.");
+    } else {
+      parts.push('Massive native silver — hackly metallic mass, the Keweenaw nugget habit. Forms when Ag concentration is high enough that the depletion zone is locally exhausted before delicate morphologies develop.');
+    }
+    if (c.twinned && (c.twin_law || '').includes('{111}')) {
+      parts.push('{111} penetration twin — two cubes interlocked along a {111} composition plane. Diagnostic when present, rare in nature.');
+    }
+    if (c.dissolved) {
+      parts.push('Tarnishing — S has returned to the fluid and is skinning the surface with acanthite. Geologically inevitable.');
+    } else if (c.zones && c.zones.length > 20) {
+      parts.push('The fresh-broken metallic luster has begun to dull — atmospheric S is reaching the surface and the first molecular layer of acanthite is forming.');
+    }
+    if ((c.position || '').includes('acanthite')) {
+      parts.push("Note position — this crystal nucleated on a dissolving acanthite. That's the supergene Ag-enrichment cycle: primary acanthite oxidizes, releases Ag⁺, the Ag⁺ migrates down the redox gradient and re-precipitates as native silver in a deeper reducing pocket. Same Ag atoms, different mineral, same vug.");
     }
     return parts.join(' ');
   }
@@ -17697,7 +17841,7 @@ const IDLE_MINERAL_COLORS = {
   wulfenite: '#ff8833', ferrimolybdite: '#f5dc14', arsenopyrite: '#c8c0b8', scorodite: '#5a9a8a', selenite: '#e8e0d8', barite: '#eb137f', celestine: '#a4c8e0', jarosite: '#dcb43c', alunite: '#f0e0d8', brochantite: '#3a7c4f', antlerite: '#2a6038', anhydrite: '#d8d0c8', feldspar: '#f0d0b0',
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
-  acanthite: '#404040', argentite: '#303030'
+  acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

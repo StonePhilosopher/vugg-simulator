@@ -7423,7 +7423,9 @@
         {
           "name": "spinel_111",
           "description": "Penetration twin on {111} (spinel law)",
-          "habits": ["octahedral"]
+          "habits": [
+            "octahedral"
+          ]
         }
       ],
       "acid_dissolution": null,
@@ -7440,6 +7442,90 @@
       ],
       "audit_status": "Round 8a-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Hard lower-T gate at 173°C; below that, apply_paramorph_transitions hook converts the crystal in-place to acanthite while preserving habit + dominant_forms — first non-destructive polymorph mechanic in the sim, distinct from THERMAL_DECOMPOSITION which destroys the crystal. Habit variants: cubic (low-moderate σ, Comstock Lode signature), octahedral (mid σ, with {111} spinel-law penetration twins), arborescent (high σ, dendritic/wire-like). Activates dormant Ag pool only in scenarios that reach >173°C — currently radioactive_pegmatite per declared scenarios. Sources: Petruk et al. 1974 (Canadian Mineralogist 12), boss research file research/research-argentite.md.",
       "class_color": "#7feb13"
+    },
+    "native_silver": {
+      "formula": "Ag",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 4,
+      "max_size_cm": 30.0,
+      "growth_rate_mult": 0.5,
+      "habit_variants": [
+        {
+          "name": "wire",
+          "wall_spread": 0.2,
+          "void_reach": 0.9,
+          "vector": "dendritic",
+          "trigger": "low T + high σ — Kongsberg epithermal wire habit, the collector's prize; threads of metal curling through open vug space"
+        },
+        {
+          "name": "dendritic",
+          "wall_spread": 0.5,
+          "void_reach": 0.6,
+          "vector": "dendritic",
+          "trigger": "moderate σ — Cobalt-Ontario fern-plate habit; branching pattern from diffusion-limited growth"
+        },
+        {
+          "name": "massive",
+          "wall_spread": 0.7,
+          "void_reach": 0.4,
+          "vector": "coating",
+          "trigger": "low σ — Keweenaw nugget habit, hackly metallic mass; high-Ag concentration depletes locally before delicate morphologies develop"
+        },
+        {
+          "name": "cubic_crystal",
+          "wall_spread": 0.4,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "high T (>200°C) + low σ — rare hypogene primary cubic crystal; {100} faces with {111} modifier; can have {111} penetration twin"
+        }
+      ],
+      "class": "native",
+      "description": "Ag — elemental silver, the only native element bright enough to make you rich just by looking at it wrong. Cubic isometric (Fm3̄m), Mohs 2.5-3, specific gravity 10.5 (one of the heaviest native metals). The S-depletion mineral: native silver only forms where every sulfur atom is already claimed and the fluid is strongly reducing — the inverse of normal supersaturation logic. Famous wire-silver localities (Kongsberg Norway, Keweenaw Michigan, Cobalt Ontario) all sit in S-depleted reducing pockets. Tarnishes inevitably to a dark acanthite rind from atmospheric H₂S; freshly broken surfaces still flash with the brightest metallic luster known to mineralogy. Source: research/research-native-silver.md (boss commit f2939da), Boyle 1968 (GSA Bulletin 79), Bjørlykke 1959 (NGU 207).",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        50,
+        300
+      ],
+      "T_optimum_C": [
+        100,
+        200
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "strongly_reducing",
+      "required_ingredients": {
+        "Ag": 1.0
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": null,
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "111_penetration",
+          "description": "Penetration twin on {111}",
+          "habits": ["cubic_crystal"]
+        }
+      ],
+      "acid_dissolution": null,
+      "habit": "wire",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_native_silver",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8a-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The first depletion-gate engine in the sim: native silver fires only when fluid.S < 2 ppm AND fluid.O2 < 0.3 — the geological signature of every Kongsberg-type wire-silver locality. Engine includes tarnish branch (when S returns to fluid > 5 ppm, the surface skins over with acanthite as a dissolution event). Habit variants: wire (low T + high σ, Kongsberg), dendritic (mid σ, Cobalt-Ontario), massive (low σ, Keweenaw), cubic_crystal (rare hypogene primary with {111} penetration twin). Activates the dormant Ag pool at Tsumeb supergene + Bisbee oxidation cap, where dissolving acanthite/tetrahedrite releases Ag⁺ that meets a deeper reducing pocket. Tarnish-clock mechanic (per-step acanthite-rind accumulation regardless of S availability) is deferred to 8a-3b alongside the same mechanic for native_arsenic / native_tellurium / native_bismuth. Sources: Boyle 1968 (GSA Bulletin 79), Bjørlykke 1959 (NGU 207), Kissin & Mango 2014 (CIM SV 54), boss research file research/research-native-silver.md.",
+      "class_color": "#eb13eb"
     }
   }
 }
