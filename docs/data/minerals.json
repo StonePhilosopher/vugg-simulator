@@ -7589,7 +7589,9 @@
       "trace_ingredients": {},
       "thermal_decomp_C": 615,
       "thermal_decomp_reaction": "As (s) → As (vapor) — sublimes at 615°C and 1 atm without melting",
-      "thermal_decomp_products": {"As": 0.4},
+      "thermal_decomp_products": {
+        "As": 0.4
+      },
       "fluorescence": null,
       "twin_laws": [],
       "acid_dissolution": null,
@@ -7605,6 +7607,77 @@
         "web/index.html"
       ],
       "audit_status": "Round 8b-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The residual-overflow native element: hard gates at S>10 (overflows to realgar/orpiment/arsenopyrite), Fe>50 (overflows to arsenopyrite), O₂>0.5 (overflows to arsenate suite). Habit variants: massive_granular (Freiberg ore form), reniform (Akatani botryoidal), rhombohedral_crystal (rare high-T crystals), arsenolamprite (Bi-rich variety). Engine includes oxidative-dissolution branch when O₂>0.7 (As goes back to fluid as AsO₄³⁻, feeds the supergene arsenate cascade: scorodite/erythrite/annabergite/olivenite/mimetite). Tarnish-clock for the As₂O₃ surface bloom is deferred to 8a-3b alongside other native-element tarnish mechanics. Sources: Schiferl 1969 (Acta Cryst. B25), Petruk 1971 (Cobalt-Ag paragenesis), boss research file research/research-native-arsenic.md.",
+      "class_color": "#eb13eb"
+    },
+    "native_sulfur": {
+      "formula": "S",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 30.0,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "bipyramidal_alpha",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "equant",
+          "trigger": "T<95°C + low-mid σ — α-sulfur orthorhombic, the Sicilian Agrigento bipyramids; {111} steep + {113} shallow dipyramids on {001} pinacoid"
+        },
+        {
+          "name": "prismatic_beta",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "95<T<119°C — β-sulfur monoclinic prism / needle; RARE because it converts to α-S on cooling with internal cracking"
+        },
+        {
+          "name": "sublimation_crust",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "high σ + T>60°C — fumarole gas-phase deposition; bright yellow crystalline crust (Vulcano Italy / El Desierto Bolivia)"
+        }
+      ],
+      "class": "native",
+      "description": "S — elemental sulfur, the bright canary-yellow native non-metal built from crown-shaped S₈ rings. Orthorhombic α-S (room T) or monoclinic β-S (T>95.5°C, unstable below). Mohs 1.5-2.5, fragile, thermally sensitive — a warm hand can crack a cool specimen. The synproportionation mineral: native S lives on the H₂S/SO₄²⁻ redox boundary where the reaction H₂S + SO₄²⁻ → 2S⁰ + H₂O drops elemental S out of solution. Forms in volcanic fumaroles (Vulcano, El Desierto), salt-dome caprocks via Desulfovibrio bacterial sulfate reduction (Tarnobrzeg), and Sicilian sulfur-vug evaporites with celestine companions (Agrigento — type locality, crystals to 20+ cm). Sources: research/research-native-sulfur.md (boss commit f2939da), Holland 1965 (Econ. Geol. 60).",
+      "scenarios": [
+        "sabkha_dolomitization",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        20,
+        119
+      ],
+      "T_optimum_C": [
+        50,
+        90
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": 5.0,
+      "redox_requirement": "tolerant_both",
+      "required_ingredients": {
+        "S": 100
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": 115,
+      "thermal_decomp_reaction": "S (s) → S (l) — melts at 115.2°C; burns to SO₂ at ~250°C in air",
+      "thermal_decomp_products": {"S": 0.6},
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": null,
+      "habit": "bipyramidal_alpha",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_native_sulfur",
+      "runtimes_present": [
+        "vugg.py",
+        "web/index.html"
+      ],
+      "audit_status": "Round 8b-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The synproportionation Eh-window engine: native S fires only when 0.1<O₂<0.7 (the H₂S/SO₄²⁻ boundary), pH<5 (H₂S dominant regime), and Fe+Cu+Pb+Zn<100 (base-metal sulfide capture gate). Habit variants: bipyramidal_alpha (T<95°C, Sicilian Agrigento), prismatic_beta (95-119°C, RARE — converts to α with cracking), sublimation_crust (high σ + T>60°C, fumarole habit). Engine includes oxidative-dissolution branch (O₂>0.9 returns S to fluid as SO₄²⁻) and per-step pH acidification (synproportionation releases minor H⁺). THERMAL_DECOMPOSITION at 115°C (melting point) — outside most scenario T ranges. Sources: Holland 1965 (Econ. Geol. 60), boss research file research/research-native-sulfur.md.",
       "class_color": "#eb13eb"
     }
   }

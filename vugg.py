@@ -2976,6 +2976,75 @@ class VugConditions:
             sigma *= 0.6
         return max(sigma, 0)
 
+    def supersaturation_native_sulfur(self) -> float:
+        """Native sulfur (S₈) — the synproportionation native element.
+
+        The Eh-window mineral. Native sulfur lives on the H₂S/SO₄²⁻
+        boundary: where the fluid is partially oxidized (sulfide and
+        sulfate co-exist), the synproportionation reaction
+        H₂S + SO₄²⁻ → 2S⁰ + H₂O drops elemental S out of solution.
+        Below the boundary (fully reducing) → all S is sulfide bonded
+        into pyrite/galena/sphalerite. Above the boundary (fully
+        oxidizing) → all S is sulfate, joining barite/celestine/
+        anhydrite/jarosite.
+
+        Hard gates:
+          • O₂ < 0.1 → 0 (fully reducing — sulfides take everything)
+          • O₂ > 0.7 → 0 (fully oxidizing — sulfates take everything)
+          • pH > 5  → 0 (high pH stabilizes HS⁻/SO₄²⁻; native S
+            requires acidic conditions where H₂S dominates)
+          • Sum(Fe+Cu+Pb+Zn) > 100 → 0 (base metals capture S first)
+        Soft preference: T < 100°C (β-S above 95.5°C is unstable;
+        most native S is α-S below the boundary).
+
+        Geological motifs (research file):
+          • Volcanic fumarole sublimation (high σ at vents)
+          • Sedimentary biogenic via Desulfovibrio bacteria
+            (caprock of salt domes, Tarnobrzeg)
+          • Hydrothermal late-stage low-T (Sicilian dipyramids)
+
+        Source: research/research-native-sulfur.md (boss commit
+        f2939da); Holland 1965 (Econ. Geol. 60, on H₂S/SO₄ boundary
+        thermodynamics).
+        """
+        if self.fluid.S < 100:
+            return 0
+        # Synproportionation Eh window — narrow.
+        if self.fluid.O2 < 0.1 or self.fluid.O2 > 0.7:
+            return 0
+        # Acidic only — H₂S dominant in pH < 5.
+        if self.fluid.pH > 5:
+            return 0
+        # Base-metal sulfide capture — Fe+Cu+Pb+Zn together gate the
+        # native S window. Each metal preferentially binds S into a
+        # sulfide before the synproportionation reaction can fire.
+        metal_sum = self.fluid.Fe + self.fluid.Cu + self.fluid.Pb + self.fluid.Zn
+        if metal_sum > 100:
+            return 0
+        # Activity factor — at S=2700 (Coorong sabkha) σ would be huge
+        # without a cap. Cap at S/200 to keep within reasonable range.
+        s_f = min(self.fluid.S / 200.0, 4.0)
+        # Eh-boundary preference — peak in the middle (O2 ≈ 0.4).
+        eh_dist = abs(self.fluid.O2 - 0.4)
+        eh_f = max(0.4, 1.0 - 2.0 * eh_dist)  # peak at 0.4, half-life 0.3
+        # Acidic preference — stronger at lower pH.
+        ph_f = max(0.4, 1.0 - 0.15 * self.fluid.pH)
+        sigma = s_f * eh_f * ph_f
+        # T preference — α-S sweet spot 20-95°C, drops sharply above.
+        T = self.temperature
+        if 20 <= T <= 95:
+            T_factor = 1.2
+        elif T < 20:
+            T_factor = 0.6
+        elif T <= 119:
+            T_factor = max(0.5, 1.2 - 0.025 * (T - 95))
+        elif T < 200:
+            T_factor = max(0.3, 0.5 - 0.005 * (T - 119))  # fumarole tail
+        else:
+            T_factor = 0.0  # melts above 115; no growth
+        sigma *= T_factor
+        return max(sigma, 0)
+
     def supersaturation_native_arsenic(self) -> float:
         """Native arsenic (As⁰) — the residual-overflow native element.
 
@@ -8256,6 +8325,74 @@ def grow_argentite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_native_sulfur(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Native sulfur (S₈) — the synproportionation native element.
+
+    Bright canary-yellow bipyramidal α-sulfur (orthorhombic, T<95.5°C);
+    needle-like β-sulfur (monoclinic, 95.5-119°C — converts to α on
+    cooling with cracking); volcanic sublimation crust (high σ from
+    fumarole gas-phase deposition). Mohs 1.5-2.5, fragile, thermally
+    sensitive — a warm hand can crack a cool specimen.
+
+    Habit selection by T at growth time:
+      - T < 95.5 + low-mid σ → bipyramidal_alpha (Sicilian Agrigento)
+      - 95.5 ≤ T ≤ 119 → prismatic_beta (rare in collections — converts
+        to α on cooling, with crack-on-inversion notes in narrator)
+      - high σ regardless of T → sublimation_crust (fumarole habit,
+        mass deposition from gas phase)
+
+    Source: research/research-native-sulfur.md (boss commit f2939da).
+    """
+    sigma = conditions.supersaturation_native_sulfur()
+
+    if sigma < 1.0:
+        # Strong oxidation re-dissolves native S as sulfate.
+        if crystal.total_growth_um > 5 and conditions.fluid.O2 > 0.9:
+            crystal.dissolved = True
+            dissolved_um = min(3.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.S += dissolved_um * 0.6
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"oxidative dissolution (O₂={conditions.fluid.O2:.2f}) — S oxidizing to SO₄²⁻"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 4.0 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    T = conditions.temperature
+
+    if excess > 1.5 and T > 60:
+        crystal.habit = "sublimation_crust"
+        crystal.dominant_forms = ["bright yellow encrustation", "powdery crystalline mass"]
+        habit_note = "sublimation crust — fumarole habit, gas-phase deposition (Bolivian fumarole / Vulcano)"
+    elif T >= 95:  # within β stability
+        crystal.habit = "prismatic_beta"
+        crystal.dominant_forms = ["β-sulfur monoclinic prism", "needle-like"]
+        habit_note = "β-sulfur prismatic — RARE high-T monoclinic habit; converts to α on cooling with internal cracking"
+    else:
+        crystal.habit = "bipyramidal_alpha"
+        crystal.dominant_forms = ["{111} steep dipyramid", "{113} shallow dipyramid", "{001} pinacoid"]
+        habit_note = "α-sulfur bipyramidal — Sicilian Agrigento habit, the iconic bright-yellow crystals"
+
+    # H+ release — synproportionation H₂S + SO₄²⁻ → 2S⁰ + 2H₂O nominally
+    # neutral, but in practice native S forms with H+ co-release that
+    # acidifies the local fluid. Track via a tiny pH bump (capped).
+    conditions.fluid.pH = max(conditions.fluid.pH - rate * 0.0003, 0.5)
+
+    # Deplete S
+    conditions.fluid.S = max(conditions.fluid.S - rate * 0.02, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_native_arsenic(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Native arsenic (As⁰) — the residual-overflow native element.
 
@@ -8555,6 +8692,7 @@ MINERAL_ENGINES = {
     "argentite": grow_argentite,
     "native_silver": grow_native_silver,
     "native_arsenic": grow_native_arsenic,
+    "native_sulfur": grow_native_sulfur,
 }
 
 
@@ -8609,6 +8747,7 @@ THERMAL_DECOMPOSITION = {
     "antlerite":     (200, "Cu₃(SO₄)(OH)₄ → tenorite + SO₃ + H₂O (dehydration)", {"Cu": 0.5, "S": 0.4}),
     "anhydrite":     (1450, "CaSO₄ → CaO + SO₃ (decomposition; very high T — outside normal sim range)", {"Ca": 0.4, "S": 0.4}),
     "native_arsenic": (615, "As (s) → As (vapor) — sublimes at 615°C and 1 atm without melting", {"As": 0.4}),
+    "native_sulfur":  (115, "S (s) → S (l) — melts at 115.2°C; burns to SO₂ at ~250°C in air", {"S": 0.6}),
 }
 
 
@@ -12046,6 +12185,29 @@ class VugSimulator:
                 self.log.append(f"  ✦ NUCLEATION: Argentite #{c.crystal_id} on {c.position} "
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_arg:.2f}, "
                               f"Ag={self.conditions.fluid.Ag:.2f}, S={self.conditions.fluid.S:.0f})")
+
+        # Native sulfur nucleation — S + Eh window + acidic + low base metals.
+        # The synproportionation mineral. Substrate preferences:
+        # celestine/aragonite (the Sicilian sulfur-vug companions),
+        # gypsum (caprock / sabkha context), or bare wall.
+        sigma_nsu = self.conditions.supersaturation_native_sulfur()
+        if sigma_nsu > 1.0 and not self._at_nucleation_cap("native_sulfur"):
+            if random.random() < 0.18:
+                pos = "vug wall"
+                active_cel_nsu = [c for c in self.crystals if c.mineral == "celestine" and c.active]
+                active_arag_nsu = [c for c in self.crystals if c.mineral == "aragonite" and c.active]
+                active_gyp_nsu = [c for c in self.crystals if c.mineral == "selenite" and c.active]
+                if active_cel_nsu and random.random() < 0.5:
+                    pos = f"on celestine #{active_cel_nsu[0].crystal_id}"
+                elif active_arag_nsu and random.random() < 0.4:
+                    pos = f"on aragonite #{active_arag_nsu[0].crystal_id}"
+                elif active_gyp_nsu and random.random() < 0.3:
+                    pos = f"on selenite #{active_gyp_nsu[0].crystal_id}"
+                c = self.nucleate("native_sulfur", position=pos, sigma=sigma_nsu)
+                self.log.append(f"  ✦ NUCLEATION: Native sulfur #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_nsu:.2f}, "
+                              f"S={self.conditions.fluid.S:.0f}, O₂={self.conditions.fluid.O2:.2f}, "
+                              f"pH={self.conditions.fluid.pH:.1f})")
 
         # Native arsenic nucleation — As + strongly_reducing + S<10 + Fe<50.
         # The residual-overflow mineral. Substrate preference: dissolving
@@ -16964,6 +17126,80 @@ class VugSimulator:
                 "vug, atmospheric S compounds eventually reach the "
                 "surface. Display specimens are usually re-polished "
                 "before sale."
+            )
+        return " ".join(parts)
+
+    def _narrate_native_sulfur(self, c: Crystal) -> str:
+        """Narrate native sulfur — the synproportionation mineral."""
+        parts = [f"Native sulfur #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "S — elemental sulfur, the bright canary-yellow native "
+            "non-metal. Built from crown-shaped S₈ rings stacked into "
+            "an orthorhombic lattice (α-S, room T) or monoclinic (β-S, "
+            "T>95.5°C). Mohs 1.5-2.5, fragile, thermally sensitive — "
+            "holding a cool specimen in a warm hand can crack it. The "
+            "synproportionation mineral: native sulfur lives on the "
+            "H₂S/SO₄²⁻ redox boundary where the reaction H₂S + SO₄²⁻ "
+            "→ 2S⁰ + H₂O drops elemental S out of solution. Below the "
+            "boundary every S atom is sulfide-bonded; above, every S "
+            "atom is sulfate."
+        )
+
+        if c.habit == "bipyramidal_alpha":
+            parts.append(
+                "α-Sulfur bipyramidal — the iconic Sicilian Agrigento "
+                "habit. Two dipyramids stacked: a steep {111} cap and a "
+                "shallow {113} base, terminating at {001} pinacoid. "
+                "Crystals reach 20+ cm in the original Italian deposits, "
+                "considered among the most beautiful native-element "
+                "specimens ever recovered. The crown-shaped S₈ rings "
+                "produce the diagnostic pure-yellow color through "
+                "intra-molecular electronic transitions."
+            )
+        elif c.habit == "prismatic_beta":
+            parts.append(
+                "β-Sulfur prismatic — RARE habit, the high-T monoclinic "
+                "polymorph. β-S is unstable below 95.5°C and converts "
+                "to α-S on cooling, with internal strain that cracks "
+                "the crystal. Most β-S in collections is preserved by "
+                "rapid quenching; left at room T, it visibly degrades "
+                "over months."
+            )
+        elif c.habit == "sublimation_crust":
+            parts.append(
+                "Sublimation crust — the volcanic-fumarole habit. Gas-"
+                "phase H₂S + O₂ deposits S directly onto vent walls, "
+                "producing bright yellow crystalline crusts that grow "
+                "in days rather than years. Vulcano (Italy), El Desierto "
+                "(Bolivia), and active Hawaiian fumaroles produce this "
+                "form in real-time."
+            )
+
+        if "celestine" in (c.position or ""):
+            parts.append(
+                "Note position — this crystal nucleated on celestine. "
+                "Sicilian Caltanissetta is the type locality for this "
+                "association: fibrous celestine radiating from native-"
+                "sulfur cores, the Sr having co-precipitated from the "
+                "same evaporite-derived fluid."
+            )
+        elif "aragonite" in (c.position or "") or "selenite" in (c.position or ""):
+            parts.append(
+                "Sedimentary biogenic context — the host carbonate or "
+                "sulfate places this crystal in a salt-dome caprock or "
+                "sabkha setting (Tarnobrzeg Poland is the type). Sulfate-"
+                "reducing bacteria (Desulfovibrio) strip oxygen from "
+                "SO₄²⁻ and leave behind elemental sulfur. Biology as a "
+                "geological agent."
+            )
+
+        if c.dissolved:
+            parts.append(
+                "Oxidative dissolution — O₂ is climbing past the synpro-"
+                "portionation window and the crystal is going back to "
+                "fluid as SO₄²⁻. Over geological time the recycled "
+                "sulfate becomes barite or anhydrite somewhere "
+                "downstream — the same atoms, a different chapter."
             )
         return " ".join(parts)
 

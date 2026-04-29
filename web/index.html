@@ -3153,6 +3153,7 @@ const MINERAL_SPEC_FALLBACK = {
   argentite: { formula: "Ag2S", nucleation_sigma: 1.0, max_size_cm: 3.0, growth_rate_mult: 0.4, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "spinel_111", description: "Penetration twin on {111} (spinel law)", habits: ["octahedral"] }], acid_dissolution: null },
   native_silver: { formula: "Ag", nucleation_sigma: 1.2, max_size_cm: 30.0, growth_rate_mult: 0.5, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "111_penetration", description: "Penetration twin on {111}", habits: ["cubic_crystal"] }], acid_dissolution: null },
   native_arsenic: { formula: "As", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: 615, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  native_sulfur: { formula: "S", nucleation_sigma: 1.0, max_size_cm: 30.0, growth_rate_mult: 0.4, thermal_decomp_C: 115, fluorescence: null, twin_laws: [], acid_dissolution: null },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3296,7 +3297,7 @@ const MINERAL_GAME_COLORS = {
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
   acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4',
-  native_arsenic: '#888888'
+  native_arsenic: '#888888', native_sulfur: '#f5d030'
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -4645,6 +4646,36 @@ class VugConditions {
     sigma *= T_factor;
     if (this.fluid.pH < 4 || this.fluid.pH > 9) sigma *= 0.5;
     if (this.fluid.Cu > 30) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  // Native sulfur (S₈) — synproportionation Eh-window engine.
+  // Hard gates: 0.1<O2<0.7, pH<5, Fe+Cu+Pb+Zn<100. Source: research-native-sulfur.md.
+  supersaturation_native_sulfur() {
+    if (this.fluid.S < 100) return 0;
+    if (this.fluid.O2 < 0.1 || this.fluid.O2 > 0.7) return 0;
+    if (this.fluid.pH > 5) return 0;
+    const metal_sum = this.fluid.Fe + this.fluid.Cu + this.fluid.Pb + this.fluid.Zn;
+    if (metal_sum > 100) return 0;
+    const s_f = Math.min(this.fluid.S / 200.0, 4.0);
+    const eh_dist = Math.abs(this.fluid.O2 - 0.4);
+    const eh_f = Math.max(0.4, 1.0 - 2.0 * eh_dist);
+    const ph_f = Math.max(0.4, 1.0 - 0.15 * this.fluid.pH);
+    let sigma = s_f * eh_f * ph_f;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 20 && T <= 95) {
+      T_factor = 1.2;
+    } else if (T < 20) {
+      T_factor = 0.6;
+    } else if (T <= 119) {
+      T_factor = Math.max(0.5, 1.2 - 0.025 * (T - 95));
+    } else if (T < 200) {
+      T_factor = Math.max(0.3, 0.5 - 0.005 * (T - 119));
+    } else {
+      T_factor = 0.0;
+    }
+    sigma *= T_factor;
     return Math.max(sigma, 0);
   }
 
@@ -7196,6 +7227,56 @@ function grow_argentite(crystal, conditions, step) {
   });
 }
 
+// Native sulfur — S (synproportionation Eh-window engine)
+function grow_native_sulfur(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_native_sulfur();
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.9) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.S += dissolved_um * 0.6;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — S oxidizing to SO₄²⁻`,
+      });
+    }
+    return null;
+  }
+
+  const excess = sigma - 1.0;
+  const rate = 4.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const T = conditions.temperature;
+  let habit_note;
+
+  if (excess > 1.5 && T > 60) {
+    crystal.habit = 'sublimation_crust';
+    crystal.dominant_forms = ['bright yellow encrustation', 'powdery crystalline mass'];
+    habit_note = 'sublimation crust — fumarole habit, gas-phase deposition (Bolivian fumarole / Vulcano)';
+  } else if (T >= 95) {
+    crystal.habit = 'prismatic_beta';
+    crystal.dominant_forms = ['β-sulfur monoclinic prism', 'needle-like'];
+    habit_note = 'β-sulfur prismatic — RARE high-T monoclinic habit; converts to α on cooling with internal cracking';
+  } else {
+    crystal.habit = 'bipyramidal_alpha';
+    crystal.dominant_forms = ['{111} steep dipyramid', '{113} shallow dipyramid', '{001} pinacoid'];
+    habit_note = 'α-sulfur bipyramidal — Sicilian Agrigento habit, the iconic bright-yellow crystals';
+  }
+
+  // Synproportionation acidifies the local fluid slightly
+  conditions.fluid.pH = Math.max(conditions.fluid.pH - rate * 0.0003, 0.5);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.02, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
 // Native arsenic — As (residual-overflow native element)
 function grow_native_arsenic(crystal, conditions, step) {
   const sigma = conditions.supersaturation_native_arsenic();
@@ -9263,6 +9344,7 @@ const MINERAL_ENGINES = {
   argentite: grow_argentite,
   native_silver: grow_native_silver,
   native_arsenic: grow_native_arsenic,
+  native_sulfur: grow_native_sulfur,
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -11588,6 +11670,22 @@ class VugSimulator {
       }
     }
 
+    // Native sulfur nucleation — synproportionation Eh window + acidic + low base metals.
+    const sigma_nsu = this.conditions.supersaturation_native_sulfur();
+    if (sigma_nsu > 1.0 && !this._atNucleationCap('native_sulfur')) {
+      if (rng.random() < 0.18) {
+        let pos = 'vug wall';
+        const active_cel_nsu = this.crystals.filter(c => c.mineral === 'celestine' && c.active);
+        const active_arag_nsu = this.crystals.filter(c => c.mineral === 'aragonite' && c.active);
+        const active_gyp_nsu = this.crystals.filter(c => c.mineral === 'selenite' && c.active);
+        if (active_cel_nsu.length && rng.random() < 0.5) pos = `on celestine #${active_cel_nsu[0].crystal_id}`;
+        else if (active_arag_nsu.length && rng.random() < 0.4) pos = `on aragonite #${active_arag_nsu[0].crystal_id}`;
+        else if (active_gyp_nsu.length && rng.random() < 0.3) pos = `on selenite #${active_gyp_nsu[0].crystal_id}`;
+        const c = this.nucleate('native_sulfur', pos, sigma_nsu);
+        this.log.push(`  ✦ NUCLEATION: Native sulfur #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_nsu.toFixed(2)}, S=${this.conditions.fluid.S.toFixed(0)}, O₂=${this.conditions.fluid.O2.toFixed(2)}, pH=${this.conditions.fluid.pH.toFixed(1)})`);
+      }
+    }
+
     // Native arsenic nucleation — As + strongly_reducing + S<10 + Fe<50.
     // The residual-overflow mineral.
     const sigma_nas = this.conditions.supersaturation_native_arsenic();
@@ -13580,6 +13678,27 @@ class VugSimulator {
       parts.push("Oxidative dissolution — strong O₂ in the fluid is etching the surface. Ag is going back into solution as Ag⁺, and the released ions migrate down the redox gradient to re-precipitate as native silver in deeper reducing pockets. This is the supergene Ag-enrichment mechanism (Boyle 1968) — the same chemistry that made Tsumeb's secondary ore zone.");
     } else if (c.zones && c.zones.length > 15) {
       parts.push('Tarnish — surface oxidation has darkened the original lead-gray luster to deep iron-black. Even in a sealed vug, atmospheric S compounds eventually reach the surface.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_native_sulfur(c) {
+    const parts = [`Native sulfur #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("S — elemental sulfur, the bright canary-yellow native non-metal built from crown-shaped S₈ rings stacked into an orthorhombic lattice (α-S, room T) or monoclinic (β-S, T>95.5°C). Mohs 1.5-2.5, fragile, thermally sensitive — holding a cool specimen in a warm hand can crack it. The synproportionation mineral: native S lives on the H₂S/SO₄²⁻ redox boundary where H₂S + SO₄²⁻ → 2S⁰ + H₂O drops elemental S out of solution.");
+    if (c.habit === 'bipyramidal_alpha') {
+      parts.push('α-Sulfur bipyramidal — the iconic Sicilian Agrigento habit. Two dipyramids stacked: a steep {111} cap and a shallow {113} base, terminating at {001} pinacoid. Crystals reach 20+ cm in the original Italian deposits.');
+    } else if (c.habit === 'prismatic_beta') {
+      parts.push('β-Sulfur prismatic — RARE habit, the high-T monoclinic polymorph. Unstable below 95.5°C and converts to α-S on cooling, with internal strain that cracks the crystal.');
+    } else if (c.habit === 'sublimation_crust') {
+      parts.push('Sublimation crust — the volcanic-fumarole habit. Gas-phase H₂S + O₂ deposits S directly onto vent walls, producing bright yellow crystalline crusts that grow in days rather than years.');
+    }
+    if ((c.position || '').includes('celestine')) {
+      parts.push('Note position — this crystal nucleated on celestine. Sicilian Caltanissetta is the type locality for this association: fibrous celestine radiating from native-sulfur cores, the Sr having co-precipitated from the same evaporite-derived fluid.');
+    } else if ((c.position || '').includes('aragonite') || (c.position || '').includes('selenite')) {
+      parts.push('Sedimentary biogenic context — the host carbonate or sulfate places this crystal in a salt-dome caprock or sabkha setting (Tarnobrzeg Poland is the type). Sulfate-reducing bacteria (Desulfovibrio) strip oxygen from SO₄²⁻ and leave behind elemental sulfur.');
+    }
+    if (c.dissolved) {
+      parts.push('Oxidative dissolution — O₂ is climbing past the synproportionation window and the crystal is going back to fluid as SO₄²⁻. Over geological time the recycled sulfate becomes barite or anhydrite somewhere downstream.');
     }
     return parts.join(' ');
   }
@@ -17982,7 +18101,7 @@ const IDLE_MINERAL_COLORS = {
   emerald: '#2e8b57', aquamarine: '#7fb8d4', morganite: '#eb6b9e', heliodor: '#eed858',
   corundum: '#c8c8c8', ruby: '#c03030', sapphire: '#304068',
   acanthite: '#404040', argentite: '#303030', native_silver: '#d4d4d4',
-  native_arsenic: '#888888'
+  native_arsenic: '#888888', native_sulfur: '#f5d030'
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second
