@@ -16986,8 +16986,15 @@ function updateFortressStatus() {
 }
 
 // Zone-viz Phase 1c: bar-graph thumbnail for Crystal Inventory specimen
-// cards. Falls back to the generic mineral photo/placeholder thumb when
-// the crystal has fewer than 2 zones (no history worth rendering).
+// cards. Falls back to the generic mineral photo/placeholder thumb only
+// when the crystal has zero zones recorded (e.g. legacy serialized
+// records from before zone data was persisted). A single zone is still
+// real history — the moment of nucleation — and renderZoneBarCanvas
+// handles it correctly (single dim stripe, per its all-equal-values
+// branch). Pre-2026-04-30 this gated on >= 2, which left sub-resolution
+// crystals (1 zone, 0.0 mm) showing the generic 💎 placeholder while
+// every other species in the inventory had a real bar-graph thumb —
+// surfaced as a topaz #6 visual bug in seed-42 ouro_preto.
 //
 // Implementation note: renderCrystalRow builds its content as an HTML
 // string and commits it via el.innerHTML. A live canvas can't be painted
@@ -17008,7 +17015,7 @@ function crystalThumbHTML(crystal, size) {
   const twinBadge = crystal && crystal.twinned
     ? `<div style="position:absolute;top:1px;right:1px;background:#3a2044;color:#bb66ee;font-size:${Math.max(9, size*0.22)}px;line-height:1;padding:1px 3px;border-radius:2px;pointer-events:none;font-weight:bold" title="Twinned: ${crystal.twin_law || 'yes'}">⟁</div>`
     : '';
-  if (crystal && crystal.zones && crystal.zones.length >= 2) {
+  if (crystal && crystal.zones && crystal.zones.length >= 1) {
     const thumbCanvas = document.createElement('canvas');
     renderZoneBarCanvas(thumbCanvas, crystal.zones, {
       height: size,
