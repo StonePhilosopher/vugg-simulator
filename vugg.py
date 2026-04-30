@@ -15076,109 +15076,65 @@ class VugSimulator:
         return " ".join(parts)
     
     def _narrate_calcite(self, c: Crystal) -> str:
-        """Narrate a calcite crystal's story."""
+        """Narrate a calcite crystal's story.
+
+        Prose lives in narratives/calcite.md. Code keeps the zone
+        analysis (Mn-vs-Fe segregation, fluorescence-quench detection)
+        and final-size descriptor; markdown owns the words.
+        """
         parts = []
         if c.zones:
-            # Check for fluorescence zoning
             mn_zones = [z for z in c.zones if z.trace_Mn > 1.0 and z.trace_Fe < 2.0]
             fe_zones = [z for z in c.zones if z.trace_Fe > 3.0]
-            
             if mn_zones and fe_zones:
                 mn_end = mn_zones[-1].step
                 fe_start = fe_zones[0].step
                 if fe_start > mn_end - 5:
-                    parts.append(
-                        f"Early growth zones are manganese-rich and would fluoresce "
-                        f"orange under UV light. After step {fe_start}, iron flooded "
-                        f"the system and quenched the fluorescence — later zones would "
-                        f"appear dark under cathodoluminescence. The boundary between "
-                        f"glowing and dark records the moment the fluid chemistry changed."
-                    )
+                    parts.append(narrative_variant("calcite", "mn_fe_quench",
+                                                   fe_start=fe_start))
             elif mn_zones:
-                parts.append(
-                    f"The crystal incorporated manganese throughout growth and would "
-                    f"fluoresce orange under shortwave UV — a classic Mn²⁺-activated "
-                    f"calcite."
-                )
-        
-        if c.twinned:
-            parts.append(
-                f"The crystal is twinned on {c.twin_law}, a common deformation twin "
-                f"in calcite that can form during growth or post-crystallization stress."
-            )
-        
-        size_desc = "microscopic" if c.c_length_mm < 0.5 else "small" if c.c_length_mm < 2 else "well-developed"
-        parts.append(f"Final size: {size_desc} ({c.c_length_mm:.1f} mm), {c.habit} habit.")
+                parts.append(narrative_variant("calcite", "mn_only"))
 
-        return " ".join(parts)
+        if c.twinned:
+            parts.append(narrative_variant("calcite", "twinned",
+                                           twin_law=c.twin_law))
+
+        size_desc = "microscopic" if c.c_length_mm < 0.5 else "small" if c.c_length_mm < 2 else "well-developed"
+        parts.append(narrative_variant("calcite", "final_size",
+                                       size_desc=size_desc,
+                                       mm=f"{c.c_length_mm:.1f}",
+                                       habit=c.habit))
+
+        return " ".join(p for p in parts if p)
 
     def _narrate_aragonite(self, c: Crystal) -> str:
-        """Narrate an aragonite crystal's story — the metastable polymorph."""
+        """Narrate an aragonite crystal's story — the metastable polymorph.
+
+        Prose lives in narratives/aragonite.md. Code dispatches habit
+        + dissolved-with-conversion-note signal.
+        """
         parts = [f"Aragonite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "CaCO₃ — same composition as calcite, different crystal structure. "
-            "The orthorhombic polymorph that exists by kinetic favor, not thermodynamic "
-            "stability: at the temperature and pressure of this vug, calcite is the "
-            "ground-state phase, and given enough geologic time aragonite would convert. "
-            "Folk 1974 / Morse 1997 — Mg/Ca ratio is the dominant control on which "
-            "polymorph nucleates from a given fluid."
-        )
+        parts.append(narrative_blurb("aragonite"))
 
         if c.habit == "acicular_needle":
-            parts.append(
-                "Acicular needles — the high-supersaturation form. Long thin prisms "
-                "radiating from a common nucleation point, often forming sprays that "
-                "look like frozen explosions in cabinet specimens."
-            )
+            parts.append(narrative_variant("aragonite", "acicular_needle"))
         elif c.habit == "twinned_cyclic":
-            parts.append(
-                "Cyclic twin on {110} — three crystals interpenetrating at 120° to "
-                "produce a pseudo-hexagonal six-pointed prism. This is the diagnostic "
-                "aragonite habit, easily mistaken for a true hexagonal mineral until "
-                "the re-entrant angles between the twin lobes give it away."
-            )
+            parts.append(narrative_variant("aragonite", "twinned_cyclic"))
         elif c.habit == "flos_ferri":
-            parts.append(
-                "'Flos ferri' — the iron flower variety. Fe-rich aragonite forms "
-                "delicate dendritic / coral-like white branches, a habit named for "
-                "the famous Eisenerz, Austria specimens. Stalactitic and visually "
-                "stunning despite (or because of) its fragility."
-            )
+            parts.append(narrative_variant("aragonite", "flos_ferri"))
         else:
-            parts.append(
-                "Columnar prisms — the default low-σ habit. Transparent to white "
-                "blades that are easily confused with calcite at first glance, "
-                "until you read the chemistry: Mg/Ca ratio, trace Sr/Pb signatures, "
-                "or the lack of perfect rhombohedral cleavage."
-            )
+            parts.append(narrative_variant("aragonite", "columnar_prisms"))
 
-        # Polymorph context
-        # (Note: at narration time we don't have the original fluid state, but
-        #  we can comment on the narrative arc.)
         if c.dissolved:
             note = c.zones[-1].note if c.zones else ""
             if "polymorphic conversion" in note:
-                parts.append(
-                    "The crystal underwent polymorphic conversion to calcite — the "
-                    "thermodynamic sink. Aragonite metastability has limits: above "
-                    "100°C with water present, the structure inverts on geologic-short "
-                    "timescales (Bischoff & Fyfe 1968, half-life ~10³ yr at 80°C). "
-                    "What remains is a calcite pseudomorph after aragonite, preserving "
-                    "the original orthorhombic outline filled with trigonal cleavage."
-                )
+                parts.append(narrative_variant("aragonite", "polymorphic_conversion"))
             else:
-                parts.append(
-                    "Acid attack dissolved the crystal — aragonite shares calcite's "
-                    "vulnerability below pH 5.5. Ca²⁺ + CO₃²⁻ returned to the fluid."
-                )
+                parts.append(narrative_variant("aragonite", "acid_dissolution"))
         else:
-            parts.append(
-                "The crystal is preserved at vug-scale geologic moment. In nature, "
-                "aragonite from cold marine settings can survive millions of years; "
-                "from hot springs it converts to calcite in centuries to millennia."
-            )
+            parts.append(narrative_variant("aragonite", "preserved"))
 
-        return " ".join(parts)
+        return " ".join(p for p in parts if p)
 
     def _narrate_dolomite(self, c: Crystal) -> str:
         """Narrate a dolomite crystal's story — the Ca-Mg ordered carbonate.
