@@ -11154,6 +11154,168 @@ def event_supergene_fracture_seal(conditions: VugConditions) -> str:
             "whatever is undersaturated will quietly corrode.")
 
 
+# --- bisbee (Warren Mining District, Cochise County, AZ — Cu porphyry + supergene) ---
+
+def event_bisbee_primary_cooling(conditions: VugConditions) -> str:
+    """First cooling step — chalcopyrite + bornite crystallize, pyrite +
+    magnetite pin down the Fe budget. Still reducing."""
+    conditions.temperature = 320
+    conditions.fluid.SiO2 += 100     # late-stage silica injection
+    conditions.fluid.Cu -= 50        # some Cu locked into early sulfides
+    conditions.fluid.O2 = 0.08
+    conditions.flow_rate = 1.2
+    return ("The Sacramento Hill porphyry finishes its main crystallization "
+            "pulse. Chalcopyrite and bornite precipitate in the vein selvages "
+            "of the Escabrosa mantos — Cu:Fe:S in the magmatic ratio. Pyrite "
+            "frames the assemblage, locked in at 300+ °C. The ore body is set. "
+            "For 180 million years, nothing will happen.")
+
+
+def event_bisbee_uplift_weathering(conditions: VugConditions) -> str:
+    """Uplift exposes the ore to meteoric water. Pyrite oxidizes,
+    releasing H+ and SO4. pH drops — supergene engine starts."""
+    conditions.temperature = 35
+    conditions.fluid.pH = 4.0         # acidic from pyrite oxidation
+    conditions.fluid.O2 = 0.8         # oxygenated meteoric water
+    conditions.fluid.S += 80          # sulfate released from pyrite
+    conditions.fluid.Cu += 100        # Cu²⁺ leached from primary chalcopyrite
+    conditions.fluid.Fe += 50
+    conditions.flow_rate = 1.8
+    return ("Mesozoic–Cenozoic uplift tips the Warren basin and strips the "
+            "Cretaceous cover. Meteoric water percolates down through "
+            "fractures, hitting pyrite; sulfuric acid is the first product. "
+            "The pH crashes to 4, and Cu²⁺ starts descending with the water "
+            "table. This is the enrichment pulse — primary ore above is "
+            "dissolving, concentrating its copper at the redox interface "
+            "below.")
+
+
+def event_bisbee_enrichment_blanket(conditions: VugConditions) -> str:
+    """Descending Cu2+ hits the reducing front beneath the water table.
+    Chalcocite and covellite mantle the remaining primary sulfides — the
+    high-grade supergene enrichment zone."""
+    conditions.temperature = 30
+    conditions.fluid.Cu += 80         # still descending from above
+    conditions.fluid.S += 40
+    conditions.fluid.O2 = 0.6         # right at the redox front
+    conditions.fluid.pH = 4.5
+    conditions.flow_rate = 1.3
+    return ("The descending Cu²⁺-bearing fluid reaches the reducing layer "
+            "just below the water table. Chalcocite replaces chalcopyrite "
+            "atom-for-atom — the Bisbee enrichment blanket, 5–10× the "
+            "primary grade. Covellite forms where S activity is highest. "
+            "This is the mineable ore. For two generations of miners, this "
+            "is what Bisbee MEANS.")
+
+
+def event_bisbee_reducing_pulse(conditions: VugConditions) -> str:
+    """Brief reducing pulse — barren deep fluid displaces the sulfate-rich
+    enrichment brine. Eh drops below cuprite stability and native copper
+    precipitates as arborescent sheets in fracture fillings."""
+    conditions.fluid.O2 = 0.05         # strongly reducing
+    conditions.fluid.S = 15             # sulfate almost entirely flushed
+    conditions.fluid.Cu += 150          # Cu²⁺ surges from above
+    conditions.fluid.pH = 6.0
+    conditions.temperature = 28
+    conditions.flow_rate = 1.1
+    return ("A barren reducing fluid pulses up from depth — lower than "
+            "any water table. For a few thousand years the pocket's Eh "
+            "is below cuprite stability. Native copper precipitates in "
+            "the fracture selvages as arborescent sheets and wire. The "
+            "Bisbee native-copper specimens — the Cornish-style copper "
+            "trees — are products of exactly these brief windows.")
+
+
+def event_bisbee_oxidation_zone(conditions: VugConditions) -> str:
+    """Water table drops further; system oxidizes. Cuprite mantles the
+    native copper sheets — the narrow Eh band between sulfide-stable and
+    fully-oxidized."""
+    conditions.temperature = 25
+    conditions.fluid.O2 = 1.0          # oxidizing but not fully
+    conditions.fluid.pH = 6.2          # limestone buffer kicks in
+    conditions.fluid.S = max(conditions.fluid.S - 60, 20)  # sulfate flushed
+    conditions.fluid.Cu += 40
+    conditions.fluid.Fe -= 30          # goethite locks up Fe
+    conditions.fluid.CO3 += 30         # limestone dissolution starts
+    conditions.flow_rate = 1.0
+    return ("The water table drops another 50 meters. The enrichment "
+            "blanket is now in the unsaturated zone — oxygen reaches it "
+            "directly. Cuprite forms where the Eh is still low; native "
+            "copper sheets grow in the fractures where reducing pockets "
+            "survive. The limestone walls are finally participating — "
+            "pH climbs toward neutral, and CO₃ rises with it.")
+
+
+def event_bisbee_azurite_peak(conditions: VugConditions) -> str:
+    """High pCO2 groundwater surges through — azurite forms in the
+    limestone-hosted chambers. The Bisbee blue."""
+    conditions.fluid.CO3 += 80          # pCO₂ peak, limestone actively dissolving
+    conditions.fluid.Cu += 30
+    conditions.fluid.O2 = 1.3
+    conditions.fluid.pH = 7.0
+    conditions.flow_rate = 0.9
+    return ("A monsoon season — the first in many. CO₂-charged rainwater "
+            "infiltrates fast, dissolves limestone aggressively, and hits "
+            "the copper pocket at pH 7 with CO₃ at 110+ ppm. Azurite — "
+            "deep midnight-blue monoclinic prisms and radiating rosettes "
+            "— nucleates from the supersaturated brine. This phase "
+            "produces the showpiece 'Bisbee Blue' specimens.")
+
+
+def event_bisbee_co2_drop(conditions: VugConditions) -> str:
+    """pCO2 drops as monsoon pattern shifts. Azurite becomes thermodynamically
+    unstable; existing crystals begin converting to malachite (pseudomorphs).
+    Fresh malachite nucleates from the released Cu + CO3."""
+    conditions.fluid.CO3 = max(conditions.fluid.CO3 - 120, 50)  # crash below azurite threshold
+    conditions.fluid.O2 = 1.4
+    conditions.fluid.pH = 6.8
+    conditions.flow_rate = 0.7
+    return ("The climate dries. Without CO₂-charged infiltration the "
+            "pocket's pCO₂ falls below azurite's stability — every "
+            "azurite crystal in the vug starts converting. The color "
+            "shift creeps crystal-by-crystal: deep blue → green rind → "
+            "green core. Vink (1986) put the crossover at log(pCO₂) ≈ "
+            "−3.5 at 25 °C, right where we are. Malachite pseudomorphs "
+            "after azurite are the diagnostic Bisbee specimen — frozen "
+            "mid-transition.")
+
+
+def event_bisbee_silica_seep(conditions: VugConditions) -> str:
+    """Percolating groundwater carries dissolved SiO2 leached from the
+    quartz-monzonite porphyry upslope. Chrysocolla starts forming wherever
+    Cu2+ meets SiO2."""
+    conditions.fluid.SiO2 += 90        # porphyry weathering delivers silica
+    conditions.fluid.Cu += 20
+    conditions.fluid.CO3 = max(conditions.fluid.CO3 - 30, 20)   # CO₂ still trending down
+    conditions.fluid.pH = 6.5
+    conditions.fluid.O2 = 1.3
+    conditions.flow_rate = 0.8
+    return ("A new seep arrives — from weathering of the Sacramento Hill "
+            "quartz-monzonite porphyry uphill, not the limestone. It "
+            "brings dissolved SiO₂ at 100+ ppm. Where this fluid meets "
+            "the Cu²⁺ still in solution the cyan enamel of chrysocolla "
+            "precipitates: thin films over cuprite, botryoidal crusts "
+            "on native copper, and — the Bisbee centerpiece — "
+            "pseudomorphs replacing the last azurite blues.")
+
+
+def event_bisbee_final_drying(conditions: VugConditions) -> str:
+    """Flow stops. System seals."""
+    conditions.temperature = 20
+    conditions.flow_rate = 0.1
+    conditions.fluid.O2 = 1.0
+    return ("The fractures seal with calcite cement. Groundwater stops. "
+            "The pocket is a closed system again, this time with the "
+            "full oxidation assemblage frozen in place: chalcopyrite "
+            "cores wrapped in chalcocite, those wrapped in cuprite, "
+            "those overgrown by native copper, those overgrown by "
+            "azurite, those converted to malachite, those pseudomorphed "
+            "by chrysocolla. A million years from now, when a mining "
+            "shaft intersects this pocket, an assayer will photograph "
+            "the specimen and write 'Bisbee, Cochise County' on the "
+            "label.")
+
+
 # ============================================================
 # EVENT REGISTRY
 # ============================================================
@@ -11222,6 +11384,16 @@ EVENT_REGISTRY = {
     "supergene_phosphate_seep": event_supergene_phosphate_seep,
     "supergene_v_bearing_seep": event_supergene_v_bearing_seep,
     "supergene_fracture_seal": event_supergene_fracture_seal,
+    # Phase 2 — bisbee
+    "bisbee_primary_cooling": event_bisbee_primary_cooling,
+    "bisbee_uplift_weathering": event_bisbee_uplift_weathering,
+    "bisbee_enrichment_blanket": event_bisbee_enrichment_blanket,
+    "bisbee_reducing_pulse": event_bisbee_reducing_pulse,
+    "bisbee_oxidation_zone": event_bisbee_oxidation_zone,
+    "bisbee_azurite_peak": event_bisbee_azurite_peak,
+    "bisbee_co2_drop": event_bisbee_co2_drop,
+    "bisbee_silica_seep": event_bisbee_silica_seep,
+    "bisbee_final_drying": event_bisbee_final_drying,
 }
 
 
@@ -11328,287 +11500,6 @@ _JSON5_SCENARIOS = _load_scenarios_json5()
 #  above. The nine remaining scenarios with inline event closures stay
 #  in-code below pending Phase 2 migration.)
 
-
-
-def scenario_bisbee() -> Tuple[VugConditions, List[Event], int]:
-    """Bisbee, Arizona — Warren Mining District, Cochise County.
-
-    The classic copper porphyry with a world-class oxidation zone. The
-    complete Cu paragenesis from primary sulfides through supergene
-    enrichment to the cyan-blue chrysocolla of the oxidation finale.
-
-    Host rock: a combo — Laramide quartz-monzonite porphyry intruded
-    into Paleozoic Escabrosa Limestone + Abrigo Formation. In the sim
-    this is represented as a limestone wall (the pH buffer, the CO₃
-    source for azurite) with scenario events that inject dissolved
-    SiO₂ from the surrounding silicate matrix weathering — the supply
-    path for late chrysocolla.
-
-    Centerpiece mechanic: the azurite ↔ malachite ↔ chrysocolla
-    cascade. Azurite dominates at high pCO₂ (event 4, CO₃ ≥ 120 ppm).
-    A pCO₂-drop event (event 6) dissolves azurite and fires
-    malachite. A silica-seep event (event 7) dissolves malachite-
-    without-silica and fires chrysocolla pseudomorphs on the
-    remaining azurite crystals. Three carbonate/silicate phases
-    recording three different groundwater chemistries, each one
-    freezing a different step of the Cochise County monsoon.
-
-    References:
-      * Graeme, Graeme & Graeme (2019) — the modern Bisbee monograph
-      * Bryant (1968), Crane (1911) — district geology
-      * Vink (1986) — azurite ↔ malachite pCO₂ thermodynamics
-      * Mote et al. (2001) — supergene chrysocolla geochemistry
-    """
-    conditions = VugConditions(
-        # Primary porphyry stage — hot magmatic-hydrothermal brine.
-        # Graeme et al. 2019 fluid inclusion data: 320–450 °C,
-        # 0.5–1.5 kbar, hypersaline (35–55 wt% NaCl eq).
-        temperature=400.0,
-        pressure=1.0,
-        fluid=FluidChemistry(
-            # Cu 400 ppm — upper end of primary porphyry; the whole
-            # district budget. Concentrated in the sim relative to
-            # nature because we don't model the open-system leaching
-            # that strips Cu from 10 km³ of rock into a small pocket.
-            SiO2=500, Ca=60, CO3=30, Fe=200, Mn=4,
-            Cu=400, S=150, F=6, Cl=400, Pb=15,
-            K=80, Na=120, Al=20,
-            # Trace — arsenic from arsenopyrite, bismuth greisen
-            # signature (Bisbee has documented bismuth enrichment).
-            As=8, Bi=2,
-            # ── Audit gap-fills (Apr 2026) ────────────────────────────
-            # Ag=40: Bisbee / Warren District was a major Ag producer
-            # (~25 Moz historically) alongside Cu and Au. Argentiferous
-            # galena + tetrahedrite + argentite + minor native Ag are
-            # documented [Graeme et al. 2019]. Higher than the prior
-            # MVT scenarios (Tri-State Ag=5, Sweetwater Ag=3) reflecting
-            # Bisbee's Ag-rich character.
-            Ag=40,
-            # Mg=50: Escabrosa Limestone host is dolomitic in places;
-            # brine Mg from carbonate dissolution. Conservative —
-            # Bisbee doesn't have prominent dolomitization, but the
-            # brief requires every scenario have non-zero Mg.
-            Mg=50,
-            # P=5: enables pyromorphite (Pb-Cl-PO4) given existing
-            # Pb=15 + Cl=400 + supergene oxidation events. Bisbee has
-            # documented pyromorphite as a minor supergene Pb species
-            # alongside cerussite and anglesite [Graeme et al. 2019].
-            P=5,
-            # Sb=5: tetrahedrite (Cu-Sb-S) is the documented sulfosalt
-            # at Bisbee. Bi=2 is already set; mirroring with comparable
-            # low Sb completes the Sb-As-Bi greisen-trace triplet.
-            Sb=5,
-            # Au=3: Bisbee was a moderate Au producer (~3 Moz
-            # historically), classic Cu-Au porphyry. Slightly higher
-            # than Bingham's Au=2 reflecting Bisbee's well-preserved
-            # supergene zone where Au accumulates as native gold +
-            # auriferous chalcocite [Graeme et al. 2019]. Activated
-            # when grow_native_gold landed (was previously in
-            # pending_schema_additions).
-            Au=3,
-            # Co=80, Ni=70 — Round 8c-1 (Apr 2026). Bisbee's deep
-            # primary sulfide assemblage includes minor Co/Ni-bearing
-            # sulfarsenide phases (cobaltite + nickeline + safflorite)
-            # documented in the historical assays [Graeme et al. 2019,
-            # citing Bryant 1968]. Activates the dormant Co/Ni pools
-            # for the new sulfarsenide engines (cobaltite, nickeline,
-            # millerite) and feeds the existing erythrite + annabergite
-            # supergene arsenates further down the cascade. SIM_VERSION
-            # already at 8 from Round 8a; baseline shifts captured by
-            # the existing v8 baseline regen.
-            Co=80, Ni=70,
-            # ──────────────────────────────────────────────────────────
-            # Very reducing primary — chalcopyrite/bornite-stable.
-            O2=0.05, pH=5.0, salinity=30.0
-        ),
-        wall=VugWall(
-            composition="limestone",
-            thickness_mm=500.0,
-            vug_diameter_mm=50.0,
-            wall_Fe_ppm=2500.0,
-            wall_Mn_ppm=400.0,
-            # Primary cavity dug by magmatic-hydrothermal replacement
-            # of limestone. Secondary alcoves from the supergene
-            # overprint. 3+7 matches the supergene_oxidation profile.
-            primary_bubbles=3,
-            secondary_bubbles=7,
-            shape_seed=13,
-        )
-    )
-
-    def ev_primary_cooling(cond):
-        """First cooling step — chalcopyrite and bornite crystallize,
-        pyrite + magnetite pin down the Fe budget. Still reducing."""
-        cond.temperature = 320
-        cond.fluid.SiO2 += 100     # late-stage silica injection
-        cond.fluid.Cu -= 50        # some Cu locked into early sulfides
-        cond.fluid.O2 = 0.08
-        cond.flow_rate = 1.2
-        return ("The Sacramento Hill porphyry finishes its main crystallization "
-                "pulse. Chalcopyrite and bornite precipitate in the vein selvages "
-                "of the Escabrosa mantos — Cu:Fe:S in the magmatic ratio. Pyrite "
-                "frames the assemblage, locked in at 300+ °C. The ore body is set. "
-                "For 180 million years, nothing will happen.")
-
-    def ev_uplift_weathering(cond):
-        """Uplift exposes the ore to meteoric water. Pyrite oxidizes,
-        releasing H⁺ and SO₄. pH drops — the supergene engine starts."""
-        cond.temperature = 35
-        cond.fluid.pH = 4.0         # acidic from pyrite oxidation
-        cond.fluid.O2 = 0.8         # oxygenated meteoric water
-        cond.fluid.S += 80          # sulfate released from pyrite
-        cond.fluid.Cu += 100        # Cu²⁺ leached from primary chalcopyrite
-        cond.fluid.Fe += 50
-        cond.flow_rate = 1.8
-        return ("Mesozoic–Cenozoic uplift tips the Warren basin and strips the "
-                "Cretaceous cover. Meteoric water percolates down through "
-                "fractures, hitting pyrite; sulfuric acid is the first product. "
-                "The pH crashes to 4, and Cu²⁺ starts descending with the water "
-                "table. This is the enrichment pulse — primary ore above is "
-                "dissolving, concentrating its copper at the redox interface "
-                "below.")
-
-    def ev_enrichment_blanket(cond):
-        """Descending Cu²⁺ hits the reducing front beneath the water table.
-        Chalcocite and covellite mantle the remaining primary sulfides —
-        the high-grade supergene enrichment zone."""
-        cond.temperature = 30
-        cond.fluid.Cu += 80         # still descending from above
-        cond.fluid.S += 40
-        cond.fluid.O2 = 0.6         # right at the redox front
-        cond.fluid.pH = 4.5
-        cond.flow_rate = 1.3
-        return ("The descending Cu²⁺-bearing fluid reaches the reducing layer "
-                "just below the water table. Chalcocite replaces chalcopyrite "
-                "atom-for-atom — the Bisbee enrichment blanket, 5–10× the "
-                "primary grade. Covellite forms where S activity is highest. "
-                "This is the mineable ore. For two generations of miners, this "
-                "is what Bisbee MEANS.")
-
-    def ev_reducing_pulse(cond):
-        """Brief reducing pulse — a barren deep fluid displaces the
-        sulfate-rich enrichment brine. Eh drops below cuprite stability
-        for a short window and native copper precipitates as arborescent
-        sheets in fracture fillings. Accounts for the isolated native-Cu
-        pockets that occur throughout the Bisbee oxidation zone.
-
-        Needs strong chemistry: native-Cu's supersaturation floor
-        demands very low O₂ (the floor clause in red_f kicks in above
-        0.3), S below sulfide threshold, and Cu well above 80 ppm.
-        """
-        cond.fluid.O2 = 0.05         # strongly reducing
-        cond.fluid.S = 15             # sulfate almost entirely flushed
-        cond.fluid.Cu += 150          # Cu²⁺ surges from above
-        cond.fluid.pH = 6.0
-        cond.temperature = 28
-        cond.flow_rate = 1.1
-        return ("A barren reducing fluid pulses up from depth — lower than "
-                "any water table. For a few thousand years the pocket's Eh "
-                "is below cuprite stability. Native copper precipitates in "
-                "the fracture selvages as arborescent sheets and wire. The "
-                "Bisbee native-copper specimens — the Cornish-style copper "
-                "trees — are products of exactly these brief windows.")
-
-    def ev_oxidation_zone(cond):
-        """Water table drops further; the whole system oxidizes. Cuprite
-        mantles the native copper sheets — the narrow Eh band between
-        sulfide-stable and fully-oxidized."""
-        cond.temperature = 25
-        cond.fluid.O2 = 1.0          # oxidizing but not fully
-        cond.fluid.pH = 6.2          # limestone buffer kicks in
-        cond.fluid.S = max(cond.fluid.S - 60, 20)  # sulfate flushed
-        cond.fluid.Cu += 40
-        cond.fluid.Fe -= 30          # goethite locks up Fe
-        cond.fluid.CO3 += 30         # limestone dissolution starts
-        cond.flow_rate = 1.0
-        return ("The water table drops another 50 meters. The enrichment "
-                "blanket is now in the unsaturated zone — oxygen reaches it "
-                "directly. Cuprite forms where the Eh is still low; native "
-                "copper sheets grow in the fractures where reducing pockets "
-                "survive. The limestone walls are finally participating — "
-                "pH climbs toward neutral, and CO₃ rises with it.")
-
-    def ev_azurite_peak(cond):
-        """High pCO₂ groundwater surges through — azurite forms in the
-        limestone-hosted chambers. This is the Bisbee blue."""
-        cond.fluid.CO3 += 80          # pCO₂ peak, limestone actively dissolving
-        cond.fluid.Cu += 30
-        cond.fluid.O2 = 1.3
-        cond.fluid.pH = 7.0
-        cond.flow_rate = 0.9
-        return ("A monsoon season — the first in many. CO₂-charged rainwater "
-                "infiltrates fast, dissolves limestone aggressively, and hits "
-                "the copper pocket at pH 7 with CO₃ at 110+ ppm. Azurite — "
-                "deep midnight-blue monoclinic prisms and radiating rosettes "
-                "— nucleates from the supersaturated brine. This phase "
-                "produces the showpiece 'Bisbee Blue' specimens.")
-
-    def ev_co2_drop(cond):
-        """pCO₂ drops as the monsoon seasonal pattern shifts. Azurite
-        becomes thermodynamically unstable; existing crystals begin
-        converting to malachite (pseudomorphs). Fresh malachite nucleates
-        from the released Cu + CO₃."""
-        cond.fluid.CO3 = max(cond.fluid.CO3 - 120, 50)  # crash below azurite threshold
-        cond.fluid.O2 = 1.4
-        cond.fluid.pH = 6.8
-        cond.flow_rate = 0.7
-        return ("The climate dries. Without CO₂-charged infiltration the "
-                "pocket's pCO₂ falls below azurite's stability — every "
-                "azurite crystal in the vug starts converting. The color "
-                "shift creeps crystal-by-crystal: deep blue → green rind → "
-                "green core. Vink (1986) put the crossover at log(pCO₂) ≈ "
-                "−3.5 at 25 °C, right where we are. Malachite pseudomorphs "
-                "after azurite are the diagnostic Bisbee specimen — frozen "
-                "mid-transition.")
-
-    def ev_silica_seep(cond):
-        """Percolating groundwater now carries dissolved SiO₂ leached from
-        the quartz-monzonite porphyry upslope. Chrysocolla starts forming
-        wherever Cu²⁺ meets SiO₂ — crusts over cuprite/native copper,
-        pseudomorphs surviving azurite."""
-        cond.fluid.SiO2 += 90        # porphyry weathering delivers silica
-        cond.fluid.Cu += 20
-        cond.fluid.CO3 = max(cond.fluid.CO3 - 30, 20)   # CO₂ still trending down
-        cond.fluid.pH = 6.5
-        cond.fluid.O2 = 1.3
-        cond.flow_rate = 0.8
-        return ("A new seep arrives — from weathering of the Sacramento Hill "
-                "quartz-monzonite porphyry uphill, not the limestone. It "
-                "brings dissolved SiO₂ at 100+ ppm. Where this fluid meets "
-                "the Cu²⁺ still in solution the cyan enamel of chrysocolla "
-                "precipitates: thin films over cuprite, botryoidal crusts "
-                "on native copper, and — the Bisbee centerpiece — "
-                "pseudomorphs replacing the last azurite blues.")
-
-    def ev_final_drying(cond):
-        """Flow stops. The system seals. The assemblage the miners will
-        find a million years from now is committed."""
-        cond.temperature = 20
-        cond.flow_rate = 0.1
-        cond.fluid.O2 = 1.0
-        return ("The fractures seal with calcite cement. Groundwater stops. "
-                "The pocket is a closed system again, this time with the "
-                "full oxidation assemblage frozen in place: chalcopyrite "
-                "cores wrapped in chalcocite, those wrapped in cuprite, "
-                "those overgrown by native copper, those overgrown by "
-                "azurite, those converted to malachite, those pseudomorphed "
-                "by chrysocolla. A million years from now, when a mining "
-                "shaft intersects this pocket, an assayer will photograph "
-                "the specimen and write 'Bisbee, Cochise County' on the "
-                "label.")
-
-    events = [
-        Event(25,  "Primary Cooling",      "Chalcopyrite + bornite lock in",    ev_primary_cooling),
-        Event(65,  "Uplift + Weathering",  "Meteoric acid strips primary ore",  ev_uplift_weathering),
-        Event(95,  "Enrichment Blanket",   "Chalcocite replaces chalcopyrite",  ev_enrichment_blanket),
-        Event(120, "Reducing Pulse",       "Native copper fracture fillings",   ev_reducing_pulse),
-        Event(145, "Oxidation Zone",       "Cuprite mantles native copper",     ev_oxidation_zone),
-        Event(180, "Azurite Peak",         "High-pCO₂ monsoon — Bisbee Blue",   ev_azurite_peak),
-        Event(225, "pCO₂ Drop",            "Azurite → malachite conversion",    ev_co2_drop),
-        Event(265, "Silica Seep",          "Chrysocolla crusts + pseudomorphs", ev_silica_seep),
-        Event(305, "Final Drying",         "Fractures seal, system locks",      ev_final_drying),
-    ]
-    return conditions, events, 340
 
 
 def scenario_sabkha_dolomitization() -> Tuple[VugConditions, List[Event], int]:
@@ -11991,7 +11882,7 @@ SCENARIOS = {
     "supergene_oxidation": _JSON5_SCENARIOS["supergene_oxidation"],
     "ouro_preto": _JSON5_SCENARIOS["ouro_preto"],
     "gem_pegmatite": _JSON5_SCENARIOS["gem_pegmatite"],
-    "bisbee": scenario_bisbee,
+    "bisbee": _JSON5_SCENARIOS["bisbee"],
     "deccan_zeolite": _JSON5_SCENARIOS["deccan_zeolite"],
     "sabkha_dolomitization": scenario_sabkha_dolomitization,
     "marble_contact_metamorphism": _JSON5_SCENARIOS["marble_contact_metamorphism"],

@@ -44,7 +44,7 @@
 // =============================================================
 {
   "$schema_version": "1.0.0",
-  "$last_updated": "2026-04-30 (Phase 2: 7 of 9 migrated — supergene_oxidation added)",
+  "$last_updated": "2026-04-30 (Phase 2: 8 of 9 migrated — bisbee added)",
   "scenarios": {
 
     "cooling": {
@@ -499,6 +499,95 @@
         "Leach et al. 2010 — MVT genesis review",
         "Anderson & Macqueen 1982 — MVT mineralogy review",
         "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
+      ]
+    },
+
+    "bisbee": {
+      "anchor": "Bisbee, Arizona — Warren Mining District, Cochise County. Laramide quartz-monzonite porphyry intruding Paleozoic Escabrosa Limestone + Abrigo Formation. Major Cu-Ag-Au district (~8 Mt Cu, ~25 Moz Ag, ~3 Moz Au historically).",
+      "description": "Classic copper porphyry with world-class oxidation zone. Complete Cu paragenesis from primary sulfides through supergene enrichment to the cyan-blue chrysocolla finale. Centerpiece mechanic: azurite ↔ malachite ↔ chrysocolla cascade tracking pCO2 evolution.",
+      "duration_steps": 340,
+      "notes": [
+        "Anchor: Bisbee, Arizona — Warren Mining District, Cochise County. Host: combo Laramide quartz-monzonite porphyry intruded into Paleozoic Escabrosa Limestone + Abrigo Formation. In the sim this is represented as a limestone wall (the pH buffer, the CO3 source for azurite) with scenario events that inject dissolved SiO2 from the surrounding silicate matrix weathering — the supply path for late chrysocolla.",
+        "Centerpiece mechanic: the azurite → malachite → chrysocolla cascade. Azurite dominates at high pCO2 (event 6, CO3 >= 120 ppm). A pCO2-drop event (event 7) dissolves azurite and fires malachite. A silica-seep event (event 8) dissolves malachite-without-silica and fires chrysocolla pseudomorphs on the remaining azurite crystals. Three carbonate/silicate phases recording three different groundwater chemistries, each one freezing a different step of the Cochise County monsoon.",
+        "Chemistry-audit gap-fill pass (Apr 2026): Ag=40 (Bisbee was a major Ag producer ~25 Moz; argentiferous galena + tetrahedrite + argentite + minor native Ag per Graeme et al. 2019). Mg=50 (Escabrosa Limestone host dolomitic in places; brief-required non-zero baseline). P=5 (enables pyromorphite given Pb+Cl already populated). Sb=5 (tetrahedrite trace; completes the Sb-As-Bi greisen triplet). Au=3 (Bisbee ~3 Moz historically — Cu-Au porphyry; native gold + auriferous chalcocite per Graeme 2019).",
+        "Round 8c-1 additions (Apr 2026): Co=80, Ni=70 — Bisbee's deep primary sulfide assemblage includes minor Co/Ni-bearing sulfarsenide phases (cobaltite + nickeline + safflorite) per Graeme et al. 2019, citing Bryant 1968. Activates dormant Co/Ni pools for the new sulfarsenide engines and feeds the existing erythrite + annabergite supergene arsenates further down the cascade."
+      ],
+      "initial": {
+        // Primary porphyry stage — hot magmatic-hydrothermal brine.
+        // Graeme et al. 2019 fluid inclusion data: 320-450C, 0.5-1.5 kbar,
+        // hypersaline (35-55 wt% NaCl eq).
+        "temperature_C": 400.0,
+        "pressure_kbar": 1.0,
+        "fluid": {
+          // Cu 400 ppm — upper end of primary porphyry; the whole
+          // district budget. Concentrated in the sim relative to nature
+          // because we don't model the open-system leaching that strips
+          // Cu from 10 km^3 of rock into a small pocket.
+          "SiO2": 500,
+          "Ca": 60,
+          "CO3": 30,
+          "Fe": 200,
+          "Mn": 4,
+          "Cu": 400,
+          "S": 150,
+          "F": 6,
+          "Cl": 400,
+          "Pb": 15,
+          "K": 80,
+          "Na": 120,
+          "Al": 20,
+          // Trace — arsenic from arsenopyrite, bismuth greisen signature
+          // (Bisbee has documented bismuth enrichment).
+          "As": 8,
+          "Bi": 2,
+          // Audit gap-fills (Apr 2026):
+          "Ag": 40,    // Warren District ~25 Moz Ag [Graeme et al. 2019]
+          "Mg": 50,    // dolomitic Escabrosa baseline; brief-required non-zero
+          "P": 5,      // enables pyromorphite (Pb+Cl+P now all present)
+          "Sb": 5,     // tetrahedrite-tennantite sulfosalt trace
+          "Au": 3,     // ~3 Moz Au; supergene-preserved native gold + auriferous chalcocite
+          // Round 8c-1: minor Co/Ni-bearing sulfarsenides (cobaltite +
+          // nickeline + safflorite) documented at depth — activates
+          // cobaltite + nickeline + millerite engines and feeds erythrite +
+          // annabergite supergene cascade.
+          "Co": 80,
+          "Ni": 70,
+          // Very reducing primary — chalcopyrite/bornite-stable.
+          "O2": 0.05,
+          "pH": 5.0,
+          "salinity": 30.0
+        },
+        "wall": {
+          "composition": "limestone",
+          "thickness_mm": 500.0,
+          "vug_diameter_mm": 50.0,
+          "wall_Fe_ppm": 2500.0,
+          "wall_Mn_ppm": 400.0,
+          // Primary cavity dug by magmatic-hydrothermal replacement of
+          // limestone. Secondary alcoves from supergene overprint.
+          // 3+7 matches the supergene_oxidation profile.
+          "primary_bubbles": 3,
+          "secondary_bubbles": 7,
+          "shape_seed": 13
+        }
+      },
+      "events": [
+        { "step": 25,  "type": "bisbee_primary_cooling",     "name": "Primary Cooling",     "description": "Chalcopyrite + bornite lock in" },
+        { "step": 65,  "type": "bisbee_uplift_weathering",   "name": "Uplift + Weathering", "description": "Meteoric acid strips primary ore" },
+        { "step": 95,  "type": "bisbee_enrichment_blanket",  "name": "Enrichment Blanket",  "description": "Chalcocite replaces chalcopyrite" },
+        { "step": 120, "type": "bisbee_reducing_pulse",      "name": "Reducing Pulse",      "description": "Native copper fracture fillings" },
+        { "step": 145, "type": "bisbee_oxidation_zone",      "name": "Oxidation Zone",      "description": "Cuprite mantles native copper" },
+        { "step": 180, "type": "bisbee_azurite_peak",        "name": "Azurite Peak",        "description": "High-pCO2 monsoon — Bisbee Blue" },
+        { "step": 225, "type": "bisbee_co2_drop",            "name": "pCO2 Drop",           "description": "Azurite -> malachite conversion" },
+        { "step": 265, "type": "bisbee_silica_seep",         "name": "Silica Seep",         "description": "Chrysocolla crusts + pseudomorphs" },
+        { "step": 305, "type": "bisbee_final_drying",        "name": "Final Drying",        "description": "Fractures seal, system locks" }
+      ],
+      "sources": [
+        "Graeme, Graeme & Graeme 2019 — modern Bisbee monograph",
+        "Bryant 1968 — Warren District geology",
+        "Crane 1911 — early Bisbee geology",
+        "Vink 1986 — azurite ↔ malachite pCO2 thermodynamics",
+        "Mote et al. 2001 — supergene chrysocolla geochemistry"
       ]
     },
 
