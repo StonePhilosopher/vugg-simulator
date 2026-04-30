@@ -6,9 +6,38 @@ Simulates mineral crystallization inside a vug (cavity) under
 evolving hydrothermal conditions. Text output describes what grows,
 how it grows, and why.
 
+Role in the project (read this before refactoring):
+    This file is the **dev/test harness** for the simulation engine.
+    The Python is where the builder iterates on new minerals first,
+    runs the test suite (`tests/` exercises this file, not the JS),
+    and confirms behavior before porting changes to index.html.
+
+    The **shipped product** is index.html — that is what users play
+    via GitHub Pages. The same 84 grow_*() functions, scenarios, and
+    Crystal/FluidChemistry/VugConditions classes also live there.
+    `agent-api/vugg-agent.js` is a third (intentionally simpler)
+    runtime for AI agents.
+
+    Yes, that's three engine implementations of the same logic. The
+    drift cost is real (and is policed by `tools/sync-spec.js`). The
+    decision to keep them all is documented in:
+        proposals/TASK-BRIEF-NARRATIVE-READABILITY.md (item 5 / context)
+        — and the architecture review session 2026-04-29.
+
+When does this file go away?
+    The endgame plan is "drop vugg.py, port pytest to Node, JS becomes
+    the only engine." Trigger conditions:
+        • mineral count crosses ~100, OR
+        • the builder's natural workflow cycles away from Python-first
+          development (e.g., new mode work happens browser-first)
+    Until then, vugg.py is the right tool — don't rewrite it ahead of
+    that trigger. The `data/`-as-truth migration (proposals/
+    TASK-BRIEF-DATA-AS-TRUTH.md) is the bridging work that makes the
+    eventual drop cheap.
+
 Usage:
   python3 vugg.py                          # default scenario
-  python3 vugg.py --scenario cooling       # simple cooling scenario  
+  python3 vugg.py --scenario cooling       # simple cooling scenario
   python3 vugg.py --scenario pulse         # fluid pulse event
   python3 vugg.py --scenario mvt           # Mississippi Valley-type deposit
   python3 vugg.py --scenario reactive_wall # Acid pulses dissolve limestone walls

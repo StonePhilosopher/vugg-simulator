@@ -17,6 +17,36 @@
 // ============================================================
 
 // ============================================================
+// Role in the project (read this before refactoring)
+// ============================================================
+// This is the THIRD runtime of the simulation engine, after vugg.py
+// (dev/test harness) and index.html (shipped product). It is
+// **intentionally kept simpler** than the other two — fewer features,
+// less coupling — because its job is "minimum viable headless sim for
+// an AI agent to play 200 steps and write about what it saw."
+//
+// What that means in practice:
+//   - Some grow_*() implementations here are simplifications of their
+//     vugg.py / index.html counterparts.
+//   - Some mechanics (paramorph transitions, water-solubility
+//     metastability, etc.) may not be wired up here even after they
+//     ship in the other two runtimes. That is a deliberate lag, not
+//     drift.
+//   - tools/sync-spec.js will flag this lag in `runtimes_present`
+//     arrays; entries that legitimately don't claim agent-api are
+//     documenting an intentional gap, not a bug.
+//
+// When does this file change?
+//   - Always: load mineral data from ../data/minerals.json (below).
+//   - On the data/-as-truth migration (proposals/
+//     TASK-BRIEF-DATA-AS-TRUTH.md): this file should consume new
+//     declarative tables (scenarios.json, paramorph_transitions.json,
+//     etc.) the same way the other runtimes do. The intent is to keep
+//     the lag deliberate and visible, not to accumulate accidental
+//     drift.
+// ============================================================
+
+// ============================================================
 // MINERAL SPEC — single source of truth from ../data/minerals.json
 // ============================================================
 // Declares every template field per mineral. Runtime reads max_size_cm

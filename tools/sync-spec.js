@@ -2,6 +2,23 @@
 // ============================================================
 // sync-spec.js — cross-runtime mineral-spec consistency check
 // ============================================================
+// Why this exists:
+//   The simulation engine is implemented THREE TIMES — vugg.py (the dev/
+//   test harness, where pytest runs), index.html (the shipped product
+//   served by GitHub Pages), and agent-api/vugg-agent.js (an intentionally-
+//   simpler headless CLI for AI agents). Same 84 grow_*() functions, same
+//   84 mineral declarations, same scenarios — three implementations.
+//
+//   That duplication is real maintenance tax (drift surfaces silently) but
+//   the boss has decided the dev-in-Python / ship-as-JS workflow is worth
+//   keeping until ~100 minerals or until the natural workflow cycle. Until
+//   then, this tool is the drift detector.
+//
+//   Endgame plan: when Python is dropped, this tool retires with it.
+//   Until then: extend it. Cross-engine baseline tests (option-3 in the
+//   architecture review) build on top of this — same data, same seeds,
+//   diff the inventories at finish, fail loud on drift.
+//
 // Usage:
 //   node tools/sync-spec.js            # report mode — prints drift, exits 1 if any
 //   node tools/sync-spec.js --fix      # apply fixes in-place where safe (embed updates only)
@@ -10,7 +27,7 @@
 // What it checks:
 //   1. data/minerals.json is valid JSON with every mineral declaring every
 //      required field (per _schema).
-//   2. web/index.html's embedded MINERAL_SPEC mirror covers every mineral
+//   2. index.html's embedded MINERAL_SPEC_FALLBACK covers every mineral
 //      in data/minerals.json, with consistent max_size_cm,
 //      thermal_decomp_C, nucleation_sigma, growth_rate_mult, and class.
 //   3. agent-api/vugg-agent.js loads data/minerals.json via require() —
@@ -23,14 +40,19 @@
 //   0 — no drift
 //   1 — drift detected (report mode) or fix applied (fix mode)
 //   2 — unrecoverable error (missing files, invalid JSON, etc.)
+//
+// History:
+//   Pre-flatten (commit 9625d3a and earlier) this also checked the
+//   docs/index.html and docs/data/minerals.json mirrors. GitHub Pages now
+//   serves from repo root, so those mirrors are gone — see
+//   ARCHITECTURE.md for the layout-flatten note.
 
 const fs = require('fs');
 const path = require('path');
 
 const REPO = path.resolve(__dirname, '..');
 const SPEC_PATH   = path.join(REPO, 'data', 'minerals.json');
-const WEB_PATH    = path.join(REPO, 'web', 'index.html');
-const DOCS_PATH   = path.join(REPO, 'docs', 'index.html');
+const INDEX_PATH  = path.join(REPO, 'index.html');
 const AGENT_PATH  = path.join(REPO, 'agent-api', 'vugg-agent.js');
 const VUGG_PATH   = path.join(REPO, 'vugg.py');
 
@@ -60,13 +82,12 @@ ok(`loaded ${SPEC_PATH} — ${mineralNames.length} minerals declared`);
 function readOrNull(p) {
   try { return fs.readFileSync(p, 'utf8'); } catch { return null; }
 }
-const webSrc   = readOrNull(WEB_PATH);
-const docsSrc  = readOrNull(DOCS_PATH);
+const indexSrc = readOrNull(INDEX_PATH);
 const agentSrc = readOrNull(AGENT_PATH);
 const vuggSrc  = readOrNull(VUGG_PATH);
 
-if (!webSrc || !agentSrc || !vuggSrc) {
-  console.error(`${RED}FATAL${RST}: missing one of web/index.html, agent-api/vugg-agent.js, vugg.py`);
+if (!indexSrc || !agentSrc || !vuggSrc) {
+  console.error(`${RED}FATAL${RST}: missing one of index.html, agent-api/vugg-agent.js, vugg.py`);
   process.exit(2);
 }
 
@@ -88,9 +109,9 @@ for (const name of mineralNames) {
   }
 }
 
-// ---- Check 2: web/index.html embed coverage ----
-// The embed is `const MINERAL_SPEC = { quartz: {...}, calcite: {...}, ... };`.
-// For each mineral in the real spec, check that the web embed has an entry
+// ---- Check 2: index.html embed coverage ----
+// The embed is `const MINERAL_SPEC_FALLBACK = { quartz: {...}, calcite: {...}, ... };`.
+// For each mineral in the real spec, check that the embed has an entry
 // with matching max_size_cm.
 function parseWebEmbed(src) {
   // After phase-3 the inline embed is `const MINERAL_SPEC_FALLBACK = {...}`
@@ -118,86 +139,35 @@ function parseWebEmbed(src) {
     return { __error: e.message };
   }
 }
-const webEmbed = parseWebEmbed(webSrc);
+const webEmbed = parseWebEmbed(indexSrc);
 if (!webEmbed) {
-  record('web/index.html: no `const MINERAL_SPEC = {...}` embed found');
+  record('index.html: no `const MINERAL_SPEC_FALLBACK = {...}` embed found');
 } else if (webEmbed.__error) {
-  record(`web/index.html: MINERAL_SPEC embed failed to evaluate — ${webEmbed.__error}`);
+  record(`index.html: MINERAL_SPEC embed failed to evaluate — ${webEmbed.__error}`);
 } else {
-  info(`web/index.html embed has ${Object.keys(webEmbed).length} minerals`);
+  info(`index.html embed has ${Object.keys(webEmbed).length} minerals`);
   for (const name of mineralNames) {
     if (!webEmbed[name]) {
-      record(`web/index.html: MINERAL_SPEC.${name} missing (present in data/minerals.json)`);
+      record(`index.html: MINERAL_SPEC.${name} missing (present in data/minerals.json)`);
       continue;
     }
     const a = webEmbed[name], b = minerals[name];
     const fields = ['max_size_cm', 'thermal_decomp_C', 'nucleation_sigma', 'growth_rate_mult'];
     for (const f of fields) {
       if (a[f] !== undefined && a[f] !== b[f]) {
-        record(`web/index.html: ${name}.${f} drift — embed=${a[f]} vs spec=${b[f]}`);
+        record(`index.html: ${name}.${f} drift — embed=${a[f]} vs spec=${b[f]}`);
       }
     }
   }
   for (const name of Object.keys(webEmbed)) {
-    if (!minerals[name]) record(`web/index.html: MINERAL_SPEC.${name} is not in data/minerals.json (orphan)`);
+    if (!minerals[name]) record(`index.html: MINERAL_SPEC.${name} is not in data/minerals.json (orphan)`);
   }
 }
 
-// ---- Check 3: docs/index.html mirror of web/index.html ----
-if (docsSrc && docsSrc !== webSrc) {
-  // Only the MINERAL_SPEC blob needs to match.
-  const docsEmbed = parseWebEmbed(docsSrc);
-  if (!docsEmbed) {
-    record('docs/index.html: MINERAL_SPEC embed missing — docs/ must mirror web/');
-  } else if (docsEmbed.__error) {
-    record(`docs/index.html: MINERAL_SPEC embed failed to evaluate`);
-  } else {
-    const webKeys  = webEmbed ? Object.keys(webEmbed).sort().join(',') : '';
-    const docsKeys = Object.keys(docsEmbed).sort().join(',');
-    if (webKeys !== docsKeys) record('docs/index.html: MINERAL_SPEC key set differs from web/');
-  }
-}
-
-// ---- Check 3b: docs/data/minerals.json mirrors data/minerals.json ----
-// GitHub Pages serves docs/, so docs/data/minerals.json is the public spec
-// when the runtime fetches it. Prior to this check, this file silently
-// drifted across multiple round-of-engines updates (last touched at
-// commit 8d2cb52, before the v3+v4 rounds). Adding this catch.
-const DOCS_SPEC_PATH = path.join(REPO, 'docs', 'data', 'minerals.json');
-const docsSpecRaw = readOrNull(DOCS_SPEC_PATH);
-if (docsSpecRaw === null) {
-  warn('docs/data/minerals.json missing — GitHub Pages will fail to load full spec');
-} else {
-  let docsSpec;
-  try {
-    docsSpec = JSON.parse(docsSpecRaw);
-  } catch (e) {
-    record(`docs/data/minerals.json: JSON parse error — ${e.message}`);
-  }
-  if (docsSpec) {
-    const dataKeys  = Object.keys(spec.minerals).sort().join(',');
-    const docsKeys  = Object.keys(docsSpec.minerals || {}).sort().join(',');
-    if (dataKeys !== docsKeys) {
-      record(
-        `docs/data/minerals.json: key set differs from data/minerals.json. ` +
-        `Run: cp data/minerals.json docs/data/minerals.json`
-      );
-    } else {
-      // Compare sizes — same keys but different content means drift
-      if (docsSpecRaw.length !== fs.readFileSync(SPEC_PATH, 'utf8').length) {
-        // Full byte-level comparison of canonical JSON
-        const dataCanon = JSON.stringify(spec, null, 2);
-        const docsCanon = JSON.stringify(docsSpec, null, 2);
-        if (dataCanon !== docsCanon) {
-          record(
-            `docs/data/minerals.json: content drifts from data/minerals.json ` +
-            `(same keys, different values). Run: cp data/minerals.json docs/data/minerals.json`
-          );
-        }
-      }
-    }
-  }
-}
+// (Pre-flatten this section also validated docs/index.html and
+// docs/data/minerals.json mirrors against the web/ source. GitHub Pages
+// now serves from repo root and those mirrors no longer exist —
+// see ARCHITECTURE.md for the flatten note.)
 
 // ---- Check 4: agent-api/vugg-agent.js loads the spec ----
 if (!/require\(['"]\.\.\/data\/minerals\.json['"]\)/.test(agentSrc)) {
@@ -218,30 +188,33 @@ for (const name of mineralNames) {
 for (const name of mineralNames) {
   const rp = minerals[name].runtimes_present || [];
   const claimVugg  = rp.includes('vugg.py');
-  const claimWeb   = rp.includes('web/index.html');
+  // Accept both the new "index.html" and legacy "web/index.html" claim strings
+  // during the transition. Once all runtimes_present arrays are migrated this
+  // can drop the legacy alias.
+  const claimWeb   = rp.includes('index.html') || rp.includes('web/index.html');
   const claimAgent = rp.includes('agent-api/vugg-agent.js');
 
   const inVugg  = new RegExp(`['"]${name}['"]\\s*:\\s*grow_${name}`).test(vuggSrc);
-  const inWeb   = new RegExp(`\\b${name}\\s*:\\s*grow_${name}`).test(webSrc);
+  const inWeb   = new RegExp(`\\b${name}\\s*:\\s*grow_${name}`).test(indexSrc);
   const inAgent = new RegExp(`\\b${name}\\s*:\\s*grow_${name}`).test(agentSrc);
 
   if (claimVugg !== inVugg)   record(`runtimes_present: ${name} claims vugg.py=${claimVugg} but registry says ${inVugg}`);
-  if (claimWeb !== inWeb)     record(`runtimes_present: ${name} claims web/index.html=${claimWeb} but registry says ${inWeb}`);
+  if (claimWeb !== inWeb)     record(`runtimes_present: ${name} claims index.html=${claimWeb} but registry says ${inWeb}`);
   if (claimAgent !== inAgent) record(`runtimes_present: ${name} claims agent-api=${claimAgent} but registry says ${inAgent}`);
 }
 
 // ---- Report ----
 console.log('');
 if (drift === 0) {
-  ok(`no drift detected across ${mineralNames.length} minerals in 4 runtimes`);
+  ok(`no drift detected across ${mineralNames.length} minerals in 3 runtimes`);
   process.exit(0);
 } else {
   console.log(`${RED}${drift} drift item(s) detected${RST}`);
   if (MODE_FIX) {
-    // --fix currently only handles the web/ embed regeneration.
+    // --fix currently only handles the index.html embed regeneration.
     // For safety it's opt-in via an explicit second pass.
     console.log(`${YEL}--fix${RST}: not auto-fixing code edits; manually reconcile the items above.`);
-    console.log('       (Future: regenerate MINERAL_SPEC embed from data/minerals.json.)');
+    console.log('       (Future: regenerate MINERAL_SPEC_FALLBACK embed from data/minerals.json.)');
   } else {
     console.log(`${DIM}Run with --fix to attempt automatic reconciliation (currently report-only).${RST}`);
   }

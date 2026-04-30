@@ -1,11 +1,12 @@
 {
   "$schema_version": "1.0.0",
-  "last_updated": "2026-04-20 (+class_color per mineral, 12-hue color wheel for topo map)",
+  "last_updated": "2026-04-29 (layout flatten: web/index.html → index.html, docs/ mirror retired)",
   "source_of_truth_for": [
     "vugg.py",
-    "web/index.html",
+    "index.html",
     "agent-api/vugg-agent.js"
   ],
+  "_source_of_truth_note": "This file is the canonical mineral spec for all three runtimes. vugg.py is the dev/test harness (where pytest runs). index.html is the shipped product (GitHub Pages serves repo root; runtime fetches data/minerals.json and overwrites the inline MINERAL_SPEC_FALLBACK). agent-api/vugg-agent.js is intentionally kept simple and reads this file via require(). Cross-runtime drift is caught by tools/sync-spec.js.",
   "_schema": {
     "formula": "Chemical formula.",
     "nucleation_sigma": "Minimum supersaturation for nucleation.",
@@ -329,7 +330,7 @@
       "narrate_function": "_narrate_quartz",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok",
@@ -453,7 +454,7 @@
       "narrate_function": "_narrate_calcite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok — most complete implementation, use as template (round-3 update: Mg-poisoning factor added so calcite yields to aragonite when Mg/Ca > ~2)",
@@ -580,7 +581,7 @@
       "narrate_function": "_narrate_aragonite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-3 add: orthorhombic CaCO3 polymorph, Mg/Ca dominant control per Folk 1974/Morse 1997, polymorphic conversion to calcite at T>100°C, four habits including iconic cyclic twin and flos ferri). Scenarios array empty until SCENARIO-CHEMISTRY-AUDIT brief runs — none of the existing scenarios have realistic enough Mg/Ca (>1.5) to nucleate aragonite at seed 42; existing scenarios use realistic low-Mg brines that correctly favor calcite. Aragonite gate is verified working with manually elevated Mg.",
       "class_color": "#eb7f13"
@@ -690,7 +691,7 @@
       "narrate_function": "_narrate_dolomite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-3 add: ordered Ca-Mg carbonate, R3̄ space group, three habits including diagnostic saddle rhombs, Mg/Ca ratio gate 0.3-5 with sweet-spot bonus near 1:1). Empirically verified in reactive_wall at seed 42 (initial Mg bumped 80→100 within Sverjensky 1981 limestone-brine range). KIM 2023 KINETICS: per Kim, Sun et al. (Science 382:915, doi:10.1126/science.adi3690), dolomite growth requires cyclic dissolution-precipitation. Implementation tracks crystal.phantom_count as cycle counter; growth rate scales by f_ord = 1 - exp(-N/50), gating from 30% (no cycling) to 100% (well-cycled). Steady-state runs produce disordered Mg-calcite intermediate, not true ordered dolomite — matches the geological observation that most natural settings produce disordered HMC, with true dolomite requiring oscillatory environments (sabkhas, microbial mats, evaporitic basins).",
       "kim_2023_kinetics": {
@@ -821,7 +822,7 @@
       "narrate_function": "_narrate_siderite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-3 add: Fe carbonate, R3̄c calcite-group structure, four habits including spherosiderite, oxidation breakdown to goethite/limonite — the diagenetic pseudomorph mechanism). Empirically verified in mvt at seed 42.",
       "class_color": "#eb7f13"
@@ -950,7 +951,7 @@
       "narrate_function": "_narrate_rhodochrosite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-3 add: Mn carbonate, R3̄c calcite-group structure, four habits, Ca substitution → kutnohorite intermediate color shift, oxidation breakdown to Mn-oxide rind). Empirically verified in mvt at seed 42 (initial Mn bumped 8→25 within Tri-State district brine range per Roedder 1976). The biggest collection-weight miss is now in the game (35 specimens). Future SCENARIO-CHEMISTRY-AUDIT will surface it more broadly via dedicated Capillitas / Sweet Home / N'Chwaning scenarios.",
       "class_color": "#eb7f13"
@@ -1066,7 +1067,7 @@
       "narrate_function": "_narrate_sphalerite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok",
@@ -1177,7 +1178,7 @@
       "narrate_function": "_narrate_wurtzite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-2 add: T>95 sphalerite dimorph, hexagonal P6₃mc, hemimorphic habit, polymorphic inversion handled).",
       "class_color": "#7feb13"
@@ -1290,7 +1291,7 @@
       "narrate_function": "_narrate_fluorite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok",
@@ -1398,7 +1399,7 @@
       "narrate_function": "_narrate_pyrite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok",
@@ -1508,7 +1509,7 @@
       "narrate_function": "_narrate_marcasite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-2 add: pH<5 & T<240 dimorph of pyrite, full habit set, metastable inversion handled).",
       "class_color": "#7feb13"
@@ -1606,7 +1607,7 @@
       "narrate_function": "_narrate_chalcopyrite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "T_optimum shifted per mineral-accuracy-audit.md (was 150-350, now 300-500)",
@@ -1706,7 +1707,7 @@
       "narrate_function": "_narrate_hematite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok",
@@ -1807,7 +1808,7 @@
       "narrate_function": "_narrate_malachite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "max_size is for single-crystal; botryoidal aggregates can exceed this",
@@ -1899,7 +1900,7 @@
       "narrate_function": "_narrate_uraninite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Emits radiation each step.",
@@ -1994,7 +1995,7 @@
       "narrate_function": "_narrate_galena",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). T_optimum 100-400°C per mineral-accuracy-audit.md.",
@@ -2103,7 +2104,7 @@
       "narrate_function": "_narrate_smithsonite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes).",
@@ -2200,7 +2201,7 @@
       "narrate_function": "_narrate_wulfenite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Requires both galena AND molybdenite to have oxidized first (Seo et al. 2012).",
@@ -2285,7 +2286,7 @@
       "narrate_function": "_narrate_ferrimolybdite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-UNIMPLEMENTED.md. The 'Pb-absent fork' of Mo oxidation — complements wulfenite which requires Pb. Ferrimolybdite nucleates earlier (σ>1.0) and grows faster; wulfenite needs σ>1.2 + Pb.",
       "class_color": "#f5dc14"
@@ -2383,7 +2384,7 @@
       "narrate_function": "_narrate_arsenopyrite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-UNIMPLEMENTED.md. The #1 gold-trapping mineral — Au-trapping mechanic consumes fluid Au (30% of 5%/step) and records as trace_Au on GrowthZone; supergene oxidation releases 12%/step back to fluid (feeds scorodite + native_gold supergene enrichment). Competes with grow_native_gold for fluid Au in reducing high-T scenarios.",
       "class_color": "#c8c0b8"
@@ -2488,7 +2489,7 @@
       "narrate_function": "_narrate_barite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Ba sequestration mineral; activates the dormant fluid.Ba pool. Tri-State Ba=20 currently dormant due to scenario O2=0.0 (gap flagged in audit). Sabkha Ba=0 (correctly absent — sabkha is Sr-dominant). Real activation: porphyry post-oxidation; future MVT chemistry tweak (O2 0→0.2) would unlock Tri-State barite.",
       "class_color": "#eb137f"
@@ -2581,7 +2582,7 @@
       "narrate_function": "_narrate_celestine",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Sr sequestration mineral; activates the dormant fluid.Sr pool. **Coorong sabkha (Sr=20, S=2700, O2=1.5) produces immediate strong celestine activation — the seed-42 shift driving the SIM_VERSION 3→4 bump.** Tri-State Sr=15 + Sweetwater Sr=12 currently dormant due to O2=0.0 (gap flagged in audit alongside barite).",
       "class_color": "#eb137f"
@@ -2679,7 +2680,7 @@
       "narrate_function": "_narrate_jarosite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Mars-class AMD mineral. Activates after Bingham event_oxidation (step 85) and Bisbee ev_uplift_weathering (step 65) when pH drops + O2 rises. Tsumeb pH=6.8 too high (same Tsumeb pH-gap as scorodite — flagged in audit). Closes a known modeling gap: previously all oxidized Fe in Bingham/Bisbee went to goethite, missing the diagnostic acid-drainage yellow.",
       "class_color": "#eb137f"
@@ -2782,7 +2783,7 @@
       "narrate_function": "_narrate_alunite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The advanced argillic alteration index mineral. Activates after Bingham event_oxidation when both pH drops AND O2 rises (porphyry lithocap simulation). Tsumeb K=10 borderline + Al=3 too low + pH=6.8 too high — won't form there. Bisbee K=80 + Al=20 + S=150 strong but needs ev_uplift_weathering for the right pH/O2 window. Closes a known modeling gap: previously the sim had no representation of advanced argillic alteration (the kilometers-wide lithocap above porphyry-Cu intrusions).",
       "class_color": "#eb137f"
@@ -2879,7 +2880,7 @@
       "narrate_function": "_narrate_brochantite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The wet-supergene Cu sulfate; higher-pH end of brochantite ↔ antlerite fork. Activates in Bisbee after ev_uplift_weathering when Cu (delivered by primary cooling event) sits in oxidizing pH 4-7 fluid. Cl > 100 flag triggers atacamite-competition note (atacamite is a queued halide-expansion target).",
       "class_color": "#eb137f"
@@ -2973,7 +2974,7 @@
       "narrate_function": "_narrate_antlerite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The dry-acid Cu sulfate; lower-pH end of brochantite ↔ antlerite fork. Activates in Bisbee post-ev_uplift_weathering if pH drops below 3.5 (acidification). The brochantite ↔ antlerite reversible conversion (substrate priority on dissolving brochantite at 80%) implements the Atacama / Chuquicamata pH-cycling paragenesis.",
       "class_color": "#eb137f"
@@ -3075,7 +3076,7 @@
       "narrate_function": "_narrate_anhydrite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. Two-mode T behavior: high-T branch (>60°C) for Bingham porphyry deep brine, low-T saline branch (T<60 AND salinity>100‰) for Coorong sabkha evaporite. Sabkha activates immediately (T=25, salinity=120, S=2700, Ca=400 → sigma 7.5). Bingham init O2=0.2 below the 0.3 gate (anhydrite blocked at startup); fires after event_oxidation raises O2. Tsumeb dilute low-T (sal=2) correctly blocked. Closes the Bingham porphyry deep-brine + Coorong sabkha evaporite niches that selenite alone couldn't cover.",
       "class_color": "#eb137f"
@@ -3166,7 +3167,7 @@
       "narrate_function": "_narrate_scorodite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-UNIMPLEMENTED.md. The arsenic-sequestration mineral and the gateway to the rest of the supergene arsenate suite. Substrate preference for dissolving arsenopyrite drives the canonical paragenesis: arsenopyrite→scorodite cascade. pH>5.5 dissolution releases AsO₄³⁻ for downstream arsenates (erythrite/mimetite/adamite already implemented).",
       "class_color": "#5a9a8a"
@@ -3242,7 +3243,7 @@
       "narrate_function": "_narrate_molybdenite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok — all 3 runtimes (phase-3).",
@@ -3350,7 +3351,7 @@
       "narrate_function": "_narrate_adamite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok — all 3 runtimes (phase-3).",
@@ -3447,7 +3448,7 @@
       "narrate_function": "_narrate_mimetite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok — all 3 runtimes (phase-3).",
@@ -3557,7 +3558,7 @@
       "narrate_function": "_narrate_erythrite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-2 add: paired with annabergite, low-T oxidizing arsenate, solid-solution color modeling).",
       "class_color": "#ebeb13"
@@ -3665,7 +3666,7 @@
       "narrate_function": "_narrate_annabergite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-2 add: paired with erythrite, same vivianite-group structure, low-T oxidizing arsenate).",
       "class_color": "#ebeb13"
@@ -3769,7 +3770,7 @@
       "narrate_function": "_narrate_tetrahedrite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-2 add: paired with tennantite, same cubic structure, Sb endmember fahlore).",
       "class_color": "#7feb13"
@@ -3875,7 +3876,7 @@
       "narrate_function": "_narrate_tennantite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-2 add: paired with tetrahedrite, As endmember fahlore).",
       "class_color": "#7feb13"
@@ -3984,7 +3985,7 @@
       "narrate_function": "_narrate_apophyllite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "ok (round-2 add: zeolite-facies basalt vesicle filling, hematite phantom inclusion mechanic, deccan_zeolite scenario added).",
       "class_color": "#1313eb"
@@ -4124,7 +4125,7 @@
       "narrate_function": "_narrate_feldspar",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok — all 3 runtimes (phase-3).",
@@ -4240,7 +4241,7 @@
       "narrate_function": "_narrate_albite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok — all 3 runtimes (phase-3). Pegmatite albite + perthite association wired in each.",
@@ -4357,7 +4358,7 @@
       "narrate_function": "_narrate_selenite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok — all 3 runtimes (phase-3). Naica giant crystals at T~58°C for 500,000 years; above 60°C anhydrite wins.",
@@ -4479,7 +4480,7 @@
       "narrate_function": "_narrate_goethite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html",
+        "index.html",
         "agent-api/vugg-agent.js"
       ],
       "audit_status": "ok (phase-1: ghost fix complete — grow_goethite + _narrate_goethite + pseudomorph-after-sulfide nucleation in all 3 runtimes).",
@@ -4592,7 +4593,7 @@
       "narrate_function": "_narrate_topaz",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (Minas Gerais Variant B, Ouro Preto Imperial Topaz). F-threshold gated nucleation; Cr³⁺ trace drives imperial color. Not yet in agent-api/vugg-agent.js.",
       "class_color": "#1313eb"
@@ -4707,7 +4708,7 @@
       "narrate_function": "_narrate_tourmaline",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (Minas Gerais Variant A, tourmaline schorl→elbaite series). First B consumer in the sim. Not yet in agent-api/vugg-agent.js.",
       "class_color": "#1313eb"
@@ -4802,7 +4803,7 @@
       "narrate_function": "_narrate_beryl",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 7 goshenite narrowing. Pre-R7 this entry was the variety dispatcher; R7 split emerald/aquamarine/morganite/heliodor out as first-class species. beryl/goshenite now fires only when no chromophore (Cr/V/Mn/Fe) is above its respective variety gate.",
       "class_color": "#1313eb"
@@ -4905,7 +4906,7 @@
       "narrate_function": "_narrate_spodumene",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (Minas Gerais Variant A, spodumene). First Li consumer — Li has been tracked as pegmatite trace since phase-2 but had no sink until now. Not yet in agent-api/vugg-agent.js.",
       "class_color": "#1313eb"
@@ -5006,7 +5007,7 @@
       "narrate_function": "_narrate_anglesite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 1, lead oxidation sequence). Not in agent-api/vugg-agent.js.",
       "class_color": "#eb137f"
@@ -5120,7 +5121,7 @@
       "narrate_function": "_narrate_cerussite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 1, lead oxidation sequence). Classic cyclic twins. Not in agent-api/vugg-agent.js.",
       "class_color": "#eb7f13"
@@ -5224,7 +5225,7 @@
       "narrate_function": "_narrate_pyromorphite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 1). First P consumer in the sim. Apatite-group cousin of existing mimetite + new vanadinite. Not in agent-api/vugg-agent.js.",
       "class_color": "#13eb7f"
@@ -5320,7 +5321,7 @@
       "narrate_function": "_narrate_vanadinite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 1). First V consumer in the sim. Apatite-group cousin of pyromorphite + mimetite. Folded into phosphate class (no vanadate hue in 12-wheel). Not in agent-api/vugg-agent.js.",
       "class_color": "#13eb7f"
@@ -5418,7 +5419,7 @@
       "narrate_function": "_narrate_bornite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 2, Cu-sulfide suite). Competes with chalcopyrite. Not in agent-api/vugg-agent.js.",
       "class_color": "#7feb13"
@@ -5524,7 +5525,7 @@
       "narrate_function": "_narrate_chalcocite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 2). Pseudomorph thief after chalcopyrite/bornite. Not in agent-api/vugg-agent.js.",
       "class_color": "#7feb13"
@@ -5618,7 +5619,7 @@
       "narrate_function": "_narrate_covellite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 2). The only common naturally blue mineral. Not in agent-api/vugg-agent.js.",
       "class_color": "#7feb13"
@@ -5724,7 +5725,7 @@
       "narrate_function": "_narrate_chrysocolla",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new — Bisbee scenario centrepiece, azurite-pseudomorph pCO₂-drop mechanic",
       "class_color": "#1313eb"
@@ -5831,7 +5832,7 @@
       "narrate_function": "_narrate_cuprite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 3, Cu oxide/native suite). Forms at the narrow Eh window between reducing and oxidizing. Not in agent-api/vugg-agent.js.",
       "class_color": "#eb1313"
@@ -5925,7 +5926,7 @@
       "narrate_function": "_narrate_azurite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 3). Azurite→malachite conversion mechanic implemented via CO3 depletion check in grow_azurite. Not in agent-api/vugg-agent.js.",
       "class_color": "#eb7f13"
@@ -6033,7 +6034,7 @@
       "narrate_function": "_narrate_native_copper",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (supergene round 3). First native-element mineral. Shares native-hue class_color with future native bismuth. Not in agent-api/vugg-agent.js.",
       "class_color": "#eb13eb"
@@ -6130,7 +6131,7 @@
       "narrate_function": "_narrate_native_gold",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (Au field + grow_native_gold landed via Bingham/Bisbee pending_schema_additions promotion). Activates Bingham Au=2 and Bisbee Au=3 fluid values that were pre-researched during the chemistry audit. Not in agent-api/vugg-agent.js.",
       "class_color": "#ffd700"
@@ -6229,7 +6230,7 @@
       "narrate_function": "_narrate_magnetite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (round 4, iron + Sb-Bi + misc). Mixed-valence Fe²⁺Fe³⁺ oxide at the HM redox buffer. Not in agent-api/vugg-agent.js.",
       "class_color": "#eb1313"
@@ -6324,7 +6325,7 @@
       "narrate_function": "_narrate_lepidocrocite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (round 4). γ-FeOOH dimorph of goethite, kinetically favored in rapid oxidation. Not in agent-api/vugg-agent.js.",
       "class_color": "#13ebeb"
@@ -6416,7 +6417,7 @@
       "narrate_function": "_narrate_stibnite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (round 4). First Sb consumer. Not tied to existing scenario — needs future hydrothermal scenario with Sb-rich fluid. Not in agent-api/vugg-agent.js.",
       "class_color": "#7feb13"
@@ -6508,7 +6509,7 @@
       "narrate_function": "_narrate_bismuthinite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (round 4). First Bi consumer. Same structure as stibnite. Not in agent-api/vugg-agent.js.",
       "class_color": "#7feb13"
@@ -6596,7 +6597,7 @@
       "narrate_function": "_narrate_native_bismuth",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (round 4). Second native element. Forms after bismuthinite when S runs out. Not in agent-api/vugg-agent.js.",
       "class_color": "#eb13eb"
@@ -6677,7 +6678,7 @@
       "narrate_function": "_narrate_clinobisvanite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "new (round 4). Bi-vanadate — folded into phosphate class_color per 12-hue palette. End of the Bi oxidation sequence. Photocatalyst for water-splitting research. Not in agent-api/vugg-agent.js.",
       "class_color": "#13eb7f"
@@ -6754,7 +6755,7 @@
       "narrate_function": "_narrate_emerald",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 7 Option-A split from inline beryl variety detector. Fires when Cr ≥ 0.5 OR V ≥ 1.0 with beryl base conditions met. Highest priority in beryl-family chromophore dispatch.",
       "class_color": "#1313eb"
@@ -6837,7 +6838,7 @@
       "narrate_function": "_narrate_aquamarine",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 7 Option-A split. Fires when Fe ≥ 8 with no higher-priority chromophore (Cr < 0.5, V < 1.0, Mn < 2.0) AND not in the heliodor band (Fe ≥ 15 AND O2 > 0.5 → heliodor takes priority).",
       "class_color": "#1313eb"
@@ -6913,7 +6914,7 @@
       "narrate_function": "_narrate_morganite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 7 Option-A split. Fires when Mn ≥ 2.0 with no Cr/V above emerald gate (Cr < 0.5, V < 1.0). Takes precedence over heliodor/aquamarine in the beryl-family chromophore dispatch.",
       "class_color": "#1313eb"
@@ -6989,7 +6990,7 @@
       "narrate_function": "_narrate_heliodor",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 7 Option-A split. Fires when Fe ≥ 15 AND O2 > 0.5 with no higher-priority chromophore (Cr/V/Mn). Takes precedence over aquamarine when Fe is both high and oxidized.",
       "class_color": "#1313eb"
@@ -7080,7 +7081,7 @@
       "narrate_function": "_narrate_corundum",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 7 Commit 3. First upper-bound-gated mineral in the sim: SiO2 < 50 blocks nucleation. Anchored to Mogok marble contact metamorphism scenario via gate + scenarios entry.",
       "class_color": "#eb1313"
@@ -7167,7 +7168,7 @@
       "narrate_function": "_narrate_ruby",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 7 Commit 3. Shares the SiO2 < 50 upper gate with corundum family. Priority over pink-sapphire + colorless-corundum when Cr >= 2 ppm.",
       "class_color": "#eb1313"
@@ -7278,7 +7279,7 @@
       "narrate_function": "_narrate_sapphire",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 7 Commit 3. Multi-color dispatch: blue (Fe+Ti), yellow (Fe alone ≥ 20), pink (Cr < 2), padparadscha (Cr + trace Fe), violet (V ≥ 2). Shares SiO2 < 50 upper gate with corundum/ruby.",
       "class_color": "#eb1313"
@@ -7359,7 +7360,7 @@
       "narrate_function": "_narrate_acanthite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8a-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Habit variants: massive_granular (low σ, dominant economic form), prismatic (mid σ), thorn (high σ), pseudo_cubic (paramorph hook — set in 8a-2 when argentite cools through 173°C). Sources: Petruk et al. 1974 (Canadian Mineralogist 12: 365-369), Hayba & Bethke 1985 (Reviews in Economic Geology 2). Activates dormant Ag pool at MVT/Sweetwater/Tsumeb/Bisbee. First Ag mineral in the sim.",
       "class_color": "#7feb13"
@@ -7438,7 +7439,7 @@
       "narrate_function": "_narrate_argentite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8a-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Hard lower-T gate at 173°C; below that, apply_paramorph_transitions hook converts the crystal in-place to acanthite while preserving habit + dominant_forms — first non-destructive polymorph mechanic in the sim, distinct from THERMAL_DECOMPOSITION which destroys the crystal. Habit variants: cubic (low-moderate σ, Comstock Lode signature), octahedral (mid σ, with {111} spinel-law penetration twins), arborescent (high σ, dendritic/wire-like). Activates dormant Ag pool only in scenarios that reach >173°C — currently radioactive_pegmatite per declared scenarios. Sources: Petruk et al. 1974 (Canadian Mineralogist 12), boss research file research/research-argentite.md.",
       "class_color": "#7feb13"
@@ -7524,7 +7525,7 @@
       "narrate_function": "_narrate_native_silver",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8a-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The first depletion-gate engine in the sim: native silver fires only when fluid.S < 2 ppm AND fluid.O2 < 0.3 — the geological signature of every Kongsberg-type wire-silver locality. Engine includes tarnish branch (when S returns to fluid > 5 ppm, the surface skins over with acanthite as a dissolution event). Habit variants: wire (low T + high σ, Kongsberg), dendritic (mid σ, Cobalt-Ontario), massive (low σ, Keweenaw), cubic_crystal (rare hypogene primary with {111} penetration twin). Activates the dormant Ag pool at Tsumeb supergene + Bisbee oxidation cap, where dissolving acanthite/tetrahedrite releases Ag⁺ that meets a deeper reducing pocket. Tarnish-clock mechanic (per-step acanthite-rind accumulation regardless of S availability) is deferred to 8a-3b alongside the same mechanic for native_arsenic / native_tellurium / native_bismuth. Sources: Boyle 1968 (GSA Bulletin 79), Bjørlykke 1959 (NGU 207), Kissin & Mango 2014 (CIM SV 54), boss research file research/research-native-silver.md.",
       "class_color": "#eb13eb"
@@ -7604,7 +7605,7 @@
       "narrate_function": "_narrate_native_arsenic",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8b-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The residual-overflow native element: hard gates at S>10 (overflows to realgar/orpiment/arsenopyrite), Fe>50 (overflows to arsenopyrite), O₂>0.5 (overflows to arsenate suite). Habit variants: massive_granular (Freiberg ore form), reniform (Akatani botryoidal), rhombohedral_crystal (rare high-T crystals), arsenolamprite (Bi-rich variety). Engine includes oxidative-dissolution branch when O₂>0.7 (As goes back to fluid as AsO₄³⁻, feeds the supergene arsenate cascade: scorodite/erythrite/annabergite/olivenite/mimetite). Tarnish-clock for the As₂O₃ surface bloom is deferred to 8a-3b alongside other native-element tarnish mechanics. Sources: Schiferl 1969 (Acta Cryst. B25), Petruk 1971 (Cobalt-Ag paragenesis), boss research file research/research-native-arsenic.md.",
       "class_color": "#eb13eb"
@@ -7677,7 +7678,7 @@
       "narrate_function": "_narrate_native_sulfur",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8b-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The synproportionation Eh-window engine: native S fires only when 0.1<O₂<0.7 (the H₂S/SO₄²⁻ boundary), pH<5 (H₂S dominant regime), and Fe+Cu+Pb+Zn<100 (base-metal sulfide capture gate). Habit variants: bipyramidal_alpha (T<95°C, Sicilian Agrigento), prismatic_beta (95-119°C, RARE — converts to α with cracking), sublimation_crust (high σ + T>60°C, fumarole habit). Engine includes oxidative-dissolution branch (O₂>0.9 returns S to fluid as SO₄²⁻) and per-step pH acidification (synproportionation releases minor H⁺). THERMAL_DECOMPOSITION at 115°C (melting point) — outside most scenario T ranges. Sources: Holland 1965 (Econ. Geol. 60), boss research file research/research-native-sulfur.md.",
       "class_color": "#eb13eb"
@@ -7749,7 +7750,7 @@
       "narrate_function": "_narrate_native_tellurium",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8b-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The metal-telluride-overflow engine: hard gates at Au>1 (overflows to calaverite/sylvanite), Ag>5 (overflows to hessite), O₂>0.5 (overflows to tellurite/tellurate). Soft suppressors for Pb (altaite) and Bi (tetradymite). Hg not currently tracked in FluidChemistry; coloradoite (HgTe) gate deferred to a future Hg-plumbing round. Habit variants: prismatic_hex (high-T striated prisms, the Kalgoorlie museum habit), granular (Cripple Creek ore form), reticulated (low-T filiform). Engine includes oxidative-dissolution branch. THERMAL_DECOMPOSITION at 449°C melting point. Currently absent_at_seed_42: porphyry has Au=2 (above gate of >1) and Ag=8 (above gate of >5), so Te stays in solution destined for calaverite/sylvanite/hessite — those engines don't exist yet. The Au-Te coupling round (calaverite + sylvanite + hessite + altaite + tetradymite + coloradoite) is now unblocked — telluride engines are the natural Round 9 lift; once Au is locked in calaverite, residual Te will be free to fire as native. Sources: Spry & Thieben 1996 (Mineralium Deposita 31), boss research file research/research-native-tellurium.md.",
       "class_color": "#eb13eb"
@@ -7821,7 +7822,7 @@
       "narrate_function": "_narrate_nickeline",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8c-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Ni+As required + reducing (O₂<0.6) + T 200-500°C with peak 300-450. Substrate preference: arsenopyrite (the paragenetic predecessor). Engine includes oxidative-dissolution branch that releases Ni²⁺ + AsO₄³⁻ to fluid, feeding the supergene annabergite cascade. Activates with Round 8c-1 Bisbee Ni=70 + As=8 chemistry; expected to fire in seed-42 Bisbee primary stages and supergene_oxidation supergene cascade. Mutual-priority dispatcher with millerite: when As>30 + T>200, nickeline takes priority (NiAs more stable than NiS at high-T As-saturation). Sources: Petruk 1971 (Co-Ni-Ag paragenesis), boss research file research/research-nickeline.md.",
       "class_color": "#7feb13"
@@ -7893,7 +7894,7 @@
       "narrate_function": "_narrate_millerite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8c-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Ni+S required + reducing (O₂<0.6) + T 100-400°C with peak 200-350. Mutual-exclusion gate with nickeline: when As>30 AND T>200, returns 0 (nickeline takes priority — NiAs more stable than NiS at high-T As-saturation). The capillary habit (hair-fine brass-yellow needles in radiating sprays) is the diagnostic morphology — Halls Gap KY, Sterling Hill NJ, Glamorgan Wales produce showcase specimens. Substrate preference: pyrite (the geological companion). Activates with Round 8c-1 Bisbee Ni=70 chemistry; expected to fire in supergene_oxidation when As is depleted from earlier scorodite/erythrite/annabergite. Sources: Bayliss 1969 (NiS-NiAs equilibria), boss research file research/research-millerite.md.",
       "class_color": "#7feb13"
@@ -7965,7 +7966,7 @@
       "narrate_function": "_narrate_cobaltite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8c-4 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. THREE-ELEMENT GATE engine: Co + As + S all required simultaneously at minimum thresholds (Co≥50, As≥100, S≥50). First three-element gate in the sim. Reducing (O₂<0.5) + T 300-600°C with peak 400-500. Substrate preference: arsenopyrite (the paragenetic predecessor). Habit variants: massive_granular (low σ, ore form), pyritohedral (mid σ, {210} striated faces — Cobalt Ontario diagnostic), reniform (high σ, botryoidal). Glaucodot series captured in narrator: Fe>100 in fluid yields '(Co,Fe)AsS' note — the iron-rich end of the cobaltite-glaucodot solid solution (Skutterud type). Engine includes oxidative-dissolution branch: when O₂>0.7, releases Co²⁺ + AsO₄³⁻ + SO₄²⁻ to fluid, feeding the existing erythrite engine downstream — this is THE primary source for the magenta-pink 'cobalt bloom' supergene cascade. Activates with Round 8c-1 Bisbee Co=80 + As=8 + S=150 chemistry; expected to fire in seed-42 Bisbee primary stage. Sources: Bayliss 1968 (cobaltite-arsenopyrite substitution), boss research file research/research-cobaltite.md.",
       "class_color": "#7feb13"
@@ -8037,7 +8038,7 @@
       "narrate_function": "_narrate_descloizite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8d-1a (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Cu/Zn ratio dispatch with mottramite (when Cu>Zn → mottramite, when Zn≥Cu → descloizite). Pb+Zn+V+oxidizing, T 20-80°C peak 30-50. Substrate preference: vanadinite (the same V source). Fires at seed-42 in supergene_oxidation when Tsumeb's Pb=60 + Zn=90 + V=1.5+events meet the gates. Source: Strunz 1959, boss research file.",
       "class_color": "#13eb7f"
@@ -8109,7 +8110,7 @@
       "narrate_function": "_narrate_mottramite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8d-1b (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Cu/Zn ratio dispatch with descloizite (when Cu>Zn → mottramite). Pb+Cu+V+oxidizing, T 20-80°C peak 30-50. Substrate preference: vanadinite. Source: boss research file research-mottramite.md.",
       "class_color": "#13eb7f"
@@ -8167,7 +8168,7 @@
       "narrate_function": "_narrate_raspite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8d-2a (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Same Pb+W+oxidizing chemistry as stolzite but narrower T window (10-50°C, peak 20-40); sigma threshold 1.4 (vs stolzite's 1.0) reflects rarity. Kinetic-preference dispatcher in check_nucleation: when both raspite + stolzite gates clear, stolzite wins ~90% of rolls (random.random() < 0.9 zeros raspite's sigma). Tsumeb scenario W=20 plumbing activates the engine. Source: boss research file.",
       "class_color": "#eb13eb"
@@ -8232,7 +8233,7 @@
       "narrate_function": "_narrate_stolzite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8d-2b (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Same Pb+W+oxidizing chemistry as raspite, broader T window (10-100°C, peak 20-80) reflecting tetragonal stability range. Tsumeb scenario W=20 plumbing activates both raspite + stolzite gates; the kinetic dispatcher gives stolzite the win ~90% of the time. Source: boss research file.",
       "class_color": "#eb13eb"
@@ -8304,7 +8305,7 @@
       "narrate_function": "_narrate_olivenite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8d-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Cu/Zn ratio dispatch with adamite (when Zn>Cu → adamite, when Cu≥Zn → olivenite). Adamite engine also updated with the inverse dispatch (returns 0 when Cu>Zn). Cu+As+oxidizing, T 10-50°C peak 20-40. Substrate preference: malachite (the Cu-carbonate companion). Activates with existing Tsumeb supergene_oxidation Cu=55 + As=12 chemistry. Source: boss research file.",
       "class_color": "#13eb13"
@@ -8384,7 +8385,7 @@
       "narrate_function": "_narrate_chalcanthite",
       "runtimes_present": [
         "vugg.py",
-        "web/index.html"
+        "index.html"
       ],
       "audit_status": "Round 8e (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The water-solubility metastability mechanic: per-step hook in VugSimulator.run_step re-dissolves chalcanthite crystals when fluid.salinity < 4 OR fluid.pH > 5. Distinct from THERMAL_DECOMPOSITION (high-T destruction) and PARAMORPH_TRANSITIONS (in-place mineral change) — this is just chemistry, the geological truth that every chalcanthite is a temporary victory over entropy. Habit variants: stalactitic (high σ, the Chuquicamata mine-wall drip habit), tabular (RARE prismatic crystals), efflorescent_crust (low σ powdery bloom). Salinity gate: salinity < 6 → 0 (needs concentrated drainage to overcome ~20 g/100mL solubility). pH gate: pH > 4 → 0 (the most acid-loving Cu sulfate). Source: boss research file research-chalcanthite.md.",
       "class_color": "#eb137f"

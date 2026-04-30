@@ -1,4 +1,33 @@
 <!DOCTYPE html>
+<!--
+  🪨 Vugg Simulator — single-file shipped product
+
+  Role in the project (read this before refactoring):
+      This is the live game. GitHub Pages serves this file from repo
+      root. At startup the JS fetches data/minerals.json (the canonical
+      mineral spec) and overwrites the inline MINERAL_SPEC_FALLBACK; the
+      fallback exists only so the simulator boots when the spec fetch
+      fails (file:// protocol, offline kiosk, network blip).
+
+      The simulation engine here — 84 grow_*() functions, 13 scenarios,
+      and Crystal/FluidChemistry/VugConditions/GrowthZone/VugWall
+      classes — is the JS port of vugg.py, which is the dev/test harness
+      where pytest runs. Drift between the two is policed by
+      tools/sync-spec.js. agent-api/vugg-agent.js is a third
+      (intentionally simpler) headless runtime for AI agents.
+
+      Layout note (2026-04-29 flatten): this used to live at
+      web/index.html with a docs/index.html mirror that GitHub Pages
+      served. The mirror was retired; Pages now serves repo root.
+
+  When does this file get split up?
+      It's currently ~21k lines. The "data/-as-truth" migration
+      (proposals/TASK-BRIEF-DATA-AS-TRUTH.md) is the natural decomposer:
+      every table extracted to data/ shrinks the per-engine procedural
+      code that has to live here. Don't pre-split into ES modules ahead
+      of that — the single-file/no-build deploy is one of the simplest
+      operational properties of the project.
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
