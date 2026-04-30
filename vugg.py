@@ -10609,329 +10609,129 @@ def event_fluid_mixing(conditions: VugConditions) -> str:
 
 
 # ============================================================
+# EVENT REGISTRY
+# ============================================================
+# Maps the event-type string used in data/scenarios.json5 to the
+# module-level event handler function. Adding a new event handler
+# requires registering it here AND in the JS-side EVENT_REGISTRY in
+# index.html. tools/sync-spec.js extends to verify both registries
+# cover every type referenced in the JSON5 file.
+
+EVENT_REGISTRY = {
+    "fluid_pulse": event_fluid_pulse,
+    "cooling_pulse": event_cooling_pulse,
+    "tectonic_shock": event_tectonic_shock,
+    "copper_injection": event_copper_injection,
+    "oxidation": event_oxidation,
+    "acidify": event_acidify,
+    "alkalinize": event_alkalinize,
+    "molybdenum_pulse": event_molybdenum_pulse,
+    "fluid_mixing": event_fluid_mixing,
+}
+
+
+# ============================================================
+# SCENARIO LOADER (data/scenarios.json5 → scenario callables)
+# ============================================================
+# Per proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 1, Option A.
+# Initial fluid + T + P + wall config + event timelines are
+# declared in data/scenarios.json5; event handler bodies stay
+# as code (above, in EVENT_REGISTRY). This loader builds a
+# scenario callable for each JSON entry that returns the same
+# (VugConditions, [Event...], duration_steps) tuple shape the
+# old hand-written scenario functions did.
+#
+# scenario_random opts out — it's procedural / RNG-driven and
+# stays as code below.
+#
+# Phase 1 (this commit): cooling/pulse/mvt/porphyry — the four
+# scenarios that used only module-level event handlers.
+# Phase 2 (deferred): the nine remaining scenarios with inline
+# event closures, which need their closures promoted to
+# module-level handlers before they can be migrated.
+
+def _build_scenario_from_spec(scenario_id, spec):
+    """Return a callable that produces (VugConditions, events, duration)
+    matching the legacy scenario_* function signature, built from a
+    JSON5 spec dict."""
+    initial = spec.get("initial", {})
+    temperature = float(initial.get("temperature_C", 350.0))
+    pressure = float(initial.get("pressure_kbar", 1.0))
+    fluid_kwargs = dict(initial.get("fluid", {}))
+    wall_kwargs = dict(initial.get("wall", {}))
+    duration = int(spec.get("duration_steps", 100))
+    event_specs = list(spec.get("events", []))
+
+    # Validate every referenced event type is registered. Better to
+    # fail loudly at module import than silently at first use.
+    for ev in event_specs:
+        et = ev.get("type")
+        if et not in EVENT_REGISTRY:
+            raise RuntimeError(
+                f"scenarios.json5 scenario '{scenario_id}' references unknown event type "
+                f"'{et}' — register it in EVENT_REGISTRY (vugg.py) + the JS mirror "
+                f"(index.html), or fix the spec entry."
+            )
+
+    def scenario_callable():
+        conditions = VugConditions(
+            temperature=temperature,
+            pressure=pressure,
+            fluid=FluidChemistry(**fluid_kwargs),
+            wall=VugWall(**wall_kwargs),
+        )
+        events = [
+            Event(
+                int(ev["step"]),
+                ev.get("name", ev.get("type", "")),
+                ev.get("description", ""),
+                EVENT_REGISTRY[ev["type"]],
+            )
+            for ev in event_specs
+        ]
+        return conditions, events, duration
+
+    scenario_callable.__name__ = f"scenario_{scenario_id}"
+    scenario_callable.__doc__ = spec.get("description", "")
+    scenario_callable._json5_spec = spec  # for narrators/inspection
+    return scenario_callable
+
+
+def _load_scenarios_json5():
+    """Read data/scenarios.json5 and return {scenario_id: callable}.
+
+    Falls back to an empty dict if json5 isn't installed or the file
+    is missing — the legacy in-code scenarios still ship in that case.
+    """
+    try:
+        import json5
+    except ImportError:
+        # json5 not installed; legacy code-defined scenarios still work.
+        # tests/conftest.py or CI should ensure json5 is available.
+        return {}
+    spec_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "data", "scenarios.json5")
+    if not os.path.exists(spec_path):
+        return {}
+    with open(spec_path, encoding="utf-8") as f:
+        doc = json5.load(f)
+    out = {}
+    for scenario_id, spec in (doc.get("scenarios") or {}).items():
+        out[scenario_id] = _build_scenario_from_spec(scenario_id, spec)
+    return out
+
+
+_JSON5_SCENARIOS = _load_scenarios_json5()
+
+
+# ============================================================
 # SCENARIOS
 # ============================================================
 
-def scenario_cooling() -> Tuple[VugConditions, List[Event], int]:
-    """Cooling scenario anchored at the Herkimer "diamond" pocket, Middleville, NY.
-
-    Anchor: Herkimer-type double-terminated quartz crystals occur in isolated
-    vugs of the Little Falls Formation, an Upper Cambrian dolostone in the
-    Mohawk Valley. (Note: the audit brief drafted "Lockport Dolostone" — that
-    is Silurian and hosts different mineralization; Herkimer's host is the
-    Little Falls Formation, confirmed by Selleck 1978 and multiple state
-    geological summaries.) The quartz itself crystallized much later,
-    during Alleghenian burial diagenesis in the Carboniferous (~340-300 Ma),
-    when the section reached >3 km depth and ~140-200°C. Silica was liberated
-    by pressure solution and hydrocarbon cracking in adjacent shales, then
-    precipitated free-floating crystals in silica-overpressured pockets
-    that were also saturated with petroleum and saline basinal brine —
-    hence the two-phase enhydro + anthraxolite inclusions diagnostic of
-    Herkimer specimens.
-
-    All fluid values cite locality_chemistry.json#localities.herkimer_middleville.
-    The sim uses abstracted sim-scale ppm, not raw brine concentrations.
-
-    Signature: clear, doubly-terminated quartz. Minimal carbonate competition
-    (most Ca/CO3 has sequestered as dolomite cement in the host rock).
-
-    Data gaps (see locality_chemistry.json): no widely-indexed modern
-    microthermometry study publishes Th and Tm_ice specifically for
-    Herkimer pocket quartz; the 140-200°C window is inferred from regional
-    Alleghenian thermal maturity (Harris et al. 1978; Friedman & Sanders 1982).
-    LA-ICP-MS of Herkimer fluid inclusions has not appeared in open
-    literature; ratios are imported from Hanor 1994 Appalachian-basin averages.
-    """
-    conditions = VugConditions(
-        # T=180°C: Alleghenian peak burial for the Cambrian-Ordovician section
-        # of the Appalachian basin [Harris et al. 1978 USGS PP 1197;
-        # Friedman & Sanders 1982 Geology 10]. Prior pre-audit value was 380°C
-        # which was a generic "hot hydrothermal" default with no locality basis.
-        temperature=180.0,
-        # P=1.0 kbar: ~3.5 km burial depth at time of quartz event
-        # [Selleck 1978 on Mohawk Valley stratigraphy + lithostatic calc].
-        pressure=1.0,
-        fluid=FluidChemistry(
-            # SiO2=260: mildly elevated over quartz equilibrium at 180°C
-            # (Rimstidt 1997 gives ~220 ppm) — gives σ(Qz) in the 1.1-1.3
-            # range at nucleation, which produces prismatic well-formed
-            # doubly-terminated crystals rather than skeletal/fenster
-            # habits (those are a high-supersaturation artefact). Herkimer
-            # signature requires slow, ordered growth — low-σ nucleation.
-            SiO2=260,
-            # Ca=80: lower than a typical Appalachian-basin brine
-            # (Hanor 1994 compendium: 5000-20000 ppm raw) because most Ca is
-            # sequestered in surrounding dolomite cement — the pocket is the
-            # silica-overpressured residue.
-            Ca=80,
-            # CO3=30: residual only; most carbonate migrated out as dolomite
-            # cement.
-            CO3=30,
-            # Mg=50: dolomitic-aquifer signature, Mg/Ca ~0.6 — matches the
-            # audit brief's 'hydrothermal' band (50-500 ppm) and fulfills the
-            # brief's core requirement that no scenario should run with Mg=0.
-            # [Hanor 1994 for Appalachian-basin Mg/Ca ratios]
-            Mg=50,
-            # Na=80, K=20: NaCl-CaCl2 brine type, K/Na ~0.25 [Hanor 1994].
-            Na=80, K=20,
-            # Trace metals from the dolomite host.
-            Fe=5, Mn=2,
-            Al=4,
-            # Ti=0.5 ppm in solution controls the TitaniQ thermometer signal
-            # in the precipitated quartz [Wark & Watson 2006].
-            Ti=0.5,
-            # pH=6.8: near-neutral basinal brine, CO2-buffered [Hanor 1994].
-            pH=6.8,
-            # Salinity=18 wt% NaCl-eq: mid-range of the 15-25 wt% Appalachian
-            # basin burial brine band [Hanor 1994]. Fluid inclusions in
-            # Herkimer quartz are commonly two-phase (brine + petroleum),
-            # consistent with a saline parent fluid.
-            salinity=18.0,
-            # O2=0.1: reducing environment — hydrocarbon coexists (solid
-            # anthraxolite + liquid petroleum inclusions are diagnostic of
-            # Herkimer).
-            O2=0.1,
-        ),
-        # Wall is dolomite, not limestone — matches the Cambrian Little Falls
-        # Formation host. wall_Mg_ppm default (1000) already reflects
-        # dolomite-higher-Mg in the VugWall schema.
-        wall=VugWall(
-            composition="dolomite",
-            primary_bubbles=2, secondary_bubbles=3, shape_seed=1,
-        ),
-    )
-    events = []
-    return conditions, events, 100
-
-
-def scenario_pulse() -> Tuple[VugConditions, List[Event], int]:
-    """Cooling with a fluid pulse event mid-growth.
-
-    Generic testing scenario — not anchored to a real locality. Acts as
-    a slightly more interesting twin of `cooling`: a single fluid pulse
-    plus a cooling pulse halfway through to test event-driven chemistry
-    perturbation. Audit treats this as a testing scaffold (per the
-    user's clarification on the audit brief), so the only gap-fill
-    here is the brief-required non-zero Mg.
-    """
-    conditions = VugConditions(
-        temperature=350.0,
-        pressure=1.2,
-        # Mg=8 audit gap-fill (Apr 2026): the brief requires every
-        # scenario have non-zero Mg. 8 ppm is the meteoric / generic
-        # cooling-fluid baseline from the brief's per-archetype Mg
-        # range table. No other gap-fills since this is a testing
-        # scaffold.
-        fluid=FluidChemistry(SiO2=500, Ca=200, CO3=120, Fe=5, Mn=2, Ti=0.5, Al=3, Mg=8),
-        wall=VugWall(primary_bubbles=2, secondary_bubbles=3, shape_seed=2),
-    )
-    events = [
-        Event(40, "Fluid Pulse", "Fresh hydrothermal fluid", event_fluid_pulse),
-        Event(70, "Cooling Pulse", "Meteoric water mixing", event_cooling_pulse),
-    ]
-    return conditions, events, 100
-
-
-def scenario_mvt() -> Tuple[VugConditions, List[Event], int]:
-    """Mississippi Valley-type deposit — anchored to the Tri-State district
-    (Joplin / Picher / Galena MO-KS-OK).
-
-    Anchor: Tri-State Pb-Zn-Ag mining district, host = Mississippian
-    Boone Formation cherty limestone. Brines per Roedder 1976, Ohle 1959,
-    Hagni 1976, and the Stoffell et al. 2008 LA-ICP-MS fluid-inclusion
-    study: NaCl-CaCl2 basinal brine, 18-24 wt% NaCl-eq total salinity,
-    150-200,000 ppm Cl raw, Mg/Ca ~0.05-0.1 (low-Mg → favors calcite over
-    aragonite). Tri-State galena is documented argentiferous; Ag was
-    historically a meaningful smelter byproduct alongside Pb-Zn.
-
-    Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl (the
-    NaCl-CaCl2 brine baseline), Ag (argentiferous-galena signature),
-    Ba (barite documented locally), Sr (basinal-brine tracer + minor
-    celestine), Cu (trace chalcopyrite). Also drift-fixed Pb=40 from
-    JS-side intent into Python init.
-
-    Existing values (SiO2, Ca, CO3, Fe, Mn, F, Mg, pH, salinity) and
-    the event sequence (fluid_mixing step 20, fluid_pulse step 60,
-    tectonic_shock step 80) preserved untouched — gap-fill only.
-    """
-    conditions = VugConditions(
-        temperature=180.0,
-        pressure=0.3,
-        fluid=FluidChemistry(
-            # Mn=25 within Tri-State district brine range (Roedder 1976
-            # reports Mn 10-50 ppm in carbonate-hosted Pb-Zn fluid
-            # inclusions); enough to push rhodochrosite into saturation
-            # late in the run as carbonate concentrates.
-            SiO2=100, Ca=300, CO3=250, Fe=15, Mn=25,
-            Zn=0, S=0, F=5, Mg=30,  # realistic Tri-State Mg/Ca ratio
-            # Drift-fix: JS scenario_mvt has carried Pb=40 in init since
-            # round 2 but Python had it at default 0. Mirroring JS intent
-            # (combined with event_fluid_mixing's +=25, post-event Pb=65
-            # in both runtimes — enables galena from initial fluid, not
-            # only from event spike).
-            Pb=40,
-            # ── Audit gap-fills (Apr 2026) ────────────────────────────
-            # Na=80, K=15: NaCl-CaCl2 basinal brine type. Stoffell et al.
-            # 2008 LA-ICP-MS reports Na 50-80,000 ppm raw, K/Na ~0.2 in
-            # Tri-State fluid inclusions. Sim-scale abstraction.
-            Na=80, K=15,
-            # Cl=200: paired with Na+K. Tri-State raw brine is 120-220,000
-            # ppm Cl (NaCl-rich endmember to CaCl2-rich endmember).
-            # salinity=15 wt% NaCl-eq remains the bulk indicator;
-            # free-trace Cl lets pyromorphite (Pb-Cl) and chlorargyrite
-            # (Ag-Cl) chemistry engage where Pb+Ag are present.
-            Cl=200,
-            # Ag=5: argentiferous-galena signature. Tri-State galena
-            # commonly carries 50-300 ppm Ag in the mineral; brine-stage
-            # fluid Ag is much lower but non-zero. Historical Joplin
-            # smelters recovered Ag as a Pb byproduct.
-            Ag=5,
-            # Ba=20: Tri-State has barite as a local late-stage gangue.
-            # Brine Ba moderate (sulfate-buffered when S delivered by
-            # event_fluid_mixing — barite then nucleates).
-            Ba=20,
-            # Sr=15: classic basinal-brine tracer (Hanor 1994); Tri-State
-            # has minor celestine. Sub-ppm raw → 15 sim-scale.
-            Sr=15,
-            # Cu=3: trace chalcopyrite is documented at Tri-State even
-            # though Cu is not a primary commodity. Low init keeps the
-            # Pb-Zn signature dominant.
-            Cu=3,
-            # ── Pre-researched, pending FluidChemistry schema ─────────
-            # When Cd is added to FluidChemistry, set:
-            #     Cd=2,
-            # Justification: Tri-State sphalerite carries Cd substituting
-            # for Zn (typically 1000-5000 ppm Cd in mineral, raw fluid Cd
-            # ~1-10 ppm). The yellow Cd-rich coatings on Tri-State
-            # sphalerite are greenockite (CdS) — would unlock its
-            # nucleation. Sim-scale 2 matches the Sr/Ag trace abstraction.
-            # Source: Schwartz 2000 (Econ. Geol. 95) on Cd in MVT
-            # sphalerite. Procedure: add Cd field to FluidChemistry +
-            # mirror to JS, add grow_greenockite (CdS) + minerals.json
-            # entry, uncomment the line above. Same template as
-            # bingham_canyon Au pending-schema entry.
-            # ──────────────────────────────────────────────────────────
-            # ── v5 gap-fill (Apr 2026) ────────────────────────────────
-            # O2=0.25 (was default 0.0): mildly reducing, NOT strictly
-            # reducing. Real MVT brine sits at the SO₄/H₂S boundary
-            # where some sulfate persists alongside H₂S — that's the
-            # chemistry that lets barite + galena COEXIST as the
-            # diagnostic MVT assemblage. With O2=0.0, sulfate didn't
-            # exist in the sim and barite + celestine couldn't form
-            # despite Ba=20 + Sr=15 being populated. Bumping to 0.25
-            # unlocks them; sphalerite/galena/pyrite still form fine
-            # (their O2 ≤ 0.8 gates remain met). Source: Anderson &
-            # Macqueen 1982 (MVT mineralogy review); Stoffell et al.
-            # 2008 (Tri-State fluid inclusion brine analyses).
-            O2=0.25,
-            # ──────────────────────────────────────────────────────────
-            pH=7.2, salinity=15.0
-        ),
-        # MVT — dissolution cavity in limestone. Cohesive primary void
-        # plus heavy secondary alcoves: the classic merged-cavity feel.
-        wall=VugWall(primary_bubbles=3, secondary_bubbles=8, shape_seed=3),
-    )
-    events = [
-        Event(20, "Fluid Mixing", "Brine meets groundwater", event_fluid_mixing),
-        Event(60, "Second Pulse", "Another mixing event", event_fluid_pulse),
-        Event(80, "Tectonic", "Minor seismic event", event_tectonic_shock),
-    ]
-    return conditions, events, 120
-
-
-def scenario_porphyry() -> Tuple[VugConditions, List[Event], int]:
-    """Copper porphyry deposit — anchored to Bingham Canyon, Utah.
-
-    Anchor: Bingham Canyon Cu-Mo-Au deposit, Oquirrh Mountains, UT.
-    Late-Eocene (~38 Ma) quartz-monzonite-porphyry intrusion with
-    classic potassic-core / phyllic-shell / propylitic-rim alteration
-    zoning. Fluid evolution from the Landtwing et al. 2010 (Econ. Geol.
-    105) LA-ICP-MS study: deep central brine ~7 wt% NaCl-eq with
-    subequal Na/K/Fe/Cu, upper brine endmember ~45 wt% NaCl-eq
-    coexisting with a low-density vapor (~0.2 g/cm³). Mo arrives in a
-    distinct later pulse from Cu (Seo et al. 2012; already encoded in
-    event_molybdenum_pulse).
-
-    Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl, Mg, Ag,
-    Te to populate the brine-element baseline that was missing from
-    the original scenario. Initial Cu and Mo remain at zero by design
-    — they are delivered by event_copper_injection (step 25, 60) and
-    event_molybdenum_pulse (step 45) respectively, modeling the
-    discrete pulse pattern documented at Bingham.
-
-    Existing values (SiO2, Ca, CO3, Fe, Mn, Pb, Sb, As, Bi, S, F,
-    pH, salinity, O2) were intentional and were not retuned. This is
-    a gap-fill audit, not a rewrite.
-    """
-    conditions = VugConditions(
-        temperature=400.0,
-        pressure=2.0,
-        fluid=FluidChemistry(
-            SiO2=700, Ca=80, CO3=50, Fe=30, Mn=2,
-            Zn=0, S=60, F=5, Cu=0, Pb=15,
-            # Sb + As + Bi traces — porphyries carry a greisen signature
-            # when the late hydrothermal phase taps tin-tungsten-
-            # arsenic-bearing granites. 25 ppm Sb, 15 ppm As, 30 ppm Bi
-            # are in the published range for polymetallic porphyry
-            # fluids (Heinrich 2007; Kouzmanov & Pokrovski 2012 for As
-            # activity in epithermal Cu systems). Enables the tetrahedrite
-            # (Cu-Sb-S) / tennantite (Cu-As-S) fahlore pair.
-            Sb=25, As=15, Bi=30,
-            # ── Drift-consistency: mirror JS-side intentional values ─
-            # Na=25, K=40, Al=15: the JS scenario_porphyry has carried
-            # these since round 2 but Python had them at default 0.
-            # Drift bug, not gap. Mirroring the JS values rather than
-            # imposing literature numbers (Landtwing 2010 would suggest
-            # Na/K ~10x higher) so existing non-zero intent is preserved.
-            # See the audit brief's consistency-check directive.
-            Na=25, K=40, Al=15,
-            # ── Audit gap-fills (Apr 2026) ────────────────────────────
-            # Cl=600: porphyry brines are NaCl-KCl rich. The salinity
-            # field already encodes 10 wt% NaCl-eq, but Cl as a free
-            # trace lets halite/chlorargyrite/atacamite chemistry engage
-            # if downstream events push that direction. Landtwing et al.
-            # 2010 LA-ICP-MS at Bingham confirms Cl as the dominant
-            # anion in the deep-center brine.
-            Cl=600,
-            # Mg=40: porphyry brines pick up Mg through wallrock
-            # interaction, especially against mafic or carbonate host.
-            # Bingham's Pennsylvanian-Permian sediment + intrusive
-            # contact yields fluid Mg in the 50-200 ppm range raw;
-            # 40 sim-ppm is mid-range conservative. Brief-required
-            # non-zero Mg.
-            Mg=40,
-            # Ag=8: argentiferous-Cu signature. Bingham galena and
-            # tetrahedrite carry Ag; brine-stage fluid Ag 1-50 ppm raw
-            # in published porphyry-fluid LA-ICP-MS (Heinrich 2007).
-            Ag=8,
-            # Te=2: epithermal-cap trace. Bingham's upper levels carry
-            # tellurides (calaverite, sylvanite) — fluid Te is low but
-            # non-zero in the porphyry-distal apron.
-            Te=2,
-            # Au=2: porphyry-Cu-Au signature. Landtwing et al. 2010
-            # LA-ICP-MS reports ~1 ppm Au in fluid inclusions across
-            # multiple porphyry Cu-Au systems including Bingham; the
-            # Au-Cu-rich center near the top of the orebody is the
-            # diagnostic vapor-plume target. Bingham has produced
-            # ~200 t Au cumulatively, making Au a defining metal
-            # alongside Cu and Mo. Activated when grow_native_gold
-            # landed (was previously in pending_schema_additions).
-            Au=2,
-            # ──────────────────────────────────────────────────────────
-            O2=0.2, pH=4.5, salinity=10.0
-        ),
-        # Porphyry stockwork — primary void plus a moderate set of
-        # secondary alcoves where vein intersections widen the pocket.
-        wall=VugWall(primary_bubbles=3, secondary_bubbles=6, shape_seed=4),
-    )
-    events = [
-        Event(25, "Copper Pulse", "Magmatic copper fluid arrives", event_copper_injection),
-        Event(45, "Molybdenum Pulse", "Late-stage Mo fluid (Seo et al. 2012)", event_molybdenum_pulse),
-        Event(60, "Second Cu Pulse", "Another copper surge", event_copper_injection),
-        Event(85, "Oxidation", "Meteoric water infiltrates", event_oxidation),
-        Event(95, "Cooling", "Rapid cooling event", event_cooling_pulse),
-    ]
-    return conditions, events, 120
+# (Phase 1, 2026-04-30: scenario_cooling/pulse/mvt/porphyry migrated to
+#  data/scenarios.json5 — loaded at module init by _load_scenarios_json5()
+#  above. The nine remaining scenarios with inline event closures stay
+#  in-code below pending Phase 2 migration.)
 
 
 def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
@@ -12725,10 +12525,14 @@ def scenario_random() -> Tuple[VugConditions, List[Event], int]:
 
 
 SCENARIOS = {
-    "cooling": scenario_cooling,
-    "pulse": scenario_pulse,
-    "mvt": scenario_mvt,
-    "porphyry": scenario_porphyry,
+    # Phase 1 — loaded from data/scenarios.json5 by _load_scenarios_json5().
+    # Each value is a callable returning (VugConditions, [Event...], duration_steps).
+    "cooling": _JSON5_SCENARIOS["cooling"],
+    "pulse": _JSON5_SCENARIOS["pulse"],
+    "mvt": _JSON5_SCENARIOS["mvt"],
+    "porphyry": _JSON5_SCENARIOS["porphyry"],
+    # Legacy in-code scenarios (Phase 2 migration target — they have inline
+    # event closures that need promotion to module-level handlers first).
     "reactive_wall": scenario_reactive_wall,
     "radioactive_pegmatite": scenario_radioactive_pegmatite,
     "supergene_oxidation": scenario_supergene_oxidation,
@@ -12738,6 +12542,7 @@ SCENARIOS = {
     "deccan_zeolite": scenario_deccan_zeolite,
     "sabkha_dolomitization": scenario_sabkha_dolomitization,
     "marble_contact_metamorphism": scenario_marble_contact_metamorphism,
+    # scenario_random opts out — procedural / RNG-driven, stays as code.
     "random": scenario_random,
 }
 

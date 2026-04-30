@@ -10760,147 +10760,104 @@ function event_fluid_mixing(conditions) {
 }
 
 // ============================================================
-// SCENARIOS
+// EVENT REGISTRY + SCENARIO LOADER (data/scenarios.json5)
 // ============================================================
+// Per proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 1, Option A.
+// Maps event-type strings used in data/scenarios.json5 to module-level
+// event handler functions. Adding a new event type requires registering
+// it here AND in vugg.py's EVENT_REGISTRY. tools/sync-spec.js extends
+// to verify both registries cover every type referenced in the JSON5.
 
-// Herkimer "diamond" pocket, Middleville, NY. Host: Little Falls Formation
-// (Upper Cambrian dolostone). Quartz event: Carboniferous Alleghenian burial
-// diagenesis (~140-200 C, ~3.5 km depth). Signature: clear, doubly-terminated
-// quartz in silica-overpressured pockets also saturated with petroleum and
-// saline basinal brine. See data/locality_chemistry.json#herkimer_middleville
-// and the vugg.py scenario_cooling docstring for full citation tags
-// (Hanor 1994, Harris et al. 1978, Friedman & Sanders 1982, Rimstidt 1997,
-// Selleck 1978, Wark & Watson 2006).
-function scenario_cooling() {
-  const conditions = new VugConditions({
-    // T=180 C: Alleghenian peak burial T [Harris et al. 1978; Friedman &
-    // Sanders 1982]. Prior pre-audit value was 380 C, a generic default.
-    // P=1.0 kbar: ~3.5 km burial depth [Selleck 1978].
-    temperature: 180.0, pressure: 1.0,
-    fluid: new FluidChemistry({
-      SiO2: 260,          // mildly over Qz equilibrium (~220 ppm at 180 C [Rimstidt 1997]); tuned for prismatic (not skeletal) habit
-      Ca: 80,             // low; Ca sequestered in host dolomite cement [Hanor 1994]
-      CO3: 30,            // residual only; most carbonate migrated to dolomite cement
-      Mg: 50,             // dolomitic-aquifer Mg/Ca ~0.6 [Hanor 1994]; brief-required non-zero Mg
-      Na: 80, K: 20,      // NaCl-CaCl2 brine type, K/Na ~0.25 [Hanor 1994]
-      Fe: 5, Mn: 2,       // trace from dolomite host
-      Al: 4, Ti: 0.5,     // Ti drives TitaniQ thermometer [Wark & Watson 2006]
-      pH: 6.8,            // near-neutral basinal brine [Hanor 1994]
-      salinity: 18.0,     // Appalachian-basin burial brine band 15-25 wt% NaCl-eq [Hanor 1994]
-      O2: 0.1,            // reducing — hydrocarbons coexist (diagnostic Herkimer enhydros)
-    }),
-    // Wall is dolomite (Little Falls Formation), not limestone.
-    wall: new VugWall({ composition: 'dolomite', primary_bubbles: 2, secondary_bubbles: 3, shape_seed: 1 }),
-  });
-  return { conditions, events: [], defaultSteps: 100 };
+const EVENT_REGISTRY = {
+  fluid_pulse: event_fluid_pulse,
+  cooling_pulse: event_cooling_pulse,
+  tectonic_shock: event_tectonic_shock,
+  copper_injection: event_copper_injection,
+  oxidation: event_oxidation,
+  acidify: event_acidify,
+  alkalinize: event_alkalinize,
+  molybdenum_pulse: event_molybdenum_pulse,
+  fluid_mixing: event_fluid_mixing,
+};
+
+// Minimal JSONC parser — strips // line + /* */ block comments and
+// trailing commas, then JSON.parse. Sufficient for our spec files; not
+// a full JSON5 parser (no unquoted keys, no single-quoted strings —
+// those don't appear in the spec).
+function _parseJSON5(text) {
+  text = text.replace(/\/\/[^\n]*/g, '');
+  text = text.replace(/\/\*[\s\S]*?\*\//g, '');
+  text = text.replace(/,(\s*[}\]])/g, '$1');
+  return JSON.parse(text);
 }
 
-// Generic testing scenario — not anchored to a real locality. Slightly
-// more interesting twin of `cooling`. Audit gap-fill (Apr 2026): only
-// Mg=8 added (brief-required non-zero Mg baseline for cooling-class
-// fluids). See vugg.py scenario_pulse docstring.
-function scenario_pulse() {
-  const conditions = new VugConditions({
-    temperature: 350.0, pressure: 1.2,
-    fluid: new FluidChemistry({ SiO2: 500, Ca: 200, CO3: 120, Fe: 5, Mn: 2, Ti: 0.5, Al: 3,
-      Mg: 8,            // brief-required non-zero Mg (cooling-class baseline)
-    }),
-    wall: new VugWall({ primary_bubbles: 2, secondary_bubbles: 3, shape_seed: 2 }),
-  });
-  const events = [
-    { step: 40, name: 'Fluid Pulse', description: 'Fresh hydrothermal fluid', apply_fn: event_fluid_pulse },
-    { step: 70, name: 'Cooling Pulse', description: 'Meteoric water mixing', apply_fn: event_cooling_pulse },
-  ];
-  return { conditions, events, defaultSteps: 100 };
+function _buildScenarioFromSpec(scenarioId, spec) {
+  const initial = spec.initial || {};
+  const temperature = Number(initial.temperature_C ?? 350);
+  const pressure = Number(initial.pressure_kbar ?? 1.0);
+  const fluidKwargs = { ...(initial.fluid || {}) };
+  const wallKwargs = { ...(initial.wall || {}) };
+  const duration = Math.floor(spec.duration_steps ?? 100);
+  const eventSpecs = (spec.events || []).slice();
+  for (const ev of eventSpecs) {
+    if (!EVENT_REGISTRY[ev.type]) {
+      throw new Error(`scenarios.json5 scenario '${scenarioId}' references unknown event type '${ev.type}' — register it in EVENT_REGISTRY (index.html) + the Python mirror (vugg.py).`);
+    }
+  }
+  return function scenarioCallable() {
+    const conditions = new VugConditions({
+      temperature, pressure,
+      fluid: new FluidChemistry(fluidKwargs),
+      wall: new VugWall(wallKwargs),
+    });
+    // JS events are plain objects (no Event class on the JS side; the
+    // global DOM Event would shadow it). Match the {step,name,description,
+    // apply_fn} shape used by the legacy in-code scenarios.
+    const events = eventSpecs.map(ev => ({
+      step: Math.floor(ev.step),
+      name: ev.name || ev.type || '',
+      description: ev.description || '',
+      apply_fn: EVENT_REGISTRY[ev.type],
+    }));
+    return { conditions, events, defaultSteps: duration };
+  };
 }
 
-// Tri-State Pb-Zn-Ag district (Joplin / Picher / Galena, MO-KS-OK).
-// Host: Mississippian Boone Formation cherty limestone. Brines are
-// NaCl-CaCl2 basinal type, 18-24 wt% NaCl-eq (Stoffell et al. 2008
-// LA-ICP-MS). Galena is argentiferous. See vugg.py scenario_mvt
-// docstring + data/locality_chemistry.json#tri_state for full citations.
-function scenario_mvt() {
-  const conditions = new VugConditions({
-    temperature: 180.0, pressure: 0.3,
-    fluid: new FluidChemistry({
-      // Mn=25 within Tri-State district brine range (Roedder 1976) — pushes rhodochrosite saturation late in run.
-      SiO2: 100, Ca: 300, CO3: 250, Fe: 15, Mn: 25,
-      Zn: 0, S: 0, F: 5, Pb: 40, Mg: 30,
-      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
-      Na: 80, K: 15,      // NaCl-CaCl2 brine, K/Na ~0.2 [Stoffell 2008]
-      Cl: 200,            // brine anion match for Na+K [Roedder 1976]
-      Ag: 5,              // argentiferous Tri-State galena signature
-      Ba: 20,             // local barite gangue
-      Sr: 15,             // basinal-brine tracer + minor celestine [Hanor 1994]
-      Cu: 3,              // trace chalcopyrite is documented at Tri-State
-      // Pre-researched, pending FluidChemistry schema:
-      //   When Cd is added, set Cd: 2. Tri-State sphalerite carries Cd
-      //   substituting for Zn; greenockite (CdS) is the diagnostic
-      //   yellow coating. Source: Schwartz 2000 Econ. Geol. 95.
-      //   See vugg.py scenario_mvt comment + locality_chemistry.json
-      //   tri_state.pending_schema_additions for full note.
-      // ── v5 gap-fill (Apr 2026) ────────────────────────────────────
-      // O2: 0.25 (was default 0.0). Mildly reducing, NOT strictly
-      // reducing. Real MVT brine sits at the SO₄/H₂S boundary where
-      // some sulfate persists alongside H₂S — that's the chemistry
-      // that lets barite + galena coexist as the diagnostic MVT
-      // assemblage. Unlocks dormant Ba=20 + Sr=15. Sphalerite/
-      // galena/pyrite gates remain met (O2 ≤ 0.8).
-      O2: 0.25,
-      pH: 7.2, salinity: 15.0
-    }),
-    // MVT dissolution cavity in limestone — all-axis lumpiness.
-    wall: new VugWall({ primary_bubbles: 3, secondary_bubbles: 8, shape_seed: 3 }),
-  });
-  const events = [
-    { step: 20, name: 'Fluid Mixing', description: 'Brine meets groundwater', apply_fn: event_fluid_mixing },
-    { step: 60, name: 'Second Pulse', description: 'Another mixing event', apply_fn: event_fluid_pulse },
-    { step: 80, name: 'Tectonic', description: 'Minor seismic event', apply_fn: event_tectonic_shock },
-  ];
-  return { conditions, events, defaultSteps: 120 };
+let _scenariosJson5Ready = false;
+
+async function _loadScenariosJSON5() {
+  // Mirror MINERAL_SPEC's multi-path fetch. Fails silently on offline boot —
+  // the four JSON5-only scenarios (cooling/pulse/mvt/porphyry) won't be
+  // available, but the legacy in-code scenarios still work.
+  const paths = ['./data/scenarios.json5', '../data/scenarios.json5', '/data/scenarios.json5'];
+  for (const p of paths) {
+    try {
+      const r = await fetch(p, { cache: 'no-store' });
+      if (!r.ok) continue;
+      const text = await r.text();
+      const doc = _parseJSON5(text);
+      const entries = Object.entries(doc.scenarios || {});
+      for (const [id, spec] of entries) {
+        SCENARIOS[id] = _buildScenarioFromSpec(id, spec);
+      }
+      _scenariosJson5Ready = true;
+      console.info(`[scenarios] loaded ${entries.length} from ${p}`);
+      return;
+    } catch (e) {
+      /* try next */
+    }
+  }
+  console.warn('[scenarios] all fetch paths failed; the JSON5-only scenarios (cooling/pulse/mvt/porphyry) will not be available this session.');
 }
 
-// Bingham Canyon Cu-Mo-Au porphyry, Oquirrh Mountains UT. Late-Eocene
-// quartz-monzonite intrusion, classic potassic/phyllic/propylitic zoning.
-// Fluid evolution per Landtwing et al. 2010 (Econ. Geol. 105) LA-ICP-MS.
-// Mo arrives in a separate later pulse from Cu (Seo et al. 2012) — encoded
-// in the molybdenum_pulse event below. See vugg.py scenario_porphyry
-// docstring + data/locality_chemistry.json for full citation tags.
-function scenario_porphyry() {
-  const conditions = new VugConditions({
-    temperature: 400.0, pressure: 2.0,
-    fluid: new FluidChemistry({
-      SiO2: 700, Ca: 80, CO3: 50, Fe: 30, Mn: 2,
-      Zn: 0, S: 60, F: 5, Cu: 0, O2: 0.2,
-      // Drift-fix: Pb=15 was set in Python (porphyry fluids carry Pb)
-      // but missing from JS until this audit pass.
-      Pb: 15,
-      K: 40, Na: 25, Al: 15,
-      // Sb + Bi traces — greisen signature. Enough to nucleate
-      // stibnite + bismuthinite at a handful of sites each.
-      Sb: 25, As: 15, Bi: 30,
-      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
-      Cl: 600,            // NaCl-KCl brine, anion match for Na+K [Landtwing 2010]
-      Mg: 40,             // wallrock interaction, Bingham brine Mg 50-200 ppm raw
-      Ag: 8,              // argentiferous Cu signature [Heinrich 2007]
-      Te: 2,              // epithermal-cap telluride trace
-      Au: 2,              // porphyry-Cu-Au signature [Landtwing 2010]; Bingham produced ~200 t Au cumulatively
-      pH: 4.5, salinity: 10.0
-    }),
-    // Porphyry veins — elongated cross-section, modest harmonics.
-    wall: new VugWall({ primary_bubbles: 3, secondary_bubbles: 6, shape_seed: 4 }),
-  });
-  const events = [
-    { step: 25, name: 'Copper Pulse', description: 'Magmatic copper fluid arrives', apply_fn: event_copper_injection },
-    // Drift-fix: Python had this molybdenum_pulse event since Seo et al.
-    // 2012 was incorporated; JS was missing it. Added in audit pass.
-    { step: 45, name: 'Molybdenum Pulse', description: 'Late-stage Mo fluid (Seo et al. 2012)', apply_fn: event_molybdenum_pulse },
-    { step: 60, name: 'Second Cu Pulse', description: 'Another copper surge', apply_fn: event_copper_injection },
-    { step: 85, name: 'Oxidation', description: 'Meteoric water infiltrates', apply_fn: event_oxidation },
-    { step: 95, name: 'Cooling', description: 'Rapid cooling event', apply_fn: event_cooling_pulse },
-  ];
-  return { conditions, events, defaultSteps: 120 };
-}
+// ============================================================
+// SCENARIOS — Phase 2 legacy in-code definitions
+// ============================================================
+// The following nine scenarios still live in code because they have
+// inline event closures (~46 closures total) that need promotion to
+// module-level handlers before they can move to data/scenarios.json5.
+// scenario_random opts out entirely — it's RNG-driven generative.
+
 
 // Sweetwater Mine, Viburnum Trend MO. Cambrian Bonneterre Formation
 // dolomitic-limestone host. Viburnum is the high-Ba / lower-Ag MVT
@@ -11590,7 +11547,27 @@ function scenario_marble_contact_metamorphism() {
   return { conditions, events, defaultSteps: 180 };
 }
 
-const SCENARIOS = { cooling: scenario_cooling, pulse: scenario_pulse, mvt: scenario_mvt, porphyry: scenario_porphyry, reactive_wall: scenario_reactive_wall, radioactive_pegmatite: scenario_radioactive_pegmatite, supergene_oxidation: scenario_supergene_oxidation, ouro_preto: scenario_ouro_preto, gem_pegmatite: scenario_gem_pegmatite, bisbee: scenario_bisbee, deccan_zeolite: scenario_deccan_zeolite, sabkha_dolomitization: scenario_sabkha_dolomitization, marble_contact_metamorphism: scenario_marble_contact_metamorphism };
+// Phase 2 legacy in-code scenarios seeded synchronously; the four Phase 1
+// scenarios (cooling/pulse/mvt/porphyry) are added asynchronously by
+// _loadScenariosJSON5() once data/scenarios.json5 fetches. `let` so the
+// loader can mutate the object in place.
+let SCENARIOS = {
+  reactive_wall: scenario_reactive_wall,
+  radioactive_pegmatite: scenario_radioactive_pegmatite,
+  supergene_oxidation: scenario_supergene_oxidation,
+  ouro_preto: scenario_ouro_preto,
+  gem_pegmatite: scenario_gem_pegmatite,
+  bisbee: scenario_bisbee,
+  deccan_zeolite: scenario_deccan_zeolite,
+  sabkha_dolomitization: scenario_sabkha_dolomitization,
+  marble_contact_metamorphism: scenario_marble_contact_metamorphism,
+};
+
+// Kick off the JSON5 fetch. Failure logs a warning (Phase 1 scenarios won't
+// be available this session) but doesn't break the rest of the runtime.
+_loadScenariosJSON5().catch(err => {
+  console.error(`[scenarios] load failed: ${err && err.message}`);
+});
 
 // ============================================================
 // PARAMORPH TRANSITIONS
