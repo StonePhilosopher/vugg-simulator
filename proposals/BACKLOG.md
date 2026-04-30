@@ -75,7 +75,31 @@ Phase 1 (commit `2feb338`) and Phase 2 (commits `69f8acb..ce3dd5a`) migrated all
 
 ---
 
-## 🎛️ Creative mode — controls expansion
+## 🏷️ Internal token cleanup — finish the mode renames
+
+**Status:** deferred. User-visible labels were renamed in commit `467e8c4` (and earlier — Fortress→Creative, Legends→Simulation, The Groove→Zen Mode/Record Player). Internal tokens (`fortress*`, `legends*`, `idle*`, `groove*`) still use the pre-rename names because renaming hundreds of CSS classes / DOM IDs / function names for no UX gain wasn't worth the churn.
+
+**Token map** (canonical entry point → user-visible name):
+
+| Internal token | User-visible | Notes |
+|---|---|---|
+| `fortressSim`, `#fortress-panel`, `.fortress-*`, `fortressBegin()`, `fortressStep()`, `fortressFinish()` | **Creative** | ~199 occurrences |
+| `legendsSim`, `legendsSimSource` | **Simulation** | far fewer occurrences (~10s) |
+| `idleSim`, `#idle-panel`, `.idle-*`, `idleTogglePlay()`, `idleAppendLog()`, `idleStep()`, `menuGo('idle')` | **Zen Mode** | ~40 occurrences |
+| `grooveCollectionCrystals`, `playCollectedInGroove()`, `switchMode('groove')`, `#mode-groove`, `.groove-tooltip`, `.groove-canvas-wrap` | **Record Player** | ~30 occurrences. **Caveat:** the term "groove" is genuinely correct for the rainbow-lane visualization primitive inside the Record Player — that should keep the name even if the mode codepath is renamed. The boundary is the codepath/mode tokens vs. the visualization-routine tokens. |
+
+**Discoverability breadcrumbs already in place** (so future devs greppin' a token find the rename context):
+- Header comment block above each global declaration: `let fortressSim`, `let legendsSim`, `let idleSim`, `let grooveModalCrystal` (all in `index.html`)
+- Section comments at `/* ---- Creative Mode Styles (internal: fortress-* IDs/classes — pre-rename token, kept) ---- */` and the matching `<!-- Creative Mode Panel -->` HTML comment
+- Pre-rename source tokens scrubbed: `source: 'Fortress'` → `'Creative'`, `source: 'Legends'` → `'Simulation'`, `source: 'The Groove'` → `'Zen'`. The post-game info panel's "Source: ___ mode" line now matches the title-card labels.
+
+**What the thorough cleanup looks like** (when someone wants to take it on):
+1. Pick one mode at a time (start with `legendsSim` — fewest occurrences, lowest blast radius)
+2. Rename the global, then the DOM IDs, then the CSS classes, then the function names — each as its own commit
+3. Verify after each: pytest 1130/1130, sync-spec 0/89, browser smoke
+4. The `groove → recordplayer` rename is the most carefully-scoped — keep `.groove-tooltip` and the rainbow-lane drawing routines named `groove*` (visualization primitive), only rename the mode-control surface
+
+**Out of scope:** Python `vugg.py` doesn't have UI modes (it's the dev/test runtime); no rename needed there. agent-api/vugg-agent.js similarly headless.
 
 The Creative mode setup panel currently exposes ~30 FluidChemistry sliders + temperature + pressure + new wall reactivity. These items extend the player's control over the rest of the wall + fluid surface.
 
