@@ -11159,6 +11159,36 @@ function event_bisbee_final_drying(c) {
   return "The fractures seal with calcite cement. Groundwater stops. The pocket is a closed system again, this time with the full oxidation assemblage frozen in place: chalcopyrite cores wrapped in chalcocite, those wrapped in cuprite, those overgrown by native copper, those overgrown by azurite, those converted to malachite, those pseudomorphed by chrysocolla. A million years from now, when a mining shaft intersects this pocket, an assayer will photograph the specimen and write 'Bisbee, Cochise County' on the label.";
 }
 
+// --- sabkha_dolomitization (Coorong/Persian Gulf cycling brine, Kim 2023 mechanism) ---
+// flood + evap each fire 12× via the supergene_acidification handler-reuse
+// precedent. Cycle number is preserved via the event `name` field.
+function event_sabkha_flood(c) {
+  c.fluid.Mg = 800;
+  c.fluid.Ca = 250;
+  c.fluid.CO3 = 50;
+  c.fluid.Sr = 12;
+  c.fluid.pH = 8.0;
+  c.flow_rate = 1.5;
+  return 'Flood pulse: low-alkalinity tidal seawater enters the lagoon. CO₃ crashes from sabkha brine levels back to ~50 ppm. Dolomite supersaturation drops below 1 — the disordered Ca/Mg surface layer detaches preferentially (Kim 2023 etch).';
+}
+
+function event_sabkha_evap(c) {
+  c.fluid.Mg = 2000;
+  c.fluid.Ca = 600;
+  c.fluid.CO3 = 800;
+  c.fluid.Sr = 30;
+  c.fluid.pH = 8.4;
+  c.flow_rate = 0.1;
+  c.temperature = 28;
+  return 'Evaporation pulse: sun bakes the lagoon. Brine reconcentrates to sabkha state — Mg=2000, Ca=600, CO₃=800. Dolomite saturation climbs back well above 1; growth resumes on the ordered template the previous etch left behind. Cycle complete; ordering ratchets up.';
+}
+
+function event_sabkha_final_seal(c) {
+  c.flow_rate = 0.05;
+  c.temperature = 22;
+  return "Sabkha matures, then seals. The crust hardens and groundwater stops cycling. What remains is the result of twelve dissolution-precipitation cycles — ordered dolomite where the cycling did its work, disordered HMC where it didn't. The Coorong recipe for ambient-T ordered dolomite, the natural laboratory that Kim 2023 finally explained at the atomic scale.";
+}
+
 // ============================================================
 // EVENT REGISTRY + SCENARIO LOADER (data/scenarios.json5)
 // ============================================================
@@ -11235,6 +11265,10 @@ const EVENT_REGISTRY = {
   bisbee_co2_drop: event_bisbee_co2_drop,
   bisbee_silica_seep: event_bisbee_silica_seep,
   bisbee_final_drying: event_bisbee_final_drying,
+  // Phase 2 — sabkha_dolomitization. flood + evap fire 12× each.
+  sabkha_flood: event_sabkha_flood,
+  sabkha_evap: event_sabkha_evap,
+  sabkha_final_seal: event_sabkha_final_seal,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and
@@ -11308,79 +11342,15 @@ async function _loadScenariosJSON5() {
 }
 
 // ============================================================
-// SCENARIOS — Phase 2 legacy in-code definitions
+// SCENARIOS
 // ============================================================
-// The following nine scenarios still live in code because they have
-// inline event closures (~46 closures total) that need promotion to
-// module-level handlers before they can move to data/scenarios.json5.
-// scenario_random opts out entirely — it's RNG-driven generative.
-
-
-// Supergene oxidation scenario — mirrors vugg.py scenario_supergene_oxidation
-// (low-T Pb+Mo+Zn+As+Cu oxidation zone; produces wulfenite + smithsonite +
-// adamite + mimetite + goethite). Five staged events over 180 steps.
-// Tsumeb mine, Otavi Mountain Land, Namibia. ~280 species documented;
-// type locality for germanium. 1st-stage gossan = uppermost supergene
-// zone where mimetite/anglesite/cerussite/willemite/Ge-phases occur.
-// Audit gap-fills (Apr 2026): Ag, Ge, Sb (Tsumeb's silver + Ge suite),
-// Na/K (groundwater traces). See vugg.py + locality_chemistry.json
-// #tsumeb for full citations.
-function scenario_sabkha_dolomitization() {
-  // Coorong-style cycling sabkha — produces ORDERED dolomite via Kim 2023 mechanism.
-  const conditions = new VugConditions({
-    temperature: 25.0,
-    pressure: 0.05,
-    fluid: new FluidChemistry({
-      SiO2: 20, Ca: 400, CO3: 300, Fe: 5, Mn: 2, Mg: 1400,
-      Na: 10500, K: 380, S: 2700, F: 2, Cl: 18000, Sr: 20,
-      O2: 1.5, pH: 8.3, salinity: 120.0
-    }),
-    wall: new VugWall({
-      composition: 'limestone',
-      thickness_mm: 300.0,
-      vug_diameter_mm: 30.0,
-      wall_Fe_ppm: 200.0,
-      wall_Mn_ppm: 50.0,
-      primary_bubbles: 2,
-      secondary_bubbles: 4,
-      shape_seed: 24,
-    })
-  });
-
-  const make_flood = (idx) => (c) => {
-    c.fluid.Mg = 800; c.fluid.Ca = 250; c.fluid.CO3 = 50;
-    c.fluid.Sr = 12; c.fluid.pH = 8.0; c.flow_rate = 1.5;
-    return `Flood pulse #${idx}: low-alkalinity tidal seawater enters the lagoon. CO₃ crashes from sabkha brine levels back to ~50 ppm. Dolomite supersaturation drops below 1 — the disordered Ca/Mg surface layer detaches preferentially (Kim 2023 etch).`;
-  };
-  const make_evap = (idx) => (c) => {
-    c.fluid.Mg = 2000; c.fluid.Ca = 600; c.fluid.CO3 = 800;
-    c.fluid.Sr = 30; c.fluid.pH = 8.4; c.flow_rate = 0.1; c.temperature = 28;
-    return `Evaporation pulse #${idx}: sun bakes the lagoon. Brine reconcentrates to sabkha state — Mg=2000, Ca=600, CO₃=800. Dolomite saturation climbs back well above 1; growth resumes on the ordered template the previous etch left behind. Cycle #${idx} complete; ordering ratchets up.`;
-  };
-
-  const events = [];
-  for (let i = 1; i <= 12; i++) {
-    const floodStep = 10 + (i - 1) * 20;
-    const evapStep = floodStep + 10;
-    events.push({ step: floodStep, name: `Tidal Flood #${i}`, description: 'Seawater dilution', apply_fn: make_flood(i) });
-    events.push({ step: evapStep,  name: `Evaporation #${i}`,  description: 'Brine reconcentration', apply_fn: make_evap(i) });
-  }
-  events.push({ step: 245, name: 'Final Seal', description: 'Sabkha matures, fluids stop cycling', apply_fn: (c) => {
-    c.flow_rate = 0.05; c.temperature = 22;
-    return "Sabkha matures, then seals. The crust hardens and groundwater stops cycling. What remains is the result of twelve dissolution-precipitation cycles — ordered dolomite where the cycling did its work, disordered HMC where it didn't. The Coorong recipe for ambient-T ordered dolomite, the natural laboratory that Kim 2023 finally explained at the atomic scale.";
-  }});
-
-  return { conditions, events, defaultSteps: 260 };
-}
-
-// Phase 2 legacy in-code scenarios seeded synchronously; the four Phase 1
-// scenarios (cooling/pulse/mvt/porphyry) are added asynchronously by
-// _loadScenariosJSON5() once data/scenarios.json5 fetches. `let` so the
-// loader can mutate the object in place.
-let SCENARIOS = {
-  sabkha_dolomitization: scenario_sabkha_dolomitization,
-  // bisbee, supergene_oxidation, gem_pegmatite, ouro_preto, deccan_zeolite, radioactive_pegmatite, reactive_wall, marble_contact_metamorphism — populated by _loadScenariosJSON5() from data/scenarios.json5 (Phase 2)
-};
+// All declarative scenarios live in data/scenarios.json5 and are
+// populated asynchronously by _loadScenariosJSON5() above. `let` so the
+// loader can mutate the object in place. scenario_random is the only
+// procedural scenario; it's wired into the title-screen Random Vugg
+// button below rather than added here (pre-existing intentional drift
+// from the Python side, where vugg.SCENARIOS["random"] = scenario_random).
+let SCENARIOS = {};
 
 // Kick off the JSON5 fetch. Failure logs a warning (Phase 1 scenarios won't
 // be available this session) but doesn't break the rest of the runtime.

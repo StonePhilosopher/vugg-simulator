@@ -11316,6 +11316,71 @@ def event_bisbee_final_drying(conditions: VugConditions) -> str:
             "label.")
 
 
+# --- sabkha_dolomitization (Coorong/Persian Gulf cycling brine, Kim 2023 mechanism) ---
+#
+# The original scenario used factory functions `make_flood(idx)` and
+# `make_evap(idx)` to generate 12 cycles of flood + evap closures, each
+# with the cycle number baked into a narrator f-string. We follow the
+# supergene_acidification precedent: one handler per phase, referenced
+# by 12 Event entries each. The cycle number is preserved via the event
+# `name` field ("Tidal Flood #1", "Evaporation #1", etc.) — the
+# redundant "#{idx}" inside the narrator string is dropped.
+
+def event_sabkha_flood(conditions: VugConditions) -> str:
+    """Tidal flood — incoming low-alkalinity seawater RESETS chemistry.
+
+    Each cycle resets to a defined low-σ state, modeling continuous
+    tidal pumping (otherwise progressive aragonite/gypsum precipitation
+    would drift the brine out of any defined regime within a few cycles).
+    Flood state: marine baseline with depressed CO3 (river input), mid
+    Mg/Ca, alkaline pH but kinetically below dolomite saturation.
+    """
+    conditions.fluid.Mg = 800     # marine baseline
+    conditions.fluid.Ca = 250     # marine + bivalve dissolution
+    conditions.fluid.CO3 = 50     # depressed by freshwater mixing
+    conditions.fluid.Sr = 12
+    conditions.fluid.pH = 8.0
+    conditions.flow_rate = 1.5
+    return ("Flood pulse: low-alkalinity tidal seawater enters "
+            "the lagoon. CO₃ crashes from sabkha brine levels back to "
+            "~50 ppm. Dolomite supersaturation drops below 1 — the "
+            "disordered Ca/Mg surface layer detaches preferentially "
+            "(Kim 2023 etch).")
+
+
+def event_sabkha_evap(conditions: VugConditions) -> str:
+    """Evaporation — sun concentrates the lagoon back to sabkha brine.
+
+    Set values are high enough that aragonite/selenite consumption
+    between events doesn't drag dolomite back below saturation —
+    the alkalinity reservoir from microbial mats is generous.
+    """
+    conditions.fluid.Mg = 2000    # >5x seawater Mg (modern Coorong+)
+    conditions.fluid.Ca = 600     # marine + microbial-mat dissolution
+    conditions.fluid.CO3 = 800    # microbial mat alkalinity (high)
+    conditions.fluid.Sr = 30
+    conditions.fluid.pH = 8.4
+    conditions.flow_rate = 0.1
+    conditions.temperature = 28
+    return ("Evaporation pulse: sun bakes the lagoon. Brine "
+            "reconcentrates to sabkha state — Mg=2000, Ca=600, CO₃=800. "
+            "Dolomite saturation climbs back well above 1; growth "
+            "resumes on the ordered template the previous etch left "
+            "behind. Cycle complete; ordering ratchets up.")
+
+
+def event_sabkha_final_seal(conditions: VugConditions) -> str:
+    """Lagoon dries up permanently — system seals."""
+    conditions.flow_rate = 0.05
+    conditions.temperature = 22
+    return ("Sabkha matures, then seals. The crust hardens and "
+            "groundwater stops cycling. What remains is the result of "
+            "twelve dissolution-precipitation cycles — ordered dolomite "
+            "where the cycling did its work, disordered HMC where it didn't. "
+            "The Coorong recipe for ambient-T ordered dolomite, the natural "
+            "laboratory that Kim 2023 finally explained at the atomic scale.")
+
+
 # ============================================================
 # EVENT REGISTRY
 # ============================================================
@@ -11394,6 +11459,13 @@ EVENT_REGISTRY = {
     "bisbee_co2_drop": event_bisbee_co2_drop,
     "bisbee_silica_seep": event_bisbee_silica_seep,
     "bisbee_final_drying": event_bisbee_final_drying,
+    # Phase 2 — sabkha_dolomitization. flood + evap fire 12× each
+    # (steps 10/30/50/.../230 + 20/40/60/.../240) for the Kim 2023
+    # ordered-dolomite cycling mechanism. Same handler-reuse precedent
+    # as supergene_acidification.
+    "sabkha_flood": event_sabkha_flood,
+    "sabkha_evap": event_sabkha_evap,
+    "sabkha_final_seal": event_sabkha_final_seal,
 }
 
 
@@ -11495,129 +11567,14 @@ _JSON5_SCENARIOS = _load_scenarios_json5()
 # SCENARIOS
 # ============================================================
 
-# (Phase 1, 2026-04-30: scenario_cooling/pulse/mvt/porphyry migrated to
-#  data/scenarios.json5 — loaded at module init by _load_scenarios_json5()
-#  above. The nine remaining scenarios with inline event closures stay
-#  in-code below pending Phase 2 migration.)
+# All declarative scenarios live in data/scenarios.json5 (loaded at
+# module init by _load_scenarios_json5() above) and reference event
+# handlers from EVENT_REGISTRY by string identifier. Only scenario_random
+# stays in-code below — it's procedural / RNG-driven generative.
+# Phase 1 (commit 2feb338): cooling/pulse/mvt/porphyry.
+# Phase 2 (this commit chain): the remaining 9 scenarios, with their
+# inline event closures promoted to module-level handlers above.
 
-
-
-def scenario_sabkha_dolomitization() -> Tuple[VugConditions, List[Event], int]:
-    """Sabkha dolomitization — Coorong-style cycling brine.
-
-    Anchor: Coorong lagoon system (South Australia) and the Persian Gulf
-    sabkhas. The classic natural laboratory for direct-from-solution
-    dolomite formation. Surface T (~25°C), high-Mg evaporative brine,
-    seasonal flood-evaporate cycles that drive Ω across the dolomite
-    saturation boundary repeatedly.
-
-    Per Kim, Sun et al. (2023, Science 382:915), exactly this kind of
-    cyclic Ω modulation is what's needed to produce ordered dolomite at
-    ambient T. The acid-pulse-and-relax style of reactive_wall produces
-    only DISORDERED HMC because the dissolution events are too aggressive
-    (full dissolution rather than gentle surface etch). Sabkha tidal
-    pumping is the right kind of cycling — gentle, frequent, repeated.
-
-    Twelve flood/evap pulses over 240 steps produce ~12 dissolution-
-    precipitation cycles. With N₀=10 in the f_ord formula, this reaches
-    ORDERED (f_ord > 0.7) by mid-scenario. The result: true ordered
-    dolomite, the geological prize the Kim 2023 paper made accessible.
-    """
-    conditions = VugConditions(
-        # Coorong surface T — ambient. The Kim mechanism's whole point is
-        # that ordered dolomite at this T is achievable with cycling.
-        temperature=25.0,
-        pressure=0.05,            # near-surface lagoonal vug
-        fluid=FluidChemistry(
-            # Marine evaporative brine baseline (~3x seawater concentration):
-            # Mg high, Ca moderate, Mg/Ca ~3.5 (above 1, dolomite-favoring),
-            # CO3 modest, alkaline pH from photosynthetic mats. Na+Cl
-            # carry the salinity but don't drive minerals here.
-            SiO2=20, Ca=400, CO3=300, Fe=5, Mn=2, Mg=1400,
-            Na=10500, K=380, S=2700, F=2, Cl=18000,
-            # Sr is the bonus tracer — marine brines carry ~8 ppm Sr,
-            # gets concentrated by evaporation. Aragonite scavenges it.
-            Sr=20,
-            O2=1.5, pH=8.3, salinity=120.0,
-        ),
-        wall=VugWall(
-            composition="limestone",   # Coorong lagoon floor is bioclastic carbonate
-            thickness_mm=300.0,
-            vug_diameter_mm=30.0,
-            wall_Fe_ppm=200.0,
-            wall_Mn_ppm=50.0,
-            primary_bubbles=2,
-            secondary_bubbles=4,
-            shape_seed=24,             # 24 hours = one tidal cycle
-        ),
-    )
-
-    def make_flood(idx):
-        """Tidal flood — incoming low-alkalinity seawater RESETS chemistry.
-
-        Each cycle resets to a defined low-σ state, modeling continuous
-        tidal pumping (otherwise progressive aragonite/gypsum precipitation
-        would drift the brine out of any defined regime within a few cycles).
-        Flood state: marine baseline with depressed CO₃ (river input), mid
-        Mg/Ca, alkaline pH but kinetically below dolomite saturation.
-        """
-        def fn(cond):
-            cond.fluid.Mg = 800     # marine baseline
-            cond.fluid.Ca = 250     # marine + bivalve dissolution
-            cond.fluid.CO3 = 50     # depressed by freshwater mixing
-            cond.fluid.Sr = 12
-            cond.fluid.pH = 8.0
-            cond.flow_rate = 1.5
-            return (f"Flood pulse #{idx}: low-alkalinity tidal seawater enters "
-                    f"the lagoon. CO₃ crashes from sabkha brine levels back to "
-                    f"~50 ppm. Dolomite supersaturation drops below 1 — the "
-                    f"disordered Ca/Mg surface layer detaches preferentially "
-                    f"(Kim 2023 etch).")
-        return fn
-
-    def make_evap(idx):
-        """Evaporation — sun concentrates the lagoon back to sabkha brine.
-
-        Set values are high enough that aragonite/selenite consumption
-        between events doesn't drag dolomite back below saturation —
-        the alkalinity reservoir from microbial mats is generous.
-        """
-        def fn(cond):
-            cond.fluid.Mg = 2000    # >5× seawater Mg (modern Coorong+)
-            cond.fluid.Ca = 600     # marine + microbial-mat dissolution
-            cond.fluid.CO3 = 800    # microbial mat alkalinity (high)
-            cond.fluid.Sr = 30
-            cond.fluid.pH = 8.4
-            cond.flow_rate = 0.1
-            cond.temperature = 28
-            return (f"Evaporation pulse #{idx}: sun bakes the lagoon. Brine "
-                    f"reconcentrates to sabkha state — Mg=2000, Ca=600, CO₃=800. "
-                    f"Dolomite saturation climbs back well above 1; growth "
-                    f"resumes on the ordered template the previous etch left "
-                    f"behind. Cycle #{idx} complete; ordering ratchets up.")
-        return fn
-
-    # Twelve flood/evap pairs over 240 steps — each pair = one Kim cycle.
-    events = []
-    for i in range(1, 13):
-        flood_step = 10 + (i - 1) * 20
-        evap_step = flood_step + 10
-        events.append(Event(flood_step, f"Tidal Flood #{i}", "Seawater dilution", make_flood(i)))
-        events.append(Event(evap_step,  f"Evaporation #{i}",  "Brine reconcentration", make_evap(i)))
-
-    # Final seal — the lagoon dries up permanently.
-    def ev_final_seal(cond):
-        cond.flow_rate = 0.05
-        cond.temperature = 22
-        return ("Sabkha matures, then seals. The crust hardens and "
-                "groundwater stops cycling. What remains is the result of "
-                "twelve dissolution-precipitation cycles — ordered dolomite "
-                "where the cycling did its work, disordered HMC where it didn't. "
-                "The Coorong recipe for ambient-T ordered dolomite, the natural "
-                "laboratory that Kim 2023 finally explained at the atomic scale.")
-    events.append(Event(245, "Final Seal", "Sabkha matures, fluids stop cycling", ev_final_seal))
-
-    return conditions, events, 260
 
 
 def scenario_random() -> Tuple[VugConditions, List[Event], int]:
@@ -11869,14 +11826,17 @@ def scenario_random() -> Tuple[VugConditions, List[Event], int]:
 
 
 SCENARIOS = {
-    # Phase 1 — loaded from data/scenarios.json5 by _load_scenarios_json5().
-    # Each value is a callable returning (VugConditions, [Event...], duration_steps).
+    # All declarative scenarios load from data/scenarios.json5 via
+    # _load_scenarios_json5(). Each value is a callable returning
+    # (VugConditions, [Event...], duration_steps).
+    # Phase 1 (commit 2feb338, 2026-04-30): cooling/pulse/mvt/porphyry.
+    # Phase 2 (this commit chain, 2026-04-30): the remaining 9 scenarios,
+    # with the inline event closures promoted to module-level handlers
+    # registered in EVENT_REGISTRY above.
     "cooling": _JSON5_SCENARIOS["cooling"],
     "pulse": _JSON5_SCENARIOS["pulse"],
     "mvt": _JSON5_SCENARIOS["mvt"],
     "porphyry": _JSON5_SCENARIOS["porphyry"],
-    # Legacy in-code scenarios (Phase 2 migration target — they have inline
-    # event closures that need promotion to module-level handlers first).
     "reactive_wall": _JSON5_SCENARIOS["reactive_wall"],
     "radioactive_pegmatite": _JSON5_SCENARIOS["radioactive_pegmatite"],
     "supergene_oxidation": _JSON5_SCENARIOS["supergene_oxidation"],
@@ -11884,7 +11844,7 @@ SCENARIOS = {
     "gem_pegmatite": _JSON5_SCENARIOS["gem_pegmatite"],
     "bisbee": _JSON5_SCENARIOS["bisbee"],
     "deccan_zeolite": _JSON5_SCENARIOS["deccan_zeolite"],
-    "sabkha_dolomitization": scenario_sabkha_dolomitization,
+    "sabkha_dolomitization": _JSON5_SCENARIOS["sabkha_dolomitization"],
     "marble_contact_metamorphism": _JSON5_SCENARIOS["marble_contact_metamorphism"],
     # scenario_random opts out — procedural / RNG-driven, stays as code.
     "random": scenario_random,

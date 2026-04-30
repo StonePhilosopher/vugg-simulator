@@ -44,7 +44,7 @@
 // =============================================================
 {
   "$schema_version": "1.0.0",
-  "$last_updated": "2026-04-30 (Phase 2: 8 of 9 migrated — bisbee added)",
+  "$last_updated": "2026-04-30 (Phase 2 complete: all 9 scenarios migrated)",
   "scenarios": {
 
     "cooling": {
@@ -499,6 +499,92 @@
         "Leach et al. 2010 — MVT genesis review",
         "Anderson & Macqueen 1982 — MVT mineralogy review",
         "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
+      ]
+    },
+
+    "sabkha_dolomitization": {
+      "anchor": "Coorong lagoon system (South Australia) and Persian Gulf sabkhas. The classic natural laboratory for direct-from-solution dolomite formation per Kim, Sun et al. 2023 (Science 382:915).",
+      "description": "Cycling-brine sabkha producing ORDERED dolomite at ambient T via the Kim 2023 mechanism. Twelve flood/evap pulses over 240 steps drive Ω across the dolomite saturation boundary repeatedly — the cyclic Ω modulation that's needed to produce ordered dolomite at surface T.",
+      "duration_steps": 260,
+      "notes": [
+        "Surface T (~25°C), high-Mg evaporative brine, seasonal flood-evaporate cycles. Per Kim, Sun et al. (2023, Science 382:915), exactly this kind of cyclic Ω modulation is what's needed to produce ordered dolomite at ambient T.",
+        "The acid-pulse-and-relax style of reactive_wall produces only DISORDERED HMC because the dissolution events are too aggressive (full dissolution rather than gentle surface etch). Sabkha tidal pumping is the right kind of cycling — gentle, frequent, repeated.",
+        "Twelve flood/evap pairs over 240 steps produce ~12 dissolution-precipitation cycles. With N0=10 in the f_ord formula, this reaches ORDERED (f_ord > 0.7) by mid-scenario. The result: true ordered dolomite, the geological prize the Kim 2023 paper made accessible.",
+        "Schema note: the original Python/JS implementations used factory functions `make_flood(idx)` and `make_evap(idx)` to bake the cycle index into each handler's narrator string. Per the Phase 2 migration, we use one flood handler and one evap handler reused across all 12 cycles (the supergene_acidification precedent — same handler, multiple Event entries pointing to it). Cycle number is preserved via the event `name` field ('Tidal Flood #1', 'Evaporation #1', etc.) instead of an in-handler f-string."
+      ],
+      "initial": {
+        // Coorong surface T — ambient. The Kim mechanism's whole point is
+        // that ordered dolomite at this T is achievable with cycling.
+        "temperature_C": 25.0,
+        "pressure_kbar": 0.05,    // near-surface lagoonal vug
+        "fluid": {
+          // Marine evaporative brine baseline (~3x seawater concentration):
+          // Mg high, Ca moderate, Mg/Ca ~3.5 (above 1, dolomite-favoring),
+          // CO3 modest, alkaline pH from photosynthetic mats. Na+Cl carry
+          // the salinity but don't drive minerals here.
+          "SiO2": 20,
+          "Ca": 400,
+          "CO3": 300,
+          "Fe": 5,
+          "Mn": 2,
+          "Mg": 1400,
+          "Na": 10500,
+          "K": 380,
+          "S": 2700,
+          "F": 2,
+          "Cl": 18000,
+          // Sr is the bonus tracer — marine brines carry ~8 ppm Sr,
+          // gets concentrated by evaporation. Aragonite scavenges it.
+          "Sr": 20,
+          "O2": 1.5,
+          "pH": 8.3,
+          "salinity": 120.0
+        },
+        "wall": {
+          "composition": "limestone",   // Coorong lagoon floor is bioclastic carbonate
+          "thickness_mm": 300.0,
+          "vug_diameter_mm": 30.0,
+          "wall_Fe_ppm": 200.0,
+          "wall_Mn_ppm": 50.0,
+          "primary_bubbles": 2,
+          "secondary_bubbles": 4,
+          "shape_seed": 24             // 24 hours = one tidal cycle
+        }
+      },
+      "events": [
+        // Twelve flood/evap pairs (one Kim cycle per pair) over 240 steps,
+        // followed by a final seal event at step 245. flood at steps
+        // 10/30/50/.../230, evap at 20/40/60/.../240. Single flood +
+        // single evap handler reused per cycle.
+        { "step":  10, "type": "sabkha_flood", "name": "Tidal Flood #1",  "description": "Seawater dilution" },
+        { "step":  20, "type": "sabkha_evap",  "name": "Evaporation #1",  "description": "Brine reconcentration" },
+        { "step":  30, "type": "sabkha_flood", "name": "Tidal Flood #2",  "description": "Seawater dilution" },
+        { "step":  40, "type": "sabkha_evap",  "name": "Evaporation #2",  "description": "Brine reconcentration" },
+        { "step":  50, "type": "sabkha_flood", "name": "Tidal Flood #3",  "description": "Seawater dilution" },
+        { "step":  60, "type": "sabkha_evap",  "name": "Evaporation #3",  "description": "Brine reconcentration" },
+        { "step":  70, "type": "sabkha_flood", "name": "Tidal Flood #4",  "description": "Seawater dilution" },
+        { "step":  80, "type": "sabkha_evap",  "name": "Evaporation #4",  "description": "Brine reconcentration" },
+        { "step":  90, "type": "sabkha_flood", "name": "Tidal Flood #5",  "description": "Seawater dilution" },
+        { "step": 100, "type": "sabkha_evap",  "name": "Evaporation #5",  "description": "Brine reconcentration" },
+        { "step": 110, "type": "sabkha_flood", "name": "Tidal Flood #6",  "description": "Seawater dilution" },
+        { "step": 120, "type": "sabkha_evap",  "name": "Evaporation #6",  "description": "Brine reconcentration" },
+        { "step": 130, "type": "sabkha_flood", "name": "Tidal Flood #7",  "description": "Seawater dilution" },
+        { "step": 140, "type": "sabkha_evap",  "name": "Evaporation #7",  "description": "Brine reconcentration" },
+        { "step": 150, "type": "sabkha_flood", "name": "Tidal Flood #8",  "description": "Seawater dilution" },
+        { "step": 160, "type": "sabkha_evap",  "name": "Evaporation #8",  "description": "Brine reconcentration" },
+        { "step": 170, "type": "sabkha_flood", "name": "Tidal Flood #9",  "description": "Seawater dilution" },
+        { "step": 180, "type": "sabkha_evap",  "name": "Evaporation #9",  "description": "Brine reconcentration" },
+        { "step": 190, "type": "sabkha_flood", "name": "Tidal Flood #10", "description": "Seawater dilution" },
+        { "step": 200, "type": "sabkha_evap",  "name": "Evaporation #10", "description": "Brine reconcentration" },
+        { "step": 210, "type": "sabkha_flood", "name": "Tidal Flood #11", "description": "Seawater dilution" },
+        { "step": 220, "type": "sabkha_evap",  "name": "Evaporation #11", "description": "Brine reconcentration" },
+        { "step": 230, "type": "sabkha_flood", "name": "Tidal Flood #12", "description": "Seawater dilution" },
+        { "step": 240, "type": "sabkha_evap",  "name": "Evaporation #12", "description": "Brine reconcentration" },
+        { "step": 245, "type": "sabkha_final_seal", "name": "Final Seal", "description": "Sabkha matures, fluids stop cycling" }
+      ],
+      "sources": [
+        "Kim, Sun et al. 2023 (Science 382:915) — cyclic Ω modulation produces ordered dolomite at ambient T",
+        "Coorong lagoon (South Australia) + Persian Gulf sabkhas — natural laboratory anchors"
       ]
     },
 
