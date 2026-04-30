@@ -8484,7 +8484,37 @@
         "index.html"
       ],
       "audit_status": "Round 9a (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. First mineral with the broth-ratio branching mechanic: supersaturation_rosasite returns 0 when Cu/(Cu+Zn) < 0.5, locking the species to Cu-dominant fluid. Mirror of aurichalcite — same parent fluid, opposite outcome based on ratio. Habit variants: botryoidal (default, the diagnostic Mapimi habit), acicular_radiating (low T + high σ delicate sprays), encrusting (low σ thin crust). Sources: research/research-rosasite.md (boss commit 3bfdf4a); Pinch & Wilson 1977 (Tsumeb monograph).",
-      "class_color": "#eb7f13"
+      "class_color": "#eb7f13",
+      "test_cases": [
+        {
+          "name": "cu_dominant_fires",
+          "fluid": {"Cu": 80, "Zn": 20, "CO3": 80, "O2": 1.5, "pH": 6.9},
+          "T_C": 25,
+          "expects": {"sigma": ">1.0"},
+          "rationale": "Cu/(Cu+Zn)=0.80 — broth-ratio gate passes for the Cu-branch."
+        },
+        {
+          "name": "zn_dominant_blocks",
+          "fluid": {"Cu": 20, "Zn": 80, "CO3": 80, "O2": 1.5, "pH": 6.9},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "Zn-dominant fluid — aurichalcite wins, rosasite ratio-blocked."
+        },
+        {
+          "name": "no_zinc_blocks",
+          "fluid": {"Cu": 80, "Zn": 0, "CO3": 80, "O2": 1.5, "pH": 6.9},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "Zn=0 fails Zn>=3 ingredient gate. Pure-Cu carbonate fluid is malachite territory."
+        },
+        {
+          "name": "too_hot_blocks",
+          "fluid": {"Cu": 80, "Zn": 20, "CO3": 80, "O2": 1.5, "pH": 6.9},
+          "T_C": 80,
+          "expects": {"sigma": "==0"},
+          "rationale": "T=80°C above 40°C supergene window."
+        }
+      ]
     },
     "aurichalcite": {
       "formula": "(Zn,Cu)5(CO3)2(OH)6",
@@ -8570,7 +8600,37 @@
         "index.html"
       ],
       "audit_status": "Round 9a (Apr 2026). Mirror of rosasite in the broth-ratio branching pair. Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_aurichalcite returns 0 when Zn/(Cu+Zn) < 0.5 — same parent fluid as rosasite, opposite outcome based on ratio. Habit variants: tufted_spray (default, the diagnostic delicate Mapimi habit), radiating_columnar (high σ spheres), encrusting (low σ laminar crust). Source: research/research-aurichalcite.md (boss commit 3bfdf4a); Loktevskoye type locality 1839.",
-      "class_color": "#eb7f13"
+      "class_color": "#eb7f13",
+      "test_cases": [
+        {
+          "name": "zn_dominant_fires",
+          "fluid": {"Cu": 20, "Zn": 80, "CO3": 80, "O2": 1.5, "pH": 6.5},
+          "T_C": 22,
+          "expects": {"sigma": ">1.0"},
+          "rationale": "Zn/(Cu+Zn)=0.80 — broth-ratio gate passes for the Zn-branch."
+        },
+        {
+          "name": "cu_dominant_blocks",
+          "fluid": {"Cu": 80, "Zn": 20, "CO3": 80, "O2": 1.5, "pH": 6.5},
+          "T_C": 22,
+          "expects": {"sigma": "==0"},
+          "rationale": "Cu-dominant fluid — rosasite wins, aurichalcite ratio-blocked."
+        },
+        {
+          "name": "no_copper_blocks",
+          "fluid": {"Cu": 0, "Zn": 80, "CO3": 80, "O2": 1.5, "pH": 6.5},
+          "T_C": 22,
+          "expects": {"sigma": "==0"},
+          "rationale": "Cu=0 fails Cu>=3 ingredient gate. Pure-Zn carbonate fluid is smithsonite/hydrozincite territory."
+        },
+        {
+          "name": "acidic_blocks",
+          "fluid": {"Cu": 20, "Zn": 80, "CO3": 80, "O2": 1.5, "pH": 5.5},
+          "T_C": 22,
+          "expects": {"sigma": "==0"},
+          "rationale": "pH=5.5 below the 6.0 carbonate-stability gate. Aurichalcite dissolves in acid."
+        }
+      ]
     },
     "torbernite": {
       "formula": "Cu(UO2)2(PO4)2·12H2O",
@@ -8661,8 +8721,45 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9b (Apr 2026). First mineral with the anion-competition mechanic — three-way fork over the U⁶⁺ cation between PO₄³⁻ (torbernite), AsO₄³⁻ (zeunerite, also 9b), and VO₄³⁻ (carnotite, 9c). supersaturation_torbernite returns 0 when P/(P+As) < 0.5, locking the species to phosphate-dominant supergene fluid. Pattern is the 3-branch generalization of 9a's 2-branch broth-ratio mechanic. Habit variants: tabular_plates (default Schneeberg), micaceous_book (high σ stacks), encrusting (low σ powdery crust). Source: research/research-torbernite.md.",
-      "class_color": "#13eb7f"
+      "audit_status": "Round 9b (Apr 2026), updated 9c (Apr 2026): denominator widened from P+As to P+As+V so V-rich fluid now properly blocks torbernite (carnotite gets it instead). First mineral with the anion-competition mechanic — three-way fork over the U⁶⁺ cation between PO₄³⁻ (torbernite), AsO₄³⁻ (zeunerite, also 9b), and VO₄³⁻ (carnotite, 9c). supersaturation_torbernite returns 0 when P/(P+As+V) < 0.5. Habit variants: tabular_plates (default Schneeberg), micaceous_book (high σ stacks), encrusting (low σ powdery crust). Source: research/research-torbernite.md.",
+      "class_color": "#13eb7f",
+      "test_cases": [
+        {
+          "name": "p_dominant_fires",
+          "fluid": {"Cu": 40, "U": 2.5, "P": 8, "As": 2, "V": 0, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": ">1.0"},
+          "rationale": "P/(P+As+V)=0.80 — anion gate passes for the P-branch."
+        },
+        {
+          "name": "as_dominant_blocks",
+          "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "As-dominant fluid — zeunerite wins, torbernite ratio-blocked."
+        },
+        {
+          "name": "v_dominant_blocks",
+          "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 2, "V": 8, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "V-dominant fluid — carnotite wins (assuming K available), torbernite ratio-blocked. The 9c update extending the denominator to P+As+V is what makes this case meaningful."
+        },
+        {
+          "name": "no_uranium_blocks",
+          "fluid": {"Cu": 40, "U": 0, "P": 8, "As": 2, "V": 0, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "U=0 fails U>=0.3 ingredient gate."
+        },
+        {
+          "name": "acidic_blocks",
+          "fluid": {"Cu": 40, "U": 2.5, "P": 8, "As": 2, "V": 0, "O2": 1.5, "pH": 4.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "pH=4.0 below 5.0 stability gate — torbernite dissolves in acid."
+        }
+      ]
     },
     "zeunerite": {
       "formula": "Cu(UO2)2(AsO4)2·12H2O",
@@ -8746,8 +8843,205 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9b (Apr 2026). Mirror of torbernite in the anion-competition trio. Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_zeunerite returns 0 when As/(P+As) < 0.5 — the As-dominant branch. Isostructural with torbernite (Schneeberg pair); shares all habit-selection logic. The third branch (carnotite, K-V) is deferred to 9c. Source: research/research-zeunerite.md.",
-      "class_color": "#13eb7f"
+      "audit_status": "Round 9b (Apr 2026), updated 9c (Apr 2026): denominator widened from P+As to P+As+V so V-rich fluid now properly blocks zeunerite (carnotite gets it instead). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_zeunerite returns 0 when As/(P+As+V) < 0.5 — the As-dominant branch of the now-complete 3-way anion-competition trio (torbernite/zeunerite/carnotite). Isostructural with torbernite (Schneeberg pair); shares all habit-selection logic. Source: research/research-zeunerite.md.",
+      "class_color": "#13eb7f",
+      "test_cases": [
+        {
+          "name": "as_dominant_fires",
+          "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": ">1.0"},
+          "rationale": "As/(P+As+V)=0.80 — anion gate passes for the As-branch."
+        },
+        {
+          "name": "p_dominant_blocks",
+          "fluid": {"Cu": 40, "U": 2.5, "P": 8, "As": 2, "V": 0, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "P-dominant fluid — torbernite wins, zeunerite ratio-blocked."
+        },
+        {
+          "name": "v_dominant_blocks",
+          "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 2, "V": 8, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "V-dominant fluid — carnotite wins (assuming K available), zeunerite ratio-blocked. The 9c update extending the anion-competition denominator to P+As+V is what makes this case meaningful."
+        },
+        {
+          "name": "no_uranium_blocks",
+          "fluid": {"Cu": 40, "U": 0, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "U=0 fails U>=0.3 ingredient gate."
+        },
+        {
+          "name": "too_hot_blocks",
+          "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
+          "T_C": 80,
+          "expects": {"sigma": "==0"},
+          "rationale": "T=80°C above the 50°C ceiling — would dehydrate to metazeunerite."
+        }
+      ]
+    },
+    "carnotite": {
+      "formula": "K2(UO2)2(VO4)2·3H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 1,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "earthy_crust",
+          "wall_spread": 0.9,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "default — canary-yellow earthy stain, the diagnostic Colorado Plateau habit. One percent of carnotite stains an entire sandstone outcrop the color of school buses."
+        },
+        {
+          "name": "tabular_plates",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "high σ rare — diamond-shaped plates flattened on {001}, to ~2mm. Crystalline carnotite is genuinely uncommon."
+        },
+        {
+          "name": "powdery_disseminated",
+          "wall_spread": 0.6,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — powdery yellow disseminations, often around organic carbon (petrified wood)."
+        }
+      ],
+      "class": "phosphate",
+      "description": "K₂(UO₂)₂(VO₄)₂·3H₂O — monoclinic uranyl vanadate, the V-branch of the autunite-group anion-competition trio (with torbernite for phosphate and zeunerite for arsenate). Bright canary-yellow earthy crusts on sandstone — the mineral that paints the desert. One percent of carnotite by weight is enough to stain an entire Jurassic outcrop the color of school buses, which is how the Colorado Plateau uranium districts were prospected before instruments. Formed where oxidizing groundwater carries U⁶⁺ + V⁵⁺ + K⁺ together at the supergene front, often concentrated around organic reducing traps (petrified wood, carbonaceous shales). Mohs ~2 (soft, earthy), strongly radioactive, non-fluorescent (vanadate matrix quenches the uranyl emission). Type locality: Roc Creek, Montrose County, Colorado (1899). Sources: research/research-carnotite.md (boss commit 3bfdf4a); Colorado Plateau uranium-vanadium roll-front geology.",
+      "scenarios": [
+        "supergene_oxidation",
+        "radioactive_pegmatite"
+      ],
+      "T_range_C": [
+        10,
+        50
+      ],
+      "T_optimum_C": [
+        20,
+        40
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "K": 5,
+        "U": 0.3,
+        "V": 1.0,
+        "O2": 0.8
+      },
+      "trace_ingredients": {
+        "Ca": "tyuyamunite variant — Ca analogue Ca(UO₂)₂(VO₄)₂·5-8H₂O, forms when Ca dominates over K"
+      },
+      "thermal_decomp_C": 100,
+      "thermal_decomp_reaction": "K₂(UO₂)₂(VO₄)₂·3H₂O → K₂(UO₂)₂(VO₄)₂ + 3H₂O (irreversible dehydration)",
+      "thermal_decomp_products": {
+        "K": 0.0,
+        "U": 0.0,
+        "V": 0.0
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "carnotite_001",
+          "miller_indices": "{001}",
+          "trigger": "twin and composition plane in rare crystals",
+          "probability": 0.04
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "K₂(UO₂)₂(VO₄)₂·3H₂O + 6H⁺ → 2K⁺ + 2UO₂²⁺ + 2H₃VO₄ + 3H₂O",
+        "products": {
+          "K": 0.2,
+          "U": 0.4,
+          "V": 0.3
+        }
+      },
+      "habit": "earthy_crust",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_carnotite",
+      "runtimes_present": [
+        "vugg.py",
+        "index.html"
+      ],
+      "audit_status": "Round 9c (Apr 2026). Singleton — V-branch of the uranyl anion-competition trio (with torbernite for P-branch, zeunerite for As-branch, both shipped in 9b). Different cation (K instead of Cu), different crystal system (monoclinic instead of tetragonal), different habit (canary-yellow earthy crusts instead of emerald-green tabular plates), same anion-competition mechanic. Completes the 3-branch generalization: 9c also widens torbernite + zeunerite supersat denominators from P+As to P+As+V so V-rich fluid properly routes to carnotite. No current scenario has the K+U+V+low-T+oxidizing conjunction (rad_peg has K+U but is hot+reducing+V=0; bisbee has K but no U or V; supergene_oxidation has K+V but no U) — same content gap as 9b's torbernite/zeunerite. Engine + test_cases verified. Sources: research/research-carnotite.md; Colorado Plateau roll-front geology; Roc Creek type locality (1899).",
+      "class_color": "#13eb7f",
+      "test_cases": [
+        {
+          "name": "v_dominant_fires",
+          "fluid": {"K": 30, "U": 2.5, "V": 8, "P": 2, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 30,
+          "expects": {"sigma": ">1.0"},
+          "rationale": "V/(P+As+V)=0.80 — anion gate passes for the V-branch. K+U+V all above ingredient thresholds; T in window; oxidizing; near-neutral pH (V is mobile as VO₄³⁻ above pH 6)."
+        },
+        {
+          "name": "p_dominant_blocks",
+          "fluid": {"K": 30, "U": 2.5, "V": 2, "P": 8, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 30,
+          "expects": {"sigma": "==0"},
+          "rationale": "P-dominant fluid — torbernite wins, carnotite ratio-blocked."
+        },
+        {
+          "name": "as_dominant_blocks",
+          "fluid": {"K": 30, "U": 2.5, "V": 2, "P": 0, "As": 8, "O2": 1.5, "pH": 6.5},
+          "T_C": 30,
+          "expects": {"sigma": "==0"},
+          "rationale": "As-dominant fluid — zeunerite wins, carnotite ratio-blocked."
+        },
+        {
+          "name": "no_potassium_blocks",
+          "fluid": {"K": 0, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 30,
+          "expects": {"sigma": "==0"},
+          "rationale": "K=0 fails K>=5 ingredient gate. Carnotite is K-specific; without K it would form tyuyamunite (Ca analogue) instead — variant deferred to a future round."
+        },
+        {
+          "name": "no_uranium_blocks",
+          "fluid": {"K": 30, "U": 0, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 30,
+          "expects": {"sigma": "==0"},
+          "rationale": "U=0 fails U>=0.3 ingredient gate. No uranyl, no uranyl mineral."
+        },
+        {
+          "name": "no_vanadium_blocks",
+          "fluid": {"K": 30, "U": 2.5, "V": 0, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 30,
+          "expects": {"sigma": "==0"},
+          "rationale": "V=0 fails V>=1.0 ingredient gate. Without vanadate the only uranyl path is torbernite/zeunerite (which also fail here since P=As=0)."
+        },
+        {
+          "name": "reducing_blocks",
+          "fluid": {"K": 30, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 0.3, "pH": 6.5},
+          "T_C": 30,
+          "expects": {"sigma": "==0"},
+          "rationale": "Reducing fluid keeps U as insoluble U⁴⁺ (uraninite). Carnotite needs U⁶⁺."
+        },
+        {
+          "name": "too_hot_blocks",
+          "fluid": {"K": 30, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 80,
+          "expects": {"sigma": "==0"},
+          "rationale": "T=80°C above 50°C ceiling — carnotite dehydrates above ~100°C, structure collapses; this gate blocks before that."
+        },
+        {
+          "name": "acidic_blocks",
+          "fluid": {"K": 30, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 4.0},
+          "T_C": 30,
+          "expects": {"sigma": "==0"},
+          "rationale": "pH=4.0 below the 5.0-7.5 stability window. Below pH 6, vanadate is no longer the dominant V species — VO₂⁺ takes over and carnotite chemistry breaks."
+        }
+      ]
     }
   }
 }

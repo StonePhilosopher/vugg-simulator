@@ -3197,6 +3197,7 @@ const MINERAL_SPEC_FALLBACK = {
   aurichalcite: { formula: "(Zn,Cu)5(CO3)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 4, growth_rate_mult: 0.4, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 5.0 }, class: "carbonate" },
   torbernite: { formula: "Cu(UO2)2(PO4)2·12H2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.4, thermal_decomp_C: 75, fluorescence: null, twin_laws: [{ name: "torbernite_110", miller_indices: "{110}", trigger: "growth (rare)", probability: 0.03 }], acid_dissolution: { pH_threshold: 4.5 }, class: "phosphate" },
   zeunerite: { formula: "Cu(UO2)2(AsO4)2·12H2O", nucleation_sigma: 1.0, max_size_cm: 3, growth_rate_mult: 0.4, thermal_decomp_C: 75, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 }, class: "phosphate" },
+  carnotite: { formula: "K2(UO2)2(VO4)2·3H2O", nucleation_sigma: 1.0, max_size_cm: 1, growth_rate_mult: 0.4, thermal_decomp_C: 100, fluorescence: null, twin_laws: [{ name: "carnotite_001", miller_indices: "{001}", trigger: "twin and composition plane in rare crystals", probability: 0.04 }], acid_dissolution: { pH_threshold: 4.5 }, class: "phosphate" },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3348,7 +3349,8 @@ const MINERAL_GAME_COLORS = {
   raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030',
   chalcanthite: '#2a40c8',
   rosasite: '#5a8a8e', aurichalcite: '#9ec8c0',  // Round 9a — Cu-blue-green & Zn-pale-green
-  torbernite: '#3a8e3a', zeunerite: '#5aa040'    // Round 9b — emerald-green uranyl phosphate/arsenate
+  torbernite: '#3a8e3a', zeunerite: '#5aa040',   // Round 9b — emerald-green uranyl phosphate/arsenate
+  carnotite: '#e8d040'                           // Round 9c — canary-yellow uranyl vanadate
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -3641,10 +3643,16 @@ let timeScale = 5.0;
 //        • 9b: torbernite + zeunerite + the **anion-competition** mechanic.
 //          The 3-branch generalization of 9a's 2-branch ratio gate, with
 //          three uranyl minerals competing for the same U⁶⁺ cation,
-//          differentiated by anion (PO₄³⁻/AsO₄³⁻/VO₄³⁻). 9b ships the
-//          P + As branches; carnotite (V) joins in 9c.
-//        Engine count 84 → 88 (+4 across 9a + 9b). No new FluidChemistry
-//        fields.
+//          differentiated by anion (PO₄³⁻/AsO₄³⁻/VO₄³⁻). 9b shipped the
+//          P + As branches.
+//        • 9c: carnotite + completion of the anion-competition trio.
+//          V-branch (canary-yellow Colorado Plateau crusts, K-cation
+//          instead of Cu, monoclinic instead of tetragonal). Also
+//          widens torbernite + zeunerite supersat denominators from
+//          P+As to P+As+V so V-rich fluid properly routes to carnotite.
+//        Engine count 84 → 89 (+5 across 9a + 9b + 9c). No new
+//        FluidChemistry fields. First commits to populate test_cases
+//        on data/minerals.json (per TASK-BRIEF-DATA-AS-TRUTH.md item 6).
 const SIM_VERSION = 9;
 
 
@@ -5776,7 +5784,9 @@ class VugConditions {
     if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || this.fluid.P < 1.0 || this.fluid.O2 < 0.8) return 0;
     if (this.temperature < 10 || this.temperature > 50) return 0;
     if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
-    const anion_total = this.fluid.P + this.fluid.As;
+    // Anion competition (3-way as of 9c): denominator includes V so
+    // V-rich fluid routes to carnotite instead of falling into torbernite.
+    const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
     if (anion_total <= 0) return 0;
     const p_fraction = this.fluid.P / anion_total;
     if (p_fraction < 0.5) return 0;
@@ -5798,7 +5808,8 @@ class VugConditions {
     if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || this.fluid.As < 2.0 || this.fluid.O2 < 0.8) return 0;
     if (this.temperature < 10 || this.temperature > 50) return 0;
     if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
-    const anion_total = this.fluid.P + this.fluid.As;
+    // Anion competition (3-way as of 9c)
+    const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
     if (anion_total <= 0) return 0;
     const as_fraction = this.fluid.As / anion_total;
     if (as_fraction < 0.5) return 0;
@@ -5811,6 +5822,31 @@ class VugConditions {
     let T_factor;
     if (T >= 15 && T <= 40) T_factor = 1.2;
     else if (T < 15) T_factor = 0.6 + 0.04 * (T - 10);
+    else T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 40));
+    sigma *= T_factor;
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_carnotite() {
+    // V-branch of the uranyl anion-competition trio (Round 9c).
+    // Mirror of vugg.py supersaturation_carnotite. K-cation (instead of
+    // Cu like torbernite/zeunerite). The "paint the desert" yellow.
+    if (this.fluid.K < 5 || this.fluid.U < 0.3 || this.fluid.V < 1.0 || this.fluid.O2 < 0.8) return 0;
+    if (this.temperature < 10 || this.temperature > 50) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+    if (anion_total <= 0) return 0;
+    const v_fraction = this.fluid.V / anion_total;
+    if (v_fraction < 0.5) return 0;
+    const u_f = Math.min(this.fluid.U / 2.0, 2.0);
+    const k_f = Math.min(this.fluid.K / 30.0, 2.0);
+    const v_f = Math.min(this.fluid.V / 10.0, 2.0);
+    let sigma = u_f * k_f * v_f;
+    if (v_fraction >= 0.55 && v_fraction <= 0.85) sigma *= 1.3;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 20 && T <= 40) T_factor = 1.2;
+    else if (T < 20) T_factor = 0.5 + 0.07 * (T - 10);
     else T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 40));
     sigma *= T_factor;
     return Math.max(sigma, 0);
@@ -8832,6 +8868,58 @@ function grow_zeunerite(crystal, conditions, step) {
   });
 }
 
+function grow_carnotite(crystal, conditions, step) {
+  // V-branch of the uranyl anion-competition trio (Round 9c). Almost
+  // always forms as canary-yellow earthy crusts on sandstone — the
+  // diagnostic Colorado Plateau habit. Mirror of vugg.py grow_carnotite.
+  const sigma = conditions.supersaturation_carnotite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.K += dissolved_um * 0.2;
+      conditions.fluid.U += dissolved_um * 0.4;
+      conditions.fluid.V += dissolved_um * 0.3;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH=${conditions.fluid.pH.toFixed(1)}) — K⁺ + UO₂²⁺ + VO₄³⁻ released`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+  if (rate < 0.1) return null;
+  let habit_note;
+  if (excess > 1.5 && conditions.temperature < 30) {
+    crystal.habit = "tabular_plates";
+    crystal.dominant_forms = ["diamond-shaped {001} plates", "tabular crystals"];
+    habit_note = "rare crystalline carnotite — diamond-shaped plates, the collector's prize";
+  } else if (excess > 0.4) {
+    crystal.habit = "earthy_crust";
+    crystal.dominant_forms = ["canary-yellow earthy crust", "thin coating"];
+    habit_note = "canary-yellow earthy crust — the diagnostic Colorado Plateau habit";
+  } else {
+    crystal.habit = "powdery_disseminated";
+    crystal.dominant_forms = ["powdery yellow disseminations", "sandstone stain"];
+    habit_note = "powdery yellow disseminations — the sandstone-stain form";
+  }
+  habit_note += "; bright canary-yellow (UO₂²⁺ charge-transfer); ☢️ radioactive";
+  habit_note += "; non-fluorescent (vanadate matrix quenches uranyl emission)";
+  if (conditions.fluid.Fe > 5 && conditions.temperature < 30) {
+    habit_note += "; roll-front signature (oxidizing groundwater + sandstone host)";
+  }
+  conditions.fluid.K = Math.max(conditions.fluid.K - rate * 0.04, 0);
+  conditions.fluid.U = Math.max(conditions.fluid.U - rate * 0.04, 0);
+  conditions.fluid.V = Math.max(conditions.fluid.V - rate * 0.05, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
 // Selenite (gypsum variety) — CaSO4·2H2O
 // Forms at low temperature in oxidizing, evaporative environments
 // The crystal that grows when everything else is ending
@@ -10314,6 +10402,7 @@ const MINERAL_ENGINES = {
   aurichalcite: grow_aurichalcite,   // Round 9a: Zn-dominant broth-ratio carbonate
   torbernite: grow_torbernite,       // Round 9b: P-branch anion-competition uranyl phosphate
   zeunerite: grow_zeunerite,         // Round 9b: As-branch anion-competition uranyl arsenate
+  carnotite: grow_carnotite,         // Round 9c: V-branch anion-competition uranyl vanadate (K-cation)
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -13253,6 +13342,27 @@ class VugSimulator {
         this.log.push(`  ✦ NUCLEATION: Zeunerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_zeu.toFixed(2)}, U=${this.conditions.fluid.U.toFixed(2)}, P=${this.conditions.fluid.P.toFixed(1)}, As=${this.conditions.fluid.As.toFixed(1)}, As-fraction=${as_pct.toFixed(0)}%) — anion-competition branch: As-dominant`);
       }
     }
+
+    // Carnotite nucleation — V-branch of the uranyl anion-competition trio (Round 9c).
+    // Substrate preference: weathering uraninite (U source) or "organic-rich" position
+    // via Fe>5 + low-T proxy (real carnotite famously concentrates around petrified
+    // wood; sim doesn't track organic matter as a separate species).
+    const sigma_car = this.conditions.supersaturation_carnotite();
+    if (sigma_car > 1.0 && !this._atNucleationCap('carnotite')) {
+      if (rng.random() < 0.20) {
+        let pos = 'vug wall';
+        const weathering_urn = this.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
+        if (weathering_urn.length && rng.random() < 0.5) {
+          pos = `on weathering uraninite #${weathering_urn[0].crystal_id}`;
+        } else if (this.conditions.fluid.Fe > 5 && this.conditions.temperature < 30 && rng.random() < 0.3) {
+          pos = 'around organic carbon (roll-front position)';
+        }
+        const c = this.nucleate('carnotite', pos, sigma_car);
+        const anion_total = this.conditions.fluid.P + this.conditions.fluid.As + this.conditions.fluid.V;
+        const v_pct = anion_total > 0 ? (this.conditions.fluid.V / anion_total * 100) : 0;
+        this.log.push(`  ✦ NUCLEATION: Carnotite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_car.toFixed(2)}, K=${this.conditions.fluid.K.toFixed(0)}, U=${this.conditions.fluid.U.toFixed(2)}, V=${this.conditions.fluid.V.toFixed(1)}, V-fraction=${v_pct.toFixed(0)}%) — anion-competition branch: V-dominant`);
+      }
+    }
   }
 
   apply_events() {
@@ -15363,6 +15473,22 @@ class VugSimulator {
       parts.push("Tabular plates flattened on {001} — the diagnostic Schneeberg/Cínovec habit. Identical in shape to torbernite; chemistry is the only discriminator.");
     } else {
       parts.push("Scaly encrustation — low-σ thin overlapping plates coating fracture surfaces.");
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_carnotite(c) {
+    const parts = [`Carnotite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("K₂(UO₂)₂(VO₄)₂·3H₂O — monoclinic uranyl vanadate, the vanadate branch of the autunite-group anion-competition trio (with torbernite for phosphate and zeunerite for arsenate). The mineral that paints the desert: bright canary-yellow, so chromatically aggressive that one percent of it stains an entire Jurassic sandstone outcrop the color of school buses and hazard tape. The Colorado Plateau uranium districts were prospected by following yellow stains across mesa tops decades before scintillometers existed. Mohs ~2 (soft, earthy), ☢️ radioactive, non-fluorescent (the vanadate matrix quenches the uranyl emission that would otherwise make this mineral glow).");
+    if (c.habit === 'tabular_plates') {
+      parts.push("Rare crystalline habit — diamond-shaped plates flattened on {001}, the collector's prize. Crystalline carnotite is genuinely uncommon; almost all carnotite in nature is the earthy/powdery form.");
+    } else if (c.habit === 'earthy_crust') {
+      parts.push("Canary-yellow earthy crust — the diagnostic Colorado Plateau habit. Forms as crusts on sandstone, often concentrated around petrified wood and carbonaceous shales where ancient organic matter trapped uranium from circulating groundwater.");
+    } else {
+      parts.push("Powdery yellow disseminations — the sandstone-stain form. Doesn't crystallize so much as it stains; the stain is the habit.");
+    }
+    if (c.nucleation_temp < 30) {
+      parts.push("Cool nucleation (~ambient surface temperatures) — consistent with the roll-front geological setting where oxidizing meteoric water encounters a reducing barrier and drops both U and V into the same yellow precipitate.");
     }
     return parts.join(' ');
   }
@@ -19504,7 +19630,8 @@ const IDLE_MINERAL_COLORS = {
   raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030',
   chalcanthite: '#2a40c8',
   rosasite: '#5a8a8e', aurichalcite: '#9ec8c0',  // Round 9a
-  torbernite: '#3a8e3a', zeunerite: '#5aa040'    // Round 9b
+  torbernite: '#3a8e3a', zeunerite: '#5aa040',   // Round 9b
+  carnotite: '#e8d040'                           // Round 9c
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

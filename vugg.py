@@ -186,11 +186,18 @@ from typing import List, Dict, Optional, Tuple
 #          mechanic. The 3-branch generalization of 9a's 2-branch
 #          ratio gate, with three uranyl minerals competing for the
 #          same U⁶⁺ cation, differentiated by which anion (PO₄³⁻/
-#          AsO₄³⁻/VO₄³⁻) dominates. 9b ships the P (torbernite) and
-#          As (zeunerite) branches; carnotite (V branch) ships in 9c.
+#          AsO₄³⁻/VO₄³⁻) dominates. 9b shipped the P + As branches.
+#        • 9c: carnotite + completion of the anion-competition trio.
+#          V-branch (canary-yellow Colorado Plateau crusts, K-cation
+#          instead of Cu, monoclinic instead of tetragonal). Also
+#          widens torbernite + zeunerite supersat denominators from
+#          P+As to P+As+V so V-rich fluid properly routes to carnotite.
+#          The mechanic now properly 3-way competitive.
 #        Both mechanics establish patterns reusable for future
-#        ratio-driven pairs/trios. Engine count 84 → 88 (+4 across
-#        9a + 9b). No new FluidChemistry fields.
+#        ratio-driven pairs/trios. Engine count 84 → 89 (+5 across
+#        9a + 9b + 9c). No new FluidChemistry fields. First commits
+#        to populate test_cases on data/minerals.json (per
+#        proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 6).
 SIM_VERSION = 9
 
 
@@ -3880,9 +3887,11 @@ class VugConditions:
         # pH gate — slightly acidic to neutral (5-7 per research)
         if self.fluid.pH < 5.0 or self.fluid.pH > 7.5:
             return 0
-        # Anion competition — P must dominate over As (V handled when
-        # carnotite ships in 9c; until then, V doesn't enter the gate).
-        anion_total = self.fluid.P + self.fluid.As
+        # Anion competition — P must dominate over As + V (full 3-way
+        # gate as of 9c, when carnotite shipped). The denominator is now
+        # P+As+V so V-dominant fluid properly routes to carnotite instead
+        # of falling into torbernite by default.
+        anion_total = self.fluid.P + self.fluid.As + self.fluid.V
         if anion_total <= 0:
             return 0
         p_fraction = self.fluid.P / anion_total
@@ -3936,8 +3945,9 @@ class VugConditions:
         if self.fluid.pH < 5.0 or self.fluid.pH > 7.5:
             return 0
 
-        # Anion competition — As must dominate over P
-        anion_total = self.fluid.P + self.fluid.As
+        # Anion competition — As must dominate over P + V (full 3-way
+        # gate as of 9c, when carnotite shipped).
+        anion_total = self.fluid.P + self.fluid.As + self.fluid.V
         if anion_total <= 0:
             return 0
         as_fraction = self.fluid.As / anion_total
@@ -3961,6 +3971,70 @@ class VugConditions:
         elif T < 15:
             T_factor = 0.6 + 0.04 * (T - 10)
         else:
+            T_factor = max(0.4, 1.2 - 0.08 * (T - 40))
+        sigma *= T_factor
+
+        return max(sigma, 0)
+
+    def supersaturation_carnotite(self) -> float:
+        """Carnotite (K₂(UO₂)₂(VO₄)₂·3H₂O) — V-branch of the autunite-group
+        anion-competition trio (Round 9c).
+
+        Singleton — completes the 3-branch generalization started in 9a's
+        broth-ratio mechanic. Different cation (K instead of Cu),
+        different crystal system (monoclinic vs tetragonal), different
+        habit (canary-yellow earthy crusts vs emerald tabular plates),
+        same anion-competition mechanic. Nucleates when V/(P+As+V) > 0.5.
+
+        Forms where oxidizing groundwater carries U⁶⁺ + V⁵⁺ + K⁺ together
+        at the supergene front. Colorado Plateau sandstone-hosted uranium
+        deposits are the type environment — one percent of carnotite
+        stains an entire outcrop the color of school buses, which is
+        how those districts were prospected before instruments.
+
+        Source: research/research-carnotite.md (boss commit 3bfdf4a);
+        Roc Creek type locality (1899).
+        """
+        # Required ingredients — K, U, V
+        if (self.fluid.K < 5 or self.fluid.U < 0.3
+                or self.fluid.V < 1.0 or self.fluid.O2 < 0.8):
+            return 0
+        # T-gate — supergene/ambient (above 50°C the structure dehydrates,
+        # collapses around 100°C)
+        if self.temperature < 10 or self.temperature > 50:
+            return 0
+        # pH gate — V is mobile as VO₄³⁻ above pH 6 (Brookins 1988 Eh-pH);
+        # below pH 5 the chemistry breaks and acid dissolution kicks in.
+        # 5.0-7.5 stability window.
+        if self.fluid.pH < 5.0 or self.fluid.pH > 7.5:
+            return 0
+        # Anion competition — V must dominate over P + As (the carnotite
+        # branch of the trio).
+        anion_total = self.fluid.P + self.fluid.As + self.fluid.V
+        if anion_total <= 0:
+            return 0
+        v_fraction = self.fluid.V / anion_total
+        if v_fraction < 0.5:
+            return 0
+
+        # Activity factors — U is trace; K is moderate; V is sparse-trace.
+        u_f = min(self.fluid.U / 2.0, 2.0)
+        k_f = min(self.fluid.K / 30.0, 2.0)
+        v_f = min(self.fluid.V / 10.0, 2.0)
+        sigma = u_f * k_f * v_f
+
+        # V-fraction sweet spot — same shape as torbernite/zeunerite
+        if 0.55 <= v_fraction <= 0.85:
+            sigma *= 1.3
+
+        # T optimum — 20-40°C (slightly warmer-leaning than tor/zeu since
+        # Colorado Plateau roll-fronts sit in arid surface-T conditions)
+        T = self.temperature
+        if 20 <= T <= 40:
+            T_factor = 1.2
+        elif T < 20:
+            T_factor = 0.5 + 0.07 * (T - 10)  # 10→0.5 ramps to 20→1.2
+        else:  # 40 < T <= 50
             T_factor = max(0.4, 1.2 - 0.08 * (T - 40))
         sigma *= T_factor
 
@@ -10097,6 +10171,79 @@ def grow_zeunerite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_carnotite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Carnotite (K₂(UO₂)₂(VO₄)₂·3H₂O) — V-branch of the uranyl
+    anion-competition trio (Round 9c).
+
+    Almost always forms as canary-yellow earthy crusts on sandstone —
+    the diagnostic Colorado Plateau habit. Crystalline carnotite is
+    genuinely rare; tabular plates only at very high σ. Habit selection:
+    high σ + cool → tabular_plates (rare); moderate σ → earthy_crust
+    (default Colorado Plateau habit); low σ → powdery_disseminated
+    (the sandstone-stain form).
+
+    Source: research/research-carnotite.md (boss commit 3bfdf4a).
+    """
+    sigma = conditions.supersaturation_carnotite()
+    if sigma < 1.0:
+        # Acid dissolution — uranyl vanadates dissolve readily below pH 4.5
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.5:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.K += dissolved_um * 0.2
+            conditions.fluid.U += dissolved_um * 0.4
+            conditions.fluid.V += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH={conditions.fluid.pH:.1f}) — K⁺ + UO₂²⁺ + VO₄³⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 1.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit selection — crystalline carnotite is RARE; default is the
+    # earthy crust. Only very high σ at cool T produces real plates.
+    if excess > 1.5 and conditions.temperature < 30:
+        crystal.habit = "tabular_plates"
+        crystal.dominant_forms = ["diamond-shaped {001} plates", "tabular crystals"]
+        habit_note = "rare crystalline carnotite — diamond-shaped plates, the collector's prize"
+    elif excess > 0.4:
+        crystal.habit = "earthy_crust"
+        crystal.dominant_forms = ["canary-yellow earthy crust", "thin coating"]
+        habit_note = "canary-yellow earthy crust — the diagnostic Colorado Plateau habit"
+    else:
+        crystal.habit = "powdery_disseminated"
+        crystal.dominant_forms = ["powdery yellow disseminations", "sandstone stain"]
+        habit_note = "powdery yellow disseminations — the sandstone-stain form"
+
+    # Color note
+    habit_note += "; bright canary-yellow (UO₂²⁺ charge-transfer); ☢️ radioactive"
+    habit_note += "; non-fluorescent (vanadate matrix quenches uranyl emission)"
+
+    # Petrified-wood association — carnotite famously concentrates around
+    # organic carbon. The sim doesn't track organic matter as a separate
+    # species, but if Fe is moderate (oxidizing groundwater) and T is low,
+    # flag the roll-front signature.
+    if conditions.fluid.Fe > 5 and conditions.temperature < 30:
+        habit_note += "; roll-front signature (oxidizing groundwater + sandstone host)"
+
+    # Deplete — formula has 2 K + 2 U + 2 V per unit. K is consumed
+    # heavily because carnotite is K-specific.
+    conditions.fluid.K = max(conditions.fluid.K - rate * 0.04, 0)
+    conditions.fluid.U = max(conditions.fluid.U - rate * 0.04, 0)
+    conditions.fluid.V = max(conditions.fluid.V - rate * 0.05, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_selenite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Selenite / Gypsum (CaSO₄·2H₂O) growth. Low-T evaporite, Naica's giant crystals."""
     sigma = conditions.supersaturation_selenite()
@@ -10246,6 +10393,7 @@ MINERAL_ENGINES = {
     "aurichalcite": grow_aurichalcite,   # Round 9a: Zn-dominant broth-ratio carbonate
     "torbernite": grow_torbernite,       # Round 9b: P-branch anion-competition uranyl phosphate
     "zeunerite": grow_zeunerite,         # Round 9b: As-branch anion-competition uranyl arsenate
+    "carnotite": grow_carnotite,         # Round 9c: V-branch anion-competition uranyl vanadate (K-cation)
 }
 
 
@@ -14400,6 +14548,34 @@ class VugSimulator:
                               f"U={self.conditions.fluid.U:.2f}, P={self.conditions.fluid.P:.1f}, "
                               f"As={self.conditions.fluid.As:.1f}, As-fraction={as_pct:.0f}%) — "
                               f"anion-competition branch: As-dominant")
+
+        # Carnotite nucleation — V-branch of the uranyl anion-competition trio
+        # (Round 9c). Substrate preference: weathering uraninite (the U
+        # source) or "organic-rich" position via Fe>5 + low-T proxy
+        # (real carnotite famously concentrates around petrified wood and
+        # carbonaceous shales — the sim doesn't track organic matter as
+        # a separate species).
+        sigma_car = self.conditions.supersaturation_carnotite()
+        if sigma_car > 1.0 and not self._at_nucleation_cap("carnotite"):
+            if random.random() < 0.20:
+                pos = "vug wall"
+                weathering_urn = [c for c in self.crystals if c.mineral == "uraninite" and c.dissolved]
+                if weathering_urn and random.random() < 0.5:
+                    pos = f"on weathering uraninite #{weathering_urn[0].crystal_id}"
+                elif (self.conditions.fluid.Fe > 5
+                      and self.conditions.temperature < 30
+                      and random.random() < 0.3):
+                    pos = "around organic carbon (roll-front position)"
+                c = self.nucleate("carnotite", position=pos, sigma=sigma_car)
+                anion_total = (self.conditions.fluid.P
+                               + self.conditions.fluid.As
+                               + self.conditions.fluid.V)
+                v_pct = (self.conditions.fluid.V / anion_total * 100) if anion_total > 0 else 0
+                self.log.append(f"  ✦ NUCLEATION: Carnotite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_car:.2f}, "
+                              f"K={self.conditions.fluid.K:.0f}, U={self.conditions.fluid.U:.2f}, "
+                              f"V={self.conditions.fluid.V:.1f}, V-fraction={v_pct:.0f}%) — "
+                              f"anion-competition branch: V-dominant")
 
     def apply_events(self):
         """Apply any events scheduled for this step."""
@@ -19835,6 +20011,56 @@ class VugSimulator:
             parts.append(
                 "Scaly encrustation — low-σ thin overlapping plates "
                 "coating fracture surfaces."
+            )
+        return " ".join(parts)
+
+    def _narrate_carnotite(self, c: Crystal) -> str:
+        """Narrate carnotite — V-branch uranyl vanadate (Round 9c)."""
+        parts = [f"Carnotite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "K₂(UO₂)₂(VO₄)₂·3H₂O — monoclinic uranyl vanadate, the "
+            "vanadate branch of the autunite-group anion-competition "
+            "trio (with torbernite for phosphate and zeunerite for "
+            "arsenate). The mineral that paints the desert: bright "
+            "canary-yellow, so chromatically aggressive that one "
+            "percent of it stains an entire Jurassic sandstone outcrop "
+            "the color of school buses and hazard tape. The Colorado "
+            "Plateau uranium districts were prospected by following "
+            "yellow stains across mesa tops decades before scintillometers "
+            "existed. Mohs ~2 (soft, earthy), ☢️ radioactive, "
+            "non-fluorescent (the vanadate matrix quenches the uranyl "
+            "emission that would otherwise make this mineral glow)."
+        )
+        if c.habit == "tabular_plates":
+            parts.append(
+                "Rare crystalline habit — diamond-shaped plates "
+                "flattened on {001}, the collector's prize. Crystalline "
+                "carnotite is genuinely uncommon; almost all carnotite "
+                "in nature is the earthy/powdery form."
+            )
+        elif c.habit == "earthy_crust":
+            parts.append(
+                "Canary-yellow earthy crust — the diagnostic Colorado "
+                "Plateau habit. Forms as crusts on sandstone, often "
+                "concentrated around petrified wood and carbonaceous "
+                "shales where ancient organic matter trapped uranium "
+                "from circulating groundwater."
+            )
+        else:  # powdery_disseminated
+            parts.append(
+                "Powdery yellow disseminations — the sandstone-stain "
+                "form. Doesn't crystallize so much as it stains; the "
+                "stain is the habit."
+            )
+        # Roll-front signature note — Fe-rich oxidizing groundwater is
+        # the diagnostic Colorado Plateau setting
+        if c.nucleation_temp < 30:
+            parts.append(
+                "Cool nucleation (~ambient surface temperatures) — "
+                "consistent with the roll-front geological setting "
+                "where oxidizing meteoric water encounters a reducing "
+                "barrier and drops both U and V into the same "
+                "yellow precipitate."
             )
         return " ".join(parts)
 
