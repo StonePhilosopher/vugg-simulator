@@ -1,6 +1,6 @@
-# HANDOFF: Narrative-as-Data extraction — extend from 10/89 to 89/89
+# HANDOFF: Narrative-as-Data extraction — extend from 28/89 to 89/89
 
-Picking up from commit `c551a5e` (2026-04-30). 10 species extracted; 79 remain. The hard design work is done — what's left is mechanical pattern-matching against five characterized shapes.
+Picking up from commit `4bd241b` (2026-04-30). 28 species extracted; 61 remain. The hard design work is done — what's left is mechanical pattern-matching against the characterized shapes.
 
 ## Where we are
 
@@ -9,23 +9,36 @@ Picking up from commit `c551a5e` (2026-04-30). 10 species extracted; 79 remain. 
 - JS: `index.html` near MINERAL_SPEC fetch — same three functions plus `_NARRATIVE_MANIFEST = [...]` array of pre-fetched species. Markdown loaded async at startup.
 - Markdown: `narratives/<species>.md` — frontmatter (`---`...`---`), `## blurb` (optional), `## variant: <name>` sections, `{key}` placeholders interpolated from ctx dict.
 
-**Species extracted** (10): chalcopyrite, sphalerite, aurichalcite, dolomite, rosasite, azurite, calcite, aragonite, siderite, rhodochrosite.
+**Species extracted** (28):
 
-**Per-extraction commit cadence**: 1-2 species per commit when shapes are similar; standalone commit for genuinely new patterns. Total of 7 narrative-extraction commits so far.
+- **Carbonates (13)**: chalcopyrite, sphalerite, aurichalcite, dolomite, rosasite, azurite, calcite, aragonite, siderite, rhodochrosite, cerussite, smithsonite, malachite
+- **Sulfides (9)**: pyrite, galena, marcasite, hematite, molybdenite, bornite, chalcocite, covellite, cuprite
+- **Native metals (3)**: native_copper, native_gold, native_silver
+- **Fe oxides (3)**: magnetite, lepidocrocite, goethite
 
-## The five extraction shapes (read this first)
+**Per-extraction commit cadence**: 1-3 species per commit (max 4, boss policy). Total of ~15 narrative-extraction commits so far.
+
+## The extraction shapes catalog (read this first)
 
 Open the matching example to see the pattern in action.
 
 | Shape | When to use | Reference |
 |---|---|---|
-| **Static blurb + flag conditionals** | Single always-shown blurb plus 1-3 boolean-conditional appendix sentences (twinned, dissolved, etc.) | `chalcopyrite.md` — simplest |
+| **Static blurb + flag conditionals** | Single always-shown blurb plus 1-3 boolean-conditional appendix sentences (twinned, dissolved, etc.) | `chalcopyrite.md`, `cerussite.md`, `galena.md`, `bornite.md`, `molybdenite.md` |
 | **Two-named-variants for computed branch** | Code computes a value (e.g. early-vs-late zone Fe), picks one of two whole sentences | `sphalerite.md` — `fe_zoning_increasing` / `fe_zoning_decreasing` |
-| **3-way habit + default** | `if habit == X / elif Y / else default` — three named variants, all standalone | `aurichalcite.md`, `rosasite.md`, `azurite.md` |
+| **3-way habit + default** | `if habit == X / elif Y / else default` — three named variants, all standalone | `aurichalcite.md`, `rosasite.md`, `azurite.md`, `pyrite.md`, `magnetite.md`, `lepidocrocite.md` |
+| **4-way habit + default** | Same pattern, four habit branches plus default catch-all | `marcasite.md`, `hematite.md`, `cuprite.md`, `native_copper.md`, `native_silver.md` |
 | **Multi-tier with `{value}` templates** | 3+ tiers picked by computed threshold + multiple template variables interpolated | `dolomite.md` — kim_ordered/kim_partial/kim_disordered with `{cycle_count}` + `{f_ord}` |
 | **Habit + dissolved-with-conversion-note** | Habit dispatch + dissolved branch that reads a zone note string to pick paramorph variant vs acid_dissolution | `aragonite.md`, `siderite.md`, `rhodochrosite.md`, `azurite.md` |
+| **Always-emitted tail variant** | Closing always-shown variant after the conditional middle (NOT the same as blurb — fires after habit dispatch) | `covellite.md` (`stoichiometry`), `native_copper.md` (`statue_of_liberty_tail`), `native_gold.md` (`noble_tail`), `lepidocrocite.md` (`conversion_tail`) |
+| **Independent `if`-not-`elif` habit substring matches** | Multiple habit components in one habit string (e.g. `pseudomorph_sooty`) fire BOTH variants. Watch for this — easy to mis-extract as elif | `chalcocite.md` (pseudomorph + sooty) |
+| **Paired branches on a binary condition** | `if X: variant_A else: variant_B` — both always emit one of two; default branch is meaningful prose, not omission | `marcasite.md` (`dissolved_inversion` / `kept_orthorhombic`), `native_silver.md` (`tarnishing_full` / `tarnishing_early`) |
+| **Dispatch on `dominant_forms` (alloy/composition)** | Crystal carries a `dominant_forms` list; dispatch reads it for alloy variants | `native_gold.md` (`alloy_electrum` / `alloy_cuproauride`) |
+| **Habit + zone-note color tints** | Last zone's `note` string substring-matched for color variant | `smithsonite.md` (`color_apple_green` / `color_pink` / `color_blue_green`), `hematite.md` (`specular_iridescent` sub-branch on specular) |
+| **Final-color summary via `predict_color()`** | Code calls `c.predict_color()` and interpolates into a `{color}` template | `malachite.md` (`color`) |
+| **No always-shown blurb (entirely conditional)** | Some narrators have NO blurb — every emission is conditional | `calcite.md`, `goethite.md`, `pyrite.md`, `marcasite.md`, `malachite.md` |
 
-If a narrator doesn't fit any shape: it's probably the design's edge-case test. Stop, look at it carefully, and either extend the existing patterns or split the narrator (some logic stays code, some prose moves to markdown).
+If a narrator doesn't fit any shape: it's probably an edge case worth flagging. Stop, look at it carefully, and either extend the existing patterns or split the narrator (some logic stays code, some prose moves to markdown).
 
 ## The mechanical extraction recipe
 
@@ -70,29 +83,33 @@ For each species:
 
 - **JS drift catch as side effect**: azurite + aragonite JS narrators had drifted shorter than Python. With the markdown extraction, live JS now produces the longer canonical Python text via the loader; offline JS gets the shorter text via fallback. This is a feature — flagging more drifts as you go is normal and good.
 
-## Recommended sequencing for the remaining 79
+- **JS narrator gap (drift-gap fix)**: native_gold had NO `_narrate_native_gold` method on the JS class — dispatch silently produced no story. When you find a similar gap, ADD the JS method as part of the extraction commit (mirror Python's structure, read from the same markdown). See `index.html` `_narrate_native_gold` for the template.
+
+- **JS file uses `’` literal escape sequences**: The right single quote appears as the literal 6-char sequence `’` in `index.html` source, not the Unicode character itself. The Edit tool's auto-swap can fail when the surrounding text mixes em-dashes and other special chars. Workaround: do smaller surgical edits one chunk at a time when full-block replace fails.
+
+- **`{Miller indices}` literal preservation**: variants like dolomite's `saddle_rhomb` contain `{104}` as crystallographic notation. The renderer's `{(\w+)}` regex finds no `104` key in ctx, falls back to preserving `{104}` literal. Same in JS. **Don't escape these — they survive automatically.**
+
+## Recommended sequencing for the remaining 61
 
 Group by similarity to the established patterns. Order doesn't matter for correctness, only for cadence.
 
-**Carbonates remaining** (5): smithsonite, cerussite, malachite + supergene_ones if not done
+**Sulfides remaining** (~6): pyrrhotite (no narrator declared — skip until added), arsenopyrite, stibnite (no narrator declared), bismuthinite (no narrator declared), native_bismuth (no narrator declared), uraninite, acanthite, argentite
 
-**Sulfides — chalcopyrite-shape simple** (~15): galena, pyrite, marcasite, hematite, molybdenite, bornite, chalcocite, covellite, cuprite, pyrrhotite, native_copper, native_gold, native_silver, electrum, etc.
-
-**Sulfates** (~12): barite, celestine, anhydrite, gypsum/selenite, jarosite, alunite, brochantite, antlerite, chalcanthite, melanterite, scorodite, ferrimolybdite
+**Sulfates** (~12): barite, celestine, anhydrite, gypsum/selenite, jarosite, alunite, brochantite, antlerite, chalcanthite, melanterite, scorodite, ferrimolybtite
 
 **Halides** (~3): fluorite, halite, chlorargyrite
 
-**Phosphates / arsenates / vanadates** (~10): adamite, olivenite, mimetite, pyromorphite, vanadinite, descloizite, mottramite, erythrite, annabergite, torbernite, zeunerite, carnotite, apatite
+**Phosphates / arsenates / vanadates** (~10+): adamite, olivenite, mimetite, pyromorphite, vanadinite, descloizite, mottramite, erythrite, annabergite, torbernite, zeunerite, carnotite, apatite
 
-**Silicates** (~10): quartz, feldspar, albite, tourmaline, beryl, morganite/aquamarine/emerald/heliodor variants, spodumene, kunzite, chrysocolla, hemimorphite, willemite, apophyllite
+**Silicates** (~10+): quartz, feldspar, albite, tourmaline, beryl, morganite/aquamarine/emerald/heliodor variants, spodumene, kunzite, chrysocolla, hemimorphite, willemite, apophyllite
 
-**Oxides** (~5): wulfenite, magnetite, raspite, stolzite, clinobisvanite
+**Oxides remaining** (~5): wulfenite, raspite, stolzite, clinobisvanite
 
-**Special** (~6): ruby, sapphire, topaz, uraninite, acanthite, argentite
+**Special** (~6): ruby, sapphire, topaz
 
-(Counts approximate — see `data/minerals.json` for the canonical list. 89 minerals × 1 narrator each = 89 narrators total; 89 minus 10 done = 79 remaining.)
+(Counts approximate — see `data/minerals.json` for the canonical list. 89 minerals × 1 narrator each = 89 narrators total; 89 minus 28 done = 61 remaining. Some minerals lack a `_narrate_*` method even on Python — those are content gaps; flag in commit message but don't block on them.)
 
-**Suggested batch size**: 1-2 species per commit when shape is established; standalone commit for new edge cases. Don't blow past 4 in a single commit — boss prefers reviewable units.
+**Suggested batch size**: 1-3 species per commit when shape is established; standalone commit for new edge cases. Don't blow past 4 in a single commit — boss prefers reviewable units. The current pace has held steady at ~3 commits per "round" of effort.
 
 ## Verification commands (cheat sheet)
 
@@ -118,12 +135,17 @@ node tools/sync-spec.js
 
 | File | Purpose |
 |---|---|
-| `narratives/chalcopyrite.md` | Simplest reference |
+| `narratives/chalcopyrite.md` | Simplest reference (blurb + flag conditionals) |
 | `narratives/dolomite.md` | Multi-tier + `{Miller indices}` edge case |
 | `narratives/sphalerite.md` | Two-named-variants for computed branch |
+| `narratives/native_gold.md` | Most variants in one file (3 habit + 2 alloy + 2 always-emitted, total 7 variants) |
+| `narratives/native_silver.md` | Paired tarnish branches + paragenesis position note |
+| `narratives/chalcocite.md` | Independent-if habit substring matching |
+| `narratives/marcasite.md` | Paired binary-condition branches (dissolved_inversion / kept_orthorhombic) |
+| `narratives/goethite.md` | No-blurb pattern (entirely conditional) |
 | `vugg.py` (~line 248) | Python narrative loader (`_load_narrative`, `narrative_blurb`, `narrative_variant`) |
 | `vugg.py` (~14000+) | The 89 `_narrate_<species>` methods being migrated |
-| `index.html` (~line 3257) | JS narrative loader — same 3 functions, plus `_NARRATIVE_MANIFEST` and async manifest fetch |
+| `index.html` (~line 3274) | JS narrative loader — same 3 functions, plus `_NARRATIVE_MANIFEST` and async manifest fetch |
 | `index.html` (~13000+) | The 89 JS `_narrate_<species>` methods being migrated |
 
 ## Boss-confirmed design decisions (don't relitigate)
@@ -138,13 +160,17 @@ From `commit 38a78fc` discussion:
 ## Recent commit chain
 
 ```
+4bd241b  Narrative-as-data (26+27+28/89): magnetite + lepidocrocite + goethite
+bcc02bd  Narrative-as-data (23+24+25/89): native metals trio + JS narrator gap closed
+0d22b6e  Narrative-as-data (20+21+22/89): chalcocite + covellite + cuprite — Cu trio
+b4db0b9  Narrative-as-data (18+19/89): molybdenite + bornite — Cu-Mo paragenesis pair
+8e3560d  Narrative-as-data (16+17/89): marcasite + hematite — sulfide group continues
+32c11a7  Narrative-as-data (14+15/89): pyrite + galena — sulfide group begins
+dd62449  Narrative-as-data (11+12+13/89): cerussite + smithsonite + malachite — carbonate stragglers
+9a1adce  HANDOFF: narrative-as-data extraction — playbook for the next 79 species
 c551a5e  Narrative-as-data (9+10/89): siderite + rhodochrosite — carbonate group continues
 e47b7a7  Narrative-as-data (7+8/89): calcite + aragonite — carbonate group begins
 38a78fc  Narrative-as-data (5+6/89): rosasite + azurite — drift fix as side effect
-815b0d8  Narrative-as-data (4/89): dolomite — multi-branch + {Miller indices} edge case
-699c091  Narrative-as-data (3/89): aurichalcite — habit-dispatch pattern
-6597f0f  Narrative-as-data (2/89): sphalerite — validates two-named-variants design
-e308ada  Narrative-as-data proof-of-concept: chalcopyrite extracted to markdown
 ```
 
 ## Project context the next session needs
@@ -159,6 +185,8 @@ e308ada  Narrative-as-data proof-of-concept: chalcopyrite extracted to markdown
 
 1. `narratives/chalcopyrite.md` — the simplest example, see what the format looks like
 2. `narratives/dolomite.md` — the most complex example, see the edge cases
-3. `vugg.py` — search for `# NARRATIVE TEMPLATES` to find the loader, then `_narrate_chalcopyrite` to see the simplest call site
-4. `index.html` — search for `_NARRATIVE_MANIFEST` to find the JS loader, then `_narrate_chalcopyrite` for the JS call-site shape (note inline fallbacks)
-5. Pick the next species — siderite-shape sister carbonates (smithsonite, cerussite, malachite) are the natural next batch. Then move into the simple sulfide group (galena, pyrite, hematite, etc.)
+3. `narratives/native_silver.md` — most-complex extracted so far (4-way habit + paired tarnish + paragenesis position note)
+4. `narratives/goethite.md` — example of no-blurb pattern (entirely conditional)
+5. `vugg.py` — search for `# NARRATIVE TEMPLATES` to find the loader, then `_narrate_chalcopyrite` to see the simplest call site
+6. `index.html` — search for `_NARRATIVE_MANIFEST` to find the JS loader, then `_narrate_chalcopyrite` for the JS call-site shape (note inline fallbacks)
+7. Pick the next species — sulfates (barite, celestine, anhydrite, gypsum/selenite) are the natural next batch. Then halides (fluorite, halite). The `data/minerals.json` keys are the canonical species list.
