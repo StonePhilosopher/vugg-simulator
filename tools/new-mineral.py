@@ -162,7 +162,53 @@ def build_json_entry(args):
             "default_color": {"default": True},
         },
         "narrate_function": f"_narrate_{args.name}" if args.narrate else None,
-        "runtimes_present": ["vugg.py", "web/index.html"],
+        "runtimes_present": ["vugg.py", "index.html"],
+        # test_cases: spec-level test declarations. The scaffold seeds two
+        # minimal stubs (one positive gate, one ingredient block); the
+        # builder fills in real fluid loadings and rationale prose.
+        # See proposals/vugg-mineral-template.md §15 for the full schema
+        # and proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 6 for the future
+        # generic test runner that will exercise these cases.
+        "test_cases": [
+            {
+                "name": "positive_gate_hit",
+                "fluid": {
+                    # TODO: fill in fluid concentrations that satisfy
+                    # every required_ingredient + the mineral's T/pH/redox
+                    # gates. Use a typical supergene/hydrothermal loading
+                    # rather than the bare minimum (mid-range gives the
+                    # supersat formula real signal to work with).
+                    k: max(v * 4, 1) for k, v in args.required.items()
+                },
+                "T_C": (args.T_optimum[0] + args.T_optimum[1]) / 2 if args.T_optimum else 25,
+                "expects": {"sigma": ">1.0"},
+                "rationale": (
+                    f"TODO: explain why this fluid + T should produce "
+                    f"σ > 1 for {args.name} (typically: cite the gate, "
+                    f"e.g. 'Cu + U + P all above thresholds, T in window, "
+                    f"oxidizing, near-neutral pH')."
+                ),
+            },
+            {
+                "name": "missing_ingredient_blocks",
+                "fluid": {
+                    # TODO: same fluid as above but with one required
+                    # ingredient set to zero. Demonstrates the engine
+                    # respects the ingredient gate.
+                    **{k: max(v * 4, 1) for k, v in args.required.items()},
+                    next(iter(args.required.keys())): 0 if args.required else 0,
+                },
+                "T_C": (args.T_optimum[0] + args.T_optimum[1]) / 2 if args.T_optimum else 25,
+                "expects": {"sigma": "==0"},
+                "rationale": (
+                    f"TODO: explain which gate this case fails — "
+                    f"typically the ingredient hard-zero check. "
+                    f"If your mineral has a special-mechanic gate "
+                    f"(broth-ratio, anion-competition, paramorph), "
+                    f"add a third case here that violates it."
+                ),
+            },
+        ],
         "audit_status": (
             f"phase-2: scaffolded by tools/new-mineral.py. TODO: replace "
             f"this audit_status string with full citation + scenario "
@@ -547,10 +593,38 @@ index.html. Add this entry to BOTH (or use sed):
 
 ---
 
-## 3. Validate
+## 3. Fill in `test_cases` in `data/minerals.json`
+
+The scaffold seeded **two stub `test_cases`** in your mineral entry —
+a positive-gate case and a missing-ingredient case. Both have TODO
+rationale strings and synthesized fluid loadings. Replace those with
+real values:
+
+- **Case 1 (positive gate):** pick a fluid loading that's solidly
+  above all thresholds (mid-range supergene/hydrothermal numbers,
+  not the bare minimum). Compute by hand what σ should be — the
+  case should expect `">1.0"`.
+- **Case 2 (missing ingredient):** the scaffold zeroed one required
+  ingredient. Verify the rationale string names the right gate.
+- **Add Case 3 if your mineral participates in a special mechanic**
+  (broth-ratio branching, anion competition, paramorph, water-
+  solubility metastability). The third case demonstrates the
+  mechanic's gate by violating it and expecting `"sigma": "==0"`.
+
+See `proposals/vugg-mineral-template.md` §15 for the full schema and
+`proposals/TASK-BRIEF-DATA-AS-TRUTH.md` item 6 for context on the
+generic test runner that will eventually exercise these cases. Until
+that runner ships, ALSO write a per-round test file in `tests/`
+(see `tests/test_round9_broth_ratio.py` / `tests/test_round9b_anion_competition.py`
+for the current shape). The `test_cases` JSON is the durable artifact;
+the per-round file is a temporary bridge.
+
+---
+
+## 4. Validate
 
 ```bash
-python -m pytest                    # all 754 tests should pass + ~8 new ones
+python -m pytest                    # all tests should pass + ~8 new parameterized
 node tools/sync-spec.js             # 0 drift
 python -c "import vugg; print('SIM:', vugg.SIM_VERSION, 'engines:', len(vugg.MINERAL_ENGINES))"
 ```
@@ -562,10 +636,10 @@ the spec to match the engine.
 
 ---
 
-## 4. Bump SIM_VERSION + regenerate baseline (if scenario output shifts)
+## 5. Bump SIM_VERSION + regenerate baseline (if scenario output shifts)
 
 If the new mineral fires in any existing scenario, seed-42 output will
-shift. Bump SIM_VERSION in `vugg.py` + `web/index.html`, then:
+shift. Bump SIM_VERSION in `vugg.py` + `index.html`, then:
 
 ```bash
 python tests/gen_baselines.py    # captures the new seed-42 baseline
@@ -576,7 +650,7 @@ Commit with a message documenting which scenarios shifted and how.
 
 ---
 
-## 5. Delete this file when done
+## 6. Delete this file when done
 
 ```bash
 rm tools/_NEW_{name}.md
