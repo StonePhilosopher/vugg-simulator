@@ -10704,6 +10704,49 @@ def event_reactive_wall_seal(conditions: VugConditions) -> str:
             "Whatever's dissolved will precipitate until equilibrium.")
 
 
+# --- radioactive_pegmatite (generic high-T alkali-granite pocket) ---
+
+def event_radioactive_pegmatite_crystallization(conditions: VugConditions) -> str:
+    """Pegmatite melt differentiates — main crystallization pulse."""
+    conditions.temperature = 450
+    conditions.fluid.SiO2 += 3000  # late-stage silica release from melt
+    return ("The pegmatite melt differentiates. Volatile-rich residual "
+            "fluid floods the pocket. Quartz begins to grow in earnest — "
+            "large, clear crystals claiming space. Uraninite cubes "
+            "nucleate where uranium concentration is highest.")
+
+
+def event_radioactive_pegmatite_deep_time(conditions: VugConditions) -> str:
+    """Deep time — radiation accumulates, U → Pb decay quietly transmutes."""
+    conditions.temperature = 300
+    return ("Deep time passes. The uraninite sits in its cradle of "
+            "cooling rock, silently emitting alpha particles. Each decay "
+            "transmutes one atom of uranium into lead. The quartz "
+            "growing nearby doesn't know it yet, but it's darkening.")
+
+
+def event_radioactive_pegmatite_oxidizing(conditions: VugConditions) -> str:
+    """Late-stage oxidizing meteoric water enters fractures."""
+    conditions.fluid.O2 += 0.8
+    conditions.temperature = 120
+    conditions.flow_rate = 1.5
+    return ("Oxidizing meteoric fluids seep through fractures. "
+            "The reducing environment shifts. Sulfides become unstable. "
+            "The uraninite endures — it has been enduring for millions of years.")
+
+
+def event_radioactive_pegmatite_final_cooling(conditions: VugConditions) -> str:
+    """System cools to near-ambient. Note: shares the verb 'final_cooling'
+    with ouro_preto's closure — the scenario prefix prevents collision."""
+    conditions.temperature = 50
+    conditions.flow_rate = 0.1
+    return ("The system cools to near-ambient. What remains is a "
+            "pegmatite pocket: black uraninite cubes, smoky quartz "
+            "darkened by radiation, and galena crystallized from the "
+            "lead that uranium became. Time wrote this assemblage. "
+            "Chemistry just held the pen.")
+
+
 # ============================================================
 # EVENT REGISTRY
 # ============================================================
@@ -10732,6 +10775,11 @@ EVENT_REGISTRY = {
     "reactive_wall_acid_pulse_2": event_reactive_wall_acid_pulse_2,
     "reactive_wall_acid_pulse_3": event_reactive_wall_acid_pulse_3,
     "reactive_wall_seal": event_reactive_wall_seal,
+    # Phase 2 — radioactive_pegmatite
+    "radioactive_pegmatite_crystallization": event_radioactive_pegmatite_crystallization,
+    "radioactive_pegmatite_deep_time": event_radioactive_pegmatite_deep_time,
+    "radioactive_pegmatite_oxidizing": event_radioactive_pegmatite_oxidizing,
+    "radioactive_pegmatite_final_cooling": event_radioactive_pegmatite_final_cooling,
 }
 
 
@@ -10838,81 +10886,6 @@ _JSON5_SCENARIOS = _load_scenarios_json5()
 #  above. The nine remaining scenarios with inline event closures stay
 #  in-code below pending Phase 2 migration.)
 
-
-def scenario_radioactive_pegmatite() -> Tuple[VugConditions, List[Event], int]:
-    """Radioactive pegmatite — high-T alkali granite pocket.
-
-    Generic testing scenario — not anchored to a real locality (per the
-    user's clarification on the audit brief). Pegmatitic fluids are
-    silica-saturated melts with abundant K+Na+Al+U. Grows uraninite,
-    smoky quartz (from radiation), feldspar/albite, and late-stage
-    galena from radiogenic Pb. Already declared in web/; ported to
-    vugg.py so uraninite / feldspar / albite actually nucleate.
-
-    Audit gap-fill (Apr 2026): Mg=5 added — brief-required non-zero
-    Mg baseline. Pegmatite pocket fluids are Mg-poor (Mg partitions
-    into outer-shell biotite/chlorite during pegmatite differentiation),
-    matches the gem_pegmatite scenario's Mg=5 abstraction.
-    """
-    conditions = VugConditions(
-        temperature=600.0,
-        pressure=2.0,
-        fluid=FluidChemistry(
-            SiO2=12000, Ca=50, CO3=20, Fe=60, Mn=8,
-            S=40, F=25, U=150, Pb=30,
-            K=80, Na=50, Al=30,
-            # Classic pegmatite-defining trace indicators — no current
-            # mineral consumes them, but the narrator reads them as
-            # beryl/spodumene/tourmaline/apatite country.
-            Be=20, Li=40, B=25, P=8,
-            # Audit gap-fill (Apr 2026): brief-required non-zero Mg.
-            # Pegmatite-pocket appropriate low value matching
-            # gem_pegmatite's Mg=5.
-            Mg=5,
-            O2=0.0, pH=6.5, salinity=8.0,
-        ),
-        # Pegmatite pocket — 4 primaries form a fracture-controlled
-        # cavity, 5 secondaries add modest alcoves.
-        wall=VugWall(primary_bubbles=4, secondary_bubbles=5, shape_seed=6),
-    )
-
-    def ev_pegmatite_crystallization(cond):
-        cond.temperature = 450
-        cond.fluid.SiO2 += 3000
-        return ("The pegmatite melt differentiates. Volatile-rich residual "
-                "fluid floods the pocket. Quartz begins to grow in earnest. "
-                "Uraninite cubes nucleate where uranium is concentrated.")
-
-    def ev_deep_time(cond):
-        cond.temperature = 300
-        return ("Deep time passes. The uraninite sits in its cradle of "
-                "cooling rock, silently emitting alpha particles. Each decay "
-                "transmutes one atom of uranium into lead. The quartz "
-                "growing nearby doesn't know it yet, but it's darkening.")
-
-    def ev_oxidizing(cond):
-        cond.fluid.O2 += 0.8
-        cond.temperature = 120
-        cond.flow_rate = 1.5
-        return ("Oxidizing meteoric fluids seep through fractures. "
-                "The reducing environment shifts. Sulfides become unstable. "
-                "The uraninite endures — it has been enduring for millions of years.")
-
-    def ev_final_cooling(cond):
-        cond.temperature = 50
-        cond.flow_rate = 0.1
-        return ("The system cools to near-ambient. What remains is a "
-                "pegmatite pocket: black uraninite cubes, smoky quartz "
-                "darkened by radiation, galena crystallized from the lead "
-                "that uranium became. Time wrote this assemblage.")
-
-    events = [
-        Event(20, "Pegmatite Crystallization", "Main crystallization pulse", ev_pegmatite_crystallization),
-        Event(50, "Deep Time", "Eons pass — radiation accumulates", ev_deep_time),
-        Event(80, "Oxidizing Fluids", "Late-stage meteoric water", ev_oxidizing),
-        Event(100, "Final Cooling", "System approaches ambient", ev_final_cooling),
-    ]
-    return conditions, events, 120
 
 
 def scenario_supergene_oxidation() -> Tuple[VugConditions, List[Event], int]:
@@ -12341,7 +12314,7 @@ SCENARIOS = {
     # Legacy in-code scenarios (Phase 2 migration target — they have inline
     # event closures that need promotion to module-level handlers first).
     "reactive_wall": _JSON5_SCENARIOS["reactive_wall"],
-    "radioactive_pegmatite": scenario_radioactive_pegmatite,
+    "radioactive_pegmatite": _JSON5_SCENARIOS["radioactive_pegmatite"],
     "supergene_oxidation": scenario_supergene_oxidation,
     "ouro_preto": scenario_ouro_preto,
     "gem_pegmatite": scenario_gem_pegmatite,

@@ -10827,6 +10827,31 @@ function event_reactive_wall_seal(c) {
   return 'The feeding fracture seals. Flow stops. The vug becomes a closed system. Whatever\'s dissolved will precipitate until equilibrium.';
 }
 
+// --- radioactive_pegmatite ---
+function event_radioactive_pegmatite_crystallization(c) {
+  c.temperature = 450;
+  c.fluid.SiO2 += 3000; // late-stage silica release from melt
+  return 'The pegmatite melt differentiates. Volatile-rich residual fluid floods the pocket. Quartz begins to grow in earnest — large, clear crystals claiming space. Uraninite cubes nucleate where uranium concentration is highest.';
+}
+
+function event_radioactive_pegmatite_deep_time(c) {
+  c.temperature = 300;
+  return 'Deep time passes. The uraninite sits in its cradle of cooling rock, silently emitting alpha particles. Each decay transmutes one atom of uranium into lead. The quartz growing nearby doesn\'t know it yet, but it\'s darkening.';
+}
+
+function event_radioactive_pegmatite_oxidizing(c) {
+  c.fluid.O2 += 0.8;
+  c.temperature = 120;
+  c.flow_rate = 1.5;
+  return 'Oxidizing meteoric fluids seep through fractures. The reducing environment shifts. Sulfides become unstable. The uraninite endures — it has been enduring for millions of years.';
+}
+
+function event_radioactive_pegmatite_final_cooling(c) {
+  c.temperature = 50;
+  c.flow_rate = 0.1;
+  return 'The system cools to near-ambient. What remains is a pegmatite pocket: black uraninite cubes, smoky quartz darkened by radiation, and galena crystallized from the lead that uranium became. Time wrote this assemblage. Chemistry just held the pen.';
+}
+
 // ============================================================
 // EVENT REGISTRY + SCENARIO LOADER (data/scenarios.json5)
 // ============================================================
@@ -10855,6 +10880,11 @@ const EVENT_REGISTRY = {
   reactive_wall_acid_pulse_2: event_reactive_wall_acid_pulse_2,
   reactive_wall_acid_pulse_3: event_reactive_wall_acid_pulse_3,
   reactive_wall_seal: event_reactive_wall_seal,
+  // Phase 2 — radioactive_pegmatite
+  radioactive_pegmatite_crystallization: event_radioactive_pegmatite_crystallization,
+  radioactive_pegmatite_deep_time: event_radioactive_pegmatite_deep_time,
+  radioactive_pegmatite_oxidizing: event_radioactive_pegmatite_oxidizing,
+  radioactive_pegmatite_final_cooling: event_radioactive_pegmatite_final_cooling,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and
@@ -10935,51 +10965,6 @@ async function _loadScenariosJSON5() {
 // module-level handlers before they can move to data/scenarios.json5.
 // scenario_random opts out entirely — it's RNG-driven generative.
 
-
-function scenario_radioactive_pegmatite() {
-  // Pegmatitic fluids are silica-saturated melts — SiO2 must be well above
-  // equilibrium (eq at 600°C ≈ 6000 ppm in our model). Real pegmatites
-  // have extreme silica activity. U and Pb for uraninite + galena.
-  const conditions = new VugConditions({
-    temperature: 600.0, pressure: 2.0,
-    fluid: new FluidChemistry({
-      SiO2: 12000, Ca: 50, CO3: 20, Fe: 60, Mn: 8,
-      Zn: 0, S: 40, F: 25, Cu: 0, U: 150, Pb: 30,
-      K: 80, Na: 50, Al: 30,
-      // Classic pegmatite-defining trace indicators — no current
-      // mineral consumes them, but the narrator reads them as
-      // beryl/spodumene/tourmaline/apatite country.
-      Be: 20, Li: 40, B: 25, P: 8,
-      Mg: 5,            // audit gap-fill: brief-required non-zero Mg (pegmatite-pocket low value)
-      O2: 0, pH: 6.5, salinity: 8.0
-    }),
-    // Pegmatite pockets are fracture-controlled — n=2 "slot" profile.
-    wall: new VugWall({ primary_bubbles: 4, secondary_bubbles: 5, shape_seed: 6 }),
-  });
-  const events = [
-    { step: 20, name: 'Pegmatite Crystallization', description: 'Main crystallization pulse', apply_fn: (cond) => {
-      cond.temperature = 450;
-      cond.fluid.SiO2 += 3000; // late-stage silica release from melt
-      return 'The pegmatite melt differentiates. Volatile-rich residual fluid floods the pocket. Quartz begins to grow in earnest — large, clear crystals claiming space. Uraninite cubes nucleate where uranium concentration is highest.';
-    }},
-    { step: 50, name: 'Deep Time', description: 'Eons pass — radiation accumulates', apply_fn: (cond) => {
-      cond.temperature = 300;
-      return 'Deep time passes. The uraninite sits in its cradle of cooling rock, silently emitting alpha particles. Each decay transmutes one atom of uranium into lead. The quartz growing nearby doesn\'t know it yet, but it\'s darkening.';
-    }},
-    { step: 80, name: 'Oxidizing Fluids', description: 'Late-stage meteoric water', apply_fn: (cond) => {
-      cond.fluid.O2 += 0.8;
-      cond.temperature = 120;
-      cond.flow_rate = 1.5;
-      return 'Oxidizing meteoric fluids seep through fractures. The reducing environment shifts. Sulfides become unstable. The uraninite endures — it has been enduring for millions of years.';
-    }},
-    { step: 100, name: 'Final Cooling', description: 'System approaches ambient', apply_fn: (cond) => {
-      cond.temperature = 50;
-      cond.flow_rate = 0.1;
-      return 'The system cools to near-ambient. What remains is a pegmatite pocket: black uraninite cubes, smoky quartz darkened by radiation, and galena crystallized from the lead that uranium became. Time wrote this assemblage. Chemistry just held the pen.';
-    }},
-  ];
-  return { conditions, events, defaultSteps: 120 };
-}
 
 // Supergene oxidation scenario — mirrors vugg.py scenario_supergene_oxidation
 // (low-T Pb+Mo+Zn+As+Cu oxidation zone; produces wulfenite + smithsonite +
@@ -11473,14 +11458,13 @@ function scenario_sabkha_dolomitization() {
 // _loadScenariosJSON5() once data/scenarios.json5 fetches. `let` so the
 // loader can mutate the object in place.
 let SCENARIOS = {
-  radioactive_pegmatite: scenario_radioactive_pegmatite,
   supergene_oxidation: scenario_supergene_oxidation,
   ouro_preto: scenario_ouro_preto,
   gem_pegmatite: scenario_gem_pegmatite,
   bisbee: scenario_bisbee,
   deccan_zeolite: scenario_deccan_zeolite,
   sabkha_dolomitization: scenario_sabkha_dolomitization,
-  // reactive_wall, marble_contact_metamorphism — populated by _loadScenariosJSON5() from data/scenarios.json5 (Phase 2)
+  // radioactive_pegmatite, reactive_wall, marble_contact_metamorphism — populated by _loadScenariosJSON5() from data/scenarios.json5 (Phase 2)
 };
 
 // Kick off the JSON5 fetch. Failure logs a warning (Phase 1 scenarios won't

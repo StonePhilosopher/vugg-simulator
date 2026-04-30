@@ -44,7 +44,7 @@
 // =============================================================
 {
   "$schema_version": "1.0.0",
-  "$last_updated": "2026-04-30 (Phase 2: marble + reactive_wall migrated)",
+  "$last_updated": "2026-04-30 (Phase 2: marble + reactive_wall + radioactive_pegmatite migrated)",
   "scenarios": {
 
     "cooling": {
@@ -499,6 +499,68 @@
         "Leach et al. 2010 — MVT genesis review",
         "Anderson & Macqueen 1982 — MVT mineralogy review",
         "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
+      ]
+    },
+
+    "radioactive_pegmatite": {
+      "anchor": "(generic high-T alkali-granite pocket — not anchored to a specific locality)",
+      "description": "High-T pegmatitic fluid + U + Pb. Grows uraninite, smoky quartz (darkened by radiation), feldspar/albite, and late-stage galena from radiogenic Pb.",
+      "duration_steps": 120,
+      "notes": [
+        "Generic testing scenario — not anchored to a real locality (per the user's clarification on the audit brief). Pegmatitic fluids are silica-saturated melts with abundant K + Na + Al + U.",
+        "Mechanic: 4-event lifecycle. Crystallization pulse (step 20): main quartz + uraninite growth. Deep time (step 50): radiation slowly transmutes U → Pb, darkens nearby quartz. Oxidizing meteoric water (step 80): late-stage fracture flow brings O2; sulfides destabilize but uraninite endures. Final cooling (step 100): system approaches ambient, galena precipitates from the radiogenic Pb.",
+        "Audit gap-fill (Apr 2026): Mg=5 — brief-required non-zero Mg baseline. Pegmatite pocket fluids are Mg-poor (Mg partitions into outer-shell biotite/chlorite during pegmatite differentiation), matches the gem_pegmatite scenario's Mg=5 abstraction."
+      ],
+      "initial": {
+        // T=600C, P=2.0 kbar: pegmatite pocket conditions before
+        // residual-fluid differentiation pulse drops it to 450C.
+        "temperature_C": 600.0,
+        "pressure_kbar": 2.0,
+        "fluid": {
+          // Pegmatitic fluids are silica-saturated melts — SiO2 must
+          // be well above equilibrium (eq at 600C ~6000 ppm in our
+          // model). Real pegmatites have extreme silica activity.
+          "SiO2": 12000,
+          "Ca": 50,
+          "CO3": 20,
+          "Fe": 60,
+          "Mn": 8,
+          "S": 40,
+          "F": 25,
+          "U": 150,   // primary uraninite source
+          "Pb": 30,   // radiogenic Pb seed; grows over event timeline
+          "K": 80,
+          "Na": 50,
+          "Al": 30,
+          // Classic pegmatite-defining trace indicators — no current
+          // mineral consumes them, but the narrator reads them as
+          // beryl/spodumene/tourmaline/apatite country.
+          "Be": 20,
+          "Li": 40,
+          "B": 25,
+          "P": 8,
+          // Audit gap-fill: brief-required non-zero Mg (pegmatite-pocket low value).
+          "Mg": 5,
+          "O2": 0.0,
+          "pH": 6.5,
+          "salinity": 8.0
+        },
+        // Pegmatite pocket — fracture-controlled cavity, n=2 "slot" profile
+        // (4 primaries + 5 secondaries).
+        "wall": {
+          "primary_bubbles": 4,
+          "secondary_bubbles": 5,
+          "shape_seed": 6
+        }
+      },
+      "events": [
+        { "step": 20,  "type": "radioactive_pegmatite_crystallization", "name": "Pegmatite Crystallization", "description": "Main crystallization pulse" },
+        { "step": 50,  "type": "radioactive_pegmatite_deep_time",       "name": "Deep Time",                  "description": "Eons pass — radiation accumulates" },
+        { "step": 80,  "type": "radioactive_pegmatite_oxidizing",       "name": "Oxidizing Fluids",           "description": "Late-stage meteoric water" },
+        { "step": 100, "type": "radioactive_pegmatite_final_cooling",   "name": "Final Cooling",              "description": "System approaches ambient" }
+      ],
+      "sources": [
+        "(generic testing scenario — no published source)"
       ]
     }
 
