@@ -45,6 +45,36 @@ The four placeholders just populated (arsenopyrite 0.01, native_silver 0.05, arg
 
 ---
 
+## 🧱 Data-as-truth Phase 2 — infrastructure follow-ups
+
+Phase 1 (commit `2feb338`) and Phase 2 (commits `69f8acb..ce3dd5a`) migrated all 13 declarative scenarios + ~50 inline event closures to `data/scenarios.json5` + module-level handlers in `EVENT_REGISTRY`. The following items were noted in the Phase 2 handoff doc (`proposals/HANDOFF-DATA-AS-TRUTH-PHASE-2.md`) as out-of-scope for the migration itself but worth filing.
+
+### `tools/sync-spec.js` Check 7 — cross-runtime EVENT_REGISTRY parity
+
+**Why:** every event-type string in `data/scenarios.json5` must be registered in BOTH `vugg.py` and `index.html` `EVENT_REGISTRY`. Today the JSON5 loader validates each runtime against the spec at import/fetch time (loud failure if a referenced type is missing), but no cross-runtime check guarantees Python and JS register identical key sets. A missing/typo'd key on one side is caught only when that scenario is actually run in that runtime.
+
+**What to build:** add Check 7 to `tools/sync-spec.js` — parse `EVENT_REGISTRY = {...}` literal from both `vugg.py` and `index.html` and assert identical key sets. Same idea as the existing mineral drift checks (Checks 1-6), just over the event-handler dimension.
+
+**Effort:** small. The key-set extraction is regex-tractable (the registry is a contiguous dict literal in both files, with one key per line in the Phase 2 layout).
+
+### `runSimulation` async-load guard (JS-only)
+
+**Why:** JS loads `data/scenarios.json5` asynchronously via `_loadScenariosJSON5()`. After page reload, if the user clicks "Run" before the fetch completes, `SCENARIOS[scenarioName]` is undefined and `runSimulation` throws `Cannot read properties of undefined (reading 'temperature')`. Edge case in normal use (the fetch is fast on localhost), but reproducible on slow connections or first cold load. Phase 2 made every scenario JSON5-loaded, so this affects all 13 scenarios now, not just the original 4 from Phase 1.
+
+**What to build:** in `runSimulation`, gate scenario execution on `_scenariosJson5Ready === true`. If not ready, show a "loading scenarios..." status message and either retry or block the click. Or — simpler — disable the Run button until ready and re-enable on fetch completion.
+
+**Effort:** small.
+
+### `scenario_random` JS-side parity gap
+
+**Why:** Python has `scenario_random()` (in `vugg.py`); JS doesn't. JS exposes a "Random Vugg" button on the title screen that does its own thing (`index.html` ~line 16470). Pre-existing intentional drift, not introduced by Phase 2 — but now that all 13 declarative scenarios are unified through JSON5, `scenario_random` is the only remaining procedural divergence between the two runtimes. Worth either reconciling (port the Python scenario_random into JS so `SCENARIOS.random` works in both) or formally documenting the asymmetry in `ARCHITECTURE.md`.
+
+**Effort:** medium if porting. Python's `scenario_random` is ~200 lines of archetype dispatch + per-archetype fluid construction. The JS title-screen Random Vugg uses a different (simpler) generative model. Reconciling them = pick one, port to the other side.
+
+**Sequencing:** none of these block. File and pick up when convenient.
+
+---
+
 ## 🎛️ Creative mode — controls expansion
 
 The Creative mode setup panel currently exposes ~30 FluidChemistry sliders + temperature + pressure + new wall reactivity. These items extend the player's control over the rest of the wall + fluid surface.
