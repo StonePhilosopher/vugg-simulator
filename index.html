@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -14221,45 +14221,49 @@ class VugSimulator {
   }
 
   _narrate_malachite(c) {
+    // Prose lives in narratives/malachite.md.
     const parts = [`Malachite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
     if (c.position.includes('chalcopyrite')) {
-      parts.push('It nucleated directly on chalcopyrite — the classic oxidation paragenesis. As oxygenated water attacked the copper sulfide, Cu²⁺ combined with carbonate to form malachite. This is the green stain that led ancient prospectors to copper deposits.');
+      parts.push(narrative_variant('malachite', 'on_chalcopyrite') || 'It nucleated directly on chalcopyrite — the classic oxidation paragenesis. As oxygenated water attacked the copper sulfide, Cu²⁺ combined with carbonate to form malachite. This is the green stain that led ancient prospectors to copper deposits.');
     }
     if (c.habit === 'banded') {
-      parts.push('The crystal developed the famous banded texture — concentric layers of alternating light and dark green, prized in decorative stonework since the Bronze Age.');
+      parts.push(narrative_variant('malachite', 'banded') || 'The crystal developed the famous banded texture — concentric layers of alternating light and dark green, prized in decorative stonework since the Bronze Age.');
     } else if (c.habit === 'botryoidal') {
-      parts.push('Botryoidal habit — smooth, rounded green masses. Cross-sections would reveal concentric banding.');
+      parts.push(narrative_variant('malachite', 'botryoidal') || 'Botryoidal habit — smooth, rounded green masses. Cross-sections would reveal concentric banding.');
     } else if (c.habit === 'fibrous/acicular') {
-      parts.push('Rapid growth produced fibrous, acicular malachite — sprays of needle-like green crystals radiating from nucleation points.');
+      parts.push(narrative_variant('malachite', 'fibrous_acicular') || 'Rapid growth produced fibrous, acicular malachite — sprays of needle-like green crystals radiating from nucleation points.');
     }
-    if (c.dissolved) parts.push('Acid attack dissolved some malachite — it fizzes in acid like calcite, releasing Cu²⁺ and CO₂.');
-    return parts.join(' ');
+    if (c.dissolved) parts.push(narrative_variant('malachite', 'acid_dissolution') || 'Acid attack dissolved some malachite — it fizzes in acid like calcite, releasing Cu²⁺ and CO₂.');
+    const color = c.predict_color ? c.predict_color() : '';
+    if (color) parts.push(narrative_variant('malachite', 'color', { color }) || `Color: ${color}.`);
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_smithsonite(c) {
+    // Prose lives in narratives/smithsonite.md.
     const parts = [`Smithsonite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push(narrative_blurb('smithsonite'));
     if (c.position.includes('sphalerite')) {
       const oxidized = c.position.includes('oxidized');
       if (oxidized) {
-        parts.push('It nucleated directly on oxidized sphalerite — the classic supergene paragenesis. As oxygenated groundwater destroyed the zinc sulfide, liberated Zn²⁺ combined with carbonate to precipitate smithsonite. The grape-like clusters grew from the corpse of the sphalerite that donated its zinc.');
+        parts.push(narrative_variant('smithsonite', 'on_sphalerite_oxidized') || 'It nucleated directly on oxidized sphalerite — the classic supergene paragenesis. As oxygenated groundwater destroyed the zinc sulfide, liberated Zn²⁺ combined with carbonate to precipitate smithsonite. The grape-like clusters grew from the corpse of the sphalerite that donated its zinc.');
       } else {
-        parts.push('It nucleated on sphalerite, the zinc source mineral. Smithsonite is the oxidized alter ego of sphalerite — same zinc, different anion, different world.');
+        parts.push(narrative_variant('smithsonite', 'on_sphalerite_fresh') || 'It nucleated on sphalerite, the zinc source mineral. Smithsonite is the oxidized alter ego of sphalerite — same zinc, different anion, different world.');
       }
     }
     if (c.habit === 'botryoidal' || c.habit === 'botryoidal/stalactitic') {
-      parts.push('Botryoidal habit — grape-like clusters of rounded, bubbly masses. Cross-sections reveal concentric growth banding like tiny onions.');
+      parts.push(narrative_variant('smithsonite', 'botryoidal') || 'Botryoidal habit — grape-like clusters of rounded, bubbly masses. Cross-sections reveal concentric growth banding like tiny onions.');
     } else if (c.habit === 'rhombohedral') {
-      parts.push('Rhombohedral crystals with curved, pearly faces — the "dry bone" ore that frustrated miners who mistook it for calcite.');
+      parts.push(narrative_variant('smithsonite', 'rhombohedral') || 'Rhombohedral crystals with curved, pearly faces — the "dry bone" ore that frustrated miners who mistook it for calcite.');
     }
-    // Check for color from last zone
     const lastZone = c.zones.length ? c.zones[c.zones.length - 1] : null;
     if (lastZone && lastZone.note) {
-      if (lastZone.note.includes('apple-green')) parts.push('Copper impurities give it an apple-green color — smithsonite is a chameleon, its color entirely dependent on trace chemistry.');
-      else if (lastZone.note.includes('pink')) parts.push('Manganese impurities lend a rare pink color — among the most prized smithsonite varieties.');
-      else if (lastZone.note.includes('blue-green')) parts.push('A blue-green translucence that collectors prize — the kelly green of Tsumeb, the turquoise of Lavrion.');
+      if (lastZone.note.includes('apple-green')) parts.push(narrative_variant('smithsonite', 'color_apple_green') || 'Copper impurities give it an apple-green color — smithsonite is a chameleon, its color entirely dependent on trace chemistry.');
+      else if (lastZone.note.includes('pink')) parts.push(narrative_variant('smithsonite', 'color_pink') || 'Manganese impurities lend a rare pink color — among the most prized smithsonite varieties.');
+      else if (lastZone.note.includes('blue-green')) parts.push(narrative_variant('smithsonite', 'color_blue_green') || 'A blue-green translucence that collectors prize — the kelly green of Tsumeb, the turquoise of Lavrion.');
     }
-    if (c.dissolved) parts.push('Acid attack dissolved some of the smithsonite — it fizzes in hydrochloric acid, a quick field test to distinguish it from prehnite or hemimorphite.');
-    return parts.join(' ');
+    if (c.dissolved) parts.push(narrative_variant('smithsonite', 'acid_dissolution') || 'Acid attack dissolved some of the smithsonite — it fizzes in hydrochloric acid, a quick field test to distinguish it from prehnite or hemimorphite.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_wulfenite(c) {
@@ -14625,18 +14629,19 @@ class VugSimulator {
   }
 
   _narrate_cerussite(c) {
+    // Prose lives in narratives/cerussite.md.
     const parts = [`Cerussite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("PbCO₃ — orthorhombic lead carbonate. Water-clear with adamantine luster and extreme birefringence — a thin slice doubles every image behind it. Final stable product of the lead oxidation sequence in carbonate-rich water. The Latin name 'cerussa' means 'white lead', a pigment used since antiquity (and poisonous — painters\u2019 death).");
+    parts.push(narrative_blurb('cerussite') || "PbCO₃ — orthorhombic lead carbonate. Water-clear with adamantine luster and extreme birefringence — a thin slice doubles every image behind it. Final stable product of the lead oxidation sequence in carbonate-rich water. The Latin name 'cerussa' means 'white lead', a pigment used since antiquity (and poisonous — painters\u2019 death).");
     if (c.twinned && (c.twin_law || '').includes('sixling')) {
-      parts.push('Six-ray stellate cyclic twin — three individuals intergrown at 120° on {110}. Among mineralogy\u2019s most iconic forms; a sharp cerussite star commands four-figure prices at a show. This twin happened because growth ran at moderate supersaturation for a sustained window — fast enough to initiate the twin, slow enough to let it develop cleanly.');
+      parts.push(narrative_variant('cerussite', 'sixling_twin') || 'Six-ray stellate cyclic twin — three individuals intergrown at 120° on {110}. Among mineralogy\u2019s most iconic forms; a sharp cerussite star commands four-figure prices at a show. This twin happened because growth ran at moderate supersaturation for a sustained window — fast enough to initiate the twin, slow enough to let it develop cleanly.');
     }
     if ((c.position || '').includes('galena')) {
-      parts.push('Pseudomorphs after galena — the cube outline survives as cerussite precipitates into it. Occasionally galena relics persist inside, slowly oxidizing.');
+      parts.push(narrative_variant('cerussite', 'on_galena') || 'Pseudomorphs after galena — the cube outline survives as cerussite precipitates into it. Occasionally galena relics persist inside, slowly oxidizing.');
     }
     if (c.dissolved) {
-      parts.push('Acid dissolution — cerussite is a carbonate and fizzes in acid just like calcite: PbCO₃ + 2H⁺ → Pb²⁺ + H₂O + CO₂. Any released Pb may find pyromorphite or vanadinite if P or V is available.');
+      parts.push(narrative_variant('cerussite', 'acid_dissolution') || 'Acid dissolution — cerussite is a carbonate and fizzes in acid just like calcite: PbCO₃ + 2H⁺ → Pb²⁺ + H₂O + CO₂. Any released Pb may find pyromorphite or vanadinite if P or V is available.');
     }
-    return parts.join(' ');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_pyromorphite(c) {

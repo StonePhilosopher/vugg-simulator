@@ -15585,50 +15585,33 @@ class VugSimulator:
         return " ".join(parts)
     
     def _narrate_malachite(self, c: Crystal) -> str:
-        """Narrate a malachite crystal's story."""
+        """Narrate a malachite crystal's story.
+
+        Prose lives in narratives/malachite.md. Code dispatches paragenesis
+        (on_chalcopyrite), 3-way habit (banded / botryoidal / fibrous_acicular),
+        dissolved, and final color summary (predict_color() result interpolates
+        into the {color} variant).
+        """
         parts = [f"Malachite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        
-        # Check paragenesis — did it grow on chalcopyrite?
-        if "chalcopyrite" in c.position:
-            parts.append(
-                "It nucleated directly on chalcopyrite — the classic oxidation "
-                "paragenesis. As oxygenated water attacked the copper sulfide, "
-                "Cu²⁺ was liberated and combined with carbonate to form malachite. "
-                "This is the green stain that led ancient prospectors to copper deposits."
-            )
-        
+
+        if "chalcopyrite" in (c.position or ""):
+            parts.append(narrative_variant("malachite", "on_chalcopyrite"))
+
         if c.habit == "banded":
-            parts.append(
-                "The crystal developed the famous banded texture — concentric layers "
-                "of alternating light and dark green, each band recording a pulse of "
-                "growth. This is the texture prized in decorative stonework since "
-                "the Bronze Age, from Russian palaces to Egyptian amulets."
-            )
+            parts.append(narrative_variant("malachite", "banded"))
         elif c.habit == "botryoidal":
-            parts.append(
-                "Botryoidal habit — smooth, rounded green masses that gleam like "
-                "polished jade. Cross-sections would reveal concentric banding."
-            )
+            parts.append(narrative_variant("malachite", "botryoidal"))
         elif c.habit == "fibrous/acicular":
-            parts.append(
-                "Rapid growth produced fibrous, acicular malachite — sprays of "
-                "needle-like green crystals radiating from nucleation points. "
-                "Delicate and sparkling, a different beauty from the massive variety."
-            )
-        
+            parts.append(narrative_variant("malachite", "fibrous_acicular"))
+
         if c.dissolved:
-            parts.append(
-                "Acid attack dissolved some malachite — it fizzes in acid like "
-                "calcite, releasing Cu²⁺ and CO₂. The green stain on the fingers "
-                "of anyone who handles it with acidic sweat."
-            )
-        
-        # Color summary
+            parts.append(narrative_variant("malachite", "acid_dissolution"))
+
         color = c.predict_color()
         if color:
-            parts.append(f"Color: {color}.")
+            parts.append(narrative_variant("malachite", "color", color=color))
 
-        return " ".join(parts)
+        return " ".join(p for p in parts if p)
 
     def _narrate_goethite(self, c: Crystal) -> str:
         """Narrate a goethite crystal's story — the ghost mineral, now real."""
@@ -15766,36 +15749,42 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_smithsonite(self, c: Crystal) -> str:
-        """Narrate a smithsonite crystal's story — sphalerite's carbonate heir."""
+        """Narrate a smithsonite crystal's story — sphalerite's carbonate heir.
+
+        Prose lives in narratives/smithsonite.md. Code dispatches blurb +
+        sphalerite paragenesis (with oxidized sub-branch), habit (botryoidal /
+        rhombohedral), zone-note color tints, and dissolved. Drift consolidation:
+        Python dispatcher gains rhombohedral + zone-note color branches that
+        the JS side already had.
+        """
         parts = [f"Smithsonite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(narrative_blurb("smithsonite"))
 
-        parts.append(
-            "ZnCO₃ — the supergene zinc carbonate, the oxidation product of "
-            "sphalerite. Named for James Smithson, who left his fortune to "
-            "found the Smithsonian."
-        )
+        if "sphalerite" in (c.position or ""):
+            if "oxidized" in c.position:
+                parts.append(narrative_variant("smithsonite", "on_sphalerite_oxidized"))
+            else:
+                parts.append(narrative_variant("smithsonite", "on_sphalerite_fresh"))
 
-        if "sphalerite" in c.position:
-            parts.append(
-                "It grew directly on dissolving sphalerite — the classic "
-                "oxidation-zone replacement. Zn²⁺ from the sulfide met CO₃²⁻ "
-                "from percolating carbonated water."
-            )
+        if "botryoidal" in (c.habit or ""):
+            parts.append(narrative_variant("smithsonite", "botryoidal"))
+        elif c.habit == "rhombohedral":
+            parts.append(narrative_variant("smithsonite", "rhombohedral"))
 
-        if "botryoidal" in c.habit:
-            parts.append(
-                "Built up in grape-like botryoidal masses — the habit that makes "
-                "smithsonite a collector's mineral. Turquoise-blue (Cu-bearing) "
-                "or apple-green varieties are the most prized."
-            )
+        last_zone = c.zones[-1] if c.zones else None
+        last_note = getattr(last_zone, "note", "") if last_zone else ""
+        if last_note:
+            if "apple-green" in last_note:
+                parts.append(narrative_variant("smithsonite", "color_apple_green"))
+            elif "pink" in last_note:
+                parts.append(narrative_variant("smithsonite", "color_pink"))
+            elif "blue-green" in last_note:
+                parts.append(narrative_variant("smithsonite", "color_blue_green"))
 
         if c.dissolved:
-            parts.append(
-                "Acid attack dissolved smithsonite — like calcite, it fizzes "
-                "as a carbonate and releases Zn²⁺ back to the fluid."
-            )
+            parts.append(narrative_variant("smithsonite", "acid_dissolution"))
 
-        return " ".join(parts)
+        return " ".join(p for p in parts if p)
 
     def _narrate_wulfenite(self, c: Crystal) -> str:
         """Narrate a wulfenite crystal's story — the sunset caught in stone."""
@@ -17444,40 +17433,20 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_cerussite(self, c: Crystal) -> str:
-        """Narrate a cerussite crystal — the star-twin lead carbonate."""
+        """Narrate a cerussite crystal — the star-twin lead carbonate.
+
+        Prose lives in narratives/cerussite.md. Code dispatches blurb +
+        flag conditionals (sixling twin, galena paragenesis, dissolved).
+        """
         parts = [f"Cerussite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "PbCO₃ — orthorhombic lead carbonate. Water-clear with "
-            "adamantine luster and extreme birefringence — a thin "
-            "slice doubles every image behind it. Final stable product "
-            "of the lead oxidation sequence in carbonate-rich water. "
-            "The Latin name 'cerussa' means 'white lead', a pigment "
-            "used since antiquity (and poisonous — painters' death)."
-        )
+        parts.append(narrative_blurb("cerussite"))
         if c.twinned and "sixling" in (c.twin_law or ""):
-            parts.append(
-                "Six-ray stellate cyclic twin — three individuals "
-                "intergrown at 120° on {110}. Among mineralogy's most "
-                "iconic forms; a sharp cerussite star commands four-"
-                "figure prices at a show. This twin happened because "
-                "growth ran at moderate supersaturation for a sustained "
-                "window — fast enough to initiate the twin, slow enough "
-                "to let it develop cleanly."
-            )
+            parts.append(narrative_variant("cerussite", "sixling_twin"))
         if "galena" in (c.position or ""):
-            parts.append(
-                "Pseudomorphs after galena — the cube outline survives "
-                "as cerussite precipitates into it. Occasionally "
-                "galena relics persist inside, slowly oxidizing."
-            )
+            parts.append(narrative_variant("cerussite", "on_galena"))
         if c.dissolved:
-            parts.append(
-                "Acid dissolution — cerussite is a carbonate and fizzes "
-                "in acid just like calcite: PbCO₃ + 2H⁺ → Pb²⁺ + H₂O "
-                "+ CO₂. Any released Pb may find pyromorphite or "
-                "vanadinite if P or V is available."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("cerussite", "acid_dissolution"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_pyromorphite(self, c: Crystal) -> str:
         """Narrate a pyromorphite crystal — the phosphate lead apatite."""
