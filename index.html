@@ -10792,6 +10792,41 @@ function event_marble_fracture_seal(c) {
   return "The feeding fracture seals. The Mogok pocket is now a closed system. Whatever corundum family crystals are still undersaturated will continue to consume the remaining Al pool until equilibrium. Everything else is frozen.";
 }
 
+// --- reactive_wall ---
+function event_reactive_wall_acid_pulse_1(c) {
+  c.fluid.pH = 3.5;
+  c.fluid.S += 40.0;
+  c.fluid.Zn += 60.0;
+  c.fluid.Fe += 15.0;
+  c.flow_rate = 4.0;
+  return 'CO₂-saturated brine surges into the vug. pH crashes to 3.5. The limestone walls begin to fizz — carbonate dissolving on contact.';
+}
+
+function event_reactive_wall_acid_pulse_2(c) {
+  c.fluid.pH = 3.0;
+  c.fluid.S += 50.0;
+  c.fluid.Zn += 80.0;
+  c.fluid.Fe += 25.0;
+  c.fluid.Mn += 10.0;
+  c.flow_rate = 5.0;
+  return 'Second acid pulse — stronger than the first. pH drops to 3.0. Metal-bearing brine floods the vug. The walls are being eaten alive, but every Ca²⁺ released is a future growth band waiting to happen.';
+}
+
+function event_reactive_wall_acid_pulse_3(c) {
+  c.fluid.pH = 4.0;
+  c.fluid.S += 20.0;
+  c.fluid.Zn += 30.0;
+  c.flow_rate = 3.0;
+  return 'Third acid pulse — weaker now. pH only drops to 4.0. The fluid system is exhausting. But the wall still has carbonate to give.';
+}
+
+function event_reactive_wall_seal(c) {
+  c.flow_rate = 0.1;
+  c.fluid.pH += 0.5;
+  c.fluid.pH = Math.min(c.fluid.pH, 8.0);
+  return 'The feeding fracture seals. Flow stops. The vug becomes a closed system. Whatever\'s dissolved will precipitate until equilibrium.';
+}
+
 // ============================================================
 // EVENT REGISTRY + SCENARIO LOADER (data/scenarios.json5)
 // ============================================================
@@ -10815,6 +10850,11 @@ const EVENT_REGISTRY = {
   marble_peak_metamorphism: event_marble_peak_metamorphism,
   marble_retrograde_cooling: event_marble_retrograde_cooling,
   marble_fracture_seal: event_marble_fracture_seal,
+  // Phase 2 — reactive_wall
+  reactive_wall_acid_pulse_1: event_reactive_wall_acid_pulse_1,
+  reactive_wall_acid_pulse_2: event_reactive_wall_acid_pulse_2,
+  reactive_wall_acid_pulse_3: event_reactive_wall_acid_pulse_3,
+  reactive_wall_seal: event_reactive_wall_seal,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and
@@ -10895,95 +10935,6 @@ async function _loadScenariosJSON5() {
 // module-level handlers before they can move to data/scenarios.json5.
 // scenario_random opts out entirely — it's RNG-driven generative.
 
-
-// Sweetwater Mine, Viburnum Trend MO. Cambrian Bonneterre Formation
-// dolomitic-limestone host. Viburnum is the high-Ba / lower-Ag MVT
-// endmember vs Tri-State (Stoffell et al. 2008). Acid-into-carbonate
-// paragenesis: sphalerite + galena + marcasite ± barite, dolomite-calcite
-// gangue. See vugg.py scenario_reactive_wall docstring + locality
-// _chemistry.json#sweetwater_viburnum for full citation tags.
-function scenario_reactive_wall() {
-  const conditions = new VugConditions({
-    temperature: 140.0, pressure: 0.2,
-    fluid: new FluidChemistry({
-      SiO2: 50, Ca: 250, CO3: 200, Fe: 8, Mn: 5,
-      // Polymetallic limestone brine — real Zn-bearing carbonate-
-      // hosted vugs almost always carry Pb too (galena travels with
-      // sphalerite), and Ba is classic (barite is a common late phase).
-      Zn: 80, Pb: 30, Ba: 25, S: 60, F: 8,
-      // Mg=100 → Mg/Ca ~0.4, above dolomite gate (0.3); calcite still wins by Mg-poisoning math.
-      Mg: 100,
-      // ── Audit gap-fills (Apr 2026) ────────────────────────────────
-      Na: 70, K: 12,      // NaCl-CaCl2 brine baseline [Sverjensky 1981; Stoffell 2008]
-      Cl: 200,            // brine anion match for Na+K
-      Ag: 3,              // Viburnum galena Ag (lower than Tri-State per Stoffell 2008)
-      Sr: 12,             // basinal-brine tracer + minor celestine [Hanor 1994]
-      // ── v5 gap-fill (Apr 2026) ────────────────────────────────────
-      // O2: 0.25 (was default 0.0). Same MVT-Eh rationale as Tri-State
-      // — mildly reducing brine where SO₄²⁻ persists alongside H₂S
-      // (barite + galena coexistence). Unlocks dormant Ba=25 + Sr=12
-      // pools without disturbing the existing sulfide assemblage.
-      // Source: Sverjensky 1981; Anderson & Macqueen 1982.
-      O2: 0.25,
-      pH: 7.0, salinity: 18.0
-    }),
-    wall: new VugWall({
-      composition: 'limestone',
-      thickness_mm: 500.0,
-      vug_diameter_mm: 40.0,
-      wall_Fe_ppm: 3000.0,
-      wall_Mn_ppm: 800.0,
-      // Aggressive acid dissolution — 3 primary + 10 secondary for
-      // the deeply lobed cavity of a reactive front.
-      primary_bubbles: 3,
-      secondary_bubbles: 10,
-      shape_seed: 5,
-    })
-  });
-
-  function acid_pulse_1(cond) {
-    cond.fluid.pH = 3.5;
-    cond.fluid.S += 40.0;
-    cond.fluid.Zn += 60.0;
-    cond.fluid.Fe += 15.0;
-    cond.flow_rate = 4.0;
-    return 'CO₂-saturated brine surges into the vug. pH crashes to 3.5. The limestone walls begin to fizz — carbonate dissolving on contact.';
-  }
-
-  function acid_pulse_2(cond) {
-    cond.fluid.pH = 3.0;
-    cond.fluid.S += 50.0;
-    cond.fluid.Zn += 80.0;
-    cond.fluid.Fe += 25.0;
-    cond.fluid.Mn += 10.0;
-    cond.flow_rate = 5.0;
-    return 'Second acid pulse — stronger than the first. pH drops to 3.0. Metal-bearing brine floods the vug. The walls are being eaten alive, but every Ca²⁺ released is a future growth band waiting to happen.';
-  }
-
-  function acid_pulse_3(cond) {
-    cond.fluid.pH = 4.0;
-    cond.fluid.S += 20.0;
-    cond.fluid.Zn += 30.0;
-    cond.flow_rate = 3.0;
-    return 'Third acid pulse — weaker now. pH only drops to 4.0. The fluid system is exhausting. But the wall still has carbonate to give.';
-  }
-
-  function seal_event(cond) {
-    cond.flow_rate = 0.1;
-    cond.fluid.pH += 0.5;
-    cond.fluid.pH = Math.min(cond.fluid.pH, 8.0);
-    return 'The feeding fracture seals. Flow stops. The vug becomes a closed system. Whatever\'s dissolved will precipitate until equilibrium.';
-  }
-
-  const events = [
-    { step: 15, name: 'First Acid Pulse', description: 'CO₂-saturated brine', apply_fn: acid_pulse_1 },
-    { step: 40, name: 'Second Acid Pulse', description: 'Stronger metal-bearing brine', apply_fn: acid_pulse_2 },
-    { step: 70, name: 'Third Acid Pulse', description: 'Weakening system', apply_fn: acid_pulse_3 },
-    { step: 90, name: 'Fracture Seal', description: 'Flow stops', apply_fn: seal_event },
-  ];
-
-  return { conditions, events, defaultSteps: 120 };
-}
 
 function scenario_radioactive_pegmatite() {
   // Pegmatitic fluids are silica-saturated melts — SiO2 must be well above
@@ -11522,7 +11473,6 @@ function scenario_sabkha_dolomitization() {
 // _loadScenariosJSON5() once data/scenarios.json5 fetches. `let` so the
 // loader can mutate the object in place.
 let SCENARIOS = {
-  reactive_wall: scenario_reactive_wall,
   radioactive_pegmatite: scenario_radioactive_pegmatite,
   supergene_oxidation: scenario_supergene_oxidation,
   ouro_preto: scenario_ouro_preto,
@@ -11530,7 +11480,7 @@ let SCENARIOS = {
   bisbee: scenario_bisbee,
   deccan_zeolite: scenario_deccan_zeolite,
   sabkha_dolomitization: scenario_sabkha_dolomitization,
-  // marble_contact_metamorphism — populated by _loadScenariosJSON5() from data/scenarios.json5 (Phase 2)
+  // reactive_wall, marble_contact_metamorphism — populated by _loadScenariosJSON5() from data/scenarios.json5 (Phase 2)
 };
 
 // Kick off the JSON5 fetch. Failure logs a warning (Phase 1 scenarios won't

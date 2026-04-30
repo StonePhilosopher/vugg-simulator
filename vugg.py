@@ -10659,6 +10659,51 @@ def event_marble_fracture_seal(conditions: VugConditions) -> str:
             "Al pool until equilibrium. Everything else is frozen.")
 
 
+# --- reactive_wall (Sweetwater Mine, Viburnum Trend MVT) ---
+
+def event_reactive_wall_acid_pulse_1(conditions: VugConditions) -> str:
+    """First acid pulse — CO₂-rich brine from depth."""
+    conditions.fluid.pH = 3.5
+    conditions.fluid.S += 40.0
+    conditions.fluid.Zn += 60.0
+    conditions.fluid.Fe += 15.0
+    conditions.flow_rate = 4.0
+    return ("CO₂-saturated brine surges into the vug. pH crashes to 3.5. "
+            "The limestone walls begin to fizz — carbonate dissolving on contact.")
+
+
+def event_reactive_wall_acid_pulse_2(conditions: VugConditions) -> str:
+    """Second acid pulse — stronger, with metals."""
+    conditions.fluid.pH = 3.0
+    conditions.fluid.S += 50.0
+    conditions.fluid.Zn += 80.0
+    conditions.fluid.Fe += 25.0
+    conditions.fluid.Mn += 10.0
+    conditions.flow_rate = 5.0
+    return ("Second acid pulse — stronger than the first. pH drops to 3.0. "
+            "Metal-bearing brine floods the vug. The walls are being eaten alive, "
+            "but every Ca²⁺ released is a future growth band waiting to happen.")
+
+
+def event_reactive_wall_acid_pulse_3(conditions: VugConditions) -> str:
+    """Third, weaker pulse — system running out of steam."""
+    conditions.fluid.pH = 4.0
+    conditions.fluid.S += 20.0
+    conditions.fluid.Zn += 30.0
+    conditions.flow_rate = 3.0
+    return ("Third acid pulse — weaker now. pH only drops to 4.0. "
+            "The fluid system is exhausting. But the wall still has carbonate to give.")
+
+
+def event_reactive_wall_seal(conditions: VugConditions) -> str:
+    """Fracture seals — fluid stops flowing, final equilibration."""
+    conditions.flow_rate = 0.1
+    conditions.fluid.pH += 0.5
+    conditions.fluid.pH = min(conditions.fluid.pH, 8.0)
+    return ("The feeding fracture seals. Flow stops. The vug becomes a closed system. "
+            "Whatever's dissolved will precipitate until equilibrium.")
+
+
 # ============================================================
 # EVENT REGISTRY
 # ============================================================
@@ -10682,6 +10727,11 @@ EVENT_REGISTRY = {
     "marble_peak_metamorphism": event_marble_peak_metamorphism,
     "marble_retrograde_cooling": event_marble_retrograde_cooling,
     "marble_fracture_seal": event_marble_fracture_seal,
+    # Phase 2 — reactive_wall
+    "reactive_wall_acid_pulse_1": event_reactive_wall_acid_pulse_1,
+    "reactive_wall_acid_pulse_2": event_reactive_wall_acid_pulse_2,
+    "reactive_wall_acid_pulse_3": event_reactive_wall_acid_pulse_3,
+    "reactive_wall_seal": event_reactive_wall_seal,
 }
 
 
@@ -10787,157 +10837,6 @@ _JSON5_SCENARIOS = _load_scenarios_json5()
 #  data/scenarios.json5 — loaded at module init by _load_scenarios_json5()
 #  above. The nine remaining scenarios with inline event closures stay
 #  in-code below pending Phase 2 migration.)
-
-
-def scenario_reactive_wall() -> Tuple[VugConditions, List[Event], int]:
-    """Reactive wall scenario — anchored to the Sweetwater Mine, Viburnum
-    Trend, Missouri.
-
-    Anchor: Sweetwater Mine (Reynolds County, MO), part of the Viburnum
-    Trend Pb-Zn district. Host = Cambrian Bonneterre Formation
-    dolomitic limestone. Viburnum is a Ba-rich MVT endmember
-    (Stoffell et al. 2008 distinguishes it from the lower-Ba, higher-Ag
-    Tri-State district). Classic acid-into-carbonate paragenesis:
-    sphalerite-galena-marcasite ± barite, dolomite-calcite gangue.
-    Sverjensky 1981 (Econ. Geol. 76) and Leach et al. 2010 are the
-    primary geochemistry sources.
-
-    Mechanic: acid entering a carbonate vug doesn't just dissolve
-    crystals — it dissolves the WALL. The wall neutralizes the acid
-    AND releases Ca²⁺/CO₃²⁻ back into solution. When pH recovers,
-    that dissolved carbonate supersaturates and precipitates as rapid
-    growth bands on existing crystals. The acid is both destroyer and
-    creator. The vug enlarges as the crystals grow. Repeated acid
-    pulses model the Viburnum dissolution→supersaturation→growth
-    burst cycle.
-
-    Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl
-    (NaCl-CaCl2 brine baseline that was missing), Ag (Viburnum
-    galena is less argentiferous than Tri-State but still carries
-    Ag), Sr (basinal-brine tracer + minor celestine documented in
-    Viburnum). Existing chemistry (SiO2, Ca, CO3, Fe, Mn, Zn, Pb,
-    Ba, S, F, Mg, pH, salinity) and the four-pulse event sequence
-    preserved untouched.
-    """
-    conditions = VugConditions(
-        temperature=140.0,
-        pressure=0.2,
-        fluid=FluidChemistry(
-            SiO2=50, Ca=250, CO3=200, Fe=8, Mn=5,
-            # Polymetallic limestone brine — real Zn-bearing carbonate-
-            # hosted vugs almost always carry Pb too (galena travels
-            # with sphalerite), and Ba is classic (barite is a common
-            # late-stage phase). Viburnum is the high-Ba MVT endmember
-            # per Stoffell et al. 2008.
-            Zn=80, Pb=30, Ba=25, S=60, F=8,
-            # Limestone-hosted brines (Sweetwater / Viburnum Trend per
-            # Sverjensky 1981) carry Mg ~50–150 ppm. Mg=100 sets Mg/Ca
-            # ~0.4, above dolomite's ratio gate so dolomitization can
-            # fire. Calcite still dominates (Mg-poisoning at 0.4 ratio
-            # is mild); aragonite stays absent (its threshold is ~1.5).
-            Mg=100,
-            # ── Audit gap-fills (Apr 2026) ────────────────────────────
-            # Na=70, K=12: NaCl-CaCl2 basinal brine baseline. Viburnum
-            # brines per Sverjensky 1981 + Stoffell 2008 are 50-80,000
-            # ppm Na raw, K/Na ~0.2. Sim-scale abstraction (slightly
-            # below Tri-State Na=80 to reflect Viburnum's somewhat lower
-            # Pb-Zn-Ag tenor / different basin source).
-            Na=70, K=12,
-            # Cl=200: brine anion paired with Na+K. salinity=18 wt%
-            # NaCl-eq remains bulk indicator; free Cl enables Pb-Cl
-            # (pyromorphite-laurionite) chemistry where Pb is present.
-            Cl=200,
-            # Ag=3: Viburnum galena carries Ag at lower abundance than
-            # Tri-State (Stoffell 2008 LA-ICP-MS shows Ag content
-            # broadly distinguishes the two MVT districts). Sim-scale
-            # below Tri-State's Ag=5.
-            Ag=3,
-            # Sr=12: basinal-brine tracer (Hanor 1994); minor celestine
-            # documented in the Viburnum carbonate gangue.
-            Sr=12,
-            # ──────────────────────────────────────────────────────────
-            # ── v5 gap-fill (Apr 2026) ────────────────────────────────
-            # O2=0.25 (was default 0.0): same MVT-Eh rationale as
-            # Tri-State — mildly reducing brine where SO₄²⁻ persists
-            # alongside H₂S, allowing barite + galena coexistence.
-            # Bumping unlocks dormant Ba=25 + Sr=12 pools without
-            # disturbing the existing sulfide assemblage. Source:
-            # Sverjensky 1981 (Viburnum brine geochem); Anderson &
-            # Macqueen 1982 (MVT review).
-            O2=0.25,
-            # ──────────────────────────────────────────────────────────
-            pH=7.0, salinity=18.0
-        ),
-        wall=VugWall(
-            composition="limestone",
-            thickness_mm=500.0,
-            vug_diameter_mm=40.0,
-            wall_Fe_ppm=3000.0,   # iron-bearing limestone
-            wall_Mn_ppm=800.0,    # Mn in the host rock
-            # Aggressive acid dissolution — 3 primary + 10 secondary
-            # bubbles give the deeply lobed cavity of a reactive front.
-            primary_bubbles=3,
-            secondary_bubbles=10,
-            shape_seed=5,
-        )
-    )
-    
-    def acid_pulse_1(cond):
-        """First acid pulse — CO₂-rich brine from depth."""
-        cond.fluid.pH = 3.5
-        cond.fluid.S += 40.0
-        cond.fluid.Zn += 60.0
-        cond.fluid.Fe += 15.0
-        cond.flow_rate = 4.0
-        return ("CO₂-saturated brine surges into the vug. pH crashes to 3.5. "
-                "The limestone walls begin to fizz — carbonate dissolving on contact.")
-    
-    def acid_pulse_2(cond):
-        """Second acid pulse — stronger, with metals."""
-        cond.fluid.pH = 3.0
-        cond.fluid.S += 50.0
-        cond.fluid.Zn += 80.0
-        cond.fluid.Fe += 25.0
-        cond.fluid.Mn += 10.0
-        cond.flow_rate = 5.0
-        return ("Second acid pulse — stronger than the first. pH drops to 3.0. "
-                "Metal-bearing brine floods the vug. The walls are being eaten alive, "
-                "but every Ca²⁺ released is a future growth band waiting to happen.")
-    
-    def acid_pulse_3(cond):
-        """Third, weaker pulse — system running out of steam."""
-        cond.fluid.pH = 4.0
-        cond.fluid.S += 20.0
-        cond.fluid.Zn += 30.0
-        cond.flow_rate = 3.0
-        return ("Third acid pulse — weaker now. pH only drops to 4.0. "
-                "The fluid system is exhausting. But the wall still has carbonate to give.")
-    
-    def seal_event(cond):
-        """Fracture seals — fluid stops flowing, final equilibration."""
-        cond.flow_rate = 0.1
-        cond.fluid.pH += 0.5
-        cond.fluid.pH = min(cond.fluid.pH, 8.0)
-        return ("The feeding fracture seals. Flow stops. The vug becomes a closed system. "
-                "Whatever's dissolved will precipitate until equilibrium.")
-    
-    events = [
-        Event(15, "First Acid Pulse", "CO₂-saturated brine", 
-              Event(0, "", "", acid_pulse_1).apply_fn if False else acid_pulse_1),
-        Event(40, "Second Acid Pulse", "Stronger metal-bearing brine", acid_pulse_2),
-        Event(70, "Third Acid Pulse", "Weakening system", acid_pulse_3),
-        Event(90, "Fracture Seal", "Flow stops", seal_event),
-    ]
-    
-    # Fix event wrapping
-    events = [
-        Event(15, "First Acid Pulse", "CO₂-saturated brine", acid_pulse_1),
-        Event(40, "Second Acid Pulse", "Stronger metal-bearing brine", acid_pulse_2),
-        Event(70, "Third Acid Pulse", "Weakening system", acid_pulse_3),
-        Event(90, "Fracture Seal", "Flow stops", seal_event),
-    ]
-    
-    return conditions, events, 120
 
 
 def scenario_radioactive_pegmatite() -> Tuple[VugConditions, List[Event], int]:
@@ -12441,7 +12340,7 @@ SCENARIOS = {
     "porphyry": _JSON5_SCENARIOS["porphyry"],
     # Legacy in-code scenarios (Phase 2 migration target — they have inline
     # event closures that need promotion to module-level handlers first).
-    "reactive_wall": scenario_reactive_wall,
+    "reactive_wall": _JSON5_SCENARIOS["reactive_wall"],
     "radioactive_pegmatite": scenario_radioactive_pegmatite,
     "supergene_oxidation": scenario_supergene_oxidation,
     "ouro_preto": scenario_ouro_preto,

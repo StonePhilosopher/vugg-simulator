@@ -44,7 +44,7 @@
 // =============================================================
 {
   "$schema_version": "1.0.0",
-  "$last_updated": "2026-04-30 (Phase 2 begins: marble_contact_metamorphism migrated)",
+  "$last_updated": "2026-04-30 (Phase 2: marble + reactive_wall migrated)",
   "scenarios": {
 
     "cooling": {
@@ -417,6 +417,88 @@
         "Garnier et al. 2008 (Ore Geology Reviews 34:169-191) — Marble-hosted ruby deposits from Central and Southeast Asia",
         "Peretti et al. 2018 (Gems & Gemology special issue) — Update on corundum and its gem varieties",
         "Searle et al. 2007 (Journal of Geology 115:1-23) — Tectonic evolution of the Mogok metamorphic belt, Burma (Myanmar)"
+      ]
+    },
+
+    "reactive_wall": {
+      "anchor": "Sweetwater Mine (Reynolds County, MO), Viburnum Trend Pb-Zn district. Host: Cambrian Bonneterre Formation dolomitic limestone.",
+      "description": "Acid-into-carbonate paragenesis — repeated acid pulses dissolve the limestone wall, then pH recovery drives supersaturation and growth bursts. Sphalerite-galena-marcasite ± barite, dolomite-calcite gangue.",
+      "duration_steps": 120,
+      "notes": [
+        "Anchor: Sweetwater Mine, Viburnum Trend MVT district (high-Ba endmember vs Tri-State, distinguished by Stoffell et al. 2008 LA-ICP-MS).",
+        "Mechanic: acid entering a carbonate vug doesn't just dissolve crystals — it dissolves the WALL. The wall neutralizes the acid AND releases Ca2+/CO3 2- back into solution. When pH recovers, that dissolved carbonate supersaturates and precipitates as rapid growth bands on existing crystals. The acid is both destroyer and creator. The vug enlarges as the crystals grow.",
+        "Repeated acid pulses (steps 15/40/70) model the Viburnum dissolution → supersaturation → growth burst cycle. Final fracture seal at step 90 closes the system.",
+        "Chemistry-audit gap-fill pass (Apr 2026): Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (Viburnum galena, less argentiferous than Tri-State), Sr (basinal-brine tracer + minor celestine documented in Viburnum). v5 gap-fill: O2=0.25 to allow barite + galena coexistence per the MVT-Eh window."
+      ],
+      "initial": {
+        "temperature_C": 140.0,
+        "pressure_kbar": 0.2,
+        "fluid": {
+          "SiO2": 50,
+          "Ca": 250,
+          "CO3": 200,
+          "Fe": 8,
+          "Mn": 5,
+          // Polymetallic limestone brine — galena travels with sphalerite,
+          // and Ba is classic (barite a common late-stage phase). Viburnum
+          // is the high-Ba MVT endmember per Stoffell et al. 2008.
+          "Zn": 80,
+          "Pb": 30,
+          "Ba": 25,
+          "S": 60,
+          "F": 8,
+          // Mg=100 → Mg/Ca ~0.4, above dolomite gate (0.3); calcite still
+          // wins by Mg-poisoning math (poisoning at 0.4 ratio is mild).
+          // Aragonite stays absent (its threshold is ~1.5).
+          "Mg": 100,
+          // Audit gap-fills (Apr 2026):
+          // Na=70, K=12: NaCl-CaCl2 basinal brine baseline. Viburnum brines
+          // per Sverjensky 1981 + Stoffell 2008 are 50-80,000 ppm Na raw,
+          // K/Na ~0.2. Sim-scale (slightly below Tri-State Na=80 to reflect
+          // Viburnum's somewhat lower Pb-Zn-Ag tenor / different basin source).
+          "Na": 70,
+          "K": 12,
+          // Cl=200: brine anion paired with Na+K. Free Cl enables Pb-Cl
+          // (pyromorphite-laurionite) chemistry where Pb is present.
+          "Cl": 200,
+          // Ag=3: Viburnum galena Ag (lower than Tri-State Ag=5 per Stoffell 2008).
+          "Ag": 3,
+          // Sr=12: basinal-brine tracer (Hanor 1994); minor celestine in Viburnum gangue.
+          "Sr": 12,
+          // v5 gap-fill: O2=0.25 (was 0.0). Same MVT-Eh rationale as Tri-State —
+          // mildly reducing brine where SO4 2- persists alongside H2S
+          // (barite + galena coexistence). Unlocks dormant Ba=25 + Sr=12 pools
+          // without disturbing the existing sulfide assemblage.
+          // Source: Sverjensky 1981; Anderson & Macqueen 1982.
+          "O2": 0.25,
+          "pH": 7.0,
+          "salinity": 18.0
+        },
+        "wall": {
+          "composition": "limestone",
+          "thickness_mm": 500.0,
+          "vug_diameter_mm": 40.0,
+          "wall_Fe_ppm": 3000.0,   // iron-bearing limestone
+          "wall_Mn_ppm": 800.0,    // Mn in the host rock
+          // Aggressive acid dissolution — 3 primary + 10 secondary bubbles
+          // give the deeply lobed cavity of a reactive front.
+          "primary_bubbles": 3,
+          "secondary_bubbles": 10,
+          "shape_seed": 5
+        }
+      },
+      "events": [
+        { "step": 15, "type": "reactive_wall_acid_pulse_1", "name": "First Acid Pulse",  "description": "CO2-saturated brine" },
+        { "step": 40, "type": "reactive_wall_acid_pulse_2", "name": "Second Acid Pulse", "description": "Stronger metal-bearing brine" },
+        { "step": 70, "type": "reactive_wall_acid_pulse_3", "name": "Third Acid Pulse",  "description": "Weakening system" },
+        { "step": 90, "type": "reactive_wall_seal",         "name": "Fracture Seal",     "description": "Flow stops" }
+      ],
+      "sources": [
+        "Sverjensky 1981 (Econ. Geol. 76) — Viburnum Trend brine geochemistry",
+        "Stoffell et al. 2008 — LA-ICP-MS fluid-inclusion brine analyses (Tri-State vs Viburnum distinction)",
+        "Leach et al. 2010 — MVT genesis review",
+        "Anderson & Macqueen 1982 — MVT mineralogy review",
+        "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
       ]
     }
 
