@@ -2366,7 +2366,9 @@
       "twin_laws": [
         {
           "name": "trillings_120",
-          "probability": 0.02
+          "miller_indices": "{120}",
+          "trigger": "growth (uncommon — star-like trillings, similar prevalence to pyrite/chalcopyrite penetration twins)",
+          "probability": 0.01
         }
       ],
       "acid_dissolution": null,
@@ -7424,6 +7426,9 @@
       "twin_laws": [
         {
           "name": "spinel_111",
+          "miller_indices": "{111}",
+          "trigger": "growth — spinel-law penetration twin, less common than the cooled-acanthite paramorph form",
+          "probability": 0.04,
           "description": "Penetration twin on {111} (spinel law)",
           "habits": [
             "octahedral"
@@ -7510,6 +7515,9 @@
       "twin_laws": [
         {
           "name": "111_penetration",
+          "miller_indices": "{111}",
+          "trigger": "growth at specific localities (Batopilas Mexico, Chanarcillo Chile, Kongsberg Norway) — spinel-law penetration twins, locality-driven not universal",
+          "probability": 0.05,
           "description": "Penetration twin on {111}",
           "habits": [
             "cubic_crystal"
@@ -8369,8 +8377,11 @@
       "fluorescence": null,
       "twin_laws": [
         {
-          "name": "cruciform_110",
-          "description": "Rare {110} cross-shaped twin",
+          "name": "cruciform_010",
+          "miller_indices": "{010}",
+          "trigger": "growth (rare) — cruciform twin with [001] and [100] of one crystal parallel to [100] and [001] of the other, sharing {010}",
+          "probability": 0.005,
+          "description": "Rare cruciform cross-shaped twin (twin plane {010}, corrected from earlier {110} placeholder per Mindat handbook entry)",
           "habits": [
             "tabular"
           ]

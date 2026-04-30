@@ -14,6 +14,37 @@ Order is rough priority — top of each section is most-actionable, but explicit
 
 ---
 
+## 🌀 Twin probability retune — measure prevalence by per-mineral lifetime
+
+**Status:** deferred, raised by user during the twin bug-fix commits (commits `8b8449b` per-nucleation roll fix + `16b39ee` four-placeholder population).
+
+**Why:** the values currently in `data/minerals.json:twin_laws[].probability` are the per-roll rates derived from total natural prevalence numbers in the literature ("X% of natural specimens are twinned"). But:
+- **The game rolls once per crystal at nucleation** (post-fix), so the realized in-game twin frequency is exactly the per-roll value.
+- **Real-world prevalence partly reflects lifetime opportunity** for stress/thermal events to induce secondary twinning during growth, which the single-roll model doesn't capture.
+- **Different minerals accumulate different growth-step counts** in typical scenarios — quartz might run 100 zones, a late-nucleating wulfenite gets 10 — so the multiplier between "per-roll rate" and "observed in-game prevalence" varies by mineral.
+
+The four placeholders just populated (arsenopyrite 0.01, native_silver 0.05, argentite 0.04, chalcanthite 0.005) are research-grounded floors, not tuned for game-visible behavior. Likely too low for some minerals once the lifetime asymmetry is taken into account.
+
+**What to build:**
+1. Extend `tools/twin_rate_check.py` (or write a sibling tool) that runs each baseline scenario at seed 42, counts twinned vs untwinned crystals per mineral, and reports observed in-game frequencies. Compare to literature target ranges.
+2. For each mineral that's "common-twinned in nature" but observed-rare in the sim (or vice versa), note the per-mineral average growth-step count and propose an adjusted per-roll probability that lands the observed rate within target.
+3. Don't blanket-multiply — different minerals have different lifetime distributions, and some twins (Carlsbad, cyclic-sextet) are genuinely birth-time decisions where per-roll = lifetime rate.
+
+**Out of scope for the retune itself:**
+- Event-driven twins (thermal shock, tectonic event) — those remain in their grow_*() functions as event-conditional logic and aren't subject to this asymmetry. Currently quartz Dauphiné + the fortress-mode tectonic event.
+- Habit-conditional twins (e.g., aragonite cyclic_sextet's "growth in twinned_cyclic habit" trigger) — these are nucleation-time decisions; the per-roll rate already matches the lifetime rate by construction.
+
+**Relevant minerals to revisit during the retune** (from the commits' candid notes):
+- cerussite cyclic_sixling at 0.4 — well-formed cerussite is nearly always cyclic-twinned in nature; per-roll 40% may underrepresent observed rate.
+- sphalerite spinel-law at 0.015 — common in well-formed crystals; per-roll 1.5% looks low.
+- calcite c-twin at 0.1 — common in many specimens; literature suggests 10-30% lifetime, may need bumping for short-lived calcite crystals.
+- arsenopyrite trillings at 0.01 — "uncommon" but if observed-zero across baseline runs, likely needs bumping.
+- chalcanthite cruciform at 0.005 — "rare" is consistent with the chalcanthite metastability mechanic (re-dissolves frequently), so observed-zero is geologically right; verify with the tool before bumping.
+
+**Sequencing:** lands after the data-as-truth Option A refactor (initial fluid/T/P/wall → JSON5) so the retune can lean on stable declarative chemistry without conflating with infrastructure changes.
+
+---
+
 ## 🎛️ Creative mode — controls expansion
 
 The Creative mode setup panel currently exposes ~30 FluidChemistry sliders + temperature + pressure + new wall reactivity. These items extend the player's control over the rest of the wall + fluid surface.

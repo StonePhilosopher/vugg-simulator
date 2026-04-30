@@ -198,7 +198,23 @@ from typing import List, Dict, Optional, Tuple
 #        9a + 9b + 9c). No new FluidChemistry fields. First commits
 #        to populate test_cases on data/minerals.json (per
 #        proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 6).
-SIM_VERSION = 9
+#   v10 — Twin bug fix (Apr 2026, Round 9 closeout patch). Pre-fix,
+#        each grow_*() function rolled twinning probability per growth
+#        step, so a crystal with 30 zones at p=0.1 had ~92% cumulative
+#        twinning rate instead of the declared per-roll 10%. Post-fix,
+#        the roll happens once at nucleation per declared twin_law in
+#        data/minerals.json (VugSimulator._roll_spontaneous_twin).
+#        Most existing minerals' realized twin rate drops dramatically —
+#        from near-certainty over a typical crystal lifetime down to
+#        the spec-declared per-roll probability (typically 1-10%).
+#        Quartz Dauphiné (thermal_shock trigger) remains in grow_quartz
+#        as event-conditional logic. Cuprite spinel-twin habit branch
+#        was removed; spinel-twinned cuprite now carries the default
+#        octahedral habit plus the twinned flag. Verified by
+#        tools/twin_rate_check.py — all 25 spontaneously-twinned
+#        minerals match declared probabilities within ±2σ binomial
+#        tolerance at n=2000.
+SIM_VERSION = 10
 
 
 # ============================================================
@@ -4588,10 +4604,8 @@ def grow_calcite(crystal: Crystal, conditions: VugConditions, step: int) -> Opti
         crystal.habit = "rhombohedral"
         crystal.dominant_forms = ["e{104}", "possibly nail-head"]
     
-    # Calcite twins easily
-    if not crystal.twinned and random.random() < 0.1:
-        crystal.twinned = True
-        crystal.twin_law = "c-twin {001}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026) —
+    # see VugSimulator._roll_spontaneous_twin and data/minerals.json twin_laws.
     
     note = ""
     if trace_Mn > 1.0 and trace_Fe < 2.0:
@@ -4689,13 +4703,7 @@ def grow_aragonite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     trace_Mn = conditions.fluid.Mn * 0.05  # less Mn than calcite (orthorhombic excludes it)
     trace_Fe = conditions.fluid.Fe * 0.06
 
-    # Cyclic twins are the diagnostic — high probability when habit selects them
-    if crystal.habit == "twinned_cyclic" and not crystal.twinned and random.random() < 0.4:
-        crystal.twinned = True
-        crystal.twin_law = "cyclic {110} sextet"
-    elif not crystal.twinned and random.random() < 0.05:
-        crystal.twinned = True
-        crystal.twin_law = "contact {110}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     note = f"{crystal.habit} CaCO₃"
     if sr_uptake > 0.5 or pb_uptake > 0.5:
@@ -4807,9 +4815,7 @@ def grow_dolomite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     else:
         color_note = "white to colorless (Ca-Mg end-member dolomite)"
 
-    if not crystal.twinned and random.random() < 0.02:
-        crystal.twinned = True
-        crystal.twin_law = "polysynthetic {012}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     # Annotate ordering state — disordered HMC at low f_ord, true dolomite at high
     if f_ord < 0.3:
@@ -4894,9 +4900,7 @@ def grow_siderite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     else:
         color_note = "deep brown (Fe-dominant end-member)"
 
-    if not crystal.twinned and random.random() < 0.02:
-        crystal.twinned = True
-        crystal.twin_law = "polysynthetic {012}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     return GrowthZone(
         step=step, temperature=conditions.temperature,
@@ -4980,10 +4984,7 @@ def grow_rhodochrosite(crystal: Crystal, conditions: VugConditions, step: int) -
     if conditions.fluid.Fe > 30:
         color_note += " with brownish tint (Fe-rich)"
 
-    # Mn carbonate twins exist but are uncommon
-    if not crystal.twinned and random.random() < 0.02:
-        crystal.twinned = True
-        crystal.twin_law = "polysynthetic {012}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     return GrowthZone(
         step=step, temperature=conditions.temperature,
@@ -5022,10 +5023,7 @@ def grow_sphalerite(crystal: Crystal, conditions: VugConditions, step: int) -> O
     else:
         color_note = "pale yellow (cleiophane — gem quality)"
     
-    # Twinning common in sphalerite
-    if not crystal.twinned and random.random() < 0.015:
-        crystal.twinned = True
-        crystal.twin_law = "spinel-law {111}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     
     return GrowthZone(
         step=step, temperature=conditions.temperature,
@@ -5089,10 +5087,7 @@ def grow_wurtzite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     else:
         color_note = "yellowish-brown to dark brown"
 
-    # Wurtzite rarely twins the same way sphalerite does — different space group
-    if crystal.habit == "hemimorphic_crystal" and not crystal.twinned and random.random() < 0.008:
-        crystal.twinned = True
-        crystal.twin_law = "basal {0001} contact"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     return GrowthZone(
         step=step, temperature=conditions.temperature,
@@ -5141,10 +5136,8 @@ def grow_fluorite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
         color = "colorless"
     else:
         color = "blue-violet"
-    
-    if not crystal.twinned and random.random() < 0.008:
-        crystal.twinned = True
-        crystal.twin_law = "penetration twin {111}"
+
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     
     return GrowthZone(
         step=step, temperature=conditions.temperature,
@@ -5216,10 +5209,7 @@ def grow_pyrite(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
     if conditions.fluid.Cu > 20:
         trace_note += ", Cu traces (may exsolve chalcopyrite inclusions)"
     
-    # Twinning — iron cross twins
-    if not crystal.twinned and random.random() < 0.008:
-        crystal.twinned = True
-        crystal.twin_law = "iron cross {110}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     
     return GrowthZone(
         step=step, temperature=conditions.temperature,
@@ -5298,10 +5288,7 @@ def grow_marcasite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     if conditions.fluid.pH < 3.5:
         trace_note += " (strong acid — extra-rapid cockscomb growth)"
 
-    # Twinning — marcasite forms characteristic spearhead (swallowtail) twins
-    if crystal.habit == "spearhead" and not crystal.twinned and random.random() < 0.05:
-        crystal.twinned = True
-        crystal.twin_law = "spearhead {101}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     return GrowthZone(
         step=step, temperature=conditions.temperature,
@@ -5350,10 +5337,7 @@ def grow_chalcopyrite(crystal: Crystal, conditions: VugConditions, step: int) ->
     # Cu content tracking through Fe field (reusing for display)
     trace_Cu = conditions.fluid.Cu * 0.1
     
-    # Twinning — penetration twins common
-    if not crystal.twinned and random.random() < 0.012:
-        crystal.twinned = True
-        crystal.twin_law = "penetration twin {112}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     
     # Competes with pyrite for Fe and S — deplete both
     return GrowthZone(
@@ -5418,10 +5402,7 @@ def grow_hematite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     trace_Mn = conditions.fluid.Mn * 0.04
     trace_Fe = conditions.fluid.Fe * 0.2  # it IS an iron mineral
     
-    # Twinning — rare, penetration twin on {001}
-    if not crystal.twinned and random.random() < 0.005:
-        crystal.twinned = True
-        crystal.twin_law = "penetration twin {001}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     
     # Color prediction note
     if crystal.habit == "specular":
@@ -6046,17 +6027,7 @@ def grow_feldspar(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
             crystal.dominant_forms = ["rhombic cross-section", "pseudo-orthorhombic faces"]
 
     # Twinning — K-feldspar has three common twin laws
-    if not crystal.twinned:
-        twin_roll = random.random()
-        if twin_roll < 0.12:
-            crystal.twinned = True
-            crystal.twin_law = "Carlsbad twin (rotation on c-axis)"
-        elif twin_roll < 0.16:
-            crystal.twinned = True
-            crystal.twin_law = "Baveno twin (reflection {021})"
-        elif twin_roll < 0.18:
-            crystal.twinned = True
-            crystal.twin_law = "Manebach twin (reflection {001})"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     # Perthite exsolution check
     # At high T, K and Na are fully miscible in alkali feldspar.
@@ -6178,14 +6149,7 @@ def grow_albite(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
             crystal.dominant_forms = ["thin platy lamellae", "curved aggregates"]
 
     # Twinning — albite has two main twin laws
-    if not crystal.twinned:
-        twin_roll = random.random()
-        if twin_roll < 0.20:
-            crystal.twinned = True
-            crystal.twin_law = "albite twin (reflection {010})"
-        elif twin_roll < 0.25:
-            crystal.twinned = True
-            crystal.twin_law = "pericline twin (rotation on b-axis)"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     # Peristerite / moonstone check
     # Albite + oligoclase intergrowth creates adularescence
@@ -7378,12 +7342,13 @@ def grow_cuprite(crystal: Crystal, conditions: VugConditions, step: int) -> Opti
         crystal.habit = "massive_earthy"
         crystal.dominant_forms = ["massive earthy 'tile ore'", "dark red-brown"]
         color_note = "massive earthy — 'tile ore' in dark red-brown (rapid growth in tight space)"
-    elif not crystal.twinned and 0.3 < excess < 0.8 and random.random() < 0.05:
-        crystal.twinned = True
-        crystal.twin_law = "spinel law {111}"
-        crystal.habit = "spinel_twin"
-        crystal.dominant_forms = ["{111} octahedron (spinel-law twinned)", "reentrant angles"]
-        color_note = "dark red octahedron with spinel-law penetration twin"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026); the
+    # former 0.3<excess<0.8 'spinel_twin' habit branch was driven by the
+    # simultaneous spinel-law twin roll, which now happens at nucleation
+    # time. The habit name is unused without that twin gate, so any
+    # spinel-twinned cuprite (still rolled at p=0.05 per minerals.json)
+    # now carries the default "octahedral" habit below + the twinned
+    # flag for rendering.
     else:
         crystal.habit = "octahedral"
         crystal.dominant_forms = ["{111} octahedron", "dark red to black with ruby internal reflection"]
@@ -7747,10 +7712,7 @@ def grow_chalcocite(crystal: Crystal, conditions: VugConditions, step: int) -> O
         return None
 
     f = conditions.fluid
-    # Cyclic sixling twin at moderate σ (chalcocite's iconic collector form)
-    if not crystal.twinned and 0.4 < excess < 1.5 and random.random() < 0.15:
-        crystal.twinned = True
-        crystal.twin_law = "cyclic sixling {110}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     if crystal.twinned and "sixling" in (crystal.twin_law or ""):
         crystal.habit = "stellate_sixling"
@@ -7922,11 +7884,7 @@ def grow_cerussite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
         return None
 
     f = conditions.fluid
-    # Cyclic sixling twin — the diagnostic habit of cerussite. High
-    # probability at moderate σ.
-    if not crystal.twinned and 0.3 < excess < 1.5 and random.random() < 0.4:
-        crystal.twinned = True
-        crystal.twin_law = "cyclic sixling {110}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     if f.Cu > 5.0:
         color_note = f"blue-green tint (Cu {f.Cu:.1f} ppm)"
@@ -8117,9 +8075,7 @@ def grow_galena(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
     conditions.fluid.Pb = max(conditions.fluid.Pb - rate * 0.005, 0)
     conditions.fluid.S = max(conditions.fluid.S - rate * 0.003, 0)
 
-    if not crystal.twinned and random.random() < 0.008:
-        crystal.twinned = True
-        crystal.twin_law = "spinel-law {111}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     color_note = "lead-gray, bright metallic luster"
     if conditions.fluid.Ag > 5:
@@ -8303,9 +8259,7 @@ def grow_smithsonite(crystal: Crystal, conditions: VugConditions, step: int) -> 
     conditions.fluid.Zn = max(conditions.fluid.Zn - rate * 0.008, 0)
     conditions.fluid.CO3 = max(conditions.fluid.CO3 - rate * 0.005, 0)
 
-    if not crystal.twinned and random.random() < 0.01:
-        crystal.twinned = True
-        crystal.twin_law = "cyclic {01-12}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     if conditions.fluid.Cu > 15:
         color_note = "apple-green (Cu impurity)"
@@ -8355,9 +8309,7 @@ def grow_wulfenite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     conditions.fluid.Pb = max(conditions.fluid.Pb - rate * 0.006, 0)
     conditions.fluid.Mo = max(conditions.fluid.Mo - rate * 0.004, 0)
 
-    if not crystal.twinned and random.random() < 0.03:
-        crystal.twinned = True
-        crystal.twin_law = "penetration twin {001}/{100}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     if conditions.fluid.Cr > 5:
         color_note = "red-orange (Cr impurity)"
@@ -9177,10 +9129,7 @@ def grow_argentite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
         crystal.dominant_forms = ["{100} cube", "sharp isometric form"]
         habit_note = "cubic argentite — Comstock Lode habit"
 
-    # Spinel-law penetration twinning on {111} (research file lists this).
-    if crystal.habit == "octahedral" and not crystal.twinned and random.random() < 0.04:
-        crystal.twinned = True
-        crystal.twin_law = "{111} penetration (spinel law)"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
         habit_note += "; spinel-law penetration twin"
 
     # Deplete Ag + S
@@ -9236,10 +9185,7 @@ def grow_chalcanthite(crystal: Crystal, conditions: VugConditions, step: int) ->
         crystal.dominant_forms = ["powdery blue bloom", "fibrous mass"]
         habit_note = "efflorescent crust chalcanthite — high-evaporation arid habit"
 
-    # Water-solubility flag in habit_note — every chalcanthite is fragile
-    if random.random() < 0.04 and not crystal.twinned:
-        crystal.twinned = True
-        crystal.twin_law = "{110} cruciform"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
         habit_note += "; cruciform twin (rare {110} cross-shaped twin)"
 
     # Deplete Cu, S; salinity stays unchanged (crystal carries away
@@ -9882,10 +9828,7 @@ def grow_native_silver(crystal: Crystal, conditions: VugConditions, step: int) -
         crystal.dominant_forms = ["hackly massive", "metallic nugget"]
         habit_note = "massive native silver — Keweenaw nugget habit"
 
-    # Penetration twin on {111} — research file lists this as common.
-    if crystal.habit == "cubic_crystal" and not crystal.twinned and random.random() < 0.05:
-        crystal.twinned = True
-        crystal.twin_law = "{111} penetration"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
         habit_note += "; {111} penetration twin"
 
     # Color note — fresh metallic silver, tarnishes inevitably.
@@ -10283,9 +10226,7 @@ def grow_selenite(crystal: Crystal, conditions: VugConditions, step: int) -> Opt
     conditions.fluid.Ca = max(conditions.fluid.Ca - rate * 0.008, 0)
     conditions.fluid.S = max(conditions.fluid.S - rate * 0.005, 0)
 
-    if not crystal.twinned and random.random() < 0.08:
-        crystal.twinned = True
-        crystal.twin_law = "swallowtail {100}"
+    # Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
     if conditions.temperature < 30:
         color_note = "colorless, glassy, transparent"
@@ -12968,8 +12909,51 @@ class VugSimulator:
             crystal.dominant_forms = ["arborescent silver-white", "iridescent oxide tarnish"]
         elif mineral == "clinobisvanite":
             crystal.dominant_forms = ["micro-platy {010}", "bright yellow"]
+
+        # Twin roll — once at nucleation per declared twin_laws (Round 9
+        # bug fix, Apr 2026). Pre-fix, each grow_*() function rolled
+        # `random.random() < probability` per growth step, so a crystal
+        # with 30 zones at p=0.1 had ~92% twinning probability instead
+        # of the declared 10%. Post-fix the roll happens once here per
+        # twin_law, matching declared probability semantics.
+        self._roll_spontaneous_twin(crystal)
+
         self.crystals.append(crystal)
         return crystal
+
+    def _roll_spontaneous_twin(self, crystal: "Crystal") -> None:
+        """Roll once at nucleation for each declared twin_law of the
+        crystal's mineral, per its probability in MINERAL_SPEC.
+
+        Skipped for triggers containing 'thermal_shock' or 'tectonic'
+        — those remain in their grow functions as event-conditional
+        logic (e.g., quartz Dauphiné from a sudden temperature drop).
+        Habit-conditional triggers (e.g., aragonite cyclic_sextet
+        "growth in twinned_cyclic habit") roll regardless of the
+        crystal's habit; specific habit dependencies can be
+        reintroduced via the trigger string parser as a follow-up
+        if the boss decides specific minerals need habit gating.
+
+        First law to fire wins; subsequent laws of the same mineral
+        don't compound onto an already-twinned crystal.
+        """
+        if crystal.twinned:
+            return
+        spec = MINERAL_SPEC.get(crystal.mineral, {})
+        twin_laws = spec.get("twin_laws", []) or []
+        for law in twin_laws:
+            if not isinstance(law, dict):
+                continue
+            prob = law.get("probability")
+            if not isinstance(prob, (int, float)) or prob <= 0:
+                continue
+            trigger = (law.get("trigger") or "").lower()
+            if "thermal_shock" in trigger or "tectonic" in trigger:
+                continue
+            if random.random() < prob:
+                crystal.twinned = True
+                crystal.twin_law = law.get("name", "twin")
+                return
 
     def _space_is_crowded(self) -> bool:
         """Fraction of ring-0 cells already claimed by another crystal.
