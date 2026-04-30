@@ -10747,6 +10747,75 @@ def event_radioactive_pegmatite_final_cooling(conditions: VugConditions) -> str:
             "Chemistry just held the pen.")
 
 
+# --- deccan_zeolite (Stage III Deccan Traps zeolite vesicle, ~21-58 Ma post-eruption) ---
+
+def event_deccan_zeolite_silica_veneer(conditions: VugConditions) -> str:
+    """Stage I — hot early silica + hematite needle deposition."""
+    conditions.fluid.SiO2 += 400
+    conditions.fluid.Fe += 50
+    conditions.fluid.O2 = 0.9
+    conditions.temperature = 200
+    return ("Stage I — hot post-eruption hydrothermal fluid coats the "
+            "vesicle wall with chalcedony. Silica activity peaks; iron "
+            "stripped from the basalt groundmass deposits as hematite "
+            "needles on the chalcedony rind. These needles will become "
+            "the seeds for the 'bloody apophyllite' phantom inclusions "
+            "in Stage III.")
+
+
+def event_deccan_zeolite_hematite_pulse(conditions: VugConditions) -> str:
+    """Iron pulse — produces the bloody apophyllite phantom zone."""
+    conditions.fluid.Fe += 80
+    conditions.fluid.O2 = 1.0
+    conditions.temperature = 175
+    return ("An iron-bearing pulse threads through the vesicle. Hematite "
+            "needles seed the surfaces of any growing apophyllite. When "
+            "the apophyllite resumes crystallization, those needles get "
+            "trapped in the next growth zone — the Nashik 'bloody "
+            "apophyllite' phantom band.")
+
+
+def event_deccan_zeolite_stage_ii(conditions: VugConditions) -> str:
+    """Stage II — zeolite blades + calcite."""
+    conditions.fluid.Ca += 80
+    conditions.fluid.K += 10
+    conditions.fluid.SiO2 += 200
+    conditions.fluid.pH = 8.5
+    conditions.temperature = 130
+    return ("Stage II — zeolite blades begin to fill the vesicle. "
+            "Stilbite, scolecite, heulandite (modeled here as the "
+            "zeolite paragenesis pH/Si signature). Calcite forms "
+            "as a late-stage carbonate. The vug is filling slowly.")
+
+
+def event_deccan_zeolite_apophyllite_stage_iii(conditions: VugConditions) -> str:
+    """Stage III — apophyllite-saturating alkaline K-Ca-Si-F pulse."""
+    conditions.fluid.K += 25
+    conditions.fluid.Ca += 50
+    conditions.fluid.SiO2 += 300
+    conditions.fluid.F += 4
+    conditions.fluid.pH = 8.8
+    conditions.temperature = 150
+    return ("Stage III — the apophyllite-bearing pulse arrives, alkaline "
+            "K-Ca-Si-F groundwater. Per Ottens et al. 2019 this is the "
+            "long-lasting late stage, 21–58 Ma after the original eruption. "
+            "The pseudo-cubic apophyllite tablets begin to crystallize on "
+            "the wall, on the chalcedony, on the hematite needles already "
+            "present — wherever a nucleation site offers itself.")
+
+
+def event_deccan_zeolite_late_cooling(conditions: VugConditions) -> str:
+    """Stage IV — late cooling, growth slows."""
+    conditions.temperature = 80
+    conditions.fluid.pH = 8.0
+    conditions.flow_rate = 0.1
+    return ("Late cooling. The vesicle fluid drops back toward ambient. "
+            "Apophyllite growth slows but doesn't stop entirely; the "
+            "remaining K-Ca-Si-F supersaturation keeps adding micron-thin "
+            "growth zones on the existing crystals. Time, not chemistry, "
+            "becomes the limiting reagent.")
+
+
 # ============================================================
 # EVENT REGISTRY
 # ============================================================
@@ -10780,6 +10849,12 @@ EVENT_REGISTRY = {
     "radioactive_pegmatite_deep_time": event_radioactive_pegmatite_deep_time,
     "radioactive_pegmatite_oxidizing": event_radioactive_pegmatite_oxidizing,
     "radioactive_pegmatite_final_cooling": event_radioactive_pegmatite_final_cooling,
+    # Phase 2 — deccan_zeolite
+    "deccan_zeolite_silica_veneer": event_deccan_zeolite_silica_veneer,
+    "deccan_zeolite_hematite_pulse": event_deccan_zeolite_hematite_pulse,
+    "deccan_zeolite_stage_ii": event_deccan_zeolite_stage_ii,
+    "deccan_zeolite_apophyllite_stage_iii": event_deccan_zeolite_apophyllite_stage_iii,
+    "deccan_zeolite_late_cooling": event_deccan_zeolite_late_cooling,
 }
 
 
@@ -11815,129 +11890,6 @@ def scenario_bisbee() -> Tuple[VugConditions, List[Event], int]:
     return conditions, events, 340
 
 
-def scenario_deccan_zeolite() -> Tuple[VugConditions, List[Event], int]:
-    """Deccan Traps zeolite vesicle — Stage III (~21–58 Ma post-eruption).
-
-    Per Ottens et al. 2019, the Deccan basalt vesicles fill in stages over
-    tens of millions of years. Stage I (early): silica veneers, chalcedony
-    coating. Stage II: zeolite blades (stilbite, scolecite, heulandite) and
-    early calcite. Stage III: the apophyllite stage — alkaline K-Ca-Si-F
-    fluid percolates through cooled basalt vesicles and crystallizes pseudo-
-    cubic apophyllite blocks, sometimes carrying hematite-needle phantoms
-    (the 'bloody apophyllite' of Nashik).
-
-    Compared to the metamorphic / hydrothermal scenarios, this is gentle:
-    no acid pulses, no dramatic T excursions. The story is patient
-    crystallization in alkaline groundwater over geologic time.
-    """
-    conditions = VugConditions(
-        temperature=250.0,        # hot Stage I post-eruption
-        pressure=0.05,            # vesicle in basalt — atmospheric-ish
-        fluid=FluidChemistry(
-            # Alkaline silica-rich groundwater leaching the basalt:
-            # high SiO2 from glass + plagioclase weathering, low K and F
-            # initially — those climb in Stage III when alkali-rich
-            # groundwater finally percolates through, gating apophyllite
-            # behind that explicit pulse so it doesn't preempt hematite.
-            # Iron is already abundant from basalt groundmass leaching;
-            # combined with high O2 it lets Stage I deposit hematite
-            # needles before Stage III brings apophyllite.
-            SiO2=900, Ca=180, CO3=80, Fe=180, Mn=4, Mg=8, Al=15,
-            K=2, Na=40, F=1,
-            # Audit gap-fill (Apr 2026): Sr=2 — Deccan zeolites
-            # (heulandite, stilbite, mesolite) carry Sr substituting
-            # for Ca, sometimes 100s of ppm in the mineral. Sim-scale
-            # 2 ppm in the parent fluid documents the source. Brief-
-            # required non-zero Mg already covered by Mg=8.
-            Sr=2,
-            O2=1.5, pH=8.2, salinity=2.0,
-        ),
-        # Vesicle in basalt — a single primary cavity with minor
-        # post-eruption coalescence. Smooth, sub-spherical.
-        wall=VugWall(
-            composition="basalt",
-            thickness_mm=200.0,
-            vug_diameter_mm=50.0,
-            wall_Fe_ppm=8000.0,    # iron-rich basalt host
-            wall_Mn_ppm=400.0,
-            primary_bubbles=2,
-            secondary_bubbles=3,
-            shape_seed=21,         # Deccan eruption ~66 Ma
-        ),
-    )
-
-    def ev_silica_veneer(cond):
-        """Stage I: hot early silica + hematite needle deposition."""
-        cond.fluid.SiO2 += 400
-        cond.fluid.Fe += 50
-        cond.fluid.O2 = 0.9
-        cond.temperature = 200
-        return ("Stage I — hot post-eruption hydrothermal fluid coats the "
-                "vesicle wall with chalcedony. Silica activity peaks; iron "
-                "stripped from the basalt groundmass deposits as hematite "
-                "needles on the chalcedony rind. These needles will become "
-                "the seeds for the 'bloody apophyllite' phantom inclusions "
-                "in Stage III.")
-
-    def ev_zeolite_stage_ii(cond):
-        """Stage II: zeolite blades + calcite."""
-        cond.fluid.Ca += 80
-        cond.fluid.K += 10
-        cond.fluid.SiO2 += 200
-        cond.fluid.pH = 8.5
-        cond.temperature = 130
-        return ("Stage II — zeolite blades begin to fill the vesicle. "
-                "Stilbite, scolecite, heulandite (modeled here as the "
-                "zeolite paragenesis pH/Si signature). Calcite forms "
-                "as a late-stage carbonate. The vug is filling slowly.")
-
-    def ev_apophyllite_stage_iii(cond):
-        """Stage III: apophyllite-saturating event."""
-        cond.fluid.K += 25
-        cond.fluid.Ca += 50
-        cond.fluid.SiO2 += 300
-        cond.fluid.F += 4
-        cond.fluid.pH = 8.8
-        cond.temperature = 150
-        return ("Stage III — the apophyllite-bearing pulse arrives, alkaline "
-                "K-Ca-Si-F groundwater. Per Ottens et al. 2019 this is the "
-                "long-lasting late stage, 21–58 Ma after the original eruption. "
-                "The pseudo-cubic apophyllite tablets begin to crystallize on "
-                "the wall, on the chalcedony, on the hematite needles already "
-                "present — wherever a nucleation site offers itself.")
-
-    def ev_hematite_pulse(cond):
-        """Iron pulse — produces the bloody apophyllite phantom zone."""
-        cond.fluid.Fe += 80
-        cond.fluid.O2 = 1.0
-        cond.temperature = 175
-        return ("An iron-bearing pulse threads through the vesicle. Hematite "
-                "needles seed the surfaces of any growing apophyllite. When "
-                "the apophyllite resumes crystallization, those needles get "
-                "trapped in the next growth zone — the Nashik 'bloody "
-                "apophyllite' phantom band.")
-
-    def ev_late_cooling(cond):
-        """Stage IV: late cooling, growth slows."""
-        cond.temperature = 80
-        cond.fluid.pH = 8.0
-        cond.flow_rate = 0.1
-        return ("Late cooling. The vesicle fluid drops back toward ambient. "
-                "Apophyllite growth slows but doesn't stop entirely; the "
-                "remaining K-Ca-Si-F supersaturation keeps adding micron-thin "
-                "growth zones on the existing crystals. Time, not chemistry, "
-                "becomes the limiting reagent.")
-
-    events = [
-        Event(20,  "Silica Veneer",       "Stage I early chalcedony coating",       ev_silica_veneer),
-        Event(35,  "Hematite Pulse",      "Iron seeds the vesicle wall — pre-zeolite needle deposition", ev_hematite_pulse),
-        Event(70,  "Zeolite Stage II",    "Stilbite + heulandite + calcite blades", ev_zeolite_stage_ii),
-        Event(110, "Apophyllite Stage III", "Alkaline K-Ca-Si-F pulse — apophyllite grows around the hematite needles, producing the 'bloody apophyllite' phantom band", ev_apophyllite_stage_iii),
-        Event(160, "Late Cooling",        "System cools toward ambient",            ev_late_cooling),
-    ]
-    return conditions, events, 200
-
-
 def scenario_sabkha_dolomitization() -> Tuple[VugConditions, List[Event], int]:
     """Sabkha dolomitization — Coorong-style cycling brine.
 
@@ -12319,7 +12271,7 @@ SCENARIOS = {
     "ouro_preto": scenario_ouro_preto,
     "gem_pegmatite": scenario_gem_pegmatite,
     "bisbee": scenario_bisbee,
-    "deccan_zeolite": scenario_deccan_zeolite,
+    "deccan_zeolite": _JSON5_SCENARIOS["deccan_zeolite"],
     "sabkha_dolomitization": scenario_sabkha_dolomitization,
     "marble_contact_metamorphism": _JSON5_SCENARIOS["marble_contact_metamorphism"],
     # scenario_random opts out — procedural / RNG-driven, stays as code.

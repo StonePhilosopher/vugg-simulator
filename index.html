@@ -10852,6 +10852,48 @@ function event_radioactive_pegmatite_final_cooling(c) {
   return 'The system cools to near-ambient. What remains is a pegmatite pocket: black uraninite cubes, smoky quartz darkened by radiation, and galena crystallized from the lead that uranium became. Time wrote this assemblage. Chemistry just held the pen.';
 }
 
+// --- deccan_zeolite ---
+function event_deccan_zeolite_silica_veneer(c) {
+  c.fluid.SiO2 += 400;
+  c.fluid.Fe += 50;
+  c.fluid.O2 = 0.9;
+  c.temperature = 200;
+  return "Stage I — hot post-eruption hydrothermal fluid coats the vesicle wall with chalcedony. Silica activity peaks; iron stripped from the basalt groundmass deposits as hematite needles on the chalcedony rind. These needles will become the seeds for the 'bloody apophyllite' phantom inclusions in Stage III.";
+}
+
+function event_deccan_zeolite_hematite_pulse(c) {
+  c.fluid.Fe += 80;
+  c.fluid.O2 = 1.0;
+  c.temperature = 175;
+  return "An iron-bearing pulse threads through the vesicle. Hematite needles seed the surfaces of any growing apophyllite. When the apophyllite resumes crystallization, those needles get trapped in the next growth zone — the Nashik 'bloody apophyllite' phantom band.";
+}
+
+function event_deccan_zeolite_stage_ii(c) {
+  c.fluid.Ca += 80;
+  c.fluid.K += 10;
+  c.fluid.SiO2 += 200;
+  c.fluid.pH = 8.5;
+  c.temperature = 130;
+  return 'Stage II — zeolite blades begin to fill the vesicle. Stilbite, scolecite, heulandite (modeled here as the zeolite paragenesis pH/Si signature). Calcite forms as a late-stage carbonate. The vug is filling slowly.';
+}
+
+function event_deccan_zeolite_apophyllite_stage_iii(c) {
+  c.fluid.K += 25;
+  c.fluid.Ca += 50;
+  c.fluid.SiO2 += 300;
+  c.fluid.F += 4;
+  c.fluid.pH = 8.8;
+  c.temperature = 150;
+  return "Stage III — the apophyllite-bearing pulse arrives, alkaline K-Ca-Si-F groundwater. Per Ottens et al. 2019 this is the long-lasting late stage, 21–58 Ma after the original eruption. The pseudo-cubic apophyllite tablets begin to crystallize on the wall, on the chalcedony, on the hematite needles already present — wherever a nucleation site offers itself.";
+}
+
+function event_deccan_zeolite_late_cooling(c) {
+  c.temperature = 80;
+  c.fluid.pH = 8.0;
+  c.flow_rate = 0.1;
+  return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. Time, not chemistry, becomes the limiting reagent.';
+}
+
 // ============================================================
 // EVENT REGISTRY + SCENARIO LOADER (data/scenarios.json5)
 // ============================================================
@@ -10885,6 +10927,12 @@ const EVENT_REGISTRY = {
   radioactive_pegmatite_deep_time: event_radioactive_pegmatite_deep_time,
   radioactive_pegmatite_oxidizing: event_radioactive_pegmatite_oxidizing,
   radioactive_pegmatite_final_cooling: event_radioactive_pegmatite_final_cooling,
+  // Phase 2 — deccan_zeolite
+  deccan_zeolite_silica_veneer: event_deccan_zeolite_silica_veneer,
+  deccan_zeolite_hematite_pulse: event_deccan_zeolite_hematite_pulse,
+  deccan_zeolite_stage_ii: event_deccan_zeolite_stage_ii,
+  deccan_zeolite_apophyllite_stage_iii: event_deccan_zeolite_apophyllite_stage_iii,
+  deccan_zeolite_late_cooling: event_deccan_zeolite_late_cooling,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and
@@ -11357,54 +11405,6 @@ function scenario_bisbee() {
   return { conditions, events, defaultSteps: 340 };
 }
 
-function scenario_deccan_zeolite() {
-  // Stage III Deccan Traps zeolite vesicle (~21–58 Ma post-eruption)
-  const conditions = new VugConditions({
-    temperature: 250.0,
-    pressure: 0.05,
-    fluid: new FluidChemistry({
-      SiO2: 900, Ca: 180, CO3: 80, Fe: 180, Mn: 4, Mg: 8, Al: 15,
-      K: 2, Na: 40, F: 1,
-      Sr: 2,            // audit gap-fill: zeolites carry Sr substituting for Ca
-      O2: 1.5, pH: 8.2, salinity: 2.0
-    }),
-    wall: new VugWall({
-      composition: 'basalt',
-      thickness_mm: 200.0,
-      vug_diameter_mm: 50.0,
-      wall_Fe_ppm: 8000.0,
-      wall_Mn_ppm: 400.0,
-      primary_bubbles: 2,
-      secondary_bubbles: 3,
-      shape_seed: 21,
-    })
-  });
-
-  const events = [
-    { step: 20, name: 'Silica Veneer', description: 'Stage I early chalcedony coating', apply_fn: (c) => {
-      c.fluid.SiO2 += 400; c.fluid.Fe += 50; c.fluid.O2 = 0.9; c.temperature = 200;
-      return "Stage I — hot post-eruption hydrothermal fluid coats the vesicle wall with chalcedony. Silica activity peaks; iron stripped from the basalt groundmass deposits as hematite needles on the chalcedony rind. These needles will become the seeds for the 'bloody apophyllite' phantom inclusions in Stage III.";
-    }},
-    { step: 35, name: 'Hematite Pulse', description: 'Iron seeds the vesicle wall', apply_fn: (c) => {
-      c.fluid.Fe += 80; c.fluid.O2 = 1.0; c.temperature = 175;
-      return "An iron-bearing pulse threads through the vesicle. Hematite needles seed the surfaces of any growing apophyllite. When the apophyllite resumes crystallization, those needles get trapped in the next growth zone — the Nashik 'bloody apophyllite' phantom band.";
-    }},
-    { step: 70, name: 'Zeolite Stage II', description: 'Stilbite + heulandite + calcite blades', apply_fn: (c) => {
-      c.fluid.Ca += 80; c.fluid.K += 10; c.fluid.SiO2 += 200; c.fluid.pH = 8.5; c.temperature = 130;
-      return 'Stage II — zeolite blades begin to fill the vesicle. Stilbite, scolecite, heulandite (modeled here as the zeolite paragenesis pH/Si signature). Calcite forms as a late-stage carbonate. The vug is filling slowly.';
-    }},
-    { step: 110, name: 'Apophyllite Stage III', description: 'Alkaline K-Ca-Si-F pulse', apply_fn: (c) => {
-      c.fluid.K += 25; c.fluid.Ca += 50; c.fluid.SiO2 += 300; c.fluid.F += 4; c.fluid.pH = 8.8; c.temperature = 150;
-      return "Stage III — the apophyllite-bearing pulse arrives, alkaline K-Ca-Si-F groundwater. Per Ottens et al. 2019 this is the long-lasting late stage, 21–58 Ma after the original eruption. The pseudo-cubic apophyllite tablets begin to crystallize on the wall, on the chalcedony, on the hematite needles already present — wherever a nucleation site offers itself.";
-    }},
-    { step: 160, name: 'Late Cooling', description: 'System cools toward ambient', apply_fn: (c) => {
-      c.temperature = 80; c.fluid.pH = 8.0; c.flow_rate = 0.1;
-      return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. Time, not chemistry, becomes the limiting reagent.';
-    }},
-  ];
-  return { conditions, events, defaultSteps: 200 };
-}
-
 function scenario_sabkha_dolomitization() {
   // Coorong-style cycling sabkha — produces ORDERED dolomite via Kim 2023 mechanism.
   const conditions = new VugConditions({
@@ -11462,9 +11462,8 @@ let SCENARIOS = {
   ouro_preto: scenario_ouro_preto,
   gem_pegmatite: scenario_gem_pegmatite,
   bisbee: scenario_bisbee,
-  deccan_zeolite: scenario_deccan_zeolite,
   sabkha_dolomitization: scenario_sabkha_dolomitization,
-  // radioactive_pegmatite, reactive_wall, marble_contact_metamorphism — populated by _loadScenariosJSON5() from data/scenarios.json5 (Phase 2)
+  // deccan_zeolite, radioactive_pegmatite, reactive_wall, marble_contact_metamorphism — populated by _loadScenariosJSON5() from data/scenarios.json5 (Phase 2)
 };
 
 // Kick off the JSON5 fetch. Failure logs a warning (Phase 1 scenarios won't

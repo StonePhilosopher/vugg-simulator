@@ -44,7 +44,7 @@
 // =============================================================
 {
   "$schema_version": "1.0.0",
-  "$last_updated": "2026-04-30 (Phase 2: marble + reactive_wall + radioactive_pegmatite migrated)",
+  "$last_updated": "2026-04-30 (Phase 2: marble + reactive_wall + radioactive_pegmatite + deccan_zeolite migrated)",
   "scenarios": {
 
     "cooling": {
@@ -499,6 +499,69 @@
         "Leach et al. 2010 — MVT genesis review",
         "Anderson & Macqueen 1982 — MVT mineralogy review",
         "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
+      ]
+    },
+
+    "deccan_zeolite": {
+      "anchor": "Deccan Traps zeolite vesicle (Stage III, ~21-58 Ma post-eruption). Nashik 'bloody apophyllite' is the type expression. Per Ottens et al. 2019.",
+      "description": "Patient zeolite-stage paragenesis in cooled basalt vesicles. Stage I silica veneer + Stage II zeolite blades + Stage III alkaline K-Ca-Si-F pulse builds pseudo-cubic apophyllite around hematite-needle phantoms.",
+      "duration_steps": 200,
+      "notes": [
+        "Per Ottens et al. 2019, the Deccan basalt vesicles fill in stages over tens of millions of years. Stage I (early): silica veneers, chalcedony coating. Stage II: zeolite blades (stilbite, scolecite, heulandite) and early calcite. Stage III: the apophyllite stage — alkaline K-Ca-Si-F fluid percolates through cooled basalt vesicles and crystallizes pseudo-cubic apophyllite blocks, sometimes carrying hematite-needle phantoms (the 'bloody apophyllite' of Nashik).",
+        "Compared to the metamorphic / hydrothermal scenarios, this is gentle: no acid pulses, no dramatic T excursions. The story is patient crystallization in alkaline groundwater over geologic time.",
+        "Audit gap-fill (Apr 2026): Sr=2 — Deccan zeolites (heulandite, stilbite, mesolite) carry Sr substituting for Ca, sometimes 100s of ppm in the mineral. Sim-scale 2 ppm in the parent fluid documents the source. Brief-required non-zero Mg already covered by Mg=8."
+      ],
+      "initial": {
+        "temperature_C": 250.0,    // hot Stage I post-eruption
+        "pressure_kbar": 0.05,     // vesicle in basalt — atmospheric-ish
+        "fluid": {
+          // Alkaline silica-rich groundwater leaching the basalt:
+          // high SiO2 from glass + plagioclase weathering, low K and F
+          // initially — those climb in Stage III when alkali-rich
+          // groundwater finally percolates through, gating apophyllite
+          // behind that explicit pulse so it doesn't preempt hematite.
+          // Iron is already abundant from basalt groundmass leaching;
+          // combined with high O2 it lets Stage I deposit hematite
+          // needles before Stage III brings apophyllite.
+          "SiO2": 900,
+          "Ca": 180,
+          "CO3": 80,
+          "Fe": 180,
+          "Mn": 4,
+          "Mg": 8,
+          "Al": 15,
+          "K": 2,
+          "Na": 40,
+          "F": 1,
+          // Audit gap-fill: zeolites carry Sr substituting for Ca.
+          "Sr": 2,
+          "O2": 1.5,
+          "pH": 8.2,
+          "salinity": 2.0
+        },
+        // Vesicle in basalt — single primary cavity with minor
+        // post-eruption coalescence. Smooth, sub-spherical.
+        "wall": {
+          "composition": "basalt",
+          "thickness_mm": 200.0,
+          "vug_diameter_mm": 50.0,
+          "wall_Fe_ppm": 8000.0,    // iron-rich basalt host
+          "wall_Mn_ppm": 400.0,
+          "primary_bubbles": 2,
+          "secondary_bubbles": 3,
+          "shape_seed": 21          // Deccan eruption ~66 Ma
+        }
+      },
+      "events": [
+        { "step": 20,  "type": "deccan_zeolite_silica_veneer",         "name": "Silica Veneer",          "description": "Stage I early chalcedony coating" },
+        { "step": 35,  "type": "deccan_zeolite_hematite_pulse",        "name": "Hematite Pulse",         "description": "Iron seeds the vesicle wall — pre-zeolite needle deposition" },
+        { "step": 70,  "type": "deccan_zeolite_stage_ii",              "name": "Zeolite Stage II",       "description": "Stilbite + heulandite + calcite blades" },
+        { "step": 110, "type": "deccan_zeolite_apophyllite_stage_iii", "name": "Apophyllite Stage III", "description": "Alkaline K-Ca-Si-F pulse — apophyllite grows around the hematite needles, producing the 'bloody apophyllite' phantom band" },
+        { "step": 160, "type": "deccan_zeolite_late_cooling",          "name": "Late Cooling",           "description": "System cools toward ambient" }
+      ],
+      "sources": [
+        "Ottens et al. 2019 — Deccan zeolite paragenesis + Stage III timing (21-58 Ma)",
+        "Pinch & Wilson 1977 — Nashik 'bloody apophyllite' phantom inclusions"
       ]
     },
 
