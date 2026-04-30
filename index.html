@@ -3195,6 +3195,8 @@ const MINERAL_SPEC_FALLBACK = {
   chalcanthite: { formula: "CuSO4·5H2O", nucleation_sigma: 1.0, max_size_cm: 10.0, growth_rate_mult: 0.5, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "cruciform_110", description: "Rare {110} cross-shaped twin", habits: ["tabular"] }], acid_dissolution: null },
   rosasite: { formula: "(Cu,Zn)2(CO3)(OH)2", nucleation_sigma: 1.0, max_size_cm: 6, growth_rate_mult: 0.4, thermal_decomp_C: 200, fluorescence: null, twin_laws: [{ name: "rosasite_100", miller_indices: "{100}", trigger: "growth", probability: 0.05 }], acid_dissolution: { pH_threshold: 5.0 }, class: "carbonate" },
   aurichalcite: { formula: "(Zn,Cu)5(CO3)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 4, growth_rate_mult: 0.4, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 5.0 }, class: "carbonate" },
+  torbernite: { formula: "Cu(UO2)2(PO4)2·12H2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.4, thermal_decomp_C: 75, fluorescence: null, twin_laws: [{ name: "torbernite_110", miller_indices: "{110}", trigger: "growth (rare)", probability: 0.03 }], acid_dissolution: { pH_threshold: 4.5 }, class: "phosphate" },
+  zeunerite: { formula: "Cu(UO2)2(AsO4)2·12H2O", nucleation_sigma: 1.0, max_size_cm: 3, growth_rate_mult: 0.4, thermal_decomp_C: 75, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 }, class: "phosphate" },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3345,7 +3347,8 @@ const MINERAL_GAME_COLORS = {
   descloizite: '#8a3020', mottramite: '#8a9a40',
   raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030',
   chalcanthite: '#2a40c8',
-  rosasite: '#5a8a8e', aurichalcite: '#9ec8c0'   // Round 9a — Cu-blue-green & Zn-pale-green
+  rosasite: '#5a8a8e', aurichalcite: '#9ec8c0',  // Round 9a — Cu-blue-green & Zn-pale-green
+  torbernite: '#3a8e3a', zeunerite: '#5aa040'    // Round 9b — emerald-green uranyl phosphate/arsenate
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -3631,13 +3634,17 @@ let timeScale = 5.0;
 //          fluid.salinity<4 OR fluid.pH>5. First re-dissolvable mineral.
 //
 //        Engine count 69 → 84 (+15). Tests 842 → 1037 (+195).
-//   v9 — Round 9a (Apr 2026): rosasite + aurichalcite + the broth-ratio
-//        branching mechanic. First mineral pair where the *ratio* of
-//        fluid elements (Cu/(Cu+Zn) for rosasite, Zn/(Cu+Zn) for
-//        aurichalcite) — not presence/absence — gates nucleation. Same
-//        parent broth, opposite outcome. Pattern templates 9b
-//        (anion competition) and any future ratio-driven pair. No new
-//        FluidChemistry fields. Engine count 84 → 86 (+2).
+//   v9 — Round 9 supergene-suite mineral expansion (Apr 2026), in sub-rounds:
+//        • 9a: rosasite + aurichalcite + the **broth-ratio branching**
+//          mechanic. First pair where the *ratio* of fluid elements (Cu
+//          vs Zn) gates nucleation, not presence/absence.
+//        • 9b: torbernite + zeunerite + the **anion-competition** mechanic.
+//          The 3-branch generalization of 9a's 2-branch ratio gate, with
+//          three uranyl minerals competing for the same U⁶⁺ cation,
+//          differentiated by anion (PO₄³⁻/AsO₄³⁻/VO₄³⁻). 9b ships the
+//          P + As branches; carnotite (V) joins in 9c.
+//        Engine count 84 → 88 (+4 across 9a + 9b). No new FluidChemistry
+//        fields.
 const SIM_VERSION = 9;
 
 
@@ -5755,6 +5762,56 @@ class VugConditions {
     if (T >= 15 && T <= 28) T_factor = 1.2;
     else if (T < 15) T_factor = 0.6 + 0.04 * (T - 10);
     else T_factor = Math.max(0.5, 1.2 - 0.06 * (T - 28));
+    sigma *= T_factor;
+    return Math.max(sigma, 0);
+  }
+
+  // Round 9b — anion-competition mechanic (torbernite + zeunerite).
+  // Three-branch generalization of 9a's broth-ratio gate: three uranyl
+  // minerals compete for the same U⁶⁺ cation, differentiated by which
+  // anion (PO₄³⁻/AsO₄³⁻/VO₄³⁻) dominates. 9b ships P + As branches;
+  // carnotite (V) joins in 9c. Mirror of vugg.py supersaturation_*.
+
+  supersaturation_torbernite() {
+    if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || this.fluid.P < 1.0 || this.fluid.O2 < 0.8) return 0;
+    if (this.temperature < 10 || this.temperature > 50) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    const anion_total = this.fluid.P + this.fluid.As;
+    if (anion_total <= 0) return 0;
+    const p_fraction = this.fluid.P / anion_total;
+    if (p_fraction < 0.5) return 0;
+    const u_f = Math.min(this.fluid.U / 2.0, 2.0);
+    const cu_f = Math.min(this.fluid.Cu / 25.0, 2.0);
+    const p_f = Math.min(this.fluid.P / 10.0, 2.0);
+    let sigma = u_f * cu_f * p_f;
+    if (p_fraction >= 0.55 && p_fraction <= 0.85) sigma *= 1.3;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 15 && T <= 40) T_factor = 1.2;
+    else if (T < 15) T_factor = 0.6 + 0.04 * (T - 10);
+    else T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 40));
+    sigma *= T_factor;
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_zeunerite() {
+    if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || this.fluid.As < 2.0 || this.fluid.O2 < 0.8) return 0;
+    if (this.temperature < 10 || this.temperature > 50) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    const anion_total = this.fluid.P + this.fluid.As;
+    if (anion_total <= 0) return 0;
+    const as_fraction = this.fluid.As / anion_total;
+    if (as_fraction < 0.5) return 0;
+    const u_f = Math.min(this.fluid.U / 2.0, 2.0);
+    const cu_f = Math.min(this.fluid.Cu / 25.0, 2.0);
+    const as_f = Math.min(this.fluid.As / 15.0, 2.0);
+    let sigma = u_f * cu_f * as_f;
+    if (as_fraction >= 0.55 && as_fraction <= 0.85) sigma *= 1.3;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 15 && T <= 40) T_factor = 1.2;
+    else if (T < 15) T_factor = 0.6 + 0.04 * (T - 10);
+    else T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 40));
     sigma *= T_factor;
     return Math.max(sigma, 0);
   }
@@ -8678,6 +8735,103 @@ function grow_aurichalcite(crystal, conditions, step) {
   });
 }
 
+// Round 9b — anion-competition mechanic (torbernite + zeunerite).
+// Mirror of vugg.py grow_torbernite / grow_zeunerite. Both are uranyl
+// tabular plates flattened on {001}; same habit-selection logic, the
+// only difference is which anion (P or As) drives the formula.
+
+function grow_torbernite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_torbernite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Cu += dissolved_um * 0.2;
+      conditions.fluid.U += dissolved_um * 0.4;
+      conditions.fluid.P += dissolved_um * 0.3;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH=${conditions.fluid.pH.toFixed(1)}) — Cu²⁺ + UO₂²⁺ + PO₄³⁻ released`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+  if (rate < 0.1) return null;
+  let habit_note;
+  if (excess > 1.0 && conditions.temperature < 30) {
+    crystal.habit = "micaceous_book";
+    crystal.dominant_forms = ["stacked tabular plates", "subparallel books"];
+    habit_note = "stacked micaceous plates — high-σ Musonoi habit";
+  } else if (excess > 0.3) {
+    crystal.habit = "tabular_plates";
+    crystal.dominant_forms = ["tabular {001}", "square plates"];
+    habit_note = "thin emerald-green plates — the diagnostic Schneeberg habit";
+  } else {
+    crystal.habit = "encrusting";
+    crystal.dominant_forms = ["earthy crust", "powdery coating"];
+    habit_note = "earthy green crust — low-σ encrustation";
+  }
+  habit_note += "; emerald-green (Cu²⁺ + UO₂²⁺); non-fluorescent (Cu²⁺ quenches)";
+  habit_note += "; ☢️ radioactive";
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.025, 0);
+  conditions.fluid.U = Math.max(conditions.fluid.U - rate * 0.04, 0);
+  conditions.fluid.P = Math.max(conditions.fluid.P - rate * 0.05, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
+function grow_zeunerite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_zeunerite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.10);
+      conditions.fluid.Cu += dissolved_um * 0.2;
+      conditions.fluid.U += dissolved_um * 0.4;
+      conditions.fluid.As += dissolved_um * 0.3;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH=${conditions.fluid.pH.toFixed(1)}) — Cu²⁺ + UO₂²⁺ + AsO₄³⁻ released`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+  if (rate < 0.1) return null;
+  let habit_note;
+  if (excess > 1.0 && conditions.temperature < 30) {
+    crystal.habit = "micaceous_book";
+    crystal.dominant_forms = ["stacked tabular plates", "subparallel books"];
+    habit_note = "stacked micaceous plates — high-σ Schneeberg habit";
+  } else if (excess > 0.3) {
+    crystal.habit = "tabular_plates";
+    crystal.dominant_forms = ["tabular {001}", "square plates"];
+    habit_note = "thin emerald-green plates — the diagnostic Schneeberg habit";
+  } else {
+    crystal.habit = "encrusting";
+    crystal.dominant_forms = ["scaly crust", "thin overlapping plates"];
+    habit_note = "scaly encrustation — low-σ thin coating";
+  }
+  habit_note += "; emerald-green (Cu²⁺ + UO₂²⁺); non-fluorescent (Cu²⁺ quenches)";
+  habit_note += "; ☢️ radioactive (U + As both decay-active)";
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.025, 0);
+  conditions.fluid.U = Math.max(conditions.fluid.U - rate * 0.04, 0);
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.06, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
 // Selenite (gypsum variety) — CaSO4·2H2O
 // Forms at low temperature in oxidizing, evaporative environments
 // The crystal that grows when everything else is ending
@@ -10158,6 +10312,8 @@ const MINERAL_ENGINES = {
   chalcanthite: grow_chalcanthite,
   rosasite: grow_rosasite,           // Round 9a: Cu-dominant broth-ratio carbonate
   aurichalcite: grow_aurichalcite,   // Round 9a: Zn-dominant broth-ratio carbonate
+  torbernite: grow_torbernite,       // Round 9b: P-branch anion-competition uranyl phosphate
+  zeunerite: grow_zeunerite,         // Round 9b: As-branch anion-competition uranyl arsenate
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -13058,6 +13214,45 @@ class VugSimulator {
         this.log.push(`  ✦ NUCLEATION: Aurichalcite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_aur.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, Zn=${this.conditions.fluid.Zn.toFixed(0)}, Zn-fraction=${zn_pct.toFixed(0)}%) — broth-ratio branch: Zn-dominant`);
       }
     }
+
+    // Torbernite nucleation — P-branch of the uranyl anion-competition
+    // trio (Round 9b). Substrate preference: weathering uraninite or wall.
+    const sigma_tor = this.conditions.supersaturation_torbernite();
+    if (sigma_tor > 1.0 && !this._atNucleationCap('torbernite')) {
+      if (rng.random() < 0.20) {
+        let pos = 'vug wall';
+        const weathering_urn = this.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
+        if (weathering_urn.length && rng.random() < 0.5) {
+          pos = `on weathering uraninite #${weathering_urn[0].crystal_id}`;
+        }
+        const c = this.nucleate('torbernite', pos, sigma_tor);
+        const p_as = this.conditions.fluid.P + this.conditions.fluid.As;
+        const p_pct = p_as > 0 ? (this.conditions.fluid.P / p_as * 100) : 0;
+        this.log.push(`  ✦ NUCLEATION: Torbernite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_tor.toFixed(2)}, U=${this.conditions.fluid.U.toFixed(2)}, P=${this.conditions.fluid.P.toFixed(1)}, As=${this.conditions.fluid.As.toFixed(1)}, P-fraction=${p_pct.toFixed(0)}%) — anion-competition branch: P-dominant`);
+      }
+    }
+
+    // Zeunerite nucleation — As-branch of the uranyl anion-competition trio.
+    const sigma_zeu = this.conditions.supersaturation_zeunerite();
+    if (sigma_zeu > 1.0 && !this._atNucleationCap('zeunerite')) {
+      if (rng.random() < 0.20) {
+        let pos = 'vug wall';
+        const weathering_urn = this.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
+        const weathering_apy = this.crystals.filter(c => c.mineral === 'arsenopyrite' && c.dissolved);
+        const active_tor = this.crystals.filter(c => c.mineral === 'torbernite' && c.active);
+        if (weathering_urn.length && rng.random() < 0.4) {
+          pos = `on weathering uraninite #${weathering_urn[0].crystal_id}`;
+        } else if (weathering_apy.length && rng.random() < 0.4) {
+          pos = `on weathering arsenopyrite #${weathering_apy[0].crystal_id}`;
+        } else if (active_tor.length && rng.random() < 0.3) {
+          pos = `adjacent to torbernite #${active_tor[0].crystal_id}`;
+        }
+        const c = this.nucleate('zeunerite', pos, sigma_zeu);
+        const p_as = this.conditions.fluid.P + this.conditions.fluid.As;
+        const as_pct = p_as > 0 ? (this.conditions.fluid.As / p_as * 100) : 0;
+        this.log.push(`  ✦ NUCLEATION: Zeunerite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_zeu.toFixed(2)}, U=${this.conditions.fluid.U.toFixed(2)}, P=${this.conditions.fluid.P.toFixed(1)}, As=${this.conditions.fluid.As.toFixed(1)}, As-fraction=${as_pct.toFixed(0)}%) — anion-competition branch: As-dominant`);
+      }
+    }
   }
 
   apply_events() {
@@ -15139,6 +15334,35 @@ class VugSimulator {
       parts.push("Botryoidal habit — the diagnostic rosasite form. Velvety spherical aggregates, mammillary crusts; the textbook specimens from Mapimi (Mexico) are sky-blue spheres on red limonite that look like planets in a rusted solar system.");
     } else {
       parts.push("Encrusting mammillary habit — thin crust at low supersaturation. Less aesthetic than the diagnostic spheres but more abundant in the field.");
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_torbernite(c) {
+    const parts = [`Torbernite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Cu(UO₂)₂(PO₄)₂·12H₂O — tetragonal uranyl phosphate, the phosphate branch of the autunite-group anion-competition trio (with zeunerite for arsenate and carnotite for vanadate). Emerald-green tabular plates that look like green mica; non-fluorescent because the Cu²⁺ in the lattice quenches the uranyl emission that would otherwise make this mineral glow. The crystal exists because uraninite weathered upstream, releasing mobile U⁶⁺ into oxidizing groundwater that also carried Cu and phosphate — and at the moment of nucleation, phosphate dominated arsenate in the local fluid. Mohs 2-2.5, ☢️ radioactive (the U⁶⁺ decays slowly inside the crystal lattice it builds).");
+    if (c.habit === 'micaceous_book') {
+      parts.push("Micaceous book habit — stacked subparallel plates, the high-σ Musonoi (Katanga, DRC) form. Looks like someone pressed sheets of green glass into a single specimen.");
+    } else if (c.habit === 'tabular_plates') {
+      parts.push("Tabular plates flattened on {001} — the diagnostic Schneeberg habit. Square or octagonal outlines, thin enough to flake, the textbook torbernite specimen.");
+    } else {
+      parts.push("Earthy crust — low-σ encrustation on fracture surfaces. Less aesthetic than the diagnostic plates but more abundant in the field.");
+    }
+    if (c.nucleation_temp > 60) {
+      parts.push("Note: this crystal grew near the metatorbernite transition temperature (~75°C). Continued heat would drive irreversible dehydration to the 8-H₂O metatorbernite form — a one-way conversion.");
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_zeunerite(c) {
+    const parts = [`Zeunerite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("Cu(UO₂)₂(AsO₄)₂·(10-16)H₂O — tetragonal uranyl arsenate, the arsenate branch of the autunite-group trio. Visually almost indistinguishable from torbernite — same emerald-green color, same square tabular habit, same micaceous cleavage — distinguishable in the field only by chemistry. The arsenic is the giveaway: zeunerite localities are almost always former mining districts with arsenopyrite or tennantite as primary As-bearing ores. The fluid that grew this crystal carried more arsenate than phosphate at the moment of nucleation; in a parallel run with the ratio inverted, this same broth would have grown torbernite instead. Mohs 2.5, ☢️ radioactive (U + As both decay-active).");
+    if (c.habit === 'micaceous_book') {
+      parts.push("Micaceous book habit — stacked subparallel plates, the high-σ Schneeberg form. Type-locality material.");
+    } else if (c.habit === 'tabular_plates') {
+      parts.push("Tabular plates flattened on {001} — the diagnostic Schneeberg/Cínovec habit. Identical in shape to torbernite; chemistry is the only discriminator.");
+    } else {
+      parts.push("Scaly encrustation — low-σ thin overlapping plates coating fracture surfaces.");
     }
     return parts.join(' ');
   }
@@ -19279,7 +19503,8 @@ const IDLE_MINERAL_COLORS = {
   descloizite: '#8a3020', mottramite: '#8a9a40',
   raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030',
   chalcanthite: '#2a40c8',
-  rosasite: '#5a8a8e', aurichalcite: '#9ec8c0'   // Round 9a
+  rosasite: '#5a8a8e', aurichalcite: '#9ec8c0',  // Round 9a
+  torbernite: '#3a8e3a', zeunerite: '#5aa040'    // Round 9b
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second

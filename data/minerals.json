@@ -8570,6 +8570,183 @@
       ],
       "audit_status": "Round 9a (Apr 2026). Mirror of rosasite in the broth-ratio branching pair. Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_aurichalcite returns 0 when Zn/(Cu+Zn) < 0.5 — same parent fluid as rosasite, opposite outcome based on ratio. Habit variants: tufted_spray (default, the diagnostic delicate Mapimi habit), radiating_columnar (high σ spheres), encrusting (low σ laminar crust). Source: research/research-aurichalcite.md (boss commit 3bfdf4a); Loktevskoye type locality 1839.",
       "class_color": "#eb7f13"
+    },
+    "torbernite": {
+      "formula": "Cu(UO2)2(PO4)2·12H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tabular_plates",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "default — thin square emerald-green plates flattened on {001}, the diagnostic Schneeberg habit"
+        },
+        {
+          "name": "micaceous_book",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "high σ — stacked subparallel plates, the Musonoi-style book habit"
+        },
+        {
+          "name": "encrusting",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — earthy/powdery green crust on fracture surfaces"
+        }
+      ],
+      "class": "phosphate",
+      "description": "Cu(UO₂)₂(PO₄)₂·12H₂O — tetragonal uranyl phosphate, the P-branch of the autunite-group anion-competition trio (with zeunerite for AsO₄³⁻ and carnotite for VO₄³⁻ the other branches). Forms emerald-green to apple-green thin tabular plates that look like green mica; strongly radioactive (U⁶⁺ in the lattice), notably non-fluorescent (Cu²⁺ quenches uranyl emission). Forms at the supergene oxidation front when uraninite weathers to mobile U⁶⁺ and meets phosphate-bearing groundwater alongside Cu²⁺ — torbernite wins the cation race when P/(P+As) > 0.5 in the local fluid. Mohs 2-2.5, dehydrates irreversibly to metatorbernite (8 H₂O) above ~75°C. Type locality: Schneeberg, Saxony (Ore Mountains). Sources: Pinch & Wilson 1977 monographs; research/research-torbernite.md (boss commit 3bfdf4a).",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        10,
+        50
+      ],
+      "T_optimum_C": [
+        15,
+        40
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 5,
+        "U": 0.3,
+        "P": 1.0,
+        "O2": 0.8
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": 75,
+      "thermal_decomp_reaction": "Cu(UO₂)₂(PO₄)₂·12H₂O → Cu(UO₂)₂(PO₄)₂·8H₂O + 4H₂O (irreversible dehydration to metatorbernite)",
+      "thermal_decomp_products": {
+        "Cu": 0.0,
+        "U": 0.0,
+        "P": 0.0
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "torbernite_110",
+          "miller_indices": "{110}",
+          "trigger": "growth (rare)",
+          "probability": 0.03
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "Cu(UO₂)₂(PO₄)₂·12H₂O + 6H⁺ → Cu²⁺ + 2(UO₂)²⁺ + 2H₃PO₄ + 12H₂O (dissolves readily in mineral acids)",
+        "products": {
+          "Cu": 0.2,
+          "U": 0.4,
+          "P": 0.3
+        }
+      },
+      "habit": "tabular_plates",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_torbernite",
+      "runtimes_present": [
+        "vugg.py",
+        "index.html"
+      ],
+      "audit_status": "Round 9b (Apr 2026). First mineral with the anion-competition mechanic — three-way fork over the U⁶⁺ cation between PO₄³⁻ (torbernite), AsO₄³⁻ (zeunerite, also 9b), and VO₄³⁻ (carnotite, 9c). supersaturation_torbernite returns 0 when P/(P+As) < 0.5, locking the species to phosphate-dominant supergene fluid. Pattern is the 3-branch generalization of 9a's 2-branch broth-ratio mechanic. Habit variants: tabular_plates (default Schneeberg), micaceous_book (high σ stacks), encrusting (low σ powdery crust). Source: research/research-torbernite.md.",
+      "class_color": "#13eb7f"
+    },
+    "zeunerite": {
+      "formula": "Cu(UO2)2(AsO4)2·12H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 3,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tabular_plates",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "default — thin emerald-green plates, isostructural with torbernite (P↔As substitution)"
+        },
+        {
+          "name": "micaceous_book",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "high σ — stacked subparallel plates, the Schneeberg habit"
+        },
+        {
+          "name": "encrusting",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — scaly thin encrustation"
+        }
+      ],
+      "class": "phosphate",
+      "description": "Cu(UO₂)₂(AsO₄)₂·(10-16)H₂O — tetragonal uranyl arsenate, the As-branch of the autunite-group anion-competition trio. Visually almost indistinguishable from torbernite — same emerald-green color, same square tabular habit, same micaceous cleavage — distinguishable only by chemistry. The arsenic is the giveaway: zeunerite localities are almost always former mining districts with arsenic-bearing primary ores (arsenopyrite, tennantite). Forms at the supergene oxidation front when uraninite weathers alongside As-rich primary sulfides; zeunerite wins the anion race when As/(P+As) > 0.5. Mohs 2.5; dehydrates irreversibly to metazeunerite (8 H₂O) above ~75°C; non-fluorescent (Cu²⁺ quenches). Type locality: Schneeberg, Saxony (1872). Sources: Pinch & Wilson 1977; research/research-zeunerite.md.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        10,
+        50
+      ],
+      "T_optimum_C": [
+        15,
+        40
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 5,
+        "U": 0.3,
+        "As": 2.0,
+        "O2": 0.8
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": 75,
+      "thermal_decomp_reaction": "Cu(UO₂)₂(AsO₄)₂·12H₂O → Cu(UO₂)₂(AsO₄)₂·8H₂O + 4H₂O (irreversible dehydration to metazeunerite)",
+      "thermal_decomp_products": {
+        "Cu": 0.0,
+        "U": 0.0,
+        "As": 0.0
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "Cu(UO₂)₂(AsO₄)₂·12H₂O + 6H⁺ → Cu²⁺ + 2(UO₂)²⁺ + 2H₃AsO₄ + 12H₂O (dissolves readily)",
+        "products": {
+          "Cu": 0.2,
+          "U": 0.4,
+          "As": 0.3
+        }
+      },
+      "habit": "tabular_plates",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_zeunerite",
+      "runtimes_present": [
+        "vugg.py",
+        "index.html"
+      ],
+      "audit_status": "Round 9b (Apr 2026). Mirror of torbernite in the anion-competition trio. Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_zeunerite returns 0 when As/(P+As) < 0.5 — the As-dominant branch. Isostructural with torbernite (Schneeberg pair); shares all habit-selection logic. The third branch (carnotite, K-V) is deferred to 9c. Source: research/research-zeunerite.md.",
+      "class_color": "#13eb7f"
     }
   }
 }

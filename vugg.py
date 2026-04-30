@@ -175,14 +175,22 @@ from typing import List, Dict, Optional, Tuple
 #            dissolvable mineral.
 #
 #        Engine count 69 → 84 (+15). Tests 842 → 1037 (+195).
-#   v9 — Round 9a (Apr 2026): rosasite + aurichalcite + the broth-ratio
-#        branching mechanic. First mineral pair where the *ratio* of
-#        fluid elements (Cu/(Cu+Zn) for rosasite, Zn/(Cu+Zn) for
-#        aurichalcite) — not presence/absence — gates nucleation. Same
-#        parent broth, opposite outcome. Pattern templates 9b
-#        (anion competition: torbernite/zeunerite/carnotite) and any
-#        future ratio-driven pair. Engine count 84 → 86 (+2).
-#        No new FluidChemistry fields — uses existing Cu, Zn, CO3, O2.
+#   v9 — Round 9 supergene-suite mineral expansion (Apr 2026), shipped
+#        in sub-rounds:
+#        • 9a: rosasite + aurichalcite + the **broth-ratio branching**
+#          mechanic. First mineral pair where the *ratio* of fluid
+#          elements (Cu vs Zn for the carbonate pair) — not presence/
+#          absence — gates nucleation. Same parent broth, opposite
+#          outcome.
+#        • 9b: torbernite + zeunerite + the **anion-competition**
+#          mechanic. The 3-branch generalization of 9a's 2-branch
+#          ratio gate, with three uranyl minerals competing for the
+#          same U⁶⁺ cation, differentiated by which anion (PO₄³⁻/
+#          AsO₄³⁻/VO₄³⁻) dominates. 9b ships the P (torbernite) and
+#          As (zeunerite) branches; carnotite (V branch) ships in 9c.
+#        Both mechanics establish patterns reusable for future
+#        ratio-driven pairs/trios. Engine count 84 → 88 (+4 across
+#        9a + 9b). No new FluidChemistry fields.
 SIM_VERSION = 9
 
 
@@ -3836,6 +3844,124 @@ class VugConditions:
             T_factor = 0.6 + 0.04 * (T - 10)
         else:  # 28 < T <= 40
             T_factor = max(0.5, 1.2 - 0.06 * (T - 28))
+        sigma *= T_factor
+
+        return max(sigma, 0)
+
+    def supersaturation_torbernite(self) -> float:
+        """Torbernite (Cu(UO₂)₂(PO₄)₂·12H₂O) — P-branch of the autunite-group
+        anion-competition trio (Round 9b).
+
+        First mineral with the **anion-competition** mechanic — the 3-branch
+        generalization of 9a's 2-branch broth-ratio gate. Three uranyl
+        minerals (torbernite, zeunerite, carnotite) compete for the same
+        U⁶⁺ cation, differentiated by which anion (PO₄³⁻ / AsO₄³⁻ / VO₄³⁻)
+        dominates the local fluid. Torbernite wins when P/(P+As) > 0.5
+        (since carnotite is the K+V branch shipped in 9c, this 9b cut
+        only handles P vs As; V will join the gate in 9c).
+
+        Forms emerald-green tabular plates flattened on {001} — looks like
+        green mica. Strongly radioactive (U⁶⁺ in lattice); notably
+        non-fluorescent because Cu²⁺ quenches uranyl emission. Dehydrates
+        irreversibly to metatorbernite above ~75°C (handled by
+        THERMAL_DECOMPOSITION).
+
+        Source: research/research-torbernite.md (boss commit 3bfdf4a);
+        Schneeberg type locality (Saxony Ore Mountains).
+        """
+        # Required ingredients — all four
+        if (self.fluid.Cu < 5 or self.fluid.U < 0.3
+                or self.fluid.P < 1.0 or self.fluid.O2 < 0.8):
+            return 0
+        # T-gate — supergene oxidation zone (above 50°C → metatorbernite
+        # is favored; we don't grow that variant here, just block).
+        if self.temperature < 10 or self.temperature > 50:
+            return 0
+        # pH gate — slightly acidic to neutral (5-7 per research)
+        if self.fluid.pH < 5.0 or self.fluid.pH > 7.5:
+            return 0
+        # Anion competition — P must dominate over As (V handled when
+        # carnotite ships in 9c; until then, V doesn't enter the gate).
+        anion_total = self.fluid.P + self.fluid.As
+        if anion_total <= 0:
+            return 0
+        p_fraction = self.fluid.P / anion_total
+        if p_fraction < 0.5:
+            return 0
+
+        # Activity factors — U is trace, Cu and P are moderate
+        u_f = min(self.fluid.U / 2.0, 2.0)
+        cu_f = min(self.fluid.Cu / 25.0, 2.0)
+        p_f = min(self.fluid.P / 10.0, 2.0)
+        sigma = u_f * cu_f * p_f
+
+        # P-fraction sweet spot — pure-P (>0.95) is fine for torbernite
+        # (autunite would compete only if Ca dominates Cu, which is its
+        # own future fork). 0.55-0.85 sweet spot to mirror 9a's tuning.
+        if 0.55 <= p_fraction <= 0.85:
+            sigma *= 1.3
+
+        # T optimum — 15-40°C
+        T = self.temperature
+        if 15 <= T <= 40:
+            T_factor = 1.2
+        elif T < 15:
+            T_factor = 0.6 + 0.04 * (T - 10)
+        else:  # 40 < T <= 50
+            T_factor = max(0.4, 1.2 - 0.08 * (T - 40))
+        sigma *= T_factor
+
+        return max(sigma, 0)
+
+    def supersaturation_zeunerite(self) -> float:
+        """Zeunerite (Cu(UO₂)₂(AsO₄)₂·xH₂O) — As-branch of the autunite-group
+        anion-competition trio (Round 9b).
+
+        Mirror of torbernite. Same parent fluid, opposite anion preference:
+        zeunerite forms when As/(P+As) > 0.5. Isostructural with torbernite
+        — same crystal system, same tabular habit; distinguishable in the
+        field only by chemistry. The arsenic is the giveaway: zeunerite
+        localities are former mining districts with arsenopyrite or
+        tennantite as primary As-bearing ores.
+
+        Source: research/research-zeunerite.md (boss commit 3bfdf4a);
+        Schneeberg type locality (1872).
+        """
+        # Required ingredients
+        if (self.fluid.Cu < 5 or self.fluid.U < 0.3
+                or self.fluid.As < 2.0 or self.fluid.O2 < 0.8):
+            return 0
+        if self.temperature < 10 or self.temperature > 50:
+            return 0
+        if self.fluid.pH < 5.0 or self.fluid.pH > 7.5:
+            return 0
+
+        # Anion competition — As must dominate over P
+        anion_total = self.fluid.P + self.fluid.As
+        if anion_total <= 0:
+            return 0
+        as_fraction = self.fluid.As / anion_total
+        if as_fraction < 0.5:
+            return 0
+
+        # Activity factors
+        u_f = min(self.fluid.U / 2.0, 2.0)
+        cu_f = min(self.fluid.Cu / 25.0, 2.0)
+        as_f = min(self.fluid.As / 15.0, 2.0)
+        sigma = u_f * cu_f * as_f
+
+        # As-fraction sweet spot
+        if 0.55 <= as_fraction <= 0.85:
+            sigma *= 1.3
+
+        # T optimum
+        T = self.temperature
+        if 15 <= T <= 40:
+            T_factor = 1.2
+        elif T < 15:
+            T_factor = 0.6 + 0.04 * (T - 10)
+        else:
+            T_factor = max(0.4, 1.2 - 0.08 * (T - 40))
         sigma *= T_factor
 
         return max(sigma, 0)
@@ -9849,6 +9975,128 @@ def grow_aurichalcite(crystal: Crystal, conditions: VugConditions, step: int) ->
     )
 
 
+def grow_torbernite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Torbernite (Cu(UO₂)₂(PO₄)₂·12H₂O) — P-branch of the uranyl
+    anion-competition trio (Round 9b). Tabular emerald-green plates.
+
+    Habit selection: high σ + cool → micaceous_book (stacked plates);
+    moderate σ → tabular_plates (default Schneeberg habit); low σ →
+    encrusting (powdery green crust on fracture surfaces).
+
+    Source: research/research-torbernite.md (boss commit 3bfdf4a).
+    """
+    sigma = conditions.supersaturation_torbernite()
+    if sigma < 1.0:
+        # Acid dissolution — uranyl phosphates dissolve readily below pH 4.5
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.5:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Cu += dissolved_um * 0.2
+            conditions.fluid.U += dissolved_um * 0.4
+            conditions.fluid.P += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH={conditions.fluid.pH:.1f}) — Cu²⁺ + UO₂²⁺ + PO₄³⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 1.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit selection
+    if excess > 1.0 and conditions.temperature < 30:
+        crystal.habit = "micaceous_book"
+        crystal.dominant_forms = ["stacked tabular plates", "subparallel books"]
+        habit_note = "stacked micaceous plates — high-σ Musonoi habit"
+    elif excess > 0.3:
+        crystal.habit = "tabular_plates"
+        crystal.dominant_forms = ["tabular {001}", "square plates"]
+        habit_note = "thin emerald-green plates — the diagnostic Schneeberg habit"
+    else:
+        crystal.habit = "encrusting"
+        crystal.dominant_forms = ["earthy crust", "powdery coating"]
+        habit_note = "earthy green crust — low-σ encrustation"
+
+    # Color note — emerald-green (Cu²⁺ chromophore + uranyl absorption)
+    habit_note += "; emerald-green (Cu²⁺ + UO₂²⁺); non-fluorescent (Cu²⁺ quenches)"
+
+    # Radiation flag — torbernite carries U, slowly self-irradiates
+    habit_note += "; ☢️ radioactive"
+
+    # Deplete — formula has 1 Cu + 2 U + 2 P per unit
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.025, 0)
+    conditions.fluid.U = max(conditions.fluid.U - rate * 0.04, 0)
+    conditions.fluid.P = max(conditions.fluid.P - rate * 0.05, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
+def grow_zeunerite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Zeunerite (Cu(UO₂)₂(AsO₄)₂·xH₂O) — As-branch of the uranyl
+    anion-competition trio (Round 9b). Isostructural with torbernite.
+
+    Same habit selection logic as torbernite (the two species are
+    visually indistinguishable in the field — distinguishable only
+    by chemistry).
+
+    Source: research/research-zeunerite.md (boss commit 3bfdf4a).
+    """
+    sigma = conditions.supersaturation_zeunerite()
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.5:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Cu += dissolved_um * 0.2
+            conditions.fluid.U += dissolved_um * 0.4
+            conditions.fluid.As += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH={conditions.fluid.pH:.1f}) — Cu²⁺ + UO₂²⁺ + AsO₄³⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 1.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit selection — same as torbernite
+    if excess > 1.0 and conditions.temperature < 30:
+        crystal.habit = "micaceous_book"
+        crystal.dominant_forms = ["stacked tabular plates", "subparallel books"]
+        habit_note = "stacked micaceous plates — high-σ Schneeberg habit"
+    elif excess > 0.3:
+        crystal.habit = "tabular_plates"
+        crystal.dominant_forms = ["tabular {001}", "square plates"]
+        habit_note = "thin emerald-green plates — the diagnostic Schneeberg habit"
+    else:
+        crystal.habit = "encrusting"
+        crystal.dominant_forms = ["scaly crust", "thin overlapping plates"]
+        habit_note = "scaly encrustation — low-σ thin coating"
+
+    habit_note += "; emerald-green (Cu²⁺ + UO₂²⁺); non-fluorescent (Cu²⁺ quenches)"
+    habit_note += "; ☢️ radioactive (U + As both decay-active)"
+
+    # Deplete — formula has 1 Cu + 2 U + 2 As per unit
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.025, 0)
+    conditions.fluid.U = max(conditions.fluid.U - rate * 0.04, 0)
+    conditions.fluid.As = max(conditions.fluid.As - rate * 0.06, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_selenite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Selenite / Gypsum (CaSO₄·2H₂O) growth. Low-T evaporite, Naica's giant crystals."""
     sigma = conditions.supersaturation_selenite()
@@ -9996,6 +10244,8 @@ MINERAL_ENGINES = {
     "chalcanthite": grow_chalcanthite,
     "rosasite": grow_rosasite,           # Round 9a: Cu-dominant broth-ratio carbonate
     "aurichalcite": grow_aurichalcite,   # Round 9a: Zn-dominant broth-ratio carbonate
+    "torbernite": grow_torbernite,       # Round 9b: P-branch anion-competition uranyl phosphate
+    "zeunerite": grow_zeunerite,         # Round 9b: As-branch anion-competition uranyl arsenate
 }
 
 
@@ -14106,6 +14356,50 @@ class VugSimulator:
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_aur:.2f}, "
                               f"Cu={self.conditions.fluid.Cu:.0f}, Zn={self.conditions.fluid.Zn:.0f}, "
                               f"Zn-fraction={zn_pct:.0f}%) — broth-ratio branch: Zn-dominant")
+
+        # Torbernite nucleation — P-branch of the uranyl anion-competition
+        # trio (Round 9b). Substrate preference: weathering uraninite (the
+        # primary U source as it oxidizes to U⁶⁺) or bare wall.
+        sigma_tor = self.conditions.supersaturation_torbernite()
+        if sigma_tor > 1.0 and not self._at_nucleation_cap("torbernite"):
+            if random.random() < 0.20:
+                pos = "vug wall"
+                weathering_urn = [c for c in self.crystals if c.mineral == "uraninite" and c.dissolved]
+                if weathering_urn and random.random() < 0.5:
+                    pos = f"on weathering uraninite #{weathering_urn[0].crystal_id}"
+                c = self.nucleate("torbernite", position=pos, sigma=sigma_tor)
+                p_as = self.conditions.fluid.P + self.conditions.fluid.As
+                p_pct = (self.conditions.fluid.P / p_as * 100) if p_as > 0 else 0
+                self.log.append(f"  ✦ NUCLEATION: Torbernite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_tor:.2f}, "
+                              f"U={self.conditions.fluid.U:.2f}, P={self.conditions.fluid.P:.1f}, "
+                              f"As={self.conditions.fluid.As:.1f}, P-fraction={p_pct:.0f}%) — "
+                              f"anion-competition branch: P-dominant")
+
+        # Zeunerite nucleation — As-branch of the uranyl anion-competition
+        # trio. Substrate preference: weathering uraninite + arsenopyrite
+        # (As source) or adjacent torbernite (isostructural intergrowth).
+        sigma_zeu = self.conditions.supersaturation_zeunerite()
+        if sigma_zeu > 1.0 and not self._at_nucleation_cap("zeunerite"):
+            if random.random() < 0.20:
+                pos = "vug wall"
+                weathering_urn = [c for c in self.crystals if c.mineral == "uraninite" and c.dissolved]
+                weathering_apy = [c for c in self.crystals if c.mineral == "arsenopyrite" and c.dissolved]
+                active_tor = [c for c in self.crystals if c.mineral == "torbernite" and c.active]
+                if weathering_urn and random.random() < 0.4:
+                    pos = f"on weathering uraninite #{weathering_urn[0].crystal_id}"
+                elif weathering_apy and random.random() < 0.4:
+                    pos = f"on weathering arsenopyrite #{weathering_apy[0].crystal_id}"
+                elif active_tor and random.random() < 0.3:
+                    pos = f"adjacent to torbernite #{active_tor[0].crystal_id}"
+                c = self.nucleate("zeunerite", position=pos, sigma=sigma_zeu)
+                p_as = self.conditions.fluid.P + self.conditions.fluid.As
+                as_pct = (self.conditions.fluid.As / p_as * 100) if p_as > 0 else 0
+                self.log.append(f"  ✦ NUCLEATION: Zeunerite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_zeu:.2f}, "
+                              f"U={self.conditions.fluid.U:.2f}, P={self.conditions.fluid.P:.1f}, "
+                              f"As={self.conditions.fluid.As:.1f}, As-fraction={as_pct:.0f}%) — "
+                              f"anion-competition branch: As-dominant")
 
     def apply_events(self):
         """Apply any events scheduled for this step."""
@@ -19459,6 +19753,88 @@ class VugSimulator:
                 "Encrusting mammillary habit — thin crust at low "
                 "supersaturation. Less aesthetic than the diagnostic "
                 "spheres but more abundant in the field."
+            )
+        return " ".join(parts)
+
+    def _narrate_torbernite(self, c: Crystal) -> str:
+        """Narrate torbernite — P-branch uranyl phosphate (Round 9b)."""
+        parts = [f"Torbernite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu(UO₂)₂(PO₄)₂·12H₂O — tetragonal uranyl phosphate, the "
+            "phosphate branch of the autunite-group anion-competition "
+            "trio (with zeunerite for arsenate and carnotite for "
+            "vanadate). Emerald-green tabular plates that look like "
+            "green mica; non-fluorescent because the Cu²⁺ in the "
+            "lattice quenches the uranyl emission that would otherwise "
+            "make this mineral glow. The crystal exists because uraninite "
+            "weathered upstream, releasing mobile U⁶⁺ into oxidizing "
+            "groundwater that also carried Cu and phosphate — and at "
+            "the moment of nucleation, phosphate dominated arsenate in "
+            "the local fluid. Mohs 2-2.5, ☢️ radioactive (the U⁶⁺ "
+            "decays slowly inside the crystal lattice it builds)."
+        )
+        if c.habit == "micaceous_book":
+            parts.append(
+                "Micaceous book habit — stacked subparallel plates, "
+                "the high-σ Musonoi (Katanga, DRC) form. Looks like "
+                "someone pressed sheets of green glass into a single "
+                "specimen."
+            )
+        elif c.habit == "tabular_plates":
+            parts.append(
+                "Tabular plates flattened on {001} — the diagnostic "
+                "Schneeberg habit. Square or octagonal outlines, thin "
+                "enough to flake, the textbook torbernite specimen."
+            )
+        else:
+            parts.append(
+                "Earthy crust — low-σ encrustation on fracture surfaces. "
+                "Less aesthetic than the diagnostic plates but more "
+                "abundant in the field."
+            )
+        # Dehydration warning if T approaches metatorbernite threshold
+        if c.nucleation_temp > 60:
+            parts.append(
+                "Note: this crystal grew near the metatorbernite "
+                "transition temperature (~75°C). Continued heat would "
+                "drive irreversible dehydration to the 8-H₂O metatorbernite "
+                "form — a one-way conversion."
+            )
+        return " ".join(parts)
+
+    def _narrate_zeunerite(self, c: Crystal) -> str:
+        """Narrate zeunerite — As-branch uranyl arsenate (Round 9b)."""
+        parts = [f"Zeunerite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "Cu(UO₂)₂(AsO₄)₂·(10-16)H₂O — tetragonal uranyl arsenate, "
+            "the arsenate branch of the autunite-group trio. Visually "
+            "almost indistinguishable from torbernite — same emerald-"
+            "green color, same square tabular habit, same micaceous "
+            "cleavage — distinguishable in the field only by chemistry. "
+            "The arsenic is the giveaway: zeunerite localities are "
+            "almost always former mining districts with arsenopyrite "
+            "or tennantite as primary As-bearing ores. The fluid that "
+            "grew this crystal carried more arsenate than phosphate "
+            "at the moment of nucleation; in a parallel run with the "
+            "ratio inverted, this same broth would have grown "
+            "torbernite instead. Mohs 2.5, ☢️ radioactive (U + As both "
+            "decay-active)."
+        )
+        if c.habit == "micaceous_book":
+            parts.append(
+                "Micaceous book habit — stacked subparallel plates, "
+                "the high-σ Schneeberg form. Type-locality material."
+            )
+        elif c.habit == "tabular_plates":
+            parts.append(
+                "Tabular plates flattened on {001} — the diagnostic "
+                "Schneeberg/Cínovec habit. Identical in shape to "
+                "torbernite; chemistry is the only discriminator."
+            )
+        else:
+            parts.append(
+                "Scaly encrustation — low-σ thin overlapping plates "
+                "coating fracture surfaces."
             )
         return " ".join(parts)
 
