@@ -44,7 +44,7 @@
 // =============================================================
 {
   "$schema_version": "1.0.0",
-  "$last_updated": "2026-04-30 (Phase 1: cooling/pulse/mvt/porphyry extracted from procedural code)",
+  "$last_updated": "2026-04-30 (Phase 2 begins: marble_contact_metamorphism migrated)",
   "scenarios": {
 
     "cooling": {
@@ -348,6 +348,75 @@
         "Seo et al. 2012 — Mo pulse timing in porphyry systems",
         "Heinrich 2007 — porphyry fluid chemistry compendium",
         "Kouzmanov & Pokrovski 2012 — As activity in epithermal Cu systems"
+      ]
+    },
+
+    "marble_contact_metamorphism": {
+      "anchor": "Mogok Stone Tract, Mandalay Region, Burma — type locality for marble-hosted ruby + 2000+-year source of 'pigeon's blood' rubies",
+      "description": "Marble-hosted contact metamorphic vug — Al-rich, SiO2-undersaturated skarn fluid drives corundum-family (ruby/sapphire) paragenesis.",
+      "duration_steps": 180,
+      "notes": [
+        "Anchored to the Mogok Stone Tract: dolomitic marble of the Mogok Metamorphic Belt was regionally metamorphosed during the Himalayan orogeny (~30 Ma) to amphibolite-to-granulite grade, then intruded by leucogranite dykes at 17-22 Ma that drove contact metamorphic ruby/sapphire/spinel crystallization in skarn envelopes.",
+        "Chemistry signature: SiO2 undersaturation (the defining corundum-family constraint). Al and Ca are high, SiO2 is low — opposite of every other scenario in the sim. When SiO2 is scarce, Al3+ cannot form feldspar/mica/Al2SiO5 polymorphs and instead crystallizes as pure corundum; with Cr trace from adjacent ultramafic country rock, ruby forms; with Fe+Ti, blue sapphire; with Fe alone, yellow sapphire.",
+        "Thermal regime: 500 → 700 → 500 → 350°C over 180 steps. Phase 1 (initial warmup): contact metamorphic pulse approaches; marble starts to fluid-saturate. Phase 2 (700°C peak, step 20): corundum family nucleates; Cr partitions to ruby, Fe+Ti to blue sapphire. Phase 3 (retrograde cooling, step 60, 700→500°C): main growth window; fluid migrates along skarn bleaching front. Phase 4 (fracture seal, step 150): system closes.",
+        "Wall composition is 'limestone' as a proxy for dolomitic marble — sim currently models limestone + pegmatite + basalt; marble is the metamorphosed limestone end-member, closest fit available."
+      ],
+      "initial": {
+        // T=500°C: initial warmup phase before peak. Pressure 3.0 kbar
+        // = contact-metamorphic amphibolite-to-granulite grade.
+        "temperature_C": 500.0,
+        "pressure_kbar": 3.0,
+        "fluid": {
+          // Al=50, SiO2=20: corundum family gates on SiO2 < 50 (upper
+          // bound — novel in the sim) and Al >= 15. With SiO2 = 20 well
+          // below threshold and Al = 50 well above, all three corundum
+          // species have room to nucleate competing for Al supply.
+          "Al": 50,
+          "SiO2": 20,
+          // Ca high — dolomitic marble host dissolving into fluid.
+          // Calcite stable in solid form at 700°C (decomposes above 840°C),
+          // doesn't nucleate from fluid at this Eh.
+          "Ca": 800,
+          "CO3": 50,  // modest; most carbonate locked in marble wall
+          // Mg tracks dolomite host — solid in wall, minor in fluid.
+          "Mg": 120,
+          // Chromophore traces for ruby/sapphire dispatch:
+          "Cr": 3,    // ruby trigger (threshold 2 ppm)
+          "Fe": 8,    // sapphire-family Fe (Fe+Ti → blue; Fe alone ≥20 → yellow)
+          "Ti": 1,    // blue sapphire (Fe+Ti intervalence charge transfer)
+          "V": 0.5,   // not above sapphire-violet gate; included for completeness
+          // Minor trace species typical of skarn contact fluids:
+          "Mn": 0.5,  // pink sapphire at high enough concentration
+          "Na": 20,
+          "K": 8,
+          "B": 0,     // marble-hosted — no pegmatite boron contribution
+          "F": 3,     // trace F from phlogopite hydrolysis
+          // Alkaline pH from marble buffering.
+          "pH": 8.0,
+          "salinity": 2.0,  // low-salinity metamorphic fluid
+          "O2": 0.3   // moderate — amphibolite facies not strongly reducing
+        },
+        "wall": {
+          "composition": "limestone",
+          "thickness_mm": 1200.0,
+          "vug_diameter_mm": 40.0,
+          "wall_Fe_ppm": 200.0,  // marble is Fe-poor — strong ruby Cr fluorescence (no Fe to quench)
+          "wall_Mn_ppm": 50.0,
+          "wall_Mg_ppm": 15000.0,  // dolomite-grade Mg content
+          "primary_bubbles": 3,
+          "secondary_bubbles": 6,
+          "shape_seed": 11
+        }
+      },
+      "events": [
+        { "step": 20,  "type": "marble_peak_metamorphism", "name": "Peak Metamorphism", "description": "Leucogranite intrusion at contact" },
+        { "step": 60,  "type": "marble_retrograde_cooling", "name": "Retrograde Cooling", "description": "Slow cooling, main ruby growth window" },
+        { "step": 150, "type": "marble_fracture_seal", "name": "Fracture Seal", "description": "System closes" }
+      ],
+      "sources": [
+        "Garnier et al. 2008 (Ore Geology Reviews 34:169-191) — Marble-hosted ruby deposits from Central and Southeast Asia",
+        "Peretti et al. 2018 (Gems & Gemology special issue) — Update on corundum and its gem varieties",
+        "Searle et al. 2007 (Journal of Geology 115:1-23) — Tectonic evolution of the Mogok metamorphic belt, Burma (Myanmar)"
       ]
     }
 

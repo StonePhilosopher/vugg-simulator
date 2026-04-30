@@ -10609,6 +10609,57 @@ def event_fluid_mixing(conditions: VugConditions) -> str:
 
 
 # ============================================================
+# PHASE 2 EVENT HANDLERS — promoted from inline closures
+# ============================================================
+# These were originally `def ev_X(cond):` closures inside the legacy
+# scenario_* functions. Phase 2 of the data-as-truth refactor promotes
+# them to module-level so the parent scenario's initial state can move
+# to data/scenarios.json5 and reference these handlers by string id.
+# Names are scenario-prefixed (event_<scenario>_<verb>) to keep them
+# unambiguous even when other scenarios use similar verbs.
+
+# --- marble_contact_metamorphism (Mogok ruby/sapphire skarn) ---
+
+def event_marble_peak_metamorphism(conditions: VugConditions) -> str:
+    """Peak metamorphic pulse: leucogranite dyke injects hot fluid into
+    the marble contact, driving peak T and skarn nucleation."""
+    conditions.temperature = 700.0
+    conditions.fluid.Al += 15
+    conditions.fluid.SiO2 += 8
+    conditions.fluid.Cr += 1.5
+    conditions.flow_rate = 2.5
+    return ("Contact metamorphic peak: a leucogranite dyke 50 m away "
+            "pumps 700°C fluid into the marble interface. Skarn "
+            "alteration zones expand outward; corundum family crystals "
+            "begin to nucleate in the most Si-undersaturated patches. "
+            "Pigeon's blood ruby paragenesis underway.")
+
+
+def event_marble_retrograde_cooling(conditions: VugConditions) -> str:
+    """Retrograde cooling: slow cooling with fluid migration along
+    bleaching front. Main growth window for corundum family."""
+    conditions.temperature = 500.0
+    conditions.fluid.Al = max(conditions.fluid.Al * 0.9, 30)
+    conditions.flow_rate = 1.2
+    return ("Retrograde cooling begins. The leucogranite intrusion "
+            "stalls; the fluid slowly retreats through the skarn "
+            "envelope, depositing corundum at every fracture it "
+            "finds. T drops from 700 to 500°C. This is the main "
+            "ruby/sapphire growth window.")
+
+
+def event_marble_fracture_seal(conditions: VugConditions) -> str:
+    """Fracture seal — fluid egress halts; system closes."""
+    conditions.temperature = 350.0
+    conditions.flow_rate = 0.1
+    conditions.fluid.pH = min(conditions.fluid.pH + 0.3, 9.0)
+    return ("The feeding fracture seals. The Mogok pocket is now a "
+            "closed system. Whatever corundum family crystals are "
+            "still undersaturated will continue to consume the remaining "
+            "Al pool until equilibrium. Everything else is frozen.")
+
+
+# ============================================================
 # EVENT REGISTRY
 # ============================================================
 # Maps the event-type string used in data/scenarios.json5 to the
@@ -10627,6 +10678,10 @@ EVENT_REGISTRY = {
     "alkalinize": event_alkalinize,
     "molybdenum_pulse": event_molybdenum_pulse,
     "fluid_mixing": event_fluid_mixing,
+    # Phase 2 — marble_contact_metamorphism
+    "marble_peak_metamorphism": event_marble_peak_metamorphism,
+    "marble_retrograde_cooling": event_marble_retrograde_cooling,
+    "marble_fracture_seal": event_marble_fracture_seal,
 }
 
 
@@ -12129,153 +12184,6 @@ def scenario_sabkha_dolomitization() -> Tuple[VugConditions, List[Event], int]:
     return conditions, events, 260
 
 
-def scenario_marble_contact_metamorphism() -> Tuple[VugConditions, List[Event], int]:
-    """Mogok Stone Tract — marble-hosted contact metamorphic vug.
-
-    Anchored to the Mogok Stone Tract, Mandalay Region, Burma — the
-    world's type locality for marble-hosted ruby and the 2000+-year
-    source of the finest "pigeon's blood" rubies. Dolomitic marble of
-    the Mogok Metamorphic Belt was regionally metamorphosed during the
-    Himalayan orogeny (~30 Ma) to amphibolite-to-granulite grade; then
-    intruded by leucogranite dykes at 17-22 Ma that drove contact
-    metamorphic ruby/sapphire/spinel crystallization in skarn envelopes.
-
-    Chemistry signature: **SiO₂ undersaturation** (the defining
-    corundum-family constraint). Al and Ca are high, SiO₂ is low — this
-    is the opposite of every other scenario in the sim. When SiO₂ is
-    scarce, Al³⁺ cannot form feldspar/mica/Al₂SiO₅ polymorphs and
-    instead crystallizes as pure corundum; with Cr trace from adjacent
-    ultramafic country rock, ruby forms; with Fe+Ti, blue sapphire;
-    with Fe alone, yellow sapphire.
-
-    Fluid parameters (Garnier et al. 2008, Peretti et al. 2018):
-    - T: 700°C peak (contact metamorphic aureole)
-    - Al: 50 ppm (high — skarn fluid concentration)
-    - SiO₂: 20 ppm (critically low — the defining upper gate)
-    - Ca: 800 ppm (dolomitic marble host dissolving into fluid)
-    - Cr: 3 ppm (trace from ultramafic country rock)
-    - Fe: 8, Ti: 1, V: 0.5 (blue/yellow sapphire variety traces)
-    - pH: 8 (alkaline marble-buffered fluid)
-
-    Anchor sources:
-    - Garnier, V. et al. 2008. "Marble-hosted ruby deposits from
-      Central and Southeast Asia." Ore Geology Reviews 34: 169-191.
-    - Peretti, A. et al. 2018. "Update on corundum and its gem
-      varieties." Gems & Gemology special issue.
-    - Searle, M.P. et al. 2007. "Tectonic evolution of the Mogok
-      metamorphic belt, Burma (Myanmar)." Journal of Geology 115: 1-23.
-
-    Thermal regime: 500 → 400 → 700 → 350°C over 180 steps.
-    - Phase 1 (initial warmup, 500→700°C): contact metamorphic pulse
-      approaches; marble starts to fluid-saturate.
-    - Phase 2 (700°C peak, step 20 onward): corundum family nucleates;
-      Cr partitions to ruby, Fe+Ti to blue sapphire.
-    - Phase 3 (retrograde cooling, step 60 onward, 700→400°C): main
-      growth window; fluid migrates along skarn bleaching front.
-    - Phase 4 (fracture seal, step 150): system closes.
-    """
-    conditions = VugConditions(
-        temperature=500.0,
-        pressure=3.0,  # contact-metamorphic amphibolite-to-granulite
-        wall=VugWall(
-            composition="limestone",  # proxy for dolomitic marble (sim
-                                      # currently models limestone +
-                                      # pegmatite + basalt; marble is the
-                                      # metamorphosed limestone end-member,
-                                      # closest fit available at this
-                                      # point)
-            thickness_mm=1200.0,  # thick contact envelope
-            vug_diameter_mm=40.0,  # typical Mogok "pigeon's blood" pocket
-            wall_Fe_ppm=200.0,    # marble is Fe-poor (that's why Ruby
-                                  # fluorescence is strong — no Fe to
-                                  # quench the Cr emission)
-            wall_Mn_ppm=50.0,
-            wall_Mg_ppm=15000.0,  # dolomite-grade Mg content
-            primary_bubbles=3,
-            secondary_bubbles=6,
-            shape_seed=11,
-        ),
-        fluid=FluidChemistry(
-            # Defining chemistry: Al-rich, SiO₂-poor. The corundum family
-            # gates on SiO2 < 50 (upper bound — novel in the sim) and Al
-            # >= 15. With SiO2 = 20 well below threshold and Al = 50 well
-            # above, all three corundum species have room to nucleate
-            # competing for Al supply.
-            Al=50,
-            SiO2=20,
-            # Ca high — dolomitic marble host dissolving into fluid.
-            # Doesn't drive a competing carbonate engine at 700°C
-            # (calcite decomposes above 840°C; at 700°C it's stable
-            # in solid form but doesn't nucleate from fluid at this
-            # Eh).
-            Ca=800,
-            CO3=50,  # modest; most carbonate is locked in marble wall
-            # Mg tracks the dolomite host (even higher than Ca in
-            # dolomitic marble; solid-state in the wall, minor in fluid).
-            Mg=120,
-            # Chromophore traces for ruby/sapphire/sapphire-variety
-            # dispatch:
-            Cr=3,     # ruby trigger (threshold 2 ppm)
-            Fe=8,     # sapphire-family Fe (Fe+Ti → blue; Fe alone ≥20 → yellow)
-            Ti=1,     # blue sapphire (Fe+Ti intervalence charge transfer)
-            V=0.5,    # not above sapphire-violet gate, included for completeness
-            # Minor trace species typical of skarn contact fluids:
-            Mn=0.5,   # pink sapphire at high enough concentration
-            Na=20, K=8,  # metamorphic fluid baseline
-            B=0,      # marble-hosted — no pegmatite boron contribution
-            F=3,      # trace F from phlogopite hydrolysis
-            # Alkaline pH from marble buffering.
-            pH=8.0,
-            salinity=2.0,  # low-salinity metamorphic fluid
-            O2=0.3,   # moderate — amphibolite facies not strongly reducing
-        ),
-    )
-
-    def ev_peak_metamorphism(cond):
-        """Peak metamorphic pulse: leucogranite dyke injects hot fluid
-        into the marble contact, driving peak T and skarn nucleation."""
-        cond.temperature = 700.0
-        cond.fluid.Al += 15     # fluid enrichment from leucogranite dissolution
-        cond.fluid.SiO2 += 8    # modest SiO2 bump — still well below corundum upper gate
-        cond.fluid.Cr += 1.5    # additional Cr from adjacent ultramafic serpentinite
-        cond.flow_rate = 2.5
-        return ("Contact metamorphic peak: a leucogranite dyke 50 m away "
-                "pumps 700°C fluid into the marble interface. Skarn "
-                "alteration zones expand outward; corundum family crystals "
-                "begin to nucleate in the most Si-undersaturated patches. "
-                "Pigeon's blood ruby paragenesis underway.")
-
-    def ev_retrograde_cooling(cond):
-        """Retrograde cooling: slow cooling with fluid migration along
-        bleaching front. Main growth window for corundum family."""
-        cond.temperature = 500.0
-        cond.fluid.Al = max(cond.fluid.Al * 0.9, 30)  # progressive depletion
-        cond.flow_rate = 1.2
-        return ("Retrograde cooling begins. The leucogranite intrusion "
-                "stalls; the fluid slowly retreats through the skarn "
-                "envelope, depositing corundum at every fracture it "
-                "finds. T drops from 700 to 500°C. This is the main "
-                "ruby/sapphire growth window.")
-
-    def ev_fracture_seal(cond):
-        """Fracture seal — fluid egress halts; system closes."""
-        cond.temperature = 350.0
-        cond.flow_rate = 0.1
-        cond.fluid.pH = min(cond.fluid.pH + 0.3, 9.0)
-        return ("The feeding fracture seals. The Mogok pocket is now a "
-                "closed system. Whatever corundum family crystals are "
-                "still undersaturated will continue to consume the remaining "
-                "Al pool until equilibrium. Everything else is frozen.")
-
-    events = [
-        Event(20, "Peak Metamorphism", "Leucogranite intrusion at contact", ev_peak_metamorphism),
-        Event(60, "Retrograde Cooling", "Slow cooling, main ruby growth window", ev_retrograde_cooling),
-        Event(150, "Fracture Seal", "System closes", ev_fracture_seal),
-    ]
-
-    return conditions, events, 180
-
-
 def scenario_random() -> Tuple[VugConditions, List[Event], int]:
     """Procedurally-generated vugg — each run a different discovery.
 
@@ -12541,7 +12449,7 @@ SCENARIOS = {
     "bisbee": scenario_bisbee,
     "deccan_zeolite": scenario_deccan_zeolite,
     "sabkha_dolomitization": scenario_sabkha_dolomitization,
-    "marble_contact_metamorphism": scenario_marble_contact_metamorphism,
+    "marble_contact_metamorphism": _JSON5_SCENARIOS["marble_contact_metamorphism"],
     # scenario_random opts out — procedural / RNG-driven, stays as code.
     "random": scenario_random,
 }
