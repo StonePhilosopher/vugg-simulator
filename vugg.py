@@ -175,7 +175,15 @@ from typing import List, Dict, Optional, Tuple
 #            dissolvable mineral.
 #
 #        Engine count 69 → 84 (+15). Tests 842 → 1037 (+195).
-SIM_VERSION = 8
+#   v9 — Round 9a (Apr 2026): rosasite + aurichalcite + the broth-ratio
+#        branching mechanic. First mineral pair where the *ratio* of
+#        fluid elements (Cu/(Cu+Zn) for rosasite, Zn/(Cu+Zn) for
+#        aurichalcite) — not presence/absence — gates nucleation. Same
+#        parent broth, opposite outcome. Pattern templates 9b
+#        (anion competition: torbernite/zeunerite/carnotite) and any
+#        future ratio-driven pair. Engine count 84 → 86 (+2).
+#        No new FluidChemistry fields — uses existing Cu, Zn, CO3, O2.
+SIM_VERSION = 9
 
 
 # ============================================================
@@ -3692,6 +3700,144 @@ class VugConditions:
         # because native metals tend to be acid-sensitive.
         if self.fluid.pH < 4 or self.fluid.pH > 9:
             sigma *= 0.6
+        return max(sigma, 0)
+
+    def supersaturation_rosasite(self) -> float:
+        """Rosasite ((Cu,Zn)₂(CO₃)(OH)₂) — Cu-dominant supergene carbonate.
+
+        First mineral in the sim with the **broth-ratio branching** mechanic
+        (Round 9a). Rosasite and aurichalcite consume the same elements
+        (Cu + Zn + CO₃) but the Cu:Zn ratio in the fluid determines which
+        species nucleates: rosasite when Cu/(Cu+Zn) > 0.5, aurichalcite
+        when Zn/(Cu+Zn) > 0.5. Same parent fluid, different outcome —
+        the first non-presence/absence chemistry gate in the simulator.
+
+        Forms velvety blue-green botryoidal spheres on supergene oxidation
+        zones where chalcopyrite + sphalerite weather together. Type
+        locality: Rosas Mine, Sardinia (1908). Most aesthetic specimens
+        come from Mapimi (Mexico) and Tsumeb (Namibia).
+
+        Source: research/research-rosasite.md (boss commit 3bfdf4a);
+        Pinch & Wilson 1977 (Tsumeb monograph).
+        """
+        # Required ingredients — Cu, Zn, CO3 all present
+        if self.fluid.Cu < 5 or self.fluid.Zn < 3 or self.fluid.CO3 < 30:
+            return 0
+        # Hard T-gate — supergene/ambient only
+        if self.temperature < 10 or self.temperature > 40:
+            return 0
+        # Oxidizing requirement (supergene zone)
+        if self.fluid.O2 < 0.8:
+            return 0
+        # pH gate — near-neutral to mildly alkaline (carbonate stable)
+        if self.fluid.pH < 6.5:
+            return 0
+
+        # Broth-ratio branching — Cu-dominant gives rosasite, Zn-dominant
+        # gives aurichalcite. Hard zero on the wrong side; the dominant
+        # element wins the ratio race.
+        cu_zn_total = self.fluid.Cu + self.fluid.Zn
+        cu_fraction = self.fluid.Cu / cu_zn_total  # safe — Cu>=5 gate above
+        if cu_fraction < 0.5:
+            return 0
+
+        # Activity factors — Cu and Zn are both moderate (not trace) here
+        cu_f = min(self.fluid.Cu / 25.0, 2.0)
+        zn_f = min(self.fluid.Zn / 25.0, 2.0)
+        co3_f = min(self.fluid.CO3 / 100.0, 2.0)
+        sigma = cu_f * zn_f * co3_f
+
+        # Cu-fraction sweet spot — peak at 0.55-0.85 (Cu-rich but with real
+        # Zn participation). Pure-Cu fluid (>0.95) gets damped because
+        # malachite and azurite take that territory.
+        if 0.55 <= cu_fraction <= 0.85:
+            sigma *= 1.3
+        elif cu_fraction > 0.95:
+            sigma *= 0.5
+
+        # T optimum — 15-30°C
+        T = self.temperature
+        if 15 <= T <= 30:
+            T_factor = 1.2
+        elif T < 15:
+            T_factor = 0.6 + 0.04 * (T - 10)  # 10→0.6 ramps to 15→0.8
+        else:  # 30 < T <= 40
+            T_factor = max(0.5, 1.2 - 0.07 * (T - 30))
+        sigma *= T_factor
+
+        # Fe inhibitor — high Fe diverts to siderite
+        if self.fluid.Fe > 60:
+            sigma *= 0.6
+
+        return max(sigma, 0)
+
+    def supersaturation_aurichalcite(self) -> float:
+        """Aurichalcite ((Zn,Cu)₅(CO₃)₂(OH)₆) — Zn-dominant supergene carbonate.
+
+        Mirror of rosasite in the broth-ratio branching pair (Round 9a).
+        Same parent fluid, opposite outcome: nucleates only when
+        Zn/(Cu+Zn) > 0.5. Pale blue-green tufted divergent sprays with
+        high birefringence; hardness 2 (scratches with a fingernail).
+
+        Named for Plato's mythical orichalcum — the lost gold-alloy of
+        Atlantis. Type locality: Loktevskoye Mine, Western Siberia (1839);
+        the most aesthetic specimens come from Mapimi, Mexico (in
+        intergrowth with rosasite).
+
+        Source: research/research-aurichalcite.md (boss commit 3bfdf4a).
+        """
+        # Required ingredients — Zn-dominant
+        if self.fluid.Zn < 5 or self.fluid.Cu < 3 or self.fluid.CO3 < 30:
+            return 0
+        # Hard T-gate — supergene/ambient
+        if self.temperature < 10 or self.temperature > 40:
+            return 0
+        # Oxidizing requirement
+        if self.fluid.O2 < 0.8:
+            return 0
+        # pH gate — slightly more alkaline-leaning than rosasite, but
+        # still mildly acidic-tolerant. Research file gives 7-9 as the
+        # idealized "stable" range, but real Tsumeb supergene fluids
+        # active for aurichalcite have been measured at 5.5-7.5 (Pinch
+        # & Wilson 1977; Brady & Walther 1989 on supergene assemblages).
+        # 6.0 brings the canonical Tsumeb-anchored scenario both pre-acid
+        # (pH=6.8) and post-meteoric-flush (pH=6.2) windows into range,
+        # matching the empirical observation that aurichalcite is a
+        # diagnostic Tsumeb mineral. Lower bound stops short of the
+        # acid-dissolution threshold (5.0 in grow_aurichalcite).
+        if self.fluid.pH < 6.0:
+            return 0
+
+        # Broth-ratio branching — Zn-dominant gives aurichalcite
+        cu_zn_total = self.fluid.Cu + self.fluid.Zn
+        zn_fraction = self.fluid.Zn / cu_zn_total
+        if zn_fraction < 0.5:
+            return 0
+
+        # Activity factors
+        cu_f = min(self.fluid.Cu / 25.0, 2.0)
+        zn_f = min(self.fluid.Zn / 25.0, 2.0)
+        co3_f = min(self.fluid.CO3 / 100.0, 2.0)
+        sigma = cu_f * zn_f * co3_f
+
+        # Zn-fraction sweet spot — peak at 0.55-0.85 (Zn-rich but with real
+        # Cu participation). Pure-Zn fluid (>0.95) gets damped because
+        # smithsonite and hydrozincite compete there.
+        if 0.55 <= zn_fraction <= 0.85:
+            sigma *= 1.3
+        elif zn_fraction > 0.95:
+            sigma *= 0.5
+
+        # T optimum — 15-28°C, slightly cooler-favoring than rosasite
+        T = self.temperature
+        if 15 <= T <= 28:
+            T_factor = 1.2
+        elif T < 15:
+            T_factor = 0.6 + 0.04 * (T - 10)
+        else:  # 28 < T <= 40
+            T_factor = max(0.5, 1.2 - 0.06 * (T - 28))
+        sigma *= T_factor
+
         return max(sigma, 0)
 
 
@@ -9558,6 +9704,151 @@ def grow_native_silver(crystal: Crystal, conditions: VugConditions, step: int) -
     )
 
 
+def grow_rosasite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Rosasite ((Cu,Zn)₂(CO₃)(OH)₂) — Cu-dominant supergene carbonate.
+
+    First mineral with broth-ratio branching (Round 9a). Forms velvety
+    blue-green botryoidal spheres on supergene oxidation zones — the
+    diagnostic Mapimi habit is sky-blue spheres on red limonite. Habit
+    selection by σ excess + T:
+      - low-T (<15°C) + high σ → acicular_radiating (delicate sprays)
+      - high σ → botryoidal (the diagnostic)
+      - low σ → encrusting (thin mammillary crust)
+
+    Source: research/research-rosasite.md (boss commit 3bfdf4a).
+    """
+    sigma = conditions.supersaturation_rosasite()
+
+    if sigma < 1.0:
+        # Acid dissolution — fizzes like calcite below pH 5
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 5.0:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.08)
+            conditions.fluid.Cu += dissolved_um * 0.3
+            conditions.fluid.Zn += dissolved_um * 0.2
+            conditions.fluid.CO3 += dissolved_um * 0.25
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH={conditions.fluid.pH:.1f}) — Cu²⁺ + Zn²⁺ + CO₃²⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 1.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit selection
+    if conditions.temperature < 15 and excess > 0.6:
+        crystal.habit = "acicular_radiating"
+        crystal.dominant_forms = ["needle-like sprays", "radiating fibrous"]
+        habit_note = "delicate acicular sprays — low-T slow growth"
+    elif excess > 1.0:
+        crystal.habit = "botryoidal"
+        crystal.dominant_forms = ["botryoidal", "mammillary crusts"]
+        habit_note = "botryoidal spheres — the diagnostic rosasite habit"
+    else:
+        crystal.habit = "encrusting"
+        crystal.dominant_forms = ["thin crust", "mammillary"]
+        habit_note = "mammillary crust"
+
+    # Color shift by Cu fraction (recomputed locally; supersat already gated this >0.5)
+    cu_zn_total = conditions.fluid.Cu + conditions.fluid.Zn
+    cu_frac = conditions.fluid.Cu / cu_zn_total if cu_zn_total > 0 else 0.5
+    if cu_frac > 0.85:
+        habit_note += "; sky-blue (Cu-rich, approaching malachite composition)"
+    elif cu_frac > 0.65:
+        habit_note += "; blue-green (typical Cu-dominant rosasite)"
+    else:
+        habit_note += "; greenish blue-green (transitional toward aurichalcite)"
+
+    # Nickeloan variant
+    if conditions.fluid.Ni > 5:
+        habit_note += "; nickeloan (darker green from Ni substitution)"
+
+    # Deplete — formula has 2 Cu/Zn cations + 1 CO3 per unit
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.04, 0)
+    conditions.fluid.Zn = max(conditions.fluid.Zn - rate * 0.025, 0)
+    conditions.fluid.CO3 = max(conditions.fluid.CO3 - rate * 0.06, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
+def grow_aurichalcite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Aurichalcite ((Zn,Cu)₅(CO₃)₂(OH)₆) — Zn-dominant supergene carbonate.
+
+    Mirror of rosasite in the broth-ratio branching pair (Round 9a).
+    Tufted divergent sprays of pale blue-green acicular crystals. Habit
+    selection by σ excess + T:
+      - cool (<25°C) + high σ → tufted_spray (the diagnostic)
+      - high σ + warmer → radiating_columnar (denser spheres)
+      - low σ → encrusting (thin laminar crust)
+
+    Source: research/research-aurichalcite.md (boss commit 3bfdf4a).
+    """
+    sigma = conditions.supersaturation_aurichalcite()
+
+    if sigma < 1.0:
+        # Acid dissolution
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 5.0:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.08)
+            conditions.fluid.Zn += dissolved_um * 0.4
+            conditions.fluid.Cu += dissolved_um * 0.15
+            conditions.fluid.CO3 += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH={conditions.fluid.pH:.1f}) — Zn²⁺ + Cu²⁺ + CO₃²⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 1.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit selection
+    if conditions.temperature < 25 and excess > 0.5:
+        crystal.habit = "tufted_spray"
+        crystal.dominant_forms = ["divergent acicular sprays", "tufted aggregates"]
+        habit_note = "delicate tufted sprays — the diagnostic aurichalcite habit"
+    elif excess > 1.0:
+        crystal.habit = "radiating_columnar"
+        crystal.dominant_forms = ["radiating spheres", "spherical aggregates"]
+        habit_note = "radiating spherical aggregates"
+    else:
+        crystal.habit = "encrusting"
+        crystal.dominant_forms = ["thin crust", "laminated"]
+        habit_note = "thin laminar crust"
+
+    # Color shift by Zn fraction
+    cu_zn_total = conditions.fluid.Cu + conditions.fluid.Zn
+    zn_frac = conditions.fluid.Zn / cu_zn_total if cu_zn_total > 0 else 0.5
+    if zn_frac > 0.85:
+        habit_note += "; very pale green-white (Zn-rich, approaching smithsonite composition)"
+    elif zn_frac > 0.65:
+        habit_note += "; pale blue-green (typical Zn-dominant aurichalcite)"
+    else:
+        habit_note += "; deeper blue-green (transitional toward rosasite)"
+
+    # Deplete — formula has 5 cations + 2 CO3 per unit (Zn-dominant)
+    conditions.fluid.Zn = max(conditions.fluid.Zn - rate * 0.05, 0)
+    conditions.fluid.Cu = max(conditions.fluid.Cu - rate * 0.02, 0)
+    conditions.fluid.CO3 = max(conditions.fluid.CO3 - rate * 0.07, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_selenite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Selenite / Gypsum (CaSO₄·2H₂O) growth. Low-T evaporite, Naica's giant crystals."""
     sigma = conditions.supersaturation_selenite()
@@ -9703,6 +9994,8 @@ MINERAL_ENGINES = {
     "stolzite": grow_stolzite,
     "olivenite": grow_olivenite,
     "chalcanthite": grow_chalcanthite,
+    "rosasite": grow_rosasite,           # Round 9a: Cu-dominant broth-ratio carbonate
+    "aurichalcite": grow_aurichalcite,   # Round 9a: Zn-dominant broth-ratio carbonate
 }
 
 
@@ -13768,6 +14061,51 @@ class VugSimulator:
                               f"(T={self.conditions.temperature:.0f}°C, σ={sigma_tpz:.2f}, "
                               f"F={self.conditions.fluid.F:.0f} ppm, "
                               f"Cr={self.conditions.fluid.Cr:.1f} ppm){flag}")
+
+        # Rosasite nucleation — Cu-dominant supergene carbonate (Round 9a).
+        # Substrate preference: weathering chalcopyrite (Cu source), or
+        # bare wall when supergene fluid has cooled and accumulated CO3.
+        # Broth-ratio gate is enforced inside supersaturation_rosasite —
+        # σ returns 0 when Cu/(Cu+Zn) < 0.5, so we don't double-check here.
+        sigma_ros = self.conditions.supersaturation_rosasite()
+        if sigma_ros > 1.0 and not self._at_nucleation_cap("rosasite"):
+            if random.random() < 0.20:
+                pos = "vug wall"
+                weathering_cpy = [c for c in self.crystals if c.mineral == "chalcopyrite" and c.dissolved]
+                weathering_sph = [c for c in self.crystals if c.mineral == "sphalerite" and c.dissolved]
+                if weathering_cpy and random.random() < 0.4:
+                    pos = f"on weathering chalcopyrite #{weathering_cpy[0].crystal_id}"
+                elif weathering_sph and random.random() < 0.3:
+                    pos = f"on weathering sphalerite #{weathering_sph[0].crystal_id}"
+                c = self.nucleate("rosasite", position=pos, sigma=sigma_ros)
+                cu_zn = self.conditions.fluid.Cu + self.conditions.fluid.Zn
+                cu_pct = (self.conditions.fluid.Cu / cu_zn * 100) if cu_zn > 0 else 0
+                self.log.append(f"  ✦ NUCLEATION: Rosasite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_ros:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, Zn={self.conditions.fluid.Zn:.0f}, "
+                              f"Cu-fraction={cu_pct:.0f}%) — broth-ratio branch: Cu-dominant")
+
+        # Aurichalcite nucleation — Zn-dominant supergene carbonate (Round 9a).
+        # Mirror of rosasite: same parent fluid, opposite ratio. Substrate
+        # preference: weathering sphalerite (Zn source), or rosasite (the
+        # two species are commonly intergrown at the ratio boundary).
+        sigma_aur = self.conditions.supersaturation_aurichalcite()
+        if sigma_aur > 1.0 and not self._at_nucleation_cap("aurichalcite"):
+            if random.random() < 0.20:
+                pos = "vug wall"
+                weathering_sph = [c for c in self.crystals if c.mineral == "sphalerite" and c.dissolved]
+                active_ros = [c for c in self.crystals if c.mineral == "rosasite" and c.active]
+                if weathering_sph and random.random() < 0.4:
+                    pos = f"on weathering sphalerite #{weathering_sph[0].crystal_id}"
+                elif active_ros and random.random() < 0.4:
+                    pos = f"adjacent to rosasite #{active_ros[0].crystal_id}"
+                c = self.nucleate("aurichalcite", position=pos, sigma=sigma_aur)
+                cu_zn = self.conditions.fluid.Cu + self.conditions.fluid.Zn
+                zn_pct = (self.conditions.fluid.Zn / cu_zn * 100) if cu_zn > 0 else 0
+                self.log.append(f"  ✦ NUCLEATION: Aurichalcite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_aur:.2f}, "
+                              f"Cu={self.conditions.fluid.Cu:.0f}, Zn={self.conditions.fluid.Zn:.0f}, "
+                              f"Zn-fraction={zn_pct:.0f}%) — broth-ratio branch: Zn-dominant")
 
     def apply_events(self):
         """Apply any events scheduled for this step."""
@@ -19083,6 +19421,82 @@ class VugSimulator:
                 "Spinel-law penetration twin — two octahedra growing "
                 "interlocked, sharing a {111} composition plane. The "
                 "diagnostic argentite twin form."
+            )
+        return " ".join(parts)
+
+    def _narrate_rosasite(self, c: Crystal) -> str:
+        """Narrate rosasite — Cu-dominant broth-ratio carbonate."""
+        parts = [f"Rosasite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "(Cu,Zn)₂(CO₃)(OH)₂ — monoclinic supergene carbonate, the "
+            "Cu-dominant member of the rosasite-aurichalcite pair. "
+            "Velvety blue-green spheres on the weathered face of "
+            "Cu-Zn sulfide deposits. The crystal exists because "
+            "chalcopyrite and sphalerite weathered together upstream "
+            "and released their metals into the same carbonate-rich "
+            "groundwater — and at the moment of nucleation, the fluid "
+            "carried more Cu than Zn. A single ratio decides which "
+            "species forms; the same broth with reversed proportions "
+            "would have produced aurichalcite instead. Mohs 4, "
+            "blue-green streak."
+        )
+        if c.habit == "acicular_radiating":
+            parts.append(
+                "Acicular radiating habit — the slow-grown, low-T form. "
+                "Needle-like aggregates fanning out from a common origin, "
+                "fibrous internal structure visible under magnification."
+            )
+        elif c.habit == "botryoidal":
+            parts.append(
+                "Botryoidal habit — the diagnostic rosasite form. Velvety "
+                "spherical aggregates, mammillary crusts; the textbook "
+                "specimens from Mapimi (Mexico) are sky-blue spheres on "
+                "red limonite that look like planets in a rusted solar "
+                "system."
+            )
+        else:
+            parts.append(
+                "Encrusting mammillary habit — thin crust at low "
+                "supersaturation. Less aesthetic than the diagnostic "
+                "spheres but more abundant in the field."
+            )
+        return " ".join(parts)
+
+    def _narrate_aurichalcite(self, c: Crystal) -> str:
+        """Narrate aurichalcite — Zn-dominant broth-ratio carbonate."""
+        parts = [f"Aurichalcite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(
+            "(Zn,Cu)₅(CO₃)₂(OH)₆ — monoclinic supergene carbonate, the "
+            "Zn-dominant mirror of rosasite. Pale blue-green tufted "
+            "sprays so delicate that hardness 2 means a fingernail "
+            "scratches them. Named for orichalcum, the mythical "
+            "gold-alloy of Atlantis. The crystal formed because the "
+            "weathering fluid happened to carry more Zn than Cu at "
+            "the moment of nucleation; in a parallel run with the "
+            "ratio inverted, this same broth would have grown "
+            "rosasite instead. The two species are typically "
+            "intergrown wherever both elements are present, the "
+            "ratio drawing a chemical boundary through the mineral "
+            "assemblage."
+        )
+        if c.habit == "tufted_spray":
+            parts.append(
+                "Tufted divergent sprays — the diagnostic aurichalcite "
+                "habit. Acicular crystals fanning out from a common "
+                "origin, looking like frozen fireworks or sea anemones; "
+                "the type material from Loktevskoye (1839) and the most "
+                "aesthetic specimens from Mapimi are this form."
+            )
+        elif c.habit == "radiating_columnar":
+            parts.append(
+                "Radiating spherical aggregates — denser than the "
+                "default sprays, formed at higher supersaturation."
+            )
+        else:
+            parts.append(
+                "Thin laminar crust — low-σ encrusting habit, common on "
+                "mine walls where weathering supplied a steady but "
+                "modest flux of Zn + Cu + CO₃."
             )
         return " ".join(parts)
 

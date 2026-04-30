@@ -8389,6 +8389,187 @@
       ],
       "audit_status": "Round 8e (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The water-solubility metastability mechanic: per-step hook in VugSimulator.run_step re-dissolves chalcanthite crystals when fluid.salinity < 4 OR fluid.pH > 5. Distinct from THERMAL_DECOMPOSITION (high-T destruction) and PARAMORPH_TRANSITIONS (in-place mineral change) — this is just chemistry, the geological truth that every chalcanthite is a temporary victory over entropy. Habit variants: stalactitic (high σ, the Chuquicamata mine-wall drip habit), tabular (RARE prismatic crystals), efflorescent_crust (low σ powdery bloom). Salinity gate: salinity < 6 → 0 (needs concentrated drainage to overcome ~20 g/100mL solubility). pH gate: pH > 4 → 0 (the most acid-loving Cu sulfate). Source: boss research file research-chalcanthite.md.",
       "class_color": "#eb137f"
+    },
+    "rosasite": {
+      "formula": "(Cu,Zn)2(CO3)(OH)2",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 6,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "default — velvety blue-green spheres, the diagnostic Mapimi/Tsumeb habit"
+        },
+        {
+          "name": "acicular_radiating",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "low-T (<15°C) + high σ — delicate radiating fibrous needles, slow-grown"
+        },
+        {
+          "name": "encrusting",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — thin mammillary crust on limonite or dolostone"
+        }
+      ],
+      "class": "carbonate",
+      "description": "(Cu,Zn)₂(CO₃)(OH)₂ — monoclinic supergene carbonate, the Cu-dominant member of the rosasite-aurichalcite pair. Velvety blue-green botryoidal spheres on weathered Cu-Zn sulfide deposits; the diagnostic habit is sky-blue spherical aggregates on red limonite (Mapimi, Mexico). Forms when chalcopyrite + sphalerite weather together at the supergene front, releasing Cu²⁺ + Zn²⁺ + CO₃²⁻ into shallow groundwater that precipitates the carbonate at near-neutral pH. The Cu:Zn ratio in the parent fluid is the key control: rosasite forms when Cu/(Cu+Zn) > 0.5; aurichalcite forms when the ratio inverts — same broth, different outcome. Mohs 4, blue-green streak, splintery fracture. Type locality: Rosas Mine, Sardinia (1908). Source: Pinch & Wilson 1977 (Tsumeb monograph); research/research-rosasite.md.",
+      "scenarios": [
+        "supergene_oxidation",
+        "bisbee"
+      ],
+      "T_range_C": [
+        10,
+        40
+      ],
+      "T_optimum_C": [
+        15,
+        30
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 5,
+        "Zn": 3,
+        "CO3": 30,
+        "O2": 0.8
+      },
+      "trace_ingredients": {
+        "Ni": "nickeloan variant — darker green from Ni substitution for Cu/Zn"
+      },
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "(Cu,Zn)₂(CO₃)(OH)₂ → CuO + ZnO + CO₂ + H₂O (dehydration + decarbonation)",
+      "thermal_decomp_products": {
+        "Cu": 0.4,
+        "Zn": 0.3,
+        "CO3": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [
+        {
+          "name": "rosasite_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.05
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "(Cu,Zn)₂(CO₃)(OH)₂ + 4H⁺ → Cu²⁺ + Zn²⁺ + CO₂ + 3H₂O (fizzes like calcite)",
+        "products": {
+          "Cu": 0.3,
+          "Zn": 0.2,
+          "CO3": 0.25
+        }
+      },
+      "habit": "botryoidal_or_acicular",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_rosasite",
+      "runtimes_present": [
+        "vugg.py",
+        "index.html"
+      ],
+      "audit_status": "Round 9a (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. First mineral with the broth-ratio branching mechanic: supersaturation_rosasite returns 0 when Cu/(Cu+Zn) < 0.5, locking the species to Cu-dominant fluid. Mirror of aurichalcite — same parent fluid, opposite outcome based on ratio. Habit variants: botryoidal (default, the diagnostic Mapimi habit), acicular_radiating (low T + high σ delicate sprays), encrusting (low σ thin crust). Sources: research/research-rosasite.md (boss commit 3bfdf4a); Pinch & Wilson 1977 (Tsumeb monograph).",
+      "class_color": "#eb7f13"
+    },
+    "aurichalcite": {
+      "formula": "(Zn,Cu)5(CO3)2(OH)6",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 4,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tufted_spray",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — delicate divergent acicular sprays, the diagnostic Mapimi/Loktevskoye habit"
+        },
+        {
+          "name": "radiating_columnar",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "high σ — radiating spherical aggregates, denser than the default sprays"
+        },
+        {
+          "name": "encrusting",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ — thin laminar crust"
+        }
+      ],
+      "class": "carbonate",
+      "description": "(Zn,Cu)₅(CO₃)₂(OH)₆ — monoclinic supergene carbonate, the Zn-dominant mirror of rosasite. Delicate pale blue-green tufted divergent sprays — high birefringence makes them shimmer under cross-polarized light. Forms in the same supergene parent fluid as rosasite (Cu + Zn + CO₃ + O₂) but precipitates only when Zn/(Cu+Zn) > 0.5; the two species are typically intergrown, separated only by ratio. Mohs 2 (scratches with a fingernail), light blue streak. Named after Plato's mythical orichalcum — the lost gold-alloy of Atlantis. Type locality: Loktevskoye Mine, Western Siberia (1839); the most aesthetic specimens come from Mapimi, Mexico. Source: research/research-aurichalcite.md (boss commit 3bfdf4a).",
+      "scenarios": [
+        "supergene_oxidation",
+        "bisbee"
+      ],
+      "T_range_C": [
+        10,
+        40
+      ],
+      "T_optimum_C": [
+        15,
+        28
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Zn": 5,
+        "Cu": 3,
+        "CO3": 30,
+        "O2": 0.8
+      },
+      "trace_ingredients": {},
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "(Zn,Cu)₅(CO₃)₂(OH)₆ → 5(Zn,Cu)O + 2CO₂ + 3H₂O (dehydration + decarbonation)",
+      "thermal_decomp_products": {
+        "Zn": 0.4,
+        "Cu": 0.2,
+        "CO3": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "(Zn,Cu)₅(CO₃)₂(OH)₆ + 10H⁺ → 5(Zn²⁺,Cu²⁺) + 2CO₂ + 8H₂O (fizzes)",
+        "products": {
+          "Zn": 0.4,
+          "Cu": 0.15,
+          "CO3": 0.3
+        }
+      },
+      "habit": "tufted_spray",
+      "color_rules": {
+        "default_color": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_aurichalcite",
+      "runtimes_present": [
+        "vugg.py",
+        "index.html"
+      ],
+      "audit_status": "Round 9a (Apr 2026). Mirror of rosasite in the broth-ratio branching pair. Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_aurichalcite returns 0 when Zn/(Cu+Zn) < 0.5 — same parent fluid as rosasite, opposite outcome based on ratio. Habit variants: tufted_spray (default, the diagnostic delicate Mapimi habit), radiating_columnar (high σ spheres), encrusting (low σ laminar crust). Source: research/research-aurichalcite.md (boss commit 3bfdf4a); Loktevskoye type locality 1839.",
+      "class_color": "#eb7f13"
     }
   }
 }

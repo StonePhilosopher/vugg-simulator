@@ -3193,6 +3193,8 @@ const MINERAL_SPEC_FALLBACK = {
   stolzite: { formula: "PbWO4", nucleation_sigma: 1.0, max_size_cm: 2.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   olivenite: { formula: "Cu2AsO4(OH)", nucleation_sigma: 1.0, max_size_cm: 5.0, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: null },
   chalcanthite: { formula: "CuSO4·5H2O", nucleation_sigma: 1.0, max_size_cm: 10.0, growth_rate_mult: 0.5, thermal_decomp_C: null, fluorescence: null, twin_laws: [{ name: "cruciform_110", description: "Rare {110} cross-shaped twin", habits: ["tabular"] }], acid_dissolution: null },
+  rosasite: { formula: "(Cu,Zn)2(CO3)(OH)2", nucleation_sigma: 1.0, max_size_cm: 6, growth_rate_mult: 0.4, thermal_decomp_C: 200, fluorescence: null, twin_laws: [{ name: "rosasite_100", miller_indices: "{100}", trigger: "growth", probability: 0.05 }], acid_dissolution: { pH_threshold: 5.0 }, class: "carbonate" },
+  aurichalcite: { formula: "(Zn,Cu)5(CO3)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 4, growth_rate_mult: 0.4, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 5.0 }, class: "carbonate" },
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
@@ -3342,7 +3344,8 @@ const MINERAL_GAME_COLORS = {
   nickeline: '#d49080', millerite: '#c8b860', cobaltite: '#d8d4cc',
   descloizite: '#8a3020', mottramite: '#8a9a40',
   raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030',
-  chalcanthite: '#2a40c8'
+  chalcanthite: '#2a40c8',
+  rosasite: '#5a8a8e', aurichalcite: '#9ec8c0'   // Round 9a — Cu-blue-green & Zn-pale-green
 };
 
 // Derive crystal color from its growth history and chemistry
@@ -3628,7 +3631,14 @@ let timeScale = 5.0;
 //          fluid.salinity<4 OR fluid.pH>5. First re-dissolvable mineral.
 //
 //        Engine count 69 → 84 (+15). Tests 842 → 1037 (+195).
-const SIM_VERSION = 8;
+//   v9 — Round 9a (Apr 2026): rosasite + aurichalcite + the broth-ratio
+//        branching mechanic. First mineral pair where the *ratio* of
+//        fluid elements (Cu/(Cu+Zn) for rosasite, Zn/(Cu+Zn) for
+//        aurichalcite) — not presence/absence — gates nucleation. Same
+//        parent broth, opposite outcome. Pattern templates 9b
+//        (anion competition) and any future ratio-driven pair. No new
+//        FluidChemistry fields. Engine count 84 → 86 (+2).
+const SIM_VERSION = 9;
 
 
 // ============================================================
@@ -5691,6 +5701,61 @@ class VugConditions {
     else T_factor = 0.1;
     sigma *= T_factor;
     if (this.fluid.pH < 2.0) sigma -= (2.0 - this.fluid.pH) * 0.4;
+    return Math.max(sigma, 0);
+  }
+
+  // Round 9a — broth-ratio branching pair (rosasite + aurichalcite).
+  // First mechanic in the sim where the *ratio* of fluid elements
+  // (Cu vs Zn) gates nucleation, not presence/absence. Same parent
+  // broth, opposite outcome based on which side dominates.
+  // Mirror of vugg.py supersaturation_rosasite / _aurichalcite.
+
+  supersaturation_rosasite() {
+    if (this.fluid.Cu < 5 || this.fluid.Zn < 3 || this.fluid.CO3 < 30) return 0;
+    if (this.temperature < 10 || this.temperature > 40) return 0;
+    if (this.fluid.O2 < 0.8) return 0;
+    if (this.fluid.pH < 6.5) return 0;
+    const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
+    const cu_fraction = this.fluid.Cu / cu_zn_total;  // safe — Cu>=5 above
+    if (cu_fraction < 0.5) return 0;  // broth-ratio branch: Cu must dominate
+    const cu_f = Math.min(this.fluid.Cu / 25.0, 2.0);
+    const zn_f = Math.min(this.fluid.Zn / 25.0, 2.0);
+    const co3_f = Math.min(this.fluid.CO3 / 100.0, 2.0);
+    let sigma = cu_f * zn_f * co3_f;
+    if (cu_fraction >= 0.55 && cu_fraction <= 0.85) sigma *= 1.3;
+    else if (cu_fraction > 0.95) sigma *= 0.5;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 15 && T <= 30) T_factor = 1.2;
+    else if (T < 15) T_factor = 0.6 + 0.04 * (T - 10);
+    else T_factor = Math.max(0.5, 1.2 - 0.07 * (T - 30));
+    sigma *= T_factor;
+    if (this.fluid.Fe > 60) sigma *= 0.6;
+    return Math.max(sigma, 0);
+  }
+
+  supersaturation_aurichalcite() {
+    if (this.fluid.Zn < 5 || this.fluid.Cu < 3 || this.fluid.CO3 < 30) return 0;
+    if (this.temperature < 10 || this.temperature > 40) return 0;
+    if (this.fluid.O2 < 0.8) return 0;
+    // pH gate — see vugg.py supersaturation_aurichalcite for citation
+    // (Pinch & Wilson 1977 — real Tsumeb fluids active at pH 5.5-7.5).
+    if (this.fluid.pH < 6.0) return 0;
+    const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
+    const zn_fraction = this.fluid.Zn / cu_zn_total;
+    if (zn_fraction < 0.5) return 0;  // broth-ratio branch: Zn must dominate
+    const cu_f = Math.min(this.fluid.Cu / 25.0, 2.0);
+    const zn_f = Math.min(this.fluid.Zn / 25.0, 2.0);
+    const co3_f = Math.min(this.fluid.CO3 / 100.0, 2.0);
+    let sigma = cu_f * zn_f * co3_f;
+    if (zn_fraction >= 0.55 && zn_fraction <= 0.85) sigma *= 1.3;
+    else if (zn_fraction > 0.95) sigma *= 0.5;
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 15 && T <= 28) T_factor = 1.2;
+    else if (T < 15) T_factor = 0.6 + 0.04 * (T - 10);
+    else T_factor = Math.max(0.5, 1.2 - 0.06 * (T - 28));
+    sigma *= T_factor;
     return Math.max(sigma, 0);
   }
 }
@@ -8504,6 +8569,115 @@ function grow_feldspar(crystal, conditions, step) {
   });
 }
 
+// Round 9a — broth-ratio branching pair: rosasite (Cu-dominant) +
+// aurichalcite (Zn-dominant). Mirror of vugg.py grow_rosasite /
+// grow_aurichalcite. The supersat methods enforce the ratio gate;
+// these grow funcs handle habit selection, color-by-fraction notes,
+// fluid depletion, and acid dissolution.
+function grow_rosasite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_rosasite();
+  if (sigma < 1.0) {
+    // Acid dissolution — fizzes like calcite below pH 5
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.08);
+      conditions.fluid.Cu += dissolved_um * 0.3;
+      conditions.fluid.Zn += dissolved_um * 0.2;
+      conditions.fluid.CO3 += dissolved_um * 0.25;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH=${conditions.fluid.pH.toFixed(1)}) — Cu²⁺ + Zn²⁺ + CO₃²⁻ released`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+  if (rate < 0.1) return null;
+  // Habit selection
+  let habit_note;
+  if (conditions.temperature < 15 && excess > 0.6) {
+    crystal.habit = "acicular_radiating";
+    crystal.dominant_forms = ["needle-like sprays", "radiating fibrous"];
+    habit_note = "delicate acicular sprays — low-T slow growth";
+  } else if (excess > 1.0) {
+    crystal.habit = "botryoidal";
+    crystal.dominant_forms = ["botryoidal", "mammillary crusts"];
+    habit_note = "botryoidal spheres — the diagnostic rosasite habit";
+  } else {
+    crystal.habit = "encrusting";
+    crystal.dominant_forms = ["thin crust", "mammillary"];
+    habit_note = "mammillary crust";
+  }
+  // Color shift by Cu fraction
+  const cu_zn_total_g = conditions.fluid.Cu + conditions.fluid.Zn;
+  const cu_frac = cu_zn_total_g > 0 ? conditions.fluid.Cu / cu_zn_total_g : 0.5;
+  if (cu_frac > 0.85) habit_note += "; sky-blue (Cu-rich, approaching malachite composition)";
+  else if (cu_frac > 0.65) habit_note += "; blue-green (typical Cu-dominant rosasite)";
+  else habit_note += "; greenish blue-green (transitional toward aurichalcite)";
+  // Nickeloan variant
+  if (conditions.fluid.Ni > 5) habit_note += "; nickeloan (darker green from Ni substitution)";
+  // Deplete
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.04, 0);
+  conditions.fluid.Zn = Math.max(conditions.fluid.Zn - rate * 0.025, 0);
+  conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.06, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
+function grow_aurichalcite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_aurichalcite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.08);
+      conditions.fluid.Zn += dissolved_um * 0.4;
+      conditions.fluid.Cu += dissolved_um * 0.15;
+      conditions.fluid.CO3 += dissolved_um * 0.3;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH=${conditions.fluid.pH.toFixed(1)}) — Zn²⁺ + Cu²⁺ + CO₃²⁻ released`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+  if (rate < 0.1) return null;
+  let habit_note;
+  if (conditions.temperature < 25 && excess > 0.5) {
+    crystal.habit = "tufted_spray";
+    crystal.dominant_forms = ["divergent acicular sprays", "tufted aggregates"];
+    habit_note = "delicate tufted sprays — the diagnostic aurichalcite habit";
+  } else if (excess > 1.0) {
+    crystal.habit = "radiating_columnar";
+    crystal.dominant_forms = ["radiating spheres", "spherical aggregates"];
+    habit_note = "radiating spherical aggregates";
+  } else {
+    crystal.habit = "encrusting";
+    crystal.dominant_forms = ["thin crust", "laminated"];
+    habit_note = "thin laminar crust";
+  }
+  const cu_zn_total_g = conditions.fluid.Cu + conditions.fluid.Zn;
+  const zn_frac = cu_zn_total_g > 0 ? conditions.fluid.Zn / cu_zn_total_g : 0.5;
+  if (zn_frac > 0.85) habit_note += "; very pale green-white (Zn-rich, approaching smithsonite composition)";
+  else if (zn_frac > 0.65) habit_note += "; pale blue-green (typical Zn-dominant aurichalcite)";
+  else habit_note += "; deeper blue-green (transitional toward rosasite)";
+  conditions.fluid.Zn = Math.max(conditions.fluid.Zn - rate * 0.05, 0);
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.02, 0);
+  conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.07, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: habit_note,
+  });
+}
+
 // Selenite (gypsum variety) — CaSO4·2H2O
 // Forms at low temperature in oxidizing, evaporative environments
 // The crystal that grows when everything else is ending
@@ -9982,6 +10156,8 @@ const MINERAL_ENGINES = {
   stolzite: grow_stolzite,
   olivenite: grow_olivenite,
   chalcanthite: grow_chalcanthite,
+  rosasite: grow_rosasite,           // Round 9a: Cu-dominant broth-ratio carbonate
+  aurichalcite: grow_aurichalcite,   // Round 9a: Zn-dominant broth-ratio carbonate
 };
 
 function grow_apophyllite(crystal, conditions, step) {
@@ -12838,6 +13014,50 @@ class VugSimulator {
         this.log.push(`  ✦ NUCLEATION: Topaz #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_tpz.toFixed(2)}, F=${this.conditions.fluid.F.toFixed(0)} ppm, Cr=${this.conditions.fluid.Cr.toFixed(1)} ppm)${flag}`);
       }
     }
+
+    // Rosasite nucleation — Cu-dominant supergene carbonate (Round 9a).
+    // The broth-ratio gate (Cu/(Cu+Zn) > 0.5) is enforced inside
+    // supersaturation_rosasite, so we don't double-check here. Substrate
+    // preference: weathering chalcopyrite (Cu source) or weathering
+    // sphalerite (Zn co-source), or bare wall.
+    const sigma_ros = this.conditions.supersaturation_rosasite();
+    if (sigma_ros > 1.0 && !this._atNucleationCap('rosasite')) {
+      if (rng.random() < 0.20) {
+        let pos = 'vug wall';
+        const weathering_cpy = this.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
+        const weathering_sph = this.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved);
+        if (weathering_cpy.length && rng.random() < 0.4) {
+          pos = `on weathering chalcopyrite #${weathering_cpy[0].crystal_id}`;
+        } else if (weathering_sph.length && rng.random() < 0.3) {
+          pos = `on weathering sphalerite #${weathering_sph[0].crystal_id}`;
+        }
+        const c = this.nucleate('rosasite', pos, sigma_ros);
+        const cu_zn = this.conditions.fluid.Cu + this.conditions.fluid.Zn;
+        const cu_pct = cu_zn > 0 ? (this.conditions.fluid.Cu / cu_zn * 100) : 0;
+        this.log.push(`  ✦ NUCLEATION: Rosasite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_ros.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, Zn=${this.conditions.fluid.Zn.toFixed(0)}, Cu-fraction=${cu_pct.toFixed(0)}%) — broth-ratio branch: Cu-dominant`);
+      }
+    }
+
+    // Aurichalcite nucleation — Zn-dominant supergene carbonate (Round 9a).
+    // Mirror of rosasite. Substrate preference: weathering sphalerite or
+    // adjacent active rosasite (the two species are commonly intergrown).
+    const sigma_aur = this.conditions.supersaturation_aurichalcite();
+    if (sigma_aur > 1.0 && !this._atNucleationCap('aurichalcite')) {
+      if (rng.random() < 0.20) {
+        let pos = 'vug wall';
+        const weathering_sph = this.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved);
+        const active_ros = this.crystals.filter(c => c.mineral === 'rosasite' && c.active);
+        if (weathering_sph.length && rng.random() < 0.4) {
+          pos = `on weathering sphalerite #${weathering_sph[0].crystal_id}`;
+        } else if (active_ros.length && rng.random() < 0.4) {
+          pos = `adjacent to rosasite #${active_ros[0].crystal_id}`;
+        }
+        const c = this.nucleate('aurichalcite', pos, sigma_aur);
+        const cu_zn = this.conditions.fluid.Cu + this.conditions.fluid.Zn;
+        const zn_pct = cu_zn > 0 ? (this.conditions.fluid.Zn / cu_zn * 100) : 0;
+        this.log.push(`  ✦ NUCLEATION: Aurichalcite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_aur.toFixed(2)}, Cu=${this.conditions.fluid.Cu.toFixed(0)}, Zn=${this.conditions.fluid.Zn.toFixed(0)}, Zn-fraction=${zn_pct.toFixed(0)}%) — broth-ratio branch: Zn-dominant`);
+      }
+    }
   }
 
   apply_events() {
@@ -14906,6 +15126,32 @@ class VugSimulator {
     }
     if (c.dissolved) {
       parts.push('Oxidation dissolved the molybdenite, releasing MoO₄²⁻ into solution. If Pb is also present in the oxidation zone, the combination becomes wulfenite — the sunset mineral.');
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_rosasite(c) {
+    const parts = [`Rosasite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("(Cu,Zn)₂(CO₃)(OH)₂ — monoclinic supergene carbonate, the Cu-dominant member of the rosasite-aurichalcite pair. Velvety blue-green spheres on the weathered face of Cu-Zn sulfide deposits. The crystal exists because chalcopyrite and sphalerite weathered together upstream and released their metals into the same carbonate-rich groundwater — and at the moment of nucleation, the fluid carried more Cu than Zn. A single ratio decides which species forms; the same broth with reversed proportions would have produced aurichalcite instead. Mohs 4, blue-green streak.");
+    if (c.habit === 'acicular_radiating') {
+      parts.push("Acicular radiating habit — the slow-grown, low-T form. Needle-like aggregates fanning out from a common origin, fibrous internal structure visible under magnification.");
+    } else if (c.habit === 'botryoidal') {
+      parts.push("Botryoidal habit — the diagnostic rosasite form. Velvety spherical aggregates, mammillary crusts; the textbook specimens from Mapimi (Mexico) are sky-blue spheres on red limonite that look like planets in a rusted solar system.");
+    } else {
+      parts.push("Encrusting mammillary habit — thin crust at low supersaturation. Less aesthetic than the diagnostic spheres but more abundant in the field.");
+    }
+    return parts.join(' ');
+  }
+
+  _narrate_aurichalcite(c) {
+    const parts = [`Aurichalcite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push("(Zn,Cu)₅(CO₃)₂(OH)₆ — monoclinic supergene carbonate, the Zn-dominant mirror of rosasite. Pale blue-green tufted sprays so delicate that hardness 2 means a fingernail scratches them. Named for orichalcum, the mythical gold-alloy of Atlantis. The crystal formed because the weathering fluid happened to carry more Zn than Cu at the moment of nucleation; in a parallel run with the ratio inverted, this same broth would have grown rosasite instead. The two species are typically intergrown wherever both elements are present, the ratio drawing a chemical boundary through the mineral assemblage.");
+    if (c.habit === 'tufted_spray') {
+      parts.push("Tufted divergent sprays — the diagnostic aurichalcite habit. Acicular crystals fanning out from a common origin, looking like frozen fireworks or sea anemones; the type material from Loktevskoye (1839) and the most aesthetic specimens from Mapimi are this form.");
+    } else if (c.habit === 'radiating_columnar') {
+      parts.push("Radiating spherical aggregates — denser than the default sprays, formed at higher supersaturation.");
+    } else {
+      parts.push("Thin laminar crust — low-σ encrusting habit, common on mine walls where weathering supplied a steady but modest flux of Zn + Cu + CO₃.");
     }
     return parts.join(' ');
   }
@@ -19032,7 +19278,8 @@ const IDLE_MINERAL_COLORS = {
   nickeline: '#d49080', millerite: '#c8b860', cobaltite: '#d8d4cc',
   descloizite: '#8a3020', mottramite: '#8a9a40',
   raspite: '#d4b840', stolzite: '#d49a30', olivenite: '#5a7030',
-  chalcanthite: '#2a40c8'
+  chalcanthite: '#2a40c8',
+  rosasite: '#5a8a8e', aurichalcite: '#9ec8c0'   // Round 9a
 };
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second
