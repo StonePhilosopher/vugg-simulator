@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -14162,25 +14162,26 @@ class VugSimulator {
   }
 
   _narrate_marcasite(c) {
+    // Prose lives in narratives/marcasite.md.
     const parts = [`Marcasite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
     if (c.habit === 'cockscomb') {
-      parts.push("The crystal developed the classic cockscomb habit — aggregated tabular plates on {010}, edges ridged like a rooster's comb. This shape is the diagnostic fingerprint: pyrite never crests like this.");
+      parts.push(narrative_variant('marcasite', 'cockscomb') || "The crystal developed the classic cockscomb habit — aggregated tabular plates on {010}, edges ridged like a rooster's comb. This shape is the diagnostic fingerprint: pyrite never crests like this.");
     } else if (c.habit === 'spearhead') {
-      parts.push('Spearhead twins — paired tabular crystals tapered to pyramidal tips. The {101} twin law produces a swallowtail shape unique to marcasite.');
+      parts.push(narrative_variant('marcasite', 'spearhead') || 'Spearhead twins — paired tabular crystals tapered to pyramidal tips. The {101} twin law produces a swallowtail shape unique to marcasite.');
     } else if (c.habit === 'radiating_blade') {
-      parts.push('Radiating blades sprayed outward from a common center — low-temperature, high-supersaturation growth in acid fluids, the same style that gives sedimentary marcasite nodules their stellate fracture patterns.');
+      parts.push(narrative_variant('marcasite', 'radiating_blade') || 'Radiating blades sprayed outward from a common center — low-temperature, high-supersaturation growth in acid fluids, the same style that gives sedimentary marcasite nodules their stellate fracture patterns.');
     } else {
-      parts.push('Flat tabular {010} plates — the slow-growth marcasite form, pale brass already starting to iridesce as surface sulfur oxidizes.');
+      parts.push(narrative_variant('marcasite', 'tabular_plates') || 'Flat tabular {010} plates — the slow-growth marcasite form, pale brass already starting to iridesce as surface sulfur oxidizes.');
     }
     if (c.twinned) {
-      parts.push(`Shows the ${c.twin_law} swallowtail twin, diagnostic of marcasite and absent from its cubic cousin pyrite.`);
+      parts.push(narrative_variant('marcasite', 'twinned', { twin_law: c.twin_law }) || `Shows the ${c.twin_law} swallowtail twin, diagnostic of marcasite and absent from its cubic cousin pyrite.`);
     }
     if (c.dissolved) {
-      parts.push('Metastable inversion or oxidative breakdown destroyed the crystal — marcasite is the unstable FeS₂ dimorph. Over geologic time it converts to pyrite; on museum shelves it rots to sulfuric acid and iron sulfate.');
+      parts.push(narrative_variant('marcasite', 'dissolved_inversion') || 'Metastable inversion or oxidative breakdown destroyed the crystal — marcasite is the unstable FeS₂ dimorph. Over geologic time it converts to pyrite; on museum shelves it rots to sulfuric acid and iron sulfate.');
     } else {
-      parts.push('The pH/T regime kept it in the orthorhombic field; given geologic time or a temperature excursion above 240°C, this crystal would invert to pyrite.');
+      parts.push(narrative_variant('marcasite', 'kept_orthorhombic') || 'The pH/T regime kept it in the orthorhombic field; given geologic time or a temperature excursion above 240°C, this crystal would invert to pyrite.');
     }
-    return parts.join(' ');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_chalcopyrite(c) {
@@ -14203,22 +14204,23 @@ class VugSimulator {
   }
 
   _narrate_hematite(c) {
+    // Prose lives in narratives/hematite.md.
     const parts = [`Hematite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
     if (c.habit === 'specular') {
-      parts.push('The high temperature produced specular hematite — brilliant metallic plates that flash like mirrors. The thin {001} basal plates grew parallel, creating the characteristic iron rose texture.');
+      parts.push(narrative_variant('hematite', 'specular') || 'The high temperature produced specular hematite — brilliant metallic plates that flash like mirrors. The thin {001} basal plates grew parallel, creating the characteristic iron rose texture.');
       if (c.zones && c.zones.some(z => z.note && z.note.includes('iridescent'))) {
-        parts.push('Some plates are thin enough to show iridescent interference colors — rainbow hematite, a collector favorite.');
+        parts.push(narrative_variant('hematite', 'specular_iridescent') || 'Some plates are thin enough to show iridescent interference colors — rainbow hematite, a collector favorite.');
       }
     } else if (c.habit === 'rhombohedral') {
-      parts.push('Moderate temperatures produced rhombohedral hematite — sharp-edged crystals with {101} faces, dark metallic gray with a red streak.');
+      parts.push(narrative_variant('hematite', 'rhombohedral') || 'Moderate temperatures produced rhombohedral hematite — sharp-edged crystals with {101} faces, dark metallic gray with a red streak.');
     } else if (c.habit === 'botryoidal') {
-      parts.push('Low-temperature growth produced botryoidal hematite — kidney-ore texture with smooth, rounded surfaces. Classic kidney iron ore mined since antiquity.');
+      parts.push(narrative_variant('hematite', 'botryoidal') || 'Low-temperature growth produced botryoidal hematite — kidney-ore texture with smooth, rounded surfaces. Classic kidney iron ore mined since antiquity.');
     } else if (c.habit === 'earthy/massive') {
-      parts.push('Low supersaturation produced earthy, massive hematite — red microcrystalline aggregate. The red ochre pigment humans have used for 100,000 years.');
+      parts.push(narrative_variant('hematite', 'earthy_massive') || 'Low supersaturation produced earthy, massive hematite — red microcrystalline aggregate. The red ochre pigment humans have used for 100,000 years.');
     }
-    if (c.twinned) parts.push(`Shows a rare ${c.twin_law}.`);
-    if (c.dissolved) parts.push('Late-stage acid attack dissolved some of the hematite, releasing iron back to the fluid.');
-    return parts.join(' ');
+    if (c.twinned) parts.push(narrative_variant('hematite', 'twinned', { twin_law: c.twin_law }) || `Shows a rare ${c.twin_law}.`);
+    if (c.dissolved) parts.push(narrative_variant('hematite', 'acid_dissolution') || 'Late-stage acid attack dissolved some of the hematite, releasing iron back to the fluid.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_malachite(c) {

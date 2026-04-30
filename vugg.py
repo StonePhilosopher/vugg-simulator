@@ -15458,51 +15458,33 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_marcasite(self, c: Crystal) -> str:
-        """Narrate a marcasite crystal's story — the acid-loving iron sulfide."""
+        """Narrate a marcasite crystal's story — the acid-loving iron sulfide.
+
+        Prose lives in narratives/marcasite.md. Code dispatches 4-way habit
+        (cockscomb / spearhead / radiating_blade / tabular_plates default) +
+        twinned (with {twin_law}) + dissolved-vs-kept_orthorhombic dimorph
+        commentary.
+        """
         parts = [f"Marcasite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
 
         if c.habit == "cockscomb":
-            parts.append(
-                "The crystal developed the classic cockscomb habit — aggregated tabular "
-                "plates on {010}, edges ridged like a rooster's comb. This shape is the "
-                "diagnostic fingerprint: pyrite never crests like this."
-            )
+            parts.append(narrative_variant("marcasite", "cockscomb"))
         elif c.habit == "spearhead":
-            parts.append(
-                "Spearhead twins — paired tabular crystals tapered to pyramidal tips. "
-                "The {101} twin law produces a swallowtail shape unique to marcasite."
-            )
+            parts.append(narrative_variant("marcasite", "spearhead"))
         elif c.habit == "radiating_blade":
-            parts.append(
-                "Radiating blades sprayed outward from a common center — low-temperature, "
-                "high-supersaturation growth in acid fluids, the same style that gives "
-                "sedimentary marcasite nodules their stellate fracture patterns."
-            )
+            parts.append(narrative_variant("marcasite", "radiating_blade"))
         else:
-            parts.append(
-                "Flat tabular {010} plates — the slow-growth marcasite form, pale brass "
-                "already starting to iridesce as surface sulfur oxidizes."
-            )
+            parts.append(narrative_variant("marcasite", "tabular_plates"))
 
         if c.twinned:
-            parts.append(
-                f"Shows the {c.twin_law} swallowtail twin, diagnostic of marcasite "
-                f"and absent from its cubic cousin pyrite."
-            )
+            parts.append(narrative_variant("marcasite", "twinned", twin_law=c.twin_law))
 
         if c.dissolved:
-            parts.append(
-                "Metastable inversion or oxidative breakdown destroyed the crystal — "
-                "marcasite is the unstable FeS₂ dimorph. Over geologic time it converts "
-                "to pyrite; on museum shelves it rots to sulfuric acid and iron sulfate."
-            )
+            parts.append(narrative_variant("marcasite", "dissolved_inversion"))
         else:
-            parts.append(
-                "The pH/T regime kept it in the orthorhombic field; given geologic time "
-                "or a temperature excursion above 240°C, this crystal would invert to pyrite."
-            )
+            parts.append(narrative_variant("marcasite", "kept_orthorhombic"))
 
-        return " ".join(parts)
+        return " ".join(p for p in parts if p)
 
     def _narrate_chalcopyrite(self, c: Crystal) -> str:
         """Narrate a chalcopyrite crystal's story.
@@ -15521,53 +15503,33 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
     
     def _narrate_hematite(self, c: Crystal) -> str:
-        """Narrate a hematite crystal's story."""
+        """Narrate a hematite crystal's story.
+
+        Prose lives in narratives/hematite.md. Code dispatches 4-way habit
+        (specular / rhombohedral / botryoidal / earthy_massive) + an
+        iridescent sub-branch on specular when zone-note contains 'iridescent'
+        + twinned (with {twin_law}) + dissolved.
+        """
         parts = [f"Hematite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        
+
         if c.habit == "specular":
-            parts.append(
-                "The high temperature produced specular hematite — brilliant metallic "
-                "plates that flash like mirrors, the most sought-after habit. The thin "
-                "{001} basal plates grew parallel to each other, creating the characteristic "
-                "'iron rose' or 'specularite' texture."
-            )
-            # Check for iridescence
+            parts.append(narrative_variant("hematite", "specular"))
             if c.zones and any("iridescent" in z.note for z in c.zones):
-                parts.append(
-                    "Some plates are thin enough to show iridescent interference colors — "
-                    "rainbow hematite, a collector favorite."
-                )
+                parts.append(narrative_variant("hematite", "specular_iridescent"))
         elif c.habit == "rhombohedral":
-            parts.append(
-                "Moderate temperatures produced rhombohedral hematite — sharp-edged "
-                "crystals with {101} faces, dark metallic gray with a red streak."
-            )
+            parts.append(narrative_variant("hematite", "rhombohedral"))
         elif c.habit == "botryoidal":
-            parts.append(
-                "Low-temperature growth produced botryoidal hematite — kidney-ore "
-                "texture with smooth, rounded surfaces. Classic 'kidney iron ore' "
-                "that has been mined since antiquity."
-            )
+            parts.append(narrative_variant("hematite", "botryoidal"))
         elif c.habit == "earthy/massive":
-            parts.append(
-                "Low supersaturation produced earthy, massive hematite — red "
-                "microcrystalline aggregate. The red ochre pigment that humans have "
-                "used for 100,000 years."
-            )
-        
+            parts.append(narrative_variant("hematite", "earthy_massive"))
+
         if c.twinned:
-            parts.append(
-                f"Shows a rare {c.twin_law} — two crystals interpenetrating "
-                f"through the basal plane."
-            )
-        
+            parts.append(narrative_variant("hematite", "twinned", twin_law=c.twin_law))
+
         if c.dissolved:
-            parts.append(
-                "Late-stage acid attack dissolved some of the hematite, releasing "
-                "iron back to the fluid."
-            )
-        
-        return " ".join(parts)
+            parts.append(narrative_variant("hematite", "acid_dissolution"))
+
+        return " ".join(p for p in parts if p)
     
     def _narrate_malachite(self, c: Crystal) -> str:
         """Narrate a malachite crystal's story.
