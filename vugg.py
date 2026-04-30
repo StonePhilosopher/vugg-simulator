@@ -214,7 +214,24 @@ from typing import List, Dict, Optional, Tuple
 #        tools/twin_rate_check.py — all 25 spontaneously-twinned
 #        minerals match declared probabilities within ±2σ binomial
 #        tolerance at n=2000.
-SIM_VERSION = 10
+#   v11 — Broth-ratio retrofit (Apr 2026), shipped in pair-by-pair commits
+#        per proposals/TASK-BRIEF-RETROFIT-BROTH-RATIO.md:
+#        • Pair 1 (malachite/azurite): docstring refresh only — existing
+#          CO3-threshold split + paramorph already encode Vink 1986.
+#        • Pair 2 (adamite/olivenite): Round 8d strict-comparison Cu/Zn
+#          dispatch upgraded to the rosasite/aurichalcite 50%-gate +
+#          sweet-spot bonus (0.55-0.85) + pure-element damping (>0.95)
+#          + recessive-element trace floor (Cu>=0.5 / Zn>=0.5). Per
+#          Hawthorne 1976 + Burns 1995 + Chukanov 2008 (zincolivenite).
+#        • Pair 3 (descloizite/mottramite): same retrofit as pair 2.
+#          Per Schwartz 1942 + Oyman 2003 + Strunz 1959.
+#        • Pair 4 (sphalerite/wurtzite): polymorphism, not solid-solution.
+#          Keep T-based gates; add low-T metastable wurtzite branch under
+#          pH<4 + sigma>=1 + Fe>=5 per Murowchick & Barnes 1986.
+#        Each retrofit is its own commit; baselines regenerated per
+#        retrofit. Research artifacts at research/research-broth-ratio-
+#        <pair>.md.
+SIM_VERSION = 11
 
 
 # ============================================================
@@ -1477,16 +1494,36 @@ class VugConditions:
         Prismatic to tabular crystals, often on limonite.
         Forms at low temperature (<100°C) in near-surface oxidation zones.
 
-        Round 8d (Apr 2026): Cu/Zn ratio dispatch added — when Cu > Zn,
-        olivenite (Cu₂AsO₄(OH)) takes priority over adamite (the Cu and
-        Zn end-members of the same arsenate structure type).
+        Adamite-vs-olivenite is a Cu:Zn broth-ratio competition (Hawthorne
+        1976 + Burns 1995 + Chukanov 2008 — zincolivenite (Cu,Zn)(AsO4)(OH)
+        is the IMA-approved intermediate). Round 9c retrofit (Apr 2026)
+        upgrades the Round 8d strict-comparison dispatch to the
+        rosasite/aurichalcite 50%-gate + sweet-spot pattern. See
+        research/research-broth-ratio-adamite-olivenite.md.
         """
+        # Trace Cu floor — the Cu²⁺ activator gives the famous green
+        # fluorescence; pure-Zn adamite without any Cu is rare in nature.
+        # Recessive-side floor also makes the Cu:Zn ratio meaningful.
         if self.fluid.Zn < 10 or self.fluid.As < 5 or self.fluid.O2 < 0.3:
             return 0
-        # Round 8d Cu/Zn dispatch — olivenite wins when Cu > Zn.
-        if self.fluid.Cu > self.fluid.Zn:
+        if self.fluid.Cu < 0.5:
+            return 0
+        # Broth-ratio gate — adamite is Zn-dominant. Olivenite returns 0
+        # when Zn>Cu and adamite returns 0 when Cu>Zn — same parent fluid,
+        # opposite outcome.
+        cu_zn_total = self.fluid.Cu + self.fluid.Zn
+        zn_fraction = self.fluid.Zn / cu_zn_total  # safe — Zn≥10 above
+        if zn_fraction < 0.5:
             return 0
         sigma = (self.fluid.Zn / 80.0) * (self.fluid.As / 30.0) * (self.fluid.O2 / 1.0)
+        # Sweet-spot bonus — Zn-dominant but Cu-trace present (the
+        # fluorescent variety) is the most aesthetic adamite. Pure-Zn
+        # adamite (>0.95 Zn fraction) gets damped because hemimorphite
+        # and smithsonite take that territory.
+        if 0.55 <= zn_fraction <= 0.85:
+            sigma *= 1.3
+        elif zn_fraction > 0.95:
+            sigma *= 0.5
         # Low temperature mineral — suppressed above 100°C
         if self.temperature > 100:
             sigma *= math.exp(-0.02 * (self.temperature - 100))
@@ -3341,10 +3378,13 @@ class VugConditions:
         """Olivenite (Cu₂AsO₄(OH)) — the Cu arsenate.
 
         Olive-green to grayish-green, the diagnostic Cu chromophore.
-        Cu/Zn-ratio dispatch with adamite (the existing Zn arsenate):
-        when Zn > Cu, adamite wins. When Cu ≥ Zn, olivenite. Forms in
-        Cu-rich supergene oxidation zones — the type at Cornwall,
+        Forms in Cu-rich supergene oxidation zones — the type at Cornwall,
         Tsumeb, Bisbee.
+
+        Adamite-vs-olivenite is a Cu:Zn broth-ratio competition (see
+        research/research-broth-ratio-adamite-olivenite.md). Round 9c
+        retrofit upgrades the Round 8d strict-comparison dispatch to the
+        rosasite/aurichalcite 50%-gate + sweet-spot pattern.
 
         Source: research/research-olivenite.md (boss commit f2939da).
         """
@@ -3352,13 +3392,28 @@ class VugConditions:
             return 0
         if self.fluid.O2 < 0.5:
             return 0
-        # Cu/Zn dispatch — adamite wins when Zn > Cu.
-        if self.fluid.Zn > self.fluid.Cu:
+        # Trace Zn floor on the recessive side — makes the Cu:Zn ratio
+        # meaningful. Real olivenite always has at least trace Zn
+        # (zincolivenite-leaning compositions).
+        if self.fluid.Zn < 0.5:
+            return 0
+        # Broth-ratio gate — olivenite is Cu-dominant.
+        cu_zn_total = self.fluid.Cu + self.fluid.Zn
+        cu_fraction = self.fluid.Cu / cu_zn_total
+        if cu_fraction < 0.5:
             return 0
         cu_f = min(self.fluid.Cu / 80.0, 2.5)
         as_f = min(self.fluid.As / 20.0, 2.5)
         ox_f = min(self.fluid.O2 / 1.0, 2.0)
         sigma = cu_f * as_f * ox_f
+        # Sweet-spot bonus — Cu-dominant with Zn trace is the
+        # zincolivenite-leaning olivenite, the most-collected form.
+        # Pure-Cu olivenite gets damped since malachite/brochantite
+        # take that territory.
+        if 0.55 <= cu_fraction <= 0.85:
+            sigma *= 1.3
+        elif cu_fraction > 0.95:
+            sigma *= 0.5
         T = self.temperature
         if 20 <= T <= 40:
             T_factor = 1.2

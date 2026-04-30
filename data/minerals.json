@@ -3307,9 +3307,11 @@
       "redox_requirement": "oxidizing",
       "required_ingredients": {
         "Zn": 10,
+        "Cu": 0.5,
         "As": 5,
         "O2": 0.3
       },
+      "_ingredients_note": "Round 9c (Apr 2026): Cu=0.5 is required by the broth-ratio engine retrofit so the Cu:Zn ratio is meaningful. Cu is the trace activator that gives the famous green UV fluorescence; pure-Zn adamite without any Cu is rare in nature.",
       "trace_ingredients": {
         "Cu": "cuproadamite_green_FL_activator",
         "Co": "purple_cobaltoadamite"
@@ -8296,8 +8298,10 @@
       "redox_requirement": "oxidizing",
       "required_ingredients": {
         "Cu": 50,
+        "Zn": 0.5,
         "As": 10
       },
+      "_ingredients_note": "Round 9c (Apr 2026): Zn=0.5 is required by the broth-ratio engine retrofit so the Cu:Zn ratio is meaningful. Real olivenite always has at least trace Zn (zincolivenite-leaning compositions); pure-Cu olivenite is uncommon.",
       "trace_ingredients": {},
       "thermal_decomp_C": null,
       "thermal_decomp_reaction": null,

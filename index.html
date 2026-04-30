@@ -3671,7 +3671,7 @@ let timeScale = 5.0;
 //        as event-conditional logic. Cuprite spinel-twin habit branch
 //        was removed; spinel-twinned cuprite now carries octahedral
 //        habit + twinned flag. Verified by tools/twin_rate_check.py.
-const SIM_VERSION = 10;
+const SIM_VERSION = 11;
 
 
 // ============================================================
@@ -4873,15 +4873,29 @@ class VugConditions {
   }
 
   // Olivenite (Cu2AsO4(OH)) — Cu end of olivenite-adamite series.
-  // Cu/Zn dispatch: Zn>Cu → adamite. Source: research-olivenite.md.
+  // Round 9c retrofit (Apr 2026): broth-ratio (50%-gate + sweet-spot)
+  // replaces the Round 8d strict-comparison dispatch. See
+  // research/research-broth-ratio-adamite-olivenite.md and
+  // research/research-olivenite.md.
   supersaturation_olivenite() {
     if (this.fluid.Cu < 50 || this.fluid.As < 10) return 0;
     if (this.fluid.O2 < 0.5) return 0;
-    if (this.fluid.Zn > this.fluid.Cu) return 0;
+    // Recessive-side trace floor — real olivenite always has at least
+    // trace Zn (zincolivenite-leaning); makes the ratio meaningful.
+    if (this.fluid.Zn < 0.5) return 0;
+    // Broth-ratio gate — olivenite is Cu-dominant.
+    const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
+    const cu_fraction = this.fluid.Cu / cu_zn_total;
+    if (cu_fraction < 0.5) return 0;
     const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
     const as_f = Math.min(this.fluid.As / 20.0, 2.5);
     const ox_f = Math.min(this.fluid.O2 / 1.0, 2.0);
     let sigma = cu_f * as_f * ox_f;
+    // Sweet-spot bonus — Cu-dominant with Zn trace is zincolivenite-
+    // leaning, the most-collected form. Pure-Cu damped (malachite/
+    // brochantite take that territory).
+    if (cu_fraction >= 0.55 && cu_fraction <= 0.85) sigma *= 1.3;
+    else if (cu_fraction > 0.95) sigma *= 0.5;
     const T = this.temperature;
     let T_factor;
     if (T >= 20 && T <= 40) T_factor = 1.2;
@@ -5226,11 +5240,26 @@ class VugConditions {
     return product * T_factor;
   }
 
+  // Adamite (Zn2(AsO4)(OH)) — Zn end of olivenite-adamite series.
+  // Round 9c retrofit (Apr 2026): broth-ratio (50%-gate + sweet-spot)
+  // replaces the Round 8d strict-comparison dispatch. The famous green
+  // UV fluorescence requires trace Cu²⁺ activator — pure-Zn adamite is
+  // rare in nature. See research/research-broth-ratio-adamite-olivenite.md.
   supersaturation_adamite() {
     if (this.fluid.Zn < 10 || this.fluid.As < 5 || this.fluid.O2 < 0.3) return 0;
-    // Round 8d Cu/Zn dispatch — olivenite wins when Cu > Zn.
-    if (this.fluid.Cu > this.fluid.Zn) return 0;
+    // Trace Cu floor — Cu²⁺ activator gives the diagnostic green
+    // fluorescence; recessive-side floor makes the Cu:Zn ratio meaningful.
+    if (this.fluid.Cu < 0.5) return 0;
+    // Broth-ratio gate — adamite is Zn-dominant.
+    const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
+    const zn_fraction = this.fluid.Zn / cu_zn_total;
+    if (zn_fraction < 0.5) return 0;
     let sigma = (this.fluid.Zn / 80.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+    // Sweet-spot bonus — Zn-dominant with Cu trace (the fluorescent
+    // variety) is the most aesthetic adamite. Pure-Zn damped because
+    // hemimorphite/smithsonite take that territory.
+    if (zn_fraction >= 0.55 && zn_fraction <= 0.85) sigma *= 1.3;
+    else if (zn_fraction > 0.95) sigma *= 0.5;
     if (this.temperature > 100) sigma *= Math.exp(-0.02 * (this.temperature - 100));
     if (this.fluid.pH < 4.0) sigma -= (4.0 - this.fluid.pH) * 0.4;
     else if (this.fluid.pH > 8.0) sigma *= 0.5;
