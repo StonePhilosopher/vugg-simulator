@@ -15472,40 +15472,36 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_sphalerite(self, c: Crystal) -> str:
-        """Narrate a sphalerite crystal's story."""
+        """Narrate a sphalerite crystal's story.
+
+        Prose lives in narratives/sphalerite.md. Code keeps the
+        Fe-zoning analysis (early/late thirds, ratio threshold) and
+        picks which named variant — fe_zoning_increasing or
+        fe_zoning_decreasing — applies. Markdown owns the words.
+        """
         parts = [f"Sphalerite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        
+
         if c.zones:
             fe_vals = [z.trace_Fe for z in c.zones if z.trace_Fe > 0]
             if fe_vals:
                 max_fe = max(fe_vals)
                 min_fe = min(fe_vals)
                 if max_fe > min_fe * 1.5:
-                    # Find the color story
-                    early_fe = sum(z.trace_Fe for z in c.zones[:len(c.zones)//3]) / max(len(c.zones)//3, 1)
-                    late_fe = sum(z.trace_Fe for z in c.zones[-len(c.zones)//3:]) / max(len(c.zones)//3, 1)
-                    
-                    if early_fe < late_fe:
-                        parts.append(
-                            f"Iron content increased through growth — early zones are pale "
-                            f"(low Fe, cleiophane variety) grading to darker amber or brown "
-                            f"as the fluid became more iron-rich. This color zoning would be "
-                            f"visible in a polished cross-section."
-                        )
-                    else:
-                        parts.append(
-                            f"Iron content decreased through growth — the crystal darkened "
-                            f"early (higher Fe, approaching marmatite) then cleared as iron "
-                            f"was depleted from the fluid."
-                        )
-        
-        if c.twinned:
-            parts.append(
-                f"Twinned on the {c.twin_law} — a common growth twin in sphalerite "
-                f"that creates triangular re-entrant faces."
-            )
+                    # Compute early-vs-late Fe averages over the first and
+                    # last thirds of the growth zones; pick the matching
+                    # variant from the markdown.
+                    third = max(len(c.zones) // 3, 1)
+                    early_fe = sum(z.trace_Fe for z in c.zones[:third]) / third
+                    late_fe = sum(z.trace_Fe for z in c.zones[-third:]) / third
+                    variant = ("fe_zoning_increasing" if early_fe < late_fe
+                               else "fe_zoning_decreasing")
+                    parts.append(narrative_variant("sphalerite", variant))
 
-        return " ".join(parts)
+        if c.twinned:
+            parts.append(narrative_variant("sphalerite", "twinned",
+                                           twin_law=c.twin_law))
+
+        return " ".join(p for p in parts if p)
 
     def _narrate_wurtzite(self, c: Crystal) -> str:
         """Narrate a wurtzite crystal's story — the high-T hexagonal ZnS dimorph."""

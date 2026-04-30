@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -14052,6 +14052,10 @@ class VugSimulator {
   }
 
   _narrate_sphalerite(c) {
+    // Prose lives in narratives/sphalerite.md. Code keeps the
+    // Fe-zoning analysis (early/late thirds, ratio threshold) and
+    // picks the matching named variant. Inline fallbacks preserve
+    // offline/file:// boot.
     const parts = [`Sphalerite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
     if (c.zones.length) {
       const fe_vals = c.zones.filter(z => z.trace_Fe > 0).map(z => z.trace_Fe);
@@ -14061,18 +14065,19 @@ class VugSimulator {
           const third = Math.max(Math.floor(c.zones.length / 3), 1);
           const early_fe = c.zones.slice(0, third).reduce((s, z) => s + z.trace_Fe, 0) / third;
           const late_fe = c.zones.slice(-third).reduce((s, z) => s + z.trace_Fe, 0) / third;
-          if (early_fe < late_fe) {
-            parts.push(`Iron content increased through growth — early zones are pale (low Fe, cleiophane variety) grading to darker amber or brown as the fluid became more iron-rich. This color zoning would be visible in a polished cross-section.`);
-          } else {
-            parts.push(`Iron content decreased through growth — the crystal darkened early (higher Fe, approaching marmatite) then cleared as iron was depleted from the fluid.`);
-          }
+          const variant = (early_fe < late_fe) ? 'fe_zoning_increasing' : 'fe_zoning_decreasing';
+          const fallback = (early_fe < late_fe)
+            ? `Iron content increased through growth — early zones are pale (low Fe, cleiophane variety) grading to darker amber or brown as the fluid became more iron-rich. This color zoning would be visible in a polished cross-section.`
+            : `Iron content decreased through growth — the crystal darkened early (higher Fe, approaching marmatite) then cleared as iron was depleted from the fluid.`;
+          parts.push(narrative_variant('sphalerite', variant) || fallback);
         }
       }
     }
     if (c.twinned) {
-      parts.push(`Twinned on the ${c.twin_law} — a common growth twin in sphalerite that creates triangular re-entrant faces.`);
+      const v = narrative_variant('sphalerite', 'twinned', { twin_law: c.twin_law });
+      parts.push(v || `Twinned on the ${c.twin_law} — a common growth twin in sphalerite that creates triangular re-entrant faces.`);
     }
-    return parts.join(' ');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_wurtzite(c) {
