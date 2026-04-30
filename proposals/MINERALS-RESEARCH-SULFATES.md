@@ -8,7 +8,7 @@
 
 **Class:** All seven are `sulfate` — share `class_color: "#eb137f"` (per the 12-class palette; never invent a new hex). Existing example: `selenite`. The 12-class palette has one slot for sulfates and all seven inherit it; intra-class differentiation is via habit + color_rules narrators, not class color.
 
-**Schema readiness:** zero new FluidChemistry fields needed. Ba, Sr, Na, K, Cl, Ca, S, O2 all already declared in vugg.py and web/index.html. The dormant Ba and Sr fields (currently populated only in MVT/Tri-State at 20 and 15 ppm) become functional after barite + celestine ship.
+**Schema readiness:** zero new FluidChemistry fields needed. Ba, Sr, Na, K, Cl, Ca, S, O2 all already declared in vugg.py and index.html. The dormant Ba and Sr fields (currently populated only in MVT/Tri-State at 20 and 15 ppm) become functional after barite + celestine ship.
 
 **Implementation pairing:** sulfates split into four paragenetic groupings that match natural commit boundaries:
 

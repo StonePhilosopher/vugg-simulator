@@ -46,7 +46,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 15
 **growth_rate_mult:** 0.4
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Pb": 30, "P": 5, "Cl": 3 }
 **acid_dissolution:** null (very stable)
 **fluorescence:** null
@@ -73,7 +73,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 10
 **growth_rate_mult:** 0.35
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Pb": 30, "V": 5, "Cl": 3 }
 **acid_dissolution:** null
 **fluorescence:** null
@@ -99,7 +99,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 20
 **growth_rate_mult:** 0.3
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Pb": 25, "CO3": 100 }
 **acid_dissolution:** { "pH_threshold": 4.0 }
 **fluorescence:** { "LW": "weak yellow", "activator": "unknown" }
@@ -126,7 +126,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 15
 **growth_rate_mult:** 0.3
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Pb": 25, "S": 50 }
 **acid_dissolution:** { "pH_threshold": 4.0, "note": "dissolves in carbonate-rich fluids → cerussite" }
 **fluorescence:** { "LW": "rarely weak yellow" }
@@ -152,7 +152,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 25
 **growth_rate_mult:** 0.3
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Cu": 100, "CO3": 150 }
 **acid_dissolution:** { "pH_threshold": 4.0, "effervesces": true }
 **fluorescence:** null
@@ -205,7 +205,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 1000 (specimen scale; real masses reach 500 tons)
 **growth_rate_mult:** 0.2
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Cu": 150, "S": 0, "O2": 0.3 }
 **acid_dissolution:** null
 **fluorescence:** null (metallic)
@@ -232,7 +232,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 15
 **growth_rate_mult:** 0.6
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Cu": 150, "S": 80 }
 **acid_dissolution:** null
 **fluorescence:** null
@@ -258,7 +258,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 10
 **growth_rate_mult:** 0.45
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Cu": 100, "S": 120 }
 **acid_dissolution:** null
 **fluorescence:** null
@@ -284,7 +284,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 5
 **growth_rate_mult:** 0.4
 **scenarios:** ["porphyry", "supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Cu": 120, "Fe": 40, "S": 80 }
 **acid_dissolution:** null
 **fluorescence:** null
@@ -310,7 +310,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 60
 **growth_rate_mult:** 0.35
 **scenarios:** ["cooling", "pulse"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Sb": 30, "S": 60 }
 **acid_dissolution:** null
 **fluorescence:** null
@@ -336,7 +336,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 5
 **growth_rate_mult:** 0.4
 **scenarios:** ["reactive_wall"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Bi": 50, "S": 60 }
 **acid_dissolution:** null
 **fluorescence:** null
@@ -362,7 +362,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 5
 **growth_rate_mult:** 0.4
 **scenarios:** ["reactive_wall"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Bi": 80, "S": 0 }
 **acid_dissolution:** null
 **fluorescence:** null (metallic)
@@ -389,7 +389,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 0.01 (microscopic!)
 **growth_rate_mult:** 0.2
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Bi": 20, "V": 5 }
 **acid_dissolution:** null
 **fluorescence:** null
@@ -414,7 +414,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 15
 **growth_rate_mult:** 0.35
 **scenarios:** ["porphyry", "reactive_wall"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Fe": 60, "O2": 1.0 }
 **acid_dissolution:** null
 **fluorescence:** null
@@ -440,7 +440,7 @@ Each entry below follows the builder's template format: FluidChemistry field nam
 **max_size_cm:** 0.5 (typically microscopic to mm-scale)
 **growth_rate_mult:** 0.5
 **scenarios:** ["supergene_oxidation"]
-**runtimes_present:** ["vugg.py", "web/index.html"]
+**runtimes_present:** ["vugg.py", "index.html"]
 **required_ingredients:** { "Fe": 40, "O2": 1.5 }
 **acid_dissolution:** { "pH_threshold": 3.0 }
 **fluorescence:** null

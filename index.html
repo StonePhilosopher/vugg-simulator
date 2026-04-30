@@ -3208,8 +3208,10 @@ function onSpecReady(cb) {
 // Fetch real spec; replaces MINERAL_SPEC with the full JSON (description,
 // class, scenarios, habit_variants, full fluorescence structure, etc.).
 // Safe to call before other init: MINERAL_SPEC_FALLBACK covers the gap.
-// Try multiple paths so it works from /web/ during local dev, from /docs/
-// on GitHub Pages, and from repo root when served flat.
+// Try multiple paths so the spec loads regardless of where the file is
+// served from: root (current GitHub Pages + local preview), one level
+// up (agent-api Node context), or absolute /data (some kiosk setups).
+// Pre-flatten this also covered web/ and docs/ subtrees — see ARCHITECTURE.md.
 async function _loadSpec(paths) {
   for (const p of paths) {
     try {
@@ -16551,7 +16553,7 @@ const FLUID_PRESETS = {
   },
   mvt: {
     label: 'MVT Brine (synced to scenario_mvt)',
-    desc: 'Mirrors scenario_mvt. Edit the scenario in vugg.py / web/index.html to change this preset.',
+    desc: 'Mirrors scenario_mvt. Edit the scenario in vugg.py / index.html to change this preset.',
     get fluid() { return _scenarioFluidParams('mvt'); }
   },
   clean: {

@@ -41,10 +41,11 @@ Every feature touches 2-3 places. Keep them in sync or `tools/sync-spec.js` will
 | File | Role | When to touch |
 |---|---|---|
 | `vugg.py` | Server-side Python simulator. Runs via CLI (`python vugg.py --scenario <name>`), used for offline runs, tests, and research. | Source of truth for growth physics. Port changes here first. |
-| `web/index.html` | Browser simulator + UI. Single-file vanilla JS + canvas. This is what the player actually plays. Serves at `localhost:8000/web/index.html` via the preview server. | Mirror every sim-logic change from `vugg.py`. Any UI work lives only here. |
-| `docs/index.html` | **Exact mirror** of `web/index.html`, served by GitHub Pages. Copy `web/` → `docs/` on every web-side commit: `cp web/index.html docs/index.html`. Forgetting this ships a broken live site. |
-| `agent-api/vugg-agent.js` | Node-side reader that loads `data/minerals.json` via `require`. No embedded spec — just reads. | Rarely needs changes. If you add a new top-level mineral field, verify this still works. |
-| `data/minerals.json` | Single source of truth for mineral data. Both runtimes read this (Python at import, browser via fetch). | Every new mineral gets an entry here FIRST. |
+| `index.html` | Browser simulator + UI. Single-file vanilla JS + canvas. This is what the player actually plays. Serves at `localhost:8000/index.html` via the preview server, and at the GitHub Pages URL in production. | Mirror every sim-logic change from `vugg.py`. Any UI work lives only here. |
+| `agent-api/vugg-agent.js` | Node-side reader that loads `data/minerals.json` via `require`. No embedded spec — just reads. | Intentionally simpler than the other two; rarely needs changes. If you add a new top-level mineral field, verify this still works. |
+| `data/minerals.json` | Single source of truth for mineral data. All three runtimes read this (Python at import, browser via fetch, agent-api via require). | Every new mineral gets an entry here FIRST. |
+
+> **Layout note (2026-04-29):** the live game used to live at `web/index.html` with a curated `docs/` mirror that GitHub Pages served. The mirror was retired (commit `4950ffa`). Pages now serves from repo root. If you see references to `web/` or `docs/` in old briefs under `build/`, treat them as historical — the live layout is flat.
 
 ---
 
@@ -116,7 +117,7 @@ def supersaturation_barite(self) -> float:
     return max(sigma, 0)
 ```
 
-Mirror to `web/index.html`'s `VugConditions` class. The formulas should be **character-identical**. If you tune denominators, tune both.
+Mirror to `index.html`'s `VugConditions` class. The formulas should be **character-identical**. If you tune denominators, tune both.
 
 ### 3. Implement the growth engine in BOTH simulators
 
@@ -138,7 +139,7 @@ Register it:
 MINERAL_ENGINES["barite"] = grow_barite
 ```
 
-Mirror in `web/index.html` (search for the existing `MINERAL_ENGINES` object). Same logic, same constants.
+Mirror in `index.html` (search for the existing `MINERAL_ENGINES` object). Same logic, same constants.
 
 ### 4. Add a narrator method in BOTH simulators
 
@@ -147,11 +148,11 @@ def _narrate_barite(self, c: Crystal) -> str:
     ...
 ```
 
-Mirror in `web/index.html`. The spec's `narrate_function` field names this method — keep them consistent.
+Mirror in `index.html`. The spec's `narrate_function` field names this method — keep them consistent.
 
 ### 5. Wire nucleation in BOTH simulators' `check_nucleation`
 
-In both `vugg.py` (search `def check_nucleation`) and `web/index.html` (search `check_nucleation(vugFill)`), add a nucleation block. Pattern to follow:
+In both `vugg.py` (search `def check_nucleation`) and `index.html` (search `check_nucleation(vugFill)`), add a nucleation block. Pattern to follow:
 
 ```python
 sigma_ba = self.conditions.supersaturation_barite()
@@ -185,7 +186,6 @@ node tools/sync-spec.js
 This validates:
 - Every mineral has every required field.
 - Web embed's `MINERAL_SPEC_FALLBACK` agrees on `max_size_cm` / `thermal_decomp_C` / `nucleation_sigma` / `growth_rate_mult`.
-- `docs/` mirrors `web/`.
 - Every declared `narrate_function` exists in `vugg.py`.
 
 If you haven't installed Node, the Python CLI will run fine — but push anyway; CI will catch drift.
@@ -199,15 +199,14 @@ PYTHONIOENCODING=utf-8 python vugg.py --scenario <relevant-scenario> --steps 200
 
 **Browser** (necessary — this is what the player sees):
 - Start the preview server (`.claude/launch.json` has `vugg-static`).
-- Navigate to `localhost:8000/web/index.html`.
+- Navigate to `localhost:8000/index.html`.
 - Start a scenario or use Creative mode to dial up the right chemistry.
 - Confirm your mineral nucleates, grows, shows correct `class_color` on the topo map, appears in the inventory, gets narrated.
 
-### 9. Sync docs and commit
+### 9. Commit and push
 
 ```bash
-cp web/index.html docs/index.html
-git add data/minerals.json vugg.py web/index.html docs/index.html
+git add data/minerals.json vugg.py index.html
 git commit -m "Add <mineral>: <brief what-it-does>"
 git push origin main
 ```
@@ -250,7 +249,7 @@ Things that weren't in the original codebase and that affect any mineral you add
 - `avg_radiation_damage > 0.3` reads as smoky; cross-referenced with Al traces.
 
 ### Fluid chemistry elements
-`FluidChemistry` now tracks 35+ elements. Many default to 0 for ordinary scenarios. Six recent scenario-chemistry updates added Ba/Pb to reactive_wall and Be/Li/B/P to pegmatite — see [48f38d7](https://github.com/Syntaxswine/vugg-simulator/commit/48f38d7). If your mineral needs a new element, add it to the `FluidChemistry` dataclass in `vugg.py` AND the `FluidChemistry` class in `web/index.html`.
+`FluidChemistry` now tracks 35+ elements. Many default to 0 for ordinary scenarios. Six recent scenario-chemistry updates added Ba/Pb to reactive_wall and Be/Li/B/P to pegmatite — see [48f38d7](https://github.com/Syntaxswine/vugg-simulator/commit/48f38d7). If your mineral needs a new element, add it to the `FluidChemistry` dataclass in `vugg.py` AND the `FluidChemistry` class in `index.html`.
 
 ---
 
@@ -259,11 +258,10 @@ Things that weren't in the original codebase and that affect any mineral you add
 1. **Don't invent `class_color` hex values.** Use the 12-hue table. If your mineral doesn't fit a class, ask first.
 2. **Don't add a mineral with string-array `habit_variants`.** That format predates the growth-vector system and will skip habit selection entirely. Objects with all five fields.
 3. **Don't skip `max_nucleation_count`.** Without it, `_at_nucleation_cap` returns false and enclosure causes runaway.
-4. **Don't forget to sync `docs/index.html`.** The live site serves from there.
-5. **Don't push to `canonical` remote.** You can't anyway, but also don't try.
-6. **Don't tune sim physics in only one runtime.** Python and web must stay behaviorally identical. The `sync-spec.js` drift check catches spec drift but not formula drift.
-7. **Don't add scenario-specific mineral behavior.** Nucleation preferences (e.g. "pyrite prefers sphalerite surfaces") go in `check_nucleation`. Scenario chemistry goes in the scenario function. Keep them separate.
-8. **Don't remove old inline count caps** (`total_py < 3` etc.) — they're belt-and-braces with `_at_nucleation_cap`. Leave both.
+4. **Don't push to `canonical` remote.** You can't anyway, but also don't try.
+5. **Don't tune sim physics in only one runtime.** Python and web must stay behaviorally identical. The `sync-spec.js` drift check catches spec drift but not formula drift.
+6. **Don't add scenario-specific mineral behavior.** Nucleation preferences (e.g. "pyrite prefers sphalerite surfaces") go in `check_nucleation`. Scenario chemistry goes in the scenario function. Keep them separate.
+7. **Don't remove old inline count caps** (`total_py < 3` etc.) — they're belt-and-braces with `_at_nucleation_cap`. Leave both.
 
 ---
 
@@ -273,12 +271,11 @@ Things that weren't in the original codebase and that affect any mineral you add
 |---|---|
 | `data/minerals.json` | **Every time** — primary entry. |
 | `vugg.py` | **Every time** — `supersaturation_X`, `grow_X`, `_narrate_X`, `check_nucleation`, `nucleate` dispatch, `MINERAL_ENGINES` map. |
-| `web/index.html` | **Every time** — mirror all of the above. |
-| `docs/index.html` | Copy from `web/` before commit. |
+| `index.html` | **Every time** — mirror all of the above. |
 | `agent-api/vugg-agent.js` | Rarely — only if you add a top-level spec field. |
 | `proposals/vugg-mineral-template.md` | Reference for habit-variant schema. |
 | `proposals/HANDOFF-ADDING-MINERALS.md` | This document. |
-| `ARCHITECTURE.md` | Older overview, partially stale (lists 10 minerals; we're at 19+). Useful for mental model of game modes. |
+| `ARCHITECTURE.md` | Pointer doc — links each topic to its canonical source. |
 | `tools/sync-spec.js` | Run after any spec change. |
 
 Good luck. If a spec-driven change breaks something unexpectedly, check `git log data/minerals.json` first — the file has been through several phases and some historic commits are instructive.

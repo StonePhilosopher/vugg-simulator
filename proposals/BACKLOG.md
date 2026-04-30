@@ -110,9 +110,10 @@ These aren't todos — they're conventions to follow when doing the work above:
 
 - **`pending_schema_additions`** in `data/locality_chemistry.json` — for "value pre-researched, schema/engine not yet there". Includes value, unit, rationale, source, blockers, minerals_unlocked. See bingham_canyon entry as canonical example before Au shipped.
 - **`intentionally_zero`** in `data/locality_chemistry.json` — for "we checked and zero is the right answer for this locality". Established in commit `e2048e9` for the Au audit. When any new schema field lands, run the per-locality gap-check and document zero values explicitly so future audits don't re-flag them.
-- **Three-place note pattern** — when a new schema element is researched but engine pending, leave cross-referenced notes in: vugg.py scenario comment + web/index.html mirror comment + data/locality_chemistry.json `pending_schema_additions` block. See bingham_canyon Au notes (pre-commit `e13d7f1`) for the reference shape.
-- **Per-commit docs/ mirror** — every web/index.html change must be mirrored to docs/index.html in the same commit. ARCHITECTURE.md requirement; user views the live game via GitHub Pages docs/.
+- **Three-place note pattern** — when a new schema element is researched but engine pending, leave cross-referenced notes in: vugg.py scenario comment + index.html mirror comment + data/locality_chemistry.json `pending_schema_additions` block. See bingham_canyon Au notes (pre-commit `e13d7f1`) for the reference shape.
 - **Push to Syntaxswine origin** — the user's fork is the push target; StonePhilosopher canonical is read-only here, boss promotes from Syntaxswine.
+
+> **Layout flatten (2026-04-29, commit `4950ffa`):** the prior "per-commit docs/ mirror" pattern is retired. `web/` and `docs/` were collapsed into repo root; GitHub Pages now serves from root, no mirror needed. References to `web/index.html` or `docs/index.html` in completed-work briefs under `build/` are historical — current path is `index.html`.
 
 ---
 
