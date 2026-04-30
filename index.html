@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -14687,46 +14687,50 @@ class VugSimulator {
   }
 
   _narrate_chalcocite(c) {
+    // Prose lives in narratives/chalcocite.md.
     const parts = [`Chalcocite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push('Cu₂S — 79.8% Cu by weight, one of the richest copper ores ever mined. Forms in the supergene enrichment blanket, where descending Cu²⁺-rich meteoric fluids meet reducing conditions at the water table. This is where mineable copper ore gets made.');
+    parts.push(narrative_blurb('chalcocite') || 'Cu₂S — 79.8% Cu by weight, one of the richest copper ores ever mined. Forms in the supergene enrichment blanket, where descending Cu²⁺-rich meteoric fluids meet reducing conditions at the water table. This is where mineable copper ore gets made.');
     if (c.twinned && (c.twin_law || '').includes('sixling')) {
-      parts.push('Pseudo-hexagonal cyclic sixling twin — chalcocite\u2019s collector habit. Three orthorhombic individuals intergrown at ~60° approximate a hexagonal symmetry the mineral doesn\u2019t actually have. Butte, Cornwall, and Bristol Cliff produced sharp sixlings.');
+      parts.push(narrative_variant('chalcocite', 'sixling_twin') || 'Pseudo-hexagonal cyclic sixling twin — chalcocite\u2019s collector habit. Three orthorhombic individuals intergrown at ~60° approximate a hexagonal symmetry the mineral doesn\u2019t actually have. Butte, Cornwall, and Bristol Cliff produced sharp sixlings.');
     }
     if ((c.habit || '').includes('pseudomorph')) {
-      parts.push("Pseudomorph — this chalcocite replaced a primary sulfide (chalcopyrite or bornite) atom-by-atom while preserving the host's external form. Copper diffused in, iron and excess sulfur diffused out, leaving a ghost outline in dark gray Cu₂S.");
+      parts.push(narrative_variant('chalcocite', 'pseudomorph') || "Pseudomorph — this chalcocite replaced a primary sulfide (chalcopyrite or bornite) atom-by-atom while preserving the host's external form. Copper diffused in, iron and excess sulfur diffused out, leaving a ghost outline in dark gray Cu₂S.");
     }
     if ((c.habit || '').includes('sooty')) {
-      parts.push('Sooty microcrystalline texture — rapid precipitation at the oxidation/reduction interface. The aggregate looks like black soot smeared on the host rock.');
+      parts.push(narrative_variant('chalcocite', 'sooty') || 'Sooty microcrystalline texture — rapid precipitation at the oxidation/reduction interface. The aggregate looks like black soot smeared on the host rock.');
     }
-    return parts.join(' ');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_covellite(c) {
+    // Prose lives in narratives/covellite.md.
     const parts = [`Covellite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push('CuS — indigo-blue, the only common naturally blue mineral (azurite aside). Named for Niccolo Covelli, who first described the Vesuvius fumarole specimens in 1833. Hexagonal, with perfect basal cleavage — the fresh plates peel like mica, and the cleavage surfaces flash purple-green iridescence from thin-film interference.');
+    parts.push(narrative_blurb('covellite') || 'CuS — indigo-blue, the only common naturally blue mineral (azurite aside). Named for Niccolo Covelli, who first described the Vesuvius fumarole specimens in 1833. Hexagonal, with perfect basal cleavage — the fresh plates peel like mica, and the cleavage surfaces flash purple-green iridescence from thin-film interference.');
     if ((c.habit || '').includes('iridescent')) {
-      parts.push('Iridescent coating — this covellite grew at the boundary between the oxidation and reduction zones. The fluid oscillated across the Eh boundary just enough to produce Cu²⁺ surface products on the forming crystal.');
+      parts.push(narrative_variant('covellite', 'iridescent') || 'Iridescent coating — this covellite grew at the boundary between the oxidation and reduction zones. The fluid oscillated across the Eh boundary just enough to produce Cu²⁺ surface products on the forming crystal.');
     } else if ((c.habit || '').includes('rosette')) {
-      parts.push('Radiating rosette — plates nucleating outward from a common center. High supersaturation triggered multiple nucleation sites on the substrate at once, and the crystals grew into each other until the void was paved blue.');
+      parts.push(narrative_variant('covellite', 'rosette') || 'Radiating rosette — plates nucleating outward from a common center. High supersaturation triggered multiple nucleation sites on the substrate at once, and the crystals grew into each other until the void was paved blue.');
     }
-    parts.push("S:Cu ratio = 1:1, twice that of chalcocite. Covellite forms where sulfur activity is high enough to push past chalcocite's stoichiometry — typically the transition layer between oxidized caprock and reduced primary sulfides below.");
-    return parts.join(' ');
+    parts.push(narrative_variant('covellite', 'stoichiometry') || "S:Cu ratio = 1:1, twice that of chalcocite. Covellite forms where sulfur activity is high enough to push past chalcocite's stoichiometry — typically the transition layer between oxidized caprock and reduced primary sulfides below.");
+    if (c.dissolved) parts.push(narrative_variant('covellite', 'oxidative_dissolution') || 'Oxidative dissolution — the Cu²⁺ will find malachite or azurite; the S oxidized to sulfate.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_cuprite(c) {
+    // Prose lives in narratives/cuprite.md.
     const parts = [`Cuprite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push('Cu₂O — 88.8% Cu by weight, dark red with ruby-red internal reflections in thin slices. Forms at the Eh boundary between more-reducing native copper and more-oxidizing malachite/tenorite. The window is narrow, which is why cuprite tends to appear as thin layers between native Cu and green malachite coats.');
+    parts.push(narrative_blurb('cuprite') || 'Cu₂O — 88.8% Cu by weight, dark red with ruby-red internal reflections in thin slices. Forms at the Eh boundary between more-reducing native copper and more-oxidizing malachite/tenorite. The window is narrow, which is why cuprite tends to appear as thin layers between native Cu and green malachite coats.');
     if (c.habit === 'chalcotrichite') {
-      parts.push('Chalcotrichite — hair-like plush texture. Rapid directional growth in open fracture space produced whisker crystals instead of octahedra. Morenci (Arizona) and Chessy (France) produced the best specimens.');
+      parts.push(narrative_variant('cuprite', 'chalcotrichite') || 'Chalcotrichite — hair-like plush texture. Rapid directional growth in open fracture space produced whisker crystals instead of octahedra. Morenci (Arizona) and Chessy (France) produced the best specimens.');
     } else if ((c.habit || '').includes('massive')) {
-      parts.push("Massive 'tile ore' — dark red-brown rapidly-precipitated cuprite filling tight pore space.");
+      parts.push(narrative_variant('cuprite', 'massive') || "Massive 'tile ore' — dark red-brown rapidly-precipitated cuprite filling tight pore space.");
     } else if (c.twinned && (c.twin_law || '').includes('spinel')) {
-      parts.push('Spinel-law penetration twin — two octahedra intergrown with a {111} reentrant angle between them. Rare.');
+      parts.push(narrative_variant('cuprite', 'spinel_twin') || 'Spinel-law penetration twin — two octahedra intergrown with a {111} reentrant angle between them. Rare.');
     } else {
-      parts.push('Classic octahedral habit, dark red with glassy-to-adamantine luster. Tsumeb (Namibia) and Mashamba West mine (Congo) produced gem-grade octahedra to 15+ cm.');
+      parts.push(narrative_variant('cuprite', 'octahedral_default') || 'Classic octahedral habit, dark red with glassy-to-adamantine luster. Tsumeb (Namibia) and Mashamba West mine (Congo) produced gem-grade octahedra to 15+ cm.');
     }
-    if (c.dissolved) parts.push('Crystal dissolved — the Eh window shifted out from under it.');
-    return parts.join(' ');
+    if (c.dissolved) parts.push(narrative_variant('cuprite', 'eh_dissolution') || 'Crystal dissolved — the Eh window shifted out from under it.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_azurite(c) {

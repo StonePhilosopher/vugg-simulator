@@ -17486,131 +17486,60 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_chalcocite(self, c: Crystal) -> str:
-        """Narrate a chalcocite crystal — the pseudomorph thief."""
+        """Narrate a chalcocite crystal — the pseudomorph thief.
+
+        Prose lives in narratives/chalcocite.md. Code dispatches blurb +
+        sixling twin + INDEPENDENT pseudomorph and sooty branches (both
+        can fire for a 'pseudomorph_sooty' habit string).
+        """
         parts = [f"Chalcocite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Cu₂S — 79.8% Cu by weight, one of the richest copper ores "
-            "ever mined. Forms in the supergene enrichment blanket, "
-            "where descending Cu²⁺-rich meteoric fluids meet reducing "
-            "conditions at the water table. This is where mineable "
-            "copper ore gets made: weathering concentrates Cu into a "
-            "layer ten times richer than the primary sulfide above it."
-        )
+        parts.append(narrative_blurb("chalcocite"))
         if c.twinned and "sixling" in (c.twin_law or ""):
-            parts.append(
-                "Pseudo-hexagonal cyclic sixling twin — chalcocite's "
-                "collector habit. Three orthorhombic individuals "
-                "intergrown at ~60° approximate a hexagonal symmetry "
-                "the mineral doesn't actually have. Butte, Cornwall, "
-                "and Bristol Cliff produced sharp sixlings; most "
-                "specimens at rock shows came from one of those three."
-            )
+            parts.append(narrative_variant("chalcocite", "sixling_twin"))
         if "pseudomorph" in (c.habit or ""):
-            parts.append(
-                "Pseudomorph — this chalcocite replaced a primary sulfide "
-                "(chalcopyrite or bornite) atom-by-atom while preserving "
-                "the host's external form. Copper diffused in, iron and "
-                "excess sulfur diffused out, leaving a ghost outline "
-                "in dark gray Cu₂S. The cube is galena's; the disphenoid "
-                "is chalcopyrite's; here the identity has been overwritten."
-            )
+            parts.append(narrative_variant("chalcocite", "pseudomorph"))
         if "sooty" in (c.habit or ""):
-            parts.append(
-                "Sooty microcrystalline texture — rapid precipitation "
-                "at the oxidation/reduction interface. Individual "
-                "crystals too small to see; the aggregate looks like "
-                "black soot smeared on the host rock."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("chalcocite", "sooty"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_covellite(self, c: Crystal) -> str:
-        """Narrate a covellite crystal — the only common blue mineral."""
+        """Narrate a covellite crystal — the only common blue mineral.
+
+        Prose lives in narratives/covellite.md. Code dispatches blurb +
+        2-way habit (iridescent / rosette) + ALWAYS-emitted stoichiometry
+        tail + dissolved.
+        """
         parts = [f"Covellite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "CuS — indigo-blue, the only common naturally blue mineral "
-            "(azurite aside). Named for Niccolo Covelli, who first "
-            "described the Vesuvius fumarole specimens in 1833. "
-            "Hexagonal, with perfect basal cleavage — the fresh plates "
-            "peel like mica, and the cleavage surfaces flash purple-"
-            "green iridescence from thin-film interference."
-        )
+        parts.append(narrative_blurb("covellite"))
         if "iridescent" in (c.habit or ""):
-            parts.append(
-                "Iridescent coating — this covellite grew at the "
-                "boundary between the oxidation and reduction zones. "
-                "The fluid oscillated across the Eh boundary just "
-                "enough to produce Cu²⁺ surface products on the "
-                "forming crystal. Summerville (Italy), Butte, and "
-                "the Sardinia localities show this habit best."
-            )
+            parts.append(narrative_variant("covellite", "iridescent"))
         elif "rosette" in (c.habit or ""):
-            parts.append(
-                "Radiating rosette — plates nucleating outward from a "
-                "common center. High supersaturation triggered multiple "
-                "nucleation sites on the substrate at once, and the "
-                "crystals grew into each other until the void was "
-                "paved blue."
-            )
-        parts.append(
-            "S:Cu ratio = 1:1, twice that of chalcocite. Covellite "
-            "forms where sulfur activity is high enough to push past "
-            "chalcocite's stoichiometry — typically the transition "
-            "layer between oxidized caprock and reduced primary "
-            "sulfides below."
-        )
+            parts.append(narrative_variant("covellite", "rosette"))
+        parts.append(narrative_variant("covellite", "stoichiometry"))
         if c.dissolved:
-            parts.append(
-                "Oxidative dissolution — the Cu²⁺ will find malachite "
-                "or azurite; the S oxidized to sulfate."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("covellite", "oxidative_dissolution"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_cuprite(self, c: Crystal) -> str:
-        """Narrate a cuprite crystal — the Eh-boundary oxide."""
+        """Narrate a cuprite crystal — the Eh-boundary oxide.
+
+        Prose lives in narratives/cuprite.md. Code dispatches blurb +
+        4-way habit (chalcotrichite / massive / spinel_twin (twinned
+        sub-condition) / octahedral_default) + Eh-shift dissolution.
+        """
         parts = [f"Cuprite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Cu₂O — 88.8% Cu by weight, dark red with ruby-red internal "
-            "reflections in thin slices. Forms at the Eh boundary between "
-            "more-reducing native copper and more-oxidizing malachite/"
-            "tenorite. The window is narrow, which is why cuprite tends to "
-            "appear as thin layers between native Cu and green malachite "
-            "coats — each zone captures a different depth in the Eh profile."
-        )
+        parts.append(narrative_blurb("cuprite"))
         if c.habit == "chalcotrichite":
-            parts.append(
-                "Chalcotrichite — hair-like plush texture. Rapid "
-                "directional growth in open fracture space produced "
-                "whisker crystals instead of octahedra. The Morenci "
-                "(Arizona) and Chessy (France) localities produced the "
-                "best specimens — bright red velvet on matrix."
-            )
+            parts.append(narrative_variant("cuprite", "chalcotrichite"))
         elif "massive" in (c.habit or ""):
-            parts.append(
-                "Massive 'tile ore' — dark red-brown rapidly-precipitated "
-                "cuprite filling tight pore space. Less photogenic than "
-                "octahedra, but this is how most cuprite actually occurs "
-                "in the field."
-            )
+            parts.append(narrative_variant("cuprite", "massive"))
         elif c.twinned and "spinel" in (c.twin_law or ""):
-            parts.append(
-                "Spinel-law penetration twin — two octahedra intergrown "
-                "with a {111} reentrant angle between them. Rare."
-            )
+            parts.append(narrative_variant("cuprite", "spinel_twin"))
         else:
-            parts.append(
-                "Classic octahedral habit, dark red with glassy-to-"
-                "adamantine luster. Tsumeb (Namibia) and the Mashamba "
-                "West mine (Congo) have produced gem-grade octahedra "
-                "to 15+ cm."
-            )
+            parts.append(narrative_variant("cuprite", "octahedral_default"))
         if c.dissolved:
-            parts.append(
-                "Crystal dissolved — the Eh window shifted out from "
-                "under it. If the fluid tilted reducing, Cu probably "
-                "went to native copper; if oxidizing and carbonated, to "
-                "malachite."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("cuprite", "eh_dissolution"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_azurite(self, c: Crystal) -> str:
         """Narrate an azurite crystal — the deep-blue carbonate.
