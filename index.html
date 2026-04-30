@@ -15492,7 +15492,30 @@ function capitalize(s) {
 // ============================================================
 
 let running = false;
+// =====================================================================
+// Simulation mode (internal name: "legends")
+// =====================================================================
+// User-visible label is "Simulation" (title card "🔬 Simulation", menu
+// button "Simulation."). The `legends*` token is the pre-rename
+// internal name still in this global, scenario-list helpers
+// (legendsSimSource, etc.), and various comments. Token kept stable
+// because the rename happened only at the user-visible surface — see
+// commit 467e8c4. The post-game source field uses 'Simulation'.
+// See proposals/BACKLOG.md "Internal token cleanup" for the deferred
+// thorough rename.
 let legendsSim = null;
+// =====================================================================
+// Record Player (internal name: "groove")
+// =====================================================================
+// User-visible label is "📀 Record Player" (title card, mode-switcher
+// button). The `groove*` token is the pre-rename internal name spread
+// across switchMode('groove'), playCollectedInGroove, mode-groove
+// button ID, .groove-tooltip / .groove-canvas-wrap CSS classes, and
+// the modal stand-in below. NOTE: the term "groove" is genuinely
+// correct for the *visualization primitive* inside the Record Player
+// — it really is a record's groove, read radially. So even if we
+// rename the mode codepath, the rainbow-lane drawing routines stay
+// "groove". See proposals/BACKLOG.md "Internal token cleanup".
 let grooveModalCrystal = null;
 
 function runSimulation() {
@@ -16892,6 +16915,19 @@ const FLUID_PRESETS = {
   }
 };
 
+// =====================================================================
+// Creative mode (internal name: "fortress")
+// =====================================================================
+// User-visible label is "Creative" everywhere (title card, panel heading,
+// menu button, post-game source field). The `fortress*` token is a
+// pre-rename internal name that's still spread across ~199 sites — CSS
+// classes (.fortress-log, .fortress-main, .fortress-setup), DOM IDs
+// (#fortress-panel, #fortress-status), function names (fortressBegin,
+// fortressStep, fortressFinish), and this global. Token kept stable
+// because renaming all 199 occurrences for no UX gain isn't worth the
+// churn. If you grep here looking for "fortress" — that's why. The user-
+// facing rename happened in commit 467e8c4. See proposals/BACKLOG.md
+// "Internal token cleanup" for the deferred thorough rename.
 let fortressSim = null;
 let fortressActive = false;
 let fortressLogLines = [];
@@ -17988,7 +18024,7 @@ function grooveGetAvailableCrystals() {
     return { sim: fortressSim, crystals: fortressSim.crystals, source: 'Creative' };
   }
   if (legendsSim && legendsSim.crystals && legendsSim.crystals.length) {
-    return { sim: legendsSim, crystals: legendsSim.crystals, source: 'Legends' };
+    return { sim: legendsSim, crystals: legendsSim.crystals, source: 'Simulation' };
   }
   if (randomSim && randomSim.crystals && randomSim.crystals.length) {
     return { sim: randomSim, crystals: randomSim.crystals, source: 'Random Vugg' };
@@ -19354,6 +19390,20 @@ const IDLE_MINERAL_COLORS = {
 
 const IDLE_SPEED_MAP = [0.5, 1, 2, 5, 10]; // steps per second
 
+// =====================================================================
+// Zen Mode (internal name: "idle")
+// =====================================================================
+// User-visible label is "Zen Mode" (title card + menu button + start
+// log line). The `idle*` token is the pre-rename internal name that's
+// still spread across DOM IDs (#idle-panel, #idle-chart, #idle-pie,
+// #idle-log, #idle-step-counter, #idle-speed-slider), CSS classes
+// (.idle-container, .idle-controls), function names (idleTogglePlay,
+// idleStep, idleFinish, idleAppendLog, idlePickScenario), and this
+// global. Mode switch is `switchMode('idle')` / `menuGo('idle')`. The
+// post-game source field also uses 'Zen' (not 'Idle'). Token kept
+// stable because the rename happened only at the user-visible surface
+// — see commit 467e8c4 and proposals/BACKLOG.md "Internal token
+// cleanup" for the deferred thorough rename.
 let idleSim = null;
 let idleRunning = false;
 let idlePaused = false;
