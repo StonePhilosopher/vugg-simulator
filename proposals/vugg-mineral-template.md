@@ -1,6 +1,8 @@
 # Vugg Mineral Template
 
-Step-by-step reference for adding a new mineral. Covers the spec entry, the two runtimes (`vugg.py` + `web/index.html`), the inline fallback, and the `docs/` mirror. Informed by the 4-mineral Minas Gerais build-out (topaz, tourmaline, beryl, spodumene) — every pattern below has been battle-tested.
+Step-by-step reference for adding a new mineral. Covers the spec entry, the two runtimes (`vugg.py` + `index.html`), and the inline fallback. Informed by the 4-mineral Minas Gerais build-out (topaz, tourmaline, beryl, spodumene) — every pattern below has been battle-tested.
+
+> **Layout note (2026-04-29):** the live game used to live at `web/index.html` with a curated `docs/` mirror that GitHub Pages served. The mirror was retired (commit `4950ffa`); Pages now serves repo root. References below to `index.html` mean the file at repo root.
 
 Quick map: one new mineral touches **~7 locations** across 3–5 files. The checklist at the bottom is the definitive "did I get everything" list.
 
@@ -36,7 +38,8 @@ Reference `_schema` in that file for the full field list. Required beyond the sc
 - `habit_variants` — see §3
 - `required_ingredients` — object keyed by **FluidChemistry field names** (not chemical symbols with superscripts). See §4.
 - `scenarios` — array of scenario IDs where this mineral can realistically form
-- `runtimes_present` — currently `["vugg.py", "web/index.html"]` is acceptable. Skip `agent-api/vugg-agent.js` unless you're also updating it; flag the gap in `_audit_summary.missing_from_agent_api`.
+- `runtimes_present` — currently `["vugg.py", "index.html"]` is acceptable. Skip `agent-api/vugg-agent.js` unless you're also updating it; flag the gap in `_audit_summary.missing_from_agent_api`.
+- `test_cases` — **required for new minerals.** At least 2-3 cases that exercise the supersat gate. See §15 below for the schema and §16 for examples. The scaffold tool seeds an empty array; the builder fills it.
 
 ## 3. Habit variants
 
@@ -52,7 +55,7 @@ Each entry in `habit_variants` must be an object with these five fields:
 
 ### Required trigger vocabulary
 
-The habit selector (`select_habit_variant` in `vugg.py` / `selectHabitVariant` in `web/index.html`) scans the trigger string for these tokens. Anything else is noise.
+The habit selector (`select_habit_variant` in `vugg.py` / `selectHabitVariant` in `index.html`) scans the trigger string for these tokens. Anything else is noise.
 
 - Supersaturation: `"very high σ"`, `"high σ"`, `"moderate-high σ"`, `"moderate σ"`, `"low-moderate σ"`, `"low σ"`.
 - Temperature: `"high T"` (> 300°C), `"moderate T"` (150–300°C), `"low T"` (< 150°C).
@@ -88,7 +91,7 @@ From `quartz`:
 
 ## 4. FluidChemistry field names (gotcha)
 
-`required_ingredients` keys must match `FluidChemistry` attribute names exactly. The field list is in `vugg.py` (~line 137) and the JS `class FluidChemistry` in `web/index.html`. Common traps:
+`required_ingredients` keys must match `FluidChemistry` attribute names exactly. The field list is in `vugg.py` (~line 137) and the JS `class FluidChemistry` in `index.html`. Common traps:
 
 - Silica is `SiO2`, **not `Si`**.
 - Carbonate is `CO3`, **not `CO3²⁻`** or `carbonate`.
@@ -100,7 +103,7 @@ Use `trace_ingredients` descriptions for pretty unicode (`"Fe²⁺": "black scho
 
 ## 5. supersaturation_\<mineral\>() — the chemistry gate
 
-Add a method to `VugConditions` in both `vugg.py` and `web/index.html`. Pattern:
+Add a method to `VugConditions` in both `vugg.py` and `index.html`. Pattern:
 
 ```python
 def supersaturation_topaz(self) -> float:
@@ -210,7 +213,7 @@ def grow_topaz(crystal, conditions, step):
 
 ## 7. nucleate() dominant_forms dispatch
 
-In both `VugSimulator.nucleate()` (vugg.py) and `nucleate()` (web/index.html), add an `elif` branch assigning `crystal.dominant_forms = [...]` for your mineral. This runs once at nucleation; the grow engine may overwrite later based on T/σ.
+In both `VugSimulator.nucleate()` (vugg.py) and `nucleate()` (index.html), add an `elif` branch assigning `crystal.dominant_forms = [...]` for your mineral. This runs once at nucleation; the grow engine may overwrite later based on T/σ.
 
 ## 8. check_nucleation block
 
@@ -258,7 +261,7 @@ def _narrate_topaz(self, c):
 
 ## 10. MINERAL_SPEC_FALLBACK (web only)
 
-In `web/index.html`, add a one-liner to the `MINERAL_SPEC_FALLBACK` object (before the `_loadSpec` fetch). This is what renders the Library UI if `data/minerals.json` fails to fetch:
+In `index.html`, add a one-liner to the `MINERAL_SPEC_FALLBACK` object (before the `_loadSpec` fetch). This is what renders the Library UI if `data/minerals.json` fails to fetch:
 
 ```js
 topaz: { formula: "Al2SiO4(F,OH)2", nucleation_sigma: 1.4, max_size_cm: 200, growth_rate_mult: 0.3, thermal_decomp_C: null, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
@@ -275,7 +278,7 @@ Not needed for minerals that grow in existing scenarios based purely on chemistr
 
 ## 12. docs/ mirror
 
-Run `cp web/index.html docs/index.html` and `cp data/minerals.json docs/data/minerals.json` after finishing. GitHub Pages serves `docs/`.
+_(Pre-flatten this section described copying `web/index.html` → `docs/index.html` and `data/minerals.json` → `docs/data/minerals.json`. Both mirrors retired in commit `4950ffa`; GitHub Pages now serves repo root directly. Nothing to copy.)_
 
 ## 13. Verification
 
@@ -284,7 +287,7 @@ Run `cp web/index.html docs/index.html` and `cp data/minerals.json docs/data/min
 python -c "import vugg; print('ok')"
 
 # JS syntax
-node -e "const fs=require('fs'); const h=fs.readFileSync('web/index.html','utf8'); const s=h.indexOf('<script>'), e=h.lastIndexOf('</script>'); new Function(h.slice(s+8,e)); console.log('ok');"
+node -e "const fs=require('fs'); const h=fs.readFileSync('index.html','utf8'); const s=h.indexOf('<script>'), e=h.lastIndexOf('</script>'); new Function(h.slice(s+8,e)); console.log('ok');"
 
 # Drift check across all 4 runtimes
 node tools/sync-spec.js
@@ -314,22 +317,60 @@ for name in vugg.SCENARIOS:
 7. **Competition math** — multiple silicates drawing on the same Al pool deplete fast. Either boost starting Al or expect smaller crystals.
 8. **Narrative ≠ simulation** — don't write flavor text describing mechanics the sim doesn't have. If you want "feldspar breaking down releases Al" to be real, you need the crystal to actually dissolve (not just `cond.fluid.Al += 12`).
 
-## 15. Master checklist
+## 15. `test_cases` — declare how to test the engine in the spec itself
 
-For a new mineral, the following files are touched:
+**Required for new minerals.** At least 2-3 cases per mineral, exercising the supersat gate. The point: the spec should be self-validating — a reader of `data/minerals.json` sees not just *what* the gates are but *how to verify* the engine matches them. Per-round `test_round*_*.py` files (broth-ratio, anion-competition, paramorph) are the legacy pattern; the data/-as-truth direction is to lift these into the spec where they live next to the chemistry they verify.
+
+**Schema:**
+
+```json
+"test_cases": [
+  {
+    "name": "p_dominant_fires",
+    "fluid": {"Cu": 40, "U": 2.5, "P": 8, "As": 2, "O2": 1.5, "pH": 6.0},
+    "T_C": 25,
+    "expects": {"sigma": ">1.0"},
+    "rationale": "P/(P+As)=0.8 — anion gate passes for the P-branch"
+  }
+]
+```
+
+**Field semantics:**
+- `name` — short snake_case. Surfaces in pytest output as `test_mineral_cases[<mineral>-<name>]`.
+- `fluid` — partial `FluidChemistry` dict. Missing fields default to 0 (or to the FluidChemistry default).
+- `T_C` — temperature in °C. Optional `pressure_kbar` for pressure-gated minerals.
+- `expects.sigma` — comparison as a string: `">1.0"`, `"==0"`, `">=0.5"`, `"<0.3"`. Keeps the JSON schema-friendly without dragging in a real expression language.
+- `rationale` — short prose; appears in test failure output. Recommended; helps the boss read the spec as a self-validating doc.
+
+**Required cases per new mineral (minimum 3):**
+1. **Positive gate hit** — fluid that satisfies all `required_ingredients` plus the mineral's other gates; expect `"sigma": ">1.0"`.
+2. **Ingredient block** — drop one required ingredient to zero (or below threshold); expect `"sigma": "==0"`.
+3. **Mechanic-specific block** (only if applicable) — for minerals participating in a special gate (broth-ratio, anion-competition, paramorph, metastability), declare a case that violates the gate and expects `"sigma": "==0"`.
+
+**Examples already shipped (until the generic runner lands):**
+- `tests/test_round9_broth_ratio.py` — rosasite + aurichalcite Cu/Zn ratio cases.
+- `tests/test_round9b_anion_competition.py` — torbernite + zeunerite P/As ratio cases.
+
+These per-round files are the right shape but in the wrong location. When item 6 of `proposals/TASK-BRIEF-DATA-AS-TRUTH.md` lands, they collapse into the spec.
+
+**For now** (until the generic `tests/test_mineral_cases.py` runner ships): populate `test_cases` for new minerals AND write a per-round file as today. The `test_cases` data is the durable artifact; the per-round file is the temporary bridge that gets replaced when the runner lands.
+
+## 16. Master checklist
+
+For a new mineral, the following are touched:
 
 - [ ] `data/minerals.json` — new top-level entry under `minerals`, `_audit_summary.total_minerals` bumped, `_audit_summary.scenarios_that_can_nucleate` updated.
+- [ ] `data/minerals.json` `test_cases` — at least 2-3 cases (positive gate, ingredient block, mechanic-specific block if applicable). See §15.
 - [ ] `vugg.py`:
   - [ ] `supersaturation_<mineral>()` method on `VugConditions`
   - [ ] `grow_<mineral>()` function + `MINERAL_ENGINES` registry
   - [ ] `dominant_forms` dispatch in `nucleate()`
   - [ ] `_narrate_<mineral>()` method on `VugSimulator`
   - [ ] Nucleation block in `check_nucleation()`
-- [ ] `web/index.html` — all 5 of the above mirrored, plus:
+- [ ] `index.html` — all 5 of the above mirrored, plus:
   - [ ] `MINERAL_SPEC_FALLBACK` entry
+  - [ ] `IDLE_MINERAL_COLORS` entry at BOTH occurrences
   - [ ] UI button / dropdown option (if scenario-specific)
-- [ ] `docs/index.html` — cp from web/index.html
-- [ ] `docs/data/minerals.json` — cp from data/minerals.json
 - [ ] `tools/sync-spec.js` passes (0 drift)
 - [ ] All scenarios smoke-test produces expected assemblages
 

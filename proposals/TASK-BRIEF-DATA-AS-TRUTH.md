@@ -27,7 +27,12 @@ declarative, not the simulation logic.
 
 ---
 
-## Five tables to extract (sequenced by dependency / leverage)
+## Six items to extract (sequenced by dependency / leverage)
+
+Items 1-5 are tables of declarative state lifted out of procedural code.
+Item 6 lifts test setup into the same data files, making each mineral
+self-documenting and self-validating.
+
 
 ### 1. `data/scenarios.json` — initial fluid + event timeline
 
@@ -241,6 +246,120 @@ the event-type set is stable enough to be worth schematizing.
 
 ---
 
+### 6. `test_cases` field on every mineral in `data/minerals.json`
+
+**Today:** mineral specs declare *what* the gates are (`required_ingredients`,
+`T_range_C`, `redox_requirement`, etc.) but not *how to test them*. The
+generic `tests/test_engine_gates.py` reads `required_ingredients` and
+synthesizes one positive case (fluid that just satisfies them, asserts
+σ > 0). Mechanic-specific behavior — broth-ratio branching for rosasite/
+aurichalcite, anion competition for torbernite/zeunerite, paramorph
+transitions for argentite, water-solubility metastability for
+chalcanthite — is tested in per-round files (`test_round8a_paramorph.py`,
+`test_round9_broth_ratio.py`, `test_round9b_anion_competition.py`, etc.).
+
+That works, but each new mechanic spawns a new test file, and the test
+setup lives separate from the spec it's verifying. A reader of
+`data/minerals.json` sees the gate prose in `audit_status` but can't
+verify the engine matches without grep-hunting for the corresponding
+test file.
+
+**Why now (relative to the others):** every Round 9+ mineral pair has
+shipped with a corresponding `test_round*.py` file. The pattern is now
+repetitive enough that the cost of NOT lifting it into data is visible:
+new mechanics keep spawning new test files instead of accumulating into
+a generic engine.
+
+**Schema sketch:**
+```json
+"torbernite": {
+  ...
+  "test_cases": [
+    {
+      "name": "p_dominant_fires",
+      "fluid": {"Cu": 40, "U": 2.5, "P": 8, "As": 2, "O2": 1.5, "pH": 6.0},
+      "T_C": 25,
+      "expects": {"sigma": ">1.0"},
+      "rationale": "P/(P+As)=0.8 — anion gate passes for the P-branch"
+    },
+    {
+      "name": "as_dominant_blocks",
+      "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 8, "O2": 1.5, "pH": 6.0},
+      "T_C": 25,
+      "expects": {"sigma": "==0"},
+      "rationale": "As-dominant fluid — anion gate ratio-blocks torbernite"
+    },
+    {
+      "name": "no_uranium_blocks",
+      "fluid": {"Cu": 40, "U": 0, "P": 8, "As": 2, "O2": 1.5, "pH": 6.0},
+      "T_C": 25,
+      "expects": {"sigma": "==0"},
+      "rationale": "U=0 fails U>=0.3 ingredient gate"
+    }
+  ]
+}
+```
+
+**Schema fields per case:**
+- `name` — short snake_case identifier; surfaces in pytest output as
+  `test_mineral_cases[torbernite-p_dominant_fires]`.
+- `fluid` — partial `FluidChemistry` dict; missing fields default to 0.
+- `T_C` — temperature in °C. Optional `pressure_kbar` for pressure-gated
+  minerals (kyanite/coesite/diamond when those land).
+- `expects.sigma` — operator + value as a string: `">1.0"`, `"==0"`,
+  `">=0.5"`, `"<0.3"`. Keeps JSON-friendly without bringing in a real
+  expression language.
+- `rationale` — short prose; appears in test failure output. Optional
+  but recommended; helps the boss read the spec as a self-validating doc.
+
+**Engineering:**
+- Add `test_cases: []` (default empty) to `_schema` in `data/minerals.json`.
+  Existing minerals get an empty array; new minerals come with cases via
+  the scaffold tool (see template update below).
+- New `tests/test_mineral_cases.py` — parameterizes over every (mineral,
+  case) pair, builds a `VugConditions` from the case, calls
+  `supersaturation_<mineral>()`, asserts the operator. Replaces the
+  per-round `test_round*_*.py` files (those collapse into the spec
+  cases).
+- Extend `tools/sync-spec.js` with a Check 7 that runs every mineral's
+  cases against the loaded spec and flags any whose engine no longer
+  matches its declared cases. Cross-engine baseline tests (architecture
+  review's option-3) become trivially derivable: same cases, both
+  runtimes, diff results.
+- Update `proposals/vugg-mineral-template.md` to require at least 2-3
+  cases per new mineral (one positive gate, one ingredient-blocking case,
+  one mechanic-specific case if the mineral participates in a special
+  gate like broth-ratio / anion-competition / paramorph).
+- Update `tools/new-mineral.py` to seed `test_cases` with a 2-case stub
+  so future builders can't forget.
+
+**What this does NOT replace (be honest):**
+- Multi-step behavior tests (paramorph transitions, metastability hooks,
+  dissolution-then-regrowth, growth-zone tracking). Those exercise the
+  run-step loop and stay in code-level test files. Estimate ~10% of the
+  current test surface.
+- Cross-mineral interaction tests (substrate preference, enclosure,
+  scenario-specific paragenesis). These are sim-level, not mineral-level.
+
+**Effect:** every mineral entry self-documents AND self-validates. Per-round
+test files collapse into spec data. The `tools/sync-spec.js` runtime check
+catches engine drift the moment a supersat formula diverges from the case
+it claims to satisfy. New mineral additions can't ship without test
+coverage because the scaffold tool seeds the cases.
+
+**Cost:** ~5-15 lines per mineral × 88 minerals = +500-1300 lines in
+`data/minerals.json`. The file gets bigger but each entry becomes more
+honest about its own behavior.
+
+**Sequencing within this brief:** lands after items 1-3 because the
+generic `tests/test_mineral_cases.py` runner depends on stable
+declarative chemistry (item 1's scenarios, item 3's tables) to verify
+behavior consistently across runtimes. Could ship before item 4
+(narrators) since narrators are pure prose and don't interact with the
+test surface.
+
+---
+
 ## Crossing all three runtimes
 
 The same fetch/interpret pattern from `data/minerals.json` extends to all
@@ -262,17 +381,21 @@ of these:
 
 ## Sequencing
 
-Five items, but not all are equal-leverage. Suggested order:
+Six items, not all equal-leverage. Suggested order:
 
 1. **Item 1 (scenarios).** Highest leverage. Closes the `scenario_random`
    drift. Establishes the "engines as interpreters of declarative data"
    pattern for compound work — all 13 scenarios at once.
-2. **Item 4 (narrators).** Compounds with `TASK-BRIEF-NARRATIVE-READABILITY`
+2. **Item 6 (test_cases).** Best paired with item 1 — once scenarios are
+   declarative, test_cases give every mineral a self-validating spec
+   that runs against both runtimes. Collapses the per-round
+   `test_round*_*.py` files into the spec.
+3. **Item 4 (narrators).** Compounds with `TASK-BRIEF-NARRATIVE-READABILITY`
    item 1; ship them together. The dedupe becomes free.
-3. **Item 2 (twin laws).** Quick win. ~30 minutes once the pattern is set.
-4. **Item 3 (paramorph + metastability).** Round 8-specific tables. Smallest
+4. **Item 2 (twin laws).** Quick win. ~30 minutes once the pattern is set.
+5. **Item 3 (paramorph + metastability).** Round 8-specific tables. Smallest
    set, clearest schema.
-5. **Item 5 (event-type catalog).** Defer.
+6. **Item 5 (event-type catalog).** Defer.
 
 After items 1-4 land, the engine source files are noticeably smaller
 (scenarios alone are ~600 lines × 2). Better yet, the per-mineral and

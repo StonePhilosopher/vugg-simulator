@@ -36,7 +36,8 @@
     "narrate_function": "Name of dedicated _narrate_* function. null = inline flavor, needs refactor.",
     "runtimes_present": "Files where growth engine currently exists.",
     "audit_status": "ok | notes on current gaps.",
-    "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber)."
+    "class_color": "Hex color for topographic map visualization. Derived from mineral class — all classes of the same type share one hue on a 12-color wheel (30° spacing). Wall/matrix = #D2691E (amber).",
+    "test_cases": "Optional array of self-validating test cases for the supersaturation gate. Each case: {name, fluid (partial FluidChemistry), T_C, [pressure_kbar], expects: {sigma: '>1.0' | '==0' | '>=0.5' | '<0.3'}, rationale}. Empty array = no declared cases (legacy minerals). New minerals should declare 2-3 cases minimum: positive gate hit, missing-ingredient block, and (if applicable) a mechanic-specific block. The generic test runner that exercises these cases is item 6 of proposals/TASK-BRIEF-DATA-AS-TRUTH.md (not yet shipped). See proposals/vugg-mineral-template.md §15 for the schema and tools/new-mineral.py for the scaffold seed."
   },
   "_audit_summary": {
     "total_minerals": 51,
