@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -14993,12 +14993,13 @@ class VugSimulator {
   }
 
   _narrate_olivenite(c) {
+    // Prose lives in narratives/olivenite.md.
     const parts = [`Olivenite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("Cu₂AsO₄(OH) — orthorhombic Cu arsenate, the Cu end of the olivenite-adamite series. Olive-green to grayish-green (the Cu chromophore — olive in name and color), Mohs 3-4. Cornwall is the type locality; Tsumeb and Bisbee produce showcase modern specimens. When Zn > Cu, adamite takes priority.");
-    if (c.habit === 'fibrous') parts.push("Fibrous — radiating acicular bundles, the Cornish 'wood-copper' silky habit.");
-    else if (c.habit === 'prismatic') parts.push('Prismatic — the Cornwall display habit.');
-    else parts.push('Globular — Tsumeb / Bisbee secondary habit.');
-    return parts.join(' ');
+    parts.push(narrative_blurb('olivenite') || "Cu₂AsO₄(OH) — orthorhombic Cu arsenate, the Cu end of the olivenite-adamite series. Olive-green to grayish-green (the Cu chromophore — olive in name and color), Mohs 3-4. Cornwall is the type locality; Tsumeb and Bisbee produce showcase modern specimens. When Zn > Cu, adamite takes priority.");
+    if (c.habit === 'fibrous') parts.push(narrative_variant('olivenite', 'fibrous') || "Fibrous — radiating acicular bundles, the Cornish 'wood-copper' silky habit.");
+    else if (c.habit === 'prismatic') parts.push(narrative_variant('olivenite', 'prismatic') || 'Prismatic — the Cornwall display habit.');
+    else parts.push(narrative_variant('olivenite', 'globular_default') || 'Globular — Tsumeb / Bisbee secondary habit.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_nickeline(c) {
@@ -15354,22 +15355,34 @@ class VugSimulator {
   }
 
   _narrate_adamite(c) {
-    const parts = [`Adamite #${c.crystal_id} — zinc arsenate hydroxide, Zn₂(AsO₄)(OH).`];
+    // Prose lives in narratives/adamite.md. Merged narrator: opening line
+    // standardized to mm-pattern (was special-cased); JS-canonical for
+    // collectors_tail and on_iron_oxide; Python-canonical for
+    // acid_dissolution and olivenite_companion. Color dispatch uses the
+    // FLUORESCENT/NON-FLUORESCENT zone-note signal (JS) which is more
+    // direct than the avg_Cu fallback Python uses.
+    const parts = [`Adamite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push(narrative_blurb('adamite'));
     const isFluorescent = c.zones.some(z => z.note && z.note.includes('FLUORESCENT'));
     const isNonFluorescent = c.zones.some(z => z.note && z.note.includes('NON-FLUORESCENT'));
     if (isFluorescent) {
-      parts.push('This crystal contains copper substituting for zinc — enough Cu²⁺ to activate brilliant green fluorescence under UV light. The cuproadamite variety: the same mineral, but one that carries light inside it.');
+      parts.push(narrative_variant('adamite', 'cuproadamite') || 'This crystal contains copper substituting for zinc — enough Cu²⁺ to activate brilliant green fluorescence under UV light. The cuproadamite variety: the same mineral, but one that carries light inside it.');
     } else if (isNonFluorescent) {
-      parts.push('No copper in this one. Under UV, it stays dark while its siblings glow green around it. The contradiction crystal — identical composition except for the trace element that makes all the difference. The non-glowing needles among the fluorescence.');
+      parts.push(narrative_variant('adamite', 'classic_yellow_green') || 'No copper in this one. Under UV, it stays dark while its siblings glow green around it. The contradiction crystal — identical composition except for the trace element that makes all the difference.');
     }
     if (c.position.includes('goethite') || c.position.includes('hematite')) {
-      parts.push('Growing on iron oxide — the classic association. Limonite and goethite are the matrix, the rusty scaffolding left behind when primary sulfides oxidize. Adamite grows in the gaps, the secondary crystal decorating the ruins of earlier chemistry.');
+      parts.push(narrative_variant('adamite', 'on_iron_oxide') || 'Growing on iron oxide — the classic association. Limonite and goethite are the matrix, the rusty scaffolding left behind when primary sulfides oxidize.');
     }
     if (c.habit === 'acicular sprays') {
-      parts.push('Fan-shaped sprays of acicular crystals radiating from a point. Each needle is a single crystal, but together they form a structure that looks like a frozen firework.');
+      parts.push(narrative_variant('adamite', 'acicular_sprays') || 'Fan-shaped sprays of acicular crystals radiating from a point. Each needle is a single crystal, but together they form a structure that looks like a frozen firework.');
     }
-    parts.push('Adamite is a collector\'s mineral — not a building block of the crust, but a rare secondary phase that forms only when zinc, arsenic, and oxygen meet in the oxidation zone of a very specific kind of deposit. Every adamite specimen is evidence that something dramatic happened here first.');
-    return parts.join(' ');
+    if (c.dissolved) parts.push(narrative_variant('adamite', 'acid_dissolution'));
+    const activeOli = (this && this.crystals) ? this.crystals.filter(oc => oc.mineral === 'olivenite' && oc.active) : [];
+    if (activeOli.length) {
+      parts.push(narrative_variant('adamite', 'olivenite_companion', { olivenite_id: activeOli[0].crystal_id }));
+    }
+    parts.push(narrative_variant('adamite', 'collectors_tail') || "Adamite is a collector's mineral — not a building block of the crust, but a rare secondary phase that forms only when zinc, arsenic, and oxygen meet in the oxidation zone of a very specific kind of deposit. Every adamite specimen is evidence that something dramatic happened here first.");
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_mimetite(c) {

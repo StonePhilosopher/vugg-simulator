@@ -15953,52 +15953,39 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_adamite(self, c: Crystal) -> str:
-        """Narrate an adamite crystal's story — the fluorescent zinc arsenate."""
+        """Narrate an adamite crystal's story — the fluorescent zinc arsenate.
+
+        Prose lives in narratives/adamite.md. Code dispatches blurb +
+        cuproadamite-vs-classic Cu/fluorescence flag + on_iron_oxide
+        paragenesis (broadened to include hematite — JS-canonical) +
+        acicular_sprays habit + acid_dissolution + olivenite_companion
+        with {olivenite_id} interpolation + ALWAYS-emitted collectors tail.
+        """
         parts = [f"Adamite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(narrative_blurb("adamite"))
 
         avg_Cu = sum(getattr(z, "trace_Cu", 0.0) for z in c.zones) / max(len(c.zones), 1)
         if avg_Cu > 0.5 or "cuproadamite" in " ".join(z.note for z in c.zones):
-            parts.append(
-                "Copper incorporated as trace — cuproadamite, the bright green "
-                "fluorescent variety. Under short-wave UV it glows apple-green."
-            )
+            parts.append(narrative_variant("adamite", "cuproadamite"))
         else:
-            parts.append(
-                "Yellow-green adamite — the classic habit of Ojuela Mine, Mexico. "
-                "Under short-wave UV the low-Cu zones fluoresce intensely; "
-                "heavy Cu zones stay dark."
-            )
+            parts.append(narrative_variant("adamite", "classic_yellow_green"))
 
-        if "goethite" in c.position:
-            parts.append(
-                "Nucleated on goethite — the limonite/adamite pairing that every "
-                "Ojuela specimen carries."
-            )
+        if "goethite" in c.position or "hematite" in c.position:
+            parts.append(narrative_variant("adamite", "on_iron_oxide"))
+
+        if c.habit == "acicular sprays":
+            parts.append(narrative_variant("adamite", "acicular_sprays"))
 
         if c.dissolved:
-            parts.append(
-                "Acid dissolved the adamite — released Zn²⁺ and arsenate back "
-                "to the fluid, potentially feeding later mimetite or olivenite growth."
-            )
+            parts.append(narrative_variant("adamite", "acid_dissolution"))
 
-        # Round 8d addition: olivenite is the Cu-end-member sibling of
-        # adamite. They share the same orthorhombic structure with the
-        # metal site filled by Zn (adamite) or Cu (olivenite). Surface
-        # the dispatcher logic in the narration.
         active_oli = [oc for oc in self.crystals if oc.mineral == "olivenite" and oc.active]
         if active_oli:
-            parts.append(
-                f"Olivenite companion — there's an active olivenite "
-                f"(#{active_oli[0].crystal_id}) in this vug. Adamite and "
-                f"olivenite are end-members of the same arsenate "
-                f"structure: Zn₂AsO₄(OH) here, Cu₂AsO₄(OH) there. The "
-                f"Cu/Zn ratio in the supergene fluid decides which one "
-                f"crystallizes from any given pocket. Tsumeb shows both "
-                f"on the same matrix when the local Cu/Zn ratio fluctuates "
-                f"between fluid pulses."
-            )
+            parts.append(narrative_variant("adamite", "olivenite_companion",
+                                           olivenite_id=active_oli[0].crystal_id))
 
-        return " ".join(parts)
+        parts.append(narrative_variant("adamite", "collectors_tail"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_mimetite(self, c: Crystal) -> str:
         """Narrate a mimetite crystal's story — the mimic of pyromorphite.
@@ -17773,33 +17760,20 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_olivenite(self, c: Crystal) -> str:
-        """Narrate olivenite — the olive-green Cu arsenate."""
+        """Narrate olivenite — the olive-green Cu arsenate.
+
+        Prose lives in narratives/olivenite.md. Code dispatches blurb +
+        3-way habit (fibrous / prismatic / globular_default).
+        """
         parts = [f"Olivenite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Cu₂AsO₄(OH) — orthorhombic Cu arsenate, the Cu end of the "
-            "olivenite-adamite series. Olive-green to grayish-green "
-            "(the Cu chromophore — olive in name and color), Mohs 3-4. "
-            "Forms in Cu-rich supergene oxidation zones; Cornwall is the "
-            "type locality, with Tsumeb and Bisbee producing showcase "
-            "modern specimens. When Zn > Cu in the fluid, adamite (the "
-            "Zn-end-member of the same arsenate structure) takes priority."
-        )
+        parts.append(narrative_blurb("olivenite"))
         if c.habit == "fibrous":
-            parts.append(
-                "Fibrous — radiating acicular bundles, the high-σ silky "
-                "habit. The Cornish 'wood-copper' specimens are this form."
-            )
+            parts.append(narrative_variant("olivenite", "fibrous"))
         elif c.habit == "prismatic":
-            parts.append(
-                "Prismatic — the Cornwall display habit. {110} prisms with "
-                "olive-green tint."
-            )
+            parts.append(narrative_variant("olivenite", "prismatic"))
         else:
-            parts.append(
-                "Globular — botryoidal aggregates, the Tsumeb / Bisbee "
-                "secondary habit."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("olivenite", "globular_default"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_nickeline(self, c: Crystal) -> str:
         """Narrate nickeline — the high-T pale-copper-red Ni arsenide."""
