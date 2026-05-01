@@ -15264,49 +15264,43 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_quartz(self, c: Crystal) -> str:
-        """Narrate a quartz crystal's story."""
-        parts = []
-        
+        """Narrate a quartz crystal — the most variable narrator in the sim.
+
+        Prose lives in narratives/quartz.md. No-blurb pattern; almost every
+        sentence is a computed-condition variant with interpolated values.
+        Code keeps all the threshold logic; markdown holds the prose.
+        Failed-to-develop fast-path returns early (no zones at all).
+        """
         if not c.zones:
-            return f"Quartz #{c.crystal_id} nucleated but failed to develop — growth kinetics were too slow at {c.nucleation_temp:.0f}°C."
-        
-        # Check for Ti variation (geothermometer)
-        if c.zones:
-            ti_vals = [z.trace_Ti for z in c.zones if z.trace_Ti > 0]
-            if ti_vals and max(ti_vals) > 0.01:
-                parts.append(
-                    f"Titanium incorporation decreases through the growth zones from "
-                    f"{max(ti_vals):.3f} to {min(ti_vals):.3f} ppm, recording the cooling "
-                    f"history via the TitaniQ geothermometer."
-                )
-        
-        # Fluid inclusions
+            return narrative_variant("quartz", "failed_to_develop",
+                                     crystal_id=c.crystal_id,
+                                     nucleation_temp=f"{c.nucleation_temp:.0f}")
+
+        parts = []
+
+        ti_vals = [z.trace_Ti for z in c.zones if z.trace_Ti > 0]
+        if ti_vals and max(ti_vals) > 0.01:
+            parts.append(narrative_variant("quartz", "titanium_zoning",
+                                           max_ti=f"{max(ti_vals):.3f}",
+                                           min_ti=f"{min(ti_vals):.3f}"))
+
         fi_zones = [z for z in c.zones if z.fluid_inclusion]
         if fi_zones:
             fi_types = set(z.inclusion_type for z in fi_zones)
-            parts.append(
-                f"The crystal trapped {len(fi_zones)} fluid inclusions ({', '.join(fi_types)}), "
-                f"preserving samples of the parent fluid at the moment of entrapment."
-            )
-        
-        # Twinning
+            parts.append(narrative_variant("quartz", "fluid_inclusions",
+                                           count=len(fi_zones),
+                                           types=", ".join(fi_types)))
+
         if c.twinned:
-            parts.append(
-                f"A {c.twin_law} twin formed during growth — likely triggered by a "
-                f"thermal shock event that introduced a rotational domain boundary."
-            )
-        
-        # Growth character
+            parts.append(narrative_variant("quartz", "twinned",
+                                           twin_law=c.twin_law))
+
         fast_zones = [z for z in c.zones if z.growth_rate > 15]
         slow_zones = [z for z in c.zones if 0 < z.growth_rate < 2]
         if fast_zones and slow_zones:
-            parts.append(
-                f"Growth alternated between rapid pulses (up to {max(z.growth_rate for z in fast_zones):.0f} µm/step, "
-                f"producing growth hillocks) and slow, high-quality periods near equilibrium. "
-                f"This oscillation would be visible as alternating clear and milky zones."
-            )
+            parts.append(narrative_variant("quartz", "growth_oscillation",
+                                           max_rate=f"{max(z.growth_rate for z in fast_zones):.0f}"))
 
-        # Alpha-damage history from nearby uraninite.
         rad_zones = [z for z in c.zones if z.radiation_damage > 0]
         if rad_zones:
             avg_rad = sum(z.radiation_damage for z in c.zones) / len(c.zones)
@@ -15314,32 +15308,25 @@ class VugSimulator:
             avg_Fe = sum(z.trace_Fe for z in c.zones) / len(c.zones)
             dosed_fraction = len(rad_zones) / len(c.zones)
             if avg_rad > 0.6 and avg_Al > 0.3:
-                parts.append(
-                    f"Sustained α-bombardment from a uraninite neighbor darkened the "
-                    f"lattice to dark smoky — morion in the deepest zones. {len(rad_zones)} "
-                    f"of {len(c.zones)} growth zones record the irradiation."
-                )
+                parts.append(narrative_variant("quartz", "morion",
+                                               rad_count=len(rad_zones),
+                                               total_count=len(c.zones)))
             elif avg_rad > 0.3 and avg_Al > 0.3:
-                parts.append(
-                    f"Alpha-damage from nearby uraninite activated Al-hole color centers "
-                    f"in {dosed_fraction*100:.0f}% of the growth zones — this crystal reads "
-                    f"as smoky quartz."
-                )
+                parts.append(narrative_variant("quartz", "smoky",
+                                               dosed_pct=f"{dosed_fraction*100:.0f}"))
             elif avg_rad > 0.3 and avg_Fe > 3.0:
-                parts.append(
-                    f"Radiation from adjacent uraninite activated Fe³⁺ color centers — "
-                    f"the crystal carries an amethyst tint where dose overlapped Fe-rich zones."
-                )
+                parts.append(narrative_variant("quartz", "amethyst_tint"))
             elif avg_rad > 0.1:
-                parts.append(
-                    f"A modest α-dose ({avg_rad:.2f}) crossed the growth history — the "
-                    f"crystal carries a faint smoky tint in the irradiated zones."
-                )
+                parts.append(narrative_variant("quartz", "mild_smoky",
+                                               avg_rad=f"{avg_rad:.2f}"))
 
         size_desc = "microscopic" if c.c_length_mm < 0.5 else "thumbnail" if c.c_length_mm < 5 else "cabinet-sized"
-        parts.append(f"Final size: {size_desc} ({c.c_length_mm:.1f} × {c.a_width_mm:.1f} mm).")
+        parts.append(narrative_variant("quartz", "final_size",
+                                       size_desc=size_desc,
+                                       mm=f"{c.c_length_mm:.1f}",
+                                       a_width_mm=f"{c.a_width_mm:.1f}"))
 
-        return " ".join(parts)
+        return " ".join(p for p in parts if p)
 
     def _narrate_sphalerite(self, c: Crystal) -> str:
         """Narrate a sphalerite crystal's story.
@@ -16255,118 +16242,69 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_topaz(self, c: Crystal) -> str:
-        """Narrate a topaz crystal's story — the fluorine-bearing nesosilicate."""
+        """Narrate topaz — the fluorine-bearing nesosilicate.
+
+        Prose lives in narratives/topaz.md. Code dispatches blurb +
+        5-way zone-note color (pink_imperial / imperial_gold / pale_blue /
+        pale_yellow / colorless_default elif chain) + 2-way fluid_inclusions
+        (geothermometer with {avg_T} sub-branch / regular {count} count) +
+        trace_ti_rutile when avg Ti > 0.05 + phantom_boundary with computed
+        {phantom_phrase} pluralization + dissolved.
+        """
         parts = [f"Topaz #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(narrative_blurb("topaz"))
 
-        parts.append(
-            "Al₂SiO₄(F,OH)₂ — orthorhombic, prismatic with steep pyramidal "
-            "terminations and perfect basal {001} cleavage. Fluorine sits in "
-            "every other anion site of the structure; the crystal cannot "
-            "nucleate until dissolved F crosses a saturation threshold. "
-            "Ouro Preto imperial topaz crystallized at ~360°C, 3.5 kbar from "
-            "metamorphic hydrothermal fluids (Morteani et al. 2002)."
-        )
-
-        imperial_pink = any("pink imperial" in z.note for z in c.zones)
-        imperial_gold = any("imperial golden-orange" in z.note for z in c.zones)
-        pale_blue = any("pale blue" in z.note for z in c.zones)
-        pale_yellow = any("pale yellow" in z.note for z in c.zones)
-
-        if imperial_pink:
-            parts.append(
-                "Pink imperial — the rarest topaz coloration. Cr³⁺ substituted "
-                "for Al³⁺ in deep concentration, and the fluid's oxidation "
-                "state tipped some chromium into the pink-producing Cr⁴⁺ state. "
-                "A handful of specimens per year reach gem-grade at this depth."
-            )
-        elif imperial_gold:
-            parts.append(
-                "Imperial golden-orange — Cr³⁺ substituting for Al³⁺ in the "
-                "topaz structure. The chromium came not from the main fluid "
-                "but from nearby ultramafic country rock dissolving in trace. "
-                "This is the signature of Ouro Preto / Capão do Lana — the "
-                "only place on Earth where it's a commercial color."
-            )
-        elif pale_blue:
-            parts.append(
-                "Pale blue, F-rich and Cr-starved. In nature, this coloration "
-                "is often enhanced by subsequent radiation exposure producing "
-                "the sky-blue topaz flooded onto the market after Iapetos-age "
-                "pegmatites started being deliberately irradiated."
-            )
-        elif pale_yellow:
-            parts.append(
-                "Pale yellow from Fe³⁺ in the Al site — the common 'imperial' "
-                "knockoff. Without the Cr chromophore, this color is merely "
-                "pretty, not legendary."
-            )
+        zone_notes = [z.note or "" for z in c.zones]
+        if any("pink imperial" in n for n in zone_notes):
+            parts.append(narrative_variant("topaz", "pink_imperial"))
+        elif any("imperial golden-orange" in n for n in zone_notes):
+            parts.append(narrative_variant("topaz", "imperial_gold"))
+        elif any("pale blue" in n for n in zone_notes):
+            parts.append(narrative_variant("topaz", "pale_blue"))
+        elif any("pale yellow" in n for n in zone_notes):
+            parts.append(narrative_variant("topaz", "pale_yellow"))
         else:
-            parts.append(
-                "Colorless — the default for topaz grown in a Cr-poor, Fe-poor "
-                "fluid. Gem-quality nonetheless; topaz is always hard (Mohs 8) "
-                "and always transparent."
-            )
+            parts.append(narrative_variant("topaz", "colorless_default"))
 
         inclusion_zones = [z for z in c.zones if z.fluid_inclusion]
         if inclusion_zones:
             geothermometer = any("geothermometer" in z.inclusion_type for z in inclusion_zones)
             if geothermometer:
                 avg_T = sum(z.temperature for z in inclusion_zones) / len(inclusion_zones)
-                parts.append(
-                    f"{len(inclusion_zones)} fluid inclusion horizons preserved in "
-                    f"the growth zones — primary 2-phase inclusions at "
-                    f"~{avg_T:.0f}°C. Microthermometry would read them as "
-                    "the thermometer that pinned Ouro Preto at 360°C."
-                )
+                parts.append(narrative_variant("topaz", "fluid_inclusions_geothermometer",
+                                               count=len(inclusion_zones),
+                                               avg_T=f"{avg_T:.0f}"))
             else:
-                parts.append(
-                    f"{len(inclusion_zones)} fluid inclusion horizons preserved — "
-                    "the topaz kept a record of every pulse of growth fluid."
-                )
+                parts.append(narrative_variant("topaz", "fluid_inclusions",
+                                               count=len(inclusion_zones)))
 
         avg_Ti = sum(z.trace_Ti for z in c.zones) / max(len(c.zones), 1)
         if avg_Ti > 0.05:
-            parts.append(
-                "Trace Ti hints at microscopic rutile needles — protogenetic "
-                "inclusions formed before the topaz grew, then enveloped as "
-                "the crystal advanced. Diagnostic for Ouro Preto topaz under "
-                "Raman spectroscopy (Serrinha pegmatite, 2016)."
-            )
+            parts.append(narrative_variant("topaz", "trace_ti_rutile"))
 
         if c.phantom_count >= 1:
-            parts.append(
-                "Perfect basal {001} cleavage means partial dissolution along "
-                "that plane can produce ghost surfaces inside the crystal. "
-                f"{c.phantom_count} phantom boundary{'ies' if c.phantom_count > 1 else ''} "
-                "preserved — the crystal's autobiography written in growth "
-                "and regrowth."
-            )
+            phantom_phrase = (f"{c.phantom_count} phantom boundaries"
+                              if c.phantom_count > 1
+                              else f"{c.phantom_count} phantom boundary")
+            parts.append(narrative_variant("topaz", "phantom_boundary",
+                                           phantom_phrase=phantom_phrase))
 
         if c.dissolved:
-            parts.append(
-                "Strong acid attack etched the surface — topaz is very "
-                "resistant, but pH below 2 with long exposure releases Al³⁺, "
-                "SiO₂, and F⁻ slowly back into the fluid."
-            )
+            parts.append(narrative_variant("topaz", "dissolved"))
 
-        return " ".join(parts)
+        return " ".join(p for p in parts if p)
 
     def _narrate_tourmaline(self, c: Crystal) -> str:
-        """Narrate a tourmaline crystal — schorl→elbaite color diary."""
+        """Narrate tourmaline — the schorl→elbaite color diary.
+
+        Prose lives in narratives/tourmaline.md. Code dispatches blurb +
+        zone-note variety detection (color_zoned_schorl with {others}
+        interp if multi-variety crystal includes schorl, OR single-variety
+        elif chain) + ALWAYS-emitted closing tail.
+        """
         parts = [f"Tourmaline #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(narrative_blurb("tourmaline"))
 
-        parts.append(
-            "Complex cyclosilicate, trigonal — elongated prisms with deep "
-            "vertical striations and a slightly rounded triangular "
-            "cross-section {10̄10}. Each striation is a growth pulse. Color "
-            "is a fluid composition snapshot: boron found a home, and which "
-            "cations came with it wrote the hue."
-        )
-
-        # Identify what varieties appeared across the crystal's life by
-        # scanning zone notes. A single crystal can span schorl→elbaite
-        # zoning if Fe depleted and Li accumulated between zones — which
-        # is exactly how Minas Gerais rubellite grows over schorl cores.
         zone_notes = [z.note or "" for z in c.zones]
         varieties = set()
         for n in zone_notes:
@@ -16379,64 +16317,23 @@ class VugSimulator:
 
         if {"schorl"} < varieties:
             other = sorted(varieties - {"schorl"})
-            parts.append(
-                f"Color-zoned: started as schorl (Fe²⁺-dominant black core) "
-                f"and transitioned to {', '.join(other)} as the pegmatite "
-                f"fluid depleted iron and built up lithium. The crystal is a "
-                f"diary of incompatible-element accumulation."
-            )
+            parts.append(narrative_variant("tourmaline", "color_zoned_schorl",
+                                           others=", ".join(other)))
         elif "paraiba" in varieties:
-            parts.append(
-                "Paraíba blue — the Cu²⁺-activated glow discovered in "
-                "northeastern Brazil in 1989 and fetching tens of thousands "
-                "of dollars per carat at auction. Copper is the rarest "
-                "chromophore in tourmaline; this zone documents a fluid "
-                "that briefly carried Cu²⁺ among its trace metals."
-            )
+            parts.append(narrative_variant("tourmaline", "paraiba"))
         elif "rubellite" in varieties:
-            parts.append(
-                "Rubellite — Li-rich elbaite with Mn²⁺ giving pink color. "
-                "The Jonas mine in Minas Gerais was perhaps the world's "
-                "greatest rubellite producer. This composition marks the "
-                "late pocket-growth phase, after iron had been scavenged by "
-                "earlier schorl."
-            )
+            parts.append(narrative_variant("tourmaline", "rubellite"))
         elif "verdelite" in varieties:
-            parts.append(
-                "Verdelite — green elbaite. Cr³⁺ or V³⁺ substitution into "
-                "the Al site drives the color; both trace elements come "
-                "from ultramafic country rock contact. Emerald's cousin by "
-                "chromophore."
-            )
+            parts.append(narrative_variant("tourmaline", "verdelite"))
         elif "indicolite" in varieties:
-            parts.append(
-                "Indicolite — blue elbaite. Fe²⁺→Ti⁴⁺ charge transfer "
-                "produces the color, requiring both cations plus Li to have "
-                "coexisted in the growth fluid. A tricky composition to "
-                "hit, which is why good indicolite is collector-priced."
-            )
+            parts.append(narrative_variant("tourmaline", "indicolite"))
         elif "schorl" in varieties:
-            parts.append(
-                "Schorl — the black Fe²⁺-dominant end-member that dominates "
-                "the early phases of pegmatite crystallization. Opaque in "
-                "thick section, dark green-black by transmitted light. The "
-                "most common tourmaline species globally."
-            )
+            parts.append(narrative_variant("tourmaline", "schorl"))
         elif "achroite" in varieties:
-            parts.append(
-                "Achroite — colorless elbaite. All trace elements muted or "
-                "absent; the pure lithium-aluminum end-member looking "
-                "through. Rare in the field, beautiful under UV sometimes "
-                "from structural defects."
-            )
+            parts.append(narrative_variant("tourmaline", "achroite"))
 
-        parts.append(
-            "The cross-section, if you sliced this crystal perpendicular to "
-            "its c-axis, would read like a tree ring record — concentric "
-            "zones of color marking each fluid event the vug witnessed."
-        )
-
-        return " ".join(parts)
+        parts.append(narrative_closing("tourmaline"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_beryl(self, c: Crystal) -> str:
         """Narrate a beryl/goshenite crystal — post-Round-7 the colorless fallback.

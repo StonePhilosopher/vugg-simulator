@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite', 'native_tellurium', 'native_sulfur', 'native_arsenic', 'wurtzite', 'spodumene', 'chrysocolla'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite', 'native_tellurium', 'native_sulfur', 'native_arsenic', 'wurtzite', 'spodumene', 'chrysocolla', 'quartz', 'topaz', 'tourmaline'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -14047,33 +14047,31 @@ class VugSimulator {
   }
 
   _narrate_quartz(c) {
+    // Prose lives in narratives/quartz.md. JS dispatches a subset of the
+    // Python branches — radiation_damage variants are Python-only because
+    // JS tracks radiation at the crystal level rather than zones.
+    if (!c.zones.length) return narrative_variant('quartz', 'failed_to_develop', { crystal_id: c.crystal_id, nucleation_temp: c.nucleation_temp.toFixed(0) }) || `Quartz #${c.crystal_id} nucleated but failed to develop — growth kinetics were too slow at ${c.nucleation_temp.toFixed(0)}°C.`;
     const parts = [];
-    if (!c.zones.length) return `Quartz #${c.crystal_id} nucleated but failed to develop — growth kinetics were too slow at ${c.nucleation_temp.toFixed(0)}°C.`;
-
     const ti_vals = c.zones.filter(z => z.trace_Ti > 0).map(z => z.trace_Ti);
     if (ti_vals.length && Math.max(...ti_vals) > 0.01) {
-      parts.push(`Titanium incorporation decreases through the growth zones from ${Math.max(...ti_vals).toFixed(3)} to ${Math.min(...ti_vals).toFixed(3)} ppm, recording the cooling history via the TitaniQ geothermometer.`);
+      parts.push(narrative_variant('quartz', 'titanium_zoning', { max_ti: Math.max(...ti_vals).toFixed(3), min_ti: Math.min(...ti_vals).toFixed(3) }) || `Titanium incorporation decreases through the growth zones from ${Math.max(...ti_vals).toFixed(3)} to ${Math.min(...ti_vals).toFixed(3)} ppm.`);
     }
-
     const fi_zones = c.zones.filter(z => z.fluid_inclusion);
     if (fi_zones.length) {
       const fi_types = [...new Set(fi_zones.map(z => z.inclusion_type))];
-      parts.push(`The crystal trapped ${fi_zones.length} fluid inclusions (${fi_types.join(', ')}), preserving samples of the parent fluid at the moment of entrapment.`);
+      parts.push(narrative_variant('quartz', 'fluid_inclusions', { count: fi_zones.length, types: fi_types.join(', ') }) || `The crystal trapped ${fi_zones.length} fluid inclusions (${fi_types.join(', ')}).`);
     }
-
     if (c.twinned) {
-      parts.push(`A ${c.twin_law} twin formed during growth — likely triggered by a thermal shock event that introduced a rotational domain boundary.`);
+      parts.push(narrative_variant('quartz', 'twinned', { twin_law: c.twin_law }) || `A ${c.twin_law} twin formed during growth.`);
     }
-
     const fast_zones = c.zones.filter(z => z.growth_rate > 15);
     const slow_zones = c.zones.filter(z => z.growth_rate > 0 && z.growth_rate < 2);
     if (fast_zones.length && slow_zones.length) {
-      parts.push(`Growth alternated between rapid pulses (up to ${Math.max(...fast_zones.map(z => z.growth_rate)).toFixed(0)} µm/step, producing growth hillocks) and slow, high-quality periods near equilibrium. This oscillation would be visible as alternating clear and milky zones.`);
+      parts.push(narrative_variant('quartz', 'growth_oscillation', { max_rate: Math.max(...fast_zones.map(z => z.growth_rate)).toFixed(0) }) || 'Growth alternated between rapid pulses and slow, high-quality periods near equilibrium.');
     }
-
     const size_desc = c.c_length_mm < 0.5 ? 'microscopic' : c.c_length_mm < 5 ? 'thumbnail' : 'cabinet-sized';
-    parts.push(`Final size: ${size_desc} (${c.c_length_mm.toFixed(1)} × ${c.a_width_mm.toFixed(1)} mm).`);
-    return parts.join(' ');
+    parts.push(narrative_variant('quartz', 'final_size', { size_desc, mm: c.c_length_mm.toFixed(1), a_width_mm: c.a_width_mm.toFixed(1) }) || `Final size: ${size_desc} (${c.c_length_mm.toFixed(1)} × ${c.a_width_mm.toFixed(1)} mm).`);
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_sphalerite(c) {
@@ -14341,8 +14339,9 @@ class VugSimulator {
   }
 
   _narrate_topaz(c) {
+    // Prose lives in narratives/topaz.md.
     const parts = [`Topaz #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push('Al₂SiO₄(F,OH)₂ — orthorhombic, prismatic with steep pyramidal terminations and perfect basal {001} cleavage. Fluorine occupies every other anion site; the crystal cannot nucleate until dissolved F crosses a saturation threshold. Ouro Preto imperial topaz crystallized at ~360°C, 3.5 kbar from metamorphic hydrothermal fluids (Morteani et al. 2002).');
+    parts.push(narrative_blurb('topaz') || 'Al₂SiO₄(F,OH)₂ — orthorhombic, prismatic with steep pyramidal terminations.');
 
     const imperial_pink = c.zones.some(z => (z.note || '').includes('pink imperial'));
     const imperial_gold = c.zones.some(z => (z.note || '').includes('imperial golden-orange'));
@@ -14350,15 +14349,15 @@ class VugSimulator {
     const pale_yellow = c.zones.some(z => (z.note || '').includes('pale yellow'));
 
     if (imperial_pink) {
-      parts.push("Pink imperial — the rarest topaz coloration. Cr³⁺ substituted for Al³⁺ in deep concentration, and the fluid's oxidation state tipped some chromium into the pink-producing Cr⁴⁺ state. A handful of specimens per year reach gem-grade at this depth.");
+      parts.push(narrative_variant('topaz', 'pink_imperial') || "Pink imperial — the rarest topaz coloration.");
     } else if (imperial_gold) {
-      parts.push('Imperial golden-orange — Cr³⁺ substituting for Al³⁺ in the topaz structure. The chromium came not from the main fluid but from nearby ultramafic country rock dissolving in trace. This is the signature of Ouro Preto / Capão do Lana — the only place on Earth where it\u2019s a commercial color.');
+      parts.push(narrative_variant('topaz', 'imperial_gold') || 'Imperial golden-orange — Cr³⁺ substituting for Al³⁺ in the topaz structure. The chromium came not from the main fluid but from nearby ultramafic country rock dissolving in trace. This is the signature of Ouro Preto / Capão do Lana — the only place on Earth where it\u2019s a commercial color.');
     } else if (pale_blue) {
-      parts.push('Pale blue, F-rich and Cr-starved. In nature this coloration is often enhanced by subsequent radiation exposure — the sky-blue topaz flooded onto the market after Iapetos-age pegmatites started being deliberately irradiated.');
+      parts.push(narrative_variant('topaz', 'pale_blue') || 'Pale blue, F-rich and Cr-starved. In nature this coloration is often enhanced by subsequent radiation exposure — the sky-blue topaz flooded onto the market after Iapetos-age pegmatites started being deliberately irradiated.');
     } else if (pale_yellow) {
-      parts.push("Pale yellow from Fe³⁺ in the Al site — the common 'imperial' knockoff. Without the Cr chromophore, this color is merely pretty, not legendary.");
+      parts.push(narrative_variant('topaz', 'pale_yellow') || "Pale yellow from Fe³⁺ in the Al site — the common 'imperial' knockoff. Without the Cr chromophore, this color is merely pretty, not legendary.");
     } else {
-      parts.push('Colorless — the default for topaz grown in a Cr-poor, Fe-poor fluid. Gem-quality nonetheless; topaz is always hard (Mohs 8) and always transparent.');
+      parts.push(narrative_variant('topaz', 'colorless_default') || 'Colorless — the default for topaz grown in a Cr-poor, Fe-poor fluid.');
     }
 
     const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
@@ -14366,32 +14365,32 @@ class VugSimulator {
       const geothermometer = inclusion_zones.some(z => (z.inclusion_type || '').includes('geothermometer'));
       if (geothermometer) {
         const avg_T = inclusion_zones.reduce((s, z) => s + z.temperature, 0) / inclusion_zones.length;
-        parts.push(`${inclusion_zones.length} fluid inclusion horizons preserved in the growth zones — primary 2-phase inclusions at ~${avg_T.toFixed(0)}°C. Microthermometry would read them as the thermometer that pinned Ouro Preto at 360°C.`);
+        parts.push(narrative_variant('topaz', 'fluid_inclusions_geothermometer', { count: inclusion_zones.length, avg_T: avg_T.toFixed(0) }) || `${inclusion_zones.length} fluid inclusion horizons at ~${avg_T.toFixed(0)}°C.`);
       } else {
-        parts.push(`${inclusion_zones.length} fluid inclusion horizons preserved — the topaz kept a record of every pulse of growth fluid.`);
+        parts.push(narrative_variant('topaz', 'fluid_inclusions', { count: inclusion_zones.length }) || `${inclusion_zones.length} fluid inclusion horizons preserved.`);
       }
     }
 
     const avg_Ti = c.zones.reduce((s, z) => s + (z.trace_Ti || 0), 0) / Math.max(c.zones.length, 1);
     if (avg_Ti > 0.05) {
-      parts.push('Trace Ti hints at microscopic rutile needles — protogenetic inclusions formed before the topaz grew, then enveloped as the crystal advanced. Diagnostic for Ouro Preto topaz under Raman spectroscopy (Serrinha pegmatite, 2016).');
+      parts.push(narrative_variant('topaz', 'trace_ti_rutile') || 'Trace Ti hints at microscopic rutile needles.');
     }
 
     if (c.phantom_count >= 1) {
-      parts.push(`Perfect basal {001} cleavage means partial dissolution along that plane can produce ghost surfaces inside the crystal. ${c.phantom_count} phantom boundar${c.phantom_count > 1 ? 'ies' : 'y'} preserved — the crystal's autobiography written in growth and regrowth.`);
+      const phantomPhrase = `${c.phantom_count} phantom boundar${c.phantom_count > 1 ? 'ies' : 'y'}`;
+      parts.push(narrative_variant('topaz', 'phantom_boundary', { phantom_phrase: phantomPhrase }) || `${phantomPhrase} preserved.`);
     }
 
     if (c.dissolved) {
-      parts.push('Strong acid attack etched the surface — topaz is very resistant, but pH below 2 with long exposure releases Al³⁺, SiO₂, and F⁻ slowly back into the fluid.');
+      parts.push(narrative_variant('topaz', 'dissolved') || 'Strong acid attack etched the surface.');
     }
-
-    return parts.join(' ');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_tourmaline(c) {
+    // Prose lives in narratives/tourmaline.md.
     const parts = [`Tourmaline #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push('Complex cyclosilicate, trigonal — elongated prisms with deep vertical striations and a slightly rounded triangular cross-section {10̄10}. Each striation is a growth pulse. Color is a fluid composition snapshot: boron found a home, and which cations came with it wrote the hue.');
-
+    parts.push(narrative_blurb('tourmaline') || 'Complex cyclosilicate, trigonal — elongated prisms.');
     const notes = c.zones.map(z => (z.note || '').toLowerCase());
     const varieties = new Set();
     for (const n of notes) {
@@ -14402,26 +14401,24 @@ class VugSimulator {
       if (n.includes('paraíba') || n.includes('paraiba')) varieties.add('paraiba');
       if (n.includes('achroite')) varieties.add('achroite');
     }
-
     if (varieties.has('schorl') && varieties.size > 1) {
       const other = [...varieties].filter(v => v !== 'schorl').sort();
-      parts.push(`Color-zoned: started as schorl (Fe²⁺-dominant black core) and transitioned to ${other.join(', ')} as the pegmatite fluid depleted iron and built up lithium. The crystal is a diary of incompatible-element accumulation.`);
+      parts.push(narrative_variant('tourmaline', 'color_zoned_schorl', { others: other.join(', ') }) || `Color-zoned: started as schorl and transitioned to ${other.join(', ')}.`);
     } else if (varieties.has('paraiba')) {
-      parts.push('Paraíba blue — the Cu²⁺-activated glow discovered in northeastern Brazil in 1989 and fetching tens of thousands of dollars per carat at auction. Copper is the rarest chromophore in tourmaline; this zone documents a fluid that briefly carried Cu²⁺ among its trace metals.');
+      parts.push(narrative_variant('tourmaline', 'paraiba') || 'Paraíba blue — the Cu²⁺-activated glow.');
     } else if (varieties.has('rubellite')) {
-      parts.push("Rubellite — Li-rich elbaite with Mn²⁺ giving pink color. The Jonas mine in Minas Gerais was perhaps the world's greatest rubellite producer. This composition marks the late pocket-growth phase, after iron had been scavenged by earlier schorl.");
+      parts.push(narrative_variant('tourmaline', 'rubellite') || "Rubellite — Li-rich elbaite with Mn²⁺.");
     } else if (varieties.has('verdelite')) {
-      parts.push("Verdelite — green elbaite. Cr³⁺ or V³⁺ substitution into the Al site drives the color; both trace elements come from ultramafic country rock contact. Emerald's cousin by chromophore.");
+      parts.push(narrative_variant('tourmaline', 'verdelite') || "Verdelite — green elbaite.");
     } else if (varieties.has('indicolite')) {
-      parts.push('Indicolite — blue elbaite. Fe²⁺→Ti⁴⁺ charge transfer produces the color, requiring both cations plus Li to have coexisted in the growth fluid. A tricky composition to hit, which is why good indicolite is collector-priced.');
+      parts.push(narrative_variant('tourmaline', 'indicolite') || 'Indicolite — blue elbaite.');
     } else if (varieties.has('schorl')) {
-      parts.push('Schorl — the black Fe²⁺-dominant end-member that dominates the early phases of pegmatite crystallization. Opaque in thick section, dark green-black by transmitted light. The most common tourmaline species globally.');
+      parts.push(narrative_variant('tourmaline', 'schorl') || 'Schorl — the black Fe²⁺-dominant end-member.');
     } else if (varieties.has('achroite')) {
-      parts.push('Achroite — colorless elbaite. All trace elements muted or absent; the pure lithium-aluminum end-member looking through. Rare in the field, beautiful under UV sometimes from structural defects.');
+      parts.push(narrative_variant('tourmaline', 'achroite') || 'Achroite — colorless elbaite.');
     }
-
-    parts.push('The cross-section, if you sliced this crystal perpendicular to its c-axis, would read like a tree-ring record — concentric zones of color marking each fluid event the vug witnessed.');
-    return parts.join(' ');
+    parts.push(narrative_closing('tourmaline') || 'The cross-section reads like a tree-ring record.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_beryl(c) {
