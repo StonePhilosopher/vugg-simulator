@@ -17358,210 +17358,67 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_native_tellurium(self, c: Crystal) -> str:
-        """Narrate native tellurium — the metal-telluride-overflow native element."""
+        """Narrate native tellurium — the residual-overflow rare element.
+
+        Prose lives in narratives/native_tellurium.md.
+        """
         parts = [f"Native tellurium #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Te — elemental tellurium, the rarest of the residual-overflow "
-            "native trio. Trigonal (P3₁21), Mohs 2-2.5, SG 6.2, perfect "
-            "{1010} prismatic cleavage. Tellurium is rarer than platinum "
-            "in Earth's crust; when it does appear in epithermal gold "
-            "veins, every metal in the broth covets it: Au makes calaverite "
-            "(AuTe₂) and sylvanite, Ag makes hessite (Ag₂Te), Pb makes "
-            "altaite (PbTe), Bi makes tetradymite (Bi₂Te₂S), Hg makes "
-            "coloradoite (HgTe). Native Te only crystallizes when every "
-            "telluride-forming metal has had its fill — a relic of excess. "
-            "Tin-white metallic, tarnishes to TeO₂ within days."
-        )
-
+        parts.append(narrative_blurb("native_tellurium"))
         if c.habit == "prismatic_hex":
-            parts.append(
-                "Hexagonal prismatic — the Kalgoorlie habit, well-formed "
-                "{1010} prisms with diagnostic c-axis striations terminating "
-                "at {1011} rhombohedron faces. Cripple Creek and Zod Mine "
-                "(Armenia) produce museum-grade specimens."
-            )
+            parts.append(narrative_variant("native_tellurium", "prismatic_hex"))
         elif c.habit == "reticulated":
-            parts.append(
-                "Reticulated / filiform — interconnected wire network, "
-                "the low-T habit. Forms when slow growth kinetics produce "
-                "branching threads instead of compact crystals."
-            )
+            parts.append(narrative_variant("native_tellurium", "reticulated"))
         else:
-            parts.append(
-                "Granular massive — the dominant ore form. Cripple Creek "
-                "shipped this habit by the kilogram during the 1890s "
-                "Colorado gold rush; the Te tarnish was the diagnostic "
-                "that distinguished telluride ore from quartz at the assay "
-                "stamp mill."
-            )
-
+            parts.append(narrative_variant("native_tellurium", "granular_default"))
         if "native_gold" in (c.position or ""):
-            parts.append(
-                "Note position — this crystal nucleated on native gold. "
-                "The Au-Te paragenetic boundary: when an Au-Te-bearing "
-                "fluid crosses the equilibrium where calaverite/sylvanite "
-                "have already consumed the available Au, residual Te "
-                "drops out as native onto the existing Au surfaces. The "
-                "Cripple Creek epithermal vein-system signature."
-            )
-
+            parts.append(narrative_variant("native_tellurium", "on_native_gold"))
         if c.dissolved:
-            parts.append(
-                "Oxidative dissolution — TeO₃²⁻ tellurite is going back "
-                "to fluid. In supergene zones this becomes secondary "
-                "tellurate minerals (tellurite TeO₂, paratellurite); "
-                "Te recycling is rare because the abundance is so low "
-                "it rarely accumulates."
-            )
+            parts.append(narrative_variant("native_tellurium", "oxidative_dissolution"))
         elif len(c.zones) > 6:
-            parts.append(
-                "Tellurite tarnish — TeO₂ surface bloom darkening the "
-                "fresh metallic luster. Faster-tarnishing than native Ag "
-                "or As; Te oxidizes within hours of exposure."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("native_tellurium", "tellurite_tarnish"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_native_sulfur(self, c: Crystal) -> str:
-        """Narrate native sulfur — the synproportionation mineral."""
+        """Narrate native sulfur — the synproportionation mineral.
+
+        Prose lives in narratives/native_sulfur.md.
+        """
         parts = [f"Native sulfur #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "S — elemental sulfur, the bright canary-yellow native "
-            "non-metal. Built from crown-shaped S₈ rings stacked into "
-            "an orthorhombic lattice (α-S, room T) or monoclinic (β-S, "
-            "T>95.5°C). Mohs 1.5-2.5, fragile, thermally sensitive — "
-            "holding a cool specimen in a warm hand can crack it. The "
-            "synproportionation mineral: native sulfur lives on the "
-            "H₂S/SO₄²⁻ redox boundary where the reaction H₂S + SO₄²⁻ "
-            "→ 2S⁰ + H₂O drops elemental S out of solution. Below the "
-            "boundary every S atom is sulfide-bonded; above, every S "
-            "atom is sulfate."
-        )
-
+        parts.append(narrative_blurb("native_sulfur"))
         if c.habit == "bipyramidal_alpha":
-            parts.append(
-                "α-Sulfur bipyramidal — the iconic Sicilian Agrigento "
-                "habit. Two dipyramids stacked: a steep {111} cap and a "
-                "shallow {113} base, terminating at {001} pinacoid. "
-                "Crystals reach 20+ cm in the original Italian deposits, "
-                "considered among the most beautiful native-element "
-                "specimens ever recovered. The crown-shaped S₈ rings "
-                "produce the diagnostic pure-yellow color through "
-                "intra-molecular electronic transitions."
-            )
+            parts.append(narrative_variant("native_sulfur", "bipyramidal_alpha"))
         elif c.habit == "prismatic_beta":
-            parts.append(
-                "β-Sulfur prismatic — RARE habit, the high-T monoclinic "
-                "polymorph. β-S is unstable below 95.5°C and converts "
-                "to α-S on cooling, with internal strain that cracks "
-                "the crystal. Most β-S in collections is preserved by "
-                "rapid quenching; left at room T, it visibly degrades "
-                "over months."
-            )
+            parts.append(narrative_variant("native_sulfur", "prismatic_beta"))
         elif c.habit == "sublimation_crust":
-            parts.append(
-                "Sublimation crust — the volcanic-fumarole habit. Gas-"
-                "phase H₂S + O₂ deposits S directly onto vent walls, "
-                "producing bright yellow crystalline crusts that grow "
-                "in days rather than years. Vulcano (Italy), El Desierto "
-                "(Bolivia), and active Hawaiian fumaroles produce this "
-                "form in real-time."
-            )
-
+            parts.append(narrative_variant("native_sulfur", "sublimation_crust"))
         if "celestine" in (c.position or ""):
-            parts.append(
-                "Note position — this crystal nucleated on celestine. "
-                "Sicilian Caltanissetta is the type locality for this "
-                "association: fibrous celestine radiating from native-"
-                "sulfur cores, the Sr having co-precipitated from the "
-                "same evaporite-derived fluid."
-            )
+            parts.append(narrative_variant("native_sulfur", "on_celestine"))
         elif "aragonite" in (c.position or "") or "selenite" in (c.position or ""):
-            parts.append(
-                "Sedimentary biogenic context — the host carbonate or "
-                "sulfate places this crystal in a salt-dome caprock or "
-                "sabkha setting (Tarnobrzeg Poland is the type). Sulfate-"
-                "reducing bacteria (Desulfovibrio) strip oxygen from "
-                "SO₄²⁻ and leave behind elemental sulfur. Biology as a "
-                "geological agent."
-            )
-
+            parts.append(narrative_variant("native_sulfur", "biogenic_caprock"))
         if c.dissolved:
-            parts.append(
-                "Oxidative dissolution — O₂ is climbing past the synpro-"
-                "portionation window and the crystal is going back to "
-                "fluid as SO₄²⁻. Over geological time the recycled "
-                "sulfate becomes barite or anhydrite somewhere "
-                "downstream — the same atoms, a different chapter."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("native_sulfur", "oxidative_dissolution"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_native_arsenic(self, c: Crystal) -> str:
-        """Narrate native arsenic — the residual-overflow native element."""
+        """Narrate native arsenic — the residual-overflow native element.
+
+        Prose lives in narratives/native_arsenic.md.
+        """
         parts = [f"Native arsenic #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "As — elemental arsenic, the pariah of the periodic table. "
-            "Trigonal (R3̄m), Mohs 3-4, perfect basal {0001} cleavage that "
-            "splits like dark mica. Tin-white to steel-gray on fresh "
-            "fracture, tarnishes to arsenolite (As₂O₃) within hours of "
-            "exposure. Forms only when every other As-consumer in the "
-            "fluid (Fe → arsenopyrite, Ni → nickeline, Co → safflorite, "
-            "S → realgar/orpiment) has already had its share — the "
-            "residual overflow. Famous Co-Ni-Ag vein districts (Freiberg "
-            "Saxony, Sainte-Marie-aux-Mines Alsace, Příbram Czech) all "
-            "host native As as the leftover phase."
-        )
-
+        parts.append(narrative_blurb("native_arsenic"))
         if c.habit == "reniform":
-            parts.append(
-                "Reniform / botryoidal — kidney-shaped crusts with concentric "
-                "growth layers, the Akatani Mine signature. The botryoidal "
-                "habit emerges when high σ produces nucleation faster than "
-                "diffusion supply, so the growth front splits into rounded "
-                "lobes that overlap and merge. Polished slabs reveal "
-                "spectacular concentric banding."
-            )
+            parts.append(narrative_variant("native_arsenic", "reniform"))
         elif c.habit == "rhombohedral_crystal":
-            parts.append(
-                "Rhombohedral crystal — RARE habit. {0001} basal pinacoid "
-                "with {1011} rhombohedron faces, barrel-shaped at higher T "
-                "where slow growth lets the crystal develop properly. "
-                "Most native-arsenic specimens are massive; well-formed "
-                "crystals are collector-grade rare."
-            )
+            parts.append(narrative_variant("native_arsenic", "rhombohedral_crystal"))
         elif c.habit == "arsenolamprite":
-            parts.append(
-                "Arsenolamprite — the Bi-rich variety (up to 12% Bi). "
-                "Possibly distinct from native arsenic at high Bi loadings "
-                "(orthorhombic instead of trigonal, per Schiferl 1969). "
-                "Rare in nature; appears here because the host fluid "
-                "carries enough Bi to substitute into the As lattice."
-            )
+            parts.append(narrative_variant("native_arsenic", "arsenolamprite"))
         else:
-            parts.append(
-                "Massive granular — the Freiberg ore form, dominant economic "
-                "habit. Tin-white metallic mass, no crystal faces but still "
-                "chemically distinct from the surrounding gangue. Hand "
-                "specimens have a characteristic garlic odor when freshly "
-                "fractured (arsine gas, As-H₃)."
-            )
-
+            parts.append(narrative_variant("native_arsenic", "massive_default"))
         if c.dissolved:
-            parts.append(
-                "Oxidative dissolution — O₂-bearing fluid is etching the "
-                "surface. As goes back to solution as AsO₄³⁻ and migrates "
-                "downstream to feed the supergene arsenate cascade: scorodite "
-                "(Fe), pharmacolite (Ca), erythrite (Co), annabergite (Ni), "
-                "olivenite (Cu), mimetite (Pb). The same As atoms passing "
-                "through one mineral after another."
-            )
+            parts.append(narrative_variant("native_arsenic", "oxidative_dissolution"))
         elif len(c.zones) > 8:
-            parts.append(
-                "Arsenolite tarnish — the surface is blooming with a crust "
-                "of As₂O₃ crystals: white, powdery, dramatically more toxic "
-                "than the metalloid beneath. Geological inevitability — "
-                "every native-arsenic specimen tarnishes."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("native_arsenic", "arsenolite_tarnish"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_native_silver(self, c: Crystal) -> str:
         """Narrate native silver — the Kongsberg wire mineral.

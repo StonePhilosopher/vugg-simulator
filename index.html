@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite', 'native_tellurium', 'native_sulfur', 'native_arsenic'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -15019,65 +15019,42 @@ class VugSimulator {
   }
 
   _narrate_native_tellurium(c) {
+    // Prose lives in narratives/native_tellurium.md.
     const parts = [`Native tellurium #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("Te — elemental tellurium, the rarest of the residual-overflow native trio. Trigonal (P3₁21), Mohs 2-2.5, SG 6.2, perfect {1010} prismatic cleavage. Tellurium is rarer than platinum in Earth's crust; when it does appear in epithermal gold veins, every metal in the broth covets it: Au makes calaverite (AuTe₂) and sylvanite, Ag makes hessite (Ag₂Te), Pb makes altaite (PbTe), Bi makes tetradymite, Hg makes coloradoite. Native Te only crystallizes when every telluride-forming metal has had its fill.");
-    if (c.habit === 'prismatic_hex') {
-      parts.push('Hexagonal prismatic — the Kalgoorlie habit, well-formed {1010} prisms with c-axis striations terminating at {1011} rhombohedron. Cripple Creek and Zod Mine (Armenia) produce museum-grade specimens.');
-    } else if (c.habit === 'reticulated') {
-      parts.push('Reticulated / filiform — interconnected wire network, the low-T habit. Forms when slow growth kinetics produce branching threads instead of compact crystals.');
-    } else {
-      parts.push('Granular massive — the Cripple Creek ore form. Te tarnish was the diagnostic that distinguished telluride ore from quartz at the 1890s Colorado assay stamp mill.');
-    }
-    if ((c.position || '').includes('native_gold')) {
-      parts.push('Note position — this crystal nucleated on native gold. The Au-Te paragenetic boundary: when an Au-Te-bearing fluid crosses the equilibrium where calaverite/sylvanite have already consumed the available Au, residual Te drops out as native onto the existing Au surfaces.');
-    }
-    if (c.dissolved) {
-      parts.push('Oxidative dissolution — TeO₃²⁻ tellurite is going back to fluid. Te recycling is rare because the abundance is so low it rarely accumulates.');
-    } else if (c.zones && c.zones.length > 6) {
-      parts.push('Tellurite tarnish — TeO₂ surface bloom darkening the fresh metallic luster. Te oxidizes within hours of exposure.');
-    }
-    return parts.join(' ');
+    parts.push(narrative_blurb('native_tellurium') || 'Te — elemental tellurium.');
+    if (c.habit === 'prismatic_hex') parts.push(narrative_variant('native_tellurium', 'prismatic_hex') || 'Hexagonal prismatic.');
+    else if (c.habit === 'reticulated') parts.push(narrative_variant('native_tellurium', 'reticulated') || 'Reticulated.');
+    else parts.push(narrative_variant('native_tellurium', 'granular_default') || 'Granular massive.');
+    if ((c.position || '').includes('native_gold')) parts.push(narrative_variant('native_tellurium', 'on_native_gold') || 'Note position — nucleated on native gold.');
+    if (c.dissolved) parts.push(narrative_variant('native_tellurium', 'oxidative_dissolution') || 'Oxidative dissolution.');
+    else if (c.zones && c.zones.length > 6) parts.push(narrative_variant('native_tellurium', 'tellurite_tarnish') || 'Tellurite tarnish.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_native_sulfur(c) {
+    // Prose lives in narratives/native_sulfur.md.
     const parts = [`Native sulfur #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("S — elemental sulfur, the bright canary-yellow native non-metal built from crown-shaped S₈ rings stacked into an orthorhombic lattice (α-S, room T) or monoclinic (β-S, T>95.5°C). Mohs 1.5-2.5, fragile, thermally sensitive — holding a cool specimen in a warm hand can crack it. The synproportionation mineral: native S lives on the H₂S/SO₄²⁻ redox boundary where H₂S + SO₄²⁻ → 2S⁰ + H₂O drops elemental S out of solution.");
-    if (c.habit === 'bipyramidal_alpha') {
-      parts.push('α-Sulfur bipyramidal — the iconic Sicilian Agrigento habit. Two dipyramids stacked: a steep {111} cap and a shallow {113} base, terminating at {001} pinacoid. Crystals reach 20+ cm in the original Italian deposits.');
-    } else if (c.habit === 'prismatic_beta') {
-      parts.push('β-Sulfur prismatic — RARE habit, the high-T monoclinic polymorph. Unstable below 95.5°C and converts to α-S on cooling, with internal strain that cracks the crystal.');
-    } else if (c.habit === 'sublimation_crust') {
-      parts.push('Sublimation crust — the volcanic-fumarole habit. Gas-phase H₂S + O₂ deposits S directly onto vent walls, producing bright yellow crystalline crusts that grow in days rather than years.');
-    }
-    if ((c.position || '').includes('celestine')) {
-      parts.push('Note position — this crystal nucleated on celestine. Sicilian Caltanissetta is the type locality for this association: fibrous celestine radiating from native-sulfur cores, the Sr having co-precipitated from the same evaporite-derived fluid.');
-    } else if ((c.position || '').includes('aragonite') || (c.position || '').includes('selenite')) {
-      parts.push('Sedimentary biogenic context — the host carbonate or sulfate places this crystal in a salt-dome caprock or sabkha setting (Tarnobrzeg Poland is the type). Sulfate-reducing bacteria (Desulfovibrio) strip oxygen from SO₄²⁻ and leave behind elemental sulfur.');
-    }
-    if (c.dissolved) {
-      parts.push('Oxidative dissolution — O₂ is climbing past the synproportionation window and the crystal is going back to fluid as SO₄²⁻. Over geological time the recycled sulfate becomes barite or anhydrite somewhere downstream.');
-    }
-    return parts.join(' ');
+    parts.push(narrative_blurb('native_sulfur') || 'S — elemental sulfur.');
+    if (c.habit === 'bipyramidal_alpha') parts.push(narrative_variant('native_sulfur', 'bipyramidal_alpha') || 'α-Sulfur bipyramidal.');
+    else if (c.habit === 'prismatic_beta') parts.push(narrative_variant('native_sulfur', 'prismatic_beta') || 'β-Sulfur prismatic.');
+    else if (c.habit === 'sublimation_crust') parts.push(narrative_variant('native_sulfur', 'sublimation_crust') || 'Sublimation crust.');
+    if ((c.position || '').includes('celestine')) parts.push(narrative_variant('native_sulfur', 'on_celestine') || 'Nucleated on celestine.');
+    else if ((c.position || '').includes('aragonite') || (c.position || '').includes('selenite')) parts.push(narrative_variant('native_sulfur', 'biogenic_caprock') || 'Sedimentary biogenic context.');
+    if (c.dissolved) parts.push(narrative_variant('native_sulfur', 'oxidative_dissolution') || 'Oxidative dissolution.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_native_arsenic(c) {
+    // Prose lives in narratives/native_arsenic.md.
     const parts = [`Native arsenic #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("As — elemental arsenic, the pariah of the periodic table. Trigonal (R3̄m), Mohs 3-4, perfect basal {0001} cleavage that splits like dark mica. Tin-white to steel-gray on fresh fracture, tarnishes to arsenolite (As₂O₃) within hours of exposure. Forms only when every other As-consumer in the fluid (Fe → arsenopyrite, Ni → nickeline, Co → safflorite, S → realgar/orpiment) has already had its share — the residual overflow.");
-    if (c.habit === 'reniform') {
-      parts.push('Reniform / botryoidal — kidney-shaped crusts with concentric growth layers, the Akatani Mine signature. The botryoidal habit emerges when high σ produces nucleation faster than diffusion supply.');
-    } else if (c.habit === 'rhombohedral_crystal') {
-      parts.push('Rhombohedral crystal — RARE habit. {0001} basal pinacoid with {1011} rhombohedron faces, barrel-shaped at higher T. Most native-arsenic specimens are massive; well-formed crystals are collector-grade rare.');
-    } else if (c.habit === 'arsenolamprite') {
-      parts.push('Arsenolamprite — the Bi-rich variety (up to 12% Bi). Possibly distinct from native arsenic at high Bi loadings (orthorhombic instead of trigonal, per Schiferl 1969).');
-    } else {
-      parts.push('Massive granular — the Freiberg ore form. Tin-white metallic mass, no crystal faces. Hand specimens have a characteristic garlic odor when freshly fractured (arsine gas, As-H₃).');
-    }
-    if (c.dissolved) {
-      parts.push('Oxidative dissolution — O₂-bearing fluid is etching the surface. As goes back to solution as AsO₄³⁻ and migrates downstream to feed the supergene arsenate cascade: scorodite, pharmacolite, erythrite, annabergite, olivenite, mimetite. The same As atoms passing through one mineral after another.');
-    } else if (c.zones && c.zones.length > 8) {
-      parts.push('Arsenolite tarnish — the surface is blooming with a crust of As₂O₃ crystals: white, powdery, dramatically more toxic than the metalloid beneath.');
-    }
-    return parts.join(' ');
+    parts.push(narrative_blurb('native_arsenic') || 'As — elemental arsenic, the pariah of the periodic table.');
+    if (c.habit === 'reniform') parts.push(narrative_variant('native_arsenic', 'reniform') || 'Reniform / botryoidal.');
+    else if (c.habit === 'rhombohedral_crystal') parts.push(narrative_variant('native_arsenic', 'rhombohedral_crystal') || 'Rhombohedral crystal — RARE.');
+    else if (c.habit === 'arsenolamprite') parts.push(narrative_variant('native_arsenic', 'arsenolamprite') || 'Arsenolamprite — Bi-rich variety.');
+    else parts.push(narrative_variant('native_arsenic', 'massive_default') || 'Massive granular — the Freiberg ore form.');
+    if (c.dissolved) parts.push(narrative_variant('native_arsenic', 'oxidative_dissolution') || 'Oxidative dissolution.');
+    else if (c.zones && c.zones.length > 8) parts.push(narrative_variant('native_arsenic', 'arsenolite_tarnish') || 'Arsenolite tarnish.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_native_silver(c) {
