@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -15222,6 +15222,58 @@ class VugSimulator {
     if (anyNote.includes('pinkish') || anyNote.includes('natroalunite')) parts.push(narrative_variant('alunite', 'pinkish_natroalunite'));
     if (c.dissolved) parts.push(narrative_variant('alunite', 'dissolved_alkaline_thermal'));
     parts.push(narrative_variant('alunite', 'ar_ar_geochronology'));
+    return parts.filter(p => p).join(' ');
+  }
+
+  _narrate_brochantite(c) {
+    // Prose lives in narratives/brochantite.md. JS narrator added in this
+    // commit to close a JS-side gap. Note the dissolved branch interpolates
+    // a computed {cause} string (alkalinization vs acidification).
+    const parts = [`Brochantite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push(narrative_blurb('brochantite'));
+    if (c.habit === 'drusy_crust') parts.push(narrative_variant('brochantite', 'drusy_crust'));
+    else if (c.habit === 'acicular_tuft') parts.push(narrative_variant('brochantite', 'acicular_tuft'));
+    else if (c.habit === 'short_prismatic') parts.push(narrative_variant('brochantite', 'short_prismatic'));
+    else parts.push(narrative_variant('brochantite', 'botryoidal_default'));
+    const anyNote = (c.zones || []).map(z => z.note || '').join(' ');
+    if (anyNote.includes('Cl-rich')) parts.push(narrative_variant('brochantite', 'cl_rich'));
+    if (c.dissolved) {
+      const cause = (c.zones || []).some(z => (z.note || '').includes('pH > 7'))
+        ? 'alkalinization (pH > 7) → tenorite/malachite stable'
+        : 'acidification (pH < 3) → antlerite stable';
+      parts.push(narrative_variant('brochantite', 'dissolved_pH_fork', { cause }));
+    }
+    parts.push(narrative_variant('brochantite', 'patina_tail'));
+    return parts.filter(p => p).join(' ');
+  }
+
+  _narrate_antlerite(c) {
+    // Prose lives in narratives/antlerite.md. JS narrator added in this
+    // commit to close a JS-side gap.
+    const parts = [`Antlerite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push(narrative_blurb('antlerite'));
+    if (c.habit === 'granular') parts.push(narrative_variant('antlerite', 'granular'));
+    else if (c.habit === 'acicular') parts.push(narrative_variant('antlerite', 'acicular'));
+    else if (c.habit === 'short_prismatic') parts.push(narrative_variant('antlerite', 'short_prismatic'));
+    else parts.push(narrative_variant('antlerite', 'drusy_default'));
+    if (c.dissolved) parts.push(narrative_variant('antlerite', 'dissolved_neutralization'));
+    const anyNote = (c.zones || []).map(z => z.note || '').join(' ');
+    const onBrochantite = (c.zones || []).some(z => (z.note || '').includes('on dissolving brochantite')) || anyNote.includes('pH-fork');
+    if (onBrochantite) parts.push(narrative_variant('antlerite', 'on_dissolving_brochantite'));
+    parts.push(narrative_variant('antlerite', 'pragmatic_tail'));
+    return parts.filter(p => p).join(' ');
+  }
+
+  _narrate_chalcanthite(c) {
+    // Prose lives in narratives/chalcanthite.md. JS narrator added in this
+    // commit to close a JS-side gap.
+    const parts = [`Chalcanthite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push(narrative_blurb('chalcanthite'));
+    if (c.habit === 'stalactitic') parts.push(narrative_variant('chalcanthite', 'stalactitic'));
+    else if (c.habit === 'tabular') parts.push(narrative_variant('chalcanthite', 'tabular'));
+    else parts.push(narrative_variant('chalcanthite', 'efflorescent_default'));
+    if (c.twinned && (c.twin_law || '').includes('cruciform')) parts.push(narrative_variant('chalcanthite', 'cruciform_twin'));
+    if (c.dissolved) parts.push(narrative_variant('chalcanthite', 'cyclic_dissolution'));
     return parts.filter(p => p).join(' ');
   }
 

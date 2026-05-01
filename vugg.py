@@ -15855,139 +15855,59 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_brochantite(self, c: Crystal) -> str:
-        """Narrate a brochantite crystal — the wet-supergene Cu sulfate."""
+        """Narrate a brochantite crystal — the wet-supergene Cu sulfate.
+
+        Prose lives in narratives/brochantite.md. Code dispatches blurb +
+        4-way habit (drusy_crust / acicular_tuft / short_prismatic /
+        botryoidal_default) + cl_rich zone-note flag + dissolved_pH_fork
+        with computed {cause} interpolation + ALWAYS-emitted patina tail.
+        """
         parts = [f"Brochantite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Cu₄(SO₄)(OH)₆ — the wet-supergene Cu sulfate. Emerald-"
-            "green prismatic crystals, distinguishable from malachite "
-            "by distinctly darker green and prismatic (vs malachite's "
-            "botryoidal) habit. The higher-pH end (pH 4-7) of the "
-            "brochantite ↔ antlerite Cu-sulfate fork. Atacama Desert "
-            "(Chile) supergene Cu deposits — Chuquicamata, Mantos "
-            "Blancos, Mansa Mina, El Tesoro — have brochantite as a "
-            "major component; arid evaporative concentration of "
-            "supergene Cu sulfate produces near-pure brochantite zones."
-        )
+        parts.append(narrative_blurb("brochantite"))
         if c.habit == "drusy_crust":
-            parts.append(
-                "Drusy emerald-green crust on Cu-bearing wall — the "
-                "rapid-supergene-precipitation habit. Atacama and "
-                "Bisbee tailings dumps stain green with this in days "
-                "to weeks of post-mining oxidation."
-            )
+            parts.append(narrative_variant("brochantite", "drusy_crust"))
         elif c.habit == "acicular_tuft":
-            parts.append(
-                "Acicular needle-tufts radiating from substrate — "
-                "the diagnostic habit when brochantite tufts coat "
-                "malachite or chalcocite."
-            )
+            parts.append(narrative_variant("brochantite", "acicular_tuft"))
         elif c.habit == "short_prismatic":
-            parts.append(
-                "Stubby emerald-green prisms — the standard Atacama / "
-                "Bisbee display specimen habit. Hand-lens reveals "
-                "monoclinic crystal forms."
-            )
+            parts.append(narrative_variant("brochantite", "short_prismatic"))
         else:
-            parts.append(
-                "Botryoidal globular aggregates — rarer than the "
-                "prismatic habit, can be confused with malachite at "
-                "hand-sample scale (the green color and globular form "
-                "overlap; XRD or acid-resistance test distinguishes)."
-            )
+            parts.append(narrative_variant("brochantite", "botryoidal_default"))
         any_note = " ".join(z.note or "" for z in c.zones)
         if "Cl-rich" in any_note:
-            parts.append(
-                "Cl-rich fluid context: in real-life Atacama and "
-                "Bisbee, brochantite competes with atacamite "
-                "(Cu₂Cl(OH)₃) for the Cu²⁺ pool — atacamite wins when "
-                "Cl is dominant over SO₄. Atacamite is queued for a "
-                "future halide-expansion commit."
-            )
+            parts.append(narrative_variant("brochantite", "cl_rich"))
         if c.dissolved:
             cause = "alkalinization (pH > 7) → tenorite/malachite stable" \
                 if any("pH > 7" in (z.note or "") for z in c.zones) \
                 else "acidification (pH < 3) → antlerite stable"
-            parts.append(
-                f"Dissolved by {cause}. The brochantite ↔ antlerite "
-                "fork is the single most-cited Cu-sulfate paragenesis "
-                "in supergene literature (Pollard et al. 1992); both "
-                "fork ends can interconvert as pH cycles seasonally."
-            )
-        parts.append(
-            "Patina-mineralogy connection: bronze sculptures in "
-            "oceanic / saline air develop brochantite patinas (vs "
-            "malachite in CO₂-rich freshwater air). The Statue of "
-            "Liberty's iconic green patina is largely brochantite, "
-            "not malachite — chloride-rich New York harbor air "
-            "drives the SO₄/CO₃ partition toward sulfate."
-        )
-        return " ".join(parts)
+            parts.append(narrative_variant("brochantite", "dissolved_pH_fork", cause=cause))
+        parts.append(narrative_variant("brochantite", "patina_tail"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_antlerite(self, c: Crystal) -> str:
-        """Narrate an antlerite crystal — the dry-acid Cu sulfate."""
+        """Narrate an antlerite crystal — the dry-acid Cu sulfate.
+
+        Prose lives in narratives/antlerite.md. Code dispatches blurb +
+        4-way habit (granular / acicular / short_prismatic / drusy_default)
+        + dissolved_neutralization + on_dissolving_brochantite zone-note
+        flag + ALWAYS-emitted pragmatic tail.
+        """
         parts = [f"Antlerite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Cu₃(SO₄)(OH)₄ — the dry-acid end of the brochantite ↔ "
-            "antlerite Cu-sulfate fork (pH 1-3.5 stability). Same "
-            "emerald-green color as brochantite; visually indistinguishable "
-            "in hand specimen — distinguished by chemistry (Cu₃ vs Cu₄, "
-            "more SO₄ per Cu unit) and by acid-resistance test (antlerite "
-            "is more soluble in dilute HCl than brochantite). Type locality "
-            "Antler mine (Mohave County, AZ; Hillebrand 1889), but the "
-            "world-class deposits were at Chuquicamata (Chile) where "
-            "antlerite was the dominant supergene Cu mineral mined "
-            "1920s-50s before the deeper hypogene chalcocite zone "
-            "became the modern target."
-        )
+        parts.append(narrative_blurb("antlerite"))
         if c.habit == "granular":
-            parts.append(
-                "Massive granular emerald-green — the Chuquicamata habit. "
-                "Decades of open-pit mining at the world's largest copper "
-                "mine recovered antlerite as a primary ore phase from this "
-                "form."
-            )
+            parts.append(narrative_variant("antlerite", "granular"))
         elif c.habit == "acicular":
-            parts.append(
-                "Thin radiating dark-green needles — the rapid-precipitation "
-                "habit when arid acidic supergene fluid reaches saturation."
-            )
+            parts.append(narrative_variant("antlerite", "acicular"))
         elif c.habit == "short_prismatic":
-            parts.append(
-                "Stubby emerald-green prisms — visually identical to "
-                "brochantite; the field test is to expose to vinegar and "
-                "watch for slow dissolution (antlerite dissolves in dilute "
-                "acid; brochantite resists)."
-            )
+            parts.append(narrative_variant("antlerite", "short_prismatic"))
         else:
-            parts.append(
-                "Druzy microcrystals on dissolving Cu sulfide — small-scale "
-                "supergene habit on chalcocite oxidation surfaces."
-            )
+            parts.append(narrative_variant("antlerite", "drusy_default"))
         if c.dissolved:
-            parts.append(
-                "Dissolved by neutralization — pH crossed above 3.5, "
-                "destabilizing antlerite. The released Cu²⁺ + SO₄²⁻ now "
-                "sit in brochantite-stable territory; expect brochantite "
-                "to re-nucleate from the same cation pool as the fork "
-                "reverses."
-            )
+            parts.append(narrative_variant("antlerite", "dissolved_neutralization"))
         any_note = " ".join(z.note or "" for z in c.zones)
         if any("on dissolving brochantite" in (z.note or "") for z in c.zones) or "pH-fork" in any_note:
-            parts.append(
-                "This crystal nucleated on dissolving brochantite — the "
-                "diagnostic Atacama paragenesis where seasonal acidification "
-                "(post-rainy-season evaporation drives pH down) flips the "
-                "Cu sulfate fork from brochantite to antlerite. Reverse "
-                "happens with the next rainy season."
-            )
-        parts.append(
-            "Pragmatic note: in the field, distinguishing antlerite from "
-            "brochantite without a lab is hard. The pH-fork mechanism "
-            "(Pollard et al. 1992) is the single most diagnostic chemistry "
-            "in arid-supergene Cu mineralogy and the basis of the "
-            "Chuquicamata-style ore-grade Cu sulfate deposits."
-        )
-        return " ".join(parts)
+            parts.append(narrative_variant("antlerite", "on_dissolving_brochantite"))
+        parts.append(narrative_variant("antlerite", "pragmatic_tail"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_anhydrite(self, c: Crystal) -> str:
         """Narrate an anhydrite crystal — the high-T or saline-low-T Ca sulfate.
@@ -17836,64 +17756,28 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_chalcanthite(self, c: Crystal) -> str:
-        """Narrate chalcanthite — the bright-blue water-soluble Cu sulfate."""
+        """Narrate chalcanthite — the bright-blue water-soluble Cu sulfate.
+
+        Prose lives in narratives/chalcanthite.md. Code dispatches blurb +
+        3-way habit (stalactitic / tabular / efflorescent_default) +
+        cruciform twin + cyclic_dissolution.
+        """
         parts = [f"Chalcanthite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "CuSO₄·5H₂O — the bright sky-blue Cu sulfate, the [Cu(H₂O)₅]²⁺ "
-            "chromophore one of the most intensely-colored minerals "
-            "anywhere. Triclinic, Mohs 2.5, perfect {110} cleavage. The "
-            "name is Greek for 'copper flower' — and like a flower, it "
-            "doesn't last. Chalcanthite is the most water-soluble mineral "
-            "in the sim (20.7 g per 100 mL at 20°C); every specimen is "
-            "a temporary victory over entropy. Forms only in arid, "
-            "strongly oxidizing, very acidic, salt-concentrated drainage: "
-            "Chuquicamata mine walls, Rio Tinto AMD seeps, Atacama "
-            "evaporite crusts. The terminal phase of the Cu sulfate "
-            "oxidation cascade — chalcopyrite eventually becomes this."
-        )
+        parts.append(narrative_blurb("chalcanthite"))
 
         if c.habit == "stalactitic":
-            parts.append(
-                "Stalactitic — the Chuquicamata mine-wall habit. Sky-blue "
-                "drips and cones formed where acidic Cu-rich fluid trickles "
-                "down a vug wall and evaporates faster than it can run "
-                "off. Each drip is a slow record of the mine's atmosphere."
-            )
+            parts.append(narrative_variant("chalcanthite", "stalactitic"))
         elif c.habit == "tabular":
-            parts.append(
-                "Tabular prismatic — RARE. Most natural chalcanthite is "
-                "stalactitic or efflorescent; well-formed prismatic "
-                "crystals are collector-grade. The triclinic symmetry is "
-                "visible in the {110} prism faces. Most 'crystals' on the "
-                "market are lab-grown."
-            )
-        else:  # efflorescent_crust
-            parts.append(
-                "Efflorescent crust — powdery blue surface bloom. Forms "
-                "in arid mine atmospheres where evaporation is fast and "
-                "growth has no time to develop crystal faces. Will weep "
-                "into solution again the moment humidity rises."
-            )
+            parts.append(narrative_variant("chalcanthite", "tabular"))
+        else:
+            parts.append(narrative_variant("chalcanthite", "efflorescent_default"))
 
         if c.twinned and "cruciform" in (c.twin_law or ""):
-            parts.append(
-                "Cruciform twin — RARE {110} cross-shaped twin. One of "
-                "the more striking twin morphologies in mineralogy when "
-                "a chalcanthite specimen survives long enough to display "
-                "it."
-            )
+            parts.append(narrative_variant("chalcanthite", "cruciform_twin"))
 
         if c.dissolved:
-            parts.append(
-                "Re-dissolved — the host fluid became more dilute (or "
-                "less acidic) and the crystal returned to solution. Cu²⁺ "
-                "and SO₄²⁻ are back in the fluid; they may recombine "
-                "as chalcanthite again the next time conditions return "
-                "to arid + acidic + concentrated. This cyclic dissolution-"
-                "regrowth is the chalcanthite signature: the only mineral "
-                "in the vug that respects the seasons."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("chalcanthite", "cyclic_dissolution"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_descloizite(self, c: Crystal) -> str:
         """Narrate descloizite — the cherry-red Zn-end Pb vanadate."""
