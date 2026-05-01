@@ -15407,10 +15407,15 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_fluorite(self, c: Crystal) -> str:
-        """Narrate a fluorite crystal's story."""
+        """Narrate a fluorite crystal's story.
+
+        Prose lives in narratives/fluorite.md. Code computes color set from
+        zones (parsing 'color zone:' notes), then dispatches multi-color vs
+        single-color variant. Adds twinned (with {twin_law}) + fluorescence
+        (with {fl}) variants. No blurb — entirely conditional.
+        """
         parts = [f"Fluorite #{c.crystal_id} grew as {c.habit} crystals to {c.c_length_mm:.1f} mm."]
-        
-        # Color zones
+
         if c.zones:
             colors = set()
             for z in c.zones:
@@ -15418,21 +15423,20 @@ class VugSimulator:
                     color = z.note.split("color zone:")[1].strip()
                     colors.add(color)
             if len(colors) > 1:
-                parts.append(
-                    f"Color zoning present: {', '.join(colors)} zones reflecting "
-                    f"changing trace element chemistry during growth."
-                )
+                parts.append(narrative_variant("fluorite", "color_zoning_multi",
+                                               colors_list=", ".join(colors)))
             elif colors:
-                parts.append(f"Uniformly {list(colors)[0]}.")
-        
+                parts.append(narrative_variant("fluorite", "color_zoning_single",
+                                               color=list(colors)[0]))
+
         if c.twinned:
-            parts.append(f"Shows {c.twin_law} twinning — two interpenetrating cubes.")
-        
+            parts.append(narrative_variant("fluorite", "twinned", twin_law=c.twin_law))
+
         fl = c.predict_fluorescence()
         if fl != "non-fluorescent":
-            parts.append(f"Would show {fl} under UV excitation.")
-        
-        return " ".join(parts)
+            parts.append(narrative_variant("fluorite", "fluorescence", fl=fl))
+
+        return " ".join(p for p in parts if p)
     
     def _narrate_pyrite(self, c: Crystal) -> str:
         """Narrate a pyrite crystal's story.
