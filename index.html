@@ -3130,7 +3130,7 @@ const MINERAL_SPEC_FALLBACK = {
   chalcopyrite: { formula: "CuFeS2", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.3, thermal_decomp_C: 880, fluorescence: null, twin_laws: [{ name: "penetration", probability: 0.012 }], acid_dissolution: { pH_threshold: 3.0 } },
   hematite: { formula: "Fe2O3", nucleation_sigma: 1.5, max_size_cm: 60, growth_rate_mult: 0.5, thermal_decomp_C: 1560, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
   malachite: { formula: "Cu2(CO3)(OH)2", nucleation_sigma: 1.0, max_size_cm: 200, growth_rate_mult: 0.8, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
-  uraninite: { formula: "UO2", nucleation_sigma: 1.5, max_size_cm: 10, growth_rate_mult: 0.1, thermal_decomp_C: 2800, fluorescence: { activator: "U", color: "green_yellow_weak" }, twin_laws: [], acid_dissolution: null },
+  uraninite: { formula: "UO2", nucleation_sigma: 1.5, max_size_cm: 10, growth_rate_mult: 0.1, thermal_decomp_C: 2800, fluorescence: { activator: null, color: null }, twin_laws: [], acid_dissolution: null },
   galena: { formula: "PbS", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.5, thermal_decomp_C: 1115, fluorescence: null, twin_laws: [{ name: "spinel_law", probability: 0.008 }], acid_dissolution: { pH_threshold: 2.0 } },
   smithsonite: { formula: "ZnCO3", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.7, thermal_decomp_C: 300, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "pink_LW" }, twin_laws: [{ name: "cyclic", probability: 0.01 }], acid_dissolution: { pH_threshold: 4.0 } },
   wulfenite: { formula: "PbMoO4", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.2, thermal_decomp_C: 1120, fluorescence: null, twin_laws: [{ name: "penetration", probability: 0.03 }], acid_dissolution: { pH_threshold: 3.5 } },
@@ -3763,7 +3763,17 @@ let timeScale = 5.0;
 //        as event-conditional logic. Cuprite spinel-twin habit branch
 //        was removed; spinel-twinned cuprite now carries octahedral
 //        habit + twinned flag. Verified by tools/twin_rate_check.py.
-const SIM_VERSION = 11;
+//   v12 — Uraninite gatekeeper (May 2026, per research-uraninite.md
+//        canonical): oxidative dissolution wired into grow_uraninite
+//        (mirrors molybdenite). Sigma<1 + O2>0.3 + grown>3µm → uraninite
+//        dissolves, releases UO₂²⁺ back to broth — feedstock for
+//        secondary uranium minerals (torbernite/zeunerite/carnotite).
+//        Habit dispatch tiered (T>500 octahedral, else pitchblende_massive).
+//        supersaturation_uraninite reconciled — pre-v12 JS had drift from
+//        Python (T-only formula, no O2 gate); now both runtimes identical.
+//        Factual fixes: fluorescence flipped to non-fluorescent; T_range
+//        tightened 200-800 → 150-600.
+const SIM_VERSION = 12;
 
 
 // ============================================================
@@ -4538,9 +4548,14 @@ class VugConditions {
   }
 
   supersaturation_uraninite() {
-    const eT = this.effectiveTemperature; // Mo flux lowers threshold
-    if (this.fluid.U < 50 || eT < 300) return 0;
-    return (this.fluid.U / 100.0) * Math.exp(-0.003 * Math.abs(eT - 500));
+    // Reconciled to Python canonical (v12, May 2026). Pre-v12 JS used a
+    // T-only formula with no O2 gate — uraninite would form even in
+    // oxidizing conditions, contradicting research-uraninite.md.
+    // Now: needs reducing + U + (slight high-T preference).
+    if (this.fluid.U < 5 || this.fluid.O2 > 0.3) return 0;
+    let sigma = (this.fluid.U / 20.0) * (0.5 - this.fluid.O2);
+    if (this.temperature > 200) sigma *= 1.3;
+    return Math.max(sigma, 0);
   }
 
   supersaturation_galena() {
@@ -7168,29 +7183,54 @@ function grow_malachite(crystal, conditions, step) {
 }
 
 function grow_uraninite(crystal, conditions, step) {
+  // v12 (May 2026): Gatekeeper for the secondary U family. When sigma<1
+  // AND O2>0.3 AND grown>3µm, uraninite oxidizes and releases UO₂²⁺
+  // back to broth — feedstock for torbernite/zeunerite/carnotite.
+  // Habit dispatch: T>500 octahedral (pegmatitic), else pitchblende_massive.
   const sigma = conditions.supersaturation_uraninite();
-  if (sigma < 1.0) return null;
+
+  if (sigma < 1.0) {
+    // Oxidative dissolution: UO₂ + ½O₂ + 2H⁺ → UO₂²⁺ + H₂O
+    if (crystal.total_growth_um > 3 && conditions.fluid.O2 > 0.3) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.12);
+      conditions.fluid.U += dissolved_um * 0.6; // uranyl back to fluid
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidation — uraninite weathers, releasing UO₂²⁺ (U fluid: ${conditions.fluid.U.toFixed(0)} ppm)`
+      });
+    }
+    return null;
+  }
 
   const rate = 0.008 * sigma * 1000 * rng.uniform(0.8, 1.2); // scale to µm
   if (rate < 0.1) return null;
 
-  crystal.habit = 'cubic';
-  crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
+  // Habit dispatch — research §157
+  const T = conditions.temperature;
+  if (T > 500) {
+    crystal.habit = 'octahedral';
+    crystal.dominant_forms = ['{111} octahedron'];
+  } else {
+    crystal.habit = 'pitchblende_massive';
+    crystal.dominant_forms = ['botryoidal masses', 'colloform banding'];
+  }
 
   // U consumption
   conditions.fluid.U -= rate * 0.005;
   conditions.fluid.U = Math.max(conditions.fluid.U, 0);
 
-  let color_note = 'black to dark green, submetallic luster';
-  if (conditions.temperature > 450) {
-    color_note = 'pitch-black, vitreous to submetallic';
-  }
+  let color_note;
+  if (T > 500) color_note = 'pitch-black, submetallic — pegmatitic octahedron';
+  else if (T >= 200) color_note = 'greasy black pitchblende, botryoidal crust';
+  else color_note = 'cryptocrystalline black mass — roll-front uraninite';
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.01,
-    note: `${color_note}, U fluid: ${conditions.fluid.U.toFixed(0)} ppm`
+    note: `${color_note}, U fluid: ${conditions.fluid.U.toFixed(0)} ppm — radioactive`
   });
 }
 
@@ -11009,7 +11049,7 @@ function event_radioactive_pegmatite_oxidizing(c) {
   c.fluid.O2 += 0.8;
   c.temperature = 120;
   c.flow_rate = 1.5;
-  return 'Oxidizing meteoric fluids seep through fractures. The reducing environment shifts. Sulfides become unstable. The uraninite endures — it has been enduring for millions of years.';
+  return 'Oxidizing meteoric fluids seep through fractures. The reducing environment shifts. Sulfides become unstable. The uraninite begins to weather — pitchy edges yellowing as U⁴⁺ goes back into solution as soluble uranyl ion.';
 }
 
 function event_radioactive_pegmatite_final_cooling(c) {
@@ -16651,10 +16691,18 @@ function libraryMatches(mineral, m, filters) {
 
 function fluorescenceSummary(fl) {
   if (!fl) return null;
+  // v12: explicitly-non-fluorescent species (e.g. uraninite) declare
+  // {activator: null, color: null}. Treat as no fluorescence.
+  if (!fl.activator && !fl.color) return null;
   const color = (fl.color || '').replace(/_/g, ' ');
   const activator = fl.activator || 'intrinsic';
   const q = fl.quencher && fl.quencher.species ? ` (quenched by ${fl.quencher.species})` : '';
   return `${color} — ${activator}${q}`;
+}
+
+function isFluorescent(fl) {
+  // Helper for the FL badge — explicitly-null activator+color = not fluorescent
+  return !!(fl && (fl.activator || fl.color));
 }
 
 function renderIngredientChips(obj) {
@@ -16714,7 +16762,7 @@ function libraryBuildCard(name, m) {
   const Topt = m.T_optimum_C ? `${m.T_optimum_C[0]}–${m.T_optimum_C[1]}` : '—';
   const fl = fluorescenceSummary(m.fluorescence);
   const badges = [];
-  if (m.fluorescence) badges.push('<span class="mineral-card-badge FL">FL</span>');
+  if (isFluorescent(m.fluorescence)) badges.push('<span class="mineral-card-badge FL">FL</span>');
   if (m.acid_dissolution) badges.push('<span class="mineral-card-badge acid">acid</span>');
   if (Array.isArray(m.twin_laws) && m.twin_laws.length) badges.push('<span class="mineral-card-badge twin">twins</span>');
   const scenarioChips = (m.scenarios || []).map(s => `<span class="scenario-chip">${s}</span>`).join('');

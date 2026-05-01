@@ -1852,17 +1852,17 @@
         }
       ],
       "class": "oxide",
-      "description": "UO₂, the primary uranium mineral. Pitch-black, extremely dense, radioactive. Forms under strongly reducing conditions — any oxygen converts it to yellow secondary uranium minerals. Each decay turns a U atom into Pb; old uraninite accumulates radiogenic lead that eventually precipitates as nearby galena.",
+      "description": "UO₂, the primary uranium mineral and gatekeeper for the entire secondary U family. Pitch-black, extremely dense, radioactive. Forms under strongly reducing conditions — any oxygen converts U⁴⁺ to mobile UO₂²⁺ uranyl ion (fed back to broth in v12 oxidation block, feedstock for torbernite/zeunerite/carnotite). Notably non-fluorescent — the ABSENCE of fluorescence distinguishes uraninite from its bright-green secondaries (autunite, torbernite). Each α-decay turns a U atom into Pb; old uraninite accumulates radiogenic lead that eventually precipitates as nearby galena. Source: research/research-uraninite.md (boss canonical 626bb22, May 2026).",
       "scenarios": [
         "radioactive_pegmatite"
       ],
       "T_range_C": [
-        200,
-        800
+        150,
+        600
       ],
       "T_optimum_C": [
-        300,
-        600
+        200,
+        500
       ],
       "T_behavior": "wide",
       "pH_dissolution_below": null,
@@ -1876,20 +1876,20 @@
         "Pb": "radiogenic_daughter"
       },
       "thermal_decomp_C": 2800,
-      "thermal_decomp_reaction": "UO2 — most refractory oxide known",
+      "thermal_decomp_reaction": "UO2 — most refractory oxide known (mp 2865°C)",
       "thermal_decomp_products": {
         "U": 0.5
       },
       "fluorescence": {
-        "activator": "U",
+        "activator": null,
         "threshold_ppm": 0,
-        "color": "green_yellow_LW_and_SW",
+        "color": null,
         "quencher": null,
-        "status": "newly_added — uraninite itself weakly fluoresces, daughter minerals strongly"
+        "status": "non-fluorescent — research-uraninite.md §Fluorescence (boss canonical 626bb22, May 2026). Pre-v12 misclassified as weakly fluorescent; corrected. The ABSENCE of fluorescence is a diagnostic feature distinguishing primary uraninite from its bright-green secondary uranyl minerals (autunite, torbernite, etc.)."
       },
       "twin_laws": [],
       "acid_dissolution": null,
-      "habit": "cubic",
+      "habit": "pitchblende_massive",
       "color_rules": {
         "black": {
           "default": true
@@ -1904,7 +1904,7 @@
         "index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Emits radiation each step.",
+      "audit_status": "ok (v12: gatekeeper mechanic wired — oxidative dissolution in all 3 runtimes feeds UO₂²⁺ back to broth as feedstock for the secondary U family. Tiered habit dispatch T>500 octahedral / else pitchblende_massive. Fluorescence corrected to non-fluorescent. Supersat reconciled across runtimes — pre-v12 JS used a T-only formula with no O2 gate). Emits radiation each step.",
       "class_color": "#eb1313"
     },
     "galena": {

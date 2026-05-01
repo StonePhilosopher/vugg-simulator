@@ -231,7 +231,28 @@ from typing import List, Dict, Optional, Tuple
 #        Each retrofit is its own commit; baselines regenerated per
 #        retrofit. Research artifacts at research/research-broth-ratio-
 #        <pair>.md.
-SIM_VERSION = 11
+#   v12 — Uraninite gatekeeper (May 2026, per research-uraninite.md
+#        canonical, boss commit 626bb22):
+#        • Oxidative dissolution wired into grow_uraninite (all 3 runtimes,
+#          mirroring molybdenite). When sigma<1 + O2>0.3 + grown>3µm,
+#          uraninite dissolves and releases UO₂²⁺ (uranyl) back to broth.
+#          This makes uraninite the realistic feedstock for the secondary
+#          uranium family (torbernite/zeunerite/carnotite/future autunite).
+#        • Habit dispatch in grow_uraninite (was always cubic):
+#          T>500 → octahedral (pegmatitic); else pitchblende_massive
+#          (hydrothermal botryoidal at 200-500, cryptocrystalline below).
+#        • supersaturation_uraninite reconciled — pre-existing JS drift
+#          (eT-only formula, no O2 gate) replaced with the canonical
+#          Python form (reducing + U-gated). All 3 runtimes now identical.
+#        • Factual fixes per research: fluorescence flipped to non-
+#          fluorescent (ABSENCE of fluorescence is what distinguishes
+#          uraninite from its glowing secondaries); T_range tightened
+#          200-800 → 150-600.
+#        • event_radioactive_pegmatite_oxidizing narration updated —
+#          uraninite no longer "endures forever"; it begins to weather
+#          when meteoric water arrives (true to the new mechanic + the
+#          research's central framing).
+SIM_VERSION = 12
 
 
 # ============================================================
@@ -2205,14 +2226,18 @@ class VugConditions:
         """Uraninite (UO₂) supersaturation. Needs U + reducing conditions.
 
         Primary uranium mineral — pitchy black masses, rarely crystalline.
-        RADIOACTIVE. The mineral that let Röntgen's successors see inside atoms.
-        Needs STRONGLY reducing conditions. Any oxygen destroys it.
-        Forms in pegmatites (high T) and reduced sedimentary environments (low T).
+        RADIOACTIVE. Gatekeeper for the entire secondary U family
+        (torbernite/zeunerite/carnotite). Needs STRONGLY reducing conditions
+        — any oxygen converts U⁴⁺ → mobile UO₂²⁺ uranyl ion. Forms in
+        pegmatites (high T, octahedral crystals), hydrothermal veins
+        (200-400°C botryoidal pitchblende), and reduced sedimentary
+        roll-fronts (low T, cryptocrystalline).
         """
         if self.fluid.U < 5 or self.fluid.O2 > 0.3:
             return 0  # needs reducing conditions
         sigma = (self.fluid.U / 20.0) * (0.5 - self.fluid.O2)
-        # Stable across wide T range, slight preference for high T
+        # Stable across wide T range (research: 150-600°C). Slight preference
+        # for higher T (pegmatitic > hydrothermal > sedimentary).
         if self.temperature > 200:
             sigma *= 1.3
         return max(sigma, 0)
@@ -8352,21 +8377,61 @@ def grow_galena(crystal: Crystal, conditions: VugConditions, step: int) -> Optio
 
 
 def grow_uraninite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
-    """Uraninite (UO₂) growth. Pitch-black primary uranium mineral. Emits radiation."""
+    """Uraninite (UO₂) growth — pitch-black primary uranium mineral.
+
+    Gatekeeper for the entire secondary uranium family (research-uraninite.md,
+    boss canonical 2026-05-01). Forms only under reducing conditions (any
+    O₂ converts U⁴⁺ → soluble U⁶⁺ uranyl). When subsequent oxidation reaches
+    a grown crystal, the engine dissolves it and releases U back to broth —
+    the feedstock event for torbernite, zeunerite, carnotite (and future
+    autunite/tyuyamunite). Mirror of molybdenite's oxidation block.
+
+    Habit dispatch (per research §157 game variants):
+      T > 500°C → octahedral (pegmatitic, high-T well-formed crystals)
+      T 200-500°C → pitchblende_massive (hydrothermal botryoidal, the default)
+      T < 200°C → pitchblende_massive (low-T cryptocrystalline, roll-front)
+    """
     sigma = conditions.supersaturation_uraninite()
+
     if sigma < 1.0:
+        # Oxidative dissolution — the gatekeeper feedstock event.
+        # UO₂ + ½O₂ + 2H⁺ → UO₂²⁺ (soluble uranyl) + H₂O
+        # Releases U back to broth so secondary U minerals can nucleate.
+        if crystal.total_growth_um > 3 and conditions.fluid.O2 > 0.3:
+            crystal.dissolved = True
+            dissolved_um = min(4.0, crystal.total_growth_um * 0.12)
+            conditions.fluid.U += dissolved_um * 0.6  # uranyl ion released
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=(f"oxidation — uraninite weathers, releasing UO₂²⁺ "
+                      f"(U fluid: {conditions.fluid.U:.0f} ppm)")
+            )
         return None
 
     rate = 4.0 * sigma * random.uniform(0.8, 1.2)
     if rate < 0.1:
         return None
 
-    crystal.habit = "cubic"
-    crystal.dominant_forms = ["{100} cube", "{111} octahedron"]
+    # Habit dispatch — research §157
+    T = conditions.temperature
+    if T > 500:
+        crystal.habit = "octahedral"
+        crystal.dominant_forms = ["{111} octahedron"]
+    else:
+        # 200-500 hydrothermal botryoidal AND <200 cryptocrystalline both
+        # carry the pitchblende_massive habit per minerals.json variants.
+        crystal.habit = "pitchblende_massive"
+        crystal.dominant_forms = ["botryoidal masses", "colloform banding"]
 
     conditions.fluid.U = max(conditions.fluid.U - rate * 0.005, 0)
 
-    color_note = "pitch-black, submetallic luster" if conditions.temperature > 450 else "black to dark green, submetallic luster"
+    if T > 500:
+        color_note = "pitch-black, submetallic luster — pegmatitic octahedron"
+    elif T >= 200:
+        color_note = "greasy black pitchblende, botryoidal crust"
+    else:
+        color_note = "cryptocrystalline black mass — roll-front uraninite"
 
     return GrowthZone(
         step=step, temperature=conditions.temperature,
@@ -10987,13 +11052,21 @@ def event_radioactive_pegmatite_deep_time(conditions: VugConditions) -> str:
 
 
 def event_radioactive_pegmatite_oxidizing(conditions: VugConditions) -> str:
-    """Late-stage oxidizing meteoric water enters fractures."""
+    """Late-stage oxidizing meteoric water enters fractures.
+
+    Per the gatekeeper mechanic (v12, research-uraninite.md): once O₂ enters
+    the system, uraninite begins to oxidize and release U⁶⁺ back to fluid.
+    In a Cu/P-rich vug this would feed torbernite; in this scenario the
+    fluid is K+P-bearing without enough V to cross the carnotite gate, so
+    the released uranyl mostly disperses without secondary precipitation.
+    """
     conditions.fluid.O2 += 0.8
     conditions.temperature = 120
     conditions.flow_rate = 1.5
     return ("Oxidizing meteoric fluids seep through fractures. "
             "The reducing environment shifts. Sulfides become unstable. "
-            "The uraninite endures — it has been enduring for millions of years.")
+            "The uraninite begins to weather — pitchy edges yellowing as "
+            "U⁴⁺ goes back into solution as soluble uranyl ion.")
 
 
 def event_radioactive_pegmatite_final_cooling(conditions: VugConditions) -> str:

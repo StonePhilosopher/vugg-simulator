@@ -331,9 +331,12 @@ class VugConditions {
   }
 
   supersaturation_uraninite() {
-    const eT = this.effectiveTemperature;
-    if (this.fluid.U < 50 || eT < 300) return 0;
-    return (this.fluid.U / 100.0) * Math.exp(-0.003 * Math.abs(eT - 500));
+    // Reconciled to Python canonical (v12, May 2026). Pre-v12 had a T-only
+    // formula with no O2 gate. Now: needs reducing + U + slight high-T pref.
+    if (this.fluid.U < 5 || this.fluid.O2 > 0.3) return 0;
+    let sigma = (this.fluid.U / 20.0) * (0.5 - this.fluid.O2);
+    if (this.temperature > 200) sigma *= 1.3;
+    return Math.max(sigma, 0);
   }
 
   supersaturation_galena() {
@@ -1118,29 +1121,54 @@ function grow_malachite(crystal, conditions, step) {
 }
 
 function grow_uraninite(crystal, conditions, step) {
+  // v12 (May 2026): Gatekeeper for the secondary U family. When sigma<1
+  // AND O2>0.3 AND grown>3µm, uraninite oxidizes and releases UO₂²⁺
+  // back to broth — feedstock for torbernite/zeunerite/carnotite.
+  // Habit dispatch: T>500 octahedral (pegmatitic), else pitchblende_massive.
   const sigma = conditions.supersaturation_uraninite();
-  if (sigma < 1.0) return null;
+
+  if (sigma < 1.0) {
+    // Oxidative dissolution: UO₂ + ½O₂ + 2H⁺ → UO₂²⁺ + H₂O
+    if (crystal.total_growth_um > 3 && conditions.fluid.O2 > 0.3) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.12);
+      conditions.fluid.U += dissolved_um * 0.6; // uranyl back to fluid
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `oxidation — uraninite weathers, releasing UO₂²⁺ (U fluid: ${conditions.fluid.U.toFixed(0)} ppm)`
+      });
+    }
+    return null;
+  }
 
   const rate = 0.008 * sigma * 1000 * rng.uniform(0.8, 1.2); // scale to µm
   if (rate < 0.1) return null;
 
-  crystal.habit = 'cubic';
-  crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
+  // Habit dispatch — research §157
+  const T = conditions.temperature;
+  if (T > 500) {
+    crystal.habit = 'octahedral';
+    crystal.dominant_forms = ['{111} octahedron'];
+  } else {
+    crystal.habit = 'pitchblende_massive';
+    crystal.dominant_forms = ['botryoidal masses', 'colloform banding'];
+  }
 
   // U consumption
   conditions.fluid.U -= rate * 0.005;
   conditions.fluid.U = Math.max(conditions.fluid.U, 0);
 
-  let color_note = 'black to dark green, submetallic luster';
-  if (conditions.temperature > 450) {
-    color_note = 'pitch-black, vitreous to submetallic';
-  }
+  let color_note;
+  if (T > 500) color_note = 'pitch-black, submetallic — pegmatitic octahedron';
+  else if (T >= 200) color_note = 'greasy black pitchblende, botryoidal crust';
+  else color_note = 'cryptocrystalline black mass — roll-front uraninite';
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.01,
-    note: `${color_note}, U fluid: ${conditions.fluid.U.toFixed(0)} ppm`
+    note: `${color_note}, U fluid: ${conditions.fluid.U.toFixed(0)} ppm — radioactive`
   });
 }
 
@@ -1665,7 +1693,7 @@ function scenario_radioactive_pegmatite() {
       cond.fluid.O2 += 0.8;
       cond.temperature = 120;
       cond.flow_rate = 1.5;
-      return 'Oxidizing meteoric fluids seep through fractures. The reducing environment shifts. Sulfides become unstable. The uraninite endures — it has been enduring for millions of years.';
+      return 'Oxidizing meteoric fluids seep through fractures. The reducing environment shifts. Sulfides become unstable. The uraninite begins to weather — pitchy edges yellowing as U⁴⁺ goes back into solution as soluble uranyl ion.';
     }},
     { step: 100, name: 'Final Cooling', description: 'System approaches ambient', apply_fn: (cond) => {
       cond.temperature = 50;

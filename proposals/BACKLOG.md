@@ -75,6 +75,34 @@ Phase 1 (commit `2feb338`) and Phase 2 (commits `69f8acb..ce3dd5a`) migrated all
 
 ---
 
+## 📜 Narrative-extraction post-completion follow-ups
+
+The 89/89 narrative-as-data extraction landed in commit `e731f1f` (2026-04-30). Two items were deferred during the extraction itself; both are now actionable:
+
+### Drop inline JS fallbacks
+
+**Why:** every JS dispatcher in `index.html` carries `narrative_blurb('species') || 'fallback prose...'` and `narrative_variant(...) || 'fallback prose...'` for each branch. These were defensive — if the async markdown fetch hadn't resolved by the time the narrator fired, the inline fallback prose would render instead. Now that all 89 species are in `_NARRATIVE_MANIFEST` and the fetch is awaited at startup, the fallbacks are useful only for `file://` boots before the fetch completes (rare).
+
+**What to build:** decide policy with the boss — keep fallbacks as `file://` resilience, OR strip them all (~1500 lines saved across 89 narrators) and trust the loader. If stripping, do it as a single mechanical commit: `narrative_blurb('x') || '...'` → `narrative_blurb('x')` for every narrator. Tests + sync-spec confirm no regressions.
+
+**Effort:** small if stripping (mechanical pattern). Zero if keeping.
+
+**Where to find:** every `_narrate_<species>` method in `index.html` (search for `|| '`).
+
+### Auto-generate `_NARRATIVE_MANIFEST` from `data/minerals.json`
+
+**Why:** `_NARRATIVE_MANIFEST` is a hardcoded array of 89 species names in `index.html` (~line 3274). Adding a new mineral now requires both adding it to `data/minerals.json` AND remembering to append it to the manifest. Easy to forget. The pattern matches the rest of the data-as-truth arc: hardcode while small, automate when stable.
+
+**What to build:** at module-load time, derive the manifest from `Object.keys(MINERAL_SPEC)` (the JS-side parse of `data/minerals.json`). Filter for species that have a `narratives/<species>.md` file (or skip the filter and let missing files return empty strings — already handled gracefully by the loader).
+
+**Effort:** small. ~5 lines change. Consider whether the python-side wants a parallel cleanup (Python doesn't have a manifest — it loads on first call — so just JS).
+
+**Where to find:** `index.html` `const _NARRATIVE_MANIFEST = [...]` declaration.
+
+**Sequencing:** neither blocks. Both are quality-of-life cleanups for narrative-edit ergonomics.
+
+---
+
 ## 🏷️ Internal token cleanup — finish the mode renames
 
 **Status:** deferred. User-visible labels were renamed in commit `467e8c4` (and earlier — Fortress→Creative, Legends→Simulation, The Groove→Zen Mode/Record Player). Internal tokens (`fortress*`, `legends*`, `idle*`, `groove*`) still use the pre-rename names because renaming hundreds of CSS classes / DOM IDs / function names for no UX gain wasn't worth the churn.
