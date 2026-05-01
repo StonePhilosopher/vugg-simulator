@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -14990,53 +14990,40 @@ class VugSimulator {
   }
 
   _narrate_nickeline(c) {
+    // Prose lives in narratives/nickeline.md.
     const parts = [`Nickeline #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("NiAs — hexagonal nickel arsenide, the namesake of the NiAs structure-type. Pale copper-red metallic on fresh fracture, the diagnostic color that fooled early miners ('kupfernickel' = copper-devil) into mistaking it for copper ore. Mohs 5-5.5, SG 7.8. Forms in high-T reducing veins where Ni and As are present together.");
-    if (c.habit === 'reniform') {
-      parts.push('Reniform / botryoidal — concentric copper-red layers, the Cobalt-Ontario signature.');
-    } else if (c.habit === 'columnar') {
-      parts.push('Columnar — vertical {0001} aggregates, intermediate between massive and well-formed crystals (which are rare for nickeline).');
-    } else {
-      parts.push('Massive granular — the dominant ore form. Compact pale copper-red mass; well-formed crystals are unusual.');
-    }
-    if (c.dissolved) {
-      parts.push('Oxidative dissolution — Ni²⁺ and AsO₄³⁻ go to fluid; downstream they recombine as annabergite (Ni₃(AsO₄)₂·8H₂O), the apple-green supergene Ni arsenate. Same Ni atoms, different mineral.');
-    } else if (c.zones && c.zones.length > 12) {
-      parts.push('Tarnish — the fresh copper-red is darkening to a deeper rose color from surface oxidation.');
-    }
-    return parts.join(' ');
+    parts.push(narrative_blurb('nickeline') || "NiAs — hexagonal nickel arsenide.");
+    if (c.habit === 'reniform') parts.push(narrative_variant('nickeline', 'reniform') || 'Reniform / botryoidal.');
+    else if (c.habit === 'columnar') parts.push(narrative_variant('nickeline', 'columnar') || 'Columnar.');
+    else parts.push(narrative_variant('nickeline', 'massive_default') || 'Massive granular.');
+    if (c.dissolved) parts.push(narrative_variant('nickeline', 'oxidative_dissolution') || 'Oxidative dissolution.');
+    else if (c.zones && c.zones.length > 12) parts.push(narrative_variant('nickeline', 'tarnish') || 'Tarnish.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_millerite(c) {
+    // Prose lives in narratives/millerite.md.
     const parts = [`Millerite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow metallic. Mohs 3-3.5, the rare nickel mineral that grows as hair-thin acicular needles in geode cavities. Forms in lower-T regimes than nickeline (NiAs); when As is depleted and Ni + S remain, NiS takes the field.");
-    if (c.habit === 'capillary') {
-      parts.push('Capillary — the diagnostic habit. Hair-thin acicular needles, often forming dense radiating sprays in vugs. Halls Gap (KY), Sterling Hill (NJ), and Glamorgan (Wales) produce showcase specimens with sprays exceeding 8 cm radius.');
-    } else if (c.habit === 'acicular') {
-      parts.push('Acicular — slender prismatic needles, longer and stouter than capillary.');
-    } else {
-      parts.push('Massive granular — the bulk ore form. Brass-yellow granular mass.');
-    }
-    if (c.dissolved) {
-      parts.push('Oxidative dissolution — Ni²⁺ goes back to fluid; downstream feeds annabergite or supergene Ni arsenate.');
-    }
-    return parts.join(' ');
+    parts.push(narrative_blurb('millerite') || "NiS — trigonal nickel sulfide.");
+    if (c.habit === 'capillary') parts.push(narrative_variant('millerite', 'capillary') || 'Capillary.');
+    else if (c.habit === 'acicular') parts.push(narrative_variant('millerite', 'acicular') || 'Acicular.');
+    else parts.push(narrative_variant('millerite', 'massive_default') || 'Massive granular.');
+    if (c.dissolved) parts.push(narrative_variant('millerite', 'oxidative_dissolution') || 'Oxidative dissolution.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_cobaltite(c) {
+    // Prose lives in narratives/cobaltite.md. JS gains glaucodot_series
+    // dispatch (Python had it; trace_Fe avg threshold).
     const parts = [`Cobaltite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push("CoAsS — orthorhombic cobalt sulfarsenide (pseudo-cubic), the cobalt analog of arsenopyrite (FeAsS). Tin-white with a diagnostic pinkish blush from surface Co oxidation, Mohs 5.5. The three-element gate (Co + As + S all required simultaneously) makes this rare. Indian jewellers used powdered cobaltite ('sehta') to make blue enamel on gold ornaments — the source of the first Co ever isolated.");
-    if (c.habit === 'pyritohedral') {
-      parts.push('Pyritohedral — {210} faces, the diagnostic primary habit. Striations parallel to the cube edges; from a distance these crystals look like pyrite, the pinkish blush on aged surfaces is the discriminating clue.');
-    } else if (c.habit === 'reniform') {
-      parts.push('Reniform — high-σ botryoidal habit, less common than pyritohedra.');
-    } else {
-      parts.push('Massive granular — the bulk ore form. Tin-white granular mass with the diagnostic pink-blush surface tarnish.');
-    }
-    if (c.dissolved) {
-      parts.push("Oxidative dissolution — the surface is going to fluid as Co²⁺ + AsO₄³⁻ + SO₄²⁻. Downstream the Co + As recombines as erythrite (Co₃(AsO₄)₂·8H₂O), the magenta-pink Co arsenate. Cobaltite is THE primary source for the medieval miners' 'cobalt bloom' supergene cascade.");
-    }
-    return parts.join(' ');
+    parts.push(narrative_blurb('cobaltite') || "CoAsS — orthorhombic cobalt sulfarsenide.");
+    if (c.habit === 'pyritohedral') parts.push(narrative_variant('cobaltite', 'pyritohedral') || 'Pyritohedral.');
+    else if (c.habit === 'reniform') parts.push(narrative_variant('cobaltite', 'reniform') || 'Reniform.');
+    else parts.push(narrative_variant('cobaltite', 'massive_default') || 'Massive granular.');
+    const avgFe = c.zones.reduce((s, z) => s + (z.trace_Fe || 0), 0) / Math.max(c.zones.length, 1);
+    if (avgFe > 0.3) parts.push(narrative_variant('cobaltite', 'glaucodot_series'));
+    if (c.dissolved) parts.push(narrative_variant('cobaltite', 'oxidative_dissolution') || 'Oxidative dissolution.');
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_native_tellurium(c) {

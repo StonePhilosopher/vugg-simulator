@@ -17381,144 +17381,69 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_nickeline(self, c: Crystal) -> str:
-        """Narrate nickeline — the high-T pale-copper-red Ni arsenide."""
+        """Narrate nickeline — the high-T pale-copper-red Ni arsenide.
+
+        Prose lives in narratives/nickeline.md. Code dispatches blurb +
+        3-way habit (reniform / columnar / massive_default) +
+        oxidative_dissolution-vs-tarnish paired branches (dissolved or
+        zone count > 12).
+        """
         parts = [f"Nickeline #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "NiAs — hexagonal nickel arsenide, the namesake of the NiAs "
-            "structure-type. Pale copper-red metallic on fresh fracture, "
-            "the diagnostic color that gave Cobalt-Ontario its early name "
-            "'Niccolite' and led miners to mistake it for actual copper "
-            "ore. Mohs 5-5.5, SG 7.8 (heavy). Forms in high-T reducing "
-            "veins where both Ni and As are present together; cooler / "
-            "As-poor regimes push the chemistry to millerite (NiS) or "
-            "annabergite (the Ni arsenate)."
-        )
+        parts.append(narrative_blurb("nickeline"))
         if c.habit == "reniform":
-            parts.append(
-                "Reniform / botryoidal — the high-σ habit. Concentric "
-                "copper-red layers, the Cobalt-Ontario signature."
-            )
+            parts.append(narrative_variant("nickeline", "reniform"))
         elif c.habit == "columnar":
-            parts.append(
-                "Columnar — vertical {0001} aggregates, an intermediate "
-                "habit between massive and well-formed crystals (which are "
-                "rare for nickeline)."
-            )
+            parts.append(narrative_variant("nickeline", "columnar"))
         else:
-            parts.append(
-                "Massive granular — the dominant ore form. Compact pale "
-                "copper-red mass; well-formed crystals are unusual at "
-                "any locality."
-            )
+            parts.append(narrative_variant("nickeline", "massive_default"))
         if c.dissolved:
-            parts.append(
-                "Oxidative dissolution — NiAs surface is oxidizing. Ni²⁺ "
-                "and AsO₄³⁻ go to fluid; downstream the Ni²⁺ + AsO₄³⁻ "
-                "recombine as annabergite (Ni₃(AsO₄)₂·8H₂O), the apple-"
-                "green supergene Ni arsenate. Same Ni atoms, different "
-                "mineral, more visible from the surface."
-            )
+            parts.append(narrative_variant("nickeline", "oxidative_dissolution"))
         elif len(c.zones) > 12:
-            parts.append(
-                "Tarnish — the fresh copper-red is darkening to a deeper "
-                "rose color from surface oxidation."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("nickeline", "tarnish"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_millerite(self, c: Crystal) -> str:
-        """Narrate millerite — the capillary brass-yellow nickel sulfide."""
+        """Narrate millerite — the capillary brass-yellow nickel sulfide.
+
+        Prose lives in narratives/millerite.md. Code dispatches blurb +
+        3-way habit (capillary / acicular / massive_default) +
+        oxidative_dissolution.
+        """
         parts = [f"Millerite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow "
-            "metallic. Mohs 3-3.5, the rare nickel mineral that grows as "
-            "hair-thin acicular needles in geode cavities. Forms in "
-            "lower-T regimes than nickeline (NiAs); when As is depleted "
-            "and Ni + S remain, NiS takes the field. The capillary habit "
-            "is so distinctive that 'millerite' is shorthand among "
-            "collectors for any radiating-needle sulfide."
-        )
+        parts.append(narrative_blurb("millerite"))
         if c.habit == "capillary":
-            parts.append(
-                "Capillary — the diagnostic habit. Hair-thin to thread-"
-                "thin acicular needles, often forming dense radiating "
-                "sprays in vugs. Halls Gap (Kentucky), Sterling Hill (NJ), "
-                "and Glamorgan (Wales) produce the showcase specimens. "
-                "Some sprays exceed 8 cm radius — geodal cavities full "
-                "of brass-yellow filigree."
-            )
+            parts.append(narrative_variant("millerite", "capillary"))
         elif c.habit == "acicular":
-            parts.append(
-                "Acicular — slender prismatic needles, longer and "
-                "stouter than capillary. The intermediate-σ habit."
-            )
+            parts.append(narrative_variant("millerite", "acicular"))
         else:
-            parts.append(
-                "Massive granular — the bulk ore form. Brass-yellow "
-                "granular mass, no crystal faces, but still chemically "
-                "millerite (NiS)."
-            )
+            parts.append(narrative_variant("millerite", "massive_default"))
         if c.dissolved:
-            parts.append(
-                "Oxidative dissolution — Ni²⁺ goes back to fluid; "
-                "downstream feeds annabergite or supergene Ni arsenate."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("millerite", "oxidative_dissolution"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_cobaltite(self, c: Crystal) -> str:
-        """Narrate cobaltite — the three-element-gate sulfarsenide."""
+        """Narrate cobaltite — the three-element-gate sulfarsenide.
+
+        Prose lives in narratives/cobaltite.md. Code dispatches blurb +
+        3-way habit (pyritohedral / reniform / massive_default) +
+        glaucodot_series when avg trace_Fe > 0.3 + oxidative_dissolution.
+        """
         parts = [f"Cobaltite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "CoAsS — orthorhombic cobalt sulfarsenide (pseudo-cubic), "
-            "the cobalt analog of arsenopyrite (FeAsS). Tin-white with "
-            "a diagnostic pinkish blush from surface Co oxidation, Mohs "
-            "5.5. The three-element gate (Co + As + S all required "
-            "simultaneously) makes this rare — the Cobalt-Ontario type "
-            "locality is one of the few places it forms in well-developed "
-            "crystals. Pyritohedral {210} faces with prominent striations. "
-            "Indian jewellers used powdered cobaltite ('sehta') to make "
-            "blue enamel on gold ornaments — the Co was the first cobalt "
-            "ever isolated from a non-arsenide source."
-        )
+        parts.append(narrative_blurb("cobaltite"))
         if c.habit == "pyritohedral":
-            parts.append(
-                "Pyritohedral — {210} faces, the diagnostic primary habit. "
-                "Striations parallel to the cube edges are visible at "
-                "low angle. From a distance these crystals look like "
-                "pyrite; the pinkish blush on aged surfaces is the "
-                "discriminating clue."
-            )
+            parts.append(narrative_variant("cobaltite", "pyritohedral"))
         elif c.habit == "reniform":
-            parts.append(
-                "Reniform — high-σ botryoidal habit. Less common than "
-                "pyritohedra, forms where supersaturation outruns the "
-                "diffusion-limited growth of well-faceted crystals."
-            )
+            parts.append(narrative_variant("cobaltite", "reniform"))
         else:
-            parts.append(
-                "Massive granular — the bulk ore form. Tin-white granular "
-                "mass with the diagnostic pink-blush surface tarnish."
-            )
+            parts.append(narrative_variant("cobaltite", "massive_default"))
 
         avg_Fe_proxy = sum(z.trace_Fe for z in c.zones) / max(len(c.zones), 1)
         if avg_Fe_proxy > 0.3:
-            parts.append(
-                "Glaucodot series — Fe substituted into the Co site, up to "
-                "~50% replacement. (Co,Fe)AsS — the iron-rich end of the "
-                "cobaltite-glaucodot solid solution. Skutterud (Norway) is "
-                "the type for these Fe-bearing intermediates."
-            )
+            parts.append(narrative_variant("cobaltite", "glaucodot_series"))
 
         if c.dissolved:
-            parts.append(
-                "Oxidative dissolution — the surface is going to fluid as "
-                "Co²⁺ + AsO₄³⁻ + SO₄²⁻. Downstream the Co + As recombines "
-                "as erythrite (Co₃(AsO₄)₂·8H₂O), the magenta-pink Co "
-                "arsenate. This is THE primary source for erythrite in any "
-                "Cobalt-Ontario-style supergene cascade — the colorful "
-                "secondary mineral that miners called 'cobalt bloom' was "
-                "originally cobaltite at depth."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("cobaltite", "oxidative_dissolution"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_native_tellurium(self, c: Crystal) -> str:
         """Narrate native tellurium — the metal-telluride-overflow native element."""
