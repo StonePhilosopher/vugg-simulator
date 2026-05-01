@@ -15702,29 +15702,39 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_wulfenite(self, c: Crystal) -> str:
-        """Narrate a wulfenite crystal's story — the sunset caught in stone."""
-        parts = [f"Wulfenite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        """Narrate a wulfenite crystal — the sunset caught in stone.
 
-        parts.append(
-            "PbMoO₄ — thin tabular plates, square outline, orange to honey-yellow. "
-            "Bright vitreous luster, adamantine in the best crystals. The mineral "
-            "that requires BOTH galena AND molybdenite to have oxidized in the "
-            "same vug (Seo et al. 2012) — a paragenesis puzzle."
-        )
+        Prose lives in narratives/wulfenite.md. Merged narrator: JS
+        canonical for blurb (collector's-prize framing) + on_galena
+        paragenesis (with oxidized sub-branch) + zone-note color tints
+        (honey, Red Cloud); Python canonical for twinned + acid_dissolution.
+        Drift consolidations: Python gains JS's habit + zone-note dispatches;
+        JS gains Python's acid_dissolution branch.
+        """
+        parts = [f"Wulfenite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(narrative_blurb("wulfenite"))
+
+        if "galena" in (c.position or ""):
+            if "oxidized" in c.position:
+                parts.append(narrative_variant("wulfenite", "on_oxidized_galena"))
+            else:
+                parts.append(narrative_variant("wulfenite", "on_galena"))
+
+        last_zone = c.zones[-1] if c.zones else None
+        last_note = getattr(last_zone, "note", "") if last_zone else ""
+        if last_note:
+            if "honey" in last_note:
+                parts.append(narrative_variant("wulfenite", "color_honey"))
+            elif "red" in last_note:
+                parts.append(narrative_variant("wulfenite", "color_red_cloud"))
 
         if c.twinned:
-            parts.append(
-                f"Twinned on {c.twin_law} — penetration twins in wulfenite "
-                "create stacked or cross-shaped tablets."
-            )
+            parts.append(narrative_variant("wulfenite", "twinned", twin_law=c.twin_law))
 
         if c.dissolved:
-            parts.append(
-                "Acid dissolution — wulfenite's pH window is narrow (dissolves "
-                "below 3.5 and above 9), and a late acid pulse closed the door."
-            )
+            parts.append(narrative_variant("wulfenite", "acid_dissolution"))
 
-        return " ".join(parts)
+        return " ".join(p for p in parts if p)
 
     def _narrate_selenite(self, c: Crystal) -> str:
         """Narrate a selenite crystal — the cool-water cathedral blade.
@@ -17665,43 +17675,28 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_raspite(self, c: Crystal) -> str:
-        """Narrate raspite — the rare monoclinic PbWO₄."""
+        """Narrate raspite — the rare monoclinic PbWO₄.
+
+        Prose lives in narratives/raspite.md. Blurb-only narrator (no
+        habit dispatch — raspite is uniformly tabular).
+        """
         parts = [f"Raspite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "PbWO₄ — monoclinic lead tungstate, RARE. Same composition as "
-            "stolzite but a different crystal system; stolzite (tetragonal) "
-            "is favored ~90% of the time when both can form. Honey-yellow "
-            "to brownish-yellow tabular crystals with perfect cleavage on "
-            "{100}. Type locality: Broken Hill, NSW, Australia. The "
-            "kinetic preference dispatcher in this engine reflects natural "
-            "rarity — when you find a raspite specimen, it's the rare "
-            "polymorph that the diffusion-limited geometry happened to "
-            "favor in that particular vug."
-        )
-        return " ".join(parts)
+        parts.append(narrative_blurb("raspite"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_stolzite(self, c: Crystal) -> str:
-        """Narrate stolzite — the common tetragonal PbWO₄."""
+        """Narrate stolzite — the common tetragonal PbWO₄.
+
+        Prose lives in narratives/stolzite.md. Code dispatches blurb +
+        2-way habit (dipyramidal / tabular_default).
+        """
         parts = [f"Stolzite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "PbWO₄ — tetragonal lead tungstate, the lead analog of "
-            "scheelite (CaWO₄). Honey-yellow to orange-yellow Mohs 2.5-3 "
-            "tetragonal crystals; the tetragonal polymorph dominant "
-            "~90% of the time over its monoclinic sibling raspite. Type "
-            "locality: Cínovec (Czech Republic). Broken Hill (Australia) "
-            "and Tsumeb (Namibia) produce the museum specimens — sharp "
-            "honey-yellow dipyramids."
-        )
+        parts.append(narrative_blurb("stolzite"))
         if c.habit == "dipyramidal":
-            parts.append(
-                "Dipyramidal — {101} faces, the Broken Hill / Tsumeb display "
-                "habit. Honey-yellow tetragonal symmetry visible at a glance."
-            )
+            parts.append(narrative_variant("stolzite", "dipyramidal"))
         else:
-            parts.append(
-                "Tabular — {001} plates, late-stage low-σ habit."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("stolzite", "tabular_default"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_olivenite(self, c: Crystal) -> str:
         """Narrate olivenite — the olive-green Cu arsenate.
