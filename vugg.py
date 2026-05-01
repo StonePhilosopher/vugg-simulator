@@ -17694,62 +17694,36 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_descloizite(self, c: Crystal) -> str:
-        """Narrate descloizite — the cherry-red Zn-end Pb vanadate."""
+        """Narrate descloizite — the cherry-red Zn-end Pb vanadate.
+
+        Prose lives in narratives/descloizite.md. Code dispatches blurb +
+        3-way habit (botryoidal / prismatic / tabular_default).
+        """
         parts = [f"Descloizite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Pb(Zn,Cu)VO₄(OH) — orthorhombic Pb-Zn vanadate, the Zn end "
-            "of the descloizite-mottramite series. Cherry-red to brown-red, "
-            "Mohs 3-3.5, the Tsumeb display standard. Forms in supergene "
-            "oxidation zones where Pb-Zn sulfide ore (galena + sphalerite) "
-            "has weathered AND V is delivered by groundwater (red-bed "
-            "roll-front signature). When Cu > Zn in the fluid, mottramite "
-            "(the Cu-end olive-green sibling) takes priority instead."
-        )
+        parts.append(narrative_blurb("descloizite"))
         if c.habit == "botryoidal":
-            parts.append(
-                "Botryoidal mammillary crust — Mibladen (Morocco) and "
-                "Berg-Aukas (Namibia) habit. Concentric cherry-red layers "
-                "deposited from oscillating supergene fluid."
-            )
+            parts.append(narrative_variant("descloizite", "botryoidal"))
         elif c.habit == "prismatic":
-            parts.append(
-                "Prismatic — the Tsumeb display habit. {010} pyramid + "
-                "{110} prism, often complex with multiple modifiers."
-            )
+            parts.append(narrative_variant("descloizite", "prismatic"))
         else:
-            parts.append(
-                "Tabular — late-stage low-σ habit, thin cherry-red plates "
-                "on the wall."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("descloizite", "tabular_default"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_mottramite(self, c: Crystal) -> str:
-        """Narrate mottramite — the olive-green Cu-end Pb vanadate."""
+        """Narrate mottramite — the olive-green Cu-end Pb vanadate.
+
+        Prose lives in narratives/mottramite.md. Code dispatches blurb +
+        3-way habit (botryoidal / prismatic / tabular_default).
+        """
         parts = [f"Mottramite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Pb(Cu,Zn)VO₄(OH) — orthorhombic Pb-Cu vanadate, the Cu end "
-            "of the descloizite-mottramite series. Olive-green to "
-            "yellowish-green from the Cu chromophore, distinguishing it "
-            "at a glance from cherry-red descloizite. Type locality: "
-            "Mottram St. Andrew, Cheshire (England), 1876. Tsumeb produces "
-            "the museum-grade specimens. When Zn ≥ Cu in the fluid, "
-            "descloizite takes priority instead."
-        )
+        parts.append(narrative_blurb("mottramite"))
         if c.habit == "botryoidal":
-            parts.append(
-                "Botryoidal — concentric olive-green layers, the Mottram "
-                "St. Andrew type habit."
-            )
+            parts.append(narrative_variant("mottramite", "botryoidal"))
         elif c.habit == "prismatic":
-            parts.append(
-                "Prismatic — Tsumeb's olive-green crystals; the world's "
-                "finest mottramite specimens."
-            )
+            parts.append(narrative_variant("mottramite", "prismatic"))
         else:
-            parts.append(
-                "Tabular — late-stage habit, olive plates on the wall."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("mottramite", "tabular_default"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_raspite(self, c: Crystal) -> str:
         """Narrate raspite — the rare monoclinic PbWO₄."""
