@@ -15993,30 +15993,33 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_mimetite(self, c: Crystal) -> str:
-        """Narrate a mimetite crystal's story — the mimic of pyromorphite."""
-        parts = [f"Mimetite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        """Narrate a mimetite crystal's story — the mimic of pyromorphite.
 
-        parts.append(
-            "Pb₅(AsO₄)₃Cl — a lead arsenate chloride, named 'mimic' because it "
-            "looks so similar to pyromorphite (Pb phosphate). Hexagonal prisms, "
-            "yellow to orange; the barrel-shaped campylite variety is a Cumbrian "
-            "classic."
-        )
+        Prose lives in narratives/mimetite.md. Code dispatches blurb +
+        3-way habit (campylite / prismatic / tabular_default) +
+        on_galena paragenesis + acid_dissolution + ALWAYS-emitted
+        imitator tail. Drift consolidation: Python dispatcher gains the
+        habit branches and ALWAYS-emitted tail that the JS side already
+        had — both runtimes converge on the richer (JS-canonical) prose.
+        """
+        parts = [f"Mimetite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(narrative_blurb("mimetite"))
+
+        if "campylite" in (c.habit or ""):
+            parts.append(narrative_variant("mimetite", "campylite"))
+        elif c.habit == "prismatic":
+            parts.append(narrative_variant("mimetite", "prismatic"))
+        else:
+            parts.append(narrative_variant("mimetite", "tabular_default"))
 
         if "galena" in c.position:
-            parts.append(
-                "It nucleated directly on galena — the classic paragenesis. "
-                "Oxidizing arsenic-bearing groundwater attacked the lead sulfide, "
-                "and the released Pb²⁺ combined with arsenate + chloride."
-            )
+            parts.append(narrative_variant("mimetite", "on_galena"))
 
         if c.dissolved:
-            parts.append(
-                "Acid dissolution released Pb²⁺ and arsenate back to the fluid — "
-                "mimetite is stable only in a narrow oxidizing, near-neutral window."
-            )
+            parts.append(narrative_variant("mimetite", "acid_dissolution"))
 
-        return " ".join(parts)
+        parts.append(narrative_variant("mimetite", "imitator_tail"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_apophyllite(self, c: Crystal) -> str:
         """Narrate an apophyllite crystal's story — the Deccan Traps vesicle filling."""
@@ -17095,76 +17098,38 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_pyromorphite(self, c: Crystal) -> str:
-        """Narrate a pyromorphite crystal — the phosphate lead apatite."""
+        """Narrate a pyromorphite crystal — the phosphate lead apatite.
+
+        Prose lives in narratives/pyromorphite.md. Code dispatches blurb +
+        2-way habit (olive_classic / non_canonical_color) + ALWAYS-emitted
+        environmental remediation tail.
+        """
         parts = [f"Pyromorphite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Pb₅(PO₄)₃Cl — hexagonal apatite-group phosphate. "
-            "Barrel-shaped hexagonal prisms in olive-green, yellow, "
-            "orange, or brown. Forms in supergene oxidation zones when "
-            "phosphate-bearing meteoric water encounters a Pb-bearing "
-            "horizon. The name is Greek 'pyros morphos' — 'fire form' "
-            "— because the crystals re-form into a spherical droplet "
-            "when melted."
-        )
+        parts.append(narrative_blurb("pyromorphite"))
         if "olive" in (c.habit or ""):
-            parts.append(
-                "Classic olive-green barrel crystals. Found at the "
-                "type locality of Leadhills (Scotland), at Dognacska "
-                "(Romania), and — best of all — at Les Farges (France) "
-                "where millimeter-sharp brilliant-green crystals set "
-                "the world standard."
-            )
+            parts.append(narrative_variant("pyromorphite", "olive_classic"))
         elif "yellow" in (c.habit or "") or "brown" in (c.habit or ""):
-            parts.append(
-                "Non-canonical color — the pocket fluid substituted "
-                "Ca for some Pb (pale yellow-orange, phosphoapatite-"
-                "adjacent) or carried Fe trace (brown-olive)."
-            )
-        parts.append(
-            "Pyromorphite is used in environmental remediation: dump "
-            "phosphate fertilizer onto lead-contaminated soil and the "
-            "toxic Pb precipitates as pyromorphite — stable, insoluble, "
-            "and harmless. Mineralogy as a cleanup tool."
-        )
-        return " ".join(parts)
+            parts.append(narrative_variant("pyromorphite", "non_canonical_color"))
+        parts.append(narrative_variant("pyromorphite", "remediation_tail"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_vanadinite(self, c: Crystal) -> str:
-        """Narrate a vanadinite crystal — the red desert lead vanadate."""
-        parts = [f"Vanadinite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Pb₅(VO₄)₃Cl — hexagonal apatite-group vanadate. Bright "
-            "red-orange prisms with flat basal terminations, sitting "
-            "atop goethite-stained matrix. Vanadium-end-member of the "
-            "pyromorphite–mimetite–vanadinite series, arguably "
-            "mineralogy's most complete solid-solution triangle."
-        )
-        if "endlichite" in (c.habit or ""):
-            parts.append(
-                "Endlichite — intermediate vanadinite-mimetite composition "
-                "with significant As⁵⁺ substituting for V⁵⁺. The color "
-                "shifts toward yellow as As dominates. The compositional "
-                "series is continuous."
-            )
-        elif "red" in (c.habit or ""):
-            parts.append(
-                "The signature red-orange. This is the chromophore "
-                "pegged to V⁵⁺ in the crystal structure — no other "
-                "common mineral produces this particular red. The "
-                "Moroccan Mibladen and Touissit deposits have produced "
-                "the world's finest specimens, growing on goethite "
-                "crust in near-surface oxidation pockets."
-            )
-        parts.append(
-            "Classic desert mineral. V comes from oxidation of "
-            "V-bearing red-bed sediments (roll-front uranium deposits, "
-            "ironstones) — an arid-climate signature. The rock-shop "
-            "cliché 'vanadinite on goethite' is geologically accurate."
-        )
+        """Narrate a vanadinite crystal — the red desert lead vanadate.
 
-        # Round 8d addition: descloizite + mottramite are paragenetic
-        # vanadinite companions — same V source, different cation
-        # partner. Surface the trio when descloizite or mottramite is
-        # present in the same vug.
+        Prose lives in narratives/vanadinite.md. Code dispatches blurb +
+        2-way habit (endlichite / red_signature) + ALWAYS-emitted desert tail
+        + vanadate_companions (with {companions} interpolation) when
+        descloizite or mottramite is active in the same vug.
+        """
+        parts = [f"Vanadinite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        parts.append(narrative_blurb("vanadinite"))
+        if "endlichite" in (c.habit or ""):
+            parts.append(narrative_variant("vanadinite", "endlichite"))
+        elif "red" in (c.habit or ""):
+            parts.append(narrative_variant("vanadinite", "red_signature"))
+        parts.append(narrative_variant("vanadinite", "desert_tail"))
+
+        # Round 8d addition: descloizite + mottramite paragenetic companions.
         active_des = [dc for dc in self.crystals if dc.mineral == "descloizite" and dc.active]
         active_mot = [mc for mc in self.crystals if mc.mineral == "mottramite" and mc.active]
         if active_des or active_mot:
@@ -17173,19 +17138,10 @@ class VugSimulator:
                 companions.append(f"descloizite #{active_des[0].crystal_id}")
             if active_mot:
                 companions.append(f"mottramite #{active_mot[0].crystal_id}")
-            parts.append(
-                f"Vanadate companions — {' and '.join(companions)} share "
-                f"this vug. Descloizite (PbZnVO₄(OH)) and mottramite "
-                f"(PbCu(VO₄)(OH)) are both Pb vanadates that draw their V "
-                f"from the same red-bed source as vanadinite, but partner "
-                f"with Zn and Cu respectively instead of binding to "
-                f"Cl⁻. Tsumeb is the type for the full vanadinite + "
-                f"descloizite + mottramite trio — three minerals "
-                f"recording three different cation availabilities in the "
-                f"same supergene cascade."
-            )
+            parts.append(narrative_variant("vanadinite", "vanadate_companions",
+                                           companions=" and ".join(companions)))
 
-        return " ".join(parts)
+        return " ".join(p for p in parts if p)
 
     def _narrate_bornite(self, c: Crystal) -> str:
         """Narrate a bornite crystal — the 228°C order-disorder mineral.
