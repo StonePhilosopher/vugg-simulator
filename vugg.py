@@ -15757,127 +15757,56 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_barite(self, c: Crystal) -> str:
-        """Narrate a barite crystal — the heavy spar."""
+        """Narrate a barite crystal — the heavy spar.
+
+        Prose lives in narratives/barite.md. Code dispatches blurb +
+        4-way habit (tabular / bladed / cockscomb / prismatic) +
+        zone-note independent flags (celestobarite, honey_yellow) +
+        ALWAYS-emitted industrial tail.
+        """
         parts = [f"Barite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "BaSO₄ — the densest non-metallic mineral most collectors "
-            "will encounter at 4.5 g/cm³, hence the name 'barytes' from "
-            "the Greek βαρύς, 'heavy.' Galena's primary gangue mineral "
-            "in MVT districts (Tri-State, Cumberland, Pine Point); also "
-            "abundant in hydrothermal vein systems. Acid-resistant — even "
-            "concentrated H₂SO₄ won't touch it, which is why it's the "
-            "standard drilling-mud weighting agent worldwide."
-        )
+        parts.append(narrative_blurb("barite"))
         if c.habit == "tabular":
-            parts.append(
-                "Tabular plates — the standard barite habit. When concentric "
-                "blade aggregates radiate from a center, you get the famous "
-                "'desert rose' rosette of Oklahoma + Saudi Arabia."
-            )
+            parts.append(narrative_variant("barite", "tabular"))
         elif c.habit == "bladed":
-            parts.append(
-                "Bladed divergent fans — the Cumberland (UK) signature habit. "
-                "Cumberland gold barite from the Frizington vein is now mined "
-                "out; specimens are collector-only."
-            )
+            parts.append(narrative_variant("barite", "bladed"))
         elif c.habit == "cockscomb":
-            parts.append(
-                "Cockscomb cyclic twins — the diagnostic crested form, where "
-                "twin individuals stack along {110} to give the fan-with-ridges "
-                "appearance. A Romanian + Cavnic specialty."
-            )
+            parts.append(narrative_variant("barite", "cockscomb"))
         elif c.habit == "prismatic":
-            parts.append(
-                "Stubby prismatic — vein-fill barite where space constrained "
-                "the tabular habit. Common in Mexican silver districts."
-            )
+            parts.append(narrative_variant("barite", "prismatic"))
         any_note = " ".join(z.note or "" for z in c.zones)
         if "celestobarite" in any_note:
-            parts.append(
-                "Sr-substituted (celestobarite) — Sr²⁺ partially replaces "
-                "Ba²⁺ in the lattice; the barite-celestine pair forms a "
-                "partial solid solution with a miscibility gap that closes "
-                "at high T."
-            )
+            parts.append(narrative_variant("barite", "celestobarite"))
         if "honey-yellow" in any_note:
-            parts.append(
-                "Honey-yellow color from Pb traces — the Cumberland-gold "
-                "habit and the most prized barite color globally. Pb²⁺ "
-                "doesn't substitute structurally; it's hosted as "
-                "submicroscopic galena inclusions."
-            )
-        parts.append(
-            "Beyond drilling mud, barite is the Ba source for fireworks "
-            "(green color), barium sulfate medical contrast agents, and "
-            "the primary radiation-shielding mineral in concrete shields. "
-            "The Sterling Hill (NJ) blue barite — F-center radiation-damage "
-            "color — is the only common natural blue Ba mineral."
-        )
-        return " ".join(parts)
+            parts.append(narrative_variant("barite", "honey_yellow"))
+        parts.append(narrative_variant("barite", "industrial_tail"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_celestine(self, c: Crystal) -> str:
-        """Narrate a celestine crystal — the celestial-blue Sr sulfate."""
+        """Narrate a celestine crystal — the celestial-blue Sr sulfate.
+
+        Prose lives in narratives/celestine.md. Code dispatches blurb +
+        4-way habit (nodular / fibrous / bladed / tabular_default) +
+        zone-note independent flags (barytocelestine, sicilian_paragenesis)
+        + ALWAYS-emitted industrial tail.
+        """
         parts = [f"Celestine #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "SrSO₄ — strontium sulfate, isostructural with barite (the two "
-            "form a partial solid solution; intermediates are 'celestobarite' "
-            "and 'barytocelestine'). The diagnostic pale celestial blue is "
-            "an F-center defect color — radiation-damaged anion vacancies "
-            "absorb yellow-orange light, leaving the calm sky blue that "
-            "named the species."
-        )
+        parts.append(narrative_blurb("celestine"))
         if c.habit == "nodular":
-            parts.append(
-                "Nodular geode lining — the Madagascar (Sakoany) habit. "
-                "The Mahajanga geodes are football-sized concentric crusts "
-                "of pale-blue celestine blades up to 30 cm long, the "
-                "world's largest celestine crystals."
-            )
+            parts.append(narrative_variant("celestine", "nodular"))
         elif c.habit == "fibrous":
-            parts.append(
-                "Fibrous radiating tufts — the Sicilian Caltanissetta habit, "
-                "where celestine fibers radiate from yellow native sulfur "
-                "in vugs of the Permian sulfur-bearing limestones. The "
-                "single most distinctive celestine specimen type."
-            )
+            parts.append(narrative_variant("celestine", "fibrous"))
         elif c.habit == "bladed":
-            parts.append(
-                "Divergent blue blades — the Lake Erie / Put-in-Bay (Ohio) "
-                "habit. The Crystal Cave on South Bass Island contains the "
-                "world's largest known geode (35 ft³, lined with celestine + "
-                "calcite); commercial mineral exhibits derive from this same "
-                "Devonian-age vug system."
-            )
+            parts.append(narrative_variant("celestine", "bladed"))
         else:
-            parts.append(
-                "Tabular pale-blue plates — the standard celestine collector "
-                "habit. Madagascar, Mexico, Texas Permian Basin all produce "
-                "this form."
-            )
+            parts.append(narrative_variant("celestine", "tabular_default"))
         any_note = " ".join(z.note or "" for z in c.zones)
         if "barytocelestine" in any_note:
-            parts.append(
-                "Ba-substituted (barytocelestine) — Ba²⁺ partially replaces "
-                "Sr²⁺. The barite-celestine pair preserves the Sr/Ba ratio "
-                "of its parent fluid, which is why ⁸⁷Sr/⁸⁶Sr ratios in "
-                "celestine are used for paleobrine geochronology "
-                "(Schwartz et al. 2018)."
-            )
+            parts.append(narrative_variant("celestine", "barytocelestine"))
         if "Sicilian" in any_note or "sulfur-vug" in any_note:
-            parts.append(
-                "The Sicilian sulfur-vug paragenesis: native sulfur "
-                "precipitates first from H₂S oxidation, then evaporative "
-                "concentration of meteoric water in the vug delivers Sr²⁺ + "
-                "SO₄²⁻ that nucleates fibrous celestine on the sulfur surface."
-            )
-        parts.append(
-            "Industrial celestine: the source of Sr for red firework colors "
-            "and (legacy) cathode-ray-tube glass. The Sr-isotope tracer is "
-            "the modern scientific use — celestine preserves the Sr-isotope "
-            "ratio of its parent fluid almost perfectly across geological "
-            "time, making it a paleobrine fingerprint."
-        )
-        return " ".join(parts)
+            parts.append(narrative_variant("celestine", "sicilian_paragenesis"))
+        parts.append(narrative_variant("celestine", "industrial_tail"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_jarosite(self, c: Crystal) -> str:
         """Narrate a jarosite crystal — the AMD-yellow Fe sulfate."""
@@ -16132,82 +16061,35 @@ class VugSimulator:
         return " ".join(parts)
 
     def _narrate_anhydrite(self, c: Crystal) -> str:
-        """Narrate an anhydrite crystal — the high-T or saline-low-T Ca sulfate."""
+        """Narrate an anhydrite crystal — the high-T or saline-low-T Ca sulfate.
+
+        Prose lives in narratives/anhydrite.md. Code dispatches blurb +
+        4-way habit (massive_granular with size sub-branch / prismatic /
+        fibrous / tabular_default) + angelite zone-note flag +
+        rehydration-to-gypsum on dissolved + ALWAYS-emitted industrial
+        tail. The massive_granular branch splits at c_length_mm < 100
+        into sabkha vs porphyry sub-variants.
+        """
         parts = [f"Anhydrite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "CaSO₄ — anhydrous calcium sulfate, the dehydrated sister "
-            "of selenite/gypsum (CaSO₄·2H₂O). The anhydrite-gypsum "
-            "boundary is not a single line but an XY plot of T vs salinity "
-            "(Hardie 1967): in pure water anhydrite is stable above 60 °C, "
-            "but in saline brines (>100‰ NaCl-eq) anhydrite is stable down "
-            "to surface T due to lowered water activity. Two distinct "
-            "geological occurrences: (1) high-T hydrothermal — the porphyry-Cu "
-            "deep-brine zones at 200-700 °C, where massive anhydrite + "
-            "chalcopyrite assemblages preserve the magmatic-hydrothermal "
-            "S source (Roedder 1971 Bingham fluid-inclusion work); (2) "
-            "low-T evaporite — the Persian Gulf / Coorong sabkha + Salar "
-            "de Atacama brine pans, where evaporative concentration drives "
-            "salinity above the gypsum-anhydrite phase boundary."
-        )
+        parts.append(narrative_blurb("anhydrite"))
         if c.habit == "massive_granular":
-            parts.append(
-                "Massive granular layers — the textbook sabkha or salt-mine "
-                "habit, where anhydrite forms continuous strata interbedded "
-                "with halite and dolomite. The Persian Gulf sabkha + ancient "
-                "Zechstein basin (Germany) preserve exactly this pattern."
-                if c.c_length_mm < 100 else
-                "Massive granular vein-fill — the Bingham porphyry deep-zone "
-                "habit, where anhydrite veins thicker than the host crystals "
-                "preserve the magmatic-S budget. Decades after mining stopped "
-                "exposing fresh deep-zone material at Bingham, the anhydrite "
-                "rapidly hydrated to gypsum on contact with humid air."
-            )
+            if c.c_length_mm < 100:
+                parts.append(narrative_variant("anhydrite", "massive_granular_sabkha"))
+            else:
+                parts.append(narrative_variant("anhydrite", "massive_granular_porphyry"))
         elif c.habit == "prismatic":
-            parts.append(
-                "Stubby prismatic — the vein-fill habit, common in porphyry "
-                "deep-zone fractures and in some Atacama hydrothermal Cu "
-                "veins co-occurring with chalcopyrite."
-            )
+            parts.append(narrative_variant("anhydrite", "prismatic"))
         elif c.habit == "fibrous":
-            parts.append(
-                "Satin-spar fibrous habit — parallel fiber bundles across "
-                "veins. The blue-fibered 'angelite' Peruvian variety belongs "
-                "to this habit; lavender color attributed to organic "
-                "inclusions or trace Mn²⁺."
-            )
+            parts.append(narrative_variant("anhydrite", "fibrous"))
         else:
-            parts.append(
-                "Tabular habit with the diagnostic three perpendicular "
-                "cleavages — a hand-sample test that distinguishes anhydrite "
-                "from selenite (which has one perfect cleavage) and from "
-                "halite (cubic three-perp cleavages but salt taste)."
-            )
+            parts.append(narrative_variant("anhydrite", "tabular_default"))
         any_note = " ".join(z.note or "" for z in c.zones)
         if "angelite" in any_note:
-            parts.append(
-                "Pale lavender 'angelite' variety — Peruvian metaphysical-stone "
-                "fixture. The lavender color is anomalous and not fully "
-                "understood; current consensus attributes it to organic "
-                "molecule inclusions rather than transition-metal traces."
-            )
+            parts.append(narrative_variant("anhydrite", "angelite"))
         if c.dissolved:
-            parts.append(
-                "Rehydrated to gypsum — fluid freshened (salinity dropped "
-                "below 100‰) at low T (<60 °C), bringing the system into "
-                "the gypsum stability field. Released Ca²⁺ + SO₄²⁻ now "
-                "feed selenite re-precipitation. The Naica Cave of "
-                "Crystals (Mexico) shows exactly this paragenesis: an "
-                "older anhydrite floor preserved from the deeper brine "
-                "phase, overgrown by giant selenite blades when the cave "
-                "dewatered + cooled."
-            )
-        parts.append(
-            "Industrial: anhydrite is the cement-setting accelerator that "
-            "controls early-strength gain in Portland cement; also a sulfur "
-            "source and (via heating) a calcium source. Plaster manufacture "
-            "depends on the anhydrite ↔ gypsum hydration cycle."
-        )
-        return " ".join(parts)
+            parts.append(narrative_variant("anhydrite", "rehydration_to_gypsum"))
+        parts.append(narrative_variant("anhydrite", "industrial_tail"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_adamite(self, c: Crystal) -> str:
         """Narrate an adamite crystal's story — the fluorescent zinc arsenate."""

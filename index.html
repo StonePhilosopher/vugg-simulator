@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -15122,6 +15122,61 @@ class VugSimulator {
     if ((c.position || '').includes('acanthite')) {
       parts.push(narrative_variant('native_silver', 'on_acanthite') || "Note position — this crystal nucleated on a dissolving acanthite. That's the supergene Ag-enrichment cycle: primary acanthite oxidizes, releases Ag⁺, the Ag⁺ migrates down the redox gradient and re-precipitates as native silver in a deeper reducing pocket. Same Ag atoms, different mineral, same vug.");
     }
+    return parts.filter(p => p).join(' ');
+  }
+
+  _narrate_barite(c) {
+    // Prose lives in narratives/barite.md. JS narrator added in this
+    // commit to close a JS-side gap (Python had a narrator; JS dispatch
+    // would silently emit nothing for barite).
+    const parts = [`Barite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push(narrative_blurb('barite'));
+    if (c.habit === 'tabular') parts.push(narrative_variant('barite', 'tabular'));
+    else if (c.habit === 'bladed') parts.push(narrative_variant('barite', 'bladed'));
+    else if (c.habit === 'cockscomb') parts.push(narrative_variant('barite', 'cockscomb'));
+    else if (c.habit === 'prismatic') parts.push(narrative_variant('barite', 'prismatic'));
+    const anyNote = (c.zones || []).map(z => z.note || '').join(' ');
+    if (anyNote.includes('celestobarite')) parts.push(narrative_variant('barite', 'celestobarite'));
+    if (anyNote.includes('honey-yellow')) parts.push(narrative_variant('barite', 'honey_yellow'));
+    parts.push(narrative_variant('barite', 'industrial_tail'));
+    return parts.filter(p => p).join(' ');
+  }
+
+  _narrate_celestine(c) {
+    // Prose lives in narratives/celestine.md. JS narrator added in this
+    // commit to close a JS-side gap.
+    const parts = [`Celestine #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push(narrative_blurb('celestine'));
+    if (c.habit === 'nodular') parts.push(narrative_variant('celestine', 'nodular'));
+    else if (c.habit === 'fibrous') parts.push(narrative_variant('celestine', 'fibrous'));
+    else if (c.habit === 'bladed') parts.push(narrative_variant('celestine', 'bladed'));
+    else parts.push(narrative_variant('celestine', 'tabular_default'));
+    const anyNote = (c.zones || []).map(z => z.note || '').join(' ');
+    if (anyNote.includes('barytocelestine')) parts.push(narrative_variant('celestine', 'barytocelestine'));
+    if (anyNote.includes('Sicilian') || anyNote.includes('sulfur-vug')) parts.push(narrative_variant('celestine', 'sicilian_paragenesis'));
+    parts.push(narrative_variant('celestine', 'industrial_tail'));
+    return parts.filter(p => p).join(' ');
+  }
+
+  _narrate_anhydrite(c) {
+    // Prose lives in narratives/anhydrite.md. JS narrator added in this
+    // commit to close a JS-side gap. The massive_granular branch splits
+    // at c_length_mm < 100 into sabkha vs porphyry sub-variants.
+    const parts = [`Anhydrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+    parts.push(narrative_blurb('anhydrite'));
+    if (c.habit === 'massive_granular') {
+      parts.push(narrative_variant('anhydrite', c.c_length_mm < 100 ? 'massive_granular_sabkha' : 'massive_granular_porphyry'));
+    } else if (c.habit === 'prismatic') {
+      parts.push(narrative_variant('anhydrite', 'prismatic'));
+    } else if (c.habit === 'fibrous') {
+      parts.push(narrative_variant('anhydrite', 'fibrous'));
+    } else {
+      parts.push(narrative_variant('anhydrite', 'tabular_default'));
+    }
+    const anyNote = (c.zones || []).map(z => z.note || '').join(' ');
+    if (anyNote.includes('angelite')) parts.push(narrative_variant('anhydrite', 'angelite'));
+    if (c.dissolved) parts.push(narrative_variant('anhydrite', 'rehydration_to_gypsum'));
+    parts.push(narrative_variant('anhydrite', 'industrial_tail'));
     return parts.filter(p => p).join(' ');
   }
 
