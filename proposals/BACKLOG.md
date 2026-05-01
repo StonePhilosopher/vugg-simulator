@@ -12,12 +12,6 @@ Order is rough priority — top of each section is most-actionable, but explicit
 **Status:** awaiting user's enumeration.
 **Context:** during the 3D viewer work earlier in the project, several specific bugs were noted but never logged with reproduction steps. User has the list; this todo is the placeholder until they share it.
 
-### Feldspar narrator: substantial Python/JS divergence (deferred from narrative-extraction)
-**Status:** flagged for prose-direction picking; not blocking.
-**Context:** Like the (now-resolved) selenite case. Python infers polymorph from `c.nucleation_temp` (sanidine/orthoclase/microcline 3-tier on T thresholds 500/300); JS uses an explicitly-set `c.mineral_display` field with 5 polymorphs (sanidine/orthoclase/microcline/adularia/albite) and dramatically richer/more-poetic prose ("the most abundant mineral on Earth, and a thermometer frozen in crystal form", "interrupted conversation between order and disorder", "patience crystallized"). JS twin dispatch also richer (Carlsbad/Baveno/cross-hatched/albite/default vs Python's single twin_law branch). JS has a perthite zone-note variant Python lacks. This is intentional creative work, not drift.
-**Decision needed:** Per richer-canonical preference (memory `feedback_narrative_canonical_richer.md`), JS leads. Resolution path: extract JS prose to markdown, plumb a `mineral_display` field on Python Crystal (or use Python's T-threshold inference inside the dispatcher to pick a polymorph variant key), preserve the Python amazonite + dissolved branches, fold in the Python kaolinization wisdom into the dissolved variant.
-**Where to find:** `vugg.py` `_narrate_feldspar` ~line 16258; `index.html` `_narrate_feldspar` ~line 14300.
-
 ---
 
 ## 🌀 Twin probability retune — measure prevalence by per-mineral lifetime

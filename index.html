@@ -3271,7 +3271,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar'];
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -3316,9 +3316,26 @@ Promise.all(_NARRATIVE_MANIFEST.map(_loadNarrative))
   .then(() => console.info(`[narratives] loaded ${_NARRATIVE_MANIFEST.length} species`))
   .catch(err => console.error(`[narratives] manifest load failed: ${err && err.message}`));
 
-function narrative_blurb(species) {
+function _narrative_interp(template, ctx) {
+  return template.replace(/\{(\w+)\}/g, (_, key) =>
+    (ctx && Object.prototype.hasOwnProperty.call(ctx, key)) ? String(ctx[key]) : `{${key}}`
+  );
+}
+
+function narrative_blurb(species, ctx) {
+  // Boss-design schema (2026-04-30): blurb may contain {key} placeholders.
   const sections = _NARRATIVE_CACHE[species];
-  return (sections && sections.blurb) || '';
+  const template = sections && sections.blurb;
+  if (!template) return '';
+  return _narrative_interp(template, ctx || {});
+}
+
+function narrative_closing(species, ctx) {
+  // Boss-design schema (2026-04-30): `## closing` always emits at end.
+  const sections = _NARRATIVE_CACHE[species];
+  const template = sections && sections.closing;
+  if (!template) return '';
+  return _narrative_interp(template, ctx || {});
 }
 
 function narrative_variant(species, variant, ctx) {
@@ -3326,9 +3343,7 @@ function narrative_variant(species, variant, ctx) {
   if (!sections) return '';
   const template = sections[`variant: ${variant}`];
   if (!template) return '';
-  return template.replace(/\{(\w+)\}/g, (_, key) =>
-    (ctx && Object.prototype.hasOwnProperty.call(ctx, key)) ? String(ctx[key]) : `{${key}}`
-  );
+  return _narrative_interp(template, ctx || {});
 }
 
 // Pick a habit variant for a nucleating crystal based on current σ / T / space.
@@ -14298,47 +14313,28 @@ class VugSimulator {
   }
 
   _narrate_feldspar(c) {
+    // Prose lives in narratives/feldspar.md (boss-pushed 2026-04-30 commit
+    // 34ed3e8). JS canonical, polymorph storytelling, per-twin-law prose.
     const polymorph = c.mineral_display || 'feldspar';
-    const parts = [`${capitalize(polymorph)} #${c.crystal_id} — the most abundant mineral on Earth, and a thermometer frozen in crystal form.`];
-    
-    if (polymorph === 'sanidine') {
-      parts.push(`High-temperature, disordered — aluminum and silicon are randomly distributed across the framework. This crystal formed hot and cooled fast, locking in the chaos. Sanidine is the snapshot of a volcanic moment.`);
-    } else if (polymorph === 'orthoclase') {
-      parts.push(`Partially ordered — aluminum is beginning to sort itself into preferred sites, but the crystal cooled before the ordering could complete. Orthoclase is the interrupted conversation between order and disorder.`);
-    } else if (polymorph === 'microcline') {
-      parts.push(`Fully ordered — every aluminum atom found its preferred site. This takes time. Microcline is patience crystallized, the reward for slow cooling in deep rock.`);
-    } else if (polymorph === 'adularia') {
-      parts.push(`Low-temperature hydrothermal form with a distinctive pseudo-orthorhombic habit. Found in alpine clefts alongside quartz and chlorite — the classic Swiss mineral assemblage. The mountains' own crystal.`);
-    } else if (polymorph === 'albite') {
-      parts.push(`Sodium feldspar — the Na-rich end of the plagioclase series. White, glassy, often twinned with fine parallel striations visible under a lens.`);
-    }
-
-    // Check for amazonite
-    if (c.zones.some(z => z.note && z.note.includes('amazonite'))) {
-      parts.push('Green from lead — Pb²⁺ substituting for K⁺ in the crystal lattice. The lead that colored this crystal may have come from dissolved galena. One mineral\'s death becomes another mineral\'s identity.');
-    }
-
-    // Check for perthite
-    if (c.zones.some(z => z.note && z.note.includes('perthite'))) {
-      parts.push('Perthite texture — as the crystal cooled through the solvus (~660°C), the solid solution of K and Na feldspar became unstable. The two compositions unmixed into alternating lamellae, like oil separating from water. If the lamellae are thin enough, they scatter light: moonstone.');
-    }
-
+    const parts = [];
+    parts.push(narrative_blurb('feldspar', { polymorph: capitalize(polymorph), crystal_id: c.crystal_id }));
+    if (polymorph === 'sanidine') parts.push(narrative_variant('feldspar', 'sanidine'));
+    else if (polymorph === 'orthoclase') parts.push(narrative_variant('feldspar', 'orthoclase'));
+    else if (polymorph === 'microcline') parts.push(narrative_variant('feldspar', 'microcline'));
+    else if (polymorph === 'adularia') parts.push(narrative_variant('feldspar', 'adularia'));
+    if (c.zones.some(z => z.note && z.note.includes('amazonite'))) parts.push(narrative_variant('feldspar', 'amazonite'));
+    if (c.zones.some(z => z.note && z.note.includes('perthite'))) parts.push(narrative_variant('feldspar', 'perthite'));
     if (c.twinned) {
-      if (c.twin_law.includes('Carlsbad')) {
-        parts.push(`Carlsbad twinned — two individuals growing in opposite directions along the c-axis. The most common feldspar twin, recognized since the 18th century in the granite of Karlovy Vary.`);
-      } else if (c.twin_law.includes('Baveno')) {
-        parts.push(`Baveno twinned — a mirror twin that creates a distinctive heart-shaped cross-section. Named for the granite quarries of Baveno on the shores of Lago Maggiore.`);
-      } else if (c.twin_law.includes('cross-hatched')) {
-        parts.push(`Cross-hatched twinning — the diagnostic feature of microcline. Albite and pericline twin laws operating simultaneously create a tartan-plaid pattern visible under crossed polars. No other mineral does this.`);
-      } else if (c.twin_law.includes('albite')) {
-        parts.push(`Albite polysynthetic twinning — fine parallel lamellae that create subtle striations on cleavage surfaces. Each stripe is a twin boundary where the crystal structure mirrors itself.`);
-      } else {
-        parts.push(`Twinned (${c.twin_law}).`);
-      }
+      const tl = c.twin_law || '';
+      if (tl.includes('Carlsbad')) parts.push(narrative_variant('feldspar', 'carlsbad_twin'));
+      else if (tl.includes('Baveno')) parts.push(narrative_variant('feldspar', 'baveno_twin'));
+      else if (tl.includes('cross-hatched')) parts.push(narrative_variant('feldspar', 'cross_hatch_twin'));
+      else if (tl.includes('albite')) parts.push(narrative_variant('feldspar', 'albite_twin'));
+      else parts.push(narrative_variant('feldspar', 'generic_twin', { twin_law: tl }));
     }
-
-    parts.push(`The feldspar polymorph records the temperature at which it formed. ${polymorph === 'sanidine' ? 'Hot and fast.' : polymorph === 'microcline' ? 'Cool and slow.' : 'The temperature is written in the crystal structure itself.'} Read the feldspar and you read the vug's thermal history.`);
-    return parts.join(' ');
+    if (c.dissolved) parts.push(narrative_variant('feldspar', 'dissolved'));
+    parts.push(narrative_closing('feldspar'));
+    return parts.filter(p => p).join(' ');
   }
 
   _narrate_albite(c) {
@@ -15328,33 +15324,25 @@ class VugSimulator {
   }
 
   _narrate_adamite(c) {
-    // Prose lives in narratives/adamite.md. Merged narrator: opening line
-    // standardized to mm-pattern (was special-cased); JS-canonical for
-    // collectors_tail and on_iron_oxide; Python-canonical for
-    // acid_dissolution and olivenite_companion. Color dispatch uses the
-    // FLUORESCENT/NON-FLUORESCENT zone-note signal (JS) which is more
-    // direct than the avg_Cu fallback Python uses.
-    const parts = [`Adamite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push(narrative_blurb('adamite'));
-    const isFluorescent = c.zones.some(z => z.note && z.note.includes('FLUORESCENT'));
-    const isNonFluorescent = c.zones.some(z => z.note && z.note.includes('NON-FLUORESCENT'));
-    if (isFluorescent) {
-      parts.push(narrative_variant('adamite', 'cuproadamite') || 'This crystal contains copper substituting for zinc — enough Cu²⁺ to activate brilliant green fluorescence under UV light. The cuproadamite variety: the same mineral, but one that carries light inside it.');
-    } else if (isNonFluorescent) {
-      parts.push(narrative_variant('adamite', 'classic_yellow_green') || 'No copper in this one. Under UV, it stays dark while its siblings glow green around it. The contradiction crystal — identical composition except for the trace element that makes all the difference.');
-    }
+    // Prose lives in narratives/adamite.md (boss-pushed canonical 2026-04-30).
+    // Boss direction: JS tone + Python facts blend. Use Python's avg_Cu
+    // dispatch logic (more precise than JS FLUORESCENT-note check), keep
+    // JS-derived prose in markdown variants. Blurb is the opening line;
+    // closing is always-emitted tail.
+    const parts = [];
+    parts.push(narrative_blurb('adamite', { crystal_id: c.crystal_id }));
+    const avgCu = c.zones.reduce((s, z) => s + (z.trace_Cu || 0), 0) / Math.max(c.zones.length, 1);
+    const cuproNote = c.zones.some(z => (z.note || '').includes('cuproadamite'));
+    if (avgCu > 0.5 || cuproNote) parts.push(narrative_variant('adamite', 'fluorescent'));
+    else parts.push(narrative_variant('adamite', 'non_fluorescent'));
     if (c.position.includes('goethite') || c.position.includes('hematite')) {
-      parts.push(narrative_variant('adamite', 'on_iron_oxide') || 'Growing on iron oxide — the classic association. Limonite and goethite are the matrix, the rusty scaffolding left behind when primary sulfides oxidize.');
+      parts.push(narrative_variant('adamite', 'on_goethite'));
     }
-    if (c.habit === 'acicular sprays') {
-      parts.push(narrative_variant('adamite', 'acicular_sprays') || 'Fan-shaped sprays of acicular crystals radiating from a point. Each needle is a single crystal, but together they form a structure that looks like a frozen firework.');
-    }
-    if (c.dissolved) parts.push(narrative_variant('adamite', 'acid_dissolution'));
+    if (c.habit === 'acicular sprays') parts.push(narrative_variant('adamite', 'acicular'));
     const activeOli = (this && this.crystals) ? this.crystals.filter(oc => oc.mineral === 'olivenite' && oc.active) : [];
-    if (activeOli.length) {
-      parts.push(narrative_variant('adamite', 'olivenite_companion', { olivenite_id: activeOli[0].crystal_id }));
-    }
-    parts.push(narrative_variant('adamite', 'collectors_tail') || "Adamite is a collector's mineral — not a building block of the crust, but a rare secondary phase that forms only when zinc, arsenic, and oxygen meet in the oxidation zone of a very specific kind of deposit. Every adamite specimen is evidence that something dramatic happened here first.");
+    if (activeOli.length) parts.push(narrative_variant('adamite', 'olivenite_companion'));
+    if (c.dissolved) parts.push(narrative_variant('adamite', 'dissolved'));
+    parts.push(narrative_closing('adamite'));
     return parts.filter(p => p).join(' ');
   }
 

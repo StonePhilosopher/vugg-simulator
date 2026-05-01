@@ -318,9 +318,37 @@ def _load_narrative(species: str) -> Dict[str, str]:
     return sections
 
 
-def narrative_blurb(species: str) -> str:
-    """Return the always-shown reference-card prose for a species."""
-    return _load_narrative(species).get("blurb", "")
+def _interpolate(template: str, ctx: dict) -> str:
+    return _re_narratives.sub(
+        r"\{(\w+)\}",
+        lambda m: str(ctx.get(m.group(1), m.group(0))),
+        template,
+    )
+
+
+def narrative_blurb(species: str, **ctx) -> str:
+    """Return the always-shown reference-card prose for a species.
+
+    Boss-design schema (2026-04-30): blurb may contain {key} placeholders
+    (e.g. boss's adamite uses `Adamite #{crystal_id} —` as the opening).
+    """
+    template = _load_narrative(species).get("blurb", "")
+    if not template:
+        return ""
+    return _interpolate(template, ctx)
+
+
+def narrative_closing(species: str, **ctx) -> str:
+    """Return the always-emitted closing/tail section for a species.
+
+    Boss-design schema (2026-04-30): `## closing` is a structural sibling
+    to `## blurb` — both always emit, blurb at the start, closing at the
+    end. Used by adamite + feldspar (2026-04-30 push).
+    """
+    template = _load_narrative(species).get("closing", "")
+    if not template:
+        return ""
+    return _interpolate(template, ctx)
 
 
 def narrative_variant(species: str, variant: str, **ctx) -> str:
@@ -15947,38 +15975,40 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_adamite(self, c: Crystal) -> str:
-        """Narrate an adamite crystal's story — the fluorescent zinc arsenate.
+        """Narrate adamite — JS tone + Python facts blend (boss direction).
 
-        Prose lives in narratives/adamite.md. Code dispatches blurb +
-        cuproadamite-vs-classic Cu/fluorescence flag + on_iron_oxide
-        paragenesis (broadened to include hematite — JS-canonical) +
-        acicular_sprays habit + acid_dissolution + olivenite_companion
-        with {olivenite_id} interpolation + ALWAYS-emitted collectors tail.
+        Prose lives in narratives/adamite.md (boss-pushed canonical 2026-04-30,
+        commit fca14e6). Boss-design schema: blurb is the opening line (no
+        separate '#N grew to X mm' preamble), closing is always-emitted tail.
+
+        Code dispatches blurb (with {crystal_id}) + fluorescent-vs-non_fluorescent
+        on numeric trace_Cu (Python's avg_Cu logic, more precise than the JS
+        FLUORESCENT-note check, per boss direction in HANDOFF) + on_goethite
+        paragenesis (broadened to include hematite) + acicular habit +
+        olivenite_companion (sim crystal scan) + dissolved + closing.
         """
-        parts = [f"Adamite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(narrative_blurb("adamite"))
+        parts = [narrative_blurb("adamite", crystal_id=c.crystal_id)]
 
         avg_Cu = sum(getattr(z, "trace_Cu", 0.0) for z in c.zones) / max(len(c.zones), 1)
         if avg_Cu > 0.5 or "cuproadamite" in " ".join(z.note for z in c.zones):
-            parts.append(narrative_variant("adamite", "cuproadamite"))
+            parts.append(narrative_variant("adamite", "fluorescent"))
         else:
-            parts.append(narrative_variant("adamite", "classic_yellow_green"))
+            parts.append(narrative_variant("adamite", "non_fluorescent"))
 
         if "goethite" in c.position or "hematite" in c.position:
-            parts.append(narrative_variant("adamite", "on_iron_oxide"))
+            parts.append(narrative_variant("adamite", "on_goethite"))
 
         if c.habit == "acicular sprays":
-            parts.append(narrative_variant("adamite", "acicular_sprays"))
-
-        if c.dissolved:
-            parts.append(narrative_variant("adamite", "acid_dissolution"))
+            parts.append(narrative_variant("adamite", "acicular"))
 
         active_oli = [oc for oc in self.crystals if oc.mineral == "olivenite" and oc.active]
         if active_oli:
-            parts.append(narrative_variant("adamite", "olivenite_companion",
-                                           olivenite_id=active_oli[0].crystal_id))
+            parts.append(narrative_variant("adamite", "olivenite_companion"))
 
-        parts.append(narrative_variant("adamite", "collectors_tail"))
+        if c.dissolved:
+            parts.append(narrative_variant("adamite", "dissolved"))
+
+        parts.append(narrative_closing("adamite"))
         return " ".join(p for p in parts if p)
 
     def _narrate_mimetite(self, c: Crystal) -> str:
@@ -16167,45 +16197,59 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_feldspar(self, c: Crystal) -> str:
-        """Narrate a K-feldspar crystal's story — the polymorph clock."""
-        parts = [f"K-feldspar #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
+        """Narrate feldspar — JS canonical (boss-pushed 2026-04-30, commit 34ed3e8).
 
-        # Polymorph inference from nucleation T
+        Prose lives in narratives/feldspar.md. Boss-design schema: blurb
+        is opening line (with {polymorph} + {crystal_id} interp), closing
+        is always-emitted tail.
+
+        Code dispatches blurb + 4-way polymorph from nucleation_temp
+        (sanidine > 500, orthoclase 300-500, microcline < 300; adularia
+        is JS-only declared via mineral_display, not reachable from Python
+        T-threshold inference) + amazonite zone-note + perthite zone-note
+        + 5-way twin dispatch (Carlsbad / Baveno / cross-hatched / albite /
+        generic) + dissolved + closing.
+        """
         if c.nucleation_temp > 500:
-            polymorph = "sanidine (high-T monoclinic)"
+            polymorph = "Sanidine"
         elif c.nucleation_temp > 300:
-            polymorph = "orthoclase (moderate-T monoclinic)"
+            polymorph = "Orthoclase"
         else:
-            polymorph = "microcline (low-T triclinic, cross-hatched)"
+            polymorph = "Microcline"
+        parts = [narrative_blurb("feldspar", polymorph=polymorph,
+                                 crystal_id=c.crystal_id)]
 
-        parts.append(
-            f"It formed as {polymorph}. Temperature is feldspar's clock — the "
-            f"polymorph you see records the thermal history of the fluid that "
-            f"grew it."
-        )
+        if polymorph == "Sanidine":
+            parts.append(narrative_variant("feldspar", "sanidine"))
+        elif polymorph == "Orthoclase":
+            parts.append(narrative_variant("feldspar", "orthoclase"))
+        else:
+            parts.append(narrative_variant("feldspar", "microcline"))
 
-        amazonite = any("amazonite" in z.note for z in c.zones)
-        if amazonite:
-            parts.append(
-                "Pb²⁺ substituted for K⁺ in trace amounts — amazonite, the "
-                "blue-green K-feldspar colored by lead. Under LW UV the "
-                "Pb-rich zones fluoresce yellow-green."
-            )
+        zone_notes = [z.note or "" for z in c.zones]
+        if any("amazonite" in n for n in zone_notes):
+            parts.append(narrative_variant("feldspar", "amazonite"))
+        if any("perthite" in n for n in zone_notes):
+            parts.append(narrative_variant("feldspar", "perthite"))
 
         if c.twinned:
-            parts.append(
-                f"Twinned on the {c.twin_law} — a diagnostic twin of the "
-                f"feldspar family."
-            )
+            tl = c.twin_law or ""
+            if "Carlsbad" in tl:
+                parts.append(narrative_variant("feldspar", "carlsbad_twin"))
+            elif "Baveno" in tl:
+                parts.append(narrative_variant("feldspar", "baveno_twin"))
+            elif "cross-hatched" in tl:
+                parts.append(narrative_variant("feldspar", "cross_hatch_twin"))
+            elif "albite" in tl:
+                parts.append(narrative_variant("feldspar", "albite_twin"))
+            else:
+                parts.append(narrative_variant("feldspar", "generic_twin", twin_law=tl))
 
         if c.dissolved:
-            parts.append(
-                "Acid weathering attacked the feldspar — kaolinization released "
-                "K⁺, Al³⁺, and SiO₂ into the fluid. The slow-motion breakdown "
-                "that makes clay."
-            )
+            parts.append(narrative_variant("feldspar", "dissolved"))
 
-        return " ".join(parts)
+        parts.append(narrative_closing("feldspar"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_albite(self, c: Crystal) -> str:
         """Narrate an albite crystal's story — the sodium end-member.

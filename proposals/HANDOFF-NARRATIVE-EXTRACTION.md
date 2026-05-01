@@ -190,3 +190,24 @@ e47b7a7  Narrative-as-data (7+8/89): calcite + aragonite — carbonate group beg
 5. `vugg.py` — search for `# NARRATIVE TEMPLATES` to find the loader, then `_narrate_chalcopyrite` to see the simplest call site
 6. `index.html` — search for `_NARRATIVE_MANIFEST` to find the JS loader, then `_narrate_chalcopyrite` for the JS call-site shape (note inline fallbacks)
 7. Pick the next species — sulfates (barite, celestine, anhydrite, gypsum/selenite) are the natural next batch. Then halides (fluorite, halite). The `data/minerals.json` keys are the canonical species list.
+
+## Divergent Narratives — Professor's Direction (2026-04-30)
+
+When Python and JS narrators diverge, prefer **JS tone with Python facts**. Specific rulings:
+
+### Selenite
+- **Use JS version** as canonical (poetic, narrative)
+- Fold in Naica detail and dissolution line from Python as variant sections
+- Add cathedral_blade habit from Python (JS doesn't have it)
+- Add rosette/desert rose and satin spar habits from JS (Python doesn't have them)
+
+### Adamite
+- **Blend both** — JS tone, Python facts
+- Keep JS language for fluorescent/non-fluorescent dispatch ("non-glowing needles among the fluorescence")
+- Keep JS goethite language ("rusty scaffolding") over Python ("limonite/adamite pairing")
+- **Must include** olivenite companion paragraph from Python (broth-ratio connection — critical sim mechanic)
+- **Must include** dissolution feedback from Python (releasing Zn²⁺ to feed later minerals)
+- Use Python's `avg_Cu` dispatch logic (more precise than JS "FLUORESCENT note" check)
+
+### General rule going forward
+JS prose tends to be the more evolved version. When in doubt, start from JS and fold in unique Python content. The JS version usually has the emotional register right; the Python version sometimes has facts the JS missed.
