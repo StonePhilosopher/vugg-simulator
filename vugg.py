@@ -18162,136 +18162,59 @@ class VugSimulator:
         return " ".join(p for p in parts if p)
 
     def _narrate_torbernite(self, c: Crystal) -> str:
-        """Narrate torbernite — P-branch uranyl phosphate (Round 9b)."""
+        """Narrate torbernite — P-branch uranyl phosphate (Round 9b).
+
+        Prose lives in narratives/torbernite.md. Code dispatches blurb +
+        3-way habit (micaceous_book / tabular_plates / earthy_crust default)
+        + metatorbernite_warning when nucleation_temp > 60.
+        """
         parts = [f"Torbernite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Cu(UO₂)₂(PO₄)₂·12H₂O — tetragonal uranyl phosphate, the "
-            "phosphate branch of the autunite-group anion-competition "
-            "trio (with zeunerite for arsenate and carnotite for "
-            "vanadate). Emerald-green tabular plates that look like "
-            "green mica; non-fluorescent because the Cu²⁺ in the "
-            "lattice quenches the uranyl emission that would otherwise "
-            "make this mineral glow. The crystal exists because uraninite "
-            "weathered upstream, releasing mobile U⁶⁺ into oxidizing "
-            "groundwater that also carried Cu and phosphate — and at "
-            "the moment of nucleation, phosphate dominated arsenate in "
-            "the local fluid. Mohs 2-2.5, ☢️ radioactive (the U⁶⁺ "
-            "decays slowly inside the crystal lattice it builds)."
-        )
+        parts.append(narrative_blurb("torbernite"))
         if c.habit == "micaceous_book":
-            parts.append(
-                "Micaceous book habit — stacked subparallel plates, "
-                "the high-σ Musonoi (Katanga, DRC) form. Looks like "
-                "someone pressed sheets of green glass into a single "
-                "specimen."
-            )
+            parts.append(narrative_variant("torbernite", "micaceous_book"))
         elif c.habit == "tabular_plates":
-            parts.append(
-                "Tabular plates flattened on {001} — the diagnostic "
-                "Schneeberg habit. Square or octagonal outlines, thin "
-                "enough to flake, the textbook torbernite specimen."
-            )
+            parts.append(narrative_variant("torbernite", "tabular_plates"))
         else:
-            parts.append(
-                "Earthy crust — low-σ encrustation on fracture surfaces. "
-                "Less aesthetic than the diagnostic plates but more "
-                "abundant in the field."
-            )
-        # Dehydration warning if T approaches metatorbernite threshold
+            parts.append(narrative_variant("torbernite", "earthy_crust"))
         if c.nucleation_temp > 60:
-            parts.append(
-                "Note: this crystal grew near the metatorbernite "
-                "transition temperature (~75°C). Continued heat would "
-                "drive irreversible dehydration to the 8-H₂O metatorbernite "
-                "form — a one-way conversion."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("torbernite", "metatorbernite_warning"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_zeunerite(self, c: Crystal) -> str:
-        """Narrate zeunerite — As-branch uranyl arsenate (Round 9b)."""
+        """Narrate zeunerite — As-branch uranyl arsenate (Round 9b).
+
+        Prose lives in narratives/zeunerite.md. Code dispatches blurb +
+        3-way habit (micaceous_book / tabular_plates / scaly_encrustation
+        default).
+        """
         parts = [f"Zeunerite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "Cu(UO₂)₂(AsO₄)₂·(10-16)H₂O — tetragonal uranyl arsenate, "
-            "the arsenate branch of the autunite-group trio. Visually "
-            "almost indistinguishable from torbernite — same emerald-"
-            "green color, same square tabular habit, same micaceous "
-            "cleavage — distinguishable in the field only by chemistry. "
-            "The arsenic is the giveaway: zeunerite localities are "
-            "almost always former mining districts with arsenopyrite "
-            "or tennantite as primary As-bearing ores. The fluid that "
-            "grew this crystal carried more arsenate than phosphate "
-            "at the moment of nucleation; in a parallel run with the "
-            "ratio inverted, this same broth would have grown "
-            "torbernite instead. Mohs 2.5, ☢️ radioactive (U + As both "
-            "decay-active)."
-        )
+        parts.append(narrative_blurb("zeunerite"))
         if c.habit == "micaceous_book":
-            parts.append(
-                "Micaceous book habit — stacked subparallel plates, "
-                "the high-σ Schneeberg form. Type-locality material."
-            )
+            parts.append(narrative_variant("zeunerite", "micaceous_book"))
         elif c.habit == "tabular_plates":
-            parts.append(
-                "Tabular plates flattened on {001} — the diagnostic "
-                "Schneeberg/Cínovec habit. Identical in shape to "
-                "torbernite; chemistry is the only discriminator."
-            )
+            parts.append(narrative_variant("zeunerite", "tabular_plates"))
         else:
-            parts.append(
-                "Scaly encrustation — low-σ thin overlapping plates "
-                "coating fracture surfaces."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("zeunerite", "scaly_encrustation"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_carnotite(self, c: Crystal) -> str:
-        """Narrate carnotite — V-branch uranyl vanadate (Round 9c)."""
+        """Narrate carnotite — V-branch uranyl vanadate (Round 9c).
+
+        Prose lives in narratives/carnotite.md. Code dispatches blurb +
+        3-way habit (tabular_plates / earthy_crust / powdery_disseminated
+        default) + roll_front when nucleation_temp < 30.
+        """
         parts = [f"Carnotite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm."]
-        parts.append(
-            "K₂(UO₂)₂(VO₄)₂·3H₂O — monoclinic uranyl vanadate, the "
-            "vanadate branch of the autunite-group anion-competition "
-            "trio (with torbernite for phosphate and zeunerite for "
-            "arsenate). The mineral that paints the desert: bright "
-            "canary-yellow, so chromatically aggressive that one "
-            "percent of it stains an entire Jurassic sandstone outcrop "
-            "the color of school buses and hazard tape. The Colorado "
-            "Plateau uranium districts were prospected by following "
-            "yellow stains across mesa tops decades before scintillometers "
-            "existed. Mohs ~2 (soft, earthy), ☢️ radioactive, "
-            "non-fluorescent (the vanadate matrix quenches the uranyl "
-            "emission that would otherwise make this mineral glow)."
-        )
+        parts.append(narrative_blurb("carnotite"))
         if c.habit == "tabular_plates":
-            parts.append(
-                "Rare crystalline habit — diamond-shaped plates "
-                "flattened on {001}, the collector's prize. Crystalline "
-                "carnotite is genuinely uncommon; almost all carnotite "
-                "in nature is the earthy/powdery form."
-            )
+            parts.append(narrative_variant("carnotite", "tabular_plates"))
         elif c.habit == "earthy_crust":
-            parts.append(
-                "Canary-yellow earthy crust — the diagnostic Colorado "
-                "Plateau habit. Forms as crusts on sandstone, often "
-                "concentrated around petrified wood and carbonaceous "
-                "shales where ancient organic matter trapped uranium "
-                "from circulating groundwater."
-            )
-        else:  # powdery_disseminated
-            parts.append(
-                "Powdery yellow disseminations — the sandstone-stain "
-                "form. Doesn't crystallize so much as it stains; the "
-                "stain is the habit."
-            )
-        # Roll-front signature note — Fe-rich oxidizing groundwater is
-        # the diagnostic Colorado Plateau setting
+            parts.append(narrative_variant("carnotite", "earthy_crust"))
+        else:
+            parts.append(narrative_variant("carnotite", "powdery_disseminated"))
         if c.nucleation_temp < 30:
-            parts.append(
-                "Cool nucleation (~ambient surface temperatures) — "
-                "consistent with the roll-front geological setting "
-                "where oxidizing meteoric water encounters a reducing "
-                "barrier and drops both U and V into the same "
-                "yellow precipitate."
-            )
-        return " ".join(parts)
+            parts.append(narrative_variant("carnotite", "roll_front"))
+        return " ".join(p for p in parts if p)
 
     def _narrate_aurichalcite(self, c: Crystal) -> str:
         """Narrate aurichalcite — Zn-dominant broth-ratio carbonate.
