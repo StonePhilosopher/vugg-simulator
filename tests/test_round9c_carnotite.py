@@ -25,13 +25,20 @@ def _carnotite_fluid(k=30, u=2.5, v=0.0, p=0.0, as_=0.0, ph=6.5, o2=1.5, T=30.0)
     """Construct a carnotite-candidate supergene fluid.
 
     Defaults pass every non-anion-fraction gate, so the only varying input
-    is the anion ratio. K=30 + U=2.5 are realistic Schneeberg-style oxidized
-    U-pegmatite + Colorado Plateau roll-front loadings.
+    is the anion ratio. K=30 + U=2.5 are realistic Colorado Plateau
+    roll-front loadings.
+
+    Ca=5 default (low-Ca evaporite/playa context) — Round 9e added a
+    K/(K+Ca) > 0.5 cation gate to carnotite. Default FluidChemistry Ca
+    is 200; with explicit Ca=5 the cation gate passes for K-dominant
+    fluids and these regression tests focus on the anion fork in
+    isolation. Round 9e's own test file covers the K-vs-Ca cation fork
+    directly.
     """
     return VugConditions(
         temperature=T,
         pressure=0.05,
-        fluid=FluidChemistry(K=k, U=u, V=v, P=p, As=as_, O2=o2, pH=ph),
+        fluid=FluidChemistry(K=k, Ca=5, U=u, V=v, P=p, As=as_, O2=o2, pH=ph),
         wall=VugWall(),
     )
 
@@ -149,10 +156,17 @@ def test_three_way_competition_p_branch():
 
 
 def test_three_way_competition_as_branch():
+    """As-dominant: zeunerite fires. Round 9e cation forks added.
+
+    Ca=5 explicit (low-Ca mining-district context) — Round 9e gates
+    zeunerite on Cu/(Cu+Ca) > 0.5; default FluidChemistry Ca is 200,
+    so without explicit Ca=5 the new cation gate would block zeunerite
+    even on its As-anion branch.
+    """
     cond = VugConditions(
         temperature=25,
         pressure=0.05,
-        fluid=FluidChemistry(Cu=40, K=30, U=2.5, P=2, As=8, V=2, O2=1.5, pH=6.0),
+        fluid=FluidChemistry(Cu=40, Ca=5, K=30, U=2.5, P=2, As=8, V=2, O2=1.5, pH=6.0),
         wall=VugWall(),
     )
     assert cond.supersaturation_zeunerite() > 1.0, "As-dominant should fire zeunerite"
@@ -161,10 +175,12 @@ def test_three_way_competition_as_branch():
 
 
 def test_three_way_competition_v_branch():
+    """V-dominant: carnotite fires. Round 9e K-fork added — Ca=5
+    explicit (low-Ca evaporite context) so K/(K+Ca) > 0.5 passes."""
     cond = VugConditions(
         temperature=30,
         pressure=0.05,
-        fluid=FluidChemistry(Cu=40, K=30, U=2.5, P=2, As=2, V=8, O2=1.5, pH=6.5),
+        fluid=FluidChemistry(Cu=40, Ca=5, K=30, U=2.5, P=2, As=2, V=8, O2=1.5, pH=6.5),
         wall=VugWall(),
     )
     assert cond.supersaturation_carnotite() > 1.0, "V-dominant should fire carnotite"
