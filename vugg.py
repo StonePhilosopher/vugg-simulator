@@ -287,7 +287,50 @@ from typing import List, Dict, Optional, Tuple
 #        scenario currently routes U + P at supergene T to fire it,
 #        though radioactive_pegmatite + a future Schneeberg-style
 #        oxidation event could).
-SIM_VERSION = 14
+#   v15 — Round 9e: tyuyamunite + uranospinite — Ca-cation analogs of
+#        carnotite + zeunerite, completing the cation+anion fork
+#        mechanic across all three anion branches (May 2026, per
+#        research/research-tyuyamunite.md + research/research-uranospinite.md).
+#        Two new minerals shipped together — they share the architectural
+#        pattern (Ca-cation, autunite-group fork on a non-P anion):
+#        - tyuyamunite Ca(UO₂)₂(VO₄)₂·5-8H₂O — V-branch / Ca-cation,
+#          orthorhombic instead of carnotite's monoclinic, weakly
+#          fluorescent yellow-green LW (vanadate matrix dampens, but
+#          slightly cleaner than carnotite). Type: Tyuya-Muyun, Fergana
+#          Valley (Nenadkevich 1912).
+#        - uranospinite Ca(UO₂)₂(AsO₄)₂·10H₂O — As-branch / Ca-cation,
+#          tetragonal autunite-group, strongly fluorescent yellow-green
+#          LW (Ca²⁺ doesn't quench like Cu²⁺ does in zeunerite). Type:
+#          Walpurgis Flacher vein, Schneeberg, Saxony (Weisbach 1873).
+#        Mechanic: cation forks added to zeunerite + carnotite mirroring
+#        torbernite's 9d gate. The full autunite-group cation+anion fork
+#        is now complete:
+#          P-branch: torbernite (Cu) ↔ autunite (Ca)
+#          As-branch: zeunerite (Cu) ↔ uranospinite (Ca)
+#          V-branch: carnotite (K) ↔ tyuyamunite (Ca)
+#        supersaturation_zeunerite gates on Cu/(Cu+Ca) > 0.5;
+#        supersaturation_carnotite gates on K/(K+Ca) > 0.5; the new
+#        Ca-cation supersats mirror with Ca/(Cu+Ca) > 0.5 and
+#        Ca/(K+Ca) > 0.5 respectively. Each pair preserves the anion
+#        fork P/(P+As+V) > 0.5 already in place.
+#        Engine count 90 → 92.
+#   v16 — Round 9e mechanic-coverage scenarios (May 2026): two new
+#        shipped scenarios that finally exercise the autunite-group
+#        cation+anion fork end-to-end.
+#        • schneeberg (Erzgebirge type locality, Saxony) — 6-event
+#          U-pegmatite + arsenopyrite oxidation lifecycle. Fires all
+#          four P/As-branch uranyls in a single seed-42 run:
+#          torbernite=3, zeunerite=3, autunite=3, uranospinite=4.
+#          Plus the v12 uraninite gatekeeper chain (3 uraninite grow
+#          then weather, releasing UO₂²⁺ to feed the secondaries).
+#        • colorado_plateau (Uravan Mineral Belt, Roc Creek type
+#          locality) — 5-event sandstone roll-front lifecycle. Fires
+#          the V-branch uranyls: carnotite=4, tyuyamunite=5.
+#        Together they fire all 6 secondary U species shipped in
+#        Rounds 9b/9c/9d/9e — the cation+anion fork mechanic
+#        finally has scenarios that exercise it.
+#        No engine changes; engine count remains 92.
+SIM_VERSION = 16
 
 
 # ============================================================
@@ -4364,17 +4407,22 @@ class VugConditions:
         return max(sigma, 0)
 
     def supersaturation_zeunerite(self) -> float:
-        """Zeunerite (Cu(UO₂)₂(AsO₄)₂·xH₂O) — As-branch of the autunite-group
-        anion-competition trio (Round 9b).
+        """Zeunerite (Cu(UO₂)₂(AsO₄)₂·xH₂O) — As-branch / Cu-cation of the
+        autunite-group cation+anion fork (Round 9b/9e).
 
-        Mirror of torbernite. Same parent fluid, opposite anion preference:
-        zeunerite forms when As/(P+As) > 0.5. Isostructural with torbernite
-        — same crystal system, same tabular habit; distinguishable in the
-        field only by chemistry. The arsenic is the giveaway: zeunerite
-        localities are former mining districts with arsenopyrite or
-        tennantite as primary As-bearing ores.
+        9b shipped the As/(P+As) anion gate; 9c widened the denominator
+        to P+As+V; 9e added the Cu/(Cu+Ca) cation gate to fork against
+        uranospinite (Ca-cation analog). Two ratio gates now apply:
+        - Anion: As/(P+As+V) > 0.5
+        - Cation: Cu/(Cu+Ca) > 0.5
 
-        Source: research/research-zeunerite.md (boss commit 3bfdf4a);
+        Mirror of torbernite (Cu-P branch). Same crystal system, same
+        tabular habit; distinguishable from torbernite only by chemistry.
+        The arsenic is the giveaway: zeunerite localities are former
+        mining districts with arsenopyrite or tennantite as primary As ores.
+
+        Sources: research/research-zeunerite.md (boss commit 3bfdf4a);
+        research/research-uranospinite.md (Round 9e cation fork);
         Schneeberg type locality (1872).
         """
         # Required ingredients
@@ -4386,13 +4434,22 @@ class VugConditions:
         if self.fluid.pH < 5.0 or self.fluid.pH > 7.5:
             return 0
 
-        # Anion competition — As must dominate over P + V (full 3-way
-        # gate as of 9c, when carnotite shipped).
+        # Anion competition — As must dominate over P + V
         anion_total = self.fluid.P + self.fluid.As + self.fluid.V
         if anion_total <= 0:
             return 0
         as_fraction = self.fluid.As / anion_total
         if as_fraction < 0.5:
+            return 0
+        # Cation competition (Round 9e) — Cu must dominate over Ca.
+        # Mirror of torbernite's Round 9d gate. Without this, zeunerite
+        # would fire in Ca-saturated groundwater that should route to
+        # uranospinite.
+        cation_total = self.fluid.Cu + self.fluid.Ca
+        if cation_total <= 0:
+            return 0
+        cu_fraction = self.fluid.Cu / cation_total
+        if cu_fraction < 0.5:
             return 0
 
         # Activity factors
@@ -4413,6 +4470,69 @@ class VugConditions:
             T_factor = 0.6 + 0.04 * (T - 10)
         else:
             T_factor = max(0.4, 1.2 - 0.08 * (T - 40))
+        sigma *= T_factor
+
+        return max(sigma, 0)
+
+    def supersaturation_uranospinite(self) -> float:
+        """Uranospinite (Ca(UO₂)₂(AsO₄)₂·10H₂O) — As-branch / Ca-cation of
+        the autunite-group cation+anion fork (Round 9e, May 2026).
+
+        Ca-cation analog of zeunerite. Same parent fluid (U + As +
+        supergene-T + oxidizing) but wins when Ca/(Cu+Ca) > 0.5 — typically
+        when Cu has been depleted from the local fluid but As is still
+        around. Strongly fluorescent yellow-green LW UV — Ca²⁺ doesn't
+        quench uranyl emission like Cu²⁺ does in zeunerite (mirroring the
+        autunite-vs-torbernite story on the As-branch).
+
+        Sources: research/research-uranospinite.md (implementation-grade
+        draft, 2026-05-01); MSA Handbook of Mineralogy; Schneeberg
+        Walpurgis Flacher vein type locality (Weisbach 1873).
+        """
+        # Required ingredients — Ca floor at 15 (typical groundwater)
+        if (self.fluid.Ca < 15 or self.fluid.U < 0.3
+                or self.fluid.As < 2.0 or self.fluid.O2 < 0.8):
+            return 0
+        if self.temperature < 5 or self.temperature > 50:
+            return 0
+        # pH window broader than zeunerite — Ca²⁺ doesn't form acid-side
+        # complexes the way Cu²⁺ does
+        if self.fluid.pH < 4.5 or self.fluid.pH > 8.0:
+            return 0
+        # Anion fork — As must dominate over P + V
+        anion_total = self.fluid.P + self.fluid.As + self.fluid.V
+        if anion_total <= 0:
+            return 0
+        as_fraction = self.fluid.As / anion_total
+        if as_fraction < 0.5:
+            return 0
+        # Cation fork — Ca must dominate over Cu (mirror of zeunerite)
+        cation_total = self.fluid.Cu + self.fluid.Ca
+        if cation_total <= 0:
+            return 0
+        ca_fraction = self.fluid.Ca / cation_total
+        if ca_fraction < 0.5:
+            return 0
+
+        # Activity factors — Ca activity referenced at 50 ppm (groundwater
+        # baseline), mirror autunite
+        u_f = min(self.fluid.U / 2.0, 2.0)
+        ca_f = min(self.fluid.Ca / 50.0, 2.0)
+        as_f = min(self.fluid.As / 15.0, 2.0)
+        sigma = u_f * ca_f * as_f
+
+        # As-fraction sweet spot
+        if 0.55 <= as_fraction <= 0.85:
+            sigma *= 1.3
+
+        # T optimum — 10-35°C (mirror autunite)
+        T = self.temperature
+        if 10 <= T <= 35:
+            T_factor = 1.2
+        elif T < 10:
+            T_factor = 0.5 + 0.07 * (T - 5)
+        else:
+            T_factor = max(0.4, 1.2 - 0.08 * (T - 35))
         sigma *= T_factor
 
         return max(sigma, 0)
@@ -4457,6 +4577,16 @@ class VugConditions:
         v_fraction = self.fluid.V / anion_total
         if v_fraction < 0.5:
             return 0
+        # Cation competition (Round 9e) — K must dominate over Ca.
+        # Mirror of the torbernite/zeunerite cation forks. Without this,
+        # carnotite would fire in Ca-saturated groundwater that should
+        # route to tyuyamunite.
+        cation_total = self.fluid.K + self.fluid.Ca
+        if cation_total <= 0:
+            return 0
+        k_fraction = self.fluid.K / cation_total
+        if k_fraction < 0.5:
+            return 0
 
         # Activity factors — U is trace; K is moderate; V is sparse-trace.
         u_f = min(self.fluid.U / 2.0, 2.0)
@@ -4477,6 +4607,74 @@ class VugConditions:
             T_factor = 0.5 + 0.07 * (T - 10)  # 10→0.5 ramps to 20→1.2
         else:  # 40 < T <= 50
             T_factor = max(0.4, 1.2 - 0.08 * (T - 40))
+        sigma *= T_factor
+
+        return max(sigma, 0)
+
+    def supersaturation_tyuyamunite(self) -> float:
+        """Tyuyamunite (Ca(UO₂)₂(VO₄)₂·5-8H₂O) — V-branch / Ca-cation of
+        the autunite-group cation+anion fork (Round 9e, May 2026).
+
+        Ca-cation analog of carnotite. Same parent fluid (U + V +
+        supergene-T + oxidizing) but wins when Ca/(K+Ca) > 0.5 — the
+        geological default in sandstone groundwater where Ca dominates
+        K. Tyuyamunite and carnotite are commonly intergrown in Colorado
+        Plateau and Tyuya-Muyun deposits, with the cation ratio drawing
+        the boundary between them; Britannica notes they are
+        interconvertible by cation exchange.
+
+        Weakly to moderately fluorescent yellow-green LW UV (vanadate
+        matrix dampens uranyl emission via vibrational coupling, same
+        effect as carnotite but slightly lifted by Ca²⁺ vs K⁺).
+
+        Sources: research/research-tyuyamunite.md (implementation-grade
+        draft, 2026-05-01); American Mineralogist v.41 (1956); Tyuya-
+        Muyun, Fergana Valley type locality (Nenadkevich 1912).
+        """
+        # Required ingredients — Ca floor at 15
+        if (self.fluid.Ca < 15 or self.fluid.U < 0.3
+                or self.fluid.V < 1.0 or self.fluid.O2 < 0.8):
+            return 0
+        if self.temperature < 5 or self.temperature > 50:
+            return 0
+        # pH window — same as carnotite (V mobile as VO₄³⁻ above pH 5;
+        # but slightly broader upper bound since Ca-V is more tolerant
+        # of slightly alkaline groundwater)
+        if self.fluid.pH < 5.0 or self.fluid.pH > 8.0:
+            return 0
+        # Anion fork — V must dominate over P + As
+        anion_total = self.fluid.P + self.fluid.As + self.fluid.V
+        if anion_total <= 0:
+            return 0
+        v_fraction = self.fluid.V / anion_total
+        if v_fraction < 0.5:
+            return 0
+        # Cation fork — Ca must dominate over K (mirror of carnotite)
+        cation_total = self.fluid.K + self.fluid.Ca
+        if cation_total <= 0:
+            return 0
+        ca_fraction = self.fluid.Ca / cation_total
+        if ca_fraction < 0.5:
+            return 0
+
+        # Activity factors
+        u_f = min(self.fluid.U / 2.0, 2.0)
+        ca_f = min(self.fluid.Ca / 50.0, 2.0)
+        v_f = min(self.fluid.V / 10.0, 2.0)
+        sigma = u_f * ca_f * v_f
+
+        # V-fraction sweet spot
+        if 0.55 <= v_fraction <= 0.85:
+            sigma *= 1.3
+
+        # T optimum — 15-35°C (mirror tyuyamunite's research §formation T)
+        T = self.temperature
+        if 15 <= T <= 35:
+            T_factor = 1.2
+        elif T < 15:
+            T_factor = 0.5 + 0.07 * (T - 5)
+        else:
+            T_factor = max(0.4, 1.2 - 0.08 * (T - 35))
         sigma *= T_factor
 
         return max(sigma, 0)
@@ -10717,6 +10915,140 @@ def grow_carnotite(crystal: Crystal, conditions: VugConditions, step: int) -> Op
     )
 
 
+def grow_uranospinite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Uranospinite (Ca(UO₂)₂(AsO₄)₂·10H₂O) — Ca-branch / As-anion of the
+    autunite-group cation+anion fork (Round 9e, May 2026). Mirror of
+    autunite with As substituted for P; mirror of zeunerite with Ca
+    substituted for Cu.
+
+    Habit selection mirrors autunite (high σ + cool → micaceous_book;
+    moderate σ → tabular_plates; low σ → encrusting). Strongly fluorescent
+    yellow-green LW UV — Ca²⁺ doesn't quench like Cu²⁺ does in zeunerite.
+
+    Source: research/research-uranospinite.md (implementation-grade
+    draft, 2026-05-01); MSA Handbook of Mineralogy.
+    """
+    sigma = conditions.supersaturation_uranospinite()
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 4.5:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Ca += dissolved_um * 0.2
+            conditions.fluid.U += dissolved_um * 0.4
+            conditions.fluid.As += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH={conditions.fluid.pH:.1f}) — Ca²⁺ + UO₂²⁺ + AsO₄³⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 1.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit selection — mirror autunite/zeunerite
+    if excess > 1.0 and conditions.temperature < 25:
+        crystal.habit = "micaceous_book"
+        crystal.dominant_forms = ["stacked tabular plates", "subparallel books"]
+        habit_note = "stacked micaceous plates — high-σ Schneeberg/Margnac habit"
+    elif excess > 0.3:
+        crystal.habit = "tabular_plates"
+        crystal.dominant_forms = ["tabular {001}", "square plates"]
+        habit_note = "thin yellow tabular plates — the autunite-group habit (Schneeberg form)"
+    else:
+        crystal.habit = "encrusting"
+        crystal.dominant_forms = ["earthy crust", "yellow staining"]
+        habit_note = "earthy yellow encrustation — secondary surface staining"
+
+    # Color + fluorescence — the cation-fork narrative payoff
+    habit_note += "; yellow to greenish-yellow (uranyl chromophore)"
+    habit_note += "; bright yellow-green LW UV fluorescence (Ca²⁺ doesn't quench like Cu²⁺)"
+    habit_note += "; ☢️ radioactive (U + As both decay-active)"
+
+    # Deplete — formula has 1 Ca + 2 U + 2 As per unit
+    conditions.fluid.Ca = max(conditions.fluid.Ca - rate * 0.025, 0)
+    conditions.fluid.U = max(conditions.fluid.U - rate * 0.04, 0)
+    conditions.fluid.As = max(conditions.fluid.As - rate * 0.06, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
+def grow_tyuyamunite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
+    """Tyuyamunite (Ca(UO₂)₂(VO₄)₂·5-8H₂O) — Ca-branch / V-anion of the
+    autunite-group cation+anion fork (Round 9e, May 2026). Mirror of
+    carnotite with Ca substituted for K — orthorhombic instead of
+    monoclinic crystal system, but same habit dispatch (rare tabular
+    plates / earthy crust default / powdery disseminations low-σ).
+
+    Weakly to moderately fluorescent yellow-green LW UV (vanadate
+    matrix dampens emission, but slightly cleaner than carnotite due
+    to Ca²⁺ vs K⁺).
+
+    Source: research/research-tyuyamunite.md (implementation-grade
+    draft, 2026-05-01); American Mineralogist v.41 (1956); Tyuya-Muyun
+    type locality (Nenadkevich 1912).
+    """
+    sigma = conditions.supersaturation_tyuyamunite()
+    if sigma < 1.0:
+        if crystal.total_growth_um > 5 and conditions.fluid.pH < 5.0:
+            crystal.dissolved = True
+            dissolved_um = min(2.0, crystal.total_growth_um * 0.10)
+            conditions.fluid.Ca += dissolved_um * 0.2
+            conditions.fluid.U += dissolved_um * 0.4
+            conditions.fluid.V += dissolved_um * 0.3
+            return GrowthZone(
+                step=step, temperature=conditions.temperature,
+                thickness_um=-dissolved_um, growth_rate=-dissolved_um,
+                note=f"acid dissolution (pH={conditions.fluid.pH:.1f}) — Ca²⁺ + UO₂²⁺ + VO₄³⁻ released"
+            )
+        return None
+
+    excess = sigma - 1.0
+    rate = 1.5 * excess * random.uniform(0.8, 1.2)
+    if rate < 0.1:
+        return None
+
+    # Habit selection — mirror carnotite (crystalline tyuyamunite is
+    # rare; the default is sandstone-staining earthy crust)
+    if excess > 1.5 and conditions.temperature < 30:
+        crystal.habit = "tabular_plates"
+        crystal.dominant_forms = ["diamond-shaped {001} plates", "tabular crystals"]
+        habit_note = "rare crystalline tyuyamunite — diamond-shaped plates from Tyuya-Muyun"
+    elif excess > 0.4:
+        crystal.habit = "earthy_crust"
+        crystal.dominant_forms = ["canary-yellow earthy crust", "thin coating"]
+        habit_note = "canary-yellow earthy crust — the standard sandstone-staining habit"
+    else:
+        crystal.habit = "powdery_disseminated"
+        crystal.dominant_forms = ["powdery yellow disseminations", "sandstone stain"]
+        habit_note = "powdery yellow disseminations — the sandstone-stain form"
+
+    # Color + fluorescence
+    habit_note += "; canary-yellow (UO₂²⁺ charge-transfer); ☢️ radioactive"
+    habit_note += "; weakly fluorescent yellow-green LW UV (vanadate dampens emission, but Ca²⁺ helps slightly)"
+
+    # Roll-front / petrified-wood association (mirror carnotite)
+    if conditions.fluid.Fe > 5 and conditions.temperature < 30:
+        habit_note += "; roll-front signature (oxidizing groundwater + sandstone host)"
+
+    # Deplete — formula has 1 Ca + 2 U + 2 V per unit
+    conditions.fluid.Ca = max(conditions.fluid.Ca - rate * 0.025, 0)
+    conditions.fluid.U = max(conditions.fluid.U - rate * 0.04, 0)
+    conditions.fluid.V = max(conditions.fluid.V - rate * 0.05, 0)
+
+    return GrowthZone(
+        step=step, temperature=conditions.temperature,
+        thickness_um=rate, growth_rate=rate,
+        note=habit_note,
+    )
+
+
 def grow_selenite(crystal: Crystal, conditions: VugConditions, step: int) -> Optional[GrowthZone]:
     """Selenite / Gypsum (CaSO₄·2H₂O) growth. Low-T evaporite, Naica's giant crystals."""
     sigma = conditions.supersaturation_selenite()
@@ -10866,6 +11198,8 @@ MINERAL_ENGINES = {
     "zeunerite": grow_zeunerite,         # Round 9b: As-branch anion-competition uranyl arsenate
     "carnotite": grow_carnotite,         # Round 9c: V-branch anion-competition uranyl vanadate (K-cation)
     "autunite": grow_autunite,           # Round 9d: P-branch with Cu-vs-Ca cation fork — Ca-uranyl phosphate
+    "uranospinite": grow_uranospinite,   # Round 9e: As-branch / Ca-cation — autunite-group Ca-uranyl arsenate
+    "tyuyamunite": grow_tyuyamunite,     # Round 9e: V-branch / Ca-cation — orthorhombic Ca-uranyl vanadate
 }
 
 
@@ -11284,6 +11618,217 @@ def event_radioactive_pegmatite_final_cooling(conditions: VugConditions) -> str:
             "darkened by radiation, and galena crystallized from the "
             "lead that uranium became. Time wrote this assemblage. "
             "Chemistry just held the pen.")
+
+
+# --- schneeberg (oxidized U-pegmatite + arsenopyrite, Erzgebirge, Saxony) ---
+# Round 9e mechanic-coverage scenario (May 2026): walks the autunite-group
+# cation×anion fork through both Cu-cation phases (torbernite + zeunerite
+# in P/As branches) then both Ca-cation phases (autunite + uranospinite).
+
+def event_schneeberg_pegmatite_crystallization(conditions: VugConditions) -> str:
+    """Hot pegmatitic fluid grows uraninite + chalcopyrite + arsenopyrite primaries."""
+    conditions.temperature = 350
+    conditions.fluid.O2 = 0.0  # strongly reducing — required for sulfides + uraninite
+    conditions.fluid.SiO2 = max(conditions.fluid.SiO2, 6000)
+    return ("The Schneeberg pegmatite differentiates. A reducing residual "
+            "fluid floods the pocket with uranium, copper, iron, and "
+            "arsenic. Uraninite grows as pitch-black masses; chalcopyrite "
+            "plates as brassy disphenoids; arsenopyrite forms steel-gray "
+            "rhombs. Bismuth is everywhere — Schneeberg's first ore was "
+            "bismuth, three centuries before pitchblende became uranium.")
+
+
+def event_schneeberg_cooling(conditions: VugConditions) -> str:
+    """T drops to ambient supergene window; primaries finish forming."""
+    conditions.temperature = 30
+    conditions.flow_rate = 0.5
+    return ("The pegmatite system cools toward ambient. Primary "
+            "crystallization closes. The vug holds black uraninite, "
+            "brassy chalcopyrite, and steel-gray arsenopyrite — a "
+            "characteristic Erzgebirge primary assemblage, not yet "
+            "touched by oxidation.")
+
+
+def event_schneeberg_cu_p_phase(conditions: VugConditions) -> str:
+    """Meteoric oxidation flood. P-dominant + Cu-dominant fluid → torbernite plates."""
+    conditions.temperature = 25
+    conditions.fluid.O2 = 1.5  # oxidizing — primaries begin weathering
+    conditions.fluid.pH = 6.0
+    conditions.flow_rate = 1.5
+    # Phosphate replenishment from soil-zone runoff (Schneeberg-area
+    # apatite-bearing pegmatite accessory minerals weather to release P).
+    # Set P high, As low — torbernite-favorable anion fork.
+    conditions.fluid.P = max(conditions.fluid.P, 18.0)
+    conditions.fluid.As = min(conditions.fluid.As, 4.0)
+    # Cu boosted by chalcopyrite weathering (the engine itself releases Cu,
+    # but we top it up to ensure the cation gate fires the Cu branch).
+    conditions.fluid.Cu = max(conditions.fluid.Cu, 70.0)
+    # Ca held moderate so Cu/(Cu+Ca) > 0.5 passes
+    conditions.fluid.Ca = min(conditions.fluid.Ca, 35.0)
+    return ("Meteoric water seeps through fractures and floods the system "
+            "with oxygen. Uraninite begins weathering — its U⁴⁺ flips to "
+            "soluble UO₂²⁺ uranyl. Chalcopyrite oxidizes; Cu²⁺ enters "
+            "solution alongside the uranyl. Arsenopyrite weathering is "
+            "delayed (steeper kinetic barrier), so phosphate dominates "
+            "the anion pool. Emerald-green torbernite plates begin "
+            "appearing on the dissolving uraninite — the diagnostic "
+            "Schneeberg habit, the museum-classic.")
+
+
+def event_schneeberg_cu_as_pulse(conditions: VugConditions) -> str:
+    """Arsenopyrite weathering catches up — As-dominant + Cu-dominant → zeunerite plates."""
+    conditions.temperature = 22
+    # Arsenopyrite weathering finally releases its arsenate. As-dominant fluid.
+    conditions.fluid.As = max(conditions.fluid.As, 22.0)
+    conditions.fluid.P = min(conditions.fluid.P, 4.0)
+    # Some Cu has been consumed by torbernite, but more is released by
+    # ongoing chalcopyrite weathering. Net stays Cu-dominant.
+    conditions.fluid.Cu = max(conditions.fluid.Cu, 55.0)
+    conditions.fluid.Ca = min(conditions.fluid.Ca, 35.0)
+    return ("The arsenopyrite has been steadily oxidizing in the "
+            "background, and now it catches up. Arsenate floods the "
+            "fluid — As pulls past P as the dominant anion. Cu is still "
+            "in the pool, ahead of Ca. The same chemistry stage as "
+            "torbernite but with arsenate instead of phosphate: zeunerite, "
+            "the species Weisbach described from this very mine in 1872. "
+            "Visually indistinguishable from torbernite; the chemistry "
+            "is the only honest test.")
+
+
+def event_schneeberg_cu_depletion(conditions: VugConditions) -> str:
+    """Cu consumed; Ca rises from carbonate dissolution → autunite plates."""
+    conditions.temperature = 20
+    # Cu has been consumed by torbernite + zeunerite; what's left in
+    # solution is the residual after secondary plating. Set explicitly low.
+    conditions.fluid.Cu = min(conditions.fluid.Cu, 5.0)
+    # Ca rises — carbonate-buffered pegmatite-country-rock contact
+    # dissolves carbonate accessory minerals as Cu²⁺ has been consumed
+    # and the local pore fluid acidity drops.
+    conditions.fluid.Ca = max(conditions.fluid.Ca, 100.0)
+    # Phosphate replenishment for the autunite phase
+    conditions.fluid.P = max(conditions.fluid.P, 18.0)
+    conditions.fluid.As = min(conditions.fluid.As, 4.0)
+    return ("Copper has been pulled out of the fluid by the green plates. "
+            "The cation pool flips: calcium, sourced from the carbonate "
+            "buffer in the pegmatite country rock, takes over. P "
+            "replenishes from continuing apatite weathering. The same "
+            "uranyl-phosphate chemistry that grew torbernite now grows "
+            "autunite — bright canary yellow instead of emerald green, "
+            "and crucially, fluorescent. Where Cu²⁺ killed the uranyl "
+            "emission cold, Ca²⁺ leaves it lit.")
+
+
+def event_schneeberg_as_pulse_late(conditions: VugConditions) -> str:
+    """Final arsenate replenishment; Ca dominant → uranospinite plates."""
+    conditions.temperature = 18
+    conditions.fluid.As = max(conditions.fluid.As, 22.0)
+    conditions.fluid.P = min(conditions.fluid.P, 4.0)
+    conditions.fluid.Ca = max(conditions.fluid.Ca, 100.0)
+    conditions.fluid.Cu = min(conditions.fluid.Cu, 5.0)
+    conditions.flow_rate = 0.3
+    return ("The arsenate replenishes one final time as the last "
+            "arsenopyrite grains weather. Ca is still dominant, As is "
+            "now dominant: uranospinite, the calcium analog of zeunerite. "
+            "Same mine, same vein, same uranyl ion — but where zeunerite "
+            "was dead under UV, this one glows yellow-green. Weisbach "
+            "described it in 1873, the year after he characterized "
+            "zeunerite a hundred meters away. Four uranyl species in one "
+            "vug, the cation+anion fork mechanic finally written into "
+            "the rock.")
+
+
+# --- colorado_plateau (sandstone roll-front uranium-vanadium deposits) ---
+# Round 9e companion scenario (May 2026): fires carnotite + tyuyamunite,
+# completing the K/Ca cation fork on the V-anion branch.
+
+def event_colorado_plateau_groundwater_pulse(conditions: VugConditions) -> str:
+    """U+V replenishment from upstream sandstone weathering; Ca dominant → tyuyamunite plates."""
+    conditions.temperature = 22
+    conditions.fluid.O2 = 1.5  # oxidizing surface groundwater
+    conditions.fluid.pH = 7.0
+    conditions.flow_rate = 1.2
+    # Replenish U + V from upstream weathering of montroseite/uraninite
+    conditions.fluid.U = max(conditions.fluid.U, 18.0)
+    conditions.fluid.V = max(conditions.fluid.V, 14.0)
+    # Ca dominant initially (groundwater carbonate equilibrium)
+    conditions.fluid.Ca = max(conditions.fluid.Ca, 100.0)
+    conditions.fluid.K = min(conditions.fluid.K, 20.0)
+    return ("Oxidizing groundwater flushes through the Morrison Formation "
+            "sandstones, picking up uranium from upstream uraninite "
+            "weathering and vanadium from montroseite-bearing layers. "
+            "The carbonate-buffered fluid carries Ca dominant over K. "
+            "Where it meets a U+V trap — typically petrified wood or "
+            "carbonaceous shale — bright canary-yellow tyuyamunite "
+            "begins plating. The same yellow that prospectors followed "
+            "across mesa tops decades before scintillometers existed.")
+
+
+def event_colorado_plateau_roll_front_contact(conditions: VugConditions) -> str:
+    """Fe rises (organic-iron proxy); T drops; redox front concentrates uranyl-vanadates."""
+    conditions.temperature = 18
+    conditions.fluid.Fe = max(conditions.fluid.Fe, 12.0)
+    conditions.fluid.O2 = 1.0  # slight reduction at the redox front
+    conditions.flow_rate = 0.6
+    return ("The fluid hits a roll-front — a buried zone of carbonaceous "
+            "shale or petrified wood that has held its reducing capacity "
+            "for millions of years. Iron rises as the organic carbon "
+            "reduces dissolved Fe³⁺ to Fe²⁺ and pulls oxygen from the "
+            "system. The uranyl-vanadate complex destabilizes at the "
+            "redox boundary, dropping out as concentrated tyuyamunite "
+            "crusts where the chemistry crosses. The Colorado Plateau "
+            "ore-grade signature.")
+
+
+def event_colorado_plateau_k_pulse(conditions: VugConditions) -> str:
+    """Evaporite K enrichment; K/(K+Ca) crosses 0.5 → carnotite plates."""
+    conditions.temperature = 22
+    # Arid-zone evaporation concentrates K (groundwater K-feldspar weathering
+    # + minor evaporite influence in the discharge zone).
+    conditions.fluid.K = max(conditions.fluid.K, 40.0)
+    conditions.fluid.Ca = min(conditions.fluid.Ca, 30.0)
+    conditions.fluid.V = max(conditions.fluid.V, 10.0)
+    conditions.fluid.U = max(conditions.fluid.U, 8.0)
+    conditions.fluid.Fe = max(conditions.fluid.Fe, 8.0)
+    return ("A drier interval. Evaporation concentrates the alkaline "
+            "ions; potassium pulls past calcium in the cation pool. "
+            "K/(K+Ca) crosses 0.5 — the carnotite branch of the cation "
+            "fork takes over. Carnotite plates beside the existing "
+            "tyuyamunite. Same canary-yellow, same uranyl-vanadate, "
+            "same chemistry stage; the cation ratio drew the boundary "
+            "between them. Friedel and Cumenge described carnotite "
+            "from Roc Creek in 1899 from exactly this kind of pore-fluid "
+            "regime.")
+
+
+def event_colorado_plateau_ca_recovery(conditions: VugConditions) -> str:
+    """Carbonate dissolution refreshes Ca; second tyuyamunite phase plates alongside carnotite."""
+    conditions.temperature = 20
+    # Carbonate dissolution (post-evaporite recharge) brings Ca back to dominance
+    conditions.fluid.Ca = max(conditions.fluid.Ca, 95.0)
+    conditions.fluid.K = min(conditions.fluid.K, 15.0)
+    conditions.fluid.V = max(conditions.fluid.V, 9.0)
+    conditions.fluid.U = max(conditions.fluid.U, 6.0)
+    return ("The dry interval ends; meteoric recharge brings carbonate "
+            "back into solution. Ca recovers dominance. Tyuyamunite "
+            "resumes plating in the new pore-fluid composition, this "
+            "time alongside the carnotite that grew during the K-pulse. "
+            "Colorado Plateau specimens preserve exactly this kind of "
+            "intergrowth — the same hand specimen, the same emerald "
+            "color, the cation chemistry the only honest test of which "
+            "is which.")
+
+
+def event_colorado_plateau_arid_stabilization(conditions: VugConditions) -> str:
+    """System reaches ambient steady state; both species coexist."""
+    conditions.temperature = 20
+    conditions.flow_rate = 0.1
+    return ("The system reaches its steady state. Carnotite and "
+            "tyuyamunite cover the pore walls in roughly equal parts. "
+            "Both fluoresce dimly under longwave UV — the vanadate "
+            "matrix dampens their emission below autunite-group "
+            "brilliance, but Ca²⁺ keeps tyuyamunite's emission slightly "
+            "lifted above carnotite's. Time wrote this assemblage. "
+            "Geochemistry just held the pen.")
 
 
 # --- deccan_zeolite (Stage III Deccan Traps zeolite vesicle, ~21-58 Ma post-eruption) ---
@@ -12005,6 +12550,18 @@ EVENT_REGISTRY = {
     "sabkha_flood": event_sabkha_flood,
     "sabkha_evap": event_sabkha_evap,
     "sabkha_final_seal": event_sabkha_final_seal,
+    # Round 9e mechanic-coverage scenarios (May 2026):
+    "schneeberg_pegmatite_crystallization": event_schneeberg_pegmatite_crystallization,
+    "schneeberg_cooling": event_schneeberg_cooling,
+    "schneeberg_cu_p_phase": event_schneeberg_cu_p_phase,
+    "schneeberg_cu_as_pulse": event_schneeberg_cu_as_pulse,
+    "schneeberg_cu_depletion": event_schneeberg_cu_depletion,
+    "schneeberg_as_pulse_late": event_schneeberg_as_pulse_late,
+    "colorado_plateau_groundwater_pulse": event_colorado_plateau_groundwater_pulse,
+    "colorado_plateau_roll_front_contact": event_colorado_plateau_roll_front_contact,
+    "colorado_plateau_k_pulse": event_colorado_plateau_k_pulse,
+    "colorado_plateau_ca_recovery": event_colorado_plateau_ca_recovery,
+    "colorado_plateau_arid_stabilization": event_colorado_plateau_arid_stabilization,
 }
 
 
@@ -12385,6 +12942,9 @@ SCENARIOS = {
     "deccan_zeolite": _JSON5_SCENARIOS["deccan_zeolite"],
     "sabkha_dolomitization": _JSON5_SCENARIOS["sabkha_dolomitization"],
     "marble_contact_metamorphism": _JSON5_SCENARIOS["marble_contact_metamorphism"],
+    # Round 9e mechanic-coverage scenarios (May 2026):
+    "schneeberg": _JSON5_SCENARIOS["schneeberg"],
+    "colorado_plateau": _JSON5_SCENARIOS["colorado_plateau"],
     # scenario_random opts out — procedural / RNG-driven, stays as code.
     "random": scenario_random,
 }
@@ -14230,6 +14790,60 @@ class VugSimulator:
                               f"Ca={self.conditions.fluid.Ca:.0f}, U={self.conditions.fluid.U:.2f}, "
                               f"P={self.conditions.fluid.P:.1f}, Ca-fraction={ca_pct:.0f}%) — "
                               f"cation+anion fork: Ca-dominant on the P-branch")
+
+        # Uranospinite nucleation — Ca-branch / As-anion of the autunite-
+        # group fork (Round 9e). Substrate preference: weathering uraninite
+        # OR weathering arsenopyrite (the As source) OR active zeunerite
+        # (the Cu-cation partner often co-mineralizes at Schneeberg).
+        sigma_uros = self.conditions.supersaturation_uranospinite()
+        if sigma_uros > 1.0 and not self._at_nucleation_cap("uranospinite"):
+            if random.random() < 0.20:
+                pos = "vug wall"
+                weathering_urn = [c for c in self.crystals if c.mineral == "uraninite" and c.dissolved]
+                weathering_apy = [c for c in self.crystals if c.mineral == "arsenopyrite" and c.dissolved]
+                active_zeu = [c for c in self.crystals if c.mineral == "zeunerite" and c.active]
+                if weathering_urn and random.random() < 0.4:
+                    pos = f"on weathering uraninite #{weathering_urn[0].crystal_id}"
+                elif weathering_apy and random.random() < 0.4:
+                    pos = f"on weathering arsenopyrite #{weathering_apy[0].crystal_id}"
+                elif active_zeu and random.random() < 0.3:
+                    pos = f"adjacent to zeunerite #{active_zeu[0].crystal_id}"
+                c = self.nucleate("uranospinite", position=pos, sigma=sigma_uros)
+                cation_total = self.conditions.fluid.Cu + self.conditions.fluid.Ca
+                ca_pct = (self.conditions.fluid.Ca / cation_total * 100) if cation_total > 0 else 0
+                self.log.append(f"  ✦ NUCLEATION: Uranospinite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_uros:.2f}, "
+                              f"Ca={self.conditions.fluid.Ca:.0f}, U={self.conditions.fluid.U:.2f}, "
+                              f"As={self.conditions.fluid.As:.1f}, Ca-fraction={ca_pct:.0f}%) — "
+                              f"cation+anion fork: Ca-dominant on the As-branch")
+
+        # Tyuyamunite nucleation — Ca-branch / V-anion of the autunite-group
+        # fork (Round 9e). Substrate preference: weathering uraninite OR
+        # active carnotite (the K-cation partner — they're commonly
+        # intergrown in Colorado Plateau and Tyuya-Muyun deposits) OR
+        # roll-front position via Fe>5 + low-T proxy.
+        sigma_tyu = self.conditions.supersaturation_tyuyamunite()
+        if sigma_tyu > 1.0 and not self._at_nucleation_cap("tyuyamunite"):
+            if random.random() < 0.20:
+                pos = "vug wall"
+                weathering_urn = [c for c in self.crystals if c.mineral == "uraninite" and c.dissolved]
+                active_car = [c for c in self.crystals if c.mineral == "carnotite" and c.active]
+                if weathering_urn and random.random() < 0.4:
+                    pos = f"on weathering uraninite #{weathering_urn[0].crystal_id}"
+                elif active_car and random.random() < 0.4:
+                    pos = f"adjacent to carnotite #{active_car[0].crystal_id}"
+                elif (self.conditions.fluid.Fe > 5
+                      and self.conditions.temperature < 30
+                      and random.random() < 0.3):
+                    pos = "around organic carbon (roll-front position)"
+                c = self.nucleate("tyuyamunite", position=pos, sigma=sigma_tyu)
+                cation_total = self.conditions.fluid.K + self.conditions.fluid.Ca
+                ca_pct = (self.conditions.fluid.Ca / cation_total * 100) if cation_total > 0 else 0
+                self.log.append(f"  ✦ NUCLEATION: Tyuyamunite #{c.crystal_id} on {c.position} "
+                              f"(T={self.conditions.temperature:.0f}°C, σ={sigma_tyu:.2f}, "
+                              f"Ca={self.conditions.fluid.Ca:.0f}, U={self.conditions.fluid.U:.2f}, "
+                              f"V={self.conditions.fluid.V:.1f}, Ca-fraction={ca_pct:.0f}%) — "
+                              f"cation+anion fork: Ca-dominant on the V-branch")
 
     def apply_events(self):
         """Apply any events scheduled for this step."""
@@ -17675,6 +18289,56 @@ class VugSimulator:
             parts.append(narrative_variant("autunite", "on_weathering_uraninite"))
         if c.dissolved:
             parts.append(narrative_variant("autunite", "acid_dissolution"))
+        return " ".join(p for p in parts if p)
+
+    def _narrate_uranospinite(self, c: Crystal) -> str:
+        """Narrate uranospinite — Ca-As branch uranyl arsenate (Round 9e).
+
+        Prose lives in narratives/uranospinite.md. Code dispatches blurb +
+        habit (micaceous_book / tabular_plates / encrusting) + paragenetic
+        on_uraninite or on_zeunerite when position notes hint + dissolved.
+        """
+        parts = [f"Uranospinite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm ☢️."]
+        parts.append(narrative_blurb("uranospinite"))
+        if c.habit == "micaceous_book":
+            parts.append(narrative_variant("uranospinite", "micaceous_book"))
+        elif c.habit == "tabular_plates":
+            parts.append(narrative_variant("uranospinite", "tabular_plates"))
+        else:
+            parts.append(narrative_variant("uranospinite", "encrusting"))
+        if "uraninite" in (c.position or ""):
+            parts.append(narrative_variant("uranospinite", "on_weathering_uraninite"))
+        elif "arsenopyrite" in (c.position or ""):
+            parts.append(narrative_variant("uranospinite", "on_weathering_arsenopyrite"))
+        elif "zeunerite" in (c.position or ""):
+            parts.append(narrative_variant("uranospinite", "on_zeunerite"))
+        if c.dissolved:
+            parts.append(narrative_variant("uranospinite", "acid_dissolution"))
+        return " ".join(p for p in parts if p)
+
+    def _narrate_tyuyamunite(self, c: Crystal) -> str:
+        """Narrate tyuyamunite — Ca-V branch uranyl vanadate (Round 9e).
+
+        Prose lives in narratives/tyuyamunite.md. Code dispatches blurb +
+        habit (tabular_plates / earthy_crust / powdery_disseminated) +
+        paragenetic carnotite_companion when position hints + dissolved.
+        """
+        parts = [f"Tyuyamunite #{c.crystal_id} grew to {c.c_length_mm:.1f} mm ☢️."]
+        parts.append(narrative_blurb("tyuyamunite"))
+        if c.habit == "tabular_plates":
+            parts.append(narrative_variant("tyuyamunite", "tabular_plates"))
+        elif c.habit == "earthy_crust":
+            parts.append(narrative_variant("tyuyamunite", "earthy_crust"))
+        else:
+            parts.append(narrative_variant("tyuyamunite", "powdery_disseminated"))
+        if "carnotite" in (c.position or ""):
+            parts.append(narrative_variant("tyuyamunite", "carnotite_companion"))
+        elif "uraninite" in (c.position or ""):
+            parts.append(narrative_variant("tyuyamunite", "on_weathering_uraninite"))
+        elif "roll-front" in (c.position or ""):
+            parts.append(narrative_variant("tyuyamunite", "roll_front"))
+        if c.dissolved:
+            parts.append(narrative_variant("tyuyamunite", "acid_dissolution"))
         return " ".join(p for p in parts if p)
 
     def _narrate_aurichalcite(self, c: Crystal) -> str:

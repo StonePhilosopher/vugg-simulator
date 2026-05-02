@@ -137,11 +137,15 @@ def test_too_cold_blocks_autunite():
 
 def test_v_dominant_still_fires_carnotite_unchanged():
     """Sanity check that the 9d cation fork on torbernite/autunite didn't
-    accidentally break carnotite's V-branch. K + V + U should still fire."""
+    break carnotite's V-branch. K + V + U should still fire.
+
+    Note (Round 9e update, May 2026): carnotite now also has a K/(K+Ca)
+    cation gate. We need Ca=5 explicit (low-Ca evaporite/playa context)
+    to keep the test focused on the V-anion branch verification."""
     cond = VugConditions(
         temperature=30.0,
         pressure=0.05,
-        fluid=FluidChemistry(K=30, U=2.5, V=8, P=0, As=0, O2=1.5, pH=6.5),
+        fluid=FluidChemistry(K=30, Ca=5, U=2.5, V=8, P=0, As=0, O2=1.5, pH=6.5),
         wall=VugWall(),
     )
     assert cond.supersaturation_carnotite() > 1.0

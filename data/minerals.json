@@ -8869,40 +8869,47 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9b (Apr 2026), updated 9c (Apr 2026): denominator widened from P+As to P+As+V so V-rich fluid now properly blocks zeunerite (carnotite gets it instead). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_zeunerite returns 0 when As/(P+As+V) < 0.5 — the As-dominant branch of the now-complete 3-way anion-competition trio (torbernite/zeunerite/carnotite). Isostructural with torbernite (Schneeberg pair); shares all habit-selection logic. Source: research/research-zeunerite.md.",
+      "audit_status": "Round 9b (Apr 2026), updated 9c (Apr 2026), updated 9e (May 2026): denominator widened from P+As to P+As+V so V-rich fluid now properly blocks zeunerite (carnotite gets it instead). 9e added a Cu/(Cu+Ca) > 0.5 cation gate to fork against uranospinite (Ca-cation analog). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_zeunerite returns 0 when As/(P+As+V) < 0.5 OR when Cu/(Cu+Ca) < 0.5. Isostructural with torbernite (Schneeberg pair); shares all habit-selection logic. Sources: research/research-zeunerite.md + research/research-uranospinite.md.",
       "class_color": "#13eb7f",
       "test_cases": [
         {
           "name": "as_dominant_fires",
-          "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
+          "fluid": {"Cu": 40, "Ca": 5, "U": 2.5, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
           "T_C": 25,
           "expects": {"sigma": ">1.0"},
-          "rationale": "As/(P+As+V)=0.80 — anion gate passes for the As-branch."
+          "rationale": "As/(P+As+V)=0.80, Cu/(Cu+Ca)=0.89 — both anion + cation gates pass for the Cu-As branch (zeunerite)."
         },
         {
           "name": "p_dominant_blocks",
-          "fluid": {"Cu": 40, "U": 2.5, "P": 8, "As": 2, "V": 0, "O2": 1.5, "pH": 6.0},
+          "fluid": {"Cu": 40, "Ca": 5, "U": 2.5, "P": 8, "As": 2, "V": 0, "O2": 1.5, "pH": 6.0},
           "T_C": 25,
           "expects": {"sigma": "==0"},
-          "rationale": "P-dominant fluid — torbernite wins, zeunerite ratio-blocked."
+          "rationale": "P-dominant fluid — torbernite wins, zeunerite anion-blocked."
         },
         {
           "name": "v_dominant_blocks",
-          "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 2, "V": 8, "O2": 1.5, "pH": 6.0},
+          "fluid": {"Cu": 40, "Ca": 5, "U": 2.5, "P": 2, "As": 2, "V": 8, "O2": 1.5, "pH": 6.0},
           "T_C": 25,
           "expects": {"sigma": "==0"},
-          "rationale": "V-dominant fluid — carnotite wins (assuming K available), zeunerite ratio-blocked. The 9c update extending the anion-competition denominator to P+As+V is what makes this case meaningful."
+          "rationale": "V-dominant fluid — carnotite wins, zeunerite anion-blocked. The 9c update widened the denominator to P+As+V."
+        },
+        {
+          "name": "ca_dominant_blocks_cu_fork",
+          "fluid": {"Cu": 5, "Ca": 80, "U": 2.5, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "Cu/(Cu+Ca)=0.06 — uranospinite wins the cation race, zeunerite cation-blocked. The 9e Cu-vs-Ca fork is what makes this case meaningful — pre-9e, Cu>=5 alone would have fired zeunerite even in Ca-saturated groundwater."
         },
         {
           "name": "no_uranium_blocks",
-          "fluid": {"Cu": 40, "U": 0, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
+          "fluid": {"Cu": 40, "Ca": 5, "U": 0, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
           "T_C": 25,
           "expects": {"sigma": "==0"},
           "rationale": "U=0 fails U>=0.3 ingredient gate."
         },
         {
           "name": "too_hot_blocks",
-          "fluid": {"Cu": 40, "U": 2.5, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
+          "fluid": {"Cu": 40, "Ca": 5, "U": 2.5, "P": 2, "As": 8, "V": 0, "O2": 1.5, "pH": 6.0},
           "T_C": 80,
           "expects": {"sigma": "==0"},
           "rationale": "T=80°C above the 50°C ceiling — would dehydrate to metazeunerite."
@@ -9001,71 +9008,78 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9c (Apr 2026). Singleton — V-branch of the uranyl anion-competition trio (with torbernite for P-branch, zeunerite for As-branch, both shipped in 9b). Different cation (K instead of Cu), different crystal system (monoclinic instead of tetragonal), different habit (canary-yellow earthy crusts instead of emerald-green tabular plates), same anion-competition mechanic. Completes the 3-branch generalization: 9c also widens torbernite + zeunerite supersat denominators from P+As to P+As+V so V-rich fluid properly routes to carnotite. No current scenario has the K+U+V+low-T+oxidizing conjunction (rad_peg has K+U but is hot+reducing+V=0; bisbee has K but no U or V; supergene_oxidation has K+V but no U) — same content gap as 9b's torbernite/zeunerite. Engine + test_cases verified. Sources: research/research-carnotite.md; Colorado Plateau roll-front geology; Roc Creek type locality (1899).",
+      "audit_status": "Round 9c (Apr 2026), updated 9e (May 2026). V-branch of the uranyl anion-competition trio (with torbernite for P-branch, zeunerite for As-branch, both shipped in 9b). 9e added a K/(K+Ca) > 0.5 cation gate to fork against tyuyamunite (Ca-cation analog). Different cation (K instead of Cu), different crystal system (monoclinic instead of tetragonal), different habit (canary-yellow earthy crusts instead of emerald-green tabular plates), same anion-competition mechanic. supersaturation_carnotite returns 0 when V/(P+As+V) < 0.5 OR when K/(K+Ca) < 0.5. No shipped scenario has the K+U+V+low-T+oxidizing conjunction with K-dominant Ca, so carnotite + tyuyamunite are both content-gap minerals (same status as 9b/9d). Engine + test_cases verified. Sources: research/research-carnotite.md + research/research-tyuyamunite.md; Colorado Plateau roll-front geology; Roc Creek type locality (1899).",
       "class_color": "#13eb7f",
       "test_cases": [
         {
           "name": "v_dominant_fires",
-          "fluid": {"K": 30, "U": 2.5, "V": 8, "P": 2, "As": 0, "O2": 1.5, "pH": 6.5},
+          "fluid": {"K": 30, "Ca": 5, "U": 2.5, "V": 8, "P": 2, "As": 0, "O2": 1.5, "pH": 6.5},
           "T_C": 30,
           "expects": {"sigma": ">1.0"},
-          "rationale": "V/(P+As+V)=0.80 — anion gate passes for the V-branch. K+U+V all above ingredient thresholds; T in window; oxidizing; near-neutral pH (V is mobile as VO₄³⁻ above pH 6)."
+          "rationale": "V/(P+As+V)=0.80, K/(K+Ca)=0.86 — both anion + cation gates pass for the K-V branch (carnotite). Ca=5 explicit (low-Ca evaporite/playa context) so the 9e cation fork passes."
         },
         {
           "name": "p_dominant_blocks",
-          "fluid": {"K": 30, "U": 2.5, "V": 2, "P": 8, "As": 0, "O2": 1.5, "pH": 6.5},
+          "fluid": {"K": 30, "Ca": 5, "U": 2.5, "V": 2, "P": 8, "As": 0, "O2": 1.5, "pH": 6.5},
           "T_C": 30,
           "expects": {"sigma": "==0"},
-          "rationale": "P-dominant fluid — torbernite wins, carnotite ratio-blocked."
+          "rationale": "P-dominant fluid — torbernite wins, carnotite anion-blocked."
         },
         {
           "name": "as_dominant_blocks",
-          "fluid": {"K": 30, "U": 2.5, "V": 2, "P": 0, "As": 8, "O2": 1.5, "pH": 6.5},
+          "fluid": {"K": 30, "Ca": 5, "U": 2.5, "V": 2, "P": 0, "As": 8, "O2": 1.5, "pH": 6.5},
           "T_C": 30,
           "expects": {"sigma": "==0"},
-          "rationale": "As-dominant fluid — zeunerite wins, carnotite ratio-blocked."
+          "rationale": "As-dominant fluid — zeunerite wins, carnotite anion-blocked."
+        },
+        {
+          "name": "ca_dominant_blocks_k_fork",
+          "fluid": {"K": 5, "Ca": 80, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 30,
+          "expects": {"sigma": "==0"},
+          "rationale": "K/(K+Ca)=0.06 — tyuyamunite wins the cation race, carnotite cation-blocked. The 9e K-vs-Ca fork is what makes this case meaningful — pre-9e, K>=5 alone would have fired carnotite even in Ca-saturated groundwater."
         },
         {
           "name": "no_potassium_blocks",
-          "fluid": {"K": 0, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "fluid": {"K": 0, "Ca": 5, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
           "T_C": 30,
           "expects": {"sigma": "==0"},
-          "rationale": "K=0 fails K>=5 ingredient gate. Carnotite is K-specific; without K it would form tyuyamunite (Ca analogue) instead — variant deferred to a future round."
+          "rationale": "K=0 fails K>=5 ingredient gate."
         },
         {
           "name": "no_uranium_blocks",
-          "fluid": {"K": 30, "U": 0, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "fluid": {"K": 30, "Ca": 5, "U": 0, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
           "T_C": 30,
           "expects": {"sigma": "==0"},
-          "rationale": "U=0 fails U>=0.3 ingredient gate. No uranyl, no uranyl mineral."
+          "rationale": "U=0 fails U>=0.3 ingredient gate."
         },
         {
           "name": "no_vanadium_blocks",
-          "fluid": {"K": 30, "U": 2.5, "V": 0, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "fluid": {"K": 30, "Ca": 5, "U": 2.5, "V": 0, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
           "T_C": 30,
           "expects": {"sigma": "==0"},
-          "rationale": "V=0 fails V>=1.0 ingredient gate. Without vanadate the only uranyl path is torbernite/zeunerite (which also fail here since P=As=0)."
+          "rationale": "V=0 fails V>=1.0 ingredient gate."
         },
         {
           "name": "reducing_blocks",
-          "fluid": {"K": 30, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 0.3, "pH": 6.5},
+          "fluid": {"K": 30, "Ca": 5, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 0.3, "pH": 6.5},
           "T_C": 30,
           "expects": {"sigma": "==0"},
           "rationale": "Reducing fluid keeps U as insoluble U⁴⁺ (uraninite). Carnotite needs U⁶⁺."
         },
         {
           "name": "too_hot_blocks",
-          "fluid": {"K": 30, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "fluid": {"K": 30, "Ca": 5, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
           "T_C": 80,
           "expects": {"sigma": "==0"},
-          "rationale": "T=80°C above 50°C ceiling — carnotite dehydrates above ~100°C, structure collapses; this gate blocks before that."
+          "rationale": "T=80°C above 50°C ceiling — carnotite dehydrates above ~100°C."
         },
         {
           "name": "acidic_blocks",
-          "fluid": {"K": 30, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 4.0},
+          "fluid": {"K": 30, "Ca": 5, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 4.0},
           "T_C": 30,
           "expects": {"sigma": "==0"},
-          "rationale": "pH=4.0 below the 5.0-7.5 stability window. Below pH 6, vanadate is no longer the dominant V species — VO₂⁺ takes over and carnotite chemistry breaks."
+          "rationale": "pH=4.0 below the 5.0-7.5 stability window — vanadate gives way to VO₂⁺."
         }
       ]
     },
@@ -9201,6 +9215,289 @@
           "T_C": 20,
           "expects": {"sigma": "==0"},
           "rationale": "pH=4.0 below 4.5 stability gate — autunite dissolves in acid (uranyl phosphates aren't acid-stable)."
+        }
+      ]
+    },
+    "tyuyamunite": {
+      "formula": "Ca(UO2)2(VO4)2·5-8H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 5,
+      "max_size_cm": 1,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tabular_plates",
+          "wall_spread": 0.4,
+          "void_reach": 0.3,
+          "vector": "tabular",
+          "trigger": "high σ, low T — rare crystalline tyuyamunite, diamond-shaped {001} plates from Tyuya-Muyun"
+        },
+        {
+          "name": "earthy_crust",
+          "wall_spread": 0.85,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "default — canary-yellow earthy crust, the standard sandstone-staining habit"
+        },
+        {
+          "name": "powdery_disseminated",
+          "wall_spread": 0.9,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "low σ — powdery yellow disseminations, the sandstone-stain form"
+        }
+      ],
+      "class": "phosphate",
+      "description": "Ca(UO₂)₂(VO₄)₂·5-8H₂O — orthorhombic Ca-uranyl vanadate, the cation analog of carnotite. Forms by the same mechanism (oxidizing groundwater + uraninite weathering + V-bearing fluid) but wins when Ca/(K+Ca) > 0.5 — the geological-default cation in sandstone groundwater. The two species are commonly intergrown in Colorado Plateau and Tyuya-Muyun deposits, with Britannica noting they are interconvertible by cation exchange. Canary-yellow earthy crusts staining sandstone, weakly-to-moderately fluorescent yellow-green LW UV (vanadate matrix dampens emission slightly even with Ca-cation; cleaner than carnotite's yellow but not as bright as autunite/uranospinite). Mohs 1.5-2, dehydrates readily to metatyuyamunite (·3-5H₂O) at room T in dry storage. Type locality: Tyuya-Muyun, Fergana Valley, Kyrgyzstan (Nenadkevich 1912). Source: research/research-tyuyamunite.md (implementation-grade draft, 2026-05-01); cation-fork mechanic mirrors carnotite + the Round 9d torbernite/autunite pair.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        50
+      ],
+      "T_optimum_C": [
+        15,
+        35
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Ca": 15,
+        "U": 0.3,
+        "V": 1.0,
+        "O2": 0.8
+      },
+      "trace_ingredients": {
+        "K": "competes for the same uranyl-vanadate; high K routes to carnotite",
+        "Mg": "minor substitution for Ca",
+        "Sr": "minor substitution for Ca"
+      },
+      "thermal_decomp_C": 100,
+      "thermal_decomp_reaction": "Ca(UO₂)₂(VO₄)₂·8H₂O → Ca(UO₂)₂(VO₄)₂·5H₂O + 3H₂O (room-T dehydration to metatyuyamunite); full collapse near 100°C",
+      "thermal_decomp_products": {
+        "Ca": 0.0,
+        "U": 0.0,
+        "V": 0.0
+      },
+      "fluorescence": {
+        "activator": "U",
+        "threshold_ppm": 0,
+        "color": "yellow_green_LW_weak_to_moderate",
+        "quencher": "vanadate matrix (partial)",
+        "status": "weakly to moderately fluorescent — Ca²⁺ doesn't quench like Cu²⁺ would, but the vanadate matrix damps the uranyl emission via vibrational coupling (same effect that makes carnotite weakly fluorescent). Brighter than carnotite, dimmer than autunite/uranospinite. Source: research/research-tyuyamunite.md."
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "Ca(UO₂)₂(VO₄)₂·8H₂O + 6H⁺ → Ca²⁺ + 2(UO₂)²⁺ + 2H₃VO₄ + 8H₂O (uranyl vanadates dissolve in mineral acids; below pH 5 vanadate gives way to VO₂⁺ and the structure breaks)",
+        "products": {
+          "Ca": 0.2,
+          "U": 0.4,
+          "V": 0.3
+        }
+      },
+      "habit": "earthy_crust",
+      "color_rules": {
+        "yellow": {
+          "default": true
+        },
+        "greenish_yellow": {
+          "trigger": "prolonged sunlight exposure"
+        }
+      },
+      "narrate_function": "_narrate_tyuyamunite",
+      "runtimes_present": [
+        "vugg.py",
+        "index.html"
+      ],
+      "audit_status": "Round 9e (May 2026): Ca-cation analog of carnotite, completing the cation+anion fork on the V-branch (mirror of how 9d's autunite paired with torbernite on the P-branch). supersaturation_tyuyamunite gates on Ca/(K+Ca) > 0.5 + V/(P+As+V) > 0.5; supersaturation_carnotite gains a symmetric K/(K+Ca) > 0.5 cation gate. Habit variants mirror carnotite (tabular_plates rare, earthy_crust default, powdery_disseminated low-σ). Source: research/research-tyuyamunite.md.",
+      "class_color": "#13eb7f",
+      "test_cases": [
+        {
+          "name": "ca_dominant_v_branch_fires",
+          "fluid": {"Ca": 80, "K": 5, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 25,
+          "expects": {"sigma": ">1.0"},
+          "rationale": "Ca/(K+Ca)=0.94 + V/(P+As+V)=1.0 — both forks pass for tyuyamunite."
+        },
+        {
+          "name": "k_dominant_blocks_via_cation_fork",
+          "fluid": {"Ca": 5, "K": 30, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "K/(K+Ca)=0.86 — carnotite wins the cation race, tyuyamunite cation-blocked."
+        },
+        {
+          "name": "p_dominant_blocks_via_anion_fork",
+          "fluid": {"Ca": 80, "K": 0, "U": 2.5, "V": 2, "P": 8, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "Ca dominant cation, but P/(P+As+V)=0.8 — anion fork sends this to autunite, tyuyamunite anion-blocked."
+        },
+        {
+          "name": "no_uranium_blocks",
+          "fluid": {"Ca": 80, "K": 0, "U": 0, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "U=0 fails U>=0.3 ingredient gate."
+        },
+        {
+          "name": "reducing_blocks",
+          "fluid": {"Ca": 80, "K": 0, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 0.3, "pH": 6.5},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "Reducing fluid keeps U as U⁴⁺ + V as V³⁺/V⁴⁺. Tyuyamunite needs U⁶⁺ + V⁵⁺."
+        },
+        {
+          "name": "acidic_blocks",
+          "fluid": {"Ca": 80, "K": 0, "U": 2.5, "V": 8, "P": 0, "As": 0, "O2": 1.5, "pH": 4.0},
+          "T_C": 25,
+          "expects": {"sigma": "==0"},
+          "rationale": "pH=4.0 below 5.0 stability gate — vanadate gives way to VO₂⁺ and structure breaks."
+        }
+      ]
+    },
+    "uranospinite": {
+      "formula": "Ca(UO2)2(AsO4)2·10H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 3,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "tabular_plates",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "default — thin yellow tabular plates flattened on {001}, the autunite-group habit"
+        },
+        {
+          "name": "micaceous_book",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "equant",
+          "trigger": "high σ, low T — stacked subparallel plates, the Schneeberg/Margnac book habit"
+        },
+        {
+          "name": "encrusting",
+          "wall_spread": 0.85,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "low σ — earthy yellow encrustation, secondary surface staining"
+        }
+      ],
+      "class": "phosphate",
+      "description": "Ca(UO₂)₂(AsO₄)₂·10H₂O — tetragonal Ca-uranyl arsenate, the autunite-group cation analog of zeunerite. Same parent fluid as zeunerite (U + As + supergene-T + oxidizing) but wins when Ca/(Cu+Ca) > 0.5 — typically when Cu has been depleted from the local fluid but As is still around. Strongly fluorescent yellow-green LW UV — Ca²⁺ doesn't quench like Cu²⁺ does in zeunerite, putting uranospinite in the same 'bright fluorescer' tier as autunite (slightly dampened by the heavier As-anion vibrational coupling). Tabular yellow plates that look like a yellow autunite, with the As content as the chemistry giveaway. Mohs 2-3, dehydrates readily to metauranospinite. Type locality: Walpurgis Flacher vein, Weisser Hirsch Mine, Schneeberg, Saxony (Weisbach 1873). Sources: research/research-uranospinite.md (implementation-grade draft, 2026-05-01); MSA Handbook of Mineralogy.",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        50
+      ],
+      "T_optimum_C": [
+        10,
+        35
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Ca": 15,
+        "U": 0.3,
+        "As": 2.0,
+        "O2": 0.8
+      },
+      "trace_ingredients": {
+        "Cu": "competes for the same uranyl-arsenate; high Cu routes to zeunerite",
+        "P": "competes for the same uranyl-cation; high P routes to autunite (the P-anion sibling)"
+      },
+      "thermal_decomp_C": 80,
+      "thermal_decomp_reaction": "Ca(UO₂)₂(AsO₄)₂·10H₂O → Ca(UO₂)₂(AsO₄)₂·xH₂O + (10-x)H₂O (room-T dehydration to metauranospinite, water content variable; full collapse ~80°C)",
+      "thermal_decomp_products": {
+        "Ca": 0.0,
+        "U": 0.0,
+        "As": 0.0
+      },
+      "fluorescence": {
+        "activator": "U",
+        "threshold_ppm": 0,
+        "color": "bright_yellow_green_LW",
+        "quencher": null,
+        "status": "strong fluorescence — Ca²⁺ doesn't quench uranyl emission like Cu²⁺ does in zeunerite. Slightly dimmer than autunite (the heavier As-anion absorbs some emission via vibrational coupling) but still in the 'bright' tier alongside autunite. Source: research/research-uranospinite.md."
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "Ca(UO₂)₂(AsO₄)₂·10H₂O + 6H⁺ → Ca²⁺ + 2(UO₂)²⁺ + 2H₃AsO₄ + 10H₂O (uranyl arsenates dissolve readily in mineral acids)",
+        "products": {
+          "Ca": 0.2,
+          "U": 0.4,
+          "As": 0.3
+        }
+      },
+      "habit": "tabular_plates",
+      "color_rules": {
+        "yellow": {
+          "default": true
+        },
+        "greenish_yellow": {
+          "trigger": "Ca-rich, light-exposed"
+        }
+      },
+      "narrate_function": "_narrate_uranospinite",
+      "runtimes_present": [
+        "vugg.py",
+        "index.html"
+      ],
+      "audit_status": "Round 9e (May 2026): Ca-cation analog of zeunerite, completing the cation+anion fork on the As-branch (mirror of how 9d's autunite paired with torbernite on the P-branch). supersaturation_uranospinite gates on Ca/(Cu+Ca) > 0.5 + As/(P+As+V) > 0.5; supersaturation_zeunerite gains a symmetric Cu/(Cu+Ca) > 0.5 cation gate. Habit variants mirror autunite/zeunerite (tabular_plates default, micaceous_book high-σ, encrusting low-σ). The 9e fork pair (tyuyamunite + uranospinite) completes the cation+anion fork mechanic across all three anion branches. Source: research/research-uranospinite.md.",
+      "class_color": "#13eb7f",
+      "test_cases": [
+        {
+          "name": "ca_dominant_as_branch_fires",
+          "fluid": {"Ca": 80, "Cu": 0, "U": 2.5, "P": 0, "As": 8, "V": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 20,
+          "expects": {"sigma": ">1.0"},
+          "rationale": "Ca/(Cu+Ca)=1.0 + As/(P+As+V)=1.0 — both forks pass for uranospinite."
+        },
+        {
+          "name": "cu_dominant_blocks_via_cation_fork",
+          "fluid": {"Ca": 5, "Cu": 40, "U": 2.5, "P": 0, "As": 8, "V": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 20,
+          "expects": {"sigma": "==0"},
+          "rationale": "Cu/(Cu+Ca)=0.89 — zeunerite wins the cation race, uranospinite cation-blocked."
+        },
+        {
+          "name": "p_dominant_blocks_via_anion_fork",
+          "fluid": {"Ca": 80, "Cu": 0, "U": 2.5, "P": 8, "As": 2, "V": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 20,
+          "expects": {"sigma": "==0"},
+          "rationale": "Ca dominant cation, but P/(P+As+V)=0.8 — anion fork sends this to autunite, uranospinite anion-blocked."
+        },
+        {
+          "name": "no_uranium_blocks",
+          "fluid": {"Ca": 80, "Cu": 0, "U": 0, "P": 0, "As": 8, "V": 0, "O2": 1.5, "pH": 6.5},
+          "T_C": 20,
+          "expects": {"sigma": "==0"},
+          "rationale": "U=0 fails U>=0.3 ingredient gate."
+        },
+        {
+          "name": "reducing_blocks",
+          "fluid": {"Ca": 80, "Cu": 0, "U": 2.5, "P": 0, "As": 8, "V": 0, "O2": 0.3, "pH": 6.5},
+          "T_C": 20,
+          "expects": {"sigma": "==0"},
+          "rationale": "Reducing fluid keeps U as U⁴⁺. Uranospinite needs U⁶⁺."
+        },
+        {
+          "name": "acidic_blocks",
+          "fluid": {"Ca": 80, "Cu": 0, "U": 2.5, "P": 0, "As": 8, "V": 0, "O2": 1.5, "pH": 4.0},
+          "T_C": 20,
+          "expects": {"sigma": "==0"},
+          "rationale": "pH=4.0 below 4.5 stability gate — autunite-group dissolves in acid."
         }
       ]
     }

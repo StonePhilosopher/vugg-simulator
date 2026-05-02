@@ -1033,6 +1033,157 @@
       "sources": [
         "(generic testing scenario — no published source)"
       ]
+    },
+
+    "schneeberg": {
+      "anchor": "Schneeberg, Erzgebirgskreis (Saxony Ore Mountains), Germany — type locality for torbernite (1772), zeunerite (1872), uranospinite (1873), and ten more uranyl arsenate-phosphate species. Walpurgis Flacher vein, Weisser Hirsch Mine.",
+      "description": "Schneeberg / Erzgebirge oxidized uranium-pegmatite vein system (Walpurgis Flacher vein, Weisser Hirsch Mine, Saxony — type locality for torbernite, zeunerite, and uranospinite). A U-bearing pegmatite + chalcopyrite + arsenopyrite primary assemblage weathers under meteoric oxidation; the resulting uranyl + Cu + As fluid plates the autunite-group secondaries in two cation phases — Cu-rich first (torbernite emerald greens then zeunerite as As-pulse arrives), then Ca-dominant after Cu is consumed (autunite + uranospinite, the bright LW-UV fluorescent yellows).",
+      "duration_steps": 160,
+      "notes": [
+        "The mineralogically richest single ore district in Europe — the Erzgebirge had been mined for silver since the 1100s, then bismuth from the 1500s (the very name 'Bismutum' was coined here), then uranium from the 1800s onward. Most autunite-group species were first described from Schneeberg or its sister deposits (Jáchymov, Annaberg). Pinch & Wilson 1977 monographs are the canonical reference.",
+        "Mechanic: 6-event lifecycle walking through cation×anion combinatorics. Pegmatite crystallization (step 20): hot reducing fluid grows uraninite + chalcopyrite + arsenopyrite primaries. Cooling (step 70): T drops to ambient. Cu+P phase (step 85): O2 floods, primaries weather, P>As, Cu>Ca → torbernite plates. Cu+As pulse (step 105): As replenishes from arsenopyrite weathering, Cu still high → zeunerite plates. Cu depletion (step 125): Cu consumed by both Cu-cation secondaries; Ca rises from carbonate dissolution → autunite plates. As pulse late (step 145): As replenishes again, Ca dominant → uranospinite plates.",
+        "First scenario to fire all 4 P/As-branch uranyl species (torbernite, autunite, zeunerite, uranospinite) in a single run. The cation+anion fork mechanic introduced by Rounds 9b-9e is finally exercised end-to-end. Uraninite weathers as the v12 gatekeeper feedstock event."
+      ],
+      "initial": {
+        // T=450°C, P=1.5 kbar: pegmatitic residual fluid before
+        // crystallization pulse drops it to ambient.
+        "temperature_C": 450.0,
+        "pressure_kbar": 1.5,
+        "fluid": {
+          // Pegmatite-saturated silica melt
+          "SiO2": 8000,
+          // Moderate Ca — will become dominant cation after Cu depletes.
+          // Carbonate buffer ~20 from limestone country rock contact.
+          "Ca": 50,
+          "CO3": 20,
+          "F": 20,
+          // U=100: enough for primary uraninite at high T, plus broth
+          // recharge during weathering. The v12 gatekeeper releases
+          // ~7 ppm U per uraninite dissolution step (60% of 12% × ~100 µm).
+          "U": 100,
+          // Cu=80, Fe=40, S=30: chalcopyrite-saturating composition.
+          // Cu also feeds torbernite + zeunerite during the supergene phase.
+          "Cu": 80,
+          "Fe": 40,
+          "S": 30,
+          // As=15: enough for arsenopyrite primary + post-weathering As
+          // pulse for zeunerite/uranospinite. Bumped further by events.
+          "As": 15,
+          // P=12: phosphate for torbernite/autunite. Replenishment events
+          // swing the P/As ratio across the run.
+          "P": 12,
+          // K=30: alkali pegmatite background; not enough to fire carnotite
+          // (no V), and the cation gate filters by K/(K+Ca) anyway.
+          "K": 30,
+          // Pegmatite-defining traces — narrator reads these as Erzgebirge
+          // country (beryl, spodumene, tourmaline, native bismuth).
+          "Pb": 5,
+          "Al": 25,
+          "Mn": 5,
+          "Mg": 8,
+          "Be": 10,
+          "Li": 15,
+          "B": 12,
+          // Bismuth — Schneeberg was named for its bismuth mining before
+          // the uranium era. Bismuthinite + native_bismuth secondary phases
+          // can form alongside the uranyls.
+          "Bi": 10,
+          // Strongly reducing initial — required for uraninite + sulfides.
+          "O2": 0.0,
+          "pH": 6.5,
+          "salinity": 6.0
+        },
+        "wall": {
+          "primary_bubbles": 3,
+          "secondary_bubbles": 5,
+          "shape_seed": 9
+        }
+      },
+      "events": [
+        { "step": 20,  "type": "schneeberg_pegmatite_crystallization", "name": "Pegmatite Crystallization", "description": "Reducing pegmatitic fluid grows uraninite + chalcopyrite + arsenopyrite primaries" },
+        { "step": 70,  "type": "schneeberg_cooling",                   "name": "Cooling",                    "description": "T drops to ambient supergene window; primaries finish forming" },
+        { "step": 85,  "type": "schneeberg_cu_p_phase",                "name": "Cu+P Oxidation",             "description": "Meteoric water floods; primaries weather; P>As, Cu>Ca → torbernite plates" },
+        { "step": 105, "type": "schneeberg_cu_as_pulse",               "name": "Cu+As Pulse",                "description": "Arsenopyrite-derived As replenishes; As>P, Cu still dominant → zeunerite plates" },
+        { "step": 125, "type": "schneeberg_cu_depletion",              "name": "Cu Depletion",               "description": "Cu consumed by torbernite+zeunerite; Ca rises (carbonate dissolution) → autunite plates" },
+        { "step": 145, "type": "schneeberg_as_pulse_late",             "name": "Late As Pulse",              "description": "Final arsenate replenishment; Ca dominant → uranospinite plates, the bright fluorescent yellow finishes the assemblage" }
+      ],
+      "sources": [
+        "Pinch & Wilson 1977 — canonical Schneeberg/Erzgebirge monograph",
+        "Weisbach 1872 — zeunerite type description (Walpurgis Flacher vein)",
+        "Weisbach 1873 — uranospinite type description (Weisser Hirsch Mine)",
+        "Klaproth 1789 — uranium discovery in Schneeberg pitchblende",
+        "research/research-uranospinite.md (May 2026) — cation-fork mechanic + paragenesis"
+      ]
+    },
+
+    "colorado_plateau": {
+      "anchor": "Uravan Mineral Belt, Colorado Plateau — sandstone-hosted roll-front uranium-vanadium deposits (Triassic-Jurassic Morrison Formation). Includes the Carnotite-Eldorado, Uravan, and Moab districts; the V+U bonanza that drove the early-twentieth-century uranium industry decades before the Manhattan Project.",
+      "description": "Uravan Mineral Belt sandstone roll-front uranium-vanadium deposit (Roc Creek, Montrose County, CO — carnotite type locality, Friedel & Cumenge 1899). Oxidizing groundwater carries U + V + K + Ca through Triassic-Jurassic Morrison Formation sandstones until it meets a reducing barrier (petrified wood, carbonaceous shale), where the metals drop out as bright canary-yellow uranyl-vanadate crusts. Carnotite + tyuyamunite are the two diagnostic species — interconvertible by cation exchange, drawn apart by whichever of K/Ca dominates the local pore fluid.",
+      "duration_steps": 180,
+      "notes": [
+        "Anchor: Colorado Plateau uranium districts (Uravan Mineral Belt). Mineralogy first described by Friedel & Cumenge (1899) at Roc Creek (Montrose County, CO); Hess (1924) characterized the V-U-Ca-K paragenesis. The Vanadium Corporation of America (VCA) operated the Uravan mill from 1915-1944 turning carnotite into V₂O₅ (steel alloy) before the Manhattan Project shifted demand to uranium.",
+        "Mechanic: 5-event sandstone roll-front lifecycle. Initial: oxidizing surface groundwater carries U+V+K+Ca at ambient T. Step 20 (groundwater pulse): more U + V flushes through the system, Ca dominates K initially → tyuyamunite plates. Step 60 (roll-front contact): Fe rises (organic-iron proxy for petrified wood / carbonaceous shale), T drops, slight reducing pulse — concentrates carnotite + tyuyamunite at the redox front. Step 100 (cation oscillation): K rises (evaporite-style salt concentration in the arid surface zone), K/(K+Ca) crosses 0.5 → carnotite plates. Step 140 (Ca recovery): Ca returns dominant → second tyuyamunite phase. Step 165 (arid stabilization): system stabilizes, both species coexist.",
+        "First scenario to fire carnotite + tyuyamunite, completing the autunite-group cation+anion fork coverage when paired with Schneeberg (which fires the Cu/Ca pair on the P+As branches)."
+      ],
+      "initial": {
+        // T=22°C, P=0.05 kbar: ambient near-surface roll-front conditions.
+        "temperature_C": 22.0,
+        "pressure_kbar": 0.05,
+        "fluid": {
+          // Sandstone matrix — moderate silica
+          "SiO2": 200,
+          // Ca dominant by background (groundwater Ca-bicarbonate)
+          "Ca": 100,
+          "CO3": 60,
+          // U=15: realistic Colorado Plateau roll-front loading — enough
+          // to cross the U>=0.3 secondary gates with margin. Bumped during
+          // groundwater pulse event.
+          "U": 15,
+          // V=12: vanadium from earlier weathering of montroseite/roscoelite
+          // (the primary V minerals; not yet in sim). Sufficient for carnotite
+          // + tyuyamunite at supergene T.
+          "V": 12,
+          // K=20 baseline; gets bumped to dominant during step 100 oscillation.
+          "K": 20,
+          // Fe=8: trace iron, will rise during roll-front contact event.
+          "Fe": 8,
+          "Mg": 15,
+          "Mn": 2,
+          "S": 5,
+          "Cl": 8,
+          // No primary Cu/Pb/As — the scenario is U-V-K-Ca specifically.
+          "Cu": 0,
+          "Pb": 0,
+          "As": 0,
+          "P": 1,    // trace; not enough for autunite/torbernite
+          // Initial mildly oxidizing — surface groundwater with O2 picked
+          // up at the recharge boundary.
+          "O2": 1.2,
+          "pH": 7.0,
+          "salinity": 8.0
+        },
+        // Sandstone-hosted vug — high secondary porosity from intergranular
+        // dissolution. n=4 'open' profile.
+        "wall": {
+          "primary_bubbles": 4,
+          "secondary_bubbles": 8,
+          "shape_seed": 5
+        }
+      },
+      "events": [
+        { "step": 20,  "type": "colorado_plateau_groundwater_pulse",  "name": "Groundwater Pulse",      "description": "U+V replenishment from upstream sandstone weathering; Ca dominant → tyuyamunite begins plating" },
+        { "step": 60,  "type": "colorado_plateau_roll_front_contact", "name": "Roll-Front Contact",     "description": "Fe rises (organic-iron proxy); T drops; redox front concentrates uranyl-vanadates" },
+        { "step": 100, "type": "colorado_plateau_k_pulse",            "name": "K Pulse",                "description": "Evaporite-style K enrichment; K/(K+Ca) crosses 0.5 → carnotite takes the cation pool" },
+        { "step": 140, "type": "colorado_plateau_ca_recovery",        "name": "Ca Recovery",            "description": "Carbonate dissolution refreshes Ca; second tyuyamunite phase plates alongside carnotite" },
+        { "step": 165, "type": "colorado_plateau_arid_stabilization", "name": "Arid Stabilization",     "description": "System reaches ambient steady state; both species coexist as in real Uravan specimens" }
+      ],
+      "sources": [
+        "Friedel & Cumenge 1899 — original carnotite description (Roc Creek)",
+        "Nenadkevich 1912 — tyuyamunite type description (Tyuya-Muyun)",
+        "Hess 1924 — V-U-Ca-K paragenesis review",
+        "Stern et al. 1956 — meta-tyuyamunite (American Mineralogist v.41)",
+        "research/research-tyuyamunite.md (May 2026) — Colorado Plateau roll-front geology + simulator design"
+      ]
     }
 
   }
