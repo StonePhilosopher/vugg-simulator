@@ -330,7 +330,36 @@ from typing import List, Dict, Optional, Tuple
 #        Rounds 9b/9c/9d/9e — the cation+anion fork mechanic
 #        finally has scenarios that exercise it.
 #        No engine changes; engine count remains 92.
-SIM_VERSION = 16
+#   v17 — Supersat reconciliation v2 (May 2026, post-v13 audit follow-up):
+#        Resolved the remaining 5 design-divergent supersats from the
+#        v13 audit, plus ported effective_temperature + silica_equilibrium
+#        to Python. All decisions research-grounded:
+#        • effective_temperature property + silica_equilibrium table
+#          ported from JS. Python's chalcopyrite/galena/pyrite/molybdenite/
+#          quartz now use eT for Mo-flux porphyry boost. Python's quartz
+#          uses Fournier & Potter 1982 / Rimstidt 1997 tabulated solubility
+#          (was inline 50*exp(0.008*T) which overshoots ~3x at high T).
+#        • feldspar — JS K-or-Na fork removed (albite has its own
+#          supersat); both runtimes now K-only with 800°C upper cap
+#          (sanidine→melt boundary).
+#        • fluorite — both runtimes adopt JS 5-tier T window (Richardson
+#          & Holland 1979, MVT deposits 50-152°C) + Python's fluoro-
+#          complex penalty (Manning 1979, secondary at T<300°C).
+#        • selenite — both runtimes adopt Python's T treatment (decay
+#          above 60°C, matches gypsum-anhydrite phase boundary at 55-
+#          60°C per Naica/Pulpí studies) + JS's T<40 sweet-spot bonus
+#          (Pulpí 20°C). Pre-v17 JS hard cap at 80°C was too lenient.
+#        • smithsonite — both runtimes adopt JS pH treatment (hard pH<5
+#          cutoff, alkaline boost pH>7) plus tightened T cap to 100°C
+#          hard with steep decay above 80°C (research: supergene-only,
+#          T 10-50°C optimum). Both pre-v17 T caps too generous.
+#        • wulfenite — hybrid: Python's T cap (decay above 80°C, matches
+#          research <80°C supergene) + Python's graduated pH penalties
+#          (3.5-9.0 window, matches research 6-9) + JS's stricter Pb/Mo
+#          thresholds (>=10/>=5, matches research's "rare two-parent
+#          mineral" framing). Pre-v17 JS T cap at 250°C was way too
+#          lenient.
+SIM_VERSION = 17
 
 
 # ============================================================
@@ -1113,7 +1142,53 @@ class VugConditions:
                 self._dol_cycle_count += 1
                 self._dol_in_undersat = False
         self._dol_prev_sigma = sigma
-    
+
+    @property
+    def effective_temperature(self) -> float:
+        """Mo-flux thermal modifier. Ports JS's get effectiveTemperature() —
+        v17 reconciliation (May 2026, per supersat drift audit).
+
+        Mo flux effect: when Mo > 20 ppm, high-T minerals nucleate as if
+        T were up to 15% higher. MoO₃ is a classic flux for growing
+        corundum at lower temperatures; here it broadens what can grow
+        in porphyry sulfide systems (chalcopyrite, galena, pyrite,
+        molybdenite, quartz). Pre-v17 only the JS runtime had this
+        effect — Python's same-fluid sigmas were lower in Mo-rich
+        scenarios.
+        """
+        if self.fluid.Mo > 20:
+            boost = 1.0 + 0.15 * min((self.fluid.Mo - 20) / 40, 1.0)
+            return self.temperature * boost
+        return self.temperature
+
+    # SiO₂ solubility table (ppm) — Fournier & Potter 1982 / Rimstidt 1997.
+    # Quartz solubility is PROGRADE: increases with T. Quartz precipitates
+    # when silica-rich hot fluid cools.
+    _SIO2_SOLUBILITY = [
+        (25, 6), (50, 15), (75, 30), (100, 60), (125, 90), (150, 130),
+        (175, 200), (200, 300), (225, 390), (250, 500), (275, 600),
+        (300, 700), (325, 850), (350, 1000), (375, 1100), (400, 1200),
+        (450, 1400), (500, 1500), (600, 1600),
+    ]
+
+    def silica_equilibrium(self, T: float) -> float:
+        """SiO₂ solubility at given T, linearly interpolated from the
+        Fournier & Potter 1982 table. v17 ports JS's silica_equilibrium —
+        pre-v17 Python quartz used inline `50 * exp(0.008*T)` which
+        overshoots the experimental data by ~3x at high T.
+        """
+        table = self._SIO2_SOLUBILITY
+        if T <= table[0][0]:
+            return table[0][1]
+        if T >= table[-1][0]:
+            return table[-1][1]
+        for i in range(len(table) - 1):
+            t0, s0 = table[i]
+            t1, s1 = table[i + 1]
+            if t0 <= T <= t1:
+                return s0 + (s1 - s0) * (T - t0) / (t1 - t0)
+        return table[-1][1]
+
     def supersaturation_quartz(self) -> float:
         """Calculate quartz supersaturation (simplified).
         
@@ -1121,22 +1196,26 @@ class VugConditions:
         At equilibrium, higher T = more SiO2 dissolved.
         Supersaturation occurs when fluid cools below the T where its
         SiO2 concentration would be in equilibrium.
-        
-        Simplified model: solubility ≈ 50 * exp(0.008 * T) ppm
-        
+
+        v17 (May 2026): now uses Fournier & Potter 1982 / Rimstidt 1997
+        tabulated solubility via silica_equilibrium(eT), where eT is
+        Mo-flux-modified effective_temperature. Pre-v17 Python used
+        `50 * exp(0.008*T)` which overshoots the experimental data
+        ~3x at high T; JS already used the table-based approach.
+
         HF ATTACK: Low pH + high fluorine dissolves quartz as SiF4.
         This is real — HF is the only common acid that attacks silicates.
         """
-        equilibrium_SiO2 = 50.0 * math.exp(0.008 * self.temperature)
+        equilibrium_SiO2 = self.silica_equilibrium(self.effective_temperature)
         if equilibrium_SiO2 <= 0:
             return 0
         sigma = self.fluid.SiO2 / equilibrium_SiO2
-        
+
         # HF attack on quartz: low pH + high F = dissolution
         if self.fluid.pH < 4.0 and self.fluid.F > 20:
             hf_attack = (4.0 - self.fluid.pH) * (self.fluid.F / 50.0) * 0.3
             sigma -= hf_attack
-        
+
         return max(sigma, 0)
     
     def supersaturation_calcite(self) -> float:
@@ -1396,21 +1475,31 @@ class VugConditions:
         """
         if self.fluid.Ca < 10 or self.fluid.F < 5:
             return 0
-        # Retrograde solubility: fluorite precipitates MORE at moderate T
-        # Sweet spot 100-250°C, drops off outside that range
-        if 100 <= self.temperature <= 250:
-            T_factor = 1.0
-        elif self.temperature < 100:
-            T_factor = 0.4 + 0.006 * self.temperature  # slow kinetics at low T
+        # v17 reconciliation (May 2026): 5-tier T window per Richardson &
+        # Holland 1979 (hydrothermal fluorite solubility) + MVT deposit
+        # studies showing 50-152°C formation range. Solubility increases
+        # with T below 100°C (kinetically slow precipitation), passes
+        # through max around 100-250°C (the MVT sweet spot), declines
+        # above 350°C.
+        T = self.temperature
+        if T < 50:
+            T_factor = T / 50.0  # kinetically slow below 50°C
+        elif T < 100:
+            T_factor = 0.8  # warming up
+        elif T <= 250:
+            T_factor = 1.2  # sweet spot — MVT range
+        elif T <= 350:
+            T_factor = 1.0  # still viable
         else:
-            T_factor = max(0.1, 1.0 - 0.004 * (self.temperature - 250))  # declines above 250
-        
-        # Product model with reduced base to prevent domination
-        product = (self.fluid.Ca / 300.0) * (self.fluid.F / 30.0) * T_factor
-        sigma = product
-        
-        # Fluoro-complex cap: at very high F, Ca²⁺ + nF⁻ → CaFₙ complexes
-        # re-dissolve fluorite. Real effect: solubility minimum around 0.01-0.05 M F⁻.
+            T_factor = max(0.1, 1.0 - (T - 350) / 200.0)  # fades above 350°C
+
+        # Product model with JS scaling (Ca/200, F/20)
+        product = (self.fluid.Ca / 200.0) * (self.fluid.F / 20.0)
+        sigma = product * T_factor
+
+        # Fluoro-complex penalty (Python canonical, kept): at very high F,
+        # Ca²⁺ + nF⁻ → CaFₙ complexes re-dissolve fluorite. Real effect
+        # documented in Manning 1979 — secondary at T<300°C but real.
         if self.fluid.F > 80:
             complex_penalty = (self.fluid.F - 80) / 200.0
             sigma -= complex_penalty
@@ -1513,8 +1602,10 @@ class VugConditions:
         if self.fluid.O2 > 1.5:
             return 0
         product = (self.fluid.Fe / 50.0) * (self.fluid.S / 80.0)
-        # Pyrite is stable over a wide T range, slight preference for moderate T
-        T_factor = 1.0 if 100 < self.temperature < 400 else 0.5
+        # v17: use effective_temperature (Mo flux widens T window in
+        # porphyry sulfide systems).
+        eT = self.effective_temperature
+        T_factor = 1.0 if 100 < eT < 400 else 0.5
         # pH rolloff below 5 — marcasite takes over
         pH_factor = 1.0
         if self.fluid.pH < 5.0:
@@ -1568,7 +1659,8 @@ class VugConditions:
         if self.fluid.O2 > 1.5:
             return 0
         product = (self.fluid.Cu / 80.0) * (self.fluid.Fe / 50.0) * (self.fluid.S / 80.0)
-        T = self.temperature
+        # v17: use effective_temperature for Mo-flux porphyry boost
+        T = self.effective_temperature
         if T < 180:
             T_factor = 0.2  # rare at low T
         elif T < 300:
@@ -1832,9 +1924,14 @@ class VugConditions:
         if self.fluid.O2 > 1.5:
             return 0  # sulfides can't survive oxidation
         sigma = (self.fluid.Pb / 50.0) * (self.fluid.S / 80.0) * (1.5 - self.fluid.O2)
-        # Moderate temperature preference
-        if self.temperature > 450:
-            sigma *= math.exp(-0.008 * (self.temperature - 450))
+        # v17: use effective_temperature for Mo-flux widening.
+        eT = self.effective_temperature
+        # Moderate temperature preference, decay above 450°C
+        if eT > 450:
+            sigma *= math.exp(-0.008 * (eT - 450))
+        # Sweet-spot bonus 200-400 (mirrors JS)
+        if 200 <= eT <= 400:
+            sigma *= 1.3
         return max(sigma, 0)
 
     def supersaturation_smithsonite(self) -> float:
@@ -1845,15 +1942,28 @@ class VugConditions:
         Botryoidal blue-green (Cu), pink (Co), yellow (Cd), white (pure).
         Low temperature mineral — forms in the oxidation zone.
         """
-        if self.fluid.Zn < 15 or self.fluid.CO3 < 30 or self.fluid.O2 < 0.3:
+        if self.fluid.Zn < 20 or self.fluid.CO3 < 50 or self.fluid.O2 < 0.2:
             return 0
-        sigma = (self.fluid.Zn / 60.0) * (self.fluid.CO3 / 80.0) * (self.fluid.O2 / 1.0)
-        # Suppressed above 100°C — it's a supergene mineral
+        # v17 reconciliation (May 2026): supergene-only mineral per
+        # research-smithsonite.md (T 10-50°C optimum, decomposes ~300°C
+        # but never seen above ~80°C in nature). Pre-v17 both runtimes
+        # were too lenient — Python's soft decay above 100°C let it
+        # form at hydrothermal T; JS's hard cap at 200°C also too
+        # generous. Now hard cap at 100°C with steep decay above 80°C.
         if self.temperature > 100:
-            sigma *= math.exp(-0.02 * (self.temperature - 100))
-        # Dissolves in acid
-        if self.fluid.pH < 4.0:
-            sigma -= (4.0 - self.fluid.pH) * 0.4
+            return 0
+        # Hard pH window — research says 7.0-8.5 (acidic dissolves
+        # carbonate). pH<5 hard cutoff matches.
+        if self.fluid.pH < 5.0:
+            return 0
+        sigma = (self.fluid.Zn / 80.0) * (self.fluid.CO3 / 200.0) * (self.fluid.O2 / 1.0)
+        # Steep decay above 80°C (approaching the supergene-T ceiling)
+        if self.temperature > 80:
+            sigma *= math.exp(-0.04 * (self.temperature - 80))
+        # Alkaline boost — carbonates precipitate better in alkaline
+        # conditions (research: pH 7.0-8.5 optimum).
+        if self.fluid.pH > 7:
+            sigma *= 1.2
         return max(sigma, 0)
 
     def supersaturation_wulfenite(self) -> float:
@@ -1864,13 +1974,23 @@ class VugConditions:
         My foundation stone (TN422). "The sunset caught in stone."
         Requires BOTH Pb and Mo to arrive — typically a late-stage mineral.
         """
-        if self.fluid.Pb < 5 or self.fluid.Mo < 2 or self.fluid.O2 < 0.5:
+        # v17 reconciliation (May 2026): per research-wulfenite.md a
+        # "rare two-parent mineral that only appears when chemistry of
+        # two different primary ore bodies converges." Pre-v17 Python
+        # thresholds (Pb>=5, Mo>=2) let it form too easily; tightened
+        # to Pb>=10, Mo>=5 to match the research framing. Python's
+        # T cap (decay above 80°C, supergene-only) and graduated pH
+        # penalties (3.5-9.0 window) preserved — they match the
+        # research perfectly.
+        if self.fluid.Pb < 10 or self.fluid.Mo < 5 or self.fluid.O2 < 0.5:
             return 0
         sigma = (self.fluid.Pb / 40.0) * (self.fluid.Mo / 15.0) * (self.fluid.O2 / 1.0)
-        # Very low temperature — oxidation zone mineral
+        # Very low temperature — oxidation zone mineral. Decay above 80°C
+        # matches research-wulfenite.md "T <80°C, optimum 20-60°C".
         if self.temperature > 80:
             sigma *= math.exp(-0.025 * (self.temperature - 80))
-        # Needs the right pH window — dissolves in both acid and strong base
+        # Graduated pH penalties — research says "near-neutral to slightly
+        # alkaline (6-9)". Both acidic and alkaline edges have soft penalties.
         if self.fluid.pH < 3.5:
             sigma -= (3.5 - self.fluid.pH) * 0.4
         elif self.fluid.pH > 9.0:
@@ -1889,9 +2009,15 @@ class VugConditions:
             return 0
         # Need oxidized sulfur (sulfate, not sulfide)
         sigma = (self.fluid.Ca / 60.0) * (self.fluid.S / 50.0) * (self.fluid.O2 / 0.5)
-        # STRICT low temperature cap — anhydrite takes over above 60°C
+        # Phase boundary: gypsum-anhydrite transition is at ~55-60°C
+        # (Naica 54.5°C, Pulpí 20°C, Van Driessche et al. 2016 +
+        # MDPI Minerals 2024). Steep decay above 60°C.
         if self.temperature > 60:
             sigma *= math.exp(-0.06 * (self.temperature - 60))
+        # v17: cool-T sweet-spot bonus (ported from JS canonical, May 2026).
+        # Pulpí 20°C grew at this colder regime via anhydrite dissolution.
+        if self.temperature < 40:
+            sigma *= 1.5
         # Neutral to slightly alkaline pH preferred
         if self.fluid.pH < 5.0:
             sigma -= (5.0 - self.fluid.pH) * 0.2
@@ -1914,6 +2040,10 @@ class VugConditions:
         feldspar growth and matches the real-world one-way conversion.
         """
         if self.fluid.K < 10 or self.fluid.Al < 3 or self.fluid.SiO2 < 200:
+            return 0
+        # v17: hard upper cap — feldspar melts above 800°C (sanidine→melt
+        # boundary; ported from JS canonical, May 2026).
+        if self.temperature > 800:
             return 0
         sigma = (self.fluid.K / 40.0) * (self.fluid.Al / 10.0) * (self.fluid.SiO2 / 400.0)
         # Feldspars need HIGH temperature — they're igneous/metamorphic
@@ -2908,10 +3038,14 @@ class VugConditions:
         if self.fluid.O2 > 1.2:
             return 0  # sulfide, needs reducing
         sigma = (self.fluid.Mo / 15.0) * (self.fluid.S / 60.0) * (1.5 - self.fluid.O2)
+        # v17: use effective_temperature for Mo-flux widening.
+        # (Note: somewhat self-referential since molybdenite supplies Mo,
+        #  but the porphyry-system co-occurrence is the geological logic.)
+        eT = self.effective_temperature
         # Moderate to high temperature
-        if self.temperature < 150:
-            sigma *= math.exp(-0.01 * (150 - self.temperature))
-        elif 300 < self.temperature < 500:
+        if eT < 150:
+            sigma *= math.exp(-0.01 * (150 - eT))
+        elif 300 < eT < 500:
             sigma *= 1.3  # sweet spot for porphyry Mo
         return max(sigma, 0)
 

@@ -126,6 +126,9 @@ def normalize_body(body: str, lang: str) -> str:
         text = text.replace("abs(", "Math.abs(")
         # math.exp → Math.exp etc
         text = re.sub(r'\bmath\.', 'Math.', text)
+        # Python snake_case → JS camelCase for known shared properties
+        text = text.replace("effective_temperature", "effectiveTemperature")
+        text = text.replace("silica_equilibrium", "silica_equilibrium")  # same in both
     else:  # js
         text = text.replace("this.", "X.")
         text = text.replace("const ", "")

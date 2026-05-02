@@ -3818,7 +3818,17 @@ let timeScale = 5.0;
 //        (Uravan Mineral Belt, 5 events) fires carnotite + tyuyamunite
 //        on the V-branch. All 6 secondary U species shipped in
 //        Rounds 9b-9e now have scenarios that fire them.
-const SIM_VERSION = 16;
+//   v17 — Supersat reconciliation v2 (May 2026, post-v13 audit follow-up).
+//        Reconciled the 5 remaining design-divergent supersats per
+//        research: feldspar (K-only structure, JS Na fork removed —
+//        albite has its own engine), fluorite (5-tier T + fluoro-complex
+//        penalty merge), selenite (60°C decay matches gypsum-anhydrite
+//        phase boundary, JS 80°C cap was too lenient), smithsonite
+//        (hard T<100 cap + alkaline boost), wulfenite (Python T+pH +
+//        JS Pb/Mo thresholds hybrid). Plus ported effective_temperature
+//        + silica_equilibrium from JS to Python — pre-v17 only the
+//        browser sim had Mo-flux thermal modulation for porphyry sulfides.
+const SIM_VERSION = 17;
 
 
 // ============================================================
@@ -4467,16 +4477,24 @@ class VugConditions {
   supersaturation_fluorite() {
     if (this.fluid.Ca < 10 || this.fluid.F < 5) return 0;
     let product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
-    // Fluorite has RETROGRADE solubility (like calcite) — less soluble at higher T.
-    // MVT deposits: 85-185°C. Can form up to ~300°C. Sweet spot ~100-250°C.
-    // Below 50°C: kinetically inhibited. Above 350°C: rare.
+    // 5-tier T window per Richardson & Holland 1979 + MVT deposit
+    // studies showing 50-152°C formation range. Solubility increases
+    // with T below 100°C (kinetically slow precipitation), passes
+    // through max around 100-250°C, declines above 350°C.
     let T_factor = 1.0;
-    if (this.temperature < 50) T_factor = this.temperature / 50.0;        // kinetically slow below 50°C
-    else if (this.temperature < 100) T_factor = 0.8;                       // warming up
-    else if (this.temperature <= 250) T_factor = 1.2;                      // sweet spot
-    else if (this.temperature <= 350) T_factor = 1.0;                      // still viable
-    else T_factor = Math.max(0.1, 1.0 - (this.temperature - 350) / 200);  // fades above 350°C
+    if (this.temperature < 50) T_factor = this.temperature / 50.0;
+    else if (this.temperature < 100) T_factor = 0.8;
+    else if (this.temperature <= 250) T_factor = 1.2;
+    else if (this.temperature <= 350) T_factor = 1.0;
+    else T_factor = Math.max(0.1, 1.0 - (this.temperature - 350) / 200);
     let sigma = product * T_factor;
+    // v17: fluoro-complex penalty (ported from Python canonical, May 2026).
+    // Per Manning 1979 — at very high F, Ca²⁺ + nF⁻ → CaFₙ complexes
+    // re-dissolve fluorite. Secondary effect at T<300°C, real.
+    if (this.fluid.F > 80) {
+      const complex_penalty = (this.fluid.F - 80) / 200.0;
+      sigma -= complex_penalty;
+    }
     // Acid dissolution — fluorite dissolves in strong acid
     if (this.fluid.pH < 5.0) {
       const acid_attack = (5.0 - this.fluid.pH) * 0.4;
@@ -4610,22 +4628,24 @@ class VugConditions {
     if (this.fluid.Pb < 5 || this.fluid.S < 10) return 0;
     if (this.fluid.O2 > 1.5) return 0;  // sulfides can't survive oxidation
     let sigma = (this.fluid.Pb / 50.0) * (this.fluid.S / 80.0) * (1.5 - this.fluid.O2);
-    // Moderate T preference (decay above 450°C). Mo-flux preserved as
-    // a separate decoration: when effectiveTemperature shifts the window,
-    // the 200-400 sweet spot still applies.
+    // v17: Mo-flux applied throughout via effectiveTemperature (matches Python).
     const eT = this.effectiveTemperature;
     if (eT >= 200 && eT <= 400) sigma *= 1.3;
-    if (this.temperature > 450) sigma *= Math.exp(-0.008 * (this.temperature - 450));
+    if (eT > 450) sigma *= Math.exp(-0.008 * (eT - 450));
     return Math.max(sigma, 0);
   }
 
   supersaturation_smithsonite() {
+    // v17 reconciliation (May 2026): supergene-only per
+    // research-smithsonite.md (T 10-50°C optimum, never above ~80°C
+    // in nature). Pre-v17 JS hard cap at 200°C was too lenient.
+    // Tightened to 100°C hard with steep decay above 80°C.
     if (this.fluid.Zn < 20 || this.fluid.CO3 < 50 || this.fluid.O2 < 0.2) return 0;
-    if (this.temperature > 200) return 0;
+    if (this.temperature > 100) return 0;
     if (this.fluid.pH < 5) return 0;
     let sigma = (this.fluid.Zn / 80.0) * (this.fluid.CO3 / 200.0) * (this.fluid.O2 / 1.0);
-    if (this.temperature > 100) {
-      sigma *= Math.exp(-0.008 * (this.temperature - 100));
+    if (this.temperature > 80) {
+      sigma *= Math.exp(-0.04 * (this.temperature - 80));
     }
     if (this.fluid.pH > 7) sigma *= 1.2;
     return Math.max(sigma, 0);
@@ -4634,14 +4654,27 @@ class VugConditions {
   // Wulfenite (PbMoO₄) — supergene mineral requiring oxidation of BOTH galena and molybdenite
   // Per Seo et al. 2012: wulfenite forms when Pb²⁺ (from oxidized galena) meets MoO₄²⁻ (from oxidized molybdenite)
   supersaturation_wulfenite() {
-    if (this.fluid.Pb < 10 || this.fluid.Mo < 5 || this.fluid.O2 < 0.2) return 0;
-    if (this.temperature > 250) return 0;
-    if (this.fluid.pH < 4 || this.fluid.pH > 7) return 0;
-    let sigma = (this.fluid.Pb / 60.0) * (this.fluid.Mo / 30.0) * (this.fluid.O2 / 1.0);
-    // Boost if dissolved molybdenite exists (MoO₄²⁻ source from oxidation)
-    // This is checked externally by the nucleation code, but we add a small σ boost here too
-    if (this.temperature > 150) {
-      sigma *= Math.exp(-0.006 * (this.temperature - 150));
+    // v17 reconciliation (May 2026): per research-wulfenite.md
+    // "T <80°C (supergene), pH 6-9 (near-neutral to slightly alkaline),
+    // rare two-parent mineral that only appears when chemistry of two
+    // different primary ore bodies converges." Pre-v17 JS T cap at
+    // 250°C was way too lenient (250°C is hydrothermal, not supergene);
+    // pH window 4-7 was too restrictive on alkaline side. Now matches
+    // Python: decay above 80°C, graduated pH penalties at 3.5/9.0.
+    // Pb/Mo thresholds (>=10/>=5) preserved — JS canonical here, matches
+    // the research's "rare two-parent" framing better than Python's
+    // pre-v17 lower thresholds.
+    if (this.fluid.Pb < 10 || this.fluid.Mo < 5 || this.fluid.O2 < 0.5) return 0;
+    let sigma = (this.fluid.Pb / 40.0) * (this.fluid.Mo / 15.0) * (this.fluid.O2 / 1.0);
+    // Decay above 80°C — supergene-only ceiling
+    if (this.temperature > 80) {
+      sigma *= Math.exp(-0.025 * (this.temperature - 80));
+    }
+    // Graduated pH penalties (matches research: 6-9 window, soft edges)
+    if (this.fluid.pH < 3.5) {
+      sigma -= (3.5 - this.fluid.pH) * 0.4;
+    } else if (this.fluid.pH > 9.0) {
+      sigma -= (this.fluid.pH - 9.0) * 0.3;
     }
     return Math.max(sigma, 0);
   }
@@ -4655,9 +4688,11 @@ class VugConditions {
     if (this.fluid.Mo < 3 || this.fluid.S < 10) return 0;
     if (this.fluid.O2 > 1.2) return 0;  // sulfide, needs reducing
     let sigma = (this.fluid.Mo / 15.0) * (this.fluid.S / 60.0) * (1.5 - this.fluid.O2);
-    if (this.temperature < 150) {
-      sigma *= Math.exp(-0.01 * (150 - this.temperature));
-    } else if (this.temperature > 300 && this.temperature < 500) {
+    // v17: use effectiveTemperature throughout for Mo-flux widening (matches Python).
+    const eT = this.effectiveTemperature;
+    if (eT < 150) {
+      sigma *= Math.exp(-0.01 * (150 - eT));
+    } else if (eT > 300 && eT < 500) {
       sigma *= 1.3;  // porphyry Mo sweet spot
     }
     return Math.max(sigma, 0);
@@ -5332,22 +5367,23 @@ class VugConditions {
   // Temperature determines polymorph: sanidine (>500°C) → orthoclase (300-500°C) → microcline (<300°C)
   // Needs K or Na + Al + Si in fluid
   supersaturation_feldspar() {
-    const hasK = this.fluid.K > 15;
-    const hasNa = this.fluid.Na > 15;
-    if (!hasK && !hasNa) return 0;
-    if (this.fluid.Al < 5) return 0;
-    if (this.fluid.SiO2 < 100) return 0;
-    // Forms across a wide temperature range (150-800°C)
-    if (this.temperature < 150 || this.temperature > 800) return 0;
-    // Near-neutral to alkaline pH
-    if (this.fluid.pH < 5.5 || this.fluid.pH > 9) return 0;
-    
-    const alkali = Math.max(this.fluid.K, this.fluid.Na);
-    let sigma = (alkali / 80.0) * (this.fluid.Al / 20.0) * (this.fluid.SiO2 / 400.0);
-    // Favored at moderate temperatures
-    if (this.temperature > 250 && this.temperature < 500) {
-      sigma *= 1.3;
-    }
+    // K-feldspar (sanidine/orthoclase/microcline polymorphs).
+    // v17 reconciliation (May 2026): pre-v17 JS folded Na into a
+    // K-or-Na fork using max(K,Na), but albite has its own
+    // supersaturation_albite engine — Na fluids should route there,
+    // not double-fire here. Python's K-only design has been canonical
+    // since the data model split feldspar/albite as separate species.
+    // JS now matches Python's K-only structure, with a hard 800°C
+    // upper cap (sanidine→melt boundary) added.
+    if (this.fluid.K < 10 || this.fluid.Al < 3 || this.fluid.SiO2 < 200) return 0;
+    // Hard upper cap — feldspar melts above 800°C.
+    if (this.temperature > 800) return 0;
+    let sigma = (this.fluid.K / 40.0) * (this.fluid.Al / 10.0) * (this.fluid.SiO2 / 400.0);
+    // Feldspars need HIGH temperature — they're igneous/metamorphic
+    if (this.temperature < 300) sigma *= Math.exp(-0.01 * (300 - this.temperature));
+    // Acid destabilization — kaolinization regime, mirrors grow_feldspar
+    // dissolution at pH < 4. KAlSi₃O₈ + H⁺ → kaolinite + K⁺ + SiO₂.
+    if (this.fluid.pH < 4.0) sigma -= (4.0 - this.fluid.pH) * 2.0;
     return Math.max(sigma, 0);
   }
 
@@ -5355,12 +5391,23 @@ class VugConditions {
   // Low temperature, needs Ca + S (as sulfate via oxidation) + O2
   // The crystal that grows when everything else is ending
   supersaturation_selenite() {
-    if (this.fluid.Ca < 20 || this.fluid.S < 10) return 0;
-    if (this.fluid.O2 < 0.3) return 0;
-    if (this.temperature > 80) return 0;
-    if (this.fluid.pH < 5 || this.fluid.pH > 8) return 0;
-    let sigma = (this.fluid.Ca / 100.0) * (this.fluid.S / 50.0) * (this.fluid.O2 / 1.0);
+    // v17 reconciliation (May 2026): Phase boundary is at ~55-60°C
+    // (Naica 54.5°C, Pulpí 20°C, Van Driessche et al. 2016). Pre-v17
+    // JS used a hard 80°C cutoff which was too lenient — gypsum
+    // converts to anhydrite well before 80°C. Now matches Python's
+    // softer decay starting at 60°C, while keeping JS's T<40 bonus
+    // (real per Pulpí Geode formation).
+    if (this.fluid.Ca < 20 || this.fluid.S < 15 || this.fluid.O2 < 0.2) return 0;
+    let sigma = (this.fluid.Ca / 60.0) * (this.fluid.S / 50.0) * (this.fluid.O2 / 0.5);
+    if (this.temperature > 60) {
+      sigma *= Math.exp(-0.06 * (this.temperature - 60));
+    }
+    // Cool-T sweet spot — Pulpí 20°C
     if (this.temperature < 40) sigma *= 1.5;
+    // Neutral to slightly alkaline pH preferred
+    if (this.fluid.pH < 5.0) {
+      sigma -= (5.0 - this.fluid.pH) * 0.2;
+    }
     return Math.max(sigma, 0);
   }
 
