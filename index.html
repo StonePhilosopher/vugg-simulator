@@ -2246,6 +2246,8 @@ footer a:hover {
     <button onclick="startScenarioInCreative('gem_pegmatite')">💚 Gem Pegmatite Pocket — Cruzeiro Mine, Doce Valley (Minas Gerais, Brazil).</button>
     <button onclick="startScenarioInCreative('deccan_zeolite')">🔷 Deccan Apophyllite Vesicle — Nashik / Aurangabad (Maharashtra, India).</button>
     <button onclick="startScenarioInCreative('sabkha_dolomitization')">🌊 Coorong Cycled Dolomite (Kim 2023) — Coorong lagoon (South Australia).</button>
+    <button onclick="startScenarioInCreative('schneeberg')">☢️ Schneeberg Oxidized U-Pegmatite — Erzgebirge (Saxony, Germany). Type locality for torbernite + zeunerite + uranospinite.</button>
+    <button onclick="startScenarioInCreative('colorado_plateau')">🌵 Colorado Plateau Roll-Front — Uravan Mineral Belt (Roc Creek, Montrose Co., CO). Carnotite + tyuyamunite type chemistry.</button>
   </div>
 
   <div class="menu-subheading">Test scenarios — generic event-driven scenarios not anchored to a real locality. Use as sandboxes for chemistry experimentation.</div>
@@ -2326,6 +2328,8 @@ footer a:hover {
       <option value="bisbee">bisbee</option>
       <option value="deccan_zeolite">deccan_zeolite</option>
       <option value="sabkha_dolomitization">sabkha_dolomitization</option>
+      <option value="schneeberg">schneeberg</option>
+      <option value="colorado_plateau">colorado_plateau</option>
     </select>
   </div>
   <div class="control-group">
@@ -2361,6 +2365,8 @@ Scenarios:
   supergene_oxidation — Cold, oxidized water-table zone. Pb+Mo+Zn+As → wulfenite + smithsonite + adamite + mimetite + goethite.
   ouro_preto — Imperial topaz veins, Minas Gerais. 360°C metamorphic brine, F-gated topaz nucleation. Cr³⁺ trace → golden-orange imperial color.
   gem_pegmatite — Gem pegmatite pocket (Minas Gerais). 650→300°C cascade: feldspar+quartz wall, schorl→elbaite transition, Be-gated beryl (enormous crystals), albitization event, late topaz.
+  schneeberg — Oxidized U-pegmatite + arsenopyrite (Erzgebirge). Type locality for the autunite-group secondaries; fires torbernite + zeunerite (Cu phase) then autunite + uranospinite (Ca phase). The cation+anion fork mechanic in one specimen.
+  colorado_plateau — Sandstone roll-front uranium-vanadium deposit (Uravan Mineral Belt). Carnotite + tyuyamunite — interconvertible by cation exchange, drawn apart by K vs Ca dominance in the local pore fluid.
 </div>
   </div>
   <div class="inventory-col" id="legends-inventory-col" style="display:none;">
@@ -3804,7 +3810,15 @@ let timeScale = 5.0;
 //        Ca-uranyl arsenate/vanadate; uranospinite is strongly
 //        fluorescent yellow-green LW (like autunite) and tyuyamunite
 //        is weakly fluorescent (vanadate matrix dampens). Engine 90→92.
-const SIM_VERSION = 15;
+//   v16 — Round 9e mechanic-coverage scenarios (May 2026): two new
+//        shipped scenarios that finally exercise the autunite-group
+//        cation+anion fork end-to-end. schneeberg (Erzgebirge type
+//        locality, 6 events) fires torbernite + zeunerite (Cu phase)
+//        then autunite + uranospinite (Ca phase). colorado_plateau
+//        (Uravan Mineral Belt, 5 events) fires carnotite + tyuyamunite
+//        on the V-branch. All 6 secondary U species shipped in
+//        Rounds 9b-9e now have scenarios that fire them.
+const SIM_VERSION = 16;
 
 
 // ============================================================
@@ -11362,6 +11376,106 @@ function event_radioactive_pegmatite_final_cooling(c) {
   return 'The system cools to near-ambient. What remains is a pegmatite pocket: black uraninite cubes, smoky quartz darkened by radiation, and galena crystallized from the lead that uranium became. Time wrote this assemblage. Chemistry just held the pen.';
 }
 
+// --- schneeberg (Round 9e mechanic-coverage scenario, May 2026) ---
+function event_schneeberg_pegmatite_crystallization(c) {
+  c.temperature = 350;
+  c.fluid.O2 = 0.0;
+  c.fluid.SiO2 = Math.max(c.fluid.SiO2, 6000);
+  return 'The Schneeberg pegmatite differentiates. A reducing residual fluid floods the pocket with uranium, copper, iron, and arsenic. Uraninite grows as pitch-black masses; chalcopyrite plates as brassy disphenoids; arsenopyrite forms steel-gray rhombs. Bismuth is everywhere — Schneeberg\'s first ore was bismuth, three centuries before pitchblende became uranium.';
+}
+
+function event_schneeberg_cooling(c) {
+  c.temperature = 30;
+  c.flow_rate = 0.5;
+  return 'The pegmatite system cools toward ambient. Primary crystallization closes. The vug holds black uraninite, brassy chalcopyrite, and steel-gray arsenopyrite — a characteristic Erzgebirge primary assemblage, not yet touched by oxidation.';
+}
+
+function event_schneeberg_cu_p_phase(c) {
+  c.temperature = 25;
+  c.fluid.O2 = 1.5;
+  c.fluid.pH = 6.0;
+  c.flow_rate = 1.5;
+  c.fluid.P = Math.max(c.fluid.P, 18.0);
+  c.fluid.As = Math.min(c.fluid.As, 4.0);
+  c.fluid.Cu = Math.max(c.fluid.Cu, 70.0);
+  c.fluid.Ca = Math.min(c.fluid.Ca, 35.0);
+  return 'Meteoric water seeps through fractures and floods the system with oxygen. Uraninite begins weathering — its U⁴⁺ flips to soluble UO₂²⁺ uranyl. Chalcopyrite oxidizes; Cu²⁺ enters solution alongside the uranyl. Arsenopyrite weathering is delayed (steeper kinetic barrier), so phosphate dominates the anion pool. Emerald-green torbernite plates begin appearing on the dissolving uraninite — the diagnostic Schneeberg habit, the museum-classic.';
+}
+
+function event_schneeberg_cu_as_pulse(c) {
+  c.temperature = 22;
+  c.fluid.As = Math.max(c.fluid.As, 22.0);
+  c.fluid.P = Math.min(c.fluid.P, 4.0);
+  c.fluid.Cu = Math.max(c.fluid.Cu, 55.0);
+  c.fluid.Ca = Math.min(c.fluid.Ca, 35.0);
+  return 'The arsenopyrite has been steadily oxidizing in the background, and now it catches up. Arsenate floods the fluid — As pulls past P as the dominant anion. Cu is still in the pool, ahead of Ca. The same chemistry stage as torbernite but with arsenate instead of phosphate: zeunerite, the species Weisbach described from this very mine in 1872. Visually indistinguishable from torbernite; the chemistry is the only honest test.';
+}
+
+function event_schneeberg_cu_depletion(c) {
+  c.temperature = 20;
+  c.fluid.Cu = Math.min(c.fluid.Cu, 5.0);
+  c.fluid.Ca = Math.max(c.fluid.Ca, 100.0);
+  c.fluid.P = Math.max(c.fluid.P, 18.0);
+  c.fluid.As = Math.min(c.fluid.As, 4.0);
+  return 'Copper has been pulled out of the fluid by the green plates. The cation pool flips: calcium, sourced from the carbonate buffer in the pegmatite country rock, takes over. P replenishes from continuing apatite weathering. The same uranyl-phosphate chemistry that grew torbernite now grows autunite — bright canary yellow instead of emerald green, and crucially, fluorescent. Where Cu²⁺ killed the uranyl emission cold, Ca²⁺ leaves it lit.';
+}
+
+function event_schneeberg_as_pulse_late(c) {
+  c.temperature = 18;
+  c.fluid.As = Math.max(c.fluid.As, 22.0);
+  c.fluid.P = Math.min(c.fluid.P, 4.0);
+  c.fluid.Ca = Math.max(c.fluid.Ca, 100.0);
+  c.fluid.Cu = Math.min(c.fluid.Cu, 5.0);
+  c.flow_rate = 0.3;
+  return 'The arsenate replenishes one final time as the last arsenopyrite grains weather. Ca is still dominant, As is now dominant: uranospinite, the calcium analog of zeunerite. Same mine, same vein, same uranyl ion — but where zeunerite was dead under UV, this one glows yellow-green. Weisbach described it in 1873, the year after he characterized zeunerite a hundred meters away. Four uranyl species in one vug, the cation+anion fork mechanic finally written into the rock.';
+}
+
+// --- colorado_plateau (Round 9e companion scenario, May 2026) ---
+function event_colorado_plateau_groundwater_pulse(c) {
+  c.temperature = 22;
+  c.fluid.O2 = 1.5;
+  c.fluid.pH = 7.0;
+  c.flow_rate = 1.2;
+  c.fluid.U = Math.max(c.fluid.U, 18.0);
+  c.fluid.V = Math.max(c.fluid.V, 14.0);
+  c.fluid.Ca = Math.max(c.fluid.Ca, 100.0);
+  c.fluid.K = Math.min(c.fluid.K, 20.0);
+  return 'Oxidizing groundwater flushes through the Morrison Formation sandstones, picking up uranium from upstream uraninite weathering and vanadium from montroseite-bearing layers. The carbonate-buffered fluid carries Ca dominant over K. Where it meets a U+V trap — typically petrified wood or carbonaceous shale — bright canary-yellow tyuyamunite begins plating. The same yellow that prospectors followed across mesa tops decades before scintillometers existed.';
+}
+
+function event_colorado_plateau_roll_front_contact(c) {
+  c.temperature = 18;
+  c.fluid.Fe = Math.max(c.fluid.Fe, 12.0);
+  c.fluid.O2 = 1.0;
+  c.flow_rate = 0.6;
+  return 'The fluid hits a roll-front — a buried zone of carbonaceous shale or petrified wood that has held its reducing capacity for millions of years. Iron rises as the organic carbon reduces dissolved Fe³⁺ to Fe²⁺ and pulls oxygen from the system. The uranyl-vanadate complex destabilizes at the redox boundary, dropping out as concentrated tyuyamunite crusts where the chemistry crosses. The Colorado Plateau ore-grade signature.';
+}
+
+function event_colorado_plateau_k_pulse(c) {
+  c.temperature = 22;
+  c.fluid.K = Math.max(c.fluid.K, 40.0);
+  c.fluid.Ca = Math.min(c.fluid.Ca, 30.0);
+  c.fluid.V = Math.max(c.fluid.V, 10.0);
+  c.fluid.U = Math.max(c.fluid.U, 8.0);
+  c.fluid.Fe = Math.max(c.fluid.Fe, 8.0);
+  return 'A drier interval. Evaporation concentrates the alkaline ions; potassium pulls past calcium in the cation pool. K/(K+Ca) crosses 0.5 — the carnotite branch of the cation fork takes over. Carnotite plates beside the existing tyuyamunite. Same canary-yellow, same uranyl-vanadate, same chemistry stage; the cation ratio drew the boundary between them. Friedel and Cumenge described carnotite from Roc Creek in 1899 from exactly this kind of pore-fluid regime.';
+}
+
+function event_colorado_plateau_ca_recovery(c) {
+  c.temperature = 20;
+  c.fluid.Ca = Math.max(c.fluid.Ca, 95.0);
+  c.fluid.K = Math.min(c.fluid.K, 15.0);
+  c.fluid.V = Math.max(c.fluid.V, 9.0);
+  c.fluid.U = Math.max(c.fluid.U, 6.0);
+  return 'The dry interval ends; meteoric recharge brings carbonate back into solution. Ca recovers dominance. Tyuyamunite resumes plating in the new pore-fluid composition, this time alongside the carnotite that grew during the K-pulse. Colorado Plateau specimens preserve exactly this kind of intergrowth — the same hand specimen, the same emerald color, the cation chemistry the only honest test of which is which.';
+}
+
+function event_colorado_plateau_arid_stabilization(c) {
+  c.temperature = 20;
+  c.flow_rate = 0.1;
+  return 'The system reaches its steady state. Carnotite and tyuyamunite cover the pore walls in roughly equal parts. Both fluoresce dimly under longwave UV — the vanadate matrix dampens their emission below autunite-group brilliance, but Ca²⁺ keeps tyuyamunite\'s emission slightly lifted above carnotite\'s. Time wrote this assemblage. Geochemistry just held the pen.';
+}
+
 // --- deccan_zeolite ---
 function event_deccan_zeolite_silica_veneer(c) {
   c.fluid.SiO2 += 400;
@@ -11779,6 +11893,18 @@ const EVENT_REGISTRY = {
   sabkha_flood: event_sabkha_flood,
   sabkha_evap: event_sabkha_evap,
   sabkha_final_seal: event_sabkha_final_seal,
+  // Round 9e mechanic-coverage scenarios (May 2026):
+  schneeberg_pegmatite_crystallization: event_schneeberg_pegmatite_crystallization,
+  schneeberg_cooling: event_schneeberg_cooling,
+  schneeberg_cu_p_phase: event_schneeberg_cu_p_phase,
+  schneeberg_cu_as_pulse: event_schneeberg_cu_as_pulse,
+  schneeberg_cu_depletion: event_schneeberg_cu_depletion,
+  schneeberg_as_pulse_late: event_schneeberg_as_pulse_late,
+  colorado_plateau_groundwater_pulse: event_colorado_plateau_groundwater_pulse,
+  colorado_plateau_roll_front_contact: event_colorado_plateau_roll_front_contact,
+  colorado_plateau_k_pulse: event_colorado_plateau_k_pulse,
+  colorado_plateau_ca_recovery: event_colorado_plateau_ca_recovery,
+  colorado_plateau_arid_stabilization: event_colorado_plateau_arid_stabilization,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and
