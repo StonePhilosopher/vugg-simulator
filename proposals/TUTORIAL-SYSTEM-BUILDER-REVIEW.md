@@ -5,7 +5,9 @@
 **Reviewing:** `proposals/TUTORIAL-SYSTEM.md` (canonical commit `524d6de`)
 **Verdict:** Design is sound. Tutorial 1 is shippable as a small additive layer on top of existing Creative Mode primitives. Estimate ~1 focused session for a working v0; ~2 to harden.
 
-**Placement decision (per Syntaxswine direction):** Tutorials live **under the Scenarios picker**, not as a separate mode. The proposal called them a "mode separate from Free Play and Fortress Mode" but they're actually structurally identical to scenarios: scripted broth + scripted events + a guided log. Treating them as a special category of scenario (with overlay UI gated by a `tutorial: true` flag in the JSON5 spec) reuses `fortressBeginFromScenario` and skips the mode-flag work entirely.
+**Placement decision (per Syntaxswine direction):** Tutorials live **at the top of the New Game Menu** (`#new-game-panel`, the "Begin" screen) — above Scenarios / Creative mode / Simulation / The Groove / Home. They're the first thing a new player sees after clicking "Begin," which is the right pedagogical placement.
+
+Structurally, tutorials are still implemented as a **scenario variant**: scripted broth + scripted events + a `tutorial: true` flag in the JSON5 spec that triggers the overlay UI. They reuse `fortressBeginFromScenario` and skip any new mode-flag plumbing. The placement decision is purely UI (where the entry button lives) — the underlying machinery is shared with Scenarios.
 
 ---
 
@@ -45,9 +47,24 @@ The proposal describes Tutorial 1 in 7 flow steps. Here's where each lands in th
 
 5. **A new tutorial scenario.** `tutorial_first_crystal` in `data/scenarios.json5` with the silica-rich starter broth inlined as the initial fluid + one scripted event `{step:6, type:'tutorial_temperature_drop'}` (T -= 80, pushes quartz out of its growth window) + the `tutorial.steps` array of 7 callouts. Gets the same Python/JS mirror treatment as every other scenario, plus baseline coverage (the chemistry side).
 
-6. **Surfacing in the Scenarios picker.** Add a new sub-section in `#scenarios-panel` (`index.html:2234`) — "**Tutorial scenarios** — guided introductions to the simulator. Recommended for first-time players." — above the existing Real-locality scenarios block. Each tutorial gets a button: `🎓 Tutorial 1: First Crystal.`. The dropdown in `#scenario` (legends mode) probably should NOT include tutorials — they only make sense in Creative Mode's interactive frame.
+6. **Surfacing at the top of the New Game Menu.** Add a new section in `#new-game-panel` (`index.html:2221`) — "**Tutorials**" — ABOVE the existing Scenarios / Creative mode / Simulation / The Groove / Home buttons. Each tutorial gets its own button at the top of the menu: `🎓 Tutorial 1: First Crystal.` etc. The Scenarios picker (`#scenarios-panel`) and the legends-mode dropdown (`#scenario`) do NOT need tutorial entries — the New Game Menu is the single canonical entry point.
 
-7. **(Optional) A "Start Here" hint on the title screen for first-run players.** localStorage flag, dismissible. Out of scope for Tutorial 1's v0; flag for later.
+    Suggested HTML structure (drop-in at `#new-game-panel` after the menu-subheading):
+    ```html
+    <div class="menu-subheading">Tutorials</div>
+    <div class="menu-buttons">
+      <button onclick="startTutorial('first_crystal')">🎓 Tutorial 1: First Crystal.</button>
+      <button onclick="startTutorial('mn_fluorescence')">🎓 Tutorial 2: A Mn-Doped Calcite.</button>
+      <button onclick="startTutorial('oxidation_breach')">🎓 Tutorial 3: The Fourth Door.</button>
+    </div>
+    <div class="menu-subheading">Or jump straight in</div>
+    <div class="menu-buttons">
+      [existing Scenarios / Creative mode / Simulation / The Groove / Home buttons]
+    </div>
+    ```
+    `startTutorial(name)` is a thin wrapper around `startScenarioInCreative(name)` that sets a tutorial-mode flag before booting the scenario, so the overlay layer activates.
+
+7. **(Optional) A localStorage `seen_tutorial_1` flag** so returning players don't get the tutorial section visually shouting at them every time they hit "Begin." Render the section dimmer/smaller after first completion, or move it below the main buttons. Out of scope for v0 — first ship makes the section bold for everyone, polish is a follow-up.
 
 ---
 
@@ -65,7 +82,7 @@ The proposal describes Tutorial 1 in 7 flow steps. Here's where each lands in th
 
 Ship Tutorial 1 in three commits:
 
-1. **Tutorial scenario + event handler.** Add `tutorial_first_crystal` to `data/scenarios.json5` (silica-rich initial fluid + one event), add `tutorial_temperature_drop` event handler in vugg.py + index.html mirror. Surface the new scenario in the Scenarios picker under a new "Tutorials" sub-section. Test: pick "Tutorial 1" from Scenarios, advance steps, confirm quartz nucleates, confirm T drops at step 6 and growth stalls. No callout UI yet — sandbox-testable in Creative Mode as a normal scenario.
+1. **Tutorial scenario + event handler + New Game Menu entry.** Add `tutorial_first_crystal` to `data/scenarios.json5` (silica-rich initial fluid + one event), add `tutorial_temperature_drop` event handler in vugg.py + index.html mirror. Surface a "Tutorials" section at the top of the New Game Menu (`#new-game-panel`) with the Tutorial 1 button. Test: click Begin → click Tutorial 1 → confirm Creative Mode boots with the silica broth, advance steps, confirm quartz nucleates, confirm T drops at step 6 and growth stalls. No callout UI yet — sandbox-testable end-to-end as a normal scenario.
 2. **Callout overlay primitive.** Generic `showCallout({anchor, text, arrow})` + `hideCallout()`. Test: drop a debug button somewhere that calls it, confirm it positions correctly against various controls.
 3. **Tutorial state machine + control-locking.** Read `tutorial.steps` from the active scenario spec, walk the steps as triggers fire, hide/reveal Creative Mode controls per step. Test: complete the tutorial end-to-end as a player.
 
