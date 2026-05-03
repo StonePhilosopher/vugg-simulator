@@ -5,6 +5,8 @@
 **Reviewing:** `proposals/TUTORIAL-SYSTEM.md` (canonical commit `524d6de`)
 **Verdict:** Design is sound. Tutorial 1 is shippable as a small additive layer on top of existing Creative Mode primitives. Estimate ~1 focused session for a working v0; ~2 to harden.
 
+**Placement decision (per Syntaxswine direction):** Tutorials live **under the Scenarios picker**, not as a separate mode. The proposal called them a "mode separate from Free Play and Fortress Mode" but they're actually structurally identical to scenarios: scripted broth + scripted events + a guided log. Treating them as a special category of scenario (with overlay UI gated by a `tutorial: true` flag in the JSON5 spec) reuses `fortressBeginFromScenario` and skips the mode-flag work entirely.
+
 ---
 
 ## Bottom line
@@ -35,21 +37,25 @@ The proposal describes Tutorial 1 in 7 flow steps. Here's where each lands in th
 
 1. **Callout/highlight overlay primitive.** The codebase has zero tooltip/callout/highlight/tour code — `grep tooltip|callout|highlight|tour` only matches the topo-canvas mineral tooltip, which is unrelated. This needs to be built. v0 can be ~80 lines: a fixed-position overlay div with arrow + text, pointing at an element by `getBoundingClientRect()`.
 
-2. **A tutorial mode flag.** `switchMode()` knows `legends / fortress / idle / library / groove / random`. Add `'tutorial'` as a 7th mode that boots Creative Mode but with the overlay layer + locked controls.
+2. **A `tutorial: true` flag on scenario specs.** `data/scenarios.json5` scenarios get an optional `tutorial` block: `{tutorial: true, steps: [{when: 'on_start', anchor: '#btn-grow', text: 'Press Grow to advance time.'}, ...]}`. `fortressBeginFromScenario` reads it and, if present, kicks off the overlay layer. No new mode needed — Creative Mode is already the host.
 
-3. **Step-state machine.** A small object: `{stepIndex, advanceWhen: () => bool, calloutSpec: {...}, onAdvance: () => void}`. Tutorial 1 has 7 states. ~50 lines.
+3. **Step-state machine that consumes the tutorial steps array.** A small object that walks the `tutorial.steps` list, listens for the trigger condition (`on_start`, `on_step_N`, `on_first_nucleation_of(quartz)`, `on_crystal_size_geq(5)`, `on_action(temperature_change)`), and renders the next callout. ~50 lines.
 
-4. **Control-locking discipline.** Hide everything except: vug canvas, Grow button, callout overlay. Reveal the temperature slider only at step 5. Suppress all the other broth sliders and action buttons (Inject Silica, Heat, Cool, etc.) until tutorial complete.
+4. **Control-locking discipline.** When a tutorial scenario is active, hide everything in Creative Mode's action panel (Inject Silica, Heat, Cool, Tectonic, etc.) and broth sliders except those the current tutorial step explicitly reveals. The `tutorial.steps[i].reveal` array names the controls to un-hide for that step. Restore everything when the tutorial completes.
 
-5. **A new tutorial scenario.** Either a JSON5 scenario `tutorial_first_crystal` with one scripted event `{step:6, type:'tutorial_temperature_drop'}` (T -= 80, pushes quartz out of its growth window), OR drive the temperature drop from the JS tutorial state machine itself. The scenario route is cleaner — it lives in `data/scenarios.json5` and gets the same Python/JS mirror treatment as everything else, plus baseline coverage.
+5. **A new tutorial scenario.** `tutorial_first_crystal` in `data/scenarios.json5` with the silica-rich starter broth inlined as the initial fluid + one scripted event `{step:6, type:'tutorial_temperature_drop'}` (T -= 80, pushes quartz out of its growth window) + the `tutorial.steps` array of 7 callouts. Gets the same Python/JS mirror treatment as every other scenario, plus baseline coverage (the chemistry side).
 
-6. **A title-screen entry point.** Currently the title screen has Quick Play / New Game / Load Game / mode cards. Add a "Tutorial" card or button. Probably belongs prominently — first-run experience.
+6. **Surfacing in the Scenarios picker.** Add a new sub-section in `#scenarios-panel` (`index.html:2234`) — "**Tutorial scenarios** — guided introductions to the simulator. Recommended for first-time players." — above the existing Real-locality scenarios block. Each tutorial gets a button: `🎓 Tutorial 1: First Crystal.`. The dropdown in `#scenario` (legends mode) probably should NOT include tutorials — they only make sense in Creative Mode's interactive frame.
+
+7. **(Optional) A "Start Here" hint on the title screen for first-run players.** localStorage flag, dismissible. Out of scope for Tutorial 1's v0; flag for later.
 
 ---
 
 ## Honest scope estimate
 
-- **v0 ugly-but-working** (Tutorial 1 only, hardcoded callout positions, no animation, basic CSS): ~3–4 hours focused work. ~250 lines net (~80 overlay + ~50 state machine + ~40 control-locking + ~30 scenario + ~50 wiring).
+(Revised down from the previous estimate now that no separate mode is needed.)
+
+- **v0 ugly-but-working** (Tutorial 1 only, hardcoded callout positions, no animation, basic CSS): ~2–3 hours focused work. ~200 lines net (~80 overlay + ~50 state machine + ~30 control-locking + ~30 scenario + ~10 picker wiring).
 - **v1 polished** (smooth fade-in, arrow positioning that handles window-resize, "skip tutorial" escape hatch, completion celebration): another ~2 hours.
 - **Tutorials 2 + 3:** each ~1–2 hours once v1 infrastructure exists, since they reuse the overlay + state machine. Tutorial 3 (paragenetic oxidation event) probably needs a small "dissolution-and-replacement" visual flourish that doesn't currently exist — flag for follow-up.
 
@@ -59,9 +65,9 @@ The proposal describes Tutorial 1 in 7 flow steps. Here's where each lands in th
 
 Ship Tutorial 1 in three commits:
 
-1. **Tutorial scenario + event handler.** Add `tutorial_first_crystal` to `data/scenarios.json5`, add `tutorial_temperature_drop` event handler in vugg.py + index.html mirror. Test: scenario boots, event fires at step 6, T drops. No tutorial UI yet — sandbox-testable in Creative Mode.
+1. **Tutorial scenario + event handler.** Add `tutorial_first_crystal` to `data/scenarios.json5` (silica-rich initial fluid + one event), add `tutorial_temperature_drop` event handler in vugg.py + index.html mirror. Surface the new scenario in the Scenarios picker under a new "Tutorials" sub-section. Test: pick "Tutorial 1" from Scenarios, advance steps, confirm quartz nucleates, confirm T drops at step 6 and growth stalls. No callout UI yet — sandbox-testable in Creative Mode as a normal scenario.
 2. **Callout overlay primitive.** Generic `showCallout({anchor, text, arrow})` + `hideCallout()`. Test: drop a debug button somewhere that calls it, confirm it positions correctly against various controls.
-3. **Tutorial state machine + mode wiring.** Title-screen entry point, `switchMode('tutorial')`, the 7-state script, control-locking. Test: complete the tutorial end-to-end as a player.
+3. **Tutorial state machine + control-locking.** Read `tutorial.steps` from the active scenario spec, walk the steps as triggers fire, hide/reveal Creative Mode controls per step. Test: complete the tutorial end-to-end as a player.
 
 Each commit independently shippable. Stuck in the middle? The half-done state is still useful (you've added a generic overlay primitive + a new scenario, both of which are reusable).
 
@@ -69,8 +75,8 @@ Each commit independently shippable. Stuck in the middle? The half-done state is
 
 ## Risks / open questions for the boss
 
-1. **Where does Tutorial 1 live in the menu hierarchy?** The proposal says tutorials are a "mode" — agreed — but the title screen already has 9 entry points (4 mode cards + 4 New-Game-Menu options + Quick Play). One more is fine, but it should probably be MORE prominent than the others, not less. Suggest: add a "Start Here" / "Tutorial" callout above the existing "New Game" button, dismissible.
-2. **Does completing Tutorial 1 unlock anything, or is the unlock language aspirational?** "Unlock: Free Play mode + Tutorial 2" implies a save-state with a `tutorial_completed` flag. The codebase has no save-state currently (Creative Mode session resets on reload). If unlocks are a real requirement, that's a separate (small) project: localStorage-backed flag + UI gating. If not, drop the unlock language and have the tutorial just be optional.
+1. **Tutorials live under Scenarios — confirmed by Syntaxswine direction.** Resolved. Sub-section in `#scenarios-panel`, above the existing real-locality block. Tutorial scenarios are not exposed in the legends-mode dropdown — they only make sense in Creative Mode's interactive frame.
+2. **Does completing Tutorial 1 unlock anything, or is the unlock language aspirational?** "Unlock: Free Play mode + Tutorial 2" implies a save-state with a `tutorial_completed` flag. The codebase has no save-state currently (Creative Mode session resets on reload). If unlocks are a real requirement, that's a separate (small) project: localStorage-backed flag + UI gating. If not, drop the unlock language and have the tutorial just be optional. Recommend: drop unlock language for v0; Free Play is already accessible.
 3. **Tutorial 1 interrupts at "step 6" (or wherever) — should it interrupt on TIME or on CRYSTAL SIZE?** The proposal says "Grow it to 5mm" then interrupt. Crystal size is more pedagogically honest (player learns "growth = size, time = steps, conditions affect both") but step-count is easier to script. v0 should probably ship with step-count and add size-trigger if it feels off in playtesting.
 4. **"All conditions are in the green" — the green-zone visualization the proposal calls out is currently the per-mineral supersaturation gates, which aren't surfaced as a single "is this growing well" indicator.** Probably want a generic "growth health" badge on the active crystal: 🟢 healthy, 🟡 stressed, 🔴 stopped. ~30 lines if we want to ship it with Tutorial 1.
 5. **Tutorial 2 references "calcite-available broth" with both quartz and calcite competing for silica — but calcite doesn't consume silica.** Calcite needs Ca + CO3, not SiO2. The "shared resource" for calcite + quartz would have to be temperature (both want similar T windows) or pH, not silica. Suggest: Tutorial 2 picks two minerals that *actually* compete (quartz + chalcedony for silica? quartz + feldspar for SiO2 + Al? sphalerite + galena for S?). Worth re-anchoring the scenario before building it.
