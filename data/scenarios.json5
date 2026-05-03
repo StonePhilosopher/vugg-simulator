@@ -1199,6 +1199,111 @@
         "Stern et al. 1956 — meta-tyuyamunite (American Mineralogist v.41)",
         "research/research-tyuyamunite.md (May 2026) — Colorado Plateau roll-front geology + simulator design"
       ]
+    },
+
+    // ============================================================
+    // Tutorial scenarios (May 2026)
+    // ============================================================
+    // Surfaced in the New Game Menu under "Tutorials" — the recommended
+    // first stop for new players. Structurally identical to scenarios
+    // (scripted broth + scripted events) but scoped/paced for teaching.
+    // The callout-overlay UI layer is a follow-up; in this slice they
+    // run as plain scenarios you can drive manually in Creative Mode.
+    // See proposals/TUTORIAL-SYSTEM-BUILDER-REVIEW.md for design context.
+    // ============================================================
+
+    "tutorial_first_crystal": {
+      "anchor": "(tutorial scaffold — generic silica-rich broth)",
+      "description": "Tutorial 1: First Crystal. Grow a quartz, then watch what happens when conditions drift out of its growth window.",
+      "expects_species": ["quartz"],
+      "duration_steps": 30,
+      "notes": [
+        "Tutorial scenario. Designed for the guided first-time-player experience: simple silica-rich broth, quartz nucleates within a few steps at 180°C, then a scripted temperature drop at step 8 pulls T well out of quartz's growth window. The intended player learning is: (1) clicking Advance moves time, (2) crystals need conditions in the right range, (3) when the conditions drift, growth stops.",
+        "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario without the callout overlay UI that ships in a follow-up.",
+        "Broth shape mirrors FLUID_PRESETS.silica (the existing 'Silica-rich' starter fluid) so the lesson generalizes to that picker entry."
+      ],
+      "initial": {
+        // T=180°C: quartz growth window center. Gives σ(Qz) ~1.2-1.5 at
+        // start so quartz nucleates within a few steps. Drops to ~100°C
+        // after the tutorial event, putting growth firmly outside the
+        // comfort window without going so cold the crystal disappears.
+        "temperature_C": 180.0,
+        "pressure_kbar": 1.0,
+        "fluid": {
+          // Silica-rich broth, mirrors FLUID_PRESETS.silica.
+          "SiO2": 600,
+          "Ca": 150,
+          "CO3": 100,
+          "Fe": 8,
+          "Mn": 3,
+          "Mg": 8,
+          "Ti": 0.8,
+          "Al": 4,
+          "F": 10,
+          "pH": 6.5,
+          "salinity": 5.0
+        },
+        "wall": {
+          "composition": "limestone",
+          "primary_bubbles": 3,
+          "secondary_bubbles": 5,
+          "shape_seed": 1
+        }
+      },
+      "events": [
+        { "step": 8, "type": "tutorial_temperature_drop", "name": "Temperature Drops", "description": "Conditions drift out of quartz's growth window — the crystal stops growing" }
+      ],
+      "sources": [
+        "(tutorial scaffold — no published source)"
+      ]
+    },
+
+    "tutorial_mn_calcite": {
+      "anchor": "(tutorial scaffold — generic carbonate broth)",
+      "description": "Tutorial 2: A Mn-Doped Calcite. Grow a calcite, then mix in manganese and watch the next zones glow orange-red under UV. Iron quenches; the boundary records the broth-history.",
+      "expects_species": ["calcite"],
+      "duration_steps": 30,
+      "notes": [
+        "Tutorial scenario. Teaches how additives change a growing crystal's properties: Mn²⁺ activates orange fluorescence in calcite (threshold 2 ppm) and Fe²⁺ quenches it. The carbonate broth ships with Fe:10 already at the quencher range and Mn:8 just past the activator threshold — early calcite zones incorporate Mn but stay dim under UV. The Mn pulse at step 8 pushes Mn well past the activator threshold; the Fe drop at step 16 clears the quencher. The boundary between dim early zones and bright late zones records the moment the broth changed.",
+        "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. The Franklin/Sterling Hill (NJ) Mn-activated calcite glow is the real-world reference for the lesson.",
+        "Broth shape mirrors FLUID_PRESETS.carbonate so the lesson generalizes to that picker entry."
+      ],
+      "initial": {
+        // T=100°C: comfortable calcite growth window with retrograde
+        // solubility helping nucleation. Stays warm enough through the
+        // tutorial that calcite keeps growing (the lesson is about
+        // properties, not growth interruption like Tutorial 1).
+        "temperature_C": 100.0,
+        "pressure_kbar": 0.5,
+        "fluid": {
+          // Carbonate broth, mirrors FLUID_PRESETS.carbonate.
+          "SiO2": 80,
+          "Ca": 300,
+          "CO3": 250,
+          "Fe": 10,
+          "Mn": 8,
+          "Mg": 12,
+          "Ti": 0.2,
+          "Al": 1,
+          "F": 5,
+          "pH": 7.0,
+          "salinity": 8.0
+        },
+        "wall": {
+          "composition": "limestone",
+          "primary_bubbles": 3,
+          "secondary_bubbles": 5,
+          "shape_seed": 2
+        }
+      },
+      "events": [
+        { "step": 8,  "type": "tutorial_mn_pulse", "name": "Manganese Pulse",    "description": "Mn²⁺ injected — next calcite zones incorporate the activator" },
+        { "step": 16, "type": "tutorial_fe_drop",  "name": "Iron-Poor Recharge", "description": "Fe²⁺ quencher cleared — Mn-doped zones fluoresce at full brightness" }
+      ],
+      "sources": [
+        "(tutorial scaffold — no published source)",
+        "Franklin / Sterling Hill (NJ) — type locality for Mn-activated calcite fluorescence"
+      ]
     }
 
   }

@@ -11952,6 +11952,55 @@ def event_colorado_plateau_ca_recovery(conditions: VugConditions) -> str:
             "is which.")
 
 
+def event_tutorial_temperature_drop(conditions: VugConditions) -> str:
+    """Tutorial 1 — scripted T drop pulling quartz out of its growth window."""
+    # Knock T down by 80°C, never below ambient. From the tutorial's
+    # 180°C start this lands ~100°C — well outside quartz's comfort
+    # window for sustained growth, but not so cold the existing crystal
+    # immediately re-dissolves.
+    conditions.temperature = max(25.0, conditions.temperature - 80.0)
+    return ("The vug cools quickly. Temperature drops out of quartz's "
+            "growth window — the silica supply that was happily plating "
+            "onto the crystal a moment ago no longer wants to leave the "
+            "fluid. Growth slows, then stops. The crystal is still there, "
+            "still beautiful, but nothing new is forming on its faces. "
+            "Conditions matter; minerals only grow when the broth wants "
+            "to give them up.")
+
+
+def event_tutorial_mn_pulse(conditions: VugConditions) -> str:
+    """Tutorial 2 — Mn injection past the calcite-fluorescence activator threshold."""
+    # Push Mn well past the 2 ppm activator threshold. From a starting
+    # 8 ppm this lands at ~38 ppm — comfortably saturating Mn in the
+    # next calcite zones, but not high enough to destabilize calcite
+    # toward rhodochrosite (that would need Mn an order of magnitude
+    # higher in this broth).
+    conditions.fluid.Mn += 30.0
+    return ("A fresh fluid pulse brings extra manganese into the broth. "
+            "The next zones of calcite to grow will incorporate Mn²⁺ as "
+            "a trace dopant — the same activator that lights up the "
+            "Franklin / Sterling Hill specimens under longwave UV. The "
+            "iron in the broth still quenches most of it for now, but "
+            "the chemistry is set: Mn²⁺ is being recorded into every "
+            "growth ring from this moment forward.")
+
+
+def event_tutorial_fe_drop(conditions: VugConditions) -> str:
+    """Tutorial 2 — Fe drop revealing the Mn-activated fluorescence."""
+    # Crash Fe down to ~5% of its current value (from 10 → 0.5). The
+    # quenching threshold is somewhere in the low single digits; this
+    # lands clearly under it, so the zones that grow next can fluoresce
+    # at the full Mn-activated brightness.
+    conditions.fluid.Fe = max(0.0, conditions.fluid.Fe * 0.05)
+    return ("An iron-poor recharge flushes the system. Fe²⁺ — the "
+            "quencher — falls below the suppression threshold. The "
+            "Mn-doped zones that grow next will fluoresce at full "
+            "brightness. The boundary between the dim early zones "
+            "and the bright new ones records the exact moment the "
+            "iron dropped out of the broth. The crystal is now a "
+            "stratigraphic record of the chemistry you played with.")
+
+
 def event_colorado_plateau_arid_stabilization(conditions: VugConditions) -> str:
     """System reaches ambient steady state; both species coexist."""
     conditions.temperature = 20
@@ -12696,6 +12745,12 @@ EVENT_REGISTRY = {
     "colorado_plateau_k_pulse": event_colorado_plateau_k_pulse,
     "colorado_plateau_ca_recovery": event_colorado_plateau_ca_recovery,
     "colorado_plateau_arid_stabilization": event_colorado_plateau_arid_stabilization,
+    # Tutorials (May 2026) — see proposals/TUTORIAL-SYSTEM-BUILDER-REVIEW.md.
+    # Surfaced in the New Game Menu under "Tutorials"; structurally these
+    # are scenarios with simple, pedagogically-paced events.
+    "tutorial_temperature_drop": event_tutorial_temperature_drop,
+    "tutorial_mn_pulse": event_tutorial_mn_pulse,
+    "tutorial_fe_drop": event_tutorial_fe_drop,
 }
 
 
@@ -13079,6 +13134,10 @@ SCENARIOS = {
     # Round 9e mechanic-coverage scenarios (May 2026):
     "schneeberg": _JSON5_SCENARIOS["schneeberg"],
     "colorado_plateau": _JSON5_SCENARIOS["colorado_plateau"],
+    # Tutorials (May 2026) — surfaced in New Game Menu under "Tutorials".
+    # See proposals/TUTORIAL-SYSTEM-BUILDER-REVIEW.md.
+    "tutorial_first_crystal": _JSON5_SCENARIOS["tutorial_first_crystal"],
+    "tutorial_mn_calcite": _JSON5_SCENARIOS["tutorial_mn_calcite"],
     # scenario_random opts out — procedural / RNG-driven, stays as code.
     "random": scenario_random,
 }

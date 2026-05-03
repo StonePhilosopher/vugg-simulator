@@ -1048,5 +1048,33 @@
       "max_um": 203.6,
       "total": 10
     }
+  },
+  "tutorial_first_crystal": {
+    "quartz": {
+      "active": 10,
+      "dissolved": 0,
+      "max_um": 545.2,
+      "total": 10
+    }
+  },
+  "tutorial_mn_calcite": {
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "max_um": 31.5,
+      "total": 1
+    },
+    "quartz": {
+      "active": 7,
+      "dissolved": 0,
+      "max_um": 68.0,
+      "total": 7
+    },
+    "rhodochrosite": {
+      "active": 1,
+      "dissolved": 0,
+      "max_um": 12.1,
+      "total": 1
+    }
   }
 }
