@@ -878,6 +878,31 @@ class WallState:
     # rescaled to match the nominal mean radius.
     bubbles: List[Tuple[float, float, float]] = field(default_factory=list)
 
+    # Cross-axis (polar) irregularity profile. The equatorial bubble-
+    # merge above defines the cavity outline as you sweep θ around the
+    # rotation axis (slice the cavity horizontally). Slice it vertically
+    # and — without this — you'd see a perfect sphere shrink-shape, since
+    # all rings share the same θ profile scaled by sin(latitude).
+    # `polar_amplitudes` + `polar_phases` add a Fourier-like 1D
+    # modulation along the polar axis (ring index → latitude φ), so the
+    # cavity bulges and pinches in the vertical direction too. Renderer-
+    # only for now: engine math (mean_diameter_mm, paint_crystal, etc.)
+    # still reads the equatorial profile via ring[0]'s base_radius_mm,
+    # so the polar modulation is a visual layer on top — it doesn't
+    # change crystal nucleation or growth. Phase F-prime work.
+    polar_amplitudes: List[float] = field(default_factory=list)
+    polar_phases: List[float] = field(default_factory=list)
+
+    # Phase F: per-ring θ twist. Adjacent rings rotate slightly relative
+    # to each other, so the equatorial bubble-merge bumps spiral up the
+    # cavity wall instead of stacking in perfect vertical columns.
+    # Computed as a 3-harmonic Fourier series in φ (smooth along the
+    # polar axis), so adjacent rings have similar twist values — the
+    # cavity reads as a continuously-twisted geode rather than a stack
+    # of independently rotated discs.
+    twist_amplitudes: List[float] = field(default_factory=list)
+    twist_phases: List[float] = field(default_factory=list)
+
     def __post_init__(self):
         if self.initial_radius_mm <= 0:
             self.initial_radius_mm = self.vug_diameter_mm / 2.0
@@ -890,6 +915,8 @@ class WallState:
         # shape params. Must run before max_seen_radius_mm is seeded so
         # it can include the largest bulge.
         self._build_profile()
+        self._build_polar_profile()
+        self._build_twist_profile()
         if self.max_seen_radius_mm <= 0:
             max_base = self.initial_radius_mm
             for ring in self.rings:
@@ -1024,6 +1051,75 @@ class WallState:
         for ring in self.rings:
             for j, cell in enumerate(ring):
                 cell.base_radius_mm = raw_radii[j] * scale
+
+    # --- Cross-axis (polar) profile ---------------------------------------
+    # Three-harmonic Fourier-style modulation in φ. Amplitudes drawn
+    # from a separately-seeded RNG (shape_seed XOR a fixed offset) so
+    # the polar profile is reproducible per scenario without polluting
+    # the equatorial RNG sequence.
+    _POLAR_HARMONICS = 3
+    _POLAR_AMP_RANGE = (-0.18, 0.18)  # ~±18% radius modulation peaks
+
+    def _build_polar_profile(self) -> None:
+        """Seed polar_amplitudes + polar_phases from a derived RNG.
+        polar_profile_factor(φ) returns 1 + Σ Aₙ·cos(n·φ + θₙ); the
+        renderer multiplies each ring's radial extent by this factor
+        to give the cavity vertical irregularity (bulges and pinches
+        along the polar axis). Mean over φ ∈ [0, π] is exactly 1
+        because each cosine harmonic integrates to zero over a full
+        period."""
+        import random as _random
+        seed = int(self.shape_seed) ^ 0x70_0AA_517   # arbitrary fixed offset
+        rng = _random.Random(seed & 0xFFFFFFFF)
+        lo, hi = self._POLAR_AMP_RANGE
+        self.polar_amplitudes = [rng.uniform(lo, hi)
+                                  for _ in range(self._POLAR_HARMONICS)]
+        self.polar_phases = [rng.uniform(0.0, 2.0 * math.pi)
+                              for _ in range(self._POLAR_HARMONICS)]
+
+    def polar_profile_factor(self, phi: float) -> float:
+        """Per-latitude radial multiplier. φ in radians, with φ=0 at
+        south pole and φ=π at north pole. Floored at 0.5 so a strong
+        pinch can't collapse a ring to zero radius (which would
+        invert the geometry on render)."""
+        factor = 1.0
+        for n, amp in enumerate(self.polar_amplitudes):
+            factor += amp * math.cos((n + 1) * phi + self.polar_phases[n])
+        return max(0.5, factor)
+
+    # --- Phase F: per-latitude twist profile ------------------------------
+    # Each ring gets a smoothly-varying θ rotation so the cavity reads
+    # as a twisted geode. Three harmonics in φ; amplitudes ~ ±0.4 rad
+    # peaks (the sum of three ±0.4 amplitudes peaks well past that, but
+    # the cosine sum rarely hits the worst case). Total twist range
+    # across the polar axis is roughly ±0.6 rad on average — visible
+    # but not chaotic.
+    _TWIST_HARMONICS = 3
+    _TWIST_AMP_RANGE = (-0.4, 0.4)
+
+    def _build_twist_profile(self) -> None:
+        """Seed twist amplitudes + phases from a derived RNG. Uses a
+        different XOR mask than the polar profile so the two profiles
+        are independent — a seed that happens to give a strongly
+        bulged polar profile won't also give a strongly twisted one."""
+        import random as _random
+        seed = int(self.shape_seed) ^ 0x_BEEF_FACE
+        rng = _random.Random(seed & 0xFFFFFFFF)
+        lo, hi = self._TWIST_AMP_RANGE
+        self.twist_amplitudes = [rng.uniform(lo, hi)
+                                  for _ in range(self._TWIST_HARMONICS)]
+        self.twist_phases = [rng.uniform(0.0, 2.0 * math.pi)
+                              for _ in range(self._TWIST_HARMONICS)]
+
+    def ring_twist_radians(self, phi: float) -> float:
+        """Per-latitude θ offset in radians. φ ∈ [0, π]. Renderer adds
+        this to the angle of every cell on the latitude band; the
+        equatorial bubble-merge bumps then appear to spiral up the
+        cavity wall rather than stack in vertical columns."""
+        twist = 0.0
+        for n, amp in enumerate(self.twist_amplitudes):
+            twist += amp * math.cos((n + 1) * phi + self.twist_phases[n])
+        return twist
 
     # ----------------------------------------------------------------------
 

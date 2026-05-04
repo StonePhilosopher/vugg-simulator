@@ -4185,6 +4185,20 @@ class WallState {
     // Primaries come first, then secondaries.
     this.bubbles = [];
 
+    // Cross-axis polar profile: per-latitude modulation factor,
+    // computed lazily by _buildPolarProfile(). Renderer multiplies
+    // ring radii by polarProfileFactor(φ) for vertical-axis
+    // irregularity. Mirrors WallState.polar_amplitudes / phases in
+    // vugg.py.
+    this.polar_amplitudes = [];
+    this.polar_phases = [];
+    // Phase F: per-latitude θ twist. Renderer adds twist[φ] to each
+    // cell's angle so adjacent rings rotate slightly and the
+    // bubble-merge bumps spiral up the cavity wall. Mirrors
+    // WallState.twist_amplitudes / phases in vugg.py.
+    this.twist_amplitudes = [];
+    this.twist_phases = [];
+
     this.rings = [];
     for (let r = 0; r < this.ring_count; r++) {
       const ring = [];
@@ -4195,6 +4209,8 @@ class WallState {
     // happen before max_seen_radius_mm is seeded so promontories
     // contribute.
     this._buildProfile();
+    this._buildPolarProfile();
+    this._buildTwistProfile();
 
     // Monotonic scale reference for the renderer. Starts generously
     // (2× the largest base radius — or 2× initial_radius_mm for a
@@ -4275,6 +4291,63 @@ class WallState {
         ring[j].base_radius_mm = rawRadii[j] * scale;
       }
     }
+  }
+
+  // Cross-axis (polar) Fourier profile. Three harmonics with random
+  // amplitudes ±18% and random phases, keyed by a derived seed so the
+  // polar profile is reproducible per scenario without polluting the
+  // equatorial RNG sequence. Mirrors WallState._build_polar_profile in
+  // vugg.py.
+  _buildPolarProfile() {
+    const seed = ((this.shape_seed | 0) ^ 0x700AA517) >>> 0;
+    const rng = _mulberry32(seed);
+    const HARMONICS = 3;
+    const AMP_LO = -0.18, AMP_HI = 0.18;
+    this.polar_amplitudes = [];
+    this.polar_phases = [];
+    for (let n = 0; n < HARMONICS; n++) {
+      this.polar_amplitudes.push(AMP_LO + (AMP_HI - AMP_LO) * rng());
+      this.polar_phases.push(rng() * 2 * Math.PI);
+    }
+  }
+
+  // Per-latitude radial multiplier. φ ∈ [0, π], south pole at 0,
+  // north at π. Floored at 0.5 so a strong pinch can't collapse a
+  // ring to zero radius.
+  polarProfileFactor(phi) {
+    let factor = 1.0;
+    for (let n = 0; n < this.polar_amplitudes.length; n++) {
+      factor += this.polar_amplitudes[n] * Math.cos((n + 1) * phi + this.polar_phases[n]);
+    }
+    return Math.max(0.5, factor);
+  }
+
+  // Phase F: per-latitude twist profile. Three harmonics with
+  // amplitudes ~ ±0.4 rad. Mirrors WallState._build_twist_profile in
+  // vugg.py. Different XOR mask from polar so the two profiles are
+  // independent — a strong polar bulge doesn't force a strong twist.
+  _buildTwistProfile() {
+    const seed = ((this.shape_seed | 0) ^ 0xBEEFFACE) >>> 0;
+    const rng = _mulberry32(seed);
+    const HARMONICS = 3;
+    const AMP_LO = -0.4, AMP_HI = 0.4;
+    this.twist_amplitudes = [];
+    this.twist_phases = [];
+    for (let n = 0; n < HARMONICS; n++) {
+      this.twist_amplitudes.push(AMP_LO + (AMP_HI - AMP_LO) * rng());
+      this.twist_phases.push(rng() * 2 * Math.PI);
+    }
+  }
+
+  // Per-latitude θ offset in radians. Renderer adds this to each cell's
+  // angle on its ring; the equatorial bubble-merge bumps spiral up the
+  // cavity wall rather than stacking in vertical columns.
+  ringTwistRadians(phi) {
+    let twist = 0.0;
+    for (let n = 0; n < this.twist_amplitudes.length; n++) {
+      twist += this.twist_amplitudes[n] * Math.cos((n + 1) * phi + this.twist_phases[n]);
+    }
+    return twist;
   }
 
   // Wall arc length for one cell — uses current mean radius (per-cell
@@ -22189,12 +22262,19 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     // Ring 0 is the south pole (floor), ring N-1 is the north pole
     // (ceiling). φ runs from π/(2N) at ring 0 to π(2N-1)/(2N) at
     // ring N-1 — full latitude sweep with half-step offsets at each
-    // end so neither pole collapses to a point.
+    // end so neither pole collapses to a point. Cross-axis polar
+    // factor adds vertical irregularity: rings at certain latitudes
+    // bulge or pinch radially.
     const phi = Math.PI * (r + 0.5) / ringCount;
-    const ringRadiusFactor = Math.sin(phi);
-    const wz = -Math.cos(phi) * sphereRadiusPx;  // south pole at -R, north at +R
+    const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+    const ringRadiusFactor = Math.sin(phi) * polar;
+    const wz = -Math.cos(phi) * sphereRadiusPx;  // vertical position unchanged
     const projZ = Math.cos(_topoTiltX) * wz;     // small-angle yaw leaves z fixed for axis points
-    ringOrder.push({ ringIdx: r, wz, ringRadiusFactor, projZ });
+    // Phase F: per-ring θ rotation. Smoothly varies with latitude, so
+    // adjacent rings rotate similar amounts and the bubble-merge bumps
+    // spiral up the cavity wall.
+    const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
+    ringOrder.push({ ringIdx: r, wz, ringRadiusFactor, projZ, twist });
   }
   ringOrder.sort((a, b) => a.projZ - b.projZ);
 
@@ -22210,10 +22290,11 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     };
   }
 
-  for (const { ringIdx, wz, ringRadiusFactor } of ringOrder) {
+  for (const { ringIdx, wz, ringRadiusFactor, twist } of ringOrder) {
     const ring = wall.rings[ringIdx];
     if (!ring || !ring.length) continue;
     const proj = projAt(wz);
+    const ringTwist = twist || 0;
     // Spherical-profile scaling: every cell radius (boundary, mid,
     // inner) shrinks by the latitude-derived factor for this ring.
     // Rings near the poles get tiny circles; the equator gets full
@@ -22239,8 +22320,8 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
       for (let i = 0; i < N; i++) {
         const cell = ring[i];
         if (cell.crystal_id == null) continue;
-        const a0 = _topoAngleFor(i, N) - arcStep / 2;
-        const aMid = _topoAngleFor(i, N);
+        const a0 = _topoAngleFor(i, N) - arcStep / 2 + ringTwist;
+        const aMid = _topoAngleFor(i, N) + ringTwist;
         const a1 = a0 + arcStep;
         const rStart = boundaryR[i] * rrf;
         const rMid = cellR[i] * rrf;
@@ -22307,8 +22388,8 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (let i = 0; i < N; i++) {
-      const a0 = _topoAngleFor(i, N) - arcStep / 2;
-      const aMid = _topoAngleFor(i, N);
+      const a0 = _topoAngleFor(i, N) - arcStep / 2 + ringTwist;
+      const aMid = _topoAngleFor(i, N) + ringTwist;
       const a1 = a0 + arcStep;
       const rStart = boundaryR[i] * rrf;
       const rMid = cellR[i] * rrf;
