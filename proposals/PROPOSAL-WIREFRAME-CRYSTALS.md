@@ -345,3 +345,67 @@ Independent of any other open work in BACKLOG.md. Doesn't depend on the 3D hit-t
 Approve and proceed. The visual jump from colored wedges to actual 3D crystal silhouettes is large; the implementation is contained; the design decisions are locked. Builder can execute on this proposal with minimal back-and-forth.
 
 The one judgment call worth deferring to playtest is the styling: the 40%-of-edge-alpha fill is the right starting point, but if it reads as too transparent (crystals get lost in the cavity wireframe) or too opaque (crystals look like solid blobs and lose the wireframe character), tune the 0.4 multiplier up or down. Trivial change once the rendering ships.
+
+---
+
+## Addenda — clarifications added after surrounding work shipped (May 2026)
+
+After this proposal was first drafted, several adjacent UI/rendering changes shipped that the builder should know about before starting. None invalidate the design above; a few clarify points the original proposal hand-waved.
+
+### A. Crystal anchor convention — base-anchored, NOT centered
+
+The original proposal's transform pseudocode treats primitive vertices as living in normalized coords with c-axis along `+y` and `y ∈ [-1, +1]`. For a cube that's fine — the cube renders symmetric around its anchor cell, half "buried" in the wall and half sticking inward, which looks acceptable.
+
+For prismatic shapes (hex_prism, scalenohedron, acicular needle, dipyramid, tabular) it doesn't work — half the prism is buried in the wall and the visible half is a prism with an *open base*, missing its termination on the wall side. Geologically wrong: real crystals grow OUT of a substrate, not THROUGH it.
+
+**Convention**: author every primitive's vertices with the c-axis range `y ∈ [-0.1, +1.0]`. The `-0.1` is a small protrusion into the wall that anchors the crystal visually (so the silhouette overlaps the cavity wireframe slightly at the base, reading as "rooted in the wall"); `+1.0` is the free tip pointing into the cavity. Crystal `c_length_mm` then scales the full `1.1` unit range — for a 5 mm tall crystal that means 0.5 mm into the wall and 5 mm into the cavity. Acceptable.
+
+For symmetric shapes that don't have a meaningful "base" (cube, octahedron, rhombohedron, tetrahedron), still author with `y ∈ [-0.1, +1.0]` but place the geometric center at `y = 0.45` so the shape reads as half-embedded. Or author centered (`y ∈ [-0.5, +0.5]`) and add a per-primitive `embedDepth` field that the transform consumes — slightly more code, more flexible. Pick one; I'd go base-anchored everywhere for uniformity.
+
+### B. Painter's-order granularity — rings paint atomically
+
+The original proposal sorted "rings + crystals" interleaved by post-rotation z. Within a single ring, all 120 cells paint as one atomic unit (the existing renderer's design). That means a crystal anchored on the front of ring k paints AFTER ring k entirely — including the cells on the *back* of ring k that should logically be behind the crystal.
+
+In practice this means a crystal silhouette can be partly overpainted by its own ring's back-side wireframe stroke. Stroke is thin (1.5px) so the visual impact is minor, but it's a known imperfection. The fix is per-cell sorting (16 × 120 = 1920 paint items, each ring split into 120 individual line segments) — fine for performance but a much bigger refactor.
+
+**Recommendation**: ship the ring-as-atom approach in v0. If playtest finds the back-stroke artifacts visible enough to bother, upgrade to per-cell sorting later. Per-cell would likely also enable real-occlusion across the ring outline itself, which is currently a wireframe through-and-through.
+
+### C. Hover-highlight source moved into the sigma panel
+
+When this proposal was drafted, hover-highlighting crystals worked by mousing over the legacy `<details class="topo-legend-drop">` "classes" tab. That tab is gone (commit `e0668ef`). Hover highlighting is now driven by the fortress-status supersaturation panel:
+- Hover a per-mineral pill (`.sat-indicator[data-hl-mineral]`) → highlight all crystals of that *mineral* (finer-grained than the old per-class hover)
+- Hover a class summary (`.sat-class-summary[data-hl-class]`) → highlight all crystals of that *class* (same as the old behavior)
+
+The wireframe rendering doesn't need to change — it reads `topoAlphaFor(mineral)` exactly the way the wedges do today, and `topoAlphaFor` already knows about both per-mineral and per-class highlights. Just noting the source so the builder knows where the hover events come from.
+
+The 40%-of-edge-alpha fill stacks with this exactly as designed: hovering a crystal's mineral → that crystal at full edge + 40% fill, all others ghost to ~25% edge + ~10% fill.
+
+### D. 2D mode now has slice navigation; wireframes are still 3D-only
+
+The 2D topo strip (default mode) now has a slice stepper (top-left of the canvas wrap) that cycles through `[aggregate, ring 0, ring 1, ..., ring 15]`. The aggregate is the post-Phase-C-v1 default — flattens any crystal on any ring at each cell index. Stepper hides automatically when the user enters rotate mode (3D), via `body.topo-view-3d` CSS.
+
+Wireframe crystals are still 3D-mode-only. The 2D wedge code path stays — it now reads from `_topoActiveRingForRender(wall)` (either aggregate or a specific ring's data). Don't touch this code path; the wireframe render lives in `_topoRenderRings3D`.
+
+If you ever want wireframes-in-2D as a top-down orthographic view of one slice, that's a future extension — would consume the same primitive library but project orthographic instead of perspective, and it'd respect the slice stepper state.
+
+### E. Aesthetic lock — no Three.js, no lighting
+
+This was explicitly declined during the planning conversation. The retro-vector wireframe aesthetic is the design choice, not a stepping stone toward a Three.js / WebGL future. Tier 2 (Three.js) is permanently out of scope unless reopened by the project owner.
+
+If a future builder is tempted to "improve" the wireframes with Phong shading, ambient occlusion, depth fog, or any other photorealism — don't. The crystals should look like Atari *Star Wars*-arcade vector graphics, not a glossy modern renderer. The cavity stays wireframe, the crystals stay wireframe, the only "solid" element is the 40% silhouette fill.
+
+### F. Botryoidal primitive — concrete shape
+
+The original proposal said "multi-bump silhouette using a few overlapping hemispheres." Concretely: place 4–6 small spheres (each ~12 vertices, latitude/longitude lines as edges) arranged in a roughly rounded cluster — three at the base, two stacked above, one capping. Each sphere's wireframe contributes an edge set; the union's silhouette is the convex hull of all projected vertices, so the fill comes out as one rounded blob.
+
+Total ~24 vertices, ~36 edges. Identical structural treatment to the other primitives — author once as a static vertex/edge list, transform/project at render time.
+
+### G. Minimum-render-size clamp — recommended values
+
+Recommended floor: silhouette must be at least 3 px in either dimension. The clamp lives in the transform: after computing `cLengthPx` and `aWidthPx`, take `Math.max(cLengthPx, 3)` and `Math.max(aWidthPx, 3)`. Below 3 px crystals read as background noise and trigger the "did anything spawn?" perception bug. 3 px is enough to register as "a thing exists here" without dominating the cavity.
+
+Real-world: a 0.05 mm baby crystal at typical mmToPx ≈ 2 would be 0.1 px without the clamp. With the clamp it's a 3 px minimal silhouette. Visible but tiny — the right perception.
+
+### H. Mobile note
+
+Pointer events are wired on the topo canvas (commit `0433bee`) and `touch-action: none` is applied. Hover events don't fire on touch devices (no cursor) — so on mobile, the per-mineral and per-class hover-highlight from the sigma panel won't activate. Click-to-lock still works because clicks fire from taps. The wireframe rendering itself is unaffected by input model; just noting that mobile users will have a slightly different highlight UX (lock-only, no hover-preview).

@@ -340,70 +340,25 @@ body.topo-view-3d .topo-slice-ctrls { display: none; }
   align-items: flex-start;
   gap: 0.6rem;
 }
-.topo-legend-drop {
-  flex: 0 0 auto;
-  min-width: 110px;
-  align-self: stretch;
-}
-.topo-legend-drop > summary {
-  cursor: pointer;
-  list-style: none;
-  color: #6a5a30;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid #1a1a14;
-  border-radius: 3px;
-  background: #0a0a08;
-  user-select: none;
-}
-.topo-legend-drop > summary::-webkit-details-marker { display: none; }
-.topo-legend-drop > summary::before {
-  content: '▸';
-  display: inline-block;
-  margin-right: 0.35rem;
-  transition: transform 0.15s;
-}
-.topo-legend-drop[open] > summary::before { transform: rotate(90deg); }
-.topo-legend-drop[open] > summary { color: #a89040; border-color: #3a3520; }
-.topo-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  padding: 0.5rem;
-  margin-top: 0.3rem;
-  border: 1px solid #1a1a14;
-  border-radius: 3px;
-  background: #0a0a08;
-  font-size: 0.7rem;
-  color: #6a5a30;
-}
-.topo-legend-entry {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.topo-legend-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex: 0 0 10px;
-  display: inline-block;
-}
+/* Legacy `.topo-legend-drop` / `.topo-legend` styles lived here for
+   the class-swatch legend that hung to the left of the topo strip.
+   Retired May 2026: the fortress-status sigma panel now carries the
+   class swatches (in each class group's <summary>) and the
+   hover/click highlight wiring (per-mineral pills now drive the same
+   topo highlight system the legacy classes-tab did, with finer
+   granularity). One element doing both jobs. */
 .topo-canvas-wrap { flex: 1 1 auto; min-width: 0; }
 @media (max-width: 600px) {
-  /* On narrow viewports the legend stacks above the canvas (rather than
-     sitting next to it), and the legend gets denser to save vertical
-     space. The canvas height is NOT capped here — it inherits its
-     stage's 200% height (CSS rule for #topo-canvas in the main block)
-     so the rendered cavity scales with the wrap, not with viewport
-     width. Pre-2026-05 the cap was 260px, which left the cavity at
-     ~33px diameter on phones — Phase B's 3D ring-stack made that
-     unusable, so the cap came out. */
+  /* Narrow viewports: keep the topo body column-flex (was previously
+     to stack legend above canvas; now there's no legend, but other
+     class controls might want to stack the same way). The canvas
+     height is NOT capped here — it inherits its stage's 200% height
+     (CSS rule for #topo-canvas in the main block) so the rendered
+     cavity scales with the wrap, not with viewport width. Pre-2026-05
+     the cap was 260px, which left the cavity at ~33px diameter on
+     phones — Phase B's 3D ring-stack made that unusable, so the cap
+     came out. */
   .topo-body { flex-direction: column; gap: 0.4rem; }
-  .topo-legend-drop { min-width: 0; align-self: stretch; }
-  .topo-legend { font-size: 0.65rem; }
 }
 
 /* ============== LIBRARY MODE ============== */
@@ -1316,9 +1271,15 @@ body.tutorial-active #mode-toggle:hover { opacity: 1; }
 }
 
 .supersaturation-bar {
+  /* Groups stack vertically; the pill grid inside each group flows
+     horizontally. Pre-class-grouping (May 2026) this was a flat
+     wrap-row of all pills, which doesn't scale past ~30 minerals.
+     Auto-derived from MINERAL_SPEC now, so adding a new mineral
+     with a supersaturation_X method makes its pill appear in the
+     right class group automatically. */
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.4rem;
   font-size: 0.75rem;
 }
 
@@ -1339,6 +1300,101 @@ body.tutorial-active #mode-toggle:hover { opacity: 1; }
   border-color: #5a2020;
   background: rgba(180,50,50,0.1);
 }
+
+/* Class-grouped sigma pills (post-2026-05). Each <details> is one
+   mineral class (sulfide / carbonate / etc); collapsed by default
+   unless any mineral in the class is supersaturated (σ ≥ 1), in
+   which case it opens automatically so the player sees the action
+   without clicking. Class swatches mirror topoClassColor — same
+   palette as the wireframe rings + crystal edges. */
+.sat-class-group {
+  border: 1px solid #2a2518;
+  border-radius: 4px;
+  padding: 0.3rem 0.55rem;
+  background: rgba(15, 15, 10, 0.4);
+}
+.sat-class-group[open] {
+  background: rgba(20, 20, 14, 0.55);
+}
+.sat-class-active {
+  border-color: #5a8a40;
+}
+.sat-class-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.75rem;
+  color: #d4a843;
+  user-select: none;
+  padding: 0.05rem 0;
+}
+.sat-class-summary::-webkit-details-marker { display: none; }
+.sat-class-summary::before {
+  content: '▶';
+  display: inline-block;
+  font-size: 0.55rem;
+  color: #6a5a30;
+  transition: transform 0.15s;
+  width: 8px;
+}
+details[open] > .sat-class-summary::before { transform: rotate(90deg); }
+.sat-class-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: 0 0 10px;
+}
+.sat-class-name { letter-spacing: 0.04em; }
+.sat-class-meta {
+  color: #6a5a30;
+  font-size: 0.65rem;
+  margin-left: auto;
+  letter-spacing: 0.03em;
+}
+.sat-class-meta.is-active { color: #50e080; }
+.sat-class-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+/* Filter row — tucks above the class groups, lets the player hide
+   either nucleating-only or dormant-only minerals. With both checked
+   you see everything; with only one, you see exactly the slice you
+   care about. Default: both checked. */
+.sat-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.7rem;
+  color: #8a7a40;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+  padding: 0.2rem 0;
+}
+.sat-filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+.sat-filter-checkbox input { cursor: pointer; }
+.sat-filter-checkbox:hover { color: #d4a843; }
+
+/* Hover-highlight feedback. The sigma panel doubles as the legend
+   now (post-2026-05): hover a mineral pill or class summary to
+   highlight that mineral / class on the topo strip. Visual hover
+   state on the pill itself nudges the player that hovering does
+   something. */
+.sat-indicator { cursor: pointer; transition: transform 0.08s; }
+.sat-indicator:hover { transform: scale(1.04); border-color: #f0c050; }
+.sat-class-summary { transition: color 0.1s; }
+.sat-class-summary:hover { color: #f0c050; }
 
 /* ---- Action Buttons ---- */
 .action-panel {
@@ -2404,10 +2460,6 @@ footer a:hover {
     <span class="topo-title">Wall Profile</span>
   </div>
   <div class="topo-body">
-    <details class="topo-legend-drop">
-      <summary>classes</summary>
-      <div class="topo-legend" id="topo-legend"></div>
-    </details>
     <div class="topo-canvas-wrap">
       <div class="topo-canvas-stage">
         <canvas id="topo-canvas" width="1100" height="120"></canvas>
@@ -2719,6 +2771,18 @@ Scenarios:
       <div class="cond-item"><span class="cond-label">Flow</span> <span id="f-stat-flow">—</span></div>
       <div class="cond-item" id="f-stat-vug-container" style="display:none"><span class="cond-label">Vug</span> <span id="f-stat-vug">—</span></div>
       <div class="cond-item" id="f-stat-radiation-container" style="display:none"><span class="cond-label">Radiation</span> <span id="f-stat-radiation" style="color:#50ff50;text-shadow:0 0 4px rgba(80,255,80,0.3)">—</span></div>
+    </div>
+    <div class="sat-filter-row">
+      <label class="sat-filter-checkbox">
+        <input type="checkbox" id="sat-filter-nucleating" checked
+               onchange="_onSatFilterToggle()">
+        <span>nucleating (σ ≥ 1)</span>
+      </label>
+      <label class="sat-filter-checkbox">
+        <input type="checkbox" id="sat-filter-dormant" checked
+               onchange="_onSatFilterToggle()">
+        <span>dormant (σ &lt; 1)</span>
+      </label>
     </div>
     <div class="supersaturation-bar" id="f-sat-bar"></div>
   </div>
@@ -19018,49 +19082,168 @@ function updateFortressStatus() {
     }
   }
 
-  // Supersaturation indicators
-  const satBar = document.getElementById('f-sat-bar');
-  satBar.innerHTML = '';
+  // Supersaturation indicators — auto-derived from MINERAL_SPEC and
+  // grouped by mineral class. Every mineral with a
+  // `supersaturation_<name>` method on conditions appears under its
+  // class's collapsible <details>; classes whose max σ ≥ 1 open
+  // automatically so the player sees active supersaturation without
+  // clicking. Supersedes the hand-coded 28-mineral list (May 2026):
+  // adding a new mineral now auto-populates the panel.
+  _renderFortressSigmaGroups(c, document.getElementById('f-sat-bar'));
+}
 
-  const minerals = [
-    { name: 'Quartz', sigma: c.supersaturation_quartz() },
-    { name: 'Calcite', sigma: c.supersaturation_calcite() },
-    { name: 'Aragonite', sigma: c.supersaturation_aragonite() },
-    { name: 'Siderite', sigma: c.supersaturation_siderite() },
-    { name: 'Rhodochrosite', sigma: c.supersaturation_rhodochrosite() },
-    { name: 'Dolomite', sigma: c.supersaturation_dolomite() },
-    { name: 'Fluorite', sigma: c.supersaturation_fluorite() },
-    { name: 'Sphalerite', sigma: c.supersaturation_sphalerite() },
-    { name: 'Wurtzite', sigma: c.supersaturation_wurtzite() },
-    { name: 'Pyrite', sigma: c.supersaturation_pyrite() },
-    { name: 'Marcasite', sigma: c.supersaturation_marcasite() },
-    { name: 'Chalcopyrite', sigma: c.supersaturation_chalcopyrite() },
-    { name: 'Hematite', sigma: c.supersaturation_hematite() },
-    { name: 'Malachite', sigma: c.supersaturation_malachite() },
-    { name: '☢️ Uraninite', sigma: c.supersaturation_uraninite() },
-    { name: 'Galena', sigma: c.supersaturation_galena() },
-    { name: 'Molybdenite', sigma: c.supersaturation_molybdenite() },
-    { name: 'Smithsonite', sigma: c.supersaturation_smithsonite() },
-    { name: '🟠 Wulfenite', sigma: c.supersaturation_wulfenite() },
-    { name: '💎 Selenite', sigma: c.supersaturation_selenite() },
-    { name: '🏔️ Feldspar', sigma: c.supersaturation_feldspar() },
-    { name: '💚 Adamite', sigma: c.supersaturation_adamite() },
-    { name: '🟡 Mimetite', sigma: c.supersaturation_mimetite() },
-    { name: 'Erythrite', sigma: c.supersaturation_erythrite() },
-    { name: 'Annabergite', sigma: c.supersaturation_annabergite() },
-    { name: 'Tetrahedrite', sigma: c.supersaturation_tetrahedrite() },
-    { name: 'Tennantite', sigma: c.supersaturation_tennantite() },
-    { name: 'Apophyllite', sigma: c.supersaturation_apophyllite() },
-  ];
+// Display-name overrides preserve the emoji decorations the legacy
+// hardcoded list used. Anything not in the map gets `name[0].upper()
+// + rest`.
+const _SAT_DISPLAY_NAMES = {
+  uraninite: '☢️ Uraninite',
+  wulfenite: '🟠 Wulfenite',
+  selenite: '💎 Selenite',
+  feldspar: '🏔️ Feldspar',
+  adamite: '💚 Adamite',
+  mimetite: '🟡 Mimetite',
+};
 
-  for (const m of minerals) {
-    const el = document.createElement('span');
-    const isSuper = m.sigma >= 1.0;
-    el.className = 'sat-indicator ' + (isSuper ? 'sat-super' : 'sat-under');
-    el.textContent = `${m.name} σ=${m.sigma.toFixed(2)}`;
-    el.title = isSuper ? 'Supersaturated — will grow!' : `Undersaturated — needs ${mineralNeeds(m.name, c)}`;
-    satBar.appendChild(el);
+// Cap the "max σ" badge so the meta line doesn't read as
+// "σ max 12345.67". Big σ values are real (Mo can hit double digits
+// in Bingham porphyry brines) but past 99 the user just needs to
+// know "very super-saturated".
+const _SAT_DISPLAY_MAX = 99.99;
+
+// Filter state — both default on. Filters drop pills below the
+// nucleation threshold (σ < 1) or above it (σ ≥ 1) from the panel.
+// A class group with no surviving pills hides entirely so the panel
+// doesn't waste a row on an empty section.
+let _satShowNucleating = true;
+let _satShowDormant = true;
+
+function _onSatFilterToggle() {
+  const a = document.getElementById('sat-filter-nucleating');
+  const b = document.getElementById('sat-filter-dormant');
+  _satShowNucleating = a ? a.checked : true;
+  _satShowDormant = b ? b.checked : true;
+  if (typeof fortressSim !== 'undefined' && fortressSim) {
+    _renderFortressSigmaGroups(fortressSim.conditions, document.getElementById('f-sat-bar'));
   }
+}
+
+function _renderFortressSigmaGroups(c, host) {
+  if (!host) return;
+  host.innerHTML = '';
+  if (typeof MINERAL_SPEC === 'undefined') return;
+  // Walk every mineral in the spec; keep those that have a
+  // `supersaturation_<name>` method on the conditions object.
+  const byClass = {};
+  for (const [name, spec] of Object.entries(MINERAL_SPEC)) {
+    const fn = c[`supersaturation_${name}`];
+    if (typeof fn !== 'function') continue;
+    let sigma;
+    try { sigma = fn.call(c); } catch (e) { continue; }
+    if (typeof sigma !== 'number' || !isFinite(sigma)) continue;
+    const cls = spec.class || 'uncategorized';
+    const displayName = _SAT_DISPLAY_NAMES[name]
+      || (name.charAt(0).toUpperCase() + name.slice(1));
+    if (!byClass[cls]) {
+      byClass[cls] = {
+        entries: [],
+        maxSigma: -Infinity,
+        color: spec.class_color || '#888',
+      };
+    }
+    byClass[cls].entries.push({ name, displayName, sigma });
+    if (sigma > byClass[cls].maxSigma) byClass[cls].maxSigma = sigma;
+  }
+  // Order: active classes (any σ ≥ 1) first, sorted by max σ
+  // descending; then dormant classes by TOPO_CLASS_ORDER, then
+  // alphabetically.
+  const orderedClasses = Object.keys(byClass).sort((a, b) => {
+    const aActive = byClass[a].maxSigma >= 1;
+    const bActive = byClass[b].maxSigma >= 1;
+    if (aActive !== bActive) return aActive ? -1 : 1;
+    if (aActive) return byClass[b].maxSigma - byClass[a].maxSigma;
+    const order = (typeof TOPO_CLASS_ORDER !== 'undefined') ? TOPO_CLASS_ORDER : [];
+    const ai = order.indexOf(a), bi = order.indexOf(b);
+    if (ai >= 0 && bi >= 0) return ai - bi;
+    if (ai >= 0) return -1;
+    if (bi >= 0) return 1;
+    return a.localeCompare(b);
+  });
+  for (const cls of orderedClasses) {
+    const group = byClass[cls];
+    // Apply filter: drop entries the user is currently hiding.
+    const filtered = group.entries.filter(e => {
+      const isSuper = e.sigma >= 1.0;
+      return isSuper ? _satShowNucleating : _satShowDormant;
+    });
+    if (!filtered.length) continue;  // class hides entirely if all pills filtered out
+    // Sort entries within group by σ descending so the "interesting
+    // ones" are visually first.
+    filtered.sort((a, b) => b.sigma - a.sigma);
+    const isActive = group.maxSigma >= 1;
+    const maxLabel = Math.min(group.maxSigma, _SAT_DISPLAY_MAX);
+    const meta = isActive
+      ? `${filtered.length} · σ max ${maxLabel.toFixed(2)}`
+      : `${filtered.length}`;
+    const summary = `<summary class="sat-class-summary" data-hl-class="${cls}">`
+      + `<span class="sat-class-swatch" style="background:${group.color}"></span>`
+      + `<span class="sat-class-name">${cls}</span>`
+      + `<span class="sat-class-meta${isActive ? ' is-active' : ''}">${meta}</span>`
+      + `</summary>`;
+    const pills = filtered.map(e => {
+      const isSuper = e.sigma >= 1.0;
+      const klass = 'sat-indicator ' + (isSuper ? 'sat-super' : 'sat-under');
+      const title = isSuper ? 'Supersaturated — will grow' : `Undersaturated (σ=${e.sigma.toFixed(2)})`;
+      // data-hl-mineral lets the panel double as the legend: hover
+      // a pill → highlight that mineral on the topo (replaces the
+      // legacy classes-tab hover behavior, which only highlighted
+      // by class).
+      return `<span class="${klass}" data-hl-mineral="${e.name}" title="${title}">${e.displayName} σ=${e.sigma.toFixed(2)}</span>`;
+    }).join('');
+    // All groups open by default. Filters do the visual reduction
+    // now; collapsing groups was the pre-filter solution.
+    const groupClass = `sat-class-group${isActive ? ' sat-class-active' : ''}`;
+    host.insertAdjacentHTML('beforeend',
+      `<details class="${groupClass}" open>${summary}<div class="sat-class-pills">${pills}</div></details>`);
+  }
+  // One-time wire-up of hover/click delegation on the panel.
+  _wireFortressSigmaEvents(host);
+}
+
+// Idempotent — wires hover/click on the sigma panel host once. Re-
+// rendering replaces innerHTML but keeps the listeners on the
+// container. Hover/click on a `.sat-indicator[data-hl-mineral]` or
+// `.sat-class-summary[data-hl-class]` drives the topo highlight
+// system the same way the legacy classes-tab legend did. Replaces
+// `_wireTopoLegendEvents` for the user-facing functionality.
+let _satEventsWired = false;
+function _wireFortressSigmaEvents(host) {
+  if (!host || _satEventsWired) return;
+  _satEventsWired = true;
+  function targetFromEvent(ev) {
+    const pill = ev.target.closest('.sat-indicator[data-hl-mineral]');
+    if (pill) return { type: 'mineral', value: pill.dataset.hlMineral };
+    const summary = ev.target.closest('.sat-class-summary[data-hl-class]');
+    if (summary) return { type: 'class', value: summary.dataset.hlClass };
+    return null;
+  }
+  host.addEventListener('mouseover', (ev) => {
+    topoSetLegendHoverTarget(targetFromEvent(ev));
+  });
+  host.addEventListener('mouseleave', () => {
+    topoSetLegendHoverTarget(null);
+  });
+  host.addEventListener('click', (ev) => {
+    const target = targetFromEvent(ev);
+    // The `<details>` element handles open/close itself on a click
+    // anywhere in <summary>. We add legend-toggle on top, but only
+    // for clicks on the summary's interactive children — clicking
+    // the disclosure caret area still toggles open/close cleanly.
+    if (target) {
+      topoToggleLockTarget(target);
+      // Don't preventDefault on summary clicks — let <details> do its
+      // open/close thing. We still want the lock behavior to apply.
+    }
+  });
 }
 
 // Zone-viz Phase 1c: bar-graph thumbnail for Crystal Inventory specimen
@@ -21478,60 +21661,13 @@ function topoClassColor(mineral) {
   return (entry && entry.class_color) || TOPO_WALL_COLOR;
 }
 
-let _topoLegendBuilt = false;
-function topoBuildLegend() {
-  const host = document.getElementById('topo-legend');
-  if (!host) return;
-  // Pull the class→hex mapping from the spec (any mineral of that class
-  // works) so the palette is the single source of truth.
-  const classColor = {};
-  for (const m of Object.values(MINERAL_SPEC)) {
-    if (m.class && m.class_color && !classColor[m.class]) {
-      classColor[m.class] = m.class_color;
-    }
-  }
-  // The first call can land while MINERAL_SPEC is still the fallback
-  // object — no class_color fields there. Rebuild each call until the
-  // real spec has loaded; only then latch.
-  if (_topoLegendBuilt && Object.keys(classColor).length > 0) return;
-  // Wall first, then the 12 classes in palette order.
-  const entries = [['wall', TOPO_WALL_COLOR]];
-  for (const cls of TOPO_CLASS_ORDER) {
-    if (classColor[cls]) entries.push([cls, classColor[cls]]);
-  }
-  host.innerHTML = entries.map(([label, color]) => {
-    // 'wall' is just the amber-substrate reminder — no highlight target.
-    // Real class entries carry a data-hl-class attribute that the hover/
-    // click handlers read to drive the highlight state.
-    const attr = label === 'wall' ? '' : ` data-hl-class="${label}"`;
-    return `<span class="topo-legend-entry"${attr}><span class="topo-legend-swatch" style="background:${color}"></span>${label}</span>`;
-  }).join('');
-  _wireTopoLegendEvents(host);
-  if (Object.keys(classColor).length > 0) _topoLegendBuilt = true;
-}
-
-// Idempotent — wires hover/click delegation on the legend host once.
-// Re-running topoBuildLegend replaces innerHTML but keeps the listeners
-// since they're on the container, not individual entries.
-let _topoLegendWired = false;
-function _wireTopoLegendEvents(host) {
-  if (_topoLegendWired) return;
-  _topoLegendWired = true;
-  host.addEventListener('mouseover', (ev) => {
-    const entry = ev.target.closest('.topo-legend-entry');
-    const cls = entry && entry.dataset.hlClass;
-    topoSetLegendHoverTarget(cls ? { type: 'class', value: cls } : null);
-  });
-  host.addEventListener('mouseleave', () => {
-    topoSetLegendHoverTarget(null);
-  });
-  host.addEventListener('click', (ev) => {
-    const entry = ev.target.closest('.topo-legend-entry');
-    const cls = entry && entry.dataset.hlClass;
-    topoToggleLockTarget(cls ? { type: 'class', value: cls } : null);
-    ev.stopPropagation();
-  });
-}
+// Legacy `topoBuildLegend()` and `_wireTopoLegendEvents()` lived here.
+// They built the class-swatch legend and drove hover/click highlight
+// from a separate "classes" details element below the topo strip.
+// Removed in favor of the fortress-status sigma panel doing both jobs:
+// per-class swatches sit in each group's <summary>, and hover/click
+// delegation is wired in `_wireFortressSigmaEvents`. See the post-
+// 2026-05 retire-classes-tab commit for the rationale.
 
 // Resize the canvas backing store to match its CSS size so the line is
 // crisp on any window width. Called on each render; cheap if unchanged.
@@ -22056,8 +22192,10 @@ function topoRender(optOverrideRing) {
   // Only show the Replay button once there's history to play back.
   const btn = document.getElementById('topo-replay-btn');
   if (btn) btn.style.display = (sim && sim.wall_state_history && sim.wall_state_history.length) ? 'flex' : 'none';
-
-  topoBuildLegend();
+  // Legacy `topoBuildLegend()` call lived here. The legend was a
+  // class-swatch list; that role moved into the fortress-status sigma
+  // panel (each class group's swatch + the per-pill hover-highlight),
+  // and the legacy <details class="topo-legend-drop"> element is gone.
 
   const ctx = canvas.getContext('2d');
   const { cssW, cssH, dpr } = _topoResize(canvas);
