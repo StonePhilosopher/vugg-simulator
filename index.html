@@ -23023,105 +23023,165 @@ function _convexHull2D(points) {
   return lower.concat(upper);
 }
 
-// Render one wireframe crystal: silhouette fill (mineral color, 40%
-// of the edge alpha) + edges (mineral color, full edge alpha). c-axis
-// orientation is environment-dependent:
+// Drusy-cluster decision: should this crystal render as one large
+// primitive (the default) or as a carpet of N small copies?
 //
-//   * 'fluid' (default): perpendicular to substrate (= inward sphere
-//     normal at the anchor cell), with a small Gaussian scatter that
-//     reproduces the geometric-selection outcome in real druses
-//     (Mathematical Geosciences 1989; mature druse σ ≈ 10–15° around
-//     the substrate normal, capped at ±30° before extinction).
-//     Epitaxial overgrowths (`enclosed_by != null`) lock tighter at
-//     σ ≈ 3° because nucleation is templated by the host's lattice.
+// Real druses are dense carpets — coarse 5–50 nuclei/cm², fine sugar
+// coatings 10²–10⁴ — not the few sparse euhedral crystals the v0
+// renderer was producing. Habit strings that signal "this is a carpet
+// of small crystals, not one big one" map to a cluster count; a
+// size-based fallback gives sub-mm individuals a small cluster too,
+// since at typical zoom they otherwise read as ambient noise.
 //
-//   * 'air': gravity-aligned. Stalactite c-axis points world-down
-//     regardless of substrate orientation (true cave-style dripstone);
-//     stalagmite c-axis points world-up. Wall crystals in air are an
-//     edge case with no clean geological analog — fall back to the
-//     fluid-mode substrate-perpendicular logic.
-//
-// Within-crystal jitter (off-axis tilt + rotation around c) is seeded
-// from crystal_id with separate channels so reloads / replays stay
-// reproducible. Sizes clamped to a 3-px floor so baby crystals read
-// as "a thing exists here" not background noise.
+// Returns 0 for single-primitive mode, N>0 for cluster of N children.
+function _druzyClusterCount(crystal) {
+  const h = (crystal.habit || '').toLowerCase();
+  // Habit-driven: explicit drusy / massive / earthy carpets.
+  if (h.includes('druz'))                                   return 16;
+  if (h.includes('crust'))                                  return 12;
+  if (h.includes('granular'))                               return 18;
+  if (h.includes('earthy'))                                 return 22;
+  if (h.includes('arborescent') || h.includes('dendritic')) return 20;
+  if (h.includes('massive'))                                return 14;
+  if (h.includes('sugar') || h.includes('coating'))         return 14;
+  // Size-based: very small crystals get a sparse cluster of 4 mini-
+  // copies so they don't render as one near-invisible 3-px primitive.
+  if ((crystal.c_length_mm || 0) < 0.4) return 4;
+  return 0;
+}
+
+// Render one wireframe crystal — single primitive or drusy cluster
+// depending on habit/size. The single-instance path lives in
+// _renderWireframeInstance; this function dispatches and, when
+// clustering, scatters N small offset copies in the substrate's
+// tangent plane around the parent's anchor cell.
 function _renderCrystalWireframe(ctx, crystal, cellWorld, sphereRadiusPx,
                                   mmToPx, cx, cy, F) {
-  const prim = _lookupCrystalPrimitive(crystal);
-  const cLengthPx = Math.max((crystal.c_length_mm || 0.5) * mmToPx, 3);
-  const aWidthPx  = Math.max((crystal.a_width_mm  || 0.5) * mmToPx, 3);
-  // Substrate-perpendicular direction (= inward sphere normal at the
-  // anchor cell). cellWorld is the anchor's (x, y, z) relative to the
-  // canvas center; the sphere's origin is (0,0,0) in this frame, so
-  // inward = -normalize(cellWorld).
+  const clusterN = _druzyClusterCount(crystal);
+  if (clusterN <= 0) {
+    _renderWireframeInstance(ctx, crystal, cellWorld, sphereRadiusPx,
+                              mmToPx, cx, cy, F, {});
+    return;
+  }
+  // Cluster mode. Each child gets:
+  //   * an offset anchor in the substrate's tangent plane (so the
+  //     carpet spreads along the wall, not into the cavity)
+  //   * its own seeded c-axis scatter (parent_id ^ child_index)
+  //   * a fractional size of the parent (0.3–0.7)
+  //   * a slightly reduced fill alpha so overlapping children read
+  //     as a sparkly carpet rather than a single opaque blob.
   const invR = 1 / (Math.hypot(cellWorld[0], cellWorld[1], cellWorld[2]) || 1);
   const subNormal = [-cellWorld[0] * invR, -cellWorld[1] * invR,
                      -cellWorld[2] * invR];
+  const [tA, tB] = _orthonormalBasis(subNormal, 0);
+  // Cluster radius in pixels: scaled by the parent's a-width (which
+  // encodes the crystal's lateral coverage on the wall) so a small
+  // druzy fleck stays compact while a big crustiform sheet spreads
+  // across many cells. Capped so a runaway crystal can't blanket the
+  // whole vug.
+  const widthMm = Math.max(crystal.a_width_mm || 0,
+                            crystal.c_length_mm || 0, 1.0);
+  const clusterRadiusPx = Math.min(widthMm * 0.9 * mmToPx, 9 * mmToPx);
+  const id = crystal.crystal_id | 0;
+  for (let i = 1; i <= clusterN; i++) {
+    // Scatter offset in tangent plane. Two seeded uniforms with
+    // sqrt-radius weighting → uniform area density inside the disc.
+    const r = Math.sqrt(_seededRand((id ^ (i * 7919)) >>> 0)) * clusterRadiusPx;
+    const a = _seededRand((id ^ (i * 6133)) >>> 0) * 2 * Math.PI;
+    const jx = r * Math.cos(a), jy = r * Math.sin(a);
+    const anchor = [
+      cellWorld[0] + tA[0] * jx + tB[0] * jy,
+      cellWorld[1] + tA[1] * jx + tB[1] * jy,
+      cellWorld[2] + tA[2] * jx + tB[2] * jy,
+    ];
+    const sizeMul = 0.3 + 0.4 * _seededRand((id ^ (i * 4111)) >>> 0);
+    _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx,
+                              mmToPx, cx, cy, F, {
+      sizeMul,
+      seedOffset: i,
+      fillAlphaMul: 0.55,
+    });
+  }
+}
+
+// One wireframe primitive: silhouette fill (mineral color, 40% of the
+// edge alpha) + edges (mineral color, full edge alpha). Anchor +
+// size + seed are passed in so the same helper drives both single-
+// crystal and cluster-child rendering. c-axis orientation is
+// environment-dependent:
+//
+//   * 'fluid' (default): perpendicular to substrate (= inward sphere
+//     normal at the anchor), with Gaussian scatter that reproduces
+//     real druse geometric-selection outcomes (Mathematical
+//     Geosciences 1989; mature druse σ ≈ 10–15° around the substrate
+//     normal, capped at ±30° before extinction). Epitaxial overgrowths
+//     (`enclosed_by != null`) lock tighter at σ ≈ 3° because
+//     nucleation is templated by the host's lattice.
+//
+//   * 'air': gravity-aligned. Stalactite c-axis points world-down
+//     regardless of substrate orientation; stalagmite world-up. Wall
+//     crystals in air are an edge case with no clean geological
+//     analog — fall back to substrate-perpendicular.
+//
+// Within-crystal jitter is seeded from (crystal_id, seedOffset) with
+// separate channels so reloads / replays stay reproducible AND
+// cluster children get independent randomness.
+function _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx,
+                                   mmToPx, cx, cy, F, opts) {
+  const sizeMul       = opts.sizeMul       != null ? opts.sizeMul       : 1.0;
+  const seedOffset    = opts.seedOffset    != null ? opts.seedOffset    : 0;
+  const fillAlphaMul  = opts.fillAlphaMul  != null ? opts.fillAlphaMul  : 1.0;
+  const prim = _lookupCrystalPrimitive(crystal);
+  const cLengthPx = Math.max((crystal.c_length_mm || 0.5) * sizeMul * mmToPx, 3);
+  const aWidthPx  = Math.max((crystal.a_width_mm  || 0.5) * sizeMul * mmToPx, 3);
+  // Substrate-perpendicular at this anchor (= inward sphere normal).
+  const invR = 1 / (Math.hypot(anchor[0], anchor[1], anchor[2]) || 1);
+  const subNormal = [-anchor[0] * invR, -anchor[1] * invR, -anchor[2] * invR];
   const env = crystal.growth_environment || 'fluid';
-  // Air-mode default: world-down (-z is "up" in this canvas frame, see
-  // _topoRenderRings3D's wz convention — the south pole sits at -z, so
-  // gravity-down = +z direction). We want stalactites to point AT the
-  // floor, so c-axis = (0, 0, -1) for ceilings (subNormal[2] > 0) and
-  // (0, 0, +1) for floors. Wall cells in air fall back to substrate-
-  // perpendicular as there's no clean dripstone analog.
   let cAxis;
   if (env === 'air') {
-    if (subNormal[2] > 0.4) {
-      // Ceiling-anchored: subNormal points "down toward floor" = +z.
-      // Stalactite c-axis matches (always +z, regardless of cell).
-      cAxis = [0, 0, 1];
-    } else if (subNormal[2] < -0.4) {
-      // Floor-anchored: stalagmite points up = -z.
-      cAxis = [0, 0, -1];
-    } else {
-      cAxis = subNormal;  // wall: fallback
-    }
+    // See _topoRenderRings3D's wz convention: south-pole/floor sits at
+    // -z, so gravity-down = +z direction. Stalactites at the ceiling
+    // point at the floor (always +z); stalagmites at the floor point
+    // up (always -z). Wall cells in air fall back to perpendicular.
+    if (subNormal[2] > 0.4)       cAxis = [0, 0, 1];
+    else if (subNormal[2] < -0.4) cAxis = [0, 0, -1];
+    else                          cAxis = subNormal;
   } else {
-    // Fluid mode: substrate normal + Gaussian scatter. Tighter for
-    // epitaxial overgrowths (enclosed_by ≠ null) — they're templated
-    // by the host's faces.
     const epitaxial = crystal.enclosed_by != null;
     const sigmaRad = (epitaxial ? 3 : 12) * Math.PI / 180;
-    const id = crystal.crystal_id | 0;
-    // Two independent normals = a 2D Gaussian in the tangent plane.
-    // Build perpendicular basis (any-rot) to subNormal, push subNormal
-    // by (gx * perp1 + gy * perp2), renormalize.
+    const seedId = ((crystal.crystal_id | 0) ^ (seedOffset * 0xA5F00D)) >>> 0;
     const [tA, tB] = _orthonormalBasis(subNormal, 0);
-    const gx = _seededGaussian(id, 1) * sigmaRad;
-    const gy = _seededGaussian(id, 2) * sigmaRad;
+    const gx = _seededGaussian(seedId, 1) * sigmaRad;
+    const gy = _seededGaussian(seedId, 2) * sigmaRad;
     const tx = subNormal[0] + tA[0] * gx + tB[0] * gy;
     const ty = subNormal[1] + tA[1] * gx + tB[1] * gy;
     const tz = subNormal[2] + tA[2] * gx + tB[2] * gy;
     const len = Math.hypot(tx, ty, tz) || 1;
     cAxis = [tx / len, ty / len, tz / len];
   }
-  // Rotation around the c-axis. Independent random channel so it
-  // doesn't co-vary with the off-axis tilt above.
-  const rotRad = (_seededRand((crystal.crystal_id | 0) ^ 0xC1B2A305) - 0.5)
-                  * 2 * Math.PI;
+  const rotSeed = ((crystal.crystal_id | 0) ^ 0xC1B2A305 ^ (seedOffset * 0x5BD1E995)) >>> 0;
+  const rotRad = (_seededRand(rotSeed) - 0.5) * 2 * Math.PI;
   const [perp1, perp2] = _orthonormalBasis(cAxis, rotRad);
-  // Project every primitive vertex.
   const projected = [];
   for (const [px, py, pz] of prim.vertices) {
-    const wx = cellWorld[0] + perp1[0] * px * aWidthPx
-                            + cAxis[0] * py * cLengthPx
-                            + perp2[0] * pz * aWidthPx;
-    const wy = cellWorld[1] + perp1[1] * px * aWidthPx
-                            + cAxis[1] * py * cLengthPx
-                            + perp2[1] * pz * aWidthPx;
-    const wz = cellWorld[2] + perp1[2] * px * aWidthPx
-                            + cAxis[2] * py * cLengthPx
-                            + perp2[2] * pz * aWidthPx;
+    const wx = anchor[0] + perp1[0] * px * aWidthPx
+                          + cAxis[0] * py * cLengthPx
+                          + perp2[0] * pz * aWidthPx;
+    const wy = anchor[1] + perp1[1] * px * aWidthPx
+                          + cAxis[1] * py * cLengthPx
+                          + perp2[1] * pz * aWidthPx;
+    const wz = anchor[2] + perp1[2] * px * aWidthPx
+                          + cAxis[2] * py * cLengthPx
+                          + perp2[2] * pz * aWidthPx;
     const proj = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
     projected.push([cx + proj[0], cy + proj[1]]);
   }
   const edgeAlpha = topoAlphaFor(crystal.mineral);
   const color = topoClassColor(crystal.mineral);
-  // Silhouette fill = convex hull of projected vertices, filled at
-  // 40% of the edge alpha. Stained-glass effect.
   const hull = _convexHull2D(projected);
   if (hull.length >= 3) {
-    ctx.globalAlpha = 0.4 * edgeAlpha;
+    ctx.globalAlpha = 0.4 * fillAlphaMul * edgeAlpha;
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.moveTo(hull[0][0], hull[0][1]);
@@ -23129,7 +23189,6 @@ function _renderCrystalWireframe(ctx, crystal, cellWorld, sphereRadiusPx,
     ctx.closePath();
     ctx.fill();
   }
-  // Edges at full alpha.
   ctx.globalAlpha = edgeAlpha;
   ctx.strokeStyle = color;
   ctx.lineWidth = 1.2;
