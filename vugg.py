@@ -359,7 +359,71 @@ from typing import List, Dict, Optional, Tuple
 #          thresholds (>=10/>=5, matches research's "rare two-parent
 #          mineral" framing). Pre-v17 JS T cap at 250°C was way too
 #          lenient.
-SIM_VERSION = 21
+# v22: Crystal.growth_environment field added. Per-crystal record of
+#      whether the cavity was fluid- or air-filled at the moment the
+#      crystal nucleated — drives the renderer's c-axis orientation
+#      branch (substrate-perpendicular under fluid, gravity-driven
+#      under air). Default 'fluid' applied retroactively to every
+#      crystal in old saves, so chemistry and growth are byte-identical
+#      to v21; the only change is a new optional field threaded through
+#      Crystal __init__. Renderer-visible only for any future scenario
+#      that sets 'air'; current scenarios all stay perpendicular-to-
+#      substrate. Companion: c-axis Gaussian scatter in the wireframe
+#      renderer (σ ≈ 12° per geometric-selection literature, σ ≈ 3°
+#      for epitaxial overgrowths). See PROPOSAL-WIREFRAME-CRYSTALS
+#      addendum + supporting research notes.
+# v23: Phase D v2 — mineral-specific orientation preferences in
+#      _assign_wall_ring. Most species stay area-weighted (spatially
+#      neutral in fluid-filled vugs at depth); ~14 species with
+#      documented bias get their preferred-ring weights multiplied by
+#      a strength factor. Sources: Sangster 1990 (MVT), Garcia-Ruiz
+#      et al. 2007 (Naica selenite), Hanor 2000 (Ba-brine density),
+#      Hill & Forti 1997 (cave mineralogy). Floor preferences trace
+#      to density-driven micro-cluster settling or supergene fluid
+#      pooling (galena, malachite, azurite, barite, celestine,
+#      goethite, native_gold, native_silver, smithsonite — all 1.5×
+#      weight on floor rings). Selenite gypsum gets 3.0× floor weight
+#      (subaqueous Naica-style pool growth). Ceiling: hematite 1.5×
+#      ("iron rose" rosettes from convective Fe-transport to cooler
+#      ceilings). Wall: stibnite, bismuthinite 1.5× (acicular sprays
+#      perpendicular to lateral substrate). Engine drift: scenarios
+#      with biased minerals will shift their crystal distribution
+#      toward preferred rings; total crystal count and species
+#      identity unchanged.
+SIM_VERSION = 23
+
+# Mineral-specific nucleation orientation preferences. Most species
+# are spatially neutral in fluid-filled vugs (gravity is weak at
+# depth; density-driven convection and substrate chemistry dominate
+# over direct gravity bias). The minority that ARE biased come from
+# documented paragenesis literature — see SIM_VERSION 23 comment
+# above for the per-mineral citations.
+#
+# Format: mineral_name → (preferred_orientation, strength_factor).
+# orientation ∈ {'floor', 'ceiling', 'wall'}; strength multiplies
+# the ring's area weight when the ring's orientation matches.
+# Strength 3.0 = strong (selenite-tier), 1.5 = weak (most entries).
+# Minerals not in this table sample by area weight only (the legacy
+# Phase D v0 / v1 behavior).
+ORIENTATION_PREFERENCE = {
+    # Floor (strong) — Naica-style subaqueous pool growth.
+    'selenite':       ('floor', 3.0),
+    # Floor (weak) — density / micro-cluster settling, supergene fluid pooling.
+    'galena':         ('floor', 1.5),
+    'malachite':      ('floor', 1.5),
+    'azurite':        ('floor', 1.5),
+    'barite':         ('floor', 1.5),
+    'celestine':      ('floor', 1.5),
+    'goethite':       ('floor', 1.5),
+    'native_gold':    ('floor', 1.5),
+    'native_silver':  ('floor', 1.5),
+    'smithsonite':    ('floor', 1.5),
+    # Ceiling (weak) — iron-rose specular rosettes, convective Fe transport.
+    'hematite':       ('ceiling', 1.5),
+    # Wall (weak) — acicular sprays grow perpendicular to lateral substrate.
+    'stibnite':       ('wall', 1.5),
+    'bismuthinite':   ('wall', 1.5),
+}
 
 # Phase C of PROPOSAL-3D-SIMULATION (= proposal's "Phase 2"): per-ring
 # chemistry scaffolding. Each ring carries its own FluidChemistry +
@@ -5060,7 +5124,18 @@ class Crystal:
     # nucleations always set this. Growth reads the ring's fluid +
     # temperature for chemistry; paint targets this ring's cells.
     wall_ring_index: Optional[int] = None
-    
+    # Environment at nucleation time. 'fluid' (the dominant case — vug
+    # cavity is fluid-filled, geometric-selection orientation along the
+    # substrate normal) or 'air' (drained / cave-style cavity, gravity-
+    # driven orientation: stalactite c-axis points world-down regardless
+    # of substrate normal). Stored on the crystal because orientation is
+    # set at growth time and persists even if the cavity later re-floods
+    # — older air-grown crystals keep their gravity-aligned habit; later
+    # fluid-grown crystals on top of them are substrate-aligned. Default
+    # 'fluid' is correct for every existing scenario; 'air' is plumbed
+    # but won't trigger until a scenario explicitly drains the cavity.
+    growth_environment: str = "fluid"
+
     # Growth history
     zones: List[GrowthZone] = field(default_factory=list)
     total_growth_um: float = 0.0
@@ -13490,7 +13565,7 @@ class VugSimulator:
         # fresh random cell + a random ring (Phase C v1: scatter across
         # the sphere wall). Phase D will weight ring choice by orientation
         # so ceiling habits prefer the upper rings, floor habits the lower.
-        crystal.wall_ring_index = self._assign_wall_ring(position)
+        crystal.wall_ring_index = self._assign_wall_ring(position, mineral)
         crystal.wall_center_cell = self._assign_wall_cell(position)
 
         # Dominant-form strings are still per-mineral — they describe
@@ -13674,12 +13749,19 @@ class VugSimulator:
         empty = [i for i, cell in enumerate(ring0) if cell.crystal_id is None]
         return random.choice(empty) if empty else random.randrange(N)
 
-    def _assign_wall_ring(self, position: str) -> int:
+    def _assign_wall_ring(self, position: str, mineral: str = None) -> int:
         """Pick a ring for a nucleating crystal. Host-substrate
         overgrowths inherit the host's ring so pseudomorphs land on
         the same latitude band. Free-wall nucleations sample a ring
         weighted by its area (Phase D: equator gets more crystals
         than polar caps, matching real-geode surface-area distribution).
+
+        Phase D v2 (SIM_VERSION 23): if `mineral` is in
+        `ORIENTATION_PREFERENCE`, multiply each ring's area weight by
+        the strength factor when the ring's orientation matches the
+        mineral's preference. Spatially neutral minerals (the default,
+        most species) sample by area weight alone — Phase D v0/v1
+        behavior preserved.
 
         Always consumes exactly one RNG number for free-wall
         nucleations (even when ring_count == 1) so simulation parity
@@ -13696,11 +13778,19 @@ class VugSimulator:
             if host and host.wall_ring_index is not None:
                 return host.wall_ring_index
         n = max(1, self.wall_state.ring_count)
+        # Per-mineral orientation bias (v23). Spatially neutral
+        # minerals get the legacy area-weighted distribution.
+        pref = ORIENTATION_PREFERENCE.get(mineral) if mineral else None
         # Area-weighted sample. Linear scan picks the first ring whose
         # cumulative weight exceeds a uniform draw of [0, total).
         # Identical algorithm in JS so both runtimes pick the same
         # ring for the same RNG state.
         weights = [self.wall_state.ring_area_weight(k) for k in range(n)]
+        if pref is not None and n > 1:
+            target_orient, strength = pref
+            for k in range(n):
+                if self.wall_state.ring_orientation(k) == target_orient:
+                    weights[k] *= strength
         total = sum(weights) or 1.0
         r = random.random() * total
         for k, w in enumerate(weights):

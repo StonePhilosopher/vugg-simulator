@@ -6632,6 +6632,15 @@ class Crystal {
     // New nucleations always set this. Mirrors crystal.wall_ring_index
     // in vugg.py.
     this.wall_ring_index = opts.wall_ring_index ?? null;
+    // Environment at nucleation time. 'fluid' (the dominant case —
+    // vug fluid-filled, geometric-selection orientation along the
+    // substrate normal) or 'air' (drained / cave-style cavity,
+    // gravity-driven orientation: stalactite c-axis points world-
+    // down regardless of substrate normal). Default 'fluid' for
+    // legacy / unset; air-mode currently never triggers (no scenario
+    // sets it yet). Companion: σ=12° Gaussian c-axis scatter in
+    // _renderCrystalWireframe (geometric-selection literature).
+    this.growth_environment = opts.growth_environment ?? 'fluid';
     this.zones = [];
     this.total_growth_um = 0;
     this.active = true;
@@ -12657,6 +12666,33 @@ function applyParamorphTransitions(crystal, T, step) {
 // SIMULATION ENGINE
 // ============================================================
 
+// Phase D v2: per-mineral nucleation orientation preference. Mirrors
+// vugg.py's ORIENTATION_PREFERENCE — see SIM_VERSION 23 comment there
+// for the geological reasoning + per-mineral citations. Most species
+// are spatially neutral and stay out of this table; the area-weighted
+// fallback in _assignWallRing handles them. Format: mineral name →
+// [preferred_orientation, strength_factor]. Strength 3.0 = strong
+// (Naica selenite tier), 1.5 = weak (most entries).
+const ORIENTATION_PREFERENCE = {
+  // Floor (strong) — Naica-style subaqueous pool growth.
+  selenite:      ['floor', 3.0],
+  // Floor (weak) — density / micro-cluster settling, supergene fluid pooling.
+  galena:        ['floor', 1.5],
+  malachite:     ['floor', 1.5],
+  azurite:       ['floor', 1.5],
+  barite:        ['floor', 1.5],
+  celestine:     ['floor', 1.5],
+  goethite:      ['floor', 1.5],
+  native_gold:   ['floor', 1.5],
+  native_silver: ['floor', 1.5],
+  smithsonite:   ['floor', 1.5],
+  // Ceiling (weak) — iron-rose specular rosettes from convective Fe transport.
+  hematite:      ['ceiling', 1.5],
+  // Wall (weak) — acicular sprays grow perpendicular to lateral substrate.
+  stibnite:      ['wall', 1.5],
+  bismuthinite:  ['wall', 1.5],
+};
+
 class VugSimulator {
   constructor(conditions, events) {
     this.conditions = conditions;
@@ -12814,7 +12850,7 @@ class VugSimulator {
     // nucleations get a random ring (Phase C v1: scatter across the
     // sphere wall; Phase D will weight by orientation).
     crystal.wall_center_cell = this._assignWallCell(position);
-    crystal.wall_ring_index = this._assignWallRing(position);
+    crystal.wall_ring_index = this._assignWallRing(position, mineral);
 
     // Dominant-form strings describe crystallographic faces and aren't
     // governed by the habit variant; keep per-mineral defaults.
@@ -13037,8 +13073,10 @@ class VugSimulator {
   // Phase C v1: pick a ring for a nucleating crystal. Host-substrate
   // overgrowths inherit the host's ring (so pseudomorphs land on
   // the same latitude); free-wall nucleations get a random ring.
+  // Phase D v2: per-mineral orientation bias (see ORIENTATION_PREFERENCE
+  // module-level table). Spatially neutral minerals stay area-weighted.
   // Mirrors VugSimulator._assign_wall_ring in vugg.py.
-  _assignWallRing(position) {
+  _assignWallRing(position, mineral) {
     let hostId = null;
     const hashIdx = position.indexOf(' #');
     if (hashIdx >= 0) {
@@ -13061,6 +13099,16 @@ class VugSimulator {
       const w = this.wall_state.ringAreaWeight(k);
       weights.push(w);
       total += w;
+    }
+    // Phase D v2: per-mineral preferred-orientation bias.
+    const pref = mineral ? ORIENTATION_PREFERENCE[mineral] : null;
+    if (pref && n > 1) {
+      const [target, strength] = pref;
+      total = 0;
+      for (let k = 0; k < n; k++) {
+        if (this.wall_state.ringOrientation(k) === target) weights[k] *= strength;
+        total += weights[k];
+      }
     }
     if (total <= 0) total = 1;
     let r = rng.random() * total;
@@ -22784,39 +22832,59 @@ const PRIM_ACICULAR = {
 
 const PRIM_BOTRYOIDAL = {
   name: 'botryoidal',
-  // 5 overlapping "blobs" in a cluster. Each blob is approximated by
-  // 4 vertices (top, base, two equatorial) — cheap and gives a
-  // multi-bumped silhouette via the convex hull.
+  // Spherulite mechanism (Wertheim et al. 2021; Quartz Page chalcedony):
+  // each visible "grape" is a single nucleation point with hundreds-to-
+  // thousands of acicular fibers radiating over a hemisphere, fiber-to-
+  // fiber misorientation 0–22°. We approximate with ~20 representative
+  // fibers fanning over the upper hemisphere from a single anchor at
+  // the wall. The convex-hull silhouette is a smooth dome (not a multi-
+  // bump cluster — those happen when the engine spawns adjacent
+  // botryoidal crystals on neighbouring cells, which already happens
+  // naturally because the habit's wall_spread is wide).
   vertices: (() => {
     const vs = [];
-    // 5 blob centers: 3 base + 2 stacked above
-    const centers = [
-      [ 0.30, 0.15, 0.00],
-      [-0.30, 0.15, 0.10],
-      [ 0.05, 0.20,-0.30],
-      [ 0.10, 0.65, 0.00],
-      [-0.10, 0.85,-0.05],
-    ];
-    const blobR = 0.30;
-    for (const [bx, by, bz] of centers) {
-      vs.push([bx,        by + blobR, bz]);          // top
-      vs.push([bx,        by - blobR, bz]);          // bottom (some buried)
-      vs.push([bx + blobR, by,        bz]);          // east
-      vs.push([bx - blobR, by,        bz]);          // west
-      vs.push([bx,         by,        bz + blobR]);  // north
-      vs.push([bx,         by,        bz - blobR]);  // south
+    vs.push([0, -0.05, 0]);                   // 0 anchor (slightly buried)
+    // Hemisphere of fiber tips. 4 latitude bands × 6 longitudes,
+    // skewed so more tips cluster near the apex than near the rim
+    // (real spherulites have denser fibers near the perpendicular).
+    const NLAT = 4, NLON = 6;
+    for (let i = 0; i < NLAT; i++) {
+      // Latitude angle from substrate (φ=0 = horizon, φ=π/2 = apex).
+      // Bias toward the apex with i^0.7 so tips concentrate up-top.
+      const t = (i + 1) / NLAT;
+      const phi = (t * t * 0.7 + t * 0.3) * Math.PI / 2;
+      const r = 0.5 * Math.cos(phi);
+      const y = 1.0 * Math.sin(phi);
+      for (let j = 0; j < NLON; j++) {
+        // Stagger longitudes per band so adjacent latitude rings don't
+        // align radially (more spherulite-like).
+        const a = (j + 0.5 * (i % 2)) * 2 * Math.PI / NLON;
+        vs.push([r * Math.cos(a), y, r * Math.sin(a)]);
+      }
     }
+    // One apex tip dead-center at y=1.0 to fix the silhouette top.
+    vs.push([0, 1.0, 0]);
     return vs;
   })(),
-  // Each 6-vertex blob gets its own ring-shaped wireframe edges:
-  // top↔(e/w/n/s), bottom↔(e/w/n/s), e↔n↔w↔s ring.
   edges: (() => {
     const es = [];
-    for (let b = 0; b < 5; b++) {
-      const o = b * 6;  // top, bot, e, w, n, s
-      es.push([o+0,o+2],[o+0,o+3],[o+0,o+4],[o+0,o+5]);
-      es.push([o+1,o+2],[o+1,o+3],[o+1,o+4],[o+1,o+5]);
-      es.push([o+2,o+4],[o+4,o+3],[o+3,o+5],[o+5,o+2]);
+    const NLAT = 4, NLON = 6;
+    // Each fiber tip connects back to the anchor — that's the visible
+    // wireframe radial pattern.
+    for (let i = 0; i < NLAT; i++) {
+      for (let j = 0; j < NLON; j++) {
+        es.push([0, 1 + i * NLON + j]);
+      }
+    }
+    es.push([0, 1 + NLAT * NLON]);  // apex fiber
+    // Connect adjacent tips in each latitude band → suggests the
+    // hemispheric envelope without fully outlining it.
+    for (let i = 0; i < NLAT; i++) {
+      for (let j = 0; j < NLON; j++) {
+        const a = 1 + i * NLON + j;
+        const b = 1 + i * NLON + ((j + 1) % NLON);
+        es.push([a, b]);
+      }
     }
     return es;
   })(),
@@ -22931,6 +22999,21 @@ function _seededRand(seed) {
   return _mulberry32(seed | 0)();
 }
 
+// Box-Muller: deterministic standard-normal sample seeded from
+// (crystal_id, channel). Channel lets a single crystal pull multiple
+// independent normals — c-axis tilt-x, tilt-z, and rotation-around-c
+// each get their own channel so they don't co-vary. Output is N(0, 1);
+// callers multiply by the desired σ. Clamped to ±3σ so a once-in-
+// thousand outlier doesn't flip a crystal completely sideways.
+function _seededGaussian(seed, channel) {
+  const r = _mulberry32(((seed | 0) ^ (channel * 0x9E3779B1)) >>> 0);
+  // Standard Box-Muller; r() never returns 0 so log is safe.
+  const u1 = Math.max(r(), 1e-9);
+  const u2 = r();
+  const g = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  return Math.max(-3, Math.min(3, g));
+}
+
 // Build a right-handed basis (perp1, perp2) perpendicular to `axis`,
 // rotated by `rotRad` around `axis`. Used to orient a primitive's
 // equatorial axes (x, z) in world space for a given anchor.
@@ -22979,46 +23062,165 @@ function _convexHull2D(points) {
   return lower.concat(upper);
 }
 
-// Render one wireframe crystal: silhouette fill (mineral color, 40%
-// of the edge alpha) + edges (mineral color, full edge alpha). c-axis
-// = inward sphere normal at the anchor cell; rotation around c-axis
-// is seeded by crystal_id so identical crystals stay identical across
-// reloads. Sizes clamped to a 3-px floor so baby crystals (sub-mm at
-// typical zoom) read as "a thing exists here" not background noise.
+// Drusy-cluster decision: should this crystal render as one large
+// primitive (the default) or as a carpet of N small copies?
+//
+// Real druses are dense carpets — coarse 5–50 nuclei/cm², fine sugar
+// coatings 10²–10⁴ — not the few sparse euhedral crystals the v0
+// renderer was producing. Habit strings that signal "this is a carpet
+// of small crystals, not one big one" map to a cluster count; a
+// size-based fallback gives sub-mm individuals a small cluster too,
+// since at typical zoom they otherwise read as ambient noise.
+//
+// Returns 0 for single-primitive mode, N>0 for cluster of N children.
+function _druzyClusterCount(crystal) {
+  const h = (crystal.habit || '').toLowerCase();
+  // Habit-driven: explicit drusy / massive / earthy carpets.
+  if (h.includes('druz'))                                   return 16;
+  if (h.includes('crust'))                                  return 12;
+  if (h.includes('granular'))                               return 18;
+  if (h.includes('earthy'))                                 return 22;
+  if (h.includes('arborescent') || h.includes('dendritic')) return 20;
+  if (h.includes('massive'))                                return 14;
+  if (h.includes('sugar') || h.includes('coating'))         return 14;
+  // Size-based: very small crystals get a sparse cluster of 4 mini-
+  // copies so they don't render as one near-invisible 3-px primitive.
+  if ((crystal.c_length_mm || 0) < 0.4) return 4;
+  return 0;
+}
+
+// Render one wireframe crystal — single primitive or drusy cluster
+// depending on habit/size. The single-instance path lives in
+// _renderWireframeInstance; this function dispatches and, when
+// clustering, scatters N small offset copies in the substrate's
+// tangent plane around the parent's anchor cell.
 function _renderCrystalWireframe(ctx, crystal, cellWorld, sphereRadiusPx,
                                   mmToPx, cx, cy, F) {
-  const prim = _lookupCrystalPrimitive(crystal);
-  const cLengthPx = Math.max((crystal.c_length_mm || 0.5) * mmToPx, 3);
-  const aWidthPx  = Math.max((crystal.a_width_mm  || 0.5) * mmToPx, 3);
-  // c-axis = inward sphere normal at the anchor cell. cellWorld is the
-  // anchor's (x, y, z) relative to the canvas center; the sphere's
-  // origin is (0,0,0) in this frame, so inward = -normalize(cellWorld).
+  const clusterN = _druzyClusterCount(crystal);
+  if (clusterN <= 0) {
+    _renderWireframeInstance(ctx, crystal, cellWorld, sphereRadiusPx,
+                              mmToPx, cx, cy, F, {});
+    return;
+  }
+  // Cluster mode. Each child gets:
+  //   * an offset anchor in the substrate's tangent plane (so the
+  //     carpet spreads along the wall, not into the cavity)
+  //   * its own seeded c-axis scatter (parent_id ^ child_index)
+  //   * a fractional size of the parent (0.3–0.7)
+  //   * a slightly reduced fill alpha so overlapping children read
+  //     as a sparkly carpet rather than a single opaque blob.
   const invR = 1 / (Math.hypot(cellWorld[0], cellWorld[1], cellWorld[2]) || 1);
-  const cAxis = [-cellWorld[0] * invR, -cellWorld[1] * invR, -cellWorld[2] * invR];
-  const rotRad = (_seededRand(crystal.crystal_id || 0) - 0.5) * 2 * Math.PI;
+  const subNormal = [-cellWorld[0] * invR, -cellWorld[1] * invR,
+                     -cellWorld[2] * invR];
+  const [tA, tB] = _orthonormalBasis(subNormal, 0);
+  // Cluster radius in pixels: scaled by the parent's a-width (which
+  // encodes the crystal's lateral coverage on the wall) so a small
+  // druzy fleck stays compact while a big crustiform sheet spreads
+  // across many cells. Capped so a runaway crystal can't blanket the
+  // whole vug.
+  const widthMm = Math.max(crystal.a_width_mm || 0,
+                            crystal.c_length_mm || 0, 1.0);
+  const clusterRadiusPx = Math.min(widthMm * 0.9 * mmToPx, 9 * mmToPx);
+  const id = crystal.crystal_id | 0;
+  for (let i = 1; i <= clusterN; i++) {
+    // Scatter offset in tangent plane. Two seeded uniforms with
+    // sqrt-radius weighting → uniform area density inside the disc.
+    const r = Math.sqrt(_seededRand((id ^ (i * 7919)) >>> 0)) * clusterRadiusPx;
+    const a = _seededRand((id ^ (i * 6133)) >>> 0) * 2 * Math.PI;
+    const jx = r * Math.cos(a), jy = r * Math.sin(a);
+    const anchor = [
+      cellWorld[0] + tA[0] * jx + tB[0] * jy,
+      cellWorld[1] + tA[1] * jx + tB[1] * jy,
+      cellWorld[2] + tA[2] * jx + tB[2] * jy,
+    ];
+    const sizeMul = 0.3 + 0.4 * _seededRand((id ^ (i * 4111)) >>> 0);
+    _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx,
+                              mmToPx, cx, cy, F, {
+      sizeMul,
+      seedOffset: i,
+      fillAlphaMul: 0.55,
+    });
+  }
+}
+
+// One wireframe primitive: silhouette fill (mineral color, 40% of the
+// edge alpha) + edges (mineral color, full edge alpha). Anchor +
+// size + seed are passed in so the same helper drives both single-
+// crystal and cluster-child rendering. c-axis orientation is
+// environment-dependent:
+//
+//   * 'fluid' (default): perpendicular to substrate (= inward sphere
+//     normal at the anchor), with Gaussian scatter that reproduces
+//     real druse geometric-selection outcomes (Mathematical
+//     Geosciences 1989; mature druse σ ≈ 10–15° around the substrate
+//     normal, capped at ±30° before extinction). Epitaxial overgrowths
+//     (`enclosed_by != null`) lock tighter at σ ≈ 3° because
+//     nucleation is templated by the host's lattice.
+//
+//   * 'air': gravity-aligned. Stalactite c-axis points world-down
+//     regardless of substrate orientation; stalagmite world-up. Wall
+//     crystals in air are an edge case with no clean geological
+//     analog — fall back to substrate-perpendicular.
+//
+// Within-crystal jitter is seeded from (crystal_id, seedOffset) with
+// separate channels so reloads / replays stay reproducible AND
+// cluster children get independent randomness.
+function _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx,
+                                   mmToPx, cx, cy, F, opts) {
+  const sizeMul       = opts.sizeMul       != null ? opts.sizeMul       : 1.0;
+  const seedOffset    = opts.seedOffset    != null ? opts.seedOffset    : 0;
+  const fillAlphaMul  = opts.fillAlphaMul  != null ? opts.fillAlphaMul  : 1.0;
+  const prim = _lookupCrystalPrimitive(crystal);
+  const cLengthPx = Math.max((crystal.c_length_mm || 0.5) * sizeMul * mmToPx, 3);
+  const aWidthPx  = Math.max((crystal.a_width_mm  || 0.5) * sizeMul * mmToPx, 3);
+  // Substrate-perpendicular at this anchor (= inward sphere normal).
+  const invR = 1 / (Math.hypot(anchor[0], anchor[1], anchor[2]) || 1);
+  const subNormal = [-anchor[0] * invR, -anchor[1] * invR, -anchor[2] * invR];
+  const env = crystal.growth_environment || 'fluid';
+  let cAxis;
+  if (env === 'air') {
+    // See _topoRenderRings3D's wz convention: south-pole/floor sits at
+    // -z, so gravity-down = +z direction. Stalactites at the ceiling
+    // point at the floor (always +z); stalagmites at the floor point
+    // up (always -z). Wall cells in air fall back to perpendicular.
+    if (subNormal[2] > 0.4)       cAxis = [0, 0, 1];
+    else if (subNormal[2] < -0.4) cAxis = [0, 0, -1];
+    else                          cAxis = subNormal;
+  } else {
+    const epitaxial = crystal.enclosed_by != null;
+    const sigmaRad = (epitaxial ? 3 : 12) * Math.PI / 180;
+    const seedId = ((crystal.crystal_id | 0) ^ (seedOffset * 0xA5F00D)) >>> 0;
+    const [tA, tB] = _orthonormalBasis(subNormal, 0);
+    const gx = _seededGaussian(seedId, 1) * sigmaRad;
+    const gy = _seededGaussian(seedId, 2) * sigmaRad;
+    const tx = subNormal[0] + tA[0] * gx + tB[0] * gy;
+    const ty = subNormal[1] + tA[1] * gx + tB[1] * gy;
+    const tz = subNormal[2] + tA[2] * gx + tB[2] * gy;
+    const len = Math.hypot(tx, ty, tz) || 1;
+    cAxis = [tx / len, ty / len, tz / len];
+  }
+  const rotSeed = ((crystal.crystal_id | 0) ^ 0xC1B2A305 ^ (seedOffset * 0x5BD1E995)) >>> 0;
+  const rotRad = (_seededRand(rotSeed) - 0.5) * 2 * Math.PI;
   const [perp1, perp2] = _orthonormalBasis(cAxis, rotRad);
-  // Project every primitive vertex.
   const projected = [];
   for (const [px, py, pz] of prim.vertices) {
-    const wx = cellWorld[0] + perp1[0] * px * aWidthPx
-                            + cAxis[0] * py * cLengthPx
-                            + perp2[0] * pz * aWidthPx;
-    const wy = cellWorld[1] + perp1[1] * px * aWidthPx
-                            + cAxis[1] * py * cLengthPx
-                            + perp2[1] * pz * aWidthPx;
-    const wz = cellWorld[2] + perp1[2] * px * aWidthPx
-                            + cAxis[2] * py * cLengthPx
-                            + perp2[2] * pz * aWidthPx;
+    const wx = anchor[0] + perp1[0] * px * aWidthPx
+                          + cAxis[0] * py * cLengthPx
+                          + perp2[0] * pz * aWidthPx;
+    const wy = anchor[1] + perp1[1] * px * aWidthPx
+                          + cAxis[1] * py * cLengthPx
+                          + perp2[1] * pz * aWidthPx;
+    const wz = anchor[2] + perp1[2] * px * aWidthPx
+                          + cAxis[2] * py * cLengthPx
+                          + perp2[2] * pz * aWidthPx;
     const proj = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
     projected.push([cx + proj[0], cy + proj[1]]);
   }
   const edgeAlpha = topoAlphaFor(crystal.mineral);
   const color = topoClassColor(crystal.mineral);
-  // Silhouette fill = convex hull of projected vertices, filled at
-  // 40% of the edge alpha. Stained-glass effect.
   const hull = _convexHull2D(projected);
   if (hull.length >= 3) {
-    ctx.globalAlpha = 0.4 * edgeAlpha;
+    ctx.globalAlpha = 0.4 * fillAlphaMul * edgeAlpha;
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.moveTo(hull[0][0], hull[0][1]);
@@ -23026,7 +23228,6 @@ function _renderCrystalWireframe(ctx, crystal, cellWorld, sphereRadiusPx,
     ctx.closePath();
     ctx.fill();
   }
-  // Edges at full alpha.
   ctx.globalAlpha = edgeAlpha;
   ctx.strokeStyle = color;
   ctx.lineWidth = 1.2;
@@ -23230,23 +23431,127 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
 // under the cursor. Returns { mineral, isInclusion, cell } or null
 // if the cursor is not on a crystal. Called by both the tooltip and
 // the highlight hover/click handlers so their geometry stays in sync.
+// Reconstruct the (mmToPx, cx, cy) the renderer is using for the
+// current canvas + zoom + pan state. Used by both 2D and 3D hit-test
+// paths so cursor coords map to the same world the user sees.
+function _topoCanvasFrame(rect, wall, ring0) {
+  const cssW = rect.width, cssH = rect.height;
+  const initR = wall.initial_radius_mm;
+  let maxWallR = wall.max_seen_radius_mm || initR * 2;
+  for (const c of ring0) {
+    const baseR = c.base_radius_mm > 0 ? c.base_radius_mm : initR;
+    const r = baseR + c.wall_depth;
+    if (r > maxWallR) maxWallR = r;
+  }
+  const centerPad = 48;
+  const viewW = cssW / TOPO_STAGE_SCALE;
+  const viewH = cssH / TOPO_STAGE_SCALE;
+  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
+  const mmToPx = (fit / maxWallR) * _topoZoom;
+  const cx = cssW / 2 + _topoPanX;
+  const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
+  return { cssW, cssH, mmToPx, cx, cy, initR, maxWallR };
+}
+
+// 3D hit-test. The cavity surface is NOT a true sphere — each ring
+// has its own latitude-dependent radius factor (sin(φ)·polar_profile)
+// and per-cell base_radius wobble, so it's a stretched-and-bumped
+// sphere. Ray-vs-sphere math gives wrong answers when polar pinches
+// pull cells far inside the mean sphere.
+//
+// Brute-force approach: forward-project every cell's anchor center
+// to screen, find the cell whose projection is nearest to the cursor.
+// This is naturally correct for the bumpy surface AND handles the
+// wireframe-occlusion case (both front and back hemispheres visible)
+// without explicit hemisphere math — the nearest-projection cell is
+// the one the user is hovering over.
+//
+// Cost: 1 projection + 1 distance² per cell × 16 rings × 120 cells =
+// ~2k operations per hit-test. Negligible at hover-event frequency.
+//
+// Returns { mineral, isInclusion, cell, ringIdx, cellIdx } or null
+// (cursor too far from any cell). Crystal-on-cell follows the same
+// engine semantic as 2D mode: a cell's crystal_id is the occupant;
+// null means bare wall.
+function _hitTest3D(ev, sim, rect) {
+  const wall = sim.wall_state;
+  if (!wall || !wall.rings || wall.rings.length < 2) return null;
+  const ringCount = wall.ring_count;
+  const ring0 = wall.rings[0];
+  const N = ring0.length;
+  const F = 1200;  // matches _topoRenderRings3D
+  const { mmToPx, cx, cy, initR } = _topoCanvasFrame(rect, wall, ring0);
+  const sphereRadiusPx = wall.meanDiameterMm() * mmToPx / 2;
+
+  // Cursor in canvas-relative coords (matches what _topoProject3D's
+  // output adds cx/cy back to).
+  const ux = (ev.clientX - rect.left) - cx;
+  const uy = (ev.clientY - rect.top) - cy;
+
+  // Walk every cell, project its anchor, track the nearest in screen
+  // space. Two candidates kept: the absolute nearest, AND the nearest
+  // crystal-bearing cell (so a wireframe crystal sitting near a bare
+  // cell's projected center wins on user-intent grounds — they almost
+  // certainly meant to hover the visible crystal, not its bare-wall
+  // neighbor).
+  let bestAny = null, bestAnyD2 = Infinity;
+  let bestCrystal = null, bestCrystalD2 = Infinity;
+  for (let r = 0; r < ringCount; r++) {
+    const phi = Math.PI * (r + 0.5) / ringCount;
+    const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+    const rrf = Math.sin(phi) * polar;
+    const wz = -Math.cos(phi) * sphereRadiusPx;
+    const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0;
+    const ring = wall.rings[r];
+    if (!ring || !ring.length) continue;
+    for (let i = 0; i < N; i++) {
+      const c = ring[i];
+      const baseR = c.base_radius_mm > 0 ? c.base_radius_mm : initR;
+      const cellOuter = (baseR + c.wall_depth) * mmToPx;
+      const aMid = -Math.PI / 2 + (i / N) * 2 * Math.PI + twist;
+      const wx = cellOuter * rrf * Math.cos(aMid);
+      const wy = cellOuter * rrf * Math.sin(aMid);
+      const p = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
+      const dx = ux - p[0], dy = uy - p[1];
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestAnyD2) {
+        bestAnyD2 = d2; bestAny = { ringIdx: r, cellIdx: i, cell: c };
+      }
+      if (c.crystal_id != null && d2 < bestCrystalD2) {
+        bestCrystalD2 = d2; bestCrystal = { ringIdx: r, cellIdx: i, cell: c };
+      }
+    }
+  }
+  if (!bestAny) return null;
+
+  // User-intent rule: if a crystal-bearing cell is reasonably close to
+  // the cursor (within 14 px, ~2 cells worth of arc at typical scale),
+  // prefer it over an even-closer bare-wall cell. Otherwise the bare
+  // wall wins. The threshold is small enough that the user has to be
+  // visually on a crystal silhouette for this to fire.
+  const CRYSTAL_PREFERENCE_PX = 14;
+  if (bestCrystal && bestCrystalD2 <= CRYSTAL_PREFERENCE_PX * CRYSTAL_PREFERENCE_PX) {
+    const { ringIdx, cellIdx, cell } = bestCrystal;
+    return { mineral: cell.mineral, isInclusion: false, cell, ringIdx, cellIdx };
+  }
+  const { ringIdx, cellIdx, cell } = bestAny;
+  if (cell.crystal_id == null) {
+    return { mineral: null, isInclusion: false, cell, ringIdx, cellIdx };
+  }
+  return { mineral: cell.mineral, isInclusion: false, cell, ringIdx, cellIdx };
+}
+
 function _topoHitTest(ev) {
   const canvas = document.getElementById('topo-canvas');
   const sim = topoActiveSim();
   if (!canvas || !sim) return null;
-  // Hit-test reads whatever ring the renderer is currently showing.
-  // Aggregate (post-scatter default) → resolves any crystal on any
-  // ring at the cursor's angular position. Single-slice mode →
-  // resolves only crystals on that specific ring (so hovering a
-  // ceiling-only slice won't pick up floor crystals at the same
-  // angular position).
-  const ring0 = _topoActiveRingForRender(sim.wall_state);
-  if (!ring0 || !ring0.length) return null;
   const rect = canvas.getBoundingClientRect();
   const mx = ev.clientX - rect.left;
   const my = ev.clientY - rect.top;
 
   // Inclusion hit-test first — dots take priority over host wall cell.
+  // Inclusions are 2D-rendered only (see _topoInclusions populate path);
+  // in 3D mode the array stays empty, so the loop is a no-op.
   for (const inc of _topoInclusions) {
     const dx = mx - inc.x, dy = my - inc.y;
     if (dx * dx + dy * dy <= inc.r * inc.r) {
@@ -23256,27 +23561,21 @@ function _topoHitTest(ev) {
     }
   }
 
-  // Same scale reconstruction as topoRender / tooltip.
-  const cssW = rect.width, cssH = rect.height;
-  const N = ring0.length;
-  const initR = sim.wall_state.initial_radius_mm;
-  let maxWallR = sim.wall_state.max_seen_radius_mm || initR * 2;
-  for (const c of ring0) {
-    const baseR = c.base_radius_mm > 0 ? c.base_radius_mm : initR;
-    const r = baseR + c.wall_depth;
-    if (r > maxWallR) maxWallR = r;
+  // 3D mode: ray-cast against the cavity sphere instead of inverting
+  // the 2D polar transform (which ignores tilt + per-ring twist).
+  if (_topoView3D && sim.wall_state && sim.wall_state.rings &&
+      sim.wall_state.rings.length > 1) {
+    return _hitTest3D(ev, sim, rect);
   }
-  const centerPad = 48;
-  // Match topoRender: fit to VISIBLE window (cssW/STAGE, cssH/STAGE),
-  // not the full canvas buffer, so hit coords land on the same cells
-  // the user actually sees.
-  const viewW = cssW / TOPO_STAGE_SCALE;
-  const viewH = cssH / TOPO_STAGE_SCALE;
-  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
-  const mmToPx = (fit / maxWallR) * _topoZoom;
-  const cx = cssW / 2 + _topoPanX;
-  const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
 
+  // 2D path: hit-test reads whatever ring the renderer is currently
+  // showing. Aggregate (post-scatter default) → resolves any crystal
+  // on any ring at the cursor's angular position. Single-slice mode →
+  // resolves only crystals on that specific ring.
+  const ring0 = _topoActiveRingForRender(sim.wall_state);
+  if (!ring0 || !ring0.length) return null;
+  const { mmToPx, cx, cy, initR } = _topoCanvasFrame(rect, sim.wall_state, ring0);
+  const N = ring0.length;
   const dx = mx - cx, dy = my - cy;
   const rMouse = Math.hypot(dx, dy);
   let a = Math.atan2(dy, dx) + Math.PI / 2;
@@ -23291,114 +23590,62 @@ function _topoHitTest(ev) {
   return { mineral: cell.mineral, isInclusion: false, cell };
 }
 
-// Hover: translate mouse position into a polar angle around the vug
-// and look up the corresponding wall cell. Inclusion dots take priority
-// — if the cursor is over one, show the enclosed crystal instead of
-// the host's wall info.
+// Hover: shared 2D + 3D path. _topoHitTest already resolves the cursor
+// to either an inclusion, a wall cell on the cavity sphere (3D), or a
+// wall cell via 2D polar inversion (2D). We just turn its result into
+// tooltip HTML — no duplicated geometry math here. Inclusion hits get
+// the "◆ inside host" framing; wall hits get the standard mineral /
+// habit / size readout.
 function _topoTooltipFromEvent(ev) {
   const canvas = document.getElementById('topo-canvas');
   const tip = document.getElementById('topo-tooltip');
   const sim = topoActiveSim();
   if (!canvas || !tip || !sim) return;
-  // Match whatever ring the renderer / hit-test is currently using.
-  // See _topoActiveRingForRender / topoCycleSlice.
-  const ring0 = _topoActiveRingForRender(sim.wall_state);
-  if (!ring0 || !ring0.length) { tip.style.display = 'none'; return; }
-  const rect = canvas.getBoundingClientRect();
-  const mx = ev.clientX - rect.left;
-  const my = ev.clientY - rect.top;
-
-  // Update highlight hover target from the same hit-test. Inclusion
-  // hovers resolve to the inclusion's mineral, wall cell hovers to the
-  // occupying crystal's mineral. Bare wall clears the hover.
   const hit = _topoHitTest(ev);
   topoSetHoverTarget(
     hit && hit.mineral ? { type: 'mineral', value: hit.mineral } : null
   );
+  if (!hit) { tip.style.display = 'none'; return; }
 
-  // Inclusion hit-test first.
-  for (const inc of _topoInclusions) {
-    const dx = mx - inc.x, dy = my - inc.y;
-    if (dx * dx + dy * dy <= inc.r * inc.r) {
-      const crystal = sim.crystals.find(c => c.crystal_id === inc.crystal_id);
-      if (!crystal) break;
-      const host = sim.crystals.find(c => c.crystal_id === crystal.enclosed_by);
-      const spec = MINERAL_SPEC[crystal.mineral] || {};
-      const color = spec.class_color || TOPO_WALL_COLOR;
-      const lines = [];
-      lines.push(`<b style="color:${color}">◆ ${crystal.mineral} #${crystal.crystal_id}</b>`);
-      lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
-      lines.push(`${crystal.c_length_mm.toFixed(2)} mm — inclusion`);
-      if (host) lines.push(`inside ${host.mineral} #${host.crystal_id}`);
-      tip.innerHTML = lines.join('<br>');
-      tip.style.display = 'block';
-      // Viewport-relative positioning (CSS is now position:fixed). Don't
-      // subtract container offsets — under TOPO_STAGE_SCALE + _topoZoom +
-      // pan transforms, that mismatch is what produces the offset bug.
-      tip.style.left = `${Math.min(window.innerWidth - tip.offsetWidth - 6, ev.clientX + 12)}px`;
-      tip.style.top = `${Math.min(window.innerHeight - 40, ev.clientY - 10)}px`;
-      return;
-    }
-  }
-
-  // Reconstruct the render's center + scale (same logic as topoRender)
-  const cssW = rect.width, cssH = rect.height;
-  const N = ring0.length;
-  const initR = sim.wall_state.initial_radius_mm;
-  let maxWallR = sim.wall_state.max_seen_radius_mm || initR * 2;
-  for (const c of ring0) {
-    // Phase-1 per-cell base radius; fallback for legacy snapshots.
-    const baseR = c.base_radius_mm > 0 ? c.base_radius_mm : initR;
-    const r = baseR + c.wall_depth;
-    if (r > maxWallR) maxWallR = r;
-  }
-  const centerPad = 48;
-  // Match topoRender: fit to VISIBLE window (cssW/STAGE, cssH/STAGE),
-  // not the full canvas buffer, so hit coords land on the same cells
-  // the user actually sees.
-  const viewW = cssW / TOPO_STAGE_SCALE;
-  const viewH = cssH / TOPO_STAGE_SCALE;
-  const fit = Math.min(viewW, viewH - centerPad) * 0.82 / 2;
-  const mmToPx = (fit / maxWallR) * _topoZoom;
-  const cx = cssW / 2 + _topoPanX;
-  const cy = (cssH - centerPad) / 2 + 8 + _topoPanY;
-
-  const dx = mx - cx, dy = my - cy;
-  const rMouse = Math.hypot(dx, dy);
-  // Only show tooltip when the cursor is near the wall (inside outer
-  // boundary plus a little slop, and not deep in the center void).
-  const cellAngle = Math.atan2(dy, dx);
-  // Map angle back to cell index: angle 0 of cell i was -π/2 + i·Δ.
-  let a = cellAngle + Math.PI / 2;
-  while (a < 0) a += 2 * Math.PI;
-  while (a >= 2 * Math.PI) a -= 2 * Math.PI;
-  const idx = Math.min(N - 1, Math.max(0, Math.round((a / (2 * Math.PI)) * N) % N));
-  // Phase-1 per-cell base radius; fallback for legacy snapshots.
-  const hitBaseR = ring0[idx].base_radius_mm > 0 ? ring0[idx].base_radius_mm : initR;
-  const cellOuterPx = (hitBaseR + ring0[idx].wall_depth) * mmToPx;
-  if (rMouse > cellOuterPx + 10 || rMouse < cellOuterPx * 0.15) {
-    tip.style.display = 'none';
-    return;
-  }
-
-  const cell = ring0[idx];
-  const wallDepthMm = cell.wall_depth;
   let html;
-  if (cell.crystal_id == null) {
-    const depthNote = wallDepthMm > 0.1 ? ` · eroded +${wallDepthMm.toFixed(1)}mm` : '';
-    html = `<b style="color:${TOPO_WALL_COLOR}">${sim.conditions.wall.composition || 'wall'}</b><br>` +
-           `bare wall${depthNote}`;
-  } else {
-    const crystal = sim.crystals.find(c => c.crystal_id === cell.crystal_id);
-    const spec = MINERAL_SPEC[cell.mineral] || {};
+  if (hit.isInclusion) {
+    const crystal = sim.crystals.find(c => c.mineral === hit.mineral);
+    if (!crystal) { tip.style.display = 'none'; return; }
+    const host = sim.crystals.find(c => c.crystal_id === crystal.enclosed_by);
+    const spec = MINERAL_SPEC[crystal.mineral] || {};
     const color = spec.class_color || TOPO_WALL_COLOR;
     const lines = [];
-    lines.push(`<b style="color:${color}">${cell.mineral} #${cell.crystal_id}</b>`);
-    if (crystal) {
-      lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
-      lines.push(`${crystal.c_length_mm.toFixed(2)} mm · vector: ${crystal.vector}`);
-    }
+    lines.push(`<b style="color:${color}">◆ ${crystal.mineral} #${crystal.crystal_id}</b>`);
+    lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
+    lines.push(`${crystal.c_length_mm.toFixed(2)} mm — inclusion`);
+    if (host) lines.push(`inside ${host.mineral} #${host.crystal_id}`);
     html = lines.join('<br>');
+  } else {
+    const cell = hit.cell;
+    if (!cell) { tip.style.display = 'none'; return; }
+    if (cell.crystal_id == null) {
+      // 3D mode renders the cavity as a wireframe topo map — the user
+      // can SEE the bare wall directly, so the "wall · eroded +Xmm"
+      // tooltip just adds friction without information. Suppress it.
+      // 2D mode keeps the readout because the strip view doesn't make
+      // erosion depth obvious from geometry alone.
+      if (_topoView3D) { tip.style.display = 'none'; return; }
+      const wallDepthMm = cell.wall_depth || 0;
+      const depthNote = wallDepthMm > 0.1 ? ` · eroded +${wallDepthMm.toFixed(1)}mm` : '';
+      html = `<b style="color:${TOPO_WALL_COLOR}">${sim.conditions.wall.composition || 'wall'}</b><br>` +
+             `bare wall${depthNote}`;
+    } else {
+      const crystal = sim.crystals.find(c => c.crystal_id === cell.crystal_id);
+      const spec = MINERAL_SPEC[cell.mineral] || {};
+      const color = spec.class_color || TOPO_WALL_COLOR;
+      const lines = [];
+      lines.push(`<b style="color:${color}">${cell.mineral} #${cell.crystal_id}</b>`);
+      if (crystal) {
+        lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
+        lines.push(`${crystal.c_length_mm.toFixed(2)} mm · vector: ${crystal.vector}`);
+      }
+      html = lines.join('<br>');
+    }
   }
   tip.innerHTML = html;
   tip.style.display = 'block';

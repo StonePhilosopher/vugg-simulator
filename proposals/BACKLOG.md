@@ -484,40 +484,28 @@ The original `drawHabitTexture` 2D textures (`_texture_sawtooth`, `_texture_rhom
 
 **If 2D-mode wireframes are ever wanted** (top-down orthographic of one slice), the same primitive library projects orthographically just as well; would respect the slice stepper state. Out of scope for v0.
 
-### Hit-test broken in 3D mode
+### Hit-test broken in 3D mode — RESOLVED
 
-**Status:** carried over from Tier 1 of the 3D viewer (the original CSS-transform commit). Phase B's per-vertex projection didn't fix it because hit-test math wasn't a priority for the geometry rebuild.
+**Status:** **resolved** in commit `f77a757`.
 
-**Why:** `_topoHitTest` and `_topoTooltipFromEvent` both reconstruct the cell at a screen position by inverting the **2D-only** transform — `(mx-cx)/mmToPx` gives a polar coordinate, that maps to a cell index. Under per-vertex 3D projection plus polar profile plus twist, the same screen position can correspond to a different cell on a different ring depending on tilt, and the inversion ignores all of that.
+The original plan (cast a ray, intersect with the sphere shell, recover phi/theta) didn't survive contact with the actual cavity geometry: rings have latitude-dependent radius factors (`sin(φ)·polar_profile`) and per-cell base_radius wobble, so a ray-vs-mean-sphere intersection lands beyond where the cells actually sit. Switched to brute-force nearest-projected-cell — forward-project every cell's anchor center and pick the one whose projection is closest to the cursor in screen space. Naturally correct for the bumpy surface and handles both front and back hemispheres without explicit hemisphere math. ~2k operations per hit-test, negligible at hover-event frequency.
 
-**User-facing impact:** hovering crystals doesn't tooltip in rotate mode. Click-to-lock-highlight also doesn't fire. The 3D view is read-only by hover.
+User-intent rule: prefer crystal-bearing cells over bare-wall ones within 14 px of the cursor (the user almost certainly meant the visible crystal, not its bare neighbor). Bare-wall tooltip itself is suppressed in 3D mode — the wireframe topo map shows the wall directly, so the readout was friction without information.
 
-**What to build:**
-1. Build the inverse projection. Given a screen `(mx, my)` and the current `_topoTiltX / _topoTiltY`:
-   - Cast a ray from camera through the screen point into world space (the inverse of `_topoProject3D`).
-   - Intersect the ray with each ring's plane (or with the sphere shell at radius R).
-   - Pick the nearest hit; resolve to (ring_idx, cell_idx) by computing θ relative to the ring's twist offset.
-2. Update `_topoHitTest` to consult this inverse projection when `_topoView3D` is true; keep the legacy 2D path for default mode.
-3. Verify: hover a crystal in 3D mode → tooltip pops with the right mineral name.
-
-**Sizing:** maybe a session — the projection inverse is ~20 lines of linear algebra plus a binary search over ring planes.
+Same change refactored `_topoTooltipFromEvent` to consume `_topoHitTest`'s cell directly instead of duplicating the geometry math (the duplication was 2D-only and wouldn't have worked in 3D anyway).
 
 ### Phase D v2 — mineral-spec orientation hints
 
-**Status:** designed but not implemented. Phase D v0 added the `floor`/`wall`/`ceiling` tags; Phase D v1 added stalactite geometry; v2 is "now actually use the tags for nucleation."
+**Status:** **shipped 2026-05-04**. See companion `PROPOSAL-AIR-MODE.md` for the air-mode-specific extension (a separate future task).
 
-**Why:** real stalactite-prone habits (calcite scalenohedra in cave settings; aragonite cones; gypsum needles in sulfate caves) overwhelmingly nucleate on ceilings under gravity, dripping. Stalagmite-prone habits (calcite rhombs from ponding water) nucleate on floors. Wall habits (most everything else, including flat-faced cubic and rhombic species) are spatially neutral. The current `_assign_wall_ring` samples by area weight only — every mineral has the same ring-distribution preference.
+Geological background corrected: in a fully fluid-filled vug at depth, gravity-driven settling is weak and most minerals are spatially neutral. Documented preferences trace to density-driven convection, gravity-assisted micro-cluster settling before nucleation, or substrate-chemistry effects — NOT direct gravity on growing crystals. (The original BACKLOG framing of "calcite scalenohedra hang from the ceiling under gravity" was the cave-mode story; in fluid-filled vugs the bias is much subtler.)
 
-**What to build:**
-1. Add an optional field on `data/minerals.json` habit variants: `orientation_preference` ∈ `{'ceiling', 'floor', 'wall', 'any'}` (default `'any'`).
-2. When `_assign_wall_ring` runs for a free-wall nucleation:
-   - Look up the chosen habit variant's orientation preference.
-   - If `'any'`: keep the area-weighted distribution as today.
-   - If `'ceiling'`: bias the sample toward ceiling rings (e.g. multiply ceiling-ring weights by 4×, others by 1×, then sample).
-   - Same for `'floor'` and `'wall'`.
-3. Populate the field for the obvious candidates: scalenohedral calcite → ceiling-prone; some aragonite habits → ceiling; rhombic calcite → floor; cubic habits → wall; needle/acicular sprays → wall.
-4. Tests verify ceiling-prone habits land on rings 12-15 the majority of the time.
+Implementation: per-mineral `ORIENTATION_PREFERENCE` table in `vugg.py` with strong/weak factors (3.0× / 1.5×), consumed by `_assign_wall_ring` to bias the area-weighted sampling. Spatially neutral minerals (most species) stay area-weighted as before.
 
-**Out of scope:** changing the engine's growth direction logic. Phase D v1's renderer-side stalactite geometry already handles the visual; v2 is just about WHICH crystals hang from the ceiling.
+Documented preferences applied:
+- **Floor (subtle):** galena, malachite, azurite, barite, celestine, goethite, native_gold, native_silver, smithsonite — density-driven micro-cluster settling or supergene fluid pooling
+- **Floor (strong):** selenite (gypsum) — Naica-style subaqueous pool growth
+- **Ceiling (subtle):** hematite (specular rosette / "iron rose")
+- **Wall:** stibnite, bismuthinite — acicular sprays grow perpendicular to substrate
 
-**Why this is the natural next step:** the stalactite geometry from Phase D v1 currently fires for any crystal that happens to randomly land on a ceiling ring. That's accidental stalactites. v2 makes them intentional — calcite scalenohedra deliberately seek the ceiling under gravity, the way real cave calcite does.
+Sources: Sangster 1990 (MVT paragenesis), Garcia-Ruiz et al. 2007 (Naica selenite), Hanor 2000 (barite brine density), Hill & Forti 1997 (cave mineralogy).
