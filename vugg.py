@@ -390,7 +390,20 @@ from typing import List, Dict, Optional, Tuple
 #      with biased minerals will shift their crystal distribution
 #      toward preferred rings; total crystal count and species
 #      identity unchanged.
-SIM_VERSION = 23
+# v24: Water-level mechanic — VugConditions.fluid_surface_ring is the
+#      meniscus position (float, 0..ring_count). None → fully submerged
+#      (legacy default; existing scenarios stay byte-identical). Below
+#      the surface = submerged, the surface band = meniscus, above =
+#      vadose. Crystal.growth_environment is now derived at nucleation
+#      time from the ring's water_state: submerged/meniscus → 'fluid',
+#      vadose → 'air'. With fluid_surface_ring=None the every-ring-
+#      submerged default keeps the v23 invariant (all crystals grow
+#      'fluid') so chemistry, growth, and visuals are unchanged. A
+#      scenario that lowers the surface mid-run starts producing 'air'-
+#      stamped crystals in the upper rings — the bridge to PROPOSAL-
+#      AIR-MODE.md's stalactite renderer. See PROPOSAL-EVAPORITE-WATER-
+#      LEVELS.md.
+SIM_VERSION = 24
 
 # Mineral-specific nucleation orientation preferences. Most species
 # are spatially neutral in fluid-filled vugs (gravity is weak at
@@ -1355,6 +1368,15 @@ class VugConditions:
     flow_rate: float = 1.0        # relative (0 = stagnant, 1 = normal, 5 = flood)
     wall: VugWall = field(default_factory=VugWall)  # reactive wall
 
+    # v24 water-level mechanic. Float in [0.0, ring_count] giving the
+    # meniscus position along the polar axis: rings strictly below it
+    # are submerged, the band containing it is the meniscus, rings
+    # strictly above it are vadose (air). None = legacy "no water level
+    # set" → treated as fully submerged so existing scenarios stay
+    # byte-identical. A scenario that wants partial fill drops this to
+    # e.g. 8.5; events can mutate it over time (drainage, refill).
+    fluid_surface_ring: Optional[float] = None
+
     # Fluid-level cycle tracking for the Kim 2023 dolomite mechanism.
     # Per-crystal tracking via phantom_count would work in principle but
     # dolomite seeds get enclosed by other carbonates faster than they
@@ -1380,6 +1402,30 @@ class VugConditions:
                 self._dol_cycle_count += 1
                 self._dol_in_undersat = False
         self._dol_prev_sigma = sigma
+
+    def ring_water_state(self, ring_idx: int, ring_count: int) -> str:
+        """v24: classify a ring as 'submerged' / 'meniscus' / 'vadose'
+        from the cavity's current `fluid_surface_ring`.
+
+        `fluid_surface_ring is None` → fully submerged (legacy / default).
+        Else: ring k is `submerged` iff k+1 ≤ surface, `vadose` iff
+        k ≥ surface, and `meniscus` iff the surface lies in [k, k+1).
+        Ring count guards single-ring sims (always 'submerged' under
+        a None surface, never gains a meniscus).
+
+        Used by nucleation to stamp `Crystal.growth_environment` and by
+        the renderer to draw the blue water line.
+        """
+        s = self.fluid_surface_ring
+        if s is None:
+            return 'submerged'
+        if ring_count <= 1:
+            return 'submerged' if s >= 1.0 else 'vadose'
+        if ring_idx + 1 <= s:
+            return 'submerged'
+        if ring_idx >= s:
+            return 'vadose'
+        return 'meniscus'
 
     @property
     def effective_temperature(self) -> float:
@@ -13567,6 +13613,16 @@ class VugSimulator:
         # so ceiling habits prefer the upper rings, floor habits the lower.
         crystal.wall_ring_index = self._assign_wall_ring(position, mineral)
         crystal.wall_center_cell = self._assign_wall_cell(position)
+
+        # v24 water-level: stamp the crystal's growth_environment from
+        # the ring it just landed on. Submerged or meniscus → 'fluid'
+        # (the surface band is still wet). Vadose → 'air' — gravity-
+        # oriented dripstone habit when the renderer learns to draw it.
+        # Default fluid_surface_ring=None makes every ring submerged,
+        # so existing scenarios continue stamping 'fluid' identically.
+        wstate = self.conditions.ring_water_state(
+            crystal.wall_ring_index, self.wall_state.ring_count)
+        crystal.growth_environment = 'air' if wstate == 'vadose' else 'fluid'
 
         # Dominant-form strings are still per-mineral — they describe
         # crystallographic faces, not the habit variant, so the growth-vector

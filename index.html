@@ -4608,10 +4608,27 @@ class VugConditions {
     this.fluid = opts.fluid || new FluidChemistry();
     this.flow_rate = opts.flow_rate ?? 1.0;
     this.wall = opts.wall || new VugWall();
+    // v24 water-level mechanic. Float in [0, ring_count] giving the
+    // meniscus position; null = "no water level set" → fully submerged
+    // (legacy default, every ring 'submerged'). Below = submerged,
+    // surface band = meniscus, above = vadose/'air'.
+    this.fluid_surface_ring = opts.fluid_surface_ring ?? null;
     // Kim 2023 dolomite cycle tracking — fluid-level so all dolomites benefit
     this._dol_cycle_count = 0;
     this._dol_prev_sigma = 0.0;
     this._dol_in_undersat = false;
+  }
+
+  // v24: classify a ring as 'submerged' / 'meniscus' / 'vadose'
+  // from the cavity's current fluid_surface_ring. Mirror of
+  // VugConditions.ring_water_state in vugg.py.
+  ringWaterState(ringIdx, ringCount) {
+    const s = this.fluid_surface_ring;
+    if (s === null || s === undefined) return 'submerged';
+    if (ringCount <= 1) return s >= 1.0 ? 'submerged' : 'vadose';
+    if (ringIdx + 1 <= s) return 'submerged';
+    if (ringIdx >= s) return 'vadose';
+    return 'meniscus';
   }
 
   update_dol_cycles() {
@@ -12851,6 +12868,15 @@ class VugSimulator {
     // sphere wall; Phase D will weight by orientation).
     crystal.wall_center_cell = this._assignWallCell(position);
     crystal.wall_ring_index = this._assignWallRing(position, mineral);
+
+    // v24 water-level: stamp growth_environment from the ring's
+    // water state. Submerged or meniscus = wet = 'fluid'; vadose
+    // (above the meniscus) = 'air'. Mirrors vugg.py.
+    {
+      const wstate = this.conditions.ringWaterState(
+        crystal.wall_ring_index, this.wall_state.ring_count);
+      crystal.growth_environment = (wstate === 'vadose') ? 'air' : 'fluid';
+    }
 
     // Dominant-form strings describe crystallographic faces and aren't
     // governed by the habit variant; keep per-mineral defaults.
@@ -23312,6 +23338,45 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
   for (const meta of ringMeta) {
     paintItems.push({ kind: 'ring', meta, sortZ: meta.projZ });
   }
+
+  // v24 water line. If conditions.fluid_surface_ring is set, the
+  // meniscus sits at φ = π·s/ringCount along the polar axis. Build a
+  // 64-segment polyline tracing the cavity outline at that latitude,
+  // pre-projected to screen, and sort the disc as a single paint item
+  // at its centre's projected z. Polar profile + per-cell wall depth
+  // are folded in so the water line wobbles with the cavity shape.
+  let waterDisc = null;
+  if (sim && sim.conditions
+      && sim.conditions.fluid_surface_ring != null
+      && ringCount > 1) {
+    const s = sim.conditions.fluid_surface_ring;
+    const sClamped = Math.max(0, Math.min(ringCount, s));
+    const phiW = Math.PI * sClamped / ringCount;
+    const polarW = wall.polarProfileFactor ? wall.polarProfileFactor(phiW) : 1.0;
+    const rrfW = Math.sin(phiW) * polarW;
+    const wzW = -Math.cos(phiW) * sphereRadiusPx;
+    const twistW = wall.ringTwistRadians ? wall.ringTwistRadians(phiW) : 0.0;
+    // Sample N_W points around θ. Use the same per-cell base_radius
+    // ring0 carries — without per-ring radius variation in the engine
+    // this is the best the renderer has for "what shape is the cavity
+    // at this height". Wall_depth on ring0 also folds in.
+    const N_W = 64;
+    const pts = new Array(N_W);
+    for (let j = 0; j < N_W; j++) {
+      const theta = (2 * Math.PI * j) / N_W + twistW;
+      // Sample ring0's per-cell radius at the matching θ index.
+      const cellIdx = Math.floor((j / N_W) * N) % N;
+      const cell = ring0[cellIdx];
+      const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
+      const rPx = (baseR + cell.wall_depth) * mmToPx * rrfW;
+      const wx = rPx * Math.cos(theta);
+      const wy = rPx * Math.sin(theta);
+      pts[j] = [wx, wy, wzW];
+    }
+    const projZW = _topoProject3D(0, 0, wzW, _topoTiltX, _topoTiltY, F)[2];
+    waterDisc = { points: pts, sortZ: projZW };
+    paintItems.push({ kind: 'water', disc: waterDisc, sortZ: projZW });
+  }
   if (sim && sim.crystals) {
     for (const crystal of sim.crystals) {
       if (crystal.dissolved) continue;
@@ -23414,8 +23479,38 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     ctx.globalAlpha = 1;
   }
 
+  // v24: render the meniscus disc — translucent blue fill with a
+  // brighter outline, projected through the same camera transform as
+  // rings/crystals. Painter's order puts the disc at its meniscus
+  // latitude's z, so back-half occluded by far rings/crystals and
+  // front-half occludes near rings/crystals. Imperfect for objects
+  // straddling the disc's z (single sortZ for the whole disc), but
+  // reads correctly at typical tilt angles.
+  function renderWaterDisc(disc) {
+    const proj = projAt(0); // wz baked into points already
+    const screen = disc.points.map(([wx, wy, wz]) => {
+      const [px, py] = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
+      return [cx + px, cy + py];
+    });
+    if (!screen.length) return;
+    ctx.beginPath();
+    ctx.moveTo(screen[0][0], screen[0][1]);
+    for (let j = 1; j < screen.length; j++) {
+      ctx.lineTo(screen[j][0], screen[j][1]);
+    }
+    ctx.closePath();
+    ctx.save();
+    ctx.fillStyle = 'rgba(86, 170, 240, 0.22)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(140, 220, 255, 0.95)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
   for (const item of paintItems) {
     if (item.kind === 'ring') renderRingOutline(item.meta);
+    else if (item.kind === 'water') renderWaterDisc(item.disc);
     else _renderCrystalWireframe(ctx, item.crystal, item.cellWorld,
                                   sphereRadiusPx, mmToPx, cx, cy, F);
   }

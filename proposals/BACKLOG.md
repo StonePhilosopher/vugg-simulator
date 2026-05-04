@@ -494,6 +494,24 @@ User-intent rule: prefer crystal-bearing cells over bare-wall ones within 14 px 
 
 Same change refactored `_topoTooltipFromEvent` to consume `_topoHitTest`'s cell directly instead of duplicating the geometry math (the duplication was 2D-only and wouldn't have worked in 3D anyway).
 
+### Water-level mechanic — partial-fill vugs (foundation)
+
+**Status:** **foundation shipped 2026-05-04** (SIM_VERSION 23 → 24). Companion: `PROPOSAL-EVAPORITE-WATER-LEVELS.md`. Bridges directly into `PROPOSAL-AIR-MODE.md`'s air-mode end-to-end.
+
+What landed:
+- `VugConditions.fluid_surface_ring: float | None` — the meniscus position along the polar axis. None = fully submerged (legacy default; existing scenarios stay byte-identical).
+- `VugConditions.ring_water_state(ring_idx, ring_count) -> 'submerged' | 'meniscus' | 'vadose'` classifier on both Python and JS sides.
+- Nucleation reads the ring's water state and stamps `Crystal.growth_environment` accordingly (`vadose → 'air'`, otherwise `'fluid'`). The dormant air-mode plumbing from v22 now has a real trigger.
+- 3D renderer paints a translucent blue meniscus disc at the surface latitude, sorted into the painter's order so it occludes correctly with rings/crystals.
+- Tests: `tests/test_water_levels.py` covers default-submerged, partial-fill, integer-boundary, fully-drained, fully-flooded, single-ring, and the air/fluid stamping invariant. Baseline `seed42_v24.json` is byte-identical to v23 (legacy default keeps behavior stable).
+
+What's NOT in the foundation (deferred to follow-on stages, in order of likely-next):
+1. **Renderer tier-2 polish:** disc Z-occlusion is done at disc-centre granularity; objects straddling the disc's z get a coarse painter's-order tie. Per-segment splitting if it reads wrong at extreme tilts.
+2. **Scenario events** that mutate `fluid_surface_ring` over time (drainage, refill, evaporation drift). Schema slot in `data/scenarios.json5` event types — none currently uses the field.
+3. **Air-mode habit consequences** — once a meaningful population of crystals is stamped 'air', wire `Crystal.growth_environment === 'air'` to a stalactite/dripstone primitive in the wireframe renderer (covered by `PROPOSAL-AIR-MODE.md` Stage A).
+4. **Evaporite-specific minerals** — gypsum/halite/borax with concentration-multiplier saturation gates, meniscus-zone preference (`PROPOSAL-EVAPORITE-WATER-LEVELS.md` items 3-5).
+5. **Concentration multiplier** as evaporation removes water mass — currently the surface drops without raising the salinity of remaining rings.
+
 ### Phase D v2 — mineral-spec orientation hints
 
 **Status:** **shipped 2026-05-04**. See companion `PROPOSAL-AIR-MODE.md` for the air-mode-specific extension (a separate future task).
