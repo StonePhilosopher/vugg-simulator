@@ -54,7 +54,7 @@ import math
 import os
 import random
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, replace
 from typing import List, Dict, Optional, Tuple
 
 
@@ -359,7 +359,17 @@ from typing import List, Dict, Optional, Tuple
 #          thresholds (>=10/>=5, matches research's "rare two-parent
 #          mineral" framing). Pre-v17 JS T cap at 250°C was way too
 #          lenient.
-SIM_VERSION = 18
+SIM_VERSION = 19
+
+# Phase C of PROPOSAL-3D-SIMULATION (= proposal's "Phase 2"): per-ring
+# chemistry scaffolding. Each ring carries its own FluidChemistry +
+# temperature; inter-ring diffusion homogenizes them slowly. Rate is
+# the per-step fraction of the difference exchanged between adjacent
+# rings — small enough that a vertical gradient survives many steps,
+# large enough that uniform broth stays uniform under floating-point
+# rounding. Scenarios that don't seed a vertical gradient see all rings
+# identical at every step (forward-simulation byte-equality preserved).
+DEFAULT_INTER_RING_DIFFUSION_RATE = 0.05
 
 
 # ============================================================
@@ -13204,7 +13214,67 @@ class VugSimulator:
             secondary_bubbles=conditions.wall.secondary_bubbles,
             shape_seed=conditions.wall.shape_seed,
         )
-    
+
+        # Phase C of PROPOSAL-3D-SIMULATION: per-ring fluid + temperature
+        # storage. Initialized as deep copies of the global so all rings
+        # start identical. Inter-ring diffusion (run at end of each step)
+        # equilibrates them. v0 doesn't yet use ring_fluids for growth —
+        # grow functions still read self.conditions.fluid. v1 wires growth
+        # to read self.ring_fluids[crystal.wall_ring_index]. This commit
+        # is pure scaffolding; the data shape is what Phase D needs to
+        # add orientation-aware habits.
+        n_rings = self.wall_state.ring_count
+        self.ring_fluids: List[FluidChemistry] = [
+            replace(self.conditions.fluid) for _ in range(n_rings)
+        ]
+        self.ring_temperatures: List[float] = [self.conditions.temperature] * n_rings
+        self.inter_ring_diffusion_rate: float = DEFAULT_INTER_RING_DIFFUSION_RATE
+        # Cache the FluidChemistry numeric fields once — used by the
+        # diffusion loop to walk every component without paying for the
+        # dataclasses.fields() call on each step.
+        self._fluid_field_names: Tuple[str, ...] = tuple(
+            f.name for f in fields(FluidChemistry)
+        )
+
+    def _diffuse_ring_state(self, rate: float = None) -> None:
+        """Phase C inter-ring homogenization. One discrete-Laplacian step
+        per fluid component and per temperature, with Neumann (no-flux)
+        boundary conditions at the floor and ceiling rings.
+
+        For uniform rings this is a no-op (Laplacian of a constant is
+        zero), which preserves byte-equality for default scenarios. For
+        non-uniform rings, the gradient relaxes by `rate * (neighbor
+        sum - 2*self)` per step.
+
+        Old values are read into a snapshot before any writes so each
+        ring's update sees the pre-step state of its neighbors — without
+        this, ring k+1's update would already see ring k's new value
+        and the diffusion would be asymmetric.
+        """
+        if rate is None:
+            rate = self.inter_ring_diffusion_rate
+        if rate <= 0:
+            return
+        n = len(self.ring_fluids)
+        if n <= 1:
+            return
+        # Diffuse each fluid component independently.
+        for fname in self._fluid_field_names:
+            old = [getattr(rf, fname) for rf in self.ring_fluids]
+            for k in range(n):
+                kp = k - 1 if k > 0 else 0       # Neumann: ring -1 reuses ring 0
+                kn = k + 1 if k < n - 1 else n - 1
+                new_val = old[k] + rate * (old[kp] + old[kn] - 2.0 * old[k])
+                setattr(self.ring_fluids[k], fname, new_val)
+        # Diffuse temperature with the same scheme.
+        old_t = list(self.ring_temperatures)
+        for k in range(n):
+            kp = k - 1 if k > 0 else 0
+            kn = k + 1 if k < n - 1 else n - 1
+            self.ring_temperatures[k] = old_t[k] + rate * (
+                old_t[kp] + old_t[kn] - 2.0 * old_t[k]
+            )
+
     def nucleate(self, mineral: str, position: str = "vug wall",
                  sigma: float = 1.0) -> Crystal:
         """Nucleate a new crystal. `sigma` (current supersaturation for this
@@ -15463,7 +15533,14 @@ class VugSimulator:
         
         # Ambient cooling
         self.ambient_cooling()
-        
+
+        # Phase C: inter-ring fluid/temperature diffusion runs at the
+        # very end of the step so chemistry exchanges happen against a
+        # stable post-events post-growth state. No-op when all rings
+        # carry identical values (Laplacian of a constant is zero) —
+        # this preserves byte-equality for default scenarios.
+        self._diffuse_ring_state()
+
         return self.log
     
     def format_header(self) -> str:

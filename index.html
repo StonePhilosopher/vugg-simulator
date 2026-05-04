@@ -3908,6 +3908,23 @@ const SIM_VERSION = 17;
 // PHYSICAL CONSTANTS AND MODELS
 // ============================================================
 
+// Phase C of PROPOSAL-3D-SIMULATION: inter-ring diffusion rate. The
+// per-step fraction of the difference exchanged between adjacent rings
+// — small enough that a vertical gradient survives many steps, large
+// enough that uniform broth stays uniform under floating-point
+// rounding. Mirrors DEFAULT_INTER_RING_DIFFUSION_RATE in vugg.py.
+const DEFAULT_INTER_RING_DIFFUSION_RATE = 0.05;
+
+// Phase C: clone a FluidChemistry instance. Used to seed each ring's
+// fluid as an independent copy of the scenario's global fluid so
+// later mutation on one ring doesn't leak to others.
+function _cloneFluid(src) {
+  if (!src) return new FluidChemistry();
+  // Pass src as the opts object — every numeric field becomes the
+  // matching opts.X ?? default, picking up the source value.
+  return new FluidChemistry(src);
+}
+
 class FluidChemistry {
   constructor(opts = {}) {
     this.SiO2 = opts.SiO2 ?? 500.0;
@@ -12449,6 +12466,63 @@ class VugSimulator {
     // the end of each step; small (~120 cells × ~4 numbers × 100-200
     // steps), so the memory cost of a whole run is trivial.
     this.wall_state_history = [];
+
+    // Phase C of PROPOSAL-3D-SIMULATION: per-ring fluid + temperature
+    // storage. Initialized as deep copies of the global so all rings
+    // start identical; inter-ring diffusion (run at end of each step)
+    // equilibrates them. v0 doesn't yet use ring_fluids for growth —
+    // grow functions still read this.conditions.fluid. v1 wires growth
+    // to read this.ring_fluids[crystal.wall_ring_index]. This commit
+    // is pure scaffolding; the data shape is what Phase D needs to
+    // add orientation-aware habits. See vugg.py mirror.
+    const nRings = this.wall_state.ring_count;
+    this.ring_fluids = [];
+    for (let r = 0; r < nRings; r++) {
+      this.ring_fluids.push(_cloneFluid(this.conditions.fluid));
+    }
+    this.ring_temperatures = new Array(nRings).fill(this.conditions.temperature);
+    this.inter_ring_diffusion_rate = DEFAULT_INTER_RING_DIFFUSION_RATE;
+    // Cache the FluidChemistry numeric field names once for the
+    // diffusion loop. Pulled from a fresh instance so any future field
+    // additions to FluidChemistry pick up automatically — no separate
+    // list to keep in sync. Filtered to numeric fields (the only kind
+    // FluidChemistry currently has, but defensive).
+    this._fluidFieldNames = Object.keys(new FluidChemistry()).filter(
+      k => typeof (new FluidChemistry()[k]) === 'number'
+    );
+  }
+
+  // Phase C inter-ring homogenization. One discrete-Laplacian step per
+  // fluid component and per temperature, with Neumann (no-flux)
+  // boundary conditions at the floor and ceiling rings.
+  //
+  // Uniform rings → no-op (Laplacian of a constant is zero), which
+  // preserves byte-equality for default scenarios. Non-uniform rings
+  // relax the gradient by `rate * (neighbor sum - 2*self)` per step.
+  //
+  // Old values are read into a snapshot before any writes so each
+  // ring's update sees the pre-step state of its neighbors —
+  // otherwise ring k+1's update would already see ring k's new value
+  // and the diffusion would be asymmetric.
+  _diffuseRingState(rate) {
+    if (rate == null) rate = this.inter_ring_diffusion_rate;
+    if (!(rate > 0)) return;
+    const n = this.ring_fluids.length;
+    if (n <= 1) return;
+    for (const fname of this._fluidFieldNames) {
+      const old = this.ring_fluids.map(rf => rf[fname]);
+      for (let k = 0; k < n; k++) {
+        const kp = k > 0 ? k - 1 : 0;
+        const kn = k < n - 1 ? k + 1 : n - 1;
+        this.ring_fluids[k][fname] = old[k] + rate * (old[kp] + old[kn] - 2 * old[k]);
+      }
+    }
+    const oldT = this.ring_temperatures.slice();
+    for (let k = 0; k < n; k++) {
+      const kp = k > 0 ? k - 1 : 0;
+      const kn = k < n - 1 ? k + 1 : n - 1;
+      this.ring_temperatures[k] = oldT[k] + rate * (oldT[kp] + oldT[kn] - 2 * oldT[k]);
+    }
   }
 
   nucleate(mineral, position = 'vug wall', sigma = 1.0) {
@@ -14468,6 +14542,14 @@ class VugSimulator {
     this._repaintWallState();
 
     this.ambient_cooling();
+
+    // Phase C: inter-ring fluid/temperature diffusion runs at the
+    // very end of the step so chemistry exchanges happen against a
+    // stable post-events post-growth state. No-op when all rings
+    // carry identical values (Laplacian of a constant is zero) —
+    // this preserves byte-equality for default scenarios.
+    this._diffuseRingState();
+
     return this.log;
   }
 
