@@ -12666,6 +12666,33 @@ function applyParamorphTransitions(crystal, T, step) {
 // SIMULATION ENGINE
 // ============================================================
 
+// Phase D v2: per-mineral nucleation orientation preference. Mirrors
+// vugg.py's ORIENTATION_PREFERENCE — see SIM_VERSION 23 comment there
+// for the geological reasoning + per-mineral citations. Most species
+// are spatially neutral and stay out of this table; the area-weighted
+// fallback in _assignWallRing handles them. Format: mineral name →
+// [preferred_orientation, strength_factor]. Strength 3.0 = strong
+// (Naica selenite tier), 1.5 = weak (most entries).
+const ORIENTATION_PREFERENCE = {
+  // Floor (strong) — Naica-style subaqueous pool growth.
+  selenite:      ['floor', 3.0],
+  // Floor (weak) — density / micro-cluster settling, supergene fluid pooling.
+  galena:        ['floor', 1.5],
+  malachite:     ['floor', 1.5],
+  azurite:       ['floor', 1.5],
+  barite:        ['floor', 1.5],
+  celestine:     ['floor', 1.5],
+  goethite:      ['floor', 1.5],
+  native_gold:   ['floor', 1.5],
+  native_silver: ['floor', 1.5],
+  smithsonite:   ['floor', 1.5],
+  // Ceiling (weak) — iron-rose specular rosettes from convective Fe transport.
+  hematite:      ['ceiling', 1.5],
+  // Wall (weak) — acicular sprays grow perpendicular to lateral substrate.
+  stibnite:      ['wall', 1.5],
+  bismuthinite:  ['wall', 1.5],
+};
+
 class VugSimulator {
   constructor(conditions, events) {
     this.conditions = conditions;
@@ -12823,7 +12850,7 @@ class VugSimulator {
     // nucleations get a random ring (Phase C v1: scatter across the
     // sphere wall; Phase D will weight by orientation).
     crystal.wall_center_cell = this._assignWallCell(position);
-    crystal.wall_ring_index = this._assignWallRing(position);
+    crystal.wall_ring_index = this._assignWallRing(position, mineral);
 
     // Dominant-form strings describe crystallographic faces and aren't
     // governed by the habit variant; keep per-mineral defaults.
@@ -13046,8 +13073,10 @@ class VugSimulator {
   // Phase C v1: pick a ring for a nucleating crystal. Host-substrate
   // overgrowths inherit the host's ring (so pseudomorphs land on
   // the same latitude); free-wall nucleations get a random ring.
+  // Phase D v2: per-mineral orientation bias (see ORIENTATION_PREFERENCE
+  // module-level table). Spatially neutral minerals stay area-weighted.
   // Mirrors VugSimulator._assign_wall_ring in vugg.py.
-  _assignWallRing(position) {
+  _assignWallRing(position, mineral) {
     let hostId = null;
     const hashIdx = position.indexOf(' #');
     if (hashIdx >= 0) {
@@ -13070,6 +13099,16 @@ class VugSimulator {
       const w = this.wall_state.ringAreaWeight(k);
       weights.push(w);
       total += w;
+    }
+    // Phase D v2: per-mineral preferred-orientation bias.
+    const pref = mineral ? ORIENTATION_PREFERENCE[mineral] : null;
+    if (pref && n > 1) {
+      const [target, strength] = pref;
+      total = 0;
+      for (let k = 0; k < n; k++) {
+        if (this.wall_state.ringOrientation(k) === target) weights[k] *= strength;
+        total += weights[k];
+      }
     }
     if (total <= 0) total = 1;
     let r = rng.random() * total;
