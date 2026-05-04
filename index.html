@@ -21508,6 +21508,39 @@ function _topoPaintPlaceholder(canvas, text) {
   }
 }
 
+// Phase B (Tier 1.5) — per-vertex 3D projection helper.
+// Maps a world-space point (relative to the scene origin) to a screen-
+// space point via Yaw → Pitch rotation + perspective. Replaces the
+// tier-1 CSS transform: projection done in canvas math instead of GPU
+// composite, so per-cell vertices land where the user actually sees
+// them (and depth-sorting / multi-ring stacking become possible).
+//
+//   wx, wy, wz : world-space coords in px (z+ toward camera at zero tilt)
+//   tiltX, tiltY : pitch and yaw in radians
+//   F : perspective focal length in px (1200 matches tier-1's CSS perspective())
+//
+// Returns [screenX, screenY, projectedZ] — screenX/Y are offsets from
+// the scene origin (caller adds cx/cy). projectedZ is post-rotation z,
+// useful for back-to-front depth sorting (smallest first = farthest).
+function _topoProject3D(wx, wy, wz, tiltX, tiltY, F) {
+  // Yaw around Y first, so x rotates with z.
+  const cy_ = Math.cos(tiltY), sy_ = Math.sin(tiltY);
+  const x1 = cy_ * wx + sy_ * wz;
+  const y1 = wy;
+  const z1 = -sy_ * wx + cy_ * wz;
+  // Pitch around X next, so y rotates with z.
+  const cx_ = Math.cos(tiltX), sx_ = Math.sin(tiltX);
+  const x2 = x1;
+  const y2 = cx_ * y1 - sx_ * z1;
+  const z2 = sx_ * y1 + cx_ * z1;
+  // Perspective divide. Clamp denominator so points at/behind the
+  // camera don't flip wildly — they'll be pushed off-screen but still
+  // produce finite numbers the canvas API accepts.
+  const denom = F - z2;
+  const scale = F / (denom < 1 ? 1 : denom);
+  return [x2 * scale, y2 * scale, z2];
+}
+
 function topoRender(optOverrideRing) {
   const canvas = document.getElementById('topo-canvas');
   const panel = document.getElementById('topo-panel');
@@ -21606,6 +21639,16 @@ function topoRender(optOverrideRing) {
   if (maxT <= 0) maxT = 1;
 
   const arcStep = 2 * Math.PI / N;
+
+  // Phase B branch — 3D mode renders all rings stacked along a vertical
+  // axis using per-vertex projection. Hands off to _topoRenderRings3D
+  // and short-circuits the rest of the 2D path. 2D mode falls through
+  // unchanged. See PROPOSAL-3D-TOPO-VUG.md ("Tier 1.5") for design.
+  if (_topoView3D && wall && wall.rings && wall.rings.length) {
+    _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy,
+                       mmToPx, maxT, arcStep, N, viewW, viewH);
+    return;
+  }
 
   // Radial wedges: each occupied cell gets a Bezier-bounded wedge.
   // Outer edge arcs from boundary_start → cell_midpoint → boundary_end
@@ -21846,6 +21889,172 @@ function topoRender(optOverrideRing) {
   }
 }
 
+// Phase B (Tier 1.5) — 3D multi-ring renderer.
+// Called from topoRender when _topoView3D is true. Renders every ring
+// in wall.rings stacked along a vertical (Y) axis, using per-vertex
+// projection through _topoProject3D. Rings are sorted back-to-front by
+// projected Z so painter's algorithm gives correct occlusion.
+//
+// Phase A invariant: only ring[0] holds crystals; rings 1..N-1 hold
+// pristine WallCell defaults. So this function paints one set of
+// crystal wedges (on ring[0]) plus N wall-outline rings. Phase C
+// extends the wedge loop to render crystals on every ring.
+//
+// What's intentionally simplified for v0:
+//   * Habit textures (sawtooth/botryoidal/etc) collapse to smooth
+//     Bezier — drawHabitTexture's chord math doesn't compose with
+//     arbitrary projection without a rewrite.
+//   * Inclusion dots are skipped (they live on ring[0] only; tier-1
+//     hit-test was already broken in 3D mode, so dropping them now
+//     doesn't regress anything).
+//   * Scale bar is skipped — its physical-distance reading is
+//     ambiguous when the disc is tilted.
+function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
+                             cx, cy, mmToPx, maxT, arcStep, N, viewW, viewH) {
+  const F = 1200;  // perspective focal length, matches tier-1's CSS perspective(1200px)
+  const ringCount = wall.ring_count;
+  // Visual ring spacing: render the cavity as roughly cubic regardless
+  // of the data model's ring_spacing_mm (which is 1mm by default — too
+  // squat for a 50mm-wide cavity). Total visual height = cavity
+  // diameter, so the cavity reads as a sphere/cylinder, not a coin.
+  const cavityDiameterPx = wall.meanDiameterMm() * mmToPx;
+  const ringSpacingPx = cavityDiameterPx / Math.max(ringCount - 1, 1);
+  const halfStack = (ringCount - 1) * ringSpacingPx / 2;
+
+  // Build (ringIdx, wz, projZ) tuples and sort by projZ ascending so
+  // far rings paint first.
+  const ringOrder = [];
+  for (let r = 0; r < ringCount; r++) {
+    // Ring 0 is the floor (wz negative, below the camera-facing center
+    // when viewing from above); ring N-1 is the ceiling (wz positive).
+    // Rotation around Y doesn't change wz when the ring's center sits
+    // on the rotation axis, so projected Z just depends on tiltX.
+    const wz = (r - (ringCount - 1) / 2) * ringSpacingPx;
+    const projZ = Math.cos(_topoTiltX) * wz;  // small-angle yaw doesn't move ring centers in z
+    ringOrder.push({ ringIdx: r, wz, projZ });
+  }
+  ringOrder.sort((a, b) => a.projZ - b.projZ);
+
+  // Project a (canvasX, canvasY) point at this ring's height to screen.
+  // canvasX/Y are absolute canvas coords (already include cx/cy), so we
+  // subtract before projecting and add cx/cy back afterward.
+  function projAt(wz) {
+    return (canvasX, canvasY) => {
+      const wx = canvasX - cx;
+      const wy = canvasY - cy;
+      const [px, py] = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
+      return [cx + px, cy + py];
+    };
+  }
+
+  for (const { ringIdx, wz } of ringOrder) {
+    const ring = wall.rings[ringIdx];
+    if (!ring || !ring.length) continue;
+    const proj = projAt(wz);
+    const isCrystalRing = (ringIdx === 0);  // Phase A: only ring[0] paints crystals
+
+    // Crystal wedges (Phase A: only ring[0]; Phase C: every ring with
+    // its own per-ring chemistry will hit this branch).
+    if (isCrystalRing) {
+      for (let i = 0; i < N; i++) {
+        const cell = ring[i];
+        if (cell.crystal_id == null) continue;
+        const a0 = _topoAngleFor(i, N) - arcStep / 2;
+        const aMid = _topoAngleFor(i, N);
+        const a1 = a0 + arcStep;
+        const rStart = boundaryR[i];
+        const rMid = cellR[i];
+        const rEnd = boundaryR[(i + 1) % N];
+        const crystal = sim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
+        const voidReach = crystal ? Math.max(crystal.void_reach, 0.05) : 0.5;
+        const inwardMm = (cell.thickness_um / 1000.0) * voidReach;
+        const inwardPx = Math.max(inwardMm * mmToPx, TOPO_WALL_STROKE_PX + 1);
+        const rStartIn = Math.max(rStart - inwardPx, rStart * (1 - TOPO_CRYSTAL_CAP_FRAC));
+        const rMidIn = Math.max(rMid - inwardPx, rMid * (1 - TOPO_CRYSTAL_CAP_FRAC));
+        const rEndIn = Math.max(rEnd - inwardPx, rEnd * (1 - TOPO_CRYSTAL_CAP_FRAC));
+        // Compute world coords (canvas-plane), then project each.
+        const sxW = cx + rStart * Math.cos(a0), syW = cy + rStart * Math.sin(a0);
+        const mxW = cx + rMid * Math.cos(aMid), myW = cy + rMid * Math.sin(aMid);
+        const exW = cx + rEnd * Math.cos(a1),  eyW = cy + rEnd * Math.sin(a1);
+        const sxInW = cx + rStartIn * Math.cos(a0), syInW = cy + rStartIn * Math.sin(a0);
+        const mxInW = cx + rMidIn * Math.cos(aMid), myInW = cy + rMidIn * Math.sin(aMid);
+        const exInW = cx + rEndIn * Math.cos(a1),  eyInW = cy + rEndIn * Math.sin(a1);
+        const [psx, psy] = proj(sxW, syW);
+        const [pmx, pmy] = proj(mxW, myW);
+        const [pex, pey] = proj(exW, eyW);
+        const [psxIn, psyIn] = proj(sxInW, syInW);
+        const [pmxIn, pmyIn] = proj(mxInW, myInW);
+        const [pexIn, peyIn] = proj(exInW, eyInW);
+        // Bezier control points in screen space — same construction as
+        // 2D, just with projected endpoints/midpoints.
+        const outerCpX = 2 * pmx - (psx + pex) / 2;
+        const outerCpY = 2 * pmy - (psy + pey) / 2;
+        const innerCpX = 2 * pmxIn - (psxIn + pexIn) / 2;
+        const innerCpY = 2 * pmyIn - (psyIn + peyIn) / 2;
+        ctx.globalAlpha = topoAlphaFor(cell.mineral);
+        ctx.fillStyle = topoClassColor(cell.mineral);
+        ctx.beginPath();
+        ctx.moveTo(psx, psy);
+        ctx.quadraticCurveTo(outerCpX, outerCpY, pex, pey);
+        ctx.lineTo(pexIn, peyIn);
+        // v0 collapses habit textures to smooth Bezier — see header.
+        ctx.quadraticCurveTo(innerCpX, innerCpY, psxIn, psyIn);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Wall outline for this ring.
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let i = 0; i < N; i++) {
+      const a0 = _topoAngleFor(i, N) - arcStep / 2;
+      const aMid = _topoAngleFor(i, N);
+      const a1 = a0 + arcStep;
+      const rStart = boundaryR[i];
+      const rMid = cellR[i];
+      const rEnd = boundaryR[(i + 1) % N];
+      const cell = ring[i];
+      let stroke, width, alpha;
+      if (cell.crystal_id == null) {
+        // Bare wall — amber. Rings 1..N-1 in Phase A always take this
+        // path; ring 0 takes it for unpainted cells.
+        stroke = TOPO_WALL_COLOR;
+        width = TOPO_WALL_STROKE_PX;
+        alpha = 1;
+      } else {
+        stroke = topoClassColor(cell.mineral);
+        const t = Math.min(cell.thickness_um / maxT, 1);
+        width = TOPO_WALL_STROKE_PX + t * (TOPO_WALL_STROKE_MAX_PX - TOPO_WALL_STROKE_PX);
+        alpha = topoAlphaFor(cell.mineral);
+      }
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = width;
+      const sxW = cx + rStart * Math.cos(a0), syW = cy + rStart * Math.sin(a0);
+      const mxW = cx + rMid * Math.cos(aMid), myW = cy + rMid * Math.sin(aMid);
+      const exW = cx + rEnd * Math.cos(a1),  eyW = cy + rEnd * Math.sin(a1);
+      const [psx, psy] = proj(sxW, syW);
+      const [pmx, pmy] = proj(mxW, myW);
+      const [pex, pey] = proj(exW, eyW);
+      const cpX = 2 * pmx - (psx + pex) / 2;
+      const cpY = 2 * pmy - (psy + pey) / 2;
+      ctx.beginPath();
+      ctx.moveTo(psx, psy);
+      ctx.quadraticCurveTo(cpX, cpY, pex, pey);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Vug size readout — same HTML overlay as 2D mode.
+  const sizeLabel = document.getElementById('topo-vug-size');
+  if (sizeLabel) {
+    sizeLabel.textContent = `Vug ⌀ ${wall.meanDiameterMm().toFixed(1)} mm × ${ringCount} rings`;
+  }
+}
+
 // Hit-test: resolve (mouseX, mouseY) on the canvas into a mineral
 // under the cursor. Returns { mineral, isInclusion, cell } or null
 // if the cursor is not on a crystal. Called by both the tooltip and
@@ -22078,22 +22287,19 @@ function topoRecenter() {
   topoRender();
 }
 
-// Apply (or clear) the CSS 3D transform on the canvas element. Called
-// whenever _topoView3D / _topoTiltX / _topoTiltY change. 2D mode leaves
-// the canvas un-transformed; 3D mode tilts it via rotateX + rotateY.
-// perspective() sits in front so the tilt produces real foreshortening.
+// Phase B (Tier 1.5): tilt is now applied per-vertex inside topoRender's
+// 3D branch (_topoRenderRings3D), not via a CSS transform on the canvas
+// element. This function stays as a no-op + cleanup hook so existing
+// callers (topoSetDragMode, topoRecenter) don't need to change. It also
+// clears any leftover CSS transform from a tier-1 build whose state
+// somehow survived (e.g. cached page) — defensive.
 function _topoApplyTransform() {
   const canvas = document.getElementById('topo-canvas');
   if (!canvas) return;
-  if (!_topoView3D) {
+  if (canvas.style.transform) {
     canvas.style.transform = '';
     canvas.style.transformOrigin = '';
-    return;
   }
-  const rx = (_topoTiltX * 180 / Math.PI).toFixed(2);
-  const ry = (_topoTiltY * 180 / Math.PI).toFixed(2);
-  canvas.style.transformOrigin = 'center center';
-  canvas.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg)`;
 }
 
 // Wire hover + zoom wheel + click-drag pan once — called from the
@@ -22165,10 +22371,12 @@ function _topoPanMouseMove(ev) {
   if (_topoDragMode === 'rotate') {
     // Vertical drag → rotateX (pitch); horizontal drag → rotateY (yaw).
     // Negative dy gives intuitive "pull up to tilt toward viewer" feel.
+    // Phase B (Tier 1.5): no tilt clamp — per-vertex projection has no
+    // geometric edge cases at vertical (the tier-1 ±86° clamp existed
+    // only because CSS transform got weird past edge-on).
     _topoTiltX = _topoDragOriginTiltX + (-dy) * TOPO_DRAG_ROTATE_RAD_PER_PX;
     _topoTiltY = _topoDragOriginTiltY + dx * TOPO_DRAG_ROTATE_RAD_PER_PX;
-    _topoTiltX = Math.max(-TOPO_TILT_X_MAX, Math.min(TOPO_TILT_X_MAX, _topoTiltX));
-    _topoApplyTransform();
+    topoRender();
   } else {
     // 'default' or 'pan' mode — both translate pan offsets.
     _topoPanX = _topoDragOriginPanX + dx;
