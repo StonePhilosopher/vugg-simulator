@@ -355,7 +355,14 @@ h1 {
 }
 .topo-canvas-wrap { flex: 1 1 auto; min-width: 0; }
 @media (max-width: 600px) {
-  #topo-canvas { height: 260px; }
+  /* On narrow viewports the legend stacks above the canvas (rather than
+     sitting next to it), and the legend gets denser to save vertical
+     space. The canvas height is NOT capped here — it inherits its
+     stage's 200% height (CSS rule for #topo-canvas in the main block)
+     so the rendered cavity scales with the wrap, not with viewport
+     width. Pre-2026-05 the cap was 260px, which left the cavity at
+     ~33px diameter on phones — Phase B's 3D ring-stack made that
+     unusable, so the cap came out. */
   .topo-body { flex-direction: column; gap: 0.4rem; }
   .topo-legend-drop { min-width: 0; align-self: stretch; }
   .topo-legend { font-size: 0.65rem; }
