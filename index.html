@@ -172,6 +172,36 @@ h1 {
   user-select: none;
 }
 
+/* Slice stepper — top-left of the canvas wrap. Lets the player flip
+   through the 16 rings of cavity data in 2D mode (with an "all
+   slices" aggregate at one end of the cycle, which is the default
+   behavior post-Phase-C-v1). Hidden in 3D mode where every ring
+   is rendered stacked. Mirrors the zoom-ctrls styling on the right. */
+.topo-slice-ctrls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(20, 20, 14, 0.75);
+  border: 1px solid #3a3520;
+  border-radius: 16px;
+  padding: 2px 6px;
+  backdrop-filter: blur(2px);
+  z-index: 5;
+}
+.topo-slice-label {
+  color: #8a7a40;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  min-width: 5.6rem;
+  text-align: center;
+  user-select: none;
+  font-family: "Courier New", monospace;
+}
+body.topo-view-3d .topo-slice-ctrls { display: none; }
+
 /* Camera mode cluster — sits to the LEFT of the play button. Rotate
    / Pan are mutually-exclusive drag modes; Recenter resets pan+tilt. */
 .topo-camera-ctrls {
@@ -275,6 +305,14 @@ h1 {
   height: 100%;    /* fills the stage (which is 200% of wrap) */
   background: transparent;
   cursor: crosshair;
+  /* `touch-action: none` lets the JS drag handler take over touch
+     gestures on the canvas — without it, mobile browsers default to
+     panning the page when the user swipes inside the canvas, and the
+     rotate / pan / hit-test handlers never see the move events. The
+     side effect is that vertical scrolling is blocked when the finger
+     starts on the canvas; users have to scroll using the page area
+     above or below it (same trade-off every map widget makes). */
+  touch-action: none;
 }
 .topo-tooltip {
   /* Must be `fixed` (not `absolute`) — same reason as .groove-tooltip below.
@@ -2378,6 +2416,11 @@ footer a:hover {
         <button class="topo-zoom-btn" onclick="topoZoom(-1)" title="Zoom out">−</button>
         <span id="topo-zoom-label" class="topo-zoom-label">100%</span>
         <button class="topo-zoom-btn" onclick="topoZoom(+1)" title="Zoom in">+</button>
+      </div>
+      <div class="topo-slice-ctrls">
+        <button class="topo-zoom-btn" onclick="topoCycleSlice(-1)" title="Previous slice (or aggregate view)">◀</button>
+        <span id="topo-slice-label" class="topo-slice-label">All slices</span>
+        <button class="topo-zoom-btn" onclick="topoCycleSlice(+1)" title="Next slice (or aggregate view)">▶</button>
       </div>
       <div class="topo-camera-ctrls">
         <button class="topo-zoom-btn" id="topo-rotate-btn" onclick="topoSetDragMode('rotate')" title="Rotate camera (drag to orbit in 3D)">↻</button>
@@ -21330,6 +21373,13 @@ let _topoDragMode = 'default';
 // _topoView3D is derived: true iff _topoDragMode === 'rotate'. Kept
 // around as a variable because render/hit-test still read it.
 let _topoView3D = false;
+// Phase C v1+: 2D mode can show either the aggregate ring (every
+// crystal across every ring projected to a single slice — the post-
+// scatter default) or one specific ring index. `'aggregate'` ⇄ ints
+// 0..ring_count-1. The stepper buttons in `.topo-slice-ctrls` cycle
+// through them. Hidden in 3D mode (where every ring is rendered
+// stacked anyway) via `body.topo-view-3d` CSS.
+let _topoActiveSlice = 'aggregate';
 let _topoTiltX = 0;                   // pitch (viewer above/below)
 let _topoTiltY = 0;                   // yaw   (viewer left/right of disc)
 const TOPO_TILT_X_MAX = Math.PI / 2 - 0.05;   // don't flip past vertical
@@ -21870,6 +21920,107 @@ function _topoProject3D(wx, wy, wz, tiltX, tiltY, F) {
   return [x2 * scale, y2 * scale, z2];
 }
 
+// Phase C v1 made crystals scatter across all rings, but the 2D topo
+// strip and the hit-test were still reading rings[0] only — which
+// after scatter is mostly empty. Result: 2D mode mostly hid crystals,
+// and hover-tooltip mostly returned "vugg wall" because the queried
+// ring 0 cell was empty. This helper builds a synthetic "aggregate
+// ring": for each cell index, the most-prominent crystal across any
+// ring is collapsed onto one slot. Geometry (base_radius_mm) is taken
+// from rings[0] since that's uniform across rings. Lossy — the 2D
+// view can't tell which ring a crystal was on — but it makes
+// everything visible and hover-clickable.
+function _topoAggregateRing(wall) {
+  if (!wall || !wall.rings || !wall.rings.length) return [];
+  const ring0 = wall.rings[0];
+  const N = ring0.length;
+  // Shallow-copy ring 0 so we can overlay other rings without mutating
+  // the simulation state.
+  const out = ring0.map(c => ({
+    wall_depth: c.wall_depth,
+    crystal_id: c.crystal_id,
+    mineral: c.mineral,
+    thickness_um: c.thickness_um,
+    base_radius_mm: c.base_radius_mm,
+  }));
+  // For each cell index, walk rings[1..] and take the thickest
+  // crystal seen. Ties go to the lowest ring index (deterministic).
+  for (let r = 1; r < wall.rings.length; r++) {
+    const ring = wall.rings[r];
+    if (!ring || !ring.length) continue;
+    for (let i = 0; i < N; i++) {
+      const cell = ring[i];
+      if (cell.crystal_id == null) continue;
+      if (cell.thickness_um > out[i].thickness_um) {
+        out[i].crystal_id = cell.crystal_id;
+        out[i].mineral = cell.mineral;
+        out[i].thickness_um = cell.thickness_um;
+      }
+    }
+  }
+  return out;
+}
+
+// Slice resolver: returns the ring data the 2D path should display
+// based on `_topoActiveSlice`. 'aggregate' → aggregate ring (post-
+// scatter default); int N → wall.rings[N] directly. Out-of-range
+// indices clamp back to aggregate so the stepper can never wedge
+// itself on a stale ring count after a scenario reload.
+function _topoActiveRingForRender(wall) {
+  if (!wall || !wall.rings || !wall.rings.length) return [];
+  if (_topoActiveSlice === 'aggregate') return _topoAggregateRing(wall);
+  const idx = _topoActiveSlice | 0;
+  if (idx < 0 || idx >= wall.rings.length) {
+    _topoActiveSlice = 'aggregate';
+    _topoUpdateSliceLabel(wall);
+    return _topoAggregateRing(wall);
+  }
+  return wall.rings[idx];
+}
+
+// Cycle through [aggregate, 0, 1, ..., ring_count-1, aggregate, ...]
+// in either direction. dir=+1 advances; dir=-1 goes back. Wraps at
+// both ends. Re-renders and updates the label after each step.
+function topoCycleSlice(dir) {
+  const sim = topoActiveSim();
+  const wall = sim ? sim.wall_state : null;
+  const n = wall ? wall.ring_count : 0;
+  if (n <= 1) {
+    // Single-ring sim — no stepper to cycle. Stay aggregated.
+    _topoActiveSlice = 'aggregate';
+    _topoUpdateSliceLabel(wall);
+    return;
+  }
+  // The state space has n + 1 entries: 'aggregate', 0, 1, ..., n-1.
+  // Encode as integers 0..n where 0 = 'aggregate'; cycle there, then
+  // decode back to either 'aggregate' or an int.
+  const cur = (_topoActiveSlice === 'aggregate') ? 0 : (_topoActiveSlice + 1);
+  const next = ((cur + dir) % (n + 1) + (n + 1)) % (n + 1);
+  _topoActiveSlice = (next === 0) ? 'aggregate' : (next - 1);
+  _topoUpdateSliceLabel(wall);
+  topoRender();
+}
+
+// Repaint the slice-stepper label to match `_topoActiveSlice`.
+// Called from topoCycleSlice and from topoRender (so the label stays
+// in sync if a scenario reload trims the ring count under us).
+function _topoUpdateSliceLabel(wall) {
+  const lab = document.getElementById('topo-slice-label');
+  if (!lab) return;
+  if (_topoActiveSlice === 'aggregate') {
+    lab.textContent = 'All slices';
+    return;
+  }
+  const idx = _topoActiveSlice | 0;
+  const orient = (wall && wall.ringOrientation)
+    ? wall.ringOrientation(idx) : '';
+  const total = wall ? wall.ring_count : 0;
+  // "5/16 wall" — compact; the orientation tag tells the player
+  // they're looking at a floor / wall / ceiling slice without a
+  // separate UI element.
+  lab.textContent = `${idx + 1}/${total} ${orient}`.trim();
+}
+
 function topoRender(optOverrideRing) {
   const canvas = document.getElementById('topo-canvas');
   const panel = document.getElementById('topo-panel');
@@ -21877,7 +22028,12 @@ function topoRender(optOverrideRing) {
 
   const sim = topoActiveSim();
   const wall = sim ? sim.wall_state : null;
-  const ring0 = optOverrideRing || (wall && wall.rings[0]);
+  // Slice stepper resolves to either the aggregate (default) or a
+  // specific ring index. Replay snapshots are already a single ring
+  // shape, so optOverrideRing falls through unchanged.
+  const ring0 = optOverrideRing || (wall && _topoActiveRingForRender(wall));
+  // Keep the stepper label in sync — cheap, runs every render.
+  if (wall) _topoUpdateSliceLabel(wall);
 
   // Empty-state guard: no active sim or no ring data yet (fresh page,
   // pre-first-Grow). Paint a centered placeholder so the panel reads as
@@ -22440,7 +22596,13 @@ function _topoHitTest(ev) {
   const canvas = document.getElementById('topo-canvas');
   const sim = topoActiveSim();
   if (!canvas || !sim) return null;
-  const ring0 = sim.wall_state.rings[0];
+  // Hit-test reads whatever ring the renderer is currently showing.
+  // Aggregate (post-scatter default) → resolves any crystal on any
+  // ring at the cursor's angular position. Single-slice mode →
+  // resolves only crystals on that specific ring (so hovering a
+  // ceiling-only slice won't pick up floor crystals at the same
+  // angular position).
+  const ring0 = _topoActiveRingForRender(sim.wall_state);
   if (!ring0 || !ring0.length) return null;
   const rect = canvas.getBoundingClientRect();
   const mx = ev.clientX - rect.left;
@@ -22500,7 +22662,9 @@ function _topoTooltipFromEvent(ev) {
   const tip = document.getElementById('topo-tooltip');
   const sim = topoActiveSim();
   if (!canvas || !tip || !sim) return;
-  const ring0 = sim.wall_state.rings[0];
+  // Match whatever ring the renderer / hit-test is currently using.
+  // See _topoActiveRingForRender / topoCycleSlice.
+  const ring0 = _topoActiveRingForRender(sim.wall_state);
   if (!ring0 || !ring0.length) { tip.style.display = 'none'; return; }
   const rect = canvas.getBoundingClientRect();
   const mx = ev.clientX - rect.left;
@@ -22649,6 +22813,11 @@ function topoSetDragMode(mode) {
   const panBtn = document.getElementById('topo-pan-btn');
   if (rotateBtn) rotateBtn.style.color = (mode === 'rotate') ? '#f0c050' : '';
   if (panBtn) panBtn.style.color = (mode === 'pan') ? '#f0c050' : '';
+  // Slice stepper hides in 3D mode (every ring is rendered stacked
+  // there anyway; the per-slice navigation only makes sense in the
+  // top-down 2D view). CSS `body.topo-view-3d .topo-slice-ctrls`
+  // does the actual hiding.
+  document.body.classList.toggle('topo-view-3d', _topoView3D);
   _topoApplyTransform();
   topoRender();
 }
@@ -22695,10 +22864,15 @@ function topoEnsureWired() {
     ev.preventDefault();
     topoZoom(ev.deltaY < 0 ? +1 : -1);
   }, { passive: false });
-  // Click-drag pan. Only starts on mousedown over a NON-crystal area
-  // (void, bare wall, or outside vug) — clicks on crystals fall through
-  // to the existing tooltip / click handlers.
-  canvas.addEventListener('mousedown', _topoPanMouseDown);
+  // Click-drag pan / rotate. Pointer events handle BOTH mouse and
+  // touch from one code path (vs. the old mousedown/mousemove/mouseup
+  // which never fired during touch gestures — emulated mouse events
+  // only arrive after touchend, too late for drag tracking). Modern
+  // browsers (Safari iOS 13+, Chrome, Firefox, Edge) all support
+  // Pointer Events; the canvas's `touch-action: none` CSS lets the
+  // gesture reach this handler instead of being eaten by browser
+  // page-pan defaults.
+  canvas.addEventListener('pointerdown', _topoPanMouseDown);
   window.addEventListener('resize', () => topoRender());
   _topoWired = true;
 }
@@ -22713,7 +22887,15 @@ function topoEnsureWired() {
 let _topoDragOriginTiltX = 0;
 let _topoDragOriginTiltY = 0;
 function _topoPanMouseDown(ev) {
-  if (ev.button !== 0) return;  // left button only
+  // For pointer events, button=0 is the primary button (left mouse,
+  // first touch contact, primary stylus). Right-click / middle-click
+  // / secondary touches are skipped.
+  if (ev.button !== 0) return;
+  // preventDefault on the pointerdown suppresses the browser's
+  // emulated mouse events (which would fire after touchend and
+  // double-trigger handlers) and any default page-scroll gesture
+  // that might still come from a misconfigured touch-action setting.
+  ev.preventDefault();
   // In 'default' mode, clicks on a crystal go to tooltip/click, not drag.
   // In 'rotate' or 'pan' modes, drag starts from anywhere on the canvas.
   if (_topoDragMode === 'default') {
@@ -22727,8 +22909,12 @@ function _topoPanMouseDown(ev) {
   _topoDragOriginPanY = _topoPanY;
   _topoDragOriginTiltX = _topoTiltX;
   _topoDragOriginTiltY = _topoTiltY;
-  document.addEventListener('mousemove', _topoPanMouseMove);
-  document.addEventListener('mouseup', _topoPanMouseUp);
+  document.addEventListener('pointermove', _topoPanMouseMove);
+  document.addEventListener('pointerup', _topoPanMouseUp);
+  // `pointercancel` covers cases where the OS interrupts the gesture
+  // (e.g. iOS palm rejection, system-level edge swipe) — without
+  // handling it, the document-level listeners can leak.
+  document.addEventListener('pointercancel', _topoPanMouseUp);
 }
 
 // Document-level mousemove during a candidate drag. Only commits once
@@ -22762,12 +22948,15 @@ function _topoPanMouseMove(ev) {
   }
 }
 
-// Mouseup ends the drag and tears down the document-level listeners.
-// If the user never crossed the movement threshold, the click event
-// will still fire on the canvas (browser default behavior).
+// Pointerup / pointercancel ends the drag and tears down the
+// document-level listeners. If the user never crossed the movement
+// threshold, the click event will still fire on the canvas (browser
+// default behavior — pointerup on the same target as pointerdown
+// without enough motion triggers a synthetic click).
 function _topoPanMouseUp() {
-  document.removeEventListener('mousemove', _topoPanMouseMove);
-  document.removeEventListener('mouseup', _topoPanMouseUp);
+  document.removeEventListener('pointermove', _topoPanMouseMove);
+  document.removeEventListener('pointerup', _topoPanMouseUp);
+  document.removeEventListener('pointercancel', _topoPanMouseUp);
   if (_topoDragging) {
     _topoDragging = false;
     const canvas = document.getElementById('topo-canvas');

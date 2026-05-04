@@ -450,3 +450,80 @@ Deferred to a future round:
 
 ### Interim placeholder plan
 Until the D3 plumbing round arrives (late in the 200-mineral runway), diamond stays on hold. If the user wants a visible diamond before the plumbing round, Option D2 (xenocryst event in a lightweight kimberlite scenario) can ship as a bridge — 2-4 hours; `scenario_kimberlite` created as a shell, diamond teleports in as a pre-formed crystal, narrator explains the xenocryst origin honestly. When the D3 plumbing lands, diamond gets retrofitted to mantle-grown-in-sim and the shell scenario fills out with the rest of the cluster.
+
+---
+
+## 🌐 3D simulation — loose ends from the multi-ring rollout (May 2026)
+
+**Context:** the 3D-track session that landed Phases A → D v1 + canvas fix + sphere shape + cross-axis polar + per-latitude twist (commits `03625b0` through `1c77950`, ten commits) left a few intentional gaps. Listing them here so they don't fall through. Tutorial 3 (the "Fourth Door" oxidation breach) is also deferred, but is tracked separately in the tutorial proposal docs.
+
+### Sim-version 20 mineral drop — bornite + magnetite
+
+**Status:** known regression from Phase C v1, accepted at the time, expects_species lists updated with a comment pointing back here.
+
+**Why:** Phase C v1 (commit `375adcf`) wired growth to per-ring chemistry. Each crystal's growth now reads `ring_fluids[crystal.wall_ring_index]` instead of the global, with mass-balance consumption hitting that ring's fluid. Inter-ring diffusion homogenizes slowly, so per-ring chemistry diverges briefly from the bulk during fast nucleation bursts. At seed 42 this shifted two borderline minerals out of the "fires reliably" window:
+- `bornite` in `porphyry`
+- `magnetite` in `deccan_zeolite`
+
+Their engines and chemistry data are unchanged. Their gates just don't get crossed at seed 42 under sim_version 20+. The expects_species lists in `data/scenarios.json5` were trimmed (with comments referencing this entry) so the tests pass.
+
+**What to build:**
+1. Pick a chemistry-tuning approach for these two scenarios. Options:
+   - Tune the scenario's initial fluid so the engine's σ for the dropped mineral is comfortably above its nucleation threshold by step ~50, even with per-ring fragmentation
+   - Add a small event nudge mid-scenario (e.g. `magnetite_seed_pulse` at step 60 in deccan_zeolite) to push σ over the gate at the right moment
+   - Bias `_assign_wall_ring` so minerals with strong scenario-anchor expectations land on the equator ring (which shares storage with conditions.fluid via aliasing — stronger event coupling)
+2. Restore the dropped expects_species entries when the tuning lands.
+
+**Out of scope:** changing the per-ring fluid mechanic itself. The fragmentation is the design intent.
+
+### Habit textures missing in 3D mode
+
+**Status:** intentional v0 simplification in Phase B (commit `c9932c9`).
+
+**Why:** `drawHabitTexture` does its own internal chord math (sawtooth tips, botryoidal bumps, saddle-rhomb Beziers) using canvas-plane coords. Composing that with arbitrary per-vertex 3D projection isn't trivial — the chord-along-arc-vs-the-projected-curve discrepancy that's invisible at small angles in 2D becomes visible at strong tilts. The 3D wedge currently collapses to a smooth Bezier inner edge regardless of habit.
+
+**What to build:**
+1. For each of the six existing texture functions (`_texture_sawtooth`, `_texture_rhomb`, `_texture_cube_edge`, `_texture_cube_edge_deep`, `_texture_botryoidal`, `_texture_saddle_rhomb`, `_texture_acicular`), make them projection-aware. Two paths:
+   - **Cheap:** compute texture vertices in canvas-plane coords as today, then run each through the 3D projection helper (`_topoProject3D`). Acceptable if the texture amplitudes are small relative to the wedge — tilt distortion stays subtle.
+   - **Honest:** compute texture vertices in 3D world space, with the texture's amplitude axis aligned to the inward sphere normal at that cell. More code; correct lighting cues if Phase E ever lands.
+2. The 2D rendering path stays unchanged either way — only the 3D branch in `_topoRenderRings3D` gets the projection-aware texture call.
+
+**Sizing:** ~half a session for the cheap path, full session for the honest one.
+
+### Hit-test broken in 3D mode
+
+**Status:** carried over from Tier 1 of the 3D viewer (the original CSS-transform commit). Phase B's per-vertex projection didn't fix it because hit-test math wasn't a priority for the geometry rebuild.
+
+**Why:** `_topoHitTest` and `_topoTooltipFromEvent` both reconstruct the cell at a screen position by inverting the **2D-only** transform — `(mx-cx)/mmToPx` gives a polar coordinate, that maps to a cell index. Under per-vertex 3D projection plus polar profile plus twist, the same screen position can correspond to a different cell on a different ring depending on tilt, and the inversion ignores all of that.
+
+**User-facing impact:** hovering crystals doesn't tooltip in rotate mode. Click-to-lock-highlight also doesn't fire. The 3D view is read-only by hover.
+
+**What to build:**
+1. Build the inverse projection. Given a screen `(mx, my)` and the current `_topoTiltX / _topoTiltY`:
+   - Cast a ray from camera through the screen point into world space (the inverse of `_topoProject3D`).
+   - Intersect the ray with each ring's plane (or with the sphere shell at radius R).
+   - Pick the nearest hit; resolve to (ring_idx, cell_idx) by computing θ relative to the ring's twist offset.
+2. Update `_topoHitTest` to consult this inverse projection when `_topoView3D` is true; keep the legacy 2D path for default mode.
+3. Verify: hover a crystal in 3D mode → tooltip pops with the right mineral name.
+
+**Sizing:** maybe a session — the projection inverse is ~20 lines of linear algebra plus a binary search over ring planes.
+
+### Phase D v2 — mineral-spec orientation hints
+
+**Status:** designed but not implemented. Phase D v0 added the `floor`/`wall`/`ceiling` tags; Phase D v1 added stalactite geometry; v2 is "now actually use the tags for nucleation."
+
+**Why:** real stalactite-prone habits (calcite scalenohedra in cave settings; aragonite cones; gypsum needles in sulfate caves) overwhelmingly nucleate on ceilings under gravity, dripping. Stalagmite-prone habits (calcite rhombs from ponding water) nucleate on floors. Wall habits (most everything else, including flat-faced cubic and rhombic species) are spatially neutral. The current `_assign_wall_ring` samples by area weight only — every mineral has the same ring-distribution preference.
+
+**What to build:**
+1. Add an optional field on `data/minerals.json` habit variants: `orientation_preference` ∈ `{'ceiling', 'floor', 'wall', 'any'}` (default `'any'`).
+2. When `_assign_wall_ring` runs for a free-wall nucleation:
+   - Look up the chosen habit variant's orientation preference.
+   - If `'any'`: keep the area-weighted distribution as today.
+   - If `'ceiling'`: bias the sample toward ceiling rings (e.g. multiply ceiling-ring weights by 4×, others by 1×, then sample).
+   - Same for `'floor'` and `'wall'`.
+3. Populate the field for the obvious candidates: scalenohedral calcite → ceiling-prone; some aragonite habits → ceiling; rhombic calcite → floor; cubic habits → wall; needle/acicular sprays → wall.
+4. Tests verify ceiling-prone habits land on rings 12-15 the majority of the time.
+
+**Out of scope:** changing the engine's growth direction logic. Phase D v1's renderer-side stalactite geometry already handles the visual; v2 is just about WHICH crystals hang from the ceiling.
+
+**Why this is the natural next step:** the stalactite geometry from Phase D v1 currently fires for any crystal that happens to randomly land on a ceiling ring. That's accidental stalactites. v2 makes them intentional — calcite scalenohedra deliberately seek the ceiling under gravity, the way real cave calcite does.
