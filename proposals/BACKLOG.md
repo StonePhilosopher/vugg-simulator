@@ -476,19 +476,13 @@ Their engines and chemistry data are unchanged. Their gates just don't get cross
 
 **Out of scope:** changing the per-ring fluid mechanic itself. The fragmentation is the design intent.
 
-### Habit textures missing in 3D mode
+### Habit textures missing in 3D mode — RESOLVED by wireframe crystals
 
-**Status:** intentional v0 simplification in Phase B (commit `c9932c9`).
+**Status:** **superseded** by `proposals/PROPOSAL-WIREFRAME-CRYSTALS.md`. Wireframe rendering replaces wedge+habit-texture entirely in 3D mode — each habit now resolves to a hand-crafted polyhedron primitive (cube, hex_prism_terminated, scalenohedron, …), painted as silhouette fill + wireframe edges. Habit fidelity in 3D is now structural (the geometry IS the habit) instead of textural.
 
-**Why:** `drawHabitTexture` does its own internal chord math (sawtooth tips, botryoidal bumps, saddle-rhomb Beziers) using canvas-plane coords. Composing that with arbitrary per-vertex 3D projection isn't trivial — the chord-along-arc-vs-the-projected-curve discrepancy that's invisible at small angles in 2D becomes visible at strong tilts. The 3D wedge currently collapses to a smooth Bezier inner edge regardless of habit.
+The original `drawHabitTexture` 2D textures (`_texture_sawtooth`, `_texture_rhomb`, etc.) stay in the codebase for the 2D topo strip — that path is untouched.
 
-**What to build:**
-1. For each of the six existing texture functions (`_texture_sawtooth`, `_texture_rhomb`, `_texture_cube_edge`, `_texture_cube_edge_deep`, `_texture_botryoidal`, `_texture_saddle_rhomb`, `_texture_acicular`), make them projection-aware. Two paths:
-   - **Cheap:** compute texture vertices in canvas-plane coords as today, then run each through the 3D projection helper (`_topoProject3D`). Acceptable if the texture amplitudes are small relative to the wedge — tilt distortion stays subtle.
-   - **Honest:** compute texture vertices in 3D world space, with the texture's amplitude axis aligned to the inward sphere normal at that cell. More code; correct lighting cues if Phase E ever lands.
-2. The 2D rendering path stays unchanged either way — only the 3D branch in `_topoRenderRings3D` gets the projection-aware texture call.
-
-**Sizing:** ~half a session for the cheap path, full session for the honest one.
+**If 2D-mode wireframes are ever wanted** (top-down orthographic of one slice), the same primitive library projects orthographically just as well; would respect the slice stepper state. Out of scope for v0.
 
 ### Hit-test broken in 3D mode
 

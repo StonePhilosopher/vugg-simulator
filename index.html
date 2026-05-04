@@ -22512,24 +22512,556 @@ function topoRender(optOverrideRing) {
   }
 }
 
+// ─── Wireframe-crystal primitive library ─────────────────────────────
+// Hand-crafted polyhedra for the 3D-mode wireframe-crystal renderer.
+// Convention (see proposals/PROPOSAL-WIREFRAME-CRYSTALS.md addendum A):
+//   * c-axis = +y, base-anchored at y=-0.1, free tip at y=+1.0.
+//   * equatorial extent = roughly ±0.5 (or wider for cube-ish shapes
+//     so they read as cubic when c_length ≈ a_width).
+//   * Each primitive scales by (a_width, c_length, a_width) at render
+//     time and rotates around its c-axis (= inward sphere normal at
+//     anchor cell) by a crystal_id-seeded random angle.
+const PRIM_CUBE = {
+  name: 'cube',
+  vertices: [
+    [-0.55, -0.1, -0.55], [ 0.55, -0.1, -0.55], [ 0.55, -0.1,  0.55], [-0.55, -0.1,  0.55],
+    [-0.55,  1.0, -0.55], [ 0.55,  1.0, -0.55], [ 0.55,  1.0,  0.55], [-0.55,  1.0,  0.55],
+  ],
+  edges: [
+    [0,1],[1,2],[2,3],[3,0],   // base
+    [4,5],[5,6],[6,7],[7,4],   // top
+    [0,4],[1,5],[2,6],[3,7],   // verticals
+  ],
+};
+
+const PRIM_OCTAHEDRON = {
+  name: 'octahedron',
+  vertices: [
+    [ 0.0,  1.0,  0.0],   // 0 top apex
+    [ 0.0, -0.1,  0.0],   // 1 bottom apex (buried)
+    [ 0.55, 0.45, 0.0],   // 2 east
+    [-0.55, 0.45, 0.0],   // 3 west
+    [ 0.0,  0.45, 0.55],  // 4 north
+    [ 0.0,  0.45,-0.55],  // 5 south
+  ],
+  edges: [
+    [0,2],[0,3],[0,4],[0,5],   // top tip → equator
+    [1,2],[1,3],[1,4],[1,5],   // bottom tip → equator
+    [2,4],[4,3],[3,5],[5,2],   // equator
+  ],
+};
+
+const PRIM_TETRAHEDRON = {
+  name: 'tetrahedron',
+  // 4 vertices: 1 apex + 3-cornered base. Slightly oversized so the
+  // base sits below y=0 (buried) and the apex points into the cavity.
+  vertices: (() => {
+    const r = 0.55;
+    return [
+      [ 0.0,  1.0, 0.0],  // apex
+      [ r * Math.cos(0),            -0.1, r * Math.sin(0)],
+      [ r * Math.cos(2*Math.PI/3),  -0.1, r * Math.sin(2*Math.PI/3)],
+      [ r * Math.cos(4*Math.PI/3),  -0.1, r * Math.sin(4*Math.PI/3)],
+    ];
+  })(),
+  edges: [
+    [0,1],[0,2],[0,3],   // apex → base
+    [1,2],[2,3],[3,1],   // base triangle
+  ],
+};
+
+const PRIM_RHOMBOHEDRON = {
+  name: 'rhombohedron',
+  // Calcite-style rhomb: parallelepiped where all 6 faces are rhombs.
+  // Topologically a cube but with the top face rotated 60° around the
+  // c-axis relative to the bottom — gives the canonical "tilted" look.
+  vertices: (() => {
+    const vs = [];
+    const r = 0.55;
+    for (let k = 0; k < 4; k++) {
+      const a = (k * Math.PI / 2) + Math.PI / 4;
+      vs.push([r * Math.cos(a), -0.1, r * Math.sin(a)]);  // base
+    }
+    for (let k = 0; k < 4; k++) {
+      const a = (k * Math.PI / 2) + Math.PI / 4 + Math.PI / 3;
+      vs.push([r * Math.cos(a),  1.0, r * Math.sin(a)]);  // top, rotated 60°
+    }
+    return vs;
+  })(),
+  edges: [
+    [0,1],[1,2],[2,3],[3,0],
+    [4,5],[5,6],[6,7],[7,4],
+    [0,4],[1,5],[2,6],[3,7],
+  ],
+};
+
+const PRIM_SCALENOHEDRON = {
+  name: 'scalenohedron',
+  // Calcite "dogtooth": doubly-pointed with a zigzag waist. 8 verts,
+  // 12 edges. Three upper-mid vertices alternate with three lower-mid
+  // around the equator, giving the characteristic facet zigzag.
+  vertices: (() => {
+    const vs = [
+      [0,  1.0, 0],   // 0 top apex
+      [0, -0.1, 0],   // 1 bottom apex (buried)
+    ];
+    const r = 0.45;
+    for (let k = 0; k < 3; k++) {
+      const a = k * 2 * Math.PI / 3;
+      vs.push([r * Math.cos(a), 0.7, r * Math.sin(a)]);   // 2,3,4 upper-mid
+    }
+    for (let k = 0; k < 3; k++) {
+      const a = k * 2 * Math.PI / 3 + Math.PI / 3;
+      vs.push([r * Math.cos(a), 0.2, r * Math.sin(a)]);   // 5,6,7 lower-mid
+    }
+    return vs;
+  })(),
+  edges: [
+    [0,2],[0,3],[0,4],   // top apex → upper-mid
+    [1,5],[1,6],[1,7],   // bot apex → lower-mid
+    // zigzag: each upper-mid connects to 2 adjacent lower-mids
+    [2,5],[2,7], [3,5],[3,6], [4,6],[4,7],
+  ],
+};
+
+const PRIM_HEX_PRISM = {
+  name: 'hex_prism',
+  vertices: (() => {
+    const vs = [];
+    const r = 0.5;
+    for (let k = 0; k < 6; k++) {
+      const a = k * Math.PI / 3;
+      vs.push([r * Math.cos(a), -0.1, r * Math.sin(a)]);   // 0..5 base hex
+    }
+    for (let k = 0; k < 6; k++) {
+      const a = k * Math.PI / 3;
+      vs.push([r * Math.cos(a),  1.0, r * Math.sin(a)]);   // 6..11 top hex
+    }
+    return vs;
+  })(),
+  edges: [
+    [0,1],[1,2],[2,3],[3,4],[4,5],[5,0],
+    [6,7],[7,8],[8,9],[9,10],[10,11],[11,6],
+    [0,6],[1,7],[2,8],[3,9],[4,10],[5,11],
+  ],
+};
+
+const PRIM_HEX_PRISM_TERMINATED = {
+  name: 'hex_prism_terminated',
+  // Quartz: hex prism with a 6-faceted pyramidal cap on the free end.
+  // 13 vertices (no buried apex — base hex sits at y=-0.1), 24 edges.
+  vertices: (() => {
+    const vs = [];
+    const r = 0.5;
+    for (let k = 0; k < 6; k++) {
+      const a = k * Math.PI / 3;
+      vs.push([r * Math.cos(a), -0.1, r * Math.sin(a)]);   // 0..5 base hex
+    }
+    for (let k = 0; k < 6; k++) {
+      const a = k * Math.PI / 3;
+      vs.push([r * Math.cos(a),  0.8, r * Math.sin(a)]);   // 6..11 shoulder
+    }
+    vs.push([0, 1.0, 0]);                                  // 12 apex
+    return vs;
+  })(),
+  edges: [
+    [0,1],[1,2],[2,3],[3,4],[4,5],[5,0],          // base hex
+    [6,7],[7,8],[8,9],[9,10],[10,11],[11,6],      // shoulder hex
+    [0,6],[1,7],[2,8],[3,9],[4,10],[5,11],        // verticals
+    [12,6],[12,7],[12,8],[12,9],[12,10],[12,11],  // pyramid ridges
+  ],
+};
+
+const PRIM_DIPYRAMID = {
+  name: 'dipyramid',
+  // Hex bipyramid (barite, scheelite, anhydrite). Equatorial hex
+  // pinching to apex on each end.
+  vertices: (() => {
+    const vs = [
+      [0,  1.0, 0],
+      [0, -0.1, 0],
+    ];
+    const r = 0.5;
+    for (let k = 0; k < 6; k++) {
+      const a = k * Math.PI / 3;
+      vs.push([r * Math.cos(a), 0.45, r * Math.sin(a)]);
+    }
+    return vs;
+  })(),
+  edges: [
+    // top apex → equator
+    [0,2],[0,3],[0,4],[0,5],[0,6],[0,7],
+    // bot apex → equator
+    [1,2],[1,3],[1,4],[1,5],[1,6],[1,7],
+    // equator
+    [2,3],[3,4],[4,5],[5,6],[6,7],[7,2],
+  ],
+};
+
+const PRIM_PYRITOHEDRON = {
+  name: 'pyritohedron',
+  // 12 pentagonal faces (one of pyrite's classic forms). Topology:
+  // 14 vertices = 8 cube-corners + 6 face-axis points.
+  // Edges: 6 cube-edges of one chosen subset + 24 from corners to face
+  // points = 30.
+  vertices: (() => {
+    const vs = [];
+    const c = 0.5;
+    // 8 cube corners
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+      vs.push([c * sx, 0.45 + c * sy, c * sz]);
+    }
+    // 6 face-axis "stretch" points (offset inward from each cube face)
+    const k = 0.7;  // pseudo-pyritohedral stretch
+    vs.push([ c*k, 0.45, 0]);     // 8 +x
+    vs.push([-c*k, 0.45, 0]);     // 9 -x
+    vs.push([0, 0.45 + c*k, 0]);  // 10 +y
+    vs.push([0, 0.45 - c*k, 0]);  // 11 -y
+    vs.push([0, 0.45,  c*k]);     // 12 +z
+    vs.push([0, 0.45, -c*k]);     // 13 -z
+    return vs;
+  })(),
+  edges: [
+    // Six "rib" cube-edges (one per face, alternating) — gives the
+    // striated-cube look pyritohedrons read as.
+    [0,1],[2,3],[4,5],[6,7],[0,4],[3,7],
+    // Each face point connects to its 4 adjacent cube corners.
+    // +x face (corners with sx=+1: indices 4,5,6,7)
+    [8,4],[8,5],[8,6],[8,7],
+    // -x face (sx=-1: 0,1,2,3)
+    [9,0],[9,1],[9,2],[9,3],
+    // +y face (sy=+1: 2,3,6,7)
+    [10,2],[10,3],[10,6],[10,7],
+    // -y face (sy=-1: 0,1,4,5)
+    [11,0],[11,1],[11,4],[11,5],
+    // +z face (sz=+1: 1,3,5,7)
+    [12,1],[12,3],[12,5],[12,7],
+    // -z face (sz=-1: 0,2,4,6)
+    [13,0],[13,2],[13,4],[13,6],
+  ],
+};
+
+const PRIM_TABULAR = {
+  name: 'tabular',
+  // Flat plate: half-height in the c-axis direction, full width in
+  // the equatorial directions. Selenite / mica / wulfenite look.
+  vertices: [
+    [-0.55, -0.1, -0.55], [ 0.55, -0.1, -0.55], [ 0.55, -0.1,  0.55], [-0.55, -0.1,  0.55],
+    [-0.55,  0.4, -0.55], [ 0.55,  0.4, -0.55], [ 0.55,  0.4,  0.55], [-0.55,  0.4,  0.55],
+  ],
+  edges: [
+    [0,1],[1,2],[2,3],[3,0],
+    [4,5],[5,6],[6,7],[7,4],
+    [0,4],[1,5],[2,6],[3,7],
+  ],
+};
+
+const PRIM_ACICULAR = {
+  name: 'acicular',
+  // Slender needle: hex cross-section, very short equatorial extent
+  // relative to c-length. Stibnite, natrolite, mesolite, sword gypsum.
+  vertices: (() => {
+    const vs = [];
+    const r = 0.18;  // slim
+    for (let k = 0; k < 3; k++) {
+      const a = k * 2 * Math.PI / 3;
+      vs.push([r * Math.cos(a), -0.1, r * Math.sin(a)]);
+    }
+    for (let k = 0; k < 3; k++) {
+      const a = k * 2 * Math.PI / 3;
+      vs.push([r * Math.cos(a),  0.95, r * Math.sin(a)]);
+    }
+    vs.push([0, 1.0, 0]);  // 6 apex
+    return vs;
+  })(),
+  edges: [
+    [0,1],[1,2],[2,0],
+    [3,4],[4,5],[5,3],
+    [0,3],[1,4],[2,5],
+    [6,3],[6,4],[6,5],
+  ],
+};
+
+const PRIM_BOTRYOIDAL = {
+  name: 'botryoidal',
+  // 5 overlapping "blobs" in a cluster. Each blob is approximated by
+  // 4 vertices (top, base, two equatorial) — cheap and gives a
+  // multi-bumped silhouette via the convex hull.
+  vertices: (() => {
+    const vs = [];
+    // 5 blob centers: 3 base + 2 stacked above
+    const centers = [
+      [ 0.30, 0.15, 0.00],
+      [-0.30, 0.15, 0.10],
+      [ 0.05, 0.20,-0.30],
+      [ 0.10, 0.65, 0.00],
+      [-0.10, 0.85,-0.05],
+    ];
+    const blobR = 0.30;
+    for (const [bx, by, bz] of centers) {
+      vs.push([bx,        by + blobR, bz]);          // top
+      vs.push([bx,        by - blobR, bz]);          // bottom (some buried)
+      vs.push([bx + blobR, by,        bz]);          // east
+      vs.push([bx - blobR, by,        bz]);          // west
+      vs.push([bx,         by,        bz + blobR]);  // north
+      vs.push([bx,         by,        bz - blobR]);  // south
+    }
+    return vs;
+  })(),
+  // Each 6-vertex blob gets its own ring-shaped wireframe edges:
+  // top↔(e/w/n/s), bottom↔(e/w/n/s), e↔n↔w↔s ring.
+  edges: (() => {
+    const es = [];
+    for (let b = 0; b < 5; b++) {
+      const o = b * 6;  // top, bot, e, w, n, s
+      es.push([o+0,o+2],[o+0,o+3],[o+0,o+4],[o+0,o+5]);
+      es.push([o+1,o+2],[o+1,o+3],[o+1,o+4],[o+1,o+5]);
+      es.push([o+2,o+4],[o+4,o+3],[o+3,o+5],[o+5,o+2]);
+    }
+    return es;
+  })(),
+};
+
+// Habit string → primitive lookup. Direct hits checked first; the
+// fuzzy-substring fallback in _lookupCrystalPrimitive catches the
+// many compound forms in data/minerals.json (e.g. "rhombohedral_or_
+// botryoidal", "saddle_rhomb_or_massive").
+const HABIT_TO_PRIMITIVE = {
+  'cubic':                          PRIM_CUBE,
+  'pseudocubic':                    PRIM_CUBE,
+  'pseudo_cubic':                   PRIM_CUBE,
+  'cubo-pyritohedral':              PRIM_PYRITOHEDRON,
+  'cubic_or_pyritohedral':          PRIM_PYRITOHEDRON,
+  'cubic_or_octahedral':            PRIM_CUBE,
+  'pyritohedral':                   PRIM_PYRITOHEDRON,
+  'octahedral':                     PRIM_OCTAHEDRON,
+  'tetrahedral':                    PRIM_TETRAHEDRON,
+  'tetrahedral_or_massive':         PRIM_TETRAHEDRON,
+  'rhombohedral':                   PRIM_RHOMBOHEDRON,
+  'saddle_rhomb_or_massive':        PRIM_RHOMBOHEDRON,
+  'rhombohedral_or_botryoidal':     PRIM_RHOMBOHEDRON,
+  'rhombohedral_or_scalenohedral':  PRIM_RHOMBOHEDRON,
+  'rhombohedral_or_tabular_or_botryoidal': PRIM_RHOMBOHEDRON,
+  'botryoidal_or_rhombohedral':     PRIM_BOTRYOIDAL,
+  'scalenohedral':                  PRIM_SCALENOHEDRON,
+  'scalenohedral_or_rhombohedral':  PRIM_SCALENOHEDRON,
+  'prismatic':                      PRIM_HEX_PRISM_TERMINATED,
+  'short_prismatic':                PRIM_HEX_PRISM,
+  'striated_prism':                 PRIM_HEX_PRISM_TERMINATED,
+  'hex_prism':                      PRIM_HEX_PRISM_TERMINATED,
+  'hex_prism_long':                 PRIM_HEX_PRISM_TERMINATED,
+  'hexagonal_prism':                PRIM_HEX_PRISM_TERMINATED,
+  'hexagonal_prism_or_botryoidal_campylite': PRIM_HEX_PRISM_TERMINATED,
+  'prismatic_hex':                  PRIM_HEX_PRISM_TERMINATED,
+  'prismatic_or_blocky':            PRIM_HEX_PRISM_TERMINATED,
+  'prismatic_orthorhombic':         PRIM_HEX_PRISM_TERMINATED,
+  'prismatic_tabular_pseudo_cubic': PRIM_CUBE,
+  'prismatic_or_rosette':           PRIM_HEX_PRISM_TERMINATED,
+  'tabular_prism':                  PRIM_HEX_PRISM_TERMINATED,
+  'tabular':                        PRIM_TABULAR,
+  'tabular_square':                 PRIM_TABULAR,
+  'tabular_hex':                    PRIM_TABULAR,
+  'hex_plate':                      PRIM_TABULAR,
+  'hexagonal_platy':                PRIM_TABULAR,
+  'tabular_plates':                 PRIM_TABULAR,
+  'tabular_monoclinic':             PRIM_TABULAR,
+  'tabular_or_prismatic_or_fibrous': PRIM_TABULAR,
+  'platy_scales':                   PRIM_TABULAR,
+  'micro_plates':                   PRIM_TABULAR,
+  'acicular':                       PRIM_ACICULAR,
+  'acicular_tuft':                  PRIM_ACICULAR,
+  'tufted_spray':                   PRIM_ACICULAR,
+  'elongated_blade':                PRIM_ACICULAR,
+  'wire':                           PRIM_ACICULAR,
+  'capillary':                      PRIM_ACICULAR,
+  'columnar_or_cyclic_twinned':     PRIM_HEX_PRISM_TERMINATED,
+  'cockscomb_or_spearhead':         PRIM_DIPYRAMID,
+  'dipyramidal':                    PRIM_DIPYRAMID,
+  'bipyramidal_alpha':              PRIM_DIPYRAMID,
+  'disphenoidal_{112}':             PRIM_DIPYRAMID,
+  'stellate_sixling':               PRIM_DIPYRAMID,
+  'hexagonal_barrel':               PRIM_HEX_PRISM,
+  'barrel':                         PRIM_HEX_PRISM,
+  'hemimorphic_hexagonal':          PRIM_HEX_PRISM_TERMINATED,
+  'deep_blue_prismatic':            PRIM_HEX_PRISM_TERMINATED,
+  'botryoidal':                     PRIM_BOTRYOIDAL,
+  'reniform':                       PRIM_BOTRYOIDAL,
+  'botryoidal_or_acicular':         PRIM_BOTRYOIDAL,
+  'botryoidal_or_mammillary_or_fibrous': PRIM_BOTRYOIDAL,
+  'botryoidal_cryptocrystalline':   PRIM_BOTRYOIDAL,
+  'cobalt_bloom_or_botryoidal':     PRIM_BOTRYOIDAL,
+  'nickel_bloom_or_capillary':      PRIM_BOTRYOIDAL,
+  'pitchblende_massive':            PRIM_BOTRYOIDAL,
+  'massive_granular':               PRIM_BOTRYOIDAL,
+  'earthy_crust':                   PRIM_BOTRYOIDAL,
+  'stalactitic':                    PRIM_BOTRYOIDAL,
+  'arborescent':                    PRIM_ACICULAR,
+  'dendritic':                      PRIM_ACICULAR,
+  'default_habit':                  PRIM_RHOMBOHEDRON,
+};
+
+function _lookupCrystalPrimitive(crystal) {
+  if (!crystal) return PRIM_RHOMBOHEDRON;
+  const direct = HABIT_TO_PRIMITIVE[crystal.habit];
+  if (direct) return direct;
+  const h = (crystal.habit || '').toLowerCase();
+  if (h.includes('cube') || h.includes('cubic'))           return PRIM_CUBE;
+  if (h.includes('pyritohed'))                              return PRIM_PYRITOHEDRON;
+  if (h.includes('octahed'))                                return PRIM_OCTAHEDRON;
+  if (h.includes('tetrahed'))                               return PRIM_TETRAHEDRON;
+  if (h.includes('scalenohed') || h.includes('dogtooth'))   return PRIM_SCALENOHEDRON;
+  if (h.includes('rhomb'))                                  return PRIM_RHOMBOHEDRON;
+  if (h.includes('dipyramid') || h.includes('bipyramid'))   return PRIM_DIPYRAMID;
+  if (h.includes('hex_prism') || h.includes('hexagonal'))   return PRIM_HEX_PRISM_TERMINATED;
+  if (h.includes('prism'))                                  return PRIM_HEX_PRISM_TERMINATED;
+  if (h.includes('tabular') || h.includes('platy')
+      || h.includes('plate') || h.includes('plates'))       return PRIM_TABULAR;
+  if (h.includes('acicular') || h.includes('needle')
+      || h.includes('wire') || h.includes('capillary'))     return PRIM_ACICULAR;
+  if (h.includes('botryoidal') || h.includes('reniform')
+      || h.includes('mammillary') || h.includes('massive')
+      || h.includes('earthy') || h.includes('stalactit'))   return PRIM_BOTRYOIDAL;
+  return PRIM_RHOMBOHEDRON;
+}
+
+// Deterministic float in [0, 1) seeded from an integer crystal_id.
+// Reuses the same Mulberry32 the wall-state generator uses so the
+// rotation around c-axis is reproducible across reloads / replays.
+function _seededRand(seed) {
+  return _mulberry32(seed | 0)();
+}
+
+// Build a right-handed basis (perp1, perp2) perpendicular to `axis`,
+// rotated by `rotRad` around `axis`. Used to orient a primitive's
+// equatorial axes (x, z) in world space for a given anchor.
+function _orthonormalBasis(axis, rotRad) {
+  const ax = axis[0], ay = axis[1], az = axis[2];
+  // Pick a non-parallel helper. World up unless axis ≈ ±y.
+  const helper = (Math.abs(ay) < 0.9) ? [0, 1, 0] : [1, 0, 0];
+  // p1 = normalize(axis × helper)
+  let p1x = ay * helper[2] - az * helper[1];
+  let p1y = az * helper[0] - ax * helper[2];
+  let p1z = ax * helper[1] - ay * helper[0];
+  const p1len = Math.hypot(p1x, p1y, p1z) || 1;
+  p1x /= p1len; p1y /= p1len; p1z /= p1len;
+  // p2 = axis × p1  (already unit length since axis and p1 are unit + perp)
+  const p2x = ay * p1z - az * p1y;
+  const p2y = az * p1x - ax * p1z;
+  const p2z = ax * p1y - ay * p1x;
+  // Rotate the (p1, p2) frame by rotRad around axis.
+  const c = Math.cos(rotRad), s = Math.sin(rotRad);
+  return [
+    [p1x * c + p2x * s, p1y * c + p2y * s, p1z * c + p2z * s],
+    [-p1x * s + p2x * c, -p1y * s + p2y * c, -p1z * s + p2z * c],
+  ];
+}
+
+// Andrew's monotone-chain convex hull of 2D points. Returns the hull
+// vertices in CCW order (in screen-y-down coords this looks clockwise
+// to a human reader — fine for the canvas fill, which doesn't care).
+function _convexHull2D(points) {
+  if (points.length < 3) return points.slice();
+  const pts = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [];
+  for (const p of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+// Render one wireframe crystal: silhouette fill (mineral color, 40%
+// of the edge alpha) + edges (mineral color, full edge alpha). c-axis
+// = inward sphere normal at the anchor cell; rotation around c-axis
+// is seeded by crystal_id so identical crystals stay identical across
+// reloads. Sizes clamped to a 3-px floor so baby crystals (sub-mm at
+// typical zoom) read as "a thing exists here" not background noise.
+function _renderCrystalWireframe(ctx, crystal, cellWorld, sphereRadiusPx,
+                                  mmToPx, cx, cy, F) {
+  const prim = _lookupCrystalPrimitive(crystal);
+  const cLengthPx = Math.max((crystal.c_length_mm || 0.5) * mmToPx, 3);
+  const aWidthPx  = Math.max((crystal.a_width_mm  || 0.5) * mmToPx, 3);
+  // c-axis = inward sphere normal at the anchor cell. cellWorld is the
+  // anchor's (x, y, z) relative to the canvas center; the sphere's
+  // origin is (0,0,0) in this frame, so inward = -normalize(cellWorld).
+  const invR = 1 / (Math.hypot(cellWorld[0], cellWorld[1], cellWorld[2]) || 1);
+  const cAxis = [-cellWorld[0] * invR, -cellWorld[1] * invR, -cellWorld[2] * invR];
+  const rotRad = (_seededRand(crystal.crystal_id || 0) - 0.5) * 2 * Math.PI;
+  const [perp1, perp2] = _orthonormalBasis(cAxis, rotRad);
+  // Project every primitive vertex.
+  const projected = [];
+  for (const [px, py, pz] of prim.vertices) {
+    const wx = cellWorld[0] + perp1[0] * px * aWidthPx
+                            + cAxis[0] * py * cLengthPx
+                            + perp2[0] * pz * aWidthPx;
+    const wy = cellWorld[1] + perp1[1] * px * aWidthPx
+                            + cAxis[1] * py * cLengthPx
+                            + perp2[1] * pz * aWidthPx;
+    const wz = cellWorld[2] + perp1[2] * px * aWidthPx
+                            + cAxis[2] * py * cLengthPx
+                            + perp2[2] * pz * aWidthPx;
+    const proj = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
+    projected.push([cx + proj[0], cy + proj[1]]);
+  }
+  const edgeAlpha = topoAlphaFor(crystal.mineral);
+  const color = topoClassColor(crystal.mineral);
+  // Silhouette fill = convex hull of projected vertices, filled at
+  // 40% of the edge alpha. Stained-glass effect.
+  const hull = _convexHull2D(projected);
+  if (hull.length >= 3) {
+    ctx.globalAlpha = 0.4 * edgeAlpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(hull[0][0], hull[0][1]);
+    for (let i = 1; i < hull.length; i++) ctx.lineTo(hull[i][0], hull[i][1]);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Edges at full alpha.
+  ctx.globalAlpha = edgeAlpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  for (const [a, b] of prim.edges) {
+    ctx.moveTo(projected[a][0], projected[a][1]);
+    ctx.lineTo(projected[b][0], projected[b][1]);
+  }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
 // Phase B (Tier 1.5) — 3D multi-ring renderer.
 // Called from topoRender when _topoView3D is true. Renders every ring
 // in wall.rings stacked along a vertical (Y) axis, using per-vertex
-// projection through _topoProject3D. Rings are sorted back-to-front by
-// projected Z so painter's algorithm gives correct occlusion.
+// projection through _topoProject3D. Rings + crystals are interleaved
+// in painter's order (back-to-front by post-rotation z) so wireframe
+// crystals occlude the cavity rings behind them — see
+// proposals/PROPOSAL-WIREFRAME-CRYSTALS.md.
 //
-// Phase A invariant: only ring[0] holds crystals; rings 1..N-1 hold
-// pristine WallCell defaults. So this function paints one set of
-// crystal wedges (on ring[0]) plus N wall-outline rings. Phase C
-// extends the wedge loop to render crystals on every ring.
+// Painter's-order granularity: rings paint atomically (the entire
+// 120-cell outline of a ring is one paint unit). A crystal anchored
+// on the front of ring k paints AFTER ring k as a whole — including
+// the back-side cells of ring k that should logically be behind the
+// crystal. Acceptable v0 trade-off; see addendum B for the per-cell
+// upgrade path.
 //
 // What's intentionally simplified for v0:
-//   * Habit textures (sawtooth/botryoidal/etc) collapse to smooth
-//     Bezier — drawHabitTexture's chord math doesn't compose with
-//     arbitrary projection without a rewrite.
+//   * Habit textures (sawtooth/botryoidal/etc) collapse into the
+//     primitive's wireframe — drawHabitTexture's chord math doesn't
+//     compose with arbitrary projection.
 //   * Inclusion dots are skipped (they live on ring[0] only; tier-1
-//     hit-test was already broken in 3D mode, so dropping them now
-//     doesn't regress anything).
+//     hit-test was already broken in 3D mode).
 //   * Scale bar is skipped — its physical-distance reading is
 //     ambiguous when the disc is tilted.
 function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
@@ -22549,32 +23081,73 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
   const cavityDiameterPx = wall.meanDiameterMm() * mmToPx;
   const sphereRadiusPx = cavityDiameterPx / 2;
 
-  // Build (ringIdx, wz, ringRadiusFactor, projZ) tuples and sort by
-  // projZ ascending so far rings paint first.
-  const ringOrder = [];
+  // Per-ring metadata: world-space z, latitude-derived radius factor,
+  // θ twist, and the projected z used for painter's-order sorting.
+  // For a ring center at (0,0,wz) the post-rotation z is
+  // cos(tiltX)·cos(tiltY)·wz; pulling it from _topoProject3D directly
+  // keeps it consistent with crystal sort keys (which use the same
+  // function on off-axis points).
+  const ringMeta = new Array(ringCount);
   for (let r = 0; r < ringCount; r++) {
     // Ring 0 is the south pole (floor), ring N-1 is the north pole
     // (ceiling). φ runs from π/(2N) at ring 0 to π(2N-1)/(2N) at
     // ring N-1 — full latitude sweep with half-step offsets at each
     // end so neither pole collapses to a point. Cross-axis polar
-    // factor adds vertical irregularity: rings at certain latitudes
-    // bulge or pinch radially.
+    // factor adds vertical irregularity.
     const phi = Math.PI * (r + 0.5) / ringCount;
     const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
     const ringRadiusFactor = Math.sin(phi) * polar;
-    const wz = -Math.cos(phi) * sphereRadiusPx;  // vertical position unchanged
-    const projZ = Math.cos(_topoTiltX) * wz;     // small-angle yaw leaves z fixed for axis points
-    // Phase F: per-ring θ rotation. Smoothly varies with latitude, so
-    // adjacent rings rotate similar amounts and the bubble-merge bumps
-    // spiral up the cavity wall.
+    const wz = -Math.cos(phi) * sphereRadiusPx;
     const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
-    ringOrder.push({ ringIdx: r, wz, ringRadiusFactor, projZ, twist });
+    const projZ = _topoProject3D(0, 0, wz, _topoTiltX, _topoTiltY, F)[2];
+    ringMeta[r] = { ringIdx: r, wz, ringRadiusFactor, twist, projZ };
   }
-  ringOrder.sort((a, b) => a.projZ - b.projZ);
+
+  // Build the painter's-order item list: rings + crystals interleaved.
+  // Rings paint atomically (entire outline in one shot); crystals
+  // paint as wireframe primitives anchored to their wall cell. Sort
+  // ascending by post-rotation z so far things paint first.
+  const paintItems = [];
+  for (const meta of ringMeta) {
+    paintItems.push({ kind: 'ring', meta, sortZ: meta.projZ });
+  }
+  if (sim && sim.crystals) {
+    for (const crystal of sim.crystals) {
+      if (crystal.dissolved) continue;
+      const ringIdx = crystal.wall_ring_index;
+      const cellIdx = crystal.wall_center_cell;
+      if (ringIdx == null || cellIdx == null) continue;
+      const meta = ringMeta[ringIdx];
+      if (!meta) continue;
+      const ring = wall.rings[ringIdx];
+      if (!ring || !ring.length) continue;
+      const aMid = _topoAngleFor(cellIdx, N) + meta.twist;
+      const rrf = meta.ringRadiusFactor;
+      const cellMidR = cellR[cellIdx] * rrf;
+      const cellWx = cellMidR * Math.cos(aMid);
+      const cellWy = cellMidR * Math.sin(aMid);
+      const cellWz = meta.wz;
+      const projected = _topoProject3D(cellWx, cellWy, cellWz,
+                                        _topoTiltX, _topoTiltY, F);
+      paintItems.push({
+        kind: 'crystal',
+        crystal,
+        cellWorld: [cellWx, cellWy, cellWz],
+        sortZ: projected[2],
+      });
+    }
+  }
+  paintItems.sort((a, b) => {
+    if (a.sortZ !== b.sortZ) return a.sortZ - b.sortZ;
+    if (a.kind !== b.kind) return a.kind === 'ring' ? -1 : 1;
+    if (a.kind === 'ring') return a.meta.ringIdx - b.meta.ringIdx;
+    // Tie-break crystals by id so pseudomorphs / overgrowths (later
+    // crystal_id) paint on top of their host — typically correct since
+    // overgrowths are later in paragenesis.
+    return (a.crystal.crystal_id | 0) - (b.crystal.crystal_id | 0);
+  });
 
   // Project a (canvasX, canvasY) point at this ring's height to screen.
-  // canvasX/Y are absolute canvas coords (already include cx/cy), so we
-  // subtract before projecting and add cx/cy back afterward.
   function projAt(wz) {
     return (canvasX, canvasY) => {
       const wx = canvasX - cx;
@@ -22584,97 +23157,18 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     };
   }
 
-  for (const { ringIdx, wz, ringRadiusFactor, twist } of ringOrder) {
+  // Render one ring's wall outline. Replaces the wedge-fill block from
+  // pre-wireframe versions — wedges are now wireframe primitives drawn
+  // as separate paint items above. The wall stroke still varies width
+  // by crystal thickness so a heavily-grown ring reads as "encrusted"
+  // through line weight alone.
+  function renderRingOutline(meta) {
+    const { ringIdx, wz, ringRadiusFactor, twist } = meta;
     const ring = wall.rings[ringIdx];
-    if (!ring || !ring.length) continue;
+    if (!ring || !ring.length) return;
     const proj = projAt(wz);
-    const ringTwist = twist || 0;
-    // Spherical-profile scaling: every cell radius (boundary, mid,
-    // inner) shrinks by the latitude-derived factor for this ring.
-    // Rings near the poles get tiny circles; the equator gets full
-    // radius. Phase C v1 distributes crystals across rings, so every
-    // ring can carry crystals — the per-cell `crystal_id != null`
-    // check inside the loop handles empty cells.
     const rrf = ringRadiusFactor;
-
-    // Crystal wedges — every ring renders its own crystals (Phase C v1).
-    // Phase D v1: inner edge sits at a smaller sphere radius, not just
-    // shrunken in the ring's local plane. The inner-vertex 3D position
-    // is the outer position scaled toward the sphere's center by an
-    // `inwardFactor` in [0, 1]. This automatically produces:
-    //   * Stalactites on ceiling rings — the inner edge is offset
-    //     downward (toward sphere center) from each ceiling cell.
-    //   * Stalagmites on floor rings — inner edge offset upward.
-    //   * Wall crystals — inner edge offset radially inward
-    //     (horizontal), the same look as before.
-    // No gravity tracking needed — the sphere's inward normal at any
-    // cell automatically points "down" on the ceiling and "up" on
-    // the floor.
-    {
-      for (let i = 0; i < N; i++) {
-        const cell = ring[i];
-        if (cell.crystal_id == null) continue;
-        const a0 = _topoAngleFor(i, N) - arcStep / 2 + ringTwist;
-        const aMid = _topoAngleFor(i, N) + ringTwist;
-        const a1 = a0 + arcStep;
-        const rStart = boundaryR[i] * rrf;
-        const rMid = cellR[i] * rrf;
-        const rEnd = boundaryR[(i + 1) % N] * rrf;
-        const crystal = sim?.crystals?.find(c => c.crystal_id === cell.crystal_id);
-        const voidReach = crystal ? Math.max(crystal.void_reach, 0.05) : 0.5;
-        const inwardMm = (cell.thickness_um / 1000.0) * voidReach;
-        const inwardPx = Math.max(inwardMm * mmToPx, TOPO_WALL_STROKE_PX + 1);
-        // Sphere-radial inwardFactor: outer vertex at full radius R,
-        // inner vertex at R*inwardFactor. Cap so the inner doesn't
-        // reach all the way to the origin (would invert geometry).
-        const inwardFactor = Math.max(1 - TOPO_CRYSTAL_CAP_FRAC,
-                                       1 - inwardPx / Math.max(sphereRadiusPx, 1));
-        // Outer vertices: canvas-plane at this ring's wz.
-        const sxW = cx + rStart * Math.cos(a0), syW = cy + rStart * Math.sin(a0);
-        const mxW = cx + rMid * Math.cos(aMid), myW = cy + rMid * Math.sin(aMid);
-        const exW = cx + rEnd * Math.cos(a1),  eyW = cy + rEnd * Math.sin(a1);
-        // Inner vertices: outer scaled toward sphere center (cx,cy,0).
-        // The 3D scale moves them in BOTH the canvas plane AND in z.
-        const sxInW = cx + (sxW - cx) * inwardFactor;
-        const syInW = cy + (syW - cy) * inwardFactor;
-        const mxInW = cx + (mxW - cx) * inwardFactor;
-        const myInW = cy + (myW - cy) * inwardFactor;
-        const exInW = cx + (exW - cx) * inwardFactor;
-        const eyInW = cy + (eyW - cy) * inwardFactor;
-        const wzIn = wz * inwardFactor;
-        const [psx, psy] = proj(sxW, syW);
-        const [pmx, pmy] = proj(mxW, myW);
-        const [pex, pey] = proj(exW, eyW);
-        // Inner edge projects at wz*inwardFactor (different depth than
-        // outer), so use a per-vertex projection instead of `proj`.
-        const projInner = (wxRel, wyRel) => {
-          const [px, py] = _topoProject3D(wxRel, wyRel, wzIn,
-                                            _topoTiltX, _topoTiltY, F);
-          return [cx + px, cy + py];
-        };
-        const [psxIn, psyIn] = projInner(sxInW - cx, syInW - cy);
-        const [pmxIn, pmyIn] = projInner(mxInW - cx, myInW - cy);
-        const [pexIn, peyIn] = projInner(exInW - cx, eyInW - cy);
-        const outerCpX = 2 * pmx - (psx + pex) / 2;
-        const outerCpY = 2 * pmy - (psy + pey) / 2;
-        const innerCpX = 2 * pmxIn - (psxIn + pexIn) / 2;
-        const innerCpY = 2 * pmyIn - (psyIn + peyIn) / 2;
-        ctx.globalAlpha = topoAlphaFor(cell.mineral);
-        ctx.fillStyle = topoClassColor(cell.mineral);
-        ctx.beginPath();
-        ctx.moveTo(psx, psy);
-        ctx.quadraticCurveTo(outerCpX, outerCpY, pex, pey);
-        ctx.lineTo(pexIn, peyIn);
-        ctx.quadraticCurveTo(innerCpX, innerCpY, psxIn, psyIn);
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // Wall outline for this ring. Phase D: bare-wall stroke color
-    // shifts subtly by orientation so the ring-stack reads as
-    // floor / wall / ceiling without needing extra UI chrome.
+    const ringTwist = twist || 0;
     const orient = wall.ringOrientation(ringIdx);
     let bareWallColor = TOPO_WALL_COLOR;
     if (orient === 'floor') bareWallColor = TOPO_WALL_COLOR_FLOOR;
@@ -22717,6 +23211,12 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
+  }
+
+  for (const item of paintItems) {
+    if (item.kind === 'ring') renderRingOutline(item.meta);
+    else _renderCrystalWireframe(ctx, item.crystal, item.cellWorld,
+                                  sphereRadiusPx, mmToPx, cx, cy, F);
   }
 
   // Vug size readout — same HTML overlay as 2D mode.
