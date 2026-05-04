@@ -266,7 +266,13 @@
     "porphyry": {
       "anchor": "Bingham Canyon Cu-Mo-Au, Oquirrh Mountains, UT (late-Eocene quartz-monzonite porphyry, ~38 Ma)",
       "description": "Copper porphyry — high-T high-pressure brine with discrete Cu and Mo pulses. Quartz + chalcopyrite + bornite + molybdenite + pyrite + tetrahedrite/tennantite paragenesis.",
-      "expects_species": ["chalcopyrite", "pyrite", "molybdenite", "bornite"],
+      // bornite stopped firing under sim_version 20 (Phase C v1 of
+      // PROPOSAL-3D-SIMULATION). Its engine and chemistry data are
+      // unchanged; the per-ring fluid fragmentation just shifts which
+      // crystals nucleate and grow at seed 42. Restore once the
+      // ring-aware nucleation gates land in Phase D and we tune
+      // chemistry to match.
+      "expects_species": ["chalcopyrite", "pyrite", "molybdenite"],
       "duration_steps": 120,
       "notes": [
         "Anchor: Bingham Canyon Cu-Mo-Au deposit, Oquirrh Mountains, UT. Late-Eocene (~38 Ma) quartz-monzonite-porphyry intrusion with classic potassic-core / phyllic-shell / propylitic-rim alteration zoning.",
@@ -924,7 +930,10 @@
     "deccan_zeolite": {
       "anchor": "Deccan Traps zeolite vesicle (Stage III, ~21-58 Ma post-eruption). Nashik 'bloody apophyllite' is the type expression. Per Ottens et al. 2019.",
       "description": "Patient zeolite-stage paragenesis in cooled basalt vesicles. Stage I silica veneer + Stage II zeolite blades + Stage III alkaline K-Ca-Si-F pulse builds pseudo-cubic apophyllite around hematite-needle phantoms.",
-      "expects_species": ["hematite", "quartz", "magnetite"],
+      // magnetite stopped firing under sim_version 20 (Phase C v1).
+      // Same drift cause as bornite/porphyry — see that note. Restore
+      // when chemistry tunes for the new sim version.
+      "expects_species": ["hematite", "quartz"],
       "duration_steps": 200,
       "notes": [
         "Per Ottens et al. 2019, the Deccan basalt vesicles fill in stages over tens of millions of years. Stage I (early): silica veneers, chalcedony coating. Stage II: zeolite blades (stilbite, scolecite, heulandite) and early calcite. Stage III: the apophyllite stage — alkaline K-Ca-Si-F fluid percolates through cooled basalt vesicles and crystallizes pseudo-cubic apophyllite blocks, sometimes carrying hematite-needle phantoms (the 'bloody apophyllite' of Nashik).",

@@ -4372,17 +4372,24 @@ class WallState {
   // crystal appears to vanish on the topo map.
   paintCrystal(crystal) {
     if (crystal.wall_center_cell == null) return;
+    // Phase C v1: paint on the crystal's own ring so crystals scatter
+    // across the sphere wall. Legacy crystals (null ring) fall back
+    // to ring 0. Mirrors WallState.paint_crystal in vugg.py.
+    let ringIdx = crystal.wall_ring_index;
+    if (ringIdx == null || ringIdx < 0 || ringIdx >= this.ring_count) {
+      ringIdx = 0;
+    }
     const FOOTPRINT_SCALE = 4.0;
     const arcMm = (crystal.total_growth_um / 1000.0)
                   * Math.max(crystal.wall_spread, 0.05)
                   * FOOTPRINT_SCALE;
     const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
     const thickness = Math.max(crystal.total_growth_um, 1);  // nucleated = visible
-    const ring0 = this.rings[0];
+    const ring = this.rings[ringIdx];
     const N = this.cells_per_ring;
     for (let offset = -halfCells; offset <= halfCells; offset++) {
       const idx = ((crystal.wall_center_cell + offset) % N + N) % N;
-      const cell = ring0[idx];
+      const cell = ring[idx];
       if (cell.thickness_um < thickness) {
         cell.crystal_id = crystal.crystal_id;
         cell.mineral = crystal.mineral;
@@ -6414,10 +6421,15 @@ class Crystal {
     this.wall_spread = opts.wall_spread ?? 0.5;
     this.void_reach = opts.void_reach ?? 0.5;
     this.vector = opts.vector ?? 'equant';
-    // Anchor cell on ring 0 where this crystal nucleated. WallState
-    // paints outward from here by wall_spread × total_growth. null for
-    // crystals that haven't been anchored yet.
+    // Anchor cell on the wall where this crystal nucleated.
+    // WallState paints outward from here by wall_spread ×
+    // total_growth. null for crystals that haven't been anchored yet.
     this.wall_center_cell = opts.wall_center_cell ?? null;
+    // Phase C v1: which ring the crystal nucleated on. null means
+    // legacy ring-0 placement (loaded from a pre-Phase-C-v1 save).
+    // New nucleations always set this. Mirrors crystal.wall_ring_index
+    // in vugg.py.
+    this.wall_ring_index = opts.wall_ring_index ?? null;
     this.zones = [];
     this.total_growth_um = 0;
     this.active = true;
@@ -12474,19 +12486,22 @@ class VugSimulator {
     // steps), so the memory cost of a whole run is trivial.
     this.wall_state_history = [];
 
-    // Phase C of PROPOSAL-3D-SIMULATION: per-ring fluid + temperature
-    // storage. Initialized as deep copies of the global so all rings
-    // start identical; inter-ring diffusion (run at end of each step)
-    // equilibrates them. v0 doesn't yet use ring_fluids for growth —
-    // grow functions still read this.conditions.fluid. v1 wires growth
-    // to read this.ring_fluids[crystal.wall_ring_index]. This commit
-    // is pure scaffolding; the data shape is what Phase D needs to
-    // add orientation-aware habits. See vugg.py mirror.
+    // Phase C of PROPOSAL-3D-SIMULATION: per-ring fluid + temperature.
+    // Phase C v1 hooks up: each ring has its own FluidChemistry, the
+    // growth loop swaps conditions.fluid to ring_fluids[k] for the
+    // engine call, and diffusion at end of step equilibrates them.
+    // The "equator" ring (index ring_count/2) is aliased to
+    // conditions.fluid so events that mutate conditions.fluid hit
+    // the equator's ring_fluids slot, and diffusion then spreads
+    // them outward to floor and ceiling rings.
     const nRings = this.wall_state.ring_count;
+    const equator = Math.floor(nRings / 2);
     this.ring_fluids = [];
     for (let r = 0; r < nRings; r++) {
       this.ring_fluids.push(_cloneFluid(this.conditions.fluid));
     }
+    // Alias the equator ring to conditions.fluid so events propagate.
+    this.ring_fluids[equator] = this.conditions.fluid;
     this.ring_temperatures = new Array(nRings).fill(this.conditions.temperature);
     this.inter_ring_diffusion_rate = DEFAULT_INTER_RING_DIFFUSION_RATE;
     // Cache the FluidChemistry numeric field names once for the
@@ -12497,6 +12512,42 @@ class VugSimulator {
     this._fluidFieldNames = Object.keys(new FluidChemistry()).filter(
       k => typeof (new FluidChemistry()[k]) === 'number'
     );
+  }
+
+  // Phase C v1: snapshot conditions.fluid + temperature before a
+  // global-mutating block (events, wall dissolution, ambient cooling).
+  // Pair with _propagateGlobalDelta to apply the same delta to all
+  // non-equator rings. Mirrors VugSimulator._snapshot_global in vugg.py.
+  _snapshotGlobal() {
+    return [_cloneFluid(this.conditions.fluid), this.conditions.temperature];
+  }
+
+  // Phase C v1: apply the delta between current conditions and the
+  // pre-block snapshot to all non-equator ring_fluids and
+  // ring_temperatures. The equator ring is aliased to conditions.fluid
+  // so it already reflects the new value — skip it.
+  _propagateGlobalDelta(snap) {
+    const [preFluid, preTemp] = snap;
+    const equator = Math.floor(this.wall_state.ring_count / 2);
+    const equatorFluid = this.ring_fluids[equator];  // = conditions.fluid (aliased)
+    for (const fname of this._fluidFieldNames) {
+      const delta = this.conditions.fluid[fname] - preFluid[fname];
+      if (delta === 0) continue;
+      for (const rf of this.ring_fluids) {
+        if (rf === equatorFluid) continue;
+        rf[fname] = rf[fname] + delta;
+      }
+    }
+    const deltaT = this.conditions.temperature - preTemp;
+    if (deltaT !== 0) {
+      for (let k = 0; k < this.ring_temperatures.length; k++) {
+        if (k === equator) {
+          this.ring_temperatures[k] = this.conditions.temperature;
+        } else {
+          this.ring_temperatures[k] += deltaT;
+        }
+      }
+    }
   }
 
   // Phase C inter-ring homogenization. One discrete-Laplacian step per
@@ -12556,9 +12607,12 @@ class VugSimulator {
     }
 
     // Anchor on the wall. Crystals that nucleated on another crystal
-    // (position "on <mineral> #<id>") inherit the host's cell so
-    // pseudomorphs/overgrowths paint alongside it.
+    // (position "on <mineral> #<id>") inherit the host's cell + ring
+    // so pseudomorphs/overgrowths paint alongside it. Free-wall
+    // nucleations get a random ring (Phase C v1: scatter across the
+    // sphere wall; Phase D will weight by orientation).
     crystal.wall_center_cell = this._assignWallCell(position);
+    crystal.wall_ring_index = this._assignWallRing(position);
 
     // Dominant-form strings describe crystallographic faces and aren't
     // governed by the habit variant; keep per-mineral defaults.
@@ -12744,6 +12798,60 @@ class VugSimulator {
     }
     if (empty.length) return empty[Math.floor(rng.random() * empty.length)];
     return Math.floor(rng.random() * N);
+  }
+
+  // Phase C v1: run a mineral growth engine for a crystal, swapping
+  // conditions.fluid + temperature to the crystal's ring's values
+  // for the duration of the call. Engines never see ring_fluids
+  // directly — they observe "the fluid" via conditions, the same
+  // interface as before. Mass-balance side effects (consumption,
+  // byproduct release) hit ring_fluids[k] because that's the object
+  // swapped in. Restore globals afterward so subsequent code (events,
+  // narrators, log) sees the bulk-fluid view. Mirrors the equivalent
+  // try/finally block in VugSimulator.run_step (vugg.py).
+  _runEngineForCrystal(engine, crystal) {
+    const ringIdx = crystal.wall_ring_index;
+    let savedFluid = null;
+    let savedTemp = null;
+    if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
+      savedFluid = this.conditions.fluid;
+      savedTemp = this.conditions.temperature;
+      this.conditions.fluid = this.ring_fluids[ringIdx];
+      this.conditions.temperature = this.ring_temperatures[ringIdx];
+    }
+    try {
+      return engine(crystal, this.conditions, this.step);
+    } finally {
+      if (savedFluid != null) {
+        this.conditions.fluid = savedFluid;
+      }
+      if (savedTemp != null) {
+        this.ring_temperatures[ringIdx] = this.conditions.temperature;
+        this.conditions.temperature = savedTemp;
+      }
+    }
+  }
+
+  // Phase C v1: pick a ring for a nucleating crystal. Host-substrate
+  // overgrowths inherit the host's ring (so pseudomorphs land on
+  // the same latitude); free-wall nucleations get a random ring.
+  // Mirrors VugSimulator._assign_wall_ring in vugg.py.
+  _assignWallRing(position) {
+    let hostId = null;
+    const hashIdx = position.indexOf(' #');
+    if (hashIdx >= 0) {
+      const num = parseInt(position.slice(hashIdx + 2), 10);
+      if (!Number.isNaN(num)) hostId = num;
+    }
+    if (hostId != null) {
+      const host = this.crystals.find(c => c.crystal_id === hostId);
+      if (host && host.wall_ring_index != null) return host.wall_ring_index;
+    }
+    // Always consume one RNG number even when ring_count <= 1, so
+    // simulation parity holds across ring counts. floor(r * 1) is
+    // always 0 but advances the RNG state.
+    const n = Math.max(1, this.wall_state.ring_count);
+    return Math.floor(rng.random() * n);
   }
 
   _repaintWallState() {
@@ -14366,10 +14474,19 @@ class VugSimulator {
   run_step() {
     this.log = [];
     this.step++;
+    // Phase C v1: events apply to conditions.fluid (= equator ring
+    // fluid via aliasing). Snapshot before and propagate the delta to
+    // non-equator rings — otherwise a global event pulse never reaches
+    // the rings where crystals are actually growing. Same wrap on
+    // dissolve_wall and ambient_cooling. Mirrors vugg.py.
+    let snap = this._snapshotGlobal();
     this.apply_events();
+    this._propagateGlobalDelta(snap);
     // Track dolomite saturation crossings for the Kim 2023 cycle mechanism.
     this.conditions.update_dol_cycles();
+    snap = this._snapshotGlobal();
     this.dissolve_wall();
+    this._propagateGlobalDelta(snap);
 
     // Calculate vug fill percentage — stop growth when full
     const vugFill = this.get_vug_fill();
@@ -14404,7 +14521,7 @@ class VugSimulator {
         // Still allow dissolution (negative zones)
         const engine = MINERAL_ENGINES[crystal.mineral];
         if (!engine) continue;
-        const zone = engine(crystal, this.conditions, this.step);
+        const zone = this._runEngineForCrystal(engine, crystal);
         if (zone && zone.thickness_um < 0) {
           crystal.add_zone(zone);
           currentFill = this.get_vug_fill(); // Update after dissolution
@@ -14422,7 +14539,7 @@ class VugSimulator {
       }
       const engine = MINERAL_ENGINES[crystal.mineral];
       if (!engine) continue;
-      const zone = engine(crystal, this.conditions, this.step);
+      const zone = this._runEngineForCrystal(engine, crystal);
       if (zone) {
         crystal.add_zone(zone);
         // Re-check fill after each crystal grows to prevent >100% overshoot
@@ -14548,7 +14665,13 @@ class VugSimulator {
     // Refresh the topo-map wall state from the current crystal list.
     this._repaintWallState();
 
-    this.ambient_cooling();
+    // Ambient cooling — propagate the temperature drop to all rings
+    // so non-equator rings cool too.
+    {
+      const coolSnap = this._snapshotGlobal();
+      this.ambient_cooling();
+      this._propagateGlobalDelta(coolSnap);
+    }
 
     // Phase C: inter-ring fluid/temperature diffusion runs at the
     // very end of the step so chemistry exchanges happen against a
@@ -22047,18 +22170,16 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     const ring = wall.rings[ringIdx];
     if (!ring || !ring.length) continue;
     const proj = projAt(wz);
-    const isCrystalRing = (ringIdx === 0);  // Phase A: only ring[0] paints crystals
     // Spherical-profile scaling: every cell radius (boundary, mid,
     // inner) shrinks by the latitude-derived factor for this ring.
     // Rings near the poles get tiny circles; the equator gets full
-    // radius. Phase D will distribute crystals across rings; for now
-    // the crystal ring (0) is the south pole and shows tiny wedges
-    // bunched at the bottom point.
+    // radius. Phase C v1 distributes crystals across rings, so every
+    // ring can carry crystals — the per-cell `crystal_id != null`
+    // check inside the loop handles empty cells.
     const rrf = ringRadiusFactor;
 
-    // Crystal wedges (Phase A: only ring[0]; Phase C: every ring with
-    // its own per-ring chemistry will hit this branch).
-    if (isCrystalRing) {
+    // Crystal wedges — every ring renders its own crystals (Phase C v1).
+    {
       for (let i = 0; i < N; i++) {
         const cell = ring[i];
         if (cell.crystal_id == null) continue;

@@ -118,9 +118,10 @@ def test_sim_version_bumped_past_17(vugg):
 
 def _wall_signature(sim):
     """A compact summary of the simulation's externally-visible state.
-    If ring_count change leaks into the engine, this signature will
-    differ."""
-    cells = sim.wall_state.rings[0]
+    Sums wall_depth and thickness ACROSS ALL RINGS so the signature is
+    invariant under the Phase C v1 ring distribution (crystals now
+    scatter across rings instead of bunching on ring 0)."""
+    all_cells = [cell for ring in sim.wall_state.rings for cell in ring]
     return {
         "step": sim.step,
         "vug_diameter_mm": sim.conditions.wall.vug_diameter_mm,
@@ -128,8 +129,8 @@ def _wall_signature(sim):
         "crystal_ids": sorted(c.crystal_id for c in sim.crystals),
         "crystal_lengths": sorted(round(c.c_length_mm, 6) for c in sim.crystals),
         "crystal_minerals": sorted(c.mineral for c in sim.crystals),
-        "wall_depth_sum": round(sum(c.wall_depth for c in cells), 6),
-        "thickness_sum": round(sum(c.thickness_um for c in cells), 6),
+        "wall_depth_sum": round(sum(c.wall_depth for c in all_cells), 6),
+        "thickness_sum": round(sum(c.thickness_um for c in all_cells), 6),
     }
 
 
@@ -167,36 +168,22 @@ def _run_scenario(vugg, scenario_name, ring_count, steps, seed=12345):
     return sim
 
 
-@pytest.mark.parametrize("scenario", ["cooling", "pulse"])
-def test_forward_parity_ring_count_1_vs_16(vugg, scenario):
-    """Phase A invariant: simulating with ring_count=1 vs ring_count=16
-    produces identical externally-visible outcomes. The engine only
-    reads/writes ring[0], so adding pristine rings 1..15 must be a
-    no-op for the simulation result."""
-    sim_a = _run_scenario(vugg, scenario, ring_count=1, steps=30)
-    sim_b = _run_scenario(vugg, scenario, ring_count=16, steps=30)
-    sig_a = _wall_signature(sim_a)
-    sig_b = _wall_signature(sim_b)
-    assert sig_a == sig_b, (
-        f"forward-parity broke for scenario={scenario}: "
-        f"ring_count=1 vs ring_count=16 diverged.\n"
-        f"  ring_count=1:  {sig_a}\n"
-        f"  ring_count=16: {sig_b}"
-    )
+# Note: the Phase A `test_forward_parity_ring_count_1_vs_16` test
+# (verifying byte-identical output across ring counts) lived here for
+# v0. Phase C v1 (proposal's Phase 2) deliberately breaks that
+# invariant: per-ring chemistry fragments growth consumption across
+# rings, so a crystal on ring 5 with ring_count=16 sees a slightly
+# different ring fluid than the same crystal on ring 0 with
+# ring_count=1. The species set stays the same (covered by
+# test_forward_parity_under_phase_c_v1 in test_multi_ring_phase_c_v1),
+# but exact thicknesses can drift by a few percent. Byte-parity is no
+# longer the right invariant.
 
 
-def test_ring_count_16_keeps_higher_rings_pristine_after_run(vugg):
-    """After a real simulation, rings 1..N-1 must still hold pristine
-    WallCell defaults. If anything writes to rings 1..15 in Phase A
-    this test catches it."""
-    sim = _run_scenario(vugg, "cooling", ring_count=16, steps=30)
-    for r in range(1, 16):
-        for cell in sim.wall_state.rings[r]:
-            assert cell.wall_depth == 0.0, (
-                f"ring[{r}] gained wall_depth — engine leaked beyond ring[0]"
-            )
-            assert cell.crystal_id is None, (
-                f"ring[{r}] painted with crystal_id={cell.crystal_id} — "
-                f"engine leaked beyond ring[0]"
-            )
-            assert cell.thickness_um == 0.0
+# Note: the original Phase A test "rings above 0 stay pristine" was
+# a v0 anti-leak guard. Phase C v1 (PROPOSAL-3D-SIMULATION proposal's
+# Phase 2) intentionally distributes crystals across rings, so the
+# invariant no longer holds. Coverage moves to
+# tests/test_multi_ring_phase_c_v1.py — see
+# test_paint_crystal_writes_to_crystal_ring and
+# test_free_wall_nucleations_distribute_across_rings.
