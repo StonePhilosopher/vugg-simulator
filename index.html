@@ -4185,6 +4185,14 @@ class WallState {
     // Primaries come first, then secondaries.
     this.bubbles = [];
 
+    // Cross-axis polar profile: per-latitude modulation factor,
+    // computed lazily by _buildPolarProfile(). Renderer multiplies
+    // ring radii by polarProfileFactor(φ) for vertical-axis
+    // irregularity. Mirrors WallState.polar_amplitudes / phases in
+    // vugg.py.
+    this.polar_amplitudes = [];
+    this.polar_phases = [];
+
     this.rings = [];
     for (let r = 0; r < this.ring_count; r++) {
       const ring = [];
@@ -4195,6 +4203,7 @@ class WallState {
     // happen before max_seen_radius_mm is seeded so promontories
     // contribute.
     this._buildProfile();
+    this._buildPolarProfile();
 
     // Monotonic scale reference for the renderer. Starts generously
     // (2× the largest base radius — or 2× initial_radius_mm for a
@@ -4275,6 +4284,35 @@ class WallState {
         ring[j].base_radius_mm = rawRadii[j] * scale;
       }
     }
+  }
+
+  // Cross-axis (polar) Fourier profile. Three harmonics with random
+  // amplitudes ±18% and random phases, keyed by a derived seed so the
+  // polar profile is reproducible per scenario without polluting the
+  // equatorial RNG sequence. Mirrors WallState._build_polar_profile in
+  // vugg.py.
+  _buildPolarProfile() {
+    const seed = ((this.shape_seed | 0) ^ 0x700AA517) >>> 0;
+    const rng = _mulberry32(seed);
+    const HARMONICS = 3;
+    const AMP_LO = -0.18, AMP_HI = 0.18;
+    this.polar_amplitudes = [];
+    this.polar_phases = [];
+    for (let n = 0; n < HARMONICS; n++) {
+      this.polar_amplitudes.push(AMP_LO + (AMP_HI - AMP_LO) * rng());
+      this.polar_phases.push(rng() * 2 * Math.PI);
+    }
+  }
+
+  // Per-latitude radial multiplier. φ ∈ [0, π], south pole at 0,
+  // north at π. Floored at 0.5 so a strong pinch can't collapse a
+  // ring to zero radius.
+  polarProfileFactor(phi) {
+    let factor = 1.0;
+    for (let n = 0; n < this.polar_amplitudes.length; n++) {
+      factor += this.polar_amplitudes[n] * Math.cos((n + 1) * phi + this.polar_phases[n]);
+    }
+    return Math.max(0.5, factor);
   }
 
   // Wall arc length for one cell — uses current mean radius (per-cell
@@ -22189,10 +22227,13 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     // Ring 0 is the south pole (floor), ring N-1 is the north pole
     // (ceiling). φ runs from π/(2N) at ring 0 to π(2N-1)/(2N) at
     // ring N-1 — full latitude sweep with half-step offsets at each
-    // end so neither pole collapses to a point.
+    // end so neither pole collapses to a point. Cross-axis polar
+    // factor adds vertical irregularity: rings at certain latitudes
+    // bulge or pinch radially.
     const phi = Math.PI * (r + 0.5) / ringCount;
-    const ringRadiusFactor = Math.sin(phi);
-    const wz = -Math.cos(phi) * sphereRadiusPx;  // south pole at -R, north at +R
+    const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+    const ringRadiusFactor = Math.sin(phi) * polar;
+    const wz = -Math.cos(phi) * sphereRadiusPx;  // vertical position unchanged
     const projZ = Math.cos(_topoTiltX) * wz;     // small-angle yaw leaves z fixed for axis points
     ringOrder.push({ ringIdx: r, wz, ringRadiusFactor, projZ });
   }
