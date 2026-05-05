@@ -54,7 +54,7 @@ Order is rough priority — top of each section is most-actionable, but explicit
 
 ## 🧪 Geological accuracy — closing the formal gaps
 
-**Status:** proposal filed, not started. See [`PROPOSAL-GEOLOGICAL-ACCURACY.md`](PROPOSAL-GEOLOGICAL-ACCURACY.md) (2026-05-05).
+**Status:** proposal filed, not started. See [`PROPOSAL-GEOLOGICAL-ACCURACY.md`](PROPOSAL-GEOLOGICAL-ACCURACY.md) (2026-05-05). **Overlaps with `PROPOSAL-VOLATILE-GASES.md`** (Rock Bot, 2026-05-04, on canonical) at Phases 3 (CO₂) and 4 (Eh/redox); cross-references in both directions are wired into the proposal text. Treat the two as one combined work package: VOLATILE-GASES owns the multi-species headspace state, this proposal owns mass balance + thermodynamic Q/K + aqueous-side speciation + solid solutions.
 
 **Why:** the v17 chemistry-audit rounds and the modular refactor closed every per-mineral mistake; what's left are *formal* gaps in how the kernel does mass-action thermodynamics. Two concrete leaks visible in the code:
 
