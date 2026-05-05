@@ -12547,126 +12547,15 @@ function grow_tennantite(crystal, conditions, step) {
     });
 }
 
-// ── 99-legacy-bundle.js ──
+// ── 65-mineral-engines.js ──
 
-let rng = new SeededRandom(Date.now());
-// Time compression: each step represents more geological time at higher values.
-// 5× = ~50,000 years/step (Simulation/Creative), 1× = ~10,000 years/step (Groove).
-// Physics are identical — the clock is different, not the chemistry.
-let timeScale = 5.0;
 // ============================================================
-// MINERAL GROWTH ENGINES
+// js/65-mineral-engines.ts — MINERAL_ENGINES dispatch table
 // ============================================================
-// Molybdenite (MoS₂) — primary molybdenum sulfide
-// Hexagonal platy crystals. Bluish-gray metallic. Soft (H=1-1.5), sectile.
-// Forms at high T (300-500°C) in porphyry systems. Mo arrives in separate pulse from Cu.
-// Dissolves under oxidizing conditions, releasing MoO₄²⁻ to fluid — essential for wulfenite.
-// Ferrimolybdite — Fe₂(MoO₄)₃·nH₂O
-// Canary-yellow acicular tufts. The "no-lead branch" of Mo oxidation —
-// forms on molybdenite surfaces during supergene weathering when Fe is
-// around. Coexists with wulfenite; faster growth, less particular.
-// Dehydrates > 150°C or acid-dissolves at pH < 2 (releasing Fe + MoO₄²⁻).
-// Scorodite — FeAsO₄·2H₂O
-// Pale blue-green pseudo-octahedral dipyramids; the arsenic sequestration
-// mineral. Forms from oxidized arsenopyrite. Releases AsO₄³⁻ back to
-// fluid above pH 5.5 (feeds higher-pH arsenates) or above 160°C
-// (dehydrates to anhydrous FeAsO₄).
-// Arsenopyrite — FeAsS
-// Mesothermal primary sulfide; striated prismatic crystals with diamond
-// cross-section; metallic silver-white. The #1 Au-trapping mineral —
-// captures fluid Au as "invisible gold" trace_Au on growth zones,
-// competing with grow_native_gold for the fluid Au pool. On supergene
-// oxidation (O₂>0.5), the trapped Au is released back to fluid along
-// with Fe³⁺ + AsO₄³⁻ + H₂SO₄ — feeds scorodite + supergene-gold pockets.
-// Barite — BaSO4
-// The Ba sequestration mineral; tabular plates ("desert rose"), bladed
-// fans (Cumberland), cockscomb cyclic twins. Acid-resistant, permanent
-// at sim T (decomposes only > 1149°C). MVT primary gangue.
-// Celestine — SrSO4
-// Pale celestial-blue Sr sulfate; isostructural with barite. Madagascar
-// geodes, Sicilian sulfur-vug fibrous habit, Lake Erie blue blades.
-// Permanent at sim T (decomposes > 1100°C).
-// Acanthite — Ag2S (monoclinic, low-T)
-// First-class engine for the cold-storage form of Ag2S. Most acanthite in
-// nature is paramorphic after cooled argentite (set by apply_paramorph_transitions
-// in 8a-2); the engine here covers primary low-T thorn / massive habits.
-// Lead-gray to iron-black, Mohs 2-2.5, sectile.
-// Argentite — Ag2S (cubic, high-T). Paramorph to acanthite on cooling
-// past 173°C — handled in applyParamorphTransitions in run_step.
-// Chalcanthite — CuSO4·5H2O (water-soluble Cu sulfate, terminal cascade phase)
-// Descloizite — Pb(Zn,Cu)VO4(OH) (Zn end of descloizite-mottramite series)
-// Mottramite — Pb(Cu,Zn)VO4(OH) (Cu end of descloizite-mottramite series)
-// Raspite — PbWO4 (RARE monoclinic polymorph)
-// Stolzite — PbWO4 (common tetragonal polymorph)
-// Olivenite — Cu2AsO4(OH) (Cu end of olivenite-adamite series)
-// Nickeline — NiAs (high-T pale-copper-red Ni arsenide)
-// Millerite — NiS (capillary brass-yellow Ni sulfide)
-// Cobaltite — CoAsS (three-element-gate sulfarsenide)
-// Native tellurium — Te (metal-telluride-overflow engine)
-// Native sulfur — S (synproportionation Eh-window engine)
-// Native arsenic — As (residual-overflow native element)
-// Native silver — Ag (Kongsberg wire-silver mineral, S-depletion gate)
-// Anhydrite — CaSO4
-// High-T or saline-low-T Ca sulfate. Sabkha evaporite + Bingham deep brine.
-// Rehydrates to gypsum/selenite when T<60 AND salinity<100‰.
-// Brochantite — Cu4(SO4)(OH)6
-// Wet-supergene Cu sulfate; emerald-green prismatic. Forks with antlerite
-// at pH 3.5. Substrate prefers dissolving Cu sulfides (chalcocite/covellite).
-// Antlerite — Cu3(SO4)(OH)4
-// Dry-acid Cu sulfate; pH 1-3.5 stability. Substrate-prefers dissolving
-// brochantite (the direct fork product when acidification arrives).
-// Jarosite — KFe³⁺₃(SO4)2(OH)6
-// Yellow AMD Fe-sulfate; substrate-prefers dissolving pyrite/marcasite.
-// Dissolves above pH 4 → releases K + Fe³⁺ + SO4 (jarosite-to-goethite
-// AMN succession when pH neutralizes).
-// Alunite — KAl3(SO4)2(OH)6
-// Advanced argillic alteration index mineral; substrate-prefers dissolving
-// feldspar. Wider T than jarosite (hydrothermal acid-sulfate). Dissolves
-// above pH 4 OR above 350°C.
-// Feldspar — KAlSi3O8 / NaAlSi3O8
-// Temperature determines polymorph: sanidine (>500) → orthoclase (300-500) → microcline (<300)
-// Pb in fluid + microcline = amazonite (green)
-// The mineral that IS a thermometer
-// Round 9a — broth-ratio branching pair: rosasite (Cu-dominant) +
-// aurichalcite (Zn-dominant). Mirror of vugg.py grow_rosasite /
-// grow_aurichalcite. The supersat methods enforce the ratio gate;
-// these grow funcs handle habit selection, color-by-fraction notes,
-// fluid depletion, and acid dissolution.
-// Round 9b — anion-competition mechanic (torbernite + zeunerite).
-// Mirror of vugg.py grow_torbernite / grow_zeunerite. Both are uranyl
-// tabular plates flattened on {001}; same habit-selection logic, the
-// only difference is which anion (P or As) drives the formula.
-// Tincalconite paramorph stub — no growth pathway, only appears via
-// applyDehydrationTransitions converting borax in place.
-function grow_tincalconite(_crystal, _conditions, _step) { return null; }
-// Mirabilite (Na2SO4·10H2O) — Glauber salt, cold-side Na-sulfate
-// evaporite. v29 mirror of vugg.py.
-// Thenardite (Na2SO4) — anhydrous warm-side Na-sulfate. v29 mirror.
-// Borax (Na2[B4O5(OH)4]·8H2O) — alkaline-brine borate evaporite.
-// v28. Fast-growing, dehydration-prone. Mirror of grow_borax in
-// vugg.py.
-// Halite (NaCl) — chloride evaporite. v27. Cubic / hopper habit.
-// Bathtub-ring deposit; fires when a vadose-transition concentration
-// boost pushes Na × Cl × concentration² into supersaturation. Mirror
-// of grow_halite in vugg.py.
-// Selenite (gypsum variety) — CaSO4·2H2O
-// Forms at low temperature in oxidizing, evaporative environments
-// The crystal that grows when everything else is ending
-// Goethite (FeO(OH)) — the ghost mineral made real.
-// Low-T oxidation product of Fe-sulfides. Botryoidal/mammillary/fibrous.
-// Classic pseudomorph after pyrite (Egyptian Prophecy Stones = goethite
-// after marcasite). Dehydrates to hematite above 300°C.
-// Albite (NaAlSi₃O₈) — Na-feldspar, cleavelandite platy habit in pegmatites.
-// Chrysocolla (Cu₂H₂Si₂O₅(OH)₄) — hydrous copper silicate, cyan-blue
-// enamel of Cu oxidation zones. Mirrors grow_chrysocolla in vugg.py.
-// Native gold (Au) — noble metal. No acid-dissolution path; gold is
-// indestructible under sim conditions. See vugg.py grow_native_gold for
-// full habit / alloying / σ rationale.
-// Shared habit-form list for the beryl family (T-binned).
-// Shared HF-only dissolution path for all beryl-family crystals.
-// ============================================================
-// CORUNDUM FAMILY (Al₂O₃) — first UPPER-gate mineral in the sim
-// ============================================================
+// Mineral name → grow_<mineral> function. Read by VugSimulator.runStep when nucleating + growing crystals. Each grow_* lives in its js/5x-engines-<class>.ts module.
+//
+// Phase B9 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
+// stay global so call sites in 99-legacy-bundle.ts keep working.
 const MINERAL_ENGINES = {
     quartz: grow_quartz,
     calcite: grow_calcite,
@@ -12766,6 +12655,16 @@ const MINERAL_ENGINES = {
     uranospinite: grow_uranospinite, // Round 9e: As-branch / Ca-cation — autunite-group Ca-uranyl arsenate
     tyuyamunite: grow_tyuyamunite, // Round 9e: V-branch / Ca-cation — orthorhombic Ca-uranyl vanadate
 };
+
+// ── 70-events.js ──
+
+// ============================================================
+// js/70-events.ts — Event system + EVENT_REGISTRY + scenario loader
+// ============================================================
+// Event base classes, named event handlers (event_fluid_pulse, event_acidify, …), the EVENT_REGISTRY string-id → handler dict, and the JSON5 scenario loader that reads data/scenarios.json5.
+//
+// Phase B9 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
+// stay global so call sites in 99-legacy-bundle.ts keep working.
 // ============================================================
 // EVENT SYSTEM
 // ============================================================
@@ -13791,6 +13690,16 @@ let SCENARIOS = {};
 _loadScenariosJSON5().catch(err => {
     console.error(`[scenarios] load failed: ${err && err.message}`);
 });
+
+// ── 75-transitions.js ──
+
+// ============================================================
+// js/75-transitions.ts — Paramorph + dehydration in-place mineral transitions
+// ============================================================
+// PARAMORPH_TRANSITIONS (T-driven cubic→monoclinic etc.) and DEHYDRATION_TRANSITIONS (humidity/heat-driven hydrate→anhydrate). applyParamorphTransitions runs each step.
+//
+// Phase B9 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
+// stay global so call sites in 99-legacy-bundle.ts keep working.
 // ============================================================
 // PARAMORPH TRANSITIONS
 // ============================================================
@@ -13879,6 +13788,16 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
     }
     return null;
 }
+
+// ── 78-preferences.js ──
+
+// ============================================================
+// js/78-preferences.ts — Orientation + water-state nucleation preferences
+// ============================================================
+// ORIENTATION_PREFERENCE (mineral → preferred wall ring), WATER_STATE_PREFERENCE (mineral → meniscus/submerged/vadose bias). Read by VugSimulator._assignWallRing during nucleation.
+//
+// Phase B9 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
+// stay global so call sites in 99-legacy-bundle.ts keep working.
 // ============================================================
 // SIMULATION ENGINE
 // ============================================================
@@ -13919,6 +13838,127 @@ const WATER_STATE_PREFERENCE = {
     mirabilite: ['meniscus', 3.0],
     thenardite: ['meniscus', 3.0],
 };
+
+// ── 99-legacy-bundle.js ──
+
+let rng = new SeededRandom(Date.now());
+// Time compression: each step represents more geological time at higher values.
+// 5× = ~50,000 years/step (Simulation/Creative), 1× = ~10,000 years/step (Groove).
+// Physics are identical — the clock is different, not the chemistry.
+let timeScale = 5.0;
+// ============================================================
+// MINERAL GROWTH ENGINES
+// ============================================================
+// Molybdenite (MoS₂) — primary molybdenum sulfide
+// Hexagonal platy crystals. Bluish-gray metallic. Soft (H=1-1.5), sectile.
+// Forms at high T (300-500°C) in porphyry systems. Mo arrives in separate pulse from Cu.
+// Dissolves under oxidizing conditions, releasing MoO₄²⁻ to fluid — essential for wulfenite.
+// Ferrimolybdite — Fe₂(MoO₄)₃·nH₂O
+// Canary-yellow acicular tufts. The "no-lead branch" of Mo oxidation —
+// forms on molybdenite surfaces during supergene weathering when Fe is
+// around. Coexists with wulfenite; faster growth, less particular.
+// Dehydrates > 150°C or acid-dissolves at pH < 2 (releasing Fe + MoO₄²⁻).
+// Scorodite — FeAsO₄·2H₂O
+// Pale blue-green pseudo-octahedral dipyramids; the arsenic sequestration
+// mineral. Forms from oxidized arsenopyrite. Releases AsO₄³⁻ back to
+// fluid above pH 5.5 (feeds higher-pH arsenates) or above 160°C
+// (dehydrates to anhydrous FeAsO₄).
+// Arsenopyrite — FeAsS
+// Mesothermal primary sulfide; striated prismatic crystals with diamond
+// cross-section; metallic silver-white. The #1 Au-trapping mineral —
+// captures fluid Au as "invisible gold" trace_Au on growth zones,
+// competing with grow_native_gold for the fluid Au pool. On supergene
+// oxidation (O₂>0.5), the trapped Au is released back to fluid along
+// with Fe³⁺ + AsO₄³⁻ + H₂SO₄ — feeds scorodite + supergene-gold pockets.
+// Barite — BaSO4
+// The Ba sequestration mineral; tabular plates ("desert rose"), bladed
+// fans (Cumberland), cockscomb cyclic twins. Acid-resistant, permanent
+// at sim T (decomposes only > 1149°C). MVT primary gangue.
+// Celestine — SrSO4
+// Pale celestial-blue Sr sulfate; isostructural with barite. Madagascar
+// geodes, Sicilian sulfur-vug fibrous habit, Lake Erie blue blades.
+// Permanent at sim T (decomposes > 1100°C).
+// Acanthite — Ag2S (monoclinic, low-T)
+// First-class engine for the cold-storage form of Ag2S. Most acanthite in
+// nature is paramorphic after cooled argentite (set by apply_paramorph_transitions
+// in 8a-2); the engine here covers primary low-T thorn / massive habits.
+// Lead-gray to iron-black, Mohs 2-2.5, sectile.
+// Argentite — Ag2S (cubic, high-T). Paramorph to acanthite on cooling
+// past 173°C — handled in applyParamorphTransitions in run_step.
+// Chalcanthite — CuSO4·5H2O (water-soluble Cu sulfate, terminal cascade phase)
+// Descloizite — Pb(Zn,Cu)VO4(OH) (Zn end of descloizite-mottramite series)
+// Mottramite — Pb(Cu,Zn)VO4(OH) (Cu end of descloizite-mottramite series)
+// Raspite — PbWO4 (RARE monoclinic polymorph)
+// Stolzite — PbWO4 (common tetragonal polymorph)
+// Olivenite — Cu2AsO4(OH) (Cu end of olivenite-adamite series)
+// Nickeline — NiAs (high-T pale-copper-red Ni arsenide)
+// Millerite — NiS (capillary brass-yellow Ni sulfide)
+// Cobaltite — CoAsS (three-element-gate sulfarsenide)
+// Native tellurium — Te (metal-telluride-overflow engine)
+// Native sulfur — S (synproportionation Eh-window engine)
+// Native arsenic — As (residual-overflow native element)
+// Native silver — Ag (Kongsberg wire-silver mineral, S-depletion gate)
+// Anhydrite — CaSO4
+// High-T or saline-low-T Ca sulfate. Sabkha evaporite + Bingham deep brine.
+// Rehydrates to gypsum/selenite when T<60 AND salinity<100‰.
+// Brochantite — Cu4(SO4)(OH)6
+// Wet-supergene Cu sulfate; emerald-green prismatic. Forks with antlerite
+// at pH 3.5. Substrate prefers dissolving Cu sulfides (chalcocite/covellite).
+// Antlerite — Cu3(SO4)(OH)4
+// Dry-acid Cu sulfate; pH 1-3.5 stability. Substrate-prefers dissolving
+// brochantite (the direct fork product when acidification arrives).
+// Jarosite — KFe³⁺₃(SO4)2(OH)6
+// Yellow AMD Fe-sulfate; substrate-prefers dissolving pyrite/marcasite.
+// Dissolves above pH 4 → releases K + Fe³⁺ + SO4 (jarosite-to-goethite
+// AMN succession when pH neutralizes).
+// Alunite — KAl3(SO4)2(OH)6
+// Advanced argillic alteration index mineral; substrate-prefers dissolving
+// feldspar. Wider T than jarosite (hydrothermal acid-sulfate). Dissolves
+// above pH 4 OR above 350°C.
+// Feldspar — KAlSi3O8 / NaAlSi3O8
+// Temperature determines polymorph: sanidine (>500) → orthoclase (300-500) → microcline (<300)
+// Pb in fluid + microcline = amazonite (green)
+// The mineral that IS a thermometer
+// Round 9a — broth-ratio branching pair: rosasite (Cu-dominant) +
+// aurichalcite (Zn-dominant). Mirror of vugg.py grow_rosasite /
+// grow_aurichalcite. The supersat methods enforce the ratio gate;
+// these grow funcs handle habit selection, color-by-fraction notes,
+// fluid depletion, and acid dissolution.
+// Round 9b — anion-competition mechanic (torbernite + zeunerite).
+// Mirror of vugg.py grow_torbernite / grow_zeunerite. Both are uranyl
+// tabular plates flattened on {001}; same habit-selection logic, the
+// only difference is which anion (P or As) drives the formula.
+// Tincalconite paramorph stub — no growth pathway, only appears via
+// applyDehydrationTransitions converting borax in place.
+function grow_tincalconite(_crystal, _conditions, _step) { return null; }
+// Mirabilite (Na2SO4·10H2O) — Glauber salt, cold-side Na-sulfate
+// evaporite. v29 mirror of vugg.py.
+// Thenardite (Na2SO4) — anhydrous warm-side Na-sulfate. v29 mirror.
+// Borax (Na2[B4O5(OH)4]·8H2O) — alkaline-brine borate evaporite.
+// v28. Fast-growing, dehydration-prone. Mirror of grow_borax in
+// vugg.py.
+// Halite (NaCl) — chloride evaporite. v27. Cubic / hopper habit.
+// Bathtub-ring deposit; fires when a vadose-transition concentration
+// boost pushes Na × Cl × concentration² into supersaturation. Mirror
+// of grow_halite in vugg.py.
+// Selenite (gypsum variety) — CaSO4·2H2O
+// Forms at low temperature in oxidizing, evaporative environments
+// The crystal that grows when everything else is ending
+// Goethite (FeO(OH)) — the ghost mineral made real.
+// Low-T oxidation product of Fe-sulfides. Botryoidal/mammillary/fibrous.
+// Classic pseudomorph after pyrite (Egyptian Prophecy Stones = goethite
+// after marcasite). Dehydrates to hematite above 300°C.
+// Albite (NaAlSi₃O₈) — Na-feldspar, cleavelandite platy habit in pegmatites.
+// Chrysocolla (Cu₂H₂Si₂O₅(OH)₄) — hydrous copper silicate, cyan-blue
+// enamel of Cu oxidation zones. Mirrors grow_chrysocolla in vugg.py.
+// Native gold (Au) — noble metal. No acid-dissolution path; gold is
+// indestructible under sim conditions. See vugg.py grow_native_gold for
+// full habit / alloying / σ rationale.
+// Shared habit-form list for the beryl family (T-binned).
+// Shared HF-only dissolution path for all beryl-family crystals.
+// ============================================================
+// CORUNDUM FAMILY (Al₂O₃) — first UPPER-gate mineral in the sim
+// ============================================================
 class VugSimulator {
     constructor(conditions, events) {
         this.conditions = conditions;
