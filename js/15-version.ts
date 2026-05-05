@@ -384,5 +384,23 @@
 //        legacy O2 thresholds 0.4/0.8 map cleanly to Eh well above
 //        the Fe couple midpoint. With EH_DYNAMIC_ENABLED still false,
 //        byte-identical to v30 (verified via diff).
-const SIM_VERSION = 31;
+//   v32 — Phase 4b oxide class COMPLETE (May 2026): hematite,
+//        uraninite, magnetite, cuprite. 8 sites across 4 supersat
+//        methods (corundum/ruby/sapphire delegate to
+//        _corundum_base_sigma which doesn't reference fluid.O2 — no
+//        migration needed). Oxide is the first class with mixed
+//        redox semantics:
+//        • hematite (Fe(III)): standard oxidized-side via
+//          oxideRedoxAvailable + oxideRedoxFactor.
+//        • uraninite (U(IV)): REDUCED-side via oxideRedoxAnoxic +
+//          oxideRedoxAnoxicFactor — the first reverse-gate helpers.
+//          Phase 4c will add a U couple to REDOX_COUPLES so this
+//          binds against `1 - redoxFraction(fluid, 'U')`.
+//        • magnetite + cuprite (intermediate Fe-mixed-valence and
+//          Cu(I)): WINDOWED via oxideRedoxWindow +
+//          oxideRedoxTent — Eh-band-with-tent peak, neither solidly
+//          oxic nor anoxic.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v31
+//        (verified via diff).
+const SIM_VERSION = 32;
 

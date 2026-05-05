@@ -226,3 +226,99 @@ function hydroxideRedoxFactor(fluid: any, scaleAtFull: number, cap: number = Inf
   const o2eq = o2FromEh(Eh);
   return Math.min(o2eq / scaleAtFull, cap);
 }
+
+// ============================================================
+// Phase 4b oxide-class engine helpers
+// ============================================================
+// Oxides have three different redox shapes — unlike sulfate/hydroxide
+// which are uniformly "needs oxidized state":
+//
+//   1. HEMATITE (Fe₂O₃, Fe(III)): standard oxidized-side, same shape
+//      as sulfate. oxideRedoxAvailable/Factor.
+//
+//   2. URANINITE (UO₂, U(IV)): REDUCED-side. Forms only when fluid is
+//      sufficiently anoxic; uranium oxidation to U(VI) keeps uranyl
+//      mobile in solution. oxideRedoxAnoxic/AnoxicFactor.
+//
+//   3. MAGNETITE (Fe₃O₄, mixed Fe(II)/Fe(III)) and CUPRITE (Cu₂O,
+//      Cu(I), intermediate copper oxidation): WINDOWED — neither
+//      solidly oxic nor anoxic. Forms in transition zones with a
+//      preferred peak. oxideRedoxWindow/Tent.
+//
+// All variants flag-OFF passthrough to fluid.O2; flag-ON Phase 4c
+// will bind the standard form to redoxFraction(fluid, 'Fe'), the
+// anoxic form to a U-couple (TBD: add to REDOX_COUPLES), and the
+// windowed forms to per-mineral Eh band specs.
+
+// Standard oxidized-side gate (hematite-style).
+function oxideRedoxAvailable(fluid: any, o2Threshold: number): boolean {
+  if (!EH_DYNAMIC_ENABLED) {
+    return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
+  }
+  const EhEquivalent = ehFromO2(o2Threshold);
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  return Eh >= EhEquivalent;
+}
+
+// Standard oxidized-side multiplier (hematite-style).
+function oxideRedoxFactor(fluid: any, scaleAtFull: number, cap: number = Infinity): number {
+  if (!EH_DYNAMIC_ENABLED) {
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    return Math.min(O2 / scaleAtFull, cap);
+  }
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  const o2eq = o2FromEh(Eh);
+  return Math.min(o2eq / scaleAtFull, cap);
+}
+
+// Reduced-side gate (uraninite-style): true when conditions are
+// reducing enough — i.e., when fluid.O2 is BELOW the threshold.
+// Replaces `if (fluid.O2 > X) return 0` with `if (!oxideRedoxAnoxic(fluid, X)) return 0`.
+function oxideRedoxAnoxic(fluid: any, o2UpperBound: number): boolean {
+  if (!EH_DYNAMIC_ENABLED) {
+    return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) <= o2UpperBound;
+  }
+  const EhEquivalent = ehFromO2(o2UpperBound);
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  return Eh <= EhEquivalent;
+}
+
+// Reduced-side multiplier (uraninite-style): factor grows as O2
+// falls. Legacy form: `(scale - fluid.O2)`. With the upstream gate
+// ensuring O2 stays well under `scale`, the result stays positive.
+function oxideRedoxAnoxicFactor(fluid: any, scale: number): number {
+  if (!EH_DYNAMIC_ENABLED) {
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    return scale - O2;
+  }
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  const o2eq = o2FromEh(Eh);
+  return scale - o2eq;
+}
+
+// Windowed gate (magnetite/cuprite-style): true when fluid.O2 sits
+// within [low, high]. Replaces `if (fluid.O2 < low || fluid.O2 > high) return 0`
+// with `if (!oxideRedoxWindow(fluid, low, high)) return 0`.
+function oxideRedoxWindow(fluid: any, o2Low: number, o2High: number): boolean {
+  if (!EH_DYNAMIC_ENABLED) {
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    return O2 >= o2Low && O2 <= o2High;
+  }
+  const EhLow = ehFromO2(o2Low);
+  const EhHigh = ehFromO2(o2High);
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  return Eh >= EhLow && Eh <= EhHigh;
+}
+
+// Tent-function multiplier (magnetite/cuprite-style): Math.max(floor,
+// 1.0 - Math.abs(O2 - peak) * slope). Falls off linearly from a peak
+// value of 1.0 at the specified peak O2, with a floor.
+function oxideRedoxTent(fluid: any, peak: number, slope: number, floor: number): number {
+  if (!EH_DYNAMIC_ENABLED) {
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    return Math.max(floor, 1.0 - Math.abs(O2 - peak) * slope);
+  }
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  const o2eq = o2FromEh(Eh);
+  return Math.max(floor, 1.0 - Math.abs(o2eq - peak) * slope);
+}

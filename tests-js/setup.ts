@@ -221,6 +221,13 @@ const EXPORTS = [
   // Phase 4b hydroxide-class helpers (20c-chemistry-redox.ts).
   'hydroxideRedoxAvailable',
   'hydroxideRedoxFactor',
+  // Phase 4b oxide-class helpers (20c-chemistry-redox.ts).
+  'oxideRedoxAvailable',
+  'oxideRedoxFactor',
+  'oxideRedoxAnoxic',
+  'oxideRedoxAnoxicFactor',
+  'oxideRedoxWindow',
+  'oxideRedoxTent',
 ];
 
 let _bundleLoaded = false;

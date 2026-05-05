@@ -18,6 +18,12 @@ declare const sulfateRedoxAvailable: any;
 declare const sulfateRedoxFactor: any;
 declare const hydroxideRedoxAvailable: any;
 declare const hydroxideRedoxFactor: any;
+declare const oxideRedoxAvailable: any;
+declare const oxideRedoxFactor: any;
+declare const oxideRedoxAnoxic: any;
+declare const oxideRedoxAnoxicFactor: any;
+declare const oxideRedoxWindow: any;
+declare const oxideRedoxTent: any;
 
 describe('redox infrastructure (Phase 4a)', () => {
   it('flag is OFF in v26 — engines still gate on fluid.O2', () => {
@@ -198,6 +204,61 @@ describe('Phase 4b hydroxide redox helpers', () => {
       const f = new FluidChemistry({ O2 });
       expect(hydroxideRedoxFactor(f, 1.0)).toBeCloseTo(O2 / 1.0, 6);
       expect(hydroxideRedoxFactor(f, 1.5, 1.5)).toBeCloseTo(Math.min(O2 / 1.5, 1.5), 6);
+    }
+  });
+});
+
+describe('Phase 4b oxide redox helpers', () => {
+  // Three semantic shapes: standard oxidized-side (hematite),
+  // reduced-side (uraninite), windowed (magnetite + cuprite).
+
+  it('oxideRedoxAvailable matches hematite legacy gate', () => {
+    for (const O2 of [0.4, 0.49, 0.5, 0.51, 1.0]) {
+      const f = new FluidChemistry({ O2 });
+      expect(oxideRedoxAvailable(f, 0.5)).toBe(O2 >= 0.5);
+    }
+  });
+
+  it('oxideRedoxFactor matches hematite legacy multiplier', () => {
+    // hematite: o_f = O2 / 1.0 (no cap)
+    for (const O2 of [0.5, 1.0, 1.5, 3.0]) {
+      const f = new FluidChemistry({ O2 });
+      expect(oxideRedoxFactor(f, 1.0)).toBeCloseTo(O2 / 1.0, 6);
+    }
+  });
+
+  it('oxideRedoxAnoxic matches uraninite legacy reverse gate', () => {
+    // legacy: `if (O2 > 0.3) return 0` — anoxic helper returns
+    // false (i.e., gate exits) when O2 > 0.3
+    for (const O2 of [0.0, 0.2, 0.3, 0.4, 1.0]) {
+      const f = new FluidChemistry({ O2 });
+      expect(oxideRedoxAnoxic(f, 0.3)).toBe(O2 <= 0.3);
+    }
+  });
+
+  it('oxideRedoxAnoxicFactor matches uraninite legacy (0.5 - O2)', () => {
+    // After the gate at 0.3, O2 stays in [0, 0.3]; factor in [0.2, 0.5].
+    for (const O2 of [0.0, 0.1, 0.2, 0.3]) {
+      const f = new FluidChemistry({ O2 });
+      expect(oxideRedoxAnoxicFactor(f, 0.5)).toBeCloseTo(0.5 - O2, 6);
+    }
+  });
+
+  it('oxideRedoxWindow matches magnetite (0.1, 1.0) and cuprite (0.3, 1.2) legacy', () => {
+    for (const O2 of [0.0, 0.1, 0.5, 1.0, 1.1, 1.2, 1.5]) {
+      const f = new FluidChemistry({ O2 });
+      expect(oxideRedoxWindow(f, 0.1, 1.0)).toBe(O2 >= 0.1 && O2 <= 1.0);
+      expect(oxideRedoxWindow(f, 0.3, 1.2)).toBe(O2 >= 0.3 && O2 <= 1.2);
+    }
+  });
+
+  it('oxideRedoxTent matches magnetite (peak 0.4, slope 1.5, floor 0.4) and cuprite (peak 0.7, slope 1.4, floor 0.3)', () => {
+    for (const O2 of [0.0, 0.4, 0.7, 1.0]) {
+      const f = new FluidChemistry({ O2 });
+      const magLegacy = Math.max(0.4, 1.0 - Math.abs(O2 - 0.4) * 1.5);
+      const cupLegacy = Math.max(0.3, 1.0 - Math.abs(O2 - 0.7) * 1.4);
+      expect(oxideRedoxTent(f, 0.4, 1.5, 0.4)).toBeCloseTo(magLegacy, 6);
+      expect(oxideRedoxTent(f, 0.7, 1.4, 0.3)).toBeCloseTo(cupLegacy, 6);
     }
   });
 });

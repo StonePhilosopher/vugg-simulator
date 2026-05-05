@@ -11,8 +11,8 @@
 
 Object.assign(VugConditions.prototype, {
   supersaturation_hematite() {
-  if (this.fluid.Fe < 20 || this.fluid.O2 < 0.5) return 0;
-  let sigma = (this.fluid.Fe / 100.0) * (this.fluid.O2 / 1.0) * Math.exp(-0.002 * this.temperature);
+  if (this.fluid.Fe < 20 || !oxideRedoxAvailable(this.fluid, 0.5)) return 0;
+  let sigma = (this.fluid.Fe / 100.0) * oxideRedoxFactor(this.fluid, 1.0) * Math.exp(-0.002 * this.temperature);
   if (this.fluid.pH < 3.5) {
     sigma -= (3.5 - this.fluid.pH) * 0.3;
   }
@@ -25,17 +25,17 @@ Object.assign(VugConditions.prototype, {
   // T-only formula with no O2 gate — uraninite would form even in
   // oxidizing conditions, contradicting research-uraninite.md.
   // Now: needs reducing + U + (slight high-T preference).
-  if (this.fluid.U < 5 || this.fluid.O2 > 0.3) return 0;
-  let sigma = (this.fluid.U / 20.0) * (0.5 - this.fluid.O2);
+  if (this.fluid.U < 5 || !oxideRedoxAnoxic(this.fluid, 0.3)) return 0;
+  let sigma = (this.fluid.U / 20.0) * oxideRedoxAnoxicFactor(this.fluid, 0.5);
   if (this.temperature > 200) sigma *= 1.3;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'uraninite');
   return Math.max(sigma, 0);
 },
 
   supersaturation_magnetite() {
-  if (this.fluid.Fe < 25 || this.fluid.O2 < 0.1 || this.fluid.O2 > 1.0) return 0;
+  if (this.fluid.Fe < 25 || !oxideRedoxWindow(this.fluid, 0.1, 1.0)) return 0;
   const fe_f = Math.min(this.fluid.Fe / 60.0, 2.0);
-  const o_f = Math.max(0.4, 1.0 - Math.abs(this.fluid.O2 - 0.4) * 1.5);
+  const o_f = oxideRedoxTent(this.fluid, 0.4, 1.5, 0.4);
   let sigma = fe_f * o_f;
   const T = this.temperature;
   let T_factor;
@@ -50,9 +50,9 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_cuprite() {
-  if (this.fluid.Cu < 20 || this.fluid.O2 < 0.3 || this.fluid.O2 > 1.2) return 0;
+  if (this.fluid.Cu < 20 || !oxideRedoxWindow(this.fluid, 0.3, 1.2)) return 0;
   const cu_f = Math.min(this.fluid.Cu / 50.0, 2.0);
-  const o_f = Math.max(0.3, 1.0 - Math.abs(this.fluid.O2 - 0.7) * 1.4);
+  const o_f = oxideRedoxTent(this.fluid, 0.7, 1.4, 0.3);
   let sigma = cu_f * o_f;
   if (this.temperature > 100) sigma *= Math.exp(-0.03 * (this.temperature - 100));
   if (this.fluid.pH < 3.5) sigma -= (3.5 - this.fluid.pH) * 0.3;
