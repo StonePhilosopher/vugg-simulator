@@ -27,6 +27,10 @@ Object.assign(VugConditions.prototype, {
   // counts both species when they differ.
   const ca_co3 = Math.sqrt(this.fluid.Ca * this.fluid.CO3);
   let sigma = ca_co3 / eq;
+  // Phase 2b: activity-coefficient correction (Davies). Drops σ by ~0.6-0.9×
+  // at typical fluid I, more sharply at brine I. Flag-OFF default — no
+  // change until calibration sweep at the flag-flip commit.
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'calcite');
 
   // Acid dissolution of carbonates
   if (this.fluid.pH < 5.5) {
@@ -57,6 +61,7 @@ Object.assign(VugConditions.prototype, {
   // Phase 2 fix: Q = a(Fe²⁺) × a(CO3²⁻); see calcite for rationale.
   const fe_co3 = Math.sqrt(this.fluid.Fe * this.fluid.CO3);
   let sigma = fe_co3 / eq_fe;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'siderite');
   if (this.fluid.pH < 5.5) sigma -= (5.5 - this.fluid.pH) * 0.5;
   else if (this.fluid.pH > 7.5) sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
   if (this.fluid.O2 > 0.3) sigma *= Math.max(0.2, 1.0 - (this.fluid.O2 - 0.3) * 1.5);
@@ -83,6 +88,7 @@ Object.assign(VugConditions.prototype, {
   const product = Math.pow(
     this.fluid.Ca * this.fluid.Mg * this.fluid.CO3 * this.fluid.CO3, 0.25);
   let sigma = product / eq;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'dolomite');
   const ratio_distance = Math.abs(Math.log10(mg_ratio));
   sigma *= Math.exp(-ratio_distance * 1.0);
   if (this.temperature > 250) sigma *= Math.max(0.3, 1.0 - (this.temperature - 250) / 200.0);
@@ -102,6 +108,7 @@ Object.assign(VugConditions.prototype, {
   // Phase 2 fix: Q = a(Mn²⁺) × a(CO3²⁻); see calcite for rationale.
   const mn_co3 = Math.sqrt(this.fluid.Mn * this.fluid.CO3);
   let sigma = mn_co3 / eq_mn;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'rhodochrosite');
   if (this.fluid.pH < 5.5) sigma -= (5.5 - this.fluid.pH) * 0.5;
   else if (this.fluid.pH > 7.5) sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
   if (this.fluid.O2 > 0.8) sigma *= Math.max(0.3, 1.5 - this.fluid.O2);
@@ -122,7 +129,8 @@ Object.assign(VugConditions.prototype, {
   if (eq <= 0) return 0;
   // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
   const ca_co3 = Math.sqrt(this.fluid.Ca * this.fluid.CO3);
-  const omega = ca_co3 / eq;
+  let omega = ca_co3 / eq;
+  if (ACTIVITY_CORRECTED_SUPERSAT) omega *= activityCorrectionFactor(this.fluid, 'aragonite');
 
   const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
   const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.5) / 0.3));

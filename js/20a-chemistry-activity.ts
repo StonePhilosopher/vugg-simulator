@@ -192,3 +192,46 @@ function ionActivityProduct(fluid: any, mineral: string): number | null {
   }
   return Math.pow(10, logQ);
 }
+
+// Geometric-mean activity-coefficient correction for a mineral's
+// stoichiometry: factor = (∏ᵢ γᵢ^νᵢ)^(1/N) where N = ∑ᵢ νᵢ.
+//
+// Why this shape: the existing supersat methods use the geometric-mean
+// concentration product (e.g. √(Ca·CO3) for calcite, (Ca·Mg·CO3²)^¼
+// for dolomite — see commit 568476f). The activity-corrected version
+// is the same shape but with activities aᵢ = γᵢ·mᵢ instead of
+// concentrations mᵢ. So:
+//
+//     σ_activity = (∏ᵢ aᵢ^νᵢ)^(1/N) / eq
+//                = (∏ᵢ γᵢ^νᵢ)^(1/N) × (∏ᵢ mᵢ^νᵢ)^(1/N) / eq
+//                = activityCorrectionFactor × σ_concentration
+//
+// Migration drop-in: each migrated supersat method multiplies its
+// existing sigma by activityCorrectionFactor(fluid, mineral) when
+// ACTIVITY_CORRECTED_SUPERSAT is true. Preserves existing eq calibration.
+//
+// Behavior:
+//   - I = 0 (zero salinity)        → factor = 1.0 (no change)
+//   - I = 0.02 (typical vug fluid) → factor ≈ 0.6-0.9 (small drop in σ)
+//   - I = 0.5 (concentrated brine) → factor ≈ 0.3-0.5
+//   - I > 1.7 (Davies-invalid)     → clamp returns γᵢ ≤ 1 → factor ≤ 1
+//
+// Returns 1.0 (no correction) for any mineral missing from the
+// stoichiometry table, missing fluid species, or zero stoichiometry sum.
+function activityCorrectionFactor(fluid: any, mineral: string): number {
+  const stoich = MINERAL_STOICHIOMETRY[mineral];
+  if (!stoich) return 1.0;
+  const I = ionicStrength(fluid);
+  if (I <= 0) return 1.0;
+  let logProduct = 0;
+  let totalNu = 0;
+  for (const species in stoich) {
+    const props = SPECIES_PROPERTIES[species];
+    if (!props) continue;
+    totalNu += stoich[species];
+    if (props.charge === 0) continue; // neutral species: log γ = 0
+    logProduct += stoich[species] * daviesLogGamma(props.charge, I);
+  }
+  if (totalNu === 0) return 1.0;
+  return Math.pow(10, logProduct / totalNu);
+}
