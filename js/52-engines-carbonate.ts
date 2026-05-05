@@ -515,7 +515,7 @@ function grow_rosasite(crystal, conditions, step) {
     return null;
   }
   const excess = sigma - 1.0;
-  const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+  const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
   if (rate < 0.1) return null;
   // Habit selection
   let habit_note;
@@ -569,7 +569,7 @@ function grow_aurichalcite(crystal, conditions, step) {
     return null;
   }
   const excess = sigma - 1.0;
-  const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+  const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
   if (rate < 0.1) return null;
   let habit_note;
   if (conditions.temperature < 25 && excess > 0.5) {

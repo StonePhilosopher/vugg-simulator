@@ -223,7 +223,7 @@ function grow_adamite(crystal, conditions, step) {
     }
     return null;
   }
-  let rate = 4.0 * (sigma - 1.0) * (0.8 + Math.random() * 0.4);
+  let rate = 4.0 * (sigma - 1.0) * (0.8 + rng.random() * 0.4);
   if (rate < 0.1) return null;
   
   const zc = crystal.zones.length;
@@ -264,13 +264,13 @@ function grow_mimetite(crystal, conditions, step) {
     }
     return null;
   }
-  let rate = 5.0 * (sigma - 1.0) * (0.8 + Math.random() * 0.4);
+  let rate = 5.0 * (sigma - 1.0) * (0.8 + rng.random() * 0.4);
   if (rate < 0.1) return null;
   
   const zc = crystal.zones.length;
   const feRatio = conditions.fluid.Fe / Math.max(conditions.fluid.Pb, 1);
   
-  if (feRatio > 0.3 && Math.random() < 0.4) {
+  if (feRatio > 0.3 && rng.random() < 0.4) {
     crystal.habit = 'campylite (barrel-shaped)';
     crystal.dominant_forms = ['barrel-shaped hexagonal prisms', 'curved faces'];
     crystal.a_width_mm = crystal.c_length_mm * 0.6;

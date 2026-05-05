@@ -4288,7 +4288,25 @@ let timeScale = 5.0;
 //        200 → 350 ppm to keep the cascade firing under the new
 //        damping; calcite nucleates at step 42 (σ=1.46). Real Mammoth
 //        Hot Springs water sits at 400-500 ppm Ca per Friedman 1970.
-const SIM_VERSION = 24;
+//   v25 — engine determinism fix (May 2026). Replaced 16 stray
+//        Math.random() calls in engines + transitions with the
+//        seeded rng.random() so seed-42 output is now reproducible
+//        across runs within a session. Surfaced by the new JS
+//        test harness (tests-js/) — the determinism test failed on
+//        porphyry crystal-by-crystal totals because Math.random()
+//        in the arsenate / borate / carbonate / halide / phosphate /
+//        sulfate growth-rate jitter and the dehydration-transition
+//        80%-chance gate read from wall-clock entropy, not the
+//        seeded stream. With the fix applied, two back-to-back
+//        runs of any scenario produce byte-identical crystals.
+//        Calibration sweep is therefore expected to drift from v24
+//        baselines on every scenario that involves those classes;
+//        baselines need to be regenerated from the JS side and
+//        committed in tests-js/baselines/. UI-side Math.random
+//        calls (seed-input default, random scenario picker, zen
+//        scenarioKey) are intentional wall-clock entropy and
+//        unchanged.
+const SIM_VERSION = 25;
 
 // ── 18-constants.js ──
 
@@ -8788,7 +8806,7 @@ function grow_adamite(crystal, conditions, step) {
         }
         return null;
     }
-    let rate = 4.0 * (sigma - 1.0) * (0.8 + Math.random() * 0.4);
+    let rate = 4.0 * (sigma - 1.0) * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     const zc = crystal.zones.length;
@@ -8831,12 +8849,12 @@ function grow_mimetite(crystal, conditions, step) {
         }
         return null;
     }
-    let rate = 5.0 * (sigma - 1.0) * (0.8 + Math.random() * 0.4);
+    let rate = 5.0 * (sigma - 1.0) * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     const zc = crystal.zones.length;
     const feRatio = conditions.fluid.Fe / Math.max(conditions.fluid.Pb, 1);
-    if (feRatio > 0.3 && Math.random() < 0.4) {
+    if (feRatio > 0.3 && rng.random() < 0.4) {
         crystal.habit = 'campylite (barrel-shaped)';
         crystal.dominant_forms = ['barrel-shaped hexagonal prisms', 'curved faces'];
         crystal.a_width_mm = crystal.c_length_mm * 0.6;
@@ -8896,7 +8914,7 @@ function grow_borax(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 15.0 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 15.0 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     if (rate > 12 && conditions.temperature >= 35) {
@@ -9432,7 +9450,7 @@ function grow_rosasite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     // Habit selection
@@ -9492,7 +9510,7 @@ function grow_aurichalcite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     let habit_note;
@@ -9678,7 +9696,7 @@ function grow_halite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 8.0 * excess * (0.85 + Math.random() * 0.30);
+    const rate = 8.0 * excess * (0.85 + rng.random() * 0.30);
     if (rate < 0.1)
         return null;
     if (sigma > 5.0) {
@@ -10747,7 +10765,7 @@ function grow_torbernite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     let habit_note;
@@ -10795,7 +10813,7 @@ function grow_zeunerite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     let habit_note;
@@ -10846,7 +10864,7 @@ function grow_carnotite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     let habit_note;
@@ -10901,7 +10919,7 @@ function grow_autunite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     let habit_note;
@@ -10954,7 +10972,7 @@ function grow_uranospinite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     let habit_note;
@@ -11007,7 +11025,7 @@ function grow_tyuyamunite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 1.5 * excess * (0.8 + Math.random() * 0.4);
+    const rate = 1.5 * excess * (0.8 + rng.random() * 0.4);
     if (rate < 0.1)
         return null;
     let habit_note;
@@ -12498,7 +12516,7 @@ function grow_mirabilite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 12.0 * excess * (0.85 + Math.random() * 0.30);
+    const rate = 12.0 * excess * (0.85 + rng.random() * 0.30);
     if (rate < 0.1)
         return null;
     if (rate > 10) {
@@ -12532,7 +12550,7 @@ function grow_thenardite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 9.0 * excess * (0.85 + Math.random() * 0.30);
+    const rate = 9.0 * excess * (0.85 + rng.random() * 0.30);
     if (rate < 0.1)
         return null;
     if (rate > 8) {
@@ -14970,7 +14988,7 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
     else
         isDry = false;
     if (isHot) {
-        if (Math.random() < 0.8) {
+        if (rng.random() < 0.8) {
             const old = crystal.mineral;
             crystal.mineral = newMineral;
             crystal.paramorph_origin = old;

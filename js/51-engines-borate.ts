@@ -26,7 +26,7 @@ function grow_borax(crystal, conditions, step) {
     return null;
   }
   const excess = sigma - 1.0;
-  const rate = 15.0 * excess * (0.8 + Math.random() * 0.4);
+  const rate = 15.0 * excess * (0.8 + rng.random() * 0.4);
   if (rate < 0.1) return null;
   if (rate > 12 && conditions.temperature >= 35) {
     crystal.habit = 'cottonball';

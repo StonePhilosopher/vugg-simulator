@@ -419,7 +419,7 @@ function grow_mirabilite(crystal, conditions, step) {
     return null;
   }
   const excess = sigma - 1.0;
-  const rate = 12.0 * excess * (0.85 + Math.random() * 0.30);
+  const rate = 12.0 * excess * (0.85 + rng.random() * 0.30);
   if (rate < 0.1) return null;
   if (rate > 10) {
     crystal.habit = 'fibrous_coating';
@@ -452,7 +452,7 @@ function grow_thenardite(crystal, conditions, step) {
     return null;
   }
   const excess = sigma - 1.0;
-  const rate = 9.0 * excess * (0.85 + Math.random() * 0.30);
+  const rate = 9.0 * excess * (0.85 + rng.random() * 0.30);
   if (rate < 0.1) return null;
   if (rate > 8) {
     crystal.habit = 'fibrous_coating';

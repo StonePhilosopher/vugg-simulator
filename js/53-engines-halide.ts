@@ -67,7 +67,7 @@ function grow_halite(crystal, conditions, step) {
     return null;
   }
   const excess = sigma - 1.0;
-  const rate = 8.0 * excess * (0.85 + Math.random() * 0.30);
+  const rate = 8.0 * excess * (0.85 + rng.random() * 0.30);
   if (rate < 0.1) return null;
   if (sigma > 5.0) {
     crystal.habit = 'hopper_growth';

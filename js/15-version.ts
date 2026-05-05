@@ -295,5 +295,23 @@
 //        200 → 350 ppm to keep the cascade firing under the new
 //        damping; calcite nucleates at step 42 (σ=1.46). Real Mammoth
 //        Hot Springs water sits at 400-500 ppm Ca per Friedman 1970.
-const SIM_VERSION = 24;
+//   v25 — engine determinism fix (May 2026). Replaced 16 stray
+//        Math.random() calls in engines + transitions with the
+//        seeded rng.random() so seed-42 output is now reproducible
+//        across runs within a session. Surfaced by the new JS
+//        test harness (tests-js/) — the determinism test failed on
+//        porphyry crystal-by-crystal totals because Math.random()
+//        in the arsenate / borate / carbonate / halide / phosphate /
+//        sulfate growth-rate jitter and the dehydration-transition
+//        80%-chance gate read from wall-clock entropy, not the
+//        seeded stream. With the fix applied, two back-to-back
+//        runs of any scenario produce byte-identical crystals.
+//        Calibration sweep is therefore expected to drift from v24
+//        baselines on every scenario that involves those classes;
+//        baselines need to be regenerated from the JS side and
+//        committed in tests-js/baselines/. UI-side Math.random
+//        calls (seed-input default, random scenario picker, zen
+//        scenarioKey) are intentional wall-clock entropy and
+//        unchanged.
+const SIM_VERSION = 25;
 

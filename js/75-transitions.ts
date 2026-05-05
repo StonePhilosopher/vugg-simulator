@@ -65,7 +65,7 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
   else if (ringWaterState === 'meniscus') isDry = ringFluid.concentration >= concMin;
   else isDry = false;
   if (isHot) {
-    if (Math.random() < 0.8) {
+    if (rng.random() < 0.8) {
       const old = crystal.mineral;
       crystal.mineral = newMineral;
       crystal.paramorph_origin = old;
