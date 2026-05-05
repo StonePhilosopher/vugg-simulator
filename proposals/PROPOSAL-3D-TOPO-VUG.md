@@ -444,10 +444,37 @@ per-crystal allocation. Min size floor 2 mm c-axis / 1.5 mm
 a-axis so freshly-nucleated micro-crystals are still readable
 against a 30 mm cavity.
 
-### Phase E4 — Polish
+### Phase E4 — Polish (a/b/c shipped, d deferred)
 
-Three.js `OrbitControls` for inertia / damping. Inside-out fly
-camera so the user can look at any wall section from inside.
-Hit-testing via raycaster (closes the gap left by E1's
-"no hit-test in Three mode"). Optional `mode === 'low-power'`
-fallback that forces canvas-vector regardless of toggle state.
+* **E4a/b — Raycaster hit-test (shipped).** Each crystal mesh
+  gets `userData = { crystal_id, mineral, ringIdx, cellIdx }` at
+  build time; the cavity has its raycast method short-circuited
+  so only crystals can be hit. `_topoHitTestThree(ev)` casts an
+  NDC ray from the camera into the scene, returns the first
+  crystal intersected as a synthesized cell-shape that the
+  existing `_topoTooltipFromEvent` / `_topoClickFromEvent`
+  consume verbatim. Dispatch lives in `_topoHitTest`: when
+  `_topoUseThreeRenderer` is true, it returns the Three.js hit
+  before the canvas-vector path runs. `topoEnsureWired` now
+  attaches mousemove / mouseleave / click / wheel / pointerdown
+  handlers to BOTH the 2D and the WebGL canvases, so toggling
+  renderer tier doesn't break tooltips or drag.
+
+* **E4c — Inside-out flythrough (shipped).** When the camera
+  distance falls below the cavity's outer radius (zoom-in past
+  the wall), the cavity material auto-switches from BackSide /
+  opacity 0.55 / transparent to FrontSide / opacity 1.0 /
+  opaque, and the lighting boosts (ambient 0.55→0.85, directional
+  0.9→1.2) to compensate for the inside-darker setting. 5%
+  hysteresis band prevents flicker right at the boundary. No new
+  UI — the existing zoom wheel does the work; max zoom (TOPO_-
+  ZOOM_MAX = 6) puts the camera comfortably inside any default
+  cavity. Geode flythrough by default.
+
+* **E4d — OrbitControls inertia/damping (deferred).** Optional
+  polish; current drag handlers carry pan/orbit/wheel without
+  damping. Adding Three.js `OrbitControls` would require
+  vendoring `three/addons/controls/OrbitControls.js` and
+  bidirectionally syncing `_topoTiltX/Y/_topoZoom` so toggling
+  renderer tier preserves view state. Worth one focused commit
+  later but not blocking E5 (per-habit extruded geometry).

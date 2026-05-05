@@ -102,6 +102,10 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
   });
   const cavity = new THREE.Mesh(cavityGeom, cavityMat);
   cavity.renderOrder = 0;     // paint cavity first; crystals layer on top
+  // Exclude the cavity from raycaster intersections — bare-wall
+  // hovers in Three mode don't get a tooltip (parity with the
+  // canvas-vector `_topoView3D` short-circuit), only crystal hits do.
+  cavity.raycast = function() {};
   scene.add(cavity);
 
   // Crystal group — one mesh per Crystal, anchored at the cell's
@@ -548,8 +552,81 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any) {
     const target = new THREE.Vector3(nx, ny, nz);
     mesh.quaternion.setFromUnitVectors(up, target);
 
+    // userData carries the original Crystal (and its id) so the
+    // raycaster in _topoHitTestThree can resolve a hit back to a
+    // mineral name + cell shape that matches the canvas-vector
+    // hit-test return contract. Subset of fields — enough for
+    // tooltip + lock-target consumers, the full crystal is also
+    // findable by id via sim.crystals if a consumer needs more.
+    mesh.userData = {
+      crystal_id: crystal.crystal_id,
+      mineral: crystal.mineral,
+      ringIdx,
+      cellIdx,
+    };
+
     state.crystals.add(mesh);
   }
+}
+
+// Cached raycaster + NDC vector — both reusable across calls,
+// avoiding per-pointer-move allocations.
+const _topoThreeRaycaster: { ray?: any; ndc?: any } = {};
+
+// Three.js hit-test. Resolves a screen-space pointer to a
+// `{ mineral, isInclusion, cell }` triple shaped like the canvas-
+// vector hit-test, so _topoTooltipFromEvent / _topoClickFromEvent
+// don't need a Three-specific path. Returns null if the pointer
+// isn't over any crystal.
+//
+// The cavity mesh is intentionally excluded from intersection
+// checks (set `cavity.raycast = function(){}` at init) — bare-wall
+// hovers in Three mode don't get a tooltip (matches the
+// `_topoView3D` short-circuit in _topoTooltipFromEvent), only
+// crystal hits do.
+function _topoHitTestThree(ev: any): any {
+  if (!_topoThreeState || !_topoThreeAvailable()) return null;
+  const canvas = document.getElementById('topo-canvas-three') as HTMLCanvasElement | null;
+  if (!canvas) return null;
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  const mx = ev.clientX - rect.left;
+  const my = ev.clientY - rect.top;
+  // Normalized device coords ∈ [-1, +1].
+  const ndcX = (mx / rect.width) * 2 - 1;
+  const ndcY = -((my / rect.height) * 2 - 1);
+
+  if (!_topoThreeRaycaster.ray) {
+    _topoThreeRaycaster.ray = new THREE.Raycaster();
+    _topoThreeRaycaster.ndc = new THREE.Vector2();
+  }
+  _topoThreeRaycaster.ndc.set(ndcX, ndcY);
+  _topoThreeRaycaster.ray.setFromCamera(
+    _topoThreeRaycaster.ndc,
+    _topoThreeState.camera,
+  );
+  const intersects = _topoThreeRaycaster.ray.intersectObjects(
+    _topoThreeState.crystals.children,
+    false,  // crystals are flat meshes, no recursion needed
+  );
+  if (!intersects.length) return null;
+  // First hit = nearest crystal (intersectObjects returns by distance).
+  const hit = intersects[0];
+  const data = hit.object && hit.object.userData;
+  if (!data || !data.mineral) return null;
+  // Synthesize a cell-like object so _topoTooltipFromEvent's existing
+  // `cell.crystal_id` / `cell.mineral` / `cell.thickness_um` reads
+  // resolve. _topoTooltipFromEvent only reads .crystal_id and .mineral
+  // from the cell, plus `cell.wall_depth` for bare-wall hits (which
+  // never fires here because the cavity is excluded).
+  const synthCell = {
+    crystal_id: data.crystal_id,
+    mineral: data.mineral,
+    thickness_um: 0,
+    wall_depth: 0,
+    base_radius_mm: 0,
+  };
+  return { mineral: data.mineral, isInclusion: false, cell: synthCell };
 }
 
 // Drive the camera from the existing tilt/zoom globals so toggling
@@ -582,6 +659,38 @@ function _topoApplyCameraFromTilt(state: any, wall: any) {
   // catches the highlight. Subtle moonlit-cavity vibe, not studio.
   if (state.directional) {
     state.directional.position.set(camX * 0.7 + 50, camY * 0.7 + 200, camZ * 0.7 + 100);
+  }
+  // Phase E4 inside-out detection. r0 already accounts for bubble-
+  // merge bumps (max_seen_radius_mm × 0.6 is the conservative cavity
+  // skin); when the camera distance falls below that we're inside the
+  // cavity and the BackSide+translucent trick from E3 needs flipping
+  // to FrontSide+opaque so the user sees the interior wall surface
+  // properly. Hysteresis (5% ratio band) avoids flicker right at the
+  // boundary.
+  const inside = radius < r0 * 0.95;
+  const outside = radius > r0 * 1.05;
+  if (inside && !state.insideMode) {
+    state.insideMode = true;
+    if (state.cavity && state.cavity.material) {
+      state.cavity.material.side = THREE.FrontSide;
+      state.cavity.material.opacity = 1.0;
+      state.cavity.material.transparent = false;
+      state.cavity.material.needsUpdate = true;
+    }
+    // Inside the cavity is darker — boost the ambient + warm the
+    // directional so crystal faces catch a flame-side glow.
+    if (state.ambient) state.ambient.intensity = 0.85;
+    if (state.directional) state.directional.intensity = 1.2;
+  } else if (outside && state.insideMode) {
+    state.insideMode = false;
+    if (state.cavity && state.cavity.material) {
+      state.cavity.material.side = THREE.BackSide;
+      state.cavity.material.opacity = 0.55;
+      state.cavity.material.transparent = true;
+      state.cavity.material.needsUpdate = true;
+    }
+    if (state.ambient) state.ambient.intensity = 0.55;
+    if (state.directional) state.directional.intensity = 0.9;
   }
 }
 

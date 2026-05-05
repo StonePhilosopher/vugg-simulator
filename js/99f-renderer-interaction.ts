@@ -149,24 +149,33 @@ function topoEnsureWired() {
   if (_topoWired) return;
   const canvas = document.getElementById('topo-canvas');
   if (!canvas) return;
-  canvas.addEventListener('mousemove', _topoTooltipFromEvent);
-  canvas.addEventListener('mouseleave', _topoHideTooltip);
-  canvas.addEventListener('click', _topoClickFromEvent);
-  // Wheel = zoom. Preventing default so the page doesn't scroll past
-  // the canvas while the player is framing the vug.
-  canvas.addEventListener('wheel', (ev) => {
-    ev.preventDefault();
-    topoZoom(ev.deltaY < 0 ? +1 : -1);
-  }, { passive: false });
-  // Click-drag pan / rotate. Pointer events handle BOTH mouse and
-  // touch from one code path (vs. the old mousedown/mousemove/mouseup
-  // which never fired during touch gestures — emulated mouse events
-  // only arrive after touchend, too late for drag tracking). Modern
-  // browsers (Safari iOS 13+, Chrome, Firefox, Edge) all support
-  // Pointer Events; the canvas's `touch-action: none` CSS lets the
-  // gesture reach this handler instead of being eaten by browser
-  // page-pan defaults.
-  canvas.addEventListener('pointerdown', _topoPanMouseDown);
+  // Both the canvas-vector canvas and the Phase E Three.js canvas
+  // need the same pointer handlers — when the user toggles renderer
+  // tier, the Three canvas claims pointer-events from the 2D canvas
+  // (the 2D canvas drops to visibility:hidden), so handlers attached
+  // only to the 2D canvas would stop firing in Three mode. Both
+  // canvases get the same callbacks; _topoHitTest dispatches by
+  // active renderer.
+  const wireOne = (el: HTMLElement | null) => {
+    if (!el) return;
+    el.addEventListener('mousemove', _topoTooltipFromEvent);
+    el.addEventListener('mouseleave', _topoHideTooltip);
+    el.addEventListener('click', _topoClickFromEvent);
+    el.addEventListener('wheel', (ev) => {
+      ev.preventDefault();
+      topoZoom(ev.deltaY < 0 ? +1 : -1);
+    }, { passive: false });
+    // Click-drag pan / rotate. Pointer events handle BOTH mouse and
+    // touch from one code path (vs. the old mousedown/mousemove/
+    // mouseup which never fired during touch gestures). Modern
+    // browsers (Safari iOS 13+, Chrome, Firefox, Edge) all support
+    // Pointer Events; the canvas's touch-action: none CSS lets the
+    // gesture reach this handler instead of being eaten by browser
+    // page-pan defaults.
+    el.addEventListener('pointerdown', _topoPanMouseDown);
+  };
+  wireOne(canvas);
+  wireOne(document.getElementById('topo-canvas-three'));
   window.addEventListener('resize', () => topoRender());
   _topoWired = true;
 }

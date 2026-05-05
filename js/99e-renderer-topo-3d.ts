@@ -402,6 +402,15 @@ function _topoHitTest(ev) {
     }
   }
 
+  // Phase E4: when the Three.js renderer is the active path, hit-test
+  // against the actual scene meshes via the WebGL raycaster — gives
+  // us pixel-accurate per-crystal hits across any orbit angle, free
+  // of the inverse-projection math the canvas-vector path needs.
+  if (typeof _topoUseThreeRenderer !== 'undefined' && _topoUseThreeRenderer
+      && typeof _topoHitTestThree === 'function') {
+    return _topoHitTestThree(ev);
+  }
+
   // 3D mode: ray-cast against the cavity sphere instead of inverting
   // the 2D polar transform (which ignores tilt + per-ring twist).
   if (_topoView3D && sim.wall_state && sim.wall_state.rings &&
