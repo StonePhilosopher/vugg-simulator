@@ -39,6 +39,8 @@ const BASELINES = path.join(ROOT, 'tests-js', 'baselines');
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', { url: 'http://localhost' });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
+globalThis.localStorage = dom.window.localStorage;
+globalThis.sessionStorage = dom.window.sessionStorage;
 
 globalThis.fetch = async (url) => {
   let rel = String(url);
