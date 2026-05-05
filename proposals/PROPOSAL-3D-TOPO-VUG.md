@@ -401,14 +401,48 @@ dissolution events, water-level changes, or new sims trigger a
 rebuild. Inside-out backface culling is deferred to E4 polish (with
 the camera fly-through gesture).
 
-### Phase E3 — Crystal sub-meshes
+### Phase E3 — Crystal sub-meshes (shipped)
 
-One mesh per crystal anchored to its `wall_ring_index` /
-`wall_center_cell`, oriented by habit and growth_environment,
-scaled by `c_length_mm` / `a_width_mm`. Reuse
-`drawHabitTexture`'s primitive-shape vocabulary by porting each
-habit to a vertex generator. Specular MeshStandardMaterial + the
-existing `class_color` per mineral.
+One Three.js mesh per non-dissolved Crystal, anchored at its
+`(wall_ring_index, wall_center_cell)` cell using the same `(φ, θ)`
+math the cavity mesh uses — so a crystal sits exactly on the
+cavity wall, regardless of bubble-merge bumps or polar Fourier
+modulation. The substrate normal (`-anchor / |anchor|`) sets the
+local +Y axis via `quaternion.setFromUnitVectors`, so each crystal
+points from the wall into the cavity center; that matches the
+geometric-selection orientation the canvas-vector wireframe
+renderer uses for fluid-environment crystals.
+
+Habits map to a small primitive-geometry vocabulary keyed by a
+`_habitGeomToken` lookup: prismatic / columnar → hexagonal prism,
+acicular / fibrous → cone, tabular / platy → flattened box,
+rhombohedral / scalenohedral → octahedron, cubic → cube,
+botryoidal → sphere, dendritic → spike-with-implicit-splay
+(splay deferred to a per-instance ConeGroup in E4). Geometries
+are cached per-token in `state.geomCache` so 50 calcite scaleno-
+hedrons share one octahedron BufferGeometry; only the per-mesh
+transform differs.
+
+Material is `MeshStandardMaterial` with `class_color` from
+`MINERAL_SPEC[mineral]`, plus a class-keyed metalness boost for
+sulfides + native elements (0.45 vs 0.08 default) so peacock-ore
+bornite and chalcopyrite read as metallic without per-mineral
+spec entries. Roughness shifts toward gloss (0.42) for silicate
++ oxide gem-crystal classes.
+
+The cavity material now uses `side: BackSide` + `opacity: 0.55`
+(transparent: true) so the user looking from outside the cavity
+sees the **interior** wall and the crystals on it — without the
+near-side shell occluding the far-side detail. E4 will add an
+"inside-out flythrough" mode where the camera enters the cavity,
+making BackSide unnecessary; for E3, translucent-from-outside is
+the right read.
+
+Crystal mesh rebuild gates on a content signature (id × mineral ×
+habit × c_length × ring × cell) so steady-state renders skip the
+per-crystal allocation. Min size floor 2 mm c-axis / 1.5 mm
+a-axis so freshly-nucleated micro-crystals are still readable
+against a 30 mm cavity.
 
 ### Phase E4 — Polish
 

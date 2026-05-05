@@ -28718,18 +28718,40 @@ function _topoInitThree(canvas) {
         vertexColors: true,
         roughness: 0.78,
         metalness: 0.04,
-        side: THREE.DoubleSide,
+        side: THREE.BackSide, // only render the cavity's interior face
+        // — the user is conceptually peering INTO
+        // a hollow geode. BackSide hides the outer
+        // hemisphere from the camera so crystals
+        // on the near interior wall stay visible.
         flatShading: false,
+        transparent: true,
+        opacity: 0.55, // translucent so crystals on the far
+        // interior wall stay readable through
+        // the near wall. E4 polish: switch to
+        // opaque + camera-inside flythrough mode.
     });
     const cavity = new THREE.Mesh(cavityGeom, cavityMat);
+    cavity.renderOrder = 0; // paint cavity first; crystals layer on top
     scene.add(cavity);
+    // Crystal group — one mesh per Crystal, anchored at the cell's
+    // surface position and oriented along the substrate normal. Cleared
+    // and rebuilt by _topoSyncCrystalMeshes whenever the crystal-set
+    // signature changes (new nucleations, growth steps, dissolutions).
+    // Subgroup of `scene` so render-order stays simple.
+    const crystals = new THREE.Group();
+    crystals.name = 'crystals';
+    scene.add(crystals);
     // Track the geometry signature so we only rebuild when it'd actually
     // change (ring_count, cells_per_ring, dissolution edits, water level).
     // Cheap regeneration is fine but skipping the work entirely is
     // cheaper at 60 fps.
     _topoThreeState = {
-        renderer, scene, camera, cavity, ambient, directional,
+        renderer, scene, camera, cavity, crystals, ambient, directional,
         cavitySig: '',
+        crystalsSig: '',
+        // Cache geometries per habit shape — many crystals can share the
+        // same primitive geometry, only the per-mesh transform differs.
+        geomCache: new Map(),
     };
     return _topoThreeState;
 }
@@ -28946,6 +28968,211 @@ function _topoSyncThreeSize(state, canvas) {
     state.camera.aspect = cssW / cssH;
     state.camera.updateProjectionMatrix();
 }
+// Habit → primitive-geometry token. Three.js mesh is generated once
+// per habit token and reused across crystals; the per-mesh transform
+// scales it to the right size. E3 uses simple primitives (cones for
+// prismatic / acicular, boxes for tabular, octahedra for rhombo /
+// equant); E4 will replace with hand-rolled vertex generators that
+// match the canvas-vector wireframe primitives more closely.
+function _habitGeomToken(habit) {
+    const h = (habit || 'prismatic').toLowerCase();
+    if (h === 'acicular' || h === 'capillary')
+        return 'spike';
+    if (h === 'prismatic' || h === 'columnar' || h === 'bladed')
+        return 'prism';
+    if (h === 'tabular' || h === 'platy' || h === 'foliated')
+        return 'tablet';
+    if (h === 'rhombohedral' || h === 'scalenohedral')
+        return 'rhomb';
+    if (h === 'cubic' || h === 'cuboid')
+        return 'cube';
+    if (h === 'octahedral')
+        return 'octahedron';
+    if (h === 'dodecahedral')
+        return 'dodecahedron';
+    if (h === 'botryoidal' || h === 'reniform' || h === 'mammillary' || h === 'globular')
+        return 'botryoidal';
+    if (h === 'dendritic' || h === 'arborescent')
+        return 'spike'; // splay handled per-instance later
+    if (h === 'fibrous')
+        return 'spike';
+    return 'prism'; // sensible default — most cavity habits are vaguely prismatic
+}
+// Build a unit-sized primitive geometry for a given habit token,
+// oriented so its long axis (= c-axis) lies along +Y. The instance
+// transform later places the apex at the wall, base inside the
+// cavity, and scales by c_length / a_width.
+function _buildHabitGeom(token) {
+    switch (token) {
+        case 'spike':
+            // Acicular — long thin needle. Pointy on both ends to read as
+            // an isolated needle rather than a stub stuck in the wall.
+            return new THREE.ConeGeometry(0.5, 1.0, 6, 1, false);
+        case 'prism':
+            // Prismatic — hexagonal prism with a slight taper toward the
+            // free tip. Captures the dominant calcite / quartz / beryl shape.
+            return new THREE.CylinderGeometry(0.45, 0.55, 1.0, 6, 1, false);
+        case 'tablet':
+            // Tabular — flattened rectangular plate, c-axis the short
+            // dimension. 1.5× wider than tall when scaled by a_width
+            // (the c_length × 1.5 factor comes from the Crystal class).
+            return new THREE.BoxGeometry(1.0, 0.4, 1.0);
+        case 'rhomb':
+            // Rhombohedral — octahedron rotated by 45° around c-axis reads
+            // as a steeply-pointed "dogtooth" calcite scalenohedron. Six
+            // faces meeting at two pointed apices.
+            return new THREE.OctahedronGeometry(0.55, 0);
+        case 'cube':
+            return new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        case 'octahedron':
+            return new THREE.OctahedronGeometry(0.55, 0);
+        case 'dodecahedron':
+            return new THREE.DodecahedronGeometry(0.55, 0);
+        case 'botryoidal':
+            // Botryoidal — bumpy half-sphere clinging to the wall. E4 may
+            // replace with multi-bubble geometry; for E3 a single sphere
+            // reads cleanly.
+            return new THREE.SphereGeometry(0.5, 12, 8);
+        default:
+            return new THREE.CylinderGeometry(0.45, 0.55, 1.0, 6, 1, false);
+    }
+}
+// Convert a #RRGGBB or rgb(...) string to THREE.Color. Falls back to
+// the bare-wall amber so unknown minerals don't render as black.
+function _topoParseColor(s) {
+    if (!s)
+        return new THREE.Color(0xd2691e);
+    try {
+        return new THREE.Color(s);
+    }
+    catch (e) {
+        return new THREE.Color(0xd2691e);
+    }
+}
+// Compose a deterministic signature of the crystals that affects
+// their meshes — id, mineral, habit, c_length_mm, ring/cell anchor.
+// Excludes growth_environment because all current crystals use
+// 'fluid' (geometric-selection orientation along the substrate
+// normal); E4 will fold in 'air' as it activates.
+function _topoCrystalsSignature(sim) {
+    if (!sim || !sim.crystals || !sim.crystals.length)
+        return '';
+    const parts = [];
+    for (const c of sim.crystals) {
+        if (!c || c.dissolved)
+            continue;
+        parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${c.wall_ring_index}:${c.wall_center_cell}`);
+    }
+    return parts.join('|');
+}
+// Build (or rebuild) crystal meshes inside `state.crystals`. One mesh
+// per non-dissolved Crystal, positioned at its anchor cell's surface,
+// oriented so the c-axis points outward from the cavity center, scaled
+// by c_length_mm / a_width_mm. Material color comes from
+// MINERAL_SPEC[mineral].class_color.
+function _topoSyncCrystalMeshes(state, sim, wall) {
+    if (!sim || !wall || !wall.rings || !wall.rings.length)
+        return;
+    const sig = _topoCrystalsSignature(sim);
+    if (sig === state.crystalsSig)
+        return;
+    state.crystalsSig = sig;
+    // Clear out the old children. Geometries are cached at the state
+    // level (geomCache) so we keep them; only materials per crystal
+    // need disposing — but materials are MeshStandardMaterial with no
+    // textures, so the GC handles the rest.
+    while (state.crystals.children.length) {
+        const child = state.crystals.children.pop();
+        if (child.material && child.material.dispose)
+            child.material.dispose();
+    }
+    if (!sim.crystals)
+        return;
+    const ringCount = wall.ring_count;
+    const N = wall.cells_per_ring;
+    const initR = wall.initial_radius_mm || 25;
+    for (const crystal of sim.crystals) {
+        if (!crystal || crystal.dissolved)
+            continue;
+        let ringIdx = crystal.wall_ring_index;
+        if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount)
+            ringIdx = 0;
+        const cellIdx = crystal.wall_center_cell;
+        if (cellIdx == null)
+            continue;
+        const ring = wall.rings[ringIdx];
+        if (!ring)
+            continue;
+        const cell = ring[cellIdx];
+        if (!cell)
+            continue;
+        // Anchor point on the cavity wall — same math as
+        // _topoBuildCavityGeometry uses, applied to one cell.
+        const phi = Math.PI * (ringIdx + 0.5) / ringCount;
+        const sinPhi = Math.sin(phi);
+        const cosPhi = Math.cos(phi);
+        const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+        const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
+        const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
+        const radiusMm = (baseR + cell.wall_depth) * polar;
+        const theta = (2 * Math.PI * cellIdx) / N + twist;
+        const ax = radiusMm * sinPhi * Math.cos(theta);
+        const ay = -radiusMm * cosPhi;
+        const az = radiusMm * sinPhi * Math.sin(theta);
+        // Substrate normal: from wall center (the origin, since the
+        // cavity is built around 0,0,0) outward through the anchor.
+        // c-axis lies along this normal — crystal grows INTO the cavity
+        // (toward origin) for fluid environments. Negate so the c-axis
+        // points from anchor toward origin.
+        const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
+        const nx = -ax / len, ny = -ay / len, nz = -az / len;
+        // Pick the habit primitive and cache it.
+        const token = _habitGeomToken(crystal.habit);
+        let geom = state.geomCache.get(token);
+        if (!geom) {
+            geom = _buildHabitGeom(token);
+            state.geomCache.set(token, geom);
+        }
+        // Material — class_color from the mineral spec. Crystals lit by
+        // the same scene lights as the cavity, with a touch more
+        // metalness for sulfides / native elements (rough heuristic — E4
+        // can read a per-mineral material spec if needed).
+        const spec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[crystal.mineral] : null;
+        const colorStr = (spec && spec.class_color) || '#d2691e';
+        const klass = spec && spec.class;
+        const metalness = (klass === 'sulfide' || klass === 'native') ? 0.45 : 0.08;
+        const roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
+        const mat = new THREE.MeshStandardMaterial({
+            color: _topoParseColor(colorStr),
+            roughness,
+            metalness,
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        // Scale: c-axis along Y in the unit primitive → scale Y by
+        // c_length_mm. a-axis (perpendicular) scales by a_width_mm.
+        // Floor at 2 mm c / 1.5 mm a so a typical 30 mm cavity reads as
+        // dotted with macro-crystals rather than dusted with invisible
+        // ones. Aesthetic-over-accurate trade-off; E4 can revisit once
+        // the camera supports zoom-into-cavity for true scale.
+        const cLen = Math.max(2.0, crystal.c_length_mm);
+        const aWid = Math.max(1.5, crystal.a_width_mm);
+        mesh.scale.set(aWid, cLen, aWid);
+        mesh.renderOrder = 1;
+        // Position the BASE of the primitive at the anchor (instead of
+        // the centroid), so the crystal projects into the cavity rather
+        // than half-buried in the wall. Translate along the substrate
+        // normal by half the c-length.
+        const offsetMm = cLen * 0.5;
+        mesh.position.set(ax + nx * offsetMm, ay + ny * offsetMm, az + nz * offsetMm);
+        // Orient so the local +Y axis aligns with the substrate normal.
+        // Three.js Object3D.lookAt orients local -Z toward the target;
+        // we want local +Y. quaternion.setFromUnitVectors handles it.
+        const up = new THREE.Vector3(0, 1, 0);
+        const target = new THREE.Vector3(nx, ny, nz);
+        mesh.quaternion.setFromUnitVectors(up, target);
+        state.crystals.add(mesh);
+    }
+}
 // Drive the camera from the existing tilt/zoom globals so toggling
 // between canvas-vector and Three.js modes preserves the user's view.
 // camera orbits a fixed lookAt(0,0,0) at a radius proportional to the
@@ -28996,6 +29223,7 @@ function _topoRenderThree(sim, wall) {
         return false;
     _topoSyncThreeSize(state, canvas);
     _topoBuildCavityGeometry(state, wall, sim);
+    _topoSyncCrystalMeshes(state, sim, wall);
     _topoApplyCameraFromTilt(state, wall);
     state.renderer.render(state.scene, state.camera);
     return true;
