@@ -10089,6 +10089,146 @@
       ],
       "audit_status": "v27 — evaporite chemistry pass",
       "class_color": "#cccccc"
+    },
+    "borax": {
+      "formula": "Na2[B4O5(OH)4]·8H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 8,
+      "max_size_cm": 30,
+      "growth_rate_mult": 1.5,
+      "habit_variants": [
+        {
+          "name": "prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low T, slow evaporation — Boron CA museum prisms"
+        },
+        {
+          "name": "cottonball",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "rapid evaporation — Death Valley playa surface"
+        },
+        {
+          "name": "massive",
+          "wall_spread": 0.6,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "tincal nodules from ancient lake beds"
+        }
+      ],
+      "class": "borate",
+      "description": "Na₂[B₄O₅(OH)₄]·8H₂O — sodium tetraborate decahydrate. The mineral that doesn’t belong in a typical hydrothermal vug: a playa-lake / closed-basin evaporite that crystallizes only from alkaline (pH > 8.5) brines rich in Na and B at low T. The defining feature is what happens after: leave a fresh borax crystal in dry air and within weeks it effloresces to white powder (tincalconite, Na₂B₄O₇·5H₂O), losing 5 of its 10 water molecules to humidity. This is the only common mineral that self-destructs in normal collection conditions — every borax specimen is a race against dehydration.",
+      "scenarios": [],
+      "T_range_C": [
+        0,
+        60
+      ],
+      "T_optimum_C": [
+        20,
+        40
+      ],
+      "T_behavior": "Decahydrate stable below ~50°C; effloresces above",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "none",
+      "required_ingredients": {
+        "Na": 100,
+        "B": 50
+      },
+      "trace_ingredients": {
+        "Cu": "pale blue/green tint (rare)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": "Borax → tincalconite (50–75°C, dry air) → kernite (>100°C burial) → anhydrous Na₂B₄O₇ (>320°C)",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "SW": null,
+        "MW": null,
+        "LW": null
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH": 6.0,
+        "rate": "fast"
+      },
+      "habit": "prismatic",
+      "color_rules": {
+        "colorless": {
+          "default": true
+        },
+        "pale_blue_green": {
+          "trigger": "Cu > 5 ppm — trace copper substitution"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "python",
+        "js"
+      ],
+      "audit_status": "v28 — dehydration paramorph pass",
+      "class_color": "#a4cfff"
+    },
+    "tincalconite": {
+      "formula": "Na2B4O7·5H2O",
+      "nucleation_sigma": 99.0,
+      "max_nucleation_count": 0,
+      "max_size_cm": 30,
+      "growth_rate_mult": 0.0,
+      "habit_variants": [
+        {
+          "name": "pseudomorph",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "inherited from parent borax crystal"
+        }
+      ],
+      "class": "borate",
+      "description": "Na₂B₄O₇·5H₂O — borax with five water molecules gone. Appears in the simulator only as a paramorph product of borax: the external crystal shape is preserved (the cubic outline, the prismatic terminations, all the field marks) but the lattice has collapsed and the surface has bloomed white-powdery. A tincalconite specimen IS a former borax crystal, frozen mid-decay. Stable in any humidity — once dehydrated, it doesn’t re-hydrate.",
+      "scenarios": [],
+      "T_range_C": [
+        0,
+        320
+      ],
+      "T_optimum_C": [
+        20,
+        50
+      ],
+      "T_behavior": "Stable from cool to ~320°C anhydrous transition",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "none",
+      "required_ingredients": {},
+      "trace_ingredients": {},
+      "thermal_decomp_C": 320,
+      "thermal_decomp_reaction": "Tincalconite → anhydrous Na₂B₄O₇ at ~320°C",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "SW": null,
+        "MW": null,
+        "LW": null
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH": 6.0,
+        "rate": "fast"
+      },
+      "habit": "pseudomorph",
+      "color_rules": {
+        "white_powdery": {
+          "default": true
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "python",
+        "js"
+      ],
+      "audit_status": "v28 — paramorph product; no engine",
+      "class_color": "#e8e8e8"
     }
   }
 }

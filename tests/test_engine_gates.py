@@ -184,6 +184,11 @@ def _favorable_fluid_for_necessity_test(vugg, name, spec):
 HEURISTIC_SKIPS = {
     # Add entries here as failing minerals are triaged.
     # Format: "mineral_name": "reason heuristic doesn't apply"
+    "borax":         "v28 hard-gates on fluid.concentration ≥ 1.5 (active "
+                     "evaporation only); the heuristic searches T/pH/O2 but "
+                     "doesn't seed the per-ring concentration multiplier.",
+    "tincalconite":  "paramorph-only product; never nucleates from solution "
+                     "(supersaturation_tincalconite returns 0 by design).",
 }
 
 

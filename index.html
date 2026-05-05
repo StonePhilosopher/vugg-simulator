@@ -5756,6 +5756,32 @@ class VugConditions {
   // Selenite (gypsum, CaSO4·2H2O) — forms in evaporite/oxidation environments
   // Low temperature, needs Ca + S (as sulfate via oxidation) + O2
   // The crystal that grows when everything else is ending
+  supersaturation_tincalconite() {
+    // v28 paramorph product of borax — never nucleates from solution.
+    return 0;
+  }
+
+  supersaturation_borax() {
+    // v28 alkaline-brine borate evaporite. Mirror of
+    // supersaturation_borax in vugg.py.
+    if (this.fluid.Na < 50 || this.fluid.B < 5) return 0;
+    if (this.temperature > 60) return 0;
+    if (this.fluid.pH < 7.0) return 0;
+    const c = this.fluid.concentration ?? 1.0;
+    // v28: hard concentration gate — borax is strictly an active-
+    // evaporation mineral. Submerged rings stay at c=1.0 and never
+    // fire borax; only meniscus + vadose rings cross this threshold.
+    if (c < 1.5) return 0;
+    let sigma = (this.fluid.Na / 500.0) * (this.fluid.B / 100.0) * c * c;
+    if (this.fluid.pH >= 8.5 && this.fluid.pH <= 10.5) sigma *= 1.4;
+    else if (this.fluid.pH > 10.5) sigma *= 1.1;
+    if (this.fluid.Ca > 50) {
+      const caPenalty = Math.min(1.0, this.fluid.Ca / 150.0);
+      sigma *= (1.0 - 0.7 * caPenalty);
+    }
+    return Math.max(sigma, 0);
+  }
+
   supersaturation_halite() {
     // v27 chloride evaporite. Quadratic in concentration so halite
     // stays dormant at scenario baseline (concentration=1) and fires
@@ -6713,6 +6739,9 @@ class Crystal {
     // can flag the cubic-acanthite-after-argentite case.
     this.paramorph_origin = opts.paramorph_origin ?? null;
     this.paramorph_step = opts.paramorph_step ?? null;
+    // v28 dehydration tracking — counts steps in a dry environment
+    // for crystals listed in DEHYDRATION_TRANSITIONS.
+    this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;
   }
 
   add_zone(zone) {
@@ -9807,6 +9836,56 @@ function grow_tyuyamunite(crystal, conditions, step) {
   });
 }
 
+// Tincalconite paramorph stub — no growth pathway, only appears via
+// applyDehydrationTransitions converting borax in place.
+function grow_tincalconite(_crystal, _conditions, _step) { return null; }
+
+// Borax (Na2[B4O5(OH)4]·8H2O) — alkaline-brine borate evaporite.
+// v28. Fast-growing, dehydration-prone. Mirror of grow_borax in
+// vugg.py.
+function grow_borax(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_borax();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.concentration < 1.5) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(10.0, crystal.total_growth_um * 0.25);
+      conditions.fluid.Na += dissolved_um * 0.4;
+      conditions.fluid.B += dissolved_um * 0.15;
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `meteoric flush — borax redissolves (concentration ${conditions.fluid.concentration.toFixed(1)})`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 15.0 * excess * (0.8 + Math.random() * 0.4);
+  if (rate < 0.1) return null;
+  if (rate > 12 && conditions.temperature >= 35) {
+    crystal.habit = 'cottonball';
+    crystal.dominant_forms = ['fibrous radial bundles', 'white rounded clusters'];
+  } else if (crystal.total_growth_um > 8000) {
+    crystal.habit = 'massive';
+    crystal.dominant_forms = ['tincal nodule', 'granular massive'];
+  } else {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['{100} pinacoid', '{110} prism', '{010} dome'];
+  }
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.06, 0);
+  conditions.fluid.B = Math.max(conditions.fluid.B - rate * 0.018, 0);
+  conditions.fluid.concentration = Math.max(
+    1.0, conditions.fluid.concentration - 0.015 * excess);
+  let color_note;
+  if (conditions.fluid.Cu > 5) color_note = 'pale blue-green borax (trace Cu)';
+  else color_note = 'colorless prismatic borax — vitreous, sectile';
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: color_note,
+  });
+}
+
 // Halite (NaCl) — chloride evaporite. v27. Cubic / hopper habit.
 // Bathtub-ring deposit; fires when a vadose-transition concentration
 // boost pushes Na × Cl × concentration² into supersaturation. Mirror
@@ -11263,6 +11342,8 @@ const MINERAL_ENGINES = {
   anhydrite: grow_anhydrite,
   selenite: grow_selenite,
   halite: grow_halite,
+  borax: grow_borax,
+  tincalconite: grow_tincalconite,  // paramorph-only stub
   feldspar: grow_feldspar,
   adamite: grow_adamite,
   mimetite: grow_mimetite,
@@ -12783,6 +12864,54 @@ function applyParamorphTransitions(crystal, T, step) {
   return [oldMineral, coolMineral];
 }
 
+// v28 dehydration paramorph transitions — environment-triggered
+// counterpart to PARAMORPH_TRANSITIONS. Borax left in a vadose ring
+// loses its structural water and pseudomorphs to tincalconite.
+// Mirrors DEHYDRATION_TRANSITIONS in vugg.py. Format:
+// hydrated_mineral → [dehydrated_mineral, threshold_steps,
+//                     concentration_min, T_max].
+const DEHYDRATION_TRANSITIONS = {
+  borax: ['tincalconite', 25, 1.5, 75.0],
+};
+
+function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step) {
+  // v28: convert a hydrated mineral in place when its host ring has
+  // been dry for too long. Increments crystal.dry_exposure_steps each
+  // step the ring is dry; transition fires once the count reaches
+  // threshold OR T exceeds T_max (heat path is instantaneous).
+  // Mirrors apply_dehydration_transitions in vugg.py.
+  if (!crystal.active || crystal.dissolved) return null;
+  const spec = DEHYDRATION_TRANSITIONS[crystal.mineral];
+  if (!spec) return null;
+  const [newMineral, thresholdSteps, concMin, Tmax] = spec;
+  const isHot = T >= Tmax;
+  let isDry;
+  if (ringWaterState === 'vadose') isDry = true;
+  else if (ringWaterState === 'meniscus') isDry = ringFluid.concentration >= concMin;
+  else isDry = false;
+  if (isHot) {
+    if (Math.random() < 0.8) {
+      const old = crystal.mineral;
+      crystal.mineral = newMineral;
+      crystal.paramorph_origin = old;
+      if (step != null) crystal.paramorph_step = step;
+      return [old, newMineral];
+    }
+    return null;
+  }
+  if (isDry) {
+    crystal.dry_exposure_steps = (crystal.dry_exposure_steps || 0) + 1;
+    if (crystal.dry_exposure_steps >= thresholdSteps) {
+      const old = crystal.mineral;
+      crystal.mineral = newMineral;
+      crystal.paramorph_origin = old;
+      if (step != null) crystal.paramorph_step = step;
+      return [old, newMineral];
+    }
+  }
+  return null;
+}
+
 // ============================================================
 // SIMULATION ENGINE
 // ============================================================
@@ -12878,7 +13007,7 @@ class VugSimulator {
     // list to keep in sync. Filtered to numeric fields (the only kind
     // FluidChemistry currently has, but defensive).
     this._fluidFieldNames = Object.keys(new FluidChemistry()).filter(
-      k => typeof (new FluidChemistry()[k]) === 'number'
+      k => typeof (new FluidChemistry()[k]) === 'number' && k !== 'concentration'
     );
     // v25 vadose-zone oxidation: track previous fluid_surface_ring so
     // we can detect rings that just transitioned wet → dry. Null at
@@ -13092,6 +13221,10 @@ class VugSimulator {
       crystal.dominant_forms = ['{010} blades', '{110} prism'];
     } else if (mineral === 'halite') {
       crystal.dominant_forms = ['{100} cube', 'hopper-growth pyramidal hollows'];
+    } else if (mineral === 'borax') {
+      crystal.dominant_forms = ['{100} pinacoid', '{110} monoclinic prism', 'vitreous to resinous luster'];
+    } else if (mineral === 'tincalconite') {
+      crystal.dominant_forms = ['paramorph after borax', 'white powdery crust'];
     } else if (mineral === 'feldspar') {
       crystal.dominant_forms = ['{010} pinacoid', '{110} prism'];
     } else if (mineral === 'topaz') {
@@ -13898,6 +14031,15 @@ class VugSimulator {
     if (sigma_hal > 1.0 && !this._atNucleationCap('halite') && rng.random() < 0.15) {
       const c = this.nucleate('halite', 'vug wall', sigma_hal);
       this.log.push(`  ✦ NUCLEATION: 🧂 Halite #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_hal.toFixed(2)}, concentration=${this.conditions.fluid.concentration.toFixed(1)}) — bathtub-ring NaCl precipitating from the evaporating brine`);
+    }
+
+    // Borax nucleation — alkaline-brine borate evaporite, v28 mirror
+    // of vugg.py. Needs Na + B + alkaline pH + low T + concentration
+    // boost. Stays dormant in scenarios that don't drain.
+    const sigma_brx = this.conditions.supersaturation_borax();
+    if (sigma_brx > 1.0 && !this._atNucleationCap('borax') && rng.random() < 0.12) {
+      const c = this.nucleate('borax', 'vug wall', sigma_brx);
+      this.log.push(`  ✦ NUCLEATION: 💎 Borax #${c.crystal_id} on ${c.position} (T=${this.conditions.temperature.toFixed(0)}°C, σ=${sigma_brx.toFixed(2)}, concentration=${this.conditions.fluid.concentration.toFixed(1)}, pH=${this.conditions.fluid.pH.toFixed(1)}) — alkaline-brine evaporite from the playa-lake chemistry of this drained vug`);
     }
 
     // Feldspar nucleation — needs sigma > 1.0, K or Na + Al + Si
@@ -15072,6 +15214,32 @@ class VugSimulator {
           `(T dropped to ${this.conditions.temperature.toFixed(0)}°C, crossed ${oldM}/${newM} ` +
           `phase boundary; cubic external form preserved)`
         );
+      }
+    }
+
+    // v28: dehydration paramorphs — environment-triggered counterpart
+    // to PARAMORPH_TRANSITIONS. Borax left in a vadose ring loses
+    // water and pseudomorphs to tincalconite. Mirror of vugg.py.
+    {
+      const nRings = this.wall_state.ring_count;
+      for (const crystal of this.crystals) {
+        if (!DEHYDRATION_TRANSITIONS[crystal.mineral]) continue;
+        const ringIdx = crystal.wall_ring_index;
+        if (ringIdx == null || ringIdx < 0 || ringIdx >= nRings) continue;
+        const ringFluid = this.ring_fluids[ringIdx];
+        const ringState = this.conditions.ringWaterState(ringIdx, nRings);
+        const Tlocal = this.ring_temperatures[ringIdx];
+        const transition = applyDehydrationTransitions(
+          crystal, ringFluid, ringState, Tlocal, this.step);
+        if (transition) {
+          const [oldM, newM] = transition;
+          this.log.push(
+            `  ☼ DEHYDRATION: ${capitalize(oldM)} #${crystal.crystal_id} → ${newM} ` +
+            `(vadose exposure ${crystal.dry_exposure_steps} steps, ring ${ringIdx} ` +
+            `concentration=${ringFluid.concentration.toFixed(1)}); external ` +
+            `crystal form preserved as a ${newM} pseudomorph`
+          );
+        }
       }
     }
 
@@ -23335,6 +23503,8 @@ const HABIT_TO_PRIMITIVE = {
   'goshenite':                      PRIM_HEX_PRISM_TERMINATED, // colorless beryl
   'nickel_bloom':                   PRIM_BOTRYOIDAL,
   'cobalt_bloom':                   PRIM_BOTRYOIDAL,    // erythrite efflorescence
+  'cottonball':                     PRIM_BOTRYOIDAL,    // borax cottonball aggregate (Death Valley)
+
   'cabrerite':                      PRIM_TABULAR,       // Mg-bearing annabergite, fibrous-bladed
   'co_bearing':                     PRIM_BOTRYOIDAL,    // chemistry tag fallback (annabergite/erythrite are typically fibrous-massive)
   'cockscomb':                      PRIM_DIPYRAMID,     // marcasite/pyrite cockscomb aggregate

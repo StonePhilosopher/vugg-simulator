@@ -124,6 +124,8 @@ _DIRECT_KEYS = _DIRECT_KEYS | {
     "disphenoidal", "banded", "druzy", "arsenolamprite",
     "chalcotrichite", "azurite_sun", "enamel_on_cuprite",
     "endlichite_yellow", "asterated",
+    # v28 borax habits
+    "cottonball",
 }
 
 
