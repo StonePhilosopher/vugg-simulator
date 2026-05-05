@@ -601,6 +601,138 @@
       ]
     },
 
+    "naica_geothermal": {
+      "anchor": "Naica, Chihuahua, Mexico — Cueva de los Cristales, 290 m below surface. Lead-Zinc-Silver mine (Industrias Peñoles); the giant selenite cave was breached in April 2000 when a mine drift broke through into the chamber. Selenite blades up to 12 m × 1 m × 55 tonnes.",
+      "description": "Slow geothermal pool that grew the largest crystals on Earth. Anhydrite-saturated water at ~58°C cools by hundredths of a degree per year through the gypsum-anhydrite boundary at 54°C; gypsum reprecipitates from dissolving anhydrite at depth. Stable for ~500,000 years (Garcia-Ruiz et al. 2007). Mining begun 1985 dewatered the cave; pumping stopped 2017 and the cave reflooded.",
+      "expects_species": ["selenite"],
+      "duration_steps": 320,
+      "notes": [
+        "Garcia-Ruiz et al. 2007 (Geology 35:327) — the canonical paper on Naica's growth mechanism. Anhydrite at depth (T > 58°C) dissolves slightly; rising water cools to ~54°C; gypsum reprecipitates. The cooling rate is critical: at hundredths of a degree per year, the brine stays close enough to the boundary that crystals grow over geological timescales without significant nucleation of new seeds. Old crystals just keep adding layers.",
+        "Initial T set to 56°C — barely inside the gypsum stability window so any T-drop event drives selenite growth. Six slow_cooling pulses (steps 30, 70, 110, 150, 190, 230) drop T by ~0.7°C each, bringing the cave to ~52°C by step 230. The selenite engine's 55-58°C sweet-spot bonus (×1.4 growth multiplier) fires on every step until the cave drops below 55.",
+        "Mining-drainage event at step 260 (1985 in real time) fires fluid_surface_ring → 0; selenite stops growing. Recharge event at step 290 (2017) refloods the cavity. Final 30 steps in cooler post-mining water: minor selenite growth resumes, plus any vadose-grown halite from the dry interval re-dissolves.",
+        "The default vug_diameter_mm of 50 mm grossly understates Naica reality (the chamber is ~30m × 10m × 10m). The simulator's max_size_cm cap on selenite is 2400 cm = 24m, double the real-world record (Garcia-Ruiz). Both are intentional — the sim isn't trying to reproduce Naica scale, it's reproducing Naica chemistry."
+      ],
+      "initial": {
+        "temperature_C": 56.0,
+        "pressure_kbar": 0.08,    // shallow geothermal — 290m depth
+        "fluid": {
+          "SiO2": 30,
+          // Anhydrite-saturated Ca-SO4 brine. Garcia-Ruiz et al.
+          // report ~600 ppm Ca, ~1500 ppm SO4 at the cave's 58°C
+          // boundary; we slightly amplify for engine kinetics.
+          "Ca": 320,
+          "S": 420,
+          "CO3": 15,             // low — limestone host but Ca-SO4 dominates
+          "F": 1,
+          "Fe": 3,
+          "Mn": 0.5,
+          "Mg": 30,              // low Mg — the system is gypsum, not aragonite
+          "Na": 90,              // mod salinity — not a brine, but not fresh
+          "K": 8,
+          "Cl": 180,
+          "Sr": 6,
+          "Pb": 5,               // trace — Naica is technically a Pb mine
+          "Ag": 1,
+          "O2": 1.5,             // oxidized — the brine contacts cave atmosphere
+          "pH": 7.2,
+          "salinity": 4.0
+        },
+        "wall": {
+          "composition": "limestone",   // Naica is in Sierra de Naica limestone
+          "thickness_mm": 1000.0,
+          "vug_diameter_mm": 50.0,
+          "wall_Fe_ppm": 600.0,
+          "wall_Mn_ppm": 80.0,
+          "primary_bubbles": 2,
+          "secondary_bubbles": 3,
+          "shape_seed": 58              // 58°C, the Naica equilibrium T
+        }
+      },
+      "events": [
+        { "step":  30, "type": "naica_slow_cooling",  "name": "Cooling pulse #1", "description": "Geothermal cooling from 56 toward 54°C boundary" },
+        { "step":  70, "type": "naica_slow_cooling",  "name": "Cooling pulse #2", "description": "Anhydrite at depth resupplies Ca + SO₄" },
+        { "step": 110, "type": "naica_slow_cooling",  "name": "Cooling pulse #3", "description": "Selenite cathedral blades grow another notch" },
+        { "step": 150, "type": "naica_slow_cooling",  "name": "Cooling pulse #4", "description": "Crossing toward the 54°C Naica equilibrium" },
+        { "step": 190, "type": "naica_slow_cooling",  "name": "Cooling pulse #5", "description": "Half a million years compressed to one event" },
+        { "step": 230, "type": "naica_slow_cooling",  "name": "Cooling pulse #6", "description": "Cave reaches Naica baseline" },
+        { "step": 260, "type": "naica_mining_drainage", "name": "1985: Mining Begins", "description": "Pumps drop the water table; cave drains" },
+        { "step": 290, "type": "naica_mining_recharge", "name": "2017: Pumps Stop", "description": "Cave refloods; growth resumes in cooler water" }
+      ],
+      "sources": [
+        "Garcia-Ruiz, Villasuso, Ayora, Canals, Otálora 2007 (Geology 35:327) — Formation of natural gypsum megacrystals in Naica, Mexico",
+        "Otálora & Garcia-Ruiz 2014 (Chem. Soc. Rev. 43:2013) — Nucleation and growth of the Naica giant gypsum crystals",
+        "Forti & Sanna 2010 (NSS Bull.) — The Naica caves and their crystals: a unique speleological problem"
+      ]
+    },
+
+    "searles_lake": {
+      "anchor": "Searles Lake, San Bernardino County, California — Pleistocene-Holocene closed-basin alkaline-saline brine, the textbook locality for sodium-borate / sodium-sulfate / sodium-chloride evaporites. ~70 evaporite mineral species documented (Smith 1979 USGS PP 1043). Type locality for hanksite, sulfohalite, borax (commercially), tincalconite.",
+      "description": "Mojave desert closed basin with Sierra Nevada snowmelt feed. Wet/dry seasonal cycling drives the full evaporite cascade: halite throughout, borax + mirabilite in cold winter, thenardite + tincalconite paramorphs in summer heat. The 20-mule team era of American borate commerce ran on chemistry like this.",
+      "expects_species": ["halite", "borax", "mirabilite", "thenardite", "tincalconite"],
+      "duration_steps": 300,
+      "notes": [
+        "Smith 1979 USGS Professional Paper 1043 — the canonical Searles Lake mineralogy + paragenesis reference. ~70 mineral species; the simulator covers the major Na-sulfate/borate/chloride suite (halite, borax, tincalconite, mirabilite, thenardite). Trona, hanksite, sulfohalite, glauberite, gaylussite, pirssonite, ulexite, colemanite, kernite are all real and worth adding later.",
+        "Initial T = 18°C (Mojave October — playa temps span 5°C winter to 50°C summer). Initial chemistry seeds the alkaline-saline brine: Na 1500, B 100, S 400, Cl 1500, alkaline pH 9.5, low Ca (Ca > 50 would steal borate as colemanite). Salinity high (180 g/L) reflects the ~4× seawater concentration of mid-Pleistocene Searles brine.",
+        "Five seasonal cycles over 300 steps. Each cycle: winter_freeze (steps 30, 90, 150, 210, 270) drops T to 8°C and bumps soluble species; summer_bake (steps 60, 120, 180, 240) heats to 55°C, firing the dehydration paramorph cascade (mirabilite → thenardite, borax → tincalconite). Inter-cycle fresh_pulse events flood the basin briefly.",
+        "fluid_surface_ring isn't set in initial state — the basin starts fully saturated. The summer_bake events drop it through evaporation; fresh_pulse refills. The vadose-transition concentration boost (×3 per drying) is what brings borax + mirabilite into supersaturation.",
+        "Death Valley (Furnace Creek) and Boron, CA also belong to this basin family but with slightly different brine-chemistry signatures. Searles is the most chemically diverse — chosen as the sim's anchor because more of its minerals are already plumbed."
+      ],
+      "initial": {
+        "temperature_C": 18.0,
+        "pressure_kbar": 0.05,
+        "fluid": {
+          "SiO2": 40,            // playa silt, rhyolitic ash from Sierra
+          "Ca": 25,              // intentionally low — Ca > 50 inhibits borax
+          "Na": 1500,            // 4x seawater Na
+          "K": 250,              // Searles is K-anomalous (commercial K2SO4)
+          "Mg": 40,              // low — Searles is a NaSO4-NaB4O7-NaCl basin
+          "S": 400,              // sulfate-rich
+          "B": 100,              // boron-rich — the commercial borate driver
+          "Cl": 1500,            // chloride-rich
+          "CO3": 80,             // some, but Searles is sulfate > carbonate
+          "F": 3,
+          "Fe": 1,
+          "Mn": 0.5,
+          "Sr": 5,
+          "Li": 12,              // Searles has Li (commercial extraction in 1900s)
+          "O2": 1.6,             // oxidized — playa surface
+          "pH": 9.5,             // alkaline — keeps borate as B(OH)4-
+          "salinity": 180.0
+        },
+        "wall": {
+          "composition": "limestone", // playa floor is mixed carbonate + evaporite mud
+          "thickness_mm": 500.0,
+          "vug_diameter_mm": 50.0,
+          "wall_Fe_ppm": 400.0,
+          "wall_Mn_ppm": 60.0,
+          "primary_bubbles": 3,
+          "secondary_bubbles": 5,
+          "shape_seed": 1862     // first borax claim at Searles, 1862
+        }
+      },
+      "events": [
+        { "step":  30, "type": "searles_winter_freeze", "name": "Winter Freeze #1", "description": "Mojave night drops below 32°C; mirabilite + borax precipitate" },
+        { "step":  60, "type": "searles_summer_bake",   "name": "Summer Bake #1",   "description": "Playa heats to 55°C; mirabilite → thenardite, borax → tincalconite" },
+        { "step":  75, "type": "searles_fresh_pulse",   "name": "Sierra Snowmelt #1","description": "Brief flash flood; soluble salts redissolve" },
+        { "step":  90, "type": "searles_winter_freeze", "name": "Winter Freeze #2", "description": "Cold-evaporite window opens again" },
+        { "step": 120, "type": "searles_summer_bake",   "name": "Summer Bake #2",   "description": "Dehydration cascade fires" },
+        { "step": 135, "type": "searles_fresh_pulse",   "name": "Sierra Snowmelt #2","description": "Refresh from spring runoff" },
+        { "step": 150, "type": "searles_winter_freeze", "name": "Winter Freeze #3", "description": "Mid-Holocene cold pulse" },
+        { "step": 180, "type": "searles_summer_bake",   "name": "Summer Bake #3",   "description": "Glauber salt loses 10 H₂O" },
+        { "step": 195, "type": "searles_fresh_pulse",   "name": "Sierra Snowmelt #3","description": "Late Holocene refill" },
+        { "step": 210, "type": "searles_winter_freeze", "name": "Winter Freeze #4", "description": "Late Pleistocene-style cold" },
+        { "step": 240, "type": "searles_summer_bake",   "name": "Summer Bake #4",   "description": "Fourth dehydration cascade" },
+        { "step": 255, "type": "searles_fresh_pulse",   "name": "Sierra Snowmelt #4","description": "Modern Holocene flush" },
+        { "step": 270, "type": "searles_winter_freeze", "name": "Winter Freeze #5", "description": "Final cold pulse before basin drying" }
+      ],
+      "sources": [
+        "Smith 1979 USGS Professional Paper 1043 — Subsurface Stratigraphy and Geochemistry of Late Quaternary Evaporites, Searles Lake, California",
+        "Smith & Pratt 1957 USGS Bull. 1045-A — Hanksite from Searles Lake",
+        "Eugster 1980 Annu. Rev. Earth Planet. Sci. 8:35 — Lake Magadi-Searles brine geochemistry",
+        "Boron, CA + Death Valley — adjacent commercially-active borate localities in the same basin family"
+      ]
+    },
+
     "bisbee": {
       "anchor": "Bisbee, Arizona — Warren Mining District, Cochise County. Laramide quartz-monzonite porphyry intruding Paleozoic Escabrosa Limestone + Abrigo Formation. Major Cu-Ag-Au district (~8 Mt Cu, ~25 Moz Ag, ~3 Moz Au historically).",
       "description": "Classic copper porphyry with world-class oxidation zone. Complete Cu paragenesis from primary sulfides through supergene enrichment to the cyan-blue chrysocolla finale. Centerpiece mechanic: azurite ↔ malachite ↔ chrysocolla cascade tracking pCO2 evolution.",

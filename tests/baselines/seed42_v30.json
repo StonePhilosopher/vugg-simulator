@@ -99,7 +99,7 @@
     "halite": {
       "active": 9,
       "dissolved": 0,
-      "max_um": 598.8,
+      "max_um": 1423.1,
       "total": 9
     },
     "hematite": {
@@ -135,7 +135,7 @@
     "mimetite": {
       "active": 1,
       "dissolved": 0,
-      "max_um": 1166.6,
+      "max_um": 1165.6,
       "total": 1
     },
     "native_copper": {
@@ -395,6 +395,44 @@
       "dissolved": 0,
       "max_um": 2.0,
       "total": 1
+    }
+  },
+  "naica_geothermal": {
+    "celestine": {
+      "active": 3,
+      "dissolved": 0,
+      "max_um": 579.6,
+      "total": 14
+    },
+    "halite": {
+      "active": 9,
+      "dissolved": 0,
+      "max_um": 679.9,
+      "total": 9
+    },
+    "mirabilite": {
+      "active": 1,
+      "dissolved": 0,
+      "max_um": 202.7,
+      "total": 2
+    },
+    "quartz": {
+      "active": 0,
+      "dissolved": 0,
+      "max_um": 34.6,
+      "total": 107
+    },
+    "selenite": {
+      "active": 10,
+      "dissolved": 0,
+      "max_um": 221576.6,
+      "total": 10
+    },
+    "thenardite": {
+      "active": 1,
+      "dissolved": 0,
+      "max_um": 251.8,
+      "total": 5
     }
   },
   "ouro_preto": {
@@ -859,6 +897,56 @@
       "dissolved": 0,
       "max_um": 119.7,
       "total": 2
+    }
+  },
+  "searles_lake": {
+    "borax": {
+      "active": 2,
+      "dissolved": 0,
+      "max_um": 3947539.6,
+      "total": 4
+    },
+    "celestine": {
+      "active": 6,
+      "dissolved": 0,
+      "max_um": 14.0,
+      "total": 17
+    },
+    "halite": {
+      "active": 0,
+      "dissolved": 0,
+      "max_um": 18699126.6,
+      "total": 12
+    },
+    "mirabilite": {
+      "active": 0,
+      "dissolved": 0,
+      "max_um": 2441763.7,
+      "total": 1
+    },
+    "quartz": {
+      "active": 1,
+      "dissolved": 0,
+      "max_um": 80.4,
+      "total": 80
+    },
+    "selenite": {
+      "active": 9,
+      "dissolved": 0,
+      "max_um": 2776.6,
+      "total": 15
+    },
+    "thenardite": {
+      "active": 3,
+      "dissolved": 0,
+      "max_um": 1405736.6,
+      "total": 6
+    },
+    "tincalconite": {
+      "active": 12,
+      "dissolved": 0,
+      "max_um": 43097.5,
+      "total": 12
     }
   },
   "supergene_oxidation": {

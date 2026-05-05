@@ -10036,7 +10036,11 @@
       ],
       "class": "halide",
       "description": "NaCl, rock salt — the canonical chloride evaporite. Forms by evaporative concentration of Na-Cl-rich brines: closed-basin playas, sabkha, drained vugs in the supergene zone. Hopper-growth (skeletal cube with pyramidal hollows) is the signature high-supersaturation habit; clean cubes form when the brine concentrates slowly.",
-      "scenarios": [],
+      "scenarios": [
+        "searles_lake",
+        "bisbee",
+        "sabkha_dolomitization"
+      ],
       "T_range_C": [
         0,
         200
@@ -10121,7 +10125,9 @@
       ],
       "class": "borate",
       "description": "Na₂[B₄O₅(OH)₄]·8H₂O — sodium tetraborate decahydrate. The mineral that doesn’t belong in a typical hydrothermal vug: a playa-lake / closed-basin evaporite that crystallizes only from alkaline (pH > 8.5) brines rich in Na and B at low T. The defining feature is what happens after: leave a fresh borax crystal in dry air and within weeks it effloresces to white powder (tincalconite, Na₂B₄O₇·5H₂O), losing 5 of its 10 water molecules to humidity. This is the only common mineral that self-destructs in normal collection conditions — every borax specimen is a race against dehydration.",
-      "scenarios": [],
+      "scenarios": [
+        "searles_lake"
+      ],
       "T_range_C": [
         0,
         60
@@ -10188,7 +10194,9 @@
       ],
       "class": "borate",
       "description": "Na₂B₄O₇·5H₂O — borax with five water molecules gone. Appears in the simulator only as a paramorph product of borax: the external crystal shape is preserved (the cubic outline, the prismatic terminations, all the field marks) but the lattice has collapsed and the surface has bloomed white-powdery. A tincalconite specimen IS a former borax crystal, frozen mid-decay. Stable in any humidity — once dehydrated, it doesn’t re-hydrate.",
-      "scenarios": [],
+      "scenarios": [
+        "searles_lake"
+      ],
       "T_range_C": [
         0,
         320
@@ -10254,7 +10262,9 @@
       ],
       "class": "sulfate",
       "description": "Na₂SO₄·10H₂O — Glauber salt. The cold-evaporite of the sodium-sulfate system. Stable only below 32.4°C (the eutectic with thenardite); warm above that and the lattice loses 10 water molecules and inverts to thenardite. Forms in winter playas, Antarctic dry valleys, cold caves — anywhere a Na-rich brine cools without freezing. The transparent prismatic crystals are stable enough to handle in cold weather but lose their water in warm dry rooms. Most museum specimens are tincal-style: the mirabilite went away decades ago and the white powdery thing in the case is thenardite pseudomorph.",
-      "scenarios": [],
+      "scenarios": [
+        "searles_lake"
+      ],
       "T_range_C": [
         -10,
         32
@@ -10339,7 +10349,9 @@
       ],
       "class": "sulfate",
       "description": "Na₂SO₄ — anhydrous sodium sulfate. The warm-evaporite half of the mirabilite-thenardite pair: where Glauber salt dehydrates above 32°C, thenardite is what’s left, OR what crystallizes directly from warm playa brines that never cool through the eutectic. Orthorhombic dipyramids in well-formed crystals, tabular plates more often, white efflorescent crusts most commonly. Searles Lake CA, Bayan Khar Mongolia, Camp Verde AZ, the type locality at Espartinas Spain.",
-      "scenarios": [],
+      "scenarios": [
+        "searles_lake"
+      ],
       "T_range_C": [
         25,
         200
