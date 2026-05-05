@@ -23571,6 +23571,17 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     let bareWallColor = TOPO_WALL_COLOR;
     if (orient === 'floor') bareWallColor = TOPO_WALL_COLOR_FLOOR;
     else if (orient === 'ceiling') bareWallColor = TOPO_WALL_COLOR_CEILING;
+    // v24: ring is submerged below the meniscus → after stroking the
+    // canonical wall colour for each cell, re-stroke the same path with
+    // a thin translucent blue companion line. Reads at-a-glance as
+    // "this ring is underwater". Meniscus + vadose rings get no extra
+    // line; the meniscus disc itself communicates the surface and the
+    // dry rings keep their canonical orange.
+    const wstate = (sim && sim.conditions && sim.conditions.ringWaterState)
+      ? sim.conditions.ringWaterState(ringIdx, ringCount)
+      : 'submerged';
+    const isSubmerged = wstate === 'submerged'
+      && sim && sim.conditions && sim.conditions.fluid_surface_ring != null;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (let i = 0; i < N; i++) {
@@ -23607,6 +23618,21 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
       ctx.moveTo(psx, psy);
       ctx.quadraticCurveTo(cpX, cpY, pex, pey);
       ctx.stroke();
+      if (isSubmerged) {
+        // Re-stroke the same path with a thin blue companion line.
+        // Lower alpha + lineCap=butt so it reads as a tint along the
+        // wall colour, not a competing outline. Width capped at the
+        // base wall stroke so heavily-encrusted cells (very thick
+        // wall colour) don't drown out the underwater cue.
+        const prevCap = ctx.lineCap;
+        ctx.lineCap = 'butt';
+        ctx.globalAlpha = 0.7;
+        ctx.strokeStyle = 'rgba(110, 190, 245, 1.0)';
+        ctx.lineWidth = Math.min(width, TOPO_WALL_STROKE_PX) * 0.55;
+        ctx.stroke();
+        ctx.globalAlpha = alpha;
+        ctx.lineCap = prevCap;
+      }
     }
     ctx.globalAlpha = 1;
   }
