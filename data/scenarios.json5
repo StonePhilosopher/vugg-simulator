@@ -1488,7 +1488,13 @@
         "pressure_kbar": 0.05,
         "fluid": {
           // CO₂-charged hot-spring water — high DIC, moderate pH.
-          "Ca": 200,
+          // Ca = 350 ppm sits in the realistic Mammoth Hot Springs
+          // range (200-1000 ppm typical, e.g. Friedman 1970 reports
+          // 400-500 ppm at the source). High Ca + initial low pH
+          // means the cascade can pass through unsaturated → saturated
+          // as Bjerrum CO₃²⁻ amplification (BJERRUM_DAMPING = 0.5)
+          // takes over at pH 8.
+          "Ca": 350,
           "CO3": 500,
           "Mg": 30,
           "SiO2": 50,

@@ -4241,7 +4241,28 @@ let timeScale = 5.0;
 //        scenarios within ±20%, max -31% (deccan_zeolite — alkaline
 //        scenario where the stronger pH boost amplifies competing
 //        carbonates). 14 of 19 scenarios completely unchanged.
-const SIM_VERSION = 23;
+//   v24 — Phase 3c: CARBONATE_SPECIATION_ACTIVE flipped on
+//        (May 2026). effectiveCO3 now routes through proper Bjerrum
+//        partition with normalization at BJERRUM_REFERENCE_PH (7.5):
+//        the existing per-mineral eq calibrations stay valid at
+//        neutral pH, while pH deviations produce the genuine ~10×
+//        per-pH-unit CO₃²⁻ amplification of real aqueous chemistry.
+//        BJERRUM_DAMPING = 0.5 — full Bjerrum (factor √10 = 3.16 at
+//        pH 8) was 2× stronger than the empirical 3^(pH-7.5) v23 was
+//        already applying, so half-amplitude blending keeps scenarios
+//        in their calibration band. The manual 3^(pH-7.5) factor in
+//        calcite supersat is now flag-conditional (only fires when
+//        the new flag is OFF), so the two paths don't double-count.
+//        Net: all 11 carbonate supersat methods now have proper
+//        pH-dependent CO₃²⁻ activity, not just calcite.
+//        Calibration sweep at seed 42 vs v23: RMS 13.4%, 17/20
+//        within ±20%, max -25% (tutorial_first_crystal,
+//        tutorial_mn_calcite — small-N tutorials sensitive to any
+//        carbonate shift). tutorial_travertine: bumped initial Ca
+//        200 → 350 ppm to keep the cascade firing under the new
+//        damping; calcite nucleates at step 42 (σ=1.46). Real Mammoth
+//        Hot Springs water sits at 400-500 ppm Ca per Friedman 1970.
+const SIM_VERSION = 24;
 
 // ── 18-constants.js ──
 
@@ -4927,7 +4948,7 @@ function activityCorrectionFactor(fluid, mineral) {
 //   - K₁ and K₂ from Plummer & Busenberg 1982 / Millero 1995. T in
 //     °C. Pressure correction for moderate pressures (<1 kbar)
 //     is small; ignore for now.
-const CARBONATE_SPECIATION_ACTIVE = false;
+const CARBONATE_SPECIATION_ACTIVE = true;
 // Carbonate dissociation constants. pK at temperature, returned as
 // -log₁₀(K). Values from Stumm & Morgan, Aquatic Chemistry (3rd ed.),
 // linearized fits valid 0–80 °C, anchor at 25 °C with experimentally-
@@ -4987,20 +5008,51 @@ function carbonateIonPpm(fluid, T_celsius) {
     const fractions = bjerrumFractions(pH, T_celsius);
     return fluid.CO3 * fractions.CO3;
 }
+// Reference pH for the Bjerrum normalization. Carbonate eq calibration
+// constants in the supersat methods were tuned against fluid.CO3 (= DIC)
+// at typical near-neutral pH around 7.5. Keeping the normalization
+// anchored here means existing eq values stay valid at pH 7.5; pH
+// deviations produce the proper Bjerrum amplification automatically.
+const BJERRUM_REFERENCE_PH = 7.5;
+// Damping coefficient for the Bjerrum normalization, analogous to
+// ACTIVITY_DAMPING in 20a-chemistry-activity.ts. Full Bjerrum at pH 8
+// gives a 10× CO₃²⁻ amplification (factor √10 ≈ 3.16 in σ via
+// geometric-mean form). That's about 2× stronger than the empirical
+// 3^(pH-7.5) factor used pre-Phase-3c — too aggressive against the
+// existing per-mineral eq calibration. Damping smoothly interpolates:
+//   damped_ratio = 1 + damping × (raw_ratio - 1)
+//   damping = 1.0 → full Bjerrum (research mode)
+//   damping = 0.5 → half-amplitude (current shipping default)
+//   damping = 0.0 → no normalization (= flag off)
+// Calibrated in Phase 3c (May 2026) at 0.5 — keeps the sweep-wide
+// RMS in the same band as Phase 1c/2c flips while preserving the
+// pH-driven cascade in tutorial_travertine and giving the other
+// 10 carbonates real pH dependence for the first time.
+const BJERRUM_DAMPING = 0.5;
 // The carbonate quantity to use in supersaturation calculations.
-// Routes between DIC (legacy) and proper CO₃²⁻ (flag on) so the
-// migration in carbonate supersat methods is a pure substitution
-// of `this.fluid.CO3` → `effectiveCO3(this.fluid, this.temperature)`.
+// When CARBONATE_SPECIATION_ACTIVE is on, returns DIC scaled by the
+// pH-dependent CO₃²⁻ fraction relative to the reference pH. The
+// normalization is the key trick: at pH = BJERRUM_REFERENCE_PH the
+// scale factor is 1.0, so eq calibrations survive the flag flip.
+// Above 7.5: ~10× more CO₃²⁻ per pH unit (real Bjerrum amplification).
+// Below 7.5: ~10× less per pH unit (acidic suppression).
 //
-// Flag OFF (default): returns fluid.CO3 — byte-identical to v22.
-// Flag ON: returns the Bjerrum-derived CO₃²⁻ activity. At pH 7-8
-// this is 0.04-0.5% of DIC, so saturation drops dramatically — the
-// existing eq calibration constants assume DIC interpretation, so
-// per-mineral eq retuning is a Phase 3c calibration follow-up.
+// Returns DIC directly (no scaling) when flag is off — preserves
+// pre-Phase-3c behavior for any caller that hasn't migrated yet.
 function effectiveCO3(fluid, T_celsius) {
     if (!CARBONATE_SPECIATION_ACTIVE)
         return fluid.CO3;
-    return carbonateIonPpm(fluid, T_celsius);
+    if (typeof fluid.CO3 !== 'number' || fluid.CO3 <= 0)
+        return 0;
+    const pH = typeof fluid.pH === 'number' ? fluid.pH : 7.0;
+    const fAtFluid = bjerrumFractions(pH, T_celsius).CO3;
+    const fAtRef = bjerrumFractions(BJERRUM_REFERENCE_PH, T_celsius).CO3;
+    if (fAtRef <= 0)
+        return fluid.CO3;
+    const rawRatio = fAtFluid / fAtRef;
+    // Damped ratio: blends toward 1.0 (= no amplification) per BJERRUM_DAMPING.
+    const dampedRatio = 1 + BJERRUM_DAMPING * (rawRatio - 1);
+    return fluid.CO3 * Math.max(0.05, dampedRatio);
 }
 // Compute the equilibrium pCO₂ (bar) consistent with the fluid's
 // current DIC and pH. This is the "aqueous-side answer" that
@@ -6119,14 +6171,12 @@ Object.assign(VugConditions.prototype, {
             sigma -= acid_attack;
         }
         // Alkaline conditions favor carbonate precipitation. Phase 3
-        // (May 2026): the empirical 0.15× / pH-unit factor was way too
-        // weak vs real Bjerrum partition (CO3²⁻ activity grows ~10× per
-        // pH unit). Replaced with 3^(pH-7.5) — gives factor 1.0 at pH 7.5,
-        // 1.73 at pH 8.0, 3.0 at pH 8.5, ~5.2 at pH 9.0. Approximates the
-        // true Bjerrum cascade well enough that CO₂-degas-driven scenarios
-        // (tutorial_travertine; eventual cave/hot-spring scenarios) build
-        // calcite as the chemistry says they should.
-        else if (this.fluid.pH > 7.5) {
+        // (May 2026): when CARBONATE_SPECIATION_ACTIVE is on, the proper
+        // pH-dependent Bjerrum amplification of CO₃²⁻ is already baked
+        // into effectiveCO3 above — so this manual boost would double-count.
+        // Flag-OFF path: keep the empirical 3^(pH-7.5) factor (which
+        // approximates Bjerrum) so behavior is consistent in either mode.
+        else if (this.fluid.pH > 7.5 && !CARBONATE_SPECIATION_ACTIVE) {
             sigma *= Math.pow(3.0, this.fluid.pH - 7.5);
         }
         // Mg poisoning of calcite growth steps — sigmoid centered on Mg/Ca=2

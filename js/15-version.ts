@@ -274,5 +274,26 @@
 //        scenarios within ±20%, max -31% (deccan_zeolite — alkaline
 //        scenario where the stronger pH boost amplifies competing
 //        carbonates). 14 of 19 scenarios completely unchanged.
-const SIM_VERSION = 23;
+//   v24 — Phase 3c: CARBONATE_SPECIATION_ACTIVE flipped on
+//        (May 2026). effectiveCO3 now routes through proper Bjerrum
+//        partition with normalization at BJERRUM_REFERENCE_PH (7.5):
+//        the existing per-mineral eq calibrations stay valid at
+//        neutral pH, while pH deviations produce the genuine ~10×
+//        per-pH-unit CO₃²⁻ amplification of real aqueous chemistry.
+//        BJERRUM_DAMPING = 0.5 — full Bjerrum (factor √10 = 3.16 at
+//        pH 8) was 2× stronger than the empirical 3^(pH-7.5) v23 was
+//        already applying, so half-amplitude blending keeps scenarios
+//        in their calibration band. The manual 3^(pH-7.5) factor in
+//        calcite supersat is now flag-conditional (only fires when
+//        the new flag is OFF), so the two paths don't double-count.
+//        Net: all 11 carbonate supersat methods now have proper
+//        pH-dependent CO₃²⁻ activity, not just calcite.
+//        Calibration sweep at seed 42 vs v23: RMS 13.4%, 17/20
+//        within ±20%, max -25% (tutorial_first_crystal,
+//        tutorial_mn_calcite — small-N tutorials sensitive to any
+//        carbonate shift). tutorial_travertine: bumped initial Ca
+//        200 → 350 ppm to keep the cascade firing under the new
+//        damping; calcite nucleates at step 42 (σ=1.46). Real Mammoth
+//        Hot Springs water sits at 400-500 ppm Ca per Friedman 1970.
+const SIM_VERSION = 24;
 

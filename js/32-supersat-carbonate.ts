@@ -38,14 +38,12 @@ Object.assign(VugConditions.prototype, {
     sigma -= acid_attack;
   }
   // Alkaline conditions favor carbonate precipitation. Phase 3
-  // (May 2026): the empirical 0.15× / pH-unit factor was way too
-  // weak vs real Bjerrum partition (CO3²⁻ activity grows ~10× per
-  // pH unit). Replaced with 3^(pH-7.5) — gives factor 1.0 at pH 7.5,
-  // 1.73 at pH 8.0, 3.0 at pH 8.5, ~5.2 at pH 9.0. Approximates the
-  // true Bjerrum cascade well enough that CO₂-degas-driven scenarios
-  // (tutorial_travertine; eventual cave/hot-spring scenarios) build
-  // calcite as the chemistry says they should.
-  else if (this.fluid.pH > 7.5) {
+  // (May 2026): when CARBONATE_SPECIATION_ACTIVE is on, the proper
+  // pH-dependent Bjerrum amplification of CO₃²⁻ is already baked
+  // into effectiveCO3 above — so this manual boost would double-count.
+  // Flag-OFF path: keep the empirical 3^(pH-7.5) factor (which
+  // approximates Bjerrum) so behavior is consistent in either mode.
+  else if (this.fluid.pH > 7.5 && !CARBONATE_SPECIATION_ACTIVE) {
     sigma *= Math.pow(3.0, this.fluid.pH - 7.5);
   }
 
