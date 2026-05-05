@@ -265,7 +265,17 @@ _runEngineForCrystal(engine, crystal) {
     this.conditions.temperature = this.ring_temperatures[ringIdx];
   }
   try {
-    return engine(crystal, this.conditions, this.step);
+    const zone = engine(crystal, this.conditions, this.step);
+    // PROPOSAL-GEOLOGICAL-ACCURACY Phase 1 — mass-balance hook.
+    // No-op when MASS_BALANCE_ENABLED is false (the v17 default), so
+    // every existing scenario stays byte-identical. When flipped on,
+    // each precipitation zone debits the per-ring fluid and each
+    // dissolution zone credits it, against the per-mineral
+    // stoichiometry table in 19-mineral-stoichiometry.ts. Runs while
+    // conditions.fluid is still aliased to the ring fluid (above), so
+    // debits/credits hit the correct ring without re-plumbing.
+    if (zone) applyMassBalance(crystal, zone, this.conditions);
+    return zone;
   } finally {
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;
