@@ -3941,13 +3941,15 @@ function mineralThumbHTML(mineral, size, crystal) {
   </div>`;
 }
 
-// ── 99-legacy-bundle.js ──
+// ── 15-version.js ──
 
-let rng = new SeededRandom(Date.now());
-// Time compression: each step represents more geological time at higher values.
-// 5× = ~50,000 years/step (Simulation/Creative), 1× = ~10,000 years/step (Groove).
-// Physics are identical — the clock is different, not the chemistry.
-let timeScale = 5.0;
+// ============================================================
+// js/15-version.ts — SIM_VERSION + per-bump engine-drift history
+// ============================================================
+// JS counterpart of vugg/version.py — currently sits at v17 while Python has progressed past v30. Drift documented in BACKLOG; future "JS catch-up" rounds land here.
+//
+// Phase B4 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
+// stay global so call sites in 99-legacy-bundle.ts keep working.
 // ============================================================
 // SIM VERSION
 // ============================================================
@@ -4101,6 +4103,16 @@ let timeScale = 5.0;
 //        + silica_equilibrium from JS to Python — pre-v17 only the
 //        browser sim had Mo-flux thermal modulation for porphyry sulfides.
 const SIM_VERSION = 17;
+
+// ── 18-constants.js ──
+
+// ============================================================
+// js/18-constants.ts — Engine-wide physical constants
+// ============================================================
+// DEFAULT_INTER_RING_DIFFUSION_RATE, WATER_LEVEL_DRAIN_RATE, EVAPORATIVE_CONCENTRATION_FACTOR. Read by VugSimulator init + per-ring chemistry plumbing.
+//
+// Phase B4 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
+// stay global so call sites in 99-legacy-bundle.ts keep working.
 // ============================================================
 // PHYSICAL CONSTANTS AND MODELS
 // ============================================================
@@ -4119,6 +4131,16 @@ const WATER_LEVEL_DRAIN_RATE = 0.05;
 // Multiplied into ring_fluids[k].concentration when the ring dries.
 // Mirrors EVAPORATIVE_CONCENTRATION_FACTOR in vugg.py.
 const EVAPORATIVE_CONCENTRATION_FACTOR = 3.0;
+
+// ── 20-chemistry-fluid.js ──
+
+// ============================================================
+// js/20-chemistry-fluid.ts — FluidChemistry — per-ring solute composition
+// ============================================================
+// Mirror of vugg/chemistry/fluid.py. _cloneFluid is the per-ring shallow-copy helper used by VugSimulator at init time so per-ring mutation does not leak across rings.
+//
+// Phase B4 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
+// stay global so call sites in 99-legacy-bundle.ts keep working.
 // Phase C: clone a FluidChemistry instance. Used to seed each ring's
 // fluid as an independent copy of the scenario's global fluid so
 // later mutation on one ring doesn't leak to others.
@@ -4214,6 +4236,14 @@ class FluidChemistry {
         return parts.length ? parts.join(', ') : 'dilute';
     }
 }
+
+// ── 99-legacy-bundle.js ──
+
+let rng = new SeededRandom(Date.now());
+// Time compression: each step represents more geological time at higher values.
+// 5× = ~50,000 years/step (Simulation/Creative), 1× = ~10,000 years/step (Groove).
+// Physics are identical — the clock is different, not the chemistry.
+let timeScale = 5.0;
 class VugWall {
     constructor(opts = {}) {
         this.composition = opts.composition ?? 'limestone';
