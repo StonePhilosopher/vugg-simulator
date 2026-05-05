@@ -52,6 +52,29 @@ Order is rough priority — top of each section is most-actionable, but explicit
 
 ---
 
+## 🧪 Geological accuracy — closing the formal gaps
+
+**Status:** proposal filed, not started. See [`PROPOSAL-GEOLOGICAL-ACCURACY.md`](PROPOSAL-GEOLOGICAL-ACCURACY.md) (2026-05-05).
+
+**Why:** the v17 chemistry-audit rounds and the modular refactor closed every per-mineral mistake; what's left are *formal* gaps in how the kernel does mass-action thermodynamics. Two concrete leaks visible in the code:
+
+- **Fluid mass balance is asymmetric.** Engines credit fluid on dissolution but only some debit it on precipitation: 0/3 halide engines, 0/3 hydroxide, 0/7 native, 0/11 phosphate, 0/2 borate, 3/11 carbonate. The fluid is effectively an infinite reservoir for half the minerals.
+- **Sigma uses `Math.min(Ca, CO3)` not the thermodynamic product `[Ca]·[CO3]`** in 90+ supersat methods, and there's no activity-coefficient correction at any salinity (so brines can't behave correctly without the `concentration` evaporative-multiplier kludge).
+
+**Phases (each shippable):**
+1. Fluid mass balance — close the leak via shared `MINERAL_STOICHIOMETRY` table + central debit/credit wrapper. SIM_VERSION 17 → 18.
+2. Saturation-Index reform — Q × K with proper stoichiometric product + Davies activity correction. Ksp moves to `data/minerals.json`.
+3. Carbonate speciation + CO₂ degassing as a first-class precipitation driver. New `co2_degas` event type. Travertine tutorial scenario.
+4. pH/Eh as dynamic state variables driven by reactions; three explicit redox couples (Fe³⁺/Fe²⁺, Mn⁴⁺/Mn²⁺, SO₄²⁻/HS⁻).
+5. Solid-solution composition tracking — replaces broth-ratio branching with continuous mole-fraction, unifies the rhomb-carbonate and sphalerite series.
+6. Classical-Nucleation-Theory rate gates (optional, lowest priority).
+
+**Adjacent angles** (not phases, but compose well): stable-isotope tracking (δ¹⁸O/δ¹³C), fluid-inclusion homogenization-T narration, Pitzer for high-salinity brines, Ostwald ripening (Phase 1 unblocks `PROPOSAL-GIBBS-THOMPSON.md`).
+
+**Sequencing:** Phases 1+2 are foundational and unblock everything else; Phase 3 is the highest visible-payoff phase. 3D-SIMULATION Phase D (orientation-bias habits) and the twin-probability retune both want this proposal landed first.
+
+---
+
 ## 🐞 Bugs / pending diagnostic
 
 ### 3D viewer bug list
