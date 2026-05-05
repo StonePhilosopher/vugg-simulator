@@ -633,26 +633,144 @@ Phase 1 (mass balance) ─┬─> Phase 2 (Q, activity) ─┬─> Phase 3 (CO�
 
 ---
 
-## Out of scope (deliberately)
+## Out of scope for this proposal — research-mode track
 
-- **Full geochemical-modeling-software equivalence (PHREEQC, Geochemist's
-  Workbench).** The simulator is a game and a teaching tool, not a
-  research tool. Aim is a player-visible bar of "real enough that the
-  geology rings true under inspection," not "publishable-grade
-  thermodynamics."
-- **Surface-area kinetics with face-specific growth rates.** Crystals
-  grow as `c_length_mm` and `a_width_mm` — face-specific kinetics
-  would require a face-resolved geometry model. Big rewrite for
-  marginal visible payoff. Defer.
-- **Metamictization beyond uraninite + neighbors.** The existing
-  cascade is sufficient; modeling lattice-damage healing on heating is
-  a niche concern.
-- **Reaction-path modeling / pH-Eh phase diagrams as canonical state.**
-  Phases 3 and 4 give us a forward-stepping pH and Eh; we don't need
-  to compute the fully-equilibrated stability surface every step.
-- **A separate "research mode" with PHREEQC-grade fidelity.** If the
-  appetite ever materializes, it lives behind a flag and shares zero
-  kernel with the game-mode engines. Out of scope for this proposal.
+The phases above are bounded by "what a player can see in a vug" and
+are calibrated to keep the simulator a teaching tool. The items below
+are deliberately *not* on the Phase 1–6 list, but each is a concrete
+seed for taking the simulator from "real enough that the geology rings
+true under inspection" toward "real enough that a researcher can run
+hypothesis-grade experiments in it."
+
+These are filed here, not deleted, so a future builder picking up the
+research-mode trajectory has the architecture sketches in one place
+rather than re-deriving them. Each item is independent; none blocks
+the others. If a research-mode track is ever opened, it lives behind a
+`mode: 'research'` flag and shares the kernel with game mode but adds
+extra solvers and state — not a fork.
+
+### Tier R1 — Tractable extensions of the proposed kernel
+
+These compose with Phases 1–6 without rewriting them.
+
+- **Pitzer-equation parameterization for high-salinity brines.**
+  Davies (Phase 2) is good to I ≈ 0.5 mol/kg; Pitzer extends to ~6
+  mol/kg, the regime of halite-saturated evaporites. The parameter
+  tables are large but well-documented (Pitzer 1973; Harvie-Møller-Weare
+  1984 for Na-K-Mg-Ca-H-Cl-SO₄-OH-HCO₃-CO₃-CO₂-H₂O at 25 °C). A research
+  build replaces `js/20a-chemistry-activity.ts` with a Pitzer module
+  gated by a feature flag; calls return identical activities at low I,
+  diverge correctly at high I.
+- **Stable-isotope tracking with Rayleigh distillation** (δ¹⁸O, δ¹³C,
+  δ³⁴S, δDH₂O). One float per zone per isotope; per-mineral
+  fractionation factors α(T) from Friedman & O'Neil 1977. Open- vs
+  closed-system Rayleigh distillation switch on the fluid. Gives the
+  sim a published-paper-grade narrative ("the meteoric/magmatic mixing
+  ratio recorded in this calcite zone is 0.42 ± 0.05") and makes
+  isotope-thermometry a first-class output.
+- **Fluid-inclusion thermobarometry as a measurable output.** Each
+  trapped inclusion stores T, P, salinity, and bulk fluid composition
+  at the moment of entrapment. A "microthermometry" UI page reports
+  the homogenization temperature distribution per crystal — the same
+  measurement a student would make on a fluid-inclusion stage. Mostly
+  bookkeeping; the inclusions already exist.
+- **Surface-complexation / sorption models.** Trace metals (Pb, Zn,
+  Cu, As, U) sorb to Fe/Mn-oxyhydroxide surfaces (goethite, ferrihydrite,
+  birnessite) — the dominant scavenging mechanism in supergene zones.
+  Implemented as a "surface site" pool on each Fe/Mn-oxide crystal
+  with a Langmuir or two-site model. Closes the gap where the current
+  sim has Cu²⁺ and goethite both present and they ignore each other.
+- **Open-system reactive transport with explicit advection.** The
+  per-ring fluid + Laplacian diffusion (3D-SIMULATION Phase C) is
+  closed-system. A research build adds a velocity field on the rings
+  (one fluid pulse moving up the cavity, leaving its precipitation
+  trail), giving genuine *vein zoning* — the classic outside-in
+  paragenetic sequence of fluorite/quartz/sulfide deposits emerges
+  for free once advection runs against the saturation gradient.
+- **Pressure as a real variable.** Currently `conditions.pressure`
+  exists but does almost no work. Adding the PV term to ΔG and the
+  pressure-dependence of Ksp (Kt-Mn empirical fits, or Helgeson-Kirkham-
+  Flowers HKF for the rigorous version) unlocks deep-hydrothermal and
+  metamorphic-vein scenarios that aren't viable today.
+
+### Tier R2 — Physics that needs new geometry or new solvers
+
+These can't slot into the current per-mineral function framework.
+
+- **Surface-area kinetics with face-specific growth rates.** Real
+  crystals grow at different rates on different faces — the {0001}
+  base of beryl grows ~10× slower than the {101̄0} prism, which is why
+  beryl is prismatic. Modeling this requires a face-resolved
+  geometry: each crystal carries an enumerated face list, each face
+  has its own growth rate, the rendered shape evolves from the
+  intersection of moving planes (Wulff construction, time-dependent).
+  Big rewrite — the renderer assumes ellipsoidal crystals. Payoff:
+  habits emerge from kinetics rather than being looked up by name;
+  hopper crystals, skeletal growth, and oscillatory-zoned faces all
+  fall out for free.
+- **Reaction-path / equilibrium-path modeling as a separate output.**
+  The forward-stepping kernel (Phases 1–4) doesn't compute the
+  fully-equilibrated stability surface every step. A research mode
+  could spawn an equilibrium solver in parallel: at each player
+  decision point ("inject fluid X into the cavity"), solve for the
+  fully-equilibrated mineral assemblage at fixed T, P, and bulk
+  composition (Gibbs-energy minimization over n minerals; standard
+  algorithm — see Connolly 2009 for the THERIAK approach). Display the
+  equilibrium answer alongside the kinetic forward-step answer; the
+  delta between them is exactly the kinetic story the sim is telling.
+- **Coupled flow-heat-chemistry (TOUGHREACT-style).** Heat conducts
+  through the host rock; fluid carries heat and solutes; reactions
+  release/consume heat (exothermic precipitation, endothermic
+  dissolution) and modify porosity/permeability, which feeds back
+  into flow. The sim has independent T (Phase 4 wraps it slightly),
+  fluid, and reactions; coupling them properly is a months-of-work
+  numerical-methods undertaking but unlocks self-organizing patterns
+  (banded ore deposits, oscillatory mineralization) that the current
+  framework can only fake.
+- **Microbial mediation of redox reactions.** Bacterial sulfate
+  reduction (BSR), iron-oxidizing bacteria (acidophiles), nitrate-
+  reducers. Each acts as a *catalyst* that shifts the kinetic
+  accessibility of a redox couple without changing its
+  thermodynamics. Implemented as a "biome" field on the fluid that
+  adjusts the rate constants for selected redox steps. Realistic for
+  any low-T sedimentary or supergene setting; wildly out of scope for
+  a teaching tool but the canonical missing variable in real
+  geochemistry.
+
+### Tier R3 — Far horizon
+
+Listed for completeness; would each be its own multi-month proposal.
+
+- **Atomistic / molecular-dynamics validation of habit dispatch.**
+  Use published DFT / classical-MD results (Stack 2014 for calcite
+  step kinetics; De Yoreo 2017 for non-classical pathways) to *derive*
+  the per-mineral habit transitions instead of hand-tuning them.
+  Lookup tables shipped from external simulations.
+- **Defect chemistry beyond colour centres.** Point-defect populations
+  (Schottky/Frenkel) drive trace-element substitution limits, optical
+  properties beyond smoky quartz, and high-T mechanical behaviour.
+  The simulator's current trace-element machinery is concentration-
+  driven; a defect-chemistry layer would reframe it as
+  charge-balanced site-by-site occupancy.
+- **PHREEQC / Geochemist's Workbench import-export bridge.** Allow
+  scenarios authored in `data/scenarios.json5` to be exported as a
+  PHREEQC input file, run externally, and the results re-imported as
+  a "ground truth" overlay. Doesn't add fidelity to the kernel; gives
+  a calibration handle and lets users compare the sim against a
+  research-grade reference.
+
+### Why file these here at all
+
+The user-facing trajectory of the simulator is "teaching tool → real
+enough to be a teaching tool that holds up under research-grade
+inspection." That's exactly the trajectory where a research-mode fork
+becomes worth opening — at the moment a chemistry-PhD player asks "but
+what does the activity-corrected calcite saturation actually look like
+along this fluid path?" and the sim has the architecture to answer.
+
+These items are the artifacts that make that opening cheap. None is
+on the critical path; all are picked up the moment a research-mode
+appetite appears.
 
 ---
 
