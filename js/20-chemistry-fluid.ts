@@ -17,7 +17,11 @@ function _cloneFluid(src) {
 }
 
 class FluidChemistry {
-  constructor(opts = {}) {
+  // Dataclass-style constructor sets all fields dynamically. The index
+  // signature lets TS accept `this.<element>` without a declaration per
+  // element (38+ of them) — runtime behavior unchanged.
+  [key: string]: any;
+  constructor(opts: any = {}) {
     this.SiO2 = opts.SiO2 ?? 500.0;
     this.Ca = opts.Ca ?? 200.0;
     this.CO3 = opts.CO3 ?? 150.0;

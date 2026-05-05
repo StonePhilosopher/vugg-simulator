@@ -15,6 +15,8 @@
 // decls stay global so call sites in 99-legacy-bundle.ts keep working.
 
 class VugWall {
+  // Dynamic dataclass-style fields — runtime untouched.
+  [key: string]: any;
   constructor(opts = {}) {
     this.composition = opts.composition ?? 'limestone';
     this.thickness_mm = opts.thickness_mm ?? 500.0;
@@ -107,6 +109,8 @@ class VugWall {
 // the renderer walks the cells in order and draws a line whose color and
 // thickness come from the crystal occupying that cell.
 class WallCell {
+  // Dynamic dataclass-style fields — runtime untouched.
+  [key: string]: any;
   constructor() {
     this.wall_depth = 0;       // dissolution depth, mm (negative = eroded)
     this.crystal_id = null;    // id of the crystal occupying this cell
@@ -182,6 +186,8 @@ function _raycastUnion(bubbles, theta) {
 }
 
 class WallState {
+  // Dynamic dataclass-style fields — runtime untouched.
+  [key: string]: any;
   constructor(opts = {}) {
     this.cells_per_ring = opts.cells_per_ring ?? 120;
     // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as

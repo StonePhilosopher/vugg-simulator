@@ -64,7 +64,7 @@ let _topoView3D = false;
 // 0..ring_count-1. The stepper buttons in `.topo-slice-ctrls` cycle
 // through them. Hidden in 3D mode (where every ring is rendered
 // stacked anyway) via `body.topo-view-3d` CSS.
-let _topoActiveSlice = 'aggregate';
+let _topoActiveSlice: number | 'aggregate' = 'aggregate';
 let _topoTiltX = 0;                   // pitch (viewer above/below)
 let _topoTiltY = 0;                   // yaw   (viewer left/right of disc)
 const TOPO_TILT_X_MAX = Math.PI / 2 - 0.05;   // don't flip past vertical

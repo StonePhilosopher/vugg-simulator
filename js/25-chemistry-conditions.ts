@@ -10,7 +10,9 @@
 // Phase B6 of PROPOSAL-MODULAR-REFACTOR.
 
 class VugConditions {
-  constructor(opts = {}) {
+  // Dynamic dataclass-style fields — runtime untouched.
+  [key: string]: any;
+  constructor(opts: any = {}) {
     this.temperature = opts.temperature ?? 350.0;
     this.pressure = opts.pressure ?? 1.5;
     this.fluid = opts.fluid || new FluidChemistry();

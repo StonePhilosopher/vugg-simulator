@@ -14,6 +14,8 @@
 // Phase B10 of PROPOSAL-MODULAR-REFACTOR.
 
 class VugSimulator {
+  // Dynamic dataclass-style fields — runtime untouched.
+  [key: string]: any;
   constructor(conditions, events) {
     this.conditions = conditions;
     this._startTemp = conditions.temperature; // remember initial T for thermal pulse ceiling
