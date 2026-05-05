@@ -4,11 +4,49 @@ Living list of open work items, captured from session conversations so context s
 
 ---
 
-## 🏗️ Modular refactor — split the monoliths
+## 🏗️ Modular refactor — split the monoliths ✅ SHIPPED (B1–B20, 2026-05-05)
 
-**Status:** brief drafted 2026-05-04, see `proposals/PROPOSAL-MODULAR-REFACTOR.md`. Awaiting builder pickup.
+**Status:** done. See `proposals/PROPOSAL-MODULAR-REFACTOR.md` (with its
+SHIPPED footer) and [`js/README.md`](../js/README.md) for the navigable
+index of the new source tree.
 
-`vugg.py` is **20,445 lines**, `index.html` is **25,225 lines**, both growing with every mineral / scenario addition. The data layer (data/minerals.json, data/scenarios.json5) is well-modularized; the engine layer is not. The proposal lays out three phases (Python-only split, JS extraction with a tiny build step, parity-drift tooling) — each shippable on its own, none a flag day. Adding a mineral currently takes 8+ insertion points across 2 giant files; the refactor targets ≤4 file touches per mineral with clear class-grouped layout. Read the proposal first; the next builder's first deliverable is a 1-2 hour audit confirming the file-tree layout + the mixin-vs-registry choice for VugConditions's 304 supersat methods.
+What landed:
+- **Python (Phase A1–A5b, partial):** `vugg.py` 20,445 lines → `vugg/`
+  package. `version.py`, `chemistry/{fluid,conditions}.py` + 12
+  per-class supersat mixins, `geometry/{wall,crystal}.py`. The remaining
+  Python phases (A6 engines, A7 transitions/events/scenarios, A8 simulator
+  residual) paused when the user pivoted to JS-first.
+- **JavaScript (Phase B1–B20, complete):** the 21,923-line inline
+  `<script>` in `index.html` → 100+ TypeScript modules under `js/`,
+  none over 1,000 lines. Includes build infra (`tools/build.mjs`
+  concatenator + `tsc`), `npm run ci` regression guard, and zero type
+  errors at landing.
+- **Real bug fixes uncovered along the way (8):** `initR` undefined ref
+  in 3D renderer; 3 duplicate narrator definitions (dead code); 5
+  latent cross-block scope leaks in `check_nucleation` (only-correct-by-
+  coincidence).
+
+Adding a new mineral now takes ≤ 4 file touches (down from 8+) — see
+[`js/README.md` Quick task lookup](../js/README.md#quick-task-lookup).
+
+### Open follow-ups (small, well-scoped)
+
+- **JS narrators for borax / tincalconite / halite / mirabilite / thenardite.**
+  Python has them; JS doesn't. `narrate()`'s dynamic dispatch falls
+  through to `''` for these 5 minerals. Port from
+  `vugg/__init__.py`'s `_narrate_*` methods (~1 hour). Lands in:
+  - `js/92c-narrators-halide.ts` ← `_narrate_halite`
+  - `js/92j-narrators-sulfate.ts` ← `_narrate_mirabilite`, `_narrate_thenardite`
+  - new `js/92l-narrators-borate.ts` ← `_narrate_borax`, `_narrate_tincalconite`
+- **Finish Python A6–A8** (engines / transitions / simulator residual).
+  Harness is functional as-is; this is future-proofing the test side.
+  Mechanical extraction script is in this commit history (B15 / B17 / B20
+  on the JS side use the same shape).
+- **Tighten remaining `[key: string]: any;` index signatures.** Each
+  dataclass-style class (FluidChemistry, VugConditions, WallState,
+  Crystal, VugSimulator) has the loose signature added in B14b.
+  Replacing with explicit field declarations would catch typos at
+  compile time. Per-file work, no risk.
 
 Order is rough priority — top of each section is most-actionable, but explicit user direction reorders freely.
 

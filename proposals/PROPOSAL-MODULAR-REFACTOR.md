@@ -1,7 +1,10 @@
 # PROPOSAL: Modular refactor — split the monoliths
 
 **Date drafted:** 2026-05-04
-**Status:** Research-mode brief for a future builder. No code changes prescribed yet — the next agent picks up by reading the audit, validating the plan, then executing one phase at a time.
+**Status:** ✅ **SHIPPED** (2026-05-05). See the SHIPPED footer at the
+bottom of this file for what actually landed and how it differs from the
+original plan. The body below is preserved as the original brief; treat
+the footer as the source of truth for current state.
 **Author:** Stone Philosopher (drafted with Claude)
 
 ---
@@ -333,3 +336,86 @@ A modular refactor that's worth the effort should produce:
 Phase A alone would already make the codebase ~50% easier to navigate. Phases B and C compound from there.
 
 The deliverable from this proposal is **a 1-2 hour audit by the next builder** confirming the file-tree layout, the mixin-vs-registry choice, and the per-class vs per-mineral file decision. Once those three calls are made, Phase A is mostly mechanical extraction with tests as the safety net.
+
+---
+
+## ✅ SHIPPED FOOTER (2026-05-05)
+
+The audit + execution happened in one session. The decisions made:
+
+1. **File-tree layout:** mostly as proposed. The Python `vugg/` package
+   used class-grouped layout (`vugg/chemistry/supersat/<class>.py`,
+   `vugg/geometry/`, etc.). The JS side mirrors the same shape under
+   `js/` — see [`js/README.md`](../js/README.md) for the navigable index.
+2. **Mixin vs registry:** **mixin** chosen for Python (`class
+   VugConditions(CarbonatesSupersatMixin, …, SulfideSupersatMixin)`),
+   **`Object.assign(Class.prototype, {…})`** chosen for JS (the SCRIPT-
+   mode TS files can't `import`/`export`, so each per-class file is a
+   side-effecting attach call). Both preserve `cond.supersaturation_X()`
+   call sites unchanged.
+3. **Per-class vs per-mineral:** **per-class.** 12 mineral-class files
+   per concern (supersat, engines, narrators, nucleation gates) instead
+   of 95+ per-mineral files. Adding a new mineral inside an existing
+   class is one line per concern.
+
+### What actually landed (vs. the original Phase A/B/C plan)
+
+| Phase | Original plan | Shipped |
+|-------|---------------|---------|
+| **A1–A5b** (Python) | Full split: `vugg/` package with chemistry, geometry, supersat mixins, engines, transitions, events, scenarios, simulator, cli. | **Partial.** `vugg/__init__.py` + `version.py` + `chemistry/{fluid,conditions}.py` + 12 supersat mixins + `geometry/{wall,crystal}.py`. Phases A6–A8 (engines, transitions, simulator residual) **paused** when the user pivoted to JS-first. |
+| **A6–A8** (Python) | Continue Python split. | **Not done.** Tests still pass (1,631 green); Python is functional. Future work, not blocking. |
+| **B1** (JS) | `tools/build.mjs` concatenator + BUILD markers in `index.html`. | **Done.** Plus `tools/build-all.mjs` that pipes `tsc` → `build.mjs` so type errors are informational without blocking the splice. |
+| **B (TypeScript pivot)** | Original recommendation was Option B-bundle in plain JS to preserve `file://` "open and play". | **TypeScript adopted instead** (user request). `tsconfig.json` uses script-mode TS (`module: "none"`), `js/_typings.d.ts` widens DOM types globally. `file://` still works because the build still produces a single inline `<script>` block. |
+| **B2–B11** (extract themed modules from `index.html`) | Renderer first (largest non-mirror chunk). Then chemistry/engines/etc. | **All done.** 100+ TypeScript modules under `js/`, none over 1,000 lines. |
+| **B12–B15** (further internal splits) | Not in original plan. | **Done.** Renderer split into 9 themed sub-modules. Simulator narrators (95) and per-class nucleation gates (87 helpers) split via Object.assign + free-function pattern. |
+| **B14a–B14c** (type cleanup) | Not in original plan; types were a pure side-quest. | **Done.** 3,317 type errors → 0 via `?` optional params, dataclass index signatures, MINERAL_SPEC widening, per-call-site Map/Set/Record typing, and the global `js/_typings.d.ts`. |
+| **B16–B20** (more splits + bookkeeping) | Not in original plan. | **Done.** Narrators split per-class (mirror of B7 supersat split), 70-events.ts split per-scenario-family, fortress UI + groove UI split into shared widgets, residual VugSimulator class split into 5 mixin files. |
+| **C** (parity-drift tooling) | `sync_engines.py`, property-based tests, drift dashboard. | **Not done.** `npm run ci` (typecheck + bundle staleness check) lands in a similar spirit but at a coarser grain. Phase C still on the table. |
+
+### Real bugs uncovered along the way (8)
+
+The refactor wasn't supposed to fix bugs — extraction is structural by
+design — but type-checking + cross-file visibility surfaced several
+latent issues:
+
+1. `_topoRenderRings3D` referenced `initR` from a closure that no longer
+   existed after the renderer split. Latent since the meniscus-disc
+   commit; never fired because `cell.base_radius_mm > 0` in the default
+   profile init. Fixed in B12 by deriving `initR` locally from
+   `wall.initial_radius_mm`.
+2-4. Three duplicate narrator definitions (`_narrate_scorodite`,
+   `_narrate_ferrimolybdite`, `_narrate_chalcanthite`) had both an
+   older inline-string version and a newer `narrative_blurb`-based
+   version. The older ~50 lines were dead code. Removed in B12.
+5-9. Five latent cross-block scope leaks in `check_nucleation`: blocks
+   for chalcopyrite, hematite, uraninite, feldspar, albite, adamite,
+   malachite all referenced `existing_<X>` variables that originated in
+   sibling blocks earlier in the same method. Worked only because the
+   method shared scope across all blocks. Caught by tsc's TS2304 when
+   B15 split the method into per-class helpers; each consuming helper
+   now declares its own dependency.
+
+### Final state
+
+- **No file over 1,000 lines** in either runtime tree.
+- **Adding a new mineral takes ≤ 4 file touches** (down from 8+) — see
+  [`js/README.md` Quick task lookup](../js/README.md#quick-task-lookup).
+- **`npm run ci` enforces no regressions** (typecheck + bundle
+  staleness check).
+- **0 type errors** at landing.
+- **1,631 Python tests still pass** byte-identical.
+- **Browser smoke confirms** all 5 modes (Legends / Creative / Random /
+  Zen / Groove + Library) + crystal-collection persistence + topo
+  renderer (2D and 3D paths) + zone modal + groove turntable + sigma
+  panel work end-to-end with zero console errors.
+
+### Open follow-ups
+
+Tracked in `proposals/BACKLOG.md` under the modular-refactor section.
+Most actionable:
+- Port 5 missing JS narrators (borax, tincalconite, halite, mirabilite,
+  thenardite) from the Python side.
+- Finish Python phases A6–A8 if/when the Python harness gets actively
+  iterated on again.
+- Tighten `[key: string]: any;` index signatures to explicit field
+  declarations (per-file, no risk).
