@@ -4190,7 +4190,30 @@ let timeScale = 5.0;
 //        -25.5% (schneeberg, U-secondary minerals less aggressive
 //        once uraninite stops over-debiting U). Most scenarios
 //        unchanged (those 7 minerals weren't dominant).
-const SIM_VERSION = 21;
+//   v22 — Phase 1d cleanup pass 2 (May 2026). Earlier pass missed the
+//        sulfate (60) and sulfide (61) engine files because their
+//        debit pattern used the inline form
+//        `conditions.fluid.X = Math.max(conditions.fluid.X - rate * Y, 0)`
+//        (one line) rather than the two-line `-= rate * Y;` + Math.max
+//        cleanup that the earlier grep matched. This pass removes
+//        ~36 additional growth-path bulk-formula debits across
+//        barite/celestine/chalcanthite/anhydrite/anglesite/jarosite/
+//        alunite/brochantite/antlerite/mirabilite/thenardite/molybdenite/
+//        galena/arsenopyrite/acanthite/argentite/nickeline/millerite/
+//        cobaltite. Special cases preserved: arsenopyrite Au-trap
+//        (Au not in stoichiometry), oxidative-breakdown S debits in
+//        dissolution paths (use `dissolved_um` not `rate`).
+//        With double-debit fully gone across all 12 engine classes,
+//        MASS_BALANCE_SCALE rises 0.01 → 0.02. Plus depletion
+//        narration: applyMassBalance now reports species crossing
+//        below MASS_BALANCE_DEPLETION_THRESHOLD (1 ppm) and
+//        _runEngineForCrystal emits ⛔ log lines. Calibration sweep
+//        at seed 42 vs v21: RMS 13.0%, 9 of 19 within ±5%, 18 of 19
+//        within ±20%. Outliers: gem_pegmatite +50% (small N: +7
+//        crystals), searles_lake -12% (Na-S evaporite finds new
+//        depletion-cycle equilibrium). 67 depletion ⛔ narratives
+//        across the sweep (mostly searles_lake + reactive_wall).
+const SIM_VERSION = 22;
 
 // ── 18-constants.js ──
 
@@ -4228,17 +4251,31 @@ const EVAPORATIVE_CONCENTRATION_FACTOR = 3.0;
 // note in 15-version.ts.
 const MASS_BALANCE_ENABLED = true;
 // Empirical ppm-per-µm-of-c-axis-growth scale, multiplied into the
-// stoichiometry coefficient when the wrapper debits or credits.
-// Calibrated against v18 baselines in Phase 1c (May 2026): scale =
-// 0.02 gives the smallest sweep-wide RMS delta across the 19
-// scenarios (most within ±15%; outliers in fluid-recycling-driven
-// scenarios like gem_pegmatite are bounded). Lower than the
-// originally-prototyped 0.05 because the wrapper now also credits
-// dissolution (in addition to engine-internal hand-coded credits in
-// ~12 minerals), which doubles up the recycling effect — a smaller
-// scale lets the natural per-scenario depletion/recycling balance
-// reach steady state.
-const MASS_BALANCE_SCALE = 0.01;
+// stoichiometry coefficient when the wrapper debits. Calibration
+// history:
+//   Phase 1a/1c (08140d1, 1eaaa5a): scale=0.01 — chosen to balance
+//     wrapper debits against the engine-internal hand-coded debits
+//     that double-counted with the wrapper.
+//   Phase 1d (7904894): scale stayed at 0.01 after first cleanup pass
+//     (carbonate, silicate, oxide, arsenate, molybdate engines).
+//   Phase 1d-followup (this commit): after the second cleanup pass
+//     removed ~36 more growth-path debits in sulfate (60) + sulfide
+//     (61) engines, the wrapper became the sole grower-side debit
+//     across all 12 engine classes. Scale rises to 0.02 — without
+//     the double-debit assumption, 0.02 gives the lowest sweep-wide
+//     RMS (13%) and produces enough depletion to fire the
+//     ⛔-narration line in evaporite scenarios (67 events across
+//     19 baselines, mostly searles_lake + reactive_wall).
+const MASS_BALANCE_SCALE = 0.02;
+// Depletion narration threshold (ppm). When a species crosses below
+// this value via mass-balance debit, _runEngineForCrystal emits a
+// "Fe²⁺ depleted in ring 4 — Pyrite #5 growth halts" log line. 1 ppm
+// is the order of magnitude where further precipitation is no longer
+// meaningful — saturation has cratered. Single-shot per crossing:
+// previous > 1 && proposed ≤ 1 fires the narrative once, not on
+// every subsequent step where the species already sits below the
+// threshold.
+const MASS_BALANCE_DEPLETION_THRESHOLD = 1.0;
 
 // ── 19-mineral-stoichiometry.js ──
 
@@ -4395,11 +4432,16 @@ const MINERAL_STOICHIOMETRY = {
 //      once and skip — so a new mineral added before its
 //      stoichiometry is filed never crashes a run.
 const _massBalanceMissingWarned = {};
+// Returns the list of species names that just transitioned from positive
+// to zero (depletion events), or null on no-op / missing stoichiometry.
+// _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —
+// pyrite nucleation halted" log lines so players can see when the fluid
+// runs out, instead of crystals silently stopping growth.
 function applyMassBalance(crystal, zone, conditions) {
     if (!MASS_BALANCE_ENABLED)
-        return;
+        return null;
     if (!zone || !zone.thickness_um)
-        return;
+        return null;
     // Phase 1d (May 2026): precipitation-only. Engines hand-code their
     // dissolution credits at per-mineral rates ~50× larger than the
     // wrapper's MASS_BALANCE_SCALE — those rates were tuned to specific
@@ -4411,7 +4453,7 @@ function applyMassBalance(crystal, zone, conditions) {
     // didn't debit the fluid), while existing dissolution credits keep
     // their behavior.
     if (zone.thickness_um < 0)
-        return;
+        return null;
     const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
     if (!stoich) {
         if (!_massBalanceMissingWarned[crystal.mineral]) {
@@ -4420,16 +4462,31 @@ function applyMassBalance(crystal, zone, conditions) {
                 `growth will not debit fluid composition. Add to ` +
                 `MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts.`);
         }
-        return;
+        return null;
     }
-    // thickness_um is positive (precipitation). Debit each species.
+    // thickness_um is positive (precipitation). Debit each species and
+    // collect any that just crossed below the depletion threshold.
     const debit = MASS_BALANCE_SCALE * zone.thickness_um;
     const fluid = conditions.fluid;
+    let depleted = null;
     for (const species in stoich) {
-        if (typeof fluid[species] !== 'number')
+        const previous = fluid[species];
+        if (typeof previous !== 'number')
             continue;
-        fluid[species] = Math.max(0, fluid[species] - debit * stoich[species]);
+        const proposed = previous - debit * stoich[species];
+        // Depletion narration fires when the species crosses below the
+        // trace threshold from above. 1 ppm is the order of magnitude
+        // where further precipitation is no longer meaningful (saturation
+        // cratered, σ ≪ 1 for cation-paired anions). Single-shot per
+        // event: previous > 1 && proposed ≤ 1 catches the transition,
+        // not the steady-state "already exhausted" case.
+        if (previous > MASS_BALANCE_DEPLETION_THRESHOLD &&
+            proposed <= MASS_BALANCE_DEPLETION_THRESHOLD) {
+            (depleted ||= []).push(species);
+        }
+        fluid[species] = Math.max(0, proposed);
     }
+    return depleted;
 }
 
 // ── 20-chemistry-fluid.js ──
@@ -11837,8 +11894,7 @@ function grow_barite(crystal, conditions, step) {
     if (conditions.fluid.Pb > 5) {
         habit_note += '; honey-yellow (Pb-bearing — Cumberland gold habit)';
     }
-    conditions.fluid.Ba = Math.max(conditions.fluid.Ba - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
+    // Phase 1d: Ba/S consumption owned by the wrapper (applyMassBalance).
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11886,8 +11942,6 @@ function grow_celestine(crystal, conditions, step) {
             habit_note += '; Ba-substituted (barytocelestine intermediate)';
         }
     }
-    conditions.fluid.Sr = Math.max(conditions.fluid.Sr - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11920,8 +11974,6 @@ function grow_chalcanthite(crystal, conditions, step) {
         habit_note = 'efflorescent crust chalcanthite — high-evaporation arid habit';
     }
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
-    conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 function grow_anhydrite(crystal, conditions, step) {
@@ -11974,8 +12026,6 @@ function grow_anhydrite(crystal, conditions, step) {
         && conditions.fluid.salinity > 150)) {
         habit_note += '; pale lavender (angelite variant)';
     }
-    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12030,8 +12080,6 @@ function grow_brochantite(crystal, conditions, step) {
     if (conditions.fluid.Cl > 100) {
         habit_note += '; Cl-rich (would compete with atacamite — Cl-Cu hydroxychloride)';
     }
-    conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12080,8 +12128,6 @@ function grow_antlerite(crystal, conditions, step) {
         crystal.dominant_forms = ['microcrystalline druse'];
         habit_note = 'druzy antlerite microcrystals on dissolving Cu sulfide';
     }
-    conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.004, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12126,9 +12172,6 @@ function grow_jarosite(crystal, conditions, step) {
         crystal.dominant_forms = ['pseudocubic rhombs', 'tabular {0001}'];
         habit_note = 'pseudocubic golden-yellow jarosite rhombs';
     }
-    conditions.fluid.K = Math.max(conditions.fluid.K - rate * 0.003, 0);
-    conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.004, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12183,9 +12226,6 @@ function grow_alunite(crystal, conditions, step) {
     if (conditions.fluid.Fe > 20) {
         habit_note += '; pinkish (intermediate to jarosite — natroalunite series)';
     }
-    conditions.fluid.K = Math.max(conditions.fluid.K - rate * 0.003, 0);
-    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.004, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12222,8 +12262,6 @@ function grow_mirabilite(crystal, conditions, step) {
         crystal.habit = 'prismatic';
         crystal.dominant_forms = ['{010} pinacoid', '{110} prism', 'monoclinic'];
     }
-    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.06, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.04, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12262,8 +12300,6 @@ function grow_thenardite(crystal, conditions, step) {
         crystal.habit = 'dipyramidal';
         crystal.dominant_forms = ['orthorhombic dipyramid', '{111} dominant'];
     }
-    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.06, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.04, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12310,10 +12346,6 @@ function grow_selenite(crystal, conditions, step) {
         crystal.dominant_forms = ['{010} tabular', '{110} prism', '{111} dome'];
     }
     // Ca and S consumption
-    conditions.fluid.Ca -= rate * 0.005;
-    conditions.fluid.Ca = Math.max(conditions.fluid.Ca, 0);
-    conditions.fluid.S -= rate * 0.004;
-    conditions.fluid.S = Math.max(conditions.fluid.S, 0);
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     // Fluid inclusions common in fast-growing selenite
     let fi = false, fi_type = '';
@@ -12669,10 +12701,6 @@ function grow_molybdenite(crystal, conditions, step) {
     crystal.habit = 'hexagonal platy';
     crystal.dominant_forms = ['{0001} basal pinacoid', '{10-10} prism'];
     // Mo and S consumption
-    conditions.fluid.Mo -= rate * 0.004;
-    conditions.fluid.Mo = Math.max(conditions.fluid.Mo, 0);
-    conditions.fluid.S -= rate * 0.003;
-    conditions.fluid.S = Math.max(conditions.fluid.S, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12694,10 +12722,6 @@ function grow_galena(crystal, conditions, step) {
     crystal.habit = 'cubic';
     crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
     // Pb and S consumption
-    conditions.fluid.Pb -= rate * 0.005;
-    conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-    conditions.fluid.S -= rate * 0.003;
-    conditions.fluid.S = Math.max(conditions.fluid.S, 0);
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     let color_note = 'lead-gray, bright metallic luster';
     if (conditions.fluid.Ag > 5) {
@@ -12779,9 +12803,6 @@ function grow_arsenopyrite(crystal, conditions, step) {
     if (conditions.fluid.Co > 2) {
         habit_note += ' (Co-bearing, pinkish tinge)';
     }
-    conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.004, 0);
-    conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.004, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12834,8 +12855,6 @@ function grow_acanthite(crystal, conditions, step) {
     else {
         habit_note += '; lead-gray metallic';
     }
-    conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.008, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12867,8 +12886,6 @@ function grow_argentite(crystal, conditions, step) {
         habit_note = 'cubic argentite — Comstock Lode habit';
     }
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
-    conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.008, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12913,8 +12930,6 @@ function grow_nickeline(crystal, conditions, step) {
     }
     if (crystal.zones && crystal.zones.length > 12)
         habit_note += '; tarnished to darker copper-rose';
-    conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.010, 0);
-    conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 function grow_millerite(crystal, conditions, step) {
@@ -12953,8 +12968,6 @@ function grow_millerite(crystal, conditions, step) {
         crystal.dominant_forms = ['massive granular', 'brass-yellow metallic'];
         habit_note = 'massive millerite — granular ore form';
     }
-    conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.010, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 function grow_cobaltite(crystal, conditions, step) {
@@ -12998,9 +13011,6 @@ function grow_cobaltite(crystal, conditions, step) {
         habit_note += '; Fe-rich (glaucodot series — (Co,Fe)AsS)';
     if (crystal.zones && crystal.zones.length > 10)
         habit_note += '; pinkish-blush surface tarnish (Co oxide skin)';
-    conditions.fluid.Co = Math.max(conditions.fluid.Co - rate * 0.012, 0);
-    conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.008, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 function grow_stibnite(crystal, conditions, step) {
@@ -16471,15 +16481,22 @@ Object.assign(VugSimulator.prototype, {
         try {
             const zone = engine(crystal, this.conditions, this.step);
             // PROPOSAL-GEOLOGICAL-ACCURACY Phase 1 — mass-balance hook.
-            // No-op when MASS_BALANCE_ENABLED is false (the v17 default), so
-            // every existing scenario stays byte-identical. When flipped on,
-            // each precipitation zone debits the per-ring fluid and each
-            // dissolution zone credits it, against the per-mineral
-            // stoichiometry table in 19-mineral-stoichiometry.ts. Runs while
-            // conditions.fluid is still aliased to the ring fluid (above), so
-            // debits/credits hit the correct ring without re-plumbing.
-            if (zone)
-                applyMassBalance(crystal, zone, this.conditions);
+            // Each precipitation zone debits the per-ring fluid by stoichiometry
+            // (per MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts).
+            // Returns the list of species that just depleted to zero so we can
+            // narrate the event to the player.
+            if (zone) {
+                const depleted = applyMassBalance(crystal, zone, this.conditions);
+                if (depleted && depleted.length) {
+                    const ringTag = ringIdx != null && ringIdx >= 0
+                        ? ` in ring ${ringIdx}`
+                        : '';
+                    for (const species of depleted) {
+                        this.log.push(`  ⛔ ${species} depleted${ringTag} — ` +
+                            `${capitalize(crystal.mineral)} #${crystal.crystal_id} growth halts`);
+                    }
+                }
+            }
             return zone;
         }
         finally {

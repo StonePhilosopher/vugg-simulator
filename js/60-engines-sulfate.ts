@@ -46,8 +46,7 @@ function grow_barite(crystal, conditions, step) {
     habit_note += '; honey-yellow (Pb-bearing — Cumberland gold habit)';
   }
 
-  conditions.fluid.Ba = Math.max(conditions.fluid.Ba - rate * 0.005, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
+  // Phase 1d: Ba/S consumption owned by the wrapper (applyMassBalance).
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -96,8 +95,6 @@ function grow_celestine(crystal, conditions, step) {
     }
   }
 
-  conditions.fluid.Sr = Math.max(conditions.fluid.Sr - rate * 0.005, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -128,8 +125,6 @@ function grow_chalcanthite(crystal, conditions, step) {
     habit_note = 'efflorescent crust chalcanthite — high-evaporation arid habit';
   }
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
-  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 
@@ -184,8 +179,6 @@ function grow_anhydrite(crystal, conditions, step) {
     habit_note += '; pale lavender (angelite variant)';
   }
 
-  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.005, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -245,8 +238,6 @@ function grow_brochantite(crystal, conditions, step) {
     habit_note += '; Cl-rich (would compete with atacamite — Cl-Cu hydroxychloride)';
   }
 
-  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -297,8 +288,6 @@ function grow_antlerite(crystal, conditions, step) {
     habit_note = 'druzy antlerite microcrystals on dissolving Cu sulfide';
   }
 
-  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.004, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -346,9 +335,6 @@ function grow_jarosite(crystal, conditions, step) {
     habit_note = 'pseudocubic golden-yellow jarosite rhombs';
   }
 
-  conditions.fluid.K  = Math.max(conditions.fluid.K  - rate * 0.003, 0);
-  conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.005, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.004, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -406,9 +392,6 @@ function grow_alunite(crystal, conditions, step) {
     habit_note += '; pinkish (intermediate to jarosite — natroalunite series)';
   }
 
-  conditions.fluid.K  = Math.max(conditions.fluid.K  - rate * 0.003, 0);
-  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.005, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.004, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -445,8 +428,6 @@ function grow_mirabilite(crystal, conditions, step) {
     crystal.habit = 'prismatic';
     crystal.dominant_forms = ['{010} pinacoid', '{110} prism', 'monoclinic'];
   }
-  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.06, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.04, 0);
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
@@ -483,8 +464,6 @@ function grow_thenardite(crystal, conditions, step) {
     crystal.habit = 'dipyramidal';
     crystal.dominant_forms = ['orthorhombic dipyramid', '{111} dominant'];
   }
-  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.06, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.04, 0);
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
@@ -533,10 +512,6 @@ function grow_selenite(crystal, conditions, step) {
   }
 
   // Ca and S consumption
-  conditions.fluid.Ca -= rate * 0.005;
-  conditions.fluid.Ca = Math.max(conditions.fluid.Ca, 0);
-  conditions.fluid.S -= rate * 0.004;
-  conditions.fluid.S = Math.max(conditions.fluid.S, 0);
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 

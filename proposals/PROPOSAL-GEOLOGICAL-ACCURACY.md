@@ -8,6 +8,17 @@ B1–B20 modular refactor, and the 3D-SIMULATION Phase A/B/C work all landed.
 **Scope:** JS-only. The Python harness is no longer canonical in this repo;
 all references and code touches below are to `js/`.
 
+**Status (2026-05-05):**
+- ✅ **Phase 1 — Fluid mass balance** — SHIPPED (commits 08140d1, 1eaaa5a, 7904894). SIM_VERSION 17 → 21.
+- ✅ **Phase 2 — Saturation Index reform** — SHIPPED (commits 568476f, b63e426, 4938321, eff8ec1, ed2a381). Davies activity correction at damping 0.25.
+- ⏳ **Phases 3-6** — not started. See backlog entry for sequencing.
+
+Open follow-ups for the shipped phases live in `BACKLOG.md` ("Geological accuracy" entry):
+Phase 1e (unify dissolution credits), Phase 2d (per-scenario fluid recalibration),
+depletion-event narration. The phase descriptions below are preserved as-shipped — the calibration
+notes (`MASS_BALANCE_SCALE = 0.01`, `ACTIVITY_DAMPING = 0.25`) reflect the actual numbers landed,
+not the originally-proposed defaults.
+
 ---
 
 ## Relationship to PROPOSAL-VOLATILE-GASES

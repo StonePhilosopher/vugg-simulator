@@ -223,5 +223,28 @@
 //        -25.5% (schneeberg, U-secondary minerals less aggressive
 //        once uraninite stops over-debiting U). Most scenarios
 //        unchanged (those 7 minerals weren't dominant).
-const SIM_VERSION = 21;
+//   v22 — Phase 1d cleanup pass 2 (May 2026). Earlier pass missed the
+//        sulfate (60) and sulfide (61) engine files because their
+//        debit pattern used the inline form
+//        `conditions.fluid.X = Math.max(conditions.fluid.X - rate * Y, 0)`
+//        (one line) rather than the two-line `-= rate * Y;` + Math.max
+//        cleanup that the earlier grep matched. This pass removes
+//        ~36 additional growth-path bulk-formula debits across
+//        barite/celestine/chalcanthite/anhydrite/anglesite/jarosite/
+//        alunite/brochantite/antlerite/mirabilite/thenardite/molybdenite/
+//        galena/arsenopyrite/acanthite/argentite/nickeline/millerite/
+//        cobaltite. Special cases preserved: arsenopyrite Au-trap
+//        (Au not in stoichiometry), oxidative-breakdown S debits in
+//        dissolution paths (use `dissolved_um` not `rate`).
+//        With double-debit fully gone across all 12 engine classes,
+//        MASS_BALANCE_SCALE rises 0.01 → 0.02. Plus depletion
+//        narration: applyMassBalance now reports species crossing
+//        below MASS_BALANCE_DEPLETION_THRESHOLD (1 ppm) and
+//        _runEngineForCrystal emits ⛔ log lines. Calibration sweep
+//        at seed 42 vs v21: RMS 13.0%, 9 of 19 within ±5%, 18 of 19
+//        within ±20%. Outliers: gem_pegmatite +50% (small N: +7
+//        crystals), searles_lake -12% (Na-S evaporite finds new
+//        depletion-cycle equilibrium). 67 depletion ⛔ narratives
+//        across the sweep (mostly searles_lake + reactive_wall).
+const SIM_VERSION = 22;
 

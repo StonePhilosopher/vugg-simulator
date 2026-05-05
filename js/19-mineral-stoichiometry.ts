@@ -164,9 +164,14 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
 //      stoichiometry is filed never crashes a run.
 const _massBalanceMissingWarned: Record<string, boolean> = {};
 
-function applyMassBalance(crystal: any, zone: any, conditions: any): void {
-  if (!MASS_BALANCE_ENABLED) return;
-  if (!zone || !zone.thickness_um) return;
+// Returns the list of species names that just transitioned from positive
+// to zero (depletion events), or null on no-op / missing stoichiometry.
+// _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —
+// pyrite nucleation halted" log lines so players can see when the fluid
+// runs out, instead of crystals silently stopping growth.
+function applyMassBalance(crystal: any, zone: any, conditions: any): string[] | null {
+  if (!MASS_BALANCE_ENABLED) return null;
+  if (!zone || !zone.thickness_um) return null;
   // Phase 1d (May 2026): precipitation-only. Engines hand-code their
   // dissolution credits at per-mineral rates ~50× larger than the
   // wrapper's MASS_BALANCE_SCALE — those rates were tuned to specific
@@ -177,7 +182,7 @@ function applyMassBalance(crystal: any, zone: any, conditions: any): void {
   // Net: the wrapper handles the gap that v17 left open (precipitation
   // didn't debit the fluid), while existing dissolution credits keep
   // their behavior.
-  if (zone.thickness_um < 0) return;
+  if (zone.thickness_um < 0) return null;
   const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
   if (!stoich) {
     if (!_massBalanceMissingWarned[crystal.mineral]) {
@@ -188,13 +193,28 @@ function applyMassBalance(crystal: any, zone: any, conditions: any): void {
         `MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts.`
       );
     }
-    return;
+    return null;
   }
-  // thickness_um is positive (precipitation). Debit each species.
+  // thickness_um is positive (precipitation). Debit each species and
+  // collect any that just crossed below the depletion threshold.
   const debit = MASS_BALANCE_SCALE * zone.thickness_um;
   const fluid = conditions.fluid;
+  let depleted: string[] | null = null;
   for (const species in stoich) {
-    if (typeof fluid[species] !== 'number') continue;
-    fluid[species] = Math.max(0, fluid[species] - debit * stoich[species]);
+    const previous = fluid[species];
+    if (typeof previous !== 'number') continue;
+    const proposed = previous - debit * stoich[species];
+    // Depletion narration fires when the species crosses below the
+    // trace threshold from above. 1 ppm is the order of magnitude
+    // where further precipitation is no longer meaningful (saturation
+    // cratered, σ ≪ 1 for cation-paired anions). Single-shot per
+    // event: previous > 1 && proposed ≤ 1 catches the transition,
+    // not the steady-state "already exhausted" case.
+    if (previous > MASS_BALANCE_DEPLETION_THRESHOLD &&
+        proposed <= MASS_BALANCE_DEPLETION_THRESHOLD) {
+      (depleted ||= []).push(species);
+    }
+    fluid[species] = Math.max(0, proposed);
   }
+  return depleted;
 }
