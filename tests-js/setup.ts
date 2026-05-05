@@ -218,6 +218,9 @@ const EXPORTS = [
   // Phase 4b sulfate-class helpers (20c-chemistry-redox.ts).
   'sulfateRedoxAvailable',
   'sulfateRedoxFactor',
+  // Phase 4b hydroxide-class helpers (20c-chemistry-redox.ts).
+  'hydroxideRedoxAvailable',
+  'hydroxideRedoxFactor',
 ];
 
 let _bundleLoaded = false;

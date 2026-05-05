@@ -373,5 +373,16 @@
 //        (verified via baseline diff). Phase 4c (flag flip + per-site
 //        Eh-threshold tuning) is the natural next sub-phase once
 //        4b's other classes ship.
-const SIM_VERSION = 30;
+//   v31 — Phase 4b hydroxide class COMPLETE (May 2026): goethite +
+//        lepidocrocite. 4 sites across 2 supersat methods. New helpers
+//        hydroxideRedoxAvailable + hydroxideRedoxFactor in
+//        20c-chemistry-redox.ts — same flag-OFF passthrough shape as
+//        sulfate's helpers, named separately so Phase 4c can bind
+//        hydroxide to the Fe³⁺/Fe²⁺ Nernst couple (E°=770 mV) while
+//        sulfate stays on the SO₄²⁻/HS⁻ couple. Both Fe(III)
+//        hydroxides only form under solidly oxic conditions, so the
+//        legacy O2 thresholds 0.4/0.8 map cleanly to Eh well above
+//        the Fe couple midpoint. With EH_DYNAMIC_ENABLED still false,
+//        byte-identical to v30 (verified via diff).
+const SIM_VERSION = 31;
 

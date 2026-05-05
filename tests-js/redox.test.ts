@@ -16,6 +16,8 @@ declare const EH_DYNAMIC_ENABLED: any;
 declare const FluidChemistry: any;
 declare const sulfateRedoxAvailable: any;
 declare const sulfateRedoxFactor: any;
+declare const hydroxideRedoxAvailable: any;
+declare const hydroxideRedoxFactor: any;
 
 describe('redox infrastructure (Phase 4a)', () => {
   it('flag is OFF in v26 — engines still gate on fluid.O2', () => {
@@ -168,5 +170,34 @@ describe('Phase 4b sulfate redox helpers', () => {
     const f = {} as any; // not a FluidChemistry — no O2 field
     expect(sulfateRedoxAvailable(f, 0.1)).toBe(false);
     expect(sulfateRedoxFactor(f, 0.5, 1.5)).toBe(0);
+  });
+});
+
+describe('Phase 4b hydroxide redox helpers', () => {
+  // Same flag-OFF passthrough contract as sulfate; named separately so
+  // Phase 4c can bind hydroxide to the Fe couple while sulfate stays
+  // on the S couple. Until then the implementations are identical
+  // and parity tests mirror the sulfate suite.
+
+  it('hydroxideRedoxAvailable matches `fluid.O2 >= threshold` with flag off', () => {
+    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    for (const { O2, X } of [
+      { O2: 0.3, X: 0.4 }, { O2: 0.4, X: 0.4 }, { O2: 0.5, X: 0.4 },
+      { O2: 0.79, X: 0.8 }, { O2: 0.8, X: 0.8 }, { O2: 1.5, X: 0.8 },
+    ]) {
+      const f = new FluidChemistry({ O2 });
+      expect(hydroxideRedoxAvailable(f, X)).toBe(f.O2 >= X);
+    }
+  });
+
+  it('hydroxideRedoxFactor matches goethite + lepidocrocite legacy expressions', () => {
+    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    // goethite: o_f = O2 / 1.0 (no cap)
+    // lepidocrocite: o_f = Math.min(O2 / 1.5, 1.5)
+    for (const O2 of [0.0, 0.4, 0.8, 1.0, 1.5, 3.0, 10.0]) {
+      const f = new FluidChemistry({ O2 });
+      expect(hydroxideRedoxFactor(f, 1.0)).toBeCloseTo(O2 / 1.0, 6);
+      expect(hydroxideRedoxFactor(f, 1.5, 1.5)).toBeCloseTo(Math.min(O2 / 1.5, 1.5), 6);
+    }
   });
 });

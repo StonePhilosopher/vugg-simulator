@@ -4366,7 +4366,18 @@ let timeScale = 5.0;
 //        (verified via baseline diff). Phase 4c (flag flip + per-site
 //        Eh-threshold tuning) is the natural next sub-phase once
 //        4b's other classes ship.
-const SIM_VERSION = 30;
+//   v31 — Phase 4b hydroxide class COMPLETE (May 2026): goethite +
+//        lepidocrocite. 4 sites across 2 supersat methods. New helpers
+//        hydroxideRedoxAvailable + hydroxideRedoxFactor in
+//        20c-chemistry-redox.ts — same flag-OFF passthrough shape as
+//        sulfate's helpers, named separately so Phase 4c can bind
+//        hydroxide to the Fe³⁺/Fe²⁺ Nernst couple (E°=770 mV) while
+//        sulfate stays on the SO₄²⁻/HS⁻ couple. Both Fe(III)
+//        hydroxides only form under solidly oxic conditions, so the
+//        legacy O2 thresholds 0.4/0.8 map cleanly to Eh well above
+//        the Fe couple midpoint. With EH_DYNAMIC_ENABLED still false,
+//        byte-identical to v30 (verified via diff).
+const SIM_VERSION = 31;
 
 // ── 18-constants.js ──
 
@@ -5379,6 +5390,41 @@ function sulfateRedoxFactor(fluid, scaleAtFull, cap = Infinity) {
     // Phase 4c: synthesize an O2 equivalent from current Eh, apply the
     // legacy ratio. Per-site tuning of scaleAtFull/cap stays callable
     // by individual engine sites if calibration calls for it.
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.min(o2eq / scaleAtFull, cap);
+}
+// ============================================================
+// Phase 4b hydroxide-class engine helpers
+// ============================================================
+// For Fe(III) hydroxides (goethite, lepidocrocite). The legacy
+// fluid.O2 gate stands proxy for Fe being in its oxidized state — at
+// low O2 / low Eh, Fe is Fe²⁺ and stays in solution as a soluble
+// cation; at high O2 / high Eh it becomes Fe³⁺ and hydrolyzes /
+// precipitates. Phase 4c will bind these helpers to
+// redoxFraction(fluid, 'Fe') with E°(Fe³⁺/Fe²⁺) = 770 mV; the legacy
+// fluid.O2 thresholds in goethite/lepidocrocite (0.4 and 0.8) map to
+// Eh thresholds well above the Fe couple's midpoint, which is
+// consistent with these minerals only forming under solidly oxic
+// conditions in real groundwater.
+//
+// Same flag-OFF passthrough shape as sulfate; named separately so
+// Phase 4c can tune Fe-couple thresholds independently of S-couple.
+function hydroxideRedoxAvailable(fluid, o2Threshold) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
+    }
+    // Phase 4c: gate on Fe couple oxidized fraction. Equivalent
+    // threshold logic — using ehFromO2 as a coarse anchor for now.
+    const EhEquivalent = ehFromO2(o2Threshold);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh >= EhEquivalent;
+}
+function hydroxideRedoxFactor(fluid, scaleAtFull, cap = Infinity) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.min(O2 / scaleAtFull, cap);
+    }
     const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
     const o2eq = o2FromEh(Eh);
     return Math.min(o2eq / scaleAtFull, cap);
@@ -6844,9 +6890,9 @@ Object.assign(VugConditions.prototype, {
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR.
 Object.assign(VugConditions.prototype, {
     supersaturation_goethite() {
-        if (this.fluid.Fe < 15 || this.fluid.O2 < 0.4)
+        if (this.fluid.Fe < 15 || !hydroxideRedoxAvailable(this.fluid, 0.4))
             return 0;
-        let sigma = (this.fluid.Fe / 60.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Fe / 60.0) * hydroxideRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 150)
             sigma *= Math.exp(-0.015 * (this.temperature - 150));
         if (this.fluid.pH < 3.0)
@@ -6856,10 +6902,10 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_lepidocrocite() {
-        if (this.fluid.Fe < 15 || this.fluid.O2 < 0.8)
+        if (this.fluid.Fe < 15 || !hydroxideRedoxAvailable(this.fluid, 0.8))
             return 0;
         const fe_f = Math.min(this.fluid.Fe / 50.0, 2.0);
-        const o_f = Math.min(this.fluid.O2 / 1.5, 1.5);
+        const o_f = hydroxideRedoxFactor(this.fluid, 1.5, 1.5);
         let sigma = fe_f * o_f;
         if (this.temperature > 50)
             sigma *= Math.exp(-0.02 * (this.temperature - 50));

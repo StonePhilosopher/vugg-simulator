@@ -188,3 +188,41 @@ function sulfateRedoxFactor(fluid: any, scaleAtFull: number, cap: number = Infin
   const o2eq = o2FromEh(Eh);
   return Math.min(o2eq / scaleAtFull, cap);
 }
+
+// ============================================================
+// Phase 4b hydroxide-class engine helpers
+// ============================================================
+// For Fe(III) hydroxides (goethite, lepidocrocite). The legacy
+// fluid.O2 gate stands proxy for Fe being in its oxidized state — at
+// low O2 / low Eh, Fe is Fe²⁺ and stays in solution as a soluble
+// cation; at high O2 / high Eh it becomes Fe³⁺ and hydrolyzes /
+// precipitates. Phase 4c will bind these helpers to
+// redoxFraction(fluid, 'Fe') with E°(Fe³⁺/Fe²⁺) = 770 mV; the legacy
+// fluid.O2 thresholds in goethite/lepidocrocite (0.4 and 0.8) map to
+// Eh thresholds well above the Fe couple's midpoint, which is
+// consistent with these minerals only forming under solidly oxic
+// conditions in real groundwater.
+//
+// Same flag-OFF passthrough shape as sulfate; named separately so
+// Phase 4c can tune Fe-couple thresholds independently of S-couple.
+
+function hydroxideRedoxAvailable(fluid: any, o2Threshold: number): boolean {
+  if (!EH_DYNAMIC_ENABLED) {
+    return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
+  }
+  // Phase 4c: gate on Fe couple oxidized fraction. Equivalent
+  // threshold logic — using ehFromO2 as a coarse anchor for now.
+  const EhEquivalent = ehFromO2(o2Threshold);
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  return Eh >= EhEquivalent;
+}
+
+function hydroxideRedoxFactor(fluid: any, scaleAtFull: number, cap: number = Infinity): number {
+  if (!EH_DYNAMIC_ENABLED) {
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    return Math.min(O2 / scaleAtFull, cap);
+  }
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  const o2eq = o2FromEh(Eh);
+  return Math.min(o2eq / scaleAtFull, cap);
+}
