@@ -60,6 +60,15 @@ class FluidChemistry {
     this.Ge = opts.Ge ?? 0.0;    // germanium — Tsumeb sphalerite
     this.Au = opts.Au ?? 0.0;    // gold — native gold; Bingham/Bisbee porphyry-Cu-Au
     this.O2 = opts.O2 ?? 0.0;
+    // Phase 4a of PROPOSAL-GEOLOGICAL-ACCURACY: redox potential Eh (mV).
+    // Default +200 mV — mildly oxidizing, matches "oxic groundwater" in
+    // pourbaix diagrams. Scenarios that want anoxic conditions set
+    // Eh < 0; ferruginous/sulfidic Eh < -100. Until EH_DYNAMIC_ENABLED
+    // flips on (Phase 4b/c migration), engines still gate on fluid.O2;
+    // Eh just rides alongside as derived state. ehFromO2 in
+    // 20c-chemistry-redox.ts gives a default Eh for scenarios that only
+    // set O2.
+    this.Eh = opts.Eh ?? 200.0;
     this.pH = opts.pH ?? 6.5;
     this.salinity = opts.salinity ?? 5.0;
     // v27 evaporative concentration multiplier (mirror of

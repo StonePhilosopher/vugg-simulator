@@ -208,6 +208,13 @@ const EXPORTS = [
   'setSeed',
   'ORIENTATION_PREFERENCE',
   'WATER_STATE_PREFERENCE',
+  // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
+  'EH_DYNAMIC_ENABLED',
+  'REDOX_COUPLES',
+  'nernstOxidizedFraction',
+  'redoxFraction',
+  'ehFromO2',
+  'o2FromEh',
 ];
 
 let _bundleLoaded = false;

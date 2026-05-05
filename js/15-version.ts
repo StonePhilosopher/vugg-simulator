@@ -313,5 +313,24 @@
 //        calls (seed-input default, random scenario picker, zen
 //        scenarioKey) are intentional wall-clock entropy and
 //        unchanged.
-const SIM_VERSION = 25;
+//   v26 — Phase 4a aqueous-redox infrastructure (May 2026).
+//        Three pieces, all flag-OFF:
+//        (a) New `fluid.Eh` field (mV, default +200 — mildly
+//            oxidizing). Per-ring like every other FluidChemistry
+//            field, threaded through diffusion automatically.
+//        (b) New module 20c-chemistry-redox.ts encoding the three
+//            Nernst couples (Fe³⁺/Fe²⁺ E°=770 mV, MnO₂/Mn²⁺
+//            E°=1230 mV pH-strongly-coupled at -118 mV/pH,
+//            SO₄²⁻/HS⁻ E°=250 mV pH-coupled at -66.6 mV/pH) plus
+//            nernstOxidizedFraction + redoxFraction helpers and
+//            backward-compat ehFromO2 / o2FromEh derivations.
+//        (c) EH_DYNAMIC_ENABLED = false flag — engines still gate
+//            on fluid.O2 > X across all 96 sites until Phase 4b
+//            migrates them one supersat class at a time. Until
+//            then the new field rides alongside as derived state;
+//            seed-42 output is byte-identical to v25.
+//        No calibration shift expected at this version (flag-OFF
+//        infrastructure only); first sweep deltas land at v27 when
+//        4b starts migrating engines.
+const SIM_VERSION = 26;
 
