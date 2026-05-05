@@ -337,3 +337,71 @@ A single `project3D` helper + 3×3 rotation matrix recomputed per render on tilt
 4. **Tier 2** — WebGL / Three.js upgrade, gated on multi-ring data being meaningful (Phase 2+ of Tier 3).
 
 The honest version: **Tier 1 proved the concept, Tier 1.5 cleans up the implementation, Tier 2 replaces it outright when the simulation catches up.** Each tier is shippable standalone and each one retires a workaround the previous tier needed.
+
+---
+
+## Status update — 2026-05-05
+
+Tier 1 / 1.5 / 3-Phase-1 / 3-Phase-2 / 3-Phase-3 all shipped as the
+codebase progressed past this proposal:
+
+- Tier 1.5 (canvas-vector projection) → `js/99e-renderer-topo-3d.ts`
+- Multi-ring data model → `WallState.ring_count = 16` default
+- Per-ring chemistry + diffusion → `ring_fluids[]` /
+  `inter_ring_diffusion_rate` in `js/85-simulator.ts`
+- Per-ring orientation tags + habit bias → `ringOrientation` +
+  `ORIENTATION_PREFERENCE` table
+
+**Tier 2 — Three.js renderer** is the remaining work, sequenced as
+sub-phases inside this section to mirror the prior staged ships:
+
+### Phase E1 — Three.js scaffolding (this commit)
+
+Vendored Three.js 0.163 at `tools/three.module.js` (ES module form;
+the legacy `three.min.js` UMD bundle was retired upstream so the
+no-build deploy now imports the module via a `<script type="module">`
+shim that assigns `window.THREE` before the SCRIPT-mode bundle runs).
+New file `js/99i-renderer-three.ts` owns the WebGL scene; topoRender
+branches into it when `_topoUseThreeRenderer` is true. The topo-panel
+gains a sibling `<canvas id="topo-canvas-three">` and a fourth ⬚
+button next to Recenter that toggles renderer tier and force-enables
+rotate mode so dragging immediately orbits.
+
+E1 ships an empty cavity (wireframe sphere sized from
+`wall.meanDiameterMm()`) plus ambient + directional lights and a
+camera that reads `_topoTiltX/_topoTiltY/_topoZoom` so existing pan /
+rotate / wheel handlers carry their effects across the toggle. No
+crystals, no per-cell wall geometry, no hit-testing in Three mode —
+all gated until E2/E3 land. CDN-blocked / file-vendor-missing case
+degrades gracefully: button disables itself and topoRender falls
+through to the canvas-vector path on every redraw.
+
+### Phase E2 — Cavity mesh from rings (next)
+
+Replace the placeholder sphere with a real mesh generated from
+`wall.rings[k].cells[j]`: spherical-coordinate vertices using the
+same `(φ, θ) → (sin φ cos θ, -cos φ, sin φ sin θ)` math the
+canvas-vector renderer's `_topoRenderRings3D` uses, with per-vertex
+radii from `cell.base_radius_mm + cell.wall_depth` and the polar /
+twist Fourier modulators applied. Inside-out culling so the camera
+sits inside the cavity and only sees the interior wall (the
+"geode you can rotate" experience). Bare wall colors driven by
+ring orientation (floor / wall / ceiling), submerged rings tinted
+blue per the canvas-vector water-line convention.
+
+### Phase E3 — Crystal sub-meshes
+
+One mesh per crystal anchored to its `wall_ring_index` /
+`wall_center_cell`, oriented by habit and growth_environment,
+scaled by `c_length_mm` / `a_width_mm`. Reuse
+`drawHabitTexture`'s primitive-shape vocabulary by porting each
+habit to a vertex generator. Specular MeshStandardMaterial + the
+existing `class_color` per mineral.
+
+### Phase E4 — Polish
+
+Three.js `OrbitControls` for inertia / damping. Inside-out fly
+camera so the user can look at any wall section from inside.
+Hit-testing via raycaster (closes the gap left by E1's
+"no hit-test in Three mode"). Optional `mode === 'low-power'`
+fallback that forces canvas-vector regardless of toggle state.

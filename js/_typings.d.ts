@@ -36,3 +36,9 @@ interface Event {
   // declaration TS narrows to `EventTarget | null`.
   [key: string]: any;
 }
+
+// Three.js arrives via a CDN <script> tag in index.html (see Phase E
+// in PROPOSAL-3D-TOPO-VUG). Treating it as a loose `any` avoids
+// vendoring @types/three or pinning to a specific module path while
+// the renderer is still scaffolding.
+declare const THREE: any;
