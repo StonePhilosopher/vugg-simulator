@@ -14,7 +14,7 @@
 class GrowthZone {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
-  constructor(opts = {}) {
+  constructor(opts: any = {}) {
     this.step = opts.step ?? 0;
     this.temperature = opts.temperature ?? 0;
     this.thickness_um = opts.thickness_um ?? 0;
@@ -38,7 +38,7 @@ class GrowthZone {
 class Crystal {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
-  constructor(opts = {}) {
+  constructor(opts: any = {}) {
     this.mineral = opts.mineral ?? '';
     this.crystal_id = opts.crystal_id ?? 0;
     this.nucleation_step = opts.nucleation_step ?? 0;

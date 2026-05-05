@@ -15,9 +15,9 @@ function libraryInit() {
   // Populate filter dropdowns from MINERAL_SPEC; wait for fetch if needed.
   onSpecReady(() => {
     if (!_libraryInitialized) {
-      const classSet = new Set();
-      const elementSet = new Set();
-      const scenarioSet = new Set();
+      const classSet = new Set<string>();
+      const elementSet = new Set<string>();
+      const scenarioSet = new Set<string>();
       for (const m of Object.values(MINERAL_SPEC)) {
         if (m.class) classSet.add(m.class);
         if (m.required_ingredients) Object.keys(m.required_ingredients).forEach(e => elementSet.add(e));
@@ -102,7 +102,7 @@ function renderCollectedForMineral(name) {
   }
   const rows = items
     .slice()
-    .sort((a, b) => new Date(b.collected_at) - new Date(a.collected_at))
+    .sort((a, b) => new Date(b.collected_at).getTime() - new Date(a.collected_at).getTime())
     .map(c => {
       const twin = c.twinned ? ` · ⟁ ${c.twin_law || ''}` : '';
       const src = c.source && (c.source.scenario || c.source.archetype || c.source.mode) || '';

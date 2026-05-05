@@ -10,7 +10,8 @@
 // SEEDED PRNG (Mulberry32)
 // ============================================================
 class SeededRandom {
-  constructor(seed) {
+  state: number;
+  constructor(seed: number) {
     this.state = seed >>> 0;
   }
   next() {

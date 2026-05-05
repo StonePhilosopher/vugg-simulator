@@ -117,7 +117,11 @@ const MINERAL_SPEC_FALLBACK = {
 };
 
 // Live spec — swapped in by the fetch below if data/minerals.json loads.
-let MINERAL_SPEC = MINERAL_SPEC_FALLBACK;
+// Typed as any because the live spec (post-fetch) has many more fields
+// than the inline fallback (class, scenarios, required_ingredients,
+// trace_ingredients, …); narrowing to the fallback shape would break
+// every Library/Random caller that reads them.
+let MINERAL_SPEC: Record<string, any> = MINERAL_SPEC_FALLBACK;
 let MINERAL_SPEC_READY = false;
 const _specListeners = [];
 

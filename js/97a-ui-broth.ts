@@ -74,7 +74,8 @@ function setBrothValue(key, sliderVal) {
 
 function syncBrothSliders() {
   if (!fortressSim) return;
-  for (const [key, m] of Object.entries(BROTH_MAP)) {
+  for (const [key, mEntry] of Object.entries(BROTH_MAP)) {
+    const m = mEntry as any;
     const val = m.get();
     const sliderVal = m.toSlider ? m.toSlider(val) : Math.round(val);
     const slider = document.getElementById('broth-' + key);

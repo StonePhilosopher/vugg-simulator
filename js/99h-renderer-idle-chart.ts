@@ -26,7 +26,7 @@ function idleDrawChart() {
   // Find Y range — supersaturation typically 0 to ~5, but can spike
   let maxSigma = 3.0;
   for (const h of idleHistory) {
-    for (const val of Object.values(h.supersats)) {
+    for (const val of Object.values(h.supersats) as number[]) {
       if (val > maxSigma) maxSigma = Math.min(val, 15);
     }
   }
@@ -174,7 +174,7 @@ function idleDrawPie() {
   const vugVolume = (4 / 3) * Math.PI * Math.pow(vugRadius, 3);
 
   // Estimate crystal volumes — approximate as ellipsoids
-  const mineralVolumes = {};
+  const mineralVolumes: Record<string, number> = {};
   let totalCrystalVolume = 0;
   for (const crystal of idleSim.crystals) {
     if (!crystal.active) continue;

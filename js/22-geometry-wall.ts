@@ -17,7 +17,7 @@
 class VugWall {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
-  constructor(opts = {}) {
+  constructor(opts: any = {}) {
     this.composition = opts.composition ?? 'limestone';
     this.thickness_mm = opts.thickness_mm ?? 500.0;
     this.vug_diameter_mm = opts.vug_diameter_mm ?? 50.0;
@@ -188,7 +188,7 @@ function _raycastUnion(bubbles, theta) {
 class WallState {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
-  constructor(opts = {}) {
+  constructor(opts: any = {}) {
     this.cells_per_ring = opts.cells_per_ring ?? 120;
     // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
     // the new default. Engine still operates on ring[0] only — rings 1..15

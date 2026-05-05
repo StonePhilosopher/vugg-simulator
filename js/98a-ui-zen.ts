@@ -189,7 +189,7 @@ function idleFireRandomEvent() {
 function idleRecordHistory() {
   if (!idleSim) return;
   const c = idleSim.conditions;
-  const supersats = {};
+  const supersats: Record<string, number> = {};
   if (typeof c.supersaturation_quartz === 'function') supersats.quartz = c.supersaturation_quartz();
   if (typeof c.supersaturation_calcite === 'function') supersats.calcite = c.supersaturation_calcite();
   if (typeof c.supersaturation_aragonite === 'function') supersats.aragonite = c.supersaturation_aragonite();

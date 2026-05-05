@@ -101,7 +101,7 @@ function buildCrystalRecord(crystal, meta) {
 // Build a Crystal-shaped stand-in from a persisted record — enough for the
 // Groove visualization and the zone-history modal to treat it like a live
 // crystal. Does not connect to a VugSimulator; purely for display.
-function reconstructCrystalFromRecord(rec) {
+function reconstructCrystalFromRecord(rec): any {
   const zones = (rec.zones || []).map(z => Object.assign({}, z));
   const stand = {
     mineral: rec.mineral,

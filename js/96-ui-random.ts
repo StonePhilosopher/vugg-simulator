@@ -257,7 +257,7 @@ function narrateDiscovery(sim, archetype) {
   }
   const fluid = sim.conditions.fluid;
   const setting = ARCHETYPE_SETTING[archetype] || "an unnamed cavity";
-  const mineralSize = {};
+  const mineralSize: Record<string, number> = {};
   for (const c of grown) {
     mineralSize[c.mineral] = Math.max(mineralSize[c.mineral] || 0, c.c_length_mm);
   }
