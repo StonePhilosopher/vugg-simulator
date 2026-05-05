@@ -37,11 +37,7 @@ function grow_wulfenite(crystal, conditions, step) {
   // Aspect ratio: very flat plates
   crystal.a_width_mm = crystal.c_length_mm * 3.0;
 
-  // Pb and Mo consumption
-  conditions.fluid.Pb -= rate * 0.006;
-  conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-  conditions.fluid.Mo -= rate * 0.004;
-  conditions.fluid.Mo = Math.max(conditions.fluid.Mo, 0);
+  // Phase 1d: Pb/Mo consumption owned by the wrapper (applyMassBalance).
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 

@@ -337,3 +337,117 @@ A single `project3D` helper + 3×3 rotation matrix recomputed per render on tilt
 4. **Tier 2** — WebGL / Three.js upgrade, gated on multi-ring data being meaningful (Phase 2+ of Tier 3).
 
 The honest version: **Tier 1 proved the concept, Tier 1.5 cleans up the implementation, Tier 2 replaces it outright when the simulation catches up.** Each tier is shippable standalone and each one retires a workaround the previous tier needed.
+
+---
+
+## Status update — 2026-05-05
+
+Tier 1 / 1.5 / 3-Phase-1 / 3-Phase-2 / 3-Phase-3 all shipped as the
+codebase progressed past this proposal:
+
+- Tier 1.5 (canvas-vector projection) → `js/99e-renderer-topo-3d.ts`
+- Multi-ring data model → `WallState.ring_count = 16` default
+- Per-ring chemistry + diffusion → `ring_fluids[]` /
+  `inter_ring_diffusion_rate` in `js/85-simulator.ts`
+- Per-ring orientation tags + habit bias → `ringOrientation` +
+  `ORIENTATION_PREFERENCE` table
+
+**Tier 2 — Three.js renderer** is the remaining work, sequenced as
+sub-phases inside this section to mirror the prior staged ships:
+
+### Phase E1 — Three.js scaffolding (this commit)
+
+Vendored Three.js 0.163 at `tools/three.module.js` (ES module form;
+the legacy `three.min.js` UMD bundle was retired upstream so the
+no-build deploy now imports the module via a `<script type="module">`
+shim that assigns `window.THREE` before the SCRIPT-mode bundle runs).
+New file `js/99i-renderer-three.ts` owns the WebGL scene; topoRender
+branches into it when `_topoUseThreeRenderer` is true. The topo-panel
+gains a sibling `<canvas id="topo-canvas-three">` and a fourth ⬚
+button next to Recenter that toggles renderer tier and force-enables
+rotate mode so dragging immediately orbits.
+
+E1 ships an empty cavity (wireframe sphere sized from
+`wall.meanDiameterMm()`) plus ambient + directional lights and a
+camera that reads `_topoTiltX/_topoTiltY/_topoZoom` so existing pan /
+rotate / wheel handlers carry their effects across the toggle. No
+crystals, no per-cell wall geometry, no hit-testing in Three mode —
+all gated until E2/E3 land. CDN-blocked / file-vendor-missing case
+degrades gracefully: button disables itself and topoRender falls
+through to the canvas-vector path on every redraw.
+
+### Phase E2 — Cavity mesh from rings (shipped)
+
+Replaced the placeholder sphere with a `BufferGeometry` built from
+`wall.rings[k].cells[j]`: 1,922 vertices (16 rings × 120 cells +
+2 pole caps) and 3,840 triangles, vertices placed via the same
+`(φ, θ) → (sin φ cos θ, -cos φ, sin φ sin θ)` math
+`_topoRenderRings3D` uses. Per-vertex radii fold in
+`cell.base_radius_mm + cell.wall_depth`, the polar Fourier
+modulator, and the twist Fourier modulator — the same three knobs
+the canvas-vector renderer reads, so the two views agree at zero
+tilt. Per-vertex colors carry orientation tint (floor / wall /
+ceiling) plus a 35 % blend toward `rgba(110,190,245,1)` for any
+ring under the meniscus, mirroring the canvas-vector water-line
+cue. `MeshStandardMaterial` with `side: DoubleSide` means the
+cavity reads cleanly from both outside (default framing) and
+inside (zoom in past the radius). `computeVertexNormals` produces
+the smooth shading.
+
+Geometry rebuilds gate on a content signature (`ring_count`,
+`cells_per_ring`, sampled wall_depth checksum, `fluid_surface_ring`)
+so steady-state renders skip the mesh allocation entirely — only
+dissolution events, water-level changes, or new sims trigger a
+rebuild. Inside-out backface culling is deferred to E4 polish (with
+the camera fly-through gesture).
+
+### Phase E3 — Crystal sub-meshes (shipped)
+
+One Three.js mesh per non-dissolved Crystal, anchored at its
+`(wall_ring_index, wall_center_cell)` cell using the same `(φ, θ)`
+math the cavity mesh uses — so a crystal sits exactly on the
+cavity wall, regardless of bubble-merge bumps or polar Fourier
+modulation. The substrate normal (`-anchor / |anchor|`) sets the
+local +Y axis via `quaternion.setFromUnitVectors`, so each crystal
+points from the wall into the cavity center; that matches the
+geometric-selection orientation the canvas-vector wireframe
+renderer uses for fluid-environment crystals.
+
+Habits map to a small primitive-geometry vocabulary keyed by a
+`_habitGeomToken` lookup: prismatic / columnar → hexagonal prism,
+acicular / fibrous → cone, tabular / platy → flattened box,
+rhombohedral / scalenohedral → octahedron, cubic → cube,
+botryoidal → sphere, dendritic → spike-with-implicit-splay
+(splay deferred to a per-instance ConeGroup in E4). Geometries
+are cached per-token in `state.geomCache` so 50 calcite scaleno-
+hedrons share one octahedron BufferGeometry; only the per-mesh
+transform differs.
+
+Material is `MeshStandardMaterial` with `class_color` from
+`MINERAL_SPEC[mineral]`, plus a class-keyed metalness boost for
+sulfides + native elements (0.45 vs 0.08 default) so peacock-ore
+bornite and chalcopyrite read as metallic without per-mineral
+spec entries. Roughness shifts toward gloss (0.42) for silicate
++ oxide gem-crystal classes.
+
+The cavity material now uses `side: BackSide` + `opacity: 0.55`
+(transparent: true) so the user looking from outside the cavity
+sees the **interior** wall and the crystals on it — without the
+near-side shell occluding the far-side detail. E4 will add an
+"inside-out flythrough" mode where the camera enters the cavity,
+making BackSide unnecessary; for E3, translucent-from-outside is
+the right read.
+
+Crystal mesh rebuild gates on a content signature (id × mineral ×
+habit × c_length × ring × cell) so steady-state renders skip the
+per-crystal allocation. Min size floor 2 mm c-axis / 1.5 mm
+a-axis so freshly-nucleated micro-crystals are still readable
+against a 30 mm cavity.
+
+### Phase E4 — Polish
+
+Three.js `OrbitControls` for inertia / damping. Inside-out fly
+camera so the user can look at any wall section from inside.
+Hit-testing via raycaster (closes the gap left by E1's
+"no hit-test in Three mode"). Optional `mode === 'low-power'`
+fallback that forces canvas-vector regardless of toggle state.

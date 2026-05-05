@@ -304,10 +304,6 @@ function grow_molybdenite(crystal, conditions, step) {
   crystal.dominant_forms = ['{0001} basal pinacoid', '{10-10} prism'];
 
   // Mo and S consumption
-  conditions.fluid.Mo -= rate * 0.004;
-  conditions.fluid.Mo = Math.max(conditions.fluid.Mo, 0);
-  conditions.fluid.S -= rate * 0.003;
-  conditions.fluid.S = Math.max(conditions.fluid.S, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -332,10 +328,6 @@ function grow_galena(crystal, conditions, step) {
   crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
 
   // Pb and S consumption
-  conditions.fluid.Pb -= rate * 0.005;
-  conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-  conditions.fluid.S -= rate * 0.003;
-  conditions.fluid.S = Math.max(conditions.fluid.S, 0);
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
@@ -423,9 +415,6 @@ function grow_arsenopyrite(crystal, conditions, step) {
     habit_note += ' (Co-bearing, pinkish tinge)';
   }
 
-  conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.004, 0);
-  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.004, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -481,8 +470,6 @@ function grow_acanthite(crystal, conditions, step) {
     habit_note += '; lead-gray metallic';
   }
 
-  conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.008, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -516,8 +503,6 @@ function grow_argentite(crystal, conditions, step) {
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
-  conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.008, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.003, 0);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -560,8 +545,6 @@ function grow_nickeline(crystal, conditions, step) {
     habit_note = 'massive granular nickeline — primary ore form';
   }
   if (crystal.zones && crystal.zones.length > 12) habit_note += '; tarnished to darker copper-rose';
-  conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.010, 0);
-  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 
@@ -598,8 +581,6 @@ function grow_millerite(crystal, conditions, step) {
     crystal.dominant_forms = ['massive granular', 'brass-yellow metallic'];
     habit_note = 'massive millerite — granular ore form';
   }
-  conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.010, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 
@@ -639,9 +620,6 @@ function grow_cobaltite(crystal, conditions, step) {
   }
   if (conditions.fluid.Fe > 100) habit_note += '; Fe-rich (glaucodot series — (Co,Fe)AsS)';
   if (crystal.zones && crystal.zones.length > 10) habit_note += '; pinkish-blush surface tarnish (Co oxide skin)';
-  conditions.fluid.Co = Math.max(conditions.fluid.Co - rate * 0.012, 0);
-  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.008, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 

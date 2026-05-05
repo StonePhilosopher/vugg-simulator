@@ -265,7 +265,27 @@ _runEngineForCrystal(engine, crystal) {
     this.conditions.temperature = this.ring_temperatures[ringIdx];
   }
   try {
-    return engine(crystal, this.conditions, this.step);
+    const zone = engine(crystal, this.conditions, this.step);
+    // PROPOSAL-GEOLOGICAL-ACCURACY Phase 1 — mass-balance hook.
+    // Each precipitation zone debits the per-ring fluid by stoichiometry
+    // (per MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts).
+    // Returns the list of species that just depleted to zero so we can
+    // narrate the event to the player.
+    if (zone) {
+      const depleted = applyMassBalance(crystal, zone, this.conditions);
+      if (depleted && depleted.length) {
+        const ringTag = ringIdx != null && ringIdx >= 0
+          ? ` in ring ${ringIdx}`
+          : '';
+        for (const species of depleted) {
+          this.log.push(
+            `  ⛔ ${species} depleted${ringTag} — ` +
+            `${capitalize(crystal.mineral)} #${crystal.crystal_id} growth halts`
+          );
+        }
+      }
+    }
+    return zone;
   } finally {
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;

@@ -33,6 +33,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH > 9.0) {
     sigma -= (this.fluid.pH - 9.0) * 0.3;
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'wulfenite');
   return Math.max(sigma, 0);
 },
 
@@ -50,6 +51,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH < 3) {
     sigma *= Math.max(0.3, 1.0 - 0.25 * (3 - this.fluid.pH));
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'ferrimolybdite');
   return Math.max(sigma, 0);
 },
 
@@ -69,6 +71,7 @@ Object.assign(VugConditions.prototype, {
   else T_factor = 0.3;
   sigma *= T_factor;
   if (this.fluid.pH < 4 || this.fluid.pH > 8) sigma *= 0.6;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'raspite');
   return Math.max(sigma, 0);
 },
 
@@ -88,6 +91,7 @@ Object.assign(VugConditions.prototype, {
   else T_factor = 0.3;
   sigma *= T_factor;
   if (this.fluid.pH < 4 || this.fluid.pH > 8) sigma *= 0.6;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'stolzite');
   return Math.max(sigma, 0);
 },
 });

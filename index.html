@@ -2464,6 +2464,13 @@ footer a:hover {
       <div class="topo-canvas-stage">
         <canvas id="topo-canvas" width="1100" height="120"></canvas>
       </div>
+      <!-- Phase E (Three.js) canvas — sibling of the stage so it's
+           sized against the wrap (the visible window) rather than the
+           200%-stage that gives the canvas-vector path its rotation
+           headroom. Three.js does its own per-vertex projection so it
+           doesn't need that headroom; sizing to the wrap matches what
+           the user sees. -->
+      <canvas id="topo-canvas-three" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:auto; z-index:2;"></canvas>
       <div class="topo-zoom-ctrls">
         <button class="topo-zoom-btn" onclick="topoZoom(-1)" title="Zoom out">−</button>
         <span id="topo-zoom-label" class="topo-zoom-label">100%</span>
@@ -2478,6 +2485,7 @@ footer a:hover {
         <button class="topo-zoom-btn" id="topo-rotate-btn" onclick="topoSetDragMode('rotate')" title="Rotate camera (drag to orbit in 3D)">↻</button>
         <button class="topo-zoom-btn" id="topo-pan-btn" onclick="topoSetDragMode('pan')" title="Pan camera (drag to move without rotating)">✥</button>
         <button class="topo-zoom-btn" onclick="topoRecenter()" title="Recenter (reset pan and rotation)">⊙</button>
+        <button class="topo-zoom-btn" id="topo-three-btn" onclick="topoToggleThreeRenderer()" title="Toggle Three.js mesh renderer (experimental — Phase E1: cavity wireframe only)">⬚</button>
       </div>
       <button id="topo-replay-btn" class="topo-replay" onclick="topoReplay()" title="Replay wall history">▶</button>
       <div id="topo-vug-size" class="topo-info-label bottom-left" title="Vug diameter"></div>
@@ -3295,6 +3303,24 @@ Scenarios:
   &nbsp;·&nbsp;
   <a href="https://github.com/StonePhilosopher/whole-mind" target="_blank" rel="noopener">github.com/StonePhilosopher/whole-mind</a>
 </footer>
+
+<!-- Three.js: optional renderer dependency for Phase E (PROPOSAL-3D-TOPO-VUG
+     Tier 2). Vendored at tools/three.module.js so the no-build deploy
+     keeps working offline (file:// + zip-and-mail use cases) without
+     touching a CDN. The ES-module shape is mandated by Three.js 0.163+
+     (the legacy three.min.js UMD build was retired); we import * once
+     and assign to window.THREE so the SCRIPT-mode bundle below can
+     reference it as a global. js/99i-renderer-three.ts guards every
+     entry point on `typeof THREE !== 'undefined'` so a broken vendor
+     path degrades gracefully to the canvas-vector renderer. -->
+<script type="module">
+  try {
+    const THREE = await import('./tools/three.module.js');
+    window.THREE = THREE;
+  } catch (e) {
+    console.warn('[three] vendored Three.js failed to load — Phase E renderer disabled:', e);
+  }
+</script>
 
 <script>
 // === BUILD:bundle:start ===
@@ -4125,7 +4151,144 @@ let timeScale = 5.0;
 //        JS Pb/Mo thresholds hybrid). Plus ported effective_temperature
 //        + silica_equilibrium from JS to Python — pre-v17 only the
 //        browser sim had Mo-flux thermal modulation for porphyry sulfides.
-const SIM_VERSION = 17;
+//   v18 — Carbonate Liebig saturation bugfix (May 2026,
+//        PROPOSAL-GEOLOGICAL-ACCURACY Phase 2). Replaced the
+//        min(cation, anion) Liebig pattern in calcite, siderite,
+//        rhodochrosite, and aragonite with √(cation × anion); replaced
+//        dolomite's mixed min(√(Ca·Mg), 2·CO3) with the properly
+//        stoichiometric (Ca·Mg·CO3²)^¼. Real saturation is the
+//        ion-activity product Q = a(M)·a(X), not the limiting
+//        reagent — when Ca and CO3 differ in abundance, the geometric
+//        mean correctly counts both species. Net: carbonates nucleate
+//        slightly earlier in scenarios with asymmetric Ca:CO3, slightly
+//        later in dolomite scenarios where CO3 was previously
+//        overweighted by the doubling-then-min hack. Five edits in
+//        js/32-supersat-carbonate.ts; no other supersat formulas
+//        affected (the 90+ Math.min hits across other classes are
+//        saturation caps, not Liebig patterns).
+//   v19 — Fluid mass balance flipped on (May 2026,
+//        PROPOSAL-GEOLOGICAL-ACCURACY Phase 1c). Every precipitation
+//        zone now debits the per-ring fluid by stoichiometric
+//        coefficient × MASS_BALANCE_SCALE; every dissolution zone
+//        credits it. The infrastructure landed flag-OFF in Phase 1a
+//        (commit 08140d1) and is calibrated here at scale=0.01
+//        (down from prototyped 0.05) to balance the wrapper's new
+//        universal credits against the engine-internal hand-coded
+//        credits in ~12 minerals. Sweep across 19 baselines at
+//        seed 42: RMS delta 11.2%, 11 of 19 scenarios within ±5%,
+//        16 within ±20%; max delta -23% (porphyry, finite Fe/S
+//        depleted by sulfide cascade — geologically correct).
+//        Outliers in absolute terms are small (≤11 crystals).
+//        Scenarios where dissolution recycles solute (naica, mvt,
+//        searles_lake) gain 2-4 crystals; depletion-prone scenarios
+//        (porphyry, schneeberg, pulse) lose 1-11 crystals.
+//   v20 — Davies activity correction flipped on (May 2026,
+//        PROPOSAL-GEOLOGICAL-ACCURACY Phase 2c). Every supersat
+//        method now multiplies σ by activityCorrectionFactor —
+//        the geometric-mean Davies γ̄ for the mineral's stoichiometry.
+//        Infrastructure landed flag-OFF in Phase 2a (b63e426); 97/97
+//        minerals migrated in Phase 2b (eff8ec1). Calibrated here at
+//        ACTIVITY_DAMPING = 0.25 (a quarter of full Davies) — full
+//        correction (damping=1.0) shifted scenarios by RMS 33% and
+//        broke tutorials (-60% on tutorial_mn_calcite). The damping
+//        smoothly interpolates between full Davies (research mode)
+//        and identity (no correction). Calibration sweep at seed 42
+//        vs v19 baselines: RMS 19.1%, 5/19 within ±5%, 12/19 within
+//        ±20%; max delta -33% (mvt, geologically defensible — MVT
+//        brines are saline-enough that activity correction matters).
+//        Brine scenarios (bisbee, mvt, schneeberg) trend down per
+//        γ < 1 suppression; halite-saturated brines hit the I=1.7
+//        Davies clamp and are unaffected. Pulse scenarios with
+//        stochastic small-N counts show ±33% noise floor.
+//   v21 — Phase 1d cleanup: end engine-internal growth-path debit
+//        double-counting (May 2026). Removed 7 manual
+//        `conditions.fluid.X -= rate * coef` blocks (15 lines, in
+//        adamite, mimetite, malachite, smithsonite, wulfenite,
+//        uraninite, feldspar) that previously double-debited fluid
+//        on growth alongside the wrapper from Phase 1a. Wrapper
+//        narrowed to precipitation-only — engine-internal dissolution
+//        credits (~120 lines, ~50× larger per-mineral rates than
+//        the wrapper's MASS_BALANCE_SCALE) keep their existing
+//        recycling stories. Phase 1e (future) would migrate those
+//        into per-mineral dissolution scales for full unification.
+//        Calibration sweep at seed 42 vs v20: RMS 7.58%, 15 of 19
+//        scenarios within ±5%, 18 of 19 within ±20%. Max delta
+//        -25.5% (schneeberg, U-secondary minerals less aggressive
+//        once uraninite stops over-debiting U). Most scenarios
+//        unchanged (those 7 minerals weren't dominant).
+//   v22 — Phase 1d cleanup pass 2 (May 2026). Earlier pass missed the
+//        sulfate (60) and sulfide (61) engine files because their
+//        debit pattern used the inline form
+//        `conditions.fluid.X = Math.max(conditions.fluid.X - rate * Y, 0)`
+//        (one line) rather than the two-line `-= rate * Y;` + Math.max
+//        cleanup that the earlier grep matched. This pass removes
+//        ~36 additional growth-path bulk-formula debits across
+//        barite/celestine/chalcanthite/anhydrite/anglesite/jarosite/
+//        alunite/brochantite/antlerite/mirabilite/thenardite/molybdenite/
+//        galena/arsenopyrite/acanthite/argentite/nickeline/millerite/
+//        cobaltite. Special cases preserved: arsenopyrite Au-trap
+//        (Au not in stoichiometry), oxidative-breakdown S debits in
+//        dissolution paths (use `dissolved_um` not `rate`).
+//        With double-debit fully gone across all 12 engine classes,
+//        MASS_BALANCE_SCALE rises 0.01 → 0.02. Plus depletion
+//        narration: applyMassBalance now reports species crossing
+//        below MASS_BALANCE_DEPLETION_THRESHOLD (1 ppm) and
+//        _runEngineForCrystal emits ⛔ log lines. Calibration sweep
+//        at seed 42 vs v21: RMS 13.0%, 9 of 19 within ±5%, 18 of 19
+//        within ±20%. Outliers: gem_pegmatite +50% (small N: +7
+//        crystals), searles_lake -12% (Na-S evaporite finds new
+//        depletion-cycle equilibrium). 67 depletion ⛔ narratives
+//        across the sweep (mostly searles_lake + reactive_wall).
+//   v23 — Phase 3b carbonate speciation infrastructure (May 2026).
+//        Three pieces:
+//        (a) Migrated all 11 carbonate supersat methods to use
+//            effectiveCO3(this.fluid, this.temperature) instead of
+//            this.fluid.CO3 directly. With CARBONATE_SPECIATION_ACTIVE
+//            flag OFF (default), behavior is identical (effectiveCO3
+//            returns fluid.CO3 = DIC). With flag ON (Phase 3c
+//            calibration target), it returns the Bjerrum-derived
+//            CO₃²⁻ activity at current pH and T.
+//        (b) Added co2_degas / co2_degas_with_reheat / co2_charge
+//            event handlers. Each manipulates fluid.CO3 + fluid.pH
+//            to keep the carbonate system roughly in Bjerrum
+//            equilibrium. The reheat variant resets temperature too,
+//            modeling continuous hot-fluid recharge at active hot
+//            springs.
+//        (c) Strengthened calcite alkaline-boost factor: old
+//            (1 + (pH - 7.5) × 0.15) → new 3^(pH - 7.5). Old factor
+//            was 7.5% per pH unit; real Bjerrum CO₃²⁻ activity grows
+//            ~10× per pH unit. New factor: 1.0 at pH 7.5, 1.73 at
+//            pH 8.0, 3.0 at pH 8.5. Lets CO₂-degas cascades work
+//            without the flag flip.
+//        New scenario: tutorial_travertine demonstrates the cascade
+//        — three CO₂-degas-with-reheat pulses raise pH 6.5 → 8.0;
+//        calcite nucleates at step 41 once σ crosses the 1.3 gate.
+//        Calibration sweep at seed 42 vs v22: RMS 9.73%, 17 of 19
+//        scenarios within ±20%, max -31% (deccan_zeolite — alkaline
+//        scenario where the stronger pH boost amplifies competing
+//        carbonates). 14 of 19 scenarios completely unchanged.
+//   v24 — Phase 3c: CARBONATE_SPECIATION_ACTIVE flipped on
+//        (May 2026). effectiveCO3 now routes through proper Bjerrum
+//        partition with normalization at BJERRUM_REFERENCE_PH (7.5):
+//        the existing per-mineral eq calibrations stay valid at
+//        neutral pH, while pH deviations produce the genuine ~10×
+//        per-pH-unit CO₃²⁻ amplification of real aqueous chemistry.
+//        BJERRUM_DAMPING = 0.5 — full Bjerrum (factor √10 = 3.16 at
+//        pH 8) was 2× stronger than the empirical 3^(pH-7.5) v23 was
+//        already applying, so half-amplitude blending keeps scenarios
+//        in their calibration band. The manual 3^(pH-7.5) factor in
+//        calcite supersat is now flag-conditional (only fires when
+//        the new flag is OFF), so the two paths don't double-count.
+//        Net: all 11 carbonate supersat methods now have proper
+//        pH-dependent CO₃²⁻ activity, not just calcite.
+//        Calibration sweep at seed 42 vs v23: RMS 13.4%, 17/20
+//        within ±20%, max -25% (tutorial_first_crystal,
+//        tutorial_mn_calcite — small-N tutorials sensitive to any
+//        carbonate shift). tutorial_travertine: bumped initial Ca
+//        200 → 350 ppm to keep the cascade firing under the new
+//        damping; calcite nucleates at step 42 (σ=1.46). Real Mammoth
+//        Hot Springs water sits at 400-500 ppm Ca per Friedman 1970.
+const SIM_VERSION = 24;
 
 // ── 18-constants.js ──
 
@@ -4154,6 +4317,252 @@ const WATER_LEVEL_DRAIN_RATE = 0.05;
 // Multiplied into ring_fluids[k].concentration when the ring dries.
 // Mirrors EVAPORATIVE_CONCENTRATION_FACTOR in vugg.py.
 const EVAPORATIVE_CONCENTRATION_FACTOR = 3.0;
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 1 — fluid mass balance.
+// When enabled, every growth zone debits the fluid (and every
+// dissolution zone credits the fluid) according to the per-mineral
+// formula coefficients in MINERAL_STOICHIOMETRY (see 19-mineral-
+// stoichiometry.ts). Phase 1c (May 2026): flag flipped ON;
+// SIM_VERSION 18 → 19. Calibration deltas documented in the v19
+// note in 15-version.ts.
+const MASS_BALANCE_ENABLED = true;
+// Empirical ppm-per-µm-of-c-axis-growth scale, multiplied into the
+// stoichiometry coefficient when the wrapper debits. Calibration
+// history:
+//   Phase 1a/1c (08140d1, 1eaaa5a): scale=0.01 — chosen to balance
+//     wrapper debits against the engine-internal hand-coded debits
+//     that double-counted with the wrapper.
+//   Phase 1d (7904894): scale stayed at 0.01 after first cleanup pass
+//     (carbonate, silicate, oxide, arsenate, molybdate engines).
+//   Phase 1d-followup (this commit): after the second cleanup pass
+//     removed ~36 more growth-path debits in sulfate (60) + sulfide
+//     (61) engines, the wrapper became the sole grower-side debit
+//     across all 12 engine classes. Scale rises to 0.02 — without
+//     the double-debit assumption, 0.02 gives the lowest sweep-wide
+//     RMS (13%) and produces enough depletion to fire the
+//     ⛔-narration line in evaporite scenarios (67 events across
+//     19 baselines, mostly searles_lake + reactive_wall).
+const MASS_BALANCE_SCALE = 0.02;
+// Depletion narration threshold (ppm). When a species crosses below
+// this value via mass-balance debit, _runEngineForCrystal emits a
+// "Fe²⁺ depleted in ring 4 — Pyrite #5 growth halts" log line. 1 ppm
+// is the order of magnitude where further precipitation is no longer
+// meaningful — saturation has cratered. Single-shot per crossing:
+// previous > 1 && proposed ≤ 1 fires the narrative once, not on
+// every subsequent step where the species already sits below the
+// threshold.
+const MASS_BALANCE_DEPLETION_THRESHOLD = 1.0;
+
+// ── 19-mineral-stoichiometry.js ──
+
+// ============================================================
+// js/19-mineral-stoichiometry.ts — per-mineral fluid stoichiometry
+// ============================================================
+// Maps each growth-engine mineral name to the moles of each fluid
+// species locked into one formula unit. Multiplied by
+// MASS_BALANCE_SCALE × zone.thickness_um in applyMassBalance to
+// debit/credit the per-ring fluid when MASS_BALANCE_ENABLED is on.
+//
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 1. Default flag OFF — these
+// values do not affect any scenario until the calibration pass flips
+// the flag.
+//
+// Conventions:
+// - Coefficients are per formula unit. Solid solutions use mid-range
+//   end-member fractions (will refine in Phase 5 when crystals carry
+//   continuous composition vectors).
+// - Anion species use the simulator's fluid field names: 'CO3' is
+//   total dissolved carbonate (Phase 3 will split into HCO3⁻/CO3²⁻ via
+//   Bjerrum); 'S' is total dissolved sulfur (carries both sulfide and
+//   sulfate equivalents in v17); 'P' is phosphate (P fluid field
+//   represents PO₄³⁻ moiety); 'V' is vanadate (VO₄³⁻); 'As' is
+//   arsenate or arsenide depending on redox.
+// - O is NOT debited: fluid.O2 is a redox proxy in v17, not a mass
+//   reservoir. Phase 4 (Eh) will reframe this; Phase 1 leaves it alone.
+// - H is NOT debited: fluid.pH is an activity, not a mole reservoir.
+//   Phase 4 (proton balance) handles H+ accounting separately.
+// - Hydration waters (·nH₂O) are not tracked — water is the solvent.
+// - Native elements have a single coefficient; sulfides carry their
+//   metal + sulfur; oxyhydroxides debit their cation only (oxygen +
+//   hydroxyl come from water, not the fluid solute pool).
+const MINERAL_STOICHIOMETRY = {
+    // ---- Carbonates ----
+    calcite: { Ca: 1, CO3: 1 }, // CaCO3
+    aragonite: { Ca: 1, CO3: 1 }, // CaCO3 (orthorhombic)
+    dolomite: { Ca: 1, Mg: 1, CO3: 2 }, // CaMg(CO3)2
+    siderite: { Fe: 1, CO3: 1 }, // FeCO3
+    rhodochrosite: { Mn: 1, CO3: 1 }, // MnCO3
+    smithsonite: { Zn: 1, CO3: 1 }, // ZnCO3
+    cerussite: { Pb: 1, CO3: 1 }, // PbCO3
+    malachite: { Cu: 2, CO3: 1 }, // Cu2CO3(OH)2
+    azurite: { Cu: 3, CO3: 2 }, // Cu3(CO3)2(OH)2
+    aurichalcite: { Zn: 3.5, Cu: 1.5, CO3: 2 }, // (Zn,Cu)5(CO3)2(OH)6 — solid solution mid-range
+    rosasite: { Cu: 1.3, Zn: 0.7, CO3: 1 }, // (Cu,Zn)2(CO3)(OH)2 — solid solution mid-range
+    // ---- Sulfides ----
+    pyrite: { Fe: 1, S: 2 }, // FeS2
+    marcasite: { Fe: 1, S: 2 }, // FeS2 (orthorhombic)
+    sphalerite: { Zn: 1, S: 1 }, // ZnS (Phase 5 will track Fe substitution)
+    wurtzite: { Zn: 1, S: 1 }, // ZnS (hexagonal)
+    galena: { Pb: 1, S: 1 }, // PbS
+    chalcopyrite: { Cu: 1, Fe: 1, S: 2 }, // CuFeS2
+    molybdenite: { Mo: 1, S: 2 }, // MoS2
+    bornite: { Cu: 5, Fe: 1, S: 4 }, // Cu5FeS4
+    chalcocite: { Cu: 2, S: 1 }, // Cu2S
+    covellite: { Cu: 1, S: 1 }, // CuS
+    arsenopyrite: { Fe: 1, As: 1, S: 1 }, // FeAsS
+    stibnite: { Sb: 2, S: 3 }, // Sb2S3
+    bismuthinite: { Bi: 2, S: 3 }, // Bi2S3
+    acanthite: { Ag: 2, S: 1 }, // Ag2S (monoclinic)
+    argentite: { Ag: 2, S: 1 }, // Ag2S (cubic)
+    tetrahedrite: { Cu: 9, Fe: 1.5, Zn: 1.5, Sb: 4, S: 13 }, // (Cu,Fe,Zn)12Sb4S13 — fahlore mid-range
+    tennantite: { Cu: 9, Fe: 1.5, Zn: 1.5, As: 4, S: 13 }, // (Cu,Fe,Zn)12As4S13 — fahlore mid-range
+    nickeline: { Ni: 1, As: 1 }, // NiAs
+    millerite: { Ni: 1, S: 1 }, // NiS
+    cobaltite: { Co: 1, As: 1, S: 1 }, // CoAsS
+    // ---- Oxides ----
+    quartz: { SiO2: 1 }, // SiO2
+    hematite: { Fe: 2 }, // Fe2O3 (O comes from water/redox)
+    magnetite: { Fe: 3 }, // Fe3O4
+    cuprite: { Cu: 2 }, // Cu2O
+    corundum: { Al: 2 }, // Al2O3
+    ruby: { Al: 2, Cr: 0.01 }, // Al2O3 + trace Cr (chromophore)
+    sapphire: { Al: 2, Fe: 0.01, Ti: 0.01 }, // Al2O3 + Fe/Ti
+    uraninite: { U: 1 }, // UO2
+    // ---- Hydroxides / oxyhydroxides ----
+    goethite: { Fe: 1 }, // FeO(OH)
+    lepidocrocite: { Fe: 1 }, // γ-FeO(OH)
+    // ---- Silicates ----
+    feldspar: { K: 1, Al: 1, SiO2: 3 }, // KAlSi3O8 (sanidine/orthoclase/microcline)
+    albite: { Na: 1, Al: 1, SiO2: 3 }, // NaAlSi3O8
+    chrysocolla: { Cu: 2, SiO2: 2 }, // (Cu,Al)2H2Si2O5(OH)4·nH2O
+    apophyllite: { K: 1, Ca: 4, SiO2: 8, F: 0.5 }, // KCa4Si8O20(F,OH)·8H2O
+    topaz: { Al: 2, SiO2: 1, F: 1.5 }, // Al2SiO4(F,OH)2
+    tourmaline: { Na: 1, Al: 6, Fe: 3, B: 3, SiO2: 6 }, // schorl end-member; will refine Phase 5
+    beryl: { Be: 3, Al: 2, SiO2: 6 }, // Be3Al2Si6O18
+    emerald: { Be: 3, Al: 2, SiO2: 6, Cr: 0.01 },
+    aquamarine: { Be: 3, Al: 2, SiO2: 6, Fe: 0.01 },
+    morganite: { Be: 3, Al: 2, SiO2: 6, Mn: 0.01 },
+    heliodor: { Be: 3, Al: 2, SiO2: 6, Fe: 0.01 },
+    spodumene: { Li: 1, Al: 1, SiO2: 2 }, // LiAlSi2O6
+    // ---- Sulfates ----
+    barite: { Ba: 1, S: 1 }, // BaSO4
+    celestine: { Sr: 1, S: 1 }, // SrSO4
+    selenite: { Ca: 1, S: 1 }, // CaSO4·2H2O (gypsum variety)
+    anhydrite: { Ca: 1, S: 1 }, // CaSO4
+    jarosite: { K: 1, Fe: 3, S: 2 }, // KFe3(SO4)2(OH)6
+    alunite: { K: 1, Al: 3, S: 2 }, // KAl3(SO4)2(OH)6
+    brochantite: { Cu: 4, S: 1 }, // Cu4(SO4)(OH)6
+    antlerite: { Cu: 3, S: 1 }, // Cu3(SO4)(OH)4
+    anglesite: { Pb: 1, S: 1 }, // PbSO4
+    chalcanthite: { Cu: 1, S: 1 }, // CuSO4·5H2O
+    mirabilite: { Na: 2, S: 1 }, // Na2SO4·10H2O
+    thenardite: { Na: 2, S: 1 }, // Na2SO4
+    // ---- Halides ----
+    fluorite: { Ca: 1, F: 2 }, // CaF2
+    halite: { Na: 1, Cl: 1 }, // NaCl
+    // ---- Phosphates / arsenates / vanadates ----
+    pyromorphite: { Pb: 5, P: 3, Cl: 1 }, // Pb5(PO4)3Cl
+    vanadinite: { Pb: 5, V: 3, Cl: 1 }, // Pb5(VO4)3Cl
+    mimetite: { Pb: 5, As: 3, Cl: 1 }, // Pb5(AsO4)3Cl
+    adamite: { Zn: 2, As: 1 }, // Zn2(AsO4)(OH)
+    olivenite: { Cu: 2, As: 1 }, // Cu2(AsO4)(OH)
+    erythrite: { Co: 3, As: 2 }, // Co3(AsO4)2·8H2O
+    annabergite: { Ni: 3, As: 2 }, // Ni3(AsO4)2·8H2O
+    scorodite: { Fe: 1, As: 1 }, // FeAsO4·2H2O
+    descloizite: { Pb: 1, Zn: 1, V: 1 }, // PbZn(VO4)(OH)
+    mottramite: { Pb: 1, Cu: 1, V: 1 }, // PbCu(VO4)(OH)
+    torbernite: { Cu: 1, U: 2, P: 2 }, // Cu(UO2)2(PO4)2·12H2O
+    zeunerite: { Cu: 1, U: 2, As: 2 }, // Cu(UO2)2(AsO4)2·12H2O
+    carnotite: { K: 2, U: 2, V: 2 }, // K2(UO2)2(VO4)2·3H2O
+    autunite: { Ca: 1, U: 2, P: 2 }, // Ca(UO2)2(PO4)2·11H2O
+    uranospinite: { Ca: 1, U: 2, As: 2 }, // Ca(UO2)2(AsO4)2·10H2O
+    tyuyamunite: { Ca: 1, U: 2, V: 2 }, // Ca(UO2)2(VO4)2·5H2O
+    // ---- Borates ----
+    borax: { Na: 2, B: 4 }, // Na2B4O7·10H2O
+    tincalconite: { Na: 2, B: 4 }, // Na2B4O7·5H2O (paramorph stub — never grows)
+    // ---- Native elements ----
+    native_copper: { Cu: 1 },
+    native_gold: { Au: 1 },
+    native_silver: { Ag: 1 },
+    native_arsenic: { As: 1 },
+    native_sulfur: { S: 1 },
+    native_tellurium: { Te: 1 },
+    native_bismuth: { Bi: 1 },
+    // ---- Molybdates / tungstates / vanadates ----
+    wulfenite: { Pb: 1, Mo: 1 }, // PbMoO4
+    ferrimolybdite: { Fe: 2, Mo: 3 }, // Fe2(MoO4)3·8H2O
+    raspite: { Pb: 1, W: 1 }, // PbWO4 (monoclinic)
+    stolzite: { Pb: 1, W: 1 }, // PbWO4 (tetragonal)
+    clinobisvanite: { Bi: 1, V: 1 }, // BiVO4
+};
+// Apply mass balance for a single growth or dissolution zone. Called
+// from VugSimulator._runEngineForCrystal after the engine returns.
+// Positive thickness = precipitation (debit fluid); negative thickness
+// = dissolution (credit fluid). No-op when MASS_BALANCE_ENABLED is
+// false, so v17 baseline scenarios stay byte-identical until the
+// calibration pass flips the flag.
+//
+// Two layers of safety while the flag is OFF:
+//   1. The early `if (!MASS_BALANCE_ENABLED) return;` short-circuit.
+//   2. Even when flipped on, missing-mineral entries log a warning
+//      once and skip — so a new mineral added before its
+//      stoichiometry is filed never crashes a run.
+const _massBalanceMissingWarned = {};
+// Returns the list of species names that just transitioned from positive
+// to zero (depletion events), or null on no-op / missing stoichiometry.
+// _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —
+// pyrite nucleation halted" log lines so players can see when the fluid
+// runs out, instead of crystals silently stopping growth.
+function applyMassBalance(crystal, zone, conditions) {
+    if (!MASS_BALANCE_ENABLED)
+        return null;
+    if (!zone || !zone.thickness_um)
+        return null;
+    // Phase 1d (May 2026): precipitation-only. Engines hand-code their
+    // dissolution credits at per-mineral rates ~50× larger than the
+    // wrapper's MASS_BALANCE_SCALE — those rates were tuned to specific
+    // recycling stories per scenario (e.g. acid dissolution of calcite
+    // releases Ca at 0.5 ppm/µm, not 0.01). Until those manual credits
+    // are migrated into per-mineral dissolution rates (Phase 1e or
+    // later), the wrapper stays growth-only to avoid double-crediting.
+    // Net: the wrapper handles the gap that v17 left open (precipitation
+    // didn't debit the fluid), while existing dissolution credits keep
+    // their behavior.
+    if (zone.thickness_um < 0)
+        return null;
+    const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
+    if (!stoich) {
+        if (!_massBalanceMissingWarned[crystal.mineral]) {
+            _massBalanceMissingWarned[crystal.mineral] = true;
+            console.warn(`[mass-balance] no stoichiometry for ${crystal.mineral} — ` +
+                `growth will not debit fluid composition. Add to ` +
+                `MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts.`);
+        }
+        return null;
+    }
+    // thickness_um is positive (precipitation). Debit each species and
+    // collect any that just crossed below the depletion threshold.
+    const debit = MASS_BALANCE_SCALE * zone.thickness_um;
+    const fluid = conditions.fluid;
+    let depleted = null;
+    for (const species in stoich) {
+        const previous = fluid[species];
+        if (typeof previous !== 'number')
+            continue;
+        const proposed = previous - debit * stoich[species];
+        // Depletion narration fires when the species crosses below the
+        // trace threshold from above. 1 ppm is the order of magnitude
+        // where further precipitation is no longer meaningful (saturation
+        // cratered, σ ≪ 1 for cation-paired anions). Single-shot per
+        // event: previous > 1 && proposed ≤ 1 catches the transition,
+        // not the steady-state "already exhausted" case.
+        if (previous > MASS_BALANCE_DEPLETION_THRESHOLD &&
+            proposed <= MASS_BALANCE_DEPLETION_THRESHOLD) {
+            (depleted ||= []).push(species);
+        }
+        fluid[species] = Math.max(0, proposed);
+    }
+    return depleted;
+}
 
 // ── 20-chemistry-fluid.js ──
 
@@ -4258,6 +4667,437 @@ class FluidChemistry {
             parts.push(`alkaline (pH ${this.pH.toFixed(1)})`);
         return parts.length ? parts.join(', ') : 'dilute';
     }
+}
+
+// ── 20a-chemistry-activity.js ──
+
+// ============================================================
+// js/20a-chemistry-activity.ts — ion activities + Davies coefficients
+// ============================================================
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 2a: infrastructure for replacing
+// concentration-based supersaturation (σ ∝ ppm) with activity-based
+// thermodynamic supersaturation (σ = Q/K, where Q = ∏ aᵢ^νᵢ uses
+// activities corrected for ionic strength via the Davies equation).
+//
+// LANDED FLAG-OFF: ACTIVITY_CORRECTED_SUPERSAT defaults false. Nothing
+// in this module is invoked from the existing supersat methods. Phase 2b
+// will migrate methods one class at a time, verifying each migration
+// against the v18 baseline.
+//
+// What's here:
+//   - SPECIES_PROPERTIES: charge + molar mass per fluid species (used
+//     to compute molality and ionic strength).
+//   - ionicStrength(fluid): I = ½ Σᵢ mᵢ zᵢ² in mol/kg. The driver of
+//     activity-coefficient corrections.
+//   - daviesLogGamma(z, I): log γ = -A·z²·(√I/(1+√I) - 0.3·I). Standard
+//     Davies form, valid to I ≈ 0.5 mol/kg. Reduces to Debye-Hückel at
+//     low I; fits experimental seawater activities to within ~10 % of
+//     Pitzer in the moderate-salinity regime. For halite-saturated brines
+//     (I ≈ 5 mol/kg) the proposal flags Pitzer as a research-mode
+//     follow-up.
+//   - speciesActivity(fluid, species): activity in mol/kg, ready to
+//     feed into Q.
+//   - ionActivityProduct(fluid, mineral): proper Q = ∏ aᵢ^νᵢ from the
+//     MINERAL_STOICHIOMETRY table — replaces the Math.min Liebig idiom
+//     and the empirical product hacks scattered across supersat files.
+//
+// What's *not* here yet:
+//   - K (solubility products) — proposal calls for them to land on
+//     data/minerals.json with van't Hoff temperature dependence. That's
+//     Phase 2b work, per-mineral.
+//   - σ wrapper — the "if (ACTIVITY_CORRECTED_SUPERSAT) return omega();"
+//     migration in each supersaturation_<mineral>. Phase 2b.
+//
+// Conventions / known simplifications:
+//   - S is treated as SO₄²⁻ (charge -2) by default; the v17 model
+//     conflates sulfide and sulfate into one fluid field. Phase 4 (Eh)
+//     splits this. For now, sulfides see the wrong charge for their
+//     anion contribution to Q; this is a known calibration handle.
+//   - Fe is treated as Fe²⁺ (charge +2). Same Phase 4 reframe — the
+//     Fe²⁺/Fe³⁺ couple becomes explicit.
+//   - As is treated as AsO₄³⁻ (oxidizing arsenate) by default; reducing
+//     arsenide forms (charge varies) wait for Phase 4.
+//   - U is the uranyl ion UO₂²⁺ (effective charge +2, mass tracks U).
+//   - SiO₂, Sb, B (at neutral pH), Ge are neutral aqueous forms — γ = 1,
+//     no ionic-strength correction.
+//   - Au is treated as a chloride/bisulfide complex (effective charge -1
+//     under most conditions) but is so trace-abundant it barely affects I.
+//   - All "trace" species (Cr, Ti, Te, Se) are listed because the
+//     simulator carries them; whether their activity actually matters
+//     for any supersat is per-mineral.
+const ACTIVITY_CORRECTED_SUPERSAT = true;
+// Damping coefficient for the Davies correction. The full activity
+// correction (factor = γ̄, geometric mean of activity coefficients)
+// suppresses σ by ~50% at typical vug-fluid ionic strengths
+// (I ≈ 0.03 mol/kg, γ_divalent ≈ 0.5). That's geologically real
+// but it shifts every scenario's nucleation threshold simultaneously,
+// breaking calibrations that were tuned against concentration-based σ.
+// The damping smoothly interpolates between full correction and no
+// correction:
+//   damped_factor = 1 - ACTIVITY_DAMPING × (1 - raw_factor)
+//   ACTIVITY_DAMPING = 1.0 → full Davies correction (research mode)
+//   ACTIVITY_DAMPING = 0.5 → half-correction (current shipping default)
+//   ACTIVITY_DAMPING = 0.0 → no correction (= flag off)
+// Calibrated in Phase 2c (May 2026) against v19 baselines: damping
+// = 0.4 brings the sweep-wide RMS delta into the same band as Phase
+// 1c (~10-15%), with all 19 scenarios producing nonzero crystals
+// and tutorials staying intact.
+const ACTIVITY_DAMPING = 0.25;
+// Charge & molar mass for each FluidChemistry species. Charge is the
+// dominant aqueous form at typical vug pH (5-9) and Eh (oxidizing-to-
+// mildly-reducing). Molar mass in g/mol; for oxyanions tracked by
+// element (P → PO₄³⁻, V → VO₄³⁻, etc.) the mass is the *element*
+// since the simulator's ppm field is element-mass.
+const SPECIES_PROPERTIES = {
+    // Major cations
+    Ca: { charge: +2, molarMass: 40.08 },
+    Mg: { charge: +2, molarMass: 24.31 },
+    Na: { charge: +1, molarMass: 22.99 },
+    K: { charge: +1, molarMass: 39.10 },
+    Fe: { charge: +2, molarMass: 55.85, note: 'Fe²⁺ default; Phase 4 splits Fe²⁺/Fe³⁺' },
+    Mn: { charge: +2, molarMass: 54.94 },
+    Al: { charge: +3, molarMass: 26.98 },
+    Cu: { charge: +2, molarMass: 63.55 },
+    Zn: { charge: +2, molarMass: 65.38 },
+    Pb: { charge: +2, molarMass: 207.2 },
+    Ba: { charge: +2, molarMass: 137.33 },
+    Sr: { charge: +2, molarMass: 87.62 },
+    U: { charge: +2, molarMass: 238.03, note: 'as uranyl UO₂²⁺' },
+    Cr: { charge: +3, molarMass: 52.00 },
+    Ni: { charge: +2, molarMass: 58.69 },
+    Co: { charge: +2, molarMass: 58.93 },
+    Ag: { charge: +1, molarMass: 107.87 },
+    Bi: { charge: +3, molarMass: 208.98 },
+    Be: { charge: +2, molarMass: 9.01 },
+    Li: { charge: +1, molarMass: 6.94 },
+    Ti: { charge: +2, molarMass: 47.87, note: 'as TiO²⁺' },
+    // Major anions
+    CO3: { charge: -2, molarMass: 60.01, note: 'CO₃²⁻; Phase 3 splits DIC by Bjerrum' },
+    S: { charge: -2, molarMass: 32.07, note: 'SO₄²⁻ default; Phase 4 splits sulfide/sulfate' },
+    F: { charge: -1, molarMass: 19.00 },
+    Cl: { charge: -1, molarMass: 35.45 },
+    P: { charge: -3, molarMass: 30.97, note: 'as PO₄³⁻; element mass' },
+    V: { charge: -3, molarMass: 50.94, note: 'as VO₄³⁻; element mass' },
+    As: { charge: -3, molarMass: 74.92, note: 'AsO₄³⁻ default; reducing forms vary' },
+    Mo: { charge: -2, molarMass: 95.95, note: 'as MoO₄²⁻; element mass' },
+    W: { charge: -2, molarMass: 183.84, note: 'as WO₄²⁻; element mass' },
+    Te: { charge: -2, molarMass: 127.60, note: 'as TeO₃²⁻ default' },
+    Se: { charge: -2, molarMass: 78.96, note: 'as SeO₄²⁻ default' },
+    Au: { charge: -1, molarMass: 196.97, note: 'as AuCl₄⁻ / Au(HS)₂⁻ complex' },
+    // Neutral aqueous forms (γ = 1, no I contribution)
+    SiO2: { charge: 0, molarMass: 60.08, note: 'as H₄SiO₄⁰' },
+    Sb: { charge: 0, molarMass: 121.76, note: 'as Sb(OH)₃⁰' },
+    B: { charge: 0, molarMass: 10.81, note: 'as B(OH)₃⁰ at pH<9' },
+    Ge: { charge: 0, molarMass: 72.63, note: 'as Ge(OH)₄⁰' },
+};
+// Convert ppm (mg solute per kg solvent, dilute approximation) → molality
+// (mol per kg solvent). For ppm = 200, MM = 40.08 (Ca):
+// m = 200 × 10⁻³ g/kg / 40.08 g/mol = 5.0 × 10⁻³ mol/kg ≈ 5 mmol/kg.
+function ppmToMolality(ppm, molarMass) {
+    return (ppm > 0 ? ppm : 0) / (1000 * molarMass);
+}
+// Ionic strength I = ½ Σᵢ mᵢ zᵢ². Sums over all charged species in the
+// SPECIES_PROPERTIES table. Neutral species contribute zero. Returns
+// mol/kg.
+function ionicStrength(fluid) {
+    let I = 0;
+    for (const species in SPECIES_PROPERTIES) {
+        const props = SPECIES_PROPERTIES[species];
+        if (props.charge === 0)
+            continue;
+        const m = ppmToMolality(fluid[species], props.molarMass);
+        I += 0.5 * m * props.charge * props.charge;
+    }
+    return I;
+}
+// Davies equation: log γ = -A·z²·(√I/(1+√I) - 0.3·I).
+// A = 0.509 at 25 °C (mild T-dependence; Phase 4 may add the T-correction
+// term once T-dependent Ksp lands). Valid to I ≈ 0.5 mol/kg; for
+// halite-saturated brines (I ≈ 5) the proposal flags Pitzer as a
+// research-mode follow-up.
+//
+// Domain safety: above I ≈ 1.7 mol/kg the linear -0.3·I term dominates
+// the asymptotically-bounded √I/(1+√I) term, and Davies returns
+// log γ > 0 (i.e. γ > 1) — geologically wrong (real ion activity
+// coefficients stay ≤ 1 across nearly the entire fluid-chemistry
+// regime relevant to vugs). Clamp log γ at 0 so the function fails
+// gracefully rather than catastrophically when called outside its
+// validity range. The clamp is a known-degraded fallback; Pitzer in
+// research-mode-track replaces it with the right physics.
+function daviesLogGamma(z, I) {
+    if (z === 0 || I <= 0)
+        return 0;
+    const sqrtI = Math.sqrt(I);
+    const A = 0.509;
+    const logGamma = -A * z * z * (sqrtI / (1 + sqrtI) - 0.3 * I);
+    // Hard cap — Davies misbehaves above I ≈ 1.7 mol/kg. γ ≤ 1 is the
+    // qualitatively-correct asymptote across the vug-relevant fluid range.
+    return Math.min(0, logGamma);
+}
+// Activity of a single species, in mol/kg (numerically equivalent to
+// γ·m on the molal scale). For neutral species, γ = 1 and activity = m.
+// Pass a precomputed I if you'll be calling this many times for the
+// same fluid (avoids re-summing).
+function speciesActivity(fluid, species, I) {
+    const props = SPECIES_PROPERTIES[species];
+    if (!props)
+        return 0;
+    const m = ppmToMolality(fluid[species], props.molarMass);
+    if (m <= 0)
+        return 0;
+    if (props.charge === 0)
+        return m;
+    const I_eff = I !== undefined ? I : ionicStrength(fluid);
+    const logGamma = daviesLogGamma(props.charge, I_eff);
+    return m * Math.pow(10, logGamma);
+}
+// Q = ∏ᵢ aᵢ^νᵢ where νᵢ comes from MINERAL_STOICHIOMETRY. Returns Q in
+// (mol/kg)^∑νᵢ — the dimensioned form to be compared against a Ksp in
+// the same units. Returns null if mineral has no stoichiometry entry,
+// 0 if any required species is absent.
+//
+// This is the "math.min → math.product" upgrade in its general form.
+// The carbonate Phase-2 bugfix (commit 568476f) handled the four
+// carbonate min-Liebig sites inline with √(M·X); this function lets
+// future migrations adopt the proper activity product everywhere with
+// one consistent kernel.
+function ionActivityProduct(fluid, mineral) {
+    const stoich = MINERAL_STOICHIOMETRY[mineral];
+    if (!stoich)
+        return null;
+    const I = ionicStrength(fluid);
+    let logQ = 0;
+    for (const species in stoich) {
+        const props = SPECIES_PROPERTIES[species];
+        if (!props)
+            continue;
+        const m_ppm = fluid[species];
+        if (typeof m_ppm !== 'number' || m_ppm <= 0)
+            return 0;
+        const m_mol = ppmToMolality(m_ppm, props.molarMass);
+        let logA = Math.log10(m_mol);
+        if (props.charge !== 0)
+            logA += daviesLogGamma(props.charge, I);
+        logQ += stoich[species] * logA;
+    }
+    return Math.pow(10, logQ);
+}
+// Geometric-mean activity-coefficient correction for a mineral's
+// stoichiometry: factor = (∏ᵢ γᵢ^νᵢ)^(1/N) where N = ∑ᵢ νᵢ.
+//
+// Why this shape: the existing supersat methods use the geometric-mean
+// concentration product (e.g. √(Ca·CO3) for calcite, (Ca·Mg·CO3²)^¼
+// for dolomite — see commit 568476f). The activity-corrected version
+// is the same shape but with activities aᵢ = γᵢ·mᵢ instead of
+// concentrations mᵢ. So:
+//
+//     σ_activity = (∏ᵢ aᵢ^νᵢ)^(1/N) / eq
+//                = (∏ᵢ γᵢ^νᵢ)^(1/N) × (∏ᵢ mᵢ^νᵢ)^(1/N) / eq
+//                = activityCorrectionFactor × σ_concentration
+//
+// Migration drop-in: each migrated supersat method multiplies its
+// existing sigma by activityCorrectionFactor(fluid, mineral) when
+// ACTIVITY_CORRECTED_SUPERSAT is true. Preserves existing eq calibration.
+//
+// Behavior:
+//   - I = 0 (zero salinity)        → factor = 1.0 (no change)
+//   - I = 0.02 (typical vug fluid) → factor ≈ 0.6-0.9 (small drop in σ)
+//   - I = 0.5 (concentrated brine) → factor ≈ 0.3-0.5
+//   - I > 1.7 (Davies-invalid)     → clamp returns γᵢ ≤ 1 → factor ≤ 1
+//
+// Returns 1.0 (no correction) for any mineral missing from the
+// stoichiometry table, missing fluid species, or zero stoichiometry sum.
+function activityCorrectionFactor(fluid, mineral) {
+    const stoich = MINERAL_STOICHIOMETRY[mineral];
+    if (!stoich)
+        return 1.0;
+    const I = ionicStrength(fluid);
+    if (I <= 0)
+        return 1.0;
+    let logProduct = 0;
+    let totalNu = 0;
+    for (const species in stoich) {
+        const props = SPECIES_PROPERTIES[species];
+        if (!props)
+            continue;
+        totalNu += stoich[species];
+        if (props.charge === 0)
+            continue; // neutral species: log γ = 0
+        logProduct += stoich[species] * daviesLogGamma(props.charge, I);
+    }
+    if (totalNu === 0)
+        return 1.0;
+    const rawFactor = Math.pow(10, logProduct / totalNu);
+    // Apply the ACTIVITY_DAMPING knob: smoothly blend toward 1.0 (no
+    // correction) so game-mode scenarios stay within calibration bands.
+    return 1.0 - ACTIVITY_DAMPING * (1.0 - rawFactor);
+}
+
+// ── 20b-chemistry-carbonate-system.js ──
+
+// ============================================================
+// js/20b-chemistry-carbonate-system.ts — DIC + Bjerrum speciation
+// ============================================================
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 3a: aqueous-side carbonate
+// system. Splits the simulator's single `fluid.CO3` field into the
+// proper DIC partition (H₂CO₃*, HCO₃⁻, CO₃²⁻) using the Bjerrum
+// equations from the carbonate dissociation constants K₁ and K₂.
+//
+// Couples deliberately with PROPOSAL-VOLATILE-GASES (Rock Bot,
+// 2026-05-04, on canonical) — that proposal owns the multi-species
+// headspace state vector (volatiles['CO2'] partial pressure +
+// gas sources/sinks). This module owns the aqueous-side speciation
+// that turns CO₂ partial pressure into actual carbonate-system
+// chemistry. When VOLATILE-GASES lands, it consumes
+// `equilibriumPCO2(fluid)` from here to set its volatiles['CO2'];
+// scenarios with degassing events use `setDICAndPH` to update the
+// carbonate state in a Bjerrum-consistent way.
+//
+// Default state: CARBONATE_SPECIATION_ACTIVE = false. Nothing in
+// existing scenarios uses this module yet — Phase 3b will migrate
+// the carbonate supersat methods and add a co2_degas event handler.
+// Until then, this is callable infrastructure that narrators and
+// future scenarios can use.
+//
+// Conventions:
+//   - fluid.CO3 in the simulator carries TOTAL dissolved inorganic
+//     carbon (DIC) by convention, in ppm. Pre-Phase-3 supersat
+//     methods that read fluid.CO3 are reading DIC, not just CO₃²⁻.
+//     This module's bjerrumPartition(fluid) extracts the correct
+//     CO₃²⁻ fraction at the current pH for thermodynamic Q
+//     calculation (Phase 3b will use it).
+//   - DIC is in ppm (as CO3 mass-equivalent). Real DIC measurements
+//     usually report mg/L of carbon, not carbonate; the conversion
+//     factor is 60 g/mol CO3 vs 12 g/mol C (factor 5). The
+//     simulator's per-species ppm convention treats CO3 as the
+//     species, so DIC here is in those units.
+//   - K₁ and K₂ from Plummer & Busenberg 1982 / Millero 1995. T in
+//     °C. Pressure correction for moderate pressures (<1 kbar)
+//     is small; ignore for now.
+const CARBONATE_SPECIATION_ACTIVE = true;
+// Carbonate dissociation constants. pK at temperature, returned as
+// -log₁₀(K). Values from Stumm & Morgan, Aquatic Chemistry (3rd ed.),
+// linearized fits valid 0–80 °C, anchor at 25 °C with experimentally-
+// confirmed values:
+//   pK₁ ≈ 6.35  (H₂CO₃* ⇌ H⁺ + HCO₃⁻)
+//   pK₂ ≈ 10.33 (HCO₃⁻ ⇌ H⁺ + CO₃²⁻)
+//   pKH ≈ 1.47  (CO₂(g) ⇌ H₂CO₃* in mol/(kg·atm))
+// T-coefficients linearized from the full Plummer-Busenberg integrals
+// across the natural-water temperature range; departure from the full
+// PB formulas is < 0.05 pK units up to 60 °C.
+function pK1Carbonate(T_celsius) {
+    const T = Math.max(0, Math.min(80, T_celsius));
+    return 6.352 - 0.0007 * (T - 25);
+}
+function pK2Carbonate(T_celsius) {
+    const T = Math.max(0, Math.min(80, T_celsius));
+    return 10.329 - 0.0029 * (T - 25);
+}
+// Henry's-Law constant for CO₂ at temperature, mol/(kg·atm).
+// CO₂ solubility decreases with T (gas escapes from warm fluid).
+function pKH_CO2(T_celsius) {
+    const T = Math.max(0, Math.min(80, T_celsius));
+    return 1.464 + 0.005 * (T - 25);
+}
+// Bjerrum partition: given the fluid's total DIC (= fluid.CO3 in ppm)
+// and pH, return the mole-fraction split among H₂CO₃*, HCO₃⁻, CO₃²⁻.
+// At pH 6: ~95% H₂CO₃*, ~5% HCO₃⁻, <0.1% CO₃²⁻.
+// At pH 8: ~3% H₂CO₃*, ~96% HCO₃⁻, ~1% CO₃²⁻.
+// At pH 10: <0.1% H₂CO₃*, ~70% HCO₃⁻, ~30% CO₃²⁻.
+//
+// Used by Phase 3b's carbonate supersat methods to extract the
+// thermodynamically correct CO₃²⁻ activity for Q calculation,
+// instead of treating fluid.CO3 as the carbonate ion directly.
+function bjerrumFractions(pH, T_celsius) {
+    const H = Math.pow(10, -pH);
+    const K1 = Math.pow(10, -pK1Carbonate(T_celsius));
+    const K2 = Math.pow(10, -pK2Carbonate(T_celsius));
+    // f(H2CO3) : f(HCO3) : f(CO3) = H² : H·K1 : K1·K2
+    // Normalize so they sum to 1.
+    const f0 = H * H; // H2CO3*
+    const f1 = H * K1; // HCO3-
+    const f2 = K1 * K2; // CO3^2-
+    const total = f0 + f1 + f2;
+    return {
+        H2CO3: f0 / total,
+        HCO3: f1 / total,
+        CO3: f2 / total,
+    };
+}
+// Convenience: extract the actual CO₃²⁻ activity (in ppm-equivalent)
+// at the fluid's current pH and temperature. The aqueous Q for, say,
+// calcite uses this rather than fluid.CO3 directly.
+function carbonateIonPpm(fluid, T_celsius) {
+    if (!fluid || typeof fluid.CO3 !== 'number' || fluid.CO3 <= 0)
+        return 0;
+    const pH = typeof fluid.pH === 'number' ? fluid.pH : 7.0;
+    const fractions = bjerrumFractions(pH, T_celsius);
+    return fluid.CO3 * fractions.CO3;
+}
+// Reference pH for the Bjerrum normalization. Carbonate eq calibration
+// constants in the supersat methods were tuned against fluid.CO3 (= DIC)
+// at typical near-neutral pH around 7.5. Keeping the normalization
+// anchored here means existing eq values stay valid at pH 7.5; pH
+// deviations produce the proper Bjerrum amplification automatically.
+const BJERRUM_REFERENCE_PH = 7.5;
+// Damping coefficient for the Bjerrum normalization, analogous to
+// ACTIVITY_DAMPING in 20a-chemistry-activity.ts. Full Bjerrum at pH 8
+// gives a 10× CO₃²⁻ amplification (factor √10 ≈ 3.16 in σ via
+// geometric-mean form). That's about 2× stronger than the empirical
+// 3^(pH-7.5) factor used pre-Phase-3c — too aggressive against the
+// existing per-mineral eq calibration. Damping smoothly interpolates:
+//   damped_ratio = 1 + damping × (raw_ratio - 1)
+//   damping = 1.0 → full Bjerrum (research mode)
+//   damping = 0.5 → half-amplitude (current shipping default)
+//   damping = 0.0 → no normalization (= flag off)
+// Calibrated in Phase 3c (May 2026) at 0.5 — keeps the sweep-wide
+// RMS in the same band as Phase 1c/2c flips while preserving the
+// pH-driven cascade in tutorial_travertine and giving the other
+// 10 carbonates real pH dependence for the first time.
+const BJERRUM_DAMPING = 0.5;
+// The carbonate quantity to use in supersaturation calculations.
+// When CARBONATE_SPECIATION_ACTIVE is on, returns DIC scaled by the
+// pH-dependent CO₃²⁻ fraction relative to the reference pH. The
+// normalization is the key trick: at pH = BJERRUM_REFERENCE_PH the
+// scale factor is 1.0, so eq calibrations survive the flag flip.
+// Above 7.5: ~10× more CO₃²⁻ per pH unit (real Bjerrum amplification).
+// Below 7.5: ~10× less per pH unit (acidic suppression).
+//
+// Returns DIC directly (no scaling) when flag is off — preserves
+// pre-Phase-3c behavior for any caller that hasn't migrated yet.
+function effectiveCO3(fluid, T_celsius) {
+    if (!CARBONATE_SPECIATION_ACTIVE)
+        return fluid.CO3;
+    if (typeof fluid.CO3 !== 'number' || fluid.CO3 <= 0)
+        return 0;
+    const pH = typeof fluid.pH === 'number' ? fluid.pH : 7.0;
+    const fAtFluid = bjerrumFractions(pH, T_celsius).CO3;
+    const fAtRef = bjerrumFractions(BJERRUM_REFERENCE_PH, T_celsius).CO3;
+    if (fAtRef <= 0)
+        return fluid.CO3;
+    const rawRatio = fAtFluid / fAtRef;
+    // Damped ratio: blends toward 1.0 (= no amplification) per BJERRUM_DAMPING.
+    const dampedRatio = 1 + BJERRUM_DAMPING * (rawRatio - 1);
+    return fluid.CO3 * Math.max(0.05, dampedRatio);
+}
+// Compute the equilibrium pCO₂ (bar) consistent with the fluid's
+// current DIC and pH. This is the "aqueous-side answer" that
+// PROPOSAL-VOLATILE-GASES would set its `volatiles['CO2']` to,
+// so the headspace and aqueous side stay in equilibrium. When there
+// is no headspace (submerged ring), the pCO₂ is hypothetical — what
+// CO₂ would degas if the cavity opened to that ring.
+//
+// pCO2 = [H2CO3*] / KH_CO2  (Henry's-Law inversion)
+function equilibriumPCO2(fluid, T_celsius) {
+    if (!fluid || typeof fluid.CO3 !== 'number' || fluid.CO3 <= 0)
+        return 0;
+    const pH = typeof fluid.pH === 'number' ? fluid.pH : 7.0;
+    const fractions = bjerrumFractions(pH, T_celsius);
+    // DIC ppm → mol/kg (assume CO3 as ~60 g/mol surrogate)
+    const DIC_molal = fluid.CO3 / (1000 * 60.01);
+    const H2CO3_molal = DIC_molal * fractions.H2CO3;
+    const KH = Math.pow(10, -pKH_CO2(T_celsius));
+    return KH > 0 ? H2CO3_molal / KH : 0;
 }
 
 // ── 22-geometry-wall.js ──
@@ -5170,6 +6010,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 4 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'olivenite');
         return Math.max(sigma, 0);
     },
     supersaturation_scorodite() {
@@ -5187,6 +6029,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH < 2) {
             sigma *= Math.max(0.4, 1.0 - 0.3 * (2 - this.fluid.pH));
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'scorodite');
         return Math.max(sigma, 0);
     },
     supersaturation_erythrite() {
@@ -5239,6 +6083,12 @@ Object.assign(VugConditions.prototype, {
             sigma -= (4.0 - this.fluid.pH) * 0.4;
         else if (this.fluid.pH > 8.0)
             sigma *= 0.5;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'adamite');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'erythrite');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'annabergite');
         return Math.max(sigma, 0);
     },
     supersaturation_mimetite() {
@@ -5249,6 +6099,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.exp(-0.015 * (this.temperature - 150));
         if (this.fluid.pH < 3.5)
             sigma -= (3.5 - this.fluid.pH) * 0.5;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'mimetite');
         return Math.max(sigma, 0);
     },
 });
@@ -5294,6 +6146,10 @@ Object.assign(VugConditions.prototype, {
             const caPenalty = Math.min(1.0, this.fluid.Ca / 150.0);
             sigma *= (1.0 - 0.7 * caPenalty);
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'borax');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'tincalconite');
         return Math.max(sigma, 0);
     },
 });
@@ -5323,16 +6179,31 @@ Object.assign(VugConditions.prototype, {
         const eq = 300.0 * Math.exp(-0.005 * this.temperature);
         if (eq <= 0)
             return 0;
-        const ca_co3 = Math.min(this.fluid.Ca, this.fluid.CO3);
+        // PROPOSAL-GEOLOGICAL-ACCURACY Phase 2 fix: real saturation is the
+        // ion-activity product Q = a(Ca²⁺) × a(CO3²⁻), not min(Ca, CO3). The
+        // geometric mean √(Ca·CO3) preserves the existing eq calibration
+        // (= ppm) and matches the old Liebig result when Ca=CO3, but correctly
+        // counts both species when they differ.
+        const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
         let sigma = ca_co3 / eq;
+        // Phase 2b: activity-coefficient correction (Davies). Drops σ by ~0.6-0.9×
+        // at typical fluid I, more sharply at brine I. Flag-OFF default — no
+        // change until calibration sweep at the flag-flip commit.
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'calcite');
         // Acid dissolution of carbonates
         if (this.fluid.pH < 5.5) {
             const acid_attack = (5.5 - this.fluid.pH) * 0.5;
             sigma -= acid_attack;
         }
-        // Alkaline conditions favor carbonate precipitation
-        else if (this.fluid.pH > 7.5) {
-            sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.15;
+        // Alkaline conditions favor carbonate precipitation. Phase 3
+        // (May 2026): when CARBONATE_SPECIATION_ACTIVE is on, the proper
+        // pH-dependent Bjerrum amplification of CO₃²⁻ is already baked
+        // into effectiveCO3 above — so this manual boost would double-count.
+        // Flag-OFF path: keep the empirical 3^(pH-7.5) factor (which
+        // approximates Bjerrum) so behavior is consistent in either mode.
+        else if (this.fluid.pH > 7.5 && !CARBONATE_SPECIATION_ACTIVE) {
+            sigma *= Math.pow(3.0, this.fluid.pH - 7.5);
         }
         // Mg poisoning of calcite growth steps — sigmoid centered on Mg/Ca=2
         const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
@@ -5342,7 +6213,7 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_siderite() {
         // FeCO3 — iron carbonate. Reducing conditions only (Fe²⁺ stability).
-        if (this.fluid.Fe < 10 || this.fluid.CO3 < 20)
+        if (this.fluid.Fe < 10 || effectiveCO3(this.fluid, this.temperature) < 20)
             return 0;
         if (this.temperature < 20 || this.temperature > 300)
             return 0;
@@ -5353,8 +6224,11 @@ Object.assign(VugConditions.prototype, {
         const eq_fe = 80.0 * Math.exp(-0.005 * this.temperature);
         if (eq_fe <= 0)
             return 0;
-        const fe_co3 = Math.min(this.fluid.Fe, this.fluid.CO3);
+        // Phase 2 fix: Q = a(Fe²⁺) × a(CO3²⁻); see calcite for rationale.
+        const fe_co3 = Math.sqrt(this.fluid.Fe * effectiveCO3(this.fluid, this.temperature));
         let sigma = fe_co3 / eq_fe;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'siderite');
         if (this.fluid.pH < 5.5)
             sigma -= (5.5 - this.fluid.pH) * 0.5;
         else if (this.fluid.pH > 7.5)
@@ -5366,7 +6240,7 @@ Object.assign(VugConditions.prototype, {
     supersaturation_dolomite() {
         // CaMg(CO3)2 — ordered Ca-Mg carbonate. Kim 2023: T floor lowered to
         // 10°C — ambient T is fine thermodynamically, kinetics handled by f_ord.
-        if (this.fluid.Mg < 25 || this.fluid.Ca < 30 || this.fluid.CO3 < 20)
+        if (this.fluid.Mg < 25 || this.fluid.Ca < 30 || effectiveCO3(this.fluid, this.temperature) < 20)
             return 0;
         if (this.temperature < 10 || this.temperature > 400)
             return 0;
@@ -5378,10 +6252,17 @@ Object.assign(VugConditions.prototype, {
         const eq = 200.0 * Math.exp(-0.005 * this.temperature);
         if (eq <= 0)
             return 0;
-        const ca_mg = Math.sqrt(this.fluid.Ca * this.fluid.Mg);
-        const co3_limit = this.fluid.CO3 * 2.0;
-        const product = Math.min(ca_mg, co3_limit);
+        // Phase 2 fix: real Q for dolomite CaMg(CO3)₂ is
+        // a(Ca²⁺)·a(Mg²⁺)·a(CO3²⁻)². The fourth-root keeps the result in
+        // ppm units (comparable to eq) while properly weighting CO3 by its
+        // stoichiometric coefficient of 2. Old form min(√(Ca·Mg), 2·CO3)
+        // was a Liebig hybrid: half-correct (geometric mean for cations) +
+        // half-Liebig (min against CO3), which under-counted CO3 even when
+        // it was abundant.
+        const product = Math.pow(this.fluid.Ca * this.fluid.Mg * effectiveCO3(this.fluid, this.temperature) * effectiveCO3(this.fluid, this.temperature), 0.25);
         let sigma = product / eq;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'dolomite');
         const ratio_distance = Math.abs(Math.log10(mg_ratio));
         sigma *= Math.exp(-ratio_distance * 1.0);
         if (this.temperature > 250)
@@ -5393,7 +6274,7 @@ Object.assign(VugConditions.prototype, {
     supersaturation_rhodochrosite() {
         // MnCO3 — pink Mn carbonate, structurally identical to calcite (R3̄c).
         // T 20-250°C, pH 5-9, Mn²⁺ stable in moderate-to-reducing conditions.
-        if (this.fluid.Mn < 5 || this.fluid.CO3 < 20)
+        if (this.fluid.Mn < 5 || effectiveCO3(this.fluid, this.temperature) < 20)
             return 0;
         if (this.temperature < 20 || this.temperature > 250)
             return 0;
@@ -5404,8 +6285,11 @@ Object.assign(VugConditions.prototype, {
         const eq_mn = 50.0 * Math.exp(-0.005 * this.temperature);
         if (eq_mn <= 0)
             return 0;
-        const mn_co3 = Math.min(this.fluid.Mn, this.fluid.CO3);
+        // Phase 2 fix: Q = a(Mn²⁺) × a(CO3²⁻); see calcite for rationale.
+        const mn_co3 = Math.sqrt(this.fluid.Mn * effectiveCO3(this.fluid, this.temperature));
         let sigma = mn_co3 / eq_mn;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'rhodochrosite');
         if (this.fluid.pH < 5.5)
             sigma -= (5.5 - this.fluid.pH) * 0.5;
         else if (this.fluid.pH > 7.5)
@@ -5421,15 +6305,18 @@ Object.assign(VugConditions.prototype, {
         // step rule, Sun 2015). Trace Sr/Pb/Ba give a small additional boost.
         // Pressure is the thermodynamic sorter (stable above ~0.4 GPa) but is
         // irrelevant at vug/hot-spring pressures — don't use it as a gate.
-        if (this.fluid.Ca < 30 || this.fluid.CO3 < 20)
+        if (this.fluid.Ca < 30 || effectiveCO3(this.fluid, this.temperature) < 20)
             return 0;
         if (this.fluid.pH < 6.0 || this.fluid.pH > 9.0)
             return 0;
         const eq = 300.0 * Math.exp(-0.005 * this.temperature);
         if (eq <= 0)
             return 0;
-        const ca_co3 = Math.min(this.fluid.Ca, this.fluid.CO3);
-        const omega = ca_co3 / eq;
+        // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
+        const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
+        let omega = ca_co3 / eq;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            omega *= activityCorrectionFactor(this.fluid, 'aragonite');
         const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
         const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.5) / 0.3));
         const T_factor = 1.0 / (1.0 + Math.exp(-(this.temperature - 50.0) / 15.0));
@@ -5442,7 +6329,7 @@ Object.assign(VugConditions.prototype, {
         return omega * favorability;
     },
     supersaturation_malachite() {
-        if (this.fluid.Cu < 5 || this.fluid.CO3 < 20 || this.fluid.O2 < 0.3)
+        if (this.fluid.Cu < 5 || effectiveCO3(this.fluid, this.temperature) < 20 || this.fluid.O2 < 0.3)
             return 0;
         // Denominators reference realistic supergene weathering fluid (Cu ~25 ppm,
         // CO₃ ~100 ppm). The older 50/200 values were tuned for Cu-saturated
@@ -5454,13 +6341,15 @@ Object.assign(VugConditions.prototype, {
         // to malachite via the paramorph mechanic in grow_azurite when CO3
         // falls during a run (Bisbee step 225 ev_co2_drop).
         // See research/research-broth-ratio-malachite-azurite.md.
-        let sigma = (this.fluid.Cu / 25.0) * (this.fluid.CO3 / 100.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Cu / 25.0) * (effectiveCO3(this.fluid, this.temperature) / 100.0) * (this.fluid.O2 / 1.0);
         if (this.temperature > 50) {
             sigma *= Math.exp(-0.005 * (this.temperature - 50));
         }
         if (this.fluid.pH < 4.5) {
             sigma -= (4.5 - this.fluid.pH) * 0.5;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'malachite');
         return Math.max(sigma, 0);
     },
     supersaturation_smithsonite() {
@@ -5468,38 +6357,42 @@ Object.assign(VugConditions.prototype, {
         // research-smithsonite.md (T 10-50°C optimum, never above ~80°C
         // in nature). Pre-v17 JS hard cap at 200°C was too lenient.
         // Tightened to 100°C hard with steep decay above 80°C.
-        if (this.fluid.Zn < 20 || this.fluid.CO3 < 50 || this.fluid.O2 < 0.2)
+        if (this.fluid.Zn < 20 || effectiveCO3(this.fluid, this.temperature) < 50 || this.fluid.O2 < 0.2)
             return 0;
         if (this.temperature > 100)
             return 0;
         if (this.fluid.pH < 5)
             return 0;
-        let sigma = (this.fluid.Zn / 80.0) * (this.fluid.CO3 / 200.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Zn / 80.0) * (effectiveCO3(this.fluid, this.temperature) / 200.0) * (this.fluid.O2 / 1.0);
         if (this.temperature > 80) {
             sigma *= Math.exp(-0.04 * (this.temperature - 80));
         }
         if (this.fluid.pH > 7)
             sigma *= 1.2;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'smithsonite');
         return Math.max(sigma, 0);
     },
     supersaturation_azurite() {
-        if (this.fluid.Cu < 20 || this.fluid.CO3 < 120 || this.fluid.O2 < 1.0)
+        if (this.fluid.Cu < 20 || effectiveCO3(this.fluid, this.temperature) < 120 || this.fluid.O2 < 1.0)
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 40.0, 2.0);
-        const co_f = Math.min(this.fluid.CO3 / 150.0, 1.8);
+        const co_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 150.0, 1.8);
         const o_f = Math.min(this.fluid.O2 / 1.5, 1.3);
         let sigma = cu_f * co_f * o_f;
         if (this.temperature > 50)
             sigma *= Math.exp(-0.06 * (this.temperature - 50));
         if (this.fluid.pH < 5.0)
             sigma -= (5.0 - this.fluid.pH) * 0.4;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'azurite');
         return Math.max(sigma, 0);
     },
     supersaturation_cerussite() {
-        if (this.fluid.Pb < 15 || this.fluid.CO3 < 30)
+        if (this.fluid.Pb < 15 || effectiveCO3(this.fluid, this.temperature) < 30)
             return 0;
         const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
-        const co_f = Math.min(this.fluid.CO3 / 80.0, 1.5);
+        const co_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 80.0, 1.5);
         let sigma = pb_f * co_f;
         if (this.temperature > 80)
             sigma *= Math.exp(-0.04 * (this.temperature - 80));
@@ -5507,10 +6400,12 @@ Object.assign(VugConditions.prototype, {
             sigma -= (4.0 - this.fluid.pH) * 0.4;
         else if (this.fluid.pH > 7.0)
             sigma *= 1.0 + (this.fluid.pH - 7.0) * 0.1;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'cerussite');
         return Math.max(sigma, 0);
     },
     supersaturation_rosasite() {
-        if (this.fluid.Cu < 5 || this.fluid.Zn < 3 || this.fluid.CO3 < 30)
+        if (this.fluid.Cu < 5 || this.fluid.Zn < 3 || effectiveCO3(this.fluid, this.temperature) < 30)
             return 0;
         if (this.temperature < 10 || this.temperature > 40)
             return 0;
@@ -5524,7 +6419,7 @@ Object.assign(VugConditions.prototype, {
             return 0; // broth-ratio branch: Cu must dominate
         const cu_f = Math.min(this.fluid.Cu / 25.0, 2.0);
         const zn_f = Math.min(this.fluid.Zn / 25.0, 2.0);
-        const co3_f = Math.min(this.fluid.CO3 / 100.0, 2.0);
+        const co3_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 100.0, 2.0);
         let sigma = cu_f * zn_f * co3_f;
         if (cu_fraction >= 0.55 && cu_fraction <= 0.85)
             sigma *= 1.3;
@@ -5541,10 +6436,12 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.Fe > 60)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'rosasite');
         return Math.max(sigma, 0);
     },
     supersaturation_aurichalcite() {
-        if (this.fluid.Zn < 5 || this.fluid.Cu < 3 || this.fluid.CO3 < 30)
+        if (this.fluid.Zn < 5 || this.fluid.Cu < 3 || effectiveCO3(this.fluid, this.temperature) < 30)
             return 0;
         if (this.temperature < 10 || this.temperature > 40)
             return 0;
@@ -5560,7 +6457,7 @@ Object.assign(VugConditions.prototype, {
             return 0; // broth-ratio branch: Zn must dominate
         const cu_f = Math.min(this.fluid.Cu / 25.0, 2.0);
         const zn_f = Math.min(this.fluid.Zn / 25.0, 2.0);
-        const co3_f = Math.min(this.fluid.CO3 / 100.0, 2.0);
+        const co3_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 100.0, 2.0);
         let sigma = cu_f * zn_f * co3_f;
         if (zn_fraction >= 0.55 && zn_fraction <= 0.85)
             sigma *= 1.3;
@@ -5575,6 +6472,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.5, 1.2 - 0.06 * (T - 28));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'aurichalcite');
         return Math.max(sigma, 0);
     },
 });
@@ -5624,6 +6523,8 @@ Object.assign(VugConditions.prototype, {
             const acid_attack = (5.0 - this.fluid.pH) * 0.4;
             sigma -= acid_attack;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'fluorite');
         return Math.max(sigma, 0);
     },
     supersaturation_halite() {
@@ -5639,6 +6540,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= 0.7;
         if (this.fluid.pH < 4.0)
             sigma *= 0.5;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'halite');
         return Math.max(sigma, 0);
     },
 });
@@ -5664,6 +6567,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.exp(-0.015 * (this.temperature - 150));
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 0.5;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'goethite');
         return Math.max(sigma, 0);
     },
     supersaturation_lepidocrocite() {
@@ -5678,6 +6583,8 @@ Object.assign(VugConditions.prototype, {
             sigma -= (3.0 - this.fluid.pH) * 0.4;
         if (this.fluid.pH > 7.5)
             sigma *= Math.max(0.5, 1.0 - (this.fluid.pH - 7.5) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'lepidocrocite');
         return Math.max(sigma, 0);
     },
 });
@@ -5720,6 +6627,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH > 9.0) {
             sigma -= (this.fluid.pH - 9.0) * 0.3;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'wulfenite');
         return Math.max(sigma, 0);
     },
     supersaturation_ferrimolybdite() {
@@ -5738,6 +6647,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH < 3) {
             sigma *= Math.max(0.3, 1.0 - 0.25 * (3 - this.fluid.pH));
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'ferrimolybdite');
         return Math.max(sigma, 0);
     },
     supersaturation_raspite() {
@@ -5764,6 +6675,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 4 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'raspite');
         return Math.max(sigma, 0);
     },
     supersaturation_stolzite() {
@@ -5790,6 +6703,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 4 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'stolzite');
         return Math.max(sigma, 0);
     },
 });
@@ -5842,6 +6757,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 3 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'native_tellurium');
         return Math.max(sigma, 0);
     },
     supersaturation_native_sulfur() {
@@ -5877,6 +6794,8 @@ Object.assign(VugConditions.prototype, {
             T_factor = 0.0;
         }
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'native_sulfur');
         return Math.max(sigma, 0);
     },
     supersaturation_native_arsenic() {
@@ -5912,6 +6831,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 3 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'native_arsenic');
         return Math.max(sigma, 0);
     },
     supersaturation_native_silver() {
@@ -5945,6 +6866,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 4 || this.fluid.pH > 9)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'native_silver');
         return Math.max(sigma, 0);
     },
     supersaturation_native_bismuth() {
@@ -5967,6 +6890,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'native_bismuth');
         return Math.max(sigma, 0);
     },
     supersaturation_native_gold() {
@@ -5986,6 +6911,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = 0.3;
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'native_gold');
         return Math.max(sigma, 0);
     },
     supersaturation_native_copper() {
@@ -6008,6 +6935,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 4.0)
             sigma -= (4.0 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'native_copper');
         return Math.max(sigma, 0);
     },
 });
@@ -6032,6 +6961,8 @@ Object.assign(VugConditions.prototype, {
         if (this.fluid.pH < 3.5) {
             sigma -= (3.5 - this.fluid.pH) * 0.3;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'hematite');
         return Math.max(sigma, 0);
     },
     supersaturation_uraninite() {
@@ -6044,6 +6975,8 @@ Object.assign(VugConditions.prototype, {
         let sigma = (this.fluid.U / 20.0) * (0.5 - this.fluid.O2);
         if (this.temperature > 200)
             sigma *= 1.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'uraninite');
         return Math.max(sigma, 0);
     },
     supersaturation_magnetite() {
@@ -6065,6 +6998,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 2.5)
             sigma -= (2.5 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'magnetite');
         return Math.max(sigma, 0);
     },
     supersaturation_cuprite() {
@@ -6077,6 +7012,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.exp(-0.03 * (this.temperature - 100));
         if (this.fluid.pH < 3.5)
             sigma -= (3.5 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'cuprite');
         return Math.max(sigma, 0);
     },
     supersaturation_corundum() {
@@ -6160,6 +7097,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 4 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'descloizite');
         return Math.max(sigma, 0);
     },
     supersaturation_mottramite() {
@@ -6197,6 +7136,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 4 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'mottramite');
         return Math.max(sigma, 0);
     },
     supersaturation_clinobisvanite() {
@@ -6210,6 +7151,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.exp(-0.04 * (this.temperature - 40));
         if (this.fluid.pH < 2.5)
             sigma -= (2.5 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'clinobisvanite');
         return Math.max(sigma, 0);
     },
     supersaturation_pyromorphite() {
@@ -6223,6 +7166,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.exp(-0.04 * (this.temperature - 80));
         if (this.fluid.pH < 2.5)
             sigma -= (2.5 - this.fluid.pH) * 0.4;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'pyromorphite');
         return Math.max(sigma, 0);
     },
     supersaturation_vanadinite() {
@@ -6236,6 +7181,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.exp(-0.04 * (this.temperature - 80));
         if (this.fluid.pH < 2.5)
             sigma -= (2.5 - this.fluid.pH) * 0.4;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'vanadinite');
         return Math.max(sigma, 0);
     },
     supersaturation_torbernite() {
@@ -6277,6 +7224,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 40));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'torbernite');
         return Math.max(sigma, 0);
     },
     supersaturation_autunite() {
@@ -6318,6 +7267,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 35));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'autunite');
         return Math.max(sigma, 0);
     },
     supersaturation_zeunerite() {
@@ -6358,6 +7309,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 40));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'zeunerite');
         return Math.max(sigma, 0);
     },
     supersaturation_uranospinite() {
@@ -6397,6 +7350,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 35));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'uranospinite');
         return Math.max(sigma, 0);
     },
     supersaturation_carnotite() {
@@ -6438,6 +7393,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 40));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'carnotite');
         return Math.max(sigma, 0);
     },
     supersaturation_tyuyamunite() {
@@ -6477,6 +7434,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.4, 1.2 - 0.08 * (T - 35));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'tyuyamunite');
         return Math.max(sigma, 0);
     },
 });
@@ -6504,6 +7463,8 @@ Object.assign(VugConditions.prototype, {
             const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
             sigma -= hf_attack;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'quartz');
         return Math.max(sigma, 0);
     },
     supersaturation_feldspar() {
@@ -6528,6 +7489,8 @@ Object.assign(VugConditions.prototype, {
         // dissolution at pH < 4. KAlSi₃O₈ + H⁺ → kaolinite + K⁺ + SiO₂.
         if (this.fluid.pH < 4.0)
             sigma -= (4.0 - this.fluid.pH) * 2.0;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'feldspar');
         return Math.max(sigma, 0);
     },
     supersaturation_apophyllite() {
@@ -6548,7 +7511,10 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = 0.6;
         const pH_factor = (this.fluid.pH >= 7.5 && this.fluid.pH <= 9.0) ? 1.2 : 0.8;
-        return product * T_factor * pH_factor;
+        let sigma = product * T_factor * pH_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'apophyllite');
+        return sigma;
     },
     supersaturation_albite() {
         if (this.fluid.Na < 10 || this.fluid.Al < 3 || this.fluid.SiO2 < 200)
@@ -6560,6 +7526,8 @@ Object.assign(VugConditions.prototype, {
         // resistant than K-feldspar). Mirrors grow_albite dissolution gate.
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 2.0;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'albite');
         return Math.max(sigma, 0);
     },
     supersaturation_spodumene() {
@@ -6582,6 +7550,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.1, 0.5 - 0.008 * (400 - T));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'spodumene');
         return Math.max(sigma, 0);
     },
     supersaturation_chrysocolla() {
@@ -6612,7 +7582,9 @@ Object.assign(VugConditions.prototype, {
             ph_f = Math.max(0.4, 1.0 - (6.0 - pH) * 0.6);
         else
             ph_f = Math.max(0.4, 1.0 - (pH - 7.5) * 0.6);
-        const sigma = cu_f * si_f * o_f * t_f * ph_f;
+        let sigma = cu_f * si_f * o_f * t_f * ph_f;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'chrysocolla');
         return Math.max(sigma, 0);
     },
     _beryl_base_sigma() {
@@ -6635,6 +7607,11 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.1, 0.6 - 0.006 * (300 - T));
         sigma *= T_factor;
+        // Activity correction at the family-base helper applies uniformly to
+        // beryl/emerald/aquamarine/morganite/heliodor (same Be₃Al₂Si₆O₁₈
+        // shared-cation set; chromophore traces don't move I).
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'beryl');
         return Math.max(sigma, 0);
     },
     supersaturation_beryl() {
@@ -6725,6 +7702,11 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         const pH_factor = (this.fluid.pH >= 7 && this.fluid.pH <= 9) ? 1.0 : 0.6;
         sigma *= pH_factor;
+        // Activity correction at the family-base helper applies uniformly to
+        // corundum/ruby/sapphire (shared Al₂O₃ formula; trace chromophores
+        // don't move I).
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'corundum');
         return Math.max(sigma, 0);
     },
     supersaturation_tourmaline() {
@@ -6748,6 +7730,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = Math.max(0.1, 0.5 - 0.008 * (350 - T));
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'tourmaline');
         return Math.max(sigma, 0);
     },
     supersaturation_topaz() {
@@ -6772,6 +7756,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 2.0)
             sigma -= (2.0 - this.fluid.pH) * 0.4;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'topaz');
         return Math.max(sigma, 0);
     },
 });
@@ -6815,6 +7801,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH > 9) {
             sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'barite');
         return Math.max(sigma, 0);
     },
     supersaturation_anhydrite() {
@@ -6856,6 +7844,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH > 9) {
             sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'anhydrite');
         return Math.max(sigma, 0);
     },
     supersaturation_brochantite() {
@@ -6876,6 +7866,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH > 6) {
             sigma *= Math.max(0.3, 1.0 - 0.4 * (this.fluid.pH - 6));
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'brochantite');
         return Math.max(sigma, 0);
     },
     supersaturation_antlerite() {
@@ -6896,6 +7888,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH < 1.5) {
             sigma *= Math.max(0.4, 1.0 - 0.3 * (1.5 - this.fluid.pH));
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'antlerite');
         return Math.max(sigma, 0);
     },
     supersaturation_jarosite() {
@@ -6918,6 +7912,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH < 1) {
             sigma *= 0.4;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'jarosite');
         return Math.max(sigma, 0);
     },
     supersaturation_alunite() {
@@ -6947,6 +7943,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH < 1) {
             sigma *= 0.4;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'alunite');
         return Math.max(sigma, 0);
     },
     supersaturation_celestine() {
@@ -6970,6 +7968,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH > 9) {
             sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'celestine');
         return Math.max(sigma, 0);
     },
     supersaturation_chalcanthite() {
@@ -7000,6 +8000,8 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = 0.2;
         sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'chalcanthite');
         return Math.max(sigma, 0);
     },
     supersaturation_mirabilite() {
@@ -7016,6 +8018,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= 1.3;
         if (this.fluid.pH < 5.0)
             sigma *= 0.5;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'mirabilite');
         return Math.max(sigma, 0);
     },
     supersaturation_thenardite() {
@@ -7032,6 +8036,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= 1.2;
         if (this.fluid.pH < 5.0)
             sigma *= 0.5;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'thenardite');
         return Math.max(sigma, 0);
     },
     supersaturation_selenite() {
@@ -7054,6 +8060,8 @@ Object.assign(VugConditions.prototype, {
         if (this.fluid.pH < 5.0) {
             sigma -= (5.0 - this.fluid.pH) * 0.2;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'selenite');
         return Math.max(sigma, 0);
     },
     supersaturation_anglesite() {
@@ -7067,6 +8075,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.exp(-0.04 * (this.temperature - 80));
         if (this.fluid.pH < 2.0)
             sigma -= (2.0 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'anglesite');
         return Math.max(sigma, 0);
     },
 });
@@ -7190,6 +8200,18 @@ Object.assign(VugConditions.prototype, {
             sigma *= 1.3;
         if (eT > 450)
             sigma *= Math.exp(-0.008 * (eT - 450));
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'pyrite');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'marcasite');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'sphalerite');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'wurtzite');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'galena');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'chalcopyrite');
         return Math.max(sigma, 0);
     },
     supersaturation_molybdenite() {
@@ -7208,6 +8230,8 @@ Object.assign(VugConditions.prototype, {
         else if (eT > 300 && eT < 500) {
             sigma *= 1.3; // porphyry Mo sweet spot
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'molybdenite');
         return Math.max(sigma, 0);
     },
     supersaturation_acanthite() {
@@ -7238,6 +8262,8 @@ Object.assign(VugConditions.prototype, {
         if (this.fluid.Fe > 30 && this.fluid.Cu > 20) {
             sigma *= 0.6;
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'acanthite');
         return Math.max(sigma, 0);
     },
     supersaturation_argentite() {
@@ -7269,6 +8295,8 @@ Object.assign(VugConditions.prototype, {
             sigma *= 0.5;
         if (this.fluid.Cu > 30)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'argentite');
         return Math.max(sigma, 0);
     },
     supersaturation_nickeline() {
@@ -7295,6 +8323,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 3 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'nickeline');
         return Math.max(sigma, 0);
     },
     supersaturation_millerite() {
@@ -7323,6 +8353,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 3 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'millerite');
         return Math.max(sigma, 0);
     },
     supersaturation_cobaltite() {
@@ -7350,6 +8382,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= T_factor;
         if (this.fluid.pH < 3 || this.fluid.pH > 8)
             sigma *= 0.6;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'cobaltite');
         return Math.max(sigma, 0);
     },
     supersaturation_arsenopyrite() {
@@ -7377,6 +8411,8 @@ Object.assign(VugConditions.prototype, {
         else if (this.fluid.pH > 6.5) {
             sigma *= Math.max(0.2, 1.0 - 0.3 * (this.fluid.pH - 6.5));
         }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'arsenopyrite');
         return Math.max(sigma, 0);
     },
     supersaturation_tetrahedrite() {
@@ -7437,6 +8473,12 @@ Object.assign(VugConditions.prototype, {
         sigma *= Math.max(0.5, 1.3 - this.fluid.O2);
         if (this.fluid.pH < 2.0)
             sigma -= (2.0 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'stibnite');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'tetrahedrite');
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'tennantite');
         return Math.max(sigma, 0);
     },
     supersaturation_bismuthinite() {
@@ -7459,6 +8501,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= Math.max(0.5, 1.3 - this.fluid.O2);
         if (this.fluid.pH < 2.0)
             sigma -= (2.0 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'bismuthinite');
         return Math.max(sigma, 0);
     },
     supersaturation_bornite() {
@@ -7485,6 +8529,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= Math.max(0.3, 1.5 - this.fluid.O2);
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'bornite');
         return Math.max(sigma, 0);
     },
     supersaturation_chalcocite() {
@@ -7498,6 +8544,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= Math.max(0.3, 1.4 - this.fluid.O2);
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'chalcocite');
         return Math.max(sigma, 0);
     },
     supersaturation_covellite() {
@@ -7511,6 +8559,8 @@ Object.assign(VugConditions.prototype, {
         sigma *= Math.max(0.3, 1.3 - Math.abs(this.fluid.O2 - 0.8));
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 0.3;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'covellite');
         return Math.max(sigma, 0);
     },
 });
@@ -7765,10 +8815,7 @@ function grow_adamite(crystal, conditions, step) {
         colorNote = 'green — weakly fluorescent';
     else
         colorNote = 'yellow-green — NON-FLUORESCENT (no Cu)';
-    conditions.fluid.Zn -= rate * 0.008;
-    conditions.fluid.Zn = Math.max(conditions.fluid.Zn, 0);
-    conditions.fluid.As -= rate * 0.005;
-    conditions.fluid.As = Math.max(conditions.fluid.As, 0);
+    // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.01, note: `${crystal.habit}, ${colorNote}` });
 }
 function grow_mimetite(crystal, conditions, step) {
@@ -7816,12 +8863,7 @@ function grow_mimetite(crystal, conditions, step) {
         colorNote = 'bright yellow-orange';
     else
         colorNote = 'pale yellow';
-    conditions.fluid.Pb -= rate * 0.015;
-    conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-    conditions.fluid.As -= rate * 0.008;
-    conditions.fluid.As = Math.max(conditions.fluid.As, 0);
-    conditions.fluid.Cl -= rate * 0.003;
-    conditions.fluid.Cl = Math.max(conditions.fluid.Cl, 0);
+    // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.02, note: `${crystal.habit}, ${colorNote}` });
 }
 
@@ -8292,9 +9334,7 @@ function grow_malachite(crystal, conditions, step) {
     else if (crystal.habit === 'fibrous/acicular') {
         crystal.a_width_mm = crystal.c_length_mm * 0.2;
     }
-    // Cu consumption
-    conditions.fluid.Cu -= rate * 0.01;
-    conditions.fluid.Cu = Math.max(conditions.fluid.Cu, 0);
+    // Phase 1d: Cu consumption owned by the wrapper (applyMassBalance).
     let color_note;
     if (zone_count >= 20) {
         color_note = 'banded green (alternating light/dark)';
@@ -8351,11 +9391,7 @@ function grow_smithsonite(crystal, conditions, step) {
     if (crystal.habit === 'botryoidal' || crystal.habit === 'botryoidal/stalactitic') {
         crystal.a_width_mm = crystal.c_length_mm * 1.8;
     }
-    // Zn consumption
-    conditions.fluid.Zn -= rate * 0.008;
-    conditions.fluid.Zn = Math.max(conditions.fluid.Zn, 0);
-    conditions.fluid.CO3 -= rate * 0.005;
-    conditions.fluid.CO3 = Math.max(conditions.fluid.CO3, 0);
+    // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyMassBalance).
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     let color_note;
     if (conditions.fluid.Cu > 15) {
@@ -8814,11 +9850,7 @@ function grow_wulfenite(crystal, conditions, step) {
     crystal.dominant_forms = ['{001} tabular plates', 'square outline'];
     // Aspect ratio: very flat plates
     crystal.a_width_mm = crystal.c_length_mm * 3.0;
-    // Pb and Mo consumption
-    conditions.fluid.Pb -= rate * 0.006;
-    conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-    conditions.fluid.Mo -= rate * 0.004;
-    conditions.fluid.Mo = Math.max(conditions.fluid.Mo, 0);
+    // Phase 1d: Pb/Mo consumption owned by the wrapper (applyMassBalance).
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     let color_note;
     if (conditions.fluid.Cr > 5) {
@@ -9362,9 +10394,7 @@ function grow_uraninite(crystal, conditions, step) {
         crystal.habit = 'pitchblende_massive';
         crystal.dominant_forms = ['botryoidal masses', 'colloform banding'];
     }
-    // U consumption
-    conditions.fluid.U -= rate * 0.005;
-    conditions.fluid.U = Math.max(conditions.fluid.U, 0);
+    // Phase 1d: U consumption owned by the wrapper (applyMassBalance).
     let color_note;
     if (T > 500)
         color_note = 'pitch-black, submetallic — pegmatitic octahedron';
@@ -10359,19 +11389,11 @@ function grow_feldspar(crystal, conditions, step) {
     }
     // Store polymorph on crystal for display
     crystal.mineral_display = polymorph;
-    // Consume K/Na, Al, Si
-    if (isKrich) {
-        conditions.fluid.K -= rate * 0.005;
-        conditions.fluid.K = Math.max(conditions.fluid.K, 0);
-    }
-    else {
-        conditions.fluid.Na -= rate * 0.005;
-        conditions.fluid.Na = Math.max(conditions.fluid.Na, 0);
-    }
-    conditions.fluid.Al -= rate * 0.004;
-    conditions.fluid.Al = Math.max(conditions.fluid.Al, 0);
-    conditions.fluid.SiO2 -= rate * 0.006;
-    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2, 0);
+    // Phase 1d: K/Na/Al/SiO2 consumption owned by the wrapper
+    // (applyMassBalance, per MINERAL_STOICHIOMETRY['feldspar']).
+    // Note: feldspar is K-only per v17 reconciliation; the K-or-Na fork
+    // here was a pre-v17 artifact. Albite (Na-feldspar) has its own
+    // engine + stoichiometry entry.
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     // Polymorph-specific twin selection (Carlsbad/Baveno/Manebach for
     // K-feldspar; cross-hatched for microcline; albite polysynthetic
@@ -11119,8 +12141,7 @@ function grow_barite(crystal, conditions, step) {
     if (conditions.fluid.Pb > 5) {
         habit_note += '; honey-yellow (Pb-bearing — Cumberland gold habit)';
     }
-    conditions.fluid.Ba = Math.max(conditions.fluid.Ba - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
+    // Phase 1d: Ba/S consumption owned by the wrapper (applyMassBalance).
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11168,8 +12189,6 @@ function grow_celestine(crystal, conditions, step) {
             habit_note += '; Ba-substituted (barytocelestine intermediate)';
         }
     }
-    conditions.fluid.Sr = Math.max(conditions.fluid.Sr - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11202,8 +12221,6 @@ function grow_chalcanthite(crystal, conditions, step) {
         habit_note = 'efflorescent crust chalcanthite — high-evaporation arid habit';
     }
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
-    conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 function grow_anhydrite(crystal, conditions, step) {
@@ -11256,8 +12273,6 @@ function grow_anhydrite(crystal, conditions, step) {
         && conditions.fluid.salinity > 150)) {
         habit_note += '; pale lavender (angelite variant)';
     }
-    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11312,8 +12327,6 @@ function grow_brochantite(crystal, conditions, step) {
     if (conditions.fluid.Cl > 100) {
         habit_note += '; Cl-rich (would compete with atacamite — Cl-Cu hydroxychloride)';
     }
-    conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11362,8 +12375,6 @@ function grow_antlerite(crystal, conditions, step) {
         crystal.dominant_forms = ['microcrystalline druse'];
         habit_note = 'druzy antlerite microcrystals on dissolving Cu sulfide';
     }
-    conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.006, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.004, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11408,9 +12419,6 @@ function grow_jarosite(crystal, conditions, step) {
         crystal.dominant_forms = ['pseudocubic rhombs', 'tabular {0001}'];
         habit_note = 'pseudocubic golden-yellow jarosite rhombs';
     }
-    conditions.fluid.K = Math.max(conditions.fluid.K - rate * 0.003, 0);
-    conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.004, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11465,9 +12473,6 @@ function grow_alunite(crystal, conditions, step) {
     if (conditions.fluid.Fe > 20) {
         habit_note += '; pinkish (intermediate to jarosite — natroalunite series)';
     }
-    conditions.fluid.K = Math.max(conditions.fluid.K - rate * 0.003, 0);
-    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.005, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.004, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11504,8 +12509,6 @@ function grow_mirabilite(crystal, conditions, step) {
         crystal.habit = 'prismatic';
         crystal.dominant_forms = ['{010} pinacoid', '{110} prism', 'monoclinic'];
     }
-    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.06, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.04, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11544,8 +12547,6 @@ function grow_thenardite(crystal, conditions, step) {
         crystal.habit = 'dipyramidal';
         crystal.dominant_forms = ['orthorhombic dipyramid', '{111} dominant'];
     }
-    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.06, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.04, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11592,10 +12593,6 @@ function grow_selenite(crystal, conditions, step) {
         crystal.dominant_forms = ['{010} tabular', '{110} prism', '{111} dome'];
     }
     // Ca and S consumption
-    conditions.fluid.Ca -= rate * 0.005;
-    conditions.fluid.Ca = Math.max(conditions.fluid.Ca, 0);
-    conditions.fluid.S -= rate * 0.004;
-    conditions.fluid.S = Math.max(conditions.fluid.S, 0);
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     // Fluid inclusions common in fast-growing selenite
     let fi = false, fi_type = '';
@@ -11951,10 +12948,6 @@ function grow_molybdenite(crystal, conditions, step) {
     crystal.habit = 'hexagonal platy';
     crystal.dominant_forms = ['{0001} basal pinacoid', '{10-10} prism'];
     // Mo and S consumption
-    conditions.fluid.Mo -= rate * 0.004;
-    conditions.fluid.Mo = Math.max(conditions.fluid.Mo, 0);
-    conditions.fluid.S -= rate * 0.003;
-    conditions.fluid.S = Math.max(conditions.fluid.S, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -11976,10 +12969,6 @@ function grow_galena(crystal, conditions, step) {
     crystal.habit = 'cubic';
     crystal.dominant_forms = ['{100} cube', '{111} octahedron'];
     // Pb and S consumption
-    conditions.fluid.Pb -= rate * 0.005;
-    conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-    conditions.fluid.S -= rate * 0.003;
-    conditions.fluid.S = Math.max(conditions.fluid.S, 0);
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     let color_note = 'lead-gray, bright metallic luster';
     if (conditions.fluid.Ag > 5) {
@@ -12061,9 +13050,6 @@ function grow_arsenopyrite(crystal, conditions, step) {
     if (conditions.fluid.Co > 2) {
         habit_note += ' (Co-bearing, pinkish tinge)';
     }
-    conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.004, 0);
-    conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.004, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12116,8 +13102,6 @@ function grow_acanthite(crystal, conditions, step) {
     else {
         habit_note += '; lead-gray metallic';
     }
-    conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.008, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12149,8 +13133,6 @@ function grow_argentite(crystal, conditions, step) {
         habit_note = 'cubic argentite — Comstock Lode habit';
     }
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
-    conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.008, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.003, 0);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -12195,8 +13177,6 @@ function grow_nickeline(crystal, conditions, step) {
     }
     if (crystal.zones && crystal.zones.length > 12)
         habit_note += '; tarnished to darker copper-rose';
-    conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.010, 0);
-    conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 function grow_millerite(crystal, conditions, step) {
@@ -12235,8 +13215,6 @@ function grow_millerite(crystal, conditions, step) {
         crystal.dominant_forms = ['massive granular', 'brass-yellow metallic'];
         habit_note = 'massive millerite — granular ore form';
     }
-    conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.010, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 function grow_cobaltite(crystal, conditions, step) {
@@ -12280,9 +13258,6 @@ function grow_cobaltite(crystal, conditions, step) {
         habit_note += '; Fe-rich (glaucodot series — (Co,Fe)AsS)';
     if (crystal.zones && crystal.zones.length > 10)
         habit_note += '; pinkish-blush surface tarnish (Co oxide skin)';
-    conditions.fluid.Co = Math.max(conditions.fluid.Co - rate * 0.012, 0);
-    conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.008, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.005, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: habit_note });
 }
 function grow_stibnite(crystal, conditions, step) {
@@ -12936,6 +13911,12 @@ const EVENT_REGISTRY = {
     tutorial_temperature_drop: event_tutorial_temperature_drop,
     tutorial_mn_pulse: event_tutorial_mn_pulse,
     tutorial_fe_drop: event_tutorial_fe_drop,
+    // PROPOSAL-GEOLOGICAL-ACCURACY Phase 3b (May 2026):
+    // CO₂ degas + charge events. See js/70l-co2-events.ts. Scenario
+    // `tutorial_travertine` exercises the degas cascade.
+    co2_degas: event_co2_degas,
+    co2_degas_with_reheat: event_co2_degas_with_reheat,
+    co2_charge: event_co2_charge,
 };
 // Minimal JSONC parser — strips // line + /* */ block comments and
 // trailing commas, then JSON.parse. Sufficient for our spec files; not
@@ -13827,6 +14808,92 @@ function event_searles_fresh_pulse(c) {
     c.flow_rate = 1.5;
     c.temperature = 20;
     return "Sierra snowmelt pulse — fresh meteoric water arrives at Searles Lake. The brine dilutes, salt crusts begin to redissolve, and the basin briefly resembles a real lake. Within weeks the heat returns and the cycle starts over.";
+}
+
+// ── 70l-co2-events.js ──
+
+// ============================================================
+// js/70l-co2-events.ts — CO₂ degas + charge event handlers
+// ============================================================
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 3b: scenario events that
+// drive carbonate precipitation through the CO₂ → pH → calcite
+// cascade. Hot-spring travertine, cave flowstone, and the slow
+// expulsion of CO₂ from cooling veins are all the same mechanism:
+// CO₂ leaves the fluid (as gas, via boiling, depressurization, or
+// outgassing through a fracture), pH rises, the CO₃²⁻ fraction of
+// DIC grows, and calcite (or any carbonate) supersaturates without
+// any other change.
+//
+// Couples deliberately with PROPOSAL-VOLATILE-GASES (Rock Bot,
+// 2026-05-04, on canonical) — when its volatiles dict lands, these
+// handlers will additionally update volatiles['CO2'] (i.e. the
+// gas-phase pCO₂). Until then, they manipulate only the aqueous
+// side: drop DIC, raise pH (degas) or raise DIC, drop pH (charge).
+// The pH shift is calibrated so the carbonate-system stays roughly
+// in equilibrium per equilibriumPCO2 — Phase 3c can refine via
+// proper Newton iteration on the Bjerrum equations if needed.
+// CO₂ degassing — fluid loses CO₂ as gas (boiling, depressurization,
+// venting through a fracture). DIC drops; pH rises because each CO₂
+// leaving takes its conjugate H⁺ along (CO₂ + H₂O ⇌ H⁺ + HCO₃⁻
+// reverses).
+//
+// Default: removes 30% of DIC, raises pH by 0.5 (clamped at 9.5).
+// Scenarios can subclass via additional fields if/when needed; for
+// now this is the single canonical degas event.
+function event_co2_degas(c) {
+    const oldDIC = c.fluid.CO3;
+    const oldPH = c.fluid.pH;
+    const fraction = 0.3;
+    c.fluid.CO3 = oldDIC * (1 - fraction);
+    c.fluid.pH = Math.min(9.5, oldPH + 0.5);
+    return (`CO₂ degasses — fluid loses ${(fraction * 100).toFixed(0)}% of its dissolved ` +
+        `inorganic carbon as gas. pH rises ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}; ` +
+        `DIC drops ${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm. ` +
+        `Carbonate supersaturation jumps because the CO₃²⁻ fraction of DIC grows ` +
+        `with pH (Bjerrum partition). The same mechanism that builds travertine ` +
+        `at hot springs and flowstone in caves.`);
+}
+// Tutorial variant — combines CO₂ degas with re-heating to model an
+// active hot spring where new hot CO₂-rich fluid keeps arriving as
+// each pulse degasses. Without the re-heat, ambient_cooling decays
+// T toward 25 °C and calcite (retrograde solubility) loses the
+// thermal assist that makes natural travertine work. Used by
+// tutorial_travertine.
+function event_co2_degas_with_reheat(c) {
+    const oldDIC = c.fluid.CO3;
+    const oldPH = c.fluid.pH;
+    const oldT = c.temperature;
+    const fraction = 0.3;
+    c.fluid.CO3 = oldDIC * (1 - fraction);
+    c.fluid.pH = Math.min(9.5, oldPH + 0.5);
+    c.temperature = 75;
+    return (`Fresh hot pulse degasses — new CO₂-rich water from depth replaces ` +
+        `what cooled. T resets to ${c.temperature}°C; DIC drops ` +
+        `${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm as CO₂ escapes; ` +
+        `pH rises ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}. Each pulse ` +
+        `nudges the carbonate system toward calcite saturation: lower DIC, ` +
+        `higher pH means a much higher CO₃²⁻ fraction (Bjerrum cascade).`);
+}
+// CO₂ charge — fresh fluid pulse with elevated pCO₂ (deep magmatic
+// source, organic decay seep, fresh meteoric water that picked up
+// soil-zone CO₂). DIC rises; pH drops because new CO₂ adds H⁺ via
+// CO₂ + H₂O → H⁺ + HCO₃⁻.
+//
+// Default: adds 100 ppm DIC, drops pH by 0.5 (clamped at 4.0).
+// Carbonates already in the cavity become subsaturated — they may
+// dissolve and free their cations back to the fluid, the
+// well-known "CO₂ pulse erodes existing speleothems" mechanism.
+function event_co2_charge(c) {
+    const oldDIC = c.fluid.CO3;
+    const oldPH = c.fluid.pH;
+    const addDIC = 100;
+    c.fluid.CO3 = oldDIC + addDIC;
+    c.fluid.pH = Math.max(4.0, oldPH - 0.5);
+    return (`Magmatic CO₂ pulse — fresh fluid carrying elevated pCO₂ enters the cavity. ` +
+        `DIC rises ${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm; ` +
+        `pH drops ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}. ` +
+        `Existing carbonates may begin to corrode as σ drops below 1; the fluid ` +
+        `is now more aggressive toward limestone walls and any pre-existing calcite.`);
 }
 
 // ── 75-transitions.js ──
@@ -15751,7 +16818,25 @@ Object.assign(VugSimulator.prototype, {
             this.conditions.temperature = this.ring_temperatures[ringIdx];
         }
         try {
-            return engine(crystal, this.conditions, this.step);
+            const zone = engine(crystal, this.conditions, this.step);
+            // PROPOSAL-GEOLOGICAL-ACCURACY Phase 1 — mass-balance hook.
+            // Each precipitation zone debits the per-ring fluid by stoichiometry
+            // (per MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts).
+            // Returns the list of species that just depleted to zero so we can
+            // narrate the event to the player.
+            if (zone) {
+                const depleted = applyMassBalance(crystal, zone, this.conditions);
+                if (depleted && depleted.length) {
+                    const ringTag = ringIdx != null && ringIdx >= 0
+                        ? ` in ring ${ringIdx}`
+                        : '';
+                    for (const species of depleted) {
+                        this.log.push(`  ⛔ ${species} depleted${ringTag} — ` +
+                            `${capitalize(crystal.mineral)} #${crystal.crystal_id} growth halts`);
+                    }
+                }
+            }
+            return zone;
         }
         finally {
             if (savedFluid != null) {
@@ -25146,6 +26231,22 @@ function topoRender(optOverrideRing) {
     if (maxT <= 0)
         maxT = 1;
     const arcStep = 2 * Math.PI / N;
+    // Phase E1 branch — Three.js mesh renderer. When the user has
+    // toggled it on AND Three.js loaded, the WebGL canvas takes over
+    // and the canvas-vector path is skipped. Falls through silently if
+    // _topoRenderThree returns false (CDN blocked, canvas missing) so
+    // the user is never left staring at an empty panel.
+    if (_topoUseThreeRenderer && wall && wall.rings && wall.rings.length) {
+        if (_topoRenderThree(sim, wall)) {
+            _topoSyncThreeCanvasVisibility();
+            return;
+        }
+    }
+    else if (typeof _topoSyncThreeCanvasVisibility === 'function') {
+        // Renderer toggled off — make sure the WebGL canvas isn't masking
+        // the 2D one from a prior session.
+        _topoSyncThreeCanvasVisibility();
+    }
     // Phase B branch — 3D mode renders all rings stacked along a vertical
     // axis using per-vertex projection. Hands off to _topoRenderRings3D
     // and short-circuits the rest of the 2D path. 2D mode falls through
@@ -27532,6 +28633,649 @@ function idlePickScenario(val) {
     }
     catch (e) { /* ignore */ }
 })();
+
+// ── 99i-renderer-three.js ──
+
+// ============================================================
+// js/99i-renderer-three.ts — Three.js mesh renderer (Phase E1 scaffolding)
+// ============================================================
+// PROPOSAL-3D-TOPO-VUG Tier 2 / "Phase E" of the 3D vision plan. The
+// canvas-vector renderer in 99e- is honest 3D over honest data; this
+// module replaces the projection step with a real WebGL scene driven
+// by Three.js so the renderer can layer real lighting, real meshes,
+// and inside-out flythrough on top of the same wall_state data.
+//
+// Phase E1 (this file): scaffolding only. Builds the scene/camera/lights
+// and renders the cavity as a wireframe sphere so we can verify the
+// wiring end-to-end before committing to mesh generation. Crystals and
+// per-cell wall geometry land in E2/E3.
+//
+// Loading semantics: Three.js arrives via a CDN <script> tag in
+// index.html; THREE becomes a global before this bundle runs. If the
+// CDN is blocked (file://, offline, network blip) THREE stays
+// undefined and topoRender's branch falls through to the canvas-vector
+// path — every feature here gates on a typeof check first so the page
+// never throws at boot.
+//
+// Mode toggle: _topoUseThreeRenderer is the single source of truth.
+// Wired to the ⬚ button in .topo-camera-ctrls. Forces drag mode to
+// 'rotate' on enable so dragging actually orbits the scene; the
+// existing _topoTiltX/_topoTiltY/_topoZoom globals drive the camera.
+let _topoUseThreeRenderer = false;
+// Lazy-init handle. Holds { renderer, scene, camera, cavity, lights }.
+// Built on first call to _topoRenderThree once the canvas is mounted.
+let _topoThreeState = null;
+// Did the CDN fail? If true, the toggle button stays disabled and
+// topoRender's branch never enters the Three.js path. Only set on the
+// first enable attempt — the script tag's async load might still be
+// in flight at boot.
+let _topoThreeUnavailable = false;
+function _topoThreeAvailable() {
+    return typeof THREE !== 'undefined' && THREE && THREE.WebGLRenderer;
+}
+// One-time init. Re-uses the WebGL canvas the HTML scaffolds in topo-
+// canvas-stage. Returns null if Three.js isn't loaded — caller falls
+// through to the canvas-vector path.
+function _topoInitThree(canvas) {
+    if (_topoThreeState)
+        return _topoThreeState;
+    if (!_topoThreeAvailable()) {
+        _topoThreeUnavailable = true;
+        return null;
+    }
+    const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+    });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setClearColor(0x050504, 1.0);
+    const scene = new THREE.Scene();
+    // Camera: perspective with a focal length that mirrors the
+    // canvas-vector renderer's `F = 1200` so the apparent zoom matches
+    // when the user toggles between modes. fov derived from the wrap's
+    // aspect ratio at first render in _topoSyncThreeSize.
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 5000);
+    camera.position.set(0, 0, 600);
+    camera.lookAt(0, 0, 0);
+    // Lighting: ambient fills shadow side so the wireframe stays visible
+    // even on the back of the cavity; directional acts as the "opening"
+    // of the geode lighting the front face. Intensity tuned for a dim
+    // cavity vibe rather than studio-bright.
+    const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+    scene.add(ambient);
+    const directional = new THREE.DirectionalLight(0xffe6c0, 0.9);
+    directional.position.set(150, 300, 400);
+    scene.add(directional);
+    // Cavity mesh — populated by _topoBuildCavityGeometry from wall.rings
+    // on the first _topoRenderThree call once a sim exists. Empty geometry
+    // here so the scene has something to add to scene.children before
+    // wall data arrives. DoubleSide so the user can see the cavity from
+    // both inside (geode flythrough) and outside (the view E2 ships
+    // with). Vertex colors carry orientation + water-state tints.
+    const cavityGeom = new THREE.BufferGeometry();
+    const cavityMat = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.78,
+        metalness: 0.04,
+        side: THREE.BackSide, // only render the cavity's interior face
+        // — the user is conceptually peering INTO
+        // a hollow geode. BackSide hides the outer
+        // hemisphere from the camera so crystals
+        // on the near interior wall stay visible.
+        flatShading: false,
+        transparent: true,
+        opacity: 0.55, // translucent so crystals on the far
+        // interior wall stay readable through
+        // the near wall. E4 polish: switch to
+        // opaque + camera-inside flythrough mode.
+    });
+    const cavity = new THREE.Mesh(cavityGeom, cavityMat);
+    cavity.renderOrder = 0; // paint cavity first; crystals layer on top
+    scene.add(cavity);
+    // Crystal group — one mesh per Crystal, anchored at the cell's
+    // surface position and oriented along the substrate normal. Cleared
+    // and rebuilt by _topoSyncCrystalMeshes whenever the crystal-set
+    // signature changes (new nucleations, growth steps, dissolutions).
+    // Subgroup of `scene` so render-order stays simple.
+    const crystals = new THREE.Group();
+    crystals.name = 'crystals';
+    scene.add(crystals);
+    // Track the geometry signature so we only rebuild when it'd actually
+    // change (ring_count, cells_per_ring, dissolution edits, water level).
+    // Cheap regeneration is fine but skipping the work entirely is
+    // cheaper at 60 fps.
+    _topoThreeState = {
+        renderer, scene, camera, cavity, crystals, ambient, directional,
+        cavitySig: '',
+        crystalsSig: '',
+        // Cache geometries per habit shape — many crystals can share the
+        // same primitive geometry, only the per-mesh transform differs.
+        geomCache: new Map(),
+    };
+    return _topoThreeState;
+}
+// Compose a deterministic signature of the wall + sim conditions that
+// affect cavity geometry. If unchanged across renders, skip the
+// rebuild. Wall mutates rarely — every dissolution event, every
+// fluid-level change — but topoRender fires every step.
+function _topoCavitySignature(wall, sim) {
+    if (!wall || !wall.rings || !wall.rings.length)
+        return '';
+    const ring0 = wall.rings[0];
+    const N = ring0 ? ring0.length : 0;
+    // Cheap fingerprint: ring_count, max_seen_radius, fluid_surface, plus
+    // a sampled wall_depth checksum so dissolution events bust the cache.
+    let depthSum = 0;
+    for (let r = 0; r < wall.rings.length; r++) {
+        const ring = wall.rings[r];
+        if (!ring)
+            continue;
+        // Sample 8 cells per ring (every N/8 steps) for a ~16 × 8 = 128-call
+        // checksum. Enough fidelity to catch erosion fronts; still O(1) per
+        // render on typical 16×120 cavities.
+        const stride = Math.max(1, Math.floor(N / 8));
+        for (let c = 0; c < N; c += stride) {
+            const cell = ring[c];
+            if (!cell)
+                continue;
+            depthSum += (cell.base_radius_mm + cell.wall_depth) * (r * 31 + c);
+        }
+    }
+    const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
+    return `${wall.ring_count}|${N}|${depthSum.toFixed(2)}|${surf}`;
+}
+// Build (or rebuild) the cavity mesh from wall.rings. Vertex layout:
+//   * One vertex per (ring, cell) pair → ringCount × cellsPerRing
+//   * One pole vertex at south pole (φ=0)
+//   * One pole vertex at north pole (φ=π)
+// Triangulation: south cap fan + inter-ring quads + north cap fan.
+// Vertex colors: ring orientation tint (floor/wall/ceiling), submerged
+// rings shifted toward blue per the canvas-vector water-line cue.
+//
+// Mirror of the math in 99e-renderer-topo-3d.ts so the two renderers
+// produce visually congruent cavities at zero tilt.
+function _topoBuildCavityGeometry(state, wall, sim) {
+    if (!wall || !wall.rings || !wall.rings.length)
+        return;
+    const sig = _topoCavitySignature(wall, sim);
+    if (sig === state.cavitySig)
+        return;
+    state.cavitySig = sig;
+    const ringCount = wall.ring_count;
+    const ring0 = wall.rings[0];
+    const N = ring0 ? ring0.length : 0;
+    if (!N || ringCount < 1)
+        return;
+    const initR = wall.initial_radius_mm || 25;
+    // 1 mm = 1 world-unit; the camera scales out from there so framing
+    // matches the canvas-vector renderer's `mmToPx`-fitted view.
+    const numInterior = ringCount * N;
+    const numVerts = numInterior + 2; // +2 for south/north pole vertices
+    const positions = new Float32Array(numVerts * 3);
+    const colors = new Float32Array(numVerts * 3);
+    const normals = new Float32Array(numVerts * 3);
+    // Convert hex color to (r, g, b) ∈ [0, 1].
+    const hexToRgb = (hex) => [
+        ((hex >> 16) & 0xff) / 255,
+        ((hex >> 8) & 0xff) / 255,
+        (hex & 0xff) / 255,
+    ];
+    // Color palette — same triplet the canvas-vector renderer uses, plus
+    // a submerged-blue tint for rings under the meniscus.
+    const wallColors = {
+        floor: hexToRgb(0xA85820),
+        wall: hexToRgb(0xD2691E),
+        ceiling: hexToRgb(0xE8782C),
+    };
+    const submergedTint = [0.43, 0.74, 0.96]; // rgba(110, 190, 245, 1)
+    // Mix two RGB triplets: returns a*(1-t) + b*t.
+    const mix = (a, b, t) => [
+        a[0] * (1 - t) + b[0] * t,
+        a[1] * (1 - t) + b[1] * t,
+        a[2] * (1 - t) + b[2] * t,
+    ];
+    // Place the interior ring × cell vertices.
+    for (let r = 0; r < ringCount; r++) {
+        const phi = Math.PI * (r + 0.5) / ringCount;
+        const sinPhi = Math.sin(phi);
+        const cosPhi = Math.cos(phi);
+        const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+        const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
+        const ring = wall.rings[r];
+        // Determine ring orientation + water state once per ring.
+        const orient = wall.ringOrientation ? wall.ringOrientation(r) : 'wall';
+        const baseColor = wallColors[orient] || wallColors.wall;
+        const wstate = (sim && sim.conditions && sim.conditions.ringWaterState)
+            ? sim.conditions.ringWaterState(r, ringCount)
+            : 'submerged';
+        const isSubmerged = wstate === 'submerged'
+            && sim && sim.conditions && sim.conditions.fluid_surface_ring != null;
+        const tinted = isSubmerged ? mix(baseColor, submergedTint, 0.35) : baseColor;
+        for (let c = 0; c < N; c++) {
+            const cell = ring && ring[c];
+            const baseR = cell && cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
+            const depth = cell ? cell.wall_depth : 0;
+            const radiusMm = (baseR + depth) * polar;
+            const theta = (2 * Math.PI * c) / N + twist;
+            const x = radiusMm * sinPhi * Math.cos(theta);
+            const y = -radiusMm * cosPhi; // south pole at -y, north at +y
+            const z = radiusMm * sinPhi * Math.sin(theta);
+            const idx = r * N + c;
+            positions[idx * 3 + 0] = x;
+            positions[idx * 3 + 1] = y;
+            positions[idx * 3 + 2] = z;
+            colors[idx * 3 + 0] = tinted[0];
+            colors[idx * 3 + 1] = tinted[1];
+            colors[idx * 3 + 2] = tinted[2];
+            // Outward normal — radial from origin. computeVertexNormals would
+            // overwrite this but we set sensible defaults so the first frame
+            // before normals are recomputed isn't black.
+            const len = Math.sqrt(x * x + y * y + z * z) || 1;
+            normals[idx * 3 + 0] = x / len;
+            normals[idx * 3 + 1] = y / len;
+            normals[idx * 3 + 2] = z / len;
+        }
+    }
+    // Pole vertices — average ring radii at the closest ring, projected
+    // onto the pole axis. Inherit the closest ring's color so the cap
+    // matches the floor/ceiling tint.
+    const southIdx = numInterior;
+    const northIdx = numInterior + 1;
+    const meanRingRadius = (rIdx) => {
+        const ring = wall.rings[rIdx];
+        if (!ring)
+            return initR;
+        let sum = 0;
+        for (let c = 0; c < N; c++) {
+            const cell = ring[c];
+            sum += (cell && cell.base_radius_mm > 0 ? cell.base_radius_mm : initR)
+                + (cell ? cell.wall_depth : 0);
+        }
+        return sum / N;
+    };
+    const southR = meanRingRadius(0) * Math.cos(Math.PI / (2 * ringCount));
+    const northR = meanRingRadius(ringCount - 1) * Math.cos(Math.PI / (2 * ringCount));
+    positions[southIdx * 3 + 0] = 0;
+    positions[southIdx * 3 + 1] = -southR;
+    positions[southIdx * 3 + 2] = 0;
+    positions[northIdx * 3 + 0] = 0;
+    positions[northIdx * 3 + 1] = +northR;
+    positions[northIdx * 3 + 2] = 0;
+    // Pole colors borrow ring 0 / ring N-1 average — small enough effect
+    // to approximate as the orientation color directly.
+    const southOrient = wall.ringOrientation ? wall.ringOrientation(0) : 'floor';
+    const northOrient = wall.ringOrientation ? wall.ringOrientation(ringCount - 1) : 'ceiling';
+    const southCol = wallColors[southOrient] || wallColors.floor;
+    const northCol = wallColors[northOrient] || wallColors.ceiling;
+    colors.set(southCol, southIdx * 3);
+    colors.set(northCol, northIdx * 3);
+    normals.set([0, -1, 0], southIdx * 3);
+    normals.set([0, +1, 0], northIdx * 3);
+    // Triangulate. Index buffer is small enough to stay 16-bit (the
+    // 16×120 default produces 3,840 triangles → 11,520 indices, well
+    // under 65,535).
+    const indices = [];
+    // South cap: fan from south pole to ring 0.
+    for (let c = 0; c < N; c++) {
+        const a = southIdx;
+        const b = 0 * N + c;
+        const cNext = 0 * N + ((c + 1) % N);
+        indices.push(a, cNext, b); // wind so outward-normal faces away from origin
+    }
+    // Inter-ring quads: each (k, c) → (k, c+1) → (k+1, c) → (k+1, c+1).
+    for (let k = 0; k < ringCount - 1; k++) {
+        for (let c = 0; c < N; c++) {
+            const cNext = (c + 1) % N;
+            const a = k * N + c;
+            const b = k * N + cNext;
+            const c2 = (k + 1) * N + c;
+            const d = (k + 1) * N + cNext;
+            indices.push(a, b, c2);
+            indices.push(b, d, c2);
+        }
+    }
+    // North cap: fan from ring N-1 to north pole.
+    for (let c = 0; c < N; c++) {
+        const a = northIdx;
+        const b = (ringCount - 1) * N + c;
+        const cNext = (ringCount - 1) * N + ((c + 1) % N);
+        indices.push(a, b, cNext);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    const indexAttr = numVerts > 65535
+        ? new THREE.Uint32BufferAttribute(indices, 1)
+        : new THREE.Uint16BufferAttribute(indices, 1);
+    geom.setIndex(indexAttr);
+    geom.computeVertexNormals(); // overwrite the placeholder normals with
+    // mesh-aware ones for proper shading
+    const target = state.cavity;
+    const prev = target.geometry;
+    target.geometry = geom;
+    if (prev && prev.dispose)
+        prev.dispose();
+}
+// Sync the renderer's drawing-buffer size to the canvas's CSS size and
+// keep the camera aspect in sync. Called every render — cheap when
+// nothing changed (Three.js no-ops setSize when dims match).
+function _topoSyncThreeSize(state, canvas) {
+    const cssW = canvas.clientWidth || canvas.parentElement?.clientWidth || 1;
+    const cssH = canvas.clientHeight || canvas.parentElement?.clientHeight || 1;
+    state.renderer.setSize(cssW, cssH, false);
+    state.camera.aspect = cssW / cssH;
+    state.camera.updateProjectionMatrix();
+}
+// Habit → primitive-geometry token. Three.js mesh is generated once
+// per habit token and reused across crystals; the per-mesh transform
+// scales it to the right size. E3 uses simple primitives (cones for
+// prismatic / acicular, boxes for tabular, octahedra for rhombo /
+// equant); E4 will replace with hand-rolled vertex generators that
+// match the canvas-vector wireframe primitives more closely.
+function _habitGeomToken(habit) {
+    const h = (habit || 'prismatic').toLowerCase();
+    if (h === 'acicular' || h === 'capillary')
+        return 'spike';
+    if (h === 'prismatic' || h === 'columnar' || h === 'bladed')
+        return 'prism';
+    if (h === 'tabular' || h === 'platy' || h === 'foliated')
+        return 'tablet';
+    if (h === 'rhombohedral' || h === 'scalenohedral')
+        return 'rhomb';
+    if (h === 'cubic' || h === 'cuboid')
+        return 'cube';
+    if (h === 'octahedral')
+        return 'octahedron';
+    if (h === 'dodecahedral')
+        return 'dodecahedron';
+    if (h === 'botryoidal' || h === 'reniform' || h === 'mammillary' || h === 'globular')
+        return 'botryoidal';
+    if (h === 'dendritic' || h === 'arborescent')
+        return 'spike'; // splay handled per-instance later
+    if (h === 'fibrous')
+        return 'spike';
+    return 'prism'; // sensible default — most cavity habits are vaguely prismatic
+}
+// Build a unit-sized primitive geometry for a given habit token,
+// oriented so its long axis (= c-axis) lies along +Y. The instance
+// transform later places the apex at the wall, base inside the
+// cavity, and scales by c_length / a_width.
+function _buildHabitGeom(token) {
+    switch (token) {
+        case 'spike':
+            // Acicular — long thin needle. Pointy on both ends to read as
+            // an isolated needle rather than a stub stuck in the wall.
+            return new THREE.ConeGeometry(0.5, 1.0, 6, 1, false);
+        case 'prism':
+            // Prismatic — hexagonal prism with a slight taper toward the
+            // free tip. Captures the dominant calcite / quartz / beryl shape.
+            return new THREE.CylinderGeometry(0.45, 0.55, 1.0, 6, 1, false);
+        case 'tablet':
+            // Tabular — flattened rectangular plate, c-axis the short
+            // dimension. 1.5× wider than tall when scaled by a_width
+            // (the c_length × 1.5 factor comes from the Crystal class).
+            return new THREE.BoxGeometry(1.0, 0.4, 1.0);
+        case 'rhomb':
+            // Rhombohedral — octahedron rotated by 45° around c-axis reads
+            // as a steeply-pointed "dogtooth" calcite scalenohedron. Six
+            // faces meeting at two pointed apices.
+            return new THREE.OctahedronGeometry(0.55, 0);
+        case 'cube':
+            return new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        case 'octahedron':
+            return new THREE.OctahedronGeometry(0.55, 0);
+        case 'dodecahedron':
+            return new THREE.DodecahedronGeometry(0.55, 0);
+        case 'botryoidal':
+            // Botryoidal — bumpy half-sphere clinging to the wall. E4 may
+            // replace with multi-bubble geometry; for E3 a single sphere
+            // reads cleanly.
+            return new THREE.SphereGeometry(0.5, 12, 8);
+        default:
+            return new THREE.CylinderGeometry(0.45, 0.55, 1.0, 6, 1, false);
+    }
+}
+// Convert a #RRGGBB or rgb(...) string to THREE.Color. Falls back to
+// the bare-wall amber so unknown minerals don't render as black.
+function _topoParseColor(s) {
+    if (!s)
+        return new THREE.Color(0xd2691e);
+    try {
+        return new THREE.Color(s);
+    }
+    catch (e) {
+        return new THREE.Color(0xd2691e);
+    }
+}
+// Compose a deterministic signature of the crystals that affects
+// their meshes — id, mineral, habit, c_length_mm, ring/cell anchor.
+// Excludes growth_environment because all current crystals use
+// 'fluid' (geometric-selection orientation along the substrate
+// normal); E4 will fold in 'air' as it activates.
+function _topoCrystalsSignature(sim) {
+    if (!sim || !sim.crystals || !sim.crystals.length)
+        return '';
+    const parts = [];
+    for (const c of sim.crystals) {
+        if (!c || c.dissolved)
+            continue;
+        parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${c.wall_ring_index}:${c.wall_center_cell}`);
+    }
+    return parts.join('|');
+}
+// Build (or rebuild) crystal meshes inside `state.crystals`. One mesh
+// per non-dissolved Crystal, positioned at its anchor cell's surface,
+// oriented so the c-axis points outward from the cavity center, scaled
+// by c_length_mm / a_width_mm. Material color comes from
+// MINERAL_SPEC[mineral].class_color.
+function _topoSyncCrystalMeshes(state, sim, wall) {
+    if (!sim || !wall || !wall.rings || !wall.rings.length)
+        return;
+    const sig = _topoCrystalsSignature(sim);
+    if (sig === state.crystalsSig)
+        return;
+    state.crystalsSig = sig;
+    // Clear out the old children. Geometries are cached at the state
+    // level (geomCache) so we keep them; only materials per crystal
+    // need disposing — but materials are MeshStandardMaterial with no
+    // textures, so the GC handles the rest.
+    while (state.crystals.children.length) {
+        const child = state.crystals.children.pop();
+        if (child.material && child.material.dispose)
+            child.material.dispose();
+    }
+    if (!sim.crystals)
+        return;
+    const ringCount = wall.ring_count;
+    const N = wall.cells_per_ring;
+    const initR = wall.initial_radius_mm || 25;
+    for (const crystal of sim.crystals) {
+        if (!crystal || crystal.dissolved)
+            continue;
+        let ringIdx = crystal.wall_ring_index;
+        if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount)
+            ringIdx = 0;
+        const cellIdx = crystal.wall_center_cell;
+        if (cellIdx == null)
+            continue;
+        const ring = wall.rings[ringIdx];
+        if (!ring)
+            continue;
+        const cell = ring[cellIdx];
+        if (!cell)
+            continue;
+        // Anchor point on the cavity wall — same math as
+        // _topoBuildCavityGeometry uses, applied to one cell.
+        const phi = Math.PI * (ringIdx + 0.5) / ringCount;
+        const sinPhi = Math.sin(phi);
+        const cosPhi = Math.cos(phi);
+        const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+        const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
+        const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
+        const radiusMm = (baseR + cell.wall_depth) * polar;
+        const theta = (2 * Math.PI * cellIdx) / N + twist;
+        const ax = radiusMm * sinPhi * Math.cos(theta);
+        const ay = -radiusMm * cosPhi;
+        const az = radiusMm * sinPhi * Math.sin(theta);
+        // Substrate normal: from wall center (the origin, since the
+        // cavity is built around 0,0,0) outward through the anchor.
+        // c-axis lies along this normal — crystal grows INTO the cavity
+        // (toward origin) for fluid environments. Negate so the c-axis
+        // points from anchor toward origin.
+        const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
+        const nx = -ax / len, ny = -ay / len, nz = -az / len;
+        // Pick the habit primitive and cache it.
+        const token = _habitGeomToken(crystal.habit);
+        let geom = state.geomCache.get(token);
+        if (!geom) {
+            geom = _buildHabitGeom(token);
+            state.geomCache.set(token, geom);
+        }
+        // Material — class_color from the mineral spec. Crystals lit by
+        // the same scene lights as the cavity, with a touch more
+        // metalness for sulfides / native elements (rough heuristic — E4
+        // can read a per-mineral material spec if needed).
+        const spec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[crystal.mineral] : null;
+        const colorStr = (spec && spec.class_color) || '#d2691e';
+        const klass = spec && spec.class;
+        const metalness = (klass === 'sulfide' || klass === 'native') ? 0.45 : 0.08;
+        const roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
+        const mat = new THREE.MeshStandardMaterial({
+            color: _topoParseColor(colorStr),
+            roughness,
+            metalness,
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        // Scale: c-axis along Y in the unit primitive → scale Y by
+        // c_length_mm. a-axis (perpendicular) scales by a_width_mm.
+        // Floor at 2 mm c / 1.5 mm a so a typical 30 mm cavity reads as
+        // dotted with macro-crystals rather than dusted with invisible
+        // ones. Aesthetic-over-accurate trade-off; E4 can revisit once
+        // the camera supports zoom-into-cavity for true scale.
+        const cLen = Math.max(2.0, crystal.c_length_mm);
+        const aWid = Math.max(1.5, crystal.a_width_mm);
+        mesh.scale.set(aWid, cLen, aWid);
+        mesh.renderOrder = 1;
+        // Position the BASE of the primitive at the anchor (instead of
+        // the centroid), so the crystal projects into the cavity rather
+        // than half-buried in the wall. Translate along the substrate
+        // normal by half the c-length.
+        const offsetMm = cLen * 0.5;
+        mesh.position.set(ax + nx * offsetMm, ay + ny * offsetMm, az + nz * offsetMm);
+        // Orient so the local +Y axis aligns with the substrate normal.
+        // Three.js Object3D.lookAt orients local -Z toward the target;
+        // we want local +Y. quaternion.setFromUnitVectors handles it.
+        const up = new THREE.Vector3(0, 1, 0);
+        const target = new THREE.Vector3(nx, ny, nz);
+        mesh.quaternion.setFromUnitVectors(up, target);
+        state.crystals.add(mesh);
+    }
+}
+// Drive the camera from the existing tilt/zoom globals so toggling
+// between canvas-vector and Three.js modes preserves the user's view.
+// camera orbits a fixed lookAt(0,0,0) at a radius proportional to the
+// cavity size + zoom. World units are mm (= the units cavity vertices
+// were emitted in by _topoBuildCavityGeometry).
+function _topoApplyCameraFromTilt(state, wall) {
+    // r0: half the mean diameter, but bubble-merge profiles produce
+    // bumps that extend ~2× past the mean — use max_seen_radius_mm if
+    // available (it tracks the largest base+depth across all cells)
+    // so the camera stays outside the cavity even on lumpy geodes.
+    let r0 = wall && wall.meanDiameterMm ? wall.meanDiameterMm() / 2 : 25;
+    if (wall && typeof wall.max_seen_radius_mm === 'number') {
+        r0 = Math.max(r0, wall.max_seen_radius_mm * 0.6);
+    }
+    const baseRadius = r0 * 3.0; // 3× outer radius keeps the cavity comfortably framed
+    const radius = baseRadius / Math.max(0.2, _topoZoom);
+    // Yaw around Y, then pitch around X — same convention as
+    // _topoProject3D so the user's drag input behaves identically.
+    const cy = Math.cos(_topoTiltY), sy = Math.sin(_topoTiltY);
+    const cx = Math.cos(_topoTiltX), sx = Math.sin(_topoTiltX);
+    const camX = sy * cx * radius;
+    const camY = -sx * radius;
+    const camZ = cy * cx * radius;
+    state.camera.position.set(camX, camY, camZ);
+    state.camera.up.set(0, 1, 0);
+    state.camera.lookAt(0, 0, 0);
+    // Light sits on the camera-side of the scene so the front face
+    // catches the highlight. Subtle moonlit-cavity vibe, not studio.
+    if (state.directional) {
+        state.directional.position.set(camX * 0.7 + 50, camY * 0.7 + 200, camZ * 0.7 + 100);
+    }
+}
+// Public render entry. Called from topoRender's branch when
+// _topoUseThreeRenderer is true. Lazily inits on first call; renders
+// the scene every frame the wrapper invokes us. Returns true on
+// success so topoRender can short-circuit; false (=> fallback) when
+// Three.js is unavailable or the canvas hasn't mounted yet.
+function _topoRenderThree(sim, wall) {
+    const canvas = document.getElementById('topo-canvas-three');
+    if (!canvas)
+        return false;
+    if (!_topoThreeAvailable()) {
+        _topoThreeUnavailable = true;
+        return false;
+    }
+    const state = _topoInitThree(canvas);
+    if (!state)
+        return false;
+    _topoSyncThreeSize(state, canvas);
+    _topoBuildCavityGeometry(state, wall, sim);
+    _topoSyncCrystalMeshes(state, sim, wall);
+    _topoApplyCameraFromTilt(state, wall);
+    state.renderer.render(state.scene, state.camera);
+    return true;
+}
+// Show/hide the WebGL canvas vs the canvas-2D canvas. Called by both
+// the toggle button and topoRender (so an off→on→off cycle leaves the
+// DOM in a coherent state regardless of which path triggered the
+// change).
+function _topoSyncThreeCanvasVisibility() {
+    const c2 = document.getElementById('topo-canvas');
+    const c3 = document.getElementById('topo-canvas-three');
+    if (!c2 || !c3)
+        return;
+    if (_topoUseThreeRenderer) {
+        c3.style.display = 'block';
+        c2.style.visibility = 'hidden'; // keep layout but don't paint
+    }
+    else {
+        c3.style.display = 'none';
+        c2.style.visibility = '';
+    }
+}
+// Toggle button handler — wired in index.html to the ⬚ button. Flips
+// the renderer tier and forces drag-mode to 'rotate' on enable so
+// clicking once and dragging immediately orbits the scene. Disabled
+// when Three.js failed to load (CDN blocked / offline file://).
+function topoToggleThreeRenderer() {
+    if (!_topoThreeAvailable()) {
+        _topoThreeUnavailable = true;
+        const btn = document.getElementById('topo-three-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.title = 'Three.js renderer unavailable (CDN blocked or offline)';
+            btn.style.opacity = '0.4';
+        }
+        return;
+    }
+    _topoUseThreeRenderer = !_topoUseThreeRenderer;
+    const btn = document.getElementById('topo-three-btn');
+    if (btn)
+        btn.style.color = _topoUseThreeRenderer ? '#f0c050' : '';
+    // Force rotate mode on enable so the existing pointer handlers
+    // already update _topoTiltX/_topoTiltY — the Three camera reads
+    // those globals every render. On disable, leave drag mode untouched
+    // (user might want to keep orbit mode on the canvas-vector path).
+    if (_topoUseThreeRenderer && typeof topoSetDragMode === 'function'
+        && _topoDragMode !== 'rotate') {
+        topoSetDragMode('rotate');
+    }
+    _topoSyncThreeCanvasVisibility();
+    topoRender();
+}
 
 // === BUILD:bundle:end ===
 </script>

@@ -33,6 +33,8 @@ Object.assign(VugConditions.prototype, {
     const caPenalty = Math.min(1.0, this.fluid.Ca / 150.0);
     sigma *= (1.0 - 0.7 * caPenalty);
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'borax');
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'tincalconite');
   return Math.max(sigma, 0);
 },
 });

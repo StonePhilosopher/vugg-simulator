@@ -275,6 +275,22 @@ function topoRender(optOverrideRing?) {
 
   const arcStep = 2 * Math.PI / N;
 
+  // Phase E1 branch — Three.js mesh renderer. When the user has
+  // toggled it on AND Three.js loaded, the WebGL canvas takes over
+  // and the canvas-vector path is skipped. Falls through silently if
+  // _topoRenderThree returns false (CDN blocked, canvas missing) so
+  // the user is never left staring at an empty panel.
+  if (_topoUseThreeRenderer && wall && wall.rings && wall.rings.length) {
+    if (_topoRenderThree(sim, wall)) {
+      _topoSyncThreeCanvasVisibility();
+      return;
+    }
+  } else if (typeof _topoSyncThreeCanvasVisibility === 'function') {
+    // Renderer toggled off — make sure the WebGL canvas isn't masking
+    // the 2D one from a prior session.
+    _topoSyncThreeCanvasVisibility();
+  }
+
   // Phase B branch — 3D mode renders all rings stacked along a vertical
   // axis using per-vertex projection. Hands off to _topoRenderRings3D
   // and short-circuits the rest of the 2D path. 2D mode falls through

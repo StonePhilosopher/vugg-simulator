@@ -268,6 +268,12 @@ const EVENT_REGISTRY = {
   tutorial_temperature_drop: event_tutorial_temperature_drop,
   tutorial_mn_pulse: event_tutorial_mn_pulse,
   tutorial_fe_drop: event_tutorial_fe_drop,
+  // PROPOSAL-GEOLOGICAL-ACCURACY Phase 3b (May 2026):
+  // CO₂ degas + charge events. See js/70l-co2-events.ts. Scenario
+  // `tutorial_travertine` exercises the degas cascade.
+  co2_degas: event_co2_degas,
+  co2_degas_with_reheat: event_co2_degas_with_reheat,
+  co2_charge: event_co2_charge,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and

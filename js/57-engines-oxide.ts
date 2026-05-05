@@ -106,9 +106,7 @@ function grow_uraninite(crystal, conditions, step) {
     crystal.dominant_forms = ['botryoidal masses', 'colloform banding'];
   }
 
-  // U consumption
-  conditions.fluid.U -= rate * 0.005;
-  conditions.fluid.U = Math.max(conditions.fluid.U, 0);
+  // Phase 1d: U consumption owned by the wrapper (applyMassBalance).
 
   let color_note;
   if (T > 500) color_note = 'pitch-black, submetallic — pegmatitic octahedron';

@@ -8,6 +8,61 @@ B1–B20 modular refactor, and the 3D-SIMULATION Phase A/B/C work all landed.
 **Scope:** JS-only. The Python harness is no longer canonical in this repo;
 all references and code touches below are to `js/`.
 
+**Status (2026-05-05):**
+- ✅ **Phase 1 — Fluid mass balance** — SHIPPED (commits 08140d1, 1eaaa5a, 7904894). SIM_VERSION 17 → 21.
+- ✅ **Phase 2 — Saturation Index reform** — SHIPPED (commits 568476f, b63e426, 4938321, eff8ec1, ed2a381). Davies activity correction at damping 0.25.
+- ⏳ **Phases 3-6** — not started. See backlog entry for sequencing.
+
+Open follow-ups for the shipped phases live in `BACKLOG.md` ("Geological accuracy" entry):
+Phase 1e (unify dissolution credits), Phase 2d (per-scenario fluid recalibration),
+depletion-event narration. The phase descriptions below are preserved as-shipped — the calibration
+notes (`MASS_BALANCE_SCALE = 0.01`, `ACTIVITY_DAMPING = 0.25`) reflect the actual numbers landed,
+not the originally-proposed defaults.
+
+---
+
+## Relationship to PROPOSAL-VOLATILE-GASES
+
+`PROPOSAL-VOLATILE-GASES.md` (Rock Bot, 2026-05-04, on canonical) was
+filed one day before this proposal and covers an adjacent — and
+overlapping — gap: the cavity headspace is treated as undifferentiated
+"air" when in real geological settings (Deccan amygdules, Mexican
+amethyst geodes, VMS, AMD) it carries volcanic-derived CO₂, H₂S,
+SO₂, or H₂O vapor with very different chemistry consequences.
+
+The two proposals overlap deliberately:
+
+- **Phase 3 (CO₂ + carbonate speciation)** in this proposal is one
+  species of the multi-species `volatiles` dict in VOLATILE-GASES.
+  When both ship, Phase 3's `co2_degas` event becomes a special case
+  of VOLATILE-GASES's gas source/sink machinery; the Bjerrum
+  speciation + DIC plumbing here is what VOLATILE-GASES needs to
+  make CO₂ → pH actually compute. **Treat them as the same phase**,
+  with VOLATILE-GASES owning the headspace state and this proposal
+  owning the aqueous-side speciation.
+
+- **Phase 4 (pH/Eh as dynamic state)** intersects VOLATILE-GASES's
+  Mechanic 1 (redox state from O₂/H₂S ratio). VOLATILE-GASES proposes
+  a discrete `redox_state ∈ {oxidizing, boundary, reducing}` from
+  partial-pressure ratio; this proposal proposes a continuous Eh in
+  millivolts driven by Nernst on three explicit redox couples. The
+  continuous version subsumes the discrete one (any pP_O2/pP_H2S
+  ratio maps to an Eh). **Land Phase 4 on top of VOLATILE-GASES's
+  partial-pressure state**, not parallel to it.
+
+- **Vesicle formation, vadose humidity** (VOLATILE-GASES Mechanics
+  3 + 4) are out of scope here — they're geometry/state mechanics,
+  not formal-thermodynamics gaps. This proposal doesn't try to
+  duplicate them.
+
+- **Mass balance, Q×K with activity correction, solid-solution
+  composition tracking, CNT nucleation** (Phases 1, 2, 5, 6 here)
+  are not in VOLATILE-GASES and don't conflict with it.
+
+In sequencing terms: VOLATILE-GASES should land first (it owns the
+new state vector), Phase 1 here lands in parallel (mass balance is
+orthogonal), then Phases 2–5 plug into the combined kernel.
+
 ---
 
 ## What the simulator already gets right
@@ -94,9 +149,21 @@ emergent behaviors:
 - **Realistic vug-fill endpoints** — currently the only stop conditions
   are size-cap and geometric fill
 
-### Gap 2 — Saturation is `min(Ca, CO3)`, not `[Ca]·[CO3]`
+### Gap 2 — Saturation is `min(Ca, CO3)`, not `[Ca]·[CO3]` *(scope-corrected)*
 
-90+ supersat methods follow the pattern:
+> **Scope correction (2026-05-05):** the original proposal text claimed
+> "90+ supersat methods" used the Liebig pattern. That was a misread of
+> grep output — most of the 90+ `Math.min(this.fluid.…)` hits across
+> supersat files are **saturation caps** of the form
+> `Math.min(x / norm, ceiling)`, which are fine. The genuine
+> two-species-Liebig pattern was concentrated in **4 carbonate methods
+> + 1 dolomite mixed shape**, all of which are now fixed (commit
+> [568476f](../../../commit/568476f), SIM_VERSION 18). The remainder of
+> Gap 2 below — "Q is wrong without activity correction" — still
+> stands and is what Phase 2 infrastructure (commit
+> [pending](../../../commits/main)) targets.
+
+The 5 Liebig sites used:
 
 ```js
 const ca_co3 = Math.min(this.fluid.Ca, this.fluid.CO3);
@@ -345,6 +412,15 @@ baseline sweep, calibrate, flip.
 
 ### Phase 3 — Carbonate speciation and CO₂ degassing
 
+> **See also:** [`PROPOSAL-VOLATILE-GASES.md`](PROPOSAL-VOLATILE-GASES.md)
+> Mechanic 2 (CO₂ → pH) and the magmatic-degassing event sources. This
+> phase owns the *aqueous* side (Bjerrum partition, DIC bookkeeping,
+> proton balance during precipitation); VOLATILE-GASES owns the
+> *headspace* side (`volatiles['CO2']` partial pressure as a state
+> field, gas sources/sinks, Henry's-Law exchange at the meniscus).
+> Land them together; the `co2_degas` event below becomes a special
+> case of VOLATILE-GASES's gas-venting source.
+
 **Goal.** Make CO₂ a first-class precipitation driver, like temperature
 and fluid mixing already are. Travertine deposits, cave flowstone, the
 entire boiling-driven-precipitation regime.
@@ -394,6 +470,16 @@ without any other change, the cycle inverting when the cavity reseals.
 purely scenario recalibration (Phase 2 mitigation applies again).
 
 ### Phase 4 — pH and Eh as dynamic state variables
+
+> **See also:** [`PROPOSAL-VOLATILE-GASES.md`](PROPOSAL-VOLATILE-GASES.md)
+> Mechanic 1 (redox state from `volatiles['O2'] / volatiles['H2S']`
+> ratio). Same gap, finer-grained parameterization here: VOLATILE-GASES
+> proposes a 3-bucket discrete `redox_state ∈ {oxidizing, boundary,
+> reducing}`; this phase proposes continuous Eh (mV) via Nernst on three
+> explicit couples (Fe³⁺/Fe²⁺, Mn⁴⁺/Mn²⁺, SO₄²⁻/HS⁻), driven by the
+> partial pressures from VOLATILE-GASES. Continuous Eh subsumes the
+> discrete buckets — VOLATILE-GASES's `redox_state()` becomes a
+> convenience wrapper that thresholds Eh into the three regions.
 
 **Goal.** pH responds to dissolved/precipitated minerals. O₂ stops
 being the universal redox proxy; Eh emerges from a small set of
@@ -581,17 +667,25 @@ but don't justify their own phase block.
 ## Sequencing and interactions with the existing roadmap
 
 Phases 1 and 2 are foundational — they enable everything downstream
-without requiring it. Recommended order:
+without requiring it. VOLATILE-GASES is the headspace state owner and
+should land in parallel with Phase 1. Recommended order:
 
 ```
-Phase 1 (mass balance) ─┬─> Phase 2 (Q, activity) ─┬─> Phase 3 (CO₂)
-                        │                          │
-                        └─> Gibbs-Thompson         └─> Phase 4 (pH/Eh)
-                            (proposal, separate)         │
+                           VOLATILE-GASES (headspace state vector)
+                                  │
+Phase 1 (mass balance) ─┐         │
+                        ├> Phase 2 (Q, activity) ─┬─> Phase 3 (CO₂ aqueous)
+                        │                         │      │
+                        └> Gibbs-Thompson         └─> Phase 4 (pH/Eh)
+                                                         │
                                                          └─> Phase 5 (solid sols)
                                                                 │
                                                                 └─> Phase 6 (CNT)
 ```
+
+VOLATILE-GASES Mechanics 3 (vesicle formation) and 4 (vadose humidity)
+sit on this diagram but don't gate any phase here — they ship on
+their own track once the headspace state vector exists.
 
 - **3D-SIMULATION Phase D** (orientation tags, habit bias) is parallel
   to all of this. Phase 4 (Eh) is *especially* synergistic with

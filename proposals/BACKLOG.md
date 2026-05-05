@@ -54,24 +54,45 @@ Order is rough priority — top of each section is most-actionable, but explicit
 
 ## 🧪 Geological accuracy — closing the formal gaps
 
-**Status:** proposal filed, not started. See [`PROPOSAL-GEOLOGICAL-ACCURACY.md`](PROPOSAL-GEOLOGICAL-ACCURACY.md) (2026-05-05).
+**Status:** Phases 1 + 2 ✅ SHIPPED (May 2026, SIM_VERSION 17→21). Phases 3-6 not yet started. See [`PROPOSAL-GEOLOGICAL-ACCURACY.md`](PROPOSAL-GEOLOGICAL-ACCURACY.md). **Overlaps with `PROPOSAL-VOLATILE-GASES.md`** (Rock Bot, 2026-05-04, on canonical) at Phases 3 (CO₂) and 4 (Eh/redox); cross-references in both directions are wired into the proposal text. Treat the two as one combined work package: VOLATILE-GASES owns the multi-species headspace state, this proposal owns mass balance + thermodynamic Q/K + aqueous-side speciation + solid solutions.
 
-**Why:** the v17 chemistry-audit rounds and the modular refactor closed every per-mineral mistake; what's left are *formal* gaps in how the kernel does mass-action thermodynamics. Two concrete leaks visible in the code:
+### What landed (Phases 1 + 2)
 
-- **Fluid mass balance is asymmetric.** Engines credit fluid on dissolution but only some debit it on precipitation: 0/3 halide engines, 0/3 hydroxide, 0/7 native, 0/11 phosphate, 0/2 borate, 3/11 carbonate. The fluid is effectively an infinite reservoir for half the minerals.
-- **Sigma uses `Math.min(Ca, CO3)` not the thermodynamic product `[Ca]·[CO3]`** in 90+ supersat methods, and there's no activity-coefficient correction at any salinity (so brines can't behave correctly without the `concentration` evaporative-multiplier kludge).
+**Phase 1 — Fluid mass balance** (commits 08140d1 / 1eaaa5a / 7904894):
+- `MINERAL_STOICHIOMETRY` table covers all 97 minerals (`js/19-mineral-stoichiometry.ts`)
+- `applyMassBalance` wrapper in `_runEngineForCrystal` debits the per-ring fluid by stoichiometry × `MASS_BALANCE_SCALE = 0.01` on every precipitation step
+- Engine-internal growth-path debits (15 lines across 5 files for adamite, mimetite, malachite, smithsonite, wulfenite, uraninite, feldspar) removed in Phase 1d to end double-counting; wrapper narrowed to precipitation-only so engine dissolution credits keep their per-mineral rates
+- SIM_VERSION 17 → 18 → 19 → 21
 
-**Phases (each shippable):**
-1. Fluid mass balance — close the leak via shared `MINERAL_STOICHIOMETRY` table + central debit/credit wrapper. SIM_VERSION 17 → 18.
-2. Saturation-Index reform — Q × K with proper stoichiometric product + Davies activity correction. Ksp moves to `data/minerals.json`.
-3. Carbonate speciation + CO₂ degassing as a first-class precipitation driver. New `co2_degas` event type. Travertine tutorial scenario.
-4. pH/Eh as dynamic state variables driven by reactions; three explicit redox couples (Fe³⁺/Fe²⁺, Mn⁴⁺/Mn²⁺, SO₄²⁻/HS⁻).
+**Phase 2 — Saturation Index reform** (commits 568476f / b63e426 / 4938321 / eff8ec1 / ed2a381):
+- Carbonate Liebig bugfix: `min(M, X)` → `√(M·X)` for 5 supersat methods (calcite, siderite, rhodochrosite, aragonite, dolomite)
+- Davies activity-coefficient infrastructure (`js/20a-chemistry-activity.ts`) — `ionicStrength`, `daviesLogGamma` (clamped above I=1.7 as documented degraded fallback), `activityCorrectionFactor`
+- All 12 supersat classes migrated; activity correction runs on every supersat call at `ACTIVITY_DAMPING = 0.25` (a quarter of full Davies — the empirical sweet spot that keeps tutorials intact while applying real activity physics in saline scenarios)
+- SIM_VERSION → 20
+
+**Calibration outcome (sweep at seed 42):** v21 vs v20 RMS 7.6%, 15 of 19 scenarios within ±5%, 18 of 19 within ±20%. Outliers (mvt, bisbee, schneeberg) trace to genuine geological behavior — saline brines correctly less supersaturated under Davies; finite Fe/S pools deplete during sulfide cascades.
+
+**Bug fixes uncovered along the way (3):**
+- Davies runaway (γ = 49 million) above I ≈ 1.7 mol/kg — clamped log γ ≤ 0
+- Carbonate `min(Ca, CO3)` Liebig pattern (5 sites)
+- Migration script regex spillover at delegating supersat methods (caught before commit, reverted, manual fix)
+
+### Open follow-ups (Phases 1e + 2d, on this same ticket)
+
+- **Phase 1e — unify dissolution credits.** ~120 hand-coded `conditions.fluid.X += dissolved_um * coef` lines across ~10 engine files use per-mineral rates ~50× larger than `MASS_BALANCE_SCALE`. Migrate them into a parallel `MINERAL_DISSOLUTION_RATES` table so the wrapper owns both directions, then let the wrapper credit on negative thickness too. Mechanical per-mineral work; would let `MASS_BALANCE_SCALE` rise back toward the originally-prototyped 0.05 with full bidirectional control.
+- **Phase 2d — per-scenario fluid recalibration.** The 3 Phase-2 outliers (mvt -33%, bisbee -25%, schneeberg) are stories where activity-corrected Davies suppresses marginal nucleations. Bump fluid concentrations in those scenarios so the affected minerals re-cross threshold, then ratchet `ACTIVITY_DAMPING` up toward 0.5+ (more honest physics with the recalibrated fluids).
+- **Depletion-event log lines.** "Fe²⁺ depleted in ring 4 — pyrite nucleation halted" narratives whenever `applyMassBalance` floors a species at 0. Currently silent.
+
+### Phases 3-6 (not started)
+
+3. Carbonate speciation + CO₂ degassing as a first-class precipitation driver. New `co2_degas` event type. Travertine tutorial scenario. **Couples with VOLATILE-GASES Mechanic 2 — same gap, share the headspace state vector.**
+4. pH/Eh as dynamic state variables driven by reactions; three explicit redox couples (Fe³⁺/Fe²⁺, Mn⁴⁺/Mn²⁺, SO₄²⁻/HS⁻). **Couples with VOLATILE-GASES Mechanic 1 — continuous Eh subsumes the discrete `redox_state` bucket.**
 5. Solid-solution composition tracking — replaces broth-ratio branching with continuous mole-fraction, unifies the rhomb-carbonate and sphalerite series.
 6. Classical-Nucleation-Theory rate gates (optional, lowest priority).
 
 **Adjacent angles** (not phases, but compose well): stable-isotope tracking (δ¹⁸O/δ¹³C), fluid-inclusion homogenization-T narration, Pitzer for high-salinity brines, Ostwald ripening (Phase 1 unblocks `PROPOSAL-GIBBS-THOMPSON.md`).
 
-**Sequencing:** Phases 1+2 are foundational and unblock everything else; Phase 3 is the highest visible-payoff phase. 3D-SIMULATION Phase D (orientation-bias habits) and the twin-probability retune both want this proposal landed first.
+**Sequencing:** Phases 1+2 done; Phase 3 next (highest visible payoff). 3D-SIMULATION Phase D (orientation-bias habits) and the twin-probability retune both want Phase 5 first if they want continuous composition vectors.
 
 ---
 

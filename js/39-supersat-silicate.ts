@@ -21,6 +21,7 @@ Object.assign(VugConditions.prototype, {
     sigma -= hf_attack;
   }
 
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'quartz');
   return Math.max(sigma, 0);
 },
 
@@ -42,6 +43,7 @@ Object.assign(VugConditions.prototype, {
   // Acid destabilization — kaolinization regime, mirrors grow_feldspar
   // dissolution at pH < 4. KAlSi₃O₈ + H⁺ → kaolinite + K⁺ + SiO₂.
   if (this.fluid.pH < 4.0) sigma -= (4.0 - this.fluid.pH) * 2.0;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'feldspar');
   return Math.max(sigma, 0);
 },
 
@@ -56,7 +58,9 @@ Object.assign(VugConditions.prototype, {
   else if ((this.temperature >= 80 && this.temperature < 100) || (this.temperature > 200 && this.temperature <= 230)) T_factor = 1.0;
   else T_factor = 0.6;
   const pH_factor = (this.fluid.pH >= 7.5 && this.fluid.pH <= 9.0) ? 1.2 : 0.8;
-  return product * T_factor * pH_factor;
+  let sigma = product * T_factor * pH_factor;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'apophyllite');
+  return sigma;
 },
 
   supersaturation_albite() {
@@ -66,6 +70,7 @@ Object.assign(VugConditions.prototype, {
   // Acid destabilization — albite kaolinizes at pH < 3 (more
   // resistant than K-feldspar). Mirrors grow_albite dissolution gate.
   if (this.fluid.pH < 3.0) sigma -= (3.0 - this.fluid.pH) * 2.0;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'albite');
   return Math.max(sigma, 0);
 },
 
@@ -83,6 +88,7 @@ Object.assign(VugConditions.prototype, {
   else if (T > 700) T_factor = 0.2;
   else T_factor = Math.max(0.1, 0.5 - 0.008 * (400 - T));
   sigma *= T_factor;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'spodumene');
   return Math.max(sigma, 0);
 },
 
@@ -104,7 +110,8 @@ Object.assign(VugConditions.prototype, {
   if (pH >= 6.0 && pH <= 7.5) ph_f = 1.0;
   else if (pH < 6.0) ph_f = Math.max(0.4, 1.0 - (6.0 - pH) * 0.6);
   else ph_f = Math.max(0.4, 1.0 - (pH - 7.5) * 0.6);
-  const sigma = cu_f * si_f * o_f * t_f * ph_f;
+  let sigma = cu_f * si_f * o_f * t_f * ph_f;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chrysocolla');
   return Math.max(sigma, 0);
 },
 
@@ -122,6 +129,10 @@ Object.assign(VugConditions.prototype, {
   else if (T > 650) T_factor = 0.2;
   else T_factor = Math.max(0.1, 0.6 - 0.006 * (300 - T));
   sigma *= T_factor;
+  // Activity correction at the family-base helper applies uniformly to
+  // beryl/emerald/aquamarine/morganite/heliodor (same Be₃Al₂Si₆O₁₈
+  // shared-cation set; chromophore traces don't move I).
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'beryl');
   return Math.max(sigma, 0);
 },
 
@@ -195,6 +206,10 @@ Object.assign(VugConditions.prototype, {
   sigma *= T_factor;
   const pH_factor = (this.fluid.pH >= 7 && this.fluid.pH <= 9) ? 1.0 : 0.6;
   sigma *= pH_factor;
+  // Activity correction at the family-base helper applies uniformly to
+  // corundum/ruby/sapphire (shared Al₂O₃ formula; trace chromophores
+  // don't move I).
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'corundum');
   return Math.max(sigma, 0);
 },
 
@@ -213,6 +228,7 @@ Object.assign(VugConditions.prototype, {
   else if (T > 700) T_factor = 0.2;
   else T_factor = Math.max(0.1, 0.5 - 0.008 * (350 - T));
   sigma *= T_factor;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'tourmaline');
   return Math.max(sigma, 0);
 },
 
@@ -231,6 +247,7 @@ Object.assign(VugConditions.prototype, {
   else T_factor = 0.1;
   sigma *= T_factor;
   if (this.fluid.pH < 2.0) sigma -= (2.0 - this.fluid.pH) * 0.4;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'topaz');
   return Math.max(sigma, 0);
 },
 });

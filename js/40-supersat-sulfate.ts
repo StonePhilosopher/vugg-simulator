@@ -32,6 +32,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH > 9) {
     sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'barite');
   return Math.max(sigma, 0);
 },
 
@@ -67,6 +68,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH > 9) {
     sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'anhydrite');
   return Math.max(sigma, 0);
 },
 
@@ -85,6 +87,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH > 6) {
     sigma *= Math.max(0.3, 1.0 - 0.4 * (this.fluid.pH - 6));
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'brochantite');
   return Math.max(sigma, 0);
 },
 
@@ -103,6 +106,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH < 1.5) {
     sigma *= Math.max(0.4, 1.0 - 0.3 * (1.5 - this.fluid.pH));
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'antlerite');
   return Math.max(sigma, 0);
 },
 
@@ -123,6 +127,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH < 1) {
     sigma *= 0.4;
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'jarosite');
   return Math.max(sigma, 0);
 },
 
@@ -148,6 +153,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH < 1) {
     sigma *= 0.4;
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'alunite');
   return Math.max(sigma, 0);
 },
 
@@ -169,6 +175,7 @@ Object.assign(VugConditions.prototype, {
   } else if (this.fluid.pH > 9) {
     sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'celestine');
   return Math.max(sigma, 0);
 },
 
@@ -191,6 +198,7 @@ Object.assign(VugConditions.prototype, {
   else if (T <= 50) T_factor = Math.max(0.4, 1.3 - 0.06 * (T - 40));
   else T_factor = 0.2;
   sigma *= T_factor;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chalcanthite');
   return Math.max(sigma, 0);
 },
 
@@ -203,6 +211,7 @@ Object.assign(VugConditions.prototype, {
   let sigma = (this.fluid.Na / 300.0) * (this.fluid.S / 200.0) * c * c;
   if (this.temperature < 10) sigma *= 1.3;
   if (this.fluid.pH < 5.0) sigma *= 0.5;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'mirabilite');
   return Math.max(sigma, 0);
 },
 
@@ -215,6 +224,7 @@ Object.assign(VugConditions.prototype, {
   let sigma = (this.fluid.Na / 300.0) * (this.fluid.S / 200.0) * c * c;
   if (this.temperature > 50) sigma *= 1.2;
   if (this.fluid.pH < 5.0) sigma *= 0.5;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'thenardite');
   return Math.max(sigma, 0);
 },
 
@@ -236,6 +246,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.pH < 5.0) {
     sigma -= (5.0 - this.fluid.pH) * 0.2;
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'selenite');
   return Math.max(sigma, 0);
 },
 
@@ -247,6 +258,7 @@ Object.assign(VugConditions.prototype, {
   let sigma = pb_f * s_f * o_f;
   if (this.temperature > 80) sigma *= Math.exp(-0.04 * (this.temperature - 80));
   if (this.fluid.pH < 2.0) sigma -= (2.0 - this.fluid.pH) * 0.3;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'anglesite');
   return Math.max(sigma, 0);
 },
 });

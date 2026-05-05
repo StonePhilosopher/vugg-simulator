@@ -36,6 +36,7 @@ Object.assign(VugConditions.prototype, {
     const acid_attack = (5.0 - this.fluid.pH) * 0.4;
     sigma -= acid_attack;
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'fluorite');
   return Math.max(sigma, 0);
 },
 
@@ -49,6 +50,7 @@ Object.assign(VugConditions.prototype, {
   let sigma = (this.fluid.Na / 100.0) * (this.fluid.Cl / 500.0) * c * c;
   if (this.temperature > 100) sigma *= 0.7;
   if (this.fluid.pH < 4.0) sigma *= 0.5;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'halite');
   return Math.max(sigma, 0);
 },
 });

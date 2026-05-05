@@ -16,6 +16,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.pH < 3.5) {
     sigma -= (3.5 - this.fluid.pH) * 0.3;
   }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'hematite');
   return Math.max(sigma, 0);
 },
 
@@ -27,6 +28,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.U < 5 || this.fluid.O2 > 0.3) return 0;
   let sigma = (this.fluid.U / 20.0) * (0.5 - this.fluid.O2);
   if (this.temperature > 200) sigma *= 1.3;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'uraninite');
   return Math.max(sigma, 0);
 },
 
@@ -43,6 +45,7 @@ Object.assign(VugConditions.prototype, {
   else T_factor = 0.2;
   sigma *= T_factor;
   if (this.fluid.pH < 2.5) sigma -= (2.5 - this.fluid.pH) * 0.3;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'magnetite');
   return Math.max(sigma, 0);
 },
 
@@ -53,6 +56,7 @@ Object.assign(VugConditions.prototype, {
   let sigma = cu_f * o_f;
   if (this.temperature > 100) sigma *= Math.exp(-0.03 * (this.temperature - 100));
   if (this.fluid.pH < 3.5) sigma -= (3.5 - this.fluid.pH) * 0.3;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'cuprite');
   return Math.max(sigma, 0);
 },
 

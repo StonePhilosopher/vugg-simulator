@@ -158,5 +158,142 @@
 //        JS Pb/Mo thresholds hybrid). Plus ported effective_temperature
 //        + silica_equilibrium from JS to Python — pre-v17 only the
 //        browser sim had Mo-flux thermal modulation for porphyry sulfides.
-const SIM_VERSION = 17;
+//   v18 — Carbonate Liebig saturation bugfix (May 2026,
+//        PROPOSAL-GEOLOGICAL-ACCURACY Phase 2). Replaced the
+//        min(cation, anion) Liebig pattern in calcite, siderite,
+//        rhodochrosite, and aragonite with √(cation × anion); replaced
+//        dolomite's mixed min(√(Ca·Mg), 2·CO3) with the properly
+//        stoichiometric (Ca·Mg·CO3²)^¼. Real saturation is the
+//        ion-activity product Q = a(M)·a(X), not the limiting
+//        reagent — when Ca and CO3 differ in abundance, the geometric
+//        mean correctly counts both species. Net: carbonates nucleate
+//        slightly earlier in scenarios with asymmetric Ca:CO3, slightly
+//        later in dolomite scenarios where CO3 was previously
+//        overweighted by the doubling-then-min hack. Five edits in
+//        js/32-supersat-carbonate.ts; no other supersat formulas
+//        affected (the 90+ Math.min hits across other classes are
+//        saturation caps, not Liebig patterns).
+//   v19 — Fluid mass balance flipped on (May 2026,
+//        PROPOSAL-GEOLOGICAL-ACCURACY Phase 1c). Every precipitation
+//        zone now debits the per-ring fluid by stoichiometric
+//        coefficient × MASS_BALANCE_SCALE; every dissolution zone
+//        credits it. The infrastructure landed flag-OFF in Phase 1a
+//        (commit 08140d1) and is calibrated here at scale=0.01
+//        (down from prototyped 0.05) to balance the wrapper's new
+//        universal credits against the engine-internal hand-coded
+//        credits in ~12 minerals. Sweep across 19 baselines at
+//        seed 42: RMS delta 11.2%, 11 of 19 scenarios within ±5%,
+//        16 within ±20%; max delta -23% (porphyry, finite Fe/S
+//        depleted by sulfide cascade — geologically correct).
+//        Outliers in absolute terms are small (≤11 crystals).
+//        Scenarios where dissolution recycles solute (naica, mvt,
+//        searles_lake) gain 2-4 crystals; depletion-prone scenarios
+//        (porphyry, schneeberg, pulse) lose 1-11 crystals.
+//   v20 — Davies activity correction flipped on (May 2026,
+//        PROPOSAL-GEOLOGICAL-ACCURACY Phase 2c). Every supersat
+//        method now multiplies σ by activityCorrectionFactor —
+//        the geometric-mean Davies γ̄ for the mineral's stoichiometry.
+//        Infrastructure landed flag-OFF in Phase 2a (b63e426); 97/97
+//        minerals migrated in Phase 2b (eff8ec1). Calibrated here at
+//        ACTIVITY_DAMPING = 0.25 (a quarter of full Davies) — full
+//        correction (damping=1.0) shifted scenarios by RMS 33% and
+//        broke tutorials (-60% on tutorial_mn_calcite). The damping
+//        smoothly interpolates between full Davies (research mode)
+//        and identity (no correction). Calibration sweep at seed 42
+//        vs v19 baselines: RMS 19.1%, 5/19 within ±5%, 12/19 within
+//        ±20%; max delta -33% (mvt, geologically defensible — MVT
+//        brines are saline-enough that activity correction matters).
+//        Brine scenarios (bisbee, mvt, schneeberg) trend down per
+//        γ < 1 suppression; halite-saturated brines hit the I=1.7
+//        Davies clamp and are unaffected. Pulse scenarios with
+//        stochastic small-N counts show ±33% noise floor.
+//   v21 — Phase 1d cleanup: end engine-internal growth-path debit
+//        double-counting (May 2026). Removed 7 manual
+//        `conditions.fluid.X -= rate * coef` blocks (15 lines, in
+//        adamite, mimetite, malachite, smithsonite, wulfenite,
+//        uraninite, feldspar) that previously double-debited fluid
+//        on growth alongside the wrapper from Phase 1a. Wrapper
+//        narrowed to precipitation-only — engine-internal dissolution
+//        credits (~120 lines, ~50× larger per-mineral rates than
+//        the wrapper's MASS_BALANCE_SCALE) keep their existing
+//        recycling stories. Phase 1e (future) would migrate those
+//        into per-mineral dissolution scales for full unification.
+//        Calibration sweep at seed 42 vs v20: RMS 7.58%, 15 of 19
+//        scenarios within ±5%, 18 of 19 within ±20%. Max delta
+//        -25.5% (schneeberg, U-secondary minerals less aggressive
+//        once uraninite stops over-debiting U). Most scenarios
+//        unchanged (those 7 minerals weren't dominant).
+//   v22 — Phase 1d cleanup pass 2 (May 2026). Earlier pass missed the
+//        sulfate (60) and sulfide (61) engine files because their
+//        debit pattern used the inline form
+//        `conditions.fluid.X = Math.max(conditions.fluid.X - rate * Y, 0)`
+//        (one line) rather than the two-line `-= rate * Y;` + Math.max
+//        cleanup that the earlier grep matched. This pass removes
+//        ~36 additional growth-path bulk-formula debits across
+//        barite/celestine/chalcanthite/anhydrite/anglesite/jarosite/
+//        alunite/brochantite/antlerite/mirabilite/thenardite/molybdenite/
+//        galena/arsenopyrite/acanthite/argentite/nickeline/millerite/
+//        cobaltite. Special cases preserved: arsenopyrite Au-trap
+//        (Au not in stoichiometry), oxidative-breakdown S debits in
+//        dissolution paths (use `dissolved_um` not `rate`).
+//        With double-debit fully gone across all 12 engine classes,
+//        MASS_BALANCE_SCALE rises 0.01 → 0.02. Plus depletion
+//        narration: applyMassBalance now reports species crossing
+//        below MASS_BALANCE_DEPLETION_THRESHOLD (1 ppm) and
+//        _runEngineForCrystal emits ⛔ log lines. Calibration sweep
+//        at seed 42 vs v21: RMS 13.0%, 9 of 19 within ±5%, 18 of 19
+//        within ±20%. Outliers: gem_pegmatite +50% (small N: +7
+//        crystals), searles_lake -12% (Na-S evaporite finds new
+//        depletion-cycle equilibrium). 67 depletion ⛔ narratives
+//        across the sweep (mostly searles_lake + reactive_wall).
+//   v23 — Phase 3b carbonate speciation infrastructure (May 2026).
+//        Three pieces:
+//        (a) Migrated all 11 carbonate supersat methods to use
+//            effectiveCO3(this.fluid, this.temperature) instead of
+//            this.fluid.CO3 directly. With CARBONATE_SPECIATION_ACTIVE
+//            flag OFF (default), behavior is identical (effectiveCO3
+//            returns fluid.CO3 = DIC). With flag ON (Phase 3c
+//            calibration target), it returns the Bjerrum-derived
+//            CO₃²⁻ activity at current pH and T.
+//        (b) Added co2_degas / co2_degas_with_reheat / co2_charge
+//            event handlers. Each manipulates fluid.CO3 + fluid.pH
+//            to keep the carbonate system roughly in Bjerrum
+//            equilibrium. The reheat variant resets temperature too,
+//            modeling continuous hot-fluid recharge at active hot
+//            springs.
+//        (c) Strengthened calcite alkaline-boost factor: old
+//            (1 + (pH - 7.5) × 0.15) → new 3^(pH - 7.5). Old factor
+//            was 7.5% per pH unit; real Bjerrum CO₃²⁻ activity grows
+//            ~10× per pH unit. New factor: 1.0 at pH 7.5, 1.73 at
+//            pH 8.0, 3.0 at pH 8.5. Lets CO₂-degas cascades work
+//            without the flag flip.
+//        New scenario: tutorial_travertine demonstrates the cascade
+//        — three CO₂-degas-with-reheat pulses raise pH 6.5 → 8.0;
+//        calcite nucleates at step 41 once σ crosses the 1.3 gate.
+//        Calibration sweep at seed 42 vs v22: RMS 9.73%, 17 of 19
+//        scenarios within ±20%, max -31% (deccan_zeolite — alkaline
+//        scenario where the stronger pH boost amplifies competing
+//        carbonates). 14 of 19 scenarios completely unchanged.
+//   v24 — Phase 3c: CARBONATE_SPECIATION_ACTIVE flipped on
+//        (May 2026). effectiveCO3 now routes through proper Bjerrum
+//        partition with normalization at BJERRUM_REFERENCE_PH (7.5):
+//        the existing per-mineral eq calibrations stay valid at
+//        neutral pH, while pH deviations produce the genuine ~10×
+//        per-pH-unit CO₃²⁻ amplification of real aqueous chemistry.
+//        BJERRUM_DAMPING = 0.5 — full Bjerrum (factor √10 = 3.16 at
+//        pH 8) was 2× stronger than the empirical 3^(pH-7.5) v23 was
+//        already applying, so half-amplitude blending keeps scenarios
+//        in their calibration band. The manual 3^(pH-7.5) factor in
+//        calcite supersat is now flag-conditional (only fires when
+//        the new flag is OFF), so the two paths don't double-count.
+//        Net: all 11 carbonate supersat methods now have proper
+//        pH-dependent CO₃²⁻ activity, not just calcite.
+//        Calibration sweep at seed 42 vs v23: RMS 13.4%, 17/20
+//        within ±20%, max -25% (tutorial_first_crystal,
+//        tutorial_mn_calcite — small-N tutorials sensitive to any
+//        carbonate shift). tutorial_travertine: bumped initial Ca
+//        200 → 350 ppm to keep the cascade firing under the new
+//        damping; calcite nucleates at step 42 (σ=1.46). Real Mammoth
+//        Hot Springs water sits at 400-500 ppm Ca per Friedman 1970.
+const SIM_VERSION = 24;
 

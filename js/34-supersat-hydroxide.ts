@@ -15,6 +15,7 @@ Object.assign(VugConditions.prototype, {
   let sigma = (this.fluid.Fe / 60.0) * (this.fluid.O2 / 1.0);
   if (this.temperature > 150) sigma *= Math.exp(-0.015 * (this.temperature - 150));
   if (this.fluid.pH < 3.0) sigma -= (3.0 - this.fluid.pH) * 0.5;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'goethite');
   return Math.max(sigma, 0);
 },
 
@@ -26,6 +27,7 @@ Object.assign(VugConditions.prototype, {
   if (this.temperature > 50) sigma *= Math.exp(-0.02 * (this.temperature - 50));
   if (this.fluid.pH < 3.0) sigma -= (3.0 - this.fluid.pH) * 0.4;
   if (this.fluid.pH > 7.5) sigma *= Math.max(0.5, 1.0 - (this.fluid.pH - 7.5) * 0.3);
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'lepidocrocite');
   return Math.max(sigma, 0);
 },
 });

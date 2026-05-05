@@ -36,6 +36,7 @@ Object.assign(VugConditions.prototype, {
   }
   sigma *= T_factor;
   if (this.fluid.pH < 3 || this.fluid.pH > 8) sigma *= 0.6;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'native_tellurium');
   return Math.max(sigma, 0);
 },
 
@@ -64,6 +65,7 @@ Object.assign(VugConditions.prototype, {
     T_factor = 0.0;
   }
   sigma *= T_factor;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'native_sulfur');
   return Math.max(sigma, 0);
 },
 
@@ -91,6 +93,7 @@ Object.assign(VugConditions.prototype, {
   }
   sigma *= T_factor;
   if (this.fluid.pH < 3 || this.fluid.pH > 8) sigma *= 0.6;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'native_arsenic');
   return Math.max(sigma, 0);
 },
 
@@ -117,6 +120,7 @@ Object.assign(VugConditions.prototype, {
   }
   sigma *= T_factor;
   if (this.fluid.pH < 4 || this.fluid.pH > 9) sigma *= 0.6;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'native_silver');
   return Math.max(sigma, 0);
 },
 
@@ -134,6 +138,7 @@ Object.assign(VugConditions.prototype, {
   else T_factor = 0.1;
   sigma *= T_factor;
   if (this.fluid.pH < 3.0) sigma -= (3.0 - this.fluid.pH) * 0.3;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'native_bismuth');
   return Math.max(sigma, 0);
 },
 
@@ -149,6 +154,7 @@ Object.assign(VugConditions.prototype, {
   else if (T <= 700) T_factor = Math.max(0.5, 1.0 - 0.001 * (T - 400));
   else T_factor = 0.3;
   sigma *= T_factor;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'native_gold');
   return Math.max(sigma, 0);
 },
 
@@ -166,6 +172,7 @@ Object.assign(VugConditions.prototype, {
   else T_factor = 0.2;
   sigma *= T_factor;
   if (this.fluid.pH < 4.0) sigma -= (4.0 - this.fluid.pH) * 0.3;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'native_copper');
   return Math.max(sigma, 0);
 },
 });

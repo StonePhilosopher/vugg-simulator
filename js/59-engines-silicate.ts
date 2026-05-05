@@ -224,18 +224,11 @@ function grow_feldspar(crystal, conditions, step) {
   // Store polymorph on crystal for display
   crystal.mineral_display = polymorph;
 
-  // Consume K/Na, Al, Si
-  if (isKrich) {
-    conditions.fluid.K -= rate * 0.005;
-    conditions.fluid.K = Math.max(conditions.fluid.K, 0);
-  } else {
-    conditions.fluid.Na -= rate * 0.005;
-    conditions.fluid.Na = Math.max(conditions.fluid.Na, 0);
-  }
-  conditions.fluid.Al -= rate * 0.004;
-  conditions.fluid.Al = Math.max(conditions.fluid.Al, 0);
-  conditions.fluid.SiO2 -= rate * 0.006;
-  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2, 0);
+  // Phase 1d: K/Na/Al/SiO2 consumption owned by the wrapper
+  // (applyMassBalance, per MINERAL_STOICHIOMETRY['feldspar']).
+  // Note: feldspar is K-only per v17 reconciliation; the K-or-Na fork
+  // here was a pre-v17 artifact. Albite (Na-feldspar) has its own
+  // engine + stoichiometry entry.
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
   // Polymorph-specific twin selection (Carlsbad/Baveno/Manebach for
