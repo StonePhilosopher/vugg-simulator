@@ -1,0 +1,15 @@
+{
+  "name": "vugg-simulator",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Build tooling for the Vugg Simulator (TypeScript modules → inlined into index.html).",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build-all.mjs",
+    "build:check": "node tools/build-all.mjs --check",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
