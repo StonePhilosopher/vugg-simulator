@@ -20,7 +20,12 @@ Object.assign(VugConditions.prototype, {
   if (this.temperature > 500) return 0; // thermal decomposition
   const eq = 300.0 * Math.exp(-0.005 * this.temperature);
   if (eq <= 0) return 0;
-  const ca_co3 = Math.min(this.fluid.Ca, this.fluid.CO3);
+  // PROPOSAL-GEOLOGICAL-ACCURACY Phase 2 fix: real saturation is the
+  // ion-activity product Q = a(Ca²⁺) × a(CO3²⁻), not min(Ca, CO3). The
+  // geometric mean √(Ca·CO3) preserves the existing eq calibration
+  // (= ppm) and matches the old Liebig result when Ca=CO3, but correctly
+  // counts both species when they differ.
+  const ca_co3 = Math.sqrt(this.fluid.Ca * this.fluid.CO3);
   let sigma = ca_co3 / eq;
 
   // Acid dissolution of carbonates
@@ -49,7 +54,8 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.O2 > 0.8) return 0;  // hard reducing gate
   const eq_fe = 80.0 * Math.exp(-0.005 * this.temperature);
   if (eq_fe <= 0) return 0;
-  const fe_co3 = Math.min(this.fluid.Fe, this.fluid.CO3);
+  // Phase 2 fix: Q = a(Fe²⁺) × a(CO3²⁻); see calcite for rationale.
+  const fe_co3 = Math.sqrt(this.fluid.Fe * this.fluid.CO3);
   let sigma = fe_co3 / eq_fe;
   if (this.fluid.pH < 5.5) sigma -= (5.5 - this.fluid.pH) * 0.5;
   else if (this.fluid.pH > 7.5) sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
@@ -67,9 +73,15 @@ Object.assign(VugConditions.prototype, {
   if (mg_ratio < 0.3 || mg_ratio > 30.0) return 0;
   const eq = 200.0 * Math.exp(-0.005 * this.temperature);
   if (eq <= 0) return 0;
-  const ca_mg = Math.sqrt(this.fluid.Ca * this.fluid.Mg);
-  const co3_limit = this.fluid.CO3 * 2.0;
-  const product = Math.min(ca_mg, co3_limit);
+  // Phase 2 fix: real Q for dolomite CaMg(CO3)₂ is
+  // a(Ca²⁺)·a(Mg²⁺)·a(CO3²⁻)². The fourth-root keeps the result in
+  // ppm units (comparable to eq) while properly weighting CO3 by its
+  // stoichiometric coefficient of 2. Old form min(√(Ca·Mg), 2·CO3)
+  // was a Liebig hybrid: half-correct (geometric mean for cations) +
+  // half-Liebig (min against CO3), which under-counted CO3 even when
+  // it was abundant.
+  const product = Math.pow(
+    this.fluid.Ca * this.fluid.Mg * this.fluid.CO3 * this.fluid.CO3, 0.25);
   let sigma = product / eq;
   const ratio_distance = Math.abs(Math.log10(mg_ratio));
   sigma *= Math.exp(-ratio_distance * 1.0);
@@ -87,7 +99,8 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.O2 > 1.5) return 0;
   const eq_mn = 50.0 * Math.exp(-0.005 * this.temperature);
   if (eq_mn <= 0) return 0;
-  const mn_co3 = Math.min(this.fluid.Mn, this.fluid.CO3);
+  // Phase 2 fix: Q = a(Mn²⁺) × a(CO3²⁻); see calcite for rationale.
+  const mn_co3 = Math.sqrt(this.fluid.Mn * this.fluid.CO3);
   let sigma = mn_co3 / eq_mn;
   if (this.fluid.pH < 5.5) sigma -= (5.5 - this.fluid.pH) * 0.5;
   else if (this.fluid.pH > 7.5) sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
@@ -107,7 +120,8 @@ Object.assign(VugConditions.prototype, {
 
   const eq = 300.0 * Math.exp(-0.005 * this.temperature);
   if (eq <= 0) return 0;
-  const ca_co3 = Math.min(this.fluid.Ca, this.fluid.CO3);
+  // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
+  const ca_co3 = Math.sqrt(this.fluid.Ca * this.fluid.CO3);
   const omega = ca_co3 / eq;
 
   const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);

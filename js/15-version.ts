@@ -158,5 +158,20 @@
 //        JS Pb/Mo thresholds hybrid). Plus ported effective_temperature
 //        + silica_equilibrium from JS to Python — pre-v17 only the
 //        browser sim had Mo-flux thermal modulation for porphyry sulfides.
-const SIM_VERSION = 17;
+//   v18 — Carbonate Liebig saturation bugfix (May 2026,
+//        PROPOSAL-GEOLOGICAL-ACCURACY Phase 2). Replaced the
+//        min(cation, anion) Liebig pattern in calcite, siderite,
+//        rhodochrosite, and aragonite with √(cation × anion); replaced
+//        dolomite's mixed min(√(Ca·Mg), 2·CO3) with the properly
+//        stoichiometric (Ca·Mg·CO3²)^¼. Real saturation is the
+//        ion-activity product Q = a(M)·a(X), not the limiting
+//        reagent — when Ca and CO3 differ in abundance, the geometric
+//        mean correctly counts both species. Net: carbonates nucleate
+//        slightly earlier in scenarios with asymmetric Ca:CO3, slightly
+//        later in dolomite scenarios where CO3 was previously
+//        overweighted by the doubling-then-min hack. Five edits in
+//        js/32-supersat-carbonate.ts; no other supersat formulas
+//        affected (the 90+ Math.min hits across other classes are
+//        saturation caps, not Liebig patterns).
+const SIM_VERSION = 18;
 
