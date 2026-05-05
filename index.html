@@ -23179,87 +23179,160 @@ const HABIT_TO_PRIMITIVE = {
   'stalactitic':                    PRIM_BOTRYOIDAL,
   'arborescent':                    PRIM_ACICULAR,
   'dendritic':                      PRIM_ACICULAR,
+  // v26 polish: runtime-set habits from the engine (silica polymorphs,
+  // calcite/aragonite habit pickers, supergene-product engines, etc.)
+  // that previously fell through to PRIM_RHOMBOHEDRON. Audited against
+  // the full list of crystal.habit assignments in this file.
+  'tridymite (thin hexagonal plates)': PRIM_TABULAR,
+  'β-quartz bipyramidal (paramorphic)': PRIM_DIPYRAMID,
+  'scepter overgrowth possible':    PRIM_HEX_PRISM_TERMINATED,
+  'chalcedony (microcrystalline)':  PRIM_BOTRYOIDAL,
+  'opal (amorphous silica)':        PRIM_BOTRYOIDAL,
+  'silica_gel_hemisphere':          PRIM_BOTRYOIDAL,
+  'flos_ferri':                     PRIM_ACICULAR,   // aragonite "iron flowers"
+  'acicular_needle':                PRIM_ACICULAR,
+  'twinned_cyclic':                 PRIM_DIPYRAMID,  // cyclic-sextet twin → stellate
+  'columnar':                       PRIM_HEX_PRISM_TERMINATED,
+  'radiating_columnar':             PRIM_HEX_PRISM_TERMINATED,
+  'coarse_rhomb':                   PRIM_RHOMBOHEDRON,
+  'massive':                        PRIM_BOTRYOIDAL,
+  'saddle_rhomb':                   PRIM_RHOMBOHEDRON,
+  'spherulitic':                    PRIM_BOTRYOIDAL,
+  'banding_agate':                  PRIM_BOTRYOIDAL,
+  'fibrous_coating':                PRIM_BOTRYOIDAL,  // fibrous mat reads dome-like
+  'hemimorphic_crystal':            PRIM_HEX_PRISM_TERMINATED,
+  'platy_massive':                  PRIM_TABULAR,
+  'micaceous_book':                 PRIM_TABULAR,    // mica = stacked sheets
+  'rosette_radiating':              PRIM_BOTRYOIDAL,
+  'rosette_bladed':                 PRIM_TABULAR,    // bladed rosette = thin plates
+  'plumose_rosette':                PRIM_BOTRYOIDAL,
+  'radiating_blade':                PRIM_TABULAR,
+  'radiating_cluster':              PRIM_BOTRYOIDAL,
+  'radiating_fibrous':              PRIM_BOTRYOIDAL,
+  'radiating_spray':                PRIM_BOTRYOIDAL,
+  'globular':                       PRIM_BOTRYOIDAL,
+  'nodular':                        PRIM_BOTRYOIDAL,
+  'framboidal':                     PRIM_BOTRYOIDAL, // raspberry-like clusters
+  'granular':                       PRIM_BOTRYOIDAL,
+  'powdery crust':                  PRIM_BOTRYOIDAL,
+  'powdery_aggregate':              PRIM_BOTRYOIDAL,
+  'powdery_disseminated':           PRIM_BOTRYOIDAL,
+  'sublimation_crust':              PRIM_BOTRYOIDAL,
+  'iridescent_coating':             PRIM_BOTRYOIDAL,
+  'peacock_iridescent':             PRIM_BOTRYOIDAL,
+  'specular':                       PRIM_TABULAR,    // specular hematite = basal pinacoid
+  'thorn':                          PRIM_ACICULAR,
+  'spearhead':                      PRIM_HEX_PRISM_TERMINATED,
+  'reticulated':                    PRIM_HEX_PRISM_TERMINATED,
+  'trapiche':                       PRIM_DIPYRAMID,  // star-shaped emerald
+  'nugget':                         PRIM_BOTRYOIDAL,
+  'hopper_growth':                  PRIM_CUBE,       // cubic skeletal
+  'pseudomorph':                    PRIM_RHOMBOHEDRON, // shape inherits host; default
+  'pseudomorph_after_azurite':      PRIM_TABULAR,    // azurite was tabular
+  'pseudomorph_after_sulfide':      PRIM_RHOMBOHEDRON,
+  'olive_hex_barrel':               PRIM_HEX_PRISM,
+  'yellow_hex_barrel':              PRIM_HEX_PRISM,
+  'goshenite':                      PRIM_HEX_PRISM_TERMINATED, // colorless beryl
+  'nickel_bloom':                   PRIM_BOTRYOIDAL,
+  'cobalt_bloom':                   PRIM_BOTRYOIDAL,    // erythrite efflorescence
+  'cabrerite':                      PRIM_TABULAR,       // Mg-bearing annabergite, fibrous-bladed
+  'co_bearing':                     PRIM_BOTRYOIDAL,    // chemistry tag fallback (annabergite/erythrite are typically fibrous-massive)
+  'cockscomb':                      PRIM_DIPYRAMID,     // marcasite/pyrite cockscomb aggregate
+  'disphenoidal':                   PRIM_TETRAHEDRON,   // distorted tetrahedron (sphalerite/chalcopyrite)
+  'banded':                         PRIM_BOTRYOIDAL,    // chalcedony/agate-style banding
+  'druzy':                          PRIM_BOTRYOIDAL,    // sparkly carpet of micro-crystals
+  'arsenolamprite':                 PRIM_BOTRYOIDAL,    // metallic As polymorph, massive
+  'chalcotrichite':                 PRIM_ACICULAR,      // capillary cuprite "hair copper"
+  'azurite_sun':                    PRIM_BOTRYOIDAL,    // radiating disc rosette
+  'enamel_on_cuprite':              PRIM_BOTRYOIDAL,    // thin conformal film
+  'endlichite_yellow':              PRIM_HEX_PRISM_TERMINATED,  // hex apatite-group prism
+  'asterated':                      PRIM_DIPYRAMID,     // star-shaped (asterism)
   'default_habit':                  PRIM_RHOMBOHEDRON,
 };
 
-// Habits that swap to dripstone geometry under air-mode growth. Cave-
-// mineralogy literature (Hill & Forti 1997): elongated/branching habits
-// that produce dripstone forms when grown out of fluid. Cubic / octa-
-// hedral / tetrahedral / dipyramidal / pyritohedral / tabular habits do
-// NOT form dripstone (galena cubes, fluorite cubes, baryte tabular —
-// these grow as wall encrustations or floor druses, not icicles), so
-// they keep their normal primitive even in air mode.
-const _AIR_MODE_DRIPSTONE_HABITS = new Set([
-  'prismatic', 'short_prismatic', 'striated_prism', 'hex_prism',
-  'hex_prism_long', 'hexagonal_prism', 'hexagonal_prism_or_botryoidal_campylite',
-  'prismatic_hex', 'prismatic_or_blocky', 'prismatic_orthorhombic',
-  'prismatic_or_rosette', 'tabular_prism', 'columnar_or_cyclic_twinned',
-  'hemimorphic_hexagonal', 'deep_blue_prismatic',
-  'acicular', 'acicular_tuft', 'tufted_spray', 'elongated_blade',
-  'wire', 'capillary',
-  'rhombohedral', 'saddle_rhomb_or_massive', 'rhombohedral_or_botryoidal',
-  'rhombohedral_or_scalenohedral', 'rhombohedral_or_tabular_or_botryoidal',
-  'botryoidal_or_rhombohedral',
-  'scalenohedral', 'scalenohedral_or_rhombohedral',
-  'botryoidal', 'reniform', 'botryoidal_or_acicular',
-  'botryoidal_or_mammillary_or_fibrous', 'botryoidal_cryptocrystalline',
-  'cobalt_bloom_or_botryoidal', 'nickel_bloom_or_capillary',
-  'pitchblende_massive', 'massive_granular', 'earthy_crust',
-  'stalactitic',
-  'arborescent', 'dendritic',
-]);
+// Canonical primitives that map to PRIM_DRIPSTONE under air-mode growth.
+// Cube / octahedron / tetrahedron / pyritohedron / tabular / dipyramid
+// stay as their canonical form: galena cubes don't form icicles,
+// barite tabulars stay tabular, marcasite cockscombs (dipyramid) keep
+// their distinctive doubly-pointed silhouette. The air-mode override
+// is structural — it answers "could this primitive plausibly be a
+// hanging drip?" — not "is this habit string in some list".
+function _isDripstoneEligibleCanonical(prim) {
+  return prim === PRIM_HEX_PRISM_TERMINATED
+      || prim === PRIM_HEX_PRISM
+      || prim === PRIM_ACICULAR
+      || prim === PRIM_RHOMBOHEDRON
+      || prim === PRIM_SCALENOHEDRON
+      || prim === PRIM_BOTRYOIDAL;
+}
 
 function _lookupCrystalPrimitive(crystal) {
   if (!crystal) return PRIM_RHOMBOHEDRON;
   // v24 air-mode override — crystals nucleated in vadose rings get
   // dripstone geometry instead of their canonical habit primitive,
-  // unless the habit is structurally incompatible (cubic / tabular /
-  // dipyramidal — those don't form dripstone). The renderer's existing
-  // c-axis flip handles ceiling-vs-floor orientation: ceiling cells
-  // get c-axis world-down (stalactite hanging), floor cells get c-axis
-  // world-up (stalagmite standing).
-  if (crystal.growth_environment === 'air') {
-    const habit = crystal.habit || '';
-    if (_AIR_MODE_DRIPSTONE_HABITS.has(habit)) return PRIM_DRIPSTONE;
-    const h = habit.toLowerCase();
-    // Fuzzy match for compound habit strings — same intent as the
-    // direct-set check, broader catch for "rhombohedral_or_…",
-    // "prismatic_…", "botryoidal_…" variants. Cubic/tabular/dipyramid
-    // explicitly excluded so cube-based habits stay cubic in air.
-    const isStructuralCube =
-      h.includes('cube') || h.includes('cubic') || h.includes('octahed')
-      || h.includes('tetrahed') || h.includes('pyritohed')
-      || h.includes('tabular') || h.includes('platy')
-      || h.includes('dipyramid') || h.includes('bipyramid');
-    if (!isStructuralCube && (
-        h.includes('prism') || h.includes('acicular') || h.includes('rhomb')
-        || h.includes('scalenohed') || h.includes('botryoidal')
-        || h.includes('reniform') || h.includes('mammillary')
-        || h.includes('stalactit') || h.includes('arborescent')
-        || h.includes('dendritic') || h.includes('needle')
-        || h.includes('wire') || h.includes('capillary'))) {
-      return PRIM_DRIPSTONE;
-    }
+  // when the canonical primitive is structurally compatible with a
+  // hanging-drip silhouette. The renderer's existing c-axis flip
+  // handles orientation: ceiling cells get c-axis world-down
+  // (stalactite hanging), floor cells get c-axis world-up
+  // (stalagmite standing).
+  const canonical = _canonicalPrimitive(crystal);
+  if (crystal.growth_environment === 'air'
+      && _isDripstoneEligibleCanonical(canonical)) {
+    return PRIM_DRIPSTONE;
   }
+  return canonical;
+}
+
+// Canonical (fluid-mode) primitive for a crystal, ignoring growth
+// environment. Direct table first, then the fuzzy-substring fallback
+// catches compound habit strings + runtime-set engine habits.
+function _canonicalPrimitive(crystal) {
+  if (!crystal) return PRIM_RHOMBOHEDRON;
   const direct = HABIT_TO_PRIMITIVE[crystal.habit];
   if (direct) return direct;
   const h = (crystal.habit || '').toLowerCase();
+  // Order matters: hopper checked BEFORE 'cube' since "hopper_growth"
+  // doesn't contain "cube" but is cubic; 'opal' before 'plate' since
+  // some opal variants get described "platy"; tabular/plate checked
+  // before acicular since "tabular_or_prismatic_or_fibrous" should
+  // resolve tabular not fibrous.
+  if (h.includes('hopper'))                                 return PRIM_CUBE;
   if (h.includes('cube') || h.includes('cubic'))           return PRIM_CUBE;
   if (h.includes('pyritohed'))                              return PRIM_PYRITOHEDRON;
   if (h.includes('octahed'))                                return PRIM_OCTAHEDRON;
   if (h.includes('tetrahed'))                               return PRIM_TETRAHEDRON;
   if (h.includes('scalenohed') || h.includes('dogtooth'))   return PRIM_SCALENOHEDRON;
   if (h.includes('rhomb'))                                  return PRIM_RHOMBOHEDRON;
-  if (h.includes('dipyramid') || h.includes('bipyramid'))   return PRIM_DIPYRAMID;
+  if (h.includes('dipyramid') || h.includes('bipyramid')
+      || h.includes('trapiche') || h.includes('twinned_cyclic')
+      || h.includes('stellate'))                            return PRIM_DIPYRAMID;
+  if (h.includes('barrel'))                                 return PRIM_HEX_PRISM;
   if (h.includes('hex_prism') || h.includes('hexagonal'))   return PRIM_HEX_PRISM_TERMINATED;
-  if (h.includes('prism'))                                  return PRIM_HEX_PRISM_TERMINATED;
+  if (h.includes('prism') || h.includes('columnar')
+      || h.includes('hemimorphic') || h.includes('scepter')
+      || h.includes('spearhead') || h.includes('reticulated')
+      || h.includes('thorn'))                               return PRIM_HEX_PRISM_TERMINATED;
   if (h.includes('tabular') || h.includes('platy')
-      || h.includes('plate') || h.includes('plates'))       return PRIM_TABULAR;
+      || h.includes('plate') || h.includes('plates')
+      || h.includes('micaceous') || h.includes('specular')
+      || h.includes('bladed') || h.includes('blade'))       return PRIM_TABULAR;
   if (h.includes('acicular') || h.includes('needle')
-      || h.includes('wire') || h.includes('capillary'))     return PRIM_ACICULAR;
+      || h.includes('wire') || h.includes('capillary')
+      || h.includes('flos_ferri'))                          return PRIM_ACICULAR;
   if (h.includes('botryoidal') || h.includes('reniform')
       || h.includes('mammillary') || h.includes('massive')
-      || h.includes('earthy') || h.includes('stalactit'))   return PRIM_BOTRYOIDAL;
+      || h.includes('earthy') || h.includes('stalactit')
+      || h.includes('opal') || h.includes('chalcedony')
+      || h.includes('agate') || h.includes('spherulit')
+      || h.includes('globular') || h.includes('nodular')
+      || h.includes('framboidal') || h.includes('granular')
+      || h.includes('powdery') || h.includes('crust')
+      || h.includes('rosette') || h.includes('plumose')
+      || h.includes('radiating') || h.includes('iridescent')
+      || h.includes('sublimation') || h.includes('coating')
+      || h.includes('fibrous') || h.includes('nugget')
+      || h.includes('silica_gel'))                          return PRIM_BOTRYOIDAL;
+  if (h.includes('arborescent') || h.includes('dendritic')) return PRIM_ACICULAR;
   return PRIM_RHOMBOHEDRON;
 }
 
