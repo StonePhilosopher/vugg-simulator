@@ -207,5 +207,21 @@
 //        γ < 1 suppression; halite-saturated brines hit the I=1.7
 //        Davies clamp and are unaffected. Pulse scenarios with
 //        stochastic small-N counts show ±33% noise floor.
-const SIM_VERSION = 20;
+//   v21 — Phase 1d cleanup: end engine-internal growth-path debit
+//        double-counting (May 2026). Removed 7 manual
+//        `conditions.fluid.X -= rate * coef` blocks (15 lines, in
+//        adamite, mimetite, malachite, smithsonite, wulfenite,
+//        uraninite, feldspar) that previously double-debited fluid
+//        on growth alongside the wrapper from Phase 1a. Wrapper
+//        narrowed to precipitation-only — engine-internal dissolution
+//        credits (~120 lines, ~50× larger per-mineral rates than
+//        the wrapper's MASS_BALANCE_SCALE) keep their existing
+//        recycling stories. Phase 1e (future) would migrate those
+//        into per-mineral dissolution scales for full unification.
+//        Calibration sweep at seed 42 vs v20: RMS 7.58%, 15 of 19
+//        scenarios within ±5%, 18 of 19 within ±20%. Max delta
+//        -25.5% (schneeberg, U-secondary minerals less aggressive
+//        once uraninite stops over-debiting U). Most scenarios
+//        unchanged (those 7 minerals weren't dominant).
+const SIM_VERSION = 21;
 

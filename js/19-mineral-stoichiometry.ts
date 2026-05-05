@@ -167,25 +167,34 @@ const _massBalanceMissingWarned: Record<string, boolean> = {};
 function applyMassBalance(crystal: any, zone: any, conditions: any): void {
   if (!MASS_BALANCE_ENABLED) return;
   if (!zone || !zone.thickness_um) return;
+  // Phase 1d (May 2026): precipitation-only. Engines hand-code their
+  // dissolution credits at per-mineral rates ~50× larger than the
+  // wrapper's MASS_BALANCE_SCALE — those rates were tuned to specific
+  // recycling stories per scenario (e.g. acid dissolution of calcite
+  // releases Ca at 0.5 ppm/µm, not 0.01). Until those manual credits
+  // are migrated into per-mineral dissolution rates (Phase 1e or
+  // later), the wrapper stays growth-only to avoid double-crediting.
+  // Net: the wrapper handles the gap that v17 left open (precipitation
+  // didn't debit the fluid), while existing dissolution credits keep
+  // their behavior.
+  if (zone.thickness_um < 0) return;
   const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
   if (!stoich) {
     if (!_massBalanceMissingWarned[crystal.mineral]) {
       _massBalanceMissingWarned[crystal.mineral] = true;
       console.warn(
         `[mass-balance] no stoichiometry for ${crystal.mineral} — ` +
-        `growth/dissolution will not affect fluid composition. Add to ` +
+        `growth will not debit fluid composition. Add to ` +
         `MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts.`
       );
     }
     return;
   }
-  // thickness_um is signed: positive = growth (debit), negative = dissolution (credit).
-  // Negate so debit = subtraction, credit = addition.
-  const delta = -MASS_BALANCE_SCALE * zone.thickness_um;
+  // thickness_um is positive (precipitation). Debit each species.
+  const debit = MASS_BALANCE_SCALE * zone.thickness_um;
   const fluid = conditions.fluid;
   for (const species in stoich) {
     if (typeof fluid[species] !== 'number') continue;
-    const change = delta * stoich[species];
-    fluid[species] = Math.max(0, fluid[species] + change);
+    fluid[species] = Math.max(0, fluid[species] - debit * stoich[species]);
   }
 }

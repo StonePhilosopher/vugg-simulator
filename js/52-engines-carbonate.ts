@@ -414,9 +414,7 @@ function grow_malachite(crystal, conditions, step) {
     crystal.a_width_mm = crystal.c_length_mm * 0.2;
   }
 
-  // Cu consumption
-  conditions.fluid.Cu -= rate * 0.01;
-  conditions.fluid.Cu = Math.max(conditions.fluid.Cu, 0);
+  // Phase 1d: Cu consumption owned by the wrapper (applyMassBalance).
 
   let color_note;
   if (zone_count >= 20) {
@@ -475,11 +473,7 @@ function grow_smithsonite(crystal, conditions, step) {
     crystal.a_width_mm = crystal.c_length_mm * 1.8;
   }
 
-  // Zn consumption
-  conditions.fluid.Zn -= rate * 0.008;
-  conditions.fluid.Zn = Math.max(conditions.fluid.Zn, 0);
-  conditions.fluid.CO3 -= rate * 0.005;
-  conditions.fluid.CO3 = Math.max(conditions.fluid.CO3, 0);
+  // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyMassBalance).
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 

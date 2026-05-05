@@ -4174,7 +4174,23 @@ let timeScale = 5.0;
 //        γ < 1 suppression; halite-saturated brines hit the I=1.7
 //        Davies clamp and are unaffected. Pulse scenarios with
 //        stochastic small-N counts show ±33% noise floor.
-const SIM_VERSION = 20;
+//   v21 — Phase 1d cleanup: end engine-internal growth-path debit
+//        double-counting (May 2026). Removed 7 manual
+//        `conditions.fluid.X -= rate * coef` blocks (15 lines, in
+//        adamite, mimetite, malachite, smithsonite, wulfenite,
+//        uraninite, feldspar) that previously double-debited fluid
+//        on growth alongside the wrapper from Phase 1a. Wrapper
+//        narrowed to precipitation-only — engine-internal dissolution
+//        credits (~120 lines, ~50× larger per-mineral rates than
+//        the wrapper's MASS_BALANCE_SCALE) keep their existing
+//        recycling stories. Phase 1e (future) would migrate those
+//        into per-mineral dissolution scales for full unification.
+//        Calibration sweep at seed 42 vs v20: RMS 7.58%, 15 of 19
+//        scenarios within ±5%, 18 of 19 within ±20%. Max delta
+//        -25.5% (schneeberg, U-secondary minerals less aggressive
+//        once uraninite stops over-debiting U). Most scenarios
+//        unchanged (those 7 minerals weren't dominant).
+const SIM_VERSION = 21;
 
 // ── 18-constants.js ──
 
@@ -4384,25 +4400,35 @@ function applyMassBalance(crystal, zone, conditions) {
         return;
     if (!zone || !zone.thickness_um)
         return;
+    // Phase 1d (May 2026): precipitation-only. Engines hand-code their
+    // dissolution credits at per-mineral rates ~50× larger than the
+    // wrapper's MASS_BALANCE_SCALE — those rates were tuned to specific
+    // recycling stories per scenario (e.g. acid dissolution of calcite
+    // releases Ca at 0.5 ppm/µm, not 0.01). Until those manual credits
+    // are migrated into per-mineral dissolution rates (Phase 1e or
+    // later), the wrapper stays growth-only to avoid double-crediting.
+    // Net: the wrapper handles the gap that v17 left open (precipitation
+    // didn't debit the fluid), while existing dissolution credits keep
+    // their behavior.
+    if (zone.thickness_um < 0)
+        return;
     const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
     if (!stoich) {
         if (!_massBalanceMissingWarned[crystal.mineral]) {
             _massBalanceMissingWarned[crystal.mineral] = true;
             console.warn(`[mass-balance] no stoichiometry for ${crystal.mineral} — ` +
-                `growth/dissolution will not affect fluid composition. Add to ` +
+                `growth will not debit fluid composition. Add to ` +
                 `MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts.`);
         }
         return;
     }
-    // thickness_um is signed: positive = growth (debit), negative = dissolution (credit).
-    // Negate so debit = subtraction, credit = addition.
-    const delta = -MASS_BALANCE_SCALE * zone.thickness_um;
+    // thickness_um is positive (precipitation). Debit each species.
+    const debit = MASS_BALANCE_SCALE * zone.thickness_um;
     const fluid = conditions.fluid;
     for (const species in stoich) {
         if (typeof fluid[species] !== 'number')
             continue;
-        const change = delta * stoich[species];
-        fluid[species] = Math.max(0, fluid[species] + change);
+        fluid[species] = Math.max(0, fluid[species] - debit * stoich[species]);
     }
 }
 
@@ -8485,10 +8511,7 @@ function grow_adamite(crystal, conditions, step) {
         colorNote = 'green — weakly fluorescent';
     else
         colorNote = 'yellow-green — NON-FLUORESCENT (no Cu)';
-    conditions.fluid.Zn -= rate * 0.008;
-    conditions.fluid.Zn = Math.max(conditions.fluid.Zn, 0);
-    conditions.fluid.As -= rate * 0.005;
-    conditions.fluid.As = Math.max(conditions.fluid.As, 0);
+    // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.01, note: `${crystal.habit}, ${colorNote}` });
 }
 function grow_mimetite(crystal, conditions, step) {
@@ -8536,12 +8559,7 @@ function grow_mimetite(crystal, conditions, step) {
         colorNote = 'bright yellow-orange';
     else
         colorNote = 'pale yellow';
-    conditions.fluid.Pb -= rate * 0.015;
-    conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-    conditions.fluid.As -= rate * 0.008;
-    conditions.fluid.As = Math.max(conditions.fluid.As, 0);
-    conditions.fluid.Cl -= rate * 0.003;
-    conditions.fluid.Cl = Math.max(conditions.fluid.Cl, 0);
+    // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.02, note: `${crystal.habit}, ${colorNote}` });
 }
 
@@ -9012,9 +9030,7 @@ function grow_malachite(crystal, conditions, step) {
     else if (crystal.habit === 'fibrous/acicular') {
         crystal.a_width_mm = crystal.c_length_mm * 0.2;
     }
-    // Cu consumption
-    conditions.fluid.Cu -= rate * 0.01;
-    conditions.fluid.Cu = Math.max(conditions.fluid.Cu, 0);
+    // Phase 1d: Cu consumption owned by the wrapper (applyMassBalance).
     let color_note;
     if (zone_count >= 20) {
         color_note = 'banded green (alternating light/dark)';
@@ -9071,11 +9087,7 @@ function grow_smithsonite(crystal, conditions, step) {
     if (crystal.habit === 'botryoidal' || crystal.habit === 'botryoidal/stalactitic') {
         crystal.a_width_mm = crystal.c_length_mm * 1.8;
     }
-    // Zn consumption
-    conditions.fluid.Zn -= rate * 0.008;
-    conditions.fluid.Zn = Math.max(conditions.fluid.Zn, 0);
-    conditions.fluid.CO3 -= rate * 0.005;
-    conditions.fluid.CO3 = Math.max(conditions.fluid.CO3, 0);
+    // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyMassBalance).
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     let color_note;
     if (conditions.fluid.Cu > 15) {
@@ -9534,11 +9546,7 @@ function grow_wulfenite(crystal, conditions, step) {
     crystal.dominant_forms = ['{001} tabular plates', 'square outline'];
     // Aspect ratio: very flat plates
     crystal.a_width_mm = crystal.c_length_mm * 3.0;
-    // Pb and Mo consumption
-    conditions.fluid.Pb -= rate * 0.006;
-    conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-    conditions.fluid.Mo -= rate * 0.004;
-    conditions.fluid.Mo = Math.max(conditions.fluid.Mo, 0);
+    // Phase 1d: Pb/Mo consumption owned by the wrapper (applyMassBalance).
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     let color_note;
     if (conditions.fluid.Cr > 5) {
@@ -10082,9 +10090,7 @@ function grow_uraninite(crystal, conditions, step) {
         crystal.habit = 'pitchblende_massive';
         crystal.dominant_forms = ['botryoidal masses', 'colloform banding'];
     }
-    // U consumption
-    conditions.fluid.U -= rate * 0.005;
-    conditions.fluid.U = Math.max(conditions.fluid.U, 0);
+    // Phase 1d: U consumption owned by the wrapper (applyMassBalance).
     let color_note;
     if (T > 500)
         color_note = 'pitch-black, submetallic — pegmatitic octahedron';
@@ -11079,19 +11085,11 @@ function grow_feldspar(crystal, conditions, step) {
     }
     // Store polymorph on crystal for display
     crystal.mineral_display = polymorph;
-    // Consume K/Na, Al, Si
-    if (isKrich) {
-        conditions.fluid.K -= rate * 0.005;
-        conditions.fluid.K = Math.max(conditions.fluid.K, 0);
-    }
-    else {
-        conditions.fluid.Na -= rate * 0.005;
-        conditions.fluid.Na = Math.max(conditions.fluid.Na, 0);
-    }
-    conditions.fluid.Al -= rate * 0.004;
-    conditions.fluid.Al = Math.max(conditions.fluid.Al, 0);
-    conditions.fluid.SiO2 -= rate * 0.006;
-    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2, 0);
+    // Phase 1d: K/Na/Al/SiO2 consumption owned by the wrapper
+    // (applyMassBalance, per MINERAL_STOICHIOMETRY['feldspar']).
+    // Note: feldspar is K-only per v17 reconciliation; the K-or-Na fork
+    // here was a pre-v17 artifact. Albite (Na-feldspar) has its own
+    // engine + stoichiometry entry.
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     // Polymorph-specific twin selection (Carlsbad/Baveno/Manebach for
     // K-feldspar; cross-hatched for microcline; albite polysynthetic

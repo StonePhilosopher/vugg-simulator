@@ -247,9 +247,7 @@ function grow_adamite(crystal, conditions, step) {
   else if (cuInCrystal > 0.1) colorNote = 'green — weakly fluorescent';
   else colorNote = 'yellow-green — NON-FLUORESCENT (no Cu)';
   
-  conditions.fluid.Zn -= rate * 0.008; conditions.fluid.Zn = Math.max(conditions.fluid.Zn, 0);
-  conditions.fluid.As -= rate * 0.005; conditions.fluid.As = Math.max(conditions.fluid.As, 0);
-  
+  // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.01, note: `${crystal.habit}, ${colorNote}` });
 }
 
@@ -295,9 +293,6 @@ function grow_mimetite(crystal, conditions, step) {
   else if (conditions.fluid.Pb > 100) colorNote = 'bright yellow-orange';
   else colorNote = 'pale yellow';
   
-  conditions.fluid.Pb -= rate * 0.015; conditions.fluid.Pb = Math.max(conditions.fluid.Pb, 0);
-  conditions.fluid.As -= rate * 0.008; conditions.fluid.As = Math.max(conditions.fluid.As, 0);
-  conditions.fluid.Cl -= rate * 0.003; conditions.fluid.Cl = Math.max(conditions.fluid.Cl, 0);
-  
+  // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.02, note: `${crystal.habit}, ${colorNote}` });
 }
