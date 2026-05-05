@@ -4742,13 +4742,18 @@ class WallState {
     }
 }
 
-// ── 99-legacy-bundle.js ──
+// ── 25-chemistry-conditions.js ──
 
-let rng = new SeededRandom(Date.now());
-// Time compression: each step represents more geological time at higher values.
-// 5× = ~50,000 years/step (Simulation/Creative), 1× = ~10,000 years/step (Groove).
-// Physics are identical — the clock is different, not the chemistry.
-let timeScale = 5.0;
+// ============================================================
+// js/25-chemistry-conditions.ts — VugConditions + 97 supersat methods
+// ============================================================
+// Mirror of vugg/chemistry/conditions.py. The mega-class with all the
+// fluid/wall/ring fields plus one supersaturation_<mineral>() per
+// supported mineral. Phase B7 will split the supersat methods into
+// per-class mixin files (mirroring vugg/chemistry/supersat/<class>.py),
+// leaving this module slim.
+//
+// Phase B6 of PROPOSAL-MODULAR-REFACTOR.
 class VugConditions {
     constructor(opts = {}) {
         this.temperature = opts.temperature ?? 350.0;
@@ -7248,6 +7253,17 @@ class VugConditions {
         return Math.max(sigma, 0);
     }
 }
+
+// ── 27-geometry-crystal.js ──
+
+// ============================================================
+// js/27-geometry-crystal.ts — GrowthZone + Crystal
+// ============================================================
+// Mirror of vugg/geometry/crystal.py. GrowthZone is one annotated
+// growth ring (per step the crystal grew); Crystal owns the list of
+// zones plus identity / habit / dominant_forms / dissolved flags.
+//
+// Phase B6 of PROPOSAL-MODULAR-REFACTOR.
 // ============================================================
 // CRYSTAL MODELS
 // ============================================================
@@ -7474,6 +7490,14 @@ class Crystal {
         return 'unknown';
     }
 }
+
+// ── 99-legacy-bundle.js ──
+
+let rng = new SeededRandom(Date.now());
+// Time compression: each step represents more geological time at higher values.
+// 5× = ~50,000 years/step (Simulation/Creative), 1× = ~10,000 years/step (Groove).
+// Physics are identical — the clock is different, not the chemistry.
+let timeScale = 5.0;
 // ============================================================
 // MINERAL GROWTH ENGINES
 // ============================================================
