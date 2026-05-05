@@ -376,18 +376,30 @@ all gated until E2/E3 land. CDN-blocked / file-vendor-missing case
 degrades gracefully: button disables itself and topoRender falls
 through to the canvas-vector path on every redraw.
 
-### Phase E2 — Cavity mesh from rings (next)
+### Phase E2 — Cavity mesh from rings (shipped)
 
-Replace the placeholder sphere with a real mesh generated from
-`wall.rings[k].cells[j]`: spherical-coordinate vertices using the
-same `(φ, θ) → (sin φ cos θ, -cos φ, sin φ sin θ)` math the
-canvas-vector renderer's `_topoRenderRings3D` uses, with per-vertex
-radii from `cell.base_radius_mm + cell.wall_depth` and the polar /
-twist Fourier modulators applied. Inside-out culling so the camera
-sits inside the cavity and only sees the interior wall (the
-"geode you can rotate" experience). Bare wall colors driven by
-ring orientation (floor / wall / ceiling), submerged rings tinted
-blue per the canvas-vector water-line convention.
+Replaced the placeholder sphere with a `BufferGeometry` built from
+`wall.rings[k].cells[j]`: 1,922 vertices (16 rings × 120 cells +
+2 pole caps) and 3,840 triangles, vertices placed via the same
+`(φ, θ) → (sin φ cos θ, -cos φ, sin φ sin θ)` math
+`_topoRenderRings3D` uses. Per-vertex radii fold in
+`cell.base_radius_mm + cell.wall_depth`, the polar Fourier
+modulator, and the twist Fourier modulator — the same three knobs
+the canvas-vector renderer reads, so the two views agree at zero
+tilt. Per-vertex colors carry orientation tint (floor / wall /
+ceiling) plus a 35 % blend toward `rgba(110,190,245,1)` for any
+ring under the meniscus, mirroring the canvas-vector water-line
+cue. `MeshStandardMaterial` with `side: DoubleSide` means the
+cavity reads cleanly from both outside (default framing) and
+inside (zoom in past the radius). `computeVertexNormals` produces
+the smooth shading.
+
+Geometry rebuilds gate on a content signature (`ring_count`,
+`cells_per_ring`, sampled wall_depth checksum, `fluid_surface_ring`)
+so steady-state renders skip the mesh allocation entirely — only
+dissolution events, water-level changes, or new sims trigger a
+rebuild. Inside-out backface culling is deferred to E4 polish (with
+the camera fly-through gesture).
 
 ### Phase E3 — Crystal sub-meshes
 
