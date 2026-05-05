@@ -2,6 +2,14 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+---
+
+## 🏗️ Modular refactor — split the monoliths
+
+**Status:** brief drafted 2026-05-04, see `proposals/PROPOSAL-MODULAR-REFACTOR.md`. Awaiting builder pickup.
+
+`vugg.py` is **20,445 lines**, `index.html` is **25,225 lines**, both growing with every mineral / scenario addition. The data layer (data/minerals.json, data/scenarios.json5) is well-modularized; the engine layer is not. The proposal lays out three phases (Python-only split, JS extraction with a tiny build step, parity-drift tooling) — each shippable on its own, none a flag day. Adding a mineral currently takes 8+ insertion points across 2 giant files; the refactor targets ≤4 file touches per mineral with clear class-grouped layout. Read the proposal first; the next builder's first deliverable is a 1-2 hour audit confirming the file-tree layout + the mixin-vs-registry choice for VugConditions's 304 supersat methods.
+
 Order is rough priority — top of each section is most-actionable, but explicit user direction reorders freely.
 
 ---
