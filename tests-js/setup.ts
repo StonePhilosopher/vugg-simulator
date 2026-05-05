@@ -247,6 +247,11 @@ const EXPORTS = [
   'phosphateRedoxFactor',
   'silicateRedoxAvailable',
   'silicateRedoxFactor',
+  // Phase 4b native-class helpers.
+  'nativeRedoxAnoxic',
+  'nativeRedoxLinearFactor',
+  'nativeRedoxWindow',
+  'nativeRedoxTent',
 ];
 
 let _bundleLoaded = false;

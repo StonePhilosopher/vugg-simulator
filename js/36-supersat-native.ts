@@ -15,11 +15,11 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Au > 1.0) return 0;
   if (this.fluid.Ag > 5.0) return 0;
   // Hg not currently tracked; coloradoite gate deferred.
-  if (this.fluid.O2 > 0.5) return 0;
+  if (!nativeRedoxAnoxic(this.fluid, 0.5)) return 0;
   const te_f = Math.min(this.fluid.Te / 2.0, 3.5);
   const pb_suppr = Math.max(0.5, 1.0 - this.fluid.Pb / 200.0);
   const bi_suppr = Math.max(0.5, 1.0 - this.fluid.Bi / 60.0);
-  const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.8);
+  const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 1.8, 0.4);
   let sigma = te_f * pb_suppr * bi_suppr * red_f;
   const T = this.temperature;
   let T_factor;
@@ -42,13 +42,12 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_native_sulfur() {
   if (this.fluid.S < 100) return 0;
-  if (this.fluid.O2 < 0.1 || this.fluid.O2 > 0.7) return 0;
+  if (!nativeRedoxWindow(this.fluid, 0.1, 0.7)) return 0;
   if (this.fluid.pH > 5) return 0;
   const metal_sum = this.fluid.Fe + this.fluid.Cu + this.fluid.Pb + this.fluid.Zn;
   if (metal_sum > 100) return 0;
   const s_f = Math.min(this.fluid.S / 200.0, 4.0);
-  const eh_dist = Math.abs(this.fluid.O2 - 0.4);
-  const eh_f = Math.max(0.4, 1.0 - 2.0 * eh_dist);
+  const eh_f = nativeRedoxTent(this.fluid, 0.4, 2.0, 0.4);
   const ph_f = Math.max(0.4, 1.0 - 0.15 * this.fluid.pH);
   let sigma = s_f * eh_f * ph_f;
   const T = this.temperature;
@@ -73,9 +72,9 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.As < 5) return 0;
   if (this.fluid.S > 10.0) return 0;
   if (this.fluid.Fe > 50.0) return 0;
-  if (this.fluid.O2 > 0.5) return 0;
+  if (!nativeRedoxAnoxic(this.fluid, 0.5)) return 0;
   const as_f = Math.min(this.fluid.As / 30.0, 3.0);
-  const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.8);
+  const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 1.8, 0.4);
   const s_suppr = Math.max(0.4, 1.0 - this.fluid.S / 12.0);
   let sigma = as_f * red_f * s_suppr;
   const T = this.temperature;
@@ -100,9 +99,9 @@ Object.assign(VugConditions.prototype, {
   supersaturation_native_silver() {
   if (this.fluid.Ag < 1.0) return 0;
   if (this.fluid.S > 2.0) return 0;
-  if (this.fluid.O2 > 0.3) return 0;
+  if (!nativeRedoxAnoxic(this.fluid, 0.3)) return 0;
   const ag_f = Math.min(this.fluid.Ag / 2.0, 3.0);
-  const red_f = Math.max(0.3, 1.0 - this.fluid.O2 * 2.5);
+  const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 2.5, 0.3);
   const s_f = Math.max(0.2, 1.0 - this.fluid.S / 4.0);
   let sigma = ag_f * red_f * s_f;
   const T = this.temperature;
@@ -125,10 +124,10 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_native_bismuth() {
-  if (this.fluid.Bi < 15 || this.fluid.S > 12 || this.fluid.O2 > 0.6) return 0;
+  if (this.fluid.Bi < 15 || this.fluid.S > 12 || !nativeRedoxAnoxic(this.fluid, 0.6)) return 0;
   const bi_f = Math.min(this.fluid.Bi / 25.0, 2.0);
   const s_mask = Math.max(0.4, 1.0 - this.fluid.S / 20.0);
-  const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.5);
+  const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
   let sigma = bi_f * s_mask * red_f;
   const T = this.temperature;
   let T_factor;
@@ -159,9 +158,9 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_native_copper() {
-  if (this.fluid.Cu < 50 || this.fluid.O2 > 0.4 || this.fluid.S > 30) return 0;
+  if (this.fluid.Cu < 50 || !nativeRedoxAnoxic(this.fluid, 0.4) || this.fluid.S > 30) return 0;
   const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
-  const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 2.0);
+  const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 2.0, 0.4);
   const s_f = Math.max(0.3, 1.0 - this.fluid.S / 40.0);
   let sigma = cu_f * red_f * s_f;
   const T = this.temperature;

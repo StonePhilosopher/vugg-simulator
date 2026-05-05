@@ -462,5 +462,29 @@
 //        oxidized-side helpers, named per-class for Phase 4c tuning
 //        independence (one Eh threshold per class).
 //        Flag still off; byte-identical to v35.
-const SIM_VERSION = 36;
+//   v37 — Phase 4b native class COMPLETE — Phase 4b in FULL (May 2026).
+//        12 sites across 6 minerals (native_tellurium, native_sulfur,
+//        native_arsenic, native_silver, native_bismuth, native_copper;
+//        native_gold has no fluid.O2 reference). Four new helpers in
+//        20c-chemistry-redox.ts: nativeRedoxAnoxic (5 sites),
+//        nativeRedoxLinearFactor (5 sites — same shape as
+//        sulfideRedoxLinearFactor with intercept=1.0), nativeRedoxWindow
+//        (1 site, native_sulfur), nativeRedoxTent (1 site,
+//        native_sulfur synproportionation Eh peak at O2=0.4).
+//
+//        ============================================================
+//        PHASE 4b: COMPLETE
+//        ============================================================
+//        TOTAL: 127 fluid.O2 sites migrated across 10 supersat classes
+//        (sulfate 22, hydroxide 4, oxide 8, arsenate 12, carbonate 12,
+//        sulfide 34, molybdate 8, phosphate 13, silicate 2, native 12).
+//        With EH_DYNAMIC_ENABLED=false throughout, all helpers
+//        passthrough to fluid.O2 — seed-42 output unchanged from v26
+//        across all 20 scenarios (verified via baseline diff at every
+//        version bump v27→v37).
+//
+//        Phase 4c (next sub-phase) is now unblocked: flip the flag,
+//        regen baseline, tune per-class Eh thresholds where the
+//        Eh-equivalent mapping shifts crystal counts beyond ±5%.
+const SIM_VERSION = 37;
 

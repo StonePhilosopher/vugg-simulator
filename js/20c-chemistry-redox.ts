@@ -555,3 +555,64 @@ function silicateRedoxFactor(fluid: any, scaleAtFull: number, cap: number = Infi
   const o2eq = o2FromEh(Eh);
   return Math.min(o2eq / scaleAtFull, cap);
 }
+
+// ============================================================
+// Phase 4b native-class engine helpers
+// ============================================================
+// Native elements (Te, S⁰, As, Ag, Bi, Cu) form under reducing
+// conditions — their cations get reduced all the way to elementary
+// state. native_sulfur is the exception: it forms in a narrow Eh
+// transition zone (synproportionation of H₂S + SO₄²⁻ ⇌ S⁰), needing
+// neither solidly oxic nor solidly anoxic. native_gold has no
+// fluid.O2 dependence (Au is nobilized by complexation, not Eh).
+//
+// Same shapes as sulfide + oxide; named per-class so Phase 4c can
+// tune independently.
+
+function nativeRedoxAnoxic(fluid: any, o2UpperBound: number): boolean {
+  if (!EH_DYNAMIC_ENABLED) {
+    return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) <= o2UpperBound;
+  }
+  const EhEquivalent = ehFromO2(o2UpperBound);
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  return Eh <= EhEquivalent;
+}
+
+function nativeRedoxLinearFactor(
+  fluid: any, intercept: number, slope: number = 1.0, floor: number = -Infinity,
+): number {
+  if (!EH_DYNAMIC_ENABLED) {
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    return Math.max(floor, intercept - slope * O2);
+  }
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  const o2eq = o2FromEh(Eh);
+  return Math.max(floor, intercept - slope * o2eq);
+}
+
+// native_sulfur Eh window — neither solidly oxic nor solidly anoxic.
+function nativeRedoxWindow(fluid: any, o2Low: number, o2High: number): boolean {
+  if (!EH_DYNAMIC_ENABLED) {
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    return O2 >= o2Low && O2 <= o2High;
+  }
+  const EhLow = ehFromO2(o2Low);
+  const EhHigh = ehFromO2(o2High);
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  return Eh >= EhLow && Eh <= EhHigh;
+}
+
+// native_sulfur Eh-distance peak — peaks at peakO2, falls off
+// linearly. Identical shape to oxide's tent + sulfide's tent but
+// with peakValue=1.0 hardcoded (the legacy native_sulfur form).
+function nativeRedoxTent(
+  fluid: any, peakO2: number, slope: number, floor: number,
+): number {
+  if (!EH_DYNAMIC_ENABLED) {
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    return Math.max(floor, 1.0 - slope * Math.abs(O2 - peakO2));
+  }
+  const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+  const o2eq = o2FromEh(Eh);
+  return Math.max(floor, 1.0 - slope * Math.abs(o2eq - peakO2));
+}
