@@ -313,5 +313,142 @@
 //        calls (seed-input default, random scenario picker, zen
 //        scenarioKey) are intentional wall-clock entropy and
 //        unchanged.
-const SIM_VERSION = 25;
+//   v26 — Phase 4a aqueous-redox infrastructure (May 2026).
+//        Three pieces, all flag-OFF:
+//        (a) New `fluid.Eh` field (mV, default +200 — mildly
+//            oxidizing). Per-ring like every other FluidChemistry
+//            field, threaded through diffusion automatically.
+//        (b) New module 20c-chemistry-redox.ts encoding the three
+//            Nernst couples (Fe³⁺/Fe²⁺ E°=770 mV, MnO₂/Mn²⁺
+//            E°=1230 mV pH-strongly-coupled at -118 mV/pH,
+//            SO₄²⁻/HS⁻ E°=250 mV pH-coupled at -66.6 mV/pH) plus
+//            nernstOxidizedFraction + redoxFraction helpers and
+//            backward-compat ehFromO2 / o2FromEh derivations.
+//        (c) EH_DYNAMIC_ENABLED = false flag — engines still gate
+//            on fluid.O2 > X across all 96 sites until Phase 4b
+//            migrates them one supersat class at a time. Until
+//            then the new field rides alongside as derived state;
+//            seed-42 output is byte-identical to v25.
+//        No calibration shift expected at this version (flag-OFF
+//        infrastructure only); first sweep deltas land at v27 when
+//        4b starts migrating engines.
+//   v27 — Phase 4b helpers landed (May 2026). Two new helpers in
+//        20c-chemistry-redox.ts: sulfateRedoxAvailable(fluid, X) and
+//        sulfateRedoxFactor(fluid, scale, cap=Infinity). With
+//        EH_DYNAMIC_ENABLED=false (still) they passthrough to the
+//        legacy fluid.O2 form, giving byte-identical seed-42 output
+//        — this version is the "infrastructure callable but unused"
+//        checkpoint. Subsequent v28+ commits walk the 22 sulfate
+//        engine sites in batches; the seed42_v27.json baseline
+//        therefore must equal seed42_v26.json content (only filename
+//        differs). If any scenario summary drifts at v27, the
+//        helpers don't actually preserve legacy behavior — back out.
+//   v28 — Phase 4b sulfate sites batch 1 (May 2026): barite,
+//        celestine, anhydrite, selenite migrated to the helper form.
+//        4 engines × 2 sites each = 8 site migrations. With
+//        EH_DYNAMIC_ENABLED=false the helpers passthrough to the
+//        legacy fluid.O2 form, so seed-42 output is byte-identical
+//        to v27 (verified via baseline diff). Per-site rationale
+//        comments preserved unchanged. Calibration delta target:
+//        zero crystal shift across all 20 scenarios.
+//   v29 — Phase 4b sulfate sites batch 2 (May 2026): brochantite,
+//        antlerite, jarosite, alunite migrated to the helper form.
+//        4 engines × 2 sites each = 8 site migrations. The Cu/Fe/Al
+//        supergene-acid suite — all four gate on O2 ≥ 0.5 and use
+//        the standard /1.0 cap 1.5 factor. With EH_DYNAMIC_ENABLED
+//        still false, byte-identical to v28 (verified via diff).
+//        14 sites + 8 supersat methods → 6 sites + 4 supersat methods
+//        remaining in the sulfate class.
+//   v30 — Phase 4b sulfate sites batch 3 + sulfate-class COMPLETE
+//        (May 2026): chalcanthite, mirabilite, thenardite, anglesite
+//        migrated to the helper form. 6 sites across 4 supersat
+//        methods. With this commit, all 22 sites in
+//        js/40-supersat-sulfate.ts are migrated; `grep "fluid.O2"
+//        js/40-supersat-sulfate.ts` returns nothing. The sulfate
+//        class is the proof-of-pattern for Phase 4b — the 5 remaining
+//        classes (arsenate / carbonate / hydroxide / oxide / sulfide)
+//        follow the same per-class-helper template once their own
+//        redox semantics are nailed down.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v29
+//        (verified via baseline diff). Phase 4c (flag flip + per-site
+//        Eh-threshold tuning) is the natural next sub-phase once
+//        4b's other classes ship.
+//   v31 — Phase 4b hydroxide class COMPLETE (May 2026): goethite +
+//        lepidocrocite. 4 sites across 2 supersat methods. New helpers
+//        hydroxideRedoxAvailable + hydroxideRedoxFactor in
+//        20c-chemistry-redox.ts — same flag-OFF passthrough shape as
+//        sulfate's helpers, named separately so Phase 4c can bind
+//        hydroxide to the Fe³⁺/Fe²⁺ Nernst couple (E°=770 mV) while
+//        sulfate stays on the SO₄²⁻/HS⁻ couple. Both Fe(III)
+//        hydroxides only form under solidly oxic conditions, so the
+//        legacy O2 thresholds 0.4/0.8 map cleanly to Eh well above
+//        the Fe couple midpoint. With EH_DYNAMIC_ENABLED still false,
+//        byte-identical to v30 (verified via diff).
+//   v32 — Phase 4b oxide class COMPLETE (May 2026): hematite,
+//        uraninite, magnetite, cuprite. 8 sites across 4 supersat
+//        methods (corundum/ruby/sapphire delegate to
+//        _corundum_base_sigma which doesn't reference fluid.O2 — no
+//        migration needed). Oxide is the first class with mixed
+//        redox semantics:
+//        • hematite (Fe(III)): standard oxidized-side via
+//          oxideRedoxAvailable + oxideRedoxFactor.
+//        • uraninite (U(IV)): REDUCED-side via oxideRedoxAnoxic +
+//          oxideRedoxAnoxicFactor — the first reverse-gate helpers.
+//          Phase 4c will add a U couple to REDOX_COUPLES so this
+//          binds against `1 - redoxFraction(fluid, 'U')`.
+//        • magnetite + cuprite (intermediate Fe-mixed-valence and
+//          Cu(I)): WINDOWED via oxideRedoxWindow +
+//          oxideRedoxTent — Eh-band-with-tent peak, neither solidly
+//          oxic nor anoxic.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v31
+//        (verified via diff).
+//   v33 — Phase 4b arsenate class COMPLETE (May 2026): adamite,
+//        annabergite, erythrite, mimetite, olivenite, scorodite.
+//        12 sites across 6 supersat methods, all standard
+//        oxidized-side via arsenateRedoxAvailable + arsenateRedoxFactor
+//        — same shape as sulfate/hydroxide. All six are arsenate As(V)
+//        minerals; Phase 4c will bind to a new As couple
+//        (HAsO₄²⁻/H₃AsO₃, E° ≈ +560 mV at pH 7) added to
+//        REDOX_COUPLES. With EH_DYNAMIC_ENABLED still false,
+//        byte-identical to v32 (verified via diff).
+//   v34 — Phase 4b carbonate class COMPLETE (May 2026): malachite,
+//        smithsonite, azurite, rosasite, aurichalcite (oxidized-side,
+//        8 sites) + siderite, rhodochrosite (reduced-side, 4 sites).
+//        Calcite, dolomite, aragonite, cerussite have no fluid.O2
+//        reference — no migration needed. New helpers:
+//        carbonateRedoxAvailable + carbonateRedoxFactor (oxidized,
+//        same shape as sulfate), carbonateRedoxAnoxic (reduced-side
+//        hard gate, same shape as oxide's anoxic), and
+//        carbonateRedoxPenalty (parametrized soft-penalty multiplier
+//        capturing siderite's smooth join at O2=0.3 and
+//        rhodochrosite's step discontinuity at O2=0.8).
+//        Phase 4c will bind oxidized-side carbonates to Eh; siderite
+//        binds to (1 - redoxFraction(fluid, 'Fe')) and rhodochrosite
+//        to (1 - redoxFraction(fluid, 'Mn')) — both Fe(II) and
+//        Mn(II) carbonates need their cation in the reduced state.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v33
+//        (verified via diff).
+//   v35 — Phase 4b sulfide class COMPLETE — Phase 4b in full (May 2026).
+//        20 minerals, 34 sites — the largest class, all reduced-side.
+//        Three new helpers in 20c-chemistry-redox.ts:
+//        • sulfideRedoxAnoxic — hard reverse-gate (18 sites). Legacy
+//          `if (O2 > X) return 0`.
+//        • sulfideRedoxLinearFactor(intercept, slope=1, floor=-∞) —
+//          unified multiplier covering three legacy shapes (15 sites):
+//          (1.5 - O2) no-clamp / (intercept - O2) clamped / (1.0 -
+//          slope·O2) clamped.
+//        • sulfideRedoxTent — for covellite's
+//          `max(0.3, 1.3 - abs(O2 - 0.8))` shape (1 site).
+//        All flag-OFF passthrough; byte-identical to v34.
+//
+//        Phase 4b RUNNING TOTAL: 92 fluid.O2 sites migrated across 6
+//        supersat classes (sulfate/hydroxide/oxide/arsenate/carbonate/
+//        sulfide). Discovered additional classes during the sulfide
+//        sweep that the handoff doc undercounted: molybdate (8),
+//        native (12), phosphate (13), silicate (2) — 35 sites
+//        remaining across 4 more classes. Phase 4b continues. With
+//        the flag still false, all migrated classes passthrough to
+//        fluid.O2 — seed-42 output unchanged from v26 across all
+//        scenarios.
+const SIM_VERSION = 35;
 

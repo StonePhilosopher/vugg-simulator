@@ -60,7 +60,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Fe < 10 || effectiveCO3(this.fluid, this.temperature) < 20) return 0;
   if (this.temperature < 20 || this.temperature > 300) return 0;
   if (this.fluid.pH < 5.0 || this.fluid.pH > 9.0) return 0;
-  if (this.fluid.O2 > 0.8) return 0;  // hard reducing gate
+  if (!carbonateRedoxAnoxic(this.fluid, 0.8)) return 0;  // hard reducing gate
   const eq_fe = 80.0 * Math.exp(-0.005 * this.temperature);
   if (eq_fe <= 0) return 0;
   // Phase 2 fix: Q = a(Fe²⁺) × a(CO3²⁻); see calcite for rationale.
@@ -69,7 +69,7 @@ Object.assign(VugConditions.prototype, {
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'siderite');
   if (this.fluid.pH < 5.5) sigma -= (5.5 - this.fluid.pH) * 0.5;
   else if (this.fluid.pH > 7.5) sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
-  if (this.fluid.O2 > 0.3) sigma *= Math.max(0.2, 1.0 - (this.fluid.O2 - 0.3) * 1.5);
+  sigma *= carbonateRedoxPenalty(this.fluid, 0.3, 1.0, 1.5, 0.2);
   return Math.max(sigma, 0);
 },
 
@@ -107,7 +107,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Mn < 5 || effectiveCO3(this.fluid, this.temperature) < 20) return 0;
   if (this.temperature < 20 || this.temperature > 250) return 0;
   if (this.fluid.pH < 5.0 || this.fluid.pH > 9.0) return 0;
-  if (this.fluid.O2 > 1.5) return 0;
+  if (!carbonateRedoxAnoxic(this.fluid, 1.5)) return 0;
   const eq_mn = 50.0 * Math.exp(-0.005 * this.temperature);
   if (eq_mn <= 0) return 0;
   // Phase 2 fix: Q = a(Mn²⁺) × a(CO3²⁻); see calcite for rationale.
@@ -116,7 +116,7 @@ Object.assign(VugConditions.prototype, {
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'rhodochrosite');
   if (this.fluid.pH < 5.5) sigma -= (5.5 - this.fluid.pH) * 0.5;
   else if (this.fluid.pH > 7.5) sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
-  if (this.fluid.O2 > 0.8) sigma *= Math.max(0.3, 1.5 - this.fluid.O2);
+  sigma *= carbonateRedoxPenalty(this.fluid, 0.8, 0.7, 1.0, 0.3);
   return Math.max(sigma, 0);
 },
 
@@ -151,7 +151,7 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_malachite() {
-  if (this.fluid.Cu < 5 || effectiveCO3(this.fluid, this.temperature) < 20 || this.fluid.O2 < 0.3) return 0;
+  if (this.fluid.Cu < 5 || effectiveCO3(this.fluid, this.temperature) < 20 || !carbonateRedoxAvailable(this.fluid, 0.3)) return 0;
   // Denominators reference realistic supergene weathering fluid (Cu ~25 ppm,
   // CO₃ ~100 ppm). The older 50/200 values were tuned for Cu-saturated
   // porphyry fluids and starved supergene vugs of their flagship Cu mineral.
@@ -162,7 +162,7 @@ Object.assign(VugConditions.prototype, {
   // to malachite via the paramorph mechanic in grow_azurite when CO3
   // falls during a run (Bisbee step 225 ev_co2_drop).
   // See research/research-broth-ratio-malachite-azurite.md.
-  let sigma = (this.fluid.Cu / 25.0) * (effectiveCO3(this.fluid, this.temperature) / 100.0) * (this.fluid.O2 / 1.0);
+  let sigma = (this.fluid.Cu / 25.0) * (effectiveCO3(this.fluid, this.temperature) / 100.0) * carbonateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 50) {
     sigma *= Math.exp(-0.005 * (this.temperature - 50));
   }
@@ -178,10 +178,10 @@ Object.assign(VugConditions.prototype, {
   // research-smithsonite.md (T 10-50°C optimum, never above ~80°C
   // in nature). Pre-v17 JS hard cap at 200°C was too lenient.
   // Tightened to 100°C hard with steep decay above 80°C.
-  if (this.fluid.Zn < 20 || effectiveCO3(this.fluid, this.temperature) < 50 || this.fluid.O2 < 0.2) return 0;
+  if (this.fluid.Zn < 20 || effectiveCO3(this.fluid, this.temperature) < 50 || !carbonateRedoxAvailable(this.fluid, 0.2)) return 0;
   if (this.temperature > 100) return 0;
   if (this.fluid.pH < 5) return 0;
-  let sigma = (this.fluid.Zn / 80.0) * (effectiveCO3(this.fluid, this.temperature) / 200.0) * (this.fluid.O2 / 1.0);
+  let sigma = (this.fluid.Zn / 80.0) * (effectiveCO3(this.fluid, this.temperature) / 200.0) * carbonateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 80) {
     sigma *= Math.exp(-0.04 * (this.temperature - 80));
   }
@@ -191,10 +191,10 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_azurite() {
-  if (this.fluid.Cu < 20 || effectiveCO3(this.fluid, this.temperature) < 120 || this.fluid.O2 < 1.0) return 0;
+  if (this.fluid.Cu < 20 || effectiveCO3(this.fluid, this.temperature) < 120 || !carbonateRedoxAvailable(this.fluid, 1.0)) return 0;
   const cu_f = Math.min(this.fluid.Cu / 40.0, 2.0);
   const co_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 150.0, 1.8);
-  const o_f  = Math.min(this.fluid.O2 / 1.5, 1.3);
+  const o_f  = carbonateRedoxFactor(this.fluid, 1.5, 1.3);
   let sigma = cu_f * co_f * o_f;
   if (this.temperature > 50) sigma *= Math.exp(-0.06 * (this.temperature - 50));
   if (this.fluid.pH < 5.0) sigma -= (5.0 - this.fluid.pH) * 0.4;
@@ -217,7 +217,7 @@ Object.assign(VugConditions.prototype, {
   supersaturation_rosasite() {
   if (this.fluid.Cu < 5 || this.fluid.Zn < 3 || effectiveCO3(this.fluid, this.temperature) < 30) return 0;
   if (this.temperature < 10 || this.temperature > 40) return 0;
-  if (this.fluid.O2 < 0.8) return 0;
+  if (!carbonateRedoxAvailable(this.fluid, 0.8)) return 0;
   if (this.fluid.pH < 6.5) return 0;
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const cu_fraction = this.fluid.Cu / cu_zn_total;  // safe — Cu>=5 above
@@ -242,7 +242,7 @@ Object.assign(VugConditions.prototype, {
   supersaturation_aurichalcite() {
   if (this.fluid.Zn < 5 || this.fluid.Cu < 3 || effectiveCO3(this.fluid, this.temperature) < 30) return 0;
   if (this.temperature < 10 || this.temperature > 40) return 0;
-  if (this.fluid.O2 < 0.8) return 0;
+  if (!carbonateRedoxAvailable(this.fluid, 0.8)) return 0;
   // pH gate — see vugg.py supersaturation_aurichalcite for citation
   // (Pinch & Wilson 1977 — real Tsumeb fluids active at pH 5.5-7.5).
   if (this.fluid.pH < 6.0) return 0;

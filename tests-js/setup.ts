@@ -208,6 +208,38 @@ const EXPORTS = [
   'setSeed',
   'ORIENTATION_PREFERENCE',
   'WATER_STATE_PREFERENCE',
+  // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
+  'EH_DYNAMIC_ENABLED',
+  'REDOX_COUPLES',
+  'nernstOxidizedFraction',
+  'redoxFraction',
+  'ehFromO2',
+  'o2FromEh',
+  // Phase 4b sulfate-class helpers (20c-chemistry-redox.ts).
+  'sulfateRedoxAvailable',
+  'sulfateRedoxFactor',
+  // Phase 4b hydroxide-class helpers (20c-chemistry-redox.ts).
+  'hydroxideRedoxAvailable',
+  'hydroxideRedoxFactor',
+  // Phase 4b oxide-class helpers (20c-chemistry-redox.ts).
+  'oxideRedoxAvailable',
+  'oxideRedoxFactor',
+  'oxideRedoxAnoxic',
+  'oxideRedoxAnoxicFactor',
+  'oxideRedoxWindow',
+  'oxideRedoxTent',
+  // Phase 4b arsenate-class helpers (20c-chemistry-redox.ts).
+  'arsenateRedoxAvailable',
+  'arsenateRedoxFactor',
+  // Phase 4b carbonate-class helpers (20c-chemistry-redox.ts).
+  'carbonateRedoxAvailable',
+  'carbonateRedoxFactor',
+  'carbonateRedoxAnoxic',
+  'carbonateRedoxPenalty',
+  // Phase 4b sulfide-class helpers (20c-chemistry-redox.ts).
+  'sulfideRedoxAnoxic',
+  'sulfideRedoxLinearFactor',
+  'sulfideRedoxTent',
 ];
 
 let _bundleLoaded = false;

@@ -4306,7 +4306,142 @@ let timeScale = 5.0;
 //        calls (seed-input default, random scenario picker, zen
 //        scenarioKey) are intentional wall-clock entropy and
 //        unchanged.
-const SIM_VERSION = 25;
+//   v26 — Phase 4a aqueous-redox infrastructure (May 2026).
+//        Three pieces, all flag-OFF:
+//        (a) New `fluid.Eh` field (mV, default +200 — mildly
+//            oxidizing). Per-ring like every other FluidChemistry
+//            field, threaded through diffusion automatically.
+//        (b) New module 20c-chemistry-redox.ts encoding the three
+//            Nernst couples (Fe³⁺/Fe²⁺ E°=770 mV, MnO₂/Mn²⁺
+//            E°=1230 mV pH-strongly-coupled at -118 mV/pH,
+//            SO₄²⁻/HS⁻ E°=250 mV pH-coupled at -66.6 mV/pH) plus
+//            nernstOxidizedFraction + redoxFraction helpers and
+//            backward-compat ehFromO2 / o2FromEh derivations.
+//        (c) EH_DYNAMIC_ENABLED = false flag — engines still gate
+//            on fluid.O2 > X across all 96 sites until Phase 4b
+//            migrates them one supersat class at a time. Until
+//            then the new field rides alongside as derived state;
+//            seed-42 output is byte-identical to v25.
+//        No calibration shift expected at this version (flag-OFF
+//        infrastructure only); first sweep deltas land at v27 when
+//        4b starts migrating engines.
+//   v27 — Phase 4b helpers landed (May 2026). Two new helpers in
+//        20c-chemistry-redox.ts: sulfateRedoxAvailable(fluid, X) and
+//        sulfateRedoxFactor(fluid, scale, cap=Infinity). With
+//        EH_DYNAMIC_ENABLED=false (still) they passthrough to the
+//        legacy fluid.O2 form, giving byte-identical seed-42 output
+//        — this version is the "infrastructure callable but unused"
+//        checkpoint. Subsequent v28+ commits walk the 22 sulfate
+//        engine sites in batches; the seed42_v27.json baseline
+//        therefore must equal seed42_v26.json content (only filename
+//        differs). If any scenario summary drifts at v27, the
+//        helpers don't actually preserve legacy behavior — back out.
+//   v28 — Phase 4b sulfate sites batch 1 (May 2026): barite,
+//        celestine, anhydrite, selenite migrated to the helper form.
+//        4 engines × 2 sites each = 8 site migrations. With
+//        EH_DYNAMIC_ENABLED=false the helpers passthrough to the
+//        legacy fluid.O2 form, so seed-42 output is byte-identical
+//        to v27 (verified via baseline diff). Per-site rationale
+//        comments preserved unchanged. Calibration delta target:
+//        zero crystal shift across all 20 scenarios.
+//   v29 — Phase 4b sulfate sites batch 2 (May 2026): brochantite,
+//        antlerite, jarosite, alunite migrated to the helper form.
+//        4 engines × 2 sites each = 8 site migrations. The Cu/Fe/Al
+//        supergene-acid suite — all four gate on O2 ≥ 0.5 and use
+//        the standard /1.0 cap 1.5 factor. With EH_DYNAMIC_ENABLED
+//        still false, byte-identical to v28 (verified via diff).
+//        14 sites + 8 supersat methods → 6 sites + 4 supersat methods
+//        remaining in the sulfate class.
+//   v30 — Phase 4b sulfate sites batch 3 + sulfate-class COMPLETE
+//        (May 2026): chalcanthite, mirabilite, thenardite, anglesite
+//        migrated to the helper form. 6 sites across 4 supersat
+//        methods. With this commit, all 22 sites in
+//        js/40-supersat-sulfate.ts are migrated; `grep "fluid.O2"
+//        js/40-supersat-sulfate.ts` returns nothing. The sulfate
+//        class is the proof-of-pattern for Phase 4b — the 5 remaining
+//        classes (arsenate / carbonate / hydroxide / oxide / sulfide)
+//        follow the same per-class-helper template once their own
+//        redox semantics are nailed down.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v29
+//        (verified via baseline diff). Phase 4c (flag flip + per-site
+//        Eh-threshold tuning) is the natural next sub-phase once
+//        4b's other classes ship.
+//   v31 — Phase 4b hydroxide class COMPLETE (May 2026): goethite +
+//        lepidocrocite. 4 sites across 2 supersat methods. New helpers
+//        hydroxideRedoxAvailable + hydroxideRedoxFactor in
+//        20c-chemistry-redox.ts — same flag-OFF passthrough shape as
+//        sulfate's helpers, named separately so Phase 4c can bind
+//        hydroxide to the Fe³⁺/Fe²⁺ Nernst couple (E°=770 mV) while
+//        sulfate stays on the SO₄²⁻/HS⁻ couple. Both Fe(III)
+//        hydroxides only form under solidly oxic conditions, so the
+//        legacy O2 thresholds 0.4/0.8 map cleanly to Eh well above
+//        the Fe couple midpoint. With EH_DYNAMIC_ENABLED still false,
+//        byte-identical to v30 (verified via diff).
+//   v32 — Phase 4b oxide class COMPLETE (May 2026): hematite,
+//        uraninite, magnetite, cuprite. 8 sites across 4 supersat
+//        methods (corundum/ruby/sapphire delegate to
+//        _corundum_base_sigma which doesn't reference fluid.O2 — no
+//        migration needed). Oxide is the first class with mixed
+//        redox semantics:
+//        • hematite (Fe(III)): standard oxidized-side via
+//          oxideRedoxAvailable + oxideRedoxFactor.
+//        • uraninite (U(IV)): REDUCED-side via oxideRedoxAnoxic +
+//          oxideRedoxAnoxicFactor — the first reverse-gate helpers.
+//          Phase 4c will add a U couple to REDOX_COUPLES so this
+//          binds against `1 - redoxFraction(fluid, 'U')`.
+//        • magnetite + cuprite (intermediate Fe-mixed-valence and
+//          Cu(I)): WINDOWED via oxideRedoxWindow +
+//          oxideRedoxTent — Eh-band-with-tent peak, neither solidly
+//          oxic nor anoxic.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v31
+//        (verified via diff).
+//   v33 — Phase 4b arsenate class COMPLETE (May 2026): adamite,
+//        annabergite, erythrite, mimetite, olivenite, scorodite.
+//        12 sites across 6 supersat methods, all standard
+//        oxidized-side via arsenateRedoxAvailable + arsenateRedoxFactor
+//        — same shape as sulfate/hydroxide. All six are arsenate As(V)
+//        minerals; Phase 4c will bind to a new As couple
+//        (HAsO₄²⁻/H₃AsO₃, E° ≈ +560 mV at pH 7) added to
+//        REDOX_COUPLES. With EH_DYNAMIC_ENABLED still false,
+//        byte-identical to v32 (verified via diff).
+//   v34 — Phase 4b carbonate class COMPLETE (May 2026): malachite,
+//        smithsonite, azurite, rosasite, aurichalcite (oxidized-side,
+//        8 sites) + siderite, rhodochrosite (reduced-side, 4 sites).
+//        Calcite, dolomite, aragonite, cerussite have no fluid.O2
+//        reference — no migration needed. New helpers:
+//        carbonateRedoxAvailable + carbonateRedoxFactor (oxidized,
+//        same shape as sulfate), carbonateRedoxAnoxic (reduced-side
+//        hard gate, same shape as oxide's anoxic), and
+//        carbonateRedoxPenalty (parametrized soft-penalty multiplier
+//        capturing siderite's smooth join at O2=0.3 and
+//        rhodochrosite's step discontinuity at O2=0.8).
+//        Phase 4c will bind oxidized-side carbonates to Eh; siderite
+//        binds to (1 - redoxFraction(fluid, 'Fe')) and rhodochrosite
+//        to (1 - redoxFraction(fluid, 'Mn')) — both Fe(II) and
+//        Mn(II) carbonates need their cation in the reduced state.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v33
+//        (verified via diff).
+//   v35 — Phase 4b sulfide class COMPLETE — Phase 4b in full (May 2026).
+//        20 minerals, 34 sites — the largest class, all reduced-side.
+//        Three new helpers in 20c-chemistry-redox.ts:
+//        • sulfideRedoxAnoxic — hard reverse-gate (18 sites). Legacy
+//          `if (O2 > X) return 0`.
+//        • sulfideRedoxLinearFactor(intercept, slope=1, floor=-∞) —
+//          unified multiplier covering three legacy shapes (15 sites):
+//          (1.5 - O2) no-clamp / (intercept - O2) clamped / (1.0 -
+//          slope·O2) clamped.
+//        • sulfideRedoxTent — for covellite's
+//          `max(0.3, 1.3 - abs(O2 - 0.8))` shape (1 site).
+//        All flag-OFF passthrough; byte-identical to v34.
+//
+//        Phase 4b TOTAL: 92 fluid.O2 sites migrated across 6 supersat
+//        classes. With the flag still false, all classes passthrough
+//        to fluid.O2 — seed-42 output unchanged from v26 (the
+//        infrastructure-landing baseline). Phase 4c is now unblocked:
+//        flip EH_DYNAMIC_ENABLED to true, regen baseline, tune any
+//        per-class thresholds where the Eh-equivalent mapping shifts
+//        crystal counts beyond ±5%.
+const SIM_VERSION = 35;
 
 // ── 18-constants.js ──
 
@@ -4641,6 +4776,15 @@ class FluidChemistry {
         this.Ge = opts.Ge ?? 0.0; // germanium — Tsumeb sphalerite
         this.Au = opts.Au ?? 0.0; // gold — native gold; Bingham/Bisbee porphyry-Cu-Au
         this.O2 = opts.O2 ?? 0.0;
+        // Phase 4a of PROPOSAL-GEOLOGICAL-ACCURACY: redox potential Eh (mV).
+        // Default +200 mV — mildly oxidizing, matches "oxic groundwater" in
+        // pourbaix diagrams. Scenarios that want anoxic conditions set
+        // Eh < 0; ferruginous/sulfidic Eh < -100. Until EH_DYNAMIC_ENABLED
+        // flips on (Phase 4b/c migration), engines still gate on fluid.O2;
+        // Eh just rides alongside as derived state. ehFromO2 in
+        // 20c-chemistry-redox.ts gives a default Eh for scenarios that only
+        // set O2.
+        this.Eh = opts.Eh ?? 200.0;
         this.pH = opts.pH ?? 6.5;
         this.salinity = opts.salinity ?? 5.0;
         // v27 evaporative concentration multiplier (mirror of
@@ -5116,6 +5260,473 @@ function equilibriumPCO2(fluid, T_celsius) {
     const H2CO3_molal = DIC_molal * fractions.H2CO3;
     const KH = Math.pow(10, -pKH_CO2(T_celsius));
     return KH > 0 ? H2CO3_molal / KH : 0;
+}
+
+// ── 20c-chemistry-redox.js ──
+
+// ============================================================
+// js/20c-chemistry-redox.ts — Nernst-equation redox infrastructure
+// ============================================================
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 4a. Brings Eh online as a
+// continuous fluid state (mV) plus three explicit redox couples
+// (Fe³⁺/Fe²⁺, Mn⁴⁺/Mn²⁺, SO₄²⁻/HS⁻) that engines can query for the
+// fraction of a given element sitting in its oxidized vs reduced
+// pool. Gates the long-tail engine migration that follows in 4b.
+//
+// Coupling: this module is the Eh-side complement to Phase 3a's
+// carbonate-system module (20b-chemistry-carbonate-system.ts).
+// Both use the same pH input from `fluid.pH`. At neutral pH the
+// Mn and S couples are pH-strongly-dependent; the Fe couple is
+// pH-independent in the simple Fe³⁺/Fe²⁺ form, but in real waters
+// hydrolysis (Fe(OH)₃ formation) introduces an effective pH slope.
+// The simple n-electron Henderson-Hasselbalch form here is enough
+// resolution for game-mode chemistry; Phase 4b can refine specific
+// couples if calibration calls for it.
+//
+// Default state: EH_DYNAMIC_ENABLED = false. Engines still gate on
+// `fluid.O2 > X` until Phase 4b migrates them one class at a time.
+// With the flag on (Phase 4c), `redoxFraction(fluid, 'Fe')` etc.
+// becomes the canonical query and `fluid.O2` collapses to a derived
+// proxy via `ehFromO2`.
+//
+// Conventions:
+//   - Eh in mV (volts × 1000), positive = oxidizing.
+//     +500 mV ≈ aerobic surface water, oxic.
+//     +200 mV ≈ mildly oxidizing groundwater (default).
+//     0 mV   ≈ redox boundary, transition zone.
+//     -100 mV ≈ Fe-reducing, ferruginous.
+//     -200 mV ≈ sulfate-reducing, sulfidic.
+//     -400 mV ≈ methanogenic.
+//   - REDOX_COUPLES values are E° in mV at 25°C, plus a pH
+//     coefficient (mV per pH unit) and electron count n.
+//   - Henderson-Hasselbalch slope at 25°C: 59.16 / n mV.
+//     Slope = 2.303 × R × T / (n × F).
+const EH_DYNAMIC_ENABLED = false;
+// Three half-reactions encoded — the minimum set the proposal calls
+// for. Each entry: E0 in mV, n electrons, pHCoeff (mV per pH unit
+// shift in apparent E0). pHCoeff comes from the H⁺ stoichiometry of
+// the half-reaction; the formula is -59.16 × m / n where m is the
+// number of H⁺ in the oxidized → reduced step.
+//
+// Fe³⁺ + e⁻ ⇌ Fe²⁺
+//   m = 0 (no H⁺), n = 1 → pHCoeff = 0.
+//
+// MnO₂ + 4H⁺ + 2e⁻ ⇌ Mn²⁺ + 2H₂O
+//   m = 4, n = 2 → pHCoeff = -118.32 mV/pH (very pH-sensitive).
+//   In real waters the dominant Mn redox is the Mn⁴⁺/Mn²⁺ couple
+//   through the manganite intermediates; this two-electron form is
+//   the standard textbook reference.
+//
+// SO₄²⁻ + 9H⁺ + 8e⁻ ⇌ HS⁻ + 4H₂O
+//   m = 9, n = 8 → pHCoeff = -66.6 mV/pH.
+//   E0 from Stumm & Morgan, Aquatic Chemistry (3rd ed.) Table 8.1.
+const REDOX_COUPLES = {
+    Fe: { E0: 770, n: 1, pHCoeff: 0 }, // Fe³⁺/Fe²⁺
+    Mn: { E0: 1230, n: 2, pHCoeff: -118.32 }, // MnO₂/Mn²⁺
+    S: { E0: 250, n: 8, pHCoeff: -66.6 }, // SO₄²⁻/HS⁻
+};
+// Nernst-derived oxidized fraction of a redox couple. Returns
+// f_ox ∈ [0,1] giving the proportion of the element sitting in its
+// oxidized pool at the current Eh and pH. Reduced fraction is 1-f_ox.
+//
+// Formula:
+//   E_apparent = E0 + pHCoeff × pH
+//   slope     = 59.16 / n  (mV per decade at 25°C)
+//   f_ox       = 1 / (1 + 10^((E_apparent - Eh) / slope))
+//
+// Behavior:
+//   - Eh ≫ E_apparent → f_ox → 1 (mostly oxidized)
+//   - Eh ≪ E_apparent → f_ox → 0 (mostly reduced)
+//   - Eh = E_apparent → f_ox = 0.5 (50/50 split, the redox boundary)
+function nernstOxidizedFraction(couple, Eh_mV, pH) {
+    if (!couple)
+        return 0.5;
+    const Eapparent = couple.E0 + couple.pHCoeff * pH;
+    const slope = 59.16 / Math.max(1, couple.n);
+    const x = (Eapparent - Eh_mV) / slope;
+    // Cap exponent so very acidic + very oxidizing systems don't
+    // produce Infinity. f_ox saturates at 1 / (1 + ε) ≈ 1.
+    if (x > 30)
+        return 0;
+    if (x < -30)
+        return 1;
+    return 1 / (1 + Math.pow(10, x));
+}
+// Convenience: read fluid.Eh + fluid.pH and return the oxidized
+// fraction of the named element ('Fe', 'Mn', or 'S'). Falls back to
+// 0.5 (no information) if the element isn't in REDOX_COUPLES.
+//
+// Engines after Phase 4b read this instead of `fluid.O2 > 0.5`. With
+// the EH_DYNAMIC_ENABLED flag off, callers should still rely on
+// `fluid.O2`; this helper is callable but unused in flag-OFF mode.
+function redoxFraction(fluid, element) {
+    if (!fluid)
+        return 0.5;
+    const couple = REDOX_COUPLES[element];
+    if (!couple)
+        return 0.5;
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const pH = typeof fluid.pH === 'number' ? fluid.pH : 7;
+    return nernstOxidizedFraction(couple, Eh, pH);
+}
+// Backward-compatibility derivation: scenarios that only set
+// `fluid.O2` (the legacy redox proxy) get a sensible default Eh
+// inferred from it. Mapping per the proposal:
+//   O₂ > 1.0  → Eh > +500 mV (well-oxygenated)
+//   O₂ ≈ 0.3  → Eh ≈ 0 mV (boundary)
+//   O₂ < 0.1  → Eh < -100 mV (sulfate-reducing)
+// Linear interpolation in log space — O₂ varies over orders of
+// magnitude in real systems, Eh varies linearly with log[O₂] per
+// the half-reaction O₂ + 4H⁺ + 4e⁻ ⇌ 2H₂O.
+function ehFromO2(O2_ppm) {
+    if (typeof O2_ppm !== 'number' || O2_ppm <= 0)
+        return -200;
+    // pin three anchors: (0.05, -150), (0.5, +100), (5.0, +500)
+    // and interpolate between them in log10(O2) space.
+    const logO2 = Math.log10(Math.max(O2_ppm, 1e-6));
+    // log10 anchors: -1.30 → -150, -0.30 → +100, +0.70 → +500
+    // Slope between them ≈ +250 mV per decade of O₂.
+    if (logO2 <= -1.30)
+        return -150 + (logO2 - (-1.30)) * 100; // saturate gently below
+    if (logO2 <= -0.30)
+        return -150 + (logO2 - (-1.30)) * (250 / 1.0);
+    if (logO2 <= 0.70)
+        return 100 + (logO2 - (-0.30)) * (400 / 1.0);
+    return 500 + (logO2 - 0.70) * 100; // saturate gently above
+}
+// Optional: when a scenario sets fluid.Eh directly but legacy engines
+// still read fluid.O2, derive a synthetic O2 so they keep working.
+// Inverse of ehFromO2 — same anchors. Used by Phase 4b migration so
+// scenarios can be written in mV terms and engines that haven't
+// migrated yet see consistent O₂.
+function o2FromEh(Eh_mV) {
+    if (typeof Eh_mV !== 'number')
+        return 0.5;
+    if (Eh_mV >= 500)
+        return Math.pow(10, 0.70 + (Eh_mV - 500) / 1000);
+    if (Eh_mV >= 100)
+        return Math.pow(10, -0.30 + (Eh_mV - 100) / 400);
+    if (Eh_mV >= -150)
+        return Math.pow(10, -1.30 + (Eh_mV - (-150)) / 250);
+    return Math.pow(10, -1.30 + (Eh_mV - (-150)) / 100);
+}
+// ============================================================
+// Phase 4b sulfate-class engine helpers
+// ============================================================
+// Two helpers consumed by js/40-supersat-sulfate.ts for the long-tail
+// engine migration. With EH_DYNAMIC_ENABLED off, both passthrough to
+// the legacy fluid.O2 form so seed-42 output is byte-identical. With
+// the flag on (Phase 4c), they consult fluid.Eh via the ehFromO2 /
+// o2FromEh anchor mapping. The sulfate class is the proof-of-pattern;
+// arsenate / carbonate / hydroxide / oxide / sulfide get their own
+// helpers as the migration walks the remaining 5 classes.
+//
+// Why per-class helpers and not a single generic one: each class has
+// its own redox semantics (sulfate gates oxidized side, sulfide gates
+// reduced side, carbonate mixes Fe-state and S-state). One helper
+// per class keeps each migration commit self-contained and the
+// thresholds adjustable without touching unrelated engines.
+// Returns true if the sulfate redox state passes the legacy O2
+// threshold. Form: replaces `fluid.O2 < X` with
+// `!sulfateRedoxAvailable(fluid, X)` (note the negation — this helper
+// is "is it oxidized enough?", the legacy was "is it not oxidized
+// enough?"). With flag off, identical to `fluid.O2 >= X` — the strict
+// `<` legacy form combined with the negation gives the same boundary.
+function sulfateRedoxAvailable(fluid, o2Threshold) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
+    }
+    // Phase 4c calibration: gate on Eh equivalent to the legacy O2 cutoff.
+    const EhEquivalent = ehFromO2(o2Threshold);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh >= EhEquivalent;
+}
+// Returns the multiplier form of the legacy O2 factor:
+// `Math.min(fluid.O2 / scaleAtFull, cap)`. cap defaults to Infinity
+// for sites that don't cap (e.g. selenite's `O2/0.5`). With flag off,
+// identical to the inline expression. With flag on, derives a
+// synthetic O2 from current Eh and applies the same ratio.
+function sulfateRedoxFactor(fluid, scaleAtFull, cap = Infinity) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.min(O2 / scaleAtFull, cap);
+    }
+    // Phase 4c: synthesize an O2 equivalent from current Eh, apply the
+    // legacy ratio. Per-site tuning of scaleAtFull/cap stays callable
+    // by individual engine sites if calibration calls for it.
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.min(o2eq / scaleAtFull, cap);
+}
+// ============================================================
+// Phase 4b hydroxide-class engine helpers
+// ============================================================
+// For Fe(III) hydroxides (goethite, lepidocrocite). The legacy
+// fluid.O2 gate stands proxy for Fe being in its oxidized state — at
+// low O2 / low Eh, Fe is Fe²⁺ and stays in solution as a soluble
+// cation; at high O2 / high Eh it becomes Fe³⁺ and hydrolyzes /
+// precipitates. Phase 4c will bind these helpers to
+// redoxFraction(fluid, 'Fe') with E°(Fe³⁺/Fe²⁺) = 770 mV; the legacy
+// fluid.O2 thresholds in goethite/lepidocrocite (0.4 and 0.8) map to
+// Eh thresholds well above the Fe couple's midpoint, which is
+// consistent with these minerals only forming under solidly oxic
+// conditions in real groundwater.
+//
+// Same flag-OFF passthrough shape as sulfate; named separately so
+// Phase 4c can tune Fe-couple thresholds independently of S-couple.
+function hydroxideRedoxAvailable(fluid, o2Threshold) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
+    }
+    // Phase 4c: gate on Fe couple oxidized fraction. Equivalent
+    // threshold logic — using ehFromO2 as a coarse anchor for now.
+    const EhEquivalent = ehFromO2(o2Threshold);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh >= EhEquivalent;
+}
+function hydroxideRedoxFactor(fluid, scaleAtFull, cap = Infinity) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.min(O2 / scaleAtFull, cap);
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.min(o2eq / scaleAtFull, cap);
+}
+// ============================================================
+// Phase 4b oxide-class engine helpers
+// ============================================================
+// Oxides have three different redox shapes — unlike sulfate/hydroxide
+// which are uniformly "needs oxidized state":
+//
+//   1. HEMATITE (Fe₂O₃, Fe(III)): standard oxidized-side, same shape
+//      as sulfate. oxideRedoxAvailable/Factor.
+//
+//   2. URANINITE (UO₂, U(IV)): REDUCED-side. Forms only when fluid is
+//      sufficiently anoxic; uranium oxidation to U(VI) keeps uranyl
+//      mobile in solution. oxideRedoxAnoxic/AnoxicFactor.
+//
+//   3. MAGNETITE (Fe₃O₄, mixed Fe(II)/Fe(III)) and CUPRITE (Cu₂O,
+//      Cu(I), intermediate copper oxidation): WINDOWED — neither
+//      solidly oxic nor anoxic. Forms in transition zones with a
+//      preferred peak. oxideRedoxWindow/Tent.
+//
+// All variants flag-OFF passthrough to fluid.O2; flag-ON Phase 4c
+// will bind the standard form to redoxFraction(fluid, 'Fe'), the
+// anoxic form to a U-couple (TBD: add to REDOX_COUPLES), and the
+// windowed forms to per-mineral Eh band specs.
+// Standard oxidized-side gate (hematite-style).
+function oxideRedoxAvailable(fluid, o2Threshold) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
+    }
+    const EhEquivalent = ehFromO2(o2Threshold);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh >= EhEquivalent;
+}
+// Standard oxidized-side multiplier (hematite-style).
+function oxideRedoxFactor(fluid, scaleAtFull, cap = Infinity) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.min(O2 / scaleAtFull, cap);
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.min(o2eq / scaleAtFull, cap);
+}
+// Reduced-side gate (uraninite-style): true when conditions are
+// reducing enough — i.e., when fluid.O2 is BELOW the threshold.
+// Replaces `if (fluid.O2 > X) return 0` with `if (!oxideRedoxAnoxic(fluid, X)) return 0`.
+function oxideRedoxAnoxic(fluid, o2UpperBound) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) <= o2UpperBound;
+    }
+    const EhEquivalent = ehFromO2(o2UpperBound);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh <= EhEquivalent;
+}
+// Reduced-side multiplier (uraninite-style): factor grows as O2
+// falls. Legacy form: `(scale - fluid.O2)`. With the upstream gate
+// ensuring O2 stays well under `scale`, the result stays positive.
+function oxideRedoxAnoxicFactor(fluid, scale) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return scale - O2;
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return scale - o2eq;
+}
+// Windowed gate (magnetite/cuprite-style): true when fluid.O2 sits
+// within [low, high]. Replaces `if (fluid.O2 < low || fluid.O2 > high) return 0`
+// with `if (!oxideRedoxWindow(fluid, low, high)) return 0`.
+function oxideRedoxWindow(fluid, o2Low, o2High) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return O2 >= o2Low && O2 <= o2High;
+    }
+    const EhLow = ehFromO2(o2Low);
+    const EhHigh = ehFromO2(o2High);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh >= EhLow && Eh <= EhHigh;
+}
+// Tent-function multiplier (magnetite/cuprite-style): Math.max(floor,
+// 1.0 - Math.abs(O2 - peak) * slope). Falls off linearly from a peak
+// value of 1.0 at the specified peak O2, with a floor.
+function oxideRedoxTent(fluid, peak, slope, floor) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.max(floor, 1.0 - Math.abs(O2 - peak) * slope);
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.max(floor, 1.0 - Math.abs(o2eq - peak) * slope);
+}
+// ============================================================
+// Phase 4b arsenate-class engine helpers
+// ============================================================
+// All six arsenates (adamite, annabergite, erythrite, mimetite,
+// olivenite, scorodite) gate on oxidized arsenic — As(V) as
+// AsO₄³⁻. Phase 4c will bind to an As couple
+// (HAsO₄²⁻/H₃AsO₃ at E° ≈ +560 mV at pH 7), to be added to
+// REDOX_COUPLES.
+// Same flag-OFF passthrough as sulfate / hydroxide.
+function arsenateRedoxAvailable(fluid, o2Threshold) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
+    }
+    const EhEquivalent = ehFromO2(o2Threshold);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh >= EhEquivalent;
+}
+function arsenateRedoxFactor(fluid, scaleAtFull, cap = Infinity) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.min(O2 / scaleAtFull, cap);
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.min(o2eq / scaleAtFull, cap);
+}
+// ============================================================
+// Phase 4b carbonate-class engine helpers
+// ============================================================
+// Carbonates split between oxidized-side (Cu/Zn supergene carbonates:
+// malachite, smithsonite, azurite, rosasite, aurichalcite) and
+// reduced-side (siderite Fe(II), rhodochrosite Mn(II)). Calcite,
+// dolomite, aragonite, cerussite have no fluid.O2 reference — they
+// don't need migration.
+//
+// Phase 4c binding: oxidized-side carbonates will gate on Eh
+// (Cu²⁺ / Zn²⁺ are stable across most of the oxic range, so the
+// gate is mostly about ruling out anoxic conditions). Reduced-side
+// carbonates will bind to redoxFraction(fluid, 'Fe') for siderite
+// and (1 - redoxFraction(fluid, 'Mn')) shape for rhodochrosite.
+// Until then, all four helpers passthrough to fluid.O2.
+function carbonateRedoxAvailable(fluid, o2Threshold) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
+    }
+    const EhEquivalent = ehFromO2(o2Threshold);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh >= EhEquivalent;
+}
+function carbonateRedoxFactor(fluid, scaleAtFull, cap = Infinity) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.min(O2 / scaleAtFull, cap);
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.min(o2eq / scaleAtFull, cap);
+}
+// Reduced-side gate (siderite, rhodochrosite hard cutoffs).
+function carbonateRedoxAnoxic(fluid, o2UpperBound) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) <= o2UpperBound;
+    }
+    const EhEquivalent = ehFromO2(o2UpperBound);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh <= EhEquivalent;
+}
+// Reduced-side soft penalty: returns 1.0 if O2 ≤ startO2 (no
+// penalty). Above startO2, returns max(floor, peakValueAtStart -
+// slope × (O2 - startO2)). Two patterns in carbonate:
+//   siderite:      startO2=0.3, peakValue=1.0, slope=1.5, floor=0.2
+//                  (legacy: 1.0 - (O2 - 0.3) × 1.5)
+//   rhodochrosite: startO2=0.8, peakValue=0.7, slope=1.0, floor=0.3
+//                  (legacy: 1.5 - O2 — note the implicit step
+//                  discontinuity at O2=0.8 from 1.0 to 0.7, preserved
+//                  via peakValue=0.7)
+function carbonateRedoxPenalty(fluid, startO2, peakValueAtStart, slope, floor) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        if (O2 <= startO2)
+            return 1.0;
+        return Math.max(floor, peakValueAtStart - slope * (O2 - startO2));
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    if (o2eq <= startO2)
+        return 1.0;
+    return Math.max(floor, peakValueAtStart - slope * (o2eq - startO2));
+}
+// ============================================================
+// Phase 4b sulfide-class engine helpers
+// ============================================================
+// All 20 sulfide minerals gate on REDUCED conditions — sulfide minerals
+// can't survive in oxic fluid (they oxidize to native sulfur, sulfate,
+// or oxide minerals). The engine file has 34 fluid.O2 sites split
+// across 4 shapes:
+//
+//   GATES (18 sites): `if (fluid.O2 > X) return 0` — replaced with
+//     `if (!sulfideRedoxAnoxic(fluid, X)) return 0`.
+//
+//   LINEAR MULTIPLIERS (15 sites total, three patterns folded into
+//     sulfideRedoxLinearFactor(fluid, intercept, slope=1, floor=-∞)):
+//     • `(intercept - O2)` no-clamp (8 sites: pyrite, marcasite,
+//       chalcopyrite, galena, molybdenite, arsenopyrite, tetrahedrite,
+//       tennantite). Slope=1, floor=-∞.
+//     • `max(floor, intercept - O2)` (4 sites: stibnite, bismuthinite,
+//       bornite, chalcocite). Slope=1, floor finite.
+//     • `max(floor, 1.0 - O2*slope)` (3 sites: nickeline, millerite,
+//       cobaltite). Intercept=1, slope variable, floor finite.
+//
+//   TENT (1 site, covellite): `max(floor, peakValue - abs(O2 - peak) × slope)`.
+//
+// Phase 4c will bind the gate + linear helpers to `1 - redoxFraction(fluid, 'S')`
+// against an Eh threshold consistent with sulfide stability.
+function sulfideRedoxAnoxic(fluid, o2UpperBound) {
+    if (!EH_DYNAMIC_ENABLED) {
+        return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) <= o2UpperBound;
+    }
+    const EhEquivalent = ehFromO2(o2UpperBound);
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    return Eh <= EhEquivalent;
+}
+// Unified linear-multiplier helper. Three call patterns:
+//   sulfideRedoxLinearFactor(f, 1.5)                 // no-clamp `1.5 - O2`
+//   sulfideRedoxLinearFactor(f, 1.3, 1.0, 0.5)       // offset clamped at 0.5
+//   sulfideRedoxLinearFactor(f, 1.0, 1.5, 0.4)       // slope variant: max(0.4, 1 - 1.5×O2)
+function sulfideRedoxLinearFactor(fluid, intercept, slope = 1.0, floor = -Infinity) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.max(floor, intercept - slope * O2);
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.max(floor, intercept - slope * o2eq);
+}
+// Tent multiplier (covellite-style):
+// max(floor, peakValue - abs(O2 - peakO2) × slope)
+function sulfideRedoxTent(fluid, peakO2, peakValue, slope, floor) {
+    if (!EH_DYNAMIC_ENABLED) {
+        const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+        return Math.max(floor, peakValue - Math.abs(O2 - peakO2) * slope);
+    }
+    const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
+    const o2eq = o2FromEh(Eh);
+    return Math.max(floor, peakValue - Math.abs(o2eq - peakO2) * slope);
 }
 
 // ── 22-geometry-wall.js ──
@@ -5991,7 +6602,7 @@ Object.assign(VugConditions.prototype, {
     supersaturation_olivenite() {
         if (this.fluid.Cu < 50 || this.fluid.As < 10)
             return 0;
-        if (this.fluid.O2 < 0.5)
+        if (!arsenateRedoxAvailable(this.fluid, 0.5))
             return 0;
         // Recessive-side trace floor — real olivenite always has at least
         // trace Zn (zincolivenite-leaning); makes the ratio meaningful.
@@ -6004,7 +6615,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
         const as_f = Math.min(this.fluid.As / 20.0, 2.5);
-        const ox_f = Math.min(this.fluid.O2 / 1.0, 2.0);
+        const ox_f = arsenateRedoxFactor(this.fluid, 1.0, 2.0);
         let sigma = cu_f * as_f * ox_f;
         // Sweet-spot bonus — Cu-dominant with Zn trace is zincolivenite-
         // leaning, the most-collected form. Pure-Cu damped (malachite/
@@ -6033,11 +6644,11 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_scorodite() {
-        if (this.fluid.Fe < 5 || this.fluid.As < 3 || this.fluid.O2 < 0.3)
+        if (this.fluid.Fe < 5 || this.fluid.As < 3 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         if (this.fluid.pH > 6)
             return 0; // dissolves above pH 5; nucleation gate at 6 for hysteresis
-        let sigma = (this.fluid.Fe / 30.0) * (this.fluid.As / 15.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Fe / 30.0) * (this.fluid.As / 15.0) * arsenateRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 80) {
             sigma *= Math.exp(-0.025 * (this.temperature - 80));
         }
@@ -6053,30 +6664,30 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_erythrite() {
         // Co3(AsO4)2·8H2O — cobalt bloom. Shared vivianite-group gating with annabergite.
-        if (this.fluid.Co < 2 || this.fluid.As < 5 || this.fluid.O2 < 0.3)
+        if (this.fluid.Co < 2 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         if (this.temperature < 5 || this.temperature > 50)
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0)
             return 0;
-        const product = (this.fluid.Co / 20.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+        const product = (this.fluid.Co / 20.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
         const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
         return product * T_factor;
     },
     supersaturation_annabergite() {
         // Ni3(AsO4)2·8H2O — nickel bloom. Ni equivalent of erythrite.
-        if (this.fluid.Ni < 2 || this.fluid.As < 5 || this.fluid.O2 < 0.3)
+        if (this.fluid.Ni < 2 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         if (this.temperature < 5 || this.temperature > 50)
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0)
             return 0;
-        const product = (this.fluid.Ni / 20.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+        const product = (this.fluid.Ni / 20.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
         const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
         return product * T_factor;
     },
     supersaturation_adamite() {
-        if (this.fluid.Zn < 10 || this.fluid.As < 5 || this.fluid.O2 < 0.3)
+        if (this.fluid.Zn < 10 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         // Trace Cu floor — Cu²⁺ activator gives the diagnostic green
         // fluorescence; recessive-side floor makes the Cu:Zn ratio meaningful.
@@ -6087,7 +6698,7 @@ Object.assign(VugConditions.prototype, {
         const zn_fraction = this.fluid.Zn / cu_zn_total;
         if (zn_fraction < 0.5)
             return 0;
-        let sigma = (this.fluid.Zn / 80.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Zn / 80.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
         // Sweet-spot bonus — Zn-dominant with Cu trace (the fluorescent
         // variety) is the most aesthetic adamite. Pure-Zn damped because
         // hemimorphite/smithsonite take that territory.
@@ -6110,9 +6721,9 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_mimetite() {
-        if (this.fluid.Pb < 5 || this.fluid.As < 3 || this.fluid.Cl < 2 || this.fluid.O2 < 0.3)
+        if (this.fluid.Pb < 5 || this.fluid.As < 3 || this.fluid.Cl < 2 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
-        let sigma = (this.fluid.Pb / 60.0) * (this.fluid.As / 25.0) * (this.fluid.Cl / 30.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Pb / 60.0) * (this.fluid.As / 25.0) * (this.fluid.Cl / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 150)
             sigma *= Math.exp(-0.015 * (this.temperature - 150));
         if (this.fluid.pH < 3.5)
@@ -6237,7 +6848,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 9.0)
             return 0;
-        if (this.fluid.O2 > 0.8)
+        if (!carbonateRedoxAnoxic(this.fluid, 0.8))
             return 0; // hard reducing gate
         const eq_fe = 80.0 * Math.exp(-0.005 * this.temperature);
         if (eq_fe <= 0)
@@ -6251,8 +6862,7 @@ Object.assign(VugConditions.prototype, {
             sigma -= (5.5 - this.fluid.pH) * 0.5;
         else if (this.fluid.pH > 7.5)
             sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
-        if (this.fluid.O2 > 0.3)
-            sigma *= Math.max(0.2, 1.0 - (this.fluid.O2 - 0.3) * 1.5);
+        sigma *= carbonateRedoxPenalty(this.fluid, 0.3, 1.0, 1.5, 0.2);
         return Math.max(sigma, 0);
     },
     supersaturation_dolomite() {
@@ -6298,7 +6908,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 9.0)
             return 0;
-        if (this.fluid.O2 > 1.5)
+        if (!carbonateRedoxAnoxic(this.fluid, 1.5))
             return 0;
         const eq_mn = 50.0 * Math.exp(-0.005 * this.temperature);
         if (eq_mn <= 0)
@@ -6312,8 +6922,7 @@ Object.assign(VugConditions.prototype, {
             sigma -= (5.5 - this.fluid.pH) * 0.5;
         else if (this.fluid.pH > 7.5)
             sigma *= 1.0 + (this.fluid.pH - 7.5) * 0.1;
-        if (this.fluid.O2 > 0.8)
-            sigma *= Math.max(0.3, 1.5 - this.fluid.O2);
+        sigma *= carbonateRedoxPenalty(this.fluid, 0.8, 0.7, 1.0, 0.3);
         return Math.max(sigma, 0);
     },
     supersaturation_aragonite() {
@@ -6347,7 +6956,7 @@ Object.assign(VugConditions.prototype, {
         return omega * favorability;
     },
     supersaturation_malachite() {
-        if (this.fluid.Cu < 5 || effectiveCO3(this.fluid, this.temperature) < 20 || this.fluid.O2 < 0.3)
+        if (this.fluid.Cu < 5 || effectiveCO3(this.fluid, this.temperature) < 20 || !carbonateRedoxAvailable(this.fluid, 0.3))
             return 0;
         // Denominators reference realistic supergene weathering fluid (Cu ~25 ppm,
         // CO₃ ~100 ppm). The older 50/200 values were tuned for Cu-saturated
@@ -6359,7 +6968,7 @@ Object.assign(VugConditions.prototype, {
         // to malachite via the paramorph mechanic in grow_azurite when CO3
         // falls during a run (Bisbee step 225 ev_co2_drop).
         // See research/research-broth-ratio-malachite-azurite.md.
-        let sigma = (this.fluid.Cu / 25.0) * (effectiveCO3(this.fluid, this.temperature) / 100.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Cu / 25.0) * (effectiveCO3(this.fluid, this.temperature) / 100.0) * carbonateRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 50) {
             sigma *= Math.exp(-0.005 * (this.temperature - 50));
         }
@@ -6375,13 +6984,13 @@ Object.assign(VugConditions.prototype, {
         // research-smithsonite.md (T 10-50°C optimum, never above ~80°C
         // in nature). Pre-v17 JS hard cap at 200°C was too lenient.
         // Tightened to 100°C hard with steep decay above 80°C.
-        if (this.fluid.Zn < 20 || effectiveCO3(this.fluid, this.temperature) < 50 || this.fluid.O2 < 0.2)
+        if (this.fluid.Zn < 20 || effectiveCO3(this.fluid, this.temperature) < 50 || !carbonateRedoxAvailable(this.fluid, 0.2))
             return 0;
         if (this.temperature > 100)
             return 0;
         if (this.fluid.pH < 5)
             return 0;
-        let sigma = (this.fluid.Zn / 80.0) * (effectiveCO3(this.fluid, this.temperature) / 200.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Zn / 80.0) * (effectiveCO3(this.fluid, this.temperature) / 200.0) * carbonateRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 80) {
             sigma *= Math.exp(-0.04 * (this.temperature - 80));
         }
@@ -6392,11 +7001,11 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_azurite() {
-        if (this.fluid.Cu < 20 || effectiveCO3(this.fluid, this.temperature) < 120 || this.fluid.O2 < 1.0)
+        if (this.fluid.Cu < 20 || effectiveCO3(this.fluid, this.temperature) < 120 || !carbonateRedoxAvailable(this.fluid, 1.0))
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 40.0, 2.0);
         const co_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 150.0, 1.8);
-        const o_f = Math.min(this.fluid.O2 / 1.5, 1.3);
+        const o_f = carbonateRedoxFactor(this.fluid, 1.5, 1.3);
         let sigma = cu_f * co_f * o_f;
         if (this.temperature > 50)
             sigma *= Math.exp(-0.06 * (this.temperature - 50));
@@ -6427,7 +7036,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.temperature < 10 || this.temperature > 40)
             return 0;
-        if (this.fluid.O2 < 0.8)
+        if (!carbonateRedoxAvailable(this.fluid, 0.8))
             return 0;
         if (this.fluid.pH < 6.5)
             return 0;
@@ -6463,7 +7072,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.temperature < 10 || this.temperature > 40)
             return 0;
-        if (this.fluid.O2 < 0.8)
+        if (!carbonateRedoxAvailable(this.fluid, 0.8))
             return 0;
         // pH gate — see vugg.py supersaturation_aurichalcite for citation
         // (Pinch & Wilson 1977 — real Tsumeb fluids active at pH 5.5-7.5).
@@ -6578,9 +7187,9 @@ Object.assign(VugConditions.prototype, {
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR.
 Object.assign(VugConditions.prototype, {
     supersaturation_goethite() {
-        if (this.fluid.Fe < 15 || this.fluid.O2 < 0.4)
+        if (this.fluid.Fe < 15 || !hydroxideRedoxAvailable(this.fluid, 0.4))
             return 0;
-        let sigma = (this.fluid.Fe / 60.0) * (this.fluid.O2 / 1.0);
+        let sigma = (this.fluid.Fe / 60.0) * hydroxideRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 150)
             sigma *= Math.exp(-0.015 * (this.temperature - 150));
         if (this.fluid.pH < 3.0)
@@ -6590,10 +7199,10 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_lepidocrocite() {
-        if (this.fluid.Fe < 15 || this.fluid.O2 < 0.8)
+        if (this.fluid.Fe < 15 || !hydroxideRedoxAvailable(this.fluid, 0.8))
             return 0;
         const fe_f = Math.min(this.fluid.Fe / 50.0, 2.0);
-        const o_f = Math.min(this.fluid.O2 / 1.5, 1.5);
+        const o_f = hydroxideRedoxFactor(this.fluid, 1.5, 1.5);
         let sigma = fe_f * o_f;
         if (this.temperature > 50)
             sigma *= Math.exp(-0.02 * (this.temperature - 50));
@@ -6973,9 +7582,9 @@ Object.assign(VugConditions.prototype, {
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR.
 Object.assign(VugConditions.prototype, {
     supersaturation_hematite() {
-        if (this.fluid.Fe < 20 || this.fluid.O2 < 0.5)
+        if (this.fluid.Fe < 20 || !oxideRedoxAvailable(this.fluid, 0.5))
             return 0;
-        let sigma = (this.fluid.Fe / 100.0) * (this.fluid.O2 / 1.0) * Math.exp(-0.002 * this.temperature);
+        let sigma = (this.fluid.Fe / 100.0) * oxideRedoxFactor(this.fluid, 1.0) * Math.exp(-0.002 * this.temperature);
         if (this.fluid.pH < 3.5) {
             sigma -= (3.5 - this.fluid.pH) * 0.3;
         }
@@ -6988,9 +7597,9 @@ Object.assign(VugConditions.prototype, {
         // T-only formula with no O2 gate — uraninite would form even in
         // oxidizing conditions, contradicting research-uraninite.md.
         // Now: needs reducing + U + (slight high-T preference).
-        if (this.fluid.U < 5 || this.fluid.O2 > 0.3)
+        if (this.fluid.U < 5 || !oxideRedoxAnoxic(this.fluid, 0.3))
             return 0;
-        let sigma = (this.fluid.U / 20.0) * (0.5 - this.fluid.O2);
+        let sigma = (this.fluid.U / 20.0) * oxideRedoxAnoxicFactor(this.fluid, 0.5);
         if (this.temperature > 200)
             sigma *= 1.3;
         if (ACTIVITY_CORRECTED_SUPERSAT)
@@ -6998,10 +7607,10 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_magnetite() {
-        if (this.fluid.Fe < 25 || this.fluid.O2 < 0.1 || this.fluid.O2 > 1.0)
+        if (this.fluid.Fe < 25 || !oxideRedoxWindow(this.fluid, 0.1, 1.0))
             return 0;
         const fe_f = Math.min(this.fluid.Fe / 60.0, 2.0);
-        const o_f = Math.max(0.4, 1.0 - Math.abs(this.fluid.O2 - 0.4) * 1.5);
+        const o_f = oxideRedoxTent(this.fluid, 0.4, 1.5, 0.4);
         let sigma = fe_f * o_f;
         const T = this.temperature;
         let T_factor;
@@ -7021,10 +7630,10 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_cuprite() {
-        if (this.fluid.Cu < 20 || this.fluid.O2 < 0.3 || this.fluid.O2 > 1.2)
+        if (this.fluid.Cu < 20 || !oxideRedoxWindow(this.fluid, 0.3, 1.2))
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 50.0, 2.0);
-        const o_f = Math.max(0.3, 1.0 - Math.abs(this.fluid.O2 - 0.7) * 1.4);
+        const o_f = oxideRedoxTent(this.fluid, 0.7, 1.4, 0.3);
         let sigma = cu_f * o_f;
         if (this.temperature > 100)
             sigma *= Math.exp(-0.03 * (this.temperature - 100));
@@ -7794,14 +8403,14 @@ Object.assign(VugConditions.prototype, {
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR.
 Object.assign(VugConditions.prototype, {
     supersaturation_barite() {
-        if (this.fluid.Ba < 5 || this.fluid.S < 10 || this.fluid.O2 < 0.1)
+        if (this.fluid.Ba < 5 || this.fluid.S < 10 || !sulfateRedoxAvailable(this.fluid, 0.1))
             return 0;
         // Factor caps to prevent evaporite-level S from runaway sigma.
         const ba_f = Math.min(this.fluid.Ba / 30.0, 2.0);
         const s_f = Math.min(this.fluid.S / 40.0, 2.5);
         // O2 saturation at SO₄/H₂S Eh boundary (~O2=0.4), not at fully
         // oxidized. Allows barite + galena coexistence (MVT diagnostic).
-        const o2_f = Math.min(this.fluid.O2 / 0.4, 1.5);
+        const o2_f = sulfateRedoxFactor(this.fluid, 0.4, 1.5);
         let sigma = ba_f * s_f * o2_f;
         const T = this.temperature;
         if (T >= 50 && T <= 200) {
@@ -7824,11 +8433,11 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_anhydrite() {
-        if (this.fluid.Ca < 50 || this.fluid.S < 20 || this.fluid.O2 < 0.3)
+        if (this.fluid.Ca < 50 || this.fluid.S < 20 || !sulfateRedoxAvailable(this.fluid, 0.3))
             return 0;
         const ca_f = Math.min(this.fluid.Ca / 200.0, 2.5);
         const s_f = Math.min(this.fluid.S / 40.0, 2.5);
-        const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+        const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
         let sigma = ca_f * s_f * o2_f;
         const T = this.temperature;
         const salinity = this.fluid.salinity;
@@ -7867,13 +8476,13 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_brochantite() {
-        if (this.fluid.Cu < 10 || this.fluid.S < 15 || this.fluid.O2 < 0.5)
+        if (this.fluid.Cu < 10 || this.fluid.S < 15 || !sulfateRedoxAvailable(this.fluid, 0.5))
             return 0;
         if (this.fluid.pH < 3 || this.fluid.pH > 7.5)
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 40.0, 2.5);
         const s_f = Math.min(this.fluid.S / 30.0, 2.5);
-        const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+        const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
         let sigma = cu_f * s_f * o2_f;
         if (this.temperature > 50) {
             sigma *= Math.exp(-0.05 * (this.temperature - 50));
@@ -7889,13 +8498,13 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_antlerite() {
-        if (this.fluid.Cu < 15 || this.fluid.S < 20 || this.fluid.O2 < 0.5)
+        if (this.fluid.Cu < 15 || this.fluid.S < 20 || !sulfateRedoxAvailable(this.fluid, 0.5))
             return 0;
         if (this.fluid.pH > 4 || this.fluid.pH < 0.5)
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 40.0, 2.5);
         const s_f = Math.min(this.fluid.S / 30.0, 2.5);
-        const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+        const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
         let sigma = cu_f * s_f * o2_f;
         if (this.temperature > 50) {
             sigma *= Math.exp(-0.05 * (this.temperature - 50));
@@ -7912,14 +8521,14 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_jarosite() {
         if (this.fluid.K < 5 || this.fluid.Fe < 10 || this.fluid.S < 20
-            || this.fluid.O2 < 0.5)
+            || !sulfateRedoxAvailable(this.fluid, 0.5))
             return 0;
         if (this.fluid.pH > 5)
             return 0;
         const k_f = Math.min(this.fluid.K / 15.0, 2.0);
         const fe_f = Math.min(this.fluid.Fe / 30.0, 2.5);
         const s_f = Math.min(this.fluid.S / 50.0, 2.5);
-        const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+        const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
         let sigma = k_f * fe_f * s_f * o2_f;
         if (this.temperature > 50) {
             sigma *= Math.exp(-0.04 * (this.temperature - 50));
@@ -7936,14 +8545,14 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_alunite() {
         if (this.fluid.K < 5 || this.fluid.Al < 10 || this.fluid.S < 20
-            || this.fluid.O2 < 0.5)
+            || !sulfateRedoxAvailable(this.fluid, 0.5))
             return 0;
         if (this.fluid.pH > 5)
             return 0;
         const k_f = Math.min(this.fluid.K / 15.0, 2.0);
         const al_f = Math.min(this.fluid.Al / 25.0, 2.5);
         const s_f = Math.min(this.fluid.S / 50.0, 2.5);
-        const o2_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+        const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
         let sigma = k_f * al_f * s_f * o2_f;
         const T = this.temperature;
         if (T >= 50 && T <= 200) {
@@ -7966,12 +8575,12 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_celestine() {
-        if (this.fluid.Sr < 3 || this.fluid.S < 10 || this.fluid.O2 < 0.1)
+        if (this.fluid.Sr < 3 || this.fluid.S < 10 || !sulfateRedoxAvailable(this.fluid, 0.1))
             return 0;
         const sr_f = Math.min(this.fluid.Sr / 15.0, 2.0);
         const s_f = Math.min(this.fluid.S / 40.0, 2.5);
         // O2 saturation at SO₄/H₂S boundary — same MVT-coexistence rationale.
-        const o2_f = Math.min(this.fluid.O2 / 0.4, 1.5);
+        const o2_f = sulfateRedoxFactor(this.fluid, 0.4, 1.5);
         let sigma = sr_f * s_f * o2_f;
         const T = this.temperature;
         if (T < 100) {
@@ -7995,13 +8604,13 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.fluid.pH > 4)
             return 0;
-        if (this.fluid.O2 < 0.8)
+        if (!sulfateRedoxAvailable(this.fluid, 0.8))
             return 0;
         if (this.fluid.salinity < 5.0)
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 80.0, 3.0);
         const s_f = Math.min(this.fluid.S / 100.0, 3.0);
-        const ox_f = Math.min(this.fluid.O2 / 1.5, 2.0);
+        const ox_f = sulfateRedoxFactor(this.fluid, 1.5, 2.0);
         const sal_f = Math.min(this.fluid.salinity / 30.0, 3.0);
         const ph_f = Math.max(0.5, 1.0 + (3.0 - this.fluid.pH) * 0.2);
         let sigma = cu_f * s_f * ox_f * sal_f * ph_f;
@@ -8024,7 +8633,7 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_mirabilite() {
         // v29 cold-side Na-sulfate evaporite. Mirror of vugg.py.
-        if (this.fluid.Na < 50 || this.fluid.S < 50 || this.fluid.O2 < 0.2)
+        if (this.fluid.Na < 50 || this.fluid.S < 50 || !sulfateRedoxAvailable(this.fluid, 0.2))
             return 0;
         if (this.temperature > 32)
             return 0;
@@ -8042,7 +8651,7 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_thenardite() {
         // v29 warm-side Na-sulfate evaporite. Mirror of vugg.py.
-        if (this.fluid.Na < 50 || this.fluid.S < 50 || this.fluid.O2 < 0.2)
+        if (this.fluid.Na < 50 || this.fluid.S < 50 || !sulfateRedoxAvailable(this.fluid, 0.2))
             return 0;
         if (this.temperature < 25)
             return 0;
@@ -8065,9 +8674,9 @@ Object.assign(VugConditions.prototype, {
         // converts to anhydrite well before 80°C. Now matches Python's
         // softer decay starting at 60°C, while keeping JS's T<40 bonus
         // (real per Pulpí Geode formation).
-        if (this.fluid.Ca < 20 || this.fluid.S < 15 || this.fluid.O2 < 0.2)
+        if (this.fluid.Ca < 20 || this.fluid.S < 15 || !sulfateRedoxAvailable(this.fluid, 0.2))
             return 0;
-        let sigma = (this.fluid.Ca / 60.0) * (this.fluid.S / 50.0) * (this.fluid.O2 / 0.5);
+        let sigma = (this.fluid.Ca / 60.0) * (this.fluid.S / 50.0) * sulfateRedoxFactor(this.fluid, 0.5);
         if (this.temperature > 60) {
             sigma *= Math.exp(-0.06 * (this.temperature - 60));
         }
@@ -8083,11 +8692,11 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_anglesite() {
-        if (this.fluid.Pb < 15 || this.fluid.S < 15 || this.fluid.O2 < 0.8)
+        if (this.fluid.Pb < 15 || this.fluid.S < 15 || !sulfateRedoxAvailable(this.fluid, 0.8))
             return 0;
         const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
         const s_f = Math.min(this.fluid.S / 40.0, 1.5);
-        const o_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+        const o_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
         let sigma = pb_f * s_f * o_f;
         if (this.temperature > 80)
             sigma *= Math.exp(-0.04 * (this.temperature - 80));
@@ -8156,7 +8765,7 @@ Object.assign(VugConditions.prototype, {
     supersaturation_pyrite() {
         if (this.fluid.Fe < 5 || this.fluid.S < 10)
             return 0;
-        if (this.fluid.O2 > 1.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 1.5))
             return 0;
         const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
         const eT = this.effectiveTemperature; // Mo flux widens T window
@@ -8166,13 +8775,13 @@ Object.assign(VugConditions.prototype, {
         if (this.fluid.pH < 5.0) {
             pH_factor = Math.max(0.3, (this.fluid.pH - 3.5) / 1.5);
         }
-        return product * T_factor * pH_factor * (1.5 - this.fluid.O2);
+        return product * T_factor * pH_factor * sulfideRedoxLinearFactor(this.fluid, 1.5);
     },
     supersaturation_marcasite() {
         // Orthorhombic FeS2 dimorph of pyrite. pH<5 AND T<240 hard gates.
         if (this.fluid.Fe < 5 || this.fluid.S < 10)
             return 0;
-        if (this.fluid.O2 > 1.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 1.5))
             return 0;
         if (this.fluid.pH >= 5.0)
             return 0;
@@ -8181,12 +8790,12 @@ Object.assign(VugConditions.prototype, {
         const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
         const pH_factor = Math.min(1.4, (5.0 - this.fluid.pH) / 1.2);
         const T_factor = this.temperature < 150 ? 1.2 : 0.6;
-        return product * pH_factor * T_factor * (1.5 - this.fluid.O2);
+        return product * pH_factor * T_factor * sulfideRedoxLinearFactor(this.fluid, 1.5);
     },
     supersaturation_chalcopyrite() {
         if (this.fluid.Cu < 10 || this.fluid.Fe < 5 || this.fluid.S < 15)
             return 0;
-        if (this.fluid.O2 > 1.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 1.5))
             return 0;
         const product = (this.fluid.Cu / 80.0) * (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
         const eT = this.effectiveTemperature; // Mo flux widens T window
@@ -8201,7 +8810,7 @@ Object.assign(VugConditions.prototype, {
             T_factor = 1.3; // sweet spot — porphyry window
         else
             T_factor = 0.5; // fades above 500°C
-        return product * T_factor * (1.5 - this.fluid.O2);
+        return product * T_factor * sulfideRedoxLinearFactor(this.fluid, 1.5);
     },
     supersaturation_galena() {
         // v13: reconciled to Python — pre-v13 had no O2 gate, allowing the
@@ -8209,9 +8818,9 @@ Object.assign(VugConditions.prototype, {
         // surfaced by tools/supersat_drift_audit.py). Now matches vugg.py.
         if (this.fluid.Pb < 5 || this.fluid.S < 10)
             return 0;
-        if (this.fluid.O2 > 1.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 1.5))
             return 0; // sulfides can't survive oxidation
-        let sigma = (this.fluid.Pb / 50.0) * (this.fluid.S / 80.0) * (1.5 - this.fluid.O2);
+        let sigma = (this.fluid.Pb / 50.0) * (this.fluid.S / 80.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
         // v17: Mo-flux applied throughout via effectiveTemperature (matches Python).
         const eT = this.effectiveTemperature;
         if (eT >= 200 && eT <= 400)
@@ -8237,9 +8846,9 @@ Object.assign(VugConditions.prototype, {
         // had no O2 gate, allowing the sulfide to form under oxidizing conditions.
         if (this.fluid.Mo < 3 || this.fluid.S < 10)
             return 0;
-        if (this.fluid.O2 > 1.2)
+        if (!sulfideRedoxAnoxic(this.fluid, 1.2))
             return 0; // sulfide, needs reducing
-        let sigma = (this.fluid.Mo / 15.0) * (this.fluid.S / 60.0) * (1.5 - this.fluid.O2);
+        let sigma = (this.fluid.Mo / 15.0) * (this.fluid.S / 60.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
         // v17: use effectiveTemperature throughout for Mo-flux widening (matches Python).
         const eT = this.effectiveTemperature;
         if (eT < 150) {
@@ -8257,7 +8866,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.temperature > 173)
             return 0;
-        if (this.fluid.O2 > 0.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 0.5))
             return 0;
         const ag_f = Math.min(this.fluid.Ag / 2.5, 2.5);
         const s_f = Math.min(this.fluid.S / 25.0, 2.5);
@@ -8289,7 +8898,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.temperature <= 173)
             return 0;
-        if (this.fluid.O2 > 0.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 0.5))
             return 0;
         const ag_f = Math.min(this.fluid.Ag / 2.5, 2.5);
         const s_f = Math.min(this.fluid.S / 25.0, 2.5);
@@ -8320,11 +8929,11 @@ Object.assign(VugConditions.prototype, {
     supersaturation_nickeline() {
         if (this.fluid.Ni < 40 || this.fluid.As < 40)
             return 0;
-        if (this.fluid.O2 > 0.6)
+        if (!sulfideRedoxAnoxic(this.fluid, 0.6))
             return 0;
         const ni_f = Math.min(this.fluid.Ni / 60.0, 2.5);
         const as_f = Math.min(this.fluid.As / 80.0, 2.5);
-        const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.5);
+        const red_f = sulfideRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
         let sigma = ni_f * as_f * red_f;
         const T = this.temperature;
         let T_factor;
@@ -8348,13 +8957,13 @@ Object.assign(VugConditions.prototype, {
     supersaturation_millerite() {
         if (this.fluid.Ni < 50 || this.fluid.S < 30)
             return 0;
-        if (this.fluid.O2 > 0.6)
+        if (!sulfideRedoxAnoxic(this.fluid, 0.6))
             return 0;
         if (this.fluid.As > 30.0 && this.temperature > 200)
             return 0;
         const ni_f = Math.min(this.fluid.Ni / 80.0, 2.5);
         const s_f = Math.min(this.fluid.S / 60.0, 2.5);
-        const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.5);
+        const red_f = sulfideRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
         let sigma = ni_f * s_f * red_f;
         const T = this.temperature;
         let T_factor;
@@ -8378,12 +8987,12 @@ Object.assign(VugConditions.prototype, {
     supersaturation_cobaltite() {
         if (this.fluid.Co < 50 || this.fluid.As < 100 || this.fluid.S < 50)
             return 0;
-        if (this.fluid.O2 > 0.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 0.5))
             return 0;
         const co_f = Math.min(this.fluid.Co / 80.0, 2.5);
         const as_f = Math.min(this.fluid.As / 120.0, 2.5);
         const s_f = Math.min(this.fluid.S / 80.0, 2.5);
-        const red_f = Math.max(0.4, 1.0 - this.fluid.O2 * 1.5);
+        const red_f = sulfideRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
         let sigma = co_f * as_f * s_f * red_f;
         const T = this.temperature;
         let T_factor;
@@ -8407,10 +9016,10 @@ Object.assign(VugConditions.prototype, {
     supersaturation_arsenopyrite() {
         if (this.fluid.Fe < 5 || this.fluid.As < 3 || this.fluid.S < 10)
             return 0;
-        if (this.fluid.O2 > 0.8)
+        if (!sulfideRedoxAnoxic(this.fluid, 0.8))
             return 0; // sulfide — needs reducing
         let sigma = (this.fluid.Fe / 30.0) * (this.fluid.As / 15.0)
-            * (this.fluid.S / 50.0) * (1.5 - this.fluid.O2);
+            * (this.fluid.S / 50.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
         // Mesothermal sweet spot 300-500°C
         const T = this.temperature;
         if (T >= 300 && T <= 500) {
@@ -8436,7 +9045,7 @@ Object.assign(VugConditions.prototype, {
     supersaturation_tetrahedrite() {
         if (this.fluid.Cu < 10 || this.fluid.Sb < 3 || this.fluid.S < 10)
             return 0;
-        if (this.fluid.O2 > 1.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 1.5))
             return 0;
         if (this.fluid.pH < 3.0 || this.fluid.pH > 7.0)
             return 0;
@@ -8450,12 +9059,12 @@ Object.assign(VugConditions.prototype, {
             T_factor = 1.0;
         else
             T_factor = 0.6;
-        return product * T_factor * (1.5 - this.fluid.O2);
+        return product * T_factor * sulfideRedoxLinearFactor(this.fluid, 1.5);
     },
     supersaturation_tennantite() {
         if (this.fluid.Cu < 10 || this.fluid.As < 3 || this.fluid.S < 10)
             return 0;
-        if (this.fluid.O2 > 1.5)
+        if (!sulfideRedoxAnoxic(this.fluid, 1.5))
             return 0;
         if (this.fluid.pH < 3.0 || this.fluid.pH > 7.0)
             return 0;
@@ -8469,10 +9078,10 @@ Object.assign(VugConditions.prototype, {
             T_factor = 1.0;
         else
             T_factor = 0.6;
-        return product * T_factor * (1.5 - this.fluid.O2);
+        return product * T_factor * sulfideRedoxLinearFactor(this.fluid, 1.5);
     },
     supersaturation_stibnite() {
-        if (this.fluid.Sb < 10 || this.fluid.S < 15 || this.fluid.O2 > 1.0)
+        if (this.fluid.Sb < 10 || this.fluid.S < 15 || !sulfideRedoxAnoxic(this.fluid, 1.0))
             return 0;
         const sb_f = Math.min(this.fluid.Sb / 20.0, 2.0);
         const s_f = Math.min(this.fluid.S / 40.0, 1.5);
@@ -8488,7 +9097,7 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = 0.2;
         sigma *= T_factor;
-        sigma *= Math.max(0.5, 1.3 - this.fluid.O2);
+        sigma *= sulfideRedoxLinearFactor(this.fluid, 1.3, 1.0, 0.5);
         if (this.fluid.pH < 2.0)
             sigma -= (2.0 - this.fluid.pH) * 0.3;
         if (ACTIVITY_CORRECTED_SUPERSAT)
@@ -8500,7 +9109,7 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_bismuthinite() {
-        if (this.fluid.Bi < 5 || this.fluid.S < 15 || this.fluid.O2 > 1.0)
+        if (this.fluid.Bi < 5 || this.fluid.S < 15 || !sulfideRedoxAnoxic(this.fluid, 1.0))
             return 0;
         const bi_f = Math.min(this.fluid.Bi / 20.0, 2.0);
         const s_f = Math.min(this.fluid.S / 50.0, 1.5);
@@ -8516,7 +9125,7 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = 0.2;
         sigma *= T_factor;
-        sigma *= Math.max(0.5, 1.3 - this.fluid.O2);
+        sigma *= sulfideRedoxLinearFactor(this.fluid, 1.3, 1.0, 0.5);
         if (this.fluid.pH < 2.0)
             sigma -= (2.0 - this.fluid.pH) * 0.3;
         if (ACTIVITY_CORRECTED_SUPERSAT)
@@ -8524,7 +9133,7 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_bornite() {
-        if (this.fluid.Cu < 25 || this.fluid.Fe < 8 || this.fluid.S < 20 || this.fluid.O2 > 1.8)
+        if (this.fluid.Cu < 25 || this.fluid.Fe < 8 || this.fluid.S < 20 || !sulfideRedoxAnoxic(this.fluid, 1.8))
             return 0;
         const cu_fe_ratio = this.fluid.Cu / Math.max(this.fluid.Fe, 1);
         if (cu_fe_ratio < 2.0)
@@ -8544,7 +9153,7 @@ Object.assign(VugConditions.prototype, {
         else
             T_factor = 0.2;
         sigma *= T_factor;
-        sigma *= Math.max(0.3, 1.5 - this.fluid.O2);
+        sigma *= sulfideRedoxLinearFactor(this.fluid, 1.5, 1.0, 0.3);
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 0.3;
         if (ACTIVITY_CORRECTED_SUPERSAT)
@@ -8552,14 +9161,14 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_chalcocite() {
-        if (this.fluid.Cu < 30 || this.fluid.S < 15 || this.fluid.O2 > 1.9)
+        if (this.fluid.Cu < 30 || this.fluid.S < 15 || !sulfideRedoxAnoxic(this.fluid, 1.9))
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 60.0, 2.0);
         const s_f = Math.min(this.fluid.S / 50.0, 1.5);
         let sigma = cu_f * s_f;
         if (this.temperature > 150)
             sigma *= Math.exp(-0.03 * (this.temperature - 150));
-        sigma *= Math.max(0.3, 1.4 - this.fluid.O2);
+        sigma *= sulfideRedoxLinearFactor(this.fluid, 1.4, 1.0, 0.3);
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 0.3;
         if (ACTIVITY_CORRECTED_SUPERSAT)
@@ -8567,14 +9176,14 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_covellite() {
-        if (this.fluid.Cu < 20 || this.fluid.S < 25 || this.fluid.O2 > 2.0)
+        if (this.fluid.Cu < 20 || this.fluid.S < 25 || !sulfideRedoxAnoxic(this.fluid, 2.0))
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 50.0, 2.0);
         const s_f = Math.min(this.fluid.S / 60.0, 1.8);
         let sigma = cu_f * s_f;
         if (this.temperature > 100)
             sigma *= Math.exp(-0.03 * (this.temperature - 100));
-        sigma *= Math.max(0.3, 1.3 - Math.abs(this.fluid.O2 - 0.8));
+        sigma *= sulfideRedoxTent(this.fluid, 0.8, 1.3, 1.0, 0.3);
         if (this.fluid.pH < 3.0)
             sigma -= (3.0 - this.fluid.pH) * 0.3;
         if (ACTIVITY_CORRECTED_SUPERSAT)

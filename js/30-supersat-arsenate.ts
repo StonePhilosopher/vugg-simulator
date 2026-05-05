@@ -12,7 +12,7 @@
 Object.assign(VugConditions.prototype, {
   supersaturation_olivenite() {
   if (this.fluid.Cu < 50 || this.fluid.As < 10) return 0;
-  if (this.fluid.O2 < 0.5) return 0;
+  if (!arsenateRedoxAvailable(this.fluid, 0.5)) return 0;
   // Recessive-side trace floor — real olivenite always has at least
   // trace Zn (zincolivenite-leaning); makes the ratio meaningful.
   if (this.fluid.Zn < 0.5) return 0;
@@ -22,7 +22,7 @@ Object.assign(VugConditions.prototype, {
   if (cu_fraction < 0.5) return 0;
   const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
   const as_f = Math.min(this.fluid.As / 20.0, 2.5);
-  const ox_f = Math.min(this.fluid.O2 / 1.0, 2.0);
+  const ox_f = arsenateRedoxFactor(this.fluid, 1.0, 2.0);
   let sigma = cu_f * as_f * ox_f;
   // Sweet-spot bonus — Cu-dominant with Zn trace is zincolivenite-
   // leaning, the most-collected form. Pure-Cu damped (malachite/
@@ -43,9 +43,9 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_scorodite() {
-  if (this.fluid.Fe < 5 || this.fluid.As < 3 || this.fluid.O2 < 0.3) return 0;
+  if (this.fluid.Fe < 5 || this.fluid.As < 3 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
   if (this.fluid.pH > 6) return 0;  // dissolves above pH 5; nucleation gate at 6 for hysteresis
-  let sigma = (this.fluid.Fe / 30.0) * (this.fluid.As / 15.0) * (this.fluid.O2 / 1.0);
+  let sigma = (this.fluid.Fe / 30.0) * (this.fluid.As / 15.0) * arsenateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 80) {
     sigma *= Math.exp(-0.025 * (this.temperature - 80));
   }
@@ -60,26 +60,26 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_erythrite() {
   // Co3(AsO4)2·8H2O — cobalt bloom. Shared vivianite-group gating with annabergite.
-  if (this.fluid.Co < 2 || this.fluid.As < 5 || this.fluid.O2 < 0.3) return 0;
+  if (this.fluid.Co < 2 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
   if (this.temperature < 5 || this.temperature > 50) return 0;
   if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
-  const product = (this.fluid.Co / 20.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+  const product = (this.fluid.Co / 20.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
   const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
   return product * T_factor;
 },
 
   supersaturation_annabergite() {
   // Ni3(AsO4)2·8H2O — nickel bloom. Ni equivalent of erythrite.
-  if (this.fluid.Ni < 2 || this.fluid.As < 5 || this.fluid.O2 < 0.3) return 0;
+  if (this.fluid.Ni < 2 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
   if (this.temperature < 5 || this.temperature > 50) return 0;
   if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
-  const product = (this.fluid.Ni / 20.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+  const product = (this.fluid.Ni / 20.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
   const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
   return product * T_factor;
 },
 
   supersaturation_adamite() {
-  if (this.fluid.Zn < 10 || this.fluid.As < 5 || this.fluid.O2 < 0.3) return 0;
+  if (this.fluid.Zn < 10 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
   // Trace Cu floor — Cu²⁺ activator gives the diagnostic green
   // fluorescence; recessive-side floor makes the Cu:Zn ratio meaningful.
   if (this.fluid.Cu < 0.5) return 0;
@@ -87,7 +87,7 @@ Object.assign(VugConditions.prototype, {
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const zn_fraction = this.fluid.Zn / cu_zn_total;
   if (zn_fraction < 0.5) return 0;
-  let sigma = (this.fluid.Zn / 80.0) * (this.fluid.As / 30.0) * (this.fluid.O2 / 1.0);
+  let sigma = (this.fluid.Zn / 80.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
   // Sweet-spot bonus — Zn-dominant with Cu trace (the fluorescent
   // variety) is the most aesthetic adamite. Pure-Zn damped because
   // hemimorphite/smithsonite take that territory.
@@ -103,8 +103,8 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_mimetite() {
-  if (this.fluid.Pb < 5 || this.fluid.As < 3 || this.fluid.Cl < 2 || this.fluid.O2 < 0.3) return 0;
-  let sigma = (this.fluid.Pb / 60.0) * (this.fluid.As / 25.0) * (this.fluid.Cl / 30.0) * (this.fluid.O2 / 1.0);
+  if (this.fluid.Pb < 5 || this.fluid.As < 3 || this.fluid.Cl < 2 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
+  let sigma = (this.fluid.Pb / 60.0) * (this.fluid.As / 25.0) * (this.fluid.Cl / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 150) sigma *= Math.exp(-0.015 * (this.temperature - 150));
   if (this.fluid.pH < 3.5) sigma -= (3.5 - this.fluid.pH) * 0.5;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'mimetite');
