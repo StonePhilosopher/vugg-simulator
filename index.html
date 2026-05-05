@@ -4352,7 +4352,21 @@ let timeScale = 5.0;
 //        still false, byte-identical to v28 (verified via diff).
 //        14 sites + 8 supersat methods → 6 sites + 4 supersat methods
 //        remaining in the sulfate class.
-const SIM_VERSION = 29;
+//   v30 — Phase 4b sulfate sites batch 3 + sulfate-class COMPLETE
+//        (May 2026): chalcanthite, mirabilite, thenardite, anglesite
+//        migrated to the helper form. 6 sites across 4 supersat
+//        methods. With this commit, all 22 sites in
+//        js/40-supersat-sulfate.ts are migrated; `grep "fluid.O2"
+//        js/40-supersat-sulfate.ts` returns nothing. The sulfate
+//        class is the proof-of-pattern for Phase 4b — the 5 remaining
+//        classes (arsenate / carbonate / hydroxide / oxide / sulfide)
+//        follow the same per-class-helper template once their own
+//        redox semantics are nailed down.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v29
+//        (verified via baseline diff). Phase 4c (flag flip + per-site
+//        Eh-threshold tuning) is the natural next sub-phase once
+//        4b's other classes ship.
+const SIM_VERSION = 30;
 
 // ── 18-constants.js ──
 
@@ -8247,13 +8261,13 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.fluid.pH > 4)
             return 0;
-        if (this.fluid.O2 < 0.8)
+        if (!sulfateRedoxAvailable(this.fluid, 0.8))
             return 0;
         if (this.fluid.salinity < 5.0)
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 80.0, 3.0);
         const s_f = Math.min(this.fluid.S / 100.0, 3.0);
-        const ox_f = Math.min(this.fluid.O2 / 1.5, 2.0);
+        const ox_f = sulfateRedoxFactor(this.fluid, 1.5, 2.0);
         const sal_f = Math.min(this.fluid.salinity / 30.0, 3.0);
         const ph_f = Math.max(0.5, 1.0 + (3.0 - this.fluid.pH) * 0.2);
         let sigma = cu_f * s_f * ox_f * sal_f * ph_f;
@@ -8276,7 +8290,7 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_mirabilite() {
         // v29 cold-side Na-sulfate evaporite. Mirror of vugg.py.
-        if (this.fluid.Na < 50 || this.fluid.S < 50 || this.fluid.O2 < 0.2)
+        if (this.fluid.Na < 50 || this.fluid.S < 50 || !sulfateRedoxAvailable(this.fluid, 0.2))
             return 0;
         if (this.temperature > 32)
             return 0;
@@ -8294,7 +8308,7 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_thenardite() {
         // v29 warm-side Na-sulfate evaporite. Mirror of vugg.py.
-        if (this.fluid.Na < 50 || this.fluid.S < 50 || this.fluid.O2 < 0.2)
+        if (this.fluid.Na < 50 || this.fluid.S < 50 || !sulfateRedoxAvailable(this.fluid, 0.2))
             return 0;
         if (this.temperature < 25)
             return 0;
@@ -8335,11 +8349,11 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_anglesite() {
-        if (this.fluid.Pb < 15 || this.fluid.S < 15 || this.fluid.O2 < 0.8)
+        if (this.fluid.Pb < 15 || this.fluid.S < 15 || !sulfateRedoxAvailable(this.fluid, 0.8))
             return 0;
         const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
         const s_f = Math.min(this.fluid.S / 40.0, 1.5);
-        const o_f = Math.min(this.fluid.O2 / 1.0, 1.5);
+        const o_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
         let sigma = pb_f * s_f * o_f;
         if (this.temperature > 80)
             sigma *= Math.exp(-0.04 * (this.temperature - 80));

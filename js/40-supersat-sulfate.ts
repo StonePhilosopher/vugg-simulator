@@ -182,11 +182,11 @@ Object.assign(VugConditions.prototype, {
   supersaturation_chalcanthite() {
   if (this.fluid.Cu < 30 || this.fluid.S < 50) return 0;
   if (this.fluid.pH > 4) return 0;
-  if (this.fluid.O2 < 0.8) return 0;
+  if (!sulfateRedoxAvailable(this.fluid, 0.8)) return 0;
   if (this.fluid.salinity < 5.0) return 0;
   const cu_f = Math.min(this.fluid.Cu / 80.0, 3.0);
   const s_f  = Math.min(this.fluid.S  / 100.0, 3.0);
-  const ox_f = Math.min(this.fluid.O2 / 1.5, 2.0);
+  const ox_f = sulfateRedoxFactor(this.fluid, 1.5, 2.0);
   const sal_f = Math.min(this.fluid.salinity / 30.0, 3.0);
   const ph_f = Math.max(0.5, 1.0 + (3.0 - this.fluid.pH) * 0.2);
   let sigma = cu_f * s_f * ox_f * sal_f * ph_f;
@@ -204,7 +204,7 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_mirabilite() {
   // v29 cold-side Na-sulfate evaporite. Mirror of vugg.py.
-  if (this.fluid.Na < 50 || this.fluid.S < 50 || this.fluid.O2 < 0.2) return 0;
+  if (this.fluid.Na < 50 || this.fluid.S < 50 || !sulfateRedoxAvailable(this.fluid, 0.2)) return 0;
   if (this.temperature > 32) return 0;
   const c = this.fluid.concentration ?? 1.0;
   if (c < 1.5) return 0;
@@ -217,7 +217,7 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_thenardite() {
   // v29 warm-side Na-sulfate evaporite. Mirror of vugg.py.
-  if (this.fluid.Na < 50 || this.fluid.S < 50 || this.fluid.O2 < 0.2) return 0;
+  if (this.fluid.Na < 50 || this.fluid.S < 50 || !sulfateRedoxAvailable(this.fluid, 0.2)) return 0;
   if (this.temperature < 25) return 0;
   const c = this.fluid.concentration ?? 1.0;
   if (c < 1.5) return 0;
@@ -251,10 +251,10 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_anglesite() {
-  if (this.fluid.Pb < 15 || this.fluid.S < 15 || this.fluid.O2 < 0.8) return 0;
+  if (this.fluid.Pb < 15 || this.fluid.S < 15 || !sulfateRedoxAvailable(this.fluid, 0.8)) return 0;
   const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
   const s_f  = Math.min(this.fluid.S / 40.0, 1.5);
-  const o_f  = Math.min(this.fluid.O2 / 1.0, 1.5);
+  const o_f  = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
   let sigma = pb_f * s_f * o_f;
   if (this.temperature > 80) sigma *= Math.exp(-0.04 * (this.temperature - 80));
   if (this.fluid.pH < 2.0) sigma -= (2.0 - this.fluid.pH) * 0.3;

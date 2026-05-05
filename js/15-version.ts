@@ -359,5 +359,19 @@
 //        still false, byte-identical to v28 (verified via diff).
 //        14 sites + 8 supersat methods → 6 sites + 4 supersat methods
 //        remaining in the sulfate class.
-const SIM_VERSION = 29;
+//   v30 — Phase 4b sulfate sites batch 3 + sulfate-class COMPLETE
+//        (May 2026): chalcanthite, mirabilite, thenardite, anglesite
+//        migrated to the helper form. 6 sites across 4 supersat
+//        methods. With this commit, all 22 sites in
+//        js/40-supersat-sulfate.ts are migrated; `grep "fluid.O2"
+//        js/40-supersat-sulfate.ts` returns nothing. The sulfate
+//        class is the proof-of-pattern for Phase 4b — the 5 remaining
+//        classes (arsenate / carbonate / hydroxide / oxide / sulfide)
+//        follow the same per-class-helper template once their own
+//        redox semantics are nailed down.
+//        With EH_DYNAMIC_ENABLED still false, byte-identical to v29
+//        (verified via baseline diff). Phase 4c (flag flip + per-site
+//        Eh-threshold tuning) is the natural next sub-phase once
+//        4b's other classes ship.
+const SIM_VERSION = 30;
 
