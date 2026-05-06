@@ -644,5 +644,18 @@
 //        to the committed v48. Rhodochrosite acid mode DID fire in
 //        reactive_wall (Mn rate 0.4 vs 0.5 ppm/µm) and exposed the bug.
 //        162/~185 sites table-mediated.
-const SIM_VERSION = 49;
+//   v50 — Phase 1e batch 11: erythrite + annabergite multi-mode (May 2026).
+//        8 inline credit lines removed across 4 dissolution sites:
+//          erythrite.thermal   constants {Co:0.4, As:0.3}  T>200, dT=-1.0
+//          erythrite.acid      constants {Co:0.6, As:0.4}  pH<4.5, dT=-1.2
+//          annabergite.thermal constants {Ni:0.4, As:0.3}  T>200, dT=-1.0
+//          annabergite.acid    constants {Ni:0.6, As:0.4}  pH<4.5, dT=-1.2
+//        All four modes use {constants} flavor — the acid mode at
+//        thickness=-1.2 hits the IEEE-754 round-trip trap (As=0.4/1.2
+//        is irrational in binary, 1.2 * (0.4/1.2) ≠ 0.4 exactly), so
+//        rate-equivalent storage would drift from the engine's hand-coded
+//        credit. Storing the literal credits via {constants} preserves
+//        byte-identicality across both modes.
+//        170/~185 sites table-mediated.
+const SIM_VERSION = 50;
 

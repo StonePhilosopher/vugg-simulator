@@ -94,11 +94,11 @@ function grow_erythrite(crystal, conditions, step) {
   // Thermal dehydration above 200°C
   if (crystal.total_growth_um > 5 && conditions.temperature > 200) {
     crystal.dissolved = true;
-    conditions.fluid.Co += 0.4;
-    conditions.fluid.As += 0.3;
+    // Phase 1e: Co + As constants via MINERAL_DISSOLUTION_RATES.erythrite.thermal.
     return new GrowthZone({
       step, temperature: conditions.temperature,
       thickness_um: -1.0, growth_rate: -1.0,
+      dissolutionMode: 'thermal',
       note: 'thermal dehydration — Co3(AsO4)2·8H2O loses water, breaks down above 200°C'
     });
   }
@@ -107,11 +107,11 @@ function grow_erythrite(crystal, conditions, step) {
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
       crystal.dissolved = true;
-      conditions.fluid.Co += 0.6;
-      conditions.fluid.As += 0.4;
+      // Phase 1e: Co + As constants via MINERAL_DISSOLUTION_RATES.erythrite.acid.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -1.2, growth_rate: -1.2,
+        dissolutionMode: 'acid',
         note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Co²⁺ + AsO₄³⁻ released`
       });
     }
@@ -154,11 +154,11 @@ function grow_erythrite(crystal, conditions, step) {
 function grow_annabergite(crystal, conditions, step) {
   if (crystal.total_growth_um > 5 && conditions.temperature > 200) {
     crystal.dissolved = true;
-    conditions.fluid.Ni += 0.4;
-    conditions.fluid.As += 0.3;
+    // Phase 1e: Ni + As constants via MINERAL_DISSOLUTION_RATES.annabergite.thermal.
     return new GrowthZone({
       step, temperature: conditions.temperature,
       thickness_um: -1.0, growth_rate: -1.0,
+      dissolutionMode: 'thermal',
       note: 'thermal dehydration — Ni3(AsO4)2·8H2O loses water, breaks down above 200°C'
     });
   }
@@ -167,11 +167,11 @@ function grow_annabergite(crystal, conditions, step) {
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
       crystal.dissolved = true;
-      conditions.fluid.Ni += 0.6;
-      conditions.fluid.As += 0.4;
+      // Phase 1e: Ni + As constants via MINERAL_DISSOLUTION_RATES.annabergite.acid.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -1.2, growth_rate: -1.2,
+        dissolutionMode: 'acid',
         note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Ni²⁺ + AsO₄³⁻ released`
       });
     }

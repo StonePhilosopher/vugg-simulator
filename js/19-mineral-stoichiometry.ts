@@ -243,12 +243,28 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   anglesite:    { Pb: 0.3, S: 0.3 },                   // two engine triggers (acid + reductive), same rates
 
   // ---- Arsenates (Phase 1e batch 4, v42 — single-mode subset) ----
-  // erythrite + annabergite have multi-mode dissolution (thermal +
-  // acid at different effective rates) and stay inline pending
-  // per-mode dispatch design.
   scorodite:  { Fe: 0.5, As: 0.5 },                    // acid dissolution
   adamite:    { Zn: 0.5, As: 0.3 },                    // acid attack
   mimetite:   { Pb: 0.8, As: 0.3, Cl: 0.1 },           // acid dissolution
+
+  // ---- Arsenates (Phase 1e batch 11, v50 — erythrite + annabergite multi-mode) ----
+  // Both have two dissolution modes, both using {constants} flavor:
+  //   thermal: T>200°C dehydration, constants {Co/Ni:0.4, As:0.3} @ dT=-1.0µm
+  //   acid:    pH<4.5,             constants {Co/Ni:0.6, As:0.4} @ dT=-1.2µm
+  // The acid mode at thickness=-1.2 hits an IEEE-754 round-trip trap:
+  // the rate-equivalent is As=0.4/1.2=0.333…, and 1.2*(0.4/1.2) ≠ 0.4
+  // exactly. Storing the literal credits via {constants} preserves
+  // byte-identicality with the engine's hand-coded credit. (The thermal
+  // mode at thickness=-1.0 would multiply through cleanly as rates,
+  // but we keep both modes in the same flavor for symmetry.)
+  erythrite: { __modes: {
+    thermal: { constants: { Co: 0.4, As: 0.3 } },      // T>200°C dehydration, dT=-1.0
+    acid:    { constants: { Co: 0.6, As: 0.4 } },      // pH<4.5, dT=-1.2
+  }},
+  annabergite: { __modes: {
+    thermal: { constants: { Ni: 0.4, As: 0.3 } },      // T>200°C dehydration, dT=-1.0
+    acid:    { constants: { Ni: 0.6, As: 0.4 } },      // pH<4.5, dT=-1.2
+  }},
 
   // ---- Phosphates / arsenates / vanadates (Phase 1e batch 4, v42) ----
   // descloizite + mottramite have no inline dissolution credit.

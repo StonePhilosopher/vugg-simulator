@@ -4637,7 +4637,20 @@ let timeScale = 5.0;
 //        to the committed v48. Rhodochrosite acid mode DID fire in
 //        reactive_wall (Mn rate 0.4 vs 0.5 ppm/µm) and exposed the bug.
 //        162/~185 sites table-mediated.
-const SIM_VERSION = 49;
+//   v50 — Phase 1e batch 11: erythrite + annabergite multi-mode (May 2026).
+//        8 inline credit lines removed across 4 dissolution sites:
+//          erythrite.thermal   constants {Co:0.4, As:0.3}  T>200, dT=-1.0
+//          erythrite.acid      constants {Co:0.6, As:0.4}  pH<4.5, dT=-1.2
+//          annabergite.thermal constants {Ni:0.4, As:0.3}  T>200, dT=-1.0
+//          annabergite.acid    constants {Ni:0.6, As:0.4}  pH<4.5, dT=-1.2
+//        All four modes use {constants} flavor — the acid mode at
+//        thickness=-1.2 hits the IEEE-754 round-trip trap (As=0.4/1.2
+//        is irrational in binary, 1.2 * (0.4/1.2) ≠ 0.4 exactly), so
+//        rate-equivalent storage would drift from the engine's hand-coded
+//        credit. Storing the literal credits via {constants} preserves
+//        byte-identicality across both modes.
+//        170/~185 sites table-mediated.
+const SIM_VERSION = 50;
 
 // ── 18-constants.js ──
 
@@ -4881,12 +4894,27 @@ const MINERAL_DISSOLUTION_RATES = {
     selenite: { Ca: 0.4, S: 0.3 }, // acid dissolution / phase boundary
     anglesite: { Pb: 0.3, S: 0.3 }, // two engine triggers (acid + reductive), same rates
     // ---- Arsenates (Phase 1e batch 4, v42 — single-mode subset) ----
-    // erythrite + annabergite have multi-mode dissolution (thermal +
-    // acid at different effective rates) and stay inline pending
-    // per-mode dispatch design.
     scorodite: { Fe: 0.5, As: 0.5 }, // acid dissolution
     adamite: { Zn: 0.5, As: 0.3 }, // acid attack
     mimetite: { Pb: 0.8, As: 0.3, Cl: 0.1 }, // acid dissolution
+    // ---- Arsenates (Phase 1e batch 11, v50 — erythrite + annabergite multi-mode) ----
+    // Both have two dissolution modes, both using {constants} flavor:
+    //   thermal: T>200°C dehydration, constants {Co/Ni:0.4, As:0.3} @ dT=-1.0µm
+    //   acid:    pH<4.5,             constants {Co/Ni:0.6, As:0.4} @ dT=-1.2µm
+    // The acid mode at thickness=-1.2 hits an IEEE-754 round-trip trap:
+    // the rate-equivalent is As=0.4/1.2=0.333…, and 1.2*(0.4/1.2) ≠ 0.4
+    // exactly. Storing the literal credits via {constants} preserves
+    // byte-identicality with the engine's hand-coded credit. (The thermal
+    // mode at thickness=-1.0 would multiply through cleanly as rates,
+    // but we keep both modes in the same flavor for symmetry.)
+    erythrite: { __modes: {
+            thermal: { constants: { Co: 0.4, As: 0.3 } }, // T>200°C dehydration, dT=-1.0
+            acid: { constants: { Co: 0.6, As: 0.4 } }, // pH<4.5, dT=-1.2
+        } },
+    annabergite: { __modes: {
+            thermal: { constants: { Ni: 0.4, As: 0.3 } }, // T>200°C dehydration, dT=-1.0
+            acid: { constants: { Ni: 0.6, As: 0.4 } }, // pH<4.5, dT=-1.2
+        } },
     // ---- Phosphates / arsenates / vanadates (Phase 1e batch 4, v42) ----
     // descloizite + mottramite have no inline dissolution credit.
     torbernite: { Cu: 0.2, U: 0.4, P: 0.3 }, // dehydration / pH
@@ -9802,11 +9830,11 @@ function grow_erythrite(crystal, conditions, step) {
     // Thermal dehydration above 200°C
     if (crystal.total_growth_um > 5 && conditions.temperature > 200) {
         crystal.dissolved = true;
-        conditions.fluid.Co += 0.4;
-        conditions.fluid.As += 0.3;
+        // Phase 1e: Co + As constants via MINERAL_DISSOLUTION_RATES.erythrite.thermal.
         return new GrowthZone({
             step, temperature: conditions.temperature,
             thickness_um: -1.0, growth_rate: -1.0,
+            dissolutionMode: 'thermal',
             note: 'thermal dehydration — Co3(AsO4)2·8H2O loses water, breaks down above 200°C'
         });
     }
@@ -9814,11 +9842,11 @@ function grow_erythrite(crystal, conditions, step) {
     if (sigma < 1.0) {
         if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
             crystal.dissolved = true;
-            conditions.fluid.Co += 0.6;
-            conditions.fluid.As += 0.4;
+            // Phase 1e: Co + As constants via MINERAL_DISSOLUTION_RATES.erythrite.acid.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -1.2, growth_rate: -1.2,
+                dissolutionMode: 'acid',
                 note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Co²⁺ + AsO₄³⁻ released`
             });
         }
@@ -9862,11 +9890,11 @@ function grow_erythrite(crystal, conditions, step) {
 function grow_annabergite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.temperature > 200) {
         crystal.dissolved = true;
-        conditions.fluid.Ni += 0.4;
-        conditions.fluid.As += 0.3;
+        // Phase 1e: Ni + As constants via MINERAL_DISSOLUTION_RATES.annabergite.thermal.
         return new GrowthZone({
             step, temperature: conditions.temperature,
             thickness_um: -1.0, growth_rate: -1.0,
+            dissolutionMode: 'thermal',
             note: 'thermal dehydration — Ni3(AsO4)2·8H2O loses water, breaks down above 200°C'
         });
     }
@@ -9874,11 +9902,11 @@ function grow_annabergite(crystal, conditions, step) {
     if (sigma < 1.0) {
         if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
             crystal.dissolved = true;
-            conditions.fluid.Ni += 0.6;
-            conditions.fluid.As += 0.4;
+            // Phase 1e: Ni + As constants via MINERAL_DISSOLUTION_RATES.annabergite.acid.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -1.2, growth_rate: -1.2,
+                dissolutionMode: 'acid',
                 note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Ni²⁺ + AsO₄³⁻ released`
             });
         }
