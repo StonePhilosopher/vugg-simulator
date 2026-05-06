@@ -150,12 +150,43 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   clinobisvanite: { Bi: 1, V: 1 },                   // BiVO4
 };
 
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 1e (May 2026): per-mineral
+// dissolution rates. Engines used to hand-code their dissolution
+// credits inline as `fluid.X += dissolved_um * RATE` blocks across
+// 12 engine files (~185 lines pre-migration). Phase 1e moves the
+// rate-scaled credits into this table so the wrapper can credit
+// fluid uniformly the way it debits during precipitation.
+//
+// Conventions:
+//   - Each entry maps mineral → species → ppm-per-µm-dissolved rate.
+//   - Rates here are NOT scaled by MASS_BALANCE_SCALE — they are the
+//     exact per-µm coefficients the legacy inline credits used.
+//     Calcite Ca=0.5 means "1 µm of calcite dissolution releases 0.5
+//     ppm Ca²⁺ to the fluid in this ring."
+//   - Rates differ per mineral because they reflect kinetic
+//     stoichiometry (what fraction of each species actually
+//     redissolves under the dominant dissolution mechanism), not
+//     formula stoichiometry. Calcite's Ca:CO3 = 0.5:0.3 reflects
+//     CO₂ outgassing during acid attack — some carbonate exits the
+//     fluid as gas rather than aqueous bicarbonate.
+//   - Trace elements (Mn, Fe in calcite zones) and special-mode
+//     constants (aragonite polymorphic conversion) STAY inline —
+//     they're zone-dependent or mode-dependent, not table-able.
+//   - Migration progresses class-by-class. Minerals with multi-mode
+//     dissolution (different rates for acid vs oxidative) keep their
+//     inline credits until per-mode dispatch is added.
+const MINERAL_DISSOLUTION_RATES: Record<string, Record<string, number>> = {
+  // ---- Halides (Phase 1e batch 1) ----
+  // Filled in the migration commit; empty in the infrastructure
+  // commit so seed-42 stays byte-identical.
+};
+
 // Apply mass balance for a single growth or dissolution zone. Called
 // from VugSimulator._runEngineForCrystal after the engine returns.
-// Positive thickness = precipitation (debit fluid); negative thickness
-// = dissolution (credit fluid). No-op when MASS_BALANCE_ENABLED is
-// false, so v17 baseline scenarios stay byte-identical until the
-// calibration pass flips the flag.
+// Positive thickness = precipitation (debit fluid via
+// MINERAL_STOICHIOMETRY × MASS_BALANCE_SCALE). Negative thickness =
+// dissolution (credit fluid via MINERAL_DISSOLUTION_RATES, when the
+// mineral has an entry).
 //
 // Two layers of safety while the flag is OFF:
 //   1. The early `if (!MASS_BALANCE_ENABLED) return;` short-circuit.
@@ -172,17 +203,26 @@ const _massBalanceMissingWarned: Record<string, boolean> = {};
 function applyMassBalance(crystal: any, zone: any, conditions: any): string[] | null {
   if (!MASS_BALANCE_ENABLED) return null;
   if (!zone || !zone.thickness_um) return null;
-  // Phase 1d (May 2026): precipitation-only. Engines hand-code their
-  // dissolution credits at per-mineral rates ~50× larger than the
-  // wrapper's MASS_BALANCE_SCALE — those rates were tuned to specific
-  // recycling stories per scenario (e.g. acid dissolution of calcite
-  // releases Ca at 0.5 ppm/µm, not 0.01). Until those manual credits
-  // are migrated into per-mineral dissolution rates (Phase 1e or
-  // later), the wrapper stays growth-only to avoid double-crediting.
-  // Net: the wrapper handles the gap that v17 left open (precipitation
-  // didn't debit the fluid), while existing dissolution credits keep
-  // their behavior.
-  if (zone.thickness_um < 0) return null;
+  // Phase 1e (May 2026): the wrapper now handles dissolution too,
+  // for minerals that have an entry in MINERAL_DISSOLUTION_RATES.
+  // Engines whose dissolution credits have NOT yet been migrated
+  // keep their inline `fluid.X += dissolved_um * RATE` blocks; the
+  // wrapper's table-lookup short-circuits via the empty-entry check
+  // so behavior stays byte-identical until the engine's class is
+  // migrated. Single-mode dissolution maps cleanly to a per-mineral
+  // entry; multi-mode (e.g. pyrite oxidative vs acid at different
+  // rates) is left inline pending per-mode dispatch.
+  if (zone.thickness_um < 0) {
+    const rates = MINERAL_DISSOLUTION_RATES[crystal.mineral];
+    if (!rates) return null;  // unmigrated mineral — engine still credits inline
+    const dissolved_um = -zone.thickness_um;
+    const fluid = conditions.fluid;
+    for (const species in rates) {
+      if (typeof fluid[species] !== 'number') continue;
+      fluid[species] += dissolved_um * rates[species];
+    }
+    return null;  // depletion narration is precipitation-only
+  }
   const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
   if (!stoich) {
     if (!_massBalanceMissingWarned[crystal.mineral]) {

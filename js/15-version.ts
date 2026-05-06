@@ -486,5 +486,16 @@
 //        Phase 4c (next sub-phase) is now unblocked: flip the flag,
 //        regen baseline, tune per-class Eh thresholds where the
 //        Eh-equivalent mapping shifts crystal counts beyond ±5%.
-const SIM_VERSION = 37;
+//   v38 — Phase 1e infrastructure (May 2026). Adds MINERAL_DISSOLUTION_RATES
+//        table to 19-mineral-stoichiometry.ts and extends applyMassBalance
+//        to credit fluid for negative-thickness zones when the mineral has
+//        an entry in the table. Table is empty in this commit — every
+//        dissolution call short-circuits via the missing-entry check, so
+//        seed-42 stays byte-identical to v37. Phase 1d's growth-path-only
+//        wrapper guard is now lifted; the comment block in applyMassBalance
+//        explains the per-mineral migration pattern. Subsequent commits
+//        populate the table class-by-class and remove the matching inline
+//        `fluid.X += dissolved_um * RATE` blocks from engines, mirroring
+//        the precipitation-side cleanup that landed across Phase 1c/d.
+const SIM_VERSION = 38;
 
