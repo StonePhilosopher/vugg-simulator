@@ -468,52 +468,53 @@ SIM_VERSION changelog with the Phase 1e per-scenario table format.
 
 ---
 
-## 7. Open questions
+## 7. Open questions — all resolved 2026-05-06
 
-### Resolved by boss 2026-05-06
+1. **Scope of snowball**: radiating epitaxy is primary (Q5).
+   Cyclic-chemistry shells are encrustation (Q3). Mechanisms stay
+   separate; player tells the textures apart by sight.
+2. **Snowball geometry**: sphere primitive for v1.
+   Radial-spray detail is v2.
+3. **Strict-epitaxy flag**: orientation-independent for v1. EPITAXY_PAIRS
+   stays scaffolded but unused in rendering until the wireframe
+   primitives support parent-relative orientation. The substrate-
+   affinity discount alone is enough to get the chemistry right.
+4. **Pseudomorph porosity**: renderer roughness boost only — the sim
+   tracks `cdr_replaces_crystal_id` and that's sufficient. Real
+   pseudomorphs vary widely (some dense, some porous); a per-mineral
+   roughness multiplier on the replacement material is the right
+   level of fidelity.
+5. **Perimorph eligibility for replacement products**: yes — if
+   malachite replaced azurite (preserving the azurite cube outline)
+   and the malachite later dissolves, it leaves an azurite-shaped
+   cast. Schema anticipates this with a `perimorph_eligible` flag on
+   the pseudomorph-replacement record now; renderer wires it up in
+   Q4 (not Q3).
+6. **σ-discount calibration**: two tiers — **0.5× for low-misfit pairs**
+   (sphalerite-on-pyrite, sphalerite-on-galena, marcasite-on-pyrite),
+   **0.7× for moderate-misfit / facet-selective heterogeneous nucleation**
+   (calcite-on-fluorite, galena-on-pyrite, snowball seeds). Tune from
+   scenario results: if every mineral nucleates on every other mineral
+   the discounts are too generous; if nothing nucleates on anything
+   they're too strict.
+7. **MVT-specific perimorph cite**: accept the Cumbria/Cornwall
+   quartz-after-fluorite analog. Citation is flavor, not architecture
+   — the perimorph pattern is universal.
 
-1. **Scope of snowball**: ANSWERED — radiating epitaxy is primary
-   (Q5). Cyclic-chemistry shells are encrustation (Q3). Mechanisms
-   stay separate; player should tell the textures apart by sight.
-2. **Snowball geometry detail**: ANSWERED — sphere primitive is
-   acceptable for v1. Radial-spray detail is v2 polish. Q5 collapses
-   accordingly.
+## 8. Future scenarios (informational)
 
-### Open for boss
+Boss flagged that two MVT scenarios are planned for later:
 
-3. **Strict-epitaxy flag**: I've proposed an `EPITAXY_PAIRS` set
-   alongside the soft-discount table. The flag would unlock
-   crystallographically aligned habit (e.g. sphalerite-on-pyrite
-   tetrahedra aligned to pyrite's cube faces). Worth the modeling
-   cost, or skip for v1 and treat all overgrowths as orientation-
-   independent?
+- **Sweetwater Mine** (Viburnum Trend, MO) — barite-rich. Snowball
+  barite signature texture. Drives Q5 demand directly.
+- **Elmwood Mine** (TN) — fluorite-rich. Calcite-on-fluorite stacking
+  + occasional perimorph (calcite-after-fluorite cast). Drives Q3
+  encrustation + Q4 perimorph demand.
 
-4. **Pseudomorph porosity**: Putnis 2009 emphasizes that CDR
-   pseudomorphs are *porous* in the product phase (volume mismatch
-   accommodation). I've proposed treating this as a renderer-only
-   roughness boost. Do we want a real `porosity` field on the
-   crystal, surfaced in the library / used by later water-soluble
-   re-dissolution mechanics?
-
-5. **Perimorph eligibility**: as proposed, only encrustation-shells
-   become perimorphs. Should pseudomorph-replacement products be
-   eligible too if late chemistry dissolves them in turn? (i.e.
-   malachite-after-azurite later dissolves → empty cavity. Does the
-   azurite outline "ghost" persist?)
-
-6. **Calibration target**: Q1c (σ discount) is the biggest drift.
-   I'd like to commit it then iterate the discount values until the
-   per-scenario crystal counts fall back within ±10% of v53 baselines.
-   Worth it, or should the discount be smaller (more conservative —
-   epitaxial pairs at 0.7 instead of 0.5) to keep scenarios closer to
-   their existing tuning?
-
-7. **MVT-specific perimorph cite**: I want to ground Q4 in a
-   documented MVT specimen rather than just borrowing the Cumbria
-   quartz-after-fluorite case. Heyl 1968 (UMV district textures) and
-   Hagni's Tri-State petrography papers are the candidates — worth a
-   targeted literature dive, or accept the analog from Cumbria/
-   Cornwall as good enough?
+No work needed today. Once these scenarios land, paragenesis features
+should be tested against their type-specimen textures. Some
+mechanics (e.g. snowball density, encrustation banding rate) may
+become scenario-specific tunings rather than universal defaults.
 
 ---
 
