@@ -29962,6 +29962,12 @@ function _habitGeomToken(habit) {
         return 'cube';
     if (h === 'octahedral')
         return 'octahedron';
+    // E5 batch 3: garnet-style rhombic dodecahedron (12 rhombic faces,
+    // 14 vertices) is the dominant garnet/almandine habit. The regular
+    // Platonic dodecahedron (12 pentagonal faces) is what 'dodecahedral'
+    // produces — kept for any mineral that genuinely needs that.
+    if (h === 'rhombic dodecahedral' || h === 'rhombic-dodecahedral' || h === 'garnet' || h === 'trapezohedral')
+        return 'rhombic_dodec';
     if (h === 'dodecahedral')
         return 'dodecahedron';
     if (h === 'botryoidal' || h === 'reniform' || h === 'mammillary' || h === 'globular')
@@ -30164,6 +30170,54 @@ function _makeBeveledTablet() {
     geom.computeVertexNormals();
     return geom;
 }
+// Garnet rhombic dodecahedron — 12 rhombic faces, 14 vertices
+// (6 axial + 8 cube-corner). The classic "garnet" silhouette,
+// distinct from the regular pentagonal Platonic dodecahedron that
+// Three.js's DodecahedronGeometry produces. Each rhombic face has
+// 4 coplanar vertices: 2 axial verts on adjacent coordinate axes +
+// 2 cube-corner verts diagonally between them.
+function _makeRhombicDodecahedron() {
+    const r = 0.50; // axial radius
+    const c = 0.25; // cube-corner half-coordinate (axial verts further from origin → r > c√3 keeps the rhombi planar; r=0.5 c=0.25 gives the regular form scaled to fit a unit-ish bounding box)
+    // 6 axial vertices
+    const A = {
+        px: [+r, 0, 0], nx: [-r, 0, 0],
+        py: [0, +r, 0], ny: [0, -r, 0],
+        pz: [0, 0, +r], nz: [0, 0, -r],
+    };
+    // 8 cube-corner vertices
+    const C = (sx, sy, sz) => [sx * c, sy * c, sz * c];
+    // 12 rhombic faces — each spans 2 axial verts on adjacent axes +
+    // 2 cube corners between them. Defined as quads (4 verts in cyclic
+    // order); each quad becomes 2 triangles in the position list.
+    const faces = [
+        // +x with +y, +y with -x, -x with -y, -y with +x   (top z half + bottom z half)
+        [A.px, C(+1, +1, +1), A.py, C(+1, +1, -1)], // +x +y
+        [A.py, C(-1, +1, +1), A.nx, C(-1, +1, -1)], // +y -x
+        [A.nx, C(-1, -1, +1), A.ny, C(-1, -1, -1)], // -x -y
+        [A.ny, C(+1, -1, +1), A.px, C(+1, -1, -1)], // -y +x
+        // ±x with ±z
+        [A.px, C(+1, +1, +1), A.pz, C(+1, -1, +1)], // +x +z
+        [A.pz, C(-1, +1, +1), A.nx, C(-1, -1, +1)], // +z -x
+        [A.nx, C(-1, +1, -1), A.nz, C(-1, -1, -1)], // -x -z
+        [A.nz, C(+1, +1, -1), A.px, C(+1, -1, -1)], // -z +x
+        // ±y with ±z
+        [A.py, C(+1, +1, +1), A.pz, C(-1, +1, +1)], // +y +z
+        [A.pz, C(+1, -1, +1), A.ny, C(-1, -1, +1)], // +z -y
+        [A.ny, C(+1, -1, -1), A.nz, C(-1, -1, -1)], // -y -z
+        [A.nz, C(+1, +1, -1), A.py, C(-1, +1, -1)], // -z +y
+    ];
+    const positions = [];
+    for (const f of faces) {
+        const [a, b, c2, d] = f;
+        _pushTri(positions, a[0], a[1], a[2], b[0], b[1], b[2], c2[0], c2[1], c2[2]);
+        _pushTri(positions, a[0], a[1], a[2], c2[0], c2[1], c2[2], d[0], d[1], d[2]);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Botryoidal cluster — 4 hemispheres of varying size welded into a
 // bumpy mass. Reads as a malachite kidney / hematite blob far better
 // than a single sphere. Each "bubble" is just a low-poly sphere
@@ -30231,6 +30285,9 @@ function _buildHabitGeom(token) {
             return new THREE.BoxGeometry(0.8, 0.8, 0.8);
         case 'octahedron':
             return new THREE.OctahedronGeometry(0.55, 0);
+        case 'rhombic_dodec':
+            // Garnet-style 12 rhombic faces. Phase E5 batch 3.
+            return _makeRhombicDodecahedron();
         case 'dodecahedron':
             return new THREE.DodecahedronGeometry(0.55, 0);
         case 'botryoidal':
