@@ -137,8 +137,7 @@ function grow_anhydrite(crystal, conditions, step) {
         && conditions.fluid.salinity < 95) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
-      conditions.fluid.Ca += dissolved_um * 0.5;
-      conditions.fluid.S  += dissolved_um * 0.4;
+      // Phase 1e: Ca + S credits via MINERAL_DISSOLUTION_RATES.anhydrite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -197,8 +196,7 @@ function grow_brochantite(crystal, conditions, step) {
     )) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.12);
-      conditions.fluid.Cu += dissolved_um * 0.5;
-      conditions.fluid.S  += dissolved_um * 0.3;
+      // Phase 1e: Cu + S credits via MINERAL_DISSOLUTION_RATES.brochantite.
       const cause = conditions.fluid.pH < 2.8
         ? 'pH < 3 → antlerite stable'
         : 'pH > 7 → tenorite/malachite stable';
@@ -254,8 +252,7 @@ function grow_antlerite(crystal, conditions, step) {
     if (crystal.total_growth_um > 2 && conditions.fluid.pH > 4.2) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.15);
-      conditions.fluid.Cu += dissolved_um * 0.5;
-      conditions.fluid.S  += dissolved_um * 0.4;
+      // Phase 1e: Cu + S credits via MINERAL_DISSOLUTION_RATES.antlerite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -304,9 +301,7 @@ function grow_jarosite(crystal, conditions, step) {
     if (crystal.total_growth_um > 2 && conditions.fluid.pH > 4.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.15);
-      conditions.fluid.K  += dissolved_um * 0.3;
-      conditions.fluid.Fe += dissolved_um * 0.5;
-      conditions.fluid.S  += dissolved_um * 0.4;
+      // Phase 1e: K + Fe + S credits via MINERAL_DISSOLUTION_RATES.jarosite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -352,9 +347,7 @@ function grow_alunite(crystal, conditions, step) {
                                          || conditions.temperature > 350)) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.12);
-      conditions.fluid.K  += dissolved_um * 0.3;
-      conditions.fluid.Al += dissolved_um * 0.4;
-      conditions.fluid.S  += dissolved_um * 0.4;
+      // Phase 1e: K + Al + S credits via MINERAL_DISSOLUTION_RATES.alunite.
       const cause = conditions.fluid.pH > 4.5 ? 'pH > 4' : 'T > 350°C';
       return new GrowthZone({
         step, temperature: conditions.temperature,
@@ -408,8 +401,7 @@ function grow_mirabilite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.concentration < 1.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(10.0, crystal.total_growth_um * 0.25);
-      conditions.fluid.Na += dissolved_um * 0.4;
-      conditions.fluid.S += dissolved_um * 0.25;
+      // Phase 1e: Na + S credits via MINERAL_DISSOLUTION_RATES.mirabilite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -441,8 +433,7 @@ function grow_thenardite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.concentration < 1.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.20);
-      conditions.fluid.Na += dissolved_um * 0.4;
-      conditions.fluid.S += dissolved_um * 0.25;
+      // Phase 1e: Na + S credits via MINERAL_DISSOLUTION_RATES.thenardite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -479,8 +470,7 @@ function grow_selenite(crystal, conditions, step) {
     if (crystal.total_growth_um > 2 && (conditions.fluid.pH < 4 || conditions.temperature > 80)) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.15);
-      conditions.fluid.Ca += dissolved_um * 0.4;
-      conditions.fluid.S += dissolved_um * 0.3;
+      // Phase 1e: Ca + S credits via MINERAL_DISSOLUTION_RATES.selenite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -549,15 +539,13 @@ function grow_anglesite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 2.0) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      conditions.fluid.Pb += d * 0.3;
-      conditions.fluid.S += d * 0.3;
+      // Phase 1e: Pb + S credits via MINERAL_DISSOLUTION_RATES.anglesite.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
     }
     if (crystal.total_growth_um > 5 && conditions.fluid.CO3 > 150) {
       crystal.dissolved = true;
       const d = Math.min(1.5, crystal.total_growth_um * 0.04);
-      conditions.fluid.Pb += d * 0.3;
-      conditions.fluid.S += d * 0.3;
+      // Phase 1e: Pb + S credits via MINERAL_DISSOLUTION_RATES.anglesite.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `anglesite → cerussite (CO₃ ${conditions.fluid.CO3.toFixed(0)} ppm overwhelms)` });
     }
     return null;

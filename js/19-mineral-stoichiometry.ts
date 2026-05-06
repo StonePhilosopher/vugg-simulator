@@ -205,6 +205,19 @@ const MINERAL_DISSOLUTION_RATES: Record<string, Record<string, number>> = {
   native_arsenic:   { As: 0.5 },          // oxidative weathering
   native_bismuth:   { Bi: 0.5 },          // acid dissolution
   native_copper:    { Cu: 0.5 },          // oxidative weathering to soluble Cu²⁺
+
+  // ---- Sulfates (Phase 1e batch 3, v41) ----
+  // barite/celestine/chalcanthite have no inline dissolution credits
+  // in engines — they simply persist when σ<1, no recycling pathway.
+  anhydrite:    { Ca: 0.5, S: 0.4 },                   // acid dissolution
+  brochantite:  { Cu: 0.5, S: 0.3 },                   // acid attack
+  antlerite:    { Cu: 0.5, S: 0.4 },                   // acid attack
+  jarosite:     { K: 0.3, Fe: 0.5, S: 0.4 },           // alkaline-driven dissolution
+  alunite:      { K: 0.3, Al: 0.4, S: 0.4 },           // alkaline-driven dissolution
+  mirabilite:   { Na: 0.4, S: 0.25 },                  // dehydration / re-dissolution
+  thenardite:   { Na: 0.4, S: 0.25 },                  // re-dissolution under low concentration
+  selenite:     { Ca: 0.4, S: 0.3 },                   // acid dissolution / phase boundary
+  anglesite:    { Pb: 0.3, S: 0.3 },                   // two engine triggers (acid + reductive), same rates
 };
 
 // Apply mass balance for a single growth or dissolution zone. Called

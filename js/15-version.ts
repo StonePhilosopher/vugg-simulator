@@ -516,5 +516,15 @@
 //        have no dissolution credit at all and stay absent from the
 //        table. Batch verified byte-identical to v39 via per-scenario
 //        JSON comparison; 21/127 sites total now table-mediated.
-const SIM_VERSION = 40;
+//   v41 — Phase 1e migration batch 3: sulfate class (May 2026).
+//        22 inline credits removed across 9 minerals (anhydrite,
+//        brochantite, antlerite, jarosite, alunite, mirabilite,
+//        thenardite, selenite, anglesite). barite, celestine,
+//        chalcanthite have no inline dissolution credit at all and
+//        stay absent from the table. anglesite has two engine
+//        triggers (acid + carbonate-overwhelm) but identical
+//        per-µm rates, so a single table entry covers both. Verified
+//        byte-identical to v40 via per-scenario JSON comparison;
+//        43/~185 sites total now table-mediated.
+const SIM_VERSION = 41;
 
