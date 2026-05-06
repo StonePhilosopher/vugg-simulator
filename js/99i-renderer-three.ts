@@ -1053,8 +1053,14 @@ function _topoCrystalsSignature(sim: any): string {
   if (!sim || !sim.crystals || !sim.crystals.length) return '';
   const parts: string[] = [];
   for (const c of sim.crystals) {
-    if (!c || c.dissolved) continue;
-    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${c.wall_ring_index}:${c.wall_center_cell}`);
+    if (!c) continue;
+    // Q4: dissolved crystals normally drop from the scene, BUT a
+    // dissolved crystal flagged perimorph_eligible persists as a
+    // hollow cast — its outline is the geological signature. Include
+    // such casts in the signature so the cache busts when one
+    // appears (and so its mesh gets built in _topoSyncCrystalMeshes).
+    if (c.dissolved && !c.perimorph_eligible) continue;
+    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${c.wall_ring_index}:${c.wall_center_cell}:${c.dissolved ? 'd' : 'a'}`);
   }
   return parts.join('|');
 }
@@ -1085,7 +1091,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any) {
   const initR = wall.initial_radius_mm || 25;
 
   for (const crystal of sim.crystals) {
-    if (!crystal || crystal.dissolved) continue;
+    if (!crystal) continue;
+    // Q4 — dissolved crystals normally drop from the scene, BUT a
+    // dissolved crystal flagged perimorph_eligible (Q2a tagged via
+    // shape-preserving CDR route) persists as a hollow cast. The
+    // mesh body is the inherited shape; the material is translucent
+    // double-sided so the user reads the void inside the shell.
+    if (crystal.dissolved && !crystal.perimorph_eligible) continue;
     let ringIdx = crystal.wall_ring_index;
     if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount) ringIdx = 0;
     const cellIdx = crystal.wall_center_cell;
@@ -1167,11 +1179,25 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any) {
     if (isCdrPseudomorph) {
       roughness = Math.min(1.0, roughness + 0.18);
     }
-    const mat = new THREE.MeshStandardMaterial({
+    // Q4 — perimorph cast. When a perimorph_eligible crystal has
+    // dissolved, it persists as a hollow shell (Cumbria/Cornwall
+    // quartz-after-fluorite type, Cave-in-Rock calcite-after-fluorite).
+    // The mesh body is the inherited (Q3a) outline; the material is
+    // translucent + double-sided so the viewer reads the void inside.
+    // metalness goes to 0 (luster is gone), roughness pushes to nearly
+    // matte (etched cast surface).
+    const isPerimorphCast = crystal.dissolved && crystal.perimorph_eligible;
+    const matOpts: any = {
       color: _topoParseColor(colorStr),
-      roughness,
-      metalness,
-    });
+      roughness: isPerimorphCast ? Math.min(1.0, roughness + 0.25) : roughness,
+      metalness: isPerimorphCast ? 0.0 : metalness,
+    };
+    if (isPerimorphCast) {
+      matOpts.transparent = true;
+      matOpts.opacity = 0.42;
+      matOpts.side = THREE.DoubleSide;
+    }
+    const mat = new THREE.MeshStandardMaterial(matOpts);
     _applyCavityClip(mat, state.clipUniforms);
 
     const mesh = new THREE.Mesh(geom, mat);
