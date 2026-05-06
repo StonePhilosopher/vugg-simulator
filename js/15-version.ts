@@ -697,5 +697,25 @@
 //        traces (calcite Mn/Fe trace from zone history; arsenopyrite
 //        Au-trap from zone trace_Au sum) — these are zone-dependent
 //        not rate-scaled and stay inline forever as designed.
-const SIM_VERSION = 53;
+//   v54 — Paragenesis Q1a infrastructure (May 2026, per
+//        PROPOSAL-PARAGENESIS-OVERGROWTH-CRUSTIFICATION-PSEUDOMORPHS).
+//        Adds js/26-mineral-paragenesis.ts with table-type scaffolding:
+//          SUBSTRATE_NUCLEATION_DISCOUNT — host -> nucleating ->
+//             σ-discount factor [0..1] for heterogeneous nucleation
+//          EPITAXY_PAIRS — Set of strict-epitaxy 'nucleating>host'
+//             pairs (low lattice misfit, real orientation relationship)
+//          PSEUDOMORPH_ROUTES — list of {parent, child, trigger,
+//             shape_preserved} CDR routes (Putnis 2002, 2009)
+//        All three start empty in Q1a (no behavior change, byte-
+//        identical to v53). Plus VugSimulator._pickSubstrate(mineral)
+//        — a paragenesis-aware substrate-pick helper that returns
+//        {host, discount} for documented hosts or null when the table
+//        has no entry. Currently always returns null (table empty).
+//        Q1b populates the table from documented MVT/supergene pairs
+//        and migrates inline ad-hoc 'if (rng() < 0.7) pos = ...'
+//        rules to this helper. Q1c wires the σ discount into the
+//        nucleation threshold check (where the calibration drift
+//        will land). v54 byte-identical to v53 across all 20 seed-42
+//        scenarios.
+const SIM_VERSION = 54;
 

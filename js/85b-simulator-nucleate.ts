@@ -4,7 +4,7 @@
 // Methods attached to VugSimulator.prototype after the class is defined
 // in 85-simulator.ts, so direct calls and dynamic dispatch keep working.
 //
-// Methods here (7): nucleate, _rollSpontaneousTwin, _spaceIsCrowded, _atNucleationCap, _assignWallCell, _runEngineForCrystal, _assignWallRing.
+// Methods here (8): nucleate, _rollSpontaneousTwin, _spaceIsCrowded, _atNucleationCap, _assignWallCell, _pickSubstrate, _runEngineForCrystal, _assignWallRing.
 //
 // Phase B20 of PROPOSAL-MODULAR-REFACTOR.
 
@@ -220,6 +220,19 @@ Object.assign(VugSimulator.prototype, {
   }
   return false;
 },
+
+  // Q1a paragenesis hook — consult MINERAL_PARAGENESIS substrate-
+  // affinity table for a heterogeneous-nucleation discount on the
+  // currently-nucleating mineral. Returns null in Q1a (table is
+  // empty); Q1b populates the table with documented MVT/supergene
+  // pairs; Q1c wires the discount into the σ-threshold check at
+  // nucleation sites. Per-engine inline `if (rng() < 0.7) pos = 'on
+  // X #Y'` rules will migrate to this helper as Q1b lands.
+  //
+  // Returns: { host: Crystal, discount: number } | null.
+  _pickSubstrate(mineral) {
+    return pickSubstrateForMineral(mineral, this.crystals, rng);
+  },
 
   _assignWallCell(position) {
   // Host-substrate overgrowths inherit the host's cell; free-wall

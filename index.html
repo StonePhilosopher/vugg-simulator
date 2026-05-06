@@ -4690,7 +4690,27 @@ let timeScale = 5.0;
 //        traces (calcite Mn/Fe trace from zone history; arsenopyrite
 //        Au-trap from zone trace_Au sum) — these are zone-dependent
 //        not rate-scaled and stay inline forever as designed.
-const SIM_VERSION = 53;
+//   v54 — Paragenesis Q1a infrastructure (May 2026, per
+//        PROPOSAL-PARAGENESIS-OVERGROWTH-CRUSTIFICATION-PSEUDOMORPHS).
+//        Adds js/26-mineral-paragenesis.ts with table-type scaffolding:
+//          SUBSTRATE_NUCLEATION_DISCOUNT — host -> nucleating ->
+//             σ-discount factor [0..1] for heterogeneous nucleation
+//          EPITAXY_PAIRS — Set of strict-epitaxy 'nucleating>host'
+//             pairs (low lattice misfit, real orientation relationship)
+//          PSEUDOMORPH_ROUTES — list of {parent, child, trigger,
+//             shape_preserved} CDR routes (Putnis 2002, 2009)
+//        All three start empty in Q1a (no behavior change, byte-
+//        identical to v53). Plus VugSimulator._pickSubstrate(mineral)
+//        — a paragenesis-aware substrate-pick helper that returns
+//        {host, discount} for documented hosts or null when the table
+//        has no entry. Currently always returns null (table empty).
+//        Q1b populates the table from documented MVT/supergene pairs
+//        and migrates inline ad-hoc 'if (rng() < 0.7) pos = ...'
+//        rules to this helper. Q1c wires the σ discount into the
+//        nucleation threshold check (where the calibration drift
+//        will land). v54 byte-identical to v53 across all 20 seed-42
+//        scenarios.
+const SIM_VERSION = 54;
 
 // ── 18-constants.js ──
 
@@ -6946,6 +6966,108 @@ class VugConditions {
             return 'beta-quartz'; // β-quartz (inverts to α on cooling)
         return 'tridymite'; // High-T volcanic polymorph
     }
+}
+
+// ── 26-mineral-paragenesis.js ──
+
+// ============================================================
+// js/26-mineral-paragenesis.ts — substrate affinity + paragenesis tables
+// ============================================================
+// Per PROPOSAL-PARAGENESIS-OVERGROWTH-CRUSTIFICATION-PSEUDOMORPHS.md.
+// Empty in this commit (Q1a) — types + table scaffolding only, no
+// behavior change. Q1b populates the table from documented MVT/
+// supergene/pegmatite mineral pairs; Q1c wires the σ-discount into
+// nucleation thresholds.
+//
+// Two tables, one Set:
+//
+//   SUBSTRATE_NUCLEATION_DISCOUNT[host_mineral][nucleating_mineral]
+//     = sigma_discount_factor (0..1).
+//   A factor of 0.6 means "this mineral nucleates at sigma_threshold
+//   * 0.6 when this substrate is available" — heterogeneous
+//   nucleation reduces the interfacial-free-energy barrier compared
+//   to bare-wall nucleation. 1.0 = no discount (treat as bare wall).
+//   Below 0.5 = strong epitaxy (close lattice match: e.g.
+//   sphalerite-on-pyrite at ~0.2% misfit, Ramdohr 1980).
+//
+//   EPITAXY_PAIRS = Set<'<nucleating>><host>'>
+//   Documented strict-epitaxy pairs only (low lattice misfit, real
+//   crystallographic orientation relationship). Pairs in this set
+//   get a habit override that aligns to host facets. Pairs in the
+//   discount table but NOT in EPITAXY_PAIRS use orientation-
+//   independent heterogeneous nucleation (general substrate
+//   stickiness, not strict lattice match).
+//
+//   PSEUDOMORPH_ROUTES — list of {parent, child, trigger,
+//   shape_preserved} entries that document the documented coupled
+//   dissolution-precipitation routes (Putnis 2002, 2009). Q2 adds
+//   entries; Q3 wires the renderer to inherit parent outline when
+//   shape_preserved is true.
+// Empty in Q1a. Populated in Q1b with ~30 documented pairs. Lookup
+// shape: SUBSTRATE_NUCLEATION_DISCOUNT[host_mineral][nucleating_mineral].
+// Missing host or missing nucleating-on-host entry => no discount
+// (nucleate as if on bare wall).
+const SUBSTRATE_NUCLEATION_DISCOUNT = {
+// --- examples (commented out until Q1b lands them with citations) ---
+// pyrite: {
+//   sphalerite: 0.5,    // ZnS on FeS2, ~0.2% misfit, Ramdohr 1980
+//   galena:     0.7,    // PbS on FeS2, ~9% misfit, semi-coherent
+//   marcasite:  0.5,    // shared S-S geometry
+// },
+// ...
+};
+// Empty in Q1a. Populated in Q1b alongside the discount table.
+// Format: '<nucleating>><host>' — e.g. 'sphalerite>pyrite'.
+const EPITAXY_PAIRS = new Set();
+// Empty in Q1a. Populated in Q2.
+const PSEUDOMORPH_ROUTES = [];
+// Pick a substrate for a nucleating mineral, weighted by available
+// hosts and their per-pair discount factors. Pure helper — called by
+// VugSimulator._pickSubstrate which threads the live crystal list +
+// rng. Returns null when no discounted substrate is available; the
+// caller falls back to its own default ('vug wall' or whatever
+// engine-specific preference it has).
+//
+// Returns: { host: Crystal, discount: number } | null.
+//
+// Q1a contract: with the empty table, this always returns null —
+// every nucleation falls back to caller's existing behavior. Q1b
+// populates the table; Q1c wires this into nucleation σ checks.
+function pickSubstrateForMineral(mineral, crystals, rng) {
+    // Eligible hosts: any non-dissolved, non-enclosed crystal whose
+    // mineral is a key in SUBSTRATE_NUCLEATION_DISCOUNT and offers a
+    // discount for the nucleating mineral.
+    const candidates = [];
+    for (const c of crystals) {
+        if (c.dissolved || c.enclosed_by != null)
+            continue;
+        const hostEntry = SUBSTRATE_NUCLEATION_DISCOUNT[c.mineral];
+        if (!hostEntry)
+            continue;
+        const discount = hostEntry[mineral];
+        if (typeof discount !== 'number' || discount >= 1.0)
+            continue;
+        // Weight by inverse discount (stronger epitaxy = stronger
+        // preference) and by host crystal size (bigger host = more
+        // surface area for heterogeneous nucleation). Empirical for now;
+        // Q1c can refine if calibration drift is too aggressive.
+        const sizeFactor = Math.max(1.0, c.c_length_mm || 0);
+        const weight = (1.0 - discount) * sizeFactor;
+        candidates.push({ host: c, discount, weight });
+    }
+    if (candidates.length === 0)
+        return null;
+    // Weighted random pick.
+    let total = 0;
+    for (const x of candidates)
+        total += x.weight;
+    let pick = (rng && rng.random ? rng.random() : Math.random()) * total;
+    for (const x of candidates) {
+        pick -= x.weight;
+        if (pick <= 0)
+            return { host: x.host, discount: x.discount };
+    }
+    return { host: candidates[candidates.length - 1].host, discount: candidates[candidates.length - 1].discount };
 }
 
 // ── 27-geometry-crystal.js ──
@@ -17664,7 +17786,7 @@ Object.assign(VugSimulator.prototype, {
 // Methods attached to VugSimulator.prototype after the class is defined
 // in 85-simulator.ts, so direct calls and dynamic dispatch keep working.
 //
-// Methods here (7): nucleate, _rollSpontaneousTwin, _spaceIsCrowded, _atNucleationCap, _assignWallCell, _runEngineForCrystal, _assignWallRing.
+// Methods here (8): nucleate, _rollSpontaneousTwin, _spaceIsCrowded, _atNucleationCap, _assignWallCell, _pickSubstrate, _runEngineForCrystal, _assignWallRing.
 //
 // Phase B20 of PROPOSAL-MODULAR-REFACTOR.
 Object.assign(VugSimulator.prototype, {
@@ -17925,6 +18047,18 @@ Object.assign(VugSimulator.prototype, {
                 return true;
         }
         return false;
+    },
+    // Q1a paragenesis hook — consult MINERAL_PARAGENESIS substrate-
+    // affinity table for a heterogeneous-nucleation discount on the
+    // currently-nucleating mineral. Returns null in Q1a (table is
+    // empty); Q1b populates the table with documented MVT/supergene
+    // pairs; Q1c wires the discount into the σ-threshold check at
+    // nucleation sites. Per-engine inline `if (rng() < 0.7) pos = 'on
+    // X #Y'` rules will migrate to this helper as Q1b lands.
+    //
+    // Returns: { host: Crystal, discount: number } | null.
+    _pickSubstrate(mineral) {
+        return pickSubstrateForMineral(mineral, this.crystals, rng);
     },
     _assignWallCell(position) {
         // Host-substrate overgrowths inherit the host's cell; free-wall
