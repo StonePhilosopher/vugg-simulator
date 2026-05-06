@@ -16,8 +16,7 @@ function grow_fluorite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.12);
-      conditions.fluid.Ca += dissolved_um * 0.4;
-      conditions.fluid.F += dissolved_um * 0.6;
+      // Phase 1e: Ca + F credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.fluorite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -56,8 +55,7 @@ function grow_halite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.concentration < 1.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.20);
-      conditions.fluid.Na += dissolved_um * 0.4;
-      conditions.fluid.Cl += dissolved_um * 6.0;
+      // Phase 1e: Na + Cl credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.halite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,

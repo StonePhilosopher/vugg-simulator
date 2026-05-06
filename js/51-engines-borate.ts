@@ -15,8 +15,7 @@ function grow_borax(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.concentration < 1.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(10.0, crystal.total_growth_um * 0.25);
-      conditions.fluid.Na += dissolved_um * 0.4;
-      conditions.fluid.B += dissolved_um * 0.15;
+      // Phase 1e: Na + B credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.borax.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,

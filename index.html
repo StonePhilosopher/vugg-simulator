@@ -4490,7 +4490,17 @@ let timeScale = 5.0;
 //        populate the table class-by-class and remove the matching inline
 //        `fluid.X += dissolved_um * RATE` blocks from engines, mirroring
 //        the precipitation-side cleanup that landed across Phase 1c/d.
-const SIM_VERSION = 38;
+//   v39 — Phase 1e migration batch 1: halide + borate + hydroxide
+//        (May 2026). 8 inline `fluid.X += dissolved_um * RATE`
+//        credits removed across 5 minerals (fluorite, halite, borax,
+//        goethite, lepidocrocite); matching entries added to
+//        MINERAL_DISSOLUTION_RATES with the exact same per-µm rates.
+//        applyMassBalance now credits the fluid uniformly the way it
+//        debits during precipitation. Verified byte-identical to v38
+//        via per-scenario JSON comparison across all 20 scenarios
+//        (the file-level diff shows CRLF/LF churn from Windows git
+//        autocrlf — substance is bit-equal). 63/63 tests green.
+const SIM_VERSION = 39;
 
 // ── 18-constants.js ──
 
@@ -4722,9 +4732,14 @@ const MINERAL_STOICHIOMETRY = {
 //     dissolution (different rates for acid vs oxidative) keep their
 //     inline credits until per-mode dispatch is added.
 const MINERAL_DISSOLUTION_RATES = {
-// ---- Halides (Phase 1e batch 1) ----
-// Filled in the migration commit; empty in the infrastructure
-// commit so seed-42 stays byte-identical.
+    // ---- Halides (Phase 1e batch 1, v39) ----
+    fluorite: { Ca: 0.4, F: 0.6 }, // acid dissolution: CaF₂ + 2H⁺ → Ca²⁺ + 2HF
+    halite: { Na: 0.4, Cl: 6.0 }, // meteoric flush — Cl is dominant in NaCl re-dissolution
+    // ---- Borates (Phase 1e batch 1, v39) ----
+    borax: { Na: 0.4, B: 0.15 }, // generic borate re-dissolution
+    // ---- Hydroxides (Phase 1e batch 1, v39) ----
+    goethite: { Fe: 0.5 }, // FeO(OH) + 3H⁺ → Fe³⁺ + 2H₂O
+    lepidocrocite: { Fe: 0.4 }, // γ-FeO(OH) acid attack
 };
 // Apply mass balance for a single growth or dissolution zone. Called
 // from VugSimulator._runEngineForCrystal after the engine returns.
@@ -9716,8 +9731,7 @@ function grow_borax(crystal, conditions, step) {
         if (crystal.total_growth_um > 5 && conditions.fluid.concentration < 1.5) {
             crystal.dissolved = true;
             const dissolved_um = Math.min(10.0, crystal.total_growth_um * 0.25);
-            conditions.fluid.Na += dissolved_um * 0.4;
-            conditions.fluid.B += dissolved_um * 0.15;
+            // Phase 1e: Na + B credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.borax.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -10460,8 +10474,7 @@ function grow_fluorite(crystal, conditions, step) {
         if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
             crystal.dissolved = true;
             const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.12);
-            conditions.fluid.Ca += dissolved_um * 0.4;
-            conditions.fluid.F += dissolved_um * 0.6;
+            // Phase 1e: Ca + F credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.fluorite.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -10498,8 +10511,7 @@ function grow_halite(crystal, conditions, step) {
         if (crystal.total_growth_um > 5 && conditions.fluid.concentration < 1.5) {
             crystal.dissolved = true;
             const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.20);
-            conditions.fluid.Na += dissolved_um * 0.4;
-            conditions.fluid.Cl += dissolved_um * 6.0;
+            // Phase 1e: Na + Cl credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.halite.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -10555,7 +10567,7 @@ function grow_goethite(crystal, conditions, step) {
         if (crystal.total_growth_um > 3 && conditions.fluid.pH < 3.0) {
             crystal.dissolved = true;
             const d = Math.min(4.0, crystal.total_growth_um * 0.12);
-            conditions.fluid.Fe += d * 0.5;
+            // Phase 1e: Fe credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.goethite.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -d, growth_rate: -d,
@@ -10614,7 +10626,7 @@ function grow_lepidocrocite(crystal, conditions, step) {
         if (crystal.total_growth_um > 5 && conditions.fluid.pH < 3.0) {
             crystal.dissolved = true;
             const d = Math.min(1.5, crystal.total_growth_um * 0.06);
-            conditions.fluid.Fe += d * 0.4;
+            // Phase 1e: Fe credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.lepidocrocite.
             return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
         }
         return null;

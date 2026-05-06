@@ -17,7 +17,7 @@ function grow_goethite(crystal, conditions, step) {
     if (crystal.total_growth_um > 3 && conditions.fluid.pH < 3.0) {
       crystal.dissolved = true;
       const d = Math.min(4.0, crystal.total_growth_um * 0.12);
-      conditions.fluid.Fe += d * 0.5;
+      // Phase 1e: Fe credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.goethite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -d, growth_rate: -d,
@@ -77,7 +77,7 @@ function grow_lepidocrocite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 3.0) {
       crystal.dissolved = true;
       const d = Math.min(1.5, crystal.total_growth_um * 0.06);
-      conditions.fluid.Fe += d * 0.4;
+      // Phase 1e: Fe credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.lepidocrocite.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
     }
     return null;

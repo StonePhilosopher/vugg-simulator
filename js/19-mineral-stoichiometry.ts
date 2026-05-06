@@ -176,9 +176,16 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
 //     dissolution (different rates for acid vs oxidative) keep their
 //     inline credits until per-mode dispatch is added.
 const MINERAL_DISSOLUTION_RATES: Record<string, Record<string, number>> = {
-  // ---- Halides (Phase 1e batch 1) ----
-  // Filled in the migration commit; empty in the infrastructure
-  // commit so seed-42 stays byte-identical.
+  // ---- Halides (Phase 1e batch 1, v39) ----
+  fluorite: { Ca: 0.4, F: 0.6 },          // acid dissolution: CaF₂ + 2H⁺ → Ca²⁺ + 2HF
+  halite:   { Na: 0.4, Cl: 6.0 },         // meteoric flush — Cl is dominant in NaCl re-dissolution
+
+  // ---- Borates (Phase 1e batch 1, v39) ----
+  borax:    { Na: 0.4, B: 0.15 },         // generic borate re-dissolution
+
+  // ---- Hydroxides (Phase 1e batch 1, v39) ----
+  goethite:      { Fe: 0.5 },             // FeO(OH) + 3H⁺ → Fe³⁺ + 2H₂O
+  lepidocrocite: { Fe: 0.4 },             // γ-FeO(OH) acid attack
 };
 
 // Apply mass balance for a single growth or dissolution zone. Called

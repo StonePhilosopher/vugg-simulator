@@ -497,5 +497,15 @@
 //        populate the table class-by-class and remove the matching inline
 //        `fluid.X += dissolved_um * RATE` blocks from engines, mirroring
 //        the precipitation-side cleanup that landed across Phase 1c/d.
-const SIM_VERSION = 38;
+//   v39 — Phase 1e migration batch 1: halide + borate + hydroxide
+//        (May 2026). 8 inline `fluid.X += dissolved_um * RATE`
+//        credits removed across 5 minerals (fluorite, halite, borax,
+//        goethite, lepidocrocite); matching entries added to
+//        MINERAL_DISSOLUTION_RATES with the exact same per-µm rates.
+//        applyMassBalance now credits the fluid uniformly the way it
+//        debits during precipitation. Verified byte-identical to v38
+//        via per-scenario JSON comparison across all 20 scenarios
+//        (the file-level diff shows CRLF/LF churn from Windows git
+//        autocrlf — substance is bit-equal). 63/63 tests green.
+const SIM_VERSION = 39;
 
