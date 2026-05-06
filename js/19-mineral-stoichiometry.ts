@@ -186,6 +186,25 @@ const MINERAL_DISSOLUTION_RATES: Record<string, Record<string, number>> = {
   // ---- Hydroxides (Phase 1e batch 1, v39) ----
   goethite:      { Fe: 0.5 },             // FeO(OH) + 3H⁺ → Fe³⁺ + 2H₂O
   lepidocrocite: { Fe: 0.4 },             // γ-FeO(OH) acid attack
+
+  // ---- Molybdates (Phase 1e batch 2, v40) ----
+  wulfenite:      { Pb: 0.5, Mo: 0.3 },   // acid dissolution releases Pb²⁺ + MoO₄²⁻
+  ferrimolybdite: { Fe: 0.5, Mo: 0.4 },   // dehydration crumble — Fe³⁺ + MoO₄²⁻
+
+  // ---- Oxides (Phase 1e batch 2, v40) ----
+  hematite:  { Fe: 1.5 },                 // strong-acid pH<2 dissolution
+  uraninite: { U: 0.6 },                  // oxidative dissolution → uranyl mobility
+  magnetite: { Fe: 0.5 },                 // acid dissolution
+  cuprite:   { Cu: 0.5 },                 // acid attack
+
+  // ---- Native elements (Phase 1e batch 2, v40) ----
+  // native_silver and native_gold have no inline dissolution credit
+  // in the engines; they remain absent from the table.
+  native_tellurium: { Te: 0.5 },          // oxidative dissolution
+  native_sulfur:    { S: 0.6 },           // sublimation / re-dissolution
+  native_arsenic:   { As: 0.5 },          // oxidative weathering
+  native_bismuth:   { Bi: 0.5 },          // acid dissolution
+  native_copper:    { Cu: 0.5 },          // oxidative weathering to soluble Cu²⁺
 };
 
 // Apply mass balance for a single growth or dissolution zone. Called

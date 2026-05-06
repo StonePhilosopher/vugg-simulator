@@ -16,7 +16,7 @@ function grow_hematite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 3.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.1);
-      conditions.fluid.Fe += dissolved_um * 1.5;
+      // Phase 1e: Fe credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.hematite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -83,7 +83,7 @@ function grow_uraninite(crystal, conditions, step) {
     if (crystal.total_growth_um > 3 && conditions.fluid.O2 > 0.3) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.12);
-      conditions.fluid.U += dissolved_um * 0.6; // uranyl back to fluid
+      // Phase 1e: U credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.uraninite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -127,7 +127,7 @@ function grow_magnetite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && (conditions.fluid.pH < 2.5 || conditions.fluid.O2 > 1.4)) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      conditions.fluid.Fe += d * 0.5;
+      // Phase 1e: Fe credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.magnetite.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `dissolution (pH ${conditions.fluid.pH.toFixed(1)}, O₂ ${conditions.fluid.O2.toFixed(1)}) — martite conversion if oxidizing` });
     }
     return null;
@@ -151,7 +151,7 @@ function grow_cuprite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && (conditions.fluid.pH < 3.5 || conditions.fluid.O2 > 1.5)) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.07);
-      conditions.fluid.Cu += d * 0.5;
+      // Phase 1e: Cu credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.cuprite.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `dissolution — Eh window exceeded (pH ${conditions.fluid.pH.toFixed(1)}, O₂ ${conditions.fluid.O2.toFixed(1)})` });
     }
     return null;

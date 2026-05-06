@@ -16,7 +16,7 @@ function grow_native_tellurium(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.10);
-      conditions.fluid.Te += dissolved_um * 0.5;
+      // Phase 1e: Te credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_tellurium.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -69,7 +69,7 @@ function grow_native_sulfur(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.9) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
-      conditions.fluid.S += dissolved_um * 0.6;
+      // Phase 1e: S credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_sulfur.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -118,7 +118,7 @@ function grow_native_arsenic(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.10);
-      conditions.fluid.As += dissolved_um * 0.5;
+      // Phase 1e: As credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_arsenic.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -240,7 +240,7 @@ function grow_native_bismuth(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.8) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      conditions.fluid.Bi += d * 0.5;
+      // Phase 1e: Bi credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_bismuth.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `oxidation (O₂ ${conditions.fluid.O2.toFixed(1)}) — bismite/bismutite surface forms` });
     }
     return null;
@@ -293,7 +293,7 @@ function grow_native_copper(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      conditions.fluid.Cu += d * 0.5;
+      // Phase 1e: Cu credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_copper.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `oxidation (O₂ ${conditions.fluid.O2.toFixed(1)}) — forms cuprite film, then malachite if CO₃ is present` });
     }
     return null;

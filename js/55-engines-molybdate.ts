@@ -16,8 +16,7 @@ function grow_wulfenite(crystal, conditions, step) {
     if (crystal.total_growth_um > 3 && conditions.fluid.pH < 3.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.10);
-      conditions.fluid.Pb += dissolved_um * 0.5;
-      conditions.fluid.Mo += dissolved_um * 0.3;
+      // Phase 1e: Pb + Mo credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.wulfenite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -65,8 +64,7 @@ function grow_ferrimolybdite(crystal, conditions, step) {
     if (crystal.total_growth_um > 2 && (conditions.fluid.pH < 2 || conditions.temperature > 150)) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.18);
-      conditions.fluid.Fe += dissolved_um * 0.5;
-      conditions.fluid.Mo += dissolved_um * 0.4;
+      // Phase 1e: Fe + Mo credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.ferrimolybdite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,

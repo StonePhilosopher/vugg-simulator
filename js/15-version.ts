@@ -507,5 +507,14 @@
 //        via per-scenario JSON comparison across all 20 scenarios
 //        (the file-level diff shows CRLF/LF churn from Windows git
 //        autocrlf — substance is bit-equal). 63/63 tests green.
-const SIM_VERSION = 39;
+//   v40 — Phase 1e migration batch 2: molybdate + native + oxide
+//        (May 2026). 13 inline credits removed across 11 minerals
+//        (wulfenite, ferrimolybdite, hematite, uraninite, magnetite,
+//        cuprite, native_tellurium, native_sulfur, native_arsenic,
+//        native_bismuth, native_copper). All single-mode dissolution
+//        with consistent per-µm rates; native_silver and native_gold
+//        have no dissolution credit at all and stay absent from the
+//        table. Batch verified byte-identical to v39 via per-scenario
+//        JSON comparison; 21/127 sites total now table-mediated.
+const SIM_VERSION = 40;
 
