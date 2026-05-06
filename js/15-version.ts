@@ -600,5 +600,20 @@
 //        S sinks, native_silver tarnish) in upcoming batches. No engine
 //        changes in this commit; no entries change shape; v46
 //        byte-identical to v45 across all 20 seed-42 scenarios.
-const SIM_VERSION = 46;
+//   v47 — Phase 1e batch 8: pyrite + marcasite multi-mode (May 2026).
+//        12 inline credit lines removed across two engines via the
+//        new __modes dispatch (5 sites total — pyrite oxidative + acid;
+//        marcasite inversion + oxidative + acid).
+//          pyrite.oxidative   rates     {Fe:1.0, S:0.5}    O2>1.0, low-σ
+//          pyrite.acid        constants {Fe:2.0, S:1.5}    pH<3.0,  -2.0µm
+//          marcasite.inversion constants {Fe:1.5, S:1.2}   pH>=5 or T>240, -1.5µm
+//          marcasite.oxidative rates     {Fe:1.0, S:0.5}   O2>0.8, low-σ
+//          marcasite.acid     constants {Fe:2.0, S:1.5}    pH<1.5,  -2.0µm
+//        Engines now emit `dissolutionMode: 'oxidative' | 'acid' | 'inversion'`
+//        on the GrowthZone for the wrapper to dispatch on. The constants
+//        modes use the {constants} flavor to bypass the 1.5×0.8=1.2 IEEE
+//        round-trip trap (marcasite inversion stores {Fe:1.5, S:1.2}
+//        directly rather than {rates: {Fe:1.0, S:0.8}} × 1.5µm).
+//        156/~185 sites table-mediated.
+const SIM_VERSION = 47;
 

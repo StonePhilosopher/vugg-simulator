@@ -4593,7 +4593,22 @@ let timeScale = 5.0;
 //        S sinks, native_silver tarnish) in upcoming batches. No engine
 //        changes in this commit; no entries change shape; v46
 //        byte-identical to v45 across all 20 seed-42 scenarios.
-const SIM_VERSION = 46;
+//   v47 — Phase 1e batch 8: pyrite + marcasite multi-mode (May 2026).
+//        12 inline credit lines removed across two engines via the
+//        new __modes dispatch (5 sites total — pyrite oxidative + acid;
+//        marcasite inversion + oxidative + acid).
+//          pyrite.oxidative   rates     {Fe:1.0, S:0.5}    O2>1.0, low-σ
+//          pyrite.acid        constants {Fe:2.0, S:1.5}    pH<3.0,  -2.0µm
+//          marcasite.inversion constants {Fe:1.5, S:1.2}   pH>=5 or T>240, -1.5µm
+//          marcasite.oxidative rates     {Fe:1.0, S:0.5}   O2>0.8, low-σ
+//          marcasite.acid     constants {Fe:2.0, S:1.5}    pH<1.5,  -2.0µm
+//        Engines now emit `dissolutionMode: 'oxidative' | 'acid' | 'inversion'`
+//        on the GrowthZone for the wrapper to dispatch on. The constants
+//        modes use the {constants} flavor to bypass the 1.5×0.8=1.2 IEEE
+//        round-trip trap (marcasite inversion stores {Fe:1.5, S:1.2}
+//        directly rather than {rates: {Fe:1.0, S:0.8}} × 1.5µm).
+//        156/~185 sites table-mediated.
+const SIM_VERSION = 47;
 
 // ── 18-constants.js ──
 
@@ -4886,10 +4901,6 @@ const MINERAL_DISSOLUTION_RATES = {
     aurichalcite: { Zn: 0.4, Cu: 0.15, CO3: 0.3 }, // pH < 5.5
     cerussite: { Pb: 0.5, CO3: 0.4 }, // strong-acid pH < 4
     // ---- Sulfides (Phase 1e batch 7, v45 — single-mode subset) ----
-    // pyrite + marcasite are multi-mode (oxidative rate-scaled vs acid
-    // constants at different effective rates) — stay inline.
-    // wurtzite has constant-rate "sublimation" credits — stays inline pending
-    // dispatch design (single-event but non-rate-scaled constants).
     // sphalerite + galena + argentite have no inline dissolution credit at all.
     // For acanthite + cobaltite, the table handles only the positive cation
     // credits (Ag / Co + As); the inline negative S consumption stays for now
@@ -4897,6 +4908,24 @@ const MINERAL_DISSOLUTION_RATES = {
     // For arsenopyrite, the table handles the standard Fe + As + S
     // rate-scaled credits; the Au-trap (zone-data-driven trace) and the pH
     // adjustment stay inline since neither is rate-scaled.
+    // ---- Sulfides (Phase 1e batch 8, v47 — multi-mode pyrite + marcasite) ----
+    // pyrite has two dissolution modes: oxidative (rate-scaled, low-σ +
+    // O₂>1.0) and acid (constants @ thickness=-2.0, low-σ + pH<3.0).
+    // marcasite has three: inversion (constants @ thickness=-1.5,
+    // pH≥5 OR T>240 -> pyrite paramorph), oxidative (rate-scaled), acid
+    // (constants @ thickness=-2.0). Constants modes use the {constants}
+    // flavor to preserve byte-identicality (the legacy engines added the
+    // raw constants directly, so storing them as "rate × thickness" risks
+    // IEEE-754 drift in marcasite inversion's 1.5×0.8 = 1.2 corner).
+    pyrite: { __modes: {
+            oxidative: { rates: { Fe: 1.0, S: 0.5 } },
+            acid: { constants: { Fe: 2.0, S: 1.5 } },
+        } },
+    marcasite: { __modes: {
+            inversion: { constants: { Fe: 1.5, S: 1.2 } }, // pH>=5 or T>240, -> pyrite
+            oxidative: { rates: { Fe: 1.0, S: 0.5 } },
+            acid: { constants: { Fe: 2.0, S: 1.5 } },
+        } },
     chalcopyrite: { Cu: 0.8, Fe: 0.5, S: 0.3 }, // acid attack
     molybdenite: { Mo: 0.8, S: 0.2 }, // oxidative — MoO₄²⁻ released
     nickeline: { Ni: 0.4, As: 0.4 }, // oxidative weathering
@@ -13756,23 +13785,22 @@ function grow_pyrite(crystal, conditions, step) {
         if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 1.0) {
             crystal.dissolved = true;
             const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.1);
-            // RECYCLING: Fe and S return to fluid
-            conditions.fluid.Fe += dissolved_um * 1.0;
-            conditions.fluid.S += dissolved_um * 0.5;
+            // Phase 1e: Fe + S credits via MINERAL_DISSOLUTION_RATES.pyrite.oxidative.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+                dissolutionMode: 'oxidative',
                 note: 'oxidizing — pyrite weathering to goethite/limonite, Fe²⁺ released to fluid'
             });
         }
         // Also dissolves in strong acid
         if (crystal.total_growth_um > 10 && conditions.fluid.pH < 3.0) {
             crystal.dissolved = true;
-            conditions.fluid.Fe += 2.0;
-            conditions.fluid.S += 1.5;
+            // Phase 1e: Fe + S constants via MINERAL_DISSOLUTION_RATES.pyrite.acid.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -2.0, growth_rate: -2.0,
+                dissolutionMode: 'acid',
                 note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Fe + S released`
             });
         }
@@ -13818,12 +13846,12 @@ function grow_marcasite(crystal, conditions, step) {
     // Metastable inversion to pyrite if pH rises above 5 or T exceeds 240
     if (crystal.total_growth_um > 10 && (conditions.fluid.pH >= 5.0 || conditions.temperature > 240)) {
         crystal.dissolved = true;
-        conditions.fluid.Fe += 1.5;
-        conditions.fluid.S += 1.2;
+        // Phase 1e: Fe + S constants via MINERAL_DISSOLUTION_RATES.marcasite.inversion.
         const trigger = conditions.fluid.pH >= 5.0 ? 'pH rose above 5' : 'T exceeded 240°C';
         return new GrowthZone({
             step, temperature: conditions.temperature,
             thickness_um: -1.5, growth_rate: -1.5,
+            dissolutionMode: 'inversion',
             note: `metastable inversion — ${trigger}, orthorhombic FeS2 converting to pyrite`
         });
     }
@@ -13833,21 +13861,21 @@ function grow_marcasite(crystal, conditions, step) {
         if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 0.8) {
             crystal.dissolved = true;
             const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.12);
-            conditions.fluid.Fe += dissolved_um * 1.0;
-            conditions.fluid.S += dissolved_um * 0.5;
+            // Phase 1e: Fe + S credits via MINERAL_DISSOLUTION_RATES.marcasite.oxidative.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+                dissolutionMode: 'oxidative',
                 note: 'oxidative breakdown — FeS2 + O2 + H2O → FeSO4 + H2SO4 (the museum rot)'
             });
         }
         if (crystal.total_growth_um > 10 && conditions.fluid.pH < 1.5) {
             crystal.dissolved = true;
-            conditions.fluid.Fe += 2.0;
-            conditions.fluid.S += 1.5;
+            // Phase 1e: Fe + S constants via MINERAL_DISSOLUTION_RATES.marcasite.acid.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -2.0, growth_rate: -2.0,
+                dissolutionMode: 'acid',
                 note: `extreme-acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})`
             });
         }

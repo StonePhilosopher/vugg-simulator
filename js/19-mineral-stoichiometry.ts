@@ -296,10 +296,6 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   cerussite:    { Pb: 0.5, CO3: 0.4 },                 // strong-acid pH < 4
 
   // ---- Sulfides (Phase 1e batch 7, v45 — single-mode subset) ----
-  // pyrite + marcasite are multi-mode (oxidative rate-scaled vs acid
-  // constants at different effective rates) — stay inline.
-  // wurtzite has constant-rate "sublimation" credits — stays inline pending
-  // dispatch design (single-event but non-rate-scaled constants).
   // sphalerite + galena + argentite have no inline dissolution credit at all.
   // For acanthite + cobaltite, the table handles only the positive cation
   // credits (Ag / Co + As); the inline negative S consumption stays for now
@@ -307,6 +303,25 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   // For arsenopyrite, the table handles the standard Fe + As + S
   // rate-scaled credits; the Au-trap (zone-data-driven trace) and the pH
   // adjustment stay inline since neither is rate-scaled.
+
+  // ---- Sulfides (Phase 1e batch 8, v47 — multi-mode pyrite + marcasite) ----
+  // pyrite has two dissolution modes: oxidative (rate-scaled, low-σ +
+  // O₂>1.0) and acid (constants @ thickness=-2.0, low-σ + pH<3.0).
+  // marcasite has three: inversion (constants @ thickness=-1.5,
+  // pH≥5 OR T>240 -> pyrite paramorph), oxidative (rate-scaled), acid
+  // (constants @ thickness=-2.0). Constants modes use the {constants}
+  // flavor to preserve byte-identicality (the legacy engines added the
+  // raw constants directly, so storing them as "rate × thickness" risks
+  // IEEE-754 drift in marcasite inversion's 1.5×0.8 = 1.2 corner).
+  pyrite: { __modes: {
+    oxidative: { rates:     { Fe: 1.0, S: 0.5 } },
+    acid:      { constants: { Fe: 2.0, S: 1.5 } },
+  }},
+  marcasite: { __modes: {
+    inversion: { constants: { Fe: 1.5, S: 1.2 } },  // pH>=5 or T>240, -> pyrite
+    oxidative: { rates:     { Fe: 1.0, S: 0.5 } },
+    acid:      { constants: { Fe: 2.0, S: 1.5 } },
+  }},
   chalcopyrite: { Cu: 0.8, Fe: 0.5, S: 0.3 },          // acid attack
   molybdenite:  { Mo: 0.8, S: 0.2 },                   // oxidative — MoO₄²⁻ released
   nickeline:    { Ni: 0.4, As: 0.4 },                  // oxidative weathering
