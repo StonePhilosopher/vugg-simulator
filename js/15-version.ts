@@ -717,5 +717,30 @@
 //        nucleation threshold check (where the calibration drift
 //        will land). v54 byte-identical to v53 across all 20 seed-42
 //        scenarios.
-const SIM_VERSION = 54;
+//   v55 — Paragenesis Q1b: substrate-affinity table populated (May 2026).
+//        ~50 documented pairs across 12 hosts span sulfides (pyrite/
+//        marcasite/sphalerite/galena/chalcopyrite + Co-Ni
+//        sulfarsenides), oxides/hydroxides (cuprite/hematite/magnetite/
+//        goethite), carbonates (fluorite/calcite/azurite/malachite),
+//        native elements (copper/silver), and silicates (quartz/
+//        topaz). Two tiers per boss directive 2026-05-06:
+//          0.5× — low-misfit lattice (sphalerite-on-pyrite ~0.2%,
+//             marcasite-on-pyrite shared S-S) OR strong CDR route
+//             (azurite -> malachite, sphalerite -> smithsonite,
+//             galena -> cerussite/anglesite, cuprite + CO3 ->
+//             malachite, native_silver -> acanthite tarnish, etc.)
+//          0.7× — moderate misfit / facet-selective (galena-on-pyrite
+//             ~9% misfit, calcite-on-fluorite Cave-in-Rock stack)
+//             or general substrate stickiness
+//        EPITAXY_PAIRS populated with 6 strict-epitaxy pairs (the
+//        sphalerite/marcasite/pyrite triangle) but unused in this
+//        commit — orientation-independent rendering for v1, per
+//        boss; renderer support is a Q3 follow-up. Citations:
+//        Ramdohr 1980 for sulfides, Putnis 2002/2009 for CDR,
+//        Sangster 1983/1990 for MVT, Heyl 1968 for UMV/Cave-in-Rock.
+//        Q1c wires SUBSTRATE_NUCLEATION_DISCOUNT into nucleation
+//        thresholds (where the calibration drift will land).
+//        v55 byte-identical to v54 across all 20 seed-42 scenarios —
+//        the table is data-only, no caller reads it yet.
+const SIM_VERSION = 55;
 
