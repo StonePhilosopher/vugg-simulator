@@ -179,12 +179,16 @@ function grow_native_silver(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.S > 5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.04);
-      conditions.fluid.Ag = Math.max(conditions.fluid.Ag - dissolved_um * 0.3, 0);
-      conditions.fluid.S = Math.max(conditions.fluid.S - dissolved_um * 0.4, 0);
+      const sBefore = conditions.fluid.S;
+      // Phase 1e: Ag + S consumption via MINERAL_DISSOLUTION_RATES.native_silver
+      // (rates Ag=-0.3, S=-0.4, both clamped at 0). Ag₂S formation pulls
+      // both species INTO the solid; the legacy note misread its own
+      // arithmetic ("S returned to fluid") — we capture pre-consumption
+      // S for the narration since the wrapper credit fires post-return.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
-        note: `tarnish — S returned to fluid (S=${conditions.fluid.S.toFixed(1)}); surface skinning to acanthite`,
+        note: `tarnish — Ag + S consumed (S=${sBefore.toFixed(1)} pre); surface skinning to acanthite`,
       });
     }
     return null;

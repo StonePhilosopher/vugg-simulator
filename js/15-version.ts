@@ -676,5 +676,26 @@
 //        than back-deriving rates 1.0/0.8 — defensive against future
 //        thickness changes drifting via IEEE-754.
 //        176/~185 sites table-mediated.
-const SIM_VERSION = 52;
+//   v53 — Phase 1e batch 14 (closer): negative-rate consumption
+//        (May 2026). 6 inline `Math.max(fluid - x, 0)` consumption sites
+//        removed across 3 engines via the wrapper's per-species
+//        rate<0 -> Math.max(0, fluid+delta) clamp:
+//          acanthite     S=-0.1 (oxidative)
+//          cobaltite     S=-0.1 (oxidative)
+//          native_silver Ag=-0.3, S=-0.4 (tarnish to acanthite)
+//        For acanthite + cobaltite, the existing entries are extended with
+//        the negative S rate (alongside the positive cation rates already
+//        there since v45). For native_silver, this is its first entry —
+//        previously absent because both species were consumed (no positive
+//        credits to migrate at v40).
+//        Also fixes the native_silver narration: legacy code said
+//        "S returned to fluid" but the arithmetic SUBTRACTED S — Ag₂S
+//        tarnish pulls both Ag and S INTO the solid surface. Note now
+//        reads "Ag + S consumed", matching the chemistry. Narration text
+//        differs but baseline JSON (counts/max_um) byte-identical.
+//        182/~185 sites table-mediated. Remaining 3 sites are zone-data
+//        traces (calcite Mn/Fe trace from zone history; arsenopyrite
+//        Au-trap from zone trace_Au sum) — these are zone-dependent
+//        not rate-scaled and stay inline forever as designed.
+const SIM_VERSION = 53;
 

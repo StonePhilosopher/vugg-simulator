@@ -429,9 +429,7 @@ function grow_acanthite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 1.2) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
-      // Phase 1e: Ag credit via MINERAL_DISSOLUTION_RATES.acanthite.
-      // S consumption (negative) stays inline — table doesn't yet support negative rates.
-      conditions.fluid.S = Math.max(conditions.fluid.S - dissolved_um * 0.1, 0);
+      // Phase 1e: Ag credit + S consumption via MINERAL_DISSOLUTION_RATES.acanthite (rate S=-0.1, clamped).
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -584,9 +582,7 @@ function grow_cobaltite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.10);
-      // Phase 1e: Co + As credits via MINERAL_DISSOLUTION_RATES.cobaltite.
-      // S consumption (negative) stays inline — table doesn't yet support negative rates.
-      conditions.fluid.S = Math.max(conditions.fluid.S - dissolved_um * 0.1, 0);
+      // Phase 1e: Co + As credits + S consumption via MINERAL_DISSOLUTION_RATES.cobaltite (rate S=-0.1, clamped).
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,

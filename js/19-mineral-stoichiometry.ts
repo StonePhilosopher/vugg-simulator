@@ -391,8 +391,16 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   tetrahedrite: { Cu: 0.6, Sb: 0.3, S: 0.4 },          // acid + oxidative
   tennantite:   { Cu: 0.6, As: 0.3, S: 0.4 },          // acid + oxidative
   arsenopyrite: { Fe: 0.5, As: 0.4, S: 0.4 },          // major species; Au-trap stays inline
-  acanthite:    { Ag: 0.4 },                           // S consumption stays inline
-  cobaltite:    { Co: 0.4, As: 0.4 },                  // S consumption stays inline
+  // Phase 1e batch 14, v53: extended with S consumption (negative rate).
+  // The wrapper applies Math.max(0, fluid + delta) when rate<0, matching
+  // the legacy inline `fluid.S = Math.max(fluid.S - dissolved_um*0.1, 0)`
+  // pattern. Now fully table-mediated — no inline credits remain.
+  acanthite:    { Ag: 0.4, S: -0.1 },                  // oxidative; S consumed
+  cobaltite:    { Co: 0.4, As: 0.4, S: -0.1 },         // oxidative; S consumed
+  // native_silver tarnish — both species are CONSUMED (negative rates).
+  // Engine had: fluid.Ag = Math.max(fluid.Ag - dissolved_um*0.3, 0);
+  //             fluid.S  = Math.max(fluid.S  - dissolved_um*0.4, 0);
+  native_silver: { Ag: -0.3, S: -0.4 },                // tarnish/skin to acanthite
 };
 
 // Apply mass balance for a single growth or dissolution zone. Called
