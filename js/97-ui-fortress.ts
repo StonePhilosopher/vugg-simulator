@@ -90,6 +90,12 @@ let fortressActive = false;
 let fortressLogLines = [];
 let selectedPreset = 'silica';
 
+// Snapshot of the starting fluid recipe captured at fortressBegin time.
+// Used by fortressStep('replenish') to reset the broth — represents the
+// host rock leaching its starting chemistry back into the cavity. Cleared
+// in fortressReset.
+let _fortressInitialFluidParams = null;
+
 function selectPreset(preset) {
   selectedPreset = preset;
   document.querySelectorAll('#preset-grid .preset-btn').forEach(btn => {
@@ -141,6 +147,9 @@ function fortressBegin() {
     if (el) fluidParams[prop] = parseFloat(el.value);
   }
   fluidParams.pH = parseFloat(document.getElementById('f-ph').value) / 10;
+  // Snapshot the post-override recipe so Replenish can restore exactly
+  // what the player started with (preset + setup-slider tweaks).
+  _fortressInitialFluidParams = Object.assign({}, fluidParams);
   const fluid = new FluidChemistry(fluidParams);
 
   // Initialize wall based on preset
@@ -381,15 +390,38 @@ function fortressStep(action, payload) {
       actionDesc = '⚗️ ' + event_alkalinize(c);
       break;
 
-    // ── 5. INJECT SPECIES — single picker collapses 4 legacy buttons ──
+    // ── 5. REPLENISH — host rock leaches the starting recipe back in ──
+    // Replaces the proposal's per-element inject picker (redundant with
+    // the Broth Control panel sliders just below the action grid). The
+    // boss reframed it: this represents fresh fluid from the host rock,
+    // so it resets the entire fluid composition (every species + pH) to
+    // whatever the player set at fortressBegin time. Temperature,
+    // pressure, and water level are NOT reset — those are separate axes
+    // controlled by their own buttons.
+    case 'replenish': {
+      if (!_fortressInitialFluidParams) {
+        actionDesc = '🥣 Replenish — no starting recipe captured (sim wasn\'t begun via fortressBegin)';
+        break;
+      }
+      let touched = 0;
+      for (const [k, v] of Object.entries(_fortressInitialFluidParams)) {
+        if (typeof v === 'number' && typeof c.fluid[k] === 'number') {
+          c.fluid[k] = v;
+          touched++;
+        }
+      }
+      actionDesc = `🥣 Replenish — host rock leaches ${touched} species back to starting values; pH → ${c.fluid.pH.toFixed(1)}`;
+      break;
+    }
+
+    // Programmatic species injection — kept callable from console / tests
+    // / scenario events. The proposal originally surfaced this as a UI
+    // picker; the boss replaced the button with Replenish, but the
+    // underlying action stays for non-UI callers.
     case 'inject_species': {
       if (!payload || !payload.species) {
-        // No payload → open the picker. Modal calls back into
-        // fortressStep('inject_species', { species, ppm }) on confirm.
-        if (typeof openInjectSpeciesModal === 'function') {
-          openInjectSpeciesModal();
-        }
-        return; // don't log anything; modal will fire the real action
+        actionDesc = '💉 inject_species — no species/ppm payload, ignored';
+        break;
       }
       const sp = String(payload.species);
       const amount = Number(payload.ppm) || 50;
@@ -697,6 +729,7 @@ function fortressReset() {
   fortressActive = false;
   fortressLogLines = [];
   brothSnapshots = [];
+  _fortressInitialFluidParams = null;
 
   // Reset broth panel
   const brothToggle = document.getElementById('broth-toggle');
@@ -752,60 +785,4 @@ function copyFortressLog() {
   });
 }
 
-// ============================================================
-// Inject Species modal — picker that replaces the four legacy
-// inject buttons (silica/metals/fluorine/copper). User picks any
-// tracked fluid species and how much to add (1–100 ppm). The
-// modal calls back into fortressStep('inject_species', { species, ppm }).
-// ============================================================
-
-// Groups roughly mirror the proposal's major/minor/trace tiers so the
-// picker is readable. Keep alphabetical inside each group.
-const INJECT_SPECIES_GROUPS = [
-  { label: 'Major', species: ['Al', 'Ca', 'Cl', 'CO3', 'Fe', 'K', 'Mg', 'Na', 'P', 'S', 'SiO2'] },
-  { label: 'Minor', species: ['B', 'Ba', 'Cu', 'F', 'Mn', 'Pb', 'Sr', 'Zn'] },
-  { label: 'Trace', species: ['Ag', 'As', 'Be', 'Bi', 'Co', 'Cr', 'Ge', 'Li', 'Mo', 'Nb', 'Ni', 'Sb', 'Se', 'Te', 'Ti', 'U', 'V', 'W'] },
-];
-
-function openInjectSpeciesModal() {
-  const modal = document.getElementById('inject-species-modal');
-  if (!modal) return;
-  // Populate the select on first open and refresh the live amount label.
-  const select = document.getElementById('inject-species-select');
-  if (select && !select.dataset.populated) {
-    let html = '';
-    for (const g of INJECT_SPECIES_GROUPS) {
-      html += `<optgroup label="${g.label}">`;
-      for (const sp of g.species) html += `<option value="${sp}">${sp}</option>`;
-      html += '</optgroup>';
-    }
-    select.innerHTML = html;
-    select.dataset.populated = '1';
-  }
-  // Show current ppm in the live readout.
-  const slider = document.getElementById('inject-species-ppm');
-  const val = document.getElementById('inject-species-ppm-val');
-  if (slider && val) val.textContent = slider.value + ' ppm';
-  modal.style.display = 'flex';
-}
-
-function closeInjectSpeciesModal() {
-  const modal = document.getElementById('inject-species-modal');
-  if (modal) modal.style.display = 'none';
-}
-
-function confirmInjectSpecies() {
-  const select = document.getElementById('inject-species-select') as any;
-  const slider = document.getElementById('inject-species-ppm') as any;
-  if (!select || !slider) return;
-  const species = select.value;
-  const ppm = parseFloat(slider.value);
-  closeInjectSpeciesModal();
-  fortressStep('inject_species', { species, ppm });
-}
-
-function onInjectSpeciesPpmChange(val) {
-  const el = document.getElementById('inject-species-ppm-val');
-  if (el) el.textContent = val + ' ppm';
-}
 
