@@ -17,9 +17,8 @@ function grow_calcite(crystal, conditions, step) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.15);
       // RECYCLING: Ca, CO3, and trace elements return to fluid
-      conditions.fluid.Ca += dissolved_um * 0.5;
-      conditions.fluid.CO3 += dissolved_um * 0.3;
-      // Mn and Fe that were in the crystal go back into solution
+      // Phase 1e: Ca + CO3 (major species) credits via MINERAL_DISSOLUTION_RATES.calcite.
+      // Mn and Fe trace credits stay inline below — they're zone-data-driven, not rate-scaled.
       if (crystal.zones.length) {
         const recentZones = crystal.zones.slice(-3);
         const avg_mn = recentZones.reduce((s, z) => s + z.trace_Mn, 0) / recentZones.length;
@@ -116,6 +115,10 @@ function grow_aragonite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.15);
+      // Phase 1e (aragonite acid path): Ca + CO3 credits stay inline —
+      // aragonite has multi-mode dissolution (this acid path uses
+      // Ca=0.5 CO3=0.3, the polymorph path uses different effective
+      // rates), pending per-mode dispatch.
       conditions.fluid.Ca += dissolved_um * 0.5;
       conditions.fluid.CO3 += dissolved_um * 0.3;
       return new GrowthZone({
@@ -180,9 +183,7 @@ function grow_dolomite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.12);
-      conditions.fluid.Ca += dissolved_um * 0.3;
-      conditions.fluid.Mg += dissolved_um * 0.3;
-      conditions.fluid.CO3 += dissolved_um * 0.5;
+      // Phase 1e: Ca + Mg + CO3 credits via MINERAL_DISSOLUTION_RATES.dolomite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -253,8 +254,7 @@ function grow_siderite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.13);
-      conditions.fluid.Fe += dissolved_um * 0.5;
-      conditions.fluid.CO3 += dissolved_um * 0.4;
+      // Phase 1e: Fe + CO3 credits via MINERAL_DISSOLUTION_RATES.siderite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -264,8 +264,7 @@ function grow_siderite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.15);
-      conditions.fluid.Fe += dissolved_um * 0.5;
-      conditions.fluid.CO3 += dissolved_um * 0.4;
+      // Phase 1e: Fe + CO3 credits via MINERAL_DISSOLUTION_RATES.siderite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -381,8 +380,7 @@ function grow_malachite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.15);
-      conditions.fluid.Cu += dissolved_um * 0.8;
-      conditions.fluid.CO3 += dissolved_um * 0.5;
+      // Phase 1e: Cu + CO3 credits via MINERAL_DISSOLUTION_RATES.malachite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -442,8 +440,7 @@ function grow_smithsonite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.12);
-      conditions.fluid.Zn += dissolved_um * 0.6;
-      conditions.fluid.CO3 += dissolved_um * 0.4;
+      // Phase 1e: Zn + CO3 credits via MINERAL_DISSOLUTION_RATES.smithsonite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -503,9 +500,7 @@ function grow_rosasite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.08);
-      conditions.fluid.Cu += dissolved_um * 0.3;
-      conditions.fluid.Zn += dissolved_um * 0.2;
-      conditions.fluid.CO3 += dissolved_um * 0.25;
+      // Phase 1e: Cu + Zn + CO3 credits via MINERAL_DISSOLUTION_RATES.rosasite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -557,9 +552,7 @@ function grow_aurichalcite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.08);
-      conditions.fluid.Zn += dissolved_um * 0.4;
-      conditions.fluid.Cu += dissolved_um * 0.15;
-      conditions.fluid.CO3 += dissolved_um * 0.3;
+      // Phase 1e: Zn + Cu + CO3 credits via MINERAL_DISSOLUTION_RATES.aurichalcite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -637,8 +630,7 @@ function grow_cerussite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
       crystal.dissolved = true;
       const d = Math.min(3.0, crystal.total_growth_um * 0.1);
-      conditions.fluid.Pb += d * 0.5;
-      conditions.fluid.CO3 += d * 0.4;
+      // Phase 1e: Pb + CO3 credits via MINERAL_DISSOLUTION_RATES.cerussite.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `carbonate dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — fizzes` });
     }
     return null;

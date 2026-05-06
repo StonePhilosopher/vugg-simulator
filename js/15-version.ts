@@ -547,5 +547,17 @@
 //        table rates = constant/2.0 produce identical credits.
 //        chrysocolla has multi-mode dissolution and stays inline.
 //        93/~185 sites total now table-mediated.
-const SIM_VERSION = 43;
+//   v44 — Phase 1e migration batch 6: carbonate (single-mode subset)
+//        (May 2026). 19 credits removed across 8 minerals (calcite
+//        major species, dolomite, siderite, malachite, smithsonite,
+//        rosasite, aurichalcite, cerussite). Calcite's trace Mn + Fe
+//        credits stay inline — they're zone-data-driven (avg over
+//        last 3 zones), not rate-scaled. Siderite has two engine
+//        triggers (oxidative + acid) with identical rates so a single
+//        table entry covers both. aragonite (polymorph constants vs
+//        acid rate-scaled), rhodochrosite (acid vs O2 at different
+//        rates), azurite (low-CO3 vs acid at different CO3 rates) are
+//        multi-mode and stay inline pending per-mode dispatch.
+//        112/~185 sites table-mediated.
+const SIM_VERSION = 44;
 

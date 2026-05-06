@@ -255,6 +255,22 @@ const MINERAL_DISSOLUTION_RATES: Record<string, Record<string, number>> = {
   aquamarine:   { Be: 0.2, Al: 0.2, SiO2: 0.4 },
   morganite:    { Be: 0.2, Al: 0.2, SiO2: 0.4 },
   heliodor:     { Be: 0.2, Al: 0.2, SiO2: 0.4 },
+
+  // ---- Carbonates (Phase 1e batch 6, v44 — single-mode subset) ----
+  // Multi-mode skipped (different effective rates per dissolution
+  // event): aragonite (polymorph + acid), rhodochrosite (acid + O2),
+  // azurite (low-CO3 + acid).
+  // Calcite has rate-scaled credits for Ca/CO3 (single-mode, table-able)
+  // PLUS trace-element credits for Mn/Fe computed from zone history
+  // (zone-dependent, stays inline).
+  calcite:      { Ca: 0.5, CO3: 0.3 },                 // major species only; trace Mn/Fe stay inline
+  dolomite:     { Ca: 0.3, Mg: 0.3, CO3: 0.5 },        // acid dissolution
+  siderite:     { Fe: 0.5, CO3: 0.4 },                 // two engine triggers (oxidative + acid), same rates
+  malachite:    { Cu: 0.8, CO3: 0.5 },                 // acid dissolution
+  smithsonite:  { Zn: 0.6, CO3: 0.4 },                 // acid attack
+  rosasite:     { Cu: 0.3, Zn: 0.2, CO3: 0.25 },       // pH < 5.5
+  aurichalcite: { Zn: 0.4, Cu: 0.15, CO3: 0.3 },       // pH < 5.5
+  cerussite:    { Pb: 0.5, CO3: 0.4 },                 // strong-acid pH < 4
 };
 
 // Apply mass balance for a single growth or dissolution zone. Called
