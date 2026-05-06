@@ -169,13 +169,36 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
 //     formula stoichiometry. Calcite's Ca:CO3 = 0.5:0.3 reflects
 //     CO₂ outgassing during acid attack — some carbonate exits the
 //     fluid as gas rather than aqueous bicarbonate.
-//   - Trace elements (Mn, Fe in calcite zones) and special-mode
-//     constants (aragonite polymorphic conversion) STAY inline —
-//     they're zone-dependent or mode-dependent, not table-able.
-//   - Migration progresses class-by-class. Minerals with multi-mode
-//     dissolution (different rates for acid vs oxidative) keep their
-//     inline credits until per-mode dispatch is added.
-const MINERAL_DISSOLUTION_RATES: Record<string, Record<string, number>> = {
+//   - Trace elements (Mn, Fe in calcite zones) STAY inline —
+//     they're zone-data-driven, not rate-scaled.
+//
+// Two entry shapes:
+//   1. Single-mode rate-scaled (legacy):
+//        fluorite: { Ca: 0.4, F: 0.6 }
+//      Values are numbers. Wrapper applies `fluid[k] += dissolved_um * rate`.
+//      Negative rates (consumption) are allowed; the wrapper clamps to ≥0.
+//
+//   2. Multi-mode dispatch (Phase 1e completion, v46):
+//        pyrite: { __modes: {
+//          oxidative: { rates: { Fe: 1.0, S: 0.5 } },         // rate-scaled
+//          acid:      { constants: { Fe: 2.0, S: 1.5 } },     // added once, regardless of |thickness_um|
+//        }}
+//      Each mode is { rates: {...} } (rate-scaled by dissolved_um) OR
+//      { constants: {...} } (literal credits, applied once). The 'constants'
+//      flavor preserves byte-identicality where the engine emits a fixed
+//      thickness like -1.2 — IEEE-754 doesn't generally let `1.2 * (k/1.2)`
+//      round-trip back to `k`, so for those modes we keep the literal credits
+//      rather than back-deriving a rate.
+//
+//      Engines emit `dissolutionMode: '<mode_name>'` as a GrowthZone field
+//      so the wrapper can dispatch. If the field is missing, the wrapper
+//      uses the first declared mode (so single-mode-with-constants entries
+//      like wurtzite need no engine change).
+type DissolutionRates = Record<string, number>;
+type DissolutionMode = { rates: DissolutionRates } | { constants: DissolutionRates };
+type DissolutionEntry = DissolutionRates | { __modes: Record<string, DissolutionMode> };
+
+const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   // ---- Halides (Phase 1e batch 1, v39) ----
   fluorite: { Ca: 0.4, F: 0.6 },          // acid dissolution: CaF₂ + 2H⁺ → Ca²⁺ + 2HF
   halite:   { Na: 0.4, Cl: 6.0 },         // meteoric flush — Cl is dominant in NaCl re-dissolution
@@ -332,13 +355,45 @@ function applyMassBalance(crystal: any, zone: any, conditions: any): string[] | 
   // entry; multi-mode (e.g. pyrite oxidative vs acid at different
   // rates) is left inline pending per-mode dispatch.
   if (zone.thickness_um < 0) {
-    const rates = MINERAL_DISSOLUTION_RATES[crystal.mineral];
-    if (!rates) return null;  // unmigrated mineral — engine still credits inline
+    const entry = MINERAL_DISSOLUTION_RATES[crystal.mineral];
+    if (!entry) return null;  // unmigrated mineral — engine still credits inline
     const dissolved_um = -zone.thickness_um;
     const fluid = conditions.fluid;
-    for (const species in rates) {
+    // Resolve credits + flavor (rate-scaled vs constants).
+    let credits: DissolutionRates;
+    let isConstant: boolean;
+    if ((entry as any).__modes) {
+      const modes = (entry as any).__modes as Record<string, DissolutionMode>;
+      const modeName: string | undefined = zone.dissolutionMode;
+      const mode = modeName ? modes[modeName] : modes[Object.keys(modes)[0]];
+      if (!mode) return null;  // unknown mode — caller must specify a declared one
+      if ((mode as any).constants) {
+        credits = (mode as any).constants;
+        isConstant = true;
+      } else {
+        credits = (mode as any).rates;
+        isConstant = false;
+      }
+    } else {
+      credits = entry as DissolutionRates;
+      isConstant = false;
+    }
+    // Apply credits. Positive-rate species use the legacy `fluid += delta`
+    // path verbatim — preserves byte-identicality with all v45-and-earlier
+    // baselines that depend on this exact accumulation order. Negative-rate
+    // species (consumption — acanthite/cobaltite S sinks, native_silver
+    // tarnish) get the legacy inline pattern `fluid = Math.max(fluid - x, 0)`,
+    // which here becomes `fluid = Math.max(0, fluid + delta)` since `delta`
+    // is already negative.
+    for (const species in credits) {
       if (typeof fluid[species] !== 'number') continue;
-      fluid[species] += dissolved_um * rates[species];
+      const rate = credits[species];
+      const delta = isConstant ? rate : dissolved_um * rate;
+      if (rate < 0) {
+        fluid[species] = Math.max(0, fluid[species] + delta);
+      } else {
+        fluid[species] += delta;
+      }
     }
     return null;  // depletion narration is precipitation-only
   }

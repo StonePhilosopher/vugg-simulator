@@ -577,5 +577,28 @@
 //        multi-mode (8), chrysocolla silicate multi-mode (4),
 //        arsenopyrite Au-trap + calcite trace (3 — never tablifiable
 //        as currently designed).
-const SIM_VERSION = 45;
+//   v46 — Phase 1e completion infrastructure (May 2026): table type
+//        extended to support multi-mode entries. Two entry shapes
+//        now allowed:
+//          (1) single-mode rates (legacy):    { Ca: 0.4, F: 0.6 }
+//          (2) multi-mode dispatch:           { __modes: {
+//                acid:      { rates: { Ca: 0.5, CO3: 0.3 } },
+//                polymorph: { constants: { Ca: 2.0, CO3: 1.5 } },
+//              }}
+//        Each multi-mode mode is either { rates } (multiplied by
+//        dissolved_um) or { constants } (added once, regardless of
+//        |thickness_um|). The constants flavor preserves byte-identicality
+//        for engines that emit fixed thicknesses like -1.2 where
+//        IEEE-754 won't round-trip `k * (1.2 * (k/1.2)) === k`. The
+//        wrapper also gains a per-species `Math.max(0, …)` clamp,
+//        applied only when the species' rate is negative. Positive
+//        rates take the legacy `fluid += delta` path verbatim, which
+//        preserves bit-for-bit accumulation with v45 — empirically a
+//        universal clamp drifted bisbee (the +=/clamp ordering changed
+//        downstream nucleation gates by ~ulp on a few crystals).
+//        Negative rates unlock the consumption pattern (acanthite/cobaltite
+//        S sinks, native_silver tarnish) in upcoming batches. No engine
+//        changes in this commit; no entries change shape; v46
+//        byte-identical to v45 across all 20 seed-42 scenarios.
+const SIM_VERSION = 46;
 
