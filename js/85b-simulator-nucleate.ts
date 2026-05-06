@@ -4,7 +4,7 @@
 // Methods attached to VugSimulator.prototype after the class is defined
 // in 85-simulator.ts, so direct calls and dynamic dispatch keep working.
 //
-// Methods here (8): nucleate, _rollSpontaneousTwin, _spaceIsCrowded, _atNucleationCap, _assignWallCell, _pickSubstrate, _runEngineForCrystal, _assignWallRing.
+// Methods here (9): nucleate, _rollSpontaneousTwin, _spaceIsCrowded, _atNucleationCap, _assignWallCell, _pickSubstrate, _sigmaDiscountForPosition, _runEngineForCrystal, _assignWallRing.
 //
 // Phase B20 of PROPOSAL-MODULAR-REFACTOR.
 
@@ -232,6 +232,33 @@ Object.assign(VugSimulator.prototype, {
   // Returns: { host: Crystal, discount: number } | null.
   _pickSubstrate(mineral) {
     return pickSubstrateForMineral(mineral, this.crystals, rng);
+  },
+
+  // Q1c — σ-discount lookup for an already-chosen substrate position.
+  // Each engine runs its inline substrate-pick first (so narrative
+  // qualifiers like "(oxidized)", "weathering ...", "adjacent to ..."
+  // are preserved in the position string), then calls this helper to
+  // get the σ-threshold discount factor for the chosen host. The
+  // engine's σ-check uses `baseThreshold * discount` instead of
+  // `baseThreshold` — heterogeneous nucleation on a documented host
+  // clears at a lower σ than bare-wall nucleation, matching the
+  // reduced interfacial-free-energy barrier (Putnis 2002 for CDR;
+  // Ramdohr 1980 for sulfide epitaxy).
+  //
+  // Position-string parsing: matches "on <mineral> #<id>" and any
+  // qualifier that follows ("(oxidized)", "weathering", "adjacent to",
+  // "pseudomorph after", etc.) — the leading `on <mineral>` is what
+  // governs the discount; qualifiers are narrative.
+  //
+  // Returns: discount factor in [0, 1]. 1.0 = no discount (bare wall
+  // or undocumented host). 0.5 = strong epitaxy / strong CDR. 0.7 =
+  // facet-selective heterogeneous nucleation.
+  _sigmaDiscountForPosition(mineral, position) {
+    if (!position || typeof position !== 'string') return 1.0;
+    const m = position.match(/(?:on|after|adjacent to|over|pseudomorph after|weathering)\s+(\w+)/i);
+    if (!m) return 1.0;
+    const hostMineral = m[1];
+    return paragenesisDiscount(hostMineral, mineral);
   },
 
   _assignWallCell(position) {

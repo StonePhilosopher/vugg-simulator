@@ -82,17 +82,20 @@ function _nuc_albite(sim) {
 function _nuc_chrysocolla(sim) {
   const sigma_chry = sim.conditions.supersaturation_chrysocolla();
   const existing_chry = sim.crystals.filter(c => c.mineral === 'chrysocolla' && c.active);
-  if (sigma_chry > 1.2 && !sim._atNucleationCap('chrysocolla')) {
+  if (sim._atNucleationCap('chrysocolla')) return;
+  // Pick substrate first, then σ-check with discount.
+  let pos = 'vug wall';
+  const active_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.active);
+  const dissolving_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.dissolved);
+  const active_cpr_chry = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active);
+  const active_nc_chry = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+  if (dissolving_azr_chry.length && rng.random() < 0.6) pos = `pseudomorph after azurite #${dissolving_azr_chry[0].crystal_id}`;
+  else if (active_azr_chry.length && rng.random() < 0.3) pos = `on azurite #${active_azr_chry[0].crystal_id}`;
+  else if (active_cpr_chry.length && rng.random() < 0.5) pos = `on cuprite #${active_cpr_chry[0].crystal_id}`;
+  else if (active_nc_chry.length && rng.random() < 0.4) pos = `on native_copper #${active_nc_chry[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('chrysocolla', pos);
+  if (sigma_chry > 1.2 * discount) {
     if (!existing_chry.length || (sigma_chry > 1.8 && rng.random() < 0.25)) {
-      let pos = 'vug wall';
-      const active_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.active);
-      const dissolving_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.dissolved);
-      const active_cpr_chry = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active);
-      const active_nc_chry = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
-      if (dissolving_azr_chry.length && rng.random() < 0.6) pos = `pseudomorph after azurite #${dissolving_azr_chry[0].crystal_id}`;
-      else if (active_azr_chry.length && rng.random() < 0.3) pos = `on azurite #${active_azr_chry[0].crystal_id}`;
-      else if (active_cpr_chry.length && rng.random() < 0.5) pos = `on cuprite #${active_cpr_chry[0].crystal_id}`;
-      else if (active_nc_chry.length && rng.random() < 0.4) pos = `on native_copper #${active_nc_chry[0].crystal_id}`;
       const c = sim.nucleate('chrysocolla', pos, sigma_chry);
       sim.log.push(`  ✦ NUCLEATION: Chrysocolla #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_chry.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)})`);
     }

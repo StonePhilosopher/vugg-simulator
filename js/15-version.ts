@@ -742,5 +742,37 @@
 //        thresholds (where the calibration drift will land).
 //        v55 byte-identical to v54 across all 20 seed-42 scenarios —
 //        the table is data-only, no caller reads it yet.
-const SIM_VERSION = 55;
+//   v56 — Paragenesis Q1c: wire σ-discount into 4 nucleation engines
+//        (smithsonite, malachite, azurite, chrysocolla) (May 2026).
+//
+//        Each engine now picks substrate FIRST (preserving narrative
+//        qualifiers like "(oxidized)", "weathering ...", "pseudomorph
+//        after ..."), then runs the σ-check with a discount factor
+//        from MINERAL_PARAGENESIS based on the chosen position. The
+//        discount factor is paragenesisDiscount(host_mineral,
+//        nucleating_mineral) → 0.5 for strong CDR/epitaxy, 0.7 for
+//        moderate, 1.0 for undocumented (= bare wall).
+//
+//        Effect: when the inline substrate-pick rules already chose
+//        a documented host (e.g. malachite -> chalcopyrite via
+//        Putnis-CDR oxidation), the σ-threshold for nucleation is
+//        lowered, so MORE such overgrowths fire when σ is in the
+//        (threshold * discount, threshold) window. Bare-wall
+//        nucleations are unaffected. The substrate-pick distribution
+//        itself is unchanged; only the σ-check threshold shifts.
+//
+//        Engines migrated this batch:
+//          smithsonite (sphalerite host, supergene_oxidation)
+//          malachite   (chalcopyrite + hematite hosts, bisbee)
+//          azurite     (cuprite + native_copper hosts, bisbee)
+//          chrysocolla (azurite + cuprite + native_copper hosts, bisbee)
+//        Other engines (~6) keep their inline rules; can be migrated
+//        in later commits if calibration shows opportunity.
+//
+//        Calibration drift expected on bisbee + supergene_oxidation
+//        (Cu cascade scenarios where the discount fires). MVT /
+//        pegmatite / cooling scenarios should drift less since their
+//        nucleation candidates are mostly outside this 4-engine set.
+//        Drift documented per-scenario in commit message.
+const SIM_VERSION = 56;
 

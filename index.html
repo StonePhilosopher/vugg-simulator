@@ -4735,7 +4735,39 @@ let timeScale = 5.0;
 //        thresholds (where the calibration drift will land).
 //        v55 byte-identical to v54 across all 20 seed-42 scenarios —
 //        the table is data-only, no caller reads it yet.
-const SIM_VERSION = 55;
+//   v56 — Paragenesis Q1c: wire σ-discount into 4 nucleation engines
+//        (smithsonite, malachite, azurite, chrysocolla) (May 2026).
+//
+//        Each engine now picks substrate FIRST (preserving narrative
+//        qualifiers like "(oxidized)", "weathering ...", "pseudomorph
+//        after ..."), then runs the σ-check with a discount factor
+//        from MINERAL_PARAGENESIS based on the chosen position. The
+//        discount factor is paragenesisDiscount(host_mineral,
+//        nucleating_mineral) → 0.5 for strong CDR/epitaxy, 0.7 for
+//        moderate, 1.0 for undocumented (= bare wall).
+//
+//        Effect: when the inline substrate-pick rules already chose
+//        a documented host (e.g. malachite -> chalcopyrite via
+//        Putnis-CDR oxidation), the σ-threshold for nucleation is
+//        lowered, so MORE such overgrowths fire when σ is in the
+//        (threshold * discount, threshold) window. Bare-wall
+//        nucleations are unaffected. The substrate-pick distribution
+//        itself is unchanged; only the σ-check threshold shifts.
+//
+//        Engines migrated this batch:
+//          smithsonite (sphalerite host, supergene_oxidation)
+//          malachite   (chalcopyrite + hematite hosts, bisbee)
+//          azurite     (cuprite + native_copper hosts, bisbee)
+//          chrysocolla (azurite + cuprite + native_copper hosts, bisbee)
+//        Other engines (~6) keep their inline rules; can be migrated
+//        in later commits if calibration shows opportunity.
+//
+//        Calibration drift expected on bisbee + supergene_oxidation
+//        (Cu cascade scenarios where the discount fires). MVT /
+//        pegmatite / cooling scenarios should drift less since their
+//        nucleation candidates are mostly outside this 4-engine set.
+//        Drift documented per-scenario in commit message.
+const SIM_VERSION = 56;
 
 // ── 18-constants.js ──
 
@@ -7168,6 +7200,20 @@ const EPITAXY_PAIRS = new Set([
 ]);
 // Empty in Q1a. Populated in Q2.
 const PSEUDOMORPH_ROUTES = [];
+// Look up the σ-discount factor for a host -> nucleating-mineral
+// pair. Returns 1.0 (no discount) when the pair isn't documented.
+// Used by VugSimulator._sigmaDiscountForPosition: each engine first
+// runs its inline substrate-pick (preserving narrative qualifiers
+// like "(oxidized)" and "weathering ..."), and the σ-threshold check
+// then consults this table to decide if the substrate-bound nucleation
+// should clear at a lower threshold.
+function paragenesisDiscount(hostMineral, nucleatingMineral) {
+    const hostEntry = SUBSTRATE_NUCLEATION_DISCOUNT[hostMineral];
+    if (!hostEntry)
+        return 1.0;
+    const factor = hostEntry[nucleatingMineral];
+    return typeof factor === 'number' ? factor : 1.0;
+}
 // Pick a substrate for a nucleating mineral, weighted by available
 // hosts and their per-pair discount factors. Pure helper — called by
 // VugSimulator._pickSubstrate which threads the live crystal list +
@@ -7177,9 +7223,11 @@ const PSEUDOMORPH_ROUTES = [];
 //
 // Returns: { host: Crystal, discount: number } | null.
 //
-// Q1a contract: with the empty table, this always returns null —
-// every nucleation falls back to caller's existing behavior. Q1b
-// populates the table; Q1c wires this into nucleation σ checks.
+// Currently unused — the table-driven substrate pick is reserved for
+// future engine refactors. Q1c-style discount wiring uses the
+// inline-rule + paragenesisDiscount(host, nucleating) pattern instead,
+// which preserves the narrative qualifiers that engines hand-craft
+// into their position strings.
 function pickSubstrateForMineral(mineral, crystals, rng) {
     // Eligible hosts: any non-dissolved, non-enclosed crystal whose
     // mineral is a key in SUBSTRATE_NUCLEATION_DISCOUNT and offers a
@@ -16725,20 +16773,23 @@ function _nuc_malachite(sim) {
     const sigma_mal = sim.conditions.supersaturation_malachite();
     const existing_mal = sim.crystals.filter(c => c.mineral === 'malachite' && c.active);
     const total_mal = sim.crystals.filter(c => c.mineral === 'malachite').length;
-    if (sigma_mal > 1.0 && !existing_mal.length && total_mal < 3 && !sim._atNucleationCap('malachite')) {
-        let pos = 'vug wall';
-        // Preference for chalcopyrite surface (classic oxidation paragenesis!)
-        const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
-        const active_cp_all = sim.crystals.filter(c => c.mineral === 'chalcopyrite');
-        if (dissolving_cp.length && rng.random() < 0.7) {
-            pos = `on chalcopyrite #${dissolving_cp[0].crystal_id}`;
-        }
-        else if (active_cp_all.length && rng.random() < 0.4) {
-            pos = `on chalcopyrite #${active_cp_all[0].crystal_id}`;
-        }
-        else if (existing_hem.length && rng.random() < 0.3) {
-            pos = `on hematite #${existing_hem[0].crystal_id}`;
-        }
+    if (existing_mal.length || total_mal >= 3 || sim._atNucleationCap('malachite'))
+        return;
+    let pos = 'vug wall';
+    // Preference for chalcopyrite surface (classic oxidation paragenesis!)
+    const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
+    const active_cp_all = sim.crystals.filter(c => c.mineral === 'chalcopyrite');
+    if (dissolving_cp.length && rng.random() < 0.7) {
+        pos = `on chalcopyrite #${dissolving_cp[0].crystal_id}`;
+    }
+    else if (active_cp_all.length && rng.random() < 0.4) {
+        pos = `on chalcopyrite #${active_cp_all[0].crystal_id}`;
+    }
+    else if (existing_hem.length && rng.random() < 0.3) {
+        pos = `on hematite #${existing_hem[0].crystal_id}`;
+    }
+    const discount = sim._sigmaDiscountForPosition('malachite', pos);
+    if (sigma_mal > 1.0 * discount) {
         const c = sim.nucleate('malachite', pos, sigma_mal);
         sim.log.push(`  ✦ NUCLEATION: Malachite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_mal.toFixed(2)})`);
     }
@@ -16748,17 +16799,21 @@ function _nuc_smithsonite(sim) {
     const sigma_sm = sim.conditions.supersaturation_smithsonite();
     const existing_sm = sim.crystals.filter(c => c.mineral === 'smithsonite' && c.active);
     const total_sm = sim.crystals.filter(c => c.mineral === 'smithsonite').length;
-    if (sigma_sm > 1.0 && !existing_sm.length && total_sm < 3 && !sim._atNucleationCap('smithsonite')) {
-        let pos = 'vug wall';
-        // Prefers to nucleate on dissolved sphalerite — classic oxidation zone paragenesis
-        const dissolved_sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved);
-        const any_sph = sim.crystals.filter(c => c.mineral === 'sphalerite');
-        if (dissolved_sph.length && rng.random() < 0.7) {
-            pos = `on sphalerite #${dissolved_sph[0].crystal_id} (oxidized)`;
-        }
-        else if (any_sph.length && rng.random() < 0.3) {
-            pos = `on sphalerite #${any_sph[0].crystal_id}`;
-        }
+    if (existing_sm.length || total_sm >= 3 || sim._atNucleationCap('smithsonite'))
+        return;
+    // Pick substrate first (preserve narrative qualifiers), then σ-check
+    // with paragenesis discount for the chosen host.
+    let pos = 'vug wall';
+    const dissolved_sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved);
+    const any_sph = sim.crystals.filter(c => c.mineral === 'sphalerite');
+    if (dissolved_sph.length && rng.random() < 0.7) {
+        pos = `on sphalerite #${dissolved_sph[0].crystal_id} (oxidized)`;
+    }
+    else if (any_sph.length && rng.random() < 0.3) {
+        pos = `on sphalerite #${any_sph[0].crystal_id}`;
+    }
+    const discount = sim._sigmaDiscountForPosition('smithsonite', pos);
+    if (sigma_sm > 1.0 * discount) {
         const c = sim.nucleate('smithsonite', pos, sigma_sm);
         sim.log.push(`  ✦ NUCLEATION: Smithsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_sm.toFixed(2)}) — zinc carbonate from oxidized sphalerite`);
     }
@@ -16767,15 +16822,19 @@ function _nuc_smithsonite(sim) {
 function _nuc_azurite(sim) {
     const sigma_azr = sim.conditions.supersaturation_azurite();
     const existing_azr = sim.crystals.filter(c => c.mineral === 'azurite' && c.active);
-    if (sigma_azr > 1.4 && !sim._atNucleationCap('azurite')) {
+    if (sim._atNucleationCap('azurite'))
+        return;
+    // Pick substrate first (preserve narrative), then σ-check with discount.
+    let pos = 'vug wall';
+    const active_cpr_azr = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active);
+    const active_nc_azr = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+    if (active_cpr_azr.length && rng.random() < 0.4)
+        pos = `on cuprite #${active_cpr_azr[0].crystal_id}`;
+    else if (active_nc_azr.length && rng.random() < 0.3)
+        pos = `on native_copper #${active_nc_azr[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('azurite', pos);
+    if (sigma_azr > 1.4 * discount) {
         if (!existing_azr.length || (sigma_azr > 2.0 && rng.random() < 0.25)) {
-            let pos = 'vug wall';
-            const active_cpr_azr = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active);
-            const active_nc_azr = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
-            if (active_cpr_azr.length && rng.random() < 0.4)
-                pos = `on cuprite #${active_cpr_azr[0].crystal_id}`;
-            else if (active_nc_azr.length && rng.random() < 0.3)
-                pos = `on native_copper #${active_nc_azr[0].crystal_id}`;
             const c = sim.nucleate('azurite', pos, sigma_azr);
             sim.log.push(`  ✦ NUCLEATION: Azurite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_azr.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)})`);
         }
@@ -17933,7 +17992,7 @@ Object.assign(VugSimulator.prototype, {
 // Methods attached to VugSimulator.prototype after the class is defined
 // in 85-simulator.ts, so direct calls and dynamic dispatch keep working.
 //
-// Methods here (8): nucleate, _rollSpontaneousTwin, _spaceIsCrowded, _atNucleationCap, _assignWallCell, _pickSubstrate, _runEngineForCrystal, _assignWallRing.
+// Methods here (9): nucleate, _rollSpontaneousTwin, _spaceIsCrowded, _atNucleationCap, _assignWallCell, _pickSubstrate, _sigmaDiscountForPosition, _runEngineForCrystal, _assignWallRing.
 //
 // Phase B20 of PROPOSAL-MODULAR-REFACTOR.
 Object.assign(VugSimulator.prototype, {
@@ -18206,6 +18265,34 @@ Object.assign(VugSimulator.prototype, {
     // Returns: { host: Crystal, discount: number } | null.
     _pickSubstrate(mineral) {
         return pickSubstrateForMineral(mineral, this.crystals, rng);
+    },
+    // Q1c — σ-discount lookup for an already-chosen substrate position.
+    // Each engine runs its inline substrate-pick first (so narrative
+    // qualifiers like "(oxidized)", "weathering ...", "adjacent to ..."
+    // are preserved in the position string), then calls this helper to
+    // get the σ-threshold discount factor for the chosen host. The
+    // engine's σ-check uses `baseThreshold * discount` instead of
+    // `baseThreshold` — heterogeneous nucleation on a documented host
+    // clears at a lower σ than bare-wall nucleation, matching the
+    // reduced interfacial-free-energy barrier (Putnis 2002 for CDR;
+    // Ramdohr 1980 for sulfide epitaxy).
+    //
+    // Position-string parsing: matches "on <mineral> #<id>" and any
+    // qualifier that follows ("(oxidized)", "weathering", "adjacent to",
+    // "pseudomorph after", etc.) — the leading `on <mineral>` is what
+    // governs the discount; qualifiers are narrative.
+    //
+    // Returns: discount factor in [0, 1]. 1.0 = no discount (bare wall
+    // or undocumented host). 0.5 = strong epitaxy / strong CDR. 0.7 =
+    // facet-selective heterogeneous nucleation.
+    _sigmaDiscountForPosition(mineral, position) {
+        if (!position || typeof position !== 'string')
+            return 1.0;
+        const m = position.match(/(?:on|after|adjacent to|over|pseudomorph after|weathering)\s+(\w+)/i);
+        if (!m)
+            return 1.0;
+        const hostMineral = m[1];
+        return paragenesisDiscount(hostMineral, mineral);
     },
     _assignWallCell(position) {
         // Host-substrate overgrowths inherit the host's cell; free-wall
@@ -19470,21 +19557,25 @@ function _nuc_albite(sim) {
 function _nuc_chrysocolla(sim) {
     const sigma_chry = sim.conditions.supersaturation_chrysocolla();
     const existing_chry = sim.crystals.filter(c => c.mineral === 'chrysocolla' && c.active);
-    if (sigma_chry > 1.2 && !sim._atNucleationCap('chrysocolla')) {
+    if (sim._atNucleationCap('chrysocolla'))
+        return;
+    // Pick substrate first, then σ-check with discount.
+    let pos = 'vug wall';
+    const active_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.active);
+    const dissolving_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.dissolved);
+    const active_cpr_chry = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active);
+    const active_nc_chry = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+    if (dissolving_azr_chry.length && rng.random() < 0.6)
+        pos = `pseudomorph after azurite #${dissolving_azr_chry[0].crystal_id}`;
+    else if (active_azr_chry.length && rng.random() < 0.3)
+        pos = `on azurite #${active_azr_chry[0].crystal_id}`;
+    else if (active_cpr_chry.length && rng.random() < 0.5)
+        pos = `on cuprite #${active_cpr_chry[0].crystal_id}`;
+    else if (active_nc_chry.length && rng.random() < 0.4)
+        pos = `on native_copper #${active_nc_chry[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('chrysocolla', pos);
+    if (sigma_chry > 1.2 * discount) {
         if (!existing_chry.length || (sigma_chry > 1.8 && rng.random() < 0.25)) {
-            let pos = 'vug wall';
-            const active_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.active);
-            const dissolving_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.dissolved);
-            const active_cpr_chry = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active);
-            const active_nc_chry = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
-            if (dissolving_azr_chry.length && rng.random() < 0.6)
-                pos = `pseudomorph after azurite #${dissolving_azr_chry[0].crystal_id}`;
-            else if (active_azr_chry.length && rng.random() < 0.3)
-                pos = `on azurite #${active_azr_chry[0].crystal_id}`;
-            else if (active_cpr_chry.length && rng.random() < 0.5)
-                pos = `on cuprite #${active_cpr_chry[0].crystal_id}`;
-            else if (active_nc_chry.length && rng.random() < 0.4)
-                pos = `on native_copper #${active_nc_chry[0].crystal_id}`;
             const c = sim.nucleate('chrysocolla', pos, sigma_chry);
             sim.log.push(`  ✦ NUCLEATION: Chrysocolla #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_chry.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)})`);
         }

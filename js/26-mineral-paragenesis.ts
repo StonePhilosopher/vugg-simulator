@@ -188,6 +188,20 @@ const EPITAXY_PAIRS: Set<string> = new Set([
 // Empty in Q1a. Populated in Q2.
 const PSEUDOMORPH_ROUTES: PseudomorphRoute[] = [];
 
+// Look up the σ-discount factor for a host -> nucleating-mineral
+// pair. Returns 1.0 (no discount) when the pair isn't documented.
+// Used by VugSimulator._sigmaDiscountForPosition: each engine first
+// runs its inline substrate-pick (preserving narrative qualifiers
+// like "(oxidized)" and "weathering ..."), and the σ-threshold check
+// then consults this table to decide if the substrate-bound nucleation
+// should clear at a lower threshold.
+function paragenesisDiscount(hostMineral: string, nucleatingMineral: string): number {
+  const hostEntry = SUBSTRATE_NUCLEATION_DISCOUNT[hostMineral];
+  if (!hostEntry) return 1.0;
+  const factor = hostEntry[nucleatingMineral];
+  return typeof factor === 'number' ? factor : 1.0;
+}
+
 // Pick a substrate for a nucleating mineral, weighted by available
 // hosts and their per-pair discount factors. Pure helper — called by
 // VugSimulator._pickSubstrate which threads the live crystal list +
@@ -197,9 +211,11 @@ const PSEUDOMORPH_ROUTES: PseudomorphRoute[] = [];
 //
 // Returns: { host: Crystal, discount: number } | null.
 //
-// Q1a contract: with the empty table, this always returns null —
-// every nucleation falls back to caller's existing behavior. Q1b
-// populates the table; Q1c wires this into nucleation σ checks.
+// Currently unused — the table-driven substrate pick is reserved for
+// future engine refactors. Q1c-style discount wiring uses the
+// inline-rule + paragenesisDiscount(host, nucleating) pattern instead,
+// which preserves the narrative qualifiers that engines hand-craft
+// into their position strings.
 function pickSubstrateForMineral(
   mineral: string,
   crystals: any[],
