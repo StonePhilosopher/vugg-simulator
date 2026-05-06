@@ -185,8 +185,81 @@ const EPITAXY_PAIRS: Set<string> = new Set([
   'marcasite>sphalerite',  // reverse direction
 ]);
 
-// Empty in Q1a. Populated in Q2.
-const PSEUDOMORPH_ROUTES: PseudomorphRoute[] = [];
+// Q2a: populated. Documented coupled-dissolution-precipitation (CDR)
+// routes per Putnis 2002 (Min Mag 66) and 2009 (RiMG 70). Each entry
+// describes a parent-child replacement where the parent dissolves at
+// a sharp interface, the child precipitates from the local
+// supersaturated film, and (for shape_preserved=true) the child
+// inherits the parent's external form.
+//
+// Per boss 2026-05-06: every entry is shape_preserved=true since
+// the documented MVT/supergene routes all preserve outline. Routes
+// where the new mineral grows with its own habit (no outline
+// inheritance) wouldn't make this list — they'd just be ordinary
+// substrate-affinity entries, not pseudomorph routes.
+//
+// Triggers are descriptive labels matching the engine's dissolution
+// dispatch mode where applicable (oxidative / acid / low_co3 /
+// thermal / silica_pulse / sulfidation), so future Q3+ logic can
+// align Q1e's dissolutionMode with the route's expected trigger.
+const PSEUDOMORPH_ROUTES: PseudomorphRoute[] = [
+  // ---- Sulfide oxidation routes ----
+  { parent: 'pyrite',       child: 'goethite',     trigger: 'oxidative',     shape_preserved: true },  // FeS2 -> FeOOH (the canonical "limonite cube" pseudomorph)
+  { parent: 'marcasite',    child: 'goethite',     trigger: 'oxidative',     shape_preserved: true },
+  { parent: 'pyrite',       child: 'lepidocrocite',trigger: 'oxidative',     shape_preserved: true },  // less common Fe-OOH polymorph
+  { parent: 'sphalerite',   child: 'smithsonite',  trigger: 'oxidative',     shape_preserved: true },  // ZnS -> ZnCO3 (supergene Zn cap)
+  { parent: 'sphalerite',   child: 'aurichalcite', trigger: 'oxidative',     shape_preserved: true },
+  { parent: 'sphalerite',   child: 'rosasite',     trigger: 'oxidative',     shape_preserved: true },
+  { parent: 'galena',       child: 'cerussite',    trigger: 'acid',          shape_preserved: true },  // PbS -> PbCO3
+  { parent: 'galena',       child: 'anglesite',    trigger: 'oxidative',     shape_preserved: true },  // PbS -> PbSO4
+  { parent: 'cobaltite',    child: 'erythrite',    trigger: 'oxidative',     shape_preserved: true },  // CoAsS -> Co arsenate (Schneeberg/Bou Azzer)
+  { parent: 'nickeline',    child: 'annabergite',  trigger: 'oxidative',     shape_preserved: true },  // NiAs -> Ni arsenate
+  { parent: 'arsenopyrite', child: 'scorodite',    trigger: 'oxidative',     shape_preserved: true },  // FeAsS -> Fe arsenate
+
+  // ---- Cu carbonate / silicate cascade ----
+  { parent: 'azurite',      child: 'malachite',    trigger: 'low_co3',       shape_preserved: true },  // Putnis canonical CDR — Cu2+ stays, CO3 drops
+  { parent: 'azurite',      child: 'chrysocolla',  trigger: 'silica_pulse',  shape_preserved: true },  // Bisbee signature
+  { parent: 'malachite',    child: 'chrysocolla',  trigger: 'silica_pulse',  shape_preserved: true },
+  { parent: 'cuprite',      child: 'malachite',    trigger: 'low_co3',       shape_preserved: true },
+  { parent: 'cuprite',      child: 'chrysocolla',  trigger: 'silica_pulse',  shape_preserved: true },
+  { parent: 'native_copper',child: 'cuprite',      trigger: 'oxidative',     shape_preserved: true },  // Cu(s) -> Cu2O surface skin
+
+  // ---- Native silver tarnish ----
+  { parent: 'native_silver',child: 'acanthite',    trigger: 'sulfidation',   shape_preserved: true },  // Ag(s) + S2- -> Ag2S (Boyle 1968)
+];
+
+// Look up a CDR route for a given parent-child pair. Returns null
+// when the pair isn't documented. Called by sim.nucleate to tag a
+// newly-nucleated crystal with cdr_replaces_crystal_id when its
+// position string identifies a parent that's dissolving/dissolved
+// AND the parent-child pair is in PSEUDOMORPH_ROUTES.
+function findPseudomorphRoute(parent: string, child: string): PseudomorphRoute | null {
+  for (const r of PSEUDOMORPH_ROUTES) {
+    if (r.parent === parent && r.child === child) return r;
+  }
+  return null;
+}
+
+// Parse a position string for the host mineral + crystal_id.
+// Position strings carry diverse narrative qualifiers ("on dissolved
+// X #N", "on weathering X #N (oxidized)", "pseudomorph after X #N",
+// "adjacent to X #N", "on X #N", etc.) — this helper extracts the
+// host's identity by anchoring on the `#<id>` token and capturing
+// the word immediately preceding it (which is always the mineral
+// name in the engine-constructed strings). Returns null when no
+// host can be parsed (e.g. position = 'vug wall').
+function parsePositionHost(position: string, crystals: any[]): { hostMineral: string; host: any | null } | null {
+  if (!position || typeof position !== 'string') return null;
+  // Anchor on '<word> #<digits>' — robust against "on dissolved X",
+  // "pseudomorph after X", "on weathering X #N (qualifier)", etc.
+  // The mineral name is whatever word lands immediately before #N.
+  const m = position.match(/([a-z_]+)\s+#(\d+)/i);
+  if (!m) return null;
+  const hostMineral = m[1].toLowerCase();
+  const hostId = parseInt(m[2], 10);
+  const host = crystals.find(c => c.crystal_id === hostId);
+  return { hostMineral, host: host || null };
+}
 
 // Look up the σ-discount factor for a host -> nucleating-mineral
 // pair. Returns 1.0 (no discount) when the pair isn't documented.

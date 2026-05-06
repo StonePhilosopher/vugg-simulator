@@ -774,5 +774,52 @@
 //        pegmatite / cooling scenarios should drift less since their
 //        nucleation candidates are mostly outside this 4-engine set.
 //        Drift documented per-scenario in commit message.
-const SIM_VERSION = 56;
+//   v57 — Paragenesis Q2a: pseudomorph routes table + Crystal CDR
+//        fields (May 2026). Per Putnis 2002/2009 canonical CDR
+//        framework.
+//
+//        18 documented coupled-dissolution-precipitation routes
+//        populate PSEUDOMORPH_ROUTES in js/26-mineral-paragenesis.ts:
+//          Sulfide oxidation: pyrite/marcasite -> goethite/
+//             lepidocrocite, sphalerite -> smithsonite/aurichalcite/
+//             rosasite, galena -> cerussite/anglesite, cobaltite ->
+//             erythrite, nickeline -> annabergite, arsenopyrite ->
+//             scorodite
+//          Cu carbonate/silicate cascade: azurite -> malachite/
+//             chrysocolla, malachite -> chrysocolla, cuprite ->
+//             malachite/chrysocolla, native_copper -> cuprite
+//          Native silver tarnish: native_silver -> acanthite (Boyle
+//             1968)
+//        Every route shape_preserved=true (boss directive 2026-05-06:
+//        the table is for shape-preserving CDR routes only; non-shape-
+//        preserving overgrowths are ordinary substrate-affinity
+//        entries from Q1b, not pseudomorph routes).
+//
+//        Crystal class gains two fields per boss directive:
+//          cdr_replaces_crystal_id  (default null) — parent
+//             crystal_id when this crystal nucleated via a CDR route
+//          perimorph_eligible       (default false) — true when the
+//             route's shape_preserved flag is on, so Q4 perimorph
+//             mechanic can treat the crystal as a candidate cast if
+//             the parent later fully dissolves (per boss: schema
+//             anticipates Q4 even before the renderer wires it)
+//
+//        Detection: sim.nucleate parses the position string AFTER Q1c
+//        substrate-pick has set it ("on dissolved X #N", "pseudomorph
+//        after X #N", "on weathering X #N", or even "on X #N" when
+//        the pair is documented), looks up (host.mineral, this.mineral)
+//        in PSEUDOMORPH_ROUTES, and tags the crystal. The position
+//        string itself is unchanged — engines keep their narrative
+//        qualifiers.
+//
+//        Q3 renderer will read cdr_replaces_crystal_id to inherit
+//        parent outline (malachite-after-azurite renders with the
+//        azurite cube silhouette). Q4 renderer will read
+//        perimorph_eligible to draw the cast when the host fully
+//        dissolves.
+//
+//        Verification: v56 -> v57 byte-identical across all 20
+//        seed-42 scenarios (CDR tagging is metadata only — no
+//        chemistry change, no nucleation-gate change).
+const SIM_VERSION = 57;
 

@@ -160,6 +160,27 @@ Object.assign(VugSimulator.prototype, {
   // data/minerals.json, matching declared probability semantics.
   this._rollSpontaneousTwin(crystal);
 
+  // Q2a — paragenesis CDR tagging. If the position string identifies
+  // a host crystal AND (host.mineral, this.mineral) matches a
+  // documented PSEUDOMORPH_ROUTES entry, tag this crystal as a CDR
+  // pseudomorph: cdr_replaces_crystal_id points to the host;
+  // perimorph_eligible flags shape_preserved=true routes for Q4. The
+  // host doesn't need to be dissolved at this moment — the position
+  // string already encoded the engine's intent ("on dissolved X",
+  // "pseudomorph after X", "on weathering X", or even "on X" when
+  // the route is documented). Q3 renderer reads cdr_replaces_crystal_id
+  // to inherit parent outline; Q4 renderer reads perimorph_eligible.
+  {
+    const parsed = parsePositionHost(position, this.crystals);
+    if (parsed && parsed.host) {
+      const route = findPseudomorphRoute(parsed.host.mineral, mineral);
+      if (route) {
+        crystal.cdr_replaces_crystal_id = parsed.host.crystal_id;
+        crystal.perimorph_eligible = route.shape_preserved;
+      }
+    }
+  }
+
   this.crystals.push(crystal);
   return crystal;
 },
@@ -254,11 +275,9 @@ Object.assign(VugSimulator.prototype, {
   // or undocumented host). 0.5 = strong epitaxy / strong CDR. 0.7 =
   // facet-selective heterogeneous nucleation.
   _sigmaDiscountForPosition(mineral, position) {
-    if (!position || typeof position !== 'string') return 1.0;
-    const m = position.match(/(?:on|after|adjacent to|over|pseudomorph after|weathering)\s+(\w+)/i);
-    if (!m) return 1.0;
-    const hostMineral = m[1];
-    return paragenesisDiscount(hostMineral, mineral);
+    const parsed = parsePositionHost(position, this.crystals);
+    if (!parsed) return 1.0;
+    return paragenesisDiscount(parsed.hostMineral, mineral);
   },
 
   _assignWallCell(position) {

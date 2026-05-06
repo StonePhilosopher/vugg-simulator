@@ -4767,7 +4767,54 @@ let timeScale = 5.0;
 //        pegmatite / cooling scenarios should drift less since their
 //        nucleation candidates are mostly outside this 4-engine set.
 //        Drift documented per-scenario in commit message.
-const SIM_VERSION = 56;
+//   v57 — Paragenesis Q2a: pseudomorph routes table + Crystal CDR
+//        fields (May 2026). Per Putnis 2002/2009 canonical CDR
+//        framework.
+//
+//        18 documented coupled-dissolution-precipitation routes
+//        populate PSEUDOMORPH_ROUTES in js/26-mineral-paragenesis.ts:
+//          Sulfide oxidation: pyrite/marcasite -> goethite/
+//             lepidocrocite, sphalerite -> smithsonite/aurichalcite/
+//             rosasite, galena -> cerussite/anglesite, cobaltite ->
+//             erythrite, nickeline -> annabergite, arsenopyrite ->
+//             scorodite
+//          Cu carbonate/silicate cascade: azurite -> malachite/
+//             chrysocolla, malachite -> chrysocolla, cuprite ->
+//             malachite/chrysocolla, native_copper -> cuprite
+//          Native silver tarnish: native_silver -> acanthite (Boyle
+//             1968)
+//        Every route shape_preserved=true (boss directive 2026-05-06:
+//        the table is for shape-preserving CDR routes only; non-shape-
+//        preserving overgrowths are ordinary substrate-affinity
+//        entries from Q1b, not pseudomorph routes).
+//
+//        Crystal class gains two fields per boss directive:
+//          cdr_replaces_crystal_id  (default null) — parent
+//             crystal_id when this crystal nucleated via a CDR route
+//          perimorph_eligible       (default false) — true when the
+//             route's shape_preserved flag is on, so Q4 perimorph
+//             mechanic can treat the crystal as a candidate cast if
+//             the parent later fully dissolves (per boss: schema
+//             anticipates Q4 even before the renderer wires it)
+//
+//        Detection: sim.nucleate parses the position string AFTER Q1c
+//        substrate-pick has set it ("on dissolved X #N", "pseudomorph
+//        after X #N", "on weathering X #N", or even "on X #N" when
+//        the pair is documented), looks up (host.mineral, this.mineral)
+//        in PSEUDOMORPH_ROUTES, and tags the crystal. The position
+//        string itself is unchanged — engines keep their narrative
+//        qualifiers.
+//
+//        Q3 renderer will read cdr_replaces_crystal_id to inherit
+//        parent outline (malachite-after-azurite renders with the
+//        azurite cube silhouette). Q4 renderer will read
+//        perimorph_eligible to draw the cast when the host fully
+//        dissolves.
+//
+//        Verification: v56 -> v57 byte-identical across all 20
+//        seed-42 scenarios (CDR tagging is metadata only — no
+//        chemistry change, no nucleation-gate change).
+const SIM_VERSION = 57;
 
 // ── 18-constants.js ──
 
@@ -7198,8 +7245,80 @@ const EPITAXY_PAIRS = new Set([
     'pyrite>sphalerite', // reverse direction
     'marcasite>sphalerite', // reverse direction
 ]);
-// Empty in Q1a. Populated in Q2.
-const PSEUDOMORPH_ROUTES = [];
+// Q2a: populated. Documented coupled-dissolution-precipitation (CDR)
+// routes per Putnis 2002 (Min Mag 66) and 2009 (RiMG 70). Each entry
+// describes a parent-child replacement where the parent dissolves at
+// a sharp interface, the child precipitates from the local
+// supersaturated film, and (for shape_preserved=true) the child
+// inherits the parent's external form.
+//
+// Per boss 2026-05-06: every entry is shape_preserved=true since
+// the documented MVT/supergene routes all preserve outline. Routes
+// where the new mineral grows with its own habit (no outline
+// inheritance) wouldn't make this list — they'd just be ordinary
+// substrate-affinity entries, not pseudomorph routes.
+//
+// Triggers are descriptive labels matching the engine's dissolution
+// dispatch mode where applicable (oxidative / acid / low_co3 /
+// thermal / silica_pulse / sulfidation), so future Q3+ logic can
+// align Q1e's dissolutionMode with the route's expected trigger.
+const PSEUDOMORPH_ROUTES = [
+    // ---- Sulfide oxidation routes ----
+    { parent: 'pyrite', child: 'goethite', trigger: 'oxidative', shape_preserved: true }, // FeS2 -> FeOOH (the canonical "limonite cube" pseudomorph)
+    { parent: 'marcasite', child: 'goethite', trigger: 'oxidative', shape_preserved: true },
+    { parent: 'pyrite', child: 'lepidocrocite', trigger: 'oxidative', shape_preserved: true }, // less common Fe-OOH polymorph
+    { parent: 'sphalerite', child: 'smithsonite', trigger: 'oxidative', shape_preserved: true }, // ZnS -> ZnCO3 (supergene Zn cap)
+    { parent: 'sphalerite', child: 'aurichalcite', trigger: 'oxidative', shape_preserved: true },
+    { parent: 'sphalerite', child: 'rosasite', trigger: 'oxidative', shape_preserved: true },
+    { parent: 'galena', child: 'cerussite', trigger: 'acid', shape_preserved: true }, // PbS -> PbCO3
+    { parent: 'galena', child: 'anglesite', trigger: 'oxidative', shape_preserved: true }, // PbS -> PbSO4
+    { parent: 'cobaltite', child: 'erythrite', trigger: 'oxidative', shape_preserved: true }, // CoAsS -> Co arsenate (Schneeberg/Bou Azzer)
+    { parent: 'nickeline', child: 'annabergite', trigger: 'oxidative', shape_preserved: true }, // NiAs -> Ni arsenate
+    { parent: 'arsenopyrite', child: 'scorodite', trigger: 'oxidative', shape_preserved: true }, // FeAsS -> Fe arsenate
+    // ---- Cu carbonate / silicate cascade ----
+    { parent: 'azurite', child: 'malachite', trigger: 'low_co3', shape_preserved: true }, // Putnis canonical CDR — Cu2+ stays, CO3 drops
+    { parent: 'azurite', child: 'chrysocolla', trigger: 'silica_pulse', shape_preserved: true }, // Bisbee signature
+    { parent: 'malachite', child: 'chrysocolla', trigger: 'silica_pulse', shape_preserved: true },
+    { parent: 'cuprite', child: 'malachite', trigger: 'low_co3', shape_preserved: true },
+    { parent: 'cuprite', child: 'chrysocolla', trigger: 'silica_pulse', shape_preserved: true },
+    { parent: 'native_copper', child: 'cuprite', trigger: 'oxidative', shape_preserved: true }, // Cu(s) -> Cu2O surface skin
+    // ---- Native silver tarnish ----
+    { parent: 'native_silver', child: 'acanthite', trigger: 'sulfidation', shape_preserved: true }, // Ag(s) + S2- -> Ag2S (Boyle 1968)
+];
+// Look up a CDR route for a given parent-child pair. Returns null
+// when the pair isn't documented. Called by sim.nucleate to tag a
+// newly-nucleated crystal with cdr_replaces_crystal_id when its
+// position string identifies a parent that's dissolving/dissolved
+// AND the parent-child pair is in PSEUDOMORPH_ROUTES.
+function findPseudomorphRoute(parent, child) {
+    for (const r of PSEUDOMORPH_ROUTES) {
+        if (r.parent === parent && r.child === child)
+            return r;
+    }
+    return null;
+}
+// Parse a position string for the host mineral + crystal_id.
+// Position strings carry diverse narrative qualifiers ("on dissolved
+// X #N", "on weathering X #N (oxidized)", "pseudomorph after X #N",
+// "adjacent to X #N", "on X #N", etc.) — this helper extracts the
+// host's identity by anchoring on the `#<id>` token and capturing
+// the word immediately preceding it (which is always the mineral
+// name in the engine-constructed strings). Returns null when no
+// host can be parsed (e.g. position = 'vug wall').
+function parsePositionHost(position, crystals) {
+    if (!position || typeof position !== 'string')
+        return null;
+    // Anchor on '<word> #<digits>' — robust against "on dissolved X",
+    // "pseudomorph after X", "on weathering X #N (qualifier)", etc.
+    // The mineral name is whatever word lands immediately before #N.
+    const m = position.match(/([a-z_]+)\s+#(\d+)/i);
+    if (!m)
+        return null;
+    const hostMineral = m[1].toLowerCase();
+    const hostId = parseInt(m[2], 10);
+    const host = crystals.find(c => c.crystal_id === hostId);
+    return { hostMineral, host: host || null };
+}
 // Look up the σ-discount factor for a host -> nucleating-mineral
 // pair. Returns 1.0 (no discount) when the pair isn't documented.
 // Used by VugSimulator._sigmaDiscountForPosition: each engine first
@@ -7366,6 +7485,18 @@ class Crystal {
         // v28 dehydration tracking — counts steps in a dry environment
         // for crystals listed in DEHYDRATION_TRANSITIONS.
         this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;
+        // Q2a paragenesis tracking — set by sim.nucleate when this
+        // crystal is born via a CDR (coupled dissolution-precipitation)
+        // route per Putnis 2002/2009. cdr_replaces_crystal_id points to
+        // the parent crystal whose dissolution fed this nucleation;
+        // perimorph_eligible flags shape_preserved=true routes (per
+        // boss directive 2026-05-06: schema anticipates Q4 perimorph
+        // mechanic even before renderer wires it). Q3 renderer reads
+        // cdr_replaces_crystal_id to inherit parent outline; Q4 renderer
+        // uses perimorph_eligible to decide if the crystal should
+        // persist as a hollow cast when later dissolved.
+        this.cdr_replaces_crystal_id = opts.cdr_replaces_crystal_id ?? null;
+        this.perimorph_eligible = opts.perimorph_eligible ?? false;
     }
     add_zone(zone) {
         // Apply time compression — more geological time per step = thicker zones
@@ -18187,6 +18318,26 @@ Object.assign(VugSimulator.prototype, {
         // Post-fix the roll happens once here per twin_law in
         // data/minerals.json, matching declared probability semantics.
         this._rollSpontaneousTwin(crystal);
+        // Q2a — paragenesis CDR tagging. If the position string identifies
+        // a host crystal AND (host.mineral, this.mineral) matches a
+        // documented PSEUDOMORPH_ROUTES entry, tag this crystal as a CDR
+        // pseudomorph: cdr_replaces_crystal_id points to the host;
+        // perimorph_eligible flags shape_preserved=true routes for Q4. The
+        // host doesn't need to be dissolved at this moment — the position
+        // string already encoded the engine's intent ("on dissolved X",
+        // "pseudomorph after X", "on weathering X", or even "on X" when
+        // the route is documented). Q3 renderer reads cdr_replaces_crystal_id
+        // to inherit parent outline; Q4 renderer reads perimorph_eligible.
+        {
+            const parsed = parsePositionHost(position, this.crystals);
+            if (parsed && parsed.host) {
+                const route = findPseudomorphRoute(parsed.host.mineral, mineral);
+                if (route) {
+                    crystal.cdr_replaces_crystal_id = parsed.host.crystal_id;
+                    crystal.perimorph_eligible = route.shape_preserved;
+                }
+            }
+        }
         this.crystals.push(crystal);
         return crystal;
     },
@@ -18286,13 +18437,10 @@ Object.assign(VugSimulator.prototype, {
     // or undocumented host). 0.5 = strong epitaxy / strong CDR. 0.7 =
     // facet-selective heterogeneous nucleation.
     _sigmaDiscountForPosition(mineral, position) {
-        if (!position || typeof position !== 'string')
+        const parsed = parsePositionHost(position, this.crystals);
+        if (!parsed)
             return 1.0;
-        const m = position.match(/(?:on|after|adjacent to|over|pseudomorph after|weathering)\s+(\w+)/i);
-        if (!m)
-            return 1.0;
-        const hostMineral = m[1];
-        return paragenesisDiscount(hostMineral, mineral);
+        return paragenesisDiscount(parsed.hostMineral, mineral);
     },
     _assignWallCell(position) {
         // Host-substrate overgrowths inherit the host's cell; free-wall

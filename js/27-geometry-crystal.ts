@@ -103,6 +103,18 @@ class Crystal {
     // v28 dehydration tracking — counts steps in a dry environment
     // for crystals listed in DEHYDRATION_TRANSITIONS.
     this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;
+    // Q2a paragenesis tracking — set by sim.nucleate when this
+    // crystal is born via a CDR (coupled dissolution-precipitation)
+    // route per Putnis 2002/2009. cdr_replaces_crystal_id points to
+    // the parent crystal whose dissolution fed this nucleation;
+    // perimorph_eligible flags shape_preserved=true routes (per
+    // boss directive 2026-05-06: schema anticipates Q4 perimorph
+    // mechanic even before renderer wires it). Q3 renderer reads
+    // cdr_replaces_crystal_id to inherit parent outline; Q4 renderer
+    // uses perimorph_eligible to decide if the crystal should
+    // persist as a hollow cast when later dissolved.
+    this.cdr_replaces_crystal_id = opts.cdr_replaces_crystal_id ?? null;
+    this.perimorph_eligible = opts.perimorph_eligible ?? false;
   }
 
   add_zone(zone) {
