@@ -12,20 +12,41 @@
 
 function _nuc_barite(sim) {
   const sigma_brt = sim.conditions.supersaturation_barite();
-  if (sigma_brt > 1.0 && !sim._atNucleationCap('barite')) {
-    if (rng.random() < 0.15) {
-      let pos = 'vug wall';
-      const active_gal_brt = sim.crystals.filter(c => c.mineral === 'galena' && c.active);
-      const active_sph_brt = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
-      if (active_gal_brt.length && rng.random() < 0.3) {
-        pos = `near galena #${active_gal_brt[0].crystal_id}`;
-      } else if (active_sph_brt.length && rng.random() < 0.2) {
-        pos = `near sphalerite #${active_sph_brt[0].crystal_id}`;
-      }
-      const c = sim.nucleate('barite', pos, sigma_brt);
-      sim.log.push(`  ✦ NUCLEATION: ⚪ Barite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brt.toFixed(2)}, Ba=${sim.conditions.fluid.Ba.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — heavy spar, MVT gangue`);
-    }
+  if (sim._atNucleationCap('barite')) return;
+  // Q5 — snowball substrate pick. When a sulfide host (sphalerite/
+  // galena/pyrite) is available, this barite is a snowball seed
+  // (Sweetwater-type radiating-epitaxy aggregate). Use 'on' not
+  // 'near' so the substrate-affinity discount + CDR detection +
+  // _assignWallCell host-inheritance all see the host. Bare-wall
+  // barite stays gated at the legacy 0.15 probability.
+  let pos = 'vug wall';
+  let snowball = false;
+  const active_sph_brt = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
+  const active_gal_brt = sim.crystals.filter(c => c.mineral === 'galena'     && c.active);
+  const active_py_brt  = sim.crystals.filter(c => c.mineral === 'pyrite'     && c.active);
+  if (active_sph_brt.length && rng.random() < 0.4) {
+    pos = `on sphalerite #${active_sph_brt[0].crystal_id}`;
+    snowball = true;
+  } else if (active_gal_brt.length && rng.random() < 0.3) {
+    pos = `on galena #${active_gal_brt[0].crystal_id}`;
+    snowball = true;
+  } else if (active_py_brt.length && rng.random() < 0.2) {
+    pos = `on pyrite #${active_py_brt[0].crystal_id}`;
+    snowball = true;
   }
+  // σ-discount via Q1c paragenesis table (barite has 0.7× entries on
+  // sphalerite/galena/pyrite hosts).
+  const discount = sim._sigmaDiscountForPosition('barite', pos);
+  if (sigma_brt <= 1.0 * discount) return;
+  // Free-wall barite stays gated at low probability (~one nucleation
+  // per ~7 steps when σ is already over threshold). Snowball seeds
+  // bypass this gate — when the substrate aligns, the aggregate
+  // forms.
+  if (!snowball && rng.random() >= 0.15) return;
+  const c = sim.nucleate('barite', pos, sigma_brt);
+  if (snowball) c.habit = 'snowball';
+  const tag = snowball ? ' (snowball seed)' : '';
+  sim.log.push(`  ✦ NUCLEATION: ⚪ Barite #${c.crystal_id} on ${c.position}${tag} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brt.toFixed(2)}, Ba=${sim.conditions.fluid.Ba.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — heavy spar, MVT gangue`);
 
   // Celestine nucleation — the Sr sequestration mineral; pale celestial
   // blue. Substrate priority: existing barite (celestobarite-barytocelestine

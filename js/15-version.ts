@@ -774,5 +774,87 @@
 //        pegmatite / cooling scenarios should drift less since their
 //        nucleation candidates are mostly outside this 4-engine set.
 //        Drift documented per-scenario in commit message.
-const SIM_VERSION = 56;
+//   v57 — Paragenesis Q2a: pseudomorph routes table + Crystal CDR
+//        fields (May 2026). Per Putnis 2002/2009 canonical CDR
+//        framework.
+//
+//        18 documented coupled-dissolution-precipitation routes
+//        populate PSEUDOMORPH_ROUTES in js/26-mineral-paragenesis.ts:
+//          Sulfide oxidation: pyrite/marcasite -> goethite/
+//             lepidocrocite, sphalerite -> smithsonite/aurichalcite/
+//             rosasite, galena -> cerussite/anglesite, cobaltite ->
+//             erythrite, nickeline -> annabergite, arsenopyrite ->
+//             scorodite
+//          Cu carbonate/silicate cascade: azurite -> malachite/
+//             chrysocolla, malachite -> chrysocolla, cuprite ->
+//             malachite/chrysocolla, native_copper -> cuprite
+//          Native silver tarnish: native_silver -> acanthite (Boyle
+//             1968)
+//        Every route shape_preserved=true (boss directive 2026-05-06:
+//        the table is for shape-preserving CDR routes only; non-shape-
+//        preserving overgrowths are ordinary substrate-affinity
+//        entries from Q1b, not pseudomorph routes).
+//
+//        Crystal class gains two fields per boss directive:
+//          cdr_replaces_crystal_id  (default null) — parent
+//             crystal_id when this crystal nucleated via a CDR route
+//          perimorph_eligible       (default false) — true when the
+//             route's shape_preserved flag is on, so Q4 perimorph
+//             mechanic can treat the crystal as a candidate cast if
+//             the parent later fully dissolves (per boss: schema
+//             anticipates Q4 even before the renderer wires it)
+//
+//        Detection: sim.nucleate parses the position string AFTER Q1c
+//        substrate-pick has set it ("on dissolved X #N", "pseudomorph
+//        after X #N", "on weathering X #N", or even "on X #N" when
+//        the pair is documented), looks up (host.mineral, this.mineral)
+//        in PSEUDOMORPH_ROUTES, and tags the crystal. The position
+//        string itself is unchanged — engines keep their narrative
+//        qualifiers.
+//
+//        Q3 renderer will read cdr_replaces_crystal_id to inherit
+//        parent outline (malachite-after-azurite renders with the
+//        azurite cube silhouette). Q4 renderer will read
+//        perimorph_eligible to draw the cast when the host fully
+//        dissolves.
+//
+//        Verification: v56 -> v57 byte-identical across all 20
+//        seed-42 scenarios (CDR tagging is metadata only — no
+//        chemistry change, no nucleation-gate change).
+//   v58 — Paragenesis Q5: snowball barite habit (May 2026, per
+//        boss directive 2026-05-06 — sphere primitive evocative
+//        enough of the final form for v1; radial-spray detail is
+//        v2 polish).
+//
+//        Mechanism: when _nuc_barite finds a sulfide host
+//        (sphalerite / galena / pyrite) AND σ exceeds the Q1c
+//        substrate-affinity-discounted threshold, the new barite
+//        crystal is tagged `habit: 'snowball'`. The 0.7× discount
+//        on sphalerite/galena/pyrite hosts (Q1b table) means
+//        snowball seeds form much more readily than free-wall
+//        barite (which stays gated at the legacy 0.15 probability).
+//        Position string changes from "near X #N" to "on X #N" so
+//        the substrate-affinity discount, CDR detection, and host-
+//        cell inheritance all see the host as a real anchor.
+//
+//        grow_barite preserves habit:'snowball' across growth steps
+//        (rather than getting overwritten by the σ-driven habit
+//        dispatch). a_width_mm = c_length_mm for snowball habit
+//        (uniform — sphere); volume formula treats it as 0.5× the
+//        true sphere volume, but acceptable until vug-fill
+//        calibration drives a refinement.
+//
+//        Renderer: new 'snowball' habit token resolves to
+//        SphereGeometry(0.5, 16, 12) — unit-radius sphere stretched
+//        uniformly to c_length_mm. Cavity-clip from e6bb0a1 handles
+//        the case where a snowball outgrows the cavity (it gets
+//        sliced at the wall like any other crystal).
+//
+//        Calibration drift expected on mvt + bisbee + sweetwater-
+//        type scenarios where sphalerite/galena/pyrite + barite
+//        co-occur. Other scenarios (pegmatite, cooling, supergene
+//        without primary sulfides, etc.) should drift little if at
+//        all since their barite either doesn't form or doesn't have
+//        the sulfide hosts.
+const SIM_VERSION = 58;
 

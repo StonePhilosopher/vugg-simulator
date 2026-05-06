@@ -18,7 +18,14 @@ function grow_barite(crystal, conditions, step) {
   if (rate < 0.1) return null;
 
   let habit_note;
-  if (excess > 1.5) {
+  if (crystal.habit === 'snowball') {
+    // Q5 — snowball habit set at nucleation; preserved across growth
+    // steps so the population-level epitaxy aggregate keeps its
+    // spherical-envelope rendering rather than getting overwritten by
+    // the σ-driven prismatic/cockscomb/bladed/tabular dispatch below.
+    crystal.dominant_forms = ['radiating bladed sphere', 'on sulfide seed core'];
+    habit_note = 'snowball barite — population-level epitaxy on a sulfide seed (Sweetwater type)';
+  } else if (excess > 1.5) {
     crystal.habit = 'prismatic';
     crystal.dominant_forms = ['stubby prisms', 'vein-fill habit'];
     habit_note = 'stubby prismatic barite, vein-fill';

@@ -442,6 +442,11 @@ function _habitGeomToken(habit: string): string {
   // produces — kept for any mineral that genuinely needs that.
   if (h === 'rhombic dodecahedral' || h === 'rhombic-dodecahedral' || h === 'garnet' || h === 'trapezohedral') return 'rhombic_dodec';
   if (h === 'dodecahedral') return 'dodecahedron';
+  // Q5 — snowball habit (Sweetwater barite radiating from a sulfide
+  // seed). Rendered as a uniform sphere primitive per boss directive
+  // 2026-05-06 ("the geometry of a sphere is evocative enough of the
+  // final form" for v1; radial-spray detail is v2 polish).
+  if (h === 'snowball') return 'snowball';
   if (h === 'botryoidal' || h === 'reniform' || h === 'mammillary' || h === 'globular') return 'botryoidal';
   if (h === 'dendritic' || h === 'arborescent') return 'spike';  // splay handled per-instance later
   if (h === 'fibrous') return 'spike';
@@ -762,6 +767,13 @@ function _buildHabitGeom(token: string): any {
       return new THREE.BoxGeometry(0.8, 0.8, 0.8);
     case 'octahedron':
       return new THREE.OctahedronGeometry(0.55, 0);
+    case 'snowball':
+      // Q5 — population-level epitaxy aggregate (boss-approved sphere
+      // primitive). Radius 0.5 → diameter 1.0 → unit-scale sphere
+      // that the per-mesh isometric scale dispatch stretches to
+      // c_length_mm uniform. 16x12 segmentation gives a smooth-
+      // enough silhouette without the vertex cost of 32x16.
+      return new THREE.SphereGeometry(0.5, 16, 12);
     case 'rhombic_dodec':
       // Garnet-style 12 rhombic faces. Phase E5 batch 3.
       return _makeRhombicDodecahedron();
@@ -1002,7 +1014,7 @@ function _emitClusterSatellites(
     sNx /= nLen; sNy /= nLen; sNz /= nLen;
     const sOffset = sCLen * 0.5;
     const satMesh = new THREE.Mesh(geom, mat);
-    if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron') {
+    if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron' || geomToken === 'snowball') {
       satMesh.scale.set(sCLen, sCLen, sCLen);
     } else {
       satMesh.scale.set(sAWid, sCLen, sAWid);
@@ -1053,8 +1065,14 @@ function _topoCrystalsSignature(sim: any): string {
   if (!sim || !sim.crystals || !sim.crystals.length) return '';
   const parts: string[] = [];
   for (const c of sim.crystals) {
-    if (!c || c.dissolved) continue;
-    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${c.wall_ring_index}:${c.wall_center_cell}`);
+    if (!c) continue;
+    // Q4: dissolved crystals normally drop from the scene, BUT a
+    // dissolved crystal flagged perimorph_eligible persists as a
+    // hollow cast — its outline is the geological signature. Include
+    // such casts in the signature so the cache busts when one
+    // appears (and so its mesh gets built in _topoSyncCrystalMeshes).
+    if (c.dissolved && !c.perimorph_eligible) continue;
+    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${c.wall_ring_index}:${c.wall_center_cell}:${c.dissolved ? 'd' : 'a'}`);
   }
   return parts.join('|');
 }
@@ -1085,7 +1103,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any) {
   const initR = wall.initial_radius_mm || 25;
 
   for (const crystal of sim.crystals) {
-    if (!crystal || crystal.dissolved) continue;
+    if (!crystal) continue;
+    // Q4 — dissolved crystals normally drop from the scene, BUT a
+    // dissolved crystal flagged perimorph_eligible (Q2a tagged via
+    // shape-preserving CDR route) persists as a hollow cast. The
+    // mesh body is the inherited shape; the material is translucent
+    // double-sided so the user reads the void inside the shell.
+    if (crystal.dissolved && !crystal.perimorph_eligible) continue;
     let ringIdx = crystal.wall_ring_index;
     if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount) ringIdx = 0;
     const cellIdx = crystal.wall_center_cell;
@@ -1118,8 +1142,29 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any) {
     const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
     const nx = -ax / len, ny = -ay / len, nz = -az / len;
 
+    // Q3a — CDR pseudomorph outline inheritance. When a crystal was
+    // born via a coupled-dissolution-precipitation route (Q2a tagged
+    // it with cdr_replaces_crystal_id), inherit the parent's habit
+    // for the geometry primitive — malachite-after-azurite renders
+    // with the azurite cube silhouette filled in malachite's color;
+    // goethite-after-pyrite renders as a "limonite cube" not a free
+    // botryoidal blob. Material color stays the child's. Per Putnis
+    // 2002/2009: CDR preserves external form because the dissolution-
+    // precipitation interface is sharp on scales below the precipitate
+    // grain size. The sim already tags eligible crystals (Q2a); the
+    // renderer just consumes the pointer.
+    let habitForGeom = crystal.habit;
+    let isCdrPseudomorph = false;
+    if (crystal.cdr_replaces_crystal_id != null) {
+      const parent = sim.crystals.find((c: any) => c.crystal_id === crystal.cdr_replaces_crystal_id);
+      if (parent && parent.habit) {
+        habitForGeom = parent.habit;
+        isCdrPseudomorph = true;
+      }
+    }
+
     // Pick the habit primitive and cache it.
-    const token = _habitGeomToken(crystal.habit);
+    const token = _habitGeomToken(habitForGeom);
     let geom = state.geomCache.get(token);
     if (!geom) {
       geom = _buildHabitGeom(token);
@@ -1134,12 +1179,37 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any) {
     const colorStr = (spec && spec.class_color) || '#d2691e';
     const klass = spec && spec.class;
     const metalness = (klass === 'sulfide' || klass === 'native') ? 0.45 : 0.08;
-    const roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
-    const mat = new THREE.MeshStandardMaterial({
+    let roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
+    // Q3a porosity boost for CDR pseudomorphs — Putnis 2009 emphasizes
+    // that CDR products are typically porous (volume mismatch
+    // accommodation between parent and child phases). Boss directive
+    // 2026-05-06 #4: renderer-roughness boost is the right level of
+    // fidelity rather than a separate sim field; real pseudomorphs
+    // vary widely between dense and porous, and the visual cue (less
+    // metallic luster, more matte surface) is what reads to the
+    // viewer.
+    if (isCdrPseudomorph) {
+      roughness = Math.min(1.0, roughness + 0.18);
+    }
+    // Q4 — perimorph cast. When a perimorph_eligible crystal has
+    // dissolved, it persists as a hollow shell (Cumbria/Cornwall
+    // quartz-after-fluorite type, Cave-in-Rock calcite-after-fluorite).
+    // The mesh body is the inherited (Q3a) outline; the material is
+    // translucent + double-sided so the viewer reads the void inside.
+    // metalness goes to 0 (luster is gone), roughness pushes to nearly
+    // matte (etched cast surface).
+    const isPerimorphCast = crystal.dissolved && crystal.perimorph_eligible;
+    const matOpts: any = {
       color: _topoParseColor(colorStr),
-      roughness,
-      metalness,
-    });
+      roughness: isPerimorphCast ? Math.min(1.0, roughness + 0.25) : roughness,
+      metalness: isPerimorphCast ? 0.0 : metalness,
+    };
+    if (isPerimorphCast) {
+      matOpts.transparent = true;
+      matOpts.opacity = 0.42;
+      matOpts.side = THREE.DoubleSide;
+    }
+    const mat = new THREE.MeshStandardMaterial(matOpts);
     _applyCavityClip(mat, state.clipUniforms);
 
     const mesh = new THREE.Mesh(geom, mat);
@@ -1162,7 +1232,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any) {
     // crystals don't shrink below visible.
     const cLen = Math.max(2.0, crystal.c_length_mm);
     const aWid = Math.max(1.5, crystal.a_width_mm);
-    if (token === 'cube' || token === 'octahedron' || token === 'rhombic_dodec' || token === 'dodecahedron') {
+    if (token === 'cube' || token === 'octahedron' || token === 'rhombic_dodec' || token === 'dodecahedron' || token === 'snowball') {
       mesh.scale.set(cLen, cLen, cLen);
     } else {
       mesh.scale.set(aWid, cLen, aWid);

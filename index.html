@@ -4767,7 +4767,89 @@ let timeScale = 5.0;
 //        pegmatite / cooling scenarios should drift less since their
 //        nucleation candidates are mostly outside this 4-engine set.
 //        Drift documented per-scenario in commit message.
-const SIM_VERSION = 56;
+//   v57 — Paragenesis Q2a: pseudomorph routes table + Crystal CDR
+//        fields (May 2026). Per Putnis 2002/2009 canonical CDR
+//        framework.
+//
+//        18 documented coupled-dissolution-precipitation routes
+//        populate PSEUDOMORPH_ROUTES in js/26-mineral-paragenesis.ts:
+//          Sulfide oxidation: pyrite/marcasite -> goethite/
+//             lepidocrocite, sphalerite -> smithsonite/aurichalcite/
+//             rosasite, galena -> cerussite/anglesite, cobaltite ->
+//             erythrite, nickeline -> annabergite, arsenopyrite ->
+//             scorodite
+//          Cu carbonate/silicate cascade: azurite -> malachite/
+//             chrysocolla, malachite -> chrysocolla, cuprite ->
+//             malachite/chrysocolla, native_copper -> cuprite
+//          Native silver tarnish: native_silver -> acanthite (Boyle
+//             1968)
+//        Every route shape_preserved=true (boss directive 2026-05-06:
+//        the table is for shape-preserving CDR routes only; non-shape-
+//        preserving overgrowths are ordinary substrate-affinity
+//        entries from Q1b, not pseudomorph routes).
+//
+//        Crystal class gains two fields per boss directive:
+//          cdr_replaces_crystal_id  (default null) — parent
+//             crystal_id when this crystal nucleated via a CDR route
+//          perimorph_eligible       (default false) — true when the
+//             route's shape_preserved flag is on, so Q4 perimorph
+//             mechanic can treat the crystal as a candidate cast if
+//             the parent later fully dissolves (per boss: schema
+//             anticipates Q4 even before the renderer wires it)
+//
+//        Detection: sim.nucleate parses the position string AFTER Q1c
+//        substrate-pick has set it ("on dissolved X #N", "pseudomorph
+//        after X #N", "on weathering X #N", or even "on X #N" when
+//        the pair is documented), looks up (host.mineral, this.mineral)
+//        in PSEUDOMORPH_ROUTES, and tags the crystal. The position
+//        string itself is unchanged — engines keep their narrative
+//        qualifiers.
+//
+//        Q3 renderer will read cdr_replaces_crystal_id to inherit
+//        parent outline (malachite-after-azurite renders with the
+//        azurite cube silhouette). Q4 renderer will read
+//        perimorph_eligible to draw the cast when the host fully
+//        dissolves.
+//
+//        Verification: v56 -> v57 byte-identical across all 20
+//        seed-42 scenarios (CDR tagging is metadata only — no
+//        chemistry change, no nucleation-gate change).
+//   v58 — Paragenesis Q5: snowball barite habit (May 2026, per
+//        boss directive 2026-05-06 — sphere primitive evocative
+//        enough of the final form for v1; radial-spray detail is
+//        v2 polish).
+//
+//        Mechanism: when _nuc_barite finds a sulfide host
+//        (sphalerite / galena / pyrite) AND σ exceeds the Q1c
+//        substrate-affinity-discounted threshold, the new barite
+//        crystal is tagged `habit: 'snowball'`. The 0.7× discount
+//        on sphalerite/galena/pyrite hosts (Q1b table) means
+//        snowball seeds form much more readily than free-wall
+//        barite (which stays gated at the legacy 0.15 probability).
+//        Position string changes from "near X #N" to "on X #N" so
+//        the substrate-affinity discount, CDR detection, and host-
+//        cell inheritance all see the host as a real anchor.
+//
+//        grow_barite preserves habit:'snowball' across growth steps
+//        (rather than getting overwritten by the σ-driven habit
+//        dispatch). a_width_mm = c_length_mm for snowball habit
+//        (uniform — sphere); volume formula treats it as 0.5× the
+//        true sphere volume, but acceptable until vug-fill
+//        calibration drives a refinement.
+//
+//        Renderer: new 'snowball' habit token resolves to
+//        SphereGeometry(0.5, 16, 12) — unit-radius sphere stretched
+//        uniformly to c_length_mm. Cavity-clip from e6bb0a1 handles
+//        the case where a snowball outgrows the cavity (it gets
+//        sliced at the wall like any other crystal).
+//
+//        Calibration drift expected on mvt + bisbee + sweetwater-
+//        type scenarios where sphalerite/galena/pyrite + barite
+//        co-occur. Other scenarios (pegmatite, cooling, supergene
+//        without primary sulfides, etc.) should drift little if at
+//        all since their barite either doesn't form or doesn't have
+//        the sulfide hosts.
+const SIM_VERSION = 58;
 
 // ── 18-constants.js ──
 
@@ -7198,8 +7280,80 @@ const EPITAXY_PAIRS = new Set([
     'pyrite>sphalerite', // reverse direction
     'marcasite>sphalerite', // reverse direction
 ]);
-// Empty in Q1a. Populated in Q2.
-const PSEUDOMORPH_ROUTES = [];
+// Q2a: populated. Documented coupled-dissolution-precipitation (CDR)
+// routes per Putnis 2002 (Min Mag 66) and 2009 (RiMG 70). Each entry
+// describes a parent-child replacement where the parent dissolves at
+// a sharp interface, the child precipitates from the local
+// supersaturated film, and (for shape_preserved=true) the child
+// inherits the parent's external form.
+//
+// Per boss 2026-05-06: every entry is shape_preserved=true since
+// the documented MVT/supergene routes all preserve outline. Routes
+// where the new mineral grows with its own habit (no outline
+// inheritance) wouldn't make this list — they'd just be ordinary
+// substrate-affinity entries, not pseudomorph routes.
+//
+// Triggers are descriptive labels matching the engine's dissolution
+// dispatch mode where applicable (oxidative / acid / low_co3 /
+// thermal / silica_pulse / sulfidation), so future Q3+ logic can
+// align Q1e's dissolutionMode with the route's expected trigger.
+const PSEUDOMORPH_ROUTES = [
+    // ---- Sulfide oxidation routes ----
+    { parent: 'pyrite', child: 'goethite', trigger: 'oxidative', shape_preserved: true }, // FeS2 -> FeOOH (the canonical "limonite cube" pseudomorph)
+    { parent: 'marcasite', child: 'goethite', trigger: 'oxidative', shape_preserved: true },
+    { parent: 'pyrite', child: 'lepidocrocite', trigger: 'oxidative', shape_preserved: true }, // less common Fe-OOH polymorph
+    { parent: 'sphalerite', child: 'smithsonite', trigger: 'oxidative', shape_preserved: true }, // ZnS -> ZnCO3 (supergene Zn cap)
+    { parent: 'sphalerite', child: 'aurichalcite', trigger: 'oxidative', shape_preserved: true },
+    { parent: 'sphalerite', child: 'rosasite', trigger: 'oxidative', shape_preserved: true },
+    { parent: 'galena', child: 'cerussite', trigger: 'acid', shape_preserved: true }, // PbS -> PbCO3
+    { parent: 'galena', child: 'anglesite', trigger: 'oxidative', shape_preserved: true }, // PbS -> PbSO4
+    { parent: 'cobaltite', child: 'erythrite', trigger: 'oxidative', shape_preserved: true }, // CoAsS -> Co arsenate (Schneeberg/Bou Azzer)
+    { parent: 'nickeline', child: 'annabergite', trigger: 'oxidative', shape_preserved: true }, // NiAs -> Ni arsenate
+    { parent: 'arsenopyrite', child: 'scorodite', trigger: 'oxidative', shape_preserved: true }, // FeAsS -> Fe arsenate
+    // ---- Cu carbonate / silicate cascade ----
+    { parent: 'azurite', child: 'malachite', trigger: 'low_co3', shape_preserved: true }, // Putnis canonical CDR — Cu2+ stays, CO3 drops
+    { parent: 'azurite', child: 'chrysocolla', trigger: 'silica_pulse', shape_preserved: true }, // Bisbee signature
+    { parent: 'malachite', child: 'chrysocolla', trigger: 'silica_pulse', shape_preserved: true },
+    { parent: 'cuprite', child: 'malachite', trigger: 'low_co3', shape_preserved: true },
+    { parent: 'cuprite', child: 'chrysocolla', trigger: 'silica_pulse', shape_preserved: true },
+    { parent: 'native_copper', child: 'cuprite', trigger: 'oxidative', shape_preserved: true }, // Cu(s) -> Cu2O surface skin
+    // ---- Native silver tarnish ----
+    { parent: 'native_silver', child: 'acanthite', trigger: 'sulfidation', shape_preserved: true }, // Ag(s) + S2- -> Ag2S (Boyle 1968)
+];
+// Look up a CDR route for a given parent-child pair. Returns null
+// when the pair isn't documented. Called by sim.nucleate to tag a
+// newly-nucleated crystal with cdr_replaces_crystal_id when its
+// position string identifies a parent that's dissolving/dissolved
+// AND the parent-child pair is in PSEUDOMORPH_ROUTES.
+function findPseudomorphRoute(parent, child) {
+    for (const r of PSEUDOMORPH_ROUTES) {
+        if (r.parent === parent && r.child === child)
+            return r;
+    }
+    return null;
+}
+// Parse a position string for the host mineral + crystal_id.
+// Position strings carry diverse narrative qualifiers ("on dissolved
+// X #N", "on weathering X #N (oxidized)", "pseudomorph after X #N",
+// "adjacent to X #N", "on X #N", etc.) — this helper extracts the
+// host's identity by anchoring on the `#<id>` token and capturing
+// the word immediately preceding it (which is always the mineral
+// name in the engine-constructed strings). Returns null when no
+// host can be parsed (e.g. position = 'vug wall').
+function parsePositionHost(position, crystals) {
+    if (!position || typeof position !== 'string')
+        return null;
+    // Anchor on '<word> #<digits>' — robust against "on dissolved X",
+    // "pseudomorph after X", "on weathering X #N (qualifier)", etc.
+    // The mineral name is whatever word lands immediately before #N.
+    const m = position.match(/([a-z_]+)\s+#(\d+)/i);
+    if (!m)
+        return null;
+    const hostMineral = m[1].toLowerCase();
+    const hostId = parseInt(m[2], 10);
+    const host = crystals.find(c => c.crystal_id === hostId);
+    return { hostMineral, host: host || null };
+}
 // Look up the σ-discount factor for a host -> nucleating-mineral
 // pair. Returns 1.0 (no discount) when the pair isn't documented.
 // Used by VugSimulator._sigmaDiscountForPosition: each engine first
@@ -7366,6 +7520,18 @@ class Crystal {
         // v28 dehydration tracking — counts steps in a dry environment
         // for crystals listed in DEHYDRATION_TRANSITIONS.
         this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;
+        // Q2a paragenesis tracking — set by sim.nucleate when this
+        // crystal is born via a CDR (coupled dissolution-precipitation)
+        // route per Putnis 2002/2009. cdr_replaces_crystal_id points to
+        // the parent crystal whose dissolution fed this nucleation;
+        // perimorph_eligible flags shape_preserved=true routes (per
+        // boss directive 2026-05-06: schema anticipates Q4 perimorph
+        // mechanic even before renderer wires it). Q3 renderer reads
+        // cdr_replaces_crystal_id to inherit parent outline; Q4 renderer
+        // uses perimorph_eligible to decide if the crystal should
+        // persist as a hollow cast when later dissolved.
+        this.cdr_replaces_crystal_id = opts.cdr_replaces_crystal_id ?? null;
+        this.perimorph_eligible = opts.perimorph_eligible ?? false;
     }
     add_zone(zone) {
         // Apply time compression — more geological time per step = thicker zones
@@ -7392,6 +7558,14 @@ class Crystal {
             this.a_width_mm = this.c_length_mm * 0.15;
         else if (this.habit === 'rhombohedral')
             this.a_width_mm = this.c_length_mm * 0.8;
+        // Q5 — snowball habit (Sweetwater-style barite radiating from a
+        // sulfide seed): rendered as a sphere primitive. a_width_mm =
+        // c_length_mm so the volume formula (4/3)π × c × a² produces an
+        // approximately spherical volume (off by 2× from a true sphere
+        // but consistent with how cubic habits are accounted; refine in
+        // v2 if vug-fill calibration shifts too far).
+        else if (this.habit === 'snowball')
+            this.a_width_mm = this.c_length_mm;
         else
             this.a_width_mm = this.c_length_mm * 0.5;
     }
@@ -13616,7 +13790,15 @@ function grow_barite(crystal, conditions, step) {
     if (rate < 0.1)
         return null;
     let habit_note;
-    if (excess > 1.5) {
+    if (crystal.habit === 'snowball') {
+        // Q5 — snowball habit set at nucleation; preserved across growth
+        // steps so the population-level epitaxy aggregate keeps its
+        // spherical-envelope rendering rather than getting overwritten by
+        // the σ-driven prismatic/cockscomb/bladed/tabular dispatch below.
+        crystal.dominant_forms = ['radiating bladed sphere', 'on sulfide seed core'];
+        habit_note = 'snowball barite — population-level epitaxy on a sulfide seed (Sweetwater type)';
+    }
+    else if (excess > 1.5) {
         crystal.habit = 'prismatic';
         crystal.dominant_forms = ['stubby prisms', 'vein-fill habit'];
         habit_note = 'stubby prismatic barite, vein-fill';
@@ -18187,6 +18369,26 @@ Object.assign(VugSimulator.prototype, {
         // Post-fix the roll happens once here per twin_law in
         // data/minerals.json, matching declared probability semantics.
         this._rollSpontaneousTwin(crystal);
+        // Q2a — paragenesis CDR tagging. If the position string identifies
+        // a host crystal AND (host.mineral, this.mineral) matches a
+        // documented PSEUDOMORPH_ROUTES entry, tag this crystal as a CDR
+        // pseudomorph: cdr_replaces_crystal_id points to the host;
+        // perimorph_eligible flags shape_preserved=true routes for Q4. The
+        // host doesn't need to be dissolved at this moment — the position
+        // string already encoded the engine's intent ("on dissolved X",
+        // "pseudomorph after X", "on weathering X", or even "on X" when
+        // the route is documented). Q3 renderer reads cdr_replaces_crystal_id
+        // to inherit parent outline; Q4 renderer reads perimorph_eligible.
+        {
+            const parsed = parsePositionHost(position, this.crystals);
+            if (parsed && parsed.host) {
+                const route = findPseudomorphRoute(parsed.host.mineral, mineral);
+                if (route) {
+                    crystal.cdr_replaces_crystal_id = parsed.host.crystal_id;
+                    crystal.perimorph_eligible = route.shape_preserved;
+                }
+            }
+        }
         this.crystals.push(crystal);
         return crystal;
     },
@@ -18286,13 +18488,10 @@ Object.assign(VugSimulator.prototype, {
     // or undocumented host). 0.5 = strong epitaxy / strong CDR. 0.7 =
     // facet-selective heterogeneous nucleation.
     _sigmaDiscountForPosition(mineral, position) {
-        if (!position || typeof position !== 'string')
+        const parsed = parsePositionHost(position, this.crystals);
+        if (!parsed)
             return 1.0;
-        const m = position.match(/(?:on|after|adjacent to|over|pseudomorph after|weathering)\s+(\w+)/i);
-        if (!m)
-            return 1.0;
-        const hostMineral = m[1];
-        return paragenesisDiscount(hostMineral, mineral);
+        return paragenesisDiscount(parsed.hostMineral, mineral);
     },
     _assignWallCell(position) {
         // Host-substrate overgrowths inherit the host's cell; free-wall
@@ -19759,21 +19958,47 @@ function _nucleateClass_silicate(sim) {
 // Phase B15 of PROPOSAL-MODULAR-REFACTOR.
 function _nuc_barite(sim) {
     const sigma_brt = sim.conditions.supersaturation_barite();
-    if (sigma_brt > 1.0 && !sim._atNucleationCap('barite')) {
-        if (rng.random() < 0.15) {
-            let pos = 'vug wall';
-            const active_gal_brt = sim.crystals.filter(c => c.mineral === 'galena' && c.active);
-            const active_sph_brt = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
-            if (active_gal_brt.length && rng.random() < 0.3) {
-                pos = `near galena #${active_gal_brt[0].crystal_id}`;
-            }
-            else if (active_sph_brt.length && rng.random() < 0.2) {
-                pos = `near sphalerite #${active_sph_brt[0].crystal_id}`;
-            }
-            const c = sim.nucleate('barite', pos, sigma_brt);
-            sim.log.push(`  ✦ NUCLEATION: ⚪ Barite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brt.toFixed(2)}, Ba=${sim.conditions.fluid.Ba.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — heavy spar, MVT gangue`);
-        }
+    if (sim._atNucleationCap('barite'))
+        return;
+    // Q5 — snowball substrate pick. When a sulfide host (sphalerite/
+    // galena/pyrite) is available, this barite is a snowball seed
+    // (Sweetwater-type radiating-epitaxy aggregate). Use 'on' not
+    // 'near' so the substrate-affinity discount + CDR detection +
+    // _assignWallCell host-inheritance all see the host. Bare-wall
+    // barite stays gated at the legacy 0.15 probability.
+    let pos = 'vug wall';
+    let snowball = false;
+    const active_sph_brt = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
+    const active_gal_brt = sim.crystals.filter(c => c.mineral === 'galena' && c.active);
+    const active_py_brt = sim.crystals.filter(c => c.mineral === 'pyrite' && c.active);
+    if (active_sph_brt.length && rng.random() < 0.4) {
+        pos = `on sphalerite #${active_sph_brt[0].crystal_id}`;
+        snowball = true;
     }
+    else if (active_gal_brt.length && rng.random() < 0.3) {
+        pos = `on galena #${active_gal_brt[0].crystal_id}`;
+        snowball = true;
+    }
+    else if (active_py_brt.length && rng.random() < 0.2) {
+        pos = `on pyrite #${active_py_brt[0].crystal_id}`;
+        snowball = true;
+    }
+    // σ-discount via Q1c paragenesis table (barite has 0.7× entries on
+    // sphalerite/galena/pyrite hosts).
+    const discount = sim._sigmaDiscountForPosition('barite', pos);
+    if (sigma_brt <= 1.0 * discount)
+        return;
+    // Free-wall barite stays gated at low probability (~one nucleation
+    // per ~7 steps when σ is already over threshold). Snowball seeds
+    // bypass this gate — when the substrate aligns, the aggregate
+    // forms.
+    if (!snowball && rng.random() >= 0.15)
+        return;
+    const c = sim.nucleate('barite', pos, sigma_brt);
+    if (snowball)
+        c.habit = 'snowball';
+    const tag = snowball ? ' (snowball seed)' : '';
+    sim.log.push(`  ✦ NUCLEATION: ⚪ Barite #${c.crystal_id} on ${c.position}${tag} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brt.toFixed(2)}, Ba=${sim.conditions.fluid.Ba.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — heavy spar, MVT gangue`);
     // Celestine nucleation — the Sr sequestration mineral; pale celestial
     // blue. Substrate priority: existing barite (celestobarite-barytocelestine
     // pair) > vug wall.
@@ -30603,6 +30828,12 @@ function _habitGeomToken(habit) {
         return 'rhombic_dodec';
     if (h === 'dodecahedral')
         return 'dodecahedron';
+    // Q5 — snowball habit (Sweetwater barite radiating from a sulfide
+    // seed). Rendered as a uniform sphere primitive per boss directive
+    // 2026-05-06 ("the geometry of a sphere is evocative enough of the
+    // final form" for v1; radial-spray detail is v2 polish).
+    if (h === 'snowball')
+        return 'snowball';
     if (h === 'botryoidal' || h === 'reniform' || h === 'mammillary' || h === 'globular')
         return 'botryoidal';
     if (h === 'dendritic' || h === 'arborescent')
@@ -30918,6 +31149,13 @@ function _buildHabitGeom(token) {
             return new THREE.BoxGeometry(0.8, 0.8, 0.8);
         case 'octahedron':
             return new THREE.OctahedronGeometry(0.55, 0);
+        case 'snowball':
+            // Q5 — population-level epitaxy aggregate (boss-approved sphere
+            // primitive). Radius 0.5 → diameter 1.0 → unit-scale sphere
+            // that the per-mesh isometric scale dispatch stretches to
+            // c_length_mm uniform. 16x12 segmentation gives a smooth-
+            // enough silhouette without the vertex cost of 32x16.
+            return new THREE.SphereGeometry(0.5, 16, 12);
         case 'rhombic_dodec':
             // Garnet-style 12 rhombic faces. Phase E5 batch 3.
             return _makeRhombicDodecahedron();
@@ -31131,7 +31369,7 @@ function _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, n
         sNz /= nLen;
         const sOffset = sCLen * 0.5;
         const satMesh = new THREE.Mesh(geom, mat);
-        if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron') {
+        if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron' || geomToken === 'snowball') {
             satMesh.scale.set(sCLen, sCLen, sCLen);
         }
         else {
@@ -31180,9 +31418,16 @@ function _topoCrystalsSignature(sim) {
         return '';
     const parts = [];
     for (const c of sim.crystals) {
-        if (!c || c.dissolved)
+        if (!c)
             continue;
-        parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${c.wall_ring_index}:${c.wall_center_cell}`);
+        // Q4: dissolved crystals normally drop from the scene, BUT a
+        // dissolved crystal flagged perimorph_eligible persists as a
+        // hollow cast — its outline is the geological signature. Include
+        // such casts in the signature so the cache busts when one
+        // appears (and so its mesh gets built in _topoSyncCrystalMeshes).
+        if (c.dissolved && !c.perimorph_eligible)
+            continue;
+        parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${c.wall_ring_index}:${c.wall_center_cell}:${c.dissolved ? 'd' : 'a'}`);
     }
     return parts.join('|');
 }
@@ -31213,7 +31458,14 @@ function _topoSyncCrystalMeshes(state, sim, wall) {
     const N = wall.cells_per_ring;
     const initR = wall.initial_radius_mm || 25;
     for (const crystal of sim.crystals) {
-        if (!crystal || crystal.dissolved)
+        if (!crystal)
+            continue;
+        // Q4 — dissolved crystals normally drop from the scene, BUT a
+        // dissolved crystal flagged perimorph_eligible (Q2a tagged via
+        // shape-preserving CDR route) persists as a hollow cast. The
+        // mesh body is the inherited shape; the material is translucent
+        // double-sided so the user reads the void inside the shell.
+        if (crystal.dissolved && !crystal.perimorph_eligible)
             continue;
         let ringIdx = crystal.wall_ring_index;
         if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount)
@@ -31247,8 +31499,28 @@ function _topoSyncCrystalMeshes(state, sim, wall) {
         // points from anchor toward origin.
         const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
         const nx = -ax / len, ny = -ay / len, nz = -az / len;
+        // Q3a — CDR pseudomorph outline inheritance. When a crystal was
+        // born via a coupled-dissolution-precipitation route (Q2a tagged
+        // it with cdr_replaces_crystal_id), inherit the parent's habit
+        // for the geometry primitive — malachite-after-azurite renders
+        // with the azurite cube silhouette filled in malachite's color;
+        // goethite-after-pyrite renders as a "limonite cube" not a free
+        // botryoidal blob. Material color stays the child's. Per Putnis
+        // 2002/2009: CDR preserves external form because the dissolution-
+        // precipitation interface is sharp on scales below the precipitate
+        // grain size. The sim already tags eligible crystals (Q2a); the
+        // renderer just consumes the pointer.
+        let habitForGeom = crystal.habit;
+        let isCdrPseudomorph = false;
+        if (crystal.cdr_replaces_crystal_id != null) {
+            const parent = sim.crystals.find((c) => c.crystal_id === crystal.cdr_replaces_crystal_id);
+            if (parent && parent.habit) {
+                habitForGeom = parent.habit;
+                isCdrPseudomorph = true;
+            }
+        }
         // Pick the habit primitive and cache it.
-        const token = _habitGeomToken(crystal.habit);
+        const token = _habitGeomToken(habitForGeom);
         let geom = state.geomCache.get(token);
         if (!geom) {
             geom = _buildHabitGeom(token);
@@ -31262,12 +31534,37 @@ function _topoSyncCrystalMeshes(state, sim, wall) {
         const colorStr = (spec && spec.class_color) || '#d2691e';
         const klass = spec && spec.class;
         const metalness = (klass === 'sulfide' || klass === 'native') ? 0.45 : 0.08;
-        const roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
-        const mat = new THREE.MeshStandardMaterial({
+        let roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
+        // Q3a porosity boost for CDR pseudomorphs — Putnis 2009 emphasizes
+        // that CDR products are typically porous (volume mismatch
+        // accommodation between parent and child phases). Boss directive
+        // 2026-05-06 #4: renderer-roughness boost is the right level of
+        // fidelity rather than a separate sim field; real pseudomorphs
+        // vary widely between dense and porous, and the visual cue (less
+        // metallic luster, more matte surface) is what reads to the
+        // viewer.
+        if (isCdrPseudomorph) {
+            roughness = Math.min(1.0, roughness + 0.18);
+        }
+        // Q4 — perimorph cast. When a perimorph_eligible crystal has
+        // dissolved, it persists as a hollow shell (Cumbria/Cornwall
+        // quartz-after-fluorite type, Cave-in-Rock calcite-after-fluorite).
+        // The mesh body is the inherited (Q3a) outline; the material is
+        // translucent + double-sided so the viewer reads the void inside.
+        // metalness goes to 0 (luster is gone), roughness pushes to nearly
+        // matte (etched cast surface).
+        const isPerimorphCast = crystal.dissolved && crystal.perimorph_eligible;
+        const matOpts = {
             color: _topoParseColor(colorStr),
-            roughness,
-            metalness,
-        });
+            roughness: isPerimorphCast ? Math.min(1.0, roughness + 0.25) : roughness,
+            metalness: isPerimorphCast ? 0.0 : metalness,
+        };
+        if (isPerimorphCast) {
+            matOpts.transparent = true;
+            matOpts.opacity = 0.42;
+            matOpts.side = THREE.DoubleSide;
+        }
+        const mat = new THREE.MeshStandardMaterial(matOpts);
         _applyCavityClip(mat, state.clipUniforms);
         const mesh = new THREE.Mesh(geom, mat);
         // Scale: c-axis along Y in the unit primitive → scale Y by
@@ -31288,7 +31585,7 @@ function _topoSyncCrystalMeshes(state, sim, wall) {
         // crystals don't shrink below visible.
         const cLen = Math.max(2.0, crystal.c_length_mm);
         const aWid = Math.max(1.5, crystal.a_width_mm);
-        if (token === 'cube' || token === 'octahedron' || token === 'rhombic_dodec' || token === 'dodecahedron') {
+        if (token === 'cube' || token === 'octahedron' || token === 'rhombic_dodec' || token === 'dodecahedron' || token === 'snowball') {
             mesh.scale.set(cLen, cLen, cLen);
         }
         else {

@@ -103,6 +103,18 @@ class Crystal {
     // v28 dehydration tracking — counts steps in a dry environment
     // for crystals listed in DEHYDRATION_TRANSITIONS.
     this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;
+    // Q2a paragenesis tracking — set by sim.nucleate when this
+    // crystal is born via a CDR (coupled dissolution-precipitation)
+    // route per Putnis 2002/2009. cdr_replaces_crystal_id points to
+    // the parent crystal whose dissolution fed this nucleation;
+    // perimorph_eligible flags shape_preserved=true routes (per
+    // boss directive 2026-05-06: schema anticipates Q4 perimorph
+    // mechanic even before renderer wires it). Q3 renderer reads
+    // cdr_replaces_crystal_id to inherit parent outline; Q4 renderer
+    // uses perimorph_eligible to decide if the crystal should
+    // persist as a hollow cast when later dissolved.
+    this.cdr_replaces_crystal_id = opts.cdr_replaces_crystal_id ?? null;
+    this.perimorph_eligible = opts.perimorph_eligible ?? false;
   }
 
   add_zone(zone) {
@@ -125,6 +137,13 @@ class Crystal {
     else if (this.habit === 'tabular') this.a_width_mm = this.c_length_mm * 1.5;
     else if (this.habit === 'acicular') this.a_width_mm = this.c_length_mm * 0.15;
     else if (this.habit === 'rhombohedral') this.a_width_mm = this.c_length_mm * 0.8;
+    // Q5 — snowball habit (Sweetwater-style barite radiating from a
+    // sulfide seed): rendered as a sphere primitive. a_width_mm =
+    // c_length_mm so the volume formula (4/3)π × c × a² produces an
+    // approximately spherical volume (off by 2× from a true sphere
+    // but consistent with how cubic habits are accounted; refine in
+    // v2 if vug-fill calibration shifts too far).
+    else if (this.habit === 'snowball') this.a_width_mm = this.c_length_mm;
     else this.a_width_mm = this.c_length_mm * 0.5;
   }
 
