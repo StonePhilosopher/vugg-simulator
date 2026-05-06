@@ -30552,7 +30552,12 @@ function _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, n
         sNz /= nLen;
         const sOffset = sCLen * 0.5;
         const satMesh = new THREE.Mesh(geom, mat);
-        satMesh.scale.set(sAWid, sCLen, sAWid);
+        if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron') {
+            satMesh.scale.set(sCLen, sCLen, sCLen);
+        }
+        else {
+            satMesh.scale.set(sAWid, sCLen, sAWid);
+        }
         satMesh.position.set(ox + sNx * sOffset, oy + sNy * sOffset, oz + sNz * sOffset);
         targetVec.set(sNx, sNy, sNz);
         satMesh.quaternion.setFromUnitVectors(upVec, targetVec);
@@ -30687,9 +30692,24 @@ function _topoSyncCrystalMeshes(state, sim, wall) {
         // dotted with macro-crystals rather than dusted with invisible
         // ones. Aesthetic-over-accurate trade-off; E4 can revisit once
         // the camera supports zoom-into-cavity for true scale.
+        //
+        // Isometric tokens (cube, octahedron, rhombic_dodec) override to
+        // uniform scale: the crystal-side `a_width_mm = c × 0.5` fallback
+        // in 27-geometry-crystal.ts treats every habit not in its
+        // {prismatic, tabular, acicular, rhombohedral} set as 2:1 elongate,
+        // so a fluorite cube ends up rendered as a 2:1 rectangle. Geologically
+        // wrong (cubic-system crystals are 1:1:1 by definition); the dispatch
+        // is part of the v48 baseline so we override at the renderer rather
+        // than touching the sim. cLen is the larger floor so isometric
+        // crystals don't shrink below visible.
         const cLen = Math.max(2.0, crystal.c_length_mm);
         const aWid = Math.max(1.5, crystal.a_width_mm);
-        mesh.scale.set(aWid, cLen, aWid);
+        if (token === 'cube' || token === 'octahedron' || token === 'rhombic_dodec' || token === 'dodecahedron') {
+            mesh.scale.set(cLen, cLen, cLen);
+        }
+        else {
+            mesh.scale.set(aWid, cLen, aWid);
+        }
         mesh.renderOrder = 1;
         // Position the BASE of the primitive at the anchor (instead of
         // the centroid), so the crystal projects into the cavity rather
