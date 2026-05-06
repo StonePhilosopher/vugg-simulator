@@ -536,5 +536,16 @@
 //        credits. descloizite + mottramite have no inline
 //        dissolution credit at all and stay absent from the table.
 //        76/~185 sites total now table-mediated.
-const SIM_VERSION = 42;
+//   v43 — Phase 1e migration batch 5: silicate (single-mode subset)
+//        (May 2026). 17 inline credits removed across 10 minerals
+//        (quartz, feldspar, albite, topaz, apophyllite, beryl,
+//        emerald, aquamarine, morganite, heliodor). The five
+//        beryl-family variants share a `_beryl_family_dissolution`
+//        helper; each variant gets its own table entry with the same
+//        rates so the wrapper dispatches correctly via crystal.mineral.
+//        Apophyllite's legacy form used constants with thickness=-2.0;
+//        table rates = constant/2.0 produce identical credits.
+//        chrysocolla has multi-mode dissolution and stays inline.
+//        93/~185 sites total now table-mediated.
+const SIM_VERSION = 43;
 

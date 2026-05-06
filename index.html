@@ -4529,7 +4529,18 @@ let timeScale = 5.0;
 //        credits. descloizite + mottramite have no inline
 //        dissolution credit at all and stay absent from the table.
 //        76/~185 sites total now table-mediated.
-const SIM_VERSION = 42;
+//   v43 — Phase 1e migration batch 5: silicate (single-mode subset)
+//        (May 2026). 17 inline credits removed across 10 minerals
+//        (quartz, feldspar, albite, topaz, apophyllite, beryl,
+//        emerald, aquamarine, morganite, heliodor). The five
+//        beryl-family variants share a `_beryl_family_dissolution`
+//        helper; each variant gets its own table entry with the same
+//        rates so the wrapper dispatches correctly via crystal.mineral.
+//        Apophyllite's legacy form used constants with thickness=-2.0;
+//        table rates = constant/2.0 produce identical credits.
+//        chrysocolla has multi-mode dissolution and stays inline.
+//        93/~185 sites total now table-mediated.
+const SIM_VERSION = 43;
 
 // ── 18-constants.js ──
 
@@ -4815,6 +4826,22 @@ const MINERAL_DISSOLUTION_RATES = {
     clinobisvanite: { Bi: 0.4, V: 0.3 },
     pyromorphite: { Pb: 0.3, P: 0.2, Cl: 0.3 },
     vanadinite: { Pb: 0.3, V: 0.2, Cl: 0.3 },
+    // ---- Silicates (Phase 1e batch 5, v43 — single-mode subset) ----
+    // chrysocolla has multi-mode dissolution (two pH-driven paths at
+    // different effective rates) and stays inline pending per-mode
+    // dispatch.
+    quartz: { SiO2: 0.8 }, // OH⁻-assisted dissolution
+    feldspar: { K: 0.3, Al: 0.05, SiO2: 0.5 }, // most Al stays in kaolinite
+    albite: { Na: 0.3, Al: 0.05, SiO2: 0.3 }, // most Al stays in kaolinite
+    topaz: { Al: 0.3, SiO2: 0.2, F: 0.4 }, // HF-assisted etch
+    apophyllite: { K: 0.25, Ca: 1.0, SiO2: 4.0, F: 0.25 }, // constants/2.0µm: K += 0.5, Ca += 2.0, SiO2 += 8.0, F += 0.5
+    // beryl-family — all five variants share _beryl_family_dissolution helper
+    // (same rates regardless of chromophore), so identical per-mineral entries.
+    beryl: { Be: 0.2, Al: 0.2, SiO2: 0.4 }, // HF-assisted (pH<3, F>30)
+    emerald: { Be: 0.2, Al: 0.2, SiO2: 0.4 },
+    aquamarine: { Be: 0.2, Al: 0.2, SiO2: 0.4 },
+    morganite: { Be: 0.2, Al: 0.2, SiO2: 0.4 },
+    heliodor: { Be: 0.2, Al: 0.2, SiO2: 0.4 },
 };
 // Apply mass balance for a single growth or dissolution zone. Called
 // from VugSimulator._runEngineForCrystal after the engine returns.
@@ -12067,8 +12094,7 @@ function grow_quartz(crystal, conditions, step) {
         if (crystal.total_growth_um > 10) {
             crystal.dissolved = true;
             const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.1);
-            // RECYCLING: dissolved SiO2 returns to fluid
-            conditions.fluid.SiO2 += dissolved_um * 0.8;
+            // Phase 1e: SiO2 credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.quartz.
             // Determine dissolution type
             let note;
             if (conditions.fluid.pH < 4.0 && conditions.fluid.F > 20) {
@@ -12226,9 +12252,8 @@ function grow_feldspar(crystal, conditions, step) {
         if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.5) {
             crystal.dissolved = true;
             const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.08);
-            conditions.fluid.K += dissolved_um * 0.3;
-            conditions.fluid.Al += dissolved_um * 0.05; // most Al stays in kaolinite
-            conditions.fluid.SiO2 += dissolved_um * 0.5;
+            // Phase 1e: K + Al + SiO2 credits via MINERAL_DISSOLUTION_RATES.feldspar.
+            // (Note: Al rate=0.05 reflects most Al staying in kaolinite, not redissolved.)
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -12351,9 +12376,8 @@ function grow_albite(crystal, conditions, step) {
         if (crystal.total_growth_um > 10 && conditions.fluid.pH < 3.0) {
             crystal.dissolved = true;
             const d = Math.min(3.0, crystal.total_growth_um * 0.06);
-            conditions.fluid.Na += d * 0.3;
-            conditions.fluid.Al += d * 0.05; // most Al stays in kaolinite
-            conditions.fluid.SiO2 += d * 0.3;
+            // Phase 1e: Na + Al + SiO2 credits via MINERAL_DISSOLUTION_RATES.albite.
+            // (Note: Al rate=0.05 reflects most Al staying in kaolinite.)
             return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `albite kaolinization (pH ${conditions.fluid.pH.toFixed(1)}) — Na⁺ + SiO₂ released, Al conserved in kaolinite` });
         }
         return null;
@@ -12519,9 +12543,7 @@ function _beryl_family_dissolution(crystal, conditions, step) {
     if (crystal.total_growth_um > 20 && conditions.fluid.pH < 3.0 && conditions.fluid.F > 30) {
         crystal.dissolved = true;
         const d = Math.min(1.5, crystal.total_growth_um * 0.03);
-        conditions.fluid.Be += d * 0.2;
-        conditions.fluid.Al += d * 0.2;
-        conditions.fluid.SiO2 += d * 0.4;
+        // Phase 1e: Be + Al + SiO2 credits via MINERAL_DISSOLUTION_RATES (per beryl-family variant).
         return new GrowthZone({
             step, temperature: conditions.temperature,
             thickness_um: -d, growth_rate: -d,
@@ -12861,9 +12883,7 @@ function grow_topaz(crystal, conditions, step) {
         if (crystal.total_growth_um > 10 && conditions.fluid.pH < 2.0) {
             crystal.dissolved = true;
             const d = Math.min(2.0, crystal.total_growth_um * 0.04);
-            conditions.fluid.Al += d * 0.3;
-            conditions.fluid.SiO2 += d * 0.2;
-            conditions.fluid.F += d * 0.4;
+            // Phase 1e: Al + SiO2 + F credits via MINERAL_DISSOLUTION_RATES.topaz.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -d, growth_rate: -d,
@@ -12944,10 +12964,9 @@ function grow_apophyllite(crystal, conditions, step) {
     if (sigma < 1.0) {
         if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
             crystal.dissolved = true;
-            conditions.fluid.K += 0.5;
-            conditions.fluid.Ca += 2.0;
-            conditions.fluid.SiO2 += 8.0;
-            conditions.fluid.F += 0.5;
+            // Phase 1e: K + Ca + SiO2 + F credits via MINERAL_DISSOLUTION_RATES.apophyllite.
+            // (Legacy used constants with thickness_um=-2.0; table rates =
+            // constant/2.0 give identical credit amounts.)
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -2.0, growth_rate: -2.0,

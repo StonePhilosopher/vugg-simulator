@@ -238,6 +238,23 @@ const MINERAL_DISSOLUTION_RATES: Record<string, Record<string, number>> = {
   clinobisvanite: { Bi: 0.4, V: 0.3 },
   pyromorphite:  { Pb: 0.3, P: 0.2, Cl: 0.3 },
   vanadinite:    { Pb: 0.3, V: 0.2, Cl: 0.3 },
+
+  // ---- Silicates (Phase 1e batch 5, v43 — single-mode subset) ----
+  // chrysocolla has multi-mode dissolution (two pH-driven paths at
+  // different effective rates) and stays inline pending per-mode
+  // dispatch.
+  quartz:       { SiO2: 0.8 },                         // OH⁻-assisted dissolution
+  feldspar:     { K: 0.3, Al: 0.05, SiO2: 0.5 },       // most Al stays in kaolinite
+  albite:       { Na: 0.3, Al: 0.05, SiO2: 0.3 },      // most Al stays in kaolinite
+  topaz:        { Al: 0.3, SiO2: 0.2, F: 0.4 },        // HF-assisted etch
+  apophyllite:  { K: 0.25, Ca: 1.0, SiO2: 4.0, F: 0.25 }, // constants/2.0µm: K += 0.5, Ca += 2.0, SiO2 += 8.0, F += 0.5
+  // beryl-family — all five variants share _beryl_family_dissolution helper
+  // (same rates regardless of chromophore), so identical per-mineral entries.
+  beryl:        { Be: 0.2, Al: 0.2, SiO2: 0.4 },       // HF-assisted (pH<3, F>30)
+  emerald:      { Be: 0.2, Al: 0.2, SiO2: 0.4 },
+  aquamarine:   { Be: 0.2, Al: 0.2, SiO2: 0.4 },
+  morganite:    { Be: 0.2, Al: 0.2, SiO2: 0.4 },
+  heliodor:     { Be: 0.2, Al: 0.2, SiO2: 0.4 },
 };
 
 // Apply mass balance for a single growth or dissolution zone. Called
