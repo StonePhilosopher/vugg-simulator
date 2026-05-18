@@ -5891,7 +5891,79 @@ let timeScale = 5.0;
 //        stalactite_demo — the ones that approach seal). Direction:
 //        crystals get smaller at the seal threshold (correct — the
 //        clamp prevents geometrically-impossible oversizing).
-const SIM_VERSION = 75;
+//   v76 — Habit-stability fix: zone-integrated volume (2026-05-18).
+//        Closes the residual gem_pegmatite (5.75×) and radioactive_pegmatite
+//        (4.07×) overshoots from Proposal D — both ARE now sealed at
+//        exactly vugFill = 1.000. Every high-fill scenario across the
+//        24-scenario sweep now seals cleanly.
+//
+//        The bug: get_vug_fill computed each crystal's ellipsoid volume
+//        from (total_growth_um, current crystal.habit). Growth engines
+//        (e.g. js/50-engines-arsenate.ts:233+237, js/52-engines-carbonate.ts:650,
+//        js/55-engines-molybdate.ts:33+117) override crystal.habit each
+//        step based on σ / zone count / rng. A single crystal flipping
+//        between habit='tabular' (aRatio=1.5, vol coeff (π/6)×2.25=1.178)
+//        and habit='prismatic' (aRatio=0.4, vol coeff (π/6)×0.16=0.0838)
+//        swung get_vug_fill by 14× for that crystal — same total_growth_um,
+//        different volume interpretation. Same mineral mass, wildly
+//        different cavity-fill calc.
+//
+//        Fix (zone-integrated volume): each zone's contribution to the
+//        crystal's volume is locked in at deposition time at the habit's
+//        aRatio AS-OF-THAT-ZONE. Crystal._volume_mm3 accumulates these
+//        shell contributions incrementally:
+//
+//          For a positive zone with habit aRatio r and shell c-range
+//          [c_old, c_new]:
+//            V_shell = (π/6) × r² × (c_new³ - c_old³)
+//            crystal._volume_mm3 += V_shell
+//
+//          For a dissolution zone (c shrinks):
+//            crystal._volume_mm3 *= (c_new / c_old)³
+//
+//        get_vug_fill simply sums crystal._volume_mm3 across active
+//        crystals — no reinterpretation through current habit. The
+//        single source of truth lives on the crystal, frozen as growth
+//        deposits it. Geologically: this is what real zoned crystals
+//        look like — each growth zone has its own habit shape, and the
+//        total volume integrates over zones.
+//
+//        Shared helpers (js/27-geometry-crystal.ts):
+//          _habitAspectRatio(habit) → number
+//          _habitVolCoeff(aRatio) → number = (π/6) × aRatio²
+//
+//        Both add_zone (Crystal method) AND the Proposal D growth-loop
+//        clamp (js/85-simulator.ts) now use these single-source helpers.
+//        Previous duplicated tables across 27-geometry, 85-simulator,
+//        and 85c-simulator-state are consolidated.
+//
+//        a_width_mm is also stabilized: derived from _volume_mm3 and
+//        c_length_mm via a = sqrt(6V / (π × c)). Renderer sees a width
+//        consistent with the crystal's growth history, not the latest
+//        habit's flip. Legacy fallback when _volume_mm3 == 0.
+//
+//        Backward compat: get_vug_fill checks for `c._volume_mm3` and
+//        falls back to the old ellipsoid calc for legacy crystals
+//        (snapshots, tests) that predate this field.
+//
+//        Verification — tools/high_fill_probe.mjs peaks:
+//          scenario              pre-v76    post-v76
+//          gem_pegmatite         5.751   →  1.000  ✓
+//          radioactive_pegmatite 4.066   →  1.000  ✓
+//          sabkha_dolomitization 1.000   →  1.000  ✓
+//          naica_geothermal      1.000   →  1.000  ✓
+//          searles_lake          1.001   →  1.000  ✓
+//          supergene_oxidation   1.000   →  1.000  ✓
+//
+//        Every scenario in the 24-scenario sweep now peaks at ≤ 1.000.
+//        The simulator can no longer report fill > 1.0 — what was a
+//        bookkeeping artifact is now structurally impossible.
+//
+//        Calibration baseline drift: 4 scenarios (gem_pegmatite,
+//        radioactive_pegmatite, searles_lake, supergene_oxidation).
+//        The other 20 scenarios are byte-identical because their fill
+//        stays well below the regime where habit oscillation mattered.
+const SIM_VERSION = 76;
 
 // ── 18-constants.js ──
 
@@ -9697,6 +9769,43 @@ function pickSubstrateForMineral(mineral, crystals, rng) {
 // ============================================================
 // CRYSTAL MODELS
 // ============================================================
+// Habit → aspect ratio (a/c) lookup table — single source of truth.
+// Used by Crystal.add_zone (zone-integrated volume) and by
+// VugSimulator.get_vug_fill (cavity-fill calc).
+//
+// 2026-05-18 habit-stability fix: previously this lookup was duplicated
+// across add_zone (geometry derivation) AND get_vug_fill (volume calc),
+// AND many growth engines (e.g. js/50-engines-arsenate.ts) set crystal.
+// a_width_mm directly with their OWN aRatio values per growth step.
+// When a crystal's habit oscillates between e.g. 'tabular' (aRatio=1.5,
+// vol coeff 1.178) and 'prismatic' (aRatio=0.4, vol coeff 0.0838),
+// get_vug_fill swings 14× for that crystal — without the crystal's
+// actual stored growth changing. gem_pegmatite + radioactive_pegmatite
+// peak vugFill stuck at 5.75× / 4.07× post-Proposal-D because this
+// per-step habit reinterpretation kept inflating cumulative fill.
+//
+// Fix: integrate volume PER ZONE at the habit-as-of-that-zone aspect
+// ratio. Crystal stores _volume_mm3 as a running sum of zone shell
+// volumes. get_vug_fill reads _volume_mm3 directly — no more
+// reinterpreting accumulated total_growth_um through the current habit.
+function _habitAspectRatio(habit) {
+    if (habit === 'prismatic')
+        return 0.4;
+    if (habit === 'tabular')
+        return 1.5;
+    if (habit === 'acicular')
+        return 0.15;
+    if (habit === 'rhombohedral')
+        return 0.8;
+    if (habit === 'snowball')
+        return 1.0;
+    return 0.5;
+}
+// Ellipsoid volume coefficient: V = kVol(aRatio) × c_mm³.
+// V = (4/3)π × (c/2) × (a/2)² = (π/6) × aRatio² × c³.
+function _habitVolCoeff(aRatio) {
+    return (Math.PI / 6) * aRatio * aRatio;
+}
 class GrowthZone {
     constructor(opts = {}) {
         this.step = opts.step ?? 0;
@@ -9735,6 +9844,13 @@ class Crystal {
         this.position = opts.position ?? 'vug wall';
         this.c_length_mm = 0;
         this.a_width_mm = 0;
+        // 2026-05-18 habit-stability fix: zone-integrated volume tracking.
+        // _volume_mm3 accumulates shell volumes from each positive zone using
+        // the habit's aspect ratio AT TIME OF GROWTH. Replaces the previous
+        // pattern of reinterpreting accumulated total_growth_um through the
+        // crystal's CURRENT habit (which oscillates step-to-step in some
+        // engines, causing wild fill swings). See _habitAspectRatio above.
+        this._volume_mm3 = 0;
         this.habit = opts.habit ?? 'prismatic';
         this.dominant_forms = opts.dominant_forms ? [...opts.dominant_forms] : [];
         this.twinned = false;
@@ -9830,26 +9946,43 @@ class Crystal {
             zone.note = (zone.note + ' [phantom boundary — growing over dissolution surface]').trim();
         }
         this.zones.push(zone);
+        // 2026-05-18 habit-stability fix: integrate _volume_mm3 PER ZONE at
+        // the aspect ratio of the habit AS-OF-THIS-ZONE. Stamp the aspect
+        // ratio on the zone itself for snapshot/replay fidelity. Done BEFORE
+        // total_growth_um is mutated so c_old / c_new bracket the zone cleanly.
+        const cOld_mm = this.total_growth_um / 1000.0;
         this.total_growth_um += zone.thickness_um;
-        this.c_length_mm = this.total_growth_um / 1000.0;
-        if (this.habit === 'prismatic')
-            this.a_width_mm = this.c_length_mm * 0.4;
-        else if (this.habit === 'tabular')
-            this.a_width_mm = this.c_length_mm * 1.5;
-        else if (this.habit === 'acicular')
-            this.a_width_mm = this.c_length_mm * 0.15;
-        else if (this.habit === 'rhombohedral')
-            this.a_width_mm = this.c_length_mm * 0.8;
-        // Q5 — snowball habit (Sweetwater-style barite radiating from a
-        // sulfide seed): rendered as a sphere primitive. a_width_mm =
-        // c_length_mm so the volume formula (4/3)π × c × a² produces an
-        // approximately spherical volume (off by 2× from a true sphere
-        // but consistent with how cubic habits are accounted; refine in
-        // v2 if vug-fill calibration shifts too far).
-        else if (this.habit === 'snowball')
-            this.a_width_mm = this.c_length_mm;
-        else
-            this.a_width_mm = this.c_length_mm * 0.5;
+        const cNew_mm = this.total_growth_um / 1000.0;
+        const zoneAspect = _habitAspectRatio(this.habit);
+        zone.aspect_ratio = zoneAspect;
+        if (zone.thickness_um > 0) {
+            // Positive zone — add ellipsoid shell volume at this zone's aspect.
+            //   V = (π/6) × aspect² × (c_new³ - c_old³)
+            const kVol = _habitVolCoeff(zoneAspect);
+            this._volume_mm3 += kVol * (Math.pow(cNew_mm, 3) - Math.pow(cOld_mm, 3));
+        }
+        else if (zone.thickness_um < 0 && cOld_mm > 0) {
+            // Dissolution — scale the whole crystal's volume by (c_new/c_old)³.
+            // Geological intuition: dissolution thins the outer shell uniformly;
+            // since the ellipsoid is shape-similar at all scales, volume scales
+            // as the cube of the linear dimension. Clamp at 0 if total dissolves.
+            const scale = Math.max(0, cNew_mm / cOld_mm);
+            this._volume_mm3 *= scale * scale * scale;
+        }
+        this.c_length_mm = cNew_mm;
+        // a_width_mm: derive from the integrated _volume_mm3 so the renderer
+        // sees a STABLE width matching the crystal's growth history, not the
+        // latest habit's possibly-oscillating ratio. Math: V = (π/6) × a² × c
+        // (from V = (4/3)π × (c/2) × (a/2)²) → a = sqrt(6V / (π × c)).
+        //
+        // Fallback to the legacy habit-based derivation when _volume_mm3 is
+        // zero (no positive zones yet — only dissolution / initial state).
+        if (this._volume_mm3 > 0 && this.c_length_mm > 0) {
+            this.a_width_mm = Math.sqrt((6 * this._volume_mm3) / (Math.PI * this.c_length_mm));
+        }
+        else {
+            this.a_width_mm = this.c_length_mm * _habitAspectRatio(this.habit);
+        }
         // No size cap. Crystals grow to chemistry-true size (boss directive
         // "defer to actual geology" 2026-05-06): in real cavities a crystal
         // that outgrows its container either competes for space, deforms,
@@ -21574,33 +21707,22 @@ class VugSimulator {
                         const vugR = this.conditions.wall.vug_diameter_mm / 2;
                         const cavityVol = (4 / 3) * Math.PI * Math.pow(vugR, 3);
                         const remainingVol = Math.max(0, (1.0 - currentFill) * cavityVol);
-                        // Compute habit width ratio (mirrors get_vug_fill in 85c).
-                        const habit = crystal.habit;
-                        let aRatio;
-                        if (habit === 'prismatic')
-                            aRatio = 0.4;
-                        else if (habit === 'tabular')
-                            aRatio = 1.5;
-                        else if (habit === 'acicular')
-                            aRatio = 0.15;
-                        else if (habit === 'rhombohedral')
-                            aRatio = 0.8;
-                        else if (habit === 'snowball')
-                            aRatio = 1.0;
-                        else
-                            aRatio = 0.5;
-                        // Volume coefficient: V = (4/3)π(c/2)(a/2)² = (4/3)π × (1/2)(aRatio/2)² × c³
-                        // = (π/6) × aRatio² × c³ (with c in mm, V in mm³)
-                        const kVol = (Math.PI / 6) * aRatio * aRatio;
+                        // Single-source-of-truth helpers (defined in 27-geometry-crystal.ts).
+                        // The clamp's deltaV calc matches what Crystal.add_zone will
+                        // increment _volume_mm3 by: shell volume at the habit's aRatio
+                        // AS-OF-THIS-ZONE. Geologically and mathematically consistent
+                        // with the post-2026-05-18 zone-integrated bookkeeping.
+                        const aRatio = _habitAspectRatio(crystal.habit);
+                        const kVol = _habitVolCoeff(aRatio);
                         const cMm_now = crystal.total_growth_um / 1000;
-                        const V_now = kVol * Math.pow(cMm_now, 3);
                         // Projected growth from this zone: zone.thickness_um is in µm,
                         // applied via add_zone() which multiplies by timeScale.
                         // Mirror that here so the cap reflects what will actually land.
                         const projDelta_mm = (zone.thickness_um * timeScale) / 1000;
                         const cMm_proj = cMm_now + projDelta_mm;
-                        const V_proj = kVol * Math.pow(cMm_proj, 3);
-                        const deltaV = V_proj - V_now;
+                        // deltaV = shell volume = kVol × (c_new³ - c_now³). Identical
+                        // to the increment Crystal.add_zone will apply to _volume_mm3.
+                        const deltaV = kVol * (Math.pow(cMm_proj, 3) - Math.pow(cMm_now, 3));
                         if (deltaV > remainingVol) {
                             // Clamp: solve V(c_max) - V(c_now) = remainingVol for c_max
                             //        c_max = (c_now³ + remainingVol/kVol)^(1/3)
@@ -23467,18 +23589,28 @@ Object.assign(VugSimulator.prototype, {
         for (const c of this.crystals) {
             if (!c.active)
                 continue;
-            // Use total_growth_um (uncapped chemistry-tracked size) rather than
-            // c_length_mm directly. v59 capped c_length / a_width at vug_radius
-            // to prevent crystals bursting the wall (BUG-CRYSTALS-CLIP-VUG-WALL.md
-            // Tier-2). Without this fix, the cap would shrink each crystal's
-            // contribution to vug-fill, suppressing the vug-sealed event and
-            // letting the sim run past natural closure — observed as +50% to
-            // +100% total growth on scenarios with previously-oversized crystals
-            // (naica selenite, sabkha aragonite, searles halite, etc.). Reading
-            // total_growth_um keeps the seal behavior identical to v58.
+            // 2026-05-18 habit-stability fix: use the crystal's zone-integrated
+            // _volume_mm3 (set by Crystal.add_zone per shell at the habit aspect
+            // ratio AS-OF-EACH-ZONE). Previously this function recomputed the
+            // entire ellipsoid volume from accumulated total_growth_um × current
+            // habit's aspect ratio — which oscillated 14× per crystal when a
+            // growth engine flipped crystal.habit between e.g. 'tabular'
+            // (aRatio=1.5) and 'prismatic' (aRatio=0.4). Same total_growth_um,
+            // different volume interpretation. The integrated _volume_mm3 is
+            // stable: each zone's contribution is locked in at deposition time
+            // and never reinterpreted. See js/27-geometry-crystal.ts header for
+            // the full design rationale.
+            //
+            // Backward-compat fallback: legacy crystals (snapshots, tests) that
+            // predate _volume_mm3 fall back to the old ellipsoid calc. The
+            // fallback uses total_growth_um (uncapped chemistry-tracked size)
+            // because v59 capped c_length_mm at vug_radius and reading it would
+            // underreport big crystals (BUG-CRYSTALS-CLIP-VUG-WALL.md Tier-2).
+            if (typeof c._volume_mm3 === 'number') {
+                crystalVol += c._volume_mm3;
+                continue;
+            }
             const cMm = c.total_growth_um / 1000;
-            // Derive a_width from the habit ratio (mirrors the formula in
-            // 27-geometry-crystal.ts:add_zone, applied to the uncapped c).
             let aMm;
             if (c.habit === 'prismatic')
                 aMm = cMm * 0.4;

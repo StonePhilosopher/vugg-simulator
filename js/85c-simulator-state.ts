@@ -324,18 +324,28 @@ _diffuseRingState(rate?) {
   let crystalVol = 0;
   for (const c of this.crystals) {
     if (!c.active) continue;
-    // Use total_growth_um (uncapped chemistry-tracked size) rather than
-    // c_length_mm directly. v59 capped c_length / a_width at vug_radius
-    // to prevent crystals bursting the wall (BUG-CRYSTALS-CLIP-VUG-WALL.md
-    // Tier-2). Without this fix, the cap would shrink each crystal's
-    // contribution to vug-fill, suppressing the vug-sealed event and
-    // letting the sim run past natural closure — observed as +50% to
-    // +100% total growth on scenarios with previously-oversized crystals
-    // (naica selenite, sabkha aragonite, searles halite, etc.). Reading
-    // total_growth_um keeps the seal behavior identical to v58.
+    // 2026-05-18 habit-stability fix: use the crystal's zone-integrated
+    // _volume_mm3 (set by Crystal.add_zone per shell at the habit aspect
+    // ratio AS-OF-EACH-ZONE). Previously this function recomputed the
+    // entire ellipsoid volume from accumulated total_growth_um × current
+    // habit's aspect ratio — which oscillated 14× per crystal when a
+    // growth engine flipped crystal.habit between e.g. 'tabular'
+    // (aRatio=1.5) and 'prismatic' (aRatio=0.4). Same total_growth_um,
+    // different volume interpretation. The integrated _volume_mm3 is
+    // stable: each zone's contribution is locked in at deposition time
+    // and never reinterpreted. See js/27-geometry-crystal.ts header for
+    // the full design rationale.
+    //
+    // Backward-compat fallback: legacy crystals (snapshots, tests) that
+    // predate _volume_mm3 fall back to the old ellipsoid calc. The
+    // fallback uses total_growth_um (uncapped chemistry-tracked size)
+    // because v59 capped c_length_mm at vug_radius and reading it would
+    // underreport big crystals (BUG-CRYSTALS-CLIP-VUG-WALL.md Tier-2).
+    if (typeof c._volume_mm3 === 'number') {
+      crystalVol += c._volume_mm3;
+      continue;
+    }
     const cMm = c.total_growth_um / 1000;
-    // Derive a_width from the habit ratio (mirrors the formula in
-    // 27-geometry-crystal.ts:add_zone, applied to the uncapped c).
     let aMm;
     if (c.habit === 'prismatic') aMm = cMm * 0.4;
     else if (c.habit === 'tabular') aMm = cMm * 1.5;

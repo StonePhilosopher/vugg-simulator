@@ -11,6 +11,40 @@
 // CRYSTAL MODELS
 // ============================================================
 
+// Habit → aspect ratio (a/c) lookup table — single source of truth.
+// Used by Crystal.add_zone (zone-integrated volume) and by
+// VugSimulator.get_vug_fill (cavity-fill calc).
+//
+// 2026-05-18 habit-stability fix: previously this lookup was duplicated
+// across add_zone (geometry derivation) AND get_vug_fill (volume calc),
+// AND many growth engines (e.g. js/50-engines-arsenate.ts) set crystal.
+// a_width_mm directly with their OWN aRatio values per growth step.
+// When a crystal's habit oscillates between e.g. 'tabular' (aRatio=1.5,
+// vol coeff 1.178) and 'prismatic' (aRatio=0.4, vol coeff 0.0838),
+// get_vug_fill swings 14× for that crystal — without the crystal's
+// actual stored growth changing. gem_pegmatite + radioactive_pegmatite
+// peak vugFill stuck at 5.75× / 4.07× post-Proposal-D because this
+// per-step habit reinterpretation kept inflating cumulative fill.
+//
+// Fix: integrate volume PER ZONE at the habit-as-of-that-zone aspect
+// ratio. Crystal stores _volume_mm3 as a running sum of zone shell
+// volumes. get_vug_fill reads _volume_mm3 directly — no more
+// reinterpreting accumulated total_growth_um through the current habit.
+function _habitAspectRatio(habit: string): number {
+  if (habit === 'prismatic') return 0.4;
+  if (habit === 'tabular') return 1.5;
+  if (habit === 'acicular') return 0.15;
+  if (habit === 'rhombohedral') return 0.8;
+  if (habit === 'snowball') return 1.0;
+  return 0.5;
+}
+
+// Ellipsoid volume coefficient: V = kVol(aRatio) × c_mm³.
+// V = (4/3)π × (c/2) × (a/2)² = (π/6) × aRatio² × c³.
+function _habitVolCoeff(aRatio: number): number {
+  return (Math.PI / 6) * aRatio * aRatio;
+}
+
 class GrowthZone {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
@@ -53,6 +87,13 @@ class Crystal {
     this.position = opts.position ?? 'vug wall';
     this.c_length_mm = 0;
     this.a_width_mm = 0;
+    // 2026-05-18 habit-stability fix: zone-integrated volume tracking.
+    // _volume_mm3 accumulates shell volumes from each positive zone using
+    // the habit's aspect ratio AT TIME OF GROWTH. Replaces the previous
+    // pattern of reinterpreting accumulated total_growth_um through the
+    // crystal's CURRENT habit (which oscillates step-to-step in some
+    // engines, causing wild fill swings). See _habitAspectRatio above.
+    this._volume_mm3 = 0;
     this.habit = opts.habit ?? 'prismatic';
     this.dominant_forms = opts.dominant_forms ? [...opts.dominant_forms] : [];
     this.twinned = false;
@@ -148,20 +189,43 @@ class Crystal {
       zone.note = (zone.note + ' [phantom boundary — growing over dissolution surface]').trim();
     }
     this.zones.push(zone);
+    // 2026-05-18 habit-stability fix: integrate _volume_mm3 PER ZONE at
+    // the aspect ratio of the habit AS-OF-THIS-ZONE. Stamp the aspect
+    // ratio on the zone itself for snapshot/replay fidelity. Done BEFORE
+    // total_growth_um is mutated so c_old / c_new bracket the zone cleanly.
+    const cOld_mm = this.total_growth_um / 1000.0;
     this.total_growth_um += zone.thickness_um;
-    this.c_length_mm = this.total_growth_um / 1000.0;
-    if (this.habit === 'prismatic') this.a_width_mm = this.c_length_mm * 0.4;
-    else if (this.habit === 'tabular') this.a_width_mm = this.c_length_mm * 1.5;
-    else if (this.habit === 'acicular') this.a_width_mm = this.c_length_mm * 0.15;
-    else if (this.habit === 'rhombohedral') this.a_width_mm = this.c_length_mm * 0.8;
-    // Q5 — snowball habit (Sweetwater-style barite radiating from a
-    // sulfide seed): rendered as a sphere primitive. a_width_mm =
-    // c_length_mm so the volume formula (4/3)π × c × a² produces an
-    // approximately spherical volume (off by 2× from a true sphere
-    // but consistent with how cubic habits are accounted; refine in
-    // v2 if vug-fill calibration shifts too far).
-    else if (this.habit === 'snowball') this.a_width_mm = this.c_length_mm;
-    else this.a_width_mm = this.c_length_mm * 0.5;
+    const cNew_mm = this.total_growth_um / 1000.0;
+    const zoneAspect = _habitAspectRatio(this.habit);
+    zone.aspect_ratio = zoneAspect;
+    if (zone.thickness_um > 0) {
+      // Positive zone — add ellipsoid shell volume at this zone's aspect.
+      //   V = (π/6) × aspect² × (c_new³ - c_old³)
+      const kVol = _habitVolCoeff(zoneAspect);
+      this._volume_mm3 += kVol * (Math.pow(cNew_mm, 3) - Math.pow(cOld_mm, 3));
+    } else if (zone.thickness_um < 0 && cOld_mm > 0) {
+      // Dissolution — scale the whole crystal's volume by (c_new/c_old)³.
+      // Geological intuition: dissolution thins the outer shell uniformly;
+      // since the ellipsoid is shape-similar at all scales, volume scales
+      // as the cube of the linear dimension. Clamp at 0 if total dissolves.
+      const scale = Math.max(0, cNew_mm / cOld_mm);
+      this._volume_mm3 *= scale * scale * scale;
+    }
+    this.c_length_mm = cNew_mm;
+    // a_width_mm: derive from the integrated _volume_mm3 so the renderer
+    // sees a STABLE width matching the crystal's growth history, not the
+    // latest habit's possibly-oscillating ratio. Math: V = (π/6) × a² × c
+    // (from V = (4/3)π × (c/2) × (a/2)²) → a = sqrt(6V / (π × c)).
+    //
+    // Fallback to the legacy habit-based derivation when _volume_mm3 is
+    // zero (no positive zones yet — only dissolution / initial state).
+    if (this._volume_mm3 > 0 && this.c_length_mm > 0) {
+      this.a_width_mm = Math.sqrt(
+        (6 * this._volume_mm3) / (Math.PI * this.c_length_mm),
+      );
+    } else {
+      this.a_width_mm = this.c_length_mm * _habitAspectRatio(this.habit);
+    }
     // No size cap. Crystals grow to chemistry-true size (boss directive
     // "defer to actual geology" 2026-05-06): in real cavities a crystal
     // that outgrows its container either competes for space, deforms,

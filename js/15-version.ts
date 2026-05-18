@@ -1556,5 +1556,77 @@
 //        stalactite_demo — the ones that approach seal). Direction:
 //        crystals get smaller at the seal threshold (correct — the
 //        clamp prevents geometrically-impossible oversizing).
-const SIM_VERSION = 75;
+//   v76 — Habit-stability fix: zone-integrated volume (2026-05-18).
+//        Closes the residual gem_pegmatite (5.75×) and radioactive_pegmatite
+//        (4.07×) overshoots from Proposal D — both ARE now sealed at
+//        exactly vugFill = 1.000. Every high-fill scenario across the
+//        24-scenario sweep now seals cleanly.
+//
+//        The bug: get_vug_fill computed each crystal's ellipsoid volume
+//        from (total_growth_um, current crystal.habit). Growth engines
+//        (e.g. js/50-engines-arsenate.ts:233+237, js/52-engines-carbonate.ts:650,
+//        js/55-engines-molybdate.ts:33+117) override crystal.habit each
+//        step based on σ / zone count / rng. A single crystal flipping
+//        between habit='tabular' (aRatio=1.5, vol coeff (π/6)×2.25=1.178)
+//        and habit='prismatic' (aRatio=0.4, vol coeff (π/6)×0.16=0.0838)
+//        swung get_vug_fill by 14× for that crystal — same total_growth_um,
+//        different volume interpretation. Same mineral mass, wildly
+//        different cavity-fill calc.
+//
+//        Fix (zone-integrated volume): each zone's contribution to the
+//        crystal's volume is locked in at deposition time at the habit's
+//        aRatio AS-OF-THAT-ZONE. Crystal._volume_mm3 accumulates these
+//        shell contributions incrementally:
+//
+//          For a positive zone with habit aRatio r and shell c-range
+//          [c_old, c_new]:
+//            V_shell = (π/6) × r² × (c_new³ - c_old³)
+//            crystal._volume_mm3 += V_shell
+//
+//          For a dissolution zone (c shrinks):
+//            crystal._volume_mm3 *= (c_new / c_old)³
+//
+//        get_vug_fill simply sums crystal._volume_mm3 across active
+//        crystals — no reinterpretation through current habit. The
+//        single source of truth lives on the crystal, frozen as growth
+//        deposits it. Geologically: this is what real zoned crystals
+//        look like — each growth zone has its own habit shape, and the
+//        total volume integrates over zones.
+//
+//        Shared helpers (js/27-geometry-crystal.ts):
+//          _habitAspectRatio(habit) → number
+//          _habitVolCoeff(aRatio) → number = (π/6) × aRatio²
+//
+//        Both add_zone (Crystal method) AND the Proposal D growth-loop
+//        clamp (js/85-simulator.ts) now use these single-source helpers.
+//        Previous duplicated tables across 27-geometry, 85-simulator,
+//        and 85c-simulator-state are consolidated.
+//
+//        a_width_mm is also stabilized: derived from _volume_mm3 and
+//        c_length_mm via a = sqrt(6V / (π × c)). Renderer sees a width
+//        consistent with the crystal's growth history, not the latest
+//        habit's flip. Legacy fallback when _volume_mm3 == 0.
+//
+//        Backward compat: get_vug_fill checks for `c._volume_mm3` and
+//        falls back to the old ellipsoid calc for legacy crystals
+//        (snapshots, tests) that predate this field.
+//
+//        Verification — tools/high_fill_probe.mjs peaks:
+//          scenario              pre-v76    post-v76
+//          gem_pegmatite         5.751   →  1.000  ✓
+//          radioactive_pegmatite 4.066   →  1.000  ✓
+//          sabkha_dolomitization 1.000   →  1.000  ✓
+//          naica_geothermal      1.000   →  1.000  ✓
+//          searles_lake          1.001   →  1.000  ✓
+//          supergene_oxidation   1.000   →  1.000  ✓
+//
+//        Every scenario in the 24-scenario sweep now peaks at ≤ 1.000.
+//        The simulator can no longer report fill > 1.0 — what was a
+//        bookkeeping artifact is now structurally impossible.
+//
+//        Calibration baseline drift: 4 scenarios (gem_pegmatite,
+//        radioactive_pegmatite, searles_lake, supergene_oxidation).
+//        The other 20 scenarios are byte-identical because their fill
+//        stays well below the regime where habit oscillation mattered.
+const SIM_VERSION = 76;
 

@@ -305,27 +305,22 @@ class VugSimulator {
             const vugR = this.conditions.wall.vug_diameter_mm / 2;
             const cavityVol = (4 / 3) * Math.PI * Math.pow(vugR, 3);
             const remainingVol = Math.max(0, (1.0 - currentFill) * cavityVol);
-            // Compute habit width ratio (mirrors get_vug_fill in 85c).
-            const habit = crystal.habit;
-            let aRatio;
-            if (habit === 'prismatic') aRatio = 0.4;
-            else if (habit === 'tabular') aRatio = 1.5;
-            else if (habit === 'acicular') aRatio = 0.15;
-            else if (habit === 'rhombohedral') aRatio = 0.8;
-            else if (habit === 'snowball') aRatio = 1.0;
-            else aRatio = 0.5;
-            // Volume coefficient: V = (4/3)π(c/2)(a/2)² = (4/3)π × (1/2)(aRatio/2)² × c³
-            // = (π/6) × aRatio² × c³ (with c in mm, V in mm³)
-            const kVol = (Math.PI / 6) * aRatio * aRatio;
+            // Single-source-of-truth helpers (defined in 27-geometry-crystal.ts).
+            // The clamp's deltaV calc matches what Crystal.add_zone will
+            // increment _volume_mm3 by: shell volume at the habit's aRatio
+            // AS-OF-THIS-ZONE. Geologically and mathematically consistent
+            // with the post-2026-05-18 zone-integrated bookkeeping.
+            const aRatio = _habitAspectRatio(crystal.habit);
+            const kVol = _habitVolCoeff(aRatio);
             const cMm_now = crystal.total_growth_um / 1000;
-            const V_now = kVol * Math.pow(cMm_now, 3);
             // Projected growth from this zone: zone.thickness_um is in µm,
             // applied via add_zone() which multiplies by timeScale.
             // Mirror that here so the cap reflects what will actually land.
             const projDelta_mm = (zone.thickness_um * timeScale) / 1000;
             const cMm_proj = cMm_now + projDelta_mm;
-            const V_proj = kVol * Math.pow(cMm_proj, 3);
-            const deltaV = V_proj - V_now;
+            // deltaV = shell volume = kVol × (c_new³ - c_now³). Identical
+            // to the increment Crystal.add_zone will apply to _volume_mm3.
+            const deltaV = kVol * (Math.pow(cMm_proj, 3) - Math.pow(cMm_now, 3));
             if (deltaV > remainingVol) {
               // Clamp: solve V(c_max) - V(c_now) = remainingVol for c_max
               //        c_max = (c_now³ + remainingVol/kVol)^(1/3)
