@@ -1,9 +1,10 @@
 # HANDOFF: Path C cascade-gate audit (4 arcs + harness extraction, geology-as-debugger)
 
 > **Authored:** 2026-05-18 by Claude (Sonnet 4.5)
-> **State:** HEAD = `0a15f9c` on `origin/main` (Syntaxswine). SIM_VERSION 73. **238/238 tests green.** Coverage tool: 0 stale, 95 live, 21 dead.
-> **Continues:** `HANDOFF-HIGH-FILL-AND-SIZE-CLASS.md` (terminus `72243d2`). That doc was the high-fill physics + size-class cascade arc; the open backlog item at the top of its §5 ("Path C cascade-gate audit, ~half day") is what this doc covers.
-> **Audience:** next agent picking up whatever the next thread is — the cascade-gate audit closes here for all of its identified targets. Open backlog (§5) is now Proposals B/D/E from the high-fill thread, plus native_sulfur (the lone non-Path-C-pattern deferred target).
+> **State at authoring:** HEAD = `0a15f9c`, SIM_VERSION 73, 238/238 tests green.
+> **Continues:** `HANDOFF-HIGH-FILL-AND-SIZE-CLASS.md` (terminus `72243d2`). That doc was the high-fill physics + size-class cascade arc; the open backlog item at the top of its §5 ("Path C cascade-gate audit, ~half day") is what this doc covered.
+> **Status:** terminal — the next-thread items (Proposals B + D + habit-stability) were completed in the same-day session that followed. **Read `HANDOFF-HIGH-FILL-ARC-COMPLETE.md` next** for the three commits that closed the high-fill physics arc completely (`f4dae0d` + `f9456bb` + `b3cc095`, current HEAD).
+> **Audience:** historical reference for the Path C cascade-gate audit. For current open backlog, see `HANDOFF-HIGH-FILL-ARC-COMPLETE.md` §5.
 
 ---
 
