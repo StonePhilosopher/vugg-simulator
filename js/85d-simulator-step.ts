@@ -183,6 +183,11 @@ Object.assign(VugSimulator.prototype, {
   // inside _atNucleationCap; the 6 high-fill scenarios see the
   // calibration drift documented in the regen baseline.
   this._fillDampener = (vugFill !== undefined) ? _fillDampenerFor(vugFill) : 1.0;
+  // Proposal B (2026-05): stash raw vugFill for selectHabitVariant. The
+  // fill dampener (sigmoid) is the right input for σ gating; the raw fill
+  // is the right input for habit selection (a 0-1 quantity that triggers
+  // can match against directly). Undefined for legacy non-step paths.
+  this._currentVugFill = vugFill;
 
   _nucleateClass_arsenate(this);
   _nucleateClass_borate(this);

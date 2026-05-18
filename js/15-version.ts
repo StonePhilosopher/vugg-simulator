@@ -1433,5 +1433,58 @@
 //        depleting species in bulk view; no canonical scenario fires it).
 //        Deferred until a fumarole / sulfide-weathering-rind scenario
 //        lands that has the right (high-S, low-metal, acidic) signature.
-const SIM_VERSION = 73;
+//   v74 — Proposal B: habit transitions on fill × σ (2026-05-18).
+//        First proposal from the high-fill physics thread to land
+//        AFTER the Path C cascade-gate audit closed. Companion to
+//        Proposals A (sigmoid dampener, v69-or-earlier) and C
+//        (late_stage_propensity gradient, v69).
+//
+//        selectHabitVariant() gains a 5th `localFill` parameter; habit
+//        variant `trigger` strings now match against "high fill" /
+//        "high-fill" / "drusy" / "post-seal" / "low fill" / "low-fill"
+//        keywords. Score bonuses:
+//          - "post-seal" trigger:  +2.0 if fill > 0.95, else -1.5
+//          - "high fill" / "drusy": +1.5 if fill > 0.75, else -1.0
+//          - "low fill":           +0.6 if fill < 0.7,  else -0.4
+//
+//        Three NEW habit variants added (all `vector: "coating"` for the
+//        space-constrained late-stage carpet pattern):
+//          calcite.druzy_crust
+//            — Brazilian amethyst "skunk calcite" late euhedral overgrowths
+//              per Proust & Fontan 2007
+//          quartz.microcrystalline
+//            — chalcedony / agate carpet, boundary-layer-diffusion-limited
+//              microcrystalline SiO2 at late stage
+//          aragonite.botryoidal_crust
+//            — speleothem "cave coral" botryoidal habit
+//
+//        Three EXISTING variants got their triggers extended with "high
+//        fill" keywords (no behavioral change at low fill, more probable
+//        at high fill):
+//          halite.hopper_growth   — Tanaka 2018 hopper geometry under DLA
+//          sylvite.hopper_cube    — same mechanism
+//          borax.cottonball       — Death Valley playa-surface texture
+//        And halite.fibrous_coating gained "high fill" alongside its
+//        existing "efflorescent" trigger.
+//
+//        Backward compat: legacy 4-arg callers (library preview, Three.js
+//        renderer) pass undefined localFill — the new scoring branch is
+//        skipped, picks identical to pre-Proposal-B behavior.
+//
+//        RNG sequence unchanged: the variant selection still consumes
+//        exactly one rng.random() call regardless of which variant scores
+//        highest. Calibration baseline seed42_v73.json byte-identical
+//        to seed42_v74.json (no baseline regen needed) — habit names
+//        shift at high fill but mineral counts + crystal sizes don't.
+//
+//        Wired by: js/85d-simulator-step.ts stashes vugFill on the sim
+//        as this._currentVugFill; js/85b-simulator-nucleate.ts passes
+//        it through to selectHabitVariant.
+//
+//        Refs: proposals/RESEARCH-GROWTH-AT-HIGH-FILL.md §5 (Proposal B
+//        spec), §6 (Recommended path: Tier 2). Boss principle composing
+//        in: "follow nature" — high-fill texture transitions are the
+//        observable downstream of the boundary-layer-diffusion regime
+//        that Proposal A's sigmoid dampener encoded in the σ formula.
+const SIM_VERSION = 74;
 

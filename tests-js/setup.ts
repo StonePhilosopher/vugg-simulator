@@ -212,6 +212,9 @@ const EXPORTS = [
   'WATER_STATE_PREFERENCE',
   // Phase D habit-bias helper (99i-renderer-three.ts).
   '_topoCAxisForCrystal',
+  // Habit-variant picker (07-habit-variant.ts) — Proposal B (2026-05)
+  // added a 5th `localFill` parameter.
+  'selectHabitVariant',
   // Slice 4 dripstone token resolver (99i-renderer-three.ts).
   '_resolveCrystalGeomToken',
   '_habitGeomToken',

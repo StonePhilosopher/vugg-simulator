@@ -6,12 +6,24 @@
 // Phase B3 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS (no import/export);
 // every top-level declaration is a global available to later modules.
 
-// Pick a habit variant for a nucleating crystal based on current σ / T / space.
+// Pick a habit variant for a nucleating crystal based on current σ / T / space / fill.
 // Mirrors select_habit_variant in vugg.py: triggers like "low σ" / "high σ" /
 // "moderate T" are matched against current conditions; vectors ("coating"
 // vs "projecting") are weighed against how crowded the vug is. Returns
 // the chosen variant dict, or null if the mineral has no variant objects.
-function selectHabitVariant(mineral, sigma, temperature, spaceConstrained) {
+//
+// 2026-05-18 Proposal B (high-fill habit transitions): added `localFill`
+// parameter. Habit variants can now carry trigger keywords "high fill" /
+// "high-fill" / "drusy" / "post-seal" (favored when vugFill > 0.75) or
+// "low fill" / "low-fill" (favored when vugFill < 0.7). This encodes the
+// geological reality that boundary-layer diffusion at high fill biases
+// growth toward edge-favored skeletal/hopper habits or microcrystalline
+// drusy crusts. See proposals/RESEARCH-GROWTH-AT-HIGH-FILL.md §5 (Proposal B).
+//
+// `localFill` is optional and defaults to undefined when fill info isn't
+// available (legacy call paths, library/preview rendering). When absent,
+// the fill scoring is skipped — backward compatible.
+function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, localFill) {
   const entry = MINERAL_SPEC[mineral];
   if (!entry) return null;
   const variants = (entry.habit_variants || []).filter(v => v && typeof v === 'object');
@@ -29,6 +41,18 @@ function selectHabitVariant(mineral, sigma, temperature, spaceConstrained) {
     if (trig.includes('high t')) s += temperature > 300 ? 1.0 : -0.6;
     else if (trig.includes('moderate t')) s += (temperature >= 150 && temperature <= 300) ? 1.0 : -0.4;
     else if (trig.includes('low t')) s += temperature < 150 ? 1.0 : -0.6;
+
+    // Proposal B (2026-05): high-fill / drusy / post-seal triggers. Skip
+    // entirely if localFill wasn't passed (legacy call sites, library
+    // preview, etc.) — preserves backward compat for those paths.
+    if (typeof localFill === 'number') {
+      if (trig.includes('post-seal')) s += localFill > 0.95 ? 2.0 : -1.5;
+      else if (trig.includes('high fill') || trig.includes('high-fill') || trig.includes('drusy')) {
+        s += localFill > 0.75 ? 1.5 : -1.0;
+      } else if (trig.includes('low fill') || trig.includes('low-fill')) {
+        s += localFill < 0.7 ? 0.6 : -0.4;
+      }
+    }
 
     const vec = (v.vector || '').toLowerCase();
     if (spaceConstrained) {

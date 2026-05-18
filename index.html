@@ -3931,12 +3931,24 @@ function narrative_variant(species, variant, ctx) {
 //
 // Phase B3 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS (no import/export);
 // every top-level declaration is a global available to later modules.
-// Pick a habit variant for a nucleating crystal based on current σ / T / space.
+// Pick a habit variant for a nucleating crystal based on current σ / T / space / fill.
 // Mirrors select_habit_variant in vugg.py: triggers like "low σ" / "high σ" /
 // "moderate T" are matched against current conditions; vectors ("coating"
 // vs "projecting") are weighed against how crowded the vug is. Returns
 // the chosen variant dict, or null if the mineral has no variant objects.
-function selectHabitVariant(mineral, sigma, temperature, spaceConstrained) {
+//
+// 2026-05-18 Proposal B (high-fill habit transitions): added `localFill`
+// parameter. Habit variants can now carry trigger keywords "high fill" /
+// "high-fill" / "drusy" / "post-seal" (favored when vugFill > 0.75) or
+// "low fill" / "low-fill" (favored when vugFill < 0.7). This encodes the
+// geological reality that boundary-layer diffusion at high fill biases
+// growth toward edge-favored skeletal/hopper habits or microcrystalline
+// drusy crusts. See proposals/RESEARCH-GROWTH-AT-HIGH-FILL.md §5 (Proposal B).
+//
+// `localFill` is optional and defaults to undefined when fill info isn't
+// available (legacy call paths, library/preview rendering). When absent,
+// the fill scoring is skipped — backward compatible.
+function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, localFill) {
     const entry = MINERAL_SPEC[mineral];
     if (!entry)
         return null;
@@ -3962,6 +3974,19 @@ function selectHabitVariant(mineral, sigma, temperature, spaceConstrained) {
             s += (temperature >= 150 && temperature <= 300) ? 1.0 : -0.4;
         else if (trig.includes('low t'))
             s += temperature < 150 ? 1.0 : -0.6;
+        // Proposal B (2026-05): high-fill / drusy / post-seal triggers. Skip
+        // entirely if localFill wasn't passed (legacy call sites, library
+        // preview, etc.) — preserves backward compat for those paths.
+        if (typeof localFill === 'number') {
+            if (trig.includes('post-seal'))
+                s += localFill > 0.95 ? 2.0 : -1.5;
+            else if (trig.includes('high fill') || trig.includes('high-fill') || trig.includes('drusy')) {
+                s += localFill > 0.75 ? 1.5 : -1.0;
+            }
+            else if (trig.includes('low fill') || trig.includes('low-fill')) {
+                s += localFill < 0.7 ? 0.6 : -0.4;
+            }
+        }
         const vec = (v.vector || '').toLowerCase();
         if (spaceConstrained) {
             if (vec === 'projecting')
@@ -5743,7 +5768,60 @@ let timeScale = 5.0;
 //        depleting species in bulk view; no canonical scenario fires it).
 //        Deferred until a fumarole / sulfide-weathering-rind scenario
 //        lands that has the right (high-S, low-metal, acidic) signature.
-const SIM_VERSION = 73;
+//   v74 — Proposal B: habit transitions on fill × σ (2026-05-18).
+//        First proposal from the high-fill physics thread to land
+//        AFTER the Path C cascade-gate audit closed. Companion to
+//        Proposals A (sigmoid dampener, v69-or-earlier) and C
+//        (late_stage_propensity gradient, v69).
+//
+//        selectHabitVariant() gains a 5th `localFill` parameter; habit
+//        variant `trigger` strings now match against "high fill" /
+//        "high-fill" / "drusy" / "post-seal" / "low fill" / "low-fill"
+//        keywords. Score bonuses:
+//          - "post-seal" trigger:  +2.0 if fill > 0.95, else -1.5
+//          - "high fill" / "drusy": +1.5 if fill > 0.75, else -1.0
+//          - "low fill":           +0.6 if fill < 0.7,  else -0.4
+//
+//        Three NEW habit variants added (all `vector: "coating"` for the
+//        space-constrained late-stage carpet pattern):
+//          calcite.druzy_crust
+//            — Brazilian amethyst "skunk calcite" late euhedral overgrowths
+//              per Proust & Fontan 2007
+//          quartz.microcrystalline
+//            — chalcedony / agate carpet, boundary-layer-diffusion-limited
+//              microcrystalline SiO2 at late stage
+//          aragonite.botryoidal_crust
+//            — speleothem "cave coral" botryoidal habit
+//
+//        Three EXISTING variants got their triggers extended with "high
+//        fill" keywords (no behavioral change at low fill, more probable
+//        at high fill):
+//          halite.hopper_growth   — Tanaka 2018 hopper geometry under DLA
+//          sylvite.hopper_cube    — same mechanism
+//          borax.cottonball       — Death Valley playa-surface texture
+//        And halite.fibrous_coating gained "high fill" alongside its
+//        existing "efflorescent" trigger.
+//
+//        Backward compat: legacy 4-arg callers (library preview, Three.js
+//        renderer) pass undefined localFill — the new scoring branch is
+//        skipped, picks identical to pre-Proposal-B behavior.
+//
+//        RNG sequence unchanged: the variant selection still consumes
+//        exactly one rng.random() call regardless of which variant scores
+//        highest. Calibration baseline seed42_v73.json byte-identical
+//        to seed42_v74.json (no baseline regen needed) — habit names
+//        shift at high fill but mineral counts + crystal sizes don't.
+//
+//        Wired by: js/85d-simulator-step.ts stashes vugFill on the sim
+//        as this._currentVugFill; js/85b-simulator-nucleate.ts passes
+//        it through to selectHabitVariant.
+//
+//        Refs: proposals/RESEARCH-GROWTH-AT-HIGH-FILL.md §5 (Proposal B
+//        spec), §6 (Recommended path: Tier 2). Boss principle composing
+//        in: "follow nature" — high-fill texture transitions are the
+//        observable downstream of the boundary-layer-diffusion regime
+//        that Proposal A's sigmoid dampener encoded in the σ formula.
+const SIM_VERSION = 74;
 
 // ── 18-constants.js ──
 
@@ -22158,7 +22236,12 @@ Object.assign(VugSimulator.prototype, {
         // and its wall_spread/void_reach/vector populate the topo-map
         // footprint. Falls back to legacy defaults below if the mineral has
         // no variant objects in the spec.
-        const variant = selectHabitVariant(mineral, sigma, this.conditions.temperature, this._spaceIsCrowded());
+        const variant = selectHabitVariant(mineral, sigma, this.conditions.temperature, this._spaceIsCrowded(), 
+        // Proposal B (2026-05): pass current vugFill so habit variants can
+        // gate on it. Stashed by check_nucleation each step. Undefined for
+        // legacy non-step nucleations (preview/library) — selectHabitVariant
+        // skips the fill scoring branch when undefined.
+        this._currentVugFill);
         if (variant) {
             crystal.habit = variant.name || crystal.habit;
             crystal.wall_spread = Number(variant.wall_spread ?? 0.5);
@@ -23527,6 +23610,11 @@ Object.assign(VugSimulator.prototype, {
         // inside _atNucleationCap; the 6 high-fill scenarios see the
         // calibration drift documented in the regen baseline.
         this._fillDampener = (vugFill !== undefined) ? _fillDampenerFor(vugFill) : 1.0;
+        // Proposal B (2026-05): stash raw vugFill for selectHabitVariant. The
+        // fill dampener (sigmoid) is the right input for σ gating; the raw fill
+        // is the right input for habit selection (a 0-1 quantity that triggers
+        // can match against directly). Undefined for legacy non-step paths.
+        this._currentVugFill = vugFill;
         _nucleateClass_arsenate(this);
         _nucleateClass_borate(this);
         _nucleateClass_carbonate(this);

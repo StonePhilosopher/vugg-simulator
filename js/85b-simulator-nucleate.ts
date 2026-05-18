@@ -32,7 +32,12 @@ Object.assign(VugSimulator.prototype, {
   // footprint. Falls back to legacy defaults below if the mineral has
   // no variant objects in the spec.
   const variant = selectHabitVariant(
-    mineral, sigma, this.conditions.temperature, this._spaceIsCrowded()
+    mineral, sigma, this.conditions.temperature, this._spaceIsCrowded(),
+    // Proposal B (2026-05): pass current vugFill so habit variants can
+    // gate on it. Stashed by check_nucleation each step. Undefined for
+    // legacy non-step nucleations (preview/library) — selectHabitVariant
+    // skips the fill scoring branch when undefined.
+    this._currentVugFill,
   );
   if (variant) {
     crystal.habit = variant.name || crystal.habit;

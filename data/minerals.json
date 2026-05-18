@@ -252,6 +252,13 @@
           "void_reach": 0.2,
           "vector": "coating",
           "trigger": "high σ, Fe³⁺ present, space-constrained"
+        },
+        {
+          "name": "microcrystalline",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "high fill or drusy — microcrystalline chalcedony / agate carpet covering existing crystals (boundary-layer diffusion at late-stage low-σ SiO2 produces tiny-grain fabric rather than euhedral prisms)"
         }
       ],
       "class": "silicate",
@@ -382,6 +389,13 @@
           "void_reach": 0.85,
           "vector": "projecting",
           "trigger": "very high σ, thin needle growth"
+        },
+        {
+          "name": "druzy_crust",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "high fill or drusy — late-stage low-σ tiny crystal carpet on top of pre-existing growth (Brazilian amethyst 'skunk calcite' late euhedral overgrowths per Proust & Fontan 2007)"
         }
       ],
       "class": "carbonate",
@@ -501,6 +515,13 @@
           "void_reach": 0.5,
           "vector": "projecting",
           "trigger": "Fe-rich (Fe > 30 ppm) and moderate σ — dendritic 'iron flower' coral, the Eisenerz Austrian variety"
+        },
+        {
+          "name": "botryoidal_crust",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "high fill — late-stage radiating-fibrous botryoidal carpet (the 'cave coral' habit of speleothem aragonite, formed under boundary-layer-diffusion-limited conditions)"
         }
       ],
       "class": "carbonate",
@@ -10086,14 +10107,14 @@
           "wall_spread": 0.45,
           "void_reach": 0.55,
           "vector": "projecting",
-          "trigger": "high σ — rapid evaporation, skeletal cube"
+          "trigger": "high σ or high fill — rapid evaporation / boundary-layer-diffusion-limited skeletal cube"
         },
         {
           "name": "fibrous_coating",
           "wall_spread": 0.85,
           "void_reach": 0.05,
           "vector": "coating",
-          "trigger": "efflorescent crust on already-dry wall"
+          "trigger": "high fill — efflorescent crust on already-dry wall, late-stage drusy carpet"
         },
         {
           "name": "stalactitic_speleothem",
@@ -10201,7 +10222,7 @@
           "wall_spread": 0.7,
           "void_reach": 0.3,
           "vector": "coating",
-          "trigger": "rapid evaporation — Death Valley playa surface"
+          "trigger": "high fill or rapid evaporation — Death Valley playa surface, late-stage cottonball crust"
         },
         {
           "name": "massive",
@@ -11447,7 +11468,7 @@
       "growth_rate_mult": 0.7,
       "habit_variants": [
         {"name": "cubic", "wall_spread": 0.25, "void_reach": 0.75, "vector": "equant", "trigger": "default — perfect cubic crystal (cubic cleavage at 90°)"},
-        {"name": "hopper_cube", "wall_spread": 0.3, "void_reach": 0.7, "vector": "equant", "trigger": "rapid evaporation — stepped/terraced 'hopper' faces"},
+        {"name": "hopper_cube", "wall_spread": 0.3, "void_reach": 0.7, "vector": "equant", "trigger": "high fill or rapid evaporation — stepped/terraced 'hopper' faces from boundary-layer diffusion"},
         {"name": "granular_massive", "wall_spread": 0.85, "void_reach": 0.15, "vector": "equant", "trigger": "high σ — granular salt-pan fabric"}
       ],
       "class": "halide",
