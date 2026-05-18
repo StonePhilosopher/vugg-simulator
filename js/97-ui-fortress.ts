@@ -166,6 +166,21 @@ function fortressBegin() {
   if (wallReactivityEl) {
     wallOpts.reactivity = parseFloat(wallReactivityEl.value) / 10;
   }
+  // Size-class cascade (2026-05). When the player picks a non-default
+  // cavity-size in the Creative Mode setup panel, override the preset's
+  // vug_diameter_mm with the literature midpoint for the chosen tier.
+  // Default = 'preset' (or absent) means "keep whatever the preset
+  // chose" — preserves backward-compat for the existing silica /
+  // mvt / carbonate / etc. presets.
+  const sizeClassEl = document.getElementById('f-size-class') as HTMLSelectElement | null;
+  const sizeClassChoice = sizeClassEl ? sizeClassEl.value : 'preset';
+  if (sizeClassChoice && sizeClassChoice !== 'preset') {
+    const mm = resolveSizeClassToMm(sizeClassChoice);
+    if (mm != null) {
+      wallOpts.size_class = sizeClassChoice;
+      wallOpts.vug_diameter_mm = mm;
+    }
+  }
   const wall = new VugWall(wallOpts);
   const conditions = new VugConditions({ temperature: temp, pressure, fluid, wall });
 

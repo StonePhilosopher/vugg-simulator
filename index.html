@@ -2732,6 +2732,15 @@ footer a:hover {
     <input type="number" id="shape-seed" placeholder="scenario default" style="width:140px" title="Seeds the cavity's 3D sphere-union geometry (primary + secondaries + tertiaries). Independent of Growth Seed — lock one and vary the other to compare crystal growth in different shapes, or the same shape with different chemistry.">
   </div>
   <div class="control-group">
+    <label for="cavity-size">Cavity Size (optional)</label>
+    <select id="cavity-size" style="width:160px" title="Override the scenario's cavity diameter. Vug: small specimen cavity (~15mm). Pocket: pegmatite-pocket / alpine-cleft scale (~160mm). Cave: passable chamber, Naica-scale (~1.65m). Default = scenario's authored size.">
+      <option value="any">scenario default</option>
+      <option value="vug">vug (~15mm)</option>
+      <option value="pocket">pocket (~160mm)</option>
+      <option value="cave">cave (~1.65m)</option>
+    </select>
+  </div>
+  <div class="control-group">
     <label for="steps">Time Steps (optional)</label>
     <input type="number" id="steps" placeholder="default" style="width:100px" min="1" step="1" title="Each step ≈ 50,000 years of geological time. 200 steps ≈ 10 million years of fluid activity. More steps = longer cooling history. Default: 100-120 depending on scenario." oninput="if(this.value<1&&this.value!=='')this.value=1">
   </div>
@@ -2853,6 +2862,16 @@ Scenarios:
       <label>Pressure</label>
       <input type="range" id="f-pressure" min="1" max="30" value="15" step="1" oninput="document.getElementById('f-pressure-val').textContent=(this.value/10).toFixed(1)+' kbar'">
       <span class="range-val" id="f-pressure-val">1.5 kbar</span>
+    </div>
+
+    <div class="setup-row" title="Cavity size class. Vug ≈ 15mm (specimen-cabinet thumbnail). Pocket ≈ 160mm (pegmatite / alpine pocket — the default for most museum specimens). Cave ≈ 1.65m (karst chamber, Naica-scale). Default keeps the preset's authored size.">
+      <label>Cavity size</label>
+      <select id="f-size-class" style="flex:1;max-width:280px;background:#1a1a0e;color:#d4c060;border:1px solid #4a4220;padding:0.3rem;border-radius:3px;">
+        <option value="preset" selected>preset default</option>
+        <option value="vug">vug (~15mm)</option>
+        <option value="pocket">pocket (~160mm)</option>
+        <option value="cave">cave (~1.65m)</option>
+      </select>
     </div>
 
     <div class="setup-row" title="Multiplier on wall dissolution rate. 0 = inert (no dissolution even with strong acid — equivalent to a silicate wall); 1 = default limestone (current behavior); 2 = fast-dissolving fresh limestone with mild water-only dissolution. Only affects carbonate walls (limestone, dolomite); silicate walls stay inert regardless.">
@@ -7233,6 +7252,19 @@ const SIZE_CLASS_RANGES = {
     pocket: [25, 300], // 1 inch  to 1 foot
     cave: [300, 3000], // 1 foot to multi-meter
 };
+// Helper for UI consumers that need to convert a player's size-class
+// choice into a concrete vug_diameter_mm — Creative Mode (97-ui-fortress)
+// and Simulation Mode's scenario override (91-ui-legends). Returns the
+// range midpoint by default; pass a 0–1 rng draw to pick uniformly
+// within the range (used by Random Mode in 96-ui-random).
+function resolveSizeClassToMm(sizeClass, rngDraw) {
+    if (!(sizeClass in SIZE_CLASS_RANGES))
+        return null;
+    const [lo, hi] = SIZE_CLASS_RANGES[sizeClass];
+    if (typeof rngDraw === 'number')
+        return lo + rngDraw * (hi - lo);
+    return (lo + hi) / 2;
+}
 function _resolveVugDiameter(opts) {
     // Explicit override wins, preserves all current scenarios' behavior
     // and keeps byte-identical baselines.
@@ -24916,6 +24948,27 @@ function runSimulation() {
             scenarioOverrides.wall = { shape_seed: parsedShape };
         }
     }
+    // Size-class override (2026-05). When the player picks a non-default
+    // cavity-size in the Simulation Mode UI, we add BOTH size_class +
+    // an explicit vug_diameter_mm to the override. The explicit mm has
+    // to be supplied because _resolveVugDiameter prioritises explicit
+    // vug_diameter_mm over size_class — and shipped scenarios all set
+    // vug_diameter_mm in their wallKwargs, so a size_class-only override
+    // would be silently ignored by the merge. The mm value comes from
+    // resolveSizeClassToMm's literature midpoint so the player sees a
+    // consistent number across modes.
+    const sizeClassEl = document.getElementById('cavity-size');
+    const sizeClassOverride = sizeClassEl ? sizeClassEl.value : 'any';
+    if (sizeClassOverride && sizeClassOverride !== 'any') {
+        const mm = resolveSizeClassToMm(sizeClassOverride);
+        if (mm != null) {
+            scenarioOverrides.wall = {
+                ...(scenarioOverrides.wall || {}),
+                size_class: sizeClassOverride,
+                vug_diameter_mm: mm,
+            };
+        }
+    }
     const { conditions, events, defaultSteps } = SCENARIOS[scenarioName](scenarioOverrides);
     const parsedSteps = stepsInput ? parseInt(stepsInput, 10) : NaN;
     const totalSteps = (parsedSteps && parsedSteps > 0) ? parsedSteps : defaultSteps;
@@ -29736,6 +29789,21 @@ function fortressBegin() {
     const wallReactivityEl = document.getElementById('f-wall-reactivity');
     if (wallReactivityEl) {
         wallOpts.reactivity = parseFloat(wallReactivityEl.value) / 10;
+    }
+    // Size-class cascade (2026-05). When the player picks a non-default
+    // cavity-size in the Creative Mode setup panel, override the preset's
+    // vug_diameter_mm with the literature midpoint for the chosen tier.
+    // Default = 'preset' (or absent) means "keep whatever the preset
+    // chose" — preserves backward-compat for the existing silica /
+    // mvt / carbonate / etc. presets.
+    const sizeClassEl = document.getElementById('f-size-class');
+    const sizeClassChoice = sizeClassEl ? sizeClassEl.value : 'preset';
+    if (sizeClassChoice && sizeClassChoice !== 'preset') {
+        const mm = resolveSizeClassToMm(sizeClassChoice);
+        if (mm != null) {
+            wallOpts.size_class = sizeClassChoice;
+            wallOpts.vug_diameter_mm = mm;
+        }
     }
     const wall = new VugWall(wallOpts);
     const conditions = new VugConditions({ temperature: temp, pressure, fluid, wall });

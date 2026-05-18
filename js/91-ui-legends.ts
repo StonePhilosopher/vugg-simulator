@@ -93,6 +93,27 @@ function runSimulation() {
       scenarioOverrides.wall = { shape_seed: parsedShape };
     }
   }
+  // Size-class override (2026-05). When the player picks a non-default
+  // cavity-size in the Simulation Mode UI, we add BOTH size_class +
+  // an explicit vug_diameter_mm to the override. The explicit mm has
+  // to be supplied because _resolveVugDiameter prioritises explicit
+  // vug_diameter_mm over size_class — and shipped scenarios all set
+  // vug_diameter_mm in their wallKwargs, so a size_class-only override
+  // would be silently ignored by the merge. The mm value comes from
+  // resolveSizeClassToMm's literature midpoint so the player sees a
+  // consistent number across modes.
+  const sizeClassEl = document.getElementById('cavity-size') as HTMLSelectElement | null;
+  const sizeClassOverride = sizeClassEl ? sizeClassEl.value : 'any';
+  if (sizeClassOverride && sizeClassOverride !== 'any') {
+    const mm = resolveSizeClassToMm(sizeClassOverride);
+    if (mm != null) {
+      scenarioOverrides.wall = {
+        ...(scenarioOverrides.wall || {}),
+        size_class: sizeClassOverride,
+        vug_diameter_mm: mm,
+      };
+    }
+  }
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName](scenarioOverrides);
   const parsedSteps = stepsInput ? parseInt(stepsInput, 10) : NaN;
   const totalSteps = (parsedSteps && parsedSteps > 0) ? parsedSteps : defaultSteps;

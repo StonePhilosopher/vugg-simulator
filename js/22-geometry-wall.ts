@@ -61,6 +61,18 @@ const SIZE_CLASS_RANGES: Record<SizeClass, [number, number]> = {
   pocket: [25,  300],    // 1 inch  to 1 foot
   cave:   [300, 3000],   // 1 foot to multi-meter
 };
+
+// Helper for UI consumers that need to convert a player's size-class
+// choice into a concrete vug_diameter_mm — Creative Mode (97-ui-fortress)
+// and Simulation Mode's scenario override (91-ui-legends). Returns the
+// range midpoint by default; pass a 0–1 rng draw to pick uniformly
+// within the range (used by Random Mode in 96-ui-random).
+function resolveSizeClassToMm(sizeClass: string, rngDraw?: number): number | null {
+  if (!(sizeClass in SIZE_CLASS_RANGES)) return null;
+  const [lo, hi] = SIZE_CLASS_RANGES[sizeClass as SizeClass];
+  if (typeof rngDraw === 'number') return lo + rngDraw * (hi - lo);
+  return (lo + hi) / 2;
+}
 function _resolveVugDiameter(opts: any): number {
   // Explicit override wins, preserves all current scenarios' behavior
   // and keeps byte-identical baselines.
