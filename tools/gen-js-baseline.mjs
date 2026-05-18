@@ -28,97 +28,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { JSDOM } from 'jsdom';
+import { loadSimBundle } from './_harness.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const DIST = path.join(ROOT, 'dist');
 const BASELINES = path.join(ROOT, 'tests-js', 'baselines');
 
-// --- jsdom + fetch mock + DOM stub (verbatim with setup.ts) ---
-
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', { url: 'http://localhost' });
-globalThis.window = dom.window;
-globalThis.document = dom.window.document;
-globalThis.localStorage = dom.window.localStorage;
-globalThis.sessionStorage = dom.window.sessionStorage;
-
-globalThis.fetch = async (url) => {
-  let rel = String(url);
-  if (rel.startsWith('./')) rel = rel.slice(2);
-  else if (rel.startsWith('../')) rel = rel.slice(3);
-  else if (rel.startsWith('/')) rel = rel.slice(1);
-  else if (rel.startsWith('http')) return new Response('', { status: 404 });
-  const filePath = path.join(ROOT, rel);
-  try {
-    return new Response(fs.readFileSync(filePath, 'utf8'), {
-      status: 200, headers: { 'content-type': 'text/plain' },
-    });
-  } catch {
-    return new Response('', { status: 404 });
-  }
-};
-
-const realGetById = document.getElementById.bind(document);
-const stub = () => new Proxy(function () { return stub(); }, {
-  get(t, p) {
-    if (p in t) return t[p];
-    if (typeof p === 'string' && /^[a-z]/i.test(p)) return stub();
-    return undefined;
-  },
-  set(t, p, v) { t[p] = v; return true; },
-});
-document.getElementById = (id) => realGetById(id) || stub();
-document.querySelector = () => stub();
-document.querySelectorAll = () => [];
-
-// --- Walk dist/ and concat in build.mjs order ---
-
-function walkSorted(dir) {
-  const out = [];
-  const stack = [dir];
-  while (stack.length) {
-    const d = stack.pop();
-    let entries;
-    try { entries = fs.readdirSync(d).sort(); }
-    catch { continue; }
-    for (const name of entries) {
-      if (name.startsWith('.')) continue;
-      const p = path.join(d, name);
-      const st = fs.statSync(p);
-      if (st.isDirectory()) stack.push(p);
-      else if (name.endsWith('.js')) out.push(p);
-    }
-  }
-  return out.sort((a, b) =>
-    path.relative(DIST, a).split(path.sep).join('/').localeCompare(
-      path.relative(DIST, b).split(path.sep).join('/'),
-    ),
-  );
-}
-
-const files = walkSorted(DIST);
-if (!files.length) {
-  console.error(`[gen-baseline] dist/ is empty — run \`npm run build\` first`);
-  process.exit(1);
-}
-const concat = files.map(f => fs.readFileSync(f, 'utf8')).join('\n\n');
-const epilogue = 'function setSeed(seed) { rng = new SeededRandom(seed | 0); }';
-const exportNames = ['SIM_VERSION', 'SCENARIOS', 'VugSimulator', 'setSeed', 'SeededRandom'];
-const expr = '{ ' + exportNames.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + ' }';
-const fn = new Function(`${concat}\n${epilogue}\n;return ${expr};`);
-const exports = fn();
-for (const k of exportNames) globalThis[k] = exports[k];
-
-// Wait for SCENARIOS (loaded async via the fetch mock).
-async function waitForScenarios() {
-  const t0 = Date.now();
-  while (Date.now() - t0 < 5000) {
-    if (SCENARIOS && Object.keys(SCENARIOS).length > 0) return;
-    await new Promise(r => setTimeout(r, 50));
-  }
-  throw new Error('SCENARIOS never populated — fetch mock or data path broken');
-}
-await waitForScenarios();
+const { SIM_VERSION, SCENARIOS, VugSimulator, setSeed } =
+  await loadSimBundle({ toolName: 'gen-baseline' });
 
 // --- Run every scenario at seed 42 + summarize ---
 

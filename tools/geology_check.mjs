@@ -19,41 +19,17 @@
  * because Schneeberg's broth was missing Co, Ni, AND Ag entirely.
  *
  * Companion to tools/mineral_coverage_check.mjs (system-wide live/dead)
- * and tools/stale_mineral_probe.mjs (per-mineral σ trace). Same harness.
+ * and tools/stale_mineral_probe.mjs (per-mineral σ trace). Same harness
+ * (tools/_harness.mjs).
  *
  * Configure the tracked mineral set + scenario at the top of the script.
  * Usage: `node tools/geology_check.mjs`
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { JSDOM } from 'jsdom';
-const ROOT = process.cwd();
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', { url: 'http://localhost' });
-globalThis.window = dom.window;
-globalThis.document = dom.window.document;
-globalThis.localStorage = dom.window.localStorage;
-globalThis.sessionStorage = dom.window.sessionStorage;
-globalThis.fetch = async (url) => {
-  let rel = String(url);
-  if (rel.startsWith('./')) rel = rel.slice(2);
-  if (rel.startsWith('/')) rel = rel.slice(1);
-  try { return new Response(fs.readFileSync(path.join(ROOT, rel), 'utf8'), { status: 200, headers: { 'content-type': 'text/plain' }}); }
-  catch { return new Response('', { status: 404 }); }
-};
-const realGetById = document.getElementById.bind(document);
-const stub = () => new Proxy(function () { return stub(); }, { get(t,p){ if(p in t) return t[p]; if(typeof p === 'string' && /^[a-z]/i.test(p)) return stub(); return undefined; }, set(t,p,v){ t[p]=v; return true; }});
-document.getElementById = (id) => realGetById(id) || stub();
-document.querySelector = () => stub();
-document.querySelectorAll = () => [];
-function walk(dir){ const out=[]; const s=[dir]; while(s.length){ const d=s.pop(); let es; try{es=fs.readdirSync(d).sort();}catch{continue;} for(const n of es){if(n.startsWith('.'))continue; const p=path.join(d,n); const st=fs.statSync(p); if(st.isDirectory())s.push(p); else if(n.endsWith('.js'))out.push(p);}} return out;}
-const files = walk(path.join(ROOT, 'dist'));
-const concat = files.map(f=>fs.readFileSync(f,'utf8')).join('\n\n');
-const epilogue = 'function setSeed(seed){ rng = new SeededRandom(seed|0); }';
-const exportNames = ['SCENARIOS','VugSimulator','setSeed','SIM_VERSION'];
-const fn = new Function(`${concat}\n${epilogue}\n;return { ${exportNames.map(n=>`${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(',')} };`);
-const exp = fn();
-for(const k of exportNames) globalThis[k]=exp[k];
-await new Promise(r=>setTimeout(r,200));
+
+import { loadSimBundle } from './_harness.mjs';
+
+const { SIM_VERSION, SCENARIOS, VugSimulator, setSeed } =
+  await loadSimBundle({ toolName: 'geology_check' });
 
 const seeds = [42, 1, 7, 13, 23, 99, 314, 1729, 8675309, 137];
 const scenario = 'schneeberg';
