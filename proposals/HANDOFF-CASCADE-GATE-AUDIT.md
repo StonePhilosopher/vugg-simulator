@@ -1,0 +1,311 @@
+# HANDOFF: Path C cascade-gate audit (3 arcs, geology-as-debugger)
+
+> **Authored:** 2026-05-18 by Claude (Sonnet 4.5)
+> **State:** HEAD = `688bdc7` on `origin/main` (Syntaxswine). SIM_VERSION 72. **238/238 tests green.** Coverage tool: 2 stale (cobaltite + nickeline, both expected by schneeberg), 91 live, 23 dead.
+> **Continues:** `HANDOFF-HIGH-FILL-AND-SIZE-CLASS.md` (terminus `72243d2`). That doc was the high-fill physics + size-class cascade arc; the open backlog item at the top of its §5 ("Path C cascade-gate audit, ~half day") is what this doc covers.
+> **Audience:** next agent picking up the next-iteration cascade-gate targets, or the boss skimming options.
+
+---
+
+## 1. TL;DR
+
+Three arcs closing the Path C cascade-gate audit identified in `HANDOFF-CALIBRATION-AND-COVERAGE.md` §12. Half-day estimate landed in roughly a half-day session.
+
+| sha | arc | tests | live/dead |
+|-----|-----|-------|-----------|
+| `e9248c5` | **Arc 1** — Activity-correction copy-paste fix (4 minerals) | 226 → 226 | 89 / 27 |
+| `1d66c4a` | **Arc 2** — Soft-cation-suppressor for native_arsenic + native_bismuth | 226 → 238 | 91 / 25 |
+| `688bdc7` | **Geology audit** — Schneeberg broth gap-fill (Co + Ni + Ag, the missing 3 of 5 elements) | 238 → 238 | 91 / 23 |
+
+The three arcs were not pre-planned as a unit. The audit was framed as "soften the hard cation gates." Arc 1 emerged from a cross-check probe that surfaced an unrelated copy-paste regression. The geology audit emerged from boss-prompted "double-check the science" review of Arc 2's σ overshoot — and **resolved the overshoot WITHOUT engine retuning** by adding three elements that had been silently missing from the broth.
+
+The session's defining moment: every time I reached for an engine knob, the boss-principle "follow nature" pointed at a chemistry-data fix instead, and the chemistry-data fix worked.
+
+---
+
+## 2. Tool chain — six probes now
+
+The harness-extraction threshold (§7 of the prior handoff said "if a 6th tool lands, extract first") is now crossed:
+
+| tool | signal | runtime |
+|------|--------|---------|
+| `tools/gen-js-baseline.mjs` | per-scenario crystal counts + sizes at seed 42 | ~30s |
+| `tools/twin_rate_check.mjs` | observed twin frequency vs authored per-roll probability | ~15s |
+| `tools/mineral_coverage_check.mjs` | live / stale / dead mineral classification | ~10s |
+| `tools/stale_mineral_probe.mjs` | per-step σ + chemistry for stale (mineral, scenario) pairs | ~5s |
+| `tools/high_fill_probe.mjs` | vugFill trajectory + growth-rate bins across all scenarios | ~5s |
+| `tools/geology_check.mjs` **(NEW)** | 10-seed scenario sweep vs expected paragenesis (configurable scenario + tracked-mineral list) | ~10s |
+
+**Each new tool was the right shape for one audit category.** `mineral_coverage_check` finds dead minerals globally. `stale_mineral_probe` traces σ per-step for a specific (mineral, scenario). `geology_check` compares a scenario's whole assemblage to the deposit class's defining paragenesis. None of them substitute for the others — the geology audit fix would not have been visible to `mineral_coverage_check` because erythrite + annabergite were technically not stale (no scenario referenced them in `expects_species`), they were just absent from the deposit class they historically defined.
+
+**Harness extraction (`tools/_harness.mjs`) is now the recommended next infrastructure task** — ~50 lines of jsdom + bundle-eval + fetch-mock + DOM-stub setup duplicate across all six tools, but the tools themselves are tiny (50-200 lines each). Extract before #7 lands. Mechanical refactor; should be one ~30-minute commit.
+
+---
+
+## 3. What landed, in detail
+
+### 3.1 Arc 1 — Activity-correction copy-paste fix (`e9248c5`)
+
+**Pattern:** four `supersaturation_X()` methods carried extra `activityCorrectionFactor(this.fluid, 'Y')` calls where Y was unrelated to X. Each extra call multiplied σ by an ≤1 factor based on the FOREIGN mineral's stoichiometry — silent ~½× suppression.
+
+**Discovery via cross-check probe:**
+
+```bash
+# Inside Python or any AST-aware grep:
+# For each `supersaturation_X() { ... activityCorrectionFactor(this.fluid, 'Y') ... }`
+# block, flag any case where Y != X.
+```
+
+Four hits across 116 minerals:
+
+| mineral | spurious extras | why it's wrong |
+|---|---|---|
+| `adamite` | `erythrite`, `annabergite` | Zn arsenate suppressed by Co + Ni arsenate factors |
+| `borax` | `tincalconite` | paramorph — identical numerical factor → γ²·m² double-count |
+| `galena` | `pyrite`, `marcasite`, `sphalerite`, `wurtzite`, `chalcopyrite` | PbS suppressed by SIX foreign sulfide factors |
+| `stibnite` | `tetrahedrite`, `tennantite` | Sb₂S₃ suppressed by Cu-As/Sb sulfosalt factors |
+
+**Origin:** the Phase 2b activity-coefficient sweep (`eff8ec1`, 2026-05-05). A mechanical sweep adding `activityCorrectionFactor` to every `supersaturation_X` method picked up unrelated mineral names from neighboring code blocks. Reviewer didn't catch the cross-naming.
+
+**Highest-impact line of the audit:** galena. Pre-fix galena fired at seed 42 in 2 of 24 scenarios (porphyry, supergene_oxidation). **It did not fire in `mvt`** — the canonical Pb-Zn MVT scenario, named after Mississippi Valley Type lead-zinc deposits. The 6× activity stack was suppressing the canonical Pb sulfide out of its canonical scenario. Post-fix: galena fires in 6 of 24 scenarios (mvt + radioactive_pegmatite + reactive_wall + schneeberg added), total crystal count 2 → 13.
+
+**Calibration drift:** 7 of 24 scenarios shifted; 17 byte-identical. All shifts in expected direction (less suppression → more nucleation of the affected minerals + carbonate-supergene products losing substrate to the now-firing primary sulfides). Proposal A's `vugFill ≥ 1.0` hard floor caps any overshoot.
+
+### 3.2 Arc 2 — Soft-cation-suppressor for native_arsenic + native_bismuth (`1d66c4a`)
+
+**Pattern (extending the native_tellurium fix from `HANDOFF-CALIBRATION-AND-COVERAGE.md` §12):** hard upper-cation gates like `if (this.fluid.S > 10) return 0` are structurally unreachable under bulk-view chemistry. Locally, S is depleted by sulfides; in the σ engine's view (`conditions.fluid` = equator-ring fluid), S stays at the seeded value through the whole run.
+
+**Two engines fit the pattern after Arc 1 didn't lift their σ enough:**
+
+```ts
+// 36-supersat-native.ts (pre-Arc 2):
+supersaturation_native_arsenic() {
+  if (this.fluid.As < 5) return 0;
+  if (this.fluid.S > 10.0) return 0;   // ← structurally unreachable: schneeberg S=30
+  if (this.fluid.Fe > 50.0) return 0;  // ← same
+  // ...
+}
+supersaturation_native_bismuth() {
+  if (this.fluid.Bi < 15 || this.fluid.S > 12 || ...) return 0;
+  // ← Bi<15 is geologically too strict (bismuthinite passes at Bi≥5)
+  // ← S>12 is the structural problem
+}
+```
+
+**Three-part fix:**
+
+1. **Engine softening** (`36-supersat-native.ts`):
+   - Drop hard `S > N` upper gates, replace with `s_suppr = max(0, 1 - S/Sdenom)`. Denominators tuned so schneeberg S=30 yields meaningful but non-zero suppression while porphyry S=60 stays gated out.
+   - Drop hard `Fe > 50` for native_arsenic, replace with `fe_suppr = max(0, 1 - Fe/200)`.
+   - Lower native_bismuth's `Bi < 15` lower gate to `Bi < 5` (matches bismuthinite's lower gate — native bismuth is bismuthinite's paragenetic step-down).
+   - Tighten `as_f` / `bi_f` scaling denominators (30/25 → 15/15) and caps (3.0/2.0 → 4.0/3.0) so realistic Schneeberg-tier broths drive σ > 1.0.
+
+2. **Nucleation threshold matching** (`86-nucleation-native.ts`):
+   - native_bismuth threshold 1.4 → 1.0 (every other native_X used 1.0 or 1.2; the 1.4 was an arbitrary outlier).
+
+3. **Scenario seed correction** (`scenarios.json5`):
+   - `schneeberg.As: 15 → 60` (Förster 1992 fluid inclusions report 100-1000 ppm in arsenide phases)
+   - `schneeberg.Bi: 10 → 40` (same paper: 50-500 ppm in native-bismuth-bearing phases)
+
+**Verification — schneeberg σ probe (3 seeds × 160 steps = 480 samples):**
+
+| metric | native_arsenic | native_bismuth |
+|---|---|---|
+| pre-Arc-2 σ_max | 0.000 | 0.000 |
+| post-Arc-2 σ_max | 1.561 | 1.353 |
+| pre-Arc-2 σ>1 count | 0/480 | 0/480 |
+| post-Arc-2 σ>1 count | 57/480 | 26/480 |
+| ever_nucleated post | YES | YES |
+
+**Coverage delta:** 89 → 91 live, 27 → 25 dead.
+
+**The σ overshoot that prompted the geology audit:** native_arsenic post-Arc-2 reached σ_max = 1.56 vs 1.0 threshold. Looked like ~30% over-tuning. Resolved by the geology audit (§3.3) — the overshoot was NOT a tuning error; it was missing competitor minerals.
+
+### 3.3 Geology audit — Schneeberg five-element broth gap-fill (`688bdc7`)
+
+**Trigger:** boss prompt — "double-check the science. when you follow nature everything should just fall into place unless there is a variable we have missed."
+
+**Tool created:** `tools/geology_check.mjs`. 10-seed schneeberg sweep tracking the canonical "Fünfelementformation" assemblage:
+
+```
+mineral             seeds-firing (pre-fix)
+-------------------------------------------
+erythrite             0/10    ← cobalt bloom, ubiquitous
+annabergite           0/10    ← Annaberg = TYPE LOCALITY
+acanthite             0/10    ← Ag2S, Schneeberg's silver-era mineral
+cobaltite             0/10    ← Co arsenide-sulfide
+nickeline             0/10    ← Ni arsenide
+naumannite            0/10    ← Ag2Se, Erzgebirge selenide-vein classic
+```
+
+**Root cause: `schneeberg.fluid` had ZERO Co, ZERO Ni, ZERO Ag.**
+
+Schneeberg-Annaberg-Jáchymov is the type locality for the **Bi-Co-Ni-Ag-As + U "five-element formation" deposit class**. The simulator's schneeberg was running it as a one-element show — uraninite + uranyl secondaries only. The Bi era (1500s–1800s, mineral name origin "Bismutum" coined here) was partially represented after Arc 2 added native_bismuth + bismuthinite. The Ag era (1100s–1500s, Europe's primary silver source) and the Co/Ni mining era (1600s–1800s, source of the kobold/cobalt etymology) had no chemistry expression at all.
+
+**Fix (data-only, no engine changes):**
+
+```json5
+"Co": 30,  // Burkhardt 2001 Erzgebirge fluid inclusions, Co 5-50 ppm
+"Ni": 20,  // same: Ni 5-30 ppm
+"Ag": 8,   // five-element-vein fluid Ag; pre-bismuth-era silver mining
+```
+
+Plus `expects_species` extended with native_bismuth + native_arsenic + erythrite + annabergite + cobaltite + nickeline (the coverage tool now flags any that go dormant in regression — diagnostic improvement).
+
+**Post-fix 10-seed schneeberg sweep:**
+
+| mineral | pre | post |
+|---|---|---|
+| erythrite | 0/10 | **10/10**, 14 crystals @ 224µm |
+| annabergite | 0/10 | **10/10**, 13 crystals @ 71µm |
+| acanthite | 0/10 | **10/10**, 44 crystals @ 814µm |
+| autunite | 5/10, 14 | 7/10, 16 |
+| zeunerite | 7/10, 12 | 7/10, 21 |
+| torbernite | 5/10, 10 | 9/10, 22 |
+| native_arsenic | 6/10, **18 @ 53µm** | 5/10, **7 @ 17µm** ← self-correction |
+| native_bismuth | 8/10, 8 | 7/10, 7 |
+| bismuthinite | 10/10, 11 | 10/10, 11 |
+| uraninite | 10/10, 30 | 10/10, 30 |
+| arsenopyrite | 10/10, 40 | 10/10, 40 |
+
+**Two findings of note (both validate "follow nature"):**
+
+1. **Arc-2 σ overshoot self-corrected.** native_arsenic crystal count + average size dropped to a "minor accessory" level matching Förster & Tischendorf 1989's paragenetic description. Why: cobaltite + nickeline + safflorite + skutterudite engines now compete for the As budget. The σ_max=1.56 reached its full nucleation rate at peak but exhausted the available As budget faster, shifting the kinetics to "occasional small crystals" — exactly the real Schneeberg paragenesis.
+
+2. **Autunite/zeunerite "regression at seed 42" reversed itself.** Adding chemistry diversified slot competition in autunite's favor, not against it. Both went UP in firing frequency.
+
+**Pattern observed:** when in doubt between (a) tuning engine knobs vs (b) auditing chemistry data against literature, prefer (b) first. Two consecutive cases this session where the chemistry-data fix beat what would have been the engine-knob fix.
+
+---
+
+## 4. State files
+
+### Engine (Path C audit deliverables)
+
+| file | purpose |
+|------|---------|
+| `js/30-supersat-arsenate.ts` | adamite: removed `erythrite` + `annabergite` activity-correction calls (Arc 1) |
+| `js/31-supersat-borate.ts` | borax: removed `tincalconite` activity-correction call (Arc 1) |
+| `js/41-supersat-sulfide.ts` | galena: removed 5 foreign activity-correction calls; stibnite: removed 2 (Arc 1) |
+| `js/36-supersat-native.ts` | native_arsenic + native_bismuth: hard S/Fe upper gates replaced with `s_suppr` / `fe_suppr` / `s_mask` soft factors; scaling denominators tightened (Arc 2) |
+| `js/86-nucleation-native.ts` | native_bismuth nuc threshold 1.4 → 1.0 (Arc 2) |
+| `js/15-version.ts` | SIM_VERSION 69 → 72; v70/v71/v72 history notes |
+| `data/scenarios.json5` | schneeberg: As 15→60, Bi 10→40 (Arc 2); +Co 30, +Ni 20, +Ag 8 (geology audit); expects_species extended with six minerals |
+
+### Tests
+
+| file | purpose |
+|------|---------|
+| `tests-js/cascade-gate-audit.test.ts` (NEW, 12 cases) | Arc 1 + Arc 2 source-inspection + nucleation pins. Hardest assertion: galena fires in ≥4 of 6 canonical Pb scenarios at seed 42 |
+| `tests-js/baselines/seed42_v70.json` (NEW) | Arc 1 baseline |
+| `tests-js/baselines/seed42_v71.json` (NEW) | Arc 2 baseline |
+| `tests-js/baselines/seed42_v72.json` (NEW) | Geology audit baseline |
+
+### Tools
+
+| file | purpose |
+|------|---------|
+| `tools/geology_check.mjs` (NEW) | 10-seed scenario sweep vs expected paragenesis. Configurable scenario + tracked-mineral list. Catches deposit-class-missing-N-of-M-defining-elements gaps |
+| `tools/stale_mineral_probe.mjs` | Updated PROBES array: Backlog-K-era entries commented out as Round-1 reference; six new (mineral, scenario) pairs for the cascade-gate audit (Round 2) |
+
+### Docs
+
+| file | purpose |
+|------|---------|
+| `proposals/HANDOFF-HIGH-FILL-AND-SIZE-CLASS.md` | Prior handoff. §5 backlog item "Path C cascade-gate audit" now struck through with this commit chain referenced. §2 tool count 5 → 6 |
+
+---
+
+## 5. Open backlog
+
+### Next-iteration cascade-gate targets
+
+These were enumerated at the end of Arc 2's commit message and re-confirmed by the geology audit's 10-seed schneeberg sweep:
+
+| mineral | scenario | category | next move |
+|---|---|---|---|
+| `native_silver` | schneeberg, epithermal_telluride, bisbee | **structural** (hard `S > 2.0` upper gate, same Path C pattern as native_arsenic) | Apply soft-suppressor: `s_f = max(0, 1 - S/Sdenom)`, drop hard gate, possibly lower nuc threshold 1.2 → 1.0. ~1 hour. |
+| `native_copper` | bisbee | **structural** (hard `S > 30` upper gate; soft `s_f = max(0.3, 1-S/40)` already present but floored at 0.3, similar to native_arsenic's pre-fix s_suppr) | Same fix pattern. ~1 hour. |
+| `native_sulfur` | none | **structural** (hard `pH > 5` + `metal_sum > 100` upper gates) | Different pattern — pH and metal_sum aren't depleting species in the bulk view. Lower priority; the engine may be correct and the gap is "no canonical scenario fires native sulfur" (fumaroles + sulfide weathering). |
+| `cobaltite` | schneeberg | **calibration** (Co<50 lower gate, schneeberg Co=30) | Either bump schneeberg Co → 60 OR lower engine gate Co<30. Geology says cobaltite forms in Co-enriched fluids, so engine gate is roughly honest; scenario seed is the conservative call. |
+| `nickeline` | schneeberg | **calibration** (Ni<40 lower gate, schneeberg Ni=20) | Same pattern. Bump Ni → 30 (per Burkhardt 2001 upper end) or lower gate. |
+| `naumannite` | schneeberg | **calibration** (σ formula too lax — Ag=8 Se=2 yields σ≈0.13 vs 1.3 threshold) | Engine scaling needs tightening. ~30 minutes. |
+| `stibnite` | porphyry | **calibration** (σ_max = 1.16 vs 1.2 threshold — JUST under) | Drop threshold 1.2 → 1.0, OR widen T window (porphyry peak at 346°C is just past native stibnite's 150-300°C sweet spot). ~30 minutes. |
+
+### Other open items (carried from prior handoff)
+
+- **Proposal B** (habit transitions on fill × σ) — ~3 hours, fastest visual win from the high-fill thread
+- **Proposal D** (interlocking textures past vugFill ≥ 1.0) — ~1 day, fixes sabkha 2.5× / gem_pegmatite 1.5× single-step overshoots
+- **Proposal E** (per-cell local fill) — ~3 days, deferred
+- **Harness extraction** (`tools/_harness.mjs`) — ~30 minutes, mechanical. Six tools now sharing ~50 lines of duplicated jsdom-eval-fetch-mock setup.
+- **Cave-size resize** of naica/dripstones — wait for Proposal D
+- **Architecture audit follow-ups** from `1541f70`
+
+---
+
+## 6. Verification harness
+
+```bash
+npm run ci                                  # typecheck + build:check + 238 tests
+npm test                                    # vitest only
+node tools/gen-js-baseline.mjs              # regen calibration baseline (after any chemistry change)
+node tools/twin_rate_check.mjs              # twin frequency report
+node tools/mineral_coverage_check.mjs       # live / stale / dead classification
+node tools/stale_mineral_probe.mjs          # per-step σ for stale (mineral, scenario) pairs
+node tools/high_fill_probe.mjs [seed]       # vugFill trajectory + growth-rate bins
+node tools/geology_check.mjs                # 10-seed schneeberg-vs-five-element-paragenesis sweep
+```
+
+`geology_check.mjs` defaults to schneeberg + the five-element tracked-mineral list. Edit the `scenario` and `tracked` constants at the top of the file for other audits — e.g. bisbee + Bisbee blue+green Cu carbonate suite, or epithermal_telluride + Cripple Creek bonanza-pocket paragenesis.
+
+Boot order if you're starting cold: `npm run build` first (the tools eval the bundle from `dist/`). Bundle takes ~5s to compile.
+
+---
+
+## 7. Principles refreshed
+
+The §7 principles from the prior handoff still hold. **One new one earned this session:**
+
+### Audit chemistry data before engine knobs
+
+When σ for a mineral is wrong (too low, too high, doesn't fire when it geologically should), the instinct is to reach for the engine — tighten a denominator, lower a threshold, soften a gate. This session showed two cases where the right fix was DATA, not engine:
+
+1. **Arc 1 (galena in mvt)**: σ was being suppressed by 6× activity corrections from unrelated minerals. The fix wasn't to change galena's σ formula; it was to remove the bogus extra multipliers.
+
+2. **Geology audit (native_arsenic overshoot)**: σ peak was 1.56 vs 1.0 threshold — looked like a 30% over-tune. The fix wasn't to dial back the engine; it was to add Co + Ni to the broth so the competitor arsenide engines could consume their share of the As budget. The σ overshoot self-corrected once the competition was present.
+
+**The rule:** before tuning an engine to make a mineral fire or stop firing, check (a) is the mineral's σ formula being multiplied by something unrelated? (b) is the deposit class's defining chemistry actually present in the broth? If either is "yes," fix that first. Engine tuning is the last resort.
+
+**Boss principle, captured verbatim:** "when you follow nature everything should just fall into place unless there is a variable we have missed."
+
+This composes with the **defer-to-geology** principle from the user-memory file: real-world chemistry is load-bearing in vugg-simulator design tradeoffs. The cascade-gate audit's three arcs each ended with the geologically-correct answer being the simpler answer. Don't out-engineer geology.
+
+---
+
+## 8. What this session was
+
+Half-day session, three commits, 238/238 tests green throughout. The audit was framed as "soften hard cation gates" and ended up touching three categories of fix:
+
+- **Structural** (Arc 1 + Arc 2's S gates): the engines literally couldn't reach their fire conditions under bulk-view chemistry. Surgical fixes.
+- **Calibration** (Arc 2's engine scaling + threshold drops): downstream of the structural fix, the formulas needed tightening for realistic seeds to clear nuc thresholds.
+- **Chemistry data** (geology audit): the broth was missing variables that a literature review would have caught instantly.
+
+The chemistry-data fix was the prettiest of the three because it required ZERO engine changes — just three numbers in `scenarios.json5` — and it cleaned up multiple downstream concerns at once (native_arsenic overshoot, autunite seed-42 regression, erythrite + annabergite + acanthite all firing).
+
+The boss intervention at the right moment (post-Arc-2, before I started "dial back native_arsenic") shifted the framing from "verify my Arc 2 was right" to "verify the science" — and that reframe was load-bearing. A self-review without that nudge would have led to engine knob-twisting and missed the broth gap entirely.
+
+Good seat to compact from.
+
+---
+
+## 9. Closing — what's NOT in this handoff
+
+Things deliberately omitted because the prior handoffs cover them:
+
+- The Backlog K vugFill cap discovery + fix → `HANDOFF-CALIBRATION-AND-COVERAGE.md` §5
+- The four original stale-mineral retunes (adamite / chrysoprase / ruby / native_tellurium) → `HANDOFF-CALIBRATION-AND-COVERAGE.md` §12
+- Proposals A/B/C/D/E for high-fill physics → `HANDOFF-HIGH-FILL-AND-SIZE-CLASS.md` §3 and `proposals/RESEARCH-GROWTH-AT-HIGH-FILL.md`
+- Size-class cascade (vug / pocket / cave) → `HANDOFF-HIGH-FILL-AND-SIZE-CLASS.md` §3
+- The compose-cleanly architecture + size-class-orthogonal-to-architecture + text-mode-bulk-edits principles → `HANDOFF-HIGH-FILL-AND-SIZE-CLASS.md` §7
+
+Read all three handoffs together for the complete picture from 2026-05-12 through 2026-05-18 — calibration + coverage (HANDOFF-CALIBRATION-AND-COVERAGE), then high-fill + size-class (HANDOFF-HIGH-FILL-AND-SIZE-CLASS), then this one (cascade-gate audit + geology-as-debugger).

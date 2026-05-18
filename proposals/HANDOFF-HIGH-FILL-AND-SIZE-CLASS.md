@@ -1,8 +1,9 @@
 # HANDOFF: High-fill physics + size-class cascade (Proposals A+C + Backlog K compose-up)
 
 > **Authored:** 2026-05-18 by Claude (Sonnet 4.5)
-> **State:** HEAD = `4b20645` on `origin/main` (Syntaxswine). SIM_VERSION 69. **226/226 tests green.** Coverage tool: 0 stale, 89 live, 27 dead.
+> **State at authoring:** HEAD = `4b20645`, SIM_VERSION 69, 226/226 tests green, coverage 0 stale / 89 live / 27 dead.
 > **Continues:** `HANDOFF-CALIBRATION-AND-COVERAGE.md` (terminus `062e6f5`). That doc covers Backlog K + the four-stale sweep up to 2026-05-16; this doc covers what happened next.
+> **Status:** terminal — the open backlog's top item (Path C cascade-gate audit) was completed in the same-day session that followed. **Read `HANDOFF-CASCADE-GATE-AUDIT.md` next** for the three arcs that closed it (`e9248c5` → `1d66c4a` → `688bdc7`, current HEAD as of this revision).
 > **Audience:** next agent (post-compact or fresh session) AND the boss skimming options.
 
 ---
