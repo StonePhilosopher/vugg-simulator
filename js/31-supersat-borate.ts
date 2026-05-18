@@ -34,7 +34,14 @@ Object.assign(VugConditions.prototype, {
     sigma *= (1.0 - 0.7 * caPenalty);
   }
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'borax');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'tincalconite');
+  // 2026-05 cascade-gate audit: removed accidental over-suppression by
+  // activityCorrectionFactor('tincalconite'). Tincalconite IS borax's
+  // paramorph (same Na2B4O7 stoich, less water of hydration), so its
+  // activity factor was numerically identical to borax's — applying both
+  // squared the correction (γ² × m²), which is not how activity-coefficient
+  // thermodynamics composes. Regression introduced by the Phase 2b sweep
+  // (eff8ec1, 2026-05-05). Equivalent fixes landed on adamite, galena,
+  // and stibnite the same day.
   return Math.max(sigma, 0);
 },
 });

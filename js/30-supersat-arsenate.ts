@@ -97,8 +97,13 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.pH < 4.0) sigma -= (4.0 - this.fluid.pH) * 0.4;
   else if (this.fluid.pH > 8.0) sigma *= 0.5;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'adamite');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'erythrite');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'annabergite');
+  // 2026-05 cascade-gate audit: removed accidental over-suppression by
+  // activityCorrectionFactor('erythrite') + ('annabergite'). Those are
+  // distinct Co + Ni arsenates with their own stoichiometry; multiplying
+  // them into adamite's σ stacked three ≤1 factors and silently dampened
+  // the σ by ~½×. Regression introduced by the Phase 2b activity-coefficient
+  // sweep (eff8ec1, 2026-05-05). Equivalent fixes landed on borax, galena,
+  // and stibnite the same day.
   return Math.max(sigma, 0);
 },
 

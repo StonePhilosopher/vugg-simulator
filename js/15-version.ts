@@ -1253,5 +1253,37 @@
 //        seed42_v69.json calibration baseline. shape_seed still
 //        controls reproducibility — same (scenario, seed) → same
 //        sphere placements forever.
-const SIM_VERSION = 69;
+//
+//   v70 — Path C cascade-gate audit, Arc 1 (2026-05-18).
+//        Activity-correction copy-paste regression repair. The Phase 2b
+//        sweep (eff8ec1, 2026-05-05) accidentally landed extra
+//        activityCorrectionFactor calls on four supersaturation methods,
+//        each suppressing σ by ~½× via stacked log γᵢ products from
+//        unrelated minerals' stoichiometry:
+//
+//          supersaturation_adamite    × erythrite × annabergite (Co+Ni
+//                                       arsenate factors stacked on a
+//                                       Zn arsenate)
+//          supersaturation_borax      × tincalconite (paramorph; identical
+//                                       stoichiometry, so γ²·m² double-count)
+//          supersaturation_galena     × pyrite × marcasite × sphalerite ×
+//                                       wurtzite × chalcopyrite (six
+//                                       factors on a PbS mineral)
+//          supersaturation_stibnite   × tetrahedrite × tennantite (Cu-As/Sb
+//                                       sulfosalt factors stacked on Sb2S3)
+//
+//        Surfaced by the cascade-gate audit (HANDOFF-CALIBRATION-AND-COVERAGE
+//        section 12) while probing why native_arsenic + native_bismuth +
+//        stibnite stay in the dead-list across 240 (scenario × seed) sweeps.
+//        Cross-check tool grep'd every supersaturation_X for foreign
+//        activityCorrectionFactor targets — only these four matched.
+//
+//        Direction: σ rises for galena (most-exercised mineral in the sim,
+//        every MVT + Pb-bearing scenario), borax (sabkha + searles_lake +
+//        evaporite playas), adamite (supergene_oxidation), stibnite
+//        (porphyry — best σ 0.87 → 1.16, +32%, still under the 1.2 nuc
+//        threshold but no longer mathematically pinned down). Bulk drift
+//        on calibration baseline expected on Pb-Zn-Cu-S sulfide scenarios.
+//        Proposal A's vugFill≥1.0 hard floor caps any overshoot.
+const SIM_VERSION = 70;
 

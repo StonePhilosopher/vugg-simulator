@@ -103,12 +103,17 @@ Object.assign(VugConditions.prototype, {
   const eT = this.effectiveTemperature;
   if (eT >= 200 && eT <= 400) sigma *= 1.3;
   if (eT > 450) sigma *= Math.exp(-0.008 * (eT - 450));
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'pyrite');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'marcasite');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'sphalerite');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'wurtzite');
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'galena');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chalcopyrite');
+  // 2026-05 cascade-gate audit: removed accidental over-suppression by
+  // activityCorrectionFactor for pyrite/marcasite/sphalerite/wurtzite/
+  // chalcopyrite. Those are unrelated Fe/Zn/Cu sulfides with their own
+  // stoichiometry; multiplying SIX factors stacked log γᵢ over the wrong
+  // ion sets and silently dampened galena's σ by ~½×. Regression
+  // introduced by the Phase 2b activity-coefficient sweep (eff8ec1,
+  // 2026-05-05). Equivalent fixes landed on adamite, borax, and stibnite
+  // the same day. Galena is the most heavily exercised mineral in the
+  // sim (MVT + every Pb-bearing scenario) so this is the highest-impact
+  // single line of the audit.
   return Math.max(sigma, 0);
 },
 
@@ -308,8 +313,15 @@ Object.assign(VugConditions.prototype, {
   sigma *= sulfideRedoxLinearFactor(this.fluid, 1.3, 1.0, 0.5);
   if (this.fluid.pH < 2.0) sigma -= (2.0 - this.fluid.pH) * 0.3;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'stibnite');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'tetrahedrite');
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'tennantite');
+  // 2026-05 cascade-gate audit: removed accidental over-suppression by
+  // activityCorrectionFactor for tetrahedrite + tennantite. Those are
+  // Cu-As/Sb sulfosalts with their own stoichiometry, structurally
+  // unrelated to stibnite (Sb2S3). Stacking the three factors dampened
+  // σ enough to keep stibnite below the σ=1.2 nucleation threshold even
+  // in porphyry (Sb=25, S=60-115): pre-fix best σ = 0.87 across 360
+  // step-samples. Regression introduced by the Phase 2b sweep (eff8ec1,
+  // 2026-05-05). Equivalent fixes landed on adamite, borax, and galena
+  // the same day.
   return Math.max(sigma, 0);
 },
 

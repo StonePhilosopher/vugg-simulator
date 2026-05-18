@@ -5563,7 +5563,39 @@ let timeScale = 5.0;
 //        seed42_v69.json calibration baseline. shape_seed still
 //        controls reproducibility — same (scenario, seed) → same
 //        sphere placements forever.
-const SIM_VERSION = 69;
+//
+//   v70 — Path C cascade-gate audit, Arc 1 (2026-05-18).
+//        Activity-correction copy-paste regression repair. The Phase 2b
+//        sweep (eff8ec1, 2026-05-05) accidentally landed extra
+//        activityCorrectionFactor calls on four supersaturation methods,
+//        each suppressing σ by ~½× via stacked log γᵢ products from
+//        unrelated minerals' stoichiometry:
+//
+//          supersaturation_adamite    × erythrite × annabergite (Co+Ni
+//                                       arsenate factors stacked on a
+//                                       Zn arsenate)
+//          supersaturation_borax      × tincalconite (paramorph; identical
+//                                       stoichiometry, so γ²·m² double-count)
+//          supersaturation_galena     × pyrite × marcasite × sphalerite ×
+//                                       wurtzite × chalcopyrite (six
+//                                       factors on a PbS mineral)
+//          supersaturation_stibnite   × tetrahedrite × tennantite (Cu-As/Sb
+//                                       sulfosalt factors stacked on Sb2S3)
+//
+//        Surfaced by the cascade-gate audit (HANDOFF-CALIBRATION-AND-COVERAGE
+//        section 12) while probing why native_arsenic + native_bismuth +
+//        stibnite stay in the dead-list across 240 (scenario × seed) sweeps.
+//        Cross-check tool grep'd every supersaturation_X for foreign
+//        activityCorrectionFactor targets — only these four matched.
+//
+//        Direction: σ rises for galena (most-exercised mineral in the sim,
+//        every MVT + Pb-bearing scenario), borax (sabkha + searles_lake +
+//        evaporite playas), adamite (supergene_oxidation), stibnite
+//        (porphyry — best σ 0.87 → 1.16, +32%, still under the 1.2 nuc
+//        threshold but no longer mathematically pinned down). Bulk drift
+//        on calibration baseline expected on Pb-Zn-Cu-S sulfide scenarios.
+//        Proposal A's vugFill≥1.0 hard floor caps any overshoot.
+const SIM_VERSION = 70;
 
 // ── 18-constants.js ──
 
@@ -9778,10 +9810,13 @@ Object.assign(VugConditions.prototype, {
             sigma *= 0.5;
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'adamite');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'erythrite');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'annabergite');
+        // 2026-05 cascade-gate audit: removed accidental over-suppression by
+        // activityCorrectionFactor('erythrite') + ('annabergite'). Those are
+        // distinct Co + Ni arsenates with their own stoichiometry; multiplying
+        // them into adamite's σ stacked three ≤1 factors and silently dampened
+        // the σ by ~½×. Regression introduced by the Phase 2b activity-coefficient
+        // sweep (eff8ec1, 2026-05-05). Equivalent fixes landed on borax, galena,
+        // and stibnite the same day.
         return Math.max(sigma, 0);
     },
     supersaturation_mimetite() {
@@ -9841,8 +9876,14 @@ Object.assign(VugConditions.prototype, {
         }
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'borax');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'tincalconite');
+        // 2026-05 cascade-gate audit: removed accidental over-suppression by
+        // activityCorrectionFactor('tincalconite'). Tincalconite IS borax's
+        // paramorph (same Na2B4O7 stoich, less water of hydration), so its
+        // activity factor was numerically identical to borax's — applying both
+        // squared the correction (γ² × m²), which is not how activity-coefficient
+        // thermodynamics composes. Regression introduced by the Phase 2b sweep
+        // (eff8ec1, 2026-05-05). Equivalent fixes landed on adamite, galena,
+        // and stibnite the same day.
         return Math.max(sigma, 0);
     },
 });
@@ -12260,17 +12301,17 @@ Object.assign(VugConditions.prototype, {
         if (eT > 450)
             sigma *= Math.exp(-0.008 * (eT - 450));
         if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'pyrite');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'marcasite');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'sphalerite');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'wurtzite');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'galena');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'chalcopyrite');
+        // 2026-05 cascade-gate audit: removed accidental over-suppression by
+        // activityCorrectionFactor for pyrite/marcasite/sphalerite/wurtzite/
+        // chalcopyrite. Those are unrelated Fe/Zn/Cu sulfides with their own
+        // stoichiometry; multiplying SIX factors stacked log γᵢ over the wrong
+        // ion sets and silently dampened galena's σ by ~½×. Regression
+        // introduced by the Phase 2b activity-coefficient sweep (eff8ec1,
+        // 2026-05-05). Equivalent fixes landed on adamite, borax, and stibnite
+        // the same day. Galena is the most heavily exercised mineral in the
+        // sim (MVT + every Pb-bearing scenario) so this is the highest-impact
+        // single line of the audit.
         return Math.max(sigma, 0);
     },
     supersaturation_molybdenite() {
@@ -12534,10 +12575,15 @@ Object.assign(VugConditions.prototype, {
             sigma -= (2.0 - this.fluid.pH) * 0.3;
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'stibnite');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'tetrahedrite');
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'tennantite');
+        // 2026-05 cascade-gate audit: removed accidental over-suppression by
+        // activityCorrectionFactor for tetrahedrite + tennantite. Those are
+        // Cu-As/Sb sulfosalts with their own stoichiometry, structurally
+        // unrelated to stibnite (Sb2S3). Stacking the three factors dampened
+        // σ enough to keep stibnite below the σ=1.2 nucleation threshold even
+        // in porphyry (Sb=25, S=60-115): pre-fix best σ = 0.87 across 360
+        // step-samples. Regression introduced by the Phase 2b sweep (eff8ec1,
+        // 2026-05-05). Equivalent fixes landed on adamite, borax, and galena
+        // the same day.
         return Math.max(sigma, 0);
     },
     supersaturation_bismuthinite() {

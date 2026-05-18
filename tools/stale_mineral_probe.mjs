@@ -141,25 +141,59 @@ const MINERALS_JSON = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'minera
 // ring water state — useful for debugging non-σ gates. Add to taste.
 
 const PROBES = [
+  // Round 1 (Backlog K era — Apr 2026): adamite, chrysoprase, native_tellurium,
+  // ruby. All four landed. Tracked here for reference; commented to keep
+  // the cascade-gate-audit signal clean.
+  //   { mineral: 'adamite', scenario: 'supergene_oxidation', ... }
+  //   { mineral: 'chrysoprase', scenario: 'ultramafic_supergene', ... }
+  //   { mineral: 'native_tellurium', scenario: 'epithermal_telluride', ... }
+  //   { mineral: 'ruby', scenario: 'marble_contact_metamorphism', ... }
+  //
+  // Round 2 (Path C cascade-gate audit — May 2026): all six dead minerals
+  // with hard upper-S / upper-Fe gates. Native_tellurium's Ag-hard-gate
+  // fix established the soft-suppressor pattern. These engines all carry
+  // the same structural defect: a hard `if (fluid.X > Y) return 0` on
+  // a species that depletes locally (via sulfides, arsenides, etc.) but
+  // the σ engine reads the bulk-view fluid at the equator ring.
   {
-    mineral: 'adamite',
-    scenario: 'supergene_oxidation',
-    extras: ['Zn', 'Cu', 'As', 'O2', 'pH', 'concentration'],
+    mineral: 'native_arsenic',
+    scenario: 'schneeberg',  // Bi-Co-Ni-Ag-As five-element vein, S=30 trips gate
+    extras: ['As', 'S', 'Fe', 'O2', 'pH', 'temperature'],
   },
   {
-    mineral: 'chrysoprase',
-    scenario: 'ultramafic_supergene',
-    extras: ['SiO2', 'Ni', 'Mg', 'Fe', 'O2', 'pH', 'concentration'],
+    mineral: 'native_bismuth',
+    scenario: 'schneeberg',  // scenario notes explicitly call out native_bismuth
+    extras: ['Bi', 'S', 'O2', 'pH', 'temperature'],
   },
   {
-    mineral: 'native_tellurium',
-    scenario: 'epithermal_telluride',
-    extras: ['Te', 'Au', 'Ag', 'O2', 'pH', 'temperature'],
+    mineral: 'native_silver',
+    scenario: 'epithermal_telluride',  // Ag=15, S=8
+    extras: ['Ag', 'S', 'O2', 'pH', 'temperature'],
   },
   {
-    mineral: 'ruby',
-    scenario: 'marble_contact_metamorphism',
-    extras: ['Al', 'Cr', 'SiO2', 'Fe', 'pH', 'temperature'],
+    mineral: 'native_silver',
+    scenario: 'bisbee',  // Ag=40, S=50
+    extras: ['Ag', 'S', 'O2', 'pH', 'temperature'],
+  },
+  {
+    mineral: 'native_copper',
+    scenario: 'bisbee',  // Cu=400, S=50
+    extras: ['Cu', 'S', 'O2', 'pH', 'temperature'],
+  },
+  {
+    mineral: 'stibnite',
+    scenario: 'porphyry',  // Sb=25, S=60
+    extras: ['Sb', 'S', 'O2', 'pH', 'temperature'],
+  },
+  {
+    mineral: 'native_bismuth',
+    scenario: 'porphyry',  // Bi=30, S=60 — second probe to confirm pattern
+    extras: ['Bi', 'S', 'O2', 'pH', 'temperature'],
+  },
+  {
+    mineral: 'native_arsenic',
+    scenario: 'porphyry',  // As=15, S=60 — second probe to confirm pattern
+    extras: ['As', 'S', 'Fe', 'O2', 'pH', 'temperature'],
   },
 ];
 
