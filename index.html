@@ -5642,7 +5642,65 @@ let timeScale = 5.0;
 //        marginal lift in Arc 1; native_silver / native_copper / native_sulfur
 //        — flaky / scenario-dependent; corundum SiO2>50 gate; chromite
 //        T>1000 gate) documented as known calibration work, not structural.
-const SIM_VERSION = 71;
+//
+//   v72 — Schneeberg five-element vein broth gap-fill (2026-05-18).
+//        Discovered while geology-auditing the Arc 2 deliverable (boss
+//        prompt: "double-check the science"): Schneeberg's seed broth was
+//        missing Co, Ni, and Ag — three of the FIVE elements that define
+//        the "Fünfelementformation" (five-element formation) deposit
+//        class Schneeberg is the type locality for. 10-seed schneeberg
+//        sweep at v71 showed:
+//
+//          erythrite      0/10 firings  (cobalt bloom — Annaberg, the town
+//                                        next to Schneeberg, is annabergite's
+//                                        type locality, and erythrite was
+//                                        the source of the 16th-century
+//                                        "Saxon blue" pigment trade)
+//          annabergite    0/10 firings  (nickel bloom — same)
+//          acanthite      0/10 firings  (silver sulfide — Schneeberg was
+//                                        Europe's primary SILVER source
+//                                        from the 1100s-1500s, before its
+//                                        bismuth + uranium eras)
+//
+//        Root cause: schneeberg.fluid had no Co, no Ni, no Ag at all.
+//
+//        Fix (data-only, no engine changes):
+//          schneeberg.Co: 0 → 30  (Burkhardt et al. 2001 Erzgebirge fluid
+//                                  inclusions: Co 5-50 ppm; 30 mid-range)
+//          schneeberg.Ni: 0 → 20  (same: Ni 5-30 ppm; 20 mid-range)
+//          schneeberg.Ag: 0 → 8   (canonical five-element-vein fluid Ag
+//                                  range; enables acanthite + acanthite's
+//                                  Ag2S pathway to naumannite)
+//          schneeberg.expects_species: extended with native_bismuth,
+//                                       native_arsenic, erythrite,
+//                                       annabergite, cobaltite, nickeline.
+//
+//        Verification — 10-seed schneeberg sweep:
+//          erythrite     0/10 → 10/10  ✓
+//          annabergite   0/10 → 10/10  ✓
+//          acanthite     0/10 → 10/10  ✓ (44 crystals)
+//          autunite      5/10 → 7/10   ✓ (slot-competition rebalance)
+//          torbernite    5/10 → 9/10   ✓
+//          zeunerite     7/10 → 7/10   (more crystals: 12→21)
+//          native_arsenic ratio dropped 53→17 µm avg as Co-Ni arsenides
+//          began consuming the As budget — exactly Förster & Tischendorf
+//          1989's "native_arsenic is a minor accessory to Co-Ni arsenides"
+//          paragenesis. The Arc-2 σ overshoot self-corrected.
+//
+//        Boss principle captured: "when you follow nature everything should
+//        just fall into place unless there is a variable we have missed."
+//        The "missed variable" was three elements absent from a deposit
+//        class defined by FIVE elements.
+//
+//        Remaining schneeberg dormants documented as future work:
+//          - native_silver: hard `S > 2` gate (same Path C structural
+//            pattern as native_arsenic — next cascade-gate audit target)
+//          - cobaltite: Co<50 lower gate (Schneeberg Co=30; geological
+//            scaling honest)
+//          - nickeline: Ni<40 lower gate (Schneeberg Ni=20; same)
+//          - naumannite: σ formula too lax (Ag=8 Se=2 → σ≈0.13 vs 1.3
+//            threshold; calibration, not structural)
+const SIM_VERSION = 72;
 
 // ── 18-constants.js ──
 

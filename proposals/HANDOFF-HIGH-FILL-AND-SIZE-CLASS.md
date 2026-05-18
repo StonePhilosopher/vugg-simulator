@@ -38,9 +38,10 @@ Three new tools this session join the two from the prior:
 | `tools/twin_rate_check.mjs` | observed twin frequency vs authored per-roll probability | ~15s |
 | `tools/mineral_coverage_check.mjs` | live / stale / dead mineral classification | ~10s |
 | `tools/stale_mineral_probe.mjs` | per-step σ + chemistry for stale (mineral, scenario) pairs | ~5s |
-| `tools/high_fill_probe.mjs` (NEW) | vugFill trajectory + growth-rate bins across all scenarios | ~5s |
+| `tools/high_fill_probe.mjs` | vugFill trajectory + growth-rate bins across all scenarios | ~5s |
+| `tools/geology_check.mjs` (NEW 2026-05-18) | 10-seed scenario sweep vs expected paragenesis (configurable scenario + tracked-mineral list) | ~10s |
 
-All five share the same jsdom + bundle-eval + fetch-mock harness. ~50 lines of setup duplicated across each `tools/*.mjs`. If a 6th tool lands, extract to `tools/_harness.mjs` first — see §8 for the candidate list.
+All six share the same jsdom + bundle-eval + fetch-mock harness. ~50 lines of setup duplicated across each `tools/*.mjs`. **Time to extract `tools/_harness.mjs`** — the 6-tool threshold is crossed.
 
 **Run any of these after any data or engine change.** They surface drift that unit tests miss.
 
@@ -207,7 +208,11 @@ A cave-sized basin (km-scale playa) or a vug-sized tabular fracture are both exp
 
 ### Other open items:
 
-- **Path C cascade-gate audit** (~half day). §12 of the prior handoff identified the structural issue: any engine with `if (this.fluid.X > Y) return 0` where Y is a depleting species becomes structurally unreachable. Only `native_tellurium` was fixed (soft `ag_suppr`). A focused probe — grep `if \(this\.fluid\.\w+ [><=]+ [\d.]+\) return 0` across `js/3?-supersat-*.ts` — would surface the rest in 10 minutes; ~half day to triage + fix.
+- ~~**Path C cascade-gate audit**~~ — **DONE 2026-05-18**, see commits `e9248c5` + `1d66c4a` + the schneeberg-broth follow-up. Three arcs landed:
+  - **Arc 1 (`e9248c5`):** Activity-correction copy-paste fix — 4 minerals (`adamite`, `borax`, `galena`, `stibnite`) had spurious extra `activityCorrectionFactor` calls suppressing σ by ~½×. Galena went from firing in 2 scenarios to firing in 6 (mvt finally produces galena).
+  - **Arc 2 (`1d66c4a`):** Soft-cation-suppressor pattern extended from `native_tellurium` to `native_arsenic` + `native_bismuth`. Both moved from dead to live (89 → 91 live). schneeberg now produces the bismuthinite + native_bismuth Bi paragenesis it was historically defined by.
+  - **Schneeberg broth gap-fill (this session):** Geology audit found schneeberg was missing Co + Ni + Ag — three of the FIVE elements defining the "five-element formation" deposit class. Adding them resurrected erythrite + annabergite + acanthite (all 10/10 seeds now) and self-corrected the Arc 2 native_arsenic σ overshoot via slot competition.
+  - **Next cascade-gate targets** (documented in v72 history note): `native_silver` (hard `S > 2` gate, same pattern), `cobaltite` + `nickeline` (lower-gate seed-too-low, calibration not structural), `naumannite` (σ formula too lax).
 
 - **Cave-size resize of cave-anchored scenarios** (naica_geothermal currently 50mm but anchored to Naica's ~10m chamber; zoned_dripstone_cave + stalactite_demo similar). Wait for Proposal D's interlocking-texture bookkeeping so cave-scale runs don't get pathologically slow at high fill.
 

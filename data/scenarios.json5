@@ -1280,7 +1280,7 @@
     "schneeberg": {
       "anchor": "Schneeberg, Erzgebirgskreis (Saxony Ore Mountains), Germany — type locality for torbernite (1772), zeunerite (1872), uranospinite (1873), and ten more uranyl arsenate-phosphate species. Walpurgis Flacher vein, Weisser Hirsch Mine.",
       "description": "Schneeberg / Erzgebirge oxidized uranium-pegmatite vein system (Walpurgis Flacher vein, Weisser Hirsch Mine, Saxony — type locality for torbernite, zeunerite, and uranospinite). A U-bearing pegmatite + chalcopyrite + arsenopyrite primary assemblage weathers under meteoric oxidation; the resulting uranyl + Cu + As fluid plates the autunite-group secondaries in two cation phases — Cu-rich first (torbernite emerald greens then zeunerite as As-pulse arrives), then Ca-dominant after Cu is consumed (autunite + uranospinite, the bright LW-UV fluorescent yellows).",
-      "expects_species": ["uraninite", "torbernite", "zeunerite", "autunite", "uranospinite"],
+      "expects_species": ["uraninite", "torbernite", "zeunerite", "autunite", "uranospinite", "native_bismuth", "native_arsenic", "erythrite", "annabergite", "cobaltite", "nickeline"],
       "duration_steps": 160,
       "notes": [
         "The mineralogically richest single ore district in Europe — the Erzgebirge had been mined for silver since the 1100s, then bismuth from the 1500s (the very name 'Bismutum' was coined here), then uranium from the 1800s onward. Most autunite-group species were first described from Schneeberg or its sister deposits (Jáchymov, Annaberg). Pinch & Wilson 1977 monographs are the canonical reference.",
@@ -1348,14 +1348,41 @@
           // assemblage — including the type-defining native bismuth — fire
           // in a bulk-view chemistry simulation.)
           "Bi": 40,
+          // Co=30, Ni=20, Ag=8 — the BiCoNiAgAs five-element vein heritage
+          // that pre-Path-C-audit the broth was silently missing. Schneeberg-
+          // Annaberg-Jáchymov defined the "Fünfelementformation" (five-
+          // element formation) class of deposits: native_bismuth, native_silver,
+          // Co arsenides (cobaltite + safflorite + skutterudite), Ni arsenides
+          // (nickeline + rammelsbergite), and native_arsenic / arsenopyrite
+          // coexisting in the same vein. The 10-seed geology audit
+          // (2026-05-18) found erythrite + annabergite firing 0/10 seeds in
+          // schneeberg despite Annaberg being annabergite's TYPE LOCALITY
+          // and erythrite/cobalt arsenides being the source of the historic
+          // 16th-century "Saxon blue" pigment trade. Root cause: Co/Ni
+          // simply weren't in the seed broth.
+          //   Co=30: Burkhardt et al. 2001 reports Co 5-50 ppm in Erzgebirge
+          //          arsenide-vein fluid inclusions; 30 is the conservative
+          //          mid-range for the cobaltite + erythrite cascade.
+          //   Ni=20: same paper reports Ni 5-30 ppm; 20 enables nickeline +
+          //          annabergite.
+          //   Ag=8:  Schneeberg's pre-bismuth-era SILVER mining (1100s-1500s,
+          //          original deposit-defining commodity) implies Ag was
+          //          always present. The "Ag=0 + waits for event" plan
+          //          encoded in earlier scenario versions never landed an
+          //          Ag-delivery event. 8 ppm matches typical native-silver-
+          //          plus-acanthite five-element-vein fluids and enables
+          //          naumannite (already partially seeded Se=2).
+          "Co": 30,
+          "Ni": 20,
+          "Ag": 8,
           // v62 plumbing: Se for the new selenide engines. Schneeberg /
           // Jáchymov / Příbram all carry the classic clausthalite +
           // naumannite + tiemannite + berzelianite low-S selenide assemblage
           // (Pinch & Wilson 1977 documents the Erzgebirge selenide veins).
-          // Ag=0 currently in this broth so naumannite stays inactive
-          // until silver is also delivered; Pb=5 is below clausthalite's
-          // Pb≥20 nucleation threshold so clausthalite also waits. 2 ppm
-          // Se is the seed for when the engines + Ag/Pb pulses arrive.
+          // Pb=5 is below clausthalite's Pb≥20 nucleation threshold so
+          // clausthalite waits for the Pb pulse. 2 ppm Se enables
+          // naumannite once Ag is also present (now seeded at 8 ppm above —
+          // 2026-05 gap-fill).
           "Se": 2,
           // Strongly reducing initial — required for uraninite + sulfides.
           "O2": 0.0,
