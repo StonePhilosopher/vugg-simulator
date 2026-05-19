@@ -369,6 +369,16 @@
         // Porphyry stockwork — primary void plus moderate secondary alcoves
         // where vein intersections widen the pocket.
         "wall": {
+          // Architecture audit (2026-05-18): porphyry-Cu deposits are
+          // fracture-controlled vein systems in quartz-monzonite stock
+          // (Bingham Canyon is the canonical example — sheeted veins
+          // along brittle-shear fractures). The cavity here represents
+          // a vein intersection / dilational jog — slot-like, not a
+          // smooth pegmatite pocket. 'tabular' archetype encodes the
+          // anisotropic stretch (~3:1 long-to-short axis) typical of
+          // fracture-pocket cross-sections. walls_only nucleation_bias
+          // keeps crystals on the long flat faces.
+          "architecture": "tabular",
           "primary_bubbles": 3,
           "secondary_bubbles": 6,
           "shape_seed": 4
@@ -938,6 +948,15 @@
         // Supergene oxidation front — 3 primary + 7 secondary bubbles model
         // complex meteoric dissolution cavity formation.
         "wall": {
+          // Architecture audit (2026-05-18): Tsumeb 1st-stage gossan is
+          // a deeply weathered + dissolved oxidation pocket — the type
+          // locality has highly irregular cavity geometry from
+          // century+ of acid pulse erosion through Pre-Cambrian
+          // dolomite. 'irregular' archetype encodes that (cathedral-
+          // scale variance, polar_amp×1.4). Default 'pocket' (smooth
+          // pegmatite ellipsoid) was wrong for a supergene gossan.
+          // Bubble counts left at scenario-tuned 3/7.
+          "architecture": "irregular",
           "primary_bubbles": 3,
           "secondary_bubbles": 7,
           "shape_seed": 7
@@ -1390,6 +1409,15 @@
           "salinity": 6.0
         },
         "wall": {
+          // Architecture audit (2026-05-18): Schneeberg is the
+          // canonical five-element vein deposit, hosted in the
+          // Walpurgis Flacher (German for "flat vein") at the
+          // Weisser Hirsch Mine. Five-element veins are STEEP TABULAR
+          // fissure-fills along Variscan brittle-shear structures —
+          // the cavity here is a slot in the vein, not a smooth
+          // pegmatite pocket. 'tabular' archetype encodes the
+          // anisotropic stretch (~3:1) of a vein-hosted cavity.
+          "architecture": "tabular",
           "primary_bubbles": 3,
           "secondary_bubbles": 5,
           "shape_seed": 9
@@ -1470,6 +1498,15 @@
         // Sandstone-hosted vug — high secondary porosity from intergranular
         // dissolution. n=4 'open' profile.
         "wall": {
+          // Architecture audit (2026-05-18): Colorado Plateau
+          // Triassic-Jurassic Morrison Formation roll-front deposits
+          // are sandstone-hosted with cavities formed by intergranular
+          // dissolution along the redox boundary. The geometry is
+          // inherently irregular — pore-throat coalescence, not a
+          // smooth pegmatite bubble. 'irregular' archetype encodes the
+          // cathedral-scale variance (polar_amp×1.4) appropriate for
+          // sandstone-vug profiles. Bubble counts 4/8 left scenario-tuned.
+          "architecture": "irregular",
           "primary_bubbles": 4,
           "secondary_bubbles": 8,
           "shape_seed": 5
@@ -1918,11 +1955,16 @@
           // 60 mm cavity — large enough that individual crystals read
           // at viewer scale.
           "vug_diameter_mm": 60.0,
-          // 'pocket' archetype = uniform-area nucleation (PROPOSAL-HOST-ROCK
-          // Mechanic 5 default). Bubble counts give a slightly irregular
-          // cavity profile so the cave reads as "carved by water" rather
-          // than "spherical bubble."
-          "architecture": "pocket",
+          // Architecture audit (2026-05-18): a "stalactite-bearing
+          // cavity" anchored to Carlsbad / Lechuguilla / Mammoth Cave
+          // is a karst dissolution chamber, not a smooth pegmatite
+          // pocket. 'irregular' archetype encodes that: more bubbles
+          // (cathedral profile) + bigger polar amplitude (the cavity
+          // has real vertical complexity). Existing primary/secondary
+          // bubble overrides preserved — scenario tuned them for the
+          // dripstone-demo specifically; archetype defaults would
+          // over-amplify the bubble count for this 60mm demo.
+          "architecture": "irregular",
           "primary_bubbles": 2,
           "secondary_bubbles": 4,
           "shape_seed": 42,
@@ -2017,7 +2059,12 @@
           // its size cap sooner (more nucleations within the 150 steps
           // → more spatial data points → cleaner demo).
           "vug_diameter_mm": 80.0,
-          "architecture": "pocket",
+          // Architecture audit (2026-05-18): zoned dripstone caves are
+          // karst dissolution chambers (Frasassi/Carlsbad/Reed Flute —
+          // cathedral-scale rooms with vertical complexity). 'irregular'
+          // not 'pocket'. Bubble counts left as scenario-tuned for the
+          // composite demo.
+          "architecture": "irregular",
           "primary_bubbles": 2,
           "secondary_bubbles": 4,
           "shape_seed": 24,

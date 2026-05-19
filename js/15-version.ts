@@ -1716,5 +1716,72 @@
 //            behavior; flag on completes without throw; painter is
 //            actually called when on; "corners stay open" property
 //            (cell-fill heterogeneity > 1.5× spread).
-const SIM_VERSION = 77;
+//   v78 — Architecture audit follow-ups (2026-05-18). Six scenarios
+//        had wrong default cavity geometry, flagged in
+//        HANDOFF-HIGH-FILL-ARC-COMPLETE.md §5 "Architecture audit
+//        follow-ups from 1541f70". Each fix is one architecture field
+//        in data/scenarios.json5; geology-correctness, not engine code:
+//
+//          scenario              before    after       why
+//          ---------------------------------------------------
+//          stalactite_demo       pocket    irregular   karst cave (Carlsbad/Lechuguilla/Mammoth)
+//          zoned_dripstone_cave  pocket    irregular   composite karst (Frasassi/Carlsbad/Reed Flute)
+//          supergene_oxidation   default*  irregular   Tsumeb 1st-stage gossan (deeply weathered)
+//          colorado_plateau      default*  irregular   sandstone-hosted roll-front (Morrison Fm)
+//          porphyry              default*  tabular     fracture-controlled veins (Bingham Canyon)
+//          schneeberg            default*  tabular     five-element vein, Walpurgis Flacher
+//
+//        * Scenarios with no explicit `architecture` field used the
+//          'pocket' default from VugWall constructor. Now explicit.
+//
+//        Behavior shift: the 4 irregular changes (stalactite_demo,
+//        zoned_dripstone_cave, supergene_oxidation, colorado_plateau)
+//        are byte-identical because:
+//          * polar_amp_scale / twist_amp_scale get zeroed post-
+//            _buildProfile3D (the 3D builder encodes per-cell variance
+//            directly; polar amps were the 2D-extruded workaround).
+//          * nucleation_bias stays 'uniform'.
+//          * primary/secondary bubble counts left at scenario-tuned
+//            overrides (3/7, 4/8, 2/4, 2/4) — irregular defaults to
+//            4/12 but the overrides win.
+//          → irregular vs pocket archetype is a NO-OP for these four.
+//            The change is documentational — declaring intent so the
+//            scenario reads correctly as "this is a karst cave / gossan
+//            / roll-front, not a smooth pegmatite pocket."
+//
+//        The 2 tabular changes (porphyry, schneeberg) activate the
+//        elongation field (0.0 → 0.55) and nucleation_bias change
+//        (uniform → walls_only). This DOES shift output:
+//
+//          porphyry:   5 minerals shift by < 1% (max_um sub-permille
+//                      noise). Same species, same counts. The tabular
+//                      stretch + walls_only bias rebalances cell-anchor
+//                      assignments but doesn't change crystal totals.
+//          schneeberg: cleaner drift in the geologically-correct
+//                      direction:
+//                        + zeunerite (the SCHNEEBERG TYPE LOCALITY
+//                          mineral — 1872 type) becomes active. The
+//                          flat-tabular vein archetype puts crystals on
+//                          the wall faces where uranyl arsenates
+//                          actually grow IRL.
+//                        - autunite, scorodite drop (both were marginal
+//                          uranyl phosphate / Fe-arsenate hits that
+//                          competed for the same site).
+//                        + annabergite becomes active (Co-Ni arsenate,
+//                          another Schneeberg signature).
+//                        * smaller mean crystal sizes (tabular = less
+//                          radial room than pocket; geologically right
+//                          for a vein-hosted slot vs a pegmatite pocket).
+//
+//        Coverage: still 95 live / 21 dead — no minerals went stale.
+//
+//        Why this matters: cavity archetype is the geology-side
+//        encoding of "what kind of opening does this fluid system
+//        deposit into." Real Schneeberg veins look NOTHING like
+//        pegmatite pockets — they're slot-like fissures with crystals
+//        on the wall faces. Picking the right archetype propagates to
+//        the renderer (tabular cavity geometry visible in the 3D
+//        view), the engine (walls_only nucleation), and the player's
+//        mental model.
+const SIM_VERSION = 78;
 
