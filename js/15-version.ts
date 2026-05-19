@@ -3471,5 +3471,81 @@
 //
 //         Coverage 120 live → 122 live (+2 minerals); 25 paramorph-only.
 //         Calibration drift: TBD per baseline regen.
-const SIM_VERSION = 99;
+//   v100 — Pb-Cu supergene sulfate trio: linarite + caledonite +
+//          leadhillite (2026-05-19). Late-stage Pb-Cu oxidation cycle
+//          from Leadhills Scotland type district + Tsumeb + Bisbee.
+//          All require SIMULTANEOUS oxidation of galena AND Cu-sulfide;
+//          discriminate via pH + CO3:SO4 ratio + Cu fraction.
+//
+//            linarite     PbCu(SO4)(OH)2          pH 4-7   CO3:SO4 < 0.3
+//            caledonite   Pb5Cu2(CO3)(SO4)3(OH)6  pH 5-7   CO3:SO4 0.3-1
+//            leadhillite  Pb4(SO4)(CO3)2(OH)2     pH 6-8   CO3:SO4 > 1.5
+//                                                          + Cu < 50
+//
+//          The CO3:SO4 ratio fork is the cleanest 3-way mineral
+//          discriminator in the v85-v100 push: each mineral occupies
+//          a distinct ratio window with smooth transitions. linarite
+//          + caledonite are commonly intergrown at Tsumeb (caledonite
+//          epitactic on linarite as carbonate activity rises during
+//          limestone-host reaction); leadhillite is the carbonate-
+//          dominant terminal phase that ages to anglesite+cerussite.
+//
+//          Color discriminators (the field test set):
+//            linarite     deep azure to ULTRAMARINE BLUE (some authors
+//                         call the most intensely blue mineral known)
+//            caledonite   BLUE-GREEN (the only blue-green of the trio)
+//            leadhillite  PEARLY WHITE-GREY pseudo-hexagonal tablets,
+//                         mica-like cleavage
+//
+//          All three sit DIRECTLY on galena (with anglesite rind for
+//          linarite) — that's the substrate signature. Caledonite also
+//          epitactic on linarite (Tsumeb tuft texture). leadhillite
+//          on cerussite (the carbonate-buffered host).
+//
+//          Polymorphism: leadhillite has the susannite (trigonal P-3)
+//          high-T polymorph above ~80°C, reversibly. Engine defaults to
+//          leadhillite for ambient T. leadhillite METASTABLE — over
+//          geological time alters to anglesite + cerussite under
+//          humidity cycling (Pollard et al. 1992); museum specimens
+//          degrade over decades unless kept dry.
+//
+//          Substrate priority:
+//            linarite:    galena > anglesite > chalcocite > cerussite
+//            caledonite:  linarite (epitactic) > anglesite > galena
+//            leadhillite: cerussite > anglesite > galena
+//
+//          All use sulfateRedoxAvailable for oxidizing supergene gate.
+//          RNG-cascade guard via sigma < 1.0 early-out.
+//
+//          NONE fluoresces (Pb²⁺ + Cu²⁺ both quench); some leadhillite
+//          shows weak yellow-orange Mn²⁺ trace, not diagnostic.
+//
+//          References (research dossier 2026-05-19):
+//            * Brooke H.J. (1820) "Caledonite." Annals of Philosophy
+//              16:193. Type description (Leadhills).
+//            * Beudant F.S. (1832) — leadhillite type description.
+//            * Wilson W.E. & Dunn P.J. (1978) "The Leadhills-Wanlockhead
+//              district, Scotland." MinRec 9:251. Linarite +
+//              caledonite + leadhillite + lanarkite paragenesis.
+//            * Smith D.G.W. (1994) "The Mineralogy of Tsumeb."
+//              Mineralogical Record Inc. — Pb-Cu sulfate suite
+//              treatment, figs. 110-112 linarite-caledonite epitaxy.
+//            * Williams P.A. (1990) "Oxide Zone Geochemistry." Ellis
+//              Horwood — stability diagrams.
+//            * Effenberger H. (1987) N. Jb. Mineral. Mh. 1987:493 —
+//              linarite structure.
+//            * Giacovazzo C. et al. (1973) Acta Cryst. B29:1986 —
+//              caledonite structure.
+//            * Mereiter K., Völlenkle H., Preisinger A. (1979) TMPM
+//              26:79 — leadhillite structure.
+//            * Steele I.M. et al. (1998) Mineralog. Mag. 62:451 —
+//              leadhillite-susannite polymorphism.
+//            * Pollard A.M. et al. (1992) Mineralog. Mag. 56:359 —
+//              leadhillite alteration metastability.
+//            * Graeme R.W. (1981) MinRec 12:258 — Bisbee Cole shaft
+//              linarite occurrence.
+//            * Dana 7th v.II sulfate volume; Handbook of Mineralogy.
+//
+//          Coverage 122 live → 125 live (+3 minerals); 25 paramorph-only.
+const SIM_VERSION = 100;
 

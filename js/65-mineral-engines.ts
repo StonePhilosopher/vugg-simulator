@@ -224,4 +224,12 @@ const MINERAL_ENGINES = {
   // Can. Mineral. 43:1839.
   coffinite: grow_coffinite,
   uranophane: grow_uranophane,
+  // v100 (2026-05-19): Pb-Cu supergene sulfate trio — linarite +
+  // caledonite + leadhillite. Late-stage Pb-Cu oxidation cycle from
+  // Tsumeb / Bisbee / Leadhills Scotland. Discriminator: pH +
+  // CO3:SO4 ratio + Cu:Pb fraction. Per Williams 1990, Smith 1994,
+  // Wilson & Dunn 1978.
+  linarite: grow_linarite,
+  caledonite: grow_caledonite,
+  leadhillite: grow_leadhillite,
 };

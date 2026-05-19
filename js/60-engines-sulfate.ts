@@ -574,3 +574,114 @@ function grow_anglesite(crystal, conditions, step) {
   f.S = Math.max(f.S - rate * 0.018, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, trace_Pb, note: color_note });
 }
+
+// v100 (2026-05-19): Pb-Cu supergene sulfate trio grow engines.
+
+function grow_linarite(crystal, conditions, step) {
+  // PbCu(SO4)(OH)2 — deep azure-blue monoclinic prisms, sits DIRECTLY
+  // on galena. Heavy (SG 5.3). Often mistaken for azurite but no
+  // HCl fizz (sulfate-hydroxide, not carbonate).
+  const sigma = conditions.supersaturation_linarite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 3.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.08);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  if (pos.includes('galena')) {
+    crystal.habit = 'on_galena';
+    crystal.dominant_forms = ['prismatic blue crust directly on galena', 'with anglesite rind between'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'elongate_prismatic';
+    crystal.dominant_forms = ['{010}-elongate prisms 1-20 mm', '{100} tabular faces dominant', 'deep azure to ultramarine'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['tabular on (100)', 'polysynthetic twinning'];
+  } else {
+    crystal.habit = 'small_divergent_groups';
+    crystal.dominant_forms = ['crusts of small divergent prisms'];
+  }
+  conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.018, 0);
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `linarite ${crystal.habit}, deep azure-blue (SG 5.3, NO HCl fizz vs azurite — heavy in hand is diagnostic)` });
+}
+
+function grow_caledonite(crystal, conditions, step) {
+  // Pb5Cu2(CO3)(SO4)3(OH)6 — orthorhombic blue-green prisms. Often
+  // epitactic on linarite (parallel [001] axes) — the Tsumeb tuft
+  // texture.
+  const sigma = conditions.supersaturation_caledonite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.08);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  if (pos.includes('linarite')) {
+    crystal.habit = 'epitactic_tuft_on_linarite';
+    crystal.dominant_forms = ['acicular tufts capping linarite prism cores (parallel [001])', 'Tsumeb classic'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'prismatic_acicular';
+    crystal.dominant_forms = ['prismatic [001]', '1-10 mm crystals to 30 mm rare', 'blue-green'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'divergent_groups';
+    crystal.dominant_forms = ['radial tufts on galena/anglesite'];
+  } else {
+    crystal.habit = 'tabular_aggregate';
+    crystal.dominant_forms = ['tabular on (010)', 'compact aggregates'];
+  }
+  conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.025, 0);
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.010, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.018, 0);
+  conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.008, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `caledonite ${crystal.habit}, blue-GREEN (the only blue-green of the Pb-Cu sulfate trio; SG 5.6)` });
+}
+
+function grow_leadhillite(crystal, conditions, step) {
+  // Pb4(SO4)(CO3)2(OH)2 — monoclinic pseudo-trigonal pearly hexagonal-
+  // looking tablets. VERY HEAVY (SG 6.5+). Mica-like {001} cleavage.
+  // Metastable — slowly transforms to anglesite + cerussite.
+  const sigma = conditions.supersaturation_leadhillite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 5.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.08);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — toward anglesite + cerussite endpoint` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.8 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  if (pos.includes('galena') || pos.includes('cerussite') || pos.includes('anglesite')) {
+    crystal.habit = 'tablet_on_Pb_oxide';
+    crystal.dominant_forms = ['pearly white tablets on Pb-oxide substrate'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'pseudo_hexagonal_tablet';
+    crystal.dominant_forms = ['pseudo-hexagonal tablets on {001}', 'polysynthetic twin striations on basal plates', '2-30 mm Leadhills classic'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'pearly_cleavable_mass';
+    crystal.dominant_forms = ['pearly cleavable masses', 'flexible thin laminae'];
+  } else {
+    crystal.habit = 'massive_granular_fill';
+    crystal.dominant_forms = ['massive granular vug filling'];
+  }
+  conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.030, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.010, 0);
+  conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.015, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `leadhillite ${crystal.habit}, pearly white pseudo-hexagonal (SG 6.5+, mica-like cleavage; metastable → anglesite+cerussite over geological time)` });
+}

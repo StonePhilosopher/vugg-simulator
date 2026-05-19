@@ -258,6 +258,66 @@ function _nuc_anglesite(sim) {
   // Cerussite nucleation — Pb + CO₃ (supergene).
 }
 
+// v100 (2026-05-19): Pb-Cu supergene sulfate trio nucleation. The
+// late-stage Pb-Cu oxidation cycle from Tsumeb / Bisbee / Leadhills.
+// Substrate priority encodes Smith 1994 + Wilson & Dunn 1978
+// paragenesis: linarite directly on galena; caledonite epitactic
+// on linarite; leadhillite on cerussite/anglesite/galena. RNG-cascade
+// guard via sigma < 1.0 early-out.
+
+function _nuc_linarite(sim) {
+  const sigma = sim.conditions.supersaturation_linarite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('linarite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'linarite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const gal = sim.crystals.filter(c => c.mineral === 'galena' && c.active);
+  const ang = sim.crystals.filter(c => c.mineral === 'anglesite' && c.active);
+  const cer = sim.crystals.filter(c => c.mineral === 'cerussite' && c.active);
+  const cc = sim.crystals.filter(c => c.mineral === 'chalcocite' && c.active);
+  if (gal.length && rng.random() < 0.55) pos = `on galena #${gal[0].crystal_id}`;
+  else if (ang.length && rng.random() < 0.45) pos = `on anglesite #${ang[0].crystal_id}`;
+  else if (cc.length && rng.random() < 0.35) pos = `on chalcocite #${cc[0].crystal_id}`;
+  else if (cer.length && rng.random() < 0.30) pos = `on cerussite #${cer[0].crystal_id}`;
+  const c = sim.nucleate('linarite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🟦 Linarite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}) — deep azure Pb-Cu sulfate-hydroxide`);
+}
+
+function _nuc_caledonite(sim) {
+  const sigma = sim.conditions.supersaturation_caledonite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('caledonite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'caledonite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const lin = sim.crystals.filter(c => c.mineral === 'linarite' && c.active);
+  const ang = sim.crystals.filter(c => c.mineral === 'anglesite' && c.active);
+  const gal = sim.crystals.filter(c => c.mineral === 'galena' && c.active);
+  if (lin.length && rng.random() < 0.60) pos = `epitactic tuft on linarite #${lin[0].crystal_id}`;
+  else if (ang.length && rng.random() < 0.40) pos = `with anglesite #${ang[0].crystal_id}`;
+  else if (gal.length && rng.random() < 0.30) pos = `on partially-oxidized galena #${gal[0].crystal_id}`;
+  const c = sim.nucleate('caledonite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🟢 Caledonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, CO₃/SO₄=${(sim.conditions.fluid.CO3/Math.max(sim.conditions.fluid.S,1)).toFixed(2)}) — blue-green Pb-Cu carbonate-sulfate`);
+}
+
+function _nuc_leadhillite(sim) {
+  const sigma = sim.conditions.supersaturation_leadhillite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('leadhillite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'leadhillite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const cer = sim.crystals.filter(c => c.mineral === 'cerussite' && c.active);
+  const ang = sim.crystals.filter(c => c.mineral === 'anglesite' && c.active);
+  const gal = sim.crystals.filter(c => c.mineral === 'galena' && c.active);
+  if (cer.length && rng.random() < 0.55) pos = `tablets on cerussite #${cer[0].crystal_id}`;
+  else if (ang.length && rng.random() < 0.45) pos = `on anglesite #${ang[0].crystal_id}`;
+  else if (gal.length && rng.random() < 0.30) pos = `with galena #${gal[0].crystal_id}`;
+  const c = sim.nucleate('leadhillite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: ⬜ Leadhillite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}) — pearly hexagonal-looking Pb sulfate-carbonate`);
+}
+
 function _nucleateClass_sulfate(sim) {
   _nuc_barite(sim);
   _nuc_celestine(sim);
@@ -271,4 +331,8 @@ function _nucleateClass_sulfate(sim) {
   _nuc_thenardite(sim);
   _nuc_chalcanthite(sim);
   _nuc_anglesite(sim);
+  // v100 Pb-Cu sulfate trio — late-stage Pb-Cu oxidation cycle
+  _nuc_linarite(sim);
+  _nuc_caledonite(sim);
+  _nuc_leadhillite(sim);
 }

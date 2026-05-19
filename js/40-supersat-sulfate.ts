@@ -261,4 +261,101 @@ Object.assign(VugConditions.prototype, {
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'anglesite');
   return Math.max(sigma, 0);
 },
+
+// v100 (2026-05-19): Pb-Cu supergene sulfate trio — linarite +
+// leadhillite + caledonite. Late-stage Pb-Cu oxidation cycle from
+// Tsumeb / Bisbee / Leadhills Scotland. All require SIMULTANEOUS
+// oxidation of galena (PbS) AND Cu-sulfide proximate. Discriminator
+// gates per Williams 1990 + Smith 1994 (Tsumeb monograph) + Wilson
+// & Dunn 1978 MinRec 9:251 (Leadhills):
+//
+//   linarite      PbCu(SO4)(OH)2          pH 4-7, CO3:SO4 < 0.1
+//                                          (Cu-Pb-rich + low-CO3)
+//   caledonite    Pb5Cu2(CO3)(SO4)3(OH)6   pH 5-7, CO3:SO4 0.3-1
+//                                          (mixed, blue-green)
+//   leadhillite   Pb4(SO4)(CO3)2(OH)2      pH 6-8, CO3:SO4 > 2
+//                                          (CO3-dominant, low Cu)
+//
+// Three minerals pull apart on pH + CO3:SO4 ratio + Cu:Pb fraction.
+// All use sulfateRedoxAvailable for oxidizing supergene gate.
+
+  supersaturation_linarite() {
+    // PbCu(SO4)(OH)2 — monoclinic deep azure-blue. Galena + Cu-sulfide
+    // co-oxidation product; lowest CO3 of the trio.
+    if (this.fluid.Pb < 30 || this.fluid.Cu < 10) return 0;
+    if (this.fluid.S < 50) return 0;
+    if (!sulfateRedoxAvailable(this.fluid, 0.5)) return 0;
+    if (this.temperature < 5 || this.temperature > 60) return 0;
+    if (this.fluid.pH < 4.0 || this.fluid.pH > 7.0) return 0;
+    // CO3:SO4 ratio fork — linarite needs LOW carbonate
+    const co3_so4 = this.fluid.CO3 / Math.max(this.fluid.S, 1);
+    if (co3_so4 > 0.3) return 0;  // > 0.3 → caledonite/leadhillite
+    // Chloride suppression (boleite group)
+    if (this.fluid.Cl > 100) return 0;
+    const pb_f = Math.min(this.fluid.Pb / 50.0, 2.0);
+    const cu_f = Math.min(this.fluid.Cu / 30.0, 2.0);
+    const s_f  = Math.min(this.fluid.S / 100.0, 2.0);
+    let sigma = pb_f * cu_f * s_f;
+    const pH = this.fluid.pH;
+    if (pH >= 5.0 && pH <= 6.0) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 5.5) * 0.5);
+    sigma *= sulfateRedoxFactor(this.fluid, 1.0, 1.5);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'linarite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_caledonite() {
+    // Pb5Cu2(CO3)(SO4)3(OH)6 — orthorhombic blue-green. Intermediate
+    // CO3:SO4. Often epitactic on linarite as the carbonate activity
+    // rises during continued reaction with limestone host.
+    if (this.fluid.Pb < 30 || this.fluid.Cu < 10) return 0;
+    if (this.fluid.S < 50) return 0;
+    if (this.fluid.CO3 < 5) return 0;
+    if (!sulfateRedoxAvailable(this.fluid, 0.5)) return 0;
+    if (this.temperature < 5 || this.temperature > 60) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.0) return 0;
+    // CO3:SO4 0.3-1 sweet spot
+    const co3_so4 = this.fluid.CO3 / Math.max(this.fluid.S, 1);
+    if (co3_so4 < 0.1 || co3_so4 > 2.0) return 0;
+    if (this.fluid.Cl > 50) return 0;
+    const pb_f = Math.min(this.fluid.Pb / 50.0, 2.0);
+    const cu_f = Math.min(this.fluid.Cu / 30.0, 1.8);
+    const s_f  = Math.min(this.fluid.S / 100.0, 1.8);
+    const co3_f = Math.min(this.fluid.CO3 / 30.0, 1.5);
+    let sigma = pb_f * cu_f * s_f * co3_f;
+    const pH = this.fluid.pH;
+    if (pH >= 5.5 && pH <= 6.5) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 6.0) * 0.5);
+    if (co3_so4 >= 0.3 && co3_so4 <= 1.0) sigma *= 1.2;
+    sigma *= sulfateRedoxFactor(this.fluid, 1.0, 1.5);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'caledonite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_leadhillite() {
+    // Pb4(SO4)(CO3)2(OH)2 — monoclinic pseudo-trigonal, pearly white
+    // mica-like tablets. Carbonate-dominant; Cu-poor; metastable
+    // (ages to anglesite + cerussite under humidity cycling).
+    if (this.fluid.Pb < 50) return 0;
+    if (this.fluid.S < 30) return 0;
+    if (this.fluid.CO3 < 30) return 0;
+    if (!sulfateRedoxAvailable(this.fluid, 0.5)) return 0;
+    if (this.temperature < 5 || this.temperature > 60) return 0;
+    if (this.fluid.pH < 6.0 || this.fluid.pH > 8.0) return 0;
+    // CO3:SO4 fork — leadhillite needs CARBONATE-dominant
+    const co3_so4 = this.fluid.CO3 / Math.max(this.fluid.S, 1);
+    if (co3_so4 < 1.5) return 0;
+    // Cu suppression — leadhillite is the Cu-poor end
+    if (this.fluid.Cu > 50) return 0;
+    const pb_f = Math.min(this.fluid.Pb / 80.0, 2.0);
+    const s_f  = Math.min(this.fluid.S / 100.0, 1.5);
+    const co3_f = Math.min(this.fluid.CO3 / 100.0, 2.0);
+    let sigma = pb_f * s_f * co3_f;
+    const pH = this.fluid.pH;
+    if (pH >= 6.5 && pH <= 7.5) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.0) * 0.5);
+    sigma *= sulfateRedoxFactor(this.fluid, 1.0, 1.5);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'leadhillite');
+    return Math.max(sigma, 0);
+  },
 });
