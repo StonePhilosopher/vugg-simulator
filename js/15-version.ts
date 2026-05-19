@@ -2942,5 +2942,60 @@
 //        stub → proper paramorph transformation), 1 documentation
 //        update (expects_species). The four canonical pegmatite +
 //        supergene scenarios now declare their full v90 assemblage.
-const SIM_VERSION = 91;
+//   v92 — As(III) vs As(V) state split (2026-05-19, Phase 4d redox
+//        infrastructure). Closes the final residual debt from the
+//        v85-v90 mineral push: "The simulator's single fluid.As pool
+//        still can't represent oxidation state distinctly. The
+//        sulfide-suppression proxy gate in supersaturation_pharmacolite
+//        is a band-aid; the principled fix is a Phase-4-redox-style
+//        refactor."
+//
+//        New helpers in 20c-chemistry-redox.ts:
+//          arsenicOxidizedFraction(fluid)  → fraction in [0,1] of
+//                                            fluid.As sitting as As(V)
+//          arsenateAvailablePpm(fluid)     → As(V) ppm
+//          arseniteAvailablePpm(fluid)     → As(III) ppm
+//
+//        Geochemistry model:
+//          1. SULFIDE GATE (hard suppression): when fluid.S > 50 AND
+//             fluid.O2 < 1.0, As stays as As(III) regardless of bulk
+//             Eh. Thioarsenite complexes (H₂AsS, H₃AsS₃) are
+//             thermodynamically stable across the entire Eh range of
+//             any sulfide-rich fluid. References: Helz et al. 1995
+//             (GCA 59:4591-4604), Stumm & Morgan 1996 Aquatic
+//             Chemistry 3rd ed. Ch.8.
+//          2. O2-DRIVEN OXIDATION (smooth ramp): with S < 50 ppm
+//             (sulfide depleted by sulfide-mineral precipitation),
+//             As(V) fraction grows linearly from 0 at O2=0.1 to 1 at
+//             O2=1.5. Reference: Bowell et al. 2014 (Reviews in
+//             Mineralogy and Geochemistry 79).
+//
+//        Refactor scope — 15 engines + 1 cleanup:
+//          As(V) consumers (8 arsenate engines in 30-supersat-arsenate.ts +
+//          6 uranyl P/As/V fork engines in 38-supersat-phosphate.ts).
+//          As(III) consumers (1 native_arsenic in 36-supersat-native.ts +
+//          6 arsenide/sulfarsenide engines in 41-supersat-sulfide.ts).
+//          Cleanup: REMOVED the v88 inline `if (fluid.S > 50) return 0`
+//          band-aid in supersaturation_pharmacolite. The new helper
+//          encodes the thioarsenite-stability geochemistry directly;
+//          the band-aid is now redundant.
+//
+//        Calibration drift on schneeberg + supergene_oxidation + bisbee
+//        (initial pre-regen) — three scenarios where As-state
+//        distinction shifts engine firing. seed42_v92.json captures
+//        the drift; other scenarios byte-identical to v91 (no
+//        As-state-dependent engines in their assemblages).
+//
+//        Tests: arsenic-state-split.test.ts adds 16 helper + integration
+//        pins. Three new helpers exposed via setup.ts EXPORTS for
+//        direct engine pins.
+//
+//        References (full helper docstring in js/20c-chemistry-redox.ts):
+//          * Helz G.R. et al. (1995) "Oligomerization in As(III)
+//            sulfide solutions." Geochim. Cosmochim. Acta 59:4591-4604.
+//          * Stumm W. & Morgan J.J. (1996) Aquatic Chemistry 3rd ed.
+//            Ch. 8.
+//          * Bowell R.J. et al. (2014) "The Environmental Geochemistry
+//            of Arsenic." Reviews in Mineralogy and Geochemistry 79.
+const SIM_VERSION = 92;
 

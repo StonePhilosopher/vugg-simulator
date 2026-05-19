@@ -176,7 +176,14 @@ Object.assign(VugConditions.prototype, {
   // native_arsenic — native_bismuth coexistence in the same paragenetic
   // band as arsenopyrite, in bulk fluids where S is present but
   // partitioned to arsenides locally.
-  if (this.fluid.As < 5) return 0;
+  // v92 As-state split: As(III) ppm via arseniteAvailablePpm. Native
+  // arsenic is As⁰ — a reduced form that only forms from As(III)-
+  // dominant fluids (Schneeberg five-element-vein chemistry). In
+  // supergene-oxidized fluids the As is all As(V); arseniteAvailablePpm
+  // correctly returns 0, blocking native_arsenic from inappropriately
+  // firing in oxidized scenarios.
+  const as_iii = arseniteAvailablePpm(this.fluid);
+  if (as_iii < 5) return 0;
   if (!nativeRedoxAnoxic(this.fluid, 0.5)) return 0;
   // Tightened from (/30, cap 3.0) to (/15, cap 4.0) (2026-05): native_arsenic
   // is a residual-overflow mineral formed when As dominates the local broth,
@@ -186,7 +193,7 @@ Object.assign(VugConditions.prototype, {
   // Cap bumped 3.0 → 4.0 so schneeberg's As=60 ppm can drive as_f to 4.0
   // and clear σ > 1.0 against the new soft S+Fe suppressors + ~0.8 activity
   // correction (calibration math worked out post-Arc-2 gate softening).
-  const as_f = Math.min(this.fluid.As / 15.0, 4.0);
+  const as_f = Math.min(as_iii / 15.0, 4.0);
   const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 1.8, 0.4);
   // Denominators tuned to schneeberg (S=30 → s_suppr=0.5, Fe=40 →
   // fe_suppr=0.8). Lower floor 0.0 (not 0.4 as the pre-audit code had —

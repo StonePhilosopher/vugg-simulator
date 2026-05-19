@@ -241,6 +241,10 @@ const EXPORTS = [
   // Phase 4b arsenate-class helpers (20c-chemistry-redox.ts).
   'arsenateRedoxAvailable',
   'arsenateRedoxFactor',
+  // Phase 4d arsenic-state split (v92, 20c-chemistry-redox.ts).
+  'arsenicOxidizedFraction',
+  'arsenateAvailablePpm',
+  'arseniteAvailablePpm',
   // Phase 4b carbonate-class helpers (20c-chemistry-redox.ts).
   'carbonateRedoxAvailable',
   'carbonateRedoxFactor',

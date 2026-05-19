@@ -106,7 +106,12 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
   // Anion competition (3-way as of 9c): denominator includes V so
   // V-rich fluid routes to carnotite instead of falling into torbernite.
-  const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+  // v92 As-state split: As(V) ppm via arsenateAvailablePpm. As(III)-only
+  // fluids (sulfide-rich) contribute 0 to the anion-fork denominator
+  // — meaning sulphur-bank-style fluids no longer spuriously share
+  // anion-budget with the uranyl arsenate branch.
+  const as_v = arsenateAvailablePpm(this.fluid);
+  const anion_total = this.fluid.P + as_v + this.fluid.V;
   if (anion_total <= 0) return 0;
   const p_fraction = this.fluid.P / anion_total;
   if (p_fraction < 0.5) return 0;
@@ -139,8 +144,10 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || this.fluid.P < 1.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
   if (this.temperature < 5 || this.temperature > 50) return 0;
   if (this.fluid.pH < 4.5 || this.fluid.pH > 8.0) return 0;
-  // Anion competition — same shape as torbernite/zeunerite/carnotite
-  const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+  // Anion competition — same shape as torbernite/zeunerite/carnotite.
+  // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+  const as_v = arsenateAvailablePpm(this.fluid);
+  const anion_total = this.fluid.P + as_v + this.fluid.V;
   if (anion_total <= 0) return 0;
   const p_fraction = this.fluid.P / anion_total;
   if (p_fraction < 0.5) return 0;
@@ -165,13 +172,19 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_zeunerite() {
-  if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || this.fluid.As < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
+  // v92 As-state split: As(V) ppm via arsenateAvailablePpm. Zeunerite
+  // is the As-branch of the uranyl P/As/V fork — only As(V) (arsenate
+  // anion AsO₄³⁻) is structurally eligible for the uranyl arsenate
+  // site, so the fluid's As(III) thioarsenites don't count toward
+  // zeunerite formation.
+  const as_v = arsenateAvailablePpm(this.fluid);
+  if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || as_v < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
   if (this.temperature < 10 || this.temperature > 50) return 0;
   if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
-  // Anion competition (3-way as of 9c)
-  const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+  // Anion competition (3-way as of 9c) — As(V) ppm in numerator + denominator
+  const anion_total = this.fluid.P + as_v + this.fluid.V;
   if (anion_total <= 0) return 0;
-  const as_fraction = this.fluid.As / anion_total;
+  const as_fraction = as_v / anion_total;
   if (as_fraction < 0.5) return 0;
   // Cation competition (Round 9e): Cu must dominate over Ca. Mirror
   // of torbernite's 9d gate. Without this, zeunerite would fire in
@@ -182,7 +195,7 @@ Object.assign(VugConditions.prototype, {
   if (cu_fraction < 0.5) return 0;
   const u_f = Math.min(this.fluid.U / 2.0, 2.0);
   const cu_f = Math.min(this.fluid.Cu / 25.0, 2.0);
-  const as_f = Math.min(this.fluid.As / 15.0, 2.0);
+  const as_f = Math.min(as_v / 15.0, 2.0);
   let sigma = u_f * cu_f * as_f;
   if (as_fraction >= 0.55 && as_fraction <= 0.85) sigma *= 1.3;
   const T = this.temperature;
@@ -199,12 +212,14 @@ Object.assign(VugConditions.prototype, {
   // Round 9e (May 2026): Ca-cation analog of zeunerite. Mirror of
   // vugg.py supersaturation_uranospinite. Same parent fluid (U + As +
   // supergene-T + oxidizing), gates on Ca/(Cu+Ca) > 0.5.
-  if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || this.fluid.As < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
+  // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+  const as_v = arsenateAvailablePpm(this.fluid);
+  if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || as_v < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
   if (this.temperature < 5 || this.temperature > 50) return 0;
   if (this.fluid.pH < 4.5 || this.fluid.pH > 8.0) return 0;
-  const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+  const anion_total = this.fluid.P + as_v + this.fluid.V;
   if (anion_total <= 0) return 0;
-  const as_fraction = this.fluid.As / anion_total;
+  const as_fraction = as_v / anion_total;
   if (as_fraction < 0.5) return 0;
   const cation_total = this.fluid.Cu + this.fluid.Ca;
   if (cation_total <= 0) return 0;
@@ -212,7 +227,7 @@ Object.assign(VugConditions.prototype, {
   if (ca_fraction < 0.5) return 0;
   const u_f = Math.min(this.fluid.U / 2.0, 2.0);
   const ca_f = Math.min(this.fluid.Ca / 50.0, 2.0);
-  const as_f = Math.min(this.fluid.As / 15.0, 2.0);
+  const as_f = Math.min(as_v / 15.0, 2.0);
   let sigma = u_f * ca_f * as_f;
   if (as_fraction >= 0.55 && as_fraction <= 0.85) sigma *= 1.3;
   const T = this.temperature;
@@ -231,7 +246,8 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.K < 5 || this.fluid.U < 0.3 || this.fluid.V < 1.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
   if (this.temperature < 10 || this.temperature > 50) return 0;
   if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
-  const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+  // v92 As-state split: only As(V) is fork-eligible (carbonate competition).
+  const anion_total = this.fluid.P + arsenateAvailablePpm(this.fluid) + this.fluid.V;
   if (anion_total <= 0) return 0;
   const v_fraction = this.fluid.V / anion_total;
   if (v_fraction < 0.5) return 0;
@@ -264,7 +280,8 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || this.fluid.V < 1.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
   if (this.temperature < 5 || this.temperature > 50) return 0;
   if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
-  const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+  // v92 As-state split: only As(V) is fork-eligible.
+  const anion_total = this.fluid.P + arsenateAvailablePpm(this.fluid) + this.fluid.V;
   if (anion_total <= 0) return 0;
   const v_fraction = this.fluid.V / anion_total;
   if (v_fraction < 0.5) return 0;

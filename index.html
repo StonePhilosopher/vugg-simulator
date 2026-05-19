@@ -7277,7 +7277,62 @@ let timeScale = 5.0;
 //        stub → proper paramorph transformation), 1 documentation
 //        update (expects_species). The four canonical pegmatite +
 //        supergene scenarios now declare their full v90 assemblage.
-const SIM_VERSION = 91;
+//   v92 — As(III) vs As(V) state split (2026-05-19, Phase 4d redox
+//        infrastructure). Closes the final residual debt from the
+//        v85-v90 mineral push: "The simulator's single fluid.As pool
+//        still can't represent oxidation state distinctly. The
+//        sulfide-suppression proxy gate in supersaturation_pharmacolite
+//        is a band-aid; the principled fix is a Phase-4-redox-style
+//        refactor."
+//
+//        New helpers in 20c-chemistry-redox.ts:
+//          arsenicOxidizedFraction(fluid)  → fraction in [0,1] of
+//                                            fluid.As sitting as As(V)
+//          arsenateAvailablePpm(fluid)     → As(V) ppm
+//          arseniteAvailablePpm(fluid)     → As(III) ppm
+//
+//        Geochemistry model:
+//          1. SULFIDE GATE (hard suppression): when fluid.S > 50 AND
+//             fluid.O2 < 1.0, As stays as As(III) regardless of bulk
+//             Eh. Thioarsenite complexes (H₂AsS, H₃AsS₃) are
+//             thermodynamically stable across the entire Eh range of
+//             any sulfide-rich fluid. References: Helz et al. 1995
+//             (GCA 59:4591-4604), Stumm & Morgan 1996 Aquatic
+//             Chemistry 3rd ed. Ch.8.
+//          2. O2-DRIVEN OXIDATION (smooth ramp): with S < 50 ppm
+//             (sulfide depleted by sulfide-mineral precipitation),
+//             As(V) fraction grows linearly from 0 at O2=0.1 to 1 at
+//             O2=1.5. Reference: Bowell et al. 2014 (Reviews in
+//             Mineralogy and Geochemistry 79).
+//
+//        Refactor scope — 15 engines + 1 cleanup:
+//          As(V) consumers (8 arsenate engines in 30-supersat-arsenate.ts +
+//          6 uranyl P/As/V fork engines in 38-supersat-phosphate.ts).
+//          As(III) consumers (1 native_arsenic in 36-supersat-native.ts +
+//          6 arsenide/sulfarsenide engines in 41-supersat-sulfide.ts).
+//          Cleanup: REMOVED the v88 inline `if (fluid.S > 50) return 0`
+//          band-aid in supersaturation_pharmacolite. The new helper
+//          encodes the thioarsenite-stability geochemistry directly;
+//          the band-aid is now redundant.
+//
+//        Calibration drift on schneeberg + supergene_oxidation + bisbee
+//        (initial pre-regen) — three scenarios where As-state
+//        distinction shifts engine firing. seed42_v92.json captures
+//        the drift; other scenarios byte-identical to v91 (no
+//        As-state-dependent engines in their assemblages).
+//
+//        Tests: arsenic-state-split.test.ts adds 16 helper + integration
+//        pins. Three new helpers exposed via setup.ts EXPORTS for
+//        direct engine pins.
+//
+//        References (full helper docstring in js/20c-chemistry-redox.ts):
+//          * Helz G.R. et al. (1995) "Oligomerization in As(III)
+//            sulfide solutions." Geochim. Cosmochim. Acta 59:4591-4604.
+//          * Stumm W. & Morgan J.J. (1996) Aquatic Chemistry 3rd ed.
+//            Ch. 8.
+//          * Bowell R.J. et al. (2014) "The Environmental Geochemistry
+//            of Arsenic." Reviews in Mineralogy and Geochemistry 79.
+const SIM_VERSION = 92;
 
 // ── 18-constants.js ──
 
@@ -8690,13 +8745,110 @@ function oxideRedoxTent(fluid, peak, slope, floor) {
     return Math.max(floor, 1.0 - Math.abs(o2eq - peak) * slope);
 }
 // ============================================================
+// Phase 4d arsenic-state split (v92, 2026-05-19)
+// ============================================================
+// Closes residual debt flagged from the v85-v90 mineral push: the
+// simulator's single fluid.As pool couldn't represent oxidation state
+// distinctly, so arsenate engines (which need As(V)) had to use proxy
+// gates against sulfide loading. The v88 pharmacolite engine carried
+// an explicit `if (fluid.S > 50) return 0` band-aid for exactly this
+// reason — Sulphur Bank's S=400 ppm fluid would otherwise have fired
+// pharmacolite incorrectly during O2-spike events, even though all
+// the As in that fluid is locked in As(III) sulfide complexes
+// (thioarsenites).
+//
+// The principled fix (v92): split fluid.As dynamically into
+// As(V) (arsenate, AsO₄³⁻) and As(III) (arsenite/arsenide,
+// H₃AsO₃ or sulfide-complexed) fractions based on the fluid's redox
+// state + sulfide loading. Arsenate engines consume As(V) ppm;
+// arsenide/sulfarsenide engines consume As(III) ppm. The scenarios'
+// fluid.As field remains as "total dissolved As" — what scenario
+// authors actually know — and the helpers split it at engine read time.
+//
+// Geochemistry model:
+//   1. SULFIDE GATE (hard suppression). When fluid.S > 50 ppm AND
+//      fluid.O2 < 1.0, As stays as As(III) regardless of bulk Eh:
+//      the thioarsenite complexes (H₂AsS, H₃AsS₃, etc.) are
+//      thermodynamically stable across the entire Eh range of any
+//      sulfide-rich fluid. Reference: Helz, Tossell, Charnock,
+//      Pattrick, Vaughan, Garner (1995) "Oligomerization in As(III)
+//      sulfide solutions: Theoretical constraints and spectroscopic
+//      evidence." Geochim. Cosmochim. Acta 59:4591-4604.
+//      Also: Stumm & Morgan (1996) Aquatic Chemistry 3rd ed., Ch. 8.
+//   2. O2-DRIVEN OXIDATION (smooth ramp). With S < 50 (sulfide
+//      depleted), As(V) fraction grows monotonically with O2 across
+//      the supergene window. Linear ramp from 0 at O2=0.1 to 1 at
+//      O2=1.5; constant 0 below 0.1 (hard anoxic floor) and constant
+//      1 above 1.5 (hard oxic ceiling). The crossover at O2~0.5
+//      matches the approximate boundary between sulfide-stable and
+//      arsenate-stable conditions in supergene groundwater (Bowell
+//      et al. 2014, "The Environmental Geochemistry of Arsenic,"
+//      Reviews in Mineralogy and Geochemistry 79).
+//
+// Note on pH: real-world As(III)/As(V) crossover is also pH-dependent
+// (H₃AsO₃ ⇌ H₂AsO₃⁻ at pK_a~9.2; H₃AsO₄ stepwise at 2.3/6.8/11.5).
+// The simulator's coarse chemistry pool doesn't resolve this nuance;
+// pH-dependence is captured implicitly by the per-engine pH gates
+// (most arsenates have pH 5-7.5 windows that align with the dominant
+// H₂AsO₄⁻ species).
+//
+// Returns fraction (0-1) of fluid.As sitting as As(V).
+function arsenicOxidizedFraction(fluid) {
+    if (!fluid || typeof fluid.As !== 'number')
+        return 0;
+    const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+    const S = typeof fluid.S === 'number' ? fluid.S : 0;
+    // Sulfide hard-suppression: thioarsenite stability locks As as
+    // As(III) when sulfide is present at meaningful concentration AND
+    // the fluid is not fully oxic. Sulphur Bank (S=400) stays As(III)
+    // through O2 spikes to 0.4 during synproportionation; schneeberg's
+    // late Cu+P phase (S consumed by sulfide-mineral precipitation,
+    // O2 jumps to 1.5) crosses out of this regime.
+    if (S > 50 && O2 < 1.0)
+        return 0;
+    // O2-driven oxidation ramp.
+    if (O2 < 0.1)
+        return 0; // hard anoxic floor
+    if (O2 >= 1.5)
+        return 1; // hard oxic ceiling
+    return Math.min(1, Math.max(0, (O2 - 0.1) / 1.4));
+}
+// As(V) ppm available for arsenate + uranyl-arsenate engines.
+// Replaces direct `fluid.As` reads in supersaturation_* methods for:
+// adamite, annabergite, conichalcite, erythrite, mimetite, olivenite,
+// pharmacolite, scorodite (all js/30-supersat-arsenate.ts) +
+// the As-branch + As-component of uranyl P/As/V fork engines
+// (torbernite, autunite, zeunerite, uranospinite, carnotite,
+// tyuyamunite in js/38-supersat-phosphate.ts).
+function arsenateAvailablePpm(fluid) {
+    if (!fluid || typeof fluid.As !== 'number')
+        return 0;
+    return fluid.As * arsenicOxidizedFraction(fluid);
+}
+// As(III) ppm available for arsenide + sulfarsenide + arsenic-sulfide
+// + native_arsenic engines. Replaces direct `fluid.As` reads in
+// supersaturation_* methods for: native_arsenic (js/36-supersat-
+// native.ts) + arsenopyrite, cobaltite, nickeline, tennantite,
+// realgar, orpiment (js/41-supersat-sulfide.ts).
+function arseniteAvailablePpm(fluid) {
+    if (!fluid || typeof fluid.As !== 'number')
+        return 0;
+    return fluid.As * (1 - arsenicOxidizedFraction(fluid));
+}
+// ============================================================
 // Phase 4b arsenate-class engine helpers
 // ============================================================
 // All six arsenates (adamite, annabergite, erythrite, mimetite,
 // olivenite, scorodite) gate on oxidized arsenic — As(V) as
-// AsO₄³⁻. Phase 4c will bind to an As couple
-// (HAsO₄²⁻/H₃AsO₃ at E° ≈ +560 mV at pH 7), to be added to
-// REDOX_COUPLES.
+// AsO₄³⁻. v92 split: instead of just checking fluid.O2 ≥ threshold,
+// engines now read arsenateAvailablePpm(fluid) directly, which combines
+// the redox-state check + sulfide-suppression check into the As
+// concentration value itself.
+//
+// The legacy arsenateRedoxAvailable / arsenateRedoxFactor helpers
+// stay in the API for callers that want a fast O2-only check
+// (e.g. coarse pre-gate before computing the full fraction), but the
+// per-engine reads now use arsenateAvailablePpm.
 // Same flag-OFF passthrough as sulfate / hydroxide.
 function arsenateRedoxAvailable(fluid, o2Threshold) {
     if (!EH_DYNAMIC_ENABLED) {
@@ -11630,7 +11782,15 @@ class Crystal {
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR.
 Object.assign(VugConditions.prototype, {
     supersaturation_olivenite() {
-        if (this.fluid.Cu < 50 || this.fluid.As < 10)
+        // v92 As-state split: consume As(V) ppm (arsenateAvailablePpm) rather
+        // than raw fluid.As. The Sulphur-Bank-style sulfide-rich fluid keeps
+        // As as As(III) thioarsenites; supergene oxidation puts it as As(V).
+        // Pre-v92 the legacy `arsenateRedoxAvailable(fluid, 0.5)` gate was a
+        // bulk-O2 proxy that could pass on Sulphur Bank's brief O2 spikes; the
+        // new helper reads the full state (S + O2) and gives back the actually-
+        // accessible As(V) concentration.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Cu < 50 || as_v < 10)
             return 0;
         if (!arsenateRedoxAvailable(this.fluid, 0.5))
             return 0;
@@ -11644,7 +11804,7 @@ Object.assign(VugConditions.prototype, {
         if (cu_fraction < 0.5)
             return 0;
         const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
-        const as_f = Math.min(this.fluid.As / 20.0, 2.5);
+        const as_f = Math.min(as_v / 20.0, 2.5);
         const ox_f = arsenateRedoxFactor(this.fluid, 1.0, 2.0);
         let sigma = cu_f * as_f * ox_f;
         // Sweet-spot bonus — Cu-dominant with Zn trace is zincolivenite-
@@ -11674,11 +11834,15 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_scorodite() {
-        if (this.fluid.Fe < 5 || this.fluid.As < 3 || !arsenateRedoxAvailable(this.fluid, 0.3))
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm. Scorodite
+        // is the canonical FeAsO₄·2H₂O supergene weathering product of
+        // arsenopyrite — only forms when As has been oxidized to As(V).
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Fe < 5 || as_v < 3 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         if (this.fluid.pH > 6)
             return 0; // dissolves above pH 5; nucleation gate at 6 for hysteresis
-        let sigma = (this.fluid.Fe / 30.0) * (this.fluid.As / 15.0) * arsenateRedoxFactor(this.fluid, 1.0);
+        let sigma = (this.fluid.Fe / 30.0) * (as_v / 15.0) * arsenateRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 80) {
             sigma *= Math.exp(-0.025 * (this.temperature - 80));
         }
@@ -11694,30 +11858,36 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_erythrite() {
         // Co3(AsO4)2·8H2O — cobalt bloom. Shared vivianite-group gating with annabergite.
-        if (this.fluid.Co < 2 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Co < 2 || as_v < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         if (this.temperature < 5 || this.temperature > 50)
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0)
             return 0;
-        const product = (this.fluid.Co / 20.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
+        const product = (this.fluid.Co / 20.0) * (as_v / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
         const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
         return product * T_factor;
     },
     supersaturation_annabergite() {
         // Ni3(AsO4)2·8H2O — nickel bloom. Ni equivalent of erythrite.
-        if (this.fluid.Ni < 2 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Ni < 2 || as_v < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         if (this.temperature < 5 || this.temperature > 50)
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0)
             return 0;
-        const product = (this.fluid.Ni / 20.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
+        const product = (this.fluid.Ni / 20.0) * (as_v / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
         const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
         return product * T_factor;
     },
     supersaturation_adamite() {
-        if (this.fluid.Zn < 10 || this.fluid.As < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Zn < 10 || as_v < 5 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         // Trace Cu floor — Cu²⁺ activator gives the diagnostic green
         // fluorescence; recessive-side floor makes the Cu:Zn ratio meaningful.
@@ -11728,7 +11898,7 @@ Object.assign(VugConditions.prototype, {
         const zn_fraction = this.fluid.Zn / cu_zn_total;
         if (zn_fraction < 0.5)
             return 0;
-        let sigma = (this.fluid.Zn / 80.0) * (this.fluid.As / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
+        let sigma = (this.fluid.Zn / 80.0) * (as_v / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
         // Sweet-spot bonus — Zn-dominant with Cu trace (the fluorescent
         // variety) is the most aesthetic adamite. Pure-Zn damped because
         // hemimorphite/smithsonite take that territory.
@@ -11770,25 +11940,26 @@ Object.assign(VugConditions.prototype, {
         // pharmacolite's own — fluid splits its arsenate budget across
         // competitor species; pharmacolite gets the residual when Ca
         // dominates the cation pool overall.
-        if (this.fluid.Ca < 15 || this.fluid.As < 5)
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+        //
+        // v92 cleanup: REMOVED the v88 inline sulfide-suppression band-aid
+        // (was `if (fluid.S > 50) return 0`). That gate was a proxy for
+        // "As is chemically bound in As(III) sulfide complexes" — the
+        // simulator's single fluid.As pool couldn't distinguish As(III)
+        // from As(V) so a hard sulfide-block was needed to prevent
+        // Sulphur Bank from spuriously firing pharmacolite during O2-spike
+        // events. v92 makes the band-aid obsolete: arsenateAvailablePpm
+        // already returns 0 when fluid.S > 50 AND O2 < 1.0, encoding the
+        // thioarsenite-stability geochemistry directly. The principled
+        // helper replaces the band-aid.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Ca < 15 || as_v < 5)
             return 0;
         if (!arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
         if (this.fluid.pH < 5.5 || this.fluid.pH > 7.5)
             return 0;
         if (this.temperature < 5 || this.temperature > 50)
-            return 0;
-        // Sulfide-suppression: pharmacolite requires As to be present as
-        // As⁵⁺ (arsenate), but a sulfide-rich fluid (S > 50 ppm) keeps As
-        // chemically bound in As³⁺ realgar/orpiment complexes regardless
-        // of the engine's coarse arsenateRedoxAvailable proxy. The
-        // simulator's single fluid.As pool doesn't distinguish As(III)
-        // from As(V); this gate proxies the real chemistry that's
-        // implicit in "supergene oxidation = sulfide-depleted environment".
-        // Sulphur Bank's S=400 → blocked even when pH/T windows happen to
-        // align during cooling pulses. Schneeberg-late's S < 30 (post-
-        // sulfide-weathering) → allowed.
-        if (this.fluid.S > 50)
             return 0;
         // Cation-share gate: Ca must dominate the cation pool. The
         // denominator includes the major competing cations from the
@@ -11807,7 +11978,7 @@ Object.assign(VugConditions.prototype, {
         // 1.0 nucleation threshold). Now sigma scales on the absolute Ca/As
         // concentrations with a sweet-spot bonus when Ca strongly dominates.
         const ca_f = Math.min(this.fluid.Ca / 50, 2.5);
-        const as_f = Math.min(this.fluid.As / 15, 2.5);
+        const as_f = Math.min(as_v / 15, 2.5);
         const ox_f = arsenateRedoxFactor(this.fluid, 1.0, 2.0);
         let sigma = ca_f * as_f * ox_f;
         if (ca_fraction >= 0.6)
@@ -11852,7 +12023,9 @@ Object.assign(VugConditions.prototype, {
         // pH window 5.0-7.5 (research: "mildly acidic to neutral").
         // T window 10-100°C, optimum 15-40°C.
         // Eh > 0.2 V — As must be As⁵⁺ (oxidizing supergene fluid).
-        if (this.fluid.Ca < 15 || this.fluid.Cu < 10 || this.fluid.As < 5)
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Ca < 15 || this.fluid.Cu < 10 || as_v < 5)
             return 0;
         if (!arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
@@ -11866,7 +12039,7 @@ Object.assign(VugConditions.prototype, {
             return 0; // Cu-dominant routes to olivenite
         const ca_f = Math.min(this.fluid.Ca / 150, 2.0);
         const cu_f = Math.min(this.fluid.Cu / 30, 2.0);
-        const as_f = Math.min(this.fluid.As / 15, 2.5);
+        const as_f = Math.min(as_v / 15, 2.5);
         const ox_f = arsenateRedoxFactor(this.fluid, 1.0, 2.0);
         let sigma = ca_f * cu_f * as_f * ox_f;
         const T = this.temperature;
@@ -11895,9 +12068,11 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_mimetite() {
-        if (this.fluid.Pb < 5 || this.fluid.As < 3 || this.fluid.Cl < 2 || !arsenateRedoxAvailable(this.fluid, 0.3))
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Pb < 5 || as_v < 3 || this.fluid.Cl < 2 || !arsenateRedoxAvailable(this.fluid, 0.3))
             return 0;
-        let sigma = (this.fluid.Pb / 60.0) * (this.fluid.As / 25.0) * (this.fluid.Cl / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
+        let sigma = (this.fluid.Pb / 60.0) * (as_v / 25.0) * (this.fluid.Cl / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 150)
             sigma *= Math.exp(-0.015 * (this.temperature - 150));
         if (this.fluid.pH < 3.5)
@@ -12895,7 +13070,14 @@ Object.assign(VugConditions.prototype, {
         // native_arsenic — native_bismuth coexistence in the same paragenetic
         // band as arsenopyrite, in bulk fluids where S is present but
         // partitioned to arsenides locally.
-        if (this.fluid.As < 5)
+        // v92 As-state split: As(III) ppm via arseniteAvailablePpm. Native
+        // arsenic is As⁰ — a reduced form that only forms from As(III)-
+        // dominant fluids (Schneeberg five-element-vein chemistry). In
+        // supergene-oxidized fluids the As is all As(V); arseniteAvailablePpm
+        // correctly returns 0, blocking native_arsenic from inappropriately
+        // firing in oxidized scenarios.
+        const as_iii = arseniteAvailablePpm(this.fluid);
+        if (as_iii < 5)
             return 0;
         if (!nativeRedoxAnoxic(this.fluid, 0.5))
             return 0;
@@ -12907,7 +13089,7 @@ Object.assign(VugConditions.prototype, {
         // Cap bumped 3.0 → 4.0 so schneeberg's As=60 ppm can drive as_f to 4.0
         // and clear σ > 1.0 against the new soft S+Fe suppressors + ~0.8 activity
         // correction (calibration math worked out post-Arc-2 gate softening).
-        const as_f = Math.min(this.fluid.As / 15.0, 4.0);
+        const as_f = Math.min(as_iii / 15.0, 4.0);
         const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 1.8, 0.4);
         // Denominators tuned to schneeberg (S=30 → s_suppr=0.5, Fe=40 →
         // fe_suppr=0.8). Lower floor 0.0 (not 0.4 as the pre-audit code had —
@@ -13504,7 +13686,12 @@ Object.assign(VugConditions.prototype, {
             return 0;
         // Anion competition (3-way as of 9c): denominator includes V so
         // V-rich fluid routes to carnotite instead of falling into torbernite.
-        const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm. As(III)-only
+        // fluids (sulfide-rich) contribute 0 to the anion-fork denominator
+        // — meaning sulphur-bank-style fluids no longer spuriously share
+        // anion-budget with the uranyl arsenate branch.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        const anion_total = this.fluid.P + as_v + this.fluid.V;
         if (anion_total <= 0)
             return 0;
         const p_fraction = this.fluid.P / anion_total;
@@ -13548,8 +13735,10 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.fluid.pH < 4.5 || this.fluid.pH > 8.0)
             return 0;
-        // Anion competition — same shape as torbernite/zeunerite/carnotite
-        const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+        // Anion competition — same shape as torbernite/zeunerite/carnotite.
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        const anion_total = this.fluid.P + as_v + this.fluid.V;
         if (anion_total <= 0)
             return 0;
         const p_fraction = this.fluid.P / anion_total;
@@ -13582,17 +13771,23 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_zeunerite() {
-        if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || this.fluid.As < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8))
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm. Zeunerite
+        // is the As-branch of the uranyl P/As/V fork — only As(V) (arsenate
+        // anion AsO₄³⁻) is structurally eligible for the uranyl arsenate
+        // site, so the fluid's As(III) thioarsenites don't count toward
+        // zeunerite formation.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || as_v < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8))
             return 0;
         if (this.temperature < 10 || this.temperature > 50)
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5)
             return 0;
-        // Anion competition (3-way as of 9c)
-        const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+        // Anion competition (3-way as of 9c) — As(V) ppm in numerator + denominator
+        const anion_total = this.fluid.P + as_v + this.fluid.V;
         if (anion_total <= 0)
             return 0;
-        const as_fraction = this.fluid.As / anion_total;
+        const as_fraction = as_v / anion_total;
         if (as_fraction < 0.5)
             return 0;
         // Cation competition (Round 9e): Cu must dominate over Ca. Mirror
@@ -13606,7 +13801,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         const u_f = Math.min(this.fluid.U / 2.0, 2.0);
         const cu_f = Math.min(this.fluid.Cu / 25.0, 2.0);
-        const as_f = Math.min(this.fluid.As / 15.0, 2.0);
+        const as_f = Math.min(as_v / 15.0, 2.0);
         let sigma = u_f * cu_f * as_f;
         if (as_fraction >= 0.55 && as_fraction <= 0.85)
             sigma *= 1.3;
@@ -13627,16 +13822,18 @@ Object.assign(VugConditions.prototype, {
         // Round 9e (May 2026): Ca-cation analog of zeunerite. Mirror of
         // vugg.py supersaturation_uranospinite. Same parent fluid (U + As +
         // supergene-T + oxidizing), gates on Ca/(Cu+Ca) > 0.5.
-        if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || this.fluid.As < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8))
+        // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+        const as_v = arsenateAvailablePpm(this.fluid);
+        if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || as_v < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8))
             return 0;
         if (this.temperature < 5 || this.temperature > 50)
             return 0;
         if (this.fluid.pH < 4.5 || this.fluid.pH > 8.0)
             return 0;
-        const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+        const anion_total = this.fluid.P + as_v + this.fluid.V;
         if (anion_total <= 0)
             return 0;
-        const as_fraction = this.fluid.As / anion_total;
+        const as_fraction = as_v / anion_total;
         if (as_fraction < 0.5)
             return 0;
         const cation_total = this.fluid.Cu + this.fluid.Ca;
@@ -13647,7 +13844,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         const u_f = Math.min(this.fluid.U / 2.0, 2.0);
         const ca_f = Math.min(this.fluid.Ca / 50.0, 2.0);
-        const as_f = Math.min(this.fluid.As / 15.0, 2.0);
+        const as_f = Math.min(as_v / 15.0, 2.0);
         let sigma = u_f * ca_f * as_f;
         if (as_fraction >= 0.55 && as_fraction <= 0.85)
             sigma *= 1.3;
@@ -13673,7 +13870,8 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5)
             return 0;
-        const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+        // v92 As-state split: only As(V) is fork-eligible (carbonate competition).
+        const anion_total = this.fluid.P + arsenateAvailablePpm(this.fluid) + this.fluid.V;
         if (anion_total <= 0)
             return 0;
         const v_fraction = this.fluid.V / anion_total;
@@ -13717,7 +13915,8 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0)
             return 0;
-        const anion_total = this.fluid.P + this.fluid.As + this.fluid.V;
+        // v92 As-state split: only As(V) is fork-eligible.
+        const anion_total = this.fluid.P + arsenateAvailablePpm(this.fluid) + this.fluid.V;
         if (anion_total <= 0)
             return 0;
         const v_fraction = this.fluid.V / anion_total;
@@ -14770,12 +14969,18 @@ Object.assign(VugConditions.prototype, {
         // Schneeberg Ni=20 + As=60 yields ni_f=1.33 × as_f=2.0 = 2.66 base,
         // clears nuc threshold 1.0 at peak T (300-450°C window during the
         // pegmatite-crystallization phase of schneeberg's 160-step trajectory).
-        if (this.fluid.Ni < 15 || this.fluid.As < 30)
+        // v92 As-state split: As(III) ppm via arseniteAvailablePpm. Nickeline
+        // is NiAs (Ni-arsenide); the As component is As(III) / As-elemental,
+        // not As(V) arsenate. arseniteAvailablePpm returns full As ppm in
+        // sulfide-rich fluids (Schneeberg pegmatite phase) and 0 in oxidized
+        // supergene fluids where As would be As(V) bound to oxygen.
+        const as_iii = arseniteAvailablePpm(this.fluid);
+        if (this.fluid.Ni < 15 || as_iii < 30)
             return 0;
         if (!sulfideRedoxAnoxic(this.fluid, 0.6))
             return 0;
         const ni_f = Math.min(this.fluid.Ni / 15.0, 3.0);
-        const as_f = Math.min(this.fluid.As / 30.0, 3.0);
+        const as_f = Math.min(as_iii / 30.0, 3.0);
         const red_f = sulfideRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
         let sigma = ni_f * as_f * red_f;
         const T = this.temperature;
@@ -14802,7 +15007,11 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (!sulfideRedoxAnoxic(this.fluid, 0.6))
             return 0;
-        if (this.fluid.As > 30.0 && this.temperature > 200)
+        // v92 As-state split: this "high As blocks millerite" inhibition
+        // gate is about As(III) competing for the Ni cation (routes to
+        // nickeline/cobaltite). As(V) doesn't compete for sulfarsenide
+        // formation, so the check reads arseniteAvailablePpm.
+        if (arseniteAvailablePpm(this.fluid) > 30.0 && this.temperature > 200)
             return 0;
         const ni_f = Math.min(this.fluid.Ni / 80.0, 2.5);
         const s_f = Math.min(this.fluid.S / 60.0, 2.5);
@@ -14842,12 +15051,15 @@ Object.assign(VugConditions.prototype, {
         // Co=30, As=60, S=30: co_f=1.2, as_f=1.71, s_f=1.2 → product 2.46. At
         // peak T (400-500°C, early pegmatite phase), σ ≈ 2.46 × 1.3 = 3.2
         // before activity correction — well above the 1.2 nuc threshold.
-        if (this.fluid.Co < 20 || this.fluid.As < 30 || this.fluid.S < 20)
+        // v92 As-state split: As(III) ppm via arseniteAvailablePpm. Cobaltite
+        // is CoAsS (sulfarsenide); As is in the As(III)/As(-I) state.
+        const as_iii_cob = arseniteAvailablePpm(this.fluid);
+        if (this.fluid.Co < 20 || as_iii_cob < 30 || this.fluid.S < 20)
             return 0;
         if (!sulfideRedoxAnoxic(this.fluid, 0.5))
             return 0;
         const co_f = Math.min(this.fluid.Co / 25.0, 3.0);
-        const as_f = Math.min(this.fluid.As / 35.0, 3.0);
+        const as_f = Math.min(as_iii_cob / 35.0, 3.0);
         const s_f = Math.min(this.fluid.S / 25.0, 3.0);
         const red_f = sulfideRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
         let sigma = co_f * as_f * s_f * red_f;
@@ -14871,11 +15083,16 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_arsenopyrite() {
-        if (this.fluid.Fe < 5 || this.fluid.As < 3 || this.fluid.S < 10)
+        // v92 As-state split: As(III) ppm via arseniteAvailablePpm.
+        // Arsenopyrite is FeAsS (sulfarsenide); As is in As(III)/As(-I) state,
+        // not As(V). In supergene-oxidized fluids As is As(V) and arsenopyrite
+        // properly returns 0 — geologically correct.
+        const as_iii = arseniteAvailablePpm(this.fluid);
+        if (this.fluid.Fe < 5 || as_iii < 3 || this.fluid.S < 10)
             return 0;
         if (!sulfideRedoxAnoxic(this.fluid, 0.8))
             return 0; // sulfide — needs reducing
-        let sigma = (this.fluid.Fe / 30.0) * (this.fluid.As / 15.0)
+        let sigma = (this.fluid.Fe / 30.0) * (as_iii / 15.0)
             * (this.fluid.S / 50.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
         // Mesothermal sweet spot 300-500°C
         const T = this.temperature;
@@ -14919,7 +15136,11 @@ Object.assign(VugConditions.prototype, {
         return product * T_factor * sulfideRedoxLinearFactor(this.fluid, 1.5);
     },
     supersaturation_tennantite() {
-        if (this.fluid.Cu < 10 || this.fluid.As < 3 || this.fluid.S < 10)
+        // v92 As-state split: As(III) ppm via arseniteAvailablePpm.
+        // Tennantite is Cu₁₂As₄S₁₃ (sulfosalt); As(III) in trigonal pyramidal
+        // [AsS₃]³⁻ groups. Not arsenate.
+        const as_iii = arseniteAvailablePpm(this.fluid);
+        if (this.fluid.Cu < 10 || as_iii < 3 || this.fluid.S < 10)
             return 0;
         if (!sulfideRedoxAnoxic(this.fluid, 1.5))
             return 0;
@@ -14927,7 +15148,7 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.temperature < 100 || this.temperature > 400)
             return 0;
-        const product = (this.fluid.Cu / 40.0) * (this.fluid.As / 15.0) * (this.fluid.S / 40.0);
+        const product = (this.fluid.Cu / 40.0) * (as_iii / 15.0) * (this.fluid.S / 40.0);
         let T_factor;
         if (this.temperature >= 150 && this.temperature <= 300)
             T_factor = 1.3;
@@ -15003,13 +15224,18 @@ Object.assign(VugConditions.prototype, {
     //   pH <= 9 (alkali dissolves it as thioarsenite complex).
     //   T optimum 50-180°C (matches Sulphur Bank's 60-90°C vent regime).
     supersaturation_realgar() {
-        if (this.fluid.As < 5 || this.fluid.S < 30)
+        // v92 As-state split: As(III) ppm via arseniteAvailablePpm.
+        // Realgar is α-As₄S₄ — As(II) sulfide cage molecule, As in cuboid
+        // cage with formal oxidation state +2 (commonly reduced-side
+        // classified). Not arsenate; reads from the As(III) pool.
+        const as_iii = arseniteAvailablePpm(this.fluid);
+        if (as_iii < 5 || this.fluid.S < 30)
             return 0;
         if (!sulfideRedoxAnoxic(this.fluid, 1.2))
             return 0;
         if (this.fluid.pH > 9)
             return 0;
-        const as_f = Math.min(this.fluid.As / 15.0, 3.0);
+        const as_f = Math.min(as_iii / 15.0, 3.0);
         const s_f = Math.min(this.fluid.S / 100.0, 3.0);
         // Eh window: mildly reducing optimal. Sulfide-redox helper at the
         // engine's preferred Eh; tolerance broader than arsenopyrite.
@@ -15046,13 +15272,16 @@ Object.assign(VugConditions.prototype, {
     //   T optimum 60-200°C (slightly hotter than realgar; orpiment is
     //                       the higher-T As-S phase in many systems).
     supersaturation_orpiment() {
-        if (this.fluid.As < 8 || this.fluid.S < 50)
+        // v92 As-state split: As(III) ppm via arseniteAvailablePpm.
+        // Orpiment is As₂S₃ — As(III) sulfide. Not arsenate.
+        const as_iii = arseniteAvailablePpm(this.fluid);
+        if (as_iii < 8 || this.fluid.S < 50)
             return 0;
         if (!sulfideRedoxAnoxic(this.fluid, 1.2))
             return 0;
         if (this.fluid.pH > 9.5)
             return 0;
-        const as_f = Math.min(this.fluid.As / 20.0, 3.0);
+        const as_f = Math.min(as_iii / 20.0, 3.0);
         const s_f = Math.min(this.fluid.S / 150.0, 3.0);
         const eh_f = sulfideRedoxLinearFactor(this.fluid, 1.5);
         let sigma = as_f * s_f * eh_f;

@@ -324,13 +324,107 @@ function oxideRedoxTent(fluid: any, peak: number, slope: number, floor: number):
 }
 
 // ============================================================
+// Phase 4d arsenic-state split (v92, 2026-05-19)
+// ============================================================
+// Closes residual debt flagged from the v85-v90 mineral push: the
+// simulator's single fluid.As pool couldn't represent oxidation state
+// distinctly, so arsenate engines (which need As(V)) had to use proxy
+// gates against sulfide loading. The v88 pharmacolite engine carried
+// an explicit `if (fluid.S > 50) return 0` band-aid for exactly this
+// reason — Sulphur Bank's S=400 ppm fluid would otherwise have fired
+// pharmacolite incorrectly during O2-spike events, even though all
+// the As in that fluid is locked in As(III) sulfide complexes
+// (thioarsenites).
+//
+// The principled fix (v92): split fluid.As dynamically into
+// As(V) (arsenate, AsO₄³⁻) and As(III) (arsenite/arsenide,
+// H₃AsO₃ or sulfide-complexed) fractions based on the fluid's redox
+// state + sulfide loading. Arsenate engines consume As(V) ppm;
+// arsenide/sulfarsenide engines consume As(III) ppm. The scenarios'
+// fluid.As field remains as "total dissolved As" — what scenario
+// authors actually know — and the helpers split it at engine read time.
+//
+// Geochemistry model:
+//   1. SULFIDE GATE (hard suppression). When fluid.S > 50 ppm AND
+//      fluid.O2 < 1.0, As stays as As(III) regardless of bulk Eh:
+//      the thioarsenite complexes (H₂AsS, H₃AsS₃, etc.) are
+//      thermodynamically stable across the entire Eh range of any
+//      sulfide-rich fluid. Reference: Helz, Tossell, Charnock,
+//      Pattrick, Vaughan, Garner (1995) "Oligomerization in As(III)
+//      sulfide solutions: Theoretical constraints and spectroscopic
+//      evidence." Geochim. Cosmochim. Acta 59:4591-4604.
+//      Also: Stumm & Morgan (1996) Aquatic Chemistry 3rd ed., Ch. 8.
+//   2. O2-DRIVEN OXIDATION (smooth ramp). With S < 50 (sulfide
+//      depleted), As(V) fraction grows monotonically with O2 across
+//      the supergene window. Linear ramp from 0 at O2=0.1 to 1 at
+//      O2=1.5; constant 0 below 0.1 (hard anoxic floor) and constant
+//      1 above 1.5 (hard oxic ceiling). The crossover at O2~0.5
+//      matches the approximate boundary between sulfide-stable and
+//      arsenate-stable conditions in supergene groundwater (Bowell
+//      et al. 2014, "The Environmental Geochemistry of Arsenic,"
+//      Reviews in Mineralogy and Geochemistry 79).
+//
+// Note on pH: real-world As(III)/As(V) crossover is also pH-dependent
+// (H₃AsO₃ ⇌ H₂AsO₃⁻ at pK_a~9.2; H₃AsO₄ stepwise at 2.3/6.8/11.5).
+// The simulator's coarse chemistry pool doesn't resolve this nuance;
+// pH-dependence is captured implicitly by the per-engine pH gates
+// (most arsenates have pH 5-7.5 windows that align with the dominant
+// H₂AsO₄⁻ species).
+//
+// Returns fraction (0-1) of fluid.As sitting as As(V).
+function arsenicOxidizedFraction(fluid: any): number {
+  if (!fluid || typeof fluid.As !== 'number') return 0;
+  const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
+  const S = typeof fluid.S === 'number' ? fluid.S : 0;
+  // Sulfide hard-suppression: thioarsenite stability locks As as
+  // As(III) when sulfide is present at meaningful concentration AND
+  // the fluid is not fully oxic. Sulphur Bank (S=400) stays As(III)
+  // through O2 spikes to 0.4 during synproportionation; schneeberg's
+  // late Cu+P phase (S consumed by sulfide-mineral precipitation,
+  // O2 jumps to 1.5) crosses out of this regime.
+  if (S > 50 && O2 < 1.0) return 0;
+  // O2-driven oxidation ramp.
+  if (O2 < 0.1) return 0;       // hard anoxic floor
+  if (O2 >= 1.5) return 1;      // hard oxic ceiling
+  return Math.min(1, Math.max(0, (O2 - 0.1) / 1.4));
+}
+
+// As(V) ppm available for arsenate + uranyl-arsenate engines.
+// Replaces direct `fluid.As` reads in supersaturation_* methods for:
+// adamite, annabergite, conichalcite, erythrite, mimetite, olivenite,
+// pharmacolite, scorodite (all js/30-supersat-arsenate.ts) +
+// the As-branch + As-component of uranyl P/As/V fork engines
+// (torbernite, autunite, zeunerite, uranospinite, carnotite,
+// tyuyamunite in js/38-supersat-phosphate.ts).
+function arsenateAvailablePpm(fluid: any): number {
+  if (!fluid || typeof fluid.As !== 'number') return 0;
+  return fluid.As * arsenicOxidizedFraction(fluid);
+}
+
+// As(III) ppm available for arsenide + sulfarsenide + arsenic-sulfide
+// + native_arsenic engines. Replaces direct `fluid.As` reads in
+// supersaturation_* methods for: native_arsenic (js/36-supersat-
+// native.ts) + arsenopyrite, cobaltite, nickeline, tennantite,
+// realgar, orpiment (js/41-supersat-sulfide.ts).
+function arseniteAvailablePpm(fluid: any): number {
+  if (!fluid || typeof fluid.As !== 'number') return 0;
+  return fluid.As * (1 - arsenicOxidizedFraction(fluid));
+}
+
+// ============================================================
 // Phase 4b arsenate-class engine helpers
 // ============================================================
 // All six arsenates (adamite, annabergite, erythrite, mimetite,
 // olivenite, scorodite) gate on oxidized arsenic — As(V) as
-// AsO₄³⁻. Phase 4c will bind to an As couple
-// (HAsO₄²⁻/H₃AsO₃ at E° ≈ +560 mV at pH 7), to be added to
-// REDOX_COUPLES.
+// AsO₄³⁻. v92 split: instead of just checking fluid.O2 ≥ threshold,
+// engines now read arsenateAvailablePpm(fluid) directly, which combines
+// the redox-state check + sulfide-suppression check into the As
+// concentration value itself.
+//
+// The legacy arsenateRedoxAvailable / arsenateRedoxFactor helpers
+// stay in the API for callers that want a fast O2-only check
+// (e.g. coarse pre-gate before computing the full fraction), but the
+// per-engine reads now use arsenateAvailablePpm.
 // Same flag-OFF passthrough as sulfate / hydroxide.
 
 function arsenateRedoxAvailable(fluid: any, o2Threshold: number): boolean {
