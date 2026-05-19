@@ -197,9 +197,17 @@ describe('Realgar (AsS) + Orpiment (As₂S₃) — v82 mineral additions', () =>
   });
 
   describe('Sulphur Bank scenario carries the As fluid + species declaration', () => {
-    it('initial fluid has As >= 20 ppm', () => {
+    it('initial fluid has As >= 8 ppm (clears orpiment gate; bumped to 10 in v83)', () => {
+      // v82 originally used As=30 ppm (above measured Sulphur Bank
+      // range); v83 tuned to 10 ppm following White & Roberson 1962
+      // + EPA Superfund monitoring data (0.5-10 ppm dissolved).
+      // sulphur_bank_h2s_recharge events add +2 As each (6 events),
+      // so trajectory rises to ~22 ppm by step 200 — covering the
+      // localized-enrichment zone where realgar + orpiment actually
+      // precipitate. The pin floor of 8 ppm matches orpiment's
+      // engine gate (the most-restrictive of the three As-engines).
       const { conditions } = SCENARIOS['sulphur_bank']();
-      expect(conditions.fluid.As).toBeGreaterThanOrEqual(20);
+      expect(conditions.fluid.As).toBeGreaterThanOrEqual(8);
     });
 
     it('expects_species lists realgar + orpiment', () => {

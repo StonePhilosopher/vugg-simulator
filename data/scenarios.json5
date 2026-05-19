@@ -2139,15 +2139,18 @@
           "Mg": 30,
           "Na": 200,
           "K": 25,
-          // Sulfur: the headline. 500 ppm sits in the published
-          // White & Roberson 1962 range for active Sulphur Bank
-          // vents (total H₂S + HS⁻ + SO₄ measured 100-400+ mg/L
-          // at the venting fissures; up to 800+ in fluid-inclusion
-          // assays). Above the engine's 100 ppm threshold; the s_f
-          // factor (S/200, capped at 4.0) hits 2.5, giving headroom
-          // above 1.0 after activity-correction (~0.8x) and the
-          // pH recovery that drifts ph_f down over the run.
-          "S": 500,
+          // Sulfur: the headline. 400 ppm sits at the upper edge of
+          // the published White & Roberson 1962 measured range for
+          // active Sulphur Bank vent fluid (total H₂S + HS⁻ + SO₄ =
+          // 100-400 mg/L documented at the venting fissures). Above
+          // the engine's 100 ppm threshold; the s_f factor (S/200,
+          // capped at 4.0) hits 2.0, giving headroom above 1.0 after
+          // activity-correction (~0.8x) and the pH recovery that
+          // drifts ph_f down over the run.
+          //
+          // v82 was 500 ppm (slightly above measured range); v83
+          // tuned to 400 to follow the published upper bound exactly.
+          "S": 400,
           "Cl": 80,       // low-moderate salinity for hot spring
           // Trace metals — low. metal_sum = Fe(25)+Cu(3)+Pb(2)+Zn(5)
           // = 35 < 100 (the engine cap; mercury hot springs are
@@ -2159,17 +2162,29 @@
           // Trace As — supports arsenopyrite + realgar + orpiment.
           // Sulphur Bank historical reports document minor realgar
           // + orpiment crystals in the vent zone (White & Roberson
-          // 1962 lists both as accessory species). 30 ppm sits in
-          // the published 1-50 ppm range for measured As at active
-          // hot-spring vents; high enough for realgar (As >= 5) and
-          // orpiment (As >= 8) engines to clear their gates.
+          // 1962 lists both as accessory species).
           //
-          // v82 bump (was 8 ppm): the previous 8 ppm sufficed only
-          // for arsenopyrite (As >= 3). Adding the v82 realgar +
-          // orpiment engines made 30 ppm the right number — fires
-          // all three As-bearing minerals in the documented Sulphur
-          // Bank assemblage.
-          "As": 30,
+          // 10 ppm sits at the upper end of the published measured
+          // range for dissolved As in Sulphur Bank vent fluid (White
+          // & Roberson 1962 + EPA Superfund site CAD980893275
+          // monitoring: typically 0.5-10 mg/L). Localized enrichment
+          // in the H₂S + O₂ mixing zone where realgar + orpiment
+          // actually precipitate can transiently exceed bulk values
+          // (the same boundary-layer micro-environment the per-cell
+          // local-fill scaffolding in Proposal E was built for). The
+          // sulphur_bank_h2s_recharge events add +2 As each, so the
+          // run-trajectory rises from 10 to ~22 ppm by step 200 —
+          // covering the localized-enrichment regime within
+          // simulator-truth bounds.
+          //
+          // v82 was 30 ppm (above the published 0.5-10 ppm measured
+          // range — author shortcut to clear the engine gates without
+          // ground-truthing first). v83 corrected to 10 ppm following
+          // White & Roberson's measured-vent values. Engines still
+          // fire reliably: realgar's σ peak drops 9.0 → ~3 across the
+          // run; orpiment's drops 6.8 → ~2; both well above the 1.0
+          // nucleation threshold.
+          "As": 10,
           // Mercury: the deposit's namesake commodity. The Sulphur
           // Bank Mine produced ~13,000 flasks of Hg (~450 tons)
           // before closure in 1957. Hg arrives in the hot-spring

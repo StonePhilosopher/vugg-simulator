@@ -6458,7 +6458,74 @@ let timeScale = 5.0;
 //        stale. seed42_v82.json captures Sulphur Bank with both
 //        species + scorodite firing; other 25 scenarios byte-
 //        identical to v81.
-const SIM_VERSION = 82;
+//   v83 — Science correction pass (2026-05-19). Following the boss's
+//        "follow the science when possible" directive, audited the
+//        Sulphur Bank scenario fluid against published measurements
+//        and tuned the values that exceeded measured ranges:
+//
+//          As: 30 ppm → 10 ppm. White & Roberson 1962 + EPA
+//              Superfund site CAD980893275 monitoring records
+//              measured dissolved As at active Sulphur Bank vents
+//              at 0.5-10 mg/L. v82's 30 was an author shortcut to
+//              clear the engine gates without ground-truthing first.
+//              v83 uses the measured upper bound. The
+//              sulphur_bank_h2s_recharge events still add +2 As
+//              each (6 events × +2 = +12 over the run), so the
+//              trajectory peaks around 22 ppm — covering the
+//              localized-enrichment zone where realgar + orpiment
+//              actually precipitate (boundary-layer micro-environment
+//              chemistry vs bulk vent-fluid average).
+//
+//          S: 500 ppm → 400 ppm. White & Roberson 1962 documents
+//              total reduced S at vents in the 100-400 mg/L range.
+//              v82's 500 sat slightly above; v83 anchors to the
+//              published upper bound exactly.
+//
+//        Verified all four As/S/Hg engines still fire reliably:
+//          peak σ_native_sulfur = 2.70-3.28 (was 2.49-2.79)
+//          peak σ_cinnabar     = 5.64 (was 5.61)
+//          peak σ_realgar      = 4.74 (was 9.02)
+//          peak σ_orpiment     = 3.58 (was 6.82)
+//
+//        All comfortably above the 1.0 nucleation threshold; crystal
+//        counts unchanged: 4 native_sulfur, 6 cinnabar, 6 realgar,
+//        6 orpiment.
+//
+//        Emergent change: scorodite (FeAsO₄) no longer fires at
+//        Sulphur Bank. Geologically MORE accurate — scorodite is
+//        a deep-supergene gossan weathering product, not an active-
+//        hot-spring-vent mineral. The v82 scorodite firing was an
+//        artifact of the inflated As=30 ppm chemistry, not the real
+//        Sulphur Bank vent assemblage. v83 puts scorodite back in
+//        the dormant pool (still 'live' coverage-wise; only un-lit
+//        in this specific scenario).
+//
+//        v82 realgar/orpiment test pin updated: "As >= 20 ppm" → "As
+//        >= 8 ppm" (the orpiment engine's gate, the most-restrictive
+//        of the three As-engines). Documents the corrected expectation.
+//
+//        Companion correction documented in this note (not in
+//        committed code since v80 is shipped): the Sicilian BSR
+//        equation in v80's history note used a "CaS" intermediate
+//        ("CaSO₄ + 2 CH₂O → CaS + 2 H₂CO₃"). The correct mechanism
+//        per Berner 1980 / Aharon 2000 is:
+//          2 CH₂O + SO₄²⁻ → H₂S + 2 HCO₃⁻
+//          Ca²⁺ + 2 HCO₃⁻ → CaCO₃ + H₂CO₃
+//        The geological RESULT is the same (carbonate cement + H₂S
+//        byproduct), but the equation as written conflated steps.
+//        Sicilian Solfifera Series scenario chemistry is unaffected;
+//        only the documentation was sloppy.
+//
+//        Workflow change going forward (boss directive 2026-05-19):
+//        for any new mineral or scenario fluid tuning, ground-truth
+//        against published measurements BEFORE committing. The
+//        cinnabar/realgar/orpiment additions worked out
+//        geologically defensible despite shortcuts, but the As=30
+//        slip was the catch — boss spotted it on review.
+//
+//        Calibration: seed42_v83.json updated for sulphur_bank;
+//        other 25 scenarios byte-identical to v82.
+const SIM_VERSION = 83;
 
 // ── 18-constants.js ──
 
