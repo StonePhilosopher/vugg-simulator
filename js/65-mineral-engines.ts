@@ -194,4 +194,15 @@ const MINERAL_ENGINES = {
   // Keighin & Honea 1969 (phase diagram); Handbook of Mineralogy.
   proustite: grow_proustite,
   pyrargyrite: grow_pyrargyrite,
+  // v97 (2026-05-19): Tsumeb arsenate suite — austinite + legrandite +
+  // koettigite + duftite + bayldonite. The 2nd-oxidation-zone
+  // signature arsenates from Gebhard 1999 monograph. Cation-ratio
+  // fork gates (Ca:Zn, Cu:Pb, Cu vs Zn fraction, Co/Ni-vs-Zn) per
+  // Magalhães et al. 1988 + Gebhard 1999 paragenesis. All use
+  // arsenateAvailablePpm (As(V)) + oxidizing supergene window.
+  austinite: grow_austinite,
+  legrandite: grow_legrandite,
+  koettigite: grow_koettigite,
+  duftite: grow_duftite,
+  bayldonite: grow_bayldonite,
 };

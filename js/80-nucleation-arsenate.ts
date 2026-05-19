@@ -208,6 +208,99 @@ function _nuc_conichalcite(sim) {
   }
 }
 
+// v97 (2026-05-19): Tsumeb arsenate suite nucleation. Five 2nd-
+// oxidation-zone supergene arsenates with distinct cation-ratio gates
+// in supersat. All use sigma < 1.0 early-out RNG-cascade guard.
+
+function _nuc_austinite(sim) {
+  const sigma = sim.conditions.supersaturation_austinite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('austinite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'austinite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const con = sim.crystals.filter(c => c.mineral === 'conichalcite' && c.active);
+  const smith = sim.crystals.filter(c => c.mineral === 'smithsonite' && c.active);
+  const dol = sim.crystals.filter(c => c.mineral === 'dolomite' && c.active);
+  if (con.length && rng.random() < 0.50) pos = `epitactic on conichalcite #${con[0].crystal_id}`;
+  else if (smith.length && rng.random() < 0.35) pos = `on smithsonite #${smith[0].crystal_id}`;
+  else if (dol.length && rng.random() < 0.25) pos = `on dolomite #${dol[0].crystal_id}`;
+  const c = sim.nucleate('austinite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🟡 Austinite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Zn=${sim.conditions.fluid.Zn.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(1)}) — Ca-Zn arsenate, Tsumeb 2nd-zone Zn-end`);
+}
+
+function _nuc_legrandite(sim) {
+  const sigma = sim.conditions.supersaturation_legrandite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('legrandite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'legrandite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const adm = sim.crystals.filter(c => c.mineral === 'adamite' && c.active);
+  const will = sim.crystals.filter(c => c.mineral === 'willemite' && c.active);
+  const dol = sim.crystals.filter(c => c.mineral === 'dolomite' && c.active);
+  if (adm.length && rng.random() < 0.55) pos = `on adamite #${adm[0].crystal_id}`;
+  else if (will.length && rng.random() < 0.30) pos = `on willemite #${will[0].crystal_id}`;
+  else if (dol.length && rng.random() < 0.25) pos = `on limonite-coated dolomite #${dol[0].crystal_id}`;
+  const c = sim.nucleate('legrandite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🟨 Legrandite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Zn=${sim.conditions.fluid.Zn.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — canary-yellow Tsumeb iconic Zn arsenate`);
+}
+
+function _nuc_koettigite(sim) {
+  const sigma = sim.conditions.supersaturation_koettigite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('koettigite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'koettigite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const ery = sim.crystals.filter(c => c.mineral === 'erythrite' && c.active);
+  const ann = sim.crystals.filter(c => c.mineral === 'annabergite' && c.active);
+  const smith = sim.crystals.filter(c => c.mineral === 'smithsonite' && c.active);
+  if (ery.length && rng.random() < 0.45) pos = `vivianite-group epitactic on erythrite #${ery[0].crystal_id}`;
+  else if (ann.length && rng.random() < 0.40) pos = `vivianite-group epitactic on annabergite #${ann[0].crystal_id}`;
+  else if (smith.length && rng.random() < 0.30) pos = `on smithsonite #${smith[0].crystal_id}`;
+  const c = sim.nucleate('koettigite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🌸 Koettigite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Zn=${sim.conditions.fluid.Zn.toFixed(0)}, Co=${sim.conditions.fluid.Co.toFixed(1)}, Ni=${sim.conditions.fluid.Ni.toFixed(1)}) — vivianite-group Zn end, pale pink`);
+}
+
+function _nuc_duftite(sim) {
+  const sigma = sim.conditions.supersaturation_duftite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('duftite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'duftite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const mal = sim.crystals.filter(c => c.mineral === 'malachite' && c.active);
+  const cer = sim.crystals.filter(c => c.mineral === 'cerussite' && c.active);
+  const mim = sim.crystals.filter(c => c.mineral === 'mimetite' && c.active);
+  const azr = sim.crystals.filter(c => c.mineral === 'azurite' && c.active);
+  if (mal.length && rng.random() < 0.45) pos = `on malachite #${mal[0].crystal_id}`;
+  else if (cer.length && rng.random() < 0.40) pos = `on cerussite #${cer[0].crystal_id}`;
+  else if (mim.length && rng.random() < 0.35) pos = `on mimetite #${mim[0].crystal_id}`;
+  else if (azr.length && rng.random() < 0.30) pos = `replacing azurite #${azr[0].crystal_id}`;
+  const c = sim.nucleate('duftite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🟢 Duftite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(1)}) — olive-drab Pb-Cu arsenate`);
+}
+
+function _nuc_bayldonite(sim) {
+  const sigma = sim.conditions.supersaturation_bayldonite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('bayldonite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'bayldonite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const mim = sim.crystals.filter(c => c.mineral === 'mimetite' && c.active);
+  const duf = sim.crystals.filter(c => c.mineral === 'duftite' && c.active);
+  const mal = sim.crystals.filter(c => c.mineral === 'malachite' && c.active);
+  const olv = sim.crystals.filter(c => c.mineral === 'olivenite' && c.active);
+  if (mim.length && rng.random() < 0.50) pos = `epitactic on mimetite #${mim[0].crystal_id}`;
+  else if (duf.length && rng.random() < 0.50) pos = `overgrowth on duftite #${duf[0].crystal_id}`;
+  else if (olv.length && rng.random() < 0.40) pos = `on olivenite #${olv[0].crystal_id}`;
+  else if (mal.length && rng.random() < 0.30) pos = `on malachite #${mal[0].crystal_id}`;
+  const c = sim.nucleate('bayldonite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🟩 Bayldonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, Cu:Pb=${(sim.conditions.fluid.Cu/Math.max(sim.conditions.fluid.Pb,0.1)).toFixed(1)}) — apple-green Cu-enriched Pb-Cu arsenate`);
+}
+
 function _nucleateClass_arsenate(sim) {
   _nuc_scorodite(sim);
   _nuc_adamite(sim);
@@ -217,4 +310,10 @@ function _nucleateClass_arsenate(sim) {
   _nuc_olivenite(sim);
   _nuc_conichalcite(sim);
   _nuc_pharmacolite(sim);
+  // v97 (2026-05-19): Tsumeb suite — order encodes paragenetic sequence
+  _nuc_austinite(sim);
+  _nuc_legrandite(sim);
+  _nuc_koettigite(sim);
+  _nuc_duftite(sim);
+  _nuc_bayldonite(sim);
 }

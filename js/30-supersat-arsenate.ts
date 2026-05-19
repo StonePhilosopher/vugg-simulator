@@ -257,4 +257,128 @@ Object.assign(VugConditions.prototype, {
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'mimetite');
   return Math.max(sigma, 0);
 },
+
+// v97 (2026-05-19): Tsumeb arsenate suite — austinite + legrandite +
+// koettigite + duftite + bayldonite. The 2nd-oxidation-zone signature
+// arsenates from Tsumeb (Gebhard 1999). All five supergene at <50°C,
+// oxidizing (O2 > 0.5, Eh strongly positive), with As(V) via
+// arsenateAvailablePpm.
+//
+// Cation-ratio fork gates (Magalhães et al. 1988 stability +
+// Gebhard 1999 paragenesis):
+//   austinite      Ca:Zn ~1:1, Cu < Zn (pH 6.5-8.0)
+//   legrandite     Zn-rich, Ca < 20 ppm, mildly acidic (pH 4.5-6.5)
+//   koettigite     Zn >> (Co+Ni), very damp, T < 35 (pH 6-8)
+//   duftite        Pb:Cu near 1:1 (pH 5.5-7.5)
+//   bayldonite     Pb:Cu near 1:3 / Cu-enriched (pH 5-7)
+//
+// Refs: Gebhard 1999 "Tsumeb"; Keller 1977 MinRec 8(3); Wilson &
+// Keller 2001 MinRec 32(3); Magalhães et al. 1988; Anthony et al.
+// Handbook of Mineralogy.
+
+  supersaturation_austinite() {
+    // CaZn(AsO4)(OH) — Ca-Zn adelite-descloizite analog of conichalcite.
+    const as_v = arsenateAvailablePpm(this.fluid);
+    if (this.fluid.Ca < 30 || this.fluid.Zn < 20 || as_v < 5) return 0;
+    if (this.fluid.O2 < 0.5) return 0;
+    if (this.temperature < 5 || this.temperature > 60) return 0;
+    if (this.fluid.pH < 6.0 || this.fluid.pH > 8.5) return 0;
+    const cu_frac = this.fluid.Cu / Math.max(this.fluid.Cu + this.fluid.Zn, 0.001);
+    if (cu_frac > 0.5) return 0;  // Cu-dominant → conichalcite wins
+    if (this.fluid.Pb > 50) return 0;  // duftite/bayldonite take precedence
+    const ca_f = Math.min(this.fluid.Ca / 80.0, 2.0);
+    const zn_f = Math.min(this.fluid.Zn / 60.0, 2.0);
+    const as_f = Math.min(as_v / 15.0, 2.0);
+    let sigma = ca_f * zn_f * as_f;
+    const pH = this.fluid.pH;
+    if (pH >= 6.5 && pH <= 8.0) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.25) * 0.5);
+    if (cu_frac < 0.3) sigma *= 1.2;  // pure Zn-end sweet spot
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'austinite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_legrandite() {
+    // Zn2(AsO4)(OH)·H2O — bright canary yellow, Tsumeb iconic.
+    const as_v = arsenateAvailablePpm(this.fluid);
+    if (this.fluid.Zn < 100 || as_v < 10) return 0;
+    if (this.fluid.O2 < 0.5) return 0;
+    if (this.temperature < 5 || this.temperature > 50) return 0;
+    if (this.fluid.pH < 4.5 || this.fluid.pH > 7.0) return 0;
+    if (this.fluid.Ca > 20) return 0;  // austinite competes
+    if (this.fluid.Cu > 50) return 0;  // olivenite/conichalcite compete
+    if (this.fluid.Pb > 20) return 0;  // Pb arsenates compete
+    const zn_f = Math.min(this.fluid.Zn / 150.0, 2.5);
+    const as_f = Math.min(as_v / 25.0, 2.0);
+    let sigma = zn_f * as_f;
+    const pH = this.fluid.pH;
+    if (pH >= 5.0 && pH <= 6.0) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 5.5) * 0.5);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'legrandite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_koettigite() {
+    // Zn3(AsO4)2·8H2O — vivianite group, Zn end-member. 8H2O fragile.
+    const as_v = arsenateAvailablePpm(this.fluid);
+    if (this.fluid.Zn < 50 || as_v < 10) return 0;
+    if (this.fluid.O2 < 0.5) return 0;
+    if (this.temperature < 5 || this.temperature > 35) return 0;
+    if (this.fluid.pH < 6.0 || this.fluid.pH > 8.0) return 0;
+    if (this.fluid.Co > 10) return 0;  // erythrite wins
+    if (this.fluid.Ni > 10) return 0;  // annabergite wins
+    const zn_f = Math.min(this.fluid.Zn / 80.0, 2.0);
+    const as_f = Math.min(as_v / 20.0, 1.8);
+    let sigma = zn_f * as_f;
+    const pH = this.fluid.pH;
+    if (pH >= 6.5 && pH <= 7.5) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.0) * 0.5);
+    if (this.temperature > 25) sigma *= Math.max(0.3, 1.0 - (this.temperature - 25) * 0.07);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'koettigite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_duftite() {
+    // PbCu(AsO4)(OH) — olive-green, Pb:Cu near 1:1.
+    const as_v = arsenateAvailablePpm(this.fluid);
+    if (this.fluid.Pb < 50 || this.fluid.Cu < 20 || as_v < 5) return 0;
+    if (this.fluid.O2 < 0.5) return 0;
+    if (this.temperature < 5 || this.temperature > 60) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+    if (this.fluid.V > as_v) return 0;  // V > As → mottramite wins
+    const cu_pb_ratio = this.fluid.Cu / Math.max(this.fluid.Pb, 0.001);
+    if (cu_pb_ratio > 2.0) return 0;  // Cu-rich → bayldonite wins
+    const pb_f = Math.min(this.fluid.Pb / 80.0, 2.0);
+    const cu_f = Math.min(this.fluid.Cu / 50.0, 1.8);
+    const as_f = Math.min(as_v / 15.0, 2.0);
+    let sigma = pb_f * cu_f * as_f;
+    const pH = this.fluid.pH;
+    if (pH >= 6.0 && pH <= 7.5) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 6.75) * 0.5);
+    if (cu_pb_ratio >= 0.7 && cu_pb_ratio <= 1.5) sigma *= 1.2;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'duftite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_bayldonite() {
+    // PbCu3(AsO4)2(OH)2 — apple-green, Pb:Cu near 1:3 (Cu-enriched).
+    const as_v = arsenateAvailablePpm(this.fluid);
+    if (this.fluid.Pb < 30 || this.fluid.Cu < 100 || as_v < 10) return 0;
+    if (this.fluid.O2 < 0.5) return 0;
+    if (this.temperature < 5 || this.temperature > 60) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    if (this.fluid.V > as_v) return 0;  // V > As → mottramite wins
+    const cu_pb_ratio = this.fluid.Cu / Math.max(this.fluid.Pb, 0.001);
+    if (cu_pb_ratio < 2.0) return 0;  // Pb-rich → duftite wins
+    const pb_f = Math.min(this.fluid.Pb / 60.0, 1.8);
+    const cu_f = Math.min(this.fluid.Cu / 120.0, 2.2);
+    const as_f = Math.min(as_v / 20.0, 2.0);
+    let sigma = pb_f * cu_f * as_f;
+    const pH = this.fluid.pH;
+    if (pH >= 5.5 && pH <= 7.0) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 6.25) * 0.5);
+    if (cu_pb_ratio >= 2.5 && cu_pb_ratio <= 4.0) sigma *= 1.2;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'bayldonite');
+    return Math.max(sigma, 0);
+  },
 });

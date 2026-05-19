@@ -3274,5 +3274,81 @@
 //         Calibration drift: TBD per baseline regen. Both engines
 //         strict-gated; may produce zero drift if schneeberg primary-
 //         stage fluid doesn't reach the epithermal Ag window.
-const SIM_VERSION = 96;
+//   v97 — Tsumeb arsenate suite: austinite + legrandite + koettigite +
+//         duftite + bayldonite (2026-05-19). Five 2nd-oxidation-zone
+//         supergene arsenates from the Gebhard 1999 Tsumeb monograph.
+//         Closes the bulk of the Tsumeb arsenate paragenesis the
+//         simulator was missing.
+//
+//         All five fire from the same parent chemistry (oxidizing
+//         supergene at <50°C with As(V)) but discriminate via
+//         cation-ratio fork gates:
+//
+//           austinite     CaZn(AsO4)(OH)        Cu/(Cu+Zn) < 0.5,
+//                                                pH 6.5-8.0; Ca:Zn ~1:1
+//           legrandite    Zn2(AsO4)(OH)·H2O    Zn-rich + Ca<20 + Cu<50
+//                                                + pH 4.5-6.5 (mildly
+//                                                acidic, the Ca-free
+//                                                + hydrous discriminator)
+//           koettigite    Zn3(AsO4)2·8H2O       vivianite-group Zn end;
+//                                                Co<10, Ni<10, T<35
+//                                                (8 H2O fragile)
+//           duftite       PbCu(AsO4)(OH)        Cu:Pb < 2 (Pb:Cu ~1:1);
+//                                                pH 5-8; V < As fork
+//                                                from mottramite
+//           bayldonite    PbCu3(AsO4)2(OH)2     Cu:Pb > 2 (Cu-enriched);
+//                                                pH 5-7.5
+//
+//         Each gate is the cation-ratio fork that prevents over-firing.
+//         austinite ↔ conichalcite via Cu/Zn fraction; austinite ↔
+//         legrandite via Ca presence + pH; koettigite ↔ erythrite/
+//         annabergite via Co/Ni vs Zn; duftite ↔ bayldonite via Cu:Pb
+//         ratio; duftite ↔ mottramite via V vs As.
+//
+//         All use arsenateAvailablePpm (v92 As-state helper). All gate
+//         on O2 > 0.5 (strongly oxidizing) + T 5-60°C (35° cap for
+//         koettigite's 8 H2O). RNG-cascade guard via sigma < 1.0
+//         early-out (matches v93/v94/v95/v96 pattern).
+//
+//         Substrate priorities encode Tsumeb 2nd-oxidation-zone
+//         paragenesis (Gebhard 1999):
+//           austinite:   conichalcite (epitactic) > smithsonite > dolomite
+//           legrandite:  adamite > willemite > limonite-dolomite
+//           koettigite:  erythrite (epitactic) > annabergite > smithsonite
+//           duftite:     malachite > cerussite > mimetite > azurite
+//           bayldonite:  mimetite (pseudomorph) > duftite (overgrowth)
+//                        > olivenite > malachite
+//
+//         Habit dispatch (per mineral): see minerals.json habit_variants.
+//
+//         References (research dossier 2026-05-19):
+//           * Gebhard G. (1999) "Tsumeb: A Unique Mineral Locality."
+//             Mineralogical Record Inc. — the canonical Tsumeb
+//             monograph; austinite pp. 155-157, legrandite pp. 197-
+//             202, koettigite p. 190, duftite pp. 173-177, bayldonite
+//             pp. 161-164.
+//           * Keller P. (1977) "Paragenesis of Tsumeb minerals."
+//             MinRec 8(3) — the canonical Tsumeb arsenate paragenesis.
+//           * Wilson W.E. & Keller P. (2001) MinRec 32(3) — Tsumeb
+//             2nd-oxidation-zone update with post-1995 finds.
+//           * Magalhães M.C.F. et al. (1988) — arsenate solubility
+//             framework (log Ksp values per mineral).
+//           * Staples L.W. (1935) — austinite type description, Gold
+//             Hill UT.
+//           * Drugman J. & Hey M.H. (1932) Mineralog. Mag. 23:175 —
+//             legrandite type description, Flor de Peña Mexico.
+//           * Pufahl O. (1920) — duftite type description, Tsumeb.
+//           * Church A.H. (1865) — bayldonite type description,
+//             Penberthy Croft, Cornwall.
+//           * Daubrée G.A. (1850) — koettigite type description,
+//             Schneeberg.
+//           * Hill R.J. (1979) — koettigite crystal structure.
+//           * Kharisun et al. (1998) Mineralog. Mag. 62 — duftite
+//             crystal structure.
+//           * Ghose S. & Wan C. (1979) — bayldonite crystal structure.
+//           * Anthony et al. Handbook of Mineralogy v.II + v.IV.
+//
+//         Coverage 112 live → 117 live (+5 minerals); 25 paramorph-only.
+//         Calibration drift: TBD per baseline regen.
+const SIM_VERSION = 97;
 

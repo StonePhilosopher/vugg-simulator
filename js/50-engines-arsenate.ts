@@ -447,7 +447,165 @@ function grow_mimetite(crystal, conditions, step) {
   if (feRatio > 0.3) colorNote = 'orange-brown (campylite)';
   else if (conditions.fluid.Pb > 100) colorNote = 'bright yellow-orange';
   else colorNote = 'pale yellow';
-  
+
   // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.02, note: `${crystal.habit}, ${colorNote}` });
+}
+
+// v97 (2026-05-19): Tsumeb arsenate suite grow engines.
+
+function grow_austinite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_austinite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.10);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * (0.8 + rng.random() * 0.4);
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  if (pos.includes('conichalcite')) {
+    crystal.habit = 'epitactic_on_conichalcite';
+    crystal.dominant_forms = ['epitactic overgrowth on conichalcite (same structure type)'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'powder_puff';
+    crystal.dominant_forms = ['radial spray', 'hemispherical "powder-puff" aggregate'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'acicular_sprays';
+    crystal.dominant_forms = ['drusy crusts of acicular crystals'];
+  } else {
+    crystal.habit = 'bladed';
+    crystal.dominant_forms = ['bladed prismatic'];
+  }
+  const cu_color = (conditions.fluid.Cu > 5) ? 'apple-green (cuprian)' : 'pale yellow-green';
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `austinite ${crystal.habit}, ${cu_color}` });
+}
+
+function grow_legrandite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_legrandite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.10);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    // Dehydration above ~120°C
+    if (crystal.total_growth_um > 3 && conditions.temperature > 120) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.08);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, dissolutionMode: 'dehydration', note: `dehydration > 120°C (legrandite is the hydrous Zn arsenate; loses structural H2O)` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * (0.8 + rng.random() * 0.4);  // grows fast — the Tsumeb sprays
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  if (pos.includes('adamite')) {
+    crystal.habit = 'on_adamite';
+    crystal.dominant_forms = ['acicular spray on adamite substrate'];
+  } else if (excess > 1.3) {
+    crystal.habit = 'aztec_sun_spray';
+    crystal.dominant_forms = ['radiating sprays + fans', 'wedge-shaped prismatic terminations (Tsumeb iconic "Aztec sun")'];
+  } else if (excess > 0.5) {
+    crystal.habit = 'wedge_prismatic';
+    crystal.dominant_forms = ['acicular wedge prisms', 'divergent groups'];
+  } else {
+    crystal.habit = 'solitary_prismatic';
+    crystal.dominant_forms = ['solitary wedge prisms on limonite-coated dolomite'];
+  }
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `legrandite ${crystal.habit}, bright canary yellow (Tsumeb iconic)` });
+}
+
+function grow_koettigite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_koettigite();
+  if (sigma < 1.0) {
+    // Dehydration above ~50°C — the 8 H2O is fragile
+    if (crystal.total_growth_um > 3 && conditions.temperature > 50) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.12);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, dissolutionMode: 'dehydration', note: `dehydration > 50°C (koettigite is a vivianite-group 8-hydrate; loses structural H2O rapidly)` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * (0.8 + rng.random() * 0.4);
+  if (rate < 0.1) return null;
+  if (excess > 1.2) {
+    crystal.habit = 'spherulitic';
+    crystal.dominant_forms = ['spherulitic radiating bladed', 'vivianite-group rosette'];
+  } else if (excess > 0.5) {
+    crystal.habit = 'bladed_lath';
+    crystal.dominant_forms = ['bladed lath-like along [010]', 'perfect {010} cleavage on flakes'];
+  } else {
+    crystal.habit = 'drusy_crust';
+    crystal.dominant_forms = ['thin drusy crusts in damp seams'];
+  }
+  // Color from any Co/Ni traces (vivianite-group)
+  const tinge = (conditions.fluid.Co > 0.5) ? 'pale pink (cobaltoan tinge)' : 'colorless to very pale peach';
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `koettigite ${crystal.habit}, ${tinge}` });
+}
+
+function grow_duftite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_duftite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.10);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * (0.8 + rng.random() * 0.4);
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  if (pos.includes('malachite') || pos.includes('azurite') || pos.includes('mimetite') || pos.includes('cerussite')) {
+    crystal.habit = 'botryoidal_crust';
+    crystal.dominant_forms = ['olive-green botryoidal crust on Pb-Cu carbonate'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'spheroidal_aggregate';
+    crystal.dominant_forms = ['1-5 mm hemispherical aggregates', 'olive-green'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'mammillary_crust';
+    crystal.dominant_forms = ['mammillary crusts lining vugs'];
+  } else {
+    crystal.habit = 'drusy_coating';
+    crystal.dominant_forms = ['drusy olive-green coating'];
+  }
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `duftite ${crystal.habit}, olive-drab green (heavy, SG 6.4 — diagnostic)` });
+}
+
+function grow_bayldonite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_bayldonite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 3 && conditions.fluid.pH < 4.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.10);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)})` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.8 * excess * (0.8 + rng.random() * 0.4);
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  if (pos.includes('mimetite') || pos.includes('duftite')) {
+    crystal.habit = 'pseudomorph_or_overgrowth';
+    crystal.dominant_forms = ['epitactic overgrowth on Pb-As substrate', 'sometimes pseudomorph after mimetite'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'spheroidal_mammillary';
+    crystal.dominant_forms = ['1-10 mm mammillary hemispheres', 'apple-green to yellow-green'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'botryoidal_druze';
+    crystal.dominant_forms = ['botryoidal druses on Pb-Cu oxide matrix'];
+  } else {
+    crystal.habit = 'powdery_crust';
+    crystal.dominant_forms = ['earthy powdery yellow-green coating (Cornwall Penberthy Croft type texture)'];
+  }
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `bayldonite ${crystal.habit}, apple-green (paler than duftite, SG 5.7)` });
 }
