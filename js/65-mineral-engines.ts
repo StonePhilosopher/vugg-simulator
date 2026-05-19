@@ -185,4 +185,13 @@ const MINERAL_ENGINES = {
   safflorite: grow_safflorite,
   rammelsbergite: grow_rammelsbergite,
   loellingite: grow_loellingite,
+  // v96 (2026-05-19): Ruby silvers — late epithermal Ag, the As:Sb
+  // fork. proustite Ag₃AsS₃ (scarlet, As-end) vs pyrargyrite Ag₃SbS₃
+  // (cherry-red, Sb-end). Trigonal R3c isostructural; near-complete
+  // solid solution > 300°C, miscibility gap < 200°C (Sack & Loucks
+  // 1985). Use arseniteAvailablePpm + fluid.Sb fork. Photodecomposes.
+  // Refs: Sack & Loucks 1985 Am. Min. 70:1270; Ondrus et al. 2003;
+  // Keighin & Honea 1969 (phase diagram); Handbook of Mineralogy.
+  proustite: grow_proustite,
+  pyrargyrite: grow_pyrargyrite,
 };

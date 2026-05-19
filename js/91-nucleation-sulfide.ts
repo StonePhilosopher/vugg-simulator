@@ -494,6 +494,51 @@ function _nuc_loellingite(sim) {
   sim.log.push(`  ✦ NUCLEATION: 🔘 Loellingite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(2)}) — five-element vein FeAs₂, steel-gray outermost rim`);
 }
 
+// v96 (2026-05-19): Ruby silvers nucleation. Late-stage epithermal Ag,
+// post-arsenide, post-main-sulfide, syn-to-post-native_silver. The
+// As:Sb fork is in the supersaturation engines; the nucleation
+// functions just encode substrate priority for the late-Ag stage.
+// RNG-cascade guard via sigma < 1.0 early-out.
+
+function _nuc_proustite(sim) {
+  const sigma = sim.conditions.supersaturation_proustite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('proustite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'proustite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  // Late epithermal Ag — sits on early arsenides + acanthite + native_Ag
+  const ag = sim.crystals.filter(c => c.mineral === 'native_silver' && c.active);
+  const acn = sim.crystals.filter(c => c.mineral === 'acanthite' && c.active);
+  const arsd = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
+  const cob = sim.crystals.filter(c => c.mineral === 'cobaltite' && c.active);
+  if (ag.length && rng.random() < 0.45) pos = `on native_silver #${ag[0].crystal_id}`;
+  else if (acn.length && rng.random() < 0.40) pos = `alongside acanthite #${acn[0].crystal_id}`;
+  else if (arsd.length && rng.random() < 0.30) pos = `post-arsenide on arsenopyrite #${arsd[0].crystal_id}`;
+  else if (cob.length && rng.random() < 0.25) pos = `post-arsenide on cobaltite #${cob[0].crystal_id}`;
+  const c = sim.nucleate('proustite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🔴 Proustite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ag=${sim.conditions.fluid.Ag.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, Sb=${(sim.conditions.fluid.Sb||0).toFixed(1)}) — scarlet light ruby silver, photodecomposes if exposed`);
+}
+
+function _nuc_pyrargyrite(sim) {
+  const sigma = sim.conditions.supersaturation_pyrargyrite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('pyrargyrite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'pyrargyrite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  const ag = sim.crystals.filter(c => c.mineral === 'native_silver' && c.active);
+  const acn = sim.crystals.filter(c => c.mineral === 'acanthite' && c.active);
+  const stb = sim.crystals.filter(c => c.mineral === 'stibnite' && c.active);
+  const tdr = sim.crystals.filter(c => c.mineral === 'tetrahedrite' && c.active);
+  if (ag.length && rng.random() < 0.45) pos = `on native_silver #${ag[0].crystal_id}`;
+  else if (acn.length && rng.random() < 0.40) pos = `alongside acanthite #${acn[0].crystal_id}`;
+  else if (tdr.length && rng.random() < 0.30) pos = `with tetrahedrite #${tdr[0].crystal_id}`;
+  else if (stb.length && rng.random() < 0.25) pos = `on stibnite #${stb[0].crystal_id}`;
+  const c = sim.nucleate('pyrargyrite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🍒 Pyrargyrite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ag=${sim.conditions.fluid.Ag.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, Sb=${(sim.conditions.fluid.Sb||0).toFixed(1)}) — cherry-red dark ruby silver, photodecomposes slowly`);
+}
+
 // v94 (2026-05-19): enargite — Cu₃AsS₄ high-sulfidation primary Cu-As-S.
 // Distinguishes from tennantite via pH + sulfidation-state proxy in the
 // supersat engine. Substrate priority: pyrite (primary, same paragenetic
@@ -544,6 +589,9 @@ function _nucleateClass_sulfide(sim) {
   _nuc_millerite(sim);
   _nuc_cobaltite(sim);
   _nuc_acanthite(sim);
+  // v96 ruby silvers — late epithermal Ag, post-arsenide/post-acanthite
+  _nuc_proustite(sim);
+  _nuc_pyrargyrite(sim);
   _nuc_bornite(sim);
   _nuc_chalcocite(sim);
   _nuc_covellite(sim);

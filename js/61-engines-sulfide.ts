@@ -1141,6 +1141,103 @@ function grow_loellingite(crystal, conditions, step) {
   });
 }
 
+// v96 (2026-05-19): Ruby silvers grow engines. The As:Sb fork in
+// supersaturation guarantees that each crystal grows from a fluid
+// where its chromophore dominates; this means the supergene products
+// distinguish cleanly (native_silver + scorodite for proustite,
+// native_silver + cervantite/stibiconite for pyrargyrite).
+// Photodecomposition flag carried via crystal._light_sensitive — not
+// runtime-applied in v96 but available for future LIGHT_TRANSITIONS
+// integration (the pararealgar/proustite-pyrargyrite mechanic family).
+
+function grow_proustite(crystal, conditions, step) {
+  // Ag3AsS3 — scarlet trigonal R3c scalenohedra. Habit dispatch:
+  // acute_scalenohedral (Jachymov classic), acute_prismatic, massive,
+  // reniform_crust (late vug fillings).
+  const sigma = conditions.supersaturation_proustite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 8 && conditions.fluid.O2 > 0.8) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.09);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative dissolution — releases Ag (50% native Ag + 50% acanthite by mol) + AsO₄³⁻ (→ scorodite if Fe present, else arsenolite)`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+  crystal._light_sensitive = true;  // photodecomposes — keep in dark
+  if (excess > 1.4) {
+    crystal.habit = 'acute_scalenohedral';
+    crystal.dominant_forms = ['{0221} acute scalenohedron', 'cm-scale Jáchymov / Chañarcillo habit'];
+  } else if (excess > 0.6) {
+    crystal.habit = 'acute_prismatic';
+    crystal.dominant_forms = ['{1010} acute prism', 'rhombohedral termination'];
+  } else if (excess > 0.2) {
+    crystal.habit = 'reniform_crust';
+    crystal.dominant_forms = ['scarlet reniform coating', 'late vug filling'];
+  } else {
+    crystal.habit = 'massive_disseminated';
+    crystal.dominant_forms = ['massive granular vermilion'];
+  }
+  conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.020, 0);
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.008, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.020, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `proustite Ag₃AsS₃ — ${crystal.habit}, scarlet light-ruby-silver; photodecomposes to acanthite + As residue if exposed`
+  });
+}
+
+function grow_pyrargyrite(crystal, conditions, step) {
+  // Ag3SbS3 — cherry-red trigonal scalenohedra/prisms. Slightly larger
+  // typical crystals than proustite (Andreasberg / San Cristobal 5 cm+).
+  // Less photo-sensitive than proustite but still keep dark.
+  const sigma = conditions.supersaturation_pyrargyrite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 8 && conditions.fluid.O2 > 0.8) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.09);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative dissolution — releases Ag (50% native + 50% acanthite) + Sb (→ cervantite/stibiconite Sb oxides)`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.8 * excess * rng.uniform(0.7, 1.3);  // slightly faster — pyrargyrite typically larger
+  if (rate < 0.1) return null;
+  crystal._light_sensitive = true;
+  if (excess > 1.4) {
+    crystal.habit = 'large_prismatic_hemimorphic';
+    crystal.dominant_forms = ['hemimorphic prism (different terminations)', 'Andreasberg classic'];
+  } else if (excess > 0.6) {
+    crystal.habit = 'scalenohedral';
+    crystal.dominant_forms = ['{0221} scalenohedron', 'rhombohedral termination'];
+  } else if (excess > 0.2) {
+    crystal.habit = 'massive_xenomorphic';
+    crystal.dominant_forms = ['cherry-red to red-black mass', 'vein selvages'];
+  } else {
+    crystal.habit = 'compact_granular';
+    crystal.dominant_forms = ['compact masses in vein gangue'];
+  }
+  conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.020, 0);
+  if (conditions.fluid.Sb !== undefined) conditions.fluid.Sb = Math.max(conditions.fluid.Sb - rate * 0.008, 0);
+  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.020, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `pyrargyrite Ag₃SbS₃ — ${crystal.habit}, cherry-red dark-ruby-silver; photodecomposes slowly to acanthite + Sb residue`
+  });
+}
+
 function grow_enargite(crystal, conditions, step) {
   // Cu₃AsS₄ — orthorhombic high-sulfidation Cu-As-S sulfosalt. Steel-gray
   // to iron-black with bright metallic luster on fresh fracture. Perfect

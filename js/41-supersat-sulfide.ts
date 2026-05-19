@@ -886,6 +886,89 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
+  // v96 (2026-05-19): Ruby silvers — proustite (Ag3AsS3, "light ruby
+  // silver", As-end) + pyrargyrite (Ag3SbS3, "dark ruby silver", Sb-end).
+  // Trigonal R3c, isostructural; near-complete solid solution above
+  // ~300°C with a miscibility gap opening below ~200°C (Sack & Loucks
+  // 1985 Am. Min. 70:1270-1289). Type ruby-silver Ag mining minerals
+  // at Schneeberg / Jachymov / Andreasberg / Pribram / Chanarcillo /
+  // San Cristobal Bolivia / Guanajuato / Cobalt-Ontario / Comstock Lode.
+  //
+  // The fork mechanism (research dossier 2026-05): below the solvus,
+  // fluids nucleate end-member proustite OR end-member pyrargyrite,
+  // discriminated by X_As = mol(As)/(mol(As)+mol(Sb)) in fluid:
+  //   X_As > 0.7 → proustite
+  //   X_As < 0.3 → pyrargyrite
+  //   intermediate at T > 300°C → solid solution (rare in nature)
+  //   intermediate at T < 200°C → both co-precipitate as discrete grains
+  //
+  // Late-stage epithermal Ag: 100-300°C, near-neutral to weakly alkaline
+  // (pH 5-8), reducing (HM-2 to HM-6), low-sulfidation environment.
+  // Use arseniteAvailablePpm for As(III) — ruby silvers carry As in
+  // [AsS3]^3- trigonal pyramidal groups (like tennantite, NOT arsenate).
+  //
+  // Refs: Sack & Loucks 1985; Ondrus et al. 2003 (Jachymov); Dana 7th;
+  // Handbook of Mineralogy; Keighin & Honea 1969 (proustite-pyrargyrite
+  // phase diagram).
+
+  supersaturation_proustite() {
+    // Ag3AsS3 — the As-end ruby silver. Scarlet-vermilion to cochineal
+    // red, photodecomposes (museum specimens kept in dark).
+    const as_iii = arseniteAvailablePpm(this.fluid);
+    if (this.fluid.Ag < 0.1 || as_iii < 1 || this.fluid.S < 10) return 0;
+    if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+    if (this.temperature < 100 || this.temperature > 350) return 0;
+    // X_As fork — proustite needs As-dominant fluid
+    const sb = this.fluid.Sb || 0;
+    const x_as = as_iii / Math.max(as_iii + sb, 0.001);
+    if (x_as < 0.5) return 0;  // below 0.5 → pyrargyrite field
+    const ag_f = Math.min(this.fluid.Ag / 2.0, 3.0);
+    const as_f = Math.min(as_iii / 15.0, 2.5);
+    const s_f  = Math.min(this.fluid.S / 100.0, 2.0);
+    let sigma = ag_f * as_f * s_f;
+    // X_As preference: above 0.7 = pure proustite, sweet spot
+    if (x_as >= 0.7) sigma *= 1.4;
+    else sigma *= Math.max(0.5, (x_as - 0.5) * 4.0);  // 0.5-0.7 ramp
+    // T sweet spot 180-250°C
+    const T = this.temperature;
+    if (T >= 180 && T <= 250) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(T - 215) / 80);
+    sigma *= sulfideRedoxLinearFactor(this.fluid, 1.5);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'proustite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_pyrargyrite() {
+    // Ag3SbS3 — the Sb-end ruby silver. Cherry-red to red-black,
+    // typically larger crystals than proustite (Andreasberg 5 cm+).
+    // The MORE common of the two ruby silvers (Sb is more abundant
+    // than As in most epithermal Ag systems).
+    const as_iii = arseniteAvailablePpm(this.fluid);
+    const sb = this.fluid.Sb || 0;
+    if (this.fluid.Ag < 0.1 || sb < 1 || this.fluid.S < 10) return 0;
+    if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+    if (this.temperature < 100 || this.temperature > 320) return 0;
+    // X_As fork — pyrargyrite needs Sb-dominant fluid (X_As < 0.5)
+    const x_as = as_iii / Math.max(as_iii + sb, 0.001);
+    if (x_as > 0.5) return 0;  // above 0.5 → proustite field
+    const ag_f = Math.min(this.fluid.Ag / 2.0, 3.0);
+    const sb_f = Math.min(sb / 15.0, 2.5);
+    const s_f  = Math.min(this.fluid.S / 100.0, 2.0);
+    let sigma = ag_f * sb_f * s_f;
+    // X_As preference: below 0.3 = pure pyrargyrite, sweet spot
+    if (x_as <= 0.3) sigma *= 1.4;
+    else sigma *= Math.max(0.5, (0.5 - x_as) * 4.0);  // 0.3-0.5 ramp
+    // T sweet spot 150-230°C (slightly cooler than proustite per research)
+    const T = this.temperature;
+    if (T >= 150 && T <= 230) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(T - 190) / 80);
+    sigma *= sulfideRedoxLinearFactor(this.fluid, 1.5);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'pyrargyrite');
+    return Math.max(sigma, 0);
+  },
+
   supersaturation_enargite() {
     const as_iii = arseniteAvailablePpm(this.fluid);
     if (this.fluid.Cu < 20 || as_iii < 5 || this.fluid.S < 100) return 0;

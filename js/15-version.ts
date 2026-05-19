@@ -3195,5 +3195,84 @@
 //
 //         Coverage 106 live → 110 live (+4 minerals); 25 paramorph-only.
 //         Calibration drift: TBD per baseline regen.
-const SIM_VERSION = 95;
+//   v96 — Ruby silvers: proustite + pyrargyrite (2026-05-19). The
+//         Ag-As-S / Ag-Sb-S epithermal sulfosalts that gave the
+//         Erzgebirge + Andreasberg + Pribram + Chanarcillo + Comstock
+//         + Guanajuato Ag mining districts their commodity. Closes
+//         the Ag-sulfosalt paragenetic position the simulator was
+//         missing (had native_silver + acanthite + tetrahedrite + the
+//         arsenide stage, but no ruby silvers — the Ag-As-S and
+//         Ag-Sb-S endmembers).
+//
+//         The As:Sb FORK is the cleanest paired-engine discriminator
+//         in the v85-v96 push:
+//           X_As = mol(As)/(mol(As)+mol(Sb)) in fluid
+//           X_As > 0.5 → proustite (scarlet, As-end, brick-red streak)
+//           X_As < 0.5 → pyrargyrite (cherry-red, Sb-end, purplish)
+//           Sweet spots at X_As > 0.7 (proustite) and X_As < 0.3
+//             (pyrargyrite) with sigma multiplier 1.4
+//           Boundary case 0.3-0.7 ramps smoothly per side
+//
+//         Both use arseniteAvailablePpm (v92 As-state helper) — the
+//         ruby silvers carry As in [AsS₃]³⁻ trigonal pyramidal groups
+//         (like tennantite, NOT arsenate). Both gate on
+//         sulfideRedoxAnoxic 1.5 (moderately reducing low-sulfidation
+//         epithermal regime).
+//
+//         Distinct T windows:
+//           proustite    100-350°C, sweet 180-250°C
+//           pyrargyrite  100-320°C, sweet 150-230°C (slightly cooler;
+//             pyrargyrite is the later, lower-T member, the Sb-
+//             fractionation residue per Sack & Loucks)
+//
+//         Both gate on pH 5-8 (low-sulfidation, near-neutral, NOT
+//         acidic like enargite's high-sulfidation field).
+//
+//         Habit dispatch:
+//           proustite: acute_scalenohedral / acute_prismatic /
+//             reniform_crust / massive_disseminated
+//           pyrargyrite: large_prismatic_hemimorphic / scalenohedral /
+//             massive_xenomorphic / compact_granular
+//
+//         Substrate priority (late epithermal Ag, post-arsenide):
+//           proustite:   native_silver > acanthite > arsenopyrite >
+//                        cobaltite > vug wall
+//           pyrargyrite: native_silver > acanthite > tetrahedrite >
+//                        stibnite > vug wall
+//
+//         RNG-cascade guard via sigma < 1.0 early-out (matches
+//         v93/v94/v95 pattern).
+//
+//         Photodecomposition flag (crystal._light_sensitive = true)
+//         set in both grow engines. Not runtime-applied in v96 — the
+//         existing LIGHT_TRANSITIONS table is for pararealgar; future
+//         integration would extend it to ruby silvers (Ag₂S surface
+//         + As/Sb residue formation under UV/visible light).
+//
+//         Supergene products distinguish cleanly:
+//           proustite  → 50% native_Ag + 50% acanthite + scorodite
+//                        (Fe-arsenate; or arsenolite if no Fe)
+//           pyrargyrite → 50% native_Ag + 50% acanthite + cervantite/
+//                         stibiconite/valentinite (Sb oxides)
+//
+//         References (research dossier 2026-05-19):
+//           * Sack R.O. & Loucks R.R. (1985) "Thermodynamic properties
+//             of tetrahedrite-tennantites: Constraints on the
+//             interdependence of the Ag↔Cu, Fe↔Zn, Cu↔Fe, and
+//             As↔Sb exchange reactions." Am. Min. 70:1270-1289.
+//             The canonical Cu-As-Sb-S sulfosalt + Ag(As,Sb)S
+//             solvus thermodynamics.
+//           * Keighin C.W. & Honea R.M. (1969) — the proustite-
+//             pyrargyrite phase diagram; older but standard.
+//           * Ondruš P. et al. (2003) "Geology and hydrothermal vein
+//             system of the Jáchymov ore district." J. Geosci.
+//             48:157-192. Jáchymov ruby-silver paragenesis.
+//           * Dana 7th vol. I — proustite + pyrargyrite descriptions.
+//           * Anthony et al. Handbook of Mineralogy.
+//
+//         Coverage 110 live → 112 live (+2 minerals); 25 paramorph-only.
+//         Calibration drift: TBD per baseline regen. Both engines
+//         strict-gated; may produce zero drift if schneeberg primary-
+//         stage fluid doesn't reach the epithermal Ag window.
+const SIM_VERSION = 96;
 
