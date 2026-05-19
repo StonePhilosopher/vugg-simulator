@@ -869,11 +869,9 @@ function grow_calaverite(crystal, conditions, step) {
   if (conditions.temperature > 280) {
     crystal.habit = 'bladed_striated_prism';
     crystal.dominant_forms = ['slender bladed prism, longitudinally striated'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.2;
   } else {
     crystal.habit = 'granular_massive';
     crystal.dominant_forms = ['granular AuTe2 aggregate'];
-    crystal.a_width_mm = crystal.c_length_mm * 1.0;
   }
   let color_note = 'brass-yellow calaverite';
   if (conditions.fluid.Ag > 1) color_note = 'silver-white calaverite (Ag-bearing — gradational toward sylvanite)';
@@ -907,11 +905,9 @@ function grow_sylvanite(crystal, conditions, step) {
   if (sigma > 1.8) {
     crystal.habit = 'bladed_graphic';
     crystal.dominant_forms = ['intergrown bladed crystals (graphic-tellurium pattern)'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.3;
   } else {
     crystal.habit = 'tabular_striated';
     crystal.dominant_forms = ['striated tabular plate'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.7;
   }
   let color_note = 'silver-white sylvanite (photosensitive — darkens with light exposure)';
   if (conditions.fluid.Au / Math.max(conditions.fluid.Ag, 0.1) > 1.5) color_note = 'brass-yellow Au-rich sylvanite (gradational toward calaverite)';
@@ -946,11 +942,9 @@ function grow_hessite(crystal, conditions, step) {
   if (conditions.temperature > 155) {
     crystal.habit = 'cubic_high_T';
     crystal.dominant_forms = ['cubic Ag2Te (high-T phase)'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.85;
   } else {
     crystal.habit = 'monoclinic_low_T_lamellae';
     crystal.dominant_forms = ['monoclinic with phase-transformation lamellae from cubic-monoclinic transition'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.9;
   }
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -982,11 +976,9 @@ function grow_naumannite(crystal, conditions, step) {
   if (conditions.temperature > 133) {
     crystal.habit = 'cubic_high_T';
     crystal.dominant_forms = ['cubic Ag2Se (high-T phase, ionic conductivity 2 S/cm)'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.85;
   } else {
     crystal.habit = 'orthorhombic_low_T';
     crystal.dominant_forms = ['orthorhombic Ag2Se (low-T phase)'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.85;
   }
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -1018,15 +1010,12 @@ function grow_clausthalite(crystal, conditions, step) {
   if (conditions.temperature > 300 && conditions.fluid.S > 5) {
     crystal.habit = 'exsolution_lamellae_in_galena';
     crystal.dominant_forms = ['lamellar exsolution from PbS-PbSe SS (cooling below 300C)'];
-    crystal.a_width_mm = crystal.c_length_mm * 1.5;
   } else if (sigma > 1.8) {
     crystal.habit = 'cubic_galena_structure';
     crystal.dominant_forms = ['small lead-gray cube'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.9;
   } else {
     crystal.habit = 'massive_granular';
     crystal.dominant_forms = ['disseminated grain'];
-    crystal.a_width_mm = crystal.c_length_mm * 1.1;
   }
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -1058,15 +1047,12 @@ function grow_greenockite(crystal, conditions, step) {
   if (sigma > 2.5) {
     crystal.habit = 'powdery_coating';
     crystal.dominant_forms = ['bright yellow earthy dust on sphalerite'];
-    crystal.a_width_mm = crystal.c_length_mm * 5.0;
   } else if (sigma > 1.5) {
     crystal.habit = 'colloform_crust';
     crystal.dominant_forms = ['encrusting colloform aggregate'];
-    crystal.a_width_mm = crystal.c_length_mm * 2.5;
   } else {
     crystal.habit = 'hexagonal_pyramidal';
     crystal.dominant_forms = ['hemimorphic six-sided pyramid'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.8;
   }
   let color_note = 'honey-yellow to citron CdS — adamantine luster';
   if (conditions.fluid.Zn > 100) color_note = 'paler yellow greenockite (Zn-substituted; fluoresces yellow under LW UV)';
@@ -1099,7 +1085,6 @@ function grow_hawleyite(crystal, conditions, step) {
   if (rate < 0.1) return null;
   crystal.habit = 'powdery_coating';
   crystal.dominant_forms = ['cadmium-yellow earthy dust (no discrete crystals known)'];
-  crystal.a_width_mm = crystal.c_length_mm * 6.0;
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,

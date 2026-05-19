@@ -14019,17 +14019,14 @@ function grow_adamite(crystal, conditions, step) {
     if (rate > 6) {
         crystal.habit = 'acicular sprays';
         crystal.dominant_forms = ['radiating fan-shaped sprays'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.15;
     }
     else if (zc > 15) {
         crystal.habit = 'prismatic';
         crystal.dominant_forms = ['elongated prisms', 'wedge-shaped'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.4;
     }
     else {
         crystal.habit = 'tabular';
         crystal.dominant_forms = ['tabular crystals'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.7;
     }
     const cuInCrystal = conditions.fluid.Cu * 0.02;
     let colorNote;
@@ -14061,22 +14058,18 @@ function grow_mimetite(crystal, conditions, step) {
     if (feRatio > 0.3 && rng.random() < 0.4) {
         crystal.habit = 'campylite (barrel-shaped)';
         crystal.dominant_forms = ['barrel-shaped hexagonal prisms', 'curved faces'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.6;
     }
     else if (rate > 7) {
         crystal.habit = 'acicular';
         crystal.dominant_forms = ['thin hexagonal needles'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.15;
     }
     else if (zc > 10) {
         crystal.habit = 'prismatic';
         crystal.dominant_forms = ['hexagonal prisms'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.4;
     }
     else {
         crystal.habit = 'tabular';
         crystal.dominant_forms = ['thick tabular hexagons'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.8;
     }
     let colorNote;
     if (feRatio > 0.3)
@@ -14544,10 +14537,8 @@ function grow_malachite(crystal, conditions, step) {
         crystal.dominant_forms = ['botryoidal masses', 'mammillary'];
     }
     if (crystal.habit === 'botryoidal' || crystal.habit === 'banded') {
-        crystal.a_width_mm = crystal.c_length_mm * 1.5;
     }
     else if (crystal.habit === 'fibrous/acicular') {
-        crystal.a_width_mm = crystal.c_length_mm * 0.2;
     }
     // Phase 1d: Cu consumption owned by the wrapper (applyMassBalance).
     let color_note;
@@ -14603,7 +14594,6 @@ function grow_smithsonite(crystal, conditions, step) {
         crystal.dominant_forms = ['grape-like clusters', 'reniform masses'];
     }
     if (crystal.habit === 'botryoidal' || crystal.habit === 'botryoidal/stalactitic') {
-        crystal.a_width_mm = crystal.c_length_mm * 1.8;
     }
     // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyMassBalance).
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
@@ -14839,12 +14829,10 @@ function grow_strontianite(crystal, conditions, step) {
     if (sigma > 1.8 && conditions.temperature < 100) {
         crystal.habit = 'acicular_fibrous';
         crystal.dominant_forms = ['radiating fibrous spray (Münsterland aesthetic)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.15;
     }
     else {
         crystal.habit = 'twinned_pseudohexagonal';
         crystal.dominant_forms = ['pseudohex cyclic-twinned prism'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.5;
     }
     let color_note = 'white Sr-carbonate prism';
     if (conditions.fluid.Pb > 10)
@@ -14879,12 +14867,10 @@ function grow_witherite(crystal, conditions, step) {
     if (sigma > 2.5) {
         crystal.habit = 'botryoidal_white';
         crystal.dominant_forms = ['white botryoidal balls (Settlingstones)'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.5;
     }
     else {
         crystal.habit = 'pseudohexagonal_twinned';
         crystal.dominant_forms = ['pseudohex pyramid via cyclic twin'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.6;
     }
     let color_note = 'white BaCO3 — fluoresces bluish-white SW';
     if (conditions.fluid.Fe > 5)
@@ -15115,7 +15101,6 @@ function grow_goethite(crystal, conditions, step) {
         crystal.dominant_forms = ['radiating needles', 'velvet crust'];
     }
     if (crystal.habit.includes('botryoidal')) {
-        crystal.a_width_mm = crystal.c_length_mm * 1.6;
     }
     conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.008, 0);
     conditions.fluid.O2 = Math.max(conditions.fluid.O2 - rate * 0.001, 0);
@@ -15207,7 +15192,6 @@ function grow_wulfenite(crystal, conditions, step) {
     crystal.habit = 'tabular';
     crystal.dominant_forms = ['{001} tabular plates', 'square outline'];
     // Aspect ratio: very flat plates
-    crystal.a_width_mm = crystal.c_length_mm * 3.0;
     // Phase 1d: Pb/Mo consumption owned by the wrapper (applyMassBalance).
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     let color_note;
@@ -15337,17 +15321,14 @@ function grow_scheelite(crystal, conditions, step) {
     if (conditions.temperature > 400) {
         crystal.habit = 'dipyramidal';
         crystal.dominant_forms = ['pseudo-octahedral dipyramid'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.7;
     }
     else if (sigma > 2.0) {
         crystal.habit = 'tabular';
         crystal.dominant_forms = ['flat scheelite tablet'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.5;
     }
     else {
         crystal.habit = 'octahedral_pseudo';
         crystal.dominant_forms = ['pseudo-octahedron (looks cubic, is tetragonal)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.85;
     }
     let color_note = 'white-yellow scheelite — bright blue-white SW UV';
     if (conditions.fluid.Mo > 5)
@@ -15382,12 +15363,10 @@ function grow_powellite(crystal, conditions, step) {
     if (sigma > 2.0) {
         crystal.habit = 'pulverulent_crust';
         crystal.dominant_forms = ['yellow crusty supergene coating'];
-        crystal.a_width_mm = crystal.c_length_mm * 3.0;
     }
     else {
         crystal.habit = 'tabular_thin_001';
         crystal.dominant_forms = ['paper-thin {001} tablet'];
-        crystal.a_width_mm = crystal.c_length_mm * 4.0;
     }
     let color_note = 'straw-yellow powellite — bright yellow SW UV';
     if (conditions.fluid.W > 1)
@@ -15422,17 +15401,14 @@ function grow_wolframite(crystal, conditions, step) {
     if (conditions.temperature > 400) {
         crystal.habit = 'equant_high_T';
         crystal.dominant_forms = ['blocky equant crystal'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.85;
     }
     else if (sigma > 2.0) {
         crystal.habit = 'bladed_tabular';
         crystal.dominant_forms = ['bladed wolframite (Panasqueira aesthetic)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.3;
     }
     else {
         crystal.habit = 'prismatic_striated';
         crystal.dominant_forms = ['striated prism'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.5;
     }
     let color_note;
     const mnf = conditions.fluid.Mn / Math.max(conditions.fluid.Fe + conditions.fluid.Mn, 1);
@@ -15835,10 +15811,6 @@ function grow_hematite(crystal, conditions, step) {
             crystal.dominant_forms = ['microcrystalline aggregate'];
         }
     }
-    if (crystal.habit === 'specular')
-        crystal.a_width_mm = crystal.c_length_mm * 2.0;
-    else if (crystal.habit === 'botryoidal')
-        crystal.a_width_mm = crystal.c_length_mm * 1.2;
     const trace_Mn = conditions.fluid.Mn * 0.04;
     const trace_Fe = conditions.fluid.Fe * 0.2;
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
@@ -16160,17 +16132,14 @@ function grow_rutile(crystal, conditions, step) {
     if (T > 500 && sigma < 1.5) {
         crystal.habit = 'stout_prismatic';
         crystal.dominant_forms = ['coarse alpine-cleft prism with dipyramid termination'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.5;
     }
     else if (sigma > 2.0 && T < 300) {
         crystal.habit = 'sixling_star';
         crystal.dominant_forms = ['cyclic-sixling reticulated star (rare)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.8;
     }
     else {
         crystal.habit = 'acicular_needle';
         crystal.dominant_forms = ['slender vertically-striated prism'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.1;
     }
     let color_note;
     if (conditions.fluid.Cr > 5)
@@ -16201,12 +16170,10 @@ function grow_chromite(crystal, conditions, step) {
     if (sigma > 2.5) {
         crystal.habit = 'massive_granular';
         crystal.dominant_forms = ['cumulate granular fabric'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.2;
     }
     else {
         crystal.habit = 'octahedral';
         crystal.dominant_forms = ['black metallic octahedron'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.85;
     }
     return new GrowthZone({
         step, temperature: conditions.temperature,
@@ -16727,17 +16694,14 @@ function grow_apatite(crystal, conditions, step) {
     if (T > 400) {
         crystal.habit = 'prismatic_hexagonal';
         crystal.dominant_forms = ['long c-axis prism with pinacoid termination'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.4;
     }
     else if (T > 100) {
         crystal.habit = 'stubby_barrel';
         crystal.dominant_forms = ['short hex barrel (Cerro de Mercado / Durango)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.7;
     }
     else {
         crystal.habit = 'botryoidal_collophane';
         crystal.dominant_forms = ['cryptocrystalline phosphorite crust'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.2;
     }
     let color_note;
     if (conditions.fluid.Mn > 20)
@@ -16780,17 +16744,14 @@ function grow_turquoise(crystal, conditions, step) {
     if (sigma > 3.0) {
         crystal.habit = 'veinlet_fill';
         crystal.dominant_forms = ['thin blue stringer in matrix fracture'];
-        crystal.a_width_mm = crystal.c_length_mm * 5.0;
     }
     else if (sigma > 1.8) {
         crystal.habit = 'nodular_massive';
         crystal.dominant_forms = ['rounded blue lump in matrix'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.5;
     }
     else {
         crystal.habit = 'botryoidal_crust';
         crystal.dominant_forms = ['smooth blue mammillary crust'];
-        crystal.a_width_mm = crystal.c_length_mm * 2.0;
     }
     let color_note;
     if (conditions.fluid.Fe > 50)
@@ -17757,17 +17718,14 @@ function grow_chrysoprase(crystal, conditions, step) {
     if (sigma > 2.5) {
         crystal.habit = 'nodular_massive';
         crystal.dominant_forms = ['rounded apple-green nodule in saprolite'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.4;
     }
     else if (sigma > 1.6) {
         crystal.habit = 'banded_chalcedony';
         crystal.dominant_forms = ['flow-banded chalcedony'];
-        crystal.a_width_mm = crystal.c_length_mm * 2.5;
     }
     else {
         crystal.habit = 'chalcedony_vein';
         crystal.dominant_forms = ['fracture-fill chalcedony fabric'];
-        crystal.a_width_mm = crystal.c_length_mm * 4.0;
     }
     let color_note;
     if (conditions.fluid.Ni > 500)
@@ -18273,7 +18231,6 @@ function grow_selenite(crystal, conditions, step) {
         // Slow, cool growth → large transparent blades ("cathedral" selenite)
         crystal.habit = 'tabular blades';
         crystal.dominant_forms = ['{010} blades', 'transparent'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.3; // elongated
     }
     else if (rate > 8) {
         // Rapid growth → desert rose (sand inclusions) or satin spar
@@ -19246,12 +19203,10 @@ function grow_calaverite(crystal, conditions, step) {
     if (conditions.temperature > 280) {
         crystal.habit = 'bladed_striated_prism';
         crystal.dominant_forms = ['slender bladed prism, longitudinally striated'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.2;
     }
     else {
         crystal.habit = 'granular_massive';
         crystal.dominant_forms = ['granular AuTe2 aggregate'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.0;
     }
     let color_note = 'brass-yellow calaverite';
     if (conditions.fluid.Ag > 1)
@@ -19286,12 +19241,10 @@ function grow_sylvanite(crystal, conditions, step) {
     if (sigma > 1.8) {
         crystal.habit = 'bladed_graphic';
         crystal.dominant_forms = ['intergrown bladed crystals (graphic-tellurium pattern)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.3;
     }
     else {
         crystal.habit = 'tabular_striated';
         crystal.dominant_forms = ['striated tabular plate'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.7;
     }
     let color_note = 'silver-white sylvanite (photosensitive — darkens with light exposure)';
     if (conditions.fluid.Au / Math.max(conditions.fluid.Ag, 0.1) > 1.5)
@@ -19327,12 +19280,10 @@ function grow_hessite(crystal, conditions, step) {
     if (conditions.temperature > 155) {
         crystal.habit = 'cubic_high_T';
         crystal.dominant_forms = ['cubic Ag2Te (high-T phase)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.85;
     }
     else {
         crystal.habit = 'monoclinic_low_T_lamellae';
         crystal.dominant_forms = ['monoclinic with phase-transformation lamellae from cubic-monoclinic transition'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.9;
     }
     return new GrowthZone({
         step, temperature: conditions.temperature,
@@ -19364,12 +19315,10 @@ function grow_naumannite(crystal, conditions, step) {
     if (conditions.temperature > 133) {
         crystal.habit = 'cubic_high_T';
         crystal.dominant_forms = ['cubic Ag2Se (high-T phase, ionic conductivity 2 S/cm)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.85;
     }
     else {
         crystal.habit = 'orthorhombic_low_T';
         crystal.dominant_forms = ['orthorhombic Ag2Se (low-T phase)'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.85;
     }
     return new GrowthZone({
         step, temperature: conditions.temperature,
@@ -19401,17 +19350,14 @@ function grow_clausthalite(crystal, conditions, step) {
     if (conditions.temperature > 300 && conditions.fluid.S > 5) {
         crystal.habit = 'exsolution_lamellae_in_galena';
         crystal.dominant_forms = ['lamellar exsolution from PbS-PbSe SS (cooling below 300C)'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.5;
     }
     else if (sigma > 1.8) {
         crystal.habit = 'cubic_galena_structure';
         crystal.dominant_forms = ['small lead-gray cube'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.9;
     }
     else {
         crystal.habit = 'massive_granular';
         crystal.dominant_forms = ['disseminated grain'];
-        crystal.a_width_mm = crystal.c_length_mm * 1.1;
     }
     return new GrowthZone({
         step, temperature: conditions.temperature,
@@ -19443,17 +19389,14 @@ function grow_greenockite(crystal, conditions, step) {
     if (sigma > 2.5) {
         crystal.habit = 'powdery_coating';
         crystal.dominant_forms = ['bright yellow earthy dust on sphalerite'];
-        crystal.a_width_mm = crystal.c_length_mm * 5.0;
     }
     else if (sigma > 1.5) {
         crystal.habit = 'colloform_crust';
         crystal.dominant_forms = ['encrusting colloform aggregate'];
-        crystal.a_width_mm = crystal.c_length_mm * 2.5;
     }
     else {
         crystal.habit = 'hexagonal_pyramidal';
         crystal.dominant_forms = ['hemimorphic six-sided pyramid'];
-        crystal.a_width_mm = crystal.c_length_mm * 0.8;
     }
     let color_note = 'honey-yellow to citron CdS — adamantine luster';
     if (conditions.fluid.Zn > 100)
@@ -19487,7 +19430,6 @@ function grow_hawleyite(crystal, conditions, step) {
         return null;
     crystal.habit = 'powdery_coating';
     crystal.dominant_forms = ['cadmium-yellow earthy dust (no discrete crystals known)'];
-    crystal.a_width_mm = crystal.c_length_mm * 6.0;
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,

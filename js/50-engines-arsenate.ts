@@ -228,15 +228,12 @@ function grow_adamite(crystal, conditions, step) {
   if (rate > 6) {
     crystal.habit = 'acicular sprays';
     crystal.dominant_forms = ['radiating fan-shaped sprays'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.15;
   } else if (zc > 15) {
     crystal.habit = 'prismatic';
     crystal.dominant_forms = ['elongated prisms', 'wedge-shaped'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.4;
   } else {
     crystal.habit = 'tabular';
     crystal.dominant_forms = ['tabular crystals'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.7;
   }
   
   const cuInCrystal = conditions.fluid.Cu * 0.02;
@@ -269,19 +266,15 @@ function grow_mimetite(crystal, conditions, step) {
   if (feRatio > 0.3 && rng.random() < 0.4) {
     crystal.habit = 'campylite (barrel-shaped)';
     crystal.dominant_forms = ['barrel-shaped hexagonal prisms', 'curved faces'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.6;
   } else if (rate > 7) {
     crystal.habit = 'acicular';
     crystal.dominant_forms = ['thin hexagonal needles'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.15;
   } else if (zc > 10) {
     crystal.habit = 'prismatic';
     crystal.dominant_forms = ['hexagonal prisms'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.4;
   } else {
     crystal.habit = 'tabular';
     crystal.dominant_forms = ['thick tabular hexagons'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.8;
   }
   
   let colorNote;

@@ -908,9 +908,9 @@ function grow_chrysoprase(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate = 2.5 * excess * rng.uniform(0.85, 1.15);
   if (rate < 0.1) return null;
-  if (sigma > 2.5) { crystal.habit = 'nodular_massive'; crystal.dominant_forms = ['rounded apple-green nodule in saprolite']; crystal.a_width_mm = crystal.c_length_mm * 1.4; }
-  else if (sigma > 1.6) { crystal.habit = 'banded_chalcedony'; crystal.dominant_forms = ['flow-banded chalcedony']; crystal.a_width_mm = crystal.c_length_mm * 2.5; }
-  else { crystal.habit = 'chalcedony_vein'; crystal.dominant_forms = ['fracture-fill chalcedony fabric']; crystal.a_width_mm = crystal.c_length_mm * 4.0; }
+  if (sigma > 2.5) { crystal.habit = 'nodular_massive'; crystal.dominant_forms = ['rounded apple-green nodule in saprolite']; }
+  else if (sigma > 1.6) { crystal.habit = 'banded_chalcedony'; crystal.dominant_forms = ['flow-banded chalcedony']; }
+  else { crystal.habit = 'chalcedony_vein'; crystal.dominant_forms = ['fracture-fill chalcedony fabric']; }
   let color_note;
   if (conditions.fluid.Ni > 500) color_note = 'deep emerald chrysoprase (Szklary aesthetic — Ni > 500 ppm)';
   else if (conditions.fluid.Ni < 100) color_note = 'pale yellow-green chrysoprase (lower-Ni grade)';

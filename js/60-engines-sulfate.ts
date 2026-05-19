@@ -496,7 +496,6 @@ function grow_selenite(crystal, conditions, step) {
     // Slow, cool growth → large transparent blades ("cathedral" selenite)
     crystal.habit = 'tabular blades';
     crystal.dominant_forms = ['{010} blades', 'transparent'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.3; // elongated
   } else if (rate > 8) {
     // Rapid growth → desert rose (sand inclusions) or satin spar
     crystal.habit = rng.random() < 0.5 ? 'fibrous (satin spar)' : 'rosette';

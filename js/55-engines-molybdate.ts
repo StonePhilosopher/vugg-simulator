@@ -34,8 +34,6 @@ function grow_wulfenite(crystal, conditions, step) {
   crystal.dominant_forms = ['{001} tabular plates', 'square outline'];
 
   // Aspect ratio: very flat plates
-  crystal.a_width_mm = crystal.c_length_mm * 3.0;
-
   // Phase 1d: Pb/Mo consumption owned by the wrapper (applyMassBalance).
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
@@ -163,9 +161,9 @@ function grow_scheelite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate = 4.0 * excess * rng.uniform(0.85, 1.15);
   if (rate < 0.1) return null;
-  if (conditions.temperature > 400) { crystal.habit = 'dipyramidal'; crystal.dominant_forms = ['pseudo-octahedral dipyramid']; crystal.a_width_mm = crystal.c_length_mm * 0.7; }
-  else if (sigma > 2.0) { crystal.habit = 'tabular'; crystal.dominant_forms = ['flat scheelite tablet']; crystal.a_width_mm = crystal.c_length_mm * 1.5; }
-  else { crystal.habit = 'octahedral_pseudo'; crystal.dominant_forms = ['pseudo-octahedron (looks cubic, is tetragonal)']; crystal.a_width_mm = crystal.c_length_mm * 0.85; }
+  if (conditions.temperature > 400) { crystal.habit = 'dipyramidal'; crystal.dominant_forms = ['pseudo-octahedral dipyramid']; }
+  else if (sigma > 2.0) { crystal.habit = 'tabular'; crystal.dominant_forms = ['flat scheelite tablet']; }
+  else { crystal.habit = 'octahedral_pseudo'; crystal.dominant_forms = ['pseudo-octahedron (looks cubic, is tetragonal)']; }
   let color_note = 'white-yellow scheelite — bright blue-white SW UV';
   if (conditions.fluid.Mo > 5) color_note = 'brown-orange scheelite (Mo-bearing — fluorescence shifts toward yellow)';
   return new GrowthZone({
@@ -195,8 +193,8 @@ function grow_powellite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate = 3.5 * excess * rng.uniform(0.85, 1.15);
   if (rate < 0.1) return null;
-  if (sigma > 2.0) { crystal.habit = 'pulverulent_crust'; crystal.dominant_forms = ['yellow crusty supergene coating']; crystal.a_width_mm = crystal.c_length_mm * 3.0; }
-  else { crystal.habit = 'tabular_thin_001'; crystal.dominant_forms = ['paper-thin {001} tablet']; crystal.a_width_mm = crystal.c_length_mm * 4.0; }
+  if (sigma > 2.0) { crystal.habit = 'pulverulent_crust'; crystal.dominant_forms = ['yellow crusty supergene coating']; }
+  else { crystal.habit = 'tabular_thin_001'; crystal.dominant_forms = ['paper-thin {001} tablet']; }
   let color_note = 'straw-yellow powellite — bright yellow SW UV';
   if (conditions.fluid.W > 1) color_note = 'blue-green zoned powellite-scheelite SS';
   return new GrowthZone({
@@ -226,9 +224,9 @@ function grow_wolframite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate = 3.5 * excess * rng.uniform(0.85, 1.15);
   if (rate < 0.1) return null;
-  if (conditions.temperature > 400) { crystal.habit = 'equant_high_T'; crystal.dominant_forms = ['blocky equant crystal']; crystal.a_width_mm = crystal.c_length_mm * 0.85; }
-  else if (sigma > 2.0) { crystal.habit = 'bladed_tabular'; crystal.dominant_forms = ['bladed wolframite (Panasqueira aesthetic)']; crystal.a_width_mm = crystal.c_length_mm * 0.3; }
-  else { crystal.habit = 'prismatic_striated'; crystal.dominant_forms = ['striated prism']; crystal.a_width_mm = crystal.c_length_mm * 0.5; }
+  if (conditions.temperature > 400) { crystal.habit = 'equant_high_T'; crystal.dominant_forms = ['blocky equant crystal']; }
+  else if (sigma > 2.0) { crystal.habit = 'bladed_tabular'; crystal.dominant_forms = ['bladed wolframite (Panasqueira aesthetic)']; }
+  else { crystal.habit = 'prismatic_striated'; crystal.dominant_forms = ['striated prism']; }
   let color_note;
   const mnf = conditions.fluid.Mn / Math.max(conditions.fluid.Fe + conditions.fluid.Mn, 1);
   if (mnf > 0.7) color_note = 'reddish-brown hübnerite (Mn-rich end)';

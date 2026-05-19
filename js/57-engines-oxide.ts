@@ -46,8 +46,6 @@ function grow_hematite(crystal, conditions, step) {
     }
   }
 
-  if (crystal.habit === 'specular') crystal.a_width_mm = crystal.c_length_mm * 2.0;
-  else if (crystal.habit === 'botryoidal') crystal.a_width_mm = crystal.c_length_mm * 1.2;
 
   const trace_Mn = conditions.fluid.Mn * 0.04;
   const trace_Fe = conditions.fluid.Fe * 0.2;
@@ -339,9 +337,9 @@ function grow_rutile(crystal, conditions, step) {
   let rate = 2.0 * excess * rng.uniform(0.85, 1.15);
   if (rate < 0.1) return null;
   const T = conditions.temperature;
-  if (T > 500 && sigma < 1.5) { crystal.habit = 'stout_prismatic'; crystal.dominant_forms = ['coarse alpine-cleft prism with dipyramid termination']; crystal.a_width_mm = crystal.c_length_mm * 0.5; }
-  else if (sigma > 2.0 && T < 300) { crystal.habit = 'sixling_star'; crystal.dominant_forms = ['cyclic-sixling reticulated star (rare)']; crystal.a_width_mm = crystal.c_length_mm * 0.8; }
-  else { crystal.habit = 'acicular_needle'; crystal.dominant_forms = ['slender vertically-striated prism']; crystal.a_width_mm = crystal.c_length_mm * 0.1; }
+  if (T > 500 && sigma < 1.5) { crystal.habit = 'stout_prismatic'; crystal.dominant_forms = ['coarse alpine-cleft prism with dipyramid termination']; }
+  else if (sigma > 2.0 && T < 300) { crystal.habit = 'sixling_star'; crystal.dominant_forms = ['cyclic-sixling reticulated star (rare)']; }
+  else { crystal.habit = 'acicular_needle'; crystal.dominant_forms = ['slender vertically-striated prism']; }
   let color_note;
   if (conditions.fluid.Cr > 5) color_note = 'red Cr-rutile (rare)';
   else if (conditions.fluid.Fe > 10) color_note = 'black nigrine (Fe-rich)';
@@ -363,8 +361,8 @@ function grow_chromite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate = 4.0 * excess * rng.uniform(0.85, 1.15);
   if (rate < 0.1) return null;
-  if (sigma > 2.5) { crystal.habit = 'massive_granular'; crystal.dominant_forms = ['cumulate granular fabric']; crystal.a_width_mm = crystal.c_length_mm * 1.2; }
-  else { crystal.habit = 'octahedral'; crystal.dominant_forms = ['black metallic octahedron']; crystal.a_width_mm = crystal.c_length_mm * 0.85; }
+  if (sigma > 2.5) { crystal.habit = 'massive_granular'; crystal.dominant_forms = ['cumulate granular fabric']; }
+  else { crystal.habit = 'octahedral'; crystal.dominant_forms = ['black metallic octahedron']; }
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,

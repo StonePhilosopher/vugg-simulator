@@ -462,9 +462,9 @@ function grow_apatite(crystal, conditions, step) {
   let rate = 5.0 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
   const T = conditions.temperature;
-  if (T > 400) { crystal.habit = 'prismatic_hexagonal'; crystal.dominant_forms = ['long c-axis prism with pinacoid termination']; crystal.a_width_mm = crystal.c_length_mm * 0.4; }
-  else if (T > 100) { crystal.habit = 'stubby_barrel'; crystal.dominant_forms = ['short hex barrel (Cerro de Mercado / Durango)']; crystal.a_width_mm = crystal.c_length_mm * 0.7; }
-  else { crystal.habit = 'botryoidal_collophane'; crystal.dominant_forms = ['cryptocrystalline phosphorite crust']; crystal.a_width_mm = crystal.c_length_mm * 1.2; }
+  if (T > 400) { crystal.habit = 'prismatic_hexagonal'; crystal.dominant_forms = ['long c-axis prism with pinacoid termination']; }
+  else if (T > 100) { crystal.habit = 'stubby_barrel'; crystal.dominant_forms = ['short hex barrel (Cerro de Mercado / Durango)']; }
+  else { crystal.habit = 'botryoidal_collophane'; crystal.dominant_forms = ['cryptocrystalline phosphorite crust']; }
   let color_note;
   if (conditions.fluid.Mn > 20) color_note = 'manganapatite — blue-violet (Mn²⁺ chromophore)';
   else if (conditions.fluid.Mn > 5) color_note = 'blue (Mn²⁺ trace)';
@@ -499,9 +499,9 @@ function grow_turquoise(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate = 3.0 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
-  if (sigma > 3.0) { crystal.habit = 'veinlet_fill'; crystal.dominant_forms = ['thin blue stringer in matrix fracture']; crystal.a_width_mm = crystal.c_length_mm * 5.0; }
-  else if (sigma > 1.8) { crystal.habit = 'nodular_massive'; crystal.dominant_forms = ['rounded blue lump in matrix']; crystal.a_width_mm = crystal.c_length_mm * 1.5; }
-  else { crystal.habit = 'botryoidal_crust'; crystal.dominant_forms = ['smooth blue mammillary crust']; crystal.a_width_mm = crystal.c_length_mm * 2.0; }
+  if (sigma > 3.0) { crystal.habit = 'veinlet_fill'; crystal.dominant_forms = ['thin blue stringer in matrix fracture']; }
+  else if (sigma > 1.8) { crystal.habit = 'nodular_massive'; crystal.dominant_forms = ['rounded blue lump in matrix']; }
+  else { crystal.habit = 'botryoidal_crust'; crystal.dominant_forms = ['smooth blue mammillary crust']; }
   let color_note;
   if (conditions.fluid.Fe > 50) color_note = 'green chalcosiderite-leaning (Fe³⁺ substitution)';
   else if (conditions.fluid.Fe < 2) color_note = "robin's-egg sky-blue (Sleeping Beauty / Persian aesthetic)";

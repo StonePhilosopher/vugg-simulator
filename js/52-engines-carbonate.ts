@@ -403,9 +403,7 @@ function grow_malachite(crystal, conditions, step) {
   }
 
   if (crystal.habit === 'botryoidal' || crystal.habit === 'banded') {
-    crystal.a_width_mm = crystal.c_length_mm * 1.5;
   } else if (crystal.habit === 'fibrous/acicular') {
-    crystal.a_width_mm = crystal.c_length_mm * 0.2;
   }
 
   // Phase 1d: Cu consumption owned by the wrapper (applyMassBalance).
@@ -463,7 +461,6 @@ function grow_smithsonite(crystal, conditions, step) {
   }
 
   if (crystal.habit === 'botryoidal' || crystal.habit === 'botryoidal/stalactitic') {
-    crystal.a_width_mm = crystal.c_length_mm * 1.8;
   }
 
   // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyMassBalance).
@@ -679,11 +676,9 @@ function grow_strontianite(crystal, conditions, step) {
   if (sigma > 1.8 && conditions.temperature < 100) {
     crystal.habit = 'acicular_fibrous';
     crystal.dominant_forms = ['radiating fibrous spray (Münsterland aesthetic)'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.15;
   } else {
     crystal.habit = 'twinned_pseudohexagonal';
     crystal.dominant_forms = ['pseudohex cyclic-twinned prism'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.5;
   }
   let color_note = 'white Sr-carbonate prism';
   if (conditions.fluid.Pb > 10) color_note = 'pale yellow strontianite (Pb trace)';
@@ -717,11 +712,9 @@ function grow_witherite(crystal, conditions, step) {
   if (sigma > 2.5) {
     crystal.habit = 'botryoidal_white';
     crystal.dominant_forms = ['white botryoidal balls (Settlingstones)'];
-    crystal.a_width_mm = crystal.c_length_mm * 1.5;
   } else {
     crystal.habit = 'pseudohexagonal_twinned';
     crystal.dominant_forms = ['pseudohex pyramid via cyclic twin'];
-    crystal.a_width_mm = crystal.c_length_mm * 0.6;
   }
   let color_note = 'white BaCO3 — fluoresces bluish-white SW';
   if (conditions.fluid.Fe > 5) color_note = 'yellow-brown witherite (Fe staining)';

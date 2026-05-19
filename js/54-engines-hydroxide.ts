@@ -48,7 +48,6 @@ function grow_goethite(crystal, conditions, step) {
   }
 
   if (crystal.habit.includes('botryoidal')) {
-    crystal.a_width_mm = crystal.c_length_mm * 1.6;
   }
 
   conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.008, 0);
