@@ -370,6 +370,73 @@ Object.assign(VugConditions.prototype, {
   return Math.max(sigma, 0);
 },
 
+  // Realgar (AsS) — α-realgar, monoclinic arsenic sulfide, the lower-S
+  // phase of the As-S system. Orange-red. Low-T hot-spring + epithermal
+  // habit; co-deposits with orpiment. Type localities Allchar
+  // (Macedonia) + Shimen (China); active hot-spring sites at
+  // Yellowstone Norris Geyser Basin + Carbazo Springs + Sulphur Bank
+  // Mine. Engine gates (2026-05-19, v82):
+  //   As >= 5, S >= 30
+  //   Reducing-to-mixed redox (sulfideRedoxAnoxic threshold 1.2 — broader
+  //     than arsenopyrite's 0.8 because realgar tolerates more O₂ than
+  //     the deeper-anoxic ferrous arsenosulfide).
+  //   pH <= 9 (alkali dissolves it as thioarsenite complex).
+  //   T optimum 50-180°C (matches Sulphur Bank's 60-90°C vent regime).
+  supersaturation_realgar() {
+  if (this.fluid.As < 5 || this.fluid.S < 30) return 0;
+  if (!sulfideRedoxAnoxic(this.fluid, 1.2)) return 0;
+  if (this.fluid.pH > 9) return 0;
+  const as_f = Math.min(this.fluid.As / 15.0, 3.0);
+  const s_f = Math.min(this.fluid.S / 100.0, 3.0);
+  // Eh window: mildly reducing optimal. Sulfide-redox helper at the
+  // engine's preferred Eh; tolerance broader than arsenopyrite.
+  const eh_f = sulfideRedoxLinearFactor(this.fluid, 1.5);
+  let sigma = as_f * s_f * eh_f;
+  const T = this.temperature;
+  let T_factor;
+  if (T >= 50 && T <= 180) T_factor = 1.2;
+  else if (T < 50) T_factor = Math.max(0.4, 0.6 + (T - 20) / 100);
+  else if (T <= 250) T_factor = Math.max(0.3, 1.2 - 0.012 * (T - 180));
+  else T_factor = 0.0;
+  sigma *= T_factor;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'realgar');
+  return Math.max(sigma, 0);
+},
+
+  // Orpiment (As₂S₃) — monoclinic arsenic sulfide, the higher-S phase of
+  // the As-S system. Golden yellow. Same depositional environment as
+  // realgar but slightly higher S threshold (As₂S₃ stoichiometry needs
+  // more S per As). Type locality Allchar; major Carlin-type producers
+  // Getchell + Twin Creeks (Nevada); 'aurum pigmentum' of antiquity.
+  // Engine gates:
+  //   As >= 8 (higher than realgar's 5 — orpiment's As₂S₃ formula
+  //            requires As to be present at higher levels)
+  //   S >= 50 (more S than realgar; the S/As 3/2 stoichiometry favors
+  //            S-rich fluids)
+  //   Reducing-to-mixed redox.
+  //   pH <= 9.5 (very broad; orpiment is the most alkali-tolerant of
+  //              the As-sulfides).
+  //   T optimum 60-200°C (slightly hotter than realgar; orpiment is
+  //                       the higher-T As-S phase in many systems).
+  supersaturation_orpiment() {
+  if (this.fluid.As < 8 || this.fluid.S < 50) return 0;
+  if (!sulfideRedoxAnoxic(this.fluid, 1.2)) return 0;
+  if (this.fluid.pH > 9.5) return 0;
+  const as_f = Math.min(this.fluid.As / 20.0, 3.0);
+  const s_f = Math.min(this.fluid.S / 150.0, 3.0);
+  const eh_f = sulfideRedoxLinearFactor(this.fluid, 1.5);
+  let sigma = as_f * s_f * eh_f;
+  const T = this.temperature;
+  let T_factor;
+  if (T >= 60 && T <= 200) T_factor = 1.2;
+  else if (T < 60) T_factor = Math.max(0.4, 0.5 + (T - 20) / 100);
+  else if (T <= 280) T_factor = Math.max(0.3, 1.2 - 0.011 * (T - 200));
+  else T_factor = 0.0;
+  sigma *= T_factor;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'orpiment');
+  return Math.max(sigma, 0);
+},
+
   supersaturation_stibnite() {
   if (this.fluid.Sb < 10 || this.fluid.S < 15 || !sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
   const sb_f = Math.min(this.fluid.Sb / 20.0, 2.0);

@@ -2113,8 +2113,8 @@
 
     "sulphur_bank": {
       "anchor": "Sulphur Bank Mine, south shore of Clear Lake, Lake County, California — Pleistocene hot-spring mercury-sulfur deposit. Active hot-spring system since ~150,000 years ago; mined for mercury 1865-1957 (one of California's largest Hg producers). Now EPA Superfund site CAD980893275. The textbook hot-spring quicksilver-sulfur deposit per White & Roberson 1962 (USGS PP 432-A).",
-      "description": "Hot-spring mercury-sulfur deposit at the surface mixing zone where rising H₂S-rich fluid meets atmospheric O₂. Two headline minerals: native sulfur (from synproportionation 2 H₂S + O₂ → 2 S° + 2 H₂O) and cinnabar (HgS, the deposit's mining commodity — Sulphur Bank yielded ~450 tons of mercury 1865-1957). The H₂SO₄ byproduct keeps fluid pH at 2-4. Native sulfur grows in the iconic α-bipyramidal habit; cinnabar in deep cochineal-red rhombohedra alongside or on top of the native_sulfur. Supporting cast: pyrite + marcasite from the Fe trace, arsenopyrite from trace As, quartz from silica-rich hot water.",
-      "expects_species": ["native_sulfur", "cinnabar", "pyrite", "marcasite", "arsenopyrite"],
+      "description": "Hot-spring mercury-sulfur deposit at the surface mixing zone where rising H₂S-rich fluid meets atmospheric O₂. Headline minerals: native sulfur (from synproportionation 2 H₂S + O₂ → 2 S° + 2 H₂O) and cinnabar (HgS, the deposit's mining commodity — Sulphur Bank yielded ~450 tons of mercury 1865-1957). The H₂SO₄ byproduct keeps fluid pH at 2-4. Accessory As-sulfides realgar (orange-red AsS) and orpiment (golden-yellow As₂S₃) deposit alongside in the same H₂S + O₂ mixing zone — the documented Sulphur Bank arsenic minerals (White & Roberson 1962). Native sulfur grows in α-bipyramidal habit; cinnabar in deep cochineal-red rhombohedra; realgar in orange-red prisms; orpiment in foliated golden plates. Supporting cast: pyrite + marcasite from the Fe trace, arsenopyrite from trace As, quartz from silica-rich hot water.",
+      "expects_species": ["native_sulfur", "cinnabar", "realgar", "orpiment", "pyrite", "marcasite", "arsenopyrite"],
       "duration_steps": 200,
       "notes": [
         "Anchor: Sulphur Bank Mine, the canonical hot-spring native-sulfur deposit. White & Roberson 1962 (USGS PP 432-A) is the foundational monograph; White 1981 placed it in the broader active-geothermal-ore-deposit framework. The deposit was the type case for the 'hot-spring mercury-sulfur' class. Active hot springs still vent today (60-90°C; the EPA Superfund record documents continuous monitoring 1990s-present).",
@@ -2156,11 +2156,20 @@
           "Cu": 3,
           "Pb": 2,
           "Zn": 5,
-          // Trace As — supports arsenopyrite. Sulphur Bank has minor
-          // realgar/orpiment historically (not yet in spec); 8 ppm
-          // is in the published range for the deposit's hot-spring
-          // fluid.
-          "As": 8,
+          // Trace As — supports arsenopyrite + realgar + orpiment.
+          // Sulphur Bank historical reports document minor realgar
+          // + orpiment crystals in the vent zone (White & Roberson
+          // 1962 lists both as accessory species). 30 ppm sits in
+          // the published 1-50 ppm range for measured As at active
+          // hot-spring vents; high enough for realgar (As >= 5) and
+          // orpiment (As >= 8) engines to clear their gates.
+          //
+          // v82 bump (was 8 ppm): the previous 8 ppm sufficed only
+          // for arsenopyrite (As >= 3). Adding the v82 realgar +
+          // orpiment engines made 30 ppm the right number — fires
+          // all three As-bearing minerals in the documented Sulphur
+          // Bank assemblage.
+          "As": 30,
           // Mercury: the deposit's namesake commodity. The Sulphur
           // Bank Mine produced ~13,000 flasks of Hg (~450 tons)
           // before closure in 1957. Hg arrives in the hot-spring

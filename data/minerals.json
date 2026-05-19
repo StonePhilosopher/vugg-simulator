@@ -12468,6 +12468,194 @@
       "audit_status": "new (2026-05-18). Lit by sulphur_bank scenario — the eponymous Mercury Mine commodity. Future scenarios: Almadén (Spain), Idria (Slovenia), New Almaden (CA).",
       "class_color": "#dc1f2c",
       "late_stage_propensity": 0.1
+    },
+    "realgar": {
+      "formula": "AsS",
+      "nucleation_sigma": 1.1,
+      "max_nucleation_count": 6,
+      "max_size_cm": 5.0,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "prismatic_red",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "moderate σ, hot-spring T, the classic Allchar / Shimen elongated prism"
+        },
+        {
+          "name": "granular_orange",
+          "wall_spread": 0.5,
+          "void_reach": 0.4,
+          "vector": "coating",
+          "trigger": "high σ, hot-spring vent, granular massive orange-red aggregate"
+        },
+        {
+          "name": "sublimation_crust_red",
+          "wall_spread": 0.7,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "fumarole T (~150°C), sublimation crust on vent walls (Yellowstone Norris Geyser Basin)"
+        },
+        {
+          "name": "default_prismatic",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "default — orange-red prismatic"
+        }
+      ],
+      "class": "sulfide",
+      "description": "AsS — monoclinic arsenic sulfide (α-realgar; the lower-S phase of the As–S system). Orange-red to vermillion red, brilliant resinous luster, soft (1.5-2 hardness). Low-T hot-spring + epithermal-vein habit; co-occurs with orpiment (As₂S₃) in the same fluids. Type locality Allchar, North Macedonia (also a thallium-anomaly site). World-largest producer is Shimen / Hunan, China. Active hot-spring depositional sites include Yellowstone Norris Geyser Basin + Carbazo Springs. Photo-degrades slowly to pararealgar (yellow) under UV — a known museum-curation problem.",
+      "scenarios": [
+        "sulphur_bank"
+      ],
+      "T_range_C": [
+        20,
+        250
+      ],
+      "T_optimum_C": [
+        50,
+        180
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": 9.0,
+      "redox_requirement": "reducing-to-mixed",
+      "required_ingredients": {
+        "As": 5,
+        "S": 30
+      },
+      "trace_ingredients": {
+        "Tl": "thallium-rich realgar at Allchar (TlAs₅S₈ avicennite/lorandite paragenesis)",
+        "Sb": "minor Sb substitution"
+      },
+      "thermal_decomp_C": 320,
+      "thermal_decomp_reaction": "AsS → As₂S₃ + As at ~320°C; melts at ~321°C in air",
+      "thermal_decomp_products": {
+        "As": 0.35,
+        "S": 0.3
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": null,
+        "reaction": "Realgar is generally acid-resistant in the vug-pH range. Strong alkali (pH > 9) dissolves it via sulfide complex formation.",
+        "products": {}
+      },
+      "habit": "prismatic_red",
+      "color_rules": {
+        "orange_red": {
+          "default": true
+        },
+        "vermillion_red": {
+          "trigger": "high σ massive"
+        },
+        "pararealgar_yellow": {
+          "trigger": "UV exposure (post-deposition alteration; not modeled in run-time)"
+        }
+      },
+      "narrate_function": "_narrate_realgar",
+      "runtimes_present": [
+        "index.html"
+      ],
+      "audit_status": "new (2026-05-19). Co-deposits with orpiment in hot-spring + epithermal scenarios. Lit by sulphur_bank.",
+      "class_color": "#ee5520",
+      "late_stage_propensity": 0.2
+    },
+    "orpiment": {
+      "formula": "As2S3",
+      "nucleation_sigma": 1.1,
+      "max_nucleation_count": 6,
+      "max_size_cm": 10.0,
+      "growth_rate_mult": 0.32,
+      "habit_variants": [
+        {
+          "name": "foliated_golden",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "moderate σ, hot-spring T, the classic foliated golden-yellow plates"
+        },
+        {
+          "name": "columnar_yellow",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "lower σ + steady growth, columnar habit (Getchell mine specimens)"
+        },
+        {
+          "name": "granular_yellow",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "high σ, granular massive aggregate"
+        },
+        {
+          "name": "default_foliated",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "default — foliated golden plates"
+        }
+      ],
+      "class": "sulfide",
+      "description": "As₂S₃ — monoclinic arsenic sulfide (the higher-S phase of the As–S system). Brilliant golden-yellow to lemon-yellow, pearly luster on cleavage. Soft (1.5-2 hardness), perfect {010} cleavage producing the characteristic foliated 'gilded plates'. Low-T hot-spring + epithermal habit; co-occurs with realgar (AsS) in the same fluid systems. The 'aurum pigmentum' of antiquity (the source of the name; ancient/medieval alchemists believed it contained gold). Type locality Allchar, North Macedonia. Major producers Getchell + Twin Creeks (Nevada Carlin-type deposits), Shimen (China), Hunan. Photo-stable (unlike realgar).",
+      "scenarios": [
+        "sulphur_bank"
+      ],
+      "T_range_C": [
+        20,
+        280
+      ],
+      "T_optimum_C": [
+        60,
+        200
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": 9.5,
+      "redox_requirement": "reducing-to-mixed",
+      "required_ingredients": {
+        "As": 8,
+        "S": 50
+      },
+      "trace_ingredients": {
+        "Sb": "minor Sb substitution (Sb-orpiment at Allchar)",
+        "Au": "Au-bearing orpiment at Carlin-type deposits (invisible gold trace)"
+      },
+      "thermal_decomp_C": 320,
+      "thermal_decomp_reaction": "As₂S₃ melts at ~310°C; volatilizes above 250°C in air",
+      "thermal_decomp_products": {
+        "As": 0.35,
+        "S": 0.4
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": null,
+        "reaction": "Orpiment is acid-resistant in the vug-pH range. Strong alkali (pH > 9.5) dissolves it as thioarsenite complexes (AsS₃³⁻).",
+        "products": {}
+      },
+      "habit": "foliated_golden",
+      "color_rules": {
+        "golden_yellow": {
+          "default": true
+        },
+        "lemon_yellow": {
+          "trigger": "high σ massive"
+        },
+        "brown_tint": {
+          "trigger": "Sb substitution"
+        }
+      },
+      "narrate_function": "_narrate_orpiment",
+      "runtimes_present": [
+        "index.html"
+      ],
+      "audit_status": "new (2026-05-19). Co-deposits with realgar in hot-spring + epithermal scenarios. Lit by sulphur_bank.",
+      "class_color": "#f0c020",
+      "late_stage_propensity": 0.2
     }
   }
 }

@@ -637,6 +637,103 @@ function grow_stibnite(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
+// Realgar (AsS) — α-realgar, monoclinic arsenic sulfide. Orange-red,
+// low-T hot-spring + epithermal. Habit dispatcher:
+//   T 100-180°C, high excess  → sublimation_crust_red (fumarole vent)
+//   excess > 1.2              → granular_orange (massive aggregate)
+//   else                      → prismatic_red (the iconic Allchar /
+//                                Shimen elongated prism)
+//
+// Acid-resistant (no acid dissolution branch); only strong alkali
+// (pH > 9.5) destabilizes it. The dissolution branch fires only at
+// high pH where AsS → AsS₃³⁻ + H₂S.
+function grow_realgar(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_realgar();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH > 9.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d,
+        note: `alkaline dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — thioarsenite complex forms`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.8 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  const T = conditions.temperature;
+  let color_note;
+  if (T >= 100 && excess > 1.5) {
+    crystal.habit = 'sublimation_crust_red';
+    crystal.dominant_forms = ['fumarole sublimation crust', 'orange-red vent coating'];
+    color_note = `orange-red sublimation crust — Yellowstone Norris Geyser Basin habit (T=${T.toFixed(0)}°C)`;
+  } else if (excess > 1.2) {
+    crystal.habit = 'granular_orange';
+    crystal.dominant_forms = ['granular massive aggregate', 'vermillion ore'];
+    color_note = 'orange-red granular massive realgar — Shimen ore-grade habit';
+  } else {
+    crystal.habit = 'prismatic_red';
+    crystal.dominant_forms = ['elongated {110} prism', 'orange-red resinous crystal'];
+    color_note = `orange-red prismatic realgar — Allchar habit (T=${T.toFixed(0)}°C)`;
+  }
+  // Growth-zone As + S debit handled by applyMassBalance via
+  // MINERAL_STOICHIOMETRY.realgar = { As: 1, S: 1 }.
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: color_note,
+  });
+}
+
+// Orpiment (As₂S₃) — golden-yellow monoclinic arsenic sulfide.
+// Co-deposits with realgar but slightly higher T sweet spot + needs
+// more S relative to As. Habit dispatcher:
+//   excess > 1.5            → granular_yellow (massive aggregate)
+//   low σ + steady          → columnar_yellow (Getchell habit)
+//   default                 → foliated_golden (the iconic gilded plates)
+function grow_orpiment(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_orpiment();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH > 9.8) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d,
+        note: `alkaline dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — thioarsenite AsS₃³⁻ complex forms`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  let color_note;
+  if (excess > 1.5) {
+    crystal.habit = 'granular_yellow';
+    crystal.dominant_forms = ['granular massive aggregate', 'golden-yellow ore'];
+    color_note = 'golden-yellow granular massive orpiment — high-σ ore habit';
+  } else if (excess < 0.6) {
+    crystal.habit = 'columnar_yellow';
+    crystal.dominant_forms = ['columnar {010} crystal', 'pearly cleavage'];
+    color_note = 'columnar orpiment with pearly cleavage — Getchell habit (low σ, steady growth)';
+  } else {
+    crystal.habit = 'foliated_golden';
+    crystal.dominant_forms = ['{010} foliated plates', 'gilded book-form'];
+    color_note = 'foliated golden plates — the iconic aurum-pigmentum habit';
+  }
+  // Growth-zone As + S debit handled by applyMassBalance via
+  // MINERAL_STOICHIOMETRY.orpiment = { As: 2, S: 3 }.
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: color_note,
+  });
+}
+
 // Cinnabar (HgS) — mercury sulfide. Hot-spring deposit (Sulphur Bank
 // + Almadén + Idria type) + co-product in Sicilian sedimentary
 // native_sulfur. Habit dispatcher:

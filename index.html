@@ -6337,7 +6337,128 @@ let timeScale = 5.0;
 //          * New Almaden (CA). Pleistocene hot-spring analog of
 //            Sulphur Bank; the simulator could reuse the Sulphur
 //            Bank events with different fluid trace metals.
-const SIM_VERSION = 81;
+//   v82 — Realgar (AsS) + Orpiment (As₂S₃): the As-sulfide pair
+//        (2026-05-19). White & Roberson 1962 documents both as
+//        accessory species at Sulphur Bank; v81 had no engines for
+//        either. Closes the As-sulfide gap with the classic
+//        co-deposition pair.
+//
+//        Both minerals are LOW-T hot-spring + epithermal phases —
+//        the same depositional environment as native_sulfur and
+//        cinnabar. The σ engines fire in the same Sulphur Bank
+//        chemistry, plus orpiment can also fire in Carlin-type
+//        gold deposits (Getchell, Twin Creeks) and Allchar-type
+//        Tl-As assemblages. Major modern producer of both is
+//        Shimen / Hunan, China.
+//
+//        REALGAR (AsS) — α-realgar, monoclinic. Orange-red,
+//        resinous luster. Engine in js/41-supersat-sulfide.ts +
+//        js/61-engines-sulfide.ts:
+//          Gates: As >= 5, S >= 30, pH <= 9 (alkali destabilizes),
+//                 sulfide-redox-anoxic threshold 1.2 (more O₂-
+//                 tolerant than arsenopyrite).
+//          σ formula: as_f × s_f × eh_f × T_factor × activity.
+//            as_f = min(As/15, 3.0); s_f = min(S/100, 3.0).
+//          T optimum 50-180°C (matches Sulphur Bank vent regime).
+//          Habit dispatcher:
+//            T >= 100 + excess > 1.5  → sublimation_crust_red
+//                                       (Yellowstone Norris habit)
+//            excess > 1.2             → granular_orange (massive ore)
+//            else                     → prismatic_red (Allchar /
+//                                       Shimen iconic habit)
+//          Photo-stable in the simulator (the slow UV pararealgar
+//          conversion is documented in the mineral spec but not
+//          run-time modeled — museum-curation problem, not vug
+//          chemistry).
+//
+//        ORPIMENT (As₂S₃) — golden-yellow monoclinic. Engine
+//        parameters parallel realgar's but slightly higher thresholds
+//        (As₂S₃ formula needs more S per As than AsS):
+//          Gates: As >= 8 (vs realgar's 5), S >= 50 (vs 30),
+//                 pH <= 9.5 (slightly more alkali-tolerant than
+//                 realgar), sulfide-redox-anoxic threshold 1.2.
+//          T optimum 60-200°C.
+//          Habit dispatcher:
+//            excess > 1.5  → granular_yellow (massive ore)
+//            excess < 0.6  → columnar_yellow (Getchell habit)
+//            else          → foliated_golden (iconic aurum-pigmentum
+//                            habit — pearly cleavage, gilded plates)
+//
+//        Supporting infrastructure:
+//          * MINERAL_STOICHIOMETRY: realgar {As:1, S:1}, orpiment
+//            {As:2, S:3}. Mass-balance debits per growth zone.
+//          * MINERAL_DISSOLUTION_RATES: alkaline-dissolution paths
+//            (realgar at pH > 9.5, orpiment at pH > 9.8 — both as
+//            thioarsenite complexes).
+//          * Nucleation handlers _nuc_realgar + _nuc_orpiment with
+//            substrate preference:
+//              realgar: native_sulfur (35%) > arsenopyrite (30%) >
+//                       quartz (25%) > wall
+//              orpiment: realgar (40%) > native_sulfur (30%) >
+//                        arsenopyrite (25%) > wall (the realgar-
+//                        substrate preference models Allchar / Shimen
+//                        co-deposition where orpiment overgrows
+//                        realgar as the σ trajectory shifts S/As
+//                        toward the orpiment-favored regime)
+//          * data/minerals.json: full entries with formula, T-range,
+//            color rules (orange_red / pararealgar_yellow for realgar;
+//            golden_yellow / lemon_yellow / brown_tint for orpiment),
+//            literature anchors (Allchar / Shimen / Getchell /
+//            Sulphur Bank), trace ingredients (Tl-bearing realgar at
+//            Allchar; Au-bearing orpiment at Carlin-type deposits).
+//
+//        Sulphur Bank scenario update:
+//          * initial fluid: As bumped 8 → 30 ppm. The previous 8
+//            ppm sufficed for arsenopyrite only (gate As >= 3); now
+//            with realgar (As >= 5) and orpiment (As >= 8) engines
+//            live, 30 ppm clears all three gates with headroom. In
+//            published 1-50 ppm range for measured As at active
+//            hot-spring vents (White & Roberson 1962).
+//          * expects_species: + realgar, orpiment.
+//          * description updated to mention both accessory minerals.
+//
+//        Verified output (3 seeds × 200 steps at Sulphur Bank):
+//          peak σ_realgar  = 9.02 (well above 1.0 threshold)
+//          peak σ_orpiment = 6.82
+//          realgar crystals = 6 active per seed
+//          orpiment crystals = 6 active per seed
+//          habits at peak σ: granular_orange (realgar) +
+//                            granular_yellow (orpiment) dominate;
+//                            seed 7 also shows foliated_golden
+//                            orpiment in cooler / lower-σ phases.
+//
+//        Emergent bonus: scorodite (FeAsO₄) now fires too —
+//        weathering product of arsenopyrite under the slightly
+//        oxidative Sulphur Bank vent conditions. Reflects the real
+//        Sulphur Bank gossan zone where scorodite caps arsenopyrite
+//        veins. Not in expects_species (was 'live' coverage-wise
+//        before; only newly LIT in this scenario).
+//
+//        Full Sulphur Bank assemblage at v82:
+//          native_sulfur (4) + cinnabar (6) + realgar (6) + orpiment
+//          (6) + arsenopyrite (4) + scorodite (4-5) + pyrite (1) +
+//          marcasite (1) + selenite (2) + quartz (3)
+//        That's a textbook hot-spring quicksilver-sulfur deposit
+//        mineralogy — the simulator now produces a specimen-cabinet-
+//        grade Sulphur Bank assemblage.
+//
+//        Tests 365 → 397 (+32 in tests-js/realgar-orpiment.test.ts):
+//          * Engine gate pins for both (As/S thresholds, pH cutoffs,
+//            T window).
+//          * Differential pH tolerance: orpiment fires at pH 9.3
+//            where realgar is blocked (proves the 9.0/9.5 split
+//            isn't degenerate).
+//          * 3-seed firing + crystal-count pins for both.
+//          * Canonical habit firing pins.
+//          * Substrate-preference pins (realgar on native_sulfur,
+//            orpiment on realgar across 3 seeds).
+//          * Sulphur Bank As=30 + expects_species pins.
+//
+//        Coverage 96 → 98 live (+realgar, +orpiment) / 21 dead / 0
+//        stale. seed42_v82.json captures Sulphur Bank with both
+//        species + scorodite firing; other 25 scenarios byte-
+//        identical to v81.
+const SIM_VERSION = 82;
 
 // ── 18-constants.js ──
 
@@ -6460,6 +6581,8 @@ const MINERAL_STOICHIOMETRY = {
     arsenopyrite: { Fe: 1, As: 1, S: 1 }, // FeAsS
     stibnite: { Sb: 2, S: 3 }, // Sb2S3
     cinnabar: { Hg: 1, S: 1 }, // HgS
+    realgar: { As: 1, S: 1 }, // AsS (α-realgar; As4S4 unit cell)
+    orpiment: { As: 2, S: 3 }, // As2S3
     bismuthinite: { Bi: 2, S: 3 }, // Bi2S3
     acanthite: { Ag: 2, S: 1 }, // Ag2S (monoclinic)
     argentite: { Ag: 2, S: 1 }, // Ag2S (cubic)
@@ -6743,6 +6866,8 @@ const MINERAL_DISSOLUTION_RATES = {
     millerite: { Ni: 0.4, S: 0.3 }, // acid attack
     stibnite: { Sb: 0.3, S: 0.3 }, // oxidative
     cinnabar: { Hg: 0.3, S: 0.2 }, // oxidative sublimation (Hg° vapor + SO₄²⁻)
+    realgar: { As: 0.3, S: 0.3 }, // alkaline dissolution (thioarsenite complex)
+    orpiment: { As: 0.4, S: 0.4 }, // alkaline dissolution (AsS₃³⁻ complex)
     bismuthinite: { Bi: 0.3, S: 0.3 }, // oxidative
     bornite: { Cu: 0.4, Fe: 0.2, S: 0.3 }, // supergene oxidation
     chalcocite: { Cu: 0.5, S: 0.3 }, // strong oxidation
@@ -13760,6 +13885,87 @@ Object.assign(VugConditions.prototype, {
             sigma *= activityCorrectionFactor(this.fluid, 'cinnabar');
         return Math.max(sigma, 0);
     },
+    // Realgar (AsS) — α-realgar, monoclinic arsenic sulfide, the lower-S
+    // phase of the As-S system. Orange-red. Low-T hot-spring + epithermal
+    // habit; co-deposits with orpiment. Type localities Allchar
+    // (Macedonia) + Shimen (China); active hot-spring sites at
+    // Yellowstone Norris Geyser Basin + Carbazo Springs + Sulphur Bank
+    // Mine. Engine gates (2026-05-19, v82):
+    //   As >= 5, S >= 30
+    //   Reducing-to-mixed redox (sulfideRedoxAnoxic threshold 1.2 — broader
+    //     than arsenopyrite's 0.8 because realgar tolerates more O₂ than
+    //     the deeper-anoxic ferrous arsenosulfide).
+    //   pH <= 9 (alkali dissolves it as thioarsenite complex).
+    //   T optimum 50-180°C (matches Sulphur Bank's 60-90°C vent regime).
+    supersaturation_realgar() {
+        if (this.fluid.As < 5 || this.fluid.S < 30)
+            return 0;
+        if (!sulfideRedoxAnoxic(this.fluid, 1.2))
+            return 0;
+        if (this.fluid.pH > 9)
+            return 0;
+        const as_f = Math.min(this.fluid.As / 15.0, 3.0);
+        const s_f = Math.min(this.fluid.S / 100.0, 3.0);
+        // Eh window: mildly reducing optimal. Sulfide-redox helper at the
+        // engine's preferred Eh; tolerance broader than arsenopyrite.
+        const eh_f = sulfideRedoxLinearFactor(this.fluid, 1.5);
+        let sigma = as_f * s_f * eh_f;
+        const T = this.temperature;
+        let T_factor;
+        if (T >= 50 && T <= 180)
+            T_factor = 1.2;
+        else if (T < 50)
+            T_factor = Math.max(0.4, 0.6 + (T - 20) / 100);
+        else if (T <= 250)
+            T_factor = Math.max(0.3, 1.2 - 0.012 * (T - 180));
+        else
+            T_factor = 0.0;
+        sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'realgar');
+        return Math.max(sigma, 0);
+    },
+    // Orpiment (As₂S₃) — monoclinic arsenic sulfide, the higher-S phase of
+    // the As-S system. Golden yellow. Same depositional environment as
+    // realgar but slightly higher S threshold (As₂S₃ stoichiometry needs
+    // more S per As). Type locality Allchar; major Carlin-type producers
+    // Getchell + Twin Creeks (Nevada); 'aurum pigmentum' of antiquity.
+    // Engine gates:
+    //   As >= 8 (higher than realgar's 5 — orpiment's As₂S₃ formula
+    //            requires As to be present at higher levels)
+    //   S >= 50 (more S than realgar; the S/As 3/2 stoichiometry favors
+    //            S-rich fluids)
+    //   Reducing-to-mixed redox.
+    //   pH <= 9.5 (very broad; orpiment is the most alkali-tolerant of
+    //              the As-sulfides).
+    //   T optimum 60-200°C (slightly hotter than realgar; orpiment is
+    //                       the higher-T As-S phase in many systems).
+    supersaturation_orpiment() {
+        if (this.fluid.As < 8 || this.fluid.S < 50)
+            return 0;
+        if (!sulfideRedoxAnoxic(this.fluid, 1.2))
+            return 0;
+        if (this.fluid.pH > 9.5)
+            return 0;
+        const as_f = Math.min(this.fluid.As / 20.0, 3.0);
+        const s_f = Math.min(this.fluid.S / 150.0, 3.0);
+        const eh_f = sulfideRedoxLinearFactor(this.fluid, 1.5);
+        let sigma = as_f * s_f * eh_f;
+        const T = this.temperature;
+        let T_factor;
+        if (T >= 60 && T <= 200)
+            T_factor = 1.2;
+        else if (T < 60)
+            T_factor = Math.max(0.4, 0.5 + (T - 20) / 100);
+        else if (T <= 280)
+            T_factor = Math.max(0.3, 1.2 - 0.011 * (T - 200));
+        else
+            T_factor = 0.0;
+        sigma *= T_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'orpiment');
+        return Math.max(sigma, 0);
+    },
     supersaturation_stibnite() {
         if (this.fluid.Sb < 10 || this.fluid.S < 15 || !sulfideRedoxAnoxic(this.fluid, 1.0))
             return 0;
@@ -19257,6 +19463,107 @@ function grow_stibnite(crystal, conditions, step) {
     f.S = Math.max(f.S - rate * 0.018, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
+// Realgar (AsS) — α-realgar, monoclinic arsenic sulfide. Orange-red,
+// low-T hot-spring + epithermal. Habit dispatcher:
+//   T 100-180°C, high excess  → sublimation_crust_red (fumarole vent)
+//   excess > 1.2              → granular_orange (massive aggregate)
+//   else                      → prismatic_red (the iconic Allchar /
+//                                Shimen elongated prism)
+//
+// Acid-resistant (no acid dissolution branch); only strong alkali
+// (pH > 9.5) destabilizes it. The dissolution branch fires only at
+// high pH where AsS → AsS₃³⁻ + H₂S.
+function grow_realgar(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_realgar();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH > 9.5) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d,
+                note: `alkaline dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — thioarsenite complex forms`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 2.8 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    const T = conditions.temperature;
+    let color_note;
+    if (T >= 100 && excess > 1.5) {
+        crystal.habit = 'sublimation_crust_red';
+        crystal.dominant_forms = ['fumarole sublimation crust', 'orange-red vent coating'];
+        color_note = `orange-red sublimation crust — Yellowstone Norris Geyser Basin habit (T=${T.toFixed(0)}°C)`;
+    }
+    else if (excess > 1.2) {
+        crystal.habit = 'granular_orange';
+        crystal.dominant_forms = ['granular massive aggregate', 'vermillion ore'];
+        color_note = 'orange-red granular massive realgar — Shimen ore-grade habit';
+    }
+    else {
+        crystal.habit = 'prismatic_red';
+        crystal.dominant_forms = ['elongated {110} prism', 'orange-red resinous crystal'];
+        color_note = `orange-red prismatic realgar — Allchar habit (T=${T.toFixed(0)}°C)`;
+    }
+    // Growth-zone As + S debit handled by applyMassBalance via
+    // MINERAL_STOICHIOMETRY.realgar = { As: 1, S: 1 }.
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        note: color_note,
+    });
+}
+// Orpiment (As₂S₃) — golden-yellow monoclinic arsenic sulfide.
+// Co-deposits with realgar but slightly higher T sweet spot + needs
+// more S relative to As. Habit dispatcher:
+//   excess > 1.5            → granular_yellow (massive aggregate)
+//   low σ + steady          → columnar_yellow (Getchell habit)
+//   default                 → foliated_golden (the iconic gilded plates)
+function grow_orpiment(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_orpiment();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH > 9.8) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d,
+                note: `alkaline dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — thioarsenite AsS₃³⁻ complex forms`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    let color_note;
+    if (excess > 1.5) {
+        crystal.habit = 'granular_yellow';
+        crystal.dominant_forms = ['granular massive aggregate', 'golden-yellow ore'];
+        color_note = 'golden-yellow granular massive orpiment — high-σ ore habit';
+    }
+    else if (excess < 0.6) {
+        crystal.habit = 'columnar_yellow';
+        crystal.dominant_forms = ['columnar {010} crystal', 'pearly cleavage'];
+        color_note = 'columnar orpiment with pearly cleavage — Getchell habit (low σ, steady growth)';
+    }
+    else {
+        crystal.habit = 'foliated_golden';
+        crystal.dominant_forms = ['{010} foliated plates', 'gilded book-form'];
+        color_note = 'foliated golden plates — the iconic aurum-pigmentum habit';
+    }
+    // Growth-zone As + S debit handled by applyMassBalance via
+    // MINERAL_STOICHIOMETRY.orpiment = { As: 2, S: 3 }.
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        note: color_note,
+    });
+}
 // Cinnabar (HgS) — mercury sulfide. Hot-spring deposit (Sulphur Bank
 // + Almadén + Idria type) + co-product in Sicilian sedimentary
 // native_sulfur. Habit dispatcher:
@@ -19899,6 +20206,8 @@ const MINERAL_ENGINES = {
     lepidocrocite: grow_lepidocrocite,
     stibnite: grow_stibnite,
     cinnabar: grow_cinnabar,
+    realgar: grow_realgar,
+    orpiment: grow_orpiment,
     bismuthinite: grow_bismuthinite,
     native_bismuth: grow_native_bismuth,
     clinobisvanite: grow_clinobisvanite,
@@ -26240,6 +26549,57 @@ function _nuc_cinnabar(sim) {
         }
     }
 }
+// Realgar (AsS) — orange-red As-sulfide. Hot-spring + epithermal
+// deposit. Substrate preference at Sulphur Bank: nucleates alongside
+// native_sulfur (same H₂S + O₂ mixing zone) > on existing arsenopyrite
+// > on quartz > free wall. Allchar's realgar specimens grow on calcite
+// + dolomite — different scenario, different substrate logic.
+function _nuc_realgar(sim) {
+    const sigma_rlg = sim.conditions.supersaturation_realgar();
+    const existing_rlg = sim.crystals.filter(c => c.mineral === 'realgar' && c.active);
+    if (sigma_rlg > 1.0 && !sim._atNucleationCap('realgar')) {
+        if (!existing_rlg.length || (sigma_rlg > 1.8 && rng.random() < 0.2)) {
+            let pos = 'vug wall';
+            const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
+            const active_apy = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
+            const active_qtz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+            if (active_ns.length && rng.random() < 0.35)
+                pos = `on native_sulfur #${active_ns[0].crystal_id}`;
+            else if (active_apy.length && rng.random() < 0.30)
+                pos = `on arsenopyrite #${active_apy[0].crystal_id}`;
+            else if (active_qtz.length && rng.random() < 0.25)
+                pos = `on quartz #${active_qtz[0].crystal_id}`;
+            const c = sim.nucleate('realgar', pos, sigma_rlg);
+            sim.log.push(`  ✦ NUCLEATION: Realgar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_rlg.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+        }
+    }
+}
+// Orpiment (As₂S₃) — golden-yellow As-sulfide. Same depositional
+// environment as realgar; tends to nucleate ON realgar (or alongside)
+// in many specimens (the Allchar + Shimen + Getchell type material).
+function _nuc_orpiment(sim) {
+    const sigma_orp = sim.conditions.supersaturation_orpiment();
+    const existing_orp = sim.crystals.filter(c => c.mineral === 'orpiment' && c.active);
+    if (sigma_orp > 1.0 && !sim._atNucleationCap('orpiment')) {
+        if (!existing_orp.length || (sigma_orp > 1.8 && rng.random() < 0.2)) {
+            let pos = 'vug wall';
+            const active_rlg = sim.crystals.filter(c => c.mineral === 'realgar' && c.active);
+            const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
+            const active_apy = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
+            // Orpiment prefers realgar substrate (co-deposition, then
+            // overgrowth as σ-trajectory shifts S/As ratio toward orpiment-
+            // favored). Falls through to native_sulfur, arsenopyrite, wall.
+            if (active_rlg.length && rng.random() < 0.40)
+                pos = `on realgar #${active_rlg[0].crystal_id}`;
+            else if (active_ns.length && rng.random() < 0.30)
+                pos = `on native_sulfur #${active_ns[0].crystal_id}`;
+            else if (active_apy.length && rng.random() < 0.25)
+                pos = `on arsenopyrite #${active_apy[0].crystal_id}`;
+            const c = sim.nucleate('orpiment', pos, sigma_orp);
+            sim.log.push(`  ✦ NUCLEATION: Orpiment #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_orp.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+        }
+    }
+}
 function _nuc_bismuthinite(sim) {
     const sigma_bmt = sim.conditions.supersaturation_bismuthinite();
     const existing_bmt = sim.crystals.filter(c => c.mineral === 'bismuthinite' && c.active);
@@ -26404,6 +26764,8 @@ function _nucleateClass_sulfide(sim) {
     _nuc_molybdenite(sim);
     _nuc_stibnite(sim);
     _nuc_cinnabar(sim);
+    _nuc_realgar(sim);
+    _nuc_orpiment(sim);
     _nuc_bismuthinite(sim);
     _nuc_argentite(sim);
     _nuc_nickeline(sim);

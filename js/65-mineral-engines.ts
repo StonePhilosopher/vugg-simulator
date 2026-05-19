@@ -79,6 +79,8 @@ const MINERAL_ENGINES = {
   lepidocrocite: grow_lepidocrocite,
   stibnite: grow_stibnite,
   cinnabar: grow_cinnabar,
+  realgar: grow_realgar,
+  orpiment: grow_orpiment,
   bismuthinite: grow_bismuthinite,
   native_bismuth: grow_native_bismuth,
   clinobisvanite: grow_clinobisvanite,

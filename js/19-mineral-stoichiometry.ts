@@ -57,6 +57,8 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   arsenopyrite:   { Fe: 1, As: 1, S: 1 },            // FeAsS
   stibnite:       { Sb: 2, S: 3 },                   // Sb2S3
   cinnabar:       { Hg: 1, S: 1 },                   // HgS
+  realgar:        { As: 1, S: 1 },                   // AsS (α-realgar; As4S4 unit cell)
+  orpiment:       { As: 2, S: 3 },                   // As2S3
   bismuthinite:   { Bi: 2, S: 3 },                   // Bi2S3
   acanthite:      { Ag: 2, S: 1 },                   // Ag2S (monoclinic)
   argentite:      { Ag: 2, S: 1 },                   // Ag2S (cubic)
@@ -414,6 +416,8 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   millerite:    { Ni: 0.4, S: 0.3 },                   // acid attack
   stibnite:     { Sb: 0.3, S: 0.3 },                   // oxidative
   cinnabar:     { Hg: 0.3, S: 0.2 },                   // oxidative sublimation (Hg° vapor + SO₄²⁻)
+  realgar:      { As: 0.3, S: 0.3 },                   // alkaline dissolution (thioarsenite complex)
+  orpiment:     { As: 0.4, S: 0.4 },                   // alkaline dissolution (AsS₃³⁻ complex)
   bismuthinite: { Bi: 0.3, S: 0.3 },                   // oxidative
   bornite:      { Cu: 0.4, Fe: 0.2, S: 0.3 },          // supergene oxidation
   chalcocite:   { Cu: 0.5, S: 0.3 },                   // strong oxidation

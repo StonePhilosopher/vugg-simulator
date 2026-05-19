@@ -221,6 +221,53 @@ function _nuc_cinnabar(sim) {
   }
 }
 
+// Realgar (AsS) — orange-red As-sulfide. Hot-spring + epithermal
+// deposit. Substrate preference at Sulphur Bank: nucleates alongside
+// native_sulfur (same H₂S + O₂ mixing zone) > on existing arsenopyrite
+// > on quartz > free wall. Allchar's realgar specimens grow on calcite
+// + dolomite — different scenario, different substrate logic.
+function _nuc_realgar(sim) {
+  const sigma_rlg = sim.conditions.supersaturation_realgar();
+  const existing_rlg = sim.crystals.filter(c => c.mineral === 'realgar' && c.active);
+  if (sigma_rlg > 1.0 && !sim._atNucleationCap('realgar')) {
+    if (!existing_rlg.length || (sigma_rlg > 1.8 && rng.random() < 0.2)) {
+      let pos = 'vug wall';
+      const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
+      const active_apy = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
+      const active_qtz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+      if (active_ns.length && rng.random() < 0.35) pos = `on native_sulfur #${active_ns[0].crystal_id}`;
+      else if (active_apy.length && rng.random() < 0.30) pos = `on arsenopyrite #${active_apy[0].crystal_id}`;
+      else if (active_qtz.length && rng.random() < 0.25) pos = `on quartz #${active_qtz[0].crystal_id}`;
+      const c = sim.nucleate('realgar', pos, sigma_rlg);
+      sim.log.push(`  ✦ NUCLEATION: Realgar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_rlg.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+    }
+  }
+}
+
+// Orpiment (As₂S₃) — golden-yellow As-sulfide. Same depositional
+// environment as realgar; tends to nucleate ON realgar (or alongside)
+// in many specimens (the Allchar + Shimen + Getchell type material).
+function _nuc_orpiment(sim) {
+  const sigma_orp = sim.conditions.supersaturation_orpiment();
+  const existing_orp = sim.crystals.filter(c => c.mineral === 'orpiment' && c.active);
+  if (sigma_orp > 1.0 && !sim._atNucleationCap('orpiment')) {
+    if (!existing_orp.length || (sigma_orp > 1.8 && rng.random() < 0.2)) {
+      let pos = 'vug wall';
+      const active_rlg = sim.crystals.filter(c => c.mineral === 'realgar' && c.active);
+      const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
+      const active_apy = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
+      // Orpiment prefers realgar substrate (co-deposition, then
+      // overgrowth as σ-trajectory shifts S/As ratio toward orpiment-
+      // favored). Falls through to native_sulfur, arsenopyrite, wall.
+      if (active_rlg.length && rng.random() < 0.40) pos = `on realgar #${active_rlg[0].crystal_id}`;
+      else if (active_ns.length && rng.random() < 0.30) pos = `on native_sulfur #${active_ns[0].crystal_id}`;
+      else if (active_apy.length && rng.random() < 0.25) pos = `on arsenopyrite #${active_apy[0].crystal_id}`;
+      const c = sim.nucleate('orpiment', pos, sigma_orp);
+      sim.log.push(`  ✦ NUCLEATION: Orpiment #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_orp.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+    }
+  }
+}
+
 function _nuc_bismuthinite(sim) {
   const sigma_bmt = sim.conditions.supersaturation_bismuthinite();
   const existing_bmt = sim.crystals.filter(c => c.mineral === 'bismuthinite' && c.active);
@@ -379,6 +426,8 @@ function _nucleateClass_sulfide(sim) {
   _nuc_molybdenite(sim);
   _nuc_stibnite(sim);
   _nuc_cinnabar(sim);
+  _nuc_realgar(sim);
+  _nuc_orpiment(sim);
   _nuc_bismuthinite(sim);
   _nuc_argentite(sim);
   _nuc_nickeline(sim);

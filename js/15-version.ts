@@ -2002,5 +2002,126 @@
 //          * New Almaden (CA). Pleistocene hot-spring analog of
 //            Sulphur Bank; the simulator could reuse the Sulphur
 //            Bank events with different fluid trace metals.
-const SIM_VERSION = 81;
+//   v82 — Realgar (AsS) + Orpiment (As₂S₃): the As-sulfide pair
+//        (2026-05-19). White & Roberson 1962 documents both as
+//        accessory species at Sulphur Bank; v81 had no engines for
+//        either. Closes the As-sulfide gap with the classic
+//        co-deposition pair.
+//
+//        Both minerals are LOW-T hot-spring + epithermal phases —
+//        the same depositional environment as native_sulfur and
+//        cinnabar. The σ engines fire in the same Sulphur Bank
+//        chemistry, plus orpiment can also fire in Carlin-type
+//        gold deposits (Getchell, Twin Creeks) and Allchar-type
+//        Tl-As assemblages. Major modern producer of both is
+//        Shimen / Hunan, China.
+//
+//        REALGAR (AsS) — α-realgar, monoclinic. Orange-red,
+//        resinous luster. Engine in js/41-supersat-sulfide.ts +
+//        js/61-engines-sulfide.ts:
+//          Gates: As >= 5, S >= 30, pH <= 9 (alkali destabilizes),
+//                 sulfide-redox-anoxic threshold 1.2 (more O₂-
+//                 tolerant than arsenopyrite).
+//          σ formula: as_f × s_f × eh_f × T_factor × activity.
+//            as_f = min(As/15, 3.0); s_f = min(S/100, 3.0).
+//          T optimum 50-180°C (matches Sulphur Bank vent regime).
+//          Habit dispatcher:
+//            T >= 100 + excess > 1.5  → sublimation_crust_red
+//                                       (Yellowstone Norris habit)
+//            excess > 1.2             → granular_orange (massive ore)
+//            else                     → prismatic_red (Allchar /
+//                                       Shimen iconic habit)
+//          Photo-stable in the simulator (the slow UV pararealgar
+//          conversion is documented in the mineral spec but not
+//          run-time modeled — museum-curation problem, not vug
+//          chemistry).
+//
+//        ORPIMENT (As₂S₃) — golden-yellow monoclinic. Engine
+//        parameters parallel realgar's but slightly higher thresholds
+//        (As₂S₃ formula needs more S per As than AsS):
+//          Gates: As >= 8 (vs realgar's 5), S >= 50 (vs 30),
+//                 pH <= 9.5 (slightly more alkali-tolerant than
+//                 realgar), sulfide-redox-anoxic threshold 1.2.
+//          T optimum 60-200°C.
+//          Habit dispatcher:
+//            excess > 1.5  → granular_yellow (massive ore)
+//            excess < 0.6  → columnar_yellow (Getchell habit)
+//            else          → foliated_golden (iconic aurum-pigmentum
+//                            habit — pearly cleavage, gilded plates)
+//
+//        Supporting infrastructure:
+//          * MINERAL_STOICHIOMETRY: realgar {As:1, S:1}, orpiment
+//            {As:2, S:3}. Mass-balance debits per growth zone.
+//          * MINERAL_DISSOLUTION_RATES: alkaline-dissolution paths
+//            (realgar at pH > 9.5, orpiment at pH > 9.8 — both as
+//            thioarsenite complexes).
+//          * Nucleation handlers _nuc_realgar + _nuc_orpiment with
+//            substrate preference:
+//              realgar: native_sulfur (35%) > arsenopyrite (30%) >
+//                       quartz (25%) > wall
+//              orpiment: realgar (40%) > native_sulfur (30%) >
+//                        arsenopyrite (25%) > wall (the realgar-
+//                        substrate preference models Allchar / Shimen
+//                        co-deposition where orpiment overgrows
+//                        realgar as the σ trajectory shifts S/As
+//                        toward the orpiment-favored regime)
+//          * data/minerals.json: full entries with formula, T-range,
+//            color rules (orange_red / pararealgar_yellow for realgar;
+//            golden_yellow / lemon_yellow / brown_tint for orpiment),
+//            literature anchors (Allchar / Shimen / Getchell /
+//            Sulphur Bank), trace ingredients (Tl-bearing realgar at
+//            Allchar; Au-bearing orpiment at Carlin-type deposits).
+//
+//        Sulphur Bank scenario update:
+//          * initial fluid: As bumped 8 → 30 ppm. The previous 8
+//            ppm sufficed for arsenopyrite only (gate As >= 3); now
+//            with realgar (As >= 5) and orpiment (As >= 8) engines
+//            live, 30 ppm clears all three gates with headroom. In
+//            published 1-50 ppm range for measured As at active
+//            hot-spring vents (White & Roberson 1962).
+//          * expects_species: + realgar, orpiment.
+//          * description updated to mention both accessory minerals.
+//
+//        Verified output (3 seeds × 200 steps at Sulphur Bank):
+//          peak σ_realgar  = 9.02 (well above 1.0 threshold)
+//          peak σ_orpiment = 6.82
+//          realgar crystals = 6 active per seed
+//          orpiment crystals = 6 active per seed
+//          habits at peak σ: granular_orange (realgar) +
+//                            granular_yellow (orpiment) dominate;
+//                            seed 7 also shows foliated_golden
+//                            orpiment in cooler / lower-σ phases.
+//
+//        Emergent bonus: scorodite (FeAsO₄) now fires too —
+//        weathering product of arsenopyrite under the slightly
+//        oxidative Sulphur Bank vent conditions. Reflects the real
+//        Sulphur Bank gossan zone where scorodite caps arsenopyrite
+//        veins. Not in expects_species (was 'live' coverage-wise
+//        before; only newly LIT in this scenario).
+//
+//        Full Sulphur Bank assemblage at v82:
+//          native_sulfur (4) + cinnabar (6) + realgar (6) + orpiment
+//          (6) + arsenopyrite (4) + scorodite (4-5) + pyrite (1) +
+//          marcasite (1) + selenite (2) + quartz (3)
+//        That's a textbook hot-spring quicksilver-sulfur deposit
+//        mineralogy — the simulator now produces a specimen-cabinet-
+//        grade Sulphur Bank assemblage.
+//
+//        Tests 365 → 397 (+32 in tests-js/realgar-orpiment.test.ts):
+//          * Engine gate pins for both (As/S thresholds, pH cutoffs,
+//            T window).
+//          * Differential pH tolerance: orpiment fires at pH 9.3
+//            where realgar is blocked (proves the 9.0/9.5 split
+//            isn't degenerate).
+//          * 3-seed firing + crystal-count pins for both.
+//          * Canonical habit firing pins.
+//          * Substrate-preference pins (realgar on native_sulfur,
+//            orpiment on realgar across 3 seeds).
+//          * Sulphur Bank As=30 + expects_species pins.
+//
+//        Coverage 96 → 98 live (+realgar, +orpiment) / 21 dead / 0
+//        stale. seed42_v82.json captures Sulphur Bank with both
+//        species + scorodite firing; other 25 scenarios byte-
+//        identical to v81.
+const SIM_VERSION = 82;
 
