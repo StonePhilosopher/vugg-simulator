@@ -11918,6 +11918,114 @@
       "_late_stage_note": "Late supergene — dioptase post-dates malachite/azurite (needs carbonate exhausted), pre-dates only chrysocolla and minor late calcite. propensity:0.7 matches the Tsumeb 2nd-oxidation-zone paragenetic position.",
       "class_color": "#2e7d32"
     },
+    "enargite": {
+      "formula": "Cu3AsS4",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 3,
+      "max_size_cm": 8,
+      "growth_rate_mult": 0.5,
+      "habit_variants": [
+        {
+          "name": "striated_prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "default at moderate-high σ — elongate [001] orthorhombic prisms with diagnostic c-axis striations; the Butte / Quiruvilca / Bisbee primary habit, crystals to 10 cm"
+        },
+        {
+          "name": "pseudo_hexagonal_trilling",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "very high σ (excess > 1.4) — 60° twin on {320}, pseudo-hexagonal star outline. The diagnostic enargite twin."
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.55,
+          "void_reach": 0.45,
+          "vector": "equant",
+          "trigger": "lower σ — {001} tabular tablets, iron-black metallic"
+        },
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.85,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "lowest σ / ore-mode — compact massive granular, the bulk-ore texture"
+        }
+      ],
+      "class": "sulfide",
+      "description": "Cu₃AsS₄ — orthorhombic high-sulfidation Cu-As-S sulfosalt, the primary Cu mineral at Butte MT, Chuquicamata Chile, Bisbee AZ (Sacramento-Lavender Pit), Tsumeb upper sulfide zone, Lepanto Philippines, El Indio Chile, Goldfield NV, Quiruvilca Peru. Hardness 3, density 4.46 g/cm³, perfect {110} prismatic cleavage (THE field discriminator from tennantite — tennantite has no cleavage). Steel-gray to iron-black with bright metallic luster on fresh fracture; tarnishes dull. Diagnostic 60° twin on {320} produces pseudo-hexagonal trilling outlines. The defining environment is HIGH-SULFIDATION: acidic (pH 1-3), advanced argillic alteration assemblage (pyrophyllite, alunite, kaolinite, dickite, native sulfur) where SO₂ disproportionation drives both the acidity and the high f(S₂). Below ~320°C the same composition forms luzonite (tetragonal I-42m) — they're polymorphs, not a solid-solution series. The simulator engine fires the same supersaturation logic across the full T range but flags the polymorph for narrative. Supergene oxidation releases a large As budget (the AMD As-load signature of Butte/Bisbee/Chuquicamata) plus brochantite + cuprite + chalcocite + scorodite. Field discriminator from tennantite: metallic luster + perfect prismatic cleavage + striations + darker color + larger crystals; tennantite is submetallic, no cleavage, equant tetrahedral crystals, with cherry-red thin-edge transmission. Refs: research dossier 2026-05; Einaudi/Hedenquist/Inan 2003 SEG SP10:285-313 (the canonical f(S₂)-T sulfidation diagram); Sack & Loucks 1985 Am. Min. 70:1270-1289; Brimhall 1979,1980 (Butte paragenesis); Posfai & Buseck 1998 (enargite/luzonite phase relations); Anthony et al. Handbook of Mineralogy.",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        200,
+        500
+      ],
+      "T_optimum_C": [
+        250,
+        400
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Cu": 20,
+        "As": 5,
+        "S": 100
+      },
+      "_ingredients_note": "v94 (2026-05-19): Cu ≥ 20, As ≥ 5, S ≥ 100. CRITICAL: enargite is the HIGH-SULFIDATION endmember of the Cu-As-S system (Einaudi/Hedenquist/Inan 2003). Discriminator from tennantite: pH < 4.5 AND sulfidation_proxy = log10(S+1) - pH > 0.5. Both gates must trip for enargite to fire; otherwise tennantite (intermediate-sulfidation, pH 3-7) wins. The simulator lacks f(S₂) tracking, so pH + total S serves as the proxy — high S + low pH correlates with the SO₂ disproportionation environment that defines high-sulfidation Cu deposits. Polymorph: T ≥ 320°C → enargite (orthorhombic); T < 320°C → luzonite (tetragonal) at the same composition. As(III) consumed via arseniteAvailablePpm (matches the v92 As-state-split helper — enargite uses As(III) in [AsS₃]³⁻ groups, not arsenate As(V)).",
+      "trace_ingredients": {
+        "Sb": "trace 0-10% substitution toward famatinite (Cu₃SbS₄), the Sb-isostructural analog; high Sb routes to famatinite instead",
+        "Fe": "trace 0-5% substitution"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": "Oxidative dissolution above O₂ > 1.0 (supergene): Cu₃AsS₄ + O₂ + H₂O → Cu²⁺ + AsO₄³⁻ + SO₄²⁻ + H⁺. Releases the big AMD As budget — feeds brochantite/antlerite (Cu sulfate), cuprite/chalcocite (Cu enrichment blanket), scorodite (Fe-AsO₄), and acidifies local pore water. The Butte / Chuquicamata acid mine drainage signature.",
+      "thermal_decomp_products": {
+        "Cu": "as Cu²⁺ → brochantite Cu₄(SO₄)(OH)₆ in sulfate-rich supergene, or chalcocite Cu₂S in enrichment blanket",
+        "As": "as AsO₄³⁻ → scorodite FeAsO₄·2H₂O if Fe available, else olivenite/conichalcite",
+        "S": "as SO₄²⁻ → drives gypsum + brochantite formation downstream",
+        "acid": "H⁺ release acidifies local pore water — the AMD signature"
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": "Cu²⁺",
+        "status": "Non-fluorescent — Cu²⁺ + opaque metallic sulfide. No characteristic emission."
+      },
+      "twin_laws": [
+        {
+          "name": "enargite_320",
+          "composition_plane": "{320}",
+          "twin_axis": "[001]",
+          "probability": 0.30,
+          "trigger": "60° trilling on {320} — the diagnostic enargite/luzonite twin, pseudo-hexagonal outline. Fires at excess > 1.4."
+        }
+      ],
+      "acid_dissolution": null,
+      "habit": "striated_prismatic",
+      "color_rules": {
+        "iron_black": {
+          "default": true,
+          "trigger": "default — steel-gray to iron-black with bright metallic luster on fresh fracture"
+        },
+        "dark_tarnish": {
+          "trigger": "exposed to air — tarnishes dull, develops brown-violet film"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v94 (2026-05-19). Closes the high-sulfidation Cu-As-S endmember — Bisbee has documented primary enargite (Sacramento-Lavender Pit), and supergene_oxidation (Tsumeb-style) has enargite in the upper sulfide zone. The discriminator from tennantite via pH + sulfidation proxy is the load-bearing mechanic; per Einaudi/Hedenquist/Inan 2003. Polymorph dispatch (enargite ≥ 320°C / luzonite < 320°C) per Posfai & Buseck 1998. Substrate priority: pyrite > chalcopyrite > vug wall. RNG-cascade guard via sigma < 1.0 early-out in nucleation.",
+      "late_stage_propensity": 0.15,
+      "_late_stage_note": "Early-to-middle primary stage in high-sulfidation Cu systems. Contemporaneous with pyrite + alunite + native sulfur + covellite. Followed by lower-T overprint with tennantite + chalcocite + bornite when f(S₂) drops. propensity:0.15 matches its position as one of the earliest primary sulfides.",
+      "class_color": "#3d3d3d"
+    },
     "shattuckite": {
       "formula": "Cu5(SiO3)4(OH)2",
       "nucleation_sigma": 1.2,

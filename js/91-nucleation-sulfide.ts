@@ -413,6 +413,27 @@ function _nuc_covellite(sim) {
   // Anglesite nucleation — Pb + oxidized S + O₂ (supergene).
 }
 
+// v94 (2026-05-19): enargite — Cu₃AsS₄ high-sulfidation primary Cu-As-S.
+// Distinguishes from tennantite via pH + sulfidation-state proxy in the
+// supersat engine. Substrate priority: pyrite (primary, same paragenetic
+// stage) > chalcopyrite (lower-sulfidation neighbor) > vug wall.
+// RNG-cascade guard: early-out if sigma < 1.0 BEFORE substrate picks.
+function _nuc_enargite(sim) {
+  const sigma = sim.conditions.supersaturation_enargite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('enargite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'enargite' && c.active);
+  if (existing.length) return;  // primary stage — one nucleation per phase
+  let pos = 'vug wall';
+  const active_py = sim.crystals.filter(c => c.mineral === 'pyrite' && c.active);
+  const active_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.active);
+  if (active_py.length && rng.random() < 0.50) pos = `on pyrite #${active_py[0].crystal_id}`;
+  else if (active_cp.length && rng.random() < 0.35) pos = `on chalcopyrite #${active_cp[0].crystal_id}`;
+  const c = sim.nucleate('enargite', pos, sigma);
+  const polymorph_label = sim.conditions.temperature >= 320 ? 'enargite' : 'luzonite';
+  sim.log.push(`  ✦ NUCLEATION: ⬛ Enargite #${c.crystal_id} (${polymorph_label}) on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — high-sulfidation primary Cu-As-S`);
+}
+
 function _nucleateClass_sulfide(sim) {
   _nuc_sphalerite(sim);
   _nuc_wurtzite(sim);
@@ -421,6 +442,7 @@ function _nucleateClass_sulfide(sim) {
   _nuc_chalcopyrite(sim);
   _nuc_tetrahedrite(sim);
   _nuc_tennantite(sim);
+  _nuc_enargite(sim);
   _nuc_arsenopyrite(sim);
   _nuc_galena(sim);
   _nuc_molybdenite(sim);

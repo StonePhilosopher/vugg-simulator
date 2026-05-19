@@ -951,6 +951,71 @@ function grow_tetrahedrite(crystal, conditions, step) {
   });
 }
 
+function grow_enargite(crystal, conditions, step) {
+  // Cu₃AsS₄ — orthorhombic high-sulfidation Cu-As-S sulfosalt. Steel-gray
+  // to iron-black with bright metallic luster on fresh fracture. Perfect
+  // {110} prismatic cleavage. Characteristic c-axis striations on prisms.
+  // Below ~320°C the same composition forms luzonite (tetragonal); the
+  // engine flags this regime via _polymorph for narrative. Per research
+  // dossier 2026-05; Einaudi/Hedenquist/Inan 2003.
+  const sigma = conditions.supersaturation_enargite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 1.0) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.1);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative dissolution — Cu²⁺ + AsO₄³⁻ + SO₄²⁻ + H⁺ released (the big AMD As budget; brochantite/scorodite supergene cascade follows)`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 4.0 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+
+  // Polymorph dispatch: enargite > 320°C, luzonite < 320°C (Posfai &
+  // Buseck 1998). Same composition, different symmetry.
+  const polymorph = conditions.temperature >= 320 ? 'enargite' : 'luzonite';
+  crystal._polymorph = polymorph;
+  if (polymorph === 'luzonite') crystal.mineral_display = 'luzonite';
+
+  // Habit dispatch. Striated prismatic at moderate σ is the textbook
+  // form (Butte / Quiruvilca); 60° trillings at high σ; tabular at low σ;
+  // bladed in some deposits.
+  if (excess > 1.4 && rng.random() < 0.30) {
+    crystal.habit = 'pseudo_hexagonal_trilling';
+    crystal.dominant_forms = ['60° trilling on {320}', 'striated prismatic faces', 'pseudo-hexagonal outline'];
+    crystal.twinned = true;
+    crystal.twin_law = '{320}';
+  } else if (excess > 0.8) {
+    crystal.habit = 'striated_prismatic';
+    crystal.dominant_forms = ['{110} prism', 'c-axis striations', 'elongate [001]'];
+  } else if (excess > 0.3) {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['{001} tabular', 'iron-black metallic'];
+  } else {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['compact massive ore', 'steel-gray metallic'];
+  }
+  const note = (polymorph === 'luzonite'
+    ? `luzonite (tetragonal < 320°C polymorph) — Cu₃AsS₄, ${crystal.habit}; will not invert to enargite kinetically at low T`
+    : `enargite (orthorhombic > 320°C) — Cu₃AsS₄, ${crystal.habit}; high-sulfidation primary Cu (S=${conditions.fluid.S.toFixed(0)}, pH=${conditions.fluid.pH.toFixed(1)})`);
+
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.030, 0);
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.040, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.02,
+    trace_Sb: conditions.fluid.Sb * 0.05,  // famatinite-end substitution
+    note
+  });
+}
+
 function grow_tennantite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_tennantite();
   if (sigma < 1.0) {

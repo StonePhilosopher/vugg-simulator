@@ -3065,5 +3065,52 @@
 //         Tests 583 → 600 (+17). Calibration drift on bisbee +
 //         supergene_oxidation only (Cu-Si fluids fire the new engines);
 //         other 22 scenarios byte-identical to v92.
-const SIM_VERSION = 93;
+//   v94 — Enargite: Cu₃AsS₄ high-sulfidation primary Cu-As-S sulfosalt
+//         (2026-05-19). The Cu-As-S endmember at HIGH f(S₂) and low pH
+//         — Butte MT, Chuquicamata Chile, Bisbee AZ primary, Tsumeb
+//         upper sulfide, Lepanto, El Indio, Goldfield, Quiruvilca.
+//
+//         Discriminator from tennantite (Cu₁₂As₄S₁₃ intermediate-
+//         sulfidation): the simulator has total S not f(S₂), so the
+//         proxy is sulfidation_proxy = log10(S+1) - pH. Combined with
+//         pH < 4.5, enargite fires in the high-sulfidation field;
+//         tennantite occupies pH 3-7 with proxy 0.5-1.5.
+//
+//         Polymorph dispatch: enargite (orthorhombic Pnm2₁) ≥ 320°C,
+//         luzonite (tetragonal I-42m) < 320°C — same Cu₃AsS₄
+//         composition, different symmetry (Posfai & Buseck 1998). The
+//         engine fires uniformly; grow_enargite sets crystal._polymorph
+//         + mineral_display = 'luzonite' below the inversion T.
+//
+//         Habit dispatch:
+//           striated_prismatic     — default, c-axis striations + {110}
+//                                    cleavage, Butte/Quiruvilca primary
+//           pseudo_hexagonal_trilling — excess > 1.4, 60° twin on {320}
+//           tabular                — lower σ {001} tablets
+//           massive_granular       — ore mode
+//
+//         Uses arseniteAvailablePpm (v92 As-state helper) — enargite
+//         carries As(III) in [AsS₃]³⁻ groups, not arsenate As(V).
+//
+//         Substrate priority: pyrite > chalcopyrite > vug wall.
+//         RNG-cascade guard via sigma < 1.0 early-out.
+//
+//         Supergene oxidation releases big As + acid budget:
+//           Cu₃AsS₄ + O₂ + H₂O → Cu²⁺ + AsO₄³⁻ + SO₄²⁻ + H⁺
+//         — the Butte/Chuquicamata acid mine drainage As signature.
+//
+//         References:
+//           * Einaudi M.T., Hedenquist J.W., Inan E.E. (2003)
+//             "Sulfidation state of fluids in active and extinct
+//             hydrothermal systems." SEG Special Publication 10:
+//             285-313. THE canonical f(S₂)-T sulfidation diagram.
+//           * Sack R.O. & Loucks R.R. (1985) "Thermodynamic properties
+//             of tetrahedrite-tennantites." Am. Min. 70:1270-1289.
+//           * Posfai M. & Buseck P.R. (1998) — enargite/luzonite phase
+//             relations.
+//           * Brimhall G.H. (1979, 1980) — Butte primary stage paragenesis.
+//
+//         Calibration drift: TBD per baseline regen.
+//         Coverage 105 live → 106 live (+1 mineral); 25 paramorph-only.
+const SIM_VERSION = 94;
 

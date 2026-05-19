@@ -739,4 +739,49 @@ Object.assign(VugConditions.prototype, {
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'hawleyite');
     return Math.max(sigma, 0);
   },
+
+  // v94 (2026-05-19): enargite — Cu₃AsS₄ orthorhombic high-sulfidation
+  // Cu-As-S sulfosalt. Type-locality and dominant primary Cu mineral at
+  // Butte MT, Chuquicamata Chile, Bisbee AZ, Tsumeb upper sulfide zone,
+  // Lepanto Philippines, El Indio Chile, Goldfield NV.
+  //
+  // CRITICAL discriminator from tennantite (Cu₁₂As₄S₁₃, intermediate-
+  // sulfidation): enargite needs HIGHER f(S₂) AND LOWER pH (Einaudi,
+  // Hedenquist & Inan 2003 — sulfidation-state diagram). The simulator
+  // has total S only, not f(S₂), so the proxy is:
+  //
+  //     sulfidation_proxy = log10(S_ppm + 1) - pH
+  //
+  // High-sulfidation (enargite): proxy > 1.5, pH < 4.5
+  //   (e.g. S=1000, pH=2.5 → proxy=0.5 → STILL borderline; needs both
+  //    high S AND low pH simultaneously, matching the SO₂ disproportion-
+  //    ation environment that drives Butte-style high-sulfidation
+  //    porphyry-related Cu).
+  // Intermediate-sulfidation (tennantite): proxy 0.5-1.5, pH 3-7.
+  //
+  // Refs: research dossier 2026-05-19; Einaudi/Hedenquist/Inan (2003)
+  // SEG Special Publication 10:285-313; Sack & Loucks (1985) Am. Min.
+  // 70:1270-1289; Posfai & Buseck (1998) for enargite/luzonite phase
+  // relations (luzonite is the < 320°C polymorph; the engine fires
+  // enargite across the full T range but flags luzonite-regime growth).
+  supersaturation_enargite() {
+    const as_iii = arseniteAvailablePpm(this.fluid);
+    if (this.fluid.Cu < 20 || as_iii < 5 || this.fluid.S < 100) return 0;
+    if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
+    if (this.fluid.pH > 4.5) return 0;  // high-sulfidation = acidic
+    if (this.temperature < 200 || this.temperature > 500) return 0;
+    // Sulfidation-state proxy: high S + low pH → high f(S₂)
+    const sulfidation_proxy = Math.log10(this.fluid.S + 1) - this.fluid.pH;
+    if (sulfidation_proxy < 0.5) return 0;  // tennantite field instead
+    const product = (this.fluid.Cu / 60.0) * (as_iii / 20.0) * (this.fluid.S / 200.0);
+    let T_factor;
+    if (this.temperature >= 250 && this.temperature <= 400) T_factor = 1.3;
+    else if (this.temperature < 250) T_factor = Math.max(0.4, 1.0 - (250 - this.temperature) / 100);
+    else T_factor = Math.max(0.4, 1.0 - (this.temperature - 400) / 100);
+    // pH sweet spot 1.5-3 (advanced argillic alteration regime)
+    if (this.fluid.pH > 3.0) T_factor *= Math.max(0.3, 1.0 - (this.fluid.pH - 3.0) * 0.5);
+    let sigma = product * T_factor * sulfideRedoxLinearFactor(this.fluid, 1.5);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'enargite');
+    return Math.max(sigma, 0);
+  },
 });

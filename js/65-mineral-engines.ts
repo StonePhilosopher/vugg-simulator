@@ -162,4 +162,11 @@ const MINERAL_ENGINES = {
   // Mrose 1977, Keller 1977).
   dioptase: grow_dioptase,
   shattuckite: grow_shattuckite,
+  // v94 (2026-05-19): Cu₃AsS₄ high-sulfidation primary sulfosalt.
+  // Distinguishes from tennantite via pH + sulfidation-state proxy
+  // (enargite: pH < 4.5, log10(S)-pH > 0.5; tennantite: pH 3-7,
+  // proxy 0.5-1.5). Polymorph dispatch: enargite > 320°C, luzonite
+  // < 320°C (Posfai & Buseck 1998). Refs: Einaudi/Hedenquist/Inan
+  // 2003 SEG SP10; Sack & Loucks 1985 Am. Min. 70:1270.
+  enargite: grow_enargite,
 };
