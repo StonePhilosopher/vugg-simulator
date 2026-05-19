@@ -951,6 +951,196 @@ function grow_tetrahedrite(crystal, conditions, step) {
   });
 }
 
+// v95 (2026-05-19): Diarsenide quartet engines. All share the
+// arsenide-class growth pattern: As-As bonded pairs in marcasite-type
+// structure (Pnnm) for safflorite/rammelsbergite/loellingite; cubic
+// Im-3m for skutterudite's triarsenide. Habit dispatch encodes the
+// rim-zonation paragenesis from Kissin (1992) + Markl et al. (2016):
+// Ni-rich rammelsbergite cores → Co-rich skutterudite/safflorite
+// mantles → Fe-rich loellingite outermost rims as fluid evolves.
+
+function _grow_arsenide_common(crystal, conditions, sigma, rate, mineral) {
+  // Shared mass-balance: As(III) consumed; specific cation per mineral.
+  conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.030, 0);
+  if (mineral === 'skutterudite') {
+    conditions.fluid.Co = Math.max(conditions.fluid.Co - rate * 0.015, 0);
+    if (conditions.fluid.Ni > 0) conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.005, 0);
+  } else if (mineral === 'safflorite') {
+    conditions.fluid.Co = Math.max(conditions.fluid.Co - rate * 0.020, 0);
+    if (conditions.fluid.Fe > 0) conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.005, 0);
+  } else if (mineral === 'rammelsbergite') {
+    conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.020, 0);
+  } else if (mineral === 'loellingite') {
+    conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.025, 0);
+  }
+}
+
+function grow_skutterudite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_skutterudite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 0.5) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.1);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative dissolution — Co²⁺ + AsO₄³⁻ released; feeds erythrite (Co) / annabergite (Ni) supergene bloom`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+  // Habit dispatch: cubic / cubo-octahedral / pyritohedral. Markl
+  // chemistry shows skutterudite as core in Cobalt rosettes when grown
+  // directly on native Bi-Ag.
+  const pos = crystal.position || '';
+  if (pos.includes('native_bismuth') || pos.includes('native_silver')) {
+    crystal.habit = 'rosette_core';
+    crystal.dominant_forms = ['cubo-octahedral core on native Bi-Ag seed', 'iridescent tarnish'];
+  } else if (excess > 1.0) {
+    crystal.habit = 'cubic';
+    crystal.dominant_forms = ['{100} cube', 'iridescent black tarnish'];
+  } else if (excess > 0.5) {
+    crystal.habit = 'cubo_octahedral';
+    crystal.dominant_forms = ['{100} cube + {111} octahedron', 'silver-tin-white'];
+  } else {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['massive granular ("smaltite" variety)'];
+  }
+  _grow_arsenide_common(crystal, conditions, sigma, rate, 'skutterudite');
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `skutterudite (Co,Ni,Fe)As₃ — ${crystal.habit}, deepest+hottest arsenide, X_As ~0.97 (Markl 2016)`
+  });
+}
+
+function grow_safflorite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_safflorite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 0.5) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.1);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative dissolution — Co²⁺ + AsO₄³⁻ released; feeds erythrite crimson bloom`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+  // Habit dispatch: pseudo-orthorhombic prisms, star fivelings on {011},
+  // mantles on rammelsbergite/skutterudite cores.
+  const pos = crystal.position || '';
+  const on_arsenide_core = pos.includes('rammelsbergite') || pos.includes('skutterudite');
+  if (on_arsenide_core) {
+    crystal.habit = 'mantle';
+    crystal.dominant_forms = ['silvery thick rim on Ni-rich core', 'Cobalt-Ontario rosette mantle'];
+  } else if (excess > 1.4 && rng.random() < 0.30) {
+    crystal.habit = 'star_fiveling';
+    crystal.dominant_forms = ['five-pointed star twin on {011}', 'tin-white prismatic'];
+    crystal.twinned = true;
+    crystal.twin_law = '{011} (star fiveling)';
+  } else if (excess > 0.6) {
+    crystal.habit = 'pseudo_orthorhombic_prism';
+    crystal.dominant_forms = ['elongate [010] prisms', '{101}+{310} faces, pseudo-tetragonal outline'];
+  } else {
+    crystal.habit = 'radial_fibrous';
+    crystal.dominant_forms = ['spherical-radiating bowtie', 'silvery anisotropic'];
+  }
+  _grow_arsenide_common(crystal, conditions, sigma, rate, 'safflorite');
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `safflorite (Co,Fe)As₂ — ${crystal.habit}, Co-sink phase, X_Co up to 0.76 (Markl Odenwald)`
+  });
+}
+
+function grow_rammelsbergite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_rammelsbergite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 0.5) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.1);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative dissolution — Ni²⁺ + AsO₄³⁻ released; feeds annabergite apple-green bloom`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+  // Habit dispatch: prismatic [010], commonly massive/fibrous/acicular.
+  // Innermost arsenide in zoned crystals when Ni dominates.
+  if (excess > 1.0) {
+    crystal.habit = 'acicular_spray';
+    crystal.dominant_forms = ['radiating prismatic [010]', 'pinkish-white tin tint'];
+  } else if (excess > 0.5) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['{010} prism', 'pinkish-white anisotropic'];
+  } else {
+    crystal.habit = 'massive_radial';
+    crystal.dominant_forms = ['massive fibrous-radiating', 'pink-white tint'];
+  }
+  _grow_arsenide_common(crystal, conditions, sigma, rate, 'rammelsbergite');
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `rammelsbergite NiAs₂ — ${crystal.habit}, Ni-dominant, pinkish tin-white (the only quartet member with pink cast)`
+  });
+}
+
+function grow_loellingite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_loellingite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 10 && conditions.fluid.O2 > 0.5) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.1);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative dissolution — Fe²⁺ + AsO₄³⁻ released; feeds scorodite (pale-green Fe-arsenate). NO erythrite/annabergite signature (Fe-only).`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.0 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+  // Habit dispatch: prismatic [001] WITH LONGITUDINAL STRIATIONS (the
+  // diagnostic — striations deeper + more regular than arsenopyrite).
+  // Outermost arsenide rim in five-element vein zonation.
+  const pos = crystal.position || '';
+  const on_arsenide = pos.includes('skutterudite') || pos.includes('safflorite') || pos.includes('rammelsbergite');
+  if (on_arsenide) {
+    crystal.habit = 'outermost_rim';
+    crystal.dominant_forms = ['steel-gray rim on Co-Ni arsenide core', 'oscillatory zoning with arsenopyrite possible'];
+  } else if (excess > 1.4) {
+    crystal.habit = 'striated_prism';
+    crystal.dominant_forms = ['{001} prism with deep longitudinal striations', 'steel-gray, doubly terminated'];
+  } else if (excess > 0.6) {
+    crystal.habit = 'radial_spray';
+    crystal.dominant_forms = ['radial divergent sprays', 'steel-gray pyramidal'];
+  } else {
+    crystal.habit = 'massive_dense';
+    crystal.dominant_forms = ['"dense loellingite" massive ore', 'steel-gray'];
+  }
+  _grow_arsenide_common(crystal, conditions, sigma, rate, 'loellingite');
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `loellingite FeAs₂ — ${crystal.habit}, Fe-dominant, steel-gray (the only non-silver quartet member). Below fS₂ boundary; if S rises, flips to arsenopyrite.`
+  });
+}
+
 function grow_enargite(crystal, conditions, step) {
   // Cu₃AsS₄ — orthorhombic high-sulfidation Cu-As-S sulfosalt. Steel-gray
   // to iron-black with bright metallic luster on fresh fracture. Perfect

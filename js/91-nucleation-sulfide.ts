@@ -413,6 +413,87 @@ function _nuc_covellite(sim) {
   // Anglesite nucleation — Pb + oxidized S + O₂ (supergene).
 }
 
+// v95 (2026-05-19): Diarsenide quartet nucleation. The four primary
+// arsenides of the Schneeberg / Jachymov / Cobalt-Ontario / Bou Azzer
+// five-element-vein paragenesis. Substrate priority encodes Kissin
+// (1992) + Markl (2016) zoned-rosette texture:
+//   native_bismuth / native_silver → seed nucleation for skutterudite
+//   rammelsbergite (Ni-rich core) → safflorite (Co mantle)
+//   skutterudite / safflorite → loellingite (Fe-rich rim)
+// All gated on `if (sigma < 1.0) return` before any rng.random()
+// substrate-pick to keep the RNG cascade byte-identical for non-five-
+// element scenarios.
+
+function _nuc_skutterudite(sim) {
+  const sigma = sim.conditions.supersaturation_skutterudite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('skutterudite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'skutterudite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  // Markl: highest X_Ni in skutterudite grown directly on native metals
+  const native_bi = sim.crystals.filter(c => c.mineral === 'native_bismuth' && c.active);
+  const native_ag = sim.crystals.filter(c => c.mineral === 'native_silver' && c.active);
+  const native_as = sim.crystals.filter(c => c.mineral === 'native_arsenic' && c.active);
+  if (native_bi.length && rng.random() < 0.50) pos = `on native_bismuth #${native_bi[0].crystal_id}`;
+  else if (native_ag.length && rng.random() < 0.40) pos = `on native_silver #${native_ag[0].crystal_id}`;
+  else if (native_as.length && rng.random() < 0.35) pos = `on native_arsenic #${native_as[0].crystal_id}`;
+  const c = sim.nucleate('skutterudite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: ⬛ Skutterudite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Co=${sim.conditions.fluid.Co.toFixed(0)}, Ni=${sim.conditions.fluid.Ni.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}) — five-element vein (Co,Ni,Fe)As₃, deepest+hottest arsenide`);
+}
+
+function _nuc_safflorite(sim) {
+  const sigma = sim.conditions.supersaturation_safflorite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('safflorite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'safflorite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  // Safflorite mantles rammelsbergite/skutterudite cores (Cobalt-Ontario)
+  const ramm = sim.crystals.filter(c => c.mineral === 'rammelsbergite' && c.active);
+  const sktd = sim.crystals.filter(c => c.mineral === 'skutterudite' && c.active);
+  const cobaltite = sim.crystals.filter(c => c.mineral === 'cobaltite' && c.active);
+  if (ramm.length && rng.random() < 0.45) pos = `mantling rammelsbergite #${ramm[0].crystal_id}`;
+  else if (sktd.length && rng.random() < 0.45) pos = `mantling skutterudite #${sktd[0].crystal_id}`;
+  else if (cobaltite.length && rng.random() < 0.30) pos = `alongside cobaltite #${cobaltite[0].crystal_id}`;
+  const c = sim.nucleate('safflorite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: ⬜ Safflorite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Co=${sim.conditions.fluid.Co.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}) — five-element vein (Co,Fe)As₂, star-twin habit`);
+}
+
+function _nuc_rammelsbergite(sim) {
+  const sigma = sim.conditions.supersaturation_rammelsbergite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('rammelsbergite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'rammelsbergite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  // Rammelsbergite: innermost arsenide when Ni dominates fluid
+  const nickeline = sim.crystals.filter(c => c.mineral === 'nickeline' && c.active);
+  const native_bi = sim.crystals.filter(c => c.mineral === 'native_bismuth' && c.active);
+  if (nickeline.length && rng.random() < 0.55) pos = `on nickeline #${nickeline[0].crystal_id}`;
+  else if (native_bi.length && rng.random() < 0.35) pos = `on native_bismuth #${native_bi[0].crystal_id}`;
+  const c = sim.nucleate('rammelsbergite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🌸 Rammelsbergite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ni=${sim.conditions.fluid.Ni.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}) — five-element vein NiAs₂, pinkish-white`);
+}
+
+function _nuc_loellingite(sim) {
+  const sigma = sim.conditions.supersaturation_loellingite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('loellingite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'loellingite' && c.active);
+  if (existing.length >= 2) return;
+  let pos = 'vug wall';
+  // Loellingite: outermost arsenide rim, OR first on Fe-bearing wall
+  const arsenopy = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
+  const sktd = sim.crystals.filter(c => c.mineral === 'skutterudite' && c.active);
+  const saff = sim.crystals.filter(c => c.mineral === 'safflorite' && c.active);
+  if (sktd.length && rng.random() < 0.40) pos = `rim on skutterudite #${sktd[0].crystal_id}`;
+  else if (saff.length && rng.random() < 0.35) pos = `rim on safflorite #${saff[0].crystal_id}`;
+  else if (arsenopy.length && rng.random() < 0.40) pos = `intergrown with arsenopyrite #${arsenopy[0].crystal_id}`;
+  const c = sim.nucleate('loellingite', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: 🔘 Loellingite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(2)}) — five-element vein FeAs₂, steel-gray outermost rim`);
+}
+
 // v94 (2026-05-19): enargite — Cu₃AsS₄ high-sulfidation primary Cu-As-S.
 // Distinguishes from tennantite via pH + sulfidation-state proxy in the
 // supersat engine. Substrate priority: pyrite (primary, same paragenetic
@@ -443,6 +524,13 @@ function _nucleateClass_sulfide(sim) {
   _nuc_tetrahedrite(sim);
   _nuc_tennantite(sim);
   _nuc_enargite(sim);
+  // v95 diarsenide quartet — order matters: rammelsbergite (Ni-rich
+  // innermost) → skutterudite (Co-Ni core on natives) → safflorite
+  // (Co mantle on Ni cores) → loellingite (Fe-rich outermost rim)
+  _nuc_rammelsbergite(sim);
+  _nuc_skutterudite(sim);
+  _nuc_safflorite(sim);
+  _nuc_loellingite(sim);
   _nuc_arsenopyrite(sim);
   _nuc_galena(sim);
   _nuc_molybdenite(sim);

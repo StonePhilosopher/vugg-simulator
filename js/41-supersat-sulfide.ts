@@ -764,6 +764,128 @@ Object.assign(VugConditions.prototype, {
   // 70:1270-1289; Posfai & Buseck (1998) for enargite/luzonite phase
   // relations (luzonite is the < 320°C polymorph; the engine fires
   // enargite across the full T range but flags luzonite-regime growth).
+  // v95 (2026-05-19): Diarsenide quartet — the five-element vein primary
+  // arsenide stage. Schneeberg/Jachymov canonical, Cobalt-Ontario,
+  // Bou Azzer, Andreasberg, Black Hawk NM. Defined by Kissin (1992
+  // Geosci. Canada 19:113) as the Ni-Co-As-Ag-Bi association where rapid
+  // reduction (CH4/graphite/Fe2+ wall-rock contact) of an oxidized
+  // As(III)-bearing brine drives precipitation far from equilibrium
+  // (Markl et al. 2016 Min. Dep. 51:703 — the "natural fracking" model).
+  //
+  // All four use:
+  //   * arseniteAvailablePpm (As(III), the arsenide oxidation state)
+  //   * sulfideRedoxAnoxic gate — REDUCING, sulfide-poor regime
+  //   * As >> S gate (X_As > 0.95 in solid; in fluid: As > 5x S)
+  //   * pH 5.5-7 carbonate-buffered
+  //
+  // Discriminator gates per mineral (dominant metal + T-range):
+  //   skutterudite    (Co,Ni,Fe)As3   T 280-500 highest, deepest Co-Ni
+  //   rammelsbergite  NiAs2           T 250-400 Ni-dominant, pink tint
+  //   safflorite      (Co,Fe)As2      T 200-350 Co-dominant, star-twins
+  //   loellingite     FeAs2           T 150-450 Fe-dominant, widest range
+  //
+  // Refs: Kissin 1992, Markl et al. 2016 (Odenwald), Ondrus et al. 2003
+  // (Jachymov), Radcliffe & Berry 1968 Am. Min. 53:1856 (safflorite-
+  // loellingite solid solution), Handbook of Mineralogy.
+
+  supersaturation_skutterudite() {
+    // (Co,Ni,Fe)As3 — cubic Im-3m, triarsenide stoichiometry demands
+    // the HIGHEST As activity of any phase here. Forms FIRST in zoned
+    // arsenide rosettes on native Bi-Ag dendrites. Cobalt-Canada
+    // chemistry shows X_As = 0.96-0.99 (Markl et al. 2016).
+    const as_iii = arseniteAvailablePpm(this.fluid);
+    if (this.fluid.Co < 5 || as_iii < 30) return 0;
+    if (this.fluid.S > 5) return 0;  // No sulfur tolerance
+    if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;  // VERY reducing
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    if (this.temperature < 280 || this.temperature > 500) return 0;
+    const co_f  = Math.min(this.fluid.Co / 50.0, 2.5);
+    const as_f  = Math.min(as_iii / 80.0, 2.0);
+    let sigma = co_f * as_f;
+    // T sweet spot 320-420
+    const T = this.temperature;
+    if (T >= 320 && T <= 420) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(T - 370) / 100);
+    // Ni co-incorporation: Ni enables triarsenide stoichiometry
+    if (this.fluid.Ni > 5) sigma *= 1.1;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'skutterudite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_safflorite() {
+    // (Co,Fe)As2 — orthorhombic Pnnm (loellingite group), star-twin on
+    // {011} fivelings. Mid-T member, tolerates a few wt% S in solid.
+    // The Co-sink phase when residual fluid has moderate As after
+    // skutterudite has crystallized.
+    const as_iii = arseniteAvailablePpm(this.fluid);
+    if (this.fluid.Co < 5 || as_iii < 15) return 0;
+    if (this.fluid.S > 15) return 0;  // ~0.9 wt% S in solid tolerance
+    if (!sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    if (this.temperature < 200 || this.temperature > 380) return 0;
+    const co_f = Math.min(this.fluid.Co / 40.0, 2.5);
+    const as_f = Math.min(as_iii / 40.0, 2.0);
+    let sigma = co_f * as_f;
+    // T sweet spot 230-320
+    const T = this.temperature;
+    if (T >= 230 && T <= 320) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(T - 275) / 80);
+    // Fe substitution: safflorite-loellingite solid solution
+    if (this.fluid.Fe > 20) sigma *= 1.1;
+    // Mantle position — discount if NO skutterudite/rammelsbergite-
+    // friendly fluid (i.e., needs depleted-Ni residual after first
+    // arsenide pulse). Approximated by Co/Ni ratio.
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'safflorite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_rammelsbergite() {
+    // NiAs2 — orthorhombic Pnnm, Ni-dominant diarsenide. Pink-tinted
+    // tin-white. Up to ~3 wt% S tolerance before flipping to
+    // gersdorffite (NiAsS, not in catalog).
+    const as_iii = arseniteAvailablePpm(this.fluid);
+    if (this.fluid.Ni < 5 || as_iii < 15) return 0;
+    if (this.fluid.S > 20) return 0;
+    if (!sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    if (this.temperature < 250 || this.temperature > 420) return 0;
+    const ni_f = Math.min(this.fluid.Ni / 40.0, 2.5);
+    const as_f = Math.min(as_iii / 40.0, 2.0);
+    let sigma = ni_f * as_f;
+    // T sweet spot 280-380
+    const T = this.temperature;
+    if (T >= 280 && T <= 380) sigma *= 1.3;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(T - 330) / 80);
+    // Suppress when Co > Ni (safflorite or skutterudite wins)
+    if (this.fluid.Co > this.fluid.Ni) sigma *= 0.5;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'rammelsbergite');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_loellingite() {
+    // FeAs2 — orthorhombic Pnnm (the namesake of the loellingite group),
+    // Fe-dominant diarsenide. Widest T range of the quartet (150-450°C).
+    // CRITICAL: at fS2 > ~10^-12 atm, flips to arsenopyrite FeAsS
+    // (Kretschmar & Scott 1976). The simulator's S < 1 gate is the
+    // proxy for "below the loellingite-arsenopyrite boundary."
+    const as_iii = arseniteAvailablePpm(this.fluid);
+    if (this.fluid.Fe < 10 || as_iii < 15) return 0;
+    if (this.fluid.S > 1) return 0;  // Sharp arsenopyrite boundary
+    if (!sulfideRedoxAnoxic(this.fluid, 1.2)) return 0;
+    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    if (this.temperature < 150 || this.temperature > 450) return 0;
+    const fe_f = Math.min(this.fluid.Fe / 50.0, 2.0);
+    const as_f = Math.min(as_iii / 40.0, 2.0);
+    let sigma = fe_f * as_f;
+    // T sweet spot 200-300 in five-element-vein context, but engine
+    // accepts the full 150-450 range with smooth attenuation
+    const T = this.temperature;
+    if (T >= 200 && T <= 350) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(T - 275) / 150);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'loellingite');
+    return Math.max(sigma, 0);
+  },
+
   supersaturation_enargite() {
     const as_iii = arseniteAvailablePpm(this.fluid);
     if (this.fluid.Cu < 20 || as_iii < 5 || this.fluid.S < 100) return 0;

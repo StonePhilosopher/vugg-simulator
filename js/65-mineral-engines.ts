@@ -169,4 +169,20 @@ const MINERAL_ENGINES = {
   // < 320°C (Posfai & Buseck 1998). Refs: Einaudi/Hedenquist/Inan
   // 2003 SEG SP10; Sack & Loucks 1985 Am. Min. 70:1270.
   enargite: grow_enargite,
+  // v95 (2026-05-19): Diarsenide quartet — the five-element vein
+  // primary arsenide stage. Schneeberg / Jachymov / Cobalt-Ontario /
+  // Bou Azzer canonical. Each fires in a distinct T + dominant-metal
+  // window per the Kissin (1992) + Markl et al. (2016) Co-Ni-Fe
+  // fractionation paragenesis:
+  //   skutterudite   (Co,Ni,Fe)As₃  T 280-500 highest, on native Bi-Ag
+  //   safflorite     (Co,Fe)As₂     T 200-380 mantles, star-twin
+  //   rammelsbergite NiAs₂          T 250-420 Ni-dominant, pink tint
+  //   loellingite    FeAs₂          T 150-450 Fe-dominant, outermost rim
+  // All require As >> S (proxy for X_As > 0.95) and reducing.
+  // Loellingite has the sharpest S gate (S < 1) — above that, flips
+  // to arsenopyrite (Kretschmar & Scott 1976 Can. Min. 14:364).
+  skutterudite: grow_skutterudite,
+  safflorite: grow_safflorite,
+  rammelsbergite: grow_rammelsbergite,
+  loellingite: grow_loellingite,
 };

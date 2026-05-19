@@ -3112,5 +3112,88 @@
 //
 //         Calibration drift: TBD per baseline regen.
 //         Coverage 105 live → 106 live (+1 mineral); 25 paramorph-only.
-const SIM_VERSION = 94;
+//   v95 — Diarsenide quartet: skutterudite + safflorite + rammelsbergite
+//         + löllingite (2026-05-19). Closes the BIG Schneeberg gap —
+//         the simulator's primary arsenide stage previously had only
+//         cobaltite + nickeline + arsenopyrite + native_arsenic (4 of
+//         the 10+ canonical phases). The five-element vein arsenide
+//         assemblage is now complete enough to represent the actual
+//         Schneeberg / Jachymov / Cobalt-Ontario / Bou Azzer geology.
+//
+//         All four use arseniteAvailablePpm (v92 As-state helper)
+//         + sulfideRedoxAnoxic gate + As >> S gate. Discriminator per
+//         mineral:
+//                          T range    dominant metal    S tolerance
+//           skutterudite   280-500    Co (with Ni,Fe)   < 5 ppm
+//           safflorite     200-380    Co (with Fe)      < 15 ppm
+//           rammelsbergite 250-420    Ni (excludes Fe)  < 20 ppm
+//           loellingite    150-450    Fe                < 1 ppm
+//
+//         Löllingite has the sharpest S gate (S < 1) — this encodes the
+//         Kretschmar & Scott (1976) fS₂ phase boundary with arsenopyrite.
+//         Above the boundary the system flips to arsenopyrite (FeAsS);
+//         below, löllingite (FeAs₂) wins.
+//
+//         Substrate priority encodes Markl (2016) zoned-rosette texture:
+//           native_bismuth/silver → skutterudite cores (Markl: highest
+//             X_Ni in skutterudite grown directly on native metals)
+//           nickeline → rammelsbergite innermost rim
+//           rammelsbergite + skutterudite → safflorite mantle
+//           skutterudite + safflorite → loellingite outermost rim
+//           arsenopyrite → loellingite oscillatory intergrowth (fS₂
+//             fluctuation signature)
+//
+//         Color/tarnish discriminator (research dossier 2026-05):
+//           skutterudite:    tin-white → IRIDESCENT-black tarnish
+//           safflorite:      tin-white → dull gray tarnish
+//           rammelsbergite:  PINKISH-WHITE (the only pink-cast member)
+//           loellingite:     STEEL-GRAY (the only non-silvery member)
+//
+//         Habit dispatch:
+//           skutterudite:   cubic / cubo_octahedral / rosette_core (on
+//                           native Bi-Ag) / massive_granular (smaltite)
+//           safflorite:     pseudo_orthorhombic_prism / star_fiveling
+//                           (excess > 1.4, {011} 5-pointed star) /
+//                           mantle (on Ni-arsenide cores) / radial
+//           rammelsbergite: acicular_spray / prismatic / massive_radial
+//           loellingite:    striated_prism (DEEP {001} striations —
+//                           DEEPER than arsenopyrite's, diagnostic) /
+//                           radial_spray / outermost_rim / massive_dense
+//
+//         Supergene fingerprint (the field discriminator at outcrop):
+//           skutterudite/safflorite → erythrite (crimson Co bloom)
+//           skutterudite/rammelsbergite → annabergite (apple-green Ni)
+//           loellingite → scorodite (pale green Fe-arsenate; NO bloom)
+//
+//         All four nucleation functions use the sigma < 1.0 early-out
+//         RNG-cascade guard (matches v93/v94 pattern). No drift in
+//         non-five-element-vein scenarios.
+//
+//         References (research dossier 2026-05-19):
+//           * Kissin S.A. (1992) "Five-element (Ni-Co-As-Ag-Bi) Veins."
+//             Geosci. Canada 19(4):113-124. The canonical stage
+//             definitions + As/S threshold framing.
+//           * Markl G., Burisch M., Neumann U. (2016) "Methane and the
+//             origin of five-element veins (Odenwald)." Min. Dep.
+//             51:703-718. Th 265-292°C, 27 wt% Na-Ca-Cl brine, CH₄
+//             reductant, X_As 0.96-0.99 for skutterudite, Ni→Co→Fe
+//             rim zonation. The 'natural fracking' model.
+//           * Ondruš P., Veselovský F., Gabašová A., Hloušek J.,
+//             Šrein V., Vavřín I., Skála R., Sejkora J., Drábek M.
+//             (2003) "Geology and hydrothermal vein system of the
+//             Jáchymov ore district." J. Geosci. 48:157-192. Three-
+//             stage scheme (arsenide → arsenic-sulphide → sulphide).
+//           * Roseboom E.H. (1962) Am. Min. 47:310-327 — skutterudite
+//             stoichiometry.
+//           * Radcliffe D. & Berry L.G. (1968) "The safflorite-
+//             löllingite solid solution series." Am. Min. 53:1856-1881.
+//           * Kretschmar U. & Scott S.D. (1976) "Phase relations
+//             involving arsenopyrite." Can. Min. 14:364. The
+//             löllingite-arsenopyrite fS₂ boundary.
+//           * Anthony, Bideaux, Bladh, Nichols — Handbook of Mineralogy
+//             v.I.
+//
+//         Coverage 106 live → 110 live (+4 minerals); 25 paramorph-only.
+//         Calibration drift: TBD per baseline regen.
+const SIM_VERSION = 95;
 
