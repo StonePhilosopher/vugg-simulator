@@ -187,7 +187,11 @@ Each zone's contribution is locked in at deposition time. `_volume_mm3` is a sin
 
 - **Cave-size resize** of naica/dripstones — wait for Proposal E if pursued (cave-scale runs benefit more from local-fill modeling than the global cap)
 - ~~**Architecture audit follow-ups** from `1541f70`~~ ✓ `c2c12ca` (2026-05-18, v78). All 6 scenarios reassigned to their geologically-correct archetype. Schneeberg gains zeunerite (the literal type locality mineral); porphyry shifts crystal anchors via walls_only bias. Coverage unchanged.
-- **`native_sulfur` cascade-gate** — only remaining structural-pattern dead mineral from the audit, deferred per HANDOFF-CASCADE-GATE-AUDIT §5. Needs a fumarole / Sulphur Bank Mine / Whakaari-type scenario to land first (its `pH > 5` + `metal_sum > 100` gates aren't depleting-species gates like the others; the engine may be correct and the gap is "no canonical scenario fires it").
+- ~~**`native_sulfur` cascade-gate**~~ ✓ closed across BOTH canonical deposit types (2026-05-18):
+  - `799e8ed` (v79) — Sulphur Bank Mine scenario (Lake County, CA). The acid-sulfate hot-spring mode that matched the engine's pre-v80 gates. 4 native_sulfur crystals × 3 seeds in bipyramidal_alpha habit, peak σ 2.49-2.79. 22 pin tests.
+  - `673d179` (v80) — Sicily Solfifera Series (Cianciana / Caltanissetta, Messinian sedimentary BSR). Required engine broadening: monotonic `ph_f = max(0.4, 1.0 - 0.15×pH)` → bimodal `max(ph_acid_peak_2.5, ph_bsr_peak_6.0)`, pH gate `5 → 6.5`. 1-3 native_sulfur crystals × 3 seeds, peak σ 3.48, same bipyramidal_alpha habit. 25 pin tests. **The "real science" path the boss directed — not parameter-forcing the existing engine but teaching it the second mechanism**.
+
+native_sulfur is no longer a structural-pattern dead mineral. Both real-world deposit types are now scientifically anchored and pin-tested.
 - ~~**Engine cleanup**: ~17 sites that explicitly set `crystal.a_width_mm = c_length_mm × N` are now redundant~~ ✓ `6aaf29c` (2026-05-18). Actual count was **56** dead assignments, not 17 — the audit under-counted. Three patterns swept: whole-line (31), inline-if (2), braced one-liner (23) across 9 engine files. Baseline byte-identical pre/post. Closes the engine-cleanup item.
 
 ---
