@@ -34,7 +34,19 @@ function runSeeds(scenarioName: string, mineralName: string, seeds: number[]) {
     const sim = new VugSimulator(conditions, events);
     const steps = defaultSteps ?? 100;
     for (let i = 0; i < steps; i++) sim.run_step();
-    const hits = sim.crystals.filter((c: any) => c.mineral === mineralName);
+    // v85 (2026-05-19): count any crystal that ORIGINATED as the named
+    // mineral, including post-transformation paramorphs. The autunite-
+    // group meta- trio (meta-autunite, metatorbernite, metazeunerite)
+    // converts at-source post-cooling at Schneeberg's still-warm ring
+    // contacts — the type-locality nucleation event happened (the
+    // mineralogical signature is preserved), the lattice just lost
+    // its structural water by run-end. This is the correct geological
+    // signal: museum-drawer torbernite/zeunerite from Schneeberg IS
+    // largely metatorbernite/metazeunerite by the time it reaches a
+    // collector, exactly because of this kind of ring-T pulse.
+    const hits = sim.crystals.filter((c: any) =>
+      c.mineral === mineralName || c.paramorph_origin === mineralName,
+    );
     if (hits.length > 0) {
       everNucleated = true;
       totalCount += hits.length;

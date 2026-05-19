@@ -12728,6 +12728,228 @@
       "class_color": "#e8c640",
       "late_stage_propensity": 0.0,
       "_transformation_only": true
+    },
+    "meta-autunite": {
+      "formula": "Ca(UO2)2(PO4)2·8H2O",
+      "nucleation_sigma": 99.0,
+      "max_nucleation_count": 0,
+      "max_size_cm": 6,
+      "growth_rate_mult": 0.0,
+      "habit_variants": [
+        {
+          "name": "pseudomorph",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "inherited from parent autunite crystal"
+        }
+      ],
+      "class": "phosphate",
+      "description": "Ca(UO₂)₂(PO₄)₂·8H₂O — autunite with three water molecules gone. Tetragonal uranyl phosphate; appears in the simulator only as a paramorph product of autunite, after heat (>80°C) or sustained dry-air exposure drives the irreversible dehydration. External crystal shape is preserved (the square tabular {001} habit, the lemon-yellow color, the field marks all inherited from the parent autunite); the lattice has lost ~27% of its structural water and partially collapsed. Specific gravity slightly higher (3.45 vs autunite's 3.14); luster duller; fluorescence weaker (still present — uranyl chromophore survives the dehydration, just dampened). MOST AUTUNITE SPECIMENS IN MUSEUMS are actually meta-autunite — fresh autunite has typically been on a shelf for years before reaching a collector. The dehydration is irreversible: once water leaves the structure, it doesn't come back, even in 100% humidity. Sources: research/research-autunite.md §Variants 1-2 (boss canonical); Roberts, Ansell, Bonardi 1980 — group structural studies. (Bonazzi et al. — autunite-group dehydration thermodynamics.)",
+      "scenarios": [
+        "schneeberg"
+      ],
+      "T_range_C": [
+        5,
+        200
+      ],
+      "T_optimum_C": [
+        20,
+        80
+      ],
+      "T_behavior": "stable_post_dehydration",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {},
+      "trace_ingredients": {},
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Meta-autunite I (8 H₂O) → meta-autunite II (~3 H₂O) on further heating; >200°C structural collapse.",
+      "thermal_decomp_products": {
+        "Ca": 0.0,
+        "U": 0.0,
+        "P": 0.0
+      },
+      "fluorescence": {
+        "activator": "U",
+        "threshold_ppm": 0,
+        "color": "muted_yellow_green_LW",
+        "quencher": "Fe (Fe²⁺ + Fe³⁺ both suppress uranyl emission); dehydration weakens but does not eliminate fluorescence",
+        "status": "weakened uranyl fluorescence relative to autunite — partial structural collapse dampens but does not extinguish the (UO₂)²⁺ emission. Still visibly green-yellow under LW UV (365nm), just less intense than fresh autunite."
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 4.5,
+        "reaction": "Inherits autunite's acid sensitivity — Ca(UO₂)₂(PO₄)₂·8H₂O + 6H⁺ → Ca²⁺ + 2(UO₂)²⁺ + 2H₃PO₄ + 8H₂O",
+        "products": {
+          "Ca": 0.2,
+          "U": 0.4,
+          "P": 0.3
+        }
+      },
+      "habit": "pseudomorph",
+      "color_rules": {
+        "dull_meta": {
+          "default": true
+        },
+        "pale_yellow": {
+          "trigger": "freshly-dehydrated specimen — partial collapse but still visibly yellow"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new (2026-05-19). Paramorph product of autunite via DEHYDRATION_TRANSITIONS; not a nucleation. Per research-autunite.md §Variants for Game §1. Mirrors the tincalconite/thenardite pattern. No engine path.",
+      "class_color": "#d0c050",
+      "late_stage_propensity": 1.0,
+      "_late_stage_note": "Paramorph after autunite — only ever late by definition (dehydration product). Mirrors tincalconite/thenardite.",
+      "_transformation_only": true
+    },
+    "metatorbernite": {
+      "formula": "Cu(UO2)2(PO4)2·8H2O",
+      "nucleation_sigma": 99.0,
+      "max_nucleation_count": 0,
+      "max_size_cm": 6,
+      "growth_rate_mult": 0.0,
+      "habit_variants": [
+        {
+          "name": "pseudomorph",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "inherited from parent torbernite crystal"
+        }
+      ],
+      "class": "phosphate",
+      "description": "Cu(UO₂)₂(PO₄)₂·8H₂O — torbernite with four water molecules gone. Tetragonal uranyl phosphate; appears in the simulator only as a paramorph product of torbernite, after heat (>75°C) or sustained dry-air exposure drives the irreversible loss of 4 of the 12 structural H₂O. The emerald-green color persists but pales toward apple-green / yellow-green as the lattice collapses; specific gravity rises (3.7 vs torbernite's 3.22); crystals become slightly more friable along the {001} cleavage. Critically: in the Schneeberg / Cornwall museum collections, very few specimens are now fresh torbernite — the trip from a damp mine adit to a dry display case is exactly what triggers the transformation. Like meta-autunite, the conversion is IRREVERSIBLE: even returning a metatorbernite to 100% humidity will not re-hydrate the lattice. Sources: research/research-torbernite.md §Dehydration Transformation (boss canonical 3bfdf4a).",
+      "scenarios": [
+        "schneeberg"
+      ],
+      "T_range_C": [
+        5,
+        200
+      ],
+      "T_optimum_C": [
+        20,
+        80
+      ],
+      "T_behavior": "stable_post_dehydration",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {},
+      "trace_ingredients": {},
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Further heating drives loss of remaining water; >200°C structural collapse to anhydrous Cu uranyl phosphate.",
+      "thermal_decomp_products": {
+        "Cu": 0.0,
+        "U": 0.0,
+        "P": 0.0
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "Inherits torbernite's acid sensitivity — Cu(UO₂)₂(PO₄)₂·8H₂O + 6H⁺ → Cu²⁺ + 2(UO₂)²⁺ + 2H₃PO₄ + 8H₂O",
+        "products": {
+          "Cu": 0.2,
+          "U": 0.4,
+          "P": 0.3
+        }
+      },
+      "habit": "pseudomorph",
+      "color_rules": {
+        "pale_green": {
+          "default": true
+        },
+        "apple_green": {
+          "trigger": "freshly-dehydrated specimen — partial collapse but still bright"
+        },
+        "faded_green": {
+          "trigger": "advanced dehydration — surface bloom"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new (2026-05-19). Paramorph product of torbernite via DEHYDRATION_TRANSITIONS; not a nucleation. Per research-torbernite.md §Dehydration. Non-fluorescent (inherits Cu²⁺ quenching from parent torbernite). No engine path.",
+      "class_color": "#7eb87a",
+      "late_stage_propensity": 1.0,
+      "_late_stage_note": "Paramorph after torbernite — only ever late by definition (dehydration product).",
+      "_transformation_only": true
+    },
+    "metazeunerite": {
+      "formula": "Cu(UO2)2(AsO4)2·8H2O",
+      "nucleation_sigma": 99.0,
+      "max_nucleation_count": 0,
+      "max_size_cm": 6,
+      "growth_rate_mult": 0.0,
+      "habit_variants": [
+        {
+          "name": "pseudomorph",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "inherited from parent zeunerite crystal"
+        }
+      ],
+      "class": "arsenate",
+      "description": "Cu(UO₂)₂(AsO₄)₂·8H₂O — zeunerite with four water molecules gone. Tetragonal uranyl arsenate; the As-anion analog of metatorbernite (the two are isostructural just as the parents are). Appears in the simulator only as a paramorph product of zeunerite, after heat (>75°C) or dry-air exposure drives the irreversible 12→8 H₂O collapse. Color paler than zeunerite's emerald green, trending grass-green or yellow-green; specific gravity rises (3.85 vs zeunerite's ~3.4). Same museum-storage problem as zeunerite — most cabinet specimens labeled 'zeunerite' from Schneeberg, Cornwall, or Wittichen are actually metazeunerite, dehydrated decades ago. Cu²⁺ still quenches the uranyl emission, so non-fluorescent. The Schneeberg cation+anion fork mechanic still applies at nucleation time; only the dehydration follows. Sources: research/research-zeunerite.md §Dehydration Transformation; Pinch & Wilson 1977.",
+      "scenarios": [
+        "schneeberg"
+      ],
+      "T_range_C": [
+        5,
+        200
+      ],
+      "T_optimum_C": [
+        20,
+        80
+      ],
+      "T_behavior": "stable_post_dehydration",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {},
+      "trace_ingredients": {},
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Further heating drives loss of remaining water; >200°C structural collapse to anhydrous Cu uranyl arsenate.",
+      "thermal_decomp_products": {
+        "Cu": 0.0,
+        "U": 0.0,
+        "As": 0.0
+      },
+      "fluorescence": null,
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "Inherits zeunerite's acid sensitivity — Cu(UO₂)₂(AsO₄)₂·8H₂O + 6H⁺ → Cu²⁺ + 2(UO₂)²⁺ + 2H₃AsO₄ + 8H₂O",
+        "products": {
+          "Cu": 0.2,
+          "U": 0.4,
+          "As": 0.3
+        }
+      },
+      "habit": "pseudomorph",
+      "color_rules": {
+        "pale_green": {
+          "default": true
+        },
+        "yellow_green": {
+          "trigger": "advanced dehydration — Cu²⁺ pales without uranyl support"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new (2026-05-19). Paramorph product of zeunerite via DEHYDRATION_TRANSITIONS; not a nucleation. Per research-zeunerite.md §Dehydration. Non-fluorescent (inherits Cu²⁺ quenching from parent zeunerite). No engine path.",
+      "class_color": "#9ec88e",
+      "late_stage_propensity": 1.0,
+      "_late_stage_note": "Paramorph after zeunerite — only ever late by definition (dehydration product).",
+      "_transformation_only": true
     }
   }
 }

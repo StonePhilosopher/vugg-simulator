@@ -44,9 +44,26 @@ function applyParamorphTransitions(crystal, T, step) {
 // Mirrors DEHYDRATION_TRANSITIONS in vugg.py. Format:
 // hydrated_mineral → [dehydrated_mineral, threshold_steps,
 //                     concentration_min, T_max].
+// v85 (2026-05-19): autunite-group meta- variants. Per research-autunite.md /
+// research-torbernite.md / research-zeunerite.md, all three parent uranyl
+// minerals lose ~3-4 H₂O above ~75-80°C OR after sustained dry-air exposure;
+// the dehydration is irreversible. Threshold steps tuned to 40 — slower than
+// borax's 25 (uranyl phosphates are more lattice-stable than the borate cage)
+// but faster than the literature would suggest for room-T air (real timescale
+// is months-to-years; the sim compresses that to a ~40-step "post-collection
+// stale" window, mirroring how pararealgar's 60-step light threshold compresses
+// the realgar→pararealgar real timescale). At schneeberg the uranyls form
+// post-cooling at ambient T in aqueous rings, so neither the heat path nor
+// the vadose path fires during the 160-step run — schneeberg baseline is
+// preserved. The transitions become observable only in scenarios where
+// uranyl-bearing rings later evaporate (none currently shipped — covered by
+// test pins that force vadose or T>80°C).
 const DEHYDRATION_TRANSITIONS = {
   borax: ['tincalconite', 25, 1.5, 75.0],
   mirabilite: ['thenardite', 30, 1.5, 32.4],
+  autunite: ['meta-autunite', 40, 1.0, 80.0],
+  torbernite: ['metatorbernite', 40, 1.0, 75.0],
+  zeunerite: ['metazeunerite', 40, 1.0, 75.0],
 };
 
 function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step) {

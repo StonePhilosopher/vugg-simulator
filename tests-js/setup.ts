@@ -262,6 +262,17 @@ const EXPORTS = [
   'nativeRedoxLinearFactor',
   'nativeRedoxWindow',
   'nativeRedoxTent',
+  // 75-transitions.ts — paramorph + dehydration + light transition tables
+  // and the per-step apply functions. Tests-js/meta-autunite-trio.test.ts
+  // (v85) needs the dehydration entry to drive heat / vadose paths
+  // synthetically; the pararealgar test (v84) drives light transitions
+  // via run_step + wall.is_lit so it doesn't need the explicit hook.
+  'PARAMORPH_TRANSITIONS',
+  'DEHYDRATION_TRANSITIONS',
+  'LIGHT_TRANSITIONS',
+  'applyParamorphTransitions',
+  'applyDehydrationTransitions',
+  'applyLightTransitions',
 ];
 
 let _bundleLoaded = false;
