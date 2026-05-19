@@ -881,7 +881,7 @@
     "supergene_oxidation": {
       "anchor": "Tsumeb mine, Otavi Mountain Land, Namibia. 1st-stage gossan (uppermost supergene zone). One of the most mineralogically diverse deposits ever discovered (~280 species), type locality for germanium.",
       "description": "Cold, oxygenated supergene weathering of a Pb-Zn-Cu sulfide pipe. Pb+Mo→wulfenite, Zn+CO3→smithsonite, Zn+As→adamite, Pb+As+Cl→mimetite, Fe→goethite, Ca+SO4→selenite, Cu+CO3→malachite. The 1st-stage gossan brings the high-Pb-As-Cl uppermost zone with mimetite, anglesite, cerussite, willemite, and Ge-bearing oxidation phases.",
-      "expects_species": ["wulfenite", "smithsonite", "adamite", "mimetite", "malachite", "vanadinite", "cerussite", "selenite"],
+      "expects_species": ["wulfenite", "smithsonite", "adamite", "mimetite", "malachite", "vanadinite", "cerussite", "selenite", "conichalcite", "pharmacolite", "haidingerite"],
       "duration_steps": 200,
       "notes": [
         "Anchor: Tsumeb mine (Otavi Mountain Land, Namibia). Pipe-shaped Pb-Zn-Cu sulfide body in Neoproterozoic dolomite, with three distinct supergene oxidation zones developed during Mesozoic-Cenozoic uplift. Argentiferous (native Ag, proustite, pyrargyrite, argentiferous galena). References: Pinch & Wilson 1977 (canonical Tsumeb monograph), Lombaard et al. 1986 (geology), Melcher 2003 (Ge geochemistry).",
@@ -992,7 +992,7 @@
     "gem_pegmatite": {
       "anchor": "Cruzeiro mine, São José da Safira, Doce Valley, Minas Gerais (Variant A — Brasiliano-age miarolitic gem pegmatite, 700-450 Ma).",
       "description": "Miarolitic cavity in a complex zoned pegmatite. The residual pocket where incompatible elements (Be, B, Li, F) accumulate beyond belief, then cross saturation in cascade — schorl → beryl → spodumene + elbaite → late topaz, with kaolinization of the microcline walls at the end.",
-      "expects_species": ["tourmaline", "spodumene", "topaz", "feldspar", "albite"],
+      "expects_species": ["tourmaline", "spodumene", "topaz", "feldspar", "albite", "lepidolite", "cassiterite"],
       "duration_steps": 230,
       "notes": [
         "Cruzeiro is the type-locality for fine schorl-elbaite tourmaline + smoky quartz pockets, with documented beryl, spodumene, lepidolite, and accessory apatite. Brasiliano-age (Neoproterozoic) pegmatite field cutting Macaúbas Group meta-sediments. Morteani et al. 2002 covers fluid chemistry; Cassedanne (1991) and Proctor (1985) cover the Cruzeiro-specific paragenesis.",
@@ -1245,7 +1245,7 @@
     "radioactive_pegmatite": {
       "anchor": "(generic high-T alkali-granite pocket — not anchored to a specific locality)",
       "description": "High-T pegmatitic fluid + U + Pb. Grows uraninite, smoky quartz (darkened by radiation), feldspar/albite, and late-stage galena from radiogenic Pb.",
-      "expects_species": ["uraninite", "autunite", "quartz", "feldspar"],
+      "expects_species": ["uraninite", "autunite", "quartz", "feldspar", "lepidolite", "cassiterite"],
       "duration_steps": 120,
       "notes": [
         "Generic testing scenario — not anchored to a real locality (per the user's clarification on the audit brief). Pegmatitic fluids are silica-saturated melts with abundant K + Na + Al + U.",
@@ -1317,7 +1317,7 @@
     "schneeberg": {
       "anchor": "Schneeberg, Erzgebirgskreis (Saxony Ore Mountains), Germany — type locality for torbernite (1772), zeunerite (1872), uranospinite (1873), and ten more uranyl arsenate-phosphate species. Walpurgis Flacher vein, Weisser Hirsch Mine.",
       "description": "Schneeberg / Erzgebirge oxidized uranium-pegmatite vein system (Walpurgis Flacher vein, Weisser Hirsch Mine, Saxony — type locality for torbernite, zeunerite, and uranospinite). A U-bearing pegmatite + chalcopyrite + arsenopyrite primary assemblage weathers under meteoric oxidation; the resulting uranyl + Cu + As fluid plates the autunite-group secondaries in two cation phases — Cu-rich first (torbernite emerald greens then zeunerite as As-pulse arrives), then Ca-dominant after Cu is consumed (autunite + uranospinite, the bright LW-UV fluorescent yellows).",
-      "expects_species": ["uraninite", "torbernite", "zeunerite", "autunite", "uranospinite", "native_bismuth", "native_arsenic", "erythrite", "annabergite", "cobaltite", "nickeline"],
+      "expects_species": ["uraninite", "torbernite", "zeunerite", "autunite", "uranospinite", "native_bismuth", "native_arsenic", "erythrite", "annabergite", "cobaltite", "nickeline", "cassiterite", "pharmacolite", "haidingerite"],
       "duration_steps": 160,
       "notes": [
         "The mineralogically richest single ore district in Europe — the Erzgebirge had been mined for silver since the 1100s, then bismuth from the 1500s (the very name 'Bismutum' was coined here), then uranium from the 1800s onward. Most autunite-group species were first described from Schneeberg or its sister deposits (Jáchymov, Annaberg). Pinch & Wilson 1977 monographs are the canonical reference.",

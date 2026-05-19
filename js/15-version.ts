@@ -2890,5 +2890,57 @@
 //            pharmacolite is a band-aid; the principled fix is a
 //            Phase-4-redox-style refactor splitting As³⁺ + As⁵⁺ into
 //            separate fields. Out of scope for v90.
-const SIM_VERSION = 90;
+//   v91 — expects_species lists updated for v85-v90 additions
+//        (2026-05-19). Documentation-only update; no engine, baseline,
+//        or chemistry changes. Closes residual debt from the v85-v90
+//        mineral push: the new minerals were firing in their canonical
+//        scenarios but the scenarios' expects_species lists hadn't
+//        been updated to reflect the additions.
+//
+//        Scenarios + additions (each verified as stable per-seed
+//        nucleation, not transient RNG drift, against the v90 baseline):
+//          gem_pegmatite           +lepidolite, +cassiterite
+//            (the Cruzeiro LCT-pegmatite signature; Cassedanne 1991
+//             documents both at the type locality)
+//          radioactive_pegmatite   +lepidolite, +cassiterite
+//            (Cornwall Sn-U districts; classic LCT + greisen-stage
+//             pair)
+//          schneeberg              +cassiterite, +pharmacolite,
+//                                   +haidingerite
+//            (the Erzgebirge tin heritage + Jáchymov five-element-
+//             vein Ca-arsenate suite per Handbook of Mineralogy)
+//          supergene_oxidation     +conichalcite, +pharmacolite,
+//                                   +haidingerite
+//            (Tsumeb-style Ca-Cu-As supergene; conichalcite is in the
+//             Pinch & Wilson 1977 Tsumeb monograph)
+//
+//        Verified per-seed firing at v90 baseline (seed 42):
+//          gem_pegmatite:           cassiterite=7, lepidolite=3
+//          radioactive_pegmatite:   cassiterite=4, lepidolite=4
+//          schneeberg:              cassiterite=4, haidingerite=1
+//                                   (pharmacolite transformed in-situ
+//                                    to haidingerite per v90 dehydration)
+//          supergene_oxidation:     conichalcite=4, pharmacolite=2,
+//                                   haidingerite=3
+//
+//        Test updates:
+//          * tests-js/lepidolite.test.ts: the v86 stub "gem_pegmatite
+//            expects_species declaration carries lepidolite is
+//            optional (not required)" became "...includes lepidolite
+//            (added v91)". The previous comment documented v86's
+//            transitional state; v91 closes it.
+//
+//        Calibration: ZERO baseline drift. expects_species is a
+//        declarative scenario-spec field; the engine doesn't read it
+//        for nucleation decisions. seed42_v91.json byte-identical to
+//        seed42_v90.json.
+//
+//        This completes the v85-v90 mineral push closure: 6 new
+//        minerals (meta-autunite trio + lepidolite + conichalcite +
+//        pharmacolite + cassiterite + haidingerite), 1 new fluid field
+//        (Sn), 1 mechanic cleanup (pharmacolite thermal-destruction
+//        stub → proper paramorph transformation), 1 documentation
+//        update (expects_species). The four canonical pegmatite +
+//        supergene scenarios now declare their full v90 assemblage.
+const SIM_VERSION = 91;
 

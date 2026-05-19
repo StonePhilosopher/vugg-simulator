@@ -172,12 +172,19 @@ describe('Lepidolite — Li-mica engine (v86)', () => {
     });
   });
 
-  describe('gem_pegmatite expects_species declaration carries lepidolite is optional (not required)', () => {
-    it('lepidolite is firing in gem_pegmatite even without being listed in expects_species', () => {
-      // Cassedanne 1991 documents lepidolite at Cruzeiro but the scenario's
-      // expects_species list focuses on the major species — lepidolite
-      // is documented in scenario notes, not in the strict pin. This test
-      // proves the engine fires regardless, so the v86 addition is real.
+  describe('gem_pegmatite expects_species declaration includes lepidolite (added v91)', () => {
+    it('lepidolite is listed in expects_species', () => {
+      // v91 added lepidolite to gem_pegmatite's expects_species so the
+      // canonical contract for the Cruzeiro scenario now reflects what
+      // the engine actually produces. Cassedanne 1991 documents
+      // lepidolite at Cruzeiro; the v91 addition makes it a pin.
+      const callable = SCENARIOS['gem_pegmatite'];
+      const spec = (callable as any)._json5_spec;
+      expect(spec).toBeTruthy();
+      expect(spec.expects_species).toContain('lepidolite');
+    });
+
+    it('lepidolite fires in gem_pegmatite (matches expects_species pin)', () => {
       const { sim } = runGemPegmatite(42);
       const lep = sim.crystals.filter((c: any) => c.mineral === 'lepidolite');
       expect(lep.length).toBeGreaterThan(0);
