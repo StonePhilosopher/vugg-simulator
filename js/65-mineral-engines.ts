@@ -151,4 +151,15 @@ const MINERAL_ENGINES = {
   // wood tin (<300°C low-T). Cassiterite is inert -- no acid
   // dissolution, no thermal decomposition, no oxidation.
   cassiterite: grow_cassiterite,
+  // v93 (2026-05-19): Cu-silicate pair for Tsumeb / Bisbee supergene.
+  // dioptase: emerald-green, type loc. Altyn-Tyube Kazakhstan, world
+  //   reference Tsumeb 2nd oxidation zone. Forms when carbonate is
+  //   locally exhausted (CO₃ < 50) leaving Cu-Si pore fluid; pH 6.5-8.
+  // shattuckite: deep azure-blue, type loc. Shattuck mine Bisbee
+  //   (Schaller 1915). Replaces malachite/azurite when CO₂ escapes
+  //   vadose vug; higher pH (7.5-9.0) than dioptase.
+  // Per research dossier 2026-05 (Ribbe/Gibbs/Hamil 1977, Evans &
+  // Mrose 1977, Keller 1977).
+  dioptase: grow_dioptase,
+  shattuckite: grow_shattuckite,
 };

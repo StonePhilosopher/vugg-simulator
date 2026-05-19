@@ -288,6 +288,71 @@ Object.assign(VugConditions.prototype, {
   return Math.max(sigma, 0);
 },
 
+  // v93 (2026-05-19): dioptase + shattuckite — Cu-silicates of the
+  // Tsumeb / Bisbee supergene oxidation zone. Both fire when carbonate
+  // has been locally exhausted by prior malachite/azurite precipitation,
+  // leaving residual Cu-Si fluid. The discriminator between them is pH +
+  // Cu:Si stoichiometry: dioptase (1:1) at pH 6.5-8.0, shattuckite (5:4)
+  // at pH 7.5-9.0. Refs: Ribbe/Gibbs/Hamil 1977 (dioptase structure),
+  // Evans & Mrose 1977 Am. Min. 62:491 (Cu-silicate family), Schaller 1915
+  // (shattuckite type description, Shattuck mine Bisbee), Keller 1977
+  // MinRec 8 (Tsumeb paragenesis).
+  supersaturation_dioptase() {
+    // CuSiO₃·H₂O — emerald-green cyclosilicate, Tsumeb world reference
+    // (type loc. Altyn-Tyube, Kazakhstan; Hauy 1797).
+    // Gates: Cu+Si oxidizing low-T, near-neutral, low CO₃ (otherwise
+    // malachite/azurite win), low Cl (otherwise CuCl complexes suppress).
+    if (this.fluid.Cu < 1 || this.fluid.SiO2 < 10) return 0;
+    if (this.fluid.O2 < 1.0) return 0;
+    if (this.temperature < 5 || this.temperature > 120) return 0;
+    if (this.fluid.pH < 6.5 || this.fluid.pH > 8.5) return 0;
+    if (this.fluid.CO3 > 50) return 0;
+    if (this.fluid.Cl > 5000) return 0;
+    const cu_f = Math.min(this.fluid.Cu / 20.0, 2.5);
+    const si_f = Math.min(this.fluid.SiO2 / 60.0, 2.0);
+    let sigma = cu_f * si_f;
+    const pH = this.fluid.pH;
+    if (pH >= 7.0 && pH <= 7.5) sigma *= 1.3;
+    else if (pH < 7.0) sigma *= Math.max(0.4, 1.0 - (7.0 - pH) * 0.8);
+    else sigma *= Math.max(0.4, 1.0 - (pH - 7.5) * 0.8);
+    const T = this.temperature;
+    if (T < 30) sigma *= Math.max(0.5, T / 30.0);
+    else if (T > 80) sigma *= Math.max(0.4, 1.0 - (T - 80) / 60.0);
+    // CO3 inhibition (smooth) — competes with malachite past 20 ppm
+    if (this.fluid.CO3 > 20) sigma *= Math.max(0.3, 1.0 - (this.fluid.CO3 - 20) / 40.0);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'dioptase');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_shattuckite() {
+    // Cu₅(SiO₃)₄(OH)₂ — deep azure-blue inosilicate. Type locality
+    // Shattuck mine, Bisbee, Arizona (Schaller 1915). Replaces malachite
+    // when CO₂ escapes a vadose vug: 5 Cu₂(CO₃)(OH)₂ + 8 SiO₂ →
+    // 2 Cu₅(SiO₃)₄(OH)₂ + 5 CO₂↑ + 3 H₂O. Tighter pH/CO₃ window than
+    // dioptase (higher Cu:Si ratio → needs alkaline OH-rich pore fluid).
+    if (this.fluid.Cu < 5 || this.fluid.SiO2 < 20) return 0;
+    if (this.fluid.O2 < 0.5) return 0;
+    if (this.temperature < 5 || this.temperature > 90) return 0;
+    if (this.fluid.pH < 7.5 || this.fluid.pH > 9.5) return 0;
+    if (this.fluid.CO3 > 30) return 0;
+    if (this.fluid.Cl > 1000) return 0;
+    if (this.fluid.S > 500 && this.fluid.O2 > 0.5) return 0;  // sulfate-rich → brochantite/antlerite competition
+    const cu_f = Math.min(this.fluid.Cu / 30.0, 2.5);
+    const si_f = Math.min(this.fluid.SiO2 / 60.0, 2.0);
+    let sigma = cu_f * si_f;
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 8.5) sigma *= 1.3;
+    else if (pH < 8.0) sigma *= Math.max(0.5, 1.0 - (8.0 - pH) * 0.8);
+    else sigma *= Math.max(0.5, 1.0 - (pH - 8.5) * 0.8);
+    const T = this.temperature;
+    if (T < 25) sigma *= Math.max(0.4, T / 25.0);
+    else if (T > 65) sigma *= Math.max(0.4, 1.0 - (T - 65) / 30.0);
+    // CO3 inhibition (smooth) — sharper than dioptase's
+    if (this.fluid.CO3 > 10) sigma *= Math.max(0.3, 1.0 - (this.fluid.CO3 - 10) / 20.0);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'shattuckite');
+    return Math.max(sigma, 0);
+  },
+
   // v63 brief-19: Ni-bearing chalcedony — microfibrous SiO2 + nano-inclusion
   // Ni-clay (pimelite/willemseite/kerolite). First chalcedony habit in the
   // sim; substrate for future agate/carnelian/onyx variants. Strict

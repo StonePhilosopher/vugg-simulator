@@ -318,6 +318,66 @@ function _nuc_chrysoprase(sim) {
   }
 }
 
+// v93 (2026-05-19): Cu-silicate pair for the Tsumeb / Bisbee 2nd
+// oxidation zone. Substrate priority encodes the canonical paragenesis:
+//   - dioptase preferentially nucleates on calcite, dolomite, chrysocolla
+//   - shattuckite preferentially REPLACES malachite/azurite (the Bisbee
+//     "pseudomorph after malachite" texture) and nucleates on chrysocolla.
+// Per research dossier 2026-05 (Evans & Mrose 1977, Keller 1977, Schaller
+// 1915 type locality Shattuck mine).
+function _nuc_dioptase(sim) {
+  const sigma = sim.conditions.supersaturation_dioptase();
+  // CRITICAL: early-out before any rng.random() to keep RNG cascade
+  // byte-identical for non-Cu-Si scenarios. The 1.0 floor is below the
+  // 1.2 nucleation threshold so we still allow substrate picking when
+  // there's a real chance to fire.
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('dioptase')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'dioptase' && c.active);
+  let pos = 'vug wall';
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  const active_dol = sim.crystals.filter(c => c.mineral === 'dolomite' && c.active);
+  const active_chr = sim.crystals.filter(c => c.mineral === 'chrysocolla' && c.active);
+  const dissolving_mal = sim.crystals.filter(c => c.mineral === 'malachite' && c.dissolved);
+  if (active_cal.length && rng.random() < 0.55) pos = `on calcite #${active_cal[0].crystal_id}`;
+  else if (active_dol.length && rng.random() < 0.40) pos = `on dolomite #${active_dol[0].crystal_id}`;
+  else if (active_chr.length && rng.random() < 0.35) pos = `on chrysocolla #${active_chr[0].crystal_id}`;
+  else if (dissolving_mal.length && rng.random() < 0.15) pos = `pseudomorph after malachite #${dissolving_mal[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('dioptase', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('dioptase', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: 💎 Dioptase #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}) — emerald-green Tsumeb 2nd oxidation zone signature`);
+    }
+  }
+}
+
+function _nuc_shattuckite(sim) {
+  const sigma = sim.conditions.supersaturation_shattuckite();
+  if (sigma < 1.0) return;  // RNG-cascade guard (see _nuc_dioptase comment)
+  if (sim._atNucleationCap('shattuckite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'shattuckite' && c.active);
+  let pos = 'vug wall';
+  // Replacement of malachite/azurite is the canonical Bisbee texture
+  const dissolving_mal = sim.crystals.filter(c => c.mineral === 'malachite' && c.dissolved);
+  const active_mal = sim.crystals.filter(c => c.mineral === 'malachite' && c.active);
+  const dissolving_azr = sim.crystals.filter(c => c.mineral === 'azurite' && c.dissolved);
+  const active_azr = sim.crystals.filter(c => c.mineral === 'azurite' && c.active);
+  const active_chr = sim.crystals.filter(c => c.mineral === 'chrysocolla' && c.active);
+  if (dissolving_mal.length && rng.random() < 0.65) pos = `pseudomorph after malachite #${dissolving_mal[0].crystal_id}`;
+  else if (active_mal.length && rng.random() < 0.45) pos = `replacing malachite #${active_mal[0].crystal_id}`;
+  else if (dissolving_azr.length && rng.random() < 0.50) pos = `pseudomorph after azurite #${dissolving_azr[0].crystal_id}`;
+  else if (active_azr.length && rng.random() < 0.30) pos = `on azurite #${active_azr[0].crystal_id}`;
+  else if (active_chr.length && rng.random() < 0.40) pos = `on chrysocolla #${active_chr[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('shattuckite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('shattuckite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: 🔵 Shattuckite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}) — azure-blue Bisbee type-locality Cu-silicate`);
+    }
+  }
+}
+
 function _nucleateClass_silicate(sim) {
   _nuc_quartz(sim);
   _nuc_apophyllite(sim);
@@ -329,4 +389,6 @@ function _nucleateClass_silicate(sim) {
   _nuc_topaz(sim);
   _nuc_chrysoprase(sim);
   _nuc_lepidolite(sim);
+  _nuc_dioptase(sim);
+  _nuc_shattuckite(sim);
 }

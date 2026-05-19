@@ -368,6 +368,121 @@ function grow_chrysocolla(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
+function grow_dioptase(crystal, conditions, step) {
+  // CuSiO₃·H₂O — emerald-green trigonal cyclosilicate of the Tsumeb
+  // 2nd oxidation zone. Habit: short prismatic hexagonal {1010} + rhombohedron
+  // {0221} (Tsumeb iconic), or long prismatic to acicular (Kaokoveld), or
+  // druzy crusts on chrysocolla, or rare calcite pseudomorphs. Per
+  // research dossier 2026-05 (Ribbe/Gibbs/Hamil 1977, Keller 1977).
+  const sigma = conditions.supersaturation_dioptase();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.07);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Cu²⁺ + silicic acid released`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  const on_calcite   = pos.includes('calcite');
+  const on_dolomite  = pos.includes('dolomite');
+  const on_chrysocolla = pos.includes('chrysocolla');
+  const on_malachite = pos.includes('malachite');  // rare; pseudomorph
+  let color_note;
+  if (on_calcite && excess > 0.5) {
+    crystal.habit = 'short_prismatic_emerald';
+    crystal.dominant_forms = ['{1010} hexagonal prism', '{0221} rhombohedron', 'on calcite scalenohedra'];
+    color_note = `emerald-green prismatic dioptase on calcite — Tsumeb 2nd oxidation zone iconic (σ=${sigma.toFixed(2)}, Cu ${conditions.fluid.Cu.toFixed(0)})`;
+  } else if (on_malachite) {
+    crystal.habit = 'pseudomorph_after_calcite';
+    crystal.dominant_forms = ['calcite scalenohedron outline preserved', 'dioptase fill'];
+    color_note = 'emerald-green dioptase preserving an earlier carbonate outline — late vadose conversion';
+  } else if (on_chrysocolla) {
+    crystal.habit = 'druzy_overgrowth';
+    crystal.dominant_forms = ['sub-mm prisms', 'high nucleation density on Cu-Si gel'];
+    color_note = 'druzy emerald dioptase crusts on chrysocolla substrate';
+  } else if (excess > 1.0) {
+    crystal.habit = 'long_prismatic_acicular';
+    crystal.dominant_forms = ['c-axis–elongated needles', 'Kaokoveld habit'];
+    color_note = 'acicular emerald dioptase — higher SiO₂/Cu ratio, fast nucleation';
+  } else if (on_dolomite) {
+    crystal.habit = 'short_prismatic_emerald';
+    crystal.dominant_forms = ['{1010} prism', '{0221} rhombohedron', 'on dolomite'];
+    color_note = 'emerald-green prismatic dioptase on dolomite';
+  } else {
+    crystal.habit = 'short_prismatic_emerald';
+    crystal.dominant_forms = ['{1010} prism', '{0221} rhombohedron'];
+    color_note = `emerald-green dioptase prisms (σ=${sigma.toFixed(2)})`;
+  }
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.020, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.025, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
+}
+
+function grow_shattuckite(crystal, conditions, step) {
+  // Cu₅(SiO₃)₄(OH)₂ — deep azure-blue inosilicate. Type locality Shattuck
+  // mine, Bisbee (Schaller 1915). Single-chain pyroxene-type Cu-Si chains
+  // on Cu-O sheets (Evans & Mrose 1977). Habit: acicular tufts + spherulitic
+  // rosettes + replacement of malachite/azurite/plancheite when CO₂
+  // escapes a vadose vug. Per research dossier 2026-05.
+  const sigma = conditions.supersaturation_shattuckite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.07);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Cu²⁺ + silicic acid released`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.8 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  const on_malachite = pos.includes('malachite') || pos.includes('pseudomorph after malachite');
+  const on_azurite   = pos.includes('azurite') || pos.includes('pseudomorph after azurite');
+  const on_chrysocolla = pos.includes('chrysocolla');
+  let color_note;
+  if (on_malachite) {
+    crystal.habit = 'pseudomorph_after_malachite';
+    crystal.dominant_forms = ['malachite botryoidal outline preserved', 'fibrous shattuckite fill'];
+    color_note = `azure shattuckite pseudomorph after malachite — Bisbee signature; net 5 Cu₂(CO₃)(OH)₂ + 8 SiO₂ → 2 shattuckite + 5 CO₂↑ + 3 H₂O`;
+  } else if (on_azurite) {
+    crystal.habit = 'pseudomorph_after_azurite';
+    crystal.dominant_forms = ['azurite prism outline preserved', 'fibrous shattuckite fill'];
+    color_note = 'azure shattuckite pseudomorph after azurite — Mesopotamia mine Kaokoveld habit';
+  } else if (on_chrysocolla && excess > 0.5) {
+    crystal.habit = 'spherulitic_rosette';
+    crystal.dominant_forms = ['radiating fibrous balls', 'concentric zoning'];
+    color_note = `deep-azure spherulitic rosettes on chrysocolla — Kaokoveld botryoidal habit (σ=${sigma.toFixed(2)})`;
+  } else if (excess > 1.2) {
+    crystal.habit = 'spherulitic_rosette';
+    crystal.dominant_forms = ['concentric fibrous balls 2-15 mm'];
+    color_note = 'deep-azure shattuckite rosettes — high σ, dense nucleation';
+  } else if (excess > 0.4) {
+    crystal.habit = 'acicular_tuft';
+    crystal.dominant_forms = ['radiating azure needles 1-5 mm'];
+    color_note = `azure acicular tufts (σ=${sigma.toFixed(2)}, Cu ${conditions.fluid.Cu.toFixed(0)}) — Bisbee vug habit`;
+  } else {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['fibrous massive blue fill'];
+    color_note = 'azure-blue shattuckite mass — low σ replacement fill';
+  }
+  conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.025, 0);  // higher Cu:Si than dioptase
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.020, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
+}
+
 function grow_lepidolite(crystal, conditions, step) {
   // Lepidolite K(Li,Al)₃(Al,Si)₄O₁₀(F,OH)₂ — trioctahedral lithium
   // mica. Perfect {001} cleavage producing micaceous sheets ("books");

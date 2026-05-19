@@ -2997,5 +2997,73 @@
 //            Ch. 8.
 //          * Bowell R.J. et al. (2014) "The Environmental Geochemistry
 //            of Arsenic." Reviews in Mineralogy and Geochemistry 79.
-const SIM_VERSION = 92;
+//   v93 — Cu-silicate pair: dioptase + shattuckite (2026-05-19).
+//         Closes a glaring catalog gap: dioptase is THE Tsumeb world
+//         reference (type locality Altyn-Tyube, Kazakhstan; described
+//         Hauy 1797; world-class display crystals from Tsumeb 2nd
+//         oxidation zone). Shattuckite is named after the Shattuck mine
+//         at Bisbee (Schaller 1915) — having Bisbee in the simulator
+//         without shattuckite was geologically untenable.
+//
+//         Both fire in the same chemical regime — Cu + SiO₂ oxidizing
+//         supergene with carbonate locally exhausted — but pull apart
+//         on pH + Cu:Si stoichiometry:
+//           dioptase    CuSiO₃·H₂O      pH 6.5-8.0  Cu:Si = 1:1
+//           shattuckite Cu₅(SiO₃)₄(OH)₂ pH 7.5-9.0  Cu:Si = 5:4
+//
+//         Defining mechanic: both engines require CO₃ low (dioptase
+//         CO₃ < 50; shattuckite CO₃ < 30). High carbonate routes Cu
+//         to malachite/azurite; only after the local carbonate is
+//         exhausted by prior malachite/azurite precipitation does the
+//         Cu-silicate window open. This is THE Tsumeb 2nd-oxidation-
+//         zone paragenesis (Keller 1977).
+//
+//         Shattuckite carries a strong replacement-of-malachite
+//         preference: net 5 Cu₂(CO₃)(OH)₂ + 8 SiO₂ → 2 shattuckite +
+//         5 CO₂↑ + 3 H₂O (Evans & Mrose 1977). Substrate priority
+//         encodes this:
+//           dioptase:    calcite > dolomite > chrysocolla > malachite
+//           shattuckite: malachite (replacement) > azurite (replacement)
+//                        > chrysocolla > vug wall
+//
+//         Habit dispatch:
+//           dioptase: short_prismatic_emerald (default Tsumeb iconic) /
+//                     long_prismatic_acicular (Kaokoveld, excess > 1.0) /
+//                     druzy_overgrowth (on chrysocolla) /
+//                     pseudomorph_after_calcite (late vadose)
+//           shattuckite: acicular_tuft (default Bisbee) /
+//                        spherulitic_rosette (Kaokoveld + high σ) /
+//                        pseudomorph_after_malachite (Bisbee signature) /
+//                        pseudomorph_after_azurite (Mesopotamia) /
+//                        massive_granular (low-σ fill)
+//
+//         No new fluid fields — existing Cu/SiO₂/CO₃/Cl/SO₄/pH/O₂
+//         cover the chemistry. The bisbee + supergene_oxidation
+//         scenarios already carry the chemistry; these engines simply
+//         pick up Cu-Si signal that was previously routed exclusively
+//         to chrysocolla.
+//
+//         References (research dossier 2026-05-19, primary literature):
+//           * Hauy R.J. (1797) — original dioptase description, type
+//             locality Altyn-Tyube.
+//           * Schaller W.T. (1915) "Four new minerals." J. Wash. Acad.
+//             Sci. 5:7. — shattuckite type description.
+//           * Ribbe P.H., Gibbs G.V., Hamil M.M. (1977) "Refinement of
+//             the structure of dioptase." Am. Min. 62:807-811.
+//           * Evans H.T. & Mrose M.E. (1977) "The crystal chemistry of
+//             the hydrous copper silicates, shattuckite and plancheite."
+//             Am. Min. 62:491-502.
+//           * Keller P. (1977) "Paragenesis of Tsumeb minerals."
+//             MinRec 8(3) — the Tsumeb shattuckite-plancheite-dioptase
+//             sequence.
+//           * Cairncross B. & Bahmann U. (2006) "The Kaokoveld plateau,
+//             Namibia." MinRec 37:137-164.
+//           * Anthony, Bideaux, Bladh, Nichols Handbook of Mineralogy
+//             v.II (Silicates).
+//
+//         Coverage 103 live → 105 live (+2 minerals); 25 paramorph-only.
+//         Tests 583 → 600 (+17). Calibration drift on bisbee +
+//         supergene_oxidation only (Cu-Si fluids fire the new engines);
+//         other 22 scenarios byte-identical to v92.
+const SIM_VERSION = 93;
 

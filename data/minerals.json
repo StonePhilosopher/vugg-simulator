@@ -11824,6 +11824,203 @@
       "_late_stage_note": "Proposal C (2026-05): propensity:0.3. Cassiterite is a mid-to-late pegmatite mineral — forms in the greisen/late-pegmatite phase after early micas + feldspars + tourmaline but before the lithium minerals (lepidolite, spodumene). The 0.3 propensity matches its position in the LCT pegmatite sequence (wall zone → intermediate zone → core).",
       "class_color": "#8b6f47"
     },
+    "dioptase": {
+      "formula": "CuSiO3·H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 4,
+      "max_size_cm": 3,
+      "growth_rate_mult": 0.4,
+      "habit_variants": [
+        {
+          "name": "short_prismatic_emerald",
+          "wall_spread": 0.35,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "default — hexagonal {1010} prism + {0221} rhombohedron, the Tsumeb 2nd-oxidation-zone iconic habit (1-15 mm crystals on calcite scalenohedra)"
+        },
+        {
+          "name": "long_prismatic_acicular",
+          "wall_spread": 0.25,
+          "void_reach": 0.75,
+          "vector": "projecting",
+          "trigger": "excess > 1.0 — c-axis-elongated needles, the Kaokoveld / Mindouli Congo habit; higher SiO₂/Cu ratio + fast nucleation"
+        },
+        {
+          "name": "druzy_overgrowth",
+          "wall_spread": 0.6,
+          "void_reach": 0.4,
+          "vector": "coating",
+          "trigger": "on chrysocolla substrate — sub-mm prisms at high nucleation density (chrysocolla Cu-Si gel lowers nucleation barrier)"
+        },
+        {
+          "name": "pseudomorph_after_calcite",
+          "wall_spread": 0.45,
+          "void_reach": 0.55,
+          "vector": "equant",
+          "trigger": "late vadose conversion — calcite scalenohedron outline preserved with dioptase fill, when late Cu-rich fluid attacks earlier calcite in a confined vug"
+        }
+      ],
+      "class": "silicate",
+      "description": "CuSiO₃·H₂O — emerald-green trigonal cyclosilicate (six-membered Si₆O₁₈ rings linked by Cu²⁺), the Tsumeb 2nd-oxidation-zone signature mineral. Type locality Altyn-Tyube, Kazakhstan (Hauy 1797). Hardness 5, density 3.31 g/cm³, perfect rhombohedral {1011} cleavage (the property that named the mineral — Greek dia+optazein, 'to see through'). Forms supergene at 25-120°C in mildly alkaline (pH 6.5-8.0) oxidizing pore fluids where carbonate has been LOCALLY EXHAUSTED by prior malachite/azurite precipitation, leaving Cu-Si-rich residual water. The HCO₃ gate is the discriminator from malachite — same Cu source, different anion availability. Cl > 5000 ppm suppresses (CuCl complexes keep Cu mobile). Two textbook generations at Tsumeb (Keller 1977): pre-calcite needles and post-calcite gemmy prisms. Field discriminator vs. emerald: softer (H 5 vs. 7.5-8), denser (3.3 vs. 2.7), strong rhombohedral cleavage, much higher birefringence (visible doubling of back facets in a 5 mm crystal). Refs: research dossier 2026-05; Ribbe/Gibbs/Hamil 1977 Am. Min. 62:807 (structure); Keller 1977 MinRec 8(3) (Tsumeb paragenesis); Lombaard et al. 1986 (Tsumeb monograph); Anthony et al. Handbook of Mineralogy v.II.",
+      "scenarios": [
+        "supergene_oxidation",
+        "bisbee"
+      ],
+      "T_range_C": [
+        5,
+        120
+      ],
+      "T_optimum_C": [
+        30,
+        80
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 1,
+        "SiO2": 10
+      },
+      "_ingredients_note": "v93 (2026-05-19): Cu ≥ 1, SiO₂ ≥ 10 per research dossier (Cu 1-50 ppm + SiO₂ 10-60 ppm in Tsumeb supergene fluid). Critical: CO₃ < 50 ppm (malachite/azurite outcompete above this) and Cl < 5000 ppm (CuCl complexes mobilize Cu away from precipitation). pH window 6.5-8.5, sweet spot 7.0-7.5 (carbonate-buffered Tsumeb 2nd oxidation zone). O₂ > 1.0 (fully oxidizing). Substrate priority: calcite > dolomite > chrysocolla > malachite (rare pseudomorph).",
+      "trace_ingredients": {
+        "CO3": "< 50 ppm gate — malachite/azurite win above this; the HCO₃ exhaustion gate is the defining mechanic",
+        "Cl": "< 5000 ppm — high Cl forms CuCl complexes that mobilize Cu out of solution"
+      },
+      "thermal_decomp_C": 120,
+      "thermal_decomp_reaction": "Dehydrates above ~120°C (loses structural H₂O). At higher T (> 200°C) converts to anhydrous Cu-silicate phases.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": "Cu²⁺",
+        "status": "Non-fluorescent under SW/MW/LW UV. Cu²⁺ is a luminescence quencher — dioptase shows no characteristic emission."
+      },
+      "twin_laws": [],
+      "acid_dissolution": "Slow dissolution in dilute HCl/H₂SO₄ at pH < 5. Cu²⁺ + silicic acid released.",
+      "habit": "short_prismatic_emerald",
+      "color_rules": {
+        "emerald_green": {
+          "default": true,
+          "trigger": "Cu²⁺ chromophore — the saturated bluish-emerald color is intrinsic; trace Mn/Fe darken slightly but rarely visible"
+        },
+        "bluish_green": {
+          "trigger": "near pH 8 + slight Cu deficit (Cu < 5 ppm) — paler bluish-green dioptase, less saturated"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v93 (2026-05-19). Tsumeb world-reference mineral — its absence was geologically untenable. Substrate priority: calcite > dolomite > chrysocolla > malachite (rare pseudomorph). Forms when prior malachite/azurite has locally exhausted carbonate (CO₃ < 50 ppm), leaving Cu-Si fluid. Three habit dispatch paths: short prismatic emerald (default, Tsumeb iconic), long prismatic acicular (Kaokoveld, high excess), druzy overgrowth on chrysocolla, rare calcite pseudomorph. Per research dossier 2026-05.",
+      "late_stage_propensity": 0.7,
+      "_late_stage_note": "Late supergene — dioptase post-dates malachite/azurite (needs carbonate exhausted), pre-dates only chrysocolla and minor late calcite. propensity:0.7 matches the Tsumeb 2nd-oxidation-zone paragenetic position.",
+      "class_color": "#2e7d32"
+    },
+    "shattuckite": {
+      "formula": "Cu5(SiO3)4(OH)2",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 3,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.35,
+      "habit_variants": [
+        {
+          "name": "acicular_tuft",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default at moderate σ — radiating azure needles 1-5 mm, the classic Bisbee vug habit"
+        },
+        {
+          "name": "spherulitic_rosette",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "high σ or on chrysocolla — concentric fibrous balls 2-15 mm, the Kaokoveld signature; growth controlled by diffusion through pre-existing Cu-silicate gel"
+        },
+        {
+          "name": "pseudomorph_after_malachite",
+          "wall_spread": 0.6,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "on dissolving malachite substrate — Cu(OH)/CO₃ layers preserved as Cu-O sheets; CO₃ displaced as CO₂(g) and replaced by SiO₃ chains. The Bisbee 'pseudomorph after malachite' signature."
+        },
+        {
+          "name": "pseudomorph_after_azurite",
+          "wall_spread": 0.55,
+          "void_reach": 0.45,
+          "vector": "equant",
+          "trigger": "on dissolving azurite substrate — sharp blocky azurite morphology preserved in fibrous blue shattuckite. The Mesopotamia mine Kaokoveld habit."
+        },
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low σ replacement fill — fibrous massive blue, no individual crystals visible"
+        }
+      ],
+      "class": "silicate",
+      "description": "Cu₅(SiO₃)₄(OH)₂ — deep azure-to-greenish-blue inosilicate (single-chain Cu-silicate; pyroxene-type chains on Cu-O sheets — NOT to be confused with plancheite's amphibole-type double chains; Evans & Mrose 1977 Am. Min. 62:491). Type locality Shattuck mine, Bisbee (Warren district), Arizona (Schaller 1915 J. Wash. Acad. Sci. 5:7). Hardness 3.5, density 4.11 g/cm³ (heavy for a non-metallic silicate due to high Cu content), perfect cleavage on {010} and {100}. Forms strictly supergene at 25-90°C in mildly alkaline (pH 7.5-9.0) oxidizing pore fluids — distinctly more alkaline than dioptase, requiring substantial OH⁻ activity. The defining mechanism is REPLACEMENT OF MALACHITE when CO₂ escapes from a vadose vug: 5 Cu₂(CO₃)(OH)₂ + 8 SiO₂(aq) → 2 Cu₅(SiO₃)₄(OH)₂ + 5 CO₂↑ + 3 H₂O. Higher Cu:Si ratio than dioptase (5:4 vs. 1:1) — shattuckite is the high-Cu, low-Si Cu-silicate. Field discriminator vs. chrysocolla: shattuckite H 3.5 (vs. chrysocolla 2-4 but softer), density 4.1 (vs. chrysocolla 2.0-2.4 — heavy in hand), shows fibrous/acicular radial structure under loupe (chrysocolla is amorphous/conchoidal). Refs: research dossier 2026-05; Schaller 1915 (type description); Evans & Mrose 1977 (structure); Keller 1977 MinRec 8(3) (Tsumeb plancheite-shattuckite-dioptase sequence); Cairncross & Bahmann 2006 MinRec 37:137 (Kaokoveld); Anthony et al. Handbook of Mineralogy v.II.",
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        90
+      ],
+      "T_optimum_C": [
+        25,
+        65
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 4.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Cu": 5,
+        "SiO2": 20
+      },
+      "_ingredients_note": "v93 (2026-05-19): Cu ≥ 5, SiO₂ ≥ 20 — stoichiometry 5:4 (Cu/Si), needs sustained Cu activity. CO₃ < 30 ppm (sharper than dioptase's gate — the OH-bearing structure needs CO₂ outgassing complete). Cl < 1000, SO₄ < 500 (brochantite/antlerite compete on SO₄). pH window 7.5-9.5, sweet spot 8.0-8.5 (mildly alkaline). O₂ > 0.5 (oxidizing). Substrate priority: malachite (replacement, the type texture) > azurite (replacement) > chrysocolla > vug wall.",
+      "trace_ingredients": {
+        "CO3": "< 30 ppm gate — needs CO₂ outgassing complete; sharper than dioptase",
+        "Cl": "< 1000 ppm",
+        "SO4": "< 500 ppm — brochantite/antlerite compete on SO₄",
+        "Al": "> 1 ppm drives chrysocolla instead of shattuckite (per research dossier — Al pulls Cu into amorphous Cu-Si gel)"
+      },
+      "thermal_decomp_C": 100,
+      "thermal_decomp_reaction": "Stable to ~100°C; above this, dehydrates and recrystallizes to anhydrous Cu-silicate.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": "Cu²⁺",
+        "status": "Non-fluorescent under SW/MW/LW UV. Cu²⁺ quenches; shattuckite shows no characteristic emission."
+      },
+      "twin_laws": [],
+      "acid_dissolution": "Slow dissolution in dilute HCl at pH < 4.5. Cu²⁺ + silicic acid released.",
+      "habit": "acicular_tuft",
+      "color_rules": {
+        "deep_azure": {
+          "default": true,
+          "trigger": "Cu²⁺ chromophore + OH coordination — deep saturated azure-to-cobalt blue, distinct from chrysocolla's cyan and dioptase's emerald"
+        },
+        "greenish_blue": {
+          "trigger": "pH near 7.5 (lower end of stability) — bluer-greenish shattuckite, slightly less saturated"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v93 (2026-05-19). Type locality Shattuck mine, Bisbee — its absence was geologically embarrassing (the mineral is literally named after a Bisbee mine). Five habit dispatch paths: acicular tuft (default Bisbee vug), spherulitic rosette (Kaokoveld + high σ), pseudomorph after malachite (Bisbee signature replacement), pseudomorph after azurite (Mesopotamia Kaokoveld), massive granular (low-σ fill). Per research dossier 2026-05 + Schaller 1915 + Evans & Mrose 1977.",
+      "late_stage_propensity": 0.8,
+      "_late_stage_note": "Very late supergene — shattuckite post-dates malachite/azurite (replacement mechanism requires their dissolution), post-dates plancheite (Cu-rich rim on plancheite cores), pre-dates only chrysocolla and minor late calcite. propensity:0.8 matches its position as the latest non-chrysocolla Cu-silicate.",
+      "class_color": "#1565c0"
+    },
     "clausthalite": {
       "formula": "PbSe",
       "nucleation_sigma": 1.4,
