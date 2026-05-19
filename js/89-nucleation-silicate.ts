@@ -325,6 +325,29 @@ function _nuc_chrysoprase(sim) {
 //     "pseudomorph after malachite" texture) and nucleates on chrysocolla.
 // Per research dossier 2026-05 (Evans & Mrose 1977, Keller 1977, Schaller
 // 1915 type locality Shattuck mine).
+// v101 (2026-05-19): Opal SiO2·nH2O — amorphous-to-short-range-ordered
+// silica. Hot-spring sinter host. Substrate priority encodes the
+// "embeds everything" universal-binder role of opal in hot-spring
+// systems. RNG-cascade guard via sigma < 1.0 early-out.
+function _nuc_opal(sim) {
+  const sigma = sim.conditions.supersaturation_opal();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('opal')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'opal' && c.active);
+  if (existing.length >= 5) return;  // sinter mound = many opal crystals
+  // Opal nucleates on essentially anything in the effluent path
+  let pos = 'vug wall';
+  const cin = sim.crystals.filter(c => c.mineral === 'cinnabar' && c.active);
+  const sul = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
+  const py = sim.crystals.filter(c => c.mineral === 'pyrite' && c.active);
+  if (cin.length && rng.random() < 0.30) pos = `sinter coating cinnabar #${cin[0].crystal_id}`;
+  else if (sul.length && rng.random() < 0.30) pos = `sinter embedding native_sulfur #${sul[0].crystal_id}`;
+  else if (py.length && rng.random() < 0.20) pos = `coating pyrite #${py[0].crystal_id}`;
+  const c = sim.nucleate('opal', pos, sigma);
+  const stage = sim.conditions.temperature < 50 ? 'opal-A (amorphous, fresh sinter)' : 'opal-CT (partially aged)';
+  sim.log.push(`  ✦ NUCLEATION: ⚪ Opal #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — ${stage}, hot-spring sinter platform`);
+}
+
 // v99 (2026-05-19): Uranyl silicates — coffinite (U(IV) primary) +
 // uranophane (U(VI) supergene). Opposite redox sides. Substrate
 // priority encodes Finch & Murakami 1999 paragenesis: coffinite
@@ -470,4 +493,5 @@ function _nucleateClass_silicate(sim) {
   _nuc_willemite(sim);
   _nuc_coffinite(sim);
   _nuc_uranophane(sim);
+  _nuc_opal(sim);
 }

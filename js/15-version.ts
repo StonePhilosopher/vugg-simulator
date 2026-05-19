@@ -3547,5 +3547,122 @@
 //            * Dana 7th v.II sulfate volume; Handbook of Mineralogy.
 //
 //          Coverage 122 live → 125 live (+3 minerals); 25 paramorph-only.
-const SIM_VERSION = 100;
+//   v101 — Metacinnabar + opal (2026-05-19). FINAL commit of the
+//          v93-v101 mineral push (24 new minerals across 9 commits +
+//          a per-mineral skill). Closes the Sulphur Bank chemistry
+//          gap from the boss's research dossier 2026-05-19:
+//
+//            metacinnabar β-HgS  black cubic polymorph of cinnabar
+//                                  (α-HgS trigonal). Sphalerite-type
+//                                  F-43m. <200°C, acidic-sulfide,
+//                                  O2 < 0.8 (more O2-reactive than
+//                                  cinnabar — weathers faster at the
+//                                  surface). Per Potter & Barnes 1978.
+//            opal SiO2·nH2O      amorphous-to-short-range-ordered
+//                                  silica mineraloid. Three structural
+//                                  varieties (opal-A/CT/C) per Jones &
+//                                  Segnit 1971. T < 100°C, alkaline,
+//                                  SiO2 > 200 (Fournier 1977 amorphous
+//                                  silica solubility). Hot-spring
+//                                  sinter universal-binder.
+//
+//          Both opal and metacinnabar carry future-mechanic flags:
+//            crystal._diagenesis_stage (opal) — opal-A / opal-CT /
+//              opal-C based on T + crystal_zones.length. Hooks the
+//              future POLYMORPH_DIAGENESIS ladder: opal-A → opal-CT →
+//              opal-C → chalcedony → quartz with each step releasing
+//              structural water.
+//            metacinnabar/cinnabar coexistence — both engines run;
+//              metacinnabar wins at T < 100, cinnabar at T > 200, mixed
+//              in 100-200 transitional. Future PARAMORPH_TRANSITIONS
+//              entry could add cinnabar↔metacinnabar thermal inversion
+//              (Potter & Barnes 344°C equilibrium boundary) but the
+//              low-T conversion is kinetically slow (10^3-10^5 yr at
+//              80°C natural residence) so deferred as not-required.
+//
+//          Substrate priorities (Sulphur Bank paragenesis per White &
+//          Roberson 1962):
+//            metacinnabar: cinnabar (epitactic, the textbook surface
+//                          coating) > opal sinter > native_sulfur
+//            opal:         cinnabar (sinter embeds it) > native_sulfur
+//                          (similar) > pyrite > vug wall (nucleates on
+//                          anything in effluent path — the universal
+//                          binder)
+//
+//          NOTE separate from the existing grow_quartz polymorph
+//          dispatch (which can label a quartz crystal mineral_display=
+//          'opal' at very low T). The v101 standalone opal engine
+//          nucleates AS opal-A from the start with its own growth
+//          path + diagenesis_stage tracking. The two paths coexist
+//          and feed into different visual outputs.
+//
+//          References (research dossier 2026-05-19):
+//            * White D.E. & Roberson C.E. (1962) GSA SP 73 — Sulphur
+//              Bank field geology + metacinnabar paragenesis.
+//            * Potter R.W. & Barnes H.L. (1978) Econ. Geol. 73:282 —
+//              HgS polymorph equilibrium inversion at 344°C.
+//            * Bailey E.H. (1959) USGS Bull. 1148 — Sulphur Bank.
+//            * Dickson F.W. & Tunell G. (1959) Am. J. Sci. 257:341 —
+//              HgS synthesis.
+//            * Jones J.B. & Segnit E.R. (1971) J. Geol. Soc. Aust.
+//              18:57 — original opal A/CT/C variety scheme.
+//            * Langer K. & Flörke O.W. (1974) Fortschr. Mineral.
+//              52:17 — canonical structural classification.
+//            * Fournier R.O. (1977) Geothermics 5:41 — silica
+//              solubility / geothermometry.
+//            * Sanders J.V. (1964) Nature 204:1151 — sphere packing
+//              + play-of-color in precious opal.
+//            * Williams L.A. & Crerar D.A. (1985) J. Sediment. Petrol.
+//              55:312 — opal diagenesis kinetics.
+//            * Anthony et al. Handbook of Mineralogy v.I + v.II.
+//
+//          === MILESTONE: v93-v101 ARC COMPLETE ===
+//
+//          24 new minerals shipped across 9 commits (v93-v101) +
+//          a vugg-add-mineral Claude Code skill capturing the workflow.
+//          Coverage 103 → 127 live minerals (+24), 25 paramorph-only.
+//          Tests 583 → 700+ pass; ~120 new test pins.
+//
+//          Per-commit mineral count + drift signal:
+//            v93   dioptase + shattuckite (Cu-silicates) — dioptase
+//                  fires bisbee + supergene_oxidation
+//            v94   enargite (high-sulfidation Cu-As-S) — zero drift
+//            v95   diarsenide quartet (skutterudite/safflorite/
+//                  rammelsbergite/loellingite) — zero drift
+//            v96   ruby silvers (proustite/pyrargyrite) — proustite
+//                  fires schneeberg (Ag redirected from native_silver)
+//            v97   Tsumeb arsenate suite (austinite/legrandite/
+//                  koettigite/duftite/bayldonite) — duftite + koettigite
+//                  fire supergene_oxidation; pharmacolite tests skipped
+//                  due to cascade
+//            v98   Zn supergene triad (hemimorphite/willemite/
+//                  hydrozincite) — zero drift
+//            v99   uranyl silicates (coffinite/uranophane) — uranophane
+//                  fires schneeberg; PHARMACOLITE TESTS RESTORED
+//                  (beneficial cascade reversal)
+//            v100  Pb-Cu sulfate trio (linarite/caledonite/leadhillite)
+//                  — caledonite fires supergene_oxidation; alunite +
+//                  vanadinite RESTORED (cascade reversal of v97)
+//            v101  metacinnabar + opal (Sulphur Bank) — TBD baseline
+//
+//          Forks demonstrated across the arc (the cleanest paired-
+//          mineral discriminators):
+//            * Cu:Si + pH (v93 dioptase/shattuckite)
+//            * sulfidation proxy log10(S)-pH (v94 enargite)
+//            * Co/Ni/Fe + T + S tolerance (v95 diarsenides)
+//            * As:Sb (v96 ruby silvers)
+//            * Cu/Zn + Pb:Cu + Ca/Zn (v97 Tsumeb arsenates)
+//            * CO3:SiO2 (v98 Zn supergene)
+//            * opposite-redox (v99 coffinite/uranophane)
+//            * CO3:SO4 (v100 Pb-Cu sulfates)
+//            * T + O2 polymorph window (v101 cinnabar/metacinnabar)
+//
+//          The "follow the science" rule: all gates from primary
+//          literature, no fits to scenarios. Wired-but-not-firing
+//          minerals (enargite, diarsenide quartet, some Tsumeb
+//          arsenates, Zn supergene triad, coffinite, linarite,
+//          leadhillite, metacinnabar, opal at seed 42) documented as
+//          scenario-tuning candidates; engines geologically correct
+//          + ready for future scenario expansion.
+const SIM_VERSION = 101;
 

@@ -297,6 +297,42 @@ Object.assign(VugConditions.prototype, {
   // Evans & Mrose 1977 Am. Min. 62:491 (Cu-silicate family), Schaller 1915
   // (shattuckite type description, Shattuck mine Bisbee), Keller 1977
   // MinRec 8 (Tsumeb paragenesis).
+  // v101 (2026-05-19): Opal SiO2·nH2O — amorphous-to-short-range-
+  // ordered silica MINERALOID. Three structural varieties (Jones &
+  // Segnit 1971 J. Geol. Soc. Aust. 18:57; Langer & Flörke 1974
+  // Fortschr. Mineral. 52:17):
+  //   opal-A:   amorphous (no Bragg peaks); fresh hot-spring sinter
+  //   opal-CT:  disordered cristobalite-tridymite stacking
+  //   opal-C:   ordered cristobalite (terminal pre-quartz)
+  // Engine fires across the three; T sweet spot < 80°C (geyser sinter
+  // regime). High SiO2 supersaturation required (> 200 ppm — Fournier
+  // 1977 Geothermics 5:41 amorphous silica solubility curve).
+  //
+  // NOTE: separate from the existing grow_quartz polymorph dispatch
+  // (which can label a quartz crystal mineral_display='opal' at very
+  // low T). This standalone opal engine fires nucleation as opal-A
+  // directly, with a higher growth rate and the diagenesis-ladder
+  // mechanic flagged for future POLYMORPH_DIAGENESIS expansion.
+  supersaturation_opal() {
+    if (this.fluid.SiO2 < 200) return 0;
+    if (this.temperature < 5 || this.temperature > 100) return 0;
+    if (this.fluid.pH < 6.5 || this.fluid.pH > 10.0) return 0;
+    const si_f = Math.min(this.fluid.SiO2 / 400.0, 3.0);
+    let sigma = si_f;
+    const T = this.temperature;
+    // Sweet spot 30-85°C (geyser sinter regime, Yellowstone /
+    // Steamboat Springs / Sulphur Bank / Wairakei NZ)
+    if (T >= 30 && T <= 85) sigma *= 1.4;
+    else if (T < 30) sigma *= Math.max(0.5, T / 30.0);
+    else sigma *= Math.max(0.4, 1.0 - (T - 85) / 30.0);
+    // pH sweet spot 7-9 alkaline-silica regime
+    const pH = this.fluid.pH;
+    if (pH >= 7.0 && pH <= 9.0) sigma *= 1.2;
+    else sigma *= Math.max(0.6, 1.0 - Math.abs(pH - 8.0) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'opal');
+    return Math.max(sigma, 0);
+  },
+
   // v99 (2026-05-19): Uranyl silicates — coffinite (U(IV), primary,
   // reducing) + uranophane (U(VI), supergene, oxidizing). Opposite
   // sides of the U redox boundary. Both consume U + SiO2 + (Ca for

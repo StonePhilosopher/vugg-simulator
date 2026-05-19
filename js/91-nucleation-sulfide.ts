@@ -494,6 +494,27 @@ function _nuc_loellingite(sim) {
   sim.log.push(`  ✦ NUCLEATION: 🔘 Loellingite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(2)}) — five-element vein FeAs₂, steel-gray outermost rim`);
 }
 
+// v101 (2026-05-19): Metacinnabar β-HgS — the low-T cubic polymorph.
+// Substrate priority encodes Sulphur Bank paragenesis (White & Roberson
+// 1962): metacinnabar coats cinnabar overgrowths + opal sinter +
+// fracture surfaces. RNG-cascade guard via sigma < 1.0 early-out.
+function _nuc_metacinnabar(sim) {
+  const sigma = sim.conditions.supersaturation_metacinnabar();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('metacinnabar')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'metacinnabar' && c.active);
+  if (existing.length >= 3) return;
+  let pos = 'vug wall';
+  const cin = sim.crystals.filter(c => c.mineral === 'cinnabar' && c.active);
+  const sul = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
+  const opl = sim.crystals.filter(c => c.mineral === 'opal' && c.active);
+  if (cin.length && rng.random() < 0.55) pos = `black coating on cinnabar #${cin[0].crystal_id}`;
+  else if (opl.length && rng.random() < 0.45) pos = `sooty coating on opal sinter #${opl[0].crystal_id}`;
+  else if (sul.length && rng.random() < 0.30) pos = `on native_sulfur #${sul[0].crystal_id}`;
+  const c = sim.nucleate('metacinnabar', pos, sigma);
+  sim.log.push(`  ✦ NUCLEATION: ⬛ Metacinnabar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Hg=${sim.conditions.fluid.Hg.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — black cubic β-HgS (kinetically favored vs cinnabar at low T)`);
+}
+
 // v96 (2026-05-19): Ruby silvers nucleation. Late-stage epithermal Ag,
 // post-arsenide, post-main-sulfide, syn-to-post-native_silver. The
 // As:Sb fork is in the supersaturation engines; the nucleation
@@ -581,6 +602,7 @@ function _nucleateClass_sulfide(sim) {
   _nuc_molybdenite(sim);
   _nuc_stibnite(sim);
   _nuc_cinnabar(sim);
+  _nuc_metacinnabar(sim);
   _nuc_realgar(sim);
   _nuc_orpiment(sim);
   _nuc_bismuthinite(sim);

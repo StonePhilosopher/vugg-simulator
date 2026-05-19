@@ -951,6 +951,48 @@ function grow_tetrahedrite(crystal, conditions, step) {
   });
 }
 
+// v101 (2026-05-19): Metacinnabar β-HgS — black cubic polymorph of
+// cinnabar (red trigonal α-HgS). Sphalerite-type F-43m. Sulphur Bank
+// + McDermitt + Almadén signature low-T HgS coating.
+function grow_metacinnabar(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_metacinnabar();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 1.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.10);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative destruction — metacinnabar is LESS O₂-tolerant than cinnabar (it's why Sulphur Bank's surface metacinnabar weathers to Hg vapor + sulfate while deeper cinnabar persists)`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 3.5 * excess * rng.uniform(0.8, 1.2);  // grows fast — kinetically favored at low T
+  if (rate < 0.1) return null;
+  const pos = crystal.position || '';
+  if (pos.includes('cinnabar')) {
+    crystal.habit = 'overgrowth_on_cinnabar';
+    crystal.dominant_forms = ['black coating on red cinnabar — Sulphur Bank surface signature'];
+  } else if (pos.includes('opal') || pos.includes('native_sulfur')) {
+    crystal.habit = 'sooty_on_sinter';
+    crystal.dominant_forms = ['black sooty coating on opal sinter / native sulfur'];
+  } else if (excess > 1.2) {
+    crystal.habit = 'botryoidal_black';
+    crystal.dominant_forms = ['botryoidal black crusts on opal sinter'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'massive_sooty';
+    crystal.dominant_forms = ['massive sooty coatings (>95% of natural occurrence)'];
+  } else {
+    crystal.habit = 'fine_grained_disseminated';
+    crystal.dominant_forms = ['fine-grained disseminated'];
+  }
+  conditions.fluid.Hg = Math.max(conditions.fluid.Hg - rate * 0.025, 0);
+  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.012, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `metacinnabar (β-HgS) ${crystal.habit}, IRON-BLACK metallic (CONTRAST with cinnabar's scarlet — diagnostic visual marker)` });
+}
+
 // v95 (2026-05-19): Diarsenide quartet engines. All share the
 // arsenide-class growth pattern: As-As bonded pairs in marcasite-type
 // structure (Pnnm) for safflorite/rammelsbergite/loellingite; cubic

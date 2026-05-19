@@ -764,6 +764,37 @@ Object.assign(VugConditions.prototype, {
   // 70:1270-1289; Posfai & Buseck (1998) for enargite/luzonite phase
   // relations (luzonite is the < 320°C polymorph; the engine fires
   // enargite across the full T range but flags luzonite-regime growth).
+  // v101 (2026-05-19): Metacinnabar β-HgS — the low-T cubic polymorph
+  // of cinnabar (α-HgS, trigonal). Sphalerite-type structure (F-43m).
+  // Sulphur Bank black-sooty coatings; cinnabar at the same locality
+  // is the higher-T equilibrium phase. Potter & Barnes 1978 Econ.
+  // Geol. 73:282 — equilibrium inversion at 344°C, but metacinnabar
+  // is KINETICALLY favored from aqueous sulfide solutions at T < 200°C
+  // (cubic close-packing requires less ordering than helical chains).
+  // Refs: White & Roberson 1962 GSA SP 73 (Sulphur Bank); Bailey 1959
+  // USGS Bull. 1148; Dickson & Tunell 1959 Am. J. Sci. 257:341.
+  supersaturation_metacinnabar() {
+    if (this.fluid.Hg < 1.0 || this.fluid.S < 50) return 0;
+    if (this.fluid.O2 > 0.8) return 0;  // strict — metacinnabar oxidizes faster than cinnabar
+    if (this.temperature < 5 || this.temperature > 200) return 0;  // strict low-T
+    if (this.fluid.pH < 1.0 || this.fluid.pH > 6.5) return 0;  // acidic-sulfide regime
+    const hg_f = Math.min(this.fluid.Hg / 5.0, 4.0);
+    const s_f = Math.min(this.fluid.S / 100.0, 3.0);
+    let sigma = hg_f * s_f;
+    const T = this.temperature;
+    // Sweet spot 60-90°C (Sulphur Bank hot-spring vents); strongly
+    // favored over cinnabar below ~100°C due to kinetic ordering
+    if (T >= 60 && T <= 100) sigma *= 1.5;
+    else if (T < 60) sigma *= Math.max(0.6, 0.7 + 0.005 * T);
+    else if (T <= 150) sigma *= Math.max(0.5, 1.5 - 0.020 * (T - 100));
+    else sigma *= Math.max(0.3, 1.0 - 0.014 * (T - 150));
+    // Fe/Zn impurities stabilize the cubic structure
+    if (this.fluid.Fe > 5) sigma *= 1.1;
+    if (this.fluid.Zn > 5) sigma *= 1.1;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'metacinnabar');
+    return Math.max(sigma, 0);
+  },
+
   // v95 (2026-05-19): Diarsenide quartet — the five-element vein primary
   // arsenide stage. Schneeberg/Jachymov canonical, Cobalt-Ontario,
   // Bou Azzer, Andreasberg, Black Hawk NM. Defined by Kissin (1992

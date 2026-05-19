@@ -368,6 +368,60 @@ function grow_chrysocolla(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
+// v101 (2026-05-19): Opal SiO2·nH2O — amorphous-to-short-range-
+// ordered silica mineraloid. Forms hot-spring sinter aprons, botryoidal
+// fillings, replacement of organics (opalized wood). Diagenesis-ladder
+// flagged via crystal._diagenesis_stage for future POLYMORPH_DIAGENESIS
+// implementation (opal-A → opal-CT → opal-C → chalcedony → quartz).
+function grow_opal(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_opal();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(3.0, crystal.total_growth_um * 0.12);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — opal redissolves to silicic acid` });
+    }
+    if (crystal.total_growth_um > 5 && conditions.temperature > 150) {
+      // High-T diagenesis: opal recrystallizes to chalcedony/quartz
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.05);
+      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, dissolutionMode: 'diagenesis', note: `diagenesis to chalcedony/quartz > 150°C — opal-A → opal-CT → opal-C → chalcedony → quartz ladder` });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 4.5 * excess * rng.uniform(0.8, 1.2);  // amorphous precipitates fastest
+  if (rate < 0.1) return null;
+
+  // Diagenesis stage — start as opal-A (fresh sinter), age over T+time
+  const T = conditions.temperature;
+  let diagenesis_stage;
+  if (T < 50 && crystal.zones.length < 5) diagenesis_stage = 'opal-A';  // fresh amorphous
+  else if (T < 100 && crystal.zones.length < 20) diagenesis_stage = 'opal-CT';
+  else diagenesis_stage = 'opal-C';
+  crystal._diagenesis_stage = diagenesis_stage;
+
+  const pos = crystal.position || '';
+  if (pos.includes('cinnabar') || pos.includes('native_sulfur')) {
+    crystal.habit = 'sinter_apron';
+    crystal.dominant_forms = ['hot-spring sinter apron embedding sulfides', 'mound morphology'];
+  } else if (excess > 1.4) {
+    crystal.habit = 'botryoidal_mound';
+    crystal.dominant_forms = ['botryoidal grape-cluster mounds', 'reniform terminations'];
+  } else if (excess > 0.6) {
+    crystal.habit = 'reniform_layer';
+    crystal.dominant_forms = ['reniform layered crusts', 'concentric banding'];
+  } else if (excess > 0.2) {
+    crystal.habit = 'nodular';
+    crystal.dominant_forms = ['nodular massive', 'glassy conchoidal fracture'];
+  } else {
+    crystal.habit = 'thin_film';
+    crystal.dominant_forms = ['thin film coating substrate'];
+  }
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `opal (${diagenesis_stage}) ${crystal.habit}, white-to-brown common opal; amorphous silica, conchoidal fracture, H 5.5-6.5 distinguishes from quartz` });
+}
+
 function grow_coffinite(crystal, conditions, step) {
   // USiO4·nH2O — micro-crystalline U(IV) silicate, dark black/tarry
   // texture. Replaces uraninite along fractures + grain boundaries.

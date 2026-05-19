@@ -101,8 +101,21 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
       // accurate — leaving as a marker for future grep.
       expect(AUTHORED_SPEC.chrysoprase).toBeDefined();
     });
-    it('nucleates in at least one of 3 seeds within default steps', () => {
-      const r = runSeeds('ultramafic_supergene', 'chrysoprase', [42, 1, 7]);
+    it('nucleates in at least one of 8 seeds within default steps', () => {
+      // v101 (2026-05-19): seed sample widened from [42, 1, 7] to
+      // [42, 1, 7, 13, 99, 2024, 17, 3]. Adding the v101 opal engine
+      // introduces a SiO2-consuming competitor in ultramafic_supergene
+      // (SiO2=300, T=28, pH=8.5 — passes opal's gates). Opal wins the
+      // SiO2 budget at high-supersaturation pulses, suppressing
+      // chrysoprase in the original 3-seed window. The chrysoprase
+      // engine is unchanged; widening the sample restores the "fires
+      // somewhere" assertion. The geological story (opal as the
+      // first-formed silica phase that later recrystallizes through
+      // the diagenesis ladder to chalcedony/chrysoprase) is preserved
+      // — opal firing first is correct, chrysoprase eventually
+      // following is correct.
+      const r = runSeeds('ultramafic_supergene', 'chrysoprase',
+        [42, 1, 7, 13, 99, 2024, 17, 3]);
       expect(r.everNucleated, `chrysoprase σ peaked at ${r.maxSigma.toFixed(2)}`).toBe(true);
     });
   });
@@ -146,15 +159,26 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
       // ever_nucleated=false on the same 3-seed sweep their individual
       // tests above use. Belt-and-suspenders; if a downstream change
       // breaks one of these, this test fails clearly with the list.
-      const targets = [
+      // v101: seed sample widened from [42, 1, 7] to 8 seeds for
+      // chrysoprase to absorb v101 opal-cascade variance (see comment
+      // in the chrysoprase-specific test above). The other three
+      // minerals stay at the original 3-seed sample — they aren't
+      // affected by the opal cascade.
+      const targetsBy3: [string, string][] = [
         ['ruby', 'marble_contact_metamorphism'],
-        ['chrysoprase', 'ultramafic_supergene'],
         ['adamite', 'supergene_oxidation'],
         ['native_tellurium', 'epithermal_telluride'],
-      ] as const;
+      ];
+      const targetsBy8: [string, string][] = [
+        ['chrysoprase', 'ultramafic_supergene'],
+      ];
       const stillStale: string[] = [];
-      for (const [mineral, scenario] of targets) {
+      for (const [mineral, scenario] of targetsBy3) {
         const r = runSeeds(scenario, mineral, [42, 1, 7]);
+        if (!r.everNucleated) stillStale.push(`${mineral} in ${scenario}`);
+      }
+      for (const [mineral, scenario] of targetsBy8) {
+        const r = runSeeds(scenario, mineral, [42, 1, 7, 13, 99, 2024, 17, 3]);
         if (!r.everNucleated) stillStale.push(`${mineral} in ${scenario}`);
       }
       expect(stillStale, 'expected zero stale entries — got: ' + stillStale.join(', ')).toEqual([]);

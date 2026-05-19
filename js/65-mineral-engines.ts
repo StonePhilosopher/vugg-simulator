@@ -232,4 +232,17 @@ const MINERAL_ENGINES = {
   linarite: grow_linarite,
   caledonite: grow_caledonite,
   leadhillite: grow_leadhillite,
+  // v101 (2026-05-19): The two Sulphur Bank-style minerals from the
+  // boss's research gap analysis.
+  //   metacinnabar β-HgS — black cubic polymorph of cinnabar (red
+  //     trigonal α-HgS). Sphalerite-type F-43m. Sulphur Bank surface
+  //     signature. Forms <200°C from acidic sulfide fluids; kinetically
+  //     favored over cinnabar at low T per Potter & Barnes 1978.
+  //   opal SiO2·nH2O — amorphous-to-short-range-ordered silica
+  //     mineraloid. Hot-spring sinter host (Yellowstone, Sulphur Bank,
+  //     Steamboat Springs). Three structural varieties opal-A/CT/C
+  //     per Jones & Segnit 1971 + Langer & Flörke 1974; diagenesis-
+  //     ladder flagged for future POLYMORPH_DIAGENESIS expansion.
+  metacinnabar: grow_metacinnabar,
+  opal: grow_opal,
 };
