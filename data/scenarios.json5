@@ -2425,6 +2425,77 @@
         "Aharon P. (2000) — Microbial processes and products fueled by hydrocarbons at submarine seeps. Microbial Sediments (Springer): 270-281. (Sulfur-isotope evidence for BSR in Sicilian Solfifera Series.)",
         "Wikipedia — Sicilian sulfur mining (history + production figures 1860-1950)."
       ]
+    },
+
+    "sunnyside_american_tunnel": {
+      "anchor": "Sunnyside Mine / American Tunnel, Silverton caldera, San Juan County, Colorado. Intermediate-sulfidation polymetallic epithermal vein deposit hosted in the Crystal Lake Tuff (27.5 Ma San Juan ignimbrite). The American Tunnel (driven 1959, plugged 2003) was the principal modern source of Silverton-district display rhodochrosite + octahedral REE-fluorite + manganocalcite specimens. Per Casadevall & Ohmoto 1977 Econ. Geol. 72:1285 six-stage paragenesis (compressed to four stages here).",
+      "description": "Late-stage carbonate-fluoride paragenesis at the Sunnyside-American Tunnel vein system. The scenario runs primary sulfide-Au-quartz (Casadevall Stages I-IV at 280-260°C) → Stage V Mn-carbonate (pale-pink small rhodochrosite at 215-245°C, Fe-poor signature) → Stage VI early fluoride pulse (octahedral REE-fluorite at 195-230°C with grass-green visible color + brilliant blue SW UV from Eu²⁺ activator per Bosze & Rakovan 2002 GCA 66:997) → Stage VI late manganocalcite cap (cauliflower botryoidal Mn²⁺-bright-fluorescing calcite at 175-200°C). The REE source is leaching of devitrified ignimbrite glass from the Carpenter Ridge Tuff host per Bachmann et al. 2014 — Eu²⁺ from feldspar at residence T, Y³⁺ general. Headline specimens: pale-pink rhodochrosite + manganocalcite cabinet pieces; octahedral REE-fluorite (~1-2 cm, sometimes with rhodochrosite + manganocalcite associates); native gold in milky quartz from the primary Stage IV ore. Many of these specimens carry dealer labels reading 'Standard Mine, Silverton' — but the only documented Standard Mine in Colorado is in Gunnison County (Ruby District, EPA Superfund, ~80 mi NE, different deposit). The 'Standard Mine, Silverton' label is dealer-conflation; the actual source is American Tunnel material from the 1959-1991 production window.",
+      "expects_species": ["pyrite", "galena", "sphalerite", "chalcopyrite", "quartz", "rhodochrosite", "fluorite", "calcite", "native_gold"],
+      "duration_steps": 200,
+      "notes": [
+        "Anchor: Sunnyside Mine / American Tunnel, Silverton caldera, San Juan County, Colorado. The Silverton caldera nests inside the older San Juan caldera, both in the Oligocene San Juan Volcanic Field. Crystal Lake Tuff erupted at 27.5 Ma collapsing the Silverton caldera; resurgent doming reopened the ring-fracture system; mineralization peaked ~22.5 Ma (Lake City caldera granite porphyry intrusion). Two K-Ar sericite events bracket the hydrothermal history at 22.5 Ma (district-wide propylitic) and 21 Ma (focused sericite). References: Burbank & Luedke 1968 USGS PP 535 (canonical district geology); Casadevall & Ohmoto 1977 Econ. Geol. 72:1285 (the six-stage Sunnyside paragenesis + fluid inclusion data).",
+        "Labeling note (research dossier 2026-05-19): many display specimens of octahedral REE-fluorite + pale-pink rhodochrosite + manganocalcite from Silverton carry dealer labels reading 'Standard Mine, Silverton' but no such mine exists in the Silverton district. The only documented Standard Mine in Colorado is in the Ruby Mining District near Crested Butte (Gunnison County, ~80 mi NE of Silverton, EPA Superfund site since 2005, totally different deposit family). The label is dealer-conflation downstream of the original Sunnyside / American Tunnel production. The scenario is named for the actual producer (Sunnyside-American Tunnel) per the published paragenesis.",
+        "Six-stage compressed to four: Casadevall & Ohmoto 1977 documented six paragenetic stages (I pyrite-quartz, II banded quartz-sulfide, III massive galena-sphalerite-chalcopyrite-bornite-hematite, IV Au-Te-quartz, V Mn ores rhodochrosite-rich, VI quartz-fluorite-carbonate-sulfate). Stages I-IV are compressed into a single primary-ore phase in this scenario (steps 1-30) because the simulator's nucleation cap doesn't reward fine-grained sequencing of the primary sulfides. Stages V and VI map directly to the late-stage carbonate + fluoride pulses (steps 30-185).",
+        "Engine fit (v103 + v104 infra commits): the Y fluid field (added v103) drives the REE-octahedral fluorite habit per Bosze & Rakovan 2002. The manganocalcite branch (v103) fires when Mn>5 + Fe<2 + low supersaturation; bright Mn²⁺ SW UV fluorescence note (graduated v103). The v104 fluorite color correction makes Y-rich fluorite display grass-green (yttrofluorite character per Naumov & Naumova 1980 + Pierce 1990 Pikes Peak HREE-fluorite mechanism), not blue (blue is the LOW-Y F-center mechanism). The boss's Silverton specimens (pale-blue-with-green-tint in white light, brilliant blue under SW UV) are photobleached display material — original was richer green, fluorescence preserved.",
+        "Wallrock: 'basalt' proxy for the Crystal Lake Tuff silicate ignimbrite host. Reactivity 0.0 keeps the wall inert (the San Juan tuffs are crystalline silicate, not carbonate-buffered) — late-stage neutralization comes from CO₂ degassing of the cooling fluid, not from wallrock dissolution. Vug diameter 50 mm matches typical American Tunnel cabinet-pocket scale (boss's specimens range thumbnail to small miniature). Architecture 'pocket' for the vein-bounded cavity. Shape_seed 1959 (the year the American Tunnel was driven from the Gold King portal at Gladstone).",
+        "Boss specimen calibration: 15 rhodochrosites from Silverton (most pale-pink, small ~3-10 mm rhombs); two with fluorite; one with calcite manganocalcite cap; the fluorites pale-blue-with-green-tint visible (probably photobleached from original richer green); SW UV brilliant blue fluorescence on fluorite (Eu²⁺/Y³⁺ activator); brilliant salmon fluorescence on manganocalcite (Mn²⁺ activator, 'much brighter than most' per boss observation). Plus a native gold in quartz from the primary ore phase. The scenario aims to reproduce this assemblage at seed 42."
+      ],
+      "initial": {
+        "temperature_C": 280.0,
+        "pressure_kbar": 0.5,
+        "fluid": {
+          "SiO2": 400,
+          "Ca": 200,
+          "CO3": 50,
+          "Fe": 10,
+          "Mn": 30,
+          "Mg": 8,
+          "Na": 100,
+          "K": 30,
+          "F": 8,
+          "Y": 0.0,
+          "Cu": 25,
+          "Pb": 80,
+          "Zn": 120,
+          "S": 200,
+          "Cl": 60,
+          "Au": 0.5,
+          "Te": 1.0,
+          "Sb": 5,
+          "As": 10,
+          "Ag": 8,
+          "pH": 4.5,
+          "O2": 0.05,
+          "salinity": 5.0
+        },
+        "wall": {
+          "composition": "basalt",
+          "reactivity": 0.0,
+          "vug_diameter_mm": 50.0,
+          "architecture": "pocket",
+          "primary_bubbles": 4,
+          "secondary_bubbles": 6,
+          "shape_seed": 1959
+        }
+      },
+      "events": [
+        { "step":  30, "type": "sunnyside_cooling_transition",          "name": "Primary Cooling",                     "description": "Stage I-IV closes — sulfides + Au-quartz lock in; T drops; pH neutralizes" },
+        { "step":  70, "type": "sunnyside_stage_v_mn_carbonate",        "name": "Stage V Mn-Carbonate Pulse",           "description": "Pale-pink rhodochrosite — Casadevall Stage V (245-200°C, Fe-poor lattice)" },
+        { "step": 110, "type": "sunnyside_stage_vi_fluoride_pulse",     "name": "Stage VI Fluoride + REE Pulse",        "description": "Magmatic F + Y leached from Carpenter Ridge Tuff glass — octahedral REE-fluorite (grass-green visible, blue SW UV)" },
+        { "step": 150, "type": "sunnyside_stage_vi_manganocalcite_cap", "name": "Stage VI Manganocalcite Cap",          "description": "Cauliflower botryoidal Mn²⁺-fluorescent calcite — terminal Sunnyside texture" }
+      ],
+      "sources": [
+        "Burbank W.S. & Luedke R.G. (1968) — Geology and Ore Deposits of the Eureka and Adjoining Districts, San Juan Mountains, Colorado. USGS Professional Paper 535.",
+        "Casadevall T. & Ohmoto H. (1977) — Sunnyside Mine, Eureka mining district, San Juan County, Colorado; geochemistry of gold and base metal ore deposition in a volcanic environment. Economic Geology 72: 1285-1320. DOI 10.2113/gsecongeo.72.7.1285.",
+        "Burbank W.S. (1933) — Geology and Ore Deposits of the South Silverton Mining Area, San Juan County, Colorado. USGS Professional Paper 378-A.",
+        "Bachmann O. et al. (2014) — Building zoned ignimbrites by recycling silicic cumulates: insight from the Carpenter Ridge Tuff, CO. Contrib. Min. Pet. 167: 1025. DOI 10.1007/s00410-014-1025-3. (REE/Eu source rock for the Y³⁺/Eu²⁺ leached during the Stage VI fluoride pulse.)",
+        "Bosze S. & Rakovan J. (2002) — Surface-structure-controlled sectoral zoning of REE in fluorite from Long Lake NY and Bingham NM. Geochim. Cosmochim. Acta 66: 997-1009. DOI 10.1016/S0016-7037(01)00822-5. (Octahedral fluorite habit mechanism; Y³⁺ partition coefficient 1.4-3.5x into {111} vs {100}.)",
+        "Naumov V.A. & Naumova S.S. (1980) — Optical spectra of rare-earth-bearing fluorites. (Russian literature; original yttrofluorite green color-mechanism description.)",
+        "Pierce M.L. (1990) — Color centers and rare-earth substitution in Pikes Peak fluorite. (HREE-cluster green color mechanism distinct from F-center blue.)",
+        "Bill H. & Calas G. (1978) — Color centers, associated rare-earth ions and the origin of coloration in natural fluorites. Phys. Chem. Min. 3: 117-131. (F-center photobleaching kinetics; SW UV REE fluorescence bleach-stability.)",
+        "Pohl W.L. (2011) — Economic Geology of Mineral Deposits. Schweizerbart. (Manganocalcite paragenesis + Mn²⁺ activator fluorescence brightness.)",
+        "Research dossier 2026-05-19 — internal research-agent compilation anchoring the scenario broth on Casadevall fluid-inclusion data + Bachmann REE-source-rock budget + boss specimen calibration targets."
+      ]
     }
 
   }

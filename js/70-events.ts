@@ -290,6 +290,16 @@ const EVENT_REGISTRY = {
   sicily_meteoric_o2_pulse: event_sicily_meteoric_o2_pulse,
   sicily_carbonate_buffer: event_sicily_carbonate_buffer,
   sicily_late_synproportionation: event_sicily_late_synproportionation,
+  // 2026-05-19 — Sunnyside Mine / American Tunnel (Silverton caldera,
+  // San Juan County, Colorado). Intermediate-sulfidation polymetallic
+  // epithermal vein deposit; the canonical Silverton-district locality
+  // for octahedral REE-fluorite + pale-pink rhodochrosite + manganocalcite
+  // (Casadevall & Ohmoto 1977 six-stage paragenesis, compressed to
+  // four in the scenario). See js/70p-sunnyside.ts for the handlers.
+  sunnyside_cooling_transition: event_sunnyside_cooling_transition,
+  sunnyside_stage_v_mn_carbonate: event_sunnyside_stage_v_mn_carbonate,
+  sunnyside_stage_vi_fluoride_pulse: event_sunnyside_stage_vi_fluoride_pulse,
+  sunnyside_stage_vi_manganocalcite_cap: event_sunnyside_stage_vi_manganocalcite_cap,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and

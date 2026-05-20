@@ -3941,5 +3941,127 @@
 //          scenario as planned (broth + 4-stage events). v104 here is
 //          a focused single-issue correction so the scenario commit
 //          isn't carrying a "correction" sub-story.
-const SIM_VERSION = 104;
+//   v105 — Sunnyside-American Tunnel Stage V-VI scenario (2026-05-19).
+//          First scenario commit since the v101 Sulphur Bank work.
+//          Anchored on boss specimens (15 Silverton rhodochrosites,
+//          octahedral REE-fluorite, manganocalcite cap, native gold
+//          in quartz) + research-dossier-verified paragenesis from
+//          Casadevall & Ohmoto 1977 Econ. Geol. 72:1285 (six-stage
+//          Sunnyside scheme, compressed to four here).
+//
+//          THE SCENARIO
+//
+//          Silverton caldera, San Juan County, Colorado. Intermediate-
+//          sulfidation polymetallic epithermal vein deposit hosted in
+//          the Crystal Lake Tuff (27.5 Ma San Juan ignimbrite). The
+//          American Tunnel was driven 1959-1991 from the Gold King
+//          portal at Gladstone, intersecting the Sunnyside vein system
+//          ~600 ft below the original Sunnyside workings; principal
+//          modern source of Silverton-district display rhodochrosite +
+//          octahedral REE-fluorite + manganocalcite specimens.
+//
+//          PARAGENESIS — 4 STAGES (Casadevall I-IV compressed):
+//            STAGE 1 (steps 1-30)    Primary ore — pyrite, galena,
+//                                     sphalerite, chalcopyrite, native
+//                                     gold, Ag-sulfosalts, quartz.
+//                                     T 280-260°C, pH 4.5 sulfide-buffered,
+//                                     O2<0.1 reducing, salinity 5 wt%.
+//            STAGE 2 (steps 30-70)   COOLING TRANSITION — primary
+//                                     phase locks in. T drops to 240,
+//                                     pH neutralizes to 6.0, Fe drops
+//                                     to 1.5 ppm (Fe-poor signature
+//                                     for pale-pink late carbonates),
+//                                     salinity 3 wt%, CO3 rises by
+//                                     degassing.
+//            STAGE 3 (steps 70-110)  STAGE V Mn-carbonate pulse —
+//                                     pale-pink rhodochrosite-rich.
+//                                     T 215, CO3 rises further (110),
+//                                     pH 6.3, Mn>Ca in fluid but
+//                                     Ca>Mn in lattice (pale pink per
+//                                     Hinman 1989 kutnohorite intermediate).
+//            STAGE 4 (steps 110-150) STAGE VI early — fluoride + REE
+//                                     pulse. F surges from 8 to 35 ppm
+//                                     (magmatic vapor + meteoric mixing);
+//                                     Y leached from Carpenter Ridge
+//                                     Tuff to 3.2 ppm (Bachmann et al.
+//                                     2014 ignimbrite REE budget).
+//                                     Octahedral REE-fluorite (Bosze
+//                                     & Rakovan 2002 GCA 66:997) fires:
+//                                     grass-green visible (v104 yttro-
+//                                     fluorite mechanism), brilliant
+//                                     blue SW UV (Eu²⁺ activator).
+//                                     T drops to 195.
+//            STAGE 5 (steps 150-200) STAGE VI late — manganocalcite
+//                                     cap. T 175, Mn 6 (waning), Ca
+//                                     220 (dominant), Fe still 1.5
+//                                     (Mn²⁺ fluorescence preserved).
+//                                     Cauliflower botryoidal habit per
+//                                     v103 manganocalcite branch; bright
+//                                     salmon SW UV fluorescence per
+//                                     v103 graduated note (trace_Mn
+//                                     ~ 0.9 × 0.15 = 0.13 — won't hit
+//                                     "brilliant" threshold but lands
+//                                     in "moderate orange" branch;
+//                                     real-deposit Mn-in-lattice up
+//                                     to 5-15 mol% per Pohl 2011 is
+//                                     a render-layer concern, not an
+//                                     engine-firing-gate concern).
+//
+//          LABELING NOTE: many of these specimens carry dealer labels
+//          reading "Standard Mine, Silverton" but no such mine exists
+//          in the Silverton district. The only documented Standard
+//          Mine in Colorado is in Gunnison County (Ruby District,
+//          ~80 mi NE, EPA Superfund). The scenario is named for the
+//          actual producer per the research dossier.
+//
+//          SEED 42 FIRING — actual baseline output:
+//            pyrite 12 (primary; Fe + S buffered)
+//            tetrahedrite 9 (Ag-sulfosalt, Sunnyside Ag carrier)
+//            quartz 6 (ongoing)
+//            proustite 6 (Ag-As ruby silver; Stage IV anchor)
+//            siderite 5 (Fe-CO3 transition cooling)
+//            galena 4 (primary Pb)
+//            arsenopyrite 4 (As-Fe-S primary)
+//            acanthite 4 (Ag2S terminal)
+//            rhodochrosite 2 (Stage V pale-pink)
+//            wurtzite 2 (high-T ZnS polymorph, Casadevall III)
+//            tennantite 2 (As end of tetrahedrite series)
+//            fluorite 1 (Stage VI octahedral REE)
+//            calcite 1 (Stage VI cap, manganocalcite branch)
+//            albite 1 (wallrock minor)
+//          14 species, 59 crystals total. Sphalerite + chalcopyrite +
+//          native_gold did NOT fire — wurtzite ate the Zn budget at
+//          high-T; Cu split to tetrahedrite+tennantite; Au=0.5 ppm was
+//          below nucleation threshold (real Sunnyside ratio Au:Ag~1:5
+//          per Casadevall — would need Au ~2 ppm to fire reliably).
+//          These are scenario-tuning candidates for v106.
+//
+//          CASCADE DRIFT IN EXISTING SCENARIOS: zero. New scenario is
+//          additive — gen-baseline diff shows 86 lines added (the new
+//          sunnyside_american_tunnel block), zero changes to existing
+//          scenario entries. The v103 + v104 infra was correctly gate-
+//          preserving; the v105 scenario only fires its own broth.
+//
+//          REFERENCES:
+//            * Burbank W.S. & Luedke R.G. (1968) USGS PP 535 — district
+//              geology
+//            * Burbank W.S. (1933) USGS PP 378-A — South Silverton
+//            * Casadevall T. & Ohmoto H. (1977) Econ. Geol. 72:1285 —
+//              the canonical Sunnyside six-stage paragenesis + fluid
+//              inclusion T/salinity data
+//            * Bachmann O. et al. (2014) Contrib. Min. Pet. 167:1025 —
+//              Carpenter Ridge Tuff REE budget (the Y/Eu source)
+//            * Bosze & Rakovan 2002 GCA 66:997 — REE-octahedral fluorite
+//            * Naumov & Naumova 1980 + Pierce 1990 — yttrofluorite
+//              green color mechanism
+//            * Bill & Calas 1978 Phys. Chem. Min. 3:117 — F-center
+//              photobleaching + REE fluorescence bleach-stability
+//            * Pohl 2011 — manganocalcite paragenesis + fluorescence
+//            * Hinman 1989 Am. Min. 74:1206 — kutnohorite-rhodochrosite
+//              Ca-Mn solid solution color
+//
+//          Coverage: 128 live minerals unchanged (no new mineral entries
+//          in this commit — pure scenario addition). 25 paramorph-only.
+//          Scenarios 26 → 27 (+1 scenario).
+const SIM_VERSION = 105;
 
