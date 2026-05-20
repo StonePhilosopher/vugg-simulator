@@ -83,15 +83,19 @@ describe('v103 Silverton infra — Y fluid field + REE-octahedral fluorite + man
       expect(crystal.habit).toBe('cubic');
     });
 
-    it('Y=5 (rich) gives deep-blue color note (fresh REE-rich appearance)', () => {
+    it('Y=5 (rich) gives rich grass-green color note (fresh HREE-rich yttrofluorite)', () => {
+      // v104: Y-rich fluorite is GREEN per Naumov & Naumova 1980 +
+      // Pierce 1990 — "yttrofluorite" character from Y-O charge transfer
+      // + Y-stabilized electron color cluster centers, not F-centers.
+      // (v103 had this wrong as deep-blue; corrected.)
       const { crystal, zone } = growOneStep({ Y: 5.0 });
       expect(crystal.habit).toBe('octahedral_REE');
-      expect(zone.note.toLowerCase()).toContain('deep blue');
+      expect(zone.note.toLowerCase()).toContain('grass-green');
     });
 
-    it('Y=1.5 (mid) gives pale-blue photobleach-fadable color note', () => {
+    it('Y=1.5 (mid) gives pale yellow-green photobleach-fadable color note', () => {
       const { zone } = growOneStep({ Y: 1.5 });
-      expect(zone.note.toLowerCase()).toContain('pale blue');
+      expect(zone.note.toLowerCase()).toContain('yellow-green');
       expect(zone.note.toLowerCase()).toContain('photobleach');
     });
 

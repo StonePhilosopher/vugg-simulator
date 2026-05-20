@@ -58,14 +58,27 @@ function grow_fluorite(crystal, conditions, step) {
 
   let color;
   if (f.Y > 1.0) {
-    // REE-bearing octahedral: deep blue when fresh, pale blue when
-    // light-aged (F-center photobleaching). The original color tied to
-    // the REE batch — high-Y / high-Eu → deeper blue when fresh.
-    color = f.Y > 3.0 ? 'deep blue-purple (fresh, REE-rich)' : 'pale blue (REE-bearing, photobleach-fadable)';
-  } else if (f.Fe > 10) color = 'green';
+    // v104 (2026-05-19): Y-rich late hydrothermal fluorite is GREEN,
+    // not blue/purple — the "yttrofluorite" of older Russian literature
+    // (Naumov & Naumova 1980). Color mechanism: Y-O charge transfer +
+    // Y-stabilized electron color cluster centers per Pierce 1990
+    // (Pikes Peak HREE-fluorite). Pure F-centers (visible blue/purple)
+    // are the LOW-Y mechanism; HREE-substituted fluorite shifts the
+    // color trap energetically and produces green-to-yellow-green
+    // visible color. Pikes Peak CO, Long Lake NY, Bingham NM, and
+    // Silverton CO are canonical green-yttrofluorite localities. The
+    // photobleached display end is near-colorless / very pale green.
+    // SW UV blue fluorescence (Eu²⁺ activator) is unchanged — that's
+    // electronic, not defect-based, so it survives bleaching.
+    // (v103 had the color wrong as deep blue-purple; corrected per
+    // boss observation 2026-05-19: "the blue is on the green side, so
+    // it might have been a richer green too, when in doubt default to
+    // the science.")
+    color = f.Y > 3.0 ? 'rich grass-green (fresh, HREE-rich yttrofluorite)' : 'pale yellow-green (REE-bearing, photobleach-fadable)';
+  } else if (f.Fe > 10) color = 'green (Fe-bearing — different mechanism from Y-yttrofluorite green)';
   else if (f.Mn > 5) color = 'purple';
   else if (conditions.temperature > 200) color = 'colorless';
-  else color = 'blue-violet';
+  else color = 'blue-violet (F-center, low-REE)';
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 

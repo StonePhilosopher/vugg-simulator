@@ -3877,5 +3877,69 @@
 //          cap). Research dossier in flight; broth chemistry anchored
 //          on Burbank & Luedke 1968 + Casadevall & Ohmoto 1977
 //          fluid inclusion data + boss's specimen calibration targets.
-const SIM_VERSION = 103;
+//   v104 — Fluorite color correction: Y-rich is GREEN, not blue
+//          (2026-05-19). Bug-shaped change but the bug was in the
+//          mechanism story not in the firing gates. v103 had the
+//          Y-rich fluorite color noted as "deep blue-purple (fresh,
+//          REE-rich)" and "pale blue (REE-bearing, photobleach-
+//          fadable)." That came from confusing two different color
+//          mechanisms:
+//            * F-CENTER color (visible blue/purple/violet) — pure
+//              electron color centers in halide-vacancy traps. The
+//              LOW-Y mechanism. Pure F-Ca fluorite color. Photo-
+//              bleaches because the trapped electron is photolytic-
+//              ally labile (Bill & Calas 1978 Phys.Chem.Min. 3:117).
+//            * Y-STABILIZED CLUSTER color (visible green to yellow-
+//              green) — Y-O charge transfer + Y-stabilized electron
+//              color cluster centers per Naumov & Naumova 1980
+//              (Russian) and Pierce 1990 (Pikes Peak HREE-fluorite).
+//              The HIGH-Y mechanism. The "yttrofluorite" character
+//              of the older literature. Also photobleach-fadable but
+//              via a different mechanism than pure F-center.
+//          The boss flagged the correction: "the blue is on the green
+//          side, so it might have been a richer green too, when in
+//          doubt default to the science." The specimens are pale-
+//          blue-with-green tint today (photobleached after decades of
+//          display); the original fresh material was richer green.
+//          Pikes Peak CO, Long Lake NY (Bosze & Rakovan 2002 study
+//          locality), Bingham NM, and Silverton CO are all canonical
+//          green-to-yellow-green yttrofluorite localities — the visible
+//          color when fresh is green, not blue.
+//          The SW UV blue fluorescence (Eu²⁺ activator) is UNCHANGED
+//          across all of this. It's an electronic transition at the REE
+//          ion, not a defect color center; survives photobleaching
+//          indefinitely. That's why the SW UV photo is the chemistry
+//          diagnostic that survives display aging (boss's specimens
+//          glow brilliant blue under 310 nm — that data is real and
+//          undisturbed by visible-color fading).
+//          ENGINE CHANGE:
+//            Y > 3   "rich grass-green (fresh, HREE-rich yttrofluorite)"
+//            Y > 1   "pale yellow-green (REE-bearing, photobleach-
+//                     fadable)"
+//          Also clarified the Fe>10 green note ("Fe-bearing — different
+//          mechanism from Y-yttrofluorite green") and the F-center
+//          baseline ("blue-violet F-center, low-REE") to make the
+//          three green/blue color mechanisms distinct in the engine
+//          metadata.
+//          REFERENCES:
+//            * Naumov V.A. & Naumova S.S. (1980) Optical spectra of
+//              rare-earth-bearing fluorites. (Russian language;
+//              original yttrofluorite color-mechanism description.)
+//            * Pierce M.L. (1990) Color centers and rare-earth
+//              substitution in Pikes Peak fluorite. (HREE-cluster
+//              mechanism for the green color.)
+//            * Bill H. & Calas G. (1978) Phys.Chem.Min. 3:117 (still
+//              the canonical photobleaching reference; the F-center
+//              vs REE-cluster distinction sits inside their framework.)
+//          Tests updated (2 pins): "Y=5 (rich) gives rich grass-green
+//          color note", "Y=1.5 (mid) gives pale yellow-green". The
+//          15-pin silverton-infra test file is otherwise unchanged.
+//          CASCADE DRIFT: zero. Color is a note-string change; doesn't
+//          affect firing gates, crystal counts, or sizes. v104 baseline
+//          regen confirms byte-identical mineral totals to v103.
+//          NEXT: v105 ships the Sunnyside-American Tunnel Stage V-VI
+//          scenario as planned (broth + 4-stage events). v104 here is
+//          a focused single-issue correction so the scenario commit
+//          isn't carrying a "correction" sub-story.
+const SIM_VERSION = 104;
 
