@@ -15654,6 +15654,281 @@
       "late_stage_propensity": 0.65,
       "_late_stage_note": "Mid-to-late stage in the rodingite paragenesis. Prehnite forms after grossular + diopside + vesuvianite but before terminal datolite + zeolites. In Lake Superior amygdales, prehnite is one of the EARLY-to-mid amygdale fillings (with calcite + analcime + native_copper); the rodingite paragenesis pushes it later.",
       "class_color": "#a8e0a0"
+    },
+    "chrysotile": {
+      "formula": "Mg3Si2O5(OH)4",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 20,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "fibrous",
+          "wall_spread": 0.55,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "moderate-high excess (> 0.6) — parallel-bundle silky fibers, the asbestos aesthetic + cabinet diagnostic. Commercial chrysotile-asbestos texture."
+        },
+        {
+          "name": "massive_fibrous",
+          "wall_spread": 0.8,
+          "void_reach": 0.15,
+          "vector": "coating",
+          "trigger": "low-moderate excess (0.2-0.6) — compact massive serpentinite texture, subradiating fiber bundles internally."
+        },
+        {
+          "name": "platy",
+          "wall_spread": 0.85,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "very low excess (< 0.2) — platy texture (lizardite-similar), low-relief serpentine coating."
+        }
+      ],
+      "class": "silicate",
+      "description": "Mg₃Si₂O₅(OH)₄ — monoclinic serpentine-group phyllosilicate (clinochrysotile, the most common polytype; ortho- and parachrysotile are minor polytypes). H 2.5-3.5, density 2.55, silky-greasy luster, conchoidal fracture for massive form. THE asbestos of commerce — fibrous habit diagnostic with parallel-bundle silky fibers. Forms by SERPENTINIZATION: olivine + pyroxene + H₂O → serpentine minerals at T 200-500°C and pH 10-12, in ultramafic protolith (peridotite/dunite/harzburgite). Jeffrey Mine (Val-des-Sources Quebec — formerly named Asbestos QC; 1881-2011 produced ~40% of world chrysotile-asbestos; town renamed 2020). Other major producers: Thetford Mines QC, Cassiar BC, Coalinga CA, Sverdlovsk Russia, Zhetygara Kazakhstan. The asbestos health concerns (mesothelioma + asbestosis from prolonged inhalation, the 1949 Quebec Asbestos Strike etc.) are real but secondary to the geological story — at Jeffrey, the rodingite-contact cabinet assemblage is what mineral collectors value. Chrysotile is the host-matrix mineral; the rodingite minerals (vesuvianite cyprine + grossular + diopside + pectolite + datolite) crystallize within and along the chrysotile-serpentine veining. Discriminator from analogous serpentines: lizardite is platy (no fibers), antigorite is corrugated-platy (no straight fibers); chrysotile is the only true fibrous polytype. Refs: Anthony JW et al. Handbook of Mineralogy v.IIA Phyllosilicates; Deer WA, Howie RA, Zussman J Rock-Forming Minerals v.1B; Wicks FJ & Plant AG (1979) Electron-microprobe + TEM study of serpentine minerals. Canadian Mineralogist 17:785-830; O'Hanley DS (1996) Serpentinites: Records of Tectonic and Petrological History. Oxford. THE rodingite + serpentine framework. Bernardini GP (1981) MR 12(5):277.",
+      "scenarios": [
+        "jeffrey_mine"
+      ],
+      "T_range_C": [
+        50,
+        500
+      ],
+      "T_optimum_C": [
+        200,
+        400
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": 7.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Mg": 100,
+        "SiO2": 50
+      },
+      "_ingredients_note": "Mg ≥ 100 (serpentinization Mg released from olivine + pyroxene of ultramafic protolith) + SiO2 ≥ 50 (silica framework). T 50-500°C; sweet spot 200-400°C (the serpentinization window per Wicks & Plant 1979). pH 8.5-13 strict alkaline (hyperalkaline serpentinization-driven fluid). Ca > 100 marginally suppresses chrysotile in favor of diopside/wollastonite (Ca-Mg-Si systems route Mg to clinopyroxene).",
+      "trace_ingredients": {
+        "Ni": "common substitution at Mg sites in serpentine; can produce pale yellow-green tint at higher Ni"
+      },
+      "thermal_decomp_C": 500,
+      "thermal_decomp_reaction": "Above ~500°C: chrysotile dehydrates and recrystallizes to forsterite + talc + H2O, then ultimately to olivine + enstatite + H2O at higher T per O'Hanley 1996. Marks the upper-T boundary of serpentine stability.",
+      "thermal_decomp_products": {
+        "Mg": 0.42,
+        "SiO2": 0.40
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Non-fluorescent."
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 7.0,
+        "reaction": "Mg3Si2O5(OH)4 + 6H⁺ → 3Mg²⁺ + 2H4SiO4 + H2O — releases Mg + Si to fluid below pH 7. Below serpentine stability field; slow kinetics in field environments.",
+        "products": {
+          "Mg": 0.42,
+          "SiO2": 0.40
+        }
+      },
+      "habit": "fibrous",
+      "color_rules": {
+        "white_pale_green": {
+          "default": true,
+          "trigger": "default — white to pale-yellow-green serpentine (the field aesthetic for both vein chrysotile and commercial asbestos)"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v114 (2026-05-20). Monoclinic serpentine-group phyllosilicate, seventh mineral of the Jeffrey Mine rodingite arc; the asbestos of commerce + Jeffrey host-matrix mineral. Substrate priority: magnetite > wall. Max nucleation count 5 (host-matrix mineral; many crystals expected). CALIBRATION expectation: chrysotile may fire in ultramafic_supergene scenario which already carries Mg + alkaline pH; first deliberate firing at v115 jeffrey_mine. Per Anthony Handbook v.IIA; Wicks & Plant 1979; O'Hanley 1996; Bernardini 1981.",
+      "late_stage_propensity": 0.2,
+      "_late_stage_note": "EARLY-stage host matrix — chrysotile forms FIRST in the rodingite paragenesis (the serpentinization event), then the rodingite-contact minerals crystallize within and along chrysotile veining. Propensity 0.2 = very early.",
+      "class_color": "#c8e0c0"
+    },
+    "brucite": {
+      "formula": "Mg(OH)2",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 4,
+      "max_size_cm": 8,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "tabular_hexagonal",
+          "wall_spread": 0.5,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "default — flat hexagonal {0001} tabular plates."
+        },
+        {
+          "name": "pearly_lamellae",
+          "wall_spread": 0.45,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "high excess (> 1.2) — pearly-vitreous flat {0001} cleavage flakes, partial bunched lamellar morphology. Best-of-cabinet from Asbestos QC + Wood's Mine PA."
+        },
+        {
+          "name": "foliated_mass",
+          "wall_spread": 0.85,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "low excess (< 0.3) — compact foliated massive, no terminations, the field aesthetic."
+        }
+      ],
+      "class": "oxide",
+      "description": "Mg(OH)₂ — trigonal Mg hydroxide. H 2.5, density 2.39, pearly to vitreous luster, perfect {0001} cleavage producing flexible lamellae. The serpentinization byproduct mineral — when olivine + pyroxene + H₂O react to form serpentine, excess Mg precipitates as brucite. Diagnostic hyperalkaline pH (10-13), above the magnesite-carbonate stability boundary. Common at Jeffrey Mine Quebec (associated with chrysotile veining), Italian Alps Val Malenco, Marmara Turkey, Mt. Lewis NV, Wood's Mine PA (the type-locality cabinet specimens). Distinct from carbonate-substituted hydromagnesite (Mg-OH-CO3, separate mineral; brucite has no CO3). Refs: Anthony JW et al. Handbook of Mineralogy v.III; Deer Howie Zussman v.5 Non-Silicates; O'Hanley DS (1996) Serpentinites: Records of Tectonic and Petrological History. Oxford; Schramke JA, Kerrick DM, Lasaga AC (1982) Calculation of the dehydration reaction muscovite + quartz = K-feldspar + sillimanite + water (and brucite stability experiments). Geochim. Cosmochim. Acta 46:1581.",
+      "scenarios": [
+        "jeffrey_mine"
+      ],
+      "T_range_C": [
+        30,
+        450
+      ],
+      "T_optimum_C": [
+        100,
+        300
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": 8.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Mg": 100
+      },
+      "_ingredients_note": "Mg ≥ 100 — simplest stoichiometry. T 30-450°C; sweet spot 100-300°C. pH 9.5-13.5 STRICT hyperalkaline. CO3 > 50 ppm gates out (brucite + CO2 → magnesite + H2O carbonatization).",
+      "trace_ingredients": {
+        "Mn": "trace gives pale-blue-green tint",
+        "Fe": "trace gives pale-green tint (Fe³⁺ d-d) — sometimes called 'iron brucite'"
+      },
+      "thermal_decomp_C": 350,
+      "thermal_decomp_reaction": "Above ~350°C: brucite dehydrates to periclase MgO + H2O. Common laboratory test for brucite.",
+      "thermal_decomp_products": {
+        "Mg": 0.42
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Non-fluorescent."
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 8.5,
+        "reaction": "Mg(OH)2 + 2H⁺ → Mg²⁺ + 2H2O — releases Mg + alkalinity to fluid below pH 8.5. Fast kinetics; brucite is one of the most acid-reactive Mg minerals.",
+        "products": {
+          "Mg": 0.42
+        }
+      },
+      "habit": "tabular_hexagonal",
+      "color_rules": {
+        "white_pale_blue_green": {
+          "default": true,
+          "trigger": "default — white to pale-blue-green; Mn or Fe trace shifts toward green"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v114 (2026-05-20). Trigonal Mg hydroxide, eighth mineral of the Jeffrey Mine rodingite arc + serpentinization byproduct. Oxide-class (hydroxides grouped with oxides per simulator convention). Substrate priority: chrysotile (rodingite host matrix) > magnetite > wall. CALIBRATION expectation: brucite may fire in ultramafic_supergene if pH is high enough; first deliberate firing at v115 jeffrey_mine. Per Anthony Handbook v.III; O'Hanley 1996; Schramke et al. 1982.",
+      "late_stage_propensity": 0.3,
+      "_late_stage_note": "Early-stage serpentinization byproduct, contemporaneous with chrysotile. Forms before the rodingite calc-silicates. Propensity 0.3 = early.",
+      "class_color": "#d8e8d8"
+    },
+    "awaruite": {
+      "formula": "Ni2Fe to Ni3Fe",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 3,
+      "max_size_cm": 2,
+      "growth_rate_mult": 0.15,
+      "habit_variants": [
+        {
+          "name": "grains_microscopic",
+          "wall_spread": 0.85,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "default — micron-scale grains in chrysotile/serpentine matrix, rarely visible without microscopy."
+        },
+        {
+          "name": "nuggets_rare",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "high excess (> 1.4) — mm-scale visible alloy grains, the Cassiar BC best-material aesthetic."
+        },
+        {
+          "name": "placer_grains",
+          "wall_spread": 0.75,
+          "void_reach": 0.25,
+          "vector": "projecting",
+          "trigger": "low T (< 120°C) + moderate excess — secondary placer concentration habit (Awaroa NZ + New Caledonia surface deposits)."
+        }
+      ],
+      "class": "native",
+      "description": "(Ni,Fe) — Ni-Fe alloy, ranging from Ni₂Fe to Ni₃Fe stoichiometry. Cubic Fm-3m, H 5, malleable, magnetic, metallic-silvery luster. THE serpentinization-driven natural metal. Forms when olivine + pyroxene of ultramafic protolith serpentinize under strongly reducing (O₂ < 0.3) and hyperalkaline (pH 9-13) conditions, releasing Ni and Fe in metallic-alloy form. Type locality AWAROA NZ 1885 (the namesake); MICROSCOPIC grains in serpentine + chrysotile matrix at most occurrences — rarely visible without microscopy. Larger nuggets at exceptional localities: Cassiar BC 1-2 mm grains; Bou Azzer Morocco; Jeffrey + Italian Alps; New Caledonia placers (secondary surface concentration). Coexists with magnetite + chrysotile + chromite in serpentinite matrix. The Ni in FluidChemistry was already added pre-v89 (speculative for millerite + annabergite + pentlandite + chrysoprase coloration); awaruite is the latest consumer. Discriminator: STRICT reducing + alkaline + S-free gate; sulfides (millerite NiS, pentlandite (Fe,Ni)9S8, heazlewoodite Ni3S2) win the Ni budget when S > 5 ppm. Refs: Anthony Handbook v.I; Bird DK & Bassett WA (1980) Fluid inclusion study of an active geothermal system Hekla Iceland (with Fe-Ni alloy stability discussion). Geochim. Cosmochim. Acta 44:1659; Krenn K & Hauzenberger CA (2007) Tonga ophiolite Fe-Ni alloy thermometry; Frost BR (1985) On the stability of sulfides, oxides and native metals in serpentinite. Contributions to Mineralogy and Petrology 91:139-153 (oxygen + sulfur fugacity controls).",
+      "scenarios": [
+        "jeffrey_mine"
+      ],
+      "T_range_C": [
+        50,
+        500
+      ],
+      "T_optimum_C": [
+        200,
+        400
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": null,
+      "pH_dissolution_above": null,
+      "redox_requirement": "reducing",
+      "required_ingredients": {
+        "Ni": 50,
+        "Fe": 20
+      },
+      "_ingredients_note": "Ni ≥ 50 + Fe ≥ 20 + STRICT reducing (nativeRedoxAnoxic with 0.3 threshold) + alkaline pH 9-13 + S < 5 ppm (sulfides take Ni when S is higher). T 50-500°C; sweet spot 200-400°C (serpentinization window).",
+      "trace_ingredients": {
+        "Co": "common minor substitution at Ni site",
+        "Cu": "very rare trace at high Cu (would shift toward Cu-Ni-Fe alloy compositions)"
+      },
+      "thermal_decomp_C": 1450,
+      "thermal_decomp_reaction": "Above ~1450°C: awaruite melts. Below melting, stable in serpentinite + ultramafic systems indefinitely.",
+      "thermal_decomp_products": {
+        "Ni": 0.6,
+        "Fe": 0.4
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Non-fluorescent (metal)."
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": null,
+        "reaction": "Acid attack on awaruite proceeds via O2 + H+ → Ni²⁺ + Fe²⁺/Fe³⁺ → migration into oxide/silicate phases. Slow at the alkaline pH where awaruite is geologically stable.",
+        "products": {
+          "Ni": 0.6,
+          "Fe": 0.4
+        }
+      },
+      "habit": "grains_microscopic",
+      "color_rules": {
+        "silvery_metallic": {
+          "default": true,
+          "trigger": "metallic-silvery Ni-Fe alloy; magnetic; the universal awaruite aesthetic"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v114 (2026-05-20). Cubic Ni-Fe alloy, ninth mineral of the Jeffrey Mine rodingite arc. Native class. Substrate priority: chrysotile (rodingite host) > magnetite > wall. STRICT gates: reducing + alkaline + S-free. Per the v110 lesson, Ni was already in FluidChemistry (pre-v89 speculative) so no add-broth needed — awaruite ships as a normal vugg-add-mineral. CALIBRATION expectation: awaruite is unlikely to fire in any existing scenario due to its strict combination of reducing + alkaline + low-S; first firing expected at v115 jeffrey_mine. Per Anthony Handbook v.I; Bird & Bassett 1980; Frost 1985; Krenn & Hauzenberger 2007.",
+      "late_stage_propensity": 0.35,
+      "_late_stage_note": "Early-to-mid stage in the serpentinization sequence — awaruite forms as alloy droplets during chrysotile precipitation. Contemporaneous with magnetite + chromite as ultramafic-protolith re-equilibration products.",
+      "class_color": "#c0c0c8"
     }
   }
 }

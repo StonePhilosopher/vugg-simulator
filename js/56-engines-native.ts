@@ -313,3 +313,62 @@ function grow_native_copper(crystal, conditions, step) {
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.04, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
+
+// v114 (2026-05-20): Awaruite (Ni,Fe) — Ni-Fe alloy serpentinization
+// byproduct. Ranges Ni2Fe to Ni3Fe stoichiometry; usually microscopic
+// grains in serpentine matrix (rarely visible without microscopy).
+// The Awaroa NZ type locality 1885 is the namesake; Cassiar BC,
+// Bou Azzer MA, Jeffrey QC, Italian Alps, New Caledonia placers are
+// the major producers. Habits:
+//   grains_microscopic (default) — micron-scale grains in chrysotile/
+//     serpentine matrix
+//   nuggets_rare (high σ) — visible mm-scale grains (Cassiar best
+//     material)
+//   placer_grains (cool T) — secondary placer concentration in NZ +
+//     New Caledonia surface deposits
+function grow_awaruite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_awaruite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.5) {
+      crystal.dissolved = true;
+      const d = Math.min(1.5, crystal.total_growth_um * 0.05);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
+        note: `oxidative dissolution (O₂ ${conditions.fluid.O2.toFixed(1)}) — awaruite alloy unstable in oxidizing fluid; Ni²⁺ + Fe³⁺ released to form oxide/silicate phases`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.8 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch
+  if (excess > 1.4) {
+    crystal.habit = 'nuggets_rare';
+    crystal.dominant_forms = ['mm-scale visible alloy grains', 'best-of-Cassiar specimen aesthetic', 'metallic luster, magnetic'];
+  } else if (conditions.temperature < 120 && excess > 0.5) {
+    crystal.habit = 'placer_grains';
+    crystal.dominant_forms = ['secondary placer concentration', 'NZ + New Caledonia surface-deposit habit'];
+  } else {
+    crystal.habit = 'grains_microscopic';
+    crystal.dominant_forms = ['micron-scale grains in serpentine matrix', 'rarely visible without microscopy', 'metallic-silvery sub-mm dots'];
+  }
+
+  // Substrate flavor
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('chrysotile') || pos.includes('serpentine')) substrate_flavor = ' embedded in chrysotile/serpentine matrix';
+  else if (pos.includes('magnetite')) substrate_flavor = ' with magnetite — both serpentinization Fe products';
+
+  // Mass-balance debits — Ni-Fe alloy
+  conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.035, 0);
+  conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.020, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `awaruite ${crystal.habit}, silvery-white metallic Ni-Fe alloy${substrate_flavor}; cubic Ni2-3Fe, H 5, malleable, magnetic, serpentinization signature`,
+  });
+}

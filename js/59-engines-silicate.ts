@@ -1315,6 +1315,68 @@ function grow_chrysoprase(crystal, conditions, step) {
   });
 }
 
+// v114 (2026-05-20): Chrysotile Mg3Si2O5(OH)4 — fibrous serpentine.
+// THE asbestos of commerce. Jeffrey Mine Quebec 1881-2011 produced
+// ~40% of world chrysotile. Habits:
+//   fibrous (default) — parallel-bundle silky fibers, the asbestos
+//     aesthetic + cabinet diagnostic
+//   massive_fibrous (low σ) — compact serpentinite mass texture
+//   platy (rare, lizardite-similar) — at very low σ in cool fluids
+// Note: the asbestos health concerns are real (mesothelioma + asbestosis
+// from prolonged inhalation) but this engine encodes the GEOLOGY; the
+// rodingite assemblage at Jeffrey is the cabinet-collector story.
+function grow_chrysotile(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_chrysotile();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 7.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.04);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — chrysotile releases Mg + Si to fluid; below the serpentine stability field`,
+      });
+    }
+    if (crystal.total_growth_um > 5 && conditions.temperature > 500) {
+      // Thermal breakdown: chrysotile → forsterite + talc (or olivine
+      // at higher T per O'Hanley 1996)
+      crystal.dissolved = true;
+      const d = Math.min(1.5, crystal.total_growth_um * 0.04);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'thermal_decomp',
+        note: `thermal breakdown > 500°C — chrysotile recrystallizes to forsterite + talc + H2O`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch
+  if (excess > 0.6) {
+    crystal.habit = 'fibrous';
+    crystal.dominant_forms = ['parallel-bundle silky fibers', 'asbestiform texture', 'the diagnostic chrysotile aesthetic + commercial product'];
+  } else if (excess > 0.2) {
+    crystal.habit = 'massive_fibrous';
+    crystal.dominant_forms = ['compact massive serpentinite texture', 'subradiating fiber bundles internally'];
+  } else {
+    crystal.habit = 'platy';
+    crystal.dominant_forms = ['platy texture (lizardite-similar)', 'low-relief serpentine coating'];
+  }
+
+  // Mass-balance debits — Mg3 Si2
+  conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.040, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `chrysotile ${crystal.habit}, white-to-pale-yellow-green serpentine; monoclinic Mg3Si2O5(OH)4 phyllosilicate, H 2.5-3.5, silky-greasy luster`,
+  });
+}
+
 // v113 (2026-05-20): Pectolite NaCa2Si3O8(OH) — triclinic Na-Ca
 // inosilicate with iconic radiating-spray habit. Jeffrey Mine
 // signature — sprays on grossular/diopside. Cu trace produces the

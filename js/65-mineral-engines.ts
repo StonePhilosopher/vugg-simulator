@@ -335,4 +335,24 @@ const MINERAL_ENGINES = {
   pectolite: grow_pectolite,
   wollastonite: grow_wollastonite,
   prehnite: grow_prehnite,
+  // v114 (2026-05-20): Mg-matrix family completing the Jeffrey Mine
+  // rodingite assemblage. Three minerals in three different chemistry
+  // classes:
+  //   chrysotile Mg3Si2O5(OH)4 — fibrous serpentine asbestos (silicate
+  //     class). Jeffrey Mine 1881-2011 produced ~40% of world chrysotile.
+  //     Per Wicks & Plant 1979 Can.Min. 17:785 + O'Hanley 1996 Oxford.
+  //   brucite Mg(OH)2 — Mg hydroxide (oxide class). Serpentinization
+  //     byproduct; tabular hexagonal habit. Per Schramke et al. 1982
+  //     GCA 46:1581.
+  //   awaruite (Ni,Fe) — Ni-Fe alloy (native class). Microscopic grains
+  //     in serpentine matrix; serpentinization-derived metal. Per Bird
+  //     & Bassett 1980 GCA 44:1659; Frost 1985 Contrib.Min.Petr. 91:139.
+  // Ni field for awaruite was already in FluidChemistry (pre-v89
+  // speculative for millerite/annabergite/pentlandite); no add-broth
+  // needed (the v110 lesson). Three engines, three classes — no
+  // single-class grouped commit possible; ships as a 3-mineral triple
+  // commit per shared family + paragenesis.
+  chrysotile: grow_chrysotile,
+  brucite: grow_brucite,
+  awaruite: grow_awaruite,
 };

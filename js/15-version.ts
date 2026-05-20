@@ -5009,5 +5009,104 @@
 //          Scenarios 28 unchanged (jeffrey_mine ships v115).
 //          v114 next: chrysotile + brucite + awaruite (Mg-matrix
 //          gangue family — completing the Jeffrey assemblage).
-const SIM_VERSION = 113;
+//   v114 — Mg-matrix gangue family: chrysotile + brucite + awaruite
+//          (2026-05-20). Fifth commit of the Jeffrey Mine rodingite
+//          arc. THREE-CLASS triple commit (silicate + oxide + native)
+//          per shared family + paragenesis (all serpentinization-
+//          driven Mg-bearing minerals).
+//
+//          CHRYSOTILE Mg3Si2O5(OH)4 (silicate) — THE asbestos of
+//          commerce. Monoclinic serpentine-group phyllosilicate;
+//          fibrous habit diagnostic. Jeffrey Mine produced ~40% of
+//          world chrysotile 1881-2011. Host matrix for the rodingite-
+//          contact mineralogy.
+//            Gates: Mg>=100, SiO2>=50, T 50-500, pH 8.5-13
+//            Habits: fibrous (default), massive_fibrous, platy
+//
+//          BRUCITE Mg(OH)2 (oxide-class, hydroxide) — Mg hydroxide;
+//          serpentinization byproduct. Hyperalkaline pH only (above
+//          magnesite stability). Tabular hexagonal habit.
+//            Gates: Mg>=100, T 30-450, pH 9.5-13.5, CO3<50
+//            Habits: tabular_hexagonal (default), pearly_lamellae
+//              (high σ), foliated_mass (low σ)
+//
+//          AWARUITE (Ni,Fe) (native-class) — Ni-Fe alloy
+//          serpentinization byproduct. Ranges Ni2Fe to Ni3Fe stoich;
+//          microscopic grains in serpentine matrix at most
+//          occurrences; mm-scale nuggets at Cassiar BC. Type locality
+//          Awaroa NZ 1885.
+//            Gates: Ni>=50, Fe>=20, T 50-500, pH 9-13, STRICT
+//              reducing (nativeRedoxAnoxic O2 < 0.3), S < 5
+//              (sulfides win Ni when S is higher)
+//            Habits: grains_microscopic (default), nuggets_rare,
+//              placer_grains
+//
+//          THREE CHEMISTRY CLASSES TOUCHED:
+//            chrysotile  -> js/39 + js/59 + js/89 (silicate)
+//            brucite     -> js/37 + js/57 + js/87 (oxide)
+//            awaruite    -> js/36 + js/56 + js/86 (native)
+//          First commit in the arc to touch three class files
+//          simultaneously. The vugg-add-mineral skill grouped-commit
+//          rule allows this when the family is paragenetically
+//          coherent (here: serpentinization byproducts).
+//
+//          NI FIELD ALREADY EXISTED — confirmed pre-v89 per v110
+//          datolite/B-field finding. Ni has consumers: millerite,
+//          annabergite, pentlandite, chrysoprase coloration.
+//          Awaruite is the latest consumer; no add-broth needed.
+//          This was the awaruite-specific implication flagged in
+//          the Jeffrey handoff (ff1a274) "Decisions locked §1" — the
+//          handoff predicted "if Ni is missing, v115 splits". Boss
+//          confirmed the right move was strengthening vugg-add-broth
+//          via dogfood IF Ni was missing. Reality: Ni was already
+//          there, so awaruite ships as a normal mineral.
+//
+//          CALIBRATION DRIFT — zero. None of chrysotile, brucite,
+//          or awaruite fire in any existing scenario at seed 42:
+//            - chrysotile: ultramafic_supergene was a candidate
+//              (Mg=300 in broth) but pH may be just below 8.5 OR
+//              SiO2 in that scenario is too low for the gate;
+//              didn't fire.
+//            - brucite: blocked everywhere by the CO3 < 50 ppm
+//              gate (FluidChemistry CO3 default is 150 ppm; only
+//              CO2-depleted serpentinization fluids clear it).
+//            - awaruite: the STRICT combination of pH>=9 +
+//              O2<0.3 (reducing) + S<5 + Ni>=50 + Fe>=20 is so
+//              specific that only the dedicated jeffrey_mine v115
+//              scenario will clear it.
+//          All three "wired but not yet firing" per the v110-v114
+//          pattern. First firings expected at v115 jeffrey_mine.
+//
+//          REFERENCES:
+//            * Anthony JW et al. Handbook of Mineralogy v.I (Native
+//              Metals); v.IIA (Phyllosilicates); v.III (Halides,
+//              Hydroxides, Oxides).
+//            * Deer WA, Howie RA, Zussman J Rock-Forming Minerals
+//              v.1B (Sheet Silicates) + v.5 (Non-Silicates).
+//            * Wicks FJ & Plant AG (1979) Electron-microprobe + TEM
+//              study of serpentine minerals. Canadian Mineralogist
+//              17:785-830.
+//            * O'Hanley DS (1996) Serpentinites: Records of Tectonic
+//              and Petrological History. Oxford. RODINGITE +
+//              SERPENTINE CANONICAL.
+//            * Schramke JA, Kerrick DM, Lasaga AC (1982) Calculation
+//              of dehydration reactions including brucite stability.
+//              GCA 46:1581.
+//            * Bird DK & Bassett WA (1980) Fluid inclusion +
+//              thermodynamic study of an active geothermal system;
+//              Fe-Ni alloy stability in serpentinite. GCA 44:1659.
+//            * Frost BR (1985) On the stability of sulfides, oxides
+//              and native metals in serpentinite. Contributions to
+//              Mineralogy and Petrology 91:139-153.
+//            * Krenn K & Hauzenberger CA (2007) Tonga ophiolite
+//              Fe-Ni alloy thermometry.
+//            * Bernardini GP (1981) The Jeffrey Mine, Asbestos,
+//              Quebec. Mineralogical Record 12(5):277-291.
+//
+//          Coverage 136 → 139 live minerals (+3: chrysotile +
+//          brucite + awaruite).
+//          Scenarios 28 unchanged (jeffrey_mine ships v115).
+//          v115 next: jeffrey_mine scenario + 'ultramafic' wall
+//          type infra (the rodingite paragenesis finally fires).
+const SIM_VERSION = 114;
 

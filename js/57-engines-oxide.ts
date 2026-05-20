@@ -556,3 +556,59 @@ function grow_chromite(crystal, conditions, step) {
     note: `black FeCr2O4 spinel — Cr ${conditions.fluid.Cr.toFixed(0)} Fe ${conditions.fluid.Fe.toFixed(0)} ppm at T=${conditions.temperature.toFixed(0)}°C`,
   });
 }
+
+// v114 (2026-05-20): Brucite Mg(OH)2 — trigonal Mg hydroxide. The
+// serpentinization byproduct. Diagnostic hyperalkaline pH 10-13
+// (above magnesite-carbonate stability). Habits:
+//   tabular_hexagonal (default) — flat hexagonal {0001} plates
+//   foliated_mass (low σ) — the field-aesthetic massive form
+//   pearly_lamellae (high σ) — pearly-vitreous {0001} cleavage flakes
+function grow_brucite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_brucite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 8.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.10);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — brucite Mg(OH)2 unstable below pH 8.5; releases Mg²⁺ + 2OH⁻ to fluid`,
+      });
+    }
+    if (crystal.total_growth_um > 5 && conditions.fluid.CO3 > 50) {
+      // Carbonatization: brucite + CO2 → magnesite + H2O
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.08);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'carbonatization',
+        note: `carbonatization (CO3 ${conditions.fluid.CO3.toFixed(0)} ppm) — brucite + CO2 → magnesite + H2O`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.8 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch
+  if (excess > 1.2) {
+    crystal.habit = 'pearly_lamellae';
+    crystal.dominant_forms = ['pearly-vitreous flat {0001} cleavage flakes', 'partial bunched lamellar morphology', 'best-of-cabinet plates from Asbestos QC + Wood\'s Mine PA'];
+  } else if (excess < 0.3) {
+    crystal.habit = 'foliated_mass';
+    crystal.dominant_forms = ['compact foliated massive', 'no terminations — the field aesthetic'];
+  } else {
+    crystal.habit = 'tabular_hexagonal';
+    crystal.dominant_forms = ['tabular hexagonal {0001}', 'flat plates with hexagonal outline'];
+  }
+
+  // Mass-balance debit — Mg(OH)2
+  conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.050, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    note: `brucite ${crystal.habit}, white to pale-blue-green; trigonal Mg(OH)2, H 2.5, pearly cleavage flexible flakes`,
+  });
+}

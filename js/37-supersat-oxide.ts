@@ -282,4 +282,38 @@ Object.assign(VugConditions.prototype, {
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chromite');
     return Math.max(sigma, 0);
   },
+
+  // v114 (2026-05-20): Brucite Mg(OH)2 — trigonal Mg hydroxide. The
+  // SERPENTINIZATION BYPRODUCT — when olivine + pyroxene react with
+  // alkaline hydrous fluid to form serpentine minerals (chrysotile/
+  // lizardite/antigorite), excess Mg precipitates as brucite. Jeffrey
+  // Mine + Italian Alps + Marmara Turkey + Mt. Lewis NV common.
+  // Distinct from carbonate-substituted hydromagnesite (Mg-OH-CO3,
+  // separate mineral). Tabular hexagonal {0001} habit; "foliated mass"
+  // is the common field aesthetic. Hyperalkaline pH (10-13) is the
+  // diagnostic — brucite stable only above the magnesite-carbonate
+  // stability boundary. Refs: Anthony Handbook v.III; Deer Howie
+  // Zussman v.5 Non-Silicates; O'Hanley 1996 Oxford serpentinite
+  // framework; Schramke et al. 1982 GCA 46:1581 (brucite stability
+  // experiments).
+  supersaturation_brucite() {
+    if (this.fluid.Mg < 100) return 0;
+    if (this.temperature < 30 || this.temperature > 450) return 0;
+    if (this.fluid.pH < 9.5 || this.fluid.pH > 13.5) return 0;
+    // CO3 > 50 suppresses brucite in favor of magnesite/hydromagnesite
+    if (this.fluid.CO3 > 50) return 0;
+    const mg_f = Math.min(this.fluid.Mg / 200.0, 2.5);
+    let sigma = mg_f;
+    // T sweet spot 100-300°C (serpentinization window)
+    const T = this.temperature;
+    if (T >= 100 && T <= 300) sigma *= 1.3;
+    else if (T < 100) sigma *= Math.max(0.4, (T - 30) / 70 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 300) / 150);
+    // pH sweet spot 10.5-12.5
+    const pH = this.fluid.pH;
+    if (pH >= 10.5 && pH <= 12.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 11.5) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'brucite');
+    return Math.max(sigma, 0);
+  },
 });

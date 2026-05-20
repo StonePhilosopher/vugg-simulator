@@ -151,6 +151,30 @@ function _nuc_native_gold(sim) {
   // Bornite nucleation — Cu + Fe + S, Cu:Fe > 2:1.
 }
 
+// v114 (2026-05-20): Awaruite (Ni,Fe) — serpentinization Ni-Fe alloy.
+// Substrate priority: chrysotile (rodingite matrix) > magnetite >
+// wall. STRICT reducing + alkaline + S-free gate; sulfides win Ni
+// when S > 5. RNG-cascade-guarded.
+function _nuc_awaruite(sim) {
+  const sigma = sim.conditions.supersaturation_awaruite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('awaruite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'awaruite' && c.active);
+  if (existing.length >= 3) return;
+  let pos = 'vug wall';
+  const active_chryso = sim.crystals.filter(c => c.mineral === 'chrysotile' && c.active);
+  const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
+  if (active_chryso.length && rng.random() < 0.55) pos = `embedded in chrysotile #${active_chryso[0].crystal_id} matrix`;
+  else if (active_mag.length && rng.random() < 0.35) pos = `with magnetite #${active_mag[0].crystal_id} — serpentinization Fe-Ni pair`;
+  const discount = sim._sigmaDiscountForPosition('awaruite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.18)) {
+      const c = sim.nucleate('awaruite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: ⚙️ Awaruite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ni=${sim.conditions.fluid.Ni.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — Ni-Fe alloy serpentinization signature`);
+    }
+  }
+}
+
 function _nucleateClass_native(sim) {
   _nuc_native_bismuth(sim);
   _nuc_native_tellurium(sim);
@@ -159,4 +183,5 @@ function _nucleateClass_native(sim) {
   _nuc_native_silver(sim);
   _nuc_native_copper(sim);
   _nuc_native_gold(sim);
+  _nuc_awaruite(sim);
 }

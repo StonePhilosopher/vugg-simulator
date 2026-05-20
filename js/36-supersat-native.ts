@@ -371,4 +371,49 @@ Object.assign(VugConditions.prototype, {
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'native_copper');
   return Math.max(sigma, 0);
 },
+
+  // v114 (2026-05-20): Awaruite (Ni,Fe) — Ni-Fe alloy, ranging from
+  // Ni2Fe to Ni3Fe stoichiometry. The serpentinization-driven natural
+  // metal — forms when olivine + pyroxene of ultramafic protolith
+  // serpentinize under STRONGLY REDUCING + hyperalkaline conditions,
+  // releasing Ni and Fe in metallic-alloy form. Found as MICROSCOPIC
+  // grains in serpentine + chrysotile matrix (rarely visible without
+  // microscopy); larger nuggets at exceptional localities (Cassiar BC
+  // 1-2 mm grains; Bou Azzer Morocco; Jeffrey + Italian Alps; New
+  // Caledonia placers; Awaroa NZ type locality 1885 — the namesake).
+  // Coexists with magnetite + chrysotile + chromite in serpentinite
+  // matrix. The Ni in FluidChemistry was already added (pre-v89
+  // speculative for millerite + annabergite + pentlandite + chrysoprase
+  // coloration); awaruite is the second-class consumer. Refs: Anthony
+  // Handbook v.I; Bird DK & Bassett WA (1980) GCA 44:1659 (Fe-Ni alloy
+  // stability in serpentinite); Krenn K & Hauzenberger CA (2007) Tonga
+  // ophiolite Fe-Ni alloy thermometry; Frost BR (1985) Contrib. Min.
+  // Petr. 91:139 (oxygen + sulfur fugacity controls).
+  supersaturation_awaruite() {
+    // STRICT reducing + Ni-rich + serpentinite-style alkaline gates.
+    // Native alloy forms only when both Ni and Fe are mobilized AND O2 is
+    // essentially absent.
+    if (this.fluid.Ni < 50 || this.fluid.Fe < 20) return 0;
+    if (this.temperature < 50 || this.temperature > 500) return 0;
+    if (this.fluid.pH < 9.0 || this.fluid.pH > 13.0) return 0;
+    if (!nativeRedoxAnoxic(this.fluid, 0.3)) return 0;
+    // S > 5 strongly suppresses — sulfide preference (millerite +
+    // pentlandite + heazlewoodite take the Ni)
+    if (this.fluid.S > 5) return 0;
+    const ni_f = Math.min(this.fluid.Ni / 100.0, 2.0);
+    const fe_f = Math.min(this.fluid.Fe / 50.0, 2.0);
+    const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 1.8, 0.5);
+    let sigma = ni_f * fe_f * red_f;
+    // T sweet spot 200-400°C (serpentinization)
+    const T = this.temperature;
+    if (T >= 200 && T <= 400) sigma *= 1.3;
+    else if (T < 200) sigma *= Math.max(0.4, (T - 50) / 150 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 400) / 100);
+    // pH sweet spot 10-12 (hyperalkaline)
+    const pH = this.fluid.pH;
+    if (pH >= 10.0 && pH <= 12.0) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 11.0) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'awaruite');
+    return Math.max(sigma, 0);
+  },
 });

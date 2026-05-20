@@ -476,6 +476,29 @@ function _nuc_shattuckite(sim) {
   }
 }
 
+// v114 (2026-05-20): Chrysotile Mg3Si2O5(OH)4 — fibrous serpentine
+// asbestos. Jeffrey Mine signature host matrix. Substrate priority:
+// magnetite (rodingite co-formation) > olivine_dissolving (the
+// serpentinization precursor — when wired; not currently) > wall.
+// RNG-cascade-guarded.
+function _nuc_chrysotile(sim) {
+  const sigma = sim.conditions.supersaturation_chrysotile();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('chrysotile')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'chrysotile' && c.active);
+  if (existing.length >= 5) return;  // host-matrix mineral; allow many
+  let pos = 'vug wall';
+  const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
+  if (active_mag.length && rng.random() < 0.40) pos = `with magnetite #${active_mag[0].crystal_id} — both serpentinization products`;
+  const discount = sim._sigmaDiscountForPosition('chrysotile', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.25)) {
+      const c = sim.nucleate('chrysotile', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: ⚪ Chrysotile #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Mg=${sim.conditions.fluid.Mg.toFixed(0)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — fibrous serpentine, the Jeffrey Mine commercial chrysotile`);
+    }
+  }
+}
+
 // v113 (2026-05-20): Ca-silicate trio (pectolite + wollastonite +
 // prehnite) — late-stage rodingite + skarn + basalt-amygdale
 // minerals. All RNG-cascade-guarded.
@@ -711,4 +734,5 @@ function _nucleateClass_silicate(sim) {
   _nuc_pectolite(sim);
   _nuc_wollastonite(sim);
   _nuc_prehnite(sim);
+  _nuc_chrysotile(sim);
 }

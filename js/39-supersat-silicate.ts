@@ -524,6 +524,48 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
+  // v114 (2026-05-20): Chrysotile Mg3Si2O5(OH)4 — monoclinic serpentine-
+  // group phyllosilicate. THE asbestos of commerce. Fibrous habit
+  // diagnostic (parallel-bundle silky fibers); platy lizardite form is
+  // a related-not-identical sister-mineral (separate engine if added).
+  // Forms by serpentinization — hydration of olivine + pyroxene from
+  // ultramafic protolith (peridotite/dunite/harzburgite) by alkaline
+  // hydrous fluid at T 200-500°C. Jeffrey Mine (Val-des-Sources Quebec
+  // — 1881-2011 produced ~40% of world chrysotile-asbestos; town
+  // renamed 2020 from Asbestos; Bernardini 1981 MR 12(5):277 puts the
+  // commercial chrysotile in geological context). Other major
+  // producers: Thetford Mines QC, Cassiar BC, Coalinga CA, Sverdlovsk
+  // Russia, Zhetygara Kazakhstan. Asbestos health concerns are real
+  // (mesothelioma + asbestosis from prolonged inhalation) but the
+  // mineral itself is geologically interesting + the rodingite
+  // assemblage at Jeffrey is the cabinet-collector story, not the
+  // asbestos. Refs: Anthony Handbook v.IIA Phyllosilicates; Deer Howie
+  // Zussman v.1B Sheet Silicates; Wicks FJ & Plant AG (1979) Electron-
+  // microprobe + TEM study of serpentine minerals. Can. Min. 17:785;
+  // O'Hanley DS (1996) Serpentinites Records of Tectonic + Petrological
+  // History. Oxford. RODINGITE + SERPENTINE FRAMEWORK.
+  supersaturation_chrysotile() {
+    if (this.fluid.Mg < 100 || this.fluid.SiO2 < 50) return 0;
+    if (this.temperature < 50 || this.temperature > 500) return 0;
+    if (this.fluid.pH < 8.5 || this.fluid.pH > 13.0) return 0;
+    const mg_f = Math.min(this.fluid.Mg / 200.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 250.0, 1.5);
+    let sigma = mg_f * si_f;
+    // T sweet spot 200-400°C (serpentinization window per Wicks & Plant 1979)
+    const T = this.temperature;
+    if (T >= 200 && T <= 400) sigma *= 1.3;
+    else if (T < 200) sigma *= Math.max(0.4, (T - 50) / 150 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 400) / 100);
+    // pH sweet spot 9-12 (hyperalkaline serpentinization fluid)
+    const pH = this.fluid.pH;
+    if (pH >= 9.0 && pH <= 12.0) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 10.5) * 0.3);
+    // Ca > 100 suppresses chrysotile in favor of diopside/wollastonite
+    if (this.fluid.Ca > 100) sigma *= Math.max(0.5, 1.0 - (this.fluid.Ca - 100) / 200);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chrysotile');
+    return Math.max(sigma, 0);
+  },
+
   // v113 (2026-05-20): Pectolite NaCa2Si3O8(OH) — triclinic
   // single-chain inosilicate; Na-Ca silicate with the iconic radiating-
   // spray habit. The CABBAGE-PETAL JEFFREY MINE specimen is one of the

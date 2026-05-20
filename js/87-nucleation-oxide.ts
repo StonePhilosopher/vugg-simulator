@@ -191,6 +191,29 @@ function _nuc_pyrolusite(sim) {
   }
 }
 
+// v114 (2026-05-20): Brucite Mg(OH)2 — serpentinization byproduct.
+// Substrate priority: chrysotile (rodingite host matrix) > magnetite >
+// wall. RNG-cascade-guarded.
+function _nuc_brucite(sim) {
+  const sigma = sim.conditions.supersaturation_brucite();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('brucite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'brucite' && c.active);
+  if (existing.length >= 4) return;
+  let pos = 'vug wall';
+  const active_chryso = sim.crystals.filter(c => c.mineral === 'chrysotile' && c.active);
+  const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
+  if (active_chryso.length && rng.random() < 0.50) pos = `with chrysotile #${active_chryso[0].crystal_id} — serpentinization Mg byproduct`;
+  else if (active_mag.length && rng.random() < 0.35) pos = `with magnetite #${active_mag[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('brucite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.22)) {
+      const c = sim.nucleate('brucite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: ⚪ Brucite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Mg=${sim.conditions.fluid.Mg.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}, CO3=${sim.conditions.fluid.CO3.toFixed(0)}) — tabular hexagonal Mg(OH)2, serpentinization signature`);
+    }
+  }
+}
+
 function _nucleateClass_oxide(sim) {
   _nuc_hematite(sim);
   _nuc_uraninite(sim);
@@ -200,4 +223,5 @@ function _nucleateClass_oxide(sim) {
   _nuc_chromite(sim);
   _nuc_cassiterite(sim);
   _nuc_pyrolusite(sim);
+  _nuc_brucite(sim);
 }
