@@ -245,4 +245,16 @@ const MINERAL_ENGINES = {
   //     ladder flagged for future POLYMORPH_DIAGENESIS expansion.
   metacinnabar: grow_metacinnabar,
   opal: grow_opal,
+  // v102 (2026-05-19): pyrolusite β-MnO2 — supergene Mn(IV) oxide, the
+  // default Mn4+ phase when Ba/K/Pb low and Fe doesn't dominate. Two
+  // modes: continental weathering (mode A, 95%) + low-T hydrothermal
+  // vein (mode B, 5%). Discriminator gates encode the canonical Mn4+
+  // fork (romanechite Ba > 100, cryptomelane K > 50, coronadite Pb > 30,
+  // hausmannite T > 250, manganite at lower Eh) AND the Fe-Mn supergene
+  // separation (Fe > 2*Mn → goethite captures the oxidation budget).
+  // Per Potter & Rossman 1979 we do NOT ship a dendritic habit — most
+  // textbook "dendritic pyrolusite" is actually cryptomelane.
+  // First dogfood test of the vugg-add-mineral skill (~/.claude/skills/
+  // vugg-add-mineral/SKILL.md).
+  pyrolusite: grow_pyrolusite,
 };

@@ -3664,5 +3664,118 @@
 //          leadhillite, metacinnabar, opal at seed 42) documented as
 //          scenario-tuning candidates; engines geologically correct
 //          + ready for future scenario expansion.
-const SIM_VERSION = 101;
+//   v102 — Pyrolusite β-MnO2 (2026-05-19). First dogfood test of the
+//          vugg-add-mineral skill (~/.claude/skills/vugg-add-mineral/
+//          SKILL.md). The skill was authored alongside the v93-v101
+//          arc but never test-driven on a fresh mineral; v102 is the
+//          dogfood pass. The chip's suggested test minerals (austinite,
+//          metacinnabar) were already shipped in v97/v101 — picked
+//          pyrolusite instead because it (a) exercises the oxide class
+//          (js/37/57/87 — not touched in the v93-v101 arc, so the file
+//          map gets a fresh class verification), (b) is a single
+//          mineral with a clean discriminator fork, and (c) uses the
+//          Mn fluid field which already exists.
+//
+//          PYROLUSITE — THE DEFAULT Mn(IV) SUPERGENE PHASE
+//
+//          Tetragonal rutile-type MnO2 (P4_2/mnm), the highest-Eh
+//          corner of the Mn4+ field. Two formation modes:
+//            A — continental weathering / lacustrine / bog (~95%
+//                of natural occurrences). T 5-40°C, pH 6.5-9.0,
+//                strongly oxidizing (+0.4 to +1.0 V at pH 7 per
+//                Hem 1963 USGS WSP 1667-A).
+//            B — low-T hydrothermal vein (<250°C, late-stage).
+//                Replaces manganite in cooling vugs. Source of the
+//                rare prismatic Ilfeld/Ilmenau crystals.
+//
+//          Discriminator fork — the engine encodes the canonical
+//          Mn-oxide family decision tree even though sister engines
+//          aren't wired yet:
+//            romanechite (Ba,H2O)Mn5O10  Ba > 100 ppm → ×0.5
+//            cryptomelane K(Mn4+,Mn2+)8O16  K > 50 ppm → ×0.4
+//            coronadite PbMn8O16          Pb > 30 ppm → ×0.3
+//            hausmannite Mn3O4            T > 250 → hard cutoff
+//            manganite γ-MnOOH            lower Eh / cooler; the
+//                                          polianite pseudomorph
+//                                          via Champness 1971 mechanism
+//            goethite α-FeOOH             Fe > 2*Mn → ×0.3 (the Fe-Mn
+//                                          supergene separation; Fe
+//                                          oxidizes ~+0.2 V earlier than
+//                                          Mn per Hem 1963 Eh sequence)
+//
+//          NO DENDRITIC HABIT (Potter & Rossman 1979 Am.Min. 64:1219):
+//          the classic "dendritic pyrolusite" in moss agate and limestone
+//          is actually cryptomelane/romanechite/birnessite microcrystalline
+//          aggregates. We refuse to perpetuate the textbook error.
+//          Dendrites route to those cousins when their engines land.
+//
+//          Habits (5 variants, all literature-anchored):
+//            massive_sooty (default ~65%) — supergene "soils-the-fingers"
+//              black powder, the field-recognizable Mn-rind texture
+//            botryoidal_reniform — Mode A higher Mn (>5), pH 7-8, stable
+//              groundwater table; classic mammillary "manganese rind"
+//            radiating_fibrous — Mode B hydrothermal, polianite-style;
+//              cleavage perpendicular to vug wall (Ilfeld habit, up to 8 cm)
+//            prismatic_crystal — rare Mode B slow-growth on clean wall;
+//              long-prismatic ‖ [001], square cross-section (Platten/
+//              Ilmenau type material)
+//            pseudomorph_after_rhodochrosite — supergene "rotted rhomb";
+//              MnCO3 + 0.5 O2 → MnO2 + CO2, preserves rhomb outline
+//            pseudomorph_after_manganite — polianite; γ-MnOOH → β-MnO2 +
+//              0.5 H2O via 15% b-axis contraction (Champness 1971
+//              Min.Mag. 38:245)
+//
+//          Substrate priority: rhodochrosite (epitactic, 0.60) >
+//          rhodochrosite_dissolving (pseudomorph, 0.55) > siderite
+//          (Fe-Mn wad, 0.35) > dolomite (Imini karst, 0.35) > calcite
+//          (Mapimí, 0.30) > goethite (Fe-Mn rind, 0.20) > wall.
+//          Acid dissolution: pH < 5.0 → MnO2 + 4H⁺ + 2e⁻ → Mn²⁺ + 2H2O
+//          (canonical Mn-oxide AMD signature).
+//
+//          TYPE-LOCALITY CORRECTION: most references cite Horní Blatná
+//          (Platten) Czech Republic but Haidinger 1827 originally used
+//          material from Eiserfeld (Siegen, Westphalia), Elgersburg, and
+//          Ilmenau (Thuringia, Germany). Ilmenau is the defensible canonical
+//          type locality. Flagged in minerals.json description.
+//
+//          CALIBRATION DRIFT: TBD at baseline regen. Mn in
+//          supergene_oxidation is 6 ppm (above 0.2 threshold) but Fe is
+//          40 (6.67x Mn) → goethite-captures gate fires (sigma × 0.3).
+//          Likely "wired but weakly firing" — geologically correct
+//          (Tsumeb's gossan is goethite-dominant; pyrolusite is a
+//          minor companion per Pinch & Wilson 1977). Engine ready for
+//          future Mn-dominant scenarios (Imini, Cuyuna, Ilfeld).
+//
+//          DOGFOOD FRICTION POINTS (for SKILL.md revision):
+//            * Skill suggested austinite/metacinnabar as test minerals,
+//              both already shipped — skill should reference a "what's
+//              already in the catalog" check before mineral choice
+//            * Oxide-class iterator at the bottom of js/87-nucleation-
+//              oxide.ts needed `_nuc_pyrolusite(sim);` added — the skill
+//              mentions this but easy to miss; could be more prominent
+//            * minerals.json insertion order matters (paramorph entries
+//              cluster at the END after metazeunerite, not after opal
+//              despite line-number proximity) — worth flagging in skill
+//
+//          References (research dossier 2026-05-19):
+//            * Anthony et al. Handbook of Mineralogy v.III pyrolusite.
+//            * Palache, Berman, Frondel (1944) Dana 7th v.I pp.555-561.
+//            * Potter R.M. & Rossman G.R. (1979) Am.Min. 64:1219 —
+//              "dendrites are cryptomelane, not pyrolusite" — load-
+//              bearing for habit choices.
+//            * Hem J.D. (1963) USGS WSP 1667-A — Eh-pH diagram +
+//              autocatalysis on existing MnO2.
+//            * Champness P.E. (1971) Min.Mag. 38:245 — polianite
+//              pseudomorph mechanism (15% b-axis contraction).
+//            * Birkner N. & Navrotsky A. (2017) PNAS 114:E1046 —
+//              Mn-oxide thermodynamic cascade.
+//            * Dekoninck A. et al. (2016) Min.Dep. 51:13 — Imini
+//              high-grade karst paragenesis.
+//            * Post J.E. (1999) PNAS 96:3447 — tunnel-structure
+//              classification.
+//            * Velebil D. (n.d.) — type-locality correction
+//              (velebil.net/en/maria-theresia/).
+//
+//          Coverage 127 live → 128 live (+1 mineral); 25 paramorph-only.
+const SIM_VERSION = 102;
 

@@ -131,6 +131,66 @@ function _nuc_cassiterite(sim) {
   }
 }
 
+// v102 (2026-05-19): pyrolusite β-MnO2 — supergene Mn(IV) oxide.
+// Substrate priority encodes the canonical Mn-weathering paragenesis
+// per the dossier §6:
+//   rhodochrosite (epitactic replacement) — strongest, classic "rotted
+//     rhomb" texture; pyrolusite forms FROM rhodochrosite under
+//     oxidation
+//   manganite (epitactic replacement) — polianite pseudomorph;
+//     Champness 1971 mechanism. Note: manganite not yet wired in the
+//     simulator; substrate branch reserved for when it lands
+//   siderite — Mn-bearing siderite produces Fe-Mn "wad" weathering
+//   calcite / dolomite — Imini-style karst-host coatings + Mapimí-
+//     style on calcite
+//   goethite — Fe-Mn weathering rind cohabitation (when both Fe and
+//     Mn are oxidized at the same rind interface)
+//   wall — fallback for bare-vug-wall nucleation
+//
+// RNG-CASCADE GUARD: sigma < 1.0 early-out BEFORE substrate-pick
+// rng.random() calls. Critical — adding pyrolusite must not perturb
+// scenarios where Mn is below threshold.
+function _nuc_pyrolusite(sim) {
+  const sigma = sim.conditions.supersaturation_pyrolusite();
+  if (sigma < 1.0) return;                       // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('pyrolusite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'pyrolusite' && c.active);
+  const total = sim.crystals.filter(c => c.mineral === 'pyrolusite').length;
+  if (existing.length >= 3 || total >= 5) return;
+  let pos = 'vug wall';
+  const parent_rhodochrosite = sim.crystals.filter(c => c.mineral === 'rhodochrosite' && c.active);
+  const dissolving_rhodochrosite = sim.crystals.filter(c => c.mineral === 'rhodochrosite' && c.dissolved);
+  const parent_siderite = sim.crystals.filter(c => c.mineral === 'siderite' && c.active);
+  const parent_calcite = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  const parent_dolomite = sim.crystals.filter(c => c.mineral === 'dolomite' && c.active);
+  const parent_goethite = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
+  if (parent_rhodochrosite.length && rng.random() < 0.60) {
+    pos = `on rhodochrosite #${parent_rhodochrosite[0].crystal_id} (epitactic replacement — supergene oxidation)`;
+  } else if (dissolving_rhodochrosite.length && rng.random() < 0.55) {
+    pos = `pseudomorph after rhodochrosite #${dissolving_rhodochrosite[0].crystal_id} ("rotted rhomb")`;
+  } else if (parent_siderite.length && rng.random() < 0.35) {
+    pos = `on siderite #${parent_siderite[0].crystal_id} (Fe-Mn weathering wad)`;
+  } else if (parent_dolomite.length && rng.random() < 0.35) {
+    pos = `on dolomite #${parent_dolomite[0].crystal_id} (Imini-style karst coating)`;
+  } else if (parent_calcite.length && rng.random() < 0.30) {
+    pos = `on calcite #${parent_calcite[0].crystal_id} (Mapimí-style botryoidal coating)`;
+  } else if (parent_goethite.length && rng.random() < 0.20) {
+    pos = `on goethite #${parent_goethite[0].crystal_id} (Fe-Mn rind cohabitation)`;
+  }
+  const discount = sim._sigmaDiscountForPosition('pyrolusite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 1.8 && rng.random() < 0.18)) {
+      const c = sim.nucleate('pyrolusite', pos, sigma);
+      const f = sim.conditions.fluid;
+      const T = sim.conditions.temperature;
+      const habit_preview = T > 100 ? 'radiating fibrous' :
+        (f.Mn > 5 && f.pH >= 7 && f.pH <= 8) ? 'botryoidal reniform' :
+        'massive sooty';
+      sim.log.push(`  ✦ NUCLEATION: ⚫ Pyrolusite #${c.crystal_id} (${habit_preview}) on ${c.position} (T=${T.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Mn=${f.Mn.toFixed(1)} ppm, pH=${f.pH.toFixed(1)}, O₂=${f.O2.toFixed(2)})`);
+    }
+  }
+}
+
 function _nucleateClass_oxide(sim) {
   _nuc_hematite(sim);
   _nuc_uraninite(sim);
@@ -139,4 +199,5 @@ function _nucleateClass_oxide(sim) {
   _nuc_rutile(sim);
   _nuc_chromite(sim);
   _nuc_cassiterite(sim);
+  _nuc_pyrolusite(sim);
 }

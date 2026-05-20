@@ -434,6 +434,111 @@ function grow_cassiterite(crystal, conditions, step) {
   });
 }
 
+// v102 (2026-05-19): pyrolusite β-MnO2 — tetragonal rutile-type Mn(IV)
+// oxide, the default Mn4+ supergene endmember. Two formation modes:
+// continental weathering (mode A, 95%) and low-T hydrothermal vein
+// (mode B, 5%). Per the dossier:
+//   * massive_sooty (default, ~65%): T < 25, Mn 0.3-2 ppm. Soils-the-
+//     fingers black powder, the field-recognizable Mn-rind texture.
+//   * botryoidal_reniform: Mode A, higher Mn (>5 ppm), pH 7-8, stable
+//     groundwater table. Mammillary surfaces, classic "manganese rind."
+//   * radiating_fibrous (polianite-style): Mode B hydrothermal,
+//     replacement of manganite needles in vug. Cleavage perpendicular
+//     to wall, up to 8 cm. Source of the rare Ilfeld specimens.
+//   * prismatic_crystal (rare): Mode B, slow growth at low sigma on
+//     clean vug wall, long-prismatic ‖ [001].
+//   * pseudomorph_after_rhodochrosite / after_manganite: substrate-
+//     driven, encodes the canonical Mn-weathering paragenesis.
+//
+// IMPORTANT (Potter & Rossman 1979): we do NOT ship a dendritic habit.
+// Most "dendritic pyrolusite" in textbooks is actually cryptomelane/
+// romanechite. The engine refuses to perpetuate the textbook error;
+// dendritic habits route to those cousins when their engines land.
+//
+// Dissolution: acid (pH < 5.0) + grown > 5 µm → Mn²⁺ released back to
+// fluid. Pyrolusite is stable to alkali but dissolves readily in acidic
+// mine drainage (the standard Mn-oxide AMD signature).
+function grow_pyrolusite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_pyrolusite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.5, crystal.total_growth_um * 0.08);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Mn²⁺ released to fluid, AMD-style Mn-oxide leach`
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  // Slow growth — oxidation-rate-limited (Hem 1963). Comparable to
+  // hematite/goethite supergene rates.
+  const rate = 1.5 * excess * rng.uniform(0.7, 1.3);
+  if (rate < 0.1) return null;
+
+  const T = conditions.temperature;
+  const f = conditions.fluid;
+  const pos = crystal.position || '';
+  const on_rhodochrosite = pos.includes('rhodochrosite');
+  const on_manganite = pos.includes('manganite');
+  const on_siderite = pos.includes('siderite');
+
+  let habit_note;
+  if (on_rhodochrosite) {
+    crystal.habit = 'pseudomorph_after_rhodochrosite';
+    crystal.dominant_forms = ['rhodochrosite rhomb outline preserved', 'sooty black MnO2 fill'];
+    habit_note = 'pseudomorph after rhodochrosite — "rotted rhomb" texture, classic supergene Mn-carbonate weathering';
+  } else if (on_manganite) {
+    crystal.habit = 'pseudomorph_after_manganite';
+    crystal.dominant_forms = ['manganite prismatic outline preserved', 'radiating fibrous MnO2'];
+    habit_note = 'polianite — pseudomorph after manganite, b-axis 15% contraction (Champness 1971)';
+  } else if (on_siderite) {
+    crystal.habit = 'massive_sooty';
+    crystal.dominant_forms = ['Fe-Mn wad coating', 'mixed Fe/Mn oxide stain'];
+    habit_note = 'Fe-Mn weathering "wad" — sooty black on Mn-bearing siderite';
+  } else if (T > 100 && excess > 0.6) {
+    // Mode B hydrothermal vein
+    if (excess > 1.4) {
+      crystal.habit = 'radiating_fibrous';
+      crystal.dominant_forms = ['radiating fibrous bundles', 'perpendicular to vug wall'];
+      habit_note = 'radiating fibrous "polianite-style" — Mode B hydrothermal vein (Ilfeld habit)';
+    } else {
+      crystal.habit = 'prismatic_crystal';
+      crystal.dominant_forms = ['long-prismatic ‖ [001]', '{110} tetragonal prism', 'square cross-section'];
+      habit_note = 'prismatic crystal — rare Mode B slow-growth habit (Platten/Ilmenau type material)';
+    }
+  } else if (T < 35 && f.Mn > 5 && f.pH >= 7.0 && f.pH <= 8.0 && excess > 0.4) {
+    crystal.habit = 'botryoidal_reniform';
+    crystal.dominant_forms = ['mammillary botryoidal surface', 'concentric internal banding'];
+    habit_note = 'botryoidal reniform — stable groundwater table, classic "manganese rind"';
+  } else {
+    crystal.habit = 'massive_sooty';
+    crystal.dominant_forms = ['sooty earthy aggregate', 'soils-the-fingers black powder'];
+    habit_note = 'massive sooty — continental-weathering endmember, the field-common form';
+  }
+
+  // Mn-Fe ratio note for the growth zone
+  if (f.Fe > 2 * f.Mn) {
+    habit_note += ` (Fe/Mn ${(f.Fe / Math.max(f.Mn, 0.01)).toFixed(1)} — losing the oxidation competition to goethite)`;
+  }
+
+  // Mass balance — Mn consumed primarily. Trace Ba/K/Pb sequestered as
+  // tunnel-cation indicators (low values; tunnel cations partition into
+  // pyrolusite weakly compared to romanechite/cryptomelane/coronadite).
+  f.Mn = Math.max(f.Mn - rate * 0.030, 0);
+  f.O2 = Math.max(f.O2 - rate * 0.005, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Ba: f.Ba * 0.002,
+    trace_K: f.K * 0.001,
+    note: `${habit_note} — Mn ${f.Mn.toFixed(1)} ppm at pH ${f.pH.toFixed(1)}, T=${T.toFixed(0)}°C, σ=${sigma.toFixed(2)}`,
+  });
+}
+
 // v63 brief-19: chromite FeCr2O4 — magmatic Fe-Cr spinel.
 function grow_chromite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_chromite();

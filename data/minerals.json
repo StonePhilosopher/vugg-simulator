@@ -14646,6 +14646,131 @@
       "late_stage_propensity": 1.0,
       "_late_stage_note": "Paramorph after zeunerite — only ever late by definition (dehydration product).",
       "_transformation_only": true
+    },
+    "pyrolusite": {
+      "formula": "MnO2",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 3,
+      "max_size_cm": 8,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "massive_sooty",
+          "wall_spread": 0.95,
+          "void_reach": 0.05,
+          "vector": "coating",
+          "trigger": "default supergene habit — soils-the-fingers black powder, the field-recognizable Mn-weathering texture (65% of natural occurrences)"
+        },
+        {
+          "name": "botryoidal_reniform",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "Mode A supergene, higher Mn (>5 ppm), pH 7-8, stable groundwater table — mammillary surfaces, classic 'manganese rind'"
+        },
+        {
+          "name": "radiating_fibrous",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "Mode B hydrothermal vein (T > 100), replacement of manganite needles — cleavage perpendicular to vug wall, up to 8 cm; the Ilfeld 'polianite-style' habit"
+        },
+        {
+          "name": "prismatic_crystal",
+          "wall_spread": 0.3,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "rare Mode B slow-growth on clean vug wall — long-prismatic ‖ [001], {110} tetragonal prism, square cross-section (Platten / Ilmenau type material)"
+        },
+        {
+          "name": "pseudomorph_after_rhodochrosite",
+          "wall_spread": 0.55,
+          "void_reach": 0.45,
+          "vector": "coating",
+          "trigger": "supergene oxidation of rhodochrosite — the 'rotted rhomb' texture, MnCO3 + 0.5 O2 → MnO2 + CO2, preserves rhomb outline as sooty black"
+        },
+        {
+          "name": "pseudomorph_after_manganite",
+          "wall_spread": 0.45,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "the polianite paramorph — γ-MnOOH → β-MnO2 + 0.5 H2O via 15% b-axis contraction (Champness 1971), inherits manganite's prismatic-radiating morphology"
+        }
+      ],
+      "class": "oxide",
+      "description": "MnO₂ — tetragonal Mn(IV) oxide with the rutile structure (P4₂/mnm, a=4.39 Å, c=2.87 Å), the default Mn⁴⁺ supergene endmember. Iron-black to dark steel-gray; black streak (NOT brown — this is the field discriminator from manganite, hardness bimodal at 6 well-crystallized vs 2 massive earthy 'soils-the-fingers' aggregate). Forms by oxidation of Mn²⁺ in two modes: low-T continental weathering / lacustrine / bog (mode A, ~95% of occurrences, T 5-40°C, pH 6.5-9, strongly oxidizing per the Hem 1963 Pourbaix diagram) and low-T hydrothermal vein (mode B, <250°C, replaces manganite in cooling vugs, source of the rare prismatic Ilfeld/Ilmenau crystals). Pyrolusite occupies the HIGH-Eh corner of the Mn⁴⁺ field; the discriminator from its catalog cousins is canonical: romanechite (Ba > 100 ppm tunnel cation), cryptomelane (K > 50 ppm), coronadite (Pb > 30 ppm), hausmannite (T > 250°C, the spinel-distorted Mn²⁺/Mn³⁺ phase), manganite (γ-MnOOH, lower Eh / cooler, dehydrates TO pyrolusite as the polianite pseudomorph). Fe-Mn supergene separation: when Fe > 2*Mn, goethite captures the oxidation budget first and pyrolusite is residual (Hem 1963 Eh sequence — Fe oxidizes ~+0.2 V earlier than Mn). IMPORTANT (Potter & Rossman 1979 Am.Min. 64:1219): the classic 'dendritic pyrolusite' in moss agate and limestone is NOT pyrolusite — it's cryptomelane / romanechite / birnessite microcrystalline aggregates. The engine refuses to ship a dendritic habit; dendrites route to those cousins when their engines land. Type-locality folklore correction: most references cite Horní Blatná (Platten) Czech Republic, but Haidinger 1827 originally used material from Eiserfeld (Siegen, Westphalia), Elgersburg, and Ilmenau (Thuringia, Germany) — Ilmenau is the defensible canonical type. Famous localities: Imini Morocco (high-grade karst-hosted ore, two-stage paragenesis per Dekoninck et al. 2016 Min.Dep. 51:13), Ilfeld Harz (classic radiating-fibrous polianite pseudomorphs), Cuyuna Range Minnesota, Mapimí Ojuela Mexico (botryoidal on calcite). Sources: Anthony et al. Handbook v.III; Dana 7th v.I pp.555-561; Potter & Rossman 1979; Birkner & Navrotsky 2017 PNAS 114:E1046 (Mn-oxide cascade thermodynamics: Mn²⁺ → hausmannite → groutite → bixbyite → pyrolusite is the thermodynamic endpoint); Champness 1971 Min.Mag. 38:245 (polianite mechanism); Hem 1963 USGS WSP 1667-A (Pourbaix + autocatalysis on existing MnO₂ surfaces); Post 1999 PNAS 96:3447 (tunnel-structure classification, pyrolusite as 1×1 tunnel endmember of the rutile-hollandite-romanechite-todorokite series).",
+      "scenarios": [
+        "supergene_oxidation"
+      ],
+      "T_range_C": [
+        5,
+        250
+      ],
+      "T_optimum_C": [
+        15,
+        35
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Mn": 0.2
+      },
+      "_ingredients_note": "Mn ≥ 0.2 ppm matches Hem's (1963) lower-bound supergene threshold; autocatalysis on existing MnO₂ surfaces (Hem 1963) means once the field fires it stays lit. Oxidizing required (Eh +0.4 to +1.0 V at pH 7) — pyrolusite is the highest-Eh Mn(IV) field endmember; uses oxideRedoxAvailable gate threshold 0.5 like hematite/magnetite/cuprite. Discriminator fork via soft suppressors (not hard cutoffs to allow weak co-deposition): Fe > 2*Mn → sigma × 0.3 (goethite/lepidocrocite capture the oxidation budget first); Ba > 100 → sigma × 0.5 (would route to romanechite); K > 50 → sigma × 0.4 (cryptomelane); Pb > 30 → sigma × 0.3 (coronadite); SiO₂ > 200 → sigma × 0.7 (todorokite + Mn-silicates compete). Hard cutoff T > 250 (hausmannite field). pH sweet spot 7-9 (Hem 1963 kinetic optimum at pH 8.5).",
+      "trace_ingredients": {
+        "Ba": "trace tunnel cation; partitions weakly into pyrolusite compared to romanechite",
+        "K": "trace tunnel cation; partitions weakly into pyrolusite compared to cryptomelane",
+        "Pb": "trace tunnel cation; partitions weakly into pyrolusite compared to coronadite",
+        "Fe": "Fe-Mn weathering rind cohabitant; high Fe drives goethite to win the oxidation budget"
+      },
+      "thermal_decomp_C": 535,
+      "thermal_decomp_reaction": "Above ~535°C in air: 4 MnO2 → 2 Mn2O3 + O2 (bixbyite formation, the thermal-reduction path per Birkner & Navrotsky 2017). Above 900°C: further reduction to Mn3O4 (hausmannite). The geological setting in the simulator (T_max 250°C) is well below the first reduction step; included for catalog completeness.",
+      "thermal_decomp_products": {
+        "Mn": 0.0,
+        "O2": 0.1
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Non-fluorescent. Mn⁴⁺ is the d³ Mn oxidation state with no visible-luminescence transitions (unlike Mn²⁺ which is the bright orange-red fluorescence activator in willemite/calcite/sphalerite). Light-absorbing iron-black metallic crystals quench any ambient phosphorescence."
+      },
+      "twin_laws": [
+        {
+          "name": "pyrolusite_031",
+          "composition_plane": "{031}",
+          "twin_axis": "[100]",
+          "probability": 0.02,
+          "trigger": "rare polysynthetic twin on {031} — encountered in well-crystallized Ilfeld 'polianite' specimens; not common enough to be diagnostic"
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "MnO2 + 4H⁺ + 2e⁻ → Mn²⁺ + 2H2O — the canonical Mn-oxide AMD signature; pyrolusite dissolves readily in acidic mine drainage releasing Mn²⁺ back to fluid. Stable to strong alkali (no upper pH dissolution).",
+        "products": {
+          "Mn": 0.6
+        }
+      },
+      "habit": "massive_sooty",
+      "color_rules": {
+        "iron_black": {
+          "default": true,
+          "trigger": "well-crystallized habit (radiating_fibrous, prismatic) — metallic luster, dark steel-gray to iron-black"
+        },
+        "sooty_black": {
+          "trigger": "massive_sooty / botryoidal_reniform / pseudomorph habits — dull-earthy black, the field 'soils-the-fingers' powder (hardness 2 vs 6 well-crystallized)"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v102 (2026-05-19). Default Mn⁴⁺ supergene endmember; discriminator-fork engine encodes the canonical Mn-oxide family decision tree (Ba → romanechite, K → cryptomelane, Pb → coronadite, T>250 → hausmannite, lower Eh → manganite, Fe-dominated → goethite). Sister Mn-oxide engines (romanechite/cryptomelane/coronadite/hausmannite/manganite) not yet wired — gates encode the suppressor so pyrolusite doesn't claim the full Mn(IV) budget at tunnel-cation localities. Substrate priority: rhodochrosite (epitactic replacement — 'rotted rhomb' supergene texture) > manganite (polianite pseudomorph — reserved for when manganite lands) > siderite (Mn-bearing → Fe-Mn 'wad') > dolomite (Imini karst) > calcite (Mapimí) > goethite (Fe-Mn rind) > wall. Per Potter & Rossman 1979 NO dendritic habit (the textbook dendrites are cryptomelane). First dogfood test of the vugg-add-mineral skill.",
+      "late_stage_propensity": 0.8,
+      "_late_stage_note": "Supergene weathering endmember — by definition late-stage (the terminal Mn(IV) oxidation product). High propensity matches its position as the final phase in the Mn²⁺ → hausmannite → groutite → bixbyite → pyrolusite oxidation cascade (Birkner & Navrotsky 2017).",
+      "class_color": "#2b2b2b"
     }
   }
 }

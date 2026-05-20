@@ -186,6 +186,88 @@ Object.assign(VugConditions.prototype, {
   // for cataloging completeness. Requires very high T (>1000°C) which no
   // existing scenario delivers — engine stays dormant until a layered-mafic-
   // intrusion scenario lands.
+  // v102 (2026-05-19): pyrolusite β-MnO2 — tetragonal rutile-type Mn(IV)
+  // oxide. The default Mn4+ supergene phase when (Ba, K, Pb) low AND Fe
+  // doesn't dominate. Two formation modes:
+  //   A — low-T supergene / lacustrine / bog (95% of natural occurrences).
+  //       T 5-40°C, pH 6.5-9.0, strongly oxidizing (Eh +0.4 to +1.0 V at
+  //       pH 7). Continental-weathering endmember of the Mn-oxide family.
+  //   B — low-T hydrothermal vein (<250°C, late-stage). Replaces manganite
+  //       in cooling vugs. Source of the rare prismatic crystals (Platten,
+  //       Ilfeld, Ilmenau).
+  //
+  // Discriminator fork — pyrolusite occupies the HIGH-Eh corner of the
+  // Mn4+ field, with cousins claiming the side cases:
+  //   romanechite (Ba,H2O)Mn5O10 — Ba > 100 ppm tunnel cation
+  //   cryptomelane K(Mn4+,Mn2+)8O16 — K > 50 ppm tunnel cation
+  //   coronadite PbMn8O16 — Pb > 30 ppm tunnel cation
+  //   hausmannite Mn3O4 — T > 250°C (higher-T spinel-distorted phase)
+  //   manganite γ-MnOOH — lower Eh / cooler; dehydrates TO pyrolusite
+  //     (polianite pseudomorph) per Champness 1971 mechanism
+  //   goethite α-FeOOH — Fe > 2*Mn captures the oxidation budget (Fe
+  //     oxidizes at lower Eh per Hem 1963; pyrolusite usually loses
+  //     the Fe-Mn supergene competition)
+  //
+  // Per Potter & Rossman 1979: most "dendritic pyrolusite" in moss agate
+  // and limestone is actually cryptomelane/romanechite/birnessite — DO
+  // NOT give pyrolusite a dendritic habit variant. Engine encodes only
+  // botryoidal/sooty/radiating-fibrous/prismatic habits.
+  //
+  // Refs: Anthony Handbook v.III pyrolusite; Dana 7th v.I pp.555-561;
+  // Potter & Rossman 1979 Am.Min. 64:1219; Birkner & Navrotsky 2017
+  // PNAS 114:E1046; Champness 1971 Min.Mag. 38:245; Hem 1963 USGS WSP
+  // 1667-A; Dekoninck et al. 2016 Min.Dep. 51:13; Post 1999 PNAS 96:3447.
+  supersaturation_pyrolusite() {
+    if (this.fluid.Mn < 0.2) return 0;
+    if (this.temperature < 5 || this.temperature > 250) return 0;
+    if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5) return 0;
+    // Oxidizing required — pyrolusite is the highest-Eh Mn field
+    // endmember. Use oxideRedoxAvailable like hematite/magnetite/cuprite.
+    if (!oxideRedoxAvailable(this.fluid, 0.5)) return 0;
+    // Base sigma from Mn budget. Pyrolusite is autocatalytic on
+    // existing MnO2 surfaces (Hem 1963); gate is forgiving once it
+    // fires; typical supergene Mn 1-10 ppm.
+    const mn_f = Math.min(this.fluid.Mn / 4.0, 3.0);
+    const o_f = oxideRedoxFactor(this.fluid, 1.0);
+    let sigma = mn_f * o_f;
+    // T sweet spot — supergene window 15-35°C is mode A. Mode B
+    // hydrothermal at 100-200°C is softer but still fires.
+    const T = this.temperature;
+    let T_factor;
+    if (T >= 15 && T <= 35) T_factor = 1.2;        // mode A continental weathering
+    else if (T > 35 && T <= 80) T_factor = 1.0;    // warm groundwater / bog
+    else if (T > 80 && T <= 200) T_factor = 0.7;   // mode B hydrothermal
+    else if (T > 200 && T <= 250) T_factor = 0.4;  // approaching hausmannite field
+    else if (T < 15) T_factor = Math.max(0.5, 0.5 + 0.05 * (T - 5));
+    else T_factor = 0.3;
+    sigma *= T_factor;
+    // pH sweet spot — Hem 1963 kinetic optimum at pH 8.5 (autocatalysis
+    // + ~10x slower below pH 7 in abiotic systems).
+    const pH = this.fluid.pH;
+    if (pH >= 7.0 && pH <= 9.0) sigma *= 1.15;
+    else if (pH < 7.0) sigma *= Math.max(0.5, 1.0 - (7.0 - pH) * 0.3);
+    else sigma *= Math.max(0.6, 1.0 - (pH - 9.0) * 0.2);
+    // Fe captures the oxidation budget when Fe > 2*Mn (Hem 1963
+    // Eh sequence). Goethite/lepidocrocite form first; pyrolusite is
+    // residual. The canonical Fe-Mn supergene separation.
+    if (this.fluid.Fe > 2 * this.fluid.Mn) {
+      sigma *= 0.3;
+    }
+    // Tunnel-cation discriminators — Ba/K/Pb would divert Mn4+
+    // oxidation to romanechite/cryptomelane/coronadite (none wired
+    // yet; the gates encode the suppressor so pyrolusite doesn't
+    // pretend to capture the full Mn4+ budget at tunnel-cation
+    // localities like Imini). Will route correctly once sister
+    // Mn-oxide engines land.
+    if (this.fluid.Ba > 100) sigma *= 0.5;
+    if (this.fluid.K > 50) sigma *= 0.4;
+    if (this.fluid.Pb > 30) sigma *= 0.3;
+    // Si > 200: favors todorokite + Mn-silicates (research §3)
+    if (this.fluid.SiO2 > 200) sigma *= 0.7;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'pyrolusite');
+    return Math.max(sigma, 0);
+  },
+
   supersaturation_chromite() {
     if (this.fluid.Fe < 100 || this.fluid.Cr < 30) return 0;
     if (this.fluid.O2 > 1.0) return 0;
