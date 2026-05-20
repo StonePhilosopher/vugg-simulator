@@ -1,8 +1,8 @@
 # HANDOFF: Jeffrey Mine (Val-des-Sources, Quebec) — full rodingite arc
 
-Status: planned, not started. Pickup by fresh-context Claude.
+Status: **SHIPPED 2026-05-20.** All commits v110-v115 + skill updates landed in a single session. Final arc shape was 6 commits (collapsed from 8 by the B + Ni pre-existing-field discovery). 10 of 12 priority targets fired cleanly at seed 42 on first run — cleanest first-firing in project history.
 Date authored: 2026-05-20 by the agent that just finished the Roughten Gill / Caldbeck Fells arc (v107-v109).
-Last updated: 2026-05-20 — boss-locked decisions appended in "Decisions locked" section below.
+Last updated: 2026-05-20 — boss-locked decisions appended in "Decisions locked" section below. Arc completed 2026-05-20 in a single session; final retrospective appended at bottom under "Arc retrospective."
 
 ## Why this handoff exists
 
@@ -442,3 +442,71 @@ Commit message style: dense field-notes; the boss reads them as papers. Match v1
 **End of handoff.** Estimated execution: 1-2 working sessions to v117 baseline. Skill updates expected mid-arc per dogfood friction. Jeffrey Mine + Bernardini 1981 will be a satisfying piece of the simulator history.
 
 Co-authored-by: Claude Opus 4.7 (1M context) — the agent that finished the Roughten Gill arc and saw this one coming.
+
+---
+
+## Arc retrospective (2026-05-20, end-of-session)
+
+Shipped in a single session. Six vugg-simulator commits + one skill ship + two mid-arc skill updates. Final shape:
+
+```
+(skill commit)  vugg-add-broth SKILL.md created standalone (no Jeffrey
+                dogfood because B + Ni were already in FluidChemistry —
+                the v110 lesson became the skill's headline gotcha)
+v110  b76792f   Datolite CaB(SiO4)(OH) — silicate-class
+v111  c70680c   Vesuvianite + cyprine (Cu trace dispatch)
+v112  e052049   Grossular + diopside (paired Ca-Al-Mg)
+                — defensible drift: +grossular +diopside in
+                  marble_contact_metamorphism (the existing skarn
+                  scenario inherited the canonical Vesuvius assemblage)
+v113  bfaed34   Pectolite + wollastonite + prehnite (Ca-silicate trio)
+                — defensible drift: +prehnite +wollastonite in
+                  deccan_zeolite (canonical Deccan amygdale companions)
+v114  bb4ee1d   Chrysotile + brucite + awaruite (3-class triple commit)
+                — zero drift; all "wired but not yet firing" until v115
+v115  4553454   jeffrey_mine scenario + 'ultramafic' wall composition
+                — 14 species fire at seed 42; 10 of 12 priority targets
+                  hit cleanly + 3 defensible cascade extras
+v116  (no bump) Skill updates + revert tune iteration (this entry)
+                — single-axis tune (O2+Mg bump) regressed pectolite
+                  4→1 with no magnetite gain. Reverted. Second dogfood
+                  of vugg-tune-scenario; confirms the "when NOT to tune"
+                  rule. Updates: vugg-add-mineral §4b trace-cation
+                  dispatch + FluidChemistry-defaults gotcha;
+                  vugg-tune-scenario "when NOT to tune" + canonical
+                  examples table extended.
+```
+
+**Highlights:**
+
+- **10 of 12 priority targets fire cleanly on first run** — chrysotile, awaruite, grossular, diopside, vesuvianite, pectolite, wollastonite, prehnite, datolite, calcite. Misses: brucite (fires then carbonatizes mid-run — geologically metastable per O'Hanley 1996), magnetite (blocked by strict-low-O2 designed for awaruite — engine-level fix needed, not tuning).
+
+- **Awaruite STRICT GATES CLEARED** on first run — the handoff (ff1a274) had flagged this as the hardest mineral to fire (O2<0.3 + S<5 + pH>=9 + Ni>=50). Three active grains in serpentine matrix at seed 42.
+
+- **B + Ni pre-existing-field discovery collapsed the arc 8 → 6 commits.** Preflight grep against `js/20-chemistry-fluid.ts` revealed both fields had been added speculatively pre-v89 (B for tourmaline, Ni for the millerite + annabergite + pentlandite + chrysoprase family). This became the load-bearing observation in the new vugg-add-broth skill — preflight is mandatory.
+
+- **Two defensible cascade drifts**: grossular + diopside firing in marble_contact_metamorphism (the existing skarn scenario inherited the canonical Vesuvius assemblage) and prehnite + wollastonite firing in deccan_zeolite (the canonical Deccan amygdale companions per Sukheswala 1974 + Pe-Piper 2014). Both improve existing scenarios, not damage them.
+
+- **Six dogfood instances** of vugg-add-mineral skill (v110/v111/v112+v112/v113×3/v114×3); first standalone ship of vugg-add-broth; second dogfood of vugg-tune-scenario (v116 no-tune confirmation). Three skill updates landed mid-arc per dogfood friction.
+
+- **Test count**: 763 → 845 (+82 across the arc). Calibration sweep stays passing throughout.
+
+**What's left as POST-ARC FOLLOW-UPS:**
+
+1. `marble_contact_metamorphism` vesuvianite-Mg-Al broth tune to complete the full Vesuvius assemblage (grossular + diopside fire; vesuvianite doesn't because Mg/Al gates are above current marble broth — would be a small 1-2 ppm bump tune).
+2. Magnetite + brucite tune at jeffrey_mine v115 if collector aesthetic surfaces a need.
+3. Optional alunite-supergroup family add-mineral (hinsdalite + hidalgoite + beudantite + corkite — for completeness of Roughten Gill type-material per Förtsch 1967).
+4. The chronic MINERAL_STOICHIOMETRY backfill (gen-baseline warning, not blocking).
+5. The scenarios.json5 URL-stripping parser bug (still outstanding; not exercised in this arc).
+
+**Total session impact:**
+
+- 6 new minerals fired in their geological context for the first time
+- 1 new wall composition added ('ultramafic')
+- 1 new skill created (vugg-add-broth)
+- 2 existing skills updated (vugg-add-mineral, vugg-tune-scenario)
+- 1 multi-page handoff document retrospectively annotated
+- ~82 new test pins
+- Bernardini 1981 + Manning & Bird 1990 + O'Hanley 1996 + Coleman 1977 + Wicks & Plant 1979 are now woven into the simulator's load-bearing geological references
+
+Co-authored-by: Claude Opus 4.7 (1M context) — the same agent that authored the handoff, picking it up with a fresh shape and shipping the whole thing in one session.
