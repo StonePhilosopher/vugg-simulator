@@ -476,6 +476,65 @@ function _nuc_shattuckite(sim) {
   }
 }
 
+// v112 (2026-05-20): Paired Ca-Al-Mg calc-silicates for the Jeffrey
+// Mine rodingite arc. Both early-stage rodingite + skarn (T ~300-450°C,
+// alkaline). Grossular substrate priority: diopside > wollastonite >
+// calcite > magnetite > wall. Diopside substrate priority: serpentinite/
+// chrysotile (the rodingite host matrix) > grossular > wollastonite >
+// calcite > wall. Both RNG-cascade-guarded at sigma < 1.0 early-out.
+function _nuc_grossular(sim) {
+  const sigma = sim.conditions.supersaturation_grossular();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('grossular')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'grossular' && c.active);
+  if (existing.length >= 4) return;
+  let pos = 'vug wall';
+  const active_diop = sim.crystals.filter(c => c.mineral === 'diopside' && c.active);
+  const active_woll = sim.crystals.filter(c => c.mineral === 'wollastonite' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
+  if (active_diop.length && rng.random() < 0.50) pos = `with diopside #${active_diop[0].crystal_id}`;
+  else if (active_woll.length && rng.random() < 0.40) pos = `with wollastonite #${active_woll[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.30) pos = `on calcite #${active_cal[0].crystal_id}`;
+  else if (active_mag.length && rng.random() < 0.25) pos = `on magnetite #${active_mag[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('grossular', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('grossular', pos, sigma);
+      const cr = sim.conditions.fluid.Cr;
+      const mn = sim.conditions.fluid.Mn;
+      const variety = cr > 1.0 ? 'CHROMIAN GREEN' : (mn > 5.0 ? 'HESSONITE' : 'colorless');
+      sim.log.push(`  ✦ NUCLEATION: 💠 Grossular #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(0)}, Cr=${cr.toFixed(2)}, Mn=${mn.toFixed(2)}) — ${variety}, Ca-Al garnet rodingite/skarn`);
+    }
+  }
+}
+
+function _nuc_diopside(sim) {
+  const sigma = sim.conditions.supersaturation_diopside();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('diopside')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'diopside' && c.active);
+  if (existing.length >= 4) return;
+  let pos = 'vug wall';
+  const active_serp = sim.crystals.filter(c => (c.mineral === 'chrysotile' || c.mineral === 'serpentine') && c.active);
+  const active_gross = sim.crystals.filter(c => c.mineral === 'grossular' && c.active);
+  const active_woll = sim.crystals.filter(c => c.mineral === 'wollastonite' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  if (active_serp.length && rng.random() < 0.50) pos = `in serpentinite matrix on chrysotile #${active_serp[0].crystal_id}`;
+  else if (active_gross.length && rng.random() < 0.45) pos = `with grossular #${active_gross[0].crystal_id}`;
+  else if (active_woll.length && rng.random() < 0.35) pos = `with wollastonite #${active_woll[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.30) pos = `on calcite #${active_cal[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('diopside', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('diopside', pos, sigma);
+      const cr = sim.conditions.fluid.Cr;
+      const variety = cr > 0.5 ? 'CHROME-DIOPSIDE (emerald green)' : 'diopside';
+      sim.log.push(`  ✦ NUCLEATION: 💚 Diopside #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Mg=${sim.conditions.fluid.Mg.toFixed(0)}, Cr=${cr.toFixed(2)}) — ${variety}, Ca-Mg clinopyroxene rodingite/skarn`);
+    }
+  }
+}
+
 // v111 (2026-05-20): Vesuvianite Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4
 // — Jeffrey Mine cyprine variety is the headline aesthetic. Substrate
 // priority: grossular > diopside > wollastonite > magnetite > calcite >
@@ -569,4 +628,6 @@ function _nucleateClass_silicate(sim) {
   _nuc_opal(sim);
   _nuc_datolite(sim);
   _nuc_vesuvianite(sim);
+  _nuc_grossular(sim);
+  _nuc_diopside(sim);
 }

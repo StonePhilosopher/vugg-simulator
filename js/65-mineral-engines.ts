@@ -296,4 +296,21 @@ const MINERAL_ENGINES = {
   // the dispatch logic reads it as a habit/color discriminator,
   // not a gate.
   vesuvianite: grow_vesuvianite,
+  // v112 (2026-05-20): Paired Ca-Al-Mg calc-silicates for the
+  // Jeffrey Mine rodingite arc. Both rodingite + skarn, both early-
+  // stage in the prograde sequence. Paired commit per vugg-add-
+  // mineral skill grouped-commit rule (shared family, shared gates,
+  // shared paragenesis).
+  //   grossular Ca3Al2(SiO4)3 — cubic Ca-Al garnet endmember; varieties
+  //     by trace dispatch: chromian green (Cr trace, "tsavorite" sensu
+  //     lato), hessonite (Mn + Fe combo per Manning 1967 Min.Mag.
+  //     36:572), colorless/pale-yellow pure.
+  //   diopside CaMgSi2O6 — monoclinic Ca-Mg clinopyroxene; chrome-
+  //     diopside (Cr trace) is the gem-grade emerald-green variety,
+  //     Jeffrey + kimberlite-xenolith origin per Bernardini 1981.
+  // Refs: Anthony Handbook v.IA + v.IIB; Manning & Bird 1990 J.Petrol.
+  // 31:1 (grossular); Cameron & Papike 1981 RIMG 7 (pyroxene); Manning
+  // 1967 Min.Mag. 36:572 (hessonite color); Bernardini 1981 MR 12(5):277.
+  grossular: grow_grossular,
+  diopside: grow_diopside,
 };

@@ -524,6 +524,72 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
+  // v112 (2026-05-20): Grossular garnet Ca3Al2(SiO4)3 — Ca-Al endmember
+  // of the garnet group (orthosilicate). Cubic Ia-3d. The classic rodingite
+  // garnet (Jeffrey Mine + Asbestos Hill NL + Italian Alps Val d'Ala
+  // hessonite). Also a major skarn mineral (Vesuvius, Crestmore CA,
+  // Sierra de Cruces MX). Trace-cation color dispatch: Cr -> green
+  // chromian grossular ("tsavorite" sensu lato), Mn -> hessonite (orange-
+  // pink), Fe -> hessonite-leuco intermediate, pure -> colorless/pale-
+  // yellow. Standard skarn/rodingite gates: Ca + Al + Si + alkaline,
+  // T 250-500°C. Refs: Anthony Handbook v.IA Orthosilicates; Deer Howie
+  // Zussman 1.A; Manning & Bird 1990 J.Petrol. 31:1; Bernardini 1981
+  // MR 12(5):277 (Jeffrey hessonite + green chromian).
+  supersaturation_grossular() {
+    if (this.fluid.Ca < 80 || this.fluid.Al < 15 || this.fluid.SiO2 < 150) return 0;
+    if (this.temperature < 250 || this.temperature > 600) return 0;
+    if (this.fluid.pH < 7.0 || this.fluid.pH > 12.0) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 250.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 35.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 350.0, 1.5);
+    let sigma = ca_f * al_f * si_f;
+    // T sweet spot 300-450°C (rodingite + skarn prograde)
+    const T = this.temperature;
+    if (T >= 300 && T <= 450) sigma *= 1.3;
+    else if (T < 300) sigma *= Math.max(0.4, (T - 250) / 50 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 450) / 150);
+    // pH sweet spot 9-11 (alkaline calc-silicate regime)
+    const pH = this.fluid.pH;
+    if (pH >= 9.0 && pH <= 11.0) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 10.0) * 0.25);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'grossular');
+    return Math.max(sigma, 0);
+  },
+
+  // v112 (2026-05-20): Diopside CaMgSi2O6 — Ca-Mg endmember of the
+  // clinopyroxene group (single-chain inosilicate). Monoclinic C2/c.
+  // The classic rodingite + skarn pyroxene; chrome-diopside (Cr trace)
+  // is the gem-grade variety. Forms in three settings sharing
+  // Ca + Mg + Si chemistry: (1) rodingite metasomatism (Jeffrey Mine
+  // chrome-diopside per Bernardini 1981 MR 12(5):277; Italian Alps;
+  // Outokumpu Finland), (2) contact metamorphism of dolomitic
+  // limestone (skarns — Crestmore CA, De Kalb NY, Pakistan), (3)
+  // ultramafic-host kimberlite xenoliths (the gemstone source — Tanzania,
+  // Russia Yakutia). Trace dispatch: Cr -> chrome-diopside emerald
+  // green, Fe -> grey-green-brown, pure -> colorless/white. Refs:
+  // Deer Howie Zussman 2A Single-Chain Silicates; Cameron & Papike 1981
+  // RIMG 7 Pyroxene Mineralogy; Bernardini 1981 (Jeffrey chrome-diopside).
+  supersaturation_diopside() {
+    if (this.fluid.Ca < 60 || this.fluid.Mg < 40 || this.fluid.SiO2 < 150) return 0;
+    if (this.temperature < 200 || this.temperature > 600) return 0;
+    if (this.fluid.pH < 7.0 || this.fluid.pH > 12.0) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
+    const mg_f = Math.min(this.fluid.Mg / 100.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 350.0, 1.5);
+    let sigma = ca_f * mg_f * si_f;
+    // T sweet spot 280-450°C
+    const T = this.temperature;
+    if (T >= 280 && T <= 450) sigma *= 1.3;
+    else if (T < 280) sigma *= Math.max(0.4, (T - 200) / 80 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 450) / 150);
+    // pH sweet spot 9-11 (alkaline rodingite/skarn)
+    const pH = this.fluid.pH;
+    if (pH >= 9.0 && pH <= 11.0) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 10.0) * 0.25);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'diopside');
+    return Math.max(sigma, 0);
+  },
+
   // v111 (2026-05-20): Vesuvianite Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4
   // (also called idocrase). Tetragonal P4/nnc Ca-Mg-Al sorosilicate
   // (Allen FM & Burnham CW 1992 Am. Min. 77:268; Groat LA, Hawthorne FC,

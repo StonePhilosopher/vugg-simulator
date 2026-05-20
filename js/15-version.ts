@@ -4798,5 +4798,118 @@
 //          v112 next: grossular + diopside (paired Ca-Al-Mg calc-
 //          silicates — both Ca + Si + alkaline gates, paired commit
 //          per vugg-add-mineral skill grouped-commit rule).
-const SIM_VERSION = 111;
+//   v112 — Grossular + Diopside paired Ca-Al-Mg calc-silicates
+//          (2026-05-20). Third commit of the Jeffrey Mine rodingite
+//          arc. Paired commit per vugg-add-mineral skill grouped-
+//          commit rule — shared family (rodingite + skarn), shared
+//          gates (Ca + alkaline pH + 200-500°C T window), shared
+//          paragenesis (early-stage in both prograde sequences).
+//
+//          GROSSULAR Ca3Al2(SiO4)3 — cubic Ia-3d Ca-Al garnet
+//          endmember:
+//            Gates: Ca>=80, Al>=15, SiO2>=150, T 250-600, pH 7-12
+//            Habits: dodecahedral (default), trapezohedral (high σ),
+//                    massive_granular (low σ)
+//            Color dispatch: Cr>1 -> chromian green ('tsavorite
+//              sensu lato'); Mn>5 + Fe>30 -> hessonite (orange-pink
+//              per Manning 1967 Min.Mag. 36:572); Fe>5 alone -> leuco-
+//              hessonite intermediate; pure -> colorless/pale-yellow
+//
+//          DIOPSIDE CaMgSi2O6 — monoclinic C2/c Ca-Mg clino-
+//          pyroxene endmember:
+//            Gates: Ca>=60, Mg>=40, SiO2>=150, T 200-600, pH 7-12
+//            Habits: prismatic_square (default — square cross-
+//              section), tabular (high σ), acicular (low T < 280),
+//              massive_granular (low σ)
+//            Color dispatch: Cr>0.5 -> chrome-diopside emerald green
+//              (gem grade; Cr³⁺ M2-site d-d transitions per Manning
+//              1968 Am.Min. 53:1187); Fe>20 -> grey-green-brown
+//              (common skarn shade); Mn>10 -> violan (violet-blue
+//              Italian rare variety); pure -> colorless/white
+//
+//          SUBSTRATE PRIORITY (encodes prograde paragenesis):
+//          Grossular: diopside > wollastonite (v113) > calcite >
+//            magnetite > wall
+//          Diopside: serpentinite/chrysotile (v114 host matrix) >
+//            grossular > wollastonite (v113) > calcite > wall
+//
+//          CALIBRATION DRIFT — first non-zero drift of the Jeffrey
+//          arc, GEOLOGICALLY DEFENSIBLE. Both grossular AND diopside
+//          fire in marble_contact_metamorphism at seed 42:
+//             diopside  2 active / max_um 104.3
+//             grossular 3 active / max_um 308.9
+//          marble_contact_metamorphism is the existing skarn scenario
+//          (Vesuvius-style limestone contact-metamorphism, T 400-500,
+//          alkaline metasomatic fluid, Ca-Al-Mg-Si chemistry). Both
+//          minerals are the textbook skarn calc-silicates — Vesuvius
+//          1795 literally found vesuvianite + grossular + diopside
+//          together. The firings ARE the geological story; this is
+//          the right scenario for them. Cascade effects: albite
+//          max_um shifted 636→973, aragonite max_um shifted 9082→9200,
+//          calcite max_um shifted 18056→18470 (Ca + Si cation budget
+//          redistributed). Net positive — exposes that the existing
+//          marble_contact_metamorphism scenario was previously
+//          "wired but missing the headline skarn assemblage."
+//          Vesuvianite still doesn't fire there because the Mg + Al
+//          gates are higher than current marble broth carries —
+//          potential future scenario tune candidate.
+//
+//          jeffrey_mine in v115 will independently produce all of
+//          grossular + diopside + vesuvianite + datolite (the
+//          rodingite-specific Ca + Mg + Al + Si + alkaline + B
+//          chemistry).
+//
+//          THIRD TRACE-CATION DISPATCH ROUTE in the arc: Cr->green
+//          + Mn->hessonite (grossular) and Cr->chrome-diopside
+//          (diopside). Now consistent across v62-era (Cr->ruby),
+//          v103 (Y->fluorite), v111 (Cu->cyprine vesuvianite),
+//          v112 (Cr+Mn dispatch on garnet + Cr on pyroxene). The
+//          pattern is well-trodden enough to deserve a skill
+//          subsection (vugg-add-mineral §5b "trace-cation color/
+//          habit dispatch") — FLAGGED for skill update at end of
+//          arc per the v111 observation.
+//
+//          TESTS:
+//            * grossular canonical Jeffrey broth fires (Ca=200, Al=30,
+//              SiO2=300, pH=10.5, T=350)
+//            * grossular canonical skarn broth fires (Ca=300, Al=50,
+//              SiO2=500, pH=9.0, T=450)
+//            * grossular Al=0 blocks (gate)
+//            * grossular pH=6 blocks (alkaline-only)
+//            * grossular T=700 blocks (above 600 ceiling)
+//            * diopside canonical Jeffrey broth fires (Ca=200, Mg=80,
+//              SiO2=300, pH=10.5, T=320)
+//            * diopside Mg=0 blocks (gate)
+//            * diopside Cr=2 ppm dispatch fires (chrome-diopside)
+//            * diopside T=700 blocks (above 600)
+//            * MINERAL_ENGINES.grossular + .diopside both wired
+//
+//          REFERENCES:
+//            * Anthony JW et al. Handbook of Mineralogy v.IA
+//              (Orthosilicates) + v.IIB (Single-Chain Silicates).
+//            * Deer WA, Howie RA, Zussman J (1997) Rock-Forming
+//              Minerals v.1A Orthosilicates; v.2A Single-Chain
+//              Silicates.
+//            * Manning DAC (1967) The chemistry of garnets, IV:
+//              Color in garnet-group minerals. Min. Mag. 36:572.
+//            * Manning DAC (1968) Geochemistry of chromium-bearing
+//              clinopyroxenes from kimberlite. Am. Min. 53:1187.
+//            * Cameron M, Papike JJ (1981) Structural and chemical
+//              variations in pyroxenes. Reviews in Mineralogy 7:5-92.
+//            * Manning CE, Bird DK (1990) Hydrothermal clinopyroxenes
+//              from rodingites. J. Petrol. 31:1-37. RODINGITE
+//              CANONICAL.
+//            * Bernardini GP (1981) The Jeffrey Mine, Asbestos,
+//              Quebec. MR 12(5):277-291.
+//            * Geiger CA (2004) Spectroscopic investigations relating
+//              to the structural, crystal-chemical and lattice-
+//              dynamic properties of (Mg,Fe,Mn,Ca,Cr)-silicate
+//              garnet: A review and analysis. Reviews in Mineralogy
+//              56:213-260.
+//
+//          Coverage 131 → 133 live minerals (+2: grossular + diopside).
+//          Scenarios 28 unchanged (jeffrey_mine ships v115).
+//          v113 next: pectolite + wollastonite + prehnite trio
+//          (late-stage Ca-silicates).
+const SIM_VERSION = 112;
 

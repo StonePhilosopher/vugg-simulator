@@ -15121,6 +15121,235 @@
       "late_stage_propensity": 0.5,
       "_late_stage_note": "Mid-stage in rodingite paragenesis — vesuvianite forms after early grossular + diopside but before the Ca-silicate late-stage trio (pectolite + wollastonite + prehnite). In skarns, vesuvianite is contemporaneous with grossular + diopside in the prograde sequence. Propensity 0.5 = mid; not strongly biased to early or late.",
       "class_color": "#5fa8c8"
+    },
+    "grossular": {
+      "formula": "Ca3Al2(SiO4)3",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 4,
+      "max_size_cm": 8,
+      "growth_rate_mult": 0.22,
+      "habit_variants": [
+        {
+          "name": "dodecahedral",
+          "wall_spread": 0.4,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "default — classic 12-faced {110} garnet form. Most rodingite + skarn occurrences."
+        },
+        {
+          "name": "trapezohedral",
+          "wall_spread": 0.4,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.4) — 24-faced {211} crystal form, often combined with dodecahedral. Best cabinet specimens (Jeffrey + Asbestos Hill NL + Italian Alps)."
+        },
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.75,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess < 0.4) — massive aggregate, no terminations. The skarn workhorse texture; common but less collectable."
+        }
+      ],
+      "class": "silicate",
+      "description": "Ca₃Al₂(SiO₄)₃ — cubic Ia-3d Ca-Al endmember of the garnet group (orthosilicate). H 6.5-7.5, density 3.59, vitreous to adamantine luster, no cleavage, conchoidal fracture. Forms in three settings: (1) RODINGITE METASOMATISM — Ca-Al-rich fluid from serpentinization-driven dehydration alters cross-cutting mafic dikes in ultramafic host (Jeffrey Mine Quebec — Bernardini 1981 MR 12(5):277 documents chromian green + hessonite varieties; Asbestos Hill NL; Italian Alps Val d'Ala IS the type-locality for HESSONITE; Outokumpu Finland). (2) SKARN contact-metamorphism of impure limestone (Vesuvius IT type 1795 area; Crestmore CA chromian variety; Sierra de Cruces MX hessonite; De Kalb NY). (3) Carbonatite alteration (rare; late-magmatic; Kovdor RU). VARIETIES via trace-cation dispatch (no new field needed — reads existing FluidChemistry Cr/Mn/Fe): chromian green (Cr trace > 1 ppm, sometimes called 'tsavorite sensu lato' though strict tsavorite is the Tsavo East National Park material; Cr³⁺ d-d transitions), hessonite (orange-pink — Mn²⁺ + Fe³⁺ crystal-field combination per Manning JE 1967 Min. Mag. 36:572 + Geiger CA 2004 RIMG 56:213), leuco-hessonite intermediate (Fe trace), colorless/pale-yellow pure (rare; Jeffrey best material). Discriminator from analogous garnets: ANDRADITE Ca₃Fe₂(SiO₄)₃ (Fe replaces Al — would route via separate Andradite engine when wired); SPESSARTINE Mn₃Al₂(SiO₄)₃ (Mn replaces Ca — separate engine); UVAROVITE Ca₃Cr₂(SiO₄)₃ (Cr replaces Al — high-Cr endmember, rare). The chromian-grossular variety encoded HERE is Cr substituting trace in Al-rich grossular, NOT the uvarovite endmember. References: Anthony JW et al. Handbook of Mineralogy v.IA Orthosilicates; Deer WA, Howie RA, Zussman J Rock-Forming Minerals v.1A; Manning & Bird 1990 J. Petrol. 31:1; Bernardini GP 1981 MR 12(5):277; Manning 1967 Min. Mag. 36:572; Geiger 2004 RIMG 56:213; Werner AG 1797 ('granat' nomenclature).",
+      "scenarios": [
+        "jeffrey_mine"
+      ],
+      "T_range_C": [
+        250,
+        600
+      ],
+      "T_optimum_C": [
+        300,
+        450
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 80,
+        "Al": 15,
+        "SiO2": 150
+      },
+      "_ingredients_note": "Ca ≥ 80 (rodingite Ca-rich OR skarn limestone Ca) + Al ≥ 15 (mafic-dike OR pelitic-impurity Al) + SiO2 ≥ 150 (silicate framework). T 250-600°C wide window; sweet spot 300-450°C. pH 7-12 broad alkaline tolerance — distinguishes from acid-pH garnet-group cousins (almandine). Activity-correction factor applied.",
+      "trace_ingredients": {
+        "Cr": "1+ ppm gives chromian green grossular (sometimes called 'tsavorite sensu lato'; Cr³⁺ d-d transitions at 14000 + 22000 cm⁻¹)",
+        "Mn": "5+ ppm in combination with Fe drives hessonite (orange-pink; Manning 1967)",
+        "Fe": "30+ ppm with Mn drives hessonite; 5-30 ppm alone drives leuco-hessonite intermediate",
+        "V": "rare trace at high abundance gives uvarovite-like green (the Cr/V analog substitution)"
+      },
+      "thermal_decomp_C": 800,
+      "thermal_decomp_reaction": "Above ~800°C: grossular breaks down to anorthite + gehlenite + wollastonite or returns to melt depending on bulk chemistry. Geologically rare in vug-formation regime; included for catalog completeness.",
+      "thermal_decomp_products": {
+        "Ca": 0.42,
+        "Al": 0.18,
+        "SiO2": 0.40
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Generally non-fluorescent. Some Mn-bearing hessonite shows weak red fluorescence from Mn²⁺ (very faint, not diagnostic). Ignored in the engine."
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "Ca3Al2(SiO4)3 + 12H⁺ → 3Ca²⁺ + 2Al³⁺ + 3H4SiO4 — releases Ca + Al + Si to fluid below pH 5. Slow kinetics; grossular is geologically very stable.",
+        "products": {
+          "Ca": 0.42,
+          "Al": 0.18,
+          "SiO2": 0.40
+        }
+      },
+      "habit": "dodecahedral",
+      "color_rules": {
+        "colorless_pale_yellow": {
+          "default": true,
+          "trigger": "no significant chromophore — pure Ca-Al endmember; rare best Jeffrey material"
+        },
+        "chromian_green": {
+          "trigger": "Cr > 1 ppm — Cr³⁺ d-d transitions; 'tsavorite sensu lato' or Crestmore chromian green"
+        },
+        "hessonite": {
+          "trigger": "Mn > 5 ppm AND Fe > 30 ppm (or combination) — orange-pink Mn²⁺/Fe³⁺ crystal-field combination per Manning 1967"
+        },
+        "leuco_hessonite": {
+          "trigger": "Fe 5-30 ppm without Mn — pale orange-brown intermediate"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v112 (2026-05-20). Cubic Ca-Al garnet endmember, paired commit with diopside (shared rodingite/skarn family). Substrate priority: diopside > wollastonite (v113) > calcite > magnetite > wall. Color dispatch via existing FluidChemistry fields (Cr/Mn/Fe) — no new infra. CALIBRATION expectation: grossular does not currently fire in any existing scenario; first firing expected when jeffrey_mine ships in v115. Wired but not yet firing — third of three Jeffrey-arc minerals to follow this pattern (with v110 datolite, v111 vesuvianite). Per Anthony Handbook v.IA; Deer Howie Zussman v.1A; Manning & Bird 1990; Bernardini 1981; Manning 1967.",
+      "late_stage_propensity": 0.3,
+      "_late_stage_note": "Early-stage in the rodingite + skarn prograde sequence. Grossular forms BEFORE vesuvianite + pectolite + wollastonite + prehnite — the first major Ca-Al silicate to crystallize as the Ca-Al-rich metasomatic fluid hits the mafic dike. Propensity 0.3 = early.",
+      "class_color": "#a0c8a0"
+    },
+    "diopside": {
+      "formula": "CaMgSi2O6",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 4,
+      "max_size_cm": 10,
+      "growth_rate_mult": 0.22,
+      "habit_variants": [
+        {
+          "name": "prismatic_square",
+          "wall_spread": 0.45,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — short {100} prismatic crystals with square cross-section. The classic clinopyroxene morphology."
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.55,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.4) — flat tabular {010} tablets. Less common cabinet form."
+        },
+        {
+          "name": "acicular",
+          "wall_spread": 0.35,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low T (< 280°C) + moderate excess — elongated acicular needles. Alpine-fissure habit, also late-stage rodingite at Jeffrey."
+        },
+        {
+          "name": "massive_granular",
+          "wall_spread": 0.75,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess < 0.4) — granular aggregate, the skarn-workhorse texture."
+        }
+      ],
+      "class": "silicate",
+      "description": "CaMgSi₂O₆ — monoclinic C2/c Ca-Mg endmember of the clinopyroxene group (single-chain inosilicate). H 5.5-6.5, density 3.27, vitreous luster, prismatic {100} cleavage at ~87°/93°. Forms in three settings: (1) RODINGITE METASOMATISM — Ca-Al-Mg-rich fluid from serpentinization-driven dehydration alters cross-cutting mafic dikes in ultramafic host; CHROME-DIOPSIDE (emerald green Cr-trace variety) is the Jeffrey Mine cabinet aesthetic per Bernardini 1981 MR 12(5):277; Italian Alps Val Malenco; Outokumpu Finland. (2) SKARN contact-metamorphism of dolomitic limestone (Crestmore CA, De Kalb NY, Pakistan, the Roopnarine 2017 review covers North American skarns); the white-grey colorless form dominates. (3) KIMBERLITE / PERIDOTITE XENOLITHS — gem-quality chrome-diopside in mantle-derived rocks (Tanzania Mahenge, Russia Yakutia Mir mine, Outokumpu shield-derived). Trace-cation color dispatch: Cr > 0.5 ppm → chrome-diopside emerald-green (Cr³⁺ in M2 site, d-d transitions at 14500 + 22500 cm⁻¹); Fe > 20 ppm → grey-green-brown (the common skarn shade); pure → colorless/white. Refs: Anthony Handbook v.IIB Single-Chain Silicates; Deer Howie Zussman v.2A; Cameron M & Papike JJ (1981) 'Structural and chemical variations in pyroxenes', Reviews in Mineralogy 7:5-92; Bernardini GP (1981) MR 12(5):277 Jeffrey canonical; Manning 1968 Am. Min. 53:1187 (chrome-diopside crystal field).",
+      "scenarios": [
+        "jeffrey_mine"
+      ],
+      "T_range_C": [
+        200,
+        600
+      ],
+      "T_optimum_C": [
+        280,
+        450
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Mg": 40,
+        "SiO2": 150
+      },
+      "_ingredients_note": "Ca ≥ 60 (rodingite OR skarn Ca) + Mg ≥ 40 (serpentinite-derived Mg for rodingite; Mg-dolomite for skarn) + SiO2 ≥ 150 (silicate framework). T 200-600°C wide window; sweet spot 280-450°C. pH 7-12 broad alkaline tolerance. Activity-correction factor applied.",
+      "trace_ingredients": {
+        "Cr": "0.5+ ppm gives chrome-diopside emerald green (gem grade; Jeffrey + Outokumpu + Tanzania kimberlite aesthetic; Cr³⁺ M2-site d-d transitions per Manning 1968)",
+        "Fe": "20+ ppm gives grey-green-brown diopside (the common skarn/rodingite shade — Fe²⁺ partial M1 substitution)",
+        "Mn": "rare trace gives violan (violet-blue) — Italian variety; M2-site Mn²⁺",
+        "Na": "trace substitution at M2 site shifts toward augite end-member; ignored at typical rodingite levels"
+      },
+      "thermal_decomp_C": 1400,
+      "thermal_decomp_reaction": "Above ~1400°C: diopside melts congruently. Below melting, stable across all geological vug regimes; no decomposition reaction needed at relevant T.",
+      "thermal_decomp_products": {
+        "Ca": 0.18,
+        "Mg": 0.12,
+        "SiO2": 0.55
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Non-fluorescent under standard UV. Mn-bearing diopside (violan) may show weak orange fluorescence at high Mn but not diagnostic; ignored in the engine."
+      },
+      "twin_laws": [
+        {
+          "name": "100",
+          "composition_plane": "{100}",
+          "twin_axis": "[100]",
+          "probability": 0.08,
+          "trigger": "common simple twinning on {100} in skarn + rodingite diopside"
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "CaMgSi2O6 + 4H⁺ → Ca²⁺ + Mg²⁺ + 2H4SiO4 — releases Ca + Mg + Si to fluid below pH 5. Slow kinetics; pyroxene-group minerals are relatively stable.",
+        "products": {
+          "Ca": 0.18,
+          "Mg": 0.12,
+          "SiO2": 0.55
+        }
+      },
+      "habit": "prismatic_square",
+      "color_rules": {
+        "colorless_white": {
+          "default": true,
+          "trigger": "no significant chromophore — pure Ca-Mg endmember; Italian Alps + Pakistan pure material"
+        },
+        "chrome_diopside_emerald_green": {
+          "trigger": "Cr > 0.5 ppm — gem grade; Cr³⁺ M2-site d-d transitions; Jeffrey + Outokumpu + Tanzania kimberlite"
+        },
+        "grey_green_brown": {
+          "trigger": "Fe > 20 ppm — the common skarn/rodingite shade"
+        },
+        "violan_violet_blue": {
+          "trigger": "Mn > 10 ppm — Italian rare variety"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v112 (2026-05-20). Monoclinic Ca-Mg clinopyroxene endmember, paired commit with grossular (shared rodingite/skarn family). Substrate priority: serpentinite/chrysotile (the rodingite host matrix, when wired v114) > grossular > wollastonite (v113) > calcite > wall. Color dispatch via existing FluidChemistry fields (Cr/Fe/Mn) — no new infra. CALIBRATION expectation: diopside does not currently fire in any existing scenario; first firing expected when jeffrey_mine ships in v115. Wired but not yet firing per the v110-v112 pattern. Per Anthony Handbook v.IIB; Deer Howie Zussman v.2A; Cameron & Papike 1981 RIMG 7; Bernardini 1981 MR 12(5):277; Manning 1968 Am. Min. 53:1187.",
+      "late_stage_propensity": 0.35,
+      "_late_stage_note": "Early-to-mid stage in the rodingite + skarn prograde sequence. Diopside forms early alongside grossular as the Ca-Mg-Si chemistry crystallizes from the metasomatic fluid; both precede vesuvianite + pectolite + wollastonite + prehnite. Propensity 0.35 = early-mid.",
+      "class_color": "#80a890"
     }
   }
 }

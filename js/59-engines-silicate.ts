@@ -1315,6 +1315,173 @@ function grow_chrysoprase(crystal, conditions, step) {
   });
 }
 
+// v112 (2026-05-20): Grossular garnet Ca3Al2(SiO4)3 — cubic Ia-3d
+// Ca-Al endmember of the garnet group. Three settings:
+//   - Rodingite metasomatism (Jeffrey + Italian Alps + Asbestos Hill NL).
+//   - Skarn contact metamorphism of impure limestone (Vesuvius type,
+//     Crestmore CA, Sierra de Cruces MX).
+//   - Carbonatite alteration (rare, late-magmatic).
+// Habits:
+//   dodecahedral (default) — classic {110} 12-faced garnet
+//   trapezohedral (high σ) — {211} crystal form, often combined with
+//     dodecahedron
+//   massive_granular (low σ) — massive aggregate, the skarn workhorse
+// Color dispatch:
+//   Cr trace > 1 → chromian green (tsavorite sensu lato; Tanzania type)
+//   Mn > 5 OR Fe > 30 → hessonite (orange-pink, Mn²⁺ + Fe³⁺ crystal-
+//     field combination per Manning 1967 Min.Mag. 36:572)
+//   Fe > 5 only → light brown leuco-hessonite intermediate
+//   pure → colorless / pale-yellow (rare; Jeffrey best material)
+function grow_grossular(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_grossular();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.05);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — grossular releases Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.8 * excess * rng.uniform(0.75, 1.25);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch
+  if (excess > 1.4) {
+    crystal.habit = 'trapezohedral';
+    crystal.dominant_forms = ['trapezohedral {211}', 'combined with dodecahedron', 'sharp 24-face crystals'];
+  } else if (excess < 0.4) {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['massive granular aggregate', 'no terminations — the skarn workhorse texture'];
+  } else {
+    crystal.habit = 'dodecahedral';
+    crystal.dominant_forms = ['classic dodecahedral {110}', '12-faced garnet — the default cabinet form'];
+  }
+
+  // Color dispatch
+  let color_note;
+  const has_cr = conditions.fluid.Cr > 1.0;
+  const has_mn = conditions.fluid.Mn > 5.0;
+  const has_fe_high = conditions.fluid.Fe > 30.0;
+  const has_fe_low = conditions.fluid.Fe > 5.0 && !has_fe_high;
+  if (has_cr) {
+    color_note = 'chromian green grossular (Cr > 1 ppm — tsavorite sensu lato, Cr³⁺ d-d transitions; Tanzania + Jeffrey + Crestmore aesthetic)';
+  } else if (has_mn || has_fe_high) {
+    color_note = 'hessonite (orange-pink — Mn²⁺ + Fe³⁺ crystal-field combination per Manning 1967; Italian Alps Val d\'Ala type)';
+  } else if (has_fe_low) {
+    color_note = 'leuco-hessonite intermediate (Fe trace — pale orange-brown)';
+  } else {
+    color_note = 'colorless to pale-yellow grossular (pure Ca-Al-Si endmember — Jeffrey best material)';
+  }
+
+  // Substrate flavor for the growth-zone note
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('diopside')) substrate_flavor = ' with diopside — rodingite/skarn Ca-Mg-Al silicate suite';
+  else if (pos.includes('wollastonite')) substrate_flavor = ' with wollastonite — late skarn assemblage';
+  else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn limestone contact';
+
+  // Mass-balance debits — Ca3 Al2 Si3
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.035, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.020, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Cr: conditions.fluid.Cr > 0.5 ? conditions.fluid.Cr * 0.008 : 0,
+    trace_Mn: conditions.fluid.Mn > 2 ? conditions.fluid.Mn * 0.005 : 0,
+    trace_Fe: conditions.fluid.Fe > 5 ? conditions.fluid.Fe * 0.004 : 0,
+    note: `grossular ${crystal.habit}, ${color_note}${substrate_flavor}; cubic Ia-3d Ca-Al garnet, H 6.5-7.5, vitreous, adamantine fracture`,
+  });
+}
+
+// v112 (2026-05-20): Diopside CaMgSi2O6 — monoclinic C2/c Ca-Mg
+// clinopyroxene. Three settings:
+//   - Rodingite metasomatism (Jeffrey chrome-diopside per Bernardini 1981).
+//   - Skarn contact metamorphism of dolomitic limestone (Crestmore, De Kalb).
+//   - Kimberlite/peridotite xenoliths (gem-quality chrome-diopside).
+// Habits:
+//   prismatic_square (default) — short {100} prism, square cross-section
+//   tabular (high σ) — flat {010} tablets
+//   acicular (low T, alpine fissure) — elongated needles
+//   massive_granular (skarn) — granular aggregate
+// Color dispatch:
+//   Cr trace > 0.5 → chrome-diopside emerald green (gem grade)
+//   Fe > 20 → grey-green-brown (most common in non-gem material)
+//   pure → colorless / white
+function grow_diopside(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_diopside();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.05);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — diopside releases Ca + Mg + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.8 * excess * rng.uniform(0.75, 1.25);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — T-driven + σ-driven
+  const T = conditions.temperature;
+  if (T < 280 && excess > 0.5) {
+    crystal.habit = 'acicular';
+    crystal.dominant_forms = ['elongated acicular needles', 'alpine-fissure habit'];
+  } else if (excess > 1.4) {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['tabular {010} tablets', 'flat blocky'];
+  } else if (excess < 0.4) {
+    crystal.habit = 'massive_granular';
+    crystal.dominant_forms = ['massive granular aggregate', 'skarn-workhorse texture'];
+  } else {
+    crystal.habit = 'prismatic_square';
+    crystal.dominant_forms = ['short {100} prismatic', 'square cross-section', 'classic clinopyroxene morphology'];
+  }
+
+  // Color dispatch
+  let color_note;
+  const has_cr = conditions.fluid.Cr > 0.5;
+  const has_fe = conditions.fluid.Fe > 20.0;
+  if (has_cr) {
+    color_note = 'chrome-diopside emerald green (Cr > 0.5 ppm — gem-grade; Jeffrey + Outokumpu + Tanzania kimberlite aesthetic per Bernardini 1981)';
+  } else if (has_fe) {
+    color_note = 'grey-green-brown diopside (Fe > 20 ppm — the common skarn/rodingite shade)';
+  } else {
+    color_note = 'colorless to white diopside (pure Ca-Mg-Si endmember — Italian Alps + Pakistan pure material)';
+  }
+
+  // Substrate flavor
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('grossular')) substrate_flavor = ' with grossular — rodingite/skarn Ca-Mg-Al silicate suite';
+  else if (pos.includes('wollastonite')) substrate_flavor = ' with wollastonite — late skarn assemblage';
+  else if (pos.includes('serpentine') || pos.includes('chrysotile')) substrate_flavor = ' in serpentinite matrix — Jeffrey rodingite host';
+  else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn limestone contact';
+
+  // Mass-balance debits — Ca Mg Si2
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.025, 0);
+  conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.015, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.045, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Cr: conditions.fluid.Cr > 0.3 ? conditions.fluid.Cr * 0.012 : 0,
+    trace_Fe: conditions.fluid.Fe > 5 ? conditions.fluid.Fe * 0.006 : 0,
+    note: `diopside ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic C2/c Ca-Mg clinopyroxene, H 5.5-6.5, vitreous`,
+  });
+}
+
 // v111 (2026-05-20): Vesuvianite Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4
 // (also called idocrase). Tetragonal P4/nnc Ca-Mg-Al sorosilicate.
 // Three settings: rodingite metasomatism (Jeffrey Mine; world's best
