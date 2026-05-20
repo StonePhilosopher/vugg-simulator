@@ -2,12 +2,26 @@
 
 Status: planned, not started. Pickup by fresh-context Claude.
 Date authored: 2026-05-20 by the agent that just finished the Roughten Gill / Caldbeck Fells arc (v107-v109).
+Last updated: 2026-05-20 — boss-locked decisions appended in "Decisions locked" section below.
 
 ## Why this handoff exists
 
 Context was getting full at the end of the Roughten Gill arc. The boss asked for the Jeffrey Mine work but recognized it's a multi-commit arc better executed with fresh context than crammed into a tail of an already-long session.
 
 Read this whole file. The dossier sketch below is enough to ship without re-running a research-agent dispatch (though you can dispatch one if you want extra grounding). The boss has approved Option B — the full rodingite assemblage arc.
+
+## Decisions locked (boss-confirmed 2026-05-20)
+
+The four open execution choices were put to the boss before pickup. Decisions:
+
+1. **vugg-add-broth skill ships as v110** before any vugg-simulator code. Same pattern as vugg-add-mineral being created then dogfooded on pyrolusite v102. Skill commit only, no engine code.
+2. **Full arc scope (v110-v117)** as outlined below. The Mg-matrix family (chrysotile/serpentine + brucite + awaruite) IS in scope, not deferred.
+3. **Stick to the science** for calibration — work from literature (Bernardini 1981 MR 12(5), Coleman 1977, Wicks & Plant 1979, Anthony Handbook v.II/IV, etc.), not from boss's specimens. Boss has Jeffrey specimens but prefers science-anchored work; specimens may surface mid-arc but are not the primary calibration target. Dispatch a fresh research-agent on Bernardini 1981 + rodingite paragenesis at start of arc.
+4. **Add 'ultramafic' wall type** (not 'serpentinite' — broader). Covers serpentinite + peridotite + dunite + harzburgite hosts. Wider future utility (Cassiar BC, New Idria CA, Italian Alps, etc.). Lands with the Jeffrey scenario in v116, or as a small pre-scenario infra commit if substrate-priority logic for any rodingite mineral engine needs to know about ultramafic walls before v116.
+
+### Implication flagged at lock time
+
+Awaruite (Ni₂Fe to Ni₃Fe, v115) needs Ni in the fluid. **Ni is not currently a FluidChemistry field** (verify with `Grep "this\.Ni " js/20-chemistry-fluid.ts`). If confirmed absent, v115 splits into: Ni field as a second vugg-add-broth dogfood + awaruite as the consumer. Boss agreed this is the right way (strengthens the new skill). Could push arc to v118 total if Ni field gets its own commit; that's acceptable. Alternatively, stub awaruite for a future arc and ship v115 as chrysotile + brucite only — fallback, not preferred.
 
 ## What Jeffrey Mine IS
 
@@ -154,11 +168,16 @@ v115  Chrysotile / serpentine + brucite + awaruite (Mg-rich
       Jeffrey-style geology to read as Jeffrey. Chrysotile is the
       asbestos itself — fibrous habit. Brucite Mg(OH)2 fairly common
       serpentinization byproduct. Awaruite Ni-Fe alloy (would need
-      Ni in fluid).
+      Ni in fluid — likely splits this commit; see "Decisions locked"
+      §1 implication note above).
 
-v116  Jeffrey Mine scenario
+v116  Jeffrey Mine scenario (+ ultramafic wall type infra)
       data/scenarios.json5: jeffrey_mine block
-      Wall: 'basalt' (silicate proxy for the serpentinite + dike host)
+      Wall: 'ultramafic' (NEW wall type — see "Decisions locked" §4;
+        if substrate-priority logic in any earlier rodingite mineral
+        engine needs to know about ultramafic walls, split the wall-
+        type add into a pre-scenario infra commit ahead of where it's
+        first referenced)
       T_initial 350°C cooling to 200°C across stages
       pH alkaline 10-12 (KEY DISCRIMINATOR — most existing scenarios
         run pH 4-8; rodingite is the alkaline outlier)
@@ -342,7 +361,7 @@ CANONICAL EXAMPLES:
 
 These apply to all Jeffrey work:
 
-- **Specimens are spec.** If the boss shows you Jeffrey Mine specimens, those become calibration targets. Match their aesthetic.
+- **Specimens are spec — BUT** for Jeffrey specifically, the boss's standing direction is "stick to the science" (locked 2026-05-20). Boss has Jeffrey specimens but prefers literature-anchored work; specimens may surface mid-arc but aren't the primary calibration target. See "Decisions locked" §3.
 - **Detailed published records matter.** Jeffrey qualifies (Bernardini 1981 MR is the canonical anchor; rich literature beyond).
 - **Type localities matter.** Jeffrey is type for several rare minerals — check Bernardini 1981 for the full list. Cyprine is co-type-quality (best material) even if not strict type.
 - **Two-pass correction pattern.** When ground truth (boss observation OR research-agent dispatch) surfaces an error in your scenario, ship a forward-fix in v<N+1> rather than amending v<N>. Document both the original reading and the correction.
