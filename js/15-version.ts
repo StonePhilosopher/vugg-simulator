@@ -4552,5 +4552,140 @@
 //          Test pin updates: +5 new firings asserted (cerussite,
 //          brochantite, caledonite, plumbogummite, dioptase
 //          suppression).
-const SIM_VERSION = 109;
+//   v110 — Datolite CaB(SiO4)(OH) (2026-05-20). First mineral of the
+//          Jeffrey Mine rodingite arc (v110-v116). Calcium
+//          boronosilicate; sorosilicate framework with B replacing
+//          Si in one tetrahedral site (Hawthorne FC, Burns PC, Grice
+//          JD 1996 Can. Min. 34:1255). Low-T (50-350°C) alkaline
+//          (pH 7-12) hydrothermal vug filling in TWO distinct
+//          settings — both alkaline, both producing gemmy cabinet
+//          material:
+//            1. Basaltic amygdales of the Lake Superior native-
+//               copper district (Keweenaw Peninsula MI, Isle Royale)
+//               — Butler GM & Burbank WS 1929 USGS Prof. Paper 144;
+//               Bornhorst TJ 2017 GSA Memoir 213. Gemmy colorless
+//               to pale-yellow crystals with prehnite + calcite +
+//               native copper.
+//            2. Rodingite metasomatic contact zones in ultramafic-
+//               hosted ophiolite complexes (Jeffrey Mine Val-des-
+//               Sources Quebec — Bernardini GP 1981 MR 12(5):277
+//               canonical anchor; Val Malenco Italian Alps; New
+//               Idria California; Coleman RG 1977 Ophiolites:
+//               Ancient Oceanic Lithosphere? Springer for global
+//               rodingite framework). Gemmy colorless crystals with
+//               vesuvianite (often cyprine) + grossular + prehnite
+//               + pectolite + chrysotile gangue.
+//
+//          GATES — Ca + B + SiO2 calc-boronosilicate:
+//            Ca ≥ 60 (basalt amygdale plagioclase OR rodingite Ca)
+//            B ≥ 1   (low-threshold; B is concentrated by datolite
+//                     against background hydrothermal levels)
+//            SiO2 ≥ 50 (silica from host basalt or sorosilicate
+//                       framework)
+//            T 50-350°C (sweet spot 100-250°C)
+//            pH 7-12 (WIDE alkaline tolerance — Lake Superior pH
+//                     7-9, Jeffrey rodingite pH 10-12)
+//
+//          HABITS (4 variants — substrate + σ-driven):
+//            gemmy_vitreous_terminated  excess > 1.4 — sharp gem
+//              monoclinic {110}/{011}/{102} crystals to several cm;
+//              the best-of-Jeffrey cabinet aesthetic + Lake Superior
+//              gem material.
+//            crystallized_gem            default — colorless mono-
+//              clinic prismatic crystals, mainstream specimen form.
+//            botryoidal_white            excess ≤ 0.4 — porcelaneous
+//              reniform crusts; common Lake Superior amygdale
+//              filling, less collectable.
+//            pseudomorph_after_calcite   rare — Bernardini 1981
+//              notes some Jeffrey datolite forms after dissolved
+//              calcite, preserving scalenohedron outlines.
+//
+//          COLOR DISPATCH (trace cations off existing fields):
+//            Cu > 1 ppm → pale pink-brown (Lake Superior copper-
+//              bearing datolite per Bornhorst 2017)
+//            Fe > 5 ppm → pale-yellow / canary (Italian Alps Val
+//              Malenco)
+//            pure → colorless gem (Jeffrey best material)
+//
+//          SUBSTRATE PRIORITY:
+//            prehnite (when wired v113 — p=0.55)
+//            wollastonite (v113 — p=0.45)
+//            vesuvianite (v111 — p=0.40)
+//            calcite (active — p=0.35)
+//            calcite (dissolving — pseudomorph after, p=0.25)
+//            native_copper (p=0.30)
+//            magnetite (p=0.20)
+//            wall (fallback)
+//
+//          B FIELD ALREADY EXISTED — no add-broth commit. Preflight
+//          grep against js/20-chemistry-fluid.ts (line 55) revealed
+//          B has been a FluidChemistry field since at least the v62-
+//          era, originally added speculatively for tourmaline. The
+//          Jeffrey handoff (ff1a274) had assumed B was missing and
+//          planned a v110 vugg-add-broth-skill-dogfood commit; the
+//          discovery collapsed the arc from 8 to 6 commits. The
+//          vugg-add-broth skill still shipped (codifies the v62-era
+//          + v89 Sn + v103 Y pattern + the speculative-field
+//          gotcha for future arcs) — see ~/.claude/skills/vugg-add-
+//          broth/SKILL.md. Same finding for Ni (line 53; consumers:
+//          millerite, annabergite, pentlandite, chrysoprase
+//          coloration); awaruite in v114 likewise needs no add-broth.
+//
+//          CALIBRATION DRIFT — zero expected. The supersat gate
+//          (B ≥ 1, pH 7-12, T 50-350) doesn't clear in any existing
+//          scenario broth. Datolite is the first mineral that
+//          consumes B AND has alkaline pH gates; tourmaline (the
+//          existing B consumer in silicate class) has different
+//          gates (Na ≥ 3, B ≥ 6, Al ≥ 8, T 350-700°C). No scenario
+//          currently carries B > 1 at pH > 7 with T < 350°C. First
+//          firing expected in v115 jeffrey_mine scenario.
+//
+//          TESTS:
+//            * datolite supersat fires at canonical Ca/B/SiO2/T/pH
+//            * datolite supersat blocks when B = 0 (the new gate)
+//            * datolite supersat blocks when pH = 5 (acidic outside
+//              the 7-12 alkaline window)
+//            * datolite supersat blocks when T = 500°C (above the
+//              350 ceiling — thermal breakdown regime)
+//            * MINERAL_ENGINES.datolite is wired
+//
+//          DOGFOOD: this is the third dogfood of vugg-add-mineral
+//          (v102 pyrolusite was first; v108 plumbogummite second).
+//          The skill correctly directed chemistry-class file map
+//          (silicate; datolite is a sorosilicate with B substitution
+//          in the SiO4 site). RNG-cascade guard placed before any
+//          rng.random() call. Iterator wiring added to
+//          _nucleateClass_silicate. No engine extensions needed.
+//          The "scenario-anchor check" (§10 of vugg-add-mineral
+//          skill, added during v108 plumbogummite dogfood) flagged
+//          correctly that datolite has no anchor scenario yet —
+//          jeffrey_mine ships in v115. Two paths per the skill:
+//          (1) ship datolite now, plan vugg-tune-scenario follow-up
+//          when jeffrey_mine ships; (2) bump anchor scenario broth
+//          in same commit. Path (1) selected since jeffrey_mine
+//          doesn't exist yet.
+//
+//          REFERENCES:
+//            * Anthony JW, Bideaux RA, Bladh KW, Nichols MC (2003)
+//              Handbook of Mineralogy v.IV — Arsenates, Phosphates,
+//              Vanadates. Mineralogical Society of America.
+//            * Bernardini GP (1981) The Jeffrey Mine, Asbestos,
+//              Quebec. Mineralogical Record 12(5):277-291. CANONICAL.
+//            * Hawthorne FC, Burns PC, Grice JD (1996) The crystal
+//              chemistry of boron. Reviews in Mineralogy 33:41-115.
+//            * Butler GM & Burbank WS (1929) The copper deposits
+//              of Michigan. USGS Professional Paper 144.
+//            * Bornhorst TJ (2017) Native copper mineralization in
+//              the Keweenaw Peninsula, Michigan. GSA Memoir 213.
+//            * Coleman RG (1977) Ophiolites: Ancient Oceanic
+//              Lithosphere? Springer-Verlag (rodingite framework).
+//            * Wicks FJ & Plant AG (1979) Electron-microprobe study
+//              of serpentine minerals. Canadian Mineralogist 17:785-
+//              830.
+//
+//          Coverage 129 → 130 live minerals (+1: datolite).
+//          Scenarios 28 unchanged (jeffrey_mine ships v115).
+//          v111 next: vesuvianite + cyprine variety (Cu trace
+//          dispatch; analogous to v62-era Cr→ruby + v103 Y→fluorite).
+const SIM_VERSION = 110;
 

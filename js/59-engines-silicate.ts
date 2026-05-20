@@ -1314,3 +1314,106 @@ function grow_chrysoprase(crystal, conditions, step) {
     note: color_note,
   });
 }
+
+// v110 (2026-05-20): Datolite CaB(SiO4)(OH) — first mineral of the
+// Jeffrey Mine rodingite arc. Calcium boronosilicate (sorosilicate
+// with B in one tetrahedral site). Lake Superior basalt-amygdale OR
+// rodingite-contact paragenesis. Habit dispatch:
+//   crystallized_gem (default; colorless to pale-yellow monoclinic
+//      {110}/{011}/{102} crystals — the Jeffrey/Lake Superior cabinet
+//      aesthetic)
+//   gemmy_vitreous_terminated (high excess; sharp-faced gem crystals
+//      to several cm — best-of-Jeffrey specimens)
+//   botryoidal_white (low excess; calcite-like massive coating —
+//      common Lake Superior basalt vug filling)
+//   pseudomorph_after_calcite (rare; Bernardini 1981 notes some
+//      Jeffrey datolite forms after calcite substrate consumption)
+// Color dispatch:
+//   Cu trace > 1 ppm → pale pink-brown (Lake Superior Cu-stained
+//      "copper-bearing datolite" of Bornhorst 2017)
+//   Fe trace > 5 ppm → pale-yellow (canary tint; Italian Alps
+//      datolite)
+//   pure → colorless gem (Jeffrey best material)
+// Substrate priority: prehnite (when wired v113) > wollastonite
+// (v113) > calcite > native_copper > magnetite > wall.
+function grow_datolite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_datolite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.08);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — datolite releases Ca + B(OH)3 + H4SiO4 to fluid`,
+      });
+    }
+    if (crystal.total_growth_um > 5 && conditions.temperature > 400) {
+      // Thermal breakdown: datolite → wollastonite + boric acid
+      crystal.dissolved = true;
+      const d = Math.min(1.5, crystal.total_growth_um * 0.05);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'thermal_decomp',
+        note: `thermal breakdown > 400°C — datolite decomposes to wollastonite + boric acid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — substrate-driven first, then σ-driven
+  const pos = crystal.position || '';
+  const on_calcite = pos.includes('calcite');
+  const on_prehnite = pos.includes('prehnite');
+  const on_wollastonite = pos.includes('wollastonite');
+  const on_native_copper = pos.includes('native_copper');
+  const pseudomorph_after_calcite = pos.includes('pseudomorph after calcite');
+
+  if (pseudomorph_after_calcite) {
+    crystal.habit = 'pseudomorph_after_calcite';
+    crystal.dominant_forms = ['calcite scalenohedron outline preserved', 'datolite fill — porcelaneous interior'];
+  } else if (excess > 1.4) {
+    crystal.habit = 'gemmy_vitreous_terminated';
+    crystal.dominant_forms = ['gemmy monoclinic {110}', 'terminated {011}/{102}', 'vitreous to adamantine luster'];
+  } else if (excess > 0.4) {
+    crystal.habit = 'crystallized_gem';
+    crystal.dominant_forms = ['monoclinic prismatic {110}', 'modified {011}', 'small terminated crystals'];
+  } else {
+    crystal.habit = 'botryoidal_white';
+    crystal.dominant_forms = ['botryoidal porcelaneous coating', 'reniform white-to-pale-tan crusts'];
+  }
+
+  // Color dispatch — trace cations read off existing fields
+  let color_note;
+  if (conditions.fluid.Cu > 1.0) {
+    color_note = 'pale pink-brown copper-bearing datolite (Lake Superior aesthetic — Cu inclusions in growth zones per Bornhorst 2017)';
+  } else if (conditions.fluid.Fe > 5.0) {
+    color_note = 'pale-yellow Fe-tinted datolite (Italian Alps canary tint)';
+  } else {
+    color_note = 'colorless gem datolite (Jeffrey best material aesthetic)';
+  }
+
+  // Substrate flavor for the growth-zone note
+  let substrate_flavor;
+  if (on_prehnite) substrate_flavor = ' on prehnite — Lake Superior amygdale paragenesis';
+  else if (on_wollastonite) substrate_flavor = ' on wollastonite — Jeffrey rodingite contact';
+  else if (on_calcite) substrate_flavor = ' on calcite — basalt-amygdale or rodingite contact';
+  else if (on_native_copper) substrate_flavor = ' with native copper — Keweenaw signature';
+  else substrate_flavor = '';
+
+  // Mass-balance debits — formula CaB(SiO4)(OH)
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
+  conditions.fluid.B = Math.max(conditions.fluid.B - rate * 0.005, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Cu: conditions.fluid.Cu > 0.5 ? conditions.fluid.Cu * 0.005 : 0,
+    trace_Fe: conditions.fluid.Fe > 2.0 ? conditions.fluid.Fe * 0.003 : 0,
+    note: `datolite ${crystal.habit}, ${color_note}${substrate_flavor}; CaB(SiO4)(OH) calcium boronosilicate, monoclinic P21/c, H 5-5.5, glassy fracture`,
+  });
+}

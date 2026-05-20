@@ -476,6 +476,45 @@ function _nuc_shattuckite(sim) {
   }
 }
 
+// v110 (2026-05-20): Datolite CaB(SiO4)(OH) — Jeffrey Mine rodingite
+// arc first mineral. Lake Superior basalt-amygdale OR rodingite-
+// contact paragenesis. Substrate priority encodes both routes:
+// prehnite > wollastonite (both pre-wired for v113) > calcite >
+// native_copper > magnetite > wall. RNG-cascade guard via
+// sigma < 1.0 early-out.
+function _nuc_datolite(sim) {
+  const sigma = sim.conditions.supersaturation_datolite();
+  if (sigma < 1.0) return;  // RNG-cascade guard — keeps non-datolite scenarios byte-identical
+  if (sim._atNucleationCap('datolite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'datolite' && c.active);
+  if (existing.length >= 3) return;
+  let pos = 'vug wall';
+  // Substrate priority — listed in paragenetic preference. prehnite +
+  // wollastonite + vesuvianite will be wired in v113-v114; the filter
+  // returns empty until then (harmless — falls through to next option).
+  const active_pre = sim.crystals.filter(c => c.mineral === 'prehnite' && c.active);
+  const active_wol = sim.crystals.filter(c => c.mineral === 'wollastonite' && c.active);
+  const active_vesu = sim.crystals.filter(c => c.mineral === 'vesuvianite' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  const dissolving_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.dissolved);
+  const active_nc = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+  const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
+  if (active_pre.length && rng.random() < 0.55) pos = `on prehnite #${active_pre[0].crystal_id}`;
+  else if (active_wol.length && rng.random() < 0.45) pos = `on wollastonite #${active_wol[0].crystal_id}`;
+  else if (active_vesu.length && rng.random() < 0.40) pos = `with vesuvianite #${active_vesu[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.35) pos = `on calcite #${active_cal[0].crystal_id}`;
+  else if (dissolving_cal.length && rng.random() < 0.25) pos = `pseudomorph after calcite #${dissolving_cal[0].crystal_id}`;
+  else if (active_nc.length && rng.random() < 0.30) pos = `with native_copper #${active_nc[0].crystal_id}`;
+  else if (active_mag.length && rng.random() < 0.20) pos = `on magnetite #${active_mag[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('datolite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('datolite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: 💎 Datolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, B=${sim.conditions.fluid.B.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — calcium boronosilicate, Lake Superior / Jeffrey Mine signature`);
+    }
+  }
+}
+
 function _nucleateClass_silicate(sim) {
   _nuc_quartz(sim);
   _nuc_apophyllite(sim);
@@ -494,4 +533,5 @@ function _nucleateClass_silicate(sim) {
   _nuc_coffinite(sim);
   _nuc_uranophane(sim);
   _nuc_opal(sim);
+  _nuc_datolite(sim);
 }

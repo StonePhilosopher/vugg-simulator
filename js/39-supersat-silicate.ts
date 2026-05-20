@@ -523,4 +523,45 @@ Object.assign(VugConditions.prototype, {
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chrysoprase');
     return Math.max(sigma, 0);
   },
+
+  // v110 (2026-05-20): Datolite CaB(SiO4)(OH) — calcium boronosilicate
+  // (sorosilicate with B replacing Si in one tetrahedral site;
+  // Hawthorne FC, Burns PC, Grice JD 1996 Can. Min. 34:1255). Low-T
+  // hydrothermal vug filling in two distinct settings:
+  //   1. Basaltic amygdales (Lake Superior native-copper district,
+  //      Keweenaw Peninsula MI/Isle Royale; Butler & Burbank 1929
+  //      USGS PP 144; Bornhorst 2017 GSA Mem 213). Gemmy colorless
+  //      to pale-yellow crystals with prehnite + calcite + native
+  //      copper. T ~100-200°C, pH 7-9 (basalt amygdale alkaline).
+  //   2. Rodingite metasomatic contacts (Jeffrey Mine Quebec
+  //      Bernardini 1981 MR 12(5):277; Italian Alps Val Malenco;
+  //      New Idria CA; Coleman 1977 Springer ophiolite framework).
+  //      Gemmy colorless crystals with vesuvianite + grossular +
+  //      prehnite + pectolite. T ~100-300°C, pH 10-12 (serpentinite-
+  //      driven hyperalkaline fluid).
+  // Wide alkaline tolerance (pH 7-12) reflects the two settings;
+  // T window 50-350°C bounded below by precipitation kinetics and
+  // above by datolite breakdown to wollastonite + boric acid.
+  // Anthony Handbook v.IV silicates is the standard reference;
+  // Bernardini 1981 is Jeffrey-specific.
+  supersaturation_datolite() {
+    if (this.fluid.Ca < 60 || this.fluid.B < 1 || this.fluid.SiO2 < 50) return 0;
+    if (this.temperature < 50 || this.temperature > 350) return 0;
+    if (this.fluid.pH < 7.0 || this.fluid.pH > 12.0) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
+    const b_f  = Math.min(this.fluid.B / 5.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 200.0, 1.5);
+    let sigma = ca_f * b_f * si_f;
+    // T sweet spot 100-250°C (both Lake Superior + Jeffrey regimes)
+    const T = this.temperature;
+    if (T >= 100 && T <= 250) sigma *= 1.3;
+    else if (T < 100) sigma *= Math.max(0.4, T / 100.0);
+    else sigma *= Math.max(0.4, 1.0 - (T - 250) / 100.0);
+    // pH sweet spot 8-11 (alkaline)
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 11.0) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 9.5) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'datolite');
+    return Math.max(sigma, 0);
+  },
 });

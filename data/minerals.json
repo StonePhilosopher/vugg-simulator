@@ -14884,6 +14884,119 @@
       "late_stage_propensity": 0.9,
       "_late_stage_note": "Terminal Pb-Al-PO4 of the supergene paragenesis — by definition late-stage. High propensity matches its position as the final phase that replaces pyromorphite after sufficient wallrock weathering has accumulated Al in the fluid (geologically requires 10^4-10^6 years of supergene window persistence).",
       "class_color": "#4a5fc8"
+    },
+    "datolite": {
+      "formula": "CaB(SiO4)(OH)",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 3,
+      "max_size_cm": 6,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "gemmy_vitreous_terminated",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.4) — sharp-faced monoclinic crystals to several cm, vitreous to adamantine luster. The best-of-Jeffrey cabinet aesthetic; also Lake Superior basalt-amygdale gem material. Dominant forms {110} prism modified by {011} pyramid and {102}."
+        },
+        {
+          "name": "crystallized_gem",
+          "wall_spread": 0.5,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "default crystallized habit at moderate supersaturation (0.4 < excess ≤ 1.4) — colorless to pale-yellow monoclinic prismatic crystals, often gemmy but smaller than gemmy_vitreous_terminated. The mainstream Lake Superior + Jeffrey specimen aesthetic."
+        },
+        {
+          "name": "botryoidal_white",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess ≤ 0.4) — porcelaneous botryoidal coating, reniform white-to-pale-tan crusts. Common Lake Superior basalt-amygdale filling; less collectable than the crystallized forms."
+        },
+        {
+          "name": "pseudomorph_after_calcite",
+          "wall_spread": 0.55,
+          "void_reach": 0.45,
+          "vector": "coating",
+          "trigger": "rare; nucleation on dissolving calcite substrate (per Bernardini 1981 MR 12(5):277 — Jeffrey Mine specimens occasionally show calcite-scalenohedron outlines preserved with porcelaneous datolite fill)."
+        }
+      ],
+      "class": "silicate",
+      "description": "CaB(SiO₄)(OH) — calcium boronosilicate (sorosilicate with B replacing Si in one tetrahedral site; Hawthorne FC, Burns PC, Grice JD 1996 Can. Min. 34:1255). Monoclinic P2₁/c, H 5-5.5, vitreous to adamantine luster, conchoidal fracture, colorless to pale-yellow / pale-pink-brown when Cu-trace, pale-yellow canary tint when Fe-trace. Low-T (50-350°C) alkaline (pH 7-12) hydrothermal vug filling in TWO distinct geological settings — both alkaline, both producing gemmy cabinet material: (1) Basaltic amygdales of the Lake Superior native-copper district (Keweenaw Peninsula MI, Isle Royale; Butler GM & Burbank WS 1929 USGS Prof. Paper 144; Bornhorst TJ 2017 GSA Memoir 213) — gemmy colorless to pale-yellow crystals with prehnite + calcite + native copper as the canonical assemblage; (2) Rodingite metasomatic contact zones in ultramafic-hosted ophiolite complexes (Jeffrey Mine, Val-des-Sources Quebec — Bernardini GP 1981 MR 12(5):277 is the canonical anchor; Val Malenco Italian Alps; New Idria CA; Coleman RG 1977 Ophiolites: Ancient Oceanic Lithosphere? Springer for the global rodingite framework) — gemmy colorless crystals with vesuvianite (often cyprine variety) + grossular + prehnite + pectolite + chrysotile gangue. The Jeffrey Mine produced the best-known cabinet datolite worldwide 1880s through mine closure 2011 — sharp gemmy crystals to several cm, often with Pectolite + Vesuvianite + Grossular associations. Anthony JW, Bideaux RA, Bladh KW, Nichols MC Handbook of Mineralogy v.IV (Arsenates, Phosphates, Vanadates) is the standard reference. Discriminator from analogous Ca-borates: datolite has Si, no other Ca-borate (colemanite, ulexite, inyoite) does. Discriminator from prehnite Ca₂Al₂Si₃O₁₀(OH)₂: prehnite has Al, datolite has B; datolite is the bonded-B borosilicate variant of the Ca-silicate family.",
+      "scenarios": [
+        "jeffrey_mine"
+      ],
+      "T_range_C": [
+        50,
+        350
+      ],
+      "T_optimum_C": [
+        100,
+        250
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "B": 1,
+        "SiO2": 50
+      },
+      "_ingredients_note": "Ca ≥ 60 (calcium from basalt amygdale plagioclase OR rodingite-metasomatic Ca-rich fluid) + B ≥ 1 (boron from late hydrothermal fluid; minor at most sites but datolite concentrates it) + SiO2 ≥ 50 (silica from host basalt or sorosilicate framework). T 50-350°C; sweet spot 100-250°C. pH 7-12 wide alkaline tolerance — Lake Superior amygdales sit ~pH 7-9, Jeffrey rodingite contacts sit pH 10-12. Activity-correction factor applied.",
+      "trace_ingredients": {
+        "Cu": "1+ ppm trace gives pale pink-brown copper-bearing datolite (Lake Superior aesthetic — Cu inclusions in growth zones per Bornhorst 2017 GSA Memoir 213; sometimes called 'copper-bearing datolite' by Keweenaw collectors)",
+        "Fe": "5+ ppm shifts color toward pale-yellow / canary (Italian Alps Val Malenco aesthetic; Fe³⁺-O charge transfer)",
+        "Mn": "rare trace produces faint pink tint (Massachusetts traprock localities)"
+      },
+      "thermal_decomp_C": 400,
+      "thermal_decomp_reaction": "Above ~400°C: datolite breaks down to wollastonite (CaSiO₃) + B(OH)₃ (boric acid, volatile in the hydrothermal regime) + H₂O. The thermal stability ceiling is bracketed by Jeffrey's higher-T (300°C) early datolite generations and the absence of datolite in regional-metamorphic-grade rodingites that exceed 400°C.",
+      "thermal_decomp_products": {
+        "Ca": 0.4,
+        "SiO2": 0.5,
+        "B": 0.1
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Non-fluorescent under standard SW/MW/LW UV. Pure CaB(SiO₄)(OH) has no fluorescence activator. Some Lake Superior datolite shows weak phosphorescence after SW exposure (likely U/Th trace at sub-ppm), not diagnostic; ignored in the engine."
+      },
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "CaB(SiO₄)(OH) + 4H⁺ → Ca²⁺ + B(OH)₃ + H₄SiO₄ — releases Ca + boric acid + silicic acid to fluid below pH 5. Slow kinetics in the supergene window (datolite is stable in most surface weathering environments — only acidic groundwater attack drives dissolution).",
+        "products": {
+          "Ca": 0.4,
+          "B": 0.1,
+          "SiO2": 0.5
+        }
+      },
+      "habit": "crystallized_gem",
+      "color_rules": {
+        "colorless_gem": {
+          "default": true,
+          "trigger": "Cu < 1 ppm and Fe < 5 ppm — pure colorless gem datolite (Jeffrey best material)"
+        },
+        "pale_pink_brown": {
+          "trigger": "Cu > 1 ppm — Lake Superior copper-bearing datolite aesthetic"
+        },
+        "pale_yellow": {
+          "trigger": "Fe > 5 ppm — canary tint (Italian Alps datolite)"
+        },
+        "porcelaneous_white": {
+          "trigger": "low supersaturation (excess ≤ 0.4) → botryoidal_white habit; the basalt-amygdale massive form"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v110 (2026-05-20). Calcium boronosilicate, first mineral of the Jeffrey Mine rodingite arc. Substrate priority: prehnite (when wired v113) > wollastonite (v113) > vesuvianite (v111) > calcite > native_copper > magnetite > wall. Lake Superior basalt-amygdale + Jeffrey rodingite-contact paragenesis both routed through the same engine — wide pH (7-12) and T (50-350°C) windows accommodate both. B field already in FluidChemistry (pre-v89 speculative add for tourmaline) so no add-broth infra commit needed; v110 is a normal vugg-add-mineral. CALIBRATION expectation: datolite does not currently fire in any existing scenario (no scenario carries enough B + Ca + SiO2 at pH 7-12 to trigger σ > 1.2); first firing expected when jeffrey_mine ships in v115. Per Anthony Handbook v.IV silicates; Bernardini 1981 MR 12(5):277 (Jeffrey canonical); Hawthorne et al. 1996 Can.Min. 34:1255 (crystal chemistry); Bornhorst 2017 GSA Memoir 213 (Lake Superior).",
+      "late_stage_propensity": 0.6,
+      "_late_stage_note": "Mid-to-late stage in both routes. Lake Superior basalt amygdales: datolite forms after prehnite + early calcite, contemporaneous with native_copper + analcime, before terminal calcite. Jeffrey rodingite: datolite is one of the LATER Ca-silicates after vesuvianite + grossular + diopside + prehnite, contemporaneous with pectolite. Propensity 0.6 = mid-to-late but not terminal.",
+      "class_color": "#d8c8e8"
     }
   }
 }

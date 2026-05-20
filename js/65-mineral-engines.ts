@@ -267,4 +267,20 @@ const MINERAL_ENGINES = {
   // aesthetic. Completes the type-locality story for v107
   // roughten_gill scenario.
   plumbogummite: grow_plumbogummite,
+  // v110 (2026-05-20): datolite CaB(SiO4)(OH) — Jeffrey Mine
+  // rodingite arc opener. Calcium boronosilicate (sorosilicate
+  // with B replacing Si in one tetrahedral site). Low-T alkaline
+  // hydrothermal vug filling in TWO settings: Lake Superior basalt
+  // amygdales (Bornhorst 2017; Butler & Burbank 1929) and rodingite
+  // metasomatic contacts (Bernardini 1981 MR 12(5):277 for Jeffrey;
+  // Coleman 1977 for the global rodingite framework). B field was
+  // already in FluidChemistry from a pre-v89-era speculative add
+  // for tourmaline — so no add-broth infra commit needed, just
+  // the mineral. The Jeffrey arc plans v110-v116 (datolite,
+  // vesuvianite/cyprine, grossular+diopside, pectolite+wollastonite+
+  // prehnite, chrysotile+brucite+awaruite, scenario+ultramafic
+  // wall type, calibration tune). Pre-existing B field discovery
+  // collapsed the arc from 8 to 6 commits; documented in the new
+  // vugg-add-broth skill's "pre-existing speculative fields" gotcha.
+  datolite: grow_datolite,
 };
