@@ -62,6 +62,7 @@ class FluidChemistry {
     this.Cd = opts.Cd ?? 0.0;    // cadmium — greenockite (hex CdS), hawleyite (cubic CdS); supergene from sphalerite oxidation
     this.Hg = opts.Hg ?? 0.0;    // mercury — cinnabar (HgS); hot-spring deposits (Sulphur Bank, Almadén), sedimentary Hg in Sicilian sulfur
     this.Sn = opts.Sn ?? 0.0;    // tin — cassiterite (SnO2); primary tin ore, late-pegmatite + greisen + hydrothermal vein; Erzgebirge/Cornwall/Bolivia/Malaysia tin belts. v89 plumbing field for the cassiterite engine; engines that consumed Sn before v89 silently skipped over it because no field existed.
+    this.Y = opts.Y ?? 0.0;      // yttrium — REE proxy, the most abundant rare earth in late hydrothermal F-Ca fluids. Drives the diagnostic blue Y³⁺/Eu²⁺ SW UV fluorescence in fluorite ("yttrofluorite" / "Y-fluorite" of collector vernacular) AND stabilizes {111} octahedral faces over {100} cubic via Ca²⁺-site substitution per Bosze & Rakovan 2002 GCA 66:997. v103 plumbing field for the REE-octahedral fluorite habit (Silverton scenario, San Juan caldera-hosted late hydrothermal); engines that consumed Y before v103 silently skipped over it because no field existed.
     this.O2 = opts.O2 ?? 0.0;
     // Phase 4a of PROPOSAL-GEOLOGICAL-ACCURACY: redox potential Eh (mV).
     // Default +200 mV — mildly oxidizing, matches "oxic groundwater" in

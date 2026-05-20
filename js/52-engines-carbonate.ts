@@ -53,22 +53,50 @@ function grow_calcite(crystal, conditions, step) {
     ca_fluid_fraction = 1.0 - ca_wall_fraction;
   }
 
-  if (conditions.temperature > 200) {
+  // v103 (2026-05-19): manganocalcite habit branch — late-stage
+  // Mn-rich Fe-poor calcite at low supersaturation, the cauliflower-
+  // mammillary slow-growth habit observed at Silverton / Standard Mine
+  // (capping rhodochrosite as the terminal carbonate pulse). The
+  // existing T-based habit dispatch (scalenohedral / rhombohedral)
+  // covers the standard CaCO3 cases; manganocalcite is a variety
+  // distinguished by chemistry (high Mn / low Fe) AND kinetics (very
+  // low excess, slow growth → botryoidal instead of crystalline).
+  // Per Pohl 2011 Economic Geology of Mineral Deposits + observed
+  // Silverton specimen aesthetic.
+  const is_manganocalcite = (conditions.fluid.Mn > 5 && conditions.fluid.Fe < 2);
+  if (is_manganocalcite && excess < 0.4) {
+    crystal.habit = 'botryoidal_manganocalcite';
+    crystal.dominant_forms = ['cauliflower botryoidal mass', 'mammillary surface', 'cryptocrystalline interior'];
+    crystal._variety = 'manganocalcite';
+  } else if (conditions.temperature > 200) {
     crystal.habit = 'scalenohedral';
     crystal.dominant_forms = ['v{211} scalenohedron', 'dog-tooth'];
+    if (is_manganocalcite) crystal._variety = 'manganocalcite';
   } else if (conditions.temperature > 100) {
     crystal.habit = 'rhombohedral';
     crystal.dominant_forms = ['e{104} rhombohedron'];
+    if (is_manganocalcite) crystal._variety = 'manganocalcite';
   } else {
     crystal.habit = 'rhombohedral';
     crystal.dominant_forms = ['e{104}', 'possibly nail-head'];
+    if (is_manganocalcite) crystal._variety = 'manganocalcite';
   }
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
+  // v103: graduated Mn²⁺ fluorescence intensity by Mn-in-lattice level.
+  // Bright "much brighter than most" specimens are the manganocalcite
+  // upper end (Mn > 30 ppm at growth, Fe < 2 ppm to avoid quenching).
   let note = '';
-  if (trace_Mn > 1.0 && trace_Fe < 2.0) note = 'Mn-rich zone — will fluoresce orange under UV';
-  else if (trace_Mn > 1.0 && trace_Fe > 2.0) note = 'Fe quenching Mn fluorescence — dark CL zone';
+  if (trace_Mn > 1.0 && trace_Fe > 2.0) {
+    note = 'Fe quenching Mn fluorescence — dark CL zone';
+  } else if (trace_Mn > 6.0 && trace_Fe < 0.4) {
+    note = 'brilliant salmon SW UV fluorescence (manganocalcite — Mn²⁺ activator high, Fe quencher minimal)';
+  } else if (trace_Mn > 2.0 && trace_Fe < 1.0) {
+    note = 'moderate orange SW UV fluorescence (Mn²⁺ activator)';
+  } else if (trace_Mn > 1.0 && trace_Fe < 2.0) {
+    note = 'Mn-rich zone — will fluoresce orange under UV';
+  }
 
   // Provenance note when significant wall-derived material
   if (ca_wall_fraction > 0.3) {

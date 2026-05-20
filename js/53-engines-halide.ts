@@ -29,23 +29,59 @@ function grow_fluorite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate = 7.0 * excess * rng.uniform(0.8, 1.2);
 
-  crystal.habit = 'cubic';
-  crystal.dominant_forms = ['{100} cube'];
+  const f = conditions.fluid;
+
+  // v103 (2026-05-19): habit dispatch — REE (Y³⁺/Eu²⁺) substitution at
+  // the Ca²⁺ site stabilizes {111} octahedral faces over {100} cubic
+  // per Bosze & Rakovan 2002 GCA 66:997. Pure F-Ca fluorite
+  // defaults to cubic; REE-bearing fluorite (Y > 1 ppm in fluid)
+  // trends octahedral. The REE is preserved as the blue
+  // Eu²⁺/Y³⁺-activated SW UV fluorescence even after F-center visible
+  // color photobleaches (Bill & Calas 1978 Phys. Chem. Min. 3:117) —
+  // the fluorescence is a chemistry diagnostic that survives display
+  // aging. Silverton / San Juan late hydrothermal fluorite is the
+  // canonical natural occurrence.
+  if (f.Y > 1.0) {
+    crystal.habit = 'octahedral_REE';
+    crystal.dominant_forms = ['{111} octahedron', 'REE-stabilized faces', 'blue Y³⁺/Eu²⁺ SW UV fluorescence (bleach-stable)'];
+    crystal._ree_substitution = true;
+    // Photobleaching: F-center visible color fades with light exposure.
+    // Display specimens trend pale-blue/colorless even when fresh
+    // material was deep purple-blue. Future render layer can use this
+    // flag to dim color over simulated display-age. The activated SW UV
+    // fluorescence is electronic-transition-based and survives bleaching.
+    crystal._photobleachable_color = true;
+  } else {
+    crystal.habit = 'cubic';
+    crystal.dominant_forms = ['{100} cube'];
+  }
 
   let color;
-  if (conditions.fluid.Fe > 10) color = 'green';
-  else if (conditions.fluid.Mn > 5) color = 'purple';
+  if (f.Y > 1.0) {
+    // REE-bearing octahedral: deep blue when fresh, pale blue when
+    // light-aged (F-center photobleaching). The original color tied to
+    // the REE batch — high-Y / high-Eu → deeper blue when fresh.
+    color = f.Y > 3.0 ? 'deep blue-purple (fresh, REE-rich)' : 'pale blue (REE-bearing, photobleach-fadable)';
+  } else if (f.Fe > 10) color = 'green';
+  else if (f.Mn > 5) color = 'purple';
   else if (conditions.temperature > 200) color = 'colorless';
   else color = 'blue-violet';
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
+  // Mass balance: F + Ca primary debits handled by Phase 1e
+  // applyMassBalance via MINERAL_STOICHIOMETRY.fluorite. Y consumption
+  // is a trace debit handled inline (substitutes at the Ca²⁺ site at
+  // ~0.1-1% of fluorite by mass when present).
+  if (f.Y > 0) f.Y = Math.max(f.Y - rate * 0.001, 0);
+
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
-    trace_Fe: conditions.fluid.Fe * 0.02,
-    trace_Mn: conditions.fluid.Mn * 0.05,
-    note: `color zone: ${color}`
+    trace_Fe: f.Fe * 0.02,
+    trace_Mn: f.Mn * 0.05,
+    trace_Y: f.Y * 0.008,
+    note: `color zone: ${color}` + (crystal.habit === 'octahedral_REE' ? ` (octahedral, Y ${f.Y.toFixed(1)} ppm)` : '')
   });
 }
 

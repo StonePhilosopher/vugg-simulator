@@ -3777,5 +3777,105 @@
 //              (velebil.net/en/maria-theresia/).
 //
 //          Coverage 127 live → 128 live (+1 mineral); 25 paramorph-only.
-const SIM_VERSION = 102;
+//   v103 — Silverton/Standard Mine infra: Y fluid field + REE-octahedral
+//          fluorite habit + manganocalcite branch (2026-05-19). Shipping
+//          ahead of a Silverton-anchored scenario in v104 — the v85-v95
+//          "infra-first then content" sequencing principle.
+//
+//          The boss showed 5 photos of Silverton specimens (3 distinct
+//          plus SW UV duplicates of 2): pale-pink rhodochrosite +
+//          cauliflower manganocalcite, octahedral REE-fluorite with
+//          rhodochrosite + manganocalcite, and rhodochrosite + small
+//          fluorite. Under 310 nm SW UV the fluorite glows brilliant
+//          blue (diagnostic Y³⁺/Eu²⁺ REE activation per Bosze &
+//          Rakovan 2002) and the calcite glows brilliant salmon
+//          (diagnostic Mn²⁺ activation; "much brighter than most",
+//          the upper end of the manganocalcite intensity range).
+//
+//          THREE INFRA CHANGES:
+//
+//          1. Y fluid field added to FluidChemistry (default 0.0).
+//             First new fluid field since v89 Sn. Y is the dominant
+//             REE in late hydrothermal F-Ca fluids (highest abundance
+//             of the heavy-REE-stable solid solution; also tracks
+//             Eu²⁺ in reducing fluids since they co-substitute at
+//             Ca²⁺). Engines that consumed Y before v103 silently
+//             skipped over it because no field existed.
+//
+//          2. grow_fluorite habit dispatch — REE branch. When fluid.Y
+//             > 1 ppm, fluorite trends octahedral_REE habit instead
+//             of the default cubic. Per Bosze & Rakovan 2002 Am.Min.
+//             87:1191 — Y³⁺ substitution at the Ca²⁺ site stabilizes
+//             {111} faces over {100} kinetically. Carries flags
+//             _ree_substitution and _photobleachable_color for the
+//             future render layer:
+//               * F-center visible color (deep blue/purple) is
+//                 photobleached by display lighting per Bill & Calas
+//                 1978 Phys. Chem. Min. 3:117. Pale-blue display
+//                 specimens may have started deep blue/purple.
+//               * Y³⁺/Eu²⁺ SW UV blue fluorescence is bleach-stable
+//                 because it's an electronic transition at the REE
+//                 ion, not an F-center defect. The fluorescence is
+//                 the chemistry diagnostic that survives display.
+//             Trace Y consumption: rate * 0.001 (substitutes at
+//             ~0.1-1% of fluorite mass when present).
+//
+//          3. grow_calcite manganocalcite branch. When fluid.Mn > 5
+//             AND fluid.Fe < 2 AND excess < 0.4 (low supersaturation
+//             slow growth), calcite gets a botryoidal_manganocalcite
+//             habit instead of the T-based scalenohedral/rhombohedral.
+//             Crystal carries _variety = 'manganocalcite' flag. The
+//             existing Mn²⁺-fluorescence note is now graduated by
+//             intensity:
+//               trace_Mn > 6 + trace_Fe < 0.4 → "brilliant salmon
+//                 SW UV fluorescence (manganocalcite)"
+//               trace_Mn > 2 + trace_Fe < 1 → "moderate orange"
+//               trace_Mn > 1 + trace_Fe < 2 → "Mn-rich zone — orange"
+//               trace_Mn > 1 + trace_Fe > 2 → "Fe quenching"
+//             Matches boss observation: "MN rich calcites are
+//             telling — much brighter than most."
+//
+//          PALE-PINK RHODOCHROSITE — NO ENGINE CHANGE. The existing
+//          grow_rhodochrosite already encodes Ca-fraction-driven color
+//          dispatch (Ca/(Mn+Ca) > 0.5 → pale pink, approaching
+//          kutnohorite intermediate). The Silverton specimens are pale
+//          because the late fluid is Ca-rich relative to Mn (which
+//          dovetails with stage-4 manganocalcite cap — Ca dominates as
+//          Mn wanes). Existing engine reads correctly; investigated
+//          and intentionally not modified.
+//
+//          REFERENCES (research dossier 2026-05-19):
+//            * Bosze S. & Rakovan J. (2002) GCA 66:997-1009 — surface-
+//              structure-controlled sectoral zoning of REE in fluorite
+//              from Long Lake NY and Bingham NM; the canonical paper
+//              for REE-stabilization of octahedral {111} faces over
+//              cubic {100} via Y³⁺/Eu²⁺/HREE substitution at Ca²⁺.
+//              (Citation corrected from Am.Min. 87:1191 on the v103
+//              research dossier finding 2026-05-19; the original
+//              misremember conflated with a different paper.)
+//            * Bill H. & Calas G. (1978) Phys. Chem. Min. 3:117 —
+//              fluorite F-center photobleaching kinetics.
+//            * Hinman N.W. (1989) Am. Min. 74:1206 — kutnohorite-
+//              rhodochrosite Ca-Mn solid solution + color.
+//            * Pohl W.L. (2011) Economic Geology of Mineral Deposits —
+//              manganocalcite paragenesis.
+//            * Burbank W.S. & Luedke R.G. (1968) USGS Prof. Paper 535 —
+//              San Juan caldera + Silverton vein paragenesis (the
+//              forthcoming v104 scenario anchor).
+//
+//          CALIBRATION DRIFT: minimal expected. Existing scenarios
+//          don't set fluid.Y, so the REE-fluorite branch stays
+//          dormant. The manganocalcite branch is a habit-and-note
+//          change; doesn't shift firing gates. v103 baseline regen
+//          should show byte-identical to v102 in scenarios where the
+//          calcite Mn-Fe regime doesn't cross the new threshold.
+//
+//          v104 will ship the Silverton/Standard Mine scenario itself
+//          (broth chemistry with Y=2-5 ppm, Mn=20-50 ppm, Fe<2 ppm,
+//          F=20-50 ppm; 4-stage paragenesis events: primary sulfide-
+//          Au-quartz → REE-F pulse → Mn-CO3 pulse A → manganocalcite
+//          cap). Research dossier in flight; broth chemistry anchored
+//          on Burbank & Luedke 1968 + Casadevall & Ohmoto 1977
+//          fluid inclusion data + boss's specimen calibration targets.
+const SIM_VERSION = 103;
 
