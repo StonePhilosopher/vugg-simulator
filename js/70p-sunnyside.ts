@@ -10,13 +10,28 @@
 // (post-1960) source of Silverton-district display rhodochrosite +
 // octahedral REE-fluorite + manganocalcite.
 //
-// LABELING NOTE: many of these specimens carry dealer labels reading
-// "Standard Mine, Silverton" but the only documented Standard Mine in
-// Colorado is in Gunnison County (Ruby District near Crested Butte,
-// EPA Superfund site, ~80 mi NE) — totally different deposit. The
-// "Standard Mine, Silverton" labels are dealer-conflation; the actual
-// source is Sunnyside / American Tunnel per research dossier 2026-05-19
-// + Casadevall & Ohmoto 1977 Econ. Geol. 72:1285 vein paragenesis.
+// LABELING NOTE (CORRECTED v106 2026-05-20): specimens labeled
+// "Standard Mine, Silverton" refer to material from the Sunnyside
+// mine during the Standard Metals Corporation lease period
+// (1959-1978). Standard Metals leased Sunnyside in 1959, drove the
+// American Tunnel from the Gold King portal at Gladstone to access
+// the deeper ore body, and operated continuously until the June 4
+// 1978 Lake Emma disaster (surface lake drained into the upper
+// workings during a slope failure, flooding the mine and ending
+// Standard Metals operations). The "[Operator] Mine" convention is
+// well-attested in mineral collecting — Hecla Mine for Sunshine
+// material, Anaconda Mine for various Butte properties, etc. The
+// label is accurate to a specific 19-year production window and
+// identifies the operator who drove the American Tunnel. It is
+// NOT (as v105 originally documented) a dealer-conflation with the
+// unrelated Standard Mine in Gunnison County (Ruby District near
+// Crested Butte, EPA Superfund) — that's a different deposit, and
+// the Silverton label is its own legitimate provenance anchor, not
+// a label drift. Casadevall & Ohmoto 1977 Econ. Geol. 72:1285 —
+// the canonical Sunnyside fluid-inclusion + stable-isotope paper —
+// studied Standard-Metals-era ore samples (the paper precedes the
+// 1978 disaster by exactly one year), so the simulator's science
+// anchor + the boss's specimens come from the same operating window.
 //
 // Mechanism (Casadevall & Ohmoto 1977 — six-stage paragenesis,
 // compressed to four in this scenario):
