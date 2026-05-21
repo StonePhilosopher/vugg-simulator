@@ -34,6 +34,14 @@ function grow_sphalerite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe,
+    // 2026-05-21 (v119) — manganoan sphalerite ("manganblende") trace.
+    // Mn²⁺ substitutes for Zn²⁺ (similar ionic radius ~83 pm) in the
+    // sphalerite lattice up to ~3 mol% in natural specimens. Pink-tone
+    // manganoan sphalerite is the diagnostic shift from honey-amber
+    // (Fe-bearing) toward salmon-pink. Partition 0.05 matches the
+    // carbonate-family coefficient (aragonite/dolomite/siderite). Refs:
+    // Frondel 1941, Cook & Ciobanu 2007 Joplin manganblende.
+    trace_Mn: conditions.fluid.Mn * 0.05,
     note: `color: ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
   });
 }
@@ -85,6 +93,11 @@ function grow_wurtzite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe,
+    // 2026-05-21 (v119) — wurtzite Mn²⁺ substitution. Hexagonal ZnS
+    // accepts Mn substitution at similar levels to sphalerite (the
+    // cubic dimorph); polytype variations exist but the trace-Mn
+    // partition is comparable. Partition 0.05.
+    trace_Mn: conditions.fluid.Mn * 0.05,
     note: `hemimorphic hexagonal (Zn,Fe)S — ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
   });
 }

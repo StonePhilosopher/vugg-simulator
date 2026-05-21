@@ -121,17 +121,55 @@ function crystalColor(crystal) {
       return '#2e8b57';
 
     case 'sphalerite':
+      // 2026-05-21 (v121) — manganoan sphalerite ("manganblende") pink
+      // hue at high Mn / low Fe. Mn²⁺ substitutes Zn²⁺ up to ~3 mol%;
+      // Cook & Ciobanu 2007 Joplin specimens shift from honey-amber to
+      // salmon-pink as Mn climbs. Threshold matches the v119 trace_Mn
+      // partition (0.05): zone Mn fluid ~30+ ppm → trace_Mn 1.5+ →
+      // salmon-pink branch.
+      if (avgMn > 1.5 && avgFe < 3) return '#d8a888';   // salmon-pink manganoan sphalerite
+      if (avgMn > 0.8 && avgFe < 5) return '#d4998a';   // pink-tinted honey
       // Iron-rich (marmatite): dark
       if (avgFe > 10) return '#553322';
       // Clean: honey/amber
       if (avgFe < 3) return '#ddaa44';
       return '#cc8844';
 
+    case 'wurtzite':
+      // v121 — same Mn-substitution family as sphalerite; hexagonal
+      // dimorph shows comparable pink tones at Mn-substituted variants.
+      if (avgMn > 1.5 && avgFe < 4) return '#cc998a';
+      if (avgFe > 10) return '#4a2818';
+      return '#a07050';   // default warm brown (hex ZnS)
+
+    case 'barite':
+      // v121 — per-zone Mn²⁺ banding (Putnis & Perthuisot 2001). Barite is
+      // THE textbook Mn-banded sulfate; TN457 Cumbria specimen pink color
+      // is Mn²⁺ activation. v118 fix wired trace_Mn capture on growth
+      // zones; this branch reads it for the zone-bar visualizer + 3D
+      // averaged tint. Partition is 0.0015 (matches calcite); fluid Mn
+      // 30+ ppm → trace_Mn 0.045 → pink branch.
+      if (avgMn > 0.08) return '#e85a8c';            // saturated bonbon pink (high Mn pulse)
+      if (avgMn > 0.04) return '#ec7ba0';            // mid pink (TN457 typical)
+      if (avgMn > 0.02) return '#f0a0bb';            // pale pink
+      if (avgFe > 3) return '#e8a85c';               // honey-yellow (Cumberland Pb/Fe variant)
+      if (radDmg > 0.3) return '#a08abb';            // smoky/blue-shifted (rare radiation-affected)
+      return '#f5d6e3';                              // white-cream default
+
     case 'goethite':
       return '#8b6914';
 
     case 'smithsonite':
-      // Blue-green (Cu): 
+      // v121 — Tsumeb "bonbon pink" Mn²⁺ branch. Gebhard & Schubnel 1999
+      // documents the Mn-bearing variety as one of three diagnostic Tsumeb
+      // smithsonite aesthetics (alongside apple-green Cu + sky-blue default).
+      // v119 wired trace_Mn capture; partition 0.05 → zone fluid Mn 20+ ppm
+      // → trace_Mn 1+ → pink branch.
+      if (avgMn > 1.0) return '#e89aaa';                      // bonbon pink (Tsumeb cabinet)
+      if (avgMn > 0.5) return '#dcaab6';                      // pale pink
+      // Apple-green (Cu trace) — fluid Cu chromophore for the Tsumeb green variety
+      if (crystal.zones.some(z => z.trace_Cu > 1)) return '#88cc88';
+      // Blue-green (Cu):
       if (crystal.zones.some(z => z.trace_Fe > 2)) return '#88aa88';
       return '#88bbcc';
 

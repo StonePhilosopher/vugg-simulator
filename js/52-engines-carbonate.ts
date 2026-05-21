@@ -510,6 +510,15 @@ function grow_smithsonite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.01,
+    // 2026-05-21 (v119) — "bonbon pink" Mn-bearing smithsonite trace.
+    // The Tsumeb cabinet aesthetic (bonbon pink + sky blue + apple
+    // green) keys off trace_Mn substitution into ZnCO3. Mn²⁺ (83 pm)
+    // substitutes Zn²⁺ (74 pm) modestly; partition 0.05 matches the
+    // carbonate-family coefficient. Pink hue threshold at Mn > 10 ppm
+    // is already in the color_note dispatch above; the zone-level
+    // trace capture lets the renderer paint per-zone color bands
+    // (slated for next sub-arc after Rock Bot visual-diff lands).
+    trace_Mn: conditions.fluid.Mn * 0.05,
     note: `${crystal.habit}, ${color_note}, Zn fluid: ${conditions.fluid.Zn.toFixed(0)} ppm`
   });
 }

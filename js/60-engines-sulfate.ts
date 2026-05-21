@@ -59,6 +59,15 @@ function grow_barite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.002,
+    // 2026-05-21 (v118): trace_Mn capture added. Barite is the textbook
+    // Mn²⁺-banded mineral (Putnis & Perthuisot 2001, the same Putnis whose
+    // CDR work is already in Crystal.cdr_replaces_crystal_id). The TN457
+    // Cumbria specimen's pink color is Mn²⁺ activation; the per-pulse
+    // Mn variation across zones IS the pink-banding signature the
+    // tn457_barite_pulses scenario dogfoods. Coefficient 0.0015 matches
+    // calcite's partition (the canonical Mn-banded mineral); empirical
+    // for now, can be refined when per-zone color rendering ships.
+    trace_Mn: conditions.fluid.Mn * 0.0015,
     trace_Pb: conditions.fluid.Pb * 0.005,
     note: habit_note
   });

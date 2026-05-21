@@ -38,6 +38,16 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   rhodochrosite:  { Mn: 1, CO3: 1 },                 // MnCO3
   smithsonite:    { Zn: 1, CO3: 1 },                 // ZnCO3
   cerussite:      { Pb: 1, CO3: 1 },                 // PbCO3
+  // v120 backfill (2026-05-21, inactive-firing subset): Sr/Ba/Zn/Pb
+  // carbonates registered in MINERAL_ENGINES but never firing in any
+  // current baseline scenario. Adding stoichiometry is pure infra —
+  // zero cascade risk — and ensures future scenarios that DO fire
+  // these don't ship a silent free-energy gift. Per Option 1
+  // disciplined-increment plan (boss-approved 2026-05-21).
+  strontianite:   { Sr: 1, CO3: 1 },                 // SrCO3
+  witherite:      { Ba: 1, CO3: 1 },                 // BaCO3
+  hydrozincite:   { Zn: 5, CO3: 2 },                 // Zn5(CO3)2(OH)6 — late-stage Zn supergene; fluorescent
+  leadhillite:    { Pb: 4, S: 1, CO3: 2 },           // Pb4SO4(CO3)2(OH)2 — multi-anion Pb supergene (Leadhills type)
   malachite:      { Cu: 2, CO3: 1 },                 // Cu2CO3(OH)2
   azurite:        { Cu: 3, CO3: 2 },                 // Cu3(CO3)2(OH)2
   aurichalcite:   { Zn: 3.5, Cu: 1.5, CO3: 2 },      // (Zn,Cu)5(CO3)2(OH)6 — solid solution mid-range
@@ -67,6 +77,15 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   nickeline:      { Ni: 1, As: 1 },                  // NiAs
   millerite:      { Ni: 1, S: 1 },                   // NiS
   cobaltite:      { Co: 1, As: 1, S: 1 },            // CoAsS
+  // v120 backfill (inactive subset): di-arsenide quartet + Sb-sulfosalt
+  // + Cu-arsenosulfide. All registered in MINERAL_ENGINES but never
+  // firing in any current baseline scenario.
+  loellingite:    { Fe: 1, As: 2 },                  // FeAs2
+  rammelsbergite: { Ni: 1, As: 2 },                  // NiAs2 (Ni analog of loellingite)
+  safflorite:     { Co: 1, As: 2 },                  // CoAs2 (Co analog of loellingite)
+  skutterudite:   { Co: 1, As: 3 },                  // (Co,Ni,Fe)As3 — Co-end approximation
+  pyrargyrite:    { Ag: 3, Sb: 1, S: 3 },            // Ag3SbS3 — "dark ruby silver" sister to proustite
+  enargite:       { Cu: 3, As: 1, S: 4 },            // Cu3AsS4 — Cu-arsenosulfide
   // v67 — Brief-19 sulfide back-fill (telluride / selenide / Cd-suite)
   greenockite:    { Cd: 1, S: 1 },                   // CdS (hexagonal)
   hawleyite:      { Cd: 1, S: 1 },                   // CdS (cubic)
@@ -87,6 +106,11 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   ruby:           { Al: 2, Cr: 0.01 },               // Al2O3 + trace Cr (chromophore)
   sapphire:       { Al: 2, Fe: 0.01, Ti: 0.01 },     // Al2O3 + Fe/Ti
   uraninite:      { U: 1 },                          // UO2
+  // v120 backfill (inactive subset): Cr-spinel + Ti + uranyl-silicate
+  // oxide. Registered but never firing in any current baseline.
+  chromite:       { Fe: 1, Cr: 2 },                  // FeCr2O4 (Cr-spinel)
+  rutile:         { Ti: 1 },                         // TiO2
+  coffinite:      { U: 1, SiO2: 1 },                 // U(SiO4)·nH2O — uranyl silicate (roll-front Colorado Plateau)
 
   // ---- Hydroxides / oxyhydroxides ----
   goethite:       { Fe: 1 },                         // FeO(OH)
@@ -113,6 +137,21 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   morganite:      { Be: 3, Al: 2, SiO2: 6, Mn: 0.01 },
   heliodor:       { Be: 3, Al: 2, SiO2: 6, Fe: 0.01 },
   spodumene:      { Li: 1, Al: 1, SiO2: 2 },         // LiAlSi2O6
+  // v120 backfill (inactive subset): silicate entries that don't fire
+  // in any current baseline scenario. Registered in MINERAL_ENGINES
+  // (engine code shipped) but no scenario clears their supersaturation
+  // gates yet. Stoichiometry now in place so future scenarios that DO
+  // fire them don't ship a silent free-energy gift.
+  hemimorphite:   { Zn: 4, SiO2: 2 },                // Zn4Si2O7(OH)2·H2O — Tsumeb supergene
+  shattuckite:    { Cu: 5, SiO2: 4 },                // Cu5(SiO3)4(OH)2 — Tsumeb deep blue Cu silicate
+  // Amphibole asbestos quintet (v116). Solid solutions use mid-range
+  // coefficients matching the v116 supersat gate defaults. (tremolite +
+  // actinolite are NOT in this batch — they fire in jeffrey_mine + the
+  // amphibole-asbestos test scenarios and would cascade; deferred per
+  // HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md.)
+  amosite:        { Fe: 6, Mg: 1, SiO2: 8 },         // (Fe,Mg)7Si8O22(OH)2 Fe-cummingtonite-grunerite asbestos
+  anthophyllite:  { Mg: 6, Fe: 1, SiO2: 8 },         // (Mg,Fe)7Si8O22(OH)2 ortho-amphibole (Mg-end)
+  crocidolite:    { Na: 2, Fe: 5, SiO2: 8 },         // Na2Fe²⁺3Fe³⁺2Si8O22(OH)2 sodic Fe-amphibole (Witwatersrand)
 
   // ---- Sulfates ----
   barite:         { Ba: 1, S: 1 },                   // BaSO4
@@ -146,6 +185,13 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   olivenite:      { Cu: 2, As: 1 },                  // Cu2(AsO4)(OH)
   erythrite:      { Co: 3, As: 2 },                  // Co3(AsO4)2·8H2O
   annabergite:    { Ni: 3, As: 2 },                  // Ni3(AsO4)2·8H2O
+  // v120 backfill (inactive subset): supergene arsenate analogs +
+  // sulfate hybrid. Registered in MINERAL_ENGINES but not firing in
+  // any current baseline scenario.
+  austinite:      { Ca: 1, Zn: 1, As: 1 },           // CaZn(AsO4)(OH) — Ca-Zn analog of conichalcite
+  bayldonite:     { Cu: 3, Pb: 1, As: 2 },           // Cu3PbO(AsO3OH)2(OH)2 — Cu-Pb arsenate (Tsumeb)
+  legrandite:     { Zn: 2, As: 1 },                  // Zn2(AsO4)(OH)·H2O — Mapimi yellow Zn arsenate
+  linarite:       { Pb: 1, Cu: 1, S: 1 },            // PbCu(SO4)(OH)2 — Roughten Gill / Cumbria blue Pb-Cu sulfate
   scorodite:      { Fe: 1, As: 1 },                  // FeAsO4·2H2O
   descloizite:    { Pb: 1, Zn: 1, V: 1 },            // PbZn(VO4)(OH)
   mottramite:     { Pb: 1, Cu: 1, V: 1 },            // PbCu(VO4)(OH)

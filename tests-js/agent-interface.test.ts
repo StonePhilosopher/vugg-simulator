@@ -306,8 +306,10 @@ describe('Agent-friendly interface — v117 guard test', () => {
       expect(all[all.length - 1]).toBe('99z-agent-interface.ts');
     });
 
-    it('SIM_VERSION is at v117', () => {
-      expect(SIM_VERSION).toBe(117);
+    it('SIM_VERSION is at v117 or later (agent-interface shipped v117)', () => {
+      // v117 is when this file landed; later versions are fine. Pinning
+      // >= avoids needing to edit this test on every SIM_VERSION bump.
+      expect(SIM_VERSION).toBeGreaterThanOrEqual(117);
     });
   });
 });

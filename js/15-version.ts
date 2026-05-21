@@ -5416,5 +5416,276 @@
 //
 //          NO MINERAL OR SCENARIO CHANGES. Coverage stays at 145.
 //          Scenarios stay at 29.
-const SIM_VERSION = 117;
+//   v118 — TN457 barite pulses scenario + barite trace_Mn capture
+//          (2026-05-21). FORCING-FUNCTION TEST for
+//          PROPOSAL-EVENT-DRIVEN-PRECIPITATION (Rock Bot + Professor,
+//          2026-05-20). Boss greenlit (1) from the gap-analysis
+//          sequencing; this commit ships the test scenario before any
+//          renderer work. Once it runs, the gap between WHAT IT
+//          PRODUCES and WHAT TN457 LOOKS LIKE drives the next sub-arc
+//          (per-zone color, coin-stack render primitive, etc.).
+//
+//          NEW SCENARIO: tn457_barite_pulses (data/scenarios.json5)
+//          Cumbria-style Pb-Zn-Ba MVT cavity. Initial Zn+S broth
+//          nucleates sphalerite steps 1-4; 50 fluid pulses across
+//          steps 5-103 inject Ba +15 ppm and Mn +rng(0.3,1.5) ppm
+//          per pulse via the single new event handler
+//          tn457_mn_ba_pulse (js/70s-tn457.ts). Each pulse drives
+//          one barite growth zone with that pulse's Mn loading.
+//          The pink-banding signature emerges as per-zone trace_Mn
+//          variation across the 50 zones.
+//
+//          NEW EVENT HANDLER: js/70s-tn457.ts
+//          Single per-pulse function; fired 50× by the scenario.
+//          Registered in EVENT_REGISTRY (70-events.ts). Uses rng.random()
+//          for per-pulse Mn variation, making the time-series byte-
+//          stable per (scenario, seed) — composes with v117 ?seed=N
+//          shareable-URL contract.
+//
+//          ENGINE CHANGE: js/60-engines-sulfate.ts grow_barite() now
+//          captures trace_Mn on growth zones (was missing — barite is
+//          THE textbook Mn²⁺-banded mineral per Putnis & Perthuisot
+//          2001, but the per-zone capture wasn't wired). Partition
+//          coefficient 0.0015 matches calcite's. This makes per-zone
+//          Mn variation visible in the dump output AND sets up the
+//          per-zone color render path (slated for the next sub-arc).
+//          The baseline format tracks only {active, dissolved, total,
+//          max_um} per mineral — NOT per-zone trace fields — so the
+//          trace_Mn addition does NOT drift v117 baseline numbers
+//          for any existing scenario. Verified by byte-diff post-regen.
+//
+//          MENU SURFACES per skill §10.5: tn457 wired into all three
+//          (scenarios-panel buttons + #scenario dropdown + #idle-
+//          scenario dropdown). Menu-coverage guard test regex
+//          /[a-z_]+/ widened to /[a-z0-9_]+/ since tn457 is the first
+//          scenario name carrying digits.
+//
+//          BASELINE: seed42_v118.json regenerated. Diff vs v117:
+//          identical for all 29 pre-existing scenarios; new entry
+//          for tn457_barite_pulses. Confirms the v117 → v118 engine
+//          changes (trace_Mn capture on barite zones) are baseline-
+//          invariant — the baseline counts crystals + max_um, not
+//          zone trace composition.
+//
+//          TESTS (tests-js/tn457-barite-pulses.test.ts, 10 pins):
+//            * scenario registered + callable returns 50 events @
+//              steps 5,7,...,103 + 110-step duration
+//            * initial broth gates: sphalerite ON, barite OFF
+//            * after pulse 1 barite gate clears
+//            * sphalerite nucleates BEFORE barite (paragenetic order)
+//            * barite zones record Mn variation (pink-banding signature
+//              proven; max-min trace_Mn > 0.01)
+//            * cumulative pulse effect: T cools, O2 oxidizes
+//            * determinism: same seed twice → identical paragenesis
+//            * different seeds → different specimens
+//            * agent-friendly: ?seed= URL contract works via
+//              _agentHeadlessRun (v117 composes)
+//
+//          FOLLOW-UPS surfaced (deferred per gap-analysis):
+//            - trace_Mn capture broader audit (siderite/rhodochrosite/
+//              aragonite/manganocalcite would all benefit; calcite
+//              already has it)
+//            - per-zone color rendering (renderer reads trace_Mn per
+//              zone, paints bands) — the visual half of the TN457
+//              fix; chemistry is now in place
+//            - coin-stack render primitive ('stacked_tablets' habit
+//              variant) — for fast-pulse tabular barite
+//            - mass-nucleation bypass at high sigma
+//            - MINERAL_STOICHIOMETRY broader backfill
+//
+//          Coverage 145 minerals (unchanged). Scenarios 29 → 30.
+//   v119 — trace_Mn capture audit: sphalerite + wurtzite + smithsonite
+//          (2026-05-21). Pure follow-the-science extension of v118's
+//          barite fix. Three engines were missing per-zone trace_Mn
+//          capture despite the literature establishing Mn²⁺
+//          substitution as the diagnostic banding signature:
+//
+//            sphalerite    Frondel 1941 manganblende; Cook & Ciobanu
+//                          2007 Joplin Mn-zoned sphalerite. Mn²⁺ (83 pm)
+//                          substitutes Zn²⁺ (74 pm) up to ~3 mol%
+//                          natural; pink-toned manganoan variety is
+//                          a cabinet-classic.
+//            wurtzite      Same family; polytype variations preserved.
+//                          Hexagonal ZnS, the high-T dimorph.
+//            smithsonite   Tsumeb "bonbon pink" cabinet aesthetic
+//                          per Gebhard & Schubnel 1999. Color-note
+//                          dispatch ALREADY checked Mn at the
+//                          fluid level (pink branch at Mn>10 ppm) but
+//                          the zone-level trace capture was absent
+//                          — half-wired feature.
+//
+//          PARTITION COEFFICIENTS
+//            sphalerite/wurtzite: 0.05 (carbonate-family match)
+//            smithsonite:         0.05 (carbonate-family match)
+//          All three approximations; refinable when per-zone color
+//          rendering ships and visual feedback hones the values.
+//
+//          ENGINE CHANGES
+//            js/61-engines-sulfide.ts:36  +trace_Mn on grow_sphalerite
+//            js/61-engines-sulfide.ts:95  +trace_Mn on grow_wurtzite
+//            js/52-engines-carbonate.ts:512 +trace_Mn on grow_smithsonite
+//
+//          BASELINE DRIFT GUARANTEE: same as v118. Baseline tracks
+//          {active, dissolved, total, max_um} per mineral, NOT
+//          per-zone trace composition. trace_Mn is a NEW FIELD on
+//          GrowthZone objects. Verified by byte-diff: 0 drifted
+//          scenarios across all 30 in seed42_v118 → seed42_v119.
+//
+//          TESTS (tests-js/trace-mn-banded-coverage.test.ts, 5 pins):
+//            * sphalerite zones capture trace_Mn (tn457 broth)
+//            * wurtzite zones capture trace_Mn (when cascade fires)
+//            * smithsonite zones capture trace_Mn (supergene_oxidation)
+//            * barite zones capture trace_Mn (v118 regression guard)
+//            * calcite/etc. carbonate-family regression guard
+//          Structural audit, not chemistry calibration — guards
+//          against silent regression where an engine refactor drops
+//          the trace_Mn line.
+//
+//          PER-ZONE COLOR RENDERING STATUS: with v119 the chemistry
+//          side covers all major Mn²⁺-banded minerals (calcite +
+//          aragonite + dolomite + siderite + rhodochrosite + barite
+//          + sphalerite + wurtzite + smithsonite — 9 minerals).
+//          The render side still averages all zones into one crystal
+//          color. Per-zone band paint is the next sub-arc, gated on
+//          Rock Bot's TN457 visual-diff completion.
+//
+//          NO MINERAL OR SCENARIO CHANGES. Coverage 145, scenarios 30.
+//   v120 — MINERAL_STOICHIOMETRY backfill: inactive-firing subset
+//          (2026-05-21). Option 1 of the boss-approved disciplined-
+//          increment plan after the abandoned v120 big-bang attempt
+//          (rolled back same day; surfaced the cascade-ripple risk
+//          the boss's v109 antipattern memory rule explicitly warns
+//          about).
+//
+//          WHY THIS COMMIT IS SAFE: every entry added here is for a
+//          mineral that's registered in MINERAL_ENGINES (engine code
+//          shipped) but does NOT fire in any current baseline
+//          scenario. The supersaturation gates either never clear or
+//          the cation-budget routing always picks a competitor. So
+//          adding stoichiometry doesn't debit any fluid in any
+//          baseline run, doesn't shift any rng-cascade output,
+//          doesn't drift any baseline. Verified by byte-diff:
+//            v119 (real, from git) -> v120: 0 drifted scenarios.
+//
+//          WHAT'S DEFERRED: 28 mineral engines that DO fire in
+//          current baselines but lack stoichiometry (gen-baseline
+//          flags them every run). Adding their entries would
+//          immediately start debiting fluid -> cascade ripples
+//          through 16 scenarios. Each needs per-scenario tune
+//          calibration. Captured in
+//          proposals/HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md
+//          with mineral -> scenario mapping + tune-priority notes.
+//
+//          ENTRIES ADDED (22 minerals):
+//            Carbonates (4):    strontianite, witherite, hydrozincite,
+//                               leadhillite
+//            Sulfides (6):      loellingite, rammelsbergite, safflorite,
+//                               skutterudite, pyrargyrite, enargite
+//            Oxides (3):        chromite, rutile, coffinite
+//            Silicates (5):     hemimorphite, shattuckite, amosite,
+//                               anthophyllite, crocidolite
+//            Arsenates/         austinite, bayldonite, legrandite,
+//            Pb-Cu sulfate (4): linarite
+//
+//          FILE-CONVENTION COMPLIANT: all entries follow the
+//          js/19-mineral-stoichiometry.ts header (no O, no H, no
+//          pH, hydration waters excluded, solid solutions use
+//          mid-range coefficients).
+//
+//          TESTS (tests-js/mineral-stoichiometry-coverage.test.ts):
+//            * MINERAL_STOICHIOMETRY exposed via setup.ts EXPORTS
+//            * INVARIANT: every MINERAL_ENGINES key has an entry OR
+//              is on the explicit DEFERRED_TUNE_REQUIRED list
+//            * The DEFERRED list is documented + numbered + has
+//              tune-priority sub-categorization
+//            * Spot-checks across the 22 new entries
+//            * Convention guard: no O / H / pH in any entry
+//
+//          The guard test enforces: any FUTURE engine that ships
+//          without stoichiometry breaks the build loudly. New
+//          engines must either get an entry OR be added to
+//          DEFERRED_TUNE_REQUIRED with a justification.
+//
+//          BASELINE: seed42_v120.json regenerated. Zero drift on
+//          all 30 scenarios.
+//
+//          NEXT (Rock Bot's visual-diff sub-arc): per-zone color
+//          rendering. The v118+v119 trace_Mn chemistry captures are
+//          in place across 9 minerals; the renderer still averages.
+//          Tackling that is the higher-narrative-value next move
+//          per Professor's framing.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+//   v121 — per-zone color: avgMn dispatch for barite + sphalerite +
+//          wurtzite + smithsonite (2026-05-21). Closes the v118/v119
+//          chemistry-side capture vs. color-side dispatch loop.
+//
+//          THE GAP THIS CLOSES: v118 wired barite trace_Mn capture
+//          on growth zones (Putnis & Perthuisot 2001 follow-the-
+//          science fix). v119 extended it to sphalerite + wurtzite +
+//          smithsonite (Frondel 1941 manganblende + Tsumeb bonbon
+//          pink). The bytes were in the zones but the COLOR FUNCTION
+//          in js/12-mineral-art.ts:crystalColor never consumed Mn for
+//          these four — they fell through to MINERAL_GAME_COLORS
+//          defaults regardless of trace_Mn value. So a TN457 50-pulse
+//          barite rendered as one flat magenta tab, no banding
+//          visible despite the chemistry being recorded correctly.
+//
+//          v121 adds avgMn-based color branches per mineral. The
+//          existing per-zone visualization path (zoneColor in
+//          js/98c-ui-zone-bars.ts, used by the zone-history modal +
+//          record-player detail strip) calls crystalColor with a
+//          fake single-zone crystal, so adding the branches makes
+//          per-zone pink banding visible immediately on those
+//          surfaces — no renderer changes needed.
+//
+//          ENGINE CHANGES (one file)
+//            js/12-mineral-art.ts crystalColor() switch:
+//              + new 'barite' case: 4 Mn thresholds + Fe + radDmg branches
+//              + new 'wurtzite' case: Mn + Fe branches
+//              + extended 'sphalerite' case: 2 new Mn branches before Fe
+//              + extended 'smithsonite' case: 2 new Mn branches before
+//                                              the existing Cu/Fe branches
+//
+//          PARTITION SCALING
+//            Barite trace_Mn partition is 0.0015 (v118), so fluid Mn
+//            30 ppm → trace_Mn 0.045 → mid-pink. Thresholds: 0.08
+//            saturated, 0.04 mid, 0.02 pale.
+//            Sphalerite/wurtzite partition 0.05, fluid Mn 30 ppm →
+//            trace_Mn 1.5 → salmon-pink. Threshold 1.5.
+//            Smithsonite partition 0.05; fluid Mn 20 ppm → trace_Mn
+//            1.0 → bonbon-pink threshold.
+//          Approximations; refinable once the renderer-side path
+//          uses these consistently and visual feedback hones the
+//          numbers.
+//
+//          BACKWARD COMPAT: new branches are ADDITIVE — no Mn
+//          dispatch means same color as v120. Sphalerite + smithsonite
+//          retain their pre-existing Fe/Cu branches as fallbacks
+//          after the new Mn checks. Barite + wurtzite gain explicit
+//          cases (previously fell through to MINERAL_GAME_COLORS
+//          default); the no-Mn / no-Fe branch returns the same
+//          MINERAL_GAME_COLORS hex.
+//
+//          TESTS (tests-js/per-zone-color-mn.test.ts, 19 pins):
+//            * Per-mineral high-Mn branch produces expected color
+//            * Per-mineral low/no-Mn back-compat (Fe / radDmg / clean)
+//            * Zone-bar narrative: TN457 long-lived barite shows
+//              >=2 distinct color buckets across its 50-pulse zones
+//              (THE visible-banding pin — proves chemistry now paints)
+//            * Averaging convention (avgMn, not last-zone Mn)
+//            * Empty-zones fallback to MINERAL_GAME_COLORS
+//
+//          BASELINE: seed42_v121.json regenerated. Zero drift —
+//          color is a render-side concern, baseline only tracks
+//          crystal counts + max_um per mineral. Verified by byte-diff.
+//
+//          NEXT: optional follow-on — extend the avgMn dispatch to
+//          the remaining 5 Mn-banded carbonates (calcite already
+//          done, but aragonite/dolomite/siderite/rhodochrosite all
+//          capture trace_Mn and could benefit from cleaner per-zone
+//          color rules). Deferred until needed.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 121;
 
