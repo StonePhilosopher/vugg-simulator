@@ -12,7 +12,7 @@
 
 function _nuc_descloizite(sim) {
   const sigma_des = sim.conditions.supersaturation_descloizite();
-  if (sigma_des > 1.0 && !sim._atNucleationCap('descloizite')) {
+  if (sigma_des > MINERAL_GATES_descloizite.sigma_crit && !sim._atNucleationCap('descloizite')) {
     if (rng.random() < 0.18) {
       let pos = 'vug wall';
       const active_van_des = sim.crystals.filter(c => c.mineral === 'vanadinite' && c.active);
@@ -26,7 +26,7 @@ function _nuc_descloizite(sim) {
 }
 function _nuc_mottramite(sim) {
   const sigma_mot = sim.conditions.supersaturation_mottramite();
-  if (sigma_mot > 1.0 && !sim._atNucleationCap('mottramite')) {
+  if (sigma_mot > MINERAL_GATES_mottramite.sigma_crit && !sim._atNucleationCap('mottramite')) {
     if (rng.random() < 0.18) {
       let pos = 'vug wall';
       const active_van_mot = sim.crystals.filter(c => c.mineral === 'vanadinite' && c.active);
@@ -43,7 +43,7 @@ function _nuc_mottramite(sim) {
 function _nuc_clinobisvanite(sim) {
   const sigma_cbv = sim.conditions.supersaturation_clinobisvanite();
   const existing_cbv = sim.crystals.filter(c => c.mineral === 'clinobisvanite' && c.active);
-  if (sigma_cbv > 1.5 && !sim._atNucleationCap('clinobisvanite')) {
+  if (sigma_cbv > MINERAL_GATES_clinobisvanite.sigma_crit && !sim._atNucleationCap('clinobisvanite')) {
     if (!existing_cbv.length || (sigma_cbv > 2.0 && rng.random() < 0.3)) {
       let pos = 'vug wall';
       const dissolving_nbi = sim.crystals.filter(c => c.mineral === 'native_bismuth' && c.dissolved);
@@ -60,7 +60,7 @@ function _nuc_clinobisvanite(sim) {
 function _nuc_pyromorphite(sim) {
   const sigma_pyr = sim.conditions.supersaturation_pyromorphite();
   const existing_pyr = sim.crystals.filter(c => c.mineral === 'pyromorphite' && c.active);
-  if (sigma_pyr > 1.2 && !sim._atNucleationCap('pyromorphite')) {
+  if (sigma_pyr > MINERAL_GATES_pyromorphite.sigma_crit && !sim._atNucleationCap('pyromorphite')) {
     if (!existing_pyr.length || (sigma_pyr > 1.8 && rng.random() < 0.3)) {
       let pos = 'vug wall';
       const dissolving_cer_p = sim.crystals.filter(c => c.mineral === 'cerussite' && c.dissolved);
@@ -79,7 +79,7 @@ function _nuc_pyromorphite(sim) {
 function _nuc_vanadinite(sim) {
   const sigma_vnd = sim.conditions.supersaturation_vanadinite();
   const existing_vnd = sim.crystals.filter(c => c.mineral === 'vanadinite' && c.active);
-  if (sigma_vnd > 1.3 && !sim._atNucleationCap('vanadinite')) {
+  if (sigma_vnd > MINERAL_GATES_vanadinite.sigma_crit && !sim._atNucleationCap('vanadinite')) {
     if (!existing_vnd.length || (sigma_vnd > 1.8 && rng.random() < 0.3)) {
       let pos = 'vug wall';
       const existing_goe_vnd = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
@@ -99,7 +99,7 @@ function _nuc_vanadinite(sim) {
 }
 function _nuc_torbernite(sim) {
   const sigma_tor = sim.conditions.supersaturation_torbernite();
-  if (sigma_tor > 1.0 && !sim._atNucleationCap('torbernite')) {
+  if (sigma_tor > MINERAL_GATES_torbernite.sigma_crit && !sim._atNucleationCap('torbernite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const weathering_urn = sim.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
@@ -117,7 +117,7 @@ function _nuc_torbernite(sim) {
 }
 function _nuc_zeunerite(sim) {
   const sigma_zeu = sim.conditions.supersaturation_zeunerite();
-  if (sigma_zeu > 1.0 && !sim._atNucleationCap('zeunerite')) {
+  if (sigma_zeu > MINERAL_GATES_zeunerite.sigma_crit && !sim._atNucleationCap('zeunerite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const weathering_urn = sim.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
@@ -144,7 +144,7 @@ function _nuc_zeunerite(sim) {
 }
 function _nuc_carnotite(sim) {
   const sigma_car = sim.conditions.supersaturation_carnotite();
-  if (sigma_car > 1.0 && !sim._atNucleationCap('carnotite')) {
+  if (sigma_car > MINERAL_GATES_carnotite.sigma_crit && !sim._atNucleationCap('carnotite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const weathering_urn = sim.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
@@ -167,7 +167,7 @@ function _nuc_carnotite(sim) {
 }
 function _nuc_autunite(sim) {
   const sigma_aut = sim.conditions.supersaturation_autunite();
-  if (sigma_aut > 1.0 && !sim._atNucleationCap('autunite')) {
+  if (sigma_aut > MINERAL_GATES_autunite.sigma_crit && !sim._atNucleationCap('autunite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const weathering_urn = sim.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
@@ -188,7 +188,7 @@ function _nuc_autunite(sim) {
 }
 function _nuc_uranospinite(sim) {
   const sigma_uros = sim.conditions.supersaturation_uranospinite();
-  if (sigma_uros > 1.0 && !sim._atNucleationCap('uranospinite')) {
+  if (sigma_uros > MINERAL_GATES_uranospinite.sigma_crit && !sim._atNucleationCap('uranospinite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const weathering_urn = sim.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
@@ -215,7 +215,7 @@ function _nuc_uranospinite(sim) {
 }
 function _nuc_tyuyamunite(sim) {
   const sigma_tyu = sim.conditions.supersaturation_tyuyamunite();
-  if (sigma_tyu > 1.0 && !sim._atNucleationCap('tyuyamunite')) {
+  if (sigma_tyu > MINERAL_GATES_tyuyamunite.sigma_crit && !sim._atNucleationCap('tyuyamunite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const weathering_urn = sim.crystals.filter(c => c.mineral === 'uraninite' && c.dissolved);
@@ -237,7 +237,7 @@ function _nuc_tyuyamunite(sim) {
 
 function _nuc_apatite(sim) {
   const sigma = sim.conditions.supersaturation_apatite();
-  if (sigma > 1.1 && !sim._atNucleationCap('apatite') && rng.random() < 0.15) {
+  if (sigma > MINERAL_GATES_apatite.sigma_crit && !sim._atNucleationCap('apatite') && rng.random() < 0.15) {
     const c = sim.nucleate('apatite', 'vug wall', sigma);
     sim.log.push(`  ✦ NUCLEATION: 🟢 Apatite #${c.crystal_id} on ${c.position} (Ca ${sim.conditions.fluid.Ca.toFixed(0)} P ${sim.conditions.fluid.P.toFixed(0)} ppm, T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}) — apatite supergroup parent`);
   }
@@ -245,7 +245,7 @@ function _nuc_apatite(sim) {
 
 function _nuc_turquoise(sim) {
   const sigma = sim.conditions.supersaturation_turquoise();
-  if (sigma > 1.3 && !sim._atNucleationCap('turquoise') && rng.random() < 0.10) {
+  if (sigma > MINERAL_GATES_turquoise.sigma_crit && !sim._atNucleationCap('turquoise') && rng.random() < 0.10) {
     let pos = 'vug wall';
     const dissolved_apa = sim.crystals.filter(c => c.mineral === 'apatite' && c.dissolved);
     if (dissolved_apa.length && rng.random() < 0.4) pos = `on apatite #${dissolved_apa[0].crystal_id} (P-source)`;
@@ -268,7 +268,7 @@ function _nuc_turquoise(sim) {
 // must not perturb scenarios where Al + P + Pb don't coincide.
 function _nuc_plumbogummite(sim) {
   const sigma = sim.conditions.supersaturation_plumbogummite();
-  if (sigma < 1.0) return;                       // RNG-cascade guard — DO NOT MOVE
+  if (sigma < MINERAL_GATES_plumbogummite.sigma_crit) return;                       // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('plumbogummite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'plumbogummite' && c.active);
   const total = sim.crystals.filter(c => c.mineral === 'plumbogummite').length;

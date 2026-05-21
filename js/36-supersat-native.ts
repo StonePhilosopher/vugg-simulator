@@ -7,14 +7,103 @@
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
+
+// ---- Native MINERAL_GATES exports ----
+
+const MINERAL_GATES_native_tellurium: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 100, T_max: 400, T_optimal: 225,
+  fluid_min: { Te: 0.5 },
+  O2_max: 0.5,                  // anoxic required (nativeRedoxAnoxic)
+  pH_min: 3, pH_max: 8,
+  surface_energy: 'medium',
+  _sources: ['native_tellurium engine v17+', 'Saunders 1991', 'Spry & Thieben 1996'],
+  _notes: 'Te° native — Cripple Creek bonanza pocket. Au > 1 blocks. Soft Ag/Pb/Bi suppressors.',
+};
+
+const MINERAL_GATES_native_sulfur: MineralGates = {
+  sigma_crit: 1.0,
+  T_max: 200, T_optimal: 50,
+  fluid_min: { S: 100 },
+  O2_min: 0.1, O2_max: 0.7,     // synproportionation window
+  pH_max: 6.5,
+  surface_energy: 'low',
+  _sources: ['native_sulfur engine v79+ (sulphur_bank)', 'native_sulfur engine v80 (Sicily BSR)', 'White & Roberson 1962', 'Ziegenbalg et al. 2010'],
+  _notes: 'S° synproportionation H2S + ½O2 → S° + H2O. Bimodal pH peaks at 2.5 (acid-sulfate) + 6.0 (BSR-near-surface). metal_sum > 100 blocks.',
+};
+
+const MINERAL_GATES_native_arsenic: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 100, T_max: 350, T_optimal: 225,
+  fluid_min: { As: 5 },
+  O2_max: 0.5,                  // anoxic (As(III) state)
+  pH_min: 3, pH_max: 8,
+  surface_energy: 'medium',
+  _sources: ['native_arsenic engine v92+', 'Petruk 1971', 'Förster & Tischendorf 1989'],
+  _notes: 'As° — As(III) dominant fluids, five-element-vein chemistry. Soft S+Fe suppressors (Path C local-vs-bulk).',
+};
+
+const MINERAL_GATES_native_silver: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 50, T_max: 300, T_optimal: 150,
+  fluid_min: { Ag: 1.0 },
+  O2_max: 0.3,                  // anoxic (Ag° reduced)
+  pH_min: 4, pH_max: 9,
+  surface_energy: 'medium',
+  _sources: ['native_silver engine v17+ Path C', '2026-05 cascade-gate audit Arc 3'],
+  _notes: 'Ag° — five-element-vein + Tsumeb supergene-enrichment + Keweenaw co-precipitation. Soft S suppressor (Path C).',
+};
+
+const MINERAL_GATES_native_bismuth: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 100, T_max: 270, T_optimal: 175,
+  fluid_min: { Bi: 5 },
+  O2_max: 0.6,                  // anoxic
+  pH_min: 3.0,
+  surface_energy: 'medium',
+  _sources: ['native_bismuth engine v17+', '2026-05 cascade-gate audit Arc 2'],
+  _notes: 'Bi° — bismuthinite paragenetic step-down. Soft S suppressor.',
+};
+
+const MINERAL_GATES_native_gold: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 20, T_max: 700, T_optimal: 200,
+  fluid_min: { Au: 0.5 },
+  surface_energy: 'medium',
+  _sources: ['native_gold engine v17+'],
+  _notes: 'Au° — tolerant of both Eh regimes. Substrate-pref chalcocite (Bisbee enrichment-blanket) > pyrite (orogenic) > bornite.',
+};
+
+const MINERAL_GATES_native_copper: MineralGates = {
+  sigma_crit: 1.6,
+  T_min: 20, T_max: 300, T_optimal: 85,
+  fluid_min: { Cu: 50 },
+  O2_max: 0.4,                  // anoxic (Cu° reduced)
+  pH_min: 4.0,
+  surface_energy: 'medium',
+  _sources: ['native_copper engine v17+', '2026-05 cascade-gate audit Arc 3'],
+  _notes: 'Cu° — Keweenaw basalt amygdules + Bisbee supergene-zone. Soft S suppressor (Path C).',
+};
+
+const MINERAL_GATES_awaruite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 50, T_max: 500, T_optimal: 300,
+  fluid_min: { Ni: 50, Fe: 20 },
+  O2_max: 0.3,                  // strictly anoxic
+  pH_min: 9.0, pH_max: 13.0,    // hyperalkaline
+  surface_energy: 'high',
+  _sources: ['awaruite engine v114+', 'Bird & Bassett 1980', 'Krenn & Hauzenberger 2007', 'Frost 1985'],
+  _notes: '(Ni,Fe) Ni2-3Fe — serpentinization Ni-Fe alloy, hyperalkaline + strongly reducing only. S > 5 blocks (sulfide preference).',
+};
 
 Object.assign(VugConditions.prototype, {
   supersaturation_native_tellurium() {
-  if (this.fluid.Te < 0.5) return 0;
+  const g = MINERAL_GATES_native_tellurium;
+  if (this.fluid.Te < g.fluid_min!.Te) return 0;
   if (this.fluid.Au > 1.0) return 0;
   // Hg not currently tracked; coloradoite gate deferred.
-  if (!nativeRedoxAnoxic(this.fluid, 0.5)) return 0;
+  if (!nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
   // Ag was a hard gate at > 5.0; stale-mineral retune (2026-05) replaced
   // it with a soft suppressor matching the engine's existing Pb / Bi
   // pattern. Why:
@@ -102,9 +191,10 @@ Object.assign(VugConditions.prototype, {
   // measurements run 5.5-6.5 in the active oxidation zone). v80
   // broadens to `pH > 6.5 → return 0` AND replaces the monotonic
   // ph_f with a bimodal one peaked at both regimes.
-  if (this.fluid.S < 100) return 0;
-  if (!nativeRedoxWindow(this.fluid, 0.1, 0.7)) return 0;
-  if (this.fluid.pH > 6.5) return 0;     // v80: was 5; broadened for BSR mode
+  const g = MINERAL_GATES_native_sulfur;
+  if (this.fluid.S < g.fluid_min!.S) return 0;
+  if (!nativeRedoxWindow(this.fluid, g.O2_min!, g.O2_max!)) return 0;
+  if (this.fluid.pH > g.pH_max!) return 0;     // v80: was 5; broadened for BSR mode
   const metal_sum = this.fluid.Fe + this.fluid.Cu + this.fluid.Pb + this.fluid.Zn;
   if (metal_sum > 100) return 0;
   const s_f = Math.min(this.fluid.S / 200.0, 4.0);
@@ -182,9 +272,10 @@ Object.assign(VugConditions.prototype, {
   // supergene-oxidized fluids the As is all As(V); arseniteAvailablePpm
   // correctly returns 0, blocking native_arsenic from inappropriately
   // firing in oxidized scenarios.
+  const g = MINERAL_GATES_native_arsenic;
   const as_iii = arseniteAvailablePpm(this.fluid);
-  if (as_iii < 5) return 0;
-  if (!nativeRedoxAnoxic(this.fluid, 0.5)) return 0;
+  if (as_iii < g.fluid_min!.As) return 0;
+  if (!nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
   // Tightened from (/30, cap 3.0) to (/15, cap 4.0) (2026-05): native_arsenic
   // is a residual-overflow mineral formed when As dominates the local broth,
   // so the "saturation unit" should sit at the geologically-realistic 15 ppm
@@ -245,8 +336,9 @@ Object.assign(VugConditions.prototype, {
   // for the same reason native_arsenic + native_bismuth needed cap bumps —
   // realistic five-element-vein Ag concentrations of 8-15 ppm should drive
   // ag_f past the old cap to clear nuc threshold.
-  if (this.fluid.Ag < 1.0) return 0;
-  if (!nativeRedoxAnoxic(this.fluid, 0.3)) return 0;
+  const g = MINERAL_GATES_native_silver;
+  if (this.fluid.Ag < g.fluid_min!.Ag) return 0;
+  if (!nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
   const ag_f = Math.min(this.fluid.Ag / 2.0, 4.0);
   const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 2.5, 0.3);
   const s_f = Math.max(0.0, 1.0 - this.fluid.S / 50.0);
@@ -287,7 +379,8 @@ Object.assign(VugConditions.prototype, {
   // naturally suppresses low-Bi fluids), drop `S > 12` hard gate, replace
   // the s_mask floor (0.4) with a true 0.0 floor so the soft suppressor
   // can actually go to zero in high-S brines.
-  if (this.fluid.Bi < 5 || !nativeRedoxAnoxic(this.fluid, 0.6)) return 0;
+  const g = MINERAL_GATES_native_bismuth;
+  if (this.fluid.Bi < g.fluid_min!.Bi || !nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
   // Tightened from /25 to /15 (2026-05) for the same reason as
   // native_arsenic — native_bismuth is paragenetically a residual phase
   // and the saturation unit should reflect arsenide/bismuth-vein
@@ -316,7 +409,7 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_native_gold() {
-  if (this.fluid.Au < 0.5) return 0;
+  if (this.fluid.Au < MINERAL_GATES_native_gold.fluid_min!.Au) return 0;
   const au_f = Math.min(this.fluid.Au / 1.0, 4.0);
   const s_f = Math.max(0.2, 1.0 - this.fluid.S / 200.0);
   let sigma = au_f * s_f;
@@ -355,7 +448,8 @@ Object.assign(VugConditions.prototype, {
   // zero; schneeberg S=30 → s_f=0.5; porphyry S=60 → s_f=0 still gated).
   // Lower floor 0.3 → 0.0 so the soft factor can actually go to zero
   // in S-saturated brines.
-  if (this.fluid.Cu < 50 || !nativeRedoxAnoxic(this.fluid, 0.4)) return 0;
+  const g = MINERAL_GATES_native_copper;
+  if (this.fluid.Cu < g.fluid_min!.Cu || !nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
   const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
   const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 2.0, 0.4);
   const s_f = Math.max(0.0, 1.0 - this.fluid.S / 60.0);
@@ -393,10 +487,11 @@ Object.assign(VugConditions.prototype, {
     // STRICT reducing + Ni-rich + serpentinite-style alkaline gates.
     // Native alloy forms only when both Ni and Fe are mobilized AND O2 is
     // essentially absent.
-    if (this.fluid.Ni < 50 || this.fluid.Fe < 20) return 0;
-    if (this.temperature < 50 || this.temperature > 500) return 0;
-    if (this.fluid.pH < 9.0 || this.fluid.pH > 13.0) return 0;
-    if (!nativeRedoxAnoxic(this.fluid, 0.3)) return 0;
+    const g = MINERAL_GATES_awaruite;
+    if (this.fluid.Ni < g.fluid_min!.Ni || this.fluid.Fe < g.fluid_min!.Fe) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    if (!nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
     // S > 5 strongly suppresses — sulfide preference (millerite +
     // pentlandite + heazlewoodite take the Ni)
     if (this.fluid.S > 5) return 0;
