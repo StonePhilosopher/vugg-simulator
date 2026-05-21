@@ -9884,7 +9884,63 @@ let timeScale = 5.0;
 //            - MINERAL_STOICHIOMETRY broader backfill
 //
 //          Coverage 145 minerals (unchanged). Scenarios 29 → 30.
-const SIM_VERSION = 118;
+//   v119 — trace_Mn capture audit: sphalerite + wurtzite + smithsonite
+//          (2026-05-21). Pure follow-the-science extension of v118's
+//          barite fix. Three engines were missing per-zone trace_Mn
+//          capture despite the literature establishing Mn²⁺
+//          substitution as the diagnostic banding signature:
+//
+//            sphalerite    Frondel 1941 manganblende; Cook & Ciobanu
+//                          2007 Joplin Mn-zoned sphalerite. Mn²⁺ (83 pm)
+//                          substitutes Zn²⁺ (74 pm) up to ~3 mol%
+//                          natural; pink-toned manganoan variety is
+//                          a cabinet-classic.
+//            wurtzite      Same family; polytype variations preserved.
+//                          Hexagonal ZnS, the high-T dimorph.
+//            smithsonite   Tsumeb "bonbon pink" cabinet aesthetic
+//                          per Gebhard & Schubnel 1999. Color-note
+//                          dispatch ALREADY checked Mn at the
+//                          fluid level (pink branch at Mn>10 ppm) but
+//                          the zone-level trace capture was absent
+//                          — half-wired feature.
+//
+//          PARTITION COEFFICIENTS
+//            sphalerite/wurtzite: 0.05 (carbonate-family match)
+//            smithsonite:         0.05 (carbonate-family match)
+//          All three approximations; refinable when per-zone color
+//          rendering ships and visual feedback hones the values.
+//
+//          ENGINE CHANGES
+//            js/61-engines-sulfide.ts:36  +trace_Mn on grow_sphalerite
+//            js/61-engines-sulfide.ts:95  +trace_Mn on grow_wurtzite
+//            js/52-engines-carbonate.ts:512 +trace_Mn on grow_smithsonite
+//
+//          BASELINE DRIFT GUARANTEE: same as v118. Baseline tracks
+//          {active, dissolved, total, max_um} per mineral, NOT
+//          per-zone trace composition. trace_Mn is a NEW FIELD on
+//          GrowthZone objects. Verified by byte-diff: 0 drifted
+//          scenarios across all 30 in seed42_v118 → seed42_v119.
+//
+//          TESTS (tests-js/trace-mn-banded-coverage.test.ts, 5 pins):
+//            * sphalerite zones capture trace_Mn (tn457 broth)
+//            * wurtzite zones capture trace_Mn (when cascade fires)
+//            * smithsonite zones capture trace_Mn (supergene_oxidation)
+//            * barite zones capture trace_Mn (v118 regression guard)
+//            * calcite/etc. carbonate-family regression guard
+//          Structural audit, not chemistry calibration — guards
+//          against silent regression where an engine refactor drops
+//          the trace_Mn line.
+//
+//          PER-ZONE COLOR RENDERING STATUS: with v119 the chemistry
+//          side covers all major Mn²⁺-banded minerals (calcite +
+//          aragonite + dolomite + siderite + rhodochrosite + barite
+//          + sphalerite + wurtzite + smithsonite — 9 minerals).
+//          The render side still averages all zones into one crystal
+//          color. Per-zone band paint is the next sub-arc, gated on
+//          Rock Bot's TN457 visual-diff completion.
+//
+//          NO MINERAL OR SCENARIO CHANGES. Coverage 145, scenarios 30.
+const SIM_VERSION = 119;
 
 // ── 18-constants.js ──
 
@@ -21287,6 +21343,15 @@ function grow_smithsonite(crystal, conditions, step) {
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe: conditions.fluid.Fe * 0.01,
+        // 2026-05-21 (v119) — "bonbon pink" Mn-bearing smithsonite trace.
+        // The Tsumeb cabinet aesthetic (bonbon pink + sky blue + apple
+        // green) keys off trace_Mn substitution into ZnCO3. Mn²⁺ (83 pm)
+        // substitutes Zn²⁺ (74 pm) modestly; partition 0.05 matches the
+        // carbonate-family coefficient. Pink hue threshold at Mn > 10 ppm
+        // is already in the color_note dispatch above; the zone-level
+        // trace capture lets the renderer paint per-zone color bands
+        // (slated for next sub-arc after Rock Bot visual-diff lands).
+        trace_Mn: conditions.fluid.Mn * 0.05,
         note: `${crystal.habit}, ${color_note}, Zn fluid: ${conditions.fluid.Zn.toFixed(0)} ppm`
     });
 }
@@ -27077,6 +27142,14 @@ function grow_sphalerite(crystal, conditions, step) {
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe,
+        // 2026-05-21 (v119) — manganoan sphalerite ("manganblende") trace.
+        // Mn²⁺ substitutes for Zn²⁺ (similar ionic radius ~83 pm) in the
+        // sphalerite lattice up to ~3 mol% in natural specimens. Pink-tone
+        // manganoan sphalerite is the diagnostic shift from honey-amber
+        // (Fe-bearing) toward salmon-pink. Partition 0.05 matches the
+        // carbonate-family coefficient (aragonite/dolomite/siderite). Refs:
+        // Frondel 1941, Cook & Ciobanu 2007 Joplin manganblende.
+        trace_Mn: conditions.fluid.Mn * 0.05,
         note: `color: ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
     });
 }
@@ -27127,6 +27200,11 @@ function grow_wurtzite(crystal, conditions, step) {
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe,
+        // 2026-05-21 (v119) — wurtzite Mn²⁺ substitution. Hexagonal ZnS
+        // accepts Mn substitution at similar levels to sphalerite (the
+        // cubic dimorph); polytype variations exist but the trace-Mn
+        // partition is comparable. Partition 0.05.
+        trace_Mn: conditions.fluid.Mn * 0.05,
         note: `hemimorphic hexagonal (Zn,Fe)S — ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
     });
 }

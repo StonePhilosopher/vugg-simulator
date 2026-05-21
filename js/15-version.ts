@@ -5494,5 +5494,61 @@
 //            - MINERAL_STOICHIOMETRY broader backfill
 //
 //          Coverage 145 minerals (unchanged). Scenarios 29 → 30.
-const SIM_VERSION = 118;
+//   v119 — trace_Mn capture audit: sphalerite + wurtzite + smithsonite
+//          (2026-05-21). Pure follow-the-science extension of v118's
+//          barite fix. Three engines were missing per-zone trace_Mn
+//          capture despite the literature establishing Mn²⁺
+//          substitution as the diagnostic banding signature:
+//
+//            sphalerite    Frondel 1941 manganblende; Cook & Ciobanu
+//                          2007 Joplin Mn-zoned sphalerite. Mn²⁺ (83 pm)
+//                          substitutes Zn²⁺ (74 pm) up to ~3 mol%
+//                          natural; pink-toned manganoan variety is
+//                          a cabinet-classic.
+//            wurtzite      Same family; polytype variations preserved.
+//                          Hexagonal ZnS, the high-T dimorph.
+//            smithsonite   Tsumeb "bonbon pink" cabinet aesthetic
+//                          per Gebhard & Schubnel 1999. Color-note
+//                          dispatch ALREADY checked Mn at the
+//                          fluid level (pink branch at Mn>10 ppm) but
+//                          the zone-level trace capture was absent
+//                          — half-wired feature.
+//
+//          PARTITION COEFFICIENTS
+//            sphalerite/wurtzite: 0.05 (carbonate-family match)
+//            smithsonite:         0.05 (carbonate-family match)
+//          All three approximations; refinable when per-zone color
+//          rendering ships and visual feedback hones the values.
+//
+//          ENGINE CHANGES
+//            js/61-engines-sulfide.ts:36  +trace_Mn on grow_sphalerite
+//            js/61-engines-sulfide.ts:95  +trace_Mn on grow_wurtzite
+//            js/52-engines-carbonate.ts:512 +trace_Mn on grow_smithsonite
+//
+//          BASELINE DRIFT GUARANTEE: same as v118. Baseline tracks
+//          {active, dissolved, total, max_um} per mineral, NOT
+//          per-zone trace composition. trace_Mn is a NEW FIELD on
+//          GrowthZone objects. Verified by byte-diff: 0 drifted
+//          scenarios across all 30 in seed42_v118 → seed42_v119.
+//
+//          TESTS (tests-js/trace-mn-banded-coverage.test.ts, 5 pins):
+//            * sphalerite zones capture trace_Mn (tn457 broth)
+//            * wurtzite zones capture trace_Mn (when cascade fires)
+//            * smithsonite zones capture trace_Mn (supergene_oxidation)
+//            * barite zones capture trace_Mn (v118 regression guard)
+//            * calcite/etc. carbonate-family regression guard
+//          Structural audit, not chemistry calibration — guards
+//          against silent regression where an engine refactor drops
+//          the trace_Mn line.
+//
+//          PER-ZONE COLOR RENDERING STATUS: with v119 the chemistry
+//          side covers all major Mn²⁺-banded minerals (calcite +
+//          aragonite + dolomite + siderite + rhodochrosite + barite
+//          + sphalerite + wurtzite + smithsonite — 9 minerals).
+//          The render side still averages all zones into one crystal
+//          color. Per-zone band paint is the next sub-arc, gated on
+//          Rock Bot's TN457 visual-diff completion.
+//
+//          NO MINERAL OR SCENARIO CHANGES. Coverage 145, scenarios 30.
+const SIM_VERSION = 119;
 
