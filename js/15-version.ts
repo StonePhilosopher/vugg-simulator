@@ -6015,5 +6015,142 @@
 //                                                       architectural fix
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 125;
+//   v126 — Batch-probe arc + pectolite no-fire backfill (2026-05-21).
+//          Empirical cascade-record completion. Ran 6 fresh probes
+//          via tools/probe-stoichiometry.mjs (the automated probe
+//          loop built for this arc) across all remaining DEFERRED
+//          minerals not previously documented as cascade-stuck.
+//
+//          THE TOOL — tools/probe-stoichiometry.mjs
+//          Encapsulates the per-mineral cascade probe: inserts a
+//          stoichiometry entry, rebuilds, regenerates baseline,
+//          diffs against a pristine snapshot, restores the source
+//          file. Returns a structured drift summary (per-scenario
+//          count changes + max_um deltas). Reusable for the Q7
+//          architectural arc or any future stoichiometry expansion.
+//
+//          THE PROBES — 6 RUNS, 1 PASS, 5 CASCADE
+//
+//          PASS: pectolite { Na: 1, Ca: 2, SiO2: 3 }
+//            Zero drift across all 30 scenarios. Pectolite isn't
+//            firing in any current baseline (it's the P1 Jeffrey-arc
+//            holdout that v123 deferred because σ-gates don't clear
+//            under the current late_ca_silicates event tune). No
+//            firings → no debit → no cascade. Pure infra add per
+//            the v120 inactive-subset pattern. If a future
+//            late_ca_silicates tune lands that fires pectolite, the
+//            stoichiometry is already in place.
+//
+//          CASCADE: willemite { Zn: 2, SiO2: 1 }
+//            roughten_gill + tn457_barite_pulses. 6 count breaks
+//            including willemite 3→1, proustite 5→4, brochantite
+//            3→5, sphalerite tn457 2→1, +aurichalcite NEW,
+//            +rosasite NEW. Confirms v124 roughten_gill Shape-B
+//            cascade extends to willemite.
+//
+//          CASCADE: conichalcite { Ca: 1, Cu: 1, As: 1 }
+//            supergene_oxidation only. 7 count breaks including
+//            annabergite 2→1, koettigite 4→6, pharmacolite 7→6,
+//            rosasite 4→2, +raspite NEW. Pharmacolite displacement
+//            (v124 mineral) confirms supergene_oxidation is the
+//            same cascade-dense scenario as v125 koettigite probe.
+//
+//          CASCADE: duftite { Pb: 1, Cu: 1, As: 1 }
+//            supergene_oxidation only. 12 count breaks — the largest
+//            cascade footprint in this arc. Includes vanadinite
+//            DROPPED, pharmacolite displaced (again, +2 this time:
+//            7→9), erythrite 2→4, galena 3→4, etc. Pb+Cu+As
+//            tri-cation debit perturbs the most σ-gates of any
+//            probed mineral.
+//
+//          CASCADE: uranophane { Ca: 1, U: 2, SiO2: 2 }
+//            colorado_plateau CLEAN (only uranophane + tyuyamunite
+//            max_um drift, no species drop/add). schneeberg CASCADE
+//            (pharmacolite DROPPED, uranospinite 4→2, +haidingerite
+//            NEW). 1-of-2 near-miss pattern matching cassiterite —
+//            colorado_plateau alone could be tune-shipped if
+//            schneeberg's contribution to mass balance were isolated.
+//            Stays deferred pending architectural fix.
+//
+//          CASCADE: lepidolite { K: 1, Li: 2, Al: 2, SiO2: 3, F: 1.5 }
+//            BOTH gem_pegmatite + radioactive_pegmatite cascade.
+//            5-cation stoichiometry is the largest debit-fan of any
+//            probed mineral; 11 total count breaks. spodumene 3→1
+//            in gem_pegmatite, cassiterite 7→4 + 5→4, galena 4→2,
+//            goethite 3→1, anglesite DROPPED. Confirms multi-cation
+//            stoichiometry into dense scenarios is structurally
+//            cascade-prone.
+//
+//          MECHANISM CONFIRMATION
+//          Across v124 + v125 + v126 (8 probes total): 4 PASS
+//          (pharmacolite, metacinnabar, opal, pectolite) and 13
+//          CASCADE (the deferred remainder). The 4 passes share a
+//          property: their cation budget is either single-scenario-
+//          unique (metacinnabar/pharmacolite share with one other
+//          mineral) or vastly exceeds the debit (opal SiO2 in
+//          thousands-of-ppm broths) or doesn't fire at all
+//          (pectolite). The 13 cascades share the inverse: multi-
+//          cation debit into a scenario where 5+ other minerals
+//          compete for the same cations on edge-of-gate σ thresholds.
+//          The Shape-B antipattern is confirmed as the dominant
+//          stoichiometry-cascade mechanism.
+//
+//          NEAR-MISSES WORTH NOTING
+//          Two probes were CLEAN in some firing scenarios but
+//          cascaded in others — exactly the pattern that suggests
+//          per-scenario tune work could rescue them:
+//
+//            cassiterite (v125): CLEAN gem_pegmatite + schneeberg;
+//                                CASCADE radioactive_pegmatite
+//            uranophane (v126):  CLEAN colorado_plateau;
+//                                CASCADE schneeberg
+//
+//          These are the closest candidates for any future tune-
+//          ship arc. The architectural fix would be Q7 from
+//          PROPOSAL-SPECIMEN-OBJECT.md (initiative-variable /
+//          competition-for-solutes ordering) which lets dense
+//          scenarios resolve cation competition deterministically.
+//
+//          STOICHIOMETRY ADDED (1 mineral)
+//            pectolite: { Na: 1, Ca: 2, SiO2: 3 } — chain silicate
+//
+//          PARAGENESIS RESULT
+//          All 30 scenarios byte-identical to v125 baseline.
+//          (Pectolite doesn't fire; the stoichiometry add is a
+//          no-op until a future event-chemistry tune flips its gate.)
+//
+//          TOOL ADDED
+//          tools/probe-stoichiometry.mjs — automated cascade probe.
+//          Inserts entry, builds, regen baseline, diffs, restores.
+//
+//          GUARD TEST UPDATED
+//          tests-js/mineral-stoichiometry-coverage.test.ts:
+//            DEFERRED_TUNE_REQUIRED size 14 → 13 (pectolite removed)
+//            Per-mineral cascade-record commentary completed
+//            Size pin updated 14 → 13
+//
+//          HANDOFF DOC UPDATED
+//          proposals/HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md:
+//            v126 status block + complete per-mineral cascade table
+//            Tool reference for tools/probe-stoichiometry.mjs
+//
+//          REMAINING IN DEFERRED LIST (13 minerals — empirically
+//          confirmed cascade-stuck)
+//            P2 cascade-stuck: caledonite, plumbogummite, proustite
+//            P3 Tsumeb (5): dioptase, willemite, conichalcite,
+//                            duftite, koettigite
+//            P4: uranophane (1-of-2 near-miss)
+//            P5 secondary (4): cassiterite (2-of-3 near-miss),
+//                                lepidolite, pyrolusite, tigers_eye
+//
+//          REFERENCES
+//          js/15-version.ts v109 — RNG-cascade ripple antipattern
+//          js/15-version.ts v120 — abandoned big-bang stoichiometry
+//          js/15-version.ts v124 — Cumbria P2 cascade precedent
+//          js/15-version.ts v125 — P3+P5 cascade-probe arc
+//          proposals/HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md
+//          proposals/PROPOSAL-SPECIMEN-OBJECT.md Q7 — architectural fix
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 126;
 

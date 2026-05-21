@@ -286,6 +286,18 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   powellite:      { Ca: 1, Mo: 1 },                  // CaMoO4
   scheelite:      { Ca: 1, W: 1 },                   // CaWO4 — classed molybdate per existing convention
   wolframite:     { Fe: 0.5, Mn: 0.5, W: 1 },        // (Fe,Mn)WO4 — solid-solution mid-range
+
+  // ---- v126 P1-holdout backfill (pectolite, no-fire pure-infra add) ----
+  // pectolite is the one P1 Jeffrey-arc mineral that v123 deferred
+  // because it doesn't reliably fire in any current baseline scenario
+  // (sensitive to the late_ca_silicates Na/Ca window; σ-gates don't
+  // clear under current event tunes). Probe-verified zero baseline
+  // drift in all 30 scenarios — no firings means no cascade. Pure
+  // infra add per the v120 inactive-subset pattern. If a future
+  // scenario or jeffrey_mine tune flips the σ-gate so pectolite
+  // fires, the stoichiometry is already in place — no silent free-
+  // energy gift.
+  pectolite:      { Na: 1, Ca: 2, SiO2: 3 },         // NaCa2Si3O8(OH) — calcic-sodic chain silicate (Jeffrey rodingite holdout)
 };
 
 // PROPOSAL-GEOLOGICAL-ACCURACY Phase 1e (May 2026): per-mineral
