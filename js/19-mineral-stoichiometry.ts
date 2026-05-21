@@ -78,6 +78,16 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   arsenopyrite:   { Fe: 1, As: 1, S: 1 },            // FeAsS
   stibnite:       { Sb: 2, S: 3 },                   // Sb2S3
   cinnabar:       { Hg: 1, S: 1 },                   // HgS
+  // v125 P3 Tsumeb supergene probe — start: metacinnabar fires
+  // sulphur_bank only (3 crystals, max_um=24827.4 @ v124). Adding
+  // stoichiometry tightens Hg accounting (cinnabar already debits Hg;
+  // metacinnabar joins). Net: max_um shifts down as the Hg-15-ppm
+  // budget is shared more honestly. No paragenesis pin breaks
+  // expected — sulphur_bank's metacinnabar is gated by σ on Hg≥1,
+  // T<200, O2<0.8, pH<6.5 only; mass balance affects depth, not the
+  // nucleation gate. Sulphur Bank is sulphide-rich (S=400 + 6 H2S
+  // recharges +150 each), so S debit is irrelevant.
+  metacinnabar:   { Hg: 1, S: 1 },                   // β-HgS (cubic polymorph of cinnabar; Sulphur Bank Mine)
   realgar:        { As: 1, S: 1 },                   // AsS (α-realgar; As4S4 unit cell)
   orpiment:       { As: 2, S: 3 },                   // As2S3
   bismuthinite:   { Bi: 2, S: 3 },                   // Bi2S3
@@ -110,6 +120,13 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
 
   // ---- Oxides ----
   quartz:         { SiO2: 1 },                       // SiO2
+  // v125 P3 Tsumeb-adjacent probe: opal — amorphous silica, same
+  // stoichiometry as quartz. Fires in 6 scenarios; SiO2 broths in
+  // each are thousands of ppm so the debit is sub-percent of budget.
+  // Verified byte-identical across all 6 firing scenarios — the
+  // cascade-perturbation mechanism is about magnitude relative to
+  // σ-gate sensitivity, not just any non-zero debit.
+  opal:           { SiO2: 1 },                       // SiO2·nH2O — amorphous silica mineraloid (Sulphur Bank-style hot-spring sinter)
   hematite:       { Fe: 2 },                         // Fe2O3 (O comes from water/redox)
   magnetite:      { Fe: 3 },                         // Fe3O4
   cuprite:        { Cu: 2 },                         // Cu2O

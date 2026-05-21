@@ -5907,5 +5907,113 @@
 //          fixed at the tune layer)
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 124;
+//   v125 — Cascade-probe arc: P3 Tsumeb + P5 secondary (2026-05-21).
+//          Two minerals shipped (metacinnabar + opal). Six probed-and-
+//          reverted with empirical cascade-mechanism findings.
+//
+//          THE THESIS GOING IN
+//          Six P3 Tsumeb + adjacent + P5 secondary candidates looked
+//          like "small footprint" targets: dioptase fires once in
+//          schneeberg, pyrolusite has only Mn debit, cassiterite has
+//          Sn-only debit, opal has SiO2-only debit. Probe each in
+//          isolation; ship the clean ones.
+//
+//          THE FINDINGS — SIX PROBES, TWO WINS
+//
+//          PASS: metacinnabar { Hg:1, S:1 } — sulphur_bank only.
+//            cinnabar already debits Hg from the same fluid, so the
+//            new debit just tightens an existing Hg-budget cascade.
+//            sulphur_bank drift: only max_um (metacinnabar 24827→17667).
+//            29 of 30 scenarios byte-identical.
+//
+//          PASS: opal { SiO2:1 } — 6 scenarios (deccan_zeolite,
+//            naica_geothermal, ouro_preto, radioactive_pegmatite,
+//            schneeberg, ultramafic_supergene). ALL 6 scenarios are
+//            byte-identical to v124 baseline. SiO2 broths are 200-8000
+//            ppm; opal max_um is 5-36 µm; debit is <0.01% of budget —
+//            too small to perturb σ-gates anywhere.
+//
+//          CASCADE: dioptase { Cu:1, SiO2:1 } — schneeberg only,
+//            1 crystal @ 84.8 µm. Sub-percent Cu+SiO2 debit displaced
+//            12+ mineral nucleation orders in schneeberg's 39-species
+//            cascade. Most alarming: DROPPED pharmacolite (the v124-
+//            shipped mineral) and added haidingerite. Reverted.
+//
+//          CASCADE: pyrolusite { Mn:1 } — bisbee + naica + ouro_preto
+//            + ultramafic_supergene. Mn at 2-4 ppm initial in those
+//            scenarios + 235-450 µm pyrolusite growth = ~14-27 ppm
+//            debit, EXCEEDING initial Mn budget. Cascade in 5 scenarios:
+//            bisbee dropped turquoise + gained 5 new species (dioptase,
+//            hematite, lepidocrocite, opal, tigers_eye).
+//
+//          CASCADE: tigers_eye { SiO2:1, Fe:0.5 } — 4 scenarios. Fe
+//            trace at 0.5 coefficient cascaded deccan_zeolite (dropped
+//            albite + rhodochrosite, gained 4 new opals). SiO2-only is
+//            safe (opal proves it); SiO2 + Fe-trace is not.
+//
+//          CASCADE: cassiterite { Sn:1 } — gem_pegmatite (CLEAN, only
+//            cassiterite's own max_um) + schneeberg (CLEAN) +
+//            radioactive_pegmatite (CASCADE: anglesite + goethite
+//            dropped, topaz 4→2, +6 other count shifts). 2-of-3 clean
+//            is a tantalizing near-miss; radioactive_pegmatite is the
+//            cascade-block.
+//
+//          CASCADE: koettigite { Zn:3, As:2 } — supergene_oxidation
+//            only. 19 count breaks: alunite DROPPED, raspite NEW,
+//            koettigite 4→2, pharmacolite 7→4. The supergene_oxidation
+//            cascade is dense — adding ANY new Zn+As debit displaces
+//            10+ As-debiting minerals' iterator order.
+//
+//          MECHANISM CLARIFIED
+//          The cascade isn't triggered by debit MAGNITUDE; it's
+//          triggered by whether the new debit shifts σ enough to
+//          flip an edge-of-gate mineral. Minerals with unique-cation
+//          stoichiometry (metacinnabar's Hg already saturated by
+//          cinnabar; opal's SiO2 vs. thousands-of-ppm) are safe.
+//          Minerals competing for cations with already-firing minerals
+//          (dioptase Cu vs schneeberg Cu-suite; pyrolusite Mn vs
+//          bisbee Mn-suite; koettigite Zn+As vs supergene_oxidation
+//          arsenate-suite) cascade. This refines the Shape-B antipattern
+//          framing from v109/v120/v124: the limiter isn't budget
+//          exhaustion, it's the rng-iterator displacement when σ
+//          recalc shifts edge-of-gate species across their nucleation
+//          thresholds.
+//
+//          STOICHIOMETRY ADDED (2 minerals)
+//            metacinnabar: { Hg: 1, S: 1 }       — β-HgS, Sulphur Bank
+//            opal:          { SiO2: 1 }           — SiO2·nH2O, mineraloid
+//
+//          PARAGENESIS RESULT
+//          sulphur_bank: max_um drift only (cinnabar/metacinnabar
+//                         share Hg budget honestly; no species drift)
+//          6 opal-firing scenarios: byte-identical
+//          23 other scenarios: byte-identical
+//
+//          GUARD TEST UPDATED
+//          tests-js/mineral-stoichiometry-coverage.test.ts:
+//            DEFERRED_TUNE_REQUIRED 16 -> 14 (metacinnabar + opal removed)
+//            Per-mineral cascade-mechanism commentary added.
+//
+//          REMAINING IN DEFERRED LIST (14 minerals)
+//            P1 remainder: pectolite
+//            P2 deferred (cascade): caledonite, plumbogummite, proustite
+//            P3 Tsumeb (5): dioptase, willemite, conichalcite, duftite,
+//                            koettigite
+//            P4 Schneeberg uranyl (1): uranophane
+//            P5 secondary (4): cassiterite, lepidolite, pyrolusite,
+//                                tigers_eye
+//
+//          REFERENCES
+//          js/15-version.ts v109 — original RNG-cascade ripple antipattern
+//          js/15-version.ts v120 — abandoned big-bang stoichiometry
+//          js/15-version.ts v124 — Cumbria P2 cascade precedent (P3 confirms
+//                                    it's not Cumbria-specific; it's the
+//                                    general dense-scenario edge-of-gate
+//                                    mechanism)
+//          proposals/HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md
+//          proposals/PROPOSAL-SPECIMEN-OBJECT.md Q7 — initiative-variable
+//                                                       architectural fix
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 125;
 

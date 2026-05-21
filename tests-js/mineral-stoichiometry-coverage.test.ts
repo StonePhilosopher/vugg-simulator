@@ -69,12 +69,35 @@ const DEFERRED_TUNE_REQUIRED = new Set<string>([
   //   work that's out of scope for a single tune commit.
   'caledonite', 'plumbogummite', 'proustite',
   // Priority 3 — Tsumeb supergene + adjacent
+  //   v125 (2026-05-21): metacinnabar shipped. Fires in sulphur_bank
+  //   only; cinnabar already debits Hg from the same fluid, so adding
+  //   metacinnabar's debit just tightens the budget — no cascade.
+  //   Five P3 minerals still deferred. Notable cascade-stuck (probed
+  //   v125, reverted): dioptase fires once in schneeberg at 85 µm —
+  //   the "tiny footprint" hypothesis failed. Sub-percent Cu+SiO2
+  //   debit displaced 12+ mineral nucleation orders in schneeberg's
+  //   39-species cascade (including DROPPING pharmacolite, the v124-
+  //   shipped mineral, and adding haidingerite). Same Shape-B
+  //   antipattern as v124 Cumbria — dense scenarios are cascade-
+  //   sensitive even at sub-percent stoichiometric perturbation.
+  //   willemite fires in roughten_gill + tn457_barite_pulses
+  //   (roughten_gill cascade); conichalcite + koettigite fire 4x in
+  //   supergene_oxidation; duftite spans supergene_oxidation +
+  //   schneeberg (so doubly cascade-prone after the dioptase probe).
   'dioptase', 'willemite', 'conichalcite', 'duftite', 'koettigite',
-  'metacinnabar',
   // Priority 4 — Schneeberg + Colorado Plateau uranyl
   'uranophane',
   // Priority 5 — Naica, gem pegmatite, secondary firings
-  'cassiterite', 'lepidolite', 'opal', 'pyrolusite', 'tigers_eye',
+  //   v125 (2026-05-21): opal shipped. SiO2-only debit across 6
+  //   scenarios; SiO2 broths range 200-8000 ppm so per-step debit is
+  //   <0.01% of budget — too small to perturb σ-gates anywhere. All
+  //   6 opal-firing scenarios are byte-identical to v124. Confirms
+  //   the cascade mechanism: it's not magnitude, it's whether the
+  //   debit shifts σ by enough to flip an edge-of-gate mineral.
+  //   pyrolusite cascaded because 4 ppm Mn × 235 µm debit *is*
+  //   meaningful (debit ~14 ppm vs initial 4); opal's debit on
+  //   SiO2=8000 is structurally invisible.
+  'cassiterite', 'lepidolite', 'pyrolusite', 'tigers_eye',
 ]);
 
 describe('MINERAL_STOICHIOMETRY coverage audit (v120)', () => {
@@ -203,12 +226,15 @@ describe('MINERAL_STOICHIOMETRY coverage audit (v120)', () => {
     expect(violations).toEqual([]);
   });
 
-  it('DEFERRED list size matches HANDOFF doc count (16 minerals at v124)', () => {
+  it('DEFERRED list size matches HANDOFF doc count (14 minerals at v125)', () => {
     // Tracking number — if you reduce the list (tune commit lands), update
     // this number AND update the HANDOFF doc to reflect the new total.
     // v120 shipped at 28; v123 Jeffrey arc tune removed 11 → 17.
     // v124 Cumbria P2 partial-tune removed pharmacolite → 16. (Other 3
     // Cumbria minerals stay deferred per cascade-displacement issue.)
-    expect(DEFERRED_TUNE_REQUIRED.size).toBe(16);
+    // v125 cascade-probe arc removed metacinnabar + opal → 14.
+    // dioptase + pyrolusite were probed but reverted (cascaded).
+    // See per-mineral commentary in the DEFERRED list.
+    expect(DEFERRED_TUNE_REQUIRED.size).toBe(14);
   });
 });
