@@ -74,7 +74,12 @@ function idleInit() {
 
 function idleCreateSim(scenarioKey) {
   if (scenarioKey === 'random') {
-    const keys = Object.keys(SCENARIOS);
+    // v116 (2026-05-20): filter out tutorial_* scenarios from the
+    // zen-mode random pool. Tutorials are guided introductions with
+    // narration scaffolding; they don't belong in the screensaver
+    // randomization (boss directive — tutorials shouldn't pop up
+    // in zen + quick-play modes).
+    const keys = Object.keys(SCENARIOS).filter(k => !k.startsWith('tutorial_'));
     scenarioKey = keys[Math.floor(Math.random() * keys.length)];
   }
   const scenarioFn = SCENARIOS[scenarioKey];
