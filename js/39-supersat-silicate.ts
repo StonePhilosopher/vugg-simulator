@@ -7,7 +7,321 @@
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
+
+// ---- Silicate MINERAL_GATES exports ----
+
+const MINERAL_GATES_quartz: MineralGates = {
+  sigma_crit: 1.2,
+  T_min: 50, T_max: 600, T_optimal: 300,
+  fluid_min: { SiO2: 50 },
+  surface_energy: 'high',
+  _sources: ['quartz engine v17+', 'Rimstidt & Barnes 1980 GCA 44:1683', 'Brantley et al. 2008'],
+  _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+.',
+};
+
+const MINERAL_GATES_feldspar: MineralGates = {
+  sigma_crit: 1.0,
+  T_max: 800, T_optimal: 500,
+  fluid_min: { K: 10, Al: 3, SiO2: 200 },
+  pH_min: 4.0,
+  surface_energy: 'medium',
+  _sources: ['feldspar engine v17+ K-only'],
+  _notes: 'KAlSi3O8 (sanidine/orthoclase/microcline polymorphs). Pre-v17 fold Na into K-or-Na fork removed — Na fluids route to albite.',
+};
+
+const MINERAL_GATES_apophyllite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 50, T_max: 250, T_optimal: 150,
+  fluid_min: { K: 5, Ca: 30, SiO2: 800, F: 2 },
+  pH_min: 7.0, pH_max: 10.0,
+  surface_energy: 'low',
+  _sources: ['apophyllite engine v17+'],
+  _notes: 'KCa4Si8O20(F,OH)·8H2O — zeolite-facies sheet silicate. Pressure ≤ 0.5 kbar required.',
+};
+
+const MINERAL_GATES_albite: MineralGates = {
+  sigma_crit: 1.0,
+  T_optimal: 400,
+  fluid_min: { Na: 10, Al: 3, SiO2: 200 },
+  pH_min: 3.0,
+  surface_energy: 'medium',
+  _sources: ['albite engine v17+'],
+  _notes: 'NaAlSi3O8 — Na-feldspar. More acid-resistant than K-feldspar (pH 3 vs 4 cutoff).',
+};
+
+const MINERAL_GATES_lepidolite: MineralGates = {
+  sigma_crit: 1.2,
+  T_min: 350, T_max: 700, T_optimal: 450,
+  fluid_min: { K: 10, Li: 15, Al: 10, SiO2: 200, F: 5 },
+  pH_min: 6.0, pH_max: 9.0,
+  surface_energy: 'medium',
+  _sources: ['lepidolite engine v17+', 'research-lepidolite.md', 'Evans & Raftery 1982'],
+  _notes: 'K(Li,Al)3(Al,Si)4O10(F,OH)2 — Li-mica. Mn → pink/purple coloration. Fe > 100 ppm routes to zinnwaldite.',
+};
+
+const MINERAL_GATES_spodumene: MineralGates = {
+  sigma_crit: 1.5,
+  T_min: 400, T_max: 800, T_optimal: 525,
+  fluid_min: { Li: 8, Al: 5, SiO2: 40 },
+  surface_energy: 'medium',
+  _sources: ['spodumene engine v17+'],
+  _notes: 'LiAlSi2O6 — Li-pyroxene. Gem variety kunzite (Mn), hiddenite (Cr).',
+};
+
+const MINERAL_GATES_chrysocolla: MineralGates = {
+  sigma_crit: 1.2,
+  T_min: 5, T_max: 80, T_optimal: 28,
+  fluid_min: { Cu: 5, SiO2: 20 },
+  O2_min: 0.3,
+  pH_min: 5.0, pH_max: 8.0,
+  surface_energy: 'very_low',
+  _sources: ['chrysocolla engine v17+'],
+  _notes: '(Cu,Al)2H2Si2O5(OH)4·nH2O — cyan supergene Cu silicate. CO3 > SiO2 routes to malachite.',
+};
+
+const MINERAL_GATES_beryl: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 300, T_max: 700, T_optimal: 450,
+  fluid_min: { Be: 10, Al: 6, SiO2: 50 },
+  surface_energy: 'medium',
+  _sources: ['beryl engine v17+', '_beryl_base_sigma family helper'],
+  _notes: 'Be3Al2Si6O18 — pegmatite cyclosilicate. Chromophore-free variant. Cr/V → emerald, Mn → morganite, Fe → aquamarine/heliodor.',
+};
+
+const MINERAL_GATES_emerald: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 300, T_max: 700, T_optimal: 450,
+  fluid_min: { Be: 10, Al: 6, SiO2: 50, Cr: 0.5 },
+  surface_energy: 'medium',
+  _sources: ['emerald variant of _beryl_base_sigma'],
+  _notes: 'Cr or V chromophore-bearing beryl. V ≥ 1.0 also fires.',
+};
+
+const MINERAL_GATES_aquamarine: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 300, T_max: 700, T_optimal: 450,
+  fluid_min: { Be: 10, Al: 6, SiO2: 50, Fe: 8 },
+  surface_energy: 'medium',
+  _sources: ['aquamarine variant of _beryl_base_sigma'],
+  _notes: 'Fe2+ chromophore beryl. Fe ≥ 15 with O2 > 0.5 routes to heliodor instead.',
+};
+
+const MINERAL_GATES_morganite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 300, T_max: 700, T_optimal: 450,
+  fluid_min: { Be: 10, Al: 6, SiO2: 50, Mn: 2.0 },
+  surface_energy: 'medium',
+  _sources: ['morganite variant of _beryl_base_sigma'],
+  _notes: 'Mn2+ chromophore beryl — pink-peach variant.',
+};
+
+const MINERAL_GATES_heliodor: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 300, T_max: 700, T_optimal: 450,
+  fluid_min: { Be: 10, Al: 6, SiO2: 50, Fe: 15 },
+  O2_min: 0.5,
+  surface_energy: 'medium',
+  _sources: ['heliodor variant of _beryl_base_sigma'],
+  _notes: 'Fe3+ chromophore beryl — yellow-gold variant. Requires oxidizing conditions for Fe(III) state.',
+};
+
+const MINERAL_GATES_tourmaline: MineralGates = {
+  sigma_crit: 1.3,
+  T_min: 350, T_max: 700, T_optimal: 500,
+  fluid_min: { Na: 3, B: 6, Al: 8, SiO2: 60 },
+  surface_energy: 'medium',
+  _sources: ['tourmaline engine v17+'],
+  _notes: 'Na(Mg,Fe,Mn,Li,Al)3Al6(Si6O18)(BO3)3(OH,F)4 — pegmatite cyclo-borosilicate. Schorl/dravite/elbaite/uvite varieties.',
+};
+
+const MINERAL_GATES_topaz: MineralGates = {
+  sigma_crit: 1.4,
+  T_min: 300, T_max: 600, T_optimal: 370,
+  fluid_min: { Al: 3, SiO2: 200, F: 20 },
+  pH_min: 2.0,
+  surface_energy: 'high',
+  _sources: ['topaz engine v17+'],
+  _notes: 'Al2SiO4(F,OH)2 — F-bearing pegmatite/greisen. Imperial topaz (Cr trace) gold-orange variety.',
+};
+
+const MINERAL_GATES_opal: MineralGates = {
+  sigma_crit: 1.0,                          // engine-matched; literature suggests 0.5-1.0 (Iler 1979) — v129 calibration target
+  T_min: 5, T_max: 100, T_optimal: 40,
+  fluid_min: { SiO2: 200 },
+  pH_min: 6.5, pH_max: 10.0,
+  surface_energy: 'very_low',
+  _sources: ['opal engine v101+', 'Jones & Segnit 1971', 'Iler 1979', 'Fournier 1977 Geothermics 5:41'],
+  _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). ΔH° corrected to +14 kJ/mol (v127 science fix). Geyser sinter at 30-85°C optimum. NOTE: engine σ_crit = 1.0 matches v101 calibration; literature heterogeneous σ_crit is 0.5-1.0 per Iler 1979 — flagged as v129 calibration target.',
+};
+
+const MINERAL_GATES_coffinite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 100, T_max: 350, T_optimal: 200,
+  fluid_min: { U: 1, SiO2: 60 },
+  O2_max: 0.3,                  // reducing
+  pH_min: 5.0, pH_max: 8.0,
+  surface_energy: 'medium',
+  _sources: ['coffinite engine v99+', 'Stieff et al. 1955', 'Finch & Murakami 1999'],
+  _notes: 'USiO4·nH2O — primary U(IV) silicate (zircon-isostructural). CO3 > 60 routes to uranyl-carbonate.',
+};
+
+const MINERAL_GATES_uranophane: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 60, T_optimal: 25,
+  fluid_min: { U: 0.5, Ca: 20, SiO2: 30 },
+  O2_min: 0.5,
+  pH_min: 5.0, pH_max: 8.0,
+  surface_energy: 'medium',
+  _sources: ['uranophane engine v99+', 'Burns 2005', 'Ginderow 1988'],
+  _notes: 'Ca(UO2)2(SiO3)2(OH)2·5H2O — supergene uranyl silicate. Bright SW+LW UV fluorescent.',
+};
+
+const MINERAL_GATES_hemimorphite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 27,
+  fluid_min: { Zn: 10, SiO2: 200 },
+  O2_min: 0.5,
+  pH_min: 5.5, pH_max: 8.0,
+  surface_energy: 'low',
+  _sources: ['hemimorphite engine v98+', 'Hitzman et al. 2003'],
+  _notes: 'Zn4Si2O7(OH)2·H2O — supergene "nonsulfide" Zn silicate. CO3 > SiO2 routes to smithsonite.',
+};
+
+const MINERAL_GATES_willemite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 50, T_max: 700, T_optimal: 115,
+  fluid_min: { Zn: 50, SiO2: 100 },
+  O2_min: 0.3,
+  pH_min: 6.0, pH_max: 9.0,
+  surface_energy: 'medium',
+  _sources: ['willemite engine v98+', 'Franklin/Sterling NJ + Skorpion literature'],
+  _notes: 'Zn2SiO4 phenakite-group. Bimodal: primary 500-600°C metamorphic OR supergene 50-200°C. Mn fluoresces SW UV green.',
+};
+
+const MINERAL_GATES_dioptase: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 120, T_optimal: 50,
+  fluid_min: { Cu: 1, SiO2: 10 },
+  O2_min: 1.0,
+  pH_min: 6.5, pH_max: 8.5,
+  surface_energy: 'medium',
+  _sources: ['dioptase engine v93+', 'Hauy 1797 (type description)', 'Ribbe/Gibbs/Hamil 1977'],
+  _notes: 'CuSiO3·H2O — Tsumeb world reference Cu cyclosilicate. CO3 > 50 + Cl > 5000 suppress.',
+};
+
+const MINERAL_GATES_shattuckite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 90, T_optimal: 40,
+  fluid_min: { Cu: 5, SiO2: 20 },
+  O2_min: 0.5,
+  pH_min: 7.5, pH_max: 9.5,
+  surface_energy: 'medium',
+  _sources: ['shattuckite engine v93+', 'Schaller 1915 (type description Bisbee)'],
+  _notes: 'Cu5(SiO3)4(OH)2 — deep azure Cu inosilicate. Higher pH window than dioptase (5:4 Cu/Si ratio needs more OH).',
+};
+
+const MINERAL_GATES_chrysoprase: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 80, T_optimal: 32,
+  fluid_min: { SiO2: 100, Ni: 50, Mg: 50 },
+  O2_min: 0.5,
+  pH_min: 7.5, pH_max: 9.5,
+  surface_energy: 'low',
+  _sources: ['chrysoprase engine v63+'],
+  _notes: 'Ni-bearing chalcedony (microfibrous SiO2 + pimelite/willemseite nano-inclusions). Cr > 30 routes to mtorolite.',
+};
+
+const MINERAL_GATES_tigers_eye: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 20, T_max: 200, T_optimal: 65,
+  fluid_min: { SiO2: 200, Fe: 30 },
+  O2_min: 0.4,
+  pH_min: 5.5, pH_max: 9.5,
+  surface_energy: 'low',
+  _sources: ['tigers_eye engine v116+', 'Cairncross & Beukes 2013', 'Heaney & Fisher 2003'],
+  _notes: 'SiO2 after crocidolite — chalcedony pseudomorph. Gold-brown chatoyant from Fe3+ trace + preserved fiber framework.',
+};
+
+const MINERAL_GATES_chrysotile: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 50, T_max: 500, T_optimal: 300,
+  fluid_min: { Mg: 100, SiO2: 50 },
+  pH_min: 8.5, pH_max: 13.0,
+  surface_energy: 'low',
+  _sources: ['chrysotile engine v114+', 'Wicks & Plant 1979', 'O\'Hanley 1996'],
+  _notes: 'Mg3Si2O5(OH)4 — serpentine asbestos. Hyperalkaline serpentinization fluid. Ca > 100 routes to diopside/wollastonite.',
+};
+
+const MINERAL_GATES_pectolite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 100, T_max: 350, T_optimal: 215,
+  fluid_min: { Na: 30, Ca: 80, SiO2: 100 },
+  pH_min: 8.5, pH_max: 12.0,
+  surface_energy: 'medium',
+  _sources: ['pectolite engine v113+', 'Bernardini 1981 MR 12(5):277', 'Filipos & Frantz 1979'],
+  _notes: 'NaCa2Si3O8(OH) — Jeffrey radiating-spray habit. Larimar (Cu) is the Dominican gem variety.',
+};
+
+const MINERAL_GATES_wollastonite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 180, T_max: 600, T_optimal: 310,
+  fluid_min: { Ca: 80, SiO2: 200 },
+  pH_min: 7.5, pH_max: 12.0,
+  surface_energy: 'medium',
+  _sources: ['wollastonite engine v113+', 'Trommsdorff & Connolly 1996'],
+  _notes: 'CaSiO3 — skarn contact metamorphism + rodingite. Acicular-white habit. Mg/Al > 100/50 routes to diopside/grossular.',
+};
+
+const MINERAL_GATES_prehnite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 100, T_max: 350, T_optimal: 215,
+  fluid_min: { Ca: 60, Al: 8, SiO2: 100 },
+  pH_min: 7.5, pH_max: 11.5,
+  surface_energy: 'low',
+  _sources: ['prehnite engine v113+', 'Liou 1971'],
+  _notes: 'Ca2Al2Si3O10(OH)2 — Lake Superior amygdale + Alpine fissure botryoidal pale-green (Fe3+ trace).',
+};
+
+const MINERAL_GATES_grossular: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 250, T_max: 600, T_optimal: 375,
+  fluid_min: { Ca: 80, Al: 15, SiO2: 150 },
+  pH_min: 7.0, pH_max: 12.0,
+  surface_energy: 'high',
+  _sources: ['grossular engine v112+', 'Manning & Bird 1990'],
+  _notes: 'Ca3Al2(SiO4)3 — calcic garnet. Cr → tsavorite (green), Mn → hessonite (orange).',
+};
+
+const MINERAL_GATES_diopside: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 200, T_max: 600, T_optimal: 365,
+  fluid_min: { Ca: 60, Mg: 40, SiO2: 150 },
+  pH_min: 7.0, pH_max: 12.0,
+  surface_energy: 'medium',
+  _sources: ['diopside engine v112+', 'Bernardini 1981', 'Cameron & Papike 1981'],
+  _notes: 'CaMgSi2O6 — clinopyroxene rodingite/skarn. Cr → chrome-diopside (emerald-green gem).',
+};
+
+const MINERAL_GATES_vesuvianite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 180, T_max: 500, T_optimal: 325,
+  fluid_min: { Ca: 100, Mg: 30, Al: 10, SiO2: 200 },
+  pH_min: 8.5, pH_max: 12.0,
+  surface_energy: 'medium',
+  _sources: ['vesuvianite engine v111+', 'Allen & Burnham 1992', 'Groat et al. 1992', 'Bernardini 1981 (cyprine)'],
+  _notes: 'Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4 — sorosilicate. Cu trace 0.5-5 ppm = cyprine (Jeffrey sky-blue).',
+};
+
+const MINERAL_GATES_datolite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 50, T_max: 350, T_optimal: 175,
+  fluid_min: { Ca: 60, B: 1, SiO2: 50 },
+  pH_min: 7.0, pH_max: 12.0,
+  surface_energy: 'medium',
+  _sources: ['datolite engine v110+', 'Hawthorne Burns Grice 1996', 'Bornhorst 2017'],
+  _notes: 'CaB(SiO4)(OH) — Lake Superior basalt amygdale + Jeffrey rodingite. Gemmy colorless.',
+};
 
 Object.assign(VugConditions.prototype, {
   supersaturation_quartz() {

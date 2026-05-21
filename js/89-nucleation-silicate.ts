@@ -13,7 +13,7 @@
 function _nuc_quartz(sim) {
   const sigma_q = sim.conditions.supersaturation_quartz();
   const existing_quartz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
-  if (sigma_q > 1.2 && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
+  if (sigma_q > MINERAL_GATES_quartz.sigma_crit && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
     if (!existing_quartz.length || (sigma_q > 2.0 && rng.random() < 0.3)) {
       const c = sim.nucleate('quartz', 'vug wall', sigma_q);
       sim.log.push(`  ✦ NUCLEATION: Quartz #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_q.toFixed(2)})`);
@@ -23,7 +23,7 @@ function _nuc_quartz(sim) {
 function _nuc_apophyllite(sim) {
   const sigma_ap = sim.conditions.supersaturation_apophyllite();
   const existing_ap = sim.crystals.filter(c => c.mineral === 'apophyllite' && c.active);
-  if (sigma_ap > 1.0 && !existing_ap.length && !sim._atNucleationCap('apophyllite')) {
+  if (sigma_ap > MINERAL_GATES_apophyllite.sigma_crit && !existing_ap.length && !sim._atNucleationCap('apophyllite')) {
     let pos = 'vug wall';
     const existing_q_ap = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
     const existing_hem_ap = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
@@ -43,7 +43,7 @@ function _nuc_feldspar(sim) {
   const sigma_feld = sim.conditions.supersaturation_feldspar();
   const existing_feld = sim.crystals.filter(c => c.mineral === 'feldspar' && c.active);
   const total_feld = sim.crystals.filter(c => c.mineral === 'feldspar').length;
-  if (sigma_feld > 1.0 && existing_feld.length < 3 && total_feld < 6 && !sim._atNucleationCap('feldspar')) {
+  if (sigma_feld > MINERAL_GATES_feldspar.sigma_crit && existing_feld.length < 3 && total_feld < 6 && !sim._atNucleationCap('feldspar')) {
     if (!existing_feld.length || (sigma_feld > 1.8 && rng.random() < 0.3)) {
       let pos = 'vug wall';
       // Can nucleate on quartz in pegmatite conditions
@@ -66,7 +66,7 @@ function _nuc_albite(sim) {
   const sigma_alb = sim.conditions.supersaturation_albite();
   const existing_alb = sim.crystals.filter(c => c.mineral === 'albite' && c.active);
   const total_alb = sim.crystals.filter(c => c.mineral === 'albite').length;
-  if (sigma_alb > 1.0 && existing_alb.length < 2 && total_alb < 4 && !sim._atNucleationCap('albite')) {
+  if (sigma_alb > MINERAL_GATES_albite.sigma_crit && existing_alb.length < 2 && total_alb < 4 && !sim._atNucleationCap('albite')) {
     if (!existing_alb.length || (sigma_alb > 1.5 && rng.random() < 0.25)) {
       let pos = 'vug wall';
       // Classic perthite association — albite on feldspar host
@@ -94,7 +94,7 @@ function _nuc_chrysocolla(sim) {
   else if (active_cpr_chry.length && rng.random() < 0.5) pos = `on cuprite #${active_cpr_chry[0].crystal_id}`;
   else if (active_nc_chry.length && rng.random() < 0.4) pos = `on native_copper #${active_nc_chry[0].crystal_id}`;
   const discount = sim._sigmaDiscountForPosition('chrysocolla', pos);
-  if (sigma_chry > 1.2 * discount) {
+  if (sigma_chry > MINERAL_GATES_chrysocolla.sigma_crit * discount) {
     if (!existing_chry.length || (sigma_chry > 1.8 && rng.random() < 0.25)) {
       const c = sim.nucleate('chrysocolla', pos, sigma_chry);
       sim.log.push(`  ✦ NUCLEATION: Chrysocolla #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_chry.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)})`);
@@ -106,7 +106,7 @@ function _nuc_chrysocolla(sim) {
 function _nuc_spodumene(sim) {
   const sigma_spd = sim.conditions.supersaturation_spodumene();
   const existing_spd = sim.crystals.filter(c => c.mineral === 'spodumene' && c.active);
-  if (sigma_spd > 1.5 && !sim._atNucleationCap('spodumene')) {
+  if (sigma_spd > MINERAL_GATES_spodumene.sigma_crit && !sim._atNucleationCap('spodumene')) {
     if (!existing_spd.length || (sigma_spd > 2.5 && rng.random() < 0.15)) {
       let pos = 'vug wall';
       const existing_qtz_spd = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
@@ -200,7 +200,7 @@ function _nuc_spodumene(sim) {
 function _nuc_tourmaline(sim) {
   const sigma_tml = sim.conditions.supersaturation_tourmaline();
   const existing_tml = sim.crystals.filter(c => c.mineral === 'tourmaline' && c.active);
-  if (sigma_tml > 1.3 && !sim._atNucleationCap('tourmaline')) {
+  if (sigma_tml > MINERAL_GATES_tourmaline.sigma_crit && !sim._atNucleationCap('tourmaline')) {
     if (!existing_tml.length || (sigma_tml > 2.0 && rng.random() < 0.25)) {
       let pos = 'vug wall';
       const existing_qtz_tml = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
@@ -231,7 +231,7 @@ function _nuc_tourmaline(sim) {
 function _nuc_topaz(sim) {
   const sigma_tpz = sim.conditions.supersaturation_topaz();
   const existing_tpz = sim.crystals.filter(c => c.mineral === 'topaz' && c.active);
-  if (sigma_tpz > 1.4 && !sim._atNucleationCap('topaz')) {
+  if (sigma_tpz > MINERAL_GATES_topaz.sigma_crit && !sim._atNucleationCap('topaz')) {
     if (!existing_tpz.length || (sigma_tpz > 2.0 && rng.random() < 0.3)) {
       let pos = 'vug wall';
       const existing_qtz_tpz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
@@ -268,7 +268,7 @@ function _nuc_lepidolite(sim) {
   // chromophore branches in grow_lepidolite.
   const sigma_lep = sim.conditions.supersaturation_lepidolite();
   const existing_lep = sim.crystals.filter(c => c.mineral === 'lepidolite' && c.active);
-  if (sigma_lep > 1.2 && existing_lep.length < 3 && !sim._atNucleationCap('lepidolite')) {
+  if (sigma_lep > MINERAL_GATES_lepidolite.sigma_crit && existing_lep.length < 3 && !sim._atNucleationCap('lepidolite')) {
     if (!existing_lep.length || (sigma_lep > 2.0 && rng.random() < 0.25)) {
       let pos = 'vug wall';
       // Substrate priority — spodumene first (most paragenetically
@@ -312,7 +312,7 @@ function _nuc_chrysoprase(sim) {
   // pass when σ just barely clears unity, matching the geological "rare
   // but possible" semantics.
   const sigma = sim.conditions.supersaturation_chrysoprase();
-  if (sigma > 1.0 && !sim._atNucleationCap('chrysoprase') && rng.random() < 0.12) {
+  if (sigma > MINERAL_GATES_chrysoprase.sigma_crit && !sim._atNucleationCap('chrysoprase') && rng.random() < 0.12) {
     const c = sim.nucleate('chrysoprase', 'vug wall', sigma);
     sim.log.push(`  ✦ NUCLEATION: 🟢 Chrysoprase #${c.crystal_id} on ${c.position} (Ni ${sim.conditions.fluid.Ni.toFixed(0)} Mg ${sim.conditions.fluid.Mg.toFixed(0)} SiO2 ${sim.conditions.fluid.SiO2.toFixed(0)} ppm, σ=${sigma.toFixed(2)}) — apple-green Ni-bearing chalcedony, ultramafic supergene`);
   }
@@ -331,7 +331,7 @@ function _nuc_chrysoprase(sim) {
 // systems. RNG-cascade guard via sigma < 1.0 early-out.
 function _nuc_opal(sim) {
   const sigma = sim.conditions.supersaturation_opal();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_opal.sigma_crit) return;
   if (sim._atNucleationCap('opal')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'opal' && c.active);
   if (existing.length >= 5) return;  // sinter mound = many opal crystals
@@ -356,7 +356,7 @@ function _nuc_opal(sim) {
 
 function _nuc_coffinite(sim) {
   const sigma = sim.conditions.supersaturation_coffinite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_coffinite.sigma_crit) return;
   if (sim._atNucleationCap('coffinite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'coffinite' && c.active);
   if (existing.length >= 2) return;
@@ -371,7 +371,7 @@ function _nuc_coffinite(sim) {
 
 function _nuc_uranophane(sim) {
   const sigma = sim.conditions.supersaturation_uranophane();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_uranophane.sigma_crit) return;
   if (sim._atNucleationCap('uranophane')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'uranophane' && c.active);
   if (existing.length >= 3) return;
@@ -392,7 +392,7 @@ function _nuc_uranophane(sim) {
 
 function _nuc_hemimorphite(sim) {
   const sigma = sim.conditions.supersaturation_hemimorphite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_hemimorphite.sigma_crit) return;
   if (sim._atNucleationCap('hemimorphite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'hemimorphite' && c.active);
   if (existing.length >= 3) return;
@@ -409,7 +409,7 @@ function _nuc_hemimorphite(sim) {
 
 function _nuc_willemite(sim) {
   const sigma = sim.conditions.supersaturation_willemite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_willemite.sigma_crit) return;
   if (sim._atNucleationCap('willemite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'willemite' && c.active);
   if (existing.length >= 3) return;
@@ -429,7 +429,7 @@ function _nuc_dioptase(sim) {
   // byte-identical for non-Cu-Si scenarios. The 1.0 floor is below the
   // 1.2 nucleation threshold so we still allow substrate picking when
   // there's a real chance to fire.
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_dioptase.sigma_crit) return;
   if (sim._atNucleationCap('dioptase')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'dioptase' && c.active);
   let pos = 'vug wall';
@@ -452,7 +452,7 @@ function _nuc_dioptase(sim) {
 
 function _nuc_shattuckite(sim) {
   const sigma = sim.conditions.supersaturation_shattuckite();
-  if (sigma < 1.0) return;  // RNG-cascade guard (see _nuc_dioptase comment)
+  if (sigma < MINERAL_GATES_shattuckite.sigma_crit) return;  // RNG-cascade guard (see _nuc_dioptase comment)
   if (sim._atNucleationCap('shattuckite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'shattuckite' && c.active);
   let pos = 'vug wall';
@@ -482,7 +482,7 @@ function _nuc_shattuckite(sim) {
 // p=0.45) > magnetite > wall.
 function _nuc_tigers_eye(sim) {
   const sigma = sim.conditions.supersaturation_tigers_eye();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_tigers_eye.sigma_crit) return;
   if (sim._atNucleationCap('tigers_eye')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'tigers_eye' && c.active);
   if (existing.length >= 3) return;
@@ -510,7 +510,7 @@ function _nuc_tigers_eye(sim) {
 // RNG-cascade-guarded.
 function _nuc_chrysotile(sim) {
   const sigma = sim.conditions.supersaturation_chrysotile();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_chrysotile.sigma_crit) return;
   if (sim._atNucleationCap('chrysotile')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'chrysotile' && c.active);
   if (existing.length >= 5) return;  // host-matrix mineral; allow many
@@ -531,7 +531,7 @@ function _nuc_chrysotile(sim) {
 // minerals. All RNG-cascade-guarded.
 function _nuc_pectolite(sim) {
   const sigma = sim.conditions.supersaturation_pectolite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_pectolite.sigma_crit) return;
   if (sim._atNucleationCap('pectolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'pectolite' && c.active);
   if (existing.length >= 4) return;
@@ -558,7 +558,7 @@ function _nuc_pectolite(sim) {
 
 function _nuc_wollastonite(sim) {
   const sigma = sim.conditions.supersaturation_wollastonite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_wollastonite.sigma_crit) return;
   if (sim._atNucleationCap('wollastonite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'wollastonite' && c.active);
   if (existing.length >= 4) return;
@@ -580,7 +580,7 @@ function _nuc_wollastonite(sim) {
 
 function _nuc_prehnite(sim) {
   const sigma = sim.conditions.supersaturation_prehnite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_prehnite.sigma_crit) return;
   if (sim._atNucleationCap('prehnite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'prehnite' && c.active);
   if (existing.length >= 4) return;
@@ -612,7 +612,7 @@ function _nuc_prehnite(sim) {
 // calcite > wall. Both RNG-cascade-guarded at sigma < 1.0 early-out.
 function _nuc_grossular(sim) {
   const sigma = sim.conditions.supersaturation_grossular();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_grossular.sigma_crit) return;
   if (sim._atNucleationCap('grossular')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'grossular' && c.active);
   if (existing.length >= 4) return;
@@ -639,7 +639,7 @@ function _nuc_grossular(sim) {
 
 function _nuc_diopside(sim) {
   const sigma = sim.conditions.supersaturation_diopside();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_diopside.sigma_crit) return;
   if (sim._atNucleationCap('diopside')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'diopside' && c.active);
   if (existing.length >= 4) return;
@@ -671,7 +671,7 @@ function _nuc_diopside(sim) {
 // sigma < 1.0 early-out.
 function _nuc_vesuvianite(sim) {
   const sigma = sim.conditions.supersaturation_vesuvianite();
-  if (sigma < 1.0) return;  // RNG-cascade guard
+  if (sigma < MINERAL_GATES_vesuvianite.sigma_crit) return;  // RNG-cascade guard
   if (sim._atNucleationCap('vesuvianite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'vesuvianite' && c.active);
   if (existing.length >= 4) return;
@@ -705,7 +705,7 @@ function _nuc_vesuvianite(sim) {
 // sigma < 1.0 early-out.
 function _nuc_datolite(sim) {
   const sigma = sim.conditions.supersaturation_datolite();
-  if (sigma < 1.0) return;  // RNG-cascade guard — keeps non-datolite scenarios byte-identical
+  if (sigma < MINERAL_GATES_datolite.sigma_crit) return;  // RNG-cascade guard — keeps non-datolite scenarios byte-identical
   if (sim._atNucleationCap('datolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'datolite' && c.active);
   if (existing.length >= 3) return;
