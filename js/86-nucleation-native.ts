@@ -20,7 +20,7 @@ function _nuc_native_bismuth(sim) {
   // to fire even in its canonical scenario (Schneeberg) once the
   // structural S>12 gate softening let σ become non-zero. Secondary-
   // nucleation tier (>2.0) preserved as-is.
-  if (sigma_nbi > 1.0 && !sim._atNucleationCap('native_bismuth')) {
+  if (sigma_nbi > MINERAL_GATES_native_bismuth.sigma_crit && !sim._atNucleationCap('native_bismuth')) {
     if (!existing_nbi.length || (sigma_nbi > 2.0 && rng.random() < 0.15)) {
       let pos = 'vug wall';
       const dissolving_bmt = sim.crystals.filter(c => c.mineral === 'bismuthinite' && c.dissolved);
@@ -36,7 +36,7 @@ function _nuc_native_bismuth(sim) {
 }
 function _nuc_native_tellurium(sim) {
   const sigma_nte = sim.conditions.supersaturation_native_tellurium();
-  if (sigma_nte > 1.0 && !sim._atNucleationCap('native_tellurium')) {
+  if (sigma_nte > MINERAL_GATES_native_tellurium.sigma_crit && !sim._atNucleationCap('native_tellurium')) {
     if (rng.random() < 0.16) {
       let pos = 'vug wall';
       const active_au_nte = sim.crystals.filter(c => c.mineral === 'native_gold' && c.active);
@@ -50,7 +50,7 @@ function _nuc_native_tellurium(sim) {
 }
 function _nuc_native_sulfur(sim) {
   const sigma_nsu = sim.conditions.supersaturation_native_sulfur();
-  if (sigma_nsu > 1.0 && !sim._atNucleationCap('native_sulfur')) {
+  if (sigma_nsu > MINERAL_GATES_native_sulfur.sigma_crit && !sim._atNucleationCap('native_sulfur')) {
     if (rng.random() < 0.18) {
       let pos = 'vug wall';
       const active_cel_nsu = sim.crystals.filter(c => c.mineral === 'celestine' && c.active);
@@ -69,7 +69,7 @@ function _nuc_native_sulfur(sim) {
 }
 function _nuc_native_arsenic(sim) {
   const sigma_nas = sim.conditions.supersaturation_native_arsenic();
-  if (sigma_nas > 1.0 && !sim._atNucleationCap('native_arsenic')) {
+  if (sigma_nas > MINERAL_GATES_native_arsenic.sigma_crit && !sim._atNucleationCap('native_arsenic')) {
     if (rng.random() < 0.16) {
       let pos = 'vug wall';
       const dissolving_apy_nas = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.dissolved);
@@ -91,7 +91,7 @@ function _nuc_native_silver(sim) {
   // natives (native_tellurium, native_sulfur, native_arsenic, native_bismuth
   // all use 1.0). The 1.2 was an outlier — same pattern as native_bismuth's
   // 1.4 outlier dropped in Arc 2.
-  if (sigma_nag > 1.0 && !sim._atNucleationCap('native_silver')) {
+  if (sigma_nag > MINERAL_GATES_native_silver.sigma_crit && !sim._atNucleationCap('native_silver')) {
     if (rng.random() < 0.16) {
       let pos = 'vug wall';
       const dissolving_aca_nag = sim.crystals.filter(c => c.mineral === 'acanthite' && c.dissolved);
@@ -114,7 +114,7 @@ function _nuc_native_silver(sim) {
 function _nuc_native_copper(sim) {
   const sigma_nc = sim.conditions.supersaturation_native_copper();
   const existing_nc_nuc = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
-  if (sigma_nc > 1.6 && !sim._atNucleationCap('native_copper')) {
+  if (sigma_nc > MINERAL_GATES_native_copper.sigma_crit && !sim._atNucleationCap('native_copper')) {
     if (!existing_nc_nuc.length || (sigma_nc > 2.2 && rng.random() < 0.15)) {
       let pos = 'vug wall';
       const active_chc_nc = sim.crystals.filter(c => c.mineral === 'chalcocite' && c.active);
@@ -134,7 +134,7 @@ function _nuc_native_copper(sim) {
 function _nuc_native_gold(sim) {
   const sigma_au = sim.conditions.supersaturation_native_gold();
   const existing_au = sim.crystals.filter(c => c.mineral === 'native_gold' && c.active);
-  if (sigma_au > 1.0 && !sim._atNucleationCap('native_gold')) {
+  if (sigma_au > MINERAL_GATES_native_gold.sigma_crit && !sim._atNucleationCap('native_gold')) {
     if (!existing_au.length || (sigma_au > 1.5 && rng.random() < 0.2)) {
       let pos = 'vug wall';
       const active_chc_au = sim.crystals.filter(c => c.mineral === 'chalcocite' && c.active);
@@ -157,7 +157,7 @@ function _nuc_native_gold(sim) {
 // when S > 5. RNG-cascade-guarded.
 function _nuc_awaruite(sim) {
   const sigma = sim.conditions.supersaturation_awaruite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_awaruite.sigma_crit) return;
   if (sim._atNucleationCap('awaruite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'awaruite' && c.active);
   if (existing.length >= 3) return;

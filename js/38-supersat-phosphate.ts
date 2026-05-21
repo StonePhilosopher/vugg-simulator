@@ -7,7 +7,160 @@
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
+
+// ---- Phosphate MINERAL_GATES exports ----
+
+const MINERAL_GATES_plumbogummite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 27,
+  fluid_min: { Pb: 30, Al: 3, P: 2 },
+  O2_min: 0.5,
+  pH_min: 4.0, pH_max: 7.5,
+  surface_energy: 'low',
+  _sources: ['plumbogummite engine v108+', 'Hartley 1882 MinMag 5:21', 'Förtsch 1967', 'Bridges et al. 2011'],
+  _notes: 'PbAl3(PO4)2(OH)5·H2O alunite-supergroup. Cl > 30 mildly suppresses (pyromorphite stability).',
+};
+
+const MINERAL_GATES_descloizite: MineralGates = {
+  sigma_crit: 1.0,
+  T_optimal: 40,
+  fluid_min: { Pb: 40, Zn: 50, V: 10, Cu: 0.5 },
+  O2_min: 0.5,
+  pH_min: 4, pH_max: 8,
+  surface_energy: 'medium',
+  _sources: ['descloizite engine v17+'],
+  _notes: 'PbZn(VO4)(OH) — Zn-dominant Pb-Zn-V (Zn/(Zn+Cu) ≥ 0.5).',
+};
+
+const MINERAL_GATES_mottramite: MineralGates = {
+  sigma_crit: 1.0,
+  T_optimal: 40,
+  fluid_min: { Pb: 40, Cu: 50, V: 10, Zn: 0.5 },
+  O2_min: 0.5,
+  pH_min: 4, pH_max: 8,
+  surface_energy: 'medium',
+  _sources: ['mottramite engine v17+'],
+  _notes: 'PbCu(VO4)(OH) — Cu-dominant Pb-Cu-V (Cu/(Cu+Zn) ≥ 0.5).',
+};
+
+const MINERAL_GATES_clinobisvanite: MineralGates = {
+  sigma_crit: 1.5,
+  T_optimal: 30,
+  fluid_min: { Bi: 2, V: 2 },
+  O2_min: 1.0,
+  pH_min: 2.5,
+  surface_energy: 'medium',
+  _sources: ['clinobisvanite engine v17+'],
+  _notes: 'BiVO4 — Bi-vanadate. Substrate-prefers dissolving native_bismuth / bismuthinite.',
+};
+
+const MINERAL_GATES_pyromorphite: MineralGates = {
+  sigma_crit: 1.2,
+  T_optimal: 40,
+  fluid_min: { Pb: 20, P: 2, Cl: 5 },
+  pH_min: 2.5,
+  surface_energy: 'medium',
+  _sources: ['pyromorphite engine v17+'],
+  _notes: 'Pb5(PO4)3Cl — apatite-group Pb phosphate. Iconic green hexagonal prisms. Substrate-prefers dissolving cerussite + galena.',
+};
+
+const MINERAL_GATES_vanadinite: MineralGates = {
+  sigma_crit: 1.3,
+  T_optimal: 40,
+  fluid_min: { Pb: 20, V: 2, Cl: 5 },
+  pH_min: 2.5,
+  surface_energy: 'medium',
+  _sources: ['vanadinite engine v17+'],
+  _notes: 'Pb5(VO4)3Cl — red-orange hexagonal apatite-group. Substrate-pref goethite (Old Yuma Mine signature).',
+};
+
+const MINERAL_GATES_torbernite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 10, T_max: 50, T_optimal: 25,
+  fluid_min: { Cu: 5, U: 0.3, P: 1.0 },
+  O2_min: 0.8,
+  pH_min: 5.0, pH_max: 7.5,
+  surface_energy: 'medium',
+  _sources: ['torbernite engine v17+', 'Round 9 cation+anion fork'],
+  _notes: 'Cu(UO2)2(PO4)2·12H2O — P-branch / Cu-cation uranyl phosphate. Anion fork P/(P+As+V) ≥ 0.5, cation fork Cu/(Cu+Ca) ≥ 0.5.',
+};
+
+const MINERAL_GATES_autunite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 22,
+  fluid_min: { Ca: 15, U: 0.3, P: 1.0 },
+  O2_min: 0.8,
+  pH_min: 4.5, pH_max: 8.0,
+  surface_energy: 'medium',
+  _sources: ['autunite engine v17+', 'Round 9d'],
+  _notes: 'Ca(UO2)2(PO4)2·11H2O — Ca-cation analog of torbernite. Bright yellow-green LW-UV fluorescent.',
+};
+
+const MINERAL_GATES_zeunerite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 10, T_max: 50, T_optimal: 25,
+  fluid_min: { Cu: 5, U: 0.3, As: 2.0 },
+  O2_min: 0.8,
+  pH_min: 5.0, pH_max: 7.5,
+  surface_energy: 'medium',
+  _sources: ['zeunerite engine v17+', 'Round 9c'],
+  _notes: 'Cu(UO2)2(AsO4)2·12H2O — As-branch / Cu-cation. Anion fork As/(P+As+V) ≥ 0.5.',
+};
+
+const MINERAL_GATES_uranospinite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 22,
+  fluid_min: { Ca: 15, U: 0.3, As: 2.0 },
+  O2_min: 0.8,
+  pH_min: 4.5, pH_max: 8.0,
+  surface_energy: 'medium',
+  _sources: ['uranospinite engine v17+', 'Round 9e'],
+  _notes: 'Ca(UO2)2(AsO4)2·10H2O — Ca-cation analog of zeunerite.',
+};
+
+const MINERAL_GATES_carnotite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 10, T_max: 50, T_optimal: 30,
+  fluid_min: { K: 5, U: 0.3, V: 1.0 },
+  O2_min: 0.8,
+  pH_min: 5.0, pH_max: 7.5,
+  surface_energy: 'medium',
+  _sources: ['carnotite engine v17+', 'Round 9c+9e'],
+  _notes: 'K2(UO2)2(VO4)2·3H2O — V-branch / K-cation. Colorado Plateau roll-front signature.',
+};
+
+const MINERAL_GATES_tyuyamunite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 25,
+  fluid_min: { Ca: 15, U: 0.3, V: 1.0 },
+  O2_min: 0.8,
+  pH_min: 5.0, pH_max: 8.0,
+  surface_energy: 'medium',
+  _sources: ['tyuyamunite engine v17+', 'Round 9e'],
+  _notes: 'Ca(UO2)2(VO4)2·5H2O — Ca-cation analog of carnotite.',
+};
+
+const MINERAL_GATES_apatite: MineralGates = {
+  sigma_crit: 1.1,
+  T_min: 50, T_max: 1000, T_optimal: 350,
+  fluid_min: { Ca: 50, P: 5 },
+  pH_min: 5.0,
+  surface_energy: 'medium',
+  _sources: ['apatite engine v63+'],
+  _notes: 'Ca5(PO4)3(F,Cl,OH) — apatite-supergroup parent. Wide T-window (50-1000°C). Pb > 30 + T < 100 suppresses (pyromorphite/mimetite drain P).',
+};
+
+const MINERAL_GATES_turquoise: MineralGates = {
+  sigma_crit: 1.3,
+  T_min: 5, T_max: 80, T_optimal: 32,
+  fluid_min: { Cu: 5, Al: 3, P: 1 },
+  O2_min: 0.5,
+  pH_min: 6.0, pH_max: 8.5,
+  surface_energy: 'low',
+  _sources: ['turquoise engine v63+'],
+  _notes: 'CuAl6(PO4)4(OH)8·4H2O — sky-blue supergene Cu-Al phosphate. SiO2/CO3/Cl all suppress at high concentrations.',
+};
 
 Object.assign(VugConditions.prototype, {
   // v108 (2026-05-20): plumbogummite PbAl3(PO4)2(OH)5·H2O — trigonal
@@ -40,10 +193,11 @@ Object.assign(VugConditions.prototype, {
   // (modern Roughten Gill paper); Cooper & Stanley 1990 Minerals
   // of the English Lake District: Caldbeck Fells.
   supersaturation_plumbogummite() {
-    if (this.fluid.Pb < 30 || this.fluid.Al < 3 || this.fluid.P < 2) return 0;
-    if (!phosphateRedoxAvailable(this.fluid, 0.5)) return 0;
-    if (this.temperature < 5 || this.temperature > 50) return 0;
-    if (this.fluid.pH < 4.0 || this.fluid.pH > 7.5) return 0;
+    const g = MINERAL_GATES_plumbogummite;
+    if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Al < g.fluid_min!.Al || this.fluid.P < g.fluid_min!.P) return 0;
+    if (!phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     const pb_f = Math.min(this.fluid.Pb / 60.0, 2.0);
     const al_f = Math.min(this.fluid.Al / 8.0, 2.0);
     const p_f  = Math.min(this.fluid.P / 5.0, 2.0);
@@ -65,9 +219,10 @@ Object.assign(VugConditions.prototype, {
   },
 
   supersaturation_descloizite() {
-  if (this.fluid.Pb < 40 || this.fluid.Zn < 50 || this.fluid.V < 10) return 0;
-  if (!phosphateRedoxAvailable(this.fluid, 0.5)) return 0;
-  if (this.fluid.Cu < 0.5) return 0;
+  const g = MINERAL_GATES_descloizite;
+  if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Zn < g.fluid_min!.Zn || this.fluid.V < g.fluid_min!.V) return 0;
+  if (!phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.fluid.Cu < g.fluid_min!.Cu) return 0;
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const zn_fraction = this.fluid.Zn / cu_zn_total;
   if (zn_fraction < 0.5) return 0;
@@ -92,9 +247,10 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_mottramite() {
-  if (this.fluid.Pb < 40 || this.fluid.Cu < 50 || this.fluid.V < 10) return 0;
-  if (!phosphateRedoxAvailable(this.fluid, 0.5)) return 0;
-  if (this.fluid.Zn < 0.5) return 0;
+  const g = MINERAL_GATES_mottramite;
+  if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Cu < g.fluid_min!.Cu || this.fluid.V < g.fluid_min!.V) return 0;
+  if (!phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.fluid.Zn < g.fluid_min!.Zn) return 0;
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const cu_fraction = this.fluid.Cu / cu_zn_total;
   if (cu_fraction < 0.5) return 0;
@@ -119,7 +275,8 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_clinobisvanite() {
-  if (this.fluid.Bi < 2 || this.fluid.V < 2 || !phosphateRedoxAvailable(this.fluid, 1.0)) return 0;
+  const g = MINERAL_GATES_clinobisvanite;
+  if (this.fluid.Bi < g.fluid_min!.Bi || this.fluid.V < g.fluid_min!.V || !phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   const bi_f = Math.min(this.fluid.Bi / 5.0, 2.0);
   const v_f  = Math.min(this.fluid.V / 5.0, 2.0);
   const o_f  = phosphateRedoxFactor(this.fluid, 1.5, 1.3);
@@ -131,7 +288,8 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_pyromorphite() {
-  if (this.fluid.Pb < 20 || this.fluid.P < 2 || this.fluid.Cl < 5) return 0;
+  const g = MINERAL_GATES_pyromorphite;
+  if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.P < g.fluid_min!.P || this.fluid.Cl < g.fluid_min!.Cl) return 0;
   const pb_f = Math.min(this.fluid.Pb / 30.0, 1.8);
   const p_f  = Math.min(this.fluid.P / 5.0, 2.0);
   const cl_f = Math.min(this.fluid.Cl / 15.0, 1.3);
@@ -143,7 +301,8 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_vanadinite() {
-  if (this.fluid.Pb < 20 || this.fluid.V < 2 || this.fluid.Cl < 5) return 0;
+  const g = MINERAL_GATES_vanadinite;
+  if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.V < g.fluid_min!.V || this.fluid.Cl < g.fluid_min!.Cl) return 0;
   const pb_f = Math.min(this.fluid.Pb / 30.0, 1.8);
   const v_f  = Math.min(this.fluid.V / 6.0, 2.0);
   const cl_f = Math.min(this.fluid.Cl / 15.0, 1.3);
@@ -155,9 +314,10 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_torbernite() {
-  if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || this.fluid.P < 1.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
-  if (this.temperature < 10 || this.temperature > 50) return 0;
-  if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+  const g = MINERAL_GATES_torbernite;
+  if (this.fluid.Cu < g.fluid_min!.Cu || this.fluid.U < g.fluid_min!.U || this.fluid.P < g.fluid_min!.P || !phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   // Anion competition (3-way as of 9c): denominator includes V so
   // V-rich fluid routes to carnotite instead of falling into torbernite.
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm. As(III)-only
@@ -195,9 +355,10 @@ Object.assign(VugConditions.prototype, {
   // Round 9d (May 2026): Ca-cation analog of torbernite. Same parent
   // fluid (U + P + supergene-T + oxidizing), gates on Ca/(Cu+Ca) > 0.5.
   // Mirror of vugg.py supersaturation_autunite.
-  if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || this.fluid.P < 1.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
-  if (this.temperature < 5 || this.temperature > 50) return 0;
-  if (this.fluid.pH < 4.5 || this.fluid.pH > 8.0) return 0;
+  const g = MINERAL_GATES_autunite;
+  if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.U < g.fluid_min!.U || this.fluid.P < g.fluid_min!.P || !phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   // Anion competition — same shape as torbernite/zeunerite/carnotite.
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
   const as_v = arsenateAvailablePpm(this.fluid);
@@ -231,10 +392,11 @@ Object.assign(VugConditions.prototype, {
   // anion AsO₄³⁻) is structurally eligible for the uranyl arsenate
   // site, so the fluid's As(III) thioarsenites don't count toward
   // zeunerite formation.
+  const g = MINERAL_GATES_zeunerite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Cu < 5 || this.fluid.U < 0.3 || as_v < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
-  if (this.temperature < 10 || this.temperature > 50) return 0;
-  if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+  if (this.fluid.Cu < g.fluid_min!.Cu || this.fluid.U < g.fluid_min!.U || as_v < g.fluid_min!.As || !phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   // Anion competition (3-way as of 9c) — As(V) ppm in numerator + denominator
   const anion_total = this.fluid.P + as_v + this.fluid.V;
   if (anion_total <= 0) return 0;
@@ -267,10 +429,11 @@ Object.assign(VugConditions.prototype, {
   // vugg.py supersaturation_uranospinite. Same parent fluid (U + As +
   // supergene-T + oxidizing), gates on Ca/(Cu+Ca) > 0.5.
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+  const g = MINERAL_GATES_uranospinite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || as_v < 2.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
-  if (this.temperature < 5 || this.temperature > 50) return 0;
-  if (this.fluid.pH < 4.5 || this.fluid.pH > 8.0) return 0;
+  if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.U < g.fluid_min!.U || as_v < g.fluid_min!.As || !phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   const anion_total = this.fluid.P + as_v + this.fluid.V;
   if (anion_total <= 0) return 0;
   const as_fraction = as_v / anion_total;
@@ -297,9 +460,10 @@ Object.assign(VugConditions.prototype, {
   supersaturation_carnotite() {
   // V-branch / K-cation of the uranyl cation+anion fork (Round 9c + 9e).
   // Mirror of vugg.py supersaturation_carnotite.
-  if (this.fluid.K < 5 || this.fluid.U < 0.3 || this.fluid.V < 1.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
-  if (this.temperature < 10 || this.temperature > 50) return 0;
-  if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+  const g = MINERAL_GATES_carnotite;
+  if (this.fluid.K < g.fluid_min!.K || this.fluid.U < g.fluid_min!.U || this.fluid.V < g.fluid_min!.V || !phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   // v92 As-state split: only As(V) is fork-eligible (carbonate competition).
   const anion_total = this.fluid.P + arsenateAvailablePpm(this.fluid) + this.fluid.V;
   if (anion_total <= 0) return 0;
@@ -331,9 +495,10 @@ Object.assign(VugConditions.prototype, {
   // Round 9e (May 2026): Ca-cation analog of carnotite. Mirror of
   // vugg.py supersaturation_tyuyamunite. Orthorhombic instead of
   // monoclinic crystal system but same chemistry stage.
-  if (this.fluid.Ca < 15 || this.fluid.U < 0.3 || this.fluid.V < 1.0 || !phosphateRedoxAvailable(this.fluid, 0.8)) return 0;
-  if (this.temperature < 5 || this.temperature > 50) return 0;
-  if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+  const g = MINERAL_GATES_tyuyamunite;
+  if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.U < g.fluid_min!.U || this.fluid.V < g.fluid_min!.V || !phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   // v92 As-state split: only As(V) is fork-eligible.
   const anion_total = this.fluid.P + arsenateAvailablePpm(this.fluid) + this.fluid.V;
   if (anion_total <= 0) return 0;
@@ -361,10 +526,11 @@ Object.assign(VugConditions.prototype, {
   // v63 brief-19: apatite supergroup parent (Ca-end-member of pyromorphite/
   // mimetite/vanadinite). Wide T window (50-900°C); pH dissolution below 5.
   supersaturation_apatite() {
-    if (this.fluid.Ca < 50 || this.fluid.P < 5) return 0;
+    const g = MINERAL_GATES_apatite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.P < g.fluid_min!.P) return 0;
     let sigma = (this.fluid.Ca / 200.0) * (this.fluid.P / 30.0);
     const T = this.temperature;
-    if (T < 50 || T > 1000) return 0;
+    if (T < g.T_min! || T > g.T_max!) return 0;
     // Optimum 200-500°C — wide thermally
     let T_factor = 1.0;
     if (T < 200) T_factor = Math.max(0.4, 0.5 + (T - 50) / 300);
@@ -381,11 +547,12 @@ Object.assign(VugConditions.prototype, {
   // v63 brief-19: arid Cu-supergene phosphate. Loses to chrysocolla (Si),
   // malachite (CO3), atacamite (Cl) when those anions dominate.
   supersaturation_turquoise() {
-    if (this.fluid.Cu < 5 || this.fluid.Al < 3 || this.fluid.P < 1) return 0;
-    if (this.fluid.O2 < 0.5) return 0;
+    const g = MINERAL_GATES_turquoise;
+    if (this.fluid.Cu < g.fluid_min!.Cu || this.fluid.Al < g.fluid_min!.Al || this.fluid.P < g.fluid_min!.P) return 0;
+    if (this.fluid.O2 < g.O2_min!) return 0;
     let sigma = (this.fluid.Cu / 50.0) * (this.fluid.Al / 25.0) * (this.fluid.P / 5.0);
     const T = this.temperature;
-    if (T > 80) return 0;
+    if (T > g.T_max!) return 0;
     let T_factor = 1.0;
     if (T >= 15 && T <= 50) T_factor = 1.2;
     else if (T < 15) T_factor = 0.4 + 0.05 * T;
