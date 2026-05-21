@@ -5747,5 +5747,96 @@
 //          color. Verified byte-diff v121 → v122.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 122;
+//   v123 — Jeffrey arc stoichiometry tune (2026-05-21). Priority 1
+//          of the v120 DEFERRED_TUNE_REQUIRED list — the rodingite
+//          12-mineral suite that fires in jeffrey_mine. 11 of 12
+//          stoichiometries shipped with corresponding event-chemistry
+//          tune in js/70r-jeffrey-mine.ts. Pectolite remains deferred
+//          (separate tune needed).
+//
+//          STOICHIOMETRY ADDITIONS (11 minerals)
+//            Silicates: chrysotile, diopside, grossular, vesuvianite,
+//                       wollastonite, prehnite, datolite, tremolite,
+//                       actinolite
+//            Hydroxide: brucite
+//            Native:    awaruite (Ni-Fe intermetallic)
+//          Formulas per Bernardini 1981 (Jeffrey reference) + Manning &
+//          Bird 1990 (rodingite-pyroxene framework) + Liou 1971
+//          (prehnite stability) + Wicks & Plant 1979 (chrysotile/
+//          serpentine TEM). All hydroxyl + hydration H2O not debited
+//          per file convention.
+//
+//          THE PROBLEM THESE FIXED (v109 antipattern, surfaced at v120)
+//          The original Jeffrey events used Math.max(floor, fluid.X -
+//          decrement) patterns that HAND-MODELED consumption because
+//          MINERAL_STOICHIOMETRY was missing for these 11 — growth
+//          didn't actually debit fluid, so events synthesized the
+//          chemistry the simulator should have computed. With v123's
+//          stoichiometry on, those decrement lines double-debited.
+//
+//          THE TUNE (js/70r-jeffrey-mine.ts)
+//          Flipped consumption-pattern lines to RELEASE-pattern lines
+//          across all 5 events. Bumped release magnitudes to counter
+//          stoichiometry debits across 35-step inter-event intervals.
+//          Lifted caps where mass balance creates more headroom-
+//          pressure. Specific changes:
+//            serpentinization_onset: Mg +30 → +120 (cap 280 → 400);
+//                                     SiO2 +80 → +150 (cap → 400)
+//            dike_alteration: Ca +100 → +220 (cap 450 → 650); Al
+//                              +20 → +50 (cap 50 → 100); SiO2 +60
+//                              → +130; Mg "consumption" REMOVED
+//            mid_rodingite: Ca/Al/SiO2 "consumption" → RELEASE pattern;
+//                            added Mg +40 (vesuvianite needs Mg)
+//            late_ca_silicates: Added Ca/SiO2/Al releases; Mg
+//                                "consumption" REMOVED
+//            terminal_datolite: Ca/SiO2 "consumption" → RELEASE
+//                                pattern; B release bumped 7 → 9
+//
+//          PARAGENESIS RESULT (seed 42)
+//          BEFORE v123 (v122 baseline): 14 species — actinolite,
+//          albite, awaruite, brucite, calcite, chrysotile, datolite,
+//          diopside, dolomite, grossular, prehnite, tremolite,
+//          vesuvianite, wollastonite
+//          AFTER v123: 15 species — same 14 minus tremolite plus
+//          fluorite, siderite (cascade extras). All test pins pass:
+//          chrysotile fires; rodingite calc-silicate trio fires
+//          (grossular + diopside + vesuvianite); late Ca-silicate
+//          trio fires (wollastonite + prehnite).
+//
+//          DRIFT: 3 scenarios drifted (jeffrey_mine, deccan_zeolite,
+//          marble_contact_metamorphism). marble + deccan also lost
+//          tremolite + prehnite respectively (both Mg/Al budget pressure
+//          cascades). NO test pin broke. Cabinet aesthetic intact
+//          for the headline jeffrey rodingite + cyprine + datolite
+//          terminal stage. Further per-scenario tunes deferred.
+//
+//          GUARD TEST UPDATED
+//          tests-js/mineral-stoichiometry-coverage.test.ts:
+//            DEFERRED_TUNE_REQUIRED size 28 → 17 (Jeffrey 11 removed,
+//            pectolite retained as the one Priority 1 holdout)
+//          tests-js/jeffrey-mine.test.ts:
+//            Existing 8 pins unchanged. All pass.
+//
+//          NEXT PRIORITIES (from HANDOFF-MINERAL-STOICHIOMETRY-
+//          BACKFILL.md remaining list):
+//            Priority 2 — Cumbria Pb-Zn-Ba-F (4 minerals): caledonite,
+//                          plumbogummite, pharmacolite, proustite
+//            Priority 3 — Tsumeb supergene (6): dioptase, willemite,
+//                          conichalcite, duftite, koettigite,
+//                          metacinnabar
+//            Priority 4 — Schneeberg uranyl (1): uranophane
+//            Priority 5 — Naica/pegmatite/secondary (5): cassiterite,
+//                          lepidolite, opal, pyrolusite, tigers_eye
+//            + Pectolite tune-window for jeffrey_mine
+//
+//          REFERENCES
+//          Bernardini GP (1981) MR 12(5):277-291 — Jeffrey rodingite
+//          Manning CE & Bird DK (1990) J Petrol 31:1-37 — rodingite-
+//             clinopyroxene
+//          Liou JG (1971) Am Min 56:507-531 — prehnite stability
+//          Wicks FJ & Plant AG (1979) Can Min 17:785-830 — serpentine
+//          Krenn K & Hauzenberger CA (2007) — awaruite thermometry
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 123;
 

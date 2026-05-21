@@ -145,13 +145,29 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   hemimorphite:   { Zn: 4, SiO2: 2 },                // Zn4Si2O7(OH)2·H2O — Tsumeb supergene
   shattuckite:    { Cu: 5, SiO2: 4 },                // Cu5(SiO3)4(OH)2 — Tsumeb deep blue Cu silicate
   // Amphibole asbestos quintet (v116). Solid solutions use mid-range
-  // coefficients matching the v116 supersat gate defaults. (tremolite +
-  // actinolite are NOT in this batch — they fire in jeffrey_mine + the
-  // amphibole-asbestos test scenarios and would cascade; deferred per
-  // HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md.)
+  // coefficients matching the v116 supersat gate defaults.
   amosite:        { Fe: 6, Mg: 1, SiO2: 8 },         // (Fe,Mg)7Si8O22(OH)2 Fe-cummingtonite-grunerite asbestos
   anthophyllite:  { Mg: 6, Fe: 1, SiO2: 8 },         // (Mg,Fe)7Si8O22(OH)2 ortho-amphibole (Mg-end)
   crocidolite:    { Na: 2, Fe: 5, SiO2: 8 },         // Na2Fe²⁺3Fe³⁺2Si8O22(OH)2 sodic Fe-amphibole (Witwatersrand)
+  // v123 Jeffrey arc rodingite tune (2026-05-21): 11 silicate engines
+  // that fire in jeffrey_mine and would silently free-energy-gift the
+  // Mg/Ca/SiO2/Al/Fe/B/Ni cation budget. Adding them MUST be
+  // accompanied by event-chemistry tunes in js/70r-jeffrey-mine.ts to
+  // restore the canonical paragenesis (chrysotile + brucite + awaruite
+  // + grossular + diopside + vesuvianite + wollastonite + prehnite +
+  // datolite + tremolite + actinolite). All formulas per Bernardini
+  // 1981 + Manning & Bird 1990 + Liou 1971. Hydroxyl + hydration H2O
+  // not debited per file convention.
+  chrysotile:     { Mg: 3, SiO2: 2 },                // Mg3Si2O5(OH)4 — asbestos serpentine (Wicks & Plant 1979)
+  brucite:        { Mg: 1 },                         // Mg(OH)2 — serpentinization byproduct
+  diopside:       { Ca: 1, Mg: 1, SiO2: 2 },         // CaMgSi2O6 — clinopyroxene rodingite endmember (Manning & Bird 1990)
+  grossular:      { Ca: 3, Al: 2, SiO2: 3 },         // Ca3Al2(SiO4)3 — calcic garnet
+  vesuvianite:    { Ca: 10, Mg: 1, Fe: 1, Al: 4, SiO2: 9 }, // Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4 — Bernardini 1981 cyprine host
+  wollastonite:   { Ca: 1, SiO2: 1 },                // CaSiO3
+  prehnite:       { Ca: 2, Al: 2, SiO2: 3 },         // Ca2Al2Si3O10(OH)2 — zeolite-facies sorosilicate (Liou 1971)
+  datolite:       { Ca: 1, B: 1, SiO2: 1 },          // CaB(SiO4)(OH) — terminal-stage cabinet aesthetic
+  tremolite:      { Ca: 2, Mg: 5, SiO2: 8 },         // Ca2Mg5Si8O22(OH)2 — Mg-end calcic amphibole
+  actinolite:     { Ca: 2, Mg: 4, Fe: 1, SiO2: 8 }, // Ca2(Mg,Fe)5Si8O22(OH)2 — Mg:Fe mid-range 4:1
 
   // ---- Sulfates ----
   barite:         { Ba: 1, S: 1 },                   // BaSO4
@@ -214,6 +230,10 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   native_sulfur:    { S: 1 },
   native_tellurium: { Te: 1 },
   native_bismuth:   { Bi: 1 },
+  // v123 Jeffrey arc: Ni-Fe intermetallic alloy (rendered through
+  // native dispatch). Range Ni2Fe to Ni3Fe per Krenn & Hauzenberger
+  // 2007 awaruite thermometry; mid-range coefficients used.
+  awaruite:         { Ni: 2.5, Fe: 1 },
 
   // ---- Molybdates / tungstates / vanadates ----
   wulfenite:      { Pb: 1, Mo: 1 },                  // PbMoO4
