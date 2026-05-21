@@ -7,7 +7,130 @@
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
+
+// ---- Oxide MINERAL_GATES exports ----
+// Note: corundum/ruby/sapphire nucleate via js/89-nucleation-silicate.ts
+// (corundum-family-candidates loop with priority ruby > sapphire > corundum)
+
+const MINERAL_GATES_cassiterite: MineralGates = {
+  sigma_crit: 1.2,
+  T_min: 200, T_max: 700, T_optimal: 525,
+  fluid_min: { Sn: 20 },
+  pH_min: 1.5, pH_max: 8.0,
+  surface_energy: 'high',
+  _sources: ['cassiterite engine v89+', 'research-cassiterite.md', 'Williamson 2010', 'Förster 1992'],
+  _notes: 'SnO2 tetragonal. Pegmatite/greisen/hydrothermal across 200-700°C. F enhances σ (greisen mechanism). High Ca+Mg suppresses Sn mobility.',
+};
+
+const MINERAL_GATES_hematite: MineralGates = {
+  sigma_crit: 1.2,
+  T_optimal: 200,
+  fluid_min: { Fe: 20 },
+  O2_min: 0.5,
+  pH_min: 3.5,                  // attenuation below; effectively gated
+  surface_energy: 'high',
+  _sources: ['hematite engine v17+'],
+  _notes: 'Fe2O3 ubiquitous oxide. Exponential T-attenuation built in. Substrate preference for active quartz.',
+};
+
+const MINERAL_GATES_uraninite: MineralGates = {
+  sigma_crit: 1.5,
+  T_optimal: 250,
+  fluid_min: { U: 5 },
+  O2_max: 0.3,                  // anoxic required (reducing)
+  surface_energy: 'medium',
+  _sources: ['uraninite engine v12+', 'research-uraninite.md'],
+  _notes: 'UO2 pegmatitic + reducing. T > 200 boosts σ by 1.3×. Anoxic gate distinguishes from oxidized uranyl phases.',
+};
+
+const MINERAL_GATES_magnetite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 100, T_max: 800, T_optimal: 450,
+  fluid_min: { Fe: 25 },
+  O2_min: 0.1, O2_max: 1.0,     // redox window (Fe2+/Fe3+ both required)
+  pH_min: 2.5,
+  surface_energy: 'high',
+  _sources: ['magnetite engine v17+'],
+  _notes: 'Fe3O4 mixed-valence spinel. T sweet spot 300-600°C (skarn/magmatic).',
+};
+
+const MINERAL_GATES_cuprite: MineralGates = {
+  sigma_crit: 1.2,
+  T_optimal: 30,
+  fluid_min: { Cu: 20 },
+  O2_min: 0.3, O2_max: 1.2,     // window (Cu1+/Cu2+ both needed)
+  pH_min: 3.5,
+  surface_energy: 'medium',
+  _sources: ['cuprite engine v17+'],
+  _notes: 'Cu2O — mixed-valence Cu oxide, supergene-zone signature on dissolving native_copper / chalcocite.',
+};
+
+const MINERAL_GATES_corundum: MineralGates = {
+  sigma_crit: 1.3,
+  T_optimal: 700,
+  surface_energy: 'very_high',
+  _sources: ['corundum-family nucleation js/89-nucleation-silicate:177-181', 'research-corundum.md'],
+  _notes: 'α-Al2O3. Fires only when neither Cr (ruby) nor Fe (sapphire) chromophores active. Nucleates via shared _corundum_base_sigma helper.',
+};
+
+const MINERAL_GATES_ruby: MineralGates = {
+  sigma_crit: 1.3,
+  T_optimal: 700,
+  fluid_min: { Cr: 2.0 },
+  surface_energy: 'very_high',
+  _sources: ['corundum-family nucleation js/89-nucleation-silicate:178', 'stale-mineral retune 2026-05'],
+  _notes: 'Cr-bearing corundum. Priority over sapphire + corundum (array order in nucleation loop). σ_crit dropped 1.5→1.3 in stale retune to match formula σ ceiling.',
+};
+
+const MINERAL_GATES_sapphire: MineralGates = {
+  sigma_crit: 1.4,
+  T_optimal: 700,
+  fluid_min: { Fe: 5 },
+  surface_energy: 'very_high',
+  _sources: ['corundum-family nucleation js/89-nucleation-silicate:179'],
+  _notes: 'Fe-Ti-bearing corundum. Ruby (Cr ≥ 2.0) overrides. Higher σ_crit than ruby/corundum.',
+};
+
+const MINERAL_GATES_rutile: MineralGates = {
+  sigma_crit: 1.3,
+  T_min: 200, T_max: 1000, T_optimal: 500,
+  fluid_min: { Ti: 25 },
+  surface_energy: 'high',
+  _sources: ['rutile engine v63+'],
+  _notes: 'TiO2 — strong substrate preference for active quartz (rutilated quartz / Venus hair). Inert otherwise. Titanite competes when Ca+SiO2 high.',
+};
+
+const MINERAL_GATES_chromite: MineralGates = {
+  sigma_crit: 1.4,
+  T_min: 800, T_max: 1500, T_optimal: 1300,
+  fluid_min: { Fe: 100, Cr: 30 },
+  O2_max: 1.0,
+  surface_energy: 'very_high',
+  _sources: ['chromite engine v63+'],
+  _notes: 'FeCr2O4 spinel. Magmatic-only — requires T > 800°C (no current scenario reaches this). Engine stays dormant until layered-mafic intrusion lands.',
+};
+
+const MINERAL_GATES_pyrolusite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 250, T_optimal: 25,
+  fluid_min: { Mn: 0.2 },
+  O2_min: 0.5,                  // oxidizing required (highest Eh Mn field)
+  pH_min: 5.5, pH_max: 9.5,
+  surface_energy: 'medium',
+  _sources: ['pyrolusite engine v102+', 'Hem 1963', 'Potter & Rossman 1979', 'Birkner & Navrotsky 2017'],
+  _notes: 'β-MnO2 supergene Mn(IV). Mode A 5-40°C continental weathering / Mode B 100-200°C late-stage hydrothermal. Ba/K/Pb tunnel-cations + Fe > 2×Mn suppress.',
+};
+
+const MINERAL_GATES_brucite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 30, T_max: 450, T_optimal: 200,
+  fluid_min: { Mg: 100 },
+  pH_min: 9.5, pH_max: 13.5,    // hyperalkaline only
+  surface_energy: 'low',
+  _sources: ['brucite engine v114+', 'O\'Hanley 1996', 'Schramke et al. 1982'],
+  _notes: 'Mg(OH)2 serpentinization byproduct. CO3 > 50 routes to magnesite/hydromagnesite. Strict hyperalkaline pH 9.5-13.5.',
+};
 
 Object.assign(VugConditions.prototype, {
   supersaturation_cassiterite() {
@@ -48,9 +171,10 @@ Object.assign(VugConditions.prototype, {
   //   SnF₆²⁻ + 2 H₂O → SnO₂ + 4 H⁺ + 6 F⁻
   // (Williamson 2010 §Fluid Chemistry — F-complex destabilization
   // at high pH or upon dilution; not redox-controlled).
-  if (this.fluid.Sn < 20) return 0;
-  if (this.fluid.pH < 1.5 || this.fluid.pH > 8.0) return 0;
-  if (this.temperature < 200 || this.temperature > 700) return 0;
+  const gcas = MINERAL_GATES_cassiterite;
+  if (this.fluid.Sn < gcas.fluid_min!.Sn) return 0;
+  if (this.fluid.pH < gcas.pH_min! || this.fluid.pH > gcas.pH_max!) return 0;
+  if (this.temperature < gcas.T_min! || this.temperature > gcas.T_max!) return 0;
   const sn_f = Math.min(this.fluid.Sn / 60.0, 3.0);
   // F enhances sigma (F-complex precipitation is the documented
   // greisen mechanism). Cap at 2x to keep the engine well-behaved.
@@ -86,7 +210,8 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_hematite() {
-  if (this.fluid.Fe < 20 || !oxideRedoxAvailable(this.fluid, 0.5)) return 0;
+  const g = MINERAL_GATES_hematite;
+  if (this.fluid.Fe < g.fluid_min!.Fe || !oxideRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   let sigma = (this.fluid.Fe / 100.0) * oxideRedoxFactor(this.fluid, 1.0) * Math.exp(-0.002 * this.temperature);
   if (this.fluid.pH < 3.5) {
     sigma -= (3.5 - this.fluid.pH) * 0.3;
@@ -100,7 +225,8 @@ Object.assign(VugConditions.prototype, {
   // T-only formula with no O2 gate — uraninite would form even in
   // oxidizing conditions, contradicting research-uraninite.md.
   // Now: needs reducing + U + (slight high-T preference).
-  if (this.fluid.U < 5 || !oxideRedoxAnoxic(this.fluid, 0.3)) return 0;
+  const g = MINERAL_GATES_uraninite;
+  if (this.fluid.U < g.fluid_min!.U || !oxideRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
   let sigma = (this.fluid.U / 20.0) * oxideRedoxAnoxicFactor(this.fluid, 0.5);
   if (this.temperature > 200) sigma *= 1.3;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'uraninite');
@@ -108,7 +234,8 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_magnetite() {
-  if (this.fluid.Fe < 25 || !oxideRedoxWindow(this.fluid, 0.1, 1.0)) return 0;
+  const g = MINERAL_GATES_magnetite;
+  if (this.fluid.Fe < g.fluid_min!.Fe || !oxideRedoxWindow(this.fluid, g.O2_min!, g.O2_max!)) return 0;
   const fe_f = Math.min(this.fluid.Fe / 60.0, 2.0);
   const o_f = oxideRedoxTent(this.fluid, 0.4, 1.5, 0.4);
   let sigma = fe_f * o_f;
@@ -125,7 +252,8 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_cuprite() {
-  if (this.fluid.Cu < 20 || !oxideRedoxWindow(this.fluid, 0.3, 1.2)) return 0;
+  const g = MINERAL_GATES_cuprite;
+  if (this.fluid.Cu < g.fluid_min!.Cu || !oxideRedoxWindow(this.fluid, g.O2_min!, g.O2_max!)) return 0;
   const cu_f = Math.min(this.fluid.Cu / 50.0, 2.0);
   const o_f = oxideRedoxTent(this.fluid, 0.7, 1.4, 0.3);
   let sigma = cu_f * o_f;
@@ -137,13 +265,13 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_corundum() {
   const f = this.fluid;
-  if (f.Cr >= 2.0) return 0;  // ruby priority
-  if (f.Fe >= 5) return 0;    // sapphire priority
+  if (f.Cr >= MINERAL_GATES_ruby.fluid_min!.Cr) return 0;     // ruby priority
+  if (f.Fe >= MINERAL_GATES_sapphire.fluid_min!.Fe) return 0; // sapphire priority
   return this._corundum_base_sigma();
 },
 
   supersaturation_ruby() {
-  if (this.fluid.Cr < 2.0) return 0;
+  if (this.fluid.Cr < MINERAL_GATES_ruby.fluid_min!.Cr) return 0;
   const base = this._corundum_base_sigma();
   if (base <= 0) return 0;
   const cr_f = Math.min(this.fluid.Cr / 5.0, 2.0);
@@ -152,8 +280,8 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_sapphire() {
   const f = this.fluid;
-  if (f.Cr >= 2.0) return 0;  // ruby priority
-  if (f.Fe < 5) return 0;
+  if (f.Cr >= MINERAL_GATES_ruby.fluid_min!.Cr) return 0;  // ruby priority
+  if (f.Fe < MINERAL_GATES_sapphire.fluid_min!.Fe) return 0;
   const base = this._corundum_base_sigma();
   if (base <= 0) return 0;
   let chrom_f = Math.min(f.Fe / 15.0, 1.5);
@@ -165,10 +293,11 @@ Object.assign(VugConditions.prototype, {
   // Ti is the gating element; chemically inert otherwise (no acid attack,
   // any redox). Inclusion-in-quartz is the iconic habit.
   supersaturation_rutile() {
-    if (this.fluid.Ti < 25) return 0;
+    const g = MINERAL_GATES_rutile;
+    if (this.fluid.Ti < g.fluid_min!.Ti) return 0;
     let sigma = (this.fluid.Ti / 60.0);
     const T = this.temperature;
-    if (T < 200 || T > 1000) return 0;
+    if (T < g.T_min! || T > g.T_max!) return 0;
     let T_factor = 1.0;
     if (T >= 300 && T <= 700) T_factor = 1.2;
     else if (T < 300) T_factor = Math.max(0.5, 0.6 + 0.006 * (T - 200));
@@ -218,12 +347,13 @@ Object.assign(VugConditions.prototype, {
   // PNAS 114:E1046; Champness 1971 Min.Mag. 38:245; Hem 1963 USGS WSP
   // 1667-A; Dekoninck et al. 2016 Min.Dep. 51:13; Post 1999 PNAS 96:3447.
   supersaturation_pyrolusite() {
-    if (this.fluid.Mn < 0.2) return 0;
-    if (this.temperature < 5 || this.temperature > 250) return 0;
-    if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5) return 0;
+    const g = MINERAL_GATES_pyrolusite;
+    if (this.fluid.Mn < g.fluid_min!.Mn) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // Oxidizing required — pyrolusite is the highest-Eh Mn field
     // endmember. Use oxideRedoxAvailable like hematite/magnetite/cuprite.
-    if (!oxideRedoxAvailable(this.fluid, 0.5)) return 0;
+    if (!oxideRedoxAvailable(this.fluid, g.O2_min!)) return 0;
     // Base sigma from Mn budget. Pyrolusite is autocatalytic on
     // existing MnO2 surfaces (Hem 1963); gate is forgiving once it
     // fires; typical supergene Mn 1-10 ppm.
@@ -269,11 +399,12 @@ Object.assign(VugConditions.prototype, {
   },
 
   supersaturation_chromite() {
-    if (this.fluid.Fe < 100 || this.fluid.Cr < 30) return 0;
-    if (this.fluid.O2 > 1.0) return 0;
+    const g = MINERAL_GATES_chromite;
+    if (this.fluid.Fe < g.fluid_min!.Fe || this.fluid.Cr < g.fluid_min!.Cr) return 0;
+    if (this.fluid.O2 > g.O2_max!) return 0;
     let sigma = (this.fluid.Fe / 200.0) * (this.fluid.Cr / 80.0);
     const T = this.temperature;
-    if (T < 800) return 0;
+    if (T < g.T_min!) return 0;
     let T_factor = 1.0;
     if (T >= 1200 && T <= 1400) T_factor = 1.3;
     else if (T < 1200) T_factor = Math.max(0.4, 0.5 + 0.0015 * (T - 800));
@@ -297,9 +428,10 @@ Object.assign(VugConditions.prototype, {
   // framework; Schramke et al. 1982 GCA 46:1581 (brucite stability
   // experiments).
   supersaturation_brucite() {
-    if (this.fluid.Mg < 100) return 0;
-    if (this.temperature < 30 || this.temperature > 450) return 0;
-    if (this.fluid.pH < 9.5 || this.fluid.pH > 13.5) return 0;
+    const g = MINERAL_GATES_brucite;
+    if (this.fluid.Mg < g.fluid_min!.Mg) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // CO3 > 50 suppresses brucite in favor of magnesite/hydromagnesite
     if (this.fluid.CO3 > 50) return 0;
     const mg_f = Math.min(this.fluid.Mg / 200.0, 2.5);

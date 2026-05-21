@@ -7,7 +7,154 @@
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
+
+// ---- Arsenate MINERAL_GATES exports ----
+// All arsenates use arsenateAvailablePpm helper for As(V) state-aware
+// composition; sigma_crit 1.0 for most; substrate discount applies in nucleation.
+
+const MINERAL_GATES_olivenite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 10, T_max: 60, T_optimal: 30,
+  fluid_min: { Cu: 50, As: 10, Zn: 0.5 },
+  O2_min: 0.5,
+  pH_min: 4, pH_max: 8,
+  surface_energy: 'medium',
+  _sources: ['olivenite engine v92+'],
+  _notes: 'Cu2(AsO4)(OH) — Cu-dominant supergene arsenate. Cu/(Cu+Zn) ≥ 0.5 broth gate. Zincolivenite sweet spot Cu-fraction 0.55-0.85.',
+};
+
+const MINERAL_GATES_scorodite: MineralGates = {
+  sigma_crit: 1.0,
+  T_optimal: 30,
+  fluid_min: { Fe: 5, As: 3 },
+  O2_min: 0.3,
+  pH_max: 6,
+  surface_energy: 'medium',
+  _sources: ['scorodite engine v92+'],
+  _notes: 'FeAsO4·2H2O — canonical supergene weathering of arsenopyrite. Substrate-pref dissolving arsenopyrite/pyrite.',
+};
+
+const MINERAL_GATES_erythrite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 20,
+  fluid_min: { Co: 2, As: 5 },
+  O2_min: 0.3,
+  pH_min: 5.0, pH_max: 8.0,
+  surface_energy: 'low',
+  _sources: ['erythrite engine v92+'],
+  _notes: 'Co3(AsO4)2·8H2O cobalt bloom. Vivianite-group fragility (8 H2O).',
+};
+
+const MINERAL_GATES_annabergite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 20,
+  fluid_min: { Ni: 2, As: 5 },
+  O2_min: 0.3,
+  pH_min: 5.0, pH_max: 8.0,
+  surface_energy: 'low',
+  _sources: ['annabergite engine v92+'],
+  _notes: 'Ni3(AsO4)2·8H2O nickel bloom — Ni equivalent of erythrite.',
+};
+
+const MINERAL_GATES_adamite: MineralGates = {
+  sigma_crit: 1.0,
+  T_optimal: 30,
+  fluid_min: { Zn: 10, As: 5, Cu: 0.5 },
+  O2_min: 0.3,
+  pH_min: 4.0, pH_max: 8.0,
+  surface_energy: 'medium',
+  _sources: ['adamite engine v92+'],
+  _notes: 'Zn2(AsO4)(OH) — Zn-dominant. Cu trace for fluorescence. Zn-fraction sweet spot 0.55-0.85.',
+};
+
+const MINERAL_GATES_pharmacolite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 25,
+  fluid_min: { Ca: 15, As: 5 },
+  O2_min: 0.3,
+  pH_min: 5.5, pH_max: 7.5,
+  surface_energy: 'low',
+  _sources: ['pharmacolite engine v92+', 'research-pharmacolite.md'],
+  _notes: 'CaHAsO4·2H2O — Ca-only hydrated arsenate, five-element-vein supergene bloom (Jáchymov/Schneeberg/Cobalt-Ontario).',
+};
+
+const MINERAL_GATES_conichalcite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 100, T_optimal: 27,
+  fluid_min: { Ca: 15, Cu: 10, As: 5 },
+  O2_min: 0.3,
+  pH_min: 5.0, pH_max: 7.5,
+  surface_energy: 'medium',
+  _sources: ['conichalcite engine v92+', 'research-conichalcite.md'],
+  _notes: 'CaCu(AsO4)(OH) — Ca-cation analog of olivenite. Ca/(Ca+Cu) > 0.4 routes here.',
+};
+
+const MINERAL_GATES_mimetite: MineralGates = {
+  sigma_crit: 1.0,
+  T_optimal: 80,
+  fluid_min: { Pb: 5, As: 3, Cl: 2 },
+  O2_min: 0.3,
+  pH_min: 3.5,
+  surface_energy: 'medium',
+  _sources: ['mimetite engine v92+'],
+  _notes: 'Pb5(AsO4)3Cl — apatite-group Pb arsenate. Needs Cl. Substrate-pref galena.',
+};
+
+const MINERAL_GATES_austinite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 60, T_optimal: 30,
+  fluid_min: { Ca: 30, Zn: 20, As: 5 },
+  O2_min: 0.5,
+  pH_min: 6.0, pH_max: 8.5,
+  surface_energy: 'medium',
+  _sources: ['austinite engine v97+', 'Gebhard 1999 Tsumeb monograph'],
+  _notes: 'CaZn(AsO4)(OH) — Ca-Zn adelite-descloizite analog of conichalcite. Pb > 50 routes to duftite/bayldonite.',
+};
+
+const MINERAL_GATES_legrandite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 50, T_optimal: 25,
+  fluid_min: { Zn: 100, As: 10 },
+  O2_min: 0.5,
+  pH_min: 4.5, pH_max: 7.0,
+  surface_energy: 'medium',
+  _sources: ['legrandite engine v97+'],
+  _notes: 'Zn2(AsO4)(OH)·H2O — canary-yellow Tsumeb iconic. Ca > 20 + Cu > 50 + Pb > 20 all suppress.',
+};
+
+const MINERAL_GATES_koettigite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 35, T_optimal: 20,
+  fluid_min: { Zn: 50, As: 10 },
+  O2_min: 0.5,
+  pH_min: 6.0, pH_max: 8.0,
+  surface_energy: 'low',
+  _sources: ['koettigite engine v97+'],
+  _notes: 'Zn3(AsO4)2·8H2O — vivianite-group Zn end (8 H2O fragile, hard T cap). Co > 10 or Ni > 10 suppress.',
+};
+
+const MINERAL_GATES_duftite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 60, T_optimal: 30,
+  fluid_min: { Pb: 50, Cu: 20, As: 5 },
+  O2_min: 0.5,
+  pH_min: 5.0, pH_max: 8.0,
+  surface_energy: 'medium',
+  _sources: ['duftite engine v97+'],
+  _notes: 'PbCu(AsO4)(OH) — olive-green Pb:Cu ~1:1. V > As routes to mottramite. Cu/Pb > 2 routes to bayldonite.',
+};
+
+const MINERAL_GATES_bayldonite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 60, T_optimal: 30,
+  fluid_min: { Pb: 30, Cu: 100, As: 10 },
+  O2_min: 0.5,
+  pH_min: 5.0, pH_max: 7.5,
+  surface_energy: 'medium',
+  _sources: ['bayldonite engine v97+'],
+  _notes: 'PbCu3(AsO4)2(OH)2 — apple-green Cu-enriched Pb-Cu arsenate. Cu/Pb > 2 required.',
+};
 
 Object.assign(VugConditions.prototype, {
   supersaturation_olivenite() {
@@ -18,12 +165,13 @@ Object.assign(VugConditions.prototype, {
   // bulk-O2 proxy that could pass on Sulphur Bank's brief O2 spikes; the
   // new helper reads the full state (S + O2) and gives back the actually-
   // accessible As(V) concentration.
+  const g = MINERAL_GATES_olivenite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Cu < 50 || as_v < 10) return 0;
-  if (!arsenateRedoxAvailable(this.fluid, 0.5)) return 0;
+  if (this.fluid.Cu < g.fluid_min!.Cu || as_v < g.fluid_min!.As) return 0;
+  if (!arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   // Recessive-side trace floor — real olivenite always has at least
   // trace Zn (zincolivenite-leaning); makes the ratio meaningful.
-  if (this.fluid.Zn < 0.5) return 0;
+  if (this.fluid.Zn < g.fluid_min!.Zn) return 0;
   // Broth-ratio gate — olivenite is Cu-dominant.
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const cu_fraction = this.fluid.Cu / cu_zn_total;
@@ -54,9 +202,10 @@ Object.assign(VugConditions.prototype, {
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm. Scorodite
   // is the canonical FeAsO₄·2H₂O supergene weathering product of
   // arsenopyrite — only forms when As has been oxidized to As(V).
+  const g = MINERAL_GATES_scorodite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Fe < 5 || as_v < 3 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
-  if (this.fluid.pH > 6) return 0;  // dissolves above pH 5; nucleation gate at 6 for hysteresis
+  if (this.fluid.Fe < g.fluid_min!.Fe || as_v < g.fluid_min!.As || !arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.fluid.pH > g.pH_max!) return 0;  // dissolves above pH 5; nucleation gate at 6 for hysteresis
   let sigma = (this.fluid.Fe / 30.0) * (as_v / 15.0) * arsenateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 80) {
     sigma *= Math.exp(-0.025 * (this.temperature - 80));
@@ -73,10 +222,11 @@ Object.assign(VugConditions.prototype, {
   supersaturation_erythrite() {
   // Co3(AsO4)2·8H2O — cobalt bloom. Shared vivianite-group gating with annabergite.
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+  const g = MINERAL_GATES_erythrite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Co < 2 || as_v < 5 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
-  if (this.temperature < 5 || this.temperature > 50) return 0;
-  if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+  if (this.fluid.Co < g.fluid_min!.Co || as_v < g.fluid_min!.As || !arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   const product = (this.fluid.Co / 20.0) * (as_v / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
   const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
   return product * T_factor;
@@ -85,10 +235,11 @@ Object.assign(VugConditions.prototype, {
   supersaturation_annabergite() {
   // Ni3(AsO4)2·8H2O — nickel bloom. Ni equivalent of erythrite.
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+  const g = MINERAL_GATES_annabergite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Ni < 2 || as_v < 5 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
-  if (this.temperature < 5 || this.temperature > 50) return 0;
-  if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+  if (this.fluid.Ni < g.fluid_min!.Ni || as_v < g.fluid_min!.As || !arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   const product = (this.fluid.Ni / 20.0) * (as_v / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
   const T_factor = (this.temperature >= 10 && this.temperature <= 30) ? 1.2 : 0.7;
   return product * T_factor;
@@ -96,11 +247,12 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_adamite() {
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+  const g = MINERAL_GATES_adamite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Zn < 10 || as_v < 5 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
+  if (this.fluid.Zn < g.fluid_min!.Zn || as_v < g.fluid_min!.As || !arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   // Trace Cu floor — Cu²⁺ activator gives the diagnostic green
   // fluorescence; recessive-side floor makes the Cu:Zn ratio meaningful.
-  if (this.fluid.Cu < 0.5) return 0;
+  if (this.fluid.Cu < g.fluid_min!.Cu) return 0;
   // Broth-ratio gate — adamite is Zn-dominant.
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
   const zn_fraction = this.fluid.Zn / cu_zn_total;
@@ -154,11 +306,12 @@ Object.assign(VugConditions.prototype, {
   // already returns 0 when fluid.S > 50 AND O2 < 1.0, encoding the
   // thioarsenite-stability geochemistry directly. The principled
   // helper replaces the band-aid.
+  const g = MINERAL_GATES_pharmacolite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Ca < 15 || as_v < 5) return 0;
-  if (!arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
-  if (this.fluid.pH < 5.5 || this.fluid.pH > 7.5) return 0;
-  if (this.temperature < 5 || this.temperature > 50) return 0;
+  if (this.fluid.Ca < g.fluid_min!.Ca || as_v < g.fluid_min!.As) return 0;
+  if (!arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
   // Cation-share gate: Ca must dominate the cation pool. The
   // denominator includes the major competing cations from the
   // arsenate-fork minerals. Pharmacolite gets the share of the
@@ -215,11 +368,12 @@ Object.assign(VugConditions.prototype, {
   // T window 10-100°C, optimum 15-40°C.
   // Eh > 0.2 V — As must be As⁵⁺ (oxidizing supergene fluid).
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+  const g = MINERAL_GATES_conichalcite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Ca < 15 || this.fluid.Cu < 10 || as_v < 5) return 0;
-  if (!arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
-  if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
-  if (this.temperature < 5 || this.temperature > 100) return 0;
+  if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Cu < g.fluid_min!.Cu || as_v < g.fluid_min!.As) return 0;
+  if (!arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
   const ca_cu_total = this.fluid.Ca + this.fluid.Cu;
   const ca_fraction = this.fluid.Ca / ca_cu_total;
   if (ca_fraction < 0.4) return 0;  // Cu-dominant routes to olivenite
@@ -249,8 +403,9 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_mimetite() {
   // v92 As-state split: As(V) ppm via arsenateAvailablePpm.
+  const g = MINERAL_GATES_mimetite;
   const as_v = arsenateAvailablePpm(this.fluid);
-  if (this.fluid.Pb < 5 || as_v < 3 || this.fluid.Cl < 2 || !arsenateRedoxAvailable(this.fluid, 0.3)) return 0;
+  if (this.fluid.Pb < g.fluid_min!.Pb || as_v < g.fluid_min!.As || this.fluid.Cl < g.fluid_min!.Cl || !arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   let sigma = (this.fluid.Pb / 60.0) * (as_v / 25.0) * (this.fluid.Cl / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 150) sigma *= Math.exp(-0.015 * (this.temperature - 150));
   if (this.fluid.pH < 3.5) sigma -= (3.5 - this.fluid.pH) * 0.5;
@@ -278,11 +433,12 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_austinite() {
     // CaZn(AsO4)(OH) — Ca-Zn adelite-descloizite analog of conichalcite.
+    const g = MINERAL_GATES_austinite;
     const as_v = arsenateAvailablePpm(this.fluid);
-    if (this.fluid.Ca < 30 || this.fluid.Zn < 20 || as_v < 5) return 0;
-    if (this.fluid.O2 < 0.5) return 0;
-    if (this.temperature < 5 || this.temperature > 60) return 0;
-    if (this.fluid.pH < 6.0 || this.fluid.pH > 8.5) return 0;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Zn < g.fluid_min!.Zn || as_v < g.fluid_min!.As) return 0;
+    if (this.fluid.O2 < g.O2_min!) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     const cu_frac = this.fluid.Cu / Math.max(this.fluid.Cu + this.fluid.Zn, 0.001);
     if (cu_frac > 0.5) return 0;  // Cu-dominant → conichalcite wins
     if (this.fluid.Pb > 50) return 0;  // duftite/bayldonite take precedence
@@ -300,11 +456,12 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_legrandite() {
     // Zn2(AsO4)(OH)·H2O — bright canary yellow, Tsumeb iconic.
+    const g = MINERAL_GATES_legrandite;
     const as_v = arsenateAvailablePpm(this.fluid);
-    if (this.fluid.Zn < 100 || as_v < 10) return 0;
-    if (this.fluid.O2 < 0.5) return 0;
-    if (this.temperature < 5 || this.temperature > 50) return 0;
-    if (this.fluid.pH < 4.5 || this.fluid.pH > 7.0) return 0;
+    if (this.fluid.Zn < g.fluid_min!.Zn || as_v < g.fluid_min!.As) return 0;
+    if (this.fluid.O2 < g.O2_min!) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     if (this.fluid.Ca > 20) return 0;  // austinite competes
     if (this.fluid.Cu > 50) return 0;  // olivenite/conichalcite compete
     if (this.fluid.Pb > 20) return 0;  // Pb arsenates compete
@@ -320,11 +477,12 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_koettigite() {
     // Zn3(AsO4)2·8H2O — vivianite group, Zn end-member. 8H2O fragile.
+    const g = MINERAL_GATES_koettigite;
     const as_v = arsenateAvailablePpm(this.fluid);
-    if (this.fluid.Zn < 50 || as_v < 10) return 0;
-    if (this.fluid.O2 < 0.5) return 0;
-    if (this.temperature < 5 || this.temperature > 35) return 0;
-    if (this.fluid.pH < 6.0 || this.fluid.pH > 8.0) return 0;
+    if (this.fluid.Zn < g.fluid_min!.Zn || as_v < g.fluid_min!.As) return 0;
+    if (this.fluid.O2 < g.O2_min!) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     if (this.fluid.Co > 10) return 0;  // erythrite wins
     if (this.fluid.Ni > 10) return 0;  // annabergite wins
     const zn_f = Math.min(this.fluid.Zn / 80.0, 2.0);
@@ -340,11 +498,12 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_duftite() {
     // PbCu(AsO4)(OH) — olive-green, Pb:Cu near 1:1.
+    const g = MINERAL_GATES_duftite;
     const as_v = arsenateAvailablePpm(this.fluid);
-    if (this.fluid.Pb < 50 || this.fluid.Cu < 20 || as_v < 5) return 0;
-    if (this.fluid.O2 < 0.5) return 0;
-    if (this.temperature < 5 || this.temperature > 60) return 0;
-    if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
+    if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Cu < g.fluid_min!.Cu || as_v < g.fluid_min!.As) return 0;
+    if (this.fluid.O2 < g.O2_min!) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     if (this.fluid.V > as_v) return 0;  // V > As → mottramite wins
     const cu_pb_ratio = this.fluid.Cu / Math.max(this.fluid.Pb, 0.001);
     if (cu_pb_ratio > 2.0) return 0;  // Cu-rich → bayldonite wins
@@ -362,11 +521,12 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_bayldonite() {
     // PbCu3(AsO4)2(OH)2 — apple-green, Pb:Cu near 1:3 (Cu-enriched).
+    const g = MINERAL_GATES_bayldonite;
     const as_v = arsenateAvailablePpm(this.fluid);
-    if (this.fluid.Pb < 30 || this.fluid.Cu < 100 || as_v < 10) return 0;
-    if (this.fluid.O2 < 0.5) return 0;
-    if (this.temperature < 5 || this.temperature > 60) return 0;
-    if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
+    if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Cu < g.fluid_min!.Cu || as_v < g.fluid_min!.As) return 0;
+    if (this.fluid.O2 < g.O2_min!) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     if (this.fluid.V > as_v) return 0;  // V > As → mottramite wins
     const cu_pb_ratio = this.fluid.Cu / Math.max(this.fluid.Pb, 0.001);
     if (cu_pb_ratio < 2.0) return 0;  // Pb-rich → duftite wins

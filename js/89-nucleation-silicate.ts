@@ -175,9 +175,9 @@ function _nuc_spodumene(sim) {
   // at 1.3 (no chromophore selectivity advantage). Priority by array order:
   // ruby first, so the tie with corundum at 1.3 still hands ruby the slot.
   const corundum_family_candidates = [
-    ['ruby', sim.conditions.supersaturation_ruby(), 1.3],
-    ['sapphire', sim.conditions.supersaturation_sapphire(), 1.4],
-    ['corundum', sim.conditions.supersaturation_corundum(), 1.3],
+    ['ruby', sim.conditions.supersaturation_ruby(), MINERAL_GATES_ruby.sigma_crit],
+    ['sapphire', sim.conditions.supersaturation_sapphire(), MINERAL_GATES_sapphire.sigma_crit],
+    ['corundum', sim.conditions.supersaturation_corundum(), MINERAL_GATES_corundum.sigma_crit],
   ];
   for (const [species, sigma_cf, threshold] of corundum_family_candidates) {
     if (sigma_cf <= threshold) continue;
