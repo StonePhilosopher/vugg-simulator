@@ -141,6 +141,134 @@ function renderCollectedForMineral(name) {
   </div>`;
 }
 
+// ============================================================
+// Competitiveness profile (v127)
+// ============================================================
+// Renders the "Competitiveness profile" block of each library card.
+// Reads from MINERAL_GATES_REGISTRY (js/42) + MINERAL_STOICHIOMETRY (js/19)
+// — no source-file parsing, no duplication.
+//
+// v127 lands this as read-only chrome alongside the initiative scaffold
+// (js/43). v128 will use the same data live, when graduated competition
+// drives growth ordering.
+//
+// Returns '' if the mineral has no gates entry (defensive — shouldn't
+// happen post-v127 since the engine-gates coverage test enforces it, but
+// the library renders pre-built MINERAL_SPEC entries too which may include
+// minerals not yet wired to an engine, e.g., aspirational entries).
+
+function libraryCompetitivenessSection(name) {
+  const reg = (globalThis as any).MINERAL_GATES_REGISTRY as Record<string, MineralGates> | undefined;
+  const stoich = (globalThis as any).MINERAL_STOICHIOMETRY as Record<string, Record<string, number>> | undefined;
+  const g = reg && reg[name];
+  if (!g) return '';
+
+  const sigmaCritText = Number.isFinite(g.sigma_crit)
+    ? g.sigma_crit.toFixed(2)
+    : '<em>no nucleation (paramorph-only)</em>';
+
+  const tempText = (() => {
+    const parts: string[] = [];
+    if (g.T_min !== undefined || g.T_max !== undefined) {
+      const lo = g.T_min !== undefined ? `${g.T_min}` : '?';
+      const hi = g.T_max !== undefined ? `${g.T_max}` : '?';
+      parts.push(`${lo}–${hi}°C`);
+    }
+    if (g.T_optimal !== undefined) parts.push(`opt ${g.T_optimal}°C`);
+    return parts.length ? parts.join(' ') : '—';
+  })();
+
+  const pHText = (g.pH_min !== undefined || g.pH_max !== undefined)
+    ? `${g.pH_min ?? '?'}–${g.pH_max ?? '?'}`
+    : '—';
+
+  const o2Text = (g.O2_min !== undefined || g.O2_max !== undefined)
+    ? `O₂ ${g.O2_min ?? '?'}–${g.O2_max ?? '?'}`
+    : '—';
+
+  const surfaceLabels: Record<string, string> = {
+    very_low: 'very low γ (+2 initiative)',
+    low: 'low γ (+1)',
+    medium: 'medium γ (±0)',
+    high: 'high γ (−1)',
+    very_high: 'very high γ (−2)',
+  };
+  const surfaceText = surfaceLabels[g.surface_energy] || g.surface_energy || '—';
+
+  // Cascade ripple count — read from stoichiometry, mirror logic in
+  // js/43-initiative.ts cascadeRippleInitiativeModifier.
+  const mineStoich = stoich && stoich[name];
+  let rippleText = '—';
+  if (mineStoich) {
+    const n = Object.keys(mineStoich).length;
+    if (n <= 1) rippleText = `${n} cation (no ripple)`;
+    else {
+      const penalty = Math.min(n - 1, 2);
+      rippleText = `${n} cations (−${penalty} ripple)`;
+    }
+  }
+
+  // Shared-cation competitors — count distinct other minerals that share
+  // at least one cation with this one in MINERAL_STOICHIOMETRY.
+  let competitorText = '—';
+  if (mineStoich && stoich) {
+    const myCations = Object.keys(mineStoich);
+    const competitors = new Set<string>();
+    for (const [other, otherStoich] of Object.entries(stoich)) {
+      if (other === name) continue;
+      for (const c of myCations) {
+        if (otherStoich[c] !== undefined) {
+          competitors.add(other);
+          break;
+        }
+      }
+    }
+    const sizeNote = competitors.size === 0 ? ' (no competitors)'
+      : competitors.size === 1 ? ' (−1 initiative)'
+      : ' (dense suite, −2 initiative)';
+    competitorText = `${competitors.size}${sizeNote}`;
+  }
+
+  // Min fluid composition (cation floor) — render as chip list.
+  const fluidMinText = g.fluid_min
+    ? Object.entries(g.fluid_min).map(([k, v]) => `${k} ≥ ${v}`).join(', ')
+    : '—';
+
+  // Sources / notes (collapsed; only render if present).
+  const sources = (g._sources && g._sources.length)
+    ? `<div class="stat-key">Sources</div><div class="stat-val" style="font-size:0.85em;color:#7a6a4a">${g._sources.join('; ')}</div>`
+    : '';
+  const notes = g._notes
+    ? `<div class="stat-key">Notes</div><div class="stat-val" style="font-size:0.85em;color:#7a6a4a">${g._notes}</div>`
+    : '';
+
+  return `
+    <div class="mineral-card-competitiveness" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px dashed #c7b58a">
+      <div class="mineral-card-section-head" style="font-weight:600;color:#5a4a30;margin-bottom:0.25rem">Competitiveness profile</div>
+      <div class="mineral-card-stats">
+        <div class="stat-key">σ_crit</div>
+        <div class="stat-val">${sigmaCritText}</div>
+        <div class="stat-key">T gate</div>
+        <div class="stat-val">${tempText}</div>
+        <div class="stat-key">pH gate</div>
+        <div class="stat-val">${pHText}</div>
+        <div class="stat-key">Redox</div>
+        <div class="stat-val">${o2Text}</div>
+        <div class="stat-key">Surface energy</div>
+        <div class="stat-val">${surfaceText}</div>
+        <div class="stat-key">Fluid minimums</div>
+        <div class="stat-val">${fluidMinText}</div>
+        <div class="stat-key">Cation competitors</div>
+        <div class="stat-val">${competitorText}</div>
+        <div class="stat-key">Cascade ripple</div>
+        <div class="stat-val">${rippleText}</div>
+        ${sources}
+        ${notes}
+      </div>
+    </div>
+  `;
+}
+
 function libraryBuildCard(name, m) {
   const Tmin = m.T_range_C ? m.T_range_C[0] : '?';
   const Tmax = m.T_range_C ? m.T_range_C[1] : '?';
@@ -219,6 +347,7 @@ function libraryBuildCard(name, m) {
         <div class="stat-val">${decompText}</div>
       </div>
       <div class="mineral-card-scenarios">Grows in: ${scenarioChips || '<em style="color:#5a4a30">no scenarios listed</em>'}</div>
+      ${libraryCompetitivenessSection(name)}
       ${renderCollectedForMineral(name)}
     </div>
   `;

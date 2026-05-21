@@ -143,8 +143,15 @@ describe('Arc 2 — native_arsenic + native_bismuth soft-cation-suppressor', () 
       expect(src, 'engine should use s_mask soft factor').toContain('s_mask');
       expect(src, 'engine should NOT have the old hard S>12 gate')
         .not.toMatch(/fluid\.S\s*>\s*12\s*[|)]/);
-      expect(src, 'engine lower Bi gate should be 5 (paragenetic step-down from bismuthinite)')
-        .toMatch(/fluid\.Bi\s*<\s*5\b/);
+      // v127 refactor: the literal `fluid.Bi < 5` moved into
+      // MINERAL_GATES_native_bismuth.fluid_min.Bi (registry); engine now
+      // dereferences `g.fluid_min!.Bi`. Assert the registry value, not
+      // the source-code literal — that's the point of the refactor.
+      const gates = (globalThis as any).MINERAL_GATES_REGISTRY?.native_bismuth
+        ?? (globalThis as any).MINERAL_GATES_native_bismuth;
+      expect(gates?.fluid_min?.Bi, 'native_bismuth lower Bi gate should be 5 (paragenetic step-down from bismuthinite)').toBe(5);
+      expect(src, 'engine should dereference the gates-registry Bi minimum')
+        .toMatch(/fluid\.Bi\s*<\s*g\.fluid_min!?\.Bi\b/);
     });
   });
 

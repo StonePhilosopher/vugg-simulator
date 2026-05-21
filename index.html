@@ -10639,7 +10639,151 @@ let timeScale = 5.0;
 //          proposals/PROPOSAL-SPECIMEN-OBJECT.md Q7 — architectural fix
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 126;
+//
+//   v127  — ENGINE-GATES REFACTOR + INITIATIVE SCAFFOLD (2026-05-21)
+//
+//          Infrastructure landing for the Initiative Variable proposal
+//          (proposals/PROPOSAL-INITIATIVE-VARIABLE.md rev 2). v127 is
+//          INFRASTRUCTURE-ONLY: byte-identical baselines to v126. The
+//          growth loop is unchanged; what's new is the read-only data
+//          plane that v128 graduated-competition will consume.
+//
+//          THE REFACTOR (shipped v127a-d, four commits)
+//          Each of 13 supersat files (js/30-41) now exports a
+//          MINERAL_GATES_<mineral> constant of type MineralGates
+//          (declared once in js/18a-mineral-gates-types.ts). The
+//          constants carry σ_crit, T_min/T_max/T_optimal, fluid_min,
+//          pH_min/pH_max, O2_min/O2_max, surface_energy category,
+//          plus _sources / _notes. Each engine's nucleation file
+//          (js/80-91) and supersat function now dereferences the
+//          gates rather than carrying inline literals.
+//
+//          ~165 minerals across 13 classes (arsenate, borate,
+//          carbonate, halide, hydroxide, molybdate, native, oxide,
+//          phosphate, silicate, amphibole, sulfate, sulfide). One
+//          new file per class, no behavior change.
+//
+//          OPAL σ_CRIT FINDING (refactor-surfaced)
+//          Setting MINERAL_GATES_opal.sigma_crit to the literature
+//          value (0.8 per Iler 1979) broke silicate baselines:
+//          ouro_preto +3 opals, +2 spodumenes, albite/feldspar +2.6k
+//          µm drift. Root cause: engine-internal σ_crit was already
+//          1.0 (v101 calibration). Set the gate to 1.0 to preserve
+//          byte-identical; flagged as v129 calibration target with
+//          _notes commentary on the file. This is exactly the kind
+//          of finding the refactor was designed to surface — engine-
+//          internal literals were hiding a literature mismatch.
+//
+//          MINERAL_GATES_REGISTRY (js/42-mineral-gates-registry.ts)
+//          Flat lookup table: mineral name → MINERAL_GATES_<mineral>.
+//          165 entries at landing, grouped by class. Load-order
+//          prefix 42 sits after all js/3x-supersat-*.ts so the const
+//          references resolve (const declarations are not hoisted).
+//          The initiative module + library card + guard test all read
+//          from here, no source-file parsing.
+//
+//          ENGINE-GATES COVERAGE GUARD TEST (tests-js/engine-
+//          gates-coverage.test.ts)
+//          Four invariants:
+//          1) every MINERAL_ENGINES entry has a MINERAL_GATES_REGISTRY
+//             entry (zero missing at landing)
+//          2) no orphan gates entries (every registered gate has a
+//             corresponding engine)
+//          3) every gates entry has populated sigma_crit + surface_
+//             energy (with Infinity allowed for paramorph-only stubs
+//             — tincalconite is the v127 reference)
+//          4) registry size ≥ 165 (sanity pin)
+//
+//          Add-mineral discipline now requires the gates declaration
+//          + registry entry alongside the existing four-file engine
+//          touch. The test fails loudly if either is missed.
+//
+//          INITIATIVE SCAFFOLD (js/43-initiative.ts)
+//          Read-only module that computes per-mineral initiative
+//          scores every step. Public surface:
+//          - baseInitiative(σ): log-scaled base (log10(σ·100+1)·10)
+//          - temperatureInitiativeModifier(mineral, fluid)
+//          - edgeOfGateInitiativeModifier(mineral, σ)
+//          - surfaceEnergyInitiativeModifier(mineral)
+//          - competitionInitiativeModifier(mineral, activeMinerals)
+//          - cascadeRippleInitiativeModifier(mineral)
+//          - computeInitiative(mineral, σ, fluid, activeMinerals)
+//          - rankInitiative(sigmas, fluid) → sorted results
+//          - getInitiativeTrace() / clearInitiativeTrace() — optional
+//            trace buffer (off by default; flip
+//            INITIATIVE_TRACE_ENABLED in DevTools to capture).
+//
+//          v127 does NOT call these from growth. The ordering they
+//          produce is logged-only. v128 will replace the fixed-order
+//          growth loop with graduated competition (proposal §3.1
+//          rev 2), validating against the 5 calibration assertions
+//          (proposal §4.1).
+//
+//          tests-js/initiative-scaffold.test.ts: 18 sanity tests
+//          (base monotonicity, modifier value-bands, composition).
+//
+//          LIBRARY CARD: "COMPETITIVENESS PROFILE" SECTION
+//          (js/95-ui-library.ts libraryCompetitivenessSection)
+//          New block on each mineral card showing:
+//            σ_crit, T gate window + optimum, pH gate, O2 redox,
+//            surface energy class (with initiative bonus shown
+//            in-line), fluid minimums, cation competitor count
+//            (with the −1 / −2 initiative bracket), cascade ripple
+//            count, _sources + _notes.
+//          All read from MINERAL_GATES_REGISTRY + MINERAL_
+//          STOICHIOMETRY. Renders '' for minerals without an engine
+//          entry (defensive — covers MINERAL_SPEC entries that don't
+//          have a grow_<name>).
+//
+//          INITIATIVE PROPOSAL REV 2 (committed ff42790)
+//          The proposal's science section was corrected during
+//          the rev 2 review:
+//          - BCF regime inversion fixed (v ∝ σ² is low-σ surface-
+//            diffusion-limited; v ∝ σ is high-σ direct-integration)
+//          - Quartz ΔH° +22 kJ/mol per Rimstidt & Barnes 1980
+//          - Opal ΔH° +14 kJ/mol per Iler 1979
+//          - γ_sl (solid-liquid) vs γ_sv (solid-vapor) distinction —
+//            nucleation from solution uses γ_sl
+//          - σ_crit homogeneous (6-20+, quartz) vs heterogeneous
+//            (2-4, vug nucleation) distinction explicit
+//          The proposal also adds the graduated-competition algorithm
+//          (power-law k=2 in proportional regime; winner-takes-most
+//          80/20 when initiative gap > 3) and 5 calibration assertions
+//          tied to the v125-v126 cascade record.
+//
+//          BASELINES
+//          All 30 scenarios byte-identical to v126/v127a-d (the
+//          v127a-d sub-commits each verified byte-identical against
+//          v126 before landing). Coverage 145 minerals (unchanged).
+//          Scenarios 30 (unchanged).
+//
+//          SIDE-EFFECT TEST FIX (cascade-gate-audit)
+//          tests-js/cascade-gate-audit.test.ts asserted the literal
+//          `fluid.Bi < 5` in the native_bismuth supersat source. v127c
+//          replaced that literal with `fluid.Bi < g.fluid_min.Bi`
+//          (the gates registry dereference). Test updated to assert
+//          the registry value === 5 + the dereference pattern — same
+//          intent, post-refactor source.
+//
+//          REFERENCES
+//          proposals/PROPOSAL-INITIATIVE-VARIABLE.md (rev 2)
+//          research/INITIATIVE-VARIABLE/01-geochemical-grounding.md
+//          research/INITIATIVE-VARIABLE/03-modifier-calibration.md
+//          research/INITIATIVE-VARIABLE/06-engine-gates-refactor.md
+//          research/INITIATIVE-VARIABLE/07-graduated-competition.md
+//
+//          FILES (this commit, the v127 finale)
+//            NEW: js/42-mineral-gates-registry.ts
+//            NEW: js/43-initiative.ts
+//            NEW: tests-js/engine-gates-coverage.test.ts
+//            NEW: tests-js/initiative-scaffold.test.ts
+//            MOD: js/95-ui-library.ts (competitiveness section)
+//            MOD: tests-js/setup.ts (EXPORTS list)
+//            MOD: tests-js/cascade-gate-audit.test.ts (side-effect fix)
+//            MOD: js/15-version.ts (this block, SIM_VERSION 126 → 127)
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 127;
 
 // ── 18-constants.js ──
 
@@ -22559,6 +22703,468 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
 });
+
+// ── 42-mineral-gates-registry.js ──
+
+// ============================================================
+// js/42-mineral-gates-registry.ts — MINERAL_GATES_REGISTRY
+// ============================================================
+// Flat lookup: mineral name → MINERAL_GATES_<mineral> constant. Lets the
+// initiative module (js/43-initiative.ts), library card, and tests
+// iterate gates without parsing source files. Cross-cuts the per-class
+// MINERAL_GATES_* declarations in js/3x-supersat-*.ts.
+//
+// Load order: this file MUST sit after every js/3x-supersat-*.ts (30–41)
+// because `const` declarations are not hoisted — TDZ on each entry
+// before its supersat file declares it. Prefix 42 is the first free slot
+// after sulfide (41). Anything that reads the registry (initiative,
+// library card, guard test) must load LATER than this file.
+//
+// Coverage invariant: every key in MINERAL_ENGINES (js/65) has a matching
+// entry here. Enforced by tests-js/engine-gates-coverage.test.ts. Adding
+// a new mineral requires touching this registry alongside the engine
+// dispatch table — same rule the README's mineral-add table will gain.
+//
+// v127 (2026-05-21): introduced as the consolidator for the engine-gates
+// refactor. 165 entries at landing, grouped by class to match the
+// supersat file layout.
+const MINERAL_GATES_REGISTRY = {
+    // ---- Arsenate (js/30-supersat-arsenate.ts) ----
+    olivenite: MINERAL_GATES_olivenite,
+    scorodite: MINERAL_GATES_scorodite,
+    erythrite: MINERAL_GATES_erythrite,
+    annabergite: MINERAL_GATES_annabergite,
+    adamite: MINERAL_GATES_adamite,
+    pharmacolite: MINERAL_GATES_pharmacolite,
+    conichalcite: MINERAL_GATES_conichalcite,
+    mimetite: MINERAL_GATES_mimetite,
+    austinite: MINERAL_GATES_austinite,
+    legrandite: MINERAL_GATES_legrandite,
+    koettigite: MINERAL_GATES_koettigite,
+    duftite: MINERAL_GATES_duftite,
+    bayldonite: MINERAL_GATES_bayldonite,
+    // ---- Borate (js/31-supersat-borate.ts) ----
+    borax: MINERAL_GATES_borax,
+    tincalconite: MINERAL_GATES_tincalconite,
+    // ---- Carbonate (js/32-supersat-carbonate.ts) ----
+    calcite: MINERAL_GATES_calcite,
+    aragonite: MINERAL_GATES_aragonite,
+    dolomite: MINERAL_GATES_dolomite,
+    siderite: MINERAL_GATES_siderite,
+    rhodochrosite: MINERAL_GATES_rhodochrosite,
+    malachite: MINERAL_GATES_malachite,
+    smithsonite: MINERAL_GATES_smithsonite,
+    azurite: MINERAL_GATES_azurite,
+    cerussite: MINERAL_GATES_cerussite,
+    rosasite: MINERAL_GATES_rosasite,
+    aurichalcite: MINERAL_GATES_aurichalcite,
+    strontianite: MINERAL_GATES_strontianite,
+    witherite: MINERAL_GATES_witherite,
+    hydrozincite: MINERAL_GATES_hydrozincite,
+    // ---- Halide (js/33-supersat-halide.ts) ----
+    fluorite: MINERAL_GATES_fluorite,
+    halite: MINERAL_GATES_halite,
+    atacamite: MINERAL_GATES_atacamite,
+    sylvite: MINERAL_GATES_sylvite,
+    // ---- Hydroxide (js/34-supersat-hydroxide.ts) ----
+    goethite: MINERAL_GATES_goethite,
+    lepidocrocite: MINERAL_GATES_lepidocrocite,
+    // ---- Molybdate / tungstate (js/35-supersat-molybdate.ts) ----
+    wulfenite: MINERAL_GATES_wulfenite,
+    ferrimolybdite: MINERAL_GATES_ferrimolybdite,
+    raspite: MINERAL_GATES_raspite,
+    stolzite: MINERAL_GATES_stolzite,
+    scheelite: MINERAL_GATES_scheelite,
+    powellite: MINERAL_GATES_powellite,
+    wolframite: MINERAL_GATES_wolframite,
+    // ---- Native (js/36-supersat-native.ts) ----
+    native_tellurium: MINERAL_GATES_native_tellurium,
+    native_sulfur: MINERAL_GATES_native_sulfur,
+    native_arsenic: MINERAL_GATES_native_arsenic,
+    native_silver: MINERAL_GATES_native_silver,
+    native_bismuth: MINERAL_GATES_native_bismuth,
+    native_gold: MINERAL_GATES_native_gold,
+    native_copper: MINERAL_GATES_native_copper,
+    awaruite: MINERAL_GATES_awaruite,
+    // ---- Oxide (js/37-supersat-oxide.ts) ----
+    cassiterite: MINERAL_GATES_cassiterite,
+    hematite: MINERAL_GATES_hematite,
+    uraninite: MINERAL_GATES_uraninite,
+    magnetite: MINERAL_GATES_magnetite,
+    cuprite: MINERAL_GATES_cuprite,
+    corundum: MINERAL_GATES_corundum,
+    ruby: MINERAL_GATES_ruby,
+    sapphire: MINERAL_GATES_sapphire,
+    rutile: MINERAL_GATES_rutile,
+    chromite: MINERAL_GATES_chromite,
+    pyrolusite: MINERAL_GATES_pyrolusite,
+    brucite: MINERAL_GATES_brucite,
+    // ---- Phosphate / vanadate (js/38-supersat-phosphate.ts) ----
+    plumbogummite: MINERAL_GATES_plumbogummite,
+    descloizite: MINERAL_GATES_descloizite,
+    mottramite: MINERAL_GATES_mottramite,
+    clinobisvanite: MINERAL_GATES_clinobisvanite,
+    pyromorphite: MINERAL_GATES_pyromorphite,
+    vanadinite: MINERAL_GATES_vanadinite,
+    torbernite: MINERAL_GATES_torbernite,
+    autunite: MINERAL_GATES_autunite,
+    zeunerite: MINERAL_GATES_zeunerite,
+    uranospinite: MINERAL_GATES_uranospinite,
+    carnotite: MINERAL_GATES_carnotite,
+    tyuyamunite: MINERAL_GATES_tyuyamunite,
+    apatite: MINERAL_GATES_apatite,
+    turquoise: MINERAL_GATES_turquoise,
+    // ---- Silicate (js/39-supersat-silicate.ts) ----
+    quartz: MINERAL_GATES_quartz,
+    feldspar: MINERAL_GATES_feldspar,
+    apophyllite: MINERAL_GATES_apophyllite,
+    albite: MINERAL_GATES_albite,
+    lepidolite: MINERAL_GATES_lepidolite,
+    spodumene: MINERAL_GATES_spodumene,
+    chrysocolla: MINERAL_GATES_chrysocolla,
+    beryl: MINERAL_GATES_beryl,
+    emerald: MINERAL_GATES_emerald,
+    aquamarine: MINERAL_GATES_aquamarine,
+    morganite: MINERAL_GATES_morganite,
+    heliodor: MINERAL_GATES_heliodor,
+    tourmaline: MINERAL_GATES_tourmaline,
+    topaz: MINERAL_GATES_topaz,
+    opal: MINERAL_GATES_opal,
+    coffinite: MINERAL_GATES_coffinite,
+    uranophane: MINERAL_GATES_uranophane,
+    hemimorphite: MINERAL_GATES_hemimorphite,
+    willemite: MINERAL_GATES_willemite,
+    dioptase: MINERAL_GATES_dioptase,
+    shattuckite: MINERAL_GATES_shattuckite,
+    chrysoprase: MINERAL_GATES_chrysoprase,
+    tigers_eye: MINERAL_GATES_tigers_eye,
+    chrysotile: MINERAL_GATES_chrysotile,
+    pectolite: MINERAL_GATES_pectolite,
+    wollastonite: MINERAL_GATES_wollastonite,
+    prehnite: MINERAL_GATES_prehnite,
+    grossular: MINERAL_GATES_grossular,
+    diopside: MINERAL_GATES_diopside,
+    vesuvianite: MINERAL_GATES_vesuvianite,
+    datolite: MINERAL_GATES_datolite,
+    // ---- Amphibole (js/39a-supersat-amphibole.ts) ----
+    tremolite: MINERAL_GATES_tremolite,
+    actinolite: MINERAL_GATES_actinolite,
+    anthophyllite: MINERAL_GATES_anthophyllite,
+    amosite: MINERAL_GATES_amosite,
+    crocidolite: MINERAL_GATES_crocidolite,
+    // ---- Sulfate (js/40-supersat-sulfate.ts) ----
+    barite: MINERAL_GATES_barite,
+    celestine: MINERAL_GATES_celestine,
+    anhydrite: MINERAL_GATES_anhydrite,
+    brochantite: MINERAL_GATES_brochantite,
+    antlerite: MINERAL_GATES_antlerite,
+    jarosite: MINERAL_GATES_jarosite,
+    alunite: MINERAL_GATES_alunite,
+    chalcanthite: MINERAL_GATES_chalcanthite,
+    mirabilite: MINERAL_GATES_mirabilite,
+    thenardite: MINERAL_GATES_thenardite,
+    selenite: MINERAL_GATES_selenite,
+    anglesite: MINERAL_GATES_anglesite,
+    linarite: MINERAL_GATES_linarite,
+    caledonite: MINERAL_GATES_caledonite,
+    leadhillite: MINERAL_GATES_leadhillite,
+    // ---- Sulfide (js/41-supersat-sulfide.ts) ----
+    sphalerite: MINERAL_GATES_sphalerite,
+    wurtzite: MINERAL_GATES_wurtzite,
+    pyrite: MINERAL_GATES_pyrite,
+    marcasite: MINERAL_GATES_marcasite,
+    chalcopyrite: MINERAL_GATES_chalcopyrite,
+    galena: MINERAL_GATES_galena,
+    molybdenite: MINERAL_GATES_molybdenite,
+    acanthite: MINERAL_GATES_acanthite,
+    argentite: MINERAL_GATES_argentite,
+    nickeline: MINERAL_GATES_nickeline,
+    millerite: MINERAL_GATES_millerite,
+    cobaltite: MINERAL_GATES_cobaltite,
+    arsenopyrite: MINERAL_GATES_arsenopyrite,
+    tetrahedrite: MINERAL_GATES_tetrahedrite,
+    tennantite: MINERAL_GATES_tennantite,
+    cinnabar: MINERAL_GATES_cinnabar,
+    realgar: MINERAL_GATES_realgar,
+    orpiment: MINERAL_GATES_orpiment,
+    stibnite: MINERAL_GATES_stibnite,
+    bismuthinite: MINERAL_GATES_bismuthinite,
+    bornite: MINERAL_GATES_bornite,
+    chalcocite: MINERAL_GATES_chalcocite,
+    covellite: MINERAL_GATES_covellite,
+    calaverite: MINERAL_GATES_calaverite,
+    sylvanite: MINERAL_GATES_sylvanite,
+    hessite: MINERAL_GATES_hessite,
+    naumannite: MINERAL_GATES_naumannite,
+    clausthalite: MINERAL_GATES_clausthalite,
+    greenockite: MINERAL_GATES_greenockite,
+    hawleyite: MINERAL_GATES_hawleyite,
+    metacinnabar: MINERAL_GATES_metacinnabar,
+    skutterudite: MINERAL_GATES_skutterudite,
+    safflorite: MINERAL_GATES_safflorite,
+    rammelsbergite: MINERAL_GATES_rammelsbergite,
+    loellingite: MINERAL_GATES_loellingite,
+    proustite: MINERAL_GATES_proustite,
+    pyrargyrite: MINERAL_GATES_pyrargyrite,
+    enargite: MINERAL_GATES_enargite,
+};
+
+// ── 43-initiative.js ──
+
+// ============================================================
+// js/43-initiative.ts — initiative scaffold (read-only in v127)
+// ============================================================
+// v127 lands the infrastructure for the initiative variable proposed in
+// proposals/PROPOSAL-INITIATIVE-VARIABLE.md (rev 2). This module:
+//
+//   - Computes per-mineral initiative scores every step (base + modifiers).
+//   - Sorts minerals by final initiative for trace / debug.
+//   - DOES NOT apply ordering to growth — fixed-order growth loop is
+//     unchanged. Baselines are therefore byte-identical to v126/v127a-d.
+//
+// v128 will replace the fixed-order growth loop with the graduated-
+// competition algorithm specified in §3.1 of the proposal. This scaffold
+// exists now so v128 can iterate on calibration without also having to
+// land the score formulas.
+//
+// Load order: must come AFTER js/42-mineral-gates-registry.ts (reads
+// MINERAL_GATES_REGISTRY) and AFTER js/19-mineral-stoichiometry.ts (reads
+// MINERAL_STOICHIOMETRY). Prefix 43 satisfies both.
+//
+// Public surface (script-mode globals after concat):
+//   - InitiativeModifier interface
+//   - InitiativeResult interface
+//   - INITIATIVE_TRACE_ENABLED flag (default false; flip in browser DevTools
+//     via `window.INITIATIVE_TRACE_ENABLED = true` to see per-step output)
+//   - baseInitiative(sigma)
+//   - temperatureInitiativeModifier(mineral, fluid)
+//   - edgeOfGateInitiativeModifier(mineral, sigma)
+//   - surfaceEnergyInitiativeModifier(mineral)
+//   - competitionInitiativeModifier(mineral, activeMinerals)
+//   - cascadeRippleInitiativeModifier(mineral)
+//   - computeInitiative(mineral, sigma, fluid, activeMinerals)
+//   - rankInitiative(sigmaByMineral, fluid)
+//
+// Conventions:
+//   - All modifier functions return a number (positive = bonus, negative
+//     = penalty). Range conventions follow proposal §3.2; values are
+//     placeholders for the v129 calibration pass.
+//   - Modifier value of 0 means "no effect" — common case for minerals
+//     with no temperature gate or no shared-cation competitors.
+//   - Functions are pure: same inputs → same output. No state stored
+//     in this module. The optional trace logger (§Trace below) lives in
+//     a closure-scoped buffer; consumers read it via getInitiativeTrace().
+// ---- Trace infrastructure ----
+//
+// Per-step trace buffer. v127 keeps this read-only; v128 will consume it
+// during graduated-competition rationing. The buffer is intentionally a
+// `let`-rebindable global so tests can clear it between runs.
+let INITIATIVE_TRACE_ENABLED = false;
+let _initiativeTrace = []; // [step][result]
+function clearInitiativeTrace() {
+    _initiativeTrace = [];
+}
+function getInitiativeTrace() {
+    return _initiativeTrace;
+}
+function recordInitiativeStep(results) {
+    if (!INITIATIVE_TRACE_ENABLED)
+        return;
+    _initiativeTrace.push(results);
+}
+// ---- Base initiative ----
+//
+// Log-scaled on σ per proposal §3.3. σ=0.5 → ~8, σ=1.0 → ~10, σ=2.0 → ~15.
+// The log scale captures the sharp threshold behavior near σ_crit: small
+// differences at low σ become large differences at high σ. v129 may
+// re-tune the scaling constants once calibration data is in.
+function baseInitiative(sigma) {
+    if (sigma <= 0)
+        return 0;
+    return Math.log10(sigma * 100 + 1) * 10;
+}
+// ---- Modifier: temperature sweet-spot ----
+//
+// Per proposal §3.2. Each MINERAL_GATES_<mineral> may declare T_min /
+// T_max / T_optimal. If absent, returns 0 (no effect).
+//
+//   Outside [T_min, T_max]: -3 (mineral is gated out chemistry-wise
+//     anyway; this just makes the trace explicit)
+//   Within 20% of T_optimal: +2 (sweet spot)
+//   Within 50% of T_optimal: +1 (comfortable)
+//   Otherwise within range: 0
+function temperatureInitiativeModifier(mineral, fluid) {
+    const reg = globalThis.MINERAL_GATES_REGISTRY;
+    const g = reg?.[mineral];
+    if (!g)
+        return { source: 'temperature', value: 0, reason: `no gates for ${mineral}` };
+    const T = fluid?.temperature;
+    if (typeof T !== 'number')
+        return { source: 'temperature', value: 0, reason: 'no fluid temperature' };
+    const Tmin = g.T_min, Tmax = g.T_max, Topt = g.T_optimal;
+    if (Tmin !== undefined && T < Tmin)
+        return { source: 'temperature', value: -3, reason: `T=${T} < T_min=${Tmin}` };
+    if (Tmax !== undefined && T > Tmax)
+        return { source: 'temperature', value: -3, reason: `T=${T} > T_max=${Tmax}` };
+    if (Topt === undefined)
+        return { source: 'temperature', value: 0, reason: 'no T_optimal' };
+    const span = (Tmax !== undefined && Tmin !== undefined) ? (Tmax - Tmin) : 50;
+    const dist = Math.abs(T - Topt) / Math.max(span, 1);
+    if (dist < 0.2)
+        return { source: 'temperature', value: +2, reason: `T=${T} in sweet spot near ${Topt}` };
+    if (dist < 0.5)
+        return { source: 'temperature', value: +1, reason: `T=${T} comfortable near ${Topt}` };
+    return { source: 'temperature', value: 0, reason: `T=${T} viable near ${Topt}` };
+}
+// ---- Modifier: edge-of-gate fragility ----
+//
+// Per proposal §3.2 + the v125-v126 cascade record. A mineral at σ just
+// above σ_crit is fragile — small perturbations push it below threshold
+// and it drops out. The penalty makes the trace honest about that.
+//
+//   σ / σ_crit < 0.5: -1 (nowhere near, barely viable — not really
+//     competing for shared cations)
+//   σ / σ_crit in [0.5, 1.1): -2 (fragile — near or just above threshold)
+//   σ / σ_crit in [1.1, 1.3): -1 (edgy but workable)
+//   σ / σ_crit > 2.0: +1 (robust)
+//   else: 0
+function edgeOfGateInitiativeModifier(mineral, sigma) {
+    const reg = globalThis.MINERAL_GATES_REGISTRY;
+    const g = reg?.[mineral];
+    if (!g || !Number.isFinite(g.sigma_crit) || g.sigma_crit <= 0) {
+        return { source: 'edge-of-gate', value: 0, reason: `no finite sigma_crit for ${mineral}` };
+    }
+    const ratio = sigma / g.sigma_crit;
+    if (ratio < 0.5)
+        return { source: 'edge-of-gate', value: -1, reason: `σ/σ_crit=${ratio.toFixed(2)} far below` };
+    if (ratio < 1.1)
+        return { source: 'edge-of-gate', value: -2, reason: `σ/σ_crit=${ratio.toFixed(2)} fragile` };
+    if (ratio < 1.3)
+        return { source: 'edge-of-gate', value: -1, reason: `σ/σ_crit=${ratio.toFixed(2)} edgy` };
+    if (ratio > 2.0)
+        return { source: 'edge-of-gate', value: +1, reason: `σ/σ_crit=${ratio.toFixed(2)} robust` };
+    return { source: 'edge-of-gate', value: 0, reason: `σ/σ_crit=${ratio.toFixed(2)} comfortable` };
+}
+// ---- Modifier: surface energy ----
+//
+// Per proposal §3.2. Lower γ → lower nucleation barrier → higher base
+// initiative. Categories from the MineralGates surface_energy field.
+function surfaceEnergyInitiativeModifier(mineral) {
+    const reg = globalThis.MINERAL_GATES_REGISTRY;
+    const g = reg?.[mineral];
+    if (!g)
+        return { source: 'surface-energy', value: 0, reason: `no gates for ${mineral}` };
+    switch (g.surface_energy) {
+        case 'very_low': return { source: 'surface-energy', value: +2, reason: 'γ very low (opal-class)' };
+        case 'low': return { source: 'surface-energy', value: +1, reason: 'γ low (gypsum-class)' };
+        case 'medium': return { source: 'surface-energy', value: 0, reason: 'γ medium (default)' };
+        case 'high': return { source: 'surface-energy', value: -1, reason: 'γ high (quartz-class)' };
+        case 'very_high': return { source: 'surface-energy', value: -2, reason: 'γ very high (diamond-class)' };
+    }
+    return { source: 'surface-energy', value: 0, reason: 'unknown γ class' };
+}
+// ---- Modifier: shared-cation competition ----
+//
+// Per proposal §3.2. Counts distinct other minerals currently firing
+// that share at least one cation with `mineral`. Reads from
+// MINERAL_STOICHIOMETRY for cation sets.
+//
+//   0 competitors: 0
+//   1 competitor:  -1
+//   2+ competitors: -2 (dense-suite penalty)
+function competitionInitiativeModifier(mineral, activeMinerals) {
+    const stoich = globalThis.MINERAL_STOICHIOMETRY;
+    if (!stoich)
+        return { source: 'competition', value: 0, reason: 'no stoichiometry table' };
+    const mine = stoich[mineral];
+    if (!mine)
+        return { source: 'competition', value: 0, reason: `no stoichiometry for ${mineral}` };
+    const myCations = Object.keys(mine);
+    const competitors = new Set();
+    for (const other of activeMinerals) {
+        if (other === mineral)
+            continue;
+        const otherStoich = stoich[other];
+        if (!otherStoich)
+            continue;
+        for (const c of myCations) {
+            if (otherStoich[c] !== undefined) {
+                competitors.add(other);
+                break;
+            }
+        }
+    }
+    if (competitors.size === 0)
+        return { source: 'competition', value: 0, reason: 'no shared-cation competitors' };
+    if (competitors.size === 1)
+        return { source: 'competition', value: -1, reason: `1 competitor (${[...competitors][0]})` };
+    return { source: 'competition', value: -2, reason: `${competitors.size} competitors (dense suite)` };
+}
+// ---- Modifier: cascade ripple ----
+//
+// Per proposal §3.2 (NEW in rev 2). Distinct from competition penalty —
+// this is about how many σ gates the mineral's debit can perturb when
+// it grows, not who else is firing now. Cap at -2.
+function cascadeRippleInitiativeModifier(mineral) {
+    const stoich = globalThis.MINERAL_STOICHIOMETRY;
+    if (!stoich)
+        return { source: 'cascade-ripple', value: 0, reason: 'no stoichiometry table' };
+    const mine = stoich[mineral];
+    if (!mine)
+        return { source: 'cascade-ripple', value: 0, reason: `no stoichiometry for ${mineral}` };
+    const n = Object.keys(mine).length;
+    if (n <= 1)
+        return { source: 'cascade-ripple', value: 0, reason: '1-cation: no ripple' };
+    const penalty = Math.min(n - 1, 2);
+    return { source: 'cascade-ripple', value: -penalty, reason: `${n} cations: -${penalty} ripple` };
+}
+// ---- Composition ----
+//
+// Sums base + all modifiers for one mineral. Returns the full
+// InitiativeResult including the modifier breakdown so the trace /
+// library card can show the "why".
+function computeInitiative(mineral, sigma, fluid, activeMinerals) {
+    const base = baseInitiative(sigma);
+    const mods = [
+        temperatureInitiativeModifier(mineral, fluid),
+        edgeOfGateInitiativeModifier(mineral, sigma),
+        surfaceEnergyInitiativeModifier(mineral),
+        competitionInitiativeModifier(mineral, activeMinerals),
+        cascadeRippleInitiativeModifier(mineral),
+    ];
+    const modSum = mods.reduce((s, m) => s + m.value, 0);
+    return {
+        mineral,
+        baseInitiative: base,
+        modifiers: mods,
+        finalInitiative: base + modSum,
+        sigma,
+    };
+}
+// ---- Step-level ranking ----
+//
+// Given a map of mineral → σ for one step, returns the per-mineral
+// InitiativeResult list sorted highest finalInitiative first. v127 logs
+// this; v128 will consume it to drive growth ordering.
+//
+// Tiebreaking (per proposal §3.1): higher base σ wins, then alphabetical
+// (deterministic).
+function rankInitiative(sigmaByMineral, fluid) {
+    const active = Object.keys(sigmaByMineral).filter(m => sigmaByMineral[m] > 0);
+    const results = [];
+    for (const m of active) {
+        results.push(computeInitiative(m, sigmaByMineral[m], fluid, active));
+    }
+    results.sort((a, b) => {
+        if (b.finalInitiative !== a.finalInitiative)
+            return b.finalInitiative - a.finalInitiative;
+        if (b.sigma !== a.sigma)
+            return b.sigma - a.sigma;
+        return a.mineral.localeCompare(b.mineral);
+    });
+    recordInitiativeStep(results);
+    return results;
+}
 
 // ── 50-engines-arsenate.js ──
 
@@ -44660,6 +45266,126 @@ function renderCollectedForMineral(name) {
     ${rows}
   </div>`;
 }
+// ============================================================
+// Competitiveness profile (v127)
+// ============================================================
+// Renders the "Competitiveness profile" block of each library card.
+// Reads from MINERAL_GATES_REGISTRY (js/42) + MINERAL_STOICHIOMETRY (js/19)
+// — no source-file parsing, no duplication.
+//
+// v127 lands this as read-only chrome alongside the initiative scaffold
+// (js/43). v128 will use the same data live, when graduated competition
+// drives growth ordering.
+//
+// Returns '' if the mineral has no gates entry (defensive — shouldn't
+// happen post-v127 since the engine-gates coverage test enforces it, but
+// the library renders pre-built MINERAL_SPEC entries too which may include
+// minerals not yet wired to an engine, e.g., aspirational entries).
+function libraryCompetitivenessSection(name) {
+    const reg = globalThis.MINERAL_GATES_REGISTRY;
+    const stoich = globalThis.MINERAL_STOICHIOMETRY;
+    const g = reg && reg[name];
+    if (!g)
+        return '';
+    const sigmaCritText = Number.isFinite(g.sigma_crit)
+        ? g.sigma_crit.toFixed(2)
+        : '<em>no nucleation (paramorph-only)</em>';
+    const tempText = (() => {
+        const parts = [];
+        if (g.T_min !== undefined || g.T_max !== undefined) {
+            const lo = g.T_min !== undefined ? `${g.T_min}` : '?';
+            const hi = g.T_max !== undefined ? `${g.T_max}` : '?';
+            parts.push(`${lo}–${hi}°C`);
+        }
+        if (g.T_optimal !== undefined)
+            parts.push(`opt ${g.T_optimal}°C`);
+        return parts.length ? parts.join(' ') : '—';
+    })();
+    const pHText = (g.pH_min !== undefined || g.pH_max !== undefined)
+        ? `${g.pH_min ?? '?'}–${g.pH_max ?? '?'}`
+        : '—';
+    const o2Text = (g.O2_min !== undefined || g.O2_max !== undefined)
+        ? `O₂ ${g.O2_min ?? '?'}–${g.O2_max ?? '?'}`
+        : '—';
+    const surfaceLabels = {
+        very_low: 'very low γ (+2 initiative)',
+        low: 'low γ (+1)',
+        medium: 'medium γ (±0)',
+        high: 'high γ (−1)',
+        very_high: 'very high γ (−2)',
+    };
+    const surfaceText = surfaceLabels[g.surface_energy] || g.surface_energy || '—';
+    // Cascade ripple count — read from stoichiometry, mirror logic in
+    // js/43-initiative.ts cascadeRippleInitiativeModifier.
+    const mineStoich = stoich && stoich[name];
+    let rippleText = '—';
+    if (mineStoich) {
+        const n = Object.keys(mineStoich).length;
+        if (n <= 1)
+            rippleText = `${n} cation (no ripple)`;
+        else {
+            const penalty = Math.min(n - 1, 2);
+            rippleText = `${n} cations (−${penalty} ripple)`;
+        }
+    }
+    // Shared-cation competitors — count distinct other minerals that share
+    // at least one cation with this one in MINERAL_STOICHIOMETRY.
+    let competitorText = '—';
+    if (mineStoich && stoich) {
+        const myCations = Object.keys(mineStoich);
+        const competitors = new Set();
+        for (const [other, otherStoich] of Object.entries(stoich)) {
+            if (other === name)
+                continue;
+            for (const c of myCations) {
+                if (otherStoich[c] !== undefined) {
+                    competitors.add(other);
+                    break;
+                }
+            }
+        }
+        const sizeNote = competitors.size === 0 ? ' (no competitors)'
+            : competitors.size === 1 ? ' (−1 initiative)'
+                : ' (dense suite, −2 initiative)';
+        competitorText = `${competitors.size}${sizeNote}`;
+    }
+    // Min fluid composition (cation floor) — render as chip list.
+    const fluidMinText = g.fluid_min
+        ? Object.entries(g.fluid_min).map(([k, v]) => `${k} ≥ ${v}`).join(', ')
+        : '—';
+    // Sources / notes (collapsed; only render if present).
+    const sources = (g._sources && g._sources.length)
+        ? `<div class="stat-key">Sources</div><div class="stat-val" style="font-size:0.85em;color:#7a6a4a">${g._sources.join('; ')}</div>`
+        : '';
+    const notes = g._notes
+        ? `<div class="stat-key">Notes</div><div class="stat-val" style="font-size:0.85em;color:#7a6a4a">${g._notes}</div>`
+        : '';
+    return `
+    <div class="mineral-card-competitiveness" style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px dashed #c7b58a">
+      <div class="mineral-card-section-head" style="font-weight:600;color:#5a4a30;margin-bottom:0.25rem">Competitiveness profile</div>
+      <div class="mineral-card-stats">
+        <div class="stat-key">σ_crit</div>
+        <div class="stat-val">${sigmaCritText}</div>
+        <div class="stat-key">T gate</div>
+        <div class="stat-val">${tempText}</div>
+        <div class="stat-key">pH gate</div>
+        <div class="stat-val">${pHText}</div>
+        <div class="stat-key">Redox</div>
+        <div class="stat-val">${o2Text}</div>
+        <div class="stat-key">Surface energy</div>
+        <div class="stat-val">${surfaceText}</div>
+        <div class="stat-key">Fluid minimums</div>
+        <div class="stat-val">${fluidMinText}</div>
+        <div class="stat-key">Cation competitors</div>
+        <div class="stat-val">${competitorText}</div>
+        <div class="stat-key">Cascade ripple</div>
+        <div class="stat-val">${rippleText}</div>
+        ${sources}
+        ${notes}
+      </div>
+    </div>
+  `;
+}
 function libraryBuildCard(name, m) {
     const Tmin = m.T_range_C ? m.T_range_C[0] : '?';
     const Tmax = m.T_range_C ? m.T_range_C[1] : '?';
@@ -44744,6 +45470,7 @@ function libraryBuildCard(name, m) {
         <div class="stat-val">${decompText}</div>
       </div>
       <div class="mineral-card-scenarios">Grows in: ${scenarioChips || '<em style="color:#5a4a30">no scenarios listed</em>'}</div>
+      ${libraryCompetitivenessSection(name)}
       ${renderCollectedForMineral(name)}
     </div>
   `;
