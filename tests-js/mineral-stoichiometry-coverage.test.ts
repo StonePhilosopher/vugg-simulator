@@ -61,7 +61,13 @@ const DEFERRED_TUNE_REQUIRED = new Set<string>([
   //   Ca window).
   'pectolite',
   // Priority 2 — Cumbria Pb-Zn-Ba-F supergene
-  'caledonite', 'plumbogummite', 'pharmacolite', 'proustite',
+  //   COMPLETED v124 (2026-05-21): pharmacolite only. Caledonite +
+  //   plumbogummite + proustite still deferred — adding any of their
+  //   stoichiometries triggers Shape-B RNG-cascade displacement in
+  //   roughten_gill that breaks the brochantite/caledonite/plumbogummite
+  //   paragenesis pins. Need dedicated nucleation-cap / class-iterator
+  //   work that's out of scope for a single tune commit.
+  'caledonite', 'plumbogummite', 'proustite',
   // Priority 3 — Tsumeb supergene + adjacent
   'dioptase', 'willemite', 'conichalcite', 'duftite', 'koettigite',
   'metacinnabar',
@@ -197,12 +203,12 @@ describe('MINERAL_STOICHIOMETRY coverage audit (v120)', () => {
     expect(violations).toEqual([]);
   });
 
-  it('DEFERRED list size matches HANDOFF doc count (17 minerals at v123)', () => {
+  it('DEFERRED list size matches HANDOFF doc count (16 minerals at v124)', () => {
     // Tracking number — if you reduce the list (tune commit lands), update
     // this number AND update the HANDOFF doc to reflect the new total.
-    // v120 shipped at 28; v123 Jeffrey arc tune removed 11 Jeffrey minerals
-    // (chrysotile, brucite, awaruite, diopside, grossular, vesuvianite,
-    // wollastonite, prehnite, datolite, tremolite, actinolite) → 17.
-    expect(DEFERRED_TUNE_REQUIRED.size).toBe(17);
+    // v120 shipped at 28; v123 Jeffrey arc tune removed 11 → 17.
+    // v124 Cumbria P2 partial-tune removed pharmacolite → 16. (Other 3
+    // Cumbria minerals stay deferred per cascade-displacement issue.)
+    expect(DEFERRED_TUNE_REQUIRED.size).toBe(16);
   });
 });

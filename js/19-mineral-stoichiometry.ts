@@ -208,6 +208,19 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   bayldonite:     { Cu: 3, Pb: 1, As: 2 },           // Cu3PbO(AsO3OH)2(OH)2 — Cu-Pb arsenate (Tsumeb)
   legrandite:     { Zn: 2, As: 1 },                  // Zn2(AsO4)(OH)·H2O — Mapimi yellow Zn arsenate
   linarite:       { Pb: 1, Cu: 1, S: 1 },            // PbCu(SO4)(OH)2 — Roughten Gill / Cumbria blue Pb-Cu sulfate
+  // v124 Cumbria P2 tune — 1 of 4 shipped (pharmacolite only). The
+  // Roughten Gill scenario hit Shape-B RNG-cascade displacement when
+  // any of {caledonite, plumbogummite, proustite} stoichiometry was
+  // added — brochantite + caledonite + plumbogummite all dropped from
+  // paragenesis even with generous Pb releases (initial 70 + event
+  // boosts to ~340 ppm total). The cascade-shift breaks test pins.
+  // This is the same structural issue the file-level comment in
+  // js/70q-roughten-gill.ts already documents for linarite. Three
+  // P2 minerals stay DEFERRED (caledonite, plumbogummite, proustite);
+  // they need either dedicated nucleation-cap tuning or class-
+  // iterator-order changes, both out of scope for a single tune commit.
+  // Pharmacolite fires only in schneeberg, doesn't affect roughten_gill.
+  pharmacolite:   { Ca: 1, As: 1 },                  // CaHAsO4·2H2O — Schneeberg supergene Ca-arsenate
   scorodite:      { Fe: 1, As: 1 },                  // FeAsO4·2H2O
   descloizite:    { Pb: 1, Zn: 1, V: 1 },            // PbZn(VO4)(OH)
   mottramite:     { Pb: 1, Cu: 1, V: 1 },            // PbCu(VO4)(OH)

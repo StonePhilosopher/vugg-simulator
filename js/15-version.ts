@@ -5838,5 +5838,74 @@
 //          Krenn K & Hauzenberger CA (2007) — awaruite thermometry
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 123;
+//   v124 — Priority 2 Cumbria stoichiometry tune — PARTIAL (1 of 4)
+//          (2026-05-21). Pharmacolite shipped; caledonite +
+//          plumbogummite + proustite STILL DEFERRED after direct
+//          probe showed they trigger Shape-B RNG-cascade displacement
+//          in roughten_gill.
+//
+//          THE PROBE FINDING
+//          Added all 4 P2 stoichiometries + tuned roughten_gill
+//          events 2/4/5 with generous Pb/Al/P releases (initial Pb=70
+//          plus event boosts to ~340 ppm total). Result: brochantite +
+//          caledonite + plumbogummite all DROPPED from roughten_gill
+//          paragenesis. Tried isolating proustite alone — same drop.
+//          The Ag+As+S mass-balance ripple from proustite shifts the
+//          per-step rng.uniform() draws enough to displace the Pb-Cu
+//          sulfate nucleation iterator, even though sigma gates still
+//          clear. This is the same Shape-B displacement the existing
+//          js/70q-roughten-gill.ts file-level comment documents for
+//          linarite.
+//
+//          DISCIPLINED RETREAT
+//          Per the v109 antipattern memory + the v120 big-bang
+//          abandoned-attempt precedent: roll back the cascading
+//          additions, ship just the safe one. Pharmacolite fires in
+//          schneeberg only and doesn't touch roughten_gill. The 3
+//          deferred items need dedicated nucleation-cap / class-
+//          iterator-order changes — exactly the Q7 initiative-variable
+//          architectural question in PROPOSAL-SPECIMEN-OBJECT.md.
+//          Out of scope for tune-only commits.
+//
+//          STOICHIOMETRY ADDED (1 mineral)
+//            pharmacolite: { Ca: 1, As: 1 } — CaHAsO4·2H2O,
+//            Schneeberg supergene Ca-arsenate.
+//
+//          NO EVENT-CHEMISTRY CHANGES this commit (the roughten_gill
+//          event tunes I tried were reverted because the underlying
+//          rng-cascade issue isn't solvable with broth tuning alone).
+//
+//          PARAGENESIS RESULT
+//          schneeberg: pharmacolite continues to fire; no species
+//                       drift; only max_um shifts (mass balance
+//                       correctly debits Ca + As)
+//          supergene_oxidation: no species drift; max_um shifts only
+//          roughten_gill: unchanged (no test pins affected)
+//          27 other scenarios: byte-identical to v123
+//
+//          GUARD TEST UPDATED
+//          tests-js/mineral-stoichiometry-coverage.test.ts:
+//            DEFERRED_TUNE_REQUIRED 17 -> 16 (pharmacolite removed)
+//            Comment block on Priority 2 documents the deferral
+//            reason for caledonite + plumbogummite + proustite
+//
+//          REMAINING IN DEFERRED LIST (16 minerals)
+//            P1 remainder: pectolite
+//            P2 deferred (cascade): caledonite, plumbogummite, proustite
+//            P3 Tsumeb (6): dioptase, willemite, conichalcite, duftite,
+//                           koettigite, metacinnabar
+//            P4 Schneeberg uranyl (1): uranophane
+//            P5 secondary (5): cassiterite, lepidolite, opal,
+//                               pyrolusite, tigers_eye
+//
+//          REFERENCES
+//          js/15-version.ts v120 (parent commit, abandoned big-bang)
+//          js/15-version.ts v123 (Jeffrey P1 tune precedent)
+//          proposals/HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md
+//          proposals/PROPOSAL-SPECIMEN-OBJECT.md Q7 (initiative variable
+//          architectural question; explains WHY P2 cascade can't be
+//          fixed at the tune layer)
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 124;
 
