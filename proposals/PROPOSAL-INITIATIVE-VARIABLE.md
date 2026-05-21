@@ -65,9 +65,9 @@ Lower γ → lower barrier → higher base initiative:
 
 ### 2.5 BCF Theory: Regime Dependence
 
-Burton-Cabrera-Frank theory gives growth rate regimes:
-- **Low σ**: v ∝ σ² (surface diffusion limited, spiral growth)
-- **High σ**: v ∝ σ (direct integration, abundant kink sites)
+Burton-Cabrera-Frank theory gives growth rate regimes (De Yoreo & Vekilov 2003, Rev. Mineral. Geochem. 54):
+- **Low σ (spiral growth, surface diffusion limited):** v ∝ σ² — adatom diffusion to kink sites on spiral steps dominates
+- **High σ (2D nucleation / rough-surface kinetics):** v ∝ σ — abundant kink sites from layer nucleation, direct integration dominates
 
 A mineral's initiative changes its scaling with σ depending on regime.
 
@@ -144,6 +144,8 @@ function edgeOfGateModifier(mineral: Mineral, σ: number): number {
 
 **Why this matters:** The v125 cascade happened because dioptase's σ was near its threshold in schneeberg. Adding stoichiometry shifted other minerals' σ across their thresholds, changing nucleation order. With edge-of-gate penalties, the system becomes **self-aware about fragility**.
 
+**Revised framing (post-Professor review):** The edge-of-gate penalty is not a permanent debuff on slow nucleation. It's a **perturbation-sensitivity flag**: a mineral near σ_crit is fragile to fluid changes from minerals that act earlier in the initiative order. The penalty represents "this mineral's nucleation window is narrow — if anyone changes the fluid first, it may miss its chance." The correct model for true edge-of-gate behavior is closer to an **induction counter** (see Q9 in §05-open-questions.md): track steps_above_threshold, nucleate when counter > induction_steps(σ, T, γ). The -2 penalty is a simplified proxy for induction-time fragility.
+
 #### Surface Energy Bonus (+1 initiative)
 
 ```typescript
@@ -174,7 +176,13 @@ function competitionModifier(mineral: Mineral, activeMinerals: Mineral[]): numbe
 }
 ```
 
-**Dense suite penalty** explains why supergene_oxidation and schneeberg are cascade-prone: many minerals share Cu, Zn, Pb, As. Adding any new stoichiometry entry for a shared cation displaces multiple competitors.
+**Important — choose ONE competition model:**
+
+- **Physics-only** (recommended): Recalculate σ after each mineral in the initiative loop. Competition emerges naturally from mass balance. The `competitionModifier` above is then redundant — **remove it**. The explicit penalty double-counts competition if we also recalc σ.
+- **Modifier-only** (simpler): Don't recalc σ between minerals in the loop. Compute σ once per step, use the competition modifier as the proxy. Faster, more "RPG-like."
+- **NOT both**: Using both recalc-σ AND competitionModifier is double-jeopardy.
+
+**Professor's preference: Physics-only.** The recalc-σ approach is closer to real geochemistry and avoids arbitrary modifier tuning.
 
 #### Substrate Epitaxy Modifier (context-dependent)
 

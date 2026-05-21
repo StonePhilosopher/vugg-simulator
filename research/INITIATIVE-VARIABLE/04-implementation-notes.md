@@ -104,6 +104,8 @@ for (const result of sortedResults) {
 
 **Why this matters:** A mineral might have high initiative (high σ initially) but after earlier minerals deplete the fluid, its σ drops below threshold. This is realistic — a mineral that "almost" got to nucleate loses its window.
 
+**Double-counting warning:** If we recalc σ after each mineral (physics-only competition), we should NOT also apply a `competitionModifier`. Competition emerges naturally from debit. Using both is double-jeopardy.
+
 ### 4. Feature Flag
 
 ```typescript
