@@ -37,7 +37,7 @@ function _nuc_barite(sim) {
   // σ-discount via Q1c paragenesis table (barite has 0.7× entries on
   // sphalerite/galena/pyrite hosts).
   const discount = sim._sigmaDiscountForPosition('barite', pos);
-  if (sigma_brt <= 1.0 * discount) return;
+  if (sigma_brt <= MINERAL_GATES_barite.sigma_crit * discount) return;
   // Free-wall barite stays gated at low probability (~one nucleation
   // per ~7 steps when σ is already over threshold). Snowball seeds
   // bypass this gate — when the substrate aligns, the aggregate
@@ -54,7 +54,7 @@ function _nuc_barite(sim) {
 }
 function _nuc_celestine(sim) {
   const sigma_cel = sim.conditions.supersaturation_celestine();
-  if (sigma_cel > 1.0 && !sim._atNucleationCap('celestine')) {
+  if (sigma_cel > MINERAL_GATES_celestine.sigma_crit && !sim._atNucleationCap('celestine')) {
     if (rng.random() < 0.15) {
       let pos = 'vug wall';
       const active_brt_cel = sim.crystals.filter(c => c.mineral === 'barite' && c.active);
@@ -71,7 +71,7 @@ function _nuc_celestine(sim) {
 }
 function _nuc_jarosite(sim) {
   const sigma_jar = sim.conditions.supersaturation_jarosite();
-  if (sigma_jar > 1.0 && !sim._atNucleationCap('jarosite')) {
+  if (sigma_jar > MINERAL_GATES_jarosite.sigma_crit && !sim._atNucleationCap('jarosite')) {
     // v5: per-check 0.45 (was 0.18) so jarosite fires reliably (~95%)
     // during brief acid windows in carbonate-buffered systems like
     // Tsumeb (where ev_supergene_acidification holds pH near 4 for
@@ -98,7 +98,7 @@ function _nuc_jarosite(sim) {
 }
 function _nuc_alunite(sim) {
   const sigma_alu = sim.conditions.supersaturation_alunite();
-  if (sigma_alu > 1.0 && !sim._atNucleationCap('alunite')) {
+  if (sigma_alu > MINERAL_GATES_alunite.sigma_crit && !sim._atNucleationCap('alunite')) {
     // v5: per-check 0.45 (was 0.15) — same rationale as jarosite,
     // tighter alunite window (Al/25 cap means only 3 of 4 acid
     // pulses cross threshold).
@@ -121,7 +121,7 @@ function _nuc_alunite(sim) {
 }
 function _nuc_brochantite(sim) {
   const sigma_brn_sulf = sim.conditions.supersaturation_brochantite();
-  if (sigma_brn_sulf > 1.0 && !sim._atNucleationCap('brochantite')) {
+  if (sigma_brn_sulf > MINERAL_GATES_brochantite.sigma_crit && !sim._atNucleationCap('brochantite')) {
     if (rng.random() < 0.18) {
       let pos = 'vug wall';
       const diss_chc_brn = sim.crystals.filter(c => c.mineral === 'chalcocite' && c.dissolved);
@@ -144,7 +144,7 @@ function _nuc_brochantite(sim) {
 }
 function _nuc_antlerite(sim) {
   const sigma_ant = sim.conditions.supersaturation_antlerite();
-  if (sigma_ant > 1.0 && !sim._atNucleationCap('antlerite')) {
+  if (sigma_ant > MINERAL_GATES_antlerite.sigma_crit && !sim._atNucleationCap('antlerite')) {
     if (rng.random() < 0.18) {
       let pos = 'vug wall';
       const diss_brn_ant = sim.crystals.filter(c => c.mineral === 'brochantite' && c.dissolved);
@@ -165,7 +165,7 @@ function _nuc_antlerite(sim) {
 }
 function _nuc_anhydrite(sim) {
   const sigma_anh = sim.conditions.supersaturation_anhydrite();
-  if (sigma_anh > 1.0 && !sim._atNucleationCap('anhydrite')) {
+  if (sigma_anh > MINERAL_GATES_anhydrite.sigma_crit && !sim._atNucleationCap('anhydrite')) {
     if (rng.random() < 0.16) {
       let pos = 'vug wall';
       const active_cp_anh = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.active);
@@ -184,7 +184,7 @@ function _nuc_selenite(sim) {
   const sigma_sel = sim.conditions.supersaturation_selenite();
   const existing_sel = sim.crystals.filter(c => c.mineral === 'selenite' && c.active);
   const total_sel = sim.crystals.filter(c => c.mineral === 'selenite').length;
-  if (sigma_sel > 1.0 && existing_sel.length < 2 && total_sel < 4 && !sim._atNucleationCap('selenite')) {
+  if (sigma_sel > MINERAL_GATES_selenite.sigma_crit && existing_sel.length < 2 && total_sel < 4 && !sim._atNucleationCap('selenite')) {
     if (!existing_sel.length || (sigma_sel > 1.8 && rng.random() < 0.3)) {
       let pos = 'vug wall';
       // Prefers to grow on dissolved sulfide surfaces — the oxidation zone paragenesis
@@ -206,7 +206,7 @@ function _nuc_selenite(sim) {
 }
 function _nuc_mirabilite(sim) {
   const sigma_mirab = sim.conditions.supersaturation_mirabilite();
-  if (sigma_mirab > 1.0 && !sim._atNucleationCap('mirabilite') && rng.random() < 0.13) {
+  if (sigma_mirab > MINERAL_GATES_mirabilite.sigma_crit && !sim._atNucleationCap('mirabilite') && rng.random() < 0.13) {
     const c = sim.nucleate('mirabilite', 'vug wall', sigma_mirab);
     sim.log.push(`  ✦ NUCLEATION: ❄️ Mirabilite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_mirab.toFixed(2)}, concentration=${sim.conditions.fluid.concentration.toFixed(1)}) — Glauber salt from the cold playa brine`);
   }
@@ -215,7 +215,7 @@ function _nuc_mirabilite(sim) {
 }
 function _nuc_thenardite(sim) {
   const sigma_then = sim.conditions.supersaturation_thenardite();
-  if (sigma_then > 1.0 && !sim._atNucleationCap('thenardite') && rng.random() < 0.13) {
+  if (sigma_then > MINERAL_GATES_thenardite.sigma_crit && !sim._atNucleationCap('thenardite') && rng.random() < 0.13) {
     const c = sim.nucleate('thenardite', 'vug wall', sigma_then);
     sim.log.push(`  ✦ NUCLEATION: 🌫️ Thenardite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_then.toFixed(2)}, concentration=${sim.conditions.fluid.concentration.toFixed(1)}) — anhydrous Na₂SO₄ from the warm playa surface`);
   }
@@ -226,7 +226,7 @@ function _nuc_thenardite(sim) {
 }
 function _nuc_chalcanthite(sim) {
   const sigma_cha = sim.conditions.supersaturation_chalcanthite();
-  if (sigma_cha > 1.0 && !sim._atNucleationCap('chalcanthite')) {
+  if (sigma_cha > MINERAL_GATES_chalcanthite.sigma_crit && !sim._atNucleationCap('chalcanthite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const dissolving_brh_cha = sim.crystals.filter(c => c.mineral === 'brochantite' && c.dissolved);
@@ -243,7 +243,7 @@ function _nuc_chalcanthite(sim) {
 function _nuc_anglesite(sim) {
   const sigma_ang = sim.conditions.supersaturation_anglesite();
   const existing_ang = sim.crystals.filter(c => c.mineral === 'anglesite' && c.active);
-  if (sigma_ang > 1.1 && !sim._atNucleationCap('anglesite')) {
+  if (sigma_ang > MINERAL_GATES_anglesite.sigma_crit && !sim._atNucleationCap('anglesite')) {
     if (!existing_ang.length || (sigma_ang > 1.8 && rng.random() < 0.25)) {
       let pos = 'vug wall';
       const dissolving_gal = sim.crystals.filter(c => c.mineral === 'galena' && (c.dissolved || rng.random() < 0.6));
@@ -267,7 +267,7 @@ function _nuc_anglesite(sim) {
 
 function _nuc_linarite(sim) {
   const sigma = sim.conditions.supersaturation_linarite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_linarite.sigma_crit) return;
   if (sim._atNucleationCap('linarite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'linarite' && c.active);
   if (existing.length >= 2) return;
@@ -286,7 +286,7 @@ function _nuc_linarite(sim) {
 
 function _nuc_caledonite(sim) {
   const sigma = sim.conditions.supersaturation_caledonite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_caledonite.sigma_crit) return;
   if (sim._atNucleationCap('caledonite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'caledonite' && c.active);
   if (existing.length >= 2) return;
@@ -303,7 +303,7 @@ function _nuc_caledonite(sim) {
 
 function _nuc_leadhillite(sim) {
   const sigma = sim.conditions.supersaturation_leadhillite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_leadhillite.sigma_crit) return;
   if (sim._atNucleationCap('leadhillite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'leadhillite' && c.active);
   if (existing.length >= 2) return;

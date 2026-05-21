@@ -15,7 +15,7 @@ function _nuc_hematite(sim) {
   const sigma_hem = sim.conditions.supersaturation_hematite();
   const existing_hem = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
   const total_hem = sim.crystals.filter(c => c.mineral === 'hematite').length;
-  if (sigma_hem > 1.2 && !existing_hem.length && total_hem < 3 && !sim._atNucleationCap('hematite')) {
+  if (sigma_hem > MINERAL_GATES_hematite.sigma_crit && !existing_hem.length && total_hem < 3 && !sim._atNucleationCap('hematite')) {
     let pos = 'vug wall';
     if (existing_quartz.length && rng.random() < 0.4) {
       pos = `on quartz #${existing_quartz[0].crystal_id}`;
@@ -31,7 +31,7 @@ function _nuc_uraninite(sim) {
   const sigma_urn = sim.conditions.supersaturation_uraninite();
   const existing_urn = sim.crystals.filter(c => c.mineral === 'uraninite' && c.active);
   const total_urn = sim.crystals.filter(c => c.mineral === 'uraninite').length;
-  if (sigma_urn > 1.5 && existing_urn.length < 3 && total_urn < 5 && !sim._atNucleationCap('uraninite')) {
+  if (sigma_urn > MINERAL_GATES_uraninite.sigma_crit && existing_urn.length < 3 && total_urn < 5 && !sim._atNucleationCap('uraninite')) {
     if (!existing_urn.length || (sigma_urn > 2.5 && rng.random() < 0.3)) {
       const c = sim.nucleate('uraninite', 'vug wall', sigma_urn);
       sim.log.push(`  ✦ NUCLEATION: ☢️ Uraninite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_urn.toFixed(2)}) — radioactive!`);
@@ -43,7 +43,7 @@ function _nuc_uraninite(sim) {
 function _nuc_magnetite(sim) {
   const sigma_mag = sim.conditions.supersaturation_magnetite();
   const existing_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
-  if (sigma_mag > 1.0 && !sim._atNucleationCap('magnetite')) {
+  if (sigma_mag > MINERAL_GATES_magnetite.sigma_crit && !sim._atNucleationCap('magnetite')) {
     if (!existing_mag.length || (sigma_mag > 1.7 && rng.random() < 0.2)) {
       let pos = 'vug wall';
       const active_hem_mag = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
@@ -58,7 +58,7 @@ function _nuc_magnetite(sim) {
 function _nuc_cuprite(sim) {
   const sigma_cpr = sim.conditions.supersaturation_cuprite();
   const existing_cpr = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active);
-  if (sigma_cpr > 1.2 && !sim._atNucleationCap('cuprite')) {
+  if (sigma_cpr > MINERAL_GATES_cuprite.sigma_crit && !sim._atNucleationCap('cuprite')) {
     if (!existing_cpr.length || (sigma_cpr > 1.8 && rng.random() < 0.2)) {
       let pos = 'vug wall';
       const active_nc_cpr = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
@@ -75,7 +75,7 @@ function _nuc_cuprite(sim) {
 
 function _nuc_rutile(sim) {
   const sigma = sim.conditions.supersaturation_rutile();
-  if (sigma > 1.3 && !sim._atNucleationCap('rutile') && rng.random() < 0.12) {
+  if (sigma > MINERAL_GATES_rutile.sigma_crit && !sim._atNucleationCap('rutile') && rng.random() < 0.12) {
     let pos = 'vug wall';
     const qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
     // Rutilated quartz — strong substrate preference for growing quartz
@@ -87,7 +87,7 @@ function _nuc_rutile(sim) {
 
 function _nuc_chromite(sim) {
   const sigma = sim.conditions.supersaturation_chromite();
-  if (sigma > 1.4 && !sim._atNucleationCap('chromite') && rng.random() < 0.10) {
+  if (sigma > MINERAL_GATES_chromite.sigma_crit && !sim._atNucleationCap('chromite') && rng.random() < 0.10) {
     const c = sim.nucleate('chromite', 'vug wall', sigma);
     sim.log.push(`  ✦ NUCLEATION: ⚫ Chromite #${c.crystal_id} on ${c.position} (Cr ${sim.conditions.fluid.Cr.toFixed(0)} Fe ${sim.conditions.fluid.Fe.toFixed(0)} ppm at T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}) — magmatic spinel`);
   }
@@ -103,7 +103,7 @@ function _nuc_cassiterite(sim) {
   // quartz. Cassiterite-on-wolframite is the classic Erzgebirge /
   // Cornwall greisen association.
   const sigma_sn = sim.conditions.supersaturation_cassiterite();
-  if (sigma_sn > 1.2 && !sim._atNucleationCap('cassiterite')) {
+  if (sigma_sn > MINERAL_GATES_cassiterite.sigma_crit && !sim._atNucleationCap('cassiterite')) {
     if (rng.random() < 0.18) {
       let pos = 'vug wall';
       const active_wf_sn   = sim.crystals.filter(c => c.mineral === 'wolframite' && c.active);
@@ -152,7 +152,7 @@ function _nuc_cassiterite(sim) {
 // scenarios where Mn is below threshold.
 function _nuc_pyrolusite(sim) {
   const sigma = sim.conditions.supersaturation_pyrolusite();
-  if (sigma < 1.0) return;                       // RNG-cascade guard — DO NOT MOVE
+  if (sigma < MINERAL_GATES_pyrolusite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('pyrolusite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'pyrolusite' && c.active);
   const total = sim.crystals.filter(c => c.mineral === 'pyrolusite').length;
@@ -196,7 +196,7 @@ function _nuc_pyrolusite(sim) {
 // wall. RNG-cascade-guarded.
 function _nuc_brucite(sim) {
   const sigma = sim.conditions.supersaturation_brucite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_brucite.sigma_crit) return;
   if (sim._atNucleationCap('brucite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'brucite' && c.active);
   if (existing.length >= 4) return;

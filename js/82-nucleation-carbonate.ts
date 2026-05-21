@@ -38,7 +38,7 @@ function _nuc_calcite(sim) {
   const gateClear = air_mode
     ? (rng.random() < _AIR_MODE_NUCLEATION_PROB)
     : !existing_calcite.length;
-  if (sigma_c > 1.3 && gateClear && !sim._atNucleationCap('calcite')) {
+  if (sigma_c > MINERAL_GATES_calcite.sigma_crit && gateClear && !sim._atNucleationCap('calcite')) {
     const c = sim.nucleate('calcite', 'vug wall', sigma_c);
     sim.log.push(`  ✦ NUCLEATION: Calcite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_c.toFixed(2)})`);
   }
@@ -54,7 +54,7 @@ function _nuc_aragonite(sim) {
   const gateClear = air_mode
     ? (rng.random() < _AIR_MODE_NUCLEATION_PROB)
     : !existing_arag.length;
-  if (sigma_arag > 1.0 && gateClear && !sim._atNucleationCap('aragonite')) {
+  if (sigma_arag > MINERAL_GATES_aragonite.sigma_crit && gateClear && !sim._atNucleationCap('aragonite')) {
     let pos = 'vug wall';
     const existing_goe_a = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
     const existing_hem_a = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
@@ -70,7 +70,7 @@ function _nuc_aragonite(sim) {
 function _nuc_dolomite(sim) {
   const sigma_dol = sim.conditions.supersaturation_dolomite();
   const existing_dol = sim.crystals.filter(c => c.mineral === 'dolomite' && c.active);
-  if (sigma_dol > 1.0 && !existing_dol.length && !sim._atNucleationCap('dolomite')) {
+  if (sigma_dol > MINERAL_GATES_dolomite.sigma_crit && !existing_dol.length && !sim._atNucleationCap('dolomite')) {
     let pos = 'vug wall';
     const existing_cal_d = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
     if (existing_cal_d.length && rng.random() < 0.4) pos = `on calcite #${existing_cal_d[0].crystal_id}`;
@@ -84,7 +84,7 @@ function _nuc_dolomite(sim) {
 function _nuc_siderite(sim) {
   const sigma_sid = sim.conditions.supersaturation_siderite();
   const existing_sid = sim.crystals.filter(c => c.mineral === 'siderite' && c.active);
-  if (sigma_sid > 1.0 && !existing_sid.length && !sim._atNucleationCap('siderite')) {
+  if (sigma_sid > MINERAL_GATES_siderite.sigma_crit && !existing_sid.length && !sim._atNucleationCap('siderite')) {
     let pos = 'vug wall';
     const existing_py_s = sim.crystals.filter(c => c.mineral === 'pyrite' && c.active);
     const existing_sph_s = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.active);
@@ -99,7 +99,7 @@ function _nuc_siderite(sim) {
 function _nuc_rhodochrosite(sim) {
   const sigma_rho = sim.conditions.supersaturation_rhodochrosite();
   const existing_rho = sim.crystals.filter(c => c.mineral === 'rhodochrosite' && c.active);
-  if (sigma_rho > 1.0 && !existing_rho.length && !sim._atNucleationCap('rhodochrosite')) {
+  if (sigma_rho > MINERAL_GATES_rhodochrosite.sigma_crit && !existing_rho.length && !sim._atNucleationCap('rhodochrosite')) {
     let pos = 'vug wall';
     const existing_goe_r = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
     const existing_py_r = sim.crystals.filter(c => c.mineral === 'pyrite' && c.active);
@@ -129,7 +129,7 @@ function _nuc_malachite(sim) {
     pos = `on hematite #${existing_hem[0].crystal_id}`;
   }
   const discount = sim._sigmaDiscountForPosition('malachite', pos);
-  if (sigma_mal > 1.0 * discount) {
+  if (sigma_mal > MINERAL_GATES_malachite.sigma_crit * discount) {
     const c = sim.nucleate('malachite', pos, sigma_mal);
     sim.log.push(`  ✦ NUCLEATION: Malachite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_mal.toFixed(2)})`);
   }
@@ -152,7 +152,7 @@ function _nuc_smithsonite(sim) {
     pos = `on sphalerite #${any_sph[0].crystal_id}`;
   }
   const discount = sim._sigmaDiscountForPosition('smithsonite', pos);
-  if (sigma_sm > 1.0 * discount) {
+  if (sigma_sm > MINERAL_GATES_smithsonite.sigma_crit * discount) {
     const c = sim.nucleate('smithsonite', pos, sigma_sm);
     sim.log.push(`  ✦ NUCLEATION: Smithsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_sm.toFixed(2)}) — zinc carbonate from oxidized sphalerite`);
   }
@@ -170,7 +170,7 @@ function _nuc_azurite(sim) {
   if (active_cpr_azr.length && rng.random() < 0.4) pos = `on cuprite #${active_cpr_azr[0].crystal_id}`;
   else if (active_nc_azr.length && rng.random() < 0.3) pos = `on native_copper #${active_nc_azr[0].crystal_id}`;
   const discount = sim._sigmaDiscountForPosition('azurite', pos);
-  if (sigma_azr > 1.4 * discount) {
+  if (sigma_azr > MINERAL_GATES_azurite.sigma_crit * discount) {
     if (!existing_azr.length || (sigma_azr > 2.0 && rng.random() < 0.25)) {
       const c = sim.nucleate('azurite', pos, sigma_azr);
       sim.log.push(`  ✦ NUCLEATION: Azurite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_azr.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)})`);
@@ -184,7 +184,7 @@ function _nuc_azurite(sim) {
 function _nuc_cerussite(sim) {
   const sigma_cer = sim.conditions.supersaturation_cerussite();
   const existing_cer = sim.crystals.filter(c => c.mineral === 'cerussite' && c.active);
-  if (sigma_cer > 1.0 && !sim._atNucleationCap('cerussite')) {
+  if (sigma_cer > MINERAL_GATES_cerussite.sigma_crit && !sim._atNucleationCap('cerussite')) {
     if (!existing_cer.length || (sigma_cer > 1.8 && rng.random() < 0.3)) {
       let pos = 'vug wall';
       const dissolving_ang = sim.crystals.filter(c => c.mineral === 'anglesite' && c.dissolved);
@@ -202,7 +202,7 @@ function _nuc_cerussite(sim) {
 }
 function _nuc_rosasite(sim) {
   const sigma_ros = sim.conditions.supersaturation_rosasite();
-  if (sigma_ros > 1.0 && !sim._atNucleationCap('rosasite')) {
+  if (sigma_ros > MINERAL_GATES_rosasite.sigma_crit && !sim._atNucleationCap('rosasite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const weathering_cpy = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
@@ -225,7 +225,7 @@ function _nuc_rosasite(sim) {
 }
 function _nuc_aurichalcite(sim) {
   const sigma_aur = sim.conditions.supersaturation_aurichalcite();
-  if (sigma_aur > 1.0 && !sim._atNucleationCap('aurichalcite')) {
+  if (sigma_aur > MINERAL_GATES_aurichalcite.sigma_crit && !sim._atNucleationCap('aurichalcite')) {
     if (rng.random() < 0.20) {
       let pos = 'vug wall';
       const weathering_sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved);
@@ -248,7 +248,7 @@ function _nuc_aurichalcite(sim) {
 
 function _nuc_strontianite(sim) {
   const sigma = sim.conditions.supersaturation_strontianite();
-  if (sigma > 1.2 && !sim._atNucleationCap('strontianite') && rng.random() < 0.15) {
+  if (sigma > MINERAL_GATES_strontianite.sigma_crit && !sim._atNucleationCap('strontianite') && rng.random() < 0.15) {
     const c = sim.nucleate('strontianite', 'vug wall', sigma);
     sim.log.push(`  ✦ NUCLEATION: 🟠 Strontianite #${c.crystal_id} on ${c.position} (Sr ${sim.conditions.fluid.Sr.toFixed(0)} CO3 ${sim.conditions.fluid.CO3.toFixed(0)} ppm, σ=${sigma.toFixed(2)}) — pseudohex cyclic-twinned Sr carbonate`);
   }
@@ -256,7 +256,7 @@ function _nuc_strontianite(sim) {
 
 function _nuc_witherite(sim) {
   const sigma = sim.conditions.supersaturation_witherite();
-  if (sigma > 1.2 && !sim._atNucleationCap('witherite') && rng.random() < 0.15) {
+  if (sigma > MINERAL_GATES_witherite.sigma_crit && !sim._atNucleationCap('witherite') && rng.random() < 0.15) {
     let pos = 'vug wall';
     const flu = sim.crystals.filter(c => c.mineral === 'fluorite' && c.active);
     if (flu.length && rng.random() < 0.35) pos = `on fluorite #${flu[0].crystal_id} (Cave-in-Rock association)`;
@@ -270,7 +270,7 @@ function _nuc_witherite(sim) {
 // + cave-floor paragenesis (Iglesiente Sardinia + Mežica Slovenia).
 function _nuc_hydrozincite(sim) {
   const sigma = sim.conditions.supersaturation_hydrozincite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_hydrozincite.sigma_crit) return;
   if (sim._atNucleationCap('hydrozincite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'hydrozincite' && c.active);
   if (existing.length >= 3) return;
