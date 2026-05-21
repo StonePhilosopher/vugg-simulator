@@ -6,9 +6,20 @@
 // MASS_BALANCE_SCALE × zone.thickness_um in applyMassBalance to
 // debit/credit the per-ring fluid when MASS_BALANCE_ENABLED is on.
 //
-// PROPOSAL-GEOLOGICAL-ACCURACY Phase 1. Default flag OFF — these
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 1.
+//
+// HISTORICAL HEADER (kept for context): "Default flag OFF — these
 // values do not affect any scenario until the calibration pass flips
-// the flag.
+// the flag."
+//
+// **THE FLAG IS ON AND HAS BEEN FOR A LONG TIME.** See
+// js/18-constants.ts:39 — MASS_BALANCE_ENABLED = true. The historical
+// header above is stale; do NOT trust it. Adding a new entry HERE
+// immediately starts debiting fluid composition for that mineral's
+// growth in every scenario where it fires. That's good (correct
+// chemistry) but the cascade ripples may shift paragenesis in
+// other scenarios. See HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md
+// for the v120-v124 lesson on disciplined per-scenario tuning.
 //
 // Conventions:
 // - Coefficients are per formula unit. Solid solutions use mid-range
