@@ -322,6 +322,12 @@ const EVENT_REGISTRY = {
   jeffrey_mine_mid_rodingite: event_jeffrey_mine_mid_rodingite,
   jeffrey_mine_late_ca_silicates: event_jeffrey_mine_late_ca_silicates,
   jeffrey_mine_terminal_datolite: event_jeffrey_mine_terminal_datolite,
+  // 2026-05-21 — TN457 forcing-function test for PROPOSAL-EVENT-DRIVEN-
+  // PRECIPITATION (Rock Bot + Professor, 2026-05-20). Single handler
+  // fired 50× across steps 5-103 by tn457_barite_pulses; each firing
+  // is a Ba + Mn fluid pulse with rng-driven Mn variation. See
+  // js/70s-tn457.ts for the per-pulse chemistry.
+  tn457_mn_ba_pulse: event_tn457_mn_ba_pulse,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and

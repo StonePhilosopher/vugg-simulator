@@ -52,7 +52,9 @@ function loadScenarioNames(): string[] {
 function loadMenuButtonScenarios(): Set<string> {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const out = new Set<string>();
-  const re = /startScenarioInCreative\(['"]([a-z_]+)['"]\)/g;
+  // Allow digits in the captured group — scenario names like
+  // `tn457_barite_pulses` (v118) carry the specimen number in them.
+  const re = /startScenarioInCreative\(['"]([a-z0-9_]+)['"]\)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) out.add(m[1]);
   return out;
@@ -64,7 +66,8 @@ function loadOptionsFromSelect(selectId: string): Set<string> {
   if (!m) return new Set();
   const block = m[0];
   const out = new Set<string>();
-  const re = /<option\s+value="([a-z_]+)"/g;
+  // Allow digits — scenario names like `tn457_barite_pulses` carry numbers.
+  const re = /<option\s+value="([a-z0-9_]+)"/g;
   let opt: RegExpExecArray | null;
   while ((opt = re.exec(block)) !== null) out.add(opt[1]);
   return out;

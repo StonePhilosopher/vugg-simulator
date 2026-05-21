@@ -5416,5 +5416,83 @@
 //
 //          NO MINERAL OR SCENARIO CHANGES. Coverage stays at 145.
 //          Scenarios stay at 29.
-const SIM_VERSION = 117;
+//   v118 — TN457 barite pulses scenario + barite trace_Mn capture
+//          (2026-05-21). FORCING-FUNCTION TEST for
+//          PROPOSAL-EVENT-DRIVEN-PRECIPITATION (Rock Bot + Professor,
+//          2026-05-20). Boss greenlit (1) from the gap-analysis
+//          sequencing; this commit ships the test scenario before any
+//          renderer work. Once it runs, the gap between WHAT IT
+//          PRODUCES and WHAT TN457 LOOKS LIKE drives the next sub-arc
+//          (per-zone color, coin-stack render primitive, etc.).
+//
+//          NEW SCENARIO: tn457_barite_pulses (data/scenarios.json5)
+//          Cumbria-style Pb-Zn-Ba MVT cavity. Initial Zn+S broth
+//          nucleates sphalerite steps 1-4; 50 fluid pulses across
+//          steps 5-103 inject Ba +15 ppm and Mn +rng(0.3,1.5) ppm
+//          per pulse via the single new event handler
+//          tn457_mn_ba_pulse (js/70s-tn457.ts). Each pulse drives
+//          one barite growth zone with that pulse's Mn loading.
+//          The pink-banding signature emerges as per-zone trace_Mn
+//          variation across the 50 zones.
+//
+//          NEW EVENT HANDLER: js/70s-tn457.ts
+//          Single per-pulse function; fired 50× by the scenario.
+//          Registered in EVENT_REGISTRY (70-events.ts). Uses rng.random()
+//          for per-pulse Mn variation, making the time-series byte-
+//          stable per (scenario, seed) — composes with v117 ?seed=N
+//          shareable-URL contract.
+//
+//          ENGINE CHANGE: js/60-engines-sulfate.ts grow_barite() now
+//          captures trace_Mn on growth zones (was missing — barite is
+//          THE textbook Mn²⁺-banded mineral per Putnis & Perthuisot
+//          2001, but the per-zone capture wasn't wired). Partition
+//          coefficient 0.0015 matches calcite's. This makes per-zone
+//          Mn variation visible in the dump output AND sets up the
+//          per-zone color render path (slated for the next sub-arc).
+//          The baseline format tracks only {active, dissolved, total,
+//          max_um} per mineral — NOT per-zone trace fields — so the
+//          trace_Mn addition does NOT drift v117 baseline numbers
+//          for any existing scenario. Verified by byte-diff post-regen.
+//
+//          MENU SURFACES per skill §10.5: tn457 wired into all three
+//          (scenarios-panel buttons + #scenario dropdown + #idle-
+//          scenario dropdown). Menu-coverage guard test regex
+//          /[a-z_]+/ widened to /[a-z0-9_]+/ since tn457 is the first
+//          scenario name carrying digits.
+//
+//          BASELINE: seed42_v118.json regenerated. Diff vs v117:
+//          identical for all 29 pre-existing scenarios; new entry
+//          for tn457_barite_pulses. Confirms the v117 → v118 engine
+//          changes (trace_Mn capture on barite zones) are baseline-
+//          invariant — the baseline counts crystals + max_um, not
+//          zone trace composition.
+//
+//          TESTS (tests-js/tn457-barite-pulses.test.ts, 10 pins):
+//            * scenario registered + callable returns 50 events @
+//              steps 5,7,...,103 + 110-step duration
+//            * initial broth gates: sphalerite ON, barite OFF
+//            * after pulse 1 barite gate clears
+//            * sphalerite nucleates BEFORE barite (paragenetic order)
+//            * barite zones record Mn variation (pink-banding signature
+//              proven; max-min trace_Mn > 0.01)
+//            * cumulative pulse effect: T cools, O2 oxidizes
+//            * determinism: same seed twice → identical paragenesis
+//            * different seeds → different specimens
+//            * agent-friendly: ?seed= URL contract works via
+//              _agentHeadlessRun (v117 composes)
+//
+//          FOLLOW-UPS surfaced (deferred per gap-analysis):
+//            - trace_Mn capture broader audit (siderite/rhodochrosite/
+//              aragonite/manganocalcite would all benefit; calcite
+//              already has it)
+//            - per-zone color rendering (renderer reads trace_Mn per
+//              zone, paints bands) — the visual half of the TN457
+//              fix; chemistry is now in place
+//            - coin-stack render primitive ('stacked_tablets' habit
+//              variant) — for fast-pulse tabular barite
+//            - mass-nucleation bypass at high sigma
+//            - MINERAL_STOICHIOMETRY broader backfill
+//
+//          Coverage 145 minerals (unchanged). Scenarios 29 → 30.
+const SIM_VERSION = 118;
 
