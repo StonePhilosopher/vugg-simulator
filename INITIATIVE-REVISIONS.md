@@ -72,46 +72,79 @@
 
 ---
 
-## Questions for Professor (A-F + Q1/Q5/Q9 from §05)
+## Builder Feedback (2026-05-21 13:43 EDT)
 
-Professor, please answer these so I can write the revised proposal and start v128:
+The builder reviewed all docs and provided substantive refinements on graduated competition:
 
-### A-F (new)
-**A. Physics-only vs modifier-only competition?**
-Your lean is modifier-only for v128. Confirm?
+### G. Sharing Math — Power-Law (k=2)
+Linear sharing (myShare = myInitiative / totalInitiative) is too weak — a 9% initiative gap → only 4% allocation gap. **Power-law sharing with k=2** is the builder's recommendation: shares = initiative² / Σ(initiative_j²). More aggressive dominance for small gaps, calibrated against v125 cascade record.
 
-**B. σ_crit extraction?**
-Extract from engine gates programmatically, with divergence guard test. Confirm?
+### H. fullAllocation Semantics — Cation-Level Rationing (Option C)
+The builder rejects per-mineral share (unphysical — non-competing minerals shouldn't slow each other). **Cation-level rationing** is correct: after all minerals compute desired thickness_um, sum desired debit per cation. If desired_C > fluid[C], ration that cation across competitors weighted by initiative. Only triggers when broth is genuinely limiting. Preserves stoichiometric integrity. Matches Liebig's law of the minimum.
 
-**C. Per-zone vs global?**
-Global for v128, per-zone as future? Or start with per-zone?
+### F Revised — cascadeRipplePenalty (additive, not replacement)
+The multi-cation penalty is NOT competition. Competition is per-cation overlap. The 5-cation penalty captures **cascade ripple potential** — a 5-cation mineral perturbs more σ-gates downstream. Rename to `cascadeRipplePenalty` or `stoichiometricComplexity`. Applied ADDITIVELY to per-cation competition.
 
-**D. RNG calls?**
-Initiative replaces Shape-B for ordering, SeededRandom stays for geometry. Confirm?
+Example: lepidolite in radioactive_pegmatite:
+- −2 from cascade ripple (5 cations)
+- −2 from per-cation competition (K, Li, Al, SiO2, F all overlap)
+- Total: −4 (matches v126 empirical severity: 11 breaks)
 
-**E. Rarity ground-truth?**
-Both v125 record + real abundance? Or one preferred?
+### B Revised — Engine Gates as Exported Constants
+Don't parse engine source files. **Have each engine export its gates as a structured constant**:
+```typescript
+const SUPERSAT_GATES_sphalerite = {
+  sigma_crit: 1.8,
+  T_min: 80, T_max: 350,
+  pH_min: 2, pH_max: 9,
+  // ...
+};
+```
+Then `data/sigma-crit-generated.json` is built from these constants. Guard test fails if registered engine lacks gates. Migration cost: 25 engine files, one-time refactor. Pays off for library-card display (T-range, pH-range, σ_crit shown directly).
 
-**F. Multi-cation penalty?**
-Scale with unique cation count (lepidolite 5 cations = bigger penalty). Confirm?
+### Induction Time Clarification
+Graduated allocation affects **post-nucleation growth rate**, not **pre-nucleation delay**. Induction time (thermal fluctuation overcoming ΔG*) is a distinct mechanism. Defer formal induction to v131+. v128's graduated model doesn't fully capture induction kinetics — be explicit about this in the proposal.
 
-### Q1/Q5/Q9 from §05
-**Q1. σ_crit source:** Extract from engines (A) with divergence guard. Agreed?
+### Five Calibration Assertions for v129
+1. **dioptase in schneeberg:** grows, but pharmacolite should NOT drop to zero
+2. **koettigite in supergene_oxidation:** grows as smaller fraction; alunite stays
+3. **lepidolite in radioactive_pegmatite:** 11 v126 breaks collapse to ~3-5 max_um drifts
+4. **cassiterite in radioactive_pegmatite:** 2-of-3 near-miss converts to clean 3-of-3
+5. **uranophane in schneeberg:** grows as small share alongside uranyl suite
 
-**Q5. Coefficient-weighted competition?**
-Mineral needing Cu:1 vs Cu:10 should have different competitive weight. Worth adding?
+### I. competitionMode Scenario Parameter — Defer to v129
+Ship v128 with one global mode (probably 'auto' with sensible defaults). Add scenario overrides in v129 if specific scenarios need them.
 
-**Q9. Induction time counter?**
-Track steps_above_threshold, nucleate when counter > induction_steps(σ,T,γ). Worth adding as the true edge-of-gate model?
+### J. Library Card Layout — Mockup Needed
+Builder offers to draft mockup. Options:
+- "Competitiveness profile": σ_crit + T sweet-spot + competition group + base initiative
+- "Rarity tier": derived from base initiative under typical conditions
+- "Why is this rare?": narrator-style explanation linking initiative + competition + edge-of-gate
 
 ---
 
-## Recommended Path Forward
+## Professor's Decisions Needed (Updated 2026-05-21)
 
-**v127 (planning):** Resolve A-F + Q1/Q5/Q9, update proposal docs in-place
-**v128 (infrastructure):** Land js/20-initiative.ts, spec fields, library card section, global enable, new baselines
-**v129-v131 (calibration):** One modifier at a time — Temperature → Edge/Induction → Competition → Substrate
+### G. Sharing Math — Power-Law k=2?
+**Builder recommends power-law with k=2.** Calibrated against v125 cascade record. Confirm?
 
-Awaiting Professor's answers.
+### H. fullAllocation — Cation-Level Rationing (Option C)?
+**Builder recommends cation-level rationing.** Only triggers when broth limiting. Non-competing minerals unaffected. Confirm?
+
+### I. competitionMode Scenario Parameter — Defer to v129?
+Ship v128 with global 'auto' mode. Add scenario overrides later. Confirm?
+
+### J. Library Card — Builder drafts mockup?
+Builder offers to draft card layout. Should they proceed?
+
+### B Revised — Engine Gates as Exported Constants?
+Refactor 25 engine files to export gates constants. One-time cost, pays off long-term. Confirm?
+
+### Revised Sequencing
+**v127 (planning):** Confirm G/H/I/J/B-revised + science fixes in canonical docs
+**v128 (infrastructure):** Engine gates exported. js/20-initiative.ts lands with base initiative + linear modifiers. Library card section drafted. NO graduated allocation yet.
+**v129 (graduated allocation):** Power-law sharing + cation-level rationing lands. Five calibration assertions become test pins. All baselines replaced.
+**v130:** Substrate/epitaxy modifier
+**v131+:** Induction counter, per-zone initiative, stochastic mode
 
 — 🪨✍️
