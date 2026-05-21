@@ -86,6 +86,48 @@ function crystalColor(crystal) {
       // Clear/white
       return '#f0e8d8';
 
+    case 'aragonite':
+      // v122 — orthorhombic CaCO3 polymorph. Mn²⁺ shifts toward
+      // peach/pink (the Sicilian aragonite cabinet aesthetic). Same
+      // partition as calcite (0.05); Mn-banded "flos-ferri" aragonite
+      // from Eisenerz / Styrian Alps is the canonical Mn-bearing
+      // variety. Default cream-white. Fe trace adds yellow-brown.
+      if (avgMn > 5 && avgFe < 1) return '#e8b8a8';      // peach (high Mn, Fe-poor)
+      if (avgMn > 2) return '#e8c8a8';                    // pale peach
+      if (avgFe > 5) return '#c8a880';                    // yellow-brown Fe-bearing
+      return '#f0e8d8';                                   // classic cream-white
+
+    case 'dolomite':
+      // v122 — CaMg(CO3)2. Pink dolomite from Tri-State district
+      // (Joplin MO / Picher OK) is THE textbook Mn²⁺-bearing variety;
+      // Heyl 1968 + Sangster 1990. Higher Mn loading than calcite
+      // typically (carbonate-family partition 0.05, and dolomite often
+      // sits in late-stage Mn-enriched MVT fluids). Default tan.
+      if (avgMn > 4 && avgFe < 2) return '#e8b8b8';      // Tri-State pink dolomite
+      if (avgMn > 1.5) return '#e0c8b8';                  // pink-cream
+      if (avgFe > 8) return '#a08868';                    // dark Fe-bearing ankerite-end
+      return '#dcc8a8';                                   // classic dolomite tan
+
+    case 'siderite':
+      // v122 — FeCO3. Naturally amber-brown from the Fe cation. Mn
+      // substitution gives subtle pink-shift; manganoan siderite
+      // ("oligonite") is real but uncommon. Fe is dominant chromophore.
+      if (avgMn > 3 && avgFe < 20) return '#c89890';      // Mn-shifted (Fe-poor manganoan siderite)
+      if (avgFe > 30) return '#604020';                   // dark brown (Fe-saturated)
+      return '#8b6914';                                   // classic amber-brown (default)
+
+    case 'rhodochrosite':
+      // v122 — MnCO3. Mn is the CATION, not a trace — color is already
+      // Mn-dominated raspberry pink. trace_Mn variation just modulates
+      // saturation within the pink range (Capillitas Argentina deep
+      // raspberry vs. Sweet Home CO bright cherry vs. banded Catamarca
+      // pale pink). Fe substitution (manganoan siderite endmember) shifts
+      // brown.
+      if (avgMn > 5) return '#d04060';                    // saturated Sweet Home cherry
+      if (avgMn > 2) return '#d87090';                    // raspberry pink (default)
+      if (avgFe > 10) return '#a86060';                   // brown-shifted (Fe-substituted)
+      return '#d09898';                                   // pale pink (low-Mn variant)
+
     case 'fluorite':
       // Purple: Mn or radiation-induced color centers
       if (avgMn > 1 || radDmg > 0.1) return '#b088dd';

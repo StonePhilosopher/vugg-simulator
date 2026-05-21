@@ -5687,5 +5687,65 @@
 //          color rules). Deferred until needed.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 121;
+//   v122 — carbonate-family Mn color dispatch + specimen-MD planning
+//          (2026-05-21). Extends v121's avgMn dispatch pattern to the
+//          remaining four canonical Mn²⁺-banded carbonates that already
+//          capture trace_Mn but lacked color logic: aragonite (peach/
+//          flos-ferri), dolomite (Tri-State pink per Heyl 1968),
+//          siderite (oligonite manganoan variant), rhodochrosite (Mn
+//          is the cation; trace_Mn modulates saturation).
+//
+//          Also lands proposals/PROPOSAL-SPECIMEN-OBJECT.md — planning
+//          MD for the specimen-as-first-class-object architectural arc,
+//          with boss-directive overgrowth-vs-replacement framing +
+//          competition-for-solutes (initiative variable) open question.
+//          The MD is a planning draft with 7 open questions ([pending
+//          boss answer]) that get filled in before Phase A
+//          implementation lands.
+//
+//          ENGINE CHANGES (one file)
+//            js/12-mineral-art.ts crystalColor() switch:
+//              + new 'aragonite' case (Mn peach + Fe yellow-brown)
+//              + new 'dolomite' case (Tri-State pink at high Mn)
+//              + new 'siderite' case (oligonite Mn-pink-shift)
+//              + new 'rhodochrosite' case (Mn-saturation modulation)
+//          The four cases all sit immediately after the existing
+//          'calcite' case (carbonate-family proximity).
+//
+//          BACKWARD COMPAT: all new branches additive. Default branch
+//          in each case returns the natural Fe-dominant or no-trace
+//          color matching the pre-v122 fallback through MINERAL_GAME_
+//          COLORS or default '#d4a843'.
+//
+//          PER-ZONE BANDING NOW LIVE FOR 13 minerals:
+//            calcite + aragonite + dolomite + siderite + rhodochrosite
+//            (carbonate family, v121-v122)
+//            barite + sphalerite + wurtzite + smithsonite (v118-v121)
+//            (the 9 minerals from v121 release notes plus the new 4)
+//          All capture trace_Mn at the engine layer AND consume it
+//          at the color-dispatch layer.
+//
+//          TESTS (tests-js/per-zone-color-mn.test.ts, +11 pins for
+//          v122; 30 total in file):
+//            * aragonite high/mid/no Mn + Fe variants
+//            * dolomite Tri-State pink + tan default
+//            * siderite oligonite + Fe-amber back-compat
+//            * rhodochrosite Sweet Home / raspberry / Fe-shifted
+//
+//          PLANNING MD: proposals/PROPOSAL-SPECIMEN-OBJECT.md (402
+//          lines, untracked-to-tracked). Seven open questions Q1-Q7
+//          with [pending boss answer] blocks. Q1-Q3 spec the
+//          grouping rule + label format edge cases. Q4 spec the
+//          3D-model-in-library future feature path. Q5 covers
+//          snowball-habit refactor decision. Q6 spec library/
+//          inventory drill-down depth. Q7 (added in this commit)
+//          surfaces the initiative-variable architectural question
+//          for fluid-competition ordering.
+//
+//          BASELINE: zero drift. Color is a render-side concern;
+//          baseline tracks crystal counts + max_um per mineral, not
+//          color. Verified byte-diff v121 → v122.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 122;
 

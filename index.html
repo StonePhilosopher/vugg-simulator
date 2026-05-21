@@ -4192,6 +4192,55 @@ function crystalColor(crystal) {
                 return '#a08050';
             // Clear/white
             return '#f0e8d8';
+        case 'aragonite':
+            // v122 — orthorhombic CaCO3 polymorph. Mn²⁺ shifts toward
+            // peach/pink (the Sicilian aragonite cabinet aesthetic). Same
+            // partition as calcite (0.05); Mn-banded "flos-ferri" aragonite
+            // from Eisenerz / Styrian Alps is the canonical Mn-bearing
+            // variety. Default cream-white. Fe trace adds yellow-brown.
+            if (avgMn > 5 && avgFe < 1)
+                return '#e8b8a8'; // peach (high Mn, Fe-poor)
+            if (avgMn > 2)
+                return '#e8c8a8'; // pale peach
+            if (avgFe > 5)
+                return '#c8a880'; // yellow-brown Fe-bearing
+            return '#f0e8d8'; // classic cream-white
+        case 'dolomite':
+            // v122 — CaMg(CO3)2. Pink dolomite from Tri-State district
+            // (Joplin MO / Picher OK) is THE textbook Mn²⁺-bearing variety;
+            // Heyl 1968 + Sangster 1990. Higher Mn loading than calcite
+            // typically (carbonate-family partition 0.05, and dolomite often
+            // sits in late-stage Mn-enriched MVT fluids). Default tan.
+            if (avgMn > 4 && avgFe < 2)
+                return '#e8b8b8'; // Tri-State pink dolomite
+            if (avgMn > 1.5)
+                return '#e0c8b8'; // pink-cream
+            if (avgFe > 8)
+                return '#a08868'; // dark Fe-bearing ankerite-end
+            return '#dcc8a8'; // classic dolomite tan
+        case 'siderite':
+            // v122 — FeCO3. Naturally amber-brown from the Fe cation. Mn
+            // substitution gives subtle pink-shift; manganoan siderite
+            // ("oligonite") is real but uncommon. Fe is dominant chromophore.
+            if (avgMn > 3 && avgFe < 20)
+                return '#c89890'; // Mn-shifted (Fe-poor manganoan siderite)
+            if (avgFe > 30)
+                return '#604020'; // dark brown (Fe-saturated)
+            return '#8b6914'; // classic amber-brown (default)
+        case 'rhodochrosite':
+            // v122 — MnCO3. Mn is the CATION, not a trace — color is already
+            // Mn-dominated raspberry pink. trace_Mn variation just modulates
+            // saturation within the pink range (Capillitas Argentina deep
+            // raspberry vs. Sweet Home CO bright cherry vs. banded Catamarca
+            // pale pink). Fe substitution (manganoan siderite endmember) shifts
+            // brown.
+            if (avgMn > 5)
+                return '#d04060'; // saturated Sweet Home cherry
+            if (avgMn > 2)
+                return '#d87090'; // raspberry pink (default)
+            if (avgFe > 10)
+                return '#a86060'; // brown-shifted (Fe-substituted)
+            return '#d09898'; // pale pink (low-Mn variant)
         case 'fluorite':
             // Purple: Mn or radiation-induced color centers
             if (avgMn > 1 || radDmg > 0.1)
@@ -10125,7 +10174,67 @@ let timeScale = 5.0;
 //          color rules). Deferred until needed.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 121;
+//   v122 — carbonate-family Mn color dispatch + specimen-MD planning
+//          (2026-05-21). Extends v121's avgMn dispatch pattern to the
+//          remaining four canonical Mn²⁺-banded carbonates that already
+//          capture trace_Mn but lacked color logic: aragonite (peach/
+//          flos-ferri), dolomite (Tri-State pink per Heyl 1968),
+//          siderite (oligonite manganoan variant), rhodochrosite (Mn
+//          is the cation; trace_Mn modulates saturation).
+//
+//          Also lands proposals/PROPOSAL-SPECIMEN-OBJECT.md — planning
+//          MD for the specimen-as-first-class-object architectural arc,
+//          with boss-directive overgrowth-vs-replacement framing +
+//          competition-for-solutes (initiative variable) open question.
+//          The MD is a planning draft with 7 open questions ([pending
+//          boss answer]) that get filled in before Phase A
+//          implementation lands.
+//
+//          ENGINE CHANGES (one file)
+//            js/12-mineral-art.ts crystalColor() switch:
+//              + new 'aragonite' case (Mn peach + Fe yellow-brown)
+//              + new 'dolomite' case (Tri-State pink at high Mn)
+//              + new 'siderite' case (oligonite Mn-pink-shift)
+//              + new 'rhodochrosite' case (Mn-saturation modulation)
+//          The four cases all sit immediately after the existing
+//          'calcite' case (carbonate-family proximity).
+//
+//          BACKWARD COMPAT: all new branches additive. Default branch
+//          in each case returns the natural Fe-dominant or no-trace
+//          color matching the pre-v122 fallback through MINERAL_GAME_
+//          COLORS or default '#d4a843'.
+//
+//          PER-ZONE BANDING NOW LIVE FOR 13 minerals:
+//            calcite + aragonite + dolomite + siderite + rhodochrosite
+//            (carbonate family, v121-v122)
+//            barite + sphalerite + wurtzite + smithsonite (v118-v121)
+//            (the 9 minerals from v121 release notes plus the new 4)
+//          All capture trace_Mn at the engine layer AND consume it
+//          at the color-dispatch layer.
+//
+//          TESTS (tests-js/per-zone-color-mn.test.ts, +11 pins for
+//          v122; 30 total in file):
+//            * aragonite high/mid/no Mn + Fe variants
+//            * dolomite Tri-State pink + tan default
+//            * siderite oligonite + Fe-amber back-compat
+//            * rhodochrosite Sweet Home / raspberry / Fe-shifted
+//
+//          PLANNING MD: proposals/PROPOSAL-SPECIMEN-OBJECT.md (402
+//          lines, untracked-to-tracked). Seven open questions Q1-Q7
+//          with [pending boss answer] blocks. Q1-Q3 spec the
+//          grouping rule + label format edge cases. Q4 spec the
+//          3D-model-in-library future feature path. Q5 covers
+//          snowball-habit refactor decision. Q6 spec library/
+//          inventory drill-down depth. Q7 (added in this commit)
+//          surfaces the initiative-variable architectural question
+//          for fluid-competition ordering.
+//
+//          BASELINE: zero drift. Color is a render-side concern;
+//          baseline tracks crystal counts + max_um per mineral, not
+//          color. Verified byte-diff v121 → v122.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 122;
 
 // ── 18-constants.js ──
 

@@ -172,6 +172,63 @@ describe('Per-zone color drives off trace_Mn (v121)', () => {
     });
   });
 
+  describe('Carbonate family — v122 extension', () => {
+    it('aragonite high Mn + low Fe → peach (flos-ferri aesthetic)', () => {
+      const c = makeCrystal('aragonite', [makeZone(0, 6)]);
+      expect(crystalColor(c)).toBe('#e8b8a8');
+    });
+
+    it('aragonite mid Mn → pale peach', () => {
+      const c = makeCrystal('aragonite', [makeZone(0, 3)]);
+      expect(crystalColor(c)).toBe('#e8c8a8');
+    });
+
+    it('aragonite no Mn → cream-white default', () => {
+      const c = makeCrystal('aragonite', [makeZone(0, 0)]);
+      expect(crystalColor(c)).toBe('#f0e8d8');
+    });
+
+    it('dolomite high Mn → Tri-State pink (Heyl 1968)', () => {
+      const c = makeCrystal('dolomite', [makeZone(0, 5)]);
+      expect(crystalColor(c)).toBe('#e8b8b8');
+    });
+
+    it('dolomite mid Mn → pink-cream', () => {
+      const c = makeCrystal('dolomite', [makeZone(0, 2)]);
+      expect(crystalColor(c)).toBe('#e0c8b8');
+    });
+
+    it('dolomite no Mn → classic tan default', () => {
+      const c = makeCrystal('dolomite', [makeZone(0, 0)]);
+      expect(crystalColor(c)).toBe('#dcc8a8');
+    });
+
+    it('siderite high Mn + low Fe → manganoan ("oligonite") pink-shift', () => {
+      const c = makeCrystal('siderite', [makeZone(10, 5)]);
+      expect(crystalColor(c)).toBe('#c89890');
+    });
+
+    it('siderite Fe-dominant → classic amber-brown (back-compat)', () => {
+      const c = makeCrystal('siderite', [makeZone(20, 0)]);
+      expect(crystalColor(c)).toBe('#8b6914');
+    });
+
+    it('rhodochrosite high Mn → Sweet Home cherry', () => {
+      const c = makeCrystal('rhodochrosite', [makeZone(0, 8)]);
+      expect(crystalColor(c)).toBe('#d04060');
+    });
+
+    it('rhodochrosite default → raspberry pink', () => {
+      const c = makeCrystal('rhodochrosite', [makeZone(0, 3)]);
+      expect(crystalColor(c)).toBe('#d87090');
+    });
+
+    it('rhodochrosite Fe-substituted → brown-shifted', () => {
+      const c = makeCrystal('rhodochrosite', [makeZone(15, 0)]);
+      expect(crystalColor(c)).toBe('#a86060');
+    });
+  });
+
   describe('Convention regression guards', () => {
     it('Mn dispatch checks avgMn (not last-zone trace_Mn) — averages correctly', () => {
       // Mix one high-Mn zone with one no-Mn zone; avg lands in mid range.
