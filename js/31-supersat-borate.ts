@@ -7,7 +7,30 @@
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates export added.
+
+// ---- Borate MINERAL_GATES exports ----
+
+const MINERAL_GATES_borax: MineralGates = {
+  sigma_crit: 1.0,
+  T_max: 60,                    // hard cutoff: above 60°C borax dissolves
+  T_optimal: 25,
+  fluid_min: { Na: 50, B: 5 },
+  pH_min: 7.0,                  // hard cutoff: alkaline only
+  surface_energy: 'low',        // hydrated alkaline borate; relatively low γ_sl
+  _sources: ['borax engine v28+', 'Searles Lake / Mojave evaporite literature'],
+  _notes: 'Strict active-evaporation mineral — needs concentration ≥ 1.5 (vadose/meniscus rings only). Ca > 50 ppm suppresses.',
+};
+
+const MINERAL_GATES_tincalconite: MineralGates = {
+  sigma_crit: Infinity,         // paramorph stub — never nucleates from solution
+  T_max: 60,
+  fluid_min: { Na: 50, B: 5 },
+  pH_min: 7.0,
+  surface_energy: 'low',
+  _sources: ['tincalconite paramorph note in supersat function'],
+  _notes: 'Paramorph product of borax dehydration (Na2B4O7·5H2O after Na2B4O7·10H2O). Never nucleates from fluid — only forms by replacement of existing borax. sigma_crit = Infinity reflects "no direct precipitation path."',
+};
 
 Object.assign(VugConditions.prototype, {
   supersaturation_tincalconite() {
@@ -18,9 +41,10 @@ Object.assign(VugConditions.prototype, {
   supersaturation_borax() {
   // v28 alkaline-brine borate evaporite. Mirror of
   // supersaturation_borax in vugg.py.
-  if (this.fluid.Na < 50 || this.fluid.B < 5) return 0;
-  if (this.temperature > 60) return 0;
-  if (this.fluid.pH < 7.0) return 0;
+  const g = MINERAL_GATES_borax;
+  if (this.fluid.Na < g.fluid_min!.Na || this.fluid.B < g.fluid_min!.B) return 0;
+  if (this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min!) return 0;
   const c = this.fluid.concentration ?? 1.0;
   // v28: hard concentration gate — borax is strictly an active-
   // evaporation mineral. Submerged rings stay at c=1.0 and never

@@ -19,7 +19,7 @@
 
 function _nuc_tremolite(sim) {
   const sigma = sim.conditions.supersaturation_tremolite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_tremolite.sigma_crit) return;
   if (sim._atNucleationCap('tremolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'tremolite' && c.active);
   if (existing.length >= 4) return;
@@ -42,7 +42,7 @@ function _nuc_tremolite(sim) {
 
 function _nuc_actinolite(sim) {
   const sigma = sim.conditions.supersaturation_actinolite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_actinolite.sigma_crit) return;
   if (sim._atNucleationCap('actinolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'actinolite' && c.active);
   if (existing.length >= 4) return;
@@ -66,7 +66,7 @@ function _nuc_actinolite(sim) {
 
 function _nuc_anthophyllite(sim) {
   const sigma = sim.conditions.supersaturation_anthophyllite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_anthophyllite.sigma_crit) return;
   if (sim._atNucleationCap('anthophyllite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'anthophyllite' && c.active);
   if (existing.length >= 3) return;
@@ -87,7 +87,7 @@ function _nuc_anthophyllite(sim) {
 
 function _nuc_amosite(sim) {
   const sigma = sim.conditions.supersaturation_amosite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_amosite.sigma_crit) return;
   if (sim._atNucleationCap('amosite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'amosite' && c.active);
   if (existing.length >= 3) return;
@@ -107,7 +107,7 @@ function _nuc_amosite(sim) {
 
 function _nuc_crocidolite(sim) {
   const sigma = sim.conditions.supersaturation_crocidolite();
-  if (sigma < 1.0) return;
+  if (sigma < MINERAL_GATES_crocidolite.sigma_crit) return;
   if (sim._atNucleationCap('crocidolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'crocidolite' && c.active);
   if (existing.length >= 3) return;

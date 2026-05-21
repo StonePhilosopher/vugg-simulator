@@ -14,7 +14,7 @@ function _nuc_goethite(sim) {
   const sigma_goe = sim.conditions.supersaturation_goethite();
   const existing_goe_active = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
   const total_goe = sim.crystals.filter(c => c.mineral === 'goethite').length;
-  if (sigma_goe > 1.0 && !existing_goe_active.length && total_goe < 3 && !sim._atNucleationCap('goethite')) {
+  if (sigma_goe > MINERAL_GATES_goethite.sigma_crit && !existing_goe_active.length && total_goe < 3 && !sim._atNucleationCap('goethite')) {
     let pos = 'vug wall';
     const dissolving_py = sim.crystals.filter(c => c.mineral === 'pyrite' && c.dissolved);
     const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
@@ -35,7 +35,7 @@ function _nuc_goethite(sim) {
 function _nuc_lepidocrocite(sim) {
   const sigma_lep = sim.conditions.supersaturation_lepidocrocite();
   const existing_lep = sim.crystals.filter(c => c.mineral === 'lepidocrocite' && c.active);
-  if (sigma_lep > 1.1 && !sim._atNucleationCap('lepidocrocite')) {
+  if (sigma_lep > MINERAL_GATES_lepidocrocite.sigma_crit && !sim._atNucleationCap('lepidocrocite')) {
     if (!existing_lep.length || (sigma_lep > 1.7 && rng.random() < 0.25)) {
       let pos = 'vug wall';
       const dissolving_py_lep = sim.crystals.filter(c => c.mineral === 'pyrite' && c.dissolved);

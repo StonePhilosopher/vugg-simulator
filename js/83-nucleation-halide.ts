@@ -13,7 +13,7 @@
 function _nuc_fluorite(sim) {
   const sigma_f = sim.conditions.supersaturation_fluorite();
   const existing_fl = sim.crystals.filter(c => c.mineral === 'fluorite' && c.active);
-  if (sigma_f > 1.2 && !existing_fl.length && !sim._atNucleationCap('fluorite')) {
+  if (sigma_f > MINERAL_GATES_fluorite.sigma_crit && !existing_fl.length && !sim._atNucleationCap('fluorite')) {
     const c = sim.nucleate('fluorite', 'vug wall', sigma_f);
     sim.log.push(`  ✦ NUCLEATION: Fluorite #${c.crystal_id} on ${c.position}`);
   }
@@ -22,7 +22,7 @@ function _nuc_fluorite(sim) {
 }
 function _nuc_halite(sim) {
   const sigma_hal = sim.conditions.supersaturation_halite();
-  if (sigma_hal > 1.0 && !sim._atNucleationCap('halite') && rng.random() < 0.15) {
+  if (sigma_hal > MINERAL_GATES_halite.sigma_crit && !sim._atNucleationCap('halite') && rng.random() < 0.15) {
     const c = sim.nucleate('halite', 'vug wall', sigma_hal);
     sim.log.push(`  ✦ NUCLEATION: 🧂 Halite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_hal.toFixed(2)}, concentration=${sim.conditions.fluid.concentration.toFixed(1)}) — bathtub-ring NaCl precipitating from the evaporating brine`);
   }
@@ -32,7 +32,7 @@ function _nuc_halite(sim) {
 
 function _nuc_atacamite(sim) {
   const sigma = sim.conditions.supersaturation_atacamite();
-  if (sigma > 1.2 && !sim._atNucleationCap('atacamite') && rng.random() < 0.15) {
+  if (sigma > MINERAL_GATES_atacamite.sigma_crit && !sim._atNucleationCap('atacamite') && rng.random() < 0.15) {
     let pos = 'vug wall';
     const dissolved_cu = sim.crystals.filter(c => (c.mineral === 'chalcopyrite' || c.mineral === 'bornite' || c.mineral === 'chalcocite') && c.dissolved);
     if (dissolved_cu.length && rng.random() < 0.5) pos = `on ${dissolved_cu[0].mineral} #${dissolved_cu[0].crystal_id} (oxidized)`;
@@ -43,7 +43,7 @@ function _nuc_atacamite(sim) {
 
 function _nuc_sylvite(sim) {
   const sigma = sim.conditions.supersaturation_sylvite();
-  if (sigma > 1.0 && !sim._atNucleationCap('sylvite') && rng.random() < 0.12) {
+  if (sigma > MINERAL_GATES_sylvite.sigma_crit && !sim._atNucleationCap('sylvite') && rng.random() < 0.12) {
     const c = sim.nucleate('sylvite', 'vug wall', sigma);
     sim.log.push(`  ✦ NUCLEATION: 🧂 Sylvite #${c.crystal_id} on ${c.position} (K=${sim.conditions.fluid.K.toFixed(0)} Cl=${sim.conditions.fluid.Cl.toFixed(0)} ppm, concentration=${sim.conditions.fluid.concentration.toFixed(1)}) — late-stage potash from residual brine`);
   }
