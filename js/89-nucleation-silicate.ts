@@ -476,6 +476,33 @@ function _nuc_shattuckite(sim) {
   }
 }
 
+// v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph after
+// crocidolite. Substrate priority: crocidolite_dissolving (canonical
+// pseudomorph substrate, p=0.65) > hematite (BIF tiger-iron context,
+// p=0.45) > magnetite > wall.
+function _nuc_tigers_eye(sim) {
+  const sigma = sim.conditions.supersaturation_tigers_eye();
+  if (sigma < 1.0) return;
+  if (sim._atNucleationCap('tigers_eye')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'tigers_eye' && c.active);
+  if (existing.length >= 3) return;
+  let pos = 'vug wall';
+  const dissolving_croc = sim.crystals.filter(c => c.mineral === 'crocidolite' && c.dissolved);
+  const active_hem = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
+  const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
+  if (dissolving_croc.length && rng.random() < 0.65) pos = `pseudomorph after crocidolite #${dissolving_croc[0].crystal_id} (the canonical tiger's eye paragenesis)`;
+  else if (active_hem.length && rng.random() < 0.45) pos = `with hematite #${active_hem[0].crystal_id} (TIGER IRON BIF context)`;
+  else if (active_mag.length && rng.random() < 0.30) pos = `with magnetite #${active_mag[0].crystal_id} (BIF residual)`;
+  const discount = sim._sigmaDiscountForPosition('tigers_eye', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.22)) {
+      const c = sim.nucleate('tigers_eye', pos, sigma);
+      const variety = pos.includes('hematite') ? 'TIGER IRON' : (pos.includes('crocidolite') ? 'CHATOYANT pseudomorph' : 'chalcedony');
+      sim.log.push(`  ✦ NUCLEATION: 🐅 Tiger's eye #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(1)}) — ${variety}, supergene chalcedony pseudomorph after crocidolite`);
+    }
+  }
+}
+
 // v114 (2026-05-20): Chrysotile Mg3Si2O5(OH)4 — fibrous serpentine
 // asbestos. Jeffrey Mine signature host matrix. Substrate priority:
 // magnetite (rodingite co-formation) > olivine_dissolving (the
@@ -735,4 +762,5 @@ function _nucleateClass_silicate(sim) {
   _nuc_wollastonite(sim);
   _nuc_prehnite(sim);
   _nuc_chrysotile(sim);
+  _nuc_tigers_eye(sim);
 }

@@ -355,4 +355,26 @@ const MINERAL_ENGINES = {
   chrysotile: grow_chrysotile,
   brucite: grow_brucite,
   awaruite: grow_awaruite,
+  // v116 (2026-05-20): Commercial-asbestos quintet + tiger's eye.
+  // Closes the asbestiform-family gap the Jeffrey arc was missing.
+  // Per WHO 1986/2014: six commercial asbestos minerals — chrysotile
+  // (serpentine, v114) + five amphiboles (this commit). Crocidolite +
+  // tremolite are the most carcinogenic; amphibole-asbestos is more
+  // dangerous than chrysotile per Frank et al. 2002. The mineral
+  // engines encode the GEOLOGY; health context lives in minerals.json
+  // descriptions. Five amphibole engines live in new amphibole-class
+  // files (js/39a / 59a / 89a) per Hawthorne et al. 2012 supergroup
+  // nomenclature.
+  //
+  // Tiger's eye = chalcedony pseudomorph AFTER crocidolite (supergene
+  // oxidation of Fe2+ → Fe3+; the famous chatoyant gemstone). Lives
+  // in silicate class since structurally chalcedony. Three habit
+  // variants: chatoyant_pseudomorph (gold-brown classic), hawks_eye
+  // (partial oxidation), tiger_iron (BIF-banded with hematite+jasper).
+  tremolite: grow_tremolite,
+  actinolite: grow_actinolite,
+  anthophyllite: grow_anthophyllite,
+  amosite: grow_amosite,
+  crocidolite: grow_crocidolite,
+  tigers_eye: grow_tigers_eye,
 };

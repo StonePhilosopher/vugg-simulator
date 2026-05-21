@@ -524,6 +524,51 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
+  // v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph AFTER
+  // crocidolite. The famous gold-brown chatoyant gemstone variety;
+  // Cu2+-bearing chalcedony fibers preserve the crocidolite-asbestos
+  // fiber-bundle morphology, producing the characteristic silky-chatoyant
+  // cat's-eye effect. Type-locality Northern Cape South Africa BIF
+  // (Hamersley + Mt. Brockman + Asbestos Hills); also Wittenoom WA,
+  // Cherokee NC. Three habit variants:
+  //   chatoyant_pseudomorph (default) — fully oxidized; gold-brown
+  //                                      classic gemstone aesthetic
+  //   hawks_eye (partial)             — crocidolite + chalcedony coexist;
+  //                                      blue-grey-gold intermediate
+  //   tiger_iron (BIF context)        — hematite + jasper + tiger's eye
+  //                                      banded; the BIF assemblage rock
+  // Geological process: supergene oxidation of crocidolite Fe2+ to Fe3+
+  // releases the Na, replaces the silicate fiber framework with
+  // microcrystalline SiO2 (chalcedony), with Fe3+ trace giving the
+  // gold-brown chatoyant color. Engine reads crocidolite_dissolving
+  // substrate; pure-SiO2 alternative path (Fe ≥ 50 + O2 > 0.5 + low T)
+  // captures the "tiger iron" BIF context.
+  // Refs: Cairncross B & Beukes NJ (2013) "The Northern Cape diamond
+  // route — geology + gemstones." Geological Society of South Africa;
+  // Heaney PJ & Fisher DM (2003) Am. Min. 88:1-14 "New interpretation
+  // of the origin of tiger's-eye."
+  supersaturation_tigers_eye() {
+    if (this.fluid.SiO2 < 200 || this.fluid.Fe < 30) return 0;
+    if (this.temperature < 20 || this.temperature > 200) return 0;
+    if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5) return 0;
+    // OXIDIZING required — the supergene weathering condition
+    if (this.fluid.O2 < 0.4) return 0;
+    const si_f = Math.min(this.fluid.SiO2 / 400.0, 2.0);
+    const fe_f = Math.min(this.fluid.Fe / 80.0, 2.0);
+    let sigma = si_f * fe_f;
+    // T sweet spot 30-100°C (surface-supergene weathering of BIF)
+    const T = this.temperature;
+    if (T >= 30 && T <= 100) sigma *= 1.3;
+    else if (T < 30) sigma *= Math.max(0.4, T / 30);
+    else sigma *= Math.max(0.4, 1.0 - (T - 100) / 100);
+    // pH sweet spot 6.5-8.0
+    const pH = this.fluid.pH;
+    if (pH >= 6.5 && pH <= 8.0) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.25) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'tigers_eye');
+    return Math.max(sigma, 0);
+  },
+
   // v114 (2026-05-20): Chrysotile Mg3Si2O5(OH)4 — monoclinic serpentine-
   // group phyllosilicate. THE asbestos of commerce. Fibrous habit
   // diagnostic (parallel-bundle silky fibers); platy lizardite form is

@@ -189,6 +189,7 @@ Object.assign(VugSimulator.prototype, {
   // can match against directly). Undefined for legacy non-step paths.
   this._currentVugFill = vugFill;
 
+  _nucleateClass_amphibole(this);
   _nucleateClass_arsenate(this);
   _nucleateClass_borate(this);
   _nucleateClass_carbonate(this);

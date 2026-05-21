@@ -5228,5 +5228,128 @@
 //          New wall composition: 'ultramafic' (first use).
 //          v116 next: calibration tune of jeffrey_mine via vugg-tune-
 //          scenario probe-diagnose-adjust-verify loop (predicted).
-const SIM_VERSION = 115;
+//   v116 — Amphibole supergroup + commercial asbestos quintet + tiger's
+//          eye (2026-05-20). The Jeffrey rodingite arc shipped at v115
+//          without the amphibole-asbestos family — boss flagged this
+//          as a major gap. v116 ships:
+//
+//            5 amphibole-asbestos minerals (new amphibole chemistry class,
+//             js/39a/59a/89a; the FIRST new class file since 2026):
+//              tremolite      Ca2Mg5Si8O22(OH)2 — calcic amphibole,
+//                                                  the documented Jeffrey
+//                                                  chrysotile contaminant
+//                                                  per WHO (more carcin-
+//                                                  ogenic than chrysotile
+//                                                  per epidemiology)
+//              actinolite     Ca2(Mg,Fe)5Si8O22(OH)2 — calcic Fe-end of
+//                                                  trem-act series;
+//                                                  NEPHRITE-JADE variety
+//                                                  when compact felted;
+//                                                  Cr trace → smaragdite
+//              anthophyllite  (Mg,Fe)7Si8O22(OH)2 — orthoamphibole;
+//                                                  ultramafic-host;
+//                                                  Finland + Carolina
+//                                                  type material
+//              amosite        (Fe,Mg)7Si8O22(OH)2 cummingtonite-grunerite
+//                                                  asbestos — "BROWN
+//                                                  ASBESTOS" (Penge SA
+//                                                  type)
+//              crocidolite    Na2Fe2+3Fe3+2Si8O22(OH)2 riebeckite
+//                                                  asbestos — "BLUE
+//                                                  ASBESTOS" (Wittenoom
+//                                                  + N. Cape SA type);
+//                                                  MOST CARCINOGENIC
+//                                                  asbestos per Frank
+//                                                  et al. 2002
+//
+//            1 silicate-class pseudomorph mineral:
+//              tigers_eye     SiO2 chalcedony pseudomorph AFTER
+//                              crocidolite. THE famous gold-brown
+//                              chatoyant gemstone. Three habits:
+//                              chatoyant_pseudomorph (gold-brown classic),
+//                              hawks_eye (partial-oxidation blue-gold
+//                              intermediate), tiger_iron (BIF-banded with
+//                              hematite + jasper layers). Per Heaney &
+//                              Fisher 2003 Am.Min. 88:1 — modern
+//                              mechanism is crocidolite REPLACEMENT,
+//                              not crocidolite-inclusions-in-quartz.
+//
+//          NEW AMPHIBOLE CLASS — files js/39a-supersat-amphibole.ts,
+//          js/59a-engines-amphibole.ts, js/89a-nucleation-amphibole.ts.
+//          Sort alphabetically right after silicate (39/59/89). The
+//          _nucleateClass_amphibole dispatch is wired at the TOP of
+//          the iterator in js/85d (alphabetical-first); the RNG-cascade
+//          guard in each _nuc_*amphibole keeps non-amphibole scenarios
+//          byte-identical to pre-v116.
+//
+//          ASBESTIFORM HABIT RENDERING per boss v116 guidance: "wide
+//          area of effect, like malachite or chalcedony." All five
+//          amphibole asbestiform habits ship with wall_spread 0.85 +
+//          void_reach 0.10 (the coating pattern, not the projecting-
+//          fibers pattern). Renders as a MAT on the cavity wall.
+//
+//          ASBESTOS HEALTH CONTEXT: the WHO IARC classifies all six
+//          commercial asbestos minerals as Group 1 carcinogens.
+//          Crocidolite + tremolite-asbestos are the most aggressive.
+//          The Wittenoom WA mining town closed in 1966 due to
+//          mesothelioma cases; Jeffrey Mine Quebec closed in 2011
+//          partly due to tremolite-asbestos contamination of the
+//          chrysotile product. The 1949 Quebec Asbestos Strike was a
+//          labor-history flashpoint. The mineral engines encode the
+//          GEOLOGY here; health context lives in the minerals.json
+//          description fields where relevant.
+//
+//          DISCRIMINATOR MAP (across all 6 commercial asbestos):
+//            chrysotile     (serpentine, v114) — Mg + Si + alkaline,
+//                            T 50-500, NO Ca/Fe diagnostic
+//            tremolite      Ca + Mg + Si, alkaline, Mg-dominant, Fe<60
+//            actinolite     Ca + Mg + Fe + Si, alkaline, Fe>=30
+//            anthophyllite  Mg + Fe + Si, NO Ca, ortho structure
+//            amosite        Fe + Si, NO Ca, Fe-dominant (Fe/Mg > 1.2)
+//            crocidolite    Na + Fe + Si, NO Ca, asbestiform habit
+//
+//          CALIBRATION EXPECTATION: several of these may fire in
+//          existing scenarios — particularly tremolite + actinolite
+//          (which have skarn/rodingite habitats overlapping with
+//          marble_contact_metamorphism and jeffrey_mine). Crocidolite
+//          + amosite need BIF-style chemistry (high Fe, Na for
+//          crocidolite); may fire in scenarios with the right
+//          chemistry. Tiger's eye needs crocidolite_dissolving as
+//          substrate, so likely fires only after crocidolite is
+//          established. Will document actual drift in commit message
+//          after baseline regen.
+//
+//          TESTS:
+//            * 5 amphibole supersat tests (canonical broth + key gate
+//              blocks + asbestiform habit pin)
+//            * tiger's eye supersat test (O2 oxidizing gate, Fe
+//              chromophore, chatoyant variety)
+//            * MINERAL_ENGINES.{tremolite,actinolite,anthophyllite,
+//              amosite,crocidolite,tigers_eye} all wired
+//
+//          REFERENCES:
+//            * Hawthorne FC et al. (2012) Nomenclature of the amphibole
+//              supergroup. American Mineralogist 97:2031-2048. IMA-CNMNC
+//              canonical.
+//            * Hawthorne FC & Oberti R (2007) Classification of the
+//              amphiboles. Reviews in Mineralogy 67:55-88.
+//            * Veblen DR & Wylie AG (1993) Mineralogy of amphiboles
+//              and 1:1 layer silicates. Reviews in Mineralogy 28:61.
+//            * WHO IARC Monograph 100C (2012) Asbestos.
+//            * Frank DR, Dodson RF, Williams MG (2002) Mineralogy and
+//              chemistry of South African crocidolite. Int. J. Occup.
+//              Environ. Health 8:38.
+//            * Heaney PJ & Fisher DM (2003) New interpretation of the
+//              origin of tiger's-eye. American Mineralogist 88:1-14.
+//            * Cairncross B & Beukes NJ (2013) on Northern Cape diamond
+//              + gemstone routes.
+//            * Anthony Handbook v.IIB Single-Chain Silicates.
+//            * Deer Howie Zussman v.2A.
+//
+//          Coverage 139 → 145 live minerals (+6: tremolite, actinolite,
+//          anthophyllite, amosite, crocidolite, tigers_eye).
+//          Scenarios 29 unchanged.
+//          New chemistry class: amphibole (first new class file since
+//          early 2026 sulfate + sulfide additions).
+const SIM_VERSION = 116;
 

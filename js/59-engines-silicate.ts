@@ -1315,6 +1315,79 @@ function grow_chrysoprase(crystal, conditions, step) {
   });
 }
 
+// v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph AFTER
+// crocidolite. The supergene oxidation of crocidolite-asbestos fiber
+// bundles, with chalcedony replacing the silicate framework while
+// Fe2+ → Fe3+ provides the gold-brown chatoyant color. Three habits
+// cover the gemstone family:
+//   chatoyant_pseudomorph (default — gold-brown classic)
+//   hawks_eye (partial oxidation — blue-grey-gold)
+//   tiger_iron (BIF context — banded hematite-jasper-tigers-eye rock)
+// Substrate priority: crocidolite_dissolving (the canonical pseudomorph
+// substrate; high probability) > hematite (BIF context — tiger iron
+// dispatch) > magnetite > wall.
+function grow_tigers_eye(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_tigers_eye();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — tiger's eye chalcedony framework breaks down; Fe³⁺ released to limonite/goethite`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — substrate-driven primary
+  const pos = crystal.position || '';
+  const after_crocidolite = pos.includes('crocidolite');
+  const with_hematite = pos.includes('hematite') || pos.includes('jasper');
+
+  if (with_hematite) {
+    crystal.habit = 'tiger_iron';
+    crystal.dominant_forms = ['banded TIGER IRON', 'hematite-jasper-chalcedony BIF assemblage', 'centimeter-scale interlayered red-black-gold bands', 'Northern Cape SA + Hamersley WA type'];
+  } else if (after_crocidolite && excess > 1.0 && conditions.fluid.O2 > 0.6) {
+    crystal.habit = 'chatoyant_pseudomorph';
+    crystal.dominant_forms = ['gold-brown chatoyant chalcedony pseudomorph after crocidolite', 'silky cat\'s-eye effect from preserved fiber bundles', 'classic tiger\'s eye gemstone aesthetic'];
+  } else if (after_crocidolite) {
+    crystal.habit = 'hawks_eye';
+    crystal.dominant_forms = ['blue-grey-gold hawk\'s eye', 'partial oxidation — crocidolite + chalcedony coexist', 'precursor stage to full tiger\'s eye'];
+  } else {
+    // No crocidolite substrate — generic chalcedony pseudomorph,
+    // potentially after iron-silicate
+    crystal.habit = 'chatoyant_pseudomorph';
+    crystal.dominant_forms = ['gold-brown chatoyant chalcedony', 'fibrous internal texture', 'classic gemstone aesthetic'];
+  }
+
+  // Color dispatch — Fe-oxidation state drives color
+  let color_note;
+  if (conditions.fluid.O2 > 0.6 && conditions.fluid.Fe > 30) {
+    color_note = 'gold-to-honey-brown (Fe³⁺ chatoyant chalcedony) — the classic gemstone color';
+  } else if (conditions.fluid.O2 > 0.4) {
+    color_note = 'red-brown to blood-red ("red tiger\'s eye" — heat-altered or higher Fe³⁺)';
+  } else {
+    color_note = 'mixed blue-gold (hawk\'s eye intermediate)';
+  }
+
+  // Mass-balance — pure SiO2 framework
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.045, 0);
+  // Fe trace incorporation into chalcedony
+  conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.005, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.01,
+    note: `tiger's eye ${crystal.habit}, ${color_note}; microcrystalline SiO2 (chalcedony) with preserved crocidolite fiber pseudomorph, H 7, chatoyant silky luster`,
+  });
+}
+
 // v114 (2026-05-20): Chrysotile Mg3Si2O5(OH)4 — fibrous serpentine.
 // THE asbestos of commerce. Jeffrey Mine Quebec 1881-2011 produced
 // ~40% of world chrysotile. Habits:
