@@ -5351,5 +5351,70 @@
 //          Scenarios 29 unchanged.
 //          New chemistry class: amphibole (first new class file since
 //          early 2026 sulfate + sulfide additions).
-const SIM_VERSION = 116;
+//   v117 — agent-friendly interface (2026-05-20). NEW FILE
+//          js/99z-agent-interface.ts. NO sim-engine changes — this is
+//          PURE INFRASTRUCTURE: URL query parameters, window.vugg
+//          debug handle, and five keyboard shortcuts (G/R/N/S/digits).
+//          v116 baseline must remain byte-identical at v117. The
+//          version bump exists to keep the SIM_VERSION → baseline
+//          convention contiguous, not because seed-42 output changes.
+//
+//          THREE SURFACES added per proposals/PROPOSAL-AGENT-FRIENDLY-
+//          INTERFACE.md (Rock Bot + Professor, 2026-05-20 — boss
+//          greenlit narrowed scope):
+//
+//            (1) URL QUERY PARAMETERS — shareable deterministic
+//                specimen links. Supported:
+//                  ?scenario=X    scenario id, or 'random' (with
+//                                  ?seed= for deterministic-random)
+//                  ?seed=N        growth-RNG seed
+//                  ?shape_seed=M  cavity-geometry RNG seed (indep.)
+//                  ?steps=K       step-count override
+//                  ?autogrow=1    auto-start the run
+//                  ?dump=specimen headless run + console JSON dump
+//                                  (implies autogrow=1)
+//                  ?mode=idle     boot zen mode pre-selected
+//                  ?lenient=1     bad-param fallback (warn instead
+//                                  of refuse + console.error)
+//
+//            (2) window.vugg DEBUG HANDLE — agents with DevTools
+//                console access (mcp__claude_in_chrome__javascript_tool
+//                or equivalent) can probe state + drive runs even
+//                when point-and-click automation fails. Exposes
+//                SCENARIOS, MINERAL_ENGINES, MINERAL_SPEC, SIM_VERSION,
+//                fortressSim, legendsSim, idleSim, rng as read-time
+//                getters; startScenario, headlessRun, dumpSpecimen,
+//                listScenarios as imperative helpers; lastSpecimen
+//                as the last dumped JSON.
+//
+//            (3) AGENT-FRIENDLY KEYBOARD SHORTCUTS — five bindings
+//                that dodge existing handlers (topo-replay owns
+//                ←/→/Space when topo-panel visible; global Escape
+//                untouched):
+//                  G       grow (start scenario or advance 1 step)
+//                  R       randomize: pick non-tutorial scenario
+//                  N       open New Game menu
+//                  S       step forward 1 (fortress mode)
+//                  1-9, 0  pick non-tutorial scenario N (alpha-sort)
+//
+//          DETERMINISM AUDIT: five Math.random() call sites in the
+//          bundle (paragenesis fallback, legends seed picker,
+//          Quick Play, crystal ID, zen random). NONE affect specimen
+//          identity when the URL-param path is followed — see the
+//          file-header block in js/99z-agent-interface.ts for the
+//          full audit. ?seed=N produces byte-stable specimens.
+//
+//          ?dump=specimen JSON SHAPE mirrors agent-api/vugg-agent.js's
+//          `finish` response so any analysis built against the Node
+//          headless runtime works on the browser dump unchanged.
+//
+//          TESTS: tests-js/agent-interface.test.ts — guard pins for
+//          URL param coercion (lenient + hard-error), specimen JSON
+//          shape, keyboard binding map, scenario-name resolution,
+//          tutorial filter, and seeded-determinism (same seed
+//          produces same specimen twice).
+//
+//          NO MINERAL OR SCENARIO CHANGES. Coverage stays at 145.
+//          Scenarios stay at 29.
+const SIM_VERSION = 117;
 
