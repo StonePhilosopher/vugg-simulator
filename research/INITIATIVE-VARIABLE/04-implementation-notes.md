@@ -1,8 +1,15 @@
-# 04: Implementation Notes for Builder
+# 04: Implementation Notes for Builder (Rev 2)
 
-**Date:** 2026-05-21
+**Date:** 2026-05-21 (rev 2 same day)
 **Audience:** Builder (future self or other developer)
-**Prerequisites:** Understanding of v125 architecture, mineral engines, stoichiometry, run_step loop
+**Prerequisites:** Understanding of v126 architecture, mineral engines, stoichiometry, run_step loop
+
+**Rev 2 changes:**
+- Two-phase rollout: v127 infrastructure-only (no growth changes) → v128 graduated competition
+- Engine gates refactor: σ_crit and other thresholds exported as `MINERAL_GATES_<mineral>` constants
+- Cation-level rationing replaces per-mineral share
+- Power-law k=2 sharing in proportional regime
+- 5 calibration assertions as v128 validation target
 
 ---
 
@@ -20,33 +27,55 @@ run_step():
   next mineral
 ```
 
-### New Flow (v126+)
+### New Flow (v128 graduated competition)
 
 ```
 run_step():
-  // Phase 1: Calculate initiative
+  // Phase 1: Calculate initiative for every viable mineral
   initiative_results = []
   for each mineral in MINERAL_ENGINES:
-    calculate σ from fluid
-    if σ <= 0: continue  // can't nucleate
+    calculate σ from fluid (once per step — no recalc in loop)
+    if σ <= sigma_crit: continue  // can't nucleate, edge-of-gate skip logged
+
     base = baseInitiative(σ)
-    modifiers = calculateModifiers(mineral, σ, fluid)
+    modifiers = calculateModifiers(mineral, σ, fluid, activeMinerals)
+    // Modifiers: temperature, edge-of-gate, surface-energy,
+    //            competition (per-cation), cascade-ripple (multi-cation)
     final = base + sum(modifiers.map(m => m.value))
-    initiative_results.push({mineral, base, modifiers, final})
-  
-  // Phase 2: Sort by initiative
-  sort initiative_results by final (descending)
-  
-  // Phase 3: Grow in initiative order
-  for each result in sorted_results:
-    recalculate σ from current fluid  // IMPORTANT: fluid may have changed
-    if σ <= threshold: continue  // edge-of-gate dropped below
-    grow()
-    debit fluid
-  
-  // Phase 4: Log
-  log initiative order for debugging
+    desired_thickness = engine.compute(σ, conditions)  // pre-rationing
+    initiative_results.push({mineral, base, modifiers, final, desired_thickness})
+
+  // Phase 2: Cation-level rationing
+  // For each cation any mineral wants:
+  //   - sum desired debits
+  //   - if total > fluid[cation], ration by initiative shares
+  //     (power-law k=2 if gap ≤ 3, winner-takes-most 80/20 if gap > 3)
+  //   - record cation-limited thickness per mineral per cation
+  cation_limits = computeCationRationing(initiative_results, fluid)
+
+  // Phase 3: Apply Liebig's law of the minimum
+  // Each mineral grows by min(desired, tightest cation limit)
+  for each result in initiative_results:
+    actual_thickness = result.desired_thickness
+    for cation in mineral.cations:
+      actual_thickness = min(actual_thickness, cation_limits[mineral][cation])
+    result.actual_thickness = actual_thickness
+
+  // Phase 4: Grow + debit
+  // Order doesn't matter for mass balance now — the rationing already
+  // handled who-gets-what. Each mineral grows its rationed thickness;
+  // fluid is debited per stoichiometry. Order only affects rng draws
+  // for crystal geometry (position, orientation) which we sort by
+  // initiative for deterministic reproducibility.
+  for each result in sorted_by_initiative_desc(initiative_results):
+    grow(result.mineral, result.actual_thickness)
+    debitFluid(result.mineral, result.actual_thickness)
+
+  // Phase 5: Log
+  log initiative order + shares + cation-limited reasons for narrator
 ```
+
+**Key difference from rev 1:** No σ recalc inside the growth loop. Competition is resolved BEFORE growth via cation-level rationing. This avoids the double-counting issue from rev 1 (where competition was both an explicit modifier AND implicit via σ recalc).
 
 ---
 
@@ -103,8 +132,6 @@ for (const result of sortedResults) {
 ```
 
 **Why this matters:** A mineral might have high initiative (high σ initially) but after earlier minerals deplete the fluid, its σ drops below threshold. This is realistic — a mineral that "almost" got to nucleate loses its window.
-
-**Double-counting warning:** If we recalc σ after each mineral (physics-only competition), we should NOT also apply a `competitionModifier`. Competition emerges naturally from debit. Using both is double-jeopardy.
 
 ### 4. Feature Flag
 
@@ -256,32 +283,48 @@ tests-js/calibration.test.ts  # Add initiative-gated comparison
 
 ---
 
-## Migration Path
+## Migration Path (Rev 2)
 
-### Step 1: Infrastructure (v126)
+User greenlight: test churn OK; old baselines will all be regenerated. No flag-gated rollout needed.
+
+### Step 1: Engine Gates Refactor (v127, no behavior change)
+- Refactor ~25 `js/3X-supersat-*.ts` files: extract first-gate σ_crit + ancillary gates into exported `MINERAL_GATES_<mineral>` constants
+- Each engine still computes gates the same way — the constants are READ from these exports for initiative + library card
+- Test pin: each registered engine must export its gates constant
+- **NO baseline changes** — internal refactor only
+
+### Step 2: Initiative Infrastructure (v127, no behavior change)
 - Create `js/20-initiative.ts` with base initiative + modifier framework
-- Add spec fields to `data/minerals.json` (top 20 minerals only)
-- Gate behind feature flag
-- Add unit tests
+- Sort + log infra
+- Modifiers calculated every step, ordering produced
+- **But growth still uses legacy fixed-order loop** — initiative just logged alongside
+- Side-by-side run lets us validate the calc against the existing baselines before applying
 
-### Step 2: Calibration (v127)
-- Run seed-42 baselines with initiative enabled
-- Adjust modifier values until drift is acceptable
-- Add top 50 mineral spec fields
+### Step 3: Library Card (v127, UI only)
+- `js/9X-ui-library.ts` reads `MINERAL_GATES_<mineral>` for the "Competitiveness profile" card section
+- Shows: σ_crit, T sweet-spot, competition group, base initiative formula, cascade ripple count
+- No simulation behavior change
 
-### Step 3: Dense Suite Fixes (v128)
-- Focus on supergene_oxidation, schneeberg, roughten_gill
-- Competition penalty should reduce cascade severity
-- Accept some drift as "improved realism"
+### Step 4: Graduated Competition Lands (v128, big change)
+- `js/20-initiative.ts` adds graduated allocation + cation-level rationing
+- run_step in `js/99-legacy-bundle.ts` / `js/97-vug-simulator.ts` switches from fixed-order loop to initiative-sorted graduated growth
+- **All 30 baselines regenerated as `seed42_v128.json`**; old baselines deleted (per user greenlight)
+- Validate against the 5 calibration assertions in PROPOSAL §4.1
 
-### Step 4: Substrate/Epitaxy (v129)
-- Add substrate modifier
-- Test overgrowth scenarios (TN457 barite on sphalerite)
+### Step 5: Modifier Tune (v129)
+- If calibration assertions fail, adjust modifier values
+- Per-mineral temperature ranges from corrected ΔH° literature data
+- Cascade-ripple weight may need bumping or capping
+- Power-law exponent k may shift from 2 (default) to 1.5 or 3 based on assertion fit
 
-### Step 5: Enable Globally (v130)
-- Remove feature flag
-- Initiative is default behavior
-- Update all baselines
+### Step 6: Substrate/Epitaxy (v130)
+- Substrate modifier wired in
+- TN457 barite-on-sphalerite epitaxy + calcite-after-fluorite perimorph cases
+
+### Step 7: Future (v131+)
+- Induction counter
+- Per-zone initiative
+- Stochastic mode
 
 ---
 

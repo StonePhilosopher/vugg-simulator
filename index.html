@@ -10709,6 +10709,41 @@ const MASS_BALANCE_SCALE = 0.02;
 // threshold.
 const MASS_BALANCE_DEPLETION_THRESHOLD = 1.0;
 
+// ── 18a-mineral-gates-types.js ──
+
+// ============================================================
+// js/18a-mineral-gates-types.ts — MineralGates interface (shared)
+// ============================================================
+// Loaded right after 18-constants.ts so every supersat + nucleation
+// file (and the initiative module + library card) can use it.
+//
+// v127 (2026-05-21): Each supersat engine file declares one
+// MINERAL_GATES_<mineral> constant of this type. The constant carries
+// the σ_crit threshold (used by the nucleation file's nucleation gate),
+// composition gates, T/pH/O2 ranges, and surface energy category. The
+// initiative module + library card read from these constants without
+// parsing source files.
+//
+// Fields are optional EXCEPT sigma_crit + surface_energy:
+//   - sigma_crit:        nucleation threshold (σ ≤ this → no nucleation)
+//   - T_min/T_max:       hard cutoffs (σ → 0 outside this range)
+//   - T_optimal:         used by initiative temperature modifier
+//   - fluid_min:         per-species composition floor (σ → 0 below)
+//   - pH_min/pH_max:     hard pH cutoffs
+//   - O2_min/O2_max:     redox windows (for oxidizing- or reducing-only minerals)
+//   - surface_energy:    γ_sl category (per 01-geochemical-grounding.md)
+//   - _sources:          literature / engine references
+//   - _notes:            free-form notes
+//
+// Conventions:
+//   - "Hard cutoff" means σ → 0 (mineral cannot fire). "Attenuation"
+//     (exponential decay above some threshold) is engine-specific and
+//     stays inline in the supersat function — gates carry only the
+//     hard cutoffs.
+//   - σ_crit is the LOWEST σ-threshold in the nucleation file. If
+//     a mineral has secondary nucleation gates (e.g., lepidocrocite
+//     σ > 1.7 for additional crystals), that's not in MINERAL_GATES.
+
 // ── 19-mineral-stoichiometry.js ──
 
 // ============================================================
@@ -15694,7 +15729,27 @@ Object.assign(VugConditions.prototype, {
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates export added.
+// ---- Borate MINERAL_GATES exports ----
+const MINERAL_GATES_borax = {
+    sigma_crit: 1.0,
+    T_max: 60, // hard cutoff: above 60°C borax dissolves
+    T_optimal: 25,
+    fluid_min: { Na: 50, B: 5 },
+    pH_min: 7.0, // hard cutoff: alkaline only
+    surface_energy: 'low', // hydrated alkaline borate; relatively low γ_sl
+    _sources: ['borax engine v28+', 'Searles Lake / Mojave evaporite literature'],
+    _notes: 'Strict active-evaporation mineral — needs concentration ≥ 1.5 (vadose/meniscus rings only). Ca > 50 ppm suppresses.',
+};
+const MINERAL_GATES_tincalconite = {
+    sigma_crit: Infinity, // paramorph stub — never nucleates from solution
+    T_max: 60,
+    fluid_min: { Na: 50, B: 5 },
+    pH_min: 7.0,
+    surface_energy: 'low',
+    _sources: ['tincalconite paramorph note in supersat function'],
+    _notes: 'Paramorph product of borax dehydration (Na2B4O7·5H2O after Na2B4O7·10H2O). Never nucleates from fluid — only forms by replacement of existing borax. sigma_crit = Infinity reflects "no direct precipitation path."',
+};
 Object.assign(VugConditions.prototype, {
     supersaturation_tincalconite() {
         // v28 paramorph product of borax — never nucleates from solution.
@@ -15703,11 +15758,12 @@ Object.assign(VugConditions.prototype, {
     supersaturation_borax() {
         // v28 alkaline-brine borate evaporite. Mirror of
         // supersaturation_borax in vugg.py.
-        if (this.fluid.Na < 50 || this.fluid.B < 5)
+        const g = MINERAL_GATES_borax;
+        if (this.fluid.Na < g.fluid_min.Na || this.fluid.B < g.fluid_min.B)
             return 0;
-        if (this.temperature > 60)
+        if (this.temperature > g.T_max)
             return 0;
-        if (this.fluid.pH < 7.0)
+        if (this.fluid.pH < g.pH_min)
             return 0;
         const c = this.fluid.concentration ?? 1.0;
         // v28: hard concentration gate — borax is strictly an active-
@@ -16161,10 +16217,51 @@ Object.assign(VugConditions.prototype, {
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
+// ---- Halide MINERAL_GATES exports ----
+const MINERAL_GATES_fluorite = {
+    sigma_crit: 1.2,
+    T_optimal: 150,
+    fluid_min: { Ca: 10, F: 5 },
+    pH_min: 3.0, // σ attenuates below 5; effectively gated by 3
+    surface_energy: 'medium',
+    _sources: ['fluorite engine v17+', 'Richardson & Holland 1979', 'Hamza & Hamdona 1991'],
+    _notes: '5-tier T window peak 100-250°C per Richardson & Holland 1979. Fluoro-complex penalty above F=80 ppm.',
+};
+const MINERAL_GATES_halite = {
+    sigma_crit: 1.0,
+    T_optimal: 25,
+    fluid_min: { Na: 5, Cl: 50 },
+    surface_energy: 'low',
+    _sources: ['halite engine v27+'],
+    _notes: 'Quadratic in concentration — stays dormant at scenario baseline (c=1), fires when vadose concentration spike kicks in. T > 100 attenuates by 0.7×.',
+};
+const MINERAL_GATES_atacamite = {
+    sigma_crit: 1.2,
+    T_min: 5,
+    T_max: 200,
+    T_optimal: 30,
+    fluid_min: { Cu: 10, Cl: 30 },
+    O2_min: 0.5, // strict oxidizing only
+    pH_min: 4.0, // σ attenuates below 5; effective gate ~4
+    pH_max: 8.5, // σ attenuates above 7; effective gate ~8.5
+    surface_energy: 'medium',
+    _sources: ['atacamite engine v63+', 'Atacama Desert supergene literature'],
+    _notes: 'Arid Cu-supergene chloride. Wins over malachite/brochantite/chrysocolla when Cl dominates Cu-pairing. CO3 > 100 and S > 100 suppress.',
+};
+const MINERAL_GATES_sylvite = {
+    sigma_crit: 1.0,
+    T_optimal: 25,
+    T_max: 200, // σ attenuates above 100; effectively gated by 200
+    fluid_min: { K: 50, Cl: 100 },
+    surface_energy: 'low',
+    _sources: ['sylvite engine v63+', 'late-stage potash evaporite literature'],
+    _notes: 'Quadratic in concentration like halite. Mg > 500 suppresses (carnallite competition).',
+};
 Object.assign(VugConditions.prototype, {
     supersaturation_fluorite() {
-        if (this.fluid.Ca < 10 || this.fluid.F < 5)
+        const g = MINERAL_GATES_fluorite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.F < g.fluid_min.F)
             return 0;
         let product = (this.fluid.Ca / 200.0) * (this.fluid.F / 20.0);
         // 5-tier T window per Richardson & Holland 1979 + MVT deposit
@@ -16204,7 +16301,8 @@ Object.assign(VugConditions.prototype, {
         // stays dormant at scenario baseline (concentration=1) and fires
         // sharply when a vadose-transition concentration spike kicks in.
         // Mirror of supersaturation_halite in vugg.py.
-        if (this.fluid.Na < 5 || this.fluid.Cl < 50)
+        const g = MINERAL_GATES_halite;
+        if (this.fluid.Na < g.fluid_min.Na || this.fluid.Cl < g.fluid_min.Cl)
             return 0;
         const c = this.fluid.concentration ?? 1.0;
         let sigma = (this.fluid.Na / 100.0) * (this.fluid.Cl / 500.0) * c * c;
@@ -16221,13 +16319,14 @@ Object.assign(VugConditions.prototype, {
     // dominant Cu-pairing anion (Atacama-style aridity). Strict supergene T
     // and oxidizing-only redox.
     supersaturation_atacamite() {
-        if (this.fluid.Cu < 10 || this.fluid.Cl < 30)
+        const g = MINERAL_GATES_atacamite;
+        if (this.fluid.Cu < g.fluid_min.Cu || this.fluid.Cl < g.fluid_min.Cl)
             return 0;
-        if (this.fluid.O2 < 0.5)
+        if (this.fluid.O2 < g.O2_min)
             return 0;
         let sigma = (this.fluid.Cu / 80.0) * (this.fluid.Cl / 200.0);
         const T = this.temperature;
-        if (T < 5 || T > 200)
+        if (T < g.T_min || T > g.T_max)
             return 0;
         if (T > 100)
             sigma *= Math.exp(-0.04 * (T - 100));
@@ -16250,7 +16349,8 @@ Object.assign(VugConditions.prototype, {
     // when a vadose-transition concentration spike kicks in. Carnallite
     // competes for K when Mg is high.
     supersaturation_sylvite() {
-        if (this.fluid.K < 50 || this.fluid.Cl < 100)
+        const g = MINERAL_GATES_sylvite;
+        if (this.fluid.K < g.fluid_min.K || this.fluid.Cl < g.fluid_min.Cl)
             return 0;
         const c = this.fluid.concentration ?? 1.0;
         let sigma = (this.fluid.K / 200.0) * (this.fluid.Cl / 800.0) * c * c;
@@ -16276,9 +16376,40 @@ Object.assign(VugConditions.prototype, {
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+//
+// v127 (2026-05-21): Each mineral now exports a MINERAL_GATES_<mineral>
+// structured constant that captures σ_crit (from nucleation file),
+// composition gates, T/pH/O2 ranges, and surface energy category. The
+// gates power (a) the initiative system in js/20-initiative.ts and
+// (b) the library card "Competitiveness profile" section. The supersat
+// function reads composition + redox gates from the constant; the
+// nucleation function reads σ_crit. Refactor is internal — no behavior
+// change, baselines byte-identical.
+// ---- Hydroxide MINERAL_GATES exports (interface in 18a-mineral-gates-types.ts) ----
+const MINERAL_GATES_goethite = {
+    sigma_crit: 1.0,
+    T_optimal: 80,
+    fluid_min: { Fe: 15 },
+    O2_min: 0.4, // hydroxideRedoxAvailable(fluid, 0.4)
+    surface_energy: 'medium',
+    _sources: ['goethite nucleation gate (84-nucleation-hydroxide:17)', 'Cornell & Schwertmann 2003 (iron oxides)'],
+    _notes: 'σ attenuates exponentially above T=150°C (kinetic ceiling). pH < 3 incurs σ penalty but does not gate.',
+};
+const MINERAL_GATES_lepidocrocite = {
+    sigma_crit: 1.1,
+    T_optimal: 40,
+    T_max: 200, // no hard cap but σ attenuates sharply above 50
+    fluid_min: { Fe: 15 },
+    O2_min: 0.8, // hydroxideRedoxAvailable(fluid, 0.8) — more strongly oxidizing than goethite
+    pH_max: 9.5, // σ attenuates above 7.5; effectively gated by 9.5
+    surface_energy: 'medium',
+    _sources: ['lepidocrocite nucleation gate (84-nucleation-hydroxide:38)', 'Cornell & Schwertmann 2003'],
+    _notes: 'γ-FeO(OH) is the metastable polymorph; converts to goethite over time. Secondary nucleation gate at σ > 1.7.',
+};
 Object.assign(VugConditions.prototype, {
     supersaturation_goethite() {
-        if (this.fluid.Fe < 15 || !hydroxideRedoxAvailable(this.fluid, 0.4))
+        const g = MINERAL_GATES_goethite;
+        if (this.fluid.Fe < g.fluid_min.Fe || !hydroxideRedoxAvailable(this.fluid, g.O2_min))
             return 0;
         let sigma = (this.fluid.Fe / 60.0) * hydroxideRedoxFactor(this.fluid, 1.0);
         if (this.temperature > 150)
@@ -16290,7 +16421,8 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_lepidocrocite() {
-        if (this.fluid.Fe < 15 || !hydroxideRedoxAvailable(this.fluid, 0.8))
+        const g = MINERAL_GATES_lepidocrocite;
+        if (this.fluid.Fe < g.fluid_min.Fe || !hydroxideRedoxAvailable(this.fluid, g.O2_min))
             return 0;
         const fe_f = Math.min(this.fluid.Fe / 50.0, 2.0);
         const o_f = hydroxideRedoxFactor(this.fluid, 1.5, 1.5);
@@ -16318,7 +16450,88 @@ Object.assign(VugConditions.prototype, {
 // defined in 25-chemistry-conditions.ts, so call sites
 // (cond.supersaturation_calcite(), etc.) keep working unchanged.
 //
-// Phase B7 of PROPOSAL-MODULAR-REFACTOR.
+// Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
+// ---- Molybdate MINERAL_GATES exports ----
+const MINERAL_GATES_wulfenite = {
+    sigma_crit: 1.2,
+    T_optimal: 50,
+    fluid_min: { Pb: 10, Mo: 5 },
+    O2_min: 0.5,
+    pH_min: 3.5,
+    pH_max: 9.0,
+    surface_energy: 'medium',
+    _sources: ['wulfenite engine v17+ reconciliation', 'research-wulfenite.md'],
+    _notes: 'Rare two-parent (Pb from galena × Mo from molybdenite) supergene mineral. Decay above 80°C — supergene-only ceiling.',
+};
+const MINERAL_GATES_ferrimolybdite = {
+    sigma_crit: 1.0,
+    T_optimal: 30,
+    fluid_min: { Mo: 2, Fe: 3 },
+    O2_min: 0.5,
+    pH_min: 3.0,
+    pH_max: 8.0,
+    surface_energy: 'low',
+    _sources: ['ferrimolybdite engine v17+'],
+    _notes: 'Canary-yellow Mo-oxidation product. Faster, less-picky than wulfenite. Strongly low-temperature (decay above 50°C).',
+};
+const MINERAL_GATES_raspite = {
+    sigma_crit: 1.4,
+    T_optimal: 30,
+    fluid_min: { Pb: 40, W: 5 },
+    O2_min: 0.5,
+    pH_min: 4.0,
+    pH_max: 8.0,
+    surface_energy: 'medium',
+    _sources: ['raspite engine v17+'],
+    _notes: 'Monoclinic PbWO4. Cool-T window 20-40°C optimal. Loses to stolzite at higher σ (one of them suppresses the other in nucleation gate).',
+};
+const MINERAL_GATES_stolzite = {
+    sigma_crit: 1.0,
+    T_optimal: 50,
+    fluid_min: { Pb: 40, W: 5 },
+    O2_min: 0.5,
+    pH_min: 4.0,
+    pH_max: 8.0,
+    surface_energy: 'medium',
+    _sources: ['stolzite engine v17+'],
+    _notes: 'Tetragonal PbWO4. Wider T window than raspite (20-80°C optimal). Dominates the Pb-W slot.',
+};
+const MINERAL_GATES_scheelite = {
+    sigma_crit: 1.2,
+    T_min: 100,
+    T_max: 700,
+    T_optimal: 400,
+    fluid_min: { Ca: 50, W: 1 },
+    pH_min: 4.0,
+    surface_energy: 'medium',
+    _sources: ['scheelite engine v63+'],
+    _notes: 'CaWO4 — hydrothermal Ca-tungstate. Bright blue-white SW UV fluorescence (diagnostic vs wolframite).',
+};
+const MINERAL_GATES_powellite = {
+    sigma_crit: 1.2,
+    T_min: 5,
+    T_max: 250,
+    T_optimal: 50,
+    fluid_min: { Ca: 50, Mo: 1 },
+    O2_min: 0.5,
+    pH_min: 5.0,
+    surface_energy: 'medium',
+    _sources: ['powellite engine v63+'],
+    _notes: 'CaMoO4 — supergene oxidation of molybdenite. Bright yellow SW UV (vs scheelite blue).',
+};
+const MINERAL_GATES_wolframite = {
+    sigma_crit: 1.3,
+    T_min: 200,
+    T_max: 600,
+    T_optimal: 350,
+    fluid_min: { W: 1, Fe: 5, Mn: 1 },
+    O2_min: 0.5,
+    pH_min: 4.0,
+    pH_max: 6.0,
+    surface_energy: 'high',
+    _sources: ['wolframite engine v63+'],
+    _notes: '(Fe,Mn)WO4 monoclinic. Wins over scheelite when Ca depleted (Ca > 80 suppresses). Non-fluorescent.',
+};
 Object.assign(VugConditions.prototype, {
     supersaturation_wulfenite() {
         // v17 reconciliation (May 2026): per research-wulfenite.md
@@ -16331,7 +16544,8 @@ Object.assign(VugConditions.prototype, {
         // Pb/Mo thresholds (>=10/>=5) preserved — JS canonical here, matches
         // the research's "rare two-parent" framing better than Python's
         // pre-v17 lower thresholds.
-        if (this.fluid.Pb < 10 || this.fluid.Mo < 5 || !molybdateRedoxAvailable(this.fluid, 0.5))
+        const gw = MINERAL_GATES_wulfenite;
+        if (this.fluid.Pb < gw.fluid_min.Pb || this.fluid.Mo < gw.fluid_min.Mo || !molybdateRedoxAvailable(this.fluid, gw.O2_min))
             return 0;
         let sigma = (this.fluid.Pb / 40.0) * (this.fluid.Mo / 15.0) * molybdateRedoxFactor(this.fluid, 1.0);
         // Decay above 80°C — supergene-only ceiling
@@ -16350,7 +16564,8 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_ferrimolybdite() {
-        if (this.fluid.Mo < 2 || this.fluid.Fe < 3 || !molybdateRedoxAvailable(this.fluid, 0.5))
+        const g = MINERAL_GATES_ferrimolybdite;
+        if (this.fluid.Mo < g.fluid_min.Mo || this.fluid.Fe < g.fluid_min.Fe || !molybdateRedoxAvailable(this.fluid, g.O2_min))
             return 0;
         // Lower Mo threshold + /10 scaling reflects faster, less-picky growth.
         let sigma = (this.fluid.Mo / 10.0) * (this.fluid.Fe / 20.0) * molybdateRedoxFactor(this.fluid, 1.0);
@@ -16370,9 +16585,10 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_raspite() {
-        if (this.fluid.Pb < 40 || this.fluid.W < 5)
+        const g = MINERAL_GATES_raspite;
+        if (this.fluid.Pb < g.fluid_min.Pb || this.fluid.W < g.fluid_min.W)
             return 0;
-        if (!molybdateRedoxAvailable(this.fluid, 0.5))
+        if (!molybdateRedoxAvailable(this.fluid, g.O2_min))
             return 0;
         const pb_f = Math.min(this.fluid.Pb / 80.0, 2.0);
         const w_f = Math.min(this.fluid.W / 15.0, 2.5);
@@ -16398,9 +16614,10 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_stolzite() {
-        if (this.fluid.Pb < 40 || this.fluid.W < 5)
+        const g = MINERAL_GATES_stolzite;
+        if (this.fluid.Pb < g.fluid_min.Pb || this.fluid.W < g.fluid_min.W)
             return 0;
-        if (!molybdateRedoxAvailable(this.fluid, 0.5))
+        if (!molybdateRedoxAvailable(this.fluid, g.O2_min))
             return 0;
         const pb_f = Math.min(this.fluid.Pb / 80.0, 2.5);
         const w_f = Math.min(this.fluid.W / 15.0, 2.5);
@@ -16429,13 +16646,14 @@ Object.assign(VugConditions.prototype, {
     // raspite/stolzite/wulfenite). Bright blue-white SW UV fluorescence is
     // the diagnostic. Loses to wolframite when Ca is depleted.
     supersaturation_scheelite() {
-        if (this.fluid.Ca < 50 || this.fluid.W < 1)
+        const g = MINERAL_GATES_scheelite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.W < g.fluid_min.W)
             return 0;
         if (!molybdateRedoxAvailable(this.fluid, 0.0))
             return 0;
         let sigma = (this.fluid.Ca / 200.0) * (this.fluid.W / 8.0);
         const T = this.temperature;
-        if (T < 100 || T > 700)
+        if (T < g.T_min || T > g.T_max)
             return 0;
         let T_factor = 1.0;
         if (T >= 300 && T <= 500)
@@ -16457,13 +16675,14 @@ Object.assign(VugConditions.prototype, {
     // in supergene oxidation of molybdenite. Bright yellow SW UV (vs
     // scheelite's blue) — same lattice, different activator.
     supersaturation_powellite() {
-        if (this.fluid.Ca < 50 || this.fluid.Mo < 1)
+        const g = MINERAL_GATES_powellite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Mo < g.fluid_min.Mo)
             return 0;
-        if (this.fluid.O2 < 0.5)
+        if (this.fluid.O2 < g.O2_min)
             return 0;
         let sigma = (this.fluid.Ca / 200.0) * (this.fluid.Mo / 8.0);
         const T = this.temperature;
-        if (T < 5 || T > 250)
+        if (T < g.T_min || T > g.T_max)
             return 0;
         let T_factor = 1.0;
         if (T >= 20 && T <= 100)
@@ -16483,13 +16702,14 @@ Object.assign(VugConditions.prototype, {
     // group). Wins over scheelite when Ca is depleted and Fe+Mn dominate.
     // Refractory; non-fluorescent (diagnostic vs scheelite).
     supersaturation_wolframite() {
-        if (this.fluid.W < 1 || this.fluid.Fe < 5 || this.fluid.Mn < 1)
+        const g = MINERAL_GATES_wolframite;
+        if (this.fluid.W < g.fluid_min.W || this.fluid.Fe < g.fluid_min.Fe || this.fluid.Mn < g.fluid_min.Mn)
             return 0;
-        if (!molybdateRedoxAvailable(this.fluid, 0.5))
+        if (!molybdateRedoxAvailable(this.fluid, g.O2_min))
             return 0;
         let sigma = (this.fluid.W / 8.0) * (this.fluid.Fe / 30.0 + this.fluid.Mn / 15.0) * 0.5;
         const T = this.temperature;
-        if (T < 200 || T > 600)
+        if (T < g.T_min || T > g.T_max)
             return 0;
         let T_factor = 1.0;
         if (T >= 300 && T <= 400)
@@ -19055,6 +19275,56 @@ Object.assign(VugConditions.prototype, {
 //     monographs — health context
 //   * Frank DR et al. (2002) Mineralogy of Australian Wittenoom +
 //     Hamersley crocidolite
+//
+// v127 (2026-05-21): MINERAL_GATES_<mineral> exports added. σ_crit
+// is the first nucleation gate (sigma < 1.0 returns) per
+// js/89a-nucleation-amphibole.ts; substrate discount (sigma > 1.2 *
+// discount) is a secondary check not captured in MINERAL_GATES.
+const MINERAL_GATES_tremolite = {
+    sigma_crit: 1.0,
+    T_min: 200, T_max: 700, T_optimal: 450,
+    fluid_min: { Ca: 60, Mg: 50, SiO2: 250 },
+    pH_min: 7.0, pH_max: 12.0,
+    surface_energy: 'medium',
+    _sources: ['Hawthorne et al. 2012', 'amphibole engine v116'],
+    _notes: 'Calcic amphibole; Fe > 60 routes to actinolite. Asbestiform variety at σ-1.0 > 1.4.',
+};
+const MINERAL_GATES_actinolite = {
+    sigma_crit: 1.0,
+    T_min: 200, T_max: 700, T_optimal: 400,
+    fluid_min: { Ca: 60, Mg: 30, Fe: 30, SiO2: 250 },
+    pH_min: 6.0, pH_max: 11.0,
+    surface_energy: 'medium',
+    _sources: ['amphibole engine v116', 'Hawthorne & Oberti 2007'],
+    _notes: 'Fe-bearing tremolite-actinolite series intermediate. Greenschist-facies metamorphic + hydrothermal.',
+};
+const MINERAL_GATES_anthophyllite = {
+    sigma_crit: 1.0,
+    T_min: 250, T_max: 650, T_optimal: 450,
+    fluid_min: { Mg: 80, Fe: 30, SiO2: 250 },
+    pH_min: 7.0, pH_max: 11.0,
+    surface_energy: 'medium',
+    _sources: ['amphibole engine v116'],
+    _notes: 'Orthoamphibole — Ca > 80 routes to calcic amphibole (tremolite/actinolite wins). Ultramafic + serpentinite-gneiss-pegmatite.',
+};
+const MINERAL_GATES_amosite = {
+    sigma_crit: 1.0,
+    T_min: 200, T_max: 500, T_optimal: 375,
+    fluid_min: { Fe: 100, SiO2: 250 },
+    pH_min: 6.0, pH_max: 10.0,
+    surface_energy: 'medium',
+    _sources: ['amphibole engine v116', 'Frank et al. 2002'],
+    _notes: '"Brown asbestos" cummingtonite-grunerite asbestiform. Ca > 80 + low Mg required. Fe must dominate Mg (Fe ≥ 1.2 × Mg).',
+};
+const MINERAL_GATES_crocidolite = {
+    sigma_crit: 1.0,
+    T_min: 100, T_max: 400, T_optimal: 275,
+    fluid_min: { Na: 30, Fe: 100, SiO2: 200 },
+    pH_min: 7.0, pH_max: 11.0,
+    surface_energy: 'medium',
+    _sources: ['amphibole engine v116', 'Frank et al. 2002', 'Wittenoom + Northern Cape literature'],
+    _notes: '"Blue asbestos" riebeckite-asbestiform variety. BIF-hosted. Ca > 50 routes to calcic amphibole. Tiger\'s eye precursor on supergene oxidation.',
+};
 Object.assign(VugConditions.prototype, {
     // TREMOLITE Ca2Mg5Si8O22(OH)2 — calcic amphibole; tremolite-asbestos
     // is the documented Jeffrey Mine chrysotile contaminant per WHO 1986.
@@ -19064,11 +19334,12 @@ Object.assign(VugConditions.prototype, {
     // when growth occurs in narrow fractures with high-σ persistence;
     // bladed/columnar when in open crystallization volume.
     supersaturation_tremolite() {
-        if (this.fluid.Ca < 60 || this.fluid.Mg < 50 || this.fluid.SiO2 < 250)
+        const g = MINERAL_GATES_tremolite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Mg < g.fluid_min.Mg || this.fluid.SiO2 < g.fluid_min.SiO2)
             return 0;
-        if (this.temperature < 200 || this.temperature > 700)
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
             return 0;
-        if (this.fluid.pH < 7.0 || this.fluid.pH > 12.0)
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
             return 0;
         // Fe > 50 routes toward actinolite end-member
         if (this.fluid.Fe > 60)
@@ -19101,11 +19372,12 @@ Object.assign(VugConditions.prototype, {
     // hydrothermal alteration. Nephrite-jade variety when compact felted-
     // fibrous (the Maori pounamu + Chinese imperial jade).
     supersaturation_actinolite() {
-        if (this.fluid.Ca < 60 || this.fluid.Mg < 30 || this.fluid.Fe < 30 || this.fluid.SiO2 < 250)
+        const g = MINERAL_GATES_actinolite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Mg < g.fluid_min.Mg || this.fluid.Fe < g.fluid_min.Fe || this.fluid.SiO2 < g.fluid_min.SiO2)
             return 0;
-        if (this.temperature < 200 || this.temperature > 700)
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
             return 0;
-        if (this.fluid.pH < 6.0 || this.fluid.pH > 11.0)
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
             return 0;
         const ca_f = Math.min(this.fluid.Ca / 180.0, 2.0);
         const mg_f = Math.min(this.fluid.Mg / 80.0, 2.0);
@@ -19137,11 +19409,12 @@ Object.assign(VugConditions.prototype, {
     // ophiolite + ultramafic. Discriminator from tremolite: NO Ca;
     // higher Mg+Fe instead.
     supersaturation_anthophyllite() {
-        if (this.fluid.Mg < 80 || this.fluid.Fe < 30 || this.fluid.SiO2 < 250)
+        const g = MINERAL_GATES_anthophyllite;
+        if (this.fluid.Mg < g.fluid_min.Mg || this.fluid.Fe < g.fluid_min.Fe || this.fluid.SiO2 < g.fluid_min.SiO2)
             return 0;
-        if (this.temperature < 250 || this.temperature > 650)
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
             return 0;
-        if (this.fluid.pH < 7.0 || this.fluid.pH > 11.0)
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
             return 0;
         // Ca > 80 routes to tremolite/actinolite (calcic amphibole wins)
         if (this.fluid.Ca > 80)
@@ -19176,11 +19449,12 @@ Object.assign(VugConditions.prototype, {
     // here under "amosite" since that's the WHO-recognized commercial
     // name. Discriminator: high Fe (Fe > Mg typical), no Ca, no Na.
     supersaturation_amosite() {
-        if (this.fluid.Fe < 100 || this.fluid.SiO2 < 250)
+        const g = MINERAL_GATES_amosite;
+        if (this.fluid.Fe < g.fluid_min.Fe || this.fluid.SiO2 < g.fluid_min.SiO2)
             return 0;
-        if (this.temperature < 200 || this.temperature > 500)
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
             return 0;
-        if (this.fluid.pH < 6.0 || this.fluid.pH > 10.0)
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
             return 0;
         // Mg too high routes to anthophyllite; Ca too high routes to actinolite
         if (this.fluid.Ca > 80)
@@ -19219,11 +19493,12 @@ Object.assign(VugConditions.prototype, {
     // oxidation creates "hawk's eye" intermediate (blue-grey-gold).
     // Discriminator: Na + Fe (no Ca, no Mg-dominance).
     supersaturation_crocidolite() {
-        if (this.fluid.Na < 30 || this.fluid.Fe < 100 || this.fluid.SiO2 < 200)
+        const g = MINERAL_GATES_crocidolite;
+        if (this.fluid.Na < g.fluid_min.Na || this.fluid.Fe < g.fluid_min.Fe || this.fluid.SiO2 < g.fluid_min.SiO2)
             return 0;
-        if (this.temperature < 100 || this.temperature > 400)
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
             return 0;
-        if (this.fluid.pH < 7.0 || this.fluid.pH > 11.0)
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
             return 0;
         // Ca > 50 routes to calcic amphibole
         if (this.fluid.Ca > 50)
@@ -32753,7 +33028,7 @@ function _nucleateClass_arsenate(sim) {
 // Phase B15 of PROPOSAL-MODULAR-REFACTOR.
 function _nuc_borax(sim) {
     const sigma_brx = sim.conditions.supersaturation_borax();
-    if (sigma_brx > 1.0 && !sim._atNucleationCap('borax') && rng.random() < 0.12) {
+    if (sigma_brx > MINERAL_GATES_borax.sigma_crit && !sim._atNucleationCap('borax') && rng.random() < 0.12) {
         const c = sim.nucleate('borax', 'vug wall', sigma_brx);
         sim.log.push(`  ✦ NUCLEATION: 💎 Borax #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brx.toFixed(2)}, concentration=${sim.conditions.fluid.concentration.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — alkaline-brine evaporite from the playa-lake chemistry of this drained vug`);
     }
@@ -33097,7 +33372,7 @@ function _nucleateClass_carbonate(sim) {
 function _nuc_fluorite(sim) {
     const sigma_f = sim.conditions.supersaturation_fluorite();
     const existing_fl = sim.crystals.filter(c => c.mineral === 'fluorite' && c.active);
-    if (sigma_f > 1.2 && !existing_fl.length && !sim._atNucleationCap('fluorite')) {
+    if (sigma_f > MINERAL_GATES_fluorite.sigma_crit && !existing_fl.length && !sim._atNucleationCap('fluorite')) {
         const c = sim.nucleate('fluorite', 'vug wall', sigma_f);
         sim.log.push(`  ✦ NUCLEATION: Fluorite #${c.crystal_id} on ${c.position}`);
     }
@@ -33105,7 +33380,7 @@ function _nuc_fluorite(sim) {
 }
 function _nuc_halite(sim) {
     const sigma_hal = sim.conditions.supersaturation_halite();
-    if (sigma_hal > 1.0 && !sim._atNucleationCap('halite') && rng.random() < 0.15) {
+    if (sigma_hal > MINERAL_GATES_halite.sigma_crit && !sim._atNucleationCap('halite') && rng.random() < 0.15) {
         const c = sim.nucleate('halite', 'vug wall', sigma_hal);
         sim.log.push(`  ✦ NUCLEATION: 🧂 Halite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_hal.toFixed(2)}, concentration=${sim.conditions.fluid.concentration.toFixed(1)}) — bathtub-ring NaCl precipitating from the evaporating brine`);
     }
@@ -33113,7 +33388,7 @@ function _nuc_halite(sim) {
 }
 function _nuc_atacamite(sim) {
     const sigma = sim.conditions.supersaturation_atacamite();
-    if (sigma > 1.2 && !sim._atNucleationCap('atacamite') && rng.random() < 0.15) {
+    if (sigma > MINERAL_GATES_atacamite.sigma_crit && !sim._atNucleationCap('atacamite') && rng.random() < 0.15) {
         let pos = 'vug wall';
         const dissolved_cu = sim.crystals.filter(c => (c.mineral === 'chalcopyrite' || c.mineral === 'bornite' || c.mineral === 'chalcocite') && c.dissolved);
         if (dissolved_cu.length && rng.random() < 0.5)
@@ -33124,7 +33399,7 @@ function _nuc_atacamite(sim) {
 }
 function _nuc_sylvite(sim) {
     const sigma = sim.conditions.supersaturation_sylvite();
-    if (sigma > 1.0 && !sim._atNucleationCap('sylvite') && rng.random() < 0.12) {
+    if (sigma > MINERAL_GATES_sylvite.sigma_crit && !sim._atNucleationCap('sylvite') && rng.random() < 0.12) {
         const c = sim.nucleate('sylvite', 'vug wall', sigma);
         sim.log.push(`  ✦ NUCLEATION: 🧂 Sylvite #${c.crystal_id} on ${c.position} (K=${sim.conditions.fluid.K.toFixed(0)} Cl=${sim.conditions.fluid.Cl.toFixed(0)} ppm, concentration=${sim.conditions.fluid.concentration.toFixed(1)}) — late-stage potash from residual brine`);
     }
@@ -33153,7 +33428,7 @@ function _nuc_goethite(sim) {
     const sigma_goe = sim.conditions.supersaturation_goethite();
     const existing_goe_active = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
     const total_goe = sim.crystals.filter(c => c.mineral === 'goethite').length;
-    if (sigma_goe > 1.0 && !existing_goe_active.length && total_goe < 3 && !sim._atNucleationCap('goethite')) {
+    if (sigma_goe > MINERAL_GATES_goethite.sigma_crit && !existing_goe_active.length && total_goe < 3 && !sim._atNucleationCap('goethite')) {
         let pos = 'vug wall';
         const dissolving_py = sim.crystals.filter(c => c.mineral === 'pyrite' && c.dissolved);
         const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
@@ -33175,7 +33450,7 @@ function _nuc_goethite(sim) {
 function _nuc_lepidocrocite(sim) {
     const sigma_lep = sim.conditions.supersaturation_lepidocrocite();
     const existing_lep = sim.crystals.filter(c => c.mineral === 'lepidocrocite' && c.active);
-    if (sigma_lep > 1.1 && !sim._atNucleationCap('lepidocrocite')) {
+    if (sigma_lep > MINERAL_GATES_lepidocrocite.sigma_crit && !sim._atNucleationCap('lepidocrocite')) {
         if (!existing_lep.length || (sigma_lep > 1.7 && rng.random() < 0.25)) {
             let pos = 'vug wall';
             const dissolving_py_lep = sim.crystals.filter(c => c.mineral === 'pyrite' && c.dissolved);
@@ -33212,7 +33487,7 @@ function _nuc_wulfenite(sim) {
     const sigma_wulf = sim.conditions.supersaturation_wulfenite();
     const existing_wulf = sim.crystals.filter(c => c.mineral === 'wulfenite' && c.active);
     const total_wulf = sim.crystals.filter(c => c.mineral === 'wulfenite').length;
-    if (sigma_wulf > 1.2 && !existing_wulf.length && total_wulf < 2 && !sim._atNucleationCap('wulfenite')) {
+    if (sigma_wulf > MINERAL_GATES_wulfenite.sigma_crit && !existing_wulf.length && total_wulf < 2 && !sim._atNucleationCap('wulfenite')) {
         let pos = 'vug wall';
         // Prefers to nucleate on dissolved galena AND/OR dissolved molybdenite
         // Wulfenite = Pb²⁺ (from oxidized galena) + MoO₄²⁻ (from oxidized molybdenite)
@@ -33244,7 +33519,7 @@ function _nuc_wulfenite(sim) {
 }
 function _nuc_ferrimolybdite(sim) {
     const sigma_fmo = sim.conditions.supersaturation_ferrimolybdite();
-    if (sigma_fmo > 1.0 && !sim._atNucleationCap('ferrimolybdite')) {
+    if (sigma_fmo > MINERAL_GATES_ferrimolybdite.sigma_crit && !sim._atNucleationCap('ferrimolybdite')) {
         if (rng.random() < 0.18) {
             let pos = 'vug wall';
             const dissolving_mol = sim.crystals.filter(c => c.mineral === 'molybdenite' && c.dissolved);
@@ -33269,16 +33544,16 @@ function _nuc_ferrimolybdite(sim) {
 function _nuc_stolzite(sim) {
     let sigma_rasp = sim.conditions.supersaturation_raspite();
     const sigma_stol = sim.conditions.supersaturation_stolzite();
-    if (sigma_rasp > 1.4 && sigma_stol > 1.0 && rng.random() < 0.9) {
+    if (sigma_rasp > MINERAL_GATES_raspite.sigma_crit && sigma_stol > MINERAL_GATES_stolzite.sigma_crit && rng.random() < 0.9) {
         sigma_rasp = 0;
     }
-    if (sigma_rasp > 1.4 && !sim._atNucleationCap('raspite')) {
+    if (sigma_rasp > MINERAL_GATES_raspite.sigma_crit && !sim._atNucleationCap('raspite')) {
         if (rng.random() < 0.16) {
             const c = sim.nucleate('raspite', 'vug wall', sigma_rasp);
             sim.log.push(`  ✦ NUCLEATION: Raspite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_rasp.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, W=${sim.conditions.fluid.W.toFixed(1)})`);
         }
     }
-    if (sigma_stol > 1.0 && !sim._atNucleationCap('stolzite')) {
+    if (sigma_stol > MINERAL_GATES_stolzite.sigma_crit && !sim._atNucleationCap('stolzite')) {
         if (rng.random() < 0.18) {
             const c = sim.nucleate('stolzite', 'vug wall', sigma_stol);
             sim.log.push(`  ✦ NUCLEATION: Stolzite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_stol.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, W=${sim.conditions.fluid.W.toFixed(1)})`);
@@ -33288,7 +33563,7 @@ function _nuc_stolzite(sim) {
 }
 function _nuc_scheelite(sim) {
     const sigma = sim.conditions.supersaturation_scheelite();
-    if (sigma > 1.2 && !sim._atNucleationCap('scheelite') && rng.random() < 0.15) {
+    if (sigma > MINERAL_GATES_scheelite.sigma_crit && !sim._atNucleationCap('scheelite') && rng.random() < 0.15) {
         let pos = 'vug wall';
         const wolf = sim.crystals.filter(c => c.mineral === 'wolframite' && c.active);
         if (wolf.length && rng.random() < 0.30)
@@ -33299,7 +33574,7 @@ function _nuc_scheelite(sim) {
 }
 function _nuc_powellite(sim) {
     const sigma = sim.conditions.supersaturation_powellite();
-    if (sigma > 1.2 && !sim._atNucleationCap('powellite') && rng.random() < 0.13) {
+    if (sigma > MINERAL_GATES_powellite.sigma_crit && !sim._atNucleationCap('powellite') && rng.random() < 0.13) {
         let pos = 'vug wall';
         const dissolved_moly = sim.crystals.filter(c => c.mineral === 'molybdenite' && c.dissolved);
         if (dissolved_moly.length && rng.random() < 0.50)
@@ -33310,7 +33585,7 @@ function _nuc_powellite(sim) {
 }
 function _nuc_wolframite(sim) {
     const sigma = sim.conditions.supersaturation_wolframite();
-    if (sigma > 1.3 && !sim._atNucleationCap('wolframite') && rng.random() < 0.13) {
+    if (sigma > MINERAL_GATES_wolframite.sigma_crit && !sim._atNucleationCap('wolframite') && rng.random() < 0.13) {
         let pos = 'vug wall';
         const qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
         if (qz.length && rng.random() < 0.45)
@@ -37699,7 +37974,7 @@ function _nucleateClass_silicate(sim) {
 // see byte-identical RNG state to pre-v116.
 function _nuc_tremolite(sim) {
     const sigma = sim.conditions.supersaturation_tremolite();
-    if (sigma < 1.0)
+    if (sigma < MINERAL_GATES_tremolite.sigma_crit)
         return;
     if (sim._atNucleationCap('tremolite'))
         return;
@@ -37727,7 +38002,7 @@ function _nuc_tremolite(sim) {
 }
 function _nuc_actinolite(sim) {
     const sigma = sim.conditions.supersaturation_actinolite();
-    if (sigma < 1.0)
+    if (sigma < MINERAL_GATES_actinolite.sigma_crit)
         return;
     if (sim._atNucleationCap('actinolite'))
         return;
@@ -37756,7 +38031,7 @@ function _nuc_actinolite(sim) {
 }
 function _nuc_anthophyllite(sim) {
     const sigma = sim.conditions.supersaturation_anthophyllite();
-    if (sigma < 1.0)
+    if (sigma < MINERAL_GATES_anthophyllite.sigma_crit)
         return;
     if (sim._atNucleationCap('anthophyllite'))
         return;
@@ -37781,7 +38056,7 @@ function _nuc_anthophyllite(sim) {
 }
 function _nuc_amosite(sim) {
     const sigma = sim.conditions.supersaturation_amosite();
-    if (sigma < 1.0)
+    if (sigma < MINERAL_GATES_amosite.sigma_crit)
         return;
     if (sim._atNucleationCap('amosite'))
         return;
@@ -37805,7 +38080,7 @@ function _nuc_amosite(sim) {
 }
 function _nuc_crocidolite(sim) {
     const sigma = sim.conditions.supersaturation_crocidolite();
-    if (sigma < 1.0)
+    if (sigma < MINERAL_GATES_crocidolite.sigma_crit)
         return;
     if (sim._atNucleationCap('crocidolite'))
         return;

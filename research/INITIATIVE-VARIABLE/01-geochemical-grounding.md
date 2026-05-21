@@ -54,19 +54,18 @@ For homogeneous nucleation from solution:
 
 ### Growth Rate (BCF Theory)
 
-**v = C · σ · tanh(λ_s / 2x_s)**
+**v = C · σ · tanh(σ_1 / σ)** (canonical BCF form)
 
 - v = step advancement rate
 - C = kinetic coefficient
 - σ = supersaturation
-- λ_s = step spacing
-- x_s = surface diffusion length
+- σ_1 = characteristic supersaturation (∝ x_s/d, where x_s = surface diffusion length, d = step spacing scale)
 
-**Regimes (De Yoreo & Vekilov 2003, Rev. Mineral. Geochem. 54):**
-- **Low σ (spiral growth, surface diffusion limited):** v ∝ σ² — growth rate limited by adatom diffusion to kink sites on spiral steps
-- **High σ (2D nucleation / rough-surface kinetics):** v ∝ σ — abundant kink sites from layer nucleation, surface diffusion no longer rate-limiting
+**Regimes (textbook convention; De Yoreo & Vekilov 2003, *Reviews in Mineralogy & Geochemistry* vol 54):**
+- **Very low σ (σ << σ_1):** tanh(σ_1/σ) → 1, but spiral-step density ∝ σ, so **v ∝ σ²** (parabolic, screw-dislocation regime)
+- **High σ (σ >> σ_1):** tanh(σ_1/σ) → σ_1/σ, surface roughens, **v ∝ σ** (linear, direct integration / 2D nucleation regime)
 
-The crossover σ depends on mineral and temperature. For many hydrothermal minerals, the transition occurs at σ ≈ 1–3.
+**CORRECTION 2026-05-21:** Earlier version of this doc had the regimes inverted. The textbook convention is **parabolic at low σ, linear at high σ** — the inverse of the naive `tanh` reading. The σ-dependence of step density (more dislocations active at higher σ) is the multiplier that gives σ² at low σ; at high σ, every kink site is saturated and surface roughening dominates, giving linear scaling.
 
 ---
 
@@ -74,59 +73,75 @@ The crossover σ depends on mineral and temperature. For many hydrothermal miner
 
 ### Temperature Sweet-Spots (from Literature)
 
-| Mineral | ΔH° (kJ/mol) | Solubility Trend | Optimal T (°C) | Initiative Modifier |
-|---------|---------------|------------------|----------------|-------------------|
-| Calcite | -10.5 | Inverse (more soluble cold) | 80–120 | +2 at high T |
-| Aragonite | -8.5 | Inverse (slightly less than calcite) | 60–100 | +1 at moderate-high T |
-| Quartz | +22 | Normal (more soluble hot) | 200–350 | +2 at high T (kinetic boost dominates) |
-| Barite | +20 | Normal | 100–200 | +1 at moderate T |
-| Sphalerite | ~+15 | Normal | 150–250 | +1 at moderate-high T |
-| Galena | +10 | Normal | 100–200 | +1 at moderate T |
-| Gypsum | -1.7 | Weak inverse | 20–40 | +2 at low T |
-| Anhydrite | +5 | Normal | 80–150 | +1 at moderate T |
-| Opal | ~+14 | Normal (but amorphous = fast) | 20–60 | +2 at low T |
-| Fluorite | +18 | Normal | 100–200 | +1 at moderate T |
-| Apatite | +15 | Normal | 100–300 | +1 at moderate-high T |
+| Mineral | ΔH° (kJ/mol) | Solubility Trend | Optimal T (°C) | Initiative Modifier | Source |
+|---------|---------------|------------------|----------------|-------------------|--------|
+| Calcite | −12.5 | Inverse (more soluble cold) | 80–120 | +2 at high T | Plummer & Busenberg 1982 |
+| Aragonite | −10.5 | Inverse (slightly less than calcite) | 60–100 | +1 at moderate-high T | Plummer & Busenberg 1982 |
+| **Quartz** | **+22** | Normal (more soluble hot) | 200–350 | +2 at high T (and ΔG* drops sharply with T) | Rimstidt & Barnes 1980 (GCA 44:1683) |
+| Barite | +26 | Normal | 100–200 | +1 at moderate T | Blount 1977 |
+| Sphalerite | ~+15 to +30 | Normal (varies with Fe content) | 150–250 | +1 at moderate-high T | Anderson 1962 |
+| Galena | +18 to +30 | Normal | 100–200 | +1 at moderate T | Anderson 1962 |
+| Gypsum | +1 (low T) → −2 (>40°C) | Crosses zero near 40°C | 20–40 | +2 at low T | Marshall & Slusher 1966 |
+| Anhydrite | +5 to +10 | Normal (with retrograde >100°C in NaCl brines) | 80–200 | +1 at moderate T | Blount & Dickson 1973 |
+| **Opal (amorphous SiO₂)** | **+14** | Normal | 20–60 | +2 at low T (amorphous γ very low, low σ_crit dominates) | Iler 1979 |
+| Fluorite | +13 to +15 | Normal | 100–200 | +1 at moderate T | Bond & Pfeiffer 1981 |
+| Apatite | +15 to +20 | Normal | 100–300 | +1 at moderate-high T | various; Valyashko 2002 |
 
-*Note: ΔH° values are approximate and depend on pH, ionic strength, and competing ions. These are "order-of-magnitude" guidelines for initiative calibration, not thermodynamic precision.*
+*Note: ΔH° values are dissolution enthalpies at ~25°C, 1 bar, from cited sources. They depend on pH, ionic strength, and competing ions — these are "best-mid-range" estimates for initiative calibration, not thermodynamic precision.*
 
-### Surface Energy γ_sl (solid-liquid interfacial energy, literature values, J/m²)
+**CORRECTIONS 2026-05-21:** Earlier version of this doc had quartz at +3.8 kJ/mol (off by ~6×) and opal at +2 kJ/mol (off by ~7×). The literature values from Rimstidt & Barnes 1980 and Iler 1979 are above. These corrections matter: they predict quartz to be strongly T-dependent (which it is — quartz kinetics slow dramatically below 200°C, well-known from sinter / quartz-cement diagenesis) and opal to also be moderately T-dependent (also correct — opal-A → opal-CT → quartz transitions happen with burial heating).
 
-*NOTE: These are γ_sl (solid-liquid), NOT γ_sv (solid-vapor). γ_sl is typically 2–5× smaller than γ_sv. For nucleation from solution, γ_sl is the relevant quantity. Values from Söhnel & Mullin 1982 and related aqueous nucleation studies.*
+### Surface Energy γ (literature values)
 
-| Mineral | γ_sl (approx) | Category | Initiative Modifier |
-|---------|--------------|----------|-------------------|
-| Opal | 0.02–0.05 | Very low | +2 |
-| Gypsum | 0.05–0.10 | Low | +1 |
-| Aragonite (in Mg-fluid) | 0.08–0.15 | Low | +1 |
-| Calcite | 0.094 | Medium | 0 |
-| Barite | 0.135 | Medium | 0 |
-| Sphalerite | 0.15–0.25 | Medium-high | -1 |
-| Quartz | 0.30–0.50 | High | -1 |
-| Corundum | 0.60–1.00 | Very high | -2 |
-| Diamond | 1.5–2.5 | Extreme | -3 |
-| Quartz | 0.8–1.2 | High | -1 |
-| Corundum | 1.5–2.0 | Very high | -2 |
-| Diamond | 3.0–5.0 | Extreme | -3 |
+**⚠️ Read the units carefully.** The relevant γ for nucleation **from solution** is the **solid–liquid interfacial energy γ_sl**, NOT the solid–vapor surface energy γ_sv. The two differ by 2–5× and are easy to confuse in the literature. ΔG* uses γ_sl.
 
-*Note: Surface energy depends on face, fluid composition, and adsorbed species. These are basal-plane values in aqueous solution. In the sim, we'd use simplified categories rather than precise values.*
+**γ_sl values (solid–liquid in water, the right ones for the sim):**
 
-### Critical Supersaturation σ_crit (homogeneous nucleation from solution)
+| Mineral | γ_sl (J/m²) | Category | Initiative Modifier | Source |
+|---------|-------------|----------|-------------------|--------|
+| Opal (amorphous SiO₂) | 0.05–0.10 | very_low | +2 | Iler 1979 |
+| Gypsum | 0.04–0.09 | low | +1 | Christoffersen & Christoffersen 1976 |
+| Aragonite (Mg-poisoned) | 0.08–0.12 | low | +1 | Berner 1975 |
+| Calcite | 0.09–0.12 | medium | 0 | Söhnel & Mullin 1982 |
+| Barite | 0.12–0.18 | medium | 0 | He et al. 1995 |
+| Sphalerite | 0.15–0.25 | medium-high | −1 | Karthikeyan et al. 2002 (est.) |
+| Quartz | 0.35–0.50 | high | −1 | Brace & Walsh 1962; Parks 1984 |
+| Corundum | 0.60–0.90 | very_high | −2 | various; estimated for α-Al₂O₃ in water |
+| Diamond | >1.0 (in water; not relevant — never grows from solution in vug) | extreme | n/a | not applicable |
 
-*NOTE: These are for **homogeneous nucleation** (new crystals in bulk solution). Heterogeneous nucleation on existing surfaces has much lower σ_crit. The sim's current behavior — quartz nucleating readily in baseline scenarios — reflects heterogeneous nucleation on vug walls or seed crystals, not homogeneous nucleation in bulk fluid. The initiative system should model σ_crit for the nucleation mode actually occurring in each scenario.*
+**γ_sv values (solid–vapor, NOT used for nucleation from solution — listed only for cross-reference because earlier draft confused them):**
 
-| Mineral | σ_crit (homogeneous) | σ_crit (heterogeneous) | Notes |
-|---------|---------------------|----------------------|-------|
-| Calcite | 1.2–2.0 | 0.3–0.8 | Low barrier, fast nucleation |
-| Aragonite | 1.5–2.5 | 0.4–1.0 | Slightly higher than calcite |
-| Quartz | 6–20+ | 1.5–3.0 | Very high homogeneous barrier; heterogeneous much lower |
-| Barite | 1.5–2.5 | 0.4–0.8 | Moderate barrier |
-| Sphalerite | 1.8–3.0 | 0.5–1.0 | Higher in Fe-rich fluids |
-| Gypsum | 1.0–1.5 | 0.2–0.5 | Very low barrier |
-| Opal | 0.5–1.0 | 0.1–0.3 | Amorphous = no real barrier |
-| Fluorite | 1.5–2.5 | 0.4–0.8 | Moderate barrier |
+| Mineral | γ_sv (J/m²) |
+|---------|-------------|
+| Calcite | 0.3–0.5 |
+| Barite | 0.4–0.6 |
+| Quartz | 0.8–1.2 |
+| Corundum | 1.5–2.0 |
 
-*For the sim: Use heterogeneous σ_crit as default (most natural nucleation is on walls/seeds). Flag scenarios where homogeneous nucleation is the actual mode (e.g., first crystal in a sealed vug).*
+**CORRECTION 2026-05-21:** Earlier version of this doc listed γ_sv values as if they were γ_sl. The category ordering (opal < gypsum < calcite < barite < quartz < corundum) is unchanged — the categorical modifier still works. But the absolute scale for the proposal's `criticalSupersaturation` derivation should use γ_sl, which is typically 2–5× smaller than what was listed.
+
+### Critical Supersaturation σ_crit (empirical estimates)
+
+**⚠️ Homogeneous vs heterogeneous nucleation distinction matters here.**
+- **Homogeneous nucleation** (new crystal forms in bulk fluid with no surface help): σ_crit is high — driven by full ΔG* barrier
+- **Heterogeneous nucleation** (new crystal forms on existing substrate — wall, prior crystal, particulate): σ_crit is much lower because the substrate lowers the effective γ. In a vug, virtually all nucleation is heterogeneous (vug wall, prior generations).
+
+Literature values vary 2–10× depending on which regime is being measured.
+
+| Mineral | σ_crit (homogeneous, bulk) | σ_crit (heterogeneous, vug-relevant) | Source |
+|---------|---------------------------|-------------------------------------|--------|
+| Calcite | 3–10 | 1.2–2.0 | Lin & Singer 2005 (het); Stack & Grantham 2010 |
+| Aragonite | 4–12 | 1.5–2.5 | Berner 1975 |
+| **Quartz** | **6–20+** | **2.0–4.0** | Rimstidt & Barnes 1980; Williams 1985; Brantley 2008 |
+| Barite | 2–4 | 1.5–2.5 | Nielsen 1964 |
+| Sphalerite | 4–8 | 1.8–3.0 | Karthikeyan 2002 (higher in Fe-rich fluids) |
+| Gypsum | 1.5–3 | 1.0–1.5 | Lancia et al. 1999 |
+| Opal (amorphous) | 1.5–2.5 | 0.5–1.0 | Iler 1979; Williams 1985 |
+| Fluorite | 3–6 | 1.5–2.5 | Hamza & Hamdona 1991 |
+
+**The sim's σ_crit values should be heterogeneous-regime numbers** because vug nucleation is essentially always heterogeneous (wall, prior crystals, particulates). The "vug-relevant" column is what gets loaded into the modifier system.
+
+**CORRECTION 2026-05-21:** Earlier version listed quartz at 2.0–3.0 without distinguishing regime. That's right for heterogeneous nucleation on existing quartz; for homogeneous it would be much higher. Calibration target: extract σ_crit from each engine's first-gate threshold (which the engines have already calibrated against the heterogeneous-from-substrate behavior of vug growth).
 
 ---
 
@@ -159,6 +174,27 @@ The crossover σ depends on mineral and temperature. For many hydrothermal miner
 7. **UCLA Manning — Thermodynamic model for mineral solubility**
    - URL: http://www2.ess.ucla.edu/~manning/pdfs/dm10.pdf
    - Key finding: Ksp(T) relationships, ΔG°, ΔH°, ΔS° for common minerals
+
+8. **Rimstidt & Barnes 1980 — The kinetics of silica–water reactions** (Geochim. Cosmochim. Acta 44:1683)
+   - Key finding: Quartz dissolution ΔH° ≈ +22 kJ/mol (corrects earlier ~+4 estimate)
+
+9. **Iler 1979 — The Chemistry of Silica**
+   - Key finding: Amorphous silica γ_sl ≈ 0.05-0.10 J/m², ΔH° ≈ +14 kJ/mol, σ_crit (het) ≈ 0.5-1.0
+
+10. **De Yoreo & Vekilov 2003 — Principles of Crystal Nucleation and Growth** (Reviews in Mineralogy & Geochemistry vol 54)
+    - Key finding: Canonical BCF regimes — parabolic at low σ (spiral growth), linear at high σ (rough surface)
+
+11. **Söhnel & Mullin 1982 — Interpretation of crystallization induction periods** (J. Colloid Interface Sci. 89:152)
+    - Key finding: Calcite γ_sl ≈ 0.094 J/m² in water (the solid-liquid value, distinct from γ_sv)
+
+12. **Plummer & Busenberg 1982 — The solubilities of calcite, aragonite and vaterite** (Geochim. Cosmochim. Acta 46:1011)
+    - Key finding: Calcite ΔH° = −12.5 kJ/mol, aragonite ΔH° = −10.5 kJ/mol
+
+13. **Brantley et al. 2008 — Kinetics of Water-Rock Interaction**
+    - Key finding: Quartz homogeneous σ_crit ≥ 6 at 25°C from solution; heterogeneous on existing quartz much lower
+
+14. **Williams 1985 — Silica geochemistry: amorphous vs crystalline regimes**
+    - Key finding: σ_crit hierarchy opal < chalcedony < quartz mirrors γ_sl hierarchy
 
 ---
 

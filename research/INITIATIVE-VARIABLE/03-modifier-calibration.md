@@ -1,8 +1,16 @@
-# 03: Modifier Calibration — Proposed Values
+# 03: Modifier Calibration — Proposed Values (Rev 2)
 
-**Date:** 2026-05-21
-**Status:** Proposed — needs builder review and seed-42 validation
-**Method:** Literature-derived starting points, empirically tuned against baselines
+**Date:** 2026-05-21 (rev 2 same day)
+**Status:** Rev 2 — graduated competition refinements + science corrections from 01-geochemical-grounding.md
+**Method:** Literature-derived starting points, empirically tuned against v125-v126 cascade record
+
+**Rev 2 changes:**
+- Quartz preferredTempRange shifted higher to reflect corrected ΔH° = +22 kJ/mol
+- Quartz σ_crit listed as heterogeneous (engine-relevant) value, not homogeneous
+- Opal σ_crit refined per Iler 1979
+- Added power-law k=2 sharing math (proportional regime)
+- Added cation-level rationing algorithm
+- Cascade ripple penalty distinguished from competition penalty
 
 ---
 
@@ -30,9 +38,10 @@ For most minerals, the thermodynamic effect dominates. We map this to a simple m
     "criticalSupersaturation": 1.8
   },
   "quartz": {
-    "preferredTempRange": [150, 400, 250],
+    "preferredTempRange": [180, 400, 300],
     "surfaceEnergy": "high",
-    "criticalSupersaturation": 2.5
+    "criticalSupersaturation": 2.5,
+    "_note": "σ_crit=2.5 is the HETEROGENEOUS value (nucleation on existing quartz / wall). Homogeneous σ_crit is 6-20+ per Brantley 2008 but never the engine-relevant value in vug nucleation. preferredTempRange optimal bumped to 300 from earlier 250 reflecting corrected ΔH° = +22 kJ/mol — quartz kinetics slow dramatically below 200°C."
   },
   "barite": {
     "preferredTempRange": [50, 250, 150],
@@ -62,7 +71,8 @@ For most minerals, the thermodynamic effect dominates. We map this to a simple m
   "opal": {
     "preferredTempRange": [10, 80, 40],
     "surfaceEnergy": "very_low",
-    "criticalSupersaturation": 0.8
+    "criticalSupersaturation": 0.8,
+    "_note": "Heterogeneous σ_crit per Iler 1979. Opal is the mineraloid edge-case — amorphous gel, γ_sl very low, ΔH° corrected to +14 kJ/mol. Low σ_crit + very_low γ together make opal the standard 'first to nucleate at low T' outcome in the modifier system."
   },
   "fluorite": {
     "preferredTempRange": [50, 250, 150],
@@ -263,14 +273,126 @@ function competitionModifier(mineral: string, activeMinerals: string[]): number 
 
 ---
 
+---
+
+## Graduated Competition Sharing Math (Rev 2)
+
+### Power-law k=2 sharing in the proportional regime
+
+When initiatives are close (gap ≤ INITIATIVE_GAP_THRESHOLD, default 3):
+
+```typescript
+function proportionalShares(competitors: InitiativeResult[]): Map<string, number> {
+  const sumOfSquares = competitors.reduce((s, c) => s + c.finalInitiative ** 2, 0);
+  const shares = new Map<string, number>();
+  for (const c of competitors) {
+    shares.set(c.mineral, (c.finalInitiative ** 2) / sumOfSquares);
+  }
+  return shares;
+}
+```
+
+Behavior:
+- A=12, B=11: 0.56 / 0.44 (12% gap → 12% allocation advantage; modest dominance)
+- A=15, B=10: 0.69 / 0.31 (gap=5 still triggers winner-takes-most at threshold=3, but for illustration)
+- A=12, B=12: 0.50 / 0.50 (true tie → equal share)
+- A=15, B=10, C=8: 0.55 / 0.24 / 0.16 + 5% (gap threshold complications — see below)
+- Three-way tie (12/12/12): 0.333 each
+
+### Winner-takes-most when gap > 3
+
+When the top initiative exceeds the next-highest by more than 3:
+
+```typescript
+function dominantShares(competitors: InitiativeResult[]): Map<string, number> {
+  // Sort by final initiative descending
+  const sorted = [...competitors].sort((a, b) => b.finalInitiative - a.finalInitiative);
+  const top = sorted[0];
+  const rest = sorted.slice(1);
+
+  const shares = new Map<string, number>();
+  shares.set(top.mineral, 0.80);  // top gets 80%
+  // Remaining 20% split proportionally among rest
+  const restSum = rest.reduce((s, c) => s + c.finalInitiative ** 2, 0);
+  for (const c of rest) {
+    shares.set(c.mineral, 0.20 * (c.finalInitiative ** 2) / restSum);
+  }
+  return shares;
+}
+```
+
+Behavior:
+- A=15, B=10, C=8: 0.80 / 0.14 / 0.06 (A dominates clearly)
+- A=15, B=8: 0.80 / 0.20
+
+### Cation-level rationing
+
+The shares above only apply per-cation, and only when fluid is constrained:
+
+```typescript
+function rationCation(cation: string, fluid: Fluid, competitors: InitiativeResult[]): void {
+  // 1. Each mineral computes desired thickness from σ via engine.compute()
+  const desired = competitors.map(c => ({
+    mineral: c.mineral,
+    desiredThickness: engineCompute(c.mineral, σ, conditions),
+    initiative: c.finalInitiative,
+  }));
+
+  // 2. Total desired debit on this cation
+  const totalDesiredDebit = desired.reduce((s, d) =>
+    s + MINERAL_STOICHIOMETRY[d.mineral][cation] * d.desiredThickness * MASS_BALANCE_SCALE,
+    0
+  );
+
+  // 3. If broth has enough, no rationing
+  if (totalDesiredDebit <= fluid[cation]) return;
+
+  // 4. Otherwise, ration by initiative shares
+  const maxGap = Math.max(...desired.map(d => d.initiative)) -
+                 Math.min(...desired.map(d => d.initiative));
+  const shares = maxGap > 3
+    ? dominantShares(desired)
+    : proportionalShares(desired);
+
+  for (const d of desired) {
+    const cationShare = shares.get(d.mineral)!;
+    const cationAllowed = cationShare * fluid[cation];
+    const stoichCoeff = MINERAL_STOICHIOMETRY[d.mineral][cation];
+    const cationLimitedThickness = cationAllowed / (stoichCoeff * MASS_BALANCE_SCALE);
+    d.desiredThickness = Math.min(d.desiredThickness, cationLimitedThickness);
+  }
+}
+```
+
+### Final mineral growth: Liebig's law of the minimum
+
+A mineral with multiple cations is limited by its tightest cation:
+
+```typescript
+function actualThickness(mineral: Mineral, fluid: Fluid, allShares: Map<string, Map<string, number>>): number {
+  const myCations = mineral.stoichiometryKeys();
+  let limitedThickness = mineral.desiredThickness;
+  for (const cation of myCations) {
+    const cationLimit = computeCationLimitedThickness(mineral, cation, fluid, allShares);
+    limitedThickness = Math.min(limitedThickness, cationLimit);
+  }
+  return limitedThickness;
+}
+```
+
+This means: if calcite (Ca + CO3) wins 70% of Ca but only 40% of CO3 because of competition with siderite, calcite's growth is limited by the CO3 share, not the Ca share. **Most constrained cation wins.**
+
+---
+
 ## Bottom Line
 
 These are **starting points**, not final values. The builder should:
-1. Implement with these defaults
-2. Run seed-42 baselines
-3. Adjust modifiers until drift is acceptable
-4. Document each adjustment in version history
+1. Implement v127 infrastructure (engine gates exported, modifier calc + log only — no growth changes)
+2. Land v128 graduated competition with these defaults
+3. Run seed-42 baselines (all regenerated; old baselines deleted)
+4. Validate against the 5 calibration assertions in PROPOSAL §4.1
+5. Adjust modifiers in v129 calibration tune
 
-The goal is not perfect thermodynamic accuracy. It's **predictable, legible competition** that makes the cascade problem solvable.
+The goal is not perfect thermodynamic accuracy. It's **predictable, legible, graduated competition** that makes the cascade problem solvable.
 
-— 🪨✍️
+— 🪨✍️ + builder (rev 2)

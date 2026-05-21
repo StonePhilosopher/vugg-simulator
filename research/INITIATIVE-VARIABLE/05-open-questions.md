@@ -1,8 +1,8 @@
-# 05: Open Questions for Discussion
+# 05: Open Questions — Resolutions (Rev 2)
 
-**Date:** 2026-05-21
-**Status:** Active discussion — builder input needed
-**Channel:** GitHub issues, herd-inbox, or direct conversation
+**Date:** 2026-05-21 (rev 2 same day)
+**Status:** Q1-Q12 resolved by boss; Q-A through Q-J resolved by builder + boss collaboration
+**Channel:** Resolved via direct dialog 2026-05-21
 
 ---
 
@@ -281,16 +281,85 @@ Real nucleation has a delay: fluid reaches σ > σ_crit, but nucleation doesn't 
 
 ---
 
-## Bottom Line
+---
 
-These questions don't need answers today. The builder can start implementing with reasonable defaults and iterate. But documenting the questions now prevents "we should have thought of that" moments later.
+## RESOLUTIONS (Rev 2, 2026-05-21)
 
-The most important questions for starting:
-- **Q1** (σ_crit source) — affects data structure
-- **Q2** (tiebreaking) — affects sort implementation
-- **Q3** (growth rate) — affects scope
-- **Q7** (testing strategy) — affects rollout plan
+### Q1 — σ_crit source: **Option A (extract from engine gates)** via engine-exported constants
+The boss called for build-time extraction. The builder refined: don't parse source files (fragile to refactors); have engines export `MINERAL_GATES_<mineral>` structured constants directly. The library card display reads from the same constants. One source of truth, no drift. See `06-engine-gates-refactor.md` for the migration scope.
 
-Everything else can be decided during calibration.
+### Q2 — Tiebreaking: **Option A (base σ wins), then fixed registry order**
+Higher base σ goes first. If still tied, use the existing MINERAL_ENGINES iteration order as deterministic fallback. Stochastic tiebreaking deferred to v131+ stochastic-mode work.
 
-— 🪨✍️
+### Q3 — Growth rate: **Option B (order + growth rate via cation-level rationing)**
+Initiative determines both order AND who gets what share of the cation budget when broth is limiting. Implemented via graduated competition + Liebig's-law-of-the-minimum (see `07-graduated-competition.md`).
+
+### Q4 — Determinism: **Option A (pure deterministic)** for v128
+Stochastic mode (Option B) deferred to v131+. Same input → same output remains the working contract.
+
+### Q5 — Competition penalty: **Option A (simple any-overlap = penalty)**
+Stoichiometric coefficients don't factor into the modifier value (Option A); rationing IS already proportional to the coefficient via mass balance (a mineral needing Cu:10 debits 10x more Cu than Cu:1, so its share already reflects its demand). Adding coefficient-weighted modifiers on top would double-count.
+
+### Q6 — Substrate epitaxy: **Option B (context-dependent)** in v130, not v128
+Defer the substrate work. v128 lands without epitaxy modifier; v130 adds catalytic/competition/encapsulation modes. The proposal already noted this in §4 Phase 4.
+
+### Q7 — Testing strategy: **Option B (accept all drift at v128)**
+User greenlight to regenerate all 30 baselines as `seed42_v128.json`. No flag-gated gradual rollout. The 5 calibration assertions in PROPOSAL §4.1 are the new validation target.
+
+### Q8 — Temperature modifier: **Option A (scenario temperature)**
+Modifier = f(fluid.T, mineral.optimalT). Mineral adapts to its environment per-step. Event-driven T changes (e.g., schneeberg cooling event) affect modifier in real time.
+
+### Q9 — Induction time: **DEFERRED to v131+**
+Graduated growth does NOT capture induction-time physics — it affects post-nucleation rate, not pre-nucleation delay. Explicitly acknowledged in the proposal §3.1 rev 2. v131+ adds a proper induction counter (steps_above_threshold per mineral) if calibration shows we need it.
+
+### Q10 — UI visibility: **Option D (all of the above)** — debug panel + library card + step log
+The user specifically asked for visibility in the library. v127 adds the "Competitiveness profile" section to the mineral catalog card. v128 adds the step-log line per mineral ("dioptase: initiative=12, share=0.34, grew 28 µm"). Debug panel in v127.
+
+### Q11 — Default for minerals with no preferredTempRange: **Option B (default "moderate" [0, 1000, 500])**
+Until each mineral has a calibrated range, default to a wide-permissive range that gives no modifier. Calibration in v129 narrows ranges per literature.
+
+### Q12 — Initiative vs stoichiometry relationship: **Option C (keep separate)**
+Stoichiometry = what happens after growth (fluid debit). Initiative = what happens before/during growth (order + share). Clear separation of concerns. The cation-level rationing layer bridges them: initiative shares determine how the stoichiometric debit is allocated when broth is limiting.
+
+---
+
+### Q-A — Physics-only vs modifier-only competition: **modifier-only**
+Avoids double-counting. Physics (σ recalc between minerals) deferred to future flag-gated option.
+
+### Q-B — σ_crit source: **extract from engine-exported gates constants** (not source parsing)
+See Q1 resolution and `06-engine-gates-refactor.md`.
+
+### Q-C — Per-zone vs global initiative: **global for v128, per-zone v132+**
+
+### Q-D — RNG calls: **SeededRandom stays for geometry/placement; initiative replaces Shape-B for ordering**
+Both coexist. Initiative handles when, SeededRandom handles how.
+
+### Q-E — Rarity ground-truth: **v125-v126 cascade record short-term, real-world abundance long-term**
+
+### Q-F — Multi-cation penalty: **cascade ripple penalty**, separate from per-cation competition penalty
+`-min(uniqueCationCount - 1, 2)` capped at -2. Applied ADDITIVELY to per-cation competition penalty. Lepidolite gets -2 ripple + -2 competition = -4 final.
+
+### Q-G — Sharing math: **power-law k=2** in proportional regime, **80/20 winner-takes-most** beyond gap > 3
+See `07-graduated-competition.md` for the full math.
+
+### Q-H — fullAllocation semantics: **cation-level rationing**
+Only triggers when desired total debit > available. Otherwise full growth. Liebig's law of the minimum determines actual thickness.
+
+### Q-I — `competitionMode` scenario parameter: **defer to v129 calibration**
+Ship v128 with one global behavior (gap=3 threshold, k=2 power-law). If specific scenarios need different modes, add per-scenario overrides in v129.
+
+### Q-J — Library visibility concretely: **Competitiveness profile card section** in v127
+Reads from `MINERAL_GATES_<mineral>` exports. Shows σ_crit, T sweet-spot, competition group, base initiative formula, cascade ripple count. Library card lives in `js/9X-ui-library.ts`.
+
+---
+
+## Bottom Line (Rev 2)
+
+All open questions resolved. Implementation can proceed:
+- v127: engine gates refactor + initiative infra + library card (no behavior change)
+- v128: graduated competition lands, all baselines regenerated, 5 calibration assertions validate
+- v129: modifier tune
+- v130: substrate/epitaxy
+- v131+: induction, per-zone, stochastic
+
+— 🪨✍️ + builder + boss (rev 2)

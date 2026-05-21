@@ -1,10 +1,20 @@
 # PROPOSAL: Initiative Variable for Competitive Mineral Growth
 
-**Status:** Draft — ready for builder review  
-**Authors:** Professor (concept), Rockbot (research & spec)  
-**Date:** 2026-05-21  
-**Related:** PROPOSAL-SPECIMEN-OBJECT.md §Q7, HANDOFF-FIELD-NOTES-V117-V124.md, v125 cascade findings  
-**SIM_VERSION target:** v126+ (incremental) or v130+ (major arc)
+**Status:** Revision 2 — builder review complete, ready for v127 infrastructure
+**Authors:** Professor (concept), Rockbot (initial research & spec), Builder + boss (rev 2 refinements)
+**Date:** 2026-05-21 (rev 1 → rev 2 same day)
+**Related:** PROPOSAL-SPECIMEN-OBJECT.md §Q7, HANDOFF-FIELD-NOTES-V117-V124.md, v126 batch-probe arc
+**SIM_VERSION target:** v127 (infrastructure) → v128 (graduated competition) → v129 (calibration) → v130 (substrate/epitaxy)
+
+**Revision 2 changes (2026-05-21):**
+- **Graduated competition model** (user proposal): not winner-takes-all; proportional allocation when initiative gaps are small, winner-takes-most when gaps are large.
+- **Power-law k=2 sharing math** for the proportional regime — more physical than linear share.
+- **Cation-level rationing** instead of per-mineral share — only triggers when broth is genuinely limiting (Liebig's-law-of-the-minimum style).
+- **Cascade ripple penalty** distinguished from per-cation competition penalty (renames the multi-cation modifier).
+- **Engine-exported gates** instead of source parsing for σ_crit.
+- **Induction time deferred to v131+** with explicit acknowledgment that graduated growth doesn't capture pre-nucleation delay.
+- **5 concrete calibration assertions** anchor v128 validation against the v125-v126 cascade record.
+- **Science corrections** to research/INITIATIVE-VARIABLE/01-geochemical-grounding.md: BCF regime inversion, quartz/opal ΔH° values, quartz σ_crit homogeneous-vs-heterogeneous distinction, γ_sl vs γ_sv clarification.
 
 ---
 
@@ -65,9 +75,9 @@ Lower γ → lower barrier → higher base initiative:
 
 ### 2.5 BCF Theory: Regime Dependence
 
-Burton-Cabrera-Frank theory gives growth rate regimes (De Yoreo & Vekilov 2003, Rev. Mineral. Geochem. 54):
-- **Low σ (spiral growth, surface diffusion limited):** v ∝ σ² — adatom diffusion to kink sites on spiral steps dominates
-- **High σ (2D nucleation / rough-surface kinetics):** v ∝ σ — abundant kink sites from layer nucleation, direct integration dominates
+Burton-Cabrera-Frank theory gives growth rate regimes:
+- **Low σ**: v ∝ σ² (surface diffusion limited, spiral growth)
+- **High σ**: v ∝ σ (direct integration, abundant kink sites)
 
 A mineral's initiative changes its scaling with σ depending on regime.
 
@@ -75,7 +85,7 @@ A mineral's initiative changes its scaling with σ depending on regime.
 
 ## 3. The Proposal
 
-### 3.1 Core Mechanic: Initiative Roll
+### 3.1 Core Mechanic: Initiative Roll + Graduated Competition
 
 Each step, before growth:
 
@@ -85,23 +95,48 @@ interface InitiativeResult {
   baseInitiative: number;      // from σ
   modifiers: InitiativeModifier[];
   finalInitiative: number;
+  share: number;               // 0-1, fraction of contested cation each mineral wins
   rollReason: string;           // for debug/trace
 }
 
 interface InitiativeModifier {
-  source: string;              // "temperature", "edge-of-gate", "surface-energy", "competition", "substrate"
+  source: string;              // "temperature", "edge-of-gate", "surface-energy", "competition", "cascade-ripple", "substrate"
   value: number;               // can be positive or negative
   reason: string;
 }
 ```
 
-**Algorithm:**
+**Algorithm (rev 2 — graduated competition):**
 1. For each mineral with σ > 0, calculate **base initiative** = f(σ)
 2. Apply **conditional modifiers** (see §3.2)
-3. Sort minerals by **final initiative** (descending)
-4. Process growth in that order
-5. After each mineral grows, debit fluid → recalculate σ for remaining minerals
-6. If σ drops below threshold for any remaining mineral, it skips this step
+3. Calculate **desired growth** (engine.compute(σ, conditions) → desired_thickness_um) for each mineral
+4. For each cation C:
+   - Sum desired debit across all minerals using C: `desired[C] = Σ stoich[C] × desired_thickness × SCALE`
+   - If `desired[C] ≤ fluid[C]`: no rationing, all minerals get their full desired growth on this cation
+   - If `desired[C] > fluid[C]`: ration — each competing mineral gets `share[C] × fluid[C]` where:
+     - **Initiative-gap small (gap ≤ 3)**: power-law share, `share_i = initiative_i^2 / Σ initiative_j^2`
+     - **Initiative-gap large (gap > 3)**: winner-takes-most, top-initiative mineral gets 80%, rest split the remaining 20%
+5. Each mineral's actual `thickness_um` = `desired_thickness_um × min(over all its cations of share[C] / desired_share[C])`
+   - This is Liebig's law of the minimum: the most constrained cation limits growth
+6. Apply mass balance with the rationed thickness_um values
+7. If any mineral's resulting σ drops below threshold after rationing, log "edge-of-gate skip" (the mineral nucleated this step but at zero size — effectively didn't nucleate)
+
+**Why this matters:** The v125-v126 cascade record showed that small debits flip edge-of-gate minerals. Under winner-takes-all, an edge-of-gate mineral that loses initiative gets zero growth → drops out → cascade. Under graduated competition, it gets a small share → grows slowly → stays in the paragenesis as a smaller crystal. **The cascade still exists, but it's no longer all-or-nothing.**
+
+**Tiebreaking when initiatives are exactly equal:** base σ wins (higher growth potential goes first). If still tied, fixed registry order (deterministic, reproducible).
+
+### 3.1.1 Why Power-Law k=2 (Not Linear, Not Softmax)
+
+Linear sharing (`share_i = initiative_i / Σ`) gives almost 50/50 splits even when initiatives differ by 10% (A=12, B=11 → 52/48). That's too soft — it under-dominates.
+
+Softmax sharing (`share_i = exp(initiative_i / T) / Σ`) is more physical (Boltzmann statistics) but requires a temperature parameter T that needs calibration.
+
+Power-law k=2 (`share_i = initiative_i² / Σ`) is the middle ground:
+- A=12, B=11: 56% / 44% — modest dominance for the higher
+- A=15, B=10: 69% / 31% — strong dominance at larger gap
+- A=15, B=8: 78% / 22% — at the gap-threshold of 3 (calibrated), winner-takes-most kicks in
+
+Power-law is simpler to reason about than softmax and gives the right qualitative behavior. k=2 chosen by initial estimate; calibration in v129 may adjust.
 
 ### 3.2 Modifier System
 
@@ -144,8 +179,6 @@ function edgeOfGateModifier(mineral: Mineral, σ: number): number {
 
 **Why this matters:** The v125 cascade happened because dioptase's σ was near its threshold in schneeberg. Adding stoichiometry shifted other minerals' σ across their thresholds, changing nucleation order. With edge-of-gate penalties, the system becomes **self-aware about fragility**.
 
-**Revised framing (post-Professor review):** The edge-of-gate penalty is not a permanent debuff on slow nucleation. It's a **perturbation-sensitivity flag**: a mineral near σ_crit is fragile to fluid changes from minerals that act earlier in the initiative order. The penalty represents "this mineral's nucleation window is narrow — if anyone changes the fluid first, it may miss its chance." The correct model for true edge-of-gate behavior is closer to an **induction counter** (see Q9 in §05-open-questions.md): track steps_above_threshold, nucleate when counter > induction_steps(σ, T, γ). The -2 penalty is a simplified proxy for induction-time fragility.
-
 #### Surface Energy Bonus (+1 initiative)
 
 ```typescript
@@ -166,23 +199,46 @@ function surfaceEnergyModifier(mineral: Mineral): number {
 ```typescript
 function competitionModifier(mineral: Mineral, activeMinerals: Mineral[]): number {
   const myCations = mineral.stoichiometryKeys(); // ['Cu', 'Zn', 'S'] etc.
-  const competitors = activeMinerals.filter(m => 
-    m !== mineral && m.stoichiometryKeys().some(c => myCations.includes(c))
-  );
-  
-  if (competitors.length === 0) return 0;
-  if (competitors.length === 1) return -1;
+
+  // Count distinct competing minerals across all my cations.
+  // A mineral that overlaps with me on multiple cations only counts once.
+  const competitors = new Set<string>();
+  for (const cation of myCations) {
+    for (const m of activeMinerals) {
+      if (m === mineral) continue;
+      if (m.stoichiometryKeys().includes(cation)) competitors.add(m.name);
+    }
+  }
+
+  if (competitors.size === 0) return 0;
+  if (competitors.size === 1) return -1;
   return -2; // 2+ competitors = dense suite penalty
 }
 ```
 
-**Important — choose ONE competition model:**
+**Dense suite penalty** explains why supergene_oxidation and schneeberg are cascade-prone: many minerals share Cu, Zn, Pb, As. Adding any new stoichiometry entry for a shared cation displaces multiple competitors.
 
-- **Physics-only** (recommended): Recalculate σ after each mineral in the initiative loop. Competition emerges naturally from mass balance. The `competitionModifier` above is then redundant — **remove it**. The explicit penalty double-counts competition if we also recalc σ.
-- **Modifier-only** (simpler): Don't recalc σ between minerals in the loop. Compute σ once per step, use the competition modifier as the proxy. Faster, more "RPG-like."
-- **NOT both**: Using both recalc-σ AND competitionModifier is double-jeopardy.
+#### Cascade Ripple Penalty (NEW rev 2 — multi-cation stoichiometry)
 
-**Professor's preference: Physics-only.** The recalc-σ approach is closer to real geochemistry and avoids arbitrary modifier tuning.
+```typescript
+function cascadeRippleModifier(mineral: Mineral): number {
+  // A mineral that needs many distinct cations has more ways to perturb
+  // other minerals' σ gates when it grows. This is distinct from
+  // competition (which is about other minerals firing now); cascade
+  // ripple is about how many σ gates this mineral's debit can flip.
+  const uniqueCations = new Set(mineral.stoichiometryKeys()).size;
+  return -Math.min(uniqueCations - 1, 2);  // cap at -2
+}
+```
+
+**Examples:**
+- opal {SiO2}: 1 cation → 0 ripple penalty (safe; v125 empirical confirmation)
+- calcite {Ca, CO3}: 2 cations → -1 ripple penalty
+- dioptase {Cu, SiO2}: 2 cations → -1 ripple penalty (v125 cascaded — the per-cation competition is what really hurt)
+- conichalcite {Ca, Cu, As}: 3 cations → -2 ripple penalty
+- lepidolite {K, Li, Al, SiO2, F}: 5 cations → -2 ripple penalty (v126 had the largest break count of any probe)
+
+**Why this is separate from competition penalty:** Competition asks "what else is firing that wants the same cations as me?" Cascade ripple asks "how many distinct σ gates can my growth perturb?" A 5-cation mineral in a sparse scenario (few other firings) gets cascade-ripple penalty but no competition penalty — and that pattern matches the v126 lepidolite cascade in gem_pegmatite (which has fewer competitors than radioactive_pegmatite but still cascaded).
 
 #### Substrate Epitaxy Modifier (context-dependent)
 
@@ -228,61 +284,90 @@ function baseInitiative(σ: number): number {
 
 ---
 
-## 4. Implementation Plan
+## 4. Implementation Plan (rev 2)
 
-### Phase 1: Infrastructure (v126)
+User greenlight: test churn is OK; old baselines will all be regenerated. This unlocks a faster rollout than the original flag-gated gradual plan.
 
-1. **Add initiative calculation module** (`js/20-initiative.ts`)
-   - Base initiative function
-   - Modifier registry (temperature, edge-of-gate, surface-energy, competition)
-   - Sorting algorithm
-   - Debug logging
+### Phase 1: Infrastructure (v127)
 
-2. **Add spec fields** to `data/minerals.json`:
-   - `preferredTempRange: [min, max, optimal]` (optional)
-   - `criticalSupersaturation: number` (optional, default 0.5)
-   - `surfaceEnergy: 'very_low' | 'low' | 'medium' | 'high' | 'very_high'` (optional, default 'medium')
+1. **Refactor engine gates to exported constants** (touches ~25 `js/3X-supersat-*.ts` files)
+   - Each engine exports `MINERAL_GATES_<mineral>` with `sigma_crit`, `T_min`, `T_max`, `pH_min`, `pH_max`, etc.
+   - One-time refactor; no behavior change (gates still compute the same way internally)
+   - Test pin: each `MINERAL_GATES_X` matches the engine's first-gate threshold
+   - Removes need to parse source files; library card display reads from these constants
 
-3. **Gate behind feature flag**
-   - `SIM_VERSION < 126`: old behavior (fixed order)
-   - `SIM_VERSION >= 126`: initiative sort
-   - `?initiative=off` URL param to disable
+2. **Add initiative calculation module** (`js/20-initiative.ts`)
+   - Base initiative function (log-scaled on σ)
+   - Modifier registry: temperature, edge-of-gate, surface-energy, competition, cascade-ripple
+   - Sort + log infrastructure (NOT yet graduated competition — that's v128)
+   - Calculation runs every step; ordering produced but NOT yet applied to growth (run alongside legacy fixed-order behavior with side-by-side log)
 
-4. **Add calibration test**
-   - Seed 42 baseline comparison: old vs new
-   - Expect drift in dense suites (supergene_oxidation, schneeberg)
-   - Accept drift if it improves paragenesis realism
+3. **Add spec fields to minerals via the gates constants** (NOT `data/minerals.json`)
+   - `preferredTempRange: [min, max, optimal]` lives in `MINERAL_GATES_<mineral>` next to T-gates
+   - `surfaceEnergy: 'very_low' | 'low' | 'medium' | 'high' | 'very_high'` lives there too
+   - σ_crit comes from the gates' sigma_crit field — no duplication
 
-### Phase 2: Modifier Tuning (v127–v129)
+4. **Library card display** (`js/9X-ui-library.ts`)
+   - New "Competitiveness profile" section on each mineral card
+   - Shows: σ_crit, temperature sweet-spot, competition group (which cations it shares), base initiative formula, cascade ripple count
+   - Reads from `MINERAL_GATES_<mineral>` — no duplication
 
-1. **Calibrate temperature ranges** for top 20 minerals
-   - Use literature Ksp(T) data
-   - Adjust until seed-42 baselines are stable
+5. **No baseline changes in v127.** Initiative is computed and logged but not applied to growth. Old paragenesis preserved.
 
-2. **Calibrate σ_crit values**
-   - Derive from engine gate thresholds
-   - Edge-of-gate penalty should predict v125 cascade minerals
+### Phase 2: Graduated Competition Lands (v128)
 
-3. **Tune competition penalty**
-   - Test dense suites: supergene_oxidation, schneeberg, roughten_gill
-   - Penalty should reduce cascade severity without eliminating it
+1. **Replace fixed-order growth loop with graduated allocation**
+   - Algorithm per §3.1 rev 2 above
+   - Cation-level rationing only when desired > available
+   - Power-law k=2 sharing in proportional regime
+   - Winner-takes-most (80/20) when initiative gap > 3
 
-### Phase 3: Substrate/Epitaxy (v130)
+2. **Regenerate all 30 baselines** as `seed42_v128.json`
+   - Old baselines deleted (per user greenlight on test churn)
+   - Calibration test suite revised to compare v128 internal-consistency, not v127 byte-identicality
+
+3. **Validate against the 5 calibration assertions** (see §4.1)
+
+### Phase 3: Modifier Calibration (v129)
+
+1. **Tune temperature ranges** for top 50 minerals from corrected ΔH° table
+2. **Tune competition + cascade-ripple weights** until calibration assertions hit
+3. **Tune power-law exponent k** and winner-takes-most threshold (currently k=2 and gap=3; may shift)
+4. **Per-scenario competition mode** if any scenario needs special handling
+
+### Phase 4: Substrate / Epitaxy (v130)
 
 1. **Add substrate modifier**
-   - Catalytic surfaces (e.g., calcite seeding aragonite)
+   - Catalytic surfaces (e.g., calcite seeding aragonite via γ_sl reduction)
    - Competition surfaces (e.g., barite vs sphalerite on same substrate)
    - Encapsulation detection
 
 2. **Add overgrowth mechanics**
    - When B nucleates on A, A can continue growing if not fully covered
    - Coverage fraction determines fluid access penalty
+   - Pseudomorph case: A → B replacement (CDR) inherits position
 
-### Phase 4: Stochastic Option (v131+)
+### Phase 5: Future (v131+)
 
-1. Add `?initiative=stochastic` mode
-2. Generate Monte Carlo baselines (100 runs per scenario)
-3. Compare variance to natural paragenesis data
+1. **Induction counter** — track `steps_above_threshold` per mineral; nucleate only when counter > induction_time(σ, T, γ)
+2. **Per-zone initiative** — different cavity zones with different fluid → different initiative orders
+3. **Stochastic mode** — small random component on initiative roll, Monte Carlo baselines
+
+### 4.1 The Five Calibration Assertions (v128 validation target)
+
+These are the v125-v126 cascade events translated into "expected behavior under graduated competition." If v128 passes all five, the model is calibrated for shipping.
+
+1. **dioptase in schneeberg**: dioptase grows (σ > σ_crit), pharmacolite remains in paragenesis at reduced max_um (but does NOT drop out). Under v125 winner-takes-all, pharmacolite dropped entirely; under graduated, it should stay small.
+
+2. **koettigite in supergene_oxidation**: koettigite grows, alunite remains at its v124 count (the v126 probe saw alunite DROPPED — graduated should preserve it).
+
+3. **lepidolite in radioactive_pegmatite**: lepidolite grows under cascade-ripple penalty -2 + per-cation competition -2 = -4 final modifier. The 11 v126 count breaks collapse to ~3-5 max_um drifts with **no count changes**.
+
+4. **cassiterite in radioactive_pegmatite**: the v125 2-of-3 near-miss becomes a clean 3-of-3 because the radioactive_pegmatite cascade items (anglesite, goethite, topaz) lose σ as cassiterite competes for shared cations rather than displacing them via iterator order.
+
+5. **uranophane in schneeberg**: the v126 1-of-2 near-miss becomes clean 2-of-2. uranophane grows as a small share of the U budget; pharmacolite + uranospinite + haidingerite all remain at their v126 counts.
+
+If any of these fail, modifier values need adjustment in v129. The probe tool (`tools/probe-stoichiometry.mjs`) extends to `tools/probe-initiative-modifier.mjs` for that loop.
 
 ---
 
@@ -313,19 +398,40 @@ function baseInitiative(σ: number): number {
 
 ## 6. Files to Create/Modify
 
-### New files:
-- `js/20-initiative.ts` — initiative calculation module
-- `tests-js/initiative.test.ts` — unit tests for modifier functions
-- `tests-js/initiative-paragenesis.test.ts` — integration tests comparing old vs new
-- `research/INITIATIVE-VARIABLE/` — research notes (this proposal, literature sources, calibration data)
+### v127 Infrastructure phase
 
-### Modified files:
-- `js/15-version.ts` — add v126+ initiative arc documentation
-- `js/19-mineral-stoichiometry.ts` — competition modifier needs stoichiometry keys
-- `data/minerals.json` — add preferredTempRange, criticalSupersaturation, surfaceEnergy fields
-- `js/99-legacy-bundle.ts` — wire initiative sort into run_step
-- `tests-js/calibration.test.ts` — add initiative-gated baseline comparison
-- `proposals/HANDOFF-FIELD-NOTES-V117-V124.md` — extend with v126+ arc
+**New files:**
+- `js/20-initiative.ts` — initiative calculation (base + modifiers + log infra)
+- `tests-js/initiative.test.ts` — unit tests for modifier functions
+- `tests-js/engine-gates-exports.test.ts` — guard that all engines export `MINERAL_GATES_X`
+
+**Modified files (~25 engine files):**
+- `js/30-supersat-*.ts` through `js/45-supersat-*.ts` — refactor first-gate σ_crit + ancillary gates into exported `MINERAL_GATES_<mineral>` constants
+- `js/9X-ui-library.ts` — read MINERAL_GATES for library card "Competitiveness" section
+- `js/15-version.ts` — v127 version block
+
+### v128 Graduated competition phase
+
+**New files:**
+- `tests-js/initiative-graduated.test.ts` — graduated allocation unit tests
+- `tests-js/initiative-paragenesis.test.ts` — the 5 calibration assertions
+
+**Modified files:**
+- `js/20-initiative.ts` — add graduated allocation algorithm + cation-level rationing
+- `js/99-legacy-bundle.ts` / `js/97-vug-simulator.ts` — wire graduated growth into run_step
+- `tests-js/calibration.test.ts` — all 30 baselines regenerated as v128
+- `tests-js/baselines/seed42_v128.json` — new ground-truth
+- (delete) old baselines except canonical reference copies
+
+### Stable research artifacts:
+- `proposals/PROPOSAL-INITIATIVE-VARIABLE.md` (this doc)
+- `research/INITIATIVE-VARIABLE/01-geochemical-grounding.md` (corrections rev 2)
+- `research/INITIATIVE-VARIABLE/02-v125-cascade-analysis.md`
+- `research/INITIATIVE-VARIABLE/03-modifier-calibration.md` (rev 2)
+- `research/INITIATIVE-VARIABLE/04-implementation-notes.md` (rev 2)
+- `research/INITIATIVE-VARIABLE/05-open-questions.md` (G-J resolutions added)
+- `research/INITIATIVE-VARIABLE/06-engine-gates-refactor.md` (NEW rev 2)
+- `research/INITIATIVE-VARIABLE/07-graduated-competition.md` (NEW rev 2)
 
 ---
 
@@ -340,10 +446,14 @@ See `research/INITIATIVE-VARIABLE/` subfolder for:
 
 ---
 
-## 8. Bottom Line
+## 8. Bottom Line (rev 2)
 
-The initiative variable is the architectural fix for the cascade problem the builder discovered in v125. It doesn't prevent cascades — it makes them **legible**. Edge-of-gate minerals get flagged as fragile. Shared-cation competition becomes explicit. Temperature sweet-spots emerge naturally from Ksp data.
+The initiative variable is the architectural fix for the cascade problem v124-v126 surfaced. **It doesn't prevent cascades — it makes them legible and graduated.** Edge-of-gate minerals get a small share instead of being dropped. Shared-cation competition becomes explicit. Multi-cation minerals carry a cascade-ripple penalty. Temperature sweet-spots emerge naturally from corrected Ksp data.
 
-The fixed-order loop served us well through 125 versions. But the next 125 need the crystals to compete.
+The graduated competition model (user-proposed, rev 2) is the key refinement: real boundary-layer + bulk-diffusion physics in vug fluids is continuous, not winner-takes-all. A crystal at σ just above σ_crit doesn't vanish when a faster competitor grows — it stays small. That matches what real vugs look like: dominant minerals + accessory minerals + trace minerals, all coexisting at different abundances.
 
-— Professor + 🪨✍️
+**Initiative as a player-facing concept:** Each mineral's library card shows base initiative under typical conditions. The narrator log explains why one crystal grew instead of another. The "competitiveness profile" becomes how a player learns geochemistry — why opal wins over quartz in cold fluids, why proustite is rare (low base + competition + edge-of-gate stacking), why TN457 fires barite-after-sphalerite (substrate epitaxy + initiative order).
+
+The fixed-order loop served well through 126 versions. Graduated competition is what the next stretch needs.
+
+— Professor + 🪨✍️ + builder (rev 2)

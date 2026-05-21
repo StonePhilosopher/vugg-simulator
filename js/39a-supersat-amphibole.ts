@@ -56,6 +56,61 @@
 //     monographs — health context
 //   * Frank DR et al. (2002) Mineralogy of Australian Wittenoom +
 //     Hamersley crocidolite
+//
+// v127 (2026-05-21): MINERAL_GATES_<mineral> exports added. σ_crit
+// is the first nucleation gate (sigma < 1.0 returns) per
+// js/89a-nucleation-amphibole.ts; substrate discount (sigma > 1.2 *
+// discount) is a secondary check not captured in MINERAL_GATES.
+
+const MINERAL_GATES_tremolite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 200, T_max: 700, T_optimal: 450,
+  fluid_min: { Ca: 60, Mg: 50, SiO2: 250 },
+  pH_min: 7.0, pH_max: 12.0,
+  surface_energy: 'medium',
+  _sources: ['Hawthorne et al. 2012', 'amphibole engine v116'],
+  _notes: 'Calcic amphibole; Fe > 60 routes to actinolite. Asbestiform variety at σ-1.0 > 1.4.',
+};
+
+const MINERAL_GATES_actinolite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 200, T_max: 700, T_optimal: 400,
+  fluid_min: { Ca: 60, Mg: 30, Fe: 30, SiO2: 250 },
+  pH_min: 6.0, pH_max: 11.0,
+  surface_energy: 'medium',
+  _sources: ['amphibole engine v116', 'Hawthorne & Oberti 2007'],
+  _notes: 'Fe-bearing tremolite-actinolite series intermediate. Greenschist-facies metamorphic + hydrothermal.',
+};
+
+const MINERAL_GATES_anthophyllite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 250, T_max: 650, T_optimal: 450,
+  fluid_min: { Mg: 80, Fe: 30, SiO2: 250 },
+  pH_min: 7.0, pH_max: 11.0,
+  surface_energy: 'medium',
+  _sources: ['amphibole engine v116'],
+  _notes: 'Orthoamphibole — Ca > 80 routes to calcic amphibole (tremolite/actinolite wins). Ultramafic + serpentinite-gneiss-pegmatite.',
+};
+
+const MINERAL_GATES_amosite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 200, T_max: 500, T_optimal: 375,
+  fluid_min: { Fe: 100, SiO2: 250 },
+  pH_min: 6.0, pH_max: 10.0,
+  surface_energy: 'medium',
+  _sources: ['amphibole engine v116', 'Frank et al. 2002'],
+  _notes: '"Brown asbestos" cummingtonite-grunerite asbestiform. Ca > 80 + low Mg required. Fe must dominate Mg (Fe ≥ 1.2 × Mg).',
+};
+
+const MINERAL_GATES_crocidolite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 100, T_max: 400, T_optimal: 275,
+  fluid_min: { Na: 30, Fe: 100, SiO2: 200 },
+  pH_min: 7.0, pH_max: 11.0,
+  surface_energy: 'medium',
+  _sources: ['amphibole engine v116', 'Frank et al. 2002', 'Wittenoom + Northern Cape literature'],
+  _notes: '"Blue asbestos" riebeckite-asbestiform variety. BIF-hosted. Ca > 50 routes to calcic amphibole. Tiger\'s eye precursor on supergene oxidation.',
+};
 
 Object.assign(VugConditions.prototype, {
 
@@ -67,9 +122,10 @@ Object.assign(VugConditions.prototype, {
   // when growth occurs in narrow fractures with high-σ persistence;
   // bladed/columnar when in open crystallization volume.
   supersaturation_tremolite() {
-    if (this.fluid.Ca < 60 || this.fluid.Mg < 50 || this.fluid.SiO2 < 250) return 0;
-    if (this.temperature < 200 || this.temperature > 700) return 0;
-    if (this.fluid.pH < 7.0 || this.fluid.pH > 12.0) return 0;
+    const g = MINERAL_GATES_tremolite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Mg < g.fluid_min!.Mg || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // Fe > 50 routes toward actinolite end-member
     if (this.fluid.Fe > 60) return 0;
     const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
@@ -95,9 +151,10 @@ Object.assign(VugConditions.prototype, {
   // hydrothermal alteration. Nephrite-jade variety when compact felted-
   // fibrous (the Maori pounamu + Chinese imperial jade).
   supersaturation_actinolite() {
-    if (this.fluid.Ca < 60 || this.fluid.Mg < 30 || this.fluid.Fe < 30 || this.fluid.SiO2 < 250) return 0;
-    if (this.temperature < 200 || this.temperature > 700) return 0;
-    if (this.fluid.pH < 6.0 || this.fluid.pH > 11.0) return 0;
+    const g = MINERAL_GATES_actinolite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Mg < g.fluid_min!.Mg || this.fluid.Fe < g.fluid_min!.Fe || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     const ca_f = Math.min(this.fluid.Ca / 180.0, 2.0);
     const mg_f = Math.min(this.fluid.Mg / 80.0, 2.0);
     const fe_f = Math.min(this.fluid.Fe / 60.0, 2.0);
@@ -123,9 +180,10 @@ Object.assign(VugConditions.prototype, {
   // ophiolite + ultramafic. Discriminator from tremolite: NO Ca;
   // higher Mg+Fe instead.
   supersaturation_anthophyllite() {
-    if (this.fluid.Mg < 80 || this.fluid.Fe < 30 || this.fluid.SiO2 < 250) return 0;
-    if (this.temperature < 250 || this.temperature > 650) return 0;
-    if (this.fluid.pH < 7.0 || this.fluid.pH > 11.0) return 0;
+    const g = MINERAL_GATES_anthophyllite;
+    if (this.fluid.Mg < g.fluid_min!.Mg || this.fluid.Fe < g.fluid_min!.Fe || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // Ca > 80 routes to tremolite/actinolite (calcic amphibole wins)
     if (this.fluid.Ca > 80) return 0;
     const mg_f = Math.min(this.fluid.Mg / 200.0, 2.0);
@@ -153,9 +211,10 @@ Object.assign(VugConditions.prototype, {
   // here under "amosite" since that's the WHO-recognized commercial
   // name. Discriminator: high Fe (Fe > Mg typical), no Ca, no Na.
   supersaturation_amosite() {
-    if (this.fluid.Fe < 100 || this.fluid.SiO2 < 250) return 0;
-    if (this.temperature < 200 || this.temperature > 500) return 0;
-    if (this.fluid.pH < 6.0 || this.fluid.pH > 10.0) return 0;
+    const g = MINERAL_GATES_amosite;
+    if (this.fluid.Fe < g.fluid_min!.Fe || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // Mg too high routes to anthophyllite; Ca too high routes to actinolite
     if (this.fluid.Ca > 80) return 0;
     // Fe must dominate over Mg (Fe/Mg > 1.5)
@@ -186,9 +245,10 @@ Object.assign(VugConditions.prototype, {
   // oxidation creates "hawk's eye" intermediate (blue-grey-gold).
   // Discriminator: Na + Fe (no Ca, no Mg-dominance).
   supersaturation_crocidolite() {
-    if (this.fluid.Na < 30 || this.fluid.Fe < 100 || this.fluid.SiO2 < 200) return 0;
-    if (this.temperature < 100 || this.temperature > 400) return 0;
-    if (this.fluid.pH < 7.0 || this.fluid.pH > 11.0) return 0;
+    const g = MINERAL_GATES_crocidolite;
+    if (this.fluid.Na < g.fluid_min!.Na || this.fluid.Fe < g.fluid_min!.Fe || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // Ca > 50 routes to calcic amphibole
     if (this.fluid.Ca > 50) return 0;
     const na_f = Math.min(this.fluid.Na / 100.0, 2.0);

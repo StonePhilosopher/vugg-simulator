@@ -14,7 +14,7 @@ function _nuc_wulfenite(sim) {
   const sigma_wulf = sim.conditions.supersaturation_wulfenite();
   const existing_wulf = sim.crystals.filter(c => c.mineral === 'wulfenite' && c.active);
   const total_wulf = sim.crystals.filter(c => c.mineral === 'wulfenite').length;
-  if (sigma_wulf > 1.2 && !existing_wulf.length && total_wulf < 2 && !sim._atNucleationCap('wulfenite')) {
+  if (sigma_wulf > MINERAL_GATES_wulfenite.sigma_crit && !existing_wulf.length && total_wulf < 2 && !sim._atNucleationCap('wulfenite')) {
     let pos = 'vug wall';
     // Prefers to nucleate on dissolved galena AND/OR dissolved molybdenite
     // Wulfenite = Pb²⁺ (from oxidized galena) + MoO₄²⁻ (from oxidized molybdenite)
@@ -44,7 +44,7 @@ function _nuc_wulfenite(sim) {
 }
 function _nuc_ferrimolybdite(sim) {
   const sigma_fmo = sim.conditions.supersaturation_ferrimolybdite();
-  if (sigma_fmo > 1.0 && !sim._atNucleationCap('ferrimolybdite')) {
+  if (sigma_fmo > MINERAL_GATES_ferrimolybdite.sigma_crit && !sim._atNucleationCap('ferrimolybdite')) {
     if (rng.random() < 0.18) {
       let pos = 'vug wall';
       const dissolving_mol = sim.crystals.filter(c => c.mineral === 'molybdenite' && c.dissolved);
@@ -69,16 +69,16 @@ function _nuc_ferrimolybdite(sim) {
 function _nuc_stolzite(sim) {
   let sigma_rasp = sim.conditions.supersaturation_raspite();
   const sigma_stol = sim.conditions.supersaturation_stolzite();
-  if (sigma_rasp > 1.4 && sigma_stol > 1.0 && rng.random() < 0.9) {
+  if (sigma_rasp > MINERAL_GATES_raspite.sigma_crit && sigma_stol > MINERAL_GATES_stolzite.sigma_crit && rng.random() < 0.9) {
     sigma_rasp = 0;
   }
-  if (sigma_rasp > 1.4 && !sim._atNucleationCap('raspite')) {
+  if (sigma_rasp > MINERAL_GATES_raspite.sigma_crit && !sim._atNucleationCap('raspite')) {
     if (rng.random() < 0.16) {
       const c = sim.nucleate('raspite', 'vug wall', sigma_rasp);
       sim.log.push(`  ✦ NUCLEATION: Raspite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_rasp.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, W=${sim.conditions.fluid.W.toFixed(1)})`);
     }
   }
-  if (sigma_stol > 1.0 && !sim._atNucleationCap('stolzite')) {
+  if (sigma_stol > MINERAL_GATES_stolzite.sigma_crit && !sim._atNucleationCap('stolzite')) {
     if (rng.random() < 0.18) {
       const c = sim.nucleate('stolzite', 'vug wall', sigma_stol);
       sim.log.push(`  ✦ NUCLEATION: Stolzite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_stol.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, W=${sim.conditions.fluid.W.toFixed(1)})`);
@@ -90,7 +90,7 @@ function _nuc_stolzite(sim) {
 
 function _nuc_scheelite(sim) {
   const sigma = sim.conditions.supersaturation_scheelite();
-  if (sigma > 1.2 && !sim._atNucleationCap('scheelite') && rng.random() < 0.15) {
+  if (sigma > MINERAL_GATES_scheelite.sigma_crit && !sim._atNucleationCap('scheelite') && rng.random() < 0.15) {
     let pos = 'vug wall';
     const wolf = sim.crystals.filter(c => c.mineral === 'wolframite' && c.active);
     if (wolf.length && rng.random() < 0.30) pos = `on wolframite #${wolf[0].crystal_id} (W-paragenesis)`;
@@ -101,7 +101,7 @@ function _nuc_scheelite(sim) {
 
 function _nuc_powellite(sim) {
   const sigma = sim.conditions.supersaturation_powellite();
-  if (sigma > 1.2 && !sim._atNucleationCap('powellite') && rng.random() < 0.13) {
+  if (sigma > MINERAL_GATES_powellite.sigma_crit && !sim._atNucleationCap('powellite') && rng.random() < 0.13) {
     let pos = 'vug wall';
     const dissolved_moly = sim.crystals.filter(c => c.mineral === 'molybdenite' && c.dissolved);
     if (dissolved_moly.length && rng.random() < 0.50) pos = `on molybdenite #${dissolved_moly[0].crystal_id} (oxidized)`;
@@ -112,7 +112,7 @@ function _nuc_powellite(sim) {
 
 function _nuc_wolframite(sim) {
   const sigma = sim.conditions.supersaturation_wolframite();
-  if (sigma > 1.3 && !sim._atNucleationCap('wolframite') && rng.random() < 0.13) {
+  if (sigma > MINERAL_GATES_wolframite.sigma_crit && !sim._atNucleationCap('wolframite') && rng.random() < 0.13) {
     let pos = 'vug wall';
     const qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
     if (qz.length && rng.random() < 0.45) pos = `on quartz #${qz[0].crystal_id} (Panasqueira-style W-Sn vein)`;

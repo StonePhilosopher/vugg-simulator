@@ -12,7 +12,7 @@
 
 function _nuc_borax(sim) {
   const sigma_brx = sim.conditions.supersaturation_borax();
-  if (sigma_brx > 1.0 && !sim._atNucleationCap('borax') && rng.random() < 0.12) {
+  if (sigma_brx > MINERAL_GATES_borax.sigma_crit && !sim._atNucleationCap('borax') && rng.random() < 0.12) {
     const c = sim.nucleate('borax', 'vug wall', sigma_brx);
     sim.log.push(`  ✦ NUCLEATION: 💎 Borax #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brx.toFixed(2)}, concentration=${sim.conditions.fluid.concentration.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — alkaline-brine evaporite from the playa-lake chemistry of this drained vug`);
   }
