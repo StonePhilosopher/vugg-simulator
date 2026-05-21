@@ -5687,5 +5687,225 @@
 //          color rules). Deferred until needed.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 121;
+//   v122 — carbonate-family Mn color dispatch + specimen-MD planning
+//          (2026-05-21). Extends v121's avgMn dispatch pattern to the
+//          remaining four canonical Mn²⁺-banded carbonates that already
+//          capture trace_Mn but lacked color logic: aragonite (peach/
+//          flos-ferri), dolomite (Tri-State pink per Heyl 1968),
+//          siderite (oligonite manganoan variant), rhodochrosite (Mn
+//          is the cation; trace_Mn modulates saturation).
+//
+//          Also lands proposals/PROPOSAL-SPECIMEN-OBJECT.md — planning
+//          MD for the specimen-as-first-class-object architectural arc,
+//          with boss-directive overgrowth-vs-replacement framing +
+//          competition-for-solutes (initiative variable) open question.
+//          The MD is a planning draft with 7 open questions ([pending
+//          boss answer]) that get filled in before Phase A
+//          implementation lands.
+//
+//          ENGINE CHANGES (one file)
+//            js/12-mineral-art.ts crystalColor() switch:
+//              + new 'aragonite' case (Mn peach + Fe yellow-brown)
+//              + new 'dolomite' case (Tri-State pink at high Mn)
+//              + new 'siderite' case (oligonite Mn-pink-shift)
+//              + new 'rhodochrosite' case (Mn-saturation modulation)
+//          The four cases all sit immediately after the existing
+//          'calcite' case (carbonate-family proximity).
+//
+//          BACKWARD COMPAT: all new branches additive. Default branch
+//          in each case returns the natural Fe-dominant or no-trace
+//          color matching the pre-v122 fallback through MINERAL_GAME_
+//          COLORS or default '#d4a843'.
+//
+//          PER-ZONE BANDING NOW LIVE FOR 13 minerals:
+//            calcite + aragonite + dolomite + siderite + rhodochrosite
+//            (carbonate family, v121-v122)
+//            barite + sphalerite + wurtzite + smithsonite (v118-v121)
+//            (the 9 minerals from v121 release notes plus the new 4)
+//          All capture trace_Mn at the engine layer AND consume it
+//          at the color-dispatch layer.
+//
+//          TESTS (tests-js/per-zone-color-mn.test.ts, +11 pins for
+//          v122; 30 total in file):
+//            * aragonite high/mid/no Mn + Fe variants
+//            * dolomite Tri-State pink + tan default
+//            * siderite oligonite + Fe-amber back-compat
+//            * rhodochrosite Sweet Home / raspberry / Fe-shifted
+//
+//          PLANNING MD: proposals/PROPOSAL-SPECIMEN-OBJECT.md (402
+//          lines, untracked-to-tracked). Seven open questions Q1-Q7
+//          with [pending boss answer] blocks. Q1-Q3 spec the
+//          grouping rule + label format edge cases. Q4 spec the
+//          3D-model-in-library future feature path. Q5 covers
+//          snowball-habit refactor decision. Q6 spec library/
+//          inventory drill-down depth. Q7 (added in this commit)
+//          surfaces the initiative-variable architectural question
+//          for fluid-competition ordering.
+//
+//          BASELINE: zero drift. Color is a render-side concern;
+//          baseline tracks crystal counts + max_um per mineral, not
+//          color. Verified byte-diff v121 → v122.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+//   v123 — Jeffrey arc stoichiometry tune (2026-05-21). Priority 1
+//          of the v120 DEFERRED_TUNE_REQUIRED list — the rodingite
+//          12-mineral suite that fires in jeffrey_mine. 11 of 12
+//          stoichiometries shipped with corresponding event-chemistry
+//          tune in js/70r-jeffrey-mine.ts. Pectolite remains deferred
+//          (separate tune needed).
+//
+//          STOICHIOMETRY ADDITIONS (11 minerals)
+//            Silicates: chrysotile, diopside, grossular, vesuvianite,
+//                       wollastonite, prehnite, datolite, tremolite,
+//                       actinolite
+//            Hydroxide: brucite
+//            Native:    awaruite (Ni-Fe intermetallic)
+//          Formulas per Bernardini 1981 (Jeffrey reference) + Manning &
+//          Bird 1990 (rodingite-pyroxene framework) + Liou 1971
+//          (prehnite stability) + Wicks & Plant 1979 (chrysotile/
+//          serpentine TEM). All hydroxyl + hydration H2O not debited
+//          per file convention.
+//
+//          THE PROBLEM THESE FIXED (v109 antipattern, surfaced at v120)
+//          The original Jeffrey events used Math.max(floor, fluid.X -
+//          decrement) patterns that HAND-MODELED consumption because
+//          MINERAL_STOICHIOMETRY was missing for these 11 — growth
+//          didn't actually debit fluid, so events synthesized the
+//          chemistry the simulator should have computed. With v123's
+//          stoichiometry on, those decrement lines double-debited.
+//
+//          THE TUNE (js/70r-jeffrey-mine.ts)
+//          Flipped consumption-pattern lines to RELEASE-pattern lines
+//          across all 5 events. Bumped release magnitudes to counter
+//          stoichiometry debits across 35-step inter-event intervals.
+//          Lifted caps where mass balance creates more headroom-
+//          pressure. Specific changes:
+//            serpentinization_onset: Mg +30 → +120 (cap 280 → 400);
+//                                     SiO2 +80 → +150 (cap → 400)
+//            dike_alteration: Ca +100 → +220 (cap 450 → 650); Al
+//                              +20 → +50 (cap 50 → 100); SiO2 +60
+//                              → +130; Mg "consumption" REMOVED
+//            mid_rodingite: Ca/Al/SiO2 "consumption" → RELEASE pattern;
+//                            added Mg +40 (vesuvianite needs Mg)
+//            late_ca_silicates: Added Ca/SiO2/Al releases; Mg
+//                                "consumption" REMOVED
+//            terminal_datolite: Ca/SiO2 "consumption" → RELEASE
+//                                pattern; B release bumped 7 → 9
+//
+//          PARAGENESIS RESULT (seed 42)
+//          BEFORE v123 (v122 baseline): 14 species — actinolite,
+//          albite, awaruite, brucite, calcite, chrysotile, datolite,
+//          diopside, dolomite, grossular, prehnite, tremolite,
+//          vesuvianite, wollastonite
+//          AFTER v123: 15 species — same 14 minus tremolite plus
+//          fluorite, siderite (cascade extras). All test pins pass:
+//          chrysotile fires; rodingite calc-silicate trio fires
+//          (grossular + diopside + vesuvianite); late Ca-silicate
+//          trio fires (wollastonite + prehnite).
+//
+//          DRIFT: 3 scenarios drifted (jeffrey_mine, deccan_zeolite,
+//          marble_contact_metamorphism). marble + deccan also lost
+//          tremolite + prehnite respectively (both Mg/Al budget pressure
+//          cascades). NO test pin broke. Cabinet aesthetic intact
+//          for the headline jeffrey rodingite + cyprine + datolite
+//          terminal stage. Further per-scenario tunes deferred.
+//
+//          GUARD TEST UPDATED
+//          tests-js/mineral-stoichiometry-coverage.test.ts:
+//            DEFERRED_TUNE_REQUIRED size 28 → 17 (Jeffrey 11 removed,
+//            pectolite retained as the one Priority 1 holdout)
+//          tests-js/jeffrey-mine.test.ts:
+//            Existing 8 pins unchanged. All pass.
+//
+//          NEXT PRIORITIES (from HANDOFF-MINERAL-STOICHIOMETRY-
+//          BACKFILL.md remaining list):
+//            Priority 2 — Cumbria Pb-Zn-Ba-F (4 minerals): caledonite,
+//                          plumbogummite, pharmacolite, proustite
+//            Priority 3 — Tsumeb supergene (6): dioptase, willemite,
+//                          conichalcite, duftite, koettigite,
+//                          metacinnabar
+//            Priority 4 — Schneeberg uranyl (1): uranophane
+//            Priority 5 — Naica/pegmatite/secondary (5): cassiterite,
+//                          lepidolite, opal, pyrolusite, tigers_eye
+//            + Pectolite tune-window for jeffrey_mine
+//
+//          REFERENCES
+//          Bernardini GP (1981) MR 12(5):277-291 — Jeffrey rodingite
+//          Manning CE & Bird DK (1990) J Petrol 31:1-37 — rodingite-
+//             clinopyroxene
+//          Liou JG (1971) Am Min 56:507-531 — prehnite stability
+//          Wicks FJ & Plant AG (1979) Can Min 17:785-830 — serpentine
+//          Krenn K & Hauzenberger CA (2007) — awaruite thermometry
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+//   v124 — Priority 2 Cumbria stoichiometry tune — PARTIAL (1 of 4)
+//          (2026-05-21). Pharmacolite shipped; caledonite +
+//          plumbogummite + proustite STILL DEFERRED after direct
+//          probe showed they trigger Shape-B RNG-cascade displacement
+//          in roughten_gill.
+//
+//          THE PROBE FINDING
+//          Added all 4 P2 stoichiometries + tuned roughten_gill
+//          events 2/4/5 with generous Pb/Al/P releases (initial Pb=70
+//          plus event boosts to ~340 ppm total). Result: brochantite +
+//          caledonite + plumbogummite all DROPPED from roughten_gill
+//          paragenesis. Tried isolating proustite alone — same drop.
+//          The Ag+As+S mass-balance ripple from proustite shifts the
+//          per-step rng.uniform() draws enough to displace the Pb-Cu
+//          sulfate nucleation iterator, even though sigma gates still
+//          clear. This is the same Shape-B displacement the existing
+//          js/70q-roughten-gill.ts file-level comment documents for
+//          linarite.
+//
+//          DISCIPLINED RETREAT
+//          Per the v109 antipattern memory + the v120 big-bang
+//          abandoned-attempt precedent: roll back the cascading
+//          additions, ship just the safe one. Pharmacolite fires in
+//          schneeberg only and doesn't touch roughten_gill. The 3
+//          deferred items need dedicated nucleation-cap / class-
+//          iterator-order changes — exactly the Q7 initiative-variable
+//          architectural question in PROPOSAL-SPECIMEN-OBJECT.md.
+//          Out of scope for tune-only commits.
+//
+//          STOICHIOMETRY ADDED (1 mineral)
+//            pharmacolite: { Ca: 1, As: 1 } — CaHAsO4·2H2O,
+//            Schneeberg supergene Ca-arsenate.
+//
+//          NO EVENT-CHEMISTRY CHANGES this commit (the roughten_gill
+//          event tunes I tried were reverted because the underlying
+//          rng-cascade issue isn't solvable with broth tuning alone).
+//
+//          PARAGENESIS RESULT
+//          schneeberg: pharmacolite continues to fire; no species
+//                       drift; only max_um shifts (mass balance
+//                       correctly debits Ca + As)
+//          supergene_oxidation: no species drift; max_um shifts only
+//          roughten_gill: unchanged (no test pins affected)
+//          27 other scenarios: byte-identical to v123
+//
+//          GUARD TEST UPDATED
+//          tests-js/mineral-stoichiometry-coverage.test.ts:
+//            DEFERRED_TUNE_REQUIRED 17 -> 16 (pharmacolite removed)
+//            Comment block on Priority 2 documents the deferral
+//            reason for caledonite + plumbogummite + proustite
+//
+//          REMAINING IN DEFERRED LIST (16 minerals)
+//            P1 remainder: pectolite
+//            P2 deferred (cascade): caledonite, plumbogummite, proustite
+//            P3 Tsumeb (6): dioptase, willemite, conichalcite, duftite,
+//                           koettigite, metacinnabar
+//            P4 Schneeberg uranyl (1): uranophane
+//            P5 secondary (5): cassiterite, lepidolite, opal,
+//                               pyrolusite, tigers_eye
+//
+//          REFERENCES
+//          js/15-version.ts v120 (parent commit, abandoned big-bang)
+//          js/15-version.ts v123 (Jeffrey P1 tune precedent)
+//          proposals/HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md
+//          proposals/PROPOSAL-SPECIMEN-OBJECT.md Q7 (initiative variable
+//          architectural question; explains WHY P2 cascade can't be
+//          fixed at the tune layer)
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 124;
 

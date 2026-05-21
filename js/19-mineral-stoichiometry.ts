@@ -6,9 +6,20 @@
 // MASS_BALANCE_SCALE × zone.thickness_um in applyMassBalance to
 // debit/credit the per-ring fluid when MASS_BALANCE_ENABLED is on.
 //
-// PROPOSAL-GEOLOGICAL-ACCURACY Phase 1. Default flag OFF — these
+// PROPOSAL-GEOLOGICAL-ACCURACY Phase 1.
+//
+// HISTORICAL HEADER (kept for context): "Default flag OFF — these
 // values do not affect any scenario until the calibration pass flips
-// the flag.
+// the flag."
+//
+// **THE FLAG IS ON AND HAS BEEN FOR A LONG TIME.** See
+// js/18-constants.ts:39 — MASS_BALANCE_ENABLED = true. The historical
+// header above is stale; do NOT trust it. Adding a new entry HERE
+// immediately starts debiting fluid composition for that mineral's
+// growth in every scenario where it fires. That's good (correct
+// chemistry) but the cascade ripples may shift paragenesis in
+// other scenarios. See HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md
+// for the v120-v124 lesson on disciplined per-scenario tuning.
 //
 // Conventions:
 // - Coefficients are per formula unit. Solid solutions use mid-range
@@ -145,13 +156,29 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   hemimorphite:   { Zn: 4, SiO2: 2 },                // Zn4Si2O7(OH)2·H2O — Tsumeb supergene
   shattuckite:    { Cu: 5, SiO2: 4 },                // Cu5(SiO3)4(OH)2 — Tsumeb deep blue Cu silicate
   // Amphibole asbestos quintet (v116). Solid solutions use mid-range
-  // coefficients matching the v116 supersat gate defaults. (tremolite +
-  // actinolite are NOT in this batch — they fire in jeffrey_mine + the
-  // amphibole-asbestos test scenarios and would cascade; deferred per
-  // HANDOFF-MINERAL-STOICHIOMETRY-BACKFILL.md.)
+  // coefficients matching the v116 supersat gate defaults.
   amosite:        { Fe: 6, Mg: 1, SiO2: 8 },         // (Fe,Mg)7Si8O22(OH)2 Fe-cummingtonite-grunerite asbestos
   anthophyllite:  { Mg: 6, Fe: 1, SiO2: 8 },         // (Mg,Fe)7Si8O22(OH)2 ortho-amphibole (Mg-end)
   crocidolite:    { Na: 2, Fe: 5, SiO2: 8 },         // Na2Fe²⁺3Fe³⁺2Si8O22(OH)2 sodic Fe-amphibole (Witwatersrand)
+  // v123 Jeffrey arc rodingite tune (2026-05-21): 11 silicate engines
+  // that fire in jeffrey_mine and would silently free-energy-gift the
+  // Mg/Ca/SiO2/Al/Fe/B/Ni cation budget. Adding them MUST be
+  // accompanied by event-chemistry tunes in js/70r-jeffrey-mine.ts to
+  // restore the canonical paragenesis (chrysotile + brucite + awaruite
+  // + grossular + diopside + vesuvianite + wollastonite + prehnite +
+  // datolite + tremolite + actinolite). All formulas per Bernardini
+  // 1981 + Manning & Bird 1990 + Liou 1971. Hydroxyl + hydration H2O
+  // not debited per file convention.
+  chrysotile:     { Mg: 3, SiO2: 2 },                // Mg3Si2O5(OH)4 — asbestos serpentine (Wicks & Plant 1979)
+  brucite:        { Mg: 1 },                         // Mg(OH)2 — serpentinization byproduct
+  diopside:       { Ca: 1, Mg: 1, SiO2: 2 },         // CaMgSi2O6 — clinopyroxene rodingite endmember (Manning & Bird 1990)
+  grossular:      { Ca: 3, Al: 2, SiO2: 3 },         // Ca3Al2(SiO4)3 — calcic garnet
+  vesuvianite:    { Ca: 10, Mg: 1, Fe: 1, Al: 4, SiO2: 9 }, // Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4 — Bernardini 1981 cyprine host
+  wollastonite:   { Ca: 1, SiO2: 1 },                // CaSiO3
+  prehnite:       { Ca: 2, Al: 2, SiO2: 3 },         // Ca2Al2Si3O10(OH)2 — zeolite-facies sorosilicate (Liou 1971)
+  datolite:       { Ca: 1, B: 1, SiO2: 1 },          // CaB(SiO4)(OH) — terminal-stage cabinet aesthetic
+  tremolite:      { Ca: 2, Mg: 5, SiO2: 8 },         // Ca2Mg5Si8O22(OH)2 — Mg-end calcic amphibole
+  actinolite:     { Ca: 2, Mg: 4, Fe: 1, SiO2: 8 }, // Ca2(Mg,Fe)5Si8O22(OH)2 — Mg:Fe mid-range 4:1
 
   // ---- Sulfates ----
   barite:         { Ba: 1, S: 1 },                   // BaSO4
@@ -192,6 +219,19 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   bayldonite:     { Cu: 3, Pb: 1, As: 2 },           // Cu3PbO(AsO3OH)2(OH)2 — Cu-Pb arsenate (Tsumeb)
   legrandite:     { Zn: 2, As: 1 },                  // Zn2(AsO4)(OH)·H2O — Mapimi yellow Zn arsenate
   linarite:       { Pb: 1, Cu: 1, S: 1 },            // PbCu(SO4)(OH)2 — Roughten Gill / Cumbria blue Pb-Cu sulfate
+  // v124 Cumbria P2 tune — 1 of 4 shipped (pharmacolite only). The
+  // Roughten Gill scenario hit Shape-B RNG-cascade displacement when
+  // any of {caledonite, plumbogummite, proustite} stoichiometry was
+  // added — brochantite + caledonite + plumbogummite all dropped from
+  // paragenesis even with generous Pb releases (initial 70 + event
+  // boosts to ~340 ppm total). The cascade-shift breaks test pins.
+  // This is the same structural issue the file-level comment in
+  // js/70q-roughten-gill.ts already documents for linarite. Three
+  // P2 minerals stay DEFERRED (caledonite, plumbogummite, proustite);
+  // they need either dedicated nucleation-cap tuning or class-
+  // iterator-order changes, both out of scope for a single tune commit.
+  // Pharmacolite fires only in schneeberg, doesn't affect roughten_gill.
+  pharmacolite:   { Ca: 1, As: 1 },                  // CaHAsO4·2H2O — Schneeberg supergene Ca-arsenate
   scorodite:      { Fe: 1, As: 1 },                  // FeAsO4·2H2O
   descloizite:    { Pb: 1, Zn: 1, V: 1 },            // PbZn(VO4)(OH)
   mottramite:     { Pb: 1, Cu: 1, V: 1 },            // PbCu(VO4)(OH)
@@ -214,6 +254,10 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   native_sulfur:    { S: 1 },
   native_tellurium: { Te: 1 },
   native_bismuth:   { Bi: 1 },
+  // v123 Jeffrey arc: Ni-Fe intermetallic alloy (rendered through
+  // native dispatch). Range Ni2Fe to Ni3Fe per Krenn & Hauzenberger
+  // 2007 awaruite thermometry; mid-range coefficients used.
+  awaruite:         { Ni: 2.5, Fe: 1 },
 
   // ---- Molybdates / tungstates / vanadates ----
   wulfenite:      { Pb: 1, Mo: 1 },                  // PbMoO4

@@ -10,7 +10,11 @@
 
 ## TL;DR
 
-28 mineral engines that fire in current baseline scenarios lack a `MINERAL_STOICHIOMETRY` entry. Adding them — the obvious fix — would immediately start debiting the fluid for those minerals' growth, which cascades through 16 of 30 scenarios and breaks 4 pre-existing paragenesis-pin tests. Each mineral's addition needs scenario tune calibration to keep canonical paragenesis intact.
+**v123 UPDATE (2026-05-21):** Priority 1 (Jeffrey rodingite arc) COMPLETED. 11 of 12 P1 minerals shipped with event-chemistry tune in `js/70r-jeffrey-mine.ts`. Pectolite remains deferred.
+
+**v124 UPDATE (2026-05-21):** Priority 2 (Cumbria) PARTIAL — pharmacolite only. Caledonite + plumbogummite + proustite stoichiometry additions ALL trigger Shape-B RNG-cascade displacement in roughten_gill that breaks the brochantite/caledonite/plumbogummite paragenesis pins. Even adding proustite alone (Ag+As+S mass balance) ripples through the cascade. Confirmed by direct probe: shipped just pharmacolite (schneeberg-only mineral, no roughten_gill interaction). 16 minerals still on the DEFERRED list.
+
+(Original v120 framing) 28 mineral engines that fire in current baseline scenarios lack a `MINERAL_STOICHIOMETRY` entry. Adding them — the obvious fix — would immediately start debiting the fluid for those minerals' growth, which cascades through 16 of 30 scenarios and breaks pre-existing paragenesis-pin tests. Each mineral's addition needs scenario tune calibration to keep canonical paragenesis intact.
 
 This document maps every deferred mineral to the scenarios it fires in, the canonical paragenesis-pin tests it affects, and the tune priority. Use it as the menu for per-scenario tune commits (v121+).
 
@@ -26,39 +30,49 @@ The v118 (TN457) commit's gen-baseline log surfaced the warnings (`[mass-balance
 
 ## The 27 deferred minerals, grouped by tune-priority
 
-### Priority 1 — Jeffrey rodingite arc (v110–v115)
+### Priority 1 — Jeffrey rodingite arc (v110–v115) — **COMPLETED v123**
 
-These fire in `jeffrey_mine` and are canonical to the rodingite paragenesis the Bernardini 1981 paper documents. The jeffrey-mine.test.ts pins them.
+✅ **11 of 12 minerals shipped in v123.** chrysotile, brucite, awaruite, diopside, grossular, vesuvianite, wollastonite, prehnite, datolite, tremolite, actinolite all added to MINERAL_STOICHIOMETRY with event-chemistry tune in `js/70r-jeffrey-mine.ts`. Paragenesis pins all pass.
 
-| Mineral | Formula | Stoichiometry candidate | Affected scenarios |
+**Tune approach taken:** the original Jeffrey events used `Math.max(floor, fluid.X - decrement)` patterns that HAND-MODELED consumption (because stoichiometry was missing). With v123's stoichiometry on, those decrement lines were double-debiting. Fix: flip all consumption-pattern lines to RELEASE-pattern lines, bump release magnitudes across 35-step inter-event intervals, lift caps where mass balance creates more headroom-pressure. Net: 3 scenarios drifted (jeffrey_mine, deccan_zeolite, marble_contact_metamorphism); test pins all pass.
+
+**Pectolite STILL DEFERRED** — fires intermittently across v118-v122 transitions, sensitive to the late_ca_silicates Na/Ca window. Needs a targeted tune that bumps Na release while keeping the existing Na cap pectolite-permissive. Should be doable as a follow-up commit.
+
+| Mineral | Formula | Stoichiometry | Status |
 |---|---|---|---|
-| chrysotile | Mg3Si2O5(OH)4 | `{ Mg: 3, SiO2: 2 }` | jeffrey_mine, ultramafic_supergene |
-| brucite | Mg(OH)2 | `{ Mg: 1 }` | jeffrey_mine |
-| awaruite | Ni2-3Fe (intermetallic) | `{ Ni: 2.5, Fe: 1 }` | jeffrey_mine |
-| diopside | CaMgSi2O6 | `{ Ca: 1, Mg: 1, SiO2: 2 }` | jeffrey_mine, marble_contact_metamorphism |
-| grossular | Ca3Al2(SiO4)3 | `{ Ca: 3, Al: 2, SiO2: 3 }` | jeffrey_mine, marble_contact_metamorphism |
-| vesuvianite | Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4 | `{ Ca: 10, Mg: 1, Fe: 1, Al: 4, SiO2: 9 }` | jeffrey_mine, marble_contact_metamorphism |
-| wollastonite | CaSiO3 | `{ Ca: 1, SiO2: 1 }` | jeffrey_mine, marble_contact_metamorphism |
-| prehnite | Ca2Al2Si3O10(OH)2 | `{ Ca: 2, Al: 2, SiO2: 3 }` | jeffrey_mine |
-| pectolite | NaCa2Si3O8(OH) | `{ Na: 1, Ca: 2, SiO2: 3 }` | jeffrey_mine |
-| datolite | CaB(SiO4)(OH) | `{ Ca: 1, B: 1, SiO2: 1 }` | jeffrey_mine |
-| tremolite | Ca2Mg5Si8O22(OH)2 | `{ Ca: 2, Mg: 5, SiO2: 8 }` | jeffrey_mine |
-| actinolite | Ca2(Mg,Fe)5Si8O22(OH)2 | `{ Ca: 2, Mg: 4, Fe: 1, SiO2: 8 }` | jeffrey_mine |
+| chrysotile | Mg3Si2O5(OH)4 | `{ Mg: 3, SiO2: 2 }` | ✅ v123 |
+| brucite | Mg(OH)2 | `{ Mg: 1 }` | ✅ v123 |
+| awaruite | Ni2-3Fe (intermetallic) | `{ Ni: 2.5, Fe: 1 }` | ✅ v123 |
+| diopside | CaMgSi2O6 | `{ Ca: 1, Mg: 1, SiO2: 2 }` | ✅ v123 |
+| grossular | Ca3Al2(SiO4)3 | `{ Ca: 3, Al: 2, SiO2: 3 }` | ✅ v123 |
+| vesuvianite | Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4 | `{ Ca: 10, Mg: 1, Fe: 1, Al: 4, SiO2: 9 }` | ✅ v123 |
+| wollastonite | CaSiO3 | `{ Ca: 1, SiO2: 1 }` | ✅ v123 |
+| prehnite | Ca2Al2Si3O10(OH)2 | `{ Ca: 2, Al: 2, SiO2: 3 }` | ✅ v123 |
+| **pectolite** | NaCa2Si3O8(OH) | `{ Na: 1, Ca: 2, SiO2: 3 }` | ⚠️ DEFERRED — needs Na-window tune |
+| datolite | CaB(SiO4)(OH) | `{ Ca: 1, B: 1, SiO2: 1 }` | ✅ v123 |
+| tremolite | Ca2Mg5Si8O22(OH)2 | `{ Ca: 2, Mg: 5, SiO2: 8 }` | ✅ v123 |
+| actinolite | Ca2(Mg,Fe)5Si8O22(OH)2 | `{ Ca: 2, Mg: 4, Fe: 1, SiO2: 8 }` | ✅ v123 |
 
-**Tune note (Jeffrey):** the per-stage events already release Mg/Ca/Si/Al at specific steps. Mass-balanced growth will consume those releases faster than the current free-energy model. Likely tune: bump per-event chemistry deltas ~30–50% to compensate, or tune the `defaultSteps` per stage.
+**Drift accepted in v123:** marble_contact_metamorphism lost tremolite; deccan_zeolite lost prehnite. No test pin broke. Could be restored with per-scenario follow-up tunes if needed.
 
-### Priority 2 — Cumbria Pb-Zn-Ba-F supergene (Roughten Gill + Force Crag style)
+### Priority 2 — Cumbria Pb-Zn-Ba-F supergene — **PARTIAL v124 (1 of 4)**
 
-These fire in `roughten_gill` and tn457_barite_pulses' cascade extras. The roughten-gill.test.ts paragenesis pins are the most-tested in the project.
+✅ **Pharmacolite shipped v124** — fires in schneeberg only, doesn't touch roughten_gill cascade.
 
-| Mineral | Formula | Stoichiometry candidate | Affected scenarios |
+⚠️ **3 of 4 STILL DEFERRED** — caledonite, plumbogummite, proustite all trigger Shape-B RNG-cascade displacement in roughten_gill when their stoichiometry is added. Confirmed via direct probe:
+- Adding all 4 → brochantite/caledonite/plumbogummite drop from roughten_gill paragenesis
+- Adding just proustite → same drop (Ag+As+S mass balance ripples globally)
+- Generous Pb releases (initial 70 + event boosts to ~340 ppm total) didn't restore them
+- This is the same structural displacement the `js/70q-roughten-gill.ts` file-level comment already documents for linarite
+
+**Path forward for the 3 deferred:** needs dedicated nucleation-cap or class-iterator-order changes. Per the v122 Q7 initiative-variable framing in PROPOSAL-SPECIMEN-OBJECT.md, this is exactly the "competition for solutes" architectural question — these scenarios depend on per-step rng-cascade ordering that mass balance subtly perturbs. Out of scope for tune-only commits.
+
+| Mineral | Formula | Stoichiometry | Status |
 |---|---|---|---|
-| caledonite | Pb5Cu2(CO3)(SO4)3(OH)6 | `{ Pb: 5, Cu: 2, CO3: 1, S: 3 }` | roughten_gill |
-| plumbogummite | PbAl3(PO4)2(OH)5·H2O | `{ Pb: 1, Al: 3, P: 2 }` | roughten_gill |
-| pharmacolite | CaHAsO4·2H2O | `{ Ca: 1, As: 1 }` | schneeberg |
-| proustite | Ag3AsS3 | `{ Ag: 3, As: 1, S: 3 }` | roughten_gill, schneeberg, sunnyside_american_tunnel |
-
-**Tune note (Roughten Gill):** the existing v107 broth was already cation-budget-stressed (v109 antipattern dogfood). Adding stoichiometry will hit it hard. Probably needs Pb/Cu/As bumps in the initial broth.
+| pharmacolite | CaHAsO4·2H2O | `{ Ca: 1, As: 1 }` | ✅ v124 |
+| caledonite | Pb5Cu2(CO3)(SO4)3(OH)6 | `{ Pb: 5, Cu: 2, CO3: 1, S: 3 }` | ⚠️ DEFERRED — rng cascade |
+| plumbogummite | PbAl3(PO4)2(OH)5·H2O | `{ Pb: 1, Al: 3, P: 2 }` | ⚠️ DEFERRED — rng cascade |
+| proustite | Ag3AsS3 | `{ Ag: 3, As: 1, S: 3 }` | ⚠️ DEFERRED — Ag+As+S debit ripples |
 
 ### Priority 3 — Tsumeb supergene + adjacent
 
