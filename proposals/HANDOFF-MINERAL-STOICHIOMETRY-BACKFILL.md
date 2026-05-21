@@ -16,6 +16,16 @@
 
 **v125 UPDATE (2026-05-21):** Cascade-probe arc across P3 Tsumeb + P5 secondary. **Two shipped (metacinnabar + opal); six probed and reverted with empirical cascade-mechanism findings.** 14 minerals still on the DEFERRED list.
 
+**v126 UPDATE (2026-05-21):** Batch-probe arc completed via the new `tools/probe-stoichiometry.mjs` automation. **One shipped (pectolite, no-fire pure-infra add); five probed and confirmed cascade-stuck.** 13 minerals still on the DEFERRED list. Across v124 + v125 + v126 the cascade record is now empirically complete across all original 28 deferred minerals: 4 PASS (pharmacolite, metacinnabar, opal, pectolite) and 13 CASCADE.
+
+Two near-misses worth flagging for future tune work:
+- **cassiterite**: clean in gem_pegmatite + schneeberg, cascades only in radioactive_pegmatite (1-of-3 fail)
+- **uranophane**: clean in colorado_plateau, cascades only in schneeberg (1-of-2 fail)
+
+Both could potentially be tune-shipped if the cascading scenario's mass balance were isolated — but that needs the Q7 initiative-variable architectural arc.
+
+The reusable probe tool (`tools/probe-stoichiometry.mjs`) takes a mineral name + JSON stoichiometry, inserts the entry, rebuilds, regens baseline, diffs against a pristine snapshot, and restores the source file. Future stoichiometry-cascade work should start with it.
+
 The key refinement to the cascade-mechanism understanding:
 
 > **It's not magnitude, it's edge-of-gate displacement.** A debit's effect on the rng cascade is determined by whether the σ recalc after the debit shifts any edge-of-gate mineral across its nucleation threshold. Minerals with unique cations (or cations already saturated by other firing minerals' debits) are safe — the rng draws don't change. Minerals competing for cations with multiple already-firing minerals cascade — even at sub-percent magnitude.
@@ -51,7 +61,7 @@ The v118 (TN457) commit's gen-baseline log surfaced the warnings (`[mass-balance
 
 **Tune approach taken:** the original Jeffrey events used `Math.max(floor, fluid.X - decrement)` patterns that HAND-MODELED consumption (because stoichiometry was missing). With v123's stoichiometry on, those decrement lines were double-debiting. Fix: flip all consumption-pattern lines to RELEASE-pattern lines, bump release magnitudes across 35-step inter-event intervals, lift caps where mass balance creates more headroom-pressure. Net: 3 scenarios drifted (jeffrey_mine, deccan_zeolite, marble_contact_metamorphism); test pins all pass.
 
-**Pectolite STILL DEFERRED** — fires intermittently across v118-v122 transitions, sensitive to the late_ca_silicates Na/Ca window. Needs a targeted tune that bumps Na release while keeping the existing Na cap pectolite-permissive. Should be doable as a follow-up commit.
+**Pectolite SHIPPED v126** — probe-verified zero baseline drift (pectolite isn't firing in any current baseline scenario). Stoichiometry now in place as pure infra; a future jeffrey_mine late_ca_silicates Na/Ca-window tune can fire pectolite without a silent free-energy gift.
 
 | Mineral | Formula | Stoichiometry | Status |
 |---|---|---|---|
@@ -63,7 +73,7 @@ The v118 (TN457) commit's gen-baseline log surfaced the warnings (`[mass-balance
 | vesuvianite | Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4 | `{ Ca: 10, Mg: 1, Fe: 1, Al: 4, SiO2: 9 }` | ✅ v123 |
 | wollastonite | CaSiO3 | `{ Ca: 1, SiO2: 1 }` | ✅ v123 |
 | prehnite | Ca2Al2Si3O10(OH)2 | `{ Ca: 2, Al: 2, SiO2: 3 }` | ✅ v123 |
-| **pectolite** | NaCa2Si3O8(OH) | `{ Na: 1, Ca: 2, SiO2: 3 }` | ⚠️ DEFERRED — needs Na-window tune |
+| **pectolite** | NaCa2Si3O8(OH) | `{ Na: 1, Ca: 2, SiO2: 3 }` | ✅ v126 (no-fire pure infra) |
 | datolite | CaB(SiO4)(OH) | `{ Ca: 1, B: 1, SiO2: 1 }` | ✅ v123 |
 | tremolite | Ca2Mg5Si8O22(OH)2 | `{ Ca: 2, Mg: 5, SiO2: 8 }` | ✅ v123 |
 | actinolite | Ca2(Mg,Fe)5Si8O22(OH)2 | `{ Ca: 2, Mg: 4, Fe: 1, SiO2: 8 }` | ✅ v123 |
@@ -93,33 +103,35 @@ The v118 (TN457) commit's gen-baseline log surfaced the warnings (`[mass-balance
 
 ✅ **Metacinnabar shipped v125** — fires in sulphur_bank only; cinnabar already debits Hg from the same fluid so the new debit just tightens an existing budget.
 
-⚠️ **5 of 6 STILL DEFERRED** — dioptase + koettigite proven to cascade via direct probe (see v125 commentary above); willemite, conichalcite, duftite extrapolated to cascade via the same edge-of-gate displacement pattern (multi-cation stoichiometry into already-competed-for cation budgets).
+⚠️ **5 of 6 STILL DEFERRED** — all five empirically confirmed cascade-stuck via direct probe (dioptase + koettigite v125; willemite + conichalcite + duftite v126).
 
 | Mineral | Formula | Stoichiometry | Status |
 |---|---|---|---|
 | dioptase | CuSiO3·H2O | `{ Cu: 1, SiO2: 1 }` | ⚠️ DEFERRED — schneeberg cascade (v125 probe) |
-| willemite | Zn2SiO4 | `{ Zn: 2, SiO2: 1 }` | ⚠️ DEFERRED — roughten_gill cascade extrapolated |
-| conichalcite | CaCu(AsO4)(OH) | `{ Ca: 1, Cu: 1, As: 1 }` | ⚠️ DEFERRED — supergene_oxidation cascade extrapolated |
-| duftite | PbCu(AsO4)(OH) | `{ Pb: 1, Cu: 1, As: 1 }` | ⚠️ DEFERRED — supergene+schneeberg cascade |
+| willemite | Zn2SiO4 | `{ Zn: 2, SiO2: 1 }` | ⚠️ DEFERRED — roughten_gill+tn457 cascade (v126 probe: 6 breaks) |
+| conichalcite | CaCu(AsO4)(OH) | `{ Ca: 1, Cu: 1, As: 1 }` | ⚠️ DEFERRED — supergene_oxidation cascade (v126 probe: 7 breaks) |
+| duftite | PbCu(AsO4)(OH) | `{ Pb: 1, Cu: 1, As: 1 }` | ⚠️ DEFERRED — supergene_oxidation cascade (v126 probe: 12 breaks, largest of arc) |
 | koettigite | Zn3(AsO4)2·8H2O | `{ Zn: 3, As: 2 }` | ⚠️ DEFERRED — supergene_oxidation cascade (v125 probe) |
 | metacinnabar | HgS | `{ Hg: 1, S: 1 }` | ✅ v125 |
 
-### Priority 4 — Schneeberg + Colorado Plateau uranyl
+### Priority 4 — Schneeberg + Colorado Plateau uranyl — **DEFERRED (near-miss)**
 
-| Mineral | Formula | Stoichiometry candidate | Affected scenarios |
+⚠️ uranophane probe (v126): **colorado_plateau CLEAN** (only max_um drift), **schneeberg CASCADE** (pharmacolite DROPPED, uranospinite 4→2, +haidingerite NEW). 1-of-2 near-miss; could be tune-shipped if schneeberg's mass balance contribution were isolatable.
+
+| Mineral | Formula | Stoichiometry | Status |
 |---|---|---|---|
-| uranophane | Ca(UO2)2(SiO3)2(OH)2·5H2O | `{ Ca: 1, U: 2, SiO2: 2 }` | schneeberg, colorado_plateau |
+| uranophane | Ca(UO2)2(SiO3)2(OH)2·5H2O | `{ Ca: 1, U: 2, SiO2: 2 }` | ⚠️ DEFERRED — schneeberg cascade only (v126 probe; 1-of-2 near-miss) |
 
 ### Priority 5 — Naica, gem pegmatite, secondary firings — **PARTIAL v125 (1 of 5)**
 
 ✅ **Opal shipped v125** — SiO2-only debit across 6 scenarios (deccan_zeolite, naica_geothermal, ouro_preto, radioactive_pegmatite, schneeberg, ultramafic_supergene). SiO2 broths 200-8000 ppm vs opal max_um 5-36 µm = debit <0.01% of budget. All 6 firing scenarios byte-identical to v124.
 
-⚠️ **4 of 5 STILL DEFERRED** — cassiterite (radioactive_pegmatite cascade, 2-of-3 near-miss), pyrolusite (bisbee cascade, Mn-budget exhaustion), tigers_eye (deccan_zeolite cascade — Fe trace is the differentiator from clean opal). lepidolite untested; expected to cascade given 5-cation stoichiometry into pegmatite scenarios that already cascaded for cassiterite.
+⚠️ **4 of 5 STILL DEFERRED** — cassiterite (radioactive_pegmatite cascade, 2-of-3 near-miss), pyrolusite (bisbee cascade, Mn-budget exhaustion), tigers_eye (deccan_zeolite cascade — Fe trace is the differentiator from clean opal), lepidolite (both pegmatite scenarios cascade, 5-cation debit-fan).
 
 | Mineral | Formula | Stoichiometry | Status |
 |---|---|---|---|
-| cassiterite | SnO2 | `{ Sn: 1 }` | ⚠️ DEFERRED — radioactive_pegmatite cascade (v125 probe) |
-| lepidolite | K(Li,Al)3(Al,Si)4O10(F,OH)2 | `{ K: 1, Li: 2, Al: 2, SiO2: 3, F: 1.5 }` | ⚠️ DEFERRED — 5-cation, pegmatite cascade extrapolated |
+| cassiterite | SnO2 | `{ Sn: 1 }` | ⚠️ DEFERRED — radioactive_pegmatite cascade (v125; 2-of-3 near-miss) |
+| lepidolite | K(Li,Al)3(Al,Si)4O10(F,OH)2 | `{ K: 1, Li: 2, Al: 2, SiO2: 3, F: 1.5 }` | ⚠️ DEFERRED — both pegmatite scenarios cascade (v126 probe: 11 breaks) |
 | opal | SiO2·nH2O | `{ SiO2: 1 }` | ✅ v125 |
 | pyrolusite | MnO2 | `{ Mn: 1 }` | ⚠️ DEFERRED — bisbee Mn-budget cascade (v125 probe) |
 | tigers_eye | SiO2 (after crocidolite) | `{ SiO2: 1, Fe: 0.5 }` | ⚠️ DEFERRED — Fe-trace cascade (v125 probe) |

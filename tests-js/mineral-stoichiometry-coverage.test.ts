@@ -56,10 +56,11 @@ const DEFERRED_TUNE_REQUIRED = new Set<string>([
   //   diopside, grossular, vesuvianite, wollastonite, prehnite,
   //   datolite, tremolite, actinolite — 11 added with event-chemistry
   //   tune in js/70r-jeffrey-mine.ts. Test pins all pass.
-  //   STILL DEFERRED: pectolite (already wasn't firing at v122; would
-  //   need its own targeted tune in the late_ca_silicates event Na +
-  //   Ca window).
-  'pectolite',
+  //   COMPLETED v126 (2026-05-21): pectolite (no-fire pure-infra add).
+  //   Probe-verified zero drift across all 30 scenarios. The
+  //   late_ca_silicates Na/Ca-window tune is still pending if/when
+  //   pectolite needs to fire — but the stoichiometry is now in place
+  //   so it won't be a silent free-energy gift when that lands.
   // Priority 2 — Cumbria Pb-Zn-Ba-F supergene
   //   COMPLETED v124 (2026-05-21): pharmacolite only. Caledonite +
   //   plumbogummite + proustite still deferred — adding any of their
@@ -226,15 +227,23 @@ describe('MINERAL_STOICHIOMETRY coverage audit (v120)', () => {
     expect(violations).toEqual([]);
   });
 
-  it('DEFERRED list size matches HANDOFF doc count (14 minerals at v125)', () => {
+  it('DEFERRED list size matches HANDOFF doc count (13 minerals at v126)', () => {
     // Tracking number — if you reduce the list (tune commit lands), update
     // this number AND update the HANDOFF doc to reflect the new total.
     // v120 shipped at 28; v123 Jeffrey arc tune removed 11 → 17.
     // v124 Cumbria P2 partial-tune removed pharmacolite → 16. (Other 3
     // Cumbria minerals stay deferred per cascade-displacement issue.)
     // v125 cascade-probe arc removed metacinnabar + opal → 14.
-    // dioptase + pyrolusite were probed but reverted (cascaded).
-    // See per-mineral commentary in the DEFERRED list.
-    expect(DEFERRED_TUNE_REQUIRED.size).toBe(14);
+    // dioptase + pyrolusite + tigers_eye + cassiterite + koettigite
+    // were probed but reverted (cascaded). See per-mineral commentary.
+    // v126 batch-probe arc: pectolite added (no-fire pure-infra) → 13.
+    // willemite + conichalcite + duftite + uranophane + lepidolite
+    // probed via tools/probe-stoichiometry.mjs and all cascaded.
+    // Empirical cascade record now complete across all original 28
+    // deferred minerals. Remaining 13 are cascade-stuck and need
+    // either per-scenario tunes (cassiterite-style 2-of-3 near-miss
+    // suggests gem_pegmatite + schneeberg are tune-able) or the Q7
+    // initiative-variable architectural arc.
+    expect(DEFERRED_TUNE_REQUIRED.size).toBe(13);
   });
 });
