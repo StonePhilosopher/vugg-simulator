@@ -979,6 +979,12 @@ _computeGraduatedZones() {
           `  ◌ ${capitalize(it.crystal.mineral)} #${it.crystal.crystal_id}: ` +
           `edge-of-gate skip — ${a?.why ?? 'rationed to 0'}`,
         );
+        // IMPORTANT: store a null sentinel so pass-2 knows the engine was
+        // already called in the dry-run pass and must NOT be called again.
+        // Without this, `_graduatedZones.has(id)` returns false and pass-2
+        // falls through to _runEngineForCrystal — calling the engine twice,
+        // consuming extra RNG, and breaking the once-per-crystal invariant.
+        out.set(it.crystal.crystal_id, null);
       } else {
         // Scale the dry-run zone. Clone to avoid sharing state.
         const scaled = Object.assign({}, it.zone);

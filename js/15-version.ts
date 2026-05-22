@@ -6551,5 +6551,80 @@
 //              softening beyond the default)
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 131;
+//
+//   v132  — EDGE-OF-GATE DOUBLE-ENGINE-CALL FIX (2026-05-22)
+//
+//          Bug discovered by the new isolation test
+//          tests-js/graduated-competition-zones.test.ts, which was
+//          written to guard the _computeGraduatedZones invariants
+//          flagged during the v131 test-coverage audit.
+//
+//          THE BUG
+//          In _computeGraduatedZones (js/85b-simulator-nucleate.ts),
+//          when computeGraduatedAllocations returned scaling ≤ 0 for
+//          a crystal (edge-of-gate: the crystal was rationed to zero
+//          because a required species was fully absent from the cell
+//          fluid), the crystal was logged and skipped — but NOT added
+//          to the `out` Map.
+//
+//          Pass-2 of run_step checks `_graduatedZones.has(crystal_id)`
+//          to decide whether to skip the engine re-call. A missing
+//          entry triggered the fallthrough to _runEngineForCrystal,
+//          calling the engine a second time for that crystal. The
+//          second call consumed additional RNG numbers, shifting the
+//          draw sequence for all subsequent crystals in the same step.
+//
+//          The canonical cascade-antipattern comment (v128c pass-2):
+//          "Crystal had no engine entry (skipped at the top of the
+//          loop) or wasn't in _graduatedZones (only happens when flag
+//          is off, because pass 1 enumerates every active crystal)."
+//          The edge-of-gate path violated the second clause — it
+//          didn't enumerate every active crystal into the map.
+//
+//          HOW IT SURFACED
+//          The new map-coverage invariant test ran _computeGraduatedZones
+//          over 30 steps of schneeberg and checked that every active
+//          crystal with a MINERAL_ENGINES entry appeared in the map.
+//          Crystal #25 (tennantite) was absent from steps 20–25 —
+//          exactly the edge-of-gate scenario where tennantite's
+//          required As pool is exhausted by arsenopyrite / orpiment
+//          in a high-As step.
+//
+//          THE FIX (one line)
+//          js/85b-simulator-nucleate.ts, edge-of-gate branch:
+//            out.set(it.crystal.crystal_id, null);
+//          This stores the null sentinel so pass-2 knows not to
+//          re-call the engine — same as the null-zone path at the
+//          top of the loop.
+//
+//          IMPACT
+//          The double-call added one extra RNG draw per rationed-to-zero
+//          crystal per step. In most scenarios no mineral hits scaling ≤ 0
+//          (fluid is never fully depleted for all competing cations).
+//          Three scenarios crossed this threshold at seed 42:
+//
+//          bisbee:   83 → 76 crystals, 37 → 35 species
+//          porphyry: 49 → 41 crystals, 21 → 19 species
+//          schneeberg: 93 → 92 crystals, 36 → 39 species
+//              (schneeberg gained 3 species — the correction unlocked
+//              coexistence patterns that the spurious RNG shift had
+//              suppressed)
+//
+//          All other 27 scenarios: byte-identical.
+//
+//          WHAT v132 SHIPS
+//            js/85b-simulator-nucleate.ts (MOD): null sentinel on edge-
+//              of-gate skip.
+//            tests-js/graduated-competition-zones.test.ts (NEW): 9
+//              isolation tests for _computeGraduatedZones invariants
+//              (map-coverage, zone types, dissolution pass-through,
+//              RNG determinism). The map-coverage test caught this bug
+//              immediately on first run.
+//            tests-js/baselines/seed42_v132.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 132. v131 baseline preserved as
+//              the "pre-fix" snapshot.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 131→132.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 132;
 
