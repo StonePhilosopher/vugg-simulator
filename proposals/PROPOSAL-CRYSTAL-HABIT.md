@@ -250,75 +250,46 @@ Every mineral (~145) needs a `habit` field. This is a one-time spec addition. Th
 
 ---
 
-## 6. New Skills & Tools Required
+## 6. New Agent Skills Required
 
-This arc requires capabilities the current builder may not have. What skills, libraries, or learning would make this feasible?
+Every mineral habit spec must be added 145 times. Every renderer form must be generated per crystal system. Every twin law must be defined per mineral that twins. These are repetitive tasks that should be skills.
 
-### 6.1 3D Geometry / Computational Geometry
+**The question for the builder:** What skills would make this arc faster and less error-prone?
 
-The renderer needs arbitrary polyhedral mesh generation from face normals + distances. Skills needed:
-- **Half-edge data structures** for mesh manipulation
-- **Convex hull algorithms** (e.g., QuickHull) for generating polyhedra from planes
-- **Mesh retesselation** when faces shrink to zero or new faces emerge
-- **Normal smoothing / flat shading** per face (crystals have flat faces, not smooth surfaces)
+### 6.1 Proposed Skills
 
-Potential libraries:
-- **Three.js** (already used in many web projects; has BufferGeometry, custom mesh support)
-- **regl** (lightweight WebGL wrapper if we want less abstraction)
-- **csg.js** (constructive solid geometry for twin composition)
+**`skill: add-habit`**
+Input: mineral name, crystal system, form list, face growth rates, twin law (optional)
+Output: adds the `habit` field to the mineral's spec, validates that all forms have valid Miller indices, cross-references Mindat/Dana's for ground truth
 
-### 6.2 Crystallographic Computation
+**`skill: add-twin-law`**
+Input: mineral name, twin axis, twin angle, probability
+Output: adds twin law to mineral spec, validates against known twin laws for that species
 
-Habit generation requires crystallographic calculations:
-- **Miller index ↔ normal vector** conversion for each crystal system
-- **Zone axis calculations** for twin law application
-- **Stereographic projections** for visualizing face relationships (debugging tool)
-- **Lattice parameter → face distance** scaling
+**`skill: generate-crystal-mesh`**
+Input: mineral name, σ, step number
+Output: generates the polyhedral mesh for that crystal at that growth stage, including face advancement, retesselation, and twin composition
+Used for: renderer integration, baseline generation, screenshot comparison
 
-Potential libraries:
-- **crystcif** (TypeScript crystallographic library)
-- **pycif** (Python CIF parser, could pre-process mineral data)
-- Custom implementation (the math is straightforward vector geometry)
+**`skill: validate-habit`**
+Input: mineral name, reference photo URL or local path
+Output: compares the generated crystal mesh against the reference photo, flags discrepancies (e.g., "generated barite is prismatic, reference is tabular")
+Used for: calibration loop against real mineral photos
 
-### 6.3 Shader Programming
+**`skill: add-renderer-form`**
+Input: crystal system (cubic, hexagonal, etc.), form name, Miller indices
+Output: adds the form to the renderer's form library, generates the base mesh template
+Used for: expanding the renderer when a new crystal system or unusual form is needed
 
-Face-specific effects need custom shaders:
-- **Per-face luster** (adamite vitreous vs pyrite metallic vs gypsum silky)
-- **Transparency / refraction** (fluorite translucent vs quartz transparent vs opal opaque)
-- **Subsurface scattering** for thin crystal edges (fluorite blue edge glow)
-- **Iridescence / thin-film** (labradorite schiller, hematite inclusions in apophyllite)
+### 6.2 Skills the Builder Already Has (Reused)
 
-Skills: GLSL/WebGL fragment shaders, BRDF models (Cook-Torrance for metallic luster, Lambert for dull).
+- `skill: add-mineral` — already exists, extended with habit field
+- `skill: add-scenario` — already exists, extended with habit showcase scenarios
+- `skill: add-broth-element` — already exists, extended with trace element face-poisoning effects
 
-### 6.4 Performance Optimization
+### 6.3 Builder Decision Needed
 
-145 minerals × up to 20 faces each × up to 1000 crystals per scenario = potentially 2.9 million faces. Skills needed:
-- **Instanced rendering** (draw same mesh many times with transforms)
-- **LOD (Level of Detail)** — simplified meshes for small/distant crystals
-- **Frustum culling** — don't render crystals outside the viewport
-- **GPU skinning / morph targets** if animated growth is desired
-
-### 6.5 Data Sources for Habit Specs
-
-Where do the 145 habit specs come from?
-- **Mindat.org** — has habit photos for most minerals
-- **Dana's New Mineralogy** — habit descriptions for all known species
-- **RRUFF database** — crystal structure + lattice parameters
-- **AMCSD (American Mineralogist Crystal Structure Database)** — free, comprehensive
-- **Manual curation** — Professor's collection specimens as ground truth (TN photos for calibration)
-
-### 6.6 Builder Question
-
-**What new skills or tools would be most useful to acquire for this arc?**
-
-- Three.js advanced geometry / custom shaders?
-- Computational geometry / mesh algorithms?
-- GLSL/WebGL shader programming?
-- Crystallographic math (Miller indices, zone axes, stereographic projections)?
-- Performance optimization (instancing, LOD, culling)?
-- Something else entirely?
-
-The builder should answer with their comfort level and what they'd need to learn or what tools they'd want to adopt.
+Which of the proposed skills (add-habit, add-twin-law, generate-crystal-mesh, validate-habit, add-renderer-form) would be most useful to build first? And are there other repetitive tasks in this arc that should become skills?
 
 ---
 
