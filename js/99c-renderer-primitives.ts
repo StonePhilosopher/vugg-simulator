@@ -470,6 +470,97 @@ const PRIM_FLUORITE_PENETRATION_TWIN = {
   })(),
 };
 
+// v134 (2026-05-22): selenite swallowtail-twin primitive. Two tabular
+// gypsum blades joined on a {100} contact plane at the base, opening
+// upward in a V — the "fishtail" / "swallowtail" twin (Dana 8th ed.
+// CaSO4·2H2O section; Hurlbut & Klein 23rd ed. §13). Iconic in
+// Bohemian + Naica + Mojave specimens. v133 set the twin probability
+// to 0.18 per selenite nucleation in data/minerals.json (Tier 2 F
+// retune — was 0.08, observed 4.5% in baseline, raised to 18% to match
+// the ~30-50% rate seen in collection-quality specimens).
+//
+// Geometry: 16 vertices (8 per blade), 24 edges (12 per blade). Each
+// blade is a thin tabular rectangular block — local dimensions before
+// tilt: thickness 2a (perpendicular to broad face), length L (along
+// the c-axis), width 2b (the side-to-side dimension perpendicular to
+// the broad face's long edge). Both blades share the base contact
+// edge along the world Z-axis at the wall (X=0, Y=-0.1).
+//
+// Tilt: each blade rotates ±30° from vertical around the contact
+// edge — total V opening angle 60°. Real gypsum {100} twin angle is
+// ~36°-105° depending on which axes you measure; 60° gives a clean
+// recognizable V silhouette consistent with typical photos.
+//
+// Anchoring: contact edge sits at Y=-0.1 (PRIM_CUBE convention). The
+// outer base corners of each blade (away from contact) bury below
+// the wall (Y < -0.1) — this matches how real swallowtails look in
+// matrix, where only the V-opening upper portion is visible.
+const PRIM_SELENITE_SWALLOWTAIL_TWIN = {
+  name: 'selenite_swallowtail_twin',
+  vertices: (() => {
+    const a = 0.08;             // half-thickness (perpendicular to broad face)
+    const L = 1.1;              // blade length along c-axis
+    const b = 0.18;             // half-width (along contact edge, Z)
+    const base_y = -0.1;        // anchor base contact at PRIM_CUBE wall y
+    const theta = Math.PI / 6;  // 30° tilt per blade — 60° total V
+    const c30 = Math.cos(theta);
+    const s30 = Math.sin(theta);
+    const vs: number[][] = [];
+    // Blade A — local coords (xl, yl, zl) with xl ∈ {-2a, 0},
+    // yl ∈ {0, L}, zl ∈ {-b, +b}. The contact face (broad face on
+    // contact plane) is at xl=0; the body of the blade extends to
+    // xl=-2a. After rotating by +30° around z-axis through origin
+    // and shifting Y by base_y, the contact-base edge (xl=0, yl=0)
+    // stays at world (0, base_y, zl); the rest of the blade tilts
+    // outward (toward -X) and upward.
+    //   Indices 0..7 in (xl, yl, zl) loop order:
+    //     0: (-2a, 0, -b)   contact-side opposite, base, -z
+    //     1: (-2a, 0, +b)
+    //     2: (-2a, L, -b)
+    //     3: (-2a, L, +b)
+    //     4: (0, 0, -b)     contact-base edge, -z
+    //     5: (0, 0, +b)     contact-base edge, +z
+    //     6: (0, L, -b)     contact-top edge, -z
+    //     7: (0, L, +b)
+    for (const xl of [-2 * a, 0]) {
+      for (const yl of [0, L]) {
+        for (const zl of [-b, b]) {
+          const wx = xl * c30 - yl * s30;
+          const wy = xl * s30 + yl * c30 + base_y;
+          vs.push([wx, wy, zl]);
+        }
+      }
+    }
+    // Blade B — mirror of blade A across the X=0 plane (the contact).
+    // Local xl ∈ {0, +2a}; rotated by -30° around z. Symmetry: blade
+    // B vertex i+8 is the X-reflection of blade A vertex i.
+    for (const xl of [0, 2 * a]) {
+      for (const yl of [0, L]) {
+        for (const zl of [-b, b]) {
+          const wx = xl * c30 + yl * s30;
+          const wy = -xl * s30 + yl * c30 + base_y;
+          vs.push([wx, wy, zl]);
+        }
+      }
+    }
+    return vs;
+  })(),
+  edges: (() => {
+    // 12 edges per blade. Same topology as a cube (vertex i connects
+    // to vertex j if they differ in exactly one of the 3 axes). Blade
+    // A uses indices 0..7; blade B uses 8..15 with identical adjacency.
+    const bladeEdges = (off: number) => [
+      // zl-edges (xl, yl fixed, zl varies):
+      [off + 0, off + 1], [off + 2, off + 3], [off + 4, off + 5], [off + 6, off + 7],
+      // yl-edges (xl, zl fixed, yl varies):
+      [off + 0, off + 2], [off + 1, off + 3], [off + 4, off + 6], [off + 5, off + 7],
+      // xl-edges (yl, zl fixed, xl varies):
+      [off + 0, off + 4], [off + 1, off + 5], [off + 2, off + 6], [off + 3, off + 7],
+    ];
+    return [...bladeEdges(0), ...bladeEdges(8)];
+  })(),
+};
+
 // Habit string → primitive lookup. Direct hits checked first; the
 // fuzzy-substring fallback in _lookupCrystalPrimitive catches the
 // many compound forms in data/minerals.json (e.g. "rhombohedral_or_

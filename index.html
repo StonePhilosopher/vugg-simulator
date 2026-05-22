@@ -52235,6 +52235,96 @@ const PRIM_FLUORITE_PENETRATION_TWIN = {
         return [...cubeEdges(0), ...cubeEdges(8)];
     })(),
 };
+// v134 (2026-05-22): selenite swallowtail-twin primitive. Two tabular
+// gypsum blades joined on a {100} contact plane at the base, opening
+// upward in a V — the "fishtail" / "swallowtail" twin (Dana 8th ed.
+// CaSO4·2H2O section; Hurlbut & Klein 23rd ed. §13). Iconic in
+// Bohemian + Naica + Mojave specimens. v133 set the twin probability
+// to 0.18 per selenite nucleation in data/minerals.json (Tier 2 F
+// retune — was 0.08, observed 4.5% in baseline, raised to 18% to match
+// the ~30-50% rate seen in collection-quality specimens).
+//
+// Geometry: 16 vertices (8 per blade), 24 edges (12 per blade). Each
+// blade is a thin tabular rectangular block — local dimensions before
+// tilt: thickness 2a (perpendicular to broad face), length L (along
+// the c-axis), width 2b (the side-to-side dimension perpendicular to
+// the broad face's long edge). Both blades share the base contact
+// edge along the world Z-axis at the wall (X=0, Y=-0.1).
+//
+// Tilt: each blade rotates ±30° from vertical around the contact
+// edge — total V opening angle 60°. Real gypsum {100} twin angle is
+// ~36°-105° depending on which axes you measure; 60° gives a clean
+// recognizable V silhouette consistent with typical photos.
+//
+// Anchoring: contact edge sits at Y=-0.1 (PRIM_CUBE convention). The
+// outer base corners of each blade (away from contact) bury below
+// the wall (Y < -0.1) — this matches how real swallowtails look in
+// matrix, where only the V-opening upper portion is visible.
+const PRIM_SELENITE_SWALLOWTAIL_TWIN = {
+    name: 'selenite_swallowtail_twin',
+    vertices: (() => {
+        const a = 0.08; // half-thickness (perpendicular to broad face)
+        const L = 1.1; // blade length along c-axis
+        const b = 0.18; // half-width (along contact edge, Z)
+        const base_y = -0.1; // anchor base contact at PRIM_CUBE wall y
+        const theta = Math.PI / 6; // 30° tilt per blade — 60° total V
+        const c30 = Math.cos(theta);
+        const s30 = Math.sin(theta);
+        const vs = [];
+        // Blade A — local coords (xl, yl, zl) with xl ∈ {-2a, 0},
+        // yl ∈ {0, L}, zl ∈ {-b, +b}. The contact face (broad face on
+        // contact plane) is at xl=0; the body of the blade extends to
+        // xl=-2a. After rotating by +30° around z-axis through origin
+        // and shifting Y by base_y, the contact-base edge (xl=0, yl=0)
+        // stays at world (0, base_y, zl); the rest of the blade tilts
+        // outward (toward -X) and upward.
+        //   Indices 0..7 in (xl, yl, zl) loop order:
+        //     0: (-2a, 0, -b)   contact-side opposite, base, -z
+        //     1: (-2a, 0, +b)
+        //     2: (-2a, L, -b)
+        //     3: (-2a, L, +b)
+        //     4: (0, 0, -b)     contact-base edge, -z
+        //     5: (0, 0, +b)     contact-base edge, +z
+        //     6: (0, L, -b)     contact-top edge, -z
+        //     7: (0, L, +b)
+        for (const xl of [-2 * a, 0]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 - yl * s30;
+                    const wy = xl * s30 + yl * c30 + base_y;
+                    vs.push([wx, wy, zl]);
+                }
+            }
+        }
+        // Blade B — mirror of blade A across the X=0 plane (the contact).
+        // Local xl ∈ {0, +2a}; rotated by -30° around z. Symmetry: blade
+        // B vertex i+8 is the X-reflection of blade A vertex i.
+        for (const xl of [0, 2 * a]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 + yl * s30;
+                    const wy = -xl * s30 + yl * c30 + base_y;
+                    vs.push([wx, wy, zl]);
+                }
+            }
+        }
+        return vs;
+    })(),
+    edges: (() => {
+        // 12 edges per blade. Same topology as a cube (vertex i connects
+        // to vertex j if they differ in exactly one of the 3 axes). Blade
+        // A uses indices 0..7; blade B uses 8..15 with identical adjacency.
+        const bladeEdges = (off) => [
+            // zl-edges (xl, yl fixed, zl varies):
+            [off + 0, off + 1], [off + 2, off + 3], [off + 4, off + 5], [off + 6, off + 7],
+            // yl-edges (xl, zl fixed, yl varies):
+            [off + 0, off + 2], [off + 1, off + 3], [off + 4, off + 6], [off + 5, off + 7],
+            // xl-edges (yl, zl fixed, xl varies):
+            [off + 0, off + 4], [off + 1, off + 5], [off + 2, off + 6], [off + 3, off + 7],
+        ];
+        return [...bladeEdges(0), ...bladeEdges(8)];
+    })(),
+};
 // Habit string → primitive lookup. Direct hits checked first; the
 // fuzzy-substring fallback in _lookupCrystalPrimitive catches the
 // many compound forms in data/minerals.json (e.g. "rhombohedral_or_
@@ -52417,18 +52507,26 @@ function _isDripstoneEligibleCanonical(prim) {
 function _lookupCrystalPrimitive(crystal) {
     if (!crystal)
         return PRIM_RHOMBOHEDRON;
-    // v134 (2026-05-22): twin-law geometry override. The first iconic
-    // twin to render with its own primitive is the fluorite penetration
-    // twin ({111}, two interpenetrating cubes rotated 60° around the
-    // shared body diagonal — the Weardale Cumbria / Cave-in-Rock signature).
-    // Runs BEFORE the air-mode dripstone override: a twinned fluorite in
-    // an air cavity is still a twin, not a dripstone (twins don't drip).
-    // Future twin primitives — gypsum swallowtail, marcasite cockscomb,
-    // cerussite snowflake-trilling, pyrite iron-cross — will land as
-    // additional checks here.
+    // v134 (2026-05-22): twin-law geometry override. Each check below
+    // is a mineral-scoped + law-scoped guard that returns a hand-rolled
+    // twin primitive instead of the canonical habit dispatch. Runs BEFORE
+    // the air-mode dripstone override: a twinned crystal in an air
+    // cavity is still a twin, not a dripstone (twins don't drip).
+    //
+    // Iconic twins shipped so far:
+    //   fluorite penetration   {111}  — two cubes rotated 60° around body diagonal
+    //   selenite swallowtail   {100}  — two tabular blades opening in V (60°)
+    //
+    // Future twin primitives (data side already complete in v133):
+    //   marcasite cockscomb, cerussite trilling, pyrite iron-cross,
+    //   galena octahedron-twin, aragonite pseudo-hex
     if (crystal.mineral === 'fluorite' && crystal.twinned
         && crystal.twin_law === 'penetration') {
         return PRIM_FLUORITE_PENETRATION_TWIN;
+    }
+    if (crystal.mineral === 'selenite' && crystal.twinned
+        && crystal.twin_law === 'swallowtail') {
+        return PRIM_SELENITE_SWALLOWTAIL_TWIN;
     }
     // v24 air-mode override — crystals nucleated in vadose rings get
     // dripstone geometry instead of their canonical habit primitive,
@@ -55111,6 +55209,7 @@ const _GEOM_TOKEN_RATIO = {
     tablet: 1.5, // tabular — flat plate, a > c
     cube: 1.0, // isometric
     fluorite_penetration_twin: 1.0, // two cubes interpenetrating — same envelope
+    selenite_swallowtail_twin: 1.5, // tabular blades — c > a like 'tablet' family
     octahedron: 1.0,
     rhombic_dodec: 1.0,
     dodecahedron: 1.0,
@@ -55149,6 +55248,10 @@ function _resolveCrystalGeomToken(crystal, habitForGeom) {
     if (crystal && crystal.mineral === 'fluorite' && crystal.twinned
         && crystal.twin_law === 'penetration') {
         return 'fluorite_penetration_twin';
+    }
+    if (crystal && crystal.mineral === 'selenite' && crystal.twinned
+        && crystal.twin_law === 'swallowtail') {
+        return 'selenite_swallowtail_twin';
     }
     const canonical = _habitGeomToken(habitForGeom);
     if (crystal && crystal.growth_environment === 'air'
@@ -55591,6 +55694,103 @@ function _makeFluoritePenetrationTwin() {
     geom.computeVertexNormals();
     return geom;
 }
+// Selenite swallowtail twin — two thin tabular blades joined on a
+// {100} contact plane at the base, opening upward in a V (Dana 8th
+// ed. CaSO4·2H2O section; Hurlbut & Klein 23rd ed. §13). The iconic
+// "fishtail" / "swallowtail" gypsum twin, present in Bohemian +
+// Naica + Mojave specimens. Mirrors PRIM_SELENITE_SWALLOWTAIL_TWIN
+// in js/99c-renderer-primitives.ts so both renderers agree on the
+// twin geometry (PROPOSAL-HABIT-BIAS.md §11 cross-renderer parity).
+//
+// Math: each blade is a thin rectangular block in its local coords
+// (xl ∈ {-2a, 0} for blade A; yl ∈ {0, L} long axis; zl ∈ {-b, +b}
+// width). Blade A is rotated +30° around the world z-axis; blade B
+// is rotated -30°. The contact-base edge (xl=0, yl=0) stays fixed
+// at the origin; the rest of each blade tilts outward. Total V
+// opening angle 60°.
+//
+// Anchoring: centered at origin (not y=-0.1 like the wireframe) to
+// match the 99i convention where geometries are centered and the
+// instance transform handles wall placement. The outer base corners
+// of each blade sit BELOW y=0; the instance transform anchors the
+// blade-pair such that the visible V opens above the wall.
+//
+// Flat-shaded: 6 faces × 2 triangles per blade × 2 blades = 24
+// triangles, 72 vertex triples — matches fluorite-twin geometry count.
+function _makeSeleniteSwallowtailTwin() {
+    const a = 0.05; // half-thickness (perpendicular to broad face)
+    const L = 0.95; // blade length along c-axis
+    const b = 0.15; // half-width (along contact edge, Z)
+    const theta = Math.PI / 6; // 30° tilt per blade — 60° total V
+    const c30 = Math.cos(theta);
+    const s30 = Math.sin(theta);
+    // Build the 8 world-space corners of each blade. Indexing matches
+    // the wireframe PRIM_SELENITE_SWALLOWTAIL_TWIN: (xl, yl, zl) loop
+    // order in {-2a, 0} × {0, L} × {-b, +b}. The contact-base corners
+    // are 4, 5 (blade A) and 12, 13 (blade B) — they coincide at the
+    // origin.
+    const buildBladeA = () => {
+        const out = [];
+        for (const xl of [-2 * a, 0]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 - yl * s30;
+                    const wy = xl * s30 + yl * c30;
+                    out.push([wx, wy, zl]);
+                }
+            }
+        }
+        return out;
+    };
+    const buildBladeB = () => {
+        // Mirror of blade A across X=0.
+        const out = [];
+        for (const xl of [0, 2 * a]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 + yl * s30;
+                    const wy = -xl * s30 + yl * c30;
+                    out.push([wx, wy, zl]);
+                }
+            }
+        }
+        return out;
+    };
+    const A = buildBladeA();
+    const B = buildBladeB();
+    // Emit 6 box faces as 12 triangles per blade, CCW from outside so
+    // flat-shaded normals point outward. Same face indexing as the
+    // fluorite twin's cube helper: faces are pairs of constant
+    // xl/yl/zl coords, vertex indices follow the (xl, yl, zl) loops.
+    const pushBlade = (out, v) => {
+        const tri = (a, b, c) => {
+            _pushTri(out, v[a][0], v[a][1], v[a][2], v[b][0], v[b][1], v[b][2], v[c][0], v[c][1], v[c][2]);
+        };
+        // Vertices in (xl, yl, zl) loop order:
+        //   0: (-2a, 0, -b)  1: (-2a, 0, +b)  2: (-2a, L, -b)  3: (-2a, L, +b)
+        //   4: (0, 0, -b)    5: (0, 0, +b)    6: (0, L, -b)    7: (0, L, +b)
+        // (For blade B, replace -2a with 0 and 0 with +2a; indices match.)
+        tri(0, 1, 3);
+        tri(0, 3, 2); // xl = -2a face (outer broad face for blade A)
+        tri(4, 6, 7);
+        tri(4, 7, 5); // xl = 0 face (contact-side broad face)
+        tri(0, 4, 5);
+        tri(0, 5, 1); // yl = 0 face (base)
+        tri(2, 3, 7);
+        tri(2, 7, 6); // yl = L face (top)
+        tri(0, 2, 6);
+        tri(0, 6, 4); // zl = -b face (one side edge)
+        tri(1, 5, 7);
+        tri(1, 7, 3); // zl = +b face (other side edge)
+    };
+    const positions = [];
+    pushBlade(positions, A);
+    pushBlade(positions, B);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Build a unit-sized geometry for a given habit token, oriented so
 // its long axis (= c-axis) lies along +Y. The instance transform
 // later places the base at the wall and scales by c_length / a_width.
@@ -55625,6 +55825,12 @@ function _buildHabitGeom(token) {
             // body diagonal. Dispatch is gated by _resolveCrystalGeomToken
             // on mineral='fluorite' + twinned=true + twin_law='penetration'.
             return _makeFluoritePenetrationTwin();
+        case 'selenite_swallowtail_twin':
+            // v134 (2026-05-22) — second iconic twin. Two tabular gypsum
+            // blades joined on {100} at the base, opening upward in a V
+            // (60° total). Dispatch gated on mineral='selenite' + twinned
+            // + twin_law='swallowtail'.
+            return _makeSeleniteSwallowtailTwin();
         case 'octahedron':
             return new THREE.OctahedronGeometry(0.55, 0);
         case 'snowball':

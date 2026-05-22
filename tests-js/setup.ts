@@ -272,6 +272,10 @@ const EXPORTS = [
   // Cumbria / Cave-in-Rock fluorite twin.
   'PRIM_FLUORITE_PENETRATION_TWIN',
   'PRIM_CUBE',  // baseline reference for twin tests
+  // 2026-05-22 selenite swallowtail-twin primitive (v134 second iconic
+  // twin, 99c-renderer-primitives.ts + 99d dispatch). Two tabular
+  // gypsum blades opening in a V at 60° from a shared base contact.
+  'PRIM_SELENITE_SWALLOWTAIL_TWIN',
   '_lookupCrystalPrimitive',
   // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
   'EH_DYNAMIC_ENABLED',

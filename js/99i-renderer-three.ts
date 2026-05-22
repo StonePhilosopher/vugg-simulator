@@ -522,6 +522,7 @@ const _GEOM_TOKEN_RATIO: Record<string, number> = {
   tablet: 1.5,        // tabular — flat plate, a > c
   cube: 1.0,          // isometric
   fluorite_penetration_twin: 1.0,  // two cubes interpenetrating — same envelope
+  selenite_swallowtail_twin: 1.5,  // tabular blades — c > a like 'tablet' family
   octahedron: 1.0,
   rhombic_dodec: 1.0,
   dodecahedron: 1.0,
@@ -562,6 +563,10 @@ function _resolveCrystalGeomToken(crystal: any, habitForGeom: string): string {
   if (crystal && crystal.mineral === 'fluorite' && crystal.twinned
       && crystal.twin_law === 'penetration') {
     return 'fluorite_penetration_twin';
+  }
+  if (crystal && crystal.mineral === 'selenite' && crystal.twinned
+      && crystal.twin_law === 'swallowtail') {
+    return 'selenite_swallowtail_twin';
   }
   const canonical = _habitGeomToken(habitForGeom);
   if (crystal && crystal.growth_environment === 'air'
@@ -1010,6 +1015,98 @@ function _makeFluoritePenetrationTwin(): any {
   return geom;
 }
 
+// Selenite swallowtail twin — two thin tabular blades joined on a
+// {100} contact plane at the base, opening upward in a V (Dana 8th
+// ed. CaSO4·2H2O section; Hurlbut & Klein 23rd ed. §13). The iconic
+// "fishtail" / "swallowtail" gypsum twin, present in Bohemian +
+// Naica + Mojave specimens. Mirrors PRIM_SELENITE_SWALLOWTAIL_TWIN
+// in js/99c-renderer-primitives.ts so both renderers agree on the
+// twin geometry (PROPOSAL-HABIT-BIAS.md §11 cross-renderer parity).
+//
+// Math: each blade is a thin rectangular block in its local coords
+// (xl ∈ {-2a, 0} for blade A; yl ∈ {0, L} long axis; zl ∈ {-b, +b}
+// width). Blade A is rotated +30° around the world z-axis; blade B
+// is rotated -30°. The contact-base edge (xl=0, yl=0) stays fixed
+// at the origin; the rest of each blade tilts outward. Total V
+// opening angle 60°.
+//
+// Anchoring: centered at origin (not y=-0.1 like the wireframe) to
+// match the 99i convention where geometries are centered and the
+// instance transform handles wall placement. The outer base corners
+// of each blade sit BELOW y=0; the instance transform anchors the
+// blade-pair such that the visible V opens above the wall.
+//
+// Flat-shaded: 6 faces × 2 triangles per blade × 2 blades = 24
+// triangles, 72 vertex triples — matches fluorite-twin geometry count.
+function _makeSeleniteSwallowtailTwin(): any {
+  const a = 0.05;             // half-thickness (perpendicular to broad face)
+  const L = 0.95;             // blade length along c-axis
+  const b = 0.15;             // half-width (along contact edge, Z)
+  const theta = Math.PI / 6;  // 30° tilt per blade — 60° total V
+  const c30 = Math.cos(theta);
+  const s30 = Math.sin(theta);
+  // Build the 8 world-space corners of each blade. Indexing matches
+  // the wireframe PRIM_SELENITE_SWALLOWTAIL_TWIN: (xl, yl, zl) loop
+  // order in {-2a, 0} × {0, L} × {-b, +b}. The contact-base corners
+  // are 4, 5 (blade A) and 12, 13 (blade B) — they coincide at the
+  // origin.
+  const buildBladeA = (): number[][] => {
+    const out: number[][] = [];
+    for (const xl of [-2 * a, 0]) {
+      for (const yl of [0, L]) {
+        for (const zl of [-b, b]) {
+          const wx = xl * c30 - yl * s30;
+          const wy = xl * s30 + yl * c30;
+          out.push([wx, wy, zl]);
+        }
+      }
+    }
+    return out;
+  };
+  const buildBladeB = (): number[][] => {
+    // Mirror of blade A across X=0.
+    const out: number[][] = [];
+    for (const xl of [0, 2 * a]) {
+      for (const yl of [0, L]) {
+        for (const zl of [-b, b]) {
+          const wx = xl * c30 + yl * s30;
+          const wy = -xl * s30 + yl * c30;
+          out.push([wx, wy, zl]);
+        }
+      }
+    }
+    return out;
+  };
+  const A = buildBladeA();
+  const B = buildBladeB();
+  // Emit 6 box faces as 12 triangles per blade, CCW from outside so
+  // flat-shaded normals point outward. Same face indexing as the
+  // fluorite twin's cube helper: faces are pairs of constant
+  // xl/yl/zl coords, vertex indices follow the (xl, yl, zl) loops.
+  const pushBlade = (out: number[], v: number[][]): void => {
+    const tri = (a: number, b: number, c: number) => {
+      _pushTri(out, v[a][0], v[a][1], v[a][2], v[b][0], v[b][1], v[b][2], v[c][0], v[c][1], v[c][2]);
+    };
+    // Vertices in (xl, yl, zl) loop order:
+    //   0: (-2a, 0, -b)  1: (-2a, 0, +b)  2: (-2a, L, -b)  3: (-2a, L, +b)
+    //   4: (0, 0, -b)    5: (0, 0, +b)    6: (0, L, -b)    7: (0, L, +b)
+    // (For blade B, replace -2a with 0 and 0 with +2a; indices match.)
+    tri(0, 1, 3); tri(0, 3, 2);  // xl = -2a face (outer broad face for blade A)
+    tri(4, 6, 7); tri(4, 7, 5);  // xl = 0 face (contact-side broad face)
+    tri(0, 4, 5); tri(0, 5, 1);  // yl = 0 face (base)
+    tri(2, 3, 7); tri(2, 7, 6);  // yl = L face (top)
+    tri(0, 2, 6); tri(0, 6, 4);  // zl = -b face (one side edge)
+    tri(1, 5, 7); tri(1, 7, 3);  // zl = +b face (other side edge)
+  };
+  const positions: number[] = [];
+  pushBlade(positions, A);
+  pushBlade(positions, B);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Build a unit-sized geometry for a given habit token, oriented so
 // its long axis (= c-axis) lies along +Y. The instance transform
 // later places the base at the wall and scales by c_length / a_width.
@@ -1044,6 +1141,12 @@ function _buildHabitGeom(token: string): any {
       // body diagonal. Dispatch is gated by _resolveCrystalGeomToken
       // on mineral='fluorite' + twinned=true + twin_law='penetration'.
       return _makeFluoritePenetrationTwin();
+    case 'selenite_swallowtail_twin':
+      // v134 (2026-05-22) — second iconic twin. Two tabular gypsum
+      // blades joined on {100} at the base, opening upward in a V
+      // (60° total). Dispatch gated on mineral='selenite' + twinned
+      // + twin_law='swallowtail'.
+      return _makeSeleniteSwallowtailTwin();
     case 'octahedron':
       return new THREE.OctahedronGeometry(0.55, 0);
     case 'snowball':
