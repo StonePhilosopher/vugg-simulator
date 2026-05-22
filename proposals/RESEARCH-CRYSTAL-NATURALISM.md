@@ -8,7 +8,7 @@
   4. Naturalistic epimorphs
   (Skeletal etching = graphic texture, not geometry)
 
-**Status:** Homework / research synthesis. No code change. Companion proposal `PROPOSAL-CRYSTAL-HABIT.md` (the Rockbot draft) is reframed here against the actual codebase state.
+**Status:** Homework / research synthesis. Drafted as no-code; 2026-05-22 session subsequently shipped §7 items 1–5 (commits `f125c13` / `3bd4472` / `a7dc360` / `b573915` / `57a9108`) plus a handoff doc (`e905eaa`). See `proposals/HANDOFF-CRYSTAL-NATURALISM-ARC.md` for what's done, what's queued, and how to pick up. Companion proposal `PROPOSAL-CRYSTAL-HABIT.md` (the Rockbot draft) is reframed here against the actual codebase state.
 
 **Reading order:** §1 (gap summary, two pages) → §3 (positioning physics) → §4 (cluster taxonomy) → §5 (per-mineral table) → §7 (proposed phasing). §2 documents what already exists and is the longest section; skim unless you're picking up implementation.
 
@@ -672,14 +672,21 @@ The boss's four-phase frame stays useful as the organizing principle. Below, eac
 
 If shipping one arc at a time, the highest naturalism-per-day order is:
 
-1. **Macro comb druzy sub-mode** (half-day) — adds a second parameter set to the existing `_druzyClusterCount` dispatch so vein-comb quartz, MVT comb calcite, and the banded vug-lining aesthetic from the field-photo correction all unlock without touching the renderer's drawing path. Highest Pareto ratio in this list. Reframes the "individual point in a forest of points" texture that currently collapses to either single primitive or micro-sparkle.
-2. **Iconic twins batch** (one session, ~10 entries) — single biggest visible jump after the comb mode
-3. **Hopper / skeletal texture** (half-day) — halite/sylvite/bismuth scenarios become diagnostic
-4. **Radiating-spray cluster mode** (~3 days) — stibnite/mesolite/scolecite/natrolite + marcasite cockscomb all unlock at once
-5. **Fluorite penetration twin** as a dedicated primitive (~half-day) — single-mineral but iconic
-6. Continue twin coverage by class (next 4–5 sessions)
-7. Other cluster modes (parallel-stack, dendritic, spherulitic, orbicular) interleaved with twin sessions
-8. Phase 1 variant enrichment and Phase 4 polish at any point — they don't block anything
+1. ✅ **Macro comb druzy sub-mode** — SHIPPED `f125c13` (2026-05-22). Wireframe cluster-spec port to parity with 99i. Adds the parameter regime that vein-comb quartz + MVT comb calcite + parallel-forest prismatic all needed; resolves the photo-correction case.
+2. ✅ **Iconic twins batch** — SHIPPED `3bd4472` (v133, SIM_VERSION 132→133, 2026-05-22). 7 twin_laws across 6 minerals: quartz Brazil + Japan (NEW), galena spinel-law (NEW), marcasite cockscomb (NEW), fluorite penetration / pyrite iron-cross / albite polysynthetic retuned to literature values. Drifted 29 of 30 scenarios; assertion updates in roughten-gill + calibration-assertions tests document the cascade.
+3. ✅ **Hopper / skeletal texture** — SHIPPED `a7dc360` (2026-05-22). New `_texture_hopper` function in 99a-renderer-textures.ts paints stepped right-angle notches on cell edges for the 6 hopper-variant minerals (halite/sylvite/galena/quartz/apophyllite/pyromorphite). Tanaka et al. 2018 cited.
+4. ✅ **Radiating-spray cluster mode (subset)** — SHIPPED `b573915` (2026-05-22). Re-routed 4 habits (radiating_spray / radiating_cluster / radiating_fibrous / plumose_rosette) from PRIM_BOTRYOIDAL to PRIM_ACICULAR so they get the spike cluster pattern (8 satellite needles around parent). Stibnite + bismuthinite + erythrite plumose now render as fans instead of domes.
+   - DEFERRED to a follow-up commit: the full radiating-spray mode (tiltMax plumbing through `_renderWireframeInstance` + 'fan' pattern with single-anchor satellites + per-pattern satellite primitive override).
+5. ✅ **Fluorite penetration twin as dedicated primitive** — SHIPPED `57a9108` (2026-05-22). `PRIM_FLUORITE_PENETRATION_TWIN` (two interpenetrating cubes rotated 60° around their shared body diagonal). Dispatched via `_lookupCrystalPrimitive` when crystal.mineral === 'fluorite' && crystal.twinned && crystal.twin_law === 'penetration'. Dispatch precedence: twin override → air-mode dripstone → canonical. **Wireframe only — Three.js parity (5b) is the next half-day task.**
+6. ⏳ **Three.js parity for fluorite twin** (5b) — half-day. `_buildFluoriteTwinGeom` BufferGeometry builder + dispatch via `_resolveCrystalGeomToken` in 99i. See `HANDOFF-CRYSTAL-NATURALISM-ARC.md` for the 9-step playbook.
+7. ⏳ **More iconic twin primitives** — half-day each, same pattern as #5. In rough impact order: gypsum swallowtail (selenite, fires in many scenarios), marcasite cockscomb ({110} repeated, v133 set p=0.55), cerussite cyclic_sixling (snowflake-trilling habit, existing p=0.4), pyrite iron-cross ({110}, v133 retuned to p=0.07), galena spinel-law ({111} contact, v133 added at p=0.10), aragonite cyclic_sextet (pseudo-hex, existing p=0.4). Six twins, can batch 2-3 per session.
+8. ⏳ **True 'fan' cluster mode** — 1 day. Plumb `tiltMax` through `_renderWireframeInstance`, add 'fan' pattern with shared-anchor satellites. Completes the radiating-spray work from #4.
+9. ⏳ **Dendritic branching cluster mode** — 1-2 days. Native silver/copper tree-like geometry. Fractal-branch primitive.
+10. ⏳ **Orbicular / banded shell rendering** — medium-large. Surface `Crystal.zones[]` in main scene as concentric shells. Port from `98d-ui-zone-shape.ts`.
+11. ⏳ **Per-class twin data coverage** — 4-6 sessions, ~15-25 mineral spec entries per session. Silicate 25, sulfide 22, phosphate 13, arsenate 12, sulfate 9, others 28. Each batch drifts baselines, needs SIM_VERSION bump.
+12. ⏳ **Phase 1 variant enrichment** — small, non-blocking. 10 minerals with ≤2 habit_variants[].
+
+See `proposals/HANDOFF-CRYSTAL-NATURALISM-ARC.md` for the full pickup playbook, gotchas encountered during items 1-5, and a seam map of every file the next agent will touch.
 
 ---
 
