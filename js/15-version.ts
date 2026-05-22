@@ -6504,5 +6504,52 @@
 //          in the commit message; calibration sweep auto-loads v130.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 130;
+//
+//   v131  — OPAL σ_CRIT LITERATURE CALIBRATION (2026-05-21)
+//
+//          First v128+-era modifier calibration commit. Single-mineral
+//          scope: MINERAL_GATES_opal.sigma_crit = 0.8 (was 1.0).
+//
+//          BACKGROUND
+//          v127 engine-gates refactor exposed σ_crit as a per-mineral
+//          constant for the first time. The opal engine had been
+//          using σ_crit = 1.0 since v101 — but Iler 1979 documents
+//          heterogeneous σ_crit for amorphous silica at 0.5-1.0
+//          (highly substrate-dependent). The midpoint 0.8 is the
+//          literature-grounded value. v127 set the gate to 1.0
+//          (engine-matched) explicitly to preserve byte-identical
+//          baselines and flagged this as a v129 calibration target.
+//
+//          THE FIX (one line)
+//          js/39-supersat-silicate.ts MINERAL_GATES_opal.sigma_crit: 1.0 → 0.8
+//
+//          The nucleation file (js/89-nucleation-silicate.ts) reads
+//          this value via `MINERAL_GATES_opal.sigma_crit` — no other
+//          source changes needed.
+//
+//          WHAT TO EXPECT
+//          Opal is a low-γ mineraloid (surface_energy: 'very_low' = +2
+//          initiative bonus already) that fires in 6 scenarios under
+//          v130. The σ_crit lowering means opal can nucleate at lower
+//          supersaturation — should fire more often in SiO2-rich
+//          broths (geyser sinter, supergene oxidation, naica-like).
+//          Under graduated competition, the extra firings compete for
+//          the SiO2 pool with quartz / albite / feldspar / chrysoprase
+//          / chalcedony etc., so the impact is bounded by per-cation
+//          rationing rather than free expansion.
+//
+//          v131 baseline regenerated. Drift documented in commit
+//          message. The v127-v131 arc closes the engine-gates
+//          refactor's "surfaced calibration targets" by acting on
+//          the one explicit target it produced.
+//
+//          NEXT calibration targets (deferred)
+//            - T_optimal for top 50 minerals from corrected ΔH° table
+//            - Power-law k + gap threshold (currently k=2, gap=3 per
+//              proposal §3.1.1 initial estimate)
+//            - Per-scenario competition mode (if any scenario needs
+//              softening beyond the default)
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 131;
 

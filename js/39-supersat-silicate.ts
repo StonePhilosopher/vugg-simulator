@@ -146,13 +146,13 @@ const MINERAL_GATES_topaz: MineralGates = {
 };
 
 const MINERAL_GATES_opal: MineralGates = {
-  sigma_crit: 1.0,                          // engine-matched; literature suggests 0.5-1.0 (Iler 1979) — v129 calibration target
+  sigma_crit: 0.8,                          // v131 (2026-05-21): literature value per Iler 1979 — heterogeneous σ_crit range 0.5-1.0, midpoint 0.8. Was 1.0 (v101 engine-matched calibration); v127 engine-gates refactor surfaced the engine/literature mismatch as a v129 calibration target.
   T_min: 5, T_max: 100, T_optimal: 40,
   fluid_min: { SiO2: 200 },
   pH_min: 6.5, pH_max: 10.0,
   surface_energy: 'very_low',
   _sources: ['opal engine v101+', 'Jones & Segnit 1971', 'Iler 1979', 'Fournier 1977 Geothermics 5:41'],
-  _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). ΔH° corrected to +14 kJ/mol (v127 science fix). Geyser sinter at 30-85°C optimum. NOTE: engine σ_crit = 1.0 matches v101 calibration; literature heterogeneous σ_crit is 0.5-1.0 per Iler 1979 — flagged as v129 calibration target.',
+  _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). ΔH° corrected to +14 kJ/mol (v127 science fix). Geyser sinter at 30-85°C optimum. σ_crit set to 0.8 per Iler 1979 heterogeneous nucleation midpoint (v131 calibration); was 1.0 v101-v130 (engine-matched, pre-literature-grounding).',
 };
 
 const MINERAL_GATES_coffinite: MineralGates = {
