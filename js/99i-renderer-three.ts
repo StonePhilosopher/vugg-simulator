@@ -492,6 +492,19 @@ function _habitGeomToken(habit: string): string {
   // is fibrous selenite, gets the same treatment.
   if (h.includes('acicular') || h.includes('capillary') || h.includes('fibrous') || h.includes('satin')) return 'spike';
   if (h.includes('dendritic') || h.includes('arborescent')) return 'spike';
+  // v134 (2026-05-22): radiating / plumose needle-fan habits route to
+  // spike (matching js/99c HABIT_TO_PRIMITIVE re-routing + js/99d fuzzy
+  // fallback). 'radiating_blade' is caught by the 'blade' tabular check
+  // above. 'radiating_columnar' should stay as prism (forest of columns
+  // radiating from a base — hemimorphite signature). Everything else
+  // 'radiating' / 'plumose' is a needle-fan: radiating_spray (stibnite),
+  // radiating_cluster (bismuthinite), radiating_fibrous (erythrite),
+  // plumose_rosette (erythrite plumose).
+  if (h.includes('plumose')) return 'spike';
+  if (h.includes('radiating')) {
+    if (h.includes('columnar')) return 'prism';
+    return 'spike';
+  }
   if (h === 'prismatic' || h === 'columnar' || h === 'bladed') return 'prism';
   return 'prism';  // sensible default — most cavity habits are vaguely prismatic
 }

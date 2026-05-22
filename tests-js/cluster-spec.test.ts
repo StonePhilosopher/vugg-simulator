@@ -228,6 +228,54 @@ describe('cluster-spec — size thresholds and edge cases', () => {
   });
 });
 
+describe('cluster-spec — radiating habits re-routed to spike (v134, 2026-05-22)', () => {
+  // v134 re-routed 4 explicit HABIT_TO_PRIMITIVE entries from
+  // PRIM_BOTRYOIDAL (single dome, no cluster) to PRIM_ACICULAR (slim
+  // needle + spike cluster pattern). The textures system already
+  // classified these as 'acicular'; now the primitive matches.
+  // Effect: each of these habits now spawns 8 acicular satellites
+  // around the parent anchor with tight spread (radiusMul=0.55,
+  // alpha=1.0, sizes 0.35-0.75 of parent), matching the visual of a
+  // needle-fan aggregate (stibnite, bismuthinite, erythrite plumose).
+
+  it('radiating_spray → spike pattern (stibnite signature)', () => {
+    const spec = _druzyClusterSpec(mkCrystal({ habit: 'radiating_spray', c_length_mm: 5 }));
+    expect(spec.count).toBe(8);
+    expect(spec.radiusMul).toBeCloseTo(0.55);  // tight fan, not wide carpet
+    expect(spec.alpha).toBeCloseTo(1.0);
+  });
+
+  it('radiating_cluster → spike pattern (bismuthinite)', () => {
+    const spec = _druzyClusterSpec(mkCrystal({ habit: 'radiating_cluster', c_length_mm: 5 }));
+    expect(spec.count).toBe(8);
+  });
+
+  it('radiating_fibrous → spike pattern (erythrite on cobaltite)', () => {
+    const spec = _druzyClusterSpec(mkCrystal({ habit: 'radiating_fibrous', c_length_mm: 5 }));
+    expect(spec.count).toBe(8);
+  });
+
+  it('plumose_rosette → spike pattern (erythrite plumose)', () => {
+    const spec = _druzyClusterSpec(mkCrystal({ habit: 'plumose_rosette', c_length_mm: 5 }));
+    expect(spec.count).toBe(8);
+  });
+
+  it('radiating_blade stays tablet (bladed = thin plates, not needles)', () => {
+    // Explicit table mapping is PRIM_TABULAR; tablet cluster pattern
+    // has evenAngles:true for rosette signature.
+    const spec = _druzyClusterSpec(mkCrystal({ habit: 'radiating_blade', c_length_mm: 5 }));
+    expect(spec.count).toBe(7);
+    expect(spec.evenAngles).toBe(true);  // tablet rosette
+  });
+
+  it('rosette_radiating stays botryoidal (dome-shaped rosette, e.g. chalcedony)', () => {
+    // Explicit table mapping is PRIM_BOTRYOIDAL. The dome silhouette
+    // is correct for fibrous radial domes (chalcedony, smithsonite).
+    const spec = _druzyClusterSpec(mkCrystal({ habit: 'rosette_radiating', c_length_mm: 5 }));
+    expect(spec.count).toBe(0);  // botryoidal — single multi-bubble primitive
+  });
+});
+
 describe('cluster-spec — habit string keywords that trigger drusy paths take priority over primitives', () => {
   it('druzy_quartz beats prism pattern (legacy explicit habit wins)', () => {
     // 'druzy_quartz' contains 'druz' (z-spelling), so the legacy

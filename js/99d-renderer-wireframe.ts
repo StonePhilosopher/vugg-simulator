@@ -65,9 +65,18 @@ function _canonicalPrimitive(crystal) {
       || h.includes('plate') || h.includes('plates')
       || h.includes('micaceous') || h.includes('specular')
       || h.includes('bladed') || h.includes('blade'))       return PRIM_TABULAR;
+  // v134 (2026-05-22): 'plumose' and 'radiating' moved here from the
+  // PRIM_BOTRYOIDAL fuzzy branch so radiating-needle habits get the
+  // acicular silhouette + spike cluster pattern. Specific habit strings
+  // like 'radiating_blade' (-> PRIM_TABULAR) and 'rosette_radiating'
+  // (-> PRIM_BOTRYOIDAL) remain in HABIT_TO_PRIMITIVE explicit table
+  // and dispatch BEFORE this fuzzy fallback, so the fan-shaped rosettes
+  // and bladed radiations keep their existing primitives. Fuzzy
+  // 'radiating' + 'plumose' here catches the general needle-fan case.
   if (h.includes('acicular') || h.includes('needle')
       || h.includes('wire') || h.includes('capillary')
-      || h.includes('flos_ferri'))                          return PRIM_ACICULAR;
+      || h.includes('flos_ferri')
+      || h.includes('plumose') || h.includes('radiating'))  return PRIM_ACICULAR;
   if (h.includes('botryoidal') || h.includes('reniform')
       || h.includes('mammillary') || h.includes('massive')
       || h.includes('earthy') || h.includes('stalactit')
@@ -76,8 +85,7 @@ function _canonicalPrimitive(crystal) {
       || h.includes('globular') || h.includes('nodular')
       || h.includes('framboidal') || h.includes('granular')
       || h.includes('powdery') || h.includes('crust')
-      || h.includes('rosette') || h.includes('plumose')
-      || h.includes('radiating') || h.includes('iridescent')
+      || h.includes('rosette') || h.includes('iridescent')
       || h.includes('sublimation') || h.includes('coating')
       || h.includes('fibrous') || h.includes('nugget')
       || h.includes('silica_gel'))                          return PRIM_BOTRYOIDAL;

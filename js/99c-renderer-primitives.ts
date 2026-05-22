@@ -500,13 +500,22 @@ const HABIT_TO_PRIMITIVE = {
   'hemimorphic_crystal':            PRIM_HEX_PRISM_TERMINATED,
   'platy_massive':                  PRIM_TABULAR,
   'micaceous_book':                 PRIM_TABULAR,    // mica = stacked sheets
-  'rosette_radiating':              PRIM_BOTRYOIDAL,
+  'rosette_radiating':              PRIM_BOTRYOIDAL,  // dome-shaped rosette stays dome — chalcedony / smithsonite style
   'rosette_bladed':                 PRIM_TABULAR,    // bladed rosette = thin plates
-  'plumose_rosette':                PRIM_BOTRYOIDAL,
-  'radiating_blade':                PRIM_TABULAR,
-  'radiating_cluster':              PRIM_BOTRYOIDAL,
-  'radiating_fibrous':              PRIM_BOTRYOIDAL,
-  'radiating_spray':                PRIM_BOTRYOIDAL,
+  // v134 (2026-05-22): plumose/radiating-needle habits re-routed from
+  // PRIM_BOTRYOIDAL (single dome, no cluster) to PRIM_ACICULAR (slim
+  // needle silhouette + spike cluster pattern from v132's cluster-spec
+  // port — produces 8 acicular satellites fanning around the parent
+  // anchor at radiusMul=0.55, alpha=1.0, sizeMin/Max=0.35/0.75). The
+  // texture system already classified these as 'acicular' (per
+  // 99a.HABIT_TO_TEXTURE); the primitive side now matches. Visible
+  // effect: stibnite radiating_spray + bismuthinite radiating_cluster
+  // + erythrite plumose_rosette render as needle-fans, not domes.
+  'plumose_rosette':                PRIM_ACICULAR,
+  'radiating_blade':                PRIM_TABULAR,    // bladed = thin plates stay tablet
+  'radiating_cluster':              PRIM_ACICULAR,
+  'radiating_fibrous':              PRIM_ACICULAR,
+  'radiating_spray':                PRIM_ACICULAR,
   'globular':                       PRIM_BOTRYOIDAL,
   'nodular':                        PRIM_BOTRYOIDAL,
   'framboidal':                     PRIM_BOTRYOIDAL, // raspberry-like clusters
