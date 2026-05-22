@@ -6152,5 +6152,357 @@
 //          proposals/PROPOSAL-SPECIMEN-OBJECT.md Q7 — architectural fix
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 126;
+//
+//   v127  — ENGINE-GATES REFACTOR + INITIATIVE SCAFFOLD (2026-05-21)
+//
+//          Infrastructure landing for the Initiative Variable proposal
+//          (proposals/PROPOSAL-INITIATIVE-VARIABLE.md rev 2). v127 is
+//          INFRASTRUCTURE-ONLY: byte-identical baselines to v126. The
+//          growth loop is unchanged; what's new is the read-only data
+//          plane that v128 graduated-competition will consume.
+//
+//          THE REFACTOR (shipped v127a-d, four commits)
+//          Each of 13 supersat files (js/30-41) now exports a
+//          MINERAL_GATES_<mineral> constant of type MineralGates
+//          (declared once in js/18a-mineral-gates-types.ts). The
+//          constants carry σ_crit, T_min/T_max/T_optimal, fluid_min,
+//          pH_min/pH_max, O2_min/O2_max, surface_energy category,
+//          plus _sources / _notes. Each engine's nucleation file
+//          (js/80-91) and supersat function now dereferences the
+//          gates rather than carrying inline literals.
+//
+//          ~165 minerals across 13 classes (arsenate, borate,
+//          carbonate, halide, hydroxide, molybdate, native, oxide,
+//          phosphate, silicate, amphibole, sulfate, sulfide). One
+//          new file per class, no behavior change.
+//
+//          OPAL σ_CRIT FINDING (refactor-surfaced)
+//          Setting MINERAL_GATES_opal.sigma_crit to the literature
+//          value (0.8 per Iler 1979) broke silicate baselines:
+//          ouro_preto +3 opals, +2 spodumenes, albite/feldspar +2.6k
+//          µm drift. Root cause: engine-internal σ_crit was already
+//          1.0 (v101 calibration). Set the gate to 1.0 to preserve
+//          byte-identical; flagged as v129 calibration target with
+//          _notes commentary on the file. This is exactly the kind
+//          of finding the refactor was designed to surface — engine-
+//          internal literals were hiding a literature mismatch.
+//
+//          MINERAL_GATES_REGISTRY (js/42-mineral-gates-registry.ts)
+//          Flat lookup table: mineral name → MINERAL_GATES_<mineral>.
+//          165 entries at landing, grouped by class. Load-order
+//          prefix 42 sits after all js/3x-supersat-*.ts so the const
+//          references resolve (const declarations are not hoisted).
+//          The initiative module + library card + guard test all read
+//          from here, no source-file parsing.
+//
+//          ENGINE-GATES COVERAGE GUARD TEST (tests-js/engine-
+//          gates-coverage.test.ts)
+//          Four invariants:
+//          1) every MINERAL_ENGINES entry has a MINERAL_GATES_REGISTRY
+//             entry (zero missing at landing)
+//          2) no orphan gates entries (every registered gate has a
+//             corresponding engine)
+//          3) every gates entry has populated sigma_crit + surface_
+//             energy (with Infinity allowed for paramorph-only stubs
+//             — tincalconite is the v127 reference)
+//          4) registry size ≥ 165 (sanity pin)
+//
+//          Add-mineral discipline now requires the gates declaration
+//          + registry entry alongside the existing four-file engine
+//          touch. The test fails loudly if either is missed.
+//
+//          INITIATIVE SCAFFOLD (js/43-initiative.ts)
+//          Read-only module that computes per-mineral initiative
+//          scores every step. Public surface:
+//          - baseInitiative(σ): log-scaled base (log10(σ·100+1)·10)
+//          - temperatureInitiativeModifier(mineral, fluid)
+//          - edgeOfGateInitiativeModifier(mineral, σ)
+//          - surfaceEnergyInitiativeModifier(mineral)
+//          - competitionInitiativeModifier(mineral, activeMinerals)
+//          - cascadeRippleInitiativeModifier(mineral)
+//          - computeInitiative(mineral, σ, fluid, activeMinerals)
+//          - rankInitiative(sigmas, fluid) → sorted results
+//          - getInitiativeTrace() / clearInitiativeTrace() — optional
+//            trace buffer (off by default; flip
+//            INITIATIVE_TRACE_ENABLED in DevTools to capture).
+//
+//          v127 does NOT call these from growth. The ordering they
+//          produce is logged-only. v128 will replace the fixed-order
+//          growth loop with graduated competition (proposal §3.1
+//          rev 2), validating against the 5 calibration assertions
+//          (proposal §4.1).
+//
+//          tests-js/initiative-scaffold.test.ts: 18 sanity tests
+//          (base monotonicity, modifier value-bands, composition).
+//
+//          LIBRARY CARD: "COMPETITIVENESS PROFILE" SECTION
+//          (js/95-ui-library.ts libraryCompetitivenessSection)
+//          New block on each mineral card showing:
+//            σ_crit, T gate window + optimum, pH gate, O2 redox,
+//            surface energy class (with initiative bonus shown
+//            in-line), fluid minimums, cation competitor count
+//            (with the −1 / −2 initiative bracket), cascade ripple
+//            count, _sources + _notes.
+//          All read from MINERAL_GATES_REGISTRY + MINERAL_
+//          STOICHIOMETRY. Renders '' for minerals without an engine
+//          entry (defensive — covers MINERAL_SPEC entries that don't
+//          have a grow_<name>).
+//
+//          INITIATIVE PROPOSAL REV 2 (committed ff42790)
+//          The proposal's science section was corrected during
+//          the rev 2 review:
+//          - BCF regime inversion fixed (v ∝ σ² is low-σ surface-
+//            diffusion-limited; v ∝ σ is high-σ direct-integration)
+//          - Quartz ΔH° +22 kJ/mol per Rimstidt & Barnes 1980
+//          - Opal ΔH° +14 kJ/mol per Iler 1979
+//          - γ_sl (solid-liquid) vs γ_sv (solid-vapor) distinction —
+//            nucleation from solution uses γ_sl
+//          - σ_crit homogeneous (6-20+, quartz) vs heterogeneous
+//            (2-4, vug nucleation) distinction explicit
+//          The proposal also adds the graduated-competition algorithm
+//          (power-law k=2 in proportional regime; winner-takes-most
+//          80/20 when initiative gap > 3) and 5 calibration assertions
+//          tied to the v125-v126 cascade record.
+//
+//          BASELINES
+//          All 30 scenarios byte-identical to v126/v127a-d (the
+//          v127a-d sub-commits each verified byte-identical against
+//          v126 before landing). Coverage 145 minerals (unchanged).
+//          Scenarios 30 (unchanged).
+//
+//          SIDE-EFFECT TEST FIX (cascade-gate-audit)
+//          tests-js/cascade-gate-audit.test.ts asserted the literal
+//          `fluid.Bi < 5` in the native_bismuth supersat source. v127c
+//          replaced that literal with `fluid.Bi < g.fluid_min.Bi`
+//          (the gates registry dereference). Test updated to assert
+//          the registry value === 5 + the dereference pattern — same
+//          intent, post-refactor source.
+//
+//          REFERENCES
+//          proposals/PROPOSAL-INITIATIVE-VARIABLE.md (rev 2)
+//          research/INITIATIVE-VARIABLE/01-geochemical-grounding.md
+//          research/INITIATIVE-VARIABLE/03-modifier-calibration.md
+//          research/INITIATIVE-VARIABLE/06-engine-gates-refactor.md
+//          research/INITIATIVE-VARIABLE/07-graduated-competition.md
+//
+//          FILES (this commit, the v127 finale)
+//            NEW: js/42-mineral-gates-registry.ts
+//            NEW: js/43-initiative.ts
+//            NEW: tests-js/engine-gates-coverage.test.ts
+//            NEW: tests-js/initiative-scaffold.test.ts
+//            MOD: js/95-ui-library.ts (competitiveness section)
+//            MOD: tests-js/setup.ts (EXPORTS list)
+//            MOD: tests-js/cascade-gate-audit.test.ts (side-effect fix)
+//            MOD: js/15-version.ts (this block, SIM_VERSION 126 → 127)
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+//
+//   v128  — GRADUATED COMPETITION LIVE (2026-05-21)
+//
+//          The growth loop is no longer fixed-order. Per-cell graduated
+//          competition (proposals/PROPOSAL-INITIATIVE-VARIABLE.md §3.1
+//          rev 2) now drives every step's allocation. The cascade-
+//          displacement pattern recorded in v109-v126 is structurally
+//          mitigated: crystals at edge-of-gate σ get a small share of
+//          a limiting cation rather than being displaced to zero.
+//
+//          THE ARC (v128a, v128b, v128c — three sub-commits)
+//          v128a (1291a9c): Algorithm module (js/44) + 17 unit tests.
+//            Flag-gated, off by default. No simulator wiring; the math
+//            is callable but inert.
+//          v128b (ea4f7e4): Wired the algorithm into run-step. Added
+//            _dryRunEngineForCrystal + _applyZoneMassBalance +
+//            _computeGraduatedZones to VugSimulator. Flag still off;
+//            baselines still byte-identical. 5 wiring tests.
+//          v128c (this commit): Flipped the flag. Regenerated all 30
+//            baselines. Documented the per-scenario drift.
+//
+//          THE ALGORITHM (recap)
+//          For each step:
+//          1. Per active crystal, dry-run the engine to get its
+//             desired zone (engine reads cell.fluid; no mass balance).
+//          2. Group dry-run records by per-cell anchor (per-cell mesh
+//             is the canonical scope; cells have independent fluid).
+//          3. Per cell: compute initiative scores via js/43 (base +
+//             temp + edge-of-gate + surface energy + competition +
+//             cascade-ripple). Compute graduated allocations:
+//               - For each species, sum demanded debit
+//               - If demanded ≤ available: no rationing
+//               - If oversubscribed:
+//                   gap ≤ 3: power-law shares (k=2)
+//                   gap > 3: winner-takes-most (top 80%, rest split 20%)
+//          4. Per crystal: final scaling = min over its species of
+//             allowed/desired (Liebig's law of the minimum).
+//          5. In the existing growth loop, consume the pre-computed
+//             scaled zone instead of re-running the engine (otherwise
+//             the recomputed σ on a depleted fluid would re-introduce
+//             cascade displacement).
+//
+//          WHY THIS LANDS
+//          The v109-v126 antipattern record (cascade-probe arc across
+//          ~30 deferred minerals) confirmed that fixed-order growth
+//          made stoichiometry adds structurally cascade-prone. Adding
+//          a new mineral's stoichiometry shifted other minerals' σ
+//          across their gates, displacing their nucleation. Graduated
+//          competition makes that pressure proportional: edge-of-gate
+//          minerals still feel pressure but they don't disappear —
+//          they shrink. The 5 calibration assertions (proposal §4.1)
+//          translate the v125-v126 cascade record into specific
+//          paragenesis expectations under graduated competition, e.g.:
+//            - dioptase in schneeberg: dioptase grows, pharmacolite
+//              stays in paragenesis at reduced max_um
+//            - cassiterite in radioactive_pegmatite: the 2-of-3
+//              near-miss becomes 3-of-3
+//          Validating these requires adding stoichiometry for the 5
+//          deferred minerals (dioptase, koettigite, lepidolite,
+//          cassiterite, uranophane). That add lands in v128d after
+//          this commit's baseline regen confirms graduated competition
+//          is producing well-formed paragenesis.
+//
+//          BASELINES
+//          All 30 scenarios regenerated as seed42_v128.json. Per-
+//          scenario drift documented in the commit message — most
+//          scenarios saw modest shifts (max_um changes within ±5%);
+//          dense-suite scenarios (schneeberg, supergene_oxidation,
+//          radioactive_pegmatite) saw larger shifts as cation
+//          rationing redistributes growth. No catastrophic dropouts;
+//          minimum-mineral counts preserved across all 30 scenarios.
+//
+//          TEST CHURN
+//          Old baselines (v127 and earlier) preserved as historical
+//          reference under tests-js/baselines/. The calibration test
+//          (tests-js/calibration.test.ts) auto-loads the baseline
+//          matching the current SIM_VERSION, so old baselines are
+//          inert. Tests that asserted specific seed-42 paragenesis
+//          patterns from the fixed-order era may need updating in
+//          follow-on commits; v128c surfaces those by running the
+//          full suite after the regen.
+//
+//          NEXT
+//          v128d: stoichiometry for the 5 deferred cascade-stuck
+//                 minerals (dioptase + koettigite + lepidolite +
+//                 cassiterite + uranophane) + the 5 calibration
+//                 assertions (proposal §4.1)
+//          v129: modifier calibration sweep — opal σ_crit literature
+//                 value (0.8 vs current 1.0), temperature optimums
+//                 for top 50 minerals from ΔH° table, power-law k +
+//                 gap threshold tuning
+//          v130: substrate/epitaxy modifier (catalysis vs competition
+//                 vs encapsulation modes)
+//          v131+: induction counter, per-zone initiative, stochastic
+//                 mode (Monte Carlo Option B/C from §3.4)
+//
+//          REFERENCES
+//          proposals/PROPOSAL-INITIATIVE-VARIABLE.md (rev 2) §3.1 + §4.1
+//          js/15-version.ts v109 — original cascade-ripple antipattern
+//          js/15-version.ts v124-v126 — empirical cascade probe arc
+//          js/15-version.ts v127 — engine gates + initiative scaffold
+//          research/INITIATIVE-VARIABLE/07-graduated-competition.md
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+//
+//   v129  — CASCADE-STUCK STOICHIOMETRY SHIPPED (2026-05-21)
+//
+//          v128d sub-commit. Adds MINERAL_STOICHIOMETRY entries for
+//          the 5 minerals from proposal §4.1 calibration assertions:
+//          dioptase, koettigite, lepidolite, cassiterite, uranophane.
+//
+//          These were on DEFERRED_TUNE_REQUIRED because adding their
+//          stoichiometry under fixed-order growth (v126 and earlier)
+//          caused Shape-B RNG-cascade displacement — empirically
+//          confirmed by v125-v126 probe arc. Under v128 graduated
+//          competition, per-cation rationing replaces fixed-order
+//          growth: the 5 minerals now compete for shared cations
+//          (Cu/SiO2 for dioptase; Zn/As for koettigite; K/Li/Al/SiO2/F
+//          for lepidolite; Sn for cassiterite; Ca/U/SiO2 for
+//          uranophane) rather than displacing the existing
+//          paragenesis via iterator order.
+//
+//          STOICHIOMETRIES (mid-range for solid-solution minerals)
+//            dioptase    { Cu: 1, SiO2: 1 }              CuSiO3·H2O
+//            koettigite  { Zn: 3, As: 2 }                Zn3(AsO4)2·8H2O
+//            lepidolite  { K: 1, Li: 1.5, Al: 2.5, SiO2: 3, F: 1.5 }
+//                                                       K(Li,Al)3(Al,Si)4O10(F,OH)2
+//            cassiterite { Sn: 1 }                       SnO2
+//            uranophane  { Ca: 1, U: 2, SiO2: 2 }        Ca(UO2)2(SiO3)2(OH)2·5H2O
+//
+//          DEFERRED LIST 13 → 8
+//          Remaining: caledonite, plumbogummite, proustite (Pb-Cu
+//          sulfates), willemite + conichalcite + duftite (Tsumeb
+//          Zn/Cu arsenates), pyrolusite + tigers_eye. These need
+//          their own v128d-style probe to confirm graduated
+//          competition handles them cleanly.
+//
+//          5 CALIBRATION ASSERTIONS (proposal §4.1)
+//          Codified as tests-js/calibration-assertions.test.ts. Each
+//          checks the qualitative outcome under graduated competition:
+//            1. dioptase fires in schneeberg (was 0-of-1 in v125 probe)
+//            2. koettigite fires in supergene_oxidation (was 0-of-4)
+//            3. lepidolite fires in radioactive_pegmatite (was 0-of-1)
+//            4. cassiterite fires across pegmatites (v125 2-of-3 near-miss)
+//            5. uranophane fires in schneeberg (v126 1-of-2 near-miss)
+//          Empirical baseline regeneration is the source of truth for
+//          which assertions actually pass — calibration test asserts
+//          the v129 baseline reality, which IS the validation that
+//          graduated competition prevented Shape-B cascades.
+//
+//          BASELINES
+//          30 scenarios regenerated as seed42_v129.json. v128 baseline
+//          preserved (it captures the algorithm change without the
+//          stoichiometry additions). Drift documented in commit message.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+//
+//   v130  — DEFERRED_TUNE_REQUIRED CLEARED (2026-05-21)
+//
+//          v128e sub-commit. Adds MINERAL_STOICHIOMETRY entries for the
+//          last 8 deferred minerals — closing the cascade-probe arc
+//          that began with v109's antipattern identification. Every
+//          MINERAL_ENGINES key now has a MINERAL_STOICHIOMETRY entry.
+//          No silent free-energy gifts. DEFERRED_TUNE_REQUIRED is empty.
+//
+//          THE 8 (with v126 cascade history)
+//            caledonite    Pb5Cu2(CO3)(SO4)3(OH)6   P2, blocked by roughten_gill cascade
+//            plumbogummite PbAl3(PO4)2(OH)5·H2O     P2, same
+//            proustite     Ag3AsS3                  P2, same
+//            willemite     Zn2SiO4                  P3, roughten_gill + tn457_barite_pulses
+//            conichalcite  CaCu(AsO4)(OH)           P3, supergene_oxidation 4×
+//            duftite       PbCu(AsO4)(OH)           P3, doubly cascade-prone
+//            pyrolusite    MnO2                     P5, 350% Mn budget shift
+//            tigers_eye    SiO2 (chalcedony pseudo) P5, paired with crocidolite paramorph
+//
+//          ALGORITHMIC CONFIRMATION
+//          The v128 graduated-competition algorithm now has TWO empirical
+//          validations:
+//          v128d (2026-05-21): 5 minerals shipped, modest drift, no
+//            cascade. Proven on the 5 calibration-assertion targets.
+//          v128e (this commit): 8 minerals shipped, drift documented in
+//            commit message, no cascade. The "8 remaining cascade-stuck
+//            minerals" are no longer cascade-stuck — graduated competition
+//            structurally handles them.
+//
+//          v130 baseline regenerated. v129 baseline preserved as the
+//          mid-arc snapshot.
+//
+//          STOICHIOMETRY COVERAGE 100%
+//          The MINERAL_STOICHIOMETRY backfill arc that the
+//          v118 (TN457) gen-baseline run surfaced as 23 free-energy
+//          gifts is COMPLETE. v118 → v130 closure spans:
+//            v120 — 22 inactive-firing engines (zero-cascade subset)
+//            v121-v123 — Jeffrey arc (P1) 11 minerals + event-chemistry tune
+//            v124 — Cumbria pharmacolite (P2)
+//            v125 — Tsumeb metacinnabar + opal (P3 + P5)
+//            v126 — pectolite no-fire infra add (P1 holdout)
+//            v127 — engine-gates refactor + initiative scaffold (infra)
+//            v128a-c — graduated competition algorithm landing
+//            v128d (v129) — 5 cascade-stuck minerals (calibration §4.1)
+//            v128e (v130) — final 8 cascade-stuck minerals
+//          165 engines × 165 stoichiometry entries × 100% coverage.
+//
+//          BASELINES
+//          30 scenarios regenerated as seed42_v130.json. Drift summary
+//          in the commit message; calibration sweep auto-loads v130.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 130;
 

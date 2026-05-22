@@ -209,6 +209,25 @@ class VugSimulator {
     }
 
     this.check_nucleation(vugFill);
+
+    // v128 graduated competition: pre-compute per-crystal scaled zones
+    // BEFORE the growth loop runs. The pre-computation does a dry-run
+    // pass through every active crystal's engine using the per-cell
+    // fluid SNAPSHOT, then rations against demand per species.
+    //
+    // When GRADUATED_COMPETITION_ENABLED is false (v128a/v128b ship
+    // state) this is a no-op — the growth loop runs the engine
+    // directly via _runEngineForCrystal, exactly as v127 did.
+    //
+    // When the flag flips on (v128c) the growth loop reads pre-computed
+    // zones from this._graduatedZones rather than re-calling the
+    // engine. The byte-identical guarantee depends on the flag being
+    // false here.
+    this._graduatedZones = null;
+    if (GRADUATED_COMPETITION_ENABLED) {
+      this._graduatedZones = this._computeGraduatedZones();
+    }
+
     let currentFill = vugFill; // Track fill dynamically during growth loop
     for (const crystal of this.crystals) {
       if (!crystal.active) continue;
@@ -258,7 +277,37 @@ class VugSimulator {
       }
       const engine = MINERAL_ENGINES[crystal.mineral];
       if (!engine) continue;
-      const zone = this._runEngineForCrystal(engine, crystal);
+      // v128 graduated competition: consume the pre-computed scaled zone
+      // when present, applying mass balance against the cell fluid that
+      // the dry-run originally read. Otherwise fall through to the
+      // single-pass engine call (v127 behavior).
+      //
+      // The graduated path skips the engine in pass 2 BECAUSE the
+      // engine would now see a fluid that's been mutated by prior
+      // crystals' rationed mass-balance debits — re-running it would
+      // re-introduce the cascade-displacement the algorithm is designed
+      // to prevent. Instead, we trust the dry-run zone (computed
+      // against a clean snapshot), scaled by the per-crystal allocation.
+      let zone: any;
+      if (this._graduatedZones && this._graduatedZones.has(crystal.crystal_id)) {
+        // The engine was already called once during pass 1 (dry-run).
+        // The stored zone may be null (engine returned nothing), zero
+        // (no growth), negative (dissolution — un-scaled), or positive
+        // (precipitation — already scaled by allocation factor).
+        // In all cases, DO NOT re-call the engine — that would
+        // double-consume RNG vs v127's once-per-crystal contract.
+        zone = this._graduatedZones.get(crystal.crystal_id);
+        if (zone && typeof zone.thickness_um === 'number' && zone.thickness_um !== 0) {
+          this._applyZoneMassBalance(crystal, zone);
+        }
+      } else {
+        // Crystal had no engine entry (skipped at the top of the loop)
+        // or wasn't in _graduatedZones (only happens when flag is off,
+        // because pass 1 enumerates every active crystal). The flag-off
+        // branch runs the engine exactly once via _runEngineForCrystal,
+        // matching v127 byte-identically.
+        zone = this._runEngineForCrystal(engine, crystal);
+      }
       if (zone) {
         // Proposal A — apply fill dampener to positive zone thickness
         // (growth). check_nucleation stashed this._fillDampener for the

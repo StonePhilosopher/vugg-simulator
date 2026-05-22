@@ -195,6 +195,35 @@ const EXPORTS = [
   'SIM_VERSION',
   'MINERAL_SPEC',
   'MINERAL_ENGINES',
+  'MINERAL_GATES_REGISTRY',  // v127 — per-mineral nucleation gates (sigma_crit, T/pH/O2/fluid_min, surface_energy)
+  // v127 initiative scaffold (read-only — does not affect growth in v127, lands in v128 graduated competition).
+  'baseInitiative',
+  'temperatureInitiativeModifier',
+  'edgeOfGateInitiativeModifier',
+  'surfaceEnergyInitiativeModifier',
+  'competitionInitiativeModifier',
+  'cascadeRippleInitiativeModifier',
+  'computeInitiative',
+  'rankInitiative',
+  'getInitiativeTrace',
+  'clearInitiativeTrace',
+  // v128 graduated-competition allocation (js/44).
+  'GRADUATED_COMPETITION_ENABLED',
+  'GRADUATED_GAP_THRESHOLD',
+  'GRADUATED_POWER_LAW_K',
+  'GRADUATED_WINNER_TAKES_FRAC',
+  // Setter functions for the closure-scoped tuning constants. Tests
+  // that need to flip the flag mid-run must call setGraduatedCompetitionEnabled(...)
+  // not assign to globalThis — the bundle's `let` bindings live inside
+  // the IIFE and globalThis writes don't reach them.
+  'setGraduatedCompetitionEnabled',
+  'setGraduatedGapThreshold',
+  'setGraduatedPowerLawK',
+  'setGraduatedWinnerTakesFrac',
+  'computeGraduatedAllocations',
+  'buildCrystalDryRun',
+  // MASS_BALANCE_SCALE is referenced by buildCrystalDryRun lookup.
+  'MASS_BALANCE_SCALE',
   'MINERAL_STOICHIOMETRY',
   'MINERAL_GAME_COLORS',
   'crystalColor',
