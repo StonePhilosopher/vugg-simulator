@@ -6452,5 +6452,57 @@
 //          stoichiometry additions). Drift documented in commit message.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 129;
+//
+//   v130  — DEFERRED_TUNE_REQUIRED CLEARED (2026-05-21)
+//
+//          v128e sub-commit. Adds MINERAL_STOICHIOMETRY entries for the
+//          last 8 deferred minerals — closing the cascade-probe arc
+//          that began with v109's antipattern identification. Every
+//          MINERAL_ENGINES key now has a MINERAL_STOICHIOMETRY entry.
+//          No silent free-energy gifts. DEFERRED_TUNE_REQUIRED is empty.
+//
+//          THE 8 (with v126 cascade history)
+//            caledonite    Pb5Cu2(CO3)(SO4)3(OH)6   P2, blocked by roughten_gill cascade
+//            plumbogummite PbAl3(PO4)2(OH)5·H2O     P2, same
+//            proustite     Ag3AsS3                  P2, same
+//            willemite     Zn2SiO4                  P3, roughten_gill + tn457_barite_pulses
+//            conichalcite  CaCu(AsO4)(OH)           P3, supergene_oxidation 4×
+//            duftite       PbCu(AsO4)(OH)           P3, doubly cascade-prone
+//            pyrolusite    MnO2                     P5, 350% Mn budget shift
+//            tigers_eye    SiO2 (chalcedony pseudo) P5, paired with crocidolite paramorph
+//
+//          ALGORITHMIC CONFIRMATION
+//          The v128 graduated-competition algorithm now has TWO empirical
+//          validations:
+//          v128d (2026-05-21): 5 minerals shipped, modest drift, no
+//            cascade. Proven on the 5 calibration-assertion targets.
+//          v128e (this commit): 8 minerals shipped, drift documented in
+//            commit message, no cascade. The "8 remaining cascade-stuck
+//            minerals" are no longer cascade-stuck — graduated competition
+//            structurally handles them.
+//
+//          v130 baseline regenerated. v129 baseline preserved as the
+//          mid-arc snapshot.
+//
+//          STOICHIOMETRY COVERAGE 100%
+//          The MINERAL_STOICHIOMETRY backfill arc that the
+//          v118 (TN457) gen-baseline run surfaced as 23 free-energy
+//          gifts is COMPLETE. v118 → v130 closure spans:
+//            v120 — 22 inactive-firing engines (zero-cascade subset)
+//            v121-v123 — Jeffrey arc (P1) 11 minerals + event-chemistry tune
+//            v124 — Cumbria pharmacolite (P2)
+//            v125 — Tsumeb metacinnabar + opal (P3 + P5)
+//            v126 — pectolite no-fire infra add (P1 holdout)
+//            v127 — engine-gates refactor + initiative scaffold (infra)
+//            v128a-c — graduated competition algorithm landing
+//            v128d (v129) — 5 cascade-stuck minerals (calibration §4.1)
+//            v128e (v130) — final 8 cascade-stuck minerals
+//          165 engines × 165 stoichiometry entries × 100% coverage.
+//
+//          BASELINES
+//          30 scenarios regenerated as seed42_v130.json. Drift summary
+//          in the commit message; calibration sweep auto-loads v130.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 130;
 

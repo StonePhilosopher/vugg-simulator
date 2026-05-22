@@ -317,6 +317,43 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   cassiterite:    { Sn: 1 },                         // SnO2 — Cornwall / Erzgebirge / Bolivia tin
   uranophane:     { Ca: 1, U: 2, SiO2: 2 },          // Ca(UO2)2(SiO3)2(OH)2·5H2O — yellow uranyl silicate
 
+  // ---- v128e final deferred-mineral sweep (2026-05-21) ----
+  // The 8 remaining cascade-stuck minerals from DEFERRED_TUNE_REQUIRED
+  // are shipped under the same v128 graduated-competition mechanism
+  // that landed v128d's first batch (dioptase, koettigite, lepidolite,
+  // cassiterite, uranophane). With per-cation rationing replacing
+  // fixed-order growth, none of the v109-v126 Shape-B cascade events
+  // should recur. v128e closes the cascade-probe arc — every engine
+  // now has a stoichiometry entry; DEFERRED_TUNE_REQUIRED is empty.
+  //
+  // Class breakdown of the 8:
+  //   - 3 sulfates with carbonate/Pb/Cu mix (caledonite + duftite + linarite-adjacent)
+  //   - 1 phosphate (plumbogummite)
+  //   - 1 sulfide (proustite, Ag-As)
+  //   - 2 silicates (willemite, tigers_eye)
+  //   - 1 oxide (pyrolusite)
+  //
+  // caledonite    Pb5Cu2(CO3)(SO4)3(OH)6 — Cumbria oxidation zone Pb-Cu sulfate-carbonate
+  // plumbogummite PbAl3(PO4)2(OH)5·H2O   — Cumbria type-locality Pb-Al phosphate
+  // proustite     Ag3AsS3                 — Ag-As sulfosalt (light ruby silver)
+  // willemite     Zn2SiO4                 — Franklin / Tsumeb fluorescent Zn-silicate
+  // conichalcite  CaCu(AsO4)(OH)          — Tsumeb Ca-Cu arsenate, paired with austinite
+  // duftite       PbCu(AsO4)(OH)          — Tsumeb Pb-Cu arsenate
+  // pyrolusite    MnO2                    — Mn supergene oxide
+  // tigers_eye    SiO2                    — chalcedony pseudomorph after crocidolite;
+  //                                         Fe + Na + Mg released by the dissolving
+  //                                         precursor, so the growth debit on tigers_eye
+  //                                         is SiO2-only (matches opal + chrysoprase
+  //                                         pattern for chalcedony-class entries).
+  caledonite:     { Pb: 5, Cu: 2, CO3: 1, S: 3 },     // Pb5Cu2(CO3)(SO4)3(OH)6
+  plumbogummite:  { Pb: 1, Al: 3, P: 2 },             // PbAl3(PO4)2(OH)5·H2O
+  proustite:      { Ag: 3, As: 1, S: 3 },             // Ag3AsS3 — light ruby silver
+  willemite:      { Zn: 2, SiO2: 1 },                 // Zn2SiO4
+  conichalcite:   { Ca: 1, Cu: 1, As: 1 },            // CaCu(AsO4)(OH)
+  duftite:        { Pb: 1, Cu: 1, As: 1 },            // PbCu(AsO4)(OH)
+  pyrolusite:     { Mn: 1 },                          // MnO2 — Mn supergene oxide
+  tigers_eye:     { SiO2: 1 },                        // SiO2 pseudomorph; Fe/Na/Mg from precursor
+
   // ---- v126 P1-holdout backfill (pectolite, no-fire pure-infra add) ----
   // pectolite is the one P1 Jeffrey-arc mineral that v123 deferred
   // because it doesn't reliably fire in any current baseline scenario

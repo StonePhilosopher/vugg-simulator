@@ -62,41 +62,41 @@ const DEFERRED_TUNE_REQUIRED = new Set<string>([
   //   pectolite needs to fire — but the stoichiometry is now in place
   //   so it won't be a silent free-energy gift when that lands.
   // Priority 2 — Cumbria Pb-Zn-Ba-F supergene
-  //   COMPLETED v124 (2026-05-21): pharmacolite only. Caledonite +
-  //   plumbogummite + proustite still deferred — adding any of their
-  //   stoichiometries triggers Shape-B RNG-cascade displacement in
-  //   roughten_gill that breaks the brochantite/caledonite/plumbogummite
-  //   paragenesis pins. Need dedicated nucleation-cap / class-iterator
-  //   work that's out of scope for a single tune commit.
-  'caledonite', 'plumbogummite', 'proustite',
+  //   COMPLETED v124 (2026-05-21): pharmacolite.
+  //   COMPLETED v128e (2026-05-21): caledonite + plumbogummite + proustite
+  //   shipped under graduated competition. The Shape-B cascade that blocked
+  //   them under fixed-order growth (v126: 5-12 paragenesis breaks per
+  //   probe in roughten_gill) is prevented by per-cation rationing.
+  //
   // Priority 3 — Tsumeb supergene + adjacent
-  //   v125 (2026-05-21): metacinnabar shipped. Fires in sulphur_bank
-  //   only; cinnabar already debits Hg from the same fluid, so adding
-  //   metacinnabar's debit just tightens the budget — no cascade.
-  //   v128d (2026-05-21): dioptase + koettigite shipped under v128
-  //   graduated competition. Per-cation rationing replaced fixed-order
-  //   growth; the Shape-B cascade pattern that blocked these in v125-
-  //   v126 (sub-percent debit flipping edge-of-gate minerals) is
-  //   structurally prevented — debits scale with the rationed share
-  //   rather than the full demand. willemite + conichalcite + duftite
-  //   remain deferred pending their own v128d-style probe.
-  'willemite', 'conichalcite', 'duftite',
+  //   COMPLETED v125 (2026-05-21): metacinnabar.
+  //   COMPLETED v128d (2026-05-21): dioptase + koettigite.
+  //   COMPLETED v128e (2026-05-21): willemite + conichalcite + duftite
+  //   shipped. The full Tsumeb supergene paragenesis is now mass-balance-
+  //   tracked end-to-end.
+  //
+  // Priority 4 — Schneeberg + Colorado Plateau uranyl
+  //   COMPLETED v128d (2026-05-21): uranophane.
+  //
   // Priority 5 — Naica, gem pegmatite, secondary firings
-  //   v125 (2026-05-21): opal shipped. SiO2-only debit across 6
-  //   scenarios; SiO2 broths range 200-8000 ppm so per-step debit is
-  //   <0.01% of budget — too small to perturb σ-gates anywhere. All
-  //   6 opal-firing scenarios are byte-identical to v124. Confirms
-  //   the cascade mechanism: it's not magnitude, it's whether the
-  //   debit shifts σ by enough to flip an edge-of-gate mineral.
-  //   pyrolusite cascaded because 4 ppm Mn × 235 µm debit *is*
-  //   meaningful (debit ~14 ppm vs initial 4); opal's debit on
-  //   SiO2=8000 is structurally invisible.
-  //   v128d (2026-05-21): cassiterite + lepidolite + uranophane
-  //   shipped. Same graduated-competition mechanism — the 2-of-3
-  //   cassiterite near-miss and 1-of-2 uranophane near-miss from
-  //   the v125-v126 probe arc are now clean under per-cation
-  //   rationing. pyrolusite + tigers_eye remain deferred.
-  'pyrolusite', 'tigers_eye',
+  //   COMPLETED v125 (2026-05-21): opal.
+  //   COMPLETED v128d (2026-05-21): cassiterite + lepidolite.
+  //   COMPLETED v128e (2026-05-21): pyrolusite + tigers_eye shipped.
+  //   pyrolusite's earlier cascade (4 ppm Mn × 235 µm debit producing
+  //   ~14 ppm displacement on a 4 ppm initial budget — a 350% relative
+  //   shift) is now rationed: the algorithm caps pyrolusite's share of
+  //   the limited Mn pool rather than letting it consume more than the
+  //   fluid can supply. tigers_eye is SiO2-only (chalcedony pseudomorph;
+  //   Fe/Na/Mg sourced from dissolving crocidolite precursor) so its
+  //   debit pattern matches the opal precedent — should be inert under
+  //   graduated comp same as opal was under v125 fixed-order.
+  //
+  // DEFERRED_TUNE_REQUIRED is now EMPTY. Every MINERAL_ENGINES key has
+  // a MINERAL_STOICHIOMETRY entry. The cascade-probe arc that began
+  // with v109's antipattern ID is closed. The remaining test below
+  // exists as a guard for future engine additions — if a new engine
+  // ships without stoichiometry AND without an entry here, the
+  // coverage audit fails loud.
 ]);
 
 describe('MINERAL_STOICHIOMETRY coverage audit (v120)', () => {
@@ -237,13 +237,12 @@ describe('MINERAL_STOICHIOMETRY coverage audit (v120)', () => {
     // v126 batch-probe arc: pectolite added (no-fire pure-infra) → 13.
     // willemite + conichalcite + duftite + uranophane + lepidolite
     // probed via tools/probe-stoichiometry.mjs and all cascaded.
-    // Empirical cascade record now complete across all original 28
-    // deferred minerals. v128d shipped 5 more (dioptase, koettigite,
-    // lepidolite, cassiterite, uranophane) under graduated competition;
-    // the remaining 8 still need either per-scenario tunes or a
-    // v128d-style probe to confirm they ship cleanly.
-    //
-    // v128d (2026-05-21): 13 → 8 (the 5 calibration-assertion minerals).
-    expect(DEFERRED_TUNE_REQUIRED.size).toBe(8);
+    // v128e (2026-05-21): 8 → 0. Final deferred-mineral sweep shipped
+    // the last 8 (caledonite, plumbogummite, proustite, willemite,
+    // conichalcite, duftite, pyrolusite, tigers_eye) under graduated
+    // competition. The cascade-probe arc that began with v109's
+    // antipattern ID is closed. Every MINERAL_ENGINES key now has a
+    // MINERAL_STOICHIOMETRY entry — no silent free-energy gifts.
+    expect(DEFERRED_TUNE_REQUIRED.size).toBe(0);
   });
 });
