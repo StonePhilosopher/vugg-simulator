@@ -250,7 +250,79 @@ Every mineral (~145) needs a `habit` field. This is a one-time spec addition. Th
 
 ---
 
-## 6. Open Questions
+## 6. New Skills & Tools Required
+
+This arc requires capabilities the current builder may not have. What skills, libraries, or learning would make this feasible?
+
+### 6.1 3D Geometry / Computational Geometry
+
+The renderer needs arbitrary polyhedral mesh generation from face normals + distances. Skills needed:
+- **Half-edge data structures** for mesh manipulation
+- **Convex hull algorithms** (e.g., QuickHull) for generating polyhedra from planes
+- **Mesh retesselation** when faces shrink to zero or new faces emerge
+- **Normal smoothing / flat shading** per face (crystals have flat faces, not smooth surfaces)
+
+Potential libraries:
+- **Three.js** (already used in many web projects; has BufferGeometry, custom mesh support)
+- **regl** (lightweight WebGL wrapper if we want less abstraction)
+- **csg.js** (constructive solid geometry for twin composition)
+
+### 6.2 Crystallographic Computation
+
+Habit generation requires crystallographic calculations:
+- **Miller index ↔ normal vector** conversion for each crystal system
+- **Zone axis calculations** for twin law application
+- **Stereographic projections** for visualizing face relationships (debugging tool)
+- **Lattice parameter → face distance** scaling
+
+Potential libraries:
+- **crystcif** (TypeScript crystallographic library)
+- **pycif** (Python CIF parser, could pre-process mineral data)
+- Custom implementation (the math is straightforward vector geometry)
+
+### 6.3 Shader Programming
+
+Face-specific effects need custom shaders:
+- **Per-face luster** (adamite vitreous vs pyrite metallic vs gypsum silky)
+- **Transparency / refraction** (fluorite translucent vs quartz transparent vs opal opaque)
+- **Subsurface scattering** for thin crystal edges (fluorite blue edge glow)
+- **Iridescence / thin-film** (labradorite schiller, hematite inclusions in apophyllite)
+
+Skills: GLSL/WebGL fragment shaders, BRDF models (Cook-Torrance for metallic luster, Lambert for dull).
+
+### 6.4 Performance Optimization
+
+145 minerals × up to 20 faces each × up to 1000 crystals per scenario = potentially 2.9 million faces. Skills needed:
+- **Instanced rendering** (draw same mesh many times with transforms)
+- **LOD (Level of Detail)** — simplified meshes for small/distant crystals
+- **Frustum culling** — don't render crystals outside the viewport
+- **GPU skinning / morph targets** if animated growth is desired
+
+### 6.5 Data Sources for Habit Specs
+
+Where do the 145 habit specs come from?
+- **Mindat.org** — has habit photos for most minerals
+- **Dana's New Mineralogy** — habit descriptions for all known species
+- **RRUFF database** — crystal structure + lattice parameters
+- **AMCSD (American Mineralogist Crystal Structure Database)** — free, comprehensive
+- **Manual curation** — Professor's collection specimens as ground truth (TN photos for calibration)
+
+### 6.6 Builder Question
+
+**What new skills or tools would be most useful to acquire for this arc?**
+
+- Three.js advanced geometry / custom shaders?
+- Computational geometry / mesh algorithms?
+- GLSL/WebGL shader programming?
+- Crystallographic math (Miller indices, zone axes, stereographic projections)?
+- Performance optimization (instancing, LOD, culling)?
+- Something else entirely?
+
+The builder should answer with their comfort level and what they'd need to learn or what tools they'd want to adopt.
+
+---
+
+## 7. Open Questions
 
 ### Q1: What renderer library?
 
@@ -284,7 +356,7 @@ The per-zone color system (v121) already colors different parts of a crystal dif
 
 ---
 
-## 7. Sequencing
+## 8. Sequencing
 
 **v131 (infrastructure):**
 - Habit spec format defined
@@ -311,7 +383,7 @@ The per-zone color system (v121) already colors different parts of a crystal dif
 
 ---
 
-## 8. Calibration Ground Truth
+## 9. Calibration Ground Truth
 
 The proposal can be validated against real mineral specimens:
 
