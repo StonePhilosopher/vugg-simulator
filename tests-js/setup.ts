@@ -251,6 +251,10 @@ const EXPORTS = [
   // Slice 4 dripstone token resolver (99i-renderer-three.ts).
   '_resolveCrystalGeomToken',
   '_habitGeomToken',
+  // 2026-05-22 wireframe cluster-spec refactor (99d-renderer-wireframe.ts).
+  // Per-habit cluster pattern dispatch; mirrors 99i's _CLUSTER_PATTERNS.
+  '_druzyClusterSpec',
+  '_druzyClusterCount',  // legacy alias — count-only API for back-compat
   // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
   'EH_DYNAMIC_ENABLED',
   'REDOX_COUPLES',

@@ -52313,6 +52313,119 @@ function _convexHull2D(points) {
     upper.pop();
     return lower.concat(upper);
 }
+// ----- Cluster spec: per-habit aggregate parameterization -----
+//
+// The original wireframe cluster system (`_druzyClusterCount`) only
+// fired on a small set of explicit habit strings — `druz`, `crust`,
+// `granular`, `earthy`, `arborescent`, `massive`, `sugar`, `coating` —
+// plus a size-based fallback for tiny crystals. Everything else
+// rendered as a single primitive. That captured the microcrystalline
+// drusy-sugar aesthetic but missed the macrocrystalline end of the
+// spectrum: vein-comb quartz, MVT comb calcite, parallel-forest
+// prismatic druzy — where each individual crystal is a recognizable
+// hex-prism point and the aggregate is a forest of upright points
+// growing perpendicular to the local wall (the "comb" texture).
+//
+// The Three.js renderer (99i) already does this correctly via
+// `_CLUSTER_PATTERNS` indexed by geom token (prism, spike, cube,
+// tablet, etc.). This block ports the same pattern system to the
+// wireframe renderer so the two agree.
+//
+// Reference: PROPOSAL-HABIT-BIAS.md §11 — "when one renderer ships a
+// feature, the other should follow within a phase." This is that
+// follow.
+//
+// Per-cluster spec fields:
+//   count       — number of satellite crystals around the parent
+//   sizeMin/Max — uniform range for per-satellite size multiplier
+//                 (drawn deterministically via _seededRand)
+//   alpha       — fill-alpha multiplier (1.0 = opaque, <1 = sparkle)
+//   radiusMul   — multiplier on the tangent-plane scatter radius
+//                 (cluster_radius = parent_a_width × this × mmToPx,
+//                  capped at 9 × mmToPx so a runaway crystal can't
+//                  blanket the whole vug)
+//   evenAngles  — if true, satellites are placed at evenly-spaced
+//                 angles around the tangent circle (rosette signature
+//                 for desert-rose / hematite-rose tabular habits);
+//                 if false, angles are uniform random
+// Cluster pattern table for the wireframe renderer. Mirrors
+// `_CLUSTER_PATTERNS` in 99i-renderer-three.ts so the two renderers
+// produce the same cluster aesthetic for the same habit. Where 99i's
+// fields are countScale + scaleMin/Max, here we use absolute count +
+// sizeMin/Max because the wireframe never had a "base count by size
+// class" lookup — it always returned an explicit number. We bake the
+// 99i base (4–6 satellites for typical mm-scale crystals) × countScale
+// into a direct count here.
+const _CLUSTER_PATTERNS_2D = {
+    // Acicular spray — needles fanning out from a single nucleation
+    // point. Tighter spread + bigger satellites = the stibnite spray.
+    // Mirrors 99i.spike (countScale=1.3, spreadMul=0.6, scaleMin=0.35,
+    // scaleMax=0.75).
+    spike: { count: 8, sizeMin: 0.35, sizeMax: 0.75, alpha: 1.0, radiusMul: 0.55, evenAngles: false },
+    // Prismatic forest — quartz druze, beryl forest, comb-quartz. The
+    // photo-correction case. Parallel alignment dominates; satellites
+    // stand close, mostly matching parent's height. Macro-comb.
+    // Mirrors 99i.prism (countScale=1.5, spreadMul=1.1, scaleMin=0.55,
+    // scaleMax=0.95).
+    prism: { count: 9, sizeMin: 0.55, sizeMax: 0.95, alpha: 1.0, radiusMul: 1.0, evenAngles: false },
+    // Cubic carpet — fluorite / halite / pyrite druze. Many small cubes
+    // packed against the wall.
+    // Mirrors 99i.cube (countScale=1.8, spreadMul=1.4, scaleMin=0.25,
+    // scaleMax=0.55).
+    cube: { count: 11, sizeMin: 0.25, sizeMax: 0.55, alpha: 1.0, radiusMul: 1.3, evenAngles: false },
+    // Octahedral / dodecahedral — chunky isometric, fewer + larger.
+    // Mirrors 99i.octahedron (countScale=0.8, scaleMin=0.40, scaleMax=0.75).
+    octahedron: { count: 5, sizeMin: 0.40, sizeMax: 0.75, alpha: 1.0, radiusMul: 0.9, evenAngles: false },
+    rhombic_dodec: { count: 5, sizeMin: 0.40, sizeMax: 0.75, alpha: 1.0, radiusMul: 0.9, evenAngles: false },
+    // Tabular rosette — gypsum desert rose, hematite rose. Petals fanned
+    // with even angular spacing. Wider tilt to face the petals outward
+    // (the wireframe handles tilt via _renderWireframeInstance's
+    // Gaussian scatter — per-pattern tilt is a follow-up).
+    // Mirrors 99i.tablet (countScale=1.2, spreadMul=1.3, scaleMin=0.50,
+    // scaleMax=0.85, evenAngles=true).
+    tablet: { count: 7, sizeMin: 0.50, sizeMax: 0.85, alpha: 1.0, radiusMul: 1.2, evenAngles: true },
+    // Rhombohedral / scalenohedral — calcite chunks + dogtooth. Treated
+    // like a less-extreme prism cluster (parallel, recognizable
+    // individuals).
+    rhomb: { count: 6, sizeMin: 0.55, sizeMax: 0.90, alpha: 1.0, radiusMul: 0.9, evenAngles: false },
+    scalene: { count: 6, sizeMin: 0.55, sizeMax: 0.90, alpha: 1.0, radiusMul: 0.9, evenAngles: false },
+    // Botryoidal — the primitive is already a multi-bubble cluster;
+    // adding satellites would just clutter. Mirrors 99i.botryoidal
+    // (countScale=0).
+    botryoidal: { count: 0, sizeMin: 1.0, sizeMax: 1.0, alpha: 1.0, radiusMul: 0.0, evenAngles: false },
+    // Dripstone — air-mode tapered icicle. Single hanging/standing
+    // primitive; satellites would break the silhouette.
+    dripstone: { count: 0, sizeMin: 1.0, sizeMax: 1.0, alpha: 1.0, radiusMul: 0.0, evenAngles: false },
+};
+const _CLUSTER_PATTERN_2D_DEFAULT = {
+    count: 5, sizeMin: 0.40, sizeMax: 0.80, alpha: 1.0, radiusMul: 1.0, evenAngles: false,
+};
+// Map a primitive object → cluster pattern key. The primitive is what
+// _canonicalPrimitive (and the air-mode-aware _lookupCrystalPrimitive)
+// returns from the habit-string lookup, so we go through that resolved
+// shape rather than re-parsing habit strings. Keeps the wireframe and
+// the cluster pattern dispatch agreeing on the same canonical shape.
+function _clusterPatternKeyForPrim(prim) {
+    if (prim === PRIM_HEX_PRISM_TERMINATED || prim === PRIM_HEX_PRISM)
+        return 'prism';
+    if (prim === PRIM_ACICULAR)
+        return 'spike';
+    if (prim === PRIM_CUBE || prim === PRIM_PYRITOHEDRON)
+        return 'cube';
+    if (prim === PRIM_OCTAHEDRON || prim === PRIM_TETRAHEDRON || prim === PRIM_DIPYRAMID)
+        return 'octahedron';
+    if (prim === PRIM_RHOMBOHEDRON)
+        return 'rhomb';
+    if (prim === PRIM_SCALENOHEDRON)
+        return 'scalene';
+    if (prim === PRIM_TABULAR)
+        return 'tablet';
+    if (prim === PRIM_BOTRYOIDAL)
+        return 'botryoidal';
+    if (prim === PRIM_DRIPSTONE)
+        return 'dripstone';
+    return null; // unknown → caller falls through to legacy drusy-habit path or single primitive
+}
 // Drusy-cluster decision: should this crystal render as one large
 // primitive (the default) or as a carpet of N small copies?
 //
@@ -52323,76 +52436,138 @@ function _convexHull2D(points) {
 // size-based fallback gives sub-mm individuals a small cluster too,
 // since at typical zoom they otherwise read as ambient noise.
 //
-// Returns 0 for single-primitive mode, N>0 for cluster of N children.
-function _druzyClusterCount(crystal) {
+// 2026-05-22 cluster-spec refactor: function now returns a SPEC OBJECT
+// {count, sizeMin, sizeMax, alpha, radiusMul, evenAngles} so the
+// caller can use per-pattern parameters (macro-comb prism druze vs
+// sparkly micro-drusy vs gypsum-rose evenly-spaced rosette) without
+// hardcoding values in `_renderCrystalWireframe`. Legacy explicit-
+// habit-string paths (`druz`/`crust`/`granular`/etc.) preserve their
+// original counts and micro-cluster parameters byte-for-byte — only
+// the API shape changed for those callers.
+//
+// Dispatch order:
+//   1. Explicit micro-drusy habit string (drusy, crust, granular,
+//      earthy, dendritic/arborescent, massive, sugar/coating) →
+//      legacy micro params (original counts, 0.3–0.7× size, alpha 0.55).
+//   2. Per-canonical-primitive macro pattern from _CLUSTER_PATTERNS_2D
+//      (prism, spike, cube, tablet, etc.) → macro params with full
+//      alpha and larger satellites. THIS is the new path that catches
+//      vein-comb quartz / parallel-forest prismatic druze.
+//   3. Small-crystal size fallback (c_length < 0.4mm) → 4 mini-copies
+//      at micro params, so dust doesn't render as one invisible pixel.
+//   4. Default → count: 0 (single primitive).
+function _druzyClusterSpec(crystal) {
     const h = (crystal.habit || '').toLowerCase();
-    // Habit-driven: explicit drusy / massive / earthy carpets.
+    // (1) Legacy explicit drusy habits — preserve the micro-cluster
+    // parameters byte-for-byte. The original code used 0.3-0.7 size,
+    // 0.55 alpha, 0.9 radiusMul; encode those as the micro defaults.
+    const micro = (count) => ({
+        count, sizeMin: 0.3, sizeMax: 0.7, alpha: 0.55, radiusMul: 0.9, evenAngles: false,
+    });
     if (h.includes('druz'))
-        return 16;
+        return micro(16);
     if (h.includes('crust'))
-        return 12;
+        return micro(12);
     if (h.includes('granular'))
-        return 18;
+        return micro(18);
     if (h.includes('earthy'))
-        return 22;
+        return micro(22);
     if (h.includes('arborescent') || h.includes('dendritic'))
-        return 20;
+        return micro(20);
     if (h.includes('massive'))
-        return 14;
+        return micro(14);
     if (h.includes('sugar') || h.includes('coating'))
-        return 14;
-    // Size-based: very small crystals get a sparse cluster of 4 mini-
-    // copies so they don't render as one near-invisible 3-px primitive.
+        return micro(14);
+    // (2) Per-canonical-primitive macro pattern. Use _canonicalPrimitive
+    // so the macro-cluster lookup agrees with the actual rendered shape,
+    // and so air-mode dripstone overrides (PRIM_DRIPSTONE) skip clustering.
+    const prim = _lookupCrystalPrimitive(crystal);
+    const key = _clusterPatternKeyForPrim(prim);
+    if (key) {
+        const pat = _CLUSTER_PATTERNS_2D[key];
+        if (pat) {
+            // Big gem crystals — same threshold as 99i's _clusterSatelliteCount
+            // (cLen > 60 mm reads as a solo specimen, no cluster).
+            const cLen = crystal.c_length_mm || 0;
+            if (cLen > 60)
+                return { count: 0, sizeMin: 1, sizeMax: 1, alpha: 1, radiusMul: 0, evenAngles: false };
+            return { ...pat };
+        }
+    }
+    // (3) Tiny-crystal fallback — preserve the original sparse mini-cluster.
     if ((crystal.c_length_mm || 0) < 0.4)
-        return 4;
-    return 0;
+        return micro(4);
+    // (4) Default — no cluster, single primitive.
+    return { count: 0, sizeMin: 1, sizeMax: 1, alpha: 1, radiusMul: 0, evenAngles: false };
 }
-// Render one wireframe crystal — single primitive or drusy cluster
+// Legacy alias — preserved so any external caller (or test) that
+// reads the old count-only API still gets a sensible answer. Internal
+// callers (`_renderCrystalWireframe`) should consume the spec object.
+function _druzyClusterCount(crystal) {
+    return _druzyClusterSpec(crystal).count;
+}
+// Render one wireframe crystal — single primitive or aggregate cluster
 // depending on habit/size. The single-instance path lives in
 // _renderWireframeInstance; this function dispatches and, when
-// clustering, scatters N small offset copies in the substrate's
-// tangent plane around the parent's anchor cell.
+// clustering, scatters N offset copies in the substrate's tangent
+// plane around the parent's anchor cell.
+//
+// 2026-05-22: per-pattern cluster spec. The spec object returned by
+// `_druzyClusterSpec` carries the count + size range + alpha + radius
+// multiplier + evenAngles flag, so the same dispatch handles micro
+// drusy (sparkly sugar, alpha 0.55, sizes 0.3–0.7) AND macro comb
+// druze (vein-comb quartz, alpha 1.0, sizes 0.55–0.95) AND tabular
+// rosette (evenly-spaced petals — gypsum desert rose, hematite rose)
+// without per-mode dispatch branches. Adding a new cluster mode = one
+// entry in `_CLUSTER_PATTERNS_2D`.
 function _renderCrystalWireframe(ctx, crystal, cellWorld, sphereRadiusPx, mmToPx, cx, cy, F) {
-    const clusterN = _druzyClusterCount(crystal);
-    if (clusterN <= 0) {
+    const spec = _druzyClusterSpec(crystal);
+    if (spec.count <= 0) {
         _renderWireframeInstance(ctx, crystal, cellWorld, sphereRadiusPx, mmToPx, cx, cy, F, {});
         return;
     }
     // Cluster mode. Each child gets:
     //   * an offset anchor in the substrate's tangent plane (so the
-    //     carpet spreads along the wall, not into the cavity)
+    //     aggregate spreads along the wall, not into the cavity)
     //   * its own seeded c-axis scatter (parent_id ^ child_index)
-    //   * a fractional size of the parent (0.3–0.7)
-    //   * a slightly reduced fill alpha so overlapping children read
-    //     as a sparkly carpet rather than a single opaque blob.
+    //   * a size multiplier drawn uniformly from [sizeMin, sizeMax]
+    //   * a fill-alpha multiplier from the spec (1.0 for macro, 0.55 for
+    //     micro sparkle).
     const invR = 1 / (Math.hypot(cellWorld[0], cellWorld[1], cellWorld[2]) || 1);
     const subNormal = [-cellWorld[0] * invR, -cellWorld[1] * invR,
         -cellWorld[2] * invR];
     const [tA, tB] = _orthonormalBasis(subNormal, 0);
     // Cluster radius in pixels: scaled by the parent's a-width (which
-    // encodes the crystal's lateral coverage on the wall) so a small
-    // druzy fleck stays compact while a big crustiform sheet spreads
-    // across many cells. Capped so a runaway crystal can't blanket the
-    // whole vug.
+    // encodes the crystal's lateral coverage on the wall) so a tight
+    // micro fleck stays compact while a wide tablet rosette fans across
+    // more cells. radiusMul comes from the per-pattern spec (1.3 for
+    // cubic carpet, 0.55 for tight acicular spray, 1.0 for prism forest).
+    // Capped so a runaway crystal can't blanket the whole vug.
     const widthMm = Math.max(crystal.a_width_mm || 0, crystal.c_length_mm || 0, 1.0);
-    const clusterRadiusPx = Math.min(widthMm * 0.9 * mmToPx, 9 * mmToPx);
+    const clusterRadiusPx = Math.min(widthMm * spec.radiusMul * mmToPx, 9 * mmToPx);
     const id = crystal.crystal_id | 0;
-    for (let i = 1; i <= clusterN; i++) {
+    const sizeSpan = spec.sizeMax - spec.sizeMin;
+    for (let i = 1; i <= spec.count; i++) {
         // Scatter offset in tangent plane. Two seeded uniforms with
         // sqrt-radius weighting → uniform area density inside the disc.
         const r = Math.sqrt(_seededRand((id ^ (i * 7919)) >>> 0)) * clusterRadiusPx;
-        const a = _seededRand((id ^ (i * 6133)) >>> 0) * 2 * Math.PI;
+        // evenAngles: petals at evenly-spaced angles around the tangent
+        // circle (rosette signature — gypsum desert rose, hematite rose).
+        // Default: uniform random angle (carpet/forest aesthetic).
+        const a = spec.evenAngles
+            ? ((i - 1) / spec.count) * 2 * Math.PI + (_seededRand((id ^ (i * 6133)) >>> 0) - 0.5) * 0.3
+            : _seededRand((id ^ (i * 6133)) >>> 0) * 2 * Math.PI;
         const jx = r * Math.cos(a), jy = r * Math.sin(a);
         const anchor = [
             cellWorld[0] + tA[0] * jx + tB[0] * jy,
             cellWorld[1] + tA[1] * jx + tB[1] * jy,
             cellWorld[2] + tA[2] * jx + tB[2] * jy,
         ];
-        const sizeMul = 0.3 + 0.4 * _seededRand((id ^ (i * 4111)) >>> 0);
+        const sizeMul = spec.sizeMin + sizeSpan * _seededRand((id ^ (i * 4111)) >>> 0);
         _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx, mmToPx, cx, cy, F, {
             sizeMul,
             seedOffset: i,
-            fillAlphaMul: 0.55,
+            fillAlphaMul: spec.alpha,
         });
     }
 }
