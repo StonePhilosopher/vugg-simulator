@@ -26,10 +26,11 @@ function _lookupCrystalPrimitive(crystal) {
   // Iconic twins shipped so far:
   //   fluorite penetration   {111}  — two cubes rotated 60° around body diagonal
   //   selenite swallowtail   {100}  — two tabular blades opening in V (60°)
+  //   galena spinel-law      {111}  — two octahedra sharing a triangular face
   //
   // Future twin primitives (data side already complete in v133):
   //   marcasite cockscomb, cerussite trilling, pyrite iron-cross,
-  //   galena octahedron-twin, aragonite pseudo-hex
+  //   aragonite pseudo-hex
   if (crystal.mineral === 'fluorite' && crystal.twinned
       && crystal.twin_law === 'penetration') {
     return PRIM_FLUORITE_PENETRATION_TWIN;
@@ -37,6 +38,10 @@ function _lookupCrystalPrimitive(crystal) {
   if (crystal.mineral === 'selenite' && crystal.twinned
       && crystal.twin_law === 'swallowtail') {
     return PRIM_SELENITE_SWALLOWTAIL_TWIN;
+  }
+  if (crystal.mineral === 'galena' && crystal.twinned
+      && crystal.twin_law === 'spinel_law') {
+    return PRIM_GALENA_OCTAHEDRON_TWIN;
   }
   // v24 air-mode override — crystals nucleated in vadose rings get
   // dripstone geometry instead of their canonical habit primitive,

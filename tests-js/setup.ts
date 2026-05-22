@@ -276,6 +276,10 @@ const EXPORTS = [
   // twin, 99c-renderer-primitives.ts + 99d dispatch). Two tabular
   // gypsum blades opening in a V at 60° from a shared base contact.
   'PRIM_SELENITE_SWALLOWTAIL_TWIN',
+  // 2026-05-22 galena spinel-law octahedron-twin primitive (v134 third
+  // iconic twin). Two octahedra sharing a {111} triangular face — the
+  // classic contact twin documented in Ramdohr 1980 + Boyle 1968.
+  'PRIM_GALENA_OCTAHEDRON_TWIN',
   '_lookupCrystalPrimitive',
   // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
   'EH_DYNAMIC_ENABLED',

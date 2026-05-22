@@ -524,6 +524,7 @@ const _GEOM_TOKEN_RATIO: Record<string, number> = {
   fluorite_penetration_twin: 1.0,  // two cubes interpenetrating — same envelope
   selenite_swallowtail_twin: 1.5,  // tabular blades — c > a like 'tablet' family
   octahedron: 1.0,
+  galena_octahedron_twin: 1.0,  // two octahedra sharing a face — isometric
   rhombic_dodec: 1.0,
   dodecahedron: 1.0,
   snowball: 1.0,
@@ -567,6 +568,10 @@ function _resolveCrystalGeomToken(crystal: any, habitForGeom: string): string {
   if (crystal && crystal.mineral === 'selenite' && crystal.twinned
       && crystal.twin_law === 'swallowtail') {
     return 'selenite_swallowtail_twin';
+  }
+  if (crystal && crystal.mineral === 'galena' && crystal.twinned
+      && crystal.twin_law === 'spinel_law') {
+    return 'galena_octahedron_twin';
   }
   const canonical = _habitGeomToken(habitForGeom);
   if (crystal && crystal.growth_environment === 'air'
@@ -1107,6 +1112,99 @@ function _makeSeleniteSwallowtailTwin(): any {
   return geom;
 }
 
+// Galena spinel-law octahedron twin — two octahedra sharing a {111}
+// triangular face, the classic contact twin documented in Ramdohr
+// 1980 §4.3.6 + Boyle 1968's Cobalt-Ontario silver-galena ores.
+// Mirrors PRIM_GALENA_OCTAHEDRON_TWIN in js/99c-renderer-primitives.ts
+// for cross-renderer parity. v133's twin_laws[].probability=0.10
+// means ~10% of galena crystals have crystal.twinned=true +
+// crystal.twin_law='spinel_law' set by _rollSpontaneousTwin.
+//
+// Math: first octahedron with vertices at (±c, 0, 0), (0, ±c, 0),
+// (0, 0, ±c) for c=0.55 (matches THREE.OctahedronGeometry(0.55, 0)
+// envelope). Second octahedron = reflection across the {111} plane
+// x+y+z = c, which leaves 3 vertices (the contact-face vertices) on
+// the plane and maps the other 3 to new positions in the +X+Y+Z
+// octant. Reflection formula: P' = P - 2*(P·n - d)/|n|² * n with
+// n=(1,1,1), d=c, |n|²=3.
+//
+// Flat-shaded triangulation: each octahedron has 8 triangular faces.
+// The contact face ({+x, +y, +z} octant face of both octahedra) is
+// SKIPPED for both octahedra — it's hidden inside the twin body and
+// would otherwise be drawn as a zero-thickness sheet with opposite-
+// facing normals. That leaves 7 faces per octahedron × 2 = 14
+// triangles, 42 vertex triples in the position attribute.
+//
+// Face winding: CCW from outside. For the second octahedron (which
+// is a mirror image of the first), winding is REVERSED to maintain
+// outward-pointing normals.
+function _makeGalenaOctahedronTwin(): any {
+  const c = 0.55;            // equatorial radius
+  // Vertex layout follows the wireframe convention:
+  //   0: +y (top apex)   1: -y (bottom apex)
+  //   2: +x (east)       3: -x (west)
+  //   4: +z (north)      5: -z (south)
+  // Centered at origin to match the 99i convention; instance
+  // transform handles wall placement.
+  const oct1: number[][] = [
+    [0,  c, 0],   // 0 top apex (+y)
+    [0, -c, 0],   // 1 bottom apex (-y)
+    [ c, 0, 0],   // 2 east (+x)
+    [-c, 0, 0],   // 3 west (-x)
+    [0, 0,  c],   // 4 north (+z)
+    [0, 0, -c],   // 5 south (-z)
+  ];
+  // Contact plane: {0, 2, 4} face — top + east + north — has plane
+  // equation x + y + z = c (each contact vertex satisfies this).
+  // Reflect non-contact vertices (1, 3, 5) across the plane; the
+  // contact vertices (0, 2, 4) stay fixed.
+  const reflect = (p: number[]): number[] => {
+    const k = 2 * (p[0] + p[1] + p[2] - c) / 3;
+    return [p[0] - k, p[1] - k, p[2] - k];
+  };
+  const oct2: number[][] = oct1.map(reflect);
+  // Faces of an octahedron labeled (top=0, bot=1, E=2, W=3, N=4, S=5).
+  // Each face is on a (sx, sy, sz) octant. For our labeling:
+  //   octant (+y, +x, +z) → face {0, 2, 4} = top-east-north (the
+  //                            CONTACT face — skipped)
+  //   octant (+y, +x, -z) → face {0, 2, 5} = top-east-south
+  //   octant (+y, -x, +z) → face {0, 3, 4} = top-west-north
+  //   octant (+y, -x, -z) → face {0, 3, 5} = top-west-south
+  //   octant (-y, +x, +z) → face {1, 2, 4} = bot-east-north
+  //   octant (-y, +x, -z) → face {1, 2, 5}
+  //   octant (-y, -x, +z) → face {1, 3, 4}
+  //   octant (-y, -x, -z) → face {1, 3, 5}
+  // CCW-from-outside order for each face (verified via cross-product
+  // outward-normal sign), with the {0, 2, 4} contact face omitted:
+  const faces: number[][] = [
+    // [0, 2, 4]  // contact face — SKIPPED
+    [0, 5, 2],   // top-east-south
+    [0, 4, 3],   // top-north-west
+    [0, 3, 5],   // top-west-south
+    [1, 2, 5],   // bot-east-south
+    [1, 5, 3],   // bot-south-west
+    [1, 3, 4],   // bot-west-north
+    [1, 4, 2],   // bot-north-east
+  ];
+  const positions: number[] = [];
+  // First octahedron — emit each face in CCW-from-outside order.
+  for (const f of faces) {
+    const A = oct1[f[0]], B = oct1[f[1]], C = oct1[f[2]];
+    _pushTri(positions, A[0], A[1], A[2], B[0], B[1], B[2], C[0], C[1], C[2]);
+  }
+  // Second octahedron — same face list, but REVERSED winding because
+  // reflection flips orientation. (A, B, C) → (A, C, B) keeps the
+  // outward normal pointing outward in the mirrored coordinate frame.
+  for (const f of faces) {
+    const A = oct2[f[0]], B = oct2[f[1]], C = oct2[f[2]];
+    _pushTri(positions, A[0], A[1], A[2], C[0], C[1], C[2], B[0], B[1], B[2]);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Build a unit-sized geometry for a given habit token, oriented so
 // its long axis (= c-axis) lies along +Y. The instance transform
 // later places the base at the wall and scales by c_length / a_width.
@@ -1147,6 +1245,13 @@ function _buildHabitGeom(token: string): any {
       // (60° total). Dispatch gated on mineral='selenite' + twinned
       // + twin_law='swallowtail'.
       return _makeSeleniteSwallowtailTwin();
+    case 'galena_octahedron_twin':
+      // v134 (2026-05-22) — third iconic twin. Two octahedra sharing
+      // a {111} triangular face — Ramdohr 1980 spinel-law contact
+      // twin, common in MVT galena (5-15% twin frequency per Boyle
+      // 1968). Dispatch gated on mineral='galena' + twinned +
+      // twin_law='spinel_law'.
+      return _makeGalenaOctahedronTwin();
     case 'octahedron':
       return new THREE.OctahedronGeometry(0.55, 0);
     case 'snowball':

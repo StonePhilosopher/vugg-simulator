@@ -561,6 +561,81 @@ const PRIM_SELENITE_SWALLOWTAIL_TWIN = {
   })(),
 };
 
+// v134 (2026-05-22): galena spinel-law octahedron-twin primitive.
+// Two octahedra sharing a {111} triangular face — the classic
+// "spinel-law" contact twin documented in Ramdohr 1980, The Ore
+// Minerals and Their Intergrowths §4.3.6. Common in MVT deposits
+// where galena grows in octahedral habit (5-15% twin frequency per
+// Boyle 1968's Cobalt-Ontario silver-galena ores). v133 added the
+// twin_law entry to data/minerals.json with probability 0.10 per
+// nucleation; this primitive renders when crystal.mineral === 'galena'
+// && crystal.twinned && crystal.twin_law === 'spinel_law'.
+//
+// Geometry: 12 vertices (6 per octahedron; 3 shared on the contact
+// face kept as duplicates for indexing simplicity), 24 edges (12 per
+// octahedron). Each octahedron uses the same vertex topology as
+// PRIM_OCTAHEDRON: 0=top apex, 1=bottom apex (buried at wall), 2-5=
+// equator (E, W, N, S).
+//
+// Contact: the {0, 2, 4} face of the first octahedron = top + east +
+// north = the {111} face in the plane x + y + z = 1 (with east at
+// (0.55, 0.45, 0), north at (0, 0.45, 0.55), top at (0, 1, 0)).
+// The second octahedron is the mirror image across this plane,
+// reflecting only the OTHER 3 vertices (bottom apex 1, west 3,
+// south 5) — the 3 shared face vertices stay fixed.
+//
+// Bipyramidal axis: from first octahedron's bottom apex (buried at
+// wall) through the contact face centroid to second octahedron's
+// mirror-of-bottom-apex. This axis runs along [1, 1, 1] direction,
+// so the twin reads as a tilted bipyramid leaning toward +X+Z. Real
+// galena spinel-law specimens often show this same tilted-bipyramid
+// profile with a visible re-entrant angle along the contact edge.
+const PRIM_GALENA_OCTAHEDRON_TWIN = {
+  name: 'galena_octahedron_twin',
+  vertices: (() => {
+    const c = 0.55;          // equatorial radius
+    const yTop = 1.0;
+    const yEq = 0.45;
+    const yBot = -0.1;       // buried at PRIM_CUBE wall y
+    // First octahedron — standard PRIM_OCTAHEDRON vertex layout.
+    const oct1: number[][] = [
+      [0, yTop, 0],          // 0 top apex
+      [0, yBot, 0],          // 1 bottom apex (buried)
+      [ c, yEq,  0],         // 2 east   (on contact face)
+      [-c, yEq,  0],         // 3 west
+      [0, yEq,  c],          // 4 north  (on contact face)
+      [0, yEq, -c],          // 5 south
+    ];
+    // Contact plane: passes through vertices 0, 2, 4 — i.e., the
+    // points (0, 1, 0), (c, yEq, 0), (0, yEq, c). Plane equation
+    // n · x = d where n = (1, 1, 1) and d = 1 (after the y-offset
+    // bakes into the eq: 0+1+0 = 1, c + yEq + 0 = 0.55+0.45 = 1,
+    // 0+yEq+c = 0.45+0.55 = 1). Reflection of point P across this
+    // plane: P' = P - 2*(P.x+P.y+P.z - 1)/3 * (1,1,1).
+    const reflect = (p: number[]): number[] => {
+      const k = 2 * (p[0] + p[1] + p[2] - 1) / 3;
+      return [p[0] - k, p[1] - k, p[2] - k];
+    };
+    // Second octahedron: mirror of each vertex. Vertices 0, 2, 4 are
+    // on the plane and map to themselves (kept as duplicates at 6,
+    // 8, 10 for index simplicity); 1, 3, 5 map to new positions.
+    const oct2: number[][] = oct1.map(reflect);
+    return [...oct1, ...oct2];
+  })(),
+  edges: (() => {
+    // 12 edges per octahedron — same topology as PRIM_OCTAHEDRON.
+    // Vertices 0..5 are the first octahedron; 6..11 are the second
+    // (with 6≡0, 8≡2, 10≡4 coincident). The 3 contact-face edges
+    // get drawn twice (once per octahedron) but coincide visually.
+    const octEdges = (off: number) => [
+      [off + 0, off + 2], [off + 0, off + 3], [off + 0, off + 4], [off + 0, off + 5],  // top → equator
+      [off + 1, off + 2], [off + 1, off + 3], [off + 1, off + 4], [off + 1, off + 5],  // bottom → equator
+      [off + 2, off + 4], [off + 4, off + 3], [off + 3, off + 5], [off + 5, off + 2],  // equator
+    ];
+    return [...octEdges(0), ...octEdges(6)];
+  })(),
+};
+
 // Habit string → primitive lookup. Direct hits checked first; the
 // fuzzy-substring fallback in _lookupCrystalPrimitive catches the
 // many compound forms in data/minerals.json (e.g. "rhombohedral_or_
