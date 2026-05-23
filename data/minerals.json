@@ -5524,7 +5524,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1122",
+          "miller_indices": "{11-22}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV (phosphates) + Frondel 1958 apatite-group section. Pyromorphite (hexagonal P6₃/m, apatite-group) rarely twins — apatite-group structures have low intrinsic twin propensity. Sparse {11-22} or {10-11} contact twins are reported at Bad Ems (Germany) and Leadhills (Scotland). Conservative p=0.005 (rare-twin floor)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.5,
         "reaction": "Pb₅(PO₄)₃Cl + 10H⁺ → 5Pb²⁺ + 3H₃PO₄ + Cl⁻",
@@ -5620,7 +5629,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1122",
+          "miller_indices": "{11-22}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Mindat vanadinite habit notes. Isostructural with pyromorphite (apatite-group, hexagonal P6₃/m, V endmember). Same low twin propensity; rare {11-22} contact twins documented at Mibladen (Morocco) and Old Yuma Mine (Arizona). Conservative p=0.005 floor."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.5,
         "reaction": "Pb₅(VO₄)₃Cl + 10H⁺ → 5Pb²⁺ + 3H₃VO₄ + Cl⁻",
@@ -7024,7 +7042,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Mindat clinobisvanite (BiVO₄, monoclinic I2/a) habit notes. Data sparse — clinobisvanite typically occurs as fine yellow micro-plates at supergene Bi-Cu vein zones (Hingston Down Quarry, Sardinian Mt. Cobre). Rare twinning reported but not well-characterized; conservative p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.5,
         "reaction": "BiVO₄ + 4H⁺ → Bi³⁺ + VO₂⁺ + 2H₂O",
@@ -8477,7 +8504,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV (vanadates) + Frondel 1958. Descloizite (orthorhombic Pnma, PbZn(VO₄)(OH)) shows {110} contact twins documented at Berg Aukas (Namibia) and Sierra de Cordoba (Argentina). Prismatic crystals with sector-pair twins. Conservative p=0.02 (rare-to-minor in field specimens)."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "prismatic",
       "color_rules": {
@@ -8551,7 +8587,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV. Isostructural with descloizite (orthorhombic Pnma, Cu endmember). Same twin behavior; documented at Mottram St Andrew (England, type locality) and Tsumeb. Conservative p=0.02 matching descloizite."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "prismatic",
       "color_rules": {
@@ -9758,7 +9803,16 @@
         "As": 0.0
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Frondel 1958 + Anthony Handbook v.IV. Zeunerite (Cu(UO₂)₂(AsO₄)₂·12H₂O, tetragonal P4/nmm) is the Cu-As analog of autunite-group; isostructural with torbernite (Cu-P). Same {001} basal contact twin behavior. Documented at Schneeberg/Walpurgis Flacher (As-rich uranium vein zone). p=0.01 matching autunite."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "Cu(UO₂)₂(AsO₄)₂·12H₂O + 6H⁺ → Cu²⁺ + 2(UO₂)²⁺ + 2H₃AsO₄ + 12H₂O (dissolves readily)",
@@ -10238,7 +10292,16 @@
         "quencher": "Fe (Fe²⁺ + Fe³⁺ both suppress uranyl emission); dehydration to meta-autunite weakens but does not eliminate fluorescence",
         "status": "the brightest uranyl fluorescer in the simulator — Ca²⁺ doesn't quench like Cu²⁺ does in torbernite/zeunerite. LW UV (365nm) drives the strongest emission; SW (254nm) gives a duller green-yellow."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Frondel 1958 The Systematic Mineralogy of Uranium and Thorium §autunite-group + Anthony Handbook v.IV. Autunite (tetragonal I4/mmm, Ca(UO₂)₂(PO₄)₂·11H₂O) shows {001} basal contact twins documented at Margnac (France) and Mt. Spokane (Washington). The autunite-group ditetragonal-dipyramidal habit produces square tablets where contact twins appear as paired basal flakes. Conservative p=0.01."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "Ca(UO₂)₂(PO₄)₂·11H₂O + 6H⁺ → Ca²⁺ + 2(UO₂)²⁺ + 2H₃PO₄ + 11H₂O (uranyl phosphates dissolve readily in mineral acids)",
@@ -10454,6 +10517,7 @@
         "quencher": "vanadate matrix (partial)",
         "status": "weakly to moderately fluorescent — Ca²⁺ doesn't quench like Cu²⁺ would, but the vanadate matrix damps the uranyl emission via vibrational coupling (same effect that makes carnotite weakly fluorescent). Brighter than carnotite, dimmer than autunite/uranospinite. Source: research/research-tyuyamunite.md."
       },
+      "_twin_laws_note": "Intentionally empty — tyuyamunite (Ca(UO₂)₂(VO₄)₂·5-8H₂O, orthorhombic Pnnm) habit code 'earthy_crust' signals non-euhedral aggregate. Typical occurrence is canary-yellow earthy coatings on Colorado-Plateau sandstone, not individual tabular crystals. No documented growth twinning at this habit scale. v138 phosphate batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 5.0,
@@ -10661,7 +10725,16 @@
         "quencher": null,
         "status": "strong fluorescence — Ca²⁺ doesn't quench uranyl emission like Cu²⁺ does in zeunerite. Slightly dimmer than autunite (the heavier As-anion absorbs some emission via vibrational coupling) but still in the 'bright' tier alongside autunite. Source: research/research-uranospinite.md."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Frondel 1958. Uranospinite (Ca(UO₂)₂(AsO₄)₂·10H₂O, tetragonal P4/nmm) is the Ca-As member of autunite-group; isostructural with autunite (Ca-P endmember). Same basal {001} contact twins. Sparser field documentation than autunite/zeunerite — most uranospinite is collected at Schneeberg + a few Bohemian localities. p=0.01."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "Ca(UO₂)₂(AsO₄)₂·10H₂O + 6H⁺ → Ca²⁺ + 2(UO₂)²⁺ + 2H₃AsO₄ + 10H₂O (uranyl arsenates dissolve readily in mineral acids)",
@@ -11417,6 +11490,7 @@
       "thermal_decomp_reaction": "Loses zeolitic water above ~200°C; color shifts irreversibly from sky-blue to green to chalky white",
       "thermal_decomp_products": {},
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — turquoise (CuAl₆(PO₄)₄(OH)₈·4H₂O, triclinic P1̄) habit code 'botryoidal_crust' signals non-euhedral aggregate. Forms cryptocrystalline nodular/botryoidal masses in Cu supergene zones (Cerrillos NM, Sleeping Beauty AZ, Neyshabur Iran), virtually never as individual euhedral crystals. The rare microscopic crystals (Bishop Mine VA) are too small for twinning to be observed. v138 phosphate batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 5.0,
@@ -14839,6 +14913,7 @@
         "quencher": "Fe (Fe²⁺ + Fe³⁺ both suppress uranyl emission); dehydration weakens but does not eliminate fluorescence",
         "status": "weakened uranyl fluorescence relative to autunite — partial structural collapse dampens but does not extinguish the (UO₂)²⁺ emission. Still visibly green-yellow under LW UV (365nm), just less intense than fresh autunite."
       },
+      "_twin_laws_note": "Intentionally empty — meta-autunite (Ca(UO₂)₂(PO₄)₂·8H₂O, tetragonal P4₂/n) is the dehydration paramorph of autunite at T > 80°C. It inherits autunite's basal {001} contact twin geometry through the paramorph transition (PARAMORPH_TRANSITIONS dispatch in 16-paramorph-transitions.ts) rather than nucleating fresh — so adding its own twin_laws entry would double-count and isn't engine-correct. The parent autunite carries the twin signal. v137 sulfide convention extended to v138 phosphate paramorphs.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 4.5,
@@ -14910,6 +14985,7 @@
         "P": 0.0
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — metatorbernite (Cu(UO₂)₂(PO₄)₂·8H₂O, tetragonal P4/nmm) is the dehydration paramorph of torbernite at T > 75°C. Inherits torbernite's documented twin geometry through paramorph transition rather than nucleating fresh. Same rationale as meta-autunite (v138).",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 5.0,
@@ -15216,6 +15292,7 @@
         "quencher": null,
         "status": "Non-fluorescent under standard SW/MW/LW UV. The Pb²⁺ + Al³⁺ + Cu²⁺ trace combination provides no fluorescence activator (Pb²⁺ at high concentrations in mineral lattice is a quencher rather than activator; Cu²⁺ trace amounts are likewise non-fluorescent). Visible cobalt-blue color is absorption + electronic transitions in Cu²⁺-Pb²⁺-O charge transfer, not fluorescence."
       },
+      "_twin_laws_note": "Intentionally empty — plumbogummite (PbAl₃(PO₄)₂(OH)₅·H₂O, trigonal R3̄m) habit code 'pseudomorph_after_pyromorphite' captures its typical occurrence as a supergene pseudomorph replacing earlier pyromorphite. Doesn't nucleate fresh as euhedral individuals at vugg-scale; the pseudomorph inherits external habit from pyromorphite but no twin behavior is documented for either the replacement or the rare primary occurrences. v138 phosphate batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 4.0,
