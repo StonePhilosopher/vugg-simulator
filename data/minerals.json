@@ -4819,7 +4819,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_trapiche",
+          "miller_indices": "{1011}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II tourmaline section; Mindat. Tourmaline's trigonal symmetry lacks horizontal mirror planes — classical contact twinning is structurally suppressed. Sector/pseudo-twins on {1011} reported very rarely in Brazilian + Afghan elbaite. Data sparse — conservative p=0.005."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "extremely resistant — no practical acid dissolution",
@@ -4928,7 +4937,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II beryl section; Frondel 1962 System of Mineralogy v.III. Hexagonal beryl rarely twins — most prismatic beryl crystals are single individuals. Basal contact twin on {0001} reported very rarely in pegmatite specimens. Data sparse — conservative p=0.005 applies to all 5 beryl-group entries (beryl, emerald, aquamarine, morganite, heliodor) which are color variants of the same Be3Al2Si6O18 species."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "resistant to most acids; dissolves slowly in HF",
@@ -5997,6 +6015,7 @@
         "SiO2": 0.4
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — chrysocolla forms only botryoidal/colloform aggregates of microcrystalline Cu-silicate, no individual euhedral crystals to twin. Per Anthony Handbook v.II and Mindat chrysocolla habit notes. v136 silicate batch documented this explicitly rather than padding with placeholder p=0.005.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 4.5,
@@ -7039,7 +7058,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": "weak red (Cr³⁺ emission, overlaps ruby but much weaker)",
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Same beryl-group basal {0001} twin as the parent beryl entry — emerald is the Cr-bearing color variant of Be3Al2Si6O18, inherits the same rare-twin behavior. Frondel 1962 v.III; Anthony Handbook v.II."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "hex_prism",
       "color_rules": {
@@ -7122,7 +7150,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Same beryl-group basal {0001} twin as the parent beryl entry — aquamarine is the Fe-bearing color variant of Be3Al2Si6O18, inherits the same rare-twin behavior."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "hex_prism_long",
       "color_rules": {
@@ -7198,7 +7235,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Same beryl-group basal {0001} twin as the parent beryl entry — morganite is the Mn/Cs-bearing pink color variant of Be3Al2Si6O18, inherits the same rare-twin behavior."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "tabular_hex",
       "color_rules": {
@@ -7274,7 +7320,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Same beryl-group basal {0001} twin as the parent beryl entry — heliodor is the Fe³⁺-bearing yellow color variant of Be3Al2Si6O18, inherits the same rare-twin behavior."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "hex_prism",
       "color_rules": {
@@ -11386,6 +11441,7 @@
       "thermal_decomp_reaction": "Ni-clay nano-inclusions destabilize above ~150°C — color fades irreversibly to white/yellow-brown; chalcedony lattice persists to 870°C α→β quartz transition",
       "thermal_decomp_products": {},
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — chrysoprase is Ni-bearing chalcedony, a microcrystalline aggregate of fibrous quartz with no individual euhedral crystals to twin. The parent quartz species has twin_laws (Dauphine, Brazil, Japan) but those require crystalline individuals; chrysoprase's chalcedony texture doesn't produce them at scale.",
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "chalcedony_vein",
@@ -12101,6 +12157,7 @@
       "thermal_decomp_reaction": "Acid dissolution below pH 5. Above 150°C: diagenesis to chalcedony/quartz (opal-A → opal-CT → opal-C → chalcedony → quartz ladder). Each step releases structural water: A→CT ~3-5 wt% H₂O; CT→C ~2-3%; C→chalcedony ~1%.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Most opal non-fluorescent. Some precious opal varieties show weak white/blue under SW UV from organic inclusions; common opal generally inert."},
+      "_twin_laws_note": "Intentionally empty — opal is amorphous hydrated silica (opal-A is fully non-crystalline; opal-CT/opal-C have nano-crystalline silica spheres but no euhedral form). No crystal structure → no twinning. Per Iler 1979 The Chemistry of Silica + Anthony Handbook v.II opal section.",
       "twin_laws": [],
       "acid_dissolution": "Dissolves slowly in dilute HF + strong alkali (>pH 10); also dissolves in hot acidic groundwater.",
       "habit": "botryoidal_mound",
@@ -12252,6 +12309,7 @@
       "thermal_decomp_reaction": "Oxidative dissolution at O₂ > 0.5: U(IV) → U(VI) uranyl, releases (UO₂)²⁺ to feed uranophane / autunite / torbernite supergene cascade. Highly radioactive — emits alpha + gamma.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": "U(IV) lacks uranyl chromophore", "status": "NON-FLUORESCENT. U(IV) does NOT have the (UO₂)²⁺ vibronic chromophore that gives U(VI) phases their characteristic yellow-green luminescence. Diagnostic distinction from uranophane (both look superficially similar but uranophane fluoresces bright yellow-green, coffinite does not)."},
+      "_twin_laws_note": "Intentionally empty — coffinite typically occurs as fracture-replacement, colloform bands, or sooty coatings; rarely as euhedral individuals. The habit_variants (fracture_replacement_after_uraninite, colloform_band, sooty_coating) all describe non-euhedral textures. Twin behavior in the rare euhedral cases is undocumented in the literature.",
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "fracture_replacement_after_uraninite",
@@ -12290,7 +12348,16 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 4.5 — uranyl + Ca + Si released. Dehydration above ~100°C transforms toward dehydrated uranophane variants.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": "(UO2)2+", "threshold_ppm": 0, "color": "bright yellow-green to apple-green", "quencher": null, "status": "DIAGNOSTIC BRIGHT YELLOW-GREEN UV-FLUORESCENCE under both SW (254 nm) + LW (365 nm), persistent. The uranyl (UO₂)²⁺ vibronic chromophore. Intensity often exceeds autunite's; distinguishes uranophane from non-fluorescent yellow Fe-oxides (jarosite, limonite)."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV uranophane section. Monoclinic {001} contact twin occasionally reported in radiating-acicular puffs at Colorado Plateau + Schneeberg. Rare; conservative p=0.01."
+        }
+      ],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.5.",
       "habit": "radiating_fibrous_puffs",
       "color_rules": {"lemon_yellow": {"default": true, "trigger": "default — brilliant lemon to canary yellow"}, "straw_yellow_weathered": {"trigger": "weathered surfaces — straw-yellow"}},
@@ -12375,7 +12442,16 @@
       "thermal_decomp_reaction": "Stable across the full geological T range up to ~1500°C. No dissolution path above pH 4. The terminal Zn-silicate phase.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": "Mn2+", "threshold_ppm": 0.005, "color": "bright green", "quencher": "Fe2+", "status": "DIAGNOSTIC bright green SW-UV (254 nm) fluorescence, often with persistent phosphorescence at Franklin/Sterling. Mn²⁺ in Zn²⁺ site is the activator; even traces produce strong response. Fe quenches in Fe-rich varieties."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II willemite section; Dana 8th ed. Trigonal {0001} basal contact twin reported very rarely in Franklin/Sterling Hill specimens. Data sparse — conservative p=0.005."
+        }
+      ],
       "acid_dissolution": "Slow in dilute HCl below pH 4.",
       "habit": "fibrous_radiating_skorpion",
       "color_rules": {"green_yellow": {"default": true, "trigger": "default Mn-trace — apple-green to honey-yellow (Skorpion supergene mode)"}, "troostite_red": {"trigger": "Mn > 50 ppm + T ≥ 500 — troostite Franklin variety, reddish-brown"}, "colorless": {"trigger": "pure Zn end (Mn < 0.005 ppm) — colorless, weakly fluorescent"}},
@@ -13044,7 +13120,16 @@
         "quencher": "Cu²⁺",
         "status": "Non-fluorescent under SW/MW/LW UV. Cu²⁺ quenches; shattuckite shows no characteristic emission."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II shattuckite section. Orthorhombic {010} contact twin reported very rarely in acicular-tuft and spherulitic-rosette specimens (Bisbee, Tantara). Data sparse — conservative p=0.005."
+        }
+      ],
       "acid_dissolution": "Slow dissolution in dilute HCl at pH < 4.5. Cu²⁺ + silicic acid released.",
       "habit": "acicular_tuft",
       "color_rules": {
@@ -15900,6 +15985,7 @@
         "quencher": null,
         "status": "Non-fluorescent."
       },
+      "_twin_laws_note": "Intentionally empty — chrysotile is the fibrous polytype of the serpentine group (the asbestos variety). Forms ONLY as parallel-aligned fibrous bundles or platy aggregates; no individual euhedral crystals to twin. Per Hawthorne et al. 2012 + Veblen 1980 (Reviews in Mineralogy v.19 amphibole/serpentine).",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 7.0,
@@ -16334,6 +16420,7 @@
       "thermal_decomp_reaction": "Above ~870°C: chalcedony recrystallizes to quartz (loses chatoyancy). Heat-treatment to ~700°C gives red tiger's eye via Fe²⁺ → Fe³⁺ in the chalcedony fabric.",
       "thermal_decomp_products": { "SiO2": 1.0 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
+      "_twin_laws_note": "Intentionally empty — tigers_eye is a chalcedony pseudomorph after crocidolite (asbestiform riebeckite) — it inherits the fibrous parallel-aligned fabric of the parent + the microcrystalline silica replacement texture. No euhedral crystal form, no twinning. The original crocidolite parent could in principle have had amphibole-group {100} twins, but those are obliterated by the chalcedony replacement.",
       "twin_laws": [],
       "acid_dissolution": { "pH_threshold": 4.0, "reaction": "SiO2 stable to acid; framework collapse only at pH < 4 + HF.", "products": { "SiO2": 1.0 } },
       "habit": "chatoyant_pseudomorph",
