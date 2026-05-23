@@ -979,6 +979,44 @@ const PRIM_PYRITE_IRON_CROSS_TWIN = {
   })(),
 };
 
+// v134 (2026-05-22): marcasite spearhead-twin primitive. The {101}
+// contact twin of marcasite — visually a single elongated rhombic
+// bipyramid (Dana 8th ed. marcasite habit; Mindat marcasite catalog).
+// Distinct from PRIM_DIPYRAMID (hex bipyramid) and PRIM_OCTAHEDRON
+// (regular octahedron): spearhead is stretched along c and has
+// RHOMBIC (not hex, not square) cross-section reflecting marcasite's
+// orthorhombic symmetry. v133 set spearhead probability to 0.05
+// (per the path-1 retune rationale documented in the marcasite
+// twin_laws _retune_note: spearhead rolls first at 5%, then cockscomb
+// at 55% if spearhead didn't fire).
+//
+// Geometry: 6 vertices (2 apexes + 4 equator), 12 edges. Same
+// topology as PRIM_OCTAHEDRON, but the equatorial radii differ
+// between x and z axes (a > b) to give the rhombic cross-section
+// signature of an orthorhombic twin.
+//
+// Why "spearhead": real marcasite specimens of the {101} twin look
+// like a stylized spearhead or arrowhead — pointed apex, broad
+// midsection, narrow base. Common at Joplin / Tri-State MVT
+// (alongside the more common cockscomb twin), Folkestone Cretaceous
+// chalk concretions.
+const PRIM_MARCASITE_SPEARHEAD_TWIN = {
+  name: 'marcasite_spearhead_twin',
+  vertices: [
+    [ 0.0,  1.0,  0.0 ],   // 0 top apex (pointed end)
+    [ 0.0, -0.1,  0.0 ],   // 1 bottom apex (buried at wall)
+    [ 0.18, 0.45,  0.0 ],  // 2 east (broad direction — a-axis, longer)
+    [-0.18, 0.45,  0.0 ],  // 3 west
+    [ 0.0,  0.45,  0.10 ], // 4 north (narrow direction — b-axis, shorter; rhombic)
+    [ 0.0,  0.45, -0.10 ], // 5 south
+  ],
+  edges: [
+    [0, 2], [0, 3], [0, 4], [0, 5],  // top apex → equator
+    [1, 2], [1, 3], [1, 4], [1, 5],  // bottom apex → equator
+    [2, 4], [4, 3], [3, 5], [5, 2],  // equator ring
+  ],
+};
+
 // Habit string → primitive lookup. Direct hits checked first; the
 // fuzzy-substring fallback in _lookupCrystalPrimitive catches the
 // many compound forms in data/minerals.json (e.g. "rhombohedral_or_

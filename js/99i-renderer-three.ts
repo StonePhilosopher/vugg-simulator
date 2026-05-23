@@ -529,6 +529,7 @@ const _GEOM_TOKEN_RATIO: Record<string, number> = {
   cerussite_sixling_twin: 1.8,  // flat stellate — wider than tall, like botryoidal crusts
   marcasite_cockscomb_twin: 0.3,  // thin needle blades — c >> a, acicular family
   pyrite_iron_cross_twin: 1.0,  // interpenetrating pyritohedra — isometric envelope
+  marcasite_spearhead_twin: 0.4,  // elongated bipyramid — c >> a, spike-like aspect
   rhombic_dodec: 1.0,
   dodecahedron: 1.0,
   snowball: 1.0,
@@ -592,6 +593,10 @@ function _resolveCrystalGeomToken(crystal: any, habitForGeom: string): string {
   if (crystal && crystal.mineral === 'pyrite' && crystal.twinned
       && crystal.twin_law === 'iron_cross') {
     return 'pyrite_iron_cross_twin';
+  }
+  if (crystal && crystal.mineral === 'marcasite' && crystal.twinned
+      && crystal.twin_law === 'spearhead') {
+    return 'marcasite_spearhead_twin';
   }
   const canonical = _habitGeomToken(habitForGeom);
   if (crystal && crystal.growth_environment === 'air'
@@ -1518,6 +1523,53 @@ function _makePyriteIronCrossTwin(): any {
   return geom;
 }
 
+// Marcasite spearhead twin — the {101} contact twin produces a single
+// elongated rhombic bipyramid. Mirrors PRIM_MARCASITE_SPEARHEAD_TWIN
+// in 99c. Distinct from cube/octahedron/dipyramid: stretched along c
+// AND rhombic in cross-section (a ≠ b) to reflect marcasite's
+// orthorhombic symmetry. Dana 8th ed. + Mindat marcasite habit.
+// v133 sets spearhead probability to 0.05 (path-1: rolls before
+// cockscomb's 0.55).
+//
+// 6 vertices, 8 flat-shaded triangular faces — same topology as a
+// regular octahedron but with a > b equatorial radii (rhombic cross-
+// section). 8 triangles × 3 verts = 24 vertex triples.
+function _makeMarcasiteSpearheadTwin(): any {
+  const a = 0.18;    // broad equatorial half-extent (a-axis)
+  const b = 0.10;    // narrow equatorial half-extent (b-axis) — rhombic
+  const L = 0.5;     // c-axis half-length (centered at origin)
+  // 6 vertices: 2 apexes + 4 equator (rhombic).
+  const v: number[][] = [
+    [0,  L, 0],   // 0 top apex (+y)
+    [0, -L, 0],   // 1 bottom apex (-y)
+    [a, 0, 0],    // 2 +x (a-axis east)
+    [-a, 0, 0],   // 3 -x (a-axis west)
+    [0, 0, b],    // 4 +z (b-axis north)
+    [0, 0, -b],   // 5 -z (b-axis south)
+  ];
+  // 8 triangular faces — same octant pattern as a regular octahedron.
+  // CCW winding from outside (sx·sy·sz parity rule).
+  const faces: number[][] = [
+    [2, 0, 4],   // (+x, +y, +z) — top-east-north
+    [2, 5, 0],   // (+x, +y, -z) — top-east-south
+    [2, 4, 1],   // (+x, -y, +z) — bot-east-north
+    [2, 1, 5],   // (+x, -y, -z) — bot-east-south
+    [3, 4, 0],   // (-x, +y, +z) — top-west-north
+    [3, 0, 5],   // (-x, +y, -z) — top-west-south
+    [3, 1, 4],   // (-x, -y, +z) — bot-west-north
+    [3, 5, 1],   // (-x, -y, -z) — bot-west-south
+  ];
+  const positions: number[] = [];
+  for (const f of faces) {
+    const A = v[f[0]], B = v[f[1]], C = v[f[2]];
+    _pushTri(positions, A[0], A[1], A[2], B[0], B[1], B[2], C[0], C[1], C[2]);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Build a unit-sized geometry for a given habit token, oriented so
 // its long axis (= c-axis) lies along +Y. The instance transform
 // later places the base at the wall and scales by c_length / a_width.
@@ -1591,6 +1643,11 @@ function _buildHabitGeom(token: string): any {
       // canonical "Eisernes Kreuz" twin (Ramdohr 1980). Dispatch gated
       // on mineral='pyrite' + twinned + twin_law='iron_cross'.
       return _makePyriteIronCrossTwin();
+    case 'marcasite_spearhead_twin':
+      // v134 (2026-05-22) — secondary marcasite twin. Single elongated
+      // rhombic bipyramid {101} (vs the cockscomb's V-pair). Dispatch
+      // gated on mineral='marcasite' + twinned + twin_law='spearhead'.
+      return _makeMarcasiteSpearheadTwin();
     case 'octahedron':
       return new THREE.OctahedronGeometry(0.55, 0);
     case 'snowball':
@@ -1794,6 +1851,7 @@ _CLUSTER_PATTERNS.aragonite_pseudohex_twin = _CLUSTER_PATTERNS.prism;
 _CLUSTER_PATTERNS.cerussite_sixling_twin = _CLUSTER_PATTERNS.botryoidal;  // skip cluster
 _CLUSTER_PATTERNS.marcasite_cockscomb_twin = _CLUSTER_PATTERNS.spike;
 _CLUSTER_PATTERNS.pyrite_iron_cross_twin = _CLUSTER_PATTERNS.cube;
+_CLUSTER_PATTERNS.marcasite_spearhead_twin = _CLUSTER_PATTERNS.spike;
 
 // Number of satellite meshes per crystal — scales inversely with
 // crystal size. Big gem crystals (>60 mm) read as solo specimens;

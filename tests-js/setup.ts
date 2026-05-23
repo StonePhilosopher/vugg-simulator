@@ -303,6 +303,9 @@ const EXPORTS = [
   // twin — completes RESEARCH-CRYSTAL-NATURALISM.md §7's list of 7).
   // Two chiral {120} pyritohedra interpenetrating at 90° around c-axis.
   'PRIM_PYRITE_IRON_CROSS_TWIN',
+  // 2026-05-22 marcasite spearhead twin (v134 secondary, post-iconic-7).
+  // Elongated rhombic bipyramid — the {101} contact twin.
+  'PRIM_MARCASITE_SPEARHEAD_TWIN',
   '_lookupCrystalPrimitive',
   // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
   'EH_DYNAMIC_ENABLED',
