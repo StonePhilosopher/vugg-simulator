@@ -259,6 +259,13 @@ const EXPORTS = [
   // Per-habit cluster pattern dispatch; mirrors 99i's _CLUSTER_PATTERNS.
   '_druzyClusterSpec',
   '_druzyClusterCount',  // legacy alias — count-only API for back-compat
+  // 2026-05-22 twin cluster-pattern wiring (v134). _clusterPatternKeyForPrim
+  // maps PRIM_* → pattern key (99d); _CLUSTER_PATTERNS maps token string →
+  // pattern (99i). Tests verify all 7 twin primitives route to appropriate
+  // patterns.
+  '_clusterPatternKeyForPrim',
+  '_CLUSTER_PATTERNS',
+  '_CLUSTER_PATTERNS_2D',
   // 2026-05-22 hopper/skeletal texture (v134, 99a-renderer-textures.ts).
   // _resolveTexture maps (mineral, habit) → texture token; the 'hopper'
   // token routes to _texture_hopper which paints stepped right-angle

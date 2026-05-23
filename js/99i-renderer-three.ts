@@ -1765,6 +1765,36 @@ const _CLUSTER_PATTERN_DEFAULT: ClusterPattern = {
   evenAngles: false,
 };
 
+// v134 (2026-05-22): twin primitives reuse their underlying-form cluster
+// pattern. Mirrors 99d's _clusterPatternKeyForPrim mapping. The dispatch
+// in this file lookups _CLUSTER_PATTERNS[geomToken] directly, so without
+// these entries the twin tokens would fall through to
+// _CLUSTER_PATTERN_DEFAULT — habit-appropriate but not habit-specific.
+//
+// Why each twin maps where it does:
+//   fluorite penetration → cube     (Weardale/Cave-in-Rock fluorite carpets
+//                                    contain many twinned cubes)
+//   selenite swallowtail → tablet   (tabular blade rosette — Bohemian +
+//                                    Naica clusters of fishtails)
+//   galena spinel-law → octahedron  (Cobalt-Ontario octahedral galena groups)
+//   aragonite pseudo-hex → prism    (vertical pseudo-hex columns cluster
+//                                    as prismatic forests)
+//   cerussite sixling → botryoidal  (count=0, skip; the primitive already
+//                                    emits 6 visible arms — adding satellites
+//                                    would clutter)
+//   marcasite cockscomb → spike     (THE payoff: 'spike' pattern emits 4-8
+//                                    satellite cockscomb-twins in a tight
+//                                    spray, which IS the comb morphology)
+//   pyrite iron-cross → cube        (twinned pyrite still grows in cubic
+//                                    carpets — Elba, Pyrite Hill)
+_CLUSTER_PATTERNS.fluorite_penetration_twin = _CLUSTER_PATTERNS.cube;
+_CLUSTER_PATTERNS.selenite_swallowtail_twin = _CLUSTER_PATTERNS.tablet;
+_CLUSTER_PATTERNS.galena_octahedron_twin = _CLUSTER_PATTERNS.octahedron;
+_CLUSTER_PATTERNS.aragonite_pseudohex_twin = _CLUSTER_PATTERNS.prism;
+_CLUSTER_PATTERNS.cerussite_sixling_twin = _CLUSTER_PATTERNS.botryoidal;  // skip cluster
+_CLUSTER_PATTERNS.marcasite_cockscomb_twin = _CLUSTER_PATTERNS.spike;
+_CLUSTER_PATTERNS.pyrite_iron_cross_twin = _CLUSTER_PATTERNS.cube;
+
 // Number of satellite meshes per crystal — scales inversely with
 // crystal size. Big gem crystals (>60 mm) read as solo specimens;
 // small ones build into drusy carpets. Multiplied by the per-habit

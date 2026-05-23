@@ -314,6 +314,26 @@ function _clusterPatternKeyForPrim(prim) {
   if (prim === PRIM_TABULAR) return 'tablet';
   if (prim === PRIM_BOTRYOIDAL) return 'botryoidal';
   if (prim === PRIM_DRIPSTONE) return 'dripstone';
+  // v134 (2026-05-22): twin primitives cluster like their underlying-form
+  // base shape — twinned fluorite still appears in carpets of cubes
+  // (Weardale, Cave-in-Rock specimens), twinned galena still clusters as
+  // octahedral groups (Cobalt-Ontario), etc. The marcasite cockscomb →
+  // 'spike' routing is the literal payoff: a clustered cockscomb twin
+  // emits multiple twin satellites in a tight spray, which IS the
+  // comb morphology in real specimens (50-70% twinning at Joplin /
+  // Tri-State per v133's _retune_note).
+  //
+  // Cerussite stellate sixling is the exception — the primitive already
+  // emits 6 visible arms (3 blades × 2), so adding cluster satellites
+  // would overflow the visual envelope. Returning null falls to the
+  // tiny-crystal micro fallback or single-primitive default.
+  if (prim === PRIM_FLUORITE_PENETRATION_TWIN) return 'cube';
+  if (prim === PRIM_SELENITE_SWALLOWTAIL_TWIN) return 'tablet';
+  if (prim === PRIM_GALENA_OCTAHEDRON_TWIN) return 'octahedron';
+  if (prim === PRIM_ARAGONITE_PSEUDOHEX_TWIN) return 'prism';
+  if (prim === PRIM_CERUSSITE_SIXLING_TWIN) return null;  // already multi-arm
+  if (prim === PRIM_MARCASITE_COCKSCOMB_TWIN) return 'spike';
+  if (prim === PRIM_PYRITE_IRON_CROSS_TWIN) return 'cube';
   return null;  // unknown → caller falls through to legacy drusy-habit path or single primitive
 }
 
