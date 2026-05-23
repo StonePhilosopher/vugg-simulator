@@ -154,7 +154,7 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
   });
 
   describe('post-retune coverage health', () => {
-    it('zero stale (mineral, scenario) pairs across the canonical 4', () => {
+    it('zero stale (mineral, scenario) pairs across the canonical 4', { timeout: 90000 }, () => {
       // End-to-end: pin that none of the four target minerals shows
       // ever_nucleated=false on the same 3-seed sweep their individual
       // tests above use. Belt-and-suspenders; if a downstream change

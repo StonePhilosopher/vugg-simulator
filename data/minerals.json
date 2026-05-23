@@ -1877,7 +1877,16 @@
         "CO3": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V (carbonates) + Frondel 1962 v.III carbonate section. Malachite (monoclinic P21/a, Cu2(CO3)(OH)2) shows {100} contact twins in the iconic acicular Mashamba + Kolwezi (DRC) sprays. Botryoidal habit dominates in field specimens (the typical green satin-mass) but well-formed acicular individuals from the Katanga copperbelt routinely twin. p=0.02 reflects minor-common frequency among the visible-crystal acicular fraction."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "malachite + 4H+ -> 2Cu2+ + CO2 + 3H2O (fizzes like calcite)",
@@ -1975,6 +1984,7 @@
         "quencher": null,
         "status": "non-fluorescent — research-uraninite.md §Fluorescence (boss canonical 626bb22, May 2026). Pre-v12 misclassified as weakly fluorescent; corrected. The ABSENCE of fluorescence is a diagnostic feature distinguishing primary uraninite from its bright-green secondary uranyl minerals (autunite, torbernite, etc.)."
       },
+      "_twin_laws_note": "Intentionally empty — uraninite (cubic Fm-3m, UO2) habit code 'pitchblende_massive' signals the dominant non-euhedral colloform/massive variety. Well-formed cubic uraninite crystals (Černý Důl Czech Republic, Wölsendorf Germany) DO show {111} contact twins per Anthony v.V, but the simulator renders the pitchblende-massive form — the more common natural occurrence at the vugg vein/replacement scale. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "pitchblende_massive",
@@ -2175,7 +2185,16 @@
         "quencher": null,
         "status": "newly_added"
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V + Frondel 1962 v.III. Smithsonite (trigonal R-3c, ZnCO3) is calcite-group-isostructural; the rhombohedral form at Tsumeb + Kelly (NM) + Choix (Mexico) shows {0001} basal contact twins analogous to calcite e-twins. Most smithsonite is botryoidal \"bonamite\" but rhombohedral varieties carry visible twins. p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.0,
         "reaction": "ZnCO3 + 2H+ -> Zn2+ + H2O + CO2 (fizzes)",
@@ -2374,7 +2393,16 @@
         "Mo": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V (molybdates + tungstates) + Mindat ferrimolybdite habit notes. Ferrimolybdite (orthorhombic, Fe2(MoO4)3·nH2O) forms canary-yellow acicular tufts at supergene Mo-Fe oxidation zones (Climax CO, Bingham UT). Twin behavior data-sparse; rare contact twins reported. Conservative p=0.005 (rare-twin floor)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "dissolves in strong acid, releasing Fe³⁺ + MoO₄²⁻",
@@ -2676,7 +2704,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V (sulfates) + Dana 8th. Celestine (orthorhombic Pnma, SrSO4) is in the barite-group; {110} contact twins documented at Maybee (Michigan), Agrigento (Sicily), and Sakoany (Madagascar) tabular specimens. Less twin-frequent than barite itself; conservative p=0.02 (rare-to-minor)."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "tabular",
       "color_rules": {
@@ -2764,7 +2801,16 @@
         "S": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1012",
+          "miller_indices": "{10-12}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V + Stoffregen et al. 2000 (Reviews in Mineralogy 40:454) alunite-jarosite-group review. Jarosite (trigonal R-3m, KFe3(SO4)2(OH)6) has the alunite-supergroup pseudocubic rhombohedral habit; {10-12} contact twins are reported but rare. Most jarosite occurs as fine drusy crusts in acid-mine-drainage and supergene zones, with twinning vanishingly uncommon at visible scale. p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "dissolves above pH 4 (alkaline-side dissolution, not acid), releasing K + Fe³⁺ + SO₄²⁻; goethite-stable territory now",
@@ -2867,7 +2913,16 @@
         "S": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1012",
+          "miller_indices": "{10-12}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V + Stoffregen et al. 2000. Alunite (trigonal R-3m, KAl3(SO4)2(OH)6) is isostructural with jarosite — the Al-end of the alunite-supergroup. Same {10-12} rare contact twins; documented at Tolfa (Italy, type) and the Yellow Mountain alunite deposits. p=0.005 matching jarosite."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "dissolves above pH 4 OR above 350°C, releasing K + Al³⁺ + SO₄²⁻",
@@ -2968,7 +3023,16 @@
         "S": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V brochantite section. Brochantite (monoclinic P21/a, Cu4(SO4)(OH)6) shows {100} contact twins documented in the iconic Chuquicamata (Chile) Atacama-desert supergene zone — the largest brochantite-bearing deposit on Earth. Also Mt Lyell (Tasmania) and Tsumeb. p=0.02 reflects the rare-to-minor field frequency in well-formed prismatic specimens."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.8,
         "reaction": "dissolves below pH 3 (acidification → antlerite stable) OR above pH 7.5 (alkalinization → tenorite/malachite stable). Two-sided fork dissolution.",
@@ -3062,7 +3126,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V antlerite section. Antlerite (orthorhombic Pnam, Cu3(SO4)(OH)4) is the more-acid sister of brochantite — Chuquicamata's dominant supergene Cu sulfate in the deeper acid zone where brochantite would dissolve. Twin documentation sparse; rare {010} contact reported. p=0.005 (rare-twin floor, data sparse)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.2,
         "reaction": "dissolves above pH 3.5 (neutralization → brochantite stable). Below pH 1 → chalcanthite (extreme acid; not in sim).",
@@ -3161,7 +3234,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_011",
+          "miller_indices": "{011}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V anhydrite section. Anhydrite (orthorhombic Amma, CaSO4) is barite-group-adjacent but with a distinct space group; {011} and {110} contact twins documented in salt-dome specimens (Tarka, German Zechstein evaporites). Conservative p=0.02 — most anhydrite is tabular massive but well-formed crystals carry visible twins."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "rehydrates to gypsum (CaSO4·2H2O = selenite in sim) at T<60°C AND salinity<100‰; releases Ca²⁺ + SO₄²⁻ to feed selenite re-precipitation",
@@ -3252,7 +3334,16 @@
         "As": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Mindat scorodite habit notes. Scorodite (orthorhombic Pbca, FeAsO₄·2H₂O) is the iconic supergene As-oxide species — pyramidal blue-green crystals at Ojuela (Mexico), Tsumeb, Hemerdon. Twin behavior data-sparse; rare {001} contact twins reported but most scorodite is untwinned pyramidal/dipyramidal. Conservative p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.5,
         "reaction": "dissolves above pH 5 (alkaline-side dissolution, not acid), releasing Fe³⁺ + AsO₄³⁻",
@@ -3343,6 +3434,7 @@
         "S": 0.4
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — molybdenite (hexagonal P6₃/mmc, MoS₂) forms platy/foliated crystals dominated by perfect basal {0001} cleavage. Glide twinning on {0001} is documented microscopically (Mindat) but no macroscopic growth twin law is recorded in Dana 8th or Ramdohr 1980. v137 sulfide batch: documented intentionally-empty per the v136 convention.",
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "hexagonal_platy",
@@ -3440,7 +3532,16 @@
           "note": "heavy Cu turns off FL"
         }
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "heart_twin_101",
+          "miller_indices": "{101}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Frondel 1948 (American Mineralogist 33:545) — type description of \"heart-shaped\" adamite twins from Mapimí (Ojuela Mine, Durango, Mexico) + Anthony Handbook v.IV adamite section. Orthorhombic Pnnm, Zn₂(AsO₄)(OH). The {101} contact twin produces the diagnostic V-pair \"heart twin\" morphology that defines collector-grade Mapimí adamite. p=0.05 reflects the minor-common frequency of visible heart twins among well-formed Mapimí specimens; the lime-green/yellow Ojuela material is the field reference."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.5,
         "reaction": "dissolves in acid",
@@ -3540,7 +3641,16 @@
         "quencher": null,
         "status": "newly_added"
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1122",
+          "miller_indices": "{11-22}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Mindat mimetite habit notes. Mimetite (hexagonal P6₃/m, Pb₅(AsO₄)₃Cl) is the As endmember of the pyromorphite-mimetite-vanadinite apatite-group series. Same low intrinsic twin propensity as pyromorphite + vanadinite (both shipped at v138); rare {11-22} contact twins documented at Tsumeb + Bad Ems + Wheal Alfred. p=0.005 matching the apatite-group floor."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "dissolves in strong acid",
@@ -3637,7 +3747,16 @@
         "As": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV (arsenates) + Frondel 1962 The System of Mineralogy v.III §vivianite-group. Erythrite (monoclinic C2/m, Co₃(AsO₄)₂·8H₂O) — iconic cobalt-bloom species. {010} contact twins documented in classic Schneeberg + Cobalt (Ontario) + Bou Azzer (Morocco) acicular sprays. The vivianite-group all share this twin law; p=0.05 reflects the minor-common frequency in well-formed sprays."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "erythrite + 6H+ → 3 Co²⁺ + 2 H3AsO4 + 8 H2O (dissolves in moderately acidic fluids)",
@@ -3747,7 +3866,16 @@
         "As": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Frondel 1962. Annabergite (monoclinic C2/m, Ni₃(AsO₄)₂·8H₂O) is the Ni endmember of the erythrite-annabergite series; isostructural, same {010} contact twins documented at Annaberg (type) + Lavrion + Bou Azzer. Conservative p=0.05 matching erythrite."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "annabergite + 6H+ → 3 Ni²⁺ + 2 H3AsO4 + 8 H2O",
@@ -3860,7 +3988,16 @@
         "S": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_111",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I (sulfides) + Ramdohr 1980 §4.4 fahlore section. Tetrahedrite is cubic I4̄3m; the diagnostic {111} tetrahedral habit twins by contact-twin on a tetrahedral face, observed in well-developed Schwaz/Freiberg/Cornwall specimens. Conservative p=0.05 (minor common) — twins are visible but not dominant in field-collected specimens."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "oxidative dissolution — Cu²⁺ + Sb³⁺ released (→ secondary Sb oxides, malachite/azurite downstream)",
@@ -3963,7 +4100,16 @@
         "S": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_111",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I + Ramdohr 1980 §4.4. Isostructural with tetrahedrite (cubic I4̄3m, As endmember of fahlore solid solution). Same {111} contact twins reported in Butte / Tsumeb / Bingham specimens. Conservative p=0.05 matching tetrahedrite."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "oxidative dissolution — Cu²⁺ + AsO₄³⁻ released (→ adamite, erythrite, annabergite, mimetite downstream)",
@@ -4576,6 +4722,7 @@
         "Fe": 0.5
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — goethite (orthorhombic Pnma, alpha-FeO(OH)) habit code 'botryoidal_or_mammillary_or_fibrous' signals non-euhedral aggregate. The dominant field habit is botryoidal/mammillary (Schwartzwald Pikes Peak Cornwall), with rare prismatic individuals (Kongsberg). The simulator renders the dominant non-euhedral form; well-formed Kongsberg-type goethite WOULD twin on {021} per Anthony v.V, but at this habit code those individuals are not produced. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 3.0,
@@ -5288,7 +5435,16 @@
         "quencher": null,
         "note": "inconsistent, many specimens show no response"
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V. Anglesite (orthorhombic Pnma, PbSO4) is the Pb endmember of the barite-group, isostructural with celestine. Same {110} contact twins documented at Monteponi (Sardinia) and Sierra de Cordoba (Argentina) supergene oxidation specimens. Conservative p=0.02 matching celestine."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "PbSO₄ + 2H⁺ → Pb²⁺ + HSO₄⁻ (slow, only strong acid)",
@@ -5505,7 +5661,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1122",
+          "miller_indices": "{11-22}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV (phosphates) + Frondel 1958 apatite-group section. Pyromorphite (hexagonal P6₃/m, apatite-group) rarely twins — apatite-group structures have low intrinsic twin propensity. Sparse {11-22} or {10-11} contact twins are reported at Bad Ems (Germany) and Leadhills (Scotland). Conservative p=0.005 (rare-twin floor)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.5,
         "reaction": "Pb₅(PO₄)₃Cl + 10H⁺ → 5Pb²⁺ + 3H₃PO₄ + Cl⁻",
@@ -5601,7 +5766,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1122",
+          "miller_indices": "{11-22}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Mindat vanadinite habit notes. Isostructural with pyromorphite (apatite-group, hexagonal P6₃/m, V endmember). Same low twin propensity; rare {11-22} contact twins documented at Mibladen (Morocco) and Old Yuma Mine (Arizona). Conservative p=0.005 floor."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.5,
         "reaction": "Pb₅(VO₄)₃Cl + 10H⁺ → 5Pb²⁺ + 3H₃VO₄ + Cl⁻",
@@ -5912,7 +6086,16 @@
         "S": 0.5
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "cleavage_twin_1122",
+          "miller_indices": "{11-22}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I (CuS section) + Ramdohr 1980 §4.3 copper-sulfide section. Covellite (hexagonal P6₃/mmc, micaceous basal cleavage) has rare {11-22} contact twins documented at Butte and Calabona. Most covellite occurs as iridescent plates without visible twins because the basal cleavage dominates the surface morphology. p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "CuS + 2H⁺ + ½O₂ → Cu²⁺ + H₂O + S",
@@ -6222,7 +6405,16 @@
         "CO3": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V + Frondel 1962 v.III — Frondel's azurite section gives the most thorough twin documentation of any Cu-carbonate. Azurite (monoclinic P21/c, Cu3(CO3)2(OH)2) shows {001} contact twins commonly at Tsumeb, Bisbee, and Chessy-les-Mines (France, type locality). The \"deep blue prismatic\" habit is famously twin-prone — collector-grade Bisbee azurite from the Copper Queen routinely shows contact-twin V-pairs. p=0.05 (minor common) reflects the relatively high visible-twin frequency."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.0,
         "reaction": "Cu₃(CO₃)₂(OH)₂ + 6H⁺ → 3Cu²⁺ + 2H₂O + 2CO₂ (fizzes like calcite)",
@@ -6621,7 +6813,16 @@
         "Fe": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V + Mindat lepidocrocite habit notes. Lepidocrocite (orthorhombic Cmcm, gamma-FeO(OH)) forms ruby-red micaceous platy scales at Easton (PA) + Siegen (Germany) + Cornwall. Rare {100} contact twins reported but data sparse — platy aggregates dominate visible morphology. p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "γ-FeOOH + 3H⁺ → Fe³⁺ + 2H₂O",
@@ -6717,7 +6918,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_130",
+          "miller_indices": "{130}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. + Anthony Handbook v.I + Ramdohr 1980 §4.6 antimony-sulfide section. Stibnite (orthorhombic Pbnm) shows contact + cyclic twins on {130}, documented at Ichinokawa (Japan) and Felsőbánya (Romania) where the bladed habit occasionally produces V-pair contact twins. Conservative p=0.02 — most acicular stibnite is untwinned."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "Sb₂S₃ + 6H⁺ → 2Sb³⁺ + 3H₂S",
@@ -6809,7 +7019,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_130",
+          "miller_indices": "{130}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I + Ramdohr 1980 §4.6. Isostructural with stibnite (orthorhombic Pbnm). Twinning behavior parallels stibnite; conservative p=0.02 reflects the same rare-but-documented field frequency."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "Bi₂S₃ + 6H⁺ → 2Bi³⁺ + 3H₂S",
@@ -6898,7 +7117,16 @@
         "Bi": 0.5
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_0112",
+          "miller_indices": "{01-12}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I (native elements). Native bismuth (trigonal R-3m, Bi) shows {01-12} contact + {01-14} rotation twins in well-formed rhombohedral platelets at Schneeberg (Saxony) + Cobalt (Ontario) five-element-vein specimens. Most native bismuth occurs as arborescent / skeletal aggregates of small platelets — the arborescent habit is the cluster pattern, not the individual crystal; per-platelet twinning is rare but documented. Conservative p=0.005 (rare-twin floor reflecting the per-platelet probability)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "Bi + oxidizing acid → Bi³⁺",
@@ -6978,7 +7206,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Mindat clinobisvanite (BiVO₄, monoclinic I2/a) habit notes. Data sparse — clinobisvanite typically occurs as fine yellow micro-plates at supergene Bi-Cu vein zones (Hingston Down Quarry, Sardinian Mt. Cobre). Rare twinning reported but not well-characterized; conservative p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.5,
         "reaction": "BiVO₄ + 4H⁺ → Bi³⁺ + VO₂⁺ + 2H₂O",
@@ -7707,7 +7944,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "paramorphic_111",
+          "miller_indices": "{111}",
+          "trigger": "growth (paramorphic from cubic argentite)",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 §4.7 silver-sulfide section. Acanthite (monoclinic P2₁/n, stable below 177°C) commonly inherits paramorphic {111} twin geometry from the high-T cubic argentite phase (Ag₂S inverts on cooling). At Freiberg / Kongsberg, acanthite preserves the cubic-habit external shape with internal paramorphic twins. p=0.02 reflects rare visible-twin frequency — most acanthite is massive or wire-form."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "default_habit",
       "color_rules": {
@@ -7958,6 +8204,7 @@
         "As": 0.4
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — native arsenic (trigonal R-3m, As) habit code 'massive_granular' signals non-euhedral aggregate. Almost always occurs as botryoidal + reniform + sooty masses at Schneeberg + Sankt Andreasberg + Pribram, not as individual euhedra. Anthony Handbook v.I notes native arsenic almost never forms euhedral crystals; the rare crystalline form (Schneeberg pillow specimens) is rhombohedral but the simulator renders the dominant massive habit. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "massive_granular",
@@ -8031,7 +8278,16 @@
         "S": 0.6
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_101",
+          "miller_indices": "{101}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I. Native alpha-sulfur (orthorhombic Fddd, S) shows {101} and {011} contact twins documented in the classic Sicilian Cianciana + Agrigento bipyramidal crystals (the Sicilian \"solfara\" sulfur). Maybee + Bolivia (Tarapaca) also produce twinned specimens. p=0.02 reflects the minor-common visible-twin frequency in well-formed bipyramidal specimens."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "bipyramidal_alpha",
       "color_rules": {
@@ -8103,7 +8359,16 @@
         "Te": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_0112",
+          "miller_indices": "{01-12}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I + Ramdohr 1980 §3 native elements. Native tellurium (trigonal P3121, Te) forms prismatic hexagonal crystals at the iconic Cresson Vug (Cripple Creek CO) and Săcărâmb (Romania) telluride zones. Rare {01-12} contact twins reported. Conservative p=0.005 (rare-twin floor) — most native tellurium is small-crystal or massive."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "prismatic_hex",
       "color_rules": {
@@ -8177,7 +8442,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1011",
+          "miller_indices": "{10-11}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 §4.5 nickel-arsenide section + Anthony Handbook v.I. Nickeline (NiAs, hexagonal P6₃/mmc) shows {10-11} contact twins at Cobalt (Ontario) and Schneeberg (Saxony). Conservative p=0.02 — most nickeline occurs as massive replacement of cobalt-nickel veins; visible euhedral twins are uncommon."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "default_habit",
       "color_rules": {
@@ -8249,7 +8523,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_3034",
+          "miller_indices": "{30-34}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I + Mindat millerite habit notes. Millerite (NiS, trigonal R3m) is famous for hair-fine acicular tufts (Sterling Mine, Iowa, the classic geode locality). Twinning on {30-34} is documented but vanishingly rare — most millerite is capillary and untwinned. Conservative p=0.005 (rare-twin floor with data-sparse caveat)."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "default_habit",
       "color_rules": {
@@ -8321,7 +8604,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "iron_cross",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I + Ramdohr 1980 §4.5 cobalt-arsenide section. Cobaltite is pseudo-cubic (orthorhombic Pca2₁ but cubic in habit) and shares pyritohedral / iron-cross-like twinning behavior with the pyrite group. Documented at Tunaberg (Sweden), Cobalt (Ontario). Conservative p=0.02 — twins visible in well-formed specimens but not common."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "default_habit",
       "color_rules": {
@@ -8395,7 +8687,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV (vanadates) + Frondel 1958. Descloizite (orthorhombic Pnma, PbZn(VO₄)(OH)) shows {110} contact twins documented at Berg Aukas (Namibia) and Sierra de Cordoba (Argentina). Prismatic crystals with sector-pair twins. Conservative p=0.02 (rare-to-minor in field specimens)."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "prismatic",
       "color_rules": {
@@ -8469,7 +8770,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV. Isostructural with descloizite (orthorhombic Pnma, Cu endmember). Same twin behavior; documented at Mottram St Andrew (England, type locality) and Tsumeb. Conservative p=0.02 matching descloizite."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "prismatic",
       "color_rules": {
@@ -8527,7 +8837,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V. Raspite (monoclinic P21/n, PbWO4) is the monoclinic dimorph of stolzite — rare at most localities, dominant at Broken Hill (NSW, Australia type). Tabular habit shows {100} contact twins per Anthony. Conservative p=0.02 reflecting the visible twins among well-formed Broken Hill specimens."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "tabular_monoclinic",
       "color_rules": {
@@ -8592,7 +8911,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V. Stolzite (tetragonal I41/a, PbWO4) is the tetragonal scheelite-group dimorph of raspite. Same Broken Hill type-locality; also documented at Tsumeb + Mapimí. {110} contact twins per Anthony — scheelite-group dipyramidal habit favors visible twin formation. p=0.02 matching raspite."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "dipyramidal",
       "color_rules": {
@@ -8666,7 +8994,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_101",
+          "miller_indices": "{101}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV. Olivenite (orthorhombic Pnnm, Cu₂(AsO₄)(OH)) is isostructural with adamite — Cu endmember of the adamite-olivenite series. Same {101} contact twin behavior but less commonly observed than adamite hearts; documented at Cornwall (type) + Tsumeb + Cap Garonne. Conservative p=0.02."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "prismatic",
       "color_rules": {
@@ -9325,7 +9662,16 @@
         "CO3": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V aurichalcite section. Aurichalcite (orthorhombic Pmcn, (Zn,Cu)5(CO3)2(OH)6) forms pale-blue-green acicular tufts in supergene Zn-Cu zones (Mapimí, Tsumeb, Bisbee). Twin data sparse — most aurichalcite is too acicular + tufted for individual twin observation. Conservative p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.0,
         "reaction": "(Zn,Cu)₅(CO₃)₂(OH)₆ + 10H⁺ → 5(Zn²⁺,Cu²⁺) + 2CO₂ + 8H₂O (fizzes)",
@@ -9676,7 +10022,16 @@
         "As": 0.0
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Frondel 1958 + Anthony Handbook v.IV. Zeunerite (Cu(UO₂)₂(AsO₄)₂·12H₂O, tetragonal P4/nmm) is the Cu-As analog of autunite-group; isostructural with torbernite (Cu-P). Same {001} basal contact twin behavior. Documented at Schneeberg/Walpurgis Flacher (As-rich uranium vein zone). p=0.01 matching autunite."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "Cu(UO₂)₂(AsO₄)₂·12H₂O + 6H⁺ → Cu²⁺ + 2(UO₂)²⁺ + 2H₃AsO₄ + 12H₂O (dissolves readily)",
@@ -10156,7 +10511,16 @@
         "quencher": "Fe (Fe²⁺ + Fe³⁺ both suppress uranyl emission); dehydration to meta-autunite weakens but does not eliminate fluorescence",
         "status": "the brightest uranyl fluorescer in the simulator — Ca²⁺ doesn't quench like Cu²⁺ does in torbernite/zeunerite. LW UV (365nm) drives the strongest emission; SW (254nm) gives a duller green-yellow."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Frondel 1958 The Systematic Mineralogy of Uranium and Thorium §autunite-group + Anthony Handbook v.IV. Autunite (tetragonal I4/mmm, Ca(UO₂)₂(PO₄)₂·11H₂O) shows {001} basal contact twins documented at Margnac (France) and Mt. Spokane (Washington). The autunite-group ditetragonal-dipyramidal habit produces square tablets where contact twins appear as paired basal flakes. Conservative p=0.01."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "Ca(UO₂)₂(PO₄)₂·11H₂O + 6H⁺ → Ca²⁺ + 2(UO₂)²⁺ + 2H₃PO₄ + 11H₂O (uranyl phosphates dissolve readily in mineral acids)",
@@ -10372,6 +10736,7 @@
         "quencher": "vanadate matrix (partial)",
         "status": "weakly to moderately fluorescent — Ca²⁺ doesn't quench like Cu²⁺ would, but the vanadate matrix damps the uranyl emission via vibrational coupling (same effect that makes carnotite weakly fluorescent). Brighter than carnotite, dimmer than autunite/uranospinite. Source: research/research-tyuyamunite.md."
       },
+      "_twin_laws_note": "Intentionally empty — tyuyamunite (Ca(UO₂)₂(VO₄)₂·5-8H₂O, orthorhombic Pnnm) habit code 'earthy_crust' signals non-euhedral aggregate. Typical occurrence is canary-yellow earthy coatings on Colorado-Plateau sandstone, not individual tabular crystals. No documented growth twinning at this habit scale. v138 phosphate batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 5.0,
@@ -10579,7 +10944,16 @@
         "quencher": null,
         "status": "strong fluorescence — Ca²⁺ doesn't quench uranyl emission like Cu²⁺ does in zeunerite. Slightly dimmer than autunite (the heavier As-anion absorbs some emission via vibrational coupling) but still in the 'bright' tier alongside autunite. Source: research/research-uranospinite.md."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Frondel 1958. Uranospinite (Ca(UO₂)₂(AsO₄)₂·10H₂O, tetragonal P4/nmm) is the Ca-As member of autunite-group; isostructural with autunite (Ca-P endmember). Same basal {001} contact twins. Sparser field documentation than autunite/zeunerite — most uranospinite is collected at Schneeberg + a few Bohemian localities. p=0.01."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "Ca(UO₂)₂(AsO₄)₂·10H₂O + 6H⁺ → Ca²⁺ + 2(UO₂)²⁺ + 2H₃AsO₄ + 10H₂O (uranyl arsenates dissolve readily in mineral acids)",
@@ -10892,7 +11266,16 @@
         "MW": null,
         "LW": null
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V (borates volume) + Dana 8th. Borax (monoclinic C2/c, Na2B4O5(OH)4·8H2O) shows rare {100} contact twins in well-formed prismatic specimens. Documented at Boron (Kramer CA) + Searles Lake + Inder Lake (Kazakhstan). Most field borax is rapidly precipitated efflorescent or recrystallized from saturated brines, with limited residence time for visible twinning. p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH": 6.0,
         "rate": "fast"
@@ -10960,6 +11343,7 @@
         "MW": null,
         "LW": null
       },
+      "_twin_laws_note": "Intentionally empty — tincalconite (Na2B4O7·5H2O, hexagonal R-3c) is the dehydration paramorph of borax at low humidity / mild heating. Inherits borax's twin geometry through paramorph transition rather than nucleating fresh — same v138 paramorph-inheritance convention used for meta-autunite + metatorbernite + metazeunerite. The parent borax carries the twin signal. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH": 6.0,
@@ -11035,7 +11419,16 @@
         "MW": null,
         "LW": null
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V mirabilite section. Mirabilite (monoclinic P21/c, Na2SO4·10H2O — Glauber's salt) shows rare {100} contact twins. Most mirabilite is rapidly-precipitated efflorescent crust at saline-lake margins (Searles Lake CA, Mono Lake) and rarely persists long enough at room T (it dehydrates to thenardite above 32.4°C) for visible twinning to develop. p=0.005 (rare-twin floor with solubility-limited-observation caveat)."
+        }
+      ],
       "acid_dissolution": {
         "pH": 5.0,
         "rate": "fast"
@@ -11124,7 +11517,16 @@
         "MW": null,
         "LW": null
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V thenardite section. Thenardite (orthorhombic Fddd, Na2SO4) is the dehydration product of mirabilite (>32.4°C) and the dominant Na-sulfate phase in arid evaporites (Soda Lake CA, Searles Lake, Espartinas Spain). {110} contact twins documented but rare — like mirabilite, most field thenardite is efflorescent rather than euhedral. p=0.005 (rare-twin floor)."
+        }
+      ],
       "acid_dissolution": {
         "pH": 5.0,
         "rate": "fast"
@@ -11335,6 +11737,7 @@
       "thermal_decomp_reaction": "Loses zeolitic water above ~200°C; color shifts irreversibly from sky-blue to green to chalky white",
       "thermal_decomp_products": {},
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — turquoise (CuAl₆(PO₄)₄(OH)₈·4H₂O, triclinic P1̄) habit code 'botryoidal_crust' signals non-euhedral aggregate. Forms cryptocrystalline nodular/botryoidal masses in Cu supergene zones (Cerrillos NM, Sleeping Beauty AZ, Neyshabur Iran), virtually never as individual euhedral crystals. The rare microscopic crystals (Bishop Mine VA) are too small for twinning to be observed. v138 phosphate batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 5.0,
@@ -12118,6 +12521,7 @@
       "thermal_decomp_reaction": "Oxidative dissolution at O₂ > 1.0: faster than cinnabar (sulfide → sulfate + Hg vapor or HgCl). Polymorph inversion to cinnabar above 344°C dry (Potter & Barnes 1978); reconstructive + slow at low T (geological timescales).",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent — opaque cubic sulfide."},
+      "_twin_laws_note": "Intentionally empty — metacinnabar (cubic F4̄3m, HgS) occurs almost exclusively as massive/sooty replacement of cinnabar, low-T supergene crusts, or fine-grained black coatings. The habit code 'massive_sooty' signals non-individual at vugg-scale; no documented growth twin law. v137 sulfide batch.",
       "twin_laws": [],
       "acid_dissolution": "Sparingly soluble in dilute acid; aqua regia dissolves.",
       "habit": "massive_sooty",
@@ -12489,6 +12893,7 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 6 — reverts toward smithsonite + Zn²⁺. Thermal dehydration at higher T converts to smithsonite + ZnO.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": "pale blue", "quencher": null, "status": "DIAGNOSTIC pale-blue SW-UV fluorescence (defect-related, not Mn²⁺ activator like willemite). Distinguishes from calcite (variable orange/pink/none) and aragonite (green-blue but different intensity)."},
+      "_twin_laws_note": "Intentionally empty — hydrozincite (monoclinic, Zn5(CO3)2(OH)6) habit code 'spherulitic_crust' signals non-euhedral aggregate. Forms white spherulitic + reniform coatings in supergene Zn zones (Mendip Hills, Linares Spain, Sardinian deposits). No individual euhedral crystals to twin. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": "Dissolves readily in dilute acid — Zn + CO3 + H2O released.",
       "habit": "spherulitic_crust",
@@ -12527,7 +12932,16 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 4.5 — Ca²⁺ + Zn²⁺ + AsO₄³⁻ released.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent. Pure Zn-end has no UV response; cuprian variety quenched by Cu²⁺."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_101",
+          "miller_indices": "{101}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV. Austinite (orthorhombic P2₁2₁2₁, CaZn(AsO₄)(OH)) is the Ca-Zn member of the adamite-group, often forming acicular sprays at Mapimí + Tsumeb + Gold Hill (Utah). {101} contact twins reported but data sparse — acicular habit dominates over visible twin morphology. Conservative p=0.02."
+        }
+      ],
       "acid_dissolution": "Slow in dilute HCl below pH 4.5 — Ca + Zn + As released to fluid.",
       "habit": "acicular_sprays",
       "color_rules": {"pale_yellow_green": {"default": true, "trigger": "default — colorless to pale yellow-green, the pure Zn-end"}, "apple_green_cuprian": {"trigger": "Cu > 5 ppm — apple-green from Cu²⁺ chromophore, transitional toward conichalcite"}},
@@ -12611,7 +13025,16 @@
       "thermal_decomp_reaction": "Dehydrates above ~50°C — loses structural H₂O, converts to lower hydrates and ultimately anhydrous Zn₃(AsO₄)₂ phases.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV. Koettigite (monoclinic C2/m, Zn₃(AsO₄)₂·8H₂O) is the Zn endmember of the vivianite-group. Less common in field collections than erythrite/annabergite; documented at Mapimí + Schneeberg. Same {010} contact twin behavior but rarer in observed specimens (data sparser); conservative p=0.02."
+        }
+      ],
       "acid_dissolution": "Slowly soluble in dilute acid — Zn + AsO₄ released.",
       "habit": "bladed_lath",
       "color_rules": {"pale_pink": {"default": true, "trigger": "pale rose-pink to near-colorless (Zn end)"}, "carmine_red_cobaltoan": {"trigger": "Co > 0.5 — cobaltoan-koettigite, transitional toward erythrite carmine"}},
@@ -12649,6 +13072,7 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 4 — Pb²⁺ + Cu²⁺ + AsO₄³⁻ released.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": "Cu²⁺ + Pb²⁺", "status": "Non-fluorescent. Pb²⁺ + Cu²⁺ both quench."},
+      "_twin_laws_note": "Intentionally empty — duftite (orthorhombic P2₁2₁2₁, PbCu(AsO₄)(OH)) habit code 'botryoidal_crust' signals microcrystalline aggregate. The Tsumeb supergene specimens are pistachio-green crusts/botryoidal coatings on bayldonite/mimetite, not individual euhedral crystals. No documented growth twinning at this habit scale. v139 arsenate batch.",
       "twin_laws": [],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.",
       "habit": "botryoidal_crust",
@@ -12687,6 +13111,7 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 4 — Pb²⁺ + Cu²⁺ + AsO₄³⁻ released.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": "Cu²⁺", "status": "Non-fluorescent — Cu²⁺ quenches."},
+      "_twin_laws_note": "Intentionally empty — bayldonite (monoclinic C2/c, PbCu₃(AsO₄)₂(OH)₂) habit code 'spheroidal_mammillary' signals non-euhedral aggregate. Forms green spheroidal/mammillary masses at Tsumeb + Wheal Carpenter (Cornwall type), classic supergene Pb-Cu-As habit. No individual euhedral crystals to twin. v139 arsenate batch.",
       "twin_laws": [],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.",
       "habit": "spheroidal_mammillary",
@@ -13210,7 +13635,16 @@
       "thermal_decomp_reaction": "PbSe melts at 1065°C; solid-solution exsolution with galena below 300°C",
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "spinel_law",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 §4.2 selenide section. PbSe is isostructural with galena (cubic Fm3̄m). Twinning data sparse — most clausthalite occurrences are massive replacement bodies. Conservative p=0.005 (rare-twin floor) mirroring galena (where spinel-law twins are documented but uncommon)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "PbSe + 4HNO3 -> Pb(NO3)2 + Se + 2NO2 + 2H2O",
@@ -13405,6 +13839,7 @@
         "color": "bright_yellow_LW",
         "quencher": "Fe"
       },
+      "_twin_laws_note": "Intentionally empty — hawleyite (cubic F4̄3m, CdS) is the powdery cubic CdS dimorph of greenockite, occurring only as yellow powdery coatings on sphalerite/marcasite in oxidation zones. Never forms individual euhedral crystals; habit code 'powdery_coating' signals non-individual. v137 sulfide batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 2.0,
@@ -13491,7 +13926,16 @@
       "thermal_decomp_reaction": "Cubic ↔ monoclinic at 155°C; melts at 960°C",
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 §4.8 telluride section + Anthony Handbook v.I. Hessite (Ag₂Te, monoclinic at room T, cubic above 150°C) shows {110} polysynthetic twin lamellae from the inversion + growth twins on contact planes. Documented at Săcărâmb (Romania) and Calaveras (California). Conservative p=0.02 — visible twins moderate in well-formed specimens."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "Ag2Te + HNO3 -> Ag+ + TeO2 + NO + H2O",
@@ -13575,7 +14019,16 @@
       "thermal_decomp_reaction": "Orthorhombic ↔ cubic at 133°C; melts at 897°C",
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "inversion_110",
+          "miller_indices": "{110}",
+          "trigger": "cooling",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 §4.2 selenide section. Naumannite (Ag₂Se) has an inversion analogous to hessite (orthorhombic at room T, pseudo-cubic above ~133°C). Twin behavior data-sparse — Ramdohr notes inversion lamellae but no detailed twin-law characterization. Conservative p=0.005 (rare-twin floor)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "Ag2Se + 4HNO3 -> 2AgNO3 + H2SeO3 + 2NO + H2O",
@@ -13978,7 +14431,16 @@
         "Te": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "graphic_twin_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 §4.8 telluride section + Anthony Handbook v.I. Sylvanite ((Au,Ag)Te₂, monoclinic P2/c) takes its name from the diagnostic \"graphic\" intergrowth at Sacarîmb (formerly Nagyág) — bladed crystals whose {100} contact twins produce hieroglyph-like outlines. The graphic twin is the species visual signature; p=0.05 reflects that the morphology is common in well-formed specimens but the underlying twin probability per nucleation is still moderate."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "bladed_graphic",
       "color_rules": {
@@ -14064,7 +14526,16 @@
         "color": "weak_red_orange_LW",
         "quencher": null
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "penetration_111",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.III (halides) + Dana 8th. Sylvite (cubic Fm-3m, KCl) is halite-isostructural; rare {111} penetration twins are documented in some Carlsbad (NM) potash specimens. Most sylvite occurs as cubic massive in evaporite K-salt beds (Stassfurt Germany, Saskatchewan basin) where visible twinning is uncommon. p=0.005 matching halite's rare-twin floor (halite has its own twin_laws entry at v9)."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "cubic",
       "color_rules": {
@@ -14357,7 +14828,16 @@
         "S": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Dana 8th + Anthony Handbook v.I. Cinnabar (trigonal P3₂21) shows {0001} simple contact twins (\"penetration twins\" of older usage) and twins on {10-11}, well documented in Almadén (Spain) and Idrija (Slovenia) specimens. The contact twin on basal pinacoid is the most-cited variety; p=0.05 reflects the minor-common field frequency at the classic localities."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "Cinnabar is acid-resistant under normal vug pH ranges. Aqua regia required for dissolution; ordinary HCl/H2SO4 leave it untouched. The reason cinnabar accumulates in oxidation zones intact while other Hg minerals weather away.",
@@ -14451,7 +14931,16 @@
         "S": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I (sulfide section). Realgar (monoclinic P2₁/n) shows {100} contact twins, documented in Mercur (Utah), Allchar (North Macedonia), and Shimen (China) low-T epithermal specimens. Conservative p=0.02 — twins visible in prismatic specimens but rare."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "Realgar is generally acid-resistant in the vug-pH range. Strong alkali (pH > 9) dissolves it via sulfide complex formation.",
@@ -14545,7 +15034,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.I. Orpiment is monoclinic P2₁/n, foliated golden masses dominated by {010} cleavage. {100} contact twinning is reported but less common than in realgar because orpiment crystals are typically foliated/columnar rather than equant. Conservative p=0.01 (data sparse — most field orpiment is foliated/massive)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "Orpiment is acid-resistant in the vug-pH range. Strong alkali (pH > 9.5) dissolves it as thioarsenite complexes (AsS₃³⁻).",
@@ -14619,6 +15117,7 @@
         "S": 0.3
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — pararealgar (monoclinic P2₁/c, As₄S₄) is a photodecomposition pseudomorph after realgar, forming as a yellow surface alteration crust rather than as primary euhedral crystals. Habit code 'yellow_pseudomorph' signals non-individual. v137 sulfide batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": null,
@@ -14691,6 +15190,7 @@
         "quencher": "Fe (Fe²⁺ + Fe³⁺ both suppress uranyl emission); dehydration weakens but does not eliminate fluorescence",
         "status": "weakened uranyl fluorescence relative to autunite — partial structural collapse dampens but does not extinguish the (UO₂)²⁺ emission. Still visibly green-yellow under LW UV (365nm), just less intense than fresh autunite."
       },
+      "_twin_laws_note": "Intentionally empty — meta-autunite (Ca(UO₂)₂(PO₄)₂·8H₂O, tetragonal P4₂/n) is the dehydration paramorph of autunite at T > 80°C. It inherits autunite's basal {001} contact twin geometry through the paramorph transition (PARAMORPH_TRANSITIONS dispatch in 16-paramorph-transitions.ts) rather than nucleating fresh — so adding its own twin_laws entry would double-count and isn't engine-correct. The parent autunite carries the twin signal. v137 sulfide convention extended to v138 phosphate paramorphs.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 4.5,
@@ -14762,6 +15262,7 @@
         "P": 0.0
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — metatorbernite (Cu(UO₂)₂(PO₄)₂·8H₂O, tetragonal P4/nmm) is the dehydration paramorph of torbernite at T > 75°C. Inherits torbernite's documented twin geometry through paramorph transition rather than nucleating fresh. Same rationale as meta-autunite (v138).",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 5.0,
@@ -14836,6 +15337,7 @@
         "As": 0.0
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — metazeunerite (Cu(UO₂)₂(AsO₄)₂·8H₂O, tetragonal P4/nmm) is the dehydration paramorph of zeunerite at T > 75°C. Inherits zeunerite's documented {001} basal contact twin geometry through PARAMORPH_TRANSITIONS dispatch (16-paramorph-transitions.ts) rather than nucleating fresh. Adding own twin_laws would double-count the cascade. Same paramorph-inheritance rationale as meta-autunite + metatorbernite (v138 phosphate batch).",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 5.0,
@@ -15068,6 +15570,7 @@
         "quencher": null,
         "status": "Non-fluorescent under standard SW/MW/LW UV. The Pb²⁺ + Al³⁺ + Cu²⁺ trace combination provides no fluorescence activator (Pb²⁺ at high concentrations in mineral lattice is a quencher rather than activator; Cu²⁺ trace amounts are likewise non-fluorescent). Visible cobalt-blue color is absorption + electronic transitions in Cu²⁺-Pb²⁺-O charge transfer, not fluorescence."
       },
+      "_twin_laws_note": "Intentionally empty — plumbogummite (PbAl₃(PO₄)₂(OH)₅·H₂O, trigonal R3̄m) habit code 'pseudomorph_after_pyromorphite' captures its typical occurrence as a supergene pseudomorph replacing earlier pyromorphite. Doesn't nucleate fresh as euhedral individuals at vugg-scale; the pseudomorph inherits external habit from pyromorphite but no twin behavior is documented for either the replacement or the rare primary occurrences. v138 phosphate batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 4.0,
@@ -16077,7 +16580,16 @@
         "quencher": null,
         "status": "Non-fluorescent."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1011",
+          "miller_indices": "{10-11}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.V brucite section. Brucite (trigonal P-3m1, Mg(OH)2) forms tabular hexagonal platelets at Hoboken (NJ, type) + Wood's Chrome Mine (PA) + Asbestos (Quebec). Layered structure with perfect {0001} cleavage; rare {10-11} contact twins reported. Most brucite is foliated/platy aggregates. p=0.005 (rare-twin floor — similar treatment to covellite + molybdenite layered minerals at v137)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 8.5,
         "reaction": "Mg(OH)2 + 2H⁺ → Mg²⁺ + 2H2O — releases Mg + alkalinity to fluid below pH 8.5. Fast kinetics; brucite is one of the most acid-reactive Mg minerals.",
@@ -16169,6 +16681,7 @@
         "quencher": null,
         "status": "Non-fluorescent (metal)."
       },
+      "_twin_laws_note": "Intentionally empty — awaruite (cubic Pm-3m, Ni2Fe to Ni3Fe alloy) habit code 'grains_microscopic' — the species occurs only as microscopic grains in serpentinite, never as visible individual crystals at vugg-scale. No twin observation possible at this scale. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": null,
@@ -16269,7 +16782,16 @@
       "thermal_decomp_reaction": "Above ~750°C: dehydration to clinopyroxene + olivine + quartz + H2O.",
       "thermal_decomp_products": { "Ca": 0.06, "Mg": 0.08, "Fe": 0.08, "SiO2": 0.58 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "simple_lamellar_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II (silicates) + Deer Howie Zussman 2nd ed. amphibole-group monograph. Actinolite (monoclinic C2/m, Ca2(Mg,Fe)5Si8O22(OH)2) shares the tremolite-actinolite series {100} simple + lamellar twin law. Tremolite already has twin_laws at v134 with the same law; this commit pairs them. Documented at Cziklowa (Romania), Ala (Italy), Wyoming Greenstone Belt. Conservative p=0.02 matching tremolite — most actinolite is untwinned bladed columnar."
+        }
+      ],
       "acid_dissolution": { "pH_threshold": 5.0, "reaction": "Ca2(Mg,Fe)5Si8O22(OH)2 + 14H⁺ → 2Ca²⁺ + Mg²⁺ + Fe²⁺ + Si.", "products": { "Ca": 0.06, "Mg": 0.08, "Fe": 0.08, "SiO2": 0.58 } },
       "habit": "bladed_columnar",
       "color_rules": { "green": { "default": true, "trigger": "Fe²⁺ M-site crystal field" }, "smaragdite_emerald": { "trigger": "Cr > 1 ppm — chromian actinolite gem variety" }, "nephrite_translucent_green": { "trigger": "compact felted-fibrous habit at cool T + high Ca — the jade gem variety" } },
@@ -16307,6 +16829,7 @@
       "thermal_decomp_reaction": "Above ~750°C: dehydration to enstatite + olivine + quartz + H2O.",
       "thermal_decomp_products": { "Mg": 0.18, "Fe": 0.08, "SiO2": 0.58 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
+      "_twin_laws_note": "Intentionally empty — anthophyllite (orthorhombic Pnma, (Mg,Fe)7Si8O22(OH)2) habit code 'fibrous_asbestiform' signals asbestos habit, fibers rather than individual euhedral amphibole crystals. The amphibole-group {100} twin law (carried by tremolite + actinolite) requires single crystals; asbestiform fibers don't admit it. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": { "pH_threshold": 5.5, "reaction": "(Mg,Fe)7Si8O22(OH)2 + 14H⁺ → 5Mg²⁺ + 2Fe²⁺ + 8H4SiO4.", "products": { "Mg": 0.18, "Fe": 0.08, "SiO2": 0.58 } },
       "habit": "fibrous_asbestiform",
@@ -16344,6 +16867,7 @@
       "thermal_decomp_reaction": "Above ~700°C: cummingtonite-grunerite dehydration to ferrosilite + iron-oxides + H2O.",
       "thermal_decomp_products": { "Fe": 0.21, "SiO2": 0.58 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
+      "_twin_laws_note": "Intentionally empty — amosite ((Fe,Mg)7Si8O22(OH)2, asbestiform variety of grunerite-cummingtonite amphibole series) habit code 'fibrous_asbestiform'. Like anthophyllite, the asbestiform habit precludes individual amphibole crystals that could carry the {100} twin law. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": { "pH_threshold": 5.0, "reaction": "Fe-cummingtonite + acid → 7Fe²⁺ + 8H4SiO4.", "products": { "Fe": 0.21, "SiO2": 0.58 } },
       "habit": "fibrous_asbestiform",
@@ -16381,6 +16905,7 @@
       "thermal_decomp_reaction": "Above ~500°C: dehydration + oxidation to magnetite + hematite + quartz + albite + H2O. Riebeckite is the most thermally-unstable of the major amphiboles.",
       "thermal_decomp_products": { "Na": 0.06, "Fe": 0.34, "SiO2": 0.55 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
+      "_twin_laws_note": "Intentionally empty — crocidolite (Na2Fe2+3Fe3+2Si8O22(OH)2, asbestiform variety of riebeckite) habit code 'fibrous_asbestiform' — blue asbestos. The fibrous-aligned riebeckite microfibers don't carry visible twinning. Parent riebeckite would; crocidolite as a habit-variant doesn't. v141 final batch.",
       "twin_laws": [],
       "acid_dissolution": { "pH_threshold": 5.5, "reaction": "Na2Fe5Si8O22(OH)2 + 12H⁺ → 2Na⁺ + 3Fe²⁺ + 2Fe³⁺ + 8H4SiO4. AT OXIDIZING pH > 5.5: in-situ Fe²⁺ → Fe³⁺ + Na release + chalcedony replacement = tiger's eye pseudomorph reaction.", "products": { "Na": 0.06, "Fe": 0.34, "SiO2": 0.55 } },
       "habit": "fibrous_asbestiform",

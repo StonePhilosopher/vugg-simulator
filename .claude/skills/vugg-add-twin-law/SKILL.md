@@ -1,6 +1,6 @@
 ---
 name: vugg-add-twin-law
-description: Quickly add twin_laws entries to data/minerals.json for the vugg-simulator. Use this whenever extending twin coverage across minerals that are missing twin_laws data. Documents the JSON shape, probability calibration, common laws by mineral class, source citation patterns, and validation steps. 108 minerals still need entries as of 2026-05-22.
+description: Add or update twin_laws entries in data/minerals.json for the vugg-simulator. Post-v141 the long-tail gap is CLOSED — 170/170 minerals are accounted for (143 with twin_laws + 27 with `_twin_laws_note`). Use this skill when adding a NEW mineral via vugg-add-mineral (every new mineral should ship with twin_laws data from the start), when revising a probability after new field evidence, or when adding new twin entries to a mineral that already has some. Documents the JSON shape, probability calibration, common laws by mineral class, source citation patterns, the cascade workflow, and the `_twin_laws_note` convention for intentionally-empty entries.
 ---
 
 # Add twin_laws Entry
@@ -170,7 +170,15 @@ For a session adding N minerals:
 
 ## Why This Skill Exists
 
-The 7 iconic twins shipped in May 2026 went deep on visualizing the most common twin morphologies. Their data entries took meaningful research time. The remaining ~108 minerals need _data_ entries (no visualization), which is straightforward but tedious — exactly the kind of work this skill makes mechanical. Each batch should take 30-60 minutes for ~10 minerals once you're in the rhythm.
+The 7 iconic twins shipped in May 2026 went deep on visualizing the most common twin morphologies. Their data entries took meaningful research time. The remaining ~108 minerals needed _data_ entries (no visualization), which was straightforward but tedious — exactly the kind of work this skill makes mechanical.
+
+**Post-v141 the long-tail gap is CLOSED** — 170/170 minerals accounted for (143 with twin_laws + 27 with `_twin_laws_note`). The project crosses from "gap-filling" into "maintenance":
+
+- When a new mineral is added via `vugg-add-mineral`, ship its twin_laws (or `_twin_laws_note`) from the start. Don't merge a new mineral with `twin_laws: []` and no note.
+- When new field evidence updates a probability, use `_retune_note` per the schema.
+- When the visual layer adds a hand-rolled twin primitive, the data is already there — the geometry just hangs off the existing twin_laws entry.
+
+The arc that built this gap-fill ran commits `5433aea` → `6228605` (v133-v141, ~30 commits). The `tools/add-<class>-twins.mjs` family (5 scripts: sulfide, phosphate, arsenate, sulfate, final) is the template for any future bulk update.
 
 ## Commit Message Pattern
 
