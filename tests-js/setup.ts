@@ -251,6 +251,52 @@ const EXPORTS = [
   // Slice 4 dripstone token resolver (99i-renderer-three.ts).
   '_resolveCrystalGeomToken',
   '_habitGeomToken',
+  // v134 (2026-05-22) — 99i fluorite-twin parity: _buildHabitGeom is
+  // exposed so tests can assert the twin token produces the right
+  // BufferGeometry vertex count (24 cube faces × 3 = 72 vertex triples).
+  '_buildHabitGeom',
+  // 2026-05-22 wireframe cluster-spec refactor (99d-renderer-wireframe.ts).
+  // Per-habit cluster pattern dispatch; mirrors 99i's _CLUSTER_PATTERNS.
+  '_druzyClusterSpec',
+  '_druzyClusterCount',  // legacy alias — count-only API for back-compat
+  // 2026-05-22 hopper/skeletal texture (v134, 99a-renderer-textures.ts).
+  // _resolveTexture maps (mineral, habit) → texture token; the 'hopper'
+  // token routes to _texture_hopper which paints stepped right-angle
+  // notches per Tanaka et al. 2018.
+  '_resolveTexture',
+  'HABIT_TO_TEXTURE',
+  'TEXTURE_PARAMS',
+  // 2026-05-22 fluorite penetration-twin primitive (v134,
+  // 99c-renderer-primitives.ts + 99d dispatch). Two interpenetrating
+  // cubes rotated 60° around their shared body diagonal — the iconic
+  // Cumbria / Cave-in-Rock fluorite twin.
+  'PRIM_FLUORITE_PENETRATION_TWIN',
+  'PRIM_CUBE',  // baseline reference for twin tests
+  // 2026-05-22 selenite swallowtail-twin primitive (v134 second iconic
+  // twin, 99c-renderer-primitives.ts + 99d dispatch). Two tabular
+  // gypsum blades opening in a V at 60° from a shared base contact.
+  'PRIM_SELENITE_SWALLOWTAIL_TWIN',
+  // 2026-05-22 galena spinel-law octahedron-twin primitive (v134 third
+  // iconic twin). Two octahedra sharing a {111} triangular face — the
+  // classic contact twin documented in Ramdohr 1980 + Boyle 1968.
+  'PRIM_GALENA_OCTAHEDRON_TWIN',
+  // 2026-05-22 aragonite cyclic-sextet pseudo-hex twin (v134 fourth
+  // iconic twin). Three tabular orthorhombic prisms at 60° around the
+  // c-axis, interpenetrating to form pseudo-hexagonal column.
+  'PRIM_ARAGONITE_PSEUDOHEX_TWIN',
+  // 2026-05-22 cerussite stellate-sixling twin (v134 fifth iconic twin).
+  // Flat-star counterpart to aragonite — 3 thin blades in the wall plane
+  // (XZ), each rotated 60° → 6 visible arms.
+  'PRIM_CERUSSITE_SIXLING_TWIN',
+  // 2026-05-22 marcasite cockscomb twin (v134 sixth iconic twin). Two
+  // thin needle blades joined on {110}, opening in a tight 40° V — the
+  // diagnostic FeS2-dimorph signature.
+  'PRIM_MARCASITE_COCKSCOMB_TWIN',
+  // 2026-05-22 pyrite iron-cross twin (v134 seventh and final iconic
+  // twin — completes RESEARCH-CRYSTAL-NATURALISM.md §7's list of 7).
+  // Two chiral {120} pyritohedra interpenetrating at 90° around c-axis.
+  'PRIM_PYRITE_IRON_CROSS_TWIN',
+  '_lookupCrystalPrimitive',
   // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
   'EH_DYNAMIC_ENABLED',
   'REDOX_COUPLES',
@@ -314,9 +360,26 @@ const EXPORTS = [
 
 let _bundleLoaded = false;
 
-function loadBundle() {
+// Load the vendored Three.js module into the test global scope so the
+// 99i renderer's geometry builders (which reference THREE.BufferGeometry,
+// THREE.BoxGeometry, THREE.Float32BufferAttribute, etc.) work when
+// invoked from tests. In the browser, index.html boots the same module
+// before the bundle runs and sets THREE as a global. In jsdom we mimic
+// that here.
+async function installThreeGlobal(): Promise<void> {
+  if ((globalThis as any).THREE) return;
+  const threeModulePath = path.join(ROOT, 'tools', 'three.module.js');
+  // Use file:// URL so dynamic import resolves the absolute path on
+  // both POSIX and Windows.
+  const url = 'file://' + threeModulePath.replace(/\\/g, '/');
+  const THREE = await import(url);
+  (globalThis as any).THREE = THREE;
+}
+
+async function loadBundle() {
   if (_bundleLoaded) return;
   installFetchMock();
+  await installThreeGlobal();
   const files = walkDistSorted();
   if (!files.length) {
     throw new Error(
@@ -376,6 +439,6 @@ async function waitForScenarios(timeoutMs = 5000): Promise<void> {
 }
 
 beforeAll(async () => {
-  loadBundle();
+  await loadBundle();
   await waitForScenarios();
 });

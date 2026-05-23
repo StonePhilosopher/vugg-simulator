@@ -309,6 +309,22 @@
           "trigger": "thermal_shock",
           "probability": 0.15,
           "min_delta_T_C": 30
+        },
+        {
+          "name": "Brazil",
+          "miller_indices": "{11-20}",
+          "trigger": "growth",
+          "probability": 0.12,
+          "_source": "Frondel 1962, System of Mineralogy vol III (Silica Minerals). Penetration twin combining left and right enantiomorphs of quartz across the {11-20} plane. Recognized by V-shaped striations on prism faces and reversed optical rotation domains. Common in pegmatite + hydrothermal quartz at 10-15% of euhedral grains.",
+          "status": "newly_added"
+        },
+        {
+          "name": "Japan",
+          "miller_indices": "{11-22}",
+          "trigger": "growth",
+          "probability": 0.03,
+          "_source": "Frondel 1962, System of Mineralogy vol III. Contact twin with ~84°33' angle between c-axes; the two crystals share a {11-22} face. Type locality Tsujikawa-mura (Yamanashi, Japan); famous Cumbria + Mont Blanc examples. Rare even in good hydrothermal pockets, 2-5%.",
+          "status": "newly_added"
         }
       ],
       "acid_dissolution": {
@@ -1307,7 +1323,10 @@
           "name": "penetration",
           "miller_indices": "{111}",
           "trigger": "growth",
-          "probability": 0.008
+          "probability": 0.12,
+          "status": "retuned",
+          "_retune_note": "Tier 2 (v133, 2026-05-22): bumped 0.008 -> 0.12. The fluorite {111} penetration twin (two cubes interpenetrating along a triad axis) is one of the most iconic mineral twins in classical mineralogy — Weardale Cumbria and Cave-in-Rock IL specimens routinely show it, with locality-specific frequencies of 20-40% in collection-quality material. Globally averaged across all fluorite, 10-15% of euhedral cubes show the twin (Dana, Sunagawa 2005). The original 0.8% rate was an order of magnitude below literature; this brings the simulator into the documented range.",
+          "_source": "Sunagawa 2005, Crystals: Growth Morphology and Perfection §6.4; Dana's New Mineralogy 8th ed (CaF2 section)"
         }
       ],
       "acid_dissolution": {
@@ -1426,7 +1445,10 @@
           "name": "iron_cross",
           "miller_indices": "{110}",
           "trigger": "growth",
-          "probability": 0.008
+          "probability": 0.07,
+          "status": "retuned",
+          "_retune_note": "Tier 2 (v133, 2026-05-22): bumped 0.008 -> 0.07. The pyrite iron-cross twin (two pyritohedra interpenetrating at ~37° along [001], producing a cross-like silhouette) is the canonical pyrite penetration twin. Documented in Ramdohr 1980, common at Elba (Italy) and Pyrite-Hill localities (Spain, Peru). Real-world frequency 5-10% of euhedral pyrite — most specimens are single cubes, but iron-cross specimens have been mined since antiquity.",
+          "_source": "Ramdohr 1980, The Ore Minerals and Their Intergrowths §4 (FeS2 section); Mindat pyrite habits"
         }
       ],
       "acid_dissolution": {
@@ -1526,6 +1548,15 @@
           "miller_indices": "{101}",
           "trigger": "growth in spearhead habit",
           "probability": 0.05
+        },
+        {
+          "name": "cockscomb",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.55,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 (FeS2 dimorph section); Dana 8th ed marcasite habit. The cockscomb morphology — sub-parallel blades arranged in a serrated row — IS the repeated {110} contact twin. It is the visually defining feature of marcasite (vs pyrite's blocky cubes). Reported as the dominant habit at the Joplin / Tri-State MVT district and at the Folkestone (Kent) type Cretaceous chalk concretions; 50-70% of euhedral marcasite shows it.",
+          "_retune_note": "Path-1 effect: when spearhead (p=0.05) doesn't fire (95% of the time), cockscomb rolls at 0.55 -> ~52% net cockscomb twins. Combined twin frequency 5% spearhead + 52% cockscomb = ~57% twinned marcasite, matching the field-collection observation that most marcasite shows ONE of the two habit twins."
         }
       ],
       "acid_dissolution": {
@@ -2025,7 +2056,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "spinel_law",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.1,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980, The Ore Minerals and Their Intergrowths §4.3.6. Galena {111} spinel-law contact twin (two octahedra sharing a triangular {111} face). Common in MVT deposits where galena grows as octahedral habit; less visible on cubic-habit galena because cube {100} faces don't expose the twin plane. Real-world frequency 5-15% of euhedral galena. Boyle 1968 reported high twin frequencies in Cobalt (Ontario) silver-galena ores where octahedral habit dominates."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "PbS + 2H+ -> Pb2+ + H2S (slow)",
@@ -4270,7 +4310,10 @@
           "name": "albite",
           "miller_indices": "{010}",
           "trigger": "growth",
-          "probability": 0.2
+          "probability": 0.85,
+          "status": "retuned",
+          "_retune_note": "Tier 2 (v133, 2026-05-22): bumped 0.2 -> 0.85. The albite {010} polysynthetic twin (alternating lamellae perpendicular to the b-axis) is the diagnostic feature of plagioclase under crossed polars: ~80-95% of natural plagioclase grains show it. It is what makes albite visually 'striated' in hand specimen (parallel stripes of slightly different luster on the {001} cleavage face) and is the single most-cited identification criterion in petrography texts. The original 0.2 was set during early calibration; literature supports a near-universal frequency in plagioclase feldspars.",
+          "_source": "Deer Howie Zussman, An Introduction to the Rock-Forming Minerals (3rd ed) — feldspar chapter; Smith & Brown 1988, Feldspar Minerals vol 1"
         },
         {
           "name": "pericline",

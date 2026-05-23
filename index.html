@@ -11113,7 +11113,79 @@ let timeScale = 5.0;
 //            js/15-version.ts (MOD): this block + SIM_VERSION 131→132.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 132;
+//
+// v133 — Iconic twin laws batch (2026-05-22)
+//
+//          First batch of the post-research-doc naturalism arc
+//          (proposals/RESEARCH-CRYSTAL-NATURALISM.md §7 item 2).
+//          Adds or retunes 7 documented twin laws across 6 minerals —
+//          the most-recognized natural-history twin geometries that
+//          field guides photograph and petrographic texts cite as
+//          diagnostic. All entries cite Sunagawa / Ramdohr / Frondel /
+//          Dana / Deer-Howie-Zussman per the doc's bibliography.
+//
+//          THE 7 ENTRIES (4 NEW + 3 RETUNED)
+//
+//          NEW:
+//            quartz Brazil   {11-20} penetration  p=0.12 (Frondel vol III)
+//            quartz Japan    {11-22} contact      p=0.03 (Frondel vol III)
+//            galena spinel-law {111} contact      p=0.10 (Ramdohr 1980)
+//            marcasite cockscomb {110} repeated  p=0.55 (Ramdohr; defines
+//                                                       the cockscomb habit)
+//
+//          RETUNED (existing entries were tuned far below literature):
+//            fluorite penetration {111}  0.008 -> 0.12 (Sunagawa 2005)
+//            pyrite iron-cross {110}    0.008 -> 0.07 (Ramdohr 1980)
+//            albite polysynthetic {010} 0.20  -> 0.85 (Deer-Howie-Zussman;
+//                                                     nearly universal in
+//                                                     plagioclase)
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          _rollSpontaneousTwin in js/85b runs rng.random() < prob per
+//          declared non-event twin law per nucleation. NEW entries on
+//          quartz/galena/marcasite add new RNG draws at every nucleation
+//          of those minerals across all scenarios. RETUNED entries
+//          don't change RNG draw count but DO change the comparison
+//          outcome — twinned crystals branch differently in downstream
+//          dispatch (paragenesis position parsing, library card text,
+//          and the dispatch order for the second twin law in marcasite
+//          + albite both shift). End result: substantial drift across
+//          every scenario that produces these 6 minerals.
+//
+//          SCENARIOS AFFECTED (any mineral firing means drift potential):
+//            quartz   -> cooling/pulse/mvt/porphyry/radioactive_pegmatite
+//                        /gem_pegmatite/ouro_preto/deccan_zeolite + most
+//                        hydrothermal scenes (drifts everywhere)
+//            pyrite   -> mvt/porphyry/reactive_wall/colorado_plateau/
+//                        sunnyside_american_tunnel + bismuth + tsumeb
+//            galena   -> mvt/porphyry/radioactive_pegmatite/sunnyside
+//            fluorite -> mvt/supergene/elmwood-style scenarios
+//            albite   -> radioactive_pegmatite/gem_pegmatite
+//            marcasite-> reactive_wall (low-pH MVT alt)
+//
+//          WHAT v133 SHIPS
+//            data/minerals.json (MOD): 7 twin_laws edits across
+//              quartz/fluorite/pyrite/marcasite/galena/albite. Each
+//              has _source (citation) and either status:"newly_added"
+//              or status:"retuned"+_retune_note (matching the v132
+//              selenite swallowtail bump pattern).
+//            tests-js/baselines/seed42_v133.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 133. v132 baseline preserved
+//              as the pre-twin-batch snapshot.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 132->133.
+//
+//          NO RENDERER WORK HERE. The twins are tracked as
+//          crystal.twinned + crystal.twin_law (visible in library
+//          card text and inventory rows) but NOT yet rendered as
+//          distinct geometric primitives (interpenetrating cubes,
+//          swallowtail blade, snowflake-trilling, etc.). That's a
+//          follow-up arc per RESEARCH-CRYSTAL-NATURALISM.md section 6
+//          (Phase 2 primitive additions) — would need
+//          PRIM_FLUORITE_OCT_CONTACT_TWIN, PRIM_SPEAR, etc.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 133;
 
 // ── 18-constants.js ──
 
@@ -50721,6 +50793,20 @@ const HABIT_TO_TEXTURE = {
     // Stage 5 — dolomite habits (THE headline texture: saddle_rhomb).
     'saddle_rhomb': 'saddle_rhomb', // dolomite default — diagnostic curved-face habit
     'coarse_rhomb': 'rhomb', // dolomite hydrothermal (textbook flat-face rhomb)
+    // Stage 6 — hopper / skeletal habits (v134, 2026-05-22). Per Tanaka et
+    // al. 2018 J. Phys. Chem. Lett. (PMC5994728), the cubic-to-hopper
+    // growth transition for halite happens at a specific σ where edges
+    // outpace face centers (diffusion-limited regime: rate ∝ σ³). The
+    // resulting morphology has stepped/terraced face centers recessed
+    // inward — the "hopper" funnel. Same physics for halide / native /
+    // silica polymorphs that ship hopper variants in MINERAL_SPEC.
+    // RESEARCH-CRYSTAL-NATURALISM.md §6.3 picked this as a TEXTURE not
+    // a primitive (per boss directive 2026-05-22).
+    'hopper_growth': 'hopper', // halite, apophyllite high-σ
+    'hopper_cube': 'hopper', // sylvite high-fill / rapid evap
+    'skeletal_hopper': 'hopper', // galena very-high-σ
+    'skeletal_fenster': 'hopper', // quartz "window" skeletal (rapid cooling)
+    'hoppered_hexagonal': 'hopper', // pyromorphite moderate-high σ low T
 };
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
 // wins over HABIT_TO_TEXTURE[habit]. Used when one habit string covers
@@ -50762,6 +50848,18 @@ const TEXTURE_PARAMS = {
     // visibly-curved-but-still-rhomb feel matching textbook saddle
     // dolomite cross-sections.
     saddle_rhomb: { amplitude_factor: 0.7, pitch_mm: 2.5, max_amplitude_pitch_ratio: 0.5, bulge_factor: 0.4 },
+    // Hopper — stepped/terraced face. Per Tanaka et al. 2018, the
+    // hopper-cube transition happens at a critical growth rate where
+    // edges outrun face centers (~6.5 µm/s for halite at room T). The
+    // visual signature is a series of recessed stair-step terraces
+    // dropping into the face. In our 2D wall-cell topo view we encode
+    // that as a series of rectangular (right-angle) notches pushed
+    // inward toward the void — distinct from sawtooth (triangular
+    // spikes) because the right-angles read as "stepped" rather than
+    // "spiky." Capped at 60° aspect (ratio 0.5) so deep crystals don't
+    // produce ribbons. Pitch slightly wider than sawtooth so each notch
+    // reads as a discrete step rather than a high-frequency rasp.
+    hopper: { amplitude_factor: 0.9, pitch_mm: 2.2, max_amplitude_pitch_ratio: 0.5 },
 };
 // Draw the inner (fluid-facing) edge of a wedge from (fromX,fromY) to
 // (toX,toY). For 'smooth', emits the existing quadratic Bezier through
@@ -50802,6 +50900,9 @@ function drawHabitTexture(ctx, mineral, habit, fromX, fromY, toX, toY, controlX,
         case 'saddle_rhomb':
             _texture_saddle_rhomb(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.saddle_rhomb);
             return;
+        case 'hopper':
+            _texture_hopper(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.hopper);
+            return;
         case 'smooth':
         default:
             ctx.quadraticCurveTo(controlX, controlY, toX, toY);
@@ -50823,6 +50924,13 @@ function _resolveTexture(mineral, habit) {
         return HABIT_TO_TEXTURE[habit];
     if (habit) {
         const h = habit.toLowerCase();
+        // v134: hopper / skeletal / fenster check BEFORE botryoidal because
+        // 'skeletal_fenster' shouldn't fuzzy-match the botryoidal family.
+        // Fenster is the German "window" — quartz fenster crystals show
+        // recessed terraced face centers, the silica analog of halite
+        // hopper.
+        if (h.includes('hopper') || h.includes('skeletal') || h.includes('fenster'))
+            return 'hopper';
         if (h.includes('botryoidal') || h.includes('reniform') || h.includes('globule') || h.includes('framboidal'))
             return 'botryoidal';
         if (h.includes('acicular') || h.includes('needle') || h.includes('radiating') || h.includes('spray') || h.includes('cockscomb') || h.includes('plumose'))
@@ -50972,6 +51080,79 @@ function _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, 
         const valleyY = fromY + valleyT * uy;
         ctx.lineTo(tipX, tipY);
         ctx.lineTo(valleyX, valleyY);
+    }
+}
+// Hopper / skeletal — stepped right-angle notches pushed inward toward
+// the void. Visually distinct from sawtooth's triangular spikes
+// because each step uses right-angle corners (down, across, up) rather
+// than triangular peaks (up, down). Reads as "stepped terraces" rather
+// than "spikes."
+//
+// Per Tanaka et al. 2018 J. Phys. Chem. Lett. (PMC5994728), the
+// cubic-to-hopper growth transition for halite happens at a critical
+// growth rate (~6.5 µm/s, room T) above which edges outpace face
+// centers in a diffusion-limited regime where rate ∝ σ³. The
+// resulting morphology has face centers RECESSED behind the edges,
+// with stepped terraces marking each growth-rate interval. The
+// rectangular-notch profile here encodes that step-down/step-up
+// geometry on the 2D cell-edge.
+//
+// Each tooth has 4 segments:
+//   1. Outer half (along chord) — top of the step, on the silhouette
+//   2. Step in (perpendicular inward by amplitudePx) — drop into the
+//      recess
+//   3. Inner half (along chord at the recessed depth) — the recess floor
+//   4. Step out (perpendicular outward by amplitudePx) — back to the
+//      silhouette before the next tooth begins
+//
+// Triggered by habit strings containing 'hopper', 'skeletal', or
+// 'fenster' (the German "window," used for quartz skeletal). Active
+// on halite / sylvite / galena / quartz / apophyllite / pyromorphite
+// when their high-σ or high-fill triggers fire.
+function _texture_hopper(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, params) {
+    const dx = toX - fromX, dy = toY - fromY;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 1) {
+        ctx.lineTo(toX, toY);
+        return;
+    }
+    const ux = dx / len, uy = dy / len;
+    // Perpendicular pointing inward (toward vug center). Same convention
+    // as _texture_sawtooth — chord-midpoint → vug-center direction so
+    // notches push into the void.
+    const midX = (fromX + toX) / 2, midY = (fromY + toY) / 2;
+    const inX = cx - midX, inY = cy - midY;
+    const inLen = Math.sqrt(inX * inX + inY * inY) || 1;
+    const nx = inX / inLen, ny = inY / inLen;
+    const amplitudeMm = _textureAmplitudeMm(thicknessMm, cellArcMm, params);
+    const amplitudePx = amplitudeMm * mmToPx;
+    const pitchPx = params.pitch_mm * mmToPx;
+    const nTeeth = Math.max(1, Math.round(len / pitchPx));
+    const toothLen = len / nTeeth;
+    const halfTooth = toothLen / 2;
+    // Pen is at (fromX, fromY); emit hopper stair-step pattern → (toX, toY).
+    // Each tooth: outer half (chord top), drop in, inner half (recessed
+    // floor), rise out (back to chord) — see header comment for geometry.
+    for (let i = 0; i < nTeeth; i++) {
+        const t0 = i * toothLen;
+        const tMid = t0 + halfTooth;
+        const t1 = (i + 1) * toothLen;
+        // Outer-mid: end of the outer-flat segment (top of step).
+        const outerMidX = fromX + tMid * ux;
+        const outerMidY = fromY + tMid * uy;
+        // Inner-mid: start of the inner-flat segment (recess floor begins).
+        const innerMidX = outerMidX + nx * amplitudePx;
+        const innerMidY = outerMidY + ny * amplitudePx;
+        // Inner-end: end of the inner-flat segment (recess floor ends).
+        const innerEndX = (fromX + t1 * ux) + nx * amplitudePx;
+        const innerEndY = (fromY + t1 * uy) + ny * amplitudePx;
+        // Outer-end: end of the tooth (back on the silhouette chord).
+        const outerEndX = fromX + t1 * ux;
+        const outerEndY = fromY + t1 * uy;
+        ctx.lineTo(outerMidX, outerMidY); // top of step (along chord)
+        ctx.lineTo(innerMidX, innerMidY); // drop into the recess
+        ctx.lineTo(innerEndX, innerEndY); // recess floor (along chord at depth)
+        ctx.lineTo(outerEndX, outerEndY); // rise back to silhouette
     }
 }
 // Paint a centered placeholder hint into the topo canvas. Used when no
@@ -51986,6 +52167,577 @@ const PRIM_BOTRYOIDAL = {
         return es;
     })(),
 };
+// v134 (2026-05-22): fluorite penetration-twin primitive. Two
+// interpenetrating cubes rotated 60° around their shared body diagonal
+// [1,1,1]/√3 — the iconic Cumbria / Weardale / Cave-in-Rock fluorite
+// habit (Sunagawa 2005 §6.4; Dana 8th ed CaF2 section). v133 set the
+// twin probability to 0.12 per nucleation in data/minerals.json; this
+// primitive is what _lookupCrystalPrimitive returns when
+// crystal.mineral === 'fluorite' && crystal.twinned &&
+// crystal.twin_law === 'penetration'.
+//
+// Geometry: 16 vertices (8 from each cube), 24 edges (12 per cube).
+// The body-diagonal endpoints (-c,-c,-c) and (+c,+c,+c) of both cubes
+// coincide on the shared rotation axis, but the duplicate vertices are
+// kept for edge-array simplicity (per-cube indices stay clean). The
+// renderer's convex-hull silhouette fills in the outer envelope; the
+// edges trace the 14-pointed star visible in real specimens.
+//
+// Rotation matrix R = (1/3) * [[2,2,-1],[-1,2,2],[2,-1,2]] is the
+// 60° rotation around [1,1,1]/√3 derived from Rodrigues' formula.
+// Centered at y=0.45 to match PRIM_CUBE's anchoring (base at y=-0.1,
+// top at y=1.0) — vertices are translated to origin before rotation
+// then translated back.
+const PRIM_FLUORITE_PENETRATION_TWIN = {
+    name: 'fluorite_penetration_twin',
+    vertices: (() => {
+        const c = 0.55;
+        const ctr_y = 0.45; // match PRIM_CUBE's center
+        const vs = [];
+        // First cube: vertex indices 0..7, ordered by (sx, sy, sz) loops.
+        //   0: (-,-,-)  1: (-,-,+)  2: (-,+,-)  3: (-,+,+)
+        //   4: (+,-,-)  5: (+,-,+)  6: (+,+,-)  7: (+,+,+)
+        // Body-diagonal axis runs from vertex 0 to vertex 7.
+        for (const sx of [-1, 1]) {
+            for (const sy of [-1, 1]) {
+                for (const sz of [-1, 1]) {
+                    vs.push([c * sx, c * sy + ctr_y, c * sz]);
+                }
+            }
+        }
+        // Second cube: vertex indices 8..15. Each is the corresponding
+        // first-cube vertex rotated 60° around [1,1,1]/√3 through the
+        // center. Vertices 0 and 7 (body-diagonal endpoints) coincide
+        // with 8 and 15 respectively under this rotation.
+        for (let i = 0; i < 8; i++) {
+            const [x, y, z] = vs[i];
+            // Translate to origin (subtract center), rotate, translate back.
+            const cx = x, cy = y - ctr_y, cz = z;
+            const rx = (2 * cx + 2 * cy - cz) / 3;
+            const ry = (-cx + 2 * cy + 2 * cz) / 3;
+            const rz = (2 * cx - cy + 2 * cz) / 3;
+            vs.push([rx, ry + ctr_y, rz]);
+        }
+        return vs;
+    })(),
+    edges: (() => {
+        // 12 edges per cube. For both cubes, edges go between vertices
+        // that differ in exactly one of (sx, sy, sz). Cube A uses indices
+        // 0..7; cube B uses 8..15 with the same topology.
+        const cubeEdges = (off) => [
+            // z-edges (sx, sy fixed; sz varies):
+            [off + 0, off + 1], [off + 2, off + 3], [off + 4, off + 5], [off + 6, off + 7],
+            // y-edges (sx, sz fixed; sy varies):
+            [off + 0, off + 2], [off + 1, off + 3], [off + 4, off + 6], [off + 5, off + 7],
+            // x-edges (sy, sz fixed; sx varies):
+            [off + 0, off + 4], [off + 1, off + 5], [off + 2, off + 6], [off + 3, off + 7],
+        ];
+        return [...cubeEdges(0), ...cubeEdges(8)];
+    })(),
+};
+// v134 (2026-05-22): selenite swallowtail-twin primitive. Two tabular
+// gypsum blades joined on a {100} contact plane at the base, opening
+// upward in a V — the "fishtail" / "swallowtail" twin (Dana 8th ed.
+// CaSO4·2H2O section; Hurlbut & Klein 23rd ed. §13). Iconic in
+// Bohemian + Naica + Mojave specimens. v133 set the twin probability
+// to 0.18 per selenite nucleation in data/minerals.json (Tier 2 F
+// retune — was 0.08, observed 4.5% in baseline, raised to 18% to match
+// the ~30-50% rate seen in collection-quality specimens).
+//
+// Geometry: 16 vertices (8 per blade), 24 edges (12 per blade). Each
+// blade is a thin tabular rectangular block — local dimensions before
+// tilt: thickness 2a (perpendicular to broad face), length L (along
+// the c-axis), width 2b (the side-to-side dimension perpendicular to
+// the broad face's long edge). Both blades share the base contact
+// edge along the world Z-axis at the wall (X=0, Y=-0.1).
+//
+// Tilt: each blade rotates ±30° from vertical around the contact
+// edge — total V opening angle 60°. Real gypsum {100} twin angle is
+// ~36°-105° depending on which axes you measure; 60° gives a clean
+// recognizable V silhouette consistent with typical photos.
+//
+// Anchoring: contact edge sits at Y=-0.1 (PRIM_CUBE convention). The
+// outer base corners of each blade (away from contact) bury below
+// the wall (Y < -0.1) — this matches how real swallowtails look in
+// matrix, where only the V-opening upper portion is visible.
+const PRIM_SELENITE_SWALLOWTAIL_TWIN = {
+    name: 'selenite_swallowtail_twin',
+    vertices: (() => {
+        const a = 0.08; // half-thickness (perpendicular to broad face)
+        const L = 1.1; // blade length along c-axis
+        const b = 0.18; // half-width (along contact edge, Z)
+        const base_y = -0.1; // anchor base contact at PRIM_CUBE wall y
+        const theta = Math.PI / 6; // 30° tilt per blade — 60° total V
+        const c30 = Math.cos(theta);
+        const s30 = Math.sin(theta);
+        const vs = [];
+        // Blade A — local coords (xl, yl, zl) with xl ∈ {-2a, 0},
+        // yl ∈ {0, L}, zl ∈ {-b, +b}. The contact face (broad face on
+        // contact plane) is at xl=0; the body of the blade extends to
+        // xl=-2a. After rotating by +30° around z-axis through origin
+        // and shifting Y by base_y, the contact-base edge (xl=0, yl=0)
+        // stays at world (0, base_y, zl); the rest of the blade tilts
+        // outward (toward -X) and upward.
+        //   Indices 0..7 in (xl, yl, zl) loop order:
+        //     0: (-2a, 0, -b)   contact-side opposite, base, -z
+        //     1: (-2a, 0, +b)
+        //     2: (-2a, L, -b)
+        //     3: (-2a, L, +b)
+        //     4: (0, 0, -b)     contact-base edge, -z
+        //     5: (0, 0, +b)     contact-base edge, +z
+        //     6: (0, L, -b)     contact-top edge, -z
+        //     7: (0, L, +b)
+        for (const xl of [-2 * a, 0]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 - yl * s30;
+                    const wy = xl * s30 + yl * c30 + base_y;
+                    vs.push([wx, wy, zl]);
+                }
+            }
+        }
+        // Blade B — mirror of blade A across the X=0 plane (the contact).
+        // Local xl ∈ {0, +2a}; rotated by -30° around z. Symmetry: blade
+        // B vertex i+8 is the X-reflection of blade A vertex i.
+        for (const xl of [0, 2 * a]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 + yl * s30;
+                    const wy = -xl * s30 + yl * c30 + base_y;
+                    vs.push([wx, wy, zl]);
+                }
+            }
+        }
+        return vs;
+    })(),
+    edges: (() => {
+        // 12 edges per blade. Same topology as a cube (vertex i connects
+        // to vertex j if they differ in exactly one of the 3 axes). Blade
+        // A uses indices 0..7; blade B uses 8..15 with identical adjacency.
+        const bladeEdges = (off) => [
+            // zl-edges (xl, yl fixed, zl varies):
+            [off + 0, off + 1], [off + 2, off + 3], [off + 4, off + 5], [off + 6, off + 7],
+            // yl-edges (xl, zl fixed, yl varies):
+            [off + 0, off + 2], [off + 1, off + 3], [off + 4, off + 6], [off + 5, off + 7],
+            // xl-edges (yl, zl fixed, xl varies):
+            [off + 0, off + 4], [off + 1, off + 5], [off + 2, off + 6], [off + 3, off + 7],
+        ];
+        return [...bladeEdges(0), ...bladeEdges(8)];
+    })(),
+};
+// v134 (2026-05-22): galena spinel-law octahedron-twin primitive.
+// Two octahedra sharing a {111} triangular face — the classic
+// "spinel-law" contact twin documented in Ramdohr 1980, The Ore
+// Minerals and Their Intergrowths §4.3.6. Common in MVT deposits
+// where galena grows in octahedral habit (5-15% twin frequency per
+// Boyle 1968's Cobalt-Ontario silver-galena ores). v133 added the
+// twin_law entry to data/minerals.json with probability 0.10 per
+// nucleation; this primitive renders when crystal.mineral === 'galena'
+// && crystal.twinned && crystal.twin_law === 'spinel_law'.
+//
+// Geometry: 12 vertices (6 per octahedron; 3 shared on the contact
+// face kept as duplicates for indexing simplicity), 24 edges (12 per
+// octahedron). Each octahedron uses the same vertex topology as
+// PRIM_OCTAHEDRON: 0=top apex, 1=bottom apex (buried at wall), 2-5=
+// equator (E, W, N, S).
+//
+// Contact: the {0, 2, 4} face of the first octahedron = top + east +
+// north = the {111} face in the plane x + y + z = 1 (with east at
+// (0.55, 0.45, 0), north at (0, 0.45, 0.55), top at (0, 1, 0)).
+// The second octahedron is the mirror image across this plane,
+// reflecting only the OTHER 3 vertices (bottom apex 1, west 3,
+// south 5) — the 3 shared face vertices stay fixed.
+//
+// Bipyramidal axis: from first octahedron's bottom apex (buried at
+// wall) through the contact face centroid to second octahedron's
+// mirror-of-bottom-apex. This axis runs along [1, 1, 1] direction,
+// so the twin reads as a tilted bipyramid leaning toward +X+Z. Real
+// galena spinel-law specimens often show this same tilted-bipyramid
+// profile with a visible re-entrant angle along the contact edge.
+const PRIM_GALENA_OCTAHEDRON_TWIN = {
+    name: 'galena_octahedron_twin',
+    vertices: (() => {
+        const c = 0.55; // equatorial radius
+        const yTop = 1.0;
+        const yEq = 0.45;
+        const yBot = -0.1; // buried at PRIM_CUBE wall y
+        // First octahedron — standard PRIM_OCTAHEDRON vertex layout.
+        const oct1 = [
+            [0, yTop, 0], // 0 top apex
+            [0, yBot, 0], // 1 bottom apex (buried)
+            [c, yEq, 0], // 2 east   (on contact face)
+            [-c, yEq, 0], // 3 west
+            [0, yEq, c], // 4 north  (on contact face)
+            [0, yEq, -c], // 5 south
+        ];
+        // Contact plane: passes through vertices 0, 2, 4 — i.e., the
+        // points (0, 1, 0), (c, yEq, 0), (0, yEq, c). Plane equation
+        // n · x = d where n = (1, 1, 1) and d = 1 (after the y-offset
+        // bakes into the eq: 0+1+0 = 1, c + yEq + 0 = 0.55+0.45 = 1,
+        // 0+yEq+c = 0.45+0.55 = 1). Reflection of point P across this
+        // plane: P' = P - 2*(P.x+P.y+P.z - 1)/3 * (1,1,1).
+        const reflect = (p) => {
+            const k = 2 * (p[0] + p[1] + p[2] - 1) / 3;
+            return [p[0] - k, p[1] - k, p[2] - k];
+        };
+        // Second octahedron: mirror of each vertex. Vertices 0, 2, 4 are
+        // on the plane and map to themselves (kept as duplicates at 6,
+        // 8, 10 for index simplicity); 1, 3, 5 map to new positions.
+        const oct2 = oct1.map(reflect);
+        return [...oct1, ...oct2];
+    })(),
+    edges: (() => {
+        // 12 edges per octahedron — same topology as PRIM_OCTAHEDRON.
+        // Vertices 0..5 are the first octahedron; 6..11 are the second
+        // (with 6≡0, 8≡2, 10≡4 coincident). The 3 contact-face edges
+        // get drawn twice (once per octahedron) but coincide visually.
+        const octEdges = (off) => [
+            [off + 0, off + 2], [off + 0, off + 3], [off + 0, off + 4], [off + 0, off + 5], // top → equator
+            [off + 1, off + 2], [off + 1, off + 3], [off + 1, off + 4], [off + 1, off + 5], // bottom → equator
+            [off + 2, off + 4], [off + 4, off + 3], [off + 3, off + 5], [off + 5, off + 2], // equator
+        ];
+        return [...octEdges(0), ...octEdges(6)];
+    })(),
+};
+// v134 (2026-05-22): aragonite pseudo-hex sextet primitive. Three
+// tabular orthorhombic prisms at 60° spacing around the c-axis,
+// interpenetrating to produce a pseudo-hexagonal column (Dana 8th
+// ed. CaCO3 section; Strunz 9th ed. 5.AB.15; Speer 1983 "Aragonite"
+// in Reviews in Mineralogy v.11). Aragonite's {110} angle is ~116°
+// — close enough to 120° that 3 crystals at 60° rotation produce
+// a pseudo-hex envelope with subtle edge offsets along the contact
+// planes.
+//
+// Why 3 crystals = "sextet": each tabular crystal contributes 2
+// {110}-type faces (one on each side of its broad face), so 3
+// crystals × 2 = 6 visible faces around the column. The "sextet"
+// (or "sixling") terminology refers to the 6 outer faces, not
+// 6 separate crystals.
+//
+// v133 added the cyclic_sextet twin_law to data/minerals.json with
+// probability 0.40 — about 40% of aragonite nucleations get
+// crystal.twinned = true + crystal.twin_law = 'cyclic_sextet'.
+//
+// Geometry: 24 vertices (8 per prism × 3 prisms), 36 edges (12 per
+// prism × 3). Each prism is a tabular rectangle: half-thickness
+// 'a' (perpendicular to broad face), full length L along the
+// vertical c-axis, half-width 'b' (parallel to broad face direction).
+// Tabular ratio a:b ≈ 1:3 — broad-faced.
+//
+// Anchoring: base at y=-0.1 (PRIM_CUBE wall convention), top at
+// y=1.0 — gives a tall vertical column with the trilling axis +Y.
+const PRIM_ARAGONITE_PSEUDOHEX_TWIN = {
+    name: 'aragonite_pseudohex_twin',
+    vertices: (() => {
+        const a = 0.10; // half-thickness (perp to broad face)
+        const b = 0.30; // half-width (parallel to broad face dir)
+        const yMin = -0.1;
+        const yMax = 1.0;
+        const vs = [];
+        // Three prisms at θ = 0°, 60°, 120° around y-axis. Each prism's
+        // local frame: xl is the "thin" direction (perpendicular to broad
+        // face), zl is the "wide" direction (parallel to broad face).
+        // After rotation by θ around y-axis, each prism's broad-face
+        // normal lies in the XZ plane at angle θ from +X.
+        for (let k = 0; k < 3; k++) {
+            const theta = k * Math.PI / 3; // 60° spacing
+            const cT = Math.cos(theta);
+            const sT = Math.sin(theta);
+            // 8 corners per prism, ordered (xl ∈ {-a, +a}) × (yl ∈ {yMin,
+            // yMax}) × (zl ∈ {-b, +b}) to match the cube-edge topology
+            // already used by fluorite-twin and swallowtail.
+            for (const xl of [-a, a]) {
+                for (const yl of [yMin, yMax]) {
+                    for (const zl of [-b, b]) {
+                        const wx = xl * cT - zl * sT;
+                        const wz = xl * sT + zl * cT;
+                        vs.push([wx, yl, wz]);
+                    }
+                }
+            }
+        }
+        return vs;
+    })(),
+    edges: (() => {
+        // 12 edges per prism, same topology as a box. Three prisms × 12
+        // = 36 edges total. No cross-prism edges — the visual contact
+        // lines emerge from edge intersections during rendering.
+        const prismEdges = (off) => [
+            // zl-edges (xl, yl fixed; zl varies):
+            [off + 0, off + 1], [off + 2, off + 3], [off + 4, off + 5], [off + 6, off + 7],
+            // yl-edges (xl, zl fixed; yl varies):
+            [off + 0, off + 2], [off + 1, off + 3], [off + 4, off + 6], [off + 5, off + 7],
+            // xl-edges (yl, zl fixed; xl varies):
+            [off + 0, off + 4], [off + 1, off + 5], [off + 2, off + 6], [off + 3, off + 7],
+        ];
+        return [...prismEdges(0), ...prismEdges(8), ...prismEdges(16)];
+    })(),
+};
+// v134 (2026-05-22): cerussite stellate-sixling primitive. Same cyclic-
+// trilling math as aragonite, but with each blade lying FLAT in the
+// wall plane (XZ) rather than standing as a vertical column (along Y).
+// The result is a 6-pointed star morphology — 3 horizontal blades
+// rotated 60° from each other, each extending through origin in both
+// directions so each blade contributes 2 visible arms (3 × 2 = 6
+// arms, the "sixling" naming). Documented in Dana 8th ed. PbCO3
+// section; Heinrich & Vian 1967 (American Mineralogist v.52, p.1747)
+// "Cerussite from MVT districts" report stellate trilling as the
+// dominant twin habit. v133 set cyclic_sixling probability to 0.40.
+//
+// Geometry vs. aragonite pseudo-hex twin:
+//   - Aragonite (vertical column):  each blade's long axis = +Y
+//   - Cerussite (flat star):        each blade's long axis = XZ plane
+//
+// Concretely: each blade is a thin elongated box where xl (the local
+// "long" axis) becomes the radial direction after rotation around Y,
+// yl is the thin wall-perpendicular dimension, and zl is the tangential
+// width (also thin). The whole assembly lies in the wall plane (slim
+// in Y, broad in XZ).
+//
+// Anchoring: yl spans [-0.1, 0.0] — just 0.1 thick, sitting flush
+// with the PRIM_CUBE wall convention (base at y=-0.1). The radial
+// extent c=0.55 matches the wireframe primitive envelope.
+const PRIM_CERUSSITE_SIXLING_TWIN = {
+    name: 'cerussite_sixling_twin',
+    vertices: (() => {
+        const c_long = 0.55; // radial half-length (the blade's long extent)
+        const b_tan = 0.08; // tangential half-width (narrow blade)
+        const yMin = -0.1; // bottom at PRIM_CUBE wall
+        const yMax = 0.0; // top slightly above wall (Y is thin direction)
+        const vs = [];
+        // Three blades at θ_k = k · 60° (k = 0, 1, 2) — 60° spacing makes
+        // the 6 visible arms (each blade extends through origin in ±xl,
+        // contributing 2 arms 180° apart, so 3 blades × 2 arms = 6 arms).
+        // 120° spacing would give a 3-arm propeller; 60° gives the
+        // 6-pointed star.
+        for (let k = 0; k < 3; k++) {
+            const theta = k * Math.PI / 3;
+            const cT = Math.cos(theta);
+            const sT = Math.sin(theta);
+            // 8 corners ordered (xl, yl, zl) — same cube-edge topology as
+            // every other twin primitive in this file. xl is the LONG axis
+            // (radial after rotation), yl is thin (wall-perpendicular), zl
+            // is tangential (also thin).
+            for (const xl of [-c_long, c_long]) {
+                for (const yl of [yMin, yMax]) {
+                    for (const zl of [-b_tan, b_tan]) {
+                        const wx = xl * cT - zl * sT;
+                        const wz = xl * sT + zl * cT;
+                        vs.push([wx, yl, wz]);
+                    }
+                }
+            }
+        }
+        return vs;
+    })(),
+    edges: (() => {
+        const bladeEdges = (off) => [
+            [off + 0, off + 1], [off + 2, off + 3], [off + 4, off + 5], [off + 6, off + 7],
+            [off + 0, off + 2], [off + 1, off + 3], [off + 4, off + 6], [off + 5, off + 7],
+            [off + 0, off + 4], [off + 1, off + 5], [off + 2, off + 6], [off + 3, off + 7],
+        ];
+        return [...bladeEdges(0), ...bladeEdges(8), ...bladeEdges(16)];
+    })(),
+};
+// v134 (2026-05-22): marcasite cockscomb-twin primitive. Two thin
+// needle-like blades joined on a {110} contact at the base, opening
+// in a tight V — the canonical morphology distinguishing marcasite
+// from its dimorph pyrite (Ramdohr 1980 FeS2 dimorph section; Dana
+// 8th ed. marcasite habit). v133's _retune_note flags this as "the
+// visually defining feature of marcasite," reporting 50-70% twin
+// frequency at the Joplin / Tri-State MVT district and Folkestone
+// (Kent) Cretaceous chalk concretions. Probability set to 0.55 per
+// nucleation; combined with the {101} spearhead twin (p=0.05) at
+// path-1, ~57% of marcasite ends up twinned in scenarios.
+//
+// Why "cockscomb": real specimens show a chain of repeated blade-
+// pair twins arranged in a serrated row resembling a rooster's
+// comb. A single PRIM_* primitive can't capture the multi-pair
+// chain directly, but when multiple twin instances cluster on a
+// shared substrate (via the existing druzy/cluster dispatch), the
+// chain emerges from the spatial arrangement. The primitive itself
+// is the unit cell: one {110} blade-pair.
+//
+// Geometry vs. selenite swallowtail (PRIM_SELENITE_SWALLOWTAIL_TWIN):
+//   Swallowtail (gypsum {100}): tabular blades, V opening 60°
+//   Cockscomb (marcasite {110}): needle blades, V opening 40°
+// Same 16-vertex / 24-edge topology — the tighter V + thinner blade
+// dimensions give the arrowhead silhouette that distinguishes it.
+const PRIM_MARCASITE_COCKSCOMB_TWIN = {
+    name: 'marcasite_cockscomb_twin',
+    vertices: (() => {
+        const a = 0.04; // half-thickness (perpendicular to broad face)
+        const L = 1.1; // blade length along c-axis
+        const b = 0.10; // half-width (along contact edge)
+        const base_y = -0.1; // anchor base contact at PRIM_CUBE wall y
+        const theta = Math.PI / 9; // 20° tilt per blade — 40° total V (tighter than swallowtail's 60°)
+        const c30 = Math.cos(theta);
+        const s30 = Math.sin(theta);
+        const vs = [];
+        // Blade A — same construction as swallowtail (rotate +θ around z
+        // through origin, then translate Y by base_y). Local coords with
+        // xl ∈ {-2a, 0}, yl ∈ {0, L}, zl ∈ {-b, +b}. Contact face xl=0
+        // sits on the z-axis at the base.
+        for (const xl of [-2 * a, 0]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 - yl * s30;
+                    const wy = xl * s30 + yl * c30 + base_y;
+                    vs.push([wx, wy, zl]);
+                }
+            }
+        }
+        // Blade B — mirror across X=0 (rotate -θ).
+        for (const xl of [0, 2 * a]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 + yl * s30;
+                    const wy = -xl * s30 + yl * c30 + base_y;
+                    vs.push([wx, wy, zl]);
+                }
+            }
+        }
+        return vs;
+    })(),
+    edges: (() => {
+        // 12 edges per blade — box topology. Same as swallowtail.
+        const bladeEdges = (off) => [
+            [off + 0, off + 1], [off + 2, off + 3], [off + 4, off + 5], [off + 6, off + 7],
+            [off + 0, off + 2], [off + 1, off + 3], [off + 4, off + 6], [off + 5, off + 7],
+            [off + 0, off + 4], [off + 1, off + 5], [off + 2, off + 6], [off + 3, off + 7],
+        ];
+        return [...bladeEdges(0), ...bladeEdges(8)];
+    })(),
+};
+// v134 (2026-05-22): pyrite iron-cross twin primitive. Two chiral
+// {120} pyritohedra interpenetrating at 90° around the c-axis — the
+// canonical pyrite "Iron Cross" / "Eisernes Kreuz" twin documented
+// in Ramdohr 1980 §4 (FeS2 section), Dana 8th ed., and Mindat's
+// pyrite habit catalog. Common at Elba (Italy), Pyrite Hill (Spain,
+// Peru); specimens mined since antiquity for use in jewelry. v133
+// retuned the probability from 0.008 → 0.07 to match the field-
+// observation 5-10% twin frequency among euhedral pyrite.
+//
+// THE PYRITOHEDRON
+//
+//   A {120} pyritohedron (NOT the cube-symmetric approximation used
+//   by PRIM_PYRITOHEDRON for non-twin pyrite) has m-3 symmetry —
+//   3-fold rotations along [111] and 2-fold along [100], but NO
+//   4-fold axis. So a 90° rotation around the c-axis is NOT a
+//   symmetry, and the rotated pyritohedron occupies distinct
+//   geometric positions from the original.
+//
+//   20 vertices, 12 pentagonal faces, 30 edges:
+//     - 8 "cube corner" vertices at (±a, ±a, ±a) with a = √5/3·s
+//     - 12 "edge" vertices in 3 cyclic groups:
+//         (0, ±b, ±c) in YZ plane (long axis ±y)
+//         (±b, ±c, 0) in XY plane (long axis ±x)
+//         (±c, 0, ±b) in ZX plane (long axis ±z)
+//       where b = √5/2·s, c = √5/4·s (b:c = 2:1 ratio).
+//
+//   Scaling: s = 0.55/b_unscaled chosen so max coordinate = 0.55
+//   (matches PRIM_CUBE envelope). After scaling: a≈0.367, b=0.55,
+//   c≈0.275. Y-shift +0.45 anchors at PRIM_CUBE wall convention
+//   (y_min = -0.1, y_max = 1.0, center at y = 0.45).
+//
+// THE TWIN
+//
+//   First pyritohedron "+": vertex indices 0-19.
+//   Second pyritohedron "-": 90° rotation around y-axis of "+":
+//       (x, y, z) → (z, y, -x)
+//     Vertex indices 20-39.
+//
+//   The 90° rotation is NOT a symmetry of "+" (chiral pyritohedron),
+//   so "-" lands at distinct positions. The two interpenetrate to
+//   produce the cross silhouette visible in real specimens.
+//
+//   40 vertices total (20 per pyritohedron), 60 edges total (30 per).
+//   Some edges may visually coincide between the two pyritohedra at
+//   crossing points; the wireframe renderer just draws both.
+const PRIM_PYRITE_IRON_CROSS_TWIN = {
+    name: 'pyrite_iron_cross_twin',
+    vertices: (() => {
+        // Unscaled pyritohedron parameters (d=1 units):
+        //   a_raw = √5/3, b_raw = √5/2, c_raw = √5/4
+        // Scaled so max coord = 0.55:
+        const s = 0.55 / (Math.sqrt(5) / 2); // ≈ 0.4924
+        const a = (Math.sqrt(5) / 3) * s; // cube corner — ≈ 0.367
+        const b = 0.55; // long edge param (max coord by construction)
+        const c = (Math.sqrt(5) / 4) * s; // short edge param — ≈ 0.275
+        const yC = 0.45; // y-center (matches PRIM_CUBE anchoring)
+        // Build "+" pyritohedron — 20 vertices in centered coords, then
+        // y-shift by yC.
+        const plus = [];
+        // 8 cube corners (indices 0-7), ordered by (sx, sy, sz) loops.
+        for (const sx of [-1, 1]) {
+            for (const sy of [-1, 1]) {
+                for (const sz of [-1, 1]) {
+                    plus.push([sx * a, sy * a + yC, sz * a]);
+                }
+            }
+        }
+        // 12 edge verts in 3 cyclic groups:
+        //   indices 8-11: YZ plane (x=0), long along y. (0, sy·b, sz·c).
+        //   indices 12-15: XY plane (z=0), long along x. (sx·b, sy·c, 0).
+        //   indices 16-19: ZX plane (y=0), long along z. (sx·c, 0, sz·b).
+        for (const sy of [-1, 1]) {
+            for (const sz of [-1, 1]) {
+                plus.push([0, sy * b + yC, sz * c]);
+            }
+        }
+        for (const sx of [-1, 1]) {
+            for (const sy of [-1, 1]) {
+                plus.push([sx * b, sy * c + yC, 0]);
+            }
+        }
+        for (const sx of [-1, 1]) {
+            for (const sz of [-1, 1]) {
+                plus.push([sx * c, 0 + yC, sz * b]);
+            }
+        }
+        // Build "-" pyritohedron — "+" rotated 90° around y-axis through
+        // y-center. Transform: (x, y, z) → (z, y_C + (y - y_C), -x) =
+        // (z, y, -x). For our verts, since y_C is built into y already,
+        // we just apply (x, y, z) → (z, y, -x).
+        // Actually that's the rotation around y AT THE CENTER (y=yC,
+        // x=0, z=0). The rotation is (x - 0, y - yC, z - 0) →
+        // ((z - 0), (y - yC), -(x - 0)) → translate back yC. Since y
+        // doesn't change and x, z don't get shifted, it's just (z, y, -x).
+        const minus = plus.map(v => [v[2], v[1], -v[0]]);
+        return [...plus, ...minus];
+    })(),
+    edges: (() => {
+        // 30 edges per pyritohedron. Computed from the 12 pentagonal
+        // face boundaries (each pentagon has 5 edges; each edge shared
+        // by 2 pentagons → 12·5/2 = 30).
+        //
+        // Cube-corner indices 0-7 connect to edge-vert indices 8-19.
+        // Each cube corner has 3 neighbors (one per adjacent face).
+        // Each edge vert has 3 neighbors: 2 cube corners (one per
+        // adjacent corner of the same face direction) + 1 "partner"
+        // edge vert (the one on the same XY/YZ/ZX plane at the opposite
+        // short-axis position).
+        const pyritEdges = (off) => [
+            // Cube → edge connections (24 edges):
+            [off + 0, off + 8], [off + 0, off + 12], [off + 0, off + 16], // (-,-,-)
+            [off + 1, off + 9], [off + 1, off + 12], [off + 1, off + 17], // (-,-,+)
+            [off + 2, off + 10], [off + 2, off + 13], [off + 2, off + 16], // (-,+,-)
+            [off + 3, off + 11], [off + 3, off + 13], [off + 3, off + 17], // (-,+,+)
+            [off + 4, off + 8], [off + 4, off + 14], [off + 4, off + 18], // (+,-,-)
+            [off + 5, off + 9], [off + 5, off + 14], [off + 5, off + 19], // (+,-,+)
+            [off + 6, off + 10], [off + 6, off + 15], [off + 6, off + 18], // (+,+,-)
+            [off + 7, off + 11], [off + 7, off + 15], [off + 7, off + 19], // (+,+,+)
+            // Edge → edge "partner" connections (6 edges):
+            [off + 8, off + 9], // YZ verts at sy=-1 (partner on z)
+            [off + 10, off + 11], // YZ verts at sy=+1
+            [off + 12, off + 13], // XY verts at sx=-1 (partner on y)
+            [off + 14, off + 15], // XY verts at sx=+1
+            [off + 16, off + 18], // ZX verts at sz=-1 (partner on x)
+            [off + 17, off + 19], // ZX verts at sz=+1
+        ];
+        return [...pyritEdges(0), ...pyritEdges(20)];
+    })(),
+};
 // Habit string → primitive lookup. Direct hits checked first; the
 // fuzzy-substring fallback in _lookupCrystalPrimitive catches the
 // many compound forms in data/minerals.json (e.g. "rhombohedral_or_
@@ -52085,13 +52837,22 @@ const HABIT_TO_PRIMITIVE = {
     'hemimorphic_crystal': PRIM_HEX_PRISM_TERMINATED,
     'platy_massive': PRIM_TABULAR,
     'micaceous_book': PRIM_TABULAR, // mica = stacked sheets
-    'rosette_radiating': PRIM_BOTRYOIDAL,
+    'rosette_radiating': PRIM_BOTRYOIDAL, // dome-shaped rosette stays dome — chalcedony / smithsonite style
     'rosette_bladed': PRIM_TABULAR, // bladed rosette = thin plates
-    'plumose_rosette': PRIM_BOTRYOIDAL,
-    'radiating_blade': PRIM_TABULAR,
-    'radiating_cluster': PRIM_BOTRYOIDAL,
-    'radiating_fibrous': PRIM_BOTRYOIDAL,
-    'radiating_spray': PRIM_BOTRYOIDAL,
+    // v134 (2026-05-22): plumose/radiating-needle habits re-routed from
+    // PRIM_BOTRYOIDAL (single dome, no cluster) to PRIM_ACICULAR (slim
+    // needle silhouette + spike cluster pattern from v132's cluster-spec
+    // port — produces 8 acicular satellites fanning around the parent
+    // anchor at radiusMul=0.55, alpha=1.0, sizeMin/Max=0.35/0.75). The
+    // texture system already classified these as 'acicular' (per
+    // 99a.HABIT_TO_TEXTURE); the primitive side now matches. Visible
+    // effect: stibnite radiating_spray + bismuthinite radiating_cluster
+    // + erythrite plumose_rosette render as needle-fans, not domes.
+    'plumose_rosette': PRIM_ACICULAR,
+    'radiating_blade': PRIM_TABULAR, // bladed = thin plates stay tablet
+    'radiating_cluster': PRIM_ACICULAR,
+    'radiating_fibrous': PRIM_ACICULAR,
+    'radiating_spray': PRIM_ACICULAR,
     'globular': PRIM_BOTRYOIDAL,
     'nodular': PRIM_BOTRYOIDAL,
     'framboidal': PRIM_BOTRYOIDAL, // raspberry-like clusters
@@ -52159,6 +52920,52 @@ function _isDripstoneEligibleCanonical(prim) {
 function _lookupCrystalPrimitive(crystal) {
     if (!crystal)
         return PRIM_RHOMBOHEDRON;
+    // v134 (2026-05-22): twin-law geometry override. Each check below
+    // is a mineral-scoped + law-scoped guard that returns a hand-rolled
+    // twin primitive instead of the canonical habit dispatch. Runs BEFORE
+    // the air-mode dripstone override: a twinned crystal in an air
+    // cavity is still a twin, not a dripstone (twins don't drip).
+    //
+    // Iconic twins shipped so far (all 7 from RESEARCH-CRYSTAL-NATURALISM.md §7):
+    //   fluorite penetration    {111}  — two cubes rotated 60° around body diagonal
+    //   selenite swallowtail    {100}  — two tabular blades opening in V (60°)
+    //   galena spinel-law       {111}  — two octahedra sharing a triangular face
+    //   aragonite cyclic-sextet {110}  — 3 prisms at 60° forming pseudo-hex column
+    //   cerussite sixling       {110}  — 3 flat blades at 60° → 6-pointed star
+    //   marcasite cockscomb     {110}  — 2 needle blades opening in 40° V
+    //   pyrite iron-cross       {110}  — 2 chiral pyritohedra at 90° around c-axis
+    //
+    // Future primitive candidates (currently fall through to canonical):
+    //   marcasite spearhead {101} — single arrowhead form
+    //   aragonite contact {110}   — single-contact twin (vs cyclic sextet)
+    if (crystal.mineral === 'fluorite' && crystal.twinned
+        && crystal.twin_law === 'penetration') {
+        return PRIM_FLUORITE_PENETRATION_TWIN;
+    }
+    if (crystal.mineral === 'selenite' && crystal.twinned
+        && crystal.twin_law === 'swallowtail') {
+        return PRIM_SELENITE_SWALLOWTAIL_TWIN;
+    }
+    if (crystal.mineral === 'galena' && crystal.twinned
+        && crystal.twin_law === 'spinel_law') {
+        return PRIM_GALENA_OCTAHEDRON_TWIN;
+    }
+    if (crystal.mineral === 'aragonite' && crystal.twinned
+        && crystal.twin_law === 'cyclic_sextet') {
+        return PRIM_ARAGONITE_PSEUDOHEX_TWIN;
+    }
+    if (crystal.mineral === 'cerussite' && crystal.twinned
+        && crystal.twin_law === 'cyclic_sixling') {
+        return PRIM_CERUSSITE_SIXLING_TWIN;
+    }
+    if (crystal.mineral === 'marcasite' && crystal.twinned
+        && crystal.twin_law === 'cockscomb') {
+        return PRIM_MARCASITE_COCKSCOMB_TWIN;
+    }
+    if (crystal.mineral === 'pyrite' && crystal.twinned
+        && crystal.twin_law === 'iron_cross') {
+        return PRIM_PYRITE_IRON_CROSS_TWIN;
+    }
     // v24 air-mode override — crystals nucleated in vadose rings get
     // dripstone geometry instead of their canonical habit primitive,
     // when the canonical primitive is structurally compatible with a
@@ -52220,9 +53027,18 @@ function _canonicalPrimitive(crystal) {
         || h.includes('micaceous') || h.includes('specular')
         || h.includes('bladed') || h.includes('blade'))
         return PRIM_TABULAR;
+    // v134 (2026-05-22): 'plumose' and 'radiating' moved here from the
+    // PRIM_BOTRYOIDAL fuzzy branch so radiating-needle habits get the
+    // acicular silhouette + spike cluster pattern. Specific habit strings
+    // like 'radiating_blade' (-> PRIM_TABULAR) and 'rosette_radiating'
+    // (-> PRIM_BOTRYOIDAL) remain in HABIT_TO_PRIMITIVE explicit table
+    // and dispatch BEFORE this fuzzy fallback, so the fan-shaped rosettes
+    // and bladed radiations keep their existing primitives. Fuzzy
+    // 'radiating' + 'plumose' here catches the general needle-fan case.
     if (h.includes('acicular') || h.includes('needle')
         || h.includes('wire') || h.includes('capillary')
-        || h.includes('flos_ferri'))
+        || h.includes('flos_ferri')
+        || h.includes('plumose') || h.includes('radiating'))
         return PRIM_ACICULAR;
     if (h.includes('botryoidal') || h.includes('reniform')
         || h.includes('mammillary') || h.includes('massive')
@@ -52232,8 +53048,7 @@ function _canonicalPrimitive(crystal) {
         || h.includes('globular') || h.includes('nodular')
         || h.includes('framboidal') || h.includes('granular')
         || h.includes('powdery') || h.includes('crust')
-        || h.includes('rosette') || h.includes('plumose')
-        || h.includes('radiating') || h.includes('iridescent')
+        || h.includes('rosette') || h.includes('iridescent')
         || h.includes('sublimation') || h.includes('coating')
         || h.includes('fibrous') || h.includes('nugget')
         || h.includes('silica_gel'))
@@ -52313,6 +53128,119 @@ function _convexHull2D(points) {
     upper.pop();
     return lower.concat(upper);
 }
+// ----- Cluster spec: per-habit aggregate parameterization -----
+//
+// The original wireframe cluster system (`_druzyClusterCount`) only
+// fired on a small set of explicit habit strings — `druz`, `crust`,
+// `granular`, `earthy`, `arborescent`, `massive`, `sugar`, `coating` —
+// plus a size-based fallback for tiny crystals. Everything else
+// rendered as a single primitive. That captured the microcrystalline
+// drusy-sugar aesthetic but missed the macrocrystalline end of the
+// spectrum: vein-comb quartz, MVT comb calcite, parallel-forest
+// prismatic druzy — where each individual crystal is a recognizable
+// hex-prism point and the aggregate is a forest of upright points
+// growing perpendicular to the local wall (the "comb" texture).
+//
+// The Three.js renderer (99i) already does this correctly via
+// `_CLUSTER_PATTERNS` indexed by geom token (prism, spike, cube,
+// tablet, etc.). This block ports the same pattern system to the
+// wireframe renderer so the two agree.
+//
+// Reference: PROPOSAL-HABIT-BIAS.md §11 — "when one renderer ships a
+// feature, the other should follow within a phase." This is that
+// follow.
+//
+// Per-cluster spec fields:
+//   count       — number of satellite crystals around the parent
+//   sizeMin/Max — uniform range for per-satellite size multiplier
+//                 (drawn deterministically via _seededRand)
+//   alpha       — fill-alpha multiplier (1.0 = opaque, <1 = sparkle)
+//   radiusMul   — multiplier on the tangent-plane scatter radius
+//                 (cluster_radius = parent_a_width × this × mmToPx,
+//                  capped at 9 × mmToPx so a runaway crystal can't
+//                  blanket the whole vug)
+//   evenAngles  — if true, satellites are placed at evenly-spaced
+//                 angles around the tangent circle (rosette signature
+//                 for desert-rose / hematite-rose tabular habits);
+//                 if false, angles are uniform random
+// Cluster pattern table for the wireframe renderer. Mirrors
+// `_CLUSTER_PATTERNS` in 99i-renderer-three.ts so the two renderers
+// produce the same cluster aesthetic for the same habit. Where 99i's
+// fields are countScale + scaleMin/Max, here we use absolute count +
+// sizeMin/Max because the wireframe never had a "base count by size
+// class" lookup — it always returned an explicit number. We bake the
+// 99i base (4–6 satellites for typical mm-scale crystals) × countScale
+// into a direct count here.
+const _CLUSTER_PATTERNS_2D = {
+    // Acicular spray — needles fanning out from a single nucleation
+    // point. Tighter spread + bigger satellites = the stibnite spray.
+    // Mirrors 99i.spike (countScale=1.3, spreadMul=0.6, scaleMin=0.35,
+    // scaleMax=0.75).
+    spike: { count: 8, sizeMin: 0.35, sizeMax: 0.75, alpha: 1.0, radiusMul: 0.55, evenAngles: false },
+    // Prismatic forest — quartz druze, beryl forest, comb-quartz. The
+    // photo-correction case. Parallel alignment dominates; satellites
+    // stand close, mostly matching parent's height. Macro-comb.
+    // Mirrors 99i.prism (countScale=1.5, spreadMul=1.1, scaleMin=0.55,
+    // scaleMax=0.95).
+    prism: { count: 9, sizeMin: 0.55, sizeMax: 0.95, alpha: 1.0, radiusMul: 1.0, evenAngles: false },
+    // Cubic carpet — fluorite / halite / pyrite druze. Many small cubes
+    // packed against the wall.
+    // Mirrors 99i.cube (countScale=1.8, spreadMul=1.4, scaleMin=0.25,
+    // scaleMax=0.55).
+    cube: { count: 11, sizeMin: 0.25, sizeMax: 0.55, alpha: 1.0, radiusMul: 1.3, evenAngles: false },
+    // Octahedral / dodecahedral — chunky isometric, fewer + larger.
+    // Mirrors 99i.octahedron (countScale=0.8, scaleMin=0.40, scaleMax=0.75).
+    octahedron: { count: 5, sizeMin: 0.40, sizeMax: 0.75, alpha: 1.0, radiusMul: 0.9, evenAngles: false },
+    rhombic_dodec: { count: 5, sizeMin: 0.40, sizeMax: 0.75, alpha: 1.0, radiusMul: 0.9, evenAngles: false },
+    // Tabular rosette — gypsum desert rose, hematite rose. Petals fanned
+    // with even angular spacing. Wider tilt to face the petals outward
+    // (the wireframe handles tilt via _renderWireframeInstance's
+    // Gaussian scatter — per-pattern tilt is a follow-up).
+    // Mirrors 99i.tablet (countScale=1.2, spreadMul=1.3, scaleMin=0.50,
+    // scaleMax=0.85, evenAngles=true).
+    tablet: { count: 7, sizeMin: 0.50, sizeMax: 0.85, alpha: 1.0, radiusMul: 1.2, evenAngles: true },
+    // Rhombohedral / scalenohedral — calcite chunks + dogtooth. Treated
+    // like a less-extreme prism cluster (parallel, recognizable
+    // individuals).
+    rhomb: { count: 6, sizeMin: 0.55, sizeMax: 0.90, alpha: 1.0, radiusMul: 0.9, evenAngles: false },
+    scalene: { count: 6, sizeMin: 0.55, sizeMax: 0.90, alpha: 1.0, radiusMul: 0.9, evenAngles: false },
+    // Botryoidal — the primitive is already a multi-bubble cluster;
+    // adding satellites would just clutter. Mirrors 99i.botryoidal
+    // (countScale=0).
+    botryoidal: { count: 0, sizeMin: 1.0, sizeMax: 1.0, alpha: 1.0, radiusMul: 0.0, evenAngles: false },
+    // Dripstone — air-mode tapered icicle. Single hanging/standing
+    // primitive; satellites would break the silhouette.
+    dripstone: { count: 0, sizeMin: 1.0, sizeMax: 1.0, alpha: 1.0, radiusMul: 0.0, evenAngles: false },
+};
+const _CLUSTER_PATTERN_2D_DEFAULT = {
+    count: 5, sizeMin: 0.40, sizeMax: 0.80, alpha: 1.0, radiusMul: 1.0, evenAngles: false,
+};
+// Map a primitive object → cluster pattern key. The primitive is what
+// _canonicalPrimitive (and the air-mode-aware _lookupCrystalPrimitive)
+// returns from the habit-string lookup, so we go through that resolved
+// shape rather than re-parsing habit strings. Keeps the wireframe and
+// the cluster pattern dispatch agreeing on the same canonical shape.
+function _clusterPatternKeyForPrim(prim) {
+    if (prim === PRIM_HEX_PRISM_TERMINATED || prim === PRIM_HEX_PRISM)
+        return 'prism';
+    if (prim === PRIM_ACICULAR)
+        return 'spike';
+    if (prim === PRIM_CUBE || prim === PRIM_PYRITOHEDRON)
+        return 'cube';
+    if (prim === PRIM_OCTAHEDRON || prim === PRIM_TETRAHEDRON || prim === PRIM_DIPYRAMID)
+        return 'octahedron';
+    if (prim === PRIM_RHOMBOHEDRON)
+        return 'rhomb';
+    if (prim === PRIM_SCALENOHEDRON)
+        return 'scalene';
+    if (prim === PRIM_TABULAR)
+        return 'tablet';
+    if (prim === PRIM_BOTRYOIDAL)
+        return 'botryoidal';
+    if (prim === PRIM_DRIPSTONE)
+        return 'dripstone';
+    return null; // unknown → caller falls through to legacy drusy-habit path or single primitive
+}
 // Drusy-cluster decision: should this crystal render as one large
 // primitive (the default) or as a carpet of N small copies?
 //
@@ -52323,76 +53251,138 @@ function _convexHull2D(points) {
 // size-based fallback gives sub-mm individuals a small cluster too,
 // since at typical zoom they otherwise read as ambient noise.
 //
-// Returns 0 for single-primitive mode, N>0 for cluster of N children.
-function _druzyClusterCount(crystal) {
+// 2026-05-22 cluster-spec refactor: function now returns a SPEC OBJECT
+// {count, sizeMin, sizeMax, alpha, radiusMul, evenAngles} so the
+// caller can use per-pattern parameters (macro-comb prism druze vs
+// sparkly micro-drusy vs gypsum-rose evenly-spaced rosette) without
+// hardcoding values in `_renderCrystalWireframe`. Legacy explicit-
+// habit-string paths (`druz`/`crust`/`granular`/etc.) preserve their
+// original counts and micro-cluster parameters byte-for-byte — only
+// the API shape changed for those callers.
+//
+// Dispatch order:
+//   1. Explicit micro-drusy habit string (drusy, crust, granular,
+//      earthy, dendritic/arborescent, massive, sugar/coating) →
+//      legacy micro params (original counts, 0.3–0.7× size, alpha 0.55).
+//   2. Per-canonical-primitive macro pattern from _CLUSTER_PATTERNS_2D
+//      (prism, spike, cube, tablet, etc.) → macro params with full
+//      alpha and larger satellites. THIS is the new path that catches
+//      vein-comb quartz / parallel-forest prismatic druze.
+//   3. Small-crystal size fallback (c_length < 0.4mm) → 4 mini-copies
+//      at micro params, so dust doesn't render as one invisible pixel.
+//   4. Default → count: 0 (single primitive).
+function _druzyClusterSpec(crystal) {
     const h = (crystal.habit || '').toLowerCase();
-    // Habit-driven: explicit drusy / massive / earthy carpets.
+    // (1) Legacy explicit drusy habits — preserve the micro-cluster
+    // parameters byte-for-byte. The original code used 0.3-0.7 size,
+    // 0.55 alpha, 0.9 radiusMul; encode those as the micro defaults.
+    const micro = (count) => ({
+        count, sizeMin: 0.3, sizeMax: 0.7, alpha: 0.55, radiusMul: 0.9, evenAngles: false,
+    });
     if (h.includes('druz'))
-        return 16;
+        return micro(16);
     if (h.includes('crust'))
-        return 12;
+        return micro(12);
     if (h.includes('granular'))
-        return 18;
+        return micro(18);
     if (h.includes('earthy'))
-        return 22;
+        return micro(22);
     if (h.includes('arborescent') || h.includes('dendritic'))
-        return 20;
+        return micro(20);
     if (h.includes('massive'))
-        return 14;
+        return micro(14);
     if (h.includes('sugar') || h.includes('coating'))
-        return 14;
-    // Size-based: very small crystals get a sparse cluster of 4 mini-
-    // copies so they don't render as one near-invisible 3-px primitive.
+        return micro(14);
+    // (2) Per-canonical-primitive macro pattern. Use _canonicalPrimitive
+    // so the macro-cluster lookup agrees with the actual rendered shape,
+    // and so air-mode dripstone overrides (PRIM_DRIPSTONE) skip clustering.
+    const prim = _lookupCrystalPrimitive(crystal);
+    const key = _clusterPatternKeyForPrim(prim);
+    if (key) {
+        const pat = _CLUSTER_PATTERNS_2D[key];
+        if (pat) {
+            // Big gem crystals — same threshold as 99i's _clusterSatelliteCount
+            // (cLen > 60 mm reads as a solo specimen, no cluster).
+            const cLen = crystal.c_length_mm || 0;
+            if (cLen > 60)
+                return { count: 0, sizeMin: 1, sizeMax: 1, alpha: 1, radiusMul: 0, evenAngles: false };
+            return { ...pat };
+        }
+    }
+    // (3) Tiny-crystal fallback — preserve the original sparse mini-cluster.
     if ((crystal.c_length_mm || 0) < 0.4)
-        return 4;
-    return 0;
+        return micro(4);
+    // (4) Default — no cluster, single primitive.
+    return { count: 0, sizeMin: 1, sizeMax: 1, alpha: 1, radiusMul: 0, evenAngles: false };
 }
-// Render one wireframe crystal — single primitive or drusy cluster
+// Legacy alias — preserved so any external caller (or test) that
+// reads the old count-only API still gets a sensible answer. Internal
+// callers (`_renderCrystalWireframe`) should consume the spec object.
+function _druzyClusterCount(crystal) {
+    return _druzyClusterSpec(crystal).count;
+}
+// Render one wireframe crystal — single primitive or aggregate cluster
 // depending on habit/size. The single-instance path lives in
 // _renderWireframeInstance; this function dispatches and, when
-// clustering, scatters N small offset copies in the substrate's
-// tangent plane around the parent's anchor cell.
+// clustering, scatters N offset copies in the substrate's tangent
+// plane around the parent's anchor cell.
+//
+// 2026-05-22: per-pattern cluster spec. The spec object returned by
+// `_druzyClusterSpec` carries the count + size range + alpha + radius
+// multiplier + evenAngles flag, so the same dispatch handles micro
+// drusy (sparkly sugar, alpha 0.55, sizes 0.3–0.7) AND macro comb
+// druze (vein-comb quartz, alpha 1.0, sizes 0.55–0.95) AND tabular
+// rosette (evenly-spaced petals — gypsum desert rose, hematite rose)
+// without per-mode dispatch branches. Adding a new cluster mode = one
+// entry in `_CLUSTER_PATTERNS_2D`.
 function _renderCrystalWireframe(ctx, crystal, cellWorld, sphereRadiusPx, mmToPx, cx, cy, F) {
-    const clusterN = _druzyClusterCount(crystal);
-    if (clusterN <= 0) {
+    const spec = _druzyClusterSpec(crystal);
+    if (spec.count <= 0) {
         _renderWireframeInstance(ctx, crystal, cellWorld, sphereRadiusPx, mmToPx, cx, cy, F, {});
         return;
     }
     // Cluster mode. Each child gets:
     //   * an offset anchor in the substrate's tangent plane (so the
-    //     carpet spreads along the wall, not into the cavity)
+    //     aggregate spreads along the wall, not into the cavity)
     //   * its own seeded c-axis scatter (parent_id ^ child_index)
-    //   * a fractional size of the parent (0.3–0.7)
-    //   * a slightly reduced fill alpha so overlapping children read
-    //     as a sparkly carpet rather than a single opaque blob.
+    //   * a size multiplier drawn uniformly from [sizeMin, sizeMax]
+    //   * a fill-alpha multiplier from the spec (1.0 for macro, 0.55 for
+    //     micro sparkle).
     const invR = 1 / (Math.hypot(cellWorld[0], cellWorld[1], cellWorld[2]) || 1);
     const subNormal = [-cellWorld[0] * invR, -cellWorld[1] * invR,
         -cellWorld[2] * invR];
     const [tA, tB] = _orthonormalBasis(subNormal, 0);
     // Cluster radius in pixels: scaled by the parent's a-width (which
-    // encodes the crystal's lateral coverage on the wall) so a small
-    // druzy fleck stays compact while a big crustiform sheet spreads
-    // across many cells. Capped so a runaway crystal can't blanket the
-    // whole vug.
+    // encodes the crystal's lateral coverage on the wall) so a tight
+    // micro fleck stays compact while a wide tablet rosette fans across
+    // more cells. radiusMul comes from the per-pattern spec (1.3 for
+    // cubic carpet, 0.55 for tight acicular spray, 1.0 for prism forest).
+    // Capped so a runaway crystal can't blanket the whole vug.
     const widthMm = Math.max(crystal.a_width_mm || 0, crystal.c_length_mm || 0, 1.0);
-    const clusterRadiusPx = Math.min(widthMm * 0.9 * mmToPx, 9 * mmToPx);
+    const clusterRadiusPx = Math.min(widthMm * spec.radiusMul * mmToPx, 9 * mmToPx);
     const id = crystal.crystal_id | 0;
-    for (let i = 1; i <= clusterN; i++) {
+    const sizeSpan = spec.sizeMax - spec.sizeMin;
+    for (let i = 1; i <= spec.count; i++) {
         // Scatter offset in tangent plane. Two seeded uniforms with
         // sqrt-radius weighting → uniform area density inside the disc.
         const r = Math.sqrt(_seededRand((id ^ (i * 7919)) >>> 0)) * clusterRadiusPx;
-        const a = _seededRand((id ^ (i * 6133)) >>> 0) * 2 * Math.PI;
+        // evenAngles: petals at evenly-spaced angles around the tangent
+        // circle (rosette signature — gypsum desert rose, hematite rose).
+        // Default: uniform random angle (carpet/forest aesthetic).
+        const a = spec.evenAngles
+            ? ((i - 1) / spec.count) * 2 * Math.PI + (_seededRand((id ^ (i * 6133)) >>> 0) - 0.5) * 0.3
+            : _seededRand((id ^ (i * 6133)) >>> 0) * 2 * Math.PI;
         const jx = r * Math.cos(a), jy = r * Math.sin(a);
         const anchor = [
             cellWorld[0] + tA[0] * jx + tB[0] * jy,
             cellWorld[1] + tA[1] * jx + tB[1] * jy,
             cellWorld[2] + tA[2] * jx + tB[2] * jy,
         ];
-        const sizeMul = 0.3 + 0.4 * _seededRand((id ^ (i * 4111)) >>> 0);
+        const sizeMul = spec.sizeMin + sizeSpan * _seededRand((id ^ (i * 4111)) >>> 0);
         _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx, mmToPx, cx, cy, F, {
             sizeMul,
             seedOffset: i,
-            fillAlphaMul: 0.55,
+            fillAlphaMul: spec.alpha,
         });
     }
 }
@@ -54625,6 +55615,21 @@ function _habitGeomToken(habit) {
         return 'spike';
     if (h.includes('dendritic') || h.includes('arborescent'))
         return 'spike';
+    // v134 (2026-05-22): radiating / plumose needle-fan habits route to
+    // spike (matching js/99c HABIT_TO_PRIMITIVE re-routing + js/99d fuzzy
+    // fallback). 'radiating_blade' is caught by the 'blade' tabular check
+    // above. 'radiating_columnar' should stay as prism (forest of columns
+    // radiating from a base — hemimorphite signature). Everything else
+    // 'radiating' / 'plumose' is a needle-fan: radiating_spray (stibnite),
+    // radiating_cluster (bismuthinite), radiating_fibrous (erythrite),
+    // plumose_rosette (erythrite plumose).
+    if (h.includes('plumose'))
+        return 'spike';
+    if (h.includes('radiating')) {
+        if (h.includes('columnar'))
+            return 'prism';
+        return 'spike';
+    }
     if (h === 'prismatic' || h === 'columnar' || h === 'bladed')
         return 'prism';
     return 'prism'; // sensible default — most cavity habits are vaguely prismatic
@@ -54641,7 +55646,14 @@ const _GEOM_TOKEN_RATIO = {
     scalene: 0.6, // scalenohedral — calcite dogtooth (taller than rhomb)
     tablet: 1.5, // tabular — flat plate, a > c
     cube: 1.0, // isometric
+    fluorite_penetration_twin: 1.0, // two cubes interpenetrating — same envelope
+    selenite_swallowtail_twin: 1.5, // tabular blades — c > a like 'tablet' family
     octahedron: 1.0,
+    galena_octahedron_twin: 1.0, // two octahedra sharing a face — isometric
+    aragonite_pseudohex_twin: 0.6, // tall pseudo-hex column — c > a, prism family
+    cerussite_sixling_twin: 1.8, // flat stellate — wider than tall, like botryoidal crusts
+    marcasite_cockscomb_twin: 0.3, // thin needle blades — c >> a, acicular family
+    pyrite_iron_cross_twin: 1.0, // interpenetrating pyritohedra — isometric envelope
     rhombic_dodec: 1.0,
     dodecahedron: 1.0,
     snowball: 1.0,
@@ -54664,7 +55676,46 @@ const _DRIPSTONE_ELIGIBLE_TOKENS = new Set([
 // "fluid → canonical primitive, air → dripstone (when eligible)"
 // decision so the call site stays a one-liner. Mirrors
 // _lookupCrystalPrimitive in js/99d-renderer-wireframe.ts.
+//
+// Dispatch precedence (matches the wireframe side):
+//   1. Twin override — mineral-specific iconic twins (v134 onward)
+//   2. Air-mode dripstone override (Slice 4)
+//   3. Canonical habit-string token
+//
+// Twins win over air-mode because real twinned cubes don't drip into
+// stalactites just because the cavity drained. Future iconic twin
+// primitives (gypsum swallowtail, marcasite cockscomb, cerussite
+// trilling, pyrite iron-cross, galena octahedron-twin, aragonite
+// pseudo-hex) plug into this same gate.
 function _resolveCrystalGeomToken(crystal, habitForGeom) {
+    if (crystal && crystal.mineral === 'fluorite' && crystal.twinned
+        && crystal.twin_law === 'penetration') {
+        return 'fluorite_penetration_twin';
+    }
+    if (crystal && crystal.mineral === 'selenite' && crystal.twinned
+        && crystal.twin_law === 'swallowtail') {
+        return 'selenite_swallowtail_twin';
+    }
+    if (crystal && crystal.mineral === 'galena' && crystal.twinned
+        && crystal.twin_law === 'spinel_law') {
+        return 'galena_octahedron_twin';
+    }
+    if (crystal && crystal.mineral === 'aragonite' && crystal.twinned
+        && crystal.twin_law === 'cyclic_sextet') {
+        return 'aragonite_pseudohex_twin';
+    }
+    if (crystal && crystal.mineral === 'cerussite' && crystal.twinned
+        && crystal.twin_law === 'cyclic_sixling') {
+        return 'cerussite_sixling_twin';
+    }
+    if (crystal && crystal.mineral === 'marcasite' && crystal.twinned
+        && crystal.twin_law === 'cockscomb') {
+        return 'marcasite_cockscomb_twin';
+    }
+    if (crystal && crystal.mineral === 'pyrite' && crystal.twinned
+        && crystal.twin_law === 'iron_cross') {
+        return 'pyrite_iron_cross_twin';
+    }
     const canonical = _habitGeomToken(habitForGeom);
     if (crystal && crystal.growth_environment === 'air'
         && _DRIPSTONE_ELIGIBLE_TOKENS.has(canonical)) {
@@ -55033,6 +56084,577 @@ function _makeBotryoidalCluster() {
     geom.computeVertexNormals();
     return geom;
 }
+// Fluorite penetration twin — two interpenetrating cubes rotated 60°
+// around their shared body diagonal [1,1,1]/√3 (Sunagawa 2005 §6.4;
+// Dana 8th ed. CaF2 section). The Weardale Cumbria / Cave-in-Rock /
+// Berbes signature visible in real specimens as a 14-pointed star
+// silhouette. Mirrors PRIM_FLUORITE_PENETRATION_TWIN in
+// js/99c-renderer-primitives.ts so the wireframe and Three.js renderers
+// agree on the twin geometry (PROPOSAL-HABIT-BIAS.md §11 cross-renderer
+// parity rule).
+//
+// Math: cube A has 8 corners at (±c, ±c, ±c) for half-extent c = 0.4
+// (matching the cube case's BoxGeometry(0.8) so a twinned fluorite is
+// the same overall envelope as an untwinned one). Cube B is cube A
+// rotated by R = (1/3) × [[2,2,-1],[-1,2,2],[2,-1,2]], the 60°-around-
+// [1,1,1]/√3 rotation derived from Rodrigues' formula. The body-
+// diagonal endpoints (-c,-c,-c) and (+c,+c,+c) sit on the rotation
+// axis and are invariant under R; the other 6 corners of each cube map
+// to NEW positions, producing the interpenetrating-cube silhouette.
+//
+// Flat-shaded: 6 faces × 2 triangles per cube × 2 cubes = 24 triangles,
+// 72 vertex triples in the position attribute. No shared verts between
+// faces — each face reads as its own facet, matching the convention of
+// the other _make* builders in this file.
+function _makeFluoritePenetrationTwin() {
+    const c = 0.4; // half-extent — matches cube case's BoxGeometry(0.8)
+    // Cube A: 8 corners ordered by (sx, sy, sz) loops to match
+    // PRIM_FLUORITE_PENETRATION_TWIN's vertex indexing on the wireframe
+    // side. 0:(-,-,-) 1:(-,-,+) 2:(-,+,-) 3:(-,+,+) 4:(+,-,-) 5:(+,-,+)
+    // 6:(+,+,-) 7:(+,+,+). Body-diagonal axis is 0 → 7.
+    const A = [];
+    for (const sx of [-1, 1]) {
+        for (const sy of [-1, 1]) {
+            for (const sz of [-1, 1]) {
+                A.push([c * sx, c * sy, c * sz]);
+            }
+        }
+    }
+    // Cube B: rotate each cube-A vertex by R around the origin (which
+    // is on the body-diagonal axis, so the (-,-,-) and (+,+,+) corners
+    // stay fixed). Centered at origin to match the cube case's anchoring;
+    // the wireframe's y=0.45 offset is its own convention.
+    const B = A.map(([x, y, z]) => [
+        (2 * x + 2 * y - z) / 3,
+        (-x + 2 * y + 2 * z) / 3,
+        (2 * x - y + 2 * z) / 3,
+    ]);
+    // Emit 6 cube faces as 12 triangles, CCW from outside (so flat-shaded
+    // normals point outward). Indexing is consistent across both cubes
+    // because both share the (sx, sy, sz) ordering above.
+    const pushCube = (out, v) => {
+        const tri = (a, b, c) => {
+            _pushTri(out, v[a][0], v[a][1], v[a][2], v[b][0], v[b][1], v[b][2], v[c][0], v[c][1], v[c][2]);
+        };
+        tri(0, 1, 3);
+        tri(0, 3, 2); // -X face
+        tri(4, 6, 7);
+        tri(4, 7, 5); // +X face
+        tri(0, 4, 5);
+        tri(0, 5, 1); // -Y face
+        tri(2, 3, 7);
+        tri(2, 7, 6); // +Y face
+        tri(0, 2, 6);
+        tri(0, 6, 4); // -Z face
+        tri(1, 5, 7);
+        tri(1, 7, 3); // +Z face
+    };
+    const positions = [];
+    pushCube(positions, A);
+    pushCube(positions, B);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Selenite swallowtail twin — two thin tabular blades joined on a
+// {100} contact plane at the base, opening upward in a V (Dana 8th
+// ed. CaSO4·2H2O section; Hurlbut & Klein 23rd ed. §13). The iconic
+// "fishtail" / "swallowtail" gypsum twin, present in Bohemian +
+// Naica + Mojave specimens. Mirrors PRIM_SELENITE_SWALLOWTAIL_TWIN
+// in js/99c-renderer-primitives.ts so both renderers agree on the
+// twin geometry (PROPOSAL-HABIT-BIAS.md §11 cross-renderer parity).
+//
+// Math: each blade is a thin rectangular block in its local coords
+// (xl ∈ {-2a, 0} for blade A; yl ∈ {0, L} long axis; zl ∈ {-b, +b}
+// width). Blade A is rotated +30° around the world z-axis; blade B
+// is rotated -30°. The contact-base edge (xl=0, yl=0) stays fixed
+// at the origin; the rest of each blade tilts outward. Total V
+// opening angle 60°.
+//
+// Anchoring: centered at origin (not y=-0.1 like the wireframe) to
+// match the 99i convention where geometries are centered and the
+// instance transform handles wall placement. The outer base corners
+// of each blade sit BELOW y=0; the instance transform anchors the
+// blade-pair such that the visible V opens above the wall.
+//
+// Flat-shaded: 6 faces × 2 triangles per blade × 2 blades = 24
+// triangles, 72 vertex triples — matches fluorite-twin geometry count.
+function _makeSeleniteSwallowtailTwin() {
+    const a = 0.05; // half-thickness (perpendicular to broad face)
+    const L = 0.95; // blade length along c-axis
+    const b = 0.15; // half-width (along contact edge, Z)
+    const theta = Math.PI / 6; // 30° tilt per blade — 60° total V
+    const c30 = Math.cos(theta);
+    const s30 = Math.sin(theta);
+    // Build the 8 world-space corners of each blade. Indexing matches
+    // the wireframe PRIM_SELENITE_SWALLOWTAIL_TWIN: (xl, yl, zl) loop
+    // order in {-2a, 0} × {0, L} × {-b, +b}. The contact-base corners
+    // are 4, 5 (blade A) and 12, 13 (blade B) — they coincide at the
+    // origin.
+    const buildBladeA = () => {
+        const out = [];
+        for (const xl of [-2 * a, 0]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 - yl * s30;
+                    const wy = xl * s30 + yl * c30;
+                    out.push([wx, wy, zl]);
+                }
+            }
+        }
+        return out;
+    };
+    const buildBladeB = () => {
+        // Mirror of blade A across X=0.
+        const out = [];
+        for (const xl of [0, 2 * a]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * c30 + yl * s30;
+                    const wy = -xl * s30 + yl * c30;
+                    out.push([wx, wy, zl]);
+                }
+            }
+        }
+        return out;
+    };
+    const A = buildBladeA();
+    const B = buildBladeB();
+    // Emit 6 box faces as 12 triangles per blade, CCW from outside so
+    // flat-shaded normals point outward. Same face indexing as the
+    // fluorite twin's cube helper: faces are pairs of constant
+    // xl/yl/zl coords, vertex indices follow the (xl, yl, zl) loops.
+    const pushBlade = (out, v) => {
+        const tri = (a, b, c) => {
+            _pushTri(out, v[a][0], v[a][1], v[a][2], v[b][0], v[b][1], v[b][2], v[c][0], v[c][1], v[c][2]);
+        };
+        // Vertices in (xl, yl, zl) loop order:
+        //   0: (-2a, 0, -b)  1: (-2a, 0, +b)  2: (-2a, L, -b)  3: (-2a, L, +b)
+        //   4: (0, 0, -b)    5: (0, 0, +b)    6: (0, L, -b)    7: (0, L, +b)
+        // (For blade B, replace -2a with 0 and 0 with +2a; indices match.)
+        tri(0, 1, 3);
+        tri(0, 3, 2); // xl = -2a face (outer broad face for blade A)
+        tri(4, 6, 7);
+        tri(4, 7, 5); // xl = 0 face (contact-side broad face)
+        tri(0, 4, 5);
+        tri(0, 5, 1); // yl = 0 face (base)
+        tri(2, 3, 7);
+        tri(2, 7, 6); // yl = L face (top)
+        tri(0, 2, 6);
+        tri(0, 6, 4); // zl = -b face (one side edge)
+        tri(1, 5, 7);
+        tri(1, 7, 3); // zl = +b face (other side edge)
+    };
+    const positions = [];
+    pushBlade(positions, A);
+    pushBlade(positions, B);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Galena spinel-law octahedron twin — two octahedra sharing a {111}
+// triangular face, the classic contact twin documented in Ramdohr
+// 1980 §4.3.6 + Boyle 1968's Cobalt-Ontario silver-galena ores.
+// Mirrors PRIM_GALENA_OCTAHEDRON_TWIN in js/99c-renderer-primitives.ts
+// for cross-renderer parity. v133's twin_laws[].probability=0.10
+// means ~10% of galena crystals have crystal.twinned=true +
+// crystal.twin_law='spinel_law' set by _rollSpontaneousTwin.
+//
+// Math: first octahedron with vertices at (±c, 0, 0), (0, ±c, 0),
+// (0, 0, ±c) for c=0.55 (matches THREE.OctahedronGeometry(0.55, 0)
+// envelope). Second octahedron = reflection across the {111} plane
+// x+y+z = c, which leaves 3 vertices (the contact-face vertices) on
+// the plane and maps the other 3 to new positions in the +X+Y+Z
+// octant. Reflection formula: P' = P - 2*(P·n - d)/|n|² * n with
+// n=(1,1,1), d=c, |n|²=3.
+//
+// Flat-shaded triangulation: each octahedron has 8 triangular faces.
+// The contact face ({+x, +y, +z} octant face of both octahedra) is
+// SKIPPED for both octahedra — it's hidden inside the twin body and
+// would otherwise be drawn as a zero-thickness sheet with opposite-
+// facing normals. That leaves 7 faces per octahedron × 2 = 14
+// triangles, 42 vertex triples in the position attribute.
+//
+// Face winding: CCW from outside. For the second octahedron (which
+// is a mirror image of the first), winding is REVERSED to maintain
+// outward-pointing normals.
+function _makeGalenaOctahedronTwin() {
+    const c = 0.55; // equatorial radius
+    // Vertex layout follows the wireframe convention:
+    //   0: +y (top apex)   1: -y (bottom apex)
+    //   2: +x (east)       3: -x (west)
+    //   4: +z (north)      5: -z (south)
+    // Centered at origin to match the 99i convention; instance
+    // transform handles wall placement.
+    const oct1 = [
+        [0, c, 0], // 0 top apex (+y)
+        [0, -c, 0], // 1 bottom apex (-y)
+        [c, 0, 0], // 2 east (+x)
+        [-c, 0, 0], // 3 west (-x)
+        [0, 0, c], // 4 north (+z)
+        [0, 0, -c], // 5 south (-z)
+    ];
+    // Contact plane: {0, 2, 4} face — top + east + north — has plane
+    // equation x + y + z = c (each contact vertex satisfies this).
+    // Reflect non-contact vertices (1, 3, 5) across the plane; the
+    // contact vertices (0, 2, 4) stay fixed.
+    const reflect = (p) => {
+        const k = 2 * (p[0] + p[1] + p[2] - c) / 3;
+        return [p[0] - k, p[1] - k, p[2] - k];
+    };
+    const oct2 = oct1.map(reflect);
+    // Faces of an octahedron labeled (top=0, bot=1, E=2, W=3, N=4, S=5).
+    // Each face is on a (sx, sy, sz) octant. For our labeling:
+    //   octant (+y, +x, +z) → face {0, 2, 4} = top-east-north (the
+    //                            CONTACT face — skipped)
+    //   octant (+y, +x, -z) → face {0, 2, 5} = top-east-south
+    //   octant (+y, -x, +z) → face {0, 3, 4} = top-west-north
+    //   octant (+y, -x, -z) → face {0, 3, 5} = top-west-south
+    //   octant (-y, +x, +z) → face {1, 2, 4} = bot-east-north
+    //   octant (-y, +x, -z) → face {1, 2, 5}
+    //   octant (-y, -x, +z) → face {1, 3, 4}
+    //   octant (-y, -x, -z) → face {1, 3, 5}
+    // CCW-from-outside order for each face (verified via cross-product
+    // outward-normal sign), with the {0, 2, 4} contact face omitted:
+    const faces = [
+        // [0, 2, 4]  // contact face — SKIPPED
+        [0, 5, 2], // top-east-south
+        [0, 4, 3], // top-north-west
+        [0, 3, 5], // top-west-south
+        [1, 2, 5], // bot-east-south
+        [1, 5, 3], // bot-south-west
+        [1, 3, 4], // bot-west-north
+        [1, 4, 2], // bot-north-east
+    ];
+    const positions = [];
+    // First octahedron — emit each face in CCW-from-outside order.
+    for (const f of faces) {
+        const A = oct1[f[0]], B = oct1[f[1]], C = oct1[f[2]];
+        _pushTri(positions, A[0], A[1], A[2], B[0], B[1], B[2], C[0], C[1], C[2]);
+    }
+    // Second octahedron — same face list, but REVERSED winding because
+    // reflection flips orientation. (A, B, C) → (A, C, B) keeps the
+    // outward normal pointing outward in the mirrored coordinate frame.
+    for (const f of faces) {
+        const A = oct2[f[0]], B = oct2[f[1]], C = oct2[f[2]];
+        _pushTri(positions, A[0], A[1], A[2], C[0], C[1], C[2], B[0], B[1], B[2]);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Aragonite pseudo-hex sextet — three tabular orthorhombic prisms at
+// 60° rotation around the c-axis (+Y), interpenetrating to produce a
+// pseudo-hexagonal column (Dana 8th ed. CaCO3 section; Speer 1983
+// "Aragonite" Reviews in Mineralogy v.11). Mirrors
+// PRIM_ARAGONITE_PSEUDOHEX_TWIN in 99c-renderer-primitives.ts for
+// cross-renderer parity. v133's twin_laws[].probability=0.40 means
+// ~40% of aragonite crystals carry crystal.twinned=true +
+// crystal.twin_law='cyclic_sextet'.
+//
+// Math: each prism is a tabular box with half-thickness a=0.10 and
+// half-width b=0.30 in its local (xl, zl) frame. Long axis +Y from
+// y=-L to y=+L (L=0.5 for the 99i convention centered at origin).
+// Prism k is rotated by k·60° around the y-axis:
+//   wx = xl·cos(θ_k) - zl·sin(θ_k)
+//   wz = xl·sin(θ_k) + zl·cos(θ_k)
+// for θ_k = k·π/3, k ∈ {0, 1, 2}.
+//
+// Why 3 crystals = "sextet": each tabular crystal contributes 2
+// {110}-type broad faces (one on each side), so 3 crystals × 2 = 6
+// visible faces around the column. The "sextet" terminology counts
+// faces, not crystals.
+//
+// Flat-shaded: 6 box faces × 2 triangles × 3 prisms = 36 triangles,
+// 108 vertex triples in the position attribute (324 floats).
+function _makeAragonitePseudohexTwin() {
+    const a = 0.10; // half-thickness (perp to broad face)
+    const b = 0.30; // half-width (parallel to broad face)
+    const L = 0.5; // half-length along c-axis (centered at origin)
+    const positions = [];
+    // Build each prism's 8 corners then emit 6 box faces as 12
+    // flat-shaded triangles. Same face-winding pattern as the
+    // fluorite-twin / swallowtail builders.
+    const pushPrism = (theta) => {
+        const cT = Math.cos(theta);
+        const sT = Math.sin(theta);
+        // 8 corners in (xl, yl, zl) loop order — xl ∈ {-a, +a},
+        // yl ∈ {-L, +L}, zl ∈ {-b, +b}. Same indexing as the cube helper
+        // in _makeFluoritePenetrationTwin so the face-winding rule
+        // transfers directly.
+        const v = [];
+        for (const xl of [-a, a]) {
+            for (const yl of [-L, L]) {
+                for (const zl of [-b, b]) {
+                    v.push([xl * cT - zl * sT, yl, xl * sT + zl * cT]);
+                }
+            }
+        }
+        const tri = (i, j, k) => {
+            _pushTri(positions, v[i][0], v[i][1], v[i][2], v[j][0], v[j][1], v[j][2], v[k][0], v[k][1], v[k][2]);
+        };
+        tri(0, 1, 3);
+        tri(0, 3, 2); // xl = -a face
+        tri(4, 6, 7);
+        tri(4, 7, 5); // xl = +a face
+        tri(0, 4, 5);
+        tri(0, 5, 1); // yl = -L face (bottom)
+        tri(2, 3, 7);
+        tri(2, 7, 6); // yl = +L face (top)
+        tri(0, 2, 6);
+        tri(0, 6, 4); // zl = -b face
+        tri(1, 5, 7);
+        tri(1, 7, 3); // zl = +b face
+    };
+    for (let k = 0; k < 3; k++) {
+        pushPrism(k * Math.PI / 3);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Cerussite stellate-sixling — the flat-star counterpart to the
+// aragonite pseudo-hex column. Three thin blades lying in the wall
+// plane (XZ), each rotated 60° from the next around y-axis. Each
+// blade extends through origin in both radial directions, so 3
+// blades × 2 arms = 6 arms (the "sixling" of the law name).
+// Documented in Dana 8th ed. PbCO3 section; Heinrich & Vian 1967
+// reported stellate trillings as the dominant cerussite twin habit
+// in MVT districts. Mirrors PRIM_CERUSSITE_SIXLING_TWIN in
+// 99c-renderer-primitives.ts. v133 set the probability to 0.40.
+//
+// Math: each blade in its local frame has xl as the long axis
+// (radial after rotation), yl as the thin wall-perpendicular
+// dimension, zl as the thin tangential dimension. Rotation by
+// θ_k = k · 60° around the y-axis spreads the blades in the wall
+// plane.
+//
+// Flat-shaded: 6 box faces × 2 triangles × 3 blades = 36 triangles,
+// 108 vertex triples (matches the aragonite twin's vertex count;
+// the math is parallel, just with different axis convention).
+function _makeCerussiteSixlingTwin() {
+    const c_long = 0.5; // radial half-length (long axis in XZ)
+    const b_tan = 0.08; // tangential half-width (narrow)
+    const thin_y = 0.05; // half-thickness in Y (very thin — flat on wall)
+    const positions = [];
+    const pushBlade = (theta) => {
+        const cT = Math.cos(theta);
+        const sT = Math.sin(theta);
+        const v = [];
+        // 8 corners in (xl, yl, zl) loop order — same indexing as the
+        // aragonite twin's pushPrism helper. Difference: here xl is the
+        // long axis (the radial direction in XZ), not the thin direction.
+        for (const xl of [-c_long, c_long]) {
+            for (const yl of [-thin_y, thin_y]) {
+                for (const zl of [-b_tan, b_tan]) {
+                    v.push([xl * cT - zl * sT, yl, xl * sT + zl * cT]);
+                }
+            }
+        }
+        const tri = (i, j, k) => {
+            _pushTri(positions, v[i][0], v[i][1], v[i][2], v[j][0], v[j][1], v[j][2], v[k][0], v[k][1], v[k][2]);
+        };
+        tri(0, 1, 3);
+        tri(0, 3, 2); // xl = -c face (outer arm 1 endcap)
+        tri(4, 6, 7);
+        tri(4, 7, 5); // xl = +c face (outer arm 2 endcap)
+        tri(0, 4, 5);
+        tri(0, 5, 1); // yl = -thin face (bottom against wall)
+        tri(2, 3, 7);
+        tri(2, 7, 6); // yl = +thin face (top, facing into cavity)
+        tri(0, 2, 6);
+        tri(0, 6, 4); // zl = -b face (tangential side 1)
+        tri(1, 5, 7);
+        tri(1, 7, 3); // zl = +b face (tangential side 2)
+    };
+    for (let k = 0; k < 3; k++) {
+        pushBlade(k * Math.PI / 3);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Marcasite cockscomb — thin needle blades joined on {110}, opening
+// in a tight V. The diagnostic morphology distinguishing marcasite
+// from pyrite (Ramdohr 1980 FeS2 dimorph section). Mirrors
+// PRIM_MARCASITE_COCKSCOMB_TWIN in 99c-renderer-primitives.ts.
+//
+// Same construction as the selenite swallowtail builder, with two
+// param differences:
+//   a = 0.025  (thinner — was 0.05 for swallowtail)
+//   b = 0.08   (narrower — was 0.15)
+//   theta = π/9  (20° tilt → 40° V — tighter than swallowtail's 60°)
+//
+// L kept the same as swallowtail (~0.95) for the blade length.
+// Centered at origin per the 99i convention.
+function _makeMarcasiteCockscombTwin() {
+    const a = 0.025; // half-thickness (perpendicular to broad face)
+    const L = 0.95; // blade length along c-axis
+    const b = 0.08; // half-width along contact edge
+    const theta = Math.PI / 9; // 20° tilt per blade — 40° total V
+    const c30 = Math.cos(theta);
+    const s30 = Math.sin(theta);
+    const buildBladeA = () => {
+        const out = [];
+        for (const xl of [-2 * a, 0]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    out.push([xl * c30 - yl * s30, xl * s30 + yl * c30, zl]);
+                }
+            }
+        }
+        return out;
+    };
+    const buildBladeB = () => {
+        const out = [];
+        for (const xl of [0, 2 * a]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    out.push([xl * c30 + yl * s30, -xl * s30 + yl * c30, zl]);
+                }
+            }
+        }
+        return out;
+    };
+    const A = buildBladeA();
+    const B = buildBladeB();
+    const pushBlade = (out, v) => {
+        const tri = (i, j, k) => {
+            _pushTri(out, v[i][0], v[i][1], v[i][2], v[j][0], v[j][1], v[j][2], v[k][0], v[k][1], v[k][2]);
+        };
+        tri(0, 1, 3);
+        tri(0, 3, 2); // xl = -2a face
+        tri(4, 6, 7);
+        tri(4, 7, 5); // xl = 0 face (contact)
+        tri(0, 4, 5);
+        tri(0, 5, 1); // yl = 0 face (base)
+        tri(2, 3, 7);
+        tri(2, 7, 6); // yl = L face (top)
+        tri(0, 2, 6);
+        tri(0, 6, 4); // zl = -b face
+        tri(1, 5, 7);
+        tri(1, 7, 3); // zl = +b face
+    };
+    const positions = [];
+    pushBlade(positions, A);
+    pushBlade(positions, B);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Pyrite iron-cross twin — two chiral {120} pyritohedra interpenetrating
+// at 90° around the c-axis (Ramdohr 1980 §4 FeS2 section; Dana 8th ed.;
+// Mindat pyrite habits). v133 retuned the probability from 0.008 → 0.07
+// to match the field-observation 5-10% twin frequency. Mirrors
+// PRIM_PYRITE_IRON_CROSS_TWIN in 99c-renderer-primitives.ts.
+//
+// The trick: a proper chiral {120} pyritohedron has m-3 (Th) symmetry —
+// NO 4-fold axis along c. So 90° rotation around c-axis is NOT a
+// symmetry, and the rotated pyritohedron occupies distinct positions.
+// (The simplified PRIM_PYRITOHEDRON used for non-twin pyrite has cubic
+// over-symmetry — 90° rotation around any axis maps it to itself —
+// which is why this twin needs its own non-shared geometry.)
+//
+// 20 vertices per pyritohedron × 2 = 40 vertices.
+// 12 pentagonal faces × 3 triangles per fan × 2 = 72 triangles.
+// 72 × 3 = 216 vertex triples in the position attribute (648 floats).
+function _makePyriteIronCrossTwin() {
+    // Unscaled pyritohedron parameters then scaled so max coord = 0.5
+    // (99i centered convention). b is the long edge param; max coord is b.
+    const s = 0.5 / (Math.sqrt(5) / 2);
+    const a = (Math.sqrt(5) / 3) * s; // cube corner extent
+    const b = 0.5; // long edge param (max coord)
+    const c = (Math.sqrt(5) / 4) * s; // short edge param
+    // "+" pyritohedron: 20 vertices, centered at origin (no y-shift —
+    // 99i convention).
+    const plus = [];
+    // Cube corners (0-7) in (sx, sy, sz) loop order.
+    for (const sx of [-1, 1]) {
+        for (const sy of [-1, 1]) {
+            for (const sz of [-1, 1]) {
+                plus.push([sx * a, sy * a, sz * a]);
+            }
+        }
+    }
+    // Edge verts in 3 cyclic groups (indices 8-19).
+    for (const sy of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+            plus.push([0, sy * b, sz * c]); // 8-11: YZ-plane (x=0)
+        }
+    }
+    for (const sx of [-1, 1]) {
+        for (const sy of [-1, 1]) {
+            plus.push([sx * b, sy * c, 0]); // 12-15: XY-plane (z=0)
+        }
+    }
+    for (const sx of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+            plus.push([sx * c, 0, sz * b]); // 16-19: ZX-plane (y=0)
+        }
+    }
+    // "-" pyritohedron: rotation by 90° around y-axis. (x, y, z) → (z, y, -x).
+    const minus = plus.map(v => [v[2], v[1], -v[0]]);
+    // 12 pentagonal faces per pyritohedron, with face normals for winding-
+    // direction verification. Each pentagon is a 5-vertex sequence; the
+    // emitter checks the cross product of (v1-v0)×(v2-v0) and reverses
+    // the pentagon order if the result points opposite the face normal
+    // (i.e., if the pentagon would render with inward-pointing flat-shaded
+    // normals).
+    const facesPlus = [
+        { vs: [7, 15, 6, 10, 11], n: [1, 2, 0] }, // (1, 2, 0)
+        { vs: [3, 13, 2, 10, 11], n: [-1, 2, 0] }, // (-1, 2, 0)
+        { vs: [5, 14, 4, 8, 9], n: [1, -2, 0] }, // (1, -2, 0)
+        { vs: [1, 12, 0, 8, 9], n: [-1, -2, 0] }, // (-1, -2, 0)
+        { vs: [7, 11, 3, 17, 19], n: [0, 1, 2] }, // (0, 1, 2)
+        { vs: [6, 10, 2, 16, 18], n: [0, 1, -2] }, // (0, 1, -2)
+        { vs: [5, 9, 1, 17, 19], n: [0, -1, 2] }, // (0, -1, 2)
+        { vs: [4, 8, 0, 16, 18], n: [0, -1, -2] }, // (0, -1, -2)
+        { vs: [7, 19, 5, 14, 15], n: [2, 0, 1] }, // (2, 0, 1)
+        { vs: [3, 17, 1, 12, 13], n: [-2, 0, 1] }, // (-2, 0, 1)
+        { vs: [6, 18, 4, 14, 15], n: [2, 0, -1] }, // (2, 0, -1)
+        { vs: [2, 16, 0, 12, 13], n: [-2, 0, -1] }, // (-2, 0, -1)
+    ];
+    // For "-" pyritohedron: same vertex indices (offset by 20) but face
+    // normals rotated 90° around y. Normal (nx, ny, nz) → (nz, ny, -nx).
+    const facesMinus = facesPlus.map(f => ({
+        vs: f.vs.map(i => i + 20),
+        n: [f.n[2], f.n[1], -f.n[0]],
+    }));
+    const positions = [];
+    const emitPentagon = (verts, face) => {
+        const o = face.vs;
+        const n = face.n;
+        const v0 = verts[o[0]], v1 = verts[o[1]], v2 = verts[o[2]];
+        // (v1 - v0) × (v2 - v0)
+        const e1x = v1[0] - v0[0], e1y = v1[1] - v0[1], e1z = v1[2] - v0[2];
+        const e2x = v2[0] - v0[0], e2y = v2[1] - v0[1], e2z = v2[2] - v0[2];
+        const cx = e1y * e2z - e1z * e2y;
+        const cy = e1z * e2x - e1x * e2z;
+        const cz = e1x * e2y - e1y * e2x;
+        const dot = cx * n[0] + cy * n[1] + cz * n[2];
+        const seq = dot >= 0 ? o : [o[0], o[4], o[3], o[2], o[1]];
+        // Fan-triangulate from seq[0]: (seq[0], seq[1], seq[2]),
+        // (seq[0], seq[2], seq[3]), (seq[0], seq[3], seq[4]).
+        for (let i = 1; i < 4; i++) {
+            const a = verts[seq[0]], b = verts[seq[i]], c = verts[seq[i + 1]];
+            _pushTri(positions, a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+        }
+    };
+    for (const f of facesPlus)
+        emitPentagon(plus, f);
+    for (const f of facesMinus)
+        emitPentagon([...plus, ...minus], f);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Build a unit-sized geometry for a given habit token, oriented so
 // its long axis (= c-axis) lies along +Y. The instance transform
 // later places the base at the wall and scales by c_length / a_width.
@@ -55061,6 +56683,51 @@ function _buildHabitGeom(token) {
             return _makeScalenohedron();
         case 'cube':
             return new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        case 'fluorite_penetration_twin':
+            // v134 (2026-05-22) — first iconic twin to render its own
+            // geometry. Two interpenetrating cubes rotated 60° around the
+            // body diagonal. Dispatch is gated by _resolveCrystalGeomToken
+            // on mineral='fluorite' + twinned=true + twin_law='penetration'.
+            return _makeFluoritePenetrationTwin();
+        case 'selenite_swallowtail_twin':
+            // v134 (2026-05-22) — second iconic twin. Two tabular gypsum
+            // blades joined on {100} at the base, opening upward in a V
+            // (60° total). Dispatch gated on mineral='selenite' + twinned
+            // + twin_law='swallowtail'.
+            return _makeSeleniteSwallowtailTwin();
+        case 'galena_octahedron_twin':
+            // v134 (2026-05-22) — third iconic twin. Two octahedra sharing
+            // a {111} triangular face — Ramdohr 1980 spinel-law contact
+            // twin, common in MVT galena (5-15% twin frequency per Boyle
+            // 1968). Dispatch gated on mineral='galena' + twinned +
+            // twin_law='spinel_law'.
+            return _makeGalenaOctahedronTwin();
+        case 'aragonite_pseudohex_twin':
+            // v134 (2026-05-22) — fourth iconic twin. Three tabular
+            // orthorhombic prisms at 60° rotation around c-axis, producing
+            // pseudo-hex column. Dispatch gated on mineral='aragonite' +
+            // twinned + twin_law='cyclic_sextet'.
+            return _makeAragonitePseudohexTwin();
+        case 'cerussite_sixling_twin':
+            // v134 (2026-05-22) — fifth iconic twin. The flat-star (stellate)
+            // counterpart to aragonite's vertical pseudo-hex column: 3 thin
+            // blades in the wall plane (XZ), each rotated 60° → 6 visible
+            // arms. Dispatch gated on mineral='cerussite' + twinned +
+            // twin_law='cyclic_sixling'.
+            return _makeCerussiteSixlingTwin();
+        case 'marcasite_cockscomb_twin':
+            // v134 (2026-05-22) — sixth iconic twin. Two thin needle blades
+            // joined on {110}, opening in a tight 40° V — the diagnostic
+            // marcasite morphology. Dispatch gated on mineral='marcasite'
+            // + twinned + twin_law='cockscomb'.
+            return _makeMarcasiteCockscombTwin();
+        case 'pyrite_iron_cross_twin':
+            // v134 (2026-05-22) — seventh and final iconic twin (completes
+            // the 7 listed in RESEARCH-CRYSTAL-NATURALISM.md §7). Two chiral
+            // {120} pyritohedra interpenetrating at 90° around c-axis —
+            // canonical "Eisernes Kreuz" twin (Ramdohr 1980). Dispatch gated
+            // on mineral='pyrite' + twinned + twin_law='iron_cross'.
+            return _makePyriteIronCrossTwin();
         case 'octahedron':
             return new THREE.OctahedronGeometry(0.55, 0);
         case 'snowball':

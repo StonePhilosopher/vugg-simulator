@@ -6626,5 +6626,77 @@
 //            js/15-version.ts (MOD): this block + SIM_VERSION 131→132.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 132;
+//
+// v133 — Iconic twin laws batch (2026-05-22)
+//
+//          First batch of the post-research-doc naturalism arc
+//          (proposals/RESEARCH-CRYSTAL-NATURALISM.md §7 item 2).
+//          Adds or retunes 7 documented twin laws across 6 minerals —
+//          the most-recognized natural-history twin geometries that
+//          field guides photograph and petrographic texts cite as
+//          diagnostic. All entries cite Sunagawa / Ramdohr / Frondel /
+//          Dana / Deer-Howie-Zussman per the doc's bibliography.
+//
+//          THE 7 ENTRIES (4 NEW + 3 RETUNED)
+//
+//          NEW:
+//            quartz Brazil   {11-20} penetration  p=0.12 (Frondel vol III)
+//            quartz Japan    {11-22} contact      p=0.03 (Frondel vol III)
+//            galena spinel-law {111} contact      p=0.10 (Ramdohr 1980)
+//            marcasite cockscomb {110} repeated  p=0.55 (Ramdohr; defines
+//                                                       the cockscomb habit)
+//
+//          RETUNED (existing entries were tuned far below literature):
+//            fluorite penetration {111}  0.008 -> 0.12 (Sunagawa 2005)
+//            pyrite iron-cross {110}    0.008 -> 0.07 (Ramdohr 1980)
+//            albite polysynthetic {010} 0.20  -> 0.85 (Deer-Howie-Zussman;
+//                                                     nearly universal in
+//                                                     plagioclase)
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          _rollSpontaneousTwin in js/85b runs rng.random() < prob per
+//          declared non-event twin law per nucleation. NEW entries on
+//          quartz/galena/marcasite add new RNG draws at every nucleation
+//          of those minerals across all scenarios. RETUNED entries
+//          don't change RNG draw count but DO change the comparison
+//          outcome — twinned crystals branch differently in downstream
+//          dispatch (paragenesis position parsing, library card text,
+//          and the dispatch order for the second twin law in marcasite
+//          + albite both shift). End result: substantial drift across
+//          every scenario that produces these 6 minerals.
+//
+//          SCENARIOS AFFECTED (any mineral firing means drift potential):
+//            quartz   -> cooling/pulse/mvt/porphyry/radioactive_pegmatite
+//                        /gem_pegmatite/ouro_preto/deccan_zeolite + most
+//                        hydrothermal scenes (drifts everywhere)
+//            pyrite   -> mvt/porphyry/reactive_wall/colorado_plateau/
+//                        sunnyside_american_tunnel + bismuth + tsumeb
+//            galena   -> mvt/porphyry/radioactive_pegmatite/sunnyside
+//            fluorite -> mvt/supergene/elmwood-style scenarios
+//            albite   -> radioactive_pegmatite/gem_pegmatite
+//            marcasite-> reactive_wall (low-pH MVT alt)
+//
+//          WHAT v133 SHIPS
+//            data/minerals.json (MOD): 7 twin_laws edits across
+//              quartz/fluorite/pyrite/marcasite/galena/albite. Each
+//              has _source (citation) and either status:"newly_added"
+//              or status:"retuned"+_retune_note (matching the v132
+//              selenite swallowtail bump pattern).
+//            tests-js/baselines/seed42_v133.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 133. v132 baseline preserved
+//              as the pre-twin-batch snapshot.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 132->133.
+//
+//          NO RENDERER WORK HERE. The twins are tracked as
+//          crystal.twinned + crystal.twin_law (visible in library
+//          card text and inventory rows) but NOT yet rendered as
+//          distinct geometric primitives (interpenetrating cubes,
+//          swallowtail blade, snowflake-trilling, etc.). That's a
+//          follow-up arc per RESEARCH-CRYSTAL-NATURALISM.md section 6
+//          (Phase 2 primitive additions) — would need
+//          PRIM_FLUORITE_OCT_CONTACT_TWIN, PRIM_SPEAR, etc.
+//
+//          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
+const SIM_VERSION = 133;
 

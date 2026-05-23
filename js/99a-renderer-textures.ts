@@ -41,6 +41,20 @@ const HABIT_TO_TEXTURE = {
   // Stage 5 — dolomite habits (THE headline texture: saddle_rhomb).
   'saddle_rhomb':        'saddle_rhomb', // dolomite default — diagnostic curved-face habit
   'coarse_rhomb':        'rhomb',        // dolomite hydrothermal (textbook flat-face rhomb)
+  // Stage 6 — hopper / skeletal habits (v134, 2026-05-22). Per Tanaka et
+  // al. 2018 J. Phys. Chem. Lett. (PMC5994728), the cubic-to-hopper
+  // growth transition for halite happens at a specific σ where edges
+  // outpace face centers (diffusion-limited regime: rate ∝ σ³). The
+  // resulting morphology has stepped/terraced face centers recessed
+  // inward — the "hopper" funnel. Same physics for halide / native /
+  // silica polymorphs that ship hopper variants in MINERAL_SPEC.
+  // RESEARCH-CRYSTAL-NATURALISM.md §6.3 picked this as a TEXTURE not
+  // a primitive (per boss directive 2026-05-22).
+  'hopper_growth':       'hopper',  // halite, apophyllite high-σ
+  'hopper_cube':         'hopper',  // sylvite high-fill / rapid evap
+  'skeletal_hopper':     'hopper',  // galena very-high-σ
+  'skeletal_fenster':    'hopper',  // quartz "window" skeletal (rapid cooling)
+  'hoppered_hexagonal':  'hopper',  // pyromorphite moderate-high σ low T
 };
 
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
@@ -84,6 +98,18 @@ const TEXTURE_PARAMS = {
   // visibly-curved-but-still-rhomb feel matching textbook saddle
   // dolomite cross-sections.
   saddle_rhomb:   { amplitude_factor: 0.7, pitch_mm: 2.5, max_amplitude_pitch_ratio: 0.5, bulge_factor: 0.4 },
+  // Hopper — stepped/terraced face. Per Tanaka et al. 2018, the
+  // hopper-cube transition happens at a critical growth rate where
+  // edges outrun face centers (~6.5 µm/s for halite at room T). The
+  // visual signature is a series of recessed stair-step terraces
+  // dropping into the face. In our 2D wall-cell topo view we encode
+  // that as a series of rectangular (right-angle) notches pushed
+  // inward toward the void — distinct from sawtooth (triangular
+  // spikes) because the right-angles read as "stepped" rather than
+  // "spiky." Capped at 60° aspect (ratio 0.5) so deep crystals don't
+  // produce ribbons. Pitch slightly wider than sawtooth so each notch
+  // reads as a discrete step rather than a high-frequency rasp.
+  hopper:         { amplitude_factor: 0.9, pitch_mm: 2.2, max_amplitude_pitch_ratio: 0.5 },
 };
 
 // Draw the inner (fluid-facing) edge of a wedge from (fromX,fromY) to
@@ -125,6 +151,9 @@ function drawHabitTexture(ctx, mineral, habit, fromX, fromY, toX, toY, controlX,
     case 'saddle_rhomb':
       _texture_saddle_rhomb(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.saddle_rhomb);
       return;
+    case 'hopper':
+      _texture_hopper(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, TEXTURE_PARAMS.hopper);
+      return;
     case 'smooth':
     default:
       ctx.quadraticCurveTo(controlX, controlY, toX, toY);
@@ -145,6 +174,12 @@ function _resolveTexture(mineral, habit) {
   if (habit && HABIT_TO_TEXTURE[habit]) return HABIT_TO_TEXTURE[habit];
   if (habit) {
     const h = habit.toLowerCase();
+    // v134: hopper / skeletal / fenster check BEFORE botryoidal because
+    // 'skeletal_fenster' shouldn't fuzzy-match the botryoidal family.
+    // Fenster is the German "window" — quartz fenster crystals show
+    // recessed terraced face centers, the silica analog of halite
+    // hopper.
+    if (h.includes('hopper') || h.includes('skeletal') || h.includes('fenster')) return 'hopper';
     if (h.includes('botryoidal') || h.includes('reniform') || h.includes('globule') || h.includes('framboidal')) return 'botryoidal';
     if (h.includes('acicular') || h.includes('needle') || h.includes('radiating') || h.includes('spray') || h.includes('cockscomb') || h.includes('plumose')) return 'acicular';
   }
@@ -287,6 +322,77 @@ function _texture_sawtooth(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, 
     const valleyY = fromY + valleyT * uy;
     ctx.lineTo(tipX, tipY);
     ctx.lineTo(valleyX, valleyY);
+  }
+}
+
+// Hopper / skeletal — stepped right-angle notches pushed inward toward
+// the void. Visually distinct from sawtooth's triangular spikes
+// because each step uses right-angle corners (down, across, up) rather
+// than triangular peaks (up, down). Reads as "stepped terraces" rather
+// than "spikes."
+//
+// Per Tanaka et al. 2018 J. Phys. Chem. Lett. (PMC5994728), the
+// cubic-to-hopper growth transition for halite happens at a critical
+// growth rate (~6.5 µm/s, room T) above which edges outpace face
+// centers in a diffusion-limited regime where rate ∝ σ³. The
+// resulting morphology has face centers RECESSED behind the edges,
+// with stepped terraces marking each growth-rate interval. The
+// rectangular-notch profile here encodes that step-down/step-up
+// geometry on the 2D cell-edge.
+//
+// Each tooth has 4 segments:
+//   1. Outer half (along chord) — top of the step, on the silhouette
+//   2. Step in (perpendicular inward by amplitudePx) — drop into the
+//      recess
+//   3. Inner half (along chord at the recessed depth) — the recess floor
+//   4. Step out (perpendicular outward by amplitudePx) — back to the
+//      silhouette before the next tooth begins
+//
+// Triggered by habit strings containing 'hopper', 'skeletal', or
+// 'fenster' (the German "window," used for quartz skeletal). Active
+// on halite / sylvite / galena / quartz / apophyllite / pyromorphite
+// when their high-σ or high-fill triggers fire.
+function _texture_hopper(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mmToPx, cx, cy, params) {
+  const dx = toX - fromX, dy = toY - fromY;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 1) { ctx.lineTo(toX, toY); return; }
+  const ux = dx / len, uy = dy / len;
+  // Perpendicular pointing inward (toward vug center). Same convention
+  // as _texture_sawtooth — chord-midpoint → vug-center direction so
+  // notches push into the void.
+  const midX = (fromX + toX) / 2, midY = (fromY + toY) / 2;
+  const inX = cx - midX, inY = cy - midY;
+  const inLen = Math.sqrt(inX * inX + inY * inY) || 1;
+  const nx = inX / inLen, ny = inY / inLen;
+  const amplitudeMm = _textureAmplitudeMm(thicknessMm, cellArcMm, params);
+  const amplitudePx = amplitudeMm * mmToPx;
+  const pitchPx = params.pitch_mm * mmToPx;
+  const nTeeth = Math.max(1, Math.round(len / pitchPx));
+  const toothLen = len / nTeeth;
+  const halfTooth = toothLen / 2;
+  // Pen is at (fromX, fromY); emit hopper stair-step pattern → (toX, toY).
+  // Each tooth: outer half (chord top), drop in, inner half (recessed
+  // floor), rise out (back to chord) — see header comment for geometry.
+  for (let i = 0; i < nTeeth; i++) {
+    const t0 = i * toothLen;
+    const tMid = t0 + halfTooth;
+    const t1 = (i + 1) * toothLen;
+    // Outer-mid: end of the outer-flat segment (top of step).
+    const outerMidX = fromX + tMid * ux;
+    const outerMidY = fromY + tMid * uy;
+    // Inner-mid: start of the inner-flat segment (recess floor begins).
+    const innerMidX = outerMidX + nx * amplitudePx;
+    const innerMidY = outerMidY + ny * amplitudePx;
+    // Inner-end: end of the inner-flat segment (recess floor ends).
+    const innerEndX = (fromX + t1 * ux) + nx * amplitudePx;
+    const innerEndY = (fromY + t1 * uy) + ny * amplitudePx;
+    // Outer-end: end of the tooth (back on the silhouette chord).
+    const outerEndX = fromX + t1 * ux;
+    const outerEndY = fromY + t1 * uy;
+    ctx.lineTo(outerMidX, outerMidY);   // top of step (along chord)
+    ctx.lineTo(innerMidX, innerMidY);   // drop into the recess
+    ctx.lineTo(innerEndX, innerEndY);   // recess floor (along chord at depth)
+    ctx.lineTo(outerEndX, outerEndY);   // rise back to silhouette
   }
 }
 
