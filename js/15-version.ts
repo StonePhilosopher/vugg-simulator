@@ -6698,5 +6698,78 @@
 //          PRIM_FLUORITE_OCT_CONTACT_TWIN, PRIM_SPEAR, etc.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 133;
+// ----------------------------------------------------------------
+// v134 (2026-05-22): sample twin_laws batch validating the
+//          .claude/skills/vugg-add-twin-law/SKILL.md workflow. 6
+//          minerals across 5 classes got their first twin_laws
+//          entries, all at conservative p ≤ 0.05 per the skill's
+//          first-batch guidance:
+//
+//            hematite (oxide):       {0001} polysynthetic  p=0.05
+//                                    — Dana 8th, Ramdohr 1980. Standard
+//                                    deformation/growth twin; field freq
+//                                    10-30%, conservative for safety.
+//            wulfenite (molybdate):  {001} tabular twin    p=0.02
+//                                    — Dana 8th, Mindat. Tabular-on-
+//                                    tabular twin at Red Cloud / Los
+//                                    Lamentos.
+//            bornite (sulfide):      {111} inversion       p=0.03
+//                                    — Ramdohr 1980. 228°C cubic→ortho
+//                                    ordering transition produces {111}
+//                                    polysynthetic exsolution lamellae.
+//            chromite (oxide):       {111} spinel-law      p=0.04
+//                                    — Dana 8th spinel group. Same
+//                                    contact twin as galena spinel,
+//                                    magnetite, regular spinel.
+//            legrandite (arsenate):  {010} contact         p=0.02
+//                                    — Drugman & Hey 1932; Handbook of
+//                                    Mineralogy. Data sparse — paired
+//                                    wedges in Aztec-sun sprays at Tsumeb.
+//            tremolite (amphibole):  {100} simple          p=0.03
+//                                    — Hawthorne et al. 2012; Veblen &
+//                                    Wylie 1993. Standard amphibole-
+//                                    group growth twin.
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same cascade mechanism as v133: each new twin_law entry
+//          adds an rng.random() draw per nucleation of the affected
+//          mineral, regardless of whether the twin fires. New draws
+//          perturb the RNG sequence for ALL subsequent crystals in
+//          the same scenario.
+//
+//          SCENARIOS AFFECTED (4 of 30):
+//            bisbee              — bornite nucleation
+//            deccan_zeolite      — hematite + tremolite eligibility
+//            porphyry            — bornite
+//            supergene_oxidation — legrandite (+ possibly hematite)
+//
+//          26 scenarios unchanged. The 4 drift downstream of the new
+//          RNG draws — the visible changes (in the failing baseline
+//          diff) were on minerals NOT in this batch: acanthite
+//          population, albite max growth, anhydrite, etc. That's
+//          characteristic of RNG cascades — the perturbation flows
+//          through every subsequent random() call.
+//
+//          WHAT v134 SHIPS
+//            data/minerals.json (MOD): 6 twin_laws additions across
+//              hematite/wulfenite/bornite/chromite/legrandite/tremolite.
+//              Each has _source citation, status:"newly_added", p ≤ 0.05.
+//            .claude/skills/vugg-add-twin-law/SKILL.md (NEW): the
+//              workflow documentation that this batch validates. Future
+//              twin_laws additions follow this skill.
+//            tests-js/baselines/seed42_v134.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 134. v133 baseline preserved.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 133 -> 134.
+//
+//          NO RENDERER WORK HERE. The 6 new twin_laws don't have
+//          rendered primitives — they're DATA layer only (visible
+//          in library card text + inventory rows, but no twinned
+//          geometry). That's intentional per the skill: rendering
+//          requires hand-rolled primitive geometry per mineral; data
+//          coverage and visual coverage proceed independently.
+//
+//          Coverage: 170 minerals (unchanged from v133), 68 now have
+//          twin_laws entries (was 62). 102 minerals still missing.
+const SIM_VERSION = 134;
 

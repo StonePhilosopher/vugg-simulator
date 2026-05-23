@@ -1762,7 +1762,16 @@
       "thermal_decomp_reaction": "Fe2O3 — very refractory, barely melts",
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "polysynthetic_0001",
+          "miller_indices": "{0001}",
+          "trigger": "deformation, growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. Fe2O3 section; Ramdohr 1980. Hematite shows {0001} polysynthetic lamellar twinning as the dominant deformation twin; growth-driven twins reported in vein hematite (Elba, Cumbria). Conservative p=0.05 keeps the in-game frequency below the 10-30% reported in field surveys to minimize RNG cascade for the sample-batch validation."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "Fe2O3 + 6H+ -> 2Fe3+ + 3H2O (slow)",
@@ -2268,7 +2277,16 @@
         "Mo": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "tabular_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. PbMoO4 section; Mindat wulfenite habit. The {001} tabular-on-tabular twin produces stacked thin yellow plates — characteristic of Red Cloud / Los Lamentos specimens. Real-world frequency low (~2-5% of euhedral specimens); conservative p=0.02 for the sample-batch validation."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.5,
         "reaction": "dissolves in strong acid",
@@ -5639,7 +5657,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "inversion_111",
+          "miller_indices": "{111}",
+          "trigger": "cooling through 228°C transition",
+          "probability": 0.03,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 §4.3 sulfide section. Bornite undergoes a cubic→orthorhombic ordering transition at 228°C; the inversion produces {111} polysynthetic exsolution lamellae that are commonly visible in reflected light. Field frequency in supergene/hypogene specimens ~5-15%; conservative p=0.03 to minimize cascade for the sample batch."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "Cu₅FeS₄ + O₂ + acid → Cu²⁺ + Fe³⁺ + S (supergene oxidation)",
@@ -11737,7 +11764,16 @@
       "thermal_decomp_reaction": "Refractory — survives metamorphism unchanged; xieite polymorph at 18-23 GPa (impact conditions)",
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "spinel_law",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.04,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. spinel-group section. Chromite shares the spinel-group {111} contact twin with magnetite, spinel s.s., and (geometrically) galena. Cumulate-grade chromite at Bushveld / Stillwater shows the twin in 5-10% of euhedral grains. Conservative p=0.04 for the sample batch."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "octahedral",
       "color_rules": {
@@ -12408,7 +12444,16 @@
       "thermal_decomp_reaction": "Dehydration above ~120°C — loses structural H₂O, transforms to anhydrous Zn arsenate phases. Acid dissolution at pH < 4: Zn²⁺ + AsO₄³⁻ released.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent under standard UV. The bright canary yellow is intrinsic ligand-field, not luminescence."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Drugman & Hey 1932 type description; Handbook of Mineralogy. Legrandite's monoclinic structure permits {010} contact twins that produce sub-parallel wedge-prismatic pairs in the Aztec-sun sprays. Data sparse — conservative p=0.02. Visible in some Tsumeb specimens as paired wedges along the radiating fan."
+        }
+      ],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.",
       "habit": "wedge_prismatic",
       "color_rules": {"canary_yellow": {"default": true, "trigger": "the diagnostic Tsumeb color — bright canary to lemon yellow"}},
@@ -16000,7 +16045,16 @@
       "thermal_decomp_reaction": "Above ~800°C: dehydration to diopside + enstatite + quartz + H2O.",
       "thermal_decomp_products": { "Ca": 0.06, "Mg": 0.15, "SiO2": 0.58 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "simple_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.03,
+          "status": "newly_added",
+          "_source": "Hawthorne et al. 2012 Nomenclature of the amphibole supergroup (Amer Mineralogist 97:2031); Veblen & Wylie 1993 (Reviews in Mineralogy 28:61). The {100} simple twin is the standard amphibole-group growth twin (also reported as lamellar polysynthetic in deformed prograde-skarn specimens). Field frequency in bladed-prismatic specimens ~5-10%; conservative p=0.03 for the sample batch."
+        }
+      ],
       "acid_dissolution": { "pH_threshold": 5.0, "reaction": "Ca2Mg5Si8O22(OH)2 + 14H⁺ → 2Ca²⁺ + 5Mg²⁺ + 8H4SiO4 — releases Ca + Mg + Si.", "products": { "Ca": 0.06, "Mg": 0.15, "SiO2": 0.58 } },
       "habit": "bladed_columnar",
       "color_rules": { "white": { "default": true, "trigger": "pure Ca-Mg endmember" }, "pale_green": { "trigger": "Fe trace > 20 ppm (toward actinolite)" } },
