@@ -249,3 +249,122 @@ function collectFromRandom(crystalIdx, ev) {
   }
 }
 
+// ============================================================
+// Bulk "Collect all" (2026-05-23 — boss request after twin-laws arc)
+// ============================================================
+// One-shot batch version of collectCrystal: no per-crystal name prompt
+// (uses the default name from buildCrystalRecord), one consolidated
+// alert at the end summarizing the count + any new species. Skips
+// already-collected and no-growth crystals using the same gates as
+// the per-row Collect button (97c-ui-crystal-card.ts:153-154).
+//
+// The persist call only runs once after all records are appended, so
+// localStorage gets touched a single time regardless of batch size —
+// matches the established uniqueCollectedMinerals/loadCrystals pattern
+// of "read once, mutate, write once."
+//
+// Returns the number actually collected (0 if nothing-to-do; 0 with
+// alert if persist failed).
+function collectAllCrystals(crystals, metaFn) {
+  if (!Array.isArray(crystals)) return 0;
+  const candidates = crystals.filter(c =>
+    c
+    && !c._collectedRecordId
+    && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0)
+  );
+  if (!candidates.length) return 0;
+
+  const before = uniqueCollectedMinerals();
+  const items = loadCrystals();
+  const records: Array<{ crystal: any; rec: any }> = [];
+  for (const crystal of candidates) {
+    const meta = (typeof metaFn === 'function') ? metaFn(crystal) : (metaFn || {});
+    const rec = buildCrystalRecord(crystal, meta);
+    items.push(rec);
+    records.push({ crystal, rec });
+  }
+
+  // Disambiguate duplicate default names within this batch (boss request,
+  // 2026-05-23). buildCrystalRecord's default name is
+  // `${capitalize(mineral)} from ${titleBase}`, so two galenas from the
+  // same scenario/run would land with identical names. Append a #1/#2/#N
+  // suffix only where there's a collision — singletons keep their
+  // unsuffixed default, which reads cleaner in the Library row list.
+  // items and records share rec object identity, so mutating rec.name
+  // here is reflected in the persisted record.
+  const nameCounts: Record<string, number> = {};
+  for (const { rec } of records) {
+    nameCounts[rec.name] = (nameCounts[rec.name] || 0) + 1;
+  }
+  const nameSeen: Record<string, number> = {};
+  for (const { rec } of records) {
+    if (nameCounts[rec.name] > 1) {
+      nameSeen[rec.name] = (nameSeen[rec.name] || 0) + 1;
+      rec.name = `${rec.name} #${nameSeen[rec.name]}`;
+    }
+  }
+
+  if (!persistCrystals(items)) {
+    alert('Could not save — localStorage is full or unavailable.');
+    return 0;
+  }
+  for (const { crystal, rec } of records) {
+    crystal._collectedRecordId = rec.id;
+  }
+
+  // New-species delta — preserves the same "🆕 first X" surprise from
+  // the per-crystal flow, just bundled. Set semantics so each new
+  // species shows once even if multiple specimens of it were collected
+  // in the same batch.
+  const newSpecies: string[] = [];
+  const seen = new Set(before);
+  for (const { rec } of records) {
+    if (!seen.has(rec.mineral)) {
+      newSpecies.push(rec.mineral);
+      seen.add(rec.mineral);
+    }
+  }
+
+  // Refresh dependent UI in the same order collectCrystal() does.
+  if (typeof libraryRender === 'function'
+      && document.getElementById('library-panel')
+      && document.getElementById('library-panel').style.display !== 'none') {
+    libraryRender();
+  }
+  refreshTitleLoadButton();
+
+  const speciesNote = newSpecies.length
+    ? `\n\n🆕 ${newSpecies.length} new species unlocked: ${newSpecies.join(', ')}.`
+    : '';
+  alert(`Collected ${records.length} crystal${records.length === 1 ? '' : 's'}.${speciesNote}`);
+  return records.length;
+}
+
+// Per-mode wrappers — gather the right meta (matches each mode's
+// existing per-crystal collectFromX helper) and refresh that mode's
+// inventory after the batch lands.
+function collectAllFromLegends() {
+  if (!legendsSim) return;
+  const scenario = (document.getElementById('scenario') as HTMLSelectElement | null)?.value;
+  const seedInputEl = document.getElementById('seed') as HTMLInputElement | null;
+  const seed = seedInputEl?.value ? parseInt(seedInputEl.value, 10) : null;
+  const meta = { mode: 'simulation', scenario, seed };
+  if (collectAllCrystals(legendsSim.crystals, () => meta) > 0) {
+    updateLegendsInventory(legendsSim);
+  }
+}
+function collectAllFromFortress() {
+  if (!fortressSim) return;
+  const meta = { mode: 'creative' };
+  if (collectAllCrystals(fortressSim.crystals, () => meta) > 0) {
+    updateFortressInventory();
+  }
+}
+function collectAllFromRandom() {
+  if (!randomSim) return;
+  const meta = { mode: 'random', archetype: randomSimArchetype, seed: randomSimSeed };
+  if (collectAllCrystals(randomSim.crystals, () => meta) > 0) {
+    renderRandomInventory();
+  }
+}
+

@@ -645,6 +645,38 @@ body.topo-view-3d .topo-slice-ctrls { display: none; }
   opacity: 0.65;
 }
 
+/* "Collect all" header button (2026-05-23). Sits between the
+   inventory h4 and the per-crystal rows; slightly more prominent
+   than the per-row Collect button to read as a batch action. */
+.inv-collect-all-row {
+  margin: 0.2rem 0 0.7rem 0;
+  text-align: center;
+}
+.inv-collect-all-btn {
+  background: #2a2510;
+  color: #f0c050;
+  border: 1px solid #5a4a30;
+  padding: 0.4rem 1rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.inv-collect-all-btn:hover:not(:disabled) {
+  border-color: #f0c050;
+  background: #3a3018;
+  color: #ffd870;
+}
+.inv-collect-all-btn:disabled {
+  color: #6a5a30;
+  border-color: #2a2518;
+  cursor: default;
+  opacity: 0.55;
+}
+
 .random-inventory {
   color: inherit;
 }
@@ -46671,6 +46703,120 @@ function collectFromRandom(crystalIdx, ev) {
         renderRandomInventory();
     }
 }
+// ============================================================
+// Bulk "Collect all" (2026-05-23 — boss request after twin-laws arc)
+// ============================================================
+// One-shot batch version of collectCrystal: no per-crystal name prompt
+// (uses the default name from buildCrystalRecord), one consolidated
+// alert at the end summarizing the count + any new species. Skips
+// already-collected and no-growth crystals using the same gates as
+// the per-row Collect button (97c-ui-crystal-card.ts:153-154).
+//
+// The persist call only runs once after all records are appended, so
+// localStorage gets touched a single time regardless of batch size —
+// matches the established uniqueCollectedMinerals/loadCrystals pattern
+// of "read once, mutate, write once."
+//
+// Returns the number actually collected (0 if nothing-to-do; 0 with
+// alert if persist failed).
+function collectAllCrystals(crystals, metaFn) {
+    if (!Array.isArray(crystals))
+        return 0;
+    const candidates = crystals.filter(c => c
+        && !c._collectedRecordId
+        && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0));
+    if (!candidates.length)
+        return 0;
+    const before = uniqueCollectedMinerals();
+    const items = loadCrystals();
+    const records = [];
+    for (const crystal of candidates) {
+        const meta = (typeof metaFn === 'function') ? metaFn(crystal) : (metaFn || {});
+        const rec = buildCrystalRecord(crystal, meta);
+        items.push(rec);
+        records.push({ crystal, rec });
+    }
+    // Disambiguate duplicate default names within this batch (boss request,
+    // 2026-05-23). buildCrystalRecord's default name is
+    // `${capitalize(mineral)} from ${titleBase}`, so two galenas from the
+    // same scenario/run would land with identical names. Append a #1/#2/#N
+    // suffix only where there's a collision — singletons keep their
+    // unsuffixed default, which reads cleaner in the Library row list.
+    // items and records share rec object identity, so mutating rec.name
+    // here is reflected in the persisted record.
+    const nameCounts = {};
+    for (const { rec } of records) {
+        nameCounts[rec.name] = (nameCounts[rec.name] || 0) + 1;
+    }
+    const nameSeen = {};
+    for (const { rec } of records) {
+        if (nameCounts[rec.name] > 1) {
+            nameSeen[rec.name] = (nameSeen[rec.name] || 0) + 1;
+            rec.name = `${rec.name} #${nameSeen[rec.name]}`;
+        }
+    }
+    if (!persistCrystals(items)) {
+        alert('Could not save — localStorage is full or unavailable.');
+        return 0;
+    }
+    for (const { crystal, rec } of records) {
+        crystal._collectedRecordId = rec.id;
+    }
+    // New-species delta — preserves the same "🆕 first X" surprise from
+    // the per-crystal flow, just bundled. Set semantics so each new
+    // species shows once even if multiple specimens of it were collected
+    // in the same batch.
+    const newSpecies = [];
+    const seen = new Set(before);
+    for (const { rec } of records) {
+        if (!seen.has(rec.mineral)) {
+            newSpecies.push(rec.mineral);
+            seen.add(rec.mineral);
+        }
+    }
+    // Refresh dependent UI in the same order collectCrystal() does.
+    if (typeof libraryRender === 'function'
+        && document.getElementById('library-panel')
+        && document.getElementById('library-panel').style.display !== 'none') {
+        libraryRender();
+    }
+    refreshTitleLoadButton();
+    const speciesNote = newSpecies.length
+        ? `\n\n🆕 ${newSpecies.length} new species unlocked: ${newSpecies.join(', ')}.`
+        : '';
+    alert(`Collected ${records.length} crystal${records.length === 1 ? '' : 's'}.${speciesNote}`);
+    return records.length;
+}
+// Per-mode wrappers — gather the right meta (matches each mode's
+// existing per-crystal collectFromX helper) and refresh that mode's
+// inventory after the batch lands.
+function collectAllFromLegends() {
+    if (!legendsSim)
+        return;
+    const scenario = document.getElementById('scenario')?.value;
+    const seedInputEl = document.getElementById('seed');
+    const seed = seedInputEl?.value ? parseInt(seedInputEl.value, 10) : null;
+    const meta = { mode: 'simulation', scenario, seed };
+    if (collectAllCrystals(legendsSim.crystals, () => meta) > 0) {
+        updateLegendsInventory(legendsSim);
+    }
+}
+function collectAllFromFortress() {
+    if (!fortressSim)
+        return;
+    const meta = { mode: 'creative' };
+    if (collectAllCrystals(fortressSim.crystals, () => meta) > 0) {
+        updateFortressInventory();
+    }
+}
+function collectAllFromRandom() {
+    if (!randomSim)
+        return;
+    const meta = { mode: 'random', archetype: randomSimArchetype, seed: randomSimSeed };
+    if (collectAllCrystals(randomSim.crystals, () => meta) > 0) {
+        renderRandomInventory();
+    }
+}
 
 // ── 94-ui-menu.js ──
 
@@ -49380,6 +49526,29 @@ function renderCrystalRow(crystal, idx, onCollect, replayStep) {
     el.innerHTML = html;
     return el;
 }
+// "Collect all" header button (2026-05-23 — boss request after twin-laws arc).
+// Returns the HTML for the row that sits between the inventory's h4 and the
+// per-crystal rows. Same has-growth + not-already-collected gate as the
+// per-row Collect button (renderCrystalRow:153-154). Hidden entirely
+// during a legends narrative replay (replayStep != null) — the per-crystal
+// buttons disable there too, and the boss specifically wanted this button
+// available "when you finish a game," i.e. once growth is done.
+function _inventoryCollectAllHTML(crystals, onCollectAllName, replayStep) {
+    if (replayStep != null)
+        return '';
+    const uncollected = (crystals || []).filter(c => c
+        && !c._collectedRecordId
+        && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0));
+    const n = uncollected.length;
+    if (!crystals || !crystals.length)
+        return ''; // empty inventory — nothing to bulk
+    const disabled = n === 0 ? 'disabled' : '';
+    const title = n === 0
+        ? 'Every collectable crystal is already in your collection'
+        : `Add every uncollected crystal (${n}) to your collection in one go`;
+    const label = n === 0 ? '✓ All collected' : `💎 Collect all (${n})`;
+    return `<div class="inv-collect-all-row"><button class="inv-collect-all-btn" ${disabled} title="${title}" onclick="${onCollectAllName}()">${label}</button></div>`;
+}
 function updateLegendsInventory(sim, replayStep) {
     const col = document.getElementById('legends-inventory-col');
     const panel = document.getElementById('legends-inventory');
@@ -49409,6 +49578,15 @@ function updateLegendsInventory(sim, replayStep) {
         return;
     }
     col.style.display = '';
+    // Inject the "Collect all" header button between h4 and per-crystal rows.
+    // Hidden during replay (matches per-crystal disabled state).
+    const collectAllHTML = _inventoryCollectAllHTML(visible, 'collectAllFromLegends', replayStep);
+    if (collectAllHTML) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = collectAllHTML;
+        if (wrap.firstChild)
+            panel.appendChild(wrap.firstChild);
+    }
     visible.forEach((crystal) => {
         // Find the live-array index for the Collect button's onclick. Slicing
         // visible[] preserves identity, so a lookup is O(visible.length).
@@ -49430,6 +49608,17 @@ function updateFortressInventory() {
         panel.appendChild(empty);
         return;
     }
+    // "Collect all" header button — visible whenever there are crystals.
+    // Creative mode has no formal "finished" state, so the button is
+    // always present when inventory has rows; the disabled state when
+    // N=0 keeps the placement consistent run-to-run.
+    const collectAllHTML = _inventoryCollectAllHTML(fortressSim.crystals, 'collectAllFromFortress');
+    if (collectAllHTML) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = collectAllHTML;
+        if (wrap.firstChild)
+            panel.appendChild(wrap.firstChild);
+    }
     fortressSim.crystals.forEach((crystal, idx) => {
         panel.appendChild(renderCrystalRow(crystal, idx, 'collectFromFortress'));
     });
@@ -49445,6 +49634,18 @@ function renderRandomInventory() {
     header.textContent = '💎 Crystal Inventory';
     header.style.cssText = 'color:#f0c050;margin:0.8rem 0 0.5rem 0;letter-spacing:0.08em';
     panel.appendChild(header);
+    // "Collect all" header button — random mode runs the sim to completion
+    // before render, so the inventory is always in "game finished" state.
+    // Filter to grown crystals (matching the grid filter below) so the
+    // count reflects what's visible.
+    const grown = randomSim.crystals.filter((c) => (c.total_growth_um || 0) > 0);
+    const collectAllHTML = _inventoryCollectAllHTML(grown, 'collectAllFromRandom');
+    if (collectAllHTML) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = collectAllHTML;
+        if (wrap.firstChild)
+            panel.appendChild(wrap.firstChild);
+    }
     const grid = document.createElement('div');
     grid.className = 'random-inventory-grid';
     randomSim.crystals.forEach((crystal, idx) => {
