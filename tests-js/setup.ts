@@ -259,6 +259,13 @@ const EXPORTS = [
   // Per-habit cluster pattern dispatch; mirrors 99i's _CLUSTER_PATTERNS.
   '_druzyClusterSpec',
   '_druzyClusterCount',  // legacy alias — count-only API for back-compat
+  // 2026-05-22 twin cluster-pattern wiring (v134). _clusterPatternKeyForPrim
+  // maps PRIM_* → pattern key (99d); _CLUSTER_PATTERNS maps token string →
+  // pattern (99i). Tests verify all 7 twin primitives route to appropriate
+  // patterns.
+  '_clusterPatternKeyForPrim',
+  '_CLUSTER_PATTERNS',
+  '_CLUSTER_PATTERNS_2D',
   // 2026-05-22 hopper/skeletal texture (v134, 99a-renderer-textures.ts).
   // _resolveTexture maps (mineral, habit) → texture token; the 'hopper'
   // token routes to _texture_hopper which paints stepped right-angle
@@ -296,6 +303,13 @@ const EXPORTS = [
   // twin — completes RESEARCH-CRYSTAL-NATURALISM.md §7's list of 7).
   // Two chiral {120} pyritohedra interpenetrating at 90° around c-axis.
   'PRIM_PYRITE_IRON_CROSS_TWIN',
+  // 2026-05-22 marcasite spearhead twin (v134 secondary, post-iconic-7).
+  // Elongated rhombic bipyramid — the {101} contact twin.
+  'PRIM_MARCASITE_SPEARHEAD_TWIN',
+  // 2026-05-22 aragonite contact twin (v134 secondary). Single V-pair
+  // {110} contact (vs cyclic-sextet's 3-fold). Prismatic (square)
+  // cross-section distinguishes from selenite's tabular swallowtail.
+  'PRIM_ARAGONITE_CONTACT_TWIN',
   '_lookupCrystalPrimitive',
   // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
   'EH_DYNAMIC_ENABLED',

@@ -173,17 +173,47 @@ function showZoneHistory(crystal) {
 
     // Canvas sized to the modal's effective content width (~600px after
     // padding on a 650px-max modal).
+    //
+    // v136-followup: display at NATIVE pixel width (max-width:100% to
+    // prevent overflow on narrow viewports). Previous `width:100%;
+    // max-width:600px` forced the canvas to fill the container even
+    // when its intrinsic pixel width was tiny (60px for a 1-zone
+    // crystal), causing CSS to stretch the canvas ~10× horizontally
+    // AND vertically (height:auto preserves aspect). With native-width
+    // display the canvas just shows its real size: a 1-zone crystal
+    // gets a small accurate stripe, a 60-zone crystal fills the modal.
+    // The HTML legend below the canvas (added in this commit) carries
+    // the lane names at fixed font-size regardless of canvas width.
     const barCanvas = document.createElement('canvas');
-    barCanvas.style.cssText = 'width:100%;max-width:600px;height:auto;display:block;margin-bottom:0.3rem;background:#070706;border:1px solid #1a1a14;border-radius:3px';
+    barCanvas.style.cssText = 'max-width:100%;height:auto;display:block;margin-bottom:0.3rem;background:#070706;border:1px solid #1a1a14;border-radius:3px;image-rendering:pixelated';
     body.appendChild(barCanvas);
+    // v136-followup: in-canvas labels disabled. When the bar canvas has
+    // few zones (e.g. just-nucleated crystals with 1 zone), the
+    // intrinsic canvas width is tiny (60px for 1 zone × max zoneW=30,
+    // doubled for visibility) but CSS stretches it to fill the modal
+    // width (~600px). Text drawn inside the canvas world at 11px gets
+    // stretched proportionally — what reads as "11px" in source becomes
+    // ~110px on screen for a 10x stretched canvas. Fix: render lane
+    // labels as HTML below the canvas at fixed font-size; the canvas
+    // itself only shows bars + glyphs which are stretch-tolerant.
     renderZoneBarCanvas(barCanvas, crystal.zones, {
       height: 160,
       maxWidth: 600,
       minZoneWidth: 1,
       maxZoneWidth: 30,
-      showLaneLabels: true,
+      showLaneLabels: false,
       showFIGlyphs: true,
     });
+    // Fixed-size HTML lane legend below the canvas. Color markers
+    // mirror the in-canvas bar palette (GROOVE_AXES — shared with the
+    // Record Player) so the legend stays in sync if the axis list
+    // changes upstream.
+    const laneLegend = document.createElement('div');
+    laneLegend.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.5rem 0.9rem;font-size:0.65rem;font-family:monospace;color:#8a7a40;margin-bottom:0.6rem;line-height:1.4';
+    laneLegend.innerHTML = GROOVE_AXES.map(ax =>
+      `<span><span style="display:inline-block;width:0.55rem;height:0.55rem;background:${ax.color};vertical-align:middle;margin-right:0.25rem;border-radius:1px"></span>${ax.name}</span>`
+    ).join('');
+    body.appendChild(laneLegend);
 
     // Hover tooltip for bar-graph zones — reuses the Record Player's
     // #groove-tooltip element when present, otherwise no-op.

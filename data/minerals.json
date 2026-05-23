@@ -243,7 +243,7 @@
           "name": "skeletal_fenster",
           "wall_spread": 0.4,
           "void_reach": 0.5,
-          "vector": "dendritic",
+          "vector": "skeletal",
           "trigger": "high σ, rapid cooling"
         },
         {
@@ -1762,7 +1762,16 @@
       "thermal_decomp_reaction": "Fe2O3 — very refractory, barely melts",
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "polysynthetic_0001",
+          "miller_indices": "{0001}",
+          "trigger": "deformation, growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. Fe2O3 section; Ramdohr 1980. Hematite shows {0001} polysynthetic lamellar twinning as the dominant deformation twin; growth-driven twins reported in vein hematite (Elba, Cumbria). Conservative p=0.05 keeps the in-game frequency below the 10-30% reported in field surveys to minimize RNG cascade for the sample-batch validation."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "Fe2O3 + 6H+ -> 2Fe3+ + 3H2O (slow)",
@@ -2018,7 +2027,7 @@
           "name": "skeletal_hopper",
           "wall_spread": 0.4,
           "void_reach": 0.4,
-          "vector": "dendritic",
+          "vector": "skeletal",
           "trigger": "very high σ, rapid growth"
         }
       ],
@@ -2268,7 +2277,16 @@
         "Mo": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "tabular_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. PbMoO4 section; Mindat wulfenite habit. The {001} tabular-on-tabular twin produces stacked thin yellow plates — characteristic of Red Cloud / Los Lamentos specimens. Real-world frequency low (~2-5% of euhedral specimens); conservative p=0.02 for the sample-batch validation."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.5,
         "reaction": "dissolves in strong acid",
@@ -4053,7 +4071,16 @@
         "F": 0.2
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_111",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. apophyllite section; Anthony Handbook of Mineralogy v.II. Tetragonal {111} contact twin reported in zeolite-cavity specimens (Pune basalt, Iceland, Faroe Islands). Field frequency low (~2-5% of euhedral); conservative p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.0,
         "reaction": "alkaline-stable phase — dissolves in acid releasing K, Ca, SiO2, F",
@@ -4670,7 +4697,16 @@
         "color": "weak_greenish_LW",
         "quencher": null
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_221",
+          "miller_indices": "{221}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. topaz section; Anthony Handbook v.II. Orthorhombic {221} contact twin reported in Brazilian + Russian pegmatite specimens. Rare overall; conservative p=0.02 with data-sparse acknowledgement."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "very resistant — only strong mineral acids attack Al₂SiO₄(F,OH)₂ slowly",
@@ -4783,7 +4819,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_trapiche",
+          "miller_indices": "{1011}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II tourmaline section; Mindat. Tourmaline's trigonal symmetry lacks horizontal mirror planes — classical contact twinning is structurally suppressed. Sector/pseudo-twins on {1011} reported very rarely in Brazilian + Afghan elbaite. Data sparse — conservative p=0.005."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "extremely resistant — no practical acid dissolution",
@@ -4892,7 +4937,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": null,
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II beryl section; Frondel 1962 System of Mineralogy v.III. Hexagonal beryl rarely twins — most prismatic beryl crystals are single individuals. Basal contact twin on {0001} reported very rarely in pegmatite specimens. Data sparse — conservative p=0.005 applies to all 5 beryl-group entries (beryl, emerald, aquamarine, morganite, heliodor) which are color variants of the same Be3Al2Si6O18 species."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "resistant to most acids; dissolves slowly in HF",
@@ -4987,7 +5041,16 @@
         "quencher": null,
         "note": "kunzite variety; hiddenite shows weaker orange-red"
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "simple_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Hawthorne (1981) Reviews in Mineralogy 9A — pyroxenes; Anthony Handbook v.II. Monoclinic pyroxene {100} simple twin is the standard pyroxene-group growth twin (same law as augite, diopside, enstatite). Reported in California + Afghanistan kunzite specimens at 5-10% frequency among euhedral crystals."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "resistant to common acids",
@@ -5639,7 +5702,16 @@
         "S": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "inversion_111",
+          "miller_indices": "{111}",
+          "trigger": "cooling through 228°C transition",
+          "probability": 0.03,
+          "status": "newly_added",
+          "_source": "Ramdohr 1980 §4.3 sulfide section. Bornite undergoes a cubic→orthorhombic ordering transition at 228°C; the inversion produces {111} polysynthetic exsolution lamellae that are commonly visible in reflected light. Field frequency in supergene/hypogene specimens ~5-15%; conservative p=0.03 to minimize cascade for the sample batch."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "Cu₅FeS₄ + O₂ + acid → Cu²⁺ + Fe³⁺ + S (supergene oxidation)",
@@ -5943,6 +6015,7 @@
         "SiO2": 0.4
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — chrysocolla forms only botryoidal/colloform aggregates of microcrystalline Cu-silicate, no individual euhedral crystals to twin. Per Anthony Handbook v.II and Mindat chrysocolla habit notes. v136 silicate batch documented this explicitly rather than padding with placeholder p=0.005.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 4.5,
@@ -6985,7 +7058,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": "weak red (Cr³⁺ emission, overlaps ruby but much weaker)",
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Same beryl-group basal {0001} twin as the parent beryl entry — emerald is the Cr-bearing color variant of Be3Al2Si6O18, inherits the same rare-twin behavior. Frondel 1962 v.III; Anthony Handbook v.II."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "hex_prism",
       "color_rules": {
@@ -7068,7 +7150,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Same beryl-group basal {0001} twin as the parent beryl entry — aquamarine is the Fe-bearing color variant of Be3Al2Si6O18, inherits the same rare-twin behavior."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "hex_prism_long",
       "color_rules": {
@@ -7144,7 +7235,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Same beryl-group basal {0001} twin as the parent beryl entry — morganite is the Mn/Cs-bearing pink color variant of Be3Al2Si6O18, inherits the same rare-twin behavior."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "tabular_hex",
       "color_rules": {
@@ -7220,7 +7320,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "rare_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Same beryl-group basal {0001} twin as the parent beryl entry — heliodor is the Fe³⁺-bearing yellow color variant of Be3Al2Si6O18, inherits the same rare-twin behavior."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "hex_prism",
       "color_rules": {
@@ -11332,6 +11441,7 @@
       "thermal_decomp_reaction": "Ni-clay nano-inclusions destabilize above ~150°C — color fades irreversibly to white/yellow-brown; chalcedony lattice persists to 870°C α→β quartz transition",
       "thermal_decomp_products": {},
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — chrysoprase is Ni-bearing chalcedony, a microcrystalline aggregate of fibrous quartz with no individual euhedral crystals to twin. The parent quartz species has twin_laws (Dauphine, Brazil, Japan) but those require crystalline individuals; chrysoprase's chalcedony texture doesn't produce them at scale.",
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "chalcedony_vein",
@@ -11737,7 +11847,16 @@
       "thermal_decomp_reaction": "Refractory — survives metamorphism unchanged; xieite polymorph at 18-23 GPa (impact conditions)",
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "spinel_law",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.04,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. spinel-group section. Chromite shares the spinel-group {111} contact twin with magnetite, spinel s.s., and (geometrically) galena. Cumulate-grade chromite at Bushveld / Stillwater shows the twin in 5-10% of euhedral grains. Conservative p=0.04 for the sample batch."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "octahedral",
       "color_rules": {
@@ -11940,7 +12059,16 @@
         "quencher": "Cu²⁺",
         "status": "Non-fluorescent under SW/MW/LW UV. Cu²⁺ is a luminescence quencher — dioptase shows no characteristic emission."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II; Mindat dioptase habit. Trigonal {0001} contact twin occasionally reported in Tsumeb + Mindouli specimens. Data sparse — conservative p=0.005."
+        }
+      ],
       "acid_dissolution": "Slow dissolution in dilute HCl/H₂SO₄ at pH < 5. Cu²⁺ + silicic acid released.",
       "habit": "short_prismatic_emerald",
       "color_rules": {
@@ -12029,6 +12157,7 @@
       "thermal_decomp_reaction": "Acid dissolution below pH 5. Above 150°C: diagenesis to chalcedony/quartz (opal-A → opal-CT → opal-C → chalcedony → quartz ladder). Each step releases structural water: A→CT ~3-5 wt% H₂O; CT→C ~2-3%; C→chalcedony ~1%.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Most opal non-fluorescent. Some precious opal varieties show weak white/blue under SW UV from organic inclusions; common opal generally inert."},
+      "_twin_laws_note": "Intentionally empty — opal is amorphous hydrated silica (opal-A is fully non-crystalline; opal-CT/opal-C have nano-crystalline silica spheres but no euhedral form). No crystal structure → no twinning. Per Iler 1979 The Chemistry of Silica + Anthony Handbook v.II opal section.",
       "twin_laws": [],
       "acid_dissolution": "Dissolves slowly in dilute HF + strong alkali (>pH 10); also dissolves in hot acidic groundwater.",
       "habit": "botryoidal_mound",
@@ -12180,6 +12309,7 @@
       "thermal_decomp_reaction": "Oxidative dissolution at O₂ > 0.5: U(IV) → U(VI) uranyl, releases (UO₂)²⁺ to feed uranophane / autunite / torbernite supergene cascade. Highly radioactive — emits alpha + gamma.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": "U(IV) lacks uranyl chromophore", "status": "NON-FLUORESCENT. U(IV) does NOT have the (UO₂)²⁺ vibronic chromophore that gives U(VI) phases their characteristic yellow-green luminescence. Diagnostic distinction from uranophane (both look superficially similar but uranophane fluoresces bright yellow-green, coffinite does not)."},
+      "_twin_laws_note": "Intentionally empty — coffinite typically occurs as fracture-replacement, colloform bands, or sooty coatings; rarely as euhedral individuals. The habit_variants (fracture_replacement_after_uraninite, colloform_band, sooty_coating) all describe non-euhedral textures. Twin behavior in the rare euhedral cases is undocumented in the literature.",
       "twin_laws": [],
       "acid_dissolution": null,
       "habit": "fracture_replacement_after_uraninite",
@@ -12218,7 +12348,16 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 4.5 — uranyl + Ca + Si released. Dehydration above ~100°C transforms toward dehydrated uranophane variants.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": "(UO2)2+", "threshold_ppm": 0, "color": "bright yellow-green to apple-green", "quencher": null, "status": "DIAGNOSTIC BRIGHT YELLOW-GREEN UV-FLUORESCENCE under both SW (254 nm) + LW (365 nm), persistent. The uranyl (UO₂)²⁺ vibronic chromophore. Intensity often exceeds autunite's; distinguishes uranophane from non-fluorescent yellow Fe-oxides (jarosite, limonite)."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV uranophane section. Monoclinic {001} contact twin occasionally reported in radiating-acicular puffs at Colorado Plateau + Schneeberg. Rare; conservative p=0.01."
+        }
+      ],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.5.",
       "habit": "radiating_fibrous_puffs",
       "color_rules": {"lemon_yellow": {"default": true, "trigger": "default — brilliant lemon to canary yellow"}, "straw_yellow_weathered": {"trigger": "weathered surfaces — straw-yellow"}},
@@ -12256,7 +12395,16 @@
       "thermal_decomp_reaction": "Dehydration above ~250°C: 2 Zn₄Si₂O₇(OH)₂·H₂O → 4 Zn₂SiO₄ (willemite) + 2 H₂O + SiO₂. Acid dissolution below pH 5.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Weak inconsistent fluorescence — do NOT rely on UV for ID. Pyroelectric/piezoelectric tests are the diagnostic physical-property checks."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. hemimorphite section. Orthorhombic {001} contact twin reported in fan-sheaf specimens on smithsonite substrates. Rare; conservative p=0.01."
+        }
+      ],
       "acid_dissolution": "Dissolves in dilute HCl below pH 5.",
       "habit": "fan_sheaves",
       "color_rules": {"colorless_white": {"default": true, "trigger": "default — colorless to white pure Zn end"}, "mapimi_blue": {"trigger": "Cu > 5 ppm — pale blue-green from Cu²⁺ trace (the Mapimi/Wenshan signature)"}},
@@ -12294,7 +12442,16 @@
       "thermal_decomp_reaction": "Stable across the full geological T range up to ~1500°C. No dissolution path above pH 4. The terminal Zn-silicate phase.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": "Mn2+", "threshold_ppm": 0.005, "color": "bright green", "quencher": "Fe2+", "status": "DIAGNOSTIC bright green SW-UV (254 nm) fluorescence, often with persistent phosphorescence at Franklin/Sterling. Mn²⁺ in Zn²⁺ site is the activator; even traces produce strong response. Fe quenches in Fe-rich varieties."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II willemite section; Dana 8th ed. Trigonal {0001} basal contact twin reported very rarely in Franklin/Sterling Hill specimens. Data sparse — conservative p=0.005."
+        }
+      ],
       "acid_dissolution": "Slow in dilute HCl below pH 4.",
       "habit": "fibrous_radiating_skorpion",
       "color_rules": {"green_yellow": {"default": true, "trigger": "default Mn-trace — apple-green to honey-yellow (Skorpion supergene mode)"}, "troostite_red": {"trigger": "Mn > 50 ppm + T ≥ 500 — troostite Franklin variety, reddish-brown"}, "colorless": {"trigger": "pure Zn end (Mn < 0.005 ppm) — colorless, weakly fluorescent"}},
@@ -12408,7 +12565,16 @@
       "thermal_decomp_reaction": "Dehydration above ~120°C — loses structural H₂O, transforms to anhydrous Zn arsenate phases. Acid dissolution at pH < 4: Zn²⁺ + AsO₄³⁻ released.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent under standard UV. The bright canary yellow is intrinsic ligand-field, not luminescence."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Drugman & Hey 1932 type description; Handbook of Mineralogy. Legrandite's monoclinic structure permits {010} contact twins that produce sub-parallel wedge-prismatic pairs in the Aztec-sun sprays. Data sparse — conservative p=0.02. Visible in some Tsumeb specimens as paired wedges along the radiating fan."
+        }
+      ],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.",
       "habit": "wedge_prismatic",
       "color_rules": {"canary_yellow": {"default": true, "trigger": "the diagnostic Tsumeb color — bright canary to lemon yellow"}},
@@ -12954,7 +13120,16 @@
         "quencher": "Cu²⁺",
         "status": "Non-fluorescent under SW/MW/LW UV. Cu²⁺ quenches; shattuckite shows no characteristic emission."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II shattuckite section. Orthorhombic {010} contact twin reported very rarely in acicular-tuft and spherulitic-rosette specimens (Bisbee, Tantara). Data sparse — conservative p=0.005."
+        }
+      ],
       "acid_dissolution": "Slow dissolution in dilute HCl at pH < 4.5. Cu²⁺ + silicic acid released.",
       "habit": "acicular_tuft",
       "color_rules": {
@@ -15006,7 +15181,16 @@
         "quencher": null,
         "status": "Non-fluorescent under standard SW/MW/LW UV. Pure CaB(SiO₄)(OH) has no fluorescence activator. Some Lake Superior datolite shows weak phosphorescence after SW exposure (likely U/Th trace at sub-ppm), not diagnostic; ignored in the engine."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II datolite section; Dana 8th ed. Monoclinic {001} contact twin reported in Lake Superior copper-country specimens and Bor (Russia) gemmy datolite. Rare; conservative p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.0,
         "reaction": "CaB(SiO₄)(OH) + 4H⁺ → Ca²⁺ + B(OH)₃ + H₄SiO₄ — releases Ca + boric acid + silicic acid to fluid below pH 5. Slow kinetics in the supergene window (datolite is stable in most surface weathering environments — only acidic groundwater attack drives dissolution).",
@@ -15123,7 +15307,16 @@
         "quencher": null,
         "status": "Generally non-fluorescent. Some Cr-bearing chromian vesuvianite (Crestmore) shows weak red SW UV fluorescence from Cr³⁺ emission; cyprine and Fe-yellow varieties are non-fluorescent. Not diagnostic; ignored in the engine."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II vesuvianite section. Tetragonal {110} contact twin reported in Alpine + Russian skarn specimens. Rare; conservative p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 6.0,
         "reaction": "Ca10Mg2Al4(SiO4)5(Si2O7)2(OH)4 + acid → Ca²⁺ + Mg²⁺ + Al³⁺ + H4SiO4 — releases all cations to fluid below pH 6. Slow kinetics; vesuvianite is geologically stable in most weathering environments and only breaks down under strong-acid attack (e.g., supergene acid-mine drainage).",
@@ -15237,7 +15430,16 @@
         "quencher": null,
         "status": "Generally non-fluorescent. Some Mn-bearing hessonite shows weak red fluorescence from Mn²⁺ (very faint, not diagnostic). Ignored in the engine."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_111",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. garnet group. Cubic {111} contact twin reported very rarely in grossular — garnet group is one of the least-commonly-twinned cubic mineral families. Data sparse; conservative p=0.01."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.0,
         "reaction": "Ca3Al2(SiO4)3 + 12H⁺ → 3Ca²⁺ + 2Al³⁺ + 3H4SiO4 — releases Ca + Al + Si to fluid below pH 5. Slow kinetics; grossular is geologically very stable.",
@@ -15464,7 +15666,16 @@
         "quencher": null,
         "status": "Some pectolite from New Jersey shows weak orange-pink SW UV fluorescence (Mn²⁺ activator at higher Mn levels). Larimar from Dominican is non-fluorescent. Ignored in the engine; not diagnostic."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "polysynthetic_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.04,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II pectolite section; Liebau (1985) Structural Chemistry of Silicates. Triclinic {100} polysynthetic twinning is the standard pyroxenoid-group law (shared with wollastonite, bustamite, rhodonite). Reported in New Jersey + Larimar specimens at 5-10% frequency among euhedral fibers."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 6.0,
         "reaction": "NaCa2Si3O8(OH) + 7H⁺ → Na⁺ + 2Ca²⁺ + 3H4SiO4 — releases Na + Ca + Si to fluid below pH 6. Pectolite is more acid-sensitive than wollastonite/prehnite (Na presence).",
@@ -15666,7 +15877,16 @@
         "quencher": null,
         "status": "Generally non-fluorescent. Fe-rich varieties may show weak fluorescence; not diagnostic."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "polysynthetic_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. prehnite section; Akizuki (1987) American Mineralogist 72:645 on prehnite structural state + growth twins. Orthorhombic {001} polysynthetic twin reported in zeolite-cavity prehnite from Bombay basalts + New Jersey traprock at moderate frequency. Conservative p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 6.0,
         "reaction": "Ca2Al2Si3O10(OH)2 + 10H⁺ → 2Ca²⁺ + 2Al³⁺ + 3H4SiO4 — releases Ca + Al + Si to fluid below pH 6. Moderate kinetics; prehnite is reactive in acidic groundwater.",
@@ -15765,6 +15985,7 @@
         "quencher": null,
         "status": "Non-fluorescent."
       },
+      "_twin_laws_note": "Intentionally empty — chrysotile is the fibrous polytype of the serpentine group (the asbestos variety). Forms ONLY as parallel-aligned fibrous bundles or platy aggregates; no individual euhedral crystals to twin. Per Hawthorne et al. 2012 + Veblen 1980 (Reviews in Mineralogy v.19 amphibole/serpentine).",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 7.0,
@@ -16000,7 +16221,16 @@
       "thermal_decomp_reaction": "Above ~800°C: dehydration to diopside + enstatite + quartz + H2O.",
       "thermal_decomp_products": { "Ca": 0.06, "Mg": 0.15, "SiO2": 0.58 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "simple_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.03,
+          "status": "newly_added",
+          "_source": "Hawthorne et al. 2012 Nomenclature of the amphibole supergroup (Amer Mineralogist 97:2031); Veblen & Wylie 1993 (Reviews in Mineralogy 28:61). The {100} simple twin is the standard amphibole-group growth twin (also reported as lamellar polysynthetic in deformed prograde-skarn specimens). Field frequency in bladed-prismatic specimens ~5-10%; conservative p=0.03 for the sample batch."
+        }
+      ],
       "acid_dissolution": { "pH_threshold": 5.0, "reaction": "Ca2Mg5Si8O22(OH)2 + 14H⁺ → 2Ca²⁺ + 5Mg²⁺ + 8H4SiO4 — releases Ca + Mg + Si.", "products": { "Ca": 0.06, "Mg": 0.15, "SiO2": 0.58 } },
       "habit": "bladed_columnar",
       "color_rules": { "white": { "default": true, "trigger": "pure Ca-Mg endmember" }, "pale_green": { "trigger": "Fe trace > 20 ppm (toward actinolite)" } },
@@ -16190,6 +16420,7 @@
       "thermal_decomp_reaction": "Above ~870°C: chalcedony recrystallizes to quartz (loses chatoyancy). Heat-treatment to ~700°C gives red tiger's eye via Fe²⁺ → Fe³⁺ in the chalcedony fabric.",
       "thermal_decomp_products": { "SiO2": 1.0 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
+      "_twin_laws_note": "Intentionally empty — tigers_eye is a chalcedony pseudomorph after crocidolite (asbestiform riebeckite) — it inherits the fibrous parallel-aligned fabric of the parent + the microcrystalline silica replacement texture. No euhedral crystal form, no twinning. The original crocidolite parent could in principle have had amphibole-group {100} twins, but those are obliterated by the chalcedony replacement.",
       "twin_laws": [],
       "acid_dissolution": { "pH_threshold": 4.0, "reaction": "SiO2 stable to acid; framework collapse only at pH < 4 + HF.", "products": { "SiO2": 1.0 } },
       "habit": "chatoyant_pseudomorph",

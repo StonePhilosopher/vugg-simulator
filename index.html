@@ -4042,6 +4042,26 @@ function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, local
                 s += localFill < 0.7 ? 0.6 : -0.4;
             }
         }
+        // Vector taxonomy (descriptive tag for how the crystal extends from
+        // substrate; also shown in the hovertext via 99f-renderer-interaction):
+        //   equant       — extends equally all directions (cubes, octahedra)
+        //   projecting   — extends outward into cavity (acicular, prismatic)
+        //   coating      — spreads along the wall (botryoidal, druzy crust)
+        //   tabular      — flat plates parallel to the wall
+        //   dendritic    — true branching / tree-like growth (native silver
+        //                  wire, native copper arborescent, gold dendrites)
+        //   skeletal     — partial-growth crystal-form silhouette with
+        //                  inward-growing faces (galena hopper, quartz
+        //                  fenster, halite hopper, bismuth staircase cubes).
+        //                  v135 (2026-05-22) split out from `dendritic`: both
+        //                  are partial-growth phenomena under supersaturation
+        //                  but geometrically distinct — dendrites branch like
+        //                  trees, skeletal/hopper crystals KEEP their
+        //                  crystal-form silhouette but with stair-stepped or
+        //                  hollow faces.
+        // Only projecting/coating/tabular are space-aware below — the rest
+        // are descriptive labels with no dispatch effect (they're for the
+        // hovertext + library card text only).
         const vec = (v.vector || '').toLowerCase();
         if (spaceConstrained) {
             if (vec === 'projecting')
@@ -11185,7 +11205,258 @@ let timeScale = 5.0;
 //          PRIM_FLUORITE_OCT_CONTACT_TWIN, PRIM_SPEAR, etc.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 133;
+// ----------------------------------------------------------------
+// v134 (2026-05-22): sample twin_laws batch validating the
+//          .claude/skills/vugg-add-twin-law/SKILL.md workflow. 6
+//          minerals across 5 classes got their first twin_laws
+//          entries, all at conservative p ≤ 0.05 per the skill's
+//          first-batch guidance:
+//
+//            hematite (oxide):       {0001} polysynthetic  p=0.05
+//                                    — Dana 8th, Ramdohr 1980. Standard
+//                                    deformation/growth twin; field freq
+//                                    10-30%, conservative for safety.
+//            wulfenite (molybdate):  {001} tabular twin    p=0.02
+//                                    — Dana 8th, Mindat. Tabular-on-
+//                                    tabular twin at Red Cloud / Los
+//                                    Lamentos.
+//            bornite (sulfide):      {111} inversion       p=0.03
+//                                    — Ramdohr 1980. 228°C cubic→ortho
+//                                    ordering transition produces {111}
+//                                    polysynthetic exsolution lamellae.
+//            chromite (oxide):       {111} spinel-law      p=0.04
+//                                    — Dana 8th spinel group. Same
+//                                    contact twin as galena spinel,
+//                                    magnetite, regular spinel.
+//            legrandite (arsenate):  {010} contact         p=0.02
+//                                    — Drugman & Hey 1932; Handbook of
+//                                    Mineralogy. Data sparse — paired
+//                                    wedges in Aztec-sun sprays at Tsumeb.
+//            tremolite (amphibole):  {100} simple          p=0.03
+//                                    — Hawthorne et al. 2012; Veblen &
+//                                    Wylie 1993. Standard amphibole-
+//                                    group growth twin.
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same cascade mechanism as v133: each new twin_law entry
+//          adds an rng.random() draw per nucleation of the affected
+//          mineral, regardless of whether the twin fires. New draws
+//          perturb the RNG sequence for ALL subsequent crystals in
+//          the same scenario.
+//
+//          SCENARIOS AFFECTED (4 of 30):
+//            bisbee              — bornite nucleation
+//            deccan_zeolite      — hematite + tremolite eligibility
+//            porphyry            — bornite
+//            supergene_oxidation — legrandite (+ possibly hematite)
+//
+//          26 scenarios unchanged. The 4 drift downstream of the new
+//          RNG draws — the visible changes (in the failing baseline
+//          diff) were on minerals NOT in this batch: acanthite
+//          population, albite max growth, anhydrite, etc. That's
+//          characteristic of RNG cascades — the perturbation flows
+//          through every subsequent random() call.
+//
+//          WHAT v134 SHIPS
+//            data/minerals.json (MOD): 6 twin_laws additions across
+//              hematite/wulfenite/bornite/chromite/legrandite/tremolite.
+//              Each has _source citation, status:"newly_added", p ≤ 0.05.
+//            .claude/skills/vugg-add-twin-law/SKILL.md (NEW): the
+//              workflow documentation that this batch validates. Future
+//              twin_laws additions follow this skill.
+//            tests-js/baselines/seed42_v134.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 134. v133 baseline preserved.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 133 -> 134.
+//
+//          NO RENDERER WORK HERE. The 6 new twin_laws don't have
+//          rendered primitives — they're DATA layer only (visible
+//          in library card text + inventory rows, but no twinned
+//          geometry). That's intentional per the skill: rendering
+//          requires hand-rolled primitive geometry per mineral; data
+//          coverage and visual coverage proceed independently.
+//
+//          Coverage: 170 minerals (unchanged from v133), 68 now have
+//          twin_laws entries (was 62). 102 minerals still missing.
+// ----------------------------------------------------------------
+// v135 (2026-05-22): silicate twin_laws batch — first real batch
+//          using the .claude/skills/vugg-add-twin-law/SKILL.md
+//          workflow. 10 silicates across pyroxene, pyroxenoid,
+//          tetragonal, orthorhombic, trigonal, monoclinic, and cubic
+//          subgroups. Probabilities calibrated per field-frequency
+//          observation (silicate twins are predominantly RARE — most
+//          entries at p=0.01-0.02, the pyroxene + pyroxenoid laws
+//          at the higher end of the rare regime).
+//
+//          THE 10 ENTRIES (all newly_added):
+//            apophyllite (tetragonal):     {111} contact    p=0.02
+//                                          — zeolite cavities (Pune,
+//                                          Iceland, Faroe). Dana 8th.
+//            topaz (orthorhombic):         {221} contact    p=0.02
+//                                          — Brazilian + Russian
+//                                          pegmatite. Dana 8th.
+//            spodumene (monoclinic):       {100} simple     p=0.05
+//                                          — pyroxene-group standard
+//                                          twin. Hawthorne 1981.
+//            dioptase (trigonal):          {0001} contact   p=0.005
+//                                          — data sparse. Tsumeb +
+//                                          Mindouli. Anthony Handbook.
+//            hemimorphite (orthorhombic):  {001} contact    p=0.01
+//                                          — fan-sheaf habits on
+//                                          smithsonite. Dana 8th.
+//            datolite (monoclinic):        {001} contact    p=0.02
+//                                          — Lake Superior + Bor.
+//                                          Anthony Handbook.
+//            vesuvianite (tetragonal):     {110} contact    p=0.02
+//                                          — Alpine + Russian skarn.
+//                                          Anthony Handbook.
+//            grossular (cubic — garnet):   {111} contact    p=0.01
+//                                          — rare; garnet group is
+//                                          one of the least-twinned
+//                                          cubic families. Dana 8th.
+//            pectolite (triclinic):        {100} polysynth  p=0.04
+//                                          — pyroxenoid-group
+//                                          standard. Anthony Handbook;
+//                                          Liebau 1985.
+//            prehnite (orthorhombic):      {001} polysynth  p=0.02
+//                                          — zeolite-cavity prehnite.
+//                                          Dana 8th; Akizuki 1987.
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same cascade mechanism as v133, v134: each new twin_law
+//          adds an rng.random() draw per nucleation of the affected
+//          mineral. 10 minerals × however many scenarios they
+//          nucleate in = many new random() draws perturbing the seed
+//          sequence.
+//
+//          SCENARIOS EXPECTED TO DRIFT (any scenario nucleating
+//          apophyllite/spodumene/grossular/pectolite/prehnite/topaz
+//          /vesuvianite/datolite/hemimorphite/dioptase):
+//            deccan_zeolite, dripstone_cavity, zoned_dripstone_cave
+//                — apophyllite + prehnite + datolite
+//            gem_pegmatite, radioactive_pegmatite
+//                — spodumene + topaz + grossular
+//            supergene_oxidation, tsumeb
+//                — dioptase + hemimorphite
+//            jeffrey_mine, rodingite skarn
+//                — grossular + vesuvianite (skarn family)
+//            new_jersey_traprock, larimar (if present)
+//                — pectolite + prehnite
+//
+//          WHAT v135 SHIPS
+//            data/minerals.json (MOD): 10 twin_laws additions across
+//              the silicates listed above. Each with citation +
+//              status:"newly_added".
+//            tests-js/baselines/seed42_v135.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 135.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 134 -> 135.
+//
+//          NO RENDERER WORK HERE. Same DATA-ONLY pattern as v134's
+//          first batch: visible in library card text + inventory rows
+//          but not yet rendered as distinct primitives.
+//
+//          Coverage: 170 minerals (unchanged). 78 now have twin_laws
+//          entries (was 68). 92 minerals still missing — silicate 15
+//          (down from 25), sulfide 21, phosphate 13, arsenate 11,
+//          sulfate 9, others 23.
+// ----------------------------------------------------------------
+// v136 (2026-05-22): silicate twin_laws batch #2 — closes the 15
+//          remaining silicates. 9 get twin_laws entries (mostly at
+//          p=0.005-0.01, the rare-twin floor); 6 get an explicit
+//          `_twin_laws_note` metadata field documenting WHY their
+//          twin_laws stays empty (microcrystalline / amorphous /
+//          fibrous textures — no individual euhedral crystals to twin).
+//
+//          THE 9 TWIN_LAWS ENTRIES (all newly_added, very low p)
+//
+//            tourmaline (trigonal):    {1011} pseudo-trapiche   p=0.005
+//                                      — trigonal symmetry lacks horizontal
+//                                      mirror planes, so classical contact
+//                                      twins are structurally suppressed.
+//                                      Sector pseudo-twins on {1011}
+//                                      reported very rarely. Mindat; Anthony.
+//            beryl (hex):              {0001} basal contact     p=0.005
+//                                      — hexagonal beryl rarely twins;
+//                                      basal contact reported in pegmatite.
+//                                      Frondel 1962 v.III; Anthony.
+//            emerald (hex):            {0001} same              p=0.005
+//                                      — Cr-bearing color variant of beryl;
+//                                      inherits parent twin behavior.
+//            aquamarine (hex):         {0001} same              p=0.005
+//                                      — Fe-bearing variant.
+//            morganite (hex):          {0001} same              p=0.005
+//                                      — Mn/Cs pink variant.
+//            heliodor (hex):           {0001} same              p=0.005
+//                                      — Fe³⁺ yellow variant.
+//            uranophane (monoclinic):  {001} contact            p=0.01
+//                                      — radiating-acicular puffs at
+//                                      Colorado Plateau / Schneeberg.
+//                                      Anthony Handbook v.IV.
+//            willemite (trigonal):     {0001} contact           p=0.005
+//                                      — Franklin/Sterling Hill rare.
+//            shattuckite (orthorhombic): {010} contact          p=0.005
+//                                      — acicular tufts at Bisbee/Tantara.
+//
+//          THE 6 INTENTIONALLY-EMPTY ENTRIES (_twin_laws_note field added)
+//
+//            chrysocolla   — botryoidal/colloform microcrystalline Cu-silicate
+//            chrysoprase   — microcrystalline chalcedony (Ni-bearing)
+//            opal          — amorphous (opal-A) or nano-crystalline (opal-CT/C);
+//                            no crystal structure to twin
+//            tigers_eye    — chalcedony pseudomorph after crocidolite —
+//                            fibrous parallel-aligned, no euhedral form
+//            chrysotile    — fibrous serpentine asbestos; no individual
+//                            euhedra
+//            coffinite     — fracture-replacement / colloform / sooty —
+//                            rarely euhedral, twin behavior undocumented
+//
+//          The `_twin_laws_note` metadata field uses the underscore-
+//          prefix convention (same as `_source`, `_retune_note`,
+//          `_ingredients_note`) so future readers + Claude Code agents
+//          working through the skill can see at a glance WHY a mineral's
+//          twin_laws stays empty rather than guessing.
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same mechanism as v133, v134, v135: each new twin_law adds
+//          an rng.random() draw per nucleation. Even p=0.005 entries
+//          consume the random() draw — the cascade source.
+//
+//          SCENARIOS EXPECTED TO DRIFT: any scenario that nucleates
+//          any of {tourmaline, beryl, emerald, aquamarine, morganite,
+//          heliodor, uranophane, willemite, shattuckite}. That's
+//          primarily the pegmatite + U-supergene + Franklin/Sterling
+//          scenarios: gem_pegmatite, radioactive_pegmatite,
+//          colorado_plateau, schneeberg, supergene_oxidation.
+//
+//          The 6 minerals with _twin_laws_note metadata but empty
+//          twin_laws DO NOT trigger new RNG draws — empty arrays mean
+//          _rollSpontaneousTwin skips them. So no cascade from those.
+//
+//          WHAT v136 SHIPS
+//            data/minerals.json (MOD): 9 twin_laws additions + 6
+//              _twin_laws_note additions. Each twin_laws entry has
+//              citation + status:"newly_added" + low p.
+//            tests-js/baselines/seed42_v136.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 136.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 135 -> 136.
+//            tests-js/vector-taxonomy.test.ts: existing v135 test will
+//              also verify _twin_laws_note isn't an unrecognized vector
+//              (it's a top-level field on the mineral, not on
+//              habit_variants, so unaffected).
+//
+//          NO RENDERER WORK HERE. Same DATA-ONLY pattern as v134, v135.
+//
+//          Coverage: 170 minerals (unchanged). 87 now have twin_laws
+//          entries (was 78). 83 still missing — silicate 6 (microcrystalline,
+//          documented as intentional), sulfide 21, phosphate 13, arsenate
+//          11, sulfate 9, others 23.
+//
+//          THE SILICATE CLASS IS NOW COMPLETE: every silicate either
+//          has a twin_law or has documented WHY it doesn't. 31 of 31
+//          accounted for.
+const SIM_VERSION = 136;
 
 // ── 18-constants.js ──
 
@@ -48791,17 +49062,45 @@ function showZoneHistory(crystal) {
         body.appendChild(barHeader);
         // Canvas sized to the modal's effective content width (~600px after
         // padding on a 650px-max modal).
+        //
+        // v136-followup: display at NATIVE pixel width (max-width:100% to
+        // prevent overflow on narrow viewports). Previous `width:100%;
+        // max-width:600px` forced the canvas to fill the container even
+        // when its intrinsic pixel width was tiny (60px for a 1-zone
+        // crystal), causing CSS to stretch the canvas ~10× horizontally
+        // AND vertically (height:auto preserves aspect). With native-width
+        // display the canvas just shows its real size: a 1-zone crystal
+        // gets a small accurate stripe, a 60-zone crystal fills the modal.
+        // The HTML legend below the canvas (added in this commit) carries
+        // the lane names at fixed font-size regardless of canvas width.
         const barCanvas = document.createElement('canvas');
-        barCanvas.style.cssText = 'width:100%;max-width:600px;height:auto;display:block;margin-bottom:0.3rem;background:#070706;border:1px solid #1a1a14;border-radius:3px';
+        barCanvas.style.cssText = 'max-width:100%;height:auto;display:block;margin-bottom:0.3rem;background:#070706;border:1px solid #1a1a14;border-radius:3px;image-rendering:pixelated';
         body.appendChild(barCanvas);
+        // v136-followup: in-canvas labels disabled. When the bar canvas has
+        // few zones (e.g. just-nucleated crystals with 1 zone), the
+        // intrinsic canvas width is tiny (60px for 1 zone × max zoneW=30,
+        // doubled for visibility) but CSS stretches it to fill the modal
+        // width (~600px). Text drawn inside the canvas world at 11px gets
+        // stretched proportionally — what reads as "11px" in source becomes
+        // ~110px on screen for a 10x stretched canvas. Fix: render lane
+        // labels as HTML below the canvas at fixed font-size; the canvas
+        // itself only shows bars + glyphs which are stretch-tolerant.
         renderZoneBarCanvas(barCanvas, crystal.zones, {
             height: 160,
             maxWidth: 600,
             minZoneWidth: 1,
             maxZoneWidth: 30,
-            showLaneLabels: true,
+            showLaneLabels: false,
             showFIGlyphs: true,
         });
+        // Fixed-size HTML lane legend below the canvas. Color markers
+        // mirror the in-canvas bar palette (GROOVE_AXES — shared with the
+        // Record Player) so the legend stays in sync if the axis list
+        // changes upstream.
+        const laneLegend = document.createElement('div');
+        laneLegend.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.5rem 0.9rem;font-size:0.65rem;font-family:monospace;color:#8a7a40;margin-bottom:0.6rem;line-height:1.4';
+        laneLegend.innerHTML = GROOVE_AXES.map(ax => `<span><span style="display:inline-block;width:0.55rem;height:0.55rem;background:${ax.color};vertical-align:middle;margin-right:0.25rem;border-radius:1px"></span>${ax.name}</span>`).join('');
+        body.appendChild(laneLegend);
         // Hover tooltip for bar-graph zones — reuses the Record Player's
         // #groove-tooltip element when present, otherwise no-op.
         const nZones = crystal.zones.length;
@@ -52738,6 +53037,108 @@ const PRIM_PYRITE_IRON_CROSS_TWIN = {
         return [...pyritEdges(0), ...pyritEdges(20)];
     })(),
 };
+// v134 (2026-05-22): marcasite spearhead-twin primitive. The {101}
+// contact twin of marcasite — visually a single elongated rhombic
+// bipyramid (Dana 8th ed. marcasite habit; Mindat marcasite catalog).
+// Distinct from PRIM_DIPYRAMID (hex bipyramid) and PRIM_OCTAHEDRON
+// (regular octahedron): spearhead is stretched along c and has
+// RHOMBIC (not hex, not square) cross-section reflecting marcasite's
+// orthorhombic symmetry. v133 set spearhead probability to 0.05
+// (per the path-1 retune rationale documented in the marcasite
+// twin_laws _retune_note: spearhead rolls first at 5%, then cockscomb
+// at 55% if spearhead didn't fire).
+//
+// Geometry: 6 vertices (2 apexes + 4 equator), 12 edges. Same
+// topology as PRIM_OCTAHEDRON, but the equatorial radii differ
+// between x and z axes (a > b) to give the rhombic cross-section
+// signature of an orthorhombic twin.
+//
+// Why "spearhead": real marcasite specimens of the {101} twin look
+// like a stylized spearhead or arrowhead — pointed apex, broad
+// midsection, narrow base. Common at Joplin / Tri-State MVT
+// (alongside the more common cockscomb twin), Folkestone Cretaceous
+// chalk concretions.
+const PRIM_MARCASITE_SPEARHEAD_TWIN = {
+    name: 'marcasite_spearhead_twin',
+    vertices: [
+        [0.0, 1.0, 0.0], // 0 top apex (pointed end)
+        [0.0, -0.1, 0.0], // 1 bottom apex (buried at wall)
+        [0.18, 0.45, 0.0], // 2 east (broad direction — a-axis, longer)
+        [-0.18, 0.45, 0.0], // 3 west
+        [0.0, 0.45, 0.10], // 4 north (narrow direction — b-axis, shorter; rhombic)
+        [0.0, 0.45, -0.10], // 5 south
+    ],
+    edges: [
+        [0, 2], [0, 3], [0, 4], [0, 5], // top apex → equator
+        [1, 2], [1, 3], [1, 4], [1, 5], // bottom apex → equator
+        [2, 4], [4, 3], [3, 5], [5, 2], // equator ring
+    ],
+};
+// v134 (2026-05-22): aragonite contact-twin primitive. The single
+// {110} contact twin variant (v133 has both 'cyclic_sextet' p=0.40
+// and 'contact' p=0.05 in aragonite's twin_laws). Two prismatic
+// orthorhombic prisms joined at base in a V — distinct from the
+// 3-fold cyclic-sextet pseudo-hex column. Documented in Dana 8th ed.
+// CaCO3 section + Speer 1983 (Reviews in Mineralogy v.11) as the
+// "simple contact twin" variant.
+//
+// Visual distinction from the other V-twin primitives:
+//   selenite swallowtail (gypsum {100}):   tabular blades (a:b = 0.08:0.18),
+//                                          60° V opening
+//   marcasite cockscomb (marcasite {110}): needle blades (a:b = 0.04:0.10),
+//                                          40° V opening
+//   aragonite contact (aragonite {110}):   prismatic blades (a:b = 0.10:0.10
+//                                          — chunky square cross-section),
+//                                          60° V opening
+//
+// 16 vertices (8 per blade), 24 edges. Same construction pattern as
+// the swallowtail / cockscomb V-pair twins, just with square cross-
+// section reflecting aragonite's prismatic individual habit.
+const PRIM_ARAGONITE_CONTACT_TWIN = {
+    name: 'aragonite_contact_twin',
+    vertices: (() => {
+        const a = 0.10; // half-thickness (perpendicular to broad face)
+        const L = 1.1; // blade length along c-axis
+        const b = 0.10; // half-width along contact edge — SQUARE cross-section
+        const base_y = -0.1; // anchor base contact at PRIM_CUBE wall y
+        const theta = Math.PI / 6; // 30° tilt per blade — 60° total V
+        const cT = Math.cos(theta);
+        const sT = Math.sin(theta);
+        const vs = [];
+        // Blade A — local (xl, yl, zl) in {-2a, 0} × {0, L} × {-b, +b}.
+        // Contact face (xl=0) sits on the rotation axis; the blade body
+        // extends to xl=-2a after rotation by +30° around z (through origin),
+        // then translated up by base_y.
+        for (const xl of [-2 * a, 0]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * cT - yl * sT;
+                    const wy = xl * sT + yl * cT + base_y;
+                    vs.push([wx, wy, zl]);
+                }
+            }
+        }
+        // Blade B — mirror across X=0 (rotate -30°).
+        for (const xl of [0, 2 * a]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    const wx = xl * cT + yl * sT;
+                    const wy = -xl * sT + yl * cT + base_y;
+                    vs.push([wx, wy, zl]);
+                }
+            }
+        }
+        return vs;
+    })(),
+    edges: (() => {
+        const bladeEdges = (off) => [
+            [off + 0, off + 1], [off + 2, off + 3], [off + 4, off + 5], [off + 6, off + 7],
+            [off + 0, off + 2], [off + 1, off + 3], [off + 4, off + 6], [off + 5, off + 7],
+            [off + 0, off + 4], [off + 1, off + 5], [off + 2, off + 6], [off + 3, off + 7],
+        ];
+        return [...bladeEdges(0), ...bladeEdges(8)];
+    })(),
+};
 // Habit string → primitive lookup. Direct hits checked first; the
 // fuzzy-substring fallback in _lookupCrystalPrimitive catches the
 // many compound forms in data/minerals.json (e.g. "rhombohedral_or_
@@ -52965,6 +53366,14 @@ function _lookupCrystalPrimitive(crystal) {
     if (crystal.mineral === 'pyrite' && crystal.twinned
         && crystal.twin_law === 'iron_cross') {
         return PRIM_PYRITE_IRON_CROSS_TWIN;
+    }
+    if (crystal.mineral === 'marcasite' && crystal.twinned
+        && crystal.twin_law === 'spearhead') {
+        return PRIM_MARCASITE_SPEARHEAD_TWIN;
+    }
+    if (crystal.mineral === 'aragonite' && crystal.twinned
+        && crystal.twin_law === 'contact') {
+        return PRIM_ARAGONITE_CONTACT_TWIN;
     }
     // v24 air-mode override — crystals nucleated in vadose rings get
     // dripstone geometry instead of their canonical habit primitive,
@@ -53211,6 +53620,22 @@ const _CLUSTER_PATTERNS_2D = {
     // Dripstone — air-mode tapered icicle. Single hanging/standing
     // primitive; satellites would break the silhouette.
     dripstone: { count: 0, sizeMin: 1.0, sizeMax: 1.0, alpha: 1.0, radiusMul: 0.0, evenAngles: false },
+    // v134 (2026-05-22): fan cluster. Denser + tighter + more uniform
+    // than 'spike' (which fans needles outward). Intended for the
+    // marcasite cockscomb chain morphology and other repeated-twin
+    // sequences where multiple sub-parallel V-twins stand close along
+    // a shared baseline. count and size range deliberately narrow to
+    // produce a chain-of-similar-units look rather than a wild spray.
+    //
+    // KNOWN LIMITATION: the satellite emission code positions satellites
+    // in a polar disc around the parent (r, angle), not in a true LINE.
+    // A real cockscomb chain has its satellites lined up along a
+    // tangent vector — that requires per-satellite arrangement logic
+    // (linear array with tilt-axis fixed to a common axis), which is
+    // future work. The current 'fan' pattern produces a "tight dense
+    // ring of parallel sub-units" which approximates but doesn't
+    // replicate the literal serrated-row morphology.
+    fan: { count: 10, sizeMin: 0.50, sizeMax: 0.80, alpha: 1.0, radiusMul: 0.40, evenAngles: false },
 };
 const _CLUSTER_PATTERN_2D_DEFAULT = {
     count: 5, sizeMin: 0.40, sizeMax: 0.80, alpha: 1.0, radiusMul: 1.0, evenAngles: false,
@@ -53239,6 +53664,37 @@ function _clusterPatternKeyForPrim(prim) {
         return 'botryoidal';
     if (prim === PRIM_DRIPSTONE)
         return 'dripstone';
+    // v134 (2026-05-22): twin primitives cluster like their underlying-form
+    // base shape — twinned fluorite still appears in carpets of cubes
+    // (Weardale, Cave-in-Rock specimens), twinned galena still clusters as
+    // octahedral groups (Cobalt-Ontario), etc. The marcasite cockscomb →
+    // 'spike' routing is the literal payoff: a clustered cockscomb twin
+    // emits multiple twin satellites in a tight spray, which IS the
+    // comb morphology in real specimens (50-70% twinning at Joplin /
+    // Tri-State per v133's _retune_note).
+    //
+    // Cerussite stellate sixling is the exception — the primitive already
+    // emits 6 visible arms (3 blades × 2), so adding cluster satellites
+    // would overflow the visual envelope. Returning null falls to the
+    // tiny-crystal micro fallback or single-primitive default.
+    if (prim === PRIM_FLUORITE_PENETRATION_TWIN)
+        return 'cube';
+    if (prim === PRIM_SELENITE_SWALLOWTAIL_TWIN)
+        return 'tablet';
+    if (prim === PRIM_GALENA_OCTAHEDRON_TWIN)
+        return 'octahedron';
+    if (prim === PRIM_ARAGONITE_PSEUDOHEX_TWIN)
+        return 'prism';
+    if (prim === PRIM_CERUSSITE_SIXLING_TWIN)
+        return null; // already multi-arm
+    if (prim === PRIM_MARCASITE_COCKSCOMB_TWIN)
+        return 'fan'; // v134: dense tight cluster of sub-parallel V-twins — the cockscomb chain
+    if (prim === PRIM_PYRITE_IRON_CROSS_TWIN)
+        return 'cube';
+    if (prim === PRIM_MARCASITE_SPEARHEAD_TWIN)
+        return 'fan'; // v134: dense cluster of sub-parallel arrowheads — same fan morphology as cockscomb, just with single-pyramid units
+    if (prim === PRIM_ARAGONITE_CONTACT_TWIN)
+        return 'prism'; // V of prismatic blades — clusters like a prismatic forest
     return null; // unknown → caller falls through to legacy drusy-habit path or single primitive
 }
 // Drusy-cluster decision: should this crystal render as one large
@@ -55654,6 +56110,8 @@ const _GEOM_TOKEN_RATIO = {
     cerussite_sixling_twin: 1.8, // flat stellate — wider than tall, like botryoidal crusts
     marcasite_cockscomb_twin: 0.3, // thin needle blades — c >> a, acicular family
     pyrite_iron_cross_twin: 1.0, // interpenetrating pyritohedra — isometric envelope
+    marcasite_spearhead_twin: 0.4, // elongated bipyramid — c >> a, spike-like aspect
+    aragonite_contact_twin: 0.5, // V of prismatic blades — prism-like aspect
     rhombic_dodec: 1.0,
     dodecahedron: 1.0,
     snowball: 1.0,
@@ -55715,6 +56173,14 @@ function _resolveCrystalGeomToken(crystal, habitForGeom) {
     if (crystal && crystal.mineral === 'pyrite' && crystal.twinned
         && crystal.twin_law === 'iron_cross') {
         return 'pyrite_iron_cross_twin';
+    }
+    if (crystal && crystal.mineral === 'marcasite' && crystal.twinned
+        && crystal.twin_law === 'spearhead') {
+        return 'marcasite_spearhead_twin';
+    }
+    if (crystal && crystal.mineral === 'aragonite' && crystal.twinned
+        && crystal.twin_law === 'contact') {
+        return 'aragonite_contact_twin';
     }
     const canonical = _habitGeomToken(habitForGeom);
     if (crystal && crystal.growth_environment === 'air'
@@ -56655,6 +57121,121 @@ function _makePyriteIronCrossTwin() {
     geom.computeVertexNormals();
     return geom;
 }
+// Marcasite spearhead twin — the {101} contact twin produces a single
+// elongated rhombic bipyramid. Mirrors PRIM_MARCASITE_SPEARHEAD_TWIN
+// in 99c. Distinct from cube/octahedron/dipyramid: stretched along c
+// AND rhombic in cross-section (a ≠ b) to reflect marcasite's
+// orthorhombic symmetry. Dana 8th ed. + Mindat marcasite habit.
+// v133 sets spearhead probability to 0.05 (path-1: rolls before
+// cockscomb's 0.55).
+//
+// 6 vertices, 8 flat-shaded triangular faces — same topology as a
+// regular octahedron but with a > b equatorial radii (rhombic cross-
+// section). 8 triangles × 3 verts = 24 vertex triples.
+function _makeMarcasiteSpearheadTwin() {
+    const a = 0.18; // broad equatorial half-extent (a-axis)
+    const b = 0.10; // narrow equatorial half-extent (b-axis) — rhombic
+    const L = 0.5; // c-axis half-length (centered at origin)
+    // 6 vertices: 2 apexes + 4 equator (rhombic).
+    const v = [
+        [0, L, 0], // 0 top apex (+y)
+        [0, -L, 0], // 1 bottom apex (-y)
+        [a, 0, 0], // 2 +x (a-axis east)
+        [-a, 0, 0], // 3 -x (a-axis west)
+        [0, 0, b], // 4 +z (b-axis north)
+        [0, 0, -b], // 5 -z (b-axis south)
+    ];
+    // 8 triangular faces — same octant pattern as a regular octahedron.
+    // CCW winding from outside (sx·sy·sz parity rule).
+    const faces = [
+        [2, 0, 4], // (+x, +y, +z) — top-east-north
+        [2, 5, 0], // (+x, +y, -z) — top-east-south
+        [2, 4, 1], // (+x, -y, +z) — bot-east-north
+        [2, 1, 5], // (+x, -y, -z) — bot-east-south
+        [3, 4, 0], // (-x, +y, +z) — top-west-north
+        [3, 0, 5], // (-x, +y, -z) — top-west-south
+        [3, 1, 4], // (-x, -y, +z) — bot-west-north
+        [3, 5, 1], // (-x, -y, -z) — bot-west-south
+    ];
+    const positions = [];
+    for (const f of faces) {
+        const A = v[f[0]], B = v[f[1]], C = v[f[2]];
+        _pushTri(positions, A[0], A[1], A[2], B[0], B[1], B[2], C[0], C[1], C[2]);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Aragonite contact twin — the single-contact {110} variant (vs
+// aragonite's 3-fold cyclic-sextet). Two prismatic orthorhombic
+// crystals joined at base, opening in a 60° V. Mirrors
+// PRIM_ARAGONITE_CONTACT_TWIN in 99c. Dana 8th ed. CaCO3 section,
+// Speer 1983 Reviews in Mineralogy v.11.
+//
+// Visual distinction from the other V-twin builders:
+//   _makeSeleniteSwallowtailTwin: tabular blades (a=0.05, b=0.15)
+//   _makeMarcasiteCockscombTwin:  needle blades (a=0.025, b=0.08)
+//   _makeAragoniteContactTwin:    prismatic blades (a=0.06, b=0.06 — square)
+//
+// 24 triangles, 72 vertex triples (matches selenite + marcasite V-pair
+// counts — same box-pair flat-shaded emission pattern).
+function _makeAragoniteContactTwin() {
+    const a = 0.06; // half-thickness (square cross-section)
+    const L = 0.95; // blade length along c-axis
+    const b = 0.06; // half-width along contact (square)
+    const theta = Math.PI / 6; // 30° tilt per blade — 60° total V
+    const cT = Math.cos(theta);
+    const sT = Math.sin(theta);
+    const buildBladeA = () => {
+        const out = [];
+        for (const xl of [-2 * a, 0]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    out.push([xl * cT - yl * sT, xl * sT + yl * cT, zl]);
+                }
+            }
+        }
+        return out;
+    };
+    const buildBladeB = () => {
+        const out = [];
+        for (const xl of [0, 2 * a]) {
+            for (const yl of [0, L]) {
+                for (const zl of [-b, b]) {
+                    out.push([xl * cT + yl * sT, -xl * sT + yl * cT, zl]);
+                }
+            }
+        }
+        return out;
+    };
+    const A = buildBladeA();
+    const B = buildBladeB();
+    const pushBlade = (out, v) => {
+        const tri = (i, j, k) => {
+            _pushTri(out, v[i][0], v[i][1], v[i][2], v[j][0], v[j][1], v[j][2], v[k][0], v[k][1], v[k][2]);
+        };
+        tri(0, 1, 3);
+        tri(0, 3, 2); // xl = -2a face
+        tri(4, 6, 7);
+        tri(4, 7, 5); // xl = 0 face (contact)
+        tri(0, 4, 5);
+        tri(0, 5, 1); // yl = 0 face (base)
+        tri(2, 3, 7);
+        tri(2, 7, 6); // yl = L face (top)
+        tri(0, 2, 6);
+        tri(0, 6, 4); // zl = -b face
+        tri(1, 5, 7);
+        tri(1, 7, 3); // zl = +b face
+    };
+    const positions = [];
+    pushBlade(positions, A);
+    pushBlade(positions, B);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Build a unit-sized geometry for a given habit token, oriented so
 // its long axis (= c-axis) lies along +Y. The instance transform
 // later places the base at the wall and scales by c_length / a_width.
@@ -56728,6 +57309,17 @@ function _buildHabitGeom(token) {
             // canonical "Eisernes Kreuz" twin (Ramdohr 1980). Dispatch gated
             // on mineral='pyrite' + twinned + twin_law='iron_cross'.
             return _makePyriteIronCrossTwin();
+        case 'marcasite_spearhead_twin':
+            // v134 (2026-05-22) — secondary marcasite twin. Single elongated
+            // rhombic bipyramid {101} (vs the cockscomb's V-pair). Dispatch
+            // gated on mineral='marcasite' + twinned + twin_law='spearhead'.
+            return _makeMarcasiteSpearheadTwin();
+        case 'aragonite_contact_twin':
+            // v134 (2026-05-22) — secondary aragonite twin. Two prismatic
+            // (square cross-section) crystals joined in a {110} contact V
+            // (vs the cyclic-sextet's 3-fold pseudo-hex column). Dispatch
+            // gated on mineral='aragonite' + twinned + twin_law='contact'.
+            return _makeAragoniteContactTwin();
         case 'octahedron':
             return new THREE.OctahedronGeometry(0.55, 0);
         case 'snowball':
@@ -56865,6 +57457,32 @@ const _CLUSTER_PATTERNS = {
         scaleMin: 1, scaleMax: 1,
         evenAngles: false,
     },
+    // v134 (2026-05-22): fan cluster. Denser + tighter + more parallel
+    // than 'spike'. Tuned for the marcasite cockscomb chain — multiple
+    // sub-parallel V-twins standing close on a shared baseline. Higher
+    // countScale + lower spreadMul + lower tiltMax + narrower size span
+    // give the chain-of-similar-units look that real cockscomb specimens
+    // show.
+    //
+    // KNOWN LIMITATION: the satellite-emission code in
+    // _emitClusterSatellites positions each satellite in a polar disc
+    // around the parent (chord offset r·(cosθ·t1 + sinθ·t2)) and tilts
+    // each off its own normal axis. A real cockscomb chain has
+    // satellites lined up along ONE tangent direction with tilts all
+    // in the SAME plane — that's a fundamentally different positioning
+    // mode (linear array, not polar disc). The 'fan' pattern below
+    // approximates the chain look via density + tightness + uniformity,
+    // but the literal serrated-row arrangement is future work that
+    // needs per-satellite arrangement logic (a linearArray field or
+    // similar in ClusterPattern + branching in _emitClusterSatellites).
+    fan: {
+        countScale: 1.5, // denser than spike (1.3)
+        spreadMul: 0.4, // tighter than spike (0.6) — chain bunches close
+        tiltMax: 0.30, // ±17° — more parallel than spike's ±31°
+        scaleMin: 0.50, // less variation than spike's 0.35-0.75
+        scaleMax: 0.80, //   — chain units are similar-sized siblings
+        evenAngles: false,
+    },
 };
 const _CLUSTER_PATTERN_DEFAULT = {
     countScale: 1.0,
@@ -56874,6 +57492,37 @@ const _CLUSTER_PATTERN_DEFAULT = {
     scaleMax: 0.80,
     evenAngles: false,
 };
+// v134 (2026-05-22): twin primitives reuse their underlying-form cluster
+// pattern. Mirrors 99d's _clusterPatternKeyForPrim mapping. The dispatch
+// in this file lookups _CLUSTER_PATTERNS[geomToken] directly, so without
+// these entries the twin tokens would fall through to
+// _CLUSTER_PATTERN_DEFAULT — habit-appropriate but not habit-specific.
+//
+// Why each twin maps where it does:
+//   fluorite penetration → cube     (Weardale/Cave-in-Rock fluorite carpets
+//                                    contain many twinned cubes)
+//   selenite swallowtail → tablet   (tabular blade rosette — Bohemian +
+//                                    Naica clusters of fishtails)
+//   galena spinel-law → octahedron  (Cobalt-Ontario octahedral galena groups)
+//   aragonite pseudo-hex → prism    (vertical pseudo-hex columns cluster
+//                                    as prismatic forests)
+//   cerussite sixling → botryoidal  (count=0, skip; the primitive already
+//                                    emits 6 visible arms — adding satellites
+//                                    would clutter)
+//   marcasite cockscomb → spike     (THE payoff: 'spike' pattern emits 4-8
+//                                    satellite cockscomb-twins in a tight
+//                                    spray, which IS the comb morphology)
+//   pyrite iron-cross → cube        (twinned pyrite still grows in cubic
+//                                    carpets — Elba, Pyrite Hill)
+_CLUSTER_PATTERNS.fluorite_penetration_twin = _CLUSTER_PATTERNS.cube;
+_CLUSTER_PATTERNS.selenite_swallowtail_twin = _CLUSTER_PATTERNS.tablet;
+_CLUSTER_PATTERNS.galena_octahedron_twin = _CLUSTER_PATTERNS.octahedron;
+_CLUSTER_PATTERNS.aragonite_pseudohex_twin = _CLUSTER_PATTERNS.prism;
+_CLUSTER_PATTERNS.cerussite_sixling_twin = _CLUSTER_PATTERNS.botryoidal; // skip cluster
+_CLUSTER_PATTERNS.marcasite_cockscomb_twin = _CLUSTER_PATTERNS.fan; // v134: dense tight chain of sub-parallel V-twins — the cockscomb morphology
+_CLUSTER_PATTERNS.pyrite_iron_cross_twin = _CLUSTER_PATTERNS.cube;
+_CLUSTER_PATTERNS.marcasite_spearhead_twin = _CLUSTER_PATTERNS.fan; // v134: dense cluster of sub-parallel spear arrowheads — fan morphology like cockscomb
+_CLUSTER_PATTERNS.aragonite_contact_twin = _CLUSTER_PATTERNS.prism;
 // Number of satellite meshes per crystal — scales inversely with
 // crystal size. Big gem crystals (>60 mm) read as solo specimens;
 // small ones build into drusy carpets. Multiplied by the per-habit

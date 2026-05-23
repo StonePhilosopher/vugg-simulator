@@ -63,6 +63,14 @@ function _lookupCrystalPrimitive(crystal) {
       && crystal.twin_law === 'iron_cross') {
     return PRIM_PYRITE_IRON_CROSS_TWIN;
   }
+  if (crystal.mineral === 'marcasite' && crystal.twinned
+      && crystal.twin_law === 'spearhead') {
+    return PRIM_MARCASITE_SPEARHEAD_TWIN;
+  }
+  if (crystal.mineral === 'aragonite' && crystal.twinned
+      && crystal.twin_law === 'contact') {
+    return PRIM_ARAGONITE_CONTACT_TWIN;
+  }
   // v24 air-mode override — crystals nucleated in vadose rings get
   // dripstone geometry instead of their canonical habit primitive,
   // when the canonical primitive is structurally compatible with a
@@ -293,6 +301,22 @@ const _CLUSTER_PATTERNS_2D = {
   // Dripstone — air-mode tapered icicle. Single hanging/standing
   // primitive; satellites would break the silhouette.
   dripstone:    { count:  0, sizeMin: 1.0,  sizeMax: 1.0,  alpha: 1.0,  radiusMul: 0.0,  evenAngles: false },
+  // v134 (2026-05-22): fan cluster. Denser + tighter + more uniform
+  // than 'spike' (which fans needles outward). Intended for the
+  // marcasite cockscomb chain morphology and other repeated-twin
+  // sequences where multiple sub-parallel V-twins stand close along
+  // a shared baseline. count and size range deliberately narrow to
+  // produce a chain-of-similar-units look rather than a wild spray.
+  //
+  // KNOWN LIMITATION: the satellite emission code positions satellites
+  // in a polar disc around the parent (r, angle), not in a true LINE.
+  // A real cockscomb chain has its satellites lined up along a
+  // tangent vector — that requires per-satellite arrangement logic
+  // (linear array with tilt-axis fixed to a common axis), which is
+  // future work. The current 'fan' pattern produces a "tight dense
+  // ring of parallel sub-units" which approximates but doesn't
+  // replicate the literal serrated-row morphology.
+  fan:          { count: 10, sizeMin: 0.50, sizeMax: 0.80, alpha: 1.0,  radiusMul: 0.40, evenAngles: false },
 };
 
 const _CLUSTER_PATTERN_2D_DEFAULT = {
@@ -314,6 +338,28 @@ function _clusterPatternKeyForPrim(prim) {
   if (prim === PRIM_TABULAR) return 'tablet';
   if (prim === PRIM_BOTRYOIDAL) return 'botryoidal';
   if (prim === PRIM_DRIPSTONE) return 'dripstone';
+  // v134 (2026-05-22): twin primitives cluster like their underlying-form
+  // base shape — twinned fluorite still appears in carpets of cubes
+  // (Weardale, Cave-in-Rock specimens), twinned galena still clusters as
+  // octahedral groups (Cobalt-Ontario), etc. The marcasite cockscomb →
+  // 'spike' routing is the literal payoff: a clustered cockscomb twin
+  // emits multiple twin satellites in a tight spray, which IS the
+  // comb morphology in real specimens (50-70% twinning at Joplin /
+  // Tri-State per v133's _retune_note).
+  //
+  // Cerussite stellate sixling is the exception — the primitive already
+  // emits 6 visible arms (3 blades × 2), so adding cluster satellites
+  // would overflow the visual envelope. Returning null falls to the
+  // tiny-crystal micro fallback or single-primitive default.
+  if (prim === PRIM_FLUORITE_PENETRATION_TWIN) return 'cube';
+  if (prim === PRIM_SELENITE_SWALLOWTAIL_TWIN) return 'tablet';
+  if (prim === PRIM_GALENA_OCTAHEDRON_TWIN) return 'octahedron';
+  if (prim === PRIM_ARAGONITE_PSEUDOHEX_TWIN) return 'prism';
+  if (prim === PRIM_CERUSSITE_SIXLING_TWIN) return null;  // already multi-arm
+  if (prim === PRIM_MARCASITE_COCKSCOMB_TWIN) return 'fan';  // v134: dense tight cluster of sub-parallel V-twins — the cockscomb chain
+  if (prim === PRIM_PYRITE_IRON_CROSS_TWIN) return 'cube';
+  if (prim === PRIM_MARCASITE_SPEARHEAD_TWIN) return 'fan';  // v134: dense cluster of sub-parallel arrowheads — same fan morphology as cockscomb, just with single-pyramid units
+  if (prim === PRIM_ARAGONITE_CONTACT_TWIN) return 'prism';  // V of prismatic blades — clusters like a prismatic forest
   return null;  // unknown → caller falls through to legacy drusy-habit path or single primitive
 }
 

@@ -6698,5 +6698,256 @@
 //          PRIM_FLUORITE_OCT_CONTACT_TWIN, PRIM_SPEAR, etc.
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
-const SIM_VERSION = 133;
+// ----------------------------------------------------------------
+// v134 (2026-05-22): sample twin_laws batch validating the
+//          .claude/skills/vugg-add-twin-law/SKILL.md workflow. 6
+//          minerals across 5 classes got their first twin_laws
+//          entries, all at conservative p ≤ 0.05 per the skill's
+//          first-batch guidance:
+//
+//            hematite (oxide):       {0001} polysynthetic  p=0.05
+//                                    — Dana 8th, Ramdohr 1980. Standard
+//                                    deformation/growth twin; field freq
+//                                    10-30%, conservative for safety.
+//            wulfenite (molybdate):  {001} tabular twin    p=0.02
+//                                    — Dana 8th, Mindat. Tabular-on-
+//                                    tabular twin at Red Cloud / Los
+//                                    Lamentos.
+//            bornite (sulfide):      {111} inversion       p=0.03
+//                                    — Ramdohr 1980. 228°C cubic→ortho
+//                                    ordering transition produces {111}
+//                                    polysynthetic exsolution lamellae.
+//            chromite (oxide):       {111} spinel-law      p=0.04
+//                                    — Dana 8th spinel group. Same
+//                                    contact twin as galena spinel,
+//                                    magnetite, regular spinel.
+//            legrandite (arsenate):  {010} contact         p=0.02
+//                                    — Drugman & Hey 1932; Handbook of
+//                                    Mineralogy. Data sparse — paired
+//                                    wedges in Aztec-sun sprays at Tsumeb.
+//            tremolite (amphibole):  {100} simple          p=0.03
+//                                    — Hawthorne et al. 2012; Veblen &
+//                                    Wylie 1993. Standard amphibole-
+//                                    group growth twin.
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same cascade mechanism as v133: each new twin_law entry
+//          adds an rng.random() draw per nucleation of the affected
+//          mineral, regardless of whether the twin fires. New draws
+//          perturb the RNG sequence for ALL subsequent crystals in
+//          the same scenario.
+//
+//          SCENARIOS AFFECTED (4 of 30):
+//            bisbee              — bornite nucleation
+//            deccan_zeolite      — hematite + tremolite eligibility
+//            porphyry            — bornite
+//            supergene_oxidation — legrandite (+ possibly hematite)
+//
+//          26 scenarios unchanged. The 4 drift downstream of the new
+//          RNG draws — the visible changes (in the failing baseline
+//          diff) were on minerals NOT in this batch: acanthite
+//          population, albite max growth, anhydrite, etc. That's
+//          characteristic of RNG cascades — the perturbation flows
+//          through every subsequent random() call.
+//
+//          WHAT v134 SHIPS
+//            data/minerals.json (MOD): 6 twin_laws additions across
+//              hematite/wulfenite/bornite/chromite/legrandite/tremolite.
+//              Each has _source citation, status:"newly_added", p ≤ 0.05.
+//            .claude/skills/vugg-add-twin-law/SKILL.md (NEW): the
+//              workflow documentation that this batch validates. Future
+//              twin_laws additions follow this skill.
+//            tests-js/baselines/seed42_v134.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 134. v133 baseline preserved.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 133 -> 134.
+//
+//          NO RENDERER WORK HERE. The 6 new twin_laws don't have
+//          rendered primitives — they're DATA layer only (visible
+//          in library card text + inventory rows, but no twinned
+//          geometry). That's intentional per the skill: rendering
+//          requires hand-rolled primitive geometry per mineral; data
+//          coverage and visual coverage proceed independently.
+//
+//          Coverage: 170 minerals (unchanged from v133), 68 now have
+//          twin_laws entries (was 62). 102 minerals still missing.
+// ----------------------------------------------------------------
+// v135 (2026-05-22): silicate twin_laws batch — first real batch
+//          using the .claude/skills/vugg-add-twin-law/SKILL.md
+//          workflow. 10 silicates across pyroxene, pyroxenoid,
+//          tetragonal, orthorhombic, trigonal, monoclinic, and cubic
+//          subgroups. Probabilities calibrated per field-frequency
+//          observation (silicate twins are predominantly RARE — most
+//          entries at p=0.01-0.02, the pyroxene + pyroxenoid laws
+//          at the higher end of the rare regime).
+//
+//          THE 10 ENTRIES (all newly_added):
+//            apophyllite (tetragonal):     {111} contact    p=0.02
+//                                          — zeolite cavities (Pune,
+//                                          Iceland, Faroe). Dana 8th.
+//            topaz (orthorhombic):         {221} contact    p=0.02
+//                                          — Brazilian + Russian
+//                                          pegmatite. Dana 8th.
+//            spodumene (monoclinic):       {100} simple     p=0.05
+//                                          — pyroxene-group standard
+//                                          twin. Hawthorne 1981.
+//            dioptase (trigonal):          {0001} contact   p=0.005
+//                                          — data sparse. Tsumeb +
+//                                          Mindouli. Anthony Handbook.
+//            hemimorphite (orthorhombic):  {001} contact    p=0.01
+//                                          — fan-sheaf habits on
+//                                          smithsonite. Dana 8th.
+//            datolite (monoclinic):        {001} contact    p=0.02
+//                                          — Lake Superior + Bor.
+//                                          Anthony Handbook.
+//            vesuvianite (tetragonal):     {110} contact    p=0.02
+//                                          — Alpine + Russian skarn.
+//                                          Anthony Handbook.
+//            grossular (cubic — garnet):   {111} contact    p=0.01
+//                                          — rare; garnet group is
+//                                          one of the least-twinned
+//                                          cubic families. Dana 8th.
+//            pectolite (triclinic):        {100} polysynth  p=0.04
+//                                          — pyroxenoid-group
+//                                          standard. Anthony Handbook;
+//                                          Liebau 1985.
+//            prehnite (orthorhombic):      {001} polysynth  p=0.02
+//                                          — zeolite-cavity prehnite.
+//                                          Dana 8th; Akizuki 1987.
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same cascade mechanism as v133, v134: each new twin_law
+//          adds an rng.random() draw per nucleation of the affected
+//          mineral. 10 minerals × however many scenarios they
+//          nucleate in = many new random() draws perturbing the seed
+//          sequence.
+//
+//          SCENARIOS EXPECTED TO DRIFT (any scenario nucleating
+//          apophyllite/spodumene/grossular/pectolite/prehnite/topaz
+//          /vesuvianite/datolite/hemimorphite/dioptase):
+//            deccan_zeolite, dripstone_cavity, zoned_dripstone_cave
+//                — apophyllite + prehnite + datolite
+//            gem_pegmatite, radioactive_pegmatite
+//                — spodumene + topaz + grossular
+//            supergene_oxidation, tsumeb
+//                — dioptase + hemimorphite
+//            jeffrey_mine, rodingite skarn
+//                — grossular + vesuvianite (skarn family)
+//            new_jersey_traprock, larimar (if present)
+//                — pectolite + prehnite
+//
+//          WHAT v135 SHIPS
+//            data/minerals.json (MOD): 10 twin_laws additions across
+//              the silicates listed above. Each with citation +
+//              status:"newly_added".
+//            tests-js/baselines/seed42_v135.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 135.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 134 -> 135.
+//
+//          NO RENDERER WORK HERE. Same DATA-ONLY pattern as v134's
+//          first batch: visible in library card text + inventory rows
+//          but not yet rendered as distinct primitives.
+//
+//          Coverage: 170 minerals (unchanged). 78 now have twin_laws
+//          entries (was 68). 92 minerals still missing — silicate 15
+//          (down from 25), sulfide 21, phosphate 13, arsenate 11,
+//          sulfate 9, others 23.
+// ----------------------------------------------------------------
+// v136 (2026-05-22): silicate twin_laws batch #2 — closes the 15
+//          remaining silicates. 9 get twin_laws entries (mostly at
+//          p=0.005-0.01, the rare-twin floor); 6 get an explicit
+//          `_twin_laws_note` metadata field documenting WHY their
+//          twin_laws stays empty (microcrystalline / amorphous /
+//          fibrous textures — no individual euhedral crystals to twin).
+//
+//          THE 9 TWIN_LAWS ENTRIES (all newly_added, very low p)
+//
+//            tourmaline (trigonal):    {1011} pseudo-trapiche   p=0.005
+//                                      — trigonal symmetry lacks horizontal
+//                                      mirror planes, so classical contact
+//                                      twins are structurally suppressed.
+//                                      Sector pseudo-twins on {1011}
+//                                      reported very rarely. Mindat; Anthony.
+//            beryl (hex):              {0001} basal contact     p=0.005
+//                                      — hexagonal beryl rarely twins;
+//                                      basal contact reported in pegmatite.
+//                                      Frondel 1962 v.III; Anthony.
+//            emerald (hex):            {0001} same              p=0.005
+//                                      — Cr-bearing color variant of beryl;
+//                                      inherits parent twin behavior.
+//            aquamarine (hex):         {0001} same              p=0.005
+//                                      — Fe-bearing variant.
+//            morganite (hex):          {0001} same              p=0.005
+//                                      — Mn/Cs pink variant.
+//            heliodor (hex):           {0001} same              p=0.005
+//                                      — Fe³⁺ yellow variant.
+//            uranophane (monoclinic):  {001} contact            p=0.01
+//                                      — radiating-acicular puffs at
+//                                      Colorado Plateau / Schneeberg.
+//                                      Anthony Handbook v.IV.
+//            willemite (trigonal):     {0001} contact           p=0.005
+//                                      — Franklin/Sterling Hill rare.
+//            shattuckite (orthorhombic): {010} contact          p=0.005
+//                                      — acicular tufts at Bisbee/Tantara.
+//
+//          THE 6 INTENTIONALLY-EMPTY ENTRIES (_twin_laws_note field added)
+//
+//            chrysocolla   — botryoidal/colloform microcrystalline Cu-silicate
+//            chrysoprase   — microcrystalline chalcedony (Ni-bearing)
+//            opal          — amorphous (opal-A) or nano-crystalline (opal-CT/C);
+//                            no crystal structure to twin
+//            tigers_eye    — chalcedony pseudomorph after crocidolite —
+//                            fibrous parallel-aligned, no euhedral form
+//            chrysotile    — fibrous serpentine asbestos; no individual
+//                            euhedra
+//            coffinite     — fracture-replacement / colloform / sooty —
+//                            rarely euhedral, twin behavior undocumented
+//
+//          The `_twin_laws_note` metadata field uses the underscore-
+//          prefix convention (same as `_source`, `_retune_note`,
+//          `_ingredients_note`) so future readers + Claude Code agents
+//          working through the skill can see at a glance WHY a mineral's
+//          twin_laws stays empty rather than guessing.
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same mechanism as v133, v134, v135: each new twin_law adds
+//          an rng.random() draw per nucleation. Even p=0.005 entries
+//          consume the random() draw — the cascade source.
+//
+//          SCENARIOS EXPECTED TO DRIFT: any scenario that nucleates
+//          any of {tourmaline, beryl, emerald, aquamarine, morganite,
+//          heliodor, uranophane, willemite, shattuckite}. That's
+//          primarily the pegmatite + U-supergene + Franklin/Sterling
+//          scenarios: gem_pegmatite, radioactive_pegmatite,
+//          colorado_plateau, schneeberg, supergene_oxidation.
+//
+//          The 6 minerals with _twin_laws_note metadata but empty
+//          twin_laws DO NOT trigger new RNG draws — empty arrays mean
+//          _rollSpontaneousTwin skips them. So no cascade from those.
+//
+//          WHAT v136 SHIPS
+//            data/minerals.json (MOD): 9 twin_laws additions + 6
+//              _twin_laws_note additions. Each twin_laws entry has
+//              citation + status:"newly_added" + low p.
+//            tests-js/baselines/seed42_v136.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 136.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 135 -> 136.
+//            tests-js/vector-taxonomy.test.ts: existing v135 test will
+//              also verify _twin_laws_note isn't an unrecognized vector
+//              (it's a top-level field on the mineral, not on
+//              habit_variants, so unaffected).
+//
+//          NO RENDERER WORK HERE. Same DATA-ONLY pattern as v134, v135.
+//
+//          Coverage: 170 minerals (unchanged). 87 now have twin_laws
+//          entries (was 78). 83 still missing — silicate 6 (microcrystalline,
+//          documented as intentional), sulfide 21, phosphate 13, arsenate
+//          11, sulfate 9, others 23.
+//
+//          THE SILICATE CLASS IS NOW COMPLETE: every silicate either
+//          has a twin_law or has documented WHY it doesn't. 31 of 31
+//          accounted for.
+const SIM_VERSION = 136;
 
