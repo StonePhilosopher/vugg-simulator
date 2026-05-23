@@ -183,8 +183,39 @@ function titleNewGame() {
   openNewGameMenu();
 }
 function titleQuickPlay() {
-  switchMode('random');
-  try { runRandomVugg(); } catch (e) { console.error('Quick Play failed to roll:', e); }
+  // Quick Play reroute (2026-05-23 — boss design decision): instead of
+  // launching a Random Vugg in random mode, pick a random non-tutorial
+  // scenario from the Simulation dropdown and auto-start it via the
+  // standard runSimulation Grow flow. The user lands directly in
+  // Simulation mode with a scenario already running, no menu detour.
+  //
+  // The dropdown is the canonical list of "what's playable in legends" —
+  // pick from it rather than from SCENARIOS so any drift between the
+  // dropdown and the SCENARIOS map (e.g. a scenario registered in
+  // data/scenarios.json5 but not yet wired into the HTML <select>)
+  // can't leave us pointing at an option the dropdown doesn't have.
+  //
+  // Random mode internals (runRandomVugg, randomSim, the random-panel
+  // UI, collectFromRandom + collectAllFromRandom) are intentionally
+  // kept in place — they still work for the agent API + any future
+  // re-entry point. The menu UI just stops surfacing them.
+  switchMode('legends');
+  const scenarioEl = document.getElementById('scenario') as HTMLSelectElement | null;
+  if (!scenarioEl) return; // fail open — user is in legends, can pick manually
+  const options = Array.from(scenarioEl.options)
+    .map(o => o.value)
+    .filter(v => v && !v.startsWith('tutorial_'));
+  if (!options.length) return;
+  const pick = options[Math.floor(Math.random() * options.length)];
+  scenarioEl.value = pick;
+  // Clear any prior seed so runSimulation auto-generates a fresh one —
+  // each Quick Play click should produce a different specimen.
+  const seedEl = document.getElementById('seed') as HTMLInputElement | null;
+  if (seedEl) seedEl.value = '';
+  if (typeof runSimulation === 'function') {
+    try { runSimulation(); }
+    catch (e) { console.error('Quick Play failed to start simulation:', e); }
+  }
 }
 function titleLoadGame() {
   // Open the Library — that's where the collection lives.
