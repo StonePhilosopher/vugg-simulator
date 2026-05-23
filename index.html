@@ -4042,6 +4042,26 @@ function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, local
                 s += localFill < 0.7 ? 0.6 : -0.4;
             }
         }
+        // Vector taxonomy (descriptive tag for how the crystal extends from
+        // substrate; also shown in the hovertext via 99f-renderer-interaction):
+        //   equant       — extends equally all directions (cubes, octahedra)
+        //   projecting   — extends outward into cavity (acicular, prismatic)
+        //   coating      — spreads along the wall (botryoidal, druzy crust)
+        //   tabular      — flat plates parallel to the wall
+        //   dendritic    — true branching / tree-like growth (native silver
+        //                  wire, native copper arborescent, gold dendrites)
+        //   skeletal     — partial-growth crystal-form silhouette with
+        //                  inward-growing faces (galena hopper, quartz
+        //                  fenster, halite hopper, bismuth staircase cubes).
+        //                  v135 (2026-05-22) split out from `dendritic`: both
+        //                  are partial-growth phenomena under supersaturation
+        //                  but geometrically distinct — dendrites branch like
+        //                  trees, skeletal/hopper crystals KEEP their
+        //                  crystal-form silhouette but with stair-stepped or
+        //                  hollow faces.
+        // Only projecting/coating/tabular are space-aware below — the rest
+        // are descriptive labels with no dispatch effect (they're for the
+        // hovertext + library card text only).
         const vec = (v.vector || '').toLowerCase();
         if (spaceConstrained) {
             if (vec === 'projecting')
