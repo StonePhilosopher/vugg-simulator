@@ -6771,5 +6771,87 @@
 //
 //          Coverage: 170 minerals (unchanged from v133), 68 now have
 //          twin_laws entries (was 62). 102 minerals still missing.
-const SIM_VERSION = 134;
+// ----------------------------------------------------------------
+// v135 (2026-05-22): silicate twin_laws batch — first real batch
+//          using the .claude/skills/vugg-add-twin-law/SKILL.md
+//          workflow. 10 silicates across pyroxene, pyroxenoid,
+//          tetragonal, orthorhombic, trigonal, monoclinic, and cubic
+//          subgroups. Probabilities calibrated per field-frequency
+//          observation (silicate twins are predominantly RARE — most
+//          entries at p=0.01-0.02, the pyroxene + pyroxenoid laws
+//          at the higher end of the rare regime).
+//
+//          THE 10 ENTRIES (all newly_added):
+//            apophyllite (tetragonal):     {111} contact    p=0.02
+//                                          — zeolite cavities (Pune,
+//                                          Iceland, Faroe). Dana 8th.
+//            topaz (orthorhombic):         {221} contact    p=0.02
+//                                          — Brazilian + Russian
+//                                          pegmatite. Dana 8th.
+//            spodumene (monoclinic):       {100} simple     p=0.05
+//                                          — pyroxene-group standard
+//                                          twin. Hawthorne 1981.
+//            dioptase (trigonal):          {0001} contact   p=0.005
+//                                          — data sparse. Tsumeb +
+//                                          Mindouli. Anthony Handbook.
+//            hemimorphite (orthorhombic):  {001} contact    p=0.01
+//                                          — fan-sheaf habits on
+//                                          smithsonite. Dana 8th.
+//            datolite (monoclinic):        {001} contact    p=0.02
+//                                          — Lake Superior + Bor.
+//                                          Anthony Handbook.
+//            vesuvianite (tetragonal):     {110} contact    p=0.02
+//                                          — Alpine + Russian skarn.
+//                                          Anthony Handbook.
+//            grossular (cubic — garnet):   {111} contact    p=0.01
+//                                          — rare; garnet group is
+//                                          one of the least-twinned
+//                                          cubic families. Dana 8th.
+//            pectolite (triclinic):        {100} polysynth  p=0.04
+//                                          — pyroxenoid-group
+//                                          standard. Anthony Handbook;
+//                                          Liebau 1985.
+//            prehnite (orthorhombic):      {001} polysynth  p=0.02
+//                                          — zeolite-cavity prehnite.
+//                                          Dana 8th; Akizuki 1987.
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same cascade mechanism as v133, v134: each new twin_law
+//          adds an rng.random() draw per nucleation of the affected
+//          mineral. 10 minerals × however many scenarios they
+//          nucleate in = many new random() draws perturbing the seed
+//          sequence.
+//
+//          SCENARIOS EXPECTED TO DRIFT (any scenario nucleating
+//          apophyllite/spodumene/grossular/pectolite/prehnite/topaz
+//          /vesuvianite/datolite/hemimorphite/dioptase):
+//            deccan_zeolite, dripstone_cavity, zoned_dripstone_cave
+//                — apophyllite + prehnite + datolite
+//            gem_pegmatite, radioactive_pegmatite
+//                — spodumene + topaz + grossular
+//            supergene_oxidation, tsumeb
+//                — dioptase + hemimorphite
+//            jeffrey_mine, rodingite skarn
+//                — grossular + vesuvianite (skarn family)
+//            new_jersey_traprock, larimar (if present)
+//                — pectolite + prehnite
+//
+//          WHAT v135 SHIPS
+//            data/minerals.json (MOD): 10 twin_laws additions across
+//              the silicates listed above. Each with citation +
+//              status:"newly_added".
+//            tests-js/baselines/seed42_v135.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 135.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 134 -> 135.
+//
+//          NO RENDERER WORK HERE. Same DATA-ONLY pattern as v134's
+//          first batch: visible in library card text + inventory rows
+//          but not yet rendered as distinct primitives.
+//
+//          Coverage: 170 minerals (unchanged). 78 now have twin_laws
+//          entries (was 68). 92 minerals still missing — silicate 15
+//          (down from 25), sulfide 21, phosphate 13, arsenate 11,
+//          sulfate 9, others 23.
+const SIM_VERSION = 135;
 

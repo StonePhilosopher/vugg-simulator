@@ -4071,7 +4071,16 @@
         "F": 0.2
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_111",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. apophyllite section; Anthony Handbook of Mineralogy v.II. Tetragonal {111} contact twin reported in zeolite-cavity specimens (Pune basalt, Iceland, Faroe Islands). Field frequency low (~2-5% of euhedral); conservative p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.0,
         "reaction": "alkaline-stable phase — dissolves in acid releasing K, Ca, SiO2, F",
@@ -4688,7 +4697,16 @@
         "color": "weak_greenish_LW",
         "quencher": null
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_221",
+          "miller_indices": "{221}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. topaz section; Anthony Handbook v.II. Orthorhombic {221} contact twin reported in Brazilian + Russian pegmatite specimens. Rare overall; conservative p=0.02 with data-sparse acknowledgement."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 2.0,
         "reaction": "very resistant — only strong mineral acids attack Al₂SiO₄(F,OH)₂ slowly",
@@ -5005,7 +5023,16 @@
         "quencher": null,
         "note": "kunzite variety; hiddenite shows weaker orange-red"
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "simple_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Hawthorne (1981) Reviews in Mineralogy 9A — pyroxenes; Anthony Handbook v.II. Monoclinic pyroxene {100} simple twin is the standard pyroxene-group growth twin (same law as augite, diopside, enstatite). Reported in California + Afghanistan kunzite specimens at 5-10% frequency among euhedral crystals."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": null,
         "reaction": "resistant to common acids",
@@ -11976,7 +12003,16 @@
         "quencher": "Cu²⁺",
         "status": "Non-fluorescent under SW/MW/LW UV. Cu²⁺ is a luminescence quencher — dioptase shows no characteristic emission."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II; Mindat dioptase habit. Trigonal {0001} contact twin occasionally reported in Tsumeb + Mindouli specimens. Data sparse — conservative p=0.005."
+        }
+      ],
       "acid_dissolution": "Slow dissolution in dilute HCl/H₂SO₄ at pH < 5. Cu²⁺ + silicic acid released.",
       "habit": "short_prismatic_emerald",
       "color_rules": {
@@ -12292,7 +12328,16 @@
       "thermal_decomp_reaction": "Dehydration above ~250°C: 2 Zn₄Si₂O₇(OH)₂·H₂O → 4 Zn₂SiO₄ (willemite) + 2 H₂O + SiO₂. Acid dissolution below pH 5.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Weak inconsistent fluorescence — do NOT rely on UV for ID. Pyroelectric/piezoelectric tests are the diagnostic physical-property checks."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. hemimorphite section. Orthorhombic {001} contact twin reported in fan-sheaf specimens on smithsonite substrates. Rare; conservative p=0.01."
+        }
+      ],
       "acid_dissolution": "Dissolves in dilute HCl below pH 5.",
       "habit": "fan_sheaves",
       "color_rules": {"colorless_white": {"default": true, "trigger": "default — colorless to white pure Zn end"}, "mapimi_blue": {"trigger": "Cu > 5 ppm — pale blue-green from Cu²⁺ trace (the Mapimi/Wenshan signature)"}},
@@ -15051,7 +15096,16 @@
         "quencher": null,
         "status": "Non-fluorescent under standard SW/MW/LW UV. Pure CaB(SiO₄)(OH) has no fluorescence activator. Some Lake Superior datolite shows weak phosphorescence after SW exposure (likely U/Th trace at sub-ppm), not diagnostic; ignored in the engine."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II datolite section; Dana 8th ed. Monoclinic {001} contact twin reported in Lake Superior copper-country specimens and Bor (Russia) gemmy datolite. Rare; conservative p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.0,
         "reaction": "CaB(SiO₄)(OH) + 4H⁺ → Ca²⁺ + B(OH)₃ + H₄SiO₄ — releases Ca + boric acid + silicic acid to fluid below pH 5. Slow kinetics in the supergene window (datolite is stable in most surface weathering environments — only acidic groundwater attack drives dissolution).",
@@ -15168,7 +15222,16 @@
         "quencher": null,
         "status": "Generally non-fluorescent. Some Cr-bearing chromian vesuvianite (Crestmore) shows weak red SW UV fluorescence from Cr³⁺ emission; cyprine and Fe-yellow varieties are non-fluorescent. Not diagnostic; ignored in the engine."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II vesuvianite section. Tetragonal {110} contact twin reported in Alpine + Russian skarn specimens. Rare; conservative p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 6.0,
         "reaction": "Ca10Mg2Al4(SiO4)5(Si2O7)2(OH)4 + acid → Ca²⁺ + Mg²⁺ + Al³⁺ + H4SiO4 — releases all cations to fluid below pH 6. Slow kinetics; vesuvianite is geologically stable in most weathering environments and only breaks down under strong-acid attack (e.g., supergene acid-mine drainage).",
@@ -15282,7 +15345,16 @@
         "quencher": null,
         "status": "Generally non-fluorescent. Some Mn-bearing hessonite shows weak red fluorescence from Mn²⁺ (very faint, not diagnostic). Ignored in the engine."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_111",
+          "miller_indices": "{111}",
+          "trigger": "growth",
+          "probability": 0.01,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. garnet group. Cubic {111} contact twin reported very rarely in grossular — garnet group is one of the least-commonly-twinned cubic mineral families. Data sparse; conservative p=0.01."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.0,
         "reaction": "Ca3Al2(SiO4)3 + 12H⁺ → 3Ca²⁺ + 2Al³⁺ + 3H4SiO4 — releases Ca + Al + Si to fluid below pH 5. Slow kinetics; grossular is geologically very stable.",
@@ -15509,7 +15581,16 @@
         "quencher": null,
         "status": "Some pectolite from New Jersey shows weak orange-pink SW UV fluorescence (Mn²⁺ activator at higher Mn levels). Larimar from Dominican is non-fluorescent. Ignored in the engine; not diagnostic."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "polysynthetic_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.04,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.II pectolite section; Liebau (1985) Structural Chemistry of Silicates. Triclinic {100} polysynthetic twinning is the standard pyroxenoid-group law (shared with wollastonite, bustamite, rhodonite). Reported in New Jersey + Larimar specimens at 5-10% frequency among euhedral fibers."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 6.0,
         "reaction": "NaCa2Si3O8(OH) + 7H⁺ → Na⁺ + 2Ca²⁺ + 3H4SiO4 — releases Na + Ca + Si to fluid below pH 6. Pectolite is more acid-sensitive than wollastonite/prehnite (Na presence).",
@@ -15711,7 +15792,16 @@
         "quencher": null,
         "status": "Generally non-fluorescent. Fe-rich varieties may show weak fluorescence; not diagnostic."
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "polysynthetic_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Dana 8th ed. prehnite section; Akizuki (1987) American Mineralogist 72:645 on prehnite structural state + growth twins. Orthorhombic {001} polysynthetic twin reported in zeolite-cavity prehnite from Bombay basalts + New Jersey traprock at moderate frequency. Conservative p=0.02."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 6.0,
         "reaction": "Ca2Al2Si3O10(OH)2 + 10H⁺ → 2Ca²⁺ + 2Al³⁺ + 3H4SiO4 — releases Ca + Al + Si to fluid below pH 6. Moderate kinetics; prehnite is reactive in acidic groundwater.",
