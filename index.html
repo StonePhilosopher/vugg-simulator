@@ -11691,7 +11691,99 @@ let timeScale = 5.0;
 //          sulfide (39/39), phosphate (16/16). The remaining three
 //          classes total 44 minerals — under one and a half batches
 //          at the current cadence.
-const SIM_VERSION = 138;
+// ----------------------------------------------------------------
+// v139 (2026-05-22): arsenate twin_laws batch — closes the class.
+//          11 minerals processed: 8 get twin_laws entries (vivianite-
+//          group {010} contacts at p=0.05 + adamite-group {101} hearts
+//          at p=0.05 + mimetite apatite-floor at p=0.005 + scorodite
+//          rare contact at p=0.005), 3 get an explicit `_twin_laws_note`
+//          metadata field documenting why their twin_laws stays empty.
+//
+//          THE 8 TWIN_LAWS ENTRIES — grouped by structural family
+//
+//            VIVIANITE-GROUP MONOCLINIC ({010} contact, iconic Co/Ni/Zn blooms):
+//              erythrite     {010} contact  p=0.05  (Schneeberg, Cobalt ON, Bou Azzer)
+//              annabergite   {010} contact  p=0.05  (Annaberg type, Lavrion, Bou Azzer)
+//              koettigite    {010} contact  p=0.02  (Mapimí, Schneeberg — Zn endmember)
+//
+//            ADAMITE-GROUP ORTHORHOMBIC ({101} contact — the famous Mapimí "heart twins"):
+//              adamite       {101} heart    p=0.05  (Ojuela Mine, Mapimí — defining habit)
+//              olivenite     {101} contact  p=0.02  (Cornwall type, Tsumeb, Cap Garonne)
+//              austinite     {101} contact  p=0.02  (Mapimí, Tsumeb, Gold Hill UT)
+//
+//            APATITE-GROUP ARSENATE (low-twin floor, matches v138 pyromorphite/vanadinite):
+//              mimetite      {11-22}        p=0.005 (Tsumeb, Bad Ems, Wheal Alfred)
+//
+//            SCORODITE-GROUP ORTHORHOMBIC:
+//              scorodite     {001} contact  p=0.005 (Ojuela, Tsumeb, Hemerdon — data sparse)
+//
+//          Citations: Anthony Handbook v.IV (arsenates + phosphates, same
+//          volume) + Frondel 1962 v.III (vivianite-group monograph) +
+//          Frondel 1948 AmMin 33:545 (the definitive Mapimí heart-twin
+//          paper — adamite). The adamite heart twin is the most-
+//          collected twin morphology in this batch; p=0.05 reflects its
+//          minor-common frequency among well-formed Ojuela specimens.
+//
+//          THE 3 _TWIN_LAWS_NOTE ADDITIONS — INTENTIONALLY EMPTY
+//
+//            TSUMEB SUPERGENE NON-EUHEDRAL:
+//              duftite       — habit 'botryoidal_crust' — pistachio-green
+//                              microcrystalline coatings on bayldonite/
+//                              mimetite. No individual euhedra.
+//              bayldonite    — habit 'spheroidal_mammillary' — green
+//                              spheroidal masses, classic Tsumeb +
+//                              Wheal Carpenter (Cornwall type) habit.
+//
+//            PARAMORPH DEHYDRATION (v138 paramorph-inheritance convention):
+//              metazeunerite — dehydration paramorph of zeunerite at
+//                              T > 75°C. Inherits zeunerite's {001}
+//                              basal twin geometry through PARAMORPH_
+//                              TRANSITIONS rather than nucleating fresh.
+//                              Adding own twin_laws would double-count.
+//                              Same rationale as meta-autunite + metator-
+//                              bernite (v138).
+//
+//          WHY THIS DRIFTS BASELINES
+//
+//          Same mechanism as v133-v138: each new twin_law adds an
+//          rng.random() draw per nucleation in _rollSpontaneousTwin.
+//          8 new entries × every nucleation across affected scenarios.
+//          Smallest cascade of any data batch yet — arsenates fire in
+//          only a few scenarios (bisbee, schneeberg, supergene_oxidation
+//          primarily; roughten_gill secondarily).
+//
+//          SCENARIOS DRIFTED EMPIRICALLY:
+//            bisbee, schneeberg, supergene_oxidation (3 baselines).
+//
+//          NO PINNED-BEHAVIOR TESTS NEEDED LOOSENING — the cascade was
+//          fully absorbed by baseline regen alone. First batch in this
+//          arc where the data layer landed without forcing any test
+//          loosening; the test infra is now warm to data perturbations.
+//
+//          WHAT v139 SHIPS
+//            data/minerals.json (MOD): 8 twin_laws + 3 _twin_laws_note.
+//            tests-js/baselines/seed42_v139.json (NEW): 30-scenario
+//              baseline at SIM_VERSION 139.
+//            js/15-version.ts (MOD): this block + SIM_VERSION 138 -> 139.
+//            tools/add-arsenate-twins.mjs (NEW): near-copy of
+//              tools/add-phosphate-twins.mjs with arsenate dicts.
+//
+//          NO RENDERER WORK HERE. Same DATA-ONLY pattern as v134-v138.
+//          NO TEST LOOSENING (first since v133).
+//
+//          Coverage: 170 minerals (unchanged). 119 now have twin_laws
+//          entries (was 111). 18 minerals have _twin_laws_note (was 15).
+//          33 still missing — sulfate 9, others 24.
+//
+//          THE ARSENATE CLASS IS NOW COMPLETE: every arsenate either
+//          has a twin_law or has documented WHY it doesn't. 15 of 15
+//          accounted for. FOUR classes complete: silicate (31/31),
+//          sulfide (39/39), phosphate (16/16), arsenate (15/15).
+//          Two remaining: sulfate 9 + others 24 = 33 minerals total.
+//          Under one batch worth of work left, structurally — though
+//          the "others" bucket is heterogeneous and may want per-
+//          mineral rather than per-class batching.
+const SIM_VERSION = 139;
 
 // ── 18-constants.js ──
 

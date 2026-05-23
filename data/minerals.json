@@ -3252,7 +3252,16 @@
         "As": 0.4
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Mindat scorodite habit notes. Scorodite (orthorhombic Pbca, FeAsO₄·2H₂O) is the iconic supergene As-oxide species — pyramidal blue-green crystals at Ojuela (Mexico), Tsumeb, Hemerdon. Twin behavior data-sparse; rare {001} contact twins reported but most scorodite is untwinned pyramidal/dipyramidal. Conservative p=0.005 (rare-twin floor with data-sparse note)."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 5.5,
         "reaction": "dissolves above pH 5 (alkaline-side dissolution, not acid), releasing Fe³⁺ + AsO₄³⁻",
@@ -3441,7 +3450,16 @@
           "note": "heavy Cu turns off FL"
         }
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "heart_twin_101",
+          "miller_indices": "{101}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Frondel 1948 (American Mineralogist 33:545) — type description of \"heart-shaped\" adamite twins from Mapimí (Ojuela Mine, Durango, Mexico) + Anthony Handbook v.IV adamite section. Orthorhombic Pnnm, Zn₂(AsO₄)(OH). The {101} contact twin produces the diagnostic V-pair \"heart twin\" morphology that defines collector-grade Mapimí adamite. p=0.05 reflects the minor-common frequency of visible heart twins among well-formed Mapimí specimens; the lime-green/yellow Ojuela material is the field reference."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.5,
         "reaction": "dissolves in acid",
@@ -3541,7 +3559,16 @@
         "quencher": null,
         "status": "newly_added"
       },
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_1122",
+          "miller_indices": "{11-22}",
+          "trigger": "growth",
+          "probability": 0.005,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Mindat mimetite habit notes. Mimetite (hexagonal P6₃/m, Pb₅(AsO₄)₃Cl) is the As endmember of the pyromorphite-mimetite-vanadinite apatite-group series. Same low intrinsic twin propensity as pyromorphite + vanadinite (both shipped at v138); rare {11-22} contact twins documented at Tsumeb + Bad Ems + Wheal Alfred. p=0.005 matching the apatite-group floor."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 3.0,
         "reaction": "dissolves in strong acid",
@@ -3638,7 +3665,16 @@
         "As": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV (arsenates) + Frondel 1962 The System of Mineralogy v.III §vivianite-group. Erythrite (monoclinic C2/m, Co₃(AsO₄)₂·8H₂O) — iconic cobalt-bloom species. {010} contact twins documented in classic Schneeberg + Cobalt (Ontario) + Bou Azzer (Morocco) acicular sprays. The vivianite-group all share this twin law; p=0.05 reflects the minor-common frequency in well-formed sprays."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "erythrite + 6H+ → 3 Co²⁺ + 2 H3AsO4 + 8 H2O (dissolves in moderately acidic fluids)",
@@ -3748,7 +3784,16 @@
         "As": 0.3
       },
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV + Frondel 1962. Annabergite (monoclinic C2/m, Ni₃(AsO₄)₂·8H₂O) is the Ni endmember of the erythrite-annabergite series; isostructural, same {010} contact twins documented at Annaberg (type) + Lavrion + Bou Azzer. Conservative p=0.05 matching erythrite."
+        }
+      ],
       "acid_dissolution": {
         "pH_threshold": 4.5,
         "reaction": "annabergite + 6H+ → 3 Ni²⁺ + 2 H3AsO4 + 8 H2O",
@@ -8793,7 +8838,16 @@
       "thermal_decomp_reaction": null,
       "thermal_decomp_products": {},
       "fluorescence": null,
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_101",
+          "miller_indices": "{101}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV. Olivenite (orthorhombic Pnnm, Cu₂(AsO₄)(OH)) is isostructural with adamite — Cu endmember of the adamite-olivenite series. Same {101} contact twin behavior but less commonly observed than adamite hearts; documented at Cornwall (type) + Tsumeb + Cap Garonne. Conservative p=0.02."
+        }
+      ],
       "acid_dissolution": null,
       "habit": "prismatic",
       "color_rules": {
@@ -12684,7 +12738,16 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 4.5 — Ca²⁺ + Zn²⁺ + AsO₄³⁻ released.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent. Pure Zn-end has no UV response; cuprian variety quenched by Cu²⁺."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_101",
+          "miller_indices": "{101}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV. Austinite (orthorhombic P2₁2₁2₁, CaZn(AsO₄)(OH)) is the Ca-Zn member of the adamite-group, often forming acicular sprays at Mapimí + Tsumeb + Gold Hill (Utah). {101} contact twins reported but data sparse — acicular habit dominates over visible twin morphology. Conservative p=0.02."
+        }
+      ],
       "acid_dissolution": "Slow in dilute HCl below pH 4.5 — Ca + Zn + As released to fluid.",
       "habit": "acicular_sprays",
       "color_rules": {"pale_yellow_green": {"default": true, "trigger": "default — colorless to pale yellow-green, the pure Zn-end"}, "apple_green_cuprian": {"trigger": "Cu > 5 ppm — apple-green from Cu²⁺ chromophore, transitional toward conichalcite"}},
@@ -12768,7 +12831,16 @@
       "thermal_decomp_reaction": "Dehydrates above ~50°C — loses structural H₂O, converts to lower hydrates and ultimately anhydrous Zn₃(AsO₄)₂ phases.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent."},
-      "twin_laws": [],
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.02,
+          "status": "newly_added",
+          "_source": "Anthony Handbook v.IV. Koettigite (monoclinic C2/m, Zn₃(AsO₄)₂·8H₂O) is the Zn endmember of the vivianite-group. Less common in field collections than erythrite/annabergite; documented at Mapimí + Schneeberg. Same {010} contact twin behavior but rarer in observed specimens (data sparser); conservative p=0.02."
+        }
+      ],
       "acid_dissolution": "Slowly soluble in dilute acid — Zn + AsO₄ released.",
       "habit": "bladed_lath",
       "color_rules": {"pale_pink": {"default": true, "trigger": "pale rose-pink to near-colorless (Zn end)"}, "carmine_red_cobaltoan": {"trigger": "Co > 0.5 — cobaltoan-koettigite, transitional toward erythrite carmine"}},
@@ -12806,6 +12878,7 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 4 — Pb²⁺ + Cu²⁺ + AsO₄³⁻ released.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": "Cu²⁺ + Pb²⁺", "status": "Non-fluorescent. Pb²⁺ + Cu²⁺ both quench."},
+      "_twin_laws_note": "Intentionally empty — duftite (orthorhombic P2₁2₁2₁, PbCu(AsO₄)(OH)) habit code 'botryoidal_crust' signals microcrystalline aggregate. The Tsumeb supergene specimens are pistachio-green crusts/botryoidal coatings on bayldonite/mimetite, not individual euhedral crystals. No documented growth twinning at this habit scale. v139 arsenate batch.",
       "twin_laws": [],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.",
       "habit": "botryoidal_crust",
@@ -12844,6 +12917,7 @@
       "thermal_decomp_reaction": "Acid dissolution at pH < 4 — Pb²⁺ + Cu²⁺ + AsO₄³⁻ released.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": "Cu²⁺", "status": "Non-fluorescent — Cu²⁺ quenches."},
+      "_twin_laws_note": "Intentionally empty — bayldonite (monoclinic C2/c, PbCu₃(AsO₄)₂(OH)₂) habit code 'spheroidal_mammillary' signals non-euhedral aggregate. Forms green spheroidal/mammillary masses at Tsumeb + Wheal Carpenter (Cornwall type), classic supergene Pb-Cu-As habit. No individual euhedral crystals to twin. v139 arsenate batch.",
       "twin_laws": [],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.",
       "habit": "spheroidal_mammillary",
@@ -15060,6 +15134,7 @@
         "As": 0.0
       },
       "fluorescence": null,
+      "_twin_laws_note": "Intentionally empty — metazeunerite (Cu(UO₂)₂(AsO₄)₂·8H₂O, tetragonal P4/nmm) is the dehydration paramorph of zeunerite at T > 75°C. Inherits zeunerite's documented {001} basal contact twin geometry through PARAMORPH_TRANSITIONS dispatch (16-paramorph-transitions.ts) rather than nucleating fresh. Adding own twin_laws would double-count the cascade. Same paramorph-inheritance rationale as meta-autunite + metatorbernite (v138 phosphate batch).",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 5.0,
