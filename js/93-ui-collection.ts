@@ -368,3 +368,23 @@ function collectAllFromRandom() {
   }
 }
 
+// Zen mode (idle) bulk collect. Differs from the three above in that
+// idle has no crystal-inventory panel to refresh — its crystals funnel
+// to the Record Player at idleFinish time and the on-screen UI is the
+// pie + chart + log, not per-crystal cards. So the only post-collect
+// refresh needed is the idle-collect-all-btn state (count goes to 0)
+// + the standard library/title-load surfaces handled by
+// collectAllCrystals.
+function collectAllFromIdle() {
+  if (typeof idleSim === 'undefined' || !idleSim) return;
+  const scenarioEl = document.getElementById('idle-scenario') as HTMLSelectElement | null;
+  const scenario = scenarioEl ? scenarioEl.value : null;
+  // 'random' is the idle-scenario picker's default value — keep that
+  // distinction in the meta so the Library shows "Zen random" vs the
+  // specific-scenario rollups separately.
+  const meta = { mode: 'zen', scenario };
+  if (collectAllCrystals(idleSim.crystals, () => meta) > 0) {
+    if (typeof idleRefreshCollectAllBtn === 'function') idleRefreshCollectAllBtn();
+  }
+}
+

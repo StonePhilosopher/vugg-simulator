@@ -270,6 +270,47 @@ function idleUpdateStatus() {
   const totalYears = idleSim.step * yearsPerStep;
   const timeStr = totalYears >= 1e6 ? `${(totalYears / 1e6).toFixed(1)}My` : `${(totalYears / 1000).toFixed(0)}ky`;
   el.textContent = `Step ${idleSim.step} · ${activeCrystals}/${totalCrystals} crystals · ${idleSim.conditions.temperature.toFixed(0)}°C · ${timeStr}`;
+  // Keep the Collect-all button label + enabled state in sync with the
+  // current sim. Cheap (no DOM walk, just one element + a count) and
+  // runs once per step alongside the other idle UI refreshes.
+  idleRefreshCollectAllBtn();
+}
+
+// Updates the #idle-collect-all-btn label + disabled state to match
+// the current idleSim crystals. Mirrors the _inventoryCollectAllHTML
+// gating pattern in 97c-ui-crystal-card.ts so the four modes feel
+// consistent: "💎 Collect all (N)" when there's something to collect,
+// "✓ All collected" when nothing remains, plain disabled label when
+// the sim hasn't started or has been finished.
+function idleRefreshCollectAllBtn() {
+  const btn = document.getElementById('idle-collect-all-btn') as HTMLButtonElement | null;
+  if (!btn) return;
+  if (typeof idleSim === 'undefined' || !idleSim) {
+    btn.disabled = true;
+    btn.textContent = '💎 Collect all';
+    btn.title = 'Start a Zen run to grow crystals you can collect';
+    return;
+  }
+  const uncollected = idleSim.crystals.filter((c: any) =>
+    c
+    && !c._collectedRecordId
+    && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0)
+  );
+  const n = uncollected.length;
+  if (n === 0) {
+    btn.disabled = true;
+    // Distinguish "haven't grown anything yet" from "everything that grew has been collected"
+    const anyGrew = idleSim.crystals.some((c: any) =>
+      (c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0);
+    btn.textContent = anyGrew ? '✓ All collected' : '💎 Collect all';
+    btn.title = anyGrew
+      ? 'Every collectable crystal from this run is already in your collection'
+      : 'No crystals have grown enough to collect yet';
+  } else {
+    btn.disabled = false;
+    btn.textContent = `💎 Collect all (${n})`;
+    btn.title = `Add every uncollected crystal (${n}) from this Zen run to your collection`;
+  }
 }
 
 function idleTogglePlay() {
@@ -297,6 +338,7 @@ function idleTogglePlay() {
   document.getElementById('idle-pause-btn').classList.remove('active');
   document.getElementById('idle-finish-btn').disabled = false;
   document.getElementById('idle-scenario').disabled = true;
+  idleRefreshCollectAllBtn();
 
   idleAnimFrame = requestAnimationFrame(idleTick);
 }
@@ -362,6 +404,11 @@ function idleFinish() {
   document.getElementById('idle-scenario').disabled = false;
 
   idleSim = null;
+  // Refresh AFTER nullifying idleSim so the button falls back to its
+  // initial "💎 Collect all" disabled label rather than freezing on the
+  // pre-finish count. Anything not collected before Finish lands in the
+  // Record Player view only, not the persistent collection.
+  idleRefreshCollectAllBtn();
 }
 
 function idleTick(now) {
@@ -434,6 +481,7 @@ function idlePickScenario(val) {
       ctx.fillStyle = '#070706';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+    idleRefreshCollectAllBtn();
   }
 }
 

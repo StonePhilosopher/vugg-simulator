@@ -3552,6 +3552,7 @@ Scenarios:
         <button id="idle-play-btn" onclick="idleTogglePlay()">▶️ Play</button>
         <button id="idle-pause-btn" onclick="idleTogglePause()" disabled>⏸️ Pause</button>
         <button id="idle-finish-btn" onclick="idleFinish()" disabled>🏁 Finish</button>
+        <button id="idle-collect-all-btn" onclick="collectAllFromIdle()" disabled title="Start a Zen run to grow crystals you can collect">💎 Collect all</button>
       </div>
       <div class="idle-speed">
         <label>Speed:</label>
@@ -46817,6 +46818,27 @@ function collectAllFromRandom() {
         renderRandomInventory();
     }
 }
+// Zen mode (idle) bulk collect. Differs from the three above in that
+// idle has no crystal-inventory panel to refresh — its crystals funnel
+// to the Record Player at idleFinish time and the on-screen UI is the
+// pie + chart + log, not per-crystal cards. So the only post-collect
+// refresh needed is the idle-collect-all-btn state (count goes to 0)
+// + the standard library/title-load surfaces handled by
+// collectAllCrystals.
+function collectAllFromIdle() {
+    if (typeof idleSim === 'undefined' || !idleSim)
+        return;
+    const scenarioEl = document.getElementById('idle-scenario');
+    const scenario = scenarioEl ? scenarioEl.value : null;
+    // 'random' is the idle-scenario picker's default value — keep that
+    // distinction in the meta so the Library shows "Zen random" vs the
+    // specific-scenario rollups separately.
+    const meta = { mode: 'zen', scenario };
+    if (collectAllCrystals(idleSim.crystals, () => meta) > 0) {
+        if (typeof idleRefreshCollectAllBtn === 'function')
+            idleRefreshCollectAllBtn();
+    }
+}
 
 // ── 94-ui-menu.js ──
 
@@ -56231,6 +56253,45 @@ function idleUpdateStatus() {
     const totalYears = idleSim.step * yearsPerStep;
     const timeStr = totalYears >= 1e6 ? `${(totalYears / 1e6).toFixed(1)}My` : `${(totalYears / 1000).toFixed(0)}ky`;
     el.textContent = `Step ${idleSim.step} · ${activeCrystals}/${totalCrystals} crystals · ${idleSim.conditions.temperature.toFixed(0)}°C · ${timeStr}`;
+    // Keep the Collect-all button label + enabled state in sync with the
+    // current sim. Cheap (no DOM walk, just one element + a count) and
+    // runs once per step alongside the other idle UI refreshes.
+    idleRefreshCollectAllBtn();
+}
+// Updates the #idle-collect-all-btn label + disabled state to match
+// the current idleSim crystals. Mirrors the _inventoryCollectAllHTML
+// gating pattern in 97c-ui-crystal-card.ts so the four modes feel
+// consistent: "💎 Collect all (N)" when there's something to collect,
+// "✓ All collected" when nothing remains, plain disabled label when
+// the sim hasn't started or has been finished.
+function idleRefreshCollectAllBtn() {
+    const btn = document.getElementById('idle-collect-all-btn');
+    if (!btn)
+        return;
+    if (typeof idleSim === 'undefined' || !idleSim) {
+        btn.disabled = true;
+        btn.textContent = '💎 Collect all';
+        btn.title = 'Start a Zen run to grow crystals you can collect';
+        return;
+    }
+    const uncollected = idleSim.crystals.filter((c) => c
+        && !c._collectedRecordId
+        && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0));
+    const n = uncollected.length;
+    if (n === 0) {
+        btn.disabled = true;
+        // Distinguish "haven't grown anything yet" from "everything that grew has been collected"
+        const anyGrew = idleSim.crystals.some((c) => (c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0);
+        btn.textContent = anyGrew ? '✓ All collected' : '💎 Collect all';
+        btn.title = anyGrew
+            ? 'Every collectable crystal from this run is already in your collection'
+            : 'No crystals have grown enough to collect yet';
+    }
+    else {
+        btn.disabled = false;
+        btn.textContent = `💎 Collect all (${n})`;
+        btn.title = `Add every uncollected crystal (${n}) from this Zen run to your collection`;
+    }
 }
 function idleTogglePlay() {
     if (idleRunning && !idlePaused)
@@ -56256,6 +56317,7 @@ function idleTogglePlay() {
     document.getElementById('idle-pause-btn').classList.remove('active');
     document.getElementById('idle-finish-btn').disabled = false;
     document.getElementById('idle-scenario').disabled = true;
+    idleRefreshCollectAllBtn();
     idleAnimFrame = requestAnimationFrame(idleTick);
 }
 function idleTogglePause() {
@@ -56314,6 +56376,11 @@ function idleFinish() {
     document.getElementById('idle-finish-btn').disabled = true;
     document.getElementById('idle-scenario').disabled = false;
     idleSim = null;
+    // Refresh AFTER nullifying idleSim so the button falls back to its
+    // initial "💎 Collect all" disabled label rather than freezing on the
+    // pre-finish count. Anything not collected before Finish lands in the
+    // Record Player view only, not the persistent collection.
+    idleRefreshCollectAllBtn();
 }
 function idleTick(now) {
     if (!idleRunning || idlePaused)
@@ -56380,6 +56447,7 @@ function idlePickScenario(val) {
             ctx.fillStyle = '#070706';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
+        idleRefreshCollectAllBtn();
     }
 }
 // On initial page load, update the title-screen Load Game button state
