@@ -309,5 +309,188 @@
     "space_group": "Pna2_1",
     "lattice": { "a": 13.65, "b": 11.71, "c": 8.18 },
     "_source": "Anthony Handbook v.V ferrimolybdite entry; Fe2(MoO4)3·nH2O hydrated ferric molybdate (data sparse; values approximate; entry may need refinement when better refinement is available)"
+  },
+
+  "hematite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 5.038, "c": 13.772 },
+    "_source": "Anthony Handbook of Mineralogy v.III hematite entry (handbookofmineralogy.org); α-Fe2O3, corundum-isostructural (same R-3c hex setting)"
+  },
+  "cuprite": {
+    "system": "cubic",
+    "space_group": "Pn-3m",
+    "lattice": { "a": 4.2685 },
+    "_source": "Anthony Handbook v.III cuprite entry; Cu2O, anti-fluorite-related cuprite structure (O at FCC sites, Cu in 1/4 of tetrahedral voids)"
+  },
+  "corundum": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.7607, "c": 12.9947 },
+    "_source": "Anthony Handbook v.III corundum entry; α-Al2O3, type structure for the corundum group (hematite + ilmenite isostructural)"
+  },
+  "ruby": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.7607, "c": 12.9947 },
+    "_source": "Cr-bearing corundum variety; same R-3c structure + lattice as corundum within composition error (Cr³⁺ substitution at Al sites; ~3-5% deviation max at high Cr)"
+  },
+  "sapphire": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.7607, "c": 12.9947 },
+    "_source": "Fe-Ti-bearing corundum variety; same R-3c structure + lattice as corundum within composition error"
+  },
+  "chromite": {
+    "system": "cubic",
+    "space_group": "Fd-3m",
+    "lattice": { "a": 8.378 },
+    "_source": "Anthony Handbook v.III chromite entry; FeCr2O4 spinel-group, isostructural with MgAl2O4 spinel + Fe3O4 magnetite"
+  },
+  "pyrolusite": {
+    "system": "tetragonal",
+    "space_group": "P4_2/mnm",
+    "lattice": { "a": 4.398, "c": 2.873 },
+    "_source": "Anthony Handbook v.III pyrolusite entry; β-MnO2 rutile-isostructural (same P4_2/mnm group as rutile + cassiterite)"
+  },
+  "brucite": {
+    "system": "trigonal",
+    "space_group": "P-3m1",
+    "lattice": { "a": 3.142, "c": 4.766 },
+    "_source": "Anthony Handbook v.III brucite entry; Mg(OH)2 layered hydroxide, type structure for the brucite group (gibbsite, portlandite, etc.)"
+  },
+
+  "scorodite": {
+    "system": "orthorhombic",
+    "space_group": "Pbca",
+    "lattice": { "a": 10.28, "b": 10.00, "c": 8.95 },
+    "_source": "Anthony Handbook of Mineralogy v.IV scorodite entry (handbookofmineralogy.org); FeAsO4·2H2O (variscite-group analogue)"
+  },
+  "mimetite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/m",
+    "lattice": { "a": 10.25, "c": 7.45 },
+    "_source": "Anthony Handbook v.IV mimetite entry; Pb5(AsO4)3Cl, apatite-group (chlorapatite arsenate analogue)"
+  },
+  "erythrite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 10.20, "b": 13.37, "c": 4.74, "beta": 104.7 },
+    "_source": "Anthony Handbook v.IV erythrite entry; Co3(AsO4)2·8H2O vivianite-group"
+  },
+  "annabergite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 10.18, "b": 13.31, "c": 4.73, "beta": 104.8 },
+    "_source": "Anthony Handbook v.IV annabergite entry; Ni3(AsO4)2·8H2O vivianite-group (erythrite-isostructural with Ni-for-Co)"
+  },
+  "olivenite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/n",
+    "lattice": { "a": 8.59, "b": 8.20, "c": 5.93, "beta": 90.1 },
+    "_source": "Anthony Handbook v.IV olivenite entry; Cu2(AsO4)(OH); β ≈ 90° → pseudo-orthorhombic with latent pseudo-tet (a ≈ b) — same family as libethenite (Cu2(PO4)(OH))"
+  },
+  "conichalcite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 7.39, "b": 9.16, "c": 5.83 },
+    "_source": "Anthony Handbook v.IV conichalcite entry; CaCu(AsO4)(OH) descloizite-group adelite analogue"
+  },
+  "pharmacolite": {
+    "system": "monoclinic",
+    "space_group": "Ia",
+    "lattice": { "a": 5.97, "b": 15.45, "c": 6.28, "beta": 114.93 },
+    "_source": "Anthony Handbook v.IV pharmacolite entry; CaHAsO4·2H2O (gypsum-analogue with HAsO4²⁻ replacing SO4²⁻)"
+  },
+  "haidingerite": {
+    "system": "orthorhombic",
+    "space_group": "Pbca",
+    "lattice": { "a": 7.94, "b": 16.10, "c": 7.91 },
+    "_source": "Anthony Handbook v.IV haidingerite entry; CaHAsO4·H2O (pharmacolite-dehydrate)"
+  },
+  "austinite": {
+    "system": "orthorhombic",
+    "space_group": "P2_12_12_1",
+    "lattice": { "a": 7.451, "b": 9.039, "c": 5.928 },
+    "_source": "Anthony Handbook v.IV austinite entry; CaZn(AsO4)(OH) descloizite-group; pseudo-orthorhombic with cell similar to conichalcite"
+  },
+  "legrandite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/n",
+    "lattice": { "a": 12.78, "b": 7.93, "c": 10.30, "beta": 104.5 },
+    "_source": "Anthony Handbook v.IV legrandite entry; Zn2(AsO4)(OH)·H2O (Mapimí + Sterling Hill localities)"
+  },
+  "koettigite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 10.24, "b": 13.41, "c": 4.76, "beta": 105.0 },
+    "_source": "Anthony Handbook v.IV koettigite entry; Zn3(AsO4)2·8H2O vivianite-group (erythrite-isostructural with Zn-for-Co)"
+  },
+
+  "pyromorphite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/m",
+    "lattice": { "a": 9.99, "c": 7.34 },
+    "_source": "Anthony Handbook of Mineralogy v.IV pyromorphite entry (handbookofmineralogy.org); Pb5(PO4)3Cl apatite-group"
+  },
+  "vanadinite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/m",
+    "lattice": { "a": 10.33, "c": 7.34 },
+    "_source": "Anthony Handbook v.IV vanadinite entry; Pb5(VO4)3Cl apatite-group (chlorapatite vanadate analogue)"
+  },
+  "apatite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/m",
+    "lattice": { "a": 9.397, "c": 6.878 },
+    "_source": "Anthony Handbook v.IV apatite entry; Ca5(PO4)3(F,Cl,OH) — fluorapatite cell values; the entire apatite group shares this P6_3/m structure"
+  },
+  "clinobisvanite": {
+    "system": "monoclinic",
+    "space_group": "I2/a",
+    "lattice": { "a": 5.195, "b": 11.701, "c": 5.092, "beta": 90.39 },
+    "_source": "BiVO4 monoclinic scheelite-distortion (Bierlein & Sleight 1975 Solid State Comm. 16:69-70); ferroelastic distortion from the tetragonal pucherite/scheelite-related parent — β ≈ 90° makes it pseudo-orthorhombic"
+  },
+  "descloizite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 7.59, "b": 9.42, "c": 6.06 },
+    "_source": "Anthony Handbook v.IV descloizite entry; PbZn(VO4)(OH), type for the descloizite group"
+  },
+  "mottramite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 7.67, "b": 9.40, "c": 6.04 },
+    "_source": "Anthony Handbook v.IV mottramite entry; PbCu(VO4)(OH), descloizite-isostructural with Cu-for-Zn"
+  },
+  "torbernite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 6.972, "c": 20.63 },
+    "_source": "Anthony Handbook v.IV torbernite entry; Cu(UO2)2(PO4)2·12H2O autunite-group layered uranyl phosphate"
+  },
+  "zeunerite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 7.176, "c": 20.84 },
+    "_source": "Anthony Handbook v.IV zeunerite entry; Cu(UO2)2(AsO4)2·12H2O torbernite-isostructural with As-for-P"
+  },
+  "carnotite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 10.47, "b": 8.41, "c": 6.91, "beta": 103.7 },
+    "_source": "Anthony Handbook v.IV carnotite entry; K2(UO2)2(VO4)2·3H2O layered uranyl vanadate"
+  },
+  "autunite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 7.00, "c": 20.67 },
+    "_source": "Anthony Handbook v.IV autunite entry; Ca(UO2)2(PO4)2·11H2O — type species for the autunite group"
+  },
+  "uranospinite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 7.16, "c": 20.71 },
+    "_source": "Anthony Handbook v.IV uranospinite entry; Ca(UO2)2(AsO4)2·10H2O autunite-group with As-for-P"
   }
 }
