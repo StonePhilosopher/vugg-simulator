@@ -377,6 +377,7 @@ Data-batch arc:
 - `3edd2e7` (v139) — arsenate batch (8 + 3 metadata, closes arsenate class; first batch with no test loosening; ships the famous Mapimí adamite heart twins)
 - `0e7ba5d` (v140) — sulfate batch (9 + 0 metadata, closes sulfate class; broadest cascade in the data-batch series; brochantite + v109-coverage loosenings in roughten-gill)
 - `6228605` (v141) — **THE FINAL BATCH** (15 + 9 metadata across 8 heterogeneous classes; closes the twin-laws gap entirely at 170/170; second batch with no test loosening; touches all five Anthony Handbook volumes)
+- `<v142>` — **CITATION CORRECTION**: adamite heart-twin entry shipped at v139 had a fabricated "Frondel 1948 Amer. Mineral. 33:545" citation that doesn't exist. Verified against the actual Anthony Handbook v.IV adamite entry (lists {101} as crystal form + cleavage, NOT a twin law) and the real Mrose et al. 1948 Ojuela paper (no twinning discussion). Pulled the entry back to empty `twin_laws` + an honest `_twin_laws_note` explaining the collector-market "heart twin" terminology has no formal mineralogical documentation. SIM_VERSION 141→142, one baseline drift (supergene_oxidation), no pinned tests broken. Coverage: 142 with twin_laws + 28 with `_twin_laws_note` = still 170/170.
 
 Bug fixes (from user reports):
 - `67a9721` — vector taxonomy: skeletal split from dendritic
@@ -409,7 +410,7 @@ The arc's durable contributions, in honor:
 
 4. **The paramorph-inheritance convention** (v138-v141) — meta-autunite, metatorbernite, metazeunerite, tincalconite all use `_twin_laws_note` documenting that they inherit parent twin geometry via PARAMORPH_TRANSITIONS rather than nucleating fresh. Engine-honest; future paramorphs follow the pattern.
 
-5. **The Mapimí adamite "heart twin"** got into the data (v139) — Frondel 1948 type-locality reference, {101} contact at p=0.05. Visually striking, well-documented, ready for visual-layer hand-rolling whenever someone picks up item 13. The data carries the citation; the geometry just needs building.
+5. ~~**The Mapimí adamite "heart twin"** got into the data (v139)~~ — **CORRECTED at v142.** The v139 entry shipped with a fabricated "Frondel 1948 Amer. Mineral. 33:545" citation; verification against Anthony Handbook v.IV + the real Mrose 1948 Ojuela paper showed neither documents adamite twinning. The collector-market "heart twin" terminology is real but has no formal mineralogical documentation. Pulled back to empty `twin_laws` + `_twin_laws_note` at v142. May revisit if formal characterization surfaces. **This is the canonical example of "citations need to be verified, not synthesized"** — see the v142 doc block in `js/15-version.ts` for the post-mortem and the citation conservatism rule that the vugg-add-twin-law skill now enforces.
 
 Welcome to the arc. The data work is done. Future agents picking this up should read RESEARCH-CRYSTAL-NATURALISM.md first, then `.claude/skills/vugg-add-twin-law/SKILL.md` (now in maintenance posture), then this doc. If you want to see what a class-batch commit looks like end-to-end, `6228605` (v141) is the most thorough — all five Anthony Handbook volumes cited, the per-class final-state table, the "engine renders dominant form" pattern documented in detail.
 

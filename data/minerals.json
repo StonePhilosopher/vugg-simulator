@@ -3532,16 +3532,8 @@
           "note": "heavy Cu turns off FL"
         }
       },
-      "twin_laws": [
-        {
-          "name": "heart_twin_101",
-          "miller_indices": "{101}",
-          "trigger": "growth",
-          "probability": 0.05,
-          "status": "newly_added",
-          "_source": "Frondel 1948 (American Mineralogist 33:545) — type description of \"heart-shaped\" adamite twins from Mapimí (Ojuela Mine, Durango, Mexico) + Anthony Handbook v.IV adamite section. Orthorhombic Pnnm, Zn₂(AsO₄)(OH). The {101} contact twin produces the diagnostic V-pair \"heart twin\" morphology that defines collector-grade Mapimí adamite. p=0.05 reflects the minor-common frequency of visible heart twins among well-formed Mapimí specimens; the lime-green/yellow Ojuela material is the field reference."
-        }
-      ],
+      "_twin_laws_note": "Mapimí Ojuela adamite specimens occasionally display heart-shaped V-pair silhouettes that the collector market labels \"heart twins,\" but no formal twin law is documented in standard mineralogical references. The authoritative Anthony Handbook v.IV adamite entry (Mineral Data Publishing 2001-2005, handbookofmineralogy.org) describes {101} as a dominant crystal form and a good cleavage direction, NOT as a twin plane. Mrose, Mayers & Wise 1948 (Amer. Mineral. 33:449-457) — the Ojuela adamite paper — documents morphology + chemistry but makes no twinning observations. The visual heart shape in collector specimens may be parallel growth, accidental juxtaposition, or possibly a true twin that hasn't been single-crystal X-ray characterized in the published literature. v142 correction: this entry shipped at v139 (commit 3edd2e7) with a fabricated 'Frondel 1948 Amer. Mineral. 33:545' citation that doesn't exist. Pulled back to empty twin_laws with this honest note. May revisit if formal documentation surfaces.",
+      "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 3.5,
         "reaction": "dissolves in acid",

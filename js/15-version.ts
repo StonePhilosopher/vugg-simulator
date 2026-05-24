@@ -7520,5 +7520,84 @@
 //            molybdate   COMPLETE (7/7)   <-- v141
 //            native      COMPLETE (8/8)   <-- v141
 //            oxide       COMPLETE (12/12) <-- v141
-const SIM_VERSION = 141;
+// ----------------------------------------------------------------
+// v142 (2026-05-23): CITATION CORRECTION — adamite heart twin pulled.
+//
+// During design conversation about future "trophy-tier" rare minerals,
+// the boss asked about the paragenesis of various rare specimens.
+// While drafting the Mapimí adamite heart-twin visual primitive (item
+// 13 in the handoff queue), I verified the v139 citation against the
+// authoritative Anthony Handbook of Mineralogy v.IV adamite entry
+// (Mineral Data Publishing 2001-2005, handbookofmineralogy.org) and
+// against the actual 1948 Ojuela paper (Mrose, Mayers & Wise, Amer.
+// Mineral. 33:449-457).
+//
+// What I found:
+//   - The Anthony Handbook lists {101} for adamite as a DOMINANT
+//     CRYSTAL FORM and as a GOOD CLEAVAGE direction — NOT as a twin
+//     law. The Handbook entry makes no mention of twinning.
+//   - The Mrose-Mayers-Wise 1948 Ojuela paper documents morphology +
+//     chemistry but makes no twinning observations.
+//   - The "Frondel 1948 (American Mineralogist 33:545)" citation I
+//     shipped at v139 (commit 3edd2e7) DOES NOT EXIST. I confabulated
+//     it from real elements (Frondel as a mineralogist name, 1948 as
+//     a plausible year, Amer. Mineral. as the journal, page 545 as a
+//     plausible number) and shipped it as if it were a real source.
+//
+// The visual heart-shape exists in Ojuela specimens — collector
+// market does sell "heart twins" — but whether they're true crystallo-
+// graphic twins on {101} or parallel growths or accidental juxta-
+// positions hasn't been characterized in published mineralogical
+// literature that I can find. Boss confirmed having seen one once
+// in a wealthy collection but couldn't vouch for the crystallography
+// either.
+//
+// THE CORRECTION
+//
+//   data/minerals.json adamite entry:
+//     - twin_laws: pulled back to []
+//     - _twin_laws_note: added, explaining the situation honestly
+//       (collector morphology exists, formal twin law not documented,
+//       v139 citation was fabricated)
+//
+//   This drops 1 rng.random() draw per adamite nucleation. Empirically
+//   shifts the supergene_oxidation baseline (the scenario where
+//   adamite is foundational); auto-handled by regenerating
+//   seed42_v142.json. No pinned tests drift; no test loosening
+//   required.
+//
+// COVERAGE UPDATE
+//
+//   142 minerals with twin_laws (was 143 at v141).
+//   28 minerals with _twin_laws_note (was 27 at v141).
+//   170 / 170 still accounted for.
+//
+//   Per-class adjustment:
+//     arsenate    COMPLETE (15/15) — was 12 twin_laws + 3 notes;
+//                                    now 11 twin_laws + 4 notes
+//   All other classes unchanged from v141.
+//
+// LESSON (for future agents reading this block)
+//
+//   Citation conservatism rule going forward: specific paper-page
+//   combinations (e.g. "Smith 1972 page 245") are the high-risk
+//   fabrication zone. Web-search any specific citation before shipping
+//   it. General references ("Anthony Handbook v.X mineral section",
+//   "Mindat habit notes", "Dana 8th ed.") are verifiable + safer to
+//   default to when the specific paper isn't directly accessible.
+//
+//   The vugg-add-twin-law skill is being updated alongside this
+//   commit to bake the rule in.
+//
+// HONESTY NOTE
+//
+//   The v141 commit message + the handoff doc both reference
+//   "Frondel 1948" for adamite — those carry the fabricated citation
+//   forward in the historical commit trail. The git history can't
+//   be rewritten (would require a force-push to main + invalidate
+//   any clones), but this v142 block documents the correction so
+//   future readers tracing the adamite entry's history land on the
+//   truth rather than the fabrication. Same with the handoff doc:
+//   updated in this commit to note the v142 correction inline.
+const SIM_VERSION = 142;
 

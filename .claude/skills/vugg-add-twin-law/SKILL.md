@@ -68,7 +68,11 @@ Each twin_laws array entry is an object:
 
 - **status**: `"newly_added"` for new entries, `"retuned"` when bumping an existing probability.
 
-- **_source**: Reference citation. Prefer Dana 8th ed., Ramdohr 1980, Hurlbut & Klein 23rd ed., Strunz 9th ed., or peer-reviewed papers. For poorly documented minerals, note `"data sparse — conservative p"`.
+- **_source**: Reference citation. Prefer Dana 8th ed., Ramdohr 1980, Hurlbut & Klein 23rd ed., Strunz 9th ed., the Anthony et al. Handbook of Mineralogy (v.I-v.V, available free at handbookofmineralogy.org), or peer-reviewed papers. For poorly documented minerals, note `"data sparse — conservative p"`.
+
+  **Citation conservatism rule (post-v142):** specific paper-page combinations (e.g. "Smith 1972 page 245") are the high-risk fabrication zone. WEB-SEARCH any specific citation before shipping it. Default to general references ("Anthony Handbook v.X mineral section", "Mindat habit notes", "Dana 8th ed. — mineral name") when the specific paper isn't directly verifiable. The v142 adamite correction (commit history) documents what happens when you don't follow this rule: a confabulated "Frondel 1948 Amer. Mineral. 33:545" shipped at v139, was caught during v142 verification, and forced a retraction commit + SIM_VERSION bump.
+
+  **Why this matters more for twin_laws than for chemistry data:** twin_laws entries are LEAF data in the engine's constraint graph — they decorate the rendered crystal but don't propagate to other systems. A confabulated value here doesn't trip baseline tests, doesn't show up as a chemistry contradiction. The constraint network can't fact-check it. So the discipline has to come from outside: external verification (web search, Anthony Handbook, Mindat), citation conservatism (general references over specific paper-page combinations), or honest uncertainty marking via `_twin_laws_note` for collector-folklore territory.
 
 - **_retune_note**: Required when bumping an existing entry's probability. Explain why, with field-frequency context if possible.
 
