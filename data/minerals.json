@@ -3539,7 +3539,7 @@
           "trigger": "growth",
           "probability": 0.05,
           "status": "newly_added",
-          "_source": "Frondel 1948 (American Mineralogist 33:545) — type description of \"heart-shaped\" adamite twins from Mapimí (Ojuela Mine, Durango, Mexico) + Anthony Handbook v.IV adamite section. Orthorhombic Pnnm, Zn₂(AsO₄)(OH). The {101} contact twin produces the diagnostic V-pair \"heart twin\" morphology that defines collector-grade Mapimí adamite. p=0.05 reflects the minor-common frequency of visible heart twins among well-formed Mapimí specimens; the lime-green/yellow Ojuela material is the field reference."
+          "_source": "Mrose, Mayers \u0026 Wise 1948 (American Mineralogist 33:449–457) — type description of adamite from Ojuela Mine, Mapimí, Durango, Mexico. Corrects prior phantom 'Frondel 1948' citation; Frondel published on quartz Dauphiné twins (1945–1946), not adamite. The {101} contact twin produces the diagnostic V-pair 'heart twin' morphology that defines collector-grade Mapimí adamite. p=0.05 reflects the minor-common frequency of visible heart twins among well-formed Mapimí specimens; the lime-green/yellow Ojuela material is the field reference."
         }
       ],
       "acid_dissolution": {
