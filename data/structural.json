@@ -728,5 +728,198 @@
     "space_group": "Pncm",
     "lattice": { "a": 4.646, "b": 5.483, "c": 18.486 },
     "_source": "Anthony Handbook v.II prehnite entry; Ca2Al(AlSi3O10)(OH)2 sheet silicate (Pncm pseudo-tetragonal a ≈ b)"
+  },
+
+  "sphalerite": {
+    "system": "cubic",
+    "space_group": "F-43m",
+    "lattice": { "a": 5.4093 },
+    "_source": "Anthony Handbook of Mineralogy v.I sphalerite entry (handbookofmineralogy.org); ZnS — type structure for the zincblende family (F-43m, non-centrosymmetric cubic; the diamond cubic with Zn + S on the two FCC sublattices)"
+  },
+  "wurtzite": {
+    "system": "hexagonal",
+    "space_group": "P6_3mc",
+    "lattice": { "a": 3.823, "c": 6.261 },
+    "_source": "Anthony Handbook v.I wurtzite entry; ZnS hexagonal polymorph (high-T form vs sphalerite low-T) — type for the wurtzite structure family"
+  },
+  "chalcopyrite": {
+    "system": "tetragonal",
+    "space_group": "I-42d",
+    "lattice": { "a": 5.289, "c": 10.423 },
+    "_source": "Anthony Handbook v.I chalcopyrite entry; CuFeS2 sphalerite-superstructure with ordered Cu/Fe → tetragonal distortion (c/a = 1.97 ≈ 2, the doubled-cell signature)"
+  },
+  "arsenopyrite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 5.741, "b": 5.677, "c": 5.785, "beta": 112.22 },
+    "_source": "Anthony Handbook v.I arsenopyrite entry; FeAsS — distorted marcasite-derivative (a ≈ b ≈ c, strongly pseudo-cubic monoclinic)"
+  },
+  "tetrahedrite": {
+    "system": "cubic",
+    "space_group": "I-43m",
+    "lattice": { "a": 10.32 },
+    "_source": "Anthony Handbook v.I tetrahedrite entry; (Cu,Ag,Fe,Zn,Hg)12Sb4S13 — tetrahedrite-group sulfosalt; non-centrosymmetric cubic"
+  },
+  "tennantite": {
+    "system": "cubic",
+    "space_group": "I-43m",
+    "lattice": { "a": 10.18 },
+    "_source": "Anthony Handbook v.I tennantite entry; (Cu,Fe)12As4S13 — As-end-member of the tetrahedrite-tennantite series (tetrahedrite-isostructural)"
+  },
+  "bornite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 5.50 },
+    "_source": "Anthony Handbook v.I bornite entry; Cu5FeS4 — HT cubic disordered form used here as the pseudo-cubic parent. LT form has a 4a-2a-2a superstructure (Pbca, a ≈ 10.94 × 21.86 × 21.86 Å); field samples are usually the metastable HT pseudo-cubic"
+  },
+  "chalcocite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 15.246, "b": 11.884, "c": 13.494, "beta": 116.35 },
+    "_source": "Anthony Handbook v.I chalcocite entry; α-Cu2S (low-T monoclinic). Inverts to hexagonal P6_3/mmc above 103°C and to cubic Fm-3m above 435°C — multi-step polymorphism documented in Will et al. 2002"
+  },
+  "covellite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/mmc",
+    "lattice": { "a": 3.794, "c": 16.34 },
+    "_source": "Anthony Handbook v.I covellite entry; CuS — layered structure with alternating Cu-S sheets; the long c-axis reflects the layer stacking"
+  },
+  "stibnite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 11.30, "b": 3.836, "c": 11.23 },
+    "_source": "Anthony Handbook v.I stibnite entry; Sb2S3 — type structure for the stibnite group; pseudo-tetragonal a ≈ c"
+  },
+  "bismuthinite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 11.30, "b": 3.97, "c": 11.15 },
+    "_source": "Anthony Handbook v.I bismuthinite entry; Bi2S3 — stibnite-isostructural with Bi-for-Sb"
+  },
+  "acanthite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 4.231, "b": 6.930, "c": 7.862, "beta": 99.61 },
+    "_source": "Anthony Handbook v.I acanthite entry; α-Ag2S (LT monoclinic). Inverts to argentite (cubic Im-3m) above 173°C — paramorphic 'acanthite-after-argentite' habit is the typical field expression"
+  },
+  "argentite": {
+    "system": "cubic",
+    "space_group": "Im-3m",
+    "lattice": { "a": 4.890 },
+    "_source": "Anthony Handbook v.I argentite entry; β-Ag2S (HT cubic), stable only above 173°C; field specimens are paramorphs (acanthite-after-argentite). Listed here for completeness with the vugg engine's argentite token"
+  },
+  "nickeline": {
+    "system": "hexagonal",
+    "space_group": "P6_3/mmc",
+    "lattice": { "a": 3.62, "c": 5.03 },
+    "_source": "Anthony Handbook v.I nickeline entry; NiAs — type structure for the nickeline group (NiAs-type, a fundamental binary sulfide/arsenide structure type)"
+  },
+  "millerite": {
+    "system": "trigonal",
+    "space_group": "R3m",
+    "lattice": { "a": 9.62, "c": 3.16 },
+    "_source": "Anthony Handbook v.I millerite entry; β-NiS (LT trigonal polymorph; dimorphic with hexagonal nickeline-isostructural γ-NiS above 379°C)"
+  },
+  "cobaltite": {
+    "system": "cubic",
+    "space_group": "Pa-3",
+    "lattice": { "a": 5.582 },
+    "_source": "Anthony Handbook v.I cobaltite entry; CoAsS — pyrite-class (Pa-3) with ordered As-S replacing the pyrite S-S dumbbell"
+  },
+  "calaverite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 7.189, "b": 4.408, "c": 5.072, "beta": 90.04 },
+    "_source": "Anthony Handbook v.I calaverite entry; AuTe2 — incommensurate modulated structure (the average is C2/m, β ≈ 90° → pseudo-orthorhombic; the modulation reflects Au-Te ordering)"
+  },
+  "proustite": {
+    "system": "trigonal",
+    "space_group": "R3c",
+    "lattice": { "a": 10.79, "c": 8.69 },
+    "_source": "Anthony Handbook v.I proustite entry; Ag3AsS3 — non-centrosymmetric trigonal; ruby silver"
+  },
+  "pyrargyrite": {
+    "system": "trigonal",
+    "space_group": "R3c",
+    "lattice": { "a": 11.06, "c": 8.73 },
+    "_source": "Anthony Handbook v.I pyrargyrite entry; Ag3SbS3 — proustite-isostructural with Sb-for-As; dark ruby silver"
+  },
+  "skutterudite": {
+    "system": "cubic",
+    "space_group": "Im-3",
+    "lattice": { "a": 8.213 },
+    "_source": "Anthony Handbook v.I skutterudite entry; CoAs3 — type structure for the skutterudite group; complex sphalerite-derivative with As4 squares filling the cubic framework"
+  },
+  "safflorite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 5.05, "b": 5.86, "c": 2.95 },
+    "_source": "Anthony Handbook v.I safflorite entry; CoAs2 loellingite-isostructural; member of the marcasite-loellingite structure family"
+  },
+  "rammelsbergite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 4.79, "b": 5.79, "c": 2.84 },
+    "_source": "Anthony Handbook v.I rammelsbergite entry; NiAs2 loellingite-isostructural"
+  },
+  "loellingite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 5.30, "b": 5.99, "c": 2.88 },
+    "_source": "Anthony Handbook v.I loellingite entry; FeAs2 — type structure for the loellingite group (same Pnnm space group as marcasite, with one M-X bond shortened)"
+  },
+  "enargite": {
+    "system": "orthorhombic",
+    "space_group": "Pmn2_1",
+    "lattice": { "a": 7.407, "b": 6.436, "c": 6.154 },
+    "_source": "Anthony Handbook v.I enargite entry; Cu3AsS4 — wurtzite superstructure with ordered Cu/As → orthorhombic distortion; the Sb-analogue is famatinite (tetragonal)"
+  },
+  "clausthalite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 6.124 },
+    "_source": "Anthony Handbook v.I clausthalite entry; PbSe — galena-isostructural with Se-for-S"
+  },
+  "greenockite": {
+    "system": "hexagonal",
+    "space_group": "P6_3mc",
+    "lattice": { "a": 4.137, "c": 6.716 },
+    "_source": "Anthony Handbook v.I greenockite entry; α-CdS — wurtzite-isostructural with Cd-for-Zn"
+  },
+  "hessite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 8.09, "b": 4.48, "c": 8.96, "beta": 123.5 },
+    "_source": "Anthony Handbook v.I hessite entry; α-Ag2Te (LT monoclinic). Inverts to cubic Fm-3m form above 145°C"
+  },
+  "naumannite": {
+    "system": "orthorhombic",
+    "space_group": "P2_12_12_1",
+    "lattice": { "a": 4.333, "b": 7.062, "c": 7.764 },
+    "_source": "Anthony Handbook v.I naumannite entry; β-Ag2Se (LT orthorhombic). Inverts to cubic Im-3m above 130°C — Ag chalcogenide series"
+  },
+  "sylvanite": {
+    "system": "monoclinic",
+    "space_group": "P2/c",
+    "lattice": { "a": 8.96, "b": 4.49, "c": 14.62, "beta": 145.3 },
+    "_source": "Anthony Handbook v.I sylvanite entry; AuAgTe4 — ordered Au-Ag telluride; large β angle reflects the layered structure"
+  },
+  "cinnabar": {
+    "system": "trigonal",
+    "space_group": "P3_121",
+    "lattice": { "a": 4.149, "c": 9.495 },
+    "_source": "Anthony Handbook v.I cinnabar entry; α-HgS — chiral trigonal (helical Hg-S chains along c); the famous cinnabar-twin is the {1010}/{0001} interpenetration twin"
+  },
+  "realgar": {
+    "system": "monoclinic",
+    "space_group": "P2_1/n",
+    "lattice": { "a": 9.325, "b": 13.55, "c": 6.587, "beta": 106.4 },
+    "_source": "Anthony Handbook v.I realgar entry; α-As4S4 — molecular crystal with As4S4 cage molecules; photoactive (degrades to pararealgar β-As4S4 under light)"
+  },
+  "orpiment": {
+    "system": "monoclinic",
+    "space_group": "P2_1/n",
+    "lattice": { "a": 11.49, "b": 9.59, "c": 4.25, "beta": 90.45 },
+    "_source": "Anthony Handbook v.I orpiment entry; As2S3 — layered structure of As2S3 sheets; β ≈ 90° → pseudo-orthorhombic"
   }
 }
