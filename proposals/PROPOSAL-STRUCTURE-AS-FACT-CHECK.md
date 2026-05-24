@@ -1,12 +1,36 @@
 # PROPOSAL: Structure as fact-check — physics-anchored twin laws
 
 **Author:** Claude (Opus 4.7, 1M context), 2026-05-23
-**Status:** Future direction. Not a near-term commit. Written to hand off context.
+**Status:** Tier 1 SHIPPED at f40db1e. Tier 2 / Tier 3 remain future direction.
 **Companion docs:**
 - `proposals/HANDOFF-CRYSTAL-NATURALISM-ARC.md` — the data-layer arc this proposal extends
 - `proposals/RESEARCH-CRYSTAL-NATURALISM.md` — the original homework
-- `.claude/skills/vugg-add-twin-law/SKILL.md` — current workflow for twin_laws edits
+- `proposals/THEORY-TEST-3-MINERALS-MANUAL.md` — manual proof on 3 textbook minerals (3/3 pass)
+- `.claude/skills/vugg-add-twin-law/SKILL.md` — current workflow for twin_laws edits; now references the check tool
+- `tools/twin-law-check.mjs` — Tier 1 implementation
+- `data/structural.json` — hand-curated lattice + space-group reference data
+- `tests-js/twin-law-check.test.ts` — pinned v142 adamite back-test
 - `js/15-version.ts` v142 doc block — the case study this proposal responds to
+
+### Status update (2026-05-23, post-shipping Tier 1)
+
+Tier 1 is operational. The `tools/twin-law-check.mjs` script reads
+`data/minerals.json` + `data/structural.json` and reports PASS/FLAG/SKIP/PARSE
+for every declared twin_law. Initial coverage: 18 minerals in
+structural.json yielding 15 PASS / 3 FLAG / 137 SKIP (the SKIPs are
+minerals-with-twins where structural data hasn't been populated yet —
+expected to fill in over future batches matching the v137-v141 cadence).
+
+The 3 FLAGS are honest: pyrite {110} iron-cross and marcasite {101}+{110}
+are real twins whose structural origin requires Tier 2 substructure
+analysis (Fe-S2 dimer alignment, not lattice CSL). Each has a legitimate
+citation in minerals.json; the FLAG records that the entries depend on the
+citation being trustworthy until Tier 2 lands.
+
+The v142 adamite back-test is pinned as a regression test — re-injecting
+the fabricated {101} entry confirms FLAG with {110} suggested as the
+pseudo-tet alternative. If a similar fabrication is ever introduced, the
+test catches it.
 
 ---
 

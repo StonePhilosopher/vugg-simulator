@@ -219,7 +219,16 @@ False positives of type 2 are diagnostically useful — they identify entries th
 
 3 of 3 textbook twin laws are reproduced by structural analysis. The fabricated adamite {101} is correctly rejected by the same analysis. The structural-fact-check approach is not speculative — it's an established research program (Nespolo, Ferraris, Souvignier and collaborators have been publishing this for two decades), and applying it to the vugg-simulator's data layer is largely a software-engineering exercise of wrapping existing tools (Bilbao server + COD CIFs + a CSL library) in a `twin-law-check.mjs` script.
 
-### Tier 1 is buildable as described
+### Tier 1 is buildable as described — and is now built
+
+**Update (2026-05-23, post-shipping):** Tier 1 landed at commit f40db1e as
+`tools/twin-law-check.mjs` + `data/structural.json` + `tests-js/twin-law-check.test.ts`.
+Initial coverage: 18 minerals in structural.json giving 15 PASS / 3 FLAG /
+137 SKIP. The v142 adamite back-test is pinned as a regression test —
+re-injecting the fabricated {101} entry yields FLAG with {110} suggested
+as the pseudo-tet alternative. See the `vugg-add-twin-law` skill for the
+integrated workflow (run the check on any new twin_laws entry; populate
+structural.json alongside).
 
 The proposal's Tier 1 — a sanity-check tool that takes a mineral name, fetches its CIF, computes low-Σ CSL candidates, and flags declared twin_laws that don't match — is well-defined and would work. The manual proof above is essentially what the tool would automate. Effort estimate from the original proposal (3-4 days) seems right.
 

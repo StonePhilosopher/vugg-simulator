@@ -1,6 +1,6 @@
 ---
 name: vugg-add-twin-law
-description: Add or update twin_laws entries in data/minerals.json for the vugg-simulator. Post-v141 the long-tail gap is CLOSED — 170/170 minerals are accounted for (143 with twin_laws + 27 with `_twin_laws_note`). Use this skill when adding a NEW mineral via vugg-add-mineral (every new mineral should ship with twin_laws data from the start), when revising a probability after new field evidence, or when adding new twin entries to a mineral that already has some. Documents the JSON shape, probability calibration, common laws by mineral class, source citation patterns, the cascade workflow, and the `_twin_laws_note` convention for intentionally-empty entries.
+description: Add or update twin_laws entries in data/minerals.json for the vugg-simulator. Post-v141 the long-tail gap is CLOSED — 170/170 minerals are accounted for (143 with twin_laws + 27 with `_twin_laws_note`). Use this skill when adding a NEW mineral via vugg-add-mineral (every new mineral should ship with twin_laws data from the start), when revising a probability after new field evidence, or when adding new twin entries to a mineral that already has some. Documents the JSON shape, probability calibration, common laws by mineral class, source citation patterns, the cascade workflow, the `_twin_laws_note` convention for intentionally-empty entries, AND (post-v142) the structural fact-check workflow — `tools/twin-law-check.mjs` validates declared Miller indices against structurally-predicted twin candidates from `data/structural.json`, surfacing fabricated citations like the v139 adamite case.
 ---
 
 # Add twin_laws Entry
@@ -115,7 +115,16 @@ npm run build       # rebuild bundle (data is loaded at runtime, but verify no J
 npm run typecheck   # 0 errors
 npm test            # all tests pass — data-only changes don't trigger baseline regen
                     # unless SIM_VERSION bumps (which it shouldn't for data-only)
+
+# Structural fact-check (Tier 1 of PROPOSAL-STRUCTURE-AS-FACT-CHECK.md, shipped f40db1e):
+node tools/twin-law-check.mjs <mineral>     # single-mineral detail
+node tools/twin-law-check.mjs --flagged     # all currently-flagged entries
 ```
+
+The check tool compares declared miller_indices against structurally-predicted
+candidates derived from the unit cell + space group in `data/structural.json`.
+See the "Structural fact-check" section below for what to do with each verdict
+and when to populate structural.json for a new mineral.
 
 **Important:** Adding twin_laws to a mineral with NO previous twin_laws DOES create new RNG draws, because `_rollSpontaneousTwin` calls `rng.random() < prob` per declared twin law per nucleation — regardless of whether the twin fires. Even p=0.0 still consumes the random() draw, so rolling back probabilities does NOT prevent cascade. The only escape paths are:
 
@@ -166,11 +175,79 @@ For a session adding N minerals:
 - **Twin is mineral-pair-specific** (epitaxy, not pure twinning): NOT a twin_law. Don't add it here.
 - **Mineral never twins** (cleavage flake-only minerals like molybdenite): add ONE entry at p=0.005 with `"_source": "no documented twinning — placeholder"` OR leave twin_laws empty. Both are valid. Empty array is more honest.
 
+## Structural fact-check (post-v142, Tier 1 shipped at f40db1e)
+
+After a twin_laws entry is added, the `tools/twin-law-check.mjs` script
+checks whether the declared `miller_indices` match a structurally-predicted
+twin candidate derived from the mineral's unit cell + space group (in
+`data/structural.json`). This catches confabulated citations like the
+v139→v142 adamite case automatically — the v139 `{101}` entry would have
+been FLAGGED at commit time, prompting citation verification.
+
+### Verdicts
+
+- **✓ PASS** — the declared plane matches a structurally-predicted candidate
+  (pseudo-symmetry, Σ3 CSL for cubic, etc.). Entry is consistent with the
+  lattice geometry. Ship.
+- **⚠ FLAG** — no specific structural prediction matches this plane. The
+  entry needs human review: is the citation real? Or is this a
+  legitimately-subtle twin (marcasite spearhead, pyrite iron-cross) where
+  the structural origin is at the atom-position level not lattice level?
+  - If the citation is real → ship; the FLAG just notes that the entry
+    depends on the citation being trustworthy
+  - If the citation is fake → that's a v139→v142 catch; pull the entry
+- **? SKIP** — no structural data populated for this mineral yet. The
+  tool can't check the entry. To turn SKIP into PASS/FLAG, add the
+  mineral to `data/structural.json` (see below)
+- **✗ PARSE** — `miller_indices` field is unparseable (`b_axis`, `undefined`,
+  `{various}`, etc.) — a data bug worth fixing
+
+### When to populate structural.json
+
+If you're adding twin_laws to a mineral that doesn't have a structural
+entry yet, **add the structural data in the same commit**. This keeps the
+audit coverage growing alongside the twin_laws data. Schema:
+
+```json
+{
+  "<mineralname>": {
+    "system": "cubic" | "tetragonal" | "orthorhombic" | "monoclinic" | "trigonal" | "hexagonal" | "triclinic",
+    "space_group": "<Hermann-Mauguin symbol e.g. Fd-3m, Pmcn, C2/m>",
+    "lattice": { "a": <Å>, "b": <Å (omit for cubic/tet/trig/hex)>, "c": <Å (omit for cubic)>, "beta": <° (monoclinic only)> },
+    "_source": "<citation — author year (journal volume:pages) — web-verified per v142 rule>"
+  }
+}
+```
+
+Sources for lattice data: the same Anthony Handbook PDFs used for twin_laws
+citations include cell parameters in the "Crystal Data" block. Wikipedia's
+mineral infoboxes usually cite primary refinements. The Crystallography
+Open Database (http://www.crystallography.net) has CIFs for most species.
+Per the v142 citation conservatism rule, **web-verify every specific paper
+citation before adding it to structural.json** — don't synthesize values
+from memory.
+
+### What the structural-check does NOT do
+
+- Doesn't predict twin frequencies (that's Tier 2 — needs full atom positions)
+- Doesn't fetch CIFs live — `structural.json` is hand-curated
+- Doesn't auto-reject FLAGGED entries — it surfaces them for human judgment
+
+See `proposals/PROPOSAL-STRUCTURE-AS-FACT-CHECK.md` for the full framework,
+`proposals/THEORY-TEST-3-MINERALS-MANUAL.md` for the 3/3 manual proof, and
+`tests-js/twin-law-check.test.ts` for the pinned v142 back-test.
+
 ## Cross-References
 
 - **Already-twinned minerals** (62 of 170) → see `data/minerals.json` for examples. Quartz, feldspars, calcite, dolomite, the iconic twins (fluorite, selenite, galena, aragonite, cerussite, marcasite, pyrite) all already have entries.
 - **The 9 iconic-twin primitives** in `js/99c-renderer-primitives.ts` (commits 57a9108 → b34bda7) show the visual end-state for the most documented twins. Newly-added twin_laws don't get primitives until someone hand-rolls the geometry. Adding twin_laws alone is the DATA layer; the visual layer needs its own work.
 - **Research doc**: `proposals/RESEARCH-CRYSTAL-NATURALISM.md` §6.2 has additional per-mineral twin notes worth cross-referencing.
+- **Structural fact-check (post-v142):**
+  - `tools/twin-law-check.mjs` — Tier 1 sanity-check script
+  - `data/structural.json` — hand-curated lattice + space-group reference data (18 minerals at f40db1e; populate as you go)
+  - `tests-js/twin-law-check.test.ts` — unit tests including the pinned v142 adamite back-test
+  - `proposals/PROPOSAL-STRUCTURE-AS-FACT-CHECK.md` — the framework
+  - `proposals/THEORY-TEST-3-MINERALS-MANUAL.md` — manual proof, 3/3 pass
 
 ## Why This Skill Exists
 
@@ -206,6 +283,8 @@ VERIFICATION
   npm run build       <chars>
   npm run typecheck   0 errors
   npm test            <N> passed, 0 failed
+  node tools/twin-law-check.mjs <mineral>   ✓ PASS / ⚠ FLAG (with reason)
+                                              # if SKIP, populate structural.json too
 
 NEXT
   <which minerals/classes remain>

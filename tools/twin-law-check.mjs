@@ -6,6 +6,13 @@
  * manually in proposals/THEORY-TEST-3-MINERALS-MANUAL.md (3/3 textbook cases
  * + adamite back-test).
  *
+ * SEE ALSO: .claude/skills/vugg-add-twin-law/SKILL.md
+ *   The skill documents when to run this tool, what each verdict means,
+ *   and how to populate data/structural.json when adding a new mineral
+ *   whose lattice + space-group data hasn't been entered yet. Every new
+ *   twin_laws entry added via that skill should also have a structural.json
+ *   entry so the audit coverage grows alongside the twin_laws data.
+ *
  * The job: for each declared twin_law in data/minerals.json, check whether the
  * Miller indices match a structurally-predicted twin plane derived from the
  * crystal's unit cell + space group (data/structural.json). Pass-list shows

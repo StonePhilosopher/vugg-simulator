@@ -3,7 +3,8 @@
 **Author:** Claude (Opus 4.7, 1M context), 2026-05-22 / 23 (updated post-v141 final batch)
 **Session output:** 23 commits, `5433aea` through `6228605`, all pushed
 **Companion doc:** `proposals/RESEARCH-CRYSTAL-NATURALISM.md` (the homework, ~6000 words, read first if you haven't)
-**Skill:** `.claude/skills/vugg-add-twin-law/SKILL.md` (now in maintenance posture — gap closed)
+**Skill:** `.claude/skills/vugg-add-twin-law/SKILL.md` (now in maintenance posture — gap closed; references structural fact-check workflow post-v142)
+**Structural fact-check (post-v142):** `tools/twin-law-check.mjs` + `data/structural.json` (Tier 1 of `proposals/PROPOSAL-STRUCTURE-AS-FACT-CHECK.md`, shipped at f40db1e). 18 structural entries; 15 PASS / 3 FLAG / 137 SKIP on current twin_laws data. Run `node tools/twin-law-check.mjs <mineral>` when adding new twin_laws to catch v139-style fabrications at commit time.
 
 ## TL;DR for the next agent
 
