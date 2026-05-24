@@ -215,6 +215,24 @@ export function generateCandidates(struct) {
         reason: 'tetragonal {011} elbow twin (rutile-type, axis-equivalent to {101})',
         strength: 'strong',
       });
+      // {001} basal twin: documented in scheelite-class minerals (scheelite,
+      // wulfenite, powellite, stolzite) and other I41/a tetragonal species.
+      // Structural basis: the 4-fold screw axis along c is broken by the
+      // twin operation (180° rotation about in-plane axis), giving a
+      // basal-mirror composition plane.
+      candidates.push({
+        indices: [0, 0, 1],
+        reason: 'tetragonal {001} basal twin (scheelite-class)',
+        strength: 'moderate',
+      });
+      // {112} composition: documented in chalcopyrite (I-42d) and related
+      // tetragonal sphalerite-derivatives. Sphalerite-class {111} maps to
+      // {112} when the cubic symmetry is broken by the c/a > 1 distortion.
+      candidates.push({
+        indices: [1, 1, 2],
+        reason: 'tetragonal {112} twin (chalcopyrite-class, sphalerite-derivative)',
+        strength: 'moderate',
+      });
       break;
     }
 

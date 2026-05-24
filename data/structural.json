@@ -133,6 +133,181 @@
     "system": "monoclinic",
     "space_group": "C2/m",
     "lattice": { "a": 8.56, "b": 12.96, "c": 7.21, "beta": 116.0 },
-    "_source": "Anthony Handbook v.V orthoclase entry; representative high-Or feldspar values"
+    "_source": "Anthony Handbook of Mineralogy v.II orthoclase entry (handbookofmineralogy.org); representative high-Or feldspar values"
+  },
+
+  "tremolite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 9.84, "b": 18.05, "c": 5.275, "beta": 104.7 },
+    "_source": "Hawthorne 1981 (Reviews in Mineralogy v.9A, amphibole crystal chemistry); Anthony Handbook v.II tremolite entry"
+  },
+  "actinolite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 9.84, "b": 18.10, "c": 5.28, "beta": 104.7 },
+    "_source": "Tremolite-actinolite solid-solution series (Hawthorne 1981 + 2007); slight cell expansion vs. tremolite from Fe²⁺-for-Mg substitution; Anthony Handbook v.II actinolite entry"
+  },
+
+  "halite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 5.6402 },
+    "_source": "Anthony Handbook v.III halite entry (handbookofmineralogy.org); canonical NaCl rock-salt structure, standard reference"
+  },
+  "sylvite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 6.2917 },
+    "_source": "Anthony Handbook v.III sylvite entry; KCl, rock-salt structure isotype with halite"
+  },
+  "atacamite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 6.030, "b": 9.120, "c": 6.865 },
+    "_source": "Parise & Hyde 1986 (Acta Cryst. C42:1277-1280) atacamite refinement; Anthony Handbook v.III atacamite entry"
+  },
+
+  "borax": {
+    "system": "monoclinic",
+    "space_group": "C2/c",
+    "lattice": { "a": 11.858, "b": 10.674, "c": 12.197, "beta": 106.68 },
+    "_source": "Morimoto 1956, The Crystal Structure of Borax (Min. J. Japan 2:1-18); Anthony Handbook v.V borax entry"
+  },
+
+  "lepidocrocite": {
+    "system": "orthorhombic",
+    "space_group": "Cmcm",
+    "lattice": { "a": 3.071, "b": 12.520, "c": 3.873 },
+    "_source": "Anthony Handbook v.III lepidocrocite entry (handbookofmineralogy.org); γ-FeOOH layered structure"
+  },
+
+  "native_copper": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 3.615 },
+    "_source": "Anthony Handbook v.I native copper entry (handbookofmineralogy.org); standard FCC metal structure"
+  },
+  "native_gold": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 4.0786 },
+    "_source": "Anthony Handbook v.I gold entry; standard FCC metal structure"
+  },
+  "native_silver": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 4.086 },
+    "_source": "Anthony Handbook v.I silver entry; standard FCC metal structure"
+  },
+  "native_bismuth": {
+    "system": "trigonal",
+    "space_group": "R-3m",
+    "lattice": { "a": 4.547, "c": 11.862 },
+    "_source": "Anthony Handbook v.I bismuth entry (handbookofmineralogy.org); A7 rhombohedral arsenic-group metal structure (shared with native arsenic + antimony)"
+  },
+  "native_sulfur": {
+    "system": "orthorhombic",
+    "space_group": "Fddd",
+    "lattice": { "a": 10.464, "b": 12.866, "c": 24.486 },
+    "_source": "Anthony Handbook v.I sulfur entry; α-S8 ring molecular structure (Coppens et al. 1977 Acta Cryst. B33:1330-1335)"
+  },
+  "native_tellurium": {
+    "system": "trigonal",
+    "space_group": "P3_121",
+    "lattice": { "a": 4.4572, "c": 5.9290 },
+    "_source": "Anthony Handbook v.I tellurium entry; helical chain structure (isotype with selenium; chiral)"
+  },
+
+  "dolomite": {
+    "system": "trigonal",
+    "space_group": "R-3",
+    "lattice": { "a": 4.808, "c": 16.01 },
+    "_source": "Anthony Handbook v.V dolomite entry (handbookofmineralogy.org); ordered Ca-Mg layered calcite-derivative (R-3 vs calcite R-3c — symmetry broken by cation order)"
+  },
+  "siderite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.691, "c": 15.379 },
+    "_source": "Anthony Handbook v.V siderite entry; FeCO3, calcite-isostructural"
+  },
+  "rhodochrosite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.777, "c": 15.664 },
+    "_source": "Anthony Handbook v.V rhodochrosite entry; MnCO3, calcite-isostructural"
+  },
+  "smithsonite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.653, "c": 15.025 },
+    "_source": "Anthony Handbook v.V smithsonite entry; ZnCO3, calcite-isostructural"
+  },
+  "malachite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 9.502, "b": 11.974, "c": 3.240, "beta": 98.75 },
+    "_source": "Anthony Handbook v.V malachite entry; Susse 1967 (Acta Cryst. 22:146-151) Cu2(CO3)(OH)2 refinement"
+  },
+  "azurite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 5.008, "b": 5.850, "c": 10.336, "beta": 92.41 },
+    "_source": "Anthony Handbook v.V azurite entry; Cu3(CO3)2(OH)2 refinement (Zigan & Schuster 1972 Z. Krist. 135:416-436)"
+  },
+  "rosasite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 9.36, "b": 12.08, "c": 3.16, "beta": 99.5 },
+    "_source": "Anthony Handbook v.V rosasite entry; (Cu,Zn)2(CO3)(OH)2, malachite-isostructural"
+  },
+  "aurichalcite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/m",
+    "lattice": { "a": 13.82, "b": 6.419, "c": 5.291, "beta": 101.04 },
+    "_source": "Anthony Handbook v.V aurichalcite entry; (Zn,Cu)5(CO3)2(OH)6 (Harding et al. 1994 Acta Cryst. C50:852-854)"
+  },
+
+  "wulfenite": {
+    "system": "tetragonal",
+    "space_group": "I4_1/a",
+    "lattice": { "a": 5.4347, "c": 12.110 },
+    "_source": "Anthony Handbook v.V wulfenite entry (handbookofmineralogy.org); PbMoO4 scheelite-type structure"
+  },
+  "scheelite": {
+    "system": "tetragonal",
+    "space_group": "I4_1/a",
+    "lattice": { "a": 5.243, "c": 11.376 },
+    "_source": "Anthony Handbook v.V scheelite entry; CaWO4, type for the scheelite structure family"
+  },
+  "powellite": {
+    "system": "tetragonal",
+    "space_group": "I4_1/a",
+    "lattice": { "a": 5.226, "c": 11.43 },
+    "_source": "Anthony Handbook v.V powellite entry; CaMoO4, scheelite-isostructural"
+  },
+  "stolzite": {
+    "system": "tetragonal",
+    "space_group": "I4_1/a",
+    "lattice": { "a": 5.462, "c": 12.046 },
+    "_source": "Anthony Handbook v.V stolzite entry; PbWO4 tetragonal polymorph (scheelite-class); dimorphic with raspite"
+  },
+  "raspite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 13.59, "b": 5.05, "c": 5.55, "beta": 130.7 },
+    "_source": "Anthony Handbook v.V raspite entry; PbWO4 monoclinic polymorph; dimorphic with stolzite (Fujita et al. 1977 Acta Cryst. B33:162-168)"
+  },
+  "wolframite": {
+    "system": "monoclinic",
+    "space_group": "P2/c",
+    "lattice": { "a": 4.80, "b": 5.76, "c": 4.99, "beta": 90.4 },
+    "_source": "Anthony Handbook v.V wolframite entry; (Fe,Mn)WO4 — solid-solution series between hübnerite (MnWO4) and ferberite (FeWO4)"
+  },
+  "ferrimolybdite": {
+    "system": "orthorhombic",
+    "space_group": "Pna2_1",
+    "lattice": { "a": 13.65, "b": 11.71, "c": 8.18 },
+    "_source": "Anthony Handbook v.V ferrimolybdite entry; Fe2(MoO4)3·nH2O hydrated ferric molybdate (data sparse; values approximate; entry may need refinement when better refinement is available)"
   }
 }

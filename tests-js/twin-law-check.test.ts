@@ -188,7 +188,7 @@ describe('generateCandidates', () => {
     expect(cands).toHaveLength(0);
   });
 
-  it('tetragonal emits {101} and {011} elbow candidates', () => {
+  it('tetragonal emits {101}, {011} elbow + {001} scheelite-class + {112} chalcopyrite-class', () => {
     const cands = generateCandidates({
       system: 'tetragonal',
       lattice: { a: 4.74, c: 3.19 },
@@ -196,6 +196,19 @@ describe('generateCandidates', () => {
     const millers = cands.map(c => c.indices);
     expect(millers).toContainEqual([1, 0, 1]);
     expect(millers).toContainEqual([0, 1, 1]);
+    expect(millers).toContainEqual([0, 0, 1]);
+    expect(millers).toContainEqual([1, 1, 2]);
+  });
+
+  it('scheelite {001} basal — PASS via tetragonal scheelite-class candidate', () => {
+    const struct = { system: 'tetragonal', lattice: { a: 5.243, c: 11.376 } };
+    const result = checkTwinLaw(
+      { miller_indices: '{001}', name: 'basal' },
+      generateCandidates(struct),
+      struct.system,
+    );
+    expect(result.verdict).toBe('PASS');
+    expect(result.reason).toMatch(/scheelite/);
   });
 
   it('trigonal/hex emits the standard family ({0001}, {10-12}, {11-20}, etc.)', () => {
