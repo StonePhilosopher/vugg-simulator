@@ -59872,11 +59872,68 @@ function _hexFromHSL(h, s, l) {
     const b = Math.round(f(4) * 255);
     return (r << 16) | (g << 8) | b;
 }
+// v24: lookup for the human-readable name. Specials get unit hints;
+// dissolved ions get either the element name or the ion form,
+// whichever a geochem reader would expect. CO3, Cl, F are written as
+// the ION ("Carbonate", "Chloride", "Fluoride") because that's how
+// they show up in the simulator's fluid chemistry; bare metals get
+// the element name (Cu = Copper, not Copper(II)) because the sim
+// doesn't track oxidation state separately.
+const _HELIX_FULL_NAMES = {
+    wall: 'Wall distance (lateral, mm)',
+    T: 'Temperature (°C)',
+    pH: 'pH (acidity, 0–14)',
+    Eh: 'Eh (redox potential, mV)',
+    salinity: 'Salinity (TDS, ppt)',
+    O2: 'Dissolved O₂ (mg/L)',
+    SiO2: 'Silica (dissolved SiO₂)',
+    Ca: 'Calcium',
+    CO3: 'Carbonate (CO₃²⁻)',
+    Cl: 'Chloride',
+    Na: 'Sodium',
+    Mg: 'Magnesium',
+    K: 'Potassium',
+    S: 'Sulfur (total — sulfide + sulfate)',
+    F: 'Fluoride',
+    Fe: 'Iron',
+    Mn: 'Manganese',
+    Zn: 'Zinc',
+    Pb: 'Lead',
+    Cu: 'Copper',
+    Ba: 'Barium',
+    Sr: 'Strontium',
+    Al: 'Aluminum',
+    P: 'Phosphorus (as phosphate)',
+    As: 'Arsenic',
+    Ti: 'Titanium',
+    U: 'Uranium',
+    Mo: 'Molybdenum',
+    Cr: 'Chromium',
+    V: 'Vanadium',
+    W: 'Tungsten',
+    Ag: 'Silver',
+    Bi: 'Bismuth',
+    Sb: 'Antimony',
+    Ni: 'Nickel',
+    Co: 'Cobalt',
+    B: 'Boron (as borate)',
+    Li: 'Lithium',
+    Cd: 'Cadmium',
+    Y: 'Yttrium',
+    Be: 'Beryllium',
+    Te: 'Tellurium',
+    Se: 'Selenium',
+    Ge: 'Germanium',
+    Au: 'Gold',
+    Hg: 'Mercury',
+    Sn: 'Tin',
+};
 const _HELIX_CHEM_PARAMS = (function () {
     const params = [];
     // Primary
     params.push({
-        id: 'wall', label: 'wall distance', min: 0, max: 0, color: 0xffffff,
+        id: 'wall', label: 'wall distance', fullName: _HELIX_FULL_NAMES.wall,
+        min: 0, max: 0, color: 0xffffff,
         primary: true,
         read: (sim, wall, i, c) => {
             if (!wall || !wall.rings)
@@ -59907,15 +59964,15 @@ const _HELIX_CHEM_PARAMS = (function () {
         },
     });
     // Specials
-    params.push({ id: 'T', label: 'temperature', min: 50, max: 250, color: 0xff5544,
+    params.push({ id: 'T', label: 'temperature', fullName: _HELIX_FULL_NAMES.T, min: 50, max: 250, color: 0xff5544,
         read: (s, w, i, c) => (s.ring_temperatures || [])[i] });
-    params.push({ id: 'pH', label: 'pH', min: 2, max: 12, color: 0x9966ee,
+    params.push({ id: 'pH', label: 'pH', fullName: _HELIX_FULL_NAMES.pH, min: 2, max: 12, color: 0x9966ee,
         read: (s, w, i, c) => ((s.ring_fluids || [])[i] || {}).pH });
-    params.push({ id: 'Eh', label: 'Eh', min: -400, max: 800, color: 0xddee44,
+    params.push({ id: 'Eh', label: 'Eh', fullName: _HELIX_FULL_NAMES.Eh, min: -400, max: 800, color: 0xddee44,
         read: (s, w, i, c) => ((s.ring_fluids || [])[i] || {}).Eh });
-    params.push({ id: 'salinity', label: 'salinity', min: 0, max: 30, color: 0x44ccdd,
+    params.push({ id: 'salinity', label: 'salinity', fullName: _HELIX_FULL_NAMES.salinity, min: 0, max: 30, color: 0x44ccdd,
         read: (s, w, i, c) => ((s.ring_fluids || [])[i] || {}).salinity });
-    params.push({ id: 'O2', label: 'O2', min: 0, max: 10, color: 0xaaccff,
+    params.push({ id: 'O2', label: 'O2', fullName: _HELIX_FULL_NAMES.O2, min: 0, max: 10, color: 0xaaccff,
         read: (s, w, i, c) => ((s.ring_fluids || [])[i] || {}).O2 });
     // Ions — id, min, max. Ranges chosen from observed typical values
     // in MVT-seed-42 sample fluid (see the helix-record data dump).
@@ -59939,8 +59996,12 @@ const _HELIX_CHEM_PARAMS = (function () {
         const [ionId, mn, mx] = ION_DEFS[i];
         const hue = i / ION_DEFS.length; // even hue spread
         const color = _hexFromHSL(hue, 0.7, 0.55);
+        // v24: fall back to the symbol if the lookup is missing — keeps
+        // the legend from breaking if a future ion is added to ION_DEFS
+        // but not to _HELIX_FULL_NAMES.
+        const fullName = _HELIX_FULL_NAMES[ionId] || ionId;
         params.push({
-            id: ionId, label: ionId, min: mn, max: mx, color,
+            id: ionId, label: ionId, fullName, min: mn, max: mx, color,
             read: (s, w, ri, c) => ((s.ring_fluids || [])[ri] || {})[ionId],
         });
     }
@@ -60066,7 +60127,15 @@ function _helixBuildLegend() {
             const p = _HELIX_CHEM_PARAMS[i];
             const swatch = _helixHexFromColor(p.color);
             const off = _helixParamEnabled[i] ? '' : ' is-off';
-            html.push(`<div class="helix-legend-row${off}" data-helix-idx="${i}" title="${p.label}">`
+            // v24: tooltip is the full chemical name (e.g. "Carbonate
+            // (CO₃²⁻)") so hover expands the chip's abbreviation. Chip
+            // text stays the symbol. Boss feedback: "it would be more
+            // informative if you wrote out the full name of the Ion
+            // instead of just having the abbreviation again in the hover."
+            // HTML-attribute-escape the name in case any later addition
+            // contains a quote.
+            const tip = (p.fullName || p.label).replace(/"/g, '&quot;');
+            html.push(`<div class="helix-legend-row${off}" data-helix-idx="${i}" title="${tip}">`
                 + `<span class="helix-legend-swatch" style="background:${swatch}"></span>`
                 + `<span class="helix-legend-label">${p.label}</span>`
                 + '</div>');
