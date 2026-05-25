@@ -1,6 +1,19 @@
 // ============================================================
 // js/99j-helix-overlay.ts — Helix Record overlay for the 3D vug
 // ============================================================
+//
+// === HELIX-OVERLAY-FORK ADDITION (entire file, v0–v17) ===========
+// This module does not exist in vugg-simulator. The whole 1.2k-line
+// file is fork-only. When merging this fork back into vugg-simulator,
+// the merge strategy is: this file moves over wholesale, plus the
+// four small additions in 99i-renderer-three.ts (one render hook,
+// two crystal-userData stamps) and 85c-simulator-state.ts (per-ring
+// chemistry snap fields), plus the index.html scaffolding (helix
+// toggle button, legend div, .helix-legend* CSS). All five sites
+// are bracketed with HELIX-OVERLAY-FORK ADDITION / END markers —
+// grep `HELIX-OVERLAY-FORK` to find every one. The full breadcrumb
+// lives in proposals/HELIX-OVERLAY-FORK-CHANGES.md.
+//
 // Boss model (final, post-v7 feedback):
 //
 //   "picture radar screens stacked up like a spiral staircase, all

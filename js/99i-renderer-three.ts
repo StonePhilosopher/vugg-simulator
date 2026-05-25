@@ -2135,11 +2135,14 @@ function _emitClusterSatellites(
       ringIdx: _anchor.ringIdx,
       cellIdx: _anchor.cellIdx,
       isSatellite: true,
-      // helix v13: satellites share the parent's material reference,
+      // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
+      // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+      // breadcrumb. Satellites share the parent's material reference,
       // so the parent's opacity write also moves the satellites. The
       // naturalOpacity here is for completeness; the helix update
       // iterates parents only.
       naturalOpacity: mat.transparent ? mat.opacity : 1.0,
+      // === END HELIX-OVERLAY-FORK ADDITION ===========================
     };
     satMesh.renderOrder = 1;
     state.crystals.add(satMesh);
@@ -2604,12 +2607,15 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       mineral: effectiveMineral,
       ringIdx,
       cellIdx,
-      // helix v13 sweep-writes-crystals: the helix overlay multiplies
-      // the material opacity by a 0→1 sweep factor as the leading
-      // edge passes this anchor. The "natural" opacity (1.0 for
-      // ordinary crystals, 0.42 for perimorph casts) is captured here
-      // so the overlay-off path can restore it without re-deriving.
+      // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
+      // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+      // breadcrumb. Sweep-writes-crystals mode: the helix overlay
+      // multiplies this mesh's material opacity by a 0→1 sweep factor
+      // as the leading edge passes this anchor. naturalOpacity (1.0
+      // for ordinary crystals, 0.42 for perimorph casts) is captured
+      // here so the overlay-off restore path doesn't have to re-derive.
       naturalOpacity: isPerimorphCast ? 0.42 : 1.0,
+      // === END HELIX-OVERLAY-FORK ADDITION ===========================
     };
 
     state.crystals.add(mesh);
@@ -2857,13 +2863,16 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayS
   _topoBuildCavityGeometry(state, renderWall, sim);
   _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
   _topoApplyCameraFromTilt(state, renderWall);
-  // HELIX OVERLAY — see js/99j-helix-overlay.ts. Adds a helicoid
-  // threaded through the cavity, inscribed with one crystal's growth
-  // record. Defensive typeof check so the bundle still boots if 99j
-  // is ever removed.
+  // === HELIX-OVERLAY-FORK ADDITION (v0–v17) =========================
+  // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+  // breadcrumb. Single integration point for the helicoid overlay
+  // module (js/99j-helix-overlay.ts) into the 3D render pipeline.
+  // Defensive typeof so the bundle still boots if 99j is ever
+  // removed during a merge.
   if (typeof _topoHelixOverlayDraw === 'function') {
     _topoHelixOverlayDraw(state, sim, renderWall);
   }
+  // === END HELIX-OVERLAY-FORK ADDITION ==============================
   state.renderer.render(state.scene, state.camera);
   return true;
 }

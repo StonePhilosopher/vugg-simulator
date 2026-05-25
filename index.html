@@ -435,6 +435,14 @@ body.topo-view-3d .topo-slice-ctrls { display: none; }
    granularity). One element doing both jobs. */
 .topo-canvas-wrap { flex: 1 1 auto; min-width: 0; }
 
+/* ============== HELIX-OVERLAY-FORK ADDITION (v12, v16) =================
+   See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full breadcrumb.
+   This entire CSS block is fork-only — it styles the helix overlay's
+   legend sidebar (#helix-legend), section headers, per-param rows,
+   bulk all/none + focus-mode pills, and the row-disabled state. The
+   sidebar is hidden by default and revealed by the overlay toggle.
+   ====================================================================== */
+
 /* Helix overlay legend — fixed-width sidebar inside .topo-body. Hidden
    when the helix overlay is off (display:none set inline by the toggle).
    Scrollable so 47+ params stay accessible without stretching the
@@ -539,6 +547,7 @@ body.topo-view-3d .topo-slice-ctrls { display: none; }
   color: #f0c050;
   border-color: rgba(240, 192, 80, 0.55);
 }
+/* ============== END HELIX-OVERLAY-FORK ADDITION ====================== */
 
 @media (max-width: 600px) {
   /* Narrow viewports: keep the topo body column-flex (was previously
@@ -2993,6 +3002,7 @@ footer a:hover {
         <button class="topo-zoom-btn" id="topo-pan-btn" onclick="topoSetDragMode('pan')" title="Pan camera (drag to move without rotating)">✥</button>
         <button class="topo-zoom-btn" onclick="topoRecenter()" title="Recenter (reset pan and rotation)">⊙</button>
         <button class="topo-zoom-btn" id="topo-three-btn" onclick="topoToggleThreeRenderer()" title="Toggle Three.js mesh renderer (experimental — Phase E1: cavity wireframe only)">⬚</button>
+        <!-- HELIX-OVERLAY-FORK ADDITION (v12) — see proposals/HELIX-OVERLAY-FORK-CHANGES.md -->
         <button class="topo-zoom-btn" id="helix-overlay-btn" onclick="helixOverlayToggle()" title="Toggle helicoid record overlay (spinning radar through cavity, reads chemistry + wall on every ring)">⌇</button>
       </div>
       <button id="topo-replay-btn" class="topo-replay" onclick="topoReplay()" title="Replay wall history">▶</button>
@@ -3020,12 +3030,14 @@ footer a:hover {
       </div>
       <div id="topo-tooltip" class="topo-tooltip" style="display:none"></div>
     </div>
-    <!-- Helix overlay legend. Populated by js/99j-helix-overlay.ts on
+    <!-- HELIX-OVERLAY-FORK ADDITION (v12) — see proposals/HELIX-OVERLAY-FORK-CHANGES.md
+         Helix overlay legend. Populated by js/99j-helix-overlay.ts on
          first run from _HELIX_CHEM_PARAMS. Each row toggles that
          param's trails on/off. Shown only while the helix overlay is
          enabled (sibling of the canvas-wrap so the canvas keeps its
          flex sizing). -->
     <div id="helix-legend" class="helix-legend" style="display:none"></div>
+    <!-- END HELIX-OVERLAY-FORK ADDITION -->
   </div>
 </div>
 
@@ -39915,15 +39927,18 @@ Object.assign(VugSimulator.prototype, {
                 fluid: _cloneFluid(cnd.fluid),
             },
             radiation_dose: this.radiation_dose,
-            // helix v15: per-ring chemistry + temperature trajectory. The
-            // helicoid overlay's rate band sources from these snaps so its
-            // temporal Δr reflects scenario time, not (frozen) view time.
+            // === HELIX-OVERLAY-FORK ADDITION (v15) ============================
+            // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+            // breadcrumb. This fork adds per-ring chemistry + temperature
+            // to each snap so the helicoid overlay's rate band can source
+            // scenario-time Δr (vugg-simulator parent doesn't need this).
             // Storage cost: 16 rings × ~50 fluid fields × 8 B = ~6.4 KB per
             // snap; for a 120-step MVT (stride 9 → ~14 snaps) that's ~90 KB
             // beyond the existing v66 schema. Smaller scenarios cost less;
             // 2400-step pegmatites cost ~190 KB.
             ring_fluids: this.ring_fluids ? this.ring_fluids.map((f) => _cloneFluid(f)) : null,
             ring_temperatures: this.ring_temperatures ? this.ring_temperatures.slice() : null,
+            // === END HELIX-OVERLAY-FORK ADDITION ==============================
         };
         for (let r = 0; r < ringCount; r++) {
             const ring = this.wall_state.rings[r];
@@ -58863,11 +58878,14 @@ function _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, n
             ringIdx: _anchor.ringIdx,
             cellIdx: _anchor.cellIdx,
             isSatellite: true,
-            // helix v13: satellites share the parent's material reference,
+            // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
+            // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+            // breadcrumb. Satellites share the parent's material reference,
             // so the parent's opacity write also moves the satellites. The
             // naturalOpacity here is for completeness; the helix update
             // iterates parents only.
             naturalOpacity: mat.transparent ? mat.opacity : 1.0,
+            // === END HELIX-OVERLAY-FORK ADDITION ===========================
         };
         satMesh.renderOrder = 1;
         state.crystals.add(satMesh);
@@ -59339,12 +59357,15 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
             mineral: effectiveMineral,
             ringIdx,
             cellIdx,
-            // helix v13 sweep-writes-crystals: the helix overlay multiplies
-            // the material opacity by a 0→1 sweep factor as the leading
-            // edge passes this anchor. The "natural" opacity (1.0 for
-            // ordinary crystals, 0.42 for perimorph casts) is captured here
-            // so the overlay-off path can restore it without re-deriving.
+            // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
+            // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+            // breadcrumb. Sweep-writes-crystals mode: the helix overlay
+            // multiplies this mesh's material opacity by a 0→1 sweep factor
+            // as the leading edge passes this anchor. naturalOpacity (1.0
+            // for ordinary crystals, 0.42 for perimorph casts) is captured
+            // here so the overlay-off restore path doesn't have to re-derive.
             naturalOpacity: isPerimorphCast ? 0.42 : 1.0,
+            // === END HELIX-OVERLAY-FORK ADDITION ===========================
         };
         state.crystals.add(mesh);
         // Phase E5b: emit cluster satellites around this parent. Same
@@ -59593,13 +59614,16 @@ function _topoRenderThree(sim, wall, optOverrideSnap, optReplayStep) {
     _topoBuildCavityGeometry(state, renderWall, sim);
     _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
     _topoApplyCameraFromTilt(state, renderWall);
-    // HELIX OVERLAY — see js/99j-helix-overlay.ts. Adds a helicoid
-    // threaded through the cavity, inscribed with one crystal's growth
-    // record. Defensive typeof check so the bundle still boots if 99j
-    // is ever removed.
+    // === HELIX-OVERLAY-FORK ADDITION (v0–v17) =========================
+    // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+    // breadcrumb. Single integration point for the helicoid overlay
+    // module (js/99j-helix-overlay.ts) into the 3D render pipeline.
+    // Defensive typeof so the bundle still boots if 99j is ever
+    // removed during a merge.
     if (typeof _topoHelixOverlayDraw === 'function') {
         _topoHelixOverlayDraw(state, sim, renderWall);
     }
+    // === END HELIX-OVERLAY-FORK ADDITION ==============================
     state.renderer.render(state.scene, state.camera);
     return true;
 }
@@ -59657,6 +59681,19 @@ function topoToggleThreeRenderer() {
 // ============================================================
 // js/99j-helix-overlay.ts — Helix Record overlay for the 3D vug
 // ============================================================
+//
+// === HELIX-OVERLAY-FORK ADDITION (entire file, v0–v17) ===========
+// This module does not exist in vugg-simulator. The whole 1.2k-line
+// file is fork-only. When merging this fork back into vugg-simulator,
+// the merge strategy is: this file moves over wholesale, plus the
+// four small additions in 99i-renderer-three.ts (one render hook,
+// two crystal-userData stamps) and 85c-simulator-state.ts (per-ring
+// chemistry snap fields), plus the index.html scaffolding (helix
+// toggle button, legend div, .helix-legend* CSS). All five sites
+// are bracketed with HELIX-OVERLAY-FORK ADDITION / END markers —
+// grep `HELIX-OVERLAY-FORK` to find every one. The full breadcrumb
+// lives in proposals/HELIX-OVERLAY-FORK-CHANGES.md.
+//
 // Boss model (final, post-v7 feedback):
 //
 //   "picture radar screens stacked up like a spiral staircase, all
