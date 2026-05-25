@@ -1,6 +1,12 @@
 // ============================================================
-// js/99j-helix-overlay.ts — Helix Record overlay for the 3D vug
+// js/99j-helix-overlay.ts — Helicoid Manifold for multidimensional space
 // ============================================================
+// Working title: "helix overlay" (kept in symbols + commit messages
+// for git history continuity). Boss-named v22: "its not just a
+// helicoid, its a helicoid manifold for multidimensional space."
+// User-facing strings (legend title, toolbar tooltip) use the full
+// name; internal identifiers stay `_helix*` so existing breadcrumbs
+// + git blame don't shift.
 //
 // === HELIX-OVERLAY-FORK ADDITION (entire file, v0–v17) ===========
 // This module does not exist in vugg-simulator. The whole 1.2k-line
@@ -289,27 +295,29 @@ function _helixBuildLegend() {
     { title: 'Ions',       start: 6, end: _HELIX_CHEM_PARAMS.length },
   ];
 
-  const html: string[] = [];
-  html.push('<div class="helix-legend-header">'
-    + '<span>Helix params</span>'
-    + '<span style="display:flex;gap:3px">'
-    + '<button class="legend-bulk" data-helix-bulk="all"  title="Show all params">all</button>'
-    + '<button class="legend-bulk" data-helix-bulk="none" title="Hide all params">none</button>'
-    + '</span></div>');
-  // v16 focus-mode row. Two toggles drive per-frame alpha multipliers
-  // in the trail render. Active reflects current mode state so the
-  // class can flip even before the first user click — initial render
-  // catches both modes off.
+  // v22: banner layout. Header at top (title + bulk + focus pills in
+  // one row), sections stacked below as horizontal chip-clouds with
+  // the section label fixed on the left and the chips wrapping to
+  // multiple rows as needed.
   const activeOn = _helixActiveOnlyMode ? ' is-on' : '';
   const moversOn = _helixMoversMode ? ' is-on' : '';
-  html.push('<div class="helix-legend-modes">'
-    + `<button class="legend-mode${activeOn}" data-helix-mode="active" `
-    +   `title="Hide params whose values stay near zero. Trace ions only appear when they have signal.">active only</button>`
-    + `<button class="legend-mode${moversOn}" data-helix-mode="movers" `
-    +   `title="Dim flat params; brighten fast-changing ones. Layered on top of the value-trail.">movers</button>`
-    + '</div>');
+  const html: string[] = [];
+  html.push('<div class="helix-legend-header">'
+    + '<div class="helix-legend-header-title">'
+    +   '<span class="helix-legend-title-main">Helicoid Manifold</span>'
+    +   '<span class="helix-legend-title-sub">for multidimensional space</span>'
+    + '</div>'
+    + '<div class="helix-legend-header-actions">'
+    +   `<button class="legend-mode${activeOn}" data-helix-mode="active" `
+    +     `title="Hide params whose values stay near zero. Trace ions only appear when they have signal.">active only</button>`
+    +   `<button class="legend-mode${moversOn}" data-helix-mode="movers" `
+    +     `title="Dim flat params; brighten fast-changing ones. Layered on top of the value-trail.">movers</button>`
+    +   '<button class="legend-bulk" data-helix-bulk="all"  title="Show all params">all</button>'
+    +   '<button class="legend-bulk" data-helix-bulk="none" title="Hide all params">none</button>'
+    + '</div></div>');
   for (const sec of sections) {
-    html.push(`<div class="helix-legend-section">${sec.title}</div>`);
+    html.push(`<div class="helix-legend-section-wrap">`);
+    html.push(`<span class="helix-legend-section">${sec.title}</span>`);
     for (let i = sec.start; i < sec.end; i++) {
       const p = _HELIX_CHEM_PARAMS[i];
       const swatch = _helixHexFromColor(p.color);
@@ -321,6 +329,7 @@ function _helixBuildLegend() {
         + '</div>'
       );
     }
+    html.push(`</div>`);
   }
   panel.innerHTML = html.join('');
 
