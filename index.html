@@ -12181,7 +12181,43 @@ let timeScale = 5.0;
 //   future readers tracing the adamite entry's history land on the
 //   truth rather than the fabrication. Same with the handoff doc:
 //   updated in this commit to note the v142 correction inline.
-const SIM_VERSION = 142;
+// v143: schema-bug repairs in the twin_laws data layer — restructured
+//   corundum / ruby / sapphire from raw-string entries to proper
+//   objects with miller_indices + _source citations; fixed atacamite
+//   "{various}" placeholder to "{110}" + documented [544] axis-twin
+//   in the citation; restructured albite pericline twin from broken
+//   "miller_indices: b_axis" to proper twin_axis: [010] + non-Miller
+//   composition_plane "rhombic_section" notation. All eight pre-
+//   existing PARSE errors that tools/twin-law-check.mjs surfaced are
+//   now resolved.
+//
+//   CASCADE: the corundum / ruby / sapphire restructure changed those
+//   three minerals from "twin_laws as raw strings, skipped by engine"
+//   to "twin_laws as proper objects, engine calls _rollSpontaneousTwin
+//   per entry consuming rng.random() draws." This is the documented
+//   cascade behavior from the vugg-add-twin-law skill — adding real
+//   twin_laws to a mineral that previously had no draws shifts the
+//   downstream RNG sequence. Affected scenarios: marble_contact_
+//   metamorphism (where corundum/ruby/sapphire nucleate). Baseline
+//   regenerated at v143 via tools/gen-js-baseline.mjs; calibration
+//   test now passes against the new baseline.
+//
+//   Tool reports post-fix: 108 PASS / 46 FLAG / 1 AXIS / 0 PARSE /
+//   0 SKIP. AXIS is a new verdict introduced in this commit for
+//   legitimate axis-defined twins (albite pericline-law) that have
+//   no fixed Miller composition plane and can't be checked by lattice
+//   CSL at Tier 1; distinguishes the honest "structurally not
+//   checkable" case from the dishonest "data bug" case. The pericline
+//   entry is the first AXIS-verdict entry; future axis-twins should
+//   use the same twin_axis schema.
+//
+//   Probabilities chosen conservatively per Anthony Handbook v.III
+//   corundum entry: basal {0001} p=0.005 (very rare, deformation-
+//   only); rhombohedral {10-11} p=0.05 (more frequent but still
+//   uncommon outside metamorphosed corundum). Same values applied
+//   to ruby + sapphire (Cr-bearing and Fe-Ti-bearing varieties of
+//   the same R-3c structure).
+const SIM_VERSION = 143;
 
 // ── 18-constants.js ──
 

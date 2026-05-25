@@ -320,6 +320,37 @@ describe('checkTwinLaw — high-level structural verdicts', () => {
     expect(result.suggested).toMatch(/pseudo-tet/);
   });
 
+  it('axis-defined twin (pericline-law) — AXIS verdict, not PARSE', () => {
+    // The albite pericline-law twin has twin_axis [010] and a composition plane
+    // that is the non-Miller "rhombic section" (Al/Si-order-dependent). This is
+    // a legitimate real twin that isn't checkable by lattice CSL at Tier 1 —
+    // not a data bug. The tool should distinguish AXIS from PARSE.
+    const struct = { system: 'triclinic', lattice: { a: 8.14, b: 12.79, c: 7.16 } };
+    const result = checkTwinLaw(
+      {
+        name: 'pericline',
+        twin_axis: '[010]',
+        composition_plane: 'rhombic_section',
+        probability: 0.05,
+      },
+      generateCandidates(struct),
+      struct.system,
+    );
+    expect(result.verdict).toBe('AXIS');
+    expect(result.reason).toMatch(/axis-defined/);
+  });
+
+  it('twin_axis-only entry (no plane field at all) — AXIS verdict', () => {
+    const struct = { system: 'orthorhombic', lattice: { a: 6.03, b: 9.12, c: 6.87 } };
+    const result = checkTwinLaw(
+      { name: 'axis_only', twin_axis: '[544]', probability: 0.1 },
+      generateCandidates(struct),
+      struct.system,
+    );
+    expect(result.verdict).toBe('AXIS');
+    expect(result.reason).toMatch(/\[544\]/);
+  });
+
   it('non-object law entry (corundum string format) — PARSE error', () => {
     const struct = { system: 'trigonal', lattice: { a: 4.76, c: 12.99 } };
     const result = checkTwinLaw(

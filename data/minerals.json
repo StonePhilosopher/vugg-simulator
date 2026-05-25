@@ -4488,9 +4488,11 @@
         },
         {
           "name": "pericline",
-          "miller_indices": "b_axis",
-          "trigger": "growth",
-          "probability": 0.05
+          "twin_axis": "[010]",
+          "composition_plane": "rhombic_section",
+          "trigger": "growth — Type II twin law (axis-defined; conjugate to albite-law Type I)",
+          "probability": 0.05,
+          "_source": "Smith & Brown 1988 Feldspar Minerals vol 1 §5.4 pericline-law twinning; Liu et al. 2013 (Modelling Simul. Mater. Sci. Eng. 21:055012) molecular-dynamics simulation of low-albite pericline twinning. The pericline-law twin is axis-defined: twin axis [010] (the b-axis — what the earlier 'b_axis' string was trying to encode), composition plane = the 'rhombic section' which is a non-Miller plane whose orientation depends on Al/Si ordering (low albite vs. high albite ≈ -2,0,5 to -1,0,2 in approximate Miller-indexing, but inherently non-rational). Less common than the dominant albite-law {010} twin (p=0.85 in the sibling entry); pericline-law p=0.05 reflects its secondary status in plagioclase. v142+ audit pass (2026-05-24): the earlier 'miller_indices: \"b_axis\"' was an attempt to express the [010] twin axis as a Miller field; restructured to proper twin_axis + composition_plane fields. NOTE: the structural fact-check tool cannot validate axis-defined twins like this one at Tier 1 — it expects a Miller plane to check against lattice candidates; pericline-law is a real twin with no fixed Miller-index composition plane, so the tool will report this entry as PARSE-equivalent, which is honest."
         }
       ],
       "acid_dissolution": {
@@ -7656,8 +7658,20 @@
       "thermal_decomp_products": {},
       "fluorescence": null,
       "twin_laws": [
-        "0001 basal (polysynthetic)",
-        "10̄11 rhombohedral"
+        {
+          "name": "basal_polysynthetic",
+          "miller_indices": "{0001}",
+          "trigger": "deformation — mechanical twin",
+          "probability": 0.005,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (handbookofmineralogy.org); Heuer 1966 (Phil. Mag. 13:379) on sapphire deformation twinning; Geipel et al. 2025 Mineralogy & Petrology 'Basal twinning of Greenland corundum'. The {0001} basal twin (reflection on (0003) pinacoid) is rare in natural corundum — overwhelmingly deformation-driven via the double-cross-slip mechanism (paired 1/3[1̄010] partial dislocations on adjacent (0001) planes). Documented in marbled corundum from high-grade metamorphics. v142+ audit pass (2026-05-24): restructured from raw string '0001 basal (polysynthetic)' into proper schema."
+        },
+        {
+          "name": "rhombohedral",
+          "miller_indices": "{10-11}",
+          "trigger": "deformation — mechanical twin (more common than basal)",
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (handbookofmineralogy.org); Hockey & Lawn 1975 (J. Mater. Sci. 10:1275) on rhombohedral twinning in sapphire bend tests. The {10-11} rhombohedral twin is the more frequent corundum twin — produced even at -196°C by bend fracture; documented at Mogok (Burma) + Madagascar + most metamorphosed-corundum localities. v142+ audit pass (2026-05-24): restructured from raw string '10̄11 rhombohedral' into proper schema."
+        }
       ],
       "acid_dissolution": null,
       "habit": "tabular",
@@ -7741,8 +7755,20 @@
       "thermal_decomp_products": {},
       "fluorescence": "strong red under LW + SW UV (Cr³⁺ emission at 694 nm) — diagnostic",
       "twin_laws": [
-        "0001 basal (polysynthetic)",
-        "10̄11 rhombohedral"
+        {
+          "name": "basal_polysynthetic",
+          "miller_indices": "{0001}",
+          "trigger": "deformation — mechanical twin",
+          "probability": 0.005,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (handbookofmineralogy.org); Heuer 1966 (Phil. Mag. 13:379) on sapphire deformation twinning; Geipel et al. 2025 Mineralogy & Petrology 'Basal twinning of Greenland corundum'. The {0001} basal twin (reflection on (0003) pinacoid) is rare in natural corundum — overwhelmingly deformation-driven via the double-cross-slip mechanism (paired 1/3[1̄010] partial dislocations on adjacent (0001) planes). Documented in marbled corundum from high-grade metamorphics. v142+ audit pass (2026-05-24): restructured from raw string '0001 basal (polysynthetic)' into proper schema."
+        },
+        {
+          "name": "rhombohedral",
+          "miller_indices": "{10-11}",
+          "trigger": "deformation — mechanical twin (more common than basal)",
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (handbookofmineralogy.org); Hockey & Lawn 1975 (J. Mater. Sci. 10:1275) on rhombohedral twinning in sapphire bend tests. The {10-11} rhombohedral twin is the more frequent corundum twin — produced even at -196°C by bend fracture; documented at Mogok (Burma) + Madagascar + most metamorphosed-corundum localities. v142+ audit pass (2026-05-24): restructured from raw string '10̄11 rhombohedral' into proper schema."
+        }
       ],
       "acid_dissolution": null,
       "habit": "tabular",
@@ -7837,8 +7863,20 @@
       "thermal_decomp_products": {},
       "fluorescence": "weak — Fe quenches Cr/V emission; yellow sapphire shows weak orange (Fe³⁺)",
       "twin_laws": [
-        "0001 basal",
-        "10̄11 rhombohedral"
+        {
+          "name": "basal_polysynthetic",
+          "miller_indices": "{0001}",
+          "trigger": "deformation — mechanical twin",
+          "probability": 0.005,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (sapphire is Fe-Ti-bearing corundum, same R-3c structure); Heuer 1966 (Phil. Mag. 13:379) sapphire deformation-twinning paper specifically uses synthetic sapphire as the canonical α-Al2O3 reference. The {0001} basal twin is rare; deformation-driven via 1/3[1̄010] partial dislocations on adjacent (0001) planes. v142+ audit pass (2026-05-24): restructured from raw string '0001 basal' into proper schema."
+        },
+        {
+          "name": "rhombohedral",
+          "miller_indices": "{10-11}",
+          "trigger": "deformation — mechanical twin (more common than basal)",
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry; Hockey & Lawn 1975 (J. Mater. Sci. 10:1275) sapphire bend-test paper — synthetic sapphire is the canonical experimental material for corundum-class twinning studies. v142+ audit pass (2026-05-24): restructured from raw string '10̄11 rhombohedral' into proper schema."
+        }
       ],
       "acid_dissolution": null,
       "habit": "barrel",
@@ -12077,9 +12115,11 @@
       "twin_laws": [
         {
           "name": "contact_complex",
-          "miller_indices": "{various}",
-          "trigger": "moderate σ — penetration twins common",
-          "probability": 0.15
+          "miller_indices": "{110}",
+          "twin_axis_note": "[544] axis is the more common twin per Anthony v.III — produces doublets, triplets, contact AND penetration twins, complex groups",
+          "trigger": "moderate σ — both rare {110} contact twins and more common [544] axis-twin complex penetration groups; p=0.15 captures the combined frequency",
+          "probability": 0.15,
+          "_source": "Anthony Handbook of Mineralogy v.III atacamite entry (handbookofmineralogy.org) documents: 'Twin plane {110}, composition plane {110}, rare; twinning about [544], more common. Doublets, triplets, both contact and penetration, and complex groups result from twinning.' Pnma orthorhombic Cu2Cl(OH)3 type-locality Atacama Desert. The [544] axis twin is the dominant field morphology; tool-checkable on the rarer {110} contact plane only. v142+ audit pass (2026-05-24): miller_indices was '{various}' placeholder — replaced with the documented {110} composition plane + axis-twin annotation."
         }
       ],
       "acid_dissolution": {

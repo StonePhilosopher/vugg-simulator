@@ -39,7 +39,10 @@
  *   ✓ PASS    declared plane matches a structural prediction (pseudo-sym or CSL)
  *   ⚠ FLAG    no specific structural prediction; recommend citation review
  *   ? SKIP    structural data not yet populated for this mineral
- *   ✗ PARSE   miller_indices field can't be parsed (e.g., 'b_axis', 'undefined')
+ *   ⊙ AXIS    axis-defined twin (twin_axis field present, no fixed Miller plane —
+ *             e.g., pericline-law in plagioclase, [544] axis-twin in atacamite).
+ *             NOT a data bug; just not checkable by lattice CSL at Tier 1.
+ *   ✗ PARSE   miller_indices field is malformed / unparseable (genuine data bug)
  *
  * Exit code: 0 always (report tool, not a CI gate). Use --strict to exit 1
  * when any FLAG or PARSE is present.
@@ -418,7 +421,17 @@ export function checkTwinLaw(law, candidates, system) {
     };
   }
   const plane = getDeclaredPlane(law);
+  const hasAxis = typeof law.twin_axis === 'string' && law.twin_axis.length > 0;
   if (plane === undefined) {
+    // No plane field. If the entry has a twin_axis declared, it's a legitimate
+    // axis-defined twin (pericline-law etc.) — not a data bug. Otherwise it's
+    // a real PARSE problem.
+    if (hasAxis) {
+      return {
+        verdict: 'AXIS',
+        reason: `axis-defined twin (twin_axis: ${law.twin_axis}); no Miller plane to check at Tier 1`,
+      };
+    }
     return {
       verdict: 'PARSE',
       reason: 'twin_law has neither miller_indices nor composition_plane field',
@@ -426,6 +439,16 @@ export function checkTwinLaw(law, candidates, system) {
   }
   const declared = parseMiller(plane);
   if (!declared) {
+    // Plane field is present but unparseable. Recognized non-Miller composition
+    // strings ("rhombic_section" for pericline-law, etc.) → AXIS verdict if a
+    // twin_axis is also declared. Otherwise PARSE (genuine data bug).
+    const nonMillerComposition = /^[a-z_]+$/i.test(plane.trim());
+    if (hasAxis && nonMillerComposition) {
+      return {
+        verdict: 'AXIS',
+        reason: `axis-defined twin (composition_plane: "${plane}", twin_axis: ${law.twin_axis}); no Miller plane to check at Tier 1`,
+      };
+    }
     return {
       verdict: 'PARSE',
       reason: `cannot parse "${plane}"`,
@@ -516,6 +539,8 @@ async function runCli() {
       else if (result.verdict === 'FLAG') {
         summary.flag++;
         flaggedMinerals.add(name);
+      } else if (result.verdict === 'AXIS') {
+        summary.axis = (summary.axis || 0) + 1;
       } else if (result.verdict === 'PARSE') {
         summary.parse++;
         flaggedMinerals.add(name);
@@ -527,7 +552,7 @@ async function runCli() {
     process.stdout.write(JSON.stringify({ summary, rows }, null, 2) + '\n');
   } else {
     const filtered = flaggedOnly
-      ? rows.filter(r => r.verdict !== 'PASS' && r.verdict !== 'SKIP')
+      ? rows.filter(r => r.verdict !== 'PASS' && r.verdict !== 'SKIP' && r.verdict !== 'AXIS')
       : rows;
 
     if (target) {
@@ -551,7 +576,7 @@ async function runCli() {
     );
     console.log(dash);
 
-    const glyph = { PASS: '✓ PASS', FLAG: '⚠ FLAG', SKIP: '? SKIP', PARSE: '✗ PARSE' };
+    const glyph = { PASS: '✓ PASS', FLAG: '⚠ FLAG', SKIP: '? SKIP', AXIS: '⊙ AXIS', PARSE: '✗ PARSE' };
     for (const r of filtered) {
       const line =
         (r.mineral || '').padEnd(cols.mineral)
@@ -565,7 +590,8 @@ async function runCli() {
     }
 
     console.log(dash);
-    console.log(`summary: ${summary.pass} pass, ${summary.flag} flag, ${summary.parse} parse-error, ${summary.skip} skip (no structural data)`);
+    const axisCount = summary.axis || 0;
+    console.log(`summary: ${summary.pass} pass, ${summary.flag} flag, ${axisCount} axis-twin, ${summary.parse} parse-error, ${summary.skip} skip (no structural data)`);
     if (summary.flag + summary.parse > 0) {
       console.log(`flagged minerals (${flaggedMinerals.size}): ${[...flaggedMinerals].sort().join(', ')}`);
     }
