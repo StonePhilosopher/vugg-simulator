@@ -434,6 +434,83 @@ body.topo-view-3d .topo-slice-ctrls { display: none; }
    topo highlight system the legacy classes-tab did, with finer
    granularity). One element doing both jobs. */
 .topo-canvas-wrap { flex: 1 1 auto; min-width: 0; }
+
+/* Helix overlay legend — fixed-width sidebar inside .topo-body. Hidden
+   when the helix overlay is off (display:none set inline by the toggle).
+   Scrollable so 47+ params stay accessible without stretching the
+   layout. */
+.helix-legend {
+  flex: 0 0 168px;
+  align-self: stretch;
+  max-height: 100%;
+  overflow-y: auto;
+  background: rgba(20, 18, 10, 0.85);
+  border: 1px solid rgba(240, 213, 160, 0.25);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: #d8c890;
+  user-select: none;
+}
+.helix-legend-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #f0d5a0;
+  padding: 4px 2px 6px 2px;
+  border-bottom: 1px solid rgba(240, 213, 160, 0.18);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.helix-legend-header .legend-bulk {
+  font-size: 10px;
+  background: none;
+  border: 1px solid rgba(240, 213, 160, 0.3);
+  color: #d8c890;
+  border-radius: 2px;
+  padding: 1px 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.helix-legend-header .legend-bulk:hover {
+  background: rgba(240, 213, 160, 0.1);
+  color: #f0d5a0;
+}
+.helix-legend-section {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(216, 200, 144, 0.55);
+  padding: 6px 2px 2px 2px;
+}
+.helix-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 2px;
+  border-radius: 2px;
+  cursor: pointer;
+  line-height: 1.3;
+}
+.helix-legend-row:hover { background: rgba(240, 213, 160, 0.08); }
+.helix-legend-row.is-off { opacity: 0.32; }
+.helix-legend-swatch {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+.helix-legend-row.is-off .helix-legend-swatch {
+  background: transparent !important;
+  border-color: rgba(216, 200, 144, 0.35);
+}
+.helix-legend-label { flex: 1 1 auto; }
+
 @media (max-width: 600px) {
   /* Narrow viewports: keep the topo body column-flex (was previously
      to stack legend above canvas; now there's no legend, but other
@@ -2887,6 +2964,7 @@ footer a:hover {
         <button class="topo-zoom-btn" id="topo-pan-btn" onclick="topoSetDragMode('pan')" title="Pan camera (drag to move without rotating)">✥</button>
         <button class="topo-zoom-btn" onclick="topoRecenter()" title="Recenter (reset pan and rotation)">⊙</button>
         <button class="topo-zoom-btn" id="topo-three-btn" onclick="topoToggleThreeRenderer()" title="Toggle Three.js mesh renderer (experimental — Phase E1: cavity wireframe only)">⬚</button>
+        <button class="topo-zoom-btn" id="helix-overlay-btn" onclick="helixOverlayToggle()" title="Toggle helicoid record overlay (spinning radar through cavity, reads chemistry + wall on every ring)">⌇</button>
       </div>
       <button id="topo-replay-btn" class="topo-replay" onclick="topoReplay()" title="Replay wall history">▶</button>
       <div id="topo-vug-size" class="topo-info-label bottom-left" title="Vug diameter"></div>
@@ -2913,6 +2991,12 @@ footer a:hover {
       </div>
       <div id="topo-tooltip" class="topo-tooltip" style="display:none"></div>
     </div>
+    <!-- Helix overlay legend. Populated by js/99j-helix-overlay.ts on
+         first run from _HELIX_CHEM_PARAMS. Each row toggles that
+         param's trails on/off. Shown only while the helix overlay is
+         enabled (sibling of the canvas-wrap so the canvas keeps its
+         flex sizing). -->
+    <div id="helix-legend" class="helix-legend" style="display:none"></div>
   </div>
 </div>
 
@@ -59563,6 +59647,11 @@ function topoToggleThreeRenderer() {
 // behind in world frame for 1/4 turn.
 let _helixOverlayEnabled = true;
 const _HELIX_N_TURNS = 1; // one full revolution = bottom to top of cavity
+// Per-param on/off — parallel to _HELIX_CHEM_PARAMS (lazily sized on
+// first legend build). Click a legend row to flip the bool; the trail
+// updater empties that param's draw range when off, so toggled-off
+// params disappear without disturbing anyone else's verts.
+let _helixParamEnabled = [];
 // Pure-JS HSL → hex, no THREE dependency at module-load time. Used
 // to spread the 41 ion trail colours evenly around the hue wheel.
 function _hexFromHSL(h, s, l) {
@@ -59636,6 +59725,100 @@ const _HELIX_CHEM_PARAMS = (function () {
 })();
 const _HELIX_FADE_ANGLE = Math.PI / 2; // 1/4 turn — boss spec
 const _HELIX_SAMPLE_STEP = Math.PI / 90; // sample every 2° of sweep
+// =========== LEGEND ====================================================
+// Boss v12 ask: side legend, hover-to-identify, show-only-active, and
+// highlight-movers — and the legend rows toggle individual params on
+// and off. The toggle is the foundation; the focus modes (active /
+// movers / hover) layer on top later. This block handles legend build
+// + enable-array + click-toggle + bulk all/none.
+let _helixLegendBuilt = false;
+function _helixHexFromColor(c) {
+    return '#' + c.toString(16).padStart(6, '0');
+}
+function _helixBuildLegend() {
+    const panel = document.getElementById('helix-legend');
+    if (!panel)
+        return;
+    if (_helixParamEnabled.length !== _HELIX_CHEM_PARAMS.length) {
+        _helixParamEnabled = _HELIX_CHEM_PARAMS.map(() => true);
+    }
+    // Section boundaries inside _HELIX_CHEM_PARAMS (matches the IIFE
+    // build order: 1 primary, 5 specials, then 41 ions).
+    const sections = [
+        { title: 'Wall', start: 0, end: 1 },
+        { title: 'Conditions', start: 1, end: 6 },
+        { title: 'Ions', start: 6, end: _HELIX_CHEM_PARAMS.length },
+    ];
+    const html = [];
+    html.push('<div class="helix-legend-header">'
+        + '<span>Helix params</span>'
+        + '<span style="display:flex;gap:3px">'
+        + '<button class="legend-bulk" data-helix-bulk="all"  title="Show all params">all</button>'
+        + '<button class="legend-bulk" data-helix-bulk="none" title="Hide all params">none</button>'
+        + '</span></div>');
+    for (const sec of sections) {
+        html.push(`<div class="helix-legend-section">${sec.title}</div>`);
+        for (let i = sec.start; i < sec.end; i++) {
+            const p = _HELIX_CHEM_PARAMS[i];
+            const swatch = _helixHexFromColor(p.color);
+            const off = _helixParamEnabled[i] ? '' : ' is-off';
+            html.push(`<div class="helix-legend-row${off}" data-helix-idx="${i}" title="${p.label}">`
+                + `<span class="helix-legend-swatch" style="background:${swatch}"></span>`
+                + `<span class="helix-legend-label">${p.label}</span>`
+                + '</div>');
+        }
+    }
+    panel.innerHTML = html.join('');
+    panel.addEventListener('click', _helixLegendClickHandler);
+    _helixLegendBuilt = true;
+}
+function _helixLegendClickHandler(ev) {
+    const t = ev.target;
+    if (!t)
+        return;
+    // Bulk all/none buttons short-circuit before per-row handling.
+    const bulkBtn = t.closest('[data-helix-bulk]');
+    if (bulkBtn) {
+        const mode = bulkBtn.getAttribute('data-helix-bulk');
+        const val = mode === 'all';
+        for (let i = 0; i < _helixParamEnabled.length; i++)
+            _helixParamEnabled[i] = val;
+        _helixRefreshLegendRows();
+        return;
+    }
+    const row = t.closest('[data-helix-idx]');
+    if (!row)
+        return;
+    const idx = parseInt(row.getAttribute('data-helix-idx') || '-1', 10);
+    if (idx < 0 || idx >= _helixParamEnabled.length)
+        return;
+    _helixParamEnabled[idx] = !_helixParamEnabled[idx];
+    row.classList.toggle('is-off', !_helixParamEnabled[idx]);
+}
+function _helixRefreshLegendRows() {
+    const panel = document.getElementById('helix-legend');
+    if (!panel)
+        return;
+    const rows = panel.querySelectorAll('[data-helix-idx]');
+    rows.forEach(r => {
+        const idx = parseInt(r.getAttribute('data-helix-idx') || '-1', 10);
+        if (idx < 0)
+            return;
+        r.classList.toggle('is-off', !_helixParamEnabled[idx]);
+    });
+}
+function _helixSyncLegendVisibility() {
+    const panel = document.getElementById('helix-legend');
+    if (panel)
+        panel.style.display = _helixOverlayEnabled ? 'block' : 'none';
+    // Keep the toolbar button colour in sync — overlay defaults to
+    // enabled on load, but the button starts uncoloured until first
+    // draw. Setting here covers both the initial render and the
+    // toggle callback path.
+    const btn = document.getElementById('helix-overlay-btn');
+    if (btn)
+        btn.style.color = _helixOverlayEnabled ? '#f0c050' : '';
+}
 function _helixDisposeGroup(g) {
     if (!g)
         return;
@@ -59722,6 +59905,9 @@ function _helixComputeRingOffsets(ringCount, yMin, yMax) {
 function _topoHelixOverlayDraw(state, sim, wall) {
     if (!state)
         return;
+    if (!_helixLegendBuilt)
+        _helixBuildLegend();
+    _helixSyncLegendVisibility();
     if (!_helixOverlayEnabled) {
         if (state.helixGroup) {
             state.scene.remove(state.helixGroup);
@@ -59901,6 +60087,13 @@ function _helixUpdateTrails(sim, wall, R, yMin, yMax, ringCount, ringOffsets) {
         const lines = _helixTrailLines[p];
         if (!lines)
             continue;
+        // Param toggled off in the legend — collapse its draw range and
+        // skip sampling entirely. Trail history is preserved (re-enabling
+        // resumes from existing samples on the next frame).
+        if (!_helixParamEnabled[p]) {
+            lines.geometry.setDrawRange(0, 0);
+            continue;
+        }
         const posArr = lines.geometry.attributes.position.array;
         const colArr = lines.geometry.attributes.color.array;
         const cr = ((param.color >> 16) & 0xff) / 255;
@@ -60059,6 +60252,10 @@ function _helixSpinTick(now) {
 }
 function helixOverlayToggle() {
     _helixOverlayEnabled = !_helixOverlayEnabled;
+    const btn = document.getElementById('helix-overlay-btn');
+    if (btn)
+        btn.style.color = _helixOverlayEnabled ? '#f0c050' : '';
+    _helixSyncLegendVisibility();
     if (typeof topoRender === 'function')
         topoRender();
 }
