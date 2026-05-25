@@ -42,18 +42,37 @@
 let _helixOverlayEnabled = true;
 const _HELIX_N_TURNS = 1;   // one full revolution = bottom to top of cavity
 
-// 6 chemistry parameters. Each gets its own colour and per-ring
-// trail. `read(sim, wall, ringIdx, cellIdx)` returns the current
-// value at that ring (cellIdx is currently ignored — chemistry is
-// per-ring in this simulator).
+// First entry is the PRIMARY: wall distance per (ring, cell). Plotted
+// at literal world-mm (no normalization) so the trail traces the
+// actual cavity wall as the helicoid intersects it. Boss v10:
+// "no visible 3d vug, the only indication of the vugg shape is the
+// reading at the wall of the vugg where it intersects with the
+// helicoid." Cavity mesh + crystal meshes are hidden in
+// _topoHelixOverlayDraw; this trail is what reveals the cavity shape.
+//
+// The other entries are SECONDARIES: per-ring chemistry, normalized
+// into [0, R]. `read(sim, wall, ringIdx, cellIdx)` — primary uses
+// cellIdx for per-cell wall lookup; secondaries ignore it (chemistry
+// is per-ring in this simulator).
 const _HELIX_CHEM_PARAMS: Array<{
   id: string,
   label: string,
   min: number,
   max: number,
   color: number,
+  primary?: boolean,
   read: (sim: any, wall: any, ringIdx: number, cellIdx: number) => number | null | undefined,
 }> = [
+  { id: 'wall', label: 'wall distance', min: 0, max: 0, color: 0xffffff,
+    primary: true,
+    read: (sim, wall, i, c) => {
+      if (!wall || !wall.rings) return null;
+      const ring = wall.rings[i];
+      if (!ring || !ring.length) return null;
+      const cell = ring[c % ring.length];
+      if (!cell) return null;
+      return (cell.base_radius_mm || 0) + (cell.wall_depth || 0);
+    } },
   { id: 'T',   label: 'temperature', min: 50,  max: 250,  color: 0xff5544,
     read: (s, w, i, c) => (s.ring_temperatures || [])[i] },
   { id: 'pH',  label: 'pH',          min: 2,   max: 12,   color: 0x9966ee,
@@ -172,9 +191,23 @@ function _topoHelixOverlayDraw(state: any, sim: any, wall: any) {
       _helixTrailLines.length = 0;
     }
     state.helixContext = null;
+    // Restore the cavity + crystal meshes hidden while the overlay
+    // was running — leaving them invisible after toggle-off would
+    // leave the topo view empty.
+    if (state.cavity) state.cavity.visible = true;
+    if (state.crystals) state.crystals.visible = true;
     return;
   }
   if (!sim || !wall || !wall.ring_count) return;
+
+  // Boss v10: "no visible 3d vug, the only indication of the vugg
+  // shape is the reading at the wall of the vugg where it intersects
+  // with the helicoid at that moment in time." Hide both the cavity
+  // mesh and crystal meshes — the white primary wall-distance trail
+  // (per-cell, fading 1/4 turn behind the sweep) reveals the cavity
+  // shape from radar returns alone.
+  if (state.cavity) state.cavity.visible = false;
+  if (state.crystals) state.crystals.visible = false;
 
   const { R, wallRadius, yMin, yMax, ySpan } = _helixGeometry(state, wall);
   const ringCount = wall.ring_count;
@@ -345,8 +378,15 @@ function _helixUpdateTrails(sim: any, wall: any, R: number, yMin: number, yMax: 
 
       const raw = param.read(sim, wall, i, cellIdx);
       if (typeof raw !== 'number' || isNaN(raw)) continue;
-      const norm = Math.max(0, Math.min(1, (raw - param.min) / (param.max - param.min)));
-      const r = norm * R;
+      // Primary plots at literal world-mm (traces the actual wall);
+      // secondaries normalize their value into [0, R].
+      let r: number;
+      if (param.primary) {
+        r = raw;
+      } else {
+        const norm = Math.max(0, Math.min(1, (raw - param.min) / (param.max - param.min)));
+        r = norm * R;
+      }
       const y = _helixRingY(i, ringCount, yMin, yMax);
       const offset = ringOffsets[i] || 0;
 
