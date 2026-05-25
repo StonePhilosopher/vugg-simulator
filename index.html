@@ -59582,22 +59582,26 @@ function _helixPickCrystal(sim) {
     }
     return best;
 }
-// Compute helix radius + axial span from the cavity dimensions, so the
-// helicoid sits well inside the wall regardless of scenario architecture
-// (vug ~15mm, pocket ~50mm, cave ~1650mm).
+// Compute helix radius + axial span from the cavity dimensions.
+//
+// Per boss model: the outer edge of the helicoid IS the vugg wall for
+// physically-grounded parameters (e.g., distance-from-center). So R
+// matches max_seen_radius_mm — not a fraction of it. And the vertical
+// span matches the full vugg diameter so "Y on helicoid = Y in vugg"
+// holds literally.
 function _helixGeometry(wall) {
     let R;
     if (wall && typeof wall.max_seen_radius_mm === 'number' && wall.max_seen_radius_mm > 0) {
-        R = wall.max_seen_radius_mm * 0.70;
+        R = wall.max_seen_radius_mm;
     }
     else if (wall && wall.vug_diameter_mm) {
-        R = wall.vug_diameter_mm * 0.35;
+        R = wall.vug_diameter_mm * 0.5;
     }
     else {
-        R = 18; // sensible default for a pocket-sized cavity
+        R = 25;
     }
-    const diameter = (wall && wall.vug_diameter_mm) ? wall.vug_diameter_mm : 50;
-    return { R, ySpan: diameter * 0.80 };
+    const ySpan = (wall && wall.vug_diameter_mm) ? wall.vug_diameter_mm : 50;
+    return { R, ySpan };
 }
 // Main entry — called by _topoRenderThree once per frame. Cheap when
 // nothing changed (signature compare short-circuits rebuild).
@@ -59749,6 +59753,56 @@ function _topoHelixOverlayDraw(state, sim, wall) {
     state.scene.add(group);
     state.helixGroup = group;
     state.helixSig = sig;
+    // Carry over the in-flight rotation so a rebuild (crystal change,
+    // zone-count tick) doesn't snap the helix back to angle 0.
+    if (typeof _helixRotationY === 'number')
+        group.rotation.y = _helixRotationY;
+    _helixStartSpin();
+}
+// =========== SPINNING ==========================================
+// Boss model: θ = time, advanced by spinning. The helicoid rotates
+// rigidly around the central (Y) axis; data inscriptions ride with it.
+//
+// v2 implements the rotation only. The data the helicoid carries
+// (per-tick chemistry traces at literal vugg heights, crystal plotter
+// points) lands in v3 — until then the existing per-zone outer-edge
+// beads ride along as visible eye-candy. They're geometrically wrong
+// per the boss model (one crystal's zones spread across Y instead of
+// living at the crystal's actual height); flagged for replacement.
+let _helixSpinRAF = null;
+let _helixSpinPrevTime = 0;
+let _helixRotationY = 0;
+const _HELIX_RPM = 6; // 6 revolutions per minute → 36°/sec — visible
+// but not dizzying. Single tunable for now.
+function _helixStartSpin() {
+    if (_helixSpinRAF != null)
+        return;
+    _helixSpinPrevTime = performance.now();
+    _helixSpinRAF = requestAnimationFrame(_helixSpinTick);
+}
+function _helixSpinTick(now) {
+    const state = (typeof _topoThreeState !== 'undefined') ? _topoThreeState : null;
+    if (!_helixOverlayEnabled || !state || !state.helixGroup) {
+        _helixSpinRAF = null;
+        return;
+    }
+    // Only spin when the WebGL canvas is actually visible — pauses the
+    // RAF cost on the title screen, in Creative mode, etc. Checks the
+    // canvas's offsetParent (null when display:none anywhere in the
+    // ancestor chain).
+    const c3 = document.getElementById('topo-canvas-three');
+    const visible = c3 && c3.offsetParent != null && c3.style.display !== 'none';
+    if (visible) {
+        const dt = Math.max(0, Math.min(0.1, (now - _helixSpinPrevTime) / 1000));
+        const omega = (_HELIX_RPM / 60) * 2 * Math.PI; // rad/sec
+        _helixRotationY = (_helixRotationY + dt * omega) % (Math.PI * 2);
+        state.helixGroup.rotation.y = _helixRotationY;
+        if (state.renderer && state.scene && state.camera) {
+            state.renderer.render(state.scene, state.camera);
+        }
+    }
+    _helixSpinPrevTime = now;
+    _helixSpinRAF = requestAnimationFrame(_helixSpinTick);
 }
 // Toggle handler — surfaced to the eventual UI button. Forces a rebuild
 // on next render by clearing the cached signature.
