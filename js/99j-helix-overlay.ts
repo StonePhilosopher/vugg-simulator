@@ -551,6 +551,17 @@ function _topoHelixOverlayDraw(state: any, sim: any, wall: any) {
 
   const sig = `${R.toFixed(2)}|${yMin.toFixed(2)}|${yMax.toFixed(2)}|${ringCount}`;
   const sigChanged = state.helixSig !== sig;
+  // v20: new sim → reset sweep to 0 so playback begins from step 0.
+  // Detect via sim reference (fresh Simulator on each runSimulation())
+  // OR via cavity-geometry sig change (handles scenarios with same
+  // sim object but rebuilt walls). Without the reset, the helicoid
+  // would resume from wherever it was, mid-revolution, on a new
+  // scenario — confusing because the "now cursor" wouldn't be at the
+  // scenario start.
+  const simChanged = !state.helixContext || state.helixContext.sim !== sim;
+  if (sigChanged || simChanged) {
+    _helixSweepAngle = 0;
+  }
 
   if (sigChanged) {
     if (state.helixGroup) {
@@ -1256,7 +1267,27 @@ function _helixRestoreCrystalOpacity(state: any) {
 let _helixSpinRAF: number | null = null;
 let _helixSpinPrevTime = 0;
 let _helixSweepAngle = 0;
-const _HELIX_RPM = 40;
+// v20: one revolution = entire scenario timeline. At 200 steps / 15 s
+// → ~13 steps/s; at 4 RPM the eye can track crystal-growth and
+// fluid-evolution between frames. Pre-v20 was 40 RPM (1.5 s per
+// scenario), which was too fast to read individual steps.
+const _HELIX_RPM = 4;
+
+// v20: convert sweep angle → wall_state_history step index. One full
+// revolution covers steps [0, lastStep]. Boss: "link it to the
+// turn by turn data so each step in the game changes what you see
+// in the vugg." Returns -1 when no history is available (creative
+// mode mid-edit, or pre-sim) — caller falls back to live-sim.
+function _helixCurrentStep(sim: any, sweep: number): number {
+  const history = sim && sim.wall_state_history;
+  if (!history || !history.length) return -1;
+  const last = history[history.length - 1];
+  const lastStep = last && typeof last.step === 'number' ? last.step : 0;
+  if (lastStep <= 0) return 0;
+  const TWO_PI = Math.PI * 2;
+  const wrapped = ((sweep % TWO_PI) + TWO_PI) % TWO_PI;
+  return Math.floor((wrapped / TWO_PI) * (lastStep + 1));
+}
 
 function _helixStartSpin() {
   if (_helixSpinRAF != null) return;
@@ -1279,6 +1310,19 @@ function _helixSpinTick(now: number) {
     state.helixGroup.rotation.y = _helixSweepAngle;
     if (state.helixContext) {
       const c = state.helixContext;
+      // v20: rebuild crystal meshes at the current scenario step so
+      // growth + nucleation play back as the helicoid spins. The
+      // signature inside _topoSyncCrystalMeshes early-returns when
+      // the step hasn't advanced — so this is one cheap signature
+      // hash per frame plus one rebuild per step transition (~13/s
+      // at 4 RPM on a 200-step scenario). Crystals that haven't
+      // nucleated yet skip themselves (nucleation_step gate in
+      // _topoHistoricalCrystalSize); already-nucleated crystals
+      // render at their grown size at this step.
+      const step = _helixCurrentStep(c.sim, _helixSweepAngle);
+      if (step >= 0 && typeof _topoSyncCrystalMeshes === 'function') {
+        _topoSyncCrystalMeshes(state, c.sim, c.wall, step);
+      }
       _helixUpdateTrails(c.sim, c.wall, c.R, c.yMin, c.yMax, c.ringCount, c.ringOffsets);
       _helixUpdateCrystalVisibility(state, _helixSweepAngle, c.wall, c.ringCount, c.ringOffsets);
       _helixUpdateEvents(state, c.sim, c.wall, _helixSweepAngle, c.ringCount, c.ringOffsets);
