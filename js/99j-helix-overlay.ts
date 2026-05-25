@@ -116,7 +116,22 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
       if (!ring || !ring.length) return null;
       const cell = ring[c % ring.length];
       if (!cell) return null;
-      return (cell.base_radius_mm || 0) + (cell.wall_depth || 0);
+      // v17: lateral distance from the cavity's vertical axis to the
+      // wall at this ring's Y height — NOT the distance from the
+      // cavity center to the cell, which the previous code returned.
+      // Bug surfaced: the helicoid sweeps around the vertical axis
+      // at each ring's Y, so "wall distance" reading should be the
+      // perpendicular-to-axis distance, which is radius·sin(phi).
+      // Pre-v17 returned radius alone, so the trail plotted at full
+      // equatorial radius for every ring including the polar caps —
+      // visibly extending past the actual cavity shape and never
+      // tapering at the top/bottom.
+      const ringCount = wall.ring_count || (wall.rings ? wall.rings.length : 0);
+      if (!ringCount) return null;
+      const phi = Math.PI * (i + 0.5) / ringCount;
+      const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+      const radius = ((cell.base_radius_mm || 0) + (cell.wall_depth || 0)) * polar;
+      return radius * Math.sin(phi);
     },
   });
 
@@ -213,12 +228,19 @@ function _helixSimAtSnap(sim: any, snap: any): any {
 // the snap, so the wall trail itself rewinds with scenario time.
 function _helixWallAtSnap(wall: any, snap: any): any {
   if (!snap || !snap.rings) return wall;
+  // ringTwistRadians and polarProfileFactor are WallState methods —
+  // they read `this.twist_amplitudes`, `this.polar_amplitudes`, etc.
+  // The plain-object proxy rebinds `this`, so without explicit
+  // binding the methods throw on undefined .length. v15 included
+  // these unbound (latent bug: nothing inside the helix called them
+  // through the proxy at the time); v17's wall read now invokes
+  // polarProfileFactor and surfaced it.
   return {
     rings: snap.rings,
     ring_count: wall && wall.ring_count,
     cells_per_ring: wall && wall.cells_per_ring,
-    ringTwistRadians: wall && wall.ringTwistRadians,
-    polarProfileFactor: wall && wall.polarProfileFactor,
+    ringTwistRadians: wall && wall.ringTwistRadians ? wall.ringTwistRadians.bind(wall) : undefined,
+    polarProfileFactor: wall && wall.polarProfileFactor ? wall.polarProfileFactor.bind(wall) : undefined,
     max_seen_radius_mm: wall && wall.max_seen_radius_mm,
     vug_diameter_mm: wall && wall.vug_diameter_mm,
   };
@@ -1061,11 +1083,15 @@ function _helixUpdateEvents(
                           _topoThreeState ? _topoThreeState.helixContext.yMax : 25);
     const angleWorld = theta + offset;
 
-    // Radial flash: short bar straddling the cell's wall radius. The
-    // wall reading is `base_radius_mm + wall_depth`; place the flash
-    // ±_HELIX_EVENT_RADIAL_HALF mm around that so the marker rides
-    // the wall instead of floating in free fluid.
-    const rWall = (cell.base_radius_mm || 0) + (cell.wall_depth || 0);
+    // Radial flash: short bar straddling the cell's lateral wall
+    // distance (perpendicular from the cavity's vertical axis to
+    // the wall). v17 fix: pre-v17 used radius-from-center, which on
+    // a roughly spherical cavity made polar-ring events float past
+    // the actual wall by a factor of (1 − sin(phi)). Now matches
+    // _topoSyncCrystalMeshes' lateral placement (radius · sin(phi)).
+    const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+    const radiusFromCenter = ((cell.base_radius_mm || 0) + (cell.wall_depth || 0)) * polar;
+    const rWall = radiusFromCenter * Math.sin(phi);
     const rIn = Math.max(0, rWall - _HELIX_EVENT_RADIAL_HALF);
     const rOut = rWall + _HELIX_EVENT_RADIAL_HALF;
 
