@@ -48,6 +48,21 @@ const _HELIX_N_TURNS = 1;   // one full revolution = bottom to top of cavity
 // params disappear without disturbing anyone else's verts.
 let _helixParamEnabled: boolean[] = [];
 
+// v16 focus modes. Each layers an alpha multiplier on top of the
+// per-param explicit enable. _helixActiveOnlyMode hides params whose
+// trail values are essentially zero (suppresses the ~30 trace ions
+// that contribute nothing in most scenarios). _helixMoversMode dims
+// flat params and brightens fast-changing ones using each param's
+// own |Δr| as the weight. _helixHoveredParam isolates a single
+// param when the cursor sits on its legend row.
+let _helixActiveOnlyMode = false;
+let _helixMoversMode = false;
+let _helixHoveredParam: number | null = null;
+let _helixParamMaxAbs: number[] = [];     // per-param: max |r| across rings this frame
+let _helixParamMaxDelta: number[] = [];   // per-param: max |Δr| across rings this frame
+const _HELIX_ACTIVE_MIN_R = 0.04;          // fraction of R below which "no signal"
+const _HELIX_MOVER_MIN_DELTA = 0.02;       // fraction of R below which "totally flat"
+
 // Pure-JS HSL → hex, no THREE dependency at module-load time. Used
 // to spread the 41 ion trail colours evenly around the hue wheel.
 function _hexFromHSL(h: number, s: number, l: number): number {
@@ -246,6 +261,18 @@ function _helixBuildLegend() {
     + '<button class="legend-bulk" data-helix-bulk="all"  title="Show all params">all</button>'
     + '<button class="legend-bulk" data-helix-bulk="none" title="Hide all params">none</button>'
     + '</span></div>');
+  // v16 focus-mode row. Two toggles drive per-frame alpha multipliers
+  // in the trail render. Active reflects current mode state so the
+  // class can flip even before the first user click — initial render
+  // catches both modes off.
+  const activeOn = _helixActiveOnlyMode ? ' is-on' : '';
+  const moversOn = _helixMoversMode ? ' is-on' : '';
+  html.push('<div class="helix-legend-modes">'
+    + `<button class="legend-mode${activeOn}" data-helix-mode="active" `
+    +   `title="Hide params whose values stay near zero. Trace ions only appear when they have signal.">active only</button>`
+    + `<button class="legend-mode${moversOn}" data-helix-mode="movers" `
+    +   `title="Dim flat params; brighten fast-changing ones. Layered on top of the value-trail.">movers</button>`
+    + '</div>');
   for (const sec of sections) {
     html.push(`<div class="helix-legend-section">${sec.title}</div>`);
     for (let i = sec.start; i < sec.end; i++) {
@@ -263,6 +290,12 @@ function _helixBuildLegend() {
   panel.innerHTML = html.join('');
 
   panel.addEventListener('click', _helixLegendClickHandler);
+  // v16 hover-to-identify: pointerover/out delegated on the panel.
+  // pointer* fires for touch + mouse + pen; mouseover would miss
+  // touch. The handler isolates one param's trails when the cursor
+  // sits on its row, and clears on leave.
+  panel.addEventListener('pointerover', _helixLegendPointerOver);
+  panel.addEventListener('pointerout', _helixLegendPointerOut);
   _helixLegendBuilt = true;
 }
 
@@ -278,12 +311,45 @@ function _helixLegendClickHandler(ev: Event) {
     _helixRefreshLegendRows();
     return;
   }
+  // v16 mode-toggle buttons.
+  const modeBtn = t.closest('[data-helix-mode]') as HTMLElement | null;
+  if (modeBtn) {
+    const mode = modeBtn.getAttribute('data-helix-mode');
+    if (mode === 'active') {
+      _helixActiveOnlyMode = !_helixActiveOnlyMode;
+      modeBtn.classList.toggle('is-on', _helixActiveOnlyMode);
+    } else if (mode === 'movers') {
+      _helixMoversMode = !_helixMoversMode;
+      modeBtn.classList.toggle('is-on', _helixMoversMode);
+    }
+    return;
+  }
   const row = t.closest('[data-helix-idx]') as HTMLElement | null;
   if (!row) return;
   const idx = parseInt(row.getAttribute('data-helix-idx') || '-1', 10);
   if (idx < 0 || idx >= _helixParamEnabled.length) return;
   _helixParamEnabled[idx] = !_helixParamEnabled[idx];
   row.classList.toggle('is-off', !_helixParamEnabled[idx]);
+}
+
+function _helixLegendPointerOver(ev: any) {
+  const row = ev.target && ev.target.closest && ev.target.closest('[data-helix-idx]');
+  if (!row) return;
+  const idx = parseInt(row.getAttribute('data-helix-idx') || '-1', 10);
+  if (idx < 0) return;
+  _helixHoveredParam = idx;
+  row.classList.add('is-hover');
+}
+
+function _helixLegendPointerOut(ev: any) {
+  const row = ev.target && ev.target.closest && ev.target.closest('[data-helix-idx]');
+  if (!row) return;
+  // pointerout fires on entering a child element too; only clear when
+  // the relatedTarget isn't still inside the row.
+  if (ev.relatedTarget && row.contains(ev.relatedTarget)) return;
+  const idx = parseInt(row.getAttribute('data-helix-idx') || '-1', 10);
+  if (_helixHoveredParam === idx) _helixHoveredParam = null;
+  row.classList.remove('is-hover');
 }
 
 function _helixRefreshLegendRows() {
@@ -623,19 +689,22 @@ function _helixUpdateTrails(sim: any, wall: any, R: number, yMin: number, yMax: 
     const cg = ((param.color >> 8) & 0xff) / 255;
     const cb = (param.color & 0xff) / 255;
 
-    let v = 0;
+    // v16 PASS 1: sample values, update trail history, gather per-
+    // param stats (max |r|, max |Δr|) used by the focus modes.
+    // Per-ring context is stashed in ringCtx so pass 2 doesn't
+    // re-read the snap or re-pick the cell.
+    type RingCtx = { y: number, offset: number, N: number, ringArr: any } | null;
+    const ringCtx: RingCtx[] = new Array(ringCount);
+    let maxAbsP = 0;
+    let maxDeltaP = 0;
 
     for (let i = 0; i < ringCount; i++) {
-      // Sample value at this ring. histWall.rings is the snap's ring
-      // array when history is active; otherwise it's the live wall's.
       const ringArr = (histWall.rings && histWall.rings[i]) || null;
       const N = ringArr && ringArr.length ? ringArr.length : 0;
       const cellIdx = N > 0 ? Math.floor(sweepWrapped / (TWO_PI / N)) % N : 0;
 
       const raw = param.read(histSim, histWall, i, cellIdx);
-      if (typeof raw !== 'number' || isNaN(raw)) continue;
-      // Primary plots at literal world-mm (traces the actual wall);
-      // secondaries normalize their value into [0, R].
+      if (typeof raw !== 'number' || isNaN(raw)) { ringCtx[i] = null; continue; }
       let r: number;
       if (param.primary) {
         r = raw;
@@ -643,9 +712,6 @@ function _helixUpdateTrails(sim: any, wall: any, R: number, yMin: number, yMax: 
         const norm = Math.max(0, Math.min(1, (raw - param.min) / (param.max - param.min)));
         r = norm * R;
       }
-      const y = _helixRingY(i, ringCount, yMin, yMax);
-      const offset = ringOffsets[i] || 0;
-
       const trail = _helixTrails[p][i];
       const last = trail[trail.length - 1];
       if (!last || (sweep - last.sweep) > _HELIX_SAMPLE_STEP) {
@@ -656,6 +722,53 @@ function _helixUpdateTrails(sim: any, wall: any, R: number, yMin: number, yMax: 
       while (trail.length && (sweep - trail[0].sweep) > _HELIX_FADE_ANGLE) {
         trail.shift();
       }
+      // Stats from the trail (handles the just-appended sample too).
+      for (let k = 0; k < trail.length; k++) {
+        const ar = Math.abs(trail[k].r);
+        if (ar > maxAbsP) maxAbsP = ar;
+        if (k > 0) {
+          const dr = Math.abs(trail[k].r - trail[k - 1].r);
+          if (dr > maxDeltaP) maxDeltaP = dr;
+        }
+      }
+      ringCtx[i] = {
+        y: _helixRingY(i, ringCount, yMin, yMax),
+        offset: ringOffsets[i] || 0,
+        N, ringArr,
+      };
+    }
+    _helixParamMaxAbs[p] = maxAbsP;
+    _helixParamMaxDelta[p] = maxDeltaP;
+
+    // v16 focus-mode multiplier. Primary (wall) is always shown at
+    // full alpha — it's the anchor that other readings hang on, and
+    // hiding it would defeat the helicoid's shape-via-radar reading.
+    let alphaMul = 1;
+    if (!param.primary) {
+      if (_helixActiveOnlyMode && maxAbsP < _HELIX_ACTIVE_MIN_R * R) {
+        lines.geometry.setDrawRange(0, 0);
+        continue;
+      }
+      if (_helixMoversMode) {
+        const moverNorm = Math.max(0, Math.min(1, maxDeltaP / R));
+        if (moverNorm < _HELIX_MOVER_MIN_DELTA) alphaMul = 0.15;
+        else alphaMul = 0.30 + 0.70 * moverNorm;
+      }
+    }
+    if (_helixHoveredParam != null && _helixHoveredParam !== p) {
+      alphaMul *= 0.18;     // non-hovered fade
+    }
+
+    let v = 0;
+
+    // v16 PASS 2: write past + rate + future verts using ringCtx.
+    for (let i = 0; i < ringCount; i++) {
+      const ctx = ringCtx[i];
+      if (!ctx) continue;
+      const { y, offset, N, ringArr } = ctx;
+      const trail = _helixTrails[p][i];
+      if (!trail || trail.length === 0) continue;
+      const r = trail[trail.length - 1].r;
 
       // Build PAST segments for this ring's trail. Each segment
       // connects two consecutive samples in (world_angle = sweep +
@@ -675,14 +788,14 @@ function _helixUpdateTrails(sim: any, wall: any, R: number, yMin: number, yMax: 
         posArr[v * 3 + 1] = y;
         posArr[v * 3 + 2] = a.r * Math.sin(angleA);
         colArr[v * 4 + 0] = cr; colArr[v * 4 + 1] = cg;
-        colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aA;
+        colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aA * alphaMul;
         v++;
 
         posArr[v * 3 + 0] = b.r * Math.cos(angleB);
         posArr[v * 3 + 1] = y;
         posArr[v * 3 + 2] = b.r * Math.sin(angleB);
         colArr[v * 4 + 0] = cr; colArr[v * 4 + 1] = cg;
-        colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aB;
+        colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aB * alphaMul;
         v++;
       }
 
@@ -722,14 +835,14 @@ function _helixUpdateTrails(sim: any, wall: any, R: number, yMin: number, yMax: 
           posArr[v * 3 + 1] = y;
           posArr[v * 3 + 2] = rBand * Math.sin(angleA);
           colArr[v * 4 + 0] = cr; colArr[v * 4 + 1] = cg;
-          colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aA;
+          colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aA * alphaMul;
           v++;
 
           posArr[v * 3 + 0] = rBand * Math.cos(angleB);
           posArr[v * 3 + 1] = y;
           posArr[v * 3 + 2] = rBand * Math.sin(angleB);
           colArr[v * 4 + 0] = cr; colArr[v * 4 + 1] = cg;
-          colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aB;
+          colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aB * alphaMul;
           v++;
         }
       }
@@ -772,14 +885,14 @@ function _helixUpdateTrails(sim: any, wall: any, R: number, yMin: number, yMax: 
           posArr[v * 3 + 1] = y;
           posArr[v * 3 + 2] = rPrev * Math.sin(angleA);
           colArr[v * 4 + 0] = cr; colArr[v * 4 + 1] = cg;
-          colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aFA;
+          colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aFA * alphaMul;
           v++;
 
           posArr[v * 3 + 0] = rNext * Math.cos(angleB);
           posArr[v * 3 + 1] = y;
           posArr[v * 3 + 2] = rNext * Math.sin(angleB);
           colArr[v * 4 + 0] = cr; colArr[v * 4 + 1] = cg;
-          colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aFB;
+          colArr[v * 4 + 2] = cb; colArr[v * 4 + 3] = aFB * alphaMul;
           v++;
           rPrev = rNext;
         }
