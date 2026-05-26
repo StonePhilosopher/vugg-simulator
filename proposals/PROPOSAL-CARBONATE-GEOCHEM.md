@@ -99,18 +99,25 @@ js/20c-chemistry-carbonate-Ksp.ts       NEW. Ksp(T) lookups from
                                         extrapolation for T-dependence.
 
 js/20d-localization-resolvers.ts        NEW (Week 4). Polymorphic
-                                        accessors for scenario fixtures
-                                        that the localization-future
-                                        will extend. Reads scalar |
-                                        per-ring-array | per-cell-fn
-                                        forms; returns per-cell answer.
-                                        Covers open_to_atmosphere,
+                                        accessors keyed on WallMesh
+                                        vertex index. Read scalar |
+                                        resolver-fn | per-region-tag-
+                                        map forms; return per-vertex
+                                        answer. Aligns with
+                                        PROPOSAL-CAVITY-MESH Phase 3+
+                                        (per-vertex state on
+                                        WallMesh.cells[]). Covers
+                                        open_to_atmosphere,
                                         atmospheric_pCO2_bar,
-                                        wall_rock_thermal_buffer_C.
-                                        Phase 1 consumers always go
-                                        through here so per-ring +
-                                        per-cell schemas land
-                                        migration-free.
+                                        wall_rock_thermal_buffer_C,
+                                        host_rock_composition. Phase 1
+                                        consumers always go through
+                                        here so future per-vertex
+                                        schemas land migration-free.
+                                        Per-ring array form
+                                        intentionally not supported —
+                                        WallMesh is retiring the
+                                        ring-grid abstraction.
 
 js/32b-supersat-carbonate-Ksp.ts        NEW. SI(mineral, fluid, T)
                                         functions. Replaces empirical eq
@@ -287,50 +294,61 @@ This is a 1D root-finding problem with monotone behavior — bisection converges
 
 **Why this matters:** closed-system calcite precipitation drops fluid pH (because precipitating CaCO₃ removes CO₃²⁻, shifts Bjerrum toward H₂CO₃, releases H⁺ effectively). In nature this is buffered by atmospheric CO₂ if the cavity is open. Currently vugg has no such buffering, so closed-system scenarios over-acidify on calcite precipitation. The sabkha mechanism is specifically open — evaporating brine maintains pCO₂ exchange with the atmosphere throughout.
 
-#### Schema shape — designed for localization-future
+#### Schema shape — designed for the wall-mesh localization future
 
-Boss directional commitment (2026-05-26): "the data is going to be more localized [meaning] instead of just by ring it would break it up into even smaller more localized sections of the vugg wall." Per-ring is the current granularity for `ring_fluids` and `ring_temperatures`; the future direction is **finer than per-ring** — per-cell (one value per `(ringIdx, cellIdx)`), per-vertex on the cavity mesh, or per-region (arbitrary cell groupings such as "basin floor" vs "basin walls" defined by mesh tagging). Phase 1 writes scalars, but the schema slot accepts a polymorphic type from the start so finer-than-per-ring refinement doesn't require migration:
+Boss directional commitment (2026-05-26): "the data is going to be more localized [meaning] instead of just by ring it would break it up into even smaller more localized sections of the vugg wall. wall mesh is probably the right direction."
+
+The target localization is **per-vertex on the `WallMesh`** (`js/23-geometry-wall-mesh.ts`), which already exists and is already planned to be the home of per-vertex state. From the WallMesh header comment:
+
+> *"Phase 4 of the proposal will retire the ring-grid model" / "Phase 2.5+ can swap in icosphere / geodesic / irregular tessellations without touching the renderer at all" / "Phase 3 will move per-vertex state (wall_depth, crystal_id, mineral, thickness_um) off WallCell and onto WallMesh.cells[] indexed by vertex."*
+
+The carbonate engine's localization story is therefore **align with PROPOSAL-CAVITY-MESH Phase 3+** rather than invent a parallel per-cell abstraction. Per-vertex chemistry, per-vertex boundary conditions, per-vertex region tagging all live on `WallMesh.cells[]` indexed by vertex. The advantage: when the wall mesh's tessellation refines (geodesic, icosphere, irregular per archetype) the carbonate engine inherits that refinement automatically because chemistry is a vertex attribute, not a separate grid.
+
+Phase 1 writes scalars (no scope expansion), but the schema slot is polymorphic from day 1:
 
 ```json5
 // any of these forms is valid for open_to_atmosphere:
 "open_to_atmosphere": true                              // scenario-global (Phase 1 typical)
-"open_to_atmosphere": [true, true, false, false, ...]   // per-ring (transitional)
-"open_to_atmosphere": "fn:openAtBasinRim"               // per-cell function ref (Phase 2+ target)
-"open_to_atmosphere": {                                 // per-region tagged
-  "_default": false,
-  "basin_floor": false,
+"open_to_atmosphere": "fn:openAtBasinRim"               // per-mesh-vertex fn (Phase 3+ target)
+"open_to_atmosphere": {                                 // per-region tag map (works against
+  "_default": false,                                    // WallMesh vertex region tags —
+  "basin_floor": false,                                 // see WallMesh tagging in 23-...mesh.ts)
   "basin_rim":   true,
   "ceiling":     true
 }
 ```
 
-Consumers always go through a resolver that ultimately produces a per-cell answer:
+(Note: the per-ring array form is intentionally OMITTED from the target schema. Per-ring is a current data-model artifact that the wall mesh is already planning to retire. New schema slots don't perpetuate it.)
+
+Consumers always go through a resolver that ultimately produces a per-vertex answer on the wall mesh:
 
 ```ts
-isOpenAtCell(scenario, ringIdx, cellIdx, regionTag?): boolean
+isOpenAtMeshVertex(scenario, mesh, vertexIdx): boolean
 ```
 
-Per-cell is the **target granularity** the resolver guarantees, regardless of which form the scenario writes. Phase 1 scenarios write scalars for convenience; the moment a scenario wants per-cell control (e.g. a basin with the rim open and the floor sealed under a brine cap), the schema accepts the function or per-region form without consumer changes. The per-ring array form is transitional — useful when a quantity genuinely varies vertically but not angularly (e.g. a horizontally-layered geothermal gradient) — but is NOT the destination.
+Per wall-mesh vertex is the **target granularity** the resolver guarantees, regardless of which form the scenario writes. Phase 1 scenarios write scalars for convenience; the moment a scenario wants per-vertex control (e.g. a basin where mesh vertices tagged `basin_rim` are open to atmosphere and `basin_floor` are sealed under a brine cap), the schema accepts the function or per-region map without consumer changes.
 
 **Same polymorphic shape for the other Phase 1 fixtures that the localization future will reach:**
 
-| field | scalar (Phase 1) | per-region / per-cell (target) | notes |
+| field | scalar (Phase 1) | per wall-mesh vertex (target) | notes |
 |---|---|---|---|
-| `open_to_atmosphere` | scenario boolean | per-cell function or region map | basins with open rim + sealed floor |
-| `atmospheric_pCO2_bar` | scenario number | per-cell field | different cells see different headspace |
-| `wall_rock_thermal_buffer_C` | scenario number | per-cell field | wall rock composition varies along the cavity |
-| `host_rock_composition` | scenario tag (e.g. "limestone") | per-cell tag map | mixed host rocks (limestone + chert beds) need this for reactive_wall-style scenarios |
+| `open_to_atmosphere` | scenario boolean | resolver fn or region tag map | basins with open rim + sealed floor; mesh vertex tags determine which |
+| `atmospheric_pCO2_bar` | scenario number | per-vertex field | different vertices see different headspace |
+| `wall_rock_thermal_buffer_C` | scenario number | per-vertex field | wall rock composition varies along the cavity |
+| `host_rock_composition` | scenario tag (e.g. "limestone") | per-vertex tag map | mixed host rocks (limestone + interbedded chert) for reactive_wall-style scenarios; aligns with the wall mesh's existing vertex-color metadata (floor/wall/ceiling × submerged tint) |
 
-Resolvers live in `js/20d-localization-resolvers.ts` (new, Week 4). All forms always available; scalars are the convenient default for now.
+Resolvers live in `js/20d-localization-resolvers.ts` (new, Week 4). They take `(scenario, mesh, vertexIdx)` and return the per-vertex value, normalizing any of the three forms (scalar / fn / region map) at read time.
 
-**Existing per-ring quantities (`ring_temperatures`, `ring_fluids`) are themselves transitional.** They were the right resolution when the simulator was per-ring, but the localization-future means the carbonate engine should be designed to consume per-cell chemistry when it lands, not just per-ring. Phase 1 reads through a thin per-cell accessor:
+**Existing per-ring quantities (`ring_temperatures`, `ring_fluids`) are themselves transitional.** They were the right resolution when the simulator was per-ring, but the wall-mesh-localization future means the carbonate engine should be designed to consume per-vertex chemistry when it lands. Phase 1 reads through thin per-vertex accessors:
 
 ```ts
-fluidAtCell(sim, ringIdx, cellIdx) → FluidChemistry
-temperatureAtCell(sim, ringIdx, cellIdx) → number
+fluidAtMeshVertex(sim, mesh, vertexIdx) → FluidChemistry
+temperatureAtMeshVertex(sim, mesh, vertexIdx) → number
 ```
 
-which currently returns the ring value (no per-cell variation yet) but is the single point where per-cell fluid would be introduced when the data model extends. Engines that consume the fluid go through these accessors so they're agnostic to the data model's current granularity — a per-cell `ring_fluids[i][c]` extension lands by changing the accessor alone, not 84 grow_*() call sites.
+which currently look up the ring index from the vertex (`mesh.cells[vertexIdx].ringIdx`) and return the ring value — but are the single point where per-vertex fluid would be introduced when WallMesh Phase 3 promotes chemistry onto `WallMesh.cells[]`. Engines that consume the fluid go through these accessors so they're agnostic to the data model's current granularity. The future per-vertex chemistry lands by changing the accessor alone, not the 84 grow_*() call sites and not the carbonate engine's SI computation.
+
+**Compositional benefit:** the carbonate engine and the cavity-mesh evolution become COMPOSED rather than competing. PROPOSAL-CAVITY-MESH Phase 3 introduces per-vertex `WallMesh.cells[]` state; the carbonate accessors immediately reach it. PROPOSAL-CAVITY-MESH Phase 2.5 introduces alternate tessellations; the carbonate engine sees finer or coarser localization automatically. Neither proposal blocks the other; both land cleanly when their respective phases ship.
 
 ### Ω-history → cycle count
 
@@ -580,7 +598,7 @@ Carbonate engine + audit framework as parallel tracks.
 
 4. **Vaterite in Phase 1 or Phase 2.** Vaterite as a metastable initial precipitate is geologically real but not load-bearing on any current scenario. Adding it to Phase 1 = ~3 days; deferring = preserved for later.
 
-5. **`open_to_atmosphere` per-ring vs per-scenario.** ~~Default per-scenario; per-ring as a future extension.~~ RESOLVED 2026-05-26: boss directional commitment — "the data is going to be more localized [meaning] instead of just by ring it would break it up into even smaller more localized sections of the vugg wall." Per-ring is already where fluid chemistry lives; the future is **finer than per-ring** (per-cell, per-vertex, or per-region with tagged groupings). Phase 1 ships scalars but schema slot is polymorphic from day 1 (scalar | per-ring array | per-cell function ref | per-region map), accessed through a resolver in `js/20d-localization-resolvers.ts`. Same shape applies to `atmospheric_pCO2_bar`, `wall_rock_thermal_buffer_C`, and `host_rock_composition`. The per-ring array form is transitional (useful for genuinely vertically-stratified quantities) but not the destination. Existing per-ring quantities (`ring_temperatures`, `ring_fluids`) are themselves transitional — the carbonate engine reads through per-cell accessors (`fluidAtCell`, `temperatureAtCell`) so the future per-cell fluid representation lands by changing the accessors alone, not 84 grow_*() call sites. See "Schema shape — designed for localization-future" section above.
+5. **`open_to_atmosphere` localization granularity.** ~~Default per-scenario; per-ring as a future extension.~~ RESOLVED 2026-05-26 (with mid-day clarification): boss directional commitment — "wall mesh is probably the right direction." Localization target is **per-vertex on `WallMesh`** (`js/23-geometry-wall-mesh.ts`), which already exists and which PROPOSAL-CAVITY-MESH Phase 3 already plans as the home of per-vertex state. Phase 1 ships scalars; schema slot is polymorphic from day 1 (scalar | resolver function | per-region tag map). Per-ring array form is intentionally OMITTED — per-ring is a current data-model artifact the wall mesh is already planning to retire, so new schema slots don't perpetuate it. Same shape applies to `atmospheric_pCO2_bar`, `wall_rock_thermal_buffer_C`, and `host_rock_composition`. Existing per-ring quantities (`ring_temperatures`, `ring_fluids`) are themselves transitional — the carbonate engine reads through per-vertex accessors (`fluidAtMeshVertex`, `temperatureAtMeshVertex`) so when PROPOSAL-CAVITY-MESH Phase 3 promotes chemistry onto `WallMesh.cells[]`, the carbonate engine immediately consumes per-vertex chemistry without touching the 84 grow_*() call sites. The carbonate engine and the cavity-mesh evolution compose rather than compete. See "Schema shape — designed for the wall-mesh localization future" section above.
 
 6. **Audit framework: separate file vs inline in `data/minerals.json`.** Storing `thermodynamics` inline keeps everything together but bloats `data/minerals.json` from ~6000 lines to ~12000 lines. A sibling `data/thermo.json` keyed by mineral name is cleaner; tools resolve the link at load time. Boss preference?
 
