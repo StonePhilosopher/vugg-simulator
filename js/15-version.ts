@@ -7520,5 +7520,121 @@
 //            molybdate   COMPLETE (7/7)   <-- v141
 //            native      COMPLETE (8/8)   <-- v141
 //            oxide       COMPLETE (12/12) <-- v141
-const SIM_VERSION = 141;
+// ----------------------------------------------------------------
+// v142 (2026-05-23): CITATION CORRECTION — adamite heart twin pulled.
+//
+// During design conversation about future "trophy-tier" rare minerals,
+// the boss asked about the paragenesis of various rare specimens.
+// While drafting the Mapimí adamite heart-twin visual primitive (item
+// 13 in the handoff queue), I verified the v139 citation against the
+// authoritative Anthony Handbook of Mineralogy v.IV adamite entry
+// (Mineral Data Publishing 2001-2005, handbookofmineralogy.org) and
+// against the actual 1948 Ojuela paper (Mrose, Mayers & Wise, Amer.
+// Mineral. 33:449-457).
+//
+// What I found:
+//   - The Anthony Handbook lists {101} for adamite as a DOMINANT
+//     CRYSTAL FORM and as a GOOD CLEAVAGE direction — NOT as a twin
+//     law. The Handbook entry makes no mention of twinning.
+//   - The Mrose-Mayers-Wise 1948 Ojuela paper documents morphology +
+//     chemistry but makes no twinning observations.
+//   - The "Frondel 1948 (American Mineralogist 33:545)" citation I
+//     shipped at v139 (commit 3edd2e7) DOES NOT EXIST. I confabulated
+//     it from real elements (Frondel as a mineralogist name, 1948 as
+//     a plausible year, Amer. Mineral. as the journal, page 545 as a
+//     plausible number) and shipped it as if it were a real source.
+//
+// The visual heart-shape exists in Ojuela specimens — collector
+// market does sell "heart twins" — but whether they're true crystallo-
+// graphic twins on {101} or parallel growths or accidental juxta-
+// positions hasn't been characterized in published mineralogical
+// literature that I can find. Boss confirmed having seen one once
+// in a wealthy collection but couldn't vouch for the crystallography
+// either.
+//
+// THE CORRECTION
+//
+//   data/minerals.json adamite entry:
+//     - twin_laws: pulled back to []
+//     - _twin_laws_note: added, explaining the situation honestly
+//       (collector morphology exists, formal twin law not documented,
+//       v139 citation was fabricated)
+//
+//   This drops 1 rng.random() draw per adamite nucleation. Empirically
+//   shifts the supergene_oxidation baseline (the scenario where
+//   adamite is foundational); auto-handled by regenerating
+//   seed42_v142.json. No pinned tests drift; no test loosening
+//   required.
+//
+// COVERAGE UPDATE
+//
+//   142 minerals with twin_laws (was 143 at v141).
+//   28 minerals with _twin_laws_note (was 27 at v141).
+//   170 / 170 still accounted for.
+//
+//   Per-class adjustment:
+//     arsenate    COMPLETE (15/15) — was 12 twin_laws + 3 notes;
+//                                    now 11 twin_laws + 4 notes
+//   All other classes unchanged from v141.
+//
+// LESSON (for future agents reading this block)
+//
+//   Citation conservatism rule going forward: specific paper-page
+//   combinations (e.g. "Smith 1972 page 245") are the high-risk
+//   fabrication zone. Web-search any specific citation before shipping
+//   it. General references ("Anthony Handbook v.X mineral section",
+//   "Mindat habit notes", "Dana 8th ed.") are verifiable + safer to
+//   default to when the specific paper isn't directly accessible.
+//
+//   The vugg-add-twin-law skill is being updated alongside this
+//   commit to bake the rule in.
+//
+// HONESTY NOTE
+//
+//   The v141 commit message + the handoff doc both reference
+//   "Frondel 1948" for adamite — those carry the fabricated citation
+//   forward in the historical commit trail. The git history can't
+//   be rewritten (would require a force-push to main + invalidate
+//   any clones), but this v142 block documents the correction so
+//   future readers tracing the adamite entry's history land on the
+//   truth rather than the fabrication. Same with the handoff doc:
+//   updated in this commit to note the v142 correction inline.
+
+// v143: schema-bug repairs in the twin_laws data layer — restructured
+//   corundum / ruby / sapphire from raw-string entries to proper
+//   objects with miller_indices + _source citations; fixed atacamite
+//   "{various}" placeholder to "{110}" + documented [544] axis-twin
+//   in the citation; restructured albite pericline twin from broken
+//   "miller_indices: b_axis" to proper twin_axis: [010] + non-Miller
+//   composition_plane "rhombic_section" notation. All eight pre-
+//   existing PARSE errors that tools/twin-law-check.mjs surfaced are
+//   now resolved.
+//
+//   CASCADE: the corundum / ruby / sapphire restructure changed those
+//   three minerals from "twin_laws as raw strings, skipped by engine"
+//   to "twin_laws as proper objects, engine calls _rollSpontaneousTwin
+//   per entry consuming rng.random() draws." This is the documented
+//   cascade behavior from the vugg-add-twin-law skill — adding real
+//   twin_laws to a mineral that previously had no draws shifts the
+//   downstream RNG sequence. Affected scenarios: marble_contact_
+//   metamorphism (where corundum/ruby/sapphire nucleate). Baseline
+//   regenerated at v143 via tools/gen-js-baseline.mjs; calibration
+//   test now passes against the new baseline.
+//
+//   Tool reports post-fix: 108 PASS / 46 FLAG / 1 AXIS / 0 PARSE /
+//   0 SKIP. AXIS is a new verdict introduced in this commit for
+//   legitimate axis-defined twins (albite pericline-law) that have
+//   no fixed Miller composition plane and can't be checked by lattice
+//   CSL at Tier 1; distinguishes the honest "structurally not
+//   checkable" case from the dishonest "data bug" case. The pericline
+//   entry is the first AXIS-verdict entry; future axis-twins should
+//   use the same twin_axis schema.
+//
+//   Probabilities chosen conservatively per Anthony Handbook v.III
+//   corundum entry: basal {0001} p=0.005 (very rare, deformation-
+//   only); rhombohedral {10-11} p=0.05 (more frequent but still
+//   uncommon outside metamorphosed corundum). Same values applied
+//   to ruby + sapphire (Cr-bearing and Fe-Ti-bearing varieties of
+//   the same R-3c structure).
+const SIM_VERSION = 143;
 

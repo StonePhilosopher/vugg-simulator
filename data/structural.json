@@ -1,0 +1,925 @@
+{
+  "_doc": [
+    "Lattice + space group reference data for tools/twin-law-check.mjs.",
+    "",
+    "Each entry is a single crystallographic refinement: unit-cell parameters",
+    "(Å for lengths, ° for angles), space-group symbol in Hermann-Mauguin",
+    "form, and the literature citation the values came from. The tool reads",
+    "this file, computes structural twin-plane candidates from the lattice",
+    "geometry, and compares them against declared twin_laws in",
+    "data/minerals.json.",
+    "",
+    "Initial population (this commit): 17 minerals — the canonical cubic",
+    "spinel-law set, the aragonite-group pseudo-hex carbonates, plus a",
+    "monoclinic / tetragonal / trigonal / orthorhombic sample. Adamite is",
+    "included so the v139 {101} back-test runs automatically. Spinel,",
+    "staurolite, gypsum, orthoclase are included even though they don't",
+    "have twin_laws entries in minerals.json yet — they're known structural",
+    "reference points and the tool will skip them gracefully.",
+    "",
+    "Future populations should add: the remaining 142 minerals-with-twins.",
+    "Strategy: do them in batches matching the v137-v141 batch boundaries",
+    "(sulfides, phosphates, arsenates, sulfates, others). Each lattice value",
+    "must cite a real source. See v142 citation-conservatism rule."
+  ],
+
+  "spinel": {
+    "system": "cubic",
+    "space_group": "Fd-3m",
+    "lattice": { "a": 8.0898 },
+    "_source": "Wikipedia spinel; matches Bosi et al. 2019 (Mineralogical Magazine 83:687-704) structural refinement"
+  },
+  "magnetite": {
+    "system": "cubic",
+    "space_group": "Fd-3m",
+    "lattice": { "a": 8.396 },
+    "_source": "Fleet 1981 (Acta Cryst. B37:917-920) Fe3O4 refinement at 298 K"
+  },
+  "fluorite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 5.4626 },
+    "_source": "standard CaF2 refinement; Anthony Handbook v.III fluorite entry"
+  },
+  "galena": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 5.9362 },
+    "_source": "Noda et al. 1987 PbS refinement; Anthony Handbook v.I galena entry"
+  },
+  "pyrite": {
+    "system": "cubic",
+    "space_group": "Pa-3",
+    "lattice": { "a": 5.4179 },
+    "_source": "Bayliss 1989 (Amer. Mineral. 74:1168-1176) pyrite refinement"
+  },
+
+  "aragonite": {
+    "system": "orthorhombic",
+    "space_group": "Pmcn",
+    "lattice": { "a": 4.9598, "b": 7.9641, "c": 5.7379 },
+    "_source": "De Villiers 1971 (Amer. Mineral. 56:758-767) aragonite at 25 °C; Wikipedia aragonite"
+  },
+  "cerussite": {
+    "system": "orthorhombic",
+    "space_group": "Pmcn",
+    "lattice": { "a": 5.180, "b": 8.492, "c": 6.134 },
+    "_source": "Antao & Hassan 2009 (Canadian Mineralogist 47:1245-1255) orthorhombic ACO3 isostructural series"
+  },
+  "witherite": {
+    "system": "orthorhombic",
+    "space_group": "Pmcn",
+    "lattice": { "a": 5.314, "b": 8.904, "c": 6.430 },
+    "_source": "Antao & Hassan 2009 (Canadian Mineralogist 47:1245-1255) BaCO3 entry in the same series"
+  },
+  "strontianite": {
+    "system": "orthorhombic",
+    "space_group": "Pmcn",
+    "lattice": { "a": 5.107, "b": 8.422, "c": 6.029 },
+    "_source": "Antao & Hassan 2009 (Canadian Mineralogist 47:1245-1255) SrCO3 entry in the same series"
+  },
+  "marcasite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 4.443, "b": 5.424, "c": 3.387 },
+    "_source": "Rieder et al. 2007 (Canadian Mineralogist 45:1395-1407) marcasite refinement"
+  },
+  "adamite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 8.30, "b": 8.51, "c": 6.04 },
+    "_source": "Hill 1976 (Amer. Mineral. 61:979-986) adamite structure; matches crystalsymmetry.wordpress.com and Anthony Handbook v.IV"
+  },
+
+  "cassiterite": {
+    "system": "tetragonal",
+    "space_group": "P4_2/mnm",
+    "lattice": { "a": 4.737, "c": 3.186 },
+    "_source": "Bolzan et al. 1997 (Acta Cryst. B53:373-380) rutile-type oxide refinement series"
+  },
+  "rutile": {
+    "system": "tetragonal",
+    "space_group": "P4_2/mnm",
+    "lattice": { "a": 4.594, "c": 2.959 },
+    "_source": "Meagher & Lager 1979 (Canadian Mineralogist 17:77-85) rutile refinement"
+  },
+
+  "calcite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.99, "c": 17.06 },
+    "_source": "Anthony Handbook v.V calcite entry; hex setting"
+  },
+  "quartz": {
+    "system": "trigonal",
+    "space_group": "P3_121",
+    "lattice": { "a": 4.913, "c": 5.405 },
+    "_source": "Le Page & Donnay 1976 (Acta Cryst. B32:2456-2459) α-quartz refinement"
+  },
+
+  "staurolite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 7.8713, "b": 16.6204, "c": 5.6560, "beta": 90.45 },
+    "_source": "Hawthorne et al. 1993 (Canadian Mineralogist 31:551-582)"
+  },
+  "gypsum": {
+    "system": "monoclinic",
+    "space_group": "C2/c",
+    "lattice": { "a": 6.284, "b": 15.20, "c": 5.679, "beta": 114.09 },
+    "_source": "Cole & Lancucki 1974 (Acta Cryst. B30:921-929) CaSO4·2H2O refinement"
+  },
+  "orthoclase": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 8.56, "b": 12.96, "c": 7.21, "beta": 116.0 },
+    "_source": "Anthony Handbook of Mineralogy v.II orthoclase entry (handbookofmineralogy.org); representative high-Or feldspar values"
+  },
+
+  "tremolite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 9.84, "b": 18.05, "c": 5.275, "beta": 104.7 },
+    "_source": "Hawthorne 1981 (Reviews in Mineralogy v.9A, amphibole crystal chemistry); Anthony Handbook v.II tremolite entry"
+  },
+  "actinolite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 9.84, "b": 18.10, "c": 5.28, "beta": 104.7 },
+    "_source": "Tremolite-actinolite solid-solution series (Hawthorne 1981 + 2007); slight cell expansion vs. tremolite from Fe²⁺-for-Mg substitution; Anthony Handbook v.II actinolite entry"
+  },
+
+  "halite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 5.6402 },
+    "_source": "Anthony Handbook v.III halite entry (handbookofmineralogy.org); canonical NaCl rock-salt structure, standard reference"
+  },
+  "sylvite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 6.2917 },
+    "_source": "Anthony Handbook v.III sylvite entry; KCl, rock-salt structure isotype with halite"
+  },
+  "atacamite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 6.030, "b": 9.120, "c": 6.865 },
+    "_source": "Parise & Hyde 1986 (Acta Cryst. C42:1277-1280) atacamite refinement; Anthony Handbook v.III atacamite entry"
+  },
+
+  "borax": {
+    "system": "monoclinic",
+    "space_group": "C2/c",
+    "lattice": { "a": 11.858, "b": 10.674, "c": 12.197, "beta": 106.68 },
+    "_source": "Morimoto 1956, The Crystal Structure of Borax (Min. J. Japan 2:1-18); Anthony Handbook v.V borax entry"
+  },
+
+  "lepidocrocite": {
+    "system": "orthorhombic",
+    "space_group": "Cmcm",
+    "lattice": { "a": 3.071, "b": 12.520, "c": 3.873 },
+    "_source": "Anthony Handbook v.III lepidocrocite entry (handbookofmineralogy.org); γ-FeOOH layered structure"
+  },
+
+  "native_copper": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 3.615 },
+    "_source": "Anthony Handbook v.I native copper entry (handbookofmineralogy.org); standard FCC metal structure"
+  },
+  "native_gold": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 4.0786 },
+    "_source": "Anthony Handbook v.I gold entry; standard FCC metal structure"
+  },
+  "native_silver": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 4.086 },
+    "_source": "Anthony Handbook v.I silver entry; standard FCC metal structure"
+  },
+  "native_bismuth": {
+    "system": "trigonal",
+    "space_group": "R-3m",
+    "lattice": { "a": 4.547, "c": 11.862 },
+    "_source": "Anthony Handbook v.I bismuth entry (handbookofmineralogy.org); A7 rhombohedral arsenic-group metal structure (shared with native arsenic + antimony)"
+  },
+  "native_sulfur": {
+    "system": "orthorhombic",
+    "space_group": "Fddd",
+    "lattice": { "a": 10.464, "b": 12.866, "c": 24.486 },
+    "_source": "Anthony Handbook v.I sulfur entry; α-S8 ring molecular structure (Coppens et al. 1977 Acta Cryst. B33:1330-1335)"
+  },
+  "native_tellurium": {
+    "system": "trigonal",
+    "space_group": "P3_121",
+    "lattice": { "a": 4.4572, "c": 5.9290 },
+    "_source": "Anthony Handbook v.I tellurium entry; helical chain structure (isotype with selenium; chiral)"
+  },
+
+  "dolomite": {
+    "system": "trigonal",
+    "space_group": "R-3",
+    "lattice": { "a": 4.808, "c": 16.01 },
+    "_source": "Anthony Handbook v.V dolomite entry (handbookofmineralogy.org); ordered Ca-Mg layered calcite-derivative (R-3 vs calcite R-3c — symmetry broken by cation order)"
+  },
+  "siderite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.691, "c": 15.379 },
+    "_source": "Anthony Handbook v.V siderite entry; FeCO3, calcite-isostructural"
+  },
+  "rhodochrosite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.777, "c": 15.664 },
+    "_source": "Anthony Handbook v.V rhodochrosite entry; MnCO3, calcite-isostructural"
+  },
+  "smithsonite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.653, "c": 15.025 },
+    "_source": "Anthony Handbook v.V smithsonite entry; ZnCO3, calcite-isostructural"
+  },
+  "malachite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 9.502, "b": 11.974, "c": 3.240, "beta": 98.75 },
+    "_source": "Anthony Handbook v.V malachite entry; Susse 1967 (Acta Cryst. 22:146-151) Cu2(CO3)(OH)2 refinement"
+  },
+  "azurite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 5.008, "b": 5.850, "c": 10.336, "beta": 92.41 },
+    "_source": "Anthony Handbook v.V azurite entry; Cu3(CO3)2(OH)2 refinement (Zigan & Schuster 1972 Z. Krist. 135:416-436)"
+  },
+  "rosasite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 9.36, "b": 12.08, "c": 3.16, "beta": 99.5 },
+    "_source": "Anthony Handbook v.V rosasite entry; (Cu,Zn)2(CO3)(OH)2, malachite-isostructural"
+  },
+  "aurichalcite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/m",
+    "lattice": { "a": 13.82, "b": 6.419, "c": 5.291, "beta": 101.04 },
+    "_source": "Anthony Handbook v.V aurichalcite entry; (Zn,Cu)5(CO3)2(OH)6 (Harding et al. 1994 Acta Cryst. C50:852-854)"
+  },
+
+  "wulfenite": {
+    "system": "tetragonal",
+    "space_group": "I4_1/a",
+    "lattice": { "a": 5.4347, "c": 12.110 },
+    "_source": "Anthony Handbook v.V wulfenite entry (handbookofmineralogy.org); PbMoO4 scheelite-type structure"
+  },
+  "scheelite": {
+    "system": "tetragonal",
+    "space_group": "I4_1/a",
+    "lattice": { "a": 5.243, "c": 11.376 },
+    "_source": "Anthony Handbook v.V scheelite entry; CaWO4, type for the scheelite structure family"
+  },
+  "powellite": {
+    "system": "tetragonal",
+    "space_group": "I4_1/a",
+    "lattice": { "a": 5.226, "c": 11.43 },
+    "_source": "Anthony Handbook v.V powellite entry; CaMoO4, scheelite-isostructural"
+  },
+  "stolzite": {
+    "system": "tetragonal",
+    "space_group": "I4_1/a",
+    "lattice": { "a": 5.462, "c": 12.046 },
+    "_source": "Anthony Handbook v.V stolzite entry; PbWO4 tetragonal polymorph (scheelite-class); dimorphic with raspite"
+  },
+  "raspite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 13.59, "b": 5.05, "c": 5.55, "beta": 130.7 },
+    "_source": "Anthony Handbook v.V raspite entry; PbWO4 monoclinic polymorph; dimorphic with stolzite (Fujita et al. 1977 Acta Cryst. B33:162-168)"
+  },
+  "wolframite": {
+    "system": "monoclinic",
+    "space_group": "P2/c",
+    "lattice": { "a": 4.80, "b": 5.76, "c": 4.99, "beta": 90.4 },
+    "_source": "Anthony Handbook v.V wolframite entry; (Fe,Mn)WO4 — solid-solution series between hübnerite (MnWO4) and ferberite (FeWO4)"
+  },
+  "ferrimolybdite": {
+    "system": "orthorhombic",
+    "space_group": "Pna2_1",
+    "lattice": { "a": 13.65, "b": 11.71, "c": 8.18 },
+    "_source": "Anthony Handbook v.V ferrimolybdite entry; Fe2(MoO4)3·nH2O hydrated ferric molybdate (data sparse; values approximate; entry may need refinement when better refinement is available)"
+  },
+
+  "hematite": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 5.038, "c": 13.772 },
+    "_source": "Anthony Handbook of Mineralogy v.III hematite entry (handbookofmineralogy.org); α-Fe2O3, corundum-isostructural (same R-3c hex setting)"
+  },
+  "cuprite": {
+    "system": "cubic",
+    "space_group": "Pn-3m",
+    "lattice": { "a": 4.2685 },
+    "_source": "Anthony Handbook v.III cuprite entry; Cu2O, anti-fluorite-related cuprite structure (O at FCC sites, Cu in 1/4 of tetrahedral voids)"
+  },
+  "corundum": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.7607, "c": 12.9947 },
+    "_source": "Anthony Handbook v.III corundum entry; α-Al2O3, type structure for the corundum group (hematite + ilmenite isostructural)"
+  },
+  "ruby": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.7607, "c": 12.9947 },
+    "_source": "Cr-bearing corundum variety; same R-3c structure + lattice as corundum within composition error (Cr³⁺ substitution at Al sites; ~3-5% deviation max at high Cr)"
+  },
+  "sapphire": {
+    "system": "trigonal",
+    "space_group": "R-3c",
+    "lattice": { "a": 4.7607, "c": 12.9947 },
+    "_source": "Fe-Ti-bearing corundum variety; same R-3c structure + lattice as corundum within composition error"
+  },
+  "chromite": {
+    "system": "cubic",
+    "space_group": "Fd-3m",
+    "lattice": { "a": 8.378 },
+    "_source": "Anthony Handbook v.III chromite entry; FeCr2O4 spinel-group, isostructural with MgAl2O4 spinel + Fe3O4 magnetite"
+  },
+  "pyrolusite": {
+    "system": "tetragonal",
+    "space_group": "P4_2/mnm",
+    "lattice": { "a": 4.398, "c": 2.873 },
+    "_source": "Anthony Handbook v.III pyrolusite entry; β-MnO2 rutile-isostructural (same P4_2/mnm group as rutile + cassiterite)"
+  },
+  "brucite": {
+    "system": "trigonal",
+    "space_group": "P-3m1",
+    "lattice": { "a": 3.142, "c": 4.766 },
+    "_source": "Anthony Handbook v.III brucite entry; Mg(OH)2 layered hydroxide, type structure for the brucite group (gibbsite, portlandite, etc.)"
+  },
+
+  "scorodite": {
+    "system": "orthorhombic",
+    "space_group": "Pbca",
+    "lattice": { "a": 10.28, "b": 10.00, "c": 8.95 },
+    "_source": "Anthony Handbook of Mineralogy v.IV scorodite entry (handbookofmineralogy.org); FeAsO4·2H2O (variscite-group analogue)"
+  },
+  "mimetite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/m",
+    "lattice": { "a": 10.25, "c": 7.45 },
+    "_source": "Anthony Handbook v.IV mimetite entry; Pb5(AsO4)3Cl, apatite-group (chlorapatite arsenate analogue)"
+  },
+  "erythrite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 10.20, "b": 13.37, "c": 4.74, "beta": 104.7 },
+    "_source": "Anthony Handbook v.IV erythrite entry; Co3(AsO4)2·8H2O vivianite-group"
+  },
+  "annabergite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 10.18, "b": 13.31, "c": 4.73, "beta": 104.8 },
+    "_source": "Anthony Handbook v.IV annabergite entry; Ni3(AsO4)2·8H2O vivianite-group (erythrite-isostructural with Ni-for-Co)"
+  },
+  "olivenite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/n",
+    "lattice": { "a": 8.59, "b": 8.20, "c": 5.93, "beta": 90.1 },
+    "_source": "Anthony Handbook v.IV olivenite entry; Cu2(AsO4)(OH); β ≈ 90° → pseudo-orthorhombic with latent pseudo-tet (a ≈ b) — same family as libethenite (Cu2(PO4)(OH))"
+  },
+  "conichalcite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 7.39, "b": 9.16, "c": 5.83 },
+    "_source": "Anthony Handbook v.IV conichalcite entry; CaCu(AsO4)(OH) descloizite-group adelite analogue"
+  },
+  "pharmacolite": {
+    "system": "monoclinic",
+    "space_group": "Ia",
+    "lattice": { "a": 5.97, "b": 15.45, "c": 6.28, "beta": 114.93 },
+    "_source": "Anthony Handbook v.IV pharmacolite entry; CaHAsO4·2H2O (gypsum-analogue with HAsO4²⁻ replacing SO4²⁻)"
+  },
+  "haidingerite": {
+    "system": "orthorhombic",
+    "space_group": "Pbca",
+    "lattice": { "a": 7.94, "b": 16.10, "c": 7.91 },
+    "_source": "Anthony Handbook v.IV haidingerite entry; CaHAsO4·H2O (pharmacolite-dehydrate)"
+  },
+  "austinite": {
+    "system": "orthorhombic",
+    "space_group": "P2_12_12_1",
+    "lattice": { "a": 7.451, "b": 9.039, "c": 5.928 },
+    "_source": "Anthony Handbook v.IV austinite entry; CaZn(AsO4)(OH) descloizite-group; pseudo-orthorhombic with cell similar to conichalcite"
+  },
+  "legrandite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/n",
+    "lattice": { "a": 12.78, "b": 7.93, "c": 10.30, "beta": 104.5 },
+    "_source": "Anthony Handbook v.IV legrandite entry; Zn2(AsO4)(OH)·H2O (Mapimí + Sterling Hill localities)"
+  },
+  "koettigite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 10.24, "b": 13.41, "c": 4.76, "beta": 105.0 },
+    "_source": "Anthony Handbook v.IV koettigite entry; Zn3(AsO4)2·8H2O vivianite-group (erythrite-isostructural with Zn-for-Co)"
+  },
+
+  "pyromorphite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/m",
+    "lattice": { "a": 9.99, "c": 7.34 },
+    "_source": "Anthony Handbook of Mineralogy v.IV pyromorphite entry (handbookofmineralogy.org); Pb5(PO4)3Cl apatite-group"
+  },
+  "vanadinite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/m",
+    "lattice": { "a": 10.33, "c": 7.34 },
+    "_source": "Anthony Handbook v.IV vanadinite entry; Pb5(VO4)3Cl apatite-group (chlorapatite vanadate analogue)"
+  },
+  "apatite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/m",
+    "lattice": { "a": 9.397, "c": 6.878 },
+    "_source": "Anthony Handbook v.IV apatite entry; Ca5(PO4)3(F,Cl,OH) — fluorapatite cell values; the entire apatite group shares this P6_3/m structure"
+  },
+  "clinobisvanite": {
+    "system": "monoclinic",
+    "space_group": "I2/a",
+    "lattice": { "a": 5.195, "b": 11.701, "c": 5.092, "beta": 90.39 },
+    "_source": "BiVO4 monoclinic scheelite-distortion (Bierlein & Sleight 1975 Solid State Comm. 16:69-70); ferroelastic distortion from the tetragonal pucherite/scheelite-related parent — β ≈ 90° makes it pseudo-orthorhombic"
+  },
+  "descloizite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 7.59, "b": 9.42, "c": 6.06 },
+    "_source": "Anthony Handbook v.IV descloizite entry; PbZn(VO4)(OH), type for the descloizite group"
+  },
+  "mottramite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 7.67, "b": 9.40, "c": 6.04 },
+    "_source": "Anthony Handbook v.IV mottramite entry; PbCu(VO4)(OH), descloizite-isostructural with Cu-for-Zn"
+  },
+  "torbernite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 6.972, "c": 20.63 },
+    "_source": "Anthony Handbook v.IV torbernite entry; Cu(UO2)2(PO4)2·12H2O autunite-group layered uranyl phosphate"
+  },
+  "zeunerite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 7.176, "c": 20.84 },
+    "_source": "Anthony Handbook v.IV zeunerite entry; Cu(UO2)2(AsO4)2·12H2O torbernite-isostructural with As-for-P"
+  },
+  "carnotite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 10.47, "b": 8.41, "c": 6.91, "beta": 103.7 },
+    "_source": "Anthony Handbook v.IV carnotite entry; K2(UO2)2(VO4)2·3H2O layered uranyl vanadate"
+  },
+  "autunite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 7.00, "c": 20.67 },
+    "_source": "Anthony Handbook v.IV autunite entry; Ca(UO2)2(PO4)2·11H2O — type species for the autunite group"
+  },
+  "uranospinite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 7.16, "c": 20.71 },
+    "_source": "Anthony Handbook v.IV uranospinite entry; Ca(UO2)2(AsO4)2·10H2O autunite-group with As-for-P"
+  },
+
+  "barite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 8.879, "b": 5.450, "c": 7.152 },
+    "_source": "Anthony Handbook of Mineralogy v.V barite entry (handbookofmineralogy.org); BaSO4 type structure for the barite group (celestine, anglesite isostructural)"
+  },
+  "celestine": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 8.359, "b": 5.352, "c": 6.866 },
+    "_source": "Anthony Handbook v.V celestine entry; SrSO4 barite-group"
+  },
+  "anglesite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 8.482, "b": 5.398, "c": 6.959 },
+    "_source": "Anthony Handbook v.V anglesite entry; PbSO4 barite-group"
+  },
+  "jarosite": {
+    "system": "trigonal",
+    "space_group": "R-3m",
+    "lattice": { "a": 7.304, "c": 17.224 },
+    "_source": "Anthony Handbook v.V jarosite entry; KFe3(SO4)2(OH)6 — type for the alunite supergroup; Stoffregen et al. 2000 (Reviews in Mineralogy v.40) crystal-chemistry review"
+  },
+  "alunite": {
+    "system": "trigonal",
+    "space_group": "R-3m",
+    "lattice": { "a": 6.981, "c": 17.32 },
+    "_source": "Anthony Handbook v.V alunite entry; KAl3(SO4)2(OH)6 alunite-supergroup type species"
+  },
+  "brochantite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 13.14, "b": 9.86, "c": 6.024, "beta": 103.4 },
+    "_source": "Anthony Handbook v.V brochantite entry; Cu4(SO4)(OH)6"
+  },
+  "antlerite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 8.24, "b": 11.97, "c": 6.04 },
+    "_source": "Anthony Handbook v.V antlerite entry; Cu3(SO4)(OH)4"
+  },
+  "anhydrite": {
+    "system": "orthorhombic",
+    "space_group": "Cmcm",
+    "lattice": { "a": 6.998, "b": 6.245, "c": 6.991 },
+    "_source": "Anthony Handbook v.V anhydrite entry; CaSO4 — chains of CaO8 polyhedra parallel to c, pseudo-tetragonal metrics (a ≈ c) but distinct b"
+  },
+  "selenite": {
+    "system": "monoclinic",
+    "space_group": "C2/c",
+    "lattice": { "a": 6.284, "b": 15.20, "c": 5.679, "beta": 114.09 },
+    "_source": "Anthony Handbook v.V gypsum entry; same CaSO4·2H2O C2/c structure as gypsum (selenite = the transparent crystalline variety; not a separate mineral structurally)"
+  },
+  "chalcanthite": {
+    "system": "triclinic",
+    "space_group": "P-1",
+    "lattice": { "a": 6.122, "b": 10.722, "c": 5.957 },
+    "_source": "Anthony Handbook v.V chalcanthite entry; CuSO4·5H2O — triclinic; full cell α=82.27°, β=107.43°, γ=102.67° (Beevers & Lipson 1934 Proc. Roy. Soc. A146:570)"
+  },
+  "mirabilite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 11.51, "b": 10.38, "c": 12.84, "beta": 107.75 },
+    "_source": "Anthony Handbook v.V mirabilite entry; Na2SO4·10H2O — Glauber's salt"
+  },
+  "thenardite": {
+    "system": "orthorhombic",
+    "space_group": "Fddd",
+    "lattice": { "a": 5.863, "b": 12.304, "c": 9.821 },
+    "_source": "Anthony Handbook v.V thenardite entry; Na2SO4 — anhydrous polymorph of mirabilite"
+  },
+  "linarite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/m",
+    "lattice": { "a": 9.700, "b": 5.650, "c": 4.690, "beta": 102.6 },
+    "_source": "Anthony Handbook v.V linarite entry; PbCu(SO4)(OH)2 (Effenberger 1987 N. Jb. Mineral. Mh. 1987:127-135)"
+  },
+  "caledonite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 20.10, "b": 7.13, "c": 6.56 },
+    "_source": "Anthony Handbook v.V caledonite entry; Pb5Cu2(SO4)3(CO3)(OH)6 — mixed sulfate-carbonate"
+  },
+  "leadhillite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 9.07, "b": 20.65, "c": 11.65, "beta": 90.4 },
+    "_source": "Anthony Handbook v.V leadhillite entry; Pb4(SO4)(CO3)2(OH)2 — β ≈ 90° makes it pseudo-orthorhombic; dimorphic with susannite (trigonal high-T)"
+  },
+
+  "apophyllite": {
+    "system": "tetragonal",
+    "space_group": "P4/mnc",
+    "lattice": { "a": 8.965, "c": 15.83 },
+    "_source": "Anthony Handbook of Mineralogy v.II apophyllite entry; KCa4(Si8O20)F·8H2O fluorapophyllite — tetragonal sheet silicate"
+  },
+  "feldspar": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 8.56, "b": 12.96, "c": 7.21, "beta": 116.0 },
+    "_source": "Generic K-feldspar (orthoclase-equivalent); same C2/m structure + parameters as the orthoclase entry. The 'feldspar' species in vugg's data is treated as KAlSi3O8 monoclinic."
+  },
+  "albite": {
+    "system": "triclinic",
+    "space_group": "C-1",
+    "lattice": { "a": 8.137, "b": 12.785, "c": 7.157 },
+    "_source": "Anthony Handbook v.II albite entry; NaAlSi3O8 — low-T ordered albite; full cell α=94.27°, β=116.57°, γ=87.66° (Harlow & Brown 1980 Amer. Mineral. 65:986-995)"
+  },
+  "topaz": {
+    "system": "orthorhombic",
+    "space_group": "Pbnm",
+    "lattice": { "a": 4.650, "b": 8.795, "c": 8.392 },
+    "_source": "Anthony Handbook v.II topaz entry; Al2(SiO4)(F,OH)2 (Ribbe & Gibbs 1971 Amer. Mineral. 56:24)"
+  },
+  "tourmaline": {
+    "system": "trigonal",
+    "space_group": "R3m",
+    "lattice": { "a": 15.94, "c": 7.18 },
+    "_source": "Anthony Handbook v.II tourmaline entry; representative schorl-dravite values; the tourmaline supergroup has the same R3m framework with varying chemistry"
+  },
+  "beryl": {
+    "system": "hexagonal",
+    "space_group": "P6/mcc",
+    "lattice": { "a": 9.211, "c": 9.190 },
+    "_source": "Anthony Handbook of Mineralogy v.II beryl entry; Be3Al2(SiO3)6 hexagonal ring silicate"
+  },
+  "emerald": {
+    "system": "hexagonal",
+    "space_group": "P6/mcc",
+    "lattice": { "a": 9.211, "c": 9.190 },
+    "_source": "Cr-bearing beryl variety; same P6/mcc structure as beryl within composition error"
+  },
+  "aquamarine": {
+    "system": "hexagonal",
+    "space_group": "P6/mcc",
+    "lattice": { "a": 9.211, "c": 9.190 },
+    "_source": "Fe²⁺-bearing beryl variety; same P6/mcc structure as beryl"
+  },
+  "morganite": {
+    "system": "hexagonal",
+    "space_group": "P6/mcc",
+    "lattice": { "a": 9.211, "c": 9.190 },
+    "_source": "Mn-bearing beryl variety; same P6/mcc structure as beryl"
+  },
+  "heliodor": {
+    "system": "hexagonal",
+    "space_group": "P6/mcc",
+    "lattice": { "a": 9.211, "c": 9.190 },
+    "_source": "Fe³⁺-bearing beryl variety (yellow); same P6/mcc structure as beryl"
+  },
+  "spodumene": {
+    "system": "monoclinic",
+    "space_group": "C2/c",
+    "lattice": { "a": 9.466, "b": 8.394, "c": 5.218, "beta": 110.1 },
+    "_source": "Anthony Handbook v.II spodumene entry; LiAlSi2O6 clinopyroxene Li-end-member"
+  },
+  "lepidolite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 5.18, "b": 8.99, "c": 10.07, "beta": 100.5 },
+    "_source": "Anthony Handbook v.II lepidolite entry; K(Li,Al)3(Si,Al)4O10(F,OH)2 — Li-mica (1M polytype values; 2M1 and 3T polytypes also exist)"
+  },
+  "dioptase": {
+    "system": "trigonal",
+    "space_group": "R-3",
+    "lattice": { "a": 14.61, "c": 7.83 },
+    "_source": "Anthony Handbook v.II dioptase entry; CuSiO3·H2O 6-membered ring silicate"
+  },
+  "uranophane": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 15.91, "b": 7.00, "c": 6.66, "beta": 97.3 },
+    "_source": "Anthony Handbook v.II uranophane entry; Ca(UO2)2(SiO3OH)2·5H2O — uranyl silicate layered structure (alpha-uranophane polymorph values)"
+  },
+  "hemimorphite": {
+    "system": "orthorhombic",
+    "space_group": "Imm2",
+    "lattice": { "a": 8.37, "b": 10.72, "c": 5.12 },
+    "_source": "Anthony Handbook v.II hemimorphite entry; Zn4Si2O7(OH)2·H2O — non-centrosymmetric (pyroelectric, piezoelectric)"
+  },
+  "willemite": {
+    "system": "trigonal",
+    "space_group": "R-3",
+    "lattice": { "a": 13.948, "c": 9.315 },
+    "_source": "Anthony Handbook v.II willemite entry; Zn2SiO4 phenakite-group"
+  },
+  "shattuckite": {
+    "system": "orthorhombic",
+    "space_group": "Pcab",
+    "lattice": { "a": 9.882, "b": 19.811, "c": 5.392 },
+    "_source": "Anthony Handbook v.II shattuckite entry; Cu5(SiO3)4(OH)2 chain silicate (Pcab is non-standard Pbca setting)"
+  },
+  "datolite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 4.832, "b": 7.608, "c": 9.620, "beta": 90.15 },
+    "_source": "Anthony Handbook v.II datolite entry; CaB(SiO4)(OH); β ≈ 90° → strongly pseudo-orthorhombic"
+  },
+  "vesuvianite": {
+    "system": "tetragonal",
+    "space_group": "P4/nnc",
+    "lattice": { "a": 15.55, "c": 11.82 },
+    "_source": "Anthony Handbook v.II vesuvianite entry; complex Ca-Al-Mg-Fe sorosilicate; large unit cell"
+  },
+  "grossular": {
+    "system": "cubic",
+    "space_group": "Ia-3d",
+    "lattice": { "a": 11.85 },
+    "_source": "Anthony Handbook v.II grossular entry; Ca3Al2(SiO4)3 garnet-group (typical garnet space group Ia-3d)"
+  },
+  "diopside": {
+    "system": "monoclinic",
+    "space_group": "C2/c",
+    "lattice": { "a": 9.748, "b": 8.924, "c": 5.252, "beta": 105.6 },
+    "_source": "Anthony Handbook v.II diopside entry; CaMgSi2O6 clinopyroxene"
+  },
+  "pectolite": {
+    "system": "triclinic",
+    "space_group": "P-1",
+    "lattice": { "a": 7.99, "b": 7.04, "c": 7.02 },
+    "_source": "Anthony Handbook v.II pectolite entry; NaCa2Si3O8(OH); full cell α=90.5°, β=95.2°, γ=102.5° — pyroxenoid"
+  },
+  "wollastonite": {
+    "system": "triclinic",
+    "space_group": "P-1",
+    "lattice": { "a": 7.94, "b": 7.32, "c": 7.07 },
+    "_source": "Anthony Handbook v.II wollastonite entry; CaSiO3 1T polytype (the most common); full cell α=90.04°, β=95.4°, γ=103.4°"
+  },
+  "prehnite": {
+    "system": "orthorhombic",
+    "space_group": "Pncm",
+    "lattice": { "a": 4.646, "b": 5.483, "c": 18.486 },
+    "_source": "Anthony Handbook v.II prehnite entry; Ca2Al(AlSi3O10)(OH)2 sheet silicate (Pncm pseudo-tetragonal a ≈ b)"
+  },
+
+  "sphalerite": {
+    "system": "cubic",
+    "space_group": "F-43m",
+    "lattice": { "a": 5.4093 },
+    "_source": "Anthony Handbook of Mineralogy v.I sphalerite entry (handbookofmineralogy.org); ZnS — type structure for the zincblende family (F-43m, non-centrosymmetric cubic; the diamond cubic with Zn + S on the two FCC sublattices)"
+  },
+  "wurtzite": {
+    "system": "hexagonal",
+    "space_group": "P6_3mc",
+    "lattice": { "a": 3.823, "c": 6.261 },
+    "_source": "Anthony Handbook v.I wurtzite entry; ZnS hexagonal polymorph (high-T form vs sphalerite low-T) — type for the wurtzite structure family"
+  },
+  "chalcopyrite": {
+    "system": "tetragonal",
+    "space_group": "I-42d",
+    "lattice": { "a": 5.289, "c": 10.423 },
+    "_source": "Anthony Handbook v.I chalcopyrite entry; CuFeS2 sphalerite-superstructure with ordered Cu/Fe → tetragonal distortion (c/a = 1.97 ≈ 2, the doubled-cell signature)"
+  },
+  "arsenopyrite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 5.741, "b": 5.677, "c": 5.785, "beta": 112.22 },
+    "_source": "Anthony Handbook v.I arsenopyrite entry; FeAsS — distorted marcasite-derivative (a ≈ b ≈ c, strongly pseudo-cubic monoclinic)"
+  },
+  "tetrahedrite": {
+    "system": "cubic",
+    "space_group": "I-43m",
+    "lattice": { "a": 10.32 },
+    "_source": "Anthony Handbook v.I tetrahedrite entry; (Cu,Ag,Fe,Zn,Hg)12Sb4S13 — tetrahedrite-group sulfosalt; non-centrosymmetric cubic"
+  },
+  "tennantite": {
+    "system": "cubic",
+    "space_group": "I-43m",
+    "lattice": { "a": 10.18 },
+    "_source": "Anthony Handbook v.I tennantite entry; (Cu,Fe)12As4S13 — As-end-member of the tetrahedrite-tennantite series (tetrahedrite-isostructural)"
+  },
+  "bornite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 5.50 },
+    "_source": "Anthony Handbook v.I bornite entry; Cu5FeS4 — HT cubic disordered form used here as the pseudo-cubic parent. LT form has a 4a-2a-2a superstructure (Pbca, a ≈ 10.94 × 21.86 × 21.86 Å); field samples are usually the metastable HT pseudo-cubic"
+  },
+  "chalcocite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 15.246, "b": 11.884, "c": 13.494, "beta": 116.35 },
+    "_source": "Anthony Handbook v.I chalcocite entry; α-Cu2S (low-T monoclinic). Inverts to hexagonal P6_3/mmc above 103°C and to cubic Fm-3m above 435°C — multi-step polymorphism documented in Will et al. 2002"
+  },
+  "covellite": {
+    "system": "hexagonal",
+    "space_group": "P6_3/mmc",
+    "lattice": { "a": 3.794, "c": 16.34 },
+    "_source": "Anthony Handbook v.I covellite entry; CuS — layered structure with alternating Cu-S sheets; the long c-axis reflects the layer stacking"
+  },
+  "stibnite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 11.30, "b": 3.836, "c": 11.23 },
+    "_source": "Anthony Handbook v.I stibnite entry; Sb2S3 — type structure for the stibnite group; pseudo-tetragonal a ≈ c"
+  },
+  "bismuthinite": {
+    "system": "orthorhombic",
+    "space_group": "Pnma",
+    "lattice": { "a": 11.30, "b": 3.97, "c": 11.15 },
+    "_source": "Anthony Handbook v.I bismuthinite entry; Bi2S3 — stibnite-isostructural with Bi-for-Sb"
+  },
+  "acanthite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 4.231, "b": 6.930, "c": 7.862, "beta": 99.61 },
+    "_source": "Anthony Handbook v.I acanthite entry; α-Ag2S (LT monoclinic). Inverts to argentite (cubic Im-3m) above 173°C — paramorphic 'acanthite-after-argentite' habit is the typical field expression"
+  },
+  "argentite": {
+    "system": "cubic",
+    "space_group": "Im-3m",
+    "lattice": { "a": 4.890 },
+    "_source": "Anthony Handbook v.I argentite entry; β-Ag2S (HT cubic), stable only above 173°C; field specimens are paramorphs (acanthite-after-argentite). Listed here for completeness with the vugg engine's argentite token"
+  },
+  "nickeline": {
+    "system": "hexagonal",
+    "space_group": "P6_3/mmc",
+    "lattice": { "a": 3.62, "c": 5.03 },
+    "_source": "Anthony Handbook v.I nickeline entry; NiAs — type structure for the nickeline group (NiAs-type, a fundamental binary sulfide/arsenide structure type)"
+  },
+  "millerite": {
+    "system": "trigonal",
+    "space_group": "R3m",
+    "lattice": { "a": 9.62, "c": 3.16 },
+    "_source": "Anthony Handbook v.I millerite entry; β-NiS (LT trigonal polymorph; dimorphic with hexagonal nickeline-isostructural γ-NiS above 379°C)"
+  },
+  "cobaltite": {
+    "system": "cubic",
+    "space_group": "Pa-3",
+    "lattice": { "a": 5.582 },
+    "_source": "Anthony Handbook v.I cobaltite entry; CoAsS — pyrite-class (Pa-3) with ordered As-S replacing the pyrite S-S dumbbell"
+  },
+  "calaverite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 7.189, "b": 4.408, "c": 5.072, "beta": 90.04 },
+    "_source": "Anthony Handbook v.I calaverite entry; AuTe2 — incommensurate modulated structure (the average is C2/m, β ≈ 90° → pseudo-orthorhombic; the modulation reflects Au-Te ordering)"
+  },
+  "proustite": {
+    "system": "trigonal",
+    "space_group": "R3c",
+    "lattice": { "a": 10.79, "c": 8.69 },
+    "_source": "Anthony Handbook v.I proustite entry; Ag3AsS3 — non-centrosymmetric trigonal; ruby silver"
+  },
+  "pyrargyrite": {
+    "system": "trigonal",
+    "space_group": "R3c",
+    "lattice": { "a": 11.06, "c": 8.73 },
+    "_source": "Anthony Handbook v.I pyrargyrite entry; Ag3SbS3 — proustite-isostructural with Sb-for-As; dark ruby silver"
+  },
+  "skutterudite": {
+    "system": "cubic",
+    "space_group": "Im-3",
+    "lattice": { "a": 8.213 },
+    "_source": "Anthony Handbook v.I skutterudite entry; CoAs3 — type structure for the skutterudite group; complex sphalerite-derivative with As4 squares filling the cubic framework"
+  },
+  "safflorite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 5.05, "b": 5.86, "c": 2.95 },
+    "_source": "Anthony Handbook v.I safflorite entry; CoAs2 loellingite-isostructural; member of the marcasite-loellingite structure family"
+  },
+  "rammelsbergite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 4.79, "b": 5.79, "c": 2.84 },
+    "_source": "Anthony Handbook v.I rammelsbergite entry; NiAs2 loellingite-isostructural"
+  },
+  "loellingite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 5.30, "b": 5.99, "c": 2.88 },
+    "_source": "Anthony Handbook v.I loellingite entry; FeAs2 — type structure for the loellingite group (same Pnnm space group as marcasite, with one M-X bond shortened)"
+  },
+  "enargite": {
+    "system": "orthorhombic",
+    "space_group": "Pmn2_1",
+    "lattice": { "a": 7.407, "b": 6.436, "c": 6.154 },
+    "_source": "Anthony Handbook v.I enargite entry; Cu3AsS4 — wurtzite superstructure with ordered Cu/As → orthorhombic distortion; the Sb-analogue is famatinite (tetragonal)"
+  },
+  "clausthalite": {
+    "system": "cubic",
+    "space_group": "Fm-3m",
+    "lattice": { "a": 6.124 },
+    "_source": "Anthony Handbook v.I clausthalite entry; PbSe — galena-isostructural with Se-for-S"
+  },
+  "greenockite": {
+    "system": "hexagonal",
+    "space_group": "P6_3mc",
+    "lattice": { "a": 4.137, "c": 6.716 },
+    "_source": "Anthony Handbook v.I greenockite entry; α-CdS — wurtzite-isostructural with Cd-for-Zn"
+  },
+  "hessite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/c",
+    "lattice": { "a": 8.09, "b": 4.48, "c": 8.96, "beta": 123.5 },
+    "_source": "Anthony Handbook v.I hessite entry; α-Ag2Te (LT monoclinic). Inverts to cubic Fm-3m form above 145°C"
+  },
+  "naumannite": {
+    "system": "orthorhombic",
+    "space_group": "P2_12_12_1",
+    "lattice": { "a": 4.333, "b": 7.062, "c": 7.764 },
+    "_source": "Anthony Handbook v.I naumannite entry; β-Ag2Se (LT orthorhombic). Inverts to cubic Im-3m above 130°C — Ag chalcogenide series"
+  },
+  "sylvanite": {
+    "system": "monoclinic",
+    "space_group": "P2/c",
+    "lattice": { "a": 8.96, "b": 4.49, "c": 14.62, "beta": 145.3 },
+    "_source": "Anthony Handbook v.I sylvanite entry; AuAgTe4 — ordered Au-Ag telluride; large β angle reflects the layered structure"
+  },
+  "cinnabar": {
+    "system": "trigonal",
+    "space_group": "P3_121",
+    "lattice": { "a": 4.149, "c": 9.495 },
+    "_source": "Anthony Handbook v.I cinnabar entry; α-HgS — chiral trigonal (helical Hg-S chains along c); the famous cinnabar-twin is the {1010}/{0001} interpenetration twin"
+  },
+  "realgar": {
+    "system": "monoclinic",
+    "space_group": "P2_1/n",
+    "lattice": { "a": 9.325, "b": 13.55, "c": 6.587, "beta": 106.4 },
+    "_source": "Anthony Handbook v.I realgar entry; α-As4S4 — molecular crystal with As4S4 cage molecules; photoactive (degrades to pararealgar β-As4S4 under light)"
+  },
+  "orpiment": {
+    "system": "monoclinic",
+    "space_group": "P2_1/n",
+    "lattice": { "a": 11.49, "b": 9.59, "c": 4.25, "beta": 90.45 },
+    "_source": "Anthony Handbook v.I orpiment entry; As2S3 — layered structure of As2S3 sheets; β ≈ 90° → pseudo-orthorhombic"
+  }
+}

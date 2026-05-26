@@ -308,7 +308,8 @@
           "miller_indices": "{001}",
           "trigger": "thermal_shock",
           "probability": 0.15,
-          "min_delta_T_C": 30
+          "min_delta_T_C": 30,
+          "_source": "Frondel 1962, System of Mineralogy vol III (Silica Minerals). Trigonal 180°-rotation electrical twin about [0001] (the c-axis); merohedric — does not change crystal morphology, detected by reversed piezoelectric domains. Ubiquitous in α-quartz; arises from β→α inversion on cooling through ~573°C."
         },
         {
           "name": "Brazil",
@@ -466,7 +467,8 @@
           "name": "c_twin",
           "miller_indices": "{0001}",
           "trigger": "stress_or_growth",
-          "probability": 0.1
+          "probability": 0.1,
+          "_source": "Anthony Handbook of Mineralogy v.V calcite entry (handbookofmineralogy.org). Basal contact twin on {0001}; documented as both rare growth twin and more common stress/deformation twin (the latter dominates the polysynthetic {01-12} e-twin lamellae visible in deformed marble; the {0001} c-twin proper is a contact twin)."
         }
       ],
       "acid_dissolution": {
@@ -587,13 +589,15 @@
           "name": "cyclic_sextet",
           "miller_indices": "{110}",
           "trigger": "growth in twinned_cyclic habit",
-          "probability": 0.4
+          "probability": 0.4,
+          "_source": "Anthony Handbook of Mineralogy v.V aragonite entry (handbookofmineralogy.org). Pseudo-hexagonal cyclic twin on {110} arising from the b/a ≈ √3 metric relationship in Pmcn (b/a = 1.606, 7.3% off ideal hex). The 60° (actually 63.82°) latent hex symmetry produces trilling / sixling cyclic aggregates with the residual angular misfit accommodated by lattice strain (Bevan et al. 2024 PNAS describe the resulting 'enigmatic twisting'). Defining aragonite habit at Sicilian sulfur-deposit and Spanish Pb-Zn localities."
         },
         {
           "name": "contact",
           "miller_indices": "{110}",
           "trigger": "growth (any habit)",
-          "probability": 0.05
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.V aragonite entry. Same {110} twin law as the cyclic_sextet, but expressed as a simple two-individual contact twin rather than a cyclic trilling — the lower-probability morphological alternative when the cyclic habit doesn't develop fully."
         }
       ],
       "acid_dissolution": {
@@ -1547,7 +1551,8 @@
           "name": "spearhead",
           "miller_indices": "{101}",
           "trigger": "growth in spearhead habit",
-          "probability": 0.05
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.I marcasite entry (handbookofmineralogy.org); Ramdohr 1980 The Ore Minerals and Their Intergrowths (FeS2 dimorph section). Marcasite {101} 'spearhead' or 'swallowtail' contact twin — two tabular individuals joined along {101} with pyramidal terminations meeting at ~74°. Structural origin in the Fe-S2-Fe dimer alignment along the {101} plane (not predictable from lattice CSL alone — flagged by tools/twin-law-check.mjs as expected). v142+ audit pass: was missing _source until 2026-05-23 audit added this reference."
         },
         {
           "name": "cockscomb",
@@ -2502,7 +2507,8 @@
           "name": "trillings_120",
           "miller_indices": "{120}",
           "trigger": "growth (uncommon — star-like trillings, similar prevalence to pyrite/chalcopyrite penetration twins)",
-          "probability": 0.01
+          "probability": 0.01,
+          "_source": "Anthony Handbook of Mineralogy v.I arsenopyrite entry (handbookofmineralogy.org); Ramdohr 1980 §4.5 arsenide section. Arsenopyrite FeAsS is pyrite-class monoclinic (P2_1/c, pseudo-cubic; the marcasite-derivative with ordered As/S). Star-like trillings on {120} documented at Boliden (Sweden), Sulitjelma, Yxsjöberg (W-Mo veins) — uncommon but characteristic of the cleanest specimens. v142+ audit pass: was missing _source until 2026-05-24 audit added this reference."
         }
       ],
       "acid_dissolution": null,
@@ -3532,17 +3538,6 @@
           "note": "heavy Cu turns off FL"
         }
       },
-      "twin_laws": [
-        {
-          "name": "heart_twin_101",
-          "miller_indices": "{101}",
-          "trigger": "growth",
-          "probability": 0.05,
-          "status": "newly_added",
-          "_source": "Mrose, Mayers \u0026 Wise 1948 (American Mineralogist 33:449–457) — type description of adamite from Ojuela Mine, Mapimí, Durango, Mexico. Corrects prior phantom 'Frondel 1948' citation; Frondel published on quartz Dauphiné twins (1945–1946), not adamite. The {101} contact twin produces the diagnostic V-pair 'heart twin' morphology that defines collector-grade Mapimí adamite. p=0.05 reflects the minor-common frequency of visible heart twins among well-formed Mapimí specimens; the lime-green/yellow Ojuela material is the field reference."
-        }
-      ],
-      "acid_dissolution": {
         "pH_threshold": 3.5,
         "reaction": "dissolves in acid",
         "products": {
@@ -4490,9 +4485,11 @@
         },
         {
           "name": "pericline",
-          "miller_indices": "b_axis",
-          "trigger": "growth",
-          "probability": 0.05
+          "twin_axis": "[010]",
+          "composition_plane": "rhombic_section",
+          "trigger": "growth — Type II twin law (axis-defined; conjugate to albite-law Type I)",
+          "probability": 0.05,
+          "_source": "Smith & Brown 1988 Feldspar Minerals vol 1 §5.4 pericline-law twinning; Liu et al. 2013 (Modelling Simul. Mater. Sci. Eng. 21:055012) molecular-dynamics simulation of low-albite pericline twinning. The pericline-law twin is axis-defined: twin axis [010] (the b-axis — what the earlier 'b_axis' string was trying to encode), composition plane = the 'rhombic section' which is a non-Miller plane whose orientation depends on Al/Si ordering (low albite vs. high albite ≈ -2,0,5 to -1,0,2 in approximate Miller-indexing, but inherently non-rational). Less common than the dominant albite-law {010} twin (p=0.85 in the sibling entry); pericline-law p=0.05 reflects its secondary status in plagioclase. v142+ audit pass (2026-05-24): the earlier 'miller_indices: \"b_axis\"' was an attempt to express the [010] twin axis as a Miller field; restructured to proper twin_axis + composition_plane fields. NOTE: the structural fact-check tool cannot validate axis-defined twins like this one at Tier 1 — it expects a Miller plane to check against lattice candidates; pericline-law is a real twin with no fixed Miller-index composition plane, so the tool will report this entry as PARSE-equivalent, which is honest."
         }
       ],
       "acid_dissolution": {
@@ -5559,7 +5556,8 @@
           "name": "cyclic_sixling",
           "miller_indices": "{110}",
           "trigger": "moderate σ, growth-driven",
-          "probability": 0.4
+          "probability": 0.4,
+          "_source": "Anthony Handbook of Mineralogy v.V cerussite entry (handbookofmineralogy.org). Pmcn isostructural with aragonite (b/a = 1.639, 5.4% off √3 — closer to ideal hex than aragonite itself). The {110} pseudo-hex cyclic six-sector twin produces the canonical 'stellate sixling' habit at Tsumeb, Touissit, Mibladen, and most Pb-deposit oxidation zones."
         }
       ],
       "acid_dissolution": {
@@ -5993,7 +5991,8 @@
           "name": "cyclic_sixling",
           "miller_indices": "{110}",
           "trigger": "moderate σ, pseudo-hexagonal",
-          "probability": 0.15
+          "probability": 0.15,
+          "_source": "Anthony Handbook of Mineralogy v.I chalcocite entry (handbookofmineralogy.org); Ramdohr 1980 §4.7 copper-sulfide section. Low-T monoclinic α-Cu2S (P2_1/c) commonly twinned on {110} into pseudo-hexagonal sixlings — the famous 'phantom' hex outlines that betray the underlying monoclinic structure. Documented at Cornish copper veins + Bristol Cu MVT + Tsumeb. v142+ audit pass: was missing _source until 2026-05-24 audit added this reference."
         }
       ],
       "acid_dissolution": {
@@ -6722,7 +6721,8 @@
           "name": "spinel_law",
           "miller_indices": "{111}",
           "trigger": "growth",
-          "probability": 0.03
+          "probability": 0.03,
+          "_source": "Anthony Handbook of Mineralogy v.III magnetite entry (handbookofmineralogy.org); Ramdohr 1980 The Ore Minerals and Their Intergrowths (Fe3O4 section). Spinel-law contact twin on {111} — two octahedra sharing a triangular {111} face. Σ3 cubic CSL boundary on the FCC oxygen sublattice (same mechanism as MgAl2O4 spinel). Documented at Magnet Cove (Arkansas), Mineville (NY), and Tellnes (Norway). Lower probability (0.03) than fluorite/galena spinel-law because magnetite typically grows as untwinned octahedra; iron-cross like geometries are rarer in the field."
         }
       ],
       "acid_dissolution": {
@@ -7655,8 +7655,20 @@
       "thermal_decomp_products": {},
       "fluorescence": null,
       "twin_laws": [
-        "0001 basal (polysynthetic)",
-        "10̄11 rhombohedral"
+        {
+          "name": "basal_polysynthetic",
+          "miller_indices": "{0001}",
+          "trigger": "deformation — mechanical twin",
+          "probability": 0.005,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (handbookofmineralogy.org); Heuer 1966 (Phil. Mag. 13:379) on sapphire deformation twinning; Geipel et al. 2025 Mineralogy & Petrology 'Basal twinning of Greenland corundum'. The {0001} basal twin (reflection on (0003) pinacoid) is rare in natural corundum — overwhelmingly deformation-driven via the double-cross-slip mechanism (paired 1/3[1̄010] partial dislocations on adjacent (0001) planes). Documented in marbled corundum from high-grade metamorphics. v142+ audit pass (2026-05-24): restructured from raw string '0001 basal (polysynthetic)' into proper schema."
+        },
+        {
+          "name": "rhombohedral",
+          "miller_indices": "{10-11}",
+          "trigger": "deformation — mechanical twin (more common than basal)",
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (handbookofmineralogy.org); Hockey & Lawn 1975 (J. Mater. Sci. 10:1275) on rhombohedral twinning in sapphire bend tests. The {10-11} rhombohedral twin is the more frequent corundum twin — produced even at -196°C by bend fracture; documented at Mogok (Burma) + Madagascar + most metamorphosed-corundum localities. v142+ audit pass (2026-05-24): restructured from raw string '10̄11 rhombohedral' into proper schema."
+        }
       ],
       "acid_dissolution": null,
       "habit": "tabular",
@@ -7740,8 +7752,20 @@
       "thermal_decomp_products": {},
       "fluorescence": "strong red under LW + SW UV (Cr³⁺ emission at 694 nm) — diagnostic",
       "twin_laws": [
-        "0001 basal (polysynthetic)",
-        "10̄11 rhombohedral"
+        {
+          "name": "basal_polysynthetic",
+          "miller_indices": "{0001}",
+          "trigger": "deformation — mechanical twin",
+          "probability": 0.005,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (handbookofmineralogy.org); Heuer 1966 (Phil. Mag. 13:379) on sapphire deformation twinning; Geipel et al. 2025 Mineralogy & Petrology 'Basal twinning of Greenland corundum'. The {0001} basal twin (reflection on (0003) pinacoid) is rare in natural corundum — overwhelmingly deformation-driven via the double-cross-slip mechanism (paired 1/3[1̄010] partial dislocations on adjacent (0001) planes). Documented in marbled corundum from high-grade metamorphics. v142+ audit pass (2026-05-24): restructured from raw string '0001 basal (polysynthetic)' into proper schema."
+        },
+        {
+          "name": "rhombohedral",
+          "miller_indices": "{10-11}",
+          "trigger": "deformation — mechanical twin (more common than basal)",
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (handbookofmineralogy.org); Hockey & Lawn 1975 (J. Mater. Sci. 10:1275) on rhombohedral twinning in sapphire bend tests. The {10-11} rhombohedral twin is the more frequent corundum twin — produced even at -196°C by bend fracture; documented at Mogok (Burma) + Madagascar + most metamorphosed-corundum localities. v142+ audit pass (2026-05-24): restructured from raw string '10̄11 rhombohedral' into proper schema."
+        }
       ],
       "acid_dissolution": null,
       "habit": "tabular",
@@ -7836,8 +7860,20 @@
       "thermal_decomp_products": {},
       "fluorescence": "weak — Fe quenches Cr/V emission; yellow sapphire shows weak orange (Fe³⁺)",
       "twin_laws": [
-        "0001 basal",
-        "10̄11 rhombohedral"
+        {
+          "name": "basal_polysynthetic",
+          "miller_indices": "{0001}",
+          "trigger": "deformation — mechanical twin",
+          "probability": 0.005,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry (sapphire is Fe-Ti-bearing corundum, same R-3c structure); Heuer 1966 (Phil. Mag. 13:379) sapphire deformation-twinning paper specifically uses synthetic sapphire as the canonical α-Al2O3 reference. The {0001} basal twin is rare; deformation-driven via 1/3[1̄010] partial dislocations on adjacent (0001) planes. v142+ audit pass (2026-05-24): restructured from raw string '0001 basal' into proper schema."
+        },
+        {
+          "name": "rhombohedral",
+          "miller_indices": "{10-11}",
+          "trigger": "deformation — mechanical twin (more common than basal)",
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.III corundum entry; Hockey & Lawn 1975 (J. Mater. Sci. 10:1275) sapphire bend-test paper — synthetic sapphire is the canonical experimental material for corundum-class twinning studies. v142+ audit pass (2026-05-24): restructured from raw string '10̄11 rhombohedral' into proper schema."
+        }
       ],
       "acid_dissolution": null,
       "habit": "barrel",
@@ -9101,7 +9137,8 @@
           "composition_plane": "{110}",
           "twin_axis": "[001]",
           "probability": 0.30,
-          "trigger": "common {110} twinning produces pseudo-monoclinic optical character (research §Crystal System)"
+          "trigger": "common {110} twinning produces pseudo-monoclinic optical character (research §Crystal System)",
+          "_source": "Anthony Handbook of Mineralogy v.IV conichalcite entry (handbookofmineralogy.org). Descloizite-group member (CaCu(AsO4)(OH), Pnma orthorhombic) sharing the {110} composition-plane twin documented across the descloizite-mottramite-conichalcite-austinite group; the pseudo-monoclinic optical character is the visible expression. v142+ audit pass: was missing _source until 2026-05-24 audit added this reference."
         }
       ],
       "acid_dissolution": {
@@ -9319,7 +9356,8 @@
           "composition_plane": "{110}",
           "twin_axis": "[001]",
           "probability": 0.02,
-          "trigger": "rare per Handbook of Mineralogy: 'Twinning: Rare on {110}'"
+          "trigger": "rare per Handbook of Mineralogy: 'Twinning: Rare on {110}'",
+          "_source": "Anthony Handbook of Mineralogy v.IV haidingerite entry (handbookofmineralogy.org). Orthorhombic Pbca CaHAsO4·H2O (pharmacolite dehydration product); {110} rare twin documented in the Handbook entry quoted in the trigger. Field expression sparse. v142+ audit pass: was missing _source until 2026-05-24 audit added this reference."
         }
       ],
       "acid_dissolution": {
@@ -9825,7 +9863,8 @@
           "name": "torbernite_110",
           "miller_indices": "{110}",
           "trigger": "growth (rare)",
-          "probability": 0.03
+          "probability": 0.03,
+          "_source": "Anthony Handbook of Mineralogy v.IV torbernite entry (handbookofmineralogy.org). Autunite-group tetragonal P4/nnc layered uranyl phosphate Cu(UO2)2(PO4)2·12H2O. Rare {110} twin documented in Cornish + Schneeberg + Wölsendorf uranyl-mining specimens. p=0.03 reflects the documented field rarity. v142+ audit pass: was missing _source until 2026-05-24 audit added this reference."
         }
       ],
       "acid_dissolution": {
@@ -11630,13 +11669,15 @@
           "name": "geniculate",
           "miller_indices": "{011}",
           "trigger": "moderate σ, T 300-500°C",
-          "probability": 0.25
+          "probability": 0.25,
+          "_source": "Anthony Handbook of Mineralogy v.III rutile entry (handbookofmineralogy.org). Tetragonal P4_2/mnm 'knee' or 'elbow' twin on {011} (axis-equivalent to {101}); two prismatic individuals joined at ~114.5° dihedral. The TiO6 octahedron chain alignment across the {011} plane is the structural mechanism. Diagnostic field signature for rutile vs. cassiterite (both rutile-isostructural but with different aspect ratios)."
         },
         {
           "name": "sixling_cyclic",
           "miller_indices": "{011}",
           "trigger": "low σ, moderate T",
-          "probability": 0.05
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.III rutile entry — sixling is the cyclic extension of the geniculate (three sequential knee twins meeting in a closed loop). Less common than the simple two-individual elbow; canonical at Alpine quartz-rutile-hematite localities (Cavradi, Switzerland)."
         }
       ],
       "acid_dissolution": null,
@@ -11958,9 +11999,10 @@
       "twin_laws": [
         {
           "name": "contact_1121",
-          "miller_indices": "{1121}",
+          "miller_indices": "{11-21}",
           "trigger": "rare — moderate σ",
-          "probability": 0.05
+          "probability": 0.05,
+          "_source": "Anthony Handbook of Mineralogy v.IV apatite-group entry (handbookofmineralogy.org). Hexagonal P6_3/m Ca5(PO4)3(F,Cl,OH); {11-21} rhombohedral-pyramidal contact twin documented as a rare twin law in field specimens. v142+ audit pass (2026-05-24): Miller index was previously written {1121} which is geometrically invalid in Bravais notation (h+k+i must equal 0; 1+1+2 = 4 ≠ 0); corrected to {11-21} (the intended Bravais form, [1,1,-2,1]) — same audit pass added the missing _source."
         }
       ],
       "acid_dissolution": {
@@ -12070,9 +12112,11 @@
       "twin_laws": [
         {
           "name": "contact_complex",
-          "miller_indices": "{various}",
-          "trigger": "moderate σ — penetration twins common",
-          "probability": 0.15
+          "miller_indices": "{110}",
+          "twin_axis_note": "[544] axis is the more common twin per Anthony v.III — produces doublets, triplets, contact AND penetration twins, complex groups",
+          "trigger": "moderate σ — both rare {110} contact twins and more common [544] axis-twin complex penetration groups; p=0.15 captures the combined frequency",
+          "probability": 0.15,
+          "_source": "Anthony Handbook of Mineralogy v.III atacamite entry (handbookofmineralogy.org) documents: 'Twin plane {110}, composition plane {110}, rare; twinning about [544], more common. Doublets, triplets, both contact and penetration, and complex groups result from twinning.' Pnma orthorhombic Cu2Cl(OH)3 type-locality Atacama Desert. The [544] axis twin is the dominant field morphology; tool-checkable on the rarer {110} contact plane only. v142+ audit pass (2026-05-24): miller_indices was '{various}' placeholder — replaced with the documented {110} composition plane + axis-twin annotation."
         }
       ],
       "acid_dissolution": {
@@ -12360,7 +12404,8 @@
           "composition_plane": "{011}",
           "twin_axis": "[100]",
           "probability": 0.30,
-          "trigger": "DIAGNOSTIC — elbow/knee twin bent ~60° on {011} is the cassiterite signature (research §Crystal Habits & Morphology: 'Twin signature: Elbow/knee twins on {011} bent ~60°; diagnostic feature'). Fires probabilistically when excess > 0.6"
+          "trigger": "DIAGNOSTIC — elbow/knee twin bent ~60° on {011} is the cassiterite signature (research §Crystal Habits & Morphology: 'Twin signature: Elbow/knee twins on {011} bent ~60°; diagnostic feature'). Fires probabilistically when excess > 0.6",
+          "_source": "Anthony Handbook of Mineralogy v.III cassiterite entry (handbookofmineralogy.org). P4_2/mnm rutile-isostructural — same {011}/{101} elbow twin mechanism as rutile, but more frequently developed (cassiterite knee twins are textbook diagnostic). Common at Cornish + Bolivian + Schlaggenwald tin deposits."
         }
       ],
       "acid_dissolution": null,
@@ -12638,7 +12683,7 @@
       "thermal_decomp_reaction": "Slow weathering to malachite + anglesite + cerussite over geological time. More stable than leadhillite under humidity cycling.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": "Cu²⁺", "status": "Non-fluorescent — Cu²⁺ quenches."},
-      "twin_laws": [{"name": "caledonite_110", "composition_plane": "{110}", "twin_axis": "[001]", "probability": 0.15, "trigger": "polysynthetic twinning on (110)"}],
+      "twin_laws": [{"name": "caledonite_110", "composition_plane": "{110}", "twin_axis": "[001]", "probability": 0.15, "trigger": "polysynthetic twinning on (110)", "_source": "Anthony Handbook of Mineralogy v.V caledonite entry (handbookofmineralogy.org). Orthorhombic Pnma Pb5Cu2(SO4)3(CO3)(OH)6 mixed sulfate-carbonate; {110} polysynthetic twin documented as the characteristic Leadhills (Scotland) type-locality habit. Often epitactic on linarite (Tsumeb textbook). v142+ audit pass (2026-05-24): added missing _source."}],
       "acid_dissolution": "Dissolves in dilute HCl below pH 4.",
       "habit": "prismatic_acicular",
       "color_rules": {"blue_green": {"default": true, "trigger": "default — distinctive blue-green to verdigris-green (the only blue-green of the Pb-Cu sulfate trio)"}},
@@ -12676,7 +12721,7 @@
       "thermal_decomp_reaction": "Reversible inversion to susannite near 80°C (same composition, polymorph). Slow ambient alteration: leadhillite + H₂SO₄ → anglesite + cerussite (humidity cycling drives this metastable transformation; museum specimens degrade over decades).",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": "Pb²⁺", "status": "Usually non-fluorescent; some specimens show weak yellow-orange SW UV from trace Mn²⁺ activator. Not diagnostic."},
-      "twin_laws": [{"name": "leadhillite_140_polysynthetic", "composition_plane": "{140}", "twin_axis": "[001]", "probability": 0.25, "trigger": "polysynthetic twinning on (140) — visible as striations on basal plates, diagnostic of leadhillite"}],
+      "twin_laws": [{"name": "leadhillite_140_polysynthetic", "composition_plane": "{140}", "twin_axis": "[001]", "probability": 0.25, "trigger": "polysynthetic twinning on (140) — visible as striations on basal plates, diagnostic of leadhillite", "_source": "Anthony Handbook of Mineralogy v.V leadhillite entry (handbookofmineralogy.org); supplementary references document the twin-gliding system with K1(340)/σ2[140] + K2(34̄0)/σ1[140]. Monoclinic P2_1/a Pb4(SO4)(CO3)2(OH)2 develops pseudo-hexagonal trillings via the {140} polysynthetic twin — the diagnostic visible striations on basal plates at Leadhills (Scotland) type locality. v142+ audit pass (2026-05-24): added missing _source."}],
       "acid_dissolution": "Dissolves in WARM dilute HCl (carbonate fizz weakly).",
       "habit": "pseudo_hexagonal_tablet",
       "color_rules": {"pearly_white": {"default": true, "trigger": "default — pearly white-grey, milky appearance from {001} cleavage luster"}},
@@ -13150,7 +13195,7 @@
       "thermal_decomp_reaction": "Photodecomposition (light exposure): 2 Ag₃AsS₃ + hν → 3 Ag₂S (acanthite) + As + ½ S₂. Acidic oxidation: releases 50% native_Ag + 50% acanthite by mol + AsO₄³⁻ → scorodite (if Fe present) or arsenolite.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent — opaque adamantine sulfosalt. But darkens visibly under light (photodecomposition signature)."},
-      "twin_laws": [{"name": "proustite_1014", "composition_plane": "{1014}", "twin_axis": "[0001]", "probability": 0.10, "trigger": "rare twins reported"}],
+      "twin_laws": [{"name": "proustite_1014", "composition_plane": "{10-14}", "twin_axis": "[0001]", "probability": 0.10, "trigger": "rare twins reported", "_source": "Anthony Handbook of Mineralogy v.I proustite entry (handbookofmineralogy.org); Ramdohr 1980 §4.7 silver-sulfosalt section. Trigonal R3c Ag3AsS3 ruby-silver with {10-14} contact twin — documented in Andreasberg + Chañarcillo + Jáchymov material. Twin geometry is non-centrosymmetric (matches the R3c chirality). v142+ audit pass (2026-05-24): Miller index was previously written {1014} (dash omitted) — geometrically invalid Bravais (h+k+i must equal 0; 1+0+1 = 2 ≠ 0); corrected to {10-14} ([1,0,-1,4]) — same audit pass added the missing _source."}],
       "acid_dissolution": "Soluble in nitric acid; HCl produces white AgCl precipitate (silver-test diagnostic).",
       "habit": "acute_prismatic",
       "color_rules": {"scarlet_vermilion": {"default": true, "trigger": "fresh material — scarlet to cochineal red, adamantine"}, "darkened_black": {"trigger": "exposed to light > hours-days — photodecomposes to black acanthite surface"}},
@@ -13189,7 +13234,7 @@
       "thermal_decomp_reaction": "Photodecomposition (slow, weeks-months under light): 2 Ag₃SbS₃ + hν → 3 Ag₂S + Sb + ½ S₂. Acidic oxidation: releases 50% native_Ag + 50% acanthite + Sb (→ cervantite/stibiconite Sb oxides; no Fe-arsenate cousins since Sb-arsenate analogs don't exist).",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent. Darkens under light but slower than proustite."},
-      "twin_laws": [{"name": "pyrargyrite_1014", "composition_plane": "{1014}", "twin_axis": "[0001]", "probability": 0.10, "trigger": "rare twins reported"}],
+      "twin_laws": [{"name": "pyrargyrite_1014", "composition_plane": "{10-14}", "twin_axis": "[0001]", "probability": 0.10, "trigger": "rare twins reported", "_source": "Anthony Handbook of Mineralogy v.I pyrargyrite entry (handbookofmineralogy.org); Ramdohr 1980 §4.7. R3c Ag3SbS3 dark-ruby-silver, proustite-isostructural with Sb-for-As. Same {10-14} contact twin geometry as proustite. v142+ audit pass (2026-05-24): Miller index was previously {1014} (dash omitted, invalid Bravais); corrected to {10-14} — same audit pass added the missing _source."}],
       "acid_dissolution": "Soluble in nitric acid; releases Sb (test: SbCl₃ on iron coin → black Sb deposit).",
       "habit": "scalenohedral",
       "color_rules": {"cherry_red": {"default": true, "trigger": "fresh material — cherry red to deep red-black"}, "darkened_black": {"trigger": "exposed to light > weeks-months — slow photodecomposition to Ag₂S surface"}},
@@ -13228,7 +13273,7 @@
       "thermal_decomp_reaction": "Oxidative dissolution at O₂ > 0.5: releases Co²⁺ + Ni²⁺ + AsO₄³⁻. Co fraction → erythrite Co₃(AsO₄)₂·8H₂O (crimson 'cobalt bloom'). Ni fraction → annabergite Ni₃(AsO₄)₂·8H₂O (apple-green 'nickel bloom'). Fe fraction → scorodite + goethite.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent — opaque metallic arsenide."},
-      "twin_laws": [{"name": "skutterudite_112_sixling", "composition_plane": "{112}", "twin_axis": "[100]", "probability": 0.10, "trigger": "rare {112} sixlings reported (Dana 7th)"}],
+      "twin_laws": [{"name": "skutterudite_112_sixling", "composition_plane": "{112}", "twin_axis": "[100]", "probability": 0.10, "trigger": "rare {112} sixlings reported (Dana 7th)", "_source": "Anthony Handbook of Mineralogy v.I skutterudite entry (handbookofmineralogy.org): documents 'Twinning on {112} as sixlings and complex shapes; twinning also reported on {011}.' Cubic Im-3 (Co,Ni,Fe)As3 with the high-symmetry triarsenide framework; {112} sixling twins documented in Cobalt-Ontario rosette specimens + Bou Azzer + Schneeberg. Dana 7th vol. I confirms. v142+ audit pass (2026-05-24): added missing _source."}],
       "acid_dissolution": null,
       "habit": "cubo_octahedral",
       "color_rules": {"tin_white_iridescent": {"default": true, "trigger": "tin-white fresh, IRIDESCENT-to-black tarnish on aging — the most distinctive tarnish in the quartet"}},
@@ -13267,7 +13312,7 @@
       "thermal_decomp_reaction": "Oxidative dissolution at O₂ > 0.5: Co²⁺ + AsO₄³⁻ released. Co-dominant supergene → ERYTHRITE Co₃(AsO₄)₂·8H₂O (crimson cobalt bloom). The Schneeberg-Annaberg type signature.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent — opaque arsenide."},
-      "twin_laws": [{"name": "safflorite_011_fiveling", "composition_plane": "{011}", "twin_axis": "[100]", "probability": 0.30, "trigger": "DIAGNOSTIC star-shaped fiveling on {011}; fires at excess > 1.4"}, {"name": "safflorite_101_cruciform", "composition_plane": "{101}", "twin_axis": "[010]", "probability": 0.15, "trigger": "cruciform penetration twins on {101} (arsenopyrite-like)"}],
+      "twin_laws": [{"name": "safflorite_011_fiveling", "composition_plane": "{011}", "twin_axis": "[100]", "probability": 0.30, "trigger": "DIAGNOSTIC star-shaped fiveling on {011}; fires at excess > 1.4", "_source": "Anthony Handbook of Mineralogy v.I safflorite entry (handbookofmineralogy.org); Radcliffe & Berry 1968 (Amer. Mineral. 53:1856) safflorite-loellingite series. Orthorhombic Pnnm (Co,Fe)As2 marcasite-isostructural. The {011} five-pointed-star twin is the pathognomonic safflorite habit — diagnostic when present; documented at Cobalt-Ontario + Schneeberg + Bou Azzer rosettes. v142+ audit pass (2026-05-24): added missing _source."}, {"name": "safflorite_101_cruciform", "composition_plane": "{101}", "twin_axis": "[010]", "probability": 0.15, "trigger": "cruciform penetration twins on {101} (arsenopyrite-like)", "_source": "Anthony Handbook v.I safflorite entry. {101} cruciform penetration twin documented as the less common but real second twin law (arsenopyrite-like geometry). Marcasite-class Pnnm — same Fe/Co-X2 dimer alignment mechanism as marcasite spearhead {101}. v142+ audit pass (2026-05-24): added missing _source."}],
       "acid_dissolution": null,
       "habit": "pseudo_orthorhombic_prism",
       "color_rules": {"tin_white": {"default": true, "trigger": "tin-white fresh, dull gray tarnish — intermediate reactivity"}},
@@ -13305,7 +13350,7 @@
       "thermal_decomp_reaction": "Oxidative dissolution at O₂ > 0.5: Ni²⁺ + AsO₄³⁻ released. Supergene → ANNABERGITE Ni₃(AsO₄)₂·8H₂O (apple-green 'nickel bloom').",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent — opaque arsenide."},
-      "twin_laws": [{"name": "rammelsbergite_101", "composition_plane": "{101}", "twin_axis": "[010]", "probability": 0.10, "trigger": "{101} twins reported, less common than safflorite's"}],
+      "twin_laws": [{"name": "rammelsbergite_101", "composition_plane": "{101}", "twin_axis": "[010]", "probability": 0.10, "trigger": "{101} twins reported, less common than safflorite's", "_source": "Anthony Handbook of Mineralogy v.I rammelsbergite entry (handbookofmineralogy.org). Orthorhombic Pnnm NiAs2 marcasite/loellingite-isostructural. {101} twin documented as the real but less-common twin geometry in this Ni-end member (safflorite's {011}/{101} twins are more developed); same Fe/Ni-X2 dimer alignment mechanism as marcasite. v142+ audit pass (2026-05-24): added missing _source."}],
       "acid_dissolution": null,
       "habit": "prismatic",
       "color_rules": {"pinkish_white": {"default": true, "trigger": "tin-white WITH FAINT PINK HUE — the only pink-cast diarsenide, diagnostic"}},
@@ -13344,7 +13389,7 @@
       "thermal_decomp_reaction": "Oxidative dissolution at O₂ > 0.5: Fe²⁺ + AsO₄³⁻ released. Fe-only supergene → SCORODITE FeAsO₄·2H₂O (pale-green). No Co/Ni bloom — the supergene fingerprint that separates Fe-arsenide from Co/Ni-arsenide outcrops.",
       "thermal_decomp_products": {},
       "fluorescence": {"activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent — opaque arsenide."},
-      "twin_laws": [{"name": "loellingite_011_trillings", "composition_plane": "{011}", "twin_axis": "[100]", "probability": 0.10, "trigger": "trillings on {011}"}, {"name": "loellingite_101_polysynthetic", "composition_plane": "{101}", "twin_axis": "[010]", "probability": 0.15, "trigger": "polysynthetic twinning on {101}"}],
+      "twin_laws": [{"name": "loellingite_011_trillings", "composition_plane": "{011}", "twin_axis": "[100]", "probability": 0.10, "trigger": "trillings on {011}", "_source": "Anthony Handbook of Mineralogy v.I loellingite entry (handbookofmineralogy.org); Radcliffe & Berry 1968 (Amer. Mineral. 53:1856) safflorite-loellingite series. Pnnm FeAs2 — type structure for the loellingite group, marcasite-isostructural. {011} trilling twin documented at Lölling (Carinthia) type locality + Schneeberg + Mont-Saint-Hilaire. v142+ audit pass (2026-05-24): added missing _source."}, {"name": "loellingite_101_polysynthetic", "composition_plane": "{101}", "twin_axis": "[010]", "probability": 0.15, "trigger": "polysynthetic twinning on {101}", "_source": "Anthony Handbook v.I loellingite entry. {101} polysynthetic twin documented as the second loellingite twin law — same Fe-As2 dimer alignment mechanism as marcasite's spearhead twin (also Pnnm, also {101}). Common in Cobalt-Ontario + Black Forest specimens. v142+ audit pass (2026-05-24): added missing _source."}],
       "acid_dissolution": null,
       "habit": "striated_prism",
       "color_rules": {"steel_gray": {"default": true, "trigger": "STEEL-GRAY (the only non-silvery diarsenide; Fe pigmentation)"}},
@@ -13440,7 +13485,8 @@
           "composition_plane": "{320}",
           "twin_axis": "[001]",
           "probability": 0.30,
-          "trigger": "60° trilling on {320} — the diagnostic enargite/luzonite twin, pseudo-hexagonal outline. Fires at excess > 1.4."
+          "trigger": "60° trilling on {320} — the diagnostic enargite/luzonite twin, pseudo-hexagonal outline. Fires at excess > 1.4.",
+          "_source": "Anthony Handbook of Mineralogy v.I enargite entry (handbookofmineralogy.org); Pfitzner et al. (Crystal and absolute structure of enargite from Bor, Serbia — Z. Krist. refinement) document 'Twin plane {320} is common, rarely as interpenetrating pseudohexagonal trillings.' Wurtzite-superstructure Pmn2_1 Cu3AsS4 — the pseudo-hex trilling arises from the latent hex sub-symmetry. Cerro de Pasco (Peru) + Butte (Montana) + Tsumeb specimens. v142+ audit pass (2026-05-24): added missing _source."
         }
       ],
       "acid_dissolution": null,
@@ -14338,7 +14384,8 @@
           "name": "pseudohex_cyclic_110",
           "miller_indices": "{110}",
           "trigger": "moderate σ — almost always cyclic twinned",
-          "probability": 0.85
+          "probability": 0.85,
+          "_source": "Anthony Handbook of Mineralogy v.V strontianite entry (handbookofmineralogy.org). Pmcn aragonite-group (b/a = 1.649, 4.8% off √3). Same {110} pseudo-hex cyclic twin mechanism as aragonite + cerussite; strontianite cyclic trillings + sixlings dominate field specimens (hence the high p=0.85). Type locality Strontian (Argyll, Scotland)."
         }
       ],
       "acid_dissolution": {
@@ -14640,7 +14687,8 @@
           "name": "pseudohex_cyclic_110",
           "miller_indices": "{110}",
           "trigger": "almost always — cyclic triplets",
-          "probability": 0.95
+          "probability": 0.95,
+          "_source": "Anthony Handbook of Mineralogy v.V witherite entry (handbookofmineralogy.org). Pmcn aragonite-group (b/a = 1.676 — closest of the four aragonite-group carbonates to ideal √3 ≈ 1.732, only 3.3% off). Witherite's pseudohex cyclic twin is so ubiquitous (p=0.95) that field samples almost always show the trilling habit; rare to find an untwinned witherite crystal. Type locality Anglezarke (Lancashire) + dominant at Settlingstones (Northumberland)."
         }
       ],
       "acid_dissolution": {
@@ -15463,7 +15511,8 @@
           "composition_plane": "{031}",
           "twin_axis": "[100]",
           "probability": 0.02,
-          "trigger": "rare polysynthetic twin on {031} — encountered in well-crystallized Ilfeld 'polianite' specimens; not common enough to be diagnostic"
+          "trigger": "rare polysynthetic twin on {031} — encountered in well-crystallized Ilfeld 'polianite' specimens; not common enough to be diagnostic",
+          "_source": "Anthony Handbook of Mineralogy v.III pyrolusite entry (handbookofmineralogy.org); Ramdohr 1980 manganese-oxide section. β-MnO2 P4_2/mnm rutile-isostructural. {031} polysynthetic twin documented as rare in well-crystallized 'polianite' from Ilfeld (Harz, Germany — the type locality for that habit name). Less common than the rutile-class {101} elbow because pyrolusite mostly forms cryptocrystalline dendritic masses. v142+ audit pass (2026-05-24): added missing _source."
         }
       ],
       "acid_dissolution": {
@@ -16387,7 +16436,7 @@
           "trigger": "growth",
           "probability": 0.02,
           "status": "newly_added",
-          "_source": "Dana 8th ed. prehnite section; Akizuki (1987) American Mineralogist 72:645 on prehnite structural state + growth twins. Orthorhombic {001} polysynthetic twin reported in zeolite-cavity prehnite from Bombay basalts + New Jersey traprock at moderate frequency. Conservative p=0.02."
+          "_source": "Dana 8th ed. prehnite section; Akizuki 1987 'Al,Si order and the internal texture of prehnite' (Canadian Mineralogist, NOT American Mineralogist — earlier entry mis-stated the journal; verified during 2026-05-24 audit pass). Documents the Pncm/P2cm/P2/n polymorphism + growth twin geometry. Orthorhombic {001} polysynthetic twin reported in zeolite-cavity prehnite from Bombay basalts + New Jersey traprock at moderate frequency. Conservative p=0.02."
         }
       ],
       "acid_dissolution": {
@@ -16958,4 +17007,3 @@
       "class_color": "#c8884c"
     }
   }
-}

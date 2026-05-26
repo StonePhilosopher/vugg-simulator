@@ -166,6 +166,30 @@ function renderCrystalRow(crystal, idx, onCollect, replayStep?: number) {
   return el;
 }
 
+// "Collect all" header button (2026-05-23 — boss request after twin-laws arc).
+// Returns the HTML for the row that sits between the inventory's h4 and the
+// per-crystal rows. Same has-growth + not-already-collected gate as the
+// per-row Collect button (renderCrystalRow:153-154). Hidden entirely
+// during a legends narrative replay (replayStep != null) — the per-crystal
+// buttons disable there too, and the boss specifically wanted this button
+// available "when you finish a game," i.e. once growth is done.
+function _inventoryCollectAllHTML(crystals, onCollectAllName, replayStep?: number) {
+  if (replayStep != null) return '';
+  const uncollected = (crystals || []).filter(c =>
+    c
+    && !c._collectedRecordId
+    && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0)
+  );
+  const n = uncollected.length;
+  if (!crystals || !crystals.length) return ''; // empty inventory — nothing to bulk
+  const disabled = n === 0 ? 'disabled' : '';
+  const title = n === 0
+    ? 'Every collectable crystal is already in your collection'
+    : `Add every uncollected crystal (${n}) to your collection in one go`;
+  const label = n === 0 ? '✓ All collected' : `💎 Collect all (${n})`;
+  return `<div class="inv-collect-all-row"><button class="inv-collect-all-btn" ${disabled} title="${title}" onclick="${onCollectAllName}()">${label}</button></div>`;
+}
+
 function updateLegendsInventory(sim, replayStep?: number) {
   const col = document.getElementById('legends-inventory-col');
   const panel = document.getElementById('legends-inventory');
@@ -200,6 +224,16 @@ function updateLegendsInventory(sim, replayStep?: number) {
   }
 
   col.style.display = '';
+
+  // Inject the "Collect all" header button between h4 and per-crystal rows.
+  // Hidden during replay (matches per-crystal disabled state).
+  const collectAllHTML = _inventoryCollectAllHTML(visible, 'collectAllFromLegends', replayStep);
+  if (collectAllHTML) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = collectAllHTML;
+    if (wrap.firstChild) panel.appendChild(wrap.firstChild);
+  }
+
   visible.forEach((crystal: any) => {
     // Find the live-array index for the Collect button's onclick. Slicing
     // visible[] preserves identity, so a lookup is O(visible.length).
@@ -222,6 +256,17 @@ function updateFortressInventory() {
     return;
   }
 
+  // "Collect all" header button — visible whenever there are crystals.
+  // Creative mode has no formal "finished" state, so the button is
+  // always present when inventory has rows; the disabled state when
+  // N=0 keeps the placement consistent run-to-run.
+  const collectAllHTML = _inventoryCollectAllHTML(fortressSim.crystals, 'collectAllFromFortress');
+  if (collectAllHTML) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = collectAllHTML;
+    if (wrap.firstChild) panel.appendChild(wrap.firstChild);
+  }
+
   fortressSim.crystals.forEach((crystal, idx) => {
     panel.appendChild(renderCrystalRow(crystal, idx, 'collectFromFortress'));
   });
@@ -237,6 +282,18 @@ function renderRandomInventory() {
   header.textContent = '💎 Crystal Inventory';
   header.style.cssText = 'color:#f0c050;margin:0.8rem 0 0.5rem 0;letter-spacing:0.08em';
   panel.appendChild(header);
+
+  // "Collect all" header button — random mode runs the sim to completion
+  // before render, so the inventory is always in "game finished" state.
+  // Filter to grown crystals (matching the grid filter below) so the
+  // count reflects what's visible.
+  const grown = randomSim.crystals.filter((c: any) => (c.total_growth_um || 0) > 0);
+  const collectAllHTML = _inventoryCollectAllHTML(grown, 'collectAllFromRandom');
+  if (collectAllHTML) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = collectAllHTML;
+    if (wrap.firstChild) panel.appendChild(wrap.firstChild);
+  }
 
   const grid = document.createElement('div');
   grid.className = 'random-inventory-grid';

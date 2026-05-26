@@ -353,9 +353,54 @@ function libraryBuildCard(name, m) {
   `;
 }
 
+// Completion-as-challenge progress banner. Computed from the static
+// MINERAL_SPEC + the player's persisted collection. Two metrics:
+//   - species seen: distinct minerals with ≥1 collected specimen,
+//     out of the full 170-species catalog
+//   - twinned variants: distinct minerals where the player has ≥1
+//     twinned specimen, out of the species whose twin_laws[] is non-
+//     empty (143 minerals post-v141; the rest have intentionally-empty
+//     twin_laws documented via _twin_laws_note)
+//
+// Quiet design — the aesthete who only grows selenites gets a single
+// line of unobtrusive text; the completionist has the numbers front
+// and center. No alerts, no popups, no celebration animation. The
+// numbers themselves do the work.
+function _libraryProgressHTML() {
+  const all = loadCrystals();
+  const speciesSeen = new Set<string>();
+  const twinnedSpeciesSeen = new Set<string>();
+  for (const c of all) {
+    if (c && c.mineral) {
+      speciesSeen.add(c.mineral);
+      if (c.twinned) twinnedSpeciesSeen.add(c.mineral);
+    }
+  }
+  const totalSpecies = Object.keys(MINERAL_SPEC).length;
+  let twinSupporting = 0;
+  for (const m of Object.values(MINERAL_SPEC) as any[]) {
+    if (Array.isArray(m.twin_laws) && m.twin_laws.length > 0) twinSupporting++;
+  }
+
+  if (all.length === 0) {
+    return `<span class="progress-label">Collection</span><span class="progress-empty">Empty — grow a vugg and tap Collect to start your collection.</span>`;
+  }
+
+  const pct = totalSpecies > 0 ? Math.round((speciesSeen.size / totalSpecies) * 100) : 0;
+  const twinPct = twinSupporting > 0 ? Math.round((twinnedSpeciesSeen.size / twinSupporting) * 100) : 0;
+  return `<span class="progress-label">Collection</span>` +
+    `<span class="progress-stat">${speciesSeen.size}</span><span> / ${totalSpecies} species</span>` +
+    ` <span style="color:#5a4a30;font-size:0.8em">(${pct}%)</span>` +
+    `<span class="progress-sep">·</span>` +
+    `<span class="progress-stat">${twinnedSpeciesSeen.size}</span><span> / ${twinSupporting} twinned variants</span>` +
+    ` <span style="color:#5a4a30;font-size:0.8em">(${twinPct}%)</span>`;
+}
+
 function libraryRender() {
   const grid = document.getElementById('library-grid');
   const count = document.getElementById('library-count');
+  const progress = document.getElementById('library-progress');
+  if (progress) progress.innerHTML = MINERAL_SPEC_READY ? _libraryProgressHTML() : '';
   if (!grid) return;
   if (!MINERAL_SPEC_READY) {
     grid.innerHTML = '<div class="library-empty">Loading spec…</div>';

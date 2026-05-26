@@ -512,6 +512,42 @@ body.topo-view-3d .topo-slice-ctrls { display: none; }
   font-size: 0.8rem;
   font-style: italic;
 }
+
+/* Completion-progress banner (2026-05-23 — supports completion-as-
+   challenge framing without locking into the future currency loop).
+   Single-line summary above the filters; quietly tells completionist
+   players where they are without bothering the aesthetic-only player
+   who just wants to grow selenites. */
+.library-progress {
+  color: #d4a843;
+  font-size: 0.95rem;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(90deg, #1f1d10, #181610);
+  border: 1px solid #3a3520;
+  border-left: 3px solid #d4a843;
+  border-radius: 4px;
+}
+.library-progress .progress-label {
+  color: #8a7a40;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-right: 0.6rem;
+}
+.library-progress .progress-stat {
+  color: #f0c050;
+  font-weight: 600;
+}
+.library-progress .progress-sep {
+  color: #5a4a30;
+  margin: 0 0.7rem;
+}
+.library-progress .progress-empty {
+  color: #6a5a30;
+  font-style: italic;
+}
 .library-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -643,6 +679,38 @@ body.topo-view-3d .topo-slice-ctrls { display: none; }
   color: #6a5a30;
   cursor: default;
   opacity: 0.65;
+}
+
+/* "Collect all" header button (2026-05-23). Sits between the
+   inventory h4 and the per-crystal rows; slightly more prominent
+   than the per-row Collect button to read as a batch action. */
+.inv-collect-all-row {
+  margin: 0.2rem 0 0.7rem 0;
+  text-align: center;
+}
+.inv-collect-all-btn {
+  background: #2a2510;
+  color: #f0c050;
+  border: 1px solid #5a4a30;
+  padding: 0.4rem 1rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.inv-collect-all-btn:hover:not(:disabled) {
+  border-color: #f0c050;
+  background: #3a3018;
+  color: #ffd870;
+}
+.inv-collect-all-btn:disabled {
+  color: #6a5a30;
+  border-color: #2a2518;
+  cursor: default;
+  opacity: 0.55;
 }
 
 .random-inventory {
@@ -3520,6 +3588,7 @@ Scenarios:
         <button id="idle-play-btn" onclick="idleTogglePlay()">▶️ Play</button>
         <button id="idle-pause-btn" onclick="idleTogglePause()" disabled>⏸️ Pause</button>
         <button id="idle-finish-btn" onclick="idleFinish()" disabled>🏁 Finish</button>
+        <button id="idle-collect-all-btn" onclick="collectAllFromIdle()" disabled title="Start a Zen run to grow crystals you can collect">💎 Collect all</button>
       </div>
       <div class="idle-speed">
         <label>Speed:</label>
@@ -3614,6 +3683,12 @@ Scenarios:
 
 <!-- Library Mode -->
 <div class="library-panel" id="library-panel">
+  <div class="library-progress" id="library-progress">
+    <!-- Populated by libraryRender(): completion-as-challenge summary
+         (X / 170 species · Y / 143 twinned). Sits above the filters
+         so the count is always visible regardless of which subset the
+         user is currently filtering to. -->
+  </div>
   <div class="library-filters">
     <div class="filter-group">
       <label for="lib-class">Class</label>
@@ -12027,7 +12102,122 @@ let timeScale = 5.0;
 //            molybdate   COMPLETE (7/7)   <-- v141
 //            native      COMPLETE (8/8)   <-- v141
 //            oxide       COMPLETE (12/12) <-- v141
-const SIM_VERSION = 141;
+// ----------------------------------------------------------------
+// v142 (2026-05-23): CITATION CORRECTION — adamite heart twin pulled.
+//
+// During design conversation about future "trophy-tier" rare minerals,
+// the boss asked about the paragenesis of various rare specimens.
+// While drafting the Mapimí adamite heart-twin visual primitive (item
+// 13 in the handoff queue), I verified the v139 citation against the
+// authoritative Anthony Handbook of Mineralogy v.IV adamite entry
+// (Mineral Data Publishing 2001-2005, handbookofmineralogy.org) and
+// against the actual 1948 Ojuela paper (Mrose, Mayers & Wise, Amer.
+// Mineral. 33:449-457).
+//
+// What I found:
+//   - The Anthony Handbook lists {101} for adamite as a DOMINANT
+//     CRYSTAL FORM and as a GOOD CLEAVAGE direction — NOT as a twin
+//     law. The Handbook entry makes no mention of twinning.
+//   - The Mrose-Mayers-Wise 1948 Ojuela paper documents morphology +
+//     chemistry but makes no twinning observations.
+//   - The "Frondel 1948 (American Mineralogist 33:545)" citation I
+//     shipped at v139 (commit 3edd2e7) DOES NOT EXIST. I confabulated
+//     it from real elements (Frondel as a mineralogist name, 1948 as
+//     a plausible year, Amer. Mineral. as the journal, page 545 as a
+//     plausible number) and shipped it as if it were a real source.
+//
+// The visual heart-shape exists in Ojuela specimens — collector
+// market does sell "heart twins" — but whether they're true crystallo-
+// graphic twins on {101} or parallel growths or accidental juxta-
+// positions hasn't been characterized in published mineralogical
+// literature that I can find. Boss confirmed having seen one once
+// in a wealthy collection but couldn't vouch for the crystallography
+// either.
+//
+// THE CORRECTION
+//
+//   data/minerals.json adamite entry:
+//     - twin_laws: pulled back to []
+//     - _twin_laws_note: added, explaining the situation honestly
+//       (collector morphology exists, formal twin law not documented,
+//       v139 citation was fabricated)
+//
+//   This drops 1 rng.random() draw per adamite nucleation. Empirically
+//   shifts the supergene_oxidation baseline (the scenario where
+//   adamite is foundational); auto-handled by regenerating
+//   seed42_v142.json. No pinned tests drift; no test loosening
+//   required.
+//
+// COVERAGE UPDATE
+//
+//   142 minerals with twin_laws (was 143 at v141).
+//   28 minerals with _twin_laws_note (was 27 at v141).
+//   170 / 170 still accounted for.
+//
+//   Per-class adjustment:
+//     arsenate    COMPLETE (15/15) — was 12 twin_laws + 3 notes;
+//                                    now 11 twin_laws + 4 notes
+//   All other classes unchanged from v141.
+//
+// LESSON (for future agents reading this block)
+//
+//   Citation conservatism rule going forward: specific paper-page
+//   combinations (e.g. "Smith 1972 page 245") are the high-risk
+//   fabrication zone. Web-search any specific citation before shipping
+//   it. General references ("Anthony Handbook v.X mineral section",
+//   "Mindat habit notes", "Dana 8th ed.") are verifiable + safer to
+//   default to when the specific paper isn't directly accessible.
+//
+//   The vugg-add-twin-law skill is being updated alongside this
+//   commit to bake the rule in.
+//
+// HONESTY NOTE
+//
+//   The v141 commit message + the handoff doc both reference
+//   "Frondel 1948" for adamite — those carry the fabricated citation
+//   forward in the historical commit trail. The git history can't
+//   be rewritten (would require a force-push to main + invalidate
+//   any clones), but this v142 block documents the correction so
+//   future readers tracing the adamite entry's history land on the
+//   truth rather than the fabrication. Same with the handoff doc:
+//   updated in this commit to note the v142 correction inline.
+// v143: schema-bug repairs in the twin_laws data layer — restructured
+//   corundum / ruby / sapphire from raw-string entries to proper
+//   objects with miller_indices + _source citations; fixed atacamite
+//   "{various}" placeholder to "{110}" + documented [544] axis-twin
+//   in the citation; restructured albite pericline twin from broken
+//   "miller_indices: b_axis" to proper twin_axis: [010] + non-Miller
+//   composition_plane "rhombic_section" notation. All eight pre-
+//   existing PARSE errors that tools/twin-law-check.mjs surfaced are
+//   now resolved.
+//
+//   CASCADE: the corundum / ruby / sapphire restructure changed those
+//   three minerals from "twin_laws as raw strings, skipped by engine"
+//   to "twin_laws as proper objects, engine calls _rollSpontaneousTwin
+//   per entry consuming rng.random() draws." This is the documented
+//   cascade behavior from the vugg-add-twin-law skill — adding real
+//   twin_laws to a mineral that previously had no draws shifts the
+//   downstream RNG sequence. Affected scenarios: marble_contact_
+//   metamorphism (where corundum/ruby/sapphire nucleate). Baseline
+//   regenerated at v143 via tools/gen-js-baseline.mjs; calibration
+//   test now passes against the new baseline.
+//
+//   Tool reports post-fix: 108 PASS / 46 FLAG / 1 AXIS / 0 PARSE /
+//   0 SKIP. AXIS is a new verdict introduced in this commit for
+//   legitimate axis-defined twins (albite pericline-law) that have
+//   no fixed Miller composition plane and can't be checked by lattice
+//   CSL at Tier 1; distinguishes the honest "structurally not
+//   checkable" case from the dishonest "data bug" case. The pericline
+//   entry is the first AXIS-verdict entry; future axis-twins should
+//   use the same twin_axis schema.
+//
+//   Probabilities chosen conservatively per Anthony Handbook v.III
+//   corundum entry: basal {0001} p=0.005 (very rare, deformation-
+//   only); rhombohedral {10-11} p=0.05 (more frequent but still
+//   uncommon outside metamorphosed corundum). Same values applied
+//   to ruby + sapphire (Cr-bearing and Fe-Ti-bearing varieties of
+//   the same R-3c structure).
+const SIM_VERSION = 143;
 
 // ── 18-constants.js ──
 
@@ -46671,6 +46861,141 @@ function collectFromRandom(crystalIdx, ev) {
         renderRandomInventory();
     }
 }
+// ============================================================
+// Bulk "Collect all" (2026-05-23 — boss request after twin-laws arc)
+// ============================================================
+// One-shot batch version of collectCrystal: no per-crystal name prompt
+// (uses the default name from buildCrystalRecord), one consolidated
+// alert at the end summarizing the count + any new species. Skips
+// already-collected and no-growth crystals using the same gates as
+// the per-row Collect button (97c-ui-crystal-card.ts:153-154).
+//
+// The persist call only runs once after all records are appended, so
+// localStorage gets touched a single time regardless of batch size —
+// matches the established uniqueCollectedMinerals/loadCrystals pattern
+// of "read once, mutate, write once."
+//
+// Returns the number actually collected (0 if nothing-to-do; 0 with
+// alert if persist failed).
+function collectAllCrystals(crystals, metaFn) {
+    if (!Array.isArray(crystals))
+        return 0;
+    const candidates = crystals.filter(c => c
+        && !c._collectedRecordId
+        && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0));
+    if (!candidates.length)
+        return 0;
+    const before = uniqueCollectedMinerals();
+    const items = loadCrystals();
+    const records = [];
+    for (const crystal of candidates) {
+        const meta = (typeof metaFn === 'function') ? metaFn(crystal) : (metaFn || {});
+        const rec = buildCrystalRecord(crystal, meta);
+        items.push(rec);
+        records.push({ crystal, rec });
+    }
+    // Disambiguate duplicate default names within this batch (boss request,
+    // 2026-05-23). buildCrystalRecord's default name is
+    // `${capitalize(mineral)} from ${titleBase}`, so two galenas from the
+    // same scenario/run would land with identical names. Append a #1/#2/#N
+    // suffix only where there's a collision — singletons keep their
+    // unsuffixed default, which reads cleaner in the Library row list.
+    // items and records share rec object identity, so mutating rec.name
+    // here is reflected in the persisted record.
+    const nameCounts = {};
+    for (const { rec } of records) {
+        nameCounts[rec.name] = (nameCounts[rec.name] || 0) + 1;
+    }
+    const nameSeen = {};
+    for (const { rec } of records) {
+        if (nameCounts[rec.name] > 1) {
+            nameSeen[rec.name] = (nameSeen[rec.name] || 0) + 1;
+            rec.name = `${rec.name} #${nameSeen[rec.name]}`;
+        }
+    }
+    if (!persistCrystals(items)) {
+        alert('Could not save — localStorage is full or unavailable.');
+        return 0;
+    }
+    for (const { crystal, rec } of records) {
+        crystal._collectedRecordId = rec.id;
+    }
+    // New-species delta — preserves the same "🆕 first X" surprise from
+    // the per-crystal flow, just bundled. Set semantics so each new
+    // species shows once even if multiple specimens of it were collected
+    // in the same batch.
+    const newSpecies = [];
+    const seen = new Set(before);
+    for (const { rec } of records) {
+        if (!seen.has(rec.mineral)) {
+            newSpecies.push(rec.mineral);
+            seen.add(rec.mineral);
+        }
+    }
+    // Refresh dependent UI in the same order collectCrystal() does.
+    if (typeof libraryRender === 'function'
+        && document.getElementById('library-panel')
+        && document.getElementById('library-panel').style.display !== 'none') {
+        libraryRender();
+    }
+    refreshTitleLoadButton();
+    const speciesNote = newSpecies.length
+        ? `\n\n🆕 ${newSpecies.length} new species unlocked: ${newSpecies.join(', ')}.`
+        : '';
+    alert(`Collected ${records.length} crystal${records.length === 1 ? '' : 's'}.${speciesNote}`);
+    return records.length;
+}
+// Per-mode wrappers — gather the right meta (matches each mode's
+// existing per-crystal collectFromX helper) and refresh that mode's
+// inventory after the batch lands.
+function collectAllFromLegends() {
+    if (!legendsSim)
+        return;
+    const scenario = document.getElementById('scenario')?.value;
+    const seedInputEl = document.getElementById('seed');
+    const seed = seedInputEl?.value ? parseInt(seedInputEl.value, 10) : null;
+    const meta = { mode: 'simulation', scenario, seed };
+    if (collectAllCrystals(legendsSim.crystals, () => meta) > 0) {
+        updateLegendsInventory(legendsSim);
+    }
+}
+function collectAllFromFortress() {
+    if (!fortressSim)
+        return;
+    const meta = { mode: 'creative' };
+    if (collectAllCrystals(fortressSim.crystals, () => meta) > 0) {
+        updateFortressInventory();
+    }
+}
+function collectAllFromRandom() {
+    if (!randomSim)
+        return;
+    const meta = { mode: 'random', archetype: randomSimArchetype, seed: randomSimSeed };
+    if (collectAllCrystals(randomSim.crystals, () => meta) > 0) {
+        renderRandomInventory();
+    }
+}
+// Zen mode (idle) bulk collect. Differs from the three above in that
+// idle has no crystal-inventory panel to refresh — its crystals funnel
+// to the Record Player at idleFinish time and the on-screen UI is the
+// pie + chart + log, not per-crystal cards. So the only post-collect
+// refresh needed is the idle-collect-all-btn state (count goes to 0)
+// + the standard library/title-load surfaces handled by
+// collectAllCrystals.
+function collectAllFromIdle() {
+    if (typeof idleSim === 'undefined' || !idleSim)
+        return;
+    const scenarioEl = document.getElementById('idle-scenario');
+    const scenario = scenarioEl ? scenarioEl.value : null;
+    // 'random' is the idle-scenario picker's default value — keep that
+    // distinction in the meta so the Library shows "Zen random" vs the
+    // specific-scenario rollups separately.
+    const meta = { mode: 'zen', scenario };
+    if (collectAllCrystals(idleSim.crystals, () => meta) > 0) {
+        if (typeof idleRefreshCollectAllBtn === 'function')
+            idleRefreshCollectAllBtn();
+    }
+}
 
 // ── 94-ui-menu.js ──
 
@@ -46860,12 +47185,45 @@ function titleNewGame() {
     openNewGameMenu();
 }
 function titleQuickPlay() {
-    switchMode('random');
-    try {
-        runRandomVugg();
-    }
-    catch (e) {
-        console.error('Quick Play failed to roll:', e);
+    // Quick Play reroute (2026-05-23 — boss design decision): instead of
+    // launching a Random Vugg in random mode, pick a random non-tutorial
+    // scenario from the Simulation dropdown and auto-start it via the
+    // standard runSimulation Grow flow. The user lands directly in
+    // Simulation mode with a scenario already running, no menu detour.
+    //
+    // The dropdown is the canonical list of "what's playable in legends" —
+    // pick from it rather than from SCENARIOS so any drift between the
+    // dropdown and the SCENARIOS map (e.g. a scenario registered in
+    // data/scenarios.json5 but not yet wired into the HTML <select>)
+    // can't leave us pointing at an option the dropdown doesn't have.
+    //
+    // Random mode internals (runRandomVugg, randomSim, the random-panel
+    // UI, collectFromRandom + collectAllFromRandom) are intentionally
+    // kept in place — they still work for the agent API + any future
+    // re-entry point. The menu UI just stops surfacing them.
+    switchMode('legends');
+    const scenarioEl = document.getElementById('scenario');
+    if (!scenarioEl)
+        return; // fail open — user is in legends, can pick manually
+    const options = Array.from(scenarioEl.options)
+        .map(o => o.value)
+        .filter(v => v && !v.startsWith('tutorial_'));
+    if (!options.length)
+        return;
+    const pick = options[Math.floor(Math.random() * options.length)];
+    scenarioEl.value = pick;
+    // Clear any prior seed so runSimulation auto-generates a fresh one —
+    // each Quick Play click should produce a different specimen.
+    const seedEl = document.getElementById('seed');
+    if (seedEl)
+        seedEl.value = '';
+    if (typeof runSimulation === 'function') {
+        try {
+            runSimulation();
+        }
+        catch (e) {
+            console.error('Quick Play failed to start simulation:', e);
+        }
     }
 }
 function titleLoadGame() {
@@ -47382,9 +47740,54 @@ function libraryBuildCard(name, m) {
     </div>
   `;
 }
+// Completion-as-challenge progress banner. Computed from the static
+// MINERAL_SPEC + the player's persisted collection. Two metrics:
+//   - species seen: distinct minerals with ≥1 collected specimen,
+//     out of the full 170-species catalog
+//   - twinned variants: distinct minerals where the player has ≥1
+//     twinned specimen, out of the species whose twin_laws[] is non-
+//     empty (143 minerals post-v141; the rest have intentionally-empty
+//     twin_laws documented via _twin_laws_note)
+//
+// Quiet design — the aesthete who only grows selenites gets a single
+// line of unobtrusive text; the completionist has the numbers front
+// and center. No alerts, no popups, no celebration animation. The
+// numbers themselves do the work.
+function _libraryProgressHTML() {
+    const all = loadCrystals();
+    const speciesSeen = new Set();
+    const twinnedSpeciesSeen = new Set();
+    for (const c of all) {
+        if (c && c.mineral) {
+            speciesSeen.add(c.mineral);
+            if (c.twinned)
+                twinnedSpeciesSeen.add(c.mineral);
+        }
+    }
+    const totalSpecies = Object.keys(MINERAL_SPEC).length;
+    let twinSupporting = 0;
+    for (const m of Object.values(MINERAL_SPEC)) {
+        if (Array.isArray(m.twin_laws) && m.twin_laws.length > 0)
+            twinSupporting++;
+    }
+    if (all.length === 0) {
+        return `<span class="progress-label">Collection</span><span class="progress-empty">Empty — grow a vugg and tap Collect to start your collection.</span>`;
+    }
+    const pct = totalSpecies > 0 ? Math.round((speciesSeen.size / totalSpecies) * 100) : 0;
+    const twinPct = twinSupporting > 0 ? Math.round((twinnedSpeciesSeen.size / twinSupporting) * 100) : 0;
+    return `<span class="progress-label">Collection</span>` +
+        `<span class="progress-stat">${speciesSeen.size}</span><span> / ${totalSpecies} species</span>` +
+        ` <span style="color:#5a4a30;font-size:0.8em">(${pct}%)</span>` +
+        `<span class="progress-sep">·</span>` +
+        `<span class="progress-stat">${twinnedSpeciesSeen.size}</span><span> / ${twinSupporting} twinned variants</span>` +
+        ` <span style="color:#5a4a30;font-size:0.8em">(${twinPct}%)</span>`;
+}
 function libraryRender() {
     const grid = document.getElementById('library-grid');
     const count = document.getElementById('library-count');
+    const progress = document.getElementById('library-progress');
+    if (progress)
+        progress.innerHTML = MINERAL_SPEC_READY ? _libraryProgressHTML() : '';
     if (!grid)
         return;
     if (!MINERAL_SPEC_READY) {
@@ -49380,6 +49783,29 @@ function renderCrystalRow(crystal, idx, onCollect, replayStep) {
     el.innerHTML = html;
     return el;
 }
+// "Collect all" header button (2026-05-23 — boss request after twin-laws arc).
+// Returns the HTML for the row that sits between the inventory's h4 and the
+// per-crystal rows. Same has-growth + not-already-collected gate as the
+// per-row Collect button (renderCrystalRow:153-154). Hidden entirely
+// during a legends narrative replay (replayStep != null) — the per-crystal
+// buttons disable there too, and the boss specifically wanted this button
+// available "when you finish a game," i.e. once growth is done.
+function _inventoryCollectAllHTML(crystals, onCollectAllName, replayStep) {
+    if (replayStep != null)
+        return '';
+    const uncollected = (crystals || []).filter(c => c
+        && !c._collectedRecordId
+        && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0));
+    const n = uncollected.length;
+    if (!crystals || !crystals.length)
+        return ''; // empty inventory — nothing to bulk
+    const disabled = n === 0 ? 'disabled' : '';
+    const title = n === 0
+        ? 'Every collectable crystal is already in your collection'
+        : `Add every uncollected crystal (${n}) to your collection in one go`;
+    const label = n === 0 ? '✓ All collected' : `💎 Collect all (${n})`;
+    return `<div class="inv-collect-all-row"><button class="inv-collect-all-btn" ${disabled} title="${title}" onclick="${onCollectAllName}()">${label}</button></div>`;
+}
 function updateLegendsInventory(sim, replayStep) {
     const col = document.getElementById('legends-inventory-col');
     const panel = document.getElementById('legends-inventory');
@@ -49409,6 +49835,15 @@ function updateLegendsInventory(sim, replayStep) {
         return;
     }
     col.style.display = '';
+    // Inject the "Collect all" header button between h4 and per-crystal rows.
+    // Hidden during replay (matches per-crystal disabled state).
+    const collectAllHTML = _inventoryCollectAllHTML(visible, 'collectAllFromLegends', replayStep);
+    if (collectAllHTML) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = collectAllHTML;
+        if (wrap.firstChild)
+            panel.appendChild(wrap.firstChild);
+    }
     visible.forEach((crystal) => {
         // Find the live-array index for the Collect button's onclick. Slicing
         // visible[] preserves identity, so a lookup is O(visible.length).
@@ -49430,6 +49865,17 @@ function updateFortressInventory() {
         panel.appendChild(empty);
         return;
     }
+    // "Collect all" header button — visible whenever there are crystals.
+    // Creative mode has no formal "finished" state, so the button is
+    // always present when inventory has rows; the disabled state when
+    // N=0 keeps the placement consistent run-to-run.
+    const collectAllHTML = _inventoryCollectAllHTML(fortressSim.crystals, 'collectAllFromFortress');
+    if (collectAllHTML) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = collectAllHTML;
+        if (wrap.firstChild)
+            panel.appendChild(wrap.firstChild);
+    }
     fortressSim.crystals.forEach((crystal, idx) => {
         panel.appendChild(renderCrystalRow(crystal, idx, 'collectFromFortress'));
     });
@@ -49445,6 +49891,18 @@ function renderRandomInventory() {
     header.textContent = '💎 Crystal Inventory';
     header.style.cssText = 'color:#f0c050;margin:0.8rem 0 0.5rem 0;letter-spacing:0.08em';
     panel.appendChild(header);
+    // "Collect all" header button — random mode runs the sim to completion
+    // before render, so the inventory is always in "game finished" state.
+    // Filter to grown crystals (matching the grid filter below) so the
+    // count reflects what's visible.
+    const grown = randomSim.crystals.filter((c) => (c.total_growth_um || 0) > 0);
+    const collectAllHTML = _inventoryCollectAllHTML(grown, 'collectAllFromRandom');
+    if (collectAllHTML) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = collectAllHTML;
+        if (wrap.firstChild)
+            panel.appendChild(wrap.firstChild);
+    }
     const grid = document.createElement('div');
     grid.className = 'random-inventory-grid';
     randomSim.crystals.forEach((crystal, idx) => {
@@ -55997,6 +56455,45 @@ function idleUpdateStatus() {
     const totalYears = idleSim.step * yearsPerStep;
     const timeStr = totalYears >= 1e6 ? `${(totalYears / 1e6).toFixed(1)}My` : `${(totalYears / 1000).toFixed(0)}ky`;
     el.textContent = `Step ${idleSim.step} · ${activeCrystals}/${totalCrystals} crystals · ${idleSim.conditions.temperature.toFixed(0)}°C · ${timeStr}`;
+    // Keep the Collect-all button label + enabled state in sync with the
+    // current sim. Cheap (no DOM walk, just one element + a count) and
+    // runs once per step alongside the other idle UI refreshes.
+    idleRefreshCollectAllBtn();
+}
+// Updates the #idle-collect-all-btn label + disabled state to match
+// the current idleSim crystals. Mirrors the _inventoryCollectAllHTML
+// gating pattern in 97c-ui-crystal-card.ts so the four modes feel
+// consistent: "💎 Collect all (N)" when there's something to collect,
+// "✓ All collected" when nothing remains, plain disabled label when
+// the sim hasn't started or has been finished.
+function idleRefreshCollectAllBtn() {
+    const btn = document.getElementById('idle-collect-all-btn');
+    if (!btn)
+        return;
+    if (typeof idleSim === 'undefined' || !idleSim) {
+        btn.disabled = true;
+        btn.textContent = '💎 Collect all';
+        btn.title = 'Start a Zen run to grow crystals you can collect';
+        return;
+    }
+    const uncollected = idleSim.crystals.filter((c) => c
+        && !c._collectedRecordId
+        && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0));
+    const n = uncollected.length;
+    if (n === 0) {
+        btn.disabled = true;
+        // Distinguish "haven't grown anything yet" from "everything that grew has been collected"
+        const anyGrew = idleSim.crystals.some((c) => (c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0);
+        btn.textContent = anyGrew ? '✓ All collected' : '💎 Collect all';
+        btn.title = anyGrew
+            ? 'Every collectable crystal from this run is already in your collection'
+            : 'No crystals have grown enough to collect yet';
+    }
+    else {
+        btn.disabled = false;
+        btn.textContent = `💎 Collect all (${n})`;
+        btn.title = `Add every uncollected crystal (${n}) from this Zen run to your collection`;
+    }
 }
 function idleTogglePlay() {
     if (idleRunning && !idlePaused)
@@ -56022,6 +56519,7 @@ function idleTogglePlay() {
     document.getElementById('idle-pause-btn').classList.remove('active');
     document.getElementById('idle-finish-btn').disabled = false;
     document.getElementById('idle-scenario').disabled = true;
+    idleRefreshCollectAllBtn();
     idleAnimFrame = requestAnimationFrame(idleTick);
 }
 function idleTogglePause() {
@@ -56080,6 +56578,11 @@ function idleFinish() {
     document.getElementById('idle-finish-btn').disabled = true;
     document.getElementById('idle-scenario').disabled = false;
     idleSim = null;
+    // Refresh AFTER nullifying idleSim so the button falls back to its
+    // initial "💎 Collect all" disabled label rather than freezing on the
+    // pre-finish count. Anything not collected before Finish lands in the
+    // Record Player view only, not the persistent collection.
+    idleRefreshCollectAllBtn();
 }
 function idleTick(now) {
     if (!idleRunning || idlePaused)
@@ -56146,6 +56649,7 @@ function idlePickScenario(val) {
             ctx.fillStyle = '#070706';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
+        idleRefreshCollectAllBtn();
     }
 }
 // On initial page load, update the title-screen Load Game button state
