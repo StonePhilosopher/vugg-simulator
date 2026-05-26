@@ -518,9 +518,39 @@ function _helixDisposeGroup(g: any) {
 function _helixGeometry(state: any, wall: any): {
   R: number, wallRadius: number, yMin: number, yMax: number, ySpan: number,
 } {
+  // R = the cavity's true equatorial radius. Used both as the helicoid
+  // surface's equatorial extent AND as the normalization scale for
+  // chemistry trails ([0, R] in lateral mm). For the two meshes (vugg
+  // cavity + helicoid) to share scale — so the wall trail lands at
+  // the cavity wall where the meshes intersect — R MUST be the cavity
+  // radius, not larger.
+  //
+  // Pre-fix this read wall.max_seen_radius_mm directly, which is
+  // deliberately 2× the actual largest cell base_radius_mm (see
+  // 22-geometry-wall.ts line 612: "Starts generously (2× the largest
+  // base radius...) so the view doesn't zoom in on enlargement").
+  // That's a CAMERA-MARGIN value, not a cavity-radius value. Using
+  // it made the helicoid 2× wider than the cavity it lived inside —
+  // the surface and the chemistry trails extended out to ~2× the
+  // wall, while the wall trail (always computed as radius·sin(phi)
+  // from actual cell radii) stayed at the true wall position. Result:
+  // the wall trail looked tiny + "twisted" inside a much-too-big
+  // helicoid envelope. Boss flagged: "the mesh vugg and the layered
+  // ring vugg should all be the same scale."
+  //
+  // Preferred source: the cavity mesh's per-ring max radii
+  // (wall.maxRadiusByRing, populated by 23-geometry-wall-mesh.ts).
+  // Take the maximum across rings to get the equatorial radius for
+  // any cavity shape (sphere, ovate, basin, multi-bubble pocket).
+  // Fallback: vug_diameter_mm / 2 if the mesh hasn't been built yet.
   let R: number;
-  if (wall && typeof wall.max_seen_radius_mm === 'number' && wall.max_seen_radius_mm > 0) {
-    R = wall.max_seen_radius_mm;
+  if (wall && wall.maxRadiusByRing && wall.maxRadiusByRing.length > 0) {
+    R = 0;
+    for (let i = 0; i < wall.maxRadiusByRing.length; i++) {
+      const r = wall.maxRadiusByRing[i];
+      if (r > R) R = r;
+    }
+    if (R <= 0) R = wall.vug_diameter_mm ? wall.vug_diameter_mm * 0.5 : 25;
   } else if (wall && wall.vug_diameter_mm) {
     R = wall.vug_diameter_mm * 0.5;
   } else {
