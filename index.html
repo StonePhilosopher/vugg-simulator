@@ -12342,7 +12342,85 @@ let timeScale = 5.0;
 //   future readers tracing the adamite entry's history land on the
 //   truth rather than the fabrication. Same with the handoff doc:
 //   updated in this commit to note the v142 correction inline.
-const SIM_VERSION = 142;
+// ----------------------------------------------------------------
+// v143 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 4c —
+// sabkha_dolomitization flipped open_to_atmosphere=true. First
+// behavioral change in the carbonate-engine arc; calibration drift
+// confined to sabkha_dolomitization (no other scenario flipped).
+//
+// THE CHANGE
+//
+//   data/scenarios.json5 sabkha_dolomitization entry adds:
+//     open_to_atmosphere: true
+//     atmospheric_pCO2_bar: 4.2e-4   (modern atmospheric)
+//
+// WHY
+//
+//   Kim, Sun et al. (2023) Science 382:915 — the cyclic-Ω-modulation
+//   dolomitization mechanism explicitly involves atmospheric exchange.
+//   The evaporating brine surface IS in contact with the atmosphere;
+//   carbonate-system pCO2 equilibrium with atmospheric pCO2 is the
+//   boundary condition that drives the cyclic Ω crossings the
+//   mechanism needs. Pre-flip the scenario simulated dolomitization
+//   in a sealed cavity — geochemically wrong for the Coorong + Persian
+//   Gulf analogs the scenario cites.
+//
+//   Tutorial_travertine NOT flipped despite the proposal calling for
+//   it. Its co2_degas_with_reheat events explicitly drive pH UP by
+//   removing DIC; if atmospheric equilibration ran each step, it
+//   would immediately undo each event's pH change and break the
+//   tutorial's step-by-step pedagogical mechanism (player presses
+//   Advance, sees pulse-driven pH rise, watches calcite supersaturate).
+//   The scenario IS open to atmosphere in real Mammoth Hot Springs,
+//   but the pedagogical compression doesn't accommodate continuous
+//   equilibration. Documented inline at the scenarios.json5 entry as
+//   intentionally-not-flipped + the geological reasoning.
+//
+// SABKHA SEED-42 DRIFT (geological assessment)
+//
+//   mineral       v142    v143    direction
+//   ─────────────────────────────────────────────────────────────
+//   dolomite      13.6 µm 34.1 µm BIGGER (2.5×) — Kim mechanism
+//                                  strengthened by atmospheric
+//                                  exchange. Geologically correct.
+//   aragonite     51.5 µm 137.2 µm BIGGER — Mg-rich brine favors
+//                                  aragonite at higher pH that
+//                                  equilibration drives toward.
+//   calcite       absent  nucleated calcite is a typical sabkha
+//                                  co-product; appearing post-flip
+//                                  is geologically expected
+//   selenite      47622 µm same   unchanged — Ca-sulfate, pH-
+//                                  insensitive (sanity check)
+//   quartz        46.5 µm 47 µm   +1 crystal, similar size — RNG-
+//                                  cascade drift; quartz isn't pH-
+//                                  sensitive
+//   sylvite       0 µm    0.5 µm  micron-scale RNG drift; sylvite
+//                                  is KCl, pH-insensitive
+//
+//   All expects_species (dolomite, anhydrite, selenite) still fire
+//   the same way (anhydrite wasn't firing pre-flip either — that's
+//   a pre-existing aspirational expect, not introduced by v143).
+//   Priority targets: dolomite stronger ✓, selenite unchanged ✓,
+//   anhydrite still aspirational (no regression).
+//
+// CASCADE DRIFT IN OTHER SCENARIOS
+//
+//   ZERO. Only sabkha_dolomitization had open_to_atmosphere flipped;
+//   every other scenario still has open_to_atmosphere=undefined →
+//   resolver returns false → equilibration no-op. Verified: the
+//   calibration test diff is confined to sabkha_dolomitization.
+//
+// WHAT v143 SHIPS
+//
+//   data/scenarios.json5 (MOD): sabkha_dolomitization +
+//     open_to_atmosphere: true, atmospheric_pCO2_bar: 4.2e-4
+//   tests-js/baselines/seed42_v143.json (NEW)
+//   js/15-version.ts (MOD): this block + SIM_VERSION 142 → 143
+//
+//   No engine code changes. The equilibrator + run_step wiring
+//   landed flag-off in d8247e8 (Week 4b); this commit is the
+//   geological flip + baseline regen.
+const SIM_VERSION = 143;
 
 // ── 18-constants.js ──
 

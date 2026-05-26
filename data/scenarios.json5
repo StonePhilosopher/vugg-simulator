@@ -637,6 +637,15 @@
         { "step": 240, "type": "sabkha_evap",  "name": "Evaporation #12", "description": "Brine reconcentration" },
         { "step": 245, "type": "sabkha_final_seal", "name": "Final Seal", "description": "Sabkha matures, fluids stop cycling" }
       ],
+      // PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 4c. Sabkha is the
+      // canonical open-system carbonate scenario — the evaporating
+      // brine surface IS in contact with the atmosphere, and Kim 2023
+      // explicitly identifies cyclic atmospheric pCO2 exchange as part
+      // of the dolomitization mechanism. Modern atmospheric pCO2
+      // (4.2e-4 bar) is the appropriate default; Holocene + Pleistocene
+      // sabkhas saw similar values.
+      "open_to_atmosphere": true,
+      "atmospheric_pCO2_bar": 4.2e-4,
       "sources": [
         "Kim, Sun et al. 2023 (Science 382:915) — cyclic Ω modulation produces ordered dolomite at ambient T",
         "Coorong lagoon (South Australia) + Persian Gulf sabkhas — natural laboratory anchors"
