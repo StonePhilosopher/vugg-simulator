@@ -12420,7 +12420,148 @@ let timeScale = 5.0;
 //   No engine code changes. The equilibrator + run_step wiring
 //   landed flag-off in d8247e8 (Week 4b); this commit is the
 //   geological flip + baseline regen.
-const SIM_VERSION = 143;
+// ----------------------------------------------------------------
+// v144 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 9 —
+// calcite engine promotion. CARBONATE_KSP_ACTIVE flipped true +
+// CARBONATE_KSP_ACTIVE_PER_MINERAL.calcite flipped true. Calcite is
+// the first carbonate to ride on the textbook SI engine + PWP rate
+// law instead of the empirical sigma + 5×(σ-1) formula. See the
+// per-scenario drift table below for what changed; the wider lesson
+// is that 8 months of empirical-engine ballast is replaced by
+// Plummer-Wigley-Parkhurst 1978 + Davies activity correction +
+// Bjerrum partition + Mg poisoning sigmoid — all real chemistry.
+//
+// SEE COMMIT MESSAGE for the dense per-scenario drift table and
+// calibration rationale. This block is the version history anchor.
+//
+// SETTINGS FLIPPED
+//   js/32b-supersat-carbonate-Ksp.ts:
+//     CARBONATE_KSP_ACTIVE: false → true
+//     CARBONATE_KSP_ACTIVE_PER_MINERAL.calcite: false → true
+//   js/32-supersat-carbonate.ts:
+//     MINERAL_GATES_calcite.sigma_crit: 1.3 → 1.5
+//     (empirical sigma ≈ Ca·CO3/eq vs textbook omega = IAP/Ksp —
+//     different absolute scales; 1.5 reflects heterogeneous
+//     nucleation barrier on cavity walls per Morse & Arvidson 2002)
+//   js/52b-engines-carbonate-kinetics.ts:
+//     _PWP_CALIBRATION_FACTOR: 1.0 → 5.0e+4
+//     (typical pwp_um/step at factor=1 ≈ 3e-5 across calcite-firing
+//     scenarios; 5e4 lands median growth at ~1.5 µm/step, matching
+//     empirical engine's ~0.5-15 µm/step regime)
+//   js/52-engines-carbonate.ts:
+//     grow_calcite growth rate calc gated by kspSupersatActiveFor —
+//     when calcite SI flag is on, rate = calciteRate (PWP × Mg
+//     poisoning) → pwpRateToSimMicronsPerStep. Empirical 5×(σ-1)
+//     stays as fallback path for any future flag-off testing.
+//
+// PER-SCENARIO CALCITE DRIFT (v143 → v144 seed42 baseline)
+//
+//   LOST calcite (was minimal in v143, none in v144):
+//     bisbee                       1 dissolved 345 µm → 0
+//                                  (was already dissolving anyway)
+//     pulse                        1 active 870 µm → 0
+//                                  (generic testing scaffold)
+//     sunnyside_american_tunnel    1 active 36 µm → 0
+//                                  (was thread-fine, near noise floor)
+//
+//   GAINED calcite (v143 had none; v144 fires geologically):
+//     tutorial_mn_calcite          0 → 1 active 2745 µm
+//                                  (PEDAGOGICAL FIX — the Mn-doped
+//                                   calcite tutorial wasn't growing
+//                                   the title mineral pre-v144)
+//     reactive_wall                0 → 1 dissolved 3527 µm
+//                                  (acid pulses dissolve early calcite
+//                                   — Sweetwater MVT paragenesis docs
+//                                   this as Stage I dissolution event)
+//     searles_lake                 0 → 12 active 14 µm each
+//                                  (saline-lake calcite dusting — small
+//                                   crystals geologically expected)
+//     ultramafic_supergene         0 → 9 active 0.8 µm each
+//                                  (sub-micron dustings, near noise)
+//
+//   DRIFTED calcite mass (firing preserved, size changed):
+//     mvt                          1205 → 34014 µm (28×)
+//                                  hot 150°C acidic MVT brine
+//                                  accelerates PWP via Arrhenius +
+//                                  a(H+); geologically right but
+//                                  cabinet-scale crystals at gangue
+//                                  position — broth re-tune candidate
+//     marble_contact_metamorphism  19134 → 63496 µm (3.3×)
+//                                  skarn marble at 600°C — Arrhenius
+//                                  accelerates; marble IS calcite
+//                                  so geological direction is correct
+//     tutorial_travertine          167 → 2110 µm (12.6×)
+//                                  hot-spring deposition — PWP
+//                                  Arrhenius captures real travertine
+//                                  growth; more dramatic pedagogically
+//     deccan_zeolite               1493 → 15773 µm (10×) but 2→1
+//                                  one big crystal instead of two
+//                                  (RNG cascade)
+//     jeffrey_mine                 8346 → 5766 µm (0.69×)
+//                                  cooler skarn conditions slow PWP
+//     stalactite_demo              52943 → 3013 µm (0.057×)
+//                                  cold cave T (~10-15°C) drops
+//                                  PWP k1..k3 substantially. Crystal
+//                                  count rose 4→9 (more nucleation
+//                                  events) but each is smaller. Total
+//                                  calcite mass dropped ~8×. Phase
+//                                  1c broth re-tune candidate for
+//                                  visual impact.
+//     zoned_dripstone_cave         44773 → 2055 µm (0.046×)
+//                                  same cold-cave story; Phase 1c
+//                                  candidate.
+//     sabkha_dolomitization        0 → 0.9 µm (trivial)
+//
+// CASCADE DRIFT IN OTHER MINERALS
+//
+//   When calcite nucleation/growth changes, the rng.uniform(0.8, 1.2)
+//   call in grow_calcite shifts the rng sequence for everything
+//   downstream. Cascade-drift in non-calcite minerals appears in 15
+//   of 30 scenarios; per-mineral counts and sizes shift in the
+//   typical RNG-cascade pattern (some crystals lose, some gain,
+//   broad mineralogy preserved). No EXPECTED species disappeared
+//   except where the calcite-specific table above documents.
+//
+// THE GEOLOGICAL LESSON
+//
+//   The empirical engine's `rate = 5.0 × (sigma - 1.0)` formula was
+//   T-independent and pH-independent. PWP's `r = k1·a(H+) + k2·a(H2CO3)
+//   + k3` × (1 - 1/Ω) is both, with Arrhenius scaling of all three
+//   k's. The drift pattern — hot acidic scenarios speeding up, cold
+//   alkaline scenarios slowing down — is the geology landing.
+//
+//   The cold-cave undergrow direction (stalactite_demo,
+//   zoned_dripstone_cave) is scientifically right but visually
+//   problematic for game-as-demo. Phase 1c expectation: raise
+//   initial Ca and/or CO3 in those scenarios so omega stays higher,
+//   compensating for the lower-T PWP slowdown. The empirical engine
+//   was massively over-extrapolating cave calcite growth (real cave
+//   stalactites grow 0.001-1 mm/year; 264 µm/sim-step at v143 is
+//   physically impossible for any reasonable sim-step time scale).
+//
+// FOLLOW-UP WORK
+//
+//   Phase 1c scenario re-anchoring candidates (not blocking Week 10):
+//     - stalactite_demo: bump Ca + CO3 for visual stalactite scale
+//     - zoned_dripstone_cave: same as above
+//     - mvt: dial-back calcite via lower CO3 (currently overshoots)
+//     - sunnyside_american_tunnel: bump CO3 for Stage VI manganocalcite
+//       cap firing (boss has ONE such specimen — rare but real)
+//   Week 10: dolomite engine promotion (same flag-flip + sigma_crit
+//     + calibration pattern; dolomite already has Kim 2023 wired)
+//   Week 11: HMC promotion (BLOCKED on HMC-as-mineral via vugg-add-
+//     mineral skill — see HANDOFF-CARBONATE-PHASE-1-W2-W8.md item #3)
+//   Week 12: aragonite promotion
+//
+// WHAT v144 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 143 → 144
+//   js/32b-supersat-carbonate-Ksp.ts: flag flips + docstring update
+//   js/32-supersat-carbonate.ts: sigma_crit 1.3 → 1.5
+//   js/52b-engines-carbonate-kinetics.ts: calibration factor + docs
+//   js/52-engines-carbonate.ts: grow_calcite PWP wiring
+//   tests-js/baselines/seed42_v144.json: regenerated baseline
+//   tests-js/carbonate-week9-promotion.test.ts: validation tests
+const SIM_VERSION = 144;
 
 // ── 18-constants.js ──
 
@@ -18248,12 +18389,21 @@ Object.assign(VugConditions.prototype, {
 // Phase B7 of PROPOSAL-MODULAR-REFACTOR. v127 mineral-gates exports added.
 // ---- Carbonate MINERAL_GATES exports ----
 const MINERAL_GATES_calcite = {
-    sigma_crit: 1.3,
+    // v144 (Week 9 SI-engine promotion): sigma_crit bumped 1.3 → 1.5.
+    // The empirical engine's 1.3 was in empirical-sigma units (ppm-style
+    // ratio Ca·CO3 / eq); the SI engine returns textbook omega = IAP/Ksp
+    // (=1 at thermodynamic equilibrium). Heterogeneous nucleation on a
+    // vugg wall starts at omega ~ 1.5-3 per Morse & Arvidson 2002 review,
+    // matching what the calibration probe (tools/w9_calcite_calibration_
+    // probe.mjs) observed: median omega at empirical nucleation threshold
+    // = 1.28, p75 = 4.29. 1.5 sits at the lower edge — kinetic barrier
+    // present but not overrestrictive.
+    sigma_crit: 1.5,
     T_max: 500, T_optimal: 100,
     fluid_min: { Ca: 1, CO3: 1 },
     surface_energy: 'medium',
-    _sources: ['calcite engine v17+', 'Davis 2000', 'Nielsen 2013', 'Söhnel & Mullin 1982'],
-    _notes: 'Retrograde solubility (precipitates on heating / CO2 degassing). Mg/Ca > ~2 routes to aragonite via Mg poisoning of growth steps.',
+    _sources: ['calcite engine v17+', 'Davis 2000', 'Nielsen 2013', 'Söhnel & Mullin 1982', 'Morse & Arvidson 2002'],
+    _notes: 'Retrograde solubility (precipitates on heating / CO2 degassing). Mg/Ca > ~2 routes to aragonite via Mg poisoning of growth steps. v144 SI engine: sigma is textbook omega = IAP/Ksp; sigma_crit 1.5 reflects heterogeneous nucleation barrier on cavity walls.',
 };
 const MINERAL_GATES_aragonite = {
     sigma_crit: 1.0,
@@ -18942,15 +19092,24 @@ Object.assign(VugConditions.prototype, {
 // outside the bundle (tests, future debug UI). Production promotions
 // edit the literal here in source; tests use the setter for transient
 // flipping with afterEach restore.
-let CARBONATE_KSP_ACTIVE = false;
+//
+// v144 (Week 9 calcite promotion): flipped from false to true. Calcite
+// is the first carbonate promoted to the SI engine + PWP rate law. The
+// per-mineral map below gates which carbonates actually use the new
+// path; the global flag is the master switch.
+let CARBONATE_KSP_ACTIVE = true;
 // Per-mineral fine-grain gate. When CARBONATE_KSP_ACTIVE is true,
 // only entries here flagged true use the SI engine. Per-mineral
 // promotion is the unit of change — one carbonate per commit per
 // the Week 9-12 plan. Reserved entries (rosasite, aurichalcite, HMC,
 // otavite, etc.) included for documentation; flipping them without
 // Ksp data is a no-op (SI returns NaN, fallback to empirical).
+//
+// v144: calcite flipped to true. Aragonite, dolomite, siderite,
+// rhodochrosite remain false pending their own Week 10/11/12 promotion
+// commits.
 const CARBONATE_KSP_ACTIVE_PER_MINERAL = {
-    calcite: false,
+    calcite: true,
     aragonite: false,
     dolomite: false,
     siderite: false,
@@ -26823,9 +26982,35 @@ function grow_calcite(crystal, conditions, step) {
         }
         return null;
     }
+    // Growth rate dispatch — v144 Week 9: when the calcite SI flag is on,
+    // delegate the rate calculation to PWP kinetics (Plummer-Wigley-
+    // Parkhurst 1978 + Mg poisoning + Arrhenius T-dependence). The
+    // empirical 5.0 × excess formula stays as the fallback for any
+    // future flag-off testing / debug rollback. Same flag gate as the
+    // sigma dispatch in supersaturation_calcite — both halves of the
+    // engine flip together (proposal Week 9 plan).
     const excess = sigma - 1.0;
-    let rate = 5.0 * excess * rng.uniform(0.8, 1.2);
-    const Mn_partition = 0.1 * (1 + excess * 0.5);
+    let rate;
+    if (kspSupersatActiveFor('calcite')) {
+        const pwp_mol = calciteRate(conditions.fluid, conditions.temperature);
+        rate = pwpRateToSimMicronsPerStep('calcite', pwp_mol) * rng.uniform(0.8, 1.2);
+        // PWP under-supersat (omega < 1) yields negative rate, which is
+        // dissolution territory — but we already handled the sigma < 1
+        // case above. If PWP returns negative here (Ω slightly > 1 but
+        // forward rate vanishingly small), treat as no growth this step.
+        if (rate < 0)
+            rate = 0;
+    }
+    else {
+        rate = 5.0 * excess * rng.uniform(0.8, 1.2);
+    }
+    // Mn partition rises with supersaturation (less selective lattice
+    // rejection at faster growth). Capped at 1.0 — the lattice can't
+    // hold more Mn than the fluid offers, regardless of growth rate.
+    // Pre-v144 empirical excess was bounded ~0-12; cap was a no-op. SI
+    // engine omega can reach 100s in wildly supersaturated scenarios,
+    // making the cap load-bearing.
+    const Mn_partition = Math.min(1.0, 0.1 * (1 + excess * 0.5));
     const trace_Mn = conditions.fluid.Mn * Mn_partition;
     const Fe_partition = 0.08;
     const trace_Fe = conditions.fluid.Fe * Fe_partition;
@@ -27664,8 +27849,12 @@ function grow_hydrozincite(crystal, conditions, step) {
 // For sim consumption, convert mol/(cm²·s) to thickness/s via molar
 // volume of calcite (36.93 cm³/mol) → linear growth rate cm/s.
 // pwpRateToSimMmPerStep applies the conversion + a calibration scaling
-// that will be tuned at Week 9 promotion (the empirical engine's
-// µm/step rates inform the calibration factor).
+// that converts mol/(cm²·s) into the sim's µm/step convention. The
+// factor encodes the "how many real seconds is one sim step"
+// implicitly — different scenarios model different time scales
+// (cave dripstone ~years per step; hot-spring travertine ~days per
+// step), so a single calibration factor is a compromise across
+// scenarios, not a perfect match for any one.
 //
 // METASTABILITY
 //
@@ -27803,11 +27992,26 @@ function pwpNetRate(mineralId, fluid, T_C, mg_content = 0) {
 //   µm/s = thickness cm/s × 1e4
 //   µm/step = µm/s × sim_seconds_per_step
 //
-// For now we use a CALIBRATION FACTOR (default 1.0) that's tuned at
-// Week 9 promotion against the empirical engine's µm/step output.
-// The geology of the rate law is correct; only the time-axis
-// stretching needs calibration to match sim conventions.
-let _PWP_CALIBRATION_FACTOR = 1.0;
+// v144 (Week 9 calcite promotion): tuned 1.0 → 5.0e+4 empirically
+// against the empirical calcite engine's µm/step output across the
+// 11 calcite-firing scenarios. The probe (tools/w9_calcite_calibration
+// _probe.mjs) found median pwp_um/step at factor=1.0 = 2.9e-5 in the
+// moderate-supersaturation regime; factor 5e4 lands typical growth at
+// ~1.5 µm/step (matching the empirical engine's ~0.5-15 µm/step band
+// for typical scenarios).
+//
+// Per-scenario drift is expected and geologically positive — PWP
+// scales with T (Arrhenius k1..k3) and pH (a(H+) term), so:
+//   - Hot acidic fluids (mvt at 150°C) grow MORE calcite than the
+//     empirical 5×(σ-1) formula — geologically right
+//   - Cool alkaline fluids (cave dripstone at 15°C) grow LESS — also
+//     geologically right (real cave calcite grows ~0.01-1 mm/year,
+//     orders of magnitude slower than hot-spring travertine)
+//
+// The single-factor compromise: scenarios that drift unacceptably
+// far from their geological intent get re-anchored via the
+// vugg-tune-scenario discipline at v144 baseline regen.
+let _PWP_CALIBRATION_FACTOR = 5.0e+4;
 function setPWPCalibrationFactor(factor) {
     if (typeof factor === 'number' && isFinite(factor) && factor > 0) {
         _PWP_CALIBRATION_FACTOR = factor;

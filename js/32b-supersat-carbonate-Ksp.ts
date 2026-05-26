@@ -117,7 +117,12 @@
 // outside the bundle (tests, future debug UI). Production promotions
 // edit the literal here in source; tests use the setter for transient
 // flipping with afterEach restore.
-let CARBONATE_KSP_ACTIVE = false;
+//
+// v144 (Week 9 calcite promotion): flipped from false to true. Calcite
+// is the first carbonate promoted to the SI engine + PWP rate law. The
+// per-mineral map below gates which carbonates actually use the new
+// path; the global flag is the master switch.
+let CARBONATE_KSP_ACTIVE = true;
 
 // Per-mineral fine-grain gate. When CARBONATE_KSP_ACTIVE is true,
 // only entries here flagged true use the SI engine. Per-mineral
@@ -125,8 +130,12 @@ let CARBONATE_KSP_ACTIVE = false;
 // the Week 9-12 plan. Reserved entries (rosasite, aurichalcite, HMC,
 // otavite, etc.) included for documentation; flipping them without
 // Ksp data is a no-op (SI returns NaN, fallback to empirical).
+//
+// v144: calcite flipped to true. Aragonite, dolomite, siderite,
+// rhodochrosite remain false pending their own Week 10/11/12 promotion
+// commits.
 const CARBONATE_KSP_ACTIVE_PER_MINERAL: Record<string, boolean> = {
-  calcite:        false,
+  calcite:        true,
   aragonite:      false,
   dolomite:       false,
   siderite:       false,

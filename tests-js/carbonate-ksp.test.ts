@@ -50,20 +50,29 @@ declare const bjerrumFractions: (pH: number, T_C: number) => { H2CO3: number; HC
 declare const carbonateIonPpm: (fluid: any, T_C: number) => number;
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — flag mechanism', () => {
-  it('CARBONATE_KSP_ACTIVE defaults to false (no promotion until Week 9)', () => {
-    expect(CARBONATE_KSP_ACTIVE).toBe(false);
+  it('CARBONATE_KSP_ACTIVE is true since v144 (Week 9 calcite promotion)', () => {
+    // v143: flag was false (engine infrastructure observer-only).
+    // v144: flag flipped true alongside per-mineral.calcite flip when
+    // the calcite SI engine + PWP rate law became the production path.
+    // The per-mineral map is the gate now; the global flag just gates
+    // the dispatcher's entire branch.
+    expect(CARBONATE_KSP_ACTIVE).toBe(true);
   });
 
-  it('all per-mineral flags default to false', () => {
-    expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.calcite).toBe(false);
+  it('per-mineral flags: calcite true (v144); aragonite/dolomite/siderite/HMC still false', () => {
+    // Calcite is the first carbonate promoted (Week 9 / v144). Aragonite
+    // is Week 12, dolomite Week 10, HMC Week 11 — all still pending.
+    expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.calcite).toBe(true);
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.aragonite).toBe(false);
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.dolomite).toBe(false);
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.siderite).toBe(false);
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.HMC).toBe(false);
   });
 
-  it('kspSupersatActiveFor returns false for every carbonate when global flag is off', () => {
+  it('kspSupersatActiveFor returns true only for calcite (v144 state)', () => {
+    expect(kspSupersatActiveFor('calcite')).toBe(true);
     for (const m of carbonatesWithSI()) {
+      if (m === 'calcite') continue;
       expect(kspSupersatActiveFor(m)).toBe(false);
     }
   });
@@ -270,17 +279,23 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — OH-bearing carbonates respond to
   });
 });
 
-describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — engine integration is flag-off by default', () => {
-  it('supersaturation_calcite() returns the same value with flag off (regression)', () => {
+describe('PROPOSAL-CARBONATE-GEOCHEM Week 2/9 — engine integration', () => {
+  it('with flag off (transient), supersaturation_calcite returns empirical sigma (regression)', () => {
     // The dispatcher hook is a one-line early-return that's a no-op
     // when CARBONATE_KSP_ACTIVE is false. Confirms no value drift
-    // from adding the hook.
-    expect(CARBONATE_KSP_ACTIVE).toBe(false);
-    const f = new FluidChemistry({ Ca: 200, CO3: 150, pH: 7.5 });
-    const cond = new VugConditions({ temperature: 25, fluid: f });
-    const sigma = cond.supersaturation_calcite();
-    expect(Number.isFinite(sigma)).toBe(true);
-    expect(sigma).toBeGreaterThan(0);  // supersaturated for empirical engine too
+    // from adding the hook. After v144 we must temporarily flip the
+    // flag off to exercise the fallback path.
+    const snap = snapshotCarbonateKspFlags();
+    try {
+      setCarbonateKspActive(false);
+      const f = new FluidChemistry({ Ca: 200, CO3: 150, pH: 7.5 });
+      const cond = new VugConditions({ temperature: 25, fluid: f });
+      const sigma = cond.supersaturation_calcite();
+      expect(Number.isFinite(sigma)).toBe(true);
+      expect(sigma).toBeGreaterThan(0);  // supersaturated for empirical engine too
+    } finally {
+      restoreCarbonateKspFlags(snap);
+    }
   });
 
   it('all 14 carbonate supersat methods still return finite numbers (smoke)', () => {
@@ -379,9 +394,14 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — dispatcher positive control', ()
 
   it('flag setter actually flips the global flag', () => {
     _flagSnap = snapshotCarbonateKspFlags();
+    // v144: calcite starts ON. Verify we can flip it OFF, then back ON.
+    expect(kspSupersatActiveFor('calcite')).toBe(true);
+    setCarbonateKspActiveFor('calcite', false);
     expect(kspSupersatActiveFor('calcite')).toBe(false);
-    setCarbonateKspActive(true);
+    setCarbonateKspActive(false);
     setCarbonateKspActiveFor('calcite', true);
+    expect(kspSupersatActiveFor('calcite')).toBe(false);  // AND-gate
+    setCarbonateKspActive(true);
     expect(kspSupersatActiveFor('calcite')).toBe(true);
   });
 
@@ -474,12 +494,15 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — dispatcher positive control', ()
 
   it('snapshot + restore round-trips correctly', () => {
     const original = snapshotCarbonateKspFlags();
-    setCarbonateKspActive(true);
-    setCarbonateKspActiveFor('calcite', true);
+    // Mutate from the v144 default state (global ON, calcite ON,
+    // siderite OFF) to something different, then restore and confirm
+    // every recorded entry came back.
+    setCarbonateKspActive(false);
+    setCarbonateKspActiveFor('calcite', false);
     setCarbonateKspActiveFor('siderite', true);
     restoreCarbonateKspFlags(original);
-    expect(CARBONATE_KSP_ACTIVE).toBe(false);
-    expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.calcite).toBe(false);
+    expect(CARBONATE_KSP_ACTIVE).toBe(true);
+    expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.calcite).toBe(true);
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.siderite).toBe(false);
   });
 });

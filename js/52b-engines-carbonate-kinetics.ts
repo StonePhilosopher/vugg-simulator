@@ -54,8 +54,12 @@
 // For sim consumption, convert mol/(cm²·s) to thickness/s via molar
 // volume of calcite (36.93 cm³/mol) → linear growth rate cm/s.
 // pwpRateToSimMmPerStep applies the conversion + a calibration scaling
-// that will be tuned at Week 9 promotion (the empirical engine's
-// µm/step rates inform the calibration factor).
+// that converts mol/(cm²·s) into the sim's µm/step convention. The
+// factor encodes the "how many real seconds is one sim step"
+// implicitly — different scenarios model different time scales
+// (cave dripstone ~years per step; hot-spring travertine ~days per
+// step), so a single calibration factor is a compromise across
+// scenarios, not a perfect match for any one.
 //
 // METASTABILITY
 //
@@ -196,11 +200,26 @@ function pwpNetRate(mineralId: string, fluid: any, T_C: number, mg_content: numb
 //   µm/s = thickness cm/s × 1e4
 //   µm/step = µm/s × sim_seconds_per_step
 //
-// For now we use a CALIBRATION FACTOR (default 1.0) that's tuned at
-// Week 9 promotion against the empirical engine's µm/step output.
-// The geology of the rate law is correct; only the time-axis
-// stretching needs calibration to match sim conventions.
-let _PWP_CALIBRATION_FACTOR = 1.0;
+// v144 (Week 9 calcite promotion): tuned 1.0 → 5.0e+4 empirically
+// against the empirical calcite engine's µm/step output across the
+// 11 calcite-firing scenarios. The probe (tools/w9_calcite_calibration
+// _probe.mjs) found median pwp_um/step at factor=1.0 = 2.9e-5 in the
+// moderate-supersaturation regime; factor 5e4 lands typical growth at
+// ~1.5 µm/step (matching the empirical engine's ~0.5-15 µm/step band
+// for typical scenarios).
+//
+// Per-scenario drift is expected and geologically positive — PWP
+// scales with T (Arrhenius k1..k3) and pH (a(H+) term), so:
+//   - Hot acidic fluids (mvt at 150°C) grow MORE calcite than the
+//     empirical 5×(σ-1) formula — geologically right
+//   - Cool alkaline fluids (cave dripstone at 15°C) grow LESS — also
+//     geologically right (real cave calcite grows ~0.01-1 mm/year,
+//     orders of magnitude slower than hot-spring travertine)
+//
+// The single-factor compromise: scenarios that drift unacceptably
+// far from their geological intent get re-anchored via the
+// vugg-tune-scenario discipline at v144 baseline regen.
+let _PWP_CALIBRATION_FACTOR = 5.0e+4;
 function setPWPCalibrationFactor(factor: number): void {
   if (typeof factor === 'number' && isFinite(factor) && factor > 0) {
     _PWP_CALIBRATION_FACTOR = factor;

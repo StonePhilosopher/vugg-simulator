@@ -12,12 +12,21 @@
 // ---- Carbonate MINERAL_GATES exports ----
 
 const MINERAL_GATES_calcite: MineralGates = {
-  sigma_crit: 1.3,
+  // v144 (Week 9 SI-engine promotion): sigma_crit bumped 1.3 → 1.5.
+  // The empirical engine's 1.3 was in empirical-sigma units (ppm-style
+  // ratio Ca·CO3 / eq); the SI engine returns textbook omega = IAP/Ksp
+  // (=1 at thermodynamic equilibrium). Heterogeneous nucleation on a
+  // vugg wall starts at omega ~ 1.5-3 per Morse & Arvidson 2002 review,
+  // matching what the calibration probe (tools/w9_calcite_calibration_
+  // probe.mjs) observed: median omega at empirical nucleation threshold
+  // = 1.28, p75 = 4.29. 1.5 sits at the lower edge — kinetic barrier
+  // present but not overrestrictive.
+  sigma_crit: 1.5,
   T_max: 500, T_optimal: 100,
   fluid_min: { Ca: 1, CO3: 1 },
   surface_energy: 'medium',
-  _sources: ['calcite engine v17+', 'Davis 2000', 'Nielsen 2013', 'Söhnel & Mullin 1982'],
-  _notes: 'Retrograde solubility (precipitates on heating / CO2 degassing). Mg/Ca > ~2 routes to aragonite via Mg poisoning of growth steps.',
+  _sources: ['calcite engine v17+', 'Davis 2000', 'Nielsen 2013', 'Söhnel & Mullin 1982', 'Morse & Arvidson 2002'],
+  _notes: 'Retrograde solubility (precipitates on heating / CO2 degassing). Mg/Ca > ~2 routes to aragonite via Mg poisoning of growth steps. v144 SI engine: sigma is textbook omega = IAP/Ksp; sigma_crit 1.5 reflects heterogeneous nucleation barrier on cavity walls.',
 };
 
 const MINERAL_GATES_aragonite: MineralGates = {

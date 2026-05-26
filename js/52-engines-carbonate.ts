@@ -35,10 +35,34 @@ function grow_calcite(crystal, conditions, step) {
     return null;
   }
 
+  // Growth rate dispatch — v144 Week 9: when the calcite SI flag is on,
+  // delegate the rate calculation to PWP kinetics (Plummer-Wigley-
+  // Parkhurst 1978 + Mg poisoning + Arrhenius T-dependence). The
+  // empirical 5.0 × excess formula stays as the fallback for any
+  // future flag-off testing / debug rollback. Same flag gate as the
+  // sigma dispatch in supersaturation_calcite — both halves of the
+  // engine flip together (proposal Week 9 plan).
   const excess = sigma - 1.0;
-  let rate = 5.0 * excess * rng.uniform(0.8, 1.2);
+  let rate;
+  if (kspSupersatActiveFor('calcite')) {
+    const pwp_mol = calciteRate(conditions.fluid, conditions.temperature);
+    rate = pwpRateToSimMicronsPerStep('calcite', pwp_mol) * rng.uniform(0.8, 1.2);
+    // PWP under-supersat (omega < 1) yields negative rate, which is
+    // dissolution territory — but we already handled the sigma < 1
+    // case above. If PWP returns negative here (Ω slightly > 1 but
+    // forward rate vanishingly small), treat as no growth this step.
+    if (rate < 0) rate = 0;
+  } else {
+    rate = 5.0 * excess * rng.uniform(0.8, 1.2);
+  }
 
-  const Mn_partition = 0.1 * (1 + excess * 0.5);
+  // Mn partition rises with supersaturation (less selective lattice
+  // rejection at faster growth). Capped at 1.0 — the lattice can't
+  // hold more Mn than the fluid offers, regardless of growth rate.
+  // Pre-v144 empirical excess was bounded ~0-12; cap was a no-op. SI
+  // engine omega can reach 100s in wildly supersaturated scenarios,
+  // making the cap load-bearing.
+  const Mn_partition = Math.min(1.0, 0.1 * (1 + excess * 0.5));
   const trace_Mn = conditions.fluid.Mn * Mn_partition;
   const Fe_partition = 0.08;
   const trace_Fe = conditions.fluid.Fe * Fe_partition;
