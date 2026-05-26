@@ -12799,7 +12799,129 @@ let timeScale = 5.0;
 //   data/minerals.json: full HMC entry
 //   tests-js/baselines/seed42_v146.json: regenerated baseline
 //   tests-js/carbonate-week11-promotion.test.ts: validation tests
-const SIM_VERSION = 146;
+// ----------------------------------------------------------------
+// v147 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 12 —
+// FINAL carbonate engine promotion. Aragonite onto the SI engine +
+// PWP rate law. CLOSES OUT Phase 1 of the carbonate proposal.
+//
+// All four CaCO3-system polymorphs (calcite, dolomite, HMC,
+// aragonite) now ride on Plummer-Wigley-Parkhurst 1978 kinetics +
+// textbook IAP/Ksp omega. Siderite + rhodochrosite + supergene
+// Cu/Zn/Pb/Ba/Sr carbonates remain empirical (siderite C-tier
+// kinetic confidence per Greenberg-Tomson 1992; Cu/Zn supergenes
+// awaiting Phase 2 activity-model upgrade).
+//
+// THE ARCHITECTURAL DIFFERENCE FOR ARAGONITE
+//
+//   Calcite, dolomite, HMC: supersaturation_<mineral> returns raw
+//   textbook omega when the SI flag is on. These are
+//   thermodynamic-minimum (or near-minimum) phases — pure omega is
+//   the right firing criterion.
+//
+//   Aragonite: the metastable polymorph. Its firing rule is
+//   FUNDAMENTALLY a KINETIC criterion layered on thermodynamics:
+//     - Folk 1974 Mg/Ca preference (>1.5)
+//     - Burton & Walter 1987 T preference (>50°C in low-Mg)
+//     - Morse 1997 Ostwald step rule (omega > ~10)
+//     - Trace Sr/Pb/Ba boost (cation substitution into orthorhombic)
+//   The empirical engine encoded these as a "favorability_weighted_
+//   sum" multiplied onto omega. v147 preserves that favorability
+//   layer in the SI engine path — supersaturation_aragonite returns
+//   (textbook omega) × (kinetic favorability). The SI engine
+//   promotion swaps the BASIS of omega from ca_co3/eq → IAP/Ksp,
+//   but the kinetic-modifier layer stays. This is geologically
+//   defensible: omega tells you HOW SUPERSATURATED, favorability
+//   tells you WHETHER ARAGONITE WINS over calcite.
+//
+// THE T_MAX FIX (geological correction in same commit)
+//
+//   Aragonite reverts rapidly to calcite above ~400°C per Carlson
+//   (1983) "The polymorphs of CaCO3 and the aragonite-calcite
+//   transformation," Reviews in Mineralogy vol 11 (Carbonates),
+//   MSA, pp 191-225. Pre-v147 MINERAL_GATES_aragonite had no T_max;
+//   marble_contact_metamorphism (T=698°C) fired aragonite at
+//   metamorphic-skarn temperatures, which is physically impossible.
+//   v147 adds T_max = 400 to MINERAL_GATES_aragonite. The marble
+//   aragonite (1 active 9373 µm in v146) will disappear — accepted
+//   as a geological correction in this commit.
+//
+// CITATION HYGIENE (W12 prep verification)
+//
+//   The "calcite × 3" rate factor for aragonite was attributed to
+//   Wollast 1990 in pre-v147 thermo data. W12 research:
+//     - Wollast (1990) "Rate and mechanism of dissolution of
+//       carbonates in the system CaCO3–MgCO3" in Stumm (ed)
+//       Aquatic chemical kinetics, Wiley-Interscience, pp 431-445.
+//       VERIFIED — exists, real chapter, summary review.
+//     - Burton & Walter (1987) "Relative precipitation rates of
+//       aragonite and Mg calcite from seawater: Temperature or
+//       carbonate ion control?" Geology 15:111-114. VERIFIED.
+//       This is the PRIMARY experimental measurement — they found
+//       "up to a factor of 4 at 25 and 37°C" (not 3, but ~3 is a
+//       reasonable midpoint of their range). At 5°C the rates are
+//       equivalent. The codebase's "×3" is a conservative
+//       middle-of-range pick; Wollast 1990 cites Burton-Walter.
+//
+//   W12 prep ALSO caught a real-time pastiche: the v147 history
+//   draft initially cited Carlson 1983 as "Geol. Soc. Am. Memoir
+//   161:153-162" — that's pure fabrication. Carlson 1983 IS real
+//   but in Reviews in Mineralogy v11, NOT GSA Memoir 161. Corrected
+//   before commit. Documented inline in MINERAL_GATES_aragonite._notes
+//   as a learning artifact.
+//
+// SETTINGS FLIPPED
+//   js/32b-supersat-carbonate-Ksp.ts:
+//     CARBONATE_KSP_ACTIVE_PER_MINERAL.aragonite: false → true
+//   js/32-supersat-carbonate.ts:
+//     MINERAL_GATES_aragonite: added T_max = 400 (Carlson 1983).
+//     supersaturation_aragonite refactored: hard gates (Ca/CO3,
+//     pH range, T_max) → omega from SI engine OR empirical →
+//     kinetic favorability multiplier → return omega × favorability.
+//   js/52-engines-carbonate.ts:
+//     grow_aragonite growth rate calc flag-gated. When aragonite
+//     SI flag on, rate = aragoniteRate (calcite PWP × 3) →
+//     pwpRateToSimMicronsPerStep. Empirical 5.5 × excess fallback.
+//
+// PER-SCENARIO ARAGONITE DRIFT (v146 → v147): see commit.
+//
+// CARBONATE PHASE 1 IS DONE
+//
+//   12 weeks of proposal arc compressed into ~26 hours of agent
+//   work across multiple sessions:
+//     W1: thermo-carbonates database (Sonnet 4.5)
+//     W2: SI engine + flag mechanism (Opus 4.7 this session)
+//     W3: helicoid chips
+//     W4abc: localization + Henry's-Law + sabkha flip
+//     W5: SI validation
+//     W6: PWP kinetic engine
+//     W7-8: reactive_wall + sabkha validation
+//     W9: calcite promotion (v144)
+//     W10: dolomite promotion (v145) + Kim threshold fix
+//     W11: HMC mineral add + promotion (v146)
+//     W12: aragonite promotion + T_max correction (v147)
+//
+//   Phase 1c follow-ups documented (Phase 1c is broth-tune work
+//   that's not engine-architectural):
+//     - stalactite_demo + zoned_dripstone_cave: cold-cave undergrow
+//     - mvt: dial back calcite via lower CO3
+//     - sunnyside_american_tunnel: manganocalcite cap broth-tune
+//     - sabkha_dolomitization: larger cavity for visible carbonate
+//
+//   Phase 2 (proposal): Pitzer-HMW84 activity model for high-I
+//   brines (Davies model has known drift above I≈0.5; MVT brines
+//   reach I=3-5). Phase 3: better Bjerrum (full Plummer-Busenberg
+//   quadratic fits to replace the linear K1/K2 T-extrapolation).
+//   These are post-Phase-1 engine refinement work.
+//
+// WHAT v147 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 146 → 147
+//   js/32-supersat-carbonate.ts: T_max + aragonite refactor
+//   js/32b-supersat-carbonate-Ksp.ts: aragonite flag flipped
+//   js/52-engines-carbonate.ts: grow_aragonite PWP wiring
+//   tests-js/baselines/seed42_v147.json: regenerated baseline
+//   tests-js/carbonate-week12-promotion.test.ts: validation tests
+//   tools/w12_aragonite_calibration_probe.mjs: prep diagnostic
+const SIM_VERSION = 147;
 
 // ── 18-constants.js ──
 
@@ -18691,13 +18813,36 @@ const MINERAL_GATES_calcite = {
     _notes: 'Retrograde solubility (precipitates on heating / CO2 degassing). Mg/Ca > ~2 routes to aragonite via Mg poisoning of growth steps. v144 SI engine: sigma is textbook omega = IAP/Ksp; sigma_crit 1.5 reflects heterogeneous nucleation barrier on cavity walls.',
 };
 const MINERAL_GATES_aragonite = {
+    // v147 (Week 12 SI-engine promotion): sigma_crit stays at 1.0
+    // because the supersaturation_aragonite function multiplies omega
+    // by the kinetic favorability factor (Mg-factor × T-factor ×
+    // omega-factor × trace-factor) — same magnitudes as the empirical
+    // engine. Aragonite is unique among the promoted carbonates in
+    // keeping a kinetic modifier on the sigma scale; it's the
+    // metastable polymorph, so its firing rule depends on KINETIC
+    // criteria (Folk 1974 Mg/Ca preference, Burton-Walter 1987 T
+    // preference, Morse 1997 omega-driven Ostwald step rule) layered
+    // on top of the textbook thermodynamic omega.
+    //
+    // T_max 400°C added in v147: aragonite is the metastable polymorph
+    // and reverts rapidly to calcite above ~400°C at low pressure per
+    // Carlson (1983) "The polymorphs of CaCO3 and the aragonite-calcite
+    // transformation," Reviews in Mineralogy vol 11 (Carbonates:
+    // Mineralogy and Chemistry, ed. Reeder), MSA, pp 191-225. The
+    // high-T metamorphic aragonite firings in v146
+    // marble_contact_metamorphism (T=698°C) were a geological anomaly
+    // the empirical engine didn't catch. Adding the gate makes the
+    // structural fact (aragonite has a real T-limit) load-bearing.
+    // (Author + year + topic recalled correctly during W12 prep but
+    // journal/volume/pages first written as fabricated "Geol. Soc. Am.
+    // Memoir 161:153-162" — web-verified-corrected before commit.)
     sigma_crit: 1.0,
-    T_optimal: 80,
+    T_max: 400, T_optimal: 80,
     fluid_min: { Ca: 30, CO3: 20 },
     pH_min: 6.0, pH_max: 9.0,
     surface_energy: 'low',
-    _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987'],
-    _notes: 'Orthorhombic CaCO3 dimorph. Favored by Mg/Ca > 1.5, T > 50, Ω > 10, trace Sr/Pb/Ba. Pseudohexagonal cyclic twinning.',
+    _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987', 'Wollast 1990', 'Carlson 1983'],
+    _notes: 'Orthorhombic CaCO3 dimorph. Favored by Mg/Ca > 1.5, T > 50, Ω > 10, trace Sr/Pb/Ba. Pseudohexagonal cyclic twinning. T_max 400°C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega × kinetic_favorability; PWP rate via aragoniteRate (~3× calcite per Burton-Walter 1987 / Wollast 1990).',
 };
 const MINERAL_GATES_dolomite = {
     // v145 (Week 10 SI-engine promotion): sigma_crit bumped 1.0 → 10.
@@ -19063,21 +19208,51 @@ Object.assign(VugConditions.prototype, {
         // step rule, Sun 2015). Trace Sr/Pb/Ba give a small additional boost.
         // Pressure is the thermodynamic sorter (stable above ~0.4 GPa) but is
         // irrelevant at vug/hot-spring pressures — don't use it as a gate.
+        //
+        // v147 (Week 12 SI engine promotion): the architectural choice for
+        // aragonite differs from calcite/dolomite/HMC. For thermodynamic-
+        // minimum carbonates, supersaturation_<mineral> returns RAW textbook
+        // omega when the flag is on. Aragonite is DIFFERENT — it's the
+        // metastable polymorph; its firing rule is fundamentally a KINETIC
+        // criterion (Mg/Ca preference + T preference + Ostwald step rule +
+        // trace boost) layered on top of the textbook omega. The SI engine
+        // promotion swaps the BASIS of omega from the empirical
+        // ca_co3/eq formula to textbook IAP/Ksp, but the favorability layer
+        // stays — preserving the geological model where omega tells you HOW
+        // SUPERSATURATED but favorability tells you WHETHER ARAGONITE WINS.
         const g = MINERAL_GATES_aragonite;
         if (this.fluid.Ca < g.fluid_min.Ca || effectiveCO3(this.fluid, this.temperature) < g.fluid_min.CO3)
             return 0;
         if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
             return 0;
-        if (kspSupersatActiveFor('aragonite'))
-            return carbonateEngineSigma('aragonite', this.fluid, this.temperature);
-        const eq = 300.0 * Math.exp(-0.005 * this.temperature);
-        if (eq <= 0)
+        // v147 T_max gate: aragonite reverts to calcite above ~400°C per
+        // Carlson 1983 Reviews in Mineralogy 11:191-225. Pre-v147 the
+        // empirical engine had no T cap; marble_contact_metamorphism fired
+        // aragonite at 698°C which is physically impossible.
+        if (g.T_max != null && this.temperature > g.T_max)
             return 0;
-        // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
-        const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
-        let omega = ca_co3 / eq;
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            omega *= activityCorrectionFactor(this.fluid, 'aragonite');
+        // Step 1: compute omega — either textbook (SI engine on) or
+        // empirical (flag off, legacy ca_co3/eq formula).
+        let omega;
+        if (kspSupersatActiveFor('aragonite')) {
+            omega = carbonateEngineSigma('aragonite', this.fluid, this.temperature);
+            if (!isFinite(omega) || omega <= 0)
+                return 0;
+        }
+        else {
+            const eq = 300.0 * Math.exp(-0.005 * this.temperature);
+            if (eq <= 0)
+                return 0;
+            // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
+            const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
+            omega = ca_co3 / eq;
+            if (ACTIVITY_CORRECTED_SUPERSAT)
+                omega *= activityCorrectionFactor(this.fluid, 'aragonite');
+        }
+        // Step 2: kinetic favorability — same formula regardless of which
+        // omega source feeds in. Mg/Ca preference + T preference + omega
+        // Ostwald step rule + trace boost. Layered on top of thermodynamic
+        // omega per Morse 1997 review.
         const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
         const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.5) / 0.3));
         const T_factor = 1.0 / (1.0 + Math.exp(-(this.temperature - 50.0) / 15.0));
@@ -19496,9 +19671,16 @@ let CARBONATE_KSP_ACTIVE = true;
 // precursor to ordered dolomite per Kim 2023; mg_content is per-
 // crystal state (set at nucleation from fluid Mg/Ca per Mucci-Morse
 // 1983) and threaded through saturationIndex_HMC + HMCRate.
+// v147 (Week 12): aragonite flipped to true. Final carbonate of
+// the Phase 1 arc. Unlike calcite/dolomite/HMC, aragonite's
+// supersaturation_aragonite returns omega × kinetic_favorability
+// rather than raw omega — the metastable polymorph's firing rule
+// is a layered kinetic+thermo criterion (Folk 1974, Burton-Walter
+// 1987, Morse 1997 Ostwald). PWP rate via aragoniteRate (calcite
+// PWP × 3 per Wollast 1990 / Burton-Walter 1987).
 const CARBONATE_KSP_ACTIVE_PER_MINERAL = {
     calcite: true,
-    aragonite: false,
+    aragonite: true,
     dolomite: true,
     siderite: false,
     rhodochrosite: false,
@@ -27514,7 +27696,23 @@ function grow_aragonite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
-    const rate = 5.5 * excess * rng.uniform(0.7, 1.3);
+    // Growth rate dispatch — v147 Week 12: when aragonite SI flag is on,
+    // delegate to PWP kinetics via aragoniteRate (which is calcite PWP
+    // × 3 per Burton-Walter 1987 Geology 15:111 / Wollast 1990 Aquatic
+    // Chemical Kinetics). The Mg-poisoning factor that lives in
+    // calciteRate is NOT applied to aragonite — high Mg/Ca is what
+    // FAVORS aragonite vs calcite, not what suppresses it. Same flag
+    // gate as W9-W11. Empirical 5.5 × excess fallback stays.
+    let rate;
+    if (kspSupersatActiveFor('aragonite')) {
+        const pwp_mol = aragoniteRate(conditions.fluid, conditions.temperature);
+        rate = pwpRateToSimMicronsPerStep('aragonite', pwp_mol) * rng.uniform(0.7, 1.3);
+        if (rate < 0)
+            rate = 0;
+    }
+    else {
+        rate = 5.5 * excess * rng.uniform(0.7, 1.3);
+    }
     // Habit selection
     if (conditions.fluid.Fe > 30 && excess > 0.6) {
         crystal.habit = 'flos_ferri';

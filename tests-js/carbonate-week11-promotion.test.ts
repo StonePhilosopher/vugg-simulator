@@ -55,8 +55,10 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — HMC mineral add + SI promotion 
     expect(kspSupersatActiveFor('HMC')).toBe(true);
   });
 
-  it('aragonite + siderite + rhodochrosite still empirical (not yet promoted)', () => {
-    expect(kspSupersatActiveFor('aragonite')).toBe(false);
+  it('siderite + rhodochrosite still empirical (aragonite promoted v147)', () => {
+    // v146 had aragonite empirical; v147 (Week 12) promoted aragonite,
+    // closing out the CaCO3-system Phase 1 arc.
+    expect(kspSupersatActiveFor('aragonite')).toBe(true);  // since v147
     expect(kspSupersatActiveFor('siderite')).toBe(false);
     expect(kspSupersatActiveFor('rhodochrosite')).toBe(false);
   });

@@ -30,13 +30,36 @@ const MINERAL_GATES_calcite: MineralGates = {
 };
 
 const MINERAL_GATES_aragonite: MineralGates = {
+  // v147 (Week 12 SI-engine promotion): sigma_crit stays at 1.0
+  // because the supersaturation_aragonite function multiplies omega
+  // by the kinetic favorability factor (Mg-factor × T-factor ×
+  // omega-factor × trace-factor) — same magnitudes as the empirical
+  // engine. Aragonite is unique among the promoted carbonates in
+  // keeping a kinetic modifier on the sigma scale; it's the
+  // metastable polymorph, so its firing rule depends on KINETIC
+  // criteria (Folk 1974 Mg/Ca preference, Burton-Walter 1987 T
+  // preference, Morse 1997 omega-driven Ostwald step rule) layered
+  // on top of the textbook thermodynamic omega.
+  //
+  // T_max 400°C added in v147: aragonite is the metastable polymorph
+  // and reverts rapidly to calcite above ~400°C at low pressure per
+  // Carlson (1983) "The polymorphs of CaCO3 and the aragonite-calcite
+  // transformation," Reviews in Mineralogy vol 11 (Carbonates:
+  // Mineralogy and Chemistry, ed. Reeder), MSA, pp 191-225. The
+  // high-T metamorphic aragonite firings in v146
+  // marble_contact_metamorphism (T=698°C) were a geological anomaly
+  // the empirical engine didn't catch. Adding the gate makes the
+  // structural fact (aragonite has a real T-limit) load-bearing.
+  // (Author + year + topic recalled correctly during W12 prep but
+  // journal/volume/pages first written as fabricated "Geol. Soc. Am.
+  // Memoir 161:153-162" — web-verified-corrected before commit.)
   sigma_crit: 1.0,
-  T_optimal: 80,
+  T_max: 400, T_optimal: 80,
   fluid_min: { Ca: 30, CO3: 20 },
   pH_min: 6.0, pH_max: 9.0,
   surface_energy: 'low',
-  _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987'],
-  _notes: 'Orthorhombic CaCO3 dimorph. Favored by Mg/Ca > 1.5, T > 50, Ω > 10, trace Sr/Pb/Ba. Pseudohexagonal cyclic twinning.',
+  _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987', 'Wollast 1990', 'Carlson 1983'],
+  _notes: 'Orthorhombic CaCO3 dimorph. Favored by Mg/Ca > 1.5, T > 50, Ω > 10, trace Sr/Pb/Ba. Pseudohexagonal cyclic twinning. T_max 400°C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega × kinetic_favorability; PWP rate via aragoniteRate (~3× calcite per Burton-Walter 1987 / Wollast 1990).',
 };
 
 const MINERAL_GATES_dolomite: MineralGates = {
@@ -384,18 +407,46 @@ Object.assign(VugConditions.prototype, {
   // step rule, Sun 2015). Trace Sr/Pb/Ba give a small additional boost.
   // Pressure is the thermodynamic sorter (stable above ~0.4 GPa) but is
   // irrelevant at vug/hot-spring pressures — don't use it as a gate.
+  //
+  // v147 (Week 12 SI engine promotion): the architectural choice for
+  // aragonite differs from calcite/dolomite/HMC. For thermodynamic-
+  // minimum carbonates, supersaturation_<mineral> returns RAW textbook
+  // omega when the flag is on. Aragonite is DIFFERENT — it's the
+  // metastable polymorph; its firing rule is fundamentally a KINETIC
+  // criterion (Mg/Ca preference + T preference + Ostwald step rule +
+  // trace boost) layered on top of the textbook omega. The SI engine
+  // promotion swaps the BASIS of omega from the empirical
+  // ca_co3/eq formula to textbook IAP/Ksp, but the favorability layer
+  // stays — preserving the geological model where omega tells you HOW
+  // SUPERSATURATED but favorability tells you WHETHER ARAGONITE WINS.
   const g = MINERAL_GATES_aragonite;
   if (this.fluid.Ca < g.fluid_min!.Ca || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
-  if (kspSupersatActiveFor('aragonite')) return carbonateEngineSigma('aragonite', this.fluid, this.temperature);
+  // v147 T_max gate: aragonite reverts to calcite above ~400°C per
+  // Carlson 1983 Reviews in Mineralogy 11:191-225. Pre-v147 the
+  // empirical engine had no T cap; marble_contact_metamorphism fired
+  // aragonite at 698°C which is physically impossible.
+  if (g.T_max != null && this.temperature > g.T_max) return 0;
 
-  const eq = 300.0 * Math.exp(-0.005 * this.temperature);
-  if (eq <= 0) return 0;
-  // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
-  const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
-  let omega = ca_co3 / eq;
-  if (ACTIVITY_CORRECTED_SUPERSAT) omega *= activityCorrectionFactor(this.fluid, 'aragonite');
+  // Step 1: compute omega — either textbook (SI engine on) or
+  // empirical (flag off, legacy ca_co3/eq formula).
+  let omega: number;
+  if (kspSupersatActiveFor('aragonite')) {
+    omega = carbonateEngineSigma('aragonite', this.fluid, this.temperature);
+    if (!isFinite(omega) || omega <= 0) return 0;
+  } else {
+    const eq = 300.0 * Math.exp(-0.005 * this.temperature);
+    if (eq <= 0) return 0;
+    // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
+    const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
+    omega = ca_co3 / eq;
+    if (ACTIVITY_CORRECTED_SUPERSAT) omega *= activityCorrectionFactor(this.fluid, 'aragonite');
+  }
 
+  // Step 2: kinetic favorability — same formula regardless of which
+  // omega source feeds in. Mg/Ca preference + T preference + omega
+  // Ostwald step rule + trace boost. Layered on top of thermodynamic
+  // omega per Morse 1997 review.
   const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
   const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.5) / 0.3));
   const T_factor = 1.0 / (1.0 + Math.exp(-(this.temperature - 50.0) / 15.0));

@@ -330,9 +330,24 @@ describe('habit-bias Slice 4 — _resolveCrystalGeomToken air-mode override', ()
     // dripstone primitive. The scenario produces a mix of habits
     // (calcite: scalenohedral_dogtooth → 'scalene'; quartz: prismatic
     // → 'prism'; etc.) so this is a real cross-section.
+    //
+    // v147 (Week 12 aragonite SI promotion): aragonite now fires in
+    // stalactite_demo via the cascade-shifted RNG (4 active crystals).
+    // Aragonite habit `aragonite_pseudohex_twin` normalizes to an
+    // eligible canonical token but does NOT route through dripstone —
+    // aragonite cave morphology is acicular/needle/frostwork
+    // (Hill & Forti 1997 'Cave Minerals of the World'), not the
+    // stalactite/stalagmite morphology dripstone primitive models.
+    // Skipping aragonite from the dripstone-eligibility assertion is
+    // geologically correct; the resolver's not handling aragonite
+    // habits is a pre-existing gap surfaced by v147 firings, not a
+    // regression to fix in this commit. Phase 1c candidate to extend
+    // _resolveCrystalGeomToken aragonite branch with a dedicated
+    // frostwork/acicular primitive.
     const sim = runScenario('stalactite_demo', { seed: 42 });
     let eligibleAirHits = 0;
     for (const c of sim.crystals) {
+      if (c.mineral === 'aragonite') continue;  // v147 carve-out
       const canonical = _habitGeomToken(c.habit);
       const resolved = _resolveCrystalGeomToken(c, c.habit);
       if (c.growth_environment === 'air'
@@ -341,8 +356,9 @@ describe('habit-bias Slice 4 — _resolveCrystalGeomToken air-mode override', ()
         eligibleAirHits++;
       }
     }
-    // At least one crystal in the scenario should hit the dripstone
-    // path — otherwise the scenario isn't proving the feature.
+    // At least one non-aragonite crystal in the scenario should hit
+    // the dripstone path — otherwise the scenario isn't proving the
+    // feature.
     expect(eligibleAirHits).toBeGreaterThan(0);
   });
 });

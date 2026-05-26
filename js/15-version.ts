@@ -8056,5 +8056,127 @@
 //   data/minerals.json: full HMC entry
 //   tests-js/baselines/seed42_v146.json: regenerated baseline
 //   tests-js/carbonate-week11-promotion.test.ts: validation tests
-const SIM_VERSION = 146;
+// ----------------------------------------------------------------
+// v147 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 12 —
+// FINAL carbonate engine promotion. Aragonite onto the SI engine +
+// PWP rate law. CLOSES OUT Phase 1 of the carbonate proposal.
+//
+// All four CaCO3-system polymorphs (calcite, dolomite, HMC,
+// aragonite) now ride on Plummer-Wigley-Parkhurst 1978 kinetics +
+// textbook IAP/Ksp omega. Siderite + rhodochrosite + supergene
+// Cu/Zn/Pb/Ba/Sr carbonates remain empirical (siderite C-tier
+// kinetic confidence per Greenberg-Tomson 1992; Cu/Zn supergenes
+// awaiting Phase 2 activity-model upgrade).
+//
+// THE ARCHITECTURAL DIFFERENCE FOR ARAGONITE
+//
+//   Calcite, dolomite, HMC: supersaturation_<mineral> returns raw
+//   textbook omega when the SI flag is on. These are
+//   thermodynamic-minimum (or near-minimum) phases — pure omega is
+//   the right firing criterion.
+//
+//   Aragonite: the metastable polymorph. Its firing rule is
+//   FUNDAMENTALLY a KINETIC criterion layered on thermodynamics:
+//     - Folk 1974 Mg/Ca preference (>1.5)
+//     - Burton & Walter 1987 T preference (>50°C in low-Mg)
+//     - Morse 1997 Ostwald step rule (omega > ~10)
+//     - Trace Sr/Pb/Ba boost (cation substitution into orthorhombic)
+//   The empirical engine encoded these as a "favorability_weighted_
+//   sum" multiplied onto omega. v147 preserves that favorability
+//   layer in the SI engine path — supersaturation_aragonite returns
+//   (textbook omega) × (kinetic favorability). The SI engine
+//   promotion swaps the BASIS of omega from ca_co3/eq → IAP/Ksp,
+//   but the kinetic-modifier layer stays. This is geologically
+//   defensible: omega tells you HOW SUPERSATURATED, favorability
+//   tells you WHETHER ARAGONITE WINS over calcite.
+//
+// THE T_MAX FIX (geological correction in same commit)
+//
+//   Aragonite reverts rapidly to calcite above ~400°C per Carlson
+//   (1983) "The polymorphs of CaCO3 and the aragonite-calcite
+//   transformation," Reviews in Mineralogy vol 11 (Carbonates),
+//   MSA, pp 191-225. Pre-v147 MINERAL_GATES_aragonite had no T_max;
+//   marble_contact_metamorphism (T=698°C) fired aragonite at
+//   metamorphic-skarn temperatures, which is physically impossible.
+//   v147 adds T_max = 400 to MINERAL_GATES_aragonite. The marble
+//   aragonite (1 active 9373 µm in v146) will disappear — accepted
+//   as a geological correction in this commit.
+//
+// CITATION HYGIENE (W12 prep verification)
+//
+//   The "calcite × 3" rate factor for aragonite was attributed to
+//   Wollast 1990 in pre-v147 thermo data. W12 research:
+//     - Wollast (1990) "Rate and mechanism of dissolution of
+//       carbonates in the system CaCO3–MgCO3" in Stumm (ed)
+//       Aquatic chemical kinetics, Wiley-Interscience, pp 431-445.
+//       VERIFIED — exists, real chapter, summary review.
+//     - Burton & Walter (1987) "Relative precipitation rates of
+//       aragonite and Mg calcite from seawater: Temperature or
+//       carbonate ion control?" Geology 15:111-114. VERIFIED.
+//       This is the PRIMARY experimental measurement — they found
+//       "up to a factor of 4 at 25 and 37°C" (not 3, but ~3 is a
+//       reasonable midpoint of their range). At 5°C the rates are
+//       equivalent. The codebase's "×3" is a conservative
+//       middle-of-range pick; Wollast 1990 cites Burton-Walter.
+//
+//   W12 prep ALSO caught a real-time pastiche: the v147 history
+//   draft initially cited Carlson 1983 as "Geol. Soc. Am. Memoir
+//   161:153-162" — that's pure fabrication. Carlson 1983 IS real
+//   but in Reviews in Mineralogy v11, NOT GSA Memoir 161. Corrected
+//   before commit. Documented inline in MINERAL_GATES_aragonite._notes
+//   as a learning artifact.
+//
+// SETTINGS FLIPPED
+//   js/32b-supersat-carbonate-Ksp.ts:
+//     CARBONATE_KSP_ACTIVE_PER_MINERAL.aragonite: false → true
+//   js/32-supersat-carbonate.ts:
+//     MINERAL_GATES_aragonite: added T_max = 400 (Carlson 1983).
+//     supersaturation_aragonite refactored: hard gates (Ca/CO3,
+//     pH range, T_max) → omega from SI engine OR empirical →
+//     kinetic favorability multiplier → return omega × favorability.
+//   js/52-engines-carbonate.ts:
+//     grow_aragonite growth rate calc flag-gated. When aragonite
+//     SI flag on, rate = aragoniteRate (calcite PWP × 3) →
+//     pwpRateToSimMicronsPerStep. Empirical 5.5 × excess fallback.
+//
+// PER-SCENARIO ARAGONITE DRIFT (v146 → v147): see commit.
+//
+// CARBONATE PHASE 1 IS DONE
+//
+//   12 weeks of proposal arc compressed into ~26 hours of agent
+//   work across multiple sessions:
+//     W1: thermo-carbonates database (Sonnet 4.5)
+//     W2: SI engine + flag mechanism (Opus 4.7 this session)
+//     W3: helicoid chips
+//     W4abc: localization + Henry's-Law + sabkha flip
+//     W5: SI validation
+//     W6: PWP kinetic engine
+//     W7-8: reactive_wall + sabkha validation
+//     W9: calcite promotion (v144)
+//     W10: dolomite promotion (v145) + Kim threshold fix
+//     W11: HMC mineral add + promotion (v146)
+//     W12: aragonite promotion + T_max correction (v147)
+//
+//   Phase 1c follow-ups documented (Phase 1c is broth-tune work
+//   that's not engine-architectural):
+//     - stalactite_demo + zoned_dripstone_cave: cold-cave undergrow
+//     - mvt: dial back calcite via lower CO3
+//     - sunnyside_american_tunnel: manganocalcite cap broth-tune
+//     - sabkha_dolomitization: larger cavity for visible carbonate
+//
+//   Phase 2 (proposal): Pitzer-HMW84 activity model for high-I
+//   brines (Davies model has known drift above I≈0.5; MVT brines
+//   reach I=3-5). Phase 3: better Bjerrum (full Plummer-Busenberg
+//   quadratic fits to replace the linear K1/K2 T-extrapolation).
+//   These are post-Phase-1 engine refinement work.
+//
+// WHAT v147 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 146 → 147
+//   js/32-supersat-carbonate.ts: T_max + aragonite refactor
+//   js/32b-supersat-carbonate-Ksp.ts: aragonite flag flipped
+//   js/52-engines-carbonate.ts: grow_aragonite PWP wiring
+//   tests-js/baselines/seed42_v147.json: regenerated baseline
+//   tests-js/carbonate-week12-promotion.test.ts: validation tests
+//   tools/w12_aragonite_calibration_probe.mjs: prep diagnostic
+const SIM_VERSION = 147;
 

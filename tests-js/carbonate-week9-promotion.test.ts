@@ -40,14 +40,14 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 9 — calcite engine promotion (v144)'
     expect(kspSupersatActiveFor('calcite')).toBe(true);
   });
 
-  it('calcite remains promoted alongside dolomite + HMC at v146 (siderite/aragonite still empirical)', () => {
-    // v144 calcite; v145 dolomite; v146 HMC. Week 12 aragonite is the
-    // remaining promotion. Siderite stays C-tier kinetic confidence
-    // (deferred pending better rate-law constraint).
+  it('calcite remains promoted alongside the rest of the CaCO3 family at v147 (Phase 1 closed)', () => {
+    // v144 calcite; v145 dolomite; v146 HMC; v147 aragonite. All four
+    // CaCO3-system polymorphs now on the SI engine + PWP rate law.
+    // Siderite stays C-tier kinetic confidence (deferred).
     expect(kspSupersatActiveFor('calcite')).toBe(true);   // since v144
     expect(kspSupersatActiveFor('dolomite')).toBe(true);  // since v145
     expect(kspSupersatActiveFor('HMC')).toBe(true);       // since v146
-    expect(kspSupersatActiveFor('aragonite')).toBe(false);
+    expect(kspSupersatActiveFor('aragonite')).toBe(true); // since v147
     expect(kspSupersatActiveFor('siderite')).toBe(false);
   });
 

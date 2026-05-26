@@ -179,7 +179,21 @@ function grow_aragonite(crystal, conditions, step) {
   }
 
   const excess = sigma - 1.0;
-  const rate = 5.5 * excess * rng.uniform(0.7, 1.3);
+  // Growth rate dispatch — v147 Week 12: when aragonite SI flag is on,
+  // delegate to PWP kinetics via aragoniteRate (which is calcite PWP
+  // × 3 per Burton-Walter 1987 Geology 15:111 / Wollast 1990 Aquatic
+  // Chemical Kinetics). The Mg-poisoning factor that lives in
+  // calciteRate is NOT applied to aragonite — high Mg/Ca is what
+  // FAVORS aragonite vs calcite, not what suppresses it. Same flag
+  // gate as W9-W11. Empirical 5.5 × excess fallback stays.
+  let rate;
+  if (kspSupersatActiveFor('aragonite')) {
+    const pwp_mol = aragoniteRate(conditions.fluid, conditions.temperature);
+    rate = pwpRateToSimMicronsPerStep('aragonite', pwp_mol) * rng.uniform(0.7, 1.3);
+    if (rate < 0) rate = 0;
+  } else {
+    rate = 5.5 * excess * rng.uniform(0.7, 1.3);
+  }
 
   // Habit selection
   if (conditions.fluid.Fe > 30 && excess > 0.6) {

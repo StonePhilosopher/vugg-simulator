@@ -143,9 +143,16 @@ let CARBONATE_KSP_ACTIVE = true;
 // precursor to ordered dolomite per Kim 2023; mg_content is per-
 // crystal state (set at nucleation from fluid Mg/Ca per Mucci-Morse
 // 1983) and threaded through saturationIndex_HMC + HMCRate.
+// v147 (Week 12): aragonite flipped to true. Final carbonate of
+// the Phase 1 arc. Unlike calcite/dolomite/HMC, aragonite's
+// supersaturation_aragonite returns omega × kinetic_favorability
+// rather than raw omega — the metastable polymorph's firing rule
+// is a layered kinetic+thermo criterion (Folk 1974, Burton-Walter
+// 1987, Morse 1997 Ostwald). PWP rate via aragoniteRate (calcite
+// PWP × 3 per Wollast 1990 / Burton-Walter 1987).
 const CARBONATE_KSP_ACTIVE_PER_MINERAL: Record<string, boolean> = {
   calcite:        true,
-  aragonite:      false,
+  aragonite:      true,
   dolomite:       true,
   siderite:       false,
   rhodochrosite:  false,
