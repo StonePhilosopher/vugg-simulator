@@ -644,22 +644,33 @@ function _resolveCrystalGeomToken(crystal: any, habitForGeom: string): string {
   // of the World §5.3.4, §10) grows as radiating acicular sprays from
   // a central anchor — diagnostic cave-aragonite morphology at
   // Frasassi, Carlsbad, Wind Cave, and dozens of other cave systems
-  // worldwide. This is geologically distinct from smooth-stalactite
-  // 'dripstone' morphology (which models calcite/calcite-family
-  // speleothems).
+  // worldwide. Geologically distinct from smooth-stalactite 'dripstone'
+  // morphology (which models calcite-family speleothems).
   //
-  // Scoping note: the override fires only for NON-twinned air-mode
-  // aragonite. Twinned air-mode aragonite (cyclic_sextet, contact)
-  // continues to route through the twin-geom branches below. The
-  // pseudo-hex twin in caves arguably reads as a 6-fold radiating
-  // frostwork cluster too, but extending the override to twinned
-  // crystals would require parallel changes in the wireframe
-  // renderer's _lookupCrystalPrimitive + adding a PRIM_ARAGONITE_FROSTWORK
-  // 2D primitive — scope deferred to a future commit. The current
-  // override covers the more common acicular_needle / columnar /
-  // botryoidal_crust variants of aragonite, which is sufficient to
-  // un-carve aragonite from the stalactite_demo dripstone-routing
-  // test.
+  // MODEL GAP (deferred — see BUG-aragonite-twin-cave-morphology.md):
+  // The override fires only for NON-twinned air-mode aragonite. Twinned
+  // air-mode aragonite (cyclic_sextet, contact) continues to route
+  // through the twin-geom branches below as a smooth pseudo-hex column
+  // — which is GEOLOGICALLY WRONG for cave aragonite. Real cave
+  // aragonite manifests as frostwork regardless of underlying twin
+  // structure; the pseudo-hex twin in caves shows up as a 6-fold
+  // radiating needle cluster, not a smooth 6-faceted column (Frisia
+  // et al. 2002 documents the cave-twin morphology in Grotte de
+  // Clamouse). The smooth pseudo-hex column geom is correct for
+  // FLUID-mode aragonite (metamorphic, sea-floor cement, hydrothermal
+  // vent settings), where it dominates.
+  //
+  // Why this gap exists: extending the override to twinned crystals
+  // requires parallel work in the wireframe renderer (99d-renderer-
+  // wireframe.ts + 99c-renderer-primitives.ts) plus updating the
+  // tests that currently encode the wrong behavior. v156 narrowed the
+  // patch surface to ship the non-twinned case immediately and queue
+  // the full fix as a documented bug. The current behavior is
+  // partially correct (covers the most common non-twinned cave
+  // aragonite case); the gap is the twinned subset.
+  //
+  // See BUG-aragonite-twin-cave-morphology.md for the full proper-fix
+  // sequence + reference list.
   if (crystal && crystal.mineral === 'aragonite'
       && crystal.growth_environment === 'air'
       && !crystal.twinned) {

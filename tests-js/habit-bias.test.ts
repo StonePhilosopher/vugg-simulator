@@ -341,11 +341,16 @@ describe('habit-bias Slice 4 — _resolveCrystalGeomToken air-mode override', ()
     // Phase 1c (v156, 2026-05-27): added _resolveCrystalGeomToken
     // aragonite air-mode branch routing NON-twinned cave aragonite to
     // 'aragonite_frostwork', a dedicated radiating-spray primitive
-    // (Hill & Forti 1997 §10). Twinned aragonite (cyclic_sextet,
-    // contact) still routes through the twin geom branches because
-    // wireframe-renderer parity for a frostwork primitive is deferred
-    // to a future commit. The non-twinned override is sufficient to
-    // un-carve aragonite from the dripstone-routing assertion.
+    // (Hill & Forti 1997 §10).
+    //
+    // MODEL GAP: twinned aragonite (cyclic_sextet, contact) still
+    // routes through the twin geom branches as a smooth pseudo-hex
+    // column — which is GEOLOGICALLY WRONG for cave aragonite. The
+    // conditional branch below preserves the wrong behavior pending
+    // the full fix (parallel wireframe-renderer work + test updates).
+    // See BUG-aragonite-twin-cave-morphology.md for the fix sequence.
+    // When that bug is closed, both branches should collapse to
+    // expect(resolved).toBe('aragonite_frostwork').
     const sim = runScenario('stalactite_demo', { seed: 42 });
     let eligibleAirHits = 0;
     for (const c of sim.crystals) {

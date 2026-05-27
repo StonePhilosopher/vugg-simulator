@@ -135,13 +135,15 @@ describe('aragonite-pseudohex-twin (99i) — _resolveCrystalGeomToken dispatch',
     expect(_resolveCrystalGeomToken(c, c.habit)).not.toBe('aragonite_pseudohex_twin');
   });
 
-  // v156 (Phase 1c, 2026-05-27) note: a non-twinned air-mode aragonite
-  // override was added to route those crystals through the new
-  // 'aragonite_frostwork' primitive. Twinned air-mode aragonite (the
-  // case tested below) still routes through the twin geom — the
-  // override is scoped to !twinned. See _resolveCrystalGeomToken header
-  // comment for the deferred-extension rationale (wireframe parity).
-  it('twinned aragonite in air-mode cavity → twin token (beats dripstone)', () => {
+  // MODEL GAP — the test below currently encodes geologically wrong
+  // behavior. Real cave aragonite is acicular frostwork regardless of
+  // twin structure (Hill & Forti 1997 §10; Frisia et al. 2002). The
+  // expected token here should be 'aragonite_frostwork', not
+  // 'aragonite_pseudohex_twin'. v156 deferred the fix because extending
+  // the override to twinned crystals requires parallel wireframe
+  // renderer changes + a parallel test update on the wireframe side.
+  // Full fix sequence + reasoning: BUG-aragonite-twin-cave-morphology.md
+  it('twinned aragonite in air-mode cavity → twin token (CURRENT WRONG behavior; see BUG-aragonite-twin-cave-morphology.md)', () => {
     const c = mkAragonite({
       twinned: true, twin_law: 'cyclic_sextet',
       growth_environment: 'air',
