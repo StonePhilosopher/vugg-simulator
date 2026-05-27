@@ -303,6 +303,11 @@ function switchMode(mode) {
   if (mode !== 'fortress' && typeof fortressSim !== 'undefined' && fortressSim) {
     _saveStripRecorderIfPresent(fortressSim);
   }
+  // HELIX-OVERLAY-FORK ADDITION (strip view v155+): same pattern for
+  // Zen mode (idleSim). Idempotent. Won't save empty recordings.
+  if (mode !== 'idle' && typeof idleSim !== 'undefined' && idleSim) {
+    _saveStripRecorderIfPresent(idleSim);
+  }
 
   // Hide title screen, show mode toggle
   document.body.classList.remove('title-on');

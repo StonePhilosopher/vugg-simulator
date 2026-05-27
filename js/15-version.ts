@@ -8771,5 +8771,103 @@
 //   tests-js/strip-view-bedrock.test.ts: +1 test for _growCapacity
 //   tests-js/baselines/seed42_v154.json: regenerated baseline (byte-
 //     identical to v153)
-const SIM_VERSION = 154;
+//
+// ============================================================
+//   v155 — Strip view v4: IDB cap + Zen + Agent wiring (2026-05-26)
+// ============================================================
+//
+// Closes the wiring loop. Every play mode (Simulation, Random,
+// Fortress, Zen, Agent) now produces a strip dataset. IDB capped at
+// 5 most-recent datasets — when a 6th would be saved, the oldest is
+// silently evicted. Users who want to keep a recording use ⬇ Download
+// to save the .stripview file to disk, then ⬆ Upload to bring it back
+// later. Per locked v4 design (boss 2026-05-26): "the save/load will
+// help if anyone actually wants to keep these."
+//
+// FEATURES SHIPPED
+//
+//   1. Count-based IDB eviction (cap = 5)
+//      js/85h-strip-storage.ts: stripStorageSave now does a pre-save
+//      eviction pass. Walks existing datasets, sorts oldest-first
+//      (by recorded_at ASC), and deletes the oldest until count =
+//      cap - 1 (leaving one free slot for the new save). Skips the
+//      key we're about to write (re-saves of the same dataset don't
+//      evict themselves). Atomic within IDB transactions.
+//
+//   2. Zen mode wiring
+//      js/99h-renderer-idle-chart.ts: idleTogglePlay creates the sim
+//      and now attaches a StripRecorder. Two save points: Finish
+//      button (idleFinish) and scenario-switch (idlePickScenario).
+//      Both call _saveStripRecorderIfPresent which is idempotent and
+//      skips empty recordings.
+//      js/94-ui-menu.ts switchMode: same mode-leave hook pattern as
+//      Fortress — `mode !== 'idle'` triggers save.
+//
+//   3. Agent API wiring
+//      js/99z-agent-interface.ts _agentHeadlessRun: attaches a
+//      recorder at sim creation, finalizes after the run loop. The
+//      dataset is returned in the result object (`{ sim, ..., stripDataset }`)
+//      rather than auto-saved to IDB. Reason: agents may run batches
+//      of 50+ scenarios; auto-saving would saturate the 5-slot cap
+//      immediately. Callers that want persistence dispatch
+//      stripStorageSave on the returned dataset themselves.
+//
+//   4. Empty-state copy updated to mention the cap + the save/load
+//      workflow: "Browser storage holds the 5 most recent — use
+//      ⬇ Download to keep anything you care about as a .stripview
+//      file on disk, and ⬆ Upload to bring it back later."
+//
+// WIRING STATUS — END OF ARC
+//
+//   Mode               Entry point                  Save trigger
+//   ──────────────────────────────────────────────────────────────
+//   Simulation         91-ui-legends.ts            end of sim loop
+//   Random             96-ui-random.ts             end of sim loop
+//   Fortress (x3)      94-ui-menu.ts + 97-ui-      switchMode mode != 'fortress'
+//                      fortress.ts
+//   Zen                99h-renderer-idle-chart.ts  Finish / scenario-switch /
+//                                                  switchMode mode != 'idle'
+//   Agent API          99z-agent-interface.ts      end of agent loop (returned
+//                                                  in result; no IDB auto-save)
+//
+//   All five play modes capture. Strip view arc is COMPLETE.
+//
+// BASELINE
+//
+// Sim state unchanged. seed42_v155.json byte-identical to v154.
+//
+// TESTS
+//
+// 1563/1563 pass (same as v154; no new tests this commit — the
+// eviction logic is async + IDB-dependent, harder to unit test
+// without a fake-indexeddb shim; covered by browser-side validation).
+//
+// WHAT v155 SHIPS
+//
+//   js/15-version.ts: this block + SIM_VERSION 154 → 155
+//   js/85h-strip-storage.ts: count-based eviction (cap = 5)
+//   js/94-ui-menu.ts: Zen mode-leave save hook
+//   js/99h-renderer-idle-chart.ts: Zen recorder lifecycle
+//   js/99k-strip-view.ts: empty-state copy update
+//   js/99z-agent-interface.ts: agent API recorder + return-in-result
+//   tests-js/baselines/seed42_v155.json: regenerated baseline (byte-
+//     identical to v154)
+//
+// STRIP VIEW ARC SUMMARY (v149 → v155)
+//
+//   v149: Bedrock — dataset format + recorder + IDB + minimal UI
+//   v150: Tab bar + Simulation wiring + 24-sub-strip expansion +
+//         line bundling + sub-strip favorites
+//   v151: Strip canvas 24 → 72 (3× height)
+//   v152: Strip canvas 72 → 100 + stroke 1.5 → 1.25
+//   v153: Promoted from overlay popup to proper mode tab
+//   v154: Fortress wiring + dynamic recorder capacity +
+//         download/upload .stripview + cross-sub-strip cursor
+//   v155: Count-based eviction + Zen + Agent wiring  [THIS]
+//
+// Seven commits, ~3000 lines added across data format + recorder +
+// IDB + 4 entry-point wirings + full UI tab with expansion, bundling,
+// favorites, markers, cursor, download, upload. Helicoid-as-recorder
+// reframe (Shy's 2026-05-26 design insight) fully realized.
+const SIM_VERSION = 155;
 

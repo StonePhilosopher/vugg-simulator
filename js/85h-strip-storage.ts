@@ -101,10 +101,52 @@ function _stripOpenDB(): Promise<IDBDatabase> {
   });
 }
 
-// Save a dataset. Returns the stored key.
+// v155 (2026-05-26): count-based auto-eviction cap. Hard limit of 5
+// datasets in IDB at a time; on save, oldest entries beyond the cap
+// are silently removed before the new write. The download button +
+// upload path lets users keep anything they care about as a
+// .stripview file on disk; IDB is treated as a recent-N cache.
+// Per locked v4 design (boss 2026-05-26): "the save/load will help
+// if anyone actually wants to keep these."
+const _STRIP_IDB_MAX_DATASETS = 5;
+
+// Save a dataset. Returns the stored key. Evicts oldest datasets
+// when the count cap is exceeded.
 async function stripStorageSave(ds: StripDataset): Promise<string> {
   const db = await _stripOpenDB();
   const key = stripStorageKey(ds.manifest);
+  // Eviction pass: walk existing keys, sort by recorded_at ascending
+  // (OLDEST first), and delete the oldest until count = cap - 1 (one
+  // free slot for the new save). If the new key already exists (re-
+  // save of a same-timestamp dataset), it counts toward the cap as
+  // itself rather than a fresh slot.
+  await new Promise<void>((resolve, reject) => {
+    const txList = db.transaction(_STRIP_STORE, 'readonly');
+    const storeList = txList.objectStore(_STRIP_STORE);
+    const req = storeList.getAll();
+    req.onsuccess = () => {
+      const all = (req.result || []) as StripStoredRecord[];
+      const existingKeys = new Set(all.map(r => r.key));
+      const newSlotNeeded = !existingKeys.has(key) ? 1 : 0;
+      const overflow = all.length + newSlotNeeded - _STRIP_IDB_MAX_DATASETS;
+      if (overflow <= 0) { resolve(); return; }
+      // Sort by recorded_at ASC (oldest first) and pick the first
+      // `overflow` to evict. Skip the key we're about to write
+      // (re-saves shouldn't evict themselves).
+      const sorted = all
+        .filter(r => r.key !== key)
+        .sort((a, b) => a.manifest.recorded_at - b.manifest.recorded_at);
+      const toEvict = sorted.slice(0, overflow).map(r => r.key);
+      if (!toEvict.length) { resolve(); return; }
+      const txDel = db.transaction(_STRIP_STORE, 'readwrite');
+      const storeDel = txDel.objectStore(_STRIP_STORE);
+      for (const k of toEvict) storeDel.delete(k);
+      txDel.oncomplete = () => resolve();
+      txDel.onerror = () => reject(txDel.error || new Error('strip: eviction failed'));
+    };
+    req.onerror = () => reject(req.error || new Error('strip: eviction list failed'));
+  });
+
   const record: StripStoredRecord = {
     key,
     manifest: ds.manifest,

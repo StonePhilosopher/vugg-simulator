@@ -564,7 +564,7 @@ async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
   if (!entries.length) {
     const empty = document.createElement('div');
     empty.className = 'strip-view-empty';
-    empty.innerHTML = 'No recordings yet. Run a Random scenario to capture one.<br><br>The helicoid is now a recording instrument; every Random run writes a dataset to IndexedDB for review here.';
+    empty.innerHTML = 'No recordings yet. Run a Simulation, Random, or Fortress scenario to capture one.<br><br>The helicoid is now a recording instrument; every run writes a dataset for review here. Browser storage holds the 5 most recent — use ⬇ Download to keep anything you care about as a <code>.stripview</code> file on disk, and ⬆ Upload to bring it back later.';
     bodyEl.appendChild(empty);
     return;
   }
