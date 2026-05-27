@@ -8537,5 +8537,43 @@
 //   index.html: tab-bar Strip View button
 //   tests-js/baselines/seed42_v150.json: regenerated baseline (byte-
 //     identical to v149)
-const SIM_VERSION = 150;
+//
+// ============================================================
+//   v151 — Strip view height polish (2026-05-26)
+// ============================================================
+//
+// Tiny visual iteration. Boss feedback from v150 playtest: "the strips
+// need to be at least 3x as tall." v149-v150 shipped at 24 px main strip
+// height — chip lines compressed into a thin band; bundling visible
+// but variation hard to read; nucleation markers pinned to the bottom
+// edge.
+//
+// CHANGES
+//   - Main strip canvas height: 24 → 72 px (3× per boss)
+//   - Sub-strip canvas height: 20 → 72 px (matches main; preserves
+//     screen-width resolution per sub-strip when expanded; per-step
+//     expanded view now takes 24 × 72 + gaps ≈ 1750 px of scroll,
+//     accepted in original design discussion)
+//   - Polyline stroke-width: 1 → 1.5 (visible against the taller
+//     backdrop; bundled lines still stack opacity naturally)
+//   - Polyline stroke-opacity: 0.6 → 0.65 (tiny bump to keep solo
+//     lines readable post-stroke-width bump)
+//   - Nucleation marker radius: 2.2 → 3.5, cy nudged from (h - 2)
+//     to (h - 5) so marker sits in the strip body rather than against
+//     the bottom border. Stroke width 0.5 → 0.6 for legibility.
+//
+// BASELINE
+//
+// CSS/render-only. Sim state unchanged. seed42_v151.json byte-identical
+// to v150.
+//
+// TESTS
+//
+// 1562/1562 pass (no new tests; pure visual polish).
+//
+// WHAT v151 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 150 → 151
+//   js/99k-strip-view.ts: height bumps + stroke + marker tweaks
+//   tests-js/baselines/seed42_v151.json: regenerated baseline
+const SIM_VERSION = 151;
 

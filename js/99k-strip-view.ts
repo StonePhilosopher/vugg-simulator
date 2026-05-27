@@ -188,7 +188,10 @@ function _ensureStripViewStyles(): void {
     .strip-view-substrip-label .ss-deg { color: #889; }
     .strip-view-substrip-label .strip-view-favorite-btn { margin-left: auto; }
     .strip-view-substrip-canvas {
-      height: 20px;
+      /* v151 (2026-05-26): 20 → 72 to match main strip height. Per-
+         angle resolution stays high; expanded time unit takes 24× the
+         vertical space (boss-accepted in 2026-05-26 design conversation). */
+      height: 72px;
       background: rgba(20, 25, 35, 0.5);
       border: 1px solid rgba(60, 80, 110, 0.25);
       position: relative;
@@ -233,7 +236,10 @@ function _ensureStripViewStyles(): void {
     .strip-view-favorite-btn:hover { color: #aaa; }
     .strip-view-favorite-btn.is-on { color: #cc6; }
     .strip-view-row-canvas {
-      height: 24px;
+      /* v151 (2026-05-26): 24 → 72 (3× taller) per boss feedback.
+         Lines spread visibly; bundle ribbons readable; nucleation
+         markers no longer pinned to bottom edge. */
+      height: 72px;
       background: rgba(20, 25, 35, 0.6);
       border: 1px solid rgba(60, 80, 110, 0.3);
       position: relative;
@@ -419,7 +425,10 @@ function _stripRenderStripSVG(
       pts.push(`${x.toFixed(1)},${s.y.toFixed(2)}`);
     }
     if (pts.length > 1) {
-      segs.push(`<polyline points="${pts.join(' ')}" fill="none" stroke="${colorHex}" stroke-width="1" stroke-opacity="0.6"/>`);
+      // v151 (2026-05-26): stroke-width 1 → 1.5 to remain visible at
+      // the 3× taller strip height. Bundled lines stack opacity
+      // naturally (each in the bundle paints its own stroke).
+      segs.push(`<polyline points="${pts.join(' ')}" fill="none" stroke="${colorHex}" stroke-width="1.5" stroke-opacity="0.65"/>`);
     }
   }
 
@@ -436,7 +445,10 @@ function _stripRenderStripSVG(
         if (eventAngle !== angle) continue;
       }
       const x = (ev.ring / Math.max(1, axes.height_positions - 1)) * width;
-      segs.push(`<circle cx="${x.toFixed(1)}" cy="${(height - 2).toFixed(1)}" r="2.2" fill="#fc6" stroke="#fff" stroke-width="0.5"><title>${ev.mineral} @ step ${ev.step}, ring ${ev.ring}, cell ${ev.cell}</title></circle>`);
+      // v151: bigger marker radius (2.2 → 3.5) for the taller strip;
+      // nudge upward from bottom edge so it sits in the strip body
+      // rather than against the border.
+      segs.push(`<circle cx="${x.toFixed(1)}" cy="${(height - 5).toFixed(1)}" r="3.5" fill="#fc6" stroke="#fff" stroke-width="0.6"><title>${ev.mineral} @ step ${ev.step}, ring ${ev.ring}, cell ${ev.cell}</title></circle>`);
     }
   }
 
@@ -478,7 +490,7 @@ function _stripBuildExpandedContainer(ds: StripDataset, step: number, width: num
         <span class="ss-deg">/ ${Math.round((a / axes.angular_indices) * 360)}°</span>
         <button class="strip-view-favorite-btn ${isFav ? 'is-on' : ''}" data-step="${step}" data-angle="${a}" title="Favorite ${_stripAngleLabel(a, axes.angular_indices)}">★</button>
       </div>
-      <div class="strip-view-substrip-canvas">${_stripRenderStripSVG(ds, step, a, width, 20)}</div>
+      <div class="strip-view-substrip-canvas">${_stripRenderStripSVG(ds, step, a, width, 72)}</div>
     `;
     container.appendChild(sub);
   }
@@ -602,7 +614,9 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
 
   // Pre-build all rows (older-at-bottom via column-reverse on .filmstrip)
   const stripW = 860;
-  const stripH = 24;
+  // v151 (2026-05-26): 24 → 72 per boss feedback. Must match
+  // .strip-view-row-canvas CSS height to avoid SVG aspect-ratio stretch.
+  const stripH = 72;
   for (let step = 0; step < ds.manifest.axes.steps; step++) {
     const row = document.createElement('div');
     row.className = 'strip-view-row';
