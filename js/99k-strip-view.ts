@@ -629,20 +629,84 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
     _stripRenderDatasetList(bodyEl);
   });
 
-  // Chip selector — grouped by system. Per-chip toggles.
+  // Chip selector — grouped by system. Per-chip toggles plus
+  // bulk-action buttons mirroring the helicoid legend's all/none
+  // pattern (boss-requested 2026-05-27 — "the same grouping buttons
+  // that you see in the game").
   const selector = document.createElement('div');
   selector.className = 'strip-view-chipselector';
+
+  // Helper to repaint chip state without rebuilding the whole row.
+  // Walks every .strip-view-chipchip in the selector and syncs its
+  // is-off class to _stripVisibleChips. Cheap (~60 nodes); avoids the
+  // O(steps) cost of rebuilding the filmstrip until the user actually
+  // wants to see the change.
+  const syncChipChrome = () => {
+    const chips = selector.querySelectorAll('.strip-view-chipchip[data-chip-id]');
+    chips.forEach((el) => {
+      const id = el.getAttribute('data-chip-id') || '';
+      el.classList.toggle('is-off', _stripVisibleChips[id] === false);
+    });
+  };
+
+  // Top-level bulk-action buttons (left of all chip groups).
+  const bulkBar = document.createElement('div');
+  bulkBar.style.cssText = 'display:flex; gap:3px; align-items:center; padding-right:8px; border-right:1px solid rgba(80,100,140,0.3); margin-right:4px;';
+  const mkBulkBtn = (label: string, title: string, action: () => void) => {
+    const b = document.createElement('button');
+    b.className = 'strip-view-btn';
+    b.style.cssText = 'padding:1px 6px; font-size:10px;';
+    b.textContent = label;
+    b.title = title;
+    b.addEventListener('click', () => {
+      action();
+      syncChipChrome();
+      _stripRefreshFilmstrip(bodyEl, ds);
+    });
+    return b;
+  };
+  bulkBar.appendChild(mkBulkBtn('all', 'Show all chips', () => {
+    for (const chip of ds.manifest.chips) _stripVisibleChips[chip.id] = true;
+  }));
+  bulkBar.appendChild(mkBulkBtn('none', 'Hide all chips', () => {
+    for (const chip of ds.manifest.chips) _stripVisibleChips[chip.id] = false;
+  }));
+  selector.appendChild(bulkBar);
+
   const systems = ['wall', 'special', 'carbonate', 'ion'];
   for (const sys of systems) {
     const inSys = ds.manifest.chips.filter(c => c.system === sys);
     if (!inSys.length) continue;
     const groupLabel = document.createElement('div');
     groupLabel.style.cssText = 'display:flex; gap:2px; align-items:center; padding-right:6px;';
-    groupLabel.innerHTML = `<span style="color:#99b; font-size:10px; padding-right:3px;">${sys}:</span>`;
+    // System name is now a clickable toggle: click cycles the whole
+    // system on/off (helicoid-legend style). Hover hint shows the
+    // mass-action; a small dim/bright state mirrors the section
+    // enable state.
+    const sysAnyOn = inSys.some(c => _stripVisibleChips[c.id] !== false);
+    const sysAllOn = inSys.every(c => _stripVisibleChips[c.id] !== false);
+    const sysLabel = document.createElement('span');
+    sysLabel.style.cssText = 'color:#99b; font-size:10px; padding-right:3px; cursor:pointer; user-select:none;'
+      + (sysAnyOn ? '' : 'opacity:0.4;');
+    sysLabel.textContent = sys + ':';
+    sysLabel.title = `Toggle all ${sys} chips (${sysAllOn ? 'currently all on — click to hide' : sysAnyOn ? 'mixed — click to show all' : 'currently all off — click to show all'})`;
+    sysLabel.setAttribute('data-strip-sys', sys);
+    sysLabel.addEventListener('click', () => {
+      // Cycle logic: if any are off, turn ALL on (most-permissive).
+      // If all are on, turn ALL off. Predictable single-click toggle.
+      const anyOff = inSys.some(c => _stripVisibleChips[c.id] === false);
+      const newState = anyOff ? true : false;
+      for (const chip of inSys) _stripVisibleChips[chip.id] = newState;
+      sysLabel.style.opacity = newState ? '1' : '0.4';
+      syncChipChrome();
+      _stripRefreshFilmstrip(bodyEl, ds);
+    });
+    groupLabel.appendChild(sysLabel);
     selector.appendChild(groupLabel);
     for (const chip of inSys) {
       const chipEl = document.createElement('span');
       chipEl.className = 'strip-view-chipchip' + (_stripVisibleChips[chip.id] === false ? ' is-off' : '');
+      chipEl.setAttribute('data-chip-id', chip.id);
       const colorHex = '#' + (chip.color | 0).toString(16).padStart(6, '0');
       chipEl.style.borderLeftColor = colorHex;
       chipEl.style.borderLeftWidth = '3px';
@@ -651,6 +715,9 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
       chipEl.addEventListener('click', () => {
         _stripVisibleChips[chip.id] = !(_stripVisibleChips[chip.id] !== false);
         chipEl.classList.toggle('is-off', _stripVisibleChips[chip.id] === false);
+        // Sync the system label opacity to reflect the new per-system mix.
+        const sysAnyOnNow = inSys.some(c => _stripVisibleChips[c.id] !== false);
+        sysLabel.style.opacity = sysAnyOnNow ? '1' : '0.4';
         _stripRefreshFilmstrip(bodyEl, ds);
       });
       selector.appendChild(chipEl);

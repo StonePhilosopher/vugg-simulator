@@ -374,7 +374,15 @@ function switchMode(mode) {
     // Record Player ('groove') — own full-page panel that's loaded
     // post-hoc. Doesn't bind to a sim; just paints the dataset list
     // and lets the user pick one to view.
-    if (stripViewModePanel) stripViewModePanel.style.display = 'block';
+    //
+    // BUG FIX (boss-reported 2026-05-27): use display 'flex' not
+    // 'block'. .strip-view-mode-panel CSS sets display: flex +
+    // flex-direction: column + max-height: calc(100vh - 80px) so
+    // the inner .strip-view-body (flex: 1; overflow: auto) gets a
+    // constrained height and scrolls. Inline display:block overrode
+    // the flex layout — body had no height bound, grew with content,
+    // panel exceeded viewport and the scroll bar disappeared.
+    if (stripViewModePanel) stripViewModePanel.style.display = 'flex';
     if (modeStripView) modeStripView.classList.add('active');
     if (typeof (window as any).stripViewModeShow === 'function') {
       (window as any).stripViewModeShow();
