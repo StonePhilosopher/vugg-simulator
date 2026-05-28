@@ -135,24 +135,26 @@ describe('aragonite-pseudohex-twin (99i) — _resolveCrystalGeomToken dispatch',
     expect(_resolveCrystalGeomToken(c, c.habit)).not.toBe('aragonite_pseudohex_twin');
   });
 
-  // MODEL GAP — the test below currently encodes geologically wrong
-  // behavior. Real cave aragonite is acicular frostwork regardless of
-  // twin structure (Hill & Forti 1997 §10; Frisia et al. 2002). The
-  // expected token here should be 'aragonite_frostwork', not
-  // 'aragonite_pseudohex_twin'. v156 deferred the fix because extending
-  // the override to twinned crystals requires parallel wireframe
-  // renderer changes + a parallel test update on the wireframe side.
-  // Full fix sequence + reasoning: BUG-aragonite-twin-cave-morphology.md
-  it('twinned aragonite in air-mode cavity → twin token (CURRENT WRONG behavior; see BUG-aragonite-twin-cave-morphology.md)', () => {
+  // BUG-aragonite-twin-cave-morphology.md FIX: air-mode aragonite is
+  // acicular frostwork REGARDLESS of twin structure. Real cave aragonite
+  // (Hill & Forti 1997 §10; Frisia et al. 2002, Grotte de Clamouse)
+  // grows as radiating needle sprays; the cyclic-sextet pseudo-hex twin
+  // manifests as a 6-fold needle cluster, not a smooth column. The
+  // air-mode override now fires above the twin branches and is
+  // unconditional on twin state.
+  it('twinned aragonite in air-mode cavity → frostwork (cave morphology beats twin column)', () => {
     const c = mkAragonite({
       twinned: true, twin_law: 'cyclic_sextet',
       growth_environment: 'air',
     });
-    expect(_resolveCrystalGeomToken(c, c.habit)).toBe('aragonite_pseudohex_twin');
+    expect(_resolveCrystalGeomToken(c, c.habit)).toBe('aragonite_frostwork');
   });
 
-  it('twinned aragonite with acicular habit still resolves to twin', () => {
-    const c = mkAragonite({ twinned: true, twin_law: 'cyclic_sextet', habit: 'acicular_needle' });
+  it('twinned aragonite in FLUID mode → pseudo-hex twin column (still correct)', () => {
+    // Fluid-mode twinned aragonite (metamorphic, sea-floor cement,
+    // hydrothermal vent) keeps the smooth pseudo-hex column — only the
+    // air (cave) path diverts to frostwork.
+    const c = mkAragonite({ twinned: true, twin_law: 'cyclic_sextet', growth_environment: 'fluid' });
     expect(_resolveCrystalGeomToken(c, c.habit)).toBe('aragonite_pseudohex_twin');
   });
 

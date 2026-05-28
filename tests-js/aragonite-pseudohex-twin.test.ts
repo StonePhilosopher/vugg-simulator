@@ -28,6 +28,7 @@
 import { describe, expect, it } from 'vitest';
 
 declare const PRIM_ARAGONITE_PSEUDOHEX_TWIN: any;
+declare const PRIM_ARAGONITE_FROSTWORK: any;
 declare const _lookupCrystalPrimitive: any;
 
 describe('aragonite-pseudohex-twin — primitive geometry', () => {
@@ -165,12 +166,22 @@ describe('aragonite-pseudohex-twin — dispatch precedence', () => {
     expect(_lookupCrystalPrimitive(c)).not.toBe(PRIM_ARAGONITE_PSEUDOHEX_TWIN);
   });
 
-  it('twinned aragonite in air-mode cavity → twin primitive (beats dripstone)', () => {
+  it('twinned aragonite in air-mode cavity → frostwork (cave morphology beats twin column)', () => {
+    // BUG-aragonite-twin-cave-morphology.md: air-mode aragonite is
+    // acicular frostwork regardless of twin state — the cyclic-sextet
+    // pseudo-hex twin shows up as a 6-fold needle cluster in caves, not
+    // a smooth column (Frisia et al. 2002). The new air-mode branch sits
+    // above the twin overrides, so it wins here.
     const c = mkAragonite({
       twinned: true, twin_law: 'cyclic_sextet',
       growth_environment: 'air',
     });
-    expect(_lookupCrystalPrimitive(c)).toBe(PRIM_ARAGONITE_PSEUDOHEX_TWIN);
+    expect(_lookupCrystalPrimitive(c)).toBe(PRIM_ARAGONITE_FROSTWORK);
+  });
+
+  it('NON-twinned air-mode aragonite → frostwork (wireframe parity with 99i, was missing pre-fix)', () => {
+    const c = mkAragonite({ twinned: false, growth_environment: 'air', habit: 'acicular_needle' });
+    expect(_lookupCrystalPrimitive(c)).toBe(PRIM_ARAGONITE_FROSTWORK);
   });
 
   it('twinned aragonite with acicular_needle habit still resolves to twin', () => {

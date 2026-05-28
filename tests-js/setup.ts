@@ -311,6 +311,11 @@ const EXPORTS = [
   // {110} contact (vs cyclic-sextet's 3-fold). Prismatic (square)
   // cross-section distinguishes from selenite's tabular swallowtail.
   'PRIM_ARAGONITE_CONTACT_TWIN',
+  // 2026-05-28 cave-aragonite frostwork (BUG-aragonite-twin-cave-
+  // morphology.md). 2D wireframe counterpart of the Three.js
+  // aragonite_frostwork geometry — radiating 5-needle acicular spray for
+  // air-mode aragonite (twinned or not).
+  'PRIM_ARAGONITE_FROSTWORK',
   '_lookupCrystalPrimitive',
   // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
   'EH_DYNAMIC_ENABLED',

@@ -338,33 +338,21 @@ describe('habit-bias Slice 4 — _resolveCrystalGeomToken air-mode override', ()
     // v147 carved aragonite out of the dripstone assertion as a Phase
     // 1c follow-up.
     //
-    // Phase 1c (v156, 2026-05-27): added _resolveCrystalGeomToken
-    // aragonite air-mode branch routing NON-twinned cave aragonite to
-    // 'aragonite_frostwork', a dedicated radiating-spray primitive
-    // (Hill & Forti 1997 §10).
-    //
-    // MODEL GAP: twinned aragonite (cyclic_sextet, contact) still
-    // routes through the twin geom branches as a smooth pseudo-hex
-    // column — which is GEOLOGICALLY WRONG for cave aragonite. The
-    // conditional branch below preserves the wrong behavior pending
-    // the full fix (parallel wireframe-renderer work + test updates).
-    // See BUG-aragonite-twin-cave-morphology.md for the fix sequence.
-    // When that bug is closed, both branches should collapse to
-    // expect(resolved).toBe('aragonite_frostwork').
+    // Phase 1c (v156): added the _resolveCrystalGeomToken aragonite
+    // air-mode branch → 'aragonite_frostwork' (Hill & Forti 1997 §10).
+    // BUG-aragonite-twin-cave-morphology.md closed the v156 model gap:
+    // ALL air-mode aragonite is frostwork now, twinned or not. The
+    // cyclic-sextet pseudo-hex twin manifests as a 6-fold radiating
+    // needle cluster in caves, not a smooth column (Frisia et al. 2002,
+    // Grotte de Clamouse). The previously-split branch has collapsed.
     const sim = runScenario('stalactite_demo', { seed: 42 });
     let eligibleAirHits = 0;
     for (const c of sim.crystals) {
       const canonical = _habitGeomToken(c.habit);
       const resolved = _resolveCrystalGeomToken(c, c.habit);
       if (c.mineral === 'aragonite' && c.growth_environment === 'air') {
-        // v156: non-twinned cave aragonite → frostwork; twinned cave
-        // aragonite → twin geom (cyclic_sextet, contact). Both are
-        // geologically defensible; neither is 'dripstone'.
-        if (!c.twinned) {
-          expect(resolved).toBe('aragonite_frostwork');
-        } else {
-          expect(resolved).toMatch(/^(aragonite_pseudohex_twin|aragonite_contact_twin)$/);
-        }
+        // Cave aragonite → frostwork regardless of twin state.
+        expect(resolved).toBe('aragonite_frostwork');
         continue;
       }
       if (c.growth_environment === 'air'

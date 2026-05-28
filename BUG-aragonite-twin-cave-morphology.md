@@ -1,5 +1,18 @@
 # Bug Report: Twinned Cave Aragonite Renders as Smooth Pseudo-Hex Column (Wrong)
 
+**Status:** ✅ RESOLVED 2026-05-28. Air-mode aragonite now routes to
+`aragonite_frostwork` in BOTH renderers regardless of twin state. The
+Three.js override (99i `_resolveCrystalGeomToken`) dropped its `!twinned`
+condition; the wireframe gained the parallel branch (99d
+`_lookupCrystalPrimitive`) + a new `PRIM_ARAGONITE_FROSTWORK` 2D primitive
+(99c) — the wireframe had never received the v156 frostwork at all, so it
+was routing air-mode aragonite to the dripstone icicle (non-twinned) or
+the pseudo-hex twin column (twinned), both wrong. Tests updated
+(aragonite-pseudohex-twin{,-three}, habit-bias). Renderer-only; sim
+baseline byte-identical (no SIM_VERSION bump — consistent with the recent
+renderer/UI-only commits). The proper-fix sequence below was followed
+verbatim; kept for the reasoning + reference trail.
+
 **Date:** 2026-05-27
 **Reported by:** Boss (called out scoping decision as model-vs-science gap during v156 commit review)
 **Severity:** Model accuracy — current behavior is geologically incorrect for one mineral × growth-environment combination
