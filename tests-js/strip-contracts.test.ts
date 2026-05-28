@@ -95,3 +95,60 @@ describe('strip chemistry contract — reactive_wall (PWP acid pulses)', () => {
     expect(series.min(si)).toBeLessThan(0);         // pulses cross into undersaturation
   });
 });
+
+describe('strip chemistry contract — tutorial_travertine (CO2 degassing)', () => {
+  let ds: any;
+  beforeAll(() => { ds = recordScenario('tutorial_travertine'); }, 60000);
+
+  it('CO2 degasses, pH rises, calcite supersaturates (the travertine cascade)', () => {
+    if (!ds) return;
+    const pCO2 = chipSeries(ds, 'pCO2', { depth: 'wall' });
+    const pH = chipSeries(ds, 'pH', { depth: 'wall' });
+    const si = chipSeries(ds, 'SI_calcite', { depth: 'wall' });
+    const dic = chipSeries(ds, 'DIC', { depth: 'wall' });
+    // Observed: pCO2 0.157→0.020 (degassing); pH 6.49→~8.0; SI_calcite ~0→1.32
+    // (supersaturation onset); DIC 500→171. Textbook open-system travertine:
+    // degassing raises pH → CO3 rises → calcite supersaturates → deposits,
+    // drawing DIC down. The coupled cascade, not just one chip.
+    expect(series.last(pCO2)!).toBeLessThan(series.first(pCO2)!); // degassing
+    expect(series.last(pCO2)!).toBeLessThan(0.05);
+    expect(series.peak(pH)).toBeGreaterThan(7.5);                 // pH rises
+    expect(series.first(si)!).toBeLessThan(0.3);                  // starts near equilibrium
+    expect(series.peak(si)).toBeGreaterThan(1.0);                 // supersaturates
+    expect(series.last(dic)!).toBeLessThan(series.first(dic)!);   // DIC drawn down
+  });
+});
+
+describe('strip chemistry contract — cooling (calcite retrograde solubility)', () => {
+  let ds: any;
+  beforeAll(() => { ds = recordScenario('cooling'); }, 60000);
+
+  it('calcite does NOT supersaturate on cooling (retrograde solubility)', () => {
+    if (!ds) return;
+    const T = chipSeries(ds, 'T', { depth: 'wall' });
+    const si = chipSeries(ds, 'SI_calcite', { depth: 'wall' });
+    // Observed: T 178→112°C; SI_calcite −0.78→−1.35, peak −0.78. Calcite has
+    // RETROGRADE solubility (less soluble hot), so COOLING makes it MORE
+    // soluble → SI drops, never reaching saturation. A regression that flipped
+    // the Ksp(T) sign would show as SI RISING on cooling — this guards it.
+    expect(series.last(T)!).toBeLessThan(series.first(T)!);  // it cools
+    expect(series.peak(si)).toBeLessThan(0);                 // calcite never reaches saturation
+  });
+});
+
+describe('strip chemistry contract — mvt (hot carbonate-supersaturated start)', () => {
+  let ds: any;
+  beforeAll(() => { ds = recordScenario('mvt'); }, 60000);
+
+  it('starts carbonate-supersaturated (dolomite > calcite), SI declines on cooling', () => {
+    if (!ds) return;
+    const cal = chipSeries(ds, 'SI_calcite', { depth: 'wall' });
+    const dol = chipSeries(ds, 'SI_dolomite', { depth: 'wall' });
+    // Observed start: SI_calcite +0.99, SI_dolomite +1.75 — dolomite favored at
+    // the hot MVT start (early carbonate gangue + dolomitization). Both decline
+    // as the fluid cools (retrograde solubility); last SI_calcite ~0.19.
+    expect(series.first(cal)!).toBeGreaterThan(0);                  // starts supersaturated
+    expect(series.first(dol)!).toBeGreaterThan(series.first(cal)!); // dolomite favored early
+    expect(series.last(cal)!).toBeLessThan(series.first(cal)!);     // declines on cooling
+  });
+});

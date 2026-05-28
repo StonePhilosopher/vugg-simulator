@@ -26,6 +26,7 @@ export const STRIP_DIGEST_SCENARIOS = [
   'reactive_wall',
   'cooling',
   'mvt',
+  'tutorial_travertine',
 ];
 
 // Key carbonate-system chips. Always present in the manifest (the recorder
