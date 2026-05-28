@@ -52,6 +52,8 @@ Each twin_laws array entry is an object:
 
 - **miller_indices**: Bracketed Miller indices like `"{110}"`, `"{0001}"`, `"{10-11}"`. Curly braces for general form, square brackets `[110]` only for specific axes (rare in twin context).
 
+- **twin_axis** (axis-defined twins, v143+): for twins defined by a rotation axis rather than a fixed composition plane — e.g. albite pericline-law — use `"twin_axis": "[010]"` plus an optional non-Miller `"composition_plane"` (e.g. `"rhombic_section"`) INSTEAD of `miller_indices`. `tools/twin-law-check.mjs` reports these as the **AXIS** verdict (they have no single {hkl} plane to CSL-check). See the Structural fact-check section.
+
 - **trigger**: When the twin fires. Common values:
   - `"growth"` — standard growth twin (most common)
   - `"growth in twinned_cyclic habit"` — fires only when the habit variant matches
@@ -196,6 +198,13 @@ been FLAGGED at commit time, prompting citation verification.
   - If the citation is real → ship; the FLAG just notes that the entry
     depends on the citation being trustworthy
   - If the citation is fake → that's a v139→v142 catch; pull the entry
+- **⟳ AXIS** — (added v143) a legitimate axis-defined twin (e.g. albite
+  pericline-law) declared via `twin_axis` instead of a fixed Miller
+  composition plane. Such twins have no single {hkl} composition plane and
+  can't be checked by lattice CSL at Tier 1, so AXIS is the honest
+  "structurally not checkable" verdict — distinct from PARSE (a data bug)
+  and FLAG (no structural match). Ship if the citation is sound; use the
+  `twin_axis` schema (see Entry Schema above).
 - **? SKIP** — no structural data populated for this mineral yet. The
   tool can't check the entry. To turn SKIP into PASS/FLAG, add the
   mineral to `data/structural.json` (see below)
