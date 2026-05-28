@@ -65349,7 +65349,16 @@ function topoToggleThreeRenderer() {
 // Helicoid surface still rotates visibly at 40 RPM. The 6 parameter
 // trails sit on the rotating surface at the leading edge and trail
 // behind in world frame for 1/4 turn.
-let _helixOverlayEnabled = true;
+// MERGE-PREP (2026-05-28): default OFF. For the merge back into the main
+// vugg repo the standard 3D vug model (cavity + crystals on
+// #topo-canvas-three) is the DEFAULT view; the helicoid manifold is an
+// opt-in mode reached via the toolbar ⌇ button (#helix-overlay-btn).
+// Was `true` (helicoid-as-star, the fork's original identity). The
+// toggle-off path in _topoHelixOverlayDraw already restores cavity +
+// crystal visibility, and _helixSyncLegendVisibility already hides the
+// legend when disabled — so flipping this one default is the whole
+// behavior change. The ⌇ button is the persistent (minimized) entry point.
+let _helixOverlayEnabled = false;
 const _HELIX_N_TURNS = 1; // one full revolution = bottom to top of cavity
 // Per-param on/off — parallel to _HELIX_CHEM_PARAMS (lazily sized on
 // first legend build). Click a legend row to flip the bool; the trail
@@ -65983,9 +65992,10 @@ function _helixSyncLegendVisibility() {
     if (panel)
         panel.style.display = _helixOverlayEnabled ? 'block' : 'none';
     // Keep the toolbar button colour in sync — overlay defaults to
-    // enabled on load, but the button starts uncoloured until first
-    // draw. Setting here covers both the initial render and the
-    // toggle callback path.
+    // DISABLED on load (merge-prep: normal 3D model is the default view),
+    // so the button starts uncoloured and the legend stays hidden until
+    // the user opts into the helicoid via ⌇. Setting here covers both the
+    // initial render and the toggle callback path.
     const btn = document.getElementById('helix-overlay-btn');
     if (btn)
         btn.style.color = _helixOverlayEnabled ? '#f0c050' : '';
