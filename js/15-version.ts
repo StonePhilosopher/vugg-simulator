@@ -9545,5 +9545,68 @@
 //   tests-js/strip-contracts.test.ts           + searles_lake contract (4 its)
 //   tools/strip-digest-shape.mjs               + searles_lake + concentration
 //   tests-js/baselines/strip_digest_v161.json  regen (6 scenarios, 7 chips)
-const SIM_VERSION = 161;
+//
+// ============================================================
+// v162 (2026-05-28) — THERMAL-PULSE OPT-OUT FLAG: no magmatic pulses at the surface
+// ============================================================
+//
+// THE BUG (surfaced by the strip T chip on bisbee). ambient_cooling (85d,
+// every step) carries a hydrothermal thermal-pulse mechanic: a 4-10%/step
+// chance to spike T by +30-150°C (ceiling 0.95×initial T) + inject SiO2/Fe/Mn
+// + drop pH — "hot fluid injection through a fracture." Correct for cooling
+// hydrothermal systems; WRONG once a scenario reaches a supergene/near-surface
+// regime (no magmatic heat source). Ungated, it reheated bisbee's
+// azurite→malachite→chrysocolla cascade (a ~25°C process) — observed T spiking
+// to 357°C. A scope survey (all 30 scenarios, seed 42) found genuine
+// contamination in bisbee (→138°C cold-regime pulses), roughten_gill (→124°C,
+// supergene Pb oxidation) and schneeberg (→146°C), while warm-spring systems
+// (naica ~54°C cave, sulphur_bank ~75°C, travertine ~70°C) and all hot
+// hydrothermal scenarios were pulsing at geologically-correct T.
+//
+// WHY A FLAG, NOT AN AUTOMATIC GATE. An automatic regime-temperature gate was
+// prototyped and REJECTED: temperature alone can't separate "supergene-cold"
+// from "cool groundwater/hot-spring" (bisbee's 25-35°C overlaps naica's
+// post-mining 30°C), and gating by regime broke 9 CALIBRATED tests on
+// schneeberg + sulphur_bank — their "spurious" pulses turned out to be
+// load-bearing for tuned mineralogy (schneeberg's meta-U heat path; sulphur_
+// bank's native_sulfur/orpiment). The honest fix is a per-scenario opt-out so
+// only confirmed-supergene scenarios lose pulses, leaving the entangled
+// calibrations untouched.
+//
+// THE FIX. VugWall.thermal_pulses (default true; 22-geometry-wall). The
+// ambient_cooling pulse is gated on conditions.wall.thermal_pulses (LAST &&
+// operand → rng.random() still drawn first → non-flagged scenarios byte-
+// identical). Tagged thermal_pulses:false on bisbee + roughten_gill (the two
+// confirmed-clean supergene targets). Creative Mode exposes it as a setup
+// toggle (f-thermal-pulses). schneeberg is NOT flagged here — its meta-U needs
+// a proper dry-air (vadose) driver first (separate commit), so leaving its
+// pulses on keeps its calibration intact for now. sulphur_bank stays on (its
+// warm-spring pulses are correct).
+//
+// BASELINE DRIFT (seed42_v161 → seed42_v162): 28/30 BYTE-IDENTICAL. Only the
+// two flagged scenarios drift, both toward more supergene-correct mineralogy:
+//   bisbee (33→30 species): sheds the heat/SiO2-pulse artifacts (anhydrite,
+//     opal, tigers_eye, alunite, rhodochrosite, thenardite) and gains proper
+//     supergene phases (jarosite, sylvite, turquoise). The azurite/malachite/
+//     chrysocolla cascade now runs at its real ~25°C instead of pulse-spiked
+//     350°C.
+//   roughten_gill (21→26): gains supergene Cu-Pb oxidation phases — duftite,
+//     olivenite, aurichalcite, rosasite, sphalerite, turquoise, AND
+//     plumbogummite (its TYPE mineral). Loses native_silver + willemite at
+//     seed 42 (RNG-cascade from the removed pulses); the suite's roughten_gill
+//     assertions stay green (no hard seed-42 native_silver pin).
+//   schneeberg + sulphur_bank: BYTE-IDENTICAL — deliberately NOT flagged, so
+//     their pulse-dependent calibrations (schneeberg meta-U heat path,
+//     sulphur_bank native_sulfur/orpiment) are untouched. Full suite green,
+//     no assertion edits needed.
+//
+// FILES
+//   js/22-geometry-wall.ts      VugWall.thermal_pulses flag (default true)
+//   js/85d-simulator-step.ts    ambient_cooling: thermal_pulses gate
+//   js/97-ui-fortress.ts        Creative-mode f-thermal-pulses toggle
+//   data/scenarios.json5        bisbee + roughten_gill → thermal_pulses:false
+//   js/15-version.ts            SIM_VERSION 161 → 162 + this block
+//   index.html                  rebuilt bundle
+//   tests-js/baselines/seed42_v162.json   regen
+const SIM_VERSION = 162;
 

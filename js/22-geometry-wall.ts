@@ -230,6 +230,17 @@ class VugWall {
     // to WallState so the simulator can check sim.wall_state.is_lit
     // without reaching back to conditions.wall.
     this.is_lit = (opts.is_lit !== undefined) ? !!opts.is_lit : true;
+    // v162 (2026-05-28): does episodic hydrothermal "hot fluid injection"
+    // (the ambient_cooling thermal-pulse mechanic, 85d) apply to this cavity?
+    // Default TRUE — most scenarios are cooling hydrothermal systems where
+    // fracture-fed hot pulses are real. SUPERGENE / near-surface weathering
+    // scenarios (bisbee's oxidation cascade, roughten_gill's Pb-oxidation) set
+    // thermal_pulses: false — a 25°C supergene pocket has no magmatic heat
+    // source, and the ungated pulses were spuriously reheating those cold
+    // cascades toward 350°C (surfaced by the strip T chip). Creative Mode
+    // exposes this as a setup toggle (f-thermal-pulses). Read directly off
+    // conditions.wall in ambient_cooling.
+    this.thermal_pulses = (opts.thermal_pulses !== undefined) ? !!opts.thermal_pulses : true;
   }
 
   dissolve(acid_strength, fluid) {

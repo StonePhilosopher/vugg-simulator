@@ -887,7 +887,12 @@
           // 3+7 matches the supergene_oxidation profile.
           "primary_bubbles": 3,
           "secondary_bubbles": 7,
-          "shape_seed": 13
+          "shape_seed": 13,
+          // v162: supergene regime — no magmatic thermal pulses. The whole
+          // azurite→malachite→chrysocolla cascade (steps 145-305) is a ~25°C
+          // near-surface monsoon process; the ungated ambient_cooling pulse
+          // mechanic was spuriously reheating it toward 350°C (strip T chip).
+          "thermal_pulses": false
         }
       },
       "events": [
@@ -2590,7 +2595,12 @@
           "architecture": "tabular",
           "primary_bubbles": 2,
           "secondary_bubbles": 4,
-          "shape_seed": 1882
+          "shape_seed": 1882,
+          // v162: supergene-dominated regime (T 130→22°C; the run is mostly
+          // the near-surface Pb-Cu oxidation sequence). No magmatic thermal
+          // pulses — they were spuriously reheating the cold linarite/
+          // caledonite/leadhillite oxidation stages toward ~120°C.
+          "thermal_pulses": false
         }
       },
       "events": [

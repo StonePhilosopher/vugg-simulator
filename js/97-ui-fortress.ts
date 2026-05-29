@@ -166,6 +166,15 @@ function fortressBegin() {
   if (wallReactivityEl) {
     wallOpts.reactivity = parseFloat(wallReactivityEl.value) / 10;
   }
+  // v162 Creative-mode thermal-pulse toggle. Checked (default) = hydrothermal
+  // "hot fluid injection" pulses fire (ambient_cooling, 85d). Unchecked =
+  // supergene / near-surface regime, no magmatic pulses. Mirrors the per-
+  // scenario wall.thermal_pulses flag (22-geometry-wall) that bisbee +
+  // roughten_gill set false.
+  const thermalPulsesEl = document.getElementById('f-thermal-pulses') as HTMLInputElement | null;
+  if (thermalPulsesEl) {
+    wallOpts.thermal_pulses = thermalPulsesEl.checked;
+  }
   // Size-class cascade (2026-05). When the player picks a non-default
   // cavity-size in the Creative Mode setup panel, override the preset's
   // vug_diameter_mm with the literature midpoint for the chosen tier.
