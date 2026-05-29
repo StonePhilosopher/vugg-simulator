@@ -65598,7 +65598,7 @@ const _HELIX_CHEM_PARAMS = (function () {
     // Primary
     params.push({
         id: 'wall', label: 'wall distance', fullName: _HELIX_FULL_NAMES.wall,
-        min: 0, max: 0, color: 0xffffff,
+        min: 0, max: 80, color: 0xffffff,
         primary: true,
         read: (sim, wall, i, c) => {
             if (!wall || !wall.rings)
@@ -65629,13 +65629,13 @@ const _HELIX_CHEM_PARAMS = (function () {
         },
     });
     // Specials
-    params.push({ id: 'T', label: 'temperature', fullName: _HELIX_FULL_NAMES.T, min: 50, max: 250, color: 0xff5544,
+    params.push({ id: 'T', label: 'temperature', fullName: _HELIX_FULL_NAMES.T, min: 0, max: 750, color: 0xff5544,
         read: (s, w, i, c) => (s.ring_temperatures || [])[i] });
-    params.push({ id: 'pH', label: 'pH', fullName: _HELIX_FULL_NAMES.pH, min: 2, max: 12, color: 0x9966ee,
+    params.push({ id: 'pH', label: 'pH', fullName: _HELIX_FULL_NAMES.pH, min: 0, max: 14, color: 0x9966ee,
         read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).pH });
     params.push({ id: 'Eh', label: 'Eh', fullName: _HELIX_FULL_NAMES.Eh, min: -400, max: 800, color: 0xddee44,
         read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).Eh });
-    params.push({ id: 'salinity', label: 'salinity', fullName: _HELIX_FULL_NAMES.salinity, min: 0, max: 30, color: 0x44ccdd,
+    params.push({ id: 'salinity', label: 'salinity', fullName: _HELIX_FULL_NAMES.salinity, min: 0, max: 200, color: 0x44ccdd,
         read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).salinity });
     params.push({ id: 'O2', label: 'O2', fullName: _HELIX_FULL_NAMES.O2, min: 0, max: 10, color: 0xaaccff,
         read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).O2 });
@@ -65677,7 +65677,7 @@ const _HELIX_CHEM_PARAMS = (function () {
     };
     params.push({
         id: 'DIC', label: 'DIC', fullName: _HELIX_FULL_NAMES.DIC,
-        min: 0, max: 500, color: 0xC9A875,
+        min: 0, max: 4500, color: 0xC9A875,
         read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).CO3,
     });
     params.push({
@@ -65697,7 +65697,7 @@ const _HELIX_CHEM_PARAMS = (function () {
     });
     params.push({
         id: 'HCO3', label: 'HCO₃', fullName: _HELIX_FULL_NAMES.HCO3,
-        min: 0, max: 500, color: 0x6B96D9,
+        min: 0, max: 4500, color: 0x6B96D9,
         read: (s, w, i, c) => {
             const f = _chipFluid(s, w, i, c);
             if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0)
@@ -65712,7 +65712,7 @@ const _HELIX_CHEM_PARAMS = (function () {
     });
     params.push({
         id: 'CO3_2', label: 'CO₃²⁻', fullName: _HELIX_FULL_NAMES.CO3_2,
-        min: 0, max: 50, color: 0x4A7FE0,
+        min: 0, max: 80, color: 0x4A7FE0,
         read: (s, w, i, c) => {
             const f = _chipFluid(s, w, i, c);
             if (!f)
@@ -65726,22 +65726,22 @@ const _HELIX_CHEM_PARAMS = (function () {
     });
     params.push({
         id: 'SI_calcite', label: 'SI cal', fullName: _HELIX_FULL_NAMES.SI_calcite,
-        min: -3, max: 3, color: 0xF0F0FF,
+        min: -8, max: 8, color: 0xF0F0FF,
         read: _readSI('calcite'),
     });
     params.push({
         id: 'SI_aragonite', label: 'SI arg', fullName: _HELIX_FULL_NAMES.SI_aragonite,
-        min: -3, max: 3, color: 0xCCCCCC,
+        min: -8, max: 8, color: 0xCCCCCC,
         read: _readSI('aragonite'),
     });
     params.push({
         id: 'SI_dolomite', label: 'SI dol', fullName: _HELIX_FULL_NAMES.SI_dolomite,
-        min: -3, max: 3, color: 0xB87C40,
+        min: -8, max: 8, color: 0xB87C40,
         read: _readSI('dolomite'),
     });
     params.push({
         id: 'SI_HMC', label: 'SI HMC', fullName: _HELIX_FULL_NAMES.SI_HMC,
-        min: -3, max: 3, color: 0x9078A0,
+        min: -8, max: 8, color: 0x9078A0,
         read: (s, w, i, c) => {
             const f = _chipFluid(s, w, i, c);
             if (!f)
@@ -65756,7 +65756,7 @@ const _HELIX_CHEM_PARAMS = (function () {
     });
     params.push({
         id: 'SI_siderite', label: 'SI sid', fullName: _HELIX_FULL_NAMES.SI_siderite,
-        min: -3, max: 3, color: 0xB85C2B,
+        min: -8, max: 8, color: 0xB85C2B,
         read: _readSI('siderite'),
     });
     params.push({
@@ -65792,23 +65792,27 @@ const _HELIX_CHEM_PARAMS = (function () {
         },
     });
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
-    // Ions — id, min, max. Ranges chosen from observed typical values
-    // in MVT-seed-42 sample fluid (see the helix-record data dump).
+    // Ions — id, min, max. Ranges cover the value envelope each ion actually
+    // reaches ACROSS all scenarios (measured by tools/strip-chip-envelope.mjs),
+    // because vug fluids span dilute meteoric water to evaporite/hydrothermal
+    // brine. Sized to observed-max + headroom; the prior MVT-seed-42-only ranges
+    // clamped 42/58 chips (Cl to 36×, Na 53×, etc.) — "follow the science of
+    // what vugs actually do."
     const ION_DEFS = [
-        // Majors (0-500 mg/L)
-        ['SiO2', 0, 500], ['Ca', 0, 500], ['CO3', 0, 500], ['Cl', 0, 500],
-        ['Na', 0, 200], ['Mg', 0, 100], ['K', 0, 50], ['S', 0, 100], ['F', 0, 100],
-        // Common metals (0-200)
-        ['Fe', 0, 200], ['Mn', 0, 200], ['Zn', 0, 200], ['Pb', 0, 200], ['Cu', 0, 50],
+        // Majors — brine-scale (evaporite / hydrothermal)
+        ['SiO2', 0, 15000], ['Ca', 0, 4500], ['CO3', 0, 4500], ['Cl', 0, 20000],
+        ['Na', 0, 12000], ['Mg', 0, 4000], ['K', 0, 500], ['S', 0, 3000], ['F', 0, 100],
+        // Common metals
+        ['Fe', 0, 400], ['Mn', 0, 200], ['Zn', 0, 300], ['Pb', 0, 200], ['Cu', 0, 400],
         // Common others
-        ['Ba', 0, 50], ['Sr', 0, 50], ['Al', 0, 50], ['P', 0, 50], ['As', 0, 50],
-        // Trace (0-10)
-        ['Ti', 0, 10], ['U', 0, 10], ['Mo', 0, 10], ['Cr', 0, 10], ['V', 0, 10],
-        ['W', 0, 10], ['Ag', 0, 20], ['Bi', 0, 10], ['Sb', 0, 10], ['Ni', 0, 10],
-        ['Co', 0, 10], ['B', 0, 10], ['Li', 0, 10], ['Cd', 0, 10], ['Y', 0, 10],
-        // Ultra-trace (0-5)
-        ['Be', 0, 5], ['Te', 0, 5], ['Se', 0, 5], ['Ge', 0, 5], ['Au', 0, 5],
-        ['Hg', 0, 5], ['Sn', 0, 5],
+        ['Ba', 0, 200], ['Sr', 0, 80], ['Al', 0, 200], ['P', 0, 50], ['As', 0, 80],
+        // Trace
+        ['Ti', 0, 30], ['U', 0, 200], ['Mo', 0, 100], ['Cr', 0, 20], ['V', 0, 20],
+        ['W', 0, 25], ['Ag', 0, 50], ['Bi', 0, 50], ['Sb', 0, 30], ['Ni', 0, 250],
+        ['Co', 0, 100], ['B', 0, 120], ['Li', 0, 50], ['Cd', 0, 10], ['Y', 0, 10],
+        // Ultra-trace
+        ['Be', 0, 30], ['Te', 0, 5], ['Se', 0, 5], ['Ge', 0, 10], ['Au', 0, 5],
+        ['Hg', 0, 20], ['Sn', 0, 100],
     ];
     for (let i = 0; i < ION_DEFS.length; i++) {
         const [ionId, mn, mx] = ION_DEFS[i];
