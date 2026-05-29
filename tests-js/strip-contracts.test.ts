@@ -335,3 +335,174 @@ describe('strip chemistry contract — supergene_oxidation (Tsumeb gossan)', () 
     expect(series.peak(si)).toBeLessThan(0);
   });
 });
+
+// =============================================================
+// v166: sulfate-family contracts — naica / sicily_solfifera / sulphur_bank
+// =============================================================
+//
+// Authored 2026-05-30 from the v165 sulfate SI chips (SI_selenite /
+// SI_anhydrite / SI_barite / SI_celestine). Before v164/v165 these
+// scenarios were SI-blind on their headline minerals (the strip's
+// carbonate-only SI chips correctly read undersaturated, but that
+// undersaturation told no story about gypsum/celestine/Hg-sulfide
+// nucleation). The new chips make the sulfate paragenesis pinnable.
+//
+// Each scenario gets its own describe block. Assertions key off the
+// per-scenario survey trajectories observed at v165, captured here as
+// regression guards — not aspirational pins. Comments record the
+// observed numbers so future drift is legible.
+
+describe('strip chemistry contract — naica_geothermal (selenite slow-growth chamber)', () => {
+  let ds: any;
+  beforeAll(() => { ds = recordScenario('naica_geothermal'); }, 60000);
+
+  it('selenite SI hovers near saturation — the slow-growth window that grows the giant crystals', () => {
+    if (!ds) return;
+    const si = chipSeries(ds, 'SI_selenite', { depth: 'wall' });
+    // Observed (wall): SI_selenite -0.490…-0.079 across 320 steps, ending
+    // -0.227. Always slightly undersaturated; never any supersat surge.
+    // This is the documented condition (Van Driessche et al. 2011) under
+    // which the Cave of Crystals grew gypsum crystals to >11 m: marginal
+    // saturation maintained for tens of millennia by isothermal-ish brine.
+    // Surge to SI>0 would mean fast nucleation, not giant single crystals.
+    expect(series.peak(si)).toBeLessThan(0);          // never supersaturated
+    expect(series.peak(si)).toBeGreaterThan(-0.6);    // but ALWAYS close
+  });
+
+  it('anhydrite is more undersaturated than gypsum (right phase for T < 55°C)', () => {
+    if (!ds) return;
+    const gy = chipSeries(ds, 'SI_selenite',  { depth: 'wall' });
+    const an = chipSeries(ds, 'SI_anhydrite', { depth: 'wall' });
+    // Observed: SI_selenite peak -0.079, SI_anhydrite peak -0.193.
+    // Anhydrite is the LESS-soluble phase only above ~55-60°C (Van
+    // Driessche 2016). Below the phase boundary, gypsum is more stable
+    // (higher SI at the same Ca·SO4 product). The chamber sits 25-55°C
+    // (T cycles), squarely in the gypsum field — anhydrite stays the
+    // less-saturated phase throughout, which is exactly correct.
+    expect(series.peak(an)).toBeLessThan(series.peak(gy));
+  });
+
+  it('T cycles in the gypsum stability field (25–55°C) — no excursion past the anhydrite transition', () => {
+    if (!ds) return;
+    const T = chipSeries(ds, 'T', { depth: 'wall' });
+    // Observed (wall): T 25.0…54.7, ending 35.5. The cooling-from-warm-
+    // groundwater cycle. Crucially never crosses 60°C (the gypsum →
+    // anhydrite phase boundary). If a future edit lets T pulse past 60,
+    // SI_anhydrite would suddenly outpace SI_selenite and the wrong
+    // phase would be favored — this pin guards that.
+    expect(series.peak(T)).toBeLessThan(60);
+    expect(series.min(T)).toBeLessThan(30);
+  });
+
+  it('Ca pinned + S cycling — naica chemistry is sulfate-driven, not Ca-driven', () => {
+    if (!ds) return;
+    const ca = chipSeries(ds, 'Ca', { depth: 'wall' });
+    const s  = chipSeries(ds, 'S',  { depth: 'wall' });
+    // Observed: Ca FLAT at 320 (groundwater equilibrium with the limestone
+    // host); S 141…420, cycling with the hot-fluid pulses. So the SI_selenite
+    // oscillation tracks S, not Ca — which is the geologically correct
+    // mechanism for naica (sulfate brought in by ascending fluid).
+    expect(series.peak(ca) - series.min(ca)).toBeLessThan(1);  // Ca pinned
+    expect(series.peak(s)  - series.min(s)).toBeGreaterThan(100);  // S oscillates
+  });
+});
+
+describe('strip chemistry contract — sicily_solfifera (celestine + native sulfur)', () => {
+  let ds: any;
+  beforeAll(() => { ds = recordScenario('sicily_solfifera'); }, 60000);
+
+  it('celestine SI ramps from supersat to strongly supersat (continuous precipitation)', () => {
+    if (!ds) return;
+    const si = chipSeries(ds, 'SI_celestine', { depth: 'wall' });
+    // Observed (wall): SI_celestine 0.459…0.856, MONO↑, ending 0.856. Sr is
+    // ramping (30→45) AND S is ramping (400→940) as bacterial sulfate
+    // reduction concentrates SO4 alongside the Sr-rich brine. The
+    // monotonic SI rise IS the Sicilian solfifera signature — celestine
+    // precipitates throughout, faster as the run progresses.
+    expect(series.first(si)!).toBeGreaterThan(0.3);     // supersat from the start
+    expect(series.peak(si)).toBeGreaterThan(0.7);       // strongly supersat by the end
+    expect(series.last(si)!).toBeGreaterThan(series.first(si)!);  // climbing
+  });
+
+  it('celestine SI > selenite SI — Sr-sulfate is more saturated than Ca-sulfate despite Ca >> Sr', () => {
+    if (!ds) return;
+    const cel = chipSeries(ds, 'SI_celestine', { depth: 'wall' });
+    const sel = chipSeries(ds, 'SI_selenite',  { depth: 'wall' });
+    // Observed: SI_celestine peak 0.856 vs SI_selenite peak 0.572. Even
+    // though Ca (600→1200 ppm) vastly outnumbers Sr (30→45), celestine's
+    // much smaller Ksp (10^-6.63 vs 10^-4.58) keeps it more supersat at
+    // the relevant concentrations. The Sicilian assemblage IS celestine
+    // + sulfur (NOT gypsum-dominant), and this SI ordering confirms it.
+    expect(series.peak(cel)).toBeGreaterThan(series.peak(sel));
+  });
+
+  it('Sr ramps with the brine event (the celestine cation pulse)', () => {
+    if (!ds) return;
+    const sr = chipSeries(ds, 'Sr', { depth: 'wall' });
+    // Observed: Sr 30→45 over the run, MONO↑. The Sr step up at ~step 17
+    // is the brine event that delivers the celestine ingredient.
+    expect(series.first(sr)!).toBeLessThan(35);
+    expect(series.peak(sr)).toBeGreaterThan(40);
+  });
+
+  it('DIC ramps too — sulfur deposits cohabit with carbonates in the Solfifera series', () => {
+    if (!ds) return;
+    const dic = chipSeries(ds, 'DIC', { depth: 'wall' });
+    // Observed: DIC 80→200, MONO↑. The Solfifera series is sulfur within
+    // a sedimentary carbonate sequence; both systems are active. Pinning
+    // the DIC ramp guards the carbonate-cohabitation signature.
+    expect(series.first(dic)!).toBeLessThan(100);
+    expect(series.peak(dic)).toBeGreaterThan(180);
+  });
+});
+
+describe('strip chemistry contract — sulphur_bank (acid sulfur springs, NOT a sulfate-precipitating system)', () => {
+  let ds: any;
+  beforeAll(() => { ds = recordScenario('sulphur_bank'); }, 60000);
+
+  it('pH crashes sharply acidic (sulfuric-acid spring) and sawtooth-recovers', () => {
+    if (!ds) return;
+    const pH = chipSeries(ds, 'pH', { depth: 'wall' });
+    // Observed (wall): pH 1.53…6.53 (HUGE range). Acid pulses from H2SO4
+    // crash pH to <2 (the diagnostic sulfur-spring acid window); carbonate
+    // host + ongoing buffering carry pH back up. The pH min < 2 IS the
+    // sulphur_bank signature.
+    expect(series.min(pH)).toBeLessThan(2.5);
+    expect(series.peak(pH)).toBeGreaterThan(6);
+    expect(series.crossings(pH, 4)).toBeGreaterThanOrEqual(2);
+  });
+
+  it('T is warm-spring (peaks > 70°C) but never magmatic-hydrothermal', () => {
+    if (!ds) return;
+    const T = chipSeries(ds, 'T', { depth: 'wall' });
+    // Observed: T 25.0…74.96. Sulphur Bank is a hot-spring mercury deposit
+    // (Clear Lake, CA); the warm-fluid pulses ARE the system (NOT spurious
+    // thermal-pulse contamination — the handoff confirmed pulses here are
+    // load-bearing for the native_sulfur + orpiment calibration).
+    expect(series.peak(T)).toBeGreaterThan(60);
+    expect(series.peak(T)).toBeLessThan(100);
+  });
+
+  it('selenite SI stays UNDERSATURATED — this is NOT a sulfate-forming system', () => {
+    if (!ds) return;
+    const si = chipSeries(ds, 'SI_selenite', { depth: 'wall' });
+    // Observed: SI_selenite -0.645…-0.514. Always undersat. Sulphur_bank
+    // produces native S + cinnabar + marcasite — not gypsum. The new SI
+    // chip CORRECTLY tells us that despite high S (400-669 ppm), Ca is
+    // too low (80 ppm, depleting) for gypsum to nucleate. This is the
+    // instrument doing its job: it speaks AGAINST the wrong story too,
+    // not just for the right one.
+    expect(series.peak(si)).toBeLessThan(0);
+  });
+
+  it('Hg present + depleting (cinnabar consumption, the headline mineral)', () => {
+    if (!ds) return;
+    const hg = chipSeries(ds, 'Hg', { depth: 'wall' });
+    // Observed: Hg MONO↓ 15→~10 (slowly depleting into cinnabar HgS).
+    // The first→last drop is small (no aggressive pulse) — Hg is a
+    // pre-loaded broth ingredient consumed gradually as cinnabar
+    // nucleates. Pinning that the wall sees finite Hg + a net decline.
+    expect(series.first(hg)!).toBeGreaterThan(10);
+    expect(series.last(hg)!).toBeLessThan(series.first(hg)!);
+  });
+});

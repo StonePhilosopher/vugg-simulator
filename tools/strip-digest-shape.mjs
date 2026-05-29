@@ -39,6 +39,17 @@ export const STRIP_DIGEST_SCENARIOS = [
   // trajectory may legitimately move when that's addressed — held out of the
   // tripwire until then; its contract pins only the robust event-driven signals.
   'supergene_oxidation',
+  // v166: the three sulfate-family scenarios newly SI-legible after v164/v165
+  // wired the sulfate Ksp engine + chips. Each pins headline-mineral
+  // saturation as well as ions/pH/T:
+  //   naica_geothermal — SI_selenite hovers ~−0.2 (giant-crystal slow-growth)
+  //   sicily_solfifera — SI_celestine ramps +0.46 → +0.86 (continuous precip)
+  //   sulphur_bank     — SI_selenite stays deeply undersat (NOT a sulfate-
+  //                       forming system; the acid-spring pH crash is the
+  //                       headline; SI here tells the negative story)
+  'naica_geothermal',
+  'sicily_solfifera',
+  'sulphur_bank',
 ];
 
 // Key carbonate-system chips + the evaporite driver. Always present in the
@@ -48,6 +59,12 @@ export const STRIP_DIGEST_SCENARIOS = [
 // non-evaporite scenario never spuriously concentrates).
 export const STRIP_DIGEST_CHIPS = [
   'SI_calcite', 'SI_dolomite', 'SI_aragonite', 'pH', 'DIC', 'f_ord', 'concentration',
+  // v166: sulfate SI chips (v164 engine, v165 chip wiring) — the four
+  // simple-sulfate Ksp dispatch (selenite/anhydrite/barite/celestine).
+  // Each may be flat or NaN in scenarios that don't carry the right ion
+  // (e.g., SI_barite is NaN where Ba≤0); the digest captures that gap
+  // explicitly, which is itself a regression guard.
+  'SI_selenite', 'SI_anhydrite', 'SI_barite', 'SI_celestine',
 ];
 
 const SAMPLE_COUNT = 8;
