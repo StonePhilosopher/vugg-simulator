@@ -256,6 +256,7 @@ const EVENT_REGISTRY = {
   schneeberg_cu_p_phase: event_schneeberg_cu_p_phase,
   schneeberg_cu_as_pulse: event_schneeberg_cu_as_pulse,
   schneeberg_cu_depletion: event_schneeberg_cu_depletion,
+  schneeberg_vadose_exhumation: event_schneeberg_vadose_exhumation,
   schneeberg_as_pulse_late: event_schneeberg_as_pulse_late,
   colorado_plateau_groundwater_pulse: event_colorado_plateau_groundwater_pulse,
   colorado_plateau_roll_front_contact: event_colorado_plateau_roll_front_contact,

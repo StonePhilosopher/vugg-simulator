@@ -41,9 +41,19 @@ function event_schneeberg_pegmatite_crystallization(c) {
 }
 
 function event_schneeberg_cooling(c) {
-  c.temperature = 30;
+  // v163: the post-magmatic vein cools THROUGH the ~180°C bismuth-arsenide
+  // window, not straight to ambient. Five-element-vein native bismuth + the
+  // Co-Ni arsenides (skutterudite/safflorite/nickeline) crystallize at
+  // ~200-150°C during cooling (Markl et al. 2016; Kissin 1992) — the
+  // supersaturation_native_bismuth T_factor is 1.0 only in [100,250]°C. The
+  // old jump 350→30 skipped this window entirely, so native_bismuth only ever
+  // nucleated when the (now-removed) ambient_cooling thermal pulses happened
+  // to reheat a ring back into range. T=180 puts the cooling vein squarely in
+  // the bismuth-arsenide window; the supergene oxidation onset is deferred to
+  // cu_p_phase (step 85, T=25).
+  c.temperature = 180;
   c.flow_rate = 0.5;
-  return 'The pegmatite system cools toward ambient. Primary crystallization closes. The vug holds black uraninite, brassy chalcopyrite, and steel-gray arsenopyrite — a characteristic Erzgebirge primary assemblage, not yet touched by oxidation.';
+  return 'The pegmatite system cools through the bismuth-arsenide window (~180°C). Native bismuth crystallizes as silver-white arborescent sheets alongside the Co-Ni arsenides (skutterudite, safflorite, nickeline) — the Erzgebirge "Fünfelementformation". Black uraninite and brassy chalcopyrite are locked in; the vein is not yet touched by oxidation.';
 }
 
 function event_schneeberg_cu_p_phase(c) {
@@ -74,6 +84,26 @@ function event_schneeberg_cu_depletion(c) {
   c.fluid.P = Math.max(c.fluid.P, 18.0);
   c.fluid.As = Math.min(c.fluid.As, 4.0);
   return 'Copper has been pulled out of the fluid by the green plates. The cation pool flips: calcium, sourced from the carbonate buffer in the pegmatite country rock, takes over. P replenishes from continuing apatite weathering. The same uranyl-phosphate chemistry that grew torbernite now grows autunite — bright canary yellow instead of emerald green, and crucially, fluorescent. Where Cu²⁺ killed the uranyl emission cold, Ca²⁺ leaves it lit.';
+}
+
+// v163: late uplift exhumes the vein — the water table drops and the supergene
+// uranyl-mica crusts pass into the vadose zone (dry Erzgebirge mine air). This
+// is the geologically-correct VADOSE driver for the meta- forms (torbernite →
+// metatorbernite, zeunerite → metazeunerite, autunite → meta-autunite): "the
+// trip from a damp mine to a dry display case" (research-autunite.md), the
+// dry_exposure_steps path in DEHYDRATION_TRANSITIONS (75-transitions). Pre-v163
+// the meta- forms relied on the SPURIOUS ambient_cooling thermal-pulse heat
+// path (rings reheated >75°C inside a 20°C supergene pocket); v162 turned those
+// pulses off for schneeberg (wall.thermal_pulses:false) and this event supplies
+// the honest mechanism. Fires at step 110 — after torbernite (85) + zeunerite
+// (105) have nucleated, with 50 steps left so their host rings clear the
+// 40-step vadose threshold; the remaining Ca-uranyl chemistry (cu_depletion
+// 125, as_pulse_late 145) then plays out in the oxidizing vadose zone.
+function event_schneeberg_vadose_exhumation(c) {
+  c.temperature = 20;
+  c.fluid_surface_ring = 2.0;
+  c.flow_rate = 0.1;
+  return 'Late uplift exhumes the Schneeberg vein. The water table drops below the pocket; the emerald torbernite and brassy zeunerite plates pass into the vadose zone and begin losing their structural water in the dry mine air — torbernite → metatorbernite, zeunerite → metazeunerite. Weisbach\'s 1872 type material was already the meta- form by the time it reached his bench.';
 }
 
 function event_schneeberg_as_pulse_late(c) {

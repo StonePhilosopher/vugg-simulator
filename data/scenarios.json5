@@ -1488,7 +1488,14 @@
           "architecture": "tabular",
           "primary_bubbles": 3,
           "secondary_bubbles": 5,
-          "shape_seed": 9
+          "shape_seed": 9,
+          // v163: supergene/near-surface regime — no magmatic thermal pulses.
+          // The cold (18-30°C) supergene U-mica stages were being spuriously
+          // reheated >75°C by the ambient_cooling pulse mechanic, which forced
+          // the meta- uranyl forms via the wrong (heat) path. With pulses off,
+          // the schneeberg_vadose_exhumation event (step 110) supplies the
+          // correct dry-air dehydration driver instead.
+          "thermal_pulses": false
         }
       },
       "events": [
@@ -1496,6 +1503,7 @@
         { "step": 70,  "type": "schneeberg_cooling",                   "name": "Cooling",                    "description": "T drops to ambient supergene window; primaries finish forming" },
         { "step": 85,  "type": "schneeberg_cu_p_phase",                "name": "Cu+P Oxidation",             "description": "Meteoric water floods; primaries weather; P>As, Cu>Ca → torbernite plates" },
         { "step": 105, "type": "schneeberg_cu_as_pulse",               "name": "Cu+As Pulse",                "description": "Arsenopyrite-derived As replenishes; As>P, Cu still dominant → zeunerite plates" },
+        { "step": 110, "type": "schneeberg_vadose_exhumation",         "name": "Vein Exhumed (water table drops)", "description": "Uranyl-mica crusts pass into the vadose zone; dry-air dehydration → metatorbernite + metazeunerite (the honest meta- path, replacing the spurious thermal-pulse heat path)" },
         { "step": 125, "type": "schneeberg_cu_depletion",              "name": "Cu Depletion",               "description": "Cu consumed by torbernite+zeunerite; Ca rises (carbonate dissolution) → autunite plates" },
         { "step": 145, "type": "schneeberg_as_pulse_late",             "name": "Late As Pulse",              "description": "Final arsenate replenishment; Ca dominant → uranospinite plates, the bright fluorescent yellow finishes the assemblage" }
       ],

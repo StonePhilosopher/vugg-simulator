@@ -9608,5 +9608,65 @@
 //   js/15-version.ts            SIM_VERSION 161 → 162 + this block
 //   index.html                  rebuilt bundle
 //   tests-js/baselines/seed42_v162.json   regen
-const SIM_VERSION = 162;
+//
+// ============================================================
+// v163 (2026-05-29) — SCHNEEBERG done properly: meta-U via dry air, native bismuth via its cooling window
+// ============================================================
+//
+// Completes the v162 thermal-pulse arc for schneeberg, which v162 left
+// deliberately un-flagged because its calibration was load-bearing on the
+// (spurious) pulses. Two entangled dependencies, both now fixed at the
+// mechanism level:
+//
+// 1. META-URANIUM via the DRY-AIR (vadose) path, not spurious heat. The meta-
+//    forms (torbernite→metatorbernite, zeunerite→metazeunerite) were firing
+//    ONLY because the ambient_cooling thermal pulses reheated their host rings
+//    >75°C (the heat path in DEHYDRATION_TRANSITIONS, 75-transitions) — absurd
+//    for a 20°C supergene pocket. Real meta-uranyl-mica forms by dehydration in
+//    dry air ("damp mine → dry display case", research-autunite.md). Added
+//    event_schneeberg_vadose_exhumation (step 110): late uplift drops the water
+//    table, the uranyl crusts enter the vadose zone, and the vadose
+//    dry_exposure_steps path (threshold 40) does the dehydration honestly.
+//    torbernite (nucleated step 85) + zeunerite (105) clear 40 vadose steps by
+//    160 → metatorbernite + metazeunerite; autunite (125) stays hydrated (only
+//    35 steps left — geologically fine, fresh autunite is the hydrate).
+//
+// 2. NATIVE BISMUTH via its real cooling window. supersaturation_native_bismuth
+//    has T_factor=1.0 only in [100,250]°C (0.1 above 270, 0.6 below 100). The
+//    old T schedule jumped 350→30°C, SKIPPING the window — so native_bismuth
+//    only ever crossed σ=1.0 when a thermal pulse happened to reheat a ring
+//    into range (σ_max without pulses was 0.811, capped — bi_f maxes at 3.0).
+//    event_schneeberg_cooling now lands at 180°C (the bismuth-arsenide
+//    "Fünfelementformation" window, Markl 2016 / Kissin 1992) before supergene
+//    onset at cu_p_phase (25°C). native_bismuth σ → 1.351, nucleates at every
+//    tested seed via legitimate chemistry. The Co-Ni arsenides crystallize in
+//    the same window. wall.thermal_pulses:false (schneeberg now flagged too).
+//
+// BASELINE DRIFT (seed42_v162 → seed42_v163): 29/30 BYTE-IDENTICAL. Only
+// schneeberg drifts (the thermal_pulses flag defaults true, so no other
+// scenario is touched). schneeberg 32→32 species, and the change is a clear
+// geological WIN — the five-element-vein heritage is now MORE complete:
+//   +native_arsenic, +native_silver, +naumannite (Ag-Se) — the Bi-Co-Ni-Ag-As
+//     "Fünfelementformation" assemblage, now crystallizing in the real 180°C
+//     cooling window alongside native_bismuth instead of being skipped.
+//   +autunite (stays the hydrate — it nucleates too late, step 125, to clear
+//     the 40-step vadose threshold), +pharmacolite.
+//   -meta-autunite (autunite no longer dehydrates; metatorbernite +
+//     metazeunerite ARE present via the vadose path — the meta-* trio test
+//     needs ≥1 and is satisfied), -haidingerite (pharmacolite stays hydrated in
+//     the baseline now; the haidingerite test forces T=90 and still passes),
+//     -opal + -lepidocrocite (SiO2/Fe thermal-pulse artifacts, correctly gone),
+//     -uranophane (still fires in colorado_plateau — the calibration 1-of-2
+//     floor holds).
+//
+// FILES
+//   js/70d-pegmatite-radioactive.ts   + event_schneeberg_vadose_exhumation;
+//                                      cooling T 30→180 (bismuth-arsenide window)
+//   js/70-events.ts                   register schneeberg_vadose_exhumation
+//   data/scenarios.json5              schneeberg: + exhumation event @110,
+//                                      thermal_pulses:false
+//   js/15-version.ts                  SIM_VERSION 162 → 163 + this block
+//   index.html                        rebuilt bundle
+//   tests-js/baselines/seed42_v163.json   regen
+const SIM_VERSION = 163;
 
