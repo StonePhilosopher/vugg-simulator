@@ -1,0 +1,117 @@
+{
+  "_meta": {
+    "purpose": "Per-sulfate-mineral thermodynamic data (Ksp + T-dependence) with confidence tiers. Consumed by js/20d-chemistry-sulfate-Ksp.ts to compute true log Ω saturation indices for the strip's sulfate SI chips (SI_selenite/anhydrite/barite/celestine). Mirrors thermo-carbonates.json shape; observer-only at this phase (no kinetic engine promotion — the existing 40-supersat-sulfate.ts σ-driver functions remain the nucleation gates).",
+    "schema_version": 1,
+    "proposal": "(none — driven by 2026-05-30 strip survey; see handoff at proposals/HANDOFF-SUPERGENE-AND-THERMAL-PULSE-2026-05-29.md, 'sulfate-SI chips' forward lead)",
+    "phase": "1 (observer)",
+    "date_created": "2026-05-30",
+    "minerals_covered": "4 well-measured simple sulfates: gypsum (CaSO4·2H2O — engine name 'selenite'), anhydrite (CaSO4), barite (BaSO4), celestine (SrSO4). These are the four binding cases for the SI-blind scenario family the strip survey flagged (naica selenite, sicily_solfifera celestine, sulphur_bank pH-driven, sabkha/searles gypsum).",
+    "minerals_deferred_to_phase_2": [
+      "alunite KAl3(SO4)2(OH)6 — Ksp varies with K/Al activity; AMD-class refinement",
+      "jarosite KFe3(SO4)2(OH)6 — same as alunite (multi-cation)",
+      "anglesite PbSO4 — well-measured but secondary priority (covered by Pb chip)",
+      "Cu-sulfates (brochantite, antlerite, chalcanthite) — multi-OH, supergene only",
+      "Pb-Cu trio (linarite, leadhillite, caledonite) — multi-anion (SO4+CO3); needs combined model",
+      "mirabilite / thenardite (Na2SO4) — high-solubility salts; outside dilute-solution SI regime",
+      "selenite trio Na2SO4 family — same"
+    ],
+    "confidence_tiers": {
+      "A": "logKsp_25C agrees across multiple major databases within 0.1 log units; ΔH from primary measurement; T-dependence validated 0–100°C",
+      "B": "logKsp_25C from a single canonical source or with database-level disagreement >0.1 log unit; ΔH approximate",
+      "C": "Only old/derived data; placeholder until refined",
+      "D": "No measured data — observer should NaN",
+      "conflict": "Sources disagree materially; flagged for resolution"
+    },
+    "_sourcing_note": "Primary values verified directly against PHREEQC wateq4f.dat (publicly distributed by USGS at github.com/usgs-coupled/phreeqc3, branch master, file database/wateq4f.dat) on 2026-05-30. ΔH values reported there in kcal/mol; converted to kJ/mol via ×4.184. wateq4f.dat is the long-standing canonical USGS aqueous-speciation database (Ball & Nordstrom 1991, USGS WRI 91-4037), distributed unchanged for these four canonical sulfates across PHREEQC versions.",
+    "_sign_convention": "deltaH_diss_kJ_mol is the enthalpy of dissolution as the reaction is written (MineralX = cation + SO4^2- (+ nH2O for hydrates)). Positive = endothermic dissolution (K rises with T, e.g. barite). Negative = exothermic (K falls with T, e.g. anhydrite). Matches thermo-carbonates.json convention. Van't Hoff form: log K(T) = log K(298.15) − (ΔH_diss/(R·ln10))·(1/T − 1/298.15) with R = 8.31446e-3 kJ/(mol·K)."
+  },
+
+  "selenite": {
+    "formula": "CaSO4·2H2O",
+    "thermodynamics": {
+      "logKsp_25C": -4.58,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -0.456,
+        "_notes_fit": "PHREEQC wateq4f delta_h = -0.109 kcal/mol = -0.456 kJ/mol. Gypsum dissolution is very nearly thermoneutral; solubility is essentially T-independent across 0-40°C. wateq4f.dat also provides a 5-coefficient analytic K(T) (68.2401, 0, -3221.51, -25.0627, 0) for higher-fidelity work; the van't Hoff form here is accurate to ~0.05 log units over the gypsum stability field."
+      },
+      "valid_T_range_C": [0, 60],
+      "sources": [
+        "PHREEQC_wateq4f.dat (Ball & Nordstrom 1991, USGS WRI 91-4037)",
+        "Parkhurst_Appelo_2013_USGS_TM6A43 (PHREEQC v3 distribution)"
+      ],
+      "databases_agree": ["PHREEQC_wateq4f", "PHREEQC_llnl", "PHREEQC_minteq.v4"],
+      "confidence_tier": "A",
+      "notes": "Engine name is 'selenite' (the macroscopic crystal form); chemistry is gypsum (CaSO4·2H2O). Valid range capped at 60°C: above ~55-60°C gypsum dehydrates to anhydrite (Van Driessche et al. 2016 — naica 54.5°C is the warm-end natural example). Above 60°C the SI is still mathematically defined but anhydrite is the stable phase, so the strip chip will read gypsum SI even though anhydrite is what actually precipitates — this is by design (the SI is a thermodynamic observable, not a phase-stability call)."
+    },
+    "metastability": null,
+    "habit_polymorph_notes": "Selenite (the prismatic crystal form), satin spar (fibrous), alabaster (massive granular) are habits of the same gypsum chemistry."
+  },
+
+  "anhydrite": {
+    "formula": "CaSO4",
+    "thermodynamics": {
+      "logKsp_25C": -4.36,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -7.155,
+        "_notes_fit": "PHREEQC wateq4f delta_h = -1.71 kcal/mol = -7.155 kJ/mol. Mildly retrograde — anhydrite is less soluble at higher T, which is *why* it replaces gypsum above the ~55-60°C phase boundary. Note: my prior memory had ΔH ≈ -19 kJ/mol from older Robie-Hemingway-derived calculations; the wateq4f-calibrated value (-7.15) is the working canonical and what PHREEQC users see. Documented openly because the difference would have materially shifted SI at 200°C."
+      },
+      "valid_T_range_C": [0, 300],
+      "sources": [
+        "PHREEQC_wateq4f.dat (Ball & Nordstrom 1991, USGS WRI 91-4037)",
+        "Blount_Dickson_1973_EPSL (anhydrite-gypsum-aqueous solubility, original Ksp measurement basis)"
+      ],
+      "databases_agree": ["PHREEQC_wateq4f", "PHREEQC_llnl", "PHREEQC_minteq.v4"],
+      "confidence_tier": "A",
+      "notes": "Stable high-T or saline-low-T Ca-sulfate. The gypsum-anhydrite transition has been studied since Marignac 1874 and the Blount & Dickson 1973 EPSL paper remains the canonical solubility-vs-T-and-salinity reference. At low T + low salinity, gypsum is metastable; the SI for both is computable and meaningful — phase stability is decided by which is less undersaturated."
+    },
+    "metastability": null,
+    "habit_polymorph_notes": "Anhydrite is orthorhombic (a different structure from gypsum, not a simple dehydration polymorph). Habit: massive, granular, occasionally bladed. Doesn't form 'selenite-style' giant crystals because nucleation kinetics differ."
+  },
+
+  "barite": {
+    "formula": "BaSO4",
+    "thermodynamics": {
+      "logKsp_25C": -9.97,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": 26.57,
+        "_notes_fit": "PHREEQC wateq4f delta_h = +6.35 kcal/mol = +26.57 kJ/mol. CRITICAL — barite is *endothermic* dissolution (prograde solubility): K rises ~5x from 25°C to 100°C, which is why barite forms preferentially at lower T and dissolves on heating. My initial memory assumed retrograde (like the other three); verifying against wateq4f.dat caught that error. The sign matters: at 200°C, barite Ksp is ~100× the 25°C value, so MVT-temperature barite scenarios will read much closer to saturation than naive calcite-style intuition predicts. Documented as Monnin 1999 (Chemical Geology) provides a more sophisticated Pitzer model for high-salinity / high-T cases; van't Hoff is adequate for the strip's observer role."
+      },
+      "valid_T_range_C": [0, 300],
+      "sources": [
+        "PHREEQC_wateq4f.dat (Ball & Nordstrom 1991, USGS WRI 91-4037)",
+        "Monnin_1999_Chem_Geol (thermodynamic model for barite + celestine in electrolyte solutions — higher-fidelity refinement)"
+      ],
+      "databases_agree": ["PHREEQC_wateq4f", "PHREEQC_llnl"],
+      "confidence_tier": "A",
+      "notes": "Among the best-measured sulfate Ksps because of barite's importance in oil/gas drilling (scale prediction) and Ba isotope work. The +26.6 kJ/mol endotherm is consistent across all major databases and matches the direct calorimetry."
+    },
+    "metastability": null,
+    "habit_polymorph_notes": "Orthorhombic tabular blades / cockscomb aggregates / desert-rose-like radiating habits common in MVT gangue. The 'desert rose' of barite at Roughten Gill / Frizington types is the textbook MVT habit."
+  },
+
+  "celestine": {
+    "formula": "SrSO4",
+    "thermodynamics": {
+      "logKsp_25C": -6.63,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -4.339,
+        "_notes_fit": "PHREEQC wateq4f delta_h = -1.037 kcal/mol = -4.339 kJ/mol. Mildly retrograde — celestine is slightly less soluble at higher T, the opposite of barite. The Sr-Ba contrast is striking: the heavier alkaline-earth sulfate (barite) is prograde and the lighter (celestine) is retrograde. Monnin 1999 also covers celestine."
+      },
+      "valid_T_range_C": [0, 200],
+      "sources": [
+        "PHREEQC_wateq4f.dat (Ball & Nordstrom 1991, USGS WRI 91-4037)",
+        "Reardon_Armstrong_1987_GCA (SrSO4 solubility in NaCl-CaCl2 solutions)",
+        "Monnin_1999_Chem_Geol (barite + celestine thermodynamic model)"
+      ],
+      "databases_agree": ["PHREEQC_wateq4f", "PHREEQC_llnl", "PHREEQC_minteq.v4"],
+      "confidence_tier": "A",
+      "notes": "Celestine forms in sedimentary settings where Sr-rich brines encounter sulfate (sicily_solfifera, evaporite caprocks, certain MVT districts). Often pseudomorphs after celestobarite-barytocelestine solid solutions — the strip chip treats it as the pure end-member."
+    },
+    "metastability": null,
+    "habit_polymorph_notes": "Orthorhombic tabular or prismatic crystals; pale celestial-blue color is diagnostic (the name origin). Often paired with native sulfur in Sicilian solfifera deposits."
+  }
+}

@@ -9668,5 +9668,86 @@
 //   js/15-version.ts                  SIM_VERSION 162 → 163 + this block
 //   index.html                        rebuilt bundle
 //   tests-js/baselines/seed42_v163.json   regen
-const SIM_VERSION = 163;
+//
+// ============================================================
+// v164 (2026-05-30) — SULFATE Ksp ENGINE: strip is no longer SI-blind on the sulfate family
+// ============================================================
+//
+// 21-scenario observation sweep (tools/strip-survey.mjs, new) confirmed what
+// the prior handoff suspected: the strip's carbonate-only SI chips are blind
+// to a whole *family* of scenarios whose headline minerals are sulfates —
+// naica (selenite), sicily_solfifera (celestine), sulphur_bank (sulfur/Hg),
+// plus the already-contracted sabkha + searles. The survey came back clean
+// (no engine bug, all 21 trajectories explainable) but the instrument gap
+// was the clear next move. This commit is the observer-only Phase 1 of the
+// sulfate SI engine — analogous to the carbonate Phase 1 (Weeks 1-2) that
+// shipped 20c + 32b before any kinetic promotion.
+//
+// WHAT LANDED
+//   data/thermo-sulfates.json        — Ksp(T) + ΔH_diss for the 4 canonical
+//                                       simple sulfates: gypsum (engine name
+//                                       'selenite'), anhydrite, barite,
+//                                       celestine. Values verified DIRECTLY
+//                                       against PHREEQC wateq4f.dat
+//                                       (USGS-distributed: github.com/usgs-
+//                                       coupled/phreeqc3, branch master,
+//                                       file database/wateq4f.dat).
+//   js/20d-chemistry-sulfate-Ksp.ts  — Ksp loader mirror of 20c. Module-level
+//                                       fetch with fallback, van't Hoff T-
+//                                       dependence, listSulfatesAtTier,
+//                                       sulfatesReady(cb).
+//   js/40b-supersat-sulfate-Ksp.ts   — sulfateSaturationIndex(mineralId, fluid,
+//                                       T) using the geometric-mean activity
+//                                       IAP = a(cation)·a(SO4²⁻), divided by
+//                                       Ksp(T). Reuses speciesActivity() from
+//                                       20a (S is already SO4²⁻ by SPECIES_
+//                                       PROPERTIES convention — Phase-4-aware).
+//   tests-js/sulfate-si.test.ts      — engine unit tests at geological
+//                                       reference points.
+//
+// THE BARITE-IS-ENDOTHERMIC CATCH. Initial memory had ΔH_diss for barite as
+// retrograde (negative) like the other three sulfates. Verifying against
+// wateq4f.dat caught it: barite is +26.57 kJ/mol — *prograde* solubility
+// (K rises 50× from 25°C to 200°C). The sign matters at MVT temperatures;
+// at 100°C barite logKsp = -9.03 (vs. -9.97 at 25°C), so MVT barite SI
+// reads ~1 log unit lower than naive 25°C-Ksp extrapolation would predict.
+// Documented openly in the JSON's notes block. This is exactly the failure
+// mode the v145 hallucinated-Wright-1999 correction warned about — the
+// verification step earned its place in the workflow.
+//
+// SI VALIDATION AGAINST GEOLOGY (one-shot probe, see commit message)
+//   naica broth (Ca=320, S=300, T=45°C):   SI_selenite ≈ -0.18 (slightly
+//                                          undersat; the slow-growth condition
+//                                          that grows the Cave of Crystals).
+//   sicily broth (Sr=45, S=940, T=27°C):   SI_celestine ≈ +0.87 (strongly
+//                                          supersat; Sr-brine precipitates
+//                                          celestine + native sulfur).
+//   MVT broth (Ba=180, S=60, T=100°C):     SI_barite ≈ +3.05 (strongly
+//                                          supersat at hot-brine temps;
+//                                          standard gangue-formation regime).
+//
+// CONVENTIONS / KNOWN APPROXIMATIONS (Phase 1)
+//   - S taken as SO4²⁻ (oxidizing): correct where sulfates form; biased
+//     for reducing systems (sulphur_bank H2S pulses). Phase-4 Eh splits
+//     this honestly.
+//   - a(H2O) = 1 for the gypsum (CaSO4·2H2O) dissolution: matches PHREEQC's
+//     wateq4f log_k definition. Halite-saturated brines would benefit
+//     from Pitzer; research-mode follow-up.
+//   - Davies activity (γ ≤ 1 cap from 20a) valid to I ≈ 0.5 mol/kg.
+//
+// BASELINE DRIFT (seed42_v163 → seed42_v164): expected 30/30 BYTE-IDENTICAL.
+// Pure observer module — no consumer in the engine pipeline calls
+// sulfateSaturationIndex; the strip chip wiring lands in the next bump
+// (v165). The full suite (1627/1627) was green BEFORE the version-line
+// bump, confirming the new modules don't perturb anything.
+//
+// FILES
+//   data/thermo-sulfates.json         + new (sourced from PHREEQC wateq4f.dat)
+//   js/20d-chemistry-sulfate-Ksp.ts   + new (Ksp loader, mirror of 20c)
+//   js/40b-supersat-sulfate-Ksp.ts    + new (SI engine, mirror of 32b)
+//   tests-js/sulfate-si.test.ts       + new (engine unit tests)
+//   tools/strip-survey.mjs            + new (the per-scenario sweep that
+//                                       motivated this work)
+//   js/15-version.ts                  SIM_VERSION 163 → 164 + this block
+const SIM_VERSION = 164;
 

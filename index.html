@@ -14429,7 +14429,88 @@ let timeScale = 5.0;
 //   js/15-version.ts                  SIM_VERSION 162 → 163 + this block
 //   index.html                        rebuilt bundle
 //   tests-js/baselines/seed42_v163.json   regen
-const SIM_VERSION = 163;
+//
+// ============================================================
+// v164 (2026-05-30) — SULFATE Ksp ENGINE: strip is no longer SI-blind on the sulfate family
+// ============================================================
+//
+// 21-scenario observation sweep (tools/strip-survey.mjs, new) confirmed what
+// the prior handoff suspected: the strip's carbonate-only SI chips are blind
+// to a whole *family* of scenarios whose headline minerals are sulfates —
+// naica (selenite), sicily_solfifera (celestine), sulphur_bank (sulfur/Hg),
+// plus the already-contracted sabkha + searles. The survey came back clean
+// (no engine bug, all 21 trajectories explainable) but the instrument gap
+// was the clear next move. This commit is the observer-only Phase 1 of the
+// sulfate SI engine — analogous to the carbonate Phase 1 (Weeks 1-2) that
+// shipped 20c + 32b before any kinetic promotion.
+//
+// WHAT LANDED
+//   data/thermo-sulfates.json        — Ksp(T) + ΔH_diss for the 4 canonical
+//                                       simple sulfates: gypsum (engine name
+//                                       'selenite'), anhydrite, barite,
+//                                       celestine. Values verified DIRECTLY
+//                                       against PHREEQC wateq4f.dat
+//                                       (USGS-distributed: github.com/usgs-
+//                                       coupled/phreeqc3, branch master,
+//                                       file database/wateq4f.dat).
+//   js/20d-chemistry-sulfate-Ksp.ts  — Ksp loader mirror of 20c. Module-level
+//                                       fetch with fallback, van't Hoff T-
+//                                       dependence, listSulfatesAtTier,
+//                                       sulfatesReady(cb).
+//   js/40b-supersat-sulfate-Ksp.ts   — sulfateSaturationIndex(mineralId, fluid,
+//                                       T) using the geometric-mean activity
+//                                       IAP = a(cation)·a(SO4²⁻), divided by
+//                                       Ksp(T). Reuses speciesActivity() from
+//                                       20a (S is already SO4²⁻ by SPECIES_
+//                                       PROPERTIES convention — Phase-4-aware).
+//   tests-js/sulfate-si.test.ts      — engine unit tests at geological
+//                                       reference points.
+//
+// THE BARITE-IS-ENDOTHERMIC CATCH. Initial memory had ΔH_diss for barite as
+// retrograde (negative) like the other three sulfates. Verifying against
+// wateq4f.dat caught it: barite is +26.57 kJ/mol — *prograde* solubility
+// (K rises 50× from 25°C to 200°C). The sign matters at MVT temperatures;
+// at 100°C barite logKsp = -9.03 (vs. -9.97 at 25°C), so MVT barite SI
+// reads ~1 log unit lower than naive 25°C-Ksp extrapolation would predict.
+// Documented openly in the JSON's notes block. This is exactly the failure
+// mode the v145 hallucinated-Wright-1999 correction warned about — the
+// verification step earned its place in the workflow.
+//
+// SI VALIDATION AGAINST GEOLOGY (one-shot probe, see commit message)
+//   naica broth (Ca=320, S=300, T=45°C):   SI_selenite ≈ -0.18 (slightly
+//                                          undersat; the slow-growth condition
+//                                          that grows the Cave of Crystals).
+//   sicily broth (Sr=45, S=940, T=27°C):   SI_celestine ≈ +0.87 (strongly
+//                                          supersat; Sr-brine precipitates
+//                                          celestine + native sulfur).
+//   MVT broth (Ba=180, S=60, T=100°C):     SI_barite ≈ +3.05 (strongly
+//                                          supersat at hot-brine temps;
+//                                          standard gangue-formation regime).
+//
+// CONVENTIONS / KNOWN APPROXIMATIONS (Phase 1)
+//   - S taken as SO4²⁻ (oxidizing): correct where sulfates form; biased
+//     for reducing systems (sulphur_bank H2S pulses). Phase-4 Eh splits
+//     this honestly.
+//   - a(H2O) = 1 for the gypsum (CaSO4·2H2O) dissolution: matches PHREEQC's
+//     wateq4f log_k definition. Halite-saturated brines would benefit
+//     from Pitzer; research-mode follow-up.
+//   - Davies activity (γ ≤ 1 cap from 20a) valid to I ≈ 0.5 mol/kg.
+//
+// BASELINE DRIFT (seed42_v163 → seed42_v164): expected 30/30 BYTE-IDENTICAL.
+// Pure observer module — no consumer in the engine pipeline calls
+// sulfateSaturationIndex; the strip chip wiring lands in the next bump
+// (v165). The full suite (1627/1627) was green BEFORE the version-line
+// bump, confirming the new modules don't perturb anything.
+//
+// FILES
+//   data/thermo-sulfates.json         + new (sourced from PHREEQC wateq4f.dat)
+//   js/20d-chemistry-sulfate-Ksp.ts   + new (Ksp loader, mirror of 20c)
+//   js/40b-supersat-sulfate-Ksp.ts    + new (SI engine, mirror of 32b)
+//   tests-js/sulfate-si.test.ts       + new (engine unit tests)
+//   tools/strip-survey.mjs            + new (the per-scenario sweep that
+//                                       motivated this work)
+//   js/15-version.ts                  SIM_VERSION 163 → 164 + this block
+const SIM_VERSION = 164;
 
 // ── 18-constants.js ──
 
@@ -16643,6 +16724,197 @@ function nativeRedoxTent(fluid, peakO2, slope, floor) {
     const Eh = typeof fluid.Eh === 'number' ? fluid.Eh : 200;
     const o2eq = o2FromEh(Eh);
     return Math.max(floor, 1.0 - slope * Math.abs(o2eq - peakO2));
+}
+
+// ── 20d-chemistry-sulfate-Ksp.js ──
+
+// ============================================================
+// js/20d-chemistry-sulfate-Ksp.ts — Ksp(T) lookups for sulfates
+// ============================================================
+// 2026-05-30 strip-survey follow-up. Mirror of 20c (the carbonate Ksp
+// engine) for the SULFATE family: gypsum (engine name 'selenite'),
+// anhydrite, barite, celestine. Phase 1 / observer-only — the
+// existing 40-supersat-sulfate.ts σ-driver functions remain the
+// nucleation gates; this module exists so the strip's sulfate SI
+// chips can read true log Ω (IAP/Ksp) instead of the capped σ.
+//
+// Exposes:
+//   - getSulfateLogKsp(mineralId, T_celsius)  → log10(Ksp) at T
+//   - getSulfateKsp(mineralId, T_celsius)     → Ksp itself
+//   - getSulfateData(mineralId)               → full record (audit / UI)
+//   - getSulfateThermoTier(mineralId)         → 'A' | 'B' | 'C' | 'D' | 'conflict' | 'unknown'
+//   - listSulfatesAtTier(tier)                → array of mineralIds
+//   - sulfatesReady(cb)                       → notify when fetch completes
+//   - sulfateThermoCoverage()                 → tier counts (for thermo-coverage-check)
+//
+// T-dependence uses the same van't Hoff form as 20c:
+//   logKsp(T) = logKsp_25C − (ΔH_diss/(2.303·R))·(1/T_K − 1/298.15)
+// where R = 8.31446e-3 kJ/(mol·K). Sign convention matches 20c —
+// ΔH_diss positive = endothermic dissolution (K rises with T;
+// barite!), negative = retrograde (anhydrite, celestine, gypsum).
+//
+// All four canonical values verified 2026-05-30 against the publicly
+// distributed PHREEQC wateq4f.dat (USGS, github.com/usgs-coupled/
+// phreeqc3). Notable: BARITE is endothermic (+26.6 kJ/mol) — my
+// initial memory was wrong (caught by the verification step).
+// Use sulfate-prefixed constants to avoid redeclaring the carbonate
+// module's identifiers in the shared bundle scope.
+const _SULFATE_GAS_CONSTANT_kJ_mol_K = 8.31446e-3;
+const _SULFATE_T_REF_K = 298.15;
+const _SULFATE_LN10 = Math.LN10;
+// Fallback so callers that ask before the JSON fetch lands still get a
+// sensible Ksp. Values match the JSON; documented sources are in the
+// JSON file's _meta._sourcing_note.
+const THERMO_SULFATES_FALLBACK = {
+    selenite: {
+        formula: 'CaSO4·2H2O',
+        thermodynamics: {
+            logKsp_25C: -4.58,
+            logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -0.456 },
+            confidence_tier: 'A',
+        },
+    },
+    anhydrite: {
+        formula: 'CaSO4',
+        thermodynamics: {
+            logKsp_25C: -4.36,
+            logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -7.155 },
+            confidence_tier: 'A',
+        },
+    },
+    barite: {
+        formula: 'BaSO4',
+        thermodynamics: {
+            logKsp_25C: -9.97,
+            logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: 26.57 },
+            confidence_tier: 'A',
+        },
+    },
+    celestine: {
+        formula: 'SrSO4',
+        thermodynamics: {
+            logKsp_25C: -6.63,
+            logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -4.339 },
+            confidence_tier: 'A',
+        },
+    },
+};
+let THERMO_SULFATES = THERMO_SULFATES_FALLBACK;
+let THERMO_SULFATES_READY = false;
+const _sulfateListeners = [];
+function sulfatesReady(cb) {
+    if (THERMO_SULFATES_READY)
+        cb(THERMO_SULFATES);
+    else
+        _sulfateListeners.push(cb);
+}
+// Same multi-path fetch pattern as 20c / 00-mineral-spec.
+async function _loadThermoSulfates(paths) {
+    for (const p of paths) {
+        try {
+            const r = await fetch(p, { cache: 'no-store' });
+            if (r.ok)
+                return { doc: await r.json(), path: p };
+        }
+        catch (e) { /* try next */ }
+    }
+    throw new Error('all thermo-sulfates paths failed');
+}
+_loadThermoSulfates([
+    './data/thermo-sulfates.json',
+    '../data/thermo-sulfates.json',
+    '/data/thermo-sulfates.json',
+])
+    .then(({ doc, path }) => {
+    THERMO_SULFATES = doc;
+    THERMO_SULFATES_READY = true;
+    const n = Object.keys(doc).filter(k => !k.startsWith('_')).length;
+    console.info(`[thermo] loaded ${n} sulfate entries from ${path}`);
+    _sulfateListeners.splice(0).forEach(cb => { try {
+        cb(THERMO_SULFATES);
+    }
+    catch (e) {
+        console.error(e);
+    } });
+})
+    .catch(err => {
+    console.warn('[thermo] sulfate fetch failed; using fallback', err);
+    THERMO_SULFATES_READY = true;
+    _sulfateListeners.splice(0).forEach(cb => { try {
+        cb(THERMO_SULFATES);
+    }
+    catch (e) {
+        console.error(e);
+    } });
+});
+// ---- Lookup helpers ---------------------------------------------------
+function getSulfateData(mineralId) {
+    const entry = THERMO_SULFATES[mineralId];
+    if (!entry || typeof entry !== 'object' || mineralId.startsWith('_'))
+        return null;
+    return entry;
+}
+function getSulfateThermoTier(mineralId) {
+    const entry = getSulfateData(mineralId);
+    if (!entry || !entry.thermodynamics)
+        return 'unknown';
+    return entry.thermodynamics.confidence_tier || 'unknown';
+}
+// log10(Ksp) at temperature T (°C). Returns NaN if mineral missing or
+// thermodynamics not parseable. In practice the four canonical sulfates
+// (selenite/anhydrite/barite/celestine) always return a real number
+// even pre-fetch (fallback covers them).
+function getSulfateLogKsp(mineralId, T_celsius) {
+    const entry = getSulfateData(mineralId);
+    if (!entry || !entry.thermodynamics)
+        return NaN;
+    const thermo = entry.thermodynamics;
+    if (typeof thermo.logKsp_25C !== 'number')
+        return NaN;
+    const logKsp_25C = thermo.logKsp_25C;
+    // T-correction via van't Hoff. Same form + sign convention as 20c.
+    const fit = thermo.logKsp_fit;
+    if (fit && fit.form === 'vanthoff' && typeof fit.deltaH_diss_kJ_mol === 'number') {
+        const T_K = T_celsius + 273.15;
+        if (T_K <= 0)
+            return logKsp_25C;
+        const exponent = -(fit.deltaH_diss_kJ_mol / (_SULFATE_LN10 * _SULFATE_GAS_CONSTANT_kJ_mol_K)) *
+            (1 / T_K - 1 / _SULFATE_T_REF_K);
+        return logKsp_25C + exponent;
+    }
+    return logKsp_25C;
+}
+// Convenience: Ksp itself. Note barite's Ksp is ~10^-10 at 25°C; that's
+// fine in float64 (no underflow risk like azurite at 10^-45).
+function getSulfateKsp(mineralId, T_celsius) {
+    const log = getSulfateLogKsp(mineralId, T_celsius);
+    if (!isFinite(log))
+        return NaN;
+    return Math.pow(10, log);
+}
+function listSulfatesAtTier(tier) {
+    const out = [];
+    for (const id in THERMO_SULFATES) {
+        if (id.startsWith('_'))
+            continue;
+        if (getSulfateThermoTier(id) === tier)
+            out.push(id);
+    }
+    return out.sort();
+}
+// Tier-count coverage report; mirrors carbonateThermoCoverage but
+// without the kinetic axis (no sulfate kinetic engine planned).
+function sulfateThermoCoverage() {
+    const thermo = { A: 0, B: 0, C: 0, D: 0, conflict: 0, unknown: 0 };
+    let total = 0;
+    for (const id in THERMO_SULFATES) {
+        if (id.startsWith('_'))
+            continue;
+        total++;
+        const t = getSulfateThermoTier(id);
+        thermo[t] = (thermo[t] || 0) + 1;
+    }
+    return { thermo, total };
 }
 
 // ── 20d-localization-resolvers.js ──
@@ -26683,6 +26955,120 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
 });
+
+// ── 40b-supersat-sulfate-Ksp.js ──
+
+// ============================================================
+// js/40b-supersat-sulfate-Ksp.ts — Ksp-based SI for sulfates
+// ============================================================
+// Mirror of 32b-supersat-carbonate-Ksp.ts for the sulfate family.
+// Pure observer (Phase 1 / 2026-05-30): consumed by the strip's
+// sulfate SI chips (SI_selenite/anhydrite/barite/celestine, added
+// in 99j) so the strip stops being SI-blind on the evaporite +
+// sulfate-vein scenario family (naica / sicily_solfifera /
+// sulphur_bank / sabkha / searles).
+//
+// The existing 40-supersat-sulfate.ts σ-driver functions remain the
+// nucleation gates and are unchanged by this module. The relationship
+// between this module's SI and 40's σ is the same as the relationship
+// between 32b's SI and 32's σ for carbonates: SI is the rigorous
+// thermodynamic observable (log Ω = log IAP − log Ksp(T)); σ is the
+// engine's capped nucleation driver (Math.min(ratio, cap) × T/pH
+// modifiers). They tell different stories — both useful.
+//
+// Public:
+//   - sulfateSaturationIndex(mineralId, fluid, T_C) → log10 Ω  (NaN if undef)
+//   - sulfateOmega(mineralId, fluid, T_C)            → 10^SI    (0 if NaN)
+//
+// Dispatch covers four canonical simple sulfates:
+//   selenite/gypsum  CaSO4·2H2O  → SI = log a(Ca²⁺) + log a(SO4²⁻) − logKsp
+//   anhydrite        CaSO4       → same form
+//   barite           BaSO4       → log a(Ba²⁺) + log a(SO4²⁻) − logKsp
+//   celestine        SrSO4       → log a(Sr²⁺) + log a(SO4²⁻) − logKsp
+//
+// 'gypsum' is accepted as an alias for 'selenite' — same chemistry,
+// same Ksp.
+//
+// =============================================================
+// Convention notes — these matter for interpretation
+// =============================================================
+//
+// 1. **S is taken to be SO₄²⁻** by the SPECIES_PROPERTIES convention
+//    (js/20a). Real fluids partition S between sulfate and sulfide
+//    species depending on Eh / pH; this module reads total S as
+//    if fully oxidized. For the supergene and evaporite scenarios
+//    the sulfate chips matter to, that's the geologically correct
+//    speciation (sulfates only form where SO₄ dominates). For
+//    reducing systems (sulphur_bank's H₂S-dominant pulses) the SI
+//    will read artificially supersaturated — but those systems aren't
+//    the targets of these chips. Documented Phase 1 simplification.
+//
+// 2. **a(H₂O) = 1** for gypsum's `CaSO4·2H2O = Ca + SO4 + 2H2O`. The
+//    PHREEQC wateq4f log_k is also defined at unit water activity —
+//    so matching the database convention is the right call here. For
+//    halite-saturated brines a(H₂O) drops to ~0.75 and gypsum SI would
+//    be ~0.25 units low; Pitzer-grade work is research-mode territory.
+//
+// 3. **Davies activity coefficients** (capped at γ ≤ 1) used via the
+//    existing speciesActivity() in 20a — same path as the carbonate
+//    SI engine. Valid to I ≈ 0.5 mol/kg; clamps gracefully above.
+// Geometric-mean SI for AB(SO4) sulfates: SI = log10(a_cation · a_SO4) − log10(Ksp).
+// Returns NaN if cation/SO4 absent or thermo not loaded — call sites
+// (strip chip reads) treat NaN as null (chip hides that sample).
+function _SI_AB_sulfate(mineralId, fluid, T, cationKey) {
+    if (!fluid)
+        return NaN;
+    const I = ionicStrength(fluid);
+    const a_cation = speciesActivity(fluid, cationKey, I);
+    if (!(a_cation > 0))
+        return NaN;
+    const a_SO4 = speciesActivity(fluid, 'S', I);
+    if (!(a_SO4 > 0))
+        return NaN;
+    const logKsp = getSulfateLogKsp(mineralId, T);
+    if (!isFinite(logKsp))
+        return NaN;
+    return Math.log10(a_cation) + Math.log10(a_SO4) - logKsp;
+}
+function saturationIndex_selenite(fluid, T) {
+    return _SI_AB_sulfate('selenite', fluid, T, 'Ca');
+}
+function saturationIndex_anhydrite(fluid, T) {
+    return _SI_AB_sulfate('anhydrite', fluid, T, 'Ca');
+}
+function saturationIndex_barite(fluid, T) {
+    return _SI_AB_sulfate('barite', fluid, T, 'Ba');
+}
+function saturationIndex_celestine(fluid, T) {
+    return _SI_AB_sulfate('celestine', fluid, T, 'Sr');
+}
+// =============================================================
+// Public observers — strip chips in 99j consume these.
+// =============================================================
+// log10 Ω = log10(IAP / Ksp). 0 = equilibrium, +1 = 10× supersat,
+// −1 = 10× undersat. NaN if data unavailable. Consumers (strip chip
+// reads) treat NaN as null (chip hides that sample).
+function sulfateSaturationIndex(mineralId, fluid, T_C) {
+    if (!fluid)
+        return NaN;
+    switch (mineralId) {
+        case 'selenite':
+        case 'gypsum': return saturationIndex_selenite(fluid, T_C);
+        case 'anhydrite': return saturationIndex_anhydrite(fluid, T_C);
+        case 'barite': return saturationIndex_barite(fluid, T_C);
+        case 'celestine': return saturationIndex_celestine(fluid, T_C);
+        default: return NaN;
+    }
+}
+// Ω = IAP / Ksp = 10^SI. Returns 0 (not NaN) for missing data so
+// engine call sites can treat omega=0 as "cannot precipitate" without
+// defensive checks. Matches carbonateOmega convention in 32b.
+function sulfateOmega(mineralId, fluid, T_C) {
+    const SI = sulfateSaturationIndex(mineralId, fluid, T_C);
+    if (!isFinite(SI))
+        return 0;
+    return Math.pow(10, SI);
+}
 
 // ── 41-supersat-sulfide.js ──
 

@@ -379,6 +379,16 @@ const EXPORTS = [
   'setCarbonateKspActiveFor',
   'snapshotCarbonateKspFlags',
   'restoreCarbonateKspFlags',
+  // v164 sulfate Ksp engine (20d + 40b) — observer-only Phase 1.
+  'getSulfateLogKsp',
+  'getSulfateKsp',
+  'getSulfateData',
+  'getSulfateThermoTier',
+  'listSulfatesAtTier',
+  'sulfateThermoCoverage',
+  'sulfatesReady',
+  'sulfateSaturationIndex',
+  'sulfateOmega',
   // Week 4 — wall-mesh localization resolvers + per-vertex accessors
   // + Henry's-Law pH equilibration (20d-localization-resolvers.ts).
   'fluidAtMeshVertex',
