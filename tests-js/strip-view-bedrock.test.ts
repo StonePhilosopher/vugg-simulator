@@ -205,7 +205,7 @@ describe('strip recorder — instrumentation', () => {
     expect(m.axes.height_positions).toBe(16);
     // Phase 3: depth axis pulled from the cavity voxel grid (4 slices).
     expect(m.axes.depth_positions).toBe(4);
-    expect(m.chips.length).toBeGreaterThan(40); // 1 wall + 5 special + 11 carbonate + 41 ions
+    expect(m.chips.length).toBeGreaterThan(40); // v165: 1 wall + 6 special (+ concentration v161) + 11 carbonate + 4 sulfate + 41 ions = 63
     // System groupings should be populated
     const systems = new Set(m.chips.map((c: any) => c.system));
     expect(systems.has('wall')).toBe(true);

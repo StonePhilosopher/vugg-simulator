@@ -212,6 +212,13 @@ const _HELIX_FULL_NAMES: { [id: string]: string } = {
   pCO2:         'Equilibrium pCO₂ (bar)',
   f_ord:        'Dolomite ordering fraction (Kim 2023; 0=disordered, 1=ordered)',
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
+  // v165 — Sulfate System section (PHREEQC wateq4f Ksp via 20d + 40b).
+  // Strip is no longer SI-blind on the sulfate/evaporite family
+  // (naica, sicily_solfifera, sulphur_bank, sabkha, searles).
+  SI_selenite:  'Saturation index — gypsum/selenite (CaSO₄·2H₂O, log Ω)',
+  SI_anhydrite: 'Saturation index — anhydrite (CaSO₄, log Ω)',
+  SI_barite:    'Saturation index — barite (BaSO₄, log Ω; barite is ENDOTHERMIC — K rises with T)',
+  SI_celestine: 'Saturation index — celestine (SrSO₄, log Ω)',
 };
 
 // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 3 — ambient radial-depth selector
@@ -489,6 +496,48 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   });
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
+  // v165 — SULFATE SYSTEM SI chips. 4 chips consuming the Ksp engine
+  // (20d) + SI dispatcher (40b) shipped in v164 as observer-only reads,
+  // matching the carbonate-SI pattern above. Resolves the "carbonate-
+  // SI-only" instrument gap the 2026-05-30 strip survey identified:
+  // naica's selenite, sicily_solfifera's celestine, and the sulphur_bank
+  // / sabkha / searles sulfate trajectories are now SI-legible. Range
+  // [-8, 8] matches the carbonate SI chips for visual comparability.
+  //
+  // The chip itself stays the SI_<mineral> token; hover shows the formula
+  // + the barite-endotherm warning per the v24 tooltip convention. The
+  // 4 readers all delegate to the same sulfateSaturationIndex dispatch.
+  if (typeof sulfateSaturationIndex === 'function') {
+    const _readSulfateSI = (mineralId: string) => (s: any, w: any, i: number, c: number) => {
+      const f = _chipFluid(s, w, i, c);
+      if (!f) return null;
+      const T = (s.ring_temperatures || [])[i];
+      const T_use = (typeof T === 'number') ? T : 25;
+      const si = sulfateSaturationIndex(mineralId, f, T_use);
+      return isFinite(si) ? si : null;
+    };
+    params.push({
+      id: 'SI_selenite', label: 'SI sel', fullName: _HELIX_FULL_NAMES.SI_selenite,
+      min: -8, max: 8, color: 0xE8DDB5,
+      read: _readSulfateSI('selenite'),
+    });
+    params.push({
+      id: 'SI_anhydrite', label: 'SI anh', fullName: _HELIX_FULL_NAMES.SI_anhydrite,
+      min: -8, max: 8, color: 0xC9B98E,
+      read: _readSulfateSI('anhydrite'),
+    });
+    params.push({
+      id: 'SI_barite', label: 'SI bar', fullName: _HELIX_FULL_NAMES.SI_barite,
+      min: -8, max: 8, color: 0xB8B0A8,
+      read: _readSulfateSI('barite'),
+    });
+    params.push({
+      id: 'SI_celestine', label: 'SI cel', fullName: _HELIX_FULL_NAMES.SI_celestine,
+      min: -8, max: 8, color: 0x9EC5D9,
+      read: _readSulfateSI('celestine'),
+    });
+  }
+
   // Ions — id, min, max. Ranges cover the value envelope each ion actually
   // reaches ACROSS all scenarios (measured by tools/strip-chip-envelope.mjs),
   // because vug fluids span dilute meteoric water to evaporite/hydrothermal
@@ -625,12 +674,14 @@ function _helixBuildLegend() {
   }
   // Section boundaries inside _HELIX_CHEM_PARAMS (matches the IIFE
   // build order: 1 primary, 6 specials (v161 added `concentration`),
-  // 11 carbonate-system (Week 3), then 41 ions = 59 total).
+  // 11 carbonate-system (Week 3), 4 sulfate-system (v165), then 41
+  // ions = 63 total).
   const sections: Array<{ title: string, start: number, end: number }> = [
     { title: 'Wall',            start: 0,  end: 1 },
     { title: 'Conditions',      start: 1,  end: 7 },
     { title: 'Carbonate System', start: 7,  end: 18 },
-    { title: 'Ions',            start: 18, end: _HELIX_CHEM_PARAMS.length },
+    { title: 'Sulfate System',  start: 18, end: 22 },
+    { title: 'Ions',            start: 22, end: _HELIX_CHEM_PARAMS.length },
   ];
 
   // v22: banner layout. Header at top (title + bulk + focus pills in

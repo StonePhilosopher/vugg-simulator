@@ -9749,5 +9749,38 @@
 //   tools/strip-survey.mjs            + new (the per-scenario sweep that
 //                                       motivated this work)
 //   js/15-version.ts                  SIM_VERSION 163 → 164 + this block
-const SIM_VERSION = 164;
+//
+// ============================================================
+// v165 (2026-05-30) — STRIP CHIPS: SI_selenite / anhydrite / barite / celestine
+// ============================================================
+//
+// Wires the v164 sulfate Ksp engine into the strip recorder + helicoid
+// overlay. Four observer-only chips, mirror of the carbonate SI chips
+// shipped in Week 3 (32b → 99j):
+//
+//   SI_selenite   gypsum/selenite (CaSO4·2H2O)
+//   SI_anhydrite  anhydrite (CaSO4)
+//   SI_barite     barite (BaSO4)
+//   SI_celestine  celestine (SrSO4)
+//
+// Each reads _chipFluid then sulfateSaturationIndex(mineralId, fluid, T)
+// (40b). Range [−8, 8] matches the carbonate SI chips for visual
+// comparability. New legend section "Sulfate System" sits between
+// "Carbonate System" and "Ions" — section boundaries updated to
+// (7, 18, 22, end) for the four-section layout.
+//
+// Naming note: the 'gypsum' alias is accepted by sulfateSaturationIndex
+// (same Ksp, same chemistry) but the chip is SI_selenite to match the
+// engine catalog's mineralId. Hover tooltip names both habits.
+//
+// BASELINE DRIFT (seed42_v164 → seed42_v165): expected 30/30 BYTE-IDENTICAL.
+// Pure observer — adds chip enumerations to the recorder but does not
+// perturb engine state. Verified before commit.
+//
+// FILES
+//   js/99j-helix-overlay.ts          + 4 _HELIX_FULL_NAMES entries
+//                                     + 4 params.push reading sulfateSaturationIndex
+//                                     + legend section "Sulfate System"
+//   js/15-version.ts                 SIM_VERSION 164 → 165 + this block
+const SIM_VERSION = 165;
 

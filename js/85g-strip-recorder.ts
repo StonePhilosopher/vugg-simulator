@@ -174,6 +174,12 @@ class StripRecorder {
     const id = String(p?.id || '');
     if (p?.primary) return 'wall';
     if (id === 'T' || id === 'pH' || id === 'Eh' || id === 'salinity' || id === 'O2') return 'special';
+    // v165: sulfate SI chips (selenite/anhydrite/barite/celestine) read
+    // the new 40b sulfateSaturationIndex. Classified into their own
+    // 'sulfate' group so the strip-view selector + helicoid legend can
+    // toggle them as a set, parallel to the carbonate-system group.
+    if (id === 'SI_selenite' || id === 'SI_anhydrite' ||
+        id === 'SI_barite'   || id === 'SI_celestine') return 'sulfate';
     if (id === 'DIC' || id === 'CO2aq' || id === 'HCO3' || id === 'CO3_2' ||
         id.startsWith('SI_') || id === 'pCO2' || id === 'f_ord') return 'carbonate';
     return 'ion';
