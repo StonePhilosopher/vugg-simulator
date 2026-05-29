@@ -32,6 +32,13 @@ export const STRIP_DIGEST_SCENARIOS = [
   // reset to 1.0 on the fresh_pulse flood); a regression to the one-way
   // ratchet would move the wall samples and trip this tripwire.
   'searles_lake',
+  // supergene_oxidation (Tsumeb gossan): a clean, cold, oxidizing supergene
+  // trajectory — the acid window (pH dip), the carbonate ramp (DIC), calcite
+  // undersaturation. NOT bisbee: bisbee's T is contaminated by the ungated
+  // ambient_cooling thermal-pulse mechanic (flagged for review), so its
+  // trajectory may legitimately move when that's addressed — held out of the
+  // tripwire until then; its contract pins only the robust event-driven signals.
+  'supergene_oxidation',
 ];
 
 // Key carbonate-system chips + the evaporite driver. Always present in the

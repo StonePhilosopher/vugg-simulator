@@ -216,3 +216,122 @@ describe('strip chemistry contract — searles_lake (evaporite concentration cyc
     expect(series.crossings(T, 40)).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('strip chemistry contract — bisbee (supergene copper paragenesis)', () => {
+  let ds: any;
+  beforeAll(() => { ds = recordScenario('bisbee'); }, 60000);
+
+  // NOTE ON TEMPERATURE. bisbee's T is deliberately NOT pinned here. The
+  // scenario's events stop setting T after the oxidation_zone (step 145, T=25)
+  // until final_drying (step 305, T=20), and the unconditional ambient_cooling
+  // thermal-pulse mechanic (85d) injects random +30–150°C hydrothermal spikes
+  // through that 160-step cold supergene window (observed: T spiking to ~357°C
+  // during the azurite/malachite/chrysocolla cascade, which is a ~25°C
+  // near-surface process). That T noise is flagged for review, not pinned as a
+  // contract. These assertions pin the EVENT-DRIVEN chemistry that drives the
+  // paragenesis regardless of the T excursions.
+
+  it('redox evolves from reducing primary ore to oxidizing supergene zone (O2)', () => {
+    if (!ds) return;
+    const o2 = chipSeries(ds, 'O2', { depth: 'wall' });
+    // Observed (wall): O2 0.039 (very reducing — chalcopyrite/bornite stable
+    // primary porphyry) → 1.77 peak (oxidizing supergene). The redox story is
+    // carried by O2, not Eh (Eh is an un-driven input here, flat at the 200 mV
+    // default — the ehFromO2 derivation is flag-gated off).
+    expect(series.first(o2)!).toBeLessThan(0.1);   // reducing primary
+    expect(series.peak(o2)).toBeGreaterThan(1.0);  // oxidizing supergene
+  });
+
+  it('pH crashes acid on pyrite weathering, limestone buffers it back toward neutral', () => {
+    if (!ds) return;
+    const pH = chipSeries(ds, 'pH', { depth: 'wall' });
+    // Observed (wall): sawtooth ~4.6 ↔ 7.0. Sulfuric acid from pyrite
+    // oxidation drives pH down; the limestone wall buffers it back up, peaking
+    // at the azurite_peak monsoon (pH 7.0). Multiple crossings = the cyclic
+    // acid-pulse / buffer-recovery supergene rhythm.
+    expect(series.min(pH)).toBeLessThan(5);
+    expect(series.peak(pH)).toBeGreaterThan(6.8);
+    expect(series.crossings(pH, 6)).toBeGreaterThanOrEqual(2);
+  });
+
+  it('DIC spikes at the azurite-peak monsoon (the Bisbee-blue window)', () => {
+    if (!ds) return;
+    const dic = chipSeries(ds, 'DIC', { depth: 'wall' });
+    // Observed (wall): DIC baseline ~35 ppm, spiking to ~177 at azurite_peak
+    // (CO3+80 monsoon infiltration) then falling at co2_drop. The high-pCO2
+    // window that nucleates azurite — the showpiece "Bisbee Blue".
+    expect(series.first(dic)!).toBeLessThan(60);
+    expect(series.peak(dic)).toBeGreaterThan(150);
+  });
+
+  it('calcite stays undersaturated — the limestone wall is a CO3 SOURCE, not a sink', () => {
+    if (!ds) return;
+    const si = chipSeries(ds, 'SI_calcite', { depth: 'wall' });
+    // Observed (wall): SI_calcite −5 … −0.13, never reaching saturation. The
+    // acidic/CO2-charged supergene fluids aggressively DISSOLVE the limestone
+    // walls, feeding CO3 to the copper carbonates (azurite/malachite) rather
+    // than precipitating calcite. peak < 0 guards that the wall keeps dissolving.
+    expect(series.peak(si)).toBeLessThan(0);
+  });
+
+  it('evaporative concentration fires only at the terminal drying (no spurious reflood)', () => {
+    if (!ds) return;
+    const conc = chipSeries(ds, 'concentration', { depth: 'wall' });
+    // Observed (wall): flat 1.0 until final_drying (step 305, fluid_surface_ring
+    // → 0, every ring vadose) boosts it ×3 to ~3.0; no refill follows, so it
+    // holds. bisbee has no rewetting event, which is why the v161 rewetting fix
+    // left its baseline byte-identical — this pins that (first ~1.0, peak ~3.0).
+    expect(series.first(conc)!).toBeLessThan(1.5);
+    expect(series.peak(conc)).toBeGreaterThan(2.5);
+  });
+});
+
+describe('strip chemistry contract — supergene_oxidation (Tsumeb gossan)', () => {
+  let ds: any;
+  beforeAll(() => { ds = recordScenario('supergene_oxidation'); }, 60000);
+
+  it('the acid window opens then the limestone buffers pH back toward neutral', () => {
+    if (!ds) return;
+    const pH = chipSeries(ds, 'pH', { depth: 'wall' });
+    // Observed (wall): starts ~6.78; the four supergene_acidification pulses
+    // (steps 5/8/12/16) sawtooth pH down to ~4.69 against the carbonate buffer
+    // (the acid window where scorodite/jarosite/alunite nucleate); meteoric_flush
+    // (step 20) ends it and pH recovers to ~6.5 for the rest of the run.
+    expect(series.first(pH)!).toBeGreaterThan(6);   // near-neutral start
+    expect(series.min(pH)).toBeLessThan(5);         // acid window
+    expect(series.last(pH)!).toBeGreaterThan(6);    // buffered recovery
+  });
+
+  it('stays oxidizing throughout — a cold oxygenated gossan (never reducing)', () => {
+    if (!ds) return;
+    const o2 = chipSeries(ds, 'O2', { depth: 'wall' });
+    // Observed (wall): O2 0.59…2.2, never crashing to the reducing regime.
+    // Unlike bisbee (which STARTS reducing in the primary porphyry), Tsumeb's
+    // 1st-stage gossan is oxidizing from the start.
+    expect(series.min(o2)).toBeGreaterThan(0.4);
+  });
+
+  it('Pb + Mo pulse delivers the wulfenite ingredients', () => {
+    if (!ds) return;
+    const pb = chipSeries(ds, 'Pb', { depth: 'wall' });
+    const mo = chipSeries(ds, 'Mo', { depth: 'wall' });
+    // Observed (wall): Pb 60→100, Mo 15→40 at the pb_mo_pulse event. Wulfenite
+    // (PbMoO4) needs both; the pulse is the step that supplies them.
+    expect(series.last(pb)!).toBeGreaterThan(series.first(pb)!);
+    expect(series.peak(pb)).toBeGreaterThan(90);
+    expect(series.last(mo)!).toBeGreaterThan(series.first(mo)!);
+    expect(series.peak(mo)).toBeGreaterThan(35);
+  });
+
+  it('carbonate availability ramps while calcite stays undersaturated (limestone CO3 source)', () => {
+    if (!ds) return;
+    const dic = chipSeries(ds, 'DIC', { depth: 'wall' });
+    const si = chipSeries(ds, 'SI_calcite', { depth: 'wall' });
+    // Observed (wall): DIC 106→212 ppm (rising carbonate for smithsonite/
+    // cerussite/malachite); SI_calcite −4.5…−0.5, undersaturated throughout —
+    // the dolomite/limestone wall dissolves to FEED the carbonate phases
+    // rather than precipitating calcite itself.
+    expect(series.last(dic)!).toBeGreaterThan(series.first(dic)!);
+    expect(series.peak(si)).toBeLessThan(0);
+  });
+});
