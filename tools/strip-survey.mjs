@@ -64,8 +64,24 @@ const chipParams = wantIds
 const EPS = 1e-6;
 const SPARK = '▁▂▃▄▅▆▇█';
 const SPARK_W = 64;  // downsample long runs so the grid stays one-scroll legible
+// Relative-range threshold: if the chip's observed range is small compared to
+// its magnitude (< RELATIVE_FLAT_FRAC × max(|lo|, |hi|, EPS)), render flat
+// instead of stretching the microvariation across the full sparkline height.
+// Without this, sub-0.01 SI noise in caves (stalactite_demo, zoned_dripstone)
+// reads as a dramatic decline when it's essentially flat — a false alarm I
+// had to talk myself out of last session.
+const RELATIVE_FLAT_FRAC = 0.01;
 function sparkline(series, lo, hi) {
-  const span = (hi - lo) || 1;
+  const span = hi - lo;
+  const scale = Math.max(Math.abs(lo), Math.abs(hi), EPS);
+  // If the absolute range is meaninglessly small relative to the chip's
+  // magnitude, the line is effectively flat — render the lowest bar across
+  // the whole width so the reader's eye doesn't chase noise.
+  if (span <= RELATIVE_FLAT_FRAC * scale) {
+    const cols = Math.min(SPARK_W, series.length);
+    return SPARK[0].repeat(cols);
+  }
+  const usableSpan = span || 1;
   // bucket into <=SPARK_W columns, averaging non-null values per bucket
   const cols = Math.min(SPARK_W, series.length);
   const out = [];
@@ -75,7 +91,7 @@ function sparkline(series, lo, hi) {
     let sum = 0, n = 0;
     for (let i = a; i < b; i++) { const v = series[i]; if (v != null && isFinite(v)) { sum += v; n++; } }
     if (!n) { out.push(' '); continue; }
-    const t = Math.max(0, Math.min(1, (sum / n - lo) / span));
+    const t = Math.max(0, Math.min(1, (sum / n - lo) / usableSpan));
     out.push(SPARK[Math.min(SPARK.length - 1, Math.round(t * (SPARK.length - 1)))]);
   }
   return out.join('');

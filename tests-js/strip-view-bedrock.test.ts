@@ -211,6 +211,10 @@ describe('strip recorder — instrumentation', () => {
     expect(systems.has('wall')).toBe(true);
     expect(systems.has('special')).toBe(true);
     expect(systems.has('carbonate')).toBe(true);
+    // v165: sulfate SI chips (SI_selenite/anhydrite/barite/celestine)
+    // route to their own 'sulfate' group via _classifyChipSystem. Gap
+    // I introduced when adding them — guarded now.
+    expect(systems.has('sulfate')).toBe(true);
     expect(systems.has('ion')).toBe(true);
   });
 
