@@ -13,6 +13,10 @@ const MINERAL_ENGINES = {
   siderite: grow_siderite,
   rhodochrosite: grow_rhodochrosite,
   dolomite: grow_dolomite,
+  // v146 (Week 11): HMC — disordered Mg-calcite Ca(1-x)Mg(x)CO3, x=0.05-0.30.
+  // Kinetic precursor to ordered dolomite per Kim 2023; persists metastable
+  // without cycling. Per-crystal mg_content state.
+  HMC: grow_HMC,
   sphalerite: grow_sphalerite,
   wurtzite: grow_wurtzite,
   fluorite: grow_fluorite,

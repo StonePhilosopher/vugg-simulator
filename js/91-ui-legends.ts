@@ -150,6 +150,22 @@ function runSimulation() {
   const sim = new VugSimulator(conditions, events);
   legendsSim = sim;
 
+  // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
+  // Attach a StripRecorder so this Simulation run is captured. Same
+  // pattern as 96-ui-random.ts. Helicoid-as-recorder reframe (Shy's
+  // 2026-05-26 design). Finalize + save at end of sim loop below.
+  try {
+    if (typeof StripRecorder === 'function') {
+      sim._stripRecorder = new StripRecorder(sim, {
+        duration_steps: totalSteps,
+        notes: `Simulation — ${scenarioName} @ seed ${seed}`,
+      });
+      const m = sim._stripRecorder.getManifest();
+      if (m) m.scenario_id = String(scenarioName || 'unknown');
+    }
+  } catch (_e) { /* strip view is optional */ }
+  // === END HELIX-OVERLAY-FORK ADDITION ==============================
+
   for (let s = 0; s < totalSteps; s++) {
     const log = sim.run_step();
     const show = (s % 5 === 0) || log.some(l => l.includes('EVENT') || l.includes('NUCLEATION') || l.includes('🧱'));
@@ -168,6 +184,19 @@ function runSimulation() {
       stepLineCounts[s + 1] = stepLines;
     }
   }
+
+  // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
+  // Sim loop done — finalize the strip recording and persist. Non-
+  // blocking + non-fatal; the playback continues even if save fails.
+  if (sim._stripRecorder) {
+    try {
+      const dataset = sim._stripRecorder.finalize();
+      if (typeof stripStorageSave === 'function' && typeof stripStorageAvailable === 'function' && stripStorageAvailable()) {
+        stripStorageSave(dataset).catch(() => { /* silent */ });
+      }
+    } catch (_e) { /* silent */ }
+  }
+  // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
   // Where the epilogue begins. Skipped (left at -1) when format_summary
   // returns no lines, which can happen for zero-crystal scenarios.

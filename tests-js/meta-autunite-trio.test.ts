@@ -174,7 +174,12 @@ describe('Autunite-group meta- trio — dehydration paramorphs (v85)', () => {
     // The pin captures the trio's emergence; the architecture-audit
     // test (v78) was updated in v85 to count paramorph_origin so its
     // "torbernite/zeunerite still fires" check still passes.
-    it('at least one of the trio appears across the seed sample', () => {
+    it('at least one of the trio appears across the seed sample', { timeout: 60000 }, () => {
+      // v161: explicit 60s timeout. v160's per-voxel diffusion made this
+      // 8-seed schneeberg sweep slower; it passes in isolation (~13s) but
+      // tips past the 30s default under parallel suite CPU contention. The
+      // coverage assertion is unaffected — sim output is byte-identical.
+      //
       // v137 retune: sulfide twin_laws batch cascade shifted earlier
       // crystals' Ca/As/U consumption in seed 42's schneeberg run,
       // suppressing all 3 autunite-group parents in that specific

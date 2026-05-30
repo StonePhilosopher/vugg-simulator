@@ -320,6 +320,14 @@ function idleTogglePlay() {
     const scenario = document.getElementById('idle-scenario').value;
     idleSim = idleCreateSim(scenario);
     if (!idleSim) return;
+    // HELIX-OVERLAY-FORK ADDITION (strip view v155+, 2026-05-26):
+    // Zen sessions are long-running interactive sims. Attach a
+    // recorder; the _growCapacity hook handles overflow if the user
+    // plays for thousands of steps. Save fires on Finish (below) or
+    // on mode-leave (switchMode in 94-ui-menu.ts).
+    if (typeof _attachStripRecorderToSim === 'function') {
+      _attachStripRecorderToSim(idleSim, `zen_${scenario}`, `Zen — ${scenario}`);
+    }
     const logEl = document.getElementById('idle-log');
     logEl.innerHTML = '';
     idleAppendLog(logEl, `🌀 Zen Mode — endless crystal growth begins`, 'log-step');
@@ -403,6 +411,12 @@ function idleFinish() {
   document.getElementById('idle-finish-btn').disabled = true;
   document.getElementById('idle-scenario').disabled = false;
 
+  // HELIX-OVERLAY-FORK ADDITION (strip view v155+): finalize the Zen
+  // recorder before nulling idleSim. _saveStripRecorderIfPresent
+  // skips empty recordings.
+  if (typeof _saveStripRecorderIfPresent === 'function') {
+    _saveStripRecorderIfPresent(idleSim);
+  }
   idleSim = null;
   // Refresh AFTER nullifying idleSim so the button falls back to its
   // initial "💎 Collect all" disabled label rather than freezing on the
@@ -468,6 +482,11 @@ function idleUpdateSpeed(val) {
 function idlePickScenario(val) {
   // Reset if not running
   if (!idleRunning) {
+    // HELIX-OVERLAY-FORK ADDITION (strip view v155+): if a previous
+    // (finished) sim has a hanging recorder, save it before nulling.
+    if (typeof _saveStripRecorderIfPresent === 'function') {
+      _saveStripRecorderIfPresent(idleSim);
+    }
     idleSim = null;
     idleHistory = [];
     const logEl = document.getElementById('idle-log');

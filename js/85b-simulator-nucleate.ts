@@ -333,24 +333,148 @@ Object.assign(VugSimulator.prototype, {
     if (effective < 1.0 && rng.random() >= effective) return true;
   }
   const cap = spec?.max_nucleation_count;
-  if (cap == null) return false;
-  let n = 0;
-  for (const c of this.crystals) {
-    // v84 (2026-05-19): also count crystals that paramorph-originated
-    // as this mineral. A realgar crystal that transformed to
-    // pararealgar (light-induced isomerization, applyLightTransitions)
-    // still consumed a realgar nucleation event when it originally
-    // nucleated. Without this check, the cap effectively reopens each
-    // time a paramorph fires — letting MORE of the original mineral
-    // nucleate beyond its spec'd max. Sister case: argentite →
-    // acanthite (T paramorph) and borax → tincalconite (dehydration)
-    // also benefit from this cap accounting.
-    if (c.mineral !== mineral && c.paramorph_origin !== mineral) continue;
-    if (c.enclosed_by != null || c.dissolved) continue;
-    n++;
-    if (n >= cap) return true;
+  if (cap != null) {
+    let n = 0;
+    for (const c of this.crystals) {
+      // v84 (2026-05-19): also count crystals that paramorph-originated
+      // as this mineral. A realgar crystal that transformed to
+      // pararealgar (light-induced isomerization, applyLightTransitions)
+      // still consumed a realgar nucleation event when it originally
+      // nucleated. Without this check, the cap effectively reopens each
+      // time a paramorph fires — letting MORE of the original mineral
+      // nucleate beyond its spec'd max. Sister case: argentite →
+      // acanthite (T paramorph) and borax → tincalconite (dehydration)
+      // also benefit from this cap accounting.
+      if (c.mineral !== mineral && c.paramorph_origin !== mineral) continue;
+      if (c.enclosed_by != null || c.dissolved) continue;
+      n++;
+      if (n >= cap) return true;
+    }
   }
+  // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 2b (v160) — depletion-halo
+  // strangulation gate. Runs LAST so it's RNG-neutral and the cap
+  // accounting above is unchanged: byte-identical to the diffusion-only
+  // path until the first step where the whole accessible wall is
+  // strangled for a mineral whose bulk-view σ still wants to fire.
+  // See _wallStrangledFor for the geological + mechanistic rationale.
+  if (this._wallStrangledFor(mineral)) return true;
   return false;
+},
+
+// PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 2b (v160) — depletion-halo
+// strangulation gate (Putnis 2009, Reviews in Mineralogy v70 §5).
+//
+// A fast-growing crystal consumes ions from its local boundary layer
+// faster than diffusion can replenish them, dropping the local σ below
+// the nucleation threshold across a 3D halo. New nuclei can't form
+// where the wall is depleted — the classic "alpha crystal" exclusion-
+// zone texture. v160's per-voxel 3D diffusion makes these halos real
+// spatial objects: mass balance debits the d=0 wall cell; diffusion
+// spreads the depletion laterally across the wall mesh and radially
+// inward, while the interior reservoir (d=1,2,3) replenishes from the
+// other side. Strangulation occurs only where consumption outpaces the
+// diffusive supply — the coupled mechanism this whole arc was built for.
+//
+// Why the gate is needed: each nucleation engine's σ-gate reads the
+// BULK view (conditions.fluid = ring_fluids[equator]), which is NOT
+// debited by mass balance — it's the flow-fed cavity average. So an
+// engine can decide "the average chemistry favors mineral X" while
+// EVERY accessible wall cell is locally strangled below σ_crit. This
+// gate samples the per-cell wall chemistry (the boundary voxels, via
+// mesh.cells) and blocks nucleation when NO cell clears the threshold.
+//
+// Returns true (strangled → block) only when the per-cell machinery is
+// available AND no wall cell reaches σ_crit. Returns false (not
+// strangled) defensively in every other case, so the gate never blocks
+// in headless/legacy paths and never throws.
+//
+// RNG-neutral: consumes no RNG, only σ evaluations. Bounded cost: only
+// reached when the engine's bulk σ > σ_crit gate already passed (the &&
+// short-circuit puts _atNucleationCap last), and the per-cell scan
+// early-exits the instant any cell clears — which is the common case
+// (cells ≈ bulk until a dominant phase depletes them), so the scan is
+// usually a single σ-eval.
+_wallStrangledFor(mineral) {
+  const gate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
+    ? MINERAL_GATES_REGISTRY[mineral]
+    : null;
+  const sigmaCrit = gate ? gate.sigma_crit : null;
+  if (typeof sigmaCrit !== 'number') return false;
+  const sigmaFn = this.conditions[`supersaturation_${mineral}`];
+  if (typeof sigmaFn !== 'function') return false;
+
+  // CRITICAL precondition: only strangulation-block when the BULK view
+  // itself says the mineral wants to nucleate (bulk σ > σ_crit). If the
+  // bulk σ is below threshold, the mineral isn't trying to fire via the
+  // cavity-average chemistry at all (e.g. σ=0 because the ingredient
+  // cations aren't in the broth) — that's not depletion-halo
+  // strangulation, it's just absence, and the engine's own σ gate
+  // handles it. Returning false here in that case is essential for
+  // byte-identity: several engines (malachite, azurite, smithsonite,
+  // cerussite, hydrozincite, …) call _atNucleationCap in their FIRST
+  // guard, BEFORE their σ check and BEFORE their substrate-pick RNG
+  // draws. If this gate returned true on a σ=0 mineral it would
+  // early-return the engine and skip those RNG draws — desyncing the
+  // sequence in every scenario. Gating on bulk σ > σ_crit keeps the
+  // gate dormant (byte-identical) except in genuine strangulation: the
+  // cavity average favors the mineral, yet every wall cell is locally
+  // depleted below σ_crit.
+  let bulkSigma = 0;
+  try {
+    bulkSigma = sigmaFn.call(this.conditions);
+  } catch (_e) {
+    return false;
+  }
+  if (!(Number.isFinite(bulkSigma) && bulkSigma > sigmaCrit)) return false;
+
+  const wall = this.wall_state;
+  const mesh = (wall && wall.meshFor) ? wall.meshFor(this) : null;
+  if (!mesh || !mesh.cells || !mesh.cells.length) return false;
+  const ringCount = wall.ring_count | 0;
+  const N = wall.cells_per_ring | 0;
+  if (ringCount < 1 || N < 1) return false;
+  if (mesh.cells.length < ringCount * N) return false;
+
+  const ringTemps = this.ring_temperatures || [];
+  // Swap conditions.fluid + .temperature to per-cell values inside the
+  // loop, restore in finally — same pattern as _perVertexNucleationSample
+  // and _runEngineForCrystal.
+  const savedFluid = this.conditions.fluid;
+  const savedTemp = this.conditions.temperature;
+  let anyClears = false;
+  try {
+    for (let r = 0; r < ringCount && !anyClears; r++) {
+      const tempR = (r < ringTemps.length) ? ringTemps[r] : savedTemp;
+      this.conditions.temperature = tempR;
+      for (let c = 0; c < N; c++) {
+        const cell = mesh.cells[r * N + c];
+        const cellFluid = cell ? cell.fluid : null;
+        if (!cellFluid) continue;
+        this.conditions.fluid = cellFluid;
+        let sigma = 0;
+        try {
+          sigma = sigmaFn.call(this.conditions);
+        } catch (_e) {
+          sigma = 0;
+        }
+        // A cell "clears" if it reaches the bare σ_crit. We deliberately
+        // ignore per-substrate paragenesis discounts here: the discount
+        // lowers the threshold for nucleation ON a documented host, but
+        // strangulation is about bare-wall depletion. Using bare σ_crit
+        // is the conservative definition of "the wall is depleted" — it
+        // can only UNDER-report strangulation (never over-block), which
+        // is the safe direction.
+        if (Number.isFinite(sigma) && sigma > sigmaCrit) {
+          anyClears = true;
+          break;
+        }
+      }
+    }
+  } finally {
+    this.conditions.fluid = savedFluid;
+    this.conditions.temperature = savedTemp;
+  }
+  return !anyClears;  // strangled when no cell cleared σ_crit
 },
 
   // Q1a paragenesis hook — consult MINERAL_PARAGENESIS substrate-

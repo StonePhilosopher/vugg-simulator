@@ -175,7 +175,15 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
         .toBeGreaterThan(0);
     });
 
-    it('at least one pharmacolite crystal appears across the seed sample', { timeout: 90000 }, () => {
+    it('at least one pharmacolite crystal appears across the seed sample', { timeout: 150000 }, () => {
+      // v160 timeout bump (90s → 150s): the per-voxel 3D diffusion adds
+      // ~4-6 ms/step, so this 32-seed × ~200-step loop runs ~43 s in
+      // isolation but tips past 90 s under parallel suite CPU contention.
+      // The assertion itself is fine — pharmacolite forms in ~24 of the
+      // first 80 seeds under v160 (probed) — this is purely the heavier
+      // diffusion cost making the seed sweep slower. Same "bump the
+      // timeout" remedy as v137.
+      //
       // v137 retune: sulfide twin_laws batch perturbed the RNG cascade
       // further and the v136 16-seed sample flaked under parallel
       // test-suite execution (test timed out at 30s default). Widened

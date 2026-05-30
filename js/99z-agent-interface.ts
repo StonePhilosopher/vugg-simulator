@@ -243,16 +243,52 @@ function _agentHeadlessRun(scenarioName: string, opts: any): any {
   const steps = (opts.steps != null && opts.steps > 0) ? (opts.steps | 0) : ((defaultSteps | 0) || 200);
 
   const sim = new VugSimulator(conditions, events);
+  // === HELIX-OVERLAY-FORK ADDITION (strip view v155+, 2026-05-26) ===
+  // Attach a StripRecorder so agent runs produce a dataset too.
+  // Agents rarely want IDB pollution (a batch of 50 headless runs
+  // would saturate the 5-slot cap immediately), so the dataset is
+  // returned to the caller via the result object and NOT auto-saved.
+  // Callers that want persistence can dispatch stripStorageSave
+  // themselves on the returned dataset.
+  let stripRecorder: any = null;
+  if (typeof StripRecorder === 'function') {
+    try {
+      stripRecorder = new StripRecorder(sim, {
+        duration_steps: steps,
+        notes: `Agent — ${scenarioName} @ seed ${seed}`,
+      });
+      const m = stripRecorder.getManifest();
+      if (m) m.scenario_id = String(scenarioName);
+      sim._stripRecorder = stripRecorder;
+    } catch (_e) { stripRecorder = null; }
+  }
+  // === END HELIX-OVERLAY-FORK ADDITION ==============================
+
   for (let s = 0; s < steps; s++) {
     sim.run_step();
   }
+
+  // === HELIX-OVERLAY-FORK ADDITION (strip view v155+) ===============
+  // Finalize the recorder. Dataset returned in result; IDB save is the
+  // caller's choice.
+  let stripDataset: any = null;
+  if (stripRecorder) {
+    try { stripDataset = stripRecorder.finalize(); } catch (_e) { stripDataset = null; }
+  }
+  // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
   // Stash metadata so _agentSpecimenJSON can include it in the dump.
   const wnd: any = (typeof window !== 'undefined') ? window : (globalThis as any);
   wnd.vugg = wnd.vugg || {};
   wnd.vugg._lastRunMeta = { scenario: scenarioName, seed, shape_seed: shapeSeed };
 
-  return { sim, seed, shape_seed: shapeSeed, scenario: scenarioName, total_steps: steps };
+  return {
+    sim, seed, shape_seed: shapeSeed, scenario: scenarioName, total_steps: steps,
+    // v155: strip dataset for the run. Agents can serialize via
+    // stripSerialize, save via stripStorageSave, or just inspect.
+    // null if the recorder wasn't available.
+    stripDataset,
+  };
 }
 
 // ---- Keyboard handler (G / R / N / S / 1-9 / 0) ----

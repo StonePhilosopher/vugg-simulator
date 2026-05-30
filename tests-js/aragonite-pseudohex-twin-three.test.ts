@@ -135,16 +135,35 @@ describe('aragonite-pseudohex-twin (99i) — _resolveCrystalGeomToken dispatch',
     expect(_resolveCrystalGeomToken(c, c.habit)).not.toBe('aragonite_pseudohex_twin');
   });
 
-  it('twinned aragonite in air-mode cavity → twin token (beats dripstone)', () => {
+  // BUG-aragonite-twin-cave-morphology.md FIX: air-mode aragonite is
+  // acicular frostwork REGARDLESS of twin structure. Real cave aragonite
+  // (Hill & Forti 1997 §10; Frisia et al. 2002, Grotte de Clamouse)
+  // grows as radiating needle sprays; the cyclic-sextet pseudo-hex twin
+  // manifests as a 6-fold needle cluster, not a smooth column. The
+  // air-mode override now fires above the twin branches and is
+  // unconditional on twin state.
+  it('twinned aragonite in air-mode cavity → frostwork (cave morphology beats twin column)', () => {
     const c = mkAragonite({
       twinned: true, twin_law: 'cyclic_sextet',
       growth_environment: 'air',
     });
+    expect(_resolveCrystalGeomToken(c, c.habit)).toBe('aragonite_frostwork');
+  });
+
+  it('twinned aragonite in FLUID mode → pseudo-hex twin column (still correct)', () => {
+    // Fluid-mode twinned aragonite (metamorphic, sea-floor cement,
+    // hydrothermal vent) keeps the smooth pseudo-hex column — only the
+    // air (cave) path diverts to frostwork.
+    const c = mkAragonite({ twinned: true, twin_law: 'cyclic_sextet', growth_environment: 'fluid' });
     expect(_resolveCrystalGeomToken(c, c.habit)).toBe('aragonite_pseudohex_twin');
   });
 
-  it('twinned aragonite with acicular habit still resolves to twin', () => {
-    const c = mkAragonite({ twinned: true, twin_law: 'cyclic_sextet', habit: 'acicular_needle' });
-    expect(_resolveCrystalGeomToken(c, c.habit)).toBe('aragonite_pseudohex_twin');
+  it('NON-twinned air-mode aragonite → frostwork (v156)', () => {
+    const c = mkAragonite({
+      twinned: false,
+      growth_environment: 'air',
+      habit: 'acicular_needle',
+    });
+    expect(_resolveCrystalGeomToken(c, c.habit)).toBe('aragonite_frostwork');
   });
 });

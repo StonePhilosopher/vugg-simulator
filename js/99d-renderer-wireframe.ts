@@ -17,6 +17,22 @@ function _isDripstoneEligibleCanonical(prim) {
 
 function _lookupCrystalPrimitive(crystal) {
   if (!crystal) return PRIM_RHOMBOHEDRON;
+  // Air-mode aragonite → frostwork, twinned OR not (BUG-aragonite-twin-
+  // cave-morphology.md). Parallels the 99i Three.js override + closes the
+  // wireframe parity gap: v156 added frostwork to the Three.js renderer
+  // but never to the wireframe, so air-mode aragonite here fell through
+  // to either the cyclic-sextet twin column (twinned) or the dripstone
+  // icicle (non-twinned, acicular canonical is dripstone-eligible) — both
+  // geologically wrong for cave aragonite, which grows as radiating
+  // acicular sprays regardless of twin state (the pseudo-hex twin shows
+  // up as a 6-fold needle cluster, not a smooth column — Frisia et al.
+  // 2002, Grotte de Clamouse). Placed ABOVE the twin + dripstone
+  // overrides so air-mode aragonite hits frostwork first; the aragonite
+  // twin primitives below now catch only FLUID-mode crystals, where the
+  // smooth pseudo-hex column is correct.
+  if (crystal.mineral === 'aragonite' && crystal.growth_environment === 'air') {
+    return PRIM_ARAGONITE_FROSTWORK;
+  }
   // v134 (2026-05-22): twin-law geometry override. Each check below
   // is a mineral-scoped + law-scoped guard that returns a hand-rolled
   // twin primitive instead of the canonical habit dispatch. Runs BEFORE

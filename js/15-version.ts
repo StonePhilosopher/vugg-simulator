@@ -7599,8 +7599,23 @@
 //   future readers tracing the adamite entry's history land on the
 //   truth rather than the fabrication. Same with the handoff doc:
 //   updated in this commit to note the v142 correction inline.
-
-// v143: schema-bug repairs in the twin_laws data layer — restructured
+// ================================================================
+// MERGE (2026-05-28): the multidimensional fork folded back into
+//   vugg-simulator main. The two repos forked at v142 (commit
+//   7157fea) and BOTH then independently used "v143" for unrelated
+//   work. vugg-simulator main's v143 = the twin-law schema-bug repairs
+//   documented in THIS block — folded in here via data/minerals.json
+//   twin_laws + tools/twin-law-check.mjs + tests-js/twin-law-check.
+//   test.ts. The multidimensional fork's v143 = the sabkha open-system
+//   flip, which continued the carbonate-geochem arc to v160 (the
+//   CANONICAL forward line that follows). vugg's parallel "v143" is NOT
+//   a separate version number in the merged repo; its content lives in
+//   the merged twin_laws data layer. Original write-up preserved below
+//   for the provenance trail.
+// ================================================================
+//
+// [folded-in — was vugg-simulator main's v143] schema-bug repairs in
+//   the twin_laws data layer — restructured
 //   corundum / ruby / sapphire from raw-string entries to proper
 //   objects with miller_indices + _source citations; fixed atacamite
 //   "{various}" placeholder to "{110}" + documented [544] axis-twin
@@ -7636,5 +7651,2176 @@
 //   uncommon outside metamorphosed corundum). Same values applied
 //   to ruby + sapphire (Cr-bearing and Fe-Ti-bearing varieties of
 //   the same R-3c structure).
-const SIM_VERSION = 143;
+// ----------------------------------------------------------------
+// v143 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 4c —
+// sabkha_dolomitization flipped open_to_atmosphere=true. First
+// behavioral change in the carbonate-engine arc; calibration drift
+// confined to sabkha_dolomitization (no other scenario flipped).
+//
+// THE CHANGE
+//
+//   data/scenarios.json5 sabkha_dolomitization entry adds:
+//     open_to_atmosphere: true
+//     atmospheric_pCO2_bar: 4.2e-4   (modern atmospheric)
+//
+// WHY
+//
+//   Kim, Sun et al. (2023) Science 382:915 — the cyclic-Ω-modulation
+//   dolomitization mechanism explicitly involves atmospheric exchange.
+//   The evaporating brine surface IS in contact with the atmosphere;
+//   carbonate-system pCO2 equilibrium with atmospheric pCO2 is the
+//   boundary condition that drives the cyclic Ω crossings the
+//   mechanism needs. Pre-flip the scenario simulated dolomitization
+//   in a sealed cavity — geochemically wrong for the Coorong + Persian
+//   Gulf analogs the scenario cites.
+//
+//   Tutorial_travertine NOT flipped despite the proposal calling for
+//   it. Its co2_degas_with_reheat events explicitly drive pH UP by
+//   removing DIC; if atmospheric equilibration ran each step, it
+//   would immediately undo each event's pH change and break the
+//   tutorial's step-by-step pedagogical mechanism (player presses
+//   Advance, sees pulse-driven pH rise, watches calcite supersaturate).
+//   The scenario IS open to atmosphere in real Mammoth Hot Springs,
+//   but the pedagogical compression doesn't accommodate continuous
+//   equilibration. Documented inline at the scenarios.json5 entry as
+//   intentionally-not-flipped + the geological reasoning.
+//
+// SABKHA SEED-42 DRIFT (geological assessment)
+//
+//   mineral       v142    v143    direction
+//   ─────────────────────────────────────────────────────────────
+//   dolomite      13.6 µm 34.1 µm BIGGER (2.5×) — Kim mechanism
+//                                  strengthened by atmospheric
+//                                  exchange. Geologically correct.
+//   aragonite     51.5 µm 137.2 µm BIGGER — Mg-rich brine favors
+//                                  aragonite at higher pH that
+//                                  equilibration drives toward.
+//   calcite       absent  nucleated calcite is a typical sabkha
+//                                  co-product; appearing post-flip
+//                                  is geologically expected
+//   selenite      47622 µm same   unchanged — Ca-sulfate, pH-
+//                                  insensitive (sanity check)
+//   quartz        46.5 µm 47 µm   +1 crystal, similar size — RNG-
+//                                  cascade drift; quartz isn't pH-
+//                                  sensitive
+//   sylvite       0 µm    0.5 µm  micron-scale RNG drift; sylvite
+//                                  is KCl, pH-insensitive
+//
+//   All expects_species (dolomite, anhydrite, selenite) still fire
+//   the same way (anhydrite wasn't firing pre-flip either — that's
+//   a pre-existing aspirational expect, not introduced by v143).
+//   Priority targets: dolomite stronger ✓, selenite unchanged ✓,
+//   anhydrite still aspirational (no regression).
+//
+// CASCADE DRIFT IN OTHER SCENARIOS
+//
+//   ZERO. Only sabkha_dolomitization had open_to_atmosphere flipped;
+//   every other scenario still has open_to_atmosphere=undefined →
+//   resolver returns false → equilibration no-op. Verified: the
+//   calibration test diff is confined to sabkha_dolomitization.
+//
+// WHAT v143 SHIPS
+//
+//   data/scenarios.json5 (MOD): sabkha_dolomitization +
+//     open_to_atmosphere: true, atmospheric_pCO2_bar: 4.2e-4
+//   tests-js/baselines/seed42_v143.json (NEW)
+//   js/15-version.ts (MOD): this block + SIM_VERSION 142 → 143
+//
+//   No engine code changes. The equilibrator + run_step wiring
+//   landed flag-off in d8247e8 (Week 4b); this commit is the
+//   geological flip + baseline regen.
+// ----------------------------------------------------------------
+// v144 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 9 —
+// calcite engine promotion. CARBONATE_KSP_ACTIVE flipped true +
+// CARBONATE_KSP_ACTIVE_PER_MINERAL.calcite flipped true. Calcite is
+// the first carbonate to ride on the textbook SI engine + PWP rate
+// law instead of the empirical sigma + 5×(σ-1) formula. See the
+// per-scenario drift table below for what changed; the wider lesson
+// is that 8 months of empirical-engine ballast is replaced by
+// Plummer-Wigley-Parkhurst 1978 + Davies activity correction +
+// Bjerrum partition + Mg poisoning sigmoid — all real chemistry.
+//
+// SEE COMMIT MESSAGE for the dense per-scenario drift table and
+// calibration rationale. This block is the version history anchor.
+//
+// SETTINGS FLIPPED
+//   js/32b-supersat-carbonate-Ksp.ts:
+//     CARBONATE_KSP_ACTIVE: false → true
+//     CARBONATE_KSP_ACTIVE_PER_MINERAL.calcite: false → true
+//   js/32-supersat-carbonate.ts:
+//     MINERAL_GATES_calcite.sigma_crit: 1.3 → 1.5
+//     (empirical sigma ≈ Ca·CO3/eq vs textbook omega = IAP/Ksp —
+//     different absolute scales; 1.5 reflects heterogeneous
+//     nucleation barrier on cavity walls per Morse & Arvidson 2002)
+//   js/52b-engines-carbonate-kinetics.ts:
+//     _PWP_CALIBRATION_FACTOR: 1.0 → 5.0e+4
+//     (typical pwp_um/step at factor=1 ≈ 3e-5 across calcite-firing
+//     scenarios; 5e4 lands median growth at ~1.5 µm/step, matching
+//     empirical engine's ~0.5-15 µm/step regime)
+//   js/52-engines-carbonate.ts:
+//     grow_calcite growth rate calc gated by kspSupersatActiveFor —
+//     when calcite SI flag is on, rate = calciteRate (PWP × Mg
+//     poisoning) → pwpRateToSimMicronsPerStep. Empirical 5×(σ-1)
+//     stays as fallback path for any future flag-off testing.
+//
+// PER-SCENARIO CALCITE DRIFT (v143 → v144 seed42 baseline)
+//
+//   LOST calcite (was minimal in v143, none in v144):
+//     bisbee                       1 dissolved 345 µm → 0
+//                                  (was already dissolving anyway)
+//     pulse                        1 active 870 µm → 0
+//                                  (generic testing scaffold)
+//     sunnyside_american_tunnel    1 active 36 µm → 0
+//                                  (was thread-fine, near noise floor)
+//
+//   GAINED calcite (v143 had none; v144 fires geologically):
+//     tutorial_mn_calcite          0 → 1 active 2745 µm
+//                                  (PEDAGOGICAL FIX — the Mn-doped
+//                                   calcite tutorial wasn't growing
+//                                   the title mineral pre-v144)
+//     reactive_wall                0 → 1 dissolved 3527 µm
+//                                  (acid pulses dissolve early calcite
+//                                   — Sweetwater MVT paragenesis docs
+//                                   this as Stage I dissolution event)
+//     searles_lake                 0 → 12 active 14 µm each
+//                                  (saline-lake calcite dusting — small
+//                                   crystals geologically expected)
+//     ultramafic_supergene         0 → 9 active 0.8 µm each
+//                                  (sub-micron dustings, near noise)
+//
+//   DRIFTED calcite mass (firing preserved, size changed):
+//     mvt                          1205 → 34014 µm (28×)
+//                                  hot 150°C acidic MVT brine
+//                                  accelerates PWP via Arrhenius +
+//                                  a(H+); geologically right but
+//                                  cabinet-scale crystals at gangue
+//                                  position — broth re-tune candidate
+//     marble_contact_metamorphism  19134 → 63496 µm (3.3×)
+//                                  skarn marble at 600°C — Arrhenius
+//                                  accelerates; marble IS calcite
+//                                  so geological direction is correct
+//     tutorial_travertine          167 → 2110 µm (12.6×)
+//                                  hot-spring deposition — PWP
+//                                  Arrhenius captures real travertine
+//                                  growth; more dramatic pedagogically
+//     deccan_zeolite               1493 → 15773 µm (10×) but 2→1
+//                                  one big crystal instead of two
+//                                  (RNG cascade)
+//     jeffrey_mine                 8346 → 5766 µm (0.69×)
+//                                  cooler skarn conditions slow PWP
+//     stalactite_demo              52943 → 3013 µm (0.057×)
+//                                  cold cave T (~10-15°C) drops
+//                                  PWP k1..k3 substantially. Crystal
+//                                  count rose 4→9 (more nucleation
+//                                  events) but each is smaller. Total
+//                                  calcite mass dropped ~8×. Phase
+//                                  1c broth re-tune candidate for
+//                                  visual impact.
+//     zoned_dripstone_cave         44773 → 2055 µm (0.046×)
+//                                  same cold-cave story; Phase 1c
+//                                  candidate.
+//     sabkha_dolomitization        0 → 0.9 µm (trivial)
+//
+// CASCADE DRIFT IN OTHER MINERALS
+//
+//   When calcite nucleation/growth changes, the rng.uniform(0.8, 1.2)
+//   call in grow_calcite shifts the rng sequence for everything
+//   downstream. Cascade-drift in non-calcite minerals appears in 15
+//   of 30 scenarios; per-mineral counts and sizes shift in the
+//   typical RNG-cascade pattern (some crystals lose, some gain,
+//   broad mineralogy preserved). No EXPECTED species disappeared
+//   except where the calcite-specific table above documents.
+//
+// THE GEOLOGICAL LESSON
+//
+//   The empirical engine's `rate = 5.0 × (sigma - 1.0)` formula was
+//   T-independent and pH-independent. PWP's `r = k1·a(H+) + k2·a(H2CO3)
+//   + k3` × (1 - 1/Ω) is both, with Arrhenius scaling of all three
+//   k's. The drift pattern — hot acidic scenarios speeding up, cold
+//   alkaline scenarios slowing down — is the geology landing.
+//
+//   The cold-cave undergrow direction (stalactite_demo,
+//   zoned_dripstone_cave) is scientifically right but visually
+//   problematic for game-as-demo. Phase 1c expectation: raise
+//   initial Ca and/or CO3 in those scenarios so omega stays higher,
+//   compensating for the lower-T PWP slowdown. The empirical engine
+//   was massively over-extrapolating cave calcite growth (real cave
+//   stalactites grow 0.001-1 mm/year; 264 µm/sim-step at v143 is
+//   physically impossible for any reasonable sim-step time scale).
+//
+// FOLLOW-UP WORK
+//
+//   Phase 1c scenario re-anchoring candidates (not blocking Week 10):
+//     - stalactite_demo: bump Ca + CO3 for visual stalactite scale
+//     - zoned_dripstone_cave: same as above
+//     - mvt: dial-back calcite via lower CO3 (currently overshoots)
+//     - sunnyside_american_tunnel: bump CO3 for Stage VI manganocalcite
+//       cap firing (boss has ONE such specimen — rare but real)
+//   Week 10: dolomite engine promotion (same flag-flip + sigma_crit
+//     + calibration pattern; dolomite already has Kim 2023 wired)
+//   Week 11: HMC promotion (BLOCKED on HMC-as-mineral via vugg-add-
+//     mineral skill — see HANDOFF-CARBONATE-PHASE-1-W2-W8.md item #3)
+//   Week 12: aragonite promotion
+//
+// WHAT v144 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 143 → 144
+//   js/32b-supersat-carbonate-Ksp.ts: flag flips + docstring update
+//   js/32-supersat-carbonate.ts: sigma_crit 1.3 → 1.5
+//   js/52b-engines-carbonate-kinetics.ts: calibration factor + docs
+//   js/52-engines-carbonate.ts: grow_calcite PWP wiring
+//   tests-js/baselines/seed42_v144.json: regenerated baseline
+//   tests-js/carbonate-week9-promotion.test.ts: validation tests
+// ----------------------------------------------------------------
+// v145 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 10 —
+// dolomite engine promotion. CARBONATE_KSP_ACTIVE_PER_MINERAL.dolomite
+// flipped true. Dolomite joins calcite on the textbook SI engine + PWP
+// rate law. PWP calibration factor (5e4) is shared from W9 calcite —
+// already lands dolomite typical growth at 0.6-2.7 µm/step matching
+// empirical 0.5-4 µm/step range. Kim 2023 cyclic-omega ordering gate
+// remains the real kinetic barrier (encoded in dolomiteRate's
+// (0.30 + 0.70 × f_ord) factor); sigma_crit promoted to 10 to
+// acknowledge a heterogeneous-nucleation barrier separate from the
+// ordering gate.
+//
+// SEE COMMIT MESSAGE for the dense per-scenario drift table.
+//
+// SETTINGS FLIPPED
+//   js/32b-supersat-carbonate-Ksp.ts:
+//     CARBONATE_KSP_ACTIVE_PER_MINERAL.dolomite: false → true
+//   js/32-supersat-carbonate.ts:
+//     MINERAL_GATES_dolomite.sigma_crit: 1.0 → 10
+//     (empirical sigma was 4th-root of Ca·Mg·CO3²/eq vs textbook
+//      omega = a(Ca)·a(Mg)·a(CO3)² / Ksp. Probe near-threshold band
+//      median omega = 504; sigma_crit = 10 is a meaningful kinetic
+//      barrier that doesn't double-count Kim's ordering gate)
+//   js/52-engines-carbonate.ts:
+//     grow_dolomite growth rate calc gated by kspSupersatActiveFor —
+//     when dolomite SI flag is on, rate = dolomiteRate (PWP with
+//     Kim ordering gate built in) → pwpRateToSimMicronsPerStep.
+//     Empirical base_rate × (0.30 + 0.70 × f_ord) stays as fallback.
+//
+// PER-SCENARIO DOLOMITE DRIFT (v144 → v145 seed42 baseline)
+//
+//   sabkha_dolomitization        1 active 49 µm → 1 active 2.5 µm
+//                                MICROCRYSTALLINE — geologically what
+//                                Kim 2023 dolomite actually looks like
+//                                (real sabkha dolomite is 5-50 µm
+//                                dolomicrite). v144's 49 µm came from
+//                                the empirical engine's much-larger
+//                                INITIAL growth zone (~13 µm/step) that
+//                                landed before the cabinet cavity
+//                                capped at fill=1.0. PWP at sabkha
+//                                alkaline cold conditions is only
+//                                0.2 µm/step (Arrhenius + a(H+) terms
+//                                give honest small rates), so initial
+//                                growth caps the crystal at 2.5 µm
+//                                before the cavity fills. The Kim
+//                                mechanism still fires correctly:
+//                                12/12 scheduled cycles, f_ord = 0.82.
+//                                The drift is the geology landing —
+//                                the empirical engine was 60× too fast
+//                                at alkaline cold conditions, masking
+//                                "the dolomite problem" Kim 2023
+//                                actually solves. Phase 1c scenario
+//                                re-anchor candidate (larger cavity
+//                                radius or tuned broth) for visual
+//                                impact.
+//
+//   jeffrey_mine                 2 active 1075 µm → 1 active 1833 µm
+//                                One fewer crystal nucleation,
+//                                surviving crystal grew bigger. PWP
+//                                Arrhenius accelerates at jeffrey's
+//                                100-150°C skarn conditions. f_ord = 0
+//                                throughout (no Kim cycling).
+//
+//   ultramafic_supergene         1 active 83 µm → 27 active 19 µm each
+//                                Many more crystal nucleations, each
+//                                smaller. Likely air-mode nucleation
+//                                probability triggering on more steps
+//                                because omega stays above sigma_crit
+//                                = 10 for longer. Geologically the
+//                                "many small dolomite crystals"
+//                                pattern is right for supergene
+//                                weathering of ultramafic protolith.
+//
+//   zoned_dripstone_cave         1 active 16188 µm → 1 active 1180 µm
+//                                Same cold-PWP story as W9 cave
+//                                calcite — empirical engine was
+//                                massively over-extrapolating cave
+//                                growth rates. 1180 µm = 1.2 mm is
+//                                still visible, just smaller than the
+//                                v144 1.6 cm. Phase 1c candidate.
+//
+//   reactive_wall (NEW)          0 → 1 dissolved 6092 µm
+//                                Acid pulses now dissolve transient
+//                                dolomite. Real Sweetwater MVT
+//                                paragenesis documents this as the
+//                                Stage I dissolution event;
+//                                geologically right.
+//
+// CASCADE DRIFT
+//
+//   5 scenarios touched (much tighter than W9's 15). jeffrey_mine and
+//   reactive_wall picked up RNG-cascade drift in non-dolomite minerals
+//   (calcite, siderite, etc.). No EXPECTED species disappeared.
+//
+// THE CYCLE COUNTER FIX
+//
+//   The Kim cycle counter in VugConditions.update_dol_cycles() detects
+//   crossings of sigma_dolomite. Under the empirical engine, sigma is
+//   in ppm-style units (4th-root of Ca·Mg·CO3²/eq), and sabkha's evap
+//   state drops sigma below 1.0 cleanly. Under the SI engine, sigma is
+//   raw omega, and sabkha's evap state has omega ~6.5 (still > 1) —
+//   the cycle counter would NEVER detect crossings without a smarter
+//   threshold.
+//
+//   v145 fix: when CARBONATE_KSP_ACTIVE_PER_MINERAL.dolomite is true,
+//   the threshold is omega = 100 — engineering-calibrated from the
+//   codebase's own Ksp data. Ordered dolomite Ksp ≈ 10^-17 vs
+//   disordered HMC at x=0.30 Ksp ≈ 10^-5.5 (per data/thermo-
+//   carbonates.json), so dolomite is ~10^11.6 less soluble than the
+//   HMC precursor. omega_dolomite = 100 approximates "IAP is enough
+//   above ordered-dolomite equilibrium to overcome the HMC
+//   competitor" — the geological condition Kim 2023 shows is needed
+//   for ordering progression. Sabkha now counts 12/12 again
+//   (verified by the W8 diagnostic tool re-run post-fix).
+//
+//   (Earlier drafts of this block cited Burton 1993 / Wright 1999
+//   as the basis for the omega=100 number; W11 prep research
+//   showed Burton 1993 is actually a review paper on aragonite-vs-
+//   Mg-calcite cement mineralogy and the kinetics-vs-omega claim
+//   was fabricated. The threshold VALUE is defensible from the
+//   sim's own Ksp differential; the citations were not. Follow-up
+//   correction in v146-prep.)
+//
+//   The empirical-mode threshold stays at 1.0 to preserve v144 and
+//   earlier behavior.
+//
+// WHAT v145 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 144 → 145
+//   js/32b-supersat-carbonate-Ksp.ts: dolomite per-mineral flag flipped
+//   js/32-supersat-carbonate.ts: sigma_crit 1.0 → 10
+//   js/52-engines-carbonate.ts: grow_dolomite PWP wiring
+//   tests-js/baselines/seed42_v145.json: regenerated baseline
+//   tests-js/carbonate-week10-promotion.test.ts: validation tests
+//   tools/w10_dolomite_calibration_probe.mjs: prep diagnostic
+// ----------------------------------------------------------------
+// v146 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 11 —
+// HMC mineral add + SI engine promotion. HMC (High-Magnesium Calcite,
+// the disordered Ca(1-x)Mg(x)CO3 intermediate with x ≈ 0.05-0.30) is
+// added as a MINERAL_SPEC entry via the vugg-add-mineral skill, AND
+// flipped onto the SI engine + PWP rate path. Combined commit because
+// the mineral-add and the promotion are the same coherent story:
+// HMC's whole reason-to-exist in the simulator is the Kim 2023
+// disordered-precursor-to-ordered-dolomite mechanism, which lives in
+// the SI engine + PWP layer, not the empirical engine.
+//
+// HMC was BLOCKED before this commit per the carbonate proposal —
+// the supersaturation + rate engine helpers (saturationIndex_HMC in
+// 32b, HMCRate in 52b) had been ready since Week 2 + Week 6, but
+// without a MINERAL_SPEC entry, no grow_HMC, no _nuc_HMC, and no
+// MINERAL_ENGINES wiring, HMC could never actually nucleate or fire.
+// W11 unblocks this stack.
+//
+// PER-CRYSTAL mg_content STATE
+//
+//   The mg_content of any individual HMC crystal is per-crystal state,
+//   set at nucleation from the fluid Mg/Ca per Mucci-Morse 1983
+//   partitioning (linear approximation: mg_content ≈ 0.05 + 0.02 ×
+//   (Mg/Ca - 1), capped at 0.30). It's stored on crystal._mg_content
+//   and threaded through saturationIndex_HMC + HMCRate at growth time.
+//
+//   This is the FIRST per-crystal-composition variable mineral in the
+//   sim. Other minerals are single-composition (calcite = CaCO3 only);
+//   HMC's mg_content is intrinsic to its chemistry and varies per
+//   crystal as a function of nucleation-time fluid composition.
+//
+// CITATION CORRECTION NOTE (prerequisite, commit 68ee988)
+//
+//   W11 prep research caught two fabricated citations in v145:
+//   "Burton 1993 / Wright 1999" for the Kim cycle-counter omega=100
+//   threshold (Burton 1993 is a review paper, not kinetics-vs-omega),
+//   and "Bischoff_Bishop_Mackenzie_1987" in thermo-carbonates.json
+//   (the actual 1987 paper is Bischoff, Mackenzie & Bishop, in GCA,
+//   not Am. Mineral.). Both were corrected pre-W11 in commit 68ee988
+//   so this v146 commit lands on a clean citation base.
+//
+// SETTINGS FLIPPED
+//   js/32b-supersat-carbonate-Ksp.ts:
+//     CARBONATE_KSP_ACTIVE_PER_MINERAL.HMC: false → true
+//   js/32-supersat-carbonate.ts:
+//     MINERAL_GATES_HMC: new entry. sigma_crit 2.0 (above calcite's
+//     1.5; HMC has slightly higher heterogeneous-nucleation barrier
+//     due to Mg-substituted lattice surface energy per Davis 2000).
+//     T_min 0, T_max 60 (above 60°C, conversion to dolomite or
+//     aragonite dominates per Burton-Walter 1987). pH 7.0-10.5.
+//     supersaturation_HMC method added with Mg/Ca 0.5-30 gate.
+//   js/52-engines-carbonate.ts:
+//     grow_HMC function added — flag-gated dispatch to HMCRate (which
+//     bakes in Davis 2000 Mg-poisoning sigmoid). Three habits:
+//     micritic (default), high_Mg_micritic (mg_content > 0.20),
+//     recrystallized_HMC (high σ + cool T). Acid dissolution faster
+//     than calcite (pH < 6 vs calcite's pH < 5.5) per Bischoff 1987.
+//   js/82-nucleation-carbonate.ts:
+//     _nuc_HMC function added with RNG-cascade guard. Substrate
+//     priority: on-calcite (0.45) > on-aragonite (0.35) > vug-wall.
+//     mg_content set on crystal at nucleation from fluid Mg/Ca.
+//   js/65-mineral-engines.ts:
+//     MINERAL_ENGINES.HMC: grow_HMC
+//   js/42-mineral-gates-registry.ts:
+//     MINERAL_GATES_REGISTRY.HMC: MINERAL_GATES_HMC
+//   data/minerals.json:
+//     Full HMC entry inserted between dolomite and siderite. Three
+//     habit_variants, full description with primary refs, solid-
+//     solution note, scenarios list.
+//
+// PER-SCENARIO HMC DRIFT (v145 → v146): see commit.
+//
+// REFERENCES (all verified during W11 prep research)
+//   Bischoff, W.D., Mackenzie, F.T. & Bishop, F.C. (1987) "Stabilities
+//     of synthetic magnesian calcites in aqueous solution: comparison
+//     with biogenic materials." Geochim. Cosmochim. Acta 51:1413-1423.
+//   Davis, K.J., Dove, P.M. & De Yoreo, J.J. (2000) "The role of
+//     Mg²⁺ as an impurity in calcite growth." Science 290:1134-1137.
+//   Goldsmith, J.R. & Graf, D.L. (1958) "Relation between lattice
+//     constants and composition of the Ca-Mg carbonates." Am. Mineral.
+//     43:84-101. — XRD d104 discriminator.
+//   Burton, E.A. & Walter, L.M. (1987) "Relative precipitation rates
+//     of aragonite and Mg calcite from seawater: temperature or
+//     carbonate ion control?" Geology 15:111-114.
+//   Kim, J., Kimura, Y., Putnis, C.V., Putnis, A., Lee, M.R. & Sun, W.
+//     (2023) "Dissolution enables dolomite crystal growth." Science
+//     382:915-920. doi:10.1126/science.adi3690
+//   Morse, J.W. & Mackenzie, F.T. (1990) "Geochemistry of Sedimentary
+//     Carbonates." Developments in Sedimentology 48. Elsevier.
+//   Mucci, A. & Morse, J.W. (1983) "The incorporation of Mg²⁺ and
+//     Sr²⁺ into calcite overgrowths: influences of growth rate and
+//     solution composition." Geochim. Cosmochim. Acta 47:217-233.
+//
+// WHAT v146 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 145 → 146
+//   js/32-supersat-carbonate.ts: MINERAL_GATES_HMC + supersaturation_HMC
+//   js/32b-supersat-carbonate-Ksp.ts: HMC flag flipped
+//   js/52-engines-carbonate.ts: grow_HMC function
+//   js/82-nucleation-carbonate.ts: _nuc_HMC + iterator wiring
+//   js/65-mineral-engines.ts: HMC engine wiring
+//   js/42-mineral-gates-registry.ts: HMC gate registry
+//   data/minerals.json: full HMC entry
+//   tests-js/baselines/seed42_v146.json: regenerated baseline
+//   tests-js/carbonate-week11-promotion.test.ts: validation tests
+// ----------------------------------------------------------------
+// v147 (2026-05-26): PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 12 —
+// FINAL carbonate engine promotion. Aragonite onto the SI engine +
+// PWP rate law. CLOSES OUT Phase 1 of the carbonate proposal.
+//
+// All four CaCO3-system polymorphs (calcite, dolomite, HMC,
+// aragonite) now ride on Plummer-Wigley-Parkhurst 1978 kinetics +
+// textbook IAP/Ksp omega. Siderite + rhodochrosite + supergene
+// Cu/Zn/Pb/Ba/Sr carbonates remain empirical (siderite C-tier
+// kinetic confidence per Greenberg-Tomson 1992; Cu/Zn supergenes
+// awaiting Phase 2 activity-model upgrade).
+//
+// THE ARCHITECTURAL DIFFERENCE FOR ARAGONITE
+//
+//   Calcite, dolomite, HMC: supersaturation_<mineral> returns raw
+//   textbook omega when the SI flag is on. These are
+//   thermodynamic-minimum (or near-minimum) phases — pure omega is
+//   the right firing criterion.
+//
+//   Aragonite: the metastable polymorph. Its firing rule is
+//   FUNDAMENTALLY a KINETIC criterion layered on thermodynamics:
+//     - Folk 1974 Mg/Ca preference (>1.5)
+//     - Burton & Walter 1987 T preference (>50°C in low-Mg)
+//     - Morse 1997 Ostwald step rule (omega > ~10)
+//     - Trace Sr/Pb/Ba boost (cation substitution into orthorhombic)
+//   The empirical engine encoded these as a "favorability_weighted_
+//   sum" multiplied onto omega. v147 preserves that favorability
+//   layer in the SI engine path — supersaturation_aragonite returns
+//   (textbook omega) × (kinetic favorability). The SI engine
+//   promotion swaps the BASIS of omega from ca_co3/eq → IAP/Ksp,
+//   but the kinetic-modifier layer stays. This is geologically
+//   defensible: omega tells you HOW SUPERSATURATED, favorability
+//   tells you WHETHER ARAGONITE WINS over calcite.
+//
+// THE T_MAX FIX (geological correction in same commit)
+//
+//   Aragonite reverts rapidly to calcite above ~400°C per Carlson
+//   (1983) "The polymorphs of CaCO3 and the aragonite-calcite
+//   transformation," Reviews in Mineralogy vol 11 (Carbonates),
+//   MSA, pp 191-225. Pre-v147 MINERAL_GATES_aragonite had no T_max;
+//   marble_contact_metamorphism (T=698°C) fired aragonite at
+//   metamorphic-skarn temperatures, which is physically impossible.
+//   v147 adds T_max = 400 to MINERAL_GATES_aragonite. The marble
+//   aragonite (1 active 9373 µm in v146) will disappear — accepted
+//   as a geological correction in this commit.
+//
+// CITATION HYGIENE (W12 prep verification)
+//
+//   The "calcite × 3" rate factor for aragonite was attributed to
+//   Wollast 1990 in pre-v147 thermo data. W12 research:
+//     - Wollast (1990) "Rate and mechanism of dissolution of
+//       carbonates in the system CaCO3–MgCO3" in Stumm (ed)
+//       Aquatic chemical kinetics, Wiley-Interscience, pp 431-445.
+//       VERIFIED — exists, real chapter, summary review.
+//     - Burton & Walter (1987) "Relative precipitation rates of
+//       aragonite and Mg calcite from seawater: Temperature or
+//       carbonate ion control?" Geology 15:111-114. VERIFIED.
+//       This is the PRIMARY experimental measurement — they found
+//       "up to a factor of 4 at 25 and 37°C" (not 3, but ~3 is a
+//       reasonable midpoint of their range). At 5°C the rates are
+//       equivalent. The codebase's "×3" is a conservative
+//       middle-of-range pick; Wollast 1990 cites Burton-Walter.
+//
+//   W12 prep ALSO caught a real-time pastiche: the v147 history
+//   draft initially cited Carlson 1983 as "Geol. Soc. Am. Memoir
+//   161:153-162" — that's pure fabrication. Carlson 1983 IS real
+//   but in Reviews in Mineralogy v11, NOT GSA Memoir 161. Corrected
+//   before commit. Documented inline in MINERAL_GATES_aragonite._notes
+//   as a learning artifact.
+//
+// SETTINGS FLIPPED
+//   js/32b-supersat-carbonate-Ksp.ts:
+//     CARBONATE_KSP_ACTIVE_PER_MINERAL.aragonite: false → true
+//   js/32-supersat-carbonate.ts:
+//     MINERAL_GATES_aragonite: added T_max = 400 (Carlson 1983).
+//     supersaturation_aragonite refactored: hard gates (Ca/CO3,
+//     pH range, T_max) → omega from SI engine OR empirical →
+//     kinetic favorability multiplier → return omega × favorability.
+//   js/52-engines-carbonate.ts:
+//     grow_aragonite growth rate calc flag-gated. When aragonite
+//     SI flag on, rate = aragoniteRate (calcite PWP × 3) →
+//     pwpRateToSimMicronsPerStep. Empirical 5.5 × excess fallback.
+//
+// PER-SCENARIO ARAGONITE DRIFT (v146 → v147): see commit.
+//
+// CARBONATE PHASE 1 IS DONE
+//
+//   12 weeks of proposal arc compressed into ~26 hours of agent
+//   work across multiple sessions:
+//     W1: thermo-carbonates database (Sonnet 4.5)
+//     W2: SI engine + flag mechanism (Opus 4.7 this session)
+//     W3: helicoid chips
+//     W4abc: localization + Henry's-Law + sabkha flip
+//     W5: SI validation
+//     W6: PWP kinetic engine
+//     W7-8: reactive_wall + sabkha validation
+//     W9: calcite promotion (v144)
+//     W10: dolomite promotion (v145) + Kim threshold fix
+//     W11: HMC mineral add + promotion (v146)
+//     W12: aragonite promotion + T_max correction (v147)
+//
+//   Phase 1c follow-ups documented (Phase 1c is broth-tune work
+//   that's not engine-architectural):
+//     - stalactite_demo + zoned_dripstone_cave: cold-cave undergrow
+//     - mvt: dial back calcite via lower CO3
+//     - sunnyside_american_tunnel: manganocalcite cap broth-tune
+//     - sabkha_dolomitization: larger cavity for visible carbonate
+//
+//   Phase 2 (proposal): Pitzer-HMW84 activity model for high-I
+//   brines (Davies model has known drift above I≈0.5; MVT brines
+//   reach I=3-5). Phase 3: better Bjerrum (full Plummer-Busenberg
+//   quadratic fits to replace the linear K1/K2 T-extrapolation).
+//   These are post-Phase-1 engine refinement work.
+//
+// WHAT v147 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 146 → 147
+//   js/32-supersat-carbonate.ts: T_max + aragonite refactor
+//   js/32b-supersat-carbonate-Ksp.ts: aragonite flag flipped
+//   js/52-engines-carbonate.ts: grow_aragonite PWP wiring
+//   tests-js/baselines/seed42_v147.json: regenerated baseline
+//   tests-js/carbonate-week12-promotion.test.ts: validation tests
+//   tools/w12_aragonite_calibration_probe.mjs: prep diagnostic
+//
+// ============================================================
+//   v148 — Phase 1c sabkha cavity bump (2026-05-26)
+// ============================================================
+//
+// First Phase 1c scenario re-anchor. Addresses the cavity-fill
+// ceiling identified in HANDOFF-CARBONATE-PHASE-1-COMPLETE.md §1.5:
+// at sabkha_dolomitization, three different carbonate minerals
+// (dolomite W10, HMC W11, aragonite W12) all grew sub-visible because
+// the 30 mm cavity (volume = 14.1 cm³) filled with selenite +
+// anhydrite within ~2 steps of step-1 evap. The currentFill ≥ 1.0
+// in-loop guard (85-simulator.ts lines 260-269) then dropped
+// positive growth zones for all slower-growing crystals.
+//
+// SCIENTIFIC NUMBERS (v147 baseline, sabkha_dolomitization, seed 42):
+//   selenite:   2 active, max 47622 µm (47.6 mm) — over 30 mm cavity diameter
+//   anhydrite:  2 active, max  171 µm
+//   aragonite:  1 active, max   15 µm — should be 100s of µm
+//   dolomite:   1 active, max  2.2 µm — should be 10s of µm
+//   HMC:        4 active, max  0.8 µm — should be 10s of µm
+//   calcite:    1 active, max  0.9 µm
+// Kim mechanism status: 12/12 cycles, f_ord = 0.82 (proposal target).
+//
+// ROOT CAUSE
+//
+// The architecture is correct (geometric truth: you can't grow past
+// cavity volume). The bottleneck is rate disparity:
+//   - Selenite + anhydrite at evap-mode broth: aggressive rates,
+//     reach cavity-fill in steps 1-2
+//   - Carbonates: PWP at sabkha cool-warm T + Kim ordering gate
+//     (rate × 0.30-1.0) + Mg poisoning (HMC) = slow, get capped
+//     out before producing visible mass
+//
+// FIX
+//
+// Bump sabkha vug_diameter_mm 30 → 60. Gives 8× cavity volume
+// (14.1 cm³ → 113.1 cm³). Selenite + anhydrite still grow visibly
+// (selenite at 47 mm fits 60 mm cavity); slow-growing carbonates
+// now have room to develop past nucleation. Geologically defensible
+// — Persian Gulf sabkha intercrystalline pores range from <1 mm to
+// several cm, depending on depth + parent lithology. 60 mm is on
+// the cm-scale end (cavity-collapse pore in carbonate-cemented
+// zone) but matches the cathedral tier the simulator uses for
+// showcase scenarios elsewhere.
+//
+// CAVE SCENARIOS (stalactite_demo, zoned_dripstone_cave): the
+// handoff also flagged these as Phase 1c targets ("bump Ca + CO3
+// so omega stays high enough at cold cave T"), but reanalysis
+// shows omega already ≈ 26,000 in the floor/ceiling zones — well
+// past where (1 - 1/Ω) saturates. The rate ceiling is the PWP
+// forward rate at 15-18°C (~4-5 µm/step), not omega. Bumping Ca/
+// CO3 wouldn't help. The honest geological knob is duration_steps
+// (real cave calcite grows 0.001-1 mm/year; the sim's 100-step
+// budget is too short to grow cathedral-scale speleothems at honest
+// PWP rates).
+//
+// v147 cave sizes are actually visible:
+//   stalactite_demo:        calcite 3.0 mm, aragonite 6.9 mm
+//   zoned_dripstone_cave:   calcite 2.2 mm, aragonite 5.7 mm,
+//                           HMC 2.1 mm
+// — hand-specimen scale, sufficient to show the habit-bias c-axis
+// distinction. DEFERRED for separate Phase 1c re-anchor (would
+// require duration_steps bump + test recalibration).
+//
+// SETTINGS FLIPPED
+//   data/scenarios.json5: sabkha_dolomitization.initial.wall.
+//     vug_diameter_mm: 30 → 60 (with inline rationale block)
+//
+// PER-SCENARIO DRIFT (v147 → v148, seed 42): regenerated baseline
+// shows the sabkha carbonate cascade. Expected directions: dolomite
+// + HMC + aragonite grow to visible scale; selenite + anhydrite
+// slightly larger as cavity-fill ceiling now further off; the Kim
+// 12/12 cycles + f_ord stay intact (chemistry unchanged).
+//
+// Phase 1c continues: cave scenario duration_steps re-anchor is the
+// next candidate. mvt + sunnyside CO3 dial-down too. Phase 1c is
+// scoped as "scenario polish on stable engines" — not blocking
+// Phase 2 (Pitzer-HMW84 activity model) or the three design
+// directions (per-vertex chips, strip view, filter/record).
+//
+// WHAT v148 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 147 → 148
+//   data/scenarios.json5: sabkha cavity bump + rationale
+//   tests-js/baselines/seed42_v148.json: regenerated baseline
+//
+// ============================================================
+//   v149 — Strip View bedrock + helicoid-as-recorder (2026-05-26)
+// ============================================================
+//
+// First commit of the strip view arc. Closes the design conversation
+// captured in HANDOFF-CARBONATE-PHASE-1-COMPLETE.md §"strip view" by
+// laying the BEDROCK that the v2+ viewer iterations build on:
+//
+//   1. Strip dataset format (js/85f-strip-dataset.ts) — typed manifest
+//      + uint8-quantized chip data tensor [step][angle][height][chip]
+//      + sparse nucleation event list. Manifest-header future-proofing:
+//      chips that exist in old datasets but not in the current chip set
+//      load as "legacy" with default-off in the selector. Browser-native
+//      gzip via CompressionStream/DecompressionStream for download.
+//
+//   2. StripRecorder (js/85g-strip-recorder.ts) — helicoid-as-recorder
+//      reframe (Shy's 2026-05-26 design insight). Hooks into
+//      run_step() at end-of-step, samples every chip in _HELIX_CHEM_PARAMS
+//      at every (angle, height) position, downsamples 120 native cells
+//      to 24 angular sub-strips by picking the midpoint cell per 15°
+//      bin, quantizes to uint8, appends to the running dataset. Captures
+//      nucleation events from this step via crystal.nucleation_step.
+//      finalize() trims trailing unused steps if the run ends early
+//      (vug sealed before duration_steps reached).
+//
+//   3. IndexedDB persistence (js/85h-strip-storage.ts) — async save /
+//      load / list / delete / clear. Datasets keyed by
+//      scenario_id@seed#recorded_at. Browser-native binary storage; no
+//      base64 inflation. Quota-friendly (~1-5 MB per typical 200-step
+//      run; modern browsers grant 100s of MB - GB).
+//
+//   4. Strip View UI tab (js/99k-strip-view.ts) — toolbar toggle
+//      button + floating panel. Dataset list (sorted newest first;
+//      click to load; ✕ to delete). When loaded: chip selector
+//      grouped by helicoid system (wall/special/carbonate/ion),
+//      per-chip toggles, filmstrip render with one row per time step
+//      (older at bottom — stratigraphic convention), variance dot
+//      (green/yellow/red), expand arrow (visual stub for v2 angular
+//      expansion), star button (turns yellow on click, no other v1
+//      behavior per locked design), mineral nucleation markers
+//      overlay, fixed-position jump-to-top/jump-to-bottom buttons.
+//
+//   5. End-to-end wiring (js/85-simulator.ts run_step + js/96-ui-random.ts)
+//      — one-line hook in run_step calls _stripRecorder.captureStep
+//      when present (no-op without recorder; baseline byte-identical).
+//      Random mode entry point attaches a recorder at sim creation +
+//      finalizes + saves to IndexedDB at run end. Other entry points
+//      (Simulation, Fortress, Zen, Agent API) can opt in by copying
+//      the same pattern. v1 wires Random only as the proof of flow.
+//
+// SHY'S HELICOID-AS-RECORDER REFRAME
+//
+// The deeper architectural insight from the design conversation:
+//
+//   "the helicoid is currently a visualization — it samples chips
+//   and renders them, then discards. Shy's request reframes the
+//   helicoid as a RECORDING DEVICE for multidimensional space. The
+//   samples ARE the artifact; the live chip display is one downstream
+//   consumer."
+//
+// Consumers of the recording:
+//   - Helicoid chip display      (live viz, existing — consumer #1)
+//   - Strip view                 (post-hoc filmstrip — consumer #2)
+//   - Record / filter / branch   (future — consumer #3, handoff §3)
+//
+// The dataset becomes the central artifact; the helicoid becomes the
+// instrument that writes it. Architecturally clean — the current
+// helicoid that "samples → renders → discards" was always a lossy
+// intermediary; this turns it into a proper instrument.
+//
+// V1 SCOPE BOUNDARY (locked design)
+//
+// Ships:
+//   - Default-on collapsed strips (mean across 24 angles), screen-width
+//     SVG render, all 30+ chips overlaid, mineral nucleation markers,
+//     variance dot, favorite star (visual only), jump buttons,
+//     per-system chip selector, dataset list + delete, IndexedDB
+//     auto-capture for Random runs.
+//
+// Deferred to v2+ (data model supports them; UI not built yet):
+//   - Expansion arrow opening 24 angular sub-strips stacked vertically
+//   - Cross-sub-strip cursor on hover
+//   - Line bundling (Sankey-style merge for coincident lines)
+//   - Star functional integration (filters/export/compare)
+//   - Adaptive height resolution (zoom on a row)
+//   - Download dataset as gzipped file (stripSerialize is built; need
+//     UI button)
+//   - Upload + load dataset from file (stripDeserialize is built; need
+//     UI)
+//   - Wiring auto-capture in Simulation/Fortress/Zen/Agent paths
+//
+// Deferred to spatial chemistry expansion (load-bearing prerequisite):
+//   - Real per-vertex angular variation in chip values. Today every
+//     chip except `wall` returns the same value across the 24 angular
+//     sub-strips because the underlying ring_fluids is per-ring not
+//     per-cell. The strip viewer renders this honestly (uniform
+//     horizontal lines for most chips, varying lines for wall geometry).
+//     When per-vertex spatial chemistry ships, the SAME viewer comes
+//     alive with real angular variation automatically.
+//
+// PER-STEP CAPTURE COST
+//
+//   ~24 angles × 16 rings × 58 chips ≈ 22K chip.read() calls per step.
+//   At ~5M JS function calls/sec: ~5 ms per step.
+//   For a 200-step Random run: ~1 second added recording overhead.
+//   Acceptable; users won't notice.
+//
+// DATASET SIZE
+//
+//   Per run: ~200 × 24 × 16 × 58 ≈ 4.45 MB raw uint8.
+//   After gzip (download path): ~1-2 MB.
+//   IndexedDB stores uncompressed (browser handles binary efficiently).
+//   Power user accumulating 20 runs ≈ 90 MB. Well within quota.
+//
+// BASELINE INVARIANCE
+//
+// The recorder hook is a single conditional call in run_step:
+//
+//     if (this._stripRecorder) this._stripRecorder.captureStep(this);
+//
+// With no _stripRecorder attached (the default for calibration tests
+// + all baseline regeneration paths), the call is a no-op. Sim state
+// is byte-identical to v148. Calibration test reads seed42_v149.json
+// = seed42_v148.json (renamed). 1562/1562 tests pass (+14 strip view
+// tests; the 1548 from v148 unchanged).
+//
+// SETTINGS FLIPPED
+//   js/85-simulator.ts: single-line hook at end of run_step
+//   js/96-ui-random.ts: attach recorder + finalize at run end
+//   tests-js/setup.ts: expose strip-view symbols to test global scope
+//
+// FILES ADDED
+//   js/85f-strip-dataset.ts            (format + codecs, ~245 lines)
+//   js/85g-strip-recorder.ts           (recorder, ~230 lines)
+//   js/85h-strip-storage.ts            (IndexedDB, ~170 lines)
+//   js/99k-strip-view.ts               (UI tab, ~480 lines)
+//   tests-js/strip-view-bedrock.test.ts (14 tests, ~180 lines)
+//
+// HANDOFF
+//
+// HANDOFF-CARBONATE-PHASE-1-COMPLETE.md §"strip view" is the design
+// spec. This bedrock implements the data path + minimal UI; the v2+
+// iterations (expansion, bundling, filters, etc.) plug into the same
+// data model without re-architecting.
+//
+// WHAT v149 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 148 → 149
+//   js/85f-strip-dataset.ts, 85g-strip-recorder.ts, 85h-strip-storage.ts
+//   js/99k-strip-view.ts
+//   js/85-simulator.ts: run_step hook (one conditional line)
+//   js/96-ui-random.ts: recorder lifecycle wiring
+//   tests-js/setup.ts: 8 new EXPORTS entries
+//   tests-js/strip-view-bedrock.test.ts (14 new tests)
+//   tests-js/baselines/seed42_v149.json: regenerated baseline (byte-identical to v148)
+//
+// ============================================================
+//   v150 — Strip View v2: tab-bar + expansion + bundling (2026-05-26)
+// ============================================================
+//
+// Second strip view commit; addresses two boss-reported gaps from v149
+// playtest + lands the three biggest v2 features.
+//
+// REPORTED GAPS (v149 playtest)
+//
+//   1. "Even after growing the vugg in simulation it's not visible."
+//      v149 only wired auto-capture in Random mode (96-ui-random.ts);
+//      Simulation mode (91-ui-legends.ts — the "Grow" button) was
+//      uninstrumented. Most users use Simulation mode, so the recorder
+//      effectively never fired for them.
+//
+//      FIX: same recorder lifecycle pattern added to 91-ui-legends.ts.
+//      Attach at sim creation, finalize + save to IndexedDB right after
+//      the sim loop completes (before the format_summary epilogue).
+//
+//   2. "Strip View button should be just to the right of Record Player."
+//      v149 created a free-floating button at top:8px right:160px,
+//      which overlapped the helicoid toggle.
+//
+//      FIX: Added <button id="mode-stripview"> to the existing
+//      .mode-toggle bar in index.html, positioned between Record Player
+//      and Library. Removed the floating button from 99k-strip-view.ts.
+//      Toggle is now exposed via window.toggleStripView() so the bar
+//      button's onclick handler can invoke it.
+//
+// V2 FEATURES SHIPPED
+//
+//   3. Angular expansion (24 sub-strips). Click the ▸ arrow on any
+//      collapsed time strip to expand into 24 vertically-stacked angular
+//      sub-strips, one per 15° of rotation. Each sub-strip:
+//        - Labeled "n / deg°" per locked design (e.g. "1 / 0°", "7 / 90°")
+//        - Has its own star button on the LEFT for favoriting that
+//          specific (step, angle) sub-strip — separate favorites Set
+//          from whole-time-slice favorites per locked design
+//        - Renders chip values from THIS angle only (not the mean)
+//        - Shows only nucleation events that fell in this 15° bin
+//      Click the arrow (now ▾) again to collapse. Vertical-stack
+//      preserves screen-width resolution per sub-strip.
+//
+//   4. Line bundling. When two or more chips would render at
+//      essentially the same y value (within 2% of normalized range),
+//      they snap to a shared centroid y so the polylines coincide
+//      pixel-for-pixel instead of fighting at adjacent pixels.
+//      Implementation: per-height sort by normalized value, group
+//      consecutive entries within tolerance, snap to bundle centroid.
+//      Result: quiet chips collapse into a baseline ribbon; chips
+//      doing geological work this step diverge out and stand out.
+//      Per locked design: "they should overlap gracefully, perhaps by
+//      just linking together to form a shared wider line where neither
+//      line overlaps the other."
+//
+//   5. Per-angle mineral nucleation filtering. v149 rendered every
+//      nucleation event in every view. v150 filters: in collapsed view
+//      show events whose step matches (OR across angles); in expanded
+//      sub-strip show only events whose native cell falls within that
+//      angular bin (cell ∈ [a*5, (a+1)*5) for 24-sub-strip mode).
+//      Tooltip now shows mineral name + step + ring + cell for
+//      diagnostic readability.
+//
+// STILL DEFERRED TO V3+ (data model supports, UI not built):
+//   - Cross-sub-strip cursor on hover (vertical guide line across all
+//     expanded sub-strips at the same height position)
+//   - Download dataset as gzipped .stripview file (stripSerialize built;
+//     needs export button)
+//   - Upload + load dataset from file
+//   - Favorite-based filters / comparison views / export-favorites-only
+//   - Auto-capture wiring in Fortress (94-ui-menu.ts), Zen (98a-ui-zen.ts),
+//     Agent API (99z-agent-interface.ts) — minor, low priority
+//   - Per-vertex spatial chemistry expansion (deeper architectural arc;
+//     the load-bearing prerequisite for the strip view to show real
+//     angular variation in non-wall chips)
+//
+// BASELINE INVARIANCE
+//
+// The Simulation mode hook (91-ui-legends.ts) is conditional on
+// StripRecorder being defined + attaches a recorder to sim. The
+// existing run_step hook then calls captureStep. None of this affects
+// sim state — recorder reads sim, doesn't write. Calibration tests
+// don't use legends mode (they call run_step directly), so baseline
+// stays byte-identical. seed42_v150.json is byte-identical to
+// seed42_v149.json (and v148).
+//
+// TESTS
+//
+//   Pre-v150:  1562 tests pass (v149)
+//   Post-v150: 1562 tests pass (no new tests this commit — the v149
+//              suite covers the dataset format and recorder; the v2
+//              additions are UI render code that's better validated
+//              visually in the browser)
+//
+// SETTINGS FLIPPED
+//   js/91-ui-legends.ts: attach recorder at sim creation + finalize +
+//     save at end of sim loop (mirrors 96-ui-random.ts pattern)
+//   index.html: added <button id="mode-stripview"> in .mode-toggle
+//     between Record Player and Library; floating button removed
+//   js/99k-strip-view.ts:
+//     - Removed floating button creation; expose window.toggleStripView
+//     - Added _stripRenderStripSVG (unified collapsed + per-angle path)
+//     - Added _stripSampleChipNormalized helper for angle/null sampling
+//     - Added line bundling (y-snap within tolerance) in render path
+//     - Added _stripBuildExpandedContainer for 24 sub-strip stack
+//     - Wired expand-arrow click to toggle expansion in place
+//     - Wired sub-strip favorite buttons (separate Set from
+//       time_slices favorites)
+//     - Per-angle nucleation marker filtering
+//     - CSS for .strip-view-row.is-expanded, .strip-view-substrip,
+//       .strip-view-substrip-label, .strip-view-substrip-canvas
+//
+// WHAT v150 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 149 → 150
+//   js/91-ui-legends.ts: Simulation mode recorder wiring
+//   js/99k-strip-view.ts: expansion + bundling + per-angle filtering
+//   index.html: tab-bar Strip View button
+//   tests-js/baselines/seed42_v150.json: regenerated baseline (byte-
+//     identical to v149)
+//
+// ============================================================
+//   v151 — Strip view height polish (2026-05-26)
+// ============================================================
+//
+// Tiny visual iteration. Boss feedback from v150 playtest: "the strips
+// need to be at least 3x as tall." v149-v150 shipped at 24 px main strip
+// height — chip lines compressed into a thin band; bundling visible
+// but variation hard to read; nucleation markers pinned to the bottom
+// edge.
+//
+// CHANGES
+//   - Main strip canvas height: 24 → 72 px (3× per boss)
+//   - Sub-strip canvas height: 20 → 72 px (matches main; preserves
+//     screen-width resolution per sub-strip when expanded; per-step
+//     expanded view now takes 24 × 72 + gaps ≈ 1750 px of scroll,
+//     accepted in original design discussion)
+//   - Polyline stroke-width: 1 → 1.5 (visible against the taller
+//     backdrop; bundled lines still stack opacity naturally)
+//   - Polyline stroke-opacity: 0.6 → 0.65 (tiny bump to keep solo
+//     lines readable post-stroke-width bump)
+//   - Nucleation marker radius: 2.2 → 3.5, cy nudged from (h - 2)
+//     to (h - 5) so marker sits in the strip body rather than against
+//     the bottom border. Stroke width 0.5 → 0.6 for legibility.
+//
+// BASELINE
+//
+// CSS/render-only. Sim state unchanged. seed42_v151.json byte-identical
+// to v150.
+//
+// TESTS
+//
+// 1562/1562 pass (no new tests; pure visual polish).
+//
+// WHAT v151 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 150 → 151
+//   js/99k-strip-view.ts: height bumps + stroke + marker tweaks
+//   tests-js/baselines/seed42_v151.json: regenerated baseline
+//
+// ============================================================
+//   v152 — Strip view height polish round 2 (2026-05-26)
+// ============================================================
+//
+// Second visual iteration. Boss tune after v151 playtest: "how about
+// 100px tall and stroke width of 1.25". Roomier vertical axis; slightly
+// thinner stroke for cleaner reading at the new height.
+//
+// CHANGES
+//   - Main strip canvas height: 72 → 100 px
+//   - Sub-strip canvas height: 72 → 100 px (still matches main)
+//   - Polyline stroke-width: 1.5 → 1.25
+//
+// Expanded time unit now takes 24 × 100 + gaps ≈ 2400 px scroll. Boss
+// already accepted the scroll cost in the original 2026-05-26 design
+// discussion.
+//
+// BASELINE
+//
+// CSS/render-only. Sim state unchanged. seed42_v152.json byte-identical
+// to v151.
+//
+// TESTS
+//
+// 1562/1562 pass.
+//
+// WHAT v152 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 151 → 152
+//   js/99k-strip-view.ts: 72 → 100 height + 1.5 → 1.25 stroke
+//   tests-js/baselines/seed42_v152.json: regenerated baseline
+//
+// ============================================================
+//   v153 — Strip View as a proper mode panel (2026-05-26)
+// ============================================================
+//
+// Boss feedback v152 → v153: "rather than a pop up the strip mode
+// should be a separate window, like how record player mode works".
+// v149-v152 implemented the strip view as a floating overlay popped
+// open by a toggle button. Boss wants it to behave like Record Player
+// (groove) — its own full-page mode tab in the mode-toggle bar that
+// switches the page view.
+//
+// CHANGES
+//
+//   1. index.html: new <div id="strip-view-mode-panel"> container in
+//      the page flow (placed alongside groove-panel). 99k-strip-view
+//      populates it on mode entry.
+//
+//   2. index.html: tab-bar button onclick changed from
+//      `window.toggleStripView()` (overlay toggle) to
+//      `switchMode('stripview')` (proper mode switch).
+//
+//   3. js/94-ui-menu.ts hideAllMenuAndModePanels: added
+//      'strip-view-mode-panel' to the hidden-ids list. Switching to any
+//      other mode now correctly hides the strip view.
+//
+//   4. js/94-ui-menu.ts switchMode: added mode === 'stripview' branch.
+//      Shows the panel, marks #mode-stripview .active (matching the
+//      Record Player / Library pattern), and invokes
+//      window.stripViewModeShow() to populate.
+//
+//   5. js/99k-strip-view.ts:
+//      - .strip-view-mode-panel CSS replaces the old .strip-view-panel
+//        floating styles. In-flow layout, centered with margin:auto,
+//        max-width 1600px, min-height 600px, max-height calc(100vh-80px).
+//      - Removed close button (mode panels close by switching to another
+//        mode, just like Record Player).
+//      - Removed the overlay panel creation and window.toggleStripView.
+//      - initStripView now ensures styles + exposes
+//        window.stripViewModeShow(), which lazily populates the
+//        mode-panel container on first show + refreshes the dataset
+//        list on every show.
+//      - Strip width bumped from 860 → 1500 to fill the wider mode
+//        panel (was sized for the 920 px popup).
+//
+// V2 FEATURE LIST UNCHANGED
+//
+// All v2 features ship the same way (line bundling, 24-sub-strip
+// expansion, variance dot, favorites, mineral nucleation markers,
+// jump-to-top/bottom buttons, chip-system selector). Only the
+// containment / lifecycle changed.
+//
+// BASELINE
+//
+// CSS + UI lifecycle only. Sim state unchanged. seed42_v153.json
+// byte-identical to v152.
+//
+// TESTS
+//
+// 1562/1562 pass.
+//
+// WHAT v153 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 152 → 153
+//   js/94-ui-menu.ts: switchMode('stripview') + hide-panels wiring
+//   js/99k-strip-view.ts: mode-panel layout + stripViewModeShow exposure
+//   index.html: new mode-panel container + tab-button rewired
+//   tests-js/baselines/seed42_v153.json: regenerated baseline
+//
+// ============================================================
+//   v154 — Strip View v3: Fortress + download/upload + cursor (2026-05-26)
+// ============================================================
+//
+// Closeout pass on the strip view arc. Boss directive ("lets finish up
+// any other parts of this that you want to wire up") + auto-mode license
+// to pick the highest-leverage items.
+//
+// FEATURES SHIPPED
+//
+//   1. Fortress mode wiring. Three entry points (94-ui-menu.ts
+//      fortressBegin + fortressBeginFromScenario, 97-ui-fortress.ts
+//      custom-setup path) now attach a StripRecorder at sim creation
+//      via the new _attachStripRecorderToSim() helper. Save lifecycle
+//      differs from Simulation/Random: Fortress is interactive (user
+//      drives steps via Wait/Heat/Cool buttons; no fixed run end), so
+//      switchMode hooks finalize + save when the user leaves the
+//      mode. Idempotent — the helper nulls _stripRecorder after save
+//      so re-leaves don't double-write.
+//
+//   2. Dynamic capacity growth. StripRecorder._growCapacity() doubles
+//      chip_data when captureStep is called past axes.steps. Removes
+//      the "data drops past N steps" cap that would have hit long
+//      Fortress sessions. Recorder no longer auto-deactivates on
+//      capacity hit; finalize() is the only deactivation path now.
+//      Test added: recorder grows from 2 → 4 → 8 step capacity over
+//      a 5-step run, captures all 5, finalize trims correctly.
+//
+//   3. Download dataset as .stripview file. Strip-view-header has a
+//      new ⬇ Download button that's enabled when a dataset is active.
+//      Click → stripSerialize(ds, gzip=true) → Blob → browser download
+//      as "<scenario_id>@seed<N>.stripview". Closes the share loop.
+//
+//   4. Upload + load dataset from file. Strip-view-header has a new
+//      ⬆ Upload button that triggers a hidden file input. Selected
+//      file is read as ArrayBuffer → stripDeserialize → saved to
+//      IndexedDB (so it persists in the list) → loaded as active.
+//      Handles both raw and gzipped formats via magic-byte sniff in
+//      stripDeserialize.
+//
+//   5. Cross-sub-strip cursor. When a time strip is expanded into 24
+//      angular sub-strips, hovering at vug-height X on any sub-strip
+//      now shows a thin vertical guide at the same X across ALL 24.
+//      Lets the user compare chip values at the same height position
+//      across rotation in one glance. Per locked v2 design (handoff
+//      §"strip view" — "Cross-sub-strip cursor on hover: confirmed
+//      yes. Hovering at height-X on one sub-strip lights a thin
+//      vertical cursor on all 24 simultaneously.")
+//
+// HELPER FUNCTIONS ADDED (js/94-ui-menu.ts)
+//
+//   _attachStripRecorderToSim(sim, scenarioId, notes)
+//     Attaches a recorder with generous 500-step allocation (grows on
+//     overflow), patches manifest.scenario_id. Idempotent + silent
+//     on failure. Reusable across Fortress entry points.
+//
+//   _saveStripRecorderIfPresent(sim)
+//     Finalizes the recorder + saves to IDB if at least one step was
+//     captured (skips empty recordings — user enters Fortress, leaves
+//     immediately, no pollution). Nulls sim._stripRecorder so re-calls
+//     are no-ops.
+//
+// STILL DEFERRED TO V4+
+//
+//   - Zen mode wiring (98a-ui-zen.ts) — same one-line pattern; will
+//     ship in a follow-up
+//   - Agent API wiring (99z-agent-interface.ts) — agents typically
+//     don't need replay capture
+//   - Favorite-based filters / comparison views / export-favorites-only
+//   - Per-vertex spatial chemistry expansion (the load-bearing
+//     prerequisite for non-wall chips to actually vary across angles)
+//
+// BASELINE
+//
+// All changes are either UI lifecycle (Fortress save hook, download/
+// upload buttons, cursor overlay) or recorder behavior (growth on
+// overflow) — none touch sim state. Calibration tests don't use
+// Fortress; they call run_step directly. seed42_v154.json byte-
+// identical to v153.
+//
+// TESTS
+//
+//   Pre-v154:  1562 tests pass (v153)
+//   Post-v154: 1563 tests pass (+1 _growCapacity test)
+//
+// WHAT v154 SHIPS
+//
+//   js/15-version.ts: this block + SIM_VERSION 153 → 154
+//   js/85g-strip-recorder.ts: _growCapacity + remove capacity-deactivate
+//   js/94-ui-menu.ts: _attachStripRecorderToSim, _saveStripRecorderIfPresent,
+//     Fortress entry-point wiring, save-on-leave hook
+//   js/97-ui-fortress.ts: custom-setup entry point wiring
+//   js/99k-strip-view.ts: download/upload buttons, cursor CSS,
+//     cursor event handlers in _stripBuildExpandedContainer
+//   tests-js/strip-view-bedrock.test.ts: +1 test for _growCapacity
+//   tests-js/baselines/seed42_v154.json: regenerated baseline (byte-
+//     identical to v153)
+//
+// ============================================================
+//   v155 — Strip view v4: IDB cap + Zen + Agent wiring (2026-05-26)
+// ============================================================
+//
+// Closes the wiring loop. Every play mode (Simulation, Random,
+// Fortress, Zen, Agent) now produces a strip dataset. IDB capped at
+// 5 most-recent datasets — when a 6th would be saved, the oldest is
+// silently evicted. Users who want to keep a recording use ⬇ Download
+// to save the .stripview file to disk, then ⬆ Upload to bring it back
+// later. Per locked v4 design (boss 2026-05-26): "the save/load will
+// help if anyone actually wants to keep these."
+//
+// FEATURES SHIPPED
+//
+//   1. Count-based IDB eviction (cap = 5)
+//      js/85h-strip-storage.ts: stripStorageSave now does a pre-save
+//      eviction pass. Walks existing datasets, sorts oldest-first
+//      (by recorded_at ASC), and deletes the oldest until count =
+//      cap - 1 (leaving one free slot for the new save). Skips the
+//      key we're about to write (re-saves of the same dataset don't
+//      evict themselves). Atomic within IDB transactions.
+//
+//   2. Zen mode wiring
+//      js/99h-renderer-idle-chart.ts: idleTogglePlay creates the sim
+//      and now attaches a StripRecorder. Two save points: Finish
+//      button (idleFinish) and scenario-switch (idlePickScenario).
+//      Both call _saveStripRecorderIfPresent which is idempotent and
+//      skips empty recordings.
+//      js/94-ui-menu.ts switchMode: same mode-leave hook pattern as
+//      Fortress — `mode !== 'idle'` triggers save.
+//
+//   3. Agent API wiring
+//      js/99z-agent-interface.ts _agentHeadlessRun: attaches a
+//      recorder at sim creation, finalizes after the run loop. The
+//      dataset is returned in the result object (`{ sim, ..., stripDataset }`)
+//      rather than auto-saved to IDB. Reason: agents may run batches
+//      of 50+ scenarios; auto-saving would saturate the 5-slot cap
+//      immediately. Callers that want persistence dispatch
+//      stripStorageSave on the returned dataset themselves.
+//
+//   4. Empty-state copy updated to mention the cap + the save/load
+//      workflow: "Browser storage holds the 5 most recent — use
+//      ⬇ Download to keep anything you care about as a .stripview
+//      file on disk, and ⬆ Upload to bring it back later."
+//
+// WIRING STATUS — END OF ARC
+//
+//   Mode               Entry point                  Save trigger
+//   ──────────────────────────────────────────────────────────────
+//   Simulation         91-ui-legends.ts            end of sim loop
+//   Random             96-ui-random.ts             end of sim loop
+//   Fortress (x3)      94-ui-menu.ts + 97-ui-      switchMode mode != 'fortress'
+//                      fortress.ts
+//   Zen                99h-renderer-idle-chart.ts  Finish / scenario-switch /
+//                                                  switchMode mode != 'idle'
+//   Agent API          99z-agent-interface.ts      end of agent loop (returned
+//                                                  in result; no IDB auto-save)
+//
+//   All five play modes capture. Strip view arc is COMPLETE.
+//
+// BASELINE
+//
+// Sim state unchanged. seed42_v155.json byte-identical to v154.
+//
+// TESTS
+//
+// 1563/1563 pass (same as v154; no new tests this commit — the
+// eviction logic is async + IDB-dependent, harder to unit test
+// without a fake-indexeddb shim; covered by browser-side validation).
+//
+// WHAT v155 SHIPS
+//
+//   js/15-version.ts: this block + SIM_VERSION 154 → 155
+//   js/85h-strip-storage.ts: count-based eviction (cap = 5)
+//   js/94-ui-menu.ts: Zen mode-leave save hook
+//   js/99h-renderer-idle-chart.ts: Zen recorder lifecycle
+//   js/99k-strip-view.ts: empty-state copy update
+//   js/99z-agent-interface.ts: agent API recorder + return-in-result
+//   tests-js/baselines/seed42_v155.json: regenerated baseline (byte-
+//     identical to v154)
+//
+// STRIP VIEW ARC SUMMARY (v149 → v155)
+//
+//   v149: Bedrock — dataset format + recorder + IDB + minimal UI
+//   v150: Tab bar + Simulation wiring + 24-sub-strip expansion +
+//         line bundling + sub-strip favorites
+//   v151: Strip canvas 24 → 72 (3× height)
+//   v152: Strip canvas 72 → 100 + stroke 1.5 → 1.25
+//   v153: Promoted from overlay popup to proper mode tab
+//   v154: Fortress wiring + dynamic recorder capacity +
+//         download/upload .stripview + cross-sub-strip cursor
+//   v155: Count-based eviction + Zen + Agent wiring  [THIS]
+//
+// Seven commits, ~3000 lines added across data format + recorder +
+// IDB + 4 entry-point wirings + full UI tab with expansion, bundling,
+// favorites, markers, cursor, download, upload. Helicoid-as-recorder
+// reframe (Shy's 2026-05-26 design insight) fully realized.
+//
+// ============================================================
+//   v156 — Phase 1c: aragonite frostwork primitive (2026-05-27)
+// ============================================================
+//
+// First post-strip-view-arc commit; back to Phase 1c carbonate
+// cleanup. Un-carves aragonite from the stalactite_demo dripstone-
+// routing test by adding a dedicated 'aragonite_frostwork' geometry
+// primitive that fires for non-twinned air-mode aragonite.
+//
+// GEOLOGICAL CONTEXT
+//
+// Hill & Forti 1997 'Cave Minerals of the World' (§5.3.4 and §10)
+// documents cave aragonite morphology as radiating acicular sprays
+// from a central anchor — the diagnostic 'frostwork' habit. Real-
+// world examples: Frasassi Cave (Italy), Carlsbad Caverns (NM),
+// Wind Cave (SD), Lechuguilla. Frostwork is geologically distinct
+// from smooth-stalactite 'dripstone' morphology (which models
+// calcite-family speleothems per PROPOSAL-HABIT-BIAS Slice 4).
+// v147 promoted aragonite to the SI engine, causing aragonite to
+// fire in stalactite_demo via cascade-shifted RNG — but
+// _resolveCrystalGeomToken had no aragonite-specific air-mode
+// branch, so the v147 commit carved aragonite out of the
+// habit-bias.test.ts dripstone-eligibility assertion as a Phase 1c
+// follow-up.
+//
+// FIX
+//
+// js/99i-renderer-three.ts:
+//   - New _makeAragoniteFrostwork() geometry: 5 thin acicular
+//     needles radiating from common anchor (one central, four
+//     tilted ~30°). Deterministic, no RNG.
+//   - New case 'aragonite_frostwork' in _buildHabitGeom dispatch.
+//   - _GEOM_TOKEN_RATIO entry (0.5; cluster envelope is roughly
+//     square because needles spread laterally as much as vertically).
+//   - Air-mode aragonite override in _resolveCrystalGeomToken,
+//     scoped to NON-twinned crystals. Twinned air-mode aragonite
+//     (cyclic_sextet, contact) continues to route through twin
+//     geom — extending the override to twinned crystals would
+//     require wireframe-renderer parity work that's deferred for
+//     scope control.
+//
+// tests-js/habit-bias.test.ts:
+//   - Lifted the v147 aragonite carve-out. The 'stalactite_demo
+//     crystals route eligible habits through dripstone' test now
+//     asserts air-mode aragonite resolves correctly: non-twinned →
+//     frostwork, twinned → twin geom; neither routes to dripstone.
+//
+// tests-js/aragonite-pseudohex-twin-three.test.ts:
+//   - Documents the v156 override scope. New positive test for
+//     non-twinned air-mode aragonite → 'aragonite_frostwork'.
+//
+// BASELINE INVARIANCE
+//
+// Renderer-only change. seed42_v156.json byte-identical to v155.
+//
+// TESTS
+//
+//   Pre-v156:  1563 tests pass (v155)
+//   Post-v156: 1564 tests pass (+1 frostwork positive case)
+//
+// WHAT v156 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 155 → 156
+//   js/99i-renderer-three.ts: frostwork geometry + dispatch + resolver
+//   tests-js/habit-bias.test.ts: aragonite carve-out lifted
+//   tests-js/aragonite-pseudohex-twin-three.test.ts: frostwork case
+//   tests-js/baselines/seed42_v156.json: regenerated baseline
+
+// ============================================================
+//   v157 — Helicoid chip reads → mesh.cells (2026-05-27)
+// ============================================================
+//
+// Re-points every chemistry chip read in _HELIX_CHEM_PARAMS from the
+// vestigial `ring_fluids[i]` backing store to the live per-vertex
+// `mesh.cells[i*N+c].fluid` store. Boss-directed: "mesh.cells is the
+// way to go, i've wanted to head that way for ages." Architectural
+// direction, not just bug-fix scope.
+//
+// WHAT WAS WRONG
+//
+// Post-Tranche-2+ of PROPOSAL-CAVITY-MESH (the un-aliasing of mesh
+// cells from ring_fluids), the live chemistry handle moved to
+// mesh.cells[].fluid. Engines read through it via the per-cell swap
+// in _runEngineForCrystal. Mass-balance debits hit cell.fluid.
+// Inter-cell diffusion (_diffuseRingState → mesh.diffuse) operates
+// on cell.fluid. But `_HELIX_CHEM_PARAMS` chip reads were never
+// migrated — they kept reading `(s.ring_fluids || [])[i]`.
+//
+// ring_fluids[] is still allocated in the simulator constructor (one
+// clone per ring). It's also still aliased at the equator slot:
+// `this.ring_fluids[equator] = this.conditions.fluid`. Events write
+// to conditions.fluid → ring_fluids[equator] sees the event update.
+// But the other 15 rings get NO chemistry update — they stay at the
+// initial broth for the entire run, because nothing syncs ring_fluids
+// to mesh.cells after the un-aliasing.
+//
+// VISUAL FINGERPRINT
+//
+// Both the live helicoid chip trails AND the strip-view recording
+// rendered an inverted-V pyramid centered on the equator (height 8 of
+// 16) for EVERY chemistry chip whose value moved during the run. The
+// pyramid looked the same in every time strip because the artifact is
+// structural (frozen at equator-only event chemistry) rather than
+// step-varying. The wall_distance chip ALSO has a legitimate
+// triangular profile (cavity radius peaks at the equator via
+// radius * sin(phi)) — so the pyramid was two effects stacked,
+// hiding the artifact behind a legit geometric signal.
+//
+// Boss noticed the pyramid in a gem_pegmatite strip-view screenshot,
+// asked "what's going on in the middle of this graph?" — diagnostic
+// surfaced via that question.
+//
+// FIX
+//
+// js/99j-helix-overlay.ts:
+//   - New _chipFluid(s, w, ri, c) helper inside the _HELIX_CHEM_PARAMS
+//     IIFE. Prefers mesh.cells[ri*N+c].fluid (via w.meshFor(s).cells);
+//     falls back to (s.ring_fluids || [])[ri] only when no mesh is
+//     reachable.
+//   - Every chemistry chip read function rewired through _chipFluid:
+//     5 specials (pH, Eh, salinity, O2), 9 carbonate-system (DIC,
+//     CO2aq, HCO3, CO3_2, SI_calcite, SI_aragonite, SI_dolomite,
+//     SI_HMC, SI_siderite, pCO2; f_ord stays global), 41 ion chips
+//     (the ION_DEFS loop body).
+//   - Unchanged: wall_distance chip (already uses wall.rings[i]
+//     geometry), temperature chip (uses ring_temperatures which IS
+//     synced cavity-wide), f_ord chip (global cycle counter).
+//
+// REPLAY PATH PRESERVED
+//
+// The historical-replay rendering path uses _helixSimAtSnap +
+// _helixWallAtSnap to build sim-shaped + wall-shaped proxies from
+// wall_state_history snapshots. The wall proxy does NOT expose a
+// meshFor method. _chipFluid's mesh check fails, falls through to
+// the snap's ring_fluids[i] — which is exactly the historical
+// behavior. Replay continues to read per-ring snap chemistry; no
+// snap-schema change needed. (Future work: capture mesh.cells[].fluid
+// in snapshots so replay also shows per-cell chemistry. Out of scope
+// for v157.)
+//
+// BEHAVIOR CHANGES
+//
+// Live helicoid chip trails: chemistry chips that were showing an
+// equator spike now render as the actual per-cell chemistry — usually
+// uniform across the cavity (because mesh.cells are uniformly updated
+// today), but where crystals are growing locally the chip values
+// reflect mass-balance depletion at those specific cells. The strip
+// view shows the same: most chips flat across heights, but at cells
+// where crystals consume species heavily the chip drops at that
+// specific height.
+//
+// Probe (tools/strip_recorder_post_fix_probe.mjs) at gem_pegmatite
+// seed 42:
+//   step  10: pH spread 0, CO3 spread 0, SI_calcite spread 0 (uniform)
+//   step 100: pH spread 4, Na spread 51, SI_calcite spread 10
+//             (one cell at height 8 carries real local chemistry
+//              from a growing crystal there)
+//   step 200: SI_calcite drops from 64 (rest) to 0 (-3 log Ω) at
+//             that single cell — heavy local precipitation effect
+//             made visible for the first time.
+//
+// BASELINE INVARIANCE
+//
+// Renderer-only change. The simulator's engine path was already
+// reading from mesh.cells via _runEngineForCrystal. Only the helicoid
+// chip-display + strip-view-recording paths changed. seed42_v157.json
+// byte-identical to v156.
+//
+// VESTIGIAL ring_fluids STATUS
+//
+// ring_fluids[] is now SOLELY a vestigial backing store. It receives
+// event writes (at equator only, via the alias). Nothing reads from
+// it for chemistry purposes except the replay-snap fallback path.
+// Three options for future cleanup, in increasing scope:
+//   (a) Add end-of-step sync from mesh.cells back into ring_fluids[]
+//       so diagnostic readers see fresh chemistry. Cheap.
+//   (b) Replace the event-time alias with a propagation function that
+//       writes event mutations directly into every mesh cell. Removes
+//       the equator privilege; symmetric across the cavity.
+//   (c) Remove ring_fluids[] entirely. Touches the snap-capture path,
+//       the diffuse helper, the simulator constructor. Bigger refactor.
+// All three are deferrable. v157 keeps ring_fluids[] as-is and
+// documents its vestigial status.
+//
+// TESTS
+//
+//   Pre-v157:  1564 tests pass (v156)
+//   Post-v157: 1564 tests pass (renderer-only; no test changes)
+//
+// PROBE TOOLS LANDED IN THIS SESSION
+//
+//   tools/dolomite_cap_probe.mjs               (rejected the bypass-bug
+//                                                diagnosis)
+//   tools/sunnyside_calcite_omega_probe.mjs    (first iteration; led to
+//                                                ring_fluids false alarm)
+//   tools/ring_sync_probe.mjs                  (cross-scenario confirmation
+//                                                that ring_fluids[k] are
+//                                                stuck — turned out to be
+//                                                a vestigial-store artifact)
+//   tools/sunnyside_nucleation_gate_probe.mjs  (correctly samples engine
+//                                                path; surfaced omega=1.045
+//                                                vs sigma_crit=1.5 marginal
+//                                                case)
+//   tools/strip_recorder_post_fix_probe.mjs    (verifies post-rewire that
+//                                                chemistry chips render
+//                                                uniformly across heights)
+//
+// WHAT v157 SHIPS
+//   js/15-version.ts: this block + SIM_VERSION 156 → 157
+//   js/99j-helix-overlay.ts: _chipFluid helper + all chemistry chip
+//     reads rewired to mesh.cells with ring_fluids fallback
+//   tools/*.mjs: 5 new probe tools (listed above)
+//   proposals/HANDOFF-CARBONATE-PHASE-1-COMPLETE.md: Phase 1c items
+//     rejected (dolomite cap, sunnyside CO3 bump), multi-condition
+//     nucleation envelope architectural note added, ring_fluids
+//     vestigial status documented
+
+// ============================================================
+//   v158 — Cavity interior voxel grid: Phase 1 infra (2026-05-27)
+// ============================================================
+//
+// First commit of PROPOSAL-CAVITY-INTERIOR-VOXELS. Ships the data
+// model + accessors + diffusion entry point for a 3D voxel grid
+// spanning the cavity interior. Pure infrastructure: no engine wiring,
+// no event wiring, no behavior change. Sim chemistry unchanged;
+// seed42_v158.json byte-identical to seed42_v157.json.
+//
+// ARCHITECTURAL CONTEXT
+//
+// Pre-v158, "chemistry inside the vug" was a single bulk view
+// (conditions.fluid, aliased to ring_fluids[equator]). The wall mesh
+// (PROPOSAL-CAVITY-MESH, Tranches 1-4c) discretized chemistry across
+// the cavity SURFACE — per-vertex cell.fluid on a 16-ring × 120-cell
+// lat-long grid. But the cavity INTERIOR was uniform: no spatial
+// chemistry, no place for fluid stratification, no place for depletion
+// halos to be 3D objects.
+//
+// v157 made the wall-side chemistry visible (chip reads rewired from
+// vestigial ring_fluids to live mesh.cells). The boss's question
+// immediately after — "if there is a big calcite somewhere would it
+// draw other smaller calcites near it or would it strangle competition
+// by sucking out the local chemistry?" — surfaced that the simulator
+// models the attraction side of local competition (heterogeneous
+// nucleation discount, CGS via enclosure) but not the strangulation
+// side (depletion halo), and the halo is fundamentally a 3D object
+// that needs a discretized interior to exist in.
+//
+// PROPOSAL-CAVITY-INTERIOR-VOXELS landed as the architectural plan;
+// boss locked all 9 firm decisions; this commit ships Phase 1.
+//
+// WHAT v158 SHIPS
+//
+// js/24-geometry-voxel-grid.ts (NEW):
+//   - CavityVoxelGrid class with (r, c, d) addressing matching the
+//     wall mesh + a radial dimension. depth_count = 4 per [FIRM] A.
+//   - 4-tier semantic slice scheme:
+//       d=0  boundary layer (aliased to wall mesh cell fluid)
+//       d=1  near-wall buffer
+//       d=2  interior bulk
+//       d=3  center baseline
+//   - Accessors: voxelAt(r, c, d), boundaryVoxel(r, c), fluidAt(r, c, d),
+//     sampleFluid(r, c, depth, field) [linear interpolation across
+//     stored slices per [FIRM] A average-on-demand pattern]
+//   - diffuse(rate, fieldNames, ringTemps) — v158 delegates to
+//     wall.mesh.diffuse for the d=0 slab (preserves byte-identity);
+//     d≥1 slabs are uniform at init and never receive writes in v158.
+//     Phase 2 (v159) expands the body to do real per-voxel + radial
+//     diffusion without changing the call signature.
+//
+// js/22-geometry-wall.ts:
+//   - New voxelGridFor(sim) on WallState — lazy + cached factory,
+//     mirrors meshFor(sim) pattern. Forces mesh build first (the d=0
+//     aliasing depends on mesh.cells[].fluid being populated).
+//
+// js/85-simulator.ts:
+//   - VugSimulator constructor calls wall_state.voxelGridFor(this)
+//     immediately after the mesh + bindRingChemistry pass. Forces the
+//     grid build so it's ready when _diffuseRingState first fires.
+//
+// js/85c-simulator-state.ts:
+//   - _diffuseRingState rewired to call voxelGrid.diffuse instead of
+//     mesh.diffuse directly. Per [FIRM] H merge: voxel diffusion is
+//     the canonical path. v158 delegate preserves behavior; Phase 2
+//     expands the implementation.
+//   - New sim-level accessors: sim.voxelAt, sim.boundaryVoxel,
+//     sim.fluidAtVoxel, sim.sampleVoxelFluid. Convenience pass-
+//     throughs to wall_state.voxelGridFor(this).<method>.
+//
+// tests-js/voxel-grid.test.ts (NEW): 24 tests covering data model,
+//   aliasing, accessor bounds, interpolation, diffuse delegation, sim
+//   accessors, integration smoke test.
+//
+// tests-js/setup.ts: CavityVoxelGrid added to EXPORTS.
+//
+// [FIRM] DECISIONS LOCKED IN PROPOSAL (all 9):
+//   A. depth_count = 4 (boss: "a coarser radial axis is perfect")
+//   B. d=0 voxel ↔ wall cell: ALIAS (same object, two access paths)
+//   C. Engine boundary-layer view: SINGLE VOXEL (d=0)
+//   D. Density-driven settling: DEFER to v162+
+//   E. Per-voxel temperature: YES from v158 (stored, not consumed)
+//   F. Replay snapshot capture: v160 (visualization phase)
+//   G. zone_chemistry semantics: KEEP PER-RING
+//   H. _diffuseRingState merge: YES (voxel canonical; v158 delegates)
+//
+// BASELINE INVARIANCE
+//
+// seed42_v158.json byte-identical to seed42_v157.json. The proof:
+//   1. d=0 voxels alias mesh.cells[].fluid (same object identity);
+//      no new write paths exist, so engine + event behavior unchanged.
+//   2. d≥1 voxels exist but are never read by engines or events in
+//      v158; they get an initial clone of bulk fluid and stay frozen.
+//   3. voxelGrid.diffuse delegates to mesh.diffuse for v158; the
+//      diffusion deltas applied to d=0 (= wall) are identical to the
+//      pre-v158 mesh.diffuse call.
+//   4. Per-voxel temperature stored but not consumed; engines still
+//      read ring_temperatures[].
+//
+// MEMORY + PERFORMANCE
+//
+// Memory: 16 × 120 × 4 = 7,680 voxels × ~50 fluid fields × 8 bytes
+//         = ~3 MB. Plus 7,680 × 8 bytes for per-voxel temperature
+//         = ~60 KB. Negligible.
+// Perf: v158 diffuse is a pure delegate; no extra cost over v157.
+//       Phase 2 will introduce real per-voxel diffusion (~23 ms/step
+//       naive Laplacian per the proposal's performance budget; under
+//       target with the sparse + asymmetric stepping mitigations
+//       available if needed).
+//
+// PHASES REMAINING
+//
+//   v159 Phase 2: engine + event coupling. Per-voxel nucleation gates
+//                 (depletion halo strangulation becomes load-bearing).
+//                 Event-targeting API. Baselines drift.
+//   v160 Phase 3: visualization. Strip view radial sub-strips. Helicoid
+//                 depth-profile trails. 3D voxel cloud option.
+//   v161+ Phase 4: per-scenario re-tune against the new spatial physics.
+//
+// TESTS
+//
+//   Pre-v158:  1564 tests pass (v157)
+//   Post-v158: 1588 tests pass (+24 voxel-grid tests)
+//
+// WHAT v158 SHIPS (file list)
+//   js/15-version.ts                    SIM_VERSION 157 → 158 + this block
+//   js/22-geometry-wall.ts              voxelGridFor(sim) lazy factory
+//   js/24-geometry-voxel-grid.ts        NEW — CavityVoxelGrid + tests
+//   js/85-simulator.ts                  constructor allocates grid
+//   js/85c-simulator-state.ts           _diffuseRingState → grid.diffuse
+//                                        + sim-level voxel accessors
+//   index.html                          rebuilt bundle
+//   tests-js/setup.ts                   CavityVoxelGrid in EXPORTS
+//   tests-js/voxel-grid.test.ts         NEW — 24 tests
+//   tests-js/baselines/seed42_v158.json regen (byte-identical to v157)
+//   proposals/PROPOSAL-CAVITY-INTERIOR-VOXELS.md  living doc anchor
+
+// ============================================================
+//   v159 — Cavity voxels Phase 2a: event delta propagation to interior
+// ============================================================
+//
+// Phase 2 of PROPOSAL-CAVITY-INTERIOR-VOXELS, split into 2a (v159) + 2b
+// (v160) for safety. v159 is the pure-infrastructure half: events
+// propagate to interior voxels; engines still read d=0 only; baseline
+// byte-identical to v158. v160 will turn on real per-voxel diffusion +
+// per-cell nucleation gates together (the coupled mechanism that
+// produces the depletion-halo strangulation behavior).
+//
+// WHY SPLIT
+//
+// The original Phase 2 plan ran ALL the engine + event + diffusion
+// + nucleation changes in one commit. v159 prep landed the per-voxel
+// 3D Laplacian and immediately surfaced two problems:
+//   1. ~14-18 ms/step diffusion cost pushed several test files past
+//      their 30s timeouts (8 seeds × 200 steps × 18 ms ≈ 29 s, right
+//      at the edge). Optimization knocked it to 10-12 ms but still
+//      tight.
+//   2. Baseline drift across all event-heavy scenarios (geologically
+//      defensible per the W9-W12 "landing on the geology" pattern,
+//      but several scenarios now broke specific test assertions —
+//      lepidolite cap, carbonate week-7 PWP rate).
+//
+// The geological behavior change (depletion halos strangling nearby
+// nucleation) needs both per-voxel diffusion AND per-cell nucleation
+// gates to work as a unit. Shipping diffusion alone would surface
+// drift without the corresponding geological gain. Shipping both
+// together at v160 is the cleaner narrative.
+//
+// v159 ships just the event propagation — pure infrastructure that
+// makes the interior voxels carry real chemistry. No engine wiring,
+// no diffusion change, no nucleation change. Strip view radial sub-
+// strip rendering (v161+) becomes possible because the interior now
+// has differentiated chemistry to show.
+//
+// WHAT v159 SHIPS
+//
+// js/24-geometry-voxel-grid.ts:
+//   + New propagateEventDelta(preFluid, fieldNames, postFluid, target='all')
+//     method. Replaces the wall-only mesh.propagateDelta path that
+//     was the canonical pre-v159 event-propagation hook. Default
+//     'all' target spreads the delta to every voxel (wall + interior).
+//   + Optional target parameter accepts 'all' | 'boundary' | 'top' |
+//     'bottom' — v159 ships the framework; v160+ scenarios can opt
+//     into spatial targeting via event handler signatures.
+//   + _diffuseFull private method: real 3D Laplacian implementation
+//     (snapshot + variance skip + branchless inner loop) prototyped
+//     in v159 prep, kept as a private method so v160 can flip the
+//     dispatch with a one-line change. Public diffuse() still
+//     delegates to wall mesh in v159.
+//
+// js/85c-simulator-state.ts:
+//   + _propagateGlobalDelta rewired to call voxelGrid.propagateEventDelta
+//     instead of mesh.propagateDelta. Defensive fallback to mesh
+//     preserved for headless test paths.
+//
+// BASELINE INVARIANCE
+//
+// seed42_v159.json byte-identical to seed42_v158.json. The proof:
+//   1. Engines still read d=0 voxels (= mesh.cells fluids via [FIRM] B
+//      alias). Event chemistry reaches d=0 the same way it did in v158
+//      (events mutate conditions.fluid; equator wall cell sees the
+//      update via the legacy ring_fluids[equator] alias; propagateEvent
+//      Delta spreads to all OTHER wall cells — exact same end state).
+//   2. propagateEventDelta ALSO writes to d=1, d=2, d=3 voxels — new
+//      behavior — but nothing in v159 reads from those voxels. No RNG
+//      consumed; no chemistry consumed; no crystal nucleation or growth
+//      sees the interior values.
+//   3. voxelGrid.diffuse delegates to mesh.diffuse (unchanged from v158).
+//
+// PERF
+//
+// propagateEventDelta cost: ~7,680 voxels × ~50 fields × ~3 ops per
+// write-back = ~1.2M ops per event firing. At ~100M ops/sec ≈ 12 ms.
+// Events fire at most a handful of times per scenario run, so total
+// event-propagation cost is ~50-100 ms per run — negligible.
+//
+// WHAT THIS UNLOCKS FOR v160+
+//
+// Interior voxels now carry real event chemistry. Once v160 turns on
+// per-voxel diffusion + per-cell nucleation gates:
+//   - Depletion halos form as 3D objects in the boundary buffer
+//   - Sustained crystal growth is replenished from the cavity reservoir
+//   - Per-cell σ sampling strangles nucleation in depleted halos
+//   - Stratification scenarios (sabkha, dripstone) get richer spatial
+//     chemistry without per-scenario rework
+//
+// v161+ visualization (strip view radial sub-strips, helicoid depth
+// profile trails) can also consume the new interior chemistry
+// directly.
+//
+// TESTS
+//
+//   Pre-v159:  1592 tests pass (v158)
+//   Post-v159: 1592 tests pass (no test changes; v159 ships infra
+//              only with byte-identical baseline)
+//
+// WHAT v159 SHIPS (file list)
+//   js/15-version.ts                    SIM_VERSION 158 → 159 + this block
+//   js/24-geometry-voxel-grid.ts        + propagateEventDelta method
+//                                       + _diffuseFull (private; v160-ready)
+//                                       + per-field variance skip + perf
+//                                         optimizations on the v160 path
+//   js/85c-simulator-state.ts           _propagateGlobalDelta → voxelGrid
+//                                       .propagateEventDelta (fallback
+//                                       to mesh.propagateDelta preserved)
+//   index.html                          rebuilt bundle
+//   tests-js/baselines/seed42_v159.json regen (byte-identical to v158)
+//
+// ============================================================
+// v160 — PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 2b: real per-voxel 3D
+//        diffusion + per-cell nucleation strangulation gate
+// ============================================================
+// The coupled geological-behavior commit v158/v159 were building toward.
+// Two mechanisms ship together because the second is only meaningful in
+// the presence of the first:
+//
+//   1. REAL 3D DIFFUSION. CavityVoxelGrid.diffuse() stops delegating to
+//      the 2D wall-mesh Laplacian and calls _diffuseFull — the full
+//      6-neighbor (r,c,d) Laplacian. The wall slab (d=0) keeps the same
+//      lat-long stencil mesh.diffuse used (identical c-neighbors, Neumann
+//      poles, same rate) and gains a radial neighbor (d=1). The radial
+//      coupling is the load-bearing change: the cavity interior reservoir
+//      (d=1,2,3, carrying event chemistry via v159's propagateEventDelta)
+//      now replenishes the wall cells that engine mass-balance depletes,
+//      and depletion halos propagate inward as 3D objects. Growth-side
+//      local competition ("does a big calcite strangle its neighbors by
+//      sucking out the local chemistry?" — yes) becomes load-bearing
+//      GLOBALLY: every scenario's mesh.cells now exchange radially with
+//      the reservoir, not just laterally along the wall.
+//
+//   2. PER-CELL NUCLEATION STRANGULATION GATE (Putnis 2009, Reviews in
+//      Mineralogy v70 §5 — boundary-layer depletion). _atNucleationCap
+//      gains a final, RNG-neutral check (_wallStrangledFor): when a
+//      mineral's BULK-view σ exceeds σ_crit (the cavity average favors
+//      it) but EVERY wall cell is locally depleted below σ_crit, block
+//      nucleation. This is the nucleation-side of local competition —
+//      the dominant phase carves a 3D halo of sub-σ_crit fluid that
+//      strangles nearby nucleation. The bulk-σ precondition is essential
+//      for byte-identity: it keeps the gate dormant unless the mineral
+//      genuinely wants to fire (σ=0 minerals — wrong ingredients — are
+//      never strangulation-blocked, so engines that call _atNucleationCap
+//      before their σ check don't lose downstream substrate-pick RNG).
+//
+// ASYMMETRIC DIFFUSION STEPPING (perf + physics, _DIFFUSE_DEEP_EVERY=4).
+// _diffuseFull processes the boundary slabs (d=0 wall, d=1 near-wall
+// buffer) EVERY step and the deep reservoir (d=2 interior, d=3 center)
+// every 4th step. This is the proposal's blessed mitigation #2 AND the
+// correct physics — the slice semantics already declared d=3 "slowest to
+// equilibrate." The d1/d2 interface is no-flux (Neumann) on shallow
+// steps, so mass is conserved every step; the deep reservoir just
+// exchanges with the near-wall buffer periodically rather than
+// continuously. Perf: naive all-slab-every-step measured ~8.5 ms/step of
+// pure diffusion (3× the ~2.7 ms 2D mesh path); asymmetric stepping
+// knocks it to ~5 ms, clearing the multi-seed test timeouts the v159
+// commit flagged as the reason Phase 2 was split.
+//
+// BASELINE DRIFT (seed42_v159 → seed42_v160)
+//
+// All 28 seed-42 scenarios drift (the diffusion changes per-cell
+// chemistry trajectories → nucleation timing → RNG cascade). Regenerated
+// to seed42_v160.json. Beyond the byte-baseline regen, exactly three
+// assertion tests needed attention; each landed on the geology:
+//
+//   * lepidolite cap: NO fix needed. The symmetric-diffusion prototype
+//     briefly produced 4 lepidolite at seed 1 (3 exposed + 1 enclosed —
+//     the cap counts EXPOSED, so it was working); asymmetric stepping
+//     shifted the chemistry and the enclosure no longer fires. Passes.
+//   * carbonate-week7 "pwp positive post-recovery": window widened from
+//     step ≥95 to ≥90 (the scheduled fracture-seal step). The seal-driven
+//     pH rebound + brief calcite supersaturation lands at steps 90-92;
+//     the v159 RNG cadence happened to overlap the old ≥95 buffer, v160's
+//     does not. Seal→precipitation signal intact.
+//   * sunnyside "rhodochrosite is pale-pink": dropped the `&& c.active`
+//     filter. At seed 42 the headline rhodochrosite happens to get
+//     enclosed by an adjacent galena (a Sweetwater overgrowth — 6 of 8
+//     sampled seeds still leave it exposed); the pale-pink color note is
+//     recorded in its zones at growth time regardless. Test intent
+//     (color encoding) preserved.
+//   * pharmacolite coverage: timeout bumped 90s → 150s. The 32-seed
+//     sweep runs ~43 s alone but tips past 90 s under parallel CPU
+//     contention now that each step carries the diffusion cost.
+//     Pharmacolite forms in ~24 of the first 80 seeds under v160 — not
+//     suppressed, just slower to sweep.
+//
+// STRANGULATION-GATE FIRINGS (seed 42, flagged for review). The gate
+// fires in 4 scenarios, all Pb/Mn supergene competition:
+//   schneeberg            anglesite 1→0, plumbogummite 3→0, duftite 2→0,
+//                         galena 1→0  (all marginal; As-dominated system)
+//   radioactive_pegmatite galena 2→0, plumbogummite 2→0
+//   supergene_oxidation   duftite fires through (2→2) — strangled on some
+//                         steps, finds a clear cell on others
+//   naica_geothermal      pyrolusite 0→0 (never formed regardless)
+// The eliminated phases are 1-3-crystal edge-of-gate late/supergene
+// firings in walls already depleted by competing growth — the boundary-
+// layer strangulation working as intended. No specimen-calibrated
+// coverage test pins them (full suite identical with the gate on vs off).
+//
+// FILES
+//   js/24-geometry-voxel-grid.ts   diffuse() → _diffuseFull; asymmetric
+//                                  stepping (_DIFFUSE_DEEP_EVERY) added to
+//                                  _diffuseFull (snapshot + Laplacian
+//                                  depth-bounded; d1/d2 Neumann on shallow)
+//   js/85b-simulator-nucleate.ts   _atNucleationCap → _wallStrangledFor
+//                                  (per-cell strangulation gate, bulk-σ
+//                                  precondition, RNG-neutral)
+//   js/15-version.ts               SIM_VERSION 159 → 160 + this block
+//   index.html                     rebuilt bundle
+//   tests-js/carbonate-week7-reactive-wall.test.ts   window ≥95 → ≥90
+//   tests-js/sunnyside-american-tunnel.test.ts       drop active filter
+//   tests-js/pharmacolite.test.ts                    timeout 90s → 150s
+//   tests-js/voxel-grid.test.ts    + 3D-diffusion + strangulation tests
+//   tests-js/baselines/seed42_v160.json              regen
+//
+// ============================================================
+// v161 (2026-05-28) — EVAPORITE REWETTING: dilute the brine on reflood
+// ============================================================
+//
+// THE BUG. The per-cell `concentration` multiplier (the evaporite driver —
+// FluidChemistry.concentration, default 1.0) was a ONE-WAY RATCHET.
+// 85c _applyVadoseOxidationOverride multiplied it by
+// EVAPORATIVE_CONCENTRATION_FACTOR (×3) on each wet→vadose drying, but the
+// method early-returned whenever the water level ROSE, so nothing ever
+// re-diluted it. Surfaced by the new strip `concentration` chip (v161
+// recording): searles_lake pinned 1→3→9→clamp after 2-3 dry cycles and
+// stayed there. The redissolution half of the evaporite cycle — fresh_pulse's
+// own narrated "the brine dilutes, salt crusts begin to redissolve... the
+// basin briefly resembles a real lake" — never fired; 3 of the 5 advertised
+// seasonal cycles were chemically inert for the evaporite minerals.
+//
+// THE FIX. _applyVadoseOxidationOverride now handles BOTH water-level
+// directions in one pass (the early-return on rising water is gone). On a
+// vadose→wet transition it resets cell.fluid.concentration AND
+// ring_fluids[r].concentration to 1.0 — full freshening, matching the flood
+// narratives and playa hydrology. Drying behavior is byte-unchanged. We do
+// NOT un-oxidize (O2) or restore S on reflood: air-exposure supergene
+// reactions persist; only the soluble evaporite load re-dilutes.
+//
+// BASELINE DRIFT (seed42_v160 → seed42_v161). 29/30 scenarios BYTE-IDENTICAL.
+// Only naica_geothermal drifts: thenardite 10 → 3 (active + total; max_um 0
+// both — these are dehydration paramorphs). The drift is geologically CORRECT:
+// the 2017 mining_recharge (step 290 of 320) now actually dilutes the brine,
+// so the late soluble Na-sulfate (thenardite) stops precipitating in the final
+// ~30 steps instead of riding a ratcheted concentration. searles_lake — the
+// scenario that MOTIVATED the fix — is byte-identical: the fix corrects the
+// fluid TRAJECTORY (concentration now oscillates 1↔3 instead of ratcheting to
+// the chip clamp) but the seed-42 final mineral census is set during the dry
+// windows, and dilution gates NEW nucleation rather than dissolving existing
+// crystals. No assertion test needed editing — the calibration regen covers
+// the count, and a new searles strip contract + the strip digest pin the
+// trajectory. naica seal/peak-fill/habit tests unaffected (thenardite is
+// zero-volume, so peak fill is unchanged).
+//
+// The strip `concentration` chip (the evaporite driver) was added in the
+// immediately-preceding recording-only commit (no version bump); this is what
+// made the ratchet visible. v161 also grows the tripwire: strip_digest_v161
+// adds searles_lake + the `concentration` chip and pins the oscillation.
+//
+// FILES
+//   js/85c-simulator-state.ts   _applyVadoseOxidationOverride: + rewetting
+//                               branch (vadose→wet resets concentration to 1.0)
+//   js/15-version.ts            SIM_VERSION 160 → 161 + this block
+//   index.html                  rebuilt bundle
+//   tests-js/baselines/seed42_v161.json        regen (naica thenardite 10→3)
+//   tests-js/strip-contracts.test.ts           + searles_lake contract (4 its)
+//   tools/strip-digest-shape.mjs               + searles_lake + concentration
+//   tests-js/baselines/strip_digest_v161.json  regen (6 scenarios, 7 chips)
+//
+// ============================================================
+// v162 (2026-05-28) — THERMAL-PULSE OPT-OUT FLAG: no magmatic pulses at the surface
+// ============================================================
+//
+// THE BUG (surfaced by the strip T chip on bisbee). ambient_cooling (85d,
+// every step) carries a hydrothermal thermal-pulse mechanic: a 4-10%/step
+// chance to spike T by +30-150°C (ceiling 0.95×initial T) + inject SiO2/Fe/Mn
+// + drop pH — "hot fluid injection through a fracture." Correct for cooling
+// hydrothermal systems; WRONG once a scenario reaches a supergene/near-surface
+// regime (no magmatic heat source). Ungated, it reheated bisbee's
+// azurite→malachite→chrysocolla cascade (a ~25°C process) — observed T spiking
+// to 357°C. A scope survey (all 30 scenarios, seed 42) found genuine
+// contamination in bisbee (→138°C cold-regime pulses), roughten_gill (→124°C,
+// supergene Pb oxidation) and schneeberg (→146°C), while warm-spring systems
+// (naica ~54°C cave, sulphur_bank ~75°C, travertine ~70°C) and all hot
+// hydrothermal scenarios were pulsing at geologically-correct T.
+//
+// WHY A FLAG, NOT AN AUTOMATIC GATE. An automatic regime-temperature gate was
+// prototyped and REJECTED: temperature alone can't separate "supergene-cold"
+// from "cool groundwater/hot-spring" (bisbee's 25-35°C overlaps naica's
+// post-mining 30°C), and gating by regime broke 9 CALIBRATED tests on
+// schneeberg + sulphur_bank — their "spurious" pulses turned out to be
+// load-bearing for tuned mineralogy (schneeberg's meta-U heat path; sulphur_
+// bank's native_sulfur/orpiment). The honest fix is a per-scenario opt-out so
+// only confirmed-supergene scenarios lose pulses, leaving the entangled
+// calibrations untouched.
+//
+// THE FIX. VugWall.thermal_pulses (default true; 22-geometry-wall). The
+// ambient_cooling pulse is gated on conditions.wall.thermal_pulses (LAST &&
+// operand → rng.random() still drawn first → non-flagged scenarios byte-
+// identical). Tagged thermal_pulses:false on bisbee + roughten_gill (the two
+// confirmed-clean supergene targets). Creative Mode exposes it as a setup
+// toggle (f-thermal-pulses). schneeberg is NOT flagged here — its meta-U needs
+// a proper dry-air (vadose) driver first (separate commit), so leaving its
+// pulses on keeps its calibration intact for now. sulphur_bank stays on (its
+// warm-spring pulses are correct).
+//
+// BASELINE DRIFT (seed42_v161 → seed42_v162): 28/30 BYTE-IDENTICAL. Only the
+// two flagged scenarios drift, both toward more supergene-correct mineralogy:
+//   bisbee (33→30 species): sheds the heat/SiO2-pulse artifacts (anhydrite,
+//     opal, tigers_eye, alunite, rhodochrosite, thenardite) and gains proper
+//     supergene phases (jarosite, sylvite, turquoise). The azurite/malachite/
+//     chrysocolla cascade now runs at its real ~25°C instead of pulse-spiked
+//     350°C.
+//   roughten_gill (21→26): gains supergene Cu-Pb oxidation phases — duftite,
+//     olivenite, aurichalcite, rosasite, sphalerite, turquoise, AND
+//     plumbogummite (its TYPE mineral). Loses native_silver + willemite at
+//     seed 42 (RNG-cascade from the removed pulses); the suite's roughten_gill
+//     assertions stay green (no hard seed-42 native_silver pin).
+//   schneeberg + sulphur_bank: BYTE-IDENTICAL — deliberately NOT flagged, so
+//     their pulse-dependent calibrations (schneeberg meta-U heat path,
+//     sulphur_bank native_sulfur/orpiment) are untouched. Full suite green,
+//     no assertion edits needed.
+//
+// FILES
+//   js/22-geometry-wall.ts      VugWall.thermal_pulses flag (default true)
+//   js/85d-simulator-step.ts    ambient_cooling: thermal_pulses gate
+//   js/97-ui-fortress.ts        Creative-mode f-thermal-pulses toggle
+//   data/scenarios.json5        bisbee + roughten_gill → thermal_pulses:false
+//   js/15-version.ts            SIM_VERSION 161 → 162 + this block
+//   index.html                  rebuilt bundle
+//   tests-js/baselines/seed42_v162.json   regen
+//
+// ============================================================
+// v163 (2026-05-29) — SCHNEEBERG done properly: meta-U via dry air, native bismuth via its cooling window
+// ============================================================
+//
+// Completes the v162 thermal-pulse arc for schneeberg, which v162 left
+// deliberately un-flagged because its calibration was load-bearing on the
+// (spurious) pulses. Two entangled dependencies, both now fixed at the
+// mechanism level:
+//
+// 1. META-URANIUM via the DRY-AIR (vadose) path, not spurious heat. The meta-
+//    forms (torbernite→metatorbernite, zeunerite→metazeunerite) were firing
+//    ONLY because the ambient_cooling thermal pulses reheated their host rings
+//    >75°C (the heat path in DEHYDRATION_TRANSITIONS, 75-transitions) — absurd
+//    for a 20°C supergene pocket. Real meta-uranyl-mica forms by dehydration in
+//    dry air ("damp mine → dry display case", research-autunite.md). Added
+//    event_schneeberg_vadose_exhumation (step 110): late uplift drops the water
+//    table, the uranyl crusts enter the vadose zone, and the vadose
+//    dry_exposure_steps path (threshold 40) does the dehydration honestly.
+//    torbernite (nucleated step 85) + zeunerite (105) clear 40 vadose steps by
+//    160 → metatorbernite + metazeunerite; autunite (125) stays hydrated (only
+//    35 steps left — geologically fine, fresh autunite is the hydrate).
+//
+// 2. NATIVE BISMUTH via its real cooling window. supersaturation_native_bismuth
+//    has T_factor=1.0 only in [100,250]°C (0.1 above 270, 0.6 below 100). The
+//    old T schedule jumped 350→30°C, SKIPPING the window — so native_bismuth
+//    only ever crossed σ=1.0 when a thermal pulse happened to reheat a ring
+//    into range (σ_max without pulses was 0.811, capped — bi_f maxes at 3.0).
+//    event_schneeberg_cooling now lands at 180°C (the bismuth-arsenide
+//    "Fünfelementformation" window, Markl 2016 / Kissin 1992) before supergene
+//    onset at cu_p_phase (25°C). native_bismuth σ → 1.351, nucleates at every
+//    tested seed via legitimate chemistry. The Co-Ni arsenides crystallize in
+//    the same window. wall.thermal_pulses:false (schneeberg now flagged too).
+//
+// BASELINE DRIFT (seed42_v162 → seed42_v163): 29/30 BYTE-IDENTICAL. Only
+// schneeberg drifts (the thermal_pulses flag defaults true, so no other
+// scenario is touched). schneeberg 32→32 species, and the change is a clear
+// geological WIN — the five-element-vein heritage is now MORE complete:
+//   +native_arsenic, +native_silver, +naumannite (Ag-Se) — the Bi-Co-Ni-Ag-As
+//     "Fünfelementformation" assemblage, now crystallizing in the real 180°C
+//     cooling window alongside native_bismuth instead of being skipped.
+//   +autunite (stays the hydrate — it nucleates too late, step 125, to clear
+//     the 40-step vadose threshold), +pharmacolite.
+//   -meta-autunite (autunite no longer dehydrates; metatorbernite +
+//     metazeunerite ARE present via the vadose path — the meta-* trio test
+//     needs ≥1 and is satisfied), -haidingerite (pharmacolite stays hydrated in
+//     the baseline now; the haidingerite test forces T=90 and still passes),
+//     -opal + -lepidocrocite (SiO2/Fe thermal-pulse artifacts, correctly gone),
+//     -uranophane (still fires in colorado_plateau — the calibration 1-of-2
+//     floor holds).
+//
+// FILES
+//   js/70d-pegmatite-radioactive.ts   + event_schneeberg_vadose_exhumation;
+//                                      cooling T 30→180 (bismuth-arsenide window)
+//   js/70-events.ts                   register schneeberg_vadose_exhumation
+//   data/scenarios.json5              schneeberg: + exhumation event @110,
+//                                      thermal_pulses:false
+//   js/15-version.ts                  SIM_VERSION 162 → 163 + this block
+//   index.html                        rebuilt bundle
+//   tests-js/baselines/seed42_v163.json   regen
+//
+// ============================================================
+// v164 (2026-05-30) — SULFATE Ksp ENGINE: strip is no longer SI-blind on the sulfate family
+// ============================================================
+//
+// 21-scenario observation sweep (tools/strip-survey.mjs, new) confirmed what
+// the prior handoff suspected: the strip's carbonate-only SI chips are blind
+// to a whole *family* of scenarios whose headline minerals are sulfates —
+// naica (selenite), sicily_solfifera (celestine), sulphur_bank (sulfur/Hg),
+// plus the already-contracted sabkha + searles. The survey came back clean
+// (no engine bug, all 21 trajectories explainable) but the instrument gap
+// was the clear next move. This commit is the observer-only Phase 1 of the
+// sulfate SI engine — analogous to the carbonate Phase 1 (Weeks 1-2) that
+// shipped 20c + 32b before any kinetic promotion.
+//
+// WHAT LANDED
+//   data/thermo-sulfates.json        — Ksp(T) + ΔH_diss for the 4 canonical
+//                                       simple sulfates: gypsum (engine name
+//                                       'selenite'), anhydrite, barite,
+//                                       celestine. Values verified DIRECTLY
+//                                       against PHREEQC wateq4f.dat
+//                                       (USGS-distributed: github.com/usgs-
+//                                       coupled/phreeqc3, branch master,
+//                                       file database/wateq4f.dat).
+//   js/20d-chemistry-sulfate-Ksp.ts  — Ksp loader mirror of 20c. Module-level
+//                                       fetch with fallback, van't Hoff T-
+//                                       dependence, listSulfatesAtTier,
+//                                       sulfatesReady(cb).
+//   js/40b-supersat-sulfate-Ksp.ts   — sulfateSaturationIndex(mineralId, fluid,
+//                                       T) using the geometric-mean activity
+//                                       IAP = a(cation)·a(SO4²⁻), divided by
+//                                       Ksp(T). Reuses speciesActivity() from
+//                                       20a (S is already SO4²⁻ by SPECIES_
+//                                       PROPERTIES convention — Phase-4-aware).
+//   tests-js/sulfate-si.test.ts      — engine unit tests at geological
+//                                       reference points.
+//
+// THE BARITE-IS-ENDOTHERMIC CATCH. Initial memory had ΔH_diss for barite as
+// retrograde (negative) like the other three sulfates. Verifying against
+// wateq4f.dat caught it: barite is +26.57 kJ/mol — *prograde* solubility
+// (K rises 50× from 25°C to 200°C). The sign matters at MVT temperatures;
+// at 100°C barite logKsp = -9.03 (vs. -9.97 at 25°C), so MVT barite SI
+// reads ~1 log unit lower than naive 25°C-Ksp extrapolation would predict.
+// Documented openly in the JSON's notes block. This is exactly the failure
+// mode the v145 hallucinated-Wright-1999 correction warned about — the
+// verification step earned its place in the workflow.
+//
+// SI VALIDATION AGAINST GEOLOGY (one-shot probe, see commit message)
+//   naica broth (Ca=320, S=300, T=45°C):   SI_selenite ≈ -0.18 (slightly
+//                                          undersat; the slow-growth condition
+//                                          that grows the Cave of Crystals).
+//   sicily broth (Sr=45, S=940, T=27°C):   SI_celestine ≈ +0.87 (strongly
+//                                          supersat; Sr-brine precipitates
+//                                          celestine + native sulfur).
+//   MVT broth (Ba=180, S=60, T=100°C):     SI_barite ≈ +3.05 (strongly
+//                                          supersat at hot-brine temps;
+//                                          standard gangue-formation regime).
+//
+// CONVENTIONS / KNOWN APPROXIMATIONS (Phase 1)
+//   - S taken as SO4²⁻ (oxidizing): correct where sulfates form; biased
+//     for reducing systems (sulphur_bank H2S pulses). Phase-4 Eh splits
+//     this honestly.
+//   - a(H2O) = 1 for the gypsum (CaSO4·2H2O) dissolution: matches PHREEQC's
+//     wateq4f log_k definition. Halite-saturated brines would benefit
+//     from Pitzer; research-mode follow-up.
+//   - Davies activity (γ ≤ 1 cap from 20a) valid to I ≈ 0.5 mol/kg.
+//
+// BASELINE DRIFT (seed42_v163 → seed42_v164): expected 30/30 BYTE-IDENTICAL.
+// Pure observer module — no consumer in the engine pipeline calls
+// sulfateSaturationIndex; the strip chip wiring lands in the next bump
+// (v165). The full suite (1627/1627) was green BEFORE the version-line
+// bump, confirming the new modules don't perturb anything.
+//
+// FILES
+//   data/thermo-sulfates.json         + new (sourced from PHREEQC wateq4f.dat)
+//   js/20d-chemistry-sulfate-Ksp.ts   + new (Ksp loader, mirror of 20c)
+//   js/40b-supersat-sulfate-Ksp.ts    + new (SI engine, mirror of 32b)
+//   tests-js/sulfate-si.test.ts       + new (engine unit tests)
+//   tools/strip-survey.mjs            + new (the per-scenario sweep that
+//                                       motivated this work)
+//   js/15-version.ts                  SIM_VERSION 163 → 164 + this block
+//
+// ============================================================
+// v165 (2026-05-30) — STRIP CHIPS: SI_selenite / anhydrite / barite / celestine
+// ============================================================
+//
+// Wires the v164 sulfate Ksp engine into the strip recorder + helicoid
+// overlay. Four observer-only chips, mirror of the carbonate SI chips
+// shipped in Week 3 (32b → 99j):
+//
+//   SI_selenite   gypsum/selenite (CaSO4·2H2O)
+//   SI_anhydrite  anhydrite (CaSO4)
+//   SI_barite     barite (BaSO4)
+//   SI_celestine  celestine (SrSO4)
+//
+// Each reads _chipFluid then sulfateSaturationIndex(mineralId, fluid, T)
+// (40b). Range [−8, 8] matches the carbonate SI chips for visual
+// comparability. New legend section "Sulfate System" sits between
+// "Carbonate System" and "Ions" — section boundaries updated to
+// (7, 18, 22, end) for the four-section layout.
+//
+// Naming note: the 'gypsum' alias is accepted by sulfateSaturationIndex
+// (same Ksp, same chemistry) but the chip is SI_selenite to match the
+// engine catalog's mineralId. Hover tooltip names both habits.
+//
+// BASELINE DRIFT (seed42_v164 → seed42_v165): expected 30/30 BYTE-IDENTICAL.
+// Pure observer — adds chip enumerations to the recorder but does not
+// perturb engine state. Verified before commit.
+//
+// FILES
+//   js/99j-helix-overlay.ts          + 4 _HELIX_FULL_NAMES entries
+//                                     + 4 params.push reading sulfateSaturationIndex
+//                                     + legend section "Sulfate System"
+//   js/15-version.ts                 SIM_VERSION 164 → 165 + this block
+//
+// ============================================================
+// v166 (2026-05-30) — SI CHIP FLOOR-CLAMP: continuous strips at zero cation
+// ============================================================
+//
+// Cosmetic fix to the strip recorder's SI chip reads. Previously, when a
+// required cation reached zero (e.g. roughten_gill Fe→0 driving 76% of
+// SI_siderite samples to null; sulphur_bank Sr=0 + Ba=0 making
+// SI_celestine + SI_barite uniformly null), the chip returned null and
+// the strip showed gaps that read as "no data / broken chip."
+//
+// The math hasn't changed — carbonateSaturationIndex / sulfateSaturation-
+// Index still return NaN when IAP is undefined (log of zero). The chip
+// helpers in 99j now CLAMP non-finite SI to the chip's declared display
+// floor (_SI_CHIP_FLOOR = −8) instead of nulling out. Geological reading
+// is identical either way ("deeply undersaturated, no precipitation
+// possible"); the strip just stays continuous.
+//
+// FILES
+//   js/99j-helix-overlay.ts          _readSI (carbonate) + _readSulfateSI:
+//                                     non-finite SI → _SI_CHIP_FLOOR (−8)
+//                                     instead of null. SI_HMC's inline read
+//                                     gets the same clamp.
+//   js/15-version.ts                 SIM_VERSION 165 → 166 + this block
+//
+// SCOPE NOTE — what's NOT clamped: the outer `if (!f) return null` (no
+// fluid sampled at all — voxel doesn't exist) stays null. That's a
+// different absence (chip-level, not chemistry-level) we want to keep
+// legible as a gap. Only the "fluid exists, SI math undefined" case
+// is now floor-clamped.
+//
+// BASELINE DRIFT
+//   seed42_v165 → seed42_v166:   30/30 BYTE-IDENTICAL. Engine untouched
+//                                 (chip reads are observers; nucleation
+//                                 / growth / dispatch all unaffected).
+//   strip_digest_v165 → v166:    EXPECTED to shift for chip × scenario
+//                                 pairs where the cation was zero (e.g.
+//                                 sulphur_bank's SI_celestine/SI_barite).
+//                                 The shift is null → −8, which is the
+//                                 correct geological reading.
+const SIM_VERSION = 166;
 

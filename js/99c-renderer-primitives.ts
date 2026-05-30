@@ -1083,6 +1083,40 @@ const PRIM_ARAGONITE_CONTACT_TWIN = {
   })(),
 };
 
+// Cave-aragonite frostwork — 2D wireframe counterpart of the Three.js
+// _makeAragoniteFrostwork geometry (99i). Radiating acicular spray:
+// 5 thin needles from a common base nucleus — a central vertical spike
+// plus four tilted ~27° in the cardinal directions. Mirrors the same 5
+// needle axes the Three.js builder uses ([0,1,0], [±0.45,0.9,0],
+// [0,0.9,±0.45]) so the wireframe projection matches the 3D form.
+// Hill & Forti 1997 (Cave Minerals of the World §5.3.4, §10); cave
+// aragonite manifests as frostwork regardless of twin state (the
+// cyclic-sextet pseudo-hex twin shows up as a 6-fold needle cluster, not
+// a smooth column — Frisia et al. 2002, Grotte de Clamouse).
+// BUG-aragonite-twin-cave-morphology.md.
+const PRIM_ARAGONITE_FROSTWORK = {
+  name: 'aragonite_frostwork',
+  vertices: (() => {
+    const baseY = -0.2;          // base nucleus anchor
+    const len = 1.1;             // needle length
+    const axes: number[][] = [
+      [0,     1.00, 0    ],      // central spike (straight up)
+      [0.45,  0.90, 0    ],      // tilt +x
+      [-0.45, 0.90, 0    ],      // tilt -x
+      [0,     0.90, 0.45 ],      // tilt +z
+      [0,     0.90, -0.45],      // tilt -z
+    ];
+    const vs: number[][] = [[0, baseY, 0]];  // 0: base nucleus
+    for (const ax of axes) {
+      const m = Math.hypot(ax[0], ax[1], ax[2]);
+      vs.push([ax[0] / m * len, baseY + ax[1] / m * len, ax[2] / m * len]);
+    }
+    return vs;
+  })(),
+  // One edge per needle: base nucleus (0) → each tip (1..5).
+  edges: [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5]],
+};
+
 // Habit string → primitive lookup. Direct hits checked first; the
 // fuzzy-substring fallback in _lookupCrystalPrimitive catches the
 // many compound forms in data/minerals.json (e.g. "rhombohedral_or_

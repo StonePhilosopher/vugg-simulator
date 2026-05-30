@@ -117,7 +117,14 @@ Object.assign(VugSimulator.prototype, {
   // systems don't notice small pulses).
   const cooledFraction = 1 - (this.conditions.temperature - 25) / Math.max(this._startTemp || 400, 100);
   const pulseChance = 0.04 + cooledFraction * 0.06; // 4-10% per step
-  if (rng.random() < pulseChance && this.conditions.temperature < (this._startTemp || 400) * 0.8) {
+  // v162 supergene opt-out (LAST && operand so rng.random() is still drawn
+  // first — keeps every non-flagged scenario byte-identical). Scenarios that
+  // model a near-surface / supergene regime set wall.thermal_pulses:false:
+  // there is no magmatic heat source at the surface, so the "hot fluid
+  // injection" pulses (which were reheating bisbee's 25°C azurite/malachite
+  // cascade toward 350°C) must not fire. See VugWall.thermal_pulses (22).
+  const _pulsesOn = (this.conditions.wall?.thermal_pulses !== false);
+  if (rng.random() < pulseChance && this.conditions.temperature < (this._startTemp || 400) * 0.8 && _pulsesOn) {
     // Spike: 30-150°C above current, but not above original start temp
     const spike = rng.uniform(30, 150);
     const newTemp = Math.min(this.conditions.temperature + spike, (this._startTemp || 400) * 0.95);

@@ -482,23 +482,41 @@
     }
   },
   "marble_contact_metamorphism": {
-    "aragonite": {
-      "active": 1,
+    "albite": {
+      "active": 2,
       "dissolved": 0,
+      "total": 2,
+      "max_um": 1033.1
+    },
+    "aragonite": {
+      "active": 0,
+      "dissolved": 1,
       "total": 1,
-      "max_um": 9315.2
+      "max_um": 9414
     },
     "calcite": {
       "active": 1,
       "dissolved": 0,
       "total": 1,
-      "max_um": 19764.3
+      "max_um": 19134.6
+    },
+    "diopside": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 39.3
+    },
+    "grossular": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 161.4
     },
     "ruby": {
       "active": 1,
       "dissolved": 0,
       "total": 1,
-      "max_um": 162.8
+      "max_um": 162.7
     }
   },
   "mvt": {
@@ -1146,19 +1164,25 @@
       "active": 1,
       "dissolved": 0,
       "total": 1,
-      "max_um": 51.5
+      "max_um": 137.2
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
     },
     "dolomite": {
       "active": 1,
       "dissolved": 0,
       "total": 1,
-      "max_um": 13.6
+      "max_um": 34.1
     },
     "quartz": {
-      "active": 1,
+      "active": 2,
       "dissolved": 0,
-      "total": 1,
-      "max_um": 46.5
+      "total": 2,
+      "max_um": 47
     },
     "selenite": {
       "active": 1,
@@ -1170,7 +1194,7 @@
       "active": 4,
       "dissolved": 0,
       "total": 4,
-      "max_um": 0
+      "max_um": 0.5
     }
   },
   "schneeberg": {

@@ -35,10 +35,34 @@ function grow_calcite(crystal, conditions, step) {
     return null;
   }
 
+  // Growth rate dispatch — v144 Week 9: when the calcite SI flag is on,
+  // delegate the rate calculation to PWP kinetics (Plummer-Wigley-
+  // Parkhurst 1978 + Mg poisoning + Arrhenius T-dependence). The
+  // empirical 5.0 × excess formula stays as the fallback for any
+  // future flag-off testing / debug rollback. Same flag gate as the
+  // sigma dispatch in supersaturation_calcite — both halves of the
+  // engine flip together (proposal Week 9 plan).
   const excess = sigma - 1.0;
-  let rate = 5.0 * excess * rng.uniform(0.8, 1.2);
+  let rate;
+  if (kspSupersatActiveFor('calcite')) {
+    const pwp_mol = calciteRate(conditions.fluid, conditions.temperature);
+    rate = pwpRateToSimMicronsPerStep('calcite', pwp_mol) * rng.uniform(0.8, 1.2);
+    // PWP under-supersat (omega < 1) yields negative rate, which is
+    // dissolution territory — but we already handled the sigma < 1
+    // case above. If PWP returns negative here (Ω slightly > 1 but
+    // forward rate vanishingly small), treat as no growth this step.
+    if (rate < 0) rate = 0;
+  } else {
+    rate = 5.0 * excess * rng.uniform(0.8, 1.2);
+  }
 
-  const Mn_partition = 0.1 * (1 + excess * 0.5);
+  // Mn partition rises with supersaturation (less selective lattice
+  // rejection at faster growth). Capped at 1.0 — the lattice can't
+  // hold more Mn than the fluid offers, regardless of growth rate.
+  // Pre-v144 empirical excess was bounded ~0-12; cap was a no-op. SI
+  // engine omega can reach 100s in wildly supersaturated scenarios,
+  // making the cap load-bearing.
+  const Mn_partition = Math.min(1.0, 0.1 * (1 + excess * 0.5));
   const trace_Mn = conditions.fluid.Mn * Mn_partition;
   const Fe_partition = 0.08;
   const trace_Fe = conditions.fluid.Fe * Fe_partition;
@@ -155,7 +179,21 @@ function grow_aragonite(crystal, conditions, step) {
   }
 
   const excess = sigma - 1.0;
-  const rate = 5.5 * excess * rng.uniform(0.7, 1.3);
+  // Growth rate dispatch — v147 Week 12: when aragonite SI flag is on,
+  // delegate to PWP kinetics via aragoniteRate (which is calcite PWP
+  // × 3 per Burton-Walter 1987 Geology 15:111 / Wollast 1990 Aquatic
+  // Chemical Kinetics). The Mg-poisoning factor that lives in
+  // calciteRate is NOT applied to aragonite — high Mg/Ca is what
+  // FAVORS aragonite vs calcite, not what suppresses it. Same flag
+  // gate as W9-W11. Empirical 5.5 × excess fallback stays.
+  let rate;
+  if (kspSupersatActiveFor('aragonite')) {
+    const pwp_mol = aragoniteRate(conditions.fluid, conditions.temperature);
+    rate = pwpRateToSimMicronsPerStep('aragonite', pwp_mol) * rng.uniform(0.7, 1.3);
+    if (rate < 0) rate = 0;
+  } else {
+    rate = 5.5 * excess * rng.uniform(0.7, 1.3);
+  }
 
   // Habit selection
   if (conditions.fluid.Fe > 30 && excess > 0.6) {
@@ -229,16 +267,29 @@ function grow_dolomite(crystal, conditions, step) {
   }
 
   const excess = sigma - 1.0;
-  const base_rate = 4.5 * excess * rng.uniform(0.7, 1.3);
-
   // Kim 2023: ordering fraction f_ord ramps with FLUID-LEVEL cycle count.
   // Tracking at the fluid level captures the geological insight that an
   // oscillatory environment ratchets ordering across all dolomite nuclei,
-  // not just the ones that survive enclosure. N₀=10 calibrated for sim
-  // timescale (each sim cycle stands in for thousands of real tidal cycles).
+  // not just the ones that survive enclosure. N₀=7 (matches dolomiteRate
+  // in 52b) calibrated for sim timescale (each sim cycle stands in for
+  // thousands of real tidal cycles).
   const cycle_count = conditions._dol_cycle_count;
   const f_ord = 1.0 - Math.exp(-cycle_count / 7.0);
-  const rate = base_rate * (0.30 + 0.70 * f_ord);
+
+  // Growth rate dispatch — v145 Week 10: when the dolomite SI flag is
+  // on, delegate the rate to PWP kinetics (dolomiteRate already bakes
+  // in the Kim 2023 (0.30 + 0.70 × f_ord) ordering gate; we just pass
+  // f_ord). Same flag gate pattern as Week 9 calcite. The empirical
+  // base_rate formula stays as the fallback path.
+  let rate;
+  if (kspSupersatActiveFor('dolomite')) {
+    const pwp_mol = dolomiteRate(conditions.fluid, conditions.temperature, f_ord);
+    rate = pwpRateToSimMicronsPerStep('dolomite', pwp_mol) * rng.uniform(0.7, 1.3);
+    if (rate < 0) rate = 0;
+  } else {
+    const base_rate = 4.5 * excess * rng.uniform(0.7, 1.3);
+    rate = base_rate * (0.30 + 0.70 * f_ord);
+  }
 
   if (conditions.temperature > 200 && excess < 0.5) {
     crystal.habit = 'coarse_rhomb';
@@ -269,6 +320,79 @@ function grow_dolomite(crystal, conditions, step) {
     trace_Fe: conditions.fluid.Fe * 0.08,
     trace_Mn: conditions.fluid.Mn * 0.05,
     note: `${crystal.habit} — ${color_note}${order_note}`,
+  });
+}
+
+// v146 (Week 11): HMC (High-Magnesium Calcite) — disordered
+// Ca(1-x)Mg(x)CO3 with x ≈ 0.05-0.30. Kinetic precursor to ordered
+// dolomite per Kim 2023; persists as metastable Mg-rich calcite
+// intermediate without cycling. The mg_content is per-crystal state,
+// set at nucleation from fluid Mg/Ca (Mucci-Morse 1983 partitioning).
+function grow_HMC(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_HMC();
+  if (sigma < 1.0) {
+    // Acid dissolution — HMC dissolves more readily than calcite due
+    // to higher Ksp of the Mg-substituted lattice (Bischoff-Mackenzie-
+    // Bishop 1987). pH < 6 threshold (vs calcite's 5.5).
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.18);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — disordered HMC lattice less stable than pure calcite`
+      });
+    }
+    return null;
+  }
+
+  // Read crystal's stored mg_content (set at nucleation). If absent
+  // (legacy data), default to 0.10 — a representative marine HMC value.
+  const mg_content = typeof crystal._mg_content === 'number' ? crystal._mg_content : 0.10;
+
+  // Growth rate dispatch — v146 Week 11: when HMC SI flag is on,
+  // delegate the rate to PWP kinetics via HMCRate (which is calcite
+  // PWP with Mg-poisoning sigmoid already baked in per Davis 2000).
+  // Same flag gate pattern as W9 calcite + W10 dolomite. Empirical
+  // 3.5 × excess formula stays as fallback.
+  const excess = sigma - 1.0;
+  let rate;
+  if (kspSupersatActiveFor('HMC')) {
+    const pwp_mol = HMCRate(conditions.fluid, conditions.temperature, mg_content);
+    rate = pwpRateToSimMicronsPerStep('calcite', pwp_mol) * rng.uniform(0.7, 1.3);  // calcite Vm; close enough for Mg-substituted lattice
+    if (rate < 0) rate = 0;
+  } else {
+    rate = 3.5 * excess * rng.uniform(0.8, 1.2);  // somewhat slower than calcite per Davis 2000 Mg poisoning
+  }
+
+  // Habit dispatch — HMC is overwhelmingly a microcrystalline cement
+  // in real geology (Coorong dolomite/HMC ambiguity aside). Discrete
+  // cabinet-grade HMC is rare. Per Bischoff-Mackenzie-Bishop 1987 +
+  // Morse-Mackenzie 1990 chapter on diagenetic stabilization.
+  if (excess > 1.5 && conditions.temperature < 35) {
+    crystal.habit = 'recrystallized_HMC';
+    crystal.dominant_forms = ['small rhombohedral aggregates', 'incipient ordered domains'];
+  } else if (mg_content > 0.20) {
+    crystal.habit = 'high_Mg_micritic';
+    crystal.dominant_forms = ['microcrystalline cement', 'gray-white groundmass', `${(mg_content * 100).toFixed(0)} mol% Mg`];
+  } else {
+    crystal.habit = 'micritic';
+    crystal.dominant_forms = ['fine-grained cement', 'matrix-supporting', `${(mg_content * 100).toFixed(0)} mol% Mg`];
+  }
+
+  // Substrate note — HMC often replaces or overgrows calcite/aragonite
+  const pos = crystal.position || '';
+  let prov_note = '';
+  if (pos.includes('calcite')) prov_note = ` [Mg-substituted overgrowth on calcite]`;
+  else if (pos.includes('aragonite')) prov_note = ` [HMC cement post-aragonite recrystallization]`;
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Mg: conditions.fluid.Mg * 0.04,  // crystal Mg trace (small relative to lattice Mg)
+    trace_Fe: conditions.fluid.Fe * 0.06,
+    trace_Mn: conditions.fluid.Mn * 0.04,
+    note: `${crystal.habit}${prov_note} — disordered Ca-Mg carbonate (x = ${mg_content.toFixed(2)}); will recrystallize to LMC over geological time without cycling, or to ordered dolomite under Kim 2023 cyclic-Ω mechanism`,
   });
 }
 

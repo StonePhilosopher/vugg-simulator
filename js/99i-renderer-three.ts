@@ -169,6 +169,24 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
       uVugCellRadii: { value: null as any },  // THREE.DataTexture
       uVugCellTexW: { value: 0 },  // = N (cellsPerRing)
       uVugCellTexH: { value: 0 },  // = ringCount
+      // === HELIX-OVERLAY-FORK ADDITION (v19) =========================
+      // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+      // breadcrumb. Per-fragment "helix skin" on crystal materials:
+      // each surface point computes its own age relative to the
+      // helicoid leading edge AT THAT Y, so the crystal is revealed
+      // segment-by-segment along its height as the spiral sweeps
+      // past, instead of fading uniformly. Pre-v19 used per-mesh
+      // opacity (whole crystal fades together), which the boss
+      // flagged as not matching the sweep visually. Updated by the
+      // helix overlay's per-frame tick (uHelixEnabled = 0 when the
+      // overlay is off, in which case the shader short-circuits).
+      uHelixEnabled: { value: 0 },
+      uHelixSweep: { value: 0 },
+      uHelixYCenter: { value: 0 },
+      uHelixYSpan: { value: 1 },
+      uHelixNTurns: { value: 1 },
+      uHelixFade: { value: Math.PI / 2 },
+      // === END HELIX-OVERLAY-FORK ADDITION ===========================
     },
   };
   return _topoThreeState;
@@ -207,6 +225,14 @@ function _applyCavityClip(material: any, clipUniforms: any) {
     shader.uniforms.uVugCellRadii = clipUniforms.uVugCellRadii;
     shader.uniforms.uVugCellTexW = clipUniforms.uVugCellTexW;
     shader.uniforms.uVugCellTexH = clipUniforms.uVugCellTexH;
+    // === HELIX-OVERLAY-FORK ADDITION (v19) =========================
+    shader.uniforms.uHelixEnabled = clipUniforms.uHelixEnabled;
+    shader.uniforms.uHelixSweep   = clipUniforms.uHelixSweep;
+    shader.uniforms.uHelixYCenter = clipUniforms.uHelixYCenter;
+    shader.uniforms.uHelixYSpan   = clipUniforms.uHelixYSpan;
+    shader.uniforms.uHelixNTurns  = clipUniforms.uHelixNTurns;
+    shader.uniforms.uHelixFade    = clipUniforms.uHelixFade;
+    // === END HELIX-OVERLAY-FORK ADDITION ===========================
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
       '#include <common>\nvarying vec3 vCavityWorldPos;'
@@ -226,6 +252,14 @@ uniform float uVugRadiiByRing[${_MAX_CLIP_RINGS}];
 uniform sampler2D uVugCellRadii;
 uniform float uVugCellTexW;
 uniform float uVugCellTexH;
+// === HELIX-OVERLAY-FORK ADDITION (v19) — helix skin uniforms =====
+uniform float uHelixEnabled;
+uniform float uHelixSweep;
+uniform float uHelixYCenter;
+uniform float uHelixYSpan;
+uniform float uHelixNTurns;
+uniform float uHelixFade;
+// === END HELIX-OVERLAY-FORK ADDITION ============================
 
 // Per-cell cavity hull lookup. The cavity build (see
 // _topoBuildCavityGeometry) places ring r at world-y = -radius * cos(phi_cav)
@@ -269,8 +303,42 @@ float cavityHullRadiusAt(vec3 worldPos) {
       'void main() {',
       `void main() {
   float _vugHullR = cavityHullRadiusAt(vCavityWorldPos);
-  if (length(vCavityWorldPos - uVugCenter) > _vugHullR) discard;`
+  if (length(vCavityWorldPos - uVugCenter) > _vugHullR) discard;
+  // === HELIX-OVERLAY-FORK ADDITION (v19) — per-fragment helix skin ====
+  // Each surface point on the crystal computes its own age relative to
+  // the helicoid leading edge AT THAT Y. The leading-edge world angle
+  // at world-y is sweep + u·2π·N where u is the fragment's Y-fraction
+  // along the cavity's vertical extent — so different parts of a tall
+  // crystal get hit by the sweep at different sweep moments, revealing
+  // the crystal segment-by-segment along its height instead of all at
+  // once. Discards fragments fully outside the half-turn visible
+  // window (saves the rest of the lighting math); alpha multiplied at
+  // the bottom of main(). Short-circuits when uHelixEnabled < 0.5.
+  float _helixSkinAlpha = 1.0;
+  if (uHelixEnabled > 0.5) {
+    float _hu = clamp((vCavityWorldPos.y - uHelixYCenter) / uHelixYSpan + 0.5, 0.0, 1.0);
+    float _hLead = uHelixSweep + _hu * 6.28318530718 * uHelixNTurns;
+    float _hTheta = atan(vCavityWorldPos.z, vCavityWorldPos.x);
+    float _hAge = mod(_hLead - _hTheta, 6.28318530718);
+    if (_hAge > 3.14159265359) _hAge -= 6.28318530718;
+    float _hAbs = abs(_hAge);
+    if (_hAbs > uHelixFade) discard;
+    _helixSkinAlpha = 1.0 - _hAbs / uHelixFade;
+  }
+  // === END HELIX-OVERLAY-FORK ADDITION ===============================`
     );
+    // === HELIX-OVERLAY-FORK ADDITION (v19) — alpha multiply at end ====
+    // Insert before <dithering_fragment> (reliably near end of main).
+    // gl_FragColor.a is final at this point; multiplying by skinAlpha
+    // gives the smooth ramp across the helicoid fade window. The early
+    // discard above keeps the multiplied alpha visible (no skin
+    // contribution if uHelixEnabled is off; skinAlpha stays 1.0).
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <dithering_fragment>',
+      `gl_FragColor.a *= _helixSkinAlpha;
+  #include <dithering_fragment>`
+    );
+    // === END HELIX-OVERLAY-FORK ADDITION ===============================
   };
   // Force shader rebuild on next render.
   material.needsUpdate = true;
@@ -536,6 +604,10 @@ const _GEOM_TOKEN_RATIO: Record<string, number> = {
   snowball: 1.0,
   botryoidal: 1.5,    // wall-crust — wider than tall
   dripstone: 0.25,    // PROPOSAL-HABIT-BIAS Slice 4 — slim icicle, c >> a
+  aragonite_frostwork: 0.5,  // Phase 1c (v156) — radiating spray; envelope
+                             // is roughly square (cluster spreads as much
+                             // laterally as vertically) so c/a is moderate
+                             // even though individual needles are slim.
 };
 
 // PROPOSAL-HABIT-BIAS Slice 4 — which canonical habit tokens can
@@ -567,6 +639,29 @@ const _DRIPSTONE_ELIGIBLE_TOKENS = new Set([
 // trilling, pyrite iron-cross, galena octahedron-twin, aragonite
 // pseudo-hex) plug into this same gate.
 function _resolveCrystalGeomToken(crystal: any, habitForGeom: string): string {
+  // Air-mode aragonite → frostwork, twinned OR not (the v156 override
+  // was scoped to !twinned; BUG-aragonite-twin-cave-morphology.md closed
+  // that gap). Real cave aragonite (Hill & Forti 1997 — Cave Minerals of
+  // the World §5.3.4, §10) grows as radiating acicular sprays from a
+  // central anchor — diagnostic cave-aragonite morphology at Frasassi,
+  // Carlsbad, Wind Cave, and dozens of other cave systems worldwide.
+  // This is geologically distinct from smooth-stalactite 'dripstone'
+  // morphology (which models calcite-family speleothems).
+  //
+  // The override is UNCONDITIONAL on twin state because the cyclic-sextet
+  // pseudo-hex twin in caves manifests as a 6-fold radiating NEEDLE
+  // cluster, not a smooth 6-faceted column (Frisia et al. 2002, Grotte de
+  // Clamouse). The structural twin operation is still there — it just
+  // doesn't render as a column at cave growth conditions (low T, low σ,
+  // vapor-deposition). Placed ABOVE the twin-geom branches so air-mode
+  // aragonite hits frostwork first; the aragonite twin branches below
+  // (cyclic_sextet, contact) now catch only FLUID-mode aragonite, where
+  // the smooth pseudo-hex column IS correct (metamorphic, sea-floor
+  // cement, hydrothermal vent settings).
+  if (crystal && crystal.mineral === 'aragonite'
+      && crystal.growth_environment === 'air') {
+    return 'aragonite_frostwork';
+  }
   if (crystal && crystal.mineral === 'fluorite' && crystal.twinned
       && crystal.twin_law === 'penetration') {
     return 'fluorite_penetration_twin';
@@ -845,6 +940,70 @@ function _makeHexPyramid(): any {
     const x0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r;
     const x1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
     _pushTri(positions, x0, yBase, z0, x1, yBase, z1, 0, yApex, 0);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// Phase 1c (v156, 2026-05-27): aragonite cave frostwork — radiating
+// spray of acicular needles from a central anchor. Real cave aragonite
+// morphology per Hill & Forti 1997 (Cave Minerals of the World §5.3.4,
+// §10). Used when growth_environment === 'air' and mineral === 'aragonite'
+// (see _resolveCrystalGeomToken). Distinguished from the generic
+// 'dripstone' icicle: frostwork is a splayed multi-needle cluster, not
+// a single tapered cone. Five needles radiating from a common base —
+// one central (straight up), four tilted at ~30° in the four cardinal
+// directions. Deterministic geometry (no RNG); identical across runs.
+function _makeAragoniteFrostwork(): any {
+  const positions: number[] = [];
+  const baseY = -0.50;
+  const needleLen = 1.0;       // each needle reaches roughly unit height
+  const needleR = 0.04;        // very thin — acicular
+  // 5 needles radiating from the base nucleus. Axes give needle
+  // direction in unit-cube coordinates; each is normalized below.
+  const needleAxes: Array<[number, number, number]> = [
+    [0,     1.00, 0    ],     // central spike (straight up)
+    [0.45,  0.90, 0    ],     // tilt +x
+    [-0.45, 0.90, 0    ],     // tilt -x
+    [0,     0.90, 0.45 ],     // tilt +z
+    [0,     0.90, -0.45],     // tilt -z
+  ];
+  for (const ax of needleAxes) {
+    const m = Math.hypot(ax[0], ax[1], ax[2]);
+    const nx = ax[0] / m, ny = ax[1] / m, nz = ax[2] / m;
+    // Build a perpendicular basis (a, b) for the needle's cross-section.
+    let ux = -ny, uy = nx, uz = 0;
+    const ulen = Math.hypot(ux, uy, uz);
+    if (ulen < 1e-6) { ux = 1; uy = 0; uz = 0; }
+    else { ux /= ulen; uy /= ulen; uz /= ulen; }
+    const vx = ny * uz - nz * uy;
+    const vy = nz * ux - nx * uz;
+    const vz = nx * uy - ny * ux;
+    // Square cross-section ring at the needle's base; tip at base + len * axis
+    const tipX = nx * needleLen;
+    const tipY = baseY + ny * needleLen;
+    const tipZ = nz * needleLen;
+    const ring: Array<[number, number, number]> = [];
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2;
+      const ru = Math.cos(a) * needleR;
+      const rv = Math.sin(a) * needleR;
+      ring.push([
+        ru * ux + rv * vx,
+        baseY + ru * uy + rv * vy,
+        ru * uz + rv * vz,
+      ]);
+    }
+    // 4 pyramid faces — each ring edge to the tip.
+    for (let i = 0; i < 4; i++) {
+      const p0 = ring[i], p1 = ring[(i + 1) % 4];
+      _pushTri(positions,
+        p0[0], p0[1], p0[2],
+        p1[0], p1[1], p1[2],
+        tipX, tipY, tipZ);
+    }
   }
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -1747,6 +1906,12 @@ function _buildHabitGeom(token: string): any {
       // canonical token is dripstone-eligible (see
       // _resolveCrystalGeomToken).
       return _makeDripstoneIcicle();
+    case 'aragonite_frostwork':
+      // Phase 1c (v156, 2026-05-27): cave aragonite frostwork —
+      // radiating acicular spray from a central anchor. Real cave
+      // aragonite morphology per Hill & Forti 1997. Dispatch gated on
+      // mineral='aragonite' + growth_environment='air'.
+      return _makeAragoniteFrostwork();
     default:
       return _makeHexPrismWithPyramid();
   }
@@ -2135,6 +2300,14 @@ function _emitClusterSatellites(
       ringIdx: _anchor.ringIdx,
       cellIdx: _anchor.cellIdx,
       isSatellite: true,
+      // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
+      // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+      // breadcrumb. Satellites share the parent's material reference,
+      // so the parent's opacity write also moves the satellites. The
+      // naturalOpacity here is for completeness; the helix update
+      // iterates parents only.
+      naturalOpacity: mat.transparent ? mat.opacity : 1.0,
+      // === END HELIX-OVERLAY-FORK ADDITION ===========================
     };
     satMesh.renderOrder = 1;
     state.crystals.add(satMesh);
@@ -2599,6 +2772,15 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       mineral: effectiveMineral,
       ringIdx,
       cellIdx,
+      // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
+      // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+      // breadcrumb. Sweep-writes-crystals mode: the helix overlay
+      // multiplies this mesh's material opacity by a 0→1 sweep factor
+      // as the leading edge passes this anchor. naturalOpacity (1.0
+      // for ordinary crystals, 0.42 for perimorph casts) is captured
+      // here so the overlay-off restore path doesn't have to re-derive.
+      naturalOpacity: isPerimorphCast ? 0.42 : 1.0,
+      // === END HELIX-OVERLAY-FORK ADDITION ===========================
     };
 
     state.crystals.add(mesh);
@@ -2846,6 +3028,16 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayS
   _topoBuildCavityGeometry(state, renderWall, sim);
   _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
   _topoApplyCameraFromTilt(state, renderWall);
+  // === HELIX-OVERLAY-FORK ADDITION (v0–v17) =========================
+  // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+  // breadcrumb. Single integration point for the helicoid overlay
+  // module (js/99j-helix-overlay.ts) into the 3D render pipeline.
+  // Defensive typeof so the bundle still boots if 99j is ever
+  // removed during a merge.
+  if (typeof _topoHelixOverlayDraw === 'function') {
+    _topoHelixOverlayDraw(state, sim, renderWall);
+  }
+  // === END HELIX-OVERLAY-FORK ADDITION ==============================
   state.renderer.render(state.scene, state.camera);
   return true;
 }

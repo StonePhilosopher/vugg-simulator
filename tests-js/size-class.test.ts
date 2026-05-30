@@ -48,8 +48,9 @@ describe('size-class cascade (boss vision, 2026-05)', () => {
     });
 
     it('explicit vug_diameter_mm wins over default — preserves every shipped scenario', () => {
-      // sabkha sets vug_diameter_mm: 30 explicitly; if it ALSO sets
-      // size_class, the explicit diameter still wins.
+      // Many scenarios set vug_diameter_mm explicitly (sabkha sets 60 at v148,
+      // stalactite_demo sets 60, etc); if a scenario ALSO sets size_class,
+      // the explicit diameter still wins.
       const wall = new VugWall({ vug_diameter_mm: 30, size_class: 'cave' });
       expect(wall.vug_diameter_mm).toBe(30);
       expect(wall.size_class).toBe('cave');

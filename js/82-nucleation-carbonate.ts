@@ -79,6 +79,36 @@ function _nuc_dolomite(sim) {
     sim.log.push(`  ✦ NUCLEATION: Dolomite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_dol.toFixed(2)})`);
   }
 
+  // HMC nucleation — disordered Mg-substituted calcite, the Kim 2023
+  // precursor to ordered dolomite.
+}
+function _nuc_HMC(sim) {
+  const sigma_hmc = sim.conditions.supersaturation_HMC();
+  if (sigma_hmc < MINERAL_GATES_HMC.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('HMC')) return;
+  const existing_hmc = sim.crystals.filter(c => c.mineral === 'HMC' && c.active);
+  // Allow multiple HMC crystals (it's a cement-phase mineral, often
+  // covering multiple wall positions).
+  if (existing_hmc.length >= 4) return;
+  // Substrate priority: HMC overgrows existing calcite or aragonite
+  // (Mg-substituted overgrowth diagenesis per Morse-Mackenzie 1990).
+  // Otherwise nucleates directly on the vug wall.
+  let pos = 'vug wall';
+  const existing_cal_h = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  const existing_arg_h = sim.crystals.filter(c => c.mineral === 'aragonite' && c.active);
+  if (existing_cal_h.length && rng.random() < 0.45) pos = `on calcite #${existing_cal_h[0].crystal_id}`;
+  else if (existing_arg_h.length && rng.random() < 0.35) pos = `on aragonite #${existing_arg_h[0].crystal_id}`;
+  // Compute crystal._mg_content from fluid Mg/Ca at nucleation time
+  // per Mucci-Morse 1983 partitioning. Empirical linear approximation
+  // calibrated for marine/sabkha conditions:
+  //   mg_content ≈ 0.05 + 0.02 × (Mg/Ca - 1), capped at 0.30
+  // At Mg/Ca=1: 5% Mg. At Mg/Ca=5: 13%. At Mg/Ca=15: 30%.
+  const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
+  const mg_content = Math.max(0.04, Math.min(0.30, 0.05 + 0.02 * (mg_ratio - 1.0)));
+  const c = sim.nucleate('HMC', pos, sigma_hmc);
+  c._mg_content = mg_content;  // per-crystal state for grow_HMC + SI engine
+  sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, x=${mg_content.toFixed(2)} mol Mg, σ=${sigma_hmc.toFixed(2)}) — disordered Mg-calcite intermediate, kinetic precursor to ordered dolomite per Kim 2023`);
+
   // Siderite nucleation — Fe carbonate, brown rhomb. Reducing only.
 }
 function _nuc_siderite(sim) {
@@ -289,6 +319,7 @@ function _nucleateClass_carbonate(sim) {
   _nuc_calcite(sim);
   _nuc_aragonite(sim);
   _nuc_dolomite(sim);
+  _nuc_HMC(sim);  // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
   _nuc_siderite(sim);
   _nuc_rhodochrosite(sim);
   _nuc_malachite(sim);

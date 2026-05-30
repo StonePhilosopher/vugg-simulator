@@ -45,6 +45,7 @@ const MINERAL_GATES_REGISTRY: Record<string, MineralGates> = {
   calcite: MINERAL_GATES_calcite,
   aragonite: MINERAL_GATES_aragonite,
   dolomite: MINERAL_GATES_dolomite,
+  HMC: MINERAL_GATES_HMC,  // v146 Week 11 — disordered Mg-calcite (Kim 2023 precursor)
   siderite: MINERAL_GATES_siderite,
   rhodochrosite: MINERAL_GATES_rhodochrosite,
   malachite: MINERAL_GATES_malachite,

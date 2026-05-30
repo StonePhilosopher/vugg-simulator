@@ -236,6 +236,7 @@ const EXPORTS = [
   'WallState',
   'WallCell',
   'WallMesh',
+  'CavityVoxelGrid',  // v158 — PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1
   'Crystal',
   'GrowthZone',
   'EVENT_REGISTRY',
@@ -310,6 +311,11 @@ const EXPORTS = [
   // {110} contact (vs cyclic-sextet's 3-fold). Prismatic (square)
   // cross-section distinguishes from selenite's tabular swallowtail.
   'PRIM_ARAGONITE_CONTACT_TWIN',
+  // 2026-05-28 cave-aragonite frostwork (BUG-aragonite-twin-cave-
+  // morphology.md). 2D wireframe counterpart of the Three.js
+  // aragonite_frostwork geometry — radiating 5-needle acicular spray for
+  // air-mode aragonite (twinned or not).
+  'PRIM_ARAGONITE_FROSTWORK',
   '_lookupCrystalPrimitive',
   // Phase 4a redox infrastructure (20c-chemistry-redox.ts).
   'EH_DYNAMIC_ENABLED',
@@ -343,6 +349,69 @@ const EXPORTS = [
   'carbonateRedoxFactor',
   'carbonateRedoxAnoxic',
   'carbonateRedoxPenalty',
+  // PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 1+2 — carbonate aqueous
+  // speciation (20b) + Ksp(T) (20c) + SI engine (32b).
+  'CARBONATE_SPECIATION_ACTIVE',
+  'bjerrumFractions',
+  'carbonateIonPpm',
+  'effectiveCO3',
+  'equilibriumPCO2',
+  'getCarbonateLogKsp',
+  'getCarbonateKsp',
+  'getCarbonateData',
+  'getCarbonateThermoTier',
+  'getCarbonateKineticTier',
+  'listCarbonatesAtTier',
+  'carbonateThermoCoverage',
+  // Week 2 SI engine + flag mechanism (32b).
+  'CARBONATE_KSP_ACTIVE',
+  'CARBONATE_KSP_ACTIVE_PER_MINERAL',
+  'kspSupersatActiveFor',
+  'carbonateSaturationIndex',
+  'carbonateOmega',
+  'carbonateEngineSigma',
+  'carbonatesWithSI',
+  'carbonatePromotionReady',
+  // Flag setters — closure-scoped `let` requires explicit setters per
+  // the graduated-competition precedent (globalThis writes don't reach
+  // bundle-internal let bindings).
+  'setCarbonateKspActive',
+  'setCarbonateKspActiveFor',
+  'snapshotCarbonateKspFlags',
+  'restoreCarbonateKspFlags',
+  // v164 sulfate Ksp engine (20d + 40b) — observer-only Phase 1.
+  'getSulfateLogKsp',
+  'getSulfateKsp',
+  'getSulfateData',
+  'getSulfateThermoTier',
+  'listSulfatesAtTier',
+  'sulfateThermoCoverage',
+  'sulfatesReady',
+  'sulfateSaturationIndex',
+  'sulfateOmega',
+  // Week 4 — wall-mesh localization resolvers + per-vertex accessors
+  // + Henry's-Law pH equilibration (20d-localization-resolvers.ts).
+  'fluidAtMeshVertex',
+  'temperatureAtMeshVertex',
+  'isOpenAtMeshVertex',
+  'atmosphericPCO2AtMeshVertex',
+  'wallRockThermalBufferAtMeshVertex',
+  'hostRockCompositionAtMeshVertex',
+  'equilibratePHtoPCO2',
+  // Week 6 PWP kinetic engine (52b-engines-carbonate-kinetics.ts).
+  'pwpForwardRate',
+  'pwpNetRate',
+  'pwpRateToSimMicronsPerStep',
+  'setPWPCalibrationFactor',
+  'aragoniteKineticallyFavoredOver',
+  'mgPoisoningFactor',
+  'calciteRate',
+  'aragoniteRate',
+  'dolomiteRate',
+  'HMCRate',
+  'sideriteRate',
+  'rhodochrositeRate',
+  'smithsoniteRate',
   // Phase 4b sulfide-class helpers (20c-chemistry-redox.ts).
   'sulfideRedoxAnoxic',
   'sulfideRedoxLinearFactor',
@@ -370,6 +439,17 @@ const EXPORTS = [
   'applyParamorphTransitions',
   'applyDehydrationTransitions',
   'applyLightTransitions',
+  // Strip view bedrock (v149+, 2026-05-26) — helicoid-as-recorder
+  // architecture. 85f = dataset format + codecs, 85g = recorder, 85h
+  // = IndexedDB storage, 99k = UI tab.
+  'stripQuantize',
+  'stripDequantize',
+  'stripDequantizeNormalized',
+  'stripDataIndex',
+  'stripAllocateData',
+  'stripSerialize',
+  'stripDeserialize',
+  'StripRecorder',
 ];
 
 let _bundleLoaded = false;
@@ -388,6 +468,42 @@ async function installThreeGlobal(): Promise<void> {
   const url = 'file://' + threeModulePath.replace(/\\/g, '/');
   const THREE = await import(url);
   (globalThis as any).THREE = THREE;
+}
+
+// Post-v165 review #2 — auto-derive top-level declaration names from the
+// compiled bundle. The hand-maintained EXPORTS list was a footgun: every
+// new global function added to a JS module (e.g. v164's sulfateSaturation-
+// Index, sulfateOmega) compiled clean and ran fine in the harness, but
+// every test using them failed with `ReferenceError: X is not defined`
+// until the name was manually added to EXPORTS. This step harvests names
+// directly from dist/ so new top-level functions / consts become test-
+// visible without a setup.ts edit.
+//
+// Limitations (intentional):
+//  - Only matches top-level decls at column 0 (`^(function|const|let|class|
+//    var)\s+<name>`). Methods added via Object.assign(SomeClass.prototype,
+//    {...}) won't be auto-discovered — but those are typically called via
+//    instance.method(), not as free identifiers, so tests don't need them
+//    in EXPORTS.
+//  - Does not strip `_`-prefixed internals; they're harmless on globalThis.
+//  - Explicit EXPORTS list still wins (any name in both is preserved). The
+//    explicit list documents intent + survives as a recovery surface if the
+//    auto-derive ever misses something.
+function autoDeriveExportNames(files: string[]): string[] {
+  const found = new Set<string>();
+  // Strict: declaration token at start of line (column 0) followed by a name.
+  // tsc output for script-mode TS keeps top-level decls at column 0.
+  const RE = /^(?:function|const|let|class|var)\s+([A-Za-z_$][\w$]*)/gm;
+  for (const f of files) {
+    let src: string;
+    try { src = fs.readFileSync(f, 'utf8'); }
+    catch { continue; }
+    let m: RegExpExecArray | null;
+    while ((m = RE.exec(src)) !== null) {
+      if (m[1] && /^[A-Za-z_$]/.test(m[1])) found.add(m[1]);
+    }
+  }
+  return Array.from(found);
 }
 
 async function loadBundle() {
@@ -420,12 +536,16 @@ async function loadBundle() {
       rng = new SeededRandom(seed | 0);
     }
   `;
-  const exportObject = '{' + EXPORTS.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + '}';
+  // EXPORTS ∪ auto-derived names — dedupe via Set. Explicit list comes
+  // first so its ordering is preserved in the literal (cosmetic only).
+  const autoDerived = autoDeriveExportNames(files);
+  const ALL_EXPORTS = Array.from(new Set([...EXPORTS, ...autoDerived]));
+  const exportObject = '{' + ALL_EXPORTS.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + '}';
   const body = `${concatenated}\n${epilogue}\n;return ${exportObject};`;
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const fn = new Function(body);
   const exports = fn();
-  for (const name of EXPORTS) {
+  for (const name of ALL_EXPORTS) {
     if (exports[name] !== undefined) {
       (globalThis as any)[name] = exports[name];
     }

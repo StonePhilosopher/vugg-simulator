@@ -756,6 +756,118 @@
       },
       "class_color": "#eb7f13"
     },
+    "HMC": {
+      "formula": "Ca(1-x)Mg(x)CO3, x ≈ 0.05-0.30 (mole fraction Mg)",
+      "nucleation_sigma": 2.0,
+      "max_nucleation_count": 4,
+      "max_size_cm": 0.5,
+      "growth_rate_mult": 0.35,
+      "_collection_specimens": 0,
+      "_solid_solution_note": "HMC is not an IMA-approved species — it's a varietal name for calcite with significant Mg²⁺ substitution (>4 mol% MgCO3) on the calcite-dolomite solid solution. The simulator treats it as its own MINERAL_SPEC entry because its solubility, kinetics, and diagenetic fate are distinct from low-Mg calcite. mg_content is per-crystal state (crystal._mg_content), set at nucleation from fluid Mg/Ca per Mucci & Morse 1983 partitioning.",
+      "habit_variants": [
+        {
+          "name": "micritic",
+          "wall_spread": 0.85,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "default — fine-grained microcrystalline cement, gray-white groundmass (the overwhelmingly dominant habit in real-world HMC)"
+        },
+        {
+          "name": "high_Mg_micritic",
+          "wall_spread": 0.85,
+          "void_reach": 0.1,
+          "vector": "coating",
+          "trigger": "mg_content > 0.20 — high-Mg variant, sometimes pre-dolomite domain texture"
+        },
+        {
+          "name": "recrystallized_HMC",
+          "wall_spread": 0.4,
+          "void_reach": 0.4,
+          "vector": "equant",
+          "trigger": "high σ (>1.5) at cool T (<35°C) — small discrete rhombohedral aggregates with incipient ordered domains"
+        }
+      ],
+      "class": "carbonate",
+      "description": "Ca(1-x)Mg(x)CO3 with x ≈ 0.05-0.30 — disordered Mg-substituted calcite. The kinetic precursor to ordered dolomite per the Kim et al. 2023 cyclic-Ω ordering mechanism. Forms as microcrystalline cement in modern marine, sabkha, and warm-shallow settings (Persian Gulf intertidal cements, Florida Bay Holocene marine cements, hot-spring tufas), and as biogenic skeletal material in echinoderms, coralline algae, foraminifera, and bryozoans (where biogenic-mediated x reaches 12-30 mol% Mg, occasionally up to 45% in red coralline algae per Stanley et al. 2002). Not an IMA species — varietal-name on the calcite-dolomite solid solution; above x ≈ 0.45 structure tilts irreversibly toward dolomite. Same R3̄c rhombohedral lattice as calcite; distinguishable only by XRD d104 peak shift (Goldsmith & Graf 1958 Am. Mineral. 43:84) — the d104 spacing decreases linearly with mol% Mg. Mohs hardness 3 (calcite-like; Mg substitution stiffens marginally). Color gray-to-white, with biogenic varieties picking up organic-pigment browns. Solubility ~0.1 log Ksp higher than calcite per mol% Mg (Bischoff, Mackenzie & Bishop 1987 GCA 51:1413). Discrete cabinet-scale HMC crystals are very rare — most occurrences are cement or skeletal phase. Diagenesis: HMC → LMC (low-Mg calcite) via Mg leaching over geological time without cycling; HMC → ordered dolomite under cyclic-Ω modulation per Kim 2023.",
+      "scenarios": [
+        "sabkha_dolomitization",
+        "ultramafic_supergene",
+        "zoned_dripstone_cave"
+      ],
+      "T_range_C": [
+        0,
+        60
+      ],
+      "T_optimum_C": [
+        5,
+        30
+      ],
+      "T_behavior": "low-T-only (above 60°C kinetics favor ordered dolomite or aragonite per Burton & Walter 1987 GCA 51:777)",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 10,
+        "Mg": 5,
+        "CO3": 20
+      },
+      "_ingredients_note": "Engine gates: Mg/Ca ratio 0.5-30 (below 0.5, pure calcite wins; above ~4 with T > 30°C, aragonite wins kinetically per Davis 2000 Mg-poisoning + Burton-Walter 1987 thermal preference). pH 7.0-10.5 (acidic dissolves, very-alkaline competition with dolomite). T 0-60°C. The mg_content of any individual crystal is computed at nucleation from fluid Mg/Ca per Mucci & Morse 1983 partitioning (linear: mg_content ≈ 0.05 + 0.02 × (Mg/Ca - 1), capped at 0.30).",
+      "trace_ingredients": {
+        "Fe": "ferroan magnesian calcite — slight brown tint at Fe > 20 ppm",
+        "Mn": "manganoan HMC — orange CL+UV fluorescence at Mn > 2 ppm (calcite-like activator behavior)",
+        "Sr": "occasionally substitutes for Ca (especially in coralline algae and seawater cements)"
+      },
+      "thermal_decomp_C": 700,
+      "thermal_decomp_reaction": "Ca(1-x)Mg(x)CO3 → Ca(1-x)Mg(x)O + CO2 (decarbonation; Mg-substituted lattice slightly more thermally stable than pure calcite, but functionally similar)",
+      "thermal_decomp_products": {
+        "Ca": 0.5,
+        "Mg": 0.1,
+        "CO3": 0.5
+      },
+      "fluorescence": {
+        "activator": "Mn",
+        "threshold_ppm": 2,
+        "color": "orange (calcite-like)",
+        "quencher": "Fe",
+        "status": "Mn²⁺ activates orange fluorescence in HMC the same way as calcite — the Mg substitution doesn't affect the crystal-field environment of Mn²⁺. Fe quenches above ~3 ppm."
+      },
+      "twin_laws": [],
+      "_twin_laws_note": "HMC is overwhelmingly microcrystalline — discrete twinning is not a documented field-discriminator feature in the cement/skeletal habit space where HMC dominates. Calcite-group twin laws (e{012}, {101̄8}) would apply geometrically to recrystallized HMC but the texture is too fine for them to be observable in practice (per Morse & Mackenzie 1990).",
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Ca(1-x)Mg(x)CO3 + 2H+ → (1-x) Ca²⁺ + x Mg²⁺ + H2O + CO2 (faster than pure calcite — Mg substitution destabilizes the lattice; Bischoff 1987)",
+        "products": {
+          "Ca": 0.7,
+          "Mg": 0.15,
+          "CO3": 0.7
+        }
+      },
+      "habit": "micritic",
+      "color_rules": {
+        "gray_to_white": {
+          "default": true
+        },
+        "organic_brown": {
+          "trigger": "biogenic substrate — picks up organic pigment in echinoderm/coralline algae remnants"
+        }
+      },
+      "nucleation_preferences": {
+        "grows_on": [
+          "calcite",
+          "aragonite",
+          "vug wall"
+        ],
+        "note": "HMC overgrows existing calcite (Mg-substituted overgrowth diagenesis) or replaces aragonite (HMC cement post-aragonite recrystallization). Direct vug-wall nucleation is also common in moderately-saline Mg-rich brines."
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "index.html"
+      ],
+      "audit_status": "new v146 (Week 11, 2026-05). Disordered Mg-substituted calcite, kinetic precursor to ordered dolomite per Kim 2023 cyclic-omega mechanism. SI engine + PWP kinetic engine via saturationIndex_HMC (32b) + HMCRate (52b) — both threaded with crystal._mg_content. Substrate priority: on-calcite (0.45) > on-aragonite (0.35) > vug-wall (default). Three habits: micritic (default), high_Mg_micritic (mg_content > 0.20), recrystallized_HMC (high σ + cool T). Not an IMA species — solid-solution composition; treated as a MINERAL_SPEC because its solubility, kinetics, and diagenetic fate differ materially from pure calcite. Primary refs: Bischoff, Mackenzie & Bishop 1987 GCA 51:1413 (solubility scaling), Davis et al. 2000 Science 290:1134 (Mg poisoning), Goldsmith & Graf 1958 Am. Mineral. 43:84 (XRD d104 discriminator), Burton & Walter 1987 GCA 51:777 (T-Mg-Ca thermal preference), Kim et al. 2023 Science 382:915 (cyclic-omega ordering to dolomite).",
+      "late_stage_propensity": 0.4,
+      "_late_stage_note": "HMC forms as cement in modern/active environments and as biogenic-skeletal phase. Both are typically EARLY in a deposit's history (modern marine + sabkha intertidal), with later diagenetic conversion to LMC or dolomite. Treated as moderate-stage (0.4) to reflect the cement-deposition window.",
+      "class_color": "#eb7f13"
+    },
     "siderite": {
       "formula": "FeCO3",
       "nucleation_sigma": 1.0,

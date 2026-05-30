@@ -117,7 +117,13 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
       const r = runSeeds('ultramafic_supergene', 'chrysoprase',
         [42, 1, 7, 13, 99, 2024, 17, 3]);
       expect(r.everNucleated, `chrysoprase σ peaked at ${r.maxSigma.toFixed(2)}`).toBe(true);
-    });
+    // merge (2026-05-28): 8 seeds of ultramafic_supergene (47 crystals +
+    // voxel diffusion — among the heaviest scenarios) tip past the 30s
+    // default under full-suite parallel contention; passes solo. Bumped to
+    // 90s, matching the multi-seed-coverage convention (pharmacolite 150s,
+    // fill-exempt/meta-autunite 60s). Not a perf regression — parallel-load
+    // flake only.
+    }, 90000);
   });
 
   describe('adamite (supergene_oxidation)', () => {

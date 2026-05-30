@@ -330,19 +330,40 @@ describe('habit-bias Slice 4 — _resolveCrystalGeomToken air-mode override', ()
     // dripstone primitive. The scenario produces a mix of habits
     // (calcite: scalenohedral_dogtooth → 'scalene'; quartz: prismatic
     // → 'prism'; etc.) so this is a real cross-section.
+    //
+    // v147 (Week 12 aragonite SI promotion): aragonite now fires in
+    // stalactite_demo via the cascade-shifted RNG. Aragonite cave
+    // morphology is acicular/frostwork (Hill & Forti 1997 'Cave
+    // Minerals of the World' §5.3.4, §10), not smooth stalactite —
+    // v147 carved aragonite out of the dripstone assertion as a Phase
+    // 1c follow-up.
+    //
+    // Phase 1c (v156): added the _resolveCrystalGeomToken aragonite
+    // air-mode branch → 'aragonite_frostwork' (Hill & Forti 1997 §10).
+    // BUG-aragonite-twin-cave-morphology.md closed the v156 model gap:
+    // ALL air-mode aragonite is frostwork now, twinned or not. The
+    // cyclic-sextet pseudo-hex twin manifests as a 6-fold radiating
+    // needle cluster in caves, not a smooth column (Frisia et al. 2002,
+    // Grotte de Clamouse). The previously-split branch has collapsed.
     const sim = runScenario('stalactite_demo', { seed: 42 });
     let eligibleAirHits = 0;
     for (const c of sim.crystals) {
       const canonical = _habitGeomToken(c.habit);
       const resolved = _resolveCrystalGeomToken(c, c.habit);
+      if (c.mineral === 'aragonite' && c.growth_environment === 'air') {
+        // Cave aragonite → frostwork regardless of twin state.
+        expect(resolved).toBe('aragonite_frostwork');
+        continue;
+      }
       if (c.growth_environment === 'air'
           && ['prism','spike','rhomb','scalene','botryoidal'].includes(canonical)) {
         expect(resolved).toBe('dripstone');
         eligibleAirHits++;
       }
     }
-    // At least one crystal in the scenario should hit the dripstone
-    // path — otherwise the scenario isn't proving the feature.
+    // At least one non-aragonite crystal in the scenario should hit
+    // the dripstone path — otherwise the scenario isn't proving the
+    // feature.
     expect(eligibleAirHits).toBeGreaterThan(0);
   });
 });

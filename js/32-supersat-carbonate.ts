@@ -12,32 +12,99 @@
 // ---- Carbonate MINERAL_GATES exports ----
 
 const MINERAL_GATES_calcite: MineralGates = {
-  sigma_crit: 1.3,
+  // v144 (Week 9 SI-engine promotion): sigma_crit bumped 1.3 → 1.5.
+  // The empirical engine's 1.3 was in empirical-sigma units (ppm-style
+  // ratio Ca·CO3 / eq); the SI engine returns textbook omega = IAP/Ksp
+  // (=1 at thermodynamic equilibrium). Heterogeneous nucleation on a
+  // vugg wall starts at omega ~ 1.5-3 per Morse & Arvidson 2002 review,
+  // matching what the calibration probe (tools/w9_calcite_calibration_
+  // probe.mjs) observed: median omega at empirical nucleation threshold
+  // = 1.28, p75 = 4.29. 1.5 sits at the lower edge — kinetic barrier
+  // present but not overrestrictive.
+  sigma_crit: 1.5,
   T_max: 500, T_optimal: 100,
   fluid_min: { Ca: 1, CO3: 1 },
   surface_energy: 'medium',
-  _sources: ['calcite engine v17+', 'Davis 2000', 'Nielsen 2013', 'Söhnel & Mullin 1982'],
-  _notes: 'Retrograde solubility (precipitates on heating / CO2 degassing). Mg/Ca > ~2 routes to aragonite via Mg poisoning of growth steps.',
+  _sources: ['calcite engine v17+', 'Davis 2000', 'Nielsen 2013', 'Söhnel & Mullin 1982', 'Morse & Arvidson 2002'],
+  _notes: 'Retrograde solubility (precipitates on heating / CO2 degassing). Mg/Ca > ~2 routes to aragonite via Mg poisoning of growth steps. v144 SI engine: sigma is textbook omega = IAP/Ksp; sigma_crit 1.5 reflects heterogeneous nucleation barrier on cavity walls.',
 };
 
 const MINERAL_GATES_aragonite: MineralGates = {
+  // v147 (Week 12 SI-engine promotion): sigma_crit stays at 1.0
+  // because the supersaturation_aragonite function multiplies omega
+  // by the kinetic favorability factor (Mg-factor × T-factor ×
+  // omega-factor × trace-factor) — same magnitudes as the empirical
+  // engine. Aragonite is unique among the promoted carbonates in
+  // keeping a kinetic modifier on the sigma scale; it's the
+  // metastable polymorph, so its firing rule depends on KINETIC
+  // criteria (Folk 1974 Mg/Ca preference, Burton-Walter 1987 T
+  // preference, Morse 1997 omega-driven Ostwald step rule) layered
+  // on top of the textbook thermodynamic omega.
+  //
+  // T_max 400°C added in v147: aragonite is the metastable polymorph
+  // and reverts rapidly to calcite above ~400°C at low pressure per
+  // Carlson (1983) "The polymorphs of CaCO3 and the aragonite-calcite
+  // transformation," Reviews in Mineralogy vol 11 (Carbonates:
+  // Mineralogy and Chemistry, ed. Reeder), MSA, pp 191-225. The
+  // high-T metamorphic aragonite firings in v146
+  // marble_contact_metamorphism (T=698°C) were a geological anomaly
+  // the empirical engine didn't catch. Adding the gate makes the
+  // structural fact (aragonite has a real T-limit) load-bearing.
+  // (Author + year + topic recalled correctly during W12 prep but
+  // journal/volume/pages first written as fabricated "Geol. Soc. Am.
+  // Memoir 161:153-162" — web-verified-corrected before commit.)
   sigma_crit: 1.0,
-  T_optimal: 80,
+  T_max: 400, T_optimal: 80,
   fluid_min: { Ca: 30, CO3: 20 },
   pH_min: 6.0, pH_max: 9.0,
   surface_energy: 'low',
-  _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987'],
-  _notes: 'Orthorhombic CaCO3 dimorph. Favored by Mg/Ca > 1.5, T > 50, Ω > 10, trace Sr/Pb/Ba. Pseudohexagonal cyclic twinning.',
+  _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987', 'Wollast 1990', 'Carlson 1983'],
+  _notes: 'Orthorhombic CaCO3 dimorph. Favored by Mg/Ca > 1.5, T > 50, Ω > 10, trace Sr/Pb/Ba. Pseudohexagonal cyclic twinning. T_max 400°C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega × kinetic_favorability; PWP rate via aragoniteRate (~3× calcite per Burton-Walter 1987 / Wollast 1990).',
 };
 
 const MINERAL_GATES_dolomite: MineralGates = {
-  sigma_crit: 1.0,
+  // v145 (Week 10 SI-engine promotion): sigma_crit bumped 1.0 → 10.
+  // The empirical engine's 1.0 was in empirical-sigma units (4th-root
+  // of Ca·Mg·CO3² / eq, ppm-scale); the SI engine returns textbook
+  // omega = IAP/Ksp where dolomite's a(Ca)·a(Mg)·a(CO3)² gives huge
+  // omegas in any Mg-rich brine (median omega at empirical threshold
+  // = 504 per tools/w10_dolomite_calibration_probe.mjs, p25-p75
+  // 486-525). Setting sigma_crit = 10 acknowledges a meaningful
+  // heterogeneous-nucleation barrier without double-counting Kim
+  // 2023's f_ord gate (which is the real kinetic barrier for
+  // ordered dolomite and lives in dolomiteRate / grow_dolomite).
+  sigma_crit: 10,
   T_min: 10, T_max: 400, T_optimal: 150,
   fluid_min: { Ca: 30, Mg: 25, CO3: 20 },
   pH_min: 6.5, pH_max: 10.0,
   surface_energy: 'medium',
-  _sources: ['dolomite engine v17+', 'Kim 2023'],
-  _notes: 'Mg/Ca window 0.3-30. T floor lowered to 10°C (Kim 2023) — ambient T thermodynamically fine, kinetics handled by ordering factor.',
+  _sources: ['dolomite engine v17+', 'Kim 2023', 'Morse & Arvidson 2002'],
+  _notes: 'Mg/Ca window 0.3-30. T floor lowered to 10°C (Kim 2023) — ambient T thermodynamically fine, kinetics handled by ordering factor. v145 SI engine: sigma is textbook omega; sigma_crit 10 acknowledges nucleation kinetic barrier separate from the Kim f_ord ordering gate.',
+};
+
+const MINERAL_GATES_HMC: MineralGates = {
+  // High-Magnesium Calcite Ca(1-x)Mg(x)CO3 with x ≈ 0.05-0.30.
+  // The disordered Mg-substituted calcite phase that's the kinetic
+  // precursor to ordered dolomite (Kim 2023 cyclic-omega mechanism).
+  // Forms as marine + sabkha cement and biogenic skeletons
+  // (echinoderms, coralline algae, foraminifera). Not a discrete IMA
+  // species — a varietal-name on the calcite-dolomite solid-solution
+  // joining ordered dolomite at x ≥ ~0.45.
+  //
+  // sigma_crit: SI-engine omega scale, comparable to calcite (1.5)
+  // but tighter — HMC is a metastable intermediate, so a meaningful
+  // kinetic barrier prevents over-firing at marginal supersaturation.
+  // Empirical sigma_crit (when flag is off) is in ppm-style ratio.
+  // v146 sigma_crit: 2.0 (slightly above calcite's 1.5; HMC nucleates
+  // less readily than pure calcite because the Mg-substituted lattice
+  // has higher surface energy per Davis 2000).
+  sigma_crit: 2.0,
+  T_min: 0, T_max: 60, T_optimal: 25,
+  fluid_min: { Ca: 10, Mg: 5, CO3: 20 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'medium',
+  _sources: ['Bischoff_Mackenzie_Bishop_1987', 'Morse_Mackenzie_1990', 'Davis_2000', 'Kim_2023', 'Goldsmith_Graf_1958'],
+  _notes: 'Mg/Ca window 0.5-30. T_max 60°C (above this, conversion to ordered dolomite or aragonite dominates per Burton & Walter 1987). Marine/sabkha cement + biogenic. Solid-solution composition — mg_content is per-crystal state, predicted from fluid Mg/Ca at nucleation per Mucci-Morse 1983 partitioning. Distinguishable from calcite/dolomite by XRD d104 peak shift (Goldsmith & Graf 1958).',
 };
 
 const MINERAL_GATES_siderite: MineralGates = {
@@ -167,6 +234,13 @@ Object.assign(VugConditions.prototype, {
   // Nielsen 2013). Mg/Ca > ~2 hands the polymorph to aragonite. Capped
   // at 85% inhibition — high-Mg calcite (HMC) always forms some fraction.
   if (this.temperature > MINERAL_GATES_calcite.T_max!) return 0; // thermal decomposition
+  // Week 2 (PROPOSAL-CARBONATE-GEOCHEM): SI-based dispatcher hook.
+  // Runs AFTER hard physical/geochemical gates (thermal decomposition
+  // boundary, ingredient minimums, redox gates) so the SI engine
+  // inherits those constraints when per-mineral promotion lands. No-op
+  // when CARBONATE_KSP_ACTIVE is false (default). See js/32b-supersat-
+  // carbonate-Ksp.ts for the SI engine + flag mechanism.
+  if (kspSupersatActiveFor('calcite')) return carbonateEngineSigma('calcite', this.fluid, this.temperature);
   const eq = 300.0 * Math.exp(-0.005 * this.temperature);
   if (eq <= 0) return 0;
   // PROPOSAL-GEOLOGICAL-ACCURACY Phase 2 fix: real saturation is the
@@ -211,6 +285,7 @@ Object.assign(VugConditions.prototype, {
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   if (!carbonateRedoxAnoxic(this.fluid, g.O2_max!)) return 0;  // hard reducing gate
+  if (kspSupersatActiveFor('siderite')) return carbonateEngineSigma('siderite', this.fluid, this.temperature);
   const eq_fe = 80.0 * Math.exp(-0.005 * this.temperature);
   if (eq_fe <= 0) return 0;
   // Phase 2 fix: Q = a(Fe²⁺) × a(CO3²⁻); see calcite for rationale.
@@ -232,6 +307,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
   if (mg_ratio < 0.3 || mg_ratio > 30.0) return 0;
+  if (kspSupersatActiveFor('dolomite')) return carbonateEngineSigma('dolomite', this.fluid, this.temperature);
   const eq = 200.0 * Math.exp(-0.005 * this.temperature);
   if (eq <= 0) return 0;
   // Phase 2 fix: real Q for dolomite CaMg(CO3)₂ is
@@ -252,6 +328,57 @@ Object.assign(VugConditions.prototype, {
   return Math.max(sigma, 0);
 },
 
+  supersaturation_HMC() {
+  // High-Magnesium Calcite Ca(1-x)Mg(x)CO3, x ≈ 0.05-0.30.
+  // Disordered Mg-substituted calcite intermediate. Kinetic precursor
+  // to ordered dolomite (Kim 2023 cyclic mechanism); persists as a
+  // metastable phase without cycling. Solubility per Bischoff,
+  // Mackenzie & Bishop 1987 GCA 51:1413: Ksp scales linearly with
+  // mol-% Mg (~0.1 log unit per mol% Mg).
+  //
+  // The mg_content of a given crystal is per-crystal state. For
+  // NUCLEATION GATE purposes, the supersaturation function uses
+  // x=0.10 (a representative marine/sabkha HMC composition per
+  // Mucci-Morse 1983 fluid-mineral partitioning). The actual
+  // crystal._mg_content is set at nucleation from fluid Mg/Ca, and
+  // the GROW engine reads that for the kinetic rate calc.
+  const g = MINERAL_GATES_HMC;
+  if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Mg < g.fluid_min!.Mg || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3) return 0;
+  if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+  if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+  const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
+  if (mg_ratio < 0.5 || mg_ratio > 30.0) return 0;
+  // Reference mg_content for nucleation gate. Use 0.10 (10 mol% Mg)
+  // as the canonical marine-HMC composition.
+  const REF_MG_CONTENT = 0.10;
+  if (kspSupersatActiveFor('HMC')) return carbonateEngineSigma('HMC', this.fluid, this.temperature, REF_MG_CONTENT);
+
+  // Empirical fallback (flag-off): calcite-like formula with
+  // Mg-substitution accounted for via a milder eq, and damped by
+  // distance from the optimum Mg/Ca ≈ 4 (marine seawater equivalent).
+  // Conservative — HMC is geologically a sometimes-mineral, not a
+  // default precipitator.
+  const eq = 320.0 * Math.exp(-0.005 * this.temperature);  // Slightly more soluble than calcite
+  if (eq <= 0) return 0;
+  // Geometric mean of (Ca · CO3) — same calcite-style Q with Mg as a
+  // multiplicative modifier.
+  const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
+  let sigma = ca_co3 / eq;
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'HMC');
+  // Mg-presence boost (HMC needs Mg in fluid — more Mg = more HMC
+  // favorability up to the optimum near Mg/Ca ≈ 4; above that
+  // aragonite/dolomite take over).
+  if (mg_ratio < 4.0) sigma *= 1.0 + 0.25 * mg_ratio;
+  else sigma *= Math.max(0.4, 2.0 - mg_ratio / 8.0);
+  // pH boost (alkaline-favored, like calcite)
+  if (this.fluid.pH > 7.5) sigma *= Math.pow(2.0, this.fluid.pH - 7.5);
+  // T preference: HMC favored at low T (sabkha/marine cool conditions).
+  // Above 30°C, aragonite kinetic preference takes over per
+  // Burton & Walter 1987 GCA 51:777.
+  if (this.temperature > 30) sigma *= Math.max(0.3, 1.0 - (this.temperature - 30) / 30);
+  return Math.max(sigma, 0);
+},
+
   supersaturation_rhodochrosite() {
   // MnCO3 — pink Mn carbonate, structurally identical to calcite (R3̄c).
   // T 20-250°C, pH 5-9, Mn²⁺ stable in moderate-to-reducing conditions.
@@ -260,6 +387,7 @@ Object.assign(VugConditions.prototype, {
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   if (!carbonateRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
+  if (kspSupersatActiveFor('rhodochrosite')) return carbonateEngineSigma('rhodochrosite', this.fluid, this.temperature);
   const eq_mn = 50.0 * Math.exp(-0.005 * this.temperature);
   if (eq_mn <= 0) return 0;
   // Phase 2 fix: Q = a(Mn²⁺) × a(CO3²⁻); see calcite for rationale.
@@ -279,17 +407,46 @@ Object.assign(VugConditions.prototype, {
   // step rule, Sun 2015). Trace Sr/Pb/Ba give a small additional boost.
   // Pressure is the thermodynamic sorter (stable above ~0.4 GPa) but is
   // irrelevant at vug/hot-spring pressures — don't use it as a gate.
+  //
+  // v147 (Week 12 SI engine promotion): the architectural choice for
+  // aragonite differs from calcite/dolomite/HMC. For thermodynamic-
+  // minimum carbonates, supersaturation_<mineral> returns RAW textbook
+  // omega when the flag is on. Aragonite is DIFFERENT — it's the
+  // metastable polymorph; its firing rule is fundamentally a KINETIC
+  // criterion (Mg/Ca preference + T preference + Ostwald step rule +
+  // trace boost) layered on top of the textbook omega. The SI engine
+  // promotion swaps the BASIS of omega from the empirical
+  // ca_co3/eq formula to textbook IAP/Ksp, but the favorability layer
+  // stays — preserving the geological model where omega tells you HOW
+  // SUPERSATURATED but favorability tells you WHETHER ARAGONITE WINS.
   const g = MINERAL_GATES_aragonite;
   if (this.fluid.Ca < g.fluid_min!.Ca || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+  // v147 T_max gate: aragonite reverts to calcite above ~400°C per
+  // Carlson 1983 Reviews in Mineralogy 11:191-225. Pre-v147 the
+  // empirical engine had no T cap; marble_contact_metamorphism fired
+  // aragonite at 698°C which is physically impossible.
+  if (g.T_max != null && this.temperature > g.T_max) return 0;
 
-  const eq = 300.0 * Math.exp(-0.005 * this.temperature);
-  if (eq <= 0) return 0;
-  // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
-  const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
-  let omega = ca_co3 / eq;
-  if (ACTIVITY_CORRECTED_SUPERSAT) omega *= activityCorrectionFactor(this.fluid, 'aragonite');
+  // Step 1: compute omega — either textbook (SI engine on) or
+  // empirical (flag off, legacy ca_co3/eq formula).
+  let omega: number;
+  if (kspSupersatActiveFor('aragonite')) {
+    omega = carbonateEngineSigma('aragonite', this.fluid, this.temperature);
+    if (!isFinite(omega) || omega <= 0) return 0;
+  } else {
+    const eq = 300.0 * Math.exp(-0.005 * this.temperature);
+    if (eq <= 0) return 0;
+    // Phase 2 fix: Q = a(Ca²⁺) × a(CO3²⁻); see calcite for rationale.
+    const ca_co3 = Math.sqrt(this.fluid.Ca * effectiveCO3(this.fluid, this.temperature));
+    omega = ca_co3 / eq;
+    if (ACTIVITY_CORRECTED_SUPERSAT) omega *= activityCorrectionFactor(this.fluid, 'aragonite');
+  }
 
+  // Step 2: kinetic favorability — same formula regardless of which
+  // omega source feeds in. Mg/Ca preference + T preference + omega
+  // Ostwald step rule + trace boost. Layered on top of thermodynamic
+  // omega per Morse 1997 review.
   const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
   const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.5) / 0.3));
   const T_factor = 1.0 / (1.0 + Math.exp(-(this.temperature - 50.0) / 15.0));
@@ -306,6 +463,7 @@ Object.assign(VugConditions.prototype, {
   supersaturation_malachite() {
   const g = MINERAL_GATES_malachite;
   if (this.fluid.Cu < g.fluid_min!.Cu || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3 || !carbonateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (kspSupersatActiveFor('malachite')) return carbonateEngineSigma('malachite', this.fluid, this.temperature);
   // Denominators reference realistic supergene weathering fluid (Cu ~25 ppm,
   // CO₃ ~100 ppm). The older 50/200 values were tuned for Cu-saturated
   // porphyry fluids and starved supergene vugs of their flagship Cu mineral.
@@ -336,6 +494,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Zn < g.fluid_min!.Zn || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3 || !carbonateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.temperature > g.T_max!) return 0;
   if (this.fluid.pH < g.pH_min!) return 0;
+  if (kspSupersatActiveFor('smithsonite')) return carbonateEngineSigma('smithsonite', this.fluid, this.temperature);
   let sigma = (this.fluid.Zn / 80.0) * (effectiveCO3(this.fluid, this.temperature) / 200.0) * carbonateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 80) {
     sigma *= Math.exp(-0.04 * (this.temperature - 80));
@@ -348,6 +507,7 @@ Object.assign(VugConditions.prototype, {
   supersaturation_azurite() {
   const g = MINERAL_GATES_azurite;
   if (this.fluid.Cu < g.fluid_min!.Cu || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3 || !carbonateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  if (kspSupersatActiveFor('azurite')) return carbonateEngineSigma('azurite', this.fluid, this.temperature);
   const cu_f = Math.min(this.fluid.Cu / 40.0, 2.0);
   const co_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 150.0, 1.8);
   const o_f  = carbonateRedoxFactor(this.fluid, 1.5, 1.3);
@@ -361,6 +521,7 @@ Object.assign(VugConditions.prototype, {
   supersaturation_cerussite() {
   const g = MINERAL_GATES_cerussite;
   if (this.fluid.Pb < g.fluid_min!.Pb || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3) return 0;
+  if (kspSupersatActiveFor('cerussite')) return carbonateEngineSigma('cerussite', this.fluid, this.temperature);
   const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
   const co_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 80.0, 1.5);
   let sigma = pb_f * co_f;
@@ -430,9 +591,10 @@ Object.assign(VugConditions.prototype, {
   supersaturation_strontianite() {
     const g = MINERAL_GATES_strontianite;
     if (this.fluid.Sr < g.fluid_min!.Sr || this.fluid.CO3 < g.fluid_min!.CO3) return 0;
-    let sigma = (this.fluid.Sr / 80.0) * (this.fluid.CO3 / 200.0);
     const T = this.temperature;
     if (T < g.T_min! || T > g.T_max!) return 0;
+    if (kspSupersatActiveFor('strontianite')) return carbonateEngineSigma('strontianite', this.fluid, this.temperature);
+    let sigma = (this.fluid.Sr / 80.0) * (this.fluid.CO3 / 200.0);
     let T_factor = 1.0;
     if (T >= 80 && T <= 150) T_factor = 1.2;
     else if (T < 80) T_factor = Math.max(0.4, 0.5 + 0.01 * (T - 5));
@@ -451,9 +613,10 @@ Object.assign(VugConditions.prototype, {
   supersaturation_witherite() {
     const g = MINERAL_GATES_witherite;
     if (this.fluid.Ba < g.fluid_min!.Ba || this.fluid.CO3 < g.fluid_min!.CO3) return 0;
-    let sigma = (this.fluid.Ba / 80.0) * (this.fluid.CO3 / 200.0);
     const T = this.temperature;
     if (T < g.T_min! || T > g.T_max!) return 0;
+    if (kspSupersatActiveFor('witherite')) return carbonateEngineSigma('witherite', this.fluid, this.temperature);
+    let sigma = (this.fluid.Ba / 80.0) * (this.fluid.CO3 / 200.0);
     let T_factor = 1.0;
     if (T >= 80 && T <= 150) T_factor = 1.2;
     else if (T < 80) T_factor = Math.max(0.4, 0.5 + 0.01 * (T - 5));
@@ -484,6 +647,7 @@ Object.assign(VugConditions.prototype, {
     // Cu suppresses → aurichalcite (Zn-Cu carbonate-hydroxide) wins
     const cu_frac = this.fluid.Cu / Math.max(this.fluid.Cu + this.fluid.Zn, 0.001);
     if (cu_frac > 0.15) return 0;
+    if (kspSupersatActiveFor('hydrozincite')) return carbonateEngineSigma('hydrozincite', this.fluid, this.temperature);
     const zn_f = Math.min(this.fluid.Zn / 20.0, 2.5);
     const co3_f = Math.min(this.fluid.CO3 / 200.0, 2.0);
     let sigma = zn_f * co3_f;

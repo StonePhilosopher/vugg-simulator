@@ -416,6 +416,22 @@ function runRandomVugg() {
   // quiet steps keeps the scroll watchable without sacrificing the
   // signal lines.
   const sim = new VugSimulator(scen.conditions, scen.events);
+  // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
+  // Attach a StripRecorder so this run is captured for later viewing.
+  // Helicoid-as-recorder reframe (Shy's 2026-05-26 design). Auto-saves
+  // to IndexedDB at run end via the finalize-and-persist tail below.
+  try {
+    if (typeof StripRecorder === 'function') {
+      sim._stripRecorder = new StripRecorder(sim, {
+        duration_steps: scen.defaultSteps,
+        notes: `Random — archetype: ${scen.archetype}, seed: ${seed}`,
+      });
+      // Patch the scenario_id since the random builder uses archetype.
+      const m = sim._stripRecorder.getManifest();
+      if (m) m.scenario_id = String(scen.archetype || 'random');
+    }
+  } catch (_e) { /* strip view is optional */ }
+  // === END HELIX-OVERLAY-FORK ADDITION ==============================
   for (let s = 0; s < scen.defaultSteps; s++) {
     const log = sim.run_step();
     const show = (s % 5 === 0) || log.some(l => l.includes('EVENT') || l.includes('NUCLEATION') || l.includes('🧱'));
@@ -431,6 +447,21 @@ function runRandomVugg() {
   randomSim = sim;
   randomSimArchetype = scen.archetype;
   randomSimSeed = seed;
+
+  // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
+  // Run finished — finalize the strip recording and persist to
+  // IndexedDB. Non-blocking + non-fatal: if storage fails the run still
+  // completes normally (and the dataset is available in-memory via
+  // sim._stripRecorder.finalize() for that session).
+  if (sim._stripRecorder) {
+    try {
+      const dataset = sim._stripRecorder.finalize();
+      if (typeof stripStorageSave === 'function' && typeof stripStorageAvailable === 'function' && stripStorageAvailable()) {
+        stripStorageSave(dataset).catch(() => { /* silent */ });
+      }
+    } catch (_e) { /* silent */ }
+  }
+  // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
   // EPILOGUE — crystal inventory, discovery prose, full narrative.
   // The pill appears at epilogueStartIdx (= start of this block).

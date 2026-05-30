@@ -1,0 +1,550 @@
+{
+  "_meta": {
+    "purpose": "Per-carbonate-mineral thermodynamic + kinetic data with confidence tiers. Consumed by js/20c-chemistry-carbonate-Ksp.ts (Week 2 deliverable) to replace the empirical eq curves in js/32-supersat-carbonate.ts with Ksp-based saturation indices.",
+    "schema_version": 1,
+    "proposal": "proposals/PROPOSAL-CARBONATE-GEOCHEM.md",
+    "phase": "1",
+    "date_created": "2026-05-26",
+    "minerals_covered": "14 carbonates currently in data/minerals.json + HMC (high-magnesian calcite, to be added via vugg-add-mineral in Week 2-3)",
+    "minerals_deferred_to_phase_2": [
+      "magnesite (MgCO3) — not in current catalog",
+      "ankerite (Ca(Fe,Mg)(CO3)2) — not in current catalog",
+      "vaterite (CaCO3 metastable polymorph) — not in current catalog",
+      "otavite (CdCO3) — not in current catalog"
+    ],
+    "confidence_tier_definitions": {
+      "thermodynamic": {
+        "A": "ΔGf directly measured (calorimetry OR solubility), ≥2 major databases concur within 2 kJ/mol",
+        "B": "Measured by one credible source, no conflicting data, in 1-2 databases",
+        "C": "Estimated by linear free-energy correlation OR single solubility with significant scatter",
+        "D": "No published thermodynamic data; estimated from structural / compositional analogs",
+        "conflict": "Two or more databases give significantly different values (>5 kJ/mol disagreement)"
+      },
+      "kinetic": {
+        "A": "Canonical published rate law, multiple confirmations over decades (e.g. Plummer-Wigley-Parkhurst 1978 for calcite)",
+        "B": "Published rate law from a credible single source, mechanistic basis (e.g. Kim 2023 for dolomite)",
+        "C": "Rate law estimated from family analog (e.g. siderite rate ≈ calcite rate × Fe-redox factor)",
+        "D": "Rate law unknown; defaults applied"
+      }
+    },
+    "Ksp_convention": {
+      "form": "log10(Ksp) at 25°C for the stoichiometric dissolution reaction",
+      "calcite_example": "CaCO3 -> Ca2+ + CO3^2-, log Ksp = -8.48",
+      "basic_carbonate_example": "Malachite Cu2(CO3)(OH)2 -> 2 Cu2+ + CO3^2- + 2 OH-, log Ksp = -33.16",
+      "notes": "Activities, not concentrations. Davies correction applied at the consumer side (js/20a-chemistry-activity.ts) when ACTIVITY_CORRECTED_SUPERSAT is on."
+    },
+    "T_dependence_convention": {
+      "form": "logKsp(T) = logKsp_25C - (deltaH_dissolution_kJ_mol / (2.303 * R)) * (1/T_K - 1/298.15)",
+      "R": "8.31446e-3 kJ/(mol K)",
+      "notes": "van't Hoff form. Exact within ~0.1 log units across 0-100C for most carbonates. For wider T range or pressure dependence, full Maier-Kelley extrapolation needed (Phase 2)."
+    },
+    "sources_legend": {
+      "Plummer_Busenberg_1982": "Plummer & Busenberg (1982) Geochim. Cosmochim. Acta 46:1011-1040. Canonical CaCO3 polymorph solubilities.",
+      "Plummer_Wigley_Parkhurst_1978": "Plummer, Wigley & Parkhurst (1978) Am. J. Sci. 278:179-216. PWP calcite rate law.",
+      "Kim_Sun_2023": "Kim, Sun et al. (2023) Science 382:915-920. Dolomite cation-disorder cyclic-omega mechanism.",
+      "Benezeth_2009": "Benezeth, Dandurand, Harrichoury (2009) Chem. Geol. 265:3-12. Siderite solubility.",
+      "Sherman_Barak_2000": "Sherman & Barak (2000) Soil Sci. Soc. Am. J. 64:1959-1968. Modern dolomite Ksp determination.",
+      "PHREEQC_wateq4f": "USGS PHREEQC wateq4f.dat database. Compiled values; primary sources vary per entry.",
+      "PHREEQC_llnl": "USGS PHREEQC llnl.dat database (Lawrence Livermore). Comprehensive but estimation-heavy at low T.",
+      "Robie_Hemingway_1995": "Robie & Hemingway (1995) USGS Bull. 2131. Calorimetric standard.",
+      "Bischoff_Mackenzie_Bishop_1987": "Bischoff, Mackenzie & Bishop (1987) Geochim. Cosmochim. Acta 51:1413-1423. Stabilities of synthetic magnesian calcites in aqueous solution: comparison with biogenic materials. (v146 prep correction: earlier entry listed authors as Bischoff-Bishop-Mackenzie and journal as Am. Mineral. 72:1316-1326 — both wrong per the published record. The one 1987 paper by these authors covers BOTH synthetic stability AND biogenic comparison, was in GCA, not Am. Min.)",
+      "Morse_Mackenzie_1990": "Morse & Mackenzie (1990) Geochemistry of Sedimentary Carbonates, Elsevier. HMC chapter.",
+      "Davis_2000": "Davis, Dove & De Yoreo (2000) Science 290:1134-1137. Mg poisoning of calcite step edges.",
+      "Schindler_1978": "Schindler et al. (1978). Hydrozincite Ksp.",
+      "Stronach_Sharpe_1996": "Stronach & Sharpe (1996). Cu-basic carbonates."
+    }
+  },
+
+  "calcite": {
+    "formula": "CaCO3",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -1129.07,
+      "deltaHf_kJ_mol": -1207.51,
+      "S_J_mol_K": 91.71,
+      "logKsp_25C": -8.48,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -10.5
+      },
+      "valid_T_range_C": [0, 90],
+      "sources": ["Plummer_Busenberg_1982", "Robie_Hemingway_1995"],
+      "databases_agree": ["PHREEQC_wateq4f", "PHREEQC_llnl", "Robie_Hemingway_1995"],
+      "confidence_tier": "A",
+      "notes": "Best-measured carbonate. ΔGf agreement across all major databases within 0.5 kJ/mol. Plummer-Busenberg 1982 is the canonical solubility study. Retrograde solubility (-10.5 kJ/mol exothermic dissolution) — less soluble at higher T."
+    },
+    "kinetics": {
+      "rate_law": "plummer_wigley_parkhurst_1978",
+      "parameters": {
+        "k1_25C_mol_cm2_s": 8.91e-5,
+        "k2_25C_mol_cm2_s": 4.47e-7,
+        "k3_25C_mol_cm2_s": 1.86e-11,
+        "Ea_kJ_mol": [35.4, 23.5, 14.4],
+        "rate_form": "r = k1*[H+] + k2*[H2CO3*] + k3 - k4*[Ca2+]*[HCO3-]",
+        "k4_via_detailed_balance": true
+      },
+      "sources": ["Plummer_Wigley_Parkhurst_1978", "Morse_Mackenzie_1990"],
+      "confidence_tier": "A",
+      "notes": "PWP 1978 is the canonical calcite rate law and has been the working standard for ~50 years. Reverse rate k4 derived from detailed balance against Ksp. Mg poisoning at high Mg/Ca (Davis 2000) applied as a multiplicative inhibitor (existing sigmoid in 32-supersat-carbonate.ts)."
+    },
+    "metastability": null,
+    "habit_polymorph_notes": "Most stable CaCO3 polymorph at all surface T."
+  },
+
+  "aragonite": {
+    "formula": "CaCO3",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -1127.75,
+      "deltaHf_kJ_mol": -1207.42,
+      "S_J_mol_K": 88.99,
+      "logKsp_25C": -8.336,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -10.0
+      },
+      "valid_T_range_C": [0, 90],
+      "sources": ["Plummer_Busenberg_1982", "Robie_Hemingway_1995"],
+      "databases_agree": ["PHREEQC_wateq4f", "PHREEQC_llnl", "Robie_Hemingway_1995"],
+      "confidence_tier": "A",
+      "notes": "1.32 kJ/mol less stable than calcite at 25C — metastable at all surface T. ΔGf well-measured. Same Plummer-Busenberg 1982 solubility study as calcite."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 3.0,
+        "scaling_basis": "Wollast 1990 — aragonite precipitates ~3× faster than calcite at equivalent supersaturation"
+      },
+      "sources": ["Wollast_1990"],
+      "confidence_tier": "B",
+      "notes": "No widely-adopted dedicated rate law. Calcite PWP × 3 is the standard family-analog approach. Less reliable at low Ω."
+    },
+    "metastability": {
+      "stable_phase": "calcite",
+      "kinetic_favored_when": {
+        "Mg_over_Ca_ratio_min": 4.0,
+        "temperature_C_min": 30,
+        "narrative": "Mg poisoning of calcite step edges + warm T routes precipitation to the aragonite polymorph. Below these thresholds, calcite wins kinetically too."
+      },
+      "conversion_rate_per_step": 0.02,
+      "notes": "Aragonite converts to calcite over geological time (~10^4 to 10^6 yr in nature). Sim collapses this to per-step rate. The 0.02 per-step value is calibrated for sim timescale where one step ≈ 50,000 years (per existing UI tooltip)."
+    }
+  },
+
+  "dolomite": {
+    "formula": "CaMg(CO3)2",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -2161.7,
+      "deltaHf_kJ_mol": -2329.9,
+      "S_J_mol_K": 155.18,
+      "logKsp_25C": -17.09,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -28.0
+      },
+      "valid_T_range_C": [0, 250],
+      "sources": ["Sherman_Barak_2000", "PHREEQC_wateq4f"],
+      "databases_agree": ["PHREEQC_wateq4f"],
+      "confidence_tier": "A",
+      "notes": "Ksp value is for ORDERED dolomite (logKsp -17.09 matches wateq4f phase 'Dolomite 401' exactly). Disordered dolomite has higher Ksp (~10^-16.5, less stable). The thermodynamic distinction matters: Kim 2023 mechanism is specifically about producing ordered from disordered via cycling. deltaH_diss FLAGGED (NOT changed) 2026-05-30: ours -28 (Sherman-Barak 2000) sits below wateq4f -9.436 kcal = -39.48 and below the first-principles value from this entry's own enthalpies (ΔHf Ca2+ -542.8 + Mg2+ -466.9 + 2*CO3-2 -677.1 - dolomite -2329.9 = -34 kJ/mol). Real spread (-28/-34/-39.5). LEFT UNCHANGED because dolomite is ENGINE-PROMOTED (CARBONATE_KSP_ACTIVE_PER_MINERAL.dolomite=true) — its deltaH_diss drives logKsp(T) in the production nucleation path, so any change shifts seed-42 output and needs a calibration-aware re-tune (vugg-tune-scenario), not a data-only edit. Deferred to a dedicated dolomite-ΔH calibration pass."
+    },
+    "kinetics": {
+      "rate_law": "kim_2023_cyclic_omega",
+      "parameters": {
+        "N0_cycles": 10,
+        "omega_threshold": 1.0,
+        "f_ord_threshold_ordered": 0.7,
+        "f_ord_threshold_partial": 0.3,
+        "rate_form": "f_ord = 1 - exp(-N_cycles/7); rate ∝ base_rate * (0.30 + 0.70 * f_ord)",
+        "kinetic_inhibition_below_T_C": 60,
+        "kinetic_inhibition_unless": "cyclic Ω modulation (Kim 2023) OR sulfate-reducing biota OR evaporative dewatering"
+      },
+      "sources": ["Kim_Sun_2023", "Arvidson_Mackenzie_1999"],
+      "confidence_tier": "B",
+      "notes": "Pre-Kim 2023 the 'dolomite problem' (low-T direct precipitation) was unresolved for ~150 years. Kim et al. 2023 demonstrated experimentally that cyclic Ω modulation across the saturation boundary builds cation ordering progressively. The N0=10 parameter is calibrated for sim timescale where each sim cycle stands in for thousands of natural tidal cycles. SCIENCE IS RECENT: this rate law may be refined or replaced by 2027-2030. The rate_law identifier is stable so swapping the implementation later won't require schema changes."
+    },
+    "metastability": {
+      "stable_phase": "dolomite",
+      "precursor_phases": ["HMC"],
+      "narrative": "Disordered HMC is the kinetic precursor; ordered dolomite is the equilibrium product. Cycling drives HMC → ordered dolomite transition via Kim mechanism."
+    }
+  },
+
+  "siderite": {
+    "formula": "FeCO3",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -682.8,
+      "deltaHf_kJ_mol": -752.0,
+      "S_J_mol_K": 95.4,
+      "logKsp_25C": -10.89,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -20.0
+      },
+      "valid_T_range_C": [0, 200],
+      "sources": ["Benezeth_2009", "PHREEQC_wateq4f"],
+      "databases_agree": ["PHREEQC_wateq4f"],
+      "confidence_tier": "A",
+      "notes": "Bénézeth 2009 redetermined siderite solubility with modern techniques after decades of literature scatter (old PHREEQC value -10.55 was off by 0.34 log units; our -10.89 matches wateq4f 'Siderite 94' exactly). Reducing conditions required for Fe2+ stability — at high Eh, Fe2+ oxidizes to Fe3+, siderite dissolves and Fe-oxides precipitate. deltaH_diss FLAGGED (NOT changed) 2026-05-30: ours -20 is the exothermic outlier vs wateq4f -2.48 kcal = -10.38, minteq.v4 -16, and the first-principles value from this entry's own enthalpies (ΔHf Fe2+ -89.1 + CO3-2 -677.1 - FeCO3 -752.0 = -14.2 kJ/mol). LEFT UNCHANGED pending verification against the Bénézeth 2009 full text — IF Bénézeth specifically reports ΔH≈-20 it stands as the modern measurement; if -20 is an unverified estimate it should move toward the -10 to -16 cluster. NOT a data-only edit because siderite feeds the SI_siderite STRIP CHIP, so changing it drifts the strip digest baseline (regen + tripwire update required)."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled_with_redox_gate",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.5,
+        "redox_gate": "fluid.O2 < 0.5 ppm (anoxic)",
+        "redox_failure_response": "dissolution if O2 rises above gate AND total_growth > 5 um"
+      },
+      "sources": ["Greenberg_Tomson_1992"],
+      "confidence_tier": "C",
+      "notes": "Siderite kinetics poorly constrained — Greenberg-Tomson 1992 is the most-cited but ~30 years old. Rate is confounded by Fe2+/Fe3+ redox: any non-trivial dissolved O2 converts Fe2+ to Fe3+, undermining the rate law's assumption of stable Fe2+. The existing engine in 52-engines-carbonate.ts implements the redox failure response (auto-dissolves above O2 threshold)."
+    },
+    "metastability": null
+  },
+
+  "rhodochrosite": {
+    "formula": "MnCO3",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -816.0,
+      "deltaHf_kJ_mol": -889.3,
+      "S_J_mol_K": 99.2,
+      "logKsp_25C": -10.39,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -12.0
+      },
+      "valid_T_range_C": [0, 200],
+      "sources": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
+      "databases_agree": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
+      "confidence_tier": "A",
+      "notes": "Well-measured by both calorimetry (Robie 1995) and solubility (PHREEQC compilation). Mn carbonate analog of siderite; less redox-confounded because Mn2+ is more stable to oxidation than Fe2+ at typical groundwater Eh. INTER-DATABASE SCATTER documented (NOT changed) 2026-05-30: both logKsp and deltaH_diss sit at the low-magnitude/exothermic edge of the published range. logKsp ours -10.39 vs wateq4f 'Rhodochrosite 564' -11.13 vs minteq.v4 -10.58. deltaH_diss ours -12 vs wateq4f -1.43 kcal = -5.98 vs minteq -1.88 vs first-principles from this entry's own enthalpies (ΔHf Mn2+ -220.8 + CO3-2 -677.1 - MnCO3 -889.3 = -8.6 kJ/mol). No single canonical value (genuine literature scatter, unlike the cerussite/witherite/strontianite sign-flips which were clear errors). LEFT UNCHANGED: observer-only (not promoted, no strip chip) so low stakes, and -12/-10.39 are within the published envelope — picking one database over another would be an unjustified preference. Flagged for a future literature-consolidation pass."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.4
+      },
+      "sources": [],
+      "confidence_tier": "C",
+      "notes": "No dedicated rate law in the literature. Calcite PWP × 0.4 is family-analog estimate, calibrated by similarity to siderite kinetics."
+    },
+    "metastability": null
+  },
+
+  "smithsonite": {
+    "formula": "ZnCO3",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -731.5,
+      "deltaHf_kJ_mol": -812.8,
+      "S_J_mol_K": 82.4,
+      "logKsp_25C": -10.0,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -15.0
+      },
+      "valid_T_range_C": [0, 150],
+      "sources": ["PHREEQC_wateq4f"],
+      "databases_agree": ["PHREEQC_wateq4f"],
+      "confidence_tier": "B",
+      "notes": "PHREEQC value -10.0 is widely cited but original source (Hayward 1962) is dated. THERMODDEM gives -10.84, a 0.84 log-unit disagreement → worth flagging in audit. CONFLICT-borderline (5 kJ/mol disagreement is the threshold for conflict tier; this is ~4.8 kJ/mol). Recommend tier 'B' with the conflict note rather than 'conflict' tier."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "C",
+      "notes": "No dedicated rate law. Standard family-analog with calcite as basis."
+    },
+    "metastability": null
+  },
+
+  "cerussite": {
+    "formula": "PbCO3",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -625.5,
+      "deltaHf_kJ_mol": -699.1,
+      "S_J_mol_K": 131.0,
+      "logKsp_25C": -13.13,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": 20.33
+      },
+      "valid_T_range_C": [0, 150],
+      "sources": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
+      "databases_agree": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
+      "confidence_tier": "A",
+      "notes": "Pb-carbonate Ksp well-established (logKsp -13.13 matches wateq4f exactly + is consistent with deltaGf -625.5). Very low solubility — cerussite is highly insoluble, forms readily in supergene oxidation of galena. deltaH_diss CORRECTED 2026-05-30: was -23.0 (exothermic) which was an unverified estimate with the WRONG SIGN. Cerussite dissolution is ENDOTHERMIC: wateq4f +4.86 kcal = +20.33 kJ/mol; minteq.v4 +24.79 kJ/mol; and the first-principles value from THIS entry's own stored enthalpies (ΔHf Pb2+ -1.7 + ΔHf CO3-2 -677.1 - ΔHf PbCO3 -699.1) = +20.3 kJ/mol — the old -23 contradicted our own deltaHf field. Observer-only fix (cerussite is not engine-promoted + has no strip chip), so zero runtime footprint."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "C",
+      "notes": "No dedicated rate law. Family-analog."
+    },
+    "metastability": null
+  },
+
+  "witherite": {
+    "formula": "BaCO3",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -1132.2,
+      "deltaHf_kJ_mol": -1213.0,
+      "S_J_mol_K": 112.1,
+      "logKsp_25C": -8.562,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": 2.94
+      },
+      "valid_T_range_C": [0, 800],
+      "sources": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
+      "databases_agree": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
+      "confidence_tier": "A",
+      "notes": "Ba-carbonate (logKsp -8.562 matches wateq4f exactly). Above 811C transitions to a different polymorph (γ-BaCO3); stable phase below. deltaH_diss CORRECTED 2026-05-30: was -15.0 (exothermic) — wrong sign + an order of magnitude off. Witherite dissolution is mildly ENDOTHERMIC near thermoneutral: wateq4f +0.703 kcal = +2.94 kJ/mol; minteq.v4 +4.0 kJ/mol. The -15 was an unverified estimate (one of an identical -15 cluster with strontianite/smithsonite — a placeholder tell). Observer-only fix (not engine-promoted, no strip chip), zero runtime footprint."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "C",
+      "notes": "No dedicated rate law in the literature. Family-analog estimate."
+    },
+    "metastability": null
+  },
+
+  "strontianite": {
+    "formula": "SrCO3",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -1144.7,
+      "deltaHf_kJ_mol": -1220.0,
+      "S_J_mol_K": 97.2,
+      "logKsp_25C": -9.271,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -1.67
+      },
+      "valid_T_range_C": [0, 900],
+      "sources": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
+      "databases_agree": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
+      "confidence_tier": "A",
+      "notes": "Sr-carbonate (logKsp -9.271 matches wateq4f exactly). Analogous to witherite; aragonite-structured at low T (orthorhombic). Less soluble than witherite. deltaH_diss CORRECTED 2026-05-30: was -15.0 — ~9x too exothermic (part of the same placeholder -15 cluster as witherite/smithsonite). Strontianite dissolution is near thermoneutral: wateq4f -0.4 kcal = -1.67 kJ/mol; minteq.v4 0.0 kJ/mol; first-principles from this entry's own enthalpies ≈ -3 kJ/mol. Observer-only fix (not engine-promoted, no strip chip), zero runtime footprint."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "C",
+      "notes": "No dedicated rate law. Family-analog."
+    },
+    "metastability": null
+  },
+
+  "malachite": {
+    "formula": "Cu2(CO3)(OH)2",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -1054.4,
+      "deltaHf_kJ_mol": -1051.4,
+      "S_J_mol_K": 166.0,
+      "logKsp_25C": -33.16,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -50.0,
+        "dissolution_form": "Cu2(CO3)(OH)2 → 2 Cu2+ + CO3^2- + 2 OH-"
+      },
+      "valid_T_range_C": [0, 200],
+      "sources": ["Stronach_Sharpe_1996", "PHREEQC_wateq4f"],
+      "databases_agree": ["PHREEQC_wateq4f"],
+      "confidence_tier": "A",
+      "notes": "Cu-basic carbonate. Dissolution involves both H+ and CO3^2- so saturation calculation needs explicit pH coupling (more so than simple carbonates). Stable supergene phase for copper above pH ~5.5 under oxidizing conditions."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "C",
+      "notes": "No dedicated rate law. Family-analog. Real malachite precipitation is often gel-mediated → no clean rate law fits all conditions."
+    },
+    "metastability": {
+      "stable_phase": "malachite",
+      "kinetic_favored_when": {
+        "narrative": "Stable Cu carbonate in oxidizing supergene zones; azurite is metastable cousin that converts to malachite over time."
+      },
+      "notes": "Azurite → malachite is the classic Cu-secondary mineral conversion (azurite dehydrates to malachite when pCO2 drops or humidity increases)."
+    }
+  },
+
+  "azurite": {
+    "formula": "Cu3(CO3)2(OH)2",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -1431.5,
+      "deltaHf_kJ_mol": -1632.0,
+      "S_J_mol_K": 254.0,
+      "logKsp_25C": -45.36,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -55.0,
+        "dissolution_form": "Cu3(CO3)2(OH)2 → 3 Cu2+ + 2 CO3^2- + 2 OH-"
+      },
+      "valid_T_range_C": [0, 100],
+      "sources": ["Stronach_Sharpe_1996", "PHREEQC_wateq4f"],
+      "databases_agree": ["PHREEQC_wateq4f"],
+      "confidence_tier": "A",
+      "notes": "Cu-basic carbonate. Metastable relative to malachite; converts at lower pCO2 or higher humidity. Forms preferentially at higher pCO2 (deeper supergene zones or CO2-rich environments)."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "C",
+      "notes": "No dedicated rate law. Family-analog."
+    },
+    "metastability": {
+      "stable_phase": "malachite",
+      "kinetic_favored_when": {
+        "pCO2_min_bar": 0.01,
+        "narrative": "Azurite favored at elevated pCO2; converts to malachite when pCO2 drops below ~0.01 bar (modern atmospheric ≈ 0.0004 bar)."
+      },
+      "conversion_rate_per_step": 0.01,
+      "notes": "Azurite-to-malachite conversion well-documented in museum specimens that have aged in dry air."
+    }
+  },
+
+  "hydrozincite": {
+    "formula": "Zn5(CO3)2(OH)6",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": -3164.4,
+      "deltaHf_kJ_mol": null,
+      "S_J_mol_K": null,
+      "logKsp_25C": -76.0,
+      "logKsp_fit": {
+        "form": "vanthoff",
+        "deltaH_diss_kJ_mol": -60.0,
+        "dissolution_form": "Zn5(CO3)2(OH)6 → 5 Zn2+ + 2 CO3^2- + 6 OH-",
+        "deltaH_estimated": true
+      },
+      "valid_T_range_C": [0, 100],
+      "sources": ["Schindler_1978", "Preis_Gamsjaeger_2001"],
+      "databases_agree": ["PHREEQC_wateq4f"],
+      "confidence_tier": "B",
+      "notes": "Late-supergene Zn carbonate. ΔGf measured by Schindler 1978 with refinements by Preis & Gamsjäger 2001. Some database disagreement (10^-75 to 10^-76 range) but within tier B. ΔH for dissolution is estimated — no calorimetric data. Tends to form botryoidal crusts in low-temperature oxidizing conditions; UV-fluorescent (blue-white)."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "D",
+      "notes": "No published rate data. Family-analog assignment; high uncertainty."
+    },
+    "metastability": null
+  },
+
+  "rosasite": {
+    "formula": "(Cu,Zn)2(CO3)(OH)2",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": null,
+      "deltaHf_kJ_mol": null,
+      "S_J_mol_K": null,
+      "logKsp_25C": null,
+      "logKsp_fit": {
+        "form": "estimated_from_endmembers",
+        "endmember_malachite_fraction": 0.5,
+        "endmember_smithsonite_fraction": 0.5,
+        "notes": "Variable composition between Cu and Zn endpoints; thermodynamic data tracks the dominant cation. For sim purposes, treat as malachite × (Cu fraction) + smithsonite × (Zn fraction) ideal mixture."
+      },
+      "valid_T_range_C": [0, 100],
+      "sources": [],
+      "databases_agree": [],
+      "confidence_tier": "D",
+      "notes": "No direct thermodynamic data published. (Cu,Zn) mixed carbonate with continuous solid solution between rosasite (Cu-rich) and aurichalcite (Zn-rich). For Phase 1: treat as malachite-smithsonite ideal mixture, flag the mineral as tier-D in narrator footnotes. THIS IS A REAL DATABASE GAP — surface in audit report."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "D",
+      "notes": "No published rate data. Family-analog assignment with very high uncertainty."
+    },
+    "metastability": null
+  },
+
+  "aurichalcite": {
+    "formula": "(Zn,Cu)5(CO3)2(OH)6",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": null,
+      "deltaHf_kJ_mol": null,
+      "S_J_mol_K": null,
+      "logKsp_25C": null,
+      "logKsp_fit": {
+        "form": "estimated_from_endmembers",
+        "endmember_hydrozincite_fraction": 0.7,
+        "endmember_malachite_fraction_pair": 0.3,
+        "notes": "Zn-dominant analog of rosasite. Approximate as hydrozincite-malachite mixture proportioned by cation ratio."
+      },
+      "valid_T_range_C": [0, 100],
+      "sources": [],
+      "databases_agree": [],
+      "confidence_tier": "D",
+      "notes": "No direct thermodynamic data. Variable composition. Continuous solid solution with rosasite on the Zn-rich end. For Phase 1: treat as hydrozincite-dominant mixture. ANOTHER REAL DATABASE GAP — surface in audit report."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_scaled",
+      "parameters": {
+        "rate_factor_vs_calcite": 0.3
+      },
+      "sources": [],
+      "confidence_tier": "D",
+      "notes": "No published rate data."
+    },
+    "metastability": null
+  },
+
+  "HMC": {
+    "formula": "Ca(1-x)MgxCO3, x ≈ 0.05-0.30 (mole fraction Mg)",
+    "thermodynamics": {
+      "deltaGf_kJ_mol": "function_of_mg_content",
+      "deltaHf_kJ_mol": null,
+      "S_J_mol_K": null,
+      "logKsp_25C": "function_of_mg_content",
+      "logKsp_fit": {
+        "form": "mg_content_linear",
+        "logKsp_at_x0": -8.48,
+        "delta_logKsp_per_mol_pct_Mg": 0.10,
+        "valid_mg_content_range": [0.0, 0.30],
+        "notes": "Mg substitution destabilizes the calcite lattice → Ksp increases ~0.1 log unit per mol-% Mg incorporated. At x=0.05 (5% Mg): logKsp ≈ -8.0. At x=0.30 (30% Mg): logKsp ≈ -5.5 (approaching disordered dolomite stability)."
+      },
+      "valid_T_range_C": [0, 60],
+      "sources": ["Bischoff_Mackenzie_Bishop_1987", "Morse_Mackenzie_1990"],
+      "databases_agree": [],
+      "confidence_tier": "B",
+      "notes": "HMC is a continuum, not a discrete phase. Mg content x is per-crystal state (crystal.mg_content). Ksp scales linearly with mol-% Mg over the valid range. Above x=0.30, structure tilts toward dolomite. Bischoff, Mackenzie & Bishop 1987 (GCA 51:1413-1423) is the canonical synthesis-Mg-calcite solubility reference (it also covers biogenic comparison — one paper, two strands). Morse & Mackenzie 1990 'Geochemistry of Sedimentary Carbonates' (Elsevier Developments in Sedimentology 48) consolidates. NEW MINERAL — to be added to data/minerals.json via vugg-add-mineral in Week 11."
+    },
+    "kinetics": {
+      "rate_law": "calcite_pwp_with_mg_inhibition",
+      "parameters": {
+        "base_rate": "calcite PWP at x=0",
+        "mg_inhibition_form": "rate *= 1 - 0.85 * sigmoid((Mg/Ca - 2) / 0.5)",
+        "mg_inhibition_source": "Davis 2000, Nielsen 2013 (existing 32-supersat-carbonate.ts Mg/Ca sigmoid)"
+      },
+      "sources": ["Davis_2000", "Nielsen_2013"],
+      "confidence_tier": "A",
+      "notes": "Mg poisoning of step edges already implemented as sigmoid in 32-supersat-carbonate.ts. For HMC specifically, the rate law is calcite-PWP with Mg inhibition factor pre-applied — that's geologically correct since HMC growth is by the same surface mechanism as calcite, slowed by the step-edge Mg."
+    },
+    "metastability": {
+      "stable_phase": "dolomite (at f_ord > 0.7 + cycling) OR calcite (at low Mg, no cycling)",
+      "narrative": "HMC is the kinetic precursor to ordered dolomite. With cyclic Ω modulation (Kim 2023) it transitions to dolomite as f_ord climbs. Without cycling, HMC persists as a metastable Mg-rich calcite intermediate. The reactive_wall scenario produces stable disordered HMC (no cycling drives ordering); the sabkha_dolomitization scenario produces HMC early then transitions to ordered dolomite as cycling accumulates."
+    }
+  }
+}

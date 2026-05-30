@@ -45,6 +45,14 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   calcite:        { Ca: 1, CO3: 1 },                 // CaCO3
   aragonite:      { Ca: 1, CO3: 1 },                 // CaCO3 (orthorhombic)
   dolomite:       { Ca: 1, Mg: 1, CO3: 2 },          // CaMg(CO3)2
+  // v146 Week 11: HMC = Ca(1-x)Mg(x)CO3 with variable x = 0.05-0.30.
+  // Approximation: use x ≈ 0.10 average (canonical marine HMC). The
+  // exact per-crystal mg_content is stored in crystal._mg_content but
+  // mass-balance treats HMC as composition-averaged. Real crystals
+  // have slight under-debit for Ca and slight over-debit for Mg at
+  // x > 0.10; reverse for x < 0.10. Errors are small (a few percent
+  // of Ca and Mg consumption).
+  HMC:            { Ca: 0.9, Mg: 0.1, CO3: 1 },      // Ca(0.9)Mg(0.1)CO3 (canonical)
   siderite:       { Fe: 1, CO3: 1 },                 // FeCO3
   rhodochrosite:  { Mn: 1, CO3: 1 },                 // MnCO3
   smithsonite:    { Zn: 1, CO3: 1 },                 // ZnCO3
@@ -527,6 +535,7 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   // (zone-dependent, stays inline).
   calcite:      { Ca: 0.5, CO3: 0.3 },                 // major species only; trace Mn/Fe stay inline
   dolomite:     { Ca: 0.3, Mg: 0.3, CO3: 0.5 },        // acid dissolution
+  HMC:          { Ca: 0.7, Mg: 0.15, CO3: 0.7 },       // v146 Week 11 — pH<6 acid dissolution; faster than calcite (Mg-substituted lattice less stable per Bischoff 1987)
   siderite:     { Fe: 0.5, CO3: 0.4 },                 // two engine triggers (oxidative + acid), same rates
   malachite:    { Cu: 0.8, CO3: 0.5 },                 // acid dissolution
   smithsonite:  { Zn: 0.6, CO3: 0.4 },                 // acid attack

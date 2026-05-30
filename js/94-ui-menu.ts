@@ -9,6 +9,42 @@
 // ============================================================
 // MENU PAGES — New Game menu + Scenarios picker
 // ============================================================
+
+// === HELIX-OVERLAY-FORK ADDITION (strip view v154+, 2026-05-26) =====
+// Helper to attach a StripRecorder to any sim (Fortress lifecycle).
+// Generous initial allocation (500 steps) since Fortress sessions
+// can run long; the recorder _growCapacity() handles overflow if
+// the player goes past that.
+function _attachStripRecorderToSim(sim: any, scenarioId: string, notes: string): void {
+  if (!sim || typeof StripRecorder !== 'function') return;
+  try {
+    sim._stripRecorder = new StripRecorder(sim, {
+      duration_steps: 500,
+      notes,
+    });
+    const m = sim._stripRecorder.getManifest();
+    if (m) m.scenario_id = String(scenarioId || 'unknown');
+  } catch (_e) { /* strip view is optional */ }
+}
+
+// Finalize + save a sim's recorder to IndexedDB. Called on mode-leave.
+function _saveStripRecorderIfPresent(sim: any): void {
+  if (!sim || !sim._stripRecorder) return;
+  try {
+    const dataset = sim._stripRecorder.finalize();
+    sim._stripRecorder = null; // prevent double-save
+    if (typeof stripStorageSave === 'function' && typeof stripStorageAvailable === 'function' && stripStorageAvailable()) {
+      // Only save if at least one step was captured. Don't pollute the
+      // dataset list with empty recordings (user clicked into Fortress
+      // and immediately left without doing anything).
+      if (dataset.manifest.duration_steps > 0) {
+        stripStorageSave(dataset).catch(() => { /* silent */ });
+      }
+    }
+  } catch (_e) { /* silent */ }
+}
+// === END HELIX-OVERLAY-FORK ADDITION ==================================
+
 function hideAllMenuAndModePanels() {
   const ids = [
     'title-screen', 'new-game-panel', 'scenarios-panel',
@@ -16,6 +52,8 @@ function hideAllMenuAndModePanels() {
     'fortress-panel', 'groove-panel', 'idle-panel',
     'library-panel', 'random-panel',
     'topo-panel',
+    // HELIX-OVERLAY-FORK ADDITION (v153): strip view mode panel.
+    'strip-view-mode-panel',
   ];
   for (const id of ids) {
     const el = document.getElementById(id);
@@ -100,6 +138,7 @@ function fortressBeginFromStarterFluid(presetId) {
 
   rng = new SeededRandom(Date.now());
   fortressSim = new VugSimulator(conditions, []);
+  _attachStripRecorderToSim(fortressSim, `fortress_starter_${presetId}`, `Fortress — starter fluid: ${preset.label}`);
   fortressActive = true;
   fortressLogLines = [];
 
@@ -140,6 +179,7 @@ function fortressBeginFromScenario(scenarioName) {
 
   rng = new SeededRandom(Date.now());
   fortressSim = new VugSimulator(conditions, events);
+  _attachStripRecorderToSim(fortressSim, `fortress_${scenarioName}`, `Fortress — scenario: ${scenarioName}`);
   fortressActive = true;
   fortressLogLines = [];
 
@@ -241,6 +281,9 @@ function switchMode(mode) {
   const modeCurrent = document.getElementById('mode-current');
   const modeGroove = document.getElementById('mode-groove');
   const modeLibrary = document.getElementById('mode-library');
+  // HELIX-OVERLAY-FORK ADDITION (v153): strip view as a proper mode.
+  const modeStripView = document.getElementById('mode-stripview');
+  const stripViewModePanel = document.getElementById('strip-view-mode-panel');
 
   // Pause background activity before leaving it.
   if (mode !== 'idle' && idleRunning && !idlePaused && typeof idleTogglePause === 'function') {
@@ -252,6 +295,19 @@ function switchMode(mode) {
   // Switching out of fortress while a tutorial is running tears down
   // the overlay + restores controls. (Tutorials only live in fortress.)
   if (mode !== 'fortress' && typeof endTutorial === 'function') endTutorial();
+  // HELIX-OVERLAY-FORK ADDITION (strip view v154+): leaving Fortress
+  // with an attached recorder → finalize + save the dataset. Fortress
+  // sessions are interactive (no fixed run end), so this is the
+  // natural save point. Idempotent: the helper nulls _stripRecorder
+  // after save so re-leaves don't double-save.
+  if (mode !== 'fortress' && typeof fortressSim !== 'undefined' && fortressSim) {
+    _saveStripRecorderIfPresent(fortressSim);
+  }
+  // HELIX-OVERLAY-FORK ADDITION (strip view v155+): same pattern for
+  // Zen mode (idleSim). Idempotent. Won't save empty recordings.
+  if (mode !== 'idle' && typeof idleSim !== 'undefined' && idleSim) {
+    _saveStripRecorderIfPresent(idleSim);
+  }
 
   // Hide title screen, show mode toggle
   document.body.classList.remove('title-on');
@@ -286,6 +342,8 @@ function switchMode(mode) {
   if (modeCurrent) modeCurrent.classList.remove('active');
   if (modeGroove) modeGroove.classList.remove('active');
   if (modeLibrary) modeLibrary.classList.remove('active');
+  if (modeStripView) modeStripView.classList.remove('active');
+  if (stripViewModePanel) stripViewModePanel.style.display = 'none';
 
   if (mode === 'legends') {
     legendsControls.style.display = 'flex';
@@ -311,6 +369,24 @@ function switchMode(mode) {
     const rp = document.getElementById('random-panel');
     if (rp) rp.style.display = 'block';
     timeScale = 5.0;
+  } else if (mode === 'stripview') {
+    // HELIX-OVERLAY-FORK ADDITION (v153): Strip View mode. Mirrors
+    // Record Player ('groove') — own full-page panel that's loaded
+    // post-hoc. Doesn't bind to a sim; just paints the dataset list
+    // and lets the user pick one to view.
+    //
+    // BUG FIX (boss-reported 2026-05-27): use display 'flex' not
+    // 'block'. .strip-view-mode-panel CSS sets display: flex +
+    // flex-direction: column + max-height: calc(100vh - 80px) so
+    // the inner .strip-view-body (flex: 1; overflow: auto) gets a
+    // constrained height and scrolls. Inline display:block overrode
+    // the flex layout — body had no height bound, grew with content,
+    // panel exceeded viewport and the scroll bar disappeared.
+    if (stripViewModePanel) stripViewModePanel.style.display = 'flex';
+    if (modeStripView) modeStripView.classList.add('active');
+    if (typeof (window as any).stripViewModeShow === 'function') {
+      (window as any).stripViewModeShow();
+    }
   }
 
   // Remember the active game so the Current Game nav button can

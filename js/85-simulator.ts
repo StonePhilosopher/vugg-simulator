@@ -136,6 +136,15 @@ class VugSimulator {
     if (_initialMesh && _initialMesh.bindRingChemistry) {
       _initialMesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
     }
+    // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — allocate the
+    // cavity interior voxel grid now that the mesh is built and
+    // chemistry is bound. d=0 voxels alias the mesh.cells[].fluid
+    // objects (per [FIRM] B); d=1, d=2, d=3 voxels each get an
+    // independent clone of the bulk fluid. Per-voxel temperature is
+    // initialized to bulk T (per [FIRM] E) but not consumed in v158.
+    // The grid is lazy-cached on wall_state; this call forces the
+    // build so the grid is ready when _diffuseRingState first fires.
+    this.wall_state.voxelGridFor(this);
     // Cache the FluidChemistry numeric field names once for the
     // diffusion loop. Pulled from a fresh instance so any future field
     // additions to FluidChemistry pick up automatically — no separate
@@ -178,6 +187,13 @@ class VugSimulator {
         `  ☁ Vadose oxidation: rings ${newlyVadose.join(',')} now exposed `
         + `to air — O₂ rises, sulfides become unstable`);
     }
+    // PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 4b — open-system pH
+    // equilibration. No-op when conditions._scenario is absent OR
+    // open_to_atmosphere is false (default). When on, the fluid's
+    // pH is re-solved so its equilibrium pCO2 matches the local
+    // atmospheric value. Runs BEFORE dissolution + nucleation so
+    // downstream supersat math sees the equilibrated chemistry.
+    this._applyOpenAtmosphereEquilibration();
     // Track dolomite saturation crossings for the Kim 2023 cycle mechanism.
     this.conditions.update_dol_cycles();
     snap = this._snapshotGlobal();
@@ -652,6 +668,18 @@ class VugSimulator {
     // carry identical values (Laplacian of a constant is zero) —
     // this preserves byte-equality for default scenarios.
     this._diffuseRingState();
+
+    // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
+    // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).
+    // When a StripRecorder is attached to the sim, capture one step's
+    // worth of chip data + nucleation events at end-of-step. Single
+    // conditional call with no side effects on sim state — runs without
+    // the recorder, baseline identical. Wired by the UI layer at run
+    // start; see 99k-strip-view.ts and 94-ui-menu.ts.
+    if (this._stripRecorder && typeof this._stripRecorder.captureStep === 'function') {
+      try { this._stripRecorder.captureStep(this); } catch (_err) { /* swallow — strip view is non-essential */ }
+    }
+    // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
     return this.log;
   }

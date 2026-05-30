@@ -41,13 +41,26 @@ _propagateGlobalDelta(snap) {
   const [preFluid, preTemp] = snap;
   const equator = Math.floor(this.wall_state.ring_count / 2);
   const equatorFluid = this.ring_fluids[equator];  // = conditions.fluid (aliased)
-  // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4c — mesh is a constructor
-  // invariant; the legacy ring_fluids[] direct-propagation path is
-  // unreachable in normal flow and dropped from the wrapper. The
-  // mesh.propagateDelta call is the canonical chemistry-mutation
-  // propagation now.
-  const mesh = this.wall_state.meshFor(this);
-  mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid);
+  // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 2a (v159) — voxel grid is
+  // now the canonical event-delta propagation path. Spreads the delta
+  // to ALL voxels (wall + interior) so event chemistry affects the
+  // whole cavity uniformly, matching pre-v158 bulk-view semantics.
+  // Pre-v159 mesh.propagateDelta hit only the d=0 wall slab; combined
+  // with the new v159 radial diffusion that would have STOLEN the
+  // event effect from the wall by mixing it with stale interior fluid.
+  // Spreading to all voxels preserves event reach.
+  //
+  // Defensive fallback to mesh.propagateDelta when the voxel grid
+  // isn't available (headless test harnesses without CavityVoxelGrid).
+  const grid = this.wall_state.voxelGridFor(this);
+  if (grid && typeof grid.propagateEventDelta === 'function') {
+    grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid);
+  } else {
+    const mesh = this.wall_state.meshFor(this);
+    if (mesh && typeof mesh.propagateDelta === 'function') {
+      mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid);
+    }
+  }
   const deltaT = this.conditions.temperature - preTemp;
   if (deltaT !== 0) {
     for (let k = 0; k < this.ring_temperatures.length; k++) {
@@ -98,9 +111,17 @@ _applyVadoseOxidationOverride() {
   const oldSurface = this._prevFluidSurfaceRing;
   this._prevFluidSurfaceRing = newSurface;
   if (newSurface === null || newSurface === undefined) return [];
-  if (oldSurface !== null && oldSurface !== undefined && newSurface >= oldSurface) {
-    return [];
-  }
+  // v161: handle BOTH water-level directions in one pass. Drying (wet→vadose)
+  // oxidizes + evaporatively concentrates; rewetting (vadose→wet) re-dilutes.
+  // Previously this early-returned whenever the surface rose, which made the
+  // evaporative `concentration` boost a ONE-WAY RATCHET: searles_lake pinned
+  // at the chip clamp after 2-3 dry cycles, and the redissolution half of the
+  // evaporite cycle (fresh_pulse's narrated "brine dilutes, salt crusts
+  // begin to redissolve") never fired — only the first few dryings did any
+  // chemical work. The rewetting branch in the loop below restores it, so a
+  // freshwater flood (searles fresh_pulse, naica/aquifer recharge) actually
+  // dilutes the brine. A no-transition step (surface unchanged) now falls
+  // through the loop as a cheap no-op rather than early-returning.
   // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4a — apply the vadose override
   // to EVERY cell in a transitioning ring, not just the ring-level
   // pool. Post-un-aliasing each cell has its own fluid; the
@@ -112,6 +133,7 @@ _applyVadoseOxidationOverride() {
     : null;
   const cellsPerRing = this.wall_state.cells_per_ring || 0;
   const becameVadose = [];
+  const rewetted = [];
   for (let r = 0; r < n; r++) {
     const was = VugConditions._classifyWaterState(oldSurface, r, n);
     const now = VugConditions._classifyWaterState(newSurface, r, n);
@@ -151,7 +173,33 @@ _applyVadoseOxidationOverride() {
         rf.concentration *= EVAPORATIVE_CONCENTRATION_FACTOR;
       }
       becameVadose.push(r);
+    } else if (was === 'vadose' && now !== 'vadose'
+               && oldSurface !== null && oldSurface !== undefined) {
+      // v161 rewetting: a freshwater flood (searles fresh_pulse, naica /
+      // aquifer recharge) reflooded this ring. Reset the evaporative
+      // `concentration` multiplier to baseline 1.0 — the dissolved load
+      // re-dilutes and salt crusts redissolve, exactly as those events
+      // narrate. Mirror of the drying boost above (same cells + ring_fluids
+      // mirror so engine gate and per-vertex view agree). We deliberately do
+      // NOT un-oxidize (O2) or restore S: air-exposure mineral reactions
+      // (sulfide→oxide supergene paragenesis) persist through reflooding;
+      // only the soluble evaporite load dilutes.
+      if (mesh && mesh.cells && cellsPerRing > 0) {
+        for (let c = 0; c < cellsPerRing; c++) {
+          const cell = mesh.cells[r * cellsPerRing + c];
+          if (!cell || !cell.fluid) continue;
+          cell.fluid.concentration = 1.0;
+        }
+      }
+      const rf = this.ring_fluids[r];
+      if (rf) rf.concentration = 1.0;
+      rewetted.push(r);
     }
+  }
+  if (rewetted.length) {
+    this.log.push(
+      `  💧 Rewetting: rings ${rewetted.join(',')} reflooded — brine dilutes, `
+      + `evaporative concentration resets to baseline 1.0×`);
   }
   return becameVadose;
 },
@@ -171,14 +219,78 @@ _applyVadoseOxidationOverride() {
 _diffuseRingState(rate?) {
   if (rate == null) rate = this.inter_ring_diffusion_rate;
   if (!(rate > 0)) return;
-  // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4c — mesh is a constructor
-  // invariant; the legacy ring-Laplacian fallback path is unreachable
-  // in normal flow and dropped. mesh.diffuse is the canonical
-  // diffusion implementation. Post-Tranche-4a it operates truly per-
-  // vertex (cells are un-aliased); Path C in full.
-  const mesh = this.wall_state.meshFor(this);
-  mesh.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+  // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — voxel grid is
+  // now the canonical diffusion entry point per [FIRM] H. In v158 the
+  // implementation delegates to mesh.diffuse() for the d=0 (wall) slab
+  // — byte-identical to the pre-v158 path because d=0 voxels alias
+  // mesh.cells[].fluid via [FIRM] B, and d≥1 slabs are uniform at init
+  // and never receive writes in v158. Phase 2 (v159) expands the
+  // implementation to do real per-voxel diffusion + radial coupling
+  // without changing this call site.
+  //
+  // Defensive fallback: if the voxel grid can't be resolved (headless
+  // harness without CavityVoxelGrid loaded), fall through to direct
+  // mesh.diffuse(). Maintains pre-v158 behavior in those paths.
+  const grid = this.wall_state.voxelGridFor(this);
+  if (grid && typeof grid.diffuse === 'function') {
+    grid.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+  } else {
+    const mesh = this.wall_state.meshFor(this);
+    if (mesh && typeof mesh.diffuse === 'function') {
+      mesh.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+    }
+  }
 },
+
+  // ====================================================================
+  // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — sim-level voxel
+  // accessors. Convenience pass-throughs to wall_state.voxelGridFor.
+  //
+  // Engines + UI consumers can reach the voxel grid directly via
+  // sim.voxelAt(r, c, d) / sim.boundaryVoxel(r, c) / sim.fluidAtVoxel
+  // without threading wall_state through every call site. Returns null
+  // in headless paths where the grid couldn't be allocated.
+  // ====================================================================
+
+  // Get the voxel at (r, c, d). r ∈ [0, ring_count), c ∈ [0, cells_per_ring),
+  // d ∈ [0, 3] (per [FIRM] A: 4-slice radial axis).
+  voxelAt(r, c, d) {
+    const grid = this.wall_state && this.wall_state.voxelGridFor
+      ? this.wall_state.voxelGridFor(this)
+      : null;
+    return grid ? grid.voxelAt(r, c, d) : null;
+  },
+
+  // Get the boundary-layer voxel (d=0) for wall cell (r, c). Engine
+  // mass-balance lands here in Phase 2+; in v158 the d=0 voxel is
+  // aliased to wall.mesh.cells[r*N+c].fluid via [FIRM] B, so reading
+  // through this and reading through mesh.cellOf() return the same
+  // fluid object.
+  boundaryVoxel(r, c) {
+    const grid = this.wall_state && this.wall_state.voxelGridFor
+      ? this.wall_state.voxelGridFor(this)
+      : null;
+    return grid ? grid.boundaryVoxel(r, c) : null;
+  },
+
+  // Get the fluid object at (r, c, d). Returns null if the voxel or
+  // fluid is missing.
+  fluidAtVoxel(r, c, d) {
+    const grid = this.wall_state && this.wall_state.voxelGridFor
+      ? this.wall_state.voxelGridFor(this)
+      : null;
+    return grid ? grid.fluidAt(r, c, d) : null;
+  },
+
+  // Sample a fluid field at fractional depth via linear interpolation
+  // (per [FIRM] A: average-on-demand for consumers wanting > 4 slices
+  // of resolution). depth is clamped to [0, depth_count-1].
+  sampleVoxelFluid(r, c, depth, field) {
+    const grid = this.wall_state && this.wall_state.voxelGridFor
+      ? this.wall_state.voxelGridFor(this)
+      : null;
+    return grid ? grid.sampleFluid(r, c, depth, field) : NaN;
+  },
 
   _repaintWallState() {
   // Rebuild ring-0 occupancy from the crystal list. Cheap (~120 × ~20)
@@ -283,6 +395,27 @@ _diffuseRingState(rate?) {
       fluid: _cloneFluid(cnd.fluid),
     },
     radiation_dose: this.radiation_dose,
+    // === HELIX-OVERLAY-FORK ADDITION (v15) ============================
+    // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
+    // breadcrumb. This fork adds per-ring chemistry + temperature
+    // to each snap so the helicoid overlay's rate band can source
+    // scenario-time Δr (vugg-simulator parent doesn't need this).
+    // Storage cost: 16 rings × ~50 fluid fields × 8 B = ~6.4 KB per
+    // snap; for a 120-step MVT (stride 9 → ~14 snaps) that's ~90 KB
+    // beyond the existing v66 schema. Smaller scenarios cost less;
+    // 2400-step pegmatites cost ~190 KB.
+    ring_fluids: this.ring_fluids ? this.ring_fluids.map((f: any) => _cloneFluid(f)) : null,
+    ring_temperatures: this.ring_temperatures ? this.ring_temperatures.slice() : null,
+    // === END HELIX-OVERLAY-FORK ADDITION ==============================
+    // === HELIX-OVERLAY-FORK ADDITION (Week 3 carbonate) ===============
+    // f_ord chip in the Carbonate System legend section reads cycle
+    // count from the snap so replays show the ordering trajectory the
+    // scenario actually walked through, not just the final value on
+    // the live conditions object. Single scalar (fluid-level on
+    // VugConditions per the Kim 2023 mechanism in 25-chemistry-
+    // conditions.ts:49) — cheap; ~8 B per snap.
+    _dol_cycle_count: (cnd && cnd._dol_cycle_count) || 0,
+    // === END HELIX-OVERLAY-FORK ADDITION ==============================
   };
   for (let r = 0; r < ringCount; r++) {
     const ring = this.wall_state.rings[r];
@@ -453,4 +586,93 @@ _check_liberation() {
     }
   }
 },
+
+  // PROPOSAL-CARBONATE-GEOCHEM Phase 1 Week 4b — open-system Henry's-
+  // Law pH equilibration.
+  //
+  // When the scenario flag open_to_atmosphere is true, the fluid is
+  // in contact with the local atmosphere and its equilibrium pCO2
+  // must match the local atmospheric value. Solves for the pH that
+  // satisfies that equilibrium; mutates fluid.pH on the global
+  // conditions + every per-ring fluid + every per-vertex mesh cell
+  // so subsequent supersat math (which reads fluid.pH) sees the
+  // equilibrated chemistry.
+  //
+  // Granularity for Week 4b is RING-LEVEL (with global + mesh-cell
+  // propagation): the scenario flag is uniform; per-vertex
+  // selectivity arrives in Phase 1c once basin-style scenarios
+  // (open ceiling, sealed floor) actually need it. The resolvers in
+  // 20d already accept the polymorphic per-region map form, so when
+  // a scenario writes one this loop slots in.
+  //
+  // No-op when:
+  //   - conditions._scenario is absent (legacy in-code scenarios
+  //     that never went through _buildScenarioFromSpec)
+  //   - open_to_atmosphere is false / absent (default)
+  //   - the helpers from 20d aren't loaded (defensive — bundle order
+  //     guarantees they are at runtime)
+  _applyOpenAtmosphereEquilibration() {
+    const scen = this.conditions && this.conditions._scenario;
+    if (!scen) return;
+    if (typeof isOpenAtMeshVertex !== 'function') return;
+    if (typeof equilibratePHtoPCO2 !== 'function') return;
+    if (typeof atmosphericPCO2AtMeshVertex !== 'function') return;
+
+    // Phase 1 uses scalar resolution (passing null mesh + vertex 0).
+    // The resolver shortcuts on scalars without touching the mesh.
+    // When a scenario writes per-region or per-vertex form, this loop
+    // will need the actual mesh — Phase 1c work.
+    const open = isOpenAtMeshVertex(scen, null, 0);
+    if (!open) return;
+    const target = atmosphericPCO2AtMeshVertex(scen, null, 0);
+
+    // Global conditions fluid — sets the baseline subsequent
+    // _propagateGlobalDelta loops would see.
+    const cnd = this.conditions;
+    if (cnd && cnd.fluid) {
+      const newPH = equilibratePHtoPCO2(cnd.fluid, cnd.temperature, target);
+      if (typeof newPH === 'number' && isFinite(newPH)) {
+        cnd.fluid.pH = newPH;
+      }
+    }
+
+    // Per-ring fluids — the engines read ring_fluids directly for
+    // ring-aware supersat. Each ring sees its own equilibration at
+    // its own temperature (the atmosphere is well-mixed for Phase 1;
+    // T differences across rings can shift the equilibrium pH).
+    if (this.ring_fluids) {
+      for (let r = 0; r < this.ring_fluids.length; r++) {
+        const f = this.ring_fluids[r];
+        if (!f) continue;
+        const T = this.ring_temperatures
+          ? (this.ring_temperatures[r] != null ? this.ring_temperatures[r] : cnd.temperature)
+          : cnd.temperature;
+        const newPH = equilibratePHtoPCO2(f, T, target);
+        if (typeof newPH === 'number' && isFinite(newPH)) {
+          f.pH = newPH;
+        }
+      }
+    }
+
+    // Per-vertex mesh cells — Tranche 4a un-aliased per-vertex fluids,
+    // so ring-level mutation doesn't reach them. Walk the mesh and
+    // equilibrate each cell's own fluid.
+    const mesh = this.wall_state && this.wall_state.meshFor
+      ? this.wall_state.meshFor(this)
+      : null;
+    if (mesh && mesh.cells) {
+      for (let i = 0; i < mesh.cells.length; i++) {
+        const cell = mesh.cells[i];
+        if (!cell || !cell.fluid) continue;
+        const ringIdx = cell.temperature_ring;
+        const T = (this.ring_temperatures && ringIdx >= 0 && ringIdx < this.ring_temperatures.length)
+          ? this.ring_temperatures[ringIdx]
+          : cnd.temperature;
+        const newPH = equilibratePHtoPCO2(cell.fluid, T, target);
+        if (typeof newPH === 'number' && isFinite(newPH)) {
+          cell.fluid.pH = newPH;
+        }
+      }
+    }
+  },
 });
