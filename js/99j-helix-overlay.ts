@@ -399,6 +399,19 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   const _HMC_DEFAULT_MG = 0.10;
   const _F_ORD_N0 = 7;
 
+  // v166 — SI chip floor clamp. When carbonateSaturationIndex returns
+  // NaN (any required cation = 0 → log of zero, mathematically undefined),
+  // the chip would previously return null and the strip would show a gap.
+  // Visually that read as "no data / broken chip" when the geological
+  // story is "deeply undersaturated (cation is fully depleted)" — same
+  // outcome the chip floor already represents for any value below −8.
+  // Clamp non-finite SI to the chip's display floor instead of null;
+  // strip becomes continuous, "very-undersat" reads correctly.
+  //
+  // The OUTER `if (!f) return null` stays — that's "no fluid sampled
+  // at all" (voxel doesn't exist), a different absence we want to keep
+  // legible as a gap.
+  const _SI_CHIP_FLOOR = -8;
   const _readSI = (mineralId: string) => (s: any, w: any, i: number, c: number) => {
     const f = _chipFluid(s, w, i, c);
     if (!f) return null;
@@ -406,7 +419,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     const T_use = (typeof T === 'number') ? T : 25;
     if (typeof carbonateSaturationIndex !== 'function') return null;
     const si = carbonateSaturationIndex(mineralId, f, T_use);
-    return isFinite(si) ? si : null;
+    return isFinite(si) ? si : _SI_CHIP_FLOOR;
   };
 
   params.push({
@@ -485,7 +498,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof carbonateSaturationIndex !== 'function') return null;
       const si = carbonateSaturationIndex('HMC', f, T_use, _HMC_DEFAULT_MG);
-      return isFinite(si) ? si : null;
+      return isFinite(si) ? si : _SI_CHIP_FLOOR;  // v166 floor-clamp; cf. _readSI
     },
   });
   params.push({
@@ -540,13 +553,18 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   // + the barite-endotherm warning per the v24 tooltip convention. The
   // 4 readers all delegate to the same sulfateSaturationIndex dispatch.
   if (typeof sulfateSaturationIndex === 'function') {
+    // v166 — same floor-clamp pattern as the carbonate _readSI above.
+    // When sulfateSaturationIndex is undefined (e.g. SI_celestine where
+    // Sr = 0, SI_barite where Ba = 0), report the chip floor instead
+    // of null so the strip stays continuous. The geological reading is
+    // "deeply undersaturated — no possible precipitation" either way.
     const _readSulfateSI = (mineralId: string) => (s: any, w: any, i: number, c: number) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
       const T = (s.ring_temperatures || [])[i];
       const T_use = (typeof T === 'number') ? T : 25;
       const si = sulfateSaturationIndex(mineralId, f, T_use);
-      return isFinite(si) ? si : null;
+      return isFinite(si) ? si : _SI_CHIP_FLOOR;
     };
     params.push({
       id: 'SI_selenite', label: 'SI sel', fullName: _HELIX_FULL_NAMES.SI_selenite,

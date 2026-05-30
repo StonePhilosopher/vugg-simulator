@@ -9782,5 +9782,45 @@
 //                                     + 4 params.push reading sulfateSaturationIndex
 //                                     + legend section "Sulfate System"
 //   js/15-version.ts                 SIM_VERSION 164 → 165 + this block
-const SIM_VERSION = 165;
+//
+// ============================================================
+// v166 (2026-05-30) — SI CHIP FLOOR-CLAMP: continuous strips at zero cation
+// ============================================================
+//
+// Cosmetic fix to the strip recorder's SI chip reads. Previously, when a
+// required cation reached zero (e.g. roughten_gill Fe→0 driving 76% of
+// SI_siderite samples to null; sulphur_bank Sr=0 + Ba=0 making
+// SI_celestine + SI_barite uniformly null), the chip returned null and
+// the strip showed gaps that read as "no data / broken chip."
+//
+// The math hasn't changed — carbonateSaturationIndex / sulfateSaturation-
+// Index still return NaN when IAP is undefined (log of zero). The chip
+// helpers in 99j now CLAMP non-finite SI to the chip's declared display
+// floor (_SI_CHIP_FLOOR = −8) instead of nulling out. Geological reading
+// is identical either way ("deeply undersaturated, no precipitation
+// possible"); the strip just stays continuous.
+//
+// FILES
+//   js/99j-helix-overlay.ts          _readSI (carbonate) + _readSulfateSI:
+//                                     non-finite SI → _SI_CHIP_FLOOR (−8)
+//                                     instead of null. SI_HMC's inline read
+//                                     gets the same clamp.
+//   js/15-version.ts                 SIM_VERSION 165 → 166 + this block
+//
+// SCOPE NOTE — what's NOT clamped: the outer `if (!f) return null` (no
+// fluid sampled at all — voxel doesn't exist) stays null. That's a
+// different absence (chip-level, not chemistry-level) we want to keep
+// legible as a gap. Only the "fluid exists, SI math undefined" case
+// is now floor-clamped.
+//
+// BASELINE DRIFT
+//   seed42_v165 → seed42_v166:   30/30 BYTE-IDENTICAL. Engine untouched
+//                                 (chip reads are observers; nucleation
+//                                 / growth / dispatch all unaffected).
+//   strip_digest_v165 → v166:    EXPECTED to shift for chip × scenario
+//                                 pairs where the cation was zero (e.g.
+//                                 sulphur_bank's SI_celestine/SI_barite).
+//                                 The shift is null → −8, which is the
+//                                 correct geological reading.
+const SIM_VERSION = 166;
 
