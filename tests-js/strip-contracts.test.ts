@@ -402,7 +402,7 @@ describe('strip chemistry contract — naica_geothermal (selenite slow-growth ch
     // host); S 141…420, cycling with the hot-fluid pulses. So the SI_selenite
     // oscillation tracks S, not Ca — which is the geologically correct
     // mechanism for naica (sulfate brought in by ascending fluid).
-    expect(series.peak(ca) - series.min(ca)).toBeLessThan(1);  // Ca pinned
+    expect(series.peak(ca) - series.min(ca)).toBeLessThan(3);  // Ca pinned (tolerance 3: ΔH correction f67c75d shifts Ca modestly at high T)
     expect(series.peak(s)  - series.min(s)).toBeGreaterThan(100);  // S oscillates
   });
 });
@@ -468,7 +468,7 @@ describe('strip chemistry contract — sulphur_bank (acid sulfur springs, NOT a 
     // host + ongoing buffering carry pH back up. The pH min < 2 IS the
     // sulphur_bank signature.
     expect(series.min(pH)).toBeLessThan(2.5);
-    expect(series.peak(pH)).toBeGreaterThan(6);
+    expect(series.peak(pH)).toBeGreaterThan(5.7);  // was 6; ΔH correction f67c75d shifts pH recovery modestly
     expect(series.crossings(pH, 4)).toBeGreaterThanOrEqual(2);
   });
 
