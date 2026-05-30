@@ -202,32 +202,91 @@ const NAME_MAP = {
 };
 const NAMES_NOT_IN_WATEQ4F = new Set(['HMC']);
 
-// Parse a wateq4f.dat block. The format:
+// Parse ALL phase entries for a mineral name in a PHREEQC .dat file.
+// The PHASES-section format is:
 //   <Name>
-//           <stoichiometry equation>
+//           <stoichiometry equation>   (contains '=')
 //           log_k           <value>
-//           delta_h         <value>  <kcal|kJ>
-//           -analytic       <a1> <a2> ... <a5>
+//           delta_h         <value>  [kcal|kJ]
+//           -analytic       <a1> ... <a5>
 //
-// We only need log_k and delta_h. delta_h is normally in kcal (unit suffix
-// optional but typically present). Default to kcal if no unit specified.
-function parseWateq4fEntry(text, mineralName) {
-  // Find the standalone mineral name line. Allow optional comment after.
-  const re = new RegExp(`^${mineralName}\\b[^\\n]*\\n([\\s\\S]*?)(?=^[A-Z][A-Za-z]+\\b|^SOLUTION_|^SOLUTION_MASTER|^PHASES|^EXCHANGE|^SURFACE_|^END\\b|\\Z)`, 'm');
-  const m = re.exec(text);
-  if (!m) return null;
-  const block = m[1];
-  const logKMatch = /^\s*log_k\s+(-?\d+(?:\.\d+)?)/m.exec(block);
-  const dHMatch = /^\s*delta_h\s+(-?\d+(?:\.\d+)?)\s*(kcal|kJ|kjoules|kilocalories)?/im.exec(block);
-  if (!logKMatch) return null;
-  const logKsp = parseFloat(logKMatch[1]);
-  let dH_kJ = null;
-  if (dHMatch) {
-    const raw = parseFloat(dHMatch[1]);
-    const unit = (dHMatch[2] || 'kcal').toLowerCase();
-    dH_kJ = (unit.startsWith('kj')) ? raw : raw * KCAL_TO_KJ;
+// A robust LINE-BASED parser (the prior version used a fragile multiline
+// lookahead regex that ran past entry boundaries — that's the bug that
+// produced the garbage rhodochrosite ΔH=+72.7, grabbed from an unrelated
+// later phase because rhodochrosite Phase 190 has no delta_h line).
+//
+// PHASE HEADERS. wateq4f.dat names PHASES entries "<Name> <number>", e.g.
+// "Dolomite 401", "Siderite 94", "Rhodochrosite 564". The header is the
+// name token + an integer phase id at column 0. (NB: a WebFetch summary of
+// this file confabulated nonexistent duplicate variants like "Dolomite 11"
+// / "Siderite 9" — the real file has ONE entry per carbonate here. Lesson:
+// parse the bytes, don't trust a summarizer's structure. This is why the
+// tool fetches + parses directly rather than relying on a model's read.)
+//
+// MULTIPLE PHASES PER NAME (defensive). Some PHREEQC databases DO carry
+// duplicate mineral names with different thermo (ordered vs disordered
+// polymorphs, etc.). We collect ALL matches and the caller picks the phase
+// whose logKsp is closest to ours, so this stays correct if a future
+// database revision adds a second variant.
+//
+// ACID-FORM REACTIONS. Some phases are written H+-consuming (e.g. wateq4f
+// Malachite: Cu2(OH)2CO3 + 3 H+ = 2 Cu+2 + 2 H2O + HCO3-). Those log_k /
+// delta_h are NOT comparable to our free-ion-product convention
+// (M(CO3)(OH)x = ... + CO3-2 + x OH-) without stoichiometry translation.
+// We tag such phases acidForm:true so the caller can skip them honestly
+// rather than false-flag a mismatch.
+function parseAllPhaseEntries(text, mineralName) {
+  const lines = text.split(/\r?\n/);
+  const out = [];
+  // A phase header is the mineral name alone (optionally trailing comment),
+  // at start-of-line, NOT indented (PHASES headers sit at column 0).
+  const headerRe = new RegExp(`^${mineralName}(?:\\s|$)`);
+  for (let i = 0; i < lines.length; i++) {
+    if (!headerRe.test(lines[i])) continue;
+    // Header must be at column 0 (not indented) and not itself contain '='.
+    if (/^\s/.test(lines[i]) || lines[i].includes('=')) continue;
+    let logKsp = null, dH_kJ = null, rxn = null;
+    // Scan forward until the next non-indented header line or blank-gap+header.
+    for (let j = i + 1; j < lines.length; j++) {
+      const raw = lines[j];
+      const s = raw.trim();
+      // Stop at the next phase header (a non-indented token line that isn't
+      // a directive and isn't a reaction). Directives start with '-'.
+      if (!/^\s/.test(raw) && s && !s.startsWith('-') && !s.includes('=')
+          && !/^(log_k|delta_h)/i.test(s)) break;
+      if (rxn === null && s.includes('=')) rxn = s;
+      let m;
+      if ((m = /^log_k\s+(-?\d+(?:\.\d+)?)/i.exec(s))) logKsp = parseFloat(m[1]);
+      if ((m = /^(?:delta_h|-delta_H)\s+(-?\d+(?:\.\d+)?)\s*(kcal|kj|kjoules|kilocalories)?/i.exec(s))) {
+        const rawDH = parseFloat(m[1]);
+        const unit = (m[2] || 'kcal').toLowerCase();
+        dH_kJ = unit.startsWith('kj') ? rawDH : rawDH * KCAL_TO_KJ;
+      }
+    }
+    if (logKsp !== null) {
+      // Acid-form if the reaction consumes H+ on the LHS (before '=').
+      const lhs = rxn ? rxn.split('=')[0] : '';
+      const acidForm = /\bH\+/.test(lhs) || /\d+\s*H\+/.test(lhs);
+      out.push({ logKsp, dH_kJ, rxn: rxn || '', acidForm });
+    }
   }
-  return { logKsp, dH_kJ };
+  return out;
+}
+
+// Pick the phase whose logKsp is closest to ours; among acid vs free-ion
+// forms, prefer the free-ion form (acidForm:false) since our convention
+// matches it. Returns null if no usable (non-acid) phase exists.
+function pickBestPhase(phases, ourLogK) {
+  if (!phases.length) return null;
+  const free = phases.filter(p => !p.acidForm);
+  const pool = free.length ? free : phases;  // fall back to acid only if no free form
+  if (ourLogK == null) return pool[0];
+  let best = pool[0], bestD = Infinity;
+  for (const p of pool) {
+    const d = Math.abs(p.logKsp - ourLogK);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return best;
 }
 
 async function verifyAgainstWateq4f() {
@@ -249,30 +308,49 @@ async function verifyAgainstWateq4f() {
         continue;
       }
       const wateqName = NAME_MAP[name] || name.charAt(0).toUpperCase() + name.slice(1);
-      const parsed = parseWateq4fEntry(text, wateqName);
-      if (!parsed) {
-        verification.skipped.push({ file: meta.kind, name, wateqName, reason: 'entry not found in wateq4f.dat' });
-        continue;
-      }
       const t = entry.thermodynamics || {};
       const ourLogK = (typeof t.logKsp_25C === 'number') ? t.logKsp_25C : null;
       const ourDH = (t.logKsp_fit && typeof t.logKsp_fit.deltaH_diss_kJ_mol === 'number')
         ? t.logKsp_fit.deltaH_diss_kJ_mol : null;
+
+      const phases = parseAllPhaseEntries(text, wateqName);
+      if (!phases.length) {
+        verification.skipped.push({ file: meta.kind, name, wateqName, reason: 'entry not found in wateq4f.dat' });
+        continue;
+      }
+      // If the ONLY phases are acid-form (e.g. malachite/azurite — written
+      // H+-consuming in wateq4f, incompatible with our free-ion convention),
+      // skip rather than false-flag a stoichiometry-convention difference.
+      const hasFreeForm = phases.some(p => !p.acidForm);
+      if (!hasFreeForm) {
+        verification.skipped.push({
+          file: meta.kind, name, wateqName,
+          reason: `wateq4f writes this acid-form (e.g. "${phases[0].rxn.slice(0, 48)}") — incompatible with our free-ion-product convention; no stoichiometry-translated comparison`,
+        });
+        continue;
+      }
+      const best = pickBestPhase(phases, ourLogK);
+      const nPhases = phases.length;
       const check = {
         file: meta.kind, name, wateqName,
         ours: { logKsp: ourLogK, dH_kJ: ourDH },
-        wateq4f: parsed,
+        wateq4f: { logKsp: best.logKsp, dH_kJ: best.dH_kJ },
+        phaseNote: nPhases > 1 ? `matched best of ${nPhases} wateq4f phases by logKsp` : null,
       };
       const issues = [];
       if (ourLogK == null) issues.push('our logKsp_25C is missing');
-      else if (Math.abs(ourLogK - parsed.logKsp) > TOL_LOGK) {
-        issues.push(`logKsp mismatch: ours=${ourLogK}, wateq4f=${parsed.logKsp} (Δ=${(ourLogK - parsed.logKsp).toFixed(4)})`);
+      else if (Math.abs(ourLogK - best.logKsp) > TOL_LOGK) {
+        issues.push(`logKsp mismatch: ours=${ourLogK}, wateq4f=${best.logKsp} (Δ=${(ourLogK - best.logKsp).toFixed(4)})`);
       }
-      if (parsed.dH_kJ != null) {
+      if (best.dH_kJ != null) {
         if (ourDH == null) issues.push('our deltaH_diss_kJ_mol is missing');
-        else if (Math.abs(ourDH - parsed.dH_kJ) > TOL_DELTAH_KJ) {
-          issues.push(`ΔH mismatch: ours=${ourDH} kJ/mol, wateq4f=${parsed.dH_kJ.toFixed(3)} kJ/mol (Δ=${(ourDH - parsed.dH_kJ).toFixed(3)})`);
+        else if (Math.abs(ourDH - best.dH_kJ) > TOL_DELTAH_KJ) {
+          issues.push(`ΔH mismatch: ours=${ourDH} kJ/mol, wateq4f=${best.dH_kJ.toFixed(3)} kJ/mol (Δ=${(ourDH - best.dH_kJ).toFixed(3)})`);
         }
+      } else {
+        // The matched phase has no delta_h; note it (don't flag — absence
+        // of a database ΔH isn't a mismatch with ours).
+        check.dhNote = 'matched wateq4f phase carries no delta_h — ΔH not cross-checkable here';
       }
       if (issues.length) verification.mismatches.push({ ...check, issues });
       else verification.checked.push(check);
@@ -378,7 +456,8 @@ async function main() {
       console.log('------------------------------------');
       for (const c of verification.checked) {
         const dh = c.wateq4f.dH_kJ != null ? `ΔH=${c.wateq4f.dH_kJ.toFixed(2)}` : 'ΔH=—';
-        console.log(`  ${c.name.padEnd(16)} (${c.wateqName.padEnd(12)})  logKsp=${c.wateq4f.logKsp}  ${dh} kJ/mol`);
+        const note = c.dhNote ? `  [${c.dhNote}]` : c.phaseNote ? `  [${c.phaseNote}]` : '';
+        console.log(`  ${c.name.padEnd(16)} (${c.wateqName.padEnd(12)})  logKsp=${c.wateq4f.logKsp}  ${dh} kJ/mol${note}`);
       }
       console.log('');
     }
