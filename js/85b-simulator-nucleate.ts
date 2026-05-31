@@ -581,14 +581,32 @@ _wallStrangledFor(mineral) {
 // cell evaluates to a positive supersaturation weight (in which case
 // the caller falls through to the legacy random sampler).
 //
-// Weight(r, c) = max(0, σ_at_cell(r, c) − 1.0)²:
+// Weight(r, c) = ringAreaWeight(r) · max(0, σ_at_cell(r, c) − 1.0)²:
 //   * σ < 1 (undersaturated or acid-dissolved) → weight 0
 //   * σ slightly > 1 (saturation cusp)         → very small weight
 //   * σ ≫ 1 (deeply supersaturated)            → strong weight
 //
-// Quadratic, not linear, so the sampler genuinely prefers high-σ
-// locations rather than spreading nucleations roughly evenly across
-// all supersaturated cells.
+// Quadratic in (σ−1), not linear, so the sampler genuinely prefers
+// high-σ locations rather than spreading nucleations roughly evenly
+// across all supersaturated cells.
+//
+// THE AREA TERM (ringAreaWeight = sin(π(r+0.5)/n)) is load-bearing,
+// not decoration. The number of nuclei a patch of wall hosts is
+// (nucleation rate per unit area) × (available area). The (σ−1)²
+// factor is the rate; ringAreaWeight is the area. On the lat-long
+// tessellation every ring carries the SAME cell count, but polar
+// rings cover far less actual surface (sin φ → 0 at the caps), so
+// WITHOUT this factor a near-uniform σ field samples every cell
+// equally and over-nucleates the floor/ceiling poles: floor/wall/
+// ceiling comes out 25/50/25 instead of the area-true 14.6/70.7/14.6
+// the legacy _assignWallRing produces via the same sin φ weight.
+// (Measured: tools/placement-skew-probe.mjs, every non-zoned
+// scenario.) With the factor in, a uniform σ field reduces EXACTLY
+// to the legacy area distribution; a zoned σ field still sorts by
+// chemistry, the area term only modulating the within-zone spread.
+// This is the same sin φ correction _cellCavityVolMm3 applies for
+// fill accounting and ringAreaWeight applies for legacy placement —
+// the per-vertex sampler was the one site that omitted it.
 //
 // Cost: O(ring_count × cells_per_ring) σ-evaluations per call.
 // supersaturation_<mineral>() is ~10-30 ops typically; ~50k ops total
@@ -635,6 +653,9 @@ _perVertexNucleationSample(mineral) {
     for (let r = 0; r < ringCount; r++) {
       const tempR = (r < ringTemps.length) ? ringTemps[r] : savedTemp;
       this.conditions.temperature = tempR;
+      // sin(φ) area weight — depends only on the ring, hoist out of the
+      // cell loop. This is the polar-thinning correction (see header).
+      const areaW = wall.ringAreaWeight(r);
       for (let c = 0; c < N; c++) {
         const idx = r * N + c;
         const cell = mesh.cells[idx];
@@ -650,7 +671,7 @@ _perVertexNucleationSample(mineral) {
           sigma = 0;
         }
         if (!Number.isFinite(sigma) || sigma <= 1) continue;
-        const w = (sigma - 1) * (sigma - 1);
+        const w = areaW * (sigma - 1) * (sigma - 1);
         weights[idx] = w;
         total += w;
       }

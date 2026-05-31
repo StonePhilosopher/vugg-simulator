@@ -184,10 +184,19 @@ describe('Tranche 6 — zoned_dripstone_cave scenario (end-to-end demo)', () => 
     // floor=0 assertion was geologically tighter than the literature.
     const aragoniteCeilingCount = aragonites.filter((a: any) => orientationOf(a) === 'ceiling').length;
     const aragoniteFloorCount = aragonites.filter((a: any) => orientationOf(a) === 'floor').length;
-    expect(aragoniteCeilingCount).toBeGreaterThan(aragonites.length / 2);  // majority on ceiling
-    expect(aragoniteFloorCount).toBeLessThanOrEqual(Math.ceil(aragonites.length / 4));  // ≤25% on floor (rare per Hill & Forti)
+    // v167 (per-vertex area term): nucleation weight is now ringAreaWeight(r)·
+    // (σ−1)², so the equatorial wall (≈5× the ceiling's surface area) is no
+    // longer under-counted and is the single largest zone by nuclei count.
+    // Aragonite's ceiling preference survives as a DIRECTION (ceiling > floor:
+    // the Mg/Ca gradient peaks at the Mg-rich ceiling) rather than an absolute
+    // >50% majority. At seed 42: floor 1 / wall 1 / ceiling 2 — ceiling is
+    // still the plurality, but we pin only the robust direction so the test
+    // doesn't break on a single-crystal RNG-cascade nudge. Wall + ceiling
+    // aragonite are both real (frostwork on wall pockets, Hill & Forti 1997).
+    expect(aragoniteCeilingCount).toBeGreaterThan(aragoniteFloorCount);  // Mg gradient: ceiling > floor
+    expect(aragoniteFloorCount).toBeLessThanOrEqual(Math.ceil(aragonites.length / 4));  // floor is the Mg-poor zone aragonite avoids
     const calciteCeilingCount = calcites.filter((c: any) => orientationOf(c) === 'ceiling').length;
-    expect(calciteCeilingCount).toBeLessThan(calcites.length / 2);  // minority on ceiling
+    expect(calciteCeilingCount).toBeLessThan(calcites.length / 2);  // calcite excluded from Mg-rich ceiling
   });
 
   it('_perVertexNucleationSample concentrates aragonite on ceiling, suppresses calcite on ceiling (100 samples per mineral)', () => {
@@ -250,34 +259,28 @@ describe('Tranche 6 — zoned_dripstone_cave scenario (end-to-end demo)', () => 
     expect(aragCeil + aragFloor + aragWall).toBe(NTRIALS);
     expect(calcCeil + calcFloor + calcWall).toBe(NTRIALS);
 
-    // Aragonite: ceiling is the dominant zone. Pre-v147 the
-    // concentration was ≥75% under the empirical-engine math (where
-    // omega was ppm-scale and the favorability sigmoids dominated
-    // the σ-1 weighting). v147 textbook omega is ~10-100× larger,
-    // which broadens the (σ-1)² weighting across non-ceiling cells —
-    // ceiling is still where σ_arag peaks but the dominance margin
-    // shrinks. Relaxed to "ceiling is the plurality zone" rather
-    // than the original 75% concentration. The Mg-favorability
-    // sigmoid still favors high-Mg/Ca cells; what changed is the
-    // SHARPNESS, not the DIRECTION.
-    expect(aragCeil).toBeGreaterThan(aragWall);
-    expect(aragCeil).toBeGreaterThan(aragFloor);
-    expect(aragCeil).toBeGreaterThan(NTRIALS / 3);  // at least 1/3 of trials
-    // Calcite avoids ceiling: the Mg-poisoning sigmoid at ceiling
-    // Mg/Ca=4.4 still cuts calcite σ. v147 doesn't change calcite's
-    // supersat path (calcite still returns raw omega from SI engine);
-    // the cascade-shifted RNG may bump calcite-on-ceiling slightly
-    // but it stays rare. Relaxed from ≤5 to ≤15.
-    expect(calcCeil).toBeLessThanOrEqual(15);
-    // Aragonite cross-term: floor is the Ca-rich, Mg-poor zone, so
-    // aragonite σ there is low. Pre-v147 the empirical formula
-    // produced essentially zero σ on floor; textbook omega is
-    // non-zero even at low Mg/Ca, so floor samples appear more
-    // frequently. The asymmetric sort is preserved (ceiling >> floor)
-    // but the floor count is no longer near-zero. Relaxed from ≤5%
-    // to "floor is the smallest of the three zones for aragonite."
-    expect(aragFloor).toBeLessThan(aragCeil);
-    expect(aragFloor).toBeLessThan(aragWall);
+    // v167 area term: weight = ringAreaWeight(r)·(σ−1)². The wall (≈5× the
+    // ceiling's surface area) is now the single largest zone by nuclei count,
+    // so ceiling is no longer the PLURALITY for aragonite. The geology the
+    // feature promises is unchanged and stated more honestly as ENRICHMENT
+    // vs the area baseline + the CROSS-SORT between the two minerals
+    // (measured over 4000 trials, tools/placement-skew-probe.mjs):
+    //   * aragonite ceiling share ~37% ≫ its 14.6% area baseline → real
+    //     Mg-driven ceiling enrichment, and ≫ its own floor share ~14% →
+    //     the Mg/Ca gradient direction.
+    //   * calcite ceiling share ~2% ≪ 14.6% baseline → Mg-poisoning exclusion;
+    //     calcite floor share ~40% → it prefers the Ca-rich floor.
+    //   * the two minerals sort to OPPOSITE poles — aragonite's ceiling share
+    //     dwarfs calcite's. Area-independent, and THE promise of Tranche 6.
+    // (NTRIALS=100 here, so allow ±5% noise against those 4000-trial shares.)
+    expect(aragCeil).toBeGreaterThan(25);          // ≫ 14.6% area baseline → ceiling enrichment
+    expect(aragCeil).toBeGreaterThan(aragFloor);   // Mg gradient: ceiling > floor
+    expect(aragFloor).toBeLessThan(aragWall);      // floor is the Mg-poor excluded zone
+    // Calcite: excluded from the Mg-rich ceiling; prefers the Ca-rich floor.
+    expect(calcCeil).toBeLessThanOrEqual(10);      // ≪ 14.6% baseline → exclusion
+    expect(calcFloor).toBeGreaterThan(calcCeil);   // calcite floor ≫ calcite ceiling
+    // The cross-sort (area-independent): the minerals sort to opposite poles.
+    expect(aragCeil).toBeGreaterThan(calcCeil * 3);
   });
 
   it('per_vertex_nucleation: false on the same scenario does NOT show the spatial sort (control)', () => {

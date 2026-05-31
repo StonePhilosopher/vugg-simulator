@@ -9822,5 +9822,81 @@
 //                                 sulphur_bank's SI_celestine/SI_barite).
 //                                 The shift is null → −8, which is the
 //                                 correct geological reading.
-const SIM_VERSION = 166;
+// ============================================================
+// v167 (2026-05-30) — PER-VERTEX SAMPLER AREA TERM: nucleation site density
+//                     is rate × AREA, not rate alone
+// ============================================================
+//
+// _perVertexNucleationSample (Tranche 6 of PROPOSAL-CAVITY-MESH) weighted
+// candidate cells by (σ−1)² with NO cell-area term. On the lat-long mesh
+// every ring carries the same cell count but polar rings cover far less
+// surface (sin φ → 0 at the caps), so under a near-uniform σ field the
+// sampler gave every cell equal probability and OVER-NUCLEATED the floor/
+// ceiling poles: floor/wall/ceiling came out 25/50/25 instead of the area-
+// true 14.6/70.7/14.6 that the legacy _assignWallRing produces via the same
+// sin φ weight (ringAreaWeight). The number of nuclei a patch of wall hosts
+// is (nucleation rate per unit area) × (available area); (σ−1)² is the rate,
+// ringAreaWeight is the area — the sampler omitted the area.
+//
+// FIX: weight = ringAreaWeight(r) · (σ−1)². Same sin φ correction
+// _cellCavityVolMm3 already applies for fill accounting. Under a uniform σ
+// field this reduces EXACTLY to the legacy area distribution; under a zoned
+// σ field it still sorts by chemistry, the area term only modulating the
+// within-zone spread.
+//
+// INSTRUMENTATION (the bug was found by, and verified with, two probes —
+// kept as permanent instruments):
+//   tools/placement-skew-probe.mjs   — floor/wall/ceiling distribution under
+//                                       legacy vs current vs area-corrected
+//                                       weights, every scenario. Empirical
+//                                       sampler flipped 25/50/25 → 14.6/70.7/
+//                                       14.6 after the fix.
+//   tools/sigma-structure-probe.mjs  — per-cell σ structure vs diffusion
+//                                       rate. VERDICT: the per-cell σ field
+//                                       is ~uniform (CV 2-4% even at
+//                                       diffusion=0) because depletion touches
+//                                       only ~1.5% of cells (~30 crystals /
+//                                       1920 cells) — a SCALE limit, not a
+//                                       diffusion artifact. Per-vertex
+//                                       placement only gets a gradient to
+//                                       track from DESIGNED zone_chemistry
+//                                       (the two scenarios below). The global
+//                                       default flip stays deferred: inert for
+//                                       the rest of the suite. See
+//                                       proposals/HANDOFF-PER-VERTEX-PLACEMENT.md.
+//
+// FILES
+//   js/85b-simulator-nucleate.ts     _perVertexNucleationSample: hoist
+//                                     ringAreaWeight(r) out of the cell loop;
+//                                     w = areaW · (σ−1)². Header rewritten.
+//   tests-js/per-vertex-nucleation.test.ts  showcase statistical test re-pinned
+//                                     to the area-corrected sort (aragonite
+//                                     plurality is now the wall, not the
+//                                     ceiling — wall frostwork per Hill & Forti
+//                                     1997; the floor/ceiling CROSS-EXCLUSION
+//                                     is preserved and sharper).
+//   js/15-version.ts                 SIM_VERSION 166 → 167 + this block
+//
+// BASELINE DRIFT
+//   seed42_v166 → seed42_v167:   the sampler runs ONLY in the 2
+//                                 per_vertex_nucleation scenarios (flag
+//                                 default OFF), so 28/30 are BYTE-IDENTICAL.
+//                                 Of the 2, only zoned_dripstone_cave's
+//                                 summary actually moves: aragonite max_um
+//                                 5706.3 → 5730.4 (+0.4%), calcite max_um
+//                                 2166.4 → 2056.8 (−5%), ALL counts identical
+//                                 (no mineral appears/disappears). stalactite_
+//                                 demo's placement shifts too but doesn't
+//                                 cross a count/size boundary at summarize
+//                                 granularity → its summary is byte-identical.
+//                                 Mechanism: nucleations move off the over-
+//                                 weighted poles toward the (larger)
+//                                 equatorial wall → a crystal draws a slightly
+//                                 different cell.fluid → its max size nudges.
+//                                 Same RNG draw count (1 joint sample), so no
+//                                 cross-step cascade — just a different picked
+//                                 index for the same RNG value.
+//   strip_digest_v166 → v167:    byte-identical (neither per_vertex scenario
+//                                 is in the 10-scenario digest set).
+const SIM_VERSION = 167;
 
