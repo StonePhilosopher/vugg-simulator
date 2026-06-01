@@ -721,6 +721,9 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
   // v154: enable download button now that we have an active dataset.
   const dl = document.getElementById('strip-view-download') as HTMLButtonElement | null;
   if (dl) dl.disabled = false;
+  // sonify MVP (2026-05-31): enable the ♪ Play button too.
+  const sn = document.getElementById('strip-view-sonify') as HTMLButtonElement | null;
+  if (sn) sn.disabled = false;
   // Initialize chip visibility — all on first time.
   for (const c of ds.manifest.chips) {
     if (!(c.id in _stripVisibleChips)) _stripVisibleChips[c.id] = true;
@@ -742,6 +745,10 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
     _stripActiveDataset = null;
     const dl = document.getElementById('strip-view-download') as HTMLButtonElement | null;
     if (dl) dl.disabled = true;
+    // sonify MVP: stop + disable sonify when leaving a dataset.
+    if (typeof stripSonifyStop === 'function') stripSonifyStop();
+    const sn = document.getElementById('strip-view-sonify') as HTMLButtonElement | null;
+    if (sn) { sn.disabled = true; sn.textContent = '♪ Play'; }
     _stripRenderDatasetList(bodyEl);
   });
 
@@ -1034,6 +1041,7 @@ function initStripView(): void {
           <div class="strip-view-header-actions">
             <button class="strip-view-btn" id="strip-view-upload" title="Load a .stripview file from disk">⬆ Upload</button>
             <button class="strip-view-btn" id="strip-view-download" title="Download the active dataset as a .stripview file (gzipped)" disabled>⬇ Download</button>
+            <button class="strip-view-btn" id="strip-view-sonify" title="Play the selected chip's trajectory as sound — value→pitch, pentatonic. Let the rocks speak their truth." disabled>♪ Play</button>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -1043,6 +1051,7 @@ function initStripView(): void {
       const refreshBtn = panel.querySelector('#strip-view-refresh') as HTMLButtonElement;
       const uploadBtn = panel.querySelector('#strip-view-upload') as HTMLButtonElement;
       const downloadBtn = panel.querySelector('#strip-view-download') as HTMLButtonElement;
+      const sonifyBtn = panel.querySelector('#strip-view-sonify') as HTMLButtonElement;
       const uploadInput = panel.querySelector('#strip-view-upload-input') as HTMLInputElement;
       refreshBtn.addEventListener('click', () => {
         const body = panel.querySelector('#strip-view-body') as HTMLElement;
@@ -1087,6 +1096,32 @@ function initStripView(): void {
         } catch (err) {
           alert('Strip view export failed: ' + (err as Error).message);
         }
+      });
+      // ♪ Play (sonify MVP): sonify the trajectory (let the rocks speak). One
+      // chip → one oscillator (value→pitch, pentatonic; step→time). Plays
+      // the first VISIBLE chip — the one you're looking at — and its line
+      // color sets the voice (hue→register, brightness→loudness). Toggles
+      // Play/Stop; flips back to Play when playback finishes on its own.
+      sonifyBtn.addEventListener('click', () => {
+        if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
+          stripSonifyStop();
+          sonifyBtn.textContent = '♪ Play';
+          return;
+        }
+        if (!_stripActiveDataset) return;
+        let chipId: string | null = null;
+        for (const c of _stripActiveDataset.manifest.chips) {
+          if (_stripVisibleChips[c.id]) { chipId = c.id; break; }
+        }
+        if (!chipId && _stripActiveDataset.manifest.chips.length) {
+          chipId = _stripActiveDataset.manifest.chips[0].id;
+        }
+        if (!chipId) return;
+        const handle = stripSonify(_stripActiveDataset, chipId, {}, () => {
+          sonifyBtn.textContent = '♪ Play';
+        });
+        if (handle) sonifyBtn.textContent = '■ Stop';
+        else alert('Audio is unavailable in this browser (no Web Audio support).');
       });
     }
     const body = panel.querySelector('#strip-view-body') as HTMLElement;
