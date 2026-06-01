@@ -385,6 +385,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
       wall_rock_thermal_buffer_C: spec.wall_rock_thermal_buffer_C,
       host_rock_composition: spec.host_rock_composition,
+      // Geological MOVEMENTS (js/85j) — persistent master-variable drift.
+      // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
+      // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
+      // adds a `movements: [...]` array to one scenario's JSON5 spec.
+      movements: spec.movements,
     };
     // JS events are plain objects (no Event class on the JS side; the
     // global DOM Event would shadow it). Match the {step,name,description,

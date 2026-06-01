@@ -172,6 +172,18 @@ class VugSimulator {
     let snap = this._snapshotGlobal();
     this.apply_events();
     this._propagateGlobalDelta(snap);
+    // Geological MOVEMENTS (js/85j) — persistent master-variable drift between
+    // discrete events. DARK in Phase 0: no scenario declares `movements`, so
+    // this guard is always false and run_step is byte-identical. When a
+    // scenario opts in, movements layer on top of events; snapshot + propagate
+    // the global delta to per-ring fluids exactly like apply_events does.
+    if (this.conditions._scenario && this.conditions._scenario.movements
+        && this.conditions._scenario.movements.length) {
+      if (!this._movements) this._movements = _createMovementController(this);
+      const mvSnap = this._snapshotGlobal();
+      this._movements.applyStep(this.conditions, this.step);
+      this._propagateGlobalDelta(mvSnap);
+    }
     // v26: continuous drainage from host-rock porosity. Runs before
     // the vadose override so a porosity-driven drift-out gets caught
     // as a transition on the same step it dries.

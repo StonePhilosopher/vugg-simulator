@@ -39340,6 +39340,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
             wall_rock_thermal_buffer_C: spec.wall_rock_thermal_buffer_C,
             host_rock_composition: spec.host_rock_composition,
+            // Geological MOVEMENTS (js/85j) — persistent master-variable drift.
+            // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
+            // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
+            // adds a `movements: [...]` array to one scenario's JSON5 spec.
+            movements: spec.movements,
         };
         // JS events are plain objects (no Event class on the JS side; the
         // global DOM Event would shadow it). Match the {step,name,description,
@@ -42522,6 +42527,19 @@ class VugSimulator {
         let snap = this._snapshotGlobal();
         this.apply_events();
         this._propagateGlobalDelta(snap);
+        // Geological MOVEMENTS (js/85j) — persistent master-variable drift between
+        // discrete events. DARK in Phase 0: no scenario declares `movements`, so
+        // this guard is always false and run_step is byte-identical. When a
+        // scenario opts in, movements layer on top of events; snapshot + propagate
+        // the global delta to per-ring fluids exactly like apply_events does.
+        if (this.conditions._scenario && this.conditions._scenario.movements
+            && this.conditions._scenario.movements.length) {
+            if (!this._movements)
+                this._movements = _createMovementController(this);
+            const mvSnap = this._snapshotGlobal();
+            this._movements.applyStep(this.conditions, this.step);
+            this._propagateGlobalDelta(mvSnap);
+        }
         // v26: continuous drainage from host-rock porosity. Runs before
         // the vadose override so a porosity-driven drift-out gets caught
         // as a transition on the same step it dries.
@@ -47403,6 +47421,198 @@ function stripSonifyUpdateVoices(ds, chipIds, opts = {}) {
         _stripSonifyHandle.setVoices(plans);
     }
     catch (_e) { /* ignore */ }
+}
+
+// ── 85j-movements.js ──
+
+// ============================================================
+// js/85j-movements.ts — geological MOVEMENTS engine (Phase 0 scaffold, DARK)
+// ============================================================
+// The broth is currently a STEP FUNCTION: ~64% of fluid fields are dead-flat
+// over a vug's life and redox (Eh) is frozen, so elements only move when a
+// discrete event shoves them (tools/broth-stability-probe.mjs, 2026-06-01).
+// Real vug chemistry is a continuously-evolving CURVE. This engine drives a
+// few MASTER VARIABLES (T, pH, redox, …) with persistent "movements"; the
+// existing saturation/SI engines then translate those into CORRELATED element
+// pulses (we never randomize elements directly). See:
+//   proposals/HANDOFF-MOVEMENTS-AND-BACKLOG-2026-06-01.md   (the plan)
+//   proposals/PROPOSAL-EVENTS-AS-GEOLOGICAL-MOVEMENTS.md    (design §8/§9/§9b)
+//   proposals/RESEARCH-vug-fluid-evolution-2026-06-01.md    (the science)
+//
+// DESIGN (agreed with boss, 2026-06-01):
+//   * A PRIMITIVE ALPHABET, not a fixed menu of named cycles. Any master-
+//     variable trajectory = a sum of composable operators: TREND, PULSE
+//     (in trains), STEP, OSCILLATION (mean-reverting), MIXING. The named
+//     archetypes (orogenic / pulse-train / meteoric-front / magmatic-
+//     hydrothermal) are just presets; the seed samples the continuous space,
+//     so most vugs are unnamed-but-real blends.
+//   * SEEDED & REPRODUCIBLE. Movements draw from a DEDICATED sub-stream
+//     derived from the VUGG (cavity) seed — mirrors the shape_seed-derived
+//     geometry streams in 22-geometry-wall.ts (_mulberry32(shape_seed ^ salt)).
+//     Linking to the cavity seed = "the geology of the vug drives its chemical
+//     outcome." A dedicated stream (NOT the shared `rng`) means tuning a
+//     movement never displaces the nucleation draw cascade. Reproducibility is
+//     required: baseline tests depend on it AND the crystal-cipher sub-project
+//     needs bit-exact regeneration. No Math.random / Date.now (resume-safe).
+//   * STATISTICAL CHARACTER (research correction): fine zoning is ANTI-
+//     persistent / mean-reverting (Holten 1997), NOT a persistent random walk.
+//     So texture = Ornstein-Uhlenbeck (mean-reverting) around a slowly-moving
+//     setpoint — the setpoint (coarse trend) carries the "long slow movement";
+//     the texture wobbles and reverts, it does not wander off.
+//
+// PHASE 0 = DARK SCAFFOLD. This module is fully defined + unit-tested, but
+// NO scenario opts in yet (none declare `movements` in scenarios.json5), so
+// the run_step hook is a dead path → SIM-NEUTRAL, seed-42 + strip-digest
+// byte-identical, NO SIM_VERSION bump. Phase 1 opts ONE scenario (a meteoric
+// front) in, regens that one baseline, and we look + listen.
+// Per-purpose salt for the movement stream (ASCII "MOVE"), XORed into the
+// cavity seed exactly like the geometry sub-streams (22-geometry-wall.ts:884).
+const _MOVEMENT_SALT = 0x4d4f5645;
+// A dedicated deterministic PRNG for movements, derived from the vugg seed.
+// Reuses _mulberry32 (defined in 22-geometry-wall.ts) — resume-safe, and
+// independent of the shared `rng` cascade. Returns a () => [0,1) function.
+function _makeMovementRng(vuggSeed, salt = _MOVEMENT_SALT) {
+    return _mulberry32((((vuggSeed | 0) ^ salt) >>> 0));
+}
+// ----------------------------------------------------------------
+// THE PRIMITIVE ALPHABET — pure shape functions of progress u ∈ [0,1].
+// Each returns a unitless shape in roughly [0,1] (or [-1,1] for mixing),
+// scaled by a per-op `amp` and applied to a master variable. Pure + testable;
+// the stochastic texture (OSCILLATION) is applied statefully in the
+// controller, since mean-reversion needs memory of the prior value.
+// ----------------------------------------------------------------
+// TREND — monotonic drift 0→1 across the window. `ease` smooths the ends
+// (smoothstep) so a movement starts and finishes gently rather than with a
+// kink. [orogenic cooling = one long trend]
+function _mvTrend(u, ease = true) {
+    const x = Math.max(0, Math.min(1, u));
+    return ease ? x * x * (3 - 2 * x) : x; // smoothstep | linear
+}
+// PULSE — a smooth bump centred at `center` with half-width `width`
+// (gaussian). A PULSE TRAIN is just several of these summed.
+// [hydrothermal fault-valve injection]
+function _mvPulse(u, center = 0.5, width = 0.12) {
+    const w = Math.max(1e-4, width);
+    const z = (u - center) / w;
+    return Math.exp(-0.5 * z * z);
+}
+// STEP — a regime jump: 0 before `at`, 1 after, with a short `soften` ramp
+// so it isn't an infinitely-sharp discontinuity. [a stage transition]
+function _mvStep(u, at = 0.5, soften = 0.04) {
+    const s = Math.max(1e-4, soften);
+    return Math.max(0, Math.min(1, (u - at) / s + 0.5));
+}
+// MIXING — two end-members blended in a proportion that itself moves over the
+// window (here: a monotonic ramp of the mixing fraction). Returns the mixing
+// fraction f ∈ [0,1]; the caller lerps field = (1-f)·a + f·b. [meteoric ↔ deep
+// brine]. Kept as a fraction (not a delta) so callers can lerp explicitly.
+function _mvMixFraction(u, ease = true) {
+    return _mvTrend(u, ease);
+}
+// Evaluate the deterministic (non-texture) operators at progress u → a delta
+// added to the field's window-entry base. (MIXING is handled separately via
+// `mix`, and OSCILLATION via the controller's stateful texture.)
+function _evalMovementOps(ops, u) {
+    if (!ops || !ops.length)
+        return 0;
+    let d = 0;
+    for (const op of ops) {
+        if (op.kind === 'trend')
+            d += op.amp * _mvTrend(u, op.ease !== false);
+        else if (op.kind === 'pulse')
+            d += op.amp * _mvPulse(u, op.center ?? 0.5, op.width ?? 0.12);
+        else if (op.kind === 'step')
+            d += op.amp * _mvStep(u, op.at ?? 0.5, op.soften ?? 0.04);
+    }
+    return d;
+}
+function _movementGetField(conditions, path) {
+    const parts = path.split('.');
+    let o = conditions;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (o == null)
+            return NaN;
+        o = o[parts[i]];
+    }
+    const v = o == null ? NaN : o[parts[parts.length - 1]];
+    return typeof v === 'number' ? v : NaN;
+}
+function _movementSetField(conditions, path, value) {
+    const parts = path.split('.');
+    let o = conditions;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (o == null)
+            return;
+        o = o[parts[i]];
+    }
+    if (o != null)
+        o[parts[parts.length - 1]] = value;
+}
+// The controller holds the parsed movements + the dedicated rng + per-movement
+// state (captured base + the OU texture value). An EMPTY controller is a total
+// no-op: applyStep returns before touching `conditions` or drawing any random
+// number — this is what keeps the dark scaffold byte-identical.
+class MovementController {
+    constructor(movements, vuggSeed) {
+        this.movements = Array.isArray(movements) ? movements : [];
+        this.rng = _makeMovementRng(vuggSeed);
+        this._state = this.movements.map(() => ({ base: 0, ou: 0, started: false }));
+    }
+    get isEmpty() { return this.movements.length === 0; }
+    // Apply every active movement for this step. No-op (and zero draws) when
+    // empty. Mutates `conditions` in place; the caller propagates the global
+    // delta to per-ring fluids exactly as it does for discrete events.
+    applyStep(conditions, step) {
+        if (!this.movements.length)
+            return; // <-- the sim-neutral fast path
+        for (let i = 0; i < this.movements.length; i++) {
+            const m = this.movements[i];
+            const st = this._state[i];
+            if (step < m.startStep || step >= m.endStep)
+                continue;
+            // Capture the baseline the first time this window is active.
+            if (!st.started) {
+                st.base = (typeof m.base === 'number') ? m.base : _movementGetField(conditions, m.field);
+                st.started = true;
+            }
+            if (!Number.isFinite(st.base))
+                continue; // field absent → skip safely
+            const span = Math.max(1, m.endStep - m.startStep);
+            const u = Math.max(0, Math.min(1, (step - m.startStep) / span));
+            // Setpoint = base + deterministic ops [+ mixing lerp toward `to`].
+            let setpoint = st.base + _evalMovementOps(m.ops, u);
+            if (m.mix) {
+                const f = _mvMixFraction(u, m.mix.ease !== false);
+                setpoint = (1 - f) * setpoint + f * m.mix.to;
+            }
+            // OSCILLATION texture: Ornstein-Uhlenbeck mean-reversion around 0
+            // (deviation from the setpoint). Mean-reverting per Holten 1997 — it
+            // wobbles and returns, it does not wander. Draws from the DEDICATED
+            // stream only when a texture is declared (still zero draws when off).
+            if (m.texture) {
+                const theta = Math.max(0, Math.min(1, m.texture.theta));
+                const noise = (this.rng() * 2 - 1) * m.texture.sigma;
+                st.ou += -theta * st.ou + noise;
+            }
+            let value = setpoint + st.ou;
+            if (typeof m.clampMin === 'number')
+                value = Math.max(m.clampMin, value);
+            if (typeof m.clampMax === 'number')
+                value = Math.min(m.clampMax, value);
+            _movementSetField(conditions, m.field, value);
+        }
+    }
+}
+// Factory: build a controller for a sim. Reads the scenario's declared
+// movements (absent → empty → no-op) and seeds the stream off the VUGG seed —
+// the cavity's shape_seed by preference (geology drives outcome), falling back
+// to the run seed. Phase 0: every scenario yields an empty controller.
+function _createMovementController(sim) {
+    const spec = sim && sim.conditions && sim.conditions._scenario
+        ? sim.conditions._scenario.movements : undefined;
+    const wall = sim && sim.conditions ? sim.conditions.wall : null;
+    const vuggSeed = (((wall && wall.shape_seed) || (sim && sim._seed) || 0) | 0);
+    return new MovementController(spec, vuggSeed);
 }
 
 // ── 86-nucleation-native.js ──
