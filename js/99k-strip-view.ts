@@ -1056,6 +1056,7 @@ function initStripView(): void {
             <label class="strip-view-vol" title="Playback volume" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">🔊<input type="range" id="strip-view-volume" min="0" max="1" step="0.01" value="0.7" style="width:72px; vertical-align:middle;"/></label>
             <label class="strip-view-tempo" title="Playback tempo — drag right to speed up, left to slow down (applies on release / next play)" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">⏱<input type="range" id="strip-view-tempo" min="1" max="8" step="0.5" value="3" style="width:72px; vertical-align:middle;"/></label>
             <select class="strip-view-btn" id="strip-view-scale" title="Musical scale / mode — pentatonic never clashes; the modes are tavern/dwarven flavor" style="max-width:185px; font-size:11px;"></select>
+            <label class="strip-view-crystals" title="Ring each crystal as it nucleates — a struck bell voiced by its color (note) + size (register/ring), over the chemistry drone" style="display:inline-flex; align-items:center; gap:3px; color:#9ab; font-size:11px; cursor:pointer;"><input type="checkbox" id="strip-view-crystals" checked/>🔔 Crystals</label>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -1193,6 +1194,19 @@ function initStripView(): void {
           if (typeof stripSonifySetScaleId === 'function') stripSonifySetScaleId(scaleSelect.value);
           if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
             startSonify();   // restart in the new mode
+          }
+        });
+      }
+      // 🔔 Crystals toggle — the struck-bell layer (nucleation events).
+      // Adding/removing the whole layer is a scheduling change, so it
+      // restarts a live performance (like tempo + scale).
+      const crystalsCb = panel.querySelector('#strip-view-crystals') as HTMLInputElement | null;
+      if (crystalsCb) {
+        if (typeof stripSonifyGetCrystals === 'function') crystalsCb.checked = stripSonifyGetCrystals();
+        crystalsCb.addEventListener('change', () => {
+          if (typeof stripSonifySetCrystals === 'function') stripSonifySetCrystals(crystalsCb.checked);
+          if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
+            startSonify();   // re-schedule with/without the crystal layer
           }
         });
       }

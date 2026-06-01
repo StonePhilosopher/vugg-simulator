@@ -23,6 +23,9 @@ declare const STRIP_SONIFY_SCALES: any;
 declare const stripSonifyGetScaleId: any;
 declare const stripSonifySetScaleId: any;
 declare const stripSonifyUpdateVoices: any;
+declare const buildStripCrystalHits: any;
+declare const stripSonifyGetCrystals: any;
+declare const stripSonifySetCrystals: any;
 declare const stripAllocateData: any;
 declare const stripDataIndex: any;
 
@@ -209,6 +212,62 @@ describe('strip sonify — live voice update', () => {
     const ds = makeDataset(8);
     expect(() => stripSonifyUpdateVoices(ds, ['test'])).not.toThrow();
     expect(stripSonifyIsPlaying()).toBe(false);
+  });
+});
+
+describe('strip sonify — crystals as struck bells', () => {
+  const pcOf = (freq: number) => {
+    const midi = Math.round(12 * Math.log2(freq / 440) + 69);
+    return ((midi % 12) + 12) % 12;
+  };
+  // A dataset with two nucleations: a big warm crystal and a small cool one.
+  const makeCrystalDs = () => {
+    const ds = makeDataset(20);
+    ds.nucleation_events = [
+      { step: 2, ring: 0, cell: 0, mineral: 'big_red' },
+      { step: 5, ring: 1, cell: 3, mineral: 'small_blue' },
+    ];
+    return ds;
+  };
+  const resolvers = {
+    colorOf: (m: string) => (m === 'big_red' ? 0xff0000 : 0x0000ff),
+    sizeOf: (m: string) => (m === 'big_red' ? 80 : 0.6),
+  };
+
+  it('one bell per nucleation, struck at the event step', () => {
+    const hits = buildStripCrystalHits(makeCrystalDs(), { stepDurationMs: 100, scaleId: 'major_pentatonic' }, resolvers);
+    expect(hits.length).toBe(2);
+    expect(hits[0].tSec).toBeCloseTo(0.2, 6);  // step 2 × 100 ms
+    expect(hits[1].tSec).toBeCloseTo(0.5, 6);  // step 5 × 100 ms
+  });
+
+  it('every bell rings IN the active scale', () => {
+    const hits = buildStripCrystalHits(makeCrystalDs(), { scaleId: 'major_pentatonic' }, resolvers);
+    const allowed = new Set([0, 2, 4, 7, 9]);
+    for (const h of hits) expect(allowed.has(pcOf(h.freq))).toBe(true);
+  });
+
+  it('big crystals toll low + long; small crystals tick high + short (size → register + ring)', () => {
+    const hits = buildStripCrystalHits(makeCrystalDs(), { scaleId: 'major_pentatonic' }, resolvers);
+    const [big, small] = hits;
+    expect(big.freq).toBeLessThan(small.freq);     // big = lower register
+    expect(big.decay).toBeGreaterThan(small.decay); // big = longer ring
+  });
+
+  it('color sets the note (different hue → different scale degree) and the loudness (brightness)', () => {
+    const hits = buildStripCrystalHits(makeCrystalDs(), { scaleId: 'major_pentatonic' }, resolvers);
+    expect(pcOf(hits[0].freq)).not.toBe(pcOf(hits[1].freq)); // red vs blue → different note
+    expect(hits[0].gain).toBeGreaterThan(hits[1].gain);      // red brighter than blue → louder
+  });
+
+  it('no events → no bells; crystals toggle has a sane default + setter', () => {
+    expect(buildStripCrystalHits(makeDataset(8), {}, resolvers).length).toBe(0);
+    const original = stripSonifyGetCrystals();
+    expect(typeof original).toBe('boolean');
+    expect(stripSonifySetCrystals(false)).toBe(false);
+    expect(stripSonifyGetCrystals()).toBe(false);
+    expect(stripSonifySetCrystals(true)).toBe(true);
+    stripSonifySetCrystals(original);
   });
 });
 

@@ -105,7 +105,7 @@ function _stripSonifyScaleFreqs(baseOctave: number, octaveSpan: number, semitone
 //     timbre. Kept gentle (sine / triangle only — no buzzy saw/square,
 //     per the restrained field-guide aesthetic).
 function _stripSonifyColorToVoice(color: number): {
-  baseOctave: number; voiceGain: number; waveform: OscillatorType;
+  baseOctave: number; voiceGain: number; waveform: OscillatorType; hue: number;
 } {
   const r = ((color >> 16) & 0xff) / 255;
   const g = ((color >> 8) & 0xff) / 255;
@@ -130,7 +130,7 @@ function _stripSonifyColorToVoice(color: number): {
   const lum = 0.299 * r + 0.587 * g + 0.114 * b;
   const voiceGain = 0.14 + 0.34 * lum;                       // ~0.14..0.48
   const waveform: OscillatorType = sat > 0.55 ? 'triangle' : 'sine';
-  return { baseOctave, voiceGain, waveform };
+  return { baseOctave, voiceGain, waveform, hue };
 }
 
 // Resolve a chip id → its index in the manifest (and its meta). Returns
@@ -268,6 +268,102 @@ function stripSonifySetStepDuration(ms: number): number {
   return v;
 }
 
+// ============================================================
+// CRYSTALS AS STRUCK BELLS (the brother's ask, 2026-05-31)
+// ============================================================
+// The chips are the sustained chemistry drone; the CRYSTALS are the
+// percussion over it. Each nucleation_event pings a scale-snapped bell —
+// sharp attack, exponential decay — voiced from the mineral's class_color
+// + max_size_cm:
+//   * color HUE → which scale degree it rings (so it's in key; this is
+//     "categorize by color"). color BRIGHTNESS → loudness (the hierarchy).
+//   * max_size_cm → register + ring-length: a big selenite blade tolls
+//     low and long; a tiny pyrite cube ticks high and short (the bell-vs-
+//     chime physics — bigger resonator = lower & longer).
+// HONEST GAP: Mohs hardness / luster / crystal-system aren't in the data,
+// so "harder = brighter, metallic = clink" isn't possible yet — a future
+// per-mineral acoustic table would unlock it. Color + size carry it today.
+
+let _stripSonifyCrystalsOn = true;
+function stripSonifyGetCrystals(): boolean { return _stripSonifyCrystalsOn; }
+function stripSonifySetCrystals(on: boolean): boolean { _stripSonifyCrystalsOn = !!on; return _stripSonifyCrystalsOn; }
+
+// Resolve a mineral id → its crystal color (int 0xRRGGBB). Prefers the
+// renderer's live class_color resolver (topoClassColor → "#rrggbb");
+// falls back to mid-grey for unknown minerals / headless.
+function _stripSonifyMineralColor(mineral: string): number {
+  let hex: any = null;
+  try { if (typeof topoClassColor === 'function') hex = topoClassColor(mineral); } catch (_e) { /* ignore */ }
+  if (typeof hex === 'string') {
+    const n = parseInt(hex.replace('#', ''), 16);
+    if (Number.isFinite(n)) return n >>> 0;
+  } else if (typeof hex === 'number' && Number.isFinite(hex)) {
+    return hex >>> 0;
+  }
+  return 0x888888;
+}
+
+// Resolve a mineral id → its max crystal size (cm) from MINERAL_SPEC.
+// Default ~2 cm when unavailable.
+function _stripSonifyMineralSize(mineral: string): number {
+  try {
+    if (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC[mineral]
+        && typeof MINERAL_SPEC[mineral].max_size_cm === 'number') {
+      return MINERAL_SPEC[mineral].max_size_cm;
+    }
+  } catch (_e) { /* ignore */ }
+  return 2;
+}
+
+// Deterministic string hash (FNV-1a) — no Math.random (resume-safe).
+function _stripSonifyHash(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+interface StripCrystalHit {
+  tSec: number; freq: number; gain: number; decay: number;
+  waveform: OscillatorType; mineral: string;
+}
+
+// Build the struck-bell schedule from a dataset's nucleation_events.
+// `resolvers` lets tests inject colorOf/sizeOf deterministically; in the
+// browser the defaults read the live class_color + max_size_cm.
+function buildStripCrystalHits(
+  ds: StripDataset,
+  opts: { stepDurationMs?: number; scaleId?: string } = {},
+  resolvers: { colorOf?: (m: string) => number; sizeOf?: (m: string) => number } = {}
+): StripCrystalHit[] {
+  const events = (ds && ds.nucleation_events) || [];
+  if (!events.length) return [];
+  const stepMs = opts.stepDurationMs ?? _stripSonifyStepDurationMs;
+  const semis = _stripSonifyScaleSemitones(opts.scaleId ?? _stripSonifyScaleId);
+  const colorOf = resolvers.colorOf || _stripSonifyMineralColor;
+  const sizeOf = resolvers.sizeOf || _stripSonifyMineralSize;
+  const LO = Math.log10(0.5), HI = Math.log10(100);   // size→0..1 over 0.5..100 cm
+  const hits: StripCrystalHit[] = [];
+  for (const ev of events) {
+    if (!ev || typeof ev.step !== 'number') continue;
+    const voice = _stripSonifyColorToVoice((colorOf(ev.mineral) >>> 0) || 0x888888);
+    const sizeCm = Math.max(0.05, Number(sizeOf(ev.mineral)) || 2);
+    const sizeNorm = Math.max(0, Math.min(1, (Math.log10(sizeCm) - LO) / (HI - LO)));
+    // color HUE → scale degree (the note); size → octave (big = lower).
+    const degIdx = Math.min(semis.length - 1, Math.floor((voice.hue / 360) * semis.length));
+    const octave = Math.max(2, Math.min(6, 5 - Math.round(sizeNorm * 2)));   // small→5, big→3
+    const freq = _stripSonifyMidiToFreq(12 * (octave + 1) + semis[degIdx]);
+    hits.push({
+      tSec: (ev.step * stepMs) / 1000,
+      freq,
+      gain: voice.voiceGain,                 // brightness → loudness
+      decay: 0.22 + 1.5 * sizeNorm,          // tick (0.22 s) … toll (1.7 s)
+      waveform: voice.waveform,
+      mineral: ev.mineral,
+    });
+  }
+  return hits;
+}
+
 // Build plans for several chips at once (skips any not in the dataset).
 function buildStripSonifyPlans(
   ds: StripDataset, chipIds: string[],
@@ -300,11 +396,11 @@ function buildStripSonifyPlans(
 // the performance ends cleanly regardless of which voices come and go.
 // Browser-only; returns null headless.
 function playStripSonifyPlans(
-  plans: StripSonifyPlan[], onEnded?: () => void
+  plans: StripSonifyPlan[], onEnded?: () => void, crystalHits: StripCrystalHit[] = []
 ): StripSonifyHandle | null {
   const AC = (globalThis as any).AudioContext || (globalThis as any).webkitAudioContext;
   if (typeof AC !== 'function') return null;
-  if (!plans.length) return null;
+  if (!plans.length && !crystalHits.length) return null;
   stripSonifyStop();
 
   const ctx = new AC();
@@ -319,6 +415,9 @@ function playStripSonifyPlans(
   const t0 = ctx.currentTime + 0.06;
   let durationSec = 0.2;
   for (const p of plans) if (p.durationSec > durationSec) durationSec = p.durationSec;
+  // Crystal bells can ring past the last chip step — extend the end so the
+  // last toll isn't cut off.
+  for (const h of crystalHits) { const e = h.tSec + h.decay; if (e > durationSec) durationSec = e; }
   const endTime = t0 + durationSec;
 
   // chipId → { osc, gain, plan }
@@ -361,6 +460,26 @@ function playStripSonifyPlans(
   timer.connect(tg).connect(master);
   try { timer.start(t0); timer.stop(endTime + 0.06); } catch (_e) { /* ignore */ }
 
+  // Crystal bells — one short struck-tone oscillator per nucleation: sharp
+  // attack, exponential decay. They feed the same master (so the volume
+  // slider rides them too), at a modest mix level under the chemistry
+  // voices. Independent of the chip selection — a separate layer.
+  const crystalOscs: any[] = [];
+  for (const hit of crystalHits) {
+    const tHit = t0 + hit.tSec;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = hit.waveform;
+    try { osc.frequency.setValueAtTime(hit.freq, tHit); } catch (_e) { /* ignore */ }
+    osc.connect(g).connect(master);
+    const peak = Math.max(0.0001, hit.gain * 0.55);   // sits under the drone
+    g.gain.setValueAtTime(0.0001, tHit);
+    g.gain.linearRampToValueAtTime(peak, tHit + 0.005);                    // sharp attack
+    g.gain.exponentialRampToValueAtTime(0.0001, tHit + Math.max(0.05, hit.decay)); // bell decay
+    try { osc.start(tHit); osc.stop(tHit + Math.max(0.05, hit.decay) + 0.05); } catch (_e) { /* ignore */ }
+    crystalOscs.push(osc);
+  }
+
   let done = false;
   const finish = () => {
     if (done) return;
@@ -379,6 +498,7 @@ function playStripSonifyPlans(
         master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), now);
         master.gain.linearRampToValueAtTime(0, now + 0.06);
         for (const v of voices.values()) { try { v.osc.stop(now + 0.08); } catch (_e) { /* ignore */ } }
+        for (const o of crystalOscs) { try { o.stop(now + 0.08); } catch (_e) { /* ignore */ } }
         try { timer.stop(now + 0.08); } catch (_e) { /* ignore */ }
       } catch (_e) { /* ignore */ }
       finish();
@@ -442,9 +562,11 @@ function stripSonifyMany(
   opts: { stepDurationMs?: number; octaveSpan?: number; scaleId?: string } = {},
   onEnded?: () => void
 ): StripSonifyHandle | null {
-  const plans = buildStripSonifyPlans(ds, chipIds, _stripSonifyDefaultOpts(opts));
-  if (!plans.length) return null;
-  return playStripSonifyPlans(plans, onEnded);
+  const o = _stripSonifyDefaultOpts(opts);
+  const plans = buildStripSonifyPlans(ds, chipIds, o);
+  const hits = _stripSonifyCrystalsOn ? buildStripCrystalHits(ds, o) : [];
+  if (!plans.length && !hits.length) return null;
+  return playStripSonifyPlans(plans, onEnded, hits);
 }
 
 // LIVE: if a performance is playing, update its voice set to exactly
