@@ -64,17 +64,25 @@ function**; real vug chemistry is a **continuously evolving curve**.
   *regime* around them is the movement.
 
 ## Build plan (phased)
-- **Phase 0 — dark scaffold (BUILDING NOW).** Movement PRNG + primitive
-  data-model + the per-step applicator, all **default-off → provably
-  sim-neutral** (seed-42 + strip-digest byte-identical, full suite green, NO
-  SIM_VERSION bump). The engine exists but nothing opts in yet.
-- **Phase 1 — meteoric-front pilot.** Opt ONE supergene scenario in
-  (bisbee/supergene_oxidation/schneeberg). It's redox-led (exercises the
-  frozen-Eh fix), the regime where our iron model is unambiguous (oxidation),
-  and has the most existing scenarios to validate against. Regen that one
-  baseline (SIM_VERSION bump), look at the strip + listen to the sonified
-  result, decide ramp-vs-drift / texture profile by eye + ear.
-- **Phase 2 — incremental rollout.** Migrate further scenarios/archetypes one
+- **✅ Phase 0 — dark scaffold (DONE — `e87bf9d` + `91e18b4`).** Movement PRNG +
+  primitive operators + OU texture + no-op-safe applicator + the SPATIAL-origin
+  data model (`origin` field + seeded `_pickOriginCell`), all **default-off →
+  proven sim-neutral** (seed-42 + strip-digest byte-identical, 1712/1712, NO
+  SIM_VERSION bump). The engine exists; nothing opts in yet.
+- **Phase 1 — meteoric-front temporal pilot.** Opt ONE supergene scenario in
+  (bisbee/supergene_oxidation/schneeberg). Redox-led (exercises the frozen-Eh
+  fix), the regime where our iron model is unambiguous (oxidation), most
+  existing scenarios to validate against. Regen that one baseline (SIM bump),
+  look at the strip + listen, decide ramp-vs-drift / texture by eye + ear.
+  (Open decision: scenario + ramp-vs-drift.)
+- **Phase 2 — fluid-source spots (spatial).** See PROPOSAL §10. Cracks/geysers/
+  hot spots: seeded (off the cavity seed) wall points that (a) anchor
+  `origin:'cell'` movements, (b) bias local nucleation/deposition, (c) add a
+  local wall-decay bonus, (d) open/close via events (spatializing the existing
+  seal/breach handlers). Sub-steps 2a seed+observe (dark) → 2b wall-decay bonus
+  → 2c origin-rides-spots + deposition bias → 2d open/close events; each its own
+  baseline regen + look. This is the physical body of §9c and feeds per-vertex.
+- **Phase 3 — incremental rollout.** Migrate further scenarios/archetypes one
   at a time, each its own dense commit + baseline regen.
 - **Open knob:** "how fast" (movement timescales) is UNQUANTIFIED by the
   research → it's ours to calibrate to band-count + visual/sonic readability

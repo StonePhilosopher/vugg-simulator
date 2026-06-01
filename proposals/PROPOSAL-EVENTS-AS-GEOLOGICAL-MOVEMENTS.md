@@ -385,3 +385,66 @@ the pure seeded `_pickOriginCell` helper (Phase 0, tested). The actual
 cell-injection wiring (controller needs the sim's mesh handle) is **Phase
 1-spatial** — after the temporal pilot reads right, since it's a second
 sim-affecting change and wants its own look-and-verify pass.
+
+## 10. FLUID-SOURCE SPOTS — cracks / geysers / hot spots (boss, 2026-06-01)
+
+The physical layer under the spatial-origin mechanic (§9c). Real cavities are
+NOT bathed uniformly — they connect to their plumbing at a few discrete points
+(fractures, feeder channels, vents), so fresh fluid + chemistry enter focused.
+A "spot" makes a §9c origin a NAMED, PERSISTENT, SEEDED geological feature
+instead of an abstract random cell. Geology: a fracture is both the fluid
+delivery path AND where dissolution concentrates → cavities grow along their
+feeders; best crystals often cluster near the feeder.
+
+**Data model (sketch):**
+```
+FluidSpot { cell: int;                       // wall cell — the location
+            kind: 'crack' | 'geyser' | 'hotspot';
+            open: boolean;                   // event-toggleable
+            supply: number;                  // local deposition/σ bias strength
+            decayBonus: number; }            // local wall-erosion multiplier (>1)
+```
+Vug-level `fluidSpots: FluidSpot[]`. Count (**0+**) + locations + kinds are
+**seeded from the vugg/cavity seed** (`shape_seed`, mirroring the geometry
+sub-streams) — same cavity → same spots (geology drives outcome). Scenarios can
+set a base count / kinds; default count from a small distribution (can be 0).
+
+**Three local couplings (all at the spot's cell):**
+1. **Fluid source / origin** — §9c `origin:'cell'` movements originate at an
+   OPEN spot (drawn from the open-spot set via the movement stream), NOT a
+   fresh random cell. Spots SUPERSEDE `_pickOriginCell`'s naive any-cell pick.
+2. **Deposition bias** — open spots raise local supersaturation / nucleation
+   probability ("statistically more likely to be a fluid deposition point").
+   Hooks `check_nucleation` / per-vertex placement — the heterogeneity that
+   feature was starved for.
+3. **Wall-decay bonus** — open spot cells get a `decayBonus` multiplier in
+   `erodeCells` / `dissolve_wall` → preferential deepening at cracks (lopsided
+   cavity growth falls out of the existing per-cell erosion).
+
+**Two dynamics:**
+- **Seeded** count + placement (reproducible; tied to the cavity seed).
+- **Open / close via events.** A geyser opens, a crack seals. The EXISTING
+  registry already has the conceptual events — `reactive_wall_seal`,
+  `*_fracture_seal`, `*_lockup` (close) and `tectonic_uplift_drains`,
+  `aquifer_recharge_floods` (breach/open) — today they're global; with spots
+  they become SPATIAL (a seal closes a specific spot). New `spot_open`/
+  `spot_close` event types, or generalize the existing seal/breach handlers.
+  Self-sealing (the vug crystallizing its own feeder shut) is real geology and
+  a natural "the fill is ending" mechanic.
+
+**Composition:** a geyser spot delivering episodic pulses IS the hydrothermal-
+pulse-train archetype (§9) with a physical home; a crack near the surface is
+where a meteoric-front movement (§ pilot) would enter.
+
+**Build placement — Phase 2 (after the Phase 1 temporal pilot).** Spots and the
+spatial-origin wiring SHIP TOGETHER (origins should BE spots), so what was
+"Phase 1-spatial" folds into this:
+  - Phase 2a: seed the spot set off the cavity seed + render/observe them
+    (dark — no behavior until coupled). Sim-neutral until wired.
+  - Phase 2b: wall-decay bonus (local `erodeCells` multiplier) — first coupling,
+    its own baseline regen + look.
+  - Phase 2c: `origin:'cell'` movements ride the open spots (§9c wiring) +
+    deposition bias — second baseline regen + look + listen.
+  - Phase 2d: open/close events (spatialize the existing seal/breach handlers).
+Each sub-step is one sim-affecting change with its own verify pass; the seam is
+already in the scaffold (`MovementSpec.origin`/`originCell`, §9c).
