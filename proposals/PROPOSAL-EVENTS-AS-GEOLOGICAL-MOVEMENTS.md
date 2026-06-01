@@ -303,3 +303,43 @@ Key design takeaways:
   scenarios to validate against (bisbee/supergene).
 - Mechanical sub-events inside an archetype (a brecciation rupture in a pulse
   train) stay instantaneous; the *regime* around them is the movement.
+
+### 9b. The shapes are the primitives; archetypes are just the named points (boss, 2026-06-01)
+
+The four named archetypes are NOT the fundamental unit — they're recognizable
+*presets* sampled from a **continuous space of dynamical shapes**. Nature fills
+the whole space; most real vug histories are **unnamed blends**. "Just because
+a pattern hasn't been named doesn't mean it doesn't happen." So the engine is
+built on the primitive SHAPES (composable, parameterized, seed-sampled), and
+the named archetypes become presets assembled from them — NOT a hard-coded
+menu of four.
+
+The primitive alphabet — operators that sum to any master-variable trajectory:
+- **TREND / drift** — monotonic-ish setpoint movement (direction, rate,
+  persistence). [orogenic = one long slow trend]
+- **PULSE** — sharp excursion + decay; in **TRAINS** = repeated pulses.
+  [hydrothermal pulse train; already partly built: `ambient_cooling` thermal
+  pulses, tn457 50× barite]
+- **STEP / transition** — setpoint jumps to a new attractor (a regime change /
+  stage boundary). [the discrete events of today, generalized]
+- **OSCILLATION** — mean-reverting texture around the setpoint (Holten 1997
+  anti-persistence — the fine band texture, NOT a wandering walk).
+- **MIXING** — two end-member setpoints blend in a varying proportion.
+  [fluid_mixing; meteoric ↔ deep brine]
+
+A real history is a **superposition**: a slow cooling trend + a superimposed
+pulse train + mean-reverting texture + a couple of step-transitions + maybe a
+late meteoric ramp as it nears the surface. The named archetypes are just
+*characteristic combinations*; the seed generates novel combinations →
+**unnamed-but-real vugs**. THIS is what makes the vugg-seed "wider variety"
+real (§8): each seed samples a point in the continuous shape-space — usually a
+blend, not one of four boxes.
+
+**Why we can let the shapes run free without producing nonsense:** geological
+coherence does NOT come from the named recipe — it comes downstream, from the
+master-variable→element translation (the SI/solubility engines + covariance).
+An arbitrary, unnamed combination of primitive shapes still yields a physically
+coherent vug, because the *chemistry is computed from the master variables, not
+scripted*. (This is "two consistencies compose" again: the seed gives
+reproducibility; the SI engines give coherence — which is exactly what frees
+the SHAPES to vary without going incoherent.)
