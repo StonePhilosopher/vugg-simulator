@@ -19,6 +19,10 @@ declare const stripSonifyGetMasterVolume: any;
 declare const stripSonifySetMasterVolume: any;
 declare const stripSonifyGetStepDuration: any;
 declare const stripSonifySetStepDuration: any;
+declare const STRIP_SONIFY_SCALES: any;
+declare const stripSonifyGetScaleId: any;
+declare const stripSonifySetScaleId: any;
+declare const stripSonifyUpdateVoices: any;
 declare const stripAllocateData: any;
 declare const stripDataIndex: any;
 
@@ -154,6 +158,57 @@ describe('strip sonify — tempo knob', () => {
     expect(stripSonifySetStepDuration(10)).toBe(30);    // clamp low (min 30)
     expect(stripSonifySetStepDuration(9999)).toBe(800); // clamp high (max 800)
     stripSonifySetStepDuration(original);               // restore
+  });
+});
+
+describe('strip sonify — scales / modes', () => {
+  const scaleById = (id: string) => STRIP_SONIFY_SCALES.find((s: any) => s.id === id);
+
+  it('registry matches the musician spec (semitone sets)', () => {
+    expect(scaleById('major_pentatonic').semitones).toEqual([0, 2, 4, 7, 9]);
+    expect(scaleById('mixolydian').semitones).toEqual([0, 2, 4, 5, 7, 9, 10]);       // major + ♭7
+    expect(scaleById('dorian').semitones).toEqual([0, 2, 3, 5, 7, 9, 10]);            // minor + raised 6
+    expect(scaleById('aeolian').semitones).toEqual([0, 2, 3, 5, 7, 8, 10]);           // natural minor
+    expect(scaleById('phrygian').semitones).toEqual([0, 1, 3, 5, 7, 8, 10]);          // ♭2, minor 3
+    expect(scaleById('phrygian_dominant').semitones).toEqual([0, 1, 4, 5, 7, 8, 10]); // ♭2, major 3
+  });
+
+  it('default scale is the safe pentatonic; setter accepts known ids and rejects unknown', () => {
+    const original = stripSonifyGetScaleId();
+    expect(original).toBe('major_pentatonic');
+    expect(stripSonifySetScaleId('dorian')).toBe('dorian');
+    expect(stripSonifyGetScaleId()).toBe('dorian');
+    expect(stripSonifySetScaleId('not_a_scale')).toBe('dorian'); // unchanged
+    stripSonifySetScaleId(original);                             // restore
+  });
+
+  it('a chosen mode produces ONLY that scale’s pitch classes', () => {
+    const ds = makeDataset(24);
+    const pcOf = (freq: number) => {
+      const midi = Math.round(12 * Math.log2(freq / 440) + 69);
+      return ((midi % 12) + 12) % 12;
+    };
+    for (const id of ['mixolydian', 'phrygian_dominant', 'aeolian']) {
+      const plan = buildStripSonifyPlan(ds, 'test', { scaleId: id });
+      const allowed = new Set(scaleById(id).semitones);
+      for (const n of plan.notes) expect(allowed.has(pcOf(n.freq))).toBe(true);
+    }
+  });
+
+  it('7-note modes give finer pitch resolution than the 5-note pentatonic', () => {
+    const ds = makeDataset(40);
+    const distinct = (id: string) => new Set(
+      buildStripSonifyPlan(ds, 'test', { scaleId: id }).notes.map((n: any) => Math.round(n.freq)),
+    ).size;
+    expect(distinct('mixolydian')).toBeGreaterThan(distinct('major_pentatonic'));
+  });
+});
+
+describe('strip sonify — live voice update', () => {
+  it('stripSonifyUpdateVoices is a no-op (no throw) when nothing is playing', () => {
+    const ds = makeDataset(8);
+    expect(() => stripSonifyUpdateVoices(ds, ['test'])).not.toThrow();
+    expect(stripSonifyIsPlaying()).toBe(false);
   });
 });
 
