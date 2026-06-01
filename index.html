@@ -46720,8 +46720,12 @@ function buildStripSonifyPlan(ds, chipId, opts = {}) {
         chipColor: found.meta.color >>> 0,
     };
 }
-// Singleton playback handle so a new play stops the previous one.
+// Singleton playback handle so a new play stops the previous one. Carries
+// setVolume so the volume slider can adjust a live performance.
 let _stripSonifyHandle = null;
+// Master volume (0..1). The slider sets this; it persists between plays
+// and is applied live to any in-progress performance.
+let _stripSonifyMasterVolume = 0.7;
 // Is a sonification currently playing?
 function stripSonifyIsPlaying() { return _stripSonifyHandle !== null; }
 // Stop any active playback (idempotent).
@@ -46734,16 +46738,45 @@ function stripSonifyStop() {
         _stripSonifyHandle = null;
     }
 }
-// PLAYER: schedule a plan on the Web Audio graph. One continuous
-// oscillator whose frequency jumps per step (setValueAtTime) — the
-// "stepped theremin" — through a master gain with attack/release so it
-// fades in and out cleanly. Browser-only; returns null in headless paths.
-// onEnded fires when playback completes naturally or is stopped.
-function playStripSonifyPlan(plan, onEnded) {
+function stripSonifyGetMasterVolume() { return _stripSonifyMasterVolume; }
+// Set master volume (0..1). Stored for future plays AND applied live to
+// any in-progress playback. Returns the clamped value.
+function stripSonifySetMasterVolume(v) {
+    const vol = Math.max(0, Math.min(1, Number(v)));
+    _stripSonifyMasterVolume = vol;
+    if (_stripSonifyHandle) {
+        try {
+            _stripSonifyHandle.setVolume(vol);
+        }
+        catch (_e) { /* ignore */ }
+    }
+    return vol;
+}
+// Build plans for several chips at once (skips any not in the dataset).
+function buildStripSonifyPlans(ds, chipIds, opts = {}) {
+    const out = [];
+    for (const id of chipIds) {
+        const p = buildStripSonifyPlan(ds, id, opts);
+        if (p)
+            out.push(p);
+    }
+    return out;
+}
+// PLAYER: schedule one OR MORE plans as layered voices on a shared
+// timeline. Each plan is one continuous oscillator whose frequency jumps
+// per step (setValueAtTime — the "stepped theremin"); its per-voice gain
+// comes from the chip color (brightness → loudness, THE hierarchy),
+// scaled by 1/sqrt(voiceCount) so a dense selection sums without
+// clipping. All voices feed a master gain set by the volume slider.
+// Browser-only; returns null headless. onEnded fires when the last voice
+// finishes (or on stop).
+function playStripSonifyPlans(plans, onEnded) {
     const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
     if (typeof AC !== 'function')
         return null;
-    stripSonifyStop(); // only one voice at a time in the MVP
+    if (!plans.length)
+        return null;
+    stripSonifyStop();
     const ctx = new AC();
     // Browsers create the context suspended until a user gesture; the Play
     // click IS that gesture, so resume immediately.
@@ -46752,25 +46785,37 @@ function playStripSonifyPlan(plan, onEnded) {
             ctx.resume();
     }
     catch (_e) { /* ignore */ }
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = plan.waveform;
-    osc.connect(gain).connect(ctx.destination);
+    const master = ctx.createGain();
+    master.gain.value = _stripSonifyMasterVolume;
+    master.connect(ctx.destination);
     const t0 = ctx.currentTime + 0.06;
     const attack = 0.08, release = 0.18;
-    const end = t0 + Math.max(plan.durationSec, 0.2);
-    // Pitch contour — instantaneous jumps per step (stepped theremin).
-    if (plan.notes.length)
-        osc.frequency.setValueAtTime(plan.notes[0].freq, t0);
-    for (const n of plan.notes)
-        osc.frequency.setValueAtTime(n.freq, t0 + n.tSec);
-    // Amplitude envelope.
-    gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(plan.voiceGain, t0 + attack);
-    gain.gain.setValueAtTime(plan.voiceGain, Math.max(t0 + attack, end - release));
-    gain.gain.linearRampToValueAtTime(0, end);
-    osc.start(t0);
-    osc.stop(end + 0.05);
+    const voiceScale = 1 / Math.sqrt(plans.length); // keep the mix bounded
+    let endMax = t0 + 0.2;
+    const oscs = [];
+    for (const plan of plans) {
+        const osc = ctx.createOscillator();
+        const vg = ctx.createGain();
+        osc.type = plan.waveform;
+        osc.connect(vg).connect(master);
+        const end = t0 + Math.max(plan.durationSec, 0.2);
+        if (end > endMax)
+            endMax = end;
+        // Pitch contour — instantaneous jumps per step.
+        if (plan.notes.length)
+            osc.frequency.setValueAtTime(plan.notes[0].freq, t0);
+        for (const n of plan.notes)
+            osc.frequency.setValueAtTime(n.freq, t0 + n.tSec);
+        // Per-voice envelope (peak = color loudness × mix scale).
+        const peak = plan.voiceGain * voiceScale;
+        vg.gain.setValueAtTime(0, t0);
+        vg.gain.linearRampToValueAtTime(peak, t0 + attack);
+        vg.gain.setValueAtTime(peak, Math.max(t0 + attack, end - release));
+        vg.gain.linearRampToValueAtTime(0, end);
+        osc.start(t0);
+        osc.stop(end + 0.05);
+        oscs.push(osc);
+    }
     let done = false;
     const finish = () => {
         if (done)
@@ -46789,30 +46834,54 @@ function playStripSonifyPlan(plan, onEnded) {
             catch (_e) { /* ignore */ }
         }
     };
-    osc.onended = finish;
+    // All voices share the same step count → same duration, so any one's
+    // onended marks the end of the performance.
+    oscs[oscs.length - 1].onended = finish;
     const handle = {
         stop() {
             try {
                 const now = ctx.currentTime;
-                gain.gain.cancelScheduledValues(now);
-                gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.06);
-                osc.stop(now + 0.08);
+                master.gain.cancelScheduledValues(now);
+                master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), now);
+                master.gain.linearRampToValueAtTime(0, now + 0.06);
+                for (const o of oscs) {
+                    try {
+                        o.stop(now + 0.08);
+                    }
+                    catch (_e) { /* ignore */ }
+                }
             }
             catch (_e) { /* ignore */ }
             finish();
+        },
+        setVolume(v) {
+            try {
+                master.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), ctx.currentTime, 0.03);
+            }
+            catch (_e) { /* ignore */ }
         },
     };
     _stripSonifyHandle = handle;
     return handle;
 }
-// Convenience: build + play one chip of a dataset. Returns the playback
-// handle, or null if the chip is missing / audio is unavailable.
+// Back-compat single-plan player (delegates to the layered player).
+function playStripSonifyPlan(plan, onEnded) {
+    return playStripSonifyPlans([plan], onEnded);
+}
+// Convenience: build + play one chip.
 function stripSonify(ds, chipId, opts = {}, onEnded) {
     const plan = buildStripSonifyPlan(ds, chipId, opts);
     if (!plan)
         return null;
-    return playStripSonifyPlan(plan, onEnded);
+    return playStripSonifyPlans([plan], onEnded);
+}
+// Convenience: build + play several chips layered — color sets each
+// voice's place in the mix. This is "play exactly what's selected."
+function stripSonifyMany(ds, chipIds, opts = {}, onEnded) {
+    const plans = buildStripSonifyPlans(ds, chipIds, opts);
+    if (!plans.length)
+        return null;
+    return playStripSonifyPlans(plans, onEnded);
 }
 
 // ── 86-nucleation-native.js ──
@@ -69386,7 +69455,8 @@ function initStripView() {
           <div class="strip-view-header-actions">
             <button class="strip-view-btn" id="strip-view-upload" title="Load a .stripview file from disk">⬆ Upload</button>
             <button class="strip-view-btn" id="strip-view-download" title="Download the active dataset as a .stripview file (gzipped)" disabled>⬇ Download</button>
-            <button class="strip-view-btn" id="strip-view-sonify" title="Play the selected chip's trajectory as sound — value→pitch, pentatonic. Let the rocks speak their truth." disabled>♪ Play</button>
+            <button class="strip-view-btn" id="strip-view-sonify" title="Play the SELECTED chips as layered sound — value→pitch (pentatonic), color→voice. Let the rocks speak their truth." disabled>♪ Play</button>
+            <label class="strip-view-vol" title="Playback volume" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">🔊<input type="range" id="strip-view-volume" min="0" max="1" step="0.01" value="0.7" style="width:72px; vertical-align:middle;"/></label>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -69448,10 +69518,10 @@ function initStripView() {
                     alert('Strip view export failed: ' + err.message);
                 }
             });
-            // ♪ Play (sonify MVP): sonify the trajectory (let the rocks speak). One
-            // chip → one oscillator (value→pitch, pentatonic; step→time). Plays
-            // the first VISIBLE chip — the one you're looking at — and its line
-            // color sets the voice (hue→register, brightness→loudness). Toggles
+            // ♪ Play: sonify the trajectory (let the rocks speak). Plays exactly
+            // the chips you've SELECTED in the chip selector — each one a layered
+            // voice (value→pitch, pentatonic; step→time), its line color setting
+            // its place in the mix (hue→register, brightness→loudness). Toggles
             // Play/Stop; flips back to Play when playback finishes on its own.
             sonifyBtn.addEventListener('click', () => {
                 if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
@@ -69461,19 +69531,14 @@ function initStripView() {
                 }
                 if (!_stripActiveDataset)
                     return;
-                let chipId = null;
-                for (const c of _stripActiveDataset.manifest.chips) {
-                    if (_stripVisibleChips[c.id]) {
-                        chipId = c.id;
-                        break;
-                    }
-                }
-                if (!chipId && _stripActiveDataset.manifest.chips.length) {
-                    chipId = _stripActiveDataset.manifest.chips[0].id;
-                }
-                if (!chipId)
+                const chipIds = _stripActiveDataset.manifest.chips
+                    .filter((c) => _stripVisibleChips[c.id])
+                    .map((c) => c.id);
+                if (!chipIds.length) {
+                    alert('No chips selected — toggle some on to hear them.');
                     return;
-                const handle = stripSonify(_stripActiveDataset, chipId, {}, () => {
+                }
+                const handle = stripSonifyMany(_stripActiveDataset, chipIds, {}, () => {
                     sonifyBtn.textContent = '♪ Play';
                 });
                 if (handle)
@@ -69481,6 +69546,19 @@ function initStripView() {
                 else
                     alert('Audio is unavailable in this browser (no Web Audio support).');
             });
+            // Volume slider — master gain, applied live to any playing
+            // performance and remembered for the next.
+            const volInput = panel.querySelector('#strip-view-volume');
+            if (volInput) {
+                if (typeof stripSonifyGetMasterVolume === 'function') {
+                    volInput.value = String(stripSonifyGetMasterVolume());
+                }
+                volInput.addEventListener('input', () => {
+                    if (typeof stripSonifySetMasterVolume === 'function') {
+                        stripSonifySetMasterVolume(parseFloat(volInput.value));
+                    }
+                });
+            }
         }
         const body = panel.querySelector('#strip-view-body');
         if (_stripActiveDataset)

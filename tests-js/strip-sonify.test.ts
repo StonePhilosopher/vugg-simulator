@@ -9,10 +9,14 @@
 import { describe, expect, it } from 'vitest';
 
 declare const buildStripSonifyPlan: any;
+declare const buildStripSonifyPlans: any;
 declare const _stripSonifyColorToVoice: any;
 declare const playStripSonifyPlan: any;
 declare const stripSonify: any;
+declare const stripSonifyMany: any;
 declare const stripSonifyIsPlaying: any;
+declare const stripSonifyGetMasterVolume: any;
+declare const stripSonifySetMasterVolume: any;
 declare const stripAllocateData: any;
 declare const stripDataIndex: any;
 
@@ -108,13 +112,37 @@ describe('strip sonify — color creates the hierarchy', () => {
   });
 });
 
+describe('strip sonify — multi-voice (play exactly what is selected)', () => {
+  it('buildStripSonifyPlans returns one plan per valid chip, skipping unknowns', () => {
+    const ds = makeDataset(8);
+    expect(buildStripSonifyPlans(ds, ['test', 'nope']).length).toBe(1);
+    expect(buildStripSonifyPlans(ds, ['test', 'test']).length).toBe(2);
+    expect(buildStripSonifyPlans(ds, []).length).toBe(0);
+    expect(buildStripSonifyPlans(ds, ['nope']).length).toBe(0);
+  });
+});
+
+describe('strip sonify — master volume', () => {
+  it('has a sane default and clamps to [0,1]', () => {
+    const original = stripSonifyGetMasterVolume();
+    expect(original).toBeGreaterThan(0);
+    expect(original).toBeLessThanOrEqual(1);
+    expect(stripSonifySetMasterVolume(0.42)).toBeCloseTo(0.42, 6);
+    expect(stripSonifyGetMasterVolume()).toBeCloseTo(0.42, 6);
+    expect(stripSonifySetMasterVolume(2)).toBe(1);     // clamp high
+    expect(stripSonifySetMasterVolume(-1)).toBe(0);    // clamp low
+    stripSonifySetMasterVolume(original);              // restore
+  });
+});
+
 describe('strip sonify — player degrades gracefully headless', () => {
-  it('playStripSonifyPlan returns null when there is no AudioContext (jsdom)', () => {
+  it('players return null when there is no AudioContext (jsdom)', () => {
     const ds = makeDataset(8);
     const plan = buildStripSonifyPlan(ds, 'test', {});
-    // jsdom provides no Web Audio; the player must not throw.
+    // jsdom provides no Web Audio; the players must not throw.
     expect(playStripSonifyPlan(plan)).toBeNull();
     expect(stripSonify(ds, 'test', {})).toBeNull();
+    expect(stripSonifyMany(ds, ['test'], {})).toBeNull();
     expect(stripSonifyIsPlaying()).toBe(false);
   });
 });

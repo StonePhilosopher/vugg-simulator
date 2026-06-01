@@ -1041,7 +1041,8 @@ function initStripView(): void {
           <div class="strip-view-header-actions">
             <button class="strip-view-btn" id="strip-view-upload" title="Load a .stripview file from disk">⬆ Upload</button>
             <button class="strip-view-btn" id="strip-view-download" title="Download the active dataset as a .stripview file (gzipped)" disabled>⬇ Download</button>
-            <button class="strip-view-btn" id="strip-view-sonify" title="Play the selected chip's trajectory as sound — value→pitch, pentatonic. Let the rocks speak their truth." disabled>♪ Play</button>
+            <button class="strip-view-btn" id="strip-view-sonify" title="Play the SELECTED chips as layered sound — value→pitch (pentatonic), color→voice. Let the rocks speak their truth." disabled>♪ Play</button>
+            <label class="strip-view-vol" title="Playback volume" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">🔊<input type="range" id="strip-view-volume" min="0" max="1" step="0.01" value="0.7" style="width:72px; vertical-align:middle;"/></label>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -1097,10 +1098,10 @@ function initStripView(): void {
           alert('Strip view export failed: ' + (err as Error).message);
         }
       });
-      // ♪ Play (sonify MVP): sonify the trajectory (let the rocks speak). One
-      // chip → one oscillator (value→pitch, pentatonic; step→time). Plays
-      // the first VISIBLE chip — the one you're looking at — and its line
-      // color sets the voice (hue→register, brightness→loudness). Toggles
+      // ♪ Play: sonify the trajectory (let the rocks speak). Plays exactly
+      // the chips you've SELECTED in the chip selector — each one a layered
+      // voice (value→pitch, pentatonic; step→time), its line color setting
+      // its place in the mix (hue→register, brightness→loudness). Toggles
       // Play/Stop; flips back to Play when playback finishes on its own.
       sonifyBtn.addEventListener('click', () => {
         if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
@@ -1109,20 +1110,29 @@ function initStripView(): void {
           return;
         }
         if (!_stripActiveDataset) return;
-        let chipId: string | null = null;
-        for (const c of _stripActiveDataset.manifest.chips) {
-          if (_stripVisibleChips[c.id]) { chipId = c.id; break; }
-        }
-        if (!chipId && _stripActiveDataset.manifest.chips.length) {
-          chipId = _stripActiveDataset.manifest.chips[0].id;
-        }
-        if (!chipId) return;
-        const handle = stripSonify(_stripActiveDataset, chipId, {}, () => {
+        const chipIds = _stripActiveDataset.manifest.chips
+          .filter((c) => _stripVisibleChips[c.id])
+          .map((c) => c.id);
+        if (!chipIds.length) { alert('No chips selected — toggle some on to hear them.'); return; }
+        const handle = stripSonifyMany(_stripActiveDataset, chipIds, {}, () => {
           sonifyBtn.textContent = '♪ Play';
         });
         if (handle) sonifyBtn.textContent = '■ Stop';
         else alert('Audio is unavailable in this browser (no Web Audio support).');
       });
+      // Volume slider — master gain, applied live to any playing
+      // performance and remembered for the next.
+      const volInput = panel.querySelector('#strip-view-volume') as HTMLInputElement | null;
+      if (volInput) {
+        if (typeof stripSonifyGetMasterVolume === 'function') {
+          volInput.value = String(stripSonifyGetMasterVolume());
+        }
+        volInput.addEventListener('input', () => {
+          if (typeof stripSonifySetMasterVolume === 'function') {
+            stripSonifySetMasterVolume(parseFloat(volInput.value));
+          }
+        });
+      }
     }
     const body = panel.querySelector('#strip-view-body') as HTMLElement;
     if (_stripActiveDataset) _stripRenderDataset(body, _stripActiveDataset);
