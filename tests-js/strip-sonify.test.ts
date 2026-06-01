@@ -215,6 +215,43 @@ describe('strip sonify — live voice update', () => {
   });
 });
 
+describe('strip sonify — pulse / rhythm', () => {
+  it('articulates on a subdivision grid — gates are sparser than the per-step contour', () => {
+    const ds = makeDataset(24);
+    const plan = buildStripSonifyPlan(ds, 'test', { stepDurationMs: 100 });
+    expect(plan.notes.length).toBe(24);                         // per-step pitch contour unchanged
+    expect([2, 3, 4, 6]).toContain(plan.subdiv);                // a musical subdivision
+    expect(plan.gates.length).toBeGreaterThan(0);
+    expect(plan.gates.length).toBeLessThan(plan.notes.length);  // fewer sounded notes than steps = rhythm
+  });
+
+  it('gates are staccato (shorter than their slot) and ordered within the piece', () => {
+    const plan = buildStripSonifyPlan(makeDataset(24), 'test', { stepDurationMs: 100 });
+    const slotSec = plan.subdiv * 0.1;   // subdiv × stepMs(100ms)
+    let prev = -1;
+    for (const g of plan.gates) {
+      expect(g.durSec).toBeLessThan(slotSec);            // a gap before the next → staccato
+      expect(g.tSec).toBeGreaterThanOrEqual(prev);       // time-ordered
+      expect(g.tSec).toBeLessThanOrEqual(plan.durationSec + slotSec);
+      prev = g.tSec;
+    }
+  });
+
+  it('rests when the data holds: a flat trajectory yields far fewer gates than a moving one', () => {
+    const moving = buildStripSonifyPlan(makeDataset(24), 'test', {});
+    const flat = makeDataset(24);
+    flat.chip_data.fill(127);            // constant byte → constant pitch → it holds
+    const flatPlan = buildStripSonifyPlan(flat, 'test', {});
+    expect(flatPlan.gates.length).toBeLessThan(moving.gates.length);
+  });
+
+  it('brightness sets the subdivision — bright voices busier than dim', () => {
+    const bright = buildStripSonifyPlan(makeDataset(24, 0xffffff), 'test', {}); // white = brightest
+    const dim = buildStripSonifyPlan(makeDataset(24, 0x202020), 'test', {});    // near-black
+    expect(bright.subdiv).toBeLessThanOrEqual(dim.subdiv);     // smaller subdiv = more notes/sec
+  });
+});
+
 describe('strip sonify — crystals as struck bells', () => {
   const pcOf = (freq: number) => {
     const midi = Math.round(12 * Math.log2(freq / 440) + 69);
