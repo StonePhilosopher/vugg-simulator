@@ -175,8 +175,15 @@ function buildStripSonifyPlan(
   };
 }
 
-// Singleton playback handle so a new play stops the previous one.
-let _stripSonifyHandle: { stop: () => void } | null = null;
+type StripSonifyHandle = { stop: () => void; setVolume: (v: number) => void };
+
+// Singleton playback handle so a new play stops the previous one. Carries
+// setVolume so the volume slider can adjust a live performance.
+let _stripSonifyHandle: StripSonifyHandle | null = null;
+
+// Master volume (0..1). The slider sets this; it persists between plays
+// and is applied live to any in-progress performance.
+let _stripSonifyMasterVolume = 0.7;
 
 // Is a sonification currently playing?
 function stripSonifyIsPlaying(): boolean { return _stripSonifyHandle !== null; }
@@ -189,43 +196,81 @@ function stripSonifyStop(): void {
   }
 }
 
-// PLAYER: schedule a plan on the Web Audio graph. One continuous
-// oscillator whose frequency jumps per step (setValueAtTime) — the
-// "stepped theremin" — through a master gain with attack/release so it
-// fades in and out cleanly. Browser-only; returns null in headless paths.
-// onEnded fires when playback completes naturally or is stopped.
-function playStripSonifyPlan(
-  plan: StripSonifyPlan, onEnded?: () => void
-): { stop: () => void } | null {
+function stripSonifyGetMasterVolume(): number { return _stripSonifyMasterVolume; }
+
+// Set master volume (0..1). Stored for future plays AND applied live to
+// any in-progress playback. Returns the clamped value.
+function stripSonifySetMasterVolume(v: number): number {
+  const vol = Math.max(0, Math.min(1, Number(v)));
+  _stripSonifyMasterVolume = vol;
+  if (_stripSonifyHandle) { try { _stripSonifyHandle.setVolume(vol); } catch (_e) { /* ignore */ } }
+  return vol;
+}
+
+// Build plans for several chips at once (skips any not in the dataset).
+function buildStripSonifyPlans(
+  ds: StripDataset, chipIds: string[],
+  opts: { stepDurationMs?: number; octaveSpan?: number } = {}
+): StripSonifyPlan[] {
+  const out: StripSonifyPlan[] = [];
+  for (const id of chipIds) {
+    const p = buildStripSonifyPlan(ds, id, opts);
+    if (p) out.push(p);
+  }
+  return out;
+}
+
+// PLAYER: schedule one OR MORE plans as layered voices on a shared
+// timeline. Each plan is one continuous oscillator whose frequency jumps
+// per step (setValueAtTime — the "stepped theremin"); its per-voice gain
+// comes from the chip color (brightness → loudness, THE hierarchy),
+// scaled by 1/sqrt(voiceCount) so a dense selection sums without
+// clipping. All voices feed a master gain set by the volume slider.
+// Browser-only; returns null headless. onEnded fires when the last voice
+// finishes (or on stop).
+function playStripSonifyPlans(
+  plans: StripSonifyPlan[], onEnded?: () => void
+): StripSonifyHandle | null {
   const AC = (globalThis as any).AudioContext || (globalThis as any).webkitAudioContext;
   if (typeof AC !== 'function') return null;
-  stripSonifyStop(); // only one voice at a time in the MVP
+  if (!plans.length) return null;
+  stripSonifyStop();
 
   const ctx = new AC();
   // Browsers create the context suspended until a user gesture; the Play
   // click IS that gesture, so resume immediately.
   try { if (ctx.state === 'suspended' && ctx.resume) ctx.resume(); } catch (_e) { /* ignore */ }
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = plan.waveform;
-  osc.connect(gain).connect(ctx.destination);
+
+  const master = ctx.createGain();
+  master.gain.value = _stripSonifyMasterVolume;
+  master.connect(ctx.destination);
 
   const t0 = ctx.currentTime + 0.06;
   const attack = 0.08, release = 0.18;
-  const end = t0 + Math.max(plan.durationSec, 0.2);
+  const voiceScale = 1 / Math.sqrt(plans.length);   // keep the mix bounded
+  let endMax = t0 + 0.2;
+  const oscs: any[] = [];
 
-  // Pitch contour — instantaneous jumps per step (stepped theremin).
-  if (plan.notes.length) osc.frequency.setValueAtTime(plan.notes[0].freq, t0);
-  for (const n of plan.notes) osc.frequency.setValueAtTime(n.freq, t0 + n.tSec);
-
-  // Amplitude envelope.
-  gain.gain.setValueAtTime(0, t0);
-  gain.gain.linearRampToValueAtTime(plan.voiceGain, t0 + attack);
-  gain.gain.setValueAtTime(plan.voiceGain, Math.max(t0 + attack, end - release));
-  gain.gain.linearRampToValueAtTime(0, end);
-
-  osc.start(t0);
-  osc.stop(end + 0.05);
+  for (const plan of plans) {
+    const osc = ctx.createOscillator();
+    const vg = ctx.createGain();
+    osc.type = plan.waveform;
+    osc.connect(vg).connect(master);
+    const end = t0 + Math.max(plan.durationSec, 0.2);
+    if (end > endMax) endMax = end;
+    // Pitch contour — instantaneous jumps per step.
+    if (plan.notes.length) osc.frequency.setValueAtTime(plan.notes[0].freq, t0);
+    for (const n of plan.notes) osc.frequency.setValueAtTime(n.freq, t0 + n.tSec);
+    // Per-voice envelope (peak = color loudness × mix scale).
+    const peak = plan.voiceGain * voiceScale;
+    vg.gain.setValueAtTime(0, t0);
+    vg.gain.linearRampToValueAtTime(peak, t0 + attack);
+    vg.gain.setValueAtTime(peak, Math.max(t0 + attack, end - release));
+    vg.gain.linearRampToValueAtTime(0, end);
+    osc.start(t0);
+    osc.stop(end + 0.05);
+    oscs.push(osc);
+  }
 
   let done = false;
   const finish = () => {
@@ -235,32 +280,55 @@ function playStripSonifyPlan(
     if (_stripSonifyHandle === handle) _stripSonifyHandle = null;
     if (onEnded) { try { onEnded(); } catch (_e) { /* ignore */ } }
   };
-  osc.onended = finish;
+  // All voices share the same step count → same duration, so any one's
+  // onended marks the end of the performance.
+  oscs[oscs.length - 1].onended = finish;
 
-  const handle = {
+  const handle: StripSonifyHandle = {
     stop() {
       try {
         const now = ctx.currentTime;
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.06);
-        osc.stop(now + 0.08);
+        master.gain.cancelScheduledValues(now);
+        master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), now);
+        master.gain.linearRampToValueAtTime(0, now + 0.06);
+        for (const o of oscs) { try { o.stop(now + 0.08); } catch (_e) { /* ignore */ } }
       } catch (_e) { /* ignore */ }
       finish();
+    },
+    setVolume(v: number) {
+      try { master.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), ctx.currentTime, 0.03); } catch (_e) { /* ignore */ }
     },
   };
   _stripSonifyHandle = handle;
   return handle;
 }
 
-// Convenience: build + play one chip of a dataset. Returns the playback
-// handle, or null if the chip is missing / audio is unavailable.
+// Back-compat single-plan player (delegates to the layered player).
+function playStripSonifyPlan(
+  plan: StripSonifyPlan, onEnded?: () => void
+): StripSonifyHandle | null {
+  return playStripSonifyPlans([plan], onEnded);
+}
+
+// Convenience: build + play one chip.
 function stripSonify(
   ds: StripDataset, chipId: string,
   opts: { stepDurationMs?: number; octaveSpan?: number } = {},
   onEnded?: () => void
-): { stop: () => void } | null {
+): StripSonifyHandle | null {
   const plan = buildStripSonifyPlan(ds, chipId, opts);
   if (!plan) return null;
-  return playStripSonifyPlan(plan, onEnded);
+  return playStripSonifyPlans([plan], onEnded);
+}
+
+// Convenience: build + play several chips layered — color sets each
+// voice's place in the mix. This is "play exactly what's selected."
+function stripSonifyMany(
+  ds: StripDataset, chipIds: string[],
+  opts: { stepDurationMs?: number; octaveSpan?: number } = {},
+  onEnded?: () => void
+): StripSonifyHandle | null {
+  const plans = buildStripSonifyPlans(ds, chipIds, opts);
+  if (!plans.length) return null;
+  return playStripSonifyPlans(plans, onEnded);
 }
