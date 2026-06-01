@@ -1015,6 +1015,17 @@ function _stripRefreshFilmstrip(bodyEl: HTMLElement, ds: StripDataset): void {
       c.innerHTML = _stripRenderStepSVG(ds, step, 1500, 100);
     }
   });
+  // Live sonify (brother-requested 2026-05-31): every chip-selection
+  // change routes through here, so if a performance is playing, resync
+  // its voices to the current selection — toggling a chip adds/removes
+  // its voice in real time, no restart. No-op when not playing.
+  if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()
+      && typeof stripSonifyUpdateVoices === 'function') {
+    const ids = ds.manifest.chips
+      .filter((c) => _stripVisibleChips[c.id] !== false)
+      .map((c) => c.id);
+    stripSonifyUpdateVoices(ds, ids);
+  }
 }
 
 // ============================================================
@@ -1044,6 +1055,7 @@ function initStripView(): void {
             <button class="strip-view-btn" id="strip-view-sonify" title="Play the SELECTED chips as layered sound — value→pitch (pentatonic), color→voice. Let the rocks speak their truth." disabled>🪨 The Rocks Are Screaming</button>
             <label class="strip-view-vol" title="Playback volume" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">🔊<input type="range" id="strip-view-volume" min="0" max="1" step="0.01" value="0.7" style="width:72px; vertical-align:middle;"/></label>
             <label class="strip-view-tempo" title="Playback tempo — drag right to speed up, left to slow down (applies on release / next play)" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">⏱<input type="range" id="strip-view-tempo" min="1" max="8" step="0.5" value="3" style="width:72px; vertical-align:middle;"/></label>
+            <select class="strip-view-btn" id="strip-view-scale" title="Musical scale / mode — pentatonic never clashes; the modes are tavern/dwarven flavor" style="max-width:185px; font-size:11px;"></select>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -1161,6 +1173,26 @@ function initStripView(): void {
           applyTempo();
           if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
             startSonify();   // restart at the new tempo (stripSonifyMany stops the old)
+          }
+        });
+      }
+      // Scale / mode dropdown — populated from the engine's scale registry.
+      // Changing the scale remaps pitch, so (like tempo) it restarts a live
+      // performance at the new mode.
+      const scaleSelect = panel.querySelector('#strip-view-scale') as HTMLSelectElement | null;
+      if (scaleSelect && typeof STRIP_SONIFY_SCALES !== 'undefined') {
+        scaleSelect.innerHTML = '';
+        for (const s of STRIP_SONIFY_SCALES) {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.label;
+          scaleSelect.appendChild(opt);
+        }
+        if (typeof stripSonifyGetScaleId === 'function') scaleSelect.value = stripSonifyGetScaleId();
+        scaleSelect.addEventListener('change', () => {
+          if (typeof stripSonifySetScaleId === 'function') stripSonifySetScaleId(scaleSelect.value);
+          if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
+            startSonify();   // restart in the new mode
           }
         });
       }

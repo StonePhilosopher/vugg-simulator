@@ -31,25 +31,62 @@
 
 // Tempo + voice defaults. stepDurationMs is THE tempo knob.
 const STRIP_SONIFY_DEFAULTS = {
-  stepDurationMs: 140,   // ms per sim step (future tempo slider sets this)
-  octaveSpan: 3,         // pentatonic scale spans this many octaves
+  stepDurationMs: 140,   // ms per sim step (the tempo slider sets this)
+  octaveSpan: 3,         // the scale spans this many octaves
 };
 
-// C-major pentatonic scale degrees, in semitones above the octave root.
-const _STRIP_PENTATONIC = [0, 2, 4, 7, 9];
+// SCALES / MODES (the dropdown). Each is a list of semitone offsets above
+// the octave root. Descriptions cribbed from the fantasy-tavern / dwarven
+// register a musician laid out (2026-05-31):
+//   * Pentatonic — the safe default: 5 notes, NO semitone clashes even
+//     when every chip plays at once. Foolproof for dense selections.
+//   * Mixolydian (major + ♭7) — the rowdy-tavern workhorse. Bright but the
+//     ♭7 keeps it folk/Celtic, not church. (bVII–IV–I session-tune land.)
+//   * Dorian (minor + raised 6th) — sad-but-not-mopey modal ballad
+//     ("Scarborough Fair" territory); the slow tune after a few rounds.
+//   * Aeolian / natural minor — solemn, heavy, marching: dwarven halls.
+//   * Phrygian (♭2, minor 3) — darker, austere.
+//   * Phrygian dominant (♭2, major 3, ♭6, ♭7; 5th mode of harmonic minor)
+//     — carved, exotic, severe: "old and not from around here."
+const STRIP_SONIFY_SCALES: { id: string; label: string; semitones: number[] }[] = [
+  { id: 'major_pentatonic',  label: 'Pentatonic — safe, no clashes', semitones: [0, 2, 4, 7, 9] },
+  { id: 'mixolydian',        label: 'Mixolydian — rowdy tavern',     semitones: [0, 2, 4, 5, 7, 9, 10] },
+  { id: 'dorian',            label: 'Dorian — melancholy ballad',    semitones: [0, 2, 3, 5, 7, 9, 10] },
+  { id: 'aeolian',           label: 'Aeolian — dwarven march',       semitones: [0, 2, 3, 5, 7, 8, 10] },
+  { id: 'phrygian',          label: 'Phrygian — austere',            semitones: [0, 1, 3, 5, 7, 8, 10] },
+  { id: 'phrygian_dominant', label: 'Phrygian dominant — carved',    semitones: [0, 1, 4, 5, 7, 8, 10] },
+];
+
+// Active scale (the dropdown sets this; the convenience players use it
+// when the caller doesn't override opts.scaleId). Default pentatonic.
+let _stripSonifyScaleId = 'major_pentatonic';
+
+function stripSonifyGetScaleId(): string { return _stripSonifyScaleId; }
+
+// Set the active scale by id (must be a known scale). Returns the id in
+// effect afterward.
+function stripSonifySetScaleId(id: string): string {
+  if (STRIP_SONIFY_SCALES.some((s) => s.id === id)) _stripSonifyScaleId = id;
+  return _stripSonifyScaleId;
+}
+
+function _stripSonifyScaleSemitones(id: string): number[] {
+  const s = STRIP_SONIFY_SCALES.find((x) => x.id === id);
+  return s ? s.semitones : STRIP_SONIFY_SCALES[0].semitones;
+}
 
 // MIDI note number → frequency (A4 = MIDI 69 = 440 Hz, equal temperament).
 function _stripSonifyMidiToFreq(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
-// Build the ascending frequency table for a pentatonic scale of
+// Build the ascending frequency table for `semitones` repeated across
 // `octaveSpan` octaves starting at scientific octave `baseOctave`
 // (so baseOctave=4 starts at C4 = MIDI 60). Returns ascending Hz.
-function _stripSonifyPentatonicFreqs(baseOctave: number, octaveSpan: number): number[] {
+function _stripSonifyScaleFreqs(baseOctave: number, octaveSpan: number, semitones: number[]): number[] {
   const out: number[] = [];
   for (let o = 0; o < octaveSpan; o++) {
-    for (const s of _STRIP_PENTATONIC) {
+    for (const s of semitones) {
       const midi = 12 * (baseOctave + o + 1) + s; // C(oct) MIDI = 12*(oct+1)
       out.push(_stripSonifyMidiToFreq(midi));
     }
@@ -148,7 +185,8 @@ interface StripSonifyPlan {
 // PURE: build the playback plan for one chip of a dataset. No audio.
 // Returns null if the chip isn't present or the dataset has no steps.
 function buildStripSonifyPlan(
-  ds: StripDataset, chipId: string, opts: { stepDurationMs?: number; octaveSpan?: number } = {}
+  ds: StripDataset, chipId: string,
+  opts: { stepDurationMs?: number; octaveSpan?: number; scaleId?: string } = {}
 ): StripSonifyPlan | null {
   const found = _stripSonifyFindChip(ds, chipId);
   if (!found) return null;
@@ -156,8 +194,9 @@ function buildStripSonifyPlan(
   if (steps < 1) return null;
   const stepMs = opts.stepDurationMs ?? STRIP_SONIFY_DEFAULTS.stepDurationMs;
   const span = opts.octaveSpan ?? STRIP_SONIFY_DEFAULTS.octaveSpan;
+  const scaleId = opts.scaleId ?? _stripSonifyScaleId;
   const voice = _stripSonifyColorToVoice(found.meta.color >>> 0);
-  const freqs = _stripSonifyPentatonicFreqs(voice.baseOctave, span);
+  const freqs = _stripSonifyScaleFreqs(voice.baseOctave, span, _stripSonifyScaleSemitones(scaleId));
   const contour = _stripSonifyContour(ds, found.idx);
   const notes = contour.map((v, step) => {
     const idx = Math.max(0, Math.min(freqs.length - 1, Math.round(v * (freqs.length - 1))));
@@ -175,7 +214,13 @@ function buildStripSonifyPlan(
   };
 }
 
-type StripSonifyHandle = { stop: () => void; setVolume: (v: number) => void };
+type StripSonifyHandle = {
+  stop: () => void;
+  setVolume: (v: number) => void;
+  addVoice: (plan: StripSonifyPlan) => void;     // live-add a chip mid-performance
+  removeVoice: (chipId: string) => void;          // live-remove a chip
+  setVoices: (plans: StripSonifyPlan[]) => void;  // diff to exactly this set
+};
 
 // Singleton playback handle so a new play stops the previous one. Carries
 // setVolume so the volume slider can adjust a live performance.
@@ -226,7 +271,7 @@ function stripSonifySetStepDuration(ms: number): number {
 // Build plans for several chips at once (skips any not in the dataset).
 function buildStripSonifyPlans(
   ds: StripDataset, chipIds: string[],
-  opts: { stepDurationMs?: number; octaveSpan?: number } = {}
+  opts: { stepDurationMs?: number; octaveSpan?: number; scaleId?: string } = {}
 ): StripSonifyPlan[] {
   const out: StripSonifyPlan[] = [];
   for (const id of chipIds) {
@@ -237,13 +282,23 @@ function buildStripSonifyPlans(
 }
 
 // PLAYER: schedule one OR MORE plans as layered voices on a shared
-// timeline. Each plan is one continuous oscillator whose frequency jumps
-// per step (setValueAtTime — the "stepped theremin"); its per-voice gain
-// comes from the chip color (brightness → loudness, THE hierarchy),
-// scaled by 1/sqrt(voiceCount) so a dense selection sums without
-// clipping. All voices feed a master gain set by the volume slider.
-// Browser-only; returns null headless. onEnded fires when the last voice
-// finishes (or on stop).
+// timeline, with LIVE voice add/remove. Each plan is one continuous
+// oscillator whose frequency jumps per step (setValueAtTime — the
+// "stepped theremin"); its per-voice gain comes from the chip color
+// (brightness → loudness, THE hierarchy), scaled by 1/sqrt(voiceCount)
+// so a dense selection sums without clipping. All voices feed a master
+// gain set by the volume slider.
+//
+// LIVE TOGGLING: every voice schedules its FULL contour relative to the
+// shared t0. Adding a voice mid-performance starts its oscillator NOW but
+// references the same t0, so its past step-events are already applied and
+// it joins at the correct CURRENT pitch — in sync with the others. The
+// per-voice gain fades in/out (setTargetAtTime) so toggling is smooth, and
+// every add/remove rescales the surviving voices to keep the mix bounded.
+//
+// A silent timer oscillator runs the full duration and fires onEnded, so
+// the performance ends cleanly regardless of which voices come and go.
+// Browser-only; returns null headless.
 function playStripSonifyPlans(
   plans: StripSonifyPlan[], onEnded?: () => void
 ): StripSonifyHandle | null {
@@ -262,31 +317,49 @@ function playStripSonifyPlans(
   master.connect(ctx.destination);
 
   const t0 = ctx.currentTime + 0.06;
-  const attack = 0.08, release = 0.18;
-  const voiceScale = 1 / Math.sqrt(plans.length);   // keep the mix bounded
-  let endMax = t0 + 0.2;
-  const oscs: any[] = [];
+  let durationSec = 0.2;
+  for (const p of plans) if (p.durationSec > durationSec) durationSec = p.durationSec;
+  const endTime = t0 + durationSec;
 
-  for (const plan of plans) {
+  // chipId → { osc, gain, plan }
+  const voices = new Map<string, { osc: any; gain: any; plan: StripSonifyPlan }>();
+
+  // Re-target every voice's gain for the current voice count (keeps the
+  // summed mix bounded as voices come and go).
+  const rescale = () => {
+    const scale = 1 / Math.sqrt(Math.max(1, voices.size));
+    const now = ctx.currentTime;
+    for (const v of voices.values()) {
+      try { v.gain.gain.setTargetAtTime(v.plan.voiceGain * scale, now, 0.04); } catch (_e) { /* ignore */ }
+    }
+  };
+
+  const addVoiceInternal = (plan: StripSonifyPlan) => {
+    if (voices.has(plan.chipId)) return;
     const osc = ctx.createOscillator();
-    const vg = ctx.createGain();
+    const g = ctx.createGain();
     osc.type = plan.waveform;
-    osc.connect(vg).connect(master);
-    const end = t0 + Math.max(plan.durationSec, 0.2);
-    if (end > endMax) endMax = end;
-    // Pitch contour — instantaneous jumps per step.
-    if (plan.notes.length) osc.frequency.setValueAtTime(plan.notes[0].freq, t0);
-    for (const n of plan.notes) osc.frequency.setValueAtTime(n.freq, t0 + n.tSec);
-    // Per-voice envelope (peak = color loudness × mix scale).
-    const peak = plan.voiceGain * voiceScale;
-    vg.gain.setValueAtTime(0, t0);
-    vg.gain.linearRampToValueAtTime(peak, t0 + attack);
-    vg.gain.setValueAtTime(peak, Math.max(t0 + attack, end - release));
-    vg.gain.linearRampToValueAtTime(0, end);
-    osc.start(t0);
-    osc.stop(end + 0.05);
-    oscs.push(osc);
-  }
+    osc.connect(g).connect(master);
+    // Full contour relative to the shared t0; past events (for late adds)
+    // are applied immediately so the voice joins at the current pitch.
+    if (plan.notes.length) { try { osc.frequency.setValueAtTime(plan.notes[0].freq, t0); } catch (_e) { /* ignore */ } }
+    for (const n of plan.notes) { try { osc.frequency.setValueAtTime(n.freq, t0 + n.tSec); } catch (_e) { /* ignore */ } }
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0, now);             // rescale() ramps it up to target
+    try { osc.start(t0 > now ? t0 : now); } catch (_e) { /* ignore */ }
+    try { osc.stop(endTime + 0.05); } catch (_e) { /* ignore */ }
+    voices.set(plan.chipId, { osc, gain: g, plan });
+  };
+
+  for (const p of plans) addVoiceInternal(p);
+  rescale();
+
+  // Silent end-timer — survives voice churn and marks the true end.
+  const timer = ctx.createOscillator();
+  const tg = ctx.createGain();
+  tg.gain.value = 0;
+  timer.connect(tg).connect(master);
+  try { timer.start(t0); timer.stop(endTime + 0.06); } catch (_e) { /* ignore */ }
 
   let done = false;
   const finish = () => {
@@ -296,9 +369,7 @@ function playStripSonifyPlans(
     if (_stripSonifyHandle === handle) _stripSonifyHandle = null;
     if (onEnded) { try { onEnded(); } catch (_e) { /* ignore */ } }
   };
-  // All voices share the same step count → same duration, so any one's
-  // onended marks the end of the performance.
-  oscs[oscs.length - 1].onended = finish;
+  timer.onended = finish;
 
   const handle: StripSonifyHandle = {
     stop() {
@@ -307,12 +378,32 @@ function playStripSonifyPlans(
         master.gain.cancelScheduledValues(now);
         master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), now);
         master.gain.linearRampToValueAtTime(0, now + 0.06);
-        for (const o of oscs) { try { o.stop(now + 0.08); } catch (_e) { /* ignore */ } }
+        for (const v of voices.values()) { try { v.osc.stop(now + 0.08); } catch (_e) { /* ignore */ } }
+        try { timer.stop(now + 0.08); } catch (_e) { /* ignore */ }
       } catch (_e) { /* ignore */ }
       finish();
     },
     setVolume(v: number) {
       try { master.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), ctx.currentTime, 0.03); } catch (_e) { /* ignore */ }
+    },
+    addVoice(plan: StripSonifyPlan) {
+      if (done || voices.has(plan.chipId)) return;
+      addVoiceInternal(plan);
+      rescale();
+    },
+    removeVoice(chipId: string) {
+      const v = voices.get(chipId);
+      if (!v) return;
+      const now = ctx.currentTime;
+      try { v.gain.gain.cancelScheduledValues(now); v.gain.gain.setTargetAtTime(0, now, 0.04); } catch (_e) { /* ignore */ }
+      try { v.osc.stop(now + 0.2); } catch (_e) { /* ignore */ }
+      voices.delete(chipId);
+      rescale();
+    },
+    setVoices(newPlans: StripSonifyPlan[]) {
+      const want = new Set(newPlans.map((p) => p.chipId));
+      for (const id of Array.from(voices.keys())) if (!want.has(id)) this.removeVoice(id);
+      for (const p of newPlans) if (!voices.has(p.chipId)) this.addVoice(p);
     },
   };
   _stripSonifyHandle = handle;
@@ -326,14 +417,20 @@ function playStripSonifyPlan(
   return playStripSonifyPlans([plan], onEnded);
 }
 
+// The current module-default opts (tempo + scale), overridable by caller.
+function _stripSonifyDefaultOpts(
+  opts: { stepDurationMs?: number; octaveSpan?: number; scaleId?: string }
+): { stepDurationMs: number; scaleId: string; octaveSpan?: number } {
+  return { stepDurationMs: _stripSonifyStepDurationMs, scaleId: _stripSonifyScaleId, ...opts };
+}
+
 // Convenience: build + play one chip.
 function stripSonify(
   ds: StripDataset, chipId: string,
-  opts: { stepDurationMs?: number; octaveSpan?: number } = {},
+  opts: { stepDurationMs?: number; octaveSpan?: number; scaleId?: string } = {},
   onEnded?: () => void
 ): StripSonifyHandle | null {
-  const o = { stepDurationMs: _stripSonifyStepDurationMs, ...opts };
-  const plan = buildStripSonifyPlan(ds, chipId, o);
+  const plan = buildStripSonifyPlan(ds, chipId, _stripSonifyDefaultOpts(opts));
   if (!plan) return null;
   return playStripSonifyPlans([plan], onEnded);
 }
@@ -342,11 +439,23 @@ function stripSonify(
 // voice's place in the mix. This is "play exactly what's selected."
 function stripSonifyMany(
   ds: StripDataset, chipIds: string[],
-  opts: { stepDurationMs?: number; octaveSpan?: number } = {},
+  opts: { stepDurationMs?: number; octaveSpan?: number; scaleId?: string } = {},
   onEnded?: () => void
 ): StripSonifyHandle | null {
-  const o = { stepDurationMs: _stripSonifyStepDurationMs, ...opts };
-  const plans = buildStripSonifyPlans(ds, chipIds, o);
+  const plans = buildStripSonifyPlans(ds, chipIds, _stripSonifyDefaultOpts(opts));
   if (!plans.length) return null;
   return playStripSonifyPlans(plans, onEnded);
+}
+
+// LIVE: if a performance is playing, update its voice set to exactly
+// `chipIds` (using the current tempo + scale) — adding/removing voices
+// without restarting. No-op if nothing is playing. This is what the chip
+// selector calls when you toggle an element on/off mid-performance.
+function stripSonifyUpdateVoices(
+  ds: StripDataset, chipIds: string[],
+  opts: { stepDurationMs?: number; octaveSpan?: number; scaleId?: string } = {}
+): void {
+  if (!_stripSonifyHandle) return;
+  const plans = buildStripSonifyPlans(ds, chipIds, _stripSonifyDefaultOpts(opts));
+  try { _stripSonifyHandle.setVoices(plans); } catch (_e) { /* ignore */ }
 }
