@@ -748,7 +748,7 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
     // sonify MVP: stop + disable sonify when leaving a dataset.
     if (typeof stripSonifyStop === 'function') stripSonifyStop();
     const sn = document.getElementById('strip-view-sonify') as HTMLButtonElement | null;
-    if (sn) { sn.disabled = true; sn.textContent = '♪ Play'; }
+    if (sn) { sn.disabled = true; sn.textContent = '🪨 The Rocks Are Screaming'; }
     _stripRenderDatasetList(bodyEl);
   });
 
@@ -1041,8 +1041,9 @@ function initStripView(): void {
           <div class="strip-view-header-actions">
             <button class="strip-view-btn" id="strip-view-upload" title="Load a .stripview file from disk">⬆ Upload</button>
             <button class="strip-view-btn" id="strip-view-download" title="Download the active dataset as a .stripview file (gzipped)" disabled>⬇ Download</button>
-            <button class="strip-view-btn" id="strip-view-sonify" title="Play the SELECTED chips as layered sound — value→pitch (pentatonic), color→voice. Let the rocks speak their truth." disabled>♪ Play</button>
+            <button class="strip-view-btn" id="strip-view-sonify" title="Play the SELECTED chips as layered sound — value→pitch (pentatonic), color→voice. Let the rocks speak their truth." disabled>🪨 The Rocks Are Screaming</button>
             <label class="strip-view-vol" title="Playback volume" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">🔊<input type="range" id="strip-view-volume" min="0" max="1" step="0.01" value="0.7" style="width:72px; vertical-align:middle;"/></label>
+            <label class="strip-view-tempo" title="Playback tempo — drag right to speed up, left to slow down (applies on release / next play)" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">⏱<input type="range" id="strip-view-tempo" min="1" max="8" step="0.5" value="3" style="width:72px; vertical-align:middle;"/></label>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -1098,29 +1099,35 @@ function initStripView(): void {
           alert('Strip view export failed: ' + (err as Error).message);
         }
       });
-      // ♪ Play: sonify the trajectory (let the rocks speak). Plays exactly
-      // the chips you've SELECTED in the chip selector — each one a layered
-      // voice (value→pitch, pentatonic; step→time), its line color setting
-      // its place in the mix (hue→register, brightness→loudness). Toggles
-      // Play/Stop; flips back to Play when playback finishes on its own.
-      sonifyBtn.addEventListener('click', () => {
-        if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
-          stripSonifyStop();
-          sonifyBtn.textContent = '♪ Play';
-          return;
-        }
+      // ♪ Play / Stop: sonify exactly the chips SELECTED in the chip
+      // selector — each a layered voice (value→pitch pentatonic; step→time),
+      // its line color setting its place in the mix (hue→register,
+      // brightness→loudness). startSonify is shared by the button and the
+      // tempo slider (which restarts at the new tempo on release).
+      const SONIFY_PLAY_LABEL = '🪨 The Rocks Are Screaming';
+      const SONIFY_STOP_LABEL = '🤫 Silence the Rocks';
+      const TEMPO_BASE_MS = 420;   // speed 3 → 140 ms/step (the default tempo)
+      const startSonify = () => {
         if (!_stripActiveDataset) return;
         const chipIds = _stripActiveDataset.manifest.chips
           .filter((c) => _stripVisibleChips[c.id])
           .map((c) => c.id);
         if (!chipIds.length) { alert('No chips selected — toggle some on to hear them.'); return; }
-        const handle = stripSonifyMany(_stripActiveDataset, chipIds, {}, () => {
-          sonifyBtn.textContent = '♪ Play';
-        });
-        if (handle) sonifyBtn.textContent = '■ Stop';
+        const handle = (typeof stripSonifyMany === 'function')
+          ? stripSonifyMany(_stripActiveDataset, chipIds, {}, () => { sonifyBtn.textContent = SONIFY_PLAY_LABEL; })
+          : null;
+        if (handle) sonifyBtn.textContent = SONIFY_STOP_LABEL;
         else alert('Audio is unavailable in this browser (no Web Audio support).');
+      };
+      sonifyBtn.addEventListener('click', () => {
+        if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
+          stripSonifyStop();
+          sonifyBtn.textContent = SONIFY_PLAY_LABEL;
+        } else {
+          startSonify();
+        }
       });
-      // Volume slider — master gain, applied live to any playing
+      // Volume slider — master gain, applied LIVE to any playing
       // performance and remembered for the next.
       const volInput = panel.querySelector('#strip-view-volume') as HTMLInputElement | null;
       if (volInput) {
@@ -1130,6 +1137,30 @@ function initStripView(): void {
         volInput.addEventListener('input', () => {
           if (typeof stripSonifySetMasterVolume === 'function') {
             stripSonifySetMasterVolume(parseFloat(volInput.value));
+          }
+        });
+      }
+      // Tempo slider — speed multiplier (drag right = faster). Note onsets
+      // are scheduled up front, so tempo can't warp a note already in
+      // flight: 'input' stores it for the next play; 'change' (slider
+      // release) restarts a live performance at the new tempo.
+      const tempoInput = panel.querySelector('#strip-view-tempo') as HTMLInputElement | null;
+      if (tempoInput) {
+        if (typeof stripSonifyGetStepDuration === 'function') {
+          const ms = stripSonifyGetStepDuration();
+          if (ms > 0) tempoInput.value = String(TEMPO_BASE_MS / ms);
+        }
+        const applyTempo = () => {
+          const speed = parseFloat(tempoInput.value) || 3;
+          if (typeof stripSonifySetStepDuration === 'function') {
+            stripSonifySetStepDuration(Math.round(TEMPO_BASE_MS / speed));
+          }
+        };
+        tempoInput.addEventListener('input', applyTempo);
+        tempoInput.addEventListener('change', () => {
+          applyTempo();
+          if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
+            startSonify();   // restart at the new tempo (stripSonifyMany stops the old)
           }
         });
       }

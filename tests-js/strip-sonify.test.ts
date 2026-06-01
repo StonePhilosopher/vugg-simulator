@@ -17,6 +17,8 @@ declare const stripSonifyMany: any;
 declare const stripSonifyIsPlaying: any;
 declare const stripSonifyGetMasterVolume: any;
 declare const stripSonifySetMasterVolume: any;
+declare const stripSonifyGetStepDuration: any;
+declare const stripSonifySetStepDuration: any;
 declare const stripAllocateData: any;
 declare const stripDataIndex: any;
 
@@ -132,6 +134,26 @@ describe('strip sonify — master volume', () => {
     expect(stripSonifySetMasterVolume(2)).toBe(1);     // clamp high
     expect(stripSonifySetMasterVolume(-1)).toBe(0);    // clamp low
     stripSonifySetMasterVolume(original);              // restore
+  });
+});
+
+describe('strip sonify — tempo knob', () => {
+  it('has a sane default and clamps to a musical range; the players honor it', () => {
+    const original = stripSonifyGetStepDuration();
+    expect(original).toBeGreaterThan(0);
+    expect(stripSonifySetStepDuration(80)).toBe(80);
+    expect(stripSonifyGetStepDuration()).toBe(80);
+    // A faster tempo (smaller ms) shortens the timeline — and the
+    // convenience build path picks up the module tempo by default.
+    const ds = makeDataset(8);
+    stripSonifySetStepDuration(100);
+    const slow = buildStripSonifyPlan(ds, 'test', { stepDurationMs: stripSonifyGetStepDuration() });
+    stripSonifySetStepDuration(50);
+    const fast = buildStripSonifyPlan(ds, 'test', { stepDurationMs: stripSonifyGetStepDuration() });
+    expect(fast.durationSec).toBeCloseTo(slow.durationSec / 2, 6);
+    expect(stripSonifySetStepDuration(10)).toBe(30);    // clamp low (min 30)
+    expect(stripSonifySetStepDuration(9999)).toBe(800); // clamp high (max 800)
+    stripSonifySetStepDuration(original);               // restore
   });
 });
 

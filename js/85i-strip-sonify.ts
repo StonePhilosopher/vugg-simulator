@@ -207,6 +207,22 @@ function stripSonifySetMasterVolume(v: number): number {
   return vol;
 }
 
+// Tempo: ms per sim step. The slider sets this; the convenience players
+// (stripSonify / stripSonifyMany) use it when the caller doesn't override
+// opts.stepDurationMs. Note onsets are scheduled up front, so tempo can't
+// be warped mid-note — changing it restarts the performance (the UI does
+// that on slider release). Smaller ms = faster.
+let _stripSonifyStepDurationMs = STRIP_SONIFY_DEFAULTS.stepDurationMs;
+
+function stripSonifyGetStepDuration(): number { return _stripSonifyStepDurationMs; }
+
+// Set tempo (ms/step), clamped to a musical range. Returns clamped value.
+function stripSonifySetStepDuration(ms: number): number {
+  const v = Math.max(30, Math.min(800, Number(ms) || STRIP_SONIFY_DEFAULTS.stepDurationMs));
+  _stripSonifyStepDurationMs = v;
+  return v;
+}
+
 // Build plans for several chips at once (skips any not in the dataset).
 function buildStripSonifyPlans(
   ds: StripDataset, chipIds: string[],
@@ -316,7 +332,8 @@ function stripSonify(
   opts: { stepDurationMs?: number; octaveSpan?: number } = {},
   onEnded?: () => void
 ): StripSonifyHandle | null {
-  const plan = buildStripSonifyPlan(ds, chipId, opts);
+  const o = { stepDurationMs: _stripSonifyStepDurationMs, ...opts };
+  const plan = buildStripSonifyPlan(ds, chipId, o);
   if (!plan) return null;
   return playStripSonifyPlans([plan], onEnded);
 }
@@ -328,7 +345,8 @@ function stripSonifyMany(
   opts: { stepDurationMs?: number; octaveSpan?: number } = {},
   onEnded?: () => void
 ): StripSonifyHandle | null {
-  const plans = buildStripSonifyPlans(ds, chipIds, opts);
+  const o = { stepDurationMs: _stripSonifyStepDurationMs, ...opts };
+  const plans = buildStripSonifyPlans(ds, chipIds, o);
   if (!plans.length) return null;
   return playStripSonifyPlans(plans, onEnded);
 }
