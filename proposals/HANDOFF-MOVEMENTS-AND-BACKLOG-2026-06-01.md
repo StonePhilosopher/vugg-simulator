@@ -118,9 +118,93 @@ function**; real vug chemistry is a **continuously evolving curve**.
   (sim runs ~100–260 steps; real vugs 10³–10⁶ yr). Informed by, not bound to,
   geology.
 
+## Dark observation — what the engine actually does (2026-06-01)
+`tools/movement-dark-observe.mjs` (uncommitted instrument): injects ONE movement
+at RUNTIME onto a scenario (3 variants — A baseline / C trend-only / B trend+OU),
+no committed file touched, no baseline regen. The first faithful step paid off
+and **reframed Phase 1**:
+
+- **F1 — temperature is ALREADY a movement.** `ambient_cooling()` runs EVERY
+  step (85-simulator.ts:673): a cooling drift + stochastic thermal-pulse
+  re-warming, on the **shared `rng`**. So `events:[]` never meant "T is flat."
+  Movements should eventually **subsume** this (declarative TREND+PULSE on the
+  dedicated reproducible stream), not run alongside it. Also: driving T with OU
+  produced chaotic B−C divergence (≈60°C) — **sensitive dependence** through the
+  cooling-mechanic feedback. Don't drive temperature with texture until
+  ambient_cooling is reconciled.
+- **F2 — Eh is frozen at 200 AND INERT.** `EH_DYNAMIC_ENABLED` (20c-chemistry-
+  redox.ts:165) is OFF by default; every redox engine gates on `fluid.O2`, not
+  `fluid.Eh`. **A movement on Eh is a downstream no-op until Phase 4c.** The
+  headline "frozen Eh" is a Phase-4 redox-wiring gap, NOT a movements gap.
+- **F3 — the live lever today is pH.** Nearly flat in baseline (CV 0.02–0.06)
+  yet pivotal (every carbonate/sulfate SI + metal-solubility engine reads it).
+  O2 is also live but already moved by the vadose override in supergene.
+- **THESIS CONFIRMED** — driving pH down (smoothstep TREND −2 + OU σ0.12) makes
+  the SI engines emit **correlated, geologically-correct** element pulses
+  (elements never randomized directly):
+  - `cooling` (closed): pH 6.8→5.4 curve; **Ca CV 0→0.38, CO₃ 0→0.65 UNFROZEN**
+    (acidification dissolves carbonate — textbook); Fe 0.61→0.67, Mn 0.55→0.60.
+  - `supergene_oxidation`: pH 6.8→5.3; **Mn 0.04→0.17 UNFROZEN**, Fe 0.14→0.22,
+    S 0.64→0.76, Ca 0.13→0.42, CO₃ 0.11→0.33 — a meteoric acid front mobilizing
+    metals (faithful: sulfide oxidation → H₂SO₄).
+- **Q2 OU visibility — KEEP IT.** Texture is VISIBLE (3–9× the trend's
+  step-to-step Δ at the smoothstep-flat ends), bounded and mean-reverting
+  (clean-overlay PASS). **ramp-vs-drift is ANSWERED: BOTH** — a smoothstep TREND
+  setpoint + OU texture = the research's moving-setpoint+OU model, confirmed to
+  render at sim resolution.
+- **Correction logged.** An early run mis-set the field path (`'pH'` vs
+  `'fluid.pH'` — paths are relative to `conditions`, fluid fields live under
+  `conditions.fluid.*`) → the controller silently skipped (base NaN). I
+  mis-attributed the no-op to open-atmosphere pH re-solve; verified WRONG — only
+  `naica` is `open_to_atmosphere`. Mechanism beats plausible narration.
+
+**Open decisions REFRAMED for Phase 1** (was: scenario + ramp-vs-drift):
+  1. **Strategy fork** — (a) drive **pH now** (the live lever; correlated pulses
+     today) vs (b) flip `EH_DYNAMIC_ENABLED` / do Phase 4c FIRST so **Eh** becomes
+     the master redox variable (bigger; addresses the frozen-Eh headline directly).
+  2. **Pilot scenario** — `supergene_oxidation` (faithful meteoric front,
+     recommended) vs `cooling` (max carbonate unfreeze) vs other.
+  3. ramp-vs-drift — **resolved: keep the OU texture** (visible + bounded).
+
+## Phase 4c — MAKE Eh LIVE (boss chose this 2026-06-02, before any pilot)
+Boss decision: wire Eh to actually drive chemistry FIRST, then pilot a movement
+on **`mvt`**. Rationale: a movement on an inert variable is a no-op; make it
+physical first. Scoping found the redox migration is far more complete than its
+comments suggested — the per-class helpers (sulfate/hydroxide/oxide×3/arsenate/
+carbonate×3/sulfide×3/molybdate/phosphate/silicate/native×4) are **fully wired at
+250+ call sites**, all flag-gated with a `fluid.O2` passthrough. The keystone gap:
+**`fluid.Eh` is written once at init and never synced** — so flipping the flag with
+frozen Eh feeds every engine a constant fake O2. The fix stages cleanly because
+`ehFromO2`/`o2FromEh` are **exact inverses for O2 ∈ [0.05, 5]** (0.000% round-trip;
+diverges only above O2=5, unreachable by any scenario → clamp in 4c.2).
+
+- **✅ 4c.1 — Eh observer sync (DONE, byte-identical, NO SIM bump).**
+  `_syncRedoxEh()` (85c) sets `fluid.Eh = ehFromO2(fluid.O2)` on every container
+  (ring_fluids + voxels/mesh.cells), called at the END of run_step (after
+  diffusion, before strip capture). Flag stays OFF → nothing reads Eh → seed-42
+  byte-identical (calibration green) AND Eh not in the strip digest (also green,
+  no regen). Eh now UNFREEZES on the strip (supergene Eh CV 0→0.22 tracking O2;
+  cooling O2-flat→Eh pins at −75, correct). 3 tripwires in redox.test.ts.
+- **4c.2 — flip `EH_DYNAMIC_ENABLED`.** Engines consume Eh → `o2FromEh(Eh)` = O2
+  (exact in-range). MUST add an EARLY sync (before nucleation/dissolution) — 4c.1's
+  sync is end-of-step, but flag-ON engines read Eh mid-step → one-step lag + step-1
+  init-200 otherwise. Clamp O2≤5. SIM bump + seed-42/strip regen; verify byte-ident
+  or characterize boundary drift.
+- **4c.3 — Eh drivable (canonical fork) + `mvt` Eh-movement pilot.** Decide
+  O2-canonical+Eh-view vs Eh-canonical+O2-view so a movement on Eh propagates
+  (a naive Eh movement would be overwritten by the O2→Eh sync). Then pilot.
+- **Latent note:** even flag-ON, the helpers use the coarse `ehFromO2` bijection,
+  NOT the principled Nernst couples (`REDOX_COUPLES`/`redoxFraction`, built in 4a,
+  still uncalled). Richer per-couple redox is a later refinement, not 4c.
+
 ## Verification tools (this project)
 - `tools/broth-stability-probe.mjs` — re-run after each migration; the flat-%
-  should drop and the volatile (redox-led) elements should move.
+  should drop and the volatile (redox-led) elements should move. NB: much of the
+  baseline "flat %" is spectator ions (Na/K/Mg/Cl) + inert Eh — not all stasis is
+  a defect. The pivotal-but-flat fields (Ca/CO₃/Mn in closed scenarios) are the
+  real targets, and a single pH movement unfreezes them.
+- `tools/movement-dark-observe.mjs` — the A/C/B observation harness above; run
+  before opting any scenario in, to ground the oracle and pick field + amplitude.
 - The strip view + sonifier ARE the look+listen instruments for the pilot.
 
 ---

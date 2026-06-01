@@ -292,6 +292,58 @@ _diffuseRingState(rate?) {
     return grid ? grid.sampleFluid(r, c, depth, field) : NaN;
   },
 
+  // ====================================================================
+  // PROPOSAL-GEOLOGICAL-ACCURACY Phase 4c.1 — keep fluid.Eh in sync with
+  // the fluid's redox proxy (fluid.O2) every step.
+  //
+  // Until 4c.1, fluid.Eh was written once at init (20-chemistry-fluid.ts:
+  // `this.Eh = opts.Eh ?? 200`) and then FROZEN, while fluid.O2 — the
+  // variable every redox engine actually reads — moved underneath it. So
+  // the strip's Eh chip showed a dead flat line at 200 even as the redox
+  // state swung. This derives Eh from O2 via the SAME ehFromO2 anchor map
+  // the flag-ON redox helpers (20c) invert, so when EH_DYNAMIC_ENABLED
+  // flips in 4c.2 the engines read back the identical O2 (ehFromO2 /
+  // o2FromEh are exact inverses for O2 ∈ [0.05, 5], which covers every
+  // scenario; the top saturation segment diverges and is clamped in 4c.2).
+  //
+  // OBSERVER-ONLY while the flag is OFF: nothing in flag-OFF mode reads
+  // fluid.Eh (redoxFraction is uncalled; the per-class helpers read O2),
+  // so this does NOT touch seed-42 crystal output — it only makes the
+  // recorded/displayed Eh correct. Runs at step END (after diffusion, in
+  // run_step) so the value the strip records reflects the step's final O2.
+  // Walks every container the strip can read: the per-ring fluids
+  // (conditions.fluid is the equator alias) + every voxel (d=0 aliases
+  // mesh.cells[].fluid; d≥1 are the interior slices), with a mesh.cells
+  // fallback for headless paths that have no voxel grid.
+  _syncRedoxEh() {
+    const rf = this.ring_fluids;
+    if (rf) {
+      for (let i = 0; i < rf.length; i++) {
+        const f = rf[i];
+        if (f && typeof f.O2 === 'number') f.Eh = ehFromO2(f.O2);
+      }
+    }
+    const grid = this.wall_state && this.wall_state.voxelGridFor
+      ? this.wall_state.voxelGridFor(this) : null;
+    if (grid && grid.voxels && grid.voxels.length) {
+      const vox = grid.voxels;
+      for (let i = 0; i < vox.length; i++) {
+        const f = vox[i] && vox[i].fluid;
+        if (f && typeof f.O2 === 'number') f.Eh = ehFromO2(f.O2);
+      }
+    } else {
+      // No grid (headless harness) — d=0 wall fluids live on mesh.cells.
+      const mesh = this.wall_state && this.wall_state.meshFor
+        ? this.wall_state.meshFor(this) : null;
+      if (mesh && mesh.cells) {
+        for (let i = 0; i < mesh.cells.length; i++) {
+          const f = mesh.cells[i] && mesh.cells[i].fluid;
+          if (f && typeof f.O2 === 'number') f.Eh = ehFromO2(f.O2);
+        }
+      }
+    }
+  },
+
   _repaintWallState() {
   // Rebuild ring-0 occupancy from the crystal list. Cheap (~120 × ~20)
   // and keeps per-cell thickness consistent with dissolution / enclosure.

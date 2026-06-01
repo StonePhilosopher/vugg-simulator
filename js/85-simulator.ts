@@ -681,6 +681,13 @@ class VugSimulator {
     // this preserves byte-equality for default scenarios.
     this._diffuseRingState();
 
+    // PROPOSAL-GEOLOGICAL-ACCURACY Phase 4c.1 — sync fluid.Eh from O2 on
+    // every container AFTER diffusion settles O2, so the value the strip
+    // records below reflects the step's final redox state (Eh was frozen
+    // at init before this). Observer-only while EH_DYNAMIC_ENABLED is off
+    // (nothing reads Eh in flag-OFF mode) → seed-42 byte-identical.
+    this._syncRedoxEh();
+
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).
     // When a StripRecorder is attached to the sim, capture one step's

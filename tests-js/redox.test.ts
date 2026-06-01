@@ -33,6 +33,9 @@ declare const carbonateRedoxPenalty: any;
 declare const sulfideRedoxAnoxic: any;
 declare const sulfideRedoxLinearFactor: any;
 declare const sulfideRedoxTent: any;
+declare const VugSimulator: any;
+declare const SCENARIOS: any;
+declare const setSeed: any;
 
 describe('redox infrastructure (Phase 4a)', () => {
   it('flag is OFF in v26 — engines still gate on fluid.O2', () => {
@@ -374,6 +377,60 @@ describe('Phase 4b sulfide redox helpers', () => {
       const f = new FluidChemistry({ O2 });
       const expected = Math.max(0.3, 1.3 - Math.abs(O2 - 0.8));
       expect(sulfideRedoxTent(f, 0.8, 1.3, 1.0, 0.3)).toBeCloseTo(expected, 6);
+    }
+  });
+});
+
+describe('Phase 4c.1 — fluid.Eh tracks O2 every step (observer sync)', () => {
+  // Until 4c.1, fluid.Eh was written once at init and FROZEN, so the
+  // strip's Eh chip showed a dead flat line at +200 while O2 (the
+  // variable the engines actually read) moved underneath it. _syncRedoxEh
+  // (85c, called at the end of run_step) now derives Eh = ehFromO2(O2) on
+  // every fluid container. Observer-only while EH_DYNAMIC_ENABLED is off:
+  // nothing reads Eh in flag-OFF mode, so seed-42 crystal output is
+  // byte-identical (locked by calibration.test.ts) — this only makes the
+  // recorded/displayed Eh correct. These tests are the tripwire against a
+  // future change silently re-freezing Eh, and they pin the exact
+  // invariant the 4c.2 flag-flip relies on.
+
+  it('the bulk Eh equals ehFromO2(O2) at the end of every step, and is no longer pinned at +200', () => {
+    expect(EH_DYNAMIC_ENABLED).toBe(false);   // still observer-only at 4c.1
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.supergene_oxidation();
+    const sim = new VugSimulator(conditions, events);
+    const ehs: number[] = [];
+    for (let s = 0; s < 40; s++) {
+      sim.run_step();
+      const f = sim.conditions.fluid;
+      // _syncRedoxEh is the last fluid mutation in run_step → exact.
+      expect(f.Eh).toBeCloseTo(ehFromO2(f.O2), 6);
+      ehs.push(f.Eh);
+    }
+    // O2 swings in supergene → Eh moved off the frozen +200 default.
+    expect(new Set(ehs.map((x) => Math.round(x))).size).toBeGreaterThan(1);
+    expect(ehs.some((x) => Math.abs(x - 200) > 1)).toBe(true);
+  });
+
+  it('a flat-O2 scenario pins Eh at ehFromO2(O2) — correct, not the init +200', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.cooling();
+    const sim = new VugSimulator(conditions, events);
+    for (let s = 0; s < 20; s++) sim.run_step();
+    const f = sim.conditions.fluid;
+    expect(f.Eh).toBeCloseTo(ehFromO2(f.O2), 6);
+    expect(f.Eh).toBeLessThan(0);   // cooling O2≈0.1 → Eh≈-75, not +200
+  });
+
+  it('the sync reaches per-cell fluids (a wall voxel\'s Eh matches its own O2)', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.supergene_oxidation();
+    const sim = new VugSimulator(conditions, events);
+    for (let s = 0; s < 30; s++) sim.run_step();
+    const equator = Math.floor(sim.wall_state.ring_count / 2);
+    const cell = typeof sim.fluidAtVoxel === 'function'
+      ? sim.fluidAtVoxel(equator, 0, 0) : null;
+    if (cell && typeof cell.O2 === 'number') {
+      expect(cell.Eh).toBeCloseTo(ehFromO2(cell.O2), 6);
     }
   });
 });
