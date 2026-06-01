@@ -136,6 +136,13 @@ function _ensureStripViewStyles(): void {
       border-radius: 3px;
     }
     .strip-view-btn:hover { background: rgba(120, 140, 180, 0.4); }
+    /* The scale/mode <select> uses .strip-view-btn (light #cde text). The
+       native dropdown POPUP renders options on the OS's white background,
+       so that light text was white-on-white — invisible until an option was
+       highlighted. Pin an opaque dark background + light text on the select
+       AND its options so the list is readable in both states. */
+    #strip-view-scale { background: #1b2436; color: #cde; }
+    #strip-view-scale option { background: #1b2436; color: #cde; }
     .strip-view-body {
       flex: 1;
       overflow: auto;

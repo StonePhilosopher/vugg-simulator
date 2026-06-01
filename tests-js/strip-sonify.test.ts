@@ -308,6 +308,108 @@ describe('strip sonify — crystals as struck bells', () => {
   });
 });
 
+describe('strip sonify — stereo pan from angular position', () => {
+  // A dataset with `A` angular sub-strips where the chip's value is loaded
+  // heavily on ONE sub-strip (`loadAngle`) and light elsewhere — a lopsided
+  // ring. height collapsed to 1 for clarity.
+  function makePanDataset(steps: number, loadAngle: number, A = 4): any {
+    const axes = { steps, angular_indices: A, height_positions: 1, depth_positions: 1 };
+    const chips = [{ id: 'test', label: 'Test', system: 'special', range: [0, 1], units: '', color: 0xff0000 }];
+    const data = stripAllocateData(axes, 1);
+    for (let s = 0; s < steps; s++) {
+      for (let a = 0; a < A; a++) {
+        data[stripDataIndex(s, a, 0, 0, axes, 1, 0)] = (a === loadAngle) ? 240 : 20;
+      }
+    }
+    return {
+      manifest: { format_version: 2, sim_version: 167, scenario_id: 'pan', seed: 42, recorded_at: 0, duration_steps: steps, axes, chips },
+      chip_data: data, nucleation_events: [],
+    };
+  }
+
+  it('emits one pan per step, all within [-1, 1]', () => {
+    const plan = buildStripSonifyPlan(makePanDataset(12, 1), 'test', {});
+    expect(plan.pans.length).toBe(12);
+    for (const p of plan.pans) {
+      expect(p.pan).toBeGreaterThanOrEqual(-1);
+      expect(p.pan).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('a spatially-uniform field sits dead center (the sines cancel)', () => {
+    // makeDataset loads every angle identically → centroid is centered.
+    const plan = buildStripSonifyPlan(makeDataset(8), 'test', {});
+    for (const p of plan.pans) expect(Math.abs(p.pan)).toBeLessThan(1e-9);
+  });
+
+  it('a lopsided field leans toward the loaded side (right vs left)', () => {
+    // A=4: sub-strip 1 is at +90° (sin=+1, hard right), sub-strip 3 at
+    // -90° (sin=-1, hard left).
+    const right = buildStripSonifyPlan(makePanDataset(8, 1), 'test', {});
+    const left = buildStripSonifyPlan(makePanDataset(8, 3), 'test', {});
+    expect(right.pans[4].pan).toBeGreaterThan(0.3);
+    expect(left.pans[4].pan).toBeLessThan(-0.3);
+    expect(right.pans[4].pan).toBeCloseTo(-left.pans[4].pan, 6);   // mirror image
+  });
+
+  it('crystal bells pan to where they nucleated around the ring', () => {
+    const ds = makeDataset(8);
+    ds.nucleation_events = [
+      { step: 1, ring: 0, cell: 0, mineral: 'm' },    // 0° → center
+      { step: 2, ring: 0, cell: 30, mineral: 'm' },   // +90° → hard right (sin=+1)
+      { step: 3, ring: 0, cell: 90, mineral: 'm' },   // -90° → hard left (sin=-1)
+    ];
+    const hits = buildStripCrystalHits(ds, {}, { colorOf: () => 0xff0000, sizeOf: () => 2 });
+    expect(hits[0].pan).toBeCloseTo(0, 6);
+    expect(hits[1].pan).toBeCloseTo(1, 6);
+    expect(hits[2].pan).toBeCloseTo(-1, 6);
+  });
+});
+
+describe('strip sonify — continuous (raw rock) honesty dial', () => {
+  it('is registered as a selectable mode with empty semitones (the sentinel)', () => {
+    const cont = STRIP_SONIFY_SCALES.find((s: any) => s.id === 'continuous');
+    expect(cont).toBeTruthy();
+    expect(cont.semitones).toEqual([]);
+    expect(stripSonifySetScaleId('continuous')).toBe('continuous');  // accepted by the setter
+    stripSonifySetScaleId('major_pentatonic');                       // restore
+  });
+
+  it('glides (no scale, no rhythm): one sustained gate + glide flag', () => {
+    const plan = buildStripSonifyPlan(makeDataset(16), 'test', { scaleId: 'continuous', stepDurationMs: 100 });
+    expect(plan.glide).toBe(true);
+    expect(plan.gates.length).toBe(1);                       // one sustained tone, not plucks
+    expect(plan.gates[0].durSec).toBeCloseTo(plan.durationSec, 6);
+    // A normal scale is NOT glide and DOES pluck.
+    const scaled = buildStripSonifyPlan(makeDataset(16), 'test', { scaleId: 'major_pentatonic', stepDurationMs: 100 });
+    expect(scaled.glide).toBe(false);
+    expect(scaled.gates.length).toBeGreaterThan(1);
+  });
+
+  it('is unquantized: a rising ramp climbs more distinct pitches than the snapped scale', () => {
+    const ds = makeDataset(16);
+    const cont = buildStripSonifyPlan(ds, 'test', { scaleId: 'continuous' });
+    const pent = buildStripSonifyPlan(ds, 'test', { scaleId: 'major_pentatonic' });
+    const distinct = (p: any) => new Set(p.notes.map((n: any) => Math.round(n.freq * 100))).size;
+    // 16-step ramp → 16 distinct raw pitches; pentatonic snaps to far fewer.
+    expect(distinct(cont)).toBeGreaterThan(distinct(pent));
+    // Monotonic non-decreasing (tracks the rising contour) + positive.
+    for (let i = 1; i < cont.notes.length; i++) {
+      expect(cont.notes[i].freq).toBeGreaterThanOrEqual(cont.notes[i - 1].freq);
+    }
+    for (const n of cont.notes) expect(n.freq).toBeGreaterThan(0);
+  });
+
+  it('crystal bells in continuous mode still ring (hue → smooth pitch, no NaN)', () => {
+    const ds = makeDataset(8);
+    ds.nucleation_events = [{ step: 1, ring: 0, cell: 10, mineral: 'm' }];
+    const hits = buildStripCrystalHits(ds, { scaleId: 'continuous' }, { colorOf: () => 0x00ff00, sizeOf: () => 3 });
+    expect(hits.length).toBe(1);
+    expect(Number.isFinite(hits[0].freq)).toBe(true);
+    expect(hits[0].freq).toBeGreaterThan(0);
+  });
+});
+
 describe('strip sonify — player degrades gracefully headless', () => {
   it('players return null when there is no AudioContext (jsdom)', () => {
     const ds = makeDataset(8);

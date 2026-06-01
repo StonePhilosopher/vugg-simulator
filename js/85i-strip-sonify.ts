@@ -55,7 +55,39 @@ const STRIP_SONIFY_SCALES: { id: string; label: string; semitones: number[] }[] 
   { id: 'aeolian',           label: 'Aeolian — dwarven march',       semitones: [0, 2, 3, 5, 7, 8, 10] },
   { id: 'phrygian',          label: 'Phrygian — austere',            semitones: [0, 1, 3, 5, 7, 8, 10] },
   { id: 'phrygian_dominant', label: 'Phrygian dominant — carved',    semitones: [0, 1, 4, 5, 7, 8, 10] },
+  // THE HONESTY DIAL (boss, 2026-06-01): "the aesthetic can improve, but I
+  // want it honest to the vugg." Every other entry quantizes the chemistry
+  // to a playable scale — a human tuning laid over the rock. `continuous`
+  // is the OTHER pole: NO scale, NO rhythm. The value glides smoothly across
+  // the register as a raw microtonal theremin — the unvarnished reading of
+  // the data. Less "musical", more true. The empty semitones[] is the
+  // sentinel the plan builder checks (_stripSonifyIsContinuous).
+  { id: 'continuous',        label: 'Continuous — raw rock (no scale)', semitones: [] },
 ];
+
+// The wall's universal native angular resolution (cells_per_ring). Used to
+// convert a nucleation event's `cell` index → an azimuth for stereo pan.
+// Every scenario uses 120 (22-geometry-wall), and the strip dataset doesn't
+// (yet) carry the value, so crystal azimuth assumes it. If a scenario ever
+// overrides cells_per_ring, crystal pan stays spread but its absolute angle
+// would scale — acceptable, and noted.
+const _STRIP_SONIFY_CELLS_PER_RING = 120;
+
+// Is this the unquantized "raw rock" mode? (the honesty dial's far pole)
+function _stripSonifyIsContinuous(scaleId: string): boolean {
+  if (scaleId === 'continuous') return true;
+  const s = STRIP_SONIFY_SCALES.find((x) => x.id === scaleId);
+  return !!s && s.semitones.length === 0;
+}
+
+// Continuous (unquantized) value→frequency: v∈0..1 maps smoothly across
+// `span` octaves up from scientific octave `baseOctave`. No scale snapping —
+// the literal pitch of the chemistry.
+function _stripSonifyContinuousFreq(baseOctave: number, span: number, v: number): number {
+  const baseMidi = 12 * (baseOctave + 1);             // C(baseOctave) in MIDI
+  const midi = baseMidi + Math.max(0, Math.min(1, v)) * span * 12;
+  return _stripSonifyMidiToFreq(midi);
+}
 
 // Active scale (the dropdown sets this; the convenience players use it
 // when the caller doesn't override opts.scaleId). Default pentatonic.
@@ -171,9 +203,55 @@ function _stripSonifyContour(ds: StripDataset, chipIdx: number): number[] {
   return out;
 }
 
+// Per step, the chip's VALUE-WEIGHTED angular centroid projected to stereo
+// (the boss's "pan from angular position", 2026-06-01). The strip already
+// fans the cavity into `angular_indices` sub-strips; this asks "which side
+// of the void is this chip leaning toward right now?" and pans the voice
+// there. A circular value-weighted mean over the ring, projected to the
+// left-right axis as sin(θ̄):
+//   pan = Σ_a v_a·sin(θ_a) / Σ_a v_a ,  θ_a = 2π·a/angular_indices
+// Uniform chemistry → the sines cancel → 0 (dead center, honest: a
+// spatially-uniform field has no side). A lopsided field leans toward the
+// loaded side. sin() is the true stereo projection of an azimuth (front and
+// back both collapse to center — inherent to 2-channel without HRTF, and
+// honest about it). Holds the last value across all-null steps. Returns one
+// pan ∈ [-1,1] per step, parallel to the contour.
+function _stripSonifyPanContour(ds: StripDataset, chipIdx: number): number[] {
+  const ax = ds.manifest.axes;
+  const A = Math.max(1, ax.angular_indices);
+  const chipCount = ds.manifest.chips.length;
+  const out: number[] = [];
+  let hold = 0;
+  // Precompute the per-sub-strip sin/cos so we don't recompute per step.
+  const sinA: number[] = [], cosA: number[] = [];
+  for (let a = 0; a < A; a++) { const th = (2 * Math.PI * a) / A; sinA.push(Math.sin(th)); cosA.push(Math.cos(th)); }
+  for (let step = 0; step < ax.steps; step++) {
+    let sy = 0, sw = 0;
+    for (let a = 0; a < A; a++) {
+      let sum = 0, n = 0;
+      for (let h = 0; h < ax.height_positions; h++) {
+        const li = stripDataIndex(step, a, h, chipIdx, ax, chipCount, 0);
+        if (li < 0) continue;
+        const v = stripDequantizeNormalized(ds.chip_data[li]);
+        if (v === null) continue;
+        sum += v; n++;
+      }
+      if (n === 0) continue;
+      const va = sum / n;
+      sy += va * sinA[a]; sw += va;
+    }
+    const pan = sw > 1e-9 ? Math.max(-1, Math.min(1, sy / sw)) : hold;
+    hold = pan;
+    out.push(pan);
+  }
+  return out;
+}
+
 interface StripSonifyPlan {
   notes: { tSec: number; freq: number }[];   // per-step pitch contour (drives freq)
   gates: { tSec: number; durSec: number }[]; // RHYTHM: when the voice actually sounds
+  pans: { tSec: number; pan: number }[];     // per-step stereo position (-1..1 from angular centroid)
+  glide: boolean;                            // continuous (raw) mode: ramp pitch + sustain, no plucks
   subdiv: number;                            // this voice's rhythmic subdivision (steps/note)
   durationSec: number;
   voiceGain: number;
@@ -225,40 +303,62 @@ function buildStripSonifyPlan(
   const stepMs = opts.stepDurationMs ?? STRIP_SONIFY_DEFAULTS.stepDurationMs;
   const span = opts.octaveSpan ?? STRIP_SONIFY_DEFAULTS.octaveSpan;
   const scaleId = opts.scaleId ?? _stripSonifyScaleId;
+  const continuous = _stripSonifyIsContinuous(scaleId);
   const voice = _stripSonifyColorToVoice(found.meta.color >>> 0);
-  const freqs = _stripSonifyScaleFreqs(voice.baseOctave, span, _stripSonifyScaleSemitones(scaleId));
   const contour = _stripSonifyContour(ds, found.idx);
-  // Per-step pitch contour (drives the oscillator frequency).
-  const toIdx = (v: number) => Math.max(0, Math.min(freqs.length - 1, Math.round(v * (freqs.length - 1))));
-  const notes = contour.map((v, step) => ({ tSec: (step * stepMs) / 1000, freq: freqs[toIdx(v)] }));
+  const panContour = _stripSonifyPanContour(ds, found.idx);
+  const pans = panContour.map((pan, step) => ({ tSec: (step * stepMs) / 1000, pan }));
+  const durationSec = (steps * stepMs) / 1000;
 
-  // RHYTHM: walk the grid at this voice's subdivision; emit a gate (a
-  // sounded note) when the pitch index CHANGES, or every maxRest slots so
-  // a steady-but-present voice keeps a sparse heartbeat. Offbeats swing.
-  const subdiv = _stripSonifySubdivForVoice(voice.voiceGain);
-  const slotMs = subdiv * stepMs;
-  const noteDurSec = Math.min(slotMs * STRIP_RHYTHM.gateFrac, stepMs * 1.4) / 1000;
-  const gates: { tSec: number; durSec: number }[] = [];
-  let lastIdx = -1;
-  let sinceGate = STRIP_RHYTHM.maxRest;   // force a gate on the first slot
-  let slot = 0;
-  for (let step = 0; step < steps; step += subdiv, slot++) {
-    const idx = toIdx(contour[step]);
-    if (idx !== lastIdx || sinceGate >= STRIP_RHYTHM.maxRest) {
-      const swingSec = (slot % 2 === 1) ? (STRIP_RHYTHM.swing * slotMs) / 1000 : 0;
-      gates.push({ tSec: (step * stepMs) / 1000 + swingSec, durSec: noteDurSec });
-      lastIdx = idx;
-      sinceGate = 0;
-    } else {
-      sinceGate++;
+  let notes: { tSec: number; freq: number }[];
+  let gates: { tSec: number; durSec: number }[];
+  let subdiv: number;
+
+  if (continuous) {
+    // RAW ROCK: unquantized log-pitch glide, sustained (no scale, no
+    // plucks). One long gate; the player ramps freq between steps (glide).
+    notes = contour.map((v, step) => ({
+      tSec: (step * stepMs) / 1000,
+      freq: _stripSonifyContinuousFreq(voice.baseOctave, span, v),
+    }));
+    gates = [{ tSec: 0, durSec: durationSec }];
+    subdiv = Math.max(1, steps);
+  } else {
+    const freqs = _stripSonifyScaleFreqs(voice.baseOctave, span, _stripSonifyScaleSemitones(scaleId));
+    // Per-step pitch contour (drives the oscillator frequency).
+    const toIdx = (v: number) => Math.max(0, Math.min(freqs.length - 1, Math.round(v * (freqs.length - 1))));
+    notes = contour.map((v, step) => ({ tSec: (step * stepMs) / 1000, freq: freqs[toIdx(v)] }));
+
+    // RHYTHM: walk the grid at this voice's subdivision; emit a gate (a
+    // sounded note) when the pitch index CHANGES, or every maxRest slots so
+    // a steady-but-present voice keeps a sparse heartbeat. Offbeats swing.
+    subdiv = _stripSonifySubdivForVoice(voice.voiceGain);
+    const slotMs = subdiv * stepMs;
+    const noteDurSec = Math.min(slotMs * STRIP_RHYTHM.gateFrac, stepMs * 1.4) / 1000;
+    gates = [];
+    let lastIdx = -1;
+    let sinceGate = STRIP_RHYTHM.maxRest;   // force a gate on the first slot
+    let slot = 0;
+    for (let step = 0; step < steps; step += subdiv, slot++) {
+      const idx = toIdx(contour[step]);
+      if (idx !== lastIdx || sinceGate >= STRIP_RHYTHM.maxRest) {
+        const swingSec = (slot % 2 === 1) ? (STRIP_RHYTHM.swing * slotMs) / 1000 : 0;
+        gates.push({ tSec: (step * stepMs) / 1000 + swingSec, durSec: noteDurSec });
+        lastIdx = idx;
+        sinceGate = 0;
+      } else {
+        sinceGate++;
+      }
     }
   }
 
   return {
     notes,
     gates,
+    pans,
+    glide: continuous,
     subdiv,
-    durationSec: (steps * stepMs) / 1000,
+    durationSec,
     voiceGain: voice.voiceGain,
     waveform: voice.waveform,
     baseOctave: voice.baseOctave,
@@ -379,6 +479,7 @@ function _stripSonifyHash(s: string): number {
 interface StripCrystalHit {
   tSec: number; freq: number; gain: number; decay: number;
   waveform: OscillatorType; mineral: string;
+  pan: number;   // stereo azimuth from the nucleation cell (where in the void it formed)
 }
 
 // Build the struck-bell schedule from a dataset's nucleation_events.
@@ -392,7 +493,9 @@ function buildStripCrystalHits(
   const events = (ds && ds.nucleation_events) || [];
   if (!events.length) return [];
   const stepMs = opts.stepDurationMs ?? _stripSonifyStepDurationMs;
-  const semis = _stripSonifyScaleSemitones(opts.scaleId ?? _stripSonifyScaleId);
+  const scaleId = opts.scaleId ?? _stripSonifyScaleId;
+  const continuous = _stripSonifyIsContinuous(scaleId);
+  const semis = _stripSonifyScaleSemitones(scaleId);
   const colorOf = resolvers.colorOf || _stripSonifyMineralColor;
   const sizeOf = resolvers.sizeOf || _stripSonifyMineralSize;
   const LO = Math.log10(0.5), HI = Math.log10(100);   // size→0..1 over 0.5..100 cm
@@ -402,10 +505,17 @@ function buildStripCrystalHits(
     const voice = _stripSonifyColorToVoice((colorOf(ev.mineral) >>> 0) || 0x888888);
     const sizeCm = Math.max(0.05, Number(sizeOf(ev.mineral)) || 2);
     const sizeNorm = Math.max(0, Math.min(1, (Math.log10(sizeCm) - LO) / (HI - LO)));
-    // color HUE → scale degree (the note); size → octave (big = lower).
-    const degIdx = Math.min(semis.length - 1, Math.floor((voice.hue / 360) * semis.length));
     const octave = Math.max(2, Math.min(6, 5 - Math.round(sizeNorm * 2)));   // small→5, big→3
-    const freq = _stripSonifyMidiToFreq(12 * (octave + 1) + semis[degIdx]);
+    // color HUE → pitch. Scale modes snap to a degree; continuous mode maps
+    // hue smoothly across ~1.5 octaves above the size octave (honest pole).
+    const freq = continuous
+      ? _stripSonifyMidiToFreq(12 * (octave + 1) + (voice.hue / 360) * 18)
+      : _stripSonifyMidiToFreq(12 * (octave + 1) + semis[Math.min(semis.length - 1, Math.floor((voice.hue / 360) * semis.length))]);
+    // Stereo azimuth: where around the ring this crystal nucleated. `cell`
+    // is the native cell index (0..cells_per_ring); sin(θ) is the honest
+    // stereo projection — you hear the crystal pop in at its position.
+    const cell = (ev && Number.isFinite(ev.cell)) ? (ev.cell % _STRIP_SONIFY_CELLS_PER_RING) : 0;
+    const pan = Math.max(-1, Math.min(1, Math.sin((2 * Math.PI * cell) / _STRIP_SONIFY_CELLS_PER_RING)));
     hits.push({
       tSec: (ev.step * stepMs) / 1000,
       freq,
@@ -413,6 +523,7 @@ function buildStripCrystalHits(
       decay: 0.22 + 1.5 * sizeNorm,          // tick (0.22 s) … toll (1.7 s)
       waveform: voice.waveform,
       mineral: ev.mineral,
+      pan,
     });
   }
   return hits;
@@ -494,24 +605,45 @@ function playStripSonifyPlans(
     const artGain = ctx.createGain();   // rhythm — plucks up per gate, rests at 0
     const lvlGain = ctx.createGain();   // structural level (rescale-adjusted)
     osc.type = plan.waveform;
-    osc.connect(artGain).connect(lvlGain).connect(master);
-    // Pitch contour relative to the shared t0; past events (for late adds)
-    // apply immediately so the pitch is right when the voice next sounds.
-    if (plan.notes.length) { try { osc.frequency.setValueAtTime(plan.notes[0].freq, t0); } catch (_e) { /* ignore */ } }
-    for (const n of plan.notes) { try { osc.frequency.setValueAtTime(n.freq, t0 + n.tSec); } catch (_e) { /* ignore */ } }
+    // Stereo placement (where this chip leans in the void). Guarded:
+    // jsdom / old browsers lack createStereoPanner → fall back to mono.
+    const panner = (typeof ctx.createStereoPanner === 'function') ? ctx.createStereoPanner() : null;
+    if (panner) {
+      osc.connect(artGain).connect(lvlGain).connect(panner).connect(master);
+      if (plan.pans && plan.pans.length) {
+        try { panner.pan.setValueAtTime(plan.pans[0].pan, t0); } catch (_e) { /* ignore */ }
+        for (const pp of plan.pans) { try { panner.pan.setValueAtTime(pp.pan, t0 + pp.tSec); } catch (_e) { /* ignore */ } }
+      }
+    } else {
+      osc.connect(artGain).connect(lvlGain).connect(master);
+    }
     const now = ctx.currentTime;
-    // Rhythm: artGain rests at ~0 and plucks for each gate (staccato).
-    artGain.gain.setValueAtTime(0.0001, Math.max(now, t0 - 0.001));
-    for (const gt of plan.gates) {
-      const ts = t0 + gt.tSec;
-      if (ts < now - 0.02) continue;                       // skip gates already past (live add)
-      const dur = Math.max(0.04, gt.durSec);
-      const attack = Math.min(0.012, dur * 0.4);
-      try {
-        artGain.gain.setValueAtTime(0.0001, ts);
-        artGain.gain.linearRampToValueAtTime(1, ts + attack);
-        artGain.gain.exponentialRampToValueAtTime(0.0001, ts + dur);
-      } catch (_e) { /* ignore */ }
+    if (plan.glide) {
+      // RAW ROCK (continuous): smooth pitch glide + sustained tone, no
+      // plucks. Frequency ramps between steps; the voice just sings.
+      if (plan.notes.length) { try { osc.frequency.setValueAtTime(plan.notes[0].freq, t0); } catch (_e) { /* ignore */ } }
+      for (const n of plan.notes) { try { osc.frequency.linearRampToValueAtTime(n.freq, t0 + n.tSec); } catch (_e) { /* ignore */ } }
+      artGain.gain.setValueAtTime(0.0001, Math.max(now, t0 - 0.001));
+      artGain.gain.linearRampToValueAtTime(1, t0 + 0.08);                  // fade in, then hold
+      try { artGain.gain.setValueAtTime(1, Math.max(t0 + 0.1, endTime - 0.1)); } catch (_e) { /* ignore */ }
+      try { artGain.gain.linearRampToValueAtTime(0.0001, endTime); } catch (_e) { /* ignore */ }
+    } else {
+      // Stepped "theremin": frequency jumps per step; staccato plucks.
+      if (plan.notes.length) { try { osc.frequency.setValueAtTime(plan.notes[0].freq, t0); } catch (_e) { /* ignore */ } }
+      for (const n of plan.notes) { try { osc.frequency.setValueAtTime(n.freq, t0 + n.tSec); } catch (_e) { /* ignore */ } }
+      // Rhythm: artGain rests at ~0 and plucks for each gate (staccato).
+      artGain.gain.setValueAtTime(0.0001, Math.max(now, t0 - 0.001));
+      for (const gt of plan.gates) {
+        const ts = t0 + gt.tSec;
+        if (ts < now - 0.02) continue;                       // skip gates already past (live add)
+        const dur = Math.max(0.04, gt.durSec);
+        const attack = Math.min(0.012, dur * 0.4);
+        try {
+          artGain.gain.setValueAtTime(0.0001, ts);
+          artGain.gain.linearRampToValueAtTime(1, ts + attack);
+          artGain.gain.exponentialRampToValueAtTime(0.0001, ts + dur);
+        } catch (_e) { /* ignore */ }
+      }
     }
     lvlGain.gain.setValueAtTime(0, now);       // rescale() ramps it up to target
     try { osc.start(t0 > now ? t0 : now); } catch (_e) { /* ignore */ }
@@ -540,7 +672,14 @@ function playStripSonifyPlans(
     const g = ctx.createGain();
     osc.type = hit.waveform;
     try { osc.frequency.setValueAtTime(hit.freq, tHit); } catch (_e) { /* ignore */ }
-    osc.connect(g).connect(master);
+    // Pan to where the crystal nucleated around the ring (guarded → mono).
+    const panner = (typeof ctx.createStereoPanner === 'function') ? ctx.createStereoPanner() : null;
+    if (panner) {
+      osc.connect(g).connect(panner).connect(master);
+      try { panner.pan.setValueAtTime(hit.pan || 0, tHit); } catch (_e) { /* ignore */ }
+    } else {
+      osc.connect(g).connect(master);
+    }
     const peak = Math.max(0.0001, hit.gain * 0.55);   // sits under the drone
     g.gain.setValueAtTime(0.0001, tHit);
     g.gain.linearRampToValueAtTime(peak, tHit + 0.005);                    // sharp attack
