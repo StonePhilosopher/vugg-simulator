@@ -250,3 +250,56 @@ random-walk):
   breach IS geologically fast — those *should* stay a single step. Movements
   are for thermal/chemical regimes, not mechanical ruptures. (This argues for
   opt-in, not a global flip.)
+
+## 8. Agreed implementation direction (boss decisions, 2026-06-01)
+
+- **Seeded movements — reproducible randomness.** Movements draw from the
+  seeded PRNG, so the same seed → the same vug (random across seeds,
+  consistent within one). This is required, not optional: the baseline/
+  calibration tests already depend on seed determinism, AND reproducibility is
+  load-bearing for the **crystal-language sub-project** downstream. (Established
+  precedent: `ambient_cooling`'s thermal pulses already work this way.)
+- **Derived sub-stream off the VUGG seed.** Movements get a dedicated PRNG
+  derived from the vug's own seed (e.g. `makeRng(hash(vuggSeed,"movements"))`,
+  deterministic FNV-1a — no Math.random/Date.now, resume-safe), NOT the shared
+  `rng`. Two reasons: (a) decouples movement-tuning from the main draw cascade
+  so retuning a movement doesn't displace nucleation order (avoids the RNG-
+  cascade-displacement fragility); (b) BOSS CHOICE — link to the *vugg* seed
+  (not a separate chemistry seed) because **the geology of the vug drives its
+  chemical outcome**: same cavity-identity → same history. Each vugg seed is
+  then one complete, coherent geological story (shape + fill), which maximizes
+  per-seed variety. Trade accepted: shape and chemical-history co-vary by seed
+  rather than being independently dialable. (FREE FUTURE DOOR if ever wanted:
+  default-derive from the vugg seed but allow an optional `movement_seed`
+  override — same pattern as the existing `shape_seed` override — to unlock the
+  2-D "lock geology, vary chemistry" space without changing the default.)
+- **Opt-in rollout.** Movements fire only for scenarios that turn them on;
+  un-migrated scenarios stay byte-identical. Pilot one, look + listen, decide
+  profile, then migrate incrementally. (Draw-gate like the v162 `&&` trick so
+  non-opted scenarios consume no extra draws.)
+- Two consistencies compose: the **seed** gives reproducibility; the
+  **master-variable / shared-driver** model (research §) gives geological
+  coherence (Fe + Mn pulse together, not incoherently). Random but consistent.
+
+## 9. Movement-archetype library (boss input, 2026-06-01)
+
+The boss proposed four real geological movement types. They are NOT one shape —
+they span the statistical range, confirming the research finding that there's
+no single model. The engine should support a small PROFILE LIBRARY:
+
+| archetype | master variables it moves | statistical shape | existing kin |
+|---|---|---|---|
+| **Orogenic cycle** (compression→uplift→exhumation→cooling) | P↓, T↓, multi-stage; hands the system toward the surface | slow, near-**monotonic persistent trend** (low reversal — the coarse drift where persistence is legit); Myr, slowest | long cooling runs |
+| **Hydrothermal pulse train** (fluid-pressure cycling, brecciation) | episodic P spike → drop → boiling → correlated metal precip; T, flow | **punctuated / clustered** episodic train (fault-valve / Sibson), NOT a smooth movement | `ambient_cooling` thermal pulses (already this!), tn457 barite 50× pulses |
+| **Meteoric alteration front** (descending acidic oxidizing water, oxidation zonation) | **Eh↑ (oxidizing), pH↓**, depth-coupled (front descends → links the depth axis), water-table-modulated | **directional ramp** ± water-table oscillation; the regime where the iron-**oxidation** mechanism is correct (vs hydrothermal solubility cycling) | bisbee, supergene_oxidation, schneeberg vadose |
+| **Magmatic-hydrothermal evolution** (boiling→condensation→mixing) | T↓ (magmatic), pH acid→neutralized, salinity brine/vapor split, redox; boiling co-precipitates the metal suite (Drummond & Ohmoto — research-confirmed) | **staged sequence** with sharp *coupled* events | porphyry, gem_pegmatite, naica |
+
+Key design takeaways:
+- The four map onto the master-variable model cleanly — each is a recipe for
+  *which* setpoints move, in *which* direction, with *what* texture.
+- They're a good PILOT menu: the **meteoric alteration front** is the strongest
+  first pilot — it's redox-led (the frozen-Eh fix lives here), it's the regime
+  where our iron model is unambiguous (oxidation), and it has the most existing
+  scenarios to validate against (bisbee/supergene).
+- Mechanical sub-events inside an archetype (a brecciation rupture in a pulse
+  train) stay instantaneous; the *regime* around them is the movement.
