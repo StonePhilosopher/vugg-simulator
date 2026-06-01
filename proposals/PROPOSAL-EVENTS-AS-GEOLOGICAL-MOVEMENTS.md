@@ -5,6 +5,16 @@ boss 2026-06-01. This is a simulation-physics change that touches every
 event-driven scenario's seed-42 output, so it gets a proposal + a pilot
 probe + the boss's eye on the approach BEFORE any baseline regen.
 
+**UPDATE 2026-06-01 — research landed.** A deep-research pass (see
+`RESEARCH-vug-fluid-evolution-2026-06-01.md`) CONFIRMED the core design
+(master variables drive *correlated* element pulses; unfreeze redox) but
+corrected two things: (1) my persistent "red-noise" model is contradicted at
+fine scale — measured zoning is **anti-persistent / mean-reverting** (Holten
+1997), so the model is **moving-setpoint + mean-reverting texture**, not a
+biased random walk; (2) iron banding in hydrothermal fluids is **solubility
+cycling** (pH/salinity/buffer), not in-fluid Fe²⁺/Fe³⁺ oxidation. §6c below is
+SUPERSEDED by "The refined model" in the research doc.
+
 ---
 
 ## 0. The ask (boss's words, 2026-06-01)
