@@ -2,6 +2,25 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## ⚠️ READ THIS FIRST (2026-06-01) — staleness + the live snapshot
+>
+> **The distilled, CURRENT open-items list lives in
+> `proposals/HANDOFF-MOVEMENTS-AND-BACKLOG-2026-06-01.md` (Part II).** This file
+> below is the deep history + detail; trust the handoff for "what's actually
+> open right now." Known stale spots in the older sections:
+> - **All Python↔JS-parity items are DEAD.** The Python tree was deleted
+>   2026-05-07 — vugg is JS-only. Ignore: effectiveTemperature port,
+>   silica_equilibrium parity, the supersat-drift reconciliation table,
+>   sync-spec Check 7, scenario_random parity, "finish Python A6–A8".
+> - **The "🎯 SIM_VERSION" section reads 7. Actual SIM_VERSION is 167.** That
+>   section's history stops in April 2026; don't trust it as current.
+>
+> **STANDING RULE (boss):** whenever you build or update a handoff document,
+> RECONCILE this backlog in the same pass — mark shipped items done, mark
+> dead/superseded items, add the new open items the arc surfaced. Handoffs and
+> the backlog must move together; staleness is what happens when you update one
+> and leave the other behind. (Memory: `feedback_handoff_updates_backlog.md`.)
+
 ---
 
 ## 🏗️ Modular refactor — split the monoliths ✅ SHIPPED (B1–B20, 2026-05-05)
