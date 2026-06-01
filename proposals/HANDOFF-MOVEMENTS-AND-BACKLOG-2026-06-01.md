@@ -6,8 +6,37 @@ backlog. Part I = the project we're building now. Part II = everything else
 we want to do, carried forward. The next builder can act from this doc alone.
 
 **Tip state:** `origin/main` (Syntaxswine) current; **SIM_VERSION 167**; full
-suite 1698/1698; working tree clean. Canonical (`StonePhilosopher`) minerals.json
+suite green; working tree clean. Canonical (`StonePhilosopher`) minerals.json
 FIXED 2026-06-01 (`083d994`, boss).
+
+---
+
+## ★ North Star — follow the science (boss, 2026-06-01)
+
+The North Star of the whole project is **follow the science**: at every step,
+model what real rocks actually do. The **finish line** — a *replication of life
+with backward compatibility* (show a photo of a real crystal, get back the
+seeds + settings that regrow it — the inverse of crystal-cipher) — is NOT a
+target you aim at directly. It is the **inevitable consequence** of following
+the science faithfully:
+
+- You can't aim at "replicate all of life" — too big, unknowable. You CAN
+  answer, at every step, "is this what real rocks do?" Faithful local steps
+  compose into a faithful whole.
+- **Invertibility is inherited, not engineered.** Nature's processes are
+  deterministic functions of their conditions — a zoned crystal IS the record
+  of its fluid history. A model that mirrors the physics inherits its
+  invertibility from reality; we only have to not break it (hence seed-linking,
+  deterministic streams, no wall-clock).
+- The inevitability holds **only if every step is science-true.** One fabricated
+  citation or unchecked "good enough" mechanism snaps the guarantee — it inserts
+  a step that doesn't compose toward the real thing. So the discipline (verify
+  sources, defer to geology, observe before assert, never fabricate) isn't
+  caution for its own sake — it's what keeps the destination reachable.
+
+Every arc — Movements included — needs no other justification than: *it is the
+next faithful step.* Movements aren't chrome; they're "model what real broths
+actually do."
 
 ---
 
