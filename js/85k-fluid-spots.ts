@@ -41,6 +41,26 @@ let _FLUID_SPOTS_DECAY_ENABLED = true;
 function setFluidSpotsDecayEnabled(enabled: boolean): void { _FLUID_SPOTS_DECAY_ENABLED = !!enabled; }
 function fluidSpotsDecayEnabled(): boolean { return _FLUID_SPOTS_DECAY_ENABLED; }
 
+// Phase 2c.2 coupling gate — DEFAULT OFF (DARK). When ON, nucleation PLACEMENT
+// is biased toward open supply-feeders (geysers 1.8 / hotspots 1.4; cracks 1.0 =
+// none) by weighting the legacy ring0 COLUMN pick (columnSupplyWeights), a
+// redistribution of the SAME rng draw (the ring — hence growth chemistry — is
+// assigned separately, so the assemblage is preserved; only angular position
+// shifts). It ships OFF after a verify-the-mechanism finding (tools/fluid-spots-
+// deposition-observe.mjs + a direct column-membership probe): at 1.4-1.8× over a
+// few columns of ~120 with sparse (~25-77) nucleation, the bias does NOT visibly
+// CLUSTER crystals at feeders (gem_pegmatite feeders [107,114,78] capture 0
+// crystals both OFF and ON) — it only RESHUFFLES placement, churning 11/30
+// baselines (assemblage preserved, 0 expects_species lost) without the payoff.
+// The visible-clustering path is a per-cell PROXIMITY-DECAY supply weight through
+// the per-vertex sampler (HANDOFF-PER-VERTEX-PLACEMENT synergy) — a future
+// increment + a visible aesthetic choice for the boss. The mechanism stays wired
+// (+ tested via explicit ON) so that path can build on it. Mirrors the
+// fluidSpotsDecayEnabled shape. Read the LIVE value via fluidSpotsDepositionEnabled().
+let _FLUID_SPOTS_DEPOSITION_ENABLED = false;
+function setFluidSpotsDepositionEnabled(enabled: boolean): void { _FLUID_SPOTS_DEPOSITION_ENABLED = !!enabled; }
+function fluidSpotsDepositionEnabled(): boolean { return _FLUID_SPOTS_DEPOSITION_ENABLED; }
+
 type FluidSpotKind = 'crack' | 'geyser' | 'hotspot';
 
 // A single fluid-entry point on the cavity wall.
@@ -175,6 +195,31 @@ class FluidSpotField {
       if (!s.open || !(s.decayBonus > 1)) continue;
       const col = ((s.cell % N) + N) % N;
       if (s.decayBonus > w[col]) { w[col] = s.decayBonus; any = true; }
+    }
+    return any ? w : null;
+  }
+
+  // Phase 2c.2 — per-COLUMN DEPOSITION weights, the placement analog of
+  // columnWeights. Nucleation's legacy cell pick chooses a ring0 column; this
+  // biases that pick toward open SUPPLY-feeders so crystals cluster in the
+  // feeder's column. Weight = MAX supply among OPEN spots on the column (>1 =
+  // nucleate more there). Crucially uses `supply`, NOT decayBonus: by the kind
+  // defaults a 'crack' has supply 1.0 (erosion-dominant flow-through, no extra
+  // deposition) while geysers (1.8) / hotspots (1.4) are vent-fed precipitators
+  // — so a crack deepens its column (2b) without seeding crystals there, exactly
+  // the right physics. Returns a length-cellsPerRing array (1.0 where no feeder)
+  // or null when nothing biases (caller stays on the EXACT legacy pick →
+  // byte-identical). The ring is assigned separately, so this shifts angular
+  // position only — the assemblage (minerals/sizes/counts) is unchanged.
+  columnSupplyWeights(cellsPerRing: number): number[] | null {
+    const N = cellsPerRing | 0;
+    if (N <= 0 || this.isEmpty) return null;
+    let any = false;
+    const w = new Array(N).fill(1.0);
+    for (const s of this.spots) {
+      if (!s.open || !(s.supply > 1)) continue;
+      const col = ((s.cell % N) + N) % N;
+      if (s.supply > w[col]) { w[col] = s.supply; any = true; }
     }
     return any ? w : null;
   }

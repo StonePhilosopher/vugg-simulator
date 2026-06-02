@@ -10057,5 +10057,21 @@
 //   SIM_VERSION bumps because the rendered output changed even though the assemblage
 //   didn't. FILES: js/85k (columnWeights + decay flag), js/22 (erodeCells colWeights),
 //   js/85d (dissolve_wall passes weights). NEXT: 2c origin:'cell' + deposition bias.
+//
+//   (2c.1 origin:'cell' spatial injection landed DARK on v171 — see commit 3ace0b7.
+//    No SIM bump: no scenario opts in, byte-identical.)
+//
+//   2c.2 DEPOSITION-bias-on-placement also rides v171 but DEFAULT-OFF (DARK) — see the
+//   85k _FLUID_SPOTS_DEPOSITION_ENABLED comment for the verify-the-mechanism finding:
+//   weighting the legacy ring0 COLUMN pick by open-feeder `supply` (geyser 1.8 /
+//   hotspot 1.4; crack 1.0 = none) reshuffles placement (changing spatial competition)
+//   but does NOT visibly CLUSTER crystals at feeders — at 1.4-1.8× over a few columns of
+//   120 with sparse (~25-77) nucleation, feeder columns capture ~0 crystals (measured:
+//   gem_pegmatite feeders [107,114,78] get 0 both OFF and ON). It only churns baselines
+//   (11/30 scenarios; assemblage preserved, 0 expects_species lost) without the payoff,
+//   so it ships OFF. The visible-clustering path is a per-cell PROXIMITY-DECAY supply
+//   weight through the per-vertex sampler (the synergy HANDOFF-PER-VERTEX-PLACEMENT
+//   predicted — feeders supply the spatial heterogeneity that sampler is σ-starved for);
+//   that's a future increment + a visible aesthetic choice for the boss's eye.
 const SIM_VERSION = 171;
 

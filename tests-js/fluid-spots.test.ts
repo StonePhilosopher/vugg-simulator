@@ -15,6 +15,7 @@ declare const SCENARIOS: any;
 declare const VugSimulator: any;
 declare const setSeed: any;
 declare const setFluidSpotsDecayEnabled: any;
+declare const setFluidSpotsDepositionEnabled: any;
 
 describe('fluid-spots — seed-derived PRNG (reproducible)', () => {
   it('same cavity seed → identical sequence; different seed → different', () => {
@@ -133,5 +134,73 @@ describe('fluid-spots — 2b wall-decay coupling (lopsided erosion, render-visib
     runDepths(true);
     const off2 = runDepths(false);
     expect(off2.depths).toEqual(off1.depths);       // flag is the only difference
+  });
+});
+
+describe('fluid-spots — 2c.2 columnSupplyWeights (deposition, pure)', () => {
+  const N = 120;
+  it('a CRACK (supply 1.0) yields NO deposition bias — null (erosion-dominant, not vent-fed)', () => {
+    const f = new FluidSpotField([{ cell: 7, kind: 'crack', open: true, supply: 1.0, decayBonus: 1.6 }]);
+    expect(f.columnSupplyWeights(N)).toBeNull();      // supply not > 1 → no precipitation boost
+    expect(f.columnWeights(N)).not.toBeNull();        // but it DOES bias erosion (decayBonus 1.6)
+  });
+  it('a GEYSER (1.8) / HOTSPOT (1.4) weights its column above 1, neutral elsewhere', () => {
+    const g = new FluidSpotField([{ cell: 5, kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.2 }]);
+    const wg = g.columnSupplyWeights(N);
+    expect(wg[5]).toBeCloseTo(1.8, 6);
+    expect(wg[4]).toBe(1.0); expect(wg[6]).toBe(1.0);
+    const h = new FluidSpotField([{ cell: 200, kind: 'hotspot', open: true, supply: 1.4, decayBonus: 1.3 }]);
+    expect(h.columnSupplyWeights(N)[200 % N]).toBeCloseTo(1.4, 6);   // cell→column wrap
+  });
+  it('a CLOSED supply-feeder is inert; an empty field is null', () => {
+    const closed = new FluidSpotField([{ cell: 5, kind: 'geyser', open: false, supply: 1.8, decayBonus: 1.2 }]);
+    expect(closed.columnSupplyWeights(N)).toBeNull();
+    expect(new FluidSpotField([]).columnSupplyWeights(N)).toBeNull();
+  });
+});
+
+describe('fluid-spots — 2c.2 deposition coupling (wired, DEFAULT-OFF/DARK)', () => {
+  // The deposition gate ships OFF (verify-the-mechanism finding: weighting the
+  // legacy column pick reshuffles placement but does NOT visibly cluster crystals
+  // at feeders — see js/85k + the v171 changelog note). These pin the wired
+  // mechanism's CONTRACT (it preserves the assemblage; the flag is the only
+  // difference; OFF is byte-identical) so the future per-cell proximity model can
+  // build on it. Restore the OFF default after each case.
+  afterEach(() => setFluidSpotsDepositionEnabled(false));
+
+  // gem_pegmatite seeds 3 hotspots (supply 1.4) at seed 42 → the placement reshuffle
+  // is observable here (the OFF→ON assemblage change tourmaline 2→5 / cassiterite 1→4).
+  function runPlacement(depositionOn: boolean) {
+    setFluidSpotsDepositionEnabled(depositionOn);
+    setSeed(42);
+    const { conditions, events, defaultSteps } = SCENARIOS['gem_pegmatite']();
+    const sim = new VugSimulator(conditions, events);
+    const steps = defaultSteps ?? 120;
+    for (let s = 0; s < steps; s++) sim.run_step();
+    const N = sim.wall_state.cells_per_ring | 0;
+    const feederCols = new Set(
+      sim._fluidSpots.spots.filter((s: any) => s.open && s.supply > 1).map((s: any) => ((s.cell % N) + N) % N));
+    const cols: number[] = [];
+    for (const c of sim.crystals) {
+      const a = sim.wall_state._resolveAnchor(c);
+      if (a) cols.push(((a.cellIdx % N) + N) % N);
+    }
+    const species = new Set(sim.crystals.map((c: any) => c.mineral));
+    return { cols, feederCols, species, N };
+  }
+
+  it('ON shifts the crystal LAYOUT but PRESERVES the assemblage (species set unchanged)', () => {
+    const off = runPlacement(false);
+    const on = runPlacement(true);
+    expect(on.feederCols.size).toBeGreaterThan(0);                  // there ARE supply-feeders
+    expect(on.cols).not.toEqual(off.cols);                          // the bias bit (placement reshuffled)
+    expect([...on.species].sort()).toEqual([...off.species].sort()); // SAFETY: no species gained/lost
+  });
+
+  it('the deposition flag toggles cleanly (OFF after ON == OFF — flag is the only difference)', () => {
+    const off1 = runPlacement(false);
+    runPlacement(true);
+    const off2 = runPlacement(false);
+    expect(off2.cols).toEqual(off1.cols);
   });
 });

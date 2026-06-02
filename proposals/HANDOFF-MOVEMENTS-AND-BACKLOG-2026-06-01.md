@@ -390,19 +390,31 @@ wall-decay bonus → 2c origin-rides-spots + deposition bias → 2d open/close e
     decorating a local halo — the Punjab hematite case), not pervasive supergene acid. Pick
     the 2c.3 demonstrator accordingly (a distinct point-source fluid into an otherwise-static
     cavity), NOT supergene's pervasive front.
-- **2c.2 (NEXT — the assemblage lever): deposition bias on PLACEMENT.** `FluidSpotField.supplyAt(cell)`
-  (per-kind: geyser 1.8 / hotspot 1.4 / crack 1.0) weights WHERE crystals nucleate so they
-  cluster near feeders — the lever that reaches the LEGACY assemblage every spot scenario sees
-  (the cell injection above can't, per the decoupling finding). Hooks: (a) the legacy empty-cell
-  pick (85b-simulator-nucleate.ts:572-576) — weight empty ring0 columns by supply, the placement
-  analog of 2b's columnWeights; (b) the per-vertex sampler weight (85b:674) — multiply `w` by
-  supply. Like 2b/2c.1 it's count-neutral (same draws, biased WHERE) so it MAY stay byte-identical
-  where rings are chemically uniform, but WILL shift growth where the feeder's ring differs
-  chemically → dark-observe placement shift, then SIM bump + regen if it bites. Flag-gate.
-- **2c.3:** bake origin:'cell' (2c.1) + deposition (2c.2) into ONE science-chosen point-source
-  demonstrator → the visible one-sided specimen. SIM bump + regen. This also FEEDS the scale-
-  starved per-vertex placement (it was starved for exactly this spatial heterogeneity —
-  HANDOFF-PER-VERTEX-PLACEMENT).
+- **⚠ 2c.2 WIRED but DEFAULT-OFF (DARK, byte-identical) — a verify-the-mechanism CATCH.**
+  Deposition bias on placement: weight the legacy ring0 COLUMN pick (`_assignWallCell`,
+  85b:569+) by open-feeder `supply` via `FluidSpotField.columnSupplyWeights()` (geyser 1.8 /
+  hotspot 1.4; crack 1.0 = none, since cracks are erosion-dominant flow-through). The weighted
+  pick consumes the SAME single rng draw (reduces EXACTLY to the legacy uniform pick under
+  uniform weights → byte-identical OFF). Per-vertex sampler also multiplies its weight by
+  `supplyAt(idx)` (composes). **FINDING (the reason it ships OFF):** the bias does NOT visibly
+  CLUSTER crystals at feeders. Measured two ways: (1) A/B observer (tools/fluid-spots-deposition-
+  observe.mjs) — 11/30 scenarios change, 0 lose an expects_species, mostly ±1µm with a few
+  active↔dissolved flips (gem_pegmatite tourmaline 2→5, cassiterite 1→4); (2) a direct column-
+  membership probe — gem_pegmatite's 3 feeder columns [107,114,78] capture **0 crystals both OFF
+  and ON**; epithermal 1→0. At 1.4-1.8× over a few columns of ~120 with sparse (~25-77) nucleation,
+  the feeder's expected capture is ~0.3 → rounds to zero. So it only RESHUFFLES placement (changing
+  spatial competition → the survival flips), churning baselines WITHOUT the spatial payoff. Shipping
+  it default-on would be baseline churn for an invisible effect — so it's OFF, wired + tested
+  (explicit ON) so the real path can build on it. **THE REAL PATH (next):** a per-cell PROXIMITY-
+  DECAY supply weight (boost a feeder's cell AND a decaying halo of neighbors, peak weight strong
+  enough to capture a visible share) routed through the per-vertex sampler — which is exactly the
+  spatial heterogeneity HANDOFF-PER-VERTEX-PLACEMENT said that σ-starved sampler needs. Clustering
+  STRENGTH/shape is a visible aesthetic choice → wants the boss's eye (field-guide restraint vs
+  obvious clustering). FILES: js/85k (columnSupplyWeights + deposition flag, default false),
+  js/85b (weighted column pick + per-vertex supplyAt multiply), tests in fluid-spots.test.ts.
+- **2c.3:** bake origin:'cell' (2c.1) + a WORKING deposition model into ONE science-chosen
+  point-source demonstrator → the visible one-sided specimen. SIM bump + regen. (Blocked on the
+  per-cell proximity deposition model above — the column-bias version doesn't cluster.)
 - **2d:** open/close via events (spatialize the seal/breach handlers).
 - **SHOWPIECE (boss look, banked from chat):** `supergene_oxidation` + `shape_seed 23`
   is the strongest 2b lopsided cavity — 3 feeders incl. a crack (1.6×) carve it ~1.8×
