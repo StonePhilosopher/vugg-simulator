@@ -185,11 +185,19 @@ diverges only above O2=5, unreachable by any scenario → clamp in 4c.2).
   byte-identical (calibration green) AND Eh not in the strip digest (also green,
   no regen). Eh now UNFREEZES on the strip (supergene Eh CV 0→0.22 tracking O2;
   cooling O2-flat→Eh pins at −75, correct). 3 tripwires in redox.test.ts.
-- **4c.2 — flip `EH_DYNAMIC_ENABLED`.** Engines consume Eh → `o2FromEh(Eh)` = O2
-  (exact in-range). MUST add an EARLY sync (before nucleation/dissolution) — 4c.1's
-  sync is end-of-step, but flag-ON engines read Eh mid-step → one-step lag + step-1
-  init-200 otherwise. Clamp O2≤5. SIM bump + seed-42/strip regen; verify byte-ident
-  or characterize boundary drift.
+- **✅ 4c.2 — flipped `EH_DYNAMIC_ENABLED` (DONE, SIM 167→168).** `let`+setter
+  (mirrors setCarbonateKspActive). Early sync added before check_nucleation;
+  end-of-step sync kept for the strip. **FluidChemistry constructor now derives
+  Eh=ehFromO2(O2) when O2 given but Eh isn't** — makes hand-built fluids
+  (tests/tools) redox-self-consistent under the flag; sim-invisible (the early
+  sync overwrites it). 29/31 scenarios byte-identical; radioactive_pegmatite +
+  schneeberg float-cascade (≤4.4e-16 round-trip ε tips a threshold), NO mineral
+  lost. Baselines regen'd (seed42_v168; strip_digest byte-identical but version
+  stamp). Full suite 1717/1717. Redox tests: parity blocks wrapped in
+  setEhDynamicEnabled(false) using a LIVE flag read (snapshotEhDynamicFlag —
+  the exported EH_DYNAMIC_ENABLED is a frozen load-time snapshot); flag-state +
+  consumed-path tests added. No O2≤5 clamp needed (max observed O2≈2.2;
+  o2FromEh saturates >5 gently). Commit: 4c.2.
 - **4c.3 — Eh drivable (canonical fork) + `mvt` Eh-movement pilot.** Decide
   O2-canonical+Eh-view vs Eh-canonical+O2-view so a movement on Eh propagates
   (a naive Eh movement would be overwritten by the O2→Eh sync). Then pilot.

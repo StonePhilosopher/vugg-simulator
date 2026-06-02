@@ -9898,5 +9898,56 @@
 //                                 index for the same RNG value.
 //   strip_digest_v166 → v167:    byte-identical (neither per_vertex scenario
 //                                 is in the 10-scenario digest set).
-const SIM_VERSION = 167;
+// ============================================================
+// v168 (2026-06-02) — Eh GOES LIVE (Phase 4c.1 + 4c.2). The redox-couple
+//                     migration (Phase 4a/4b) had wired Eh-aware helpers at
+//                     250+ call sites but kept them dormant: fluid.Eh was
+//                     written once at init and never synced, and
+//                     EH_DYNAMIC_ENABLED was off (engines read fluid.O2). The
+//                     Geological-Movements dark observation surfaced that Eh
+//                     was both FROZEN and INERT. Two coupled changes:
+//
+//   4c.1 (observer): _syncRedoxEh (85c) derives fluid.Eh = ehFromO2(fluid.O2)
+//        on every container each step (end-of-step for the strip; and again
+//        before check_nucleation for the engines). Eh now tracks redox on the
+//        strip instead of pinning at +200.
+//   4c.2 (consume): EH_DYNAMIC_ENABLED flipped ON (now a `let` + setEhDynamic-
+//        Enabled, mirroring setCarbonateKspActive). Every redox engine now
+//        derives its O2 from fluid.Eh via o2FromEh. Byte-equivalent because
+//        ehFromO2/o2FromEh are EXACT inverses for O2 ∈ [0.05,5] (max round-trip
+//        error 4.4e-16; many values bitwise-exact) and the pre-nucleation sync
+//        keeps Eh = ehFromO2(O2) at engine-read time. Above O2=5 (unreachable;
+//        max observed ≈ 2.2) o2FromEh saturates gently — no NaN / wild values.
+//        Latent: helpers still use the coarse ehFromO2 bijection, NOT the
+//        Nernst couples (redoxFraction, built 4a, still uncalled) — later work.
+//
+// FILES
+//   js/20c-chemistry-redox.ts        EH_DYNAMIC_ENABLED const→let, default true;
+//                                     setEhDynamicEnabled/snapshot/restore.
+//   js/85c-simulator-state.ts        _syncRedoxEh (walks ring_fluids + voxels).
+//   js/85-simulator.ts               sync call before check_nucleation + at
+//                                     end of run_step (after diffusion).
+//   tests-js/redox.test.ts           flag-state tests flipped; parity blocks
+//                                     wrapped in setEhDynamicEnabled(false);
+//                                     4c.1 sync tripwires + 4c.2 consumed-path.
+//   js/15-version.ts                 SIM_VERSION 167 → 168 + this block.
+//
+// BASELINE DRIFT
+//   seed42_v167 → seed42_v168:   29/31 BYTE-IDENTICAL. Only radioactive_
+//                                 pegmatite + schneeberg shift — both O2-dynamic
+//                                 redox-heavy scenarios where the ≤4.4e-16
+//                                 round-trip ε tips one nucleation threshold and
+//                                 RNG-cascades. NO mineral appears/disappears in
+//                                 either. schneeberg reshuffles a few uranyl-
+//                                 family counts (autunite 5→2, metatorbernite
+//                                 1→3, uranospinite 2→3) + minor Ag/As/Co
+//                                 nudges; the full U story (uraninite + all meta-
+//                                 uranyl phases) is intact. radioactive_pegmatite
+//                                 shifts max_um <1µm + uraninite 11374→11022.
+//                                 Same class as every prior engine-flip cascade.
+//   strip_digest_v167 → v168:    byte-identical except the sim_version stamp —
+//                                 neither changed scenario (radioactive_pegmatite,
+//                                 schneeberg) is in the 10-scenario digest set,
+//                                 and Eh itself is not a hashed digest field.
+const SIM_VERSION = 168;
 

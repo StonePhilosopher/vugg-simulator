@@ -236,6 +236,14 @@ class VugSimulator {
       this.log.push(sealMsg);
     }
 
+    // Phase 4c.2 — sync Eh from O2 BEFORE the engines read it. With
+    // EH_DYNAMIC_ENABLED on, the redox helpers derive their O2 from
+    // fluid.Eh (o2FromEh), so Eh must equal ehFromO2(O2) at engine-read
+    // time for the consumed path to match the legacy O2 path. O2 is final
+    // for the step by here (events + vadose + dissolve_wall are all done;
+    // nothing between here and the growth loop rewrites O2). The
+    // end-of-step _syncRedoxEh (after diffusion) still runs, for the strip.
+    this._syncRedoxEh();
     this.check_nucleation(vugFill);
 
     // v128 graduated competition: pre-compute per-crystal scaled zones

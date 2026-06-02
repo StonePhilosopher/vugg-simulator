@@ -17,11 +17,21 @@
 // resolution for game-mode chemistry; Phase 4b can refine specific
 // couples if calibration calls for it.
 //
-// Default state: EH_DYNAMIC_ENABLED = false. Engines still gate on
-// `fluid.O2 > X` until Phase 4b migrates them one class at a time.
-// With the flag on (Phase 4c), `redoxFraction(fluid, 'Fe')` etc.
-// becomes the canonical query and `fluid.O2` collapses to a derived
-// proxy via `ehFromO2`.
+// State (Phase 4c.2, 2026-06-02): EH_DYNAMIC_ENABLED is now ON by
+// default. Every redox engine consumes Eh via the per-class helpers,
+// which derive a synthetic O2 from the fluid's Eh (`o2FromEh(fluid.Eh)`)
+// and apply the legacy ratio/threshold against it. This is byte-identical
+// to the old `fluid.O2` path because (a) `_syncRedoxEh` (85c) keeps
+// `fluid.Eh = ehFromO2(fluid.O2)` synced just before the engines read it
+// each step, and (b) `ehFromO2`/`o2FromEh` are exact inverses for
+// O2 ∈ [0.05, 5] — which covers every scenario (max observed O2 ≈ 2.2);
+// above 5 `o2FromEh` saturates gently (no NaN / wild values), so even a
+// pathological high-O2 cell degrades safely rather than breaking.
+//
+// `let` + setter (mirrors setCarbonateKspActive): the bundle's closure-
+// scoped binding can't be flipped via globalThis, so tests that want to
+// exercise the legacy flag-OFF passthrough wrap their body in
+// setEhDynamicEnabled(false) … restore.
 //
 // Conventions:
 //   - Eh in mV (volts × 1000), positive = oxidizing.
@@ -36,7 +46,17 @@
 //   - Henderson-Hasselbalch slope at 25°C: 59.16 / n mV.
 //     Slope = 2.303 × R × T / (n × F).
 
-const EH_DYNAMIC_ENABLED = false;
+let EH_DYNAMIC_ENABLED = true;
+
+// Setter (mirrors setCarbonateKspActive) — the only safe way to flip the
+// closure-scoped binding from outside the bundle. Tests exercising the
+// legacy flag-OFF passthrough call setEhDynamicEnabled(false), run, then
+// setEhDynamicEnabled(true) to restore.
+function setEhDynamicEnabled(enabled: boolean): void {
+  EH_DYNAMIC_ENABLED = !!enabled;
+}
+function snapshotEhDynamicFlag(): boolean { return EH_DYNAMIC_ENABLED; }
+function restoreEhDynamicFlag(snap: boolean): void { EH_DYNAMIC_ENABLED = !!snap; }
 
 // Three half-reactions encoded — the minimum set the proposal calls
 // for. Each entry: E0 in mV, n electrons, pHCoeff (mV per pH unit
