@@ -359,9 +359,75 @@ wall-decay bonus → 2c origin-rides-spots + deposition bias → 2d open/close e
   because the rendered output changed. **Boss: the lopsided cavity is the look — on
   acidic scenarios (porphyry/bisbee/supergene) the vug should be visibly deeper
   toward its feeder columns.**
-- **2c:** `origin:'cell'` movements ride OPEN spots (supersede _pickOriginCell) +
-  deposition bias (supplyAt → check_nucleation). The one-sided-growth payoff.
+- **✅ 2c.1 DONE (dark mechanism + observer, byte-identical, NO SIM bump): origin:'cell'
+  spatial injection.** `MovementController.applyStep(conditions, step, sim)` gained a sim
+  handle (run_step passes `this`; 2-arg callers degrade safely to global). For an
+  `origin:'cell'` movement it PINS one seeded cell's `mesh.cells[idx].fluid[leaf]` to the
+  movement value each step (a fixed-composition feeder) and SKIPS the bulk set, so run_step's
+  `_propagateGlobalDelta` is a no-op for it and the step-end `_diffuseRingState` carries the
+  value outward. Origin resolved ONCE at first window activation (`_resolveOriginCell`):
+  explicit `m.originCell` → a seeded pick among `FluidSpotField.openSpots()` → `_pickOriginCell`
+  fallback (one draw from the dedicated movement stream → reproducible, independent of the
+  nucleation rng). DARK: no scenario declares origin:'cell' → seed-42 + strip-digest byte-
+  identical (regen-confirmed). Tests: 5 new in movements.test.ts (pin-one-cell + leave-bulk-and-
+  conditions-untouched, open-spot resolution incl. skip-closed, no-spots fallback, 2-arg back-
+  compat, reproducibility). Observer: **tools/fluid-spot-origin-observe.mjs**.
+  - **★ KEY ARCHITECTURE FINDING (load-bearing, was a stale-comment trap):** per-cell
+    `mesh.cells[].fluid` are INDEPENDENT clones (Tranche 4c) and are **DECOUPLED** from
+    `ring_fluids`/`conditions.fluid` — writing one does NOT update the other (proof:
+    85c-simulator-state.ts:152-168, the vadose override must explicitly mirror writes to
+    BOTH because "the mesh-only path left ring_fluids[r] alone, so the nucleation gate never
+    saw it"). The LEGACY nucleation gate + placement read ring_fluids; only the STRIP view +
+    the per-vertex sampler read mesh.cells. ⇒ a cell injection is strip/per-vertex-VISIBLE but
+    **assemblage-NEUTRAL on its own** (byte-identical seed-42, like 2b). Assemblage-level
+    one-sided GROWTH needs the deposition bias (2c.2) to bite the legacy placement. (Fixed the
+    stale Tranche-1 comment at 85-sim:131 that claimed `cells[i].fluid === ring_fluids[r]`.)
+  - **OBSERVED (supergene seed-23, pH trend 6.8→4.3 at the hotspot@cell1002 feeder, texture
+    off):** the gradient is REAL and correctly SHARP for a point source + slow diffusion
+    (rate 0.05) — acid pinned at d=0 (pH 4.93) recovers to bulk (6.52) within ~8 graph-hops,
+    then flat; GLOBAL gives a uniform bulk drop (per-cell spread 0.00). So `origin:'cell'` is
+    NOT a drop-in for a global movement: it models a DIFFERENT geology (a point feeder
+    decorating a local halo — the Punjab hematite case), not pervasive supergene acid. Pick
+    the 2c.3 demonstrator accordingly (a distinct point-source fluid into an otherwise-static
+    cavity), NOT supergene's pervasive front.
+- **⚠ 2c.2 WIRED but DEFAULT-OFF (DARK, byte-identical) — a verify-the-mechanism CATCH.**
+  Deposition bias on placement: weight the legacy ring0 COLUMN pick (`_assignWallCell`,
+  85b:569+) by open-feeder `supply` via `FluidSpotField.columnSupplyWeights()` (geyser 1.8 /
+  hotspot 1.4; crack 1.0 = none, since cracks are erosion-dominant flow-through). The weighted
+  pick consumes the SAME single rng draw (reduces EXACTLY to the legacy uniform pick under
+  uniform weights → byte-identical OFF). Per-vertex sampler also multiplies its weight by
+  `supplyAt(idx)` (composes). **FINDING (the reason it ships OFF):** the bias does NOT visibly
+  CLUSTER crystals at feeders. Measured two ways: (1) A/B observer (tools/fluid-spots-deposition-
+  observe.mjs) — 11/30 scenarios change, 0 lose an expects_species, mostly ±1µm with a few
+  active↔dissolved flips (gem_pegmatite tourmaline 2→5, cassiterite 1→4); (2) a direct column-
+  membership probe — gem_pegmatite's 3 feeder columns [107,114,78] capture **0 crystals both OFF
+  and ON**; epithermal 1→0. At 1.4-1.8× over a few columns of ~120 with sparse (~25-77) nucleation,
+  the feeder's expected capture is ~0.3 → rounds to zero. So it only RESHUFFLES placement (changing
+  spatial competition → the survival flips), churning baselines WITHOUT the spatial payoff. Shipping
+  it default-on would be baseline churn for an invisible effect — so it's OFF, wired + tested
+  (explicit ON) so the real path can build on it. **THE REAL PATH (next):** a per-cell PROXIMITY-
+  DECAY supply weight (boost a feeder's cell AND a decaying halo of neighbors, peak weight strong
+  enough to capture a visible share) routed through the per-vertex sampler — which is exactly the
+  spatial heterogeneity HANDOFF-PER-VERTEX-PLACEMENT said that σ-starved sampler needs. Clustering
+  STRENGTH/shape is a visible aesthetic choice → wants the boss's eye (field-guide restraint vs
+  obvious clustering). FILES: js/85k (columnSupplyWeights + deposition flag, default false),
+  js/85b (weighted column pick + per-vertex supplyAt multiply), tests in fluid-spots.test.ts.
+- **2c.3:** bake origin:'cell' (2c.1) + a WORKING deposition model into ONE science-chosen
+  point-source demonstrator → the visible one-sided specimen. SIM bump + regen. (Blocked on the
+  per-cell proximity deposition model above — the column-bias version doesn't cluster.)
 - **2d:** open/close via events (spatialize the seal/breach handlers).
+- **SHOWPIECE (boss look, banked from chat):** `supergene_oxidation` + `shape_seed 23`
+  is the strongest 2b lopsided cavity — 3 feeders incl. a crack (1.6×) carve it ~1.8×
+  deeper on one side (mean wall_depth ~41mm, feeder lobe ~74mm, 34mm bulge). supergene
+  wins because its acid front dissolves the most wall → biggest absolute bulge. Seeds
+  16/15/14 similar (14 = twin crack). Default supergene (shape_seed 7) has 1 hotspot
+  (subtle). porphyry default = cleanest uniform→single-bulge A/B but small (~0.5mm).
+- **OPEN QUESTION (boss feedback pending):** is 2b's lopsidedness VISIBLE ENOUGH on the
+  3D render vs the existing 'irregular' architecture variance? If too subtle, the
+  decay bonuses (1.2-1.6×) want amplifying — a cheap tune in _KIND_DEFAULTS (85k).
+  Also: erodeCells is RING0-only (equatorial slices) — the bulge is an equatorial-plane
+  asymmetry; a per-(ring,col) erosion model would make spots deepen at their actual
+  latitude (bigger refactor, future).
 - **Latent note:** even flag-ON, the helpers use the coarse `ehFromO2` bijection,
   NOT the principled Nernst couples (`REDOX_COUPLES`/`redoxFraction`, built in 4a,
   still uncalled). Richer per-couple redox is a later refinement, not 4c.
@@ -674,3 +740,43 @@ What I'd have the next builder do, in order:
 This is a years-long cathedral. Build the next faithful step, write down what you
 learn for the one after you, and trust that following the science all the way down
 into the grain is the road that gets there. It was an honor to lay a few stones.
+
+---
+
+### ☆☆☆ Addendum — the "second movement + spatial spots" session (2026-06-02)
+
+What shipped (all on Syntaxswine, green throughout): **supergene_oxidation pH acid
+front** (SIM 170, the SECOND movement → "reads true on 2 scenarios" v1 hit; recovers
+vanadinite, a baseline miss) → **Phase 3 coverage map** (the clean temporal set is
+just 2; the rest are gated — documented, not forced) → **Phase 2a fluid-spots dark
+scaffold** (seeded, byte-identical) → **Phase 2b feeder-localized erosion** (SIM 171,
+lopsided cavities, render-visible). Two new instruments: `movement-assemblage-observe`
+(Phase-3) + `fluid-spots-observe` (Phase-2).
+
+Meta-lessons worth carrying (not captured elsewhere):
+- **Mass-conserving redistribution is a superpower.** 2b adds a real, render-visible
+  feature (lopsided erosion) with ZERO chemistry-baseline drift, because it
+  redistributes a fixed budget instead of adding to it. When you can phrase a change
+  as "same total, different distribution," you get the feature nearly free of risk.
+- **A change can be real and invisible to the suite at once.** 2b is byte-identical on
+  seed-42 + strip-digest yet changes the render. The suite proves chemistry
+  determinism, not geometry. When that happens, PIN the new behavior with a dedicated
+  test (don't lean on the baseline) and bump SIM_VERSION anyway — the rendered game
+  changed (Pages-is-the-game). Different doors, same room: the baseline door simply
+  doesn't open onto geometry.
+- **"Finish in totality" can mean proving the boundary.** Asked to finish the temporal
+  feature, the honest answer was "the clean set is 2; baking unmotivated movements
+  would betray follow-the-science." Documenting WHY the other 28 are gated (T-blocked,
+  event-confounded, baseline-debt, assemblage-cost) IS finishing it. A feature is done
+  when its coverage is deliberate, not when every slot is filled.
+- **Verify the mechanism, every time — it keeps paying.** Two "bugs" this session were
+  caught by instrumenting, not narrating: the all-zero spots (wrong wall handle:
+  wall_state vs conditions.wall) and a "tool contamination" scare that was just my own
+  arg-order mistake (a contamination test proved the engine clean). The clobber rule
+  (a same-field movement overwrites same-field events → start after the event window)
+  came the same way.
+
+Next builder: **2c** is the one-sided-GROWTH payoff (spatial-origin injection +
+deposition bias) — concrete entry points are in the Phase 2 section above. The boss
+has the seed-23 supergene showpiece to look at, and one open question pending their
+eye: is 2b lopsidedness visible enough, or do the decay bonuses want amplifying?

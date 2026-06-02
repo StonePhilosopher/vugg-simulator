@@ -18,6 +18,7 @@ declare const _evalMovementOps: any;
 declare const MovementController: any;
 declare const _createMovementController: any;
 declare const _pickOriginCell: any;
+declare const FluidSpotField: any;
 
 const conds = () => ({ temperature: 200, fluid: { pH: 6, Eh: 200 } });
 
@@ -170,5 +171,91 @@ describe('movements — controller: active movement drives its field', () => {
     const c = conds();
     for (let s = 0; s < 5; s++) ctl.applyStep(c, s);
     expect(c.temperature).toBeGreaterThanOrEqual(25);  // floored
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 2c.1 — SPATIAL ORIGIN injection (origin:'cell'). A movement can pin ONE
+// seeded fluid-spot cell's per-vertex mesh fluid (a fixed-composition feeder)
+// instead of setting the bulk field; the step-end diffusion then carries it
+// outward → a near→far gradient (one-sided growth). These pin the contract at
+// the controller level (the engine's _injectCellField / _resolveOriginCell);
+// the gradient-over-distance is proven empirically by
+// tools/fluid-spot-origin-observe.mjs (acid pinned at the feeder, relaxing out).
+// ---------------------------------------------------------------------------
+describe("movements — controller: origin:'cell' spatial injection (Phase 2c.1)", () => {
+  // A minimal mock mesh: n cells, each with an independent flat fluid (mirrors
+  // the Tranche-4c per-cell clones the real WallMesh binds).
+  const mockMesh = (n: number) =>
+    ({ cells: Array.from({ length: n }, () => ({ fluid: { pH: 6.8, Eh: 200 } })) });
+  // A mock sim exposing only what applyStep's cell path reads: the mesh handle
+  // (wall_state.meshFor) and the seeded spot set (_fluidSpots).
+  const mockSim = (mesh: any, spots: any[] | null) =>
+    ({ wall_state: { meshFor: () => mesh }, _fluidSpots: spots ? new FluidSpotField(spots) : null });
+  const cellSpec = (extra: any = {}) =>
+    [{ field: 'fluid.pH', startStep: 0, endStep: 4, base: 6.8, ops: [{ kind: 'trend', amp: -3 }], origin: 'cell', ...extra }];
+
+  it('pins ONLY the explicit origin cell; leaves bulk cells AND conditions untouched', () => {
+    const mesh = mockMesh(6);
+    const sim = mockSim(mesh, null);
+    const ctl = new MovementController(cellSpec({ originCell: 2 }), 58);
+    const c = conds();
+    for (let s = 0; s < 4; s++) ctl.applyStep(c, s, sim);
+    expect(mesh.cells[2].fluid.pH).toBeLessThan(6.8);  // origin acidified (feeder source)
+    expect(mesh.cells[0].fluid.pH).toBe(6.8);          // neighbor untouched (diffusion is the sim's job)
+    expect(mesh.cells[5].fluid.pH).toBe(6.8);          // far cell untouched
+    expect(c.fluid.pH).toBe(6);                         // CONDITIONS untouched → global path NOT taken
+    expect(c.temperature).toBe(200);                   // nothing else moved
+  });
+
+  it('resolves the origin to an OPEN fluid-spot when no explicit cell is given (pinned + cached)', () => {
+    const mesh = mockMesh(10);
+    const sim = mockSim(mesh, [
+      { cell: 3, kind: 'crack', open: false, supply: 1, decayBonus: 1.6 },  // CLOSED — must be skipped
+      { cell: 7, kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.2 },
+    ]);
+    const ctl = new MovementController(cellSpec(), 58);
+    const c = conds();
+    for (let s = 0; s < 4; s++) ctl.applyStep(c, s, sim);
+    expect(ctl._state[0].originCell).toBe(7);          // resolved to the OPEN spot, cached once
+    expect(mesh.cells[7].fluid.pH).toBeLessThan(6.8);  // the feeder cell got pinned
+    expect(mesh.cells[3].fluid.pH).toBe(6.8);          // the closed spot's cell is inert
+    expect(c.fluid.pH).toBe(6);                         // conditions untouched
+  });
+
+  it('falls back to a valid wall cell when there are no open spots (still local, still no bulk write)', () => {
+    const mesh = mockMesh(8);
+    const sim = mockSim(mesh, []);                      // empty spot set
+    const ctl = new MovementController(cellSpec(), 58);
+    const c = conds();
+    for (let s = 0; s < 4; s++) ctl.applyStep(c, s, sim);
+    const oc = ctl._state[0].originCell;
+    expect(oc).toBeGreaterThanOrEqual(0);
+    expect(oc).toBeLessThan(8);                         // _pickOriginCell stayed in range
+    expect(mesh.cells[oc].fluid.pH).toBeLessThan(6.8);  // some single cell got pinned
+    expect(c.fluid.pH).toBe(6);                         // conditions still untouched
+  });
+
+  it("degrades to the GLOBAL path when no sim handle is passed (back-compat with 2-arg callers)", () => {
+    const ctl = new MovementController(cellSpec(), 58);
+    const c = conds();
+    for (let s = 0; s < 4; s++) ctl.applyStep(c, s);   // legacy 2-arg call, sim undefined
+    expect(c.fluid.pH).toBeLessThan(6.8);              // origin:'cell' safely fell back to setting conditions
+  });
+
+  it("a same-spec origin:'cell' movement is reproducible (resolved cell pinned from the seed)", () => {
+    const resolve = (seed: number) => {
+      const mesh = mockMesh(12);
+      const sim = mockSim(mesh, [
+        { cell: 2, kind: 'crack', open: true, supply: 1, decayBonus: 1.6 },
+        { cell: 9, kind: 'hotspot', open: true, supply: 1.4, decayBonus: 1.3 },
+      ]);
+      const ctl = new MovementController(cellSpec(), seed);
+      const c = conds();
+      for (let s = 0; s < 4; s++) ctl.applyStep(c, s, sim);
+      return ctl._state[0].originCell;
+    };
+    expect(resolve(58)).toBe(resolve(58));             // same cavity seed → same feeder
+    expect([2, 9]).toContain(resolve(58));             // and it's one of the open spots
   });
 });

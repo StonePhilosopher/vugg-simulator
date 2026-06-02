@@ -572,8 +572,40 @@ _wallStrangledFor(mineral) {
   for (let i = 0; i < ring0.length; i++) {
     if (ring0[i].crystal_id == null) empty.push(i);
   }
-  if (empty.length) return empty[Math.floor(rng.random() * empty.length)];
+  // Phase 2c.2 — DEPOSITION bias toward open supply-feeders (geysers/hotspots):
+  // weight the column pick so crystals cluster in the feeder's column. Null when
+  // there's nothing to bias (no spots / flag off / only cracks) → fall through to
+  // the EXACT legacy uniform pick, byte-identical. The weighted pick consumes the
+  // SAME single rng.random() draw, so the downstream cascade (and thus the
+  // assemblage) is untouched — only the chosen column (angular position) shifts.
+  const supW = (fluidSpotsDepositionEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
+    ? this._fluidSpots.columnSupplyWeights(N) : null;
+  if (empty.length) {
+    if (supW) return this._supplyWeightedColumnPick(empty, supW, rng.random());
+    return empty[Math.floor(rng.random() * empty.length)];
+  }
+  if (supW) {
+    // Wall full: bias over all columns (overlaps paint the larger crystal on top).
+    const all = []; for (let i = 0; i < N; i++) all.push(i);
+    return this._supplyWeightedColumnPick(all, supW, rng.random());
+  }
   return Math.floor(rng.random() * N);
+},
+
+// Phase 2c.2 — pick a column from `pool` weighted by per-column supply
+// (weights[col]). Consumes the single pre-drawn `rand` ∈ [0,1) the caller would
+// otherwise have spent on the uniform pick, so determinism is preserved. With
+// all-1 weights this reduces EXACTLY to pool[floor(rand*pool.length)] (the legacy
+// expression), so the bias only deviates where a feeder column has weight > 1.
+_supplyWeightedColumnPick(pool, weights, rand) {
+  let total = 0;
+  for (let i = 0; i < pool.length; i++) total += weights[pool[i]] || 1;
+  let r = rand * total;
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[pool[i]] || 1;
+    if (r < 0) return pool[i];
+  }
+  return pool[pool.length - 1];   // float round-off guard
 },
 
 // Tranche 6 of PROPOSAL-CAVITY-MESH §14 — joint σ-weighted sample over
@@ -647,6 +679,15 @@ _perVertexNucleationSample(mineral) {
   const savedFluid = this.conditions.fluid;
   const savedTemp = this.conditions.temperature;
 
+  // Phase 2c.2 — DEPOSITION bias: open supply-feeders raise the per-cell
+  // nucleation weight at their cell (vent-fed precipitation). supplyAt returns
+  // 1.0 everywhere when there are no spots / the cell isn't a feeder, so this is
+  // a no-op (byte-identical) for the default fleet; only the feeder cell's weight
+  // lifts when the flag is on and a spot sits on it. The legacy column path
+  // (above) is the broad lever; this is the per-vertex companion that composes
+  // when per_vertex_nucleation is enabled.
+  const spots = (fluidSpotsDepositionEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
+    ? this._fluidSpots : null;
   const weights = new Float64Array(ringCount * N);
   let total = 0;
   try {
@@ -671,7 +712,8 @@ _perVertexNucleationSample(mineral) {
           sigma = 0;
         }
         if (!Number.isFinite(sigma) || sigma <= 1) continue;
-        const w = areaW * (sigma - 1) * (sigma - 1);
+        let w = areaW * (sigma - 1) * (sigma - 1);
+        if (spots) w *= spots.supplyAt(idx);
         weights[idx] = w;
         total += w;
       }

@@ -14818,6 +14818,22 @@ let timeScale = 5.0;
 //   SIM_VERSION bumps because the rendered output changed even though the assemblage
 //   didn't. FILES: js/85k (columnWeights + decay flag), js/22 (erodeCells colWeights),
 //   js/85d (dissolve_wall passes weights). NEXT: 2c origin:'cell' + deposition bias.
+//
+//   (2c.1 origin:'cell' spatial injection landed DARK on v171 — see commit 3ace0b7.
+//    No SIM bump: no scenario opts in, byte-identical.)
+//
+//   2c.2 DEPOSITION-bias-on-placement also rides v171 but DEFAULT-OFF (DARK) — see the
+//   85k _FLUID_SPOTS_DEPOSITION_ENABLED comment for the verify-the-mechanism finding:
+//   weighting the legacy ring0 COLUMN pick by open-feeder `supply` (geyser 1.8 /
+//   hotspot 1.4; crack 1.0 = none) reshuffles placement (changing spatial competition)
+//   but does NOT visibly CLUSTER crystals at feeders — at 1.4-1.8× over a few columns of
+//   120 with sparse (~25-77) nucleation, feeder columns capture ~0 crystals (measured:
+//   gem_pegmatite feeders [107,114,78] get 0 both OFF and ON). It only churns baselines
+//   (11/30 scenarios; assemblage preserved, 0 expects_species lost) without the payoff,
+//   so it ships OFF. The visible-clustering path is a per-cell PROXIMITY-DECAY supply
+//   weight through the per-vertex sampler (the synergy HANDOFF-PER-VERTEX-PLACEMENT
+//   predicted — feeders supply the spatial heterogeneity that sampler is σ-starved for);
+//   that's a future increment + a visible aesthetic choice for the boss's eye.
 const SIM_VERSION = 171;
 
 // ── 18-constants.js ──
@@ -42700,12 +42716,15 @@ class VugSimulator {
             (this.conditions.wall?.inter_ring_diffusion_rate != null)
                 ? this.conditions.wall.inter_ring_diffusion_rate
                 : DEFAULT_INTER_RING_DIFFUSION_RATE;
-        // PROPOSAL-CAVITY-MESH Phase 4 Tranche 1 — bind per-vertex
-        // chemistry slots on the mesh to the ring_fluids[] backing
-        // store. After this call, mesh.cells[i].fluid === ring_fluids[r]
-        // for vertex i in ring r — same object, two accessor paths.
-        // Tranche 2+ moves to per-vertex cloned fluids; Tranche 1 keeps
-        // the byte-identical invariant by aliasing.
+        // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4c — bind per-vertex
+        // chemistry slots on the mesh from the ring_fluids[] backing
+        // store. After this call, mesh.cells[i].fluid is an INDEPENDENT
+        // clone of ring_fluids[r] for vertex i in ring r (un-aliased in
+        // Tranche 4a) — so the per-cell fluids evolve separately under
+        // engines + diffusion and are DECOUPLED from ring_fluids /
+        // conditions.fluid (writing one does not update the other; see
+        // 85c-simulator-state.ts:152-168). cells[i] is the same WallCell
+        // object as wall.rings[r][c], so legacy ring reads see the binding.
         const _initialMesh = this.wall_state.meshFor(this);
         if (_initialMesh && _initialMesh.bindRingChemistry) {
             _initialMesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
@@ -42761,7 +42780,11 @@ class VugSimulator {
             if (!this._movements)
                 this._movements = _createMovementController(this);
             const mvSnap = this._snapshotGlobal();
-            this._movements.applyStep(this.conditions, this.step);
+            // Pass the sim handle so origin:'cell' movements (Phase 2c) can reach the
+            // mesh + seeded fluid-spots. Global movements ignore it. A cell movement
+            // injects into one mesh cell (not `conditions`), so the propagate below is
+            // a no-op for it — the step-end _diffuseRingState spreads the cell value.
+            this._movements.applyStep(this.conditions, this.step, this);
             this._propagateGlobalDelta(mvSnap);
         }
         // v26: continuous drainage from host-rock porosity. Runs before
@@ -44459,9 +44482,44 @@ Object.assign(VugSimulator.prototype, {
             if (ring0[i].crystal_id == null)
                 empty.push(i);
         }
-        if (empty.length)
+        // Phase 2c.2 — DEPOSITION bias toward open supply-feeders (geysers/hotspots):
+        // weight the column pick so crystals cluster in the feeder's column. Null when
+        // there's nothing to bias (no spots / flag off / only cracks) → fall through to
+        // the EXACT legacy uniform pick, byte-identical. The weighted pick consumes the
+        // SAME single rng.random() draw, so the downstream cascade (and thus the
+        // assemblage) is untouched — only the chosen column (angular position) shifts.
+        const supW = (fluidSpotsDepositionEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
+            ? this._fluidSpots.columnSupplyWeights(N) : null;
+        if (empty.length) {
+            if (supW)
+                return this._supplyWeightedColumnPick(empty, supW, rng.random());
             return empty[Math.floor(rng.random() * empty.length)];
+        }
+        if (supW) {
+            // Wall full: bias over all columns (overlaps paint the larger crystal on top).
+            const all = [];
+            for (let i = 0; i < N; i++)
+                all.push(i);
+            return this._supplyWeightedColumnPick(all, supW, rng.random());
+        }
         return Math.floor(rng.random() * N);
+    },
+    // Phase 2c.2 — pick a column from `pool` weighted by per-column supply
+    // (weights[col]). Consumes the single pre-drawn `rand` ∈ [0,1) the caller would
+    // otherwise have spent on the uniform pick, so determinism is preserved. With
+    // all-1 weights this reduces EXACTLY to pool[floor(rand*pool.length)] (the legacy
+    // expression), so the bias only deviates where a feeder column has weight > 1.
+    _supplyWeightedColumnPick(pool, weights, rand) {
+        let total = 0;
+        for (let i = 0; i < pool.length; i++)
+            total += weights[pool[i]] || 1;
+        let r = rand * total;
+        for (let i = 0; i < pool.length; i++) {
+            r -= weights[pool[i]] || 1;
+            if (r < 0)
+                return pool[i];
+        }
+        return pool[pool.length - 1]; // float round-off guard
     },
     // Tranche 6 of PROPOSAL-CAVITY-MESH §14 — joint σ-weighted sample over
     // every (ring, cell) pair. Returns { ringIdx, cellIdx } or null if no
@@ -44533,6 +44591,15 @@ Object.assign(VugSimulator.prototype, {
         // Save conditions.fluid + .temperature once; swap inside the loop.
         const savedFluid = this.conditions.fluid;
         const savedTemp = this.conditions.temperature;
+        // Phase 2c.2 — DEPOSITION bias: open supply-feeders raise the per-cell
+        // nucleation weight at their cell (vent-fed precipitation). supplyAt returns
+        // 1.0 everywhere when there are no spots / the cell isn't a feeder, so this is
+        // a no-op (byte-identical) for the default fleet; only the feeder cell's weight
+        // lifts when the flag is on and a spot sits on it. The legacy column path
+        // (above) is the broad lever; this is the per-vertex companion that composes
+        // when per_vertex_nucleation is enabled.
+        const spots = (fluidSpotsDepositionEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
+            ? this._fluidSpots : null;
         const weights = new Float64Array(ringCount * N);
         let total = 0;
         try {
@@ -44560,7 +44627,9 @@ Object.assign(VugSimulator.prototype, {
                     }
                     if (!Number.isFinite(sigma) || sigma <= 1)
                         continue;
-                    const w = areaW * (sigma - 1) * (sigma - 1);
+                    let w = areaW * (sigma - 1) * (sigma - 1);
+                    if (spots)
+                        w *= spots.supplyAt(idx);
                     weights[idx] = w;
                     total += w;
                 }
@@ -47883,7 +47952,9 @@ class MovementController {
     constructor(movements, vuggSeed) {
         this.movements = Array.isArray(movements) ? movements : [];
         this.rng = _makeMovementRng(vuggSeed);
-        this._state = this.movements.map(() => ({ base: 0, ou: 0, started: false }));
+        // originCell -1 = unresolved; resolved once at first window activation for
+        // origin:'cell' movements (Phase 2c), then pinned (stable across steps).
+        this._state = this.movements.map(() => ({ base: 0, ou: 0, started: false, originCell: -1 }));
     }
     get isEmpty() { return this.movements.length === 0; }
     // Phase 4c.3a — is any movement driving `field` active at this step? Used by
@@ -47903,7 +47974,12 @@ class MovementController {
     // Apply every active movement for this step. No-op (and zero draws) when
     // empty. Mutates `conditions` in place; the caller propagates the global
     // delta to per-ring fluids exactly as it does for discrete events.
-    applyStep(conditions, step) {
+    //
+    // `sim` (Phase 2c) is the optional simulator handle, used ONLY by
+    // origin:'cell' movements to reach the mesh + the seeded fluid-spot set.
+    // When absent (the legacy 2-arg call from unit tests), every movement uses
+    // the global path — so origin:'cell' degrades safely to origin:'global'.
+    applyStep(conditions, step, sim) {
         if (!this.movements.length)
             return; // <-- the sim-neutral fast path
         for (let i = 0; i < this.movements.length; i++) {
@@ -47915,6 +47991,12 @@ class MovementController {
             if (!st.started) {
                 st.base = (typeof m.base === 'number') ? m.base : _movementGetField(conditions, m.field);
                 st.started = true;
+                // SPATIAL origin (Phase 2c): resolve + pin the injection cell ONCE,
+                // here at first activation, so it's stable and the (single) movement-
+                // stream draw lands in a predictable place. Only for origin:'cell'
+                // movements with a sim handle — global movements never draw here.
+                if (m.origin === 'cell' && sim)
+                    st.originCell = this._resolveOriginCell(i, sim);
             }
             if (!Number.isFinite(st.base))
                 continue; // field absent → skip safely
@@ -47940,8 +48022,64 @@ class MovementController {
                 value = Math.max(m.clampMin, value);
             if (typeof m.clampMax === 'number')
                 value = Math.min(m.clampMax, value);
+            // SPATIAL origin (Phase 2c): instead of SETTING the bulk field (global),
+            // pin ONE seeded origin cell's per-vertex fluid to `value` — a fixed-
+            // composition feeder — and let the step-end _diffuseRingState carry it
+            // outward across mesh cells (a near→far gradient = one-sided growth, the
+            // Punjab hematite-on-one-side specimen). NB per 85c:152-168 the per-cell
+            // mesh fluids are DECOUPLED from ring_fluids/conditions.fluid, so this
+            // injection is seen by the strip + the per-vertex nucleation sampler
+            // (which read mesh.cells), NOT the legacy ring-fluid nucleation gate —
+            // crystal CLUSTERING near a feeder is the separate deposition bias (2c.2).
+            // The caller's _propagateGlobalDelta is a no-op for this movement because
+            // we never touched `conditions` here. Falls back to the global set if the
+            // mesh isn't resolvable (headless edge) so the movement still does work.
+            if (m.origin === 'cell' && sim && this._injectCellField(sim, st.originCell, m.field, value)) {
+                continue;
+            }
             _movementSetField(conditions, m.field, value);
         }
+    }
+    // Resolve the origin (injection) cell for movement i. Preference order:
+    //   explicit m.originCell  →  a seeded pick among OPEN fluid-spots  →  the
+    //   naive _pickOriginCell (any wall cell). A fluid-spot IS the geological
+    //   home of a feeder (js/85k), so an origin:'cell' movement enters where the
+    //   plumbing connects. The spot pick draws ONCE from the dedicated movement
+    //   stream → reproducible AND independent of the shared nucleation rng.
+    _resolveOriginCell(i, sim) {
+        const m = this.movements[i];
+        if (typeof m.originCell === 'number')
+            return m.originCell | 0;
+        const field = sim && sim._fluidSpots;
+        const open = field && !field.isEmpty ? field.openSpots() : [];
+        if (open && open.length) {
+            const pick = Math.min(open.length - 1, Math.floor(this.rng() * open.length));
+            return open[pick].cell | 0;
+        }
+        const mesh = sim && sim.wall_state && sim.wall_state.meshFor ? sim.wall_state.meshFor(sim) : null;
+        const n = mesh && mesh.cells ? mesh.cells.length : 1;
+        return _pickOriginCell(this.rng, n);
+    }
+    // Pin a single mesh cell's per-vertex fluid field to `value` (the feeder
+    // source composition). Returns false (→ caller uses the global path) when the
+    // mesh / cell / field can't be resolved. Sets the LEAF of a dotted field
+    // ('fluid.pH' → 'pH'); the per-cell fluid is a flat FluidChemistry.
+    _injectCellField(sim, idx, field, value) {
+        if (!(idx >= 0))
+            return false;
+        const mesh = sim && sim.wall_state && sim.wall_state.meshFor ? sim.wall_state.meshFor(sim) : null;
+        if (!mesh || !mesh.cells || idx >= mesh.cells.length)
+            return false;
+        const cell = mesh.cells[idx];
+        const fluid = cell ? cell.fluid : null;
+        if (!fluid)
+            return false;
+        const dot = field.lastIndexOf('.');
+        const leaf = dot >= 0 ? field.slice(dot + 1) : field;
+        if (typeof fluid[leaf] !== 'number')
+            return false;
+        fluid[leaf] = value;
+        return true;
     }
 }
 // Factory: build a controller for a sim. Reads the scenario's declared
@@ -47998,6 +48136,25 @@ const _SPOTS_SALT = 0x53504f54;
 let _FLUID_SPOTS_DECAY_ENABLED = true;
 function setFluidSpotsDecayEnabled(enabled) { _FLUID_SPOTS_DECAY_ENABLED = !!enabled; }
 function fluidSpotsDecayEnabled() { return _FLUID_SPOTS_DECAY_ENABLED; }
+// Phase 2c.2 coupling gate — DEFAULT OFF (DARK). When ON, nucleation PLACEMENT
+// is biased toward open supply-feeders (geysers 1.8 / hotspots 1.4; cracks 1.0 =
+// none) by weighting the legacy ring0 COLUMN pick (columnSupplyWeights), a
+// redistribution of the SAME rng draw (the ring — hence growth chemistry — is
+// assigned separately, so the assemblage is preserved; only angular position
+// shifts). It ships OFF after a verify-the-mechanism finding (tools/fluid-spots-
+// deposition-observe.mjs + a direct column-membership probe): at 1.4-1.8× over a
+// few columns of ~120 with sparse (~25-77) nucleation, the bias does NOT visibly
+// CLUSTER crystals at feeders (gem_pegmatite feeders [107,114,78] capture 0
+// crystals both OFF and ON) — it only RESHUFFLES placement, churning 11/30
+// baselines (assemblage preserved, 0 expects_species lost) without the payoff.
+// The visible-clustering path is a per-cell PROXIMITY-DECAY supply weight through
+// the per-vertex sampler (HANDOFF-PER-VERTEX-PLACEMENT synergy) — a future
+// increment + a visible aesthetic choice for the boss. The mechanism stays wired
+// (+ tested via explicit ON) so that path can build on it. Mirrors the
+// fluidSpotsDecayEnabled shape. Read the LIVE value via fluidSpotsDepositionEnabled().
+let _FLUID_SPOTS_DEPOSITION_ENABLED = false;
+function setFluidSpotsDepositionEnabled(enabled) { _FLUID_SPOTS_DEPOSITION_ENABLED = !!enabled; }
+function fluidSpotsDepositionEnabled() { return _FLUID_SPOTS_DEPOSITION_ENABLED; }
 // A dedicated deterministic PRNG for the spot set, derived from the cavity seed.
 // Reuses _mulberry32 (22-geometry-wall.ts) — resume-safe, independent of `rng`.
 function _makeSpotRng(vuggSeed, salt = _SPOTS_SALT) {
@@ -48112,6 +48269,35 @@ class FluidSpotField {
             const col = ((s.cell % N) + N) % N;
             if (s.decayBonus > w[col]) {
                 w[col] = s.decayBonus;
+                any = true;
+            }
+        }
+        return any ? w : null;
+    }
+    // Phase 2c.2 — per-COLUMN DEPOSITION weights, the placement analog of
+    // columnWeights. Nucleation's legacy cell pick chooses a ring0 column; this
+    // biases that pick toward open SUPPLY-feeders so crystals cluster in the
+    // feeder's column. Weight = MAX supply among OPEN spots on the column (>1 =
+    // nucleate more there). Crucially uses `supply`, NOT decayBonus: by the kind
+    // defaults a 'crack' has supply 1.0 (erosion-dominant flow-through, no extra
+    // deposition) while geysers (1.8) / hotspots (1.4) are vent-fed precipitators
+    // — so a crack deepens its column (2b) without seeding crystals there, exactly
+    // the right physics. Returns a length-cellsPerRing array (1.0 where no feeder)
+    // or null when nothing biases (caller stays on the EXACT legacy pick →
+    // byte-identical). The ring is assigned separately, so this shifts angular
+    // position only — the assemblage (minerals/sizes/counts) is unchanged.
+    columnSupplyWeights(cellsPerRing) {
+        const N = cellsPerRing | 0;
+        if (N <= 0 || this.isEmpty)
+            return null;
+        let any = false;
+        const w = new Array(N).fill(1.0);
+        for (const s of this.spots) {
+            if (!s.open || !(s.supply > 1))
+                continue;
+            const col = ((s.cell % N) + N) % N;
+            if (s.supply > w[col]) {
+                w[col] = s.supply;
                 any = true;
             }
         }

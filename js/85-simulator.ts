@@ -126,12 +126,15 @@ class VugSimulator {
       (this.conditions.wall?.inter_ring_diffusion_rate != null)
         ? this.conditions.wall.inter_ring_diffusion_rate
         : DEFAULT_INTER_RING_DIFFUSION_RATE;
-    // PROPOSAL-CAVITY-MESH Phase 4 Tranche 1 — bind per-vertex
-    // chemistry slots on the mesh to the ring_fluids[] backing
-    // store. After this call, mesh.cells[i].fluid === ring_fluids[r]
-    // for vertex i in ring r — same object, two accessor paths.
-    // Tranche 2+ moves to per-vertex cloned fluids; Tranche 1 keeps
-    // the byte-identical invariant by aliasing.
+    // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4c — bind per-vertex
+    // chemistry slots on the mesh from the ring_fluids[] backing
+    // store. After this call, mesh.cells[i].fluid is an INDEPENDENT
+    // clone of ring_fluids[r] for vertex i in ring r (un-aliased in
+    // Tranche 4a) — so the per-cell fluids evolve separately under
+    // engines + diffusion and are DECOUPLED from ring_fluids /
+    // conditions.fluid (writing one does not update the other; see
+    // 85c-simulator-state.ts:152-168). cells[i] is the same WallCell
+    // object as wall.rings[r][c], so legacy ring reads see the binding.
     const _initialMesh = this.wall_state.meshFor(this);
     if (_initialMesh && _initialMesh.bindRingChemistry) {
       _initialMesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
@@ -189,7 +192,11 @@ class VugSimulator {
         && this.conditions._scenario.movements.length) {
       if (!this._movements) this._movements = _createMovementController(this);
       const mvSnap = this._snapshotGlobal();
-      this._movements.applyStep(this.conditions, this.step);
+      // Pass the sim handle so origin:'cell' movements (Phase 2c) can reach the
+      // mesh + seeded fluid-spots. Global movements ignore it. A cell movement
+      // injects into one mesh cell (not `conditions`), so the propagate below is
+      // a no-op for it — the step-end _diffuseRingState spreads the cell value.
+      this._movements.applyStep(this.conditions, this.step, this);
       this._propagateGlobalDelta(mvSnap);
     }
     // v26: continuous drainage from host-rock porosity. Runs before

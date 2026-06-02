@@ -182,12 +182,14 @@ function _movementSetField(conditions: any, path: string, value: number): void {
 class MovementController {
   movements: MovementSpec[];
   rng: () => number;
-  _state: { base: number; ou: number; started: boolean }[];
+  _state: { base: number; ou: number; started: boolean; originCell: number }[];
 
   constructor(movements: MovementSpec[] | undefined, vuggSeed: number) {
     this.movements = Array.isArray(movements) ? movements : [];
     this.rng = _makeMovementRng(vuggSeed);
-    this._state = this.movements.map(() => ({ base: 0, ou: 0, started: false }));
+    // originCell -1 = unresolved; resolved once at first window activation for
+    // origin:'cell' movements (Phase 2c), then pinned (stable across steps).
+    this._state = this.movements.map(() => ({ base: 0, ou: 0, started: false, originCell: -1 }));
   }
 
   get isEmpty(): boolean { return this.movements.length === 0; }
@@ -209,7 +211,12 @@ class MovementController {
   // Apply every active movement for this step. No-op (and zero draws) when
   // empty. Mutates `conditions` in place; the caller propagates the global
   // delta to per-ring fluids exactly as it does for discrete events.
-  applyStep(conditions: any, step: number): void {
+  //
+  // `sim` (Phase 2c) is the optional simulator handle, used ONLY by
+  // origin:'cell' movements to reach the mesh + the seeded fluid-spot set.
+  // When absent (the legacy 2-arg call from unit tests), every movement uses
+  // the global path — so origin:'cell' degrades safely to origin:'global'.
+  applyStep(conditions: any, step: number, sim?: any): void {
     if (!this.movements.length) return;              // <-- the sim-neutral fast path
     for (let i = 0; i < this.movements.length; i++) {
       const m = this.movements[i];
@@ -219,6 +226,11 @@ class MovementController {
       if (!st.started) {
         st.base = (typeof m.base === 'number') ? m.base : _movementGetField(conditions, m.field);
         st.started = true;
+        // SPATIAL origin (Phase 2c): resolve + pin the injection cell ONCE,
+        // here at first activation, so it's stable and the (single) movement-
+        // stream draw lands in a predictable place. Only for origin:'cell'
+        // movements with a sim handle — global movements never draw here.
+        if (m.origin === 'cell' && sim) st.originCell = this._resolveOriginCell(i, sim);
       }
       if (!Number.isFinite(st.base)) continue;       // field absent → skip safely
       const span = Math.max(1, m.endStep - m.startStep);
@@ -243,8 +255,62 @@ class MovementController {
       let value = setpoint + st.ou;
       if (typeof m.clampMin === 'number') value = Math.max(m.clampMin, value);
       if (typeof m.clampMax === 'number') value = Math.min(m.clampMax, value);
+
+      // SPATIAL origin (Phase 2c): instead of SETTING the bulk field (global),
+      // pin ONE seeded origin cell's per-vertex fluid to `value` — a fixed-
+      // composition feeder — and let the step-end _diffuseRingState carry it
+      // outward across mesh cells (a near→far gradient = one-sided growth, the
+      // Punjab hematite-on-one-side specimen). NB per 85c:152-168 the per-cell
+      // mesh fluids are DECOUPLED from ring_fluids/conditions.fluid, so this
+      // injection is seen by the strip + the per-vertex nucleation sampler
+      // (which read mesh.cells), NOT the legacy ring-fluid nucleation gate —
+      // crystal CLUSTERING near a feeder is the separate deposition bias (2c.2).
+      // The caller's _propagateGlobalDelta is a no-op for this movement because
+      // we never touched `conditions` here. Falls back to the global set if the
+      // mesh isn't resolvable (headless edge) so the movement still does work.
+      if (m.origin === 'cell' && sim && this._injectCellField(sim, st.originCell, m.field, value)) {
+        continue;
+      }
       _movementSetField(conditions, m.field, value);
     }
+  }
+
+  // Resolve the origin (injection) cell for movement i. Preference order:
+  //   explicit m.originCell  →  a seeded pick among OPEN fluid-spots  →  the
+  //   naive _pickOriginCell (any wall cell). A fluid-spot IS the geological
+  //   home of a feeder (js/85k), so an origin:'cell' movement enters where the
+  //   plumbing connects. The spot pick draws ONCE from the dedicated movement
+  //   stream → reproducible AND independent of the shared nucleation rng.
+  _resolveOriginCell(i: number, sim: any): number {
+    const m = this.movements[i];
+    if (typeof m.originCell === 'number') return m.originCell | 0;
+    const field = sim && sim._fluidSpots;
+    const open = field && !field.isEmpty ? field.openSpots() : [];
+    if (open && open.length) {
+      const pick = Math.min(open.length - 1, Math.floor(this.rng() * open.length));
+      return open[pick].cell | 0;
+    }
+    const mesh = sim && sim.wall_state && sim.wall_state.meshFor ? sim.wall_state.meshFor(sim) : null;
+    const n = mesh && mesh.cells ? mesh.cells.length : 1;
+    return _pickOriginCell(this.rng, n);
+  }
+
+  // Pin a single mesh cell's per-vertex fluid field to `value` (the feeder
+  // source composition). Returns false (→ caller uses the global path) when the
+  // mesh / cell / field can't be resolved. Sets the LEAF of a dotted field
+  // ('fluid.pH' → 'pH'); the per-cell fluid is a flat FluidChemistry.
+  _injectCellField(sim: any, idx: number, field: string, value: number): boolean {
+    if (!(idx >= 0)) return false;
+    const mesh = sim && sim.wall_state && sim.wall_state.meshFor ? sim.wall_state.meshFor(sim) : null;
+    if (!mesh || !mesh.cells || idx >= mesh.cells.length) return false;
+    const cell = mesh.cells[idx];
+    const fluid = cell ? cell.fluid : null;
+    if (!fluid) return false;
+    const dot = field.lastIndexOf('.');
+    const leaf = dot >= 0 ? field.slice(dot + 1) : field;
+    if (typeof fluid[leaf] !== 'number') return false;
+    fluid[leaf] = value;
+    return true;
   }
 }
 
