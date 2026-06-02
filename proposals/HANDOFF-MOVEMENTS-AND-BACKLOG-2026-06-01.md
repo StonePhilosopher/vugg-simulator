@@ -408,6 +408,51 @@ pattern), profile, then optimize the actual hotspot. NB: the fluid-source-spots
 design (§10) already reduces per-step RNG by using a bounded precomputed origin
 set instead of per-parcel rolls — perf and geology aligned there.
 
+### P. Frontier gaps toward byte-identical (exposed 2026-06-02 — LOWER PRIORITY than the active Movements arc; documented so the knowledge carries forward)
+The boss stress-tested the finish line with three real specimens (a Treece-KS
+sphalerite+calcite, a quartz-druse vug with internal bridges, a query about
+angel-wing calcite). The honest map: "simulate life / byte-identical" needs FOUR
+axes all true, and these specimens cleanly separate them. **Do NOT pull these
+ahead of the Movements arc** — they're the long game. Captured per axis:
+
+- **(1) Chemistry fidelity** — the axis we're ON (Eh live, movements). Coarsest
+  grain; real progress. Keep climbing it (the active work).
+- **(2) Morphology / individual-resolution texture** — the BIG forward gap and the
+  precondition for inversion (you can't invert to an individual the forward model
+  can't even render). Today's model emits STYLIZED primitives + habit tokens, not
+  etch pits / step-bunching / growth striations / phantoms / twin re-entrants /
+  included blebs at individual resolution. Sub-items exposed:
+  - **Angel-wing calcite is MISSING.** Calcite is only `scalenohedral_or_
+    rhombohedral` with a single {0001} c_twin (prob 0.1). Angel-wing = a tabular
+    wing/butterfly CONTACT twin — absent as both habit and twin. (The only "angel"
+    in-code is *angelite* = lavender anhydrite, unrelated.) MVT-associated
+    (Linwood, IA) → natural add for the collection arc: `vugg-add-twin-law` + a
+    wing primitive (99c/99d) + habit token (07).
+  - **Sphalerite under-grows in `mvt`** — galena reaches ~7 mm while sphalerite
+    stays ~µm; the ore proportions are INVERTED vs real Tri-State (sphalerite is
+    the dominant ore). A calibration gap (vugg-tune-scenario) — and a clean
+    "replicate what you see" failure to fix.
+  - **Per-individual surface/interior texture** — the deep one. Phantoms,
+    striation spacing, etch figures are the deterministic RECORD of the contingent
+    history; they must EMERGE from truer + FINER physics, not be painted on. See
+    the North Star "what byte-identical means" block. **Natural bridge from the
+    current arc:** a phantom IS a movement event frozen into the crystal, and the
+    strip recorder already stores the movement trajectory — so rendering phantoms
+    FROM the recorded movement trajectory is the first faithful step up the
+    resolution axis, and it composes directly with Movements.
+- **(3) Topology** — internal **septa / bridges** that subdivide a cavity (Keokuk-
+  geode style) are NOT representable: the cavity is a single closed surface (rings
+  × cells around one interior); grep for septa/bridge/partition is empty. Origin:
+  incomplete dissolution leaves host-rock/silica walls, then crystal coats
+  everything. A cavity-geometry arc (22-geometry-wall) — distinct from chemistry.
+  (The even quartz-DRUSE half of that specimen IS reproducible today — wall
+  nucleation across the whole surface is the default growth mode.)
+- **(4) Inversion (photo → recipe)** — the literal stop-condition; see coda §1
+  (factors through the strip trajectory). Unbuilt. **Ordering note:** axis (2)
+  forward-resolution must precede (4) — there's nothing to invert TO until the
+  forward model emits individual-resolution texture. Don't build the inverse leg
+  first.
+
 ### O. RESOLVED / DONE (don't re-open)
 - **Per-vertex placement flip** — investigated v167, deliberately NOT globally
   flipped (scale-starved); area-skew bug fixed. Stays opt-in. Don't re-attempt
@@ -458,3 +503,57 @@ Things worth carrying that aren't fully captured above:
 5. When the science contradicts your plan, that's the compass working, not a
    setback. The best moves this session were the two corrections (red-noise →
    mean-reverting; iron → solubility cycling). Stay glad to be wrong.
+
+---
+
+### ☆☆ Addendum — the "make Eh live" session (2026-06-02)
+
+What shipped: the whole **Eh-live arc** — 4c.1 observer (Eh tracks O2) → 4c.2
+consume (engines read Eh) → 4c.3a Eh-canonical (a movement can drive Eh) → 4c.3b
+the **first real geological movement** (mvt reducing-Eh trend). SIM 167→169, suite
+green throughout, all on Syntaxswine. Eh went from frozen+inert to live, consumed,
+drivable, with a science-grounded movement on a real scenario. The dark-observation
+that opened the session is what found Eh was the gap.
+
+What I learned (carry these):
+- **Observe before you build, every time.** The dark observation found Eh wasn't
+  just frozen but *inert*; it found the barite-tension in the mvt movement; it
+  corrected my movement shape from a wrong oscillation to a reducing trend. Almost
+  every good call this session came from running a no-commit observation FIRST.
+  Build the oracle from observation, never from a plausible story (I narrated an
+  "open-atmosphere clobbers pH" diagnosis that was just a wrong field path — verify
+  the mechanism, don't trust the narration).
+- **The boss will keep raising your sights to the individual.** I under-shot the
+  finish line twice — first missing inversion, then missing individuality/texture.
+  The target is always *that crystal*, not a plausible member of its type. Don't
+  offer type-matches as progress. (See the North Star "what byte-identical means"
+  block — the load-bearing reframe of the session.)
+- **Green suite ≠ shipped. Functional on GitHub Pages = shipped** (boss). The suite
+  validates the engine; the game is the browser. After a player-facing push, verify
+  the live URL (serving + data 200s). Sonifier audio + visual render are the boss's
+  senses / a real browser — not something jsdom or curl can judge.
+- **Follow-the-science is a live corrective, not a slogan.** The MVT deep-research
+  killed my oscillating-pulse design and replaced it with a reducing trend; it's
+  what made the pilot true. Run the research, verify the citations (never fabricate
+  — v145), let it overrule you.
+
+What I'd have the next builder do, in order:
+1. **Finish the Movements arc (highest priority, the active work).** Get the boss's
+   look+listen on the mvt pilot → tune the trend by eye+ear → then Phase 3
+   (roll movements out to more scenarios, each deep-researched + dark-observed +
+   its own commit/regen) and Phase 2 (fluid-source spots — the spatial,
+   one-sided-growth layer). This is coherent, in-flight, and grounded.
+2. **Then the frontier axes (§P), LOWER priority, in the right order:** forward
+   individual-resolution texture BEFORE inversion. The cleanest first bite that
+   composes with what exists: **render phantoms from the recorded movement
+   trajectory** — a phantom is a movement frozen into the crystal, the strip
+   already stores the trajectory, and it's the first faithful step up the
+   resolution axis toward "that crystal." Angel-wing calcite + the mvt
+   sphalerite/galena proportion fix are clean, bounded, MVT-arc-aligned wins.
+3. **Keep the disciplines that make the finish line reachable:** verify sources,
+   defer to geology, observe before assert, never fabricate, Pages-is-the-game.
+   The destination is inevitable only if every step is science-true.
+
+This is a years-long cathedral. Build the next faithful step, write down what you
+learn for the one after you, and trust that following the science all the way down
+into the grain is the road that gets there. It was an honor to lay a few stones.
