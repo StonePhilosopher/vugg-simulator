@@ -281,6 +281,48 @@ whether any event touches the movement's field and start after it.
 
 Next arcs: Phase 3 continues (more scenarios/archetypes opt in, each its own commit
 + look+listen) and Phase 2 fluid-source spots (spatial).
+
+**★★★ PHASE 3 COVERAGE MAP (surveyed 2026-06-02 via tools/movement-assemblage-
+observe.mjs — observed 7+ candidates, the homework behind "totality").** A clean
+temporal-movement target needs a lever that is (a) FLAT in baseline, (b) the
+load-bearing GEOLOGICAL driver, and (c) assemblage-preserving. Across the roster
+that set is SMALL — most scenarios are gated. The honest map:
+- **✅ CLEAN + SHIPPED (2):** `mvt` (Eh reducing trend), `supergene_oxidation`
+  (pH acid front). These are the scenarios where all three conditions hold.
+- **⛔ T-BLOCKED (the biggest gated class — needs the ambient_cooling reconciliation
+  sub-project first):** `cooling`, `naica_geothermal`, `marble_contact_metamorphism`,
+  `gem_pegmatite`, `radioactive_pegmatite`, `porphyry`, `epithermal_telluride`
+  (boiling≈T; a pH-up movement can't recover its native_gold — boiling→Au isn't
+  pH-driven in-engine), `deccan_zeolite`. Temperature is their master variable and
+  the engine can't yet move it (ambient_cooling is an ad-hoc T movement on the
+  shared rng; OU-on-T diverges chaotically). **Unblocking T is the single largest
+  "totality" lever — ~8 scenarios.**
+- **⚠ EVENT-CONFOUNDED redox (lever already event-driven, not flat):** `bisbee`
+  (Eh −150→322 rollercoaster), `schneeberg` (Eh −200→322). A movement just fights
+  the scripted swings. To move these, SUBSUME their redox events into a movement
+  (the "movements subsume ad-hoc events" vision) — a per-scenario refactor.
+- **⚠ BASELINE-DEBT (fails many expects regardless of movement):** `roughten_gill`
+  (8 expects missing), `sunnyside_american_tunnel` (4 missing). Calibration debt,
+  not a movement target — fix the broth first.
+- **⚠ ASSEMBLAGE-COST (the geologically-right movement loses an expects):**
+  `sicily_solfifera` (reducing trend right for biogenic S but shrinks native_sulfur
+  87→1µm + kills celestine in-engine), `colorado_plateau` (VERIFIED: reducing Eh
+  wipes the oxidized U(VI) uranyl-vanadates). Engine doesn't reward these yet.
+- **⚠ CONCENTRATION-CONFOUNDED (evaporites; concentration already vadose-cycled):**
+  `sabkha_dolomitization`, `searles_lake`. The lever isn't flat (vadose ratchets it).
+- **○ ALKALINE / specialized (no clean acid-front):** `ultramafic_supergene` (pH 8.5),
+  `jeffrey_mine` (pH 10 serpentinite). A different (alkalinity) story, not yet modeled.
+- **— EXCLUDED by design (testing / tutorial / demo):** `pulse`, `reactive_wall`,
+  `tn457_barite_pulses`, `tutorial_*` (separate rework package), `stalactite_demo`,
+  `zoned_dripstone_cave`, `ouro_preto` (pH movement safe but not its headline driver).
+
+**TOTALITY VERDICT:** the temporal pH/Eh movement feature is COMPLETE at its clean
+set (2 scenarios) — baking unmotivated movements would violate follow-the-science.
+Broad coverage requires real sub-projects, in leverage order: (1) **T-reconciliation**
+(subsume ambient_cooling → unlocks ~8 cooling/hydrothermal/metamorphic scenarios —
+the biggest unlock), (2) **event-subsumption** (bisbee/schneeberg redox events →
+movements), (3) **baseline calibration** (roughten_gill/sunnyside). Each is its own
+arc. Phase 2 (spatial fluid-source spots) remains the other parked feature.
 - **Latent note:** even flag-ON, the helpers use the coarse `ehFromO2` bijection,
   NOT the principled Nernst couples (`REDOX_COUPLES`/`redoxFraction`, built in 4a,
   still uncalled). Richer per-couple redox is a later refinement, not 4c.
