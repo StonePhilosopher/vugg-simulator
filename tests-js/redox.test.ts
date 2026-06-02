@@ -5,7 +5,7 @@
 // helpers, breaking them silently would be expensive — these tests
 // are cheap insurance.
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 declare const REDOX_COUPLES: any;
 declare const nernstOxidizedFraction: any;
@@ -33,13 +33,21 @@ declare const carbonateRedoxPenalty: any;
 declare const sulfideRedoxAnoxic: any;
 declare const sulfideRedoxLinearFactor: any;
 declare const sulfideRedoxTent: any;
+declare const VugSimulator: any;
+declare const SCENARIOS: any;
+declare const setSeed: any;
+declare const setEhDynamicEnabled: any;
+declare const snapshotEhDynamicFlag: any;   // live read of the bundle's let (the exported EH_DYNAMIC_ENABLED is a frozen load-time snapshot)
 
 describe('redox infrastructure (Phase 4a)', () => {
-  it('flag is OFF in v26 — engines still gate on fluid.O2', () => {
-    // If this flips to true without Phase 4b/c migration landing
-    // first, every engine that reads `fluid.O2 > X` becomes a
-    // false-negative and most scenarios stop nucleating.
-    expect(EH_DYNAMIC_ENABLED).toBe(false);
+  it('flag is ON by default (Phase 4c.2 landed 2026-06-02) — engines consume Eh', () => {
+    // Was false through Phase 4a/4b (the migration wired helpers but kept
+    // the legacy O2 path live). Phase 4c.2 flipped it: every redox engine
+    // now derives its O2 from fluid.Eh via o2FromEh, with _syncRedoxEh (85c)
+    // keeping Eh = ehFromO2(O2) just before the engines read each step. The
+    // flag-OFF passthrough is still exercised by the parity blocks below,
+    // which wrap their bodies in setEhDynamicEnabled(false).
+    expect(EH_DYNAMIC_ENABLED).toBe(true);
   });
 
   it('three couples are encoded with the published E° values', () => {
@@ -133,6 +141,10 @@ describe('redox infrastructure (Phase 4a)', () => {
 });
 
 describe('Phase 4b sulfate redox helpers', () => {
+  // Phase 4c.2: the flag now defaults ON, so force the legacy flag-OFF
+  // passthrough for this parity block and restore after each test.
+  beforeEach(() => setEhDynamicEnabled(false));
+  afterEach(() => setEhDynamicEnabled(true));
   // Flag-OFF parity is the contract: with EH_DYNAMIC_ENABLED=false the
   // helpers must produce values that, when slotted into the engine
   // sites, give byte-identical seed-42 output. The legacy form is
@@ -141,7 +153,7 @@ describe('Phase 4b sulfate redox helpers', () => {
   // so the boundary case (O2 == X) maps the same way.
 
   it('sulfateRedoxAvailable matches `fluid.O2 >= threshold` with flag off', () => {
-    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    expect(snapshotEhDynamicFlag()).toBe(false);   // beforeEach forced flag OFF for this parity block
     const cases = [
       { O2: 0.05, X: 0.1, want: false },
       { O2: 0.1,  X: 0.1, want: true },   // boundary: legacy `<` excludes; `>=` includes — same exit decision
@@ -159,7 +171,7 @@ describe('Phase 4b sulfate redox helpers', () => {
   });
 
   it('sulfateRedoxFactor matches `Math.min(O2/scale, cap)` with flag off', () => {
-    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    expect(snapshotEhDynamicFlag()).toBe(false);   // beforeEach forced flag OFF for this parity block
     const cases = [
       { O2: 0.4,  scale: 0.4,  cap: 1.5, want: 1.0 },     // barite at cap-eligible point
       { O2: 1.0,  scale: 0.4,  cap: 1.5, want: 1.5 },     // capped
@@ -189,13 +201,15 @@ describe('Phase 4b sulfate redox helpers', () => {
 });
 
 describe('Phase 4b hydroxide redox helpers', () => {
+  beforeEach(() => setEhDynamicEnabled(false));
+  afterEach(() => setEhDynamicEnabled(true));
   // Same flag-OFF passthrough contract as sulfate; named separately so
   // Phase 4c can bind hydroxide to the Fe couple while sulfate stays
   // on the S couple. Until then the implementations are identical
   // and parity tests mirror the sulfate suite.
 
   it('hydroxideRedoxAvailable matches `fluid.O2 >= threshold` with flag off', () => {
-    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    expect(snapshotEhDynamicFlag()).toBe(false);   // beforeEach forced flag OFF for this parity block
     for (const { O2, X } of [
       { O2: 0.3, X: 0.4 }, { O2: 0.4, X: 0.4 }, { O2: 0.5, X: 0.4 },
       { O2: 0.79, X: 0.8 }, { O2: 0.8, X: 0.8 }, { O2: 1.5, X: 0.8 },
@@ -206,7 +220,7 @@ describe('Phase 4b hydroxide redox helpers', () => {
   });
 
   it('hydroxideRedoxFactor matches goethite + lepidocrocite legacy expressions', () => {
-    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    expect(snapshotEhDynamicFlag()).toBe(false);   // beforeEach forced flag OFF for this parity block
     // goethite: o_f = O2 / 1.0 (no cap)
     // lepidocrocite: o_f = Math.min(O2 / 1.5, 1.5)
     for (const O2 of [0.0, 0.4, 0.8, 1.0, 1.5, 3.0, 10.0]) {
@@ -218,6 +232,8 @@ describe('Phase 4b hydroxide redox helpers', () => {
 });
 
 describe('Phase 4b oxide redox helpers', () => {
+  beforeEach(() => setEhDynamicEnabled(false));
+  afterEach(() => setEhDynamicEnabled(true));
   // Three semantic shapes: standard oxidized-side (hematite),
   // reduced-side (uraninite), windowed (magnetite + cuprite).
 
@@ -273,8 +289,10 @@ describe('Phase 4b oxide redox helpers', () => {
 });
 
 describe('Phase 4b arsenate redox helpers', () => {
+  beforeEach(() => setEhDynamicEnabled(false));
+  afterEach(() => setEhDynamicEnabled(true));
   it('arsenateRedoxAvailable / Factor parity with legacy form', () => {
-    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    expect(snapshotEhDynamicFlag()).toBe(false);   // beforeEach forced flag OFF for this parity block
     for (const O2 of [0.0, 0.2, 0.3, 0.5, 1.0, 2.0]) {
       const f = new FluidChemistry({ O2 });
       // gates at 0.3 (most arsenates) and 0.5 (olivenite)
@@ -288,12 +306,14 @@ describe('Phase 4b arsenate redox helpers', () => {
 });
 
 describe('Phase 4b carbonate redox helpers', () => {
+  beforeEach(() => setEhDynamicEnabled(false));
+  afterEach(() => setEhDynamicEnabled(true));
   // Standard pair (oxidized side) parity is the same shape as
   // sulfate's — covered in spirit. Focus tests on the new shapes:
   // anoxic gate + soft penalty.
 
   it('carbonateRedoxAnoxic matches siderite + rhodochrosite hard reverse gates', () => {
-    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    expect(snapshotEhDynamicFlag()).toBe(false);   // beforeEach forced flag OFF for this parity block
     for (const O2 of [0.0, 0.5, 0.8, 0.81, 1.5, 1.51]) {
       const f = new FluidChemistry({ O2 });
       expect(carbonateRedoxAnoxic(f, 0.8)).toBe(O2 <= 0.8);
@@ -323,11 +343,13 @@ describe('Phase 4b carbonate redox helpers', () => {
 });
 
 describe('Phase 4b sulfide redox helpers', () => {
+  beforeEach(() => setEhDynamicEnabled(false));
+  afterEach(() => setEhDynamicEnabled(true));
   // Sulfide is the largest class — 34 sites, 4 shapes folded into
   // 3 helpers. Test each call pattern against its legacy form.
 
   it('sulfideRedoxAnoxic matches the 18 hard reverse gates', () => {
-    expect(EH_DYNAMIC_ENABLED).toBe(false);
+    expect(snapshotEhDynamicFlag()).toBe(false);   // beforeEach forced flag OFF for this parity block
     // Sample of thresholds used: 0.5 (acanthite), 0.6 (nickeline),
     // 0.8 (arsenopyrite), 1.0 (stibnite), 1.2 (molybdenite),
     // 1.5 (most), 1.8 (bornite), 1.9 (chalcocite), 2.0 (covellite)
@@ -375,5 +397,123 @@ describe('Phase 4b sulfide redox helpers', () => {
       const expected = Math.max(0.3, 1.3 - Math.abs(O2 - 0.8));
       expect(sulfideRedoxTent(f, 0.8, 1.3, 1.0, 0.3)).toBeCloseTo(expected, 6);
     }
+  });
+});
+
+describe('Phase 4c.1 — fluid.Eh tracks O2 every step (observer sync)', () => {
+  // Until 4c.1, fluid.Eh was written once at init and FROZEN, so the
+  // strip's Eh chip showed a dead flat line at +200 while O2 (the
+  // variable the engines actually read) moved underneath it. _syncRedoxEh
+  // (85c, called at the end of run_step) now derives Eh = ehFromO2(O2) on
+  // every fluid container. Observer-only while EH_DYNAMIC_ENABLED is off:
+  // nothing reads Eh in flag-OFF mode, so seed-42 crystal output is
+  // byte-identical (locked by calibration.test.ts) — this only makes the
+  // recorded/displayed Eh correct. These tests are the tripwire against a
+  // future change silently re-freezing Eh, and they pin the exact
+  // invariant the 4c.2 flag-flip relies on.
+
+  it('the bulk Eh equals ehFromO2(O2) at the end of every step, and is no longer pinned at +200', () => {
+    // The sync runs regardless of the flag; the Eh-tracks-O2 invariant is
+    // what 4c.2's consumed path relies on (engines read o2FromEh(Eh)=O2).
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.supergene_oxidation();
+    const sim = new VugSimulator(conditions, events);
+    const ehs: number[] = [];
+    for (let s = 0; s < 40; s++) {
+      sim.run_step();
+      const f = sim.conditions.fluid;
+      // _syncRedoxEh is the last fluid mutation in run_step → exact.
+      expect(f.Eh).toBeCloseTo(ehFromO2(f.O2), 6);
+      ehs.push(f.Eh);
+    }
+    // O2 swings in supergene → Eh moved off the frozen +200 default.
+    expect(new Set(ehs.map((x) => Math.round(x))).size).toBeGreaterThan(1);
+    expect(ehs.some((x) => Math.abs(x - 200) > 1)).toBe(true);
+  });
+
+  it('a flat-O2 scenario pins Eh at ehFromO2(O2) — correct, not the init +200', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.cooling();
+    const sim = new VugSimulator(conditions, events);
+    for (let s = 0; s < 20; s++) sim.run_step();
+    const f = sim.conditions.fluid;
+    expect(f.Eh).toBeCloseTo(ehFromO2(f.O2), 6);
+    expect(f.Eh).toBeLessThan(0);   // cooling O2≈0.1 → Eh≈-75, not +200
+  });
+
+  it('the sync reaches per-cell fluids (a wall voxel\'s Eh matches its own O2)', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.supergene_oxidation();
+    const sim = new VugSimulator(conditions, events);
+    for (let s = 0; s < 30; s++) sim.run_step();
+    const equator = Math.floor(sim.wall_state.ring_count / 2);
+    const cell = typeof sim.fluidAtVoxel === 'function'
+      ? sim.fluidAtVoxel(equator, 0, 0) : null;
+    if (cell && typeof cell.O2 === 'number') {
+      expect(cell.Eh).toBeCloseTo(ehFromO2(cell.O2), 6);
+    }
+  });
+});
+
+describe('Phase 4c.2 — engines CONSUME Eh (flag ON by default)', () => {
+  // With the flag on, the per-class helpers derive their O2 from fluid.Eh
+  // (o2FromEh), so Eh — not the raw O2 field — is what gates a mineral.
+  // These pin (a) that the consumed path actually follows Eh, and (b) the
+  // bridge identity the seed-42 byte-equivalence rests on: when Eh is the
+  // ehFromO2 image of O2 (which _syncRedoxEh guarantees each step), the
+  // helper reproduces the legacy O2-form result.
+
+  it('the flag is ON, so the helper follows Eh even when raw O2 disagrees', () => {
+    expect(EH_DYNAMIC_ENABLED).toBe(true);
+    // Raw O2 says "anoxic" (0) but Eh says strongly oxidizing (+600). The
+    // consumed path reads Eh → o2FromEh(+600) ≈ oxic → gate passes, despite
+    // O2=0. (Flag-OFF this would be false: 0 >= 0.1 is false.)
+    const f = new FluidChemistry({ O2: 0, Eh: 600 });
+    expect(sulfateRedoxAvailable(f, 0.1)).toBe(true);
+    // And the converse: oxic O2 but reducing Eh → gate fails on Eh.
+    const g = new FluidChemistry({ O2: 5, Eh: -200 });
+    expect(sulfateRedoxAvailable(g, 0.1)).toBe(false);
+  });
+
+  it('bridge identity: with Eh = ehFromO2(O2), the consumed path == the legacy O2 form', () => {
+    // This is why the flag flip is byte-equivalent: _syncRedoxEh sets
+    // Eh = ehFromO2(O2) before the engines read, so o2FromEh(Eh) round-trips
+    // back to O2 (exact for O2 ∈ [0.05,5]) and the gate decision is unchanged.
+    for (const O2 of [0.05, 0.1, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0]) {
+      const f = new FluidChemistry({ O2, Eh: ehFromO2(O2) });
+      for (const X of [0.1, 0.3, 0.5, 0.8]) {
+        expect(sulfateRedoxAvailable(f, X)).toBe(O2 >= X);
+      }
+    }
+  });
+});
+
+describe('Phase 4c.3a — Eh-CANONICAL: a movement driving Eh makes O2 follow', () => {
+  // "Follow the science": Eh is the master redox variable. By default the sync
+  // is O2→Eh (Eh is a derived view). But when a movement drives fluid.Eh,
+  // run_step flips to Eh→O2 so the movement's Eh is the source of truth and
+  // isn't clobbered before the engines (which read o2FromEh(Eh)) see it. This
+  // is the mechanism the mvt Eh-movement pilot rides on. Sim-neutral until a
+  // scenario opts in (no scenario declares movements yet → byte-identical,
+  // locked by calibration.test.ts).
+
+  it('an injected fluid.Eh movement drives O2 = o2FromEh(Eh), overriding the O2→Eh default', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.cooling();   // closed, O2≈0.1 (reducing)
+    const sim = new VugSimulator(conditions, events);
+    // Inject (runtime only) a movement holding Eh at +400 mV (oxidizing) — far
+    // from what cooling's O2≈0.1 would imply (ehFromO2(0.1) ≈ −75).
+    if (!sim.conditions._scenario) sim.conditions._scenario = {};
+    sim.conditions._scenario.movements = [
+      { field: 'fluid.Eh', startStep: 0, endStep: 20, base: 400, ops: [{ kind: 'trend', amp: 0 }] },
+    ];
+    for (let s = 0; s < 10; s++) sim.run_step();
+    const f = sim.conditions.fluid;
+    // Eh is the movement's setpoint, NOT the O2→Eh derivation.
+    expect(f.Eh).toBeGreaterThan(300);
+    // O2 was reverse-derived from the movement's Eh (Eh-canonical direction) —
+    // i.e. the engines (o2FromEh(Eh)) now see the movement, not the stale O2.
+    expect(f.O2).toBeCloseTo(o2FromEh(f.Eh), 6);
+    expect(f.O2).toBeGreaterThan(1);   // +400 mV → oxidizing O2, well above the initial 0.1
   });
 });

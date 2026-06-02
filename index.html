@@ -14659,7 +14659,90 @@ let timeScale = 5.0;
 //                                 index for the same RNG value.
 //   strip_digest_v166 → v167:    byte-identical (neither per_vertex scenario
 //                                 is in the 10-scenario digest set).
-const SIM_VERSION = 167;
+// ============================================================
+// v168 (2026-06-02) — Eh GOES LIVE (Phase 4c.1 + 4c.2). The redox-couple
+//                     migration (Phase 4a/4b) had wired Eh-aware helpers at
+//                     250+ call sites but kept them dormant: fluid.Eh was
+//                     written once at init and never synced, and
+//                     EH_DYNAMIC_ENABLED was off (engines read fluid.O2). The
+//                     Geological-Movements dark observation surfaced that Eh
+//                     was both FROZEN and INERT. Two coupled changes:
+//
+//   4c.1 (observer): _syncRedoxEh (85c) derives fluid.Eh = ehFromO2(fluid.O2)
+//        on every container each step (end-of-step for the strip; and again
+//        before check_nucleation for the engines). Eh now tracks redox on the
+//        strip instead of pinning at +200.
+//   4c.2 (consume): EH_DYNAMIC_ENABLED flipped ON (now a `let` + setEhDynamic-
+//        Enabled, mirroring setCarbonateKspActive). Every redox engine now
+//        derives its O2 from fluid.Eh via o2FromEh. Byte-equivalent because
+//        ehFromO2/o2FromEh are EXACT inverses for O2 ∈ [0.05,5] (max round-trip
+//        error 4.4e-16; many values bitwise-exact) and the pre-nucleation sync
+//        keeps Eh = ehFromO2(O2) at engine-read time. Above O2=5 (unreachable;
+//        max observed ≈ 2.2) o2FromEh saturates gently — no NaN / wild values.
+//        Latent: helpers still use the coarse ehFromO2 bijection, NOT the
+//        Nernst couples (redoxFraction, built 4a, still uncalled) — later work.
+//
+// FILES
+//   js/20c-chemistry-redox.ts        EH_DYNAMIC_ENABLED const→let, default true;
+//                                     setEhDynamicEnabled/snapshot/restore.
+//   js/85c-simulator-state.ts        _syncRedoxEh (walks ring_fluids + voxels).
+//   js/85-simulator.ts               sync call before check_nucleation + at
+//                                     end of run_step (after diffusion).
+//   tests-js/redox.test.ts           flag-state tests flipped; parity blocks
+//                                     wrapped in setEhDynamicEnabled(false);
+//                                     4c.1 sync tripwires + 4c.2 consumed-path.
+//   js/15-version.ts                 SIM_VERSION 167 → 168 + this block.
+//
+// BASELINE DRIFT
+//   seed42_v167 → seed42_v168:   29/31 BYTE-IDENTICAL. Only radioactive_
+//                                 pegmatite + schneeberg shift — both O2-dynamic
+//                                 redox-heavy scenarios where the ≤4.4e-16
+//                                 round-trip ε tips one nucleation threshold and
+//                                 RNG-cascades. NO mineral appears/disappears in
+//                                 either. schneeberg reshuffles a few uranyl-
+//                                 family counts (autunite 5→2, metatorbernite
+//                                 1→3, uranospinite 2→3) + minor Ag/As/Co
+//                                 nudges; the full U story (uraninite + all meta-
+//                                 uranyl phases) is intact. radioactive_pegmatite
+//                                 shifts max_um <1µm + uraninite 11374→11022.
+//                                 Same class as every prior engine-flip cascade.
+//   strip_digest_v167 → v168:    byte-identical except the sim_version stamp —
+//                                 neither changed scenario (radioactive_pegmatite,
+//                                 schneeberg) is in the 10-scenario digest set,
+//                                 and Eh itself is not a hashed digest field.
+// ============================================================
+// v169 (2026-06-02) — Eh-MOVEMENT PILOT on mvt (Phase 4c.3b). The FIRST scenario
+//                     to opt into a geological movement. mvt's scenarios.json5
+//                     spec gains a `movements: [{ field:'fluid.Eh', +50→-250 mV
+//                     smoothstep TREND + OU texture }]`. Eh-canonical (4c.3a): the
+//                     movement drives fluid.Eh, O2 follows.
+//
+//   Science (RESEARCH-mvt-redox-2026-06-02.md; deep-research, verified): MVT ore
+//   fluid is REDUCING during sulfide deposition (log fO2 ~ -52 to -55; Wenz 2012,
+//   Appold 2009), deep in the H2S field. Barite (a sulfate) belongs to an EARLIER
+//   less-reducing gangue stage — a flat-reducing fluid wipes it. The +50→-250 mV
+//   trend reproduces the Tri-State paragenetic order: sulfate gangue (barite +
+//   fluorite) early → sulfide ore (galena + sphalerite) late.
+//
+//   Dark-observed before baking (tools/mvt-redox-observe.mjs): the TREND preserves
+//   the full expects_species (a FLAT reducing baseline loses barite + sphalerite)
+//   and boosts late galena 1×→4×.
+//
+// FILES
+//   data/scenarios.json5            mvt gains the `movements` block (opt-in).
+//   js/15-version.ts                SIM_VERSION 168 → 169 + this block.
+//   tools/mvt-redox-observe.mjs     the A/FLAT/TREND assemblage-survival observer.
+//   proposals/RESEARCH-mvt-redox-2026-06-02.md   the verified science.
+//
+// BASELINE DRIFT
+//   seed42_v168 → seed42_v169:   ONLY `mvt` changes (the only opt-in); all other
+//                                 scenarios byte-identical (movement draw-gate).
+//                                 mvt assemblage stays whole — barite 18→6 (now
+//                                 the early oxidizing stage), galena 1→4 (reduced
+//                                 ore stage), sphalerite kept, +willemite; Eh
+//                                 trajectory +60 → -246 mV (was flat +24).
+//   strip_digest_v168 → v169:    version stamp only — mvt is not in the digest set.
+const SIM_VERSION = 169;
 
 // ── 18-constants.js ──
 
@@ -15493,15 +15576,22 @@ class FluidChemistry {
         this.Sn = opts.Sn ?? 0.0; // tin — cassiterite (SnO2); primary tin ore, late-pegmatite + greisen + hydrothermal vein; Erzgebirge/Cornwall/Bolivia/Malaysia tin belts. v89 plumbing field for the cassiterite engine; engines that consumed Sn before v89 silently skipped over it because no field existed.
         this.Y = opts.Y ?? 0.0; // yttrium — REE proxy, the most abundant rare earth in late hydrothermal F-Ca fluids. Drives the diagnostic blue Y³⁺/Eu²⁺ SW UV fluorescence in fluorite ("yttrofluorite" / "Y-fluorite" of collector vernacular) AND stabilizes {111} octahedral faces over {100} cubic via Ca²⁺-site substitution per Bosze & Rakovan 2002 GCA 66:997. v103 plumbing field for the REE-octahedral fluorite habit (Silverton scenario, San Juan caldera-hosted late hydrothermal); engines that consumed Y before v103 silently skipped over it because no field existed.
         this.O2 = opts.O2 ?? 0.0;
-        // Phase 4a of PROPOSAL-GEOLOGICAL-ACCURACY: redox potential Eh (mV).
-        // Default +200 mV — mildly oxidizing, matches "oxic groundwater" in
-        // pourbaix diagrams. Scenarios that want anoxic conditions set
-        // Eh < 0; ferruginous/sulfidic Eh < -100. Until EH_DYNAMIC_ENABLED
-        // flips on (Phase 4b/c migration), engines still gate on fluid.O2;
-        // Eh just rides alongside as derived state. ehFromO2 in
-        // 20c-chemistry-redox.ts gives a default Eh for scenarios that only
-        // set O2.
-        this.Eh = opts.Eh ?? 200.0;
+        // Phase 4a/4c of PROPOSAL-GEOLOGICAL-ACCURACY: redox potential Eh (mV).
+        // Resolution order:
+        //   1. explicit opts.Eh wins (a scenario that authors Eh directly).
+        //   2. else, if opts.O2 was given, DERIVE Eh = ehFromO2(O2) so the
+        //      fluid is redox-self-consistent from birth. This matters now that
+        //      EH_DYNAMIC_ENABLED is on (4c.2): the engines read Eh, so a fluid
+        //      built with only O2 must carry the matching Eh or the redox gate
+        //      reads the wrong state. (In the sim, _syncRedoxEh re-derives Eh
+        //      from O2 each step anyway, so this is invisible to seed-42 output;
+        //      it's what makes hand-built fluids — tests, ad-hoc tools — correct
+        //      under the flag without setting Eh explicitly.)
+        //   3. else default +200 mV (mildly oxidizing "oxic groundwater"; a bare
+        //      `new FluidChemistry()` with no O2 keeps the historical default).
+        // Anoxic = Eh<0, ferruginous/sulfidic Eh<-100. ehFromO2 lives in
+        // 20c-chemistry-redox.ts (hoisted; callable here).
+        this.Eh = opts.Eh ?? (opts.O2 !== undefined ? ehFromO2(opts.O2) : 200.0);
         this.pH = opts.pH ?? 6.5;
         this.salinity = opts.salinity ?? 5.0;
         // v27 evaporative concentration multiplier (mirror of
@@ -16216,11 +16306,21 @@ function carbonateThermoCoverage() {
 // resolution for game-mode chemistry; Phase 4b can refine specific
 // couples if calibration calls for it.
 //
-// Default state: EH_DYNAMIC_ENABLED = false. Engines still gate on
-// `fluid.O2 > X` until Phase 4b migrates them one class at a time.
-// With the flag on (Phase 4c), `redoxFraction(fluid, 'Fe')` etc.
-// becomes the canonical query and `fluid.O2` collapses to a derived
-// proxy via `ehFromO2`.
+// State (Phase 4c.2, 2026-06-02): EH_DYNAMIC_ENABLED is now ON by
+// default. Every redox engine consumes Eh via the per-class helpers,
+// which derive a synthetic O2 from the fluid's Eh (`o2FromEh(fluid.Eh)`)
+// and apply the legacy ratio/threshold against it. This is byte-identical
+// to the old `fluid.O2` path because (a) `_syncRedoxEh` (85c) keeps
+// `fluid.Eh = ehFromO2(fluid.O2)` synced just before the engines read it
+// each step, and (b) `ehFromO2`/`o2FromEh` are exact inverses for
+// O2 ∈ [0.05, 5] — which covers every scenario (max observed O2 ≈ 2.2);
+// above 5 `o2FromEh` saturates gently (no NaN / wild values), so even a
+// pathological high-O2 cell degrades safely rather than breaking.
+//
+// `let` + setter (mirrors setCarbonateKspActive): the bundle's closure-
+// scoped binding can't be flipped via globalThis, so tests that want to
+// exercise the legacy flag-OFF passthrough wrap their body in
+// setEhDynamicEnabled(false) … restore.
 //
 // Conventions:
 //   - Eh in mV (volts × 1000), positive = oxidizing.
@@ -16234,7 +16334,16 @@ function carbonateThermoCoverage() {
 //     coefficient (mV per pH unit) and electron count n.
 //   - Henderson-Hasselbalch slope at 25°C: 59.16 / n mV.
 //     Slope = 2.303 × R × T / (n × F).
-const EH_DYNAMIC_ENABLED = false;
+let EH_DYNAMIC_ENABLED = true;
+// Setter (mirrors setCarbonateKspActive) — the only safe way to flip the
+// closure-scoped binding from outside the bundle. Tests exercising the
+// legacy flag-OFF passthrough call setEhDynamicEnabled(false), run, then
+// setEhDynamicEnabled(true) to restore.
+function setEhDynamicEnabled(enabled) {
+    EH_DYNAMIC_ENABLED = !!enabled;
+}
+function snapshotEhDynamicFlag() { return EH_DYNAMIC_ENABLED; }
+function restoreEhDynamicFlag(snap) { EH_DYNAMIC_ENABLED = !!snap; }
 // Three half-reactions encoded — the minimum set the proposal calls
 // for. Each entry: E0 in mV, n electrons, pHCoeff (mV per pH unit
 // shift in apparent E0). pHCoeff comes from the H⁺ stoichiometry of
@@ -39340,6 +39449,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
             wall_rock_thermal_buffer_C: spec.wall_rock_thermal_buffer_C,
             host_rock_composition: spec.host_rock_composition,
+            // Geological MOVEMENTS (js/85j) — persistent master-variable drift.
+            // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
+            // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
+            // adds a `movements: [...]` array to one scenario's JSON5 spec.
+            movements: spec.movements,
         };
         // JS events are plain objects (no Event class on the JS side; the
         // global DOM Event would shadow it). Match the {step,name,description,
@@ -42522,6 +42636,19 @@ class VugSimulator {
         let snap = this._snapshotGlobal();
         this.apply_events();
         this._propagateGlobalDelta(snap);
+        // Geological MOVEMENTS (js/85j) — persistent master-variable drift between
+        // discrete events. DARK in Phase 0: no scenario declares `movements`, so
+        // this guard is always false and run_step is byte-identical. When a
+        // scenario opts in, movements layer on top of events; snapshot + propagate
+        // the global delta to per-ring fluids exactly like apply_events does.
+        if (this.conditions._scenario && this.conditions._scenario.movements
+            && this.conditions._scenario.movements.length) {
+            if (!this._movements)
+                this._movements = _createMovementController(this);
+            const mvSnap = this._snapshotGlobal();
+            this._movements.applyStep(this.conditions, this.step);
+            this._propagateGlobalDelta(mvSnap);
+        }
         // v26: continuous drainage from host-rock porosity. Runs before
         // the vadose override so a porosity-driven drift-out gets caught
         // as a transition on the same step it dries.
@@ -42572,6 +42699,17 @@ class VugSimulator {
             }
             this.log.push(sealMsg);
         }
+        // Phase 4c.2/4c.3a — sync Eh⇄O2 BEFORE the engines read it. With
+        // EH_DYNAMIC_ENABLED on, the redox helpers derive their O2 from
+        // fluid.Eh (o2FromEh), so the two must be consistent at engine-read
+        // time. Default direction is O2→Eh (O2 de-facto master). When a
+        // movement drives fluid.Eh this step, flip to Eh-canonical (Eh→O2) so
+        // the movement's Eh is the source of truth and isn't clobbered. O2 is
+        // final by here (events + vadose + dissolve_wall done; dissolve_wall
+        // touches only SiO2). The end-of-step sync (after diffusion) repeats this
+        // for the strip.
+        this._syncRedoxEh(this._movements
+            ? this._movements.drivesFieldAt('Eh', this.step) : false);
         this.check_nucleation(vugFill);
         // v128 graduated competition: pre-compute per-crystal scaled zones
         // BEFORE the growth loop runs. The pre-computation does a dry-run
@@ -43005,6 +43143,13 @@ class VugSimulator {
         // carry identical values (Laplacian of a constant is zero) —
         // this preserves byte-equality for default scenarios.
         this._diffuseRingState();
+        // PROPOSAL-GEOLOGICAL-ACCURACY Phase 4c.1/4c.3a — re-sync Eh⇄O2 on every
+        // container AFTER diffusion settles both, so the pair the strip records
+        // below reflects the step's final redox state. Same direction as the
+        // pre-nucleation sync: O2→Eh by default, Eh→O2 on steps a movement drives
+        // fluid.Eh (so the movement's Eh is what the strip shows).
+        this._syncRedoxEh(this._movements
+            ? this._movements.drivesFieldAt('Eh', this.step) : false);
         // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
         // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).
         // When a StripRecorder is attached to the sim, capture one step's
@@ -45068,6 +45213,70 @@ Object.assign(VugSimulator.prototype, {
             : null;
         return grid ? grid.sampleFluid(r, c, depth, field) : NaN;
     },
+    // ====================================================================
+    // PROPOSAL-GEOLOGICAL-ACCURACY Phase 4c.1 — keep fluid.Eh in sync with
+    // the fluid's redox proxy (fluid.O2) every step.
+    //
+    // Until 4c.1, fluid.Eh was written once at init (20-chemistry-fluid.ts:
+    // `this.Eh = opts.Eh ?? 200`) and then FROZEN, while fluid.O2 — the
+    // variable every redox engine actually reads — moved underneath it. So
+    // the strip's Eh chip showed a dead flat line at 200 even as the redox
+    // state swung. This derives Eh from O2 via the SAME ehFromO2 anchor map
+    // the flag-ON redox helpers (20c) invert, so when EH_DYNAMIC_ENABLED
+    // flips in 4c.2 the engines read back the identical O2 (ehFromO2 /
+    // o2FromEh are exact inverses for O2 ∈ [0.05, 5], which covers every
+    // scenario; the top saturation segment diverges and is clamped in 4c.2).
+    //
+    // OBSERVER-ONLY while the flag is OFF: nothing in flag-OFF mode reads
+    // fluid.Eh (redoxFraction is uncalled; the per-class helpers read O2),
+    // so this does NOT touch seed-42 crystal output — it only makes the
+    // recorded/displayed Eh correct. Runs at step END (after diffusion, in
+    // run_step) so the value the strip records reflects the step's final O2.
+    // Walks every container the strip can read: the per-ring fluids
+    // (conditions.fluid is the equator alias) + every voxel (d=0 aliases
+    // mesh.cells[].fluid; d≥1 are the interior slices), with a mesh.cells
+    // fallback for headless paths that have no voxel grid.
+    //
+    // Phase 4c.3a — Eh-CANONICAL direction. "Follow the science": redox
+    // potential (Eh) is the fundamental master variable; dissolved O2 is one
+    // expression of it. By DEFAULT (ehCanonical=false) O2 is the de-facto
+    // master and Eh is its derived view (the 4c.1/4c.2 behavior, byte-identical).
+    // But when a geological MOVEMENT drives fluid.Eh (run_step passes
+    // ehCanonical=true for those steps), Eh is the source of truth: we reverse
+    // the map and derive O2 = o2FromEh(Eh) so the movement's Eh survives to the
+    // engines (which read Eh) AND any O2-reading path follows it. Without this,
+    // the default O2→Eh sync would clobber a movement-driven Eh before the
+    // engines saw it. NB: a scenario that ALSO drives O2 locally (vadose
+    // override) while an Eh movement is active is a per-cell-ownership conflict
+    // deferred to Phase 2 (mvt — the pilot — is closed, no vadose, so the coarse
+    // whole-cavity flip is exact there). Sim-neutral until a scenario opts in.
+    _syncRedoxEh(ehCanonical) {
+        const one = ehCanonical
+            ? (f) => { if (f && typeof f.Eh === 'number')
+                f.O2 = o2FromEh(f.Eh); }
+            : (f) => { if (f && typeof f.O2 === 'number')
+                f.Eh = ehFromO2(f.O2); };
+        const rf = this.ring_fluids;
+        if (rf)
+            for (let i = 0; i < rf.length; i++)
+                one(rf[i]);
+        const grid = this.wall_state && this.wall_state.voxelGridFor
+            ? this.wall_state.voxelGridFor(this) : null;
+        if (grid && grid.voxels && grid.voxels.length) {
+            const vox = grid.voxels;
+            for (let i = 0; i < vox.length; i++)
+                one(vox[i] && vox[i].fluid);
+        }
+        else {
+            // No grid (headless harness) — d=0 wall fluids live on mesh.cells.
+            const mesh = this.wall_state && this.wall_state.meshFor
+                ? this.wall_state.meshFor(this) : null;
+            if (mesh && mesh.cells) {
+                for (let i = 0; i < mesh.cells.length; i++)
+                    one(mesh.cells[i] && mesh.cells[i].fluid);
+            }
+        }
+    },
     _repaintWallState() {
         // Rebuild ring-0 occupancy from the crystal list. Cheap (~120 × ~20)
         // and keeps per-cell thickness consistent with dissolution / enclosure.
@@ -46613,7 +46822,37 @@ const STRIP_SONIFY_SCALES = [
     { id: 'aeolian', label: 'Aeolian — dwarven march', semitones: [0, 2, 3, 5, 7, 8, 10] },
     { id: 'phrygian', label: 'Phrygian — austere', semitones: [0, 1, 3, 5, 7, 8, 10] },
     { id: 'phrygian_dominant', label: 'Phrygian dominant — carved', semitones: [0, 1, 4, 5, 7, 8, 10] },
+    // THE HONESTY DIAL (boss, 2026-06-01): "the aesthetic can improve, but I
+    // want it honest to the vugg." Every other entry quantizes the chemistry
+    // to a playable scale — a human tuning laid over the rock. `continuous`
+    // is the OTHER pole: NO scale, NO rhythm. The value glides smoothly across
+    // the register as a raw microtonal theremin — the unvarnished reading of
+    // the data. Less "musical", more true. The empty semitones[] is the
+    // sentinel the plan builder checks (_stripSonifyIsContinuous).
+    { id: 'continuous', label: 'Continuous — raw rock (no scale)', semitones: [] },
 ];
+// The wall's universal native angular resolution (cells_per_ring). Used to
+// convert a nucleation event's `cell` index → an azimuth for stereo pan.
+// Every scenario uses 120 (22-geometry-wall), and the strip dataset doesn't
+// (yet) carry the value, so crystal azimuth assumes it. If a scenario ever
+// overrides cells_per_ring, crystal pan stays spread but its absolute angle
+// would scale — acceptable, and noted.
+const _STRIP_SONIFY_CELLS_PER_RING = 120;
+// Is this the unquantized "raw rock" mode? (the honesty dial's far pole)
+function _stripSonifyIsContinuous(scaleId) {
+    if (scaleId === 'continuous')
+        return true;
+    const s = STRIP_SONIFY_SCALES.find((x) => x.id === scaleId);
+    return !!s && s.semitones.length === 0;
+}
+// Continuous (unquantized) value→frequency: v∈0..1 maps smoothly across
+// `span` octaves up from scientific octave `baseOctave`. No scale snapping —
+// the literal pitch of the chemistry.
+function _stripSonifyContinuousFreq(baseOctave, span, v) {
+    const baseMidi = 12 * (baseOctave + 1); // C(baseOctave) in MIDI
+    const midi = baseMidi + Math.max(0, Math.min(1, v)) * span * 12;
+    return _stripSonifyMidiToFreq(midi);
+}
 // Active scale (the dropdown sets this; the convenience players use it
 // when the caller doesn't override opts.scaleId). Default pentatonic.
 let _stripSonifyScaleId = 'major_pentatonic';
@@ -46725,6 +46964,58 @@ function _stripSonifyContour(ds, chipIdx) {
     }
     return out;
 }
+// Per step, the chip's VALUE-WEIGHTED angular centroid projected to stereo
+// (the boss's "pan from angular position", 2026-06-01). The strip already
+// fans the cavity into `angular_indices` sub-strips; this asks "which side
+// of the void is this chip leaning toward right now?" and pans the voice
+// there. A circular value-weighted mean over the ring, projected to the
+// left-right axis as sin(θ̄):
+//   pan = Σ_a v_a·sin(θ_a) / Σ_a v_a ,  θ_a = 2π·a/angular_indices
+// Uniform chemistry → the sines cancel → 0 (dead center, honest: a
+// spatially-uniform field has no side). A lopsided field leans toward the
+// loaded side. sin() is the true stereo projection of an azimuth (front and
+// back both collapse to center — inherent to 2-channel without HRTF, and
+// honest about it). Holds the last value across all-null steps. Returns one
+// pan ∈ [-1,1] per step, parallel to the contour.
+function _stripSonifyPanContour(ds, chipIdx) {
+    const ax = ds.manifest.axes;
+    const A = Math.max(1, ax.angular_indices);
+    const chipCount = ds.manifest.chips.length;
+    const out = [];
+    let hold = 0;
+    // Precompute the per-sub-strip sin/cos so we don't recompute per step.
+    const sinA = [], cosA = [];
+    for (let a = 0; a < A; a++) {
+        const th = (2 * Math.PI * a) / A;
+        sinA.push(Math.sin(th));
+        cosA.push(Math.cos(th));
+    }
+    for (let step = 0; step < ax.steps; step++) {
+        let sy = 0, sw = 0;
+        for (let a = 0; a < A; a++) {
+            let sum = 0, n = 0;
+            for (let h = 0; h < ax.height_positions; h++) {
+                const li = stripDataIndex(step, a, h, chipIdx, ax, chipCount, 0);
+                if (li < 0)
+                    continue;
+                const v = stripDequantizeNormalized(ds.chip_data[li]);
+                if (v === null)
+                    continue;
+                sum += v;
+                n++;
+            }
+            if (n === 0)
+                continue;
+            const va = sum / n;
+            sy += va * sinA[a];
+            sw += va;
+        }
+        const pan = sw > 1e-9 ? Math.max(-1, Math.min(1, sy / sw)) : hold;
+        hold = pan;
+        out.push(pan);
+    }
+    return out;
+}
 // ============================================================
 // RHYTHM — give it a pulse (the boss's pick, 2026-05-31)
 // ============================================================
@@ -46766,39 +47057,60 @@ function buildStripSonifyPlan(ds, chipId, opts = {}) {
     const stepMs = opts.stepDurationMs ?? STRIP_SONIFY_DEFAULTS.stepDurationMs;
     const span = opts.octaveSpan ?? STRIP_SONIFY_DEFAULTS.octaveSpan;
     const scaleId = opts.scaleId ?? _stripSonifyScaleId;
+    const continuous = _stripSonifyIsContinuous(scaleId);
     const voice = _stripSonifyColorToVoice(found.meta.color >>> 0);
-    const freqs = _stripSonifyScaleFreqs(voice.baseOctave, span, _stripSonifyScaleSemitones(scaleId));
     const contour = _stripSonifyContour(ds, found.idx);
-    // Per-step pitch contour (drives the oscillator frequency).
-    const toIdx = (v) => Math.max(0, Math.min(freqs.length - 1, Math.round(v * (freqs.length - 1))));
-    const notes = contour.map((v, step) => ({ tSec: (step * stepMs) / 1000, freq: freqs[toIdx(v)] }));
-    // RHYTHM: walk the grid at this voice's subdivision; emit a gate (a
-    // sounded note) when the pitch index CHANGES, or every maxRest slots so
-    // a steady-but-present voice keeps a sparse heartbeat. Offbeats swing.
-    const subdiv = _stripSonifySubdivForVoice(voice.voiceGain);
-    const slotMs = subdiv * stepMs;
-    const noteDurSec = Math.min(slotMs * STRIP_RHYTHM.gateFrac, stepMs * 1.4) / 1000;
-    const gates = [];
-    let lastIdx = -1;
-    let sinceGate = STRIP_RHYTHM.maxRest; // force a gate on the first slot
-    let slot = 0;
-    for (let step = 0; step < steps; step += subdiv, slot++) {
-        const idx = toIdx(contour[step]);
-        if (idx !== lastIdx || sinceGate >= STRIP_RHYTHM.maxRest) {
-            const swingSec = (slot % 2 === 1) ? (STRIP_RHYTHM.swing * slotMs) / 1000 : 0;
-            gates.push({ tSec: (step * stepMs) / 1000 + swingSec, durSec: noteDurSec });
-            lastIdx = idx;
-            sinceGate = 0;
-        }
-        else {
-            sinceGate++;
+    const panContour = _stripSonifyPanContour(ds, found.idx);
+    const pans = panContour.map((pan, step) => ({ tSec: (step * stepMs) / 1000, pan }));
+    const durationSec = (steps * stepMs) / 1000;
+    let notes;
+    let gates;
+    let subdiv;
+    if (continuous) {
+        // RAW ROCK: unquantized log-pitch glide, sustained (no scale, no
+        // plucks). One long gate; the player ramps freq between steps (glide).
+        notes = contour.map((v, step) => ({
+            tSec: (step * stepMs) / 1000,
+            freq: _stripSonifyContinuousFreq(voice.baseOctave, span, v),
+        }));
+        gates = [{ tSec: 0, durSec: durationSec }];
+        subdiv = Math.max(1, steps);
+    }
+    else {
+        const freqs = _stripSonifyScaleFreqs(voice.baseOctave, span, _stripSonifyScaleSemitones(scaleId));
+        // Per-step pitch contour (drives the oscillator frequency).
+        const toIdx = (v) => Math.max(0, Math.min(freqs.length - 1, Math.round(v * (freqs.length - 1))));
+        notes = contour.map((v, step) => ({ tSec: (step * stepMs) / 1000, freq: freqs[toIdx(v)] }));
+        // RHYTHM: walk the grid at this voice's subdivision; emit a gate (a
+        // sounded note) when the pitch index CHANGES, or every maxRest slots so
+        // a steady-but-present voice keeps a sparse heartbeat. Offbeats swing.
+        subdiv = _stripSonifySubdivForVoice(voice.voiceGain);
+        const slotMs = subdiv * stepMs;
+        const noteDurSec = Math.min(slotMs * STRIP_RHYTHM.gateFrac, stepMs * 1.4) / 1000;
+        gates = [];
+        let lastIdx = -1;
+        let sinceGate = STRIP_RHYTHM.maxRest; // force a gate on the first slot
+        let slot = 0;
+        for (let step = 0; step < steps; step += subdiv, slot++) {
+            const idx = toIdx(contour[step]);
+            if (idx !== lastIdx || sinceGate >= STRIP_RHYTHM.maxRest) {
+                const swingSec = (slot % 2 === 1) ? (STRIP_RHYTHM.swing * slotMs) / 1000 : 0;
+                gates.push({ tSec: (step * stepMs) / 1000 + swingSec, durSec: noteDurSec });
+                lastIdx = idx;
+                sinceGate = 0;
+            }
+            else {
+                sinceGate++;
+            }
         }
     }
     return {
         notes,
         gates,
+        pans,
+        glide: continuous,
         subdiv,
-        durationSec: (steps * stepMs) / 1000,
+        durationSec,
         voiceGain: voice.voiceGain,
         waveform: voice.waveform,
         baseOctave: voice.baseOctave,
@@ -46919,7 +47231,9 @@ function buildStripCrystalHits(ds, opts = {}, resolvers = {}) {
     if (!events.length)
         return [];
     const stepMs = opts.stepDurationMs ?? _stripSonifyStepDurationMs;
-    const semis = _stripSonifyScaleSemitones(opts.scaleId ?? _stripSonifyScaleId);
+    const scaleId = opts.scaleId ?? _stripSonifyScaleId;
+    const continuous = _stripSonifyIsContinuous(scaleId);
+    const semis = _stripSonifyScaleSemitones(scaleId);
     const colorOf = resolvers.colorOf || _stripSonifyMineralColor;
     const sizeOf = resolvers.sizeOf || _stripSonifyMineralSize;
     const LO = Math.log10(0.5), HI = Math.log10(100); // size→0..1 over 0.5..100 cm
@@ -46930,10 +47244,17 @@ function buildStripCrystalHits(ds, opts = {}, resolvers = {}) {
         const voice = _stripSonifyColorToVoice((colorOf(ev.mineral) >>> 0) || 0x888888);
         const sizeCm = Math.max(0.05, Number(sizeOf(ev.mineral)) || 2);
         const sizeNorm = Math.max(0, Math.min(1, (Math.log10(sizeCm) - LO) / (HI - LO)));
-        // color HUE → scale degree (the note); size → octave (big = lower).
-        const degIdx = Math.min(semis.length - 1, Math.floor((voice.hue / 360) * semis.length));
         const octave = Math.max(2, Math.min(6, 5 - Math.round(sizeNorm * 2))); // small→5, big→3
-        const freq = _stripSonifyMidiToFreq(12 * (octave + 1) + semis[degIdx]);
+        // color HUE → pitch. Scale modes snap to a degree; continuous mode maps
+        // hue smoothly across ~1.5 octaves above the size octave (honest pole).
+        const freq = continuous
+            ? _stripSonifyMidiToFreq(12 * (octave + 1) + (voice.hue / 360) * 18)
+            : _stripSonifyMidiToFreq(12 * (octave + 1) + semis[Math.min(semis.length - 1, Math.floor((voice.hue / 360) * semis.length))]);
+        // Stereo azimuth: where around the ring this crystal nucleated. `cell`
+        // is the native cell index (0..cells_per_ring); sin(θ) is the honest
+        // stereo projection — you hear the crystal pop in at its position.
+        const cell = (ev && Number.isFinite(ev.cell)) ? (ev.cell % _STRIP_SONIFY_CELLS_PER_RING) : 0;
+        const pan = Math.max(-1, Math.min(1, Math.sin((2 * Math.PI * cell) / _STRIP_SONIFY_CELLS_PER_RING)));
         hits.push({
             tSec: (ev.step * stepMs) / 1000,
             freq,
@@ -46941,6 +47262,7 @@ function buildStripCrystalHits(ds, opts = {}, resolvers = {}) {
             decay: 0.22 + 1.5 * sizeNorm, // tick (0.22 s) … toll (1.7 s)
             waveform: voice.waveform,
             mineral: ev.mineral,
+            pan,
         });
     }
     return hits;
@@ -47026,36 +47348,83 @@ function playStripSonifyPlans(plans, onEnded, crystalHits = []) {
         const artGain = ctx.createGain(); // rhythm — plucks up per gate, rests at 0
         const lvlGain = ctx.createGain(); // structural level (rescale-adjusted)
         osc.type = plan.waveform;
-        osc.connect(artGain).connect(lvlGain).connect(master);
-        // Pitch contour relative to the shared t0; past events (for late adds)
-        // apply immediately so the pitch is right when the voice next sounds.
-        if (plan.notes.length) {
-            try {
-                osc.frequency.setValueAtTime(plan.notes[0].freq, t0);
+        // Stereo placement (where this chip leans in the void). Guarded:
+        // jsdom / old browsers lack createStereoPanner → fall back to mono.
+        const panner = (typeof ctx.createStereoPanner === 'function') ? ctx.createStereoPanner() : null;
+        if (panner) {
+            osc.connect(artGain).connect(lvlGain).connect(panner).connect(master);
+            if (plan.pans && plan.pans.length) {
+                try {
+                    panner.pan.setValueAtTime(plan.pans[0].pan, t0);
+                }
+                catch (_e) { /* ignore */ }
+                for (const pp of plan.pans) {
+                    try {
+                        panner.pan.setValueAtTime(pp.pan, t0 + pp.tSec);
+                    }
+                    catch (_e) { /* ignore */ }
+                }
             }
-            catch (_e) { /* ignore */ }
         }
-        for (const n of plan.notes) {
-            try {
-                osc.frequency.setValueAtTime(n.freq, t0 + n.tSec);
-            }
-            catch (_e) { /* ignore */ }
+        else {
+            osc.connect(artGain).connect(lvlGain).connect(master);
         }
         const now = ctx.currentTime;
-        // Rhythm: artGain rests at ~0 and plucks for each gate (staccato).
-        artGain.gain.setValueAtTime(0.0001, Math.max(now, t0 - 0.001));
-        for (const gt of plan.gates) {
-            const ts = t0 + gt.tSec;
-            if (ts < now - 0.02)
-                continue; // skip gates already past (live add)
-            const dur = Math.max(0.04, gt.durSec);
-            const attack = Math.min(0.012, dur * 0.4);
+        if (plan.glide) {
+            // RAW ROCK (continuous): smooth pitch glide + sustained tone, no
+            // plucks. Frequency ramps between steps; the voice just sings.
+            if (plan.notes.length) {
+                try {
+                    osc.frequency.setValueAtTime(plan.notes[0].freq, t0);
+                }
+                catch (_e) { /* ignore */ }
+            }
+            for (const n of plan.notes) {
+                try {
+                    osc.frequency.linearRampToValueAtTime(n.freq, t0 + n.tSec);
+                }
+                catch (_e) { /* ignore */ }
+            }
+            artGain.gain.setValueAtTime(0.0001, Math.max(now, t0 - 0.001));
+            artGain.gain.linearRampToValueAtTime(1, t0 + 0.08); // fade in, then hold
             try {
-                artGain.gain.setValueAtTime(0.0001, ts);
-                artGain.gain.linearRampToValueAtTime(1, ts + attack);
-                artGain.gain.exponentialRampToValueAtTime(0.0001, ts + dur);
+                artGain.gain.setValueAtTime(1, Math.max(t0 + 0.1, endTime - 0.1));
             }
             catch (_e) { /* ignore */ }
+            try {
+                artGain.gain.linearRampToValueAtTime(0.0001, endTime);
+            }
+            catch (_e) { /* ignore */ }
+        }
+        else {
+            // Stepped "theremin": frequency jumps per step; staccato plucks.
+            if (plan.notes.length) {
+                try {
+                    osc.frequency.setValueAtTime(plan.notes[0].freq, t0);
+                }
+                catch (_e) { /* ignore */ }
+            }
+            for (const n of plan.notes) {
+                try {
+                    osc.frequency.setValueAtTime(n.freq, t0 + n.tSec);
+                }
+                catch (_e) { /* ignore */ }
+            }
+            // Rhythm: artGain rests at ~0 and plucks for each gate (staccato).
+            artGain.gain.setValueAtTime(0.0001, Math.max(now, t0 - 0.001));
+            for (const gt of plan.gates) {
+                const ts = t0 + gt.tSec;
+                if (ts < now - 0.02)
+                    continue; // skip gates already past (live add)
+                const dur = Math.max(0.04, gt.durSec);
+                const attack = Math.min(0.012, dur * 0.4);
+                try {
+                    artGain.gain.setValueAtTime(0.0001, ts);
+                    artGain.gain.linearRampToValueAtTime(1, ts + attack);
+                    artGain.gain.exponentialRampToValueAtTime(0.0001, ts + dur);
+                }
+                catch (_e) { /* ignore */ }
+            }
         }
         lvlGain.gain.setValueAtTime(0, now); // rescale() ramps it up to target
         try {
@@ -47095,7 +47464,18 @@ function playStripSonifyPlans(plans, onEnded, crystalHits = []) {
             osc.frequency.setValueAtTime(hit.freq, tHit);
         }
         catch (_e) { /* ignore */ }
-        osc.connect(g).connect(master);
+        // Pan to where the crystal nucleated around the ring (guarded → mono).
+        const panner = (typeof ctx.createStereoPanner === 'function') ? ctx.createStereoPanner() : null;
+        if (panner) {
+            osc.connect(g).connect(panner).connect(master);
+            try {
+                panner.pan.setValueAtTime(hit.pan || 0, tHit);
+            }
+            catch (_e) { /* ignore */ }
+        }
+        else {
+            osc.connect(g).connect(master);
+        }
         const peak = Math.max(0.0001, hit.gain * 0.55); // sits under the drone
         g.gain.setValueAtTime(0.0001, tHit);
         g.gain.linearRampToValueAtTime(peak, tHit + 0.005); // sharp attack
@@ -47232,6 +47612,224 @@ function stripSonifyUpdateVoices(ds, chipIds, opts = {}) {
         _stripSonifyHandle.setVoices(plans);
     }
     catch (_e) { /* ignore */ }
+}
+
+// ── 85j-movements.js ──
+
+// ============================================================
+// js/85j-movements.ts — geological MOVEMENTS engine (Phase 0 scaffold, DARK)
+// ============================================================
+// The broth is currently a STEP FUNCTION: ~64% of fluid fields are dead-flat
+// over a vug's life and redox (Eh) is frozen, so elements only move when a
+// discrete event shoves them (tools/broth-stability-probe.mjs, 2026-06-01).
+// Real vug chemistry is a continuously-evolving CURVE. This engine drives a
+// few MASTER VARIABLES (T, pH, redox, …) with persistent "movements"; the
+// existing saturation/SI engines then translate those into CORRELATED element
+// pulses (we never randomize elements directly). See:
+//   proposals/HANDOFF-MOVEMENTS-AND-BACKLOG-2026-06-01.md   (the plan)
+//   proposals/PROPOSAL-EVENTS-AS-GEOLOGICAL-MOVEMENTS.md    (design §8/§9/§9b)
+//   proposals/RESEARCH-vug-fluid-evolution-2026-06-01.md    (the science)
+//
+// DESIGN (agreed with boss, 2026-06-01):
+//   * A PRIMITIVE ALPHABET, not a fixed menu of named cycles. Any master-
+//     variable trajectory = a sum of composable operators: TREND, PULSE
+//     (in trains), STEP, OSCILLATION (mean-reverting), MIXING. The named
+//     archetypes (orogenic / pulse-train / meteoric-front / magmatic-
+//     hydrothermal) are just presets; the seed samples the continuous space,
+//     so most vugs are unnamed-but-real blends.
+//   * SEEDED & REPRODUCIBLE. Movements draw from a DEDICATED sub-stream
+//     derived from the VUGG (cavity) seed — mirrors the shape_seed-derived
+//     geometry streams in 22-geometry-wall.ts (_mulberry32(shape_seed ^ salt)).
+//     Linking to the cavity seed = "the geology of the vug drives its chemical
+//     outcome." A dedicated stream (NOT the shared `rng`) means tuning a
+//     movement never displaces the nucleation draw cascade. Reproducibility is
+//     required: baseline tests depend on it AND the crystal-cipher sub-project
+//     needs bit-exact regeneration. No Math.random / Date.now (resume-safe).
+//   * STATISTICAL CHARACTER (research correction): fine zoning is ANTI-
+//     persistent / mean-reverting (Holten 1997), NOT a persistent random walk.
+//     So texture = Ornstein-Uhlenbeck (mean-reverting) around a slowly-moving
+//     setpoint — the setpoint (coarse trend) carries the "long slow movement";
+//     the texture wobbles and reverts, it does not wander off.
+//
+// PHASE 0 = DARK SCAFFOLD. This module is fully defined + unit-tested, but
+// NO scenario opts in yet (none declare `movements` in scenarios.json5), so
+// the run_step hook is a dead path → SIM-NEUTRAL, seed-42 + strip-digest
+// byte-identical, NO SIM_VERSION bump. Phase 1 opts ONE scenario (a meteoric
+// front) in, regens that one baseline, and we look + listen.
+// Per-purpose salt for the movement stream (ASCII "MOVE"), XORed into the
+// cavity seed exactly like the geometry sub-streams (22-geometry-wall.ts:884).
+const _MOVEMENT_SALT = 0x4d4f5645;
+// A dedicated deterministic PRNG for movements, derived from the vugg seed.
+// Reuses _mulberry32 (defined in 22-geometry-wall.ts) — resume-safe, and
+// independent of the shared `rng` cascade. Returns a () => [0,1) function.
+function _makeMovementRng(vuggSeed, salt = _MOVEMENT_SALT) {
+    return _mulberry32((((vuggSeed | 0) ^ salt) >>> 0));
+}
+// SPATIAL origin (boss, 2026-06-01): a movement can originate at one
+// semi-random CELL and flow outward via the diffusion that already runs each
+// step (_diffuseRingState over mesh.cells[].fluid) — instead of applying
+// evenly across the whole cavity. That makes the vug's 3-D-ness matter and
+// reproduces one-sided growth (the hematite-on-one-side-of-calcite specimens).
+// The pick is seeded from the movement stream → reproducible AND tied to the
+// vugg/cavity seed (same cavity → same origin spots). Pure + deterministic
+// given the rng. Returns a cell index in [0, cellCount).
+function _pickOriginCell(rng, cellCount) {
+    const n = Math.max(1, cellCount | 0);
+    return Math.min(n - 1, Math.floor(rng() * n));
+}
+// ----------------------------------------------------------------
+// THE PRIMITIVE ALPHABET — pure shape functions of progress u ∈ [0,1].
+// Each returns a unitless shape in roughly [0,1] (or [-1,1] for mixing),
+// scaled by a per-op `amp` and applied to a master variable. Pure + testable;
+// the stochastic texture (OSCILLATION) is applied statefully in the
+// controller, since mean-reversion needs memory of the prior value.
+// ----------------------------------------------------------------
+// TREND — monotonic drift 0→1 across the window. `ease` smooths the ends
+// (smoothstep) so a movement starts and finishes gently rather than with a
+// kink. [orogenic cooling = one long trend]
+function _mvTrend(u, ease = true) {
+    const x = Math.max(0, Math.min(1, u));
+    return ease ? x * x * (3 - 2 * x) : x; // smoothstep | linear
+}
+// PULSE — a smooth bump centred at `center` with half-width `width`
+// (gaussian). A PULSE TRAIN is just several of these summed.
+// [hydrothermal fault-valve injection]
+function _mvPulse(u, center = 0.5, width = 0.12) {
+    const w = Math.max(1e-4, width);
+    const z = (u - center) / w;
+    return Math.exp(-0.5 * z * z);
+}
+// STEP — a regime jump: 0 before `at`, 1 after, with a short `soften` ramp
+// so it isn't an infinitely-sharp discontinuity. [a stage transition]
+function _mvStep(u, at = 0.5, soften = 0.04) {
+    const s = Math.max(1e-4, soften);
+    return Math.max(0, Math.min(1, (u - at) / s + 0.5));
+}
+// MIXING — two end-members blended in a proportion that itself moves over the
+// window (here: a monotonic ramp of the mixing fraction). Returns the mixing
+// fraction f ∈ [0,1]; the caller lerps field = (1-f)·a + f·b. [meteoric ↔ deep
+// brine]. Kept as a fraction (not a delta) so callers can lerp explicitly.
+function _mvMixFraction(u, ease = true) {
+    return _mvTrend(u, ease);
+}
+// Evaluate the deterministic (non-texture) operators at progress u → a delta
+// added to the field's window-entry base. (MIXING is handled separately via
+// `mix`, and OSCILLATION via the controller's stateful texture.)
+function _evalMovementOps(ops, u) {
+    if (!ops || !ops.length)
+        return 0;
+    let d = 0;
+    for (const op of ops) {
+        if (op.kind === 'trend')
+            d += op.amp * _mvTrend(u, op.ease !== false);
+        else if (op.kind === 'pulse')
+            d += op.amp * _mvPulse(u, op.center ?? 0.5, op.width ?? 0.12);
+        else if (op.kind === 'step')
+            d += op.amp * _mvStep(u, op.at ?? 0.5, op.soften ?? 0.04);
+    }
+    return d;
+}
+function _movementGetField(conditions, path) {
+    const parts = path.split('.');
+    let o = conditions;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (o == null)
+            return NaN;
+        o = o[parts[i]];
+    }
+    const v = o == null ? NaN : o[parts[parts.length - 1]];
+    return typeof v === 'number' ? v : NaN;
+}
+function _movementSetField(conditions, path, value) {
+    const parts = path.split('.');
+    let o = conditions;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (o == null)
+            return;
+        o = o[parts[i]];
+    }
+    if (o != null)
+        o[parts[parts.length - 1]] = value;
+}
+// The controller holds the parsed movements + the dedicated rng + per-movement
+// state (captured base + the OU texture value). An EMPTY controller is a total
+// no-op: applyStep returns before touching `conditions` or drawing any random
+// number — this is what keeps the dark scaffold byte-identical.
+class MovementController {
+    constructor(movements, vuggSeed) {
+        this.movements = Array.isArray(movements) ? movements : [];
+        this.rng = _makeMovementRng(vuggSeed);
+        this._state = this.movements.map(() => ({ base: 0, ou: 0, started: false }));
+    }
+    get isEmpty() { return this.movements.length === 0; }
+    // Phase 4c.3a — is any movement driving `field` active at this step? Used by
+    // the sim's _syncRedoxEh to flip the redox sync to Eh-CANONICAL (Eh→O2) for
+    // steps where a movement owns fluid.Eh, so the movement's Eh isn't clobbered
+    // by the default O2→Eh sync before the engines read it. Accepts the dotted
+    // path ('fluid.Eh') or the bare leaf ('Eh') a spec might use.
+    drivesFieldAt(field, step) {
+        for (let i = 0; i < this.movements.length; i++) {
+            const m = this.movements[i];
+            if ((m.field === field || m.field === 'fluid.' + field || 'fluid.' + m.field === field)
+                && step >= m.startStep && step < m.endStep)
+                return true;
+        }
+        return false;
+    }
+    // Apply every active movement for this step. No-op (and zero draws) when
+    // empty. Mutates `conditions` in place; the caller propagates the global
+    // delta to per-ring fluids exactly as it does for discrete events.
+    applyStep(conditions, step) {
+        if (!this.movements.length)
+            return; // <-- the sim-neutral fast path
+        for (let i = 0; i < this.movements.length; i++) {
+            const m = this.movements[i];
+            const st = this._state[i];
+            if (step < m.startStep || step >= m.endStep)
+                continue;
+            // Capture the baseline the first time this window is active.
+            if (!st.started) {
+                st.base = (typeof m.base === 'number') ? m.base : _movementGetField(conditions, m.field);
+                st.started = true;
+            }
+            if (!Number.isFinite(st.base))
+                continue; // field absent → skip safely
+            const span = Math.max(1, m.endStep - m.startStep);
+            const u = Math.max(0, Math.min(1, (step - m.startStep) / span));
+            // Setpoint = base + deterministic ops [+ mixing lerp toward `to`].
+            let setpoint = st.base + _evalMovementOps(m.ops, u);
+            if (m.mix) {
+                const f = _mvMixFraction(u, m.mix.ease !== false);
+                setpoint = (1 - f) * setpoint + f * m.mix.to;
+            }
+            // OSCILLATION texture: Ornstein-Uhlenbeck mean-reversion around 0
+            // (deviation from the setpoint). Mean-reverting per Holten 1997 — it
+            // wobbles and returns, it does not wander. Draws from the DEDICATED
+            // stream only when a texture is declared (still zero draws when off).
+            if (m.texture) {
+                const theta = Math.max(0, Math.min(1, m.texture.theta));
+                const noise = (this.rng() * 2 - 1) * m.texture.sigma;
+                st.ou += -theta * st.ou + noise;
+            }
+            let value = setpoint + st.ou;
+            if (typeof m.clampMin === 'number')
+                value = Math.max(m.clampMin, value);
+            if (typeof m.clampMax === 'number')
+                value = Math.min(m.clampMax, value);
+            _movementSetField(conditions, m.field, value);
+        }
+    }
+}
+// Factory: build a controller for a sim. Reads the scenario's declared
+// movements (absent → empty → no-op) and seeds the stream off the VUGG seed —
+// the cavity's shape_seed by preference (geology drives outcome), falling back
+// to the run seed. Phase 0: every scenario yields an empty controller.
+function _createMovementController(sim) {
+    const spec = sim && sim.conditions && sim.conditions._scenario
+        ? sim.conditions._scenario.movements : undefined;
+    const wall = sim && sim.conditions ? sim.conditions.wall : null;
+    const vuggSeed = (((wall && wall.shape_seed) || (sim && sim._seed) || 0) | 0);
+    return new MovementController(spec, vuggSeed);
 }
 
 // ── 86-nucleation-native.js ──
@@ -68878,6 +69476,13 @@ function _ensureStripViewStyles() {
       border-radius: 3px;
     }
     .strip-view-btn:hover { background: rgba(120, 140, 180, 0.4); }
+    /* The scale/mode <select> uses .strip-view-btn (light #cde text). The
+       native dropdown POPUP renders options on the OS's white background,
+       so that light text was white-on-white — invisible until an option was
+       highlighted. Pin an opaque dark background + light text on the select
+       AND its options so the list is readable in both states. */
+    #strip-view-scale { background: #1b2436; color: #cde; }
+    #strip-view-scale option { background: #1b2436; color: #cde; }
     .strip-view-body {
       flex: 1;
       overflow: auto;

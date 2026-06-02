@@ -172,6 +172,18 @@ class VugSimulator {
     let snap = this._snapshotGlobal();
     this.apply_events();
     this._propagateGlobalDelta(snap);
+    // Geological MOVEMENTS (js/85j) — persistent master-variable drift between
+    // discrete events. DARK in Phase 0: no scenario declares `movements`, so
+    // this guard is always false and run_step is byte-identical. When a
+    // scenario opts in, movements layer on top of events; snapshot + propagate
+    // the global delta to per-ring fluids exactly like apply_events does.
+    if (this.conditions._scenario && this.conditions._scenario.movements
+        && this.conditions._scenario.movements.length) {
+      if (!this._movements) this._movements = _createMovementController(this);
+      const mvSnap = this._snapshotGlobal();
+      this._movements.applyStep(this.conditions, this.step);
+      this._propagateGlobalDelta(mvSnap);
+    }
     // v26: continuous drainage from host-rock porosity. Runs before
     // the vadose override so a porosity-driven drift-out gets caught
     // as a transition on the same step it dries.
@@ -224,6 +236,17 @@ class VugSimulator {
       this.log.push(sealMsg);
     }
 
+    // Phase 4c.2/4c.3a — sync Eh⇄O2 BEFORE the engines read it. With
+    // EH_DYNAMIC_ENABLED on, the redox helpers derive their O2 from
+    // fluid.Eh (o2FromEh), so the two must be consistent at engine-read
+    // time. Default direction is O2→Eh (O2 de-facto master). When a
+    // movement drives fluid.Eh this step, flip to Eh-canonical (Eh→O2) so
+    // the movement's Eh is the source of truth and isn't clobbered. O2 is
+    // final by here (events + vadose + dissolve_wall done; dissolve_wall
+    // touches only SiO2). The end-of-step sync (after diffusion) repeats this
+    // for the strip.
+    this._syncRedoxEh(this._movements
+      ? this._movements.drivesFieldAt('Eh', this.step) : false);
     this.check_nucleation(vugFill);
 
     // v128 graduated competition: pre-compute per-crystal scaled zones
@@ -668,6 +691,14 @@ class VugSimulator {
     // carry identical values (Laplacian of a constant is zero) —
     // this preserves byte-equality for default scenarios.
     this._diffuseRingState();
+
+    // PROPOSAL-GEOLOGICAL-ACCURACY Phase 4c.1/4c.3a — re-sync Eh⇄O2 on every
+    // container AFTER diffusion settles both, so the pair the strip records
+    // below reflects the step's final redox state. Same direction as the
+    // pre-nucleation sync: O2→Eh by default, Eh→O2 on steps a movement drives
+    // fluid.Eh (so the movement's Eh is what the strip shows).
+    this._syncRedoxEh(this._movements
+      ? this._movements.drivesFieldAt('Eh', this.step) : false);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

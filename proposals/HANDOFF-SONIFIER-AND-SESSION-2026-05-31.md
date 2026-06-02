@@ -6,9 +6,15 @@ good session; here's what matters.
 
 ---
 
-## 0. READ FIRST — canonical's minerals.json is still broken
+## 0. ~~READ FIRST — canonical's minerals.json is still broken~~ — RESOLVED 2026-06-01
 
-`StonePhilosopher/main` (canonical, the boss's promotion lane) has a
+**RESOLVED:** the boss applied the wholesale-checkout fix on canonical
+(`083d994 fix: restore minerals.json from syntaxswine/main`), merging
+origin first so the recurring conflict is settled at the source. Canonical's
+`data/minerals.json` is now healthy (8 top-level keys, 171 minerals nested).
+The incident write-up below is kept for its lessons, not as a live to-do.
+
+`StonePhilosopher/main` (canonical, the boss's promotion lane) **had** a
 **corrupted `data/minerals.json`**: 148 top-level keys instead of 8,
 because a botched merge-conflict resolution dropped an `acid_dissolution`
 opening brace in the **adamite** entry, which ejected ~140 minerals out of
