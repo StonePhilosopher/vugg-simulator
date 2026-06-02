@@ -390,28 +390,40 @@ wall-decay bonus → 2c origin-rides-spots + deposition bias → 2d open/close e
     decorating a local halo — the Punjab hematite case), not pervasive supergene acid. Pick
     the 2c.3 demonstrator accordingly (a distinct point-source fluid into an otherwise-static
     cavity), NOT supergene's pervasive front.
-- **⚠ 2c.2 WIRED but DEFAULT-OFF (DARK, byte-identical) — a verify-the-mechanism CATCH.**
-  Deposition bias on placement: weight the legacy ring0 COLUMN pick (`_assignWallCell`,
-  85b:569+) by open-feeder `supply` via `FluidSpotField.columnSupplyWeights()` (geyser 1.8 /
-  hotspot 1.4; crack 1.0 = none, since cracks are erosion-dominant flow-through). The weighted
-  pick consumes the SAME single rng draw (reduces EXACTLY to the legacy uniform pick under
-  uniform weights → byte-identical OFF). Per-vertex sampler also multiplies its weight by
-  `supplyAt(idx)` (composes). **FINDING (the reason it ships OFF):** the bias does NOT visibly
-  CLUSTER crystals at feeders. Measured two ways: (1) A/B observer (tools/fluid-spots-deposition-
-  observe.mjs) — 11/30 scenarios change, 0 lose an expects_species, mostly ±1µm with a few
-  active↔dissolved flips (gem_pegmatite tourmaline 2→5, cassiterite 1→4); (2) a direct column-
-  membership probe — gem_pegmatite's 3 feeder columns [107,114,78] capture **0 crystals both OFF
-  and ON**; epithermal 1→0. At 1.4-1.8× over a few columns of ~120 with sparse (~25-77) nucleation,
-  the feeder's expected capture is ~0.3 → rounds to zero. So it only RESHUFFLES placement (changing
-  spatial competition → the survival flips), churning baselines WITHOUT the spatial payoff. Shipping
-  it default-on would be baseline churn for an invisible effect — so it's OFF, wired + tested
-  (explicit ON) so the real path can build on it. **THE REAL PATH (next):** a per-cell PROXIMITY-
-  DECAY supply weight (boost a feeder's cell AND a decaying halo of neighbors, peak weight strong
-  enough to capture a visible share) routed through the per-vertex sampler — which is exactly the
-  spatial heterogeneity HANDOFF-PER-VERTEX-PLACEMENT said that σ-starved sampler needs. Clustering
-  STRENGTH/shape is a visible aesthetic choice → wants the boss's eye (field-guide restraint vs
-  obvious clustering). FILES: js/85k (columnSupplyWeights + deposition flag, default false),
-  js/85b (weighted column pick + per-vertex supplyAt multiply), tests in fluid-spots.test.ts.
+- **2c.2 column-bias (DARK, default-off, v171 commit 3c17e49) — a verify-the-mechanism CATCH,
+  SUPERSEDED by 2c.2b.** Weighting the legacy ring0 COLUMN pick by open-feeder `supply`
+  (columnSupplyWeights) did NOT visibly cluster: gem_pegmatite's feeder columns [107,114,78]
+  captured **0 crystals OFF and ON** (a feeder is a 2-D patch, not a thin vertical stripe; the
+  column pick is sparse + bypassed). It only reshuffled competition. Kept default-off (the
+  column helper remains as a sibling query to columnWeights). The fix → 2c.2b.
+- **✅ 2c.2b DONE (SIM 172, PER-SCENARIO OPT-IN): per-cell PROXIMITY-DECAY deposition
+  CLUSTERING — the visible "best crystals cluster near the feeder."** `FluidSpotField.proximityField(N,R)`
+  = per-cell boost `1 + max_f[(supply_f−1)·PEAK_K·exp(−dist/LAMBDA)]` (dist = lat-long graph
+  distance; default PEAK_K=12, LAMBDA=2.5), a multiplicative weight in BOTH placement samplers:
+  the geometry-only `_feederProximitySample` (joint (ring,col) draw weighted by
+  ringAreaWeight·proximity — clusters free-wall nucleation, reuses the `_lastNucVertexRing`
+  handoff) and the per-vertex σ-sampler (`w *= proximity`, finally feeding that σ-starved sampler
+  its missing spatial heterogeneity). proximity≡1 → ring-marginal reduces to the legacy area
+  distribution → byte-identical.
+  **PER-SCENARIO OPT-IN** (`fluid_spots: { deposition: true }` → `sim._fluidSpotsDeposition`),
+  NOT global, because a global default perturbed a VALIDATED-chemistry scenario: reactive_wall's
+  marginal PWP precipitation contract (calcite at equilibrium, ~2e-9) flipped when its calcite
+  clustered (2946→2159µm). Clustering mustn't silently rewrite scenarios testing other physics.
+  v172 enables exactly ONE demonstrator — **gem_pegmatite** (3 hotspots → 0→18% of crystals
+  within 2 cells of a feeder; tourmaline 2→5, cassiterite 1→4 concentrate at the vents). The
+  observer/tests force it for any sim via the tri-state master override
+  `setFluidSpotsDepositionEnabled(null|true|false)` → `fluidSpotsDepositionFor(sim)`.
+  **Measured (override-on A/B, K12/λ2.5):** within-2-cells share ~0-2%→~11-18% fleet-wide;
+  assemblage PRESERVED everywhere, **0 expects_species lost** — so widening the opt-in is SAFE.
+  **Baseline:** seed42_v171→v172 = gem_pegmatite ONLY (29/30 byte-identical incl. reactive_wall);
+  strip_digest stamp-only (gem_pegmatite not in the digest set). FILES: js/85k (proximityField +
+  clustering params + tri-state override + fluidSpotsDepositionFor), js/85b
+  (_feederProximitySample + per-vertex prox multiply), js/85 (opt-in read), data/scenarios.json5
+  (gem_pegmatite), tools/fluid-spots-deposition-observe.mjs, tests in fluid-spots.test.ts.
+  **⚠ CALIBRATION OPEN (boss's eye):** v172 is a restrained, calibratable PREVIEW on ONE
+  scenario. Strength = `setDepositionClustering(PEAK_K, LAMBDA)` (K12/λ2.5 ≈ broadest lobe;
+  K25-50/λ1.5-2 ≈ tighter cores). Scope = which scenarios opt in (global is safe per the A/B).
+  Boss to look at gem_pegmatite on Pages + steer strength + which scenarios.
 - **2c.3:** bake origin:'cell' (2c.1) + a WORKING deposition model into ONE science-chosen
   point-source demonstrator → the visible one-sided specimen. SIM bump + regen. (Blocked on the
   per-cell proximity deposition model above — the column-bias version doesn't cluster.)

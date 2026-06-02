@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 /**
- * tools/fluid-spots-deposition-observe.mjs — Phase 2c.2 DARK OBSERVATION (commits
- * nothing). The A/B gate before baking the deposition bias.
+ * tools/fluid-spots-deposition-observe.mjs — Phase 2c.2b A/B OBSERVATION (commits
+ * nothing). The safety gate for deposition CLUSTERING.
  *
- * 2c.2 weights nucleation PLACEMENT toward open supply-feeders (geysers 1.8 /
- * hotspots 1.4; cracks 1.0 = no deposition boost) so crystals cluster in the
- * feeder's column. The RING is assigned separately → growth chemistry is
- * unchanged, BUT clustering changes spatial competition (enclosure / liberation
- * / overgrowth), which CAN shift a few crystals active↔dissolved and nudge sizes.
+ * 2c.2b clusters nucleation PLACEMENT toward open supply-feeders (geysers 1.8 /
+ * hotspots 1.4; cracks 1.0 = none) via a per-cell PROXIMITY-DECAY halo
+ * (FluidSpotField.proximityField). The RING is assigned separately → growth
+ * chemistry is unchanged, BUT clustering changes spatial competition (enclosure /
+ * liberation / overgrowth), which shifts crystal sizes + a few active↔dissolved.
+ * Clustering is PER-SCENARIO opt-in; this tool FORCES it on/off fleet-wide via the
+ * tri-state master override (setFluidSpotsDepositionEnabled true/false) to A/B
+ * EVERY scenario and confirm none loses a headline species before widening opt-in.
  *
  * The discipline (HANDOFF lesson #1): before baking, confirm the bias does NOT
  * WIPE any scenario's headline assemblage. This runs every scenario with

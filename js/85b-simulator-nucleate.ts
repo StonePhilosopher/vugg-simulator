@@ -566,46 +566,66 @@ _wallStrangledFor(mineral) {
     // number below. _lastNucVertexRing stays null so _assignWallRing
     // also uses its legacy path.
   }
+  // Phase 2c.2b — DEPOSITION CLUSTERING. When the flag is on AND the cavity has
+  // open supply-feeders (geysers/hotspots), draw a joint (ring, col) sample
+  // weighted by ringAreaWeight(ring)·proximityField(cell) — a decaying halo of
+  // nucleation boost around each vent. Pure geometry (no σ), so it clusters
+  // free-wall nucleation toward feeders in ANY scenario, not just per-vertex ones.
+  // Stashes the ring on _lastNucVertexRing (reusing the per-vertex handoff) so the
+  // following _assignWallRing honors it. Returns null (→ legacy uniform pick,
+  // byte-identical) when off / no supply-feeders. (The 2c.2 column-only bias this
+  // supersedes did NOT cluster — a feeder is a 2-D patch, not a thin stripe.)
+  if (fluidSpotsDepositionFor(this) && this._fluidSpots && !this._fluidSpots.isEmpty) {
+    const picked = this._feederProximitySample();
+    if (picked) {
+      this._lastNucVertexRing = picked.ringIdx;
+      return picked.cellIdx;
+    }
+  }
   const N = this.wall_state.cells_per_ring;
   const ring0 = this.wall_state.rings[0];
   const empty = [];
   for (let i = 0; i < ring0.length; i++) {
     if (ring0[i].crystal_id == null) empty.push(i);
   }
-  // Phase 2c.2 — DEPOSITION bias toward open supply-feeders (geysers/hotspots):
-  // weight the column pick so crystals cluster in the feeder's column. Null when
-  // there's nothing to bias (no spots / flag off / only cracks) → fall through to
-  // the EXACT legacy uniform pick, byte-identical. The weighted pick consumes the
-  // SAME single rng.random() draw, so the downstream cascade (and thus the
-  // assemblage) is untouched — only the chosen column (angular position) shifts.
-  const supW = (fluidSpotsDepositionEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
-    ? this._fluidSpots.columnSupplyWeights(N) : null;
-  if (empty.length) {
-    if (supW) return this._supplyWeightedColumnPick(empty, supW, rng.random());
-    return empty[Math.floor(rng.random() * empty.length)];
-  }
-  if (supW) {
-    // Wall full: bias over all columns (overlaps paint the larger crystal on top).
-    const all = []; for (let i = 0; i < N; i++) all.push(i);
-    return this._supplyWeightedColumnPick(all, supW, rng.random());
-  }
+  if (empty.length) return empty[Math.floor(rng.random() * empty.length)];
   return Math.floor(rng.random() * N);
 },
 
-// Phase 2c.2 — pick a column from `pool` weighted by per-column supply
-// (weights[col]). Consumes the single pre-drawn `rand` ∈ [0,1) the caller would
-// otherwise have spent on the uniform pick, so determinism is preserved. With
-// all-1 weights this reduces EXACTLY to pool[floor(rand*pool.length)] (the legacy
-// expression), so the bias only deviates where a feeder column has weight > 1.
-_supplyWeightedColumnPick(pool, weights, rand) {
+// Phase 2c.2b — joint (ring, col) nucleation sample weighted by
+// ringAreaWeight(ring)·proximityField(cell): crystals cluster in a decaying halo
+// around open supply-feeders while the no-feeder background stays area-true (with
+// proximity ≡ 1 the ring-marginal reduces to the legacy sin φ area distribution).
+// One RNG draw; returns { ringIdx, cellIdx } or null (no open supply-feeders /
+// degenerate mesh → caller uses the legacy pick). Mirrors _perVertexNucleationSample's
+// return + _lastNucVertexRing contract but is GEOMETRY-only (works for every
+// free-wall mineral, not only those with a supersaturation_<mineral> method).
+_feederProximitySample() {
+  const wall = this.wall_state;
+  if (!wall || !wall.rings || !wall.rings.length) return null;
+  const R = wall.ring_count | 0;
+  const N = wall.cells_per_ring | 0;
+  if (R < 1 || N < 1) return null;
+  const prox = this._fluidSpots.proximityField(N, R);
+  if (!prox) return null;                         // no open supply-feeders
+  const weights = new Float64Array(R * N);
   let total = 0;
-  for (let i = 0; i < pool.length; i++) total += weights[pool[i]] || 1;
-  let r = rand * total;
-  for (let i = 0; i < pool.length; i++) {
-    r -= weights[pool[i]] || 1;
-    if (r < 0) return pool[i];
+  for (let r = 0; r < R; r++) {
+    const areaW = wall.ringAreaWeight(r);
+    for (let c = 0; c < N; c++) {
+      const idx = r * N + c;
+      const w = areaW * prox[idx];
+      weights[idx] = w;
+      total += w;
+    }
   }
-  return pool[pool.length - 1];   // float round-off guard
+  if (!(total > 0)) return null;
+  let rr = rng.random() * total;
+  for (let i = 0; i < weights.length; i++) {
+    rr -= weights[i];
+    if (rr <= 0) return { ringIdx: (i / N) | 0, cellIdx: (i % N) | 0 };
+  }
+  return { ringIdx: R - 1, cellIdx: N - 1 };       // float round-off guard
 },
 
 // Tranche 6 of PROPOSAL-CAVITY-MESH §14 — joint σ-weighted sample over
@@ -679,15 +699,13 @@ _perVertexNucleationSample(mineral) {
   const savedFluid = this.conditions.fluid;
   const savedTemp = this.conditions.temperature;
 
-  // Phase 2c.2 — DEPOSITION bias: open supply-feeders raise the per-cell
-  // nucleation weight at their cell (vent-fed precipitation). supplyAt returns
-  // 1.0 everywhere when there are no spots / the cell isn't a feeder, so this is
-  // a no-op (byte-identical) for the default fleet; only the feeder cell's weight
-  // lifts when the flag is on and a spot sits on it. The legacy column path
-  // (above) is the broad lever; this is the per-vertex companion that composes
-  // when per_vertex_nucleation is enabled.
-  const spots = (fluidSpotsDepositionEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
-    ? this._fluidSpots : null;
+  // Phase 2c.2b — DEPOSITION CLUSTERING: multiply the per-cell σ weight by the
+  // feeder proximity halo (proximityField), so a per-vertex scenario with open
+  // supply-feeders concentrates nucleation around its vents with the SAME decaying
+  // halo the geometry-only _feederProximitySample uses. null (→ no multiply,
+  // byte-identical) when the flag is off or there are no open supply-feeders.
+  const prox = (fluidSpotsDepositionFor(this) && this._fluidSpots && !this._fluidSpots.isEmpty)
+    ? this._fluidSpots.proximityField(N, ringCount) : null;
   const weights = new Float64Array(ringCount * N);
   let total = 0;
   try {
@@ -713,7 +731,7 @@ _perVertexNucleationSample(mineral) {
         }
         if (!Number.isFinite(sigma) || sigma <= 1) continue;
         let w = areaW * (sigma - 1) * (sigma - 1);
-        if (spots) w *= spots.supplyAt(idx);
+        if (prox) w *= prox[idx];
         weights[idx] = w;
         total += w;
       }

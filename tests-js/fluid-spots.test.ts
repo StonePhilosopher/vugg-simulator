@@ -137,7 +137,9 @@ describe('fluid-spots — 2b wall-decay coupling (lopsided erosion, render-visib
   });
 });
 
-describe('fluid-spots — 2c.2 columnSupplyWeights (deposition, pure)', () => {
+describe('fluid-spots — columnSupplyWeights (2c.2, SUPERSEDED by proximityField, pure)', () => {
+  // The column-only bias didn't cluster (a feeder is a 2-D patch, not a stripe);
+  // superseded by proximityField (2c.2b). Kept as the sibling query to columnWeights.
   const N = 120;
   it('a CRACK (supply 1.0) yields NO deposition bias — null (erosion-dominant, not vent-fed)', () => {
     const f = new FluidSpotField([{ cell: 7, kind: 'crack', open: true, supply: 1.0, decayBonus: 1.6 }]);
@@ -159,17 +161,47 @@ describe('fluid-spots — 2c.2 columnSupplyWeights (deposition, pure)', () => {
   });
 });
 
-describe('fluid-spots — 2c.2 deposition coupling (wired, DEFAULT-OFF/DARK)', () => {
-  // The deposition gate ships OFF (verify-the-mechanism finding: weighting the
-  // legacy column pick reshuffles placement but does NOT visibly cluster crystals
-  // at feeders — see js/85k + the v171 changelog note). These pin the wired
-  // mechanism's CONTRACT (it preserves the assemblage; the flag is the only
-  // difference; OFF is byte-identical) so the future per-cell proximity model can
-  // build on it. Restore the OFF default after each case.
-  afterEach(() => setFluidSpotsDepositionEnabled(false));
+describe('fluid-spots — 2c.2b proximityField (per-cell clustering halo, pure)', () => {
+  const N = 120, R = 16;
+  it('a CRACK (supply 1.0) yields NO halo — null (flow-through, not a precipitator)', () => {
+    const f = new FluidSpotField([{ cell: 5 * N + 60, kind: 'crack', open: true, supply: 1.0, decayBonus: 1.6 }]);
+    expect(f.proximityField(N, R)).toBeNull();
+  });
+  it('a GEYSER halo PEAKS at the feeder cell and DECAYS with graph-distance', () => {
+    const fr = 8, fc = 60, cell = fr * N + fc;
+    const g = new FluidSpotField([{ cell, kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.2 }]);
+    const w = g.proximityField(N, R)!;
+    const at = (r: number, c: number) => w[r * N + c];
+    expect(at(fr, fc)).toBeGreaterThan(1);                  // boosted at the vent
+    expect(at(fr, fc)).toBeGreaterThan(at(fr, fc + 1));     // decays 1 hop along the ring
+    expect(at(fr, fc + 1)).toBeGreaterThan(at(fr, fc + 3)); // monotone decay outward
+    expect(at(fr, fc + 3)).toBeGreaterThan(at(fr, fc + 6));
+    expect(at(fr + 5, fc)).toBeGreaterThan(1);              // halo reaches a few rings up
+    expect(at((fr + 8) % R, (fc + 60) % N)).toBeCloseTo(1, 3); // far side ≈ baseline
+  });
+  it('a GEYSER (1.8) halo is stronger than a HOTSPOT (1.4) at the same cell', () => {
+    const cell = 8 * N + 60;
+    const g = new FluidSpotField([{ cell, kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.2 }]);
+    const h = new FluidSpotField([{ cell, kind: 'hotspot', open: true, supply: 1.4, decayBonus: 1.3 }]);
+    expect(g.proximityField(N, R)![cell]).toBeGreaterThan(h.proximityField(N, R)![cell]);
+  });
+  it('a CLOSED feeder is inert; an empty field is null', () => {
+    const closed = new FluidSpotField([{ cell: 8 * N + 60, kind: 'geyser', open: false, supply: 1.8, decayBonus: 1.2 }]);
+    expect(closed.proximityField(N, R)).toBeNull();
+    expect(new FluidSpotField([]).proximityField(N, R)).toBeNull();
+  });
+});
 
-  // gem_pegmatite seeds 3 hotspots (supply 1.4) at seed 42 → the placement reshuffle
-  // is observable here (the OFF→ON assemblage change tourmaline 2→5 / cassiterite 1→4).
+describe('fluid-spots — 2c.2b deposition CLUSTERING (per-cell, render-visible)', () => {
+  // Deposition clustering is per-scenario opt-in; the master override forces it
+  // on/off for the A/B. Restore the override to null (honor opt-in) after each case
+  // so it doesn't leak into other tests.
+  afterEach(() => setFluidSpotsDepositionEnabled(null));
+
+  // gem_pegmatite seeds 3 hotspots at seed 42 → a clear OFF→ON clustering signal.
+  // Distance is the lat-long graph distance using the anchor's RING (a.ringIdx) and
+  // COLUMN (a.cellIdx) — they are SEPARATE fields (a.cellIdx is 0..N-1, not a full
+  // mesh index), the subtlety that bit the first clustering probe.
   function runPlacement(depositionOn: boolean) {
     setFluidSpotsDepositionEnabled(depositionOn);
     setSeed(42);
@@ -178,23 +210,38 @@ describe('fluid-spots — 2c.2 deposition coupling (wired, DEFAULT-OFF/DARK)', (
     const steps = defaultSteps ?? 120;
     for (let s = 0; s < steps; s++) sim.run_step();
     const N = sim.wall_state.cells_per_ring | 0;
-    const feederCols = new Set(
-      sim._fluidSpots.spots.filter((s: any) => s.open && s.supply > 1).map((s: any) => ((s.cell % N) + N) % N));
+    const feeders = sim._fluidSpots.spots
+      .filter((s: any) => s.open && s.supply > 1)
+      .map((s: any) => ({ r: (s.cell / N) | 0, c: s.cell % N }));
     const cols: number[] = [];
-    for (const c of sim.crystals) {
-      const a = sim.wall_state._resolveAnchor(c);
-      if (a) cols.push(((a.cellIdx % N) + N) % N);
+    let nearFeeder = 0;
+    for (const cr of sim.crystals) {
+      const a = sim.wall_state._resolveAnchor(cr);
+      if (!a) continue;
+      cols.push(a.cellIdx);
+      let dmin = Infinity;
+      for (const f of feeders) {
+        const dc = Math.abs(a.cellIdx - f.c);
+        const d = Math.abs(a.ringIdx - f.r) + Math.min(dc, N - dc);
+        if (d < dmin) dmin = d;
+      }
+      if (dmin <= 2) nearFeeder++;
     }
     const species = new Set(sim.crystals.map((c: any) => c.mineral));
-    return { cols, feederCols, species, N };
+    return { cols, nearFeeder, total: sim.crystals.length, feeders, species };
   }
 
-  it('ON shifts the crystal LAYOUT but PRESERVES the assemblage (species set unchanged)', () => {
+  it('ON CLUSTERS more crystals within 2 cells of a feeder than OFF (the visible payoff)', () => {
     const off = runPlacement(false);
     const on = runPlacement(true);
-    expect(on.feederCols.size).toBeGreaterThan(0);                  // there ARE supply-feeders
-    expect(on.cols).not.toEqual(off.cols);                          // the bias bit (placement reshuffled)
-    expect([...on.species].sort()).toEqual([...off.species].sort()); // SAFETY: no species gained/lost
+    expect(on.feeders.length).toBeGreaterThan(0);                   // there ARE supply-feeders
+    expect(on.nearFeeder).toBeGreaterThan(off.nearFeeder);          // crystals concentrate at the vents
+  });
+
+  it('ON preserves the assemblage (species set unchanged — clustering, not chemistry)', () => {
+    const off = runPlacement(false);
+    const on = runPlacement(true);
+    expect([...on.species].sort()).toEqual([...off.species].sort());
   });
 
   it('the deposition flag toggles cleanly (OFF after ON == OFF — flag is the only difference)', () => {

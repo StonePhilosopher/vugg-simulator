@@ -156,6 +156,12 @@ class VugSimulator {
     // SIM_VERSION bump. Couplings (decay bonus 2b, origin/deposition 2c, open/
     // close events 2d) consume `this._fluidSpots` in later sub-steps.
     this._fluidSpots = _createFluidSpotField(this);
+    // Phase 2c.2b — per-scenario DEPOSITION-clustering opt-in. A scenario turns on
+    // feeder crystal-clustering with `fluid_spots: { deposition: true }`; absent →
+    // false (the validated fleet stays byte-identical). The observer/tests can force
+    // it for any sim via the tri-state master override (setFluidSpotsDepositionEnabled).
+    this._fluidSpotsDeposition = !!(this.conditions && this.conditions._scenario
+      && this.conditions._scenario.fluid_spots && this.conditions._scenario.fluid_spots.deposition);
     // Cache the FluidChemistry numeric field names once for the
     // diffusion loop. Pulled from a fresh instance so any future field
     // additions to FluidChemistry pick up automatically — no separate

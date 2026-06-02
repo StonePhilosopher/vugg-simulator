@@ -1103,6 +1103,16 @@
       "description": "Miarolitic cavity in a complex zoned pegmatite. The residual pocket where incompatible elements (Be, B, Li, F) accumulate beyond belief, then cross saturation in cascade — schorl → beryl → spodumene + elbaite → late topaz, with kaolinization of the microcline walls at the end.",
       "expects_species": ["tourmaline", "spodumene", "topaz", "feldspar", "albite", "lepidolite", "cassiterite"],
       "duration_steps": 230,
+      // FLUID-SPOTS Phase 2c.2b — the per-cell deposition-clustering DEMONSTRATOR
+      // (the boss's "best crystals cluster near the feeder"). A miarolitic gem
+      // pocket connects to its plumbing at a few feeder channels; the finest
+      // crystals concentrate around them. The seeded set here is 3 hotspots
+      // (shape_seed 42); with `deposition: true` nucleation gains a decaying halo
+      // of boost around each open vent → tourmaline/cassiterite concentrate at the
+      // feeders (0→18% of crystals within 2 cells), assemblage preserved. Per-
+      // scenario opt-in keeps the validated-chemistry fleet (e.g. reactive_wall)
+      // byte-identical. Strength is the global setDepositionClustering(PEAK_K,LAMBDA).
+      "fluid_spots": { "deposition": true },
       "notes": [
         "Cruzeiro is the type-locality for fine schorl-elbaite tourmaline + smoky quartz pockets, with documented beryl, spodumene, lepidolite, and accessory apatite. Brasiliano-age (Neoproterozoic) pegmatite field cutting Macaúbas Group meta-sediments. Morteani et al. 2002 covers fluid chemistry; Cassedanne (1991) and Proctor (1985) cover the Cruzeiro-specific paragenesis.",
         "Thermal regime: 650 → 300°C over ~230 steps in three phases. Phase 1 (650-550°C): wall-zone crystallization (microcline, quartz, early schorl). Phase 2 (550-400°C): main pocket growth — beryl finally nucleates when Be crosses threshold; spodumene when Li crosses; schorl transitions to elbaite as Fe depletes and Li accumulates. Phase 3 (400-300°C): late hydrothermal — topaz if F survives, then kaolinization of microcline walls.",
