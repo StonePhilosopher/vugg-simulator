@@ -209,12 +209,28 @@ diverges only above O2=5, unreachable by any scenario → clamp in 4c.2).
   from the movement's Eh). NB: vadose-override O2 writes + an Eh movement on the
   SAME cells is a per-cell-ownership conflict deferred to Phase 2; mvt (the pilot)
   is closed/no-vadose so the coarse whole-cavity flip is exact there.
-- **4c.3b — `mvt` Eh-movement pilot (NEXT; boss look+listen + baseline regen).**
-  Author a geologically-faithful redox movement on mvt (MVT = low-T basinal-brine
-  carbonate-hosted Pb-Zn; sulfide deposition driven by REDUCING pulses when
-  reduced/H₂S fluid mixes in → an Eh-DROP trend/pulse-train is the faithful
-  shape). Opt mvt in, regen seed42 + strip baselines (SIM bump), then boss LOOKS
-  at the strip + LISTENS to the sonifier (the look+listen gate I can't do).
+- **✅ 4c.3b — `mvt` Eh-movement pilot SHIPPED (SIM 168→169). FIRST real movement.**
+  Grounded in RESEARCH-mvt-redox-2026-06-02.md (deep-research, verified): MVT ore
+  fluid is REDUCING during sulfide deposition (log fO2 −52…−55), but barite (a
+  sulfate) belongs to an EARLIER less-reducing gangue stage — research CORRECTED my
+  first sketch (an oxidizing↔reducing oscillation was wrong; discarded). Dark-
+  observed both candidates (tools/mvt-redox-observe.mjs): a FLAT reducing baseline
+  WIPES barite + sphalerite; the chosen **+50 → −250 mV smoothstep TREND + OU**
+  preserves the full expects_species (barite kept as the early oxidizing stage,
+  galena boosted 1×→4× as it reduces late) — the Tri-State paragenetic order
+  (sulfate gangue early → sulfide ore late). mvt's scenarios.json5 gains a
+  `movements` block; Eh-canonical (O2 follows). Only mvt changed; all other
+  scenarios byte-identical; seed42_v169 + strip_digest regen; suite 1719/1719.
+  **REMAINING: boss LOOK (strip Eh chip should sweep +60→−246, paragenetic barite-
+  early/galena-late) + LISTEN (sonifier) — the sensory acceptance I can't do —
+  then tune shape by eye+ear if wanted.**
+
+**★ The "make Eh live" arc is COMPLETE (4c.1 observer → 4c.2 consume → 4c.3a
+Eh-canonical → 4c.3b first movement).** Eh went frozen+inert → live, consumed, and
+drivable, with the first geological movement (mvt redox trend) shipped. The
+Movements engine is now PROVEN end-to-end on a real scenario. Next arcs: Phase 3
+incremental rollout (more scenarios/archetypes opt in, each its own commit +
+look+listen) and Phase 2 fluid-source spots (spatial).
 - **Latent note:** even flag-ON, the helpers use the coarse `ehFromO2` bijection,
   NOT the principled Nernst couples (`REDOX_COUPLES`/`redoxFraction`, built in 4a,
   still uncalled). Richer per-couple redox is a later refinement, not 4c.
@@ -286,6 +302,20 @@ Sweetwater (snowball barite) + Elmwood (calcite-after-fluorite perimorph) — MV
 may need scenario-specific paragenesis tunings. Cobalt-Ontario/Freiberg Ag vein
 (activates nickeline+cobaltite+native_silver). Acid-mine-drainage (activates
 chalcanthite). Plus the D3-gated scenarios (H below).
+- **Specimen-anchored MVT scenario from the boss's own collection (boss, 2026-06-02;
+  "sometime down the line").** Boss owns 30+ MVT calcites + fluorites + barites +
+  sphalerites, probably galena (unconfirmed — resolve from the shelf; galena
+  presence calibrates the depth of the reducing Eh excursion). That assemblage is
+  the EXACT `mvt` expects_species (sphalerite, galena, fluorite, barite, calcite),
+  so this is mostly a CALIBRATION of the existing literature-anchored `mvt` against
+  real specimens (habit/color/paragenetic order), via the vugg-add-scenario
+  specimen-anchored workflow — NOT a from-scratch build. The "replication of life"
+  north star applied to his rocks; the richer successor to today's Tri-State-lit
+  `mvt` + its Eh-movement (4c.3b). NB 30+ pieces likely span sub-districts
+  (Tri-State / Elmwood TN / Cave-in-Rock IL / Moroccan-Spanish barite) → decide
+  one representative scenario vs sub-district variants from the specimens. Inputs
+  can flow from the 1217-specimen mineral catalog once iPhone-capture is live.
+  FUTURE CONTEXT, not a current requirement — needs photos/labels in hand.
 
 ### G. Mineral engines — pre-researched, pure engine work (use vugg-add-mineral)
 - **Cd + greenockite** (CdS yellow on Tri-State sphalerite; Cd field).

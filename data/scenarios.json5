@@ -273,6 +273,32 @@
         { "step": 60, "type": "fluid_pulse", "name": "Second Pulse", "description": "Another mixing event" },
         { "step": 80, "type": "tectonic_shock", "name": "Tectonic", "description": "Minor seismic event" }
       ],
+      // Geological MOVEMENTS (js/85j) — Phase 4c.3b pilot; mvt is the FIRST
+      // scenario to opt in. A reducing Eh TREND grounded in
+      // RESEARCH-mvt-redox-2026-06-02.md: MVT ore fluid is REDUCING during sulfide
+      // deposition (log fO2 ~ -52 to -55; Wenz et al. 2012 Am.J.Sci 312:22; Appold
+      // 2009 USGS 06HQGR0178 — deep in the H2S field, sulfur as sulfide not
+      // sulfate). The fluid evolves from a mildly-oxidizing early gangue stage
+      // (sulfate-stable → barite + fluorite) to a reducing sulfide-ore stage
+      // (galena + sphalerite) — the textbook Tri-State paragenetic order. Eh +50 mV
+      // → -250 mV (smoothstep) across the run + a small mean-reverting (OU)
+      // texture. EH-CANONICAL: the movement drives fluid.Eh and O2 follows (js/85c
+      // _syncRedoxEh, Phase 4c.3a). Dark-observed (tools/mvt-redox-observe.mjs): a
+      // FLAT reducing baseline WIPES barite (sulfate can't survive the sulfide
+      // field); the TREND preserves the full expects_species (barite kept as the
+      // early stage) and boosts late galena 1x->4x. Pulse count / excursion depth
+      // are modeler's choice — no defensible MVT band-count exists in the
+      // literature; trend + OU is the minimum-assumption faithful shape.
+      "movements": [
+        {
+          "field": "fluid.Eh",
+          "startStep": 0,
+          "endStep": 120,
+          "base": 50,
+          "ops": [{ "kind": "trend", "amp": -300, "ease": true }],
+          "texture": { "theta": 0.3, "sigma": 15 }
+        }
+      ],
       "sources": [
         "Roedder 1976 — Tri-State fluid-inclusion microthermometry",
         "Ohle 1959 — Tri-State district geology",

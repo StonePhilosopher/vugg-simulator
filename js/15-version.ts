@@ -9949,5 +9949,37 @@
 //                                 neither changed scenario (radioactive_pegmatite,
 //                                 schneeberg) is in the 10-scenario digest set,
 //                                 and Eh itself is not a hashed digest field.
-const SIM_VERSION = 168;
+// ============================================================
+// v169 (2026-06-02) — Eh-MOVEMENT PILOT on mvt (Phase 4c.3b). The FIRST scenario
+//                     to opt into a geological movement. mvt's scenarios.json5
+//                     spec gains a `movements: [{ field:'fluid.Eh', +50→-250 mV
+//                     smoothstep TREND + OU texture }]`. Eh-canonical (4c.3a): the
+//                     movement drives fluid.Eh, O2 follows.
+//
+//   Science (RESEARCH-mvt-redox-2026-06-02.md; deep-research, verified): MVT ore
+//   fluid is REDUCING during sulfide deposition (log fO2 ~ -52 to -55; Wenz 2012,
+//   Appold 2009), deep in the H2S field. Barite (a sulfate) belongs to an EARLIER
+//   less-reducing gangue stage — a flat-reducing fluid wipes it. The +50→-250 mV
+//   trend reproduces the Tri-State paragenetic order: sulfate gangue (barite +
+//   fluorite) early → sulfide ore (galena + sphalerite) late.
+//
+//   Dark-observed before baking (tools/mvt-redox-observe.mjs): the TREND preserves
+//   the full expects_species (a FLAT reducing baseline loses barite + sphalerite)
+//   and boosts late galena 1×→4×.
+//
+// FILES
+//   data/scenarios.json5            mvt gains the `movements` block (opt-in).
+//   js/15-version.ts                SIM_VERSION 168 → 169 + this block.
+//   tools/mvt-redox-observe.mjs     the A/FLAT/TREND assemblage-survival observer.
+//   proposals/RESEARCH-mvt-redox-2026-06-02.md   the verified science.
+//
+// BASELINE DRIFT
+//   seed42_v168 → seed42_v169:   ONLY `mvt` changes (the only opt-in); all other
+//                                 scenarios byte-identical (movement draw-gate).
+//                                 mvt assemblage stays whole — barite 18→6 (now
+//                                 the early oxidizing stage), galena 1→4 (reduced
+//                                 ore stage), sphalerite kept, +willemite; Eh
+//                                 trajectory +60 → -246 mV (was flat +24).
+//   strip_digest_v168 → v169:    version stamp only — mvt is not in the digest set.
+const SIM_VERSION = 169;
 
