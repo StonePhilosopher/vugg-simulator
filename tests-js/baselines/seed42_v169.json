@@ -341,9 +341,9 @@
       "max_um": 18618.6
     },
     "cassiterite": {
-      "active": 8,
+      "active": 6,
       "dissolved": 0,
-      "total": 8,
+      "total": 6,
       "max_um": 39
     },
     "emerald": {
@@ -353,10 +353,10 @@
       "max_um": 157.7
     },
     "feldspar": {
-      "active": 1,
+      "active": 2,
       "dissolved": 1,
-      "total": 2,
-      "max_um": 37645
+      "total": 3,
+      "max_um": 37629.9
     },
     "lepidolite": {
       "active": 3,
@@ -368,7 +368,7 @@
       "active": 3,
       "dissolved": 0,
       "total": 3,
-      "max_um": 2944.6
+      "max_um": 2928.3
     },
     "spodumene": {
       "active": 2,
@@ -1775,9 +1775,9 @@
       "max_um": 61.7
     },
     "haidingerite": {
-      "active": 4,
+      "active": 5,
       "dissolved": 0,
-      "total": 4,
+      "total": 5,
       "max_um": 1459.6
     },
     "jarosite": {
@@ -1796,7 +1796,7 @@
       "active": 1,
       "dissolved": 0,
       "total": 1,
-      "max_um": 8977.2
+      "max_um": 8968.8
     },
     "mimetite": {
       "active": 2,
@@ -1823,16 +1823,16 @@
       "max_um": 0.6
     },
     "pharmacolite": {
-      "active": 2,
+      "active": 1,
       "dissolved": 0,
-      "total": 2,
+      "total": 1,
       "max_um": 1343.5
     },
     "plumbogummite": {
       "active": 3,
       "dissolved": 0,
       "total": 3,
-      "max_um": 31.6
+      "max_um": 31.7
     },
     "powellite": {
       "active": 4,
@@ -1880,7 +1880,7 @@
       "active": 1,
       "dissolved": 0,
       "total": 1,
-      "max_um": 7932.7
+      "max_um": 7931.8
     }
   },
   "tn457_barite_pulses": {
