@@ -255,9 +255,113 @@ diverges only above O2=5, unreachable by any scenario → clamp in 4c.2).
 **★ The "make Eh live" arc is COMPLETE (4c.1 observer → 4c.2 consume → 4c.3a
 Eh-canonical → 4c.3b first movement).** Eh went frozen+inert → live, consumed, and
 drivable, with the first geological movement (mvt redox trend) shipped. The
-Movements engine is now PROVEN end-to-end on a real scenario. Next arcs: Phase 3
-incremental rollout (more scenarios/archetypes opt in, each its own commit +
-look+listen) and Phase 2 fluid-source spots (spatial).
+Movements engine is now PROVEN end-to-end on a real scenario.
+
+**★ Phase 3 — FIRST ROLLOUT SHIPPED (SIM 170, `5b589d3`): `supergene_oxidation`
+meteoric acid front.** The SECOND scenario movement → the "reads true on 2
+SCENARIOS" minimum-lovable-v1 (coda watch-item 4b) is HIT. Deliberately a DIFFERENT
+master variable (pH, not Eh) → the engine's GENERALITY is proven, not a repeat. A
+sustained acid front (pH 6.8→4.3 smoothstep + OU, startStep 20) that RECOVERS
+vanadinite — a declared `expects_species` the static baseline never grew (36→40
+species, expects whole). Grounded in RESEARCH-supergene-acid-front-2026-06-02.md
+(Bowell 2014; Singer & Stumm 1970; verified). Pages-verified (SIM 170 + scenarios
+data serve 200). **Boss look+listen on BOTH pilots (mvt Eh trend + supergene pH
+front) is the pending sensory acceptance** — strip shows the supergene pH chip
+descending after the flush; tune by eye+ear if wanted.
+
+**★★ MOVEMENT DESIGN RULE learned this rollout (carry forward): a same-FIELD
+movement CLOBBERS same-field EVENTS.** run_step applies movements AFTER
+apply_events (85-sim:184) and a movement SETS its field absolutely each step — so a
+pH movement starting at step 0 ERASES an early pH-event window (supergene's acid
+pulses, steps 5-16 → lost jarosite+alunite). FIX: start the movement AFTER any
+same-field event window (supergene uses startStep 20, post-flush) so the events own
+their window and the movement owns the rest — they COMPOSE. mvt was immune (its
+movement drove Eh while events drove S/Zn/Pb). When opting a new scenario in, check
+whether any event touches the movement's field and start after it.
+
+Next arcs: Phase 3 continues (more scenarios/archetypes opt in, each its own commit
++ look+listen) and Phase 2 fluid-source spots (spatial).
+
+**★★★ PHASE 3 COVERAGE MAP (surveyed 2026-06-02 via tools/movement-assemblage-
+observe.mjs — observed 7+ candidates, the homework behind "totality").** A clean
+temporal-movement target needs a lever that is (a) FLAT in baseline, (b) the
+load-bearing GEOLOGICAL driver, and (c) assemblage-preserving. Across the roster
+that set is SMALL — most scenarios are gated. The honest map:
+- **✅ CLEAN + SHIPPED (2):** `mvt` (Eh reducing trend), `supergene_oxidation`
+  (pH acid front). These are the scenarios where all three conditions hold.
+- **⛔ T-BLOCKED (the biggest gated class — needs the ambient_cooling reconciliation
+  sub-project first):** `cooling`, `naica_geothermal`, `marble_contact_metamorphism`,
+  `gem_pegmatite`, `radioactive_pegmatite`, `porphyry`, `epithermal_telluride`
+  (boiling≈T; a pH-up movement can't recover its native_gold — boiling→Au isn't
+  pH-driven in-engine), `deccan_zeolite`. Temperature is their master variable and
+  the engine can't yet move it (ambient_cooling is an ad-hoc T movement on the
+  shared rng; OU-on-T diverges chaotically). **Unblocking T is the single largest
+  "totality" lever — ~8 scenarios.**
+- **⚠ EVENT-CONFOUNDED redox (lever already event-driven, not flat):** `bisbee`
+  (Eh −150→322 rollercoaster), `schneeberg` (Eh −200→322). A movement just fights
+  the scripted swings. To move these, SUBSUME their redox events into a movement
+  (the "movements subsume ad-hoc events" vision) — a per-scenario refactor.
+- **⚠ BASELINE-DEBT (fails many expects regardless of movement):** `roughten_gill`
+  (8 expects missing), `sunnyside_american_tunnel` (4 missing). Calibration debt,
+  not a movement target — fix the broth first.
+- **⚠ ASSEMBLAGE-COST (the geologically-right movement loses an expects):**
+  `sicily_solfifera` (reducing trend right for biogenic S but shrinks native_sulfur
+  87→1µm + kills celestine in-engine), `colorado_plateau` (VERIFIED: reducing Eh
+  wipes the oxidized U(VI) uranyl-vanadates). Engine doesn't reward these yet.
+- **⚠ CONCENTRATION-CONFOUNDED (evaporites; concentration already vadose-cycled):**
+  `sabkha_dolomitization`, `searles_lake`. The lever isn't flat (vadose ratchets it).
+- **○ ALKALINE / specialized (no clean acid-front):** `ultramafic_supergene` (pH 8.5),
+  `jeffrey_mine` (pH 10 serpentinite). A different (alkalinity) story, not yet modeled.
+- **— EXCLUDED by design (testing / tutorial / demo):** `pulse`, `reactive_wall`,
+  `tn457_barite_pulses`, `tutorial_*` (separate rework package), `stalactite_demo`,
+  `zoned_dripstone_cave`, `ouro_preto` (pH movement safe but not its headline driver).
+
+**TOTALITY VERDICT:** the temporal pH/Eh movement feature is COMPLETE at its clean
+set (2 scenarios) — baking unmotivated movements would violate follow-the-science.
+Broad coverage requires real sub-projects, in leverage order: (1) **T-reconciliation**
+(subsume ambient_cooling → unlocks ~8 cooling/hydrothermal/metamorphic scenarios —
+the biggest unlock), (2) **event-subsumption** (bisbee/schneeberg redox events →
+movements), (3) **baseline calibration** (roughten_gill/sunnyside). Each is its own
+arc. (Boss 2026-06-02: pH/Eh temporal feature ACCEPTED as done at its clean set;
+pivoted to Phase 2.)
+
+## Phase 2 — FLUID-SOURCE SPOTS (spatial), active 2026-06-02
+"The specific points where things enter the vugg" (boss). Cracks/geysers/hotspots —
+seeded wall entry points (PROPOSAL §10). Sub-steps: 2a seed+observe (dark) → 2b
+wall-decay bonus → 2c origin-rides-spots + deposition bias → 2d open/close events.
+- **✅ 2a DONE (dark scaffold, byte-identical, NO SIM bump).** `js/85k-fluid-spots.ts`:
+  `FluidSpot {cell,kind,open,supply,decayBonus}` + `_seedFluidSpots(shape_seed,
+  cellCount, opts)` off a DEDICATED `_mulberry32(shape_seed ^ 0x53504f54)` stream
+  (independent of the shared rng → seeding draws nothing from the nucleation
+  cascade) + a no-op-safe `FluidSpotField` (empty set = neutral everywhere). The sim
+  constructor seeds `this._fluidSpots` after the mesh is built; scenarios may pin
+  count/kinds via a `fluid_spots` block (threaded in 70-events). DARK: stored, NOT
+  consumed → seed-42 + strip-digest byte-identical (regen confirmed no drift).
+  Observed (tools/fluid-spots-observe.mjs): count distribution {0:6,1:10,2:12,3:1,4:1}
+  across 30 scenarios (mode 1-2, ~20% zero — as designed), sensible floor/wall/ceiling
+  positions, reproducible (same shape_seed → identical spots; scenarios sharing a
+  shape_seed share spots). GOTCHA fixed: the built+cached mesh AND shape_seed live on
+  `sim.wall_state` (WallState), NOT `sim.conditions.wall` (the VugWall config) — read
+  spatial state from wall_state. Tests: tests-js/fluid-spots.test.ts (9).
+- **✅ 2b DONE (SIM 170→171): FEEDER-LOCALIZED erosion, the first coupling.** Open
+  spots redistribute the FIXED wall-dissolution budget toward their columns
+  (`FluidSpotField.columnWeights` → `erodeCells(rateMm, blocked, colWeights)` via
+  `dissolve_wall`), so the cavity deepens LOPSIDEDLY toward feeders. Gated by
+  `fluidSpotsDecayEnabled()` (default on). MASS-CONSERVING (same total wall_depth →
+  Ca/CO3 release computed upstream is untouched → PURELY GEOMETRIC). Only fires
+  where the wall dissolves (acidic, pH<5.5; silicate veins inert). Observed (A/B):
+  porphyry crack@col43 0.86→1.37mm (1.59× mean), hotspot 1.29×; bisbee col8 1.30×;
+  mean preserved; **assemblage IDENTICAL**. **★ PAGES-IS-THE-GAME case:** render-
+  visible (cavity shape) but BYTE-IDENTICAL on seed-42 + strip-digest (verified
+  stamp-only v170→v171) — the baselines capture chemistry/assemblage, not raw
+  geometry. So the geometry is PINNED by 2 new tests in fluid-spots.test.ts
+  (ON→lopsided + mean preserved; OFF→uniform) rather than the baseline. SIM bumped
+  because the rendered output changed. **Boss: the lopsided cavity is the look — on
+  acidic scenarios (porphyry/bisbee/supergene) the vug should be visibly deeper
+  toward its feeder columns.**
+- **2c:** `origin:'cell'` movements ride OPEN spots (supersede _pickOriginCell) +
+  deposition bias (supplyAt → check_nucleation). The one-sided-growth payoff.
+- **2d:** open/close via events (spatialize the seal/breach handlers).
 - **Latent note:** even flag-ON, the helpers use the coarse `ehFromO2` bijection,
   NOT the principled Nernst couples (`REDOX_COUPLES`/`redoxFraction`, built in 4a,
   still uncalled). Richer per-couple redox is a later refinement, not 4c.
@@ -269,7 +373,20 @@ look+listen) and Phase 2 fluid-source spots (spatial).
   a defect. The pivotal-but-flat fields (Ca/CO₃/Mn in closed scenarios) are the
   real targets, and a single pH movement unfreezes them.
 - `tools/movement-dark-observe.mjs` — the A/C/B observation harness above; run
-  before opting any scenario in, to ground the oracle and pick field + amplitude.
+  before opting any scenario in, to ground the oracle and pick field + amplitude
+  (trajectory + correlated-CV view; does NOT report assemblage survival).
+- `tools/movement-assemblage-observe.mjs` — **the Phase-3 rollout instrument** (the
+  generalized successor to mvt-redox-observe; any scenario+field). BASE/FLAT/TREND
+  ASSEMBLAGE SURVIVAL — does the movement keep the scenario's `expects_species`? —
+  plus the full Δ-vs-baseline assemblage + correlated-CV table. Reads
+  `expects_species` from `SCENARIOS[scen]._json5_spec`. Run THIS before baking; the
+  shape that reads true in prose can still wipe a headline mineral (the mvt-barite
+  + supergene-vanadinite tensions both surfaced here). Args (positional, startStep
+  before the rarely-used clampMax): `<scen> <field> <base> <amp> <sigma> <clampMin>
+  <startStep> <clampMax>`. **Verified finding (don't re-attempt): `colorado_plateau`
+  roll-front U with a reducing Eh trend WIPES carnotite+tyuyamunite — they're
+  oxidized U(VI) uranyl-vanadates, so reduction destroys them. Roll-front U is NOT
+  a reducing-Eh pilot; its target assemblage IS the oxidized expression.**
 - The strip view + sonifier ARE the look+listen instruments for the pilot.
 
 ---

@@ -390,6 +390,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
       // adds a `movements: [...]` array to one scenario's JSON5 spec.
       movements: spec.movements,
+      // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) — optional per-scenario spot
+      // config {count|minCount|maxCount|kinds}. Spots are SEEDED off the cavity
+      // seed regardless; this only pins/biases the seeded distribution. Absent →
+      // the default small distribution. Phase 2a is dark (spots stored, unread).
+      fluid_spots: spec.fluid_spots,
     };
     // JS events are plain objects (no Event class on the JS side; the
     // global DOM Event would shadow it). Match the {step,name,description,

@@ -1041,6 +1041,49 @@
         { "step": 130, "type": "supergene_v_bearing_seep",  "name": "V-bearing Seep",    "description": "Red-bed V leaches in, vanadinite fires" },
         { "step": 160, "type": "supergene_fracture_seal",   "name": "Fracture Seal",     "description": "System closes" }
       ],
+      // Geological MOVEMENTS (js/85j) — Phase 3, the SECOND scenario to opt in
+      // (after mvt's 4c.3b Eh trend). A sustained meteoric ACID FRONT on fluid.pH,
+      // grounded in RESEARCH-supergene-acid-front-2026-06-02.md. Supergene sulfide
+      // oxidation generates sulfuric acid (4 FeS2 + 15 O2 + 14 H2O -> 4 Fe(OH)3 +
+      // 8 H2SO4; Fe2+->Fe3+ is the rate-determining step, Singer & Stumm 1970
+      // Science 167:1121), progressively acidifying the O2-rich oxidation-zone
+      // fluid; the limestone wall buffers it (CaCO3 + H2SO4 -> Ca + SO4 + CO2),
+      // so it stays mildly acidic and Ca/CO3 surge as the front advances.
+      // Tsumeb arsenate-mineral stability tracks this oxidation-zone pH/Eh
+      // (Bowell 2014, Rev. Mineral. Geochem. 79:589). pH 6.8 -> 4.3 (smoothstep)
+      // + a small mean-reverting (OU) texture; clampMin 3.5 = the limestone-
+      // buffered floor (a carbonate-hosted gossan doesn't run away to AMD pH 2 —
+      // in-run pH stays >= 4.7).
+      //
+      // startStep 20 is LOAD-BEARING: a same-field (pH) movement OVERWRITES the
+      // field each step (run_step applies movements AFTER apply_events, 85-sim:184),
+      // so starting at 0 would CLOBBER the early acid-window EVENTS (steps 5/8/12/16,
+      // which sawtooth pH to ~4.7 to nucleate jarosite + alunite + scorodite). Begin-
+      // ning the movement AT step 20 (just after supergene_meteoric_flush re-wets
+      // and re-neutralizes) makes the movement COMPOSE with the events instead of
+      // clobbering them: the events own the early sharp acid spike, the movement owns
+      // the slow SUSTAINED re-acidification as oxidation deepens. (Verified via the
+      // tmp diagnostic: start0 erases the acid window -> 38 sp, loses jarosite+alunite;
+      // start20 PRESERVES it -> 40 sp, full acid-sulfate suite kept AND vanadinite
+      // recovered. The static baseline FAILS to grow vanadinite, a declared
+      // expects_species; this movement recovers it.) DARK-OBSERVED (tools/movement-
+      // assemblage-observe.mjs supergene_oxidation pH 6.8 -2.5 0.12 3.5 20).
+      // Driving ONE master var (pH) makes the SI engines emit correlated pulses (Mn
+      // UNFROZEN CV 0.04->0.33, Ca/CO3 surge from carbonate dissolution, Fe/Zn/S
+      // mobilized) — elements never randomized directly. The sustained front means
+      // pH does NOT recover to neutral by run-end (~5.1) — the more faithful gossan
+      // profile vs the old acid-spike-then-full-recovery (strip contract updated).
+      "movements": [
+        {
+          "field": "fluid.pH",
+          "startStep": 20,
+          "endStep": 200,
+          "base": 6.8,
+          "ops": [{ "kind": "trend", "amp": -2.5, "ease": true }],
+          "texture": { "theta": 0.3, "sigma": 0.12 },
+          "clampMin": 3.5
+        }
+      ],
       "sources": [
         "Pinch & Wilson 1977 — canonical Tsumeb monograph",
         "Lombaard et al. 1986 — Tsumeb geology",
@@ -1048,7 +1091,10 @@
         "Seo et al. 2012 — Pb+Mo simultaneous weathering for wulfenite formation",
         "Hemley et al. 1969 — alunite stability + Al solubility under acid-sulfate conditions",
         "Stoffregen et al. 2000 — alunite-jarosite paragenesis review",
-        "Strunz 1959 — Tsumeb deep oxidation zone scheelite + lead-tungstate suite (raspite + stolzite)"
+        "Strunz 1959 — Tsumeb deep oxidation zone scheelite + lead-tungstate suite (raspite + stolzite)",
+        "Bowell 2014, Rev. Mineral. Geochem. 79:589 — Tsumeb hydrogeochemistry + arsenate mineral stability (the acid-front movement)",
+        "Singer & Stumm 1970, Science 167:1121 — Fe(II)→Fe(III) as the rate-determining step of sulfide-oxidation acid generation",
+        "Skarpelis 2009, Resource Geology 59(1) — Lavrion Pb-Ag-Zn supergene oxidation profile (carbonate-hosted analogue)"
       ]
     },
 

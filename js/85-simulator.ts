@@ -145,6 +145,14 @@ class VugSimulator {
     // The grid is lazy-cached on wall_state; this call forces the
     // build so the grid is ready when _diffuseRingState first fires.
     this.wall_state.voxelGridFor(this);
+    // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
+    // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
+    // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
+    // so seeding draws nothing from the nucleation cascade. DARK: stored on the
+    // sim but NOTHING reads it yet → sim-neutral, seed-42 byte-identical, no
+    // SIM_VERSION bump. Couplings (decay bonus 2b, origin/deposition 2c, open/
+    // close events 2d) consume `this._fluidSpots` in later sub-steps.
+    this._fluidSpots = _createFluidSpotField(this);
     // Cache the FluidChemistry numeric field names once for the
     // diffusion loop. Pulled from a fresh instance so any future field
     // additions to FluidChemistry pick up automatically — no separate

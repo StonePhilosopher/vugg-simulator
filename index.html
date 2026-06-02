@@ -14742,7 +14742,83 @@ let timeScale = 5.0;
 //                                 ore stage), sphalerite kept, +willemite; Eh
 //                                 trajectory +60 → -246 mV (was flat +24).
 //   strip_digest_v168 → v169:    version stamp only — mvt is not in the digest set.
-const SIM_VERSION = 169;
+//
+// v170 (2026-06-02) — SECOND geological movement: a meteoric ACID FRONT on
+//                     `supergene_oxidation` (Phase 3 rollout). Hits the handoff's
+//                     "reads true on 2 scenarios" minimum-lovable-v1 (coda 4b).
+//                     Deliberately a DIFFERENT master variable (pH) than mvt's Eh
+//                     → demonstrates the movements engine's generality, not a repeat.
+//                     scenarios.json5 supergene_oxidation gains `movements:
+//                     [{ field:'fluid.pH', 6.8→4.3 smoothstep TREND + OU,
+//                     clampMin 3.5, startStep 20 }]`.
+//
+//   Science (RESEARCH-supergene-acid-front-2026-06-02.md; verified citations):
+//   supergene sulfide oxidation generates H2SO4 (Fe2+→Fe3+ rate-determining,
+//   Singer & Stumm 1970), progressively acidifying the O2-rich oxidation fluid;
+//   the limestone wall buffers it (CaCO3 + H2SO4 → Ca + SO4 + CO2) so it stays
+//   mildly acidic (in-run pH ≥ 4.7) and Ca/CO3 surge. Tsumeb arsenate stability
+//   tracks oxidation-zone pH/Eh (Bowell 2014, RiMG 79:589).
+//
+//   startStep 20 COMPOSES with the events instead of clobbering them. run_step
+//   applies movements AFTER apply_events (85-sim:184) — a same-field (pH) movement
+//   OVERWRITES the field each step, so starting at 0 ERASES the early acid-window
+//   events (steps 5-16, which dip pH to ~4.7 to nucleate jarosite+alunite+scorodite):
+//   start0 → 38 species but LOSES jarosite+alunite (window erased, pH stuck ~6.7).
+//   Starting at 20 (just after the meteoric flush) lets the events own the early acid
+//   spike and the movement own the slow SUSTAINED re-acidification → 40 species,
+//   FULL acid-sulfate suite kept AND vanadinite RECOVERED (the static baseline FAILS
+//   to grow vanadinite, a declared expects_species — the movement fixes that).
+//   Dark-observed (tools/movement-assemblage-observe.mjs). Mn UNFROZEN (CV
+//   0.04→0.33), Ca/CO3 surge from carbonate dissolution, Fe/Zn/S mobilized — one
+//   master var → correlated pulses, elements never randomized.
+//
+// FILES
+//   data/scenarios.json5            supergene_oxidation gains the `movements` block.
+//   js/15-version.ts                SIM_VERSION 169 → 170 + this block.
+//   tools/movement-assemblage-observe.mjs   generalized assemblage-survival observer
+//                                   (any scenario+field; reads expects_species).
+//   tests-js/strip-contracts.test.ts  supergene pH contract re-pinned: the acid front
+//                                   is now SUSTAINED (ends ~5.1), not spike-then-recover.
+//   proposals/RESEARCH-supergene-acid-front-2026-06-02.md   the verified science.
+//
+// BASELINE DRIFT
+//   seed42_v169 → seed42_v170:   ONLY `supergene_oxidation` changes (the only new
+//                                 opt-in); all other scenarios byte-identical
+//                                 (movement draw-gate). vanadinite recovered;
+//                                 40 species, expects_species whole, acid-window
+//                                 suite (jarosite/alunite/scorodite) preserved.
+//   strip_digest_v169 → v170:    supergene_oxidation IS in the digest set — its
+//                                 pH/Ca/CO3/Mn envelopes shift with the sustained
+//                                 acid front; other digest scenarios stamp-only.
+// v171 (2026-06-02) — FLUID-SPOTS Phase 2b: FEEDER-LOCALIZED erosion (the first
+//                     spot COUPLING, render-visible). Open fluid-source spots
+//                     (js/85k, seeded in 2a) now redistribute the wall-dissolution
+//                     budget toward their columns, so the cavity deepens LOPSIDEDLY
+//                     toward its feeders instead of as an even sphere — the physical
+//                     mechanism behind one-sided mineralization (PROPOSAL §10).
+//
+//   MECHANISM: dissolve_wall passes FluidSpotField.columnWeights() to erodeCells;
+//   the FIXED dissolution budget (rateMm·N, unchanged) is distributed proportional
+//   to per-column weights (max open-spot decayBonus on each column: crack 1.6,
+//   hotspot 1.3, geyser 1.2). MASS-CONSERVING → the Ca/CO3 release computed upstream
+//   in wall.dissolve() is untouched, so this is PURELY GEOMETRIC. Only fires where
+//   the wall actually dissolves (acidic fluid, pH<5.5) — silicate veins (sunnyside)
+//   are inert, as they should be. Gated by fluidSpotsDecayEnabled() (default on).
+//
+//   Observed (A/B flag OFF→ON): porphyry crack@col43 deepens 0.86→1.37mm (1.59× mean,
+//   ≈ its 1.6 bonus), hotspot@col7 →1.29×; mean wall_depth preserved; assemblage
+//   IDENTICAL (46 crys/20 sp). bisbee col8 →1.30×. The lopsided shape is the payoff.
+//
+//   BASELINE NOTE — this is the PAGES-IS-THE-GAME case: the change is render-visible
+//   (cavity geometry) but BYTE-IDENTICAL on the seed-42 + strip-digest baselines (the
+//   redistribution is mass-conserving + the baselines capture chemistry/assemblage,
+//   not raw wall geometry). seed42_v170 → v171 + strip_digest → v171 are STAMP-ONLY.
+//   The geometry is instead PINNED by the new 2b test in tests-js/fluid-spots.test.ts
+//   (ON → lopsided ring0 wall_depth at the spot column + mean preserved; OFF → uniform).
+//   SIM_VERSION bumps because the rendered output changed even though the assemblage
+//   didn't. FILES: js/85k (columnWeights + decay flag), js/22 (erodeCells colWeights),
+//   js/85d (dissolve_wall passes weights). NEXT: 2c origin:'cell' + deposition bias.
+const SIM_VERSION = 171;
 
 // ── 18-constants.js ──
 
@@ -18476,7 +18552,14 @@ class WallState {
     // Blocked cells (Set of cell indices) contribute zero — the acid
     // budget concentrates on exposed slices. Returns the number of
     // cells eroded.
-    erodeCells(rateMm, blocked) {
+    // colWeights (Phase 2b, optional): a length-N array of per-column erosion
+    // multipliers from the fluid-source spots (FluidSpotField.columnWeights). The
+    // FIXED dissolution budget (rateMm·N) is redistributed proportional to the
+    // unblocked cells' weights → preferential deepening at feeder columns (lopsided
+    // cavity growth). Mass-conserving (same total wall_depth added), so the Ca/CO3
+    // release computed upstream in wall.dissolve() is untouched — this is purely
+    // geometric. Absent/null → the legacy UNIFORM distribution (byte-identical).
+    erodeCells(rateMm, blocked, colWeights) {
         if (!(rateMm > 0))
             return 0;
         const ring0 = this.rings[0];
@@ -18487,9 +18570,28 @@ class WallState {
                 unblocked.push(i);
         if (!unblocked.length)
             return 0;
-        const perCell = rateMm * N / unblocked.length;
-        for (const i of unblocked)
-            ring0[i].wall_depth += perCell;
+        const total = rateMm * N;
+        if (colWeights) {
+            let wsum = 0;
+            for (const i of unblocked)
+                wsum += (colWeights[i] > 0 ? colWeights[i] : 1);
+            if (wsum > 0) {
+                for (const i of unblocked) {
+                    const wi = colWeights[i] > 0 ? colWeights[i] : 1;
+                    ring0[i].wall_depth += total * wi / wsum;
+                }
+            }
+            else {
+                const perCell = total / unblocked.length;
+                for (const i of unblocked)
+                    ring0[i].wall_depth += perCell;
+            }
+        }
+        else {
+            const perCell = total / unblocked.length;
+            for (const i of unblocked)
+                ring0[i].wall_depth += perCell;
+        }
         // Bump the monotonic render scale if any cell just passed the
         // current maximum. Uses per-cell base_radius_mm so Fourier-profile
         // bulges contribute correctly.
@@ -39454,6 +39556,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
             // adds a `movements: [...]` array to one scenario's JSON5 spec.
             movements: spec.movements,
+            // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) — optional per-scenario spot
+            // config {count|minCount|maxCount|kinds}. Spots are SEEDED off the cavity
+            // seed regardless; this only pins/biases the seeded distribution. Absent →
+            // the default small distribution. Phase 2a is dark (spots stored, unread).
+            fluid_spots: spec.fluid_spots,
         };
         // JS events are plain objects (no Event class on the JS side; the
         // global DOM Event would shadow it). Match the {step,name,description,
@@ -42612,6 +42719,14 @@ class VugSimulator {
         // The grid is lazy-cached on wall_state; this call forces the
         // build so the grid is ready when _diffuseRingState first fires.
         this.wall_state.voxelGridFor(this);
+        // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
+        // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
+        // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
+        // so seeding draws nothing from the nucleation cascade. DARK: stored on the
+        // sim but NOTHING reads it yet → sim-neutral, seed-42 byte-identical, no
+        // SIM_VERSION bump. Couplings (decay bonus 2b, origin/deposition 2c, open/
+        // close events 2d) consume `this._fluidSpots` in later sub-steps.
+        this._fluidSpots = _createFluidSpotField(this);
         // Cache the FluidChemistry numeric field names once for the
         // diffusion loop. Pulled from a fresh instance so any future field
         // additions to FluidChemistry pick up automatically — no separate
@@ -45767,7 +45882,16 @@ Object.assign(VugSimulator.prototype, {
             // crystals don't budge, concentrating the attack elsewhere — the
             // vug grows lopsided in whatever direction the deposit left bare.
             const blocked = this._wallCellsBlockedByCrystals();
-            this.wall_state.erodeCells(result.rate_mm, blocked);
+            // Phase 2b — FEEDER-LOCALIZED erosion (PROPOSAL §10). Open fluid-source spots
+            // redistribute the FIXED dissolution budget toward their columns, so the cavity
+            // deepens lopsidedly toward its feeders (cracks/geysers/hotspots) instead of as
+            // an even sphere. Gated by fluidSpotsDecayEnabled() (default on); null weights
+            // (coupling off / no spots / no >1 bonus) → the legacy uniform path, byte-
+            // identical. Mass-conserving → chemistry (Ca/CO3 release) unchanged; pure shape.
+            const _colW = (fluidSpotsDecayEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
+                ? this._fluidSpots.columnWeights(this.wall_state.cells_per_ring)
+                : null;
+            this.wall_state.erodeCells(result.rate_mm, blocked, _colW);
             const post_sigma_cal = this.conditions.supersaturation_calcite();
             this.log.push(`  🧱 WALL DISSOLUTION: ${result.rate_mm.toFixed(2)} mm of ${wall.composition} dissolved`);
             if (blocked.size) {
@@ -47830,6 +47954,192 @@ function _createMovementController(sim) {
     const wall = sim && sim.conditions ? sim.conditions.wall : null;
     const vuggSeed = (((wall && wall.shape_seed) || (sim && sim._seed) || 0) | 0);
     return new MovementController(spec, vuggSeed);
+}
+
+// ── 85k-fluid-spots.js ──
+
+// ============================================================
+// js/85k-fluid-spots.ts — FLUID-SOURCE SPOTS engine (Phase 2a scaffold, DARK)
+// ============================================================
+// Real cavities are NOT bathed uniformly — they connect to their plumbing at a
+// few discrete points (fractures, feeder channels, vents), so fresh fluid +
+// chemistry enter FOCUSED. A "spot" is the physical home of the spatial-origin
+// mechanic (PROPOSAL-EVENTS-AS-GEOLOGICAL-MOVEMENTS §10 / §9c): a named,
+// persistent, SEEDED wall point where fluid enters. Geology: a fracture is both
+// the fluid delivery path AND where dissolution concentrates → cavities grow
+// along their feeders, and the best crystals cluster near the feeder. The
+// motivating specimen is one-sided mineralization (hematite mostly on ONE side
+// of a Punjab calcite) — uniform application can never make that asymmetry.
+//
+// PHASE 2 PLAN (each sub-step its own sim-affecting change + verify pass):
+//   2a (THIS) — seed the spot set off the cavity seed; DARK (nothing reads it
+//               yet → SIM-NEUTRAL, seed-42 byte-identical, NO SIM_VERSION bump).
+//   2b        — wall-decay bonus: open-spot cells erode faster (erodeCells) →
+//               lopsided cavity deepening. First coupling; baseline regen.
+//   2c        — origin:'cell' movements ride OPEN spots (supersede the naive
+//               _pickOriginCell pick) + local deposition/nucleation bias.
+//   2d        — open/close via events (spatialize the seal/breach handlers).
+//
+// SEEDED & REPRODUCIBLE, exactly like the geometry sub-streams in
+// 22-geometry-wall.ts (_mulberry32(shape_seed ^ MASK)) and the movement stream
+// in 85j (_MOVEMENT_SALT). A DEDICATED stream means seeding spots never displaces
+// the shared `rng` nucleation cascade → the dark scaffold stays byte-identical.
+// Same cavity (shape_seed) → same spots: geology drives the outcome, spatially.
+// Per-purpose salt for the spot stream (ASCII "SPOT"), XORed into the cavity
+// seed — distinct from polar (0x700AA517), twist (0xBEEFFACE), movement
+// (0x4d4f5645) so the spot draws are independent of every other sub-stream.
+const _SPOTS_SALT = 0x53504f54;
+// Phase 2b coupling gate. When ON (default — the shipped feature), open-spot
+// cells erode preferentially in dissolve_wall/erodeCells → lopsided cavity
+// deepening toward feeders. The OBSERVER toggles this OFF to recover the
+// no-spot baseline for an A/B look; tests use it for the neutral/active
+// positive control. Mirrors the EH_DYNAMIC_ENABLED pattern (20c). The exported
+// global is a load-time snapshot; read the LIVE value via fluidSpotsDecayEnabled().
+let _FLUID_SPOTS_DECAY_ENABLED = true;
+function setFluidSpotsDecayEnabled(enabled) { _FLUID_SPOTS_DECAY_ENABLED = !!enabled; }
+function fluidSpotsDecayEnabled() { return _FLUID_SPOTS_DECAY_ENABLED; }
+// A dedicated deterministic PRNG for the spot set, derived from the cavity seed.
+// Reuses _mulberry32 (22-geometry-wall.ts) — resume-safe, independent of `rng`.
+function _makeSpotRng(vuggSeed, salt = _SPOTS_SALT) {
+    return _mulberry32((((vuggSeed | 0) ^ salt) >>> 0));
+}
+const _SPOT_KINDS = ['crack', 'geyser', 'hotspot'];
+// Default per-kind coupling strengths (consumed in 2b/2c, inert in 2a). Cracks
+// are erosion-dominant (the feeder deepens); geysers are supply-dominant
+// (episodic chemistry delivery); hotspots are balanced + warm.
+const _KIND_DEFAULTS = {
+    crack: { supply: 1.0, decayBonus: 1.6 },
+    geyser: { supply: 1.8, decayBonus: 1.2 },
+    hotspot: { supply: 1.4, decayBonus: 1.3 },
+};
+// Seed the spot SET deterministically from the cavity seed + cell count.
+// Count comes from a small distribution (CAN be 0 — some cavities are bathed,
+// not fed at a point), unless a scenario pins it via opts. Cells are distinct,
+// drawn uniformly over the wall (orientation-biasing is a later refinement).
+// Pure given (shapeSeed, cellCount, opts) → fully reproducible.
+//
+//   opts (from a scenario's `fluid_spots` block, all optional):
+//     count               fixed spot count (overrides the distribution)
+//     minCount, maxCount  clamp the seeded distribution
+//     kinds               restrict to a subset of kinds
+function _seedFluidSpots(shapeSeed, cellCount, opts = {}) {
+    const n = Math.max(0, cellCount | 0);
+    if (n === 0)
+        return [];
+    const rng = _makeSpotRng(shapeSeed);
+    // Count: a fixed override, else a small seeded distribution (mode 1-2, can
+    // be 0). Clamped to [minCount, maxCount] then to the available cell count.
+    let count;
+    if (typeof opts.count === 'number') {
+        count = Math.max(0, opts.count | 0);
+    }
+    else {
+        const r = rng();
+        count = r < 0.15 ? 0 : r < 0.50 ? 1 : r < 0.80 ? 2 : r < 0.95 ? 3 : 4;
+    }
+    if (typeof opts.minCount === 'number')
+        count = Math.max(opts.minCount | 0, count);
+    if (typeof opts.maxCount === 'number')
+        count = Math.min(opts.maxCount | 0, count);
+    count = Math.min(count, n);
+    if (count === 0)
+        return [];
+    const kinds = Array.isArray(opts.kinds) && opts.kinds.length
+        ? opts.kinds.filter((k) => _SPOT_KINDS.includes(k))
+        : _SPOT_KINDS;
+    if (!kinds.length)
+        kinds.push('crack');
+    // Distinct cells: rejection-sample over the stream (count << n, so cheap).
+    const used = new Set();
+    const spots = [];
+    let guard = 0;
+    while (spots.length < count && guard++ < count * 50) {
+        const cell = Math.min(n - 1, Math.floor(rng() * n));
+        if (used.has(cell))
+            continue;
+        used.add(cell);
+        const kind = kinds[Math.min(kinds.length - 1, Math.floor(rng() * kinds.length))];
+        const d = _KIND_DEFAULTS[kind];
+        spots.push({ cell, kind, open: true, supply: d.supply, decayBonus: d.decayBonus });
+    }
+    return spots;
+}
+// A lightweight holder for a sim's spot set + the queries the future couplings
+// (2b-2d) will use. An EMPTY set is a total no-op — every accessor returns the
+// neutral value, so a cavity with zero spots behaves exactly as today.
+class FluidSpotField {
+    constructor(spots) {
+        this.spots = Array.isArray(spots) ? spots : [];
+        this._byCell = new Map();
+        for (const s of this.spots)
+            this._byCell.set(s.cell, s);
+    }
+    get isEmpty() { return this.spots.length === 0; }
+    // The open spots — the live fluid sources this step (Phase 2c/2d). All seeded
+    // open in 2a; 2d toggles `open` via events.
+    openSpots() {
+        return this.spots.filter(s => s.open);
+    }
+    // Wall-decay multiplier at a cell (Phase 2b). 1.0 (neutral) unless an OPEN
+    // spot sits on the cell. Safe for any cell index when the set is empty.
+    decayMultiplierAt(cell) {
+        const s = this._byCell.get(cell);
+        return (s && s.open) ? s.decayBonus : 1.0;
+    }
+    // Local deposition / supersaturation bias at a cell (Phase 2c). 1.0 neutral.
+    supplyAt(cell) {
+        const s = this._byCell.get(cell);
+        return (s && s.open) ? s.supply : 1.0;
+    }
+    // Phase 2b — per-COLUMN erosion weights for erodeCells, which operates on the
+    // equatorial ring (ring0) per slice/column. A spot's mesh cell index maps to a
+    // column via (cell % cellsPerRing); the column's weight is the MAX decayBonus
+    // among OPEN spots on it (>1 = erode faster there). Returns a length-cellsPerRing
+    // array of multipliers (1.0 where no open spot). erodeCells redistributes the
+    // FIXED dissolution budget by these weights → lopsided deepening toward feeders,
+    // mass-conserving (the Ca/CO3 release is computed upstream, so this is purely
+    // geometric). Returns null when there's nothing to bias (caller stays on the
+    // uniform path → byte-identical).
+    columnWeights(cellsPerRing) {
+        const N = cellsPerRing | 0;
+        if (N <= 0 || this.isEmpty)
+            return null;
+        let any = false;
+        const w = new Array(N).fill(1.0);
+        for (const s of this.spots) {
+            if (!s.open || !(s.decayBonus > 1))
+                continue;
+            const col = ((s.cell % N) + N) % N;
+            if (s.decayBonus > w[col]) {
+                w[col] = s.decayBonus;
+                any = true;
+            }
+        }
+        return any ? w : null;
+    }
+}
+// Factory: build a sim's spot field. Seeds off the cavity's shape_seed (geology
+// drives outcome) using mesh.numInterior cells; falls back to the run seed if no
+// shape_seed. Reads an optional scenario `fluid_spots` config. Phase 2a: the
+// field is built + stored but NOTHING reads it → sim-neutral.
+function _createFluidSpotField(sim) {
+    // The BUILT + cached mesh and the cavity shape_seed both live on `wall_state`
+    // (the runtime WallState), NOT on `conditions.wall` (the VugWall config) — the
+    // constructor builds the mesh via `this.wall_state.meshFor(this)`. Read both
+    // from wall_state; fall back to the config wall's shape_seed / the run seed.
+    const ws = sim ? sim.wall_state : null;
+    const confWall = sim && sim.conditions ? sim.conditions.wall : null;
+    const shapeSeed = (ws && typeof ws.shape_seed === 'number') ? ws.shape_seed
+        : (confWall && typeof confWall.shape_seed === 'number') ? confWall.shape_seed
+            : (sim && sim._seed) || 0;
+    const vuggSeed = shapeSeed | 0;
+    const mesh = ws && ws.meshFor ? ws.meshFor(sim) : null;
+    const cellCount = (mesh && typeof mesh.numInterior === 'number' && mesh.numInterior > 0)
+        ? mesh.numInterior
+        : (mesh && mesh.cells ? mesh.cells.length : 0);
+    const opts = (sim && sim.conditions && sim.conditions._scenario)
+        ? (sim.conditions._scenario.fluid_spots || {}) : {};
+    return new FluidSpotField(_seedFluidSpots(vuggSeed, cellCount, opts));
 }
 
 // ── 86-nucleation-native.js ──

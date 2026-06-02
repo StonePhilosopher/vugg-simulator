@@ -9981,5 +9981,81 @@
 //                                 ore stage), sphalerite kept, +willemite; Eh
 //                                 trajectory +60 → -246 mV (was flat +24).
 //   strip_digest_v168 → v169:    version stamp only — mvt is not in the digest set.
-const SIM_VERSION = 169;
+//
+// v170 (2026-06-02) — SECOND geological movement: a meteoric ACID FRONT on
+//                     `supergene_oxidation` (Phase 3 rollout). Hits the handoff's
+//                     "reads true on 2 scenarios" minimum-lovable-v1 (coda 4b).
+//                     Deliberately a DIFFERENT master variable (pH) than mvt's Eh
+//                     → demonstrates the movements engine's generality, not a repeat.
+//                     scenarios.json5 supergene_oxidation gains `movements:
+//                     [{ field:'fluid.pH', 6.8→4.3 smoothstep TREND + OU,
+//                     clampMin 3.5, startStep 20 }]`.
+//
+//   Science (RESEARCH-supergene-acid-front-2026-06-02.md; verified citations):
+//   supergene sulfide oxidation generates H2SO4 (Fe2+→Fe3+ rate-determining,
+//   Singer & Stumm 1970), progressively acidifying the O2-rich oxidation fluid;
+//   the limestone wall buffers it (CaCO3 + H2SO4 → Ca + SO4 + CO2) so it stays
+//   mildly acidic (in-run pH ≥ 4.7) and Ca/CO3 surge. Tsumeb arsenate stability
+//   tracks oxidation-zone pH/Eh (Bowell 2014, RiMG 79:589).
+//
+//   startStep 20 COMPOSES with the events instead of clobbering them. run_step
+//   applies movements AFTER apply_events (85-sim:184) — a same-field (pH) movement
+//   OVERWRITES the field each step, so starting at 0 ERASES the early acid-window
+//   events (steps 5-16, which dip pH to ~4.7 to nucleate jarosite+alunite+scorodite):
+//   start0 → 38 species but LOSES jarosite+alunite (window erased, pH stuck ~6.7).
+//   Starting at 20 (just after the meteoric flush) lets the events own the early acid
+//   spike and the movement own the slow SUSTAINED re-acidification → 40 species,
+//   FULL acid-sulfate suite kept AND vanadinite RECOVERED (the static baseline FAILS
+//   to grow vanadinite, a declared expects_species — the movement fixes that).
+//   Dark-observed (tools/movement-assemblage-observe.mjs). Mn UNFROZEN (CV
+//   0.04→0.33), Ca/CO3 surge from carbonate dissolution, Fe/Zn/S mobilized — one
+//   master var → correlated pulses, elements never randomized.
+//
+// FILES
+//   data/scenarios.json5            supergene_oxidation gains the `movements` block.
+//   js/15-version.ts                SIM_VERSION 169 → 170 + this block.
+//   tools/movement-assemblage-observe.mjs   generalized assemblage-survival observer
+//                                   (any scenario+field; reads expects_species).
+//   tests-js/strip-contracts.test.ts  supergene pH contract re-pinned: the acid front
+//                                   is now SUSTAINED (ends ~5.1), not spike-then-recover.
+//   proposals/RESEARCH-supergene-acid-front-2026-06-02.md   the verified science.
+//
+// BASELINE DRIFT
+//   seed42_v169 → seed42_v170:   ONLY `supergene_oxidation` changes (the only new
+//                                 opt-in); all other scenarios byte-identical
+//                                 (movement draw-gate). vanadinite recovered;
+//                                 40 species, expects_species whole, acid-window
+//                                 suite (jarosite/alunite/scorodite) preserved.
+//   strip_digest_v169 → v170:    supergene_oxidation IS in the digest set — its
+//                                 pH/Ca/CO3/Mn envelopes shift with the sustained
+//                                 acid front; other digest scenarios stamp-only.
+// v171 (2026-06-02) — FLUID-SPOTS Phase 2b: FEEDER-LOCALIZED erosion (the first
+//                     spot COUPLING, render-visible). Open fluid-source spots
+//                     (js/85k, seeded in 2a) now redistribute the wall-dissolution
+//                     budget toward their columns, so the cavity deepens LOPSIDEDLY
+//                     toward its feeders instead of as an even sphere — the physical
+//                     mechanism behind one-sided mineralization (PROPOSAL §10).
+//
+//   MECHANISM: dissolve_wall passes FluidSpotField.columnWeights() to erodeCells;
+//   the FIXED dissolution budget (rateMm·N, unchanged) is distributed proportional
+//   to per-column weights (max open-spot decayBonus on each column: crack 1.6,
+//   hotspot 1.3, geyser 1.2). MASS-CONSERVING → the Ca/CO3 release computed upstream
+//   in wall.dissolve() is untouched, so this is PURELY GEOMETRIC. Only fires where
+//   the wall actually dissolves (acidic fluid, pH<5.5) — silicate veins (sunnyside)
+//   are inert, as they should be. Gated by fluidSpotsDecayEnabled() (default on).
+//
+//   Observed (A/B flag OFF→ON): porphyry crack@col43 deepens 0.86→1.37mm (1.59× mean,
+//   ≈ its 1.6 bonus), hotspot@col7 →1.29×; mean wall_depth preserved; assemblage
+//   IDENTICAL (46 crys/20 sp). bisbee col8 →1.30×. The lopsided shape is the payoff.
+//
+//   BASELINE NOTE — this is the PAGES-IS-THE-GAME case: the change is render-visible
+//   (cavity geometry) but BYTE-IDENTICAL on the seed-42 + strip-digest baselines (the
+//   redistribution is mass-conserving + the baselines capture chemistry/assemblage,
+//   not raw wall geometry). seed42_v170 → v171 + strip_digest → v171 are STAMP-ONLY.
+//   The geometry is instead PINNED by the new 2b test in tests-js/fluid-spots.test.ts
+//   (ON → lopsided ring0 wall_depth at the spot column + mean preserved; OFF → uniform).
+//   SIM_VERSION bumps because the rendered output changed even though the assemblage
+//   didn't. FILES: js/85k (columnWeights + decay flag), js/22 (erodeCells colWeights),
+//   js/85d (dissolve_wall passes weights). NEXT: 2c origin:'cell' + deposition bias.
+const SIM_VERSION = 171;
 

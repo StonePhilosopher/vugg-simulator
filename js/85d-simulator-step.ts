@@ -88,7 +88,16 @@ Object.assign(VugSimulator.prototype, {
     // crystals don't budge, concentrating the attack elsewhere — the
     // vug grows lopsided in whatever direction the deposit left bare.
     const blocked = this._wallCellsBlockedByCrystals();
-    this.wall_state.erodeCells(result.rate_mm, blocked);
+    // Phase 2b — FEEDER-LOCALIZED erosion (PROPOSAL §10). Open fluid-source spots
+    // redistribute the FIXED dissolution budget toward their columns, so the cavity
+    // deepens lopsidedly toward its feeders (cracks/geysers/hotspots) instead of as
+    // an even sphere. Gated by fluidSpotsDecayEnabled() (default on); null weights
+    // (coupling off / no spots / no >1 bonus) → the legacy uniform path, byte-
+    // identical. Mass-conserving → chemistry (Ca/CO3 release) unchanged; pure shape.
+    const _colW = (fluidSpotsDecayEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
+      ? this._fluidSpots.columnWeights(this.wall_state.cells_per_ring)
+      : null;
+    this.wall_state.erodeCells(result.rate_mm, blocked, _colW);
     const post_sigma_cal = this.conditions.supersaturation_calcite();
 
     this.log.push(`  🧱 WALL DISSOLUTION: ${result.rate_mm.toFixed(2)} mm of ${wall.composition} dissolved`);

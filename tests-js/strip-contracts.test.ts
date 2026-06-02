@@ -290,16 +290,21 @@ describe('strip chemistry contract — supergene_oxidation (Tsumeb gossan)', () 
   let ds: any;
   beforeAll(() => { ds = recordScenario('supergene_oxidation'); }, 60000);
 
-  it('the acid window opens then the limestone buffers pH back toward neutral', () => {
+  it('acid window opens, the flush recovers it, then a sustained meteoric acid front re-acidifies (v170 movement)', () => {
     if (!ds) return;
     const pH = chipSeries(ds, 'pH', { depth: 'wall' });
     // Observed (wall): starts ~6.78; the four supergene_acidification pulses
-    // (steps 5/8/12/16) sawtooth pH down to ~4.69 against the carbonate buffer
-    // (the acid window where scorodite/jarosite/alunite nucleate); meteoric_flush
-    // (step 20) ends it and pH recovers to ~6.5 for the rest of the run.
-    expect(series.first(pH)!).toBeGreaterThan(6);   // near-neutral start
-    expect(series.min(pH)).toBeLessThan(5);         // acid window
-    expect(series.last(pH)!).toBeGreaterThan(6);    // buffered recovery
+    // (steps 5/8/12/16) sawtooth pH down to ~4.7 against the carbonate buffer
+    // (the acid window where jarosite/alunite/scorodite nucleate); meteoric_flush
+    // (step 20) re-wets + re-neutralizes — THEN the v170 geological MOVEMENT drives
+    // a slow SUSTAINED acid front (pH 6.8 → ~4.3 setpoint, limestone-buffered to
+    // ~5.1) as oxidation deepens. So pH does NOT fully recover to neutral — it ends
+    // acidic, the more faithful gossan profile (vs the old acid-spike-then-recovery).
+    expect(series.first(pH)!).toBeGreaterThan(6);             // near-neutral start
+    expect(series.min(pH)).toBeLessThan(5);                   // acid window (events)
+    expect(series.last(pH)!).toBeLessThan(6);                 // sustained front (was >6 pre-movement)
+    expect(series.last(pH)!).toBeLessThan(series.first(pH)!); // net acidified over the run
+    expect(series.last(pH)!).toBeGreaterThan(4);              // limestone buffer holds (not runaway AMD)
   });
 
   it('stays oxidizing throughout — a cold oxygenated gossan (never reducing)', () => {
