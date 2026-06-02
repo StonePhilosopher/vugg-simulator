@@ -31,6 +31,16 @@
 // (0x4d4f5645) so the spot draws are independent of every other sub-stream.
 const _SPOTS_SALT = 0x53504f54;
 
+// Phase 2b coupling gate. When ON (default — the shipped feature), open-spot
+// cells erode preferentially in dissolve_wall/erodeCells → lopsided cavity
+// deepening toward feeders. The OBSERVER toggles this OFF to recover the
+// no-spot baseline for an A/B look; tests use it for the neutral/active
+// positive control. Mirrors the EH_DYNAMIC_ENABLED pattern (20c). The exported
+// global is a load-time snapshot; read the LIVE value via fluidSpotsDecayEnabled().
+let _FLUID_SPOTS_DECAY_ENABLED = true;
+function setFluidSpotsDecayEnabled(enabled: boolean): void { _FLUID_SPOTS_DECAY_ENABLED = !!enabled; }
+function fluidSpotsDecayEnabled(): boolean { return _FLUID_SPOTS_DECAY_ENABLED; }
+
 type FluidSpotKind = 'crack' | 'geyser' | 'hotspot';
 
 // A single fluid-entry point on the cavity wall.
@@ -145,6 +155,28 @@ class FluidSpotField {
   supplyAt(cell: number): number {
     const s = this._byCell.get(cell);
     return (s && s.open) ? s.supply : 1.0;
+  }
+
+  // Phase 2b — per-COLUMN erosion weights for erodeCells, which operates on the
+  // equatorial ring (ring0) per slice/column. A spot's mesh cell index maps to a
+  // column via (cell % cellsPerRing); the column's weight is the MAX decayBonus
+  // among OPEN spots on it (>1 = erode faster there). Returns a length-cellsPerRing
+  // array of multipliers (1.0 where no open spot). erodeCells redistributes the
+  // FIXED dissolution budget by these weights → lopsided deepening toward feeders,
+  // mass-conserving (the Ca/CO3 release is computed upstream, so this is purely
+  // geometric). Returns null when there's nothing to bias (caller stays on the
+  // uniform path → byte-identical).
+  columnWeights(cellsPerRing: number): number[] | null {
+    const N = cellsPerRing | 0;
+    if (N <= 0 || this.isEmpty) return null;
+    let any = false;
+    const w = new Array(N).fill(1.0);
+    for (const s of this.spots) {
+      if (!s.open || !(s.decayBonus > 1)) continue;
+      const col = ((s.cell % N) + N) % N;
+      if (s.decayBonus > w[col]) { w[col] = s.decayBonus; any = true; }
+    }
+    return any ? w : null;
   }
 }
 

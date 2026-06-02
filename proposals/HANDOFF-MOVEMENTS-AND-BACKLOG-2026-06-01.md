@@ -343,9 +343,22 @@ wall-decay bonus → 2c origin-rides-spots + deposition bias → 2d open/close e
   shape_seed share spots). GOTCHA fixed: the built+cached mesh AND shape_seed live on
   `sim.wall_state` (WallState), NOT `sim.conditions.wall` (the VugWall config) — read
   spatial state from wall_state. Tests: tests-js/fluid-spots.test.ts (9).
-- **2b NEXT:** wall-decay bonus — open-spot cells erode faster in `erodeCells`/
-  `dissolve_wall` (FluidSpotField.decayMultiplierAt is already the hook) → lopsided
-  cavity deepening. First coupling; flag-gate it, baseline regen + look.
+- **✅ 2b DONE (SIM 170→171): FEEDER-LOCALIZED erosion, the first coupling.** Open
+  spots redistribute the FIXED wall-dissolution budget toward their columns
+  (`FluidSpotField.columnWeights` → `erodeCells(rateMm, blocked, colWeights)` via
+  `dissolve_wall`), so the cavity deepens LOPSIDEDLY toward feeders. Gated by
+  `fluidSpotsDecayEnabled()` (default on). MASS-CONSERVING (same total wall_depth →
+  Ca/CO3 release computed upstream is untouched → PURELY GEOMETRIC). Only fires
+  where the wall dissolves (acidic, pH<5.5; silicate veins inert). Observed (A/B):
+  porphyry crack@col43 0.86→1.37mm (1.59× mean), hotspot 1.29×; bisbee col8 1.30×;
+  mean preserved; **assemblage IDENTICAL**. **★ PAGES-IS-THE-GAME case:** render-
+  visible (cavity shape) but BYTE-IDENTICAL on seed-42 + strip-digest (verified
+  stamp-only v170→v171) — the baselines capture chemistry/assemblage, not raw
+  geometry. So the geometry is PINNED by 2 new tests in fluid-spots.test.ts
+  (ON→lopsided + mean preserved; OFF→uniform) rather than the baseline. SIM bumped
+  because the rendered output changed. **Boss: the lopsided cavity is the look — on
+  acidic scenarios (porphyry/bisbee/supergene) the vug should be visibly deeper
+  toward its feeder columns.**
 - **2c:** `origin:'cell'` movements ride OPEN spots (supersede _pickOriginCell) +
   deposition bias (supplyAt → check_nucleation). The one-sided-growth payoff.
 - **2d:** open/close via events (spatialize the seal/breach handlers).

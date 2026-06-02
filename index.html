@@ -14790,7 +14790,35 @@ let timeScale = 5.0;
 //   strip_digest_v169 → v170:    supergene_oxidation IS in the digest set — its
 //                                 pH/Ca/CO3/Mn envelopes shift with the sustained
 //                                 acid front; other digest scenarios stamp-only.
-const SIM_VERSION = 170;
+// v171 (2026-06-02) — FLUID-SPOTS Phase 2b: FEEDER-LOCALIZED erosion (the first
+//                     spot COUPLING, render-visible). Open fluid-source spots
+//                     (js/85k, seeded in 2a) now redistribute the wall-dissolution
+//                     budget toward their columns, so the cavity deepens LOPSIDEDLY
+//                     toward its feeders instead of as an even sphere — the physical
+//                     mechanism behind one-sided mineralization (PROPOSAL §10).
+//
+//   MECHANISM: dissolve_wall passes FluidSpotField.columnWeights() to erodeCells;
+//   the FIXED dissolution budget (rateMm·N, unchanged) is distributed proportional
+//   to per-column weights (max open-spot decayBonus on each column: crack 1.6,
+//   hotspot 1.3, geyser 1.2). MASS-CONSERVING → the Ca/CO3 release computed upstream
+//   in wall.dissolve() is untouched, so this is PURELY GEOMETRIC. Only fires where
+//   the wall actually dissolves (acidic fluid, pH<5.5) — silicate veins (sunnyside)
+//   are inert, as they should be. Gated by fluidSpotsDecayEnabled() (default on).
+//
+//   Observed (A/B flag OFF→ON): porphyry crack@col43 deepens 0.86→1.37mm (1.59× mean,
+//   ≈ its 1.6 bonus), hotspot@col7 →1.29×; mean wall_depth preserved; assemblage
+//   IDENTICAL (46 crys/20 sp). bisbee col8 →1.30×. The lopsided shape is the payoff.
+//
+//   BASELINE NOTE — this is the PAGES-IS-THE-GAME case: the change is render-visible
+//   (cavity geometry) but BYTE-IDENTICAL on the seed-42 + strip-digest baselines (the
+//   redistribution is mass-conserving + the baselines capture chemistry/assemblage,
+//   not raw wall geometry). seed42_v170 → v171 + strip_digest → v171 are STAMP-ONLY.
+//   The geometry is instead PINNED by the new 2b test in tests-js/fluid-spots.test.ts
+//   (ON → lopsided ring0 wall_depth at the spot column + mean preserved; OFF → uniform).
+//   SIM_VERSION bumps because the rendered output changed even though the assemblage
+//   didn't. FILES: js/85k (columnWeights + decay flag), js/22 (erodeCells colWeights),
+//   js/85d (dissolve_wall passes weights). NEXT: 2c origin:'cell' + deposition bias.
+const SIM_VERSION = 171;
 
 // ── 18-constants.js ──
 
@@ -18524,7 +18552,14 @@ class WallState {
     // Blocked cells (Set of cell indices) contribute zero — the acid
     // budget concentrates on exposed slices. Returns the number of
     // cells eroded.
-    erodeCells(rateMm, blocked) {
+    // colWeights (Phase 2b, optional): a length-N array of per-column erosion
+    // multipliers from the fluid-source spots (FluidSpotField.columnWeights). The
+    // FIXED dissolution budget (rateMm·N) is redistributed proportional to the
+    // unblocked cells' weights → preferential deepening at feeder columns (lopsided
+    // cavity growth). Mass-conserving (same total wall_depth added), so the Ca/CO3
+    // release computed upstream in wall.dissolve() is untouched — this is purely
+    // geometric. Absent/null → the legacy UNIFORM distribution (byte-identical).
+    erodeCells(rateMm, blocked, colWeights) {
         if (!(rateMm > 0))
             return 0;
         const ring0 = this.rings[0];
@@ -18535,9 +18570,28 @@ class WallState {
                 unblocked.push(i);
         if (!unblocked.length)
             return 0;
-        const perCell = rateMm * N / unblocked.length;
-        for (const i of unblocked)
-            ring0[i].wall_depth += perCell;
+        const total = rateMm * N;
+        if (colWeights) {
+            let wsum = 0;
+            for (const i of unblocked)
+                wsum += (colWeights[i] > 0 ? colWeights[i] : 1);
+            if (wsum > 0) {
+                for (const i of unblocked) {
+                    const wi = colWeights[i] > 0 ? colWeights[i] : 1;
+                    ring0[i].wall_depth += total * wi / wsum;
+                }
+            }
+            else {
+                const perCell = total / unblocked.length;
+                for (const i of unblocked)
+                    ring0[i].wall_depth += perCell;
+            }
+        }
+        else {
+            const perCell = total / unblocked.length;
+            for (const i of unblocked)
+                ring0[i].wall_depth += perCell;
+        }
         // Bump the monotonic render scale if any cell just passed the
         // current maximum. Uses per-cell base_radius_mm so Fourier-profile
         // bulges contribute correctly.
@@ -45828,7 +45882,16 @@ Object.assign(VugSimulator.prototype, {
             // crystals don't budge, concentrating the attack elsewhere — the
             // vug grows lopsided in whatever direction the deposit left bare.
             const blocked = this._wallCellsBlockedByCrystals();
-            this.wall_state.erodeCells(result.rate_mm, blocked);
+            // Phase 2b — FEEDER-LOCALIZED erosion (PROPOSAL §10). Open fluid-source spots
+            // redistribute the FIXED dissolution budget toward their columns, so the cavity
+            // deepens lopsidedly toward its feeders (cracks/geysers/hotspots) instead of as
+            // an even sphere. Gated by fluidSpotsDecayEnabled() (default on); null weights
+            // (coupling off / no spots / no >1 bonus) → the legacy uniform path, byte-
+            // identical. Mass-conserving → chemistry (Ca/CO3 release) unchanged; pure shape.
+            const _colW = (fluidSpotsDecayEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
+                ? this._fluidSpots.columnWeights(this.wall_state.cells_per_ring)
+                : null;
+            this.wall_state.erodeCells(result.rate_mm, blocked, _colW);
             const post_sigma_cal = this.conditions.supersaturation_calcite();
             this.log.push(`  🧱 WALL DISSOLUTION: ${result.rate_mm.toFixed(2)} mm of ${wall.composition} dissolved`);
             if (blocked.size) {
@@ -47926,6 +47989,15 @@ function _createMovementController(sim) {
 // seed — distinct from polar (0x700AA517), twist (0xBEEFFACE), movement
 // (0x4d4f5645) so the spot draws are independent of every other sub-stream.
 const _SPOTS_SALT = 0x53504f54;
+// Phase 2b coupling gate. When ON (default — the shipped feature), open-spot
+// cells erode preferentially in dissolve_wall/erodeCells → lopsided cavity
+// deepening toward feeders. The OBSERVER toggles this OFF to recover the
+// no-spot baseline for an A/B look; tests use it for the neutral/active
+// positive control. Mirrors the EH_DYNAMIC_ENABLED pattern (20c). The exported
+// global is a load-time snapshot; read the LIVE value via fluidSpotsDecayEnabled().
+let _FLUID_SPOTS_DECAY_ENABLED = true;
+function setFluidSpotsDecayEnabled(enabled) { _FLUID_SPOTS_DECAY_ENABLED = !!enabled; }
+function fluidSpotsDecayEnabled() { return _FLUID_SPOTS_DECAY_ENABLED; }
 // A dedicated deterministic PRNG for the spot set, derived from the cavity seed.
 // Reuses _mulberry32 (22-geometry-wall.ts) — resume-safe, independent of `rng`.
 function _makeSpotRng(vuggSeed, salt = _SPOTS_SALT) {
@@ -48018,6 +48090,32 @@ class FluidSpotField {
     supplyAt(cell) {
         const s = this._byCell.get(cell);
         return (s && s.open) ? s.supply : 1.0;
+    }
+    // Phase 2b — per-COLUMN erosion weights for erodeCells, which operates on the
+    // equatorial ring (ring0) per slice/column. A spot's mesh cell index maps to a
+    // column via (cell % cellsPerRing); the column's weight is the MAX decayBonus
+    // among OPEN spots on it (>1 = erode faster there). Returns a length-cellsPerRing
+    // array of multipliers (1.0 where no open spot). erodeCells redistributes the
+    // FIXED dissolution budget by these weights → lopsided deepening toward feeders,
+    // mass-conserving (the Ca/CO3 release is computed upstream, so this is purely
+    // geometric). Returns null when there's nothing to bias (caller stays on the
+    // uniform path → byte-identical).
+    columnWeights(cellsPerRing) {
+        const N = cellsPerRing | 0;
+        if (N <= 0 || this.isEmpty)
+            return null;
+        let any = false;
+        const w = new Array(N).fill(1.0);
+        for (const s of this.spots) {
+            if (!s.open || !(s.decayBonus > 1))
+                continue;
+            const col = ((s.cell % N) + N) % N;
+            if (s.decayBonus > w[col]) {
+                w[col] = s.decayBonus;
+                any = true;
+            }
+        }
+        return any ? w : null;
     }
 }
 // Factory: build a sim's spot field. Seeds off the cavity's shape_seed (geology

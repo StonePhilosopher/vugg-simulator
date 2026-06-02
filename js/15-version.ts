@@ -10029,5 +10029,33 @@
 //   strip_digest_v169 → v170:    supergene_oxidation IS in the digest set — its
 //                                 pH/Ca/CO3/Mn envelopes shift with the sustained
 //                                 acid front; other digest scenarios stamp-only.
-const SIM_VERSION = 170;
+// v171 (2026-06-02) — FLUID-SPOTS Phase 2b: FEEDER-LOCALIZED erosion (the first
+//                     spot COUPLING, render-visible). Open fluid-source spots
+//                     (js/85k, seeded in 2a) now redistribute the wall-dissolution
+//                     budget toward their columns, so the cavity deepens LOPSIDEDLY
+//                     toward its feeders instead of as an even sphere — the physical
+//                     mechanism behind one-sided mineralization (PROPOSAL §10).
+//
+//   MECHANISM: dissolve_wall passes FluidSpotField.columnWeights() to erodeCells;
+//   the FIXED dissolution budget (rateMm·N, unchanged) is distributed proportional
+//   to per-column weights (max open-spot decayBonus on each column: crack 1.6,
+//   hotspot 1.3, geyser 1.2). MASS-CONSERVING → the Ca/CO3 release computed upstream
+//   in wall.dissolve() is untouched, so this is PURELY GEOMETRIC. Only fires where
+//   the wall actually dissolves (acidic fluid, pH<5.5) — silicate veins (sunnyside)
+//   are inert, as they should be. Gated by fluidSpotsDecayEnabled() (default on).
+//
+//   Observed (A/B flag OFF→ON): porphyry crack@col43 deepens 0.86→1.37mm (1.59× mean,
+//   ≈ its 1.6 bonus), hotspot@col7 →1.29×; mean wall_depth preserved; assemblage
+//   IDENTICAL (46 crys/20 sp). bisbee col8 →1.30×. The lopsided shape is the payoff.
+//
+//   BASELINE NOTE — this is the PAGES-IS-THE-GAME case: the change is render-visible
+//   (cavity geometry) but BYTE-IDENTICAL on the seed-42 + strip-digest baselines (the
+//   redistribution is mass-conserving + the baselines capture chemistry/assemblage,
+//   not raw wall geometry). seed42_v170 → v171 + strip_digest → v171 are STAMP-ONLY.
+//   The geometry is instead PINNED by the new 2b test in tests-js/fluid-spots.test.ts
+//   (ON → lopsided ring0 wall_depth at the spot column + mean preserved; OFF → uniform).
+//   SIM_VERSION bumps because the rendered output changed even though the assemblage
+//   didn't. FILES: js/85k (columnWeights + decay flag), js/22 (erodeCells colWeights),
+//   js/85d (dissolve_wall passes weights). NEXT: 2c origin:'cell' + deposition bias.
+const SIM_VERSION = 171;
 

@@ -1152,15 +1152,37 @@ class WallState {
   // Blocked cells (Set of cell indices) contribute zero — the acid
   // budget concentrates on exposed slices. Returns the number of
   // cells eroded.
-  erodeCells(rateMm, blocked) {
+  // colWeights (Phase 2b, optional): a length-N array of per-column erosion
+  // multipliers from the fluid-source spots (FluidSpotField.columnWeights). The
+  // FIXED dissolution budget (rateMm·N) is redistributed proportional to the
+  // unblocked cells' weights → preferential deepening at feeder columns (lopsided
+  // cavity growth). Mass-conserving (same total wall_depth added), so the Ca/CO3
+  // release computed upstream in wall.dissolve() is untouched — this is purely
+  // geometric. Absent/null → the legacy UNIFORM distribution (byte-identical).
+  erodeCells(rateMm, blocked, colWeights) {
     if (!(rateMm > 0)) return 0;
     const ring0 = this.rings[0];
     const N = ring0.length;
     const unblocked = [];
     for (let i = 0; i < N; i++) if (!blocked.has(i)) unblocked.push(i);
     if (!unblocked.length) return 0;
-    const perCell = rateMm * N / unblocked.length;
-    for (const i of unblocked) ring0[i].wall_depth += perCell;
+    const total = rateMm * N;
+    if (colWeights) {
+      let wsum = 0;
+      for (const i of unblocked) wsum += (colWeights[i] > 0 ? colWeights[i] : 1);
+      if (wsum > 0) {
+        for (const i of unblocked) {
+          const wi = colWeights[i] > 0 ? colWeights[i] : 1;
+          ring0[i].wall_depth += total * wi / wsum;
+        }
+      } else {
+        const perCell = total / unblocked.length;
+        for (const i of unblocked) ring0[i].wall_depth += perCell;
+      }
+    } else {
+      const perCell = total / unblocked.length;
+      for (const i of unblocked) ring0[i].wall_depth += perCell;
+    }
     // Bump the monotonic render scale if any cell just passed the
     // current maximum. Uses per-cell base_radius_mm so Fourier-profile
     // bulges contribute correctly.

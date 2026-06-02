@@ -6,11 +6,15 @@
 // FluidSpotField no-op contract (an empty set behaves exactly as today, the
 // sim-neutrality guarantee that keeps 2a byte-identical).
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 declare const _makeSpotRng: any;
 declare const _seedFluidSpots: any;
 declare const FluidSpotField: any;
+declare const SCENARIOS: any;
+declare const VugSimulator: any;
+declare const setSeed: any;
+declare const setFluidSpotsDecayEnabled: any;
 
 describe('fluid-spots — seed-derived PRNG (reproducible)', () => {
   it('same cavity seed → identical sequence; different seed → different', () => {
@@ -90,5 +94,44 @@ describe('fluid-spots — FluidSpotField no-op contract (sim-neutrality)', () =>
     expect(f.decayMultiplierAt(7)).toBe(1.0);                // no spot → neutral
     expect(f.supplyAt(5)).toBe(1.0);                         // wait: crack supply 1.0
     expect(f.supplyAt(9)).toBe(1.0);                         // closed → neutral
+  });
+});
+
+describe('fluid-spots — 2b wall-decay coupling (lopsided erosion, render-visible)', () => {
+  // The decay coupling is a GLOBAL flag (module state); restore the default.
+  afterEach(() => setFluidSpotsDecayEnabled(true));
+
+  function runDepths(decayOn: boolean) {
+    setFluidSpotsDecayEnabled(decayOn);
+    setSeed(42);
+    const { conditions, events, defaultSteps } = SCENARIOS['porphyry']();  // acidic (pH 4.5) → wall dissolves
+    const sim = new VugSimulator(conditions, events);
+    const steps = defaultSteps ?? 100;
+    for (let s = 0; s < steps; s++) sim.run_step();
+    const depths = sim.wall_state.rings[0].map((c: any) => c.wall_depth);
+    const N = depths.length;
+    const mean = depths.reduce((a: number, b: number) => a + b, 0) / N;
+    const std = Math.sqrt(depths.reduce((a: number, d: number) => a + (d - mean) ** 2, 0) / N);
+    const spotCols = sim._fluidSpots.spots.filter((s: any) => s.open).map((s: any) => s.cell % N);
+    return { depths, N, mean, cv: mean > 1e-9 ? std / mean : 0, spotCols };
+  }
+
+  it('porphyry: OFF erodes uniformly, ON deepens feeder columns (mass-conserving)', () => {
+    const off = runDepths(false);
+    const on = runDepths(true);
+    expect(off.mean).toBeGreaterThan(0);            // acidic → the wall actually dissolves
+    expect(off.cv).toBeLessThan(0.01);              // OFF: uniform radial erosion
+    expect(on.cv).toBeGreaterThan(off.cv + 0.01);   // ON: lopsided
+    expect(on.spotCols.length).toBeGreaterThan(0);
+    expect(Math.abs(on.mean - off.mean)).toBeLessThan(1e-6);   // mass-conserving (same total)
+    const maxSpotDepth = Math.max(...on.spotCols.map((c: number) => on.depths[c]));
+    expect(maxSpotDepth).toBeGreaterThan(on.mean * 1.2);       // feeder column deepened
+  });
+
+  it('the decay flag toggles cleanly (OFF reverts to the uniform baseline)', () => {
+    const off1 = runDepths(false);
+    runDepths(true);
+    const off2 = runDepths(false);
+    expect(off2.depths).toEqual(off1.depths);       // flag is the only difference
   });
 });
