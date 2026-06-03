@@ -10141,5 +10141,35 @@
 //   step 160; couplings see open/closed live). SIM bumps for the rendered change.
 //   FILES: js/85k (seal/breachSpots), js/85d (apply_events directive), js/70-events
 //   (spots passthrough), data/scenarios.json5 (supergene seal directive).
-const SIM_VERSION = 173;
+// v174 (2026-06-03) — FLUID-SPOTS Phase 2c.3: the UNITED point-source showpiece —
+//                     gem_pegmatite's feeder now carries an origin:'cell' chemical
+//                     HALO (2c.1) co-located with its crystal CLUSTER (2c.2b) and its
+//                     lopsided cavity (2b): one feeder, three signals. The spots arc's
+//                     capstone — "the specific points where things enter the vugg" made
+//                     whole on a single scenario.
+//
+//   MECHANISM: gem_pegmatite gains a `movements:[{ field:'fluid.B', origin:'cell',
+//   startStep 30, trend +100 eased, clampMax 120 }]`. The origin:'cell' movement pins a
+//   BORON halo at the cavity's dominant feeder. To make the halo COINCIDE with the
+//   deposition cluster (not a random polar feeder), _resolveOriginCell (85j) now picks
+//   the most EQUATORIAL open spot (highest ringAreaWeight) — it delivers to the most
+//   wall AND is where crystals form. Resolves to the equatorial hotspot@954 (ring 7);
+//   B halo there 96.7 → 34.9 bulk (within the 0-120 strip-chip scale), strip-visible,
+//   anchored to the step-30 "Schorl Arrives (B supersaturation)" event: the feeder
+//   delivers the boron that brings schorl, where the tourmaline gathers.
+//
+//   HONEST SCOPE (verify-the-mechanism): the injection is a per-cell CHEMICAL halo
+//   (strip + per-vertex visible), DECOUPLED from the legacy ring-fluid nucleation gate,
+//   and these growth engines are NOT nutrient-rate-limited (observed: even +4000 B left
+//   tourmaline 3×451 unchanged). So 2c.3 UNITES halo + cluster by spatial CO-LOCATION at
+//   the feeder, not by the halo driving growth. seed42 + strip_digest impact: gem_pegmatite
+//   only (the lone host); see drift note in the commit.
+//
+//   _resolveOriginCell change (equatorial-preference) is free: no scenario had baked
+//   origin:'cell' before v174, so no prior baseline depended on the old random pick.
+//   Tool: tools/showpiece-observe.mjs (halo + one-sided-growth + expects-safety A/B).
+//   FILES: js/85j (_resolveOriginCell equatorial pick), data/scenarios.json5 (gem_pegmatite
+//   movements). NEXT: spots arc is COMPLETE (2a-2d); 2c.2b clustering calibration still
+//   open for the boss's eye.
+const SIM_VERSION = 174;
 

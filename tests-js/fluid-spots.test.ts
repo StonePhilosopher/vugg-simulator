@@ -294,3 +294,29 @@ describe('fluid-spots — 2d open/close lifecycle (seal/breach, pure)', () => {
     expect(sim._fluidSpots.columnWeights(sim.wall_state.cells_per_ring | 0)).toBeNull(); // 2b feeder-erosion off after seal
   });
 });
+
+describe('fluid-spots — 2c.3 united showpiece (gem_pegmatite origin:cell B halo + cluster)', () => {
+  it('the baked B movement paints a halo at the EQUATORIAL feeder; assemblage preserved', () => {
+    setSeed(42);
+    const { conditions, events, defaultSteps } = SCENARIOS['gem_pegmatite']();
+    const sim = new VugSimulator(conditions, events);
+    const steps = defaultSteps ?? 230;
+    for (let s = 0; s < steps; s++) sim.run_step();
+    const N = sim.wall_state.cells_per_ring | 0;
+    const oc = sim._movements._state[0].originCell;            // resolved origin cell
+    expect(oc).toBeGreaterThanOrEqual(0);
+    const ring = (oc / N) | 0;
+    expect(ring).toBeGreaterThan(2); expect(ring).toBeLessThan(13);   // equatorial-ish, NOT a pole
+    const mesh = sim.wall_state.meshFor(sim);
+    const feederB = mesh.cells[oc].fluid.B;
+    const farB = mesh.cells[ring * N + ((oc + (N >> 1)) % N)].fluid.B;  // opposite side, same ring
+    expect(feederB).toBeGreaterThan(farB + 5);                 // HALO: B elevated at the feeder
+    expect(feederB).toBeLessThanOrEqual(120 + 1e-6);           // clamped to the 0-120 strip-chip scale
+    // assemblage preserved (the halo is decoupled from the legacy gate + growth isn't
+    // nutrient-rate-limited — the union is spatial co-location, not a growth driver)
+    const species = new Set(sim.crystals.map((c: any) => c.mineral));
+    for (const m of ['tourmaline', 'spodumene', 'feldspar', 'albite', 'cassiterite']) {
+      expect(species.has(m)).toBe(true);
+    }
+  });
+});

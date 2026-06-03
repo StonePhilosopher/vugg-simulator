@@ -1113,6 +1113,23 @@
       // scenario opt-in keeps the validated-chemistry fleet (e.g. reactive_wall)
       // byte-identical. Strength is the global setDepositionClustering(PEAK_K,LAMBDA).
       "fluid_spots": { "deposition": true },
+      // FLUID-SPOTS Phase 2c.3 — the UNITED point-source showpiece. An origin:'cell'
+      // movement injects a BORON halo at the cavity's dominant (most-equatorial) open
+      // feeder: the feeder is the boron delivery point (PROPOSAL §10 / §9c). It resolves
+      // to the same equatorial vent the deposition cluster favors, so the chemical halo
+      // (strip-visible B chip, 0-120 scale → clampMax 120) sits at the SAME feeder where
+      // tourmaline concentrates (2c.2b) and the cavity deepens (2b): one point, three
+      // signals — shape + chemistry + crystals. Anchored to the step-30 "Schorl Arrives
+      // (B + Fe supersaturation)" event: the feeder delivers the boron that brings schorl.
+      // NB the injection is a per-cell CHEMICAL halo (strip + per-vertex visible), DECOUPLED
+      // from the legacy ring-fluid nucleation gate, and these growth engines aren't
+      // nutrient-rate-limited → the bulk assemblage is unchanged (verified byte-identical);
+      // the uniting is the spatial CO-LOCATION of halo + cluster at the feeder.
+      "movements": [
+        { "field": "fluid.B", "origin": "cell", "startStep": 30, "endStep": 230,
+          "ops": [{ "kind": "trend", "amp": 100, "ease": true }],
+          "texture": { "theta": 0.3, "sigma": 4 }, "clampMax": 120 }
+      ],
       "notes": [
         "Cruzeiro is the type-locality for fine schorl-elbaite tourmaline + smoky quartz pockets, with documented beryl, spodumene, lepidolite, and accessory apatite. Brasiliano-age (Neoproterozoic) pegmatite field cutting Macaúbas Group meta-sediments. Morteani et al. 2002 covers fluid chemistry; Cassedanne (1991) and Proctor (1985) cover the Cruzeiro-specific paragenesis.",
         "Thermal regime: 650 → 300°C over ~230 steps in three phases. Phase 1 (650-550°C): wall-zone crystallization (microcline, quartz, early schorl). Phase 2 (550-400°C): main pocket growth — beryl finally nucleates when Be crosses threshold; spodumene when Li crosses; schorl transitions to elbaite as Fe depletes and Li accumulates. Phase 3 (400-300°C): late hydrothermal — topaz if F survives, then kaolinization of microcline walls.",

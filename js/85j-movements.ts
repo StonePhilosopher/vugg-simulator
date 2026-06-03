@@ -276,19 +276,31 @@ class MovementController {
   }
 
   // Resolve the origin (injection) cell for movement i. Preference order:
-  //   explicit m.originCell  →  a seeded pick among OPEN fluid-spots  →  the
-  //   naive _pickOriginCell (any wall cell). A fluid-spot IS the geological
-  //   home of a feeder (js/85k), so an origin:'cell' movement enters where the
-  //   plumbing connects. The spot pick draws ONCE from the dedicated movement
-  //   stream → reproducible AND independent of the shared nucleation rng.
+  //   explicit m.originCell  →  the most EQUATORIAL open fluid-spot  →  the naive
+  //   _pickOriginCell (any wall cell). A fluid-spot IS the geological home of a
+  //   feeder (js/85k), so an origin:'cell' movement enters where the plumbing
+  //   connects. Among open feeders we pick the one with the highest ring area
+  //   weight (sin φ — most equatorial): it delivers fluid to the most cavity wall
+  //   AND is where crystals actually form (polar rings are area-starved), so the
+  //   injected halo COINCIDES with the deposition cluster (2c.2b) instead of
+  //   landing at a near-polar feeder with no crystals. Deterministic given the
+  //   seeded spot set — no draw from the movement stream (the geometry decides).
   _resolveOriginCell(i: number, sim: any): number {
     const m = this.movements[i];
     if (typeof m.originCell === 'number') return m.originCell | 0;
     const field = sim && sim._fluidSpots;
     const open = field && !field.isEmpty ? field.openSpots() : [];
     if (open && open.length) {
-      const pick = Math.min(open.length - 1, Math.floor(this.rng() * open.length));
-      return open[pick].cell | 0;
+      const ws = sim && sim.wall_state;
+      const N = (ws && ws.cells_per_ring) | 0;
+      const areaW = (cell: number) =>
+        (ws && typeof ws.ringAreaWeight === 'function' && N > 0) ? ws.ringAreaWeight((cell / N) | 0) : 1;
+      let best = open[0], bestW = areaW(open[0].cell);
+      for (let k = 1; k < open.length; k++) {
+        const w = areaW(open[k].cell);
+        if (w > bestW + 1e-9) { best = open[k]; bestW = w; }
+      }
+      return best.cell | 0;
     }
     const mesh = sim && sim.wall_state && sim.wall_state.meshFor ? sim.wall_state.meshFor(sim) : null;
     const n = mesh && mesh.cells ? mesh.cells.length : 1;

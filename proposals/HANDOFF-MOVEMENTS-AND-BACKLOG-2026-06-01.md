@@ -428,9 +428,28 @@ wall-decay bonus → 2c origin-rides-spots + deposition bias → 2d open/close e
   scenario. Strength = `setDepositionClustering(PEAK_K, LAMBDA)` (K12/λ2.5 ≈ broadest lobe;
   K25-50/λ1.5-2 ≈ tighter cores). Scope = which scenarios opt in (global is safe per the A/B).
   Boss to look at gem_pegmatite on Pages + steer strength + which scenarios.
-- **2c.3:** bake origin:'cell' (2c.1) + a WORKING deposition model into ONE science-chosen
-  point-source demonstrator → the visible one-sided specimen. SIM bump + regen. (Blocked on the
-  per-cell proximity deposition model above — the column-bias version doesn't cluster.)
+- **✅ 2c.3 DONE (SIM 173→174): the UNITED point-source showpiece on gem_pegmatite.** An
+  `origin:'cell'` movement injects a BORON halo (field fluid.B, startStep 30, trend +100 eased,
+  clampMax 120 = the strip-chip scale) at the cavity's dominant feeder, so the chemical halo
+  (strip-visible) sits at the SAME equatorial vent where tourmaline CLUSTERS (2c.2b, baked v172)
+  and the cavity DEEPENS (2b, live — gem_pegmatite hits pH 3.53). One feeder, three signals:
+  shape + chemistry + crystals. Anchored to the step-30 "Schorl Arrives (B supersaturation)"
+  event — the feeder delivers the boron that brings schorl. To make halo + cluster COINCIDE,
+  `_resolveOriginCell` (85j) now picks the most EQUATORIAL open spot (highest ringAreaWeight) —
+  it resolves to hotspot@954 (ring 7); B 96.7 at feeder → 34.9 bulk (the lone polar feeder the
+  random pick used before had 0 crystals). **HONEST SCOPE (verify-the-mechanism):** the injection
+  is a per-cell CHEMICAL halo (strip + per-vertex visible), DECOUPLED from the legacy ring-fluid
+  nucleation gate, and these growth engines are NOT nutrient-rate-limited (observed: even +4000 B
+  left tourmaline 3×451 unchanged). So 2c.3 unites halo + cluster by spatial CO-LOCATION at the
+  feeder, NOT by the halo driving growth → seed42 + strip_digest BYTE-IDENTICAL v173→v174
+  (gem_pegmatite isn't in the digest set; the B halo is purely strip/render-visible) — the
+  2b/2c.1 pattern, SIM bumps for the rendered change. The `_resolveOriginCell` equatorial change
+  was FREE (no scenario had baked origin:'cell' before v174). Tool: tools/showpiece-observe.mjs
+  (halo + one-sided-growth + expects-safety A/B). Tests: equatorial-pick unit (movements.test.ts)
+  + gem_pegmatite halo-at-feeder integration (fluid-spots.test.ts). FILES: js/85j (_resolveOriginCell),
+  data/scenarios.json5 (gem_pegmatite movements).
+  **★★ The Phase 2 FLUID-SPOTS arc is COMPLETE end-to-end: 2a seed → 2b erosion → 2c.1 halo →
+  2c.2 (catch) → 2c.2b clustering → 2c.3 united showpiece → 2d lifecycle.**
 - **✅ 2d DONE (SIM 172→173): spots OPEN/CLOSE via events — the plumbing lives.** A
   DECLARATIVE `spots` directive on an event spec (`'seal' | 'breach' | {action, kind}`)
   → `apply_events` (85d) toggles the cavity's feeders CENTRALLY after `apply_fn` (one
