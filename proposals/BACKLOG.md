@@ -2,6 +2,23 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🪨 UPDATE (2026-06-03) — the FLUID-SPOTS arc is COMPLETE (SIM 174)
+>
+> Phase 2 fluid-spots shipped end-to-end: **2a** seed → **2b** lopsided erosion →
+> **2c.1** chemical halo → **2c.2** (the dead-end catch, default-off) → **2c.2b**
+> per-cell proximity clustering → **2c.3** united showpiece (gem_pegmatite) →
+> **2d** open/close lifecycle. A seeded feeder now deepens the wall, injects a
+> halo, gathers crystals, and opens/closes over the vug's life.
+> - **Read `proposals/HANDOFF-TO-THE-NEXT-BUILDER-2026-06-03.md` first** — the
+>   voice/wisdom layer (the catches, the decoupling map, the honest ceiling).
+> - Per-bump detail: `js/15-version.ts` (v171→v174). Live open-items: the
+>   movements handoff Part II (below pointer), still current.
+> - **Open from this arc:** (1) 2c.2b clustering strength/scope calibration —
+>   boss's eye on Pages (gem_pegmatite live); (2) **per-cell nucleation gating** —
+>   the deep arc for a *distinct-mineral* one-sided specimen (literal Punjab
+>   hematite-on-calcite), the ceiling we hit; (3) 2d `breach` API unused (needs a
+>   seal-then-reopen scenario); (4) supergene pH-front listen-acceptance.
+>
 > ## ⚠️ READ THIS FIRST (2026-06-01) — staleness + the live snapshot
 >
 > **The distilled, CURRENT open-items list lives in
