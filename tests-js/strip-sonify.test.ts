@@ -225,24 +225,36 @@ describe('strip sonify — pulse / rhythm', () => {
     expect(plan.gates.length).toBeLessThan(plan.notes.length);  // fewer sounded notes than steps = rhythm
   });
 
-  it('gates are staccato (shorter than their slot) and ordered within the piece', () => {
+  it('notes are legato (sustain to the next onset, no overlap) and time-ordered', () => {
     const plan = buildStripSonifyPlan(makeDataset(24), 'test', { stepDurationMs: 100 });
-    const slotSec = plan.subdiv * 0.1;   // subdiv × stepMs(100ms)
     let prev = -1;
-    for (const g of plan.gates) {
-      expect(g.durSec).toBeLessThan(slotSec);            // a gap before the next → staccato
+    for (let i = 0; i < plan.gates.length; i++) {
+      const g = plan.gates[i];
+      expect(g.durSec).toBeGreaterThan(0);
       expect(g.tSec).toBeGreaterThanOrEqual(prev);       // time-ordered
-      expect(g.tSec).toBeLessThanOrEqual(plan.durationSec + slotSec);
+      const next = i + 1 < plan.gates.length ? plan.gates[i + 1].tSec : plan.durationSec;
+      expect(g.tSec + g.durSec).toBeLessThanOrEqual(next + 1e-6);   // ends before the next begins
       prev = g.tSec;
     }
   });
 
-  it('rests when the data holds: a flat trajectory yields far fewer gates than a moving one', () => {
+  it('fires fewer notes when the data holds: a flat trajectory yields fewer onsets than a moving one', () => {
     const moving = buildStripSonifyPlan(makeDataset(24), 'test', {});
     const flat = makeDataset(24);
     flat.chip_data.fill(127);            // constant byte → constant pitch → it holds
     const flatPlan = buildStripSonifyPlan(flat, 'test', {});
     expect(flatPlan.gates.length).toBeLessThan(moving.gates.length);
+  });
+
+  it('a held (even) line DRONES: it sustains most of the timeline instead of resting silent', () => {
+    // The boss's 2026-06-03 ear: "a lot of the modes don't play most of the
+    // even droning lines." A steady line must keep sounding, not rest at ~0.
+    const flat = makeDataset(240, 0x223344);   // dim color → slow "pad" subdiv
+    flat.chip_data.fill(127);                  // constant pitch → held the whole run
+    const plan = buildStripSonifyPlan(flat, 'test', { stepDurationMs: 140 });
+    const sounded = plan.gates.reduce((s: number, g: any) => s + g.durSec, 0);
+    expect(sounded / plan.durationSec).toBeGreaterThan(0.7);   // drones (was ~0.05 before the fix)
+    expect(plan.gates.some((g: any) => g.sustain)).toBe(true); // held notes flagged for the player to hold
   });
 
   it('brightness sets the subdivision — bright voices busier than dim', () => {

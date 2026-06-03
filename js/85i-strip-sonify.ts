@@ -249,7 +249,7 @@ function _stripSonifyPanContour(ds: StripDataset, chipIdx: number): number[] {
 
 interface StripSonifyPlan {
   notes: { tSec: number; freq: number }[];   // per-step pitch contour (drives freq)
-  gates: { tSec: number; durSec: number }[]; // RHYTHM: when the voice actually sounds
+  gates: { tSec: number; durSec: number; sustain?: boolean }[]; // RHYTHM: when the voice sounds (sustain = hold as a drone, not a pluck)
   pans: { tSec: number; pan: number }[];     // per-step stereo position (-1..1 from angular centroid)
   glide: boolean;                            // continuous (raw) mode: ramp pitch + sustain, no plucks
   subdiv: number;                            // this voice's rhythmic subdivision (steps/note)
@@ -268,15 +268,26 @@ interface StripSonifyPlan {
 // The unmusical part was that the sim's STEP RATE was the NOTE RATE: every
 // chip sounded continuously, all changing pitch in lockstep every step.
 // Music decouples them — pitch follows the data, but RHYTHM comes from a
-// grid + note-density rules. So each voice now articulates on its own
-// subdivision (a pluck, not a drone), fires a note only when its pitch
-// CHANGES (rests when the data holds), and offbeats swing slightly. Voices
-// on different subdivisions (set by brightness — bright = busy melody, dim
-// = slow pad) interlock into polyrhythm.
+// grid + note-density rules. So each voice articulates on its own
+// subdivision, fires a note when its pitch CHANGES, and offbeats swing
+// slightly. Voices on different subdivisions (set by brightness — bright =
+// busy melody, dim = slow pad) interlock into polyrhythm.
+//
+// LEGATO/DRONE (boss, 2026-06-03 — "a lot of the modes don't play most of
+// the even droning lines"): the original made every note a fixed-length
+// staccato PLUCK, then rested at silence until the next pitch change. A
+// STEADY line changes pitch ~never, so it only got the sparse maxRest
+// heartbeat — measured at ~5% sounded for a dim voice in EVERY scale mode
+// (vs 100% in continuous). The fix: a note now SUSTAINS until just before
+// the next articulation. A held pitch becomes a long drone; a changing pitch
+// stays a short articulation. The note-density polyrhythm is preserved (busy
+// voices still re-articulate often); only the GAPS are filled with tone
+// instead of silence.
 const STRIP_RHYTHM = {
-  gateFrac: 0.72,   // note sounds for this fraction of its slot → staccato gap
-  swing: 0.12,      // offbeat delay as a fraction of the subdivision
-  maxRest: 4,       // re-articulate at least every N slots even if pitch held
+  sustainFrac: 0.9,   // a note holds for this fraction of the gap to the next
+                      // onset → held pitches drone, changing pitches detach
+  swing: 0.12,        // offbeat delay as a fraction of the subdivision
+  maxRest: 4,         // re-strike the drone at least every N slots (keeps it alive)
 };
 
 // Brightness → rhythmic subdivision (steps per note). Bright/foreground
@@ -311,7 +322,7 @@ function buildStripSonifyPlan(
   const durationSec = (steps * stepMs) / 1000;
 
   let notes: { tSec: number; freq: number }[];
-  let gates: { tSec: number; durSec: number }[];
+  let gates: { tSec: number; durSec: number; sustain?: boolean }[];
   let subdiv: number;
 
   if (continuous) {
@@ -329,13 +340,13 @@ function buildStripSonifyPlan(
     const toIdx = (v: number) => Math.max(0, Math.min(freqs.length - 1, Math.round(v * (freqs.length - 1))));
     notes = contour.map((v, step) => ({ tSec: (step * stepMs) / 1000, freq: freqs[toIdx(v)] }));
 
-    // RHYTHM: walk the grid at this voice's subdivision; emit a gate (a
-    // sounded note) when the pitch index CHANGES, or every maxRest slots so
-    // a steady-but-present voice keeps a sparse heartbeat. Offbeats swing.
+    // RHYTHM — PASS 1: walk the grid at this voice's subdivision and collect
+    // ONSETS. An onset fires when the pitch index CHANGES, or every maxRest
+    // slots so a held drone re-strikes and stays alive. Offbeats swing.
     subdiv = _stripSonifySubdivForVoice(voice.voiceGain);
     const slotMs = subdiv * stepMs;
-    const noteDurSec = Math.min(slotMs * STRIP_RHYTHM.gateFrac, stepMs * 1.4) / 1000;
-    gates = [];
+    const slotSec = slotMs / 1000;
+    const onsets: number[] = [];   // tSec of each articulation
     let lastIdx = -1;
     let sinceGate = STRIP_RHYTHM.maxRest;   // force a gate on the first slot
     let slot = 0;
@@ -343,12 +354,24 @@ function buildStripSonifyPlan(
       const idx = toIdx(contour[step]);
       if (idx !== lastIdx || sinceGate >= STRIP_RHYTHM.maxRest) {
         const swingSec = (slot % 2 === 1) ? (STRIP_RHYTHM.swing * slotMs) / 1000 : 0;
-        gates.push({ tSec: (step * stepMs) / 1000 + swingSec, durSec: noteDurSec });
+        onsets.push((step * stepMs) / 1000 + swingSec);
         lastIdx = idx;
         sinceGate = 0;
       } else {
         sinceGate++;
       }
+    }
+    // PASS 2: each note SUSTAINS until just before the next onset (legato), so
+    // a HELD pitch drones (long note) and a CHANGING pitch detaches (short
+    // note) — the boss's "even droning lines should play". The last note holds
+    // to the end of the piece. A note longer than ~1.5 slots is flagged
+    // `sustain` so the player holds it at level instead of a pluck-decay.
+    gates = [];
+    for (let i = 0; i < onsets.length; i++) {
+      const start = onsets[i];
+      const next = (i + 1 < onsets.length) ? onsets[i + 1] : durationSec;
+      const durSec = Math.max(0.04, next - start) * STRIP_RHYTHM.sustainFrac;
+      gates.push({ tSec: start, durSec, sustain: durSec > slotSec * 1.5 });
     }
   }
 
@@ -641,7 +664,16 @@ function playStripSonifyPlans(
         try {
           artGain.gain.setValueAtTime(0.0001, ts);
           artGain.gain.linearRampToValueAtTime(1, ts + attack);
-          artGain.gain.exponentialRampToValueAtTime(0.0001, ts + dur);
+          if (gt.sustain) {
+            // DRONE: hold near full for the body of the note, then a short
+            // release — so a steady ("even") line actually sustains instead
+            // of decaying to silence like a pluck (the boss's 2026-06-03 ask).
+            const release = Math.min(0.12, dur * 0.3);
+            artGain.gain.setValueAtTime(1, ts + Math.max(attack, dur - release));
+            artGain.gain.exponentialRampToValueAtTime(0.0001, ts + dur);
+          } else {
+            artGain.gain.exponentialRampToValueAtTime(0.0001, ts + dur);   // pluck: attack → decay
+          }
         } catch (_e) { /* ignore */ }
       }
     }

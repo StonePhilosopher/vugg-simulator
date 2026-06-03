@@ -10171,5 +10171,36 @@
 //   FILES: js/85j (_resolveOriginCell equatorial pick), data/scenarios.json5 (gem_pegmatite
 //   movements). NEXT: spots arc is COMPLETE (2a-2d); 2c.2b clustering calibration still
 //   open for the boss's eye.
-const SIM_VERSION = 174;
+// v175 (2026-06-03) — STRIP DEPLETION-FLOOR CHANNEL (format_version 3): surface the
+//                     per-cell depletion halo the strip's midpoint downsample hides.
+//                     Boss's ear ("I don't see dips in the broth around crystals —
+//                     follow the science even when it means I'm wrong"); boss chose the
+//                     floor-channel path after the bin-mean detour was measured & reverted.
+//
+//   THE FINDING (verify-the-mechanism): crystal growth debits cell.fluid (depletion-dip-
+//   probe: live broth dips up to ~22% on LIMITING ions Ag/Cd/F/Sn, <0.5% on abundant
+//   Ca/Zn/SiO2 — correct geology). The strip recorder samples ONE midpoint cell per 15°
+//   bin, so ~80-90% of the halo never reaches the dataset (strip-depletion-probe: Ag
+//   22%→2.5%). Bin-AVERAGING (first attempt) made it worse — DILUTES a one-cell halo ~5×
+//   AND costs 5× chip-reads → cascading test timeouts. Reverted. The science: a single
+//   crystal's dip is a SUB-bin phenomenon; the faithful per-bin LEVEL structurally can't
+//   show it — you need the per-bin MINIMUM.
+//
+//   THE FIX (additive, level byte-identical): a parallel floor_data tensor (format_version
+//   3) holds the per-bin MIN, computed ONLY for ION-system chips (the broth that depletes;
+//   cheap cell.fluid reads — perf-bounded, no timeout). chip_data (the LEVEL) stays the
+//   midpoint sample → BYTE-IDENTICAL, so seed42 + strip_digest do NOT move. The renderer
+//   (99k) draws a faint shadow band hanging from each line down to its floor; in the
+//   collapsed view the floor is the ring MIN (deepest halo anywhere) so it survives the
+//   per-angle mean. strip-floor-probe: reactive_wall Ag floor dip 19.87% recovered (vs the
+//   2.35% the midpoint level showed) — the true cell-depth halo, in the boss's instrument.
+//
+//   BASELINE: seed42 + strip_digest BYTE-IDENTICAL to v174 (floor is a NEW channel; the
+//   level/assemblage are untouched — regen proves zero drift). SIM bumps for the recorded-
+//   format change (format_version 3) + the render-visible shadow. format_version 3 is
+//   back-compat: v1/v2 datasets have no floor → readers render the level alone.
+//   Tools: depletion-dip-probe / strip-depletion-probe / strip-floor-probe. FILES: js/85f
+//   (format+codec), js/85g (floor capture), js/85h (storage), js/99k (shadow render).
+//   OPEN: a sonifier depletion voice (hear the sag) is a natural follow-up, not yet built.
+const SIM_VERSION = 175;
 
