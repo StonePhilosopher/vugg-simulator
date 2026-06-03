@@ -76,6 +76,6 @@ describe('strip chemistry-trajectory tripwire — seed 42 vs committed digest', 
       if (!ds) return; // scenario not registered in this build → skip
       const got = stripDigestForDataset(ds, deps);
       expect(got).toEqual(digest.scenarios[name]);
-    }, 60000);
+    }, 120000);   // v175: per-scenario recording is heavier (depletion-floor channel) + load-variable
   }
 });

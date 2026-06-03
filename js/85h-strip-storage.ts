@@ -61,6 +61,7 @@ interface StripStoredRecord {
   manifest: StripManifest;
   chip_data: Uint8Array;
   nucleation_events: StripNucleationEvent[];
+  floor_data?: Uint8Array;   // format_version 3 depletion-floor channel (optional)
 }
 
 interface StripListEntry {
@@ -152,6 +153,7 @@ async function stripStorageSave(ds: StripDataset): Promise<string> {
     manifest: ds.manifest,
     chip_data: ds.chip_data,
     nucleation_events: ds.nucleation_events,
+    ...(ds.floor_data ? { floor_data: ds.floor_data } : {}),
   };
   return new Promise<string>((resolve, reject) => {
     const tx = db.transaction(_STRIP_STORE, 'readwrite');
@@ -177,6 +179,7 @@ async function stripStorageLoad(key: string): Promise<StripDataset | null> {
         manifest: rec.manifest,
         chip_data: rec.chip_data,
         nucleation_events: rec.nucleation_events,
+        ...(rec.floor_data ? { floor_data: rec.floor_data } : {}),
       });
     };
     req.onerror = () => reject(req.error || new Error('strip: load failed'));

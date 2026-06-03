@@ -14932,7 +14932,38 @@ let timeScale = 5.0;
 //   FILES: js/85j (_resolveOriginCell equatorial pick), data/scenarios.json5 (gem_pegmatite
 //   movements). NEXT: spots arc is COMPLETE (2a-2d); 2c.2b clustering calibration still
 //   open for the boss's eye.
-const SIM_VERSION = 174;
+// v175 (2026-06-03) — STRIP DEPLETION-FLOOR CHANNEL (format_version 3): surface the
+//                     per-cell depletion halo the strip's midpoint downsample hides.
+//                     Boss's ear ("I don't see dips in the broth around crystals —
+//                     follow the science even when it means I'm wrong"); boss chose the
+//                     floor-channel path after the bin-mean detour was measured & reverted.
+//
+//   THE FINDING (verify-the-mechanism): crystal growth debits cell.fluid (depletion-dip-
+//   probe: live broth dips up to ~22% on LIMITING ions Ag/Cd/F/Sn, <0.5% on abundant
+//   Ca/Zn/SiO2 — correct geology). The strip recorder samples ONE midpoint cell per 15°
+//   bin, so ~80-90% of the halo never reaches the dataset (strip-depletion-probe: Ag
+//   22%→2.5%). Bin-AVERAGING (first attempt) made it worse — DILUTES a one-cell halo ~5×
+//   AND costs 5× chip-reads → cascading test timeouts. Reverted. The science: a single
+//   crystal's dip is a SUB-bin phenomenon; the faithful per-bin LEVEL structurally can't
+//   show it — you need the per-bin MINIMUM.
+//
+//   THE FIX (additive, level byte-identical): a parallel floor_data tensor (format_version
+//   3) holds the per-bin MIN, computed ONLY for ION-system chips (the broth that depletes;
+//   cheap cell.fluid reads — perf-bounded, no timeout). chip_data (the LEVEL) stays the
+//   midpoint sample → BYTE-IDENTICAL, so seed42 + strip_digest do NOT move. The renderer
+//   (99k) draws a faint shadow band hanging from each line down to its floor; in the
+//   collapsed view the floor is the ring MIN (deepest halo anywhere) so it survives the
+//   per-angle mean. strip-floor-probe: reactive_wall Ag floor dip 19.87% recovered (vs the
+//   2.35% the midpoint level showed) — the true cell-depth halo, in the boss's instrument.
+//
+//   BASELINE: seed42 + strip_digest BYTE-IDENTICAL to v174 (floor is a NEW channel; the
+//   level/assemblage are untouched — regen proves zero drift). SIM bumps for the recorded-
+//   format change (format_version 3) + the render-visible shadow. format_version 3 is
+//   back-compat: v1/v2 datasets have no floor → readers render the level alone.
+//   Tools: depletion-dip-probe / strip-depletion-probe / strip-floor-probe. FILES: js/85f
+//   (format+codec), js/85g (floor capture), js/85h (storage), js/99k (shadow render).
+//   OPEN: a sonifier depletion voice (hear the sag) is a natural follow-up, not yet built.
+const SIM_VERSION = 175;
 
 // ── 18-constants.js ──
 
@@ -46408,7 +46439,19 @@ Object.assign(VugSimulator.prototype, {
 // format_version 2 (2026-05-28): added the depth axis (radial sub-strips).
 // v1 datasets (no depth_positions) still load — see the backward-compat
 // note above.
-const _STRIP_FORMAT_VERSION = 2;
+//
+// format_version 3 (2026-06-03): added the optional DEPLETION-FLOOR channel
+// (floor_data) — a parallel tensor, same shape as chip_data, holding the
+// per-bin MINIMUM cell value (vs chip_data's representative/midpoint LEVEL).
+// The level is byte-identical to v2 (still the midpoint sample); floor is a
+// NEW additive channel. It exists so the strip/sonifier can show the per-cell
+// depletion halo a crystal carves into the broth — the midpoint-sampled level
+// dilutes/misses it (strip-depletion-probe). The recorder fills floor only for
+// ION-system chips (the broth that depletes; cheap cell.fluid reads) and sets
+// floor=level for the rest, so the shadow is zero-width where there's no
+// depletion. BACKWARD COMPAT: v2 datasets have no floor_data — readers treat a
+// missing floor_data as "no depletion shadow" and render the level alone.
+const _STRIP_FORMAT_VERSION = 3;
 const _STRIP_NULL_BYTE = 255; // reserved value meaning "no data"
 const _STRIP_MAX_DATA_BYTE = 254; // chip values map to [0, 254]
 // ============================================================
@@ -46496,7 +46539,12 @@ function stripAllocateData(axes, chip_count) {
 //   [manifest_json_length bytes: utf-8 JSON manifest]
 //   [4 bytes: events_json_length (little-endian uint32)]
 //   [events_json_length bytes: utf-8 JSON nucleation events array]
+//   [format_version 3 ONLY: 4 bytes floor_data_length (LE uint32) + that many
+//                           floor bytes; length 0 means "no floor channel"]
 //   [remainder: chip_data uint8 bytes]
+//
+// The floor section is keyed off manifest.format_version (read first on
+// deserialize), so v1/v2 blobs — which never wrote it — round-trip unchanged.
 //
 // Optionally the whole blob is gzipped via CompressionStream before
 // download. Header byte 0 is the gzip magic (0x1F) when compressed.
@@ -46504,7 +46552,12 @@ async function stripSerialize(ds, gzip = true) {
     const enc = new TextEncoder();
     const manifestBytes = enc.encode(JSON.stringify(ds.manifest));
     const eventsBytes = enc.encode(JSON.stringify(ds.nucleation_events));
-    const headerSize = 4 + manifestBytes.length + 4 + eventsBytes.length;
+    // Floor section only for format_version ≥ 3. floor_data may be absent even
+    // then (e.g. a v3 reader handed a v2-origin dataset) → write length 0.
+    const writeFloor = (ds.manifest.format_version || 0) >= 3;
+    const floorBytes = (writeFloor && ds.floor_data) ? ds.floor_data : null;
+    const floorSection = writeFloor ? (4 + (floorBytes ? floorBytes.length : 0)) : 0;
+    const headerSize = 4 + manifestBytes.length + 4 + eventsBytes.length + floorSection;
     const buf = new Uint8Array(headerSize + ds.chip_data.length);
     const dv = new DataView(buf.buffer);
     let offset = 0;
@@ -46516,6 +46569,14 @@ async function stripSerialize(ds, gzip = true) {
     offset += 4;
     buf.set(eventsBytes, offset);
     offset += eventsBytes.length;
+    if (writeFloor) {
+        dv.setUint32(offset, floorBytes ? floorBytes.length : 0, true);
+        offset += 4;
+        if (floorBytes) {
+            buf.set(floorBytes, offset);
+            offset += floorBytes.length;
+        }
+    }
     buf.set(ds.chip_data, offset);
     if (!gzip)
         return buf;
@@ -46554,8 +46615,20 @@ async function stripDeserialize(input) {
     offset += 4;
     const nucleation_events = JSON.parse(dec.decode(buf.subarray(offset, offset + eventsLen)));
     offset += eventsLen;
+    // Floor section: only present for format_version ≥ 3 (v1/v2 blobs skip
+    // straight to chip_data). A written length of 0 means "v3 but no floor".
+    let floor_data;
+    if ((manifest.format_version || 0) >= 3) {
+        const floorLen = dv.getUint32(offset, true);
+        offset += 4;
+        if (floorLen > 0) {
+            floor_data = buf.slice(offset, offset + floorLen);
+            offset += floorLen;
+        }
+    }
     const chip_data = buf.slice(offset);
-    return { manifest, chip_data, nucleation_events };
+    return floor_data ? { manifest, chip_data, nucleation_events, floor_data }
+        : { manifest, chip_data, nucleation_events };
 }
 // === END HELIX-OVERLAY-FORK ADDITION ==================================
 
@@ -46668,14 +46741,24 @@ class StripRecorder {
         catch (_e) {
             depth_positions = 1;
         }
-        // Precompute angle → midpoint native cell.
+        // Precompute angle → midpoint native cell (the LEVEL sample) AND
+        // angle → full bin cell list (for the ION depletion-FLOOR min).
         this.cellForAngle = new Array(angular_indices);
+        this.cellsForAngle = new Array(angular_indices);
         const binSize = cells_per_ring / angular_indices;
         for (let a = 0; a < angular_indices; a++) {
             this.cellForAngle[a] = Math.floor(a * binSize + binSize / 2) % cells_per_ring;
+            const lo = Math.floor(a * binSize);
+            const hi = Math.floor((a + 1) * binSize);
+            const list = [];
+            for (let c = lo; c < hi; c++)
+                list.push(((c % cells_per_ring) + cells_per_ring) % cells_per_ring);
+            if (!list.length)
+                list.push(this.cellForAngle[a]);
+            this.cellsForAngle[a] = list;
         }
         this.manifest = {
-            format_version: 2,
+            format_version: 3,
             sim_version: Number((sim && sim.SIM_VERSION) || (typeof SIM_VERSION !== 'undefined' ? SIM_VERSION : 0)),
             scenario_id: String(sim?.conditions?._scenario?.id || sim?.conditions?._scenario_id || 'unknown'),
             seed: Number(sim?._seed || 42),
@@ -46686,6 +46769,7 @@ class StripRecorder {
             notes: o.notes,
         };
         this.chipData = stripAllocateData(this.manifest.axes, chips.length);
+        this.floorData = stripAllocateData(this.manifest.axes, chips.length);
         this.events = [];
         this.lastSeenCrystalCount = Array.isArray(sim?.crystals) ? sim.crystals.length : 0;
         this.capturedSteps = 0;
@@ -46762,6 +46846,9 @@ class StripRecorder {
         const grown = new Uint8Array(newSize);
         grown.set(this.chipData); // preserve existing data
         this.chipData = grown;
+        const grownFloor = new Uint8Array(newSize);
+        grownFloor.set(this.floorData);
+        this.floorData = grownFloor;
         this.manifest = { ...this.manifest, axes: newAxes, duration_steps: newSteps };
     }
     // Called from VugSimulator.run_step() at end-of-step. Records one
@@ -46789,32 +46876,67 @@ class StripRecorder {
         const depthPositions = (axes.depth_positions && axes.depth_positions > 0) ? axes.depth_positions : 1;
         const hasDepthSetter = (typeof _setStripChipReadDepth === 'function');
         for (let a = 0; a < axes.angular_indices; a++) {
-            const cellIdx = this.cellForAngle[a];
+            const cellIdx = this.cellForAngle[a]; // midpoint cell → the LEVEL
+            const binCells = this.cellsForAngle[a]; // full bin → the ION FLOOR (min)
             for (let h = 0; h < axes.height_positions; h++) {
                 for (let d = 0; d < depthPositions; d++) {
                     if (hasDepthSetter)
                         _setStripChipReadDepth(d);
                     for (let k = 0; k < chipCount; k++) {
                         const p = chips[k];
+                        const idx = stripDataIndex(step, a, h, k, axes, chipCount, d);
+                        if (idx < 0)
+                            continue;
                         if (!p || typeof p.read !== 'function') {
-                            // Missing runtime entry — record null.
-                            const idx = stripDataIndex(step, a, h, k, axes, chipCount, d);
-                            if (idx >= 0)
-                                this.chipData[idx] = 255; // _STRIP_NULL_BYTE
+                            this.chipData[idx] = 255; // _STRIP_NULL_BYTE
+                            this.floorData[idx] = 255;
                             continue;
                         }
-                        let val;
+                        const meta = this.manifest.chips[k];
+                        // LEVEL — the midpoint sample. Byte-identical to format_version 2,
+                        // so chip_data + the strip digest never move; floor is additive.
+                        let levelVal = null;
                         try {
-                            val = p.read(sim, wall, h, cellIdx);
+                            levelVal = p.read(sim, wall, h, cellIdx);
                         }
                         catch (_err) {
-                            val = null;
+                            levelVal = null;
                         }
-                        const meta = this.manifest.chips[k];
-                        const byte = stripQuantize(val, meta.range[0], meta.range[1]);
-                        const idx = stripDataIndex(step, a, h, k, axes, chipCount, d);
-                        if (idx >= 0)
-                            this.chipData[idx] = byte;
+                        // FLOOR — for ION-system chips (the broth that depletes), the MIN
+                        // over the bin's native cells: the depletion halo a crystal carves
+                        // that the midpoint sample misses. Cheap cell.fluid reads. Every
+                        // other system keeps floor = level (no extra reads → perf-bounded;
+                        // the bin-mean attempt's 5×-all-chips cost is what caused timeouts).
+                        // ONLY at depth 0 (the WALL): crystals grow at the cavity surface,
+                        // so the depletion halo lives there; interior reservoir slices have
+                        // no crystal draw-down (floor≈level). Gating on d===0 keeps the
+                        // extra reads off the ×4 depth multiplier — the cost that tipped
+                        // long scenarios (sabkha) past the recording timeout.
+                        let floorVal = levelVal;
+                        if (d === 0 && meta.system === 'ion' && binCells.length > 1) {
+                            let mn = (typeof levelVal === 'number' && Number.isFinite(levelVal)) ? levelVal : Infinity;
+                            for (let ci = 0; ci < binCells.length; ci++) {
+                                const c = binCells[ci];
+                                if (c === cellIdx)
+                                    continue; // midpoint already counted as levelVal
+                                let cv;
+                                try {
+                                    cv = p.read(sim, wall, h, c);
+                                }
+                                catch (_err) {
+                                    cv = null;
+                                }
+                                if (cv === null || cv === undefined || !Number.isFinite(Number(cv)))
+                                    continue;
+                                const nv = Number(cv);
+                                if (nv < mn)
+                                    mn = nv;
+                            }
+                            if (mn !== Infinity)
+                                floorVal = mn;
+                        }
+                        this.chipData[idx] = stripQuantize(levelVal, meta.range[0], meta.range[1]);
+                        this.floorData[idx] = stripQuantize(floorVal, meta.range[0], meta.range[1]);
                     }
                 }
             }
@@ -46864,18 +46986,19 @@ class StripRecorder {
             const oldAxes = this.manifest.axes;
             const D = (oldAxes.depth_positions && oldAxes.depth_positions > 0) ? oldAxes.depth_positions : 1;
             const newSize = actual * oldAxes.angular_indices * oldAxes.height_positions * D * chipCount;
-            const trimmed = this.chipData.slice(0, newSize);
+            this.chipData = this.chipData.slice(0, newSize);
+            this.floorData = this.floorData.slice(0, newSize);
             this.manifest = {
                 ...this.manifest,
                 duration_steps: actual,
                 axes: { ...oldAxes, steps: actual },
             };
-            this.chipData = trimmed;
         }
         return {
             manifest: this.manifest,
             chip_data: this.chipData,
             nucleation_events: this.events,
+            floor_data: this.floorData,
         };
     }
     // ---- introspection -------------------------------------------------
@@ -47028,6 +47151,7 @@ async function stripStorageSave(ds) {
         manifest: ds.manifest,
         chip_data: ds.chip_data,
         nucleation_events: ds.nucleation_events,
+        ...(ds.floor_data ? { floor_data: ds.floor_data } : {}),
     };
     return new Promise((resolve, reject) => {
         const tx = db.transaction(_STRIP_STORE, 'readwrite');
@@ -47055,6 +47179,7 @@ async function stripStorageLoad(key) {
                 manifest: rec.manifest,
                 chip_data: rec.chip_data,
                 nucleation_events: rec.nucleation_events,
+                ...(rec.floor_data ? { floor_data: rec.floor_data } : {}),
             });
         };
         req.onerror = () => reject(req.error || new Error('strip: load failed'));
@@ -70223,7 +70348,11 @@ function _stripSetHoverIsolate(chipId) {
         : chipId.replace(/["\\]/g, '\\$&');
     el.textContent =
         `.strip-chip-line { stroke-opacity: 0.05 !important; }\n` +
-            `.strip-chip-line[data-chip-id="${safe}"] { stroke-opacity: 0.95 !important; stroke-width: 2 !important; }`;
+            `.strip-chip-line[data-chip-id="${safe}"] { stroke-opacity: 0.95 !important; stroke-width: 2 !important; }\n` +
+            // Dim every depletion shadow except the hovered chip's, so isolating a
+            // line also isolates its halo band.
+            `.strip-depletion-shadow { fill-opacity: 0.02 !important; }\n` +
+            `.strip-depletion-shadow[data-chip-id="${safe}"] { fill-opacity: 0.22 !important; }`;
 }
 // CSS injection — strip view's styles live alongside helicoid styles.
 // One-shot inject at first show.
@@ -70555,6 +70684,40 @@ function _stripSampleChipNormalized(ds, step, angle, height, k, depth = 0) {
         return null;
     return (sum / count) / 254;
 }
+// Sample a chip's DEPLETION-FLOOR (format_version 3 floor_data) at one
+// (step, angle, height, depth), normalized 0..1. The floor is the per-bin
+// MINIMUM the recorder captured for ion chips — how far the most-depleted
+// cell drops below the representative level. When angle is null, returns the
+// MINIMUM across angles (the deepest depletion anywhere on the ring — a halo
+// is local, so a mean would re-dilute what the floor channel exists to show).
+// Returns null when there's no floor_data (v1/v2 datasets) or no data.
+function _stripSampleChipFloorNormalized(ds, step, angle, height, k, depth = 0) {
+    if (!ds.floor_data)
+        return null;
+    const axes = ds.manifest.axes;
+    const chipCount = ds.manifest.chips.length;
+    if (angle !== null) {
+        const idx = stripDataIndex(step, angle, height, k, axes, chipCount, depth);
+        if (idx < 0)
+            return null;
+        const b = ds.floor_data[idx];
+        if (b === 255)
+            return null;
+        return b / 254;
+    }
+    let mn = Infinity;
+    for (let a = 0; a < axes.angular_indices; a++) {
+        const idx = stripDataIndex(step, a, height, k, axes, chipCount, depth);
+        if (idx < 0)
+            continue;
+        const b = ds.floor_data[idx];
+        if (b === 255)
+            continue;
+        if (b < mn)
+            mn = b;
+    }
+    return mn === Infinity ? null : mn / 254;
+}
 // Line bundling helper. For each height position, sort the (chip, y)
 // pairs and group ones within `tolerance` of each other on the y axis.
 // Returns one polyline per chip but the same y value when chips bundle —
@@ -70582,6 +70745,42 @@ function _stripRenderStripSVG(ds, step, angle, width, height, depth = 0) {
     const chipCount = ds.manifest.chips.length;
     const segs = [];
     segs.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">`);
+    // DEPLETION SHADOW (format_version 3) — drawn FIRST so it sits behind the
+    // level lines. For each visible chip, a faint band hangs from the LEVEL
+    // curve down to the FLOOR (the most-depleted cell in the slice). Where a
+    // crystal draws the broth down, the band opens; where the broth is uniform
+    // (or the chip carries no floor), floor==level and the band is zero-width.
+    // This is the "dips in the broth around crystals" the midpoint level can't
+    // show (boss 2026-06-03). In the collapsed view the floor is the ring MIN
+    // (the deepest halo anywhere), so it survives the per-angle mean.
+    if (ds.floor_data) {
+        for (let k = 0; k < chipCount; k++) {
+            const meta = ds.manifest.chips[k];
+            if (_stripVisibleChips[meta.id] === false)
+                continue;
+            const top = [];
+            const botPts = [];
+            let hasDip = false;
+            for (let h = 0; h < axes.height_positions; h++) {
+                const lvl = _stripSampleChipNormalized(ds, step, angle, h, k, depth);
+                const flr = _stripSampleChipFloorNormalized(ds, step, angle, h, k, depth);
+                if (lvl === null || flr === null)
+                    continue;
+                const x = (h / Math.max(1, axes.height_positions - 1)) * width;
+                top.push(`${x.toFixed(1)},${(height - lvl * height).toFixed(2)}`);
+                botPts.push({ x, y: height - Math.min(lvl, flr) * height });
+                if (flr < lvl - 0.012)
+                    hasDip = true; // ~1.2% of range → meaningful, not noise
+            }
+            if (hasDip && top.length > 1) {
+                const bot = [];
+                for (let i = botPts.length - 1; i >= 0; i--)
+                    bot.push(`${botPts[i].x.toFixed(1)},${botPts[i].y.toFixed(2)}`);
+                const colorHex = '#' + (meta.color | 0).toString(16).padStart(6, '0');
+                segs.push(`<polygon class="strip-depletion-shadow" data-chip-id="${meta.id}" points="${top.concat(bot).join(' ')}" fill="${colorHex}" fill-opacity="0.16" stroke="none"><title>${meta.label}: broth drawn down here (depletion halo)</title></polygon>`);
+            }
+        }
+    }
     // First pass: gather all (chip, height) -> normalized values into a
     // matrix so we can bundle per-height.
     // valuesByHeight[h] = array of { k, norm } for visible chips.

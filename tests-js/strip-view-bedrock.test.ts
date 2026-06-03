@@ -185,6 +185,45 @@ describe('strip dataset — serialization round-trip', () => {
     expect(reload.nucleation_events[0].mineral).toBe('calcite');
     expect(reload.nucleation_events[1].cell).toBe(17);
   });
+
+  it('round-trips the format_version-3 depletion-floor channel', async () => {
+    const manifest = {
+      format_version: 3, sim_version: 175, scenario_id: 'floor', seed: 42,
+      recorded_at: 7, duration_steps: 2,
+      axes: { steps: 2, angular_indices: 3, height_positions: 2 },
+      chips: [{ id: 'Ag', label: 'Ag', system: 'ion', range: [0, 10] as [number, number], units: 'ppm', color: 0xcccccc }],
+    };
+    const total = 2 * 3 * 2 * 1;
+    const chip_data = new Uint8Array(total);
+    const floor_data = new Uint8Array(total);
+    for (let i = 0; i < total; i++) { chip_data[i] = 200; floor_data[i] = 150 + (i % 10); } // floor < level
+    const ds = { manifest, chip_data, nucleation_events: [], floor_data };
+
+    const reload = await stripDeserialize(await stripSerialize(ds, false));
+    expect(reload.floor_data).toBeInstanceOf(Uint8Array);
+    expect(reload.floor_data.length).toBe(total);
+    for (let i = 0; i < total; i++) {
+      expect(reload.chip_data[i]).toBe(200);
+      expect(reload.floor_data[i]).toBe(150 + (i % 10));
+    }
+  });
+
+  it('a v3 dataset with no floor_data, and a v2 dataset, both deserialize without a floor channel', async () => {
+    const base = {
+      sim_version: 175, scenario_id: 'nofloor', seed: 42, recorded_at: 8, duration_steps: 1,
+      axes: { steps: 1, angular_indices: 2, height_positions: 1 },
+      chips: [{ id: 'Ca', label: 'Ca', system: 'ion', range: [0, 500] as [number, number], units: 'ppm', color: 0xff5544 }],
+    };
+    const chip_data = new Uint8Array(2); chip_data[0] = 10; chip_data[1] = 20;
+    // v3 but floor_data absent → writes length 0 → deserializes with no floor.
+    const v3 = await stripDeserialize(await stripSerialize({ manifest: { ...base, format_version: 3 }, chip_data, nucleation_events: [] }, false));
+    expect(v3.floor_data).toBeUndefined();
+    expect(Array.from(v3.chip_data)).toEqual([10, 20]);
+    // legacy v2 (never wrote a floor section) → unchanged round-trip.
+    const v2 = await stripDeserialize(await stripSerialize({ manifest: { ...base, format_version: 2 }, chip_data, nucleation_events: [] }, false));
+    expect(v2.floor_data).toBeUndefined();
+    expect(Array.from(v2.chip_data)).toEqual([10, 20]);
+  });
 });
 
 describe('strip recorder — instrumentation', () => {
@@ -199,7 +238,7 @@ describe('strip recorder — instrumentation', () => {
 
   it('builds a manifest with all helicoid chips', () => {
     const m = recorder.getManifest();
-    expect(m.format_version).toBe(2);  // v2 added the radial depth axis
+    expect(m.format_version).toBe(3);  // v2 added the depth axis; v3 added the depletion-floor channel
     expect(m.axes.steps).toBe(5);
     expect(m.axes.angular_indices).toBe(24);
     expect(m.axes.height_positions).toBe(16);
@@ -299,5 +338,40 @@ describe('strip recorder — instrumentation', () => {
     const centerByte = ds.chip_data[stripDataIndex(0, 0, ring, kCa, axes, chipCount, 3)];
     // Center (Ca=5000) quantizes strictly higher than wall (Ca=50).
     expect(centerByte).toBeGreaterThan(wallByte);
+  });
+
+  // format_version 3: the depletion-FLOOR channel. The level is the midpoint
+  // cell; the floor is the per-bin MIN for ion chips — it catches a one-cell
+  // halo the midpoint sample would miss.
+  it('records a depletion floor (floor ≤ level everywhere; a depleted cell shows in the floor)', () => {
+    setSeed(42);
+    const scen = SCENARIOS.mvt();
+    const simF = new VugSimulator(scen.conditions, scen.events);
+    const grid = simF.wall_state.voxelGridFor(simF);
+    expect(grid).toBeTruthy();
+    const ring = 8;
+    const N = simF.wall_state.cells_per_ring;
+    // Uniform Ca at the wall slab, EXCEPT cell 0 drawn down — a one-cell
+    // depletion halo inside angular bin 0 (cells 0..4, midpoint cell 2).
+    for (let c = 0; c < N; c++) grid.voxelAt(ring, c, 0).fluid.Ca = 400;
+    grid.voxelAt(ring, 0, 0).fluid.Ca = 40;
+    const rec = new StripRecorder(simF, { duration_steps: 1 });
+    rec.captureStep(simF);
+    const ds = rec.finalize();
+
+    expect(ds.floor_data).toBeInstanceOf(Uint8Array);
+    expect(ds.floor_data.length).toBe(ds.chip_data.length);
+    // Invariant: per-bin min ≤ midpoint level everywhere real data exists.
+    for (let i = 0; i < ds.chip_data.length; i++) {
+      if (ds.chip_data[i] === 255 || ds.floor_data[i] === 255) continue;
+      expect(ds.floor_data[i]).toBeLessThanOrEqual(ds.chip_data[i]);
+    }
+    // Bin 0 at ring 8: LEVEL samples midpoint cell 2 (Ca=400); FLOOR is the
+    // min over cells 0..4 → catches cell 0 (Ca=40). So floor < level here.
+    const axes = ds.manifest.axes, chipCount = ds.manifest.chips.length;
+    const kCa = ds.manifest.chips.findIndex((c: any) => c.id === 'Ca');
+    expect(kCa).toBeGreaterThanOrEqual(0);
+    const idx = stripDataIndex(0, 0, ring, kCa, axes, chipCount, 0);
+    expect(ds.floor_data[idx]).toBeLessThan(ds.chip_data[idx]);
   });
 });

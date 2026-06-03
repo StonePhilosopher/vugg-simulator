@@ -73,7 +73,19 @@
 // format_version 2 (2026-05-28): added the depth axis (radial sub-strips).
 // v1 datasets (no depth_positions) still load — see the backward-compat
 // note above.
-const _STRIP_FORMAT_VERSION = 2;
+//
+// format_version 3 (2026-06-03): added the optional DEPLETION-FLOOR channel
+// (floor_data) — a parallel tensor, same shape as chip_data, holding the
+// per-bin MINIMUM cell value (vs chip_data's representative/midpoint LEVEL).
+// The level is byte-identical to v2 (still the midpoint sample); floor is a
+// NEW additive channel. It exists so the strip/sonifier can show the per-cell
+// depletion halo a crystal carves into the broth — the midpoint-sampled level
+// dilutes/misses it (strip-depletion-probe). The recorder fills floor only for
+// ION-system chips (the broth that depletes; cheap cell.fluid reads) and sets
+// floor=level for the rest, so the shadow is zero-width where there's no
+// depletion. BACKWARD COMPAT: v2 datasets have no floor_data — readers treat a
+// missing floor_data as "no depletion shadow" and render the level alone.
+const _STRIP_FORMAT_VERSION = 3;
 const _STRIP_NULL_BYTE = 255;       // reserved value meaning "no data"
 const _STRIP_MAX_DATA_BYTE = 254;   // chip values map to [0, 254]
 
@@ -127,8 +139,12 @@ interface StripManifest {
 // JSON-serialized.
 interface StripDataset {
   manifest: StripManifest;
-  chip_data: Uint8Array;        // [step][angle][height][chip] row-major
+  chip_data: Uint8Array;        // [step][angle][height][depth][chip] — the LEVEL (midpoint sample)
   nucleation_events: StripNucleationEvent[];
+  // format_version 3: per-bin MINIMUM, same shape/indexing as chip_data.
+  // The depletion FLOOR — chip_data is the level, floor_data is how far the
+  // most-depleted cell in the bin drops below it. Absent on v1/v2 datasets.
+  floor_data?: Uint8Array;
 }
 
 // ============================================================
@@ -218,7 +234,12 @@ function stripAllocateData(
 //   [manifest_json_length bytes: utf-8 JSON manifest]
 //   [4 bytes: events_json_length (little-endian uint32)]
 //   [events_json_length bytes: utf-8 JSON nucleation events array]
+//   [format_version 3 ONLY: 4 bytes floor_data_length (LE uint32) + that many
+//                           floor bytes; length 0 means "no floor channel"]
 //   [remainder: chip_data uint8 bytes]
+//
+// The floor section is keyed off manifest.format_version (read first on
+// deserialize), so v1/v2 blobs — which never wrote it — round-trip unchanged.
 //
 // Optionally the whole blob is gzipped via CompressionStream before
 // download. Header byte 0 is the gzip magic (0x1F) when compressed.
@@ -230,8 +251,13 @@ async function stripSerialize(
   const enc = new TextEncoder();
   const manifestBytes = enc.encode(JSON.stringify(ds.manifest));
   const eventsBytes = enc.encode(JSON.stringify(ds.nucleation_events));
+  // Floor section only for format_version ≥ 3. floor_data may be absent even
+  // then (e.g. a v3 reader handed a v2-origin dataset) → write length 0.
+  const writeFloor = (ds.manifest.format_version || 0) >= 3;
+  const floorBytes: Uint8Array | null = (writeFloor && ds.floor_data) ? ds.floor_data : null;
+  const floorSection = writeFloor ? (4 + (floorBytes ? floorBytes.length : 0)) : 0;
 
-  const headerSize = 4 + manifestBytes.length + 4 + eventsBytes.length;
+  const headerSize = 4 + manifestBytes.length + 4 + eventsBytes.length + floorSection;
   const buf = new Uint8Array(headerSize + ds.chip_data.length);
   const dv = new DataView(buf.buffer);
   let offset = 0;
@@ -239,6 +265,10 @@ async function stripSerialize(
   buf.set(manifestBytes, offset); offset += manifestBytes.length;
   dv.setUint32(offset, eventsBytes.length, true); offset += 4;
   buf.set(eventsBytes, offset); offset += eventsBytes.length;
+  if (writeFloor) {
+    dv.setUint32(offset, floorBytes ? floorBytes.length : 0, true); offset += 4;
+    if (floorBytes) { buf.set(floorBytes, offset); offset += floorBytes.length; }
+  }
   buf.set(ds.chip_data, offset);
 
   if (!gzip) return buf;
@@ -278,8 +308,16 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     dec.decode(buf.subarray(offset, offset + eventsLen))
   ) as StripNucleationEvent[];
   offset += eventsLen;
+  // Floor section: only present for format_version ≥ 3 (v1/v2 blobs skip
+  // straight to chip_data). A written length of 0 means "v3 but no floor".
+  let floor_data: Uint8Array | undefined;
+  if ((manifest.format_version || 0) >= 3) {
+    const floorLen = dv.getUint32(offset, true); offset += 4;
+    if (floorLen > 0) { floor_data = buf.slice(offset, offset + floorLen); offset += floorLen; }
+  }
   const chip_data = buf.slice(offset);
-  return { manifest, chip_data, nucleation_events };
+  return floor_data ? { manifest, chip_data, nucleation_events, floor_data }
+                    : { manifest, chip_data, nucleation_events };
 }
 
 // === END HELIX-OVERLAY-FORK ADDITION ==================================

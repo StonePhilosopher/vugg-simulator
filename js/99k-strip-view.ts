@@ -83,7 +83,11 @@ function _stripSetHoverIsolate(chipId: string | null): void {
     : chipId.replace(/["\\]/g, '\\$&');
   el.textContent =
     `.strip-chip-line { stroke-opacity: 0.05 !important; }\n` +
-    `.strip-chip-line[data-chip-id="${safe}"] { stroke-opacity: 0.95 !important; stroke-width: 2 !important; }`;
+    `.strip-chip-line[data-chip-id="${safe}"] { stroke-opacity: 0.95 !important; stroke-width: 2 !important; }\n` +
+    // Dim every depletion shadow except the hovered chip's, so isolating a
+    // line also isolates its halo band.
+    `.strip-depletion-shadow { fill-opacity: 0.02 !important; }\n` +
+    `.strip-depletion-shadow[data-chip-id="${safe}"] { fill-opacity: 0.22 !important; }`;
 }
 
 // CSS injection — strip view's styles live alongside helicoid styles.
@@ -411,6 +415,38 @@ function _stripSampleChipNormalized(
   return (sum / count) / 254;
 }
 
+// Sample a chip's DEPLETION-FLOOR (format_version 3 floor_data) at one
+// (step, angle, height, depth), normalized 0..1. The floor is the per-bin
+// MINIMUM the recorder captured for ion chips — how far the most-depleted
+// cell drops below the representative level. When angle is null, returns the
+// MINIMUM across angles (the deepest depletion anywhere on the ring — a halo
+// is local, so a mean would re-dilute what the floor channel exists to show).
+// Returns null when there's no floor_data (v1/v2 datasets) or no data.
+function _stripSampleChipFloorNormalized(
+  ds: StripDataset, step: number, angle: number | null, height: number, k: number,
+  depth: number = 0
+): number | null {
+  if (!ds.floor_data) return null;
+  const axes = ds.manifest.axes;
+  const chipCount = ds.manifest.chips.length;
+  if (angle !== null) {
+    const idx = stripDataIndex(step, angle, height, k, axes, chipCount, depth);
+    if (idx < 0) return null;
+    const b = ds.floor_data[idx];
+    if (b === 255) return null;
+    return b / 254;
+  }
+  let mn = Infinity;
+  for (let a = 0; a < axes.angular_indices; a++) {
+    const idx = stripDataIndex(step, a, height, k, axes, chipCount, depth);
+    if (idx < 0) continue;
+    const b = ds.floor_data[idx];
+    if (b === 255) continue;
+    if (b < mn) mn = b;
+  }
+  return mn === Infinity ? null : mn / 254;
+}
+
 // Line bundling helper. For each height position, sort the (chip, y)
 // pairs and group ones within `tolerance` of each other on the y axis.
 // Returns one polyline per chip but the same y value when chips bundle —
@@ -442,6 +478,39 @@ function _stripRenderStripSVG(
   const chipCount = ds.manifest.chips.length;
   const segs: string[] = [];
   segs.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">`);
+
+  // DEPLETION SHADOW (format_version 3) — drawn FIRST so it sits behind the
+  // level lines. For each visible chip, a faint band hangs from the LEVEL
+  // curve down to the FLOOR (the most-depleted cell in the slice). Where a
+  // crystal draws the broth down, the band opens; where the broth is uniform
+  // (or the chip carries no floor), floor==level and the band is zero-width.
+  // This is the "dips in the broth around crystals" the midpoint level can't
+  // show (boss 2026-06-03). In the collapsed view the floor is the ring MIN
+  // (the deepest halo anywhere), so it survives the per-angle mean.
+  if (ds.floor_data) {
+    for (let k = 0; k < chipCount; k++) {
+      const meta = ds.manifest.chips[k];
+      if (_stripVisibleChips[meta.id] === false) continue;
+      const top: string[] = [];
+      const botPts: { x: number; y: number }[] = [];
+      let hasDip = false;
+      for (let h = 0; h < axes.height_positions; h++) {
+        const lvl = _stripSampleChipNormalized(ds, step, angle, h, k, depth);
+        const flr = _stripSampleChipFloorNormalized(ds, step, angle, h, k, depth);
+        if (lvl === null || flr === null) continue;
+        const x = (h / Math.max(1, axes.height_positions - 1)) * width;
+        top.push(`${x.toFixed(1)},${(height - lvl * height).toFixed(2)}`);
+        botPts.push({ x, y: height - Math.min(lvl, flr) * height });
+        if (flr < lvl - 0.012) hasDip = true;   // ~1.2% of range → meaningful, not noise
+      }
+      if (hasDip && top.length > 1) {
+        const bot: string[] = [];
+        for (let i = botPts.length - 1; i >= 0; i--) bot.push(`${botPts[i].x.toFixed(1)},${botPts[i].y.toFixed(2)}`);
+        const colorHex = '#' + (meta.color | 0).toString(16).padStart(6, '0');
+        segs.push(`<polygon class="strip-depletion-shadow" data-chip-id="${meta.id}" points="${top.concat(bot).join(' ')}" fill="${colorHex}" fill-opacity="0.16" stroke="none"><title>${meta.label}: broth drawn down here (depletion halo)</title></polygon>`);
+      }
+    }
+  }
 
   // First pass: gather all (chip, height) -> normalized values into a
   // matrix so we can bundle per-height.

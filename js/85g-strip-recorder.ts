@@ -82,12 +82,20 @@ class StripRecorder {
   private chipsRuntime: any[];
   // Mapping from sub-strip angular_index (0..23) to native cell index
   // (the midpoint cell within that angular bin). Precomputed at
-  // construction.
+  // construction. This is the LEVEL sample (byte-identical to v2).
   private cellForAngle: number[];
-  // The chip_data tensor — uint8 array, [step][angle][height][chip]
+  // Mapping from sub-strip angular_index to the FULL list of native cells
+  // in that 15° bin. Used to compute the depletion FLOOR (per-bin min) for
+  // ION chips — see captureStep. Precomputed at construction.
+  private cellsForAngle: number[][];
+  // The chip_data tensor — uint8 array, [step][angle][height][depth][chip]
   // row-major. Allocated once at construction; recorder fills slice
-  // by slice as captureStep() is called.
+  // by slice as captureStep() is called. This is the LEVEL (midpoint sample).
   private chipData: Uint8Array;
+  // The floor_data tensor (format_version 3) — same shape as chipData,
+  // holding the per-bin MINIMUM for ION chips (= level for others). The
+  // depletion-halo channel.
+  private floorData: Uint8Array;
   // Sparse nucleation event list. Appended to in captureStep().
   private events: StripNucleationEvent[];
   // Track how many crystals existed at the start of each step so we
@@ -140,15 +148,23 @@ class StripRecorder {
       if (grid && grid.depth_count > 0) depth_positions = grid.depth_count | 0;
     } catch (_e) { depth_positions = 1; }
 
-    // Precompute angle → midpoint native cell.
+    // Precompute angle → midpoint native cell (the LEVEL sample) AND
+    // angle → full bin cell list (for the ION depletion-FLOOR min).
     this.cellForAngle = new Array(angular_indices);
+    this.cellsForAngle = new Array(angular_indices);
     const binSize = cells_per_ring / angular_indices;
     for (let a = 0; a < angular_indices; a++) {
       this.cellForAngle[a] = Math.floor(a * binSize + binSize / 2) % cells_per_ring;
+      const lo = Math.floor(a * binSize);
+      const hi = Math.floor((a + 1) * binSize);
+      const list: number[] = [];
+      for (let c = lo; c < hi; c++) list.push(((c % cells_per_ring) + cells_per_ring) % cells_per_ring);
+      if (!list.length) list.push(this.cellForAngle[a]);
+      this.cellsForAngle[a] = list;
     }
 
     this.manifest = {
-      format_version: 2,
+      format_version: 3,
       sim_version: Number((sim && sim.SIM_VERSION) || (typeof SIM_VERSION !== 'undefined' ? SIM_VERSION : 0)),
       scenario_id: String(sim?.conditions?._scenario?.id || sim?.conditions?._scenario_id || 'unknown'),
       seed: Number(sim?._seed || 42),
@@ -160,6 +176,7 @@ class StripRecorder {
     };
 
     this.chipData = stripAllocateData(this.manifest.axes, chips.length);
+    this.floorData = stripAllocateData(this.manifest.axes, chips.length);
     this.events = [];
     this.lastSeenCrystalCount = Array.isArray(sim?.crystals) ? sim.crystals.length : 0;
     this.capturedSteps = 0;
@@ -227,6 +244,9 @@ class StripRecorder {
     const grown = new Uint8Array(newSize);
     grown.set(this.chipData);  // preserve existing data
     this.chipData = grown;
+    const grownFloor = new Uint8Array(newSize);
+    grownFloor.set(this.floorData);
+    this.floorData = grownFloor;
     this.manifest = { ...this.manifest, axes: newAxes, duration_steps: newSteps };
   }
 
@@ -256,28 +276,51 @@ class StripRecorder {
     const depthPositions = (axes.depth_positions && axes.depth_positions > 0) ? axes.depth_positions : 1;
     const hasDepthSetter = (typeof _setStripChipReadDepth === 'function');
     for (let a = 0; a < axes.angular_indices; a++) {
-      const cellIdx = this.cellForAngle[a];
+      const cellIdx = this.cellForAngle[a];      // midpoint cell → the LEVEL
+      const binCells = this.cellsForAngle[a];    // full bin → the ION FLOOR (min)
       for (let h = 0; h < axes.height_positions; h++) {
         for (let d = 0; d < depthPositions; d++) {
           if (hasDepthSetter) _setStripChipReadDepth(d);
           for (let k = 0; k < chipCount; k++) {
             const p = chips[k];
+            const idx = stripDataIndex(step, a, h, k, axes, chipCount, d);
+            if (idx < 0) continue;
             if (!p || typeof p.read !== 'function') {
-              // Missing runtime entry — record null.
-              const idx = stripDataIndex(step, a, h, k, axes, chipCount, d);
-              if (idx >= 0) this.chipData[idx] = 255; // _STRIP_NULL_BYTE
+              this.chipData[idx] = 255;   // _STRIP_NULL_BYTE
+              this.floorData[idx] = 255;
               continue;
             }
-            let val: any;
-            try {
-              val = p.read(sim, wall, h, cellIdx);
-            } catch (_err) {
-              val = null;
-            }
             const meta = this.manifest.chips[k];
-            const byte = stripQuantize(val, meta.range[0], meta.range[1]);
-            const idx = stripDataIndex(step, a, h, k, axes, chipCount, d);
-            if (idx >= 0) this.chipData[idx] = byte;
+            // LEVEL — the midpoint sample. Byte-identical to format_version 2,
+            // so chip_data + the strip digest never move; floor is additive.
+            let levelVal: any = null;
+            try { levelVal = p.read(sim, wall, h, cellIdx); } catch (_err) { levelVal = null; }
+            // FLOOR — for ION-system chips (the broth that depletes), the MIN
+            // over the bin's native cells: the depletion halo a crystal carves
+            // that the midpoint sample misses. Cheap cell.fluid reads. Every
+            // other system keeps floor = level (no extra reads → perf-bounded;
+            // the bin-mean attempt's 5×-all-chips cost is what caused timeouts).
+            // ONLY at depth 0 (the WALL): crystals grow at the cavity surface,
+            // so the depletion halo lives there; interior reservoir slices have
+            // no crystal draw-down (floor≈level). Gating on d===0 keeps the
+            // extra reads off the ×4 depth multiplier — the cost that tipped
+            // long scenarios (sabkha) past the recording timeout.
+            let floorVal: any = levelVal;
+            if (d === 0 && meta.system === 'ion' && binCells.length > 1) {
+              let mn = (typeof levelVal === 'number' && Number.isFinite(levelVal)) ? levelVal : Infinity;
+              for (let ci = 0; ci < binCells.length; ci++) {
+                const c = binCells[ci];
+                if (c === cellIdx) continue;   // midpoint already counted as levelVal
+                let cv: any;
+                try { cv = p.read(sim, wall, h, c); } catch (_err) { cv = null; }
+                if (cv === null || cv === undefined || !Number.isFinite(Number(cv))) continue;
+                const nv = Number(cv);
+                if (nv < mn) mn = nv;
+              }
+              if (mn !== Infinity) floorVal = mn;
+            }
+            this.chipData[idx] = stripQuantize(levelVal, meta.range[0], meta.range[1]);
+            this.floorData[idx] = stripQuantize(floorVal, meta.range[0], meta.range[1]);
           }
         }
       }
@@ -329,18 +372,19 @@ class StripRecorder {
       const oldAxes = this.manifest.axes;
       const D = (oldAxes.depth_positions && oldAxes.depth_positions > 0) ? oldAxes.depth_positions : 1;
       const newSize = actual * oldAxes.angular_indices * oldAxes.height_positions * D * chipCount;
-      const trimmed = this.chipData.slice(0, newSize);
+      this.chipData = this.chipData.slice(0, newSize);
+      this.floorData = this.floorData.slice(0, newSize);
       this.manifest = {
         ...this.manifest,
         duration_steps: actual,
         axes: { ...oldAxes, steps: actual },
       };
-      this.chipData = trimmed;
     }
     return {
       manifest: this.manifest,
       chip_data: this.chipData,
       nucleation_events: this.events,
+      floor_data: this.floorData,
     };
   }
 

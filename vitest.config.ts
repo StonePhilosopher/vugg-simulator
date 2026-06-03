@@ -17,7 +17,16 @@ export default defineConfig({
     // expensive (~109 module concat + jsdom init).
     isolate: false,
     // Generous default; the calibration sweep test runs 20 scenarios.
-    testTimeout: 30000,
-    hookTimeout: 60000,
+    // v175 (2026-06-03): doubled both. The strip recorder now also captures
+    // the depletion-FLOOR channel (per-bin min for ion chips at the wall),
+    // ~25% more chip reads when recording. Long recording-heavy scenarios
+    // (sabkha_dolomitization, mvt determinism) sit near the old limits under
+    // vitest's parallel CPU contention — they pass comfortably in isolation,
+    // but the shared-worker wall-clock tips them over. Doubling the headroom
+    // is proportional to the heavier recorder and removes the load-flake the
+    // floor channel widened, without masking real failures (a genuine hang
+    // still trips 60s/120s).
+    testTimeout: 60000,
+    hookTimeout: 120000,
   },
 });
