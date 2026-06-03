@@ -26,6 +26,8 @@ declare const stripSonifyUpdateVoices: any;
 declare const buildStripCrystalHits: any;
 declare const stripSonifyGetCrystals: any;
 declare const stripSonifySetCrystals: any;
+declare const stripSonifyGetCrystalVolume: any;
+declare const stripSonifySetCrystalVolume: any;
 declare const stripAllocateData: any;
 declare const stripDataIndex: any;
 
@@ -141,6 +143,16 @@ describe('strip sonify — master volume', () => {
     expect(stripSonifySetMasterVolume(2)).toBe(1);     // clamp high
     expect(stripSonifySetMasterVolume(-1)).toBe(0);    // clamp low
     stripSonifySetMasterVolume(original);              // restore
+  });
+
+  it('crystal volume defaults to full (prior mix) and clamps to [0,1]', () => {
+    const original = stripSonifyGetCrystalVolume();
+    expect(original).toBe(1);                           // default = unchanged prior mix
+    expect(stripSonifySetCrystalVolume(0.3)).toBeCloseTo(0.3, 6);
+    expect(stripSonifyGetCrystalVolume()).toBeCloseTo(0.3, 6);
+    expect(stripSonifySetCrystalVolume(5)).toBe(1);     // clamp high
+    expect(stripSonifySetCrystalVolume(-2)).toBe(0);    // clamp low
+    stripSonifySetCrystalVolume(original);              // restore
   });
 });
 

@@ -397,6 +397,7 @@ type StripSonifyHandle = {
   addVoice: (plan: StripSonifyPlan) => void;     // live-add a chip mid-performance
   removeVoice: (chipId: string) => void;          // live-remove a chip
   setVoices: (plans: StripSonifyPlan[]) => void;  // diff to exactly this set
+  setCrystalVolume: (v: number) => void;          // ride the crystal-bell bus live (0..1)
 };
 
 // Singleton playback handle so a new play stops the previous one. Carries
@@ -426,6 +427,23 @@ function stripSonifySetMasterVolume(v: number): number {
   const vol = Math.max(0, Math.min(1, Number(v)));
   _stripSonifyMasterVolume = vol;
   if (_stripSonifyHandle) { try { _stripSonifyHandle.setVolume(vol); } catch (_e) { /* ignore */ } }
+  return vol;
+}
+
+// Crystal-bell layer volume (0..1) — rides the crystal submix bus only, so
+// the percussion can be balanced against the chip drone independently of the
+// master. Default 1.0 = the prior fixed mix (bell peak = hit.gain·0.55), so
+// existing behavior is unchanged until the slider moves. Persists between
+// plays + applies live. (The 🔔 toggle still gates crystals on/off entirely;
+// this sets how loud they are when on.)
+let _stripSonifyCrystalVolume = 1.0;
+
+function stripSonifyGetCrystalVolume(): number { return _stripSonifyCrystalVolume; }
+
+function stripSonifySetCrystalVolume(v: number): number {
+  const vol = Math.max(0, Math.min(1, Number(v)));
+  _stripSonifyCrystalVolume = vol;
+  if (_stripSonifyHandle) { try { _stripSonifyHandle.setCrystalVolume(vol); } catch (_e) { /* ignore */ } }
   return vol;
 }
 
@@ -600,6 +618,13 @@ function playStripSonifyPlans(
   master.gain.value = _stripSonifyMasterVolume;
   master.connect(ctx.destination);
 
+  // Crystal-bell submix bus — all bells feed this, it feeds master. Lets the
+  // crystal-volume slider ride the percussion layer independently of the chip
+  // drone (and live, like master). Default 1.0 → byte-for-byte the prior mix.
+  const crystalBus = ctx.createGain();
+  crystalBus.gain.value = _stripSonifyCrystalVolume;
+  crystalBus.connect(master);
+
   const t0 = ctx.currentTime + 0.06;
   let durationSec = 0.2;
   for (const p of plans) if (p.durationSec > durationSec) durationSec = p.durationSec;
@@ -694,9 +719,9 @@ function playStripSonifyPlans(
   try { timer.start(t0); timer.stop(endTime + 0.06); } catch (_e) { /* ignore */ }
 
   // Crystal bells — one short struck-tone oscillator per nucleation: sharp
-  // attack, exponential decay. They feed the same master (so the volume
-  // slider rides them too), at a modest mix level under the chemistry
-  // voices. Independent of the chip selection — a separate layer.
+  // attack, exponential decay. They feed the crystalBus (→ master), so the
+  // crystal-volume slider rides them as a layer AND the master slider still
+  // rides everything. Independent of the chip selection — a separate layer.
   const crystalOscs: any[] = [];
   for (const hit of crystalHits) {
     const tHit = t0 + hit.tSec;
@@ -707,10 +732,10 @@ function playStripSonifyPlans(
     // Pan to where the crystal nucleated around the ring (guarded → mono).
     const panner = (typeof ctx.createStereoPanner === 'function') ? ctx.createStereoPanner() : null;
     if (panner) {
-      osc.connect(g).connect(panner).connect(master);
+      osc.connect(g).connect(panner).connect(crystalBus);
       try { panner.pan.setValueAtTime(hit.pan || 0, tHit); } catch (_e) { /* ignore */ }
     } else {
-      osc.connect(g).connect(master);
+      osc.connect(g).connect(crystalBus);
     }
     const peak = Math.max(0.0001, hit.gain * 0.55);   // sits under the drone
     g.gain.setValueAtTime(0.0001, tHit);
@@ -745,6 +770,9 @@ function playStripSonifyPlans(
     },
     setVolume(v: number) {
       try { master.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), ctx.currentTime, 0.03); } catch (_e) { /* ignore */ }
+    },
+    setCrystalVolume(v: number) {
+      try { crystalBus.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), ctx.currentTime, 0.03); } catch (_e) { /* ignore */ }
     },
     addVoice(plan: StripSonifyPlan) {
       if (done || voices.has(plan.chipId)) return;

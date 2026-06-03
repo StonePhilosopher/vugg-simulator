@@ -47642,6 +47642,25 @@ function stripSonifySetMasterVolume(v) {
     }
     return vol;
 }
+// Crystal-bell layer volume (0..1) — rides the crystal submix bus only, so
+// the percussion can be balanced against the chip drone independently of the
+// master. Default 1.0 = the prior fixed mix (bell peak = hit.gain·0.55), so
+// existing behavior is unchanged until the slider moves. Persists between
+// plays + applies live. (The 🔔 toggle still gates crystals on/off entirely;
+// this sets how loud they are when on.)
+let _stripSonifyCrystalVolume = 1.0;
+function stripSonifyGetCrystalVolume() { return _stripSonifyCrystalVolume; }
+function stripSonifySetCrystalVolume(v) {
+    const vol = Math.max(0, Math.min(1, Number(v)));
+    _stripSonifyCrystalVolume = vol;
+    if (_stripSonifyHandle) {
+        try {
+            _stripSonifyHandle.setCrystalVolume(vol);
+        }
+        catch (_e) { /* ignore */ }
+    }
+    return vol;
+}
 // Tempo: ms per sim step. The slider sets this; the convenience players
 // (stripSonify / stripSonifyMany) use it when the caller doesn't override
 // opts.stepDurationMs. Note onsets are scheduled up front, so tempo can't
@@ -47804,6 +47823,12 @@ function playStripSonifyPlans(plans, onEnded, crystalHits = []) {
     const master = ctx.createGain();
     master.gain.value = _stripSonifyMasterVolume;
     master.connect(ctx.destination);
+    // Crystal-bell submix bus — all bells feed this, it feeds master. Lets the
+    // crystal-volume slider ride the percussion layer independently of the chip
+    // drone (and live, like master). Default 1.0 → byte-for-byte the prior mix.
+    const crystalBus = ctx.createGain();
+    crystalBus.gain.value = _stripSonifyCrystalVolume;
+    crystalBus.connect(master);
     const t0 = ctx.currentTime + 0.06;
     let durationSec = 0.2;
     for (const p of plans)
@@ -47952,9 +47977,9 @@ function playStripSonifyPlans(plans, onEnded, crystalHits = []) {
     }
     catch (_e) { /* ignore */ }
     // Crystal bells — one short struck-tone oscillator per nucleation: sharp
-    // attack, exponential decay. They feed the same master (so the volume
-    // slider rides them too), at a modest mix level under the chemistry
-    // voices. Independent of the chip selection — a separate layer.
+    // attack, exponential decay. They feed the crystalBus (→ master), so the
+    // crystal-volume slider rides them as a layer AND the master slider still
+    // rides everything. Independent of the chip selection — a separate layer.
     const crystalOscs = [];
     for (const hit of crystalHits) {
         const tHit = t0 + hit.tSec;
@@ -47968,14 +47993,14 @@ function playStripSonifyPlans(plans, onEnded, crystalHits = []) {
         // Pan to where the crystal nucleated around the ring (guarded → mono).
         const panner = (typeof ctx.createStereoPanner === 'function') ? ctx.createStereoPanner() : null;
         if (panner) {
-            osc.connect(g).connect(panner).connect(master);
+            osc.connect(g).connect(panner).connect(crystalBus);
             try {
                 panner.pan.setValueAtTime(hit.pan || 0, tHit);
             }
             catch (_e) { /* ignore */ }
         }
         else {
-            osc.connect(g).connect(master);
+            osc.connect(g).connect(crystalBus);
         }
         const peak = Math.max(0.0001, hit.gain * 0.55); // sits under the drone
         g.gain.setValueAtTime(0.0001, tHit);
@@ -48037,6 +48062,12 @@ function playStripSonifyPlans(plans, onEnded, crystalHits = []) {
         setVolume(v) {
             try {
                 master.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), ctx.currentTime, 0.03);
+            }
+            catch (_e) { /* ignore */ }
+        },
+        setCrystalVolume(v) {
+            try {
+                crystalBus.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), ctx.currentTime, 0.03);
             }
             catch (_e) { /* ignore */ }
         },
@@ -71425,6 +71456,7 @@ function initStripView() {
             <label class="strip-view-tempo" title="Playback tempo — drag right to speed up, left to slow down (applies on release / next play)" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">⏱<input type="range" id="strip-view-tempo" min="1" max="8" step="0.5" value="3" style="width:72px; vertical-align:middle;"/></label>
             <select class="strip-view-btn" id="strip-view-scale" title="Musical scale / mode — pentatonic never clashes; the modes are tavern/dwarven flavor" style="max-width:185px; font-size:11px;"></select>
             <label class="strip-view-crystals" title="Ring each crystal as it nucleates — a struck bell voiced by its color (note) + size (register/ring), over the chemistry drone" style="display:inline-flex; align-items:center; gap:3px; color:#9ab; font-size:11px; cursor:pointer;"><input type="checkbox" id="strip-view-crystals" checked/>🔔 Crystals</label>
+            <label class="strip-view-cryst-vol" title="Crystal-bell volume — how loud the struck bells ring over the chemistry drone (applies live)" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">🔔🔊<input type="range" id="strip-view-crystal-volume" min="0" max="1" step="0.01" value="1" style="width:56px; vertical-align:middle;"/></label>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -71593,6 +71625,19 @@ function initStripView() {
                         stripSonifySetCrystals(crystalsCb.checked);
                     if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
                         startSonify(); // re-schedule with/without the crystal layer
+                    }
+                });
+            }
+            // 🔔🔊 Crystal-bell volume — rides the crystal submix bus, so (unlike the
+            // toggle) it applies LIVE with no re-schedule, exactly like the master.
+            const crystalVolInput = panel.querySelector('#strip-view-crystal-volume');
+            if (crystalVolInput) {
+                if (typeof stripSonifyGetCrystalVolume === 'function') {
+                    crystalVolInput.value = String(stripSonifyGetCrystalVolume());
+                }
+                crystalVolInput.addEventListener('input', () => {
+                    if (typeof stripSonifySetCrystalVolume === 'function') {
+                        stripSonifySetCrystalVolume(parseFloat(crystalVolInput.value));
                     }
                 });
             }
