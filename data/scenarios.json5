@@ -1039,7 +1039,7 @@
         { "step": 95,  "type": "supergene_as_rich_seep",    "name": "Arsenic Seep",      "description": "Zn/Pb arsenate saturation" },
         { "step": 115, "type": "supergene_phosphate_seep",  "name": "Phosphate Seep",    "description": "Soil-zone PO4 enables pyromorphite" },
         { "step": 130, "type": "supergene_v_bearing_seep",  "name": "V-bearing Seep",    "description": "Red-bed V leaches in, vanadinite fires" },
-        { "step": 160, "type": "supergene_fracture_seal",   "name": "Fracture Seal",     "description": "System closes" }
+        { "step": 160, "type": "supergene_fracture_seal",   "name": "Fracture Seal",     "description": "System closes", "spots": "seal" }
       ],
       // Geological MOVEMENTS (js/85j) — Phase 3, the SECOND scenario to opt in
       // (after mvt's 4c.3b Eh trend). A sustained meteoric ACID FRONT on fluid.pH,

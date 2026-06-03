@@ -404,6 +404,13 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       name: ev.name || ev.type || '',
       description: ev.description || '',
       apply_fn: EVENT_REGISTRY[ev.type],
+      // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
+      // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's
+      // feeders when this event fires (apply_events handles it centrally, after
+      // apply_fn). Absent → no spot toggle → byte-identical. Lets a scenario
+      // declare "this fracture-seal event shuts the plumbing" without touching
+      // the shared event handler.
+      spots: ev.spots,
     }));
     return { conditions, events, defaultSteps: duration };
   };

@@ -251,3 +251,46 @@ describe('fluid-spots — 2c.2b deposition CLUSTERING (per-cell, render-visible)
     expect(off2.cols).toEqual(off1.cols);
   });
 });
+
+describe('fluid-spots — 2d open/close lifecycle (seal/breach, pure)', () => {
+  it('sealSpots closes (pred = all | kind | fn) and breachSpots reopens; couplings see it live', () => {
+    const f = new FluidSpotField([
+      { cell: 5, kind: 'crack', open: true, supply: 1.0, decayBonus: 1.6 },
+      { cell: 9, kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.2 },
+    ]);
+    expect(f.sealSpots('crack').map((s: any) => s.cell)).toEqual([5]);   // kind-filtered seal
+    expect(f.openSpots().map((s: any) => s.cell)).toEqual([9]);          // geyser stays open
+    expect(f.decayMultiplierAt(5)).toBe(1.0);                            // 2b sees the crack closed (live)
+    f.breachSpots('crack');
+    expect(f.openSpots().length).toBe(2);                                // crack back open
+    expect(f.sealSpots().length).toBe(2);                                // seal ALL
+    expect(f.openSpots().length).toBe(0);
+    expect(f.breachSpots((s: any) => s.kind === 'geyser').map((s: any) => s.cell)).toEqual([9]); // fn pred
+    expect(f.openSpots().map((s: any) => s.cell)).toEqual([9]);
+  });
+
+  it('sealing a feeder INVALIDATES the proximityField memo (no stale clustering)', () => {
+    const N = 120, R = 16;
+    const f = new FluidSpotField([{ cell: 8 * N + 60, kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.2 }]);
+    expect(f.proximityField(N, R)).not.toBeNull();   // builds + caches the halo
+    f.sealSpots();                                   // close the only feeder
+    expect(f.proximityField(N, R)).toBeNull();        // memo busted → no halo (not a stale cache)
+    f.breachSpots();
+    expect(f.proximityField(N, R)).not.toBeNull();    // reopened → halo returns
+  });
+
+  it('a `spots:"seal"` event closes the cavity feeders mid-run (supergene step-160)', () => {
+    setSeed(42);
+    const { conditions, events, defaultSteps } = SCENARIOS['supergene_oxidation']();
+    const sim = new VugSimulator(conditions, events);
+    expect(sim._fluidSpots.openSpots().length).toBeGreaterThan(0);       // plumbing starts open
+    let openAfterSeal: number | null = null;
+    const steps = defaultSteps ?? 200;
+    for (let s = 0; s < steps; s++) {
+      sim.run_step();
+      if (sim.step === 161) openAfterSeal = sim._fluidSpots.openSpots().length;
+    }
+    expect(openAfterSeal).toBe(0);                                        // sealed by the step-160 Fracture Seal
+    expect(sim._fluidSpots.columnWeights(sim.wall_state.cells_per_ring | 0)).toBeNull(); // 2b feeder-erosion off after seal
+  });
+});

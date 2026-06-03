@@ -295,6 +295,36 @@ class FluidSpotField {
     this._proxSig = sig;
     return w;
   }
+
+  // Phase 2d — open/close spots over a vug's life, driven by events (a fracture
+  // seals → its feeder shuts; tectonic uplift / aquifer recharge breaches a vent
+  // back open). Because every coupling (2b erosion columnWeights, 2c.1 origin
+  // openSpots, 2c.2b proximityField) filters on `s.open`, flipping the flag
+  // propagates everywhere for free — the couplings re-read it live. `pred`
+  // selects which spots: undefined = all, a kind string ('crack'), or a
+  // predicate fn. Returns the spots actually toggled (for the event log).
+  // CACHE NOTE: proximityField memoizes by (N,R,K,λ) and does NOT key on the
+  // open-set, so a toggle MUST invalidate it or a sealed feeder would keep
+  // clustering from the stale cache. _byCell/openSpots/columnWeights read `open`
+  // live, so only the proximity memo needs busting.
+  private _matchSpots(pred: any, wantOpen: boolean): FluidSpot[] {
+    return this.spots.filter(s => s.open === wantOpen && (
+      pred == null ? true :
+      typeof pred === 'string' ? s.kind === pred :
+      typeof pred === 'function' ? !!pred(s) : true));
+  }
+  sealSpots(pred?: any): FluidSpot[] {
+    const hit = this._matchSpots(pred, true);
+    for (const s of hit) s.open = false;
+    if (hit.length) this._proxCache = null;   // bust the clustering memo
+    return hit;
+  }
+  breachSpots(pred?: any): FluidSpot[] {
+    const hit = this._matchSpots(pred, false);
+    for (const s of hit) s.open = true;
+    if (hit.length) this._proxCache = null;
+    return hit;
+  }
 }
 
 // Factory: build a sim's spot field. Seeds off the cavity's shape_seed (geology

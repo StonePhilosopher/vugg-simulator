@@ -14870,7 +14870,39 @@ let timeScale = 5.0;
 //   data/scenarios.json5 (gem_pegmatite fluid_spots.deposition).
 //   CALIBRATION OPEN (boss's eye): strength (PEAK_K/LAMBDA via setDepositionClustering) +
 //   scope (which scenarios opt in; global is safe per the A/B). One-line re-tune + regen.
-const SIM_VERSION = 172;
+// v173 (2026-06-03) — FLUID-SPOTS Phase 2d: spots OPEN/CLOSE via events — the
+//                     plumbing changes over a vug's life (the spots arc's last
+//                     mechanic). A fracture seal shuts the feeders (self-sealing =
+//                     "the fill is ending"); tectonic uplift / aquifer recharge
+//                     breaches them back open. Because every coupling (2b erosion
+//                     columnWeights, 2c.1 origin openSpots, 2c.2b proximityField)
+//                     already filters on spot.open, flipping the flag propagates
+//                     for free — the feeders go live/dead and the couplings follow.
+//
+//   MECHANISM: a DECLARATIVE `spots` directive on an event spec ('seal' | 'breach'
+//   | {action, kind}) — apply_events (85d) toggles the cavity's feeders CENTRALLY
+//   after apply_fn, no per-handler edits. js/85k FluidSpotField.sealSpots(pred) /
+//   breachSpots(pred) close/open matching spots (pred = undefined=all | kind string
+//   | fn) + BUST the proximityField memo (it caches by (N,R,K,λ), not the open-set,
+//   so a sealed feeder must not keep clustering from a stale cache). js/70-events
+//   carries `spots: ev.spots` onto the event object. Absent directive / no spots →
+//   no toggle → byte-identical.
+//
+//   v173 enables ONE demonstrator: supergene_oxidation's step-160 `Fracture Seal`
+//   gains `"spots": "seal"`. Probed: its lone hotspot@921 seals (open 1→0), and 2b's
+//   columnWeights goes null afterward → feeder erosion stops, the cavity's lopsided
+//   deepening FREEZES at the seal instead of continuing to step 200. Render-visible.
+//
+//   BASELINE — like 2b, the change is render-visible (cavity geometry) but the 2b
+//   erosion it gates is MASS-CONSERVING (total wall_depth preserved; per-column
+//   redistribution only) and the baselines capture chemistry/assemblage NOT raw
+//   geometry → seed42_v172 → v173 + strip_digest BYTE-IDENTICAL (stamp-only).
+//   Behavior PINNED by 2d tests in fluid-spots.test.ts (sealSpots/breachSpots toggle
+//   open + invalidate the prox memo; event-driven seal closes supergene's feeder at
+//   step 160; couplings see open/closed live). SIM bumps for the rendered change.
+//   FILES: js/85k (seal/breachSpots), js/85d (apply_events directive), js/70-events
+//   (spots passthrough), data/scenarios.json5 (supergene seal directive).
+const SIM_VERSION = 173;
 
 // ── 18-constants.js ──
 
@@ -39622,6 +39654,13 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             name: ev.name || ev.type || '',
             description: ev.description || '',
             apply_fn: EVENT_REGISTRY[ev.type],
+            // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
+            // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's
+            // feeders when this event fires (apply_events handles it centrally, after
+            // apply_fn). Absent → no spot toggle → byte-identical. Lets a scenario
+            // declare "this fracture-seal event shuts the plumbing" without touching
+            // the shared event handler.
+            spots: ev.spots,
         }));
         return { conditions, events, defaultSteps: duration };
     };
@@ -45991,6 +46030,26 @@ Object.assign(VugSimulator.prototype, {
                 this.log.push('');
                 this.log.push(`  ⚡ EVENT: ${event.name}`);
                 this.log.push(`     ${result}`);
+                // FLUID-SOURCE SPOTS Phase 2d — open/close feeders when an event declares
+                // a `spots` directive. The plumbing changes over the vug's life: a fracture
+                // seal shuts the feeders (self-sealing = "the fill is ending"); tectonic
+                // uplift / aquifer recharge breaches them back open. Every coupling
+                // (2b erosion, 2c.1 origin, 2c.2b clustering) filters on spot.open, so this
+                // flip propagates for free. No directive / no spots → no-op (byte-identical).
+                if (event.spots && this._fluidSpots && !this._fluidSpots.isEmpty) {
+                    const dir = (typeof event.spots === 'string') ? { action: event.spots } : event.spots;
+                    const pred = dir.kind != null ? dir.kind : undefined;
+                    const toggled = dir.action === 'breach'
+                        ? this._fluidSpots.breachSpots(pred)
+                        : dir.action === 'seal'
+                            ? this._fluidSpots.sealSpots(pred)
+                            : [];
+                    if (toggled.length) {
+                        const verb = dir.action === 'breach' ? 'breached open' : 'sealed shut';
+                        const kinds = toggled.map(s => s.kind).join(', ');
+                        this.log.push(`     🔌 ${toggled.length} fluid feeder${toggled.length === 1 ? '' : 's'} ${verb} (${kinds}) — plumbing changed`);
+                    }
+                }
                 this.log.push('');
             }
         }
@@ -48438,6 +48497,38 @@ class FluidSpotField {
         this._proxCache = w;
         this._proxSig = sig;
         return w;
+    }
+    // Phase 2d — open/close spots over a vug's life, driven by events (a fracture
+    // seals → its feeder shuts; tectonic uplift / aquifer recharge breaches a vent
+    // back open). Because every coupling (2b erosion columnWeights, 2c.1 origin
+    // openSpots, 2c.2b proximityField) filters on `s.open`, flipping the flag
+    // propagates everywhere for free — the couplings re-read it live. `pred`
+    // selects which spots: undefined = all, a kind string ('crack'), or a
+    // predicate fn. Returns the spots actually toggled (for the event log).
+    // CACHE NOTE: proximityField memoizes by (N,R,K,λ) and does NOT key on the
+    // open-set, so a toggle MUST invalidate it or a sealed feeder would keep
+    // clustering from the stale cache. _byCell/openSpots/columnWeights read `open`
+    // live, so only the proximity memo needs busting.
+    _matchSpots(pred, wantOpen) {
+        return this.spots.filter(s => s.open === wantOpen && (pred == null ? true :
+            typeof pred === 'string' ? s.kind === pred :
+                typeof pred === 'function' ? !!pred(s) : true));
+    }
+    sealSpots(pred) {
+        const hit = this._matchSpots(pred, true);
+        for (const s of hit)
+            s.open = false;
+        if (hit.length)
+            this._proxCache = null; // bust the clustering memo
+        return hit;
+    }
+    breachSpots(pred) {
+        const hit = this._matchSpots(pred, false);
+        for (const s of hit)
+            s.open = true;
+        if (hit.length)
+            this._proxCache = null;
+        return hit;
     }
 }
 // Factory: build a sim's spot field. Seeds off the cavity's shape_seed (geology

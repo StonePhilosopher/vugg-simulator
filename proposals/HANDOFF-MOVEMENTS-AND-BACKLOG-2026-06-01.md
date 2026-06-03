@@ -431,7 +431,26 @@ wall-decay bonus → 2c origin-rides-spots + deposition bias → 2d open/close e
 - **2c.3:** bake origin:'cell' (2c.1) + a WORKING deposition model into ONE science-chosen
   point-source demonstrator → the visible one-sided specimen. SIM bump + regen. (Blocked on the
   per-cell proximity deposition model above — the column-bias version doesn't cluster.)
-- **2d:** open/close via events (spatialize the seal/breach handlers).
+- **✅ 2d DONE (SIM 172→173): spots OPEN/CLOSE via events — the plumbing lives.** A
+  DECLARATIVE `spots` directive on an event spec (`'seal' | 'breach' | {action, kind}`)
+  → `apply_events` (85d) toggles the cavity's feeders CENTRALLY after `apply_fn` (one
+  edit point, no per-handler changes). `FluidSpotField.sealSpots(pred)/breachSpots(pred)`
+  close/open matching spots (pred = undefined=all | kind string | fn) + bust the
+  proximityField memo (it caches by (N,R,K,λ), NOT the open-set — a sealed feeder must
+  not keep clustering from a stale cache; the live-read couplings columnWeights/openSpots/
+  decayMultiplierAt need no busting). `js/70-events` carries `spots: ev.spots` onto the
+  event object. Because every coupling already filters on `spot.open`, the flip propagates
+  for FREE — feeders go live/dead, 2b erosion + 2c clustering follow. Demonstrator:
+  **supergene_oxidation** step-160 `Fracture Seal` gains `"spots": "seal"` — its lone
+  hotspot@921 seals (open 1→0), 2b columnWeights → null, the lopsided deepening FREEZES
+  at the seal (self-sealing = "the fill is ending"). Render-visible but seed42 + strip-
+  digest **BYTE-IDENTICAL v172→v173** (the 2b geometry it gates is mass-conserving;
+  baselines capture chemistry not geometry) → SIM bumps for the rendered change, behavior
+  PINNED by 3 tests in fluid-spots.test.ts (seal/breach toggle + prox-memo invalidation +
+  event-driven supergene seal). FILES: js/85k (seal/breachSpots), js/85d (directive),
+  js/70-events (passthrough), data/scenarios.json5 (supergene). **breach API ready +
+  unit-tested; no scenario declares it yet** (needs a seal-then-reopen sequence — a
+  future scenario, e.g. tectonic_uplift/aquifer_recharge breaching after a seal).
 - **SHOWPIECE (boss look, banked from chat):** `supergene_oxidation` + `shape_seed 23`
   is the strongest 2b lopsided cavity — 3 feeders incl. a crack (1.6×) carve it ~1.8×
   deeper on one side (mean wall_depth ~41mm, feeder lobe ~74mm, 34mm bulge). supergene

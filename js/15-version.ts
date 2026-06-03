@@ -10109,5 +10109,37 @@
 //   data/scenarios.json5 (gem_pegmatite fluid_spots.deposition).
 //   CALIBRATION OPEN (boss's eye): strength (PEAK_K/LAMBDA via setDepositionClustering) +
 //   scope (which scenarios opt in; global is safe per the A/B). One-line re-tune + regen.
-const SIM_VERSION = 172;
+// v173 (2026-06-03) — FLUID-SPOTS Phase 2d: spots OPEN/CLOSE via events — the
+//                     plumbing changes over a vug's life (the spots arc's last
+//                     mechanic). A fracture seal shuts the feeders (self-sealing =
+//                     "the fill is ending"); tectonic uplift / aquifer recharge
+//                     breaches them back open. Because every coupling (2b erosion
+//                     columnWeights, 2c.1 origin openSpots, 2c.2b proximityField)
+//                     already filters on spot.open, flipping the flag propagates
+//                     for free — the feeders go live/dead and the couplings follow.
+//
+//   MECHANISM: a DECLARATIVE `spots` directive on an event spec ('seal' | 'breach'
+//   | {action, kind}) — apply_events (85d) toggles the cavity's feeders CENTRALLY
+//   after apply_fn, no per-handler edits. js/85k FluidSpotField.sealSpots(pred) /
+//   breachSpots(pred) close/open matching spots (pred = undefined=all | kind string
+//   | fn) + BUST the proximityField memo (it caches by (N,R,K,λ), not the open-set,
+//   so a sealed feeder must not keep clustering from a stale cache). js/70-events
+//   carries `spots: ev.spots` onto the event object. Absent directive / no spots →
+//   no toggle → byte-identical.
+//
+//   v173 enables ONE demonstrator: supergene_oxidation's step-160 `Fracture Seal`
+//   gains `"spots": "seal"`. Probed: its lone hotspot@921 seals (open 1→0), and 2b's
+//   columnWeights goes null afterward → feeder erosion stops, the cavity's lopsided
+//   deepening FREEZES at the seal instead of continuing to step 200. Render-visible.
+//
+//   BASELINE — like 2b, the change is render-visible (cavity geometry) but the 2b
+//   erosion it gates is MASS-CONSERVING (total wall_depth preserved; per-column
+//   redistribution only) and the baselines capture chemistry/assemblage NOT raw
+//   geometry → seed42_v172 → v173 + strip_digest BYTE-IDENTICAL (stamp-only).
+//   Behavior PINNED by 2d tests in fluid-spots.test.ts (sealSpots/breachSpots toggle
+//   open + invalidate the prox memo; event-driven seal closes supergene's feeder at
+//   step 160; couplings see open/closed live). SIM bumps for the rendered change.
+//   FILES: js/85k (seal/breachSpots), js/85d (apply_events directive), js/70-events
+//   (spots passthrough), data/scenarios.json5 (supergene seal directive).
+const SIM_VERSION = 173;
 
