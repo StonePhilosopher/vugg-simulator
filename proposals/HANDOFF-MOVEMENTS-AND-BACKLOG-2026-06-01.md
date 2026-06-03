@@ -248,9 +248,13 @@ diverges only above O2=5, unreachable by any scenario → clamp in 4c.2).
   (sulfate gangue early → sulfide ore late). mvt's scenarios.json5 gains a
   `movements` block; Eh-canonical (O2 follows). Only mvt changed; all other
   scenarios byte-identical; seed42_v169 + strip_digest regen; suite 1719/1719.
-  **REMAINING: boss LOOK (strip Eh chip should sweep +60→−246, paragenetic barite-
-  early/galena-late) + LISTEN (sonifier) — the sensory acceptance I can't do —
-  then tune shape by eye+ear if wanted.**
+  **✅ LISTEN ACCEPTANCE (boss 2026-06-03): "MVT is great, i love the way it sounds."**
+  The sonifier door confirms the Eh-movement reads true BY EAR — the door-test passes
+  (strip + sound = same room). It sings because the Eh trend gives the redox voice a
+  slow descent, OU gives it a living mean-reverting wobble, and one-master-var →
+  correlated pulses means the crystal-bells play the paragenetic ORDER (barite early
+  gangue → galena swelling late 1×→4×): harmony from shared causation. NO tuning
+  requested. (Strip-LOOK acceptance still open, but the ear has spoken.)**
 
 **★ The "make Eh live" arc is COMPLETE (4c.1 observer → 4c.2 consume → 4c.3a
 Eh-canonical → 4c.3b first movement).** Eh went frozen+inert → live, consumed, and
@@ -265,9 +269,9 @@ sustained acid front (pH 6.8→4.3 smoothstep + OU, startStep 20) that RECOVERS
 vanadinite — a declared `expects_species` the static baseline never grew (36→40
 species, expects whole). Grounded in RESEARCH-supergene-acid-front-2026-06-02.md
 (Bowell 2014; Singer & Stumm 1970; verified). Pages-verified (SIM 170 + scenarios
-data serve 200). **Boss look+listen on BOTH pilots (mvt Eh trend + supergene pH
-front) is the pending sensory acceptance** — strip shows the supergene pH chip
-descending after the flush; tune by eye+ear if wanted.
+data serve 200). **Sensory acceptance: mvt Eh trend ✅ ACCEPTED BY EAR (boss 2026-06-03,
+"love the way it sounds"). supergene pH front — listen still pending** (strip shows the
+supergene pH chip descending after the flush; tune by eye+ear if wanted).
 
 **★★ MOVEMENT DESIGN RULE learned this rollout (carry forward): a same-FIELD
 movement CLOBBERS same-field EVENTS.** run_step applies movements AFTER
@@ -390,32 +394,82 @@ wall-decay bonus → 2c origin-rides-spots + deposition bias → 2d open/close e
     decorating a local halo — the Punjab hematite case), not pervasive supergene acid. Pick
     the 2c.3 demonstrator accordingly (a distinct point-source fluid into an otherwise-static
     cavity), NOT supergene's pervasive front.
-- **⚠ 2c.2 WIRED but DEFAULT-OFF (DARK, byte-identical) — a verify-the-mechanism CATCH.**
-  Deposition bias on placement: weight the legacy ring0 COLUMN pick (`_assignWallCell`,
-  85b:569+) by open-feeder `supply` via `FluidSpotField.columnSupplyWeights()` (geyser 1.8 /
-  hotspot 1.4; crack 1.0 = none, since cracks are erosion-dominant flow-through). The weighted
-  pick consumes the SAME single rng draw (reduces EXACTLY to the legacy uniform pick under
-  uniform weights → byte-identical OFF). Per-vertex sampler also multiplies its weight by
-  `supplyAt(idx)` (composes). **FINDING (the reason it ships OFF):** the bias does NOT visibly
-  CLUSTER crystals at feeders. Measured two ways: (1) A/B observer (tools/fluid-spots-deposition-
-  observe.mjs) — 11/30 scenarios change, 0 lose an expects_species, mostly ±1µm with a few
-  active↔dissolved flips (gem_pegmatite tourmaline 2→5, cassiterite 1→4); (2) a direct column-
-  membership probe — gem_pegmatite's 3 feeder columns [107,114,78] capture **0 crystals both OFF
-  and ON**; epithermal 1→0. At 1.4-1.8× over a few columns of ~120 with sparse (~25-77) nucleation,
-  the feeder's expected capture is ~0.3 → rounds to zero. So it only RESHUFFLES placement (changing
-  spatial competition → the survival flips), churning baselines WITHOUT the spatial payoff. Shipping
-  it default-on would be baseline churn for an invisible effect — so it's OFF, wired + tested
-  (explicit ON) so the real path can build on it. **THE REAL PATH (next):** a per-cell PROXIMITY-
-  DECAY supply weight (boost a feeder's cell AND a decaying halo of neighbors, peak weight strong
-  enough to capture a visible share) routed through the per-vertex sampler — which is exactly the
-  spatial heterogeneity HANDOFF-PER-VERTEX-PLACEMENT said that σ-starved sampler needs. Clustering
-  STRENGTH/shape is a visible aesthetic choice → wants the boss's eye (field-guide restraint vs
-  obvious clustering). FILES: js/85k (columnSupplyWeights + deposition flag, default false),
-  js/85b (weighted column pick + per-vertex supplyAt multiply), tests in fluid-spots.test.ts.
-- **2c.3:** bake origin:'cell' (2c.1) + a WORKING deposition model into ONE science-chosen
-  point-source demonstrator → the visible one-sided specimen. SIM bump + regen. (Blocked on the
-  per-cell proximity deposition model above — the column-bias version doesn't cluster.)
-- **2d:** open/close via events (spatialize the seal/breach handlers).
+- **2c.2 column-bias (DARK, default-off, v171 commit 3c17e49) — a verify-the-mechanism CATCH,
+  SUPERSEDED by 2c.2b.** Weighting the legacy ring0 COLUMN pick by open-feeder `supply`
+  (columnSupplyWeights) did NOT visibly cluster: gem_pegmatite's feeder columns [107,114,78]
+  captured **0 crystals OFF and ON** (a feeder is a 2-D patch, not a thin vertical stripe; the
+  column pick is sparse + bypassed). It only reshuffled competition. Kept default-off (the
+  column helper remains as a sibling query to columnWeights). The fix → 2c.2b.
+- **✅ 2c.2b DONE (SIM 172, PER-SCENARIO OPT-IN): per-cell PROXIMITY-DECAY deposition
+  CLUSTERING — the visible "best crystals cluster near the feeder."** `FluidSpotField.proximityField(N,R)`
+  = per-cell boost `1 + max_f[(supply_f−1)·PEAK_K·exp(−dist/LAMBDA)]` (dist = lat-long graph
+  distance; default PEAK_K=12, LAMBDA=2.5), a multiplicative weight in BOTH placement samplers:
+  the geometry-only `_feederProximitySample` (joint (ring,col) draw weighted by
+  ringAreaWeight·proximity — clusters free-wall nucleation, reuses the `_lastNucVertexRing`
+  handoff) and the per-vertex σ-sampler (`w *= proximity`, finally feeding that σ-starved sampler
+  its missing spatial heterogeneity). proximity≡1 → ring-marginal reduces to the legacy area
+  distribution → byte-identical.
+  **PER-SCENARIO OPT-IN** (`fluid_spots: { deposition: true }` → `sim._fluidSpotsDeposition`),
+  NOT global, because a global default perturbed a VALIDATED-chemistry scenario: reactive_wall's
+  marginal PWP precipitation contract (calcite at equilibrium, ~2e-9) flipped when its calcite
+  clustered (2946→2159µm). Clustering mustn't silently rewrite scenarios testing other physics.
+  v172 enables exactly ONE demonstrator — **gem_pegmatite** (3 hotspots → 0→18% of crystals
+  within 2 cells of a feeder; tourmaline 2→5, cassiterite 1→4 concentrate at the vents). The
+  observer/tests force it for any sim via the tri-state master override
+  `setFluidSpotsDepositionEnabled(null|true|false)` → `fluidSpotsDepositionFor(sim)`.
+  **Measured (override-on A/B, K12/λ2.5):** within-2-cells share ~0-2%→~11-18% fleet-wide;
+  assemblage PRESERVED everywhere, **0 expects_species lost** — so widening the opt-in is SAFE.
+  **Baseline:** seed42_v171→v172 = gem_pegmatite ONLY (29/30 byte-identical incl. reactive_wall);
+  strip_digest stamp-only (gem_pegmatite not in the digest set). FILES: js/85k (proximityField +
+  clustering params + tri-state override + fluidSpotsDepositionFor), js/85b
+  (_feederProximitySample + per-vertex prox multiply), js/85 (opt-in read), data/scenarios.json5
+  (gem_pegmatite), tools/fluid-spots-deposition-observe.mjs, tests in fluid-spots.test.ts.
+  **⚠ CALIBRATION OPEN (boss's eye):** v172 is a restrained, calibratable PREVIEW on ONE
+  scenario. Strength = `setDepositionClustering(PEAK_K, LAMBDA)` (K12/λ2.5 ≈ broadest lobe;
+  K25-50/λ1.5-2 ≈ tighter cores). Scope = which scenarios opt in (global is safe per the A/B).
+  Boss to look at gem_pegmatite on Pages + steer strength + which scenarios.
+- **✅ 2c.3 DONE (SIM 173→174): the UNITED point-source showpiece on gem_pegmatite.** An
+  `origin:'cell'` movement injects a BORON halo (field fluid.B, startStep 30, trend +100 eased,
+  clampMax 120 = the strip-chip scale) at the cavity's dominant feeder, so the chemical halo
+  (strip-visible) sits at the SAME equatorial vent where tourmaline CLUSTERS (2c.2b, baked v172)
+  and the cavity DEEPENS (2b, live — gem_pegmatite hits pH 3.53). One feeder, three signals:
+  shape + chemistry + crystals. Anchored to the step-30 "Schorl Arrives (B supersaturation)"
+  event — the feeder delivers the boron that brings schorl. To make halo + cluster COINCIDE,
+  `_resolveOriginCell` (85j) now picks the most EQUATORIAL open spot (highest ringAreaWeight) —
+  it resolves to hotspot@954 (ring 7); B 96.7 at feeder → 34.9 bulk (the lone polar feeder the
+  random pick used before had 0 crystals). **HONEST SCOPE (verify-the-mechanism):** the injection
+  is a per-cell CHEMICAL halo (strip + per-vertex visible), DECOUPLED from the legacy ring-fluid
+  nucleation gate, and these growth engines are NOT nutrient-rate-limited (observed: even +4000 B
+  left tourmaline 3×451 unchanged). So 2c.3 unites halo + cluster by spatial CO-LOCATION at the
+  feeder, NOT by the halo driving growth → seed42 + strip_digest BYTE-IDENTICAL v173→v174
+  (gem_pegmatite isn't in the digest set; the B halo is purely strip/render-visible) — the
+  2b/2c.1 pattern, SIM bumps for the rendered change. The `_resolveOriginCell` equatorial change
+  was FREE (no scenario had baked origin:'cell' before v174). Tool: tools/showpiece-observe.mjs
+  (halo + one-sided-growth + expects-safety A/B). Tests: equatorial-pick unit (movements.test.ts)
+  + gem_pegmatite halo-at-feeder integration (fluid-spots.test.ts). FILES: js/85j (_resolveOriginCell),
+  data/scenarios.json5 (gem_pegmatite movements).
+  **★★ The Phase 2 FLUID-SPOTS arc is COMPLETE end-to-end: 2a seed → 2b erosion → 2c.1 halo →
+  2c.2 (catch) → 2c.2b clustering → 2c.3 united showpiece → 2d lifecycle.**
+- **✅ 2d DONE (SIM 172→173): spots OPEN/CLOSE via events — the plumbing lives.** A
+  DECLARATIVE `spots` directive on an event spec (`'seal' | 'breach' | {action, kind}`)
+  → `apply_events` (85d) toggles the cavity's feeders CENTRALLY after `apply_fn` (one
+  edit point, no per-handler changes). `FluidSpotField.sealSpots(pred)/breachSpots(pred)`
+  close/open matching spots (pred = undefined=all | kind string | fn) + bust the
+  proximityField memo (it caches by (N,R,K,λ), NOT the open-set — a sealed feeder must
+  not keep clustering from a stale cache; the live-read couplings columnWeights/openSpots/
+  decayMultiplierAt need no busting). `js/70-events` carries `spots: ev.spots` onto the
+  event object. Because every coupling already filters on `spot.open`, the flip propagates
+  for FREE — feeders go live/dead, 2b erosion + 2c clustering follow. Demonstrator:
+  **supergene_oxidation** step-160 `Fracture Seal` gains `"spots": "seal"` — its lone
+  hotspot@921 seals (open 1→0), 2b columnWeights → null, the lopsided deepening FREEZES
+  at the seal (self-sealing = "the fill is ending"). Render-visible but seed42 + strip-
+  digest **BYTE-IDENTICAL v172→v173** (the 2b geometry it gates is mass-conserving;
+  baselines capture chemistry not geometry) → SIM bumps for the rendered change, behavior
+  PINNED by 3 tests in fluid-spots.test.ts (seal/breach toggle + prox-memo invalidation +
+  event-driven supergene seal). FILES: js/85k (seal/breachSpots), js/85d (directive),
+  js/70-events (passthrough), data/scenarios.json5 (supergene). **breach API ready +
+  unit-tested; no scenario declares it yet** (needs a seal-then-reopen sequence — a
+  future scenario, e.g. tectonic_uplift/aquifer_recharge breaching after a seal).
 - **SHOWPIECE (boss look, banked from chat):** `supergene_oxidation` + `shape_seed 23`
   is the strongest 2b lopsided cavity — 3 feeders incl. a crack (1.6×) carve it ~1.8×
   deeper on one side (mean wall_depth ~41mm, feeder lobe ~74mm, 34mm bulge). supergene

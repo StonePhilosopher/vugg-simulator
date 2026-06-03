@@ -258,4 +258,28 @@ describe("movements — controller: origin:'cell' spatial injection (Phase 2c.1)
     expect(resolve(58)).toBe(resolve(58));             // same cavity seed → same feeder
     expect([2, 9]).toContain(resolve(58));             // and it's one of the open spots
   });
+
+  it("resolves to the most EQUATORIAL open feeder (Phase 2c.3 — halo coincides with cluster)", () => {
+    // Two open feeders: one near-polar (ring 14, low area weight), one equatorial
+    // (ring 7, area weight 1). The injected halo should land at the equatorial vent —
+    // it delivers to the most wall AND is where crystals form, so the halo coincides
+    // with the deposition cluster instead of a crystal-free polar feeder.
+    const N = 10, R = 16;
+    const mesh = mockMesh(N * R);
+    const sim = {
+      wall_state: {
+        meshFor: () => mesh,
+        cells_per_ring: N,
+        ringAreaWeight: (r: number) => Math.sin(Math.PI * (r + 0.5) / R),
+      },
+      _fluidSpots: new FluidSpotField([
+        { cell: 14 * N + 3, kind: 'hotspot', open: true, supply: 1.4, decayBonus: 1.3 }, // polar
+        { cell: 7 * N + 5, kind: 'hotspot', open: true, supply: 1.4, decayBonus: 1.3 },  // equator
+      ]),
+    };
+    const ctl = new MovementController(cellSpec(), 58);
+    const c = conds();
+    ctl.applyStep(c, 0, sim);
+    expect(ctl._state[0].originCell).toBe(7 * N + 5);   // equatorial feeder wins
+  });
 });

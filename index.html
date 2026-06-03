@@ -14820,21 +14820,119 @@ let timeScale = 5.0;
 //   js/85d (dissolve_wall passes weights). NEXT: 2c origin:'cell' + deposition bias.
 //
 //   (2c.1 origin:'cell' spatial injection landed DARK on v171 — see commit 3ace0b7.
-//    No SIM bump: no scenario opts in, byte-identical.)
+//    No SIM bump: no scenario opts in, byte-identical. 2c.2 column-bias deposition
+//    landed DARK/default-off on v171 — commit 3c17e49 — because it didn't visibly
+//    cluster; SUPERSEDED by 2c.2b below.)
+// v172 (2026-06-02) — FLUID-SPOTS Phase 2c.2b: per-cell PROXIMITY-DECAY DEPOSITION
+//                     CLUSTERING (the boss's "best crystals cluster near the feeder",
+//                     now actually visible). Open SUPPLY-feeders (geysers/hotspots)
+//                     project a decaying halo of nucleation boost; crystals concentrate
+//                     in a lobe around each vent. Pairs with 2b (feeder deepens its
+//                     column) + 2c.1 (feeder's chemical halo): one feeder, three
+//                     couplings. This is a CALIBRATABLE PREVIEW at a restrained default
+//                     — strength is a one-line tune (setDepositionClustering).
 //
-//   2c.2 DEPOSITION-bias-on-placement also rides v171 but DEFAULT-OFF (DARK) — see the
-//   85k _FLUID_SPOTS_DEPOSITION_ENABLED comment for the verify-the-mechanism finding:
-//   weighting the legacy ring0 COLUMN pick by open-feeder `supply` (geyser 1.8 /
-//   hotspot 1.4; crack 1.0 = none) reshuffles placement (changing spatial competition)
-//   but does NOT visibly CLUSTER crystals at feeders — at 1.4-1.8× over a few columns of
-//   120 with sparse (~25-77) nucleation, feeder columns capture ~0 crystals (measured:
-//   gem_pegmatite feeders [107,114,78] get 0 both OFF and ON). It only churns baselines
-//   (11/30 scenarios; assemblage preserved, 0 expects_species lost) without the payoff,
-//   so it ships OFF. The visible-clustering path is a per-cell PROXIMITY-DECAY supply
-//   weight through the per-vertex sampler (the synergy HANDOFF-PER-VERTEX-PLACEMENT
-//   predicted — feeders supply the spatial heterogeneity that sampler is σ-starved for);
-//   that's a future increment + a visible aesthetic choice for the boss's eye.
-const SIM_VERSION = 171;
+//   MECHANISM: FluidSpotField.proximityField(N, R) = per-cell boost
+//   1 + max_f[(supply_f-1)·PEAK_K·exp(-dist/LAMBDA)], dist = lat-long graph distance to
+//   the feeder cell (default PEAK_K=12, LAMBDA=2.5). Used as a multiplicative weight in
+//   BOTH placement samplers: the geometry-only _feederProximitySample (a joint (ring,col)
+//   draw weighted by ringAreaWeight·proximity — clusters free-wall nucleation, reusing the
+//   _lastNucVertexRing handoff) and the per-vertex σ-sampler (w *= proximity, finally
+//   feeding that σ-starved sampler the spatial heterogeneity HANDOFF-PER-VERTEX-PLACEMENT
+//   predicted). With proximity ≡ 1 the ring-marginal reduces to the legacy sin φ area
+//   distribution → byte-identical.
+//
+//   PER-SCENARIO OPT-IN (not global). A scenario enables clustering with
+//   `fluid_spots: { deposition: true }` → sim._fluidSpotsDeposition; default false. The
+//   observer/tests force it via the tri-state master override setFluidSpotsDepositionEnabled
+//   (null=honor opt-in / true / false). WHY OPT-IN: a global default perturbed a VALIDATED-
+//   chemistry scenario — reactive_wall's marginal PWP precipitation contract (calcite sits
+//   at equilibrium, signal ~2e-9) flipped when its calcite clustered (2946→2159µm). Clustering
+//   must not silently rewrite scenarios built to test OTHER physics. v172 enables exactly ONE
+//   DEMONSTRATOR: gem_pegmatite (3 hotspots → 0→18% of crystals within 2 cells of a feeder;
+//   tourmaline 2→5, cassiterite 1→4 concentrate at the vents — the right look for a gem vug).
+//
+//   THE PRIOR FINDING (why proximity, not the v171 dark column-bias): the column-only bias
+//   did NOT cluster — gem_pegmatite's feeder columns captured 0 crystals, because a feeder
+//   is a 2-D PATCH not a thin vertical stripe + the legacy column pick is sparse/bypassed.
+//   The per-cell halo fixes both. Measured (override-on A/B across the fleet, K12/λ2.5):
+//   within-2-cells share ~0-2%→~11-18%; assemblage PRESERVED everywhere, 0 expects_species
+//   lost — confirming clustering is SAFE if/when the boss widens the opt-in.
+//
+//   BASELINE DRIFT — only the opted-in scenario moves. seed42_v171 → v172: gem_pegmatite
+//   shifts (placement → competition → sizes; assemblage whole), the other 29 byte-identical
+//   (incl. reactive_wall → its PWP contract holds). strip_digest → v172: gem_pegmatite not in
+//   the digest set → stamp-only. PINNED by 2c.2b tests in tests-js/fluid-spots.test.ts
+//   (proximityField crack→null / geyser+hotspot halo decays with distance; override-ON clusters
+//   MORE crystals near feeders than OFF; assemblage preserved; toggle clean). FILES: js/85k
+//   (proximityField + clustering params + tri-state override + fluidSpotsDepositionFor), js/85b
+//   (_feederProximitySample + per-vertex prox multiply), js/85 (per-scenario opt-in read),
+//   data/scenarios.json5 (gem_pegmatite fluid_spots.deposition).
+//   CALIBRATION OPEN (boss's eye): strength (PEAK_K/LAMBDA via setDepositionClustering) +
+//   scope (which scenarios opt in; global is safe per the A/B). One-line re-tune + regen.
+// v173 (2026-06-03) — FLUID-SPOTS Phase 2d: spots OPEN/CLOSE via events — the
+//                     plumbing changes over a vug's life (the spots arc's last
+//                     mechanic). A fracture seal shuts the feeders (self-sealing =
+//                     "the fill is ending"); tectonic uplift / aquifer recharge
+//                     breaches them back open. Because every coupling (2b erosion
+//                     columnWeights, 2c.1 origin openSpots, 2c.2b proximityField)
+//                     already filters on spot.open, flipping the flag propagates
+//                     for free — the feeders go live/dead and the couplings follow.
+//
+//   MECHANISM: a DECLARATIVE `spots` directive on an event spec ('seal' | 'breach'
+//   | {action, kind}) — apply_events (85d) toggles the cavity's feeders CENTRALLY
+//   after apply_fn, no per-handler edits. js/85k FluidSpotField.sealSpots(pred) /
+//   breachSpots(pred) close/open matching spots (pred = undefined=all | kind string
+//   | fn) + BUST the proximityField memo (it caches by (N,R,K,λ), not the open-set,
+//   so a sealed feeder must not keep clustering from a stale cache). js/70-events
+//   carries `spots: ev.spots` onto the event object. Absent directive / no spots →
+//   no toggle → byte-identical.
+//
+//   v173 enables ONE demonstrator: supergene_oxidation's step-160 `Fracture Seal`
+//   gains `"spots": "seal"`. Probed: its lone hotspot@921 seals (open 1→0), and 2b's
+//   columnWeights goes null afterward → feeder erosion stops, the cavity's lopsided
+//   deepening FREEZES at the seal instead of continuing to step 200. Render-visible.
+//
+//   BASELINE — like 2b, the change is render-visible (cavity geometry) but the 2b
+//   erosion it gates is MASS-CONSERVING (total wall_depth preserved; per-column
+//   redistribution only) and the baselines capture chemistry/assemblage NOT raw
+//   geometry → seed42_v172 → v173 + strip_digest BYTE-IDENTICAL (stamp-only).
+//   Behavior PINNED by 2d tests in fluid-spots.test.ts (sealSpots/breachSpots toggle
+//   open + invalidate the prox memo; event-driven seal closes supergene's feeder at
+//   step 160; couplings see open/closed live). SIM bumps for the rendered change.
+//   FILES: js/85k (seal/breachSpots), js/85d (apply_events directive), js/70-events
+//   (spots passthrough), data/scenarios.json5 (supergene seal directive).
+// v174 (2026-06-03) — FLUID-SPOTS Phase 2c.3: the UNITED point-source showpiece —
+//                     gem_pegmatite's feeder now carries an origin:'cell' chemical
+//                     HALO (2c.1) co-located with its crystal CLUSTER (2c.2b) and its
+//                     lopsided cavity (2b): one feeder, three signals. The spots arc's
+//                     capstone — "the specific points where things enter the vugg" made
+//                     whole on a single scenario.
+//
+//   MECHANISM: gem_pegmatite gains a `movements:[{ field:'fluid.B', origin:'cell',
+//   startStep 30, trend +100 eased, clampMax 120 }]`. The origin:'cell' movement pins a
+//   BORON halo at the cavity's dominant feeder. To make the halo COINCIDE with the
+//   deposition cluster (not a random polar feeder), _resolveOriginCell (85j) now picks
+//   the most EQUATORIAL open spot (highest ringAreaWeight) — it delivers to the most
+//   wall AND is where crystals form. Resolves to the equatorial hotspot@954 (ring 7);
+//   B halo there 96.7 → 34.9 bulk (within the 0-120 strip-chip scale), strip-visible,
+//   anchored to the step-30 "Schorl Arrives (B supersaturation)" event: the feeder
+//   delivers the boron that brings schorl, where the tourmaline gathers.
+//
+//   HONEST SCOPE (verify-the-mechanism): the injection is a per-cell CHEMICAL halo
+//   (strip + per-vertex visible), DECOUPLED from the legacy ring-fluid nucleation gate,
+//   and these growth engines are NOT nutrient-rate-limited (observed: even +4000 B left
+//   tourmaline 3×451 unchanged). So 2c.3 UNITES halo + cluster by spatial CO-LOCATION at
+//   the feeder, not by the halo driving growth. seed42 + strip_digest impact: gem_pegmatite
+//   only (the lone host); see drift note in the commit.
+//
+//   _resolveOriginCell change (equatorial-preference) is free: no scenario had baked
+//   origin:'cell' before v174, so no prior baseline depended on the old random pick.
+//   Tool: tools/showpiece-observe.mjs (halo + one-sided-growth + expects-safety A/B).
+//   FILES: js/85j (_resolveOriginCell equatorial pick), data/scenarios.json5 (gem_pegmatite
+//   movements). NEXT: spots arc is COMPLETE (2a-2d); 2c.2b clustering calibration still
+//   open for the boss's eye.
+const SIM_VERSION = 174;
 
 // ── 18-constants.js ──
 
@@ -39586,6 +39684,13 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             name: ev.name || ev.type || '',
             description: ev.description || '',
             apply_fn: EVENT_REGISTRY[ev.type],
+            // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
+            // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's
+            // feeders when this event fires (apply_events handles it centrally, after
+            // apply_fn). Absent → no spot toggle → byte-identical. Lets a scenario
+            // declare "this fracture-seal event shuts the plumbing" without touching
+            // the shared event handler.
+            spots: ev.spots,
         }));
         return { conditions, events, defaultSteps: duration };
     };
@@ -42746,6 +42851,12 @@ class VugSimulator {
         // SIM_VERSION bump. Couplings (decay bonus 2b, origin/deposition 2c, open/
         // close events 2d) consume `this._fluidSpots` in later sub-steps.
         this._fluidSpots = _createFluidSpotField(this);
+        // Phase 2c.2b — per-scenario DEPOSITION-clustering opt-in. A scenario turns on
+        // feeder crystal-clustering with `fluid_spots: { deposition: true }`; absent →
+        // false (the validated fleet stays byte-identical). The observer/tests can force
+        // it for any sim via the tri-state master override (setFluidSpotsDepositionEnabled).
+        this._fluidSpotsDeposition = !!(this.conditions && this.conditions._scenario
+            && this.conditions._scenario.fluid_spots && this.conditions._scenario.fluid_spots.deposition);
         // Cache the FluidChemistry numeric field names once for the
         // diffusion loop. Pulled from a fresh instance so any future field
         // additions to FluidChemistry pick up automatically — no separate
@@ -44475,6 +44586,22 @@ Object.assign(VugSimulator.prototype, {
             // number below. _lastNucVertexRing stays null so _assignWallRing
             // also uses its legacy path.
         }
+        // Phase 2c.2b — DEPOSITION CLUSTERING. When the flag is on AND the cavity has
+        // open supply-feeders (geysers/hotspots), draw a joint (ring, col) sample
+        // weighted by ringAreaWeight(ring)·proximityField(cell) — a decaying halo of
+        // nucleation boost around each vent. Pure geometry (no σ), so it clusters
+        // free-wall nucleation toward feeders in ANY scenario, not just per-vertex ones.
+        // Stashes the ring on _lastNucVertexRing (reusing the per-vertex handoff) so the
+        // following _assignWallRing honors it. Returns null (→ legacy uniform pick,
+        // byte-identical) when off / no supply-feeders. (The 2c.2 column-only bias this
+        // supersedes did NOT cluster — a feeder is a 2-D patch, not a thin stripe.)
+        if (fluidSpotsDepositionFor(this) && this._fluidSpots && !this._fluidSpots.isEmpty) {
+            const picked = this._feederProximitySample();
+            if (picked) {
+                this._lastNucVertexRing = picked.ringIdx;
+                return picked.cellIdx;
+            }
+        }
         const N = this.wall_state.cells_per_ring;
         const ring0 = this.wall_state.rings[0];
         const empty = [];
@@ -44482,44 +44609,49 @@ Object.assign(VugSimulator.prototype, {
             if (ring0[i].crystal_id == null)
                 empty.push(i);
         }
-        // Phase 2c.2 — DEPOSITION bias toward open supply-feeders (geysers/hotspots):
-        // weight the column pick so crystals cluster in the feeder's column. Null when
-        // there's nothing to bias (no spots / flag off / only cracks) → fall through to
-        // the EXACT legacy uniform pick, byte-identical. The weighted pick consumes the
-        // SAME single rng.random() draw, so the downstream cascade (and thus the
-        // assemblage) is untouched — only the chosen column (angular position) shifts.
-        const supW = (fluidSpotsDepositionEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
-            ? this._fluidSpots.columnSupplyWeights(N) : null;
-        if (empty.length) {
-            if (supW)
-                return this._supplyWeightedColumnPick(empty, supW, rng.random());
+        if (empty.length)
             return empty[Math.floor(rng.random() * empty.length)];
-        }
-        if (supW) {
-            // Wall full: bias over all columns (overlaps paint the larger crystal on top).
-            const all = [];
-            for (let i = 0; i < N; i++)
-                all.push(i);
-            return this._supplyWeightedColumnPick(all, supW, rng.random());
-        }
         return Math.floor(rng.random() * N);
     },
-    // Phase 2c.2 — pick a column from `pool` weighted by per-column supply
-    // (weights[col]). Consumes the single pre-drawn `rand` ∈ [0,1) the caller would
-    // otherwise have spent on the uniform pick, so determinism is preserved. With
-    // all-1 weights this reduces EXACTLY to pool[floor(rand*pool.length)] (the legacy
-    // expression), so the bias only deviates where a feeder column has weight > 1.
-    _supplyWeightedColumnPick(pool, weights, rand) {
+    // Phase 2c.2b — joint (ring, col) nucleation sample weighted by
+    // ringAreaWeight(ring)·proximityField(cell): crystals cluster in a decaying halo
+    // around open supply-feeders while the no-feeder background stays area-true (with
+    // proximity ≡ 1 the ring-marginal reduces to the legacy sin φ area distribution).
+    // One RNG draw; returns { ringIdx, cellIdx } or null (no open supply-feeders /
+    // degenerate mesh → caller uses the legacy pick). Mirrors _perVertexNucleationSample's
+    // return + _lastNucVertexRing contract but is GEOMETRY-only (works for every
+    // free-wall mineral, not only those with a supersaturation_<mineral> method).
+    _feederProximitySample() {
+        const wall = this.wall_state;
+        if (!wall || !wall.rings || !wall.rings.length)
+            return null;
+        const R = wall.ring_count | 0;
+        const N = wall.cells_per_ring | 0;
+        if (R < 1 || N < 1)
+            return null;
+        const prox = this._fluidSpots.proximityField(N, R);
+        if (!prox)
+            return null; // no open supply-feeders
+        const weights = new Float64Array(R * N);
         let total = 0;
-        for (let i = 0; i < pool.length; i++)
-            total += weights[pool[i]] || 1;
-        let r = rand * total;
-        for (let i = 0; i < pool.length; i++) {
-            r -= weights[pool[i]] || 1;
-            if (r < 0)
-                return pool[i];
+        for (let r = 0; r < R; r++) {
+            const areaW = wall.ringAreaWeight(r);
+            for (let c = 0; c < N; c++) {
+                const idx = r * N + c;
+                const w = areaW * prox[idx];
+                weights[idx] = w;
+                total += w;
+            }
         }
-        return pool[pool.length - 1]; // float round-off guard
+        if (!(total > 0))
+            return null;
+        let rr = rng.random() * total;
+        for (let i = 0; i < weights.length; i++) {
+            rr -= weights[i];
+            if (rr <= 0)
+                return { ringIdx: (i / N) | 0, cellIdx: (i % N) | 0 };
+        }
+        return { ringIdx: R - 1, cellIdx: N - 1 }; // float round-off guard
     },
     // Tranche 6 of PROPOSAL-CAVITY-MESH §14 — joint σ-weighted sample over
     // every (ring, cell) pair. Returns { ringIdx, cellIdx } or null if no
@@ -44591,15 +44723,13 @@ Object.assign(VugSimulator.prototype, {
         // Save conditions.fluid + .temperature once; swap inside the loop.
         const savedFluid = this.conditions.fluid;
         const savedTemp = this.conditions.temperature;
-        // Phase 2c.2 — DEPOSITION bias: open supply-feeders raise the per-cell
-        // nucleation weight at their cell (vent-fed precipitation). supplyAt returns
-        // 1.0 everywhere when there are no spots / the cell isn't a feeder, so this is
-        // a no-op (byte-identical) for the default fleet; only the feeder cell's weight
-        // lifts when the flag is on and a spot sits on it. The legacy column path
-        // (above) is the broad lever; this is the per-vertex companion that composes
-        // when per_vertex_nucleation is enabled.
-        const spots = (fluidSpotsDepositionEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
-            ? this._fluidSpots : null;
+        // Phase 2c.2b — DEPOSITION CLUSTERING: multiply the per-cell σ weight by the
+        // feeder proximity halo (proximityField), so a per-vertex scenario with open
+        // supply-feeders concentrates nucleation around its vents with the SAME decaying
+        // halo the geometry-only _feederProximitySample uses. null (→ no multiply,
+        // byte-identical) when the flag is off or there are no open supply-feeders.
+        const prox = (fluidSpotsDepositionFor(this) && this._fluidSpots && !this._fluidSpots.isEmpty)
+            ? this._fluidSpots.proximityField(N, ringCount) : null;
         const weights = new Float64Array(ringCount * N);
         let total = 0;
         try {
@@ -44628,8 +44758,8 @@ Object.assign(VugSimulator.prototype, {
                     if (!Number.isFinite(sigma) || sigma <= 1)
                         continue;
                     let w = areaW * (sigma - 1) * (sigma - 1);
-                    if (spots)
-                        w *= spots.supplyAt(idx);
+                    if (prox)
+                        w *= prox[idx];
                     weights[idx] = w;
                     total += w;
                 }
@@ -45930,6 +46060,26 @@ Object.assign(VugSimulator.prototype, {
                 this.log.push('');
                 this.log.push(`  ⚡ EVENT: ${event.name}`);
                 this.log.push(`     ${result}`);
+                // FLUID-SOURCE SPOTS Phase 2d — open/close feeders when an event declares
+                // a `spots` directive. The plumbing changes over the vug's life: a fracture
+                // seal shuts the feeders (self-sealing = "the fill is ending"); tectonic
+                // uplift / aquifer recharge breaches them back open. Every coupling
+                // (2b erosion, 2c.1 origin, 2c.2b clustering) filters on spot.open, so this
+                // flip propagates for free. No directive / no spots → no-op (byte-identical).
+                if (event.spots && this._fluidSpots && !this._fluidSpots.isEmpty) {
+                    const dir = (typeof event.spots === 'string') ? { action: event.spots } : event.spots;
+                    const pred = dir.kind != null ? dir.kind : undefined;
+                    const toggled = dir.action === 'breach'
+                        ? this._fluidSpots.breachSpots(pred)
+                        : dir.action === 'seal'
+                            ? this._fluidSpots.sealSpots(pred)
+                            : [];
+                    if (toggled.length) {
+                        const verb = dir.action === 'breach' ? 'breached open' : 'sealed shut';
+                        const kinds = toggled.map(s => s.kind).join(', ');
+                        this.log.push(`     🔌 ${toggled.length} fluid feeder${toggled.length === 1 ? '' : 's'} ${verb} (${kinds}) — plumbing changed`);
+                    }
+                }
                 this.log.push('');
             }
         }
@@ -48041,11 +48191,15 @@ class MovementController {
         }
     }
     // Resolve the origin (injection) cell for movement i. Preference order:
-    //   explicit m.originCell  →  a seeded pick among OPEN fluid-spots  →  the
-    //   naive _pickOriginCell (any wall cell). A fluid-spot IS the geological
-    //   home of a feeder (js/85k), so an origin:'cell' movement enters where the
-    //   plumbing connects. The spot pick draws ONCE from the dedicated movement
-    //   stream → reproducible AND independent of the shared nucleation rng.
+    //   explicit m.originCell  →  the most EQUATORIAL open fluid-spot  →  the naive
+    //   _pickOriginCell (any wall cell). A fluid-spot IS the geological home of a
+    //   feeder (js/85k), so an origin:'cell' movement enters where the plumbing
+    //   connects. Among open feeders we pick the one with the highest ring area
+    //   weight (sin φ — most equatorial): it delivers fluid to the most cavity wall
+    //   AND is where crystals actually form (polar rings are area-starved), so the
+    //   injected halo COINCIDES with the deposition cluster (2c.2b) instead of
+    //   landing at a near-polar feeder with no crystals. Deterministic given the
+    //   seeded spot set — no draw from the movement stream (the geometry decides).
     _resolveOriginCell(i, sim) {
         const m = this.movements[i];
         if (typeof m.originCell === 'number')
@@ -48053,8 +48207,18 @@ class MovementController {
         const field = sim && sim._fluidSpots;
         const open = field && !field.isEmpty ? field.openSpots() : [];
         if (open && open.length) {
-            const pick = Math.min(open.length - 1, Math.floor(this.rng() * open.length));
-            return open[pick].cell | 0;
+            const ws = sim && sim.wall_state;
+            const N = (ws && ws.cells_per_ring) | 0;
+            const areaW = (cell) => (ws && typeof ws.ringAreaWeight === 'function' && N > 0) ? ws.ringAreaWeight((cell / N) | 0) : 1;
+            let best = open[0], bestW = areaW(open[0].cell);
+            for (let k = 1; k < open.length; k++) {
+                const w = areaW(open[k].cell);
+                if (w > bestW + 1e-9) {
+                    best = open[k];
+                    bestW = w;
+                }
+            }
+            return best.cell | 0;
         }
         const mesh = sim && sim.wall_state && sim.wall_state.meshFor ? sim.wall_state.meshFor(sim) : null;
         const n = mesh && mesh.cells ? mesh.cells.length : 1;
@@ -48136,25 +48300,61 @@ const _SPOTS_SALT = 0x53504f54;
 let _FLUID_SPOTS_DECAY_ENABLED = true;
 function setFluidSpotsDecayEnabled(enabled) { _FLUID_SPOTS_DECAY_ENABLED = !!enabled; }
 function fluidSpotsDecayEnabled() { return _FLUID_SPOTS_DECAY_ENABLED; }
-// Phase 2c.2 coupling gate — DEFAULT OFF (DARK). When ON, nucleation PLACEMENT
-// is biased toward open supply-feeders (geysers 1.8 / hotspots 1.4; cracks 1.0 =
-// none) by weighting the legacy ring0 COLUMN pick (columnSupplyWeights), a
-// redistribution of the SAME rng draw (the ring — hence growth chemistry — is
-// assigned separately, so the assemblage is preserved; only angular position
-// shifts). It ships OFF after a verify-the-mechanism finding (tools/fluid-spots-
-// deposition-observe.mjs + a direct column-membership probe): at 1.4-1.8× over a
-// few columns of ~120 with sparse (~25-77) nucleation, the bias does NOT visibly
-// CLUSTER crystals at feeders (gem_pegmatite feeders [107,114,78] capture 0
-// crystals both OFF and ON) — it only RESHUFFLES placement, churning 11/30
-// baselines (assemblage preserved, 0 expects_species lost) without the payoff.
-// The visible-clustering path is a per-cell PROXIMITY-DECAY supply weight through
-// the per-vertex sampler (HANDOFF-PER-VERTEX-PLACEMENT synergy) — a future
-// increment + a visible aesthetic choice for the boss. The mechanism stays wired
-// (+ tested via explicit ON) so that path can build on it. Mirrors the
-// fluidSpotsDecayEnabled shape. Read the LIVE value via fluidSpotsDepositionEnabled().
-let _FLUID_SPOTS_DEPOSITION_ENABLED = false;
-function setFluidSpotsDepositionEnabled(enabled) { _FLUID_SPOTS_DEPOSITION_ENABLED = !!enabled; }
-function fluidSpotsDepositionEnabled() { return _FLUID_SPOTS_DEPOSITION_ENABLED; }
+// Phase 2c.2b coupling — DEPOSITION CLUSTERING is PER-SCENARIO OPT-IN, not global.
+// When active for a sim, nucleation PLACEMENT clusters toward open supply-feeders
+// (geysers 1.8 / hotspots 1.4; cracks 1.0 = none — flow-through, not precipitators)
+// via the per-cell proximityField halo (below), used in BOTH placement samplers.
+// This is the model that actually CLUSTERS — the original 2c.2 column-only bias
+// (superseded, kept as columnSupplyWeights) reshuffled placement without a visible
+// signal (gem_pegmatite feeder columns captured 0 crystals). Measured (K12/λ2.5):
+// crystals within 2 cells of a feeder rise from ~0-2% to ~11-18% (a clear lobe),
+// assemblage PRESERVED (the ring — growth chemistry — is assigned separately; sizes
+// move only via spatial competition).
+//
+// WHY OPT-IN (not global like 2b): global-on perturbed a VALIDATED-chemistry scenario
+// (reactive_wall's marginal PWP precipitation contract shifted when its calcite
+// clustered) — clustering shouldn't silently rewrite scenarios built to test other
+// physics. A scenario enables it with `fluid_spots: { deposition: true }`; the sim
+// reads that into `this._fluidSpotsDeposition`. The validated fleet stays byte-identical.
+//
+// The flag here is a TRI-STATE master OVERRIDE for the observer + tests:
+//   null  (default) → honor the per-scenario opt-in
+//   true / false    → force clustering on / off for EVERY sim (A/B harness, controls)
+// Restore to null after a forced run. Read the resolved per-sim value via
+// fluidSpotsDepositionFor(sim).
+let _FLUID_SPOTS_DEPOSITION_OVERRIDE = null;
+function setFluidSpotsDepositionEnabled(enabled) {
+    _FLUID_SPOTS_DEPOSITION_OVERRIDE = (enabled === null || enabled === undefined) ? null : !!enabled;
+}
+function fluidSpotsDepositionOverride() { return _FLUID_SPOTS_DEPOSITION_OVERRIDE; }
+// Resolve whether deposition clustering is active for a given sim: the master
+// override wins when set, else the sim's per-scenario opt-in (default false).
+function fluidSpotsDepositionFor(sim) {
+    if (_FLUID_SPOTS_DEPOSITION_OVERRIDE !== null)
+        return _FLUID_SPOTS_DEPOSITION_OVERRIDE;
+    return !!(sim && sim._fluidSpotsDeposition);
+}
+// Phase 2c.2b — the per-cell PROXIMITY-DECAY clustering parameters (the model
+// that ACTUALLY clusters, superseding the 2c.2 column-bias that didn't — see the
+// flag comment above). A cell's deposition boost is
+//     1 + max_over_open_supply_feeders[ (supply - 1) * PEAK_K * exp(-dist/LAMBDA) ]
+// where dist is the lat-long graph distance (|Δring| + wrapped |Δcol|) to the
+// feeder cell. PEAK_K turns the modest per-kind supply (geyser 1.8 / hotspot 1.4)
+// into a VISIBLE peak (hotspot center ≈ 1+0.4·K, geyser ≈ 1+0.8·K); LAMBDA is the
+// decay length in hops (a tight halo). Module-mutable so the observer can sweep
+// strengths and the boss can calibrate before baking — setDepositionClustering()
+// resets them (each sim builds a fresh FluidSpotField, so a new run picks them up).
+let _DEPOSITION_PEAK_K = 12;
+let _DEPOSITION_LAMBDA = 2.5;
+function setDepositionClustering(peakK, lambda) {
+    if (typeof peakK === 'number' && peakK >= 0)
+        _DEPOSITION_PEAK_K = peakK;
+    if (typeof lambda === 'number' && lambda > 0)
+        _DEPOSITION_LAMBDA = lambda;
+}
+function depositionClustering() {
+    return { peakK: _DEPOSITION_PEAK_K, lambda: _DEPOSITION_LAMBDA };
+}
 // A dedicated deterministic PRNG for the spot set, derived from the cavity seed.
 // Reuses _mulberry32 (22-geometry-wall.ts) — resume-safe, independent of `rng`.
 function _makeSpotRng(vuggSeed, salt = _SPOTS_SALT) {
@@ -48230,6 +48430,8 @@ class FluidSpotField {
         this._byCell = new Map();
         for (const s of this.spots)
             this._byCell.set(s.cell, s);
+        this._proxCache = null;
+        this._proxSig = '';
     }
     get isEmpty() { return this.spots.length === 0; }
     // The open spots — the live fluid sources this step (Phase 2c/2d). All seeded
@@ -48275,17 +48477,12 @@ class FluidSpotField {
         return any ? w : null;
     }
     // Phase 2c.2 — per-COLUMN DEPOSITION weights, the placement analog of
-    // columnWeights. Nucleation's legacy cell pick chooses a ring0 column; this
-    // biases that pick toward open SUPPLY-feeders so crystals cluster in the
-    // feeder's column. Weight = MAX supply among OPEN spots on the column (>1 =
-    // nucleate more there). Crucially uses `supply`, NOT decayBonus: by the kind
-    // defaults a 'crack' has supply 1.0 (erosion-dominant flow-through, no extra
-    // deposition) while geysers (1.8) / hotspots (1.4) are vent-fed precipitators
-    // — so a crack deepens its column (2b) without seeding crystals there, exactly
-    // the right physics. Returns a length-cellsPerRing array (1.0 where no feeder)
-    // or null when nothing biases (caller stays on the EXACT legacy pick →
-    // byte-identical). The ring is assigned separately, so this shifts angular
-    // position only — the assemblage (minerals/sizes/counts) is unchanged.
+    // columnWeights. Weight = MAX supply among OPEN spots on the column (>1).
+    // Crucially uses `supply` NOT decayBonus: a 'crack' (supply 1.0) deepens its
+    // column (2b) without seeding crystals; geysers/hotspots are vent precipitators.
+    // SUPERSEDED for placement by proximityField (2c.2b) — the column-only bias
+    // didn't visibly cluster (see the deposition-flag comment). Kept as the sibling
+    // query to columnWeights. Returns a length-cellsPerRing array or null.
     columnSupplyWeights(cellsPerRing) {
         const N = cellsPerRing | 0;
         if (N <= 0 || this.isEmpty)
@@ -48302,6 +48499,80 @@ class FluidSpotField {
             }
         }
         return any ? w : null;
+    }
+    // Phase 2c.2b — per-CELL deposition PROXIMITY field over the full ring×col
+    // mesh: a decaying halo of nucleation boost around each open SUPPLY-feeder.
+    // This is the model that actually CLUSTERS crystals (the 2c.2 column-only bias
+    // didn't — a feeder is a 2-D patch on the wall, not a thin vertical stripe).
+    //   boost(r,c) = 1 + max_f[ (supply_f - 1)·PEAK_K·exp(-dist_f / LAMBDA) ]
+    // dist = lat-long graph distance |Δring| + wrapped |Δcol| (the metric diffusion
+    // relaxes along). Used as a multiplicative weight in BOTH placement samplers
+    // (the per-vertex σ-weighted one and the geometry-only feeder sampler), so a
+    // crystal is far likelier to nucleate near a vent. Returns a Float64Array of
+    // length ringCount·N (row-major idx = r·N + c), or NULL when there are no open
+    // supply-feeders (caller falls through → byte-identical). Cached per
+    // (N, ringCount, PEAK_K, LAMBDA); spots are static within a run (2d will toggle).
+    proximityField(cellsPerRing, ringCount) {
+        const N = cellsPerRing | 0;
+        const R = ringCount | 0;
+        if (N <= 0 || R <= 0 || this.isEmpty)
+            return null;
+        const feeders = this.spots.filter(s => s.open && s.supply > 1);
+        if (!feeders.length)
+            return null;
+        const sig = `${N}|${R}|${_DEPOSITION_PEAK_K}|${_DEPOSITION_LAMBDA}`;
+        if (this._proxCache && this._proxSig === sig)
+            return this._proxCache;
+        const w = new Float64Array(N * R);
+        for (let r = 0; r < R; r++) {
+            for (let c = 0; c < N; c++) {
+                let boost = 0;
+                for (const f of feeders) {
+                    const fr = (f.cell / N) | 0, fc = f.cell % N;
+                    const dCol = Math.abs(c - fc);
+                    const dist = Math.abs(r - fr) + Math.min(dCol, N - dCol);
+                    const b = (f.supply - 1) * _DEPOSITION_PEAK_K * Math.exp(-dist / _DEPOSITION_LAMBDA);
+                    if (b > boost)
+                        boost = b;
+                }
+                w[r * N + c] = 1 + boost;
+            }
+        }
+        this._proxCache = w;
+        this._proxSig = sig;
+        return w;
+    }
+    // Phase 2d — open/close spots over a vug's life, driven by events (a fracture
+    // seals → its feeder shuts; tectonic uplift / aquifer recharge breaches a vent
+    // back open). Because every coupling (2b erosion columnWeights, 2c.1 origin
+    // openSpots, 2c.2b proximityField) filters on `s.open`, flipping the flag
+    // propagates everywhere for free — the couplings re-read it live. `pred`
+    // selects which spots: undefined = all, a kind string ('crack'), or a
+    // predicate fn. Returns the spots actually toggled (for the event log).
+    // CACHE NOTE: proximityField memoizes by (N,R,K,λ) and does NOT key on the
+    // open-set, so a toggle MUST invalidate it or a sealed feeder would keep
+    // clustering from the stale cache. _byCell/openSpots/columnWeights read `open`
+    // live, so only the proximity memo needs busting.
+    _matchSpots(pred, wantOpen) {
+        return this.spots.filter(s => s.open === wantOpen && (pred == null ? true :
+            typeof pred === 'string' ? s.kind === pred :
+                typeof pred === 'function' ? !!pred(s) : true));
+    }
+    sealSpots(pred) {
+        const hit = this._matchSpots(pred, true);
+        for (const s of hit)
+            s.open = false;
+        if (hit.length)
+            this._proxCache = null; // bust the clustering memo
+        return hit;
+    }
+    breachSpots(pred) {
+        const hit = this._matchSpots(pred, false);
+        for (const s of hit)
+            s.open = true;
+        if (hit.length)
+            this._proxCache = null;
+        return hit;
     }
 }
 // Factory: build a sim's spot field. Seeds off the cavity's shape_seed (geology

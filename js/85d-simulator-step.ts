@@ -64,6 +64,26 @@ Object.assign(VugSimulator.prototype, {
       this.log.push('');
       this.log.push(`  ⚡ EVENT: ${event.name}`);
       this.log.push(`     ${result}`);
+      // FLUID-SOURCE SPOTS Phase 2d — open/close feeders when an event declares
+      // a `spots` directive. The plumbing changes over the vug's life: a fracture
+      // seal shuts the feeders (self-sealing = "the fill is ending"); tectonic
+      // uplift / aquifer recharge breaches them back open. Every coupling
+      // (2b erosion, 2c.1 origin, 2c.2b clustering) filters on spot.open, so this
+      // flip propagates for free. No directive / no spots → no-op (byte-identical).
+      if (event.spots && this._fluidSpots && !this._fluidSpots.isEmpty) {
+        const dir = (typeof event.spots === 'string') ? { action: event.spots } : event.spots;
+        const pred = dir.kind != null ? dir.kind : undefined;
+        const toggled = dir.action === 'breach'
+          ? this._fluidSpots.breachSpots(pred)
+          : dir.action === 'seal'
+            ? this._fluidSpots.sealSpots(pred)
+            : [];
+        if (toggled.length) {
+          const verb = dir.action === 'breach' ? 'breached open' : 'sealed shut';
+          const kinds = toggled.map(s => s.kind).join(', ');
+          this.log.push(`     🔌 ${toggled.length} fluid feeder${toggled.length === 1 ? '' : 's'} ${verb} (${kinds}) — plumbing changed`);
+        }
+      }
       this.log.push('');
     }
   }
