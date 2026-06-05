@@ -2,6 +2,47 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## ▽ UPDATE (2026-06-04) — the DEPLETION VOICE ships (SIM-neutral)
+>
+> The audible twin of the floor shadow (open item #1 from the SIM-175 banner
+> below, now done) is built: a soft SHADOW oscillator per chip, sounding at the
+> deepest depleted pocket's pitch, swelling where a crystal draws the broth down.
+> It shares the chip's lvlGain (pans + rescales with the voice), bypasses artGain
+> (a sustained undertone, not a pluck), sits a few cents flat (a faint beat where
+> the gap is near-unison, a real interval where the halo is deep), and SELF-GATES
+> to silence on abundant/absent ions. Toggle: ▽ Depletion (default ON), restarts a
+> live performance like the 🔔 crystals layer. Engine in js/85i; UI in js/99k.
+> SIM-neutral (reads recorded floor_data only — no engine output touched, no
+> SIM_VERSION bump, no baseline regen). Full suite 1761/1761.
+>
+> **THE KEY MEASUREMENT (tools/sonify-depletion-probe.mjs — built first, it tuned
+> the design):** the recorded halos are REAL but small in ABSOLUTE normalized
+> terms — a limiting ion sits near the bottom of its own declared color-range, so
+> a 20-49% local drawdown is only a ~1-10% band height. Two load-bearing consequences:
+> - **Reduction must be GLOBAL-MIN, not a mean.** A halo is local (one crystal);
+>   averaging — even a per-height ring-mean — re-dilutes it (mvt Cd's 49% halo
+>   showed as 2% under mean-of-ring-min). The single deepest pocket is what the eye
+>   catches and what the ear now tracks.
+> - **Loudness keys on RELATIVE drawdown (depth/level), not absolute.** That's the
+>   range-independent physical "how hard was this pocket sucked dry," and it's what
+>   separates limiting ions (big relative dip) from abundant ones (broth barely
+>   dips). An absolute noise floor (~1.5 quantization levels) rejects fuzz +
+>   essentially-absent ions (caught mvt SiO2's spurious 12%-on-~0-baseline). Probe
+>   verdict: reactive_wall Ag sings (peak 0.36, 94% of run); mvt Ag/Cd/F/Pb sing
+>   (Cd's deep halo saturates at 0.60); gem_pegmatite F sings but Sn stays silent
+>   (it's abundant there — honest).
+> - **A DELIBERATE eye/ear split:** the VISUAL shadow keys on the absolute band
+>   (faint for low-baseline ions); the VOICE keys loudness on relative hollowing.
+>   Complementary readings of one floor_data channel, not a contradiction —
+>   documented in the 85i header. PITCH stays absolute (deep halo → real interval).
+>
+> **Open from THIS arc:** (1) **by-EAR tuning on a live deploy** — mix / relDipRef /
+> detune were tuned by the headless probe, NOT by an ear yet (the 9th-catch rule:
+> a probe verifies the code, not the channel; re-confirm on a real Pages build);
+> (2) whether the VISUAL shadow should ALSO go relative — would re-unite eye+ear,
+> but touches accepted rendering (boss's call); (3) a per-crystal "tick" at the
+> moment the dip first opens is unbuilt — currently a continuous swell.
+>
 > ## 🔊 UPDATE (2026-06-03, later) — TWO LISTENING FINDINGS closed (SIM 175)
 >
 > Boss listened to the strip sonifier + looked at the strip, and flagged two things;
@@ -20,9 +61,10 @@ Living list of open work items, captured from session conversations so context s
 >   strip-depletion / strip-floor. Test infra: testTimeout 30→60s, hookTimeout 60→120s
 >   (heavier recorder). Full suite 1754/1754 green.
 > - **Open from this arc:** (1) a SONIFIER depletion voice (hear the sag — the audible
->   twin of the shadow; not built); (2) the floor shadow's visual weight (boss's eye);
->   (3) the halo is still DECOUPLED from the nucleation gate — showing where the broth
->   thins, not a distinct mineral firing only there (still the per-cell-gating frontier).
+>   twin of the shadow) → ✅ SHIPPED 2026-06-04, see the ▽ banner above; (2) the floor
+>   shadow's visual weight (boss's eye); (3) the halo is still DECOUPLED from the
+>   nucleation gate — showing where the broth thins, not a distinct mineral firing only
+>   there (still the per-cell-gating frontier).
 >
 > ## 🪨 UPDATE (2026-06-03) — the FLUID-SPOTS arc is COMPLETE (SIM 174)
 >

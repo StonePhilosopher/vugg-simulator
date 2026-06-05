@@ -251,6 +251,8 @@ interface StripSonifyPlan {
   notes: { tSec: number; freq: number }[];   // per-step pitch contour (drives freq)
   gates: { tSec: number; durSec: number; sustain?: boolean }[]; // RHYTHM: when the voice sounds (sustain = hold as a drone, not a pluck)
   pans: { tSec: number; pan: number }[];     // per-step stereo position (-1..1 from angular centroid)
+  floorNotes?: { tSec: number; freq: number }[];  // DEPLETION VOICE: shadow pitch contour (the floor); absent when there's no depletion to hear
+  shadowGains?: { tSec: number; gain: number }[]; // DEPLETION VOICE: per-step shadow gain (0..mix), swells where the broth is drawn down
   glide: boolean;                            // continuous (raw) mode: ramp pitch + sustain, no plucks
   subdiv: number;                            // this voice's rhythmic subdivision (steps/note)
   durationSec: number;
@@ -301,6 +303,98 @@ function _stripSonifySubdivForVoice(voiceGain: number): number {
   return 6;
 }
 
+// ============================================================
+// THE DEPLETION VOICE — hear the broth drawn down around the crystals
+// ============================================================
+// The strip view draws a faint band hanging from a chip's LEVEL line down to
+// its FLOOR — "the broth drawn down around the crystals" (format_version 3,
+// 2026-06-03). This is the EAR's reading of that same recorded floor_data.
+// Alongside the chip's main drone, a soft SHADOW oscillator sounds at the
+// FLOOR pitch (the deepest depleted pocket on the wall) — at or BELOW the
+// level pitch, since floor ≤ level. It swells where a crystal bites the broth
+// hard and stays silent where the broth is uniform, so it SELF-GATES: limiting
+// ions (Ag, Cd, F, Sn) sing; abundant ones (Ca, Zn) stay quiet.
+//
+// WHAT IT KEYS ON — and a deliberate eye/ear split (measured 2026-06-04 via
+// tools/sonify-depletion-probe.mjs): the recorded halos are REAL but small in
+// ABSOLUTE normalized terms (a limiting ion sits near the bottom of its own
+// declared color-range, so a 20-49% local drawdown is only a ~1-10% band
+// height). The VISUAL shadow keys on that absolute band — faint for low-
+// baseline ions. The VOICE instead keys LOUDNESS on the RELATIVE drawdown
+// (depth/level): that's the physical "how hard was this pocket sucked dry,"
+// independent of the arbitrary declared range, and it's exactly what separates
+// limiting ions (big relative dip) from abundant ones (broth barely dips). An
+// absolute noise floor (~1.5 quantization levels) rejects quantization fuzz and
+// essentially-absent ions (e.g. mvt SiO2: 12% relative on a ~0 baseline = noise).
+// So the eye reads the absolute band; the ear reads the relative hollowing —
+// complementary readings of one channel, not a contradiction. PITCH stays
+// absolute (the floor's true value), so a deep halo opens a real interval and a
+// shallow one just beats faintly under the drone.
+//
+// HONESTY: floor is RECORDED (floor_data, depth 0 = the wall where crystals
+// grow), never synthesized. SIM-NEUTRAL (no engine output touched).
+const STRIP_DEPLETION = {
+  mix: 0.6,         // shadow PEAK gain as a fraction of the chip's own voice gain
+  absNoise: 0.006,  // ignore drawdowns ≤ ~1.5 quantization levels (1 LSB ≈ 0.004) — noise / absent ions
+  minRelDip: 0.05,  // relative drawdown (depth/level) below this = uniform broth → silent
+  relDipRef: 0.30,  // relative drawdown that reaches full mix (a deep halo, e.g. mvt Cd ≈ 49%)
+  detuneCents: 5,   // shadow a few cents FLAT → a faint beat where pitch is near-unison
+};
+
+// Is the depletion voice on? Default ON — it self-gates to silence where there
+// is no depletion, so it only sings on limiting ions. The toggle lets the ear
+// A/B it; flipping it rebuilds plans (a build-time change, like the crystals
+// layer), so a live performance restarts to pick it up.
+let _stripSonifyDepletionOn = true;
+function stripSonifyGetDepletion(): boolean { return _stripSonifyDepletionOn; }
+function stripSonifySetDepletion(on: boolean): boolean { _stripSonifyDepletionOn = !!on; return _stripSonifyDepletionOn; }
+
+// Per step, reduce the recorded depletion FLOOR (floor_data, depth 0 = the
+// wall) to the DEEPEST pocket anywhere on the wall: the MIN across all angles ×
+// heights. A halo is LOCAL (one crystal, a few cells), so averaging — even a
+// per-height ring-mean — re-dilutes the very thing the channel exists to show
+// (measured: mean-of-ring-min hid mvt Cd's 49% halo as 2%). The single deepest
+// cell is what the eye catches as the prominent band, so it's what the ear
+// should track. Holds the last valid value across all-null steps so the
+// undertone doesn't stutter. Returns null when the dataset carries no floor_data
+// (v1/v2) OR this chip never recorded a floor (a non-ion chip the recorder
+// skipped → all-255) — so abundant/non-ion chips get no shadow even in v3.
+function _stripSonifyFloorSeries(ds: StripDataset, chipIdx: number): number[] | null {
+  if (!ds.floor_data) return null;
+  const ax = ds.manifest.axes;
+  const chipCount = ds.manifest.chips.length;
+  const floor: number[] = [];
+  let hold = 0.5;
+  let any = false;
+  for (let step = 0; step < ax.steps; step++) {
+    let mn = Infinity;
+    for (let h = 0; h < ax.height_positions; h++) {
+      for (let a = 0; a < ax.angular_indices; a++) {
+        const li = stripDataIndex(step, a, h, chipIdx, ax, chipCount, 0);
+        if (li < 0) continue;
+        const v = stripDequantizeNormalized(ds.floor_data[li]);
+        if (v === null) continue;
+        if (v < mn) mn = v;
+      }
+    }
+    if (mn !== Infinity) { hold = mn; any = true; }
+    floor.push(mn === Infinity ? hold : mn);
+  }
+  return any ? floor : null;
+}
+
+// (level, floor) → shadow gain MULTIPLIER (0..mix). Gate on the RELATIVE
+// drawdown depth/level (honest halo strength, range-independent), with an
+// absolute noise floor that rejects quantization fuzz + essentially-absent
+// ions. Silent below minRelDip; ramps to full `mix` at relDipRef, saturates.
+function _stripSonifyShadowGain(level: number, floor: number): number {
+  const depth = level - floor;
+  if (depth <= STRIP_DEPLETION.absNoise) return 0;        // ≤ noise floor → nothing real to hear
+  const relDip = depth / Math.max(STRIP_DEPLETION.absNoise, level);
+  const t = (relDip - STRIP_DEPLETION.minRelDip) / Math.max(1e-6, STRIP_DEPLETION.relDipRef - STRIP_DEPLETION.minRelDip);
+  return STRIP_DEPLETION.mix * Math.max(0, Math.min(1, t));
+}
+
 // PURE: build the playback plan for one chip of a dataset. No audio.
 // Returns null if the chip isn't present or the dataset has no steps.
 function buildStripSonifyPlan(
@@ -321,9 +415,25 @@ function buildStripSonifyPlan(
   const pans = panContour.map((pan, step) => ({ tSec: (step * stepMs) / 1000, pan }));
   const durationSec = (steps * stepMs) / 1000;
 
+  // THE DEPLETION VOICE — read the recorded floor (deepest pocket / step) and
+  // turn it into a shadow gain envelope keyed on the RELATIVE drawdown. The
+  // shadow exists only when the toggle is on AND some step actually sings
+  // (gain > 0) — else hasShadow stays false → no extra voice, byte-for-byte the
+  // prior plan on abundant/non-ion chips. floorNotes are filled below alongside
+  // the main contour so they share the pitch mapping.
+  const floorSeries = _stripSonifyDepletionOn ? _stripSonifyFloorSeries(ds, found.idx) : null;
+  const shadowGains = floorSeries
+    ? floorSeries.map((f, step) => ({
+        tSec: (step * stepMs) / 1000,
+        gain: _stripSonifyShadowGain((step < contour.length ? contour[step] : f), f),
+      }))
+    : null;
+  const hasShadow = !!shadowGains && shadowGains.some((g) => g.gain > 0);
+
   let notes: { tSec: number; freq: number }[];
   let gates: { tSec: number; durSec: number; sustain?: boolean }[];
   let subdiv: number;
+  let floorNotes: { tSec: number; freq: number }[] | undefined;
 
   if (continuous) {
     // RAW ROCK: unquantized log-pitch glide, sustained (no scale, no
@@ -332,6 +442,12 @@ function buildStripSonifyPlan(
       tSec: (step * stepMs) / 1000,
       freq: _stripSonifyContinuousFreq(voice.baseOctave, span, v),
     }));
+    if (hasShadow) {
+      floorNotes = floorSeries!.map((v, step) => ({
+        tSec: (step * stepMs) / 1000,
+        freq: _stripSonifyContinuousFreq(voice.baseOctave, span, v),
+      }));
+    }
     gates = [{ tSec: 0, durSec: durationSec }];
     subdiv = Math.max(1, steps);
   } else {
@@ -339,6 +455,11 @@ function buildStripSonifyPlan(
     // Per-step pitch contour (drives the oscillator frequency).
     const toIdx = (v: number) => Math.max(0, Math.min(freqs.length - 1, Math.round(v * (freqs.length - 1))));
     notes = contour.map((v, step) => ({ tSec: (step * stepMs) / 1000, freq: freqs[toIdx(v)] }));
+    // The shadow snaps to the SAME scale (so floor and level form a musical
+    // interval, not a microtonal smear); floor ≤ level → it sits at or below.
+    if (hasShadow) {
+      floorNotes = floorSeries!.map((v, step) => ({ tSec: (step * stepMs) / 1000, freq: freqs[toIdx(v)] }));
+    }
 
     // RHYTHM — PASS 1: walk the grid at this voice's subdivision and collect
     // ONSETS. An onset fires when the pitch index CHANGES, or every maxRest
@@ -379,6 +500,8 @@ function buildStripSonifyPlan(
     notes,
     gates,
     pans,
+    floorNotes,
+    shadowGains: hasShadow ? shadowGains! : undefined,
     glide: continuous,
     subdiv,
     durationSec,
@@ -633,9 +756,12 @@ function playStripSonifyPlans(
   for (const h of crystalHits) { const e = h.tSec + h.decay; if (e > durationSec) durationSec = e; }
   const endTime = t0 + durationSec;
 
-  // chipId → { osc, lvlGain, plan }. Per voice: osc → artGain (rhythm
-  // plucks) → lvlGain (structural level, rescale-adjusted) → master.
-  const voices = new Map<string, { osc: any; lvlGain: any; plan: StripSonifyPlan }>();
+  // chipId → { osc, lvlGain, plan, shOsc? }. Per voice: osc → artGain (rhythm
+  // plucks) → lvlGain (structural level, rescale-adjusted) → master. The
+  // DEPLETION VOICE (shOsc) is a second oscillator that shares lvlGain (so it
+  // pans + rescales with the main voice) but bypasses artGain — a sustained
+  // undertone, not a plucked note.
+  const voices = new Map<string, { osc: any; lvlGain: any; plan: StripSonifyPlan; shOsc?: any }>();
 
   // Re-target every voice's LEVEL for the current voice count (keeps the
   // summed mix bounded as voices come and go). Rhythm lives on artGain.
@@ -702,10 +828,42 @@ function playStripSonifyPlans(
         } catch (_e) { /* ignore */ }
       }
     }
+    // THE DEPLETION VOICE — a soft shadow oscillator at the FLOOR pitch,
+    // swelling where the broth is drawn down (plan.shadowGains). Shares lvlGain
+    // (→ panner → master), so it pans with the chip and rescales with the voice
+    // count; bypasses artGain (no plucking — it's a sustained undertone). Sine
+    // + a few cents FLAT → a faint beat where the gap is small, an open interval
+    // where the depletion is deep. Silent on abundant ions (shadowGains ≈ 0);
+    // absent entirely when the dataset has no floor_data. Mirrors the visual
+    // shadow band the renderer hangs below the level line.
+    let shOsc: any = null;
+    if (plan.floorNotes && plan.floorNotes.length && plan.shadowGains && plan.shadowGains.length) {
+      shOsc = ctx.createOscillator();
+      const shGain = ctx.createGain();
+      shOsc.type = 'sine';
+      shOsc.connect(shGain).connect(lvlGain);
+      try { shOsc.detune.setValueAtTime(-STRIP_DEPLETION.detuneCents, t0); } catch (_e) { /* ignore */ }
+      // Pitch contour mirrors the main voice's mode: glide ramps, scale steps.
+      try { shOsc.frequency.setValueAtTime(plan.floorNotes[0].freq, t0); } catch (_e) { /* ignore */ }
+      for (const n of plan.floorNotes) {
+        try {
+          if (plan.glide) shOsc.frequency.linearRampToValueAtTime(n.freq, t0 + n.tSec);
+          else shOsc.frequency.setValueAtTime(n.freq, t0 + n.tSec);
+        } catch (_e) { /* ignore */ }
+      }
+      // Gain breathes with the depletion depth (smooth ramps → swell/recede,
+      // not a stutter). Starts at its first value so a live-add joins in place.
+      try { shGain.gain.setValueAtTime(Math.max(0.0001, plan.shadowGains[0].gain), Math.max(now, t0 - 0.001)); } catch (_e) { /* ignore */ }
+      for (const sg of plan.shadowGains) {
+        try { shGain.gain.linearRampToValueAtTime(Math.max(0.0001, sg.gain), t0 + sg.tSec); } catch (_e) { /* ignore */ }
+      }
+      try { shOsc.start(t0 > now ? t0 : now); } catch (_e) { /* ignore */ }
+      try { shOsc.stop(endTime + 0.05); } catch (_e) { /* ignore */ }
+    }
     lvlGain.gain.setValueAtTime(0, now);       // rescale() ramps it up to target
     try { osc.start(t0 > now ? t0 : now); } catch (_e) { /* ignore */ }
     try { osc.stop(endTime + 0.05); } catch (_e) { /* ignore */ }
-    voices.set(plan.chipId, { osc, lvlGain, plan });
+    voices.set(plan.chipId, { osc, lvlGain, plan, shOsc });
   };
 
   for (const p of plans) addVoiceInternal(p);
@@ -762,7 +920,10 @@ function playStripSonifyPlans(
         master.gain.cancelScheduledValues(now);
         master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), now);
         master.gain.linearRampToValueAtTime(0, now + 0.06);
-        for (const v of voices.values()) { try { v.osc.stop(now + 0.08); } catch (_e) { /* ignore */ } }
+        for (const v of voices.values()) {
+          try { v.osc.stop(now + 0.08); } catch (_e) { /* ignore */ }
+          if (v.shOsc) { try { v.shOsc.stop(now + 0.08); } catch (_e) { /* ignore */ } }
+        }
         for (const o of crystalOscs) { try { o.stop(now + 0.08); } catch (_e) { /* ignore */ } }
         try { timer.stop(now + 0.08); } catch (_e) { /* ignore */ }
       } catch (_e) { /* ignore */ }
@@ -785,6 +946,7 @@ function playStripSonifyPlans(
       const now = ctx.currentTime;
       try { v.lvlGain.gain.cancelScheduledValues(now); v.lvlGain.gain.setTargetAtTime(0, now, 0.04); } catch (_e) { /* ignore */ }
       try { v.osc.stop(now + 0.2); } catch (_e) { /* ignore */ }
+      if (v.shOsc) { try { v.shOsc.stop(now + 0.2); } catch (_e) { /* ignore */ } }
       voices.delete(chipId);
       rescale();
     },
