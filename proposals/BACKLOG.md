@@ -2,6 +2,18 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🏛️ UPDATE (2026-06-05) — fresh full-orientation handoff written; READ IT FIRST
+>
+> **`proposals/HANDOFF-TO-THE-NEXT-BUILDER-2026-06-05.md`** is a complete, from-zero
+> orientation for a builder who knows nothing: the JS-only law, the build pipeline
+> (js/ → index.html), the subsystem map, every tool/probe + the five vugg-* skills
+> and when to invoke them, the corrected deploy model (push-to-Syntaxswine IS the
+> deploy; confirm the Pages build before "go look"), SIM_VERSION + baselines + the
+> run-suite-alone discipline, the seven working disciplines, all nine catches, and
+> where the depletion-voice session left off. Grounded against current source via a
+> survey workflow, authored in-voice. New builder: start there, then this BACKLOG
+> for fine-grained open items.
+>
 > ## ▽ UPDATE (2026-06-04) — the DEPLETION VOICE ships (SIM-neutral)
 >
 > The audible twin of the floor shadow (open item #1 from the SIM-175 banner
