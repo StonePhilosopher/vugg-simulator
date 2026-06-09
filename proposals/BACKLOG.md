@@ -2,6 +2,25 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🟢 UPDATE (2026-06-08) — 2d BREACH shipped: reactivated_fluorite_vein (SIM 176)
+>
+> The "2d breach API — wire a seal-then-reopen scenario" open item is **DONE**
+> (`c1b161e`, live on Syntaxswine Pages). New scenario `reactivated_fluorite_vein`:
+> a crack-seal reactivated vug (North-Pennine fluorite-galena-barite style) that
+> grows a first generation with feeders OPEN, SEALS them (cement chokes the
+> conduit, `spots:'seal'`@78), then BREACHES them open again (tectonic
+> reactivation, `spots:'breach'`@118) for a cooler gen-2. Lights up the breach
+> API that was wired+tested but unused. No new engine — stage 1 reuses the proven
+> mvt-analog brine + generic events; handlers in js/70t. Seed-42: 62 crystals /
+> 16 species, all 5 expects fire (fluorite/galena/barite/calcite/sphalerite +
+> wurtzite). ZERO cascade drift (additive). Suite 1761→1769. Full 7-file
+> add-scenario pipeline + 3 menu surfaces (guard test green).
+> - **Open from this arc:** (1) fluorite fires only 1 crystal even at 5× F — its
+>   limiter is nucleation competition/cap, not F; present-but-minor, a
+>   vugg-tune-scenario candidate if the boss wants fluorite dominant. (2) the
+>   `breach` predicate-by-kind path (`spots:{action,kind}`) is exercised only with
+>   the all-spots default here — a kind-selective seal/breach is still untried.
+>
 > ## 🏛️ UPDATE (2026-06-05) — fresh full-orientation handoff written; READ IT FIRST
 >
 > **`proposals/HANDOFF-TO-THE-NEXT-BUILDER-2026-06-05.md`** is a complete, from-zero
