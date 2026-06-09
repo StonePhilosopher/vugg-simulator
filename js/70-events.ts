@@ -329,6 +329,12 @@ const EVENT_REGISTRY = {
   // is a Ba + Mn fluid pulse with rng-driven Mn variation. See
   // js/70s-tn457.ts for the per-pulse chemistry.
   tn457_mn_ba_pulse: event_tn457_mn_ba_pulse,
+  // 2026-06-08 — reactivated_fluorite_vein: the fluid-spots SEAL → BREACH
+  // (Phase 2d) demonstrator. Two handlers do the chemistry of each transition;
+  // the feeder open/close itself is the event's `spots: 'seal'|'breach'`
+  // directive (handled centrally in apply_events). See js/70t-reactivated-vein.ts.
+  reactivated_vein_seal: event_reactivated_vein_seal,
+  reactivated_vein_breach: event_reactivated_vein_breach,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and

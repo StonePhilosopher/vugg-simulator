@@ -10202,5 +10202,42 @@
 //   Tools: depletion-dip-probe / strip-depletion-probe / strip-floor-probe. FILES: js/85f
 //   (format+codec), js/85g (floor capture), js/85h (storage), js/99k (shadow render).
 //   OPEN: a sonifier depletion voice (hear the sag) is a natural follow-up, not yet built.
-const SIM_VERSION = 175;
+//
+// (interim, SIM-NEUTRAL — no bump): the SONIFIER DEPLETION VOICE shipped (js/85i +
+//   99k, the "hear the sag" follow-up above) — a shadow oscillator at the deepest
+//   depleted pocket's pitch, loudness keyed on RELATIVE drawdown. Reads recorded
+//   floor_data only; no engine output touched → no version bump, baselines untouched.
+//
+// v176 (2026-06-08) — REACTIVATED FLUORITE VEIN scenario: the fluid-spots SEAL →
+//                     BREACH lifecycle (js/85k Phase 2d) gets its first scenario.
+//                     The breach API was wired + tested but UNUSED; this lights it up.
+//
+//   THE STORY (crack-seal fracture reactivation; Ramsay 1980, Nature): a North-
+//   Pennine-style fluorite-galena-barite vug grows a first generation while its
+//   feeder fractures are OPEN, a late cement SEALS the conduit shut (the cavity goes
+//   quiet), then a tectonic pulse BREACHES it open again and a cooler fresh fluid
+//   grows a distinct SECOND generation (gen-2 fluorite + calcite). It demonstrates
+//   that the fluid-spots couplings read spot.open LIVE: the deposition-clustering
+//   halo concentrates gen-1 at the open feeders, switches OFF across the sealed
+//   interval, and switches back ON for gen-2 at the reopened vents.
+//
+//   MECHANISM (no new engine): stage 1 reuses the proven generic fluid_mixing (step
+//   20) + fluid_pulse (step 60) brine events on an mvt-analog NaCl-CaCl2 broth
+//   (F raised to 25, fluorite-forward). New handlers js/70t-reactivated-vein.ts:
+//   event_reactivated_vein_seal (step 78, spots:'seal' — cools to ~150°C, stalls
+//   flow, draws CO3/F down) + event_reactivated_vein_breach (step 118, spots:'breach'
+//   — cooler fresh pulse F+16/CO3+130/Ca+90). fluid_spots:{deposition:true}; wall is
+//   reactive limestone, architecture 'tabular' (vein-bounded). expects_species:
+//   fluorite, galena, barite, calcite, sphalerite. The seal/breach directive is
+//   handled centrally in apply_events (js/85d), logged "🔌 N feeders sealed/breached".
+//
+//   BASELINE: a NEW scenario is purely ADDITIVE — seed42 + strip_digest for every
+//   existing scenario are byte-identical (each runs independently at seed 42); the
+//   baselines just gain the new reactivated_fluorite_vein block. SIM bumps because
+//   it's new gameplay content. CITATIONS kept safe/general (Dunham 1990 BGS Memoir;
+//   Ramsay 1980; Bons et al. 2012) — the broth is DESIGNED (reverse-from-engines,
+//   mvt-analog), honestly framed as a demonstrator archetype, not a measured locality.
+//   FILES: js/70t (handlers), js/70-events.ts (registry), data/scenarios.json5
+//   (spec), index.html (3 menu surfaces), tests-js/reactivated-fluorite-vein.test.ts.
+const SIM_VERSION = 176;
 

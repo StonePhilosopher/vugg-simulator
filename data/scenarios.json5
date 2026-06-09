@@ -310,6 +310,76 @@
       ]
     },
 
+    "reactivated_fluorite_vein": {
+      "anchor": "North Pennine Orefield style (Weardale district, England) — a fluorite-galena-barite vein on a reactivated fault (Dunham 1990, BGS Economic Memoir).",
+      "description": "A crack-seal reactivated vug. An ascending brine grows a first generation (fluorite + galena + barite, with sphalerite + calcite gangue) while its feeder fractures are OPEN; a late cement then seals the conduit shut and the cavity goes quiet; a later tectonic pulse breaches the fracture open again, and a cooler fresh fluid grows a second-generation fluorite + calcite. The demonstrator for the fluid-spots SEAL → BREACH lifecycle: the deposition-clustering halo follows the open feeders, so each generation concentrates at the vents and the sealed interval shows no clustering.",
+      "expects_species": ["fluorite", "galena", "barite", "calcite", "sphalerite"],
+      "duration_steps": 160,
+      // FLUID-SPOTS Phase 2d DEMONSTRATOR — the seeded feeders deposition-cluster
+      // (like gem_pegmatite), but here events SEAL then BREACH them: the couplings
+      // read spot.open live, so the clustering halo switches OFF at the seal and
+      // back ON at the breach. Per-scenario opt-in keeps the validated fleet
+      // byte-identical (a new scenario is purely additive — zero cascade drift).
+      "fluid_spots": { "deposition": true },
+      "notes": [
+        "DEMONSTRATOR, honestly framed: this scenario exercises the crack-seal SEAL→BREACH mechanic on a North-Pennine-style fluorite-galena-barite vein. The chemistry is DESIGNED (reverse-from-engines) on an mvt-analog NaCl-CaCl2 basinal brine, not lifted from a specific mine's fluid-inclusion dataset — so the broth is a faithful archetype, not a measured locality record. North Pennine veins are textbook reactivated-fault systems with repeated fluid pulses (Dunham 1990); the crack-seal reopening mechanism is Ramsay 1980 (Nature).",
+        "Two generations: STAGE 1 (feeders open, steps 0-78) — the ascending brine fires fluorite + galena + barite (+ sphalerite, calcite) clustering at the open vents, reusing the proven generic fluid_mixing (step 20) + fluid_pulse (step 60) brine events. SEAL (step 78) — a carbonate/silica cement chokes the feeder (spots:'seal'); T drops to ~150°C, flow stalls, the clustering halo switches off. STAGE 2 (breach, step 118) — tectonic reactivation reopens the conduit (spots:'breach'); a cooler fresh pulse (F +16, CO3 +130) grows second-generation fluorite + late calcite at the reopened vents.",
+        "Why limestone wall: North Pennine fluorite veins cut Carboniferous limestone (the Great Limestone and equivalents); the reactive carbonate wall supplies background Ca + CO3, consistent with the calcite gangue in both stages. Architecture 'tabular' = fracture-controlled / vein-bounded, the right cavity archetype for a vein (vs the karst 'irregular' of mvt).",
+        "Calibration note: stage-1 assemblage tracks the mvt scenario (same brine + the same two generic brine events), so fluorite/galena/barite/sphalerite/calcite are expected to fire; deposition clustering shifts spatial competition so exact counts will differ from mvt. Any first-pass miss is aspirational — tune via vugg-tune-scenario, don't inflate the broth."
+      ],
+      "initial": {
+        "temperature_C": 180.0,
+        "pressure_kbar": 0.3,
+        "fluid": {
+          // mvt-analog NaCl-CaCl2 basinal brine (see the mvt scenario for the
+          // per-field provenance); F raised to 25 (fluorite-forward vein vs mvt's
+          // gangue-trace F=5) so fluorite is a prominent gen-1 phase against the
+          // barite/greenockite/celestine competition for Ca + the anion budget.
+          "SiO2": 100,
+          "Ca": 300,
+          "CO3": 250,
+          "Fe": 15,
+          "Mn": 25,
+          "Zn": 0,
+          "S": 0,
+          "F": 25,
+          "Mg": 30,
+          "Pb": 40,
+          "Na": 80,
+          "K": 15,
+          "Cl": 200,
+          "Ag": 5,
+          "Ba": 20,
+          "Sr": 15,
+          "Cu": 3,
+          "Cd": 2,
+          "O2": 0.25,
+          "pH": 7.2,
+          "salinity": 15.0
+        },
+        "wall": {
+          // Fracture-controlled vein cutting Carboniferous limestone. tabular =
+          // vein-bounded geometry; reactive limestone supplies background Ca+CO3.
+          "composition": "limestone",
+          "architecture": "tabular",
+          "primary_bubbles": 2,
+          "secondary_bubbles": 6,
+          "shape_seed": 1850
+        }
+      },
+      "events": [
+        { "step": 20,  "type": "fluid_mixing",            "name": "Ascending Brine",   "description": "Stage-1 brine meets groundwater — fluorite + galena + barite at the open feeders" },
+        { "step": 60,  "type": "fluid_pulse",             "name": "Second Pulse",       "description": "More stage-1 growth" },
+        { "step": 78,  "type": "reactivated_vein_seal",   "name": "Feeder Sealed",      "description": "Cement chokes the fracture — the vug goes quiet", "spots": "seal" },
+        { "step": 118, "type": "reactivated_vein_breach", "name": "Reactivation",       "description": "Tectonic uplift breaches the feeder — a cooler fresh pulse grows gen-2 fluorite + calcite", "spots": "breach" }
+      ],
+      "sources": [
+        "Dunham, K.C. (1990) — Geology of the Northern Pennine Orefield, Vol. 1 (2nd ed.), British Geological Survey Economic Memoir.",
+        "Ramsay, J.G. (1980) — The crack-seal mechanism of rock deformation, Nature 284.",
+        "Bons, Elburg & Gomez-Rivas (2012) — A review of the formation of tectonic veins and their microstructures, Journal of Structural Geology."
+      ]
+    },
+
     "porphyry": {
       "anchor": "Bingham Canyon Cu-Mo-Au, Oquirrh Mountains, UT (late-Eocene quartz-monzonite porphyry, ~38 Ma)",
       "description": "Copper porphyry — high-T high-pressure brine with discrete Cu and Mo pulses. Quartz + chalcopyrite + bornite + molybdenite + pyrite + tetrahedrite/tennantite paragenesis.",

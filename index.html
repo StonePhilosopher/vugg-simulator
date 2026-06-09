@@ -2874,6 +2874,7 @@ footer a:hover {
   <div class="menu-buttons">
     <button onclick="startScenarioInCreative('cooling')">❄️ Cooling — Herkimer "diamond" pocket (Middleville, NY).</button>
     <button onclick="startScenarioInCreative('mvt')">⚗️ Mississippi Valley-type — Tri-State district (Joplin / Picher, MO-KS-OK).</button>
+    <button onclick="startScenarioInCreative('reactivated_fluorite_vein')">🟢 Reactivated Fluorite Vein — North Pennine style (Weardale): a sealed vug, breached open by tectonic reactivation for a second fluorite generation.</button>
     <button onclick="startScenarioInCreative('reactive_wall')">🪨 Reactive Wall — Sweetwater Mine, Viburnum Trend (MO).</button>
     <button onclick="startScenarioInCreative('porphyry')">🟠 Porphyry Copper — Bingham Canyon (UT).</button>
     <button onclick="startScenarioInCreative('bisbee')">🔵 Bisbee Cu Oxidation Cascade — Warren District (Cochise County, AZ).</button>
@@ -2955,6 +2956,7 @@ footer a:hover {
       <option value="cooling">cooling</option>
       <option value="pulse">pulse</option>
       <option value="mvt">mvt</option>
+      <option value="reactivated_fluorite_vein">reactivated_fluorite_vein</option>
       <option value="porphyry">porphyry</option>
       <option value="reactive_wall">reactive_wall</option>
       <option value="radioactive_pegmatite">radioactive_pegmatite</option>
@@ -3795,6 +3797,7 @@ Scenarios:
           <option value="porphyry">Porphyry Copper (Bingham)</option>
           <option value="pulse">Fluid Pulse</option>
           <option value="radioactive_pegmatite">Radioactive Pegmatite</option>
+          <option value="reactivated_fluorite_vein">Reactivated Fluorite Vein</option>
           <option value="reactive_wall">Reactive Wall (Sweetwater)</option>
           <option value="roughten_gill">Roughten Gill Pb-Cu (Caldbeck)</option>
           <option value="sabkha_dolomitization">Coorong Sabkha Dolomite</option>
@@ -14963,7 +14966,44 @@ let timeScale = 5.0;
 //   Tools: depletion-dip-probe / strip-depletion-probe / strip-floor-probe. FILES: js/85f
 //   (format+codec), js/85g (floor capture), js/85h (storage), js/99k (shadow render).
 //   OPEN: a sonifier depletion voice (hear the sag) is a natural follow-up, not yet built.
-const SIM_VERSION = 175;
+//
+// (interim, SIM-NEUTRAL — no bump): the SONIFIER DEPLETION VOICE shipped (js/85i +
+//   99k, the "hear the sag" follow-up above) — a shadow oscillator at the deepest
+//   depleted pocket's pitch, loudness keyed on RELATIVE drawdown. Reads recorded
+//   floor_data only; no engine output touched → no version bump, baselines untouched.
+//
+// v176 (2026-06-08) — REACTIVATED FLUORITE VEIN scenario: the fluid-spots SEAL →
+//                     BREACH lifecycle (js/85k Phase 2d) gets its first scenario.
+//                     The breach API was wired + tested but UNUSED; this lights it up.
+//
+//   THE STORY (crack-seal fracture reactivation; Ramsay 1980, Nature): a North-
+//   Pennine-style fluorite-galena-barite vug grows a first generation while its
+//   feeder fractures are OPEN, a late cement SEALS the conduit shut (the cavity goes
+//   quiet), then a tectonic pulse BREACHES it open again and a cooler fresh fluid
+//   grows a distinct SECOND generation (gen-2 fluorite + calcite). It demonstrates
+//   that the fluid-spots couplings read spot.open LIVE: the deposition-clustering
+//   halo concentrates gen-1 at the open feeders, switches OFF across the sealed
+//   interval, and switches back ON for gen-2 at the reopened vents.
+//
+//   MECHANISM (no new engine): stage 1 reuses the proven generic fluid_mixing (step
+//   20) + fluid_pulse (step 60) brine events on an mvt-analog NaCl-CaCl2 broth
+//   (F nudged to 12, fluorite-forward). New handlers js/70t-reactivated-vein.ts:
+//   event_reactivated_vein_seal (step 78, spots:'seal' — cools to ~150°C, stalls
+//   flow, draws CO3/F down) + event_reactivated_vein_breach (step 118, spots:'breach'
+//   — cooler fresh pulse F+16/CO3+130/Ca+90). fluid_spots:{deposition:true}; wall is
+//   reactive limestone, architecture 'tabular' (vein-bounded). expects_species:
+//   fluorite, galena, barite, calcite, sphalerite. The seal/breach directive is
+//   handled centrally in apply_events (js/85d), logged "🔌 N feeders sealed/breached".
+//
+//   BASELINE: a NEW scenario is purely ADDITIVE — seed42 + strip_digest for every
+//   existing scenario are byte-identical (each runs independently at seed 42); the
+//   baselines just gain the new reactivated_fluorite_vein block. SIM bumps because
+//   it's new gameplay content. CITATIONS kept safe/general (Dunham 1990 BGS Memoir;
+//   Ramsay 1980; Bons et al. 2012) — the broth is DESIGNED (reverse-from-engines,
+//   mvt-analog), honestly framed as a demonstrator archetype, not a measured locality.
+//   FILES: js/70t (handlers), js/70-events.ts (registry), data/scenarios.json5
+//   (spec), index.html (3 menu surfaces), tests-js/reactivated-fluorite-vein.test.ts.
+const SIM_VERSION = 176;
 
 // ── 18-constants.js ──
 
@@ -39642,6 +39682,12 @@ const EVENT_REGISTRY = {
     // is a Ba + Mn fluid pulse with rng-driven Mn variation. See
     // js/70s-tn457.ts for the per-pulse chemistry.
     tn457_mn_ba_pulse: event_tn457_mn_ba_pulse,
+    // 2026-06-08 — reactivated_fluorite_vein: the fluid-spots SEAL → BREACH
+    // (Phase 2d) demonstrator. Two handlers do the chemistry of each transition;
+    // the feeder open/close itself is the event's `spots: 'seal'|'breach'`
+    // directive (handled centrally in apply_events). See js/70t-reactivated-vein.ts.
+    reactivated_vein_seal: event_reactivated_vein_seal,
+    reactivated_vein_breach: event_reactivated_vein_breach,
 };
 // Minimal JSONC parser — strips // line + /* */ block comments and
 // trailing commas, then JSON.parse. Sufficient for our spec files; not
@@ -41505,6 +41551,58 @@ function event_tn457_mn_ba_pulse(c) {
     // Flow rate spike per arriving pulse.
     c.flow_rate = Math.max(c.flow_rate, 2.0);
     return `TN457 pulse: Ba ${c.fluid.Ba.toFixed(0)}, Mn +${mnAdd.toFixed(2)} (now ${c.fluid.Mn.toFixed(2)}), pH ${c.fluid.pH.toFixed(2)}, T ${c.temperature.toFixed(0)}°C, O2 ${c.fluid.O2.toFixed(2)}.`;
+}
+
+// ── 70t-reactivated-vein.js ──
+
+// ============================================================
+// js/70t-reactivated-vein.ts — a sealed vug, reopened
+// ============================================================
+// Event handlers for `reactivated_fluorite_vein` — the demonstrator for the
+// fluid-spots SEAL → BREACH lifecycle (js/85k Phase 2d). The geological story
+// is crack-seal fracture reactivation (Ramsay 1980, Nature): a hydrothermal vug
+// grows from an ascending brine while its feeder fractures are OPEN, then a late
+// cement chokes the plumbing SHUT, the cavity goes quiet — and a later tectonic
+// pulse REOPENS (breaches) the fracture, admitting a cooler fresh fluid that
+// grows a visibly distinct SECOND generation on top of the first. Telescoped /
+// reactivated veins are textbook in the North Pennine Orefield (Weardale
+// fluorite-galena-barite; Dunham 1990, BGS Economic Memoir), where repeated
+// fluid pulses tracked reactivated faults.
+//
+// The mechanic this exercises: every fluid-spots coupling (2b lopsided erosion,
+// 2c.1 origin halo, 2c.2b deposition clustering) filters on `spot.open`, so the
+// `spots: 'seal'` / `spots: 'breach'` directives on these events (handled
+// centrally in apply_events, js/85d) flip the open-set and the clustering halo
+// follows for free: gen-1 crystals concentrate at the open feeders, the seal
+// switches the halo OFF, the breach switches it back ON for gen-2.
+//
+// These two handlers do only the CHEMISTRY of each transition (the feeder
+// open/close is the directive's job). Bounded Math.max/min transitions per the
+// scenario-authoring convention. Stage 1 itself reuses the proven generic
+// fluid_mixing/fluid_pulse events (the same brine chemistry the mvt scenario
+// fires from), so this file owns only the seal + breach.
+// SEAL — a late carbonate/silica cement chokes the feeder fracture. The vug
+// cools and the flow stalls; CO3 is drawn down as the sealing cement forms.
+// Paired in scenarios.json5 with `spots: 'seal'`, which shuts the feeders so
+// the deposition-clustering halo switches off during the quiescent interval.
+function event_reactivated_vein_seal(c) {
+    c.temperature = Math.max(120, c.temperature - 30); // cooling as the conduit closes
+    c.flow_rate = 0.05; // plumbing choked → near-stagnant
+    c.fluid.CO3 = Math.max(60, c.fluid.CO3 - 40); // carbonate consumed by the sealing cement
+    c.fluid.F = Math.max(2, c.fluid.F - 4); // residual F drawn down by gen-1 fluorite
+    return `Feeder cementation seals the cavity — T ${c.temperature.toFixed(0)}°C, flow stalls; the vug goes quiet.`;
+}
+// BREACH — tectonic reactivation reopens the fracture and a cooler, fresh
+// fluid pulse pours in: replenished F brings a second-generation fluorite, and
+// the CO3 + Ca spike brings late calcite. Paired with `spots: 'breach'`, which
+// reopens the feeders so the second generation clusters at the same vents.
+function event_reactivated_vein_breach(c) {
+    c.temperature = Math.max(90, c.temperature - 10); // the second pulse is cooler than the first
+    c.fluid.F = Math.min(30, c.fluid.F + 16); // fresh fluorine → gen-2 fluorite
+    c.fluid.Ca = Math.min(420, c.fluid.Ca + 90); // Ca for both fluorite + calcite
+    c.fluid.CO3 = Math.min(320, c.fluid.CO3 + 130); // carbonate spike → late calcite
+    c.flow_rate = 0.4; // plumbing reopened, flow resumes
+    return `Tectonic reactivation breaches the feeder — a cooler fresh pulse (F +16, CO3 +130) at T ${c.temperature.toFixed(0)}°C; gen-2 fluorite + calcite.`;
 }
 
 // ── 75-transitions.js ──
