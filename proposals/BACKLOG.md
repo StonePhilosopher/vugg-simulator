@@ -20,6 +20,20 @@ Living list of open work items, captured from session conversations so context s
 > age with the architecture under them — re-probe before trusting an old
 > shape.**
 >
+> **SAME SESSION, 13th CATCH — the tune pass is COMPLETE, stale 4 → 2:**
+> "stale" mirabilite + torbernite were CORRECT GEOLOGY mis-filed by
+> end-state-only accounting. Mirabilite nucleates every searles winter
+> (σ 24.6) and dehydrates to thenardite pseudomorphs every summer — the
+> textbook Glauber-salt cycle, working since v29; torbernite grows ~30
+> steps of emerald Musonoi plates at schneeberg then dehydrates to
+> metatorbernite per the scenario's own design (10/10 seeds once counted;
+> zeunerite 2/10 → 10/10 too). The checkers tallied `c.mineral === m` and
+> never read the `paramorph_origin` lineage the transition code records.
+> Both tools fixed (coverage + geology_check). Remaining stale 2 are
+> genuine and NOT tuning work: jeffrey magnetite (engine-level low-O2
+> design), roughten_gill mottramite (own gate-census arc; V axis is
+> twice-confirmed touchy). Full story: CATCHES.md thirteenth entry.
+>
 > ## 🪨 UPDATE (2026-06-10) — SESSION HANDOFF: review → rebake → soundtrack
 >
 > **`proposals/HANDOFF-REVIEW-REBAKE-MUSIC-2026-06-10.md`** is the handoff for

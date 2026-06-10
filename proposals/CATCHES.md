@@ -294,6 +294,7 @@ field). The data now testifies against itself automatically, every run.
 | 2026-06-09 same-length bundle staleness | Guard's diagnostic hid the failure ("diff length: 0 chars" on a red check) | running `npm run ci` COLD at review start |
 | v178 PWP Ea permutation + the test that loved it | Real values, wrong PAIRING; green test pinned to backwards physics | literature audit of the pairing; the corrected physics failing the test exposed the fixture |
 | v177 "load-bearing" that was latent | Review claim ahead of measurement | the probe run BOTH ways (fix stashed/unstashed) — identical binding populations |
+| 2026-06-10 "stale" mirabilite + torbernite | Correct geology mis-filed as failure by end-state-only accounting | the gate census said PASS×242 σ=24.6 — then reading the sim's own log, which narrated the seasonal cycle the checkers couldn't see |
 
 The seventh catch is the most satisfying: the verification tool built from
 the sixth catch's lesson found a backlog of the same failure mode on its
@@ -402,6 +403,28 @@ v144 tuning it informed — it calls the LIVE conversion, so its printed values
 bake in the current factor and its "recommended factor" lines assume raw.
 The instrument that tuned the constant could no longer measure it honestly.
 Probes are data too; they drift like data.
+
+The THIRTEENTH catch (2026-06-10, the tune-pass session) is the inverse of
+all twelve before it: nothing was wrong with the simulator — the BOOKKEEPING
+mis-filed correct geology as failure, for ~150 versions. "Stale" mirabilite at
+searles_lake turned out to be the textbook Glauber-salt seasonal cycle WORKING:
+winter nights below the 32 °C eutectic nucleate a mirabilite crop (σ 24.6,
+three winters at seed 42), every summer afternoon dehydrates it to thenardite
+with the external form preserved as a pseudomorph — the sim's own log narrates
+the whole cycle. And "stale" torbernite at schneeberg was growing ~30 steps of
+emerald Musonoi-habit plates before dehydrating to metatorbernite per the
+scenario's own vadose-exhumation design (10/10 seeds, 34 crystals, once
+counted honestly; zeunerite went 2/10 → 10/10 the same instant). The hole:
+`mineral_coverage_check` and `geology_check` tallied END-STATE mineral
+identity (`c.mineral === m`), so any species whose whole point is to live
+briefly and transition in place — exactly what DEHYDRATION_TRANSITIONS
+exists to model — could never be counted as having fired. The transition
+code even RECORDS the lineage (`crystal.paramorph_origin`); the checkers
+just never read it. Cure: credit the origin species in both tools. Stale
+list 4 → 2 (both remainders are genuine: jeffrey magnetite is engine-level,
+mottramite needs its own arc). **An instrument that only reads final state
+will mis-file every process whose beauty is in the passing — check whether
+your accounting can see what your simulator can do.**
 
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.

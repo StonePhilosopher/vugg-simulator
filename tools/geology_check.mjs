@@ -42,7 +42,13 @@ for (const seed of seeds) {
   const sim = new VugSimulator(conditions, events);
   for (let i = 0; i < (defaultSteps ?? 160); i++) sim.run_step();
   for (const m of tracked) {
-    const crystals = sim.crystals.filter(c => c.mineral === m);
+    // 2026-06-10: count in-place transitions as firings of the ORIGIN
+    // species (same accounting fix as mineral_coverage_check) —
+    // schneeberg torbernite nucleates, grows ~30 steps of emerald
+    // Musonoi plates, then dehydrates to metatorbernite per the
+    // scenario's own vadose-exhumation design; end-state-identity
+    // counting reported it 0/10 for ~150 versions.
+    const crystals = sim.crystals.filter(c => c.mineral === m || c.paramorph_origin === m);
     if (crystals.length) {
       byMineral[m].seeds.push(seed);
       byMineral[m].totalCrystals += crystals.length;
