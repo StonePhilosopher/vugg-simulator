@@ -89,7 +89,13 @@ function event_roughten_gill_pyrite_oxidation(c) {
   // pyromorphite begin nucleating on residual galena. Plumbogummite
   // gates also clear here (Pb 90 + Al 15 + P 8 + pH 4.2 + T 35).
   c.temperature = Math.max(30, c.temperature - 10);
-  c.fluid.S = Math.min(220, c.fluid.S + 80);            // SO4 surge from pyrite breakdown (less aggressive, helps caledonite later)
+  // v180: surge +80 → +110. The v109 value left the wall-cell CO3:SO4
+  // ratio at 0.33-0.36 through the ENTIRE linarite window — over the
+  // 0.30 fork by a whisker, for 75 consecutive steps (gate-census
+  // probe). A stronger pyrite-derived SO4 surge is this event's own
+  // mechanism; it also lands the caledonite stage ratio at ~0.8,
+  // BETTER inside its 0.3-1.0 sweet spot than the old marginal 1.06.
+  c.fluid.S = Math.min(220, c.fluid.S + 110);           // SO4 surge from pyrite breakdown
   c.fluid.Cu = Math.min(75, c.fluid.Cu + 35);           // bump to mottramite + brochantite sweet spot
   c.fluid.Pb = Math.min(95, c.fluid.Pb + 20);           // Pb mobilized from galena
   c.fluid.As = Math.min(18, c.fluid.As + 5);            // As(V) mobilized but less than v107 (give pyromorphite the win)
@@ -101,25 +107,23 @@ function event_roughten_gill_pyrite_oxidation(c) {
 }
 
 function event_roughten_gill_linarite_stage(c) {
-  // v109 iteration 1 (final): conservative pH bump + O2 ease;
-  // observed Shape-B RNG-cascade displacement when overly aggressive
-  // state-pinning was tried in iteration 2 (it actually displaced
-  // ALL Pb-Cu sulfates). Linarite's gates clear in sigma calculation
-  // (sigma ~6.5 per inspection) but per-step nucleation iterator
-  // displaces it to pyromorphite + Ag-sulfosalts that fire first.
-  // Documented as a structural issue (Shape B per vugg-tune-scenario
-  // skill — usually not fixable at tuning layer; the per-scenario
-  // nucleation cap or class-iterator ordering is the limiter).
+  // HISTORY: v109 diagnosed linarite as Shape B (RNG-cascade
+  // displacement — σ ~6.5 cleared but pyromorphite + Ag-sulfosalts
+  // consumed the budget first) and documented it as structural. That
+  // diagnosis predated the per-vertex/per-cell architecture (v160) and
+  // the v177 competition cell-key fix. RE-PROBED v180: the displacement
+  // is GONE — the actual blocker was the CO3:SO4 fork missing 0.30 by
+  // 0.03-0.06 for the entire window (the v109 AMD surge left the wall
+  // ratio at 0.33-0.36). With the v180 surge (+110), LINARITE FIRES
+  // (2x at seed 42, ~2 mm) — the headline azure-blue specimen grows.
   //
   // Linarite window: pH recovers to 5.5-6 (acid neutralized by minor
-  // wallrock dissolution + meteoric mixing), CO3 still low. The
-  // Pb-Cu-SO4 chemistry hits the linarite gate but loses the
-  // nucleation roll-off.
+  // wallrock dissolution + meteoric mixing), CO3 still low.
   c.temperature = Math.max(28, c.temperature - 2);
   c.fluid.pH = Math.min(5.8, c.fluid.pH + 1.5);
   c.fluid.O2 = Math.max(0.8, c.fluid.O2 - 0.3);
   c.flow_rate = 0.2;
-  return `Linarite window: T ${c.temperature.toFixed(0)}°C, pH ${c.fluid.pH.toFixed(1)}, CO3:SO4 = ${(c.fluid.CO3 / Math.max(c.fluid.S, 1)).toFixed(2)} (sulfate-dominant). PbCu(SO4)(OH)2 gates clear but RNG-cascade displaces nucleation to pyromorphite + Ag-sulfosalts.`;
+  return `Linarite window: T ${c.temperature.toFixed(0)}°C, pH ${c.fluid.pH.toFixed(1)}, CO3:SO4 = ${(c.fluid.CO3 / Math.max(c.fluid.S, 1)).toFixed(2)} (sulfate-dominant). PbCu(SO4)(OH)2 — deep azure-blue, THE Roughten Gill collector specimen.`;
 }
 
 function event_roughten_gill_caledonite_transition(c) {
@@ -150,7 +154,13 @@ function event_roughten_gill_leadhillite_cap(c) {
   // as the terminal Pb-Cu-CO3 phase. Pyromorphite + mimetite fire
   // alongside as Pb-PO4 and Pb-AsO4 phases on whatever P + As is left.
   c.temperature = Math.max(22, c.temperature - 3);
-  c.fluid.CO3 = Math.min(110, c.fluid.CO3 + 50);
+  // v180: flood +50 → +70, ceiling 110 → 165. Two reasons: (1) the cap's
+  // σ was 0.774 — limited by the carbonate term (co3_f = CO3/100 = 1.1);
+  // (2) the v180 AMD S-surge leaves more residual sulfate, and the
+  // CO3:SO4 ≥ 1.5 leadhillite fork must still hold (165/~97 ≈ 1.7 ✓).
+  // A carbonate FLOOD is this event's whole identity — meteoric CO2 +
+  // lime-stained jointing at pH 7 supports the higher ceiling.
+  c.fluid.CO3 = Math.min(165, c.fluid.CO3 + 70);
   c.fluid.S = Math.max(40, c.fluid.S - 20);
   c.fluid.Cu = Math.max(8, c.fluid.Cu * 0.3);          // Cu fully depleted now
   c.fluid.pH = Math.min(7.0, c.fluid.pH + 0.5);

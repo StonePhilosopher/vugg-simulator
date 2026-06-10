@@ -73,7 +73,14 @@ describe('Roughten Gill Mine scenario (v107)', () => {
       expect(species.has('proustite')).toBe(true);
     });
 
-    it('fires sphalerite as Zn primary across the seed sample', { timeout: 90000 }, () => {
+    // 2026-06-10 timeout bump (90s → 150s), same shape as pharmacolite's
+    // v160 bump: this 16-seed × 200-step loop runs in well under the
+    // budget in ISOLATION (whole file 56 s), but under parallel suite
+    // load wall time inflates ~2-3.5×, leaving zero headroom at 90 s —
+    // it red-lined the moment the §1.4 snapshot projection added ~2.6 s
+    // per seed-sample test (the 14th catch in CATCHES.md). 150 s gives
+    // the same ~3.5× headroom pharmacolite gets.
+    it('fires sphalerite as Zn primary across the seed sample', { timeout: 150000 }, () => {
       // v138 retune: phosphate twin_laws batch (autunite + zeunerite +
       // uranospinite + pyromorphite + vanadinite + descloizite +
       // mottramite + clinobisvanite) added 8 new rng.random() draws
@@ -132,7 +139,8 @@ describe('Roughten Gill Mine scenario (v107)', () => {
       expect(species.has('cerussite')).toBe(true);
     });
 
-    it('fires brochantite across the seed sample (Cu-SO4 supergene — v109 tune gain)', { timeout: 90000 }, () => {
+    // 2026-06-10: 90s → 150s, same rationale as the sphalerite test above.
+    it('fires brochantite across the seed sample (Cu-SO4 supergene — v109 tune gain)', { timeout: 150000 }, () => {
       // v140 retune: sulfate twin_laws batch (celestine + anglesite +
       // anhydrite + jarosite + alunite + brochantite + antlerite +
       // mirabilite + thenardite) added 9 new rng.random() draws per

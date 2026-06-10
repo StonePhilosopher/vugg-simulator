@@ -33,10 +33,17 @@ _snapshotGlobal() {
   return [_cloneFluid(this.conditions.fluid), this.conditions.temperature];
 },
 
-  // Phase C v1: apply the delta between current conditions and the
-// pre-block snapshot to all non-equator ring_fluids and
-// ring_temperatures. The equator ring is aliased to conditions.fluid
-// so it already reflects the new value — skip it.
+  // Phase C v1 (comment trued 2026-06-10): apply the delta between
+// current conditions and the pre-block snapshot. FLUID deltas go to
+// the voxel grid (all wall + interior voxels — canonical since v159)
+// with a mesh.propagateDelta fallback; TEMPERATURE deltas go to all
+// non-equator ring_temperatures. The historical per-ring FLUID loop
+// is gone — the non-equator ring_fluids slots are a retired store
+// (frozen at init + vadose/open-atmosphere partials, read only by
+// mesh-absent fallbacks); the replay snapshot, their one live
+// consumer, now captures a projection of the cells instead
+// (_ringFluidMeans, review §1.4). The equator ring is aliased to
+// conditions.fluid so it already reflects the new value.
 _propagateGlobalDelta(snap) {
   const [preFluid, preTemp] = snap;
   const equator = Math.floor(this.wall_state.ring_count / 2);
@@ -301,10 +308,12 @@ _diffuseRingState(rate?) {
   // variable every redox engine actually reads — moved underneath it. So
   // the strip's Eh chip showed a dead flat line at 200 even as the redox
   // state swung. This derives Eh from O2 via the SAME ehFromO2 anchor map
-  // the flag-ON redox helpers (20c) invert, so when EH_DYNAMIC_ENABLED
-  // flips in 4c.2 the engines read back the identical O2 (ehFromO2 /
-  // o2FromEh are exact inverses for O2 ∈ [0.05, 5], which covers every
-  // scenario; the top saturation segment diverges and is clamped in 4c.2).
+  // the flag-ON redox helpers (20c) invert, so the engines read back the
+  // identical O2. (Historical note: the planned 4c.2 clamp for the
+  // diverging top saturation segment was never added — deemed unneeded at
+  // max observed O2 ≈ 2.2 — and on 2026-06-10 the divergence itself was
+  // fixed instead: both functions now saturate at 1000 mV/decade and are
+  // exact inverses over the whole representable domain, Eh ≥ -620 mV.)
   //
   // OBSERVER-ONLY while the flag is OFF: nothing in flag-OFF mode reads
   // fluid.Eh (redoxFraction is uncalled; the per-class helpers read O2),
@@ -348,6 +357,95 @@ _diffuseRingState(rate?) {
         for (let i = 0; i < mesh.cells.length; i++) one(mesh.cells[i] && mesh.cells[i].fluid);
       }
     }
+  },
+
+  // ====================================================================
+  // REVIEW-THREE-METRICS §1.4 resolution (2026-06-10) — ring_fluids is
+  // RETIRED as a forward chemistry store. The replay snapshot no longer
+  // clones the (frozen) non-equator slots; it captures a PROJECTION of
+  // the canonical per-cell chemistry (mesh.cells[].fluid) computed by
+  // this helper at snapshot time.
+  //
+  // History: Phase C gave each ring its own fluid and
+  // _propagateGlobalDelta kept them fed with event deltas. The cavity-
+  // mesh tranches moved canonical chemistry to per-cell storage and
+  // v159 re-pointed event propagation at the voxel grid — after which
+  // the documented per-ring loop was gone and the non-equator slots
+  // froze at the initial broth for the whole run (review §1.4 probe:
+  // vein seed 42, all 15 non-equator rings 100% divergent on Zn).
+  // Their one LIVE consumer — the replay snapshot capture
+  // (_repaintWallState → snap.ring_fluids), which the helicoid replay
+  // chips read — was therefore showing initial-broth chemistry for 15
+  // of 16 rings: the replay-mode sibling of the v157 live-chip pyramid
+  // artifact.
+  //
+  // The decision (per the review: "retire the store or restore the
+  // loop — not a third partial mirror"): RETIRE. The projection is not
+  // a mirror of event writes — it is a total, unidirectional read-time
+  // computation canon → snapshot, so it cannot rot the way the partial
+  // mirrors did.
+  //
+  // Why SNAPSHOT-time, not every step (the first cut ran in run_step):
+  // measured 1.32 ms/call on roughten_gill (16×120 cells × 45 dynamic-
+  // key fields) ≈ 12% of a 10.7 ms step — enough to push the 32-seed
+  // integration tests (pharmacolite 150 s, roughten-gill 90 s budgets)
+  // over their timeouts under parallel suite load. At snapshot stride
+  // (~63 captures per 200-step run) the same work costs ~80 ms per run.
+  //
+  // The LIVE ring_fluids array is deliberately untouched:
+  //   * ring_fluids[equator] === conditions.fluid (the alias) is the
+  //     BULK view events and the bulk nucleation gate read — load-
+  //     bearing, the Tranche-6 borax lesson.
+  //   * The non-equator slots keep their legacy frozen-at-init values
+  //     (plus the vadose/open-atmosphere partial writes), so the
+  //     mesh-absent fallback readers (_runEngineForCrystal sentinel,
+  //     dehydration, 20d) see EXACTLY what they saw before — byte-
+  //     identical by construction, not by hope. (Census at seed 42:
+  //     tools/cell-resolution-census.mjs measured 0 fallback hits in
+  //     8966+ crystal-step reads — but 0-measured ≠ 0-guaranteed, and
+  //     frozen is what the calibration was tuned against.)
+  //   * `concentration` is carried through from the stored slot, NOT
+  //     averaged (same exclusion as diffusion's _fluidFieldNames): it
+  //     is per-ring evaporative state owned by the vadose mechanic.
+  //
+  // Returns an array shaped like ring_fluids (one fluid-like object per
+  // ring): equator = clone of conditions.fluid (the bulk view, exactly
+  // what the old capture put there via the alias); other rings = clone
+  // of the stored slot with every _fluidFieldNames field overwritten by
+  // the ring's cell mean. Falls back to plain clones when no mesh is
+  // built (headless harness) — the legacy capture, unchanged.
+  _ringFluidMeans() {
+    const rf = this.ring_fluids;
+    if (!rf || !rf.length) return null;
+    const out = new Array(rf.length);
+    const mesh = this.wall_state && this.wall_state.meshFor
+      ? this.wall_state.meshFor(this) : null;
+    const perRing = this.wall_state.cells_per_ring || 0;
+    const haveCells = !!(mesh && mesh.cells && mesh.cells.length && perRing > 0);
+    const equator = Math.floor(this.wall_state.ring_count / 2);
+    const fields = this._fluidFieldNames || [];
+    const nF = fields.length;
+    const sums = new Array(nF);
+    const counts = new Array(nF);
+    for (let r = 0; r < rf.length; r++) {
+      const clone = rf[r] ? _cloneFluid(rf[r]) : null;
+      out[r] = clone;
+      if (!clone || !haveCells || r === equator) continue;
+      sums.fill(0); counts.fill(0);
+      for (let c = 0; c < perRing; c++) {
+        const cell = mesh.cells[r * perRing + c];
+        const f = cell && cell.fluid;
+        if (!f) continue;
+        for (let i = 0; i < nF; i++) {
+          const v = f[fields[i]];
+          if (typeof v === 'number' && isFinite(v)) { sums[i] += v; counts[i]++; }
+        }
+      }
+      for (let i = 0; i < nF; i++) {
+        if (counts[i] > 0) clone[fields[i]] = sums[i] / counts[i];
+      }
+    }
+    return out;
   },
 
   _repaintWallState() {
@@ -462,7 +560,14 @@ _diffuseRingState(rate?) {
     // snap; for a 120-step MVT (stride 9 → ~14 snaps) that's ~90 KB
     // beyond the existing v66 schema. Smaller scenarios cost less;
     // 2400-step pegmatites cost ~190 KB.
-    ring_fluids: this.ring_fluids ? this.ring_fluids.map((f: any) => _cloneFluid(f)) : null,
+    //
+    // REVIEW §1.4 (2026-06-10): this used to clone the ring_fluids
+    // array directly — whose non-equator slots froze at the initial
+    // broth when v159 removed their event feed, so replay chips showed
+    // day-zero chemistry for 15 of 16 rings. Now captures the per-ring
+    // PROJECTION of the canonical cell chemistry instead; the live
+    // store is untouched. See _ringFluidMeans for the full rationale.
+    ring_fluids: this._ringFluidMeans ? this._ringFluidMeans() : null,
     ring_temperatures: this.ring_temperatures ? this.ring_temperatures.slice() : null,
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // === HELIX-OVERLAY-FORK ADDITION (Week 3 carbonate) ===============

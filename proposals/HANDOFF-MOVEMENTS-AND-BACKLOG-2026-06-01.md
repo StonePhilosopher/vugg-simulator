@@ -9,6 +9,19 @@ we want to do, carried forward. The next builder can act from this doc alone.
 suite green; working tree clean. Canonical (`StonePhilosopher`) minerals.json
 FIXED 2026-06-01 (`083d994`, boss).
 
+> **STATUS (2026-06-10): Phase 1's last precondition is CLEARED.** The
+> ehFromO2/o2FromEh saturation-slope asymmetry (the round trip an
+> Eh-canonical movement must survive — +800 mV snapped to +530 on window
+> close) is FIXED: both functions now saturate at 1000 mV/decade and are
+> exact inverses over the whole representable domain (Eh ≥ -620 mV).
+> SIM-neutral at v180 (measured: fleet max O2 = 5.000, AT the top anchor,
+> never over it). Standing instrument: `tools/redox-anchor-probe.mjs`
+> (round-trip audit + `--fleet` ceiling sweep — re-run if the 20c anchor
+> maps ever change). With 4c.1–4c.3a long done, **Phase 1 (pilot movement
+> on `mvt`) is fully unblocked.** NB the doc below predates this — its
+> "exact inverses for O2 ∈ [0.05, 5] → clamp in 4c.2" line is superseded
+> (no clamp was ever added; the divergence itself is gone).
+
 ---
 
 ## ★ North Star — follow the science (boss, 2026-06-01)

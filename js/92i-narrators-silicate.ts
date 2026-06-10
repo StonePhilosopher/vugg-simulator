@@ -91,7 +91,9 @@ Object.assign(VugSimulator.prototype, {
   } else if (imperial_gold) {
     parts.push(narrative_variant('topaz', 'imperial_gold') || 'Imperial golden-orange — Cr³⁺ substituting for Al³⁺ in the topaz structure. The chromium came not from the main fluid but from nearby ultramafic country rock dissolving in trace. This is the signature of Ouro Preto / Capão do Lana — the only place on Earth where it\u2019s a commercial color.');
   } else if (pale_blue) {
-    parts.push(narrative_variant('topaz', 'pale_blue') || 'Pale blue, F-rich and Cr-starved. In nature this coloration is often enhanced by subsequent radiation exposure — the sky-blue topaz flooded onto the market after Iapetos-age pegmatites started being deliberately irradiated.');
+    // (2026-06-10 review §2.4: "Iapetos-age pegmatites ... deliberately
+    // irradiated" was a garbled phrase — rewritten to the actual story.)
+    parts.push(narrative_variant('topaz', 'pale_blue') || 'Pale blue, F-rich and Cr-starved. Natural blue topaz owes its color to geologic radiation doses over deep time; the sky-blue that flooded the market since the 1970s is colorless natural topaz deliberately irradiated and heat-treated — nature’s slow recipe, industrialized.');
   } else if (pale_yellow) {
     parts.push(narrative_variant('topaz', 'pale_yellow') || "Pale yellow from Fe³⁺ in the Al site — the common 'imperial' knockoff. Without the Cr chromophore, this color is merely pretty, not legendary.");
   } else {
@@ -236,7 +238,9 @@ Object.assign(VugSimulator.prototype, {
   const parts = [`Heliodor #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
   parts.push(narrative_blurb('heliodor') || 'Be₃Al₂Si₆O₁₈ + Fe³⁺ — the yellow variety of beryl. Same iron as aquamarine but oxidized to the Fe³⁺ state; the aquamarine/heliodor split is the cleanest redox record in the gem world.');
   if (c.zones.some(z => (z.note || '').includes('Namibian'))) {
-    parts.push(narrative_variant('heliodor', 'namibian_deep_yellow') || 'Namibian deep-yellow — high-Fe strongly-oxidizing pocket signature. The Volodarsk pegmatite cross-cuts Fe-rich country rock, delivering both the Fe source and the late oxidizing pulse that converts Fe²⁺ to Fe³⁺.');
+    // (2026-06-10 review §2.4: Volodarsk-Volynskii is UKRAINE, not Namibia —
+    // two localities were conflated. Variant KEY kept for back-compat.)
+    parts.push(narrative_variant('heliodor', 'namibian_deep_yellow') || 'Deep-yellow — the high-Fe, strongly-oxidizing pocket signature. The celebrated deep-golden heliodors come from Volodarsk-Volynskii in Ukraine, where the pegmatite cross-cuts Fe-rich country rock — both the iron source and the late oxidizing pulse that converts Fe²⁺ to Fe³⁺. Namibia’s Erongo and Klein Spitzkoppe pockets grow their own, typically paler, version.');
   }
   const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
   if (inclusion_zones.length) {
@@ -265,7 +269,11 @@ Object.assign(VugSimulator.prototype, {
   if (varieties.has('kunzite')) {
     parts.push(narrative_variant('spodumene', 'kunzite') || "Kunzite — the pink-lilac Mn²⁺ variety, named for George Kunz, Tiffany & Co.'s mineralogist who bought Minas Gerais specimens by the crate in the early 1900s. Kunzite fluoresces strongly pink-orange under SW UV, a diagnostic test no other pink gem material passes. Color depth correlates with growth rate — faster growth traps more color-causing impurity.");
   } else if (varieties.has('hiddenite')) {
-    parts.push(narrative_variant('spodumene', 'hiddenite') || 'Hiddenite — the green Cr³⁺ variety, named for William Earl Hidden, who discovered the North Carolina locality in 1879. Much rarer than kunzite because Cr³⁺ needs to diffuse from country rock into the pegmatite fluid at just the right moment. Minas Gerais produces the world\u2019s best hiddenite.');
+    parts.push(narrative_variant('spodumene', 'hiddenite') || 'Hiddenite — the green Cr³⁺ variety, named for William Earl Hidden, who discovered the North Carolina locality in 1879. Much rarer than kunzite because Cr³⁺ needs to diffuse from country rock into the pegmatite fluid at just the right moment. Alexander County, North Carolina remains the classic source of true chromium hiddenite; most Brazilian hiddenite is Fe-colored green spodumene wearing the name.');
+    // (2026-06-10 review \u00a72.4: the old tail credited Minas Gerais with the
+    // world's best hiddenite \u2014 true Cr-hiddenite's classic source is the
+    // North Carolina discovery locality; Brazilian green spodumene is
+    // mostly Fe-colored.)
   } else if (varieties.has('triphane')) {
     parts.push(narrative_variant('spodumene', 'triphane') || "Triphane — pale yellow-green or colorless, the iron-trace end-member. The name means 'three-appearing' (Greek), for the dichroism that shifts the hue depending on viewing angle. The default spodumene species when no strong chromophore is present.");
   }

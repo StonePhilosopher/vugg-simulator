@@ -10354,5 +10354,39 @@
 //   flag/handler changes are scenario-local). strip digest 0/10 moved. Scenario suite
 //   7/7 green. Probe: vein-quiet (inline) — sealed-interval max T 111 °C, no flow
 //   violation, seal Δ T strictly negative.
-const SIM_VERSION = 179;
+//
+// v180 (2026-06-10) — ROUGHTEN GILL TUNE: linarite + leadhillite FIRE. The headline
+//                     azure-blue specimen grows after three versions of absence.
+//
+//   THE DIAGNOSIS THAT CHANGED: v109 called linarite Shape B (σ ~6.5 cleared, but the
+//   nucleation iterator displaced it to pyromorphite + Ag-sulfosalts) and documented it
+//   as structural. Re-probed post-v177/v178 with a per-step GATE CENSUS: the
+//   displacement is GONE — the actual blocker was the CO3:SO4 ≤ 0.30 fork missing by
+//   0.03-0.06 for SEVENTY-FIVE consecutive steps (the v109 AMD surge left the wall
+//   ratio at 0.33-0.36 through the entire designed window). Diagnoses rot with the
+//   architecture under them; re-probe before trusting an old shape.
+//
+//   THE TUNE (trajectory-level, each change the event's own mechanism): AMD pulse S
+//   surge +80 → +110 (pyrite-derived SO4; drops the window ratio to ~0.26 AND lands
+//   caledonite's stage at ~0.8, better inside its 0.3-1.0 sweet spot than the old
+//   marginal 1.06); leadhillite cap CO3 flood +50 → +70, ceiling 110 → 165 (the cap's
+//   σ was 0.774, carbonate-term-limited; the flood also holds the ≥1.5 fork against
+//   the higher residual S — 165/97 ≈ 1.7).
+//
+//   THE ITERATION THAT REVERTED (the discipline holding): V 6 → 12 for mottramite
+//   (literature-plausible; wallrock V ~10-20 ppm) did NOT fire it (V gate 10 cleared;
+//   blocker is elsewhere — likely Zn≥0.5 or the redox·T product) AND rippled
+//   sphalerite 7x → 2x in the primary stage. Reverted per the strictly-improving rule
+//   (v116 lesson). V is now a TWICE-confirmed touchy axis (v109: 6→0; v180: 6→12).
+//   Mottramite stays aspirational pending its own gate-census arc.
+//
+//   SHAPE D: bayldonite removed from expects_species — its engine encodes the
+//   formula's Cu-dominance (PbCu3: Cu≥100 AND Cu/Pb≥2 → Cu≥140 at Pb 70), unreachable
+//   in this Pb-dominant broth (Cu max ~75) without tripling Cu and transforming the
+//   scenario. Minor accessory at the real locality; the catalog keeps the species.
+//
+//   BASELINE (1/31 moved, roughten_gill only): linarite 0→2x (~2.2 mm), leadhillite
+//   0→2x, cerussite 1→4x, caledonite + brochantite + anglesite KEPT and grew,
+//   pyromorphite stable 6x. 26 → 28 species, 75 crystals. Stale list 7 → 4.
+const SIM_VERSION = 180;
 

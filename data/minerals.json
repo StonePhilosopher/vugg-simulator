@@ -43,7 +43,7 @@
   },
   "_audit_summary": {
     "total_minerals": 51,
-    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 sphalerite dimorph), +erythrite/annabergite (round-2: paired vivianite-group arsenates), +tetrahedrite/tennantite (round-2: paired fahlore Sb/As sulfosalts), +apophyllite (round-2: zeolite-facies silicate, hematite-phantom 'bloody apophyllite' habit, deccan_zeolite scenario added), +aragonite (round-3: orthorhombic CaCO3, Mg/Ca-driven polymorph competition with calcite per Folk 1974/Morse 1997), +rhodochrosite (round-3: Mn carbonate, biggest collection-weight miss at 35 specimens), +siderite (round-3: Fe carbonate, oxidation breakdown to goethite is the diagenetic pseudomorph mechanism), +dolomite (round-3: Ca-Mg ordered carbonate, completes the carbonate quartet calcite/aragonite/rhodochrosite/siderite/dolomite).",
+    "_note": "Post-phase-2 state. The _initial_audit block below is frozen at phase-1 start for historical reference — do not edit. +topaz (MG-B), +tourmaline/beryl/spodumene (MG-A), +anglesite/cerussite/pyromorphite/vanadinite (Pb oxidation), +bornite/chalcocite/covellite (Cu sulfide enrichment), +cuprite/azurite/native_copper (Cu oxide-native), +magnetite/lepidocrocite/stibnite/bismuthinite/native_bismuth/clinobisvanite (Fe/Sb/Bi suite), +chrysocolla (Bisbee), +marcasite (round-2: pH<5 pyrite dimorph), +wurtzite (round-2: T>95 SIM-GATE sphalerite dimorph — the equilibrium inversion is ~1020°C; low-T natural wurtzite is metastable, per 2026-06-10 review §2.4), +erythrite/annabergite (round-2: paired vivianite-group arsenates), +tetrahedrite/tennantite (round-2: paired fahlore Sb/As sulfosalts), +apophyllite (round-2: zeolite-facies silicate, hematite-phantom 'bloody apophyllite' habit, deccan_zeolite scenario added), +aragonite (round-3: orthorhombic CaCO3, Mg/Ca-driven polymorph competition with calcite per Folk 1974/Morse 1997), +rhodochrosite (round-3: Mn carbonate, biggest collection-weight miss at 35 specimens), +siderite (round-3: Fe carbonate, oxidation breakdown to goethite is the diagenetic pseudomorph mechanism), +dolomite (round-3: Ca-Mg ordered carbonate, completes the carbonate quartet calcite/aragonite/rhodochrosite/siderite/dolomite).",
     "missing_growth_engine": [],
     "missing_narrate_function": [],
     "missing_from_vugg_py_registry": [],
@@ -567,10 +567,10 @@
         "Ba": "scavenged into the lattice (same reason as Sr)",
         "Mg": "EXCLUDED — Mg's smaller ionic radius doesn't fit aragonite's 9-fold Ca site",
         "Mn": "minor incorporation (less than calcite, which has the right coordination)",
-        "Fe": "Fe-rich fluids produce the dendritic 'flos ferri' habit"
+        "Fe": "sim habit dispatch keys the dendritic 'flos ferri' habit on Fe-rich fluid as a stand-in for the Eisenerz siderite-mine setting — real flos ferri is iron-FREE pure aragonite, named for the mines it grew in"
       },
-      "thermal_decomp_C": 520,
-      "thermal_decomp_reaction": "orthorhombic CaCO3 -> trigonal calcite (polymorphic conversion before calcination at ~840°C)",
+      "thermal_decomp_C": 450,
+      "thermal_decomp_reaction": "orthorhombic CaCO3 -> trigonal calcite (dry polymorphic inversion, ~400-470°C depending on heating rate; calcination only at ~840°C)",
       "thermal_decomp_products": {
         "Ca": 0.5,
         "CO3": 0.4
@@ -1281,7 +1281,7 @@
         }
       ],
       "class": "sulfide",
-      "description": "(Zn,Fe)S, the hexagonal high-temperature dimorph of sphalerite — same composition, different crystal structure. Above 95°C, cubic sphalerite gives way to hexagonal wurtzite with the distinctive hemimorphic habit (one end pointed, one end flat, due to the non-centrosymmetric P6₃mc space group). On cooling below 95°C, wurtzite converts to sphalerite — but sphalerite rarely goes back. The asymmetric dimorphism means finding wurtzite is diagnostic of rapid cooling from the hexagonal field. Type locality San José Mine (Oruro, Bolivia, tin-silver veins); Llallagua produces the best-formed crystals, Mont Saint-Hilaire alkalic pegmatites give the rare hexagonal prisms.",
+      "description": "(Zn,Fe)S, the hexagonal dimorph of sphalerite — same composition, different stacking. The true equilibrium inversion sits near 1020°C, so every wurtzite in a vein or vug is METASTABLE: what stabilizes it at low temperature is chemistry, not heat — sulfur-deficient, acidic fluids favor nucleating the hexagonal stacking (the simulator dispatches it above 95°C as its gameplay gate). The distinctive hemimorphic habit (one end pointed, one end flat) comes from the non-centrosymmetric P6₃mc space group. Over geologic time wurtzite converts down to sphalerite; sphalerite essentially never goes back, so surviving wurtzite is diagnostic of young or chemically-guarded growth. Type locality San José Mine (Oruro, Bolivia, tin-silver veins); Llallagua produces the best-formed crystals, Mont Saint-Hilaire alkalic pegmatites give the rare hexagonal prisms.",
       "scenarios": [
         "mvt"
       ],
@@ -2381,7 +2381,7 @@
         }
       ],
       "class": "molybdate",
-      "description": "PbMoO₄, the sunset caught in stone. Thin tabular plates in honey-yellow to blood-orange. Requires BOTH galena AND molybdenite to have oxidized in the same oxidation zone (Seo et al. 2012) — a narrow paragenetic window that makes specimens collector-prized.",
+      "description": "PbMoO₄, the sunset caught in stone. Thin tabular plates in honey-yellow to blood-orange. Needs oxidized Pb AND molybdate in the same zone, but the Mo is commonly a trace passenger in galena/wallrock — Red Cloud and Mežica have no discrete molybdenite. A narrow paragenetic window that makes specimens collector-prized.",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -2447,7 +2447,7 @@
         "index.html",
         "agent-api/vugg-agent.js"
       ],
-      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Requires both galena AND molybdenite to have oxidized first (Seo et al. 2012).",
+      "audit_status": "ok (phase-2: wired in vugg.py, narrators in all 3 runtimes). Sim route: galena + molybdenite oxidation — one honest path; in nature Mo is often trace in galena/wallrock with no discrete molybdenite (2026-06-10 review §2.4 correction).",
       "class_color": "#137feb"
     },
     "ferrimolybdite": {
@@ -4709,7 +4709,7 @@
       },
       "trace_ingredients": {},
       "thermal_decomp_C": 150,
-      "thermal_decomp_reaction": "CaSO4·2H2O -> CaSO4 + 2H2O (dehydration to anhydrite)",
+      "thermal_decomp_reaction": "CaSO4·2H2O -> CaSO4·0.5H2O (bassanite) -> CaSO4 (dehydration runs via the hemihydrate; anhydrite is the end product, not the first step)",
       "thermal_decomp_products": {
         "Ca": 0.3,
         "S": 0.2
@@ -14786,7 +14786,7 @@
         "Ca": "minor substitution"
       },
       "thermal_decomp_C": 811,
-      "thermal_decomp_reaction": "BaCO3 -> BaO + CO2 at 811°C",
+      "thermal_decomp_reaction": "orthorhombic -> hexagonal BaCO3 transition at 811°C (decarbonation to BaO + CO2 only near ~1300°C)",
       "thermal_decomp_products": {
         "Ba": 0.5,
         "CO3": 0.4
@@ -15306,7 +15306,7 @@
       "_transformation_only": true
     },
     "meta-autunite": {
-      "formula": "Ca(UO2)2(PO4)2·8H2O",
+      "formula": "Ca(UO2)2(PO4)2·6H2O",
       "nucleation_sigma": 99.0,
       "max_nucleation_count": 0,
       "max_size_cm": 6,

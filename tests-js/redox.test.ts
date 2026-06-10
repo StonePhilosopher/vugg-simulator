@@ -118,15 +118,46 @@ describe('redox infrastructure (Phase 4a)', () => {
     expect(redoxFraction(f, '')).toBe(0.5);
   });
 
-  it('ehFromO2 ↔ o2FromEh roundtrip is sane around the boundary', () => {
-    // Not strictly invertible due to the piecewise-linear anchors,
-    // but Eh from O₂ from Eh should land in the same regime band.
-    for (const Eh0 of [-150, 0, 100, 300, 500]) {
-      const O2 = o2FromEh(Eh0);
-      const Eh1 = ehFromO2(O2);
-      // ±100 mV tolerance — anchor seams are coarse on purpose.
-      expect(Math.abs(Eh1 - Eh0)).toBeLessThan(120);
+  it('ehFromO2 ↔ o2FromEh roundtrip is EXACT over the representable domain', () => {
+    // 2026-06-10: the top saturation slopes were aligned (both 1000
+    // mV/decade), making the pair exact inverses everywhere above the
+    // 1e-6 ppm floor (Eh ≥ -620 mV). Before that, the slopes differed
+    // 10× above the top anchor and this test tolerated ±120 mV.
+    for (let Eh0 = -620; Eh0 <= 1000; Eh0 += 10) {
+      expect(ehFromO2(o2FromEh(Eh0))).toBeCloseTo(Eh0, 6);
     }
+    // O2-side round trip, spanning the full anchor ladder and beyond
+    // the top anchor (5 ppm) into supersaturated territory.
+    for (const O2 of [1e-5, 0.01, 0.05, 0.1, 0.5, 1, 2.2, 5, 5.5, 10, 20, 30]) {
+      expect(o2FromEh(ehFromO2(O2)) / O2).toBeCloseTo(1, 6);
+    }
+  });
+
+  it('an Eh-canonical movement write of +800 mV survives the window-close round trip', () => {
+    // The Movements Phase 1 gate (HANDOFF-REVIEW-REBAKE-MUSIC-2026-06-10
+    // Part II next-step #1): while a movement drives fluid.Eh,
+    // _syncRedoxEh runs Eh→O2; when the movement's window closes the
+    // sync reverts to O2→Eh. Before the slope fix, +800 came back as
+    // +530 — the movement's signal snapped the step it stopped driving.
+    expect(ehFromO2(o2FromEh(800))).toBeCloseTo(800, 6);
+  });
+
+  it('synthetic O2 stays inside the physical dissolved-O2 ceiling at high Eh', () => {
+    // Why o2FromEh's gentle 1000 mV/decade was the slope to keep:
+    // ratio-form engine sites (O2/scale multipliers, some uncapped)
+    // consume o2FromEh(Eh) directly, so the O2 image of the whole
+    // plausible Eh domain must stay physically bounded. Air-saturated
+    // water is ~8-14 ppm; supersaturated tops out ~20.
+    expect(o2FromEh(800)).toBeCloseTo(10.0, 1);
+    expect(o2FromEh(1000)).toBeLessThan(20);
+  });
+
+  it('Eh below the -620 mV representability floor rounds up to the floor', () => {
+    // ehFromO2 clamps at 1e-6 ppm, so Eh < -620 has no O2 image — the
+    // round trip floors rather than diverging. Acceptable: -620 at
+    // pH 7 is beyond the water-stability limit (methanogenic anchor
+    // is -400); documented in ehFromO2's comment.
+    expect(ehFromO2(o2FromEh(-700))).toBeCloseTo(-620, 6);
   });
 
   it('FluidChemistry default Eh is +200 mV (mildly oxidizing)', () => {

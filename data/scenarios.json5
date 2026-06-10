@@ -790,7 +790,7 @@
 
     "naica_geothermal": {
       "anchor": "Naica, Chihuahua, Mexico — Cueva de los Cristales, 290 m below surface. Lead-Zinc-Silver mine (Industrias Peñoles); the giant selenite cave was breached in April 2000 when a mine drift broke through into the chamber. Selenite blades up to 12 m × 1 m × 55 tonnes.",
-      "description": "Slow geothermal pool that grew the largest crystals on Earth. Anhydrite-saturated water at ~58°C cools by hundredths of a degree per year through the gypsum-anhydrite boundary at 54°C; gypsum reprecipitates from dissolving anhydrite at depth. Stable for ~500,000 years (Garcia-Ruiz et al. 2007). Mining begun 1985 dewatered the cave; pumping stopped 2017 and the cave reflooded.",
+      "description": "Slow geothermal pool that grew the largest crystals on Earth. Anhydrite-saturated water cools by hundredths of a degree per year through the gypsum-anhydrite boundary at ~58°C and holds just below it (~54-57°C), where gypsum reprecipitates from anhydrite dissolving at depth. Stable for ~500,000 years (Garcia-Ruiz et al. 2007). Mining begun 1985 dewatered the cave; pumping stopped 2017 and the cave reflooded.",
       "expects_species": ["selenite"],
       "duration_steps": 320,
       "notes": [
@@ -2732,7 +2732,16 @@
     "roughten_gill": {
       "anchor": "Roughten Gill Mine, Caldbeck Fells, Lake District, Cumbria, England. Polymetallic Pb-Cu fissure-vein deposit in Eycott Volcanic Group + Carrock Fell Intrusive Complex (granophyre footwall + gabbro hangingwall). Worked 1700s-1894 for lead + minor copper, dumps reworked for barite post-1894; classic specimen-collector locality. TYPE LOCALITY for plumbogummite (Hartley 1882; Förtsch 1967 corrected type material to plumbogummite-hinsdalite-hidalgoite mix-crystal). Per Cooper & Stanley (1990) 'Minerals of the English Lake District: Caldbeck Fells' + the Russell Society multi-part review (Bridges et al. 2011 Part 3).",
       "description": "Pb-Cu fissure-vein in Eycott Volcanic Group volcanics + Carrock Fell Intrusive Complex granophyre/gabbro walls, weathered through an exhaustively-documented supergene oxidation sequence: primary galena+chalcopyrite+sphalerite+pyrite+tetrahedrite/tennantite (T 110-130°C, high-salinity Na-Ca-Cl basinal brine, H2S-buffered) → cooling lockup → pyrite-oxidation AMD acid pulse → linarite stage (Pb+Cu+SO4 with CO3:SO4 << 0.3 producing the iconic Roughten Gill azure-blue cabinet specimens) → caledonite + brochantite transition as CO3 rises → leadhillite cap when CO3:SO4 > 1.5 and Cu depletes. The v100 Pb-Cu sulfate trio (linarite + caledonite + leadhillite) fires in their type-district here — Cooper & Stanley + the Russell Society three-part review document each mineral per-mine in Caldbeck Fells. TYPE LOCALITY for plumbogummite PbAl3(PO4)2(OH)5·H2O (Hartley 1882 from Roughten Gill); plumbogummite is NOT yet wired in the simulator and is flagged as the imminent v108 add-mineral commit to complete the type-locality story. The headline cabinet aesthetic is plumbogummite-after-pyromorphite pseudomorphs — cobalt-blue botryoidal crusts draping green pyromorphite hexagonal prisms — which will only complete once plumbogummite engine ships.",
-      "expects_species": ["galena", "sphalerite", "chalcopyrite", "pyrite", "tetrahedrite", "tennantite", "quartz", "calcite", "cerussite", "anglesite", "linarite", "caledonite", "leadhillite", "brochantite", "pyromorphite", "mimetite", "mottramite", "bayldonite", "native_silver"],
+      // v180: bayldonite REMOVED from expects (Shape D — declaration
+      // tightening, v91 sweep pattern). Its engine encodes the formula's
+      // Cu-dominance (PbCu3: gate Cu≥100 AND Cu/Pb≥2 → Cu≥140 at Pb 70),
+      // which this Pb-dominant broth can never honestly reach (Cu max
+      // ~75 at the plateau); forcing it would mean tripling Cu and
+      // transforming the whole scenario. At the real Roughten Gill
+      // bayldonite is a minor accessory; the catalog keeps the species,
+      // this locality just doesn't promise it. mottramite STAYS as the
+      // one aspirational entry — see the V-axis note in initial.fluid.
+      "expects_species": ["galena", "sphalerite", "chalcopyrite", "pyrite", "tetrahedrite", "tennantite", "quartz", "calcite", "cerussite", "anglesite", "linarite", "caledonite", "leadhillite", "brochantite", "pyromorphite", "mimetite", "mottramite", "native_silver"],
       "duration_steps": 200,
       "notes": [
         "Anchor: Roughten Gill Mine, Caldbeck Fells, Cumbria. The Caldbeck Fells district occupies the northern Skiddaw inlier; Roughten Gill itself sits on the southern flank of Balliway Rigg (NY 304 344). Host is the Ordovician Eycott Volcanic Group (basaltic-andesitic to rhyolitic lavas + tuffs — NOT Borrowdale Volcanic Group, a common error in derivative literature). The South Vein cuts a NE-SW normal fault juxtaposing the Carrock Fell Intrusive Complex's Iron Crag Microgranite (Carrock Granophyre, U-Pb zircon 452.4 ± 3.1 Ma) against gabbro of the same complex. Caldbeck Fells district hosts ~175 valid mineral species — the greatest mineralogical diversity per unit area in the British Isles per Bridges et al. 2011 + Cooper & Stanley 1990.",
@@ -2774,6 +2783,14 @@
           "Ag": 12,
           "As": 12,
           "Sb": 5,
+          // V stays 6 — TWICE-CONFIRMED touchy axis. v109: 6→0 rippled 3
+          // minerals (reverted). v180: 6→12 (literature-plausible — the
+          // 70q header cites wallrock V ~10-20 ppm) STILL didn't fire
+          // mottramite (V gate 10 cleared; blocker is elsewhere, likely
+          // Zn≥0.5 or the redox/T product) AND rippled sphalerite 7x→2x
+          // in the primary stage (reverted). Mottramite needs its own
+          // gate-census arc, possibly engine-level — don't retry the
+          // naive V bump.
           "V": 6,
           "Al": 15,
           "P": 8,

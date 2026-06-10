@@ -68,7 +68,18 @@ for (const seed of seeds) {
     const sim = new VugSimulator(conditions, events);
     const steps = defaultSteps ?? 100;
     for (let i = 0; i < steps; i++) sim.run_step();
-    for (const c of sim.crystals) bump(c.mineral, name);
+    for (const c of sim.crystals) {
+      bump(c.mineral, name);
+      // 2026-06-10: a crystal that NUCLEATED as one species and then
+      // transitioned IN PLACE (dehydration / paramorph / light) is
+      // still a firing of the ORIGIN species — the player saw it grow.
+      // Mirabilite at searles_lake nucleates every winter night and
+      // dehydrates to a thenardite pseudomorph every summer afternoon
+      // (the textbook Glauber-salt cycle, working as designed since
+      // v29); end-state-identity accounting mis-filed it as "never
+      // nucleates" the whole time. Credit the recorded origin.
+      if (c.paramorph_origin && c.paramorph_origin !== c.mineral) bump(c.paramorph_origin, name);
+    }
   }
 }
 

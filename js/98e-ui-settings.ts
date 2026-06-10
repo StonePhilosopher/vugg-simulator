@@ -40,11 +40,17 @@ function initSettingsUI(): void {
   if (musicEnabled) musicEnabled.addEventListener('change', () => {
     if (typeof musicSetEnabled === 'function') musicSetEnabled(musicEnabled.checked);
   });
-  if (musicVolume) musicVolume.addEventListener('input', () => {
-    const pct = Number(musicVolume.value) || 0;
+  // 'input' fires per-drag-tick on every modern browser; 'change' is the
+  // end-of-drag fallback for the odd embed that only fires the latter.
+  const onVolume = () => {
+    const pct = Number(musicVolume!.value) || 0;
     if (musicVolumePct) musicVolumePct.textContent = pct + '%';
     if (typeof musicSetVolume === 'function') musicSetVolume(pct / 100);
-  });
+  };
+  if (musicVolume) {
+    musicVolume.addEventListener('input', onVolume);
+    musicVolume.addEventListener('change', onVolume);
+  }
 
   syncFromSettings();
 }

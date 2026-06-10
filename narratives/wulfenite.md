@@ -1,16 +1,16 @@
 ---
 species: wulfenite
 formula: PbMoO4
-description: Lead molybdate. The collector's prize; thin tabular orange-to-honey plates that require BOTH galena AND molybdenite to have oxidized in the same vug.
+description: Lead molybdate. The collector's prize; thin tabular orange-to-honey plates grown where oxidized lead meets molybdate — the Mo often just a trace passenger in galena or wallrock, no discrete molybdenite required.
 ---
 
 ## blurb
 
-PbMoO₄ — the collector's prize. Thin, square, tabular plates with a vitreous-to-adamantine luster that catches light like stacked playing cards; orange to honey-yellow. The mineral that requires BOTH galena AND molybdenite to have oxidized in the same vug (Seo et al. 2012) — a paragenesis puzzle. Wulfenite is rare in nature and rare in the simulation: it needs both lead AND molybdenum in an oxidized environment, a narrow window that rewards specimens grown from earlier-shipped sulfides which then had the courage to dissolve.
+PbMoO₄ — the collector's prize. Thin, square, tabular plates with a vitreous-to-adamantine luster that catches light like stacked playing cards; orange to honey-yellow. It needs oxidized lead AND molybdate in the same vug — but the molybdenum rarely arrives as discrete molybdenite: at Red Cloud and Mežica there is none, and the Mo is a trace passenger in galena and the wallrock, concentrated by oxidation (the simulation's molybdenite-oxidation route is one honest path among several). Wulfenite is rare in nature and rare in the simulation: lead and molybdenum in an oxidized environment is a narrow window that rewards specimens grown from earlier-shipped sulfides which then had the courage to dissolve.
 
 ## variant: on_oxidized_galena
 
-It nucleated on the ghosts of two sulfides — oxidized galena (Pb²⁺) and oxidized molybdenite (MoO₄²⁻). Lead molybdate born from the death of both parents. The Pb²⁺ liberated from galena met molybdate released from dissolving molybdenite, and wulfenite crystallized in the space they vacated. Destruction made the room; the room grew the prize.
+It nucleated on the ghost of oxidized galena — the lead source and the substrate both. The molybdate half needs no molybdenite parent: the Mo rode in as a trace passenger in the galena and wallrock, and oxidation concentrated it into MoO₄²⁻. The Pb²⁺ liberated from the dissolving sulfide met the molybdate in the space it vacated. Destruction made the room; the room grew the prize.
 
 ## variant: on_galena
 

@@ -458,6 +458,7 @@ const EXPORTS = [
   'musicSetVolume',
   'musicSetContext',
   'initSettingsUI',
+  'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 
 let _bundleLoaded = false;

@@ -2,6 +2,130 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 📖 UPDATE (2026-06-10, latest) — the §2.4 NARRATOR/SPEC AFTERNOON: 15 corrections, SIM-NEUTRAL
+>
+> Part II's next-step #3 is DONE. All 15 shippable rows of the review's
+> §2.4 table executed — wurtzite's 95°C "boundary" myth (equilibrium
+> inversion is ~1020°C; low-T wurtzite is metastable, 95°C stays as the
+> declared SIM GATE), flos ferri de-ironed (pure aragonite named for the
+> Eisenerz mines), the Liberty patina re-assigned to brochantite+antlerite,
+> hiddenite returned to Alexander Co. NC, scheelite UV prospecting moved to
+> the 1930s-WWII, Volodarsk returned to Ukraine, the pyritohedron made
+> crystallographic again ({210}, pseudo-fivefold), topaz's garbled
+> "Iapetos-age" line rewritten, witherite 811°C re-labeled as the
+> polymorphic transition, selenite dehydration routed via bassanite,
+> aragonite dry inversion 520→450°C, wulfenite freed from needing discrete
+> molybdenite (Red Cloud/Mežica have none), meta-autunite 8→6 H₂O, naica's
+> boundary made internally consistent (~58°C), ACTIVITY_DAMPING comment
+> drift trued (shipping 0.25). Narrator md + js fallback fixed in PAIRS.
+> **DEFERRED as engine-coupled** (each needs a calibration-aware arc):
+> calcite's flos-ferri habit_variants entry (selectHabitVariant RNG-draws
+> from that list — removal shifts the fleet cascade) and the
+> aragonite-vs-calcite Mg/Ca gate (review §2.4 last row). Still open from
+> §2: the 5 unvouched twin-law citations (literature pass) + carbonate
+> pK(T) slopes (§2.2, calibration-coupled).
+>
+> ## 🪞 UPDATE (2026-06-10, earlier) — ring_fluids RETIRED as a store: replay snapshot now projects cell chemistry (review §1.4, SIM-NEUTRAL) + 14th CATCH
+>
+> Part II's next-step #2 is DECIDED AND DONE — retire, not restore (the
+> boss's standing v157 direction: "mesh.cells is the way to go"). The
+> non-equator `ring_fluids` slots froze at the initial broth when v159
+> re-pointed event propagation at the voxel grid; their one live consumer
+> — the REPLAY SNAPSHOT chips — was faithfully displaying that frozen
+> chemistry (the replay-mode sibling of the v157 pyramid artifact). Final
+> design: `_ringFluidMeans` (85c) computes the per-ring cell-mean
+> projection AT SNAPSHOT CAPTURE (~63 captures per 200-step run) directly
+> into `snap.ring_fluids`; the LIVE store is untouched — frozen slots stay
+> frozen, so the sim path is byte-identical BY CONSTRUCTION. Untouched,
+> deliberately: the equator alias (`ring_fluids[equator] ===
+> conditions.fluid`, load-bearing, the Tranche-6 borax lesson) and
+> `concentration` (vadose-mirror-owned, same exclusion as diffusion).
+> **14th CATCH rode along** (CATCHES.md): the FIRST cut synced the live
+> store every step — probe-exact, seed-42-identical, and it TIMED OUT four
+> 32-seed integration tests (1.32 ms/call ≈ 12% of a step under 3×
+> parallel-load inflation). The reds were mineral-firing tests and the
+> obvious "fallback readers saw new chemistry" theory was WRONG (census:
+> 0 fallback hits in 8,966+ crystal-step reads; failure text said
+> `Test timed out`). Time budgets are part of the contract; read the
+> failure text before theorizing the failure mode. New standing
+> instruments: **`tools/ring-fluid-view-probe.mjs`** (3-invariant
+> contract: store FROZEN / projection LIVE / alias INTACT) +
+> **`tools/cell-resolution-census.mjs`** (how often does the engine
+> fallback actually fire?). 5 tests pin the projection, the bulk-view
+> equator entry, concentration ownership, the frozen-store contract, and
+> the snapshot fix. Stale comments trued (`_propagateGlobalDelta` header +
+> constructor Phase-C block). Next per Part II: §2.4 narrator one-liners…
+> or the **Movements Phase 1 pilot on mvt, which now has NOTHING in front
+> of it.**
+>
+> ## ⚡ UPDATE (2026-06-10, earlier) — MOVEMENTS GATE CLEARED: ehFromO2 ↔ o2FromEh exact (SIM-NEUTRAL)
+>
+> Part II's next-step #1 is DONE. The 10× saturation-slope asymmetry above
+> the top anchor (`ehFromO2` rose at 100 mV/decade past O2=5 while
+> `o2FromEh` came back at 1000 — each author had picked "gentle" in their
+> own output space) is fixed by aligning `ehFromO2`'s top branch to
+> 1000 mV/decade. An Eh-canonical movement writing +800 mV now survives
+> the window-close round trip EXACTLY (was: snapped to +530). 1000 won
+> over 100 because the inverse keeps synthetic O2 physical across the
+> whole Eh domain (+900 mV → 12.6 ppm ≈ air-saturated water; slope-100
+> would hand uncapped ratio engine sites thousands of ppm).
+> **NEW STANDING INSTRUMENT: `tools/redox-anchor-probe.mjs`** — round-trip
+> audit + `--fleet` ceiling sweep. Measured: fleet max O2 = **5.000 exactly**
+> (dripstone caves sit AT the anchor, Eh 499.6) → changed branch unreachable
+> → SIM-NEUTRAL, no bump, no rebake. Also measured: a -620 mV
+> representability floor (ehFromO2's 1e-6 ppm log clamp — documented, not
+> fixed; beyond water stability at pH 7, methanogenic anchor is -400).
+> Stale comments trued: 20c header ("exact inverses for [0.05,5]" → full
+> domain), 85c ("clamped in 4c.2" — that clamp was never added; now
+> unneeded). 4 new round-trip tests pin exactness, the +800 case, the O2
+> ceiling, and the floor. **Movements Phase 1 is UNBLOCKED** — next per
+> Part II: ring_fluids retire-or-restore, then the Movements arc itself
+> (HANDOFF-MOVEMENTS-AND-BACKLOG-2026-06-01.md).
+>
+> ## 💙 UPDATE (2026-06-10, later) — v180: LINARITE FIRES at roughten_gill
+>
+> First execution of the handoff's tune pass (`12a0b09`): the headline
+> azure-blue specimen grows (0→2x, ~2.2 mm) + leadhillite caps (0→2x).
+> **Stale 7 → 4.** The v109 "Shape B structural" diagnosis had ROTTED — the
+> per-cell architecture (v160) + v177 cell-key fix dissolved the
+> displacement; the real blocker was the CO3:SO4 fork missed by 0.03-0.06
+> for 75 straight steps (gate-census probing found it). Tune: AMD S surge
+> +80→+110 + leadhillite-cap CO3 flood +70/ceiling 165. Bayldonite removed
+> from expects (Shape D — engine encodes PbCu3 Cu-dominance, unreachable in
+> the Pb-dominant broth). **V is a TWICE-confirmed touchy axis** (v109 6→0,
+> v180 6→12 — both reverted); mottramite still stale, needs its own
+> gate-census arc (V gate clears at 12; blocker is Zn≥0.5 or redox·T).
+> Remaining stale: jeffrey magnetite, searles mirabilite, roughten_gill
+> mottramite, schneeberg torbernite. Lesson for the lineage: **diagnoses
+> age with the architecture under them — re-probe before trusting an old
+> shape.**
+>
+> **SAME SESSION, 13th CATCH — the tune pass is COMPLETE, stale 4 → 2:**
+> "stale" mirabilite + torbernite were CORRECT GEOLOGY mis-filed by
+> end-state-only accounting. Mirabilite nucleates every searles winter
+> (σ 24.6) and dehydrates to thenardite pseudomorphs every summer — the
+> textbook Glauber-salt cycle, working since v29; torbernite grows ~30
+> steps of emerald Musonoi plates at schneeberg then dehydrates to
+> metatorbernite per the scenario's own design (10/10 seeds once counted;
+> zeunerite 2/10 → 10/10 too). The checkers tallied `c.mineral === m` and
+> never read the `paramorph_origin` lineage the transition code records.
+> Both tools fixed (coverage + geology_check). Remaining stale 2 are
+> genuine and NOT tuning work: jeffrey magnetite (engine-level low-O2
+> design), roughten_gill mottramite (own gate-census arc; V axis is
+> twice-confirmed touchy). Full story: CATCHES.md thirteenth entry.
+>
+> ## 🪨 UPDATE (2026-06-10) — SESSION HANDOFF: review → rebake → soundtrack
+>
+> **`proposals/HANDOFF-REVIEW-REBAKE-MUSIC-2026-06-10.md`** is the handoff for
+> the 2026-06-09/10 session (three-metrics review, the v177-v179 rebake arc,
+> the music + settings shell, the GainNode volume fix) — **NOW WITH PART II**
+> (same day, after the handoff): v180 linarite-fires, the 13th catch, the
+> tune pass COMPLETE, and the REVISED next-step order (ehFromO2 is the new
+> top item). Twelve lessons total. CATCHES.md gained the 10th-13th catches.
+> Next builder: read the 2026-06-05 orientation handoff first if cold, then
+> that one (Part II's revised order supersedes Part I's), then the banners
+> below.
+>
 > ## 🎵 UPDATE (2026-06-09, latest) — MUSIC + the settings shell (SIM-NEUTRAL)
 >
 > Boss-directed: two boss-supplied tracks now loop per room — "Vugg
@@ -14,9 +138,9 @@ Living list of open work items, captured from session conversations so context s
 > enable + volume, persisted under the NEW `vugg-settings-v1` localStorage
 > ROOT — future settings groups go BESIDE music:{} in that key, the first
 > brick of Steam-T1 #4). Verified in a live preview (play/pause call matrix
-> per mode + settings round-trip + zero console errors); BY-EAR acceptance
-> on Pages is the boss's (9th-catch rule — loop seams + relative levels
-> especially). Tests: tests-js/music.test.ts (10).
+> per mode + settings round-trip + zero console errors); BY-EAR ACCEPTED by
+> the boss on the live deploy 2026-06-10 ("it works well") — the channel is
+> verified, not just the code. Tests: tests-js/music.test.ts (10).
 >
 > ## ⚒️ UPDATE (2026-06-09, later) — REBAKE ARC SHIPPED: v177 + v178 + v179
 >
@@ -51,9 +175,11 @@ Living list of open work items, captured from session conversations so context s
 >   (not in expects), deccan gained a 1-crystal wollastonite (suspect at
 >   zeolite T), w9-probe trap documented in 52b (its printed columns bake in
 >   the LIVE factor).
-> - Still open from the review: §1.4 ring_fluids retire-or-restore decision,
+> - Still open from the review: §1.4 ring_fluids retire-or-restore decision
+>   (✅ RESOLVED 2026-06-10 — retired to a derived view, see 🪞 banner),
 >   §1.6 hygiene items (cells_per_ring manifest, IDB leak, pH clamp), the
->   ehFromO2 asymmetry (MOVEMENTS BLOCKER), the §2.4 narrator/spec one-liners,
+>   ehFromO2 asymmetry (MOVEMENTS BLOCKER — ✅ FIXED 2026-06-10, see ⚡
+>   banner above), the §2.4 narrator/spec one-liners,
 >   carbonate pK(T) slopes (§2.2), and the whole Steam §3 ladder.
 >
 > ## 🔍 UPDATE (2026-06-09) — THREE-METRICS REVIEW: bugs / accuracy / Steam-readiness
@@ -84,7 +210,8 @@ Living list of open work items, captured from session conversations so context s
 >   torbernite) + bisbee expects omits azurite.
 > - **MOVEMENTS BLOCKER:** ehFromO2/o2FromEh are 10× asymmetric above O2=5
 >   (`20c`) — an Eh +800 mV movement snaps back to +530 when its window closes.
->   Align slopes before Movements Phase 1 drives Eh.
+>   Align slopes before Movements Phase 1 drives Eh. *(✅ FIXED 2026-06-10 —
+>   see the ⚡ banner above; +800 now round-trips exactly.)*
 > - **Narrator/spec one-liners (afternoon, SIM-NEUTRAL):** wurtzite 95 °C
 >   "boundary" myth, flos-ferri is aragonite not calcite, Statue of Liberty
 >   patina is brochantite/antlerite not malachite, hiddenite is N. Carolina,

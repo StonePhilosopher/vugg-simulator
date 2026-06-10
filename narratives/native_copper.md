@@ -26,4 +26,4 @@ Cubic/dodecahedral well-formed crystal — rare for native copper, which usually
 
 ## variant: statue_of_liberty_tail
 
-The Statue of Liberty's iconic green patina is malachite growing on native copper — the mineralogical fate of most surface copper, given enough time and rain.
+The Statue of Liberty's iconic green patina is sulfate chemistry, not carbonate — brochantite and antlerite (with some atacamite near the sea air), grown by a century of acid rain on native copper. Malachite needs carbonate-rich groundwater; city rain writes a different recipe on the same metal.

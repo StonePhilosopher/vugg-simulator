@@ -44,7 +44,9 @@ Object.assign(VugSimulator.prototype, {
   } else if (c.habit === 'twinned_cyclic') {
     parts.push(narrative_variant('aragonite', 'twinned_cyclic') || 'Cyclic twin on {110} — three crystals interpenetrating at 120° to produce a pseudo-hexagonal six-pointed prism. This is the diagnostic aragonite habit, easily mistaken for a true hexagonal mineral until the re-entrant angles between the twin lobes give it away.');
   } else if (c.habit === 'flos_ferri') {
-    parts.push(narrative_variant('aragonite', 'flos_ferri') || "'Flos ferri' — the iron flower variety. Fe-rich aragonite forms delicate dendritic / coral-like white branches, named for the famous Eisenerz, Austria specimens.");
+    // (2026-06-10 review §2.4: flos ferri is PURE aragonite — named for the
+    // Eisenerz siderite mines it grew in, not for any iron content.)
+    parts.push(narrative_variant('aragonite', 'flos_ferri') || "'Flos ferri' — the 'flower of iron' that contains no iron: pure aragonite in delicate dendritic / coral-like white branches, named for growing in the siderite mines of Eisenerz, Austria.");
   } else {
     parts.push(narrative_variant('aragonite', 'columnar_prisms') || 'Columnar prisms — the default low-σ habit. Transparent to white blades easily confused with calcite at first glance, until the chemistry (Mg/Ca, Sr/Pb signatures, lack of perfect rhombohedral cleavage) gives it away.');
   }

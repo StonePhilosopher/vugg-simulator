@@ -77,13 +77,19 @@ class VugSimulator {
     this.wall_state_history = [];
 
     // Phase C of PROPOSAL-3D-SIMULATION: per-ring fluid + temperature.
-    // Phase C v1 hooks up: each ring has its own FluidChemistry, the
-    // growth loop swaps conditions.fluid to ring_fluids[k] for the
-    // engine call, and diffusion at end of step equilibrates them.
-    // The "equator" ring (index ring_count/2) is aliased to
-    // conditions.fluid so events that mutate conditions.fluid hit
-    // the equator's ring_fluids slot, and diffusion then spreads
-    // them outward to floor and ceiling rings.
+    // (Comment trued 2026-06-10 — the Phase C wiring this described has
+    // since moved on: the growth loop swaps conditions.fluid to the
+    // crystal's CELL fluid (Tranche 4c), diffusion runs on the voxel
+    // grid/mesh, and the non-equator ring_fluids slots are a RETIRED
+    // store — frozen after init except the vadose/open-atmosphere
+    // partial writes, read only by mesh-absent fallbacks; the replay
+    // snapshot captures a projection of the cells instead
+    // (_ringFluidMeans, review §1.4).
+    // What remains load-bearing here: the array allocation, the
+    // zone_chemistry init seed below, and the EQUATOR ALIAS — the
+    // "equator" ring (index ring_count/2) IS conditions.fluid, so
+    // events that mutate conditions.fluid hit the equator slot and
+    // the bulk nucleation gate sees them.
     const nRings = this.wall_state.ring_count;
     const equator = Math.floor(nRings / 2);
     this.ring_fluids = [];

@@ -70,7 +70,26 @@ rebakes every baseline. Deserves its own arc with before/after assemblage
 probes. Worth noting: this may be quietly *causing* some of the 8 stale
 expects_species (§2.3) — fix this first, then re-run the stale sweep.
 
-### 1.4 OPEN MED — event chemistry never reaches non-equator `ring_fluids`
+### 1.4 ✅ RESOLVED 2026-06-10 (SIM-NEUTRAL) — event chemistry never reaches non-equator `ring_fluids`
+
+> **Outcome note: RETIRED the store** (per the boss's standing v157
+> direction, "mesh.cells is the way to go"). The replay snapshot — the
+> frozen slots' ONE live consumer — now captures a per-ring cell-mean
+> PROJECTION computed at snapshot time (`_ringFluidMeans`, a total
+> unidirectional read-time computation, NOT a third partial mirror); the
+> live store is untouched, so the sim path is byte-identical by
+> construction. The equator alias and the vadose `concentration`
+> ownership are untouched. Probe (`tools/ring-fluid-view-probe.mjs`,
+> vein seed 42): before — all 15 non-equator rings 100% divergent on Zn
+> (145.7 ppm of event chemistry never reached the replay); after — the
+> snapshot projection carries it (Zn moved 146.3 ppm at ring 0), the
+> store provably frozen, the alias intact. Replay chips now show evolved
+> chemistry — the replay-mode sibling of the v157 pyramid artifact,
+> retired with the store. NB the FIRST cut (live every-step sync) was
+> probe-exact but timed out four 32-seed integration tests at 1.32
+> ms/step — the 14th catch in CATCHES.md; `tools/cell-resolution-census.mjs`
+> (0 engine-fallback hits in 8,966+ crystal-step reads) was built to
+> refute the chemistry-regression theory before the timeout text settled it.
 
 `js/85c-simulator-state.ts:40` (`_propagateGlobalDelta`) routes deltas to
 voxels + mesh cells only; the documented per-ring fluid loop is gone. Probe
@@ -172,7 +191,16 @@ cuprite) while the scenario bills the azurite↔malachite cascade as its
 centerpiece. Re-run this sweep AFTER the §1.3 fix — the competition-group
 collapse plausibly suppresses exactly these marginal nucleators.
 
-### 2.4 Spec + narrator corrections (small, high-reach)
+### 2.4 ✅ EXECUTED 2026-06-10 (15 of 16 rows, SIM-NEUTRAL) — Spec + narrator corrections (small, high-reach)
+
+> **Outcome note:** all rows shipped except the two engine-coupled ones —
+> the aragonite-vs-calcite Mg/Ca gate (last row below; calibration-coupled,
+> needs its own arc) and the calcite `habit_variants` flos-ferri ENTRY
+> (selectHabitVariant weighted-randoms from that list on the shared rng,
+> so removing it is a fleet-cascade rebake; the flos-ferri TEXT is fixed
+> everywhere). Narrator md + js fallbacks fixed in pairs; engine
+> consumption verified per spec field before editing (thermal_decomp_C /
+> formula display-only; habit_variants engine-coupled).
 
 | Sev | Where | Wrong | Right |
 |-----|-------|-------|-------|

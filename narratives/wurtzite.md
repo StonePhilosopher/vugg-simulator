@@ -30,8 +30,8 @@ Shows the {twin_law} twin — less common than sphalerite's spinel twinning beca
 
 ## variant: polymorphic_inversion
 
-Polymorphic inversion destroyed the crystal — cooling below 95°C pushed (Zn,Fe)S into the cubic sphalerite field. Over geologic time wurtzite usually converts down to sphalerite; sphalerite rarely goes back.
+Polymorphic inversion destroyed the crystal — as the fluid cooled and matured, the metastable hexagonal stacking surrendered to the cubic sphalerite field. Wurtzite at vug temperatures is never the equilibrium phase (the true inversion sits near 1020°C); it persists only while sulfur-deficient, acidic conditions hold. Over geologic time wurtzite converts down to sphalerite; sphalerite essentially never goes back.
 
 ## variant: kept_hexagonal
 
-As long as the fluid stays above 95°C, the crystal is stable in the wurtzite structure; cooling through that threshold would trigger conversion to sphalerite.
+Kept the hexagonal structure — strictly on borrowed time. Below ~1020°C wurtzite is always metastable with respect to sphalerite; what preserves it in low-temperature veins is not heat but chemistry, a sulfur-deficient, low-pH fluid that keeps renucleating the hexagonal stacking faster than it can invert.

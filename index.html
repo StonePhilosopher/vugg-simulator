@@ -3023,8 +3023,8 @@ footer a:hover {
   </div>
   <div class="settings-row">
     <label for="settings-music-volume">Music volume</label>
-    <input type="range" id="settings-music-volume" min="0" max="100" step="1" value="50">
-    <span id="settings-music-volume-pct">50%</span>
+    <input type="range" id="settings-music-volume" min="0" max="100" step="1" value="25">
+    <span id="settings-music-volume-pct">25%</span>
   </div>
   <div class="settings-note">Strip View stays music-free — the rocks sing there.</div>
 </div>
@@ -4072,7 +4072,7 @@ Scenarios:
 const MINERAL_SPEC_FALLBACK = {
     quartz: { formula: "SiO2", nucleation_sigma: 1.0, max_size_cm: 1200, growth_rate_mult: 0.3, thermal_decomp_C: 1713, fluorescence: { activator: "Al", threshold_ppm: 5, color: "weak_blue_LW" }, twin_laws: [{ name: "Dauphine", probability: 0.15 }], acid_dissolution: { pH_threshold: 4.0, requires: { F: 20 } } },
     calcite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 2000, growth_rate_mult: 1.0, thermal_decomp_C: 840, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_red", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "c_twin", probability: 0.10 }], acid_dissolution: { pH_threshold: 5.5 } },
-    aragonite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.5, thermal_decomp_C: 520, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_yellow", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "cyclic_sextet", probability: 0.40 }], acid_dissolution: { pH_threshold: 5.5 } },
+    aragonite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.5, thermal_decomp_C: 450, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_yellow", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "cyclic_sextet", probability: 0.40 }], acid_dissolution: { pH_threshold: 5.5 } },
     rhodochrosite: { formula: "MnCO3", nucleation_sigma: 1.0, max_size_cm: 25, growth_rate_mult: 0.5, thermal_decomp_C: 600, fluorescence: { activator: "intrinsic", color: "red_pink_LW" }, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 5.5 } },
     siderite: { formula: "FeCO3", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.5, thermal_decomp_C: 550, fluorescence: null, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 5.5 } },
     dolomite: { formula: "CaMg(CO3)2", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.45, thermal_decomp_C: 700, fluorescence: null, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 6.0 } },
@@ -4486,6 +4486,66 @@ const _VUGG_SETTINGS_KEY = 'vugg-settings-v1';
 let _musicContext = 'silent';
 let _musicAudio = null;
 let _musicUnlockArmed = false;
+// VOLUME PATH (boss bug report 2026-06-10: "the volume slider doesn't
+// work"). HTMLMediaElement.volume is a SILENT NO-OP on iOS/iPadOS (the
+// setter is hardware-locked) and unreliable in a few other embeds — the
+// element kept playing at full blast while the slider, the stored
+// setting, and the % label all updated correctly. The fix is the same
+// trick the strip sonifier uses: route the element through a Web Audio
+// GainNode and set LOUDNESS on the gain, which works everywhere.
+// The graph is wired on the FIRST USER GESTURE (never earlier: a
+// MediaElementSource captures the element's output, and an AudioContext
+// created without a gesture sits 'suspended' — wiring early would
+// SILENCE autoplay-allowed playback until the first click). Until the
+// gesture, element.volume carries loudness (correct on desktop); after
+// it, gain owns loudness and element.volume pins to 1.0.
+// createMediaElementSource is once-per-element — _musicGraphWired guards.
+let _musicCtx = null;
+let _musicGain = null;
+let _musicGraphWired = false;
+function _musicWireGraphOnGesture() {
+    if (_musicGraphWired)
+        return;
+    if (!_musicAudio)
+        return; // stays armed; retries on the next gesture
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC)
+        return;
+    try {
+        _musicCtx = new AC();
+        const src = _musicCtx.createMediaElementSource(_musicAudio);
+        _musicGain = _musicCtx.createGain();
+        src.connect(_musicGain);
+        _musicGain.connect(_musicCtx.destination);
+        _musicGraphWired = true;
+        _musicGain.gain.value = musicGetSettings().volume;
+        _musicAudio.volume = 1.0; // gain owns loudness from here on
+        if (_musicCtx.state === 'suspended')
+            _musicCtx.resume().catch(() => { });
+        document.removeEventListener('pointerdown', _musicWireGraphOnGesture);
+        document.removeEventListener('keydown', _musicWireGraphOnGesture);
+    }
+    catch (_) { /* element.volume fallback stays in charge */ }
+}
+// Arm the graph-wiring gesture hook at load (separate from the autoplay
+// unlock — that one is one-shot per blocked play; this one persists
+// until the graph is wired).
+if (typeof document !== 'undefined') {
+    document.addEventListener('pointerdown', _musicWireGraphOnGesture);
+    document.addEventListener('keydown', _musicWireGraphOnGesture);
+}
+// Debug/probe surface — lets the preview harness and future field
+// debugging see which volume path is live without reaching closures.
+function musicDebugState() {
+    return {
+        context: _musicContext,
+        graphWired: _musicGraphWired,
+        ctxState: _musicCtx ? _musicCtx.state : null,
+        gainValue: _musicGain ? _musicGain.gain.value : null,
+        elementVolume: _musicAudio ? _musicAudio.volume : null,
+        playing: _musicAudio ? !_musicAudio.paused : false,
+    };
+}
 // ---- settings (root object shared by future settings groups) ----
 function _vuggSettingsLoad() {
     try {
@@ -4507,7 +4567,9 @@ function musicGetSettings() {
     const m = root.music || {};
     return {
         enabled: (m.enabled !== undefined) ? !!m.enabled : true,
-        volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.5,
+        // Default 0.25 (boss 2026-06-10: half the original 0.5 — the music
+        // sits under the game, not on top of it).
+        volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.25,
     };
 }
 function musicSetEnabled(on) {
@@ -4521,7 +4583,11 @@ function musicSetVolume(v) {
     const root = _vuggSettingsLoad();
     root.music = Object.assign({}, root.music, { volume: vol });
     _vuggSettingsSave(root);
-    if (_musicAudio)
+    // Gain owns loudness once the graph is wired (iOS ignores
+    // element.volume); element.volume is the pre-gesture desktop path.
+    if (_musicGraphWired && _musicGain)
+        _musicGain.gain.value = vol;
+    else if (_musicAudio)
         _musicAudio.volume = vol;
 }
 // ---- context + playback ----
@@ -4552,7 +4618,17 @@ function _musicApply() {
         _musicAudio = new Audio();
         _musicAudio.loop = true;
     }
-    _musicAudio.volume = settings.volume;
+    if (_musicGraphWired && _musicGain) {
+        _musicGain.gain.value = settings.volume;
+        _musicAudio.volume = 1.0;
+        // The wired graph only sounds while its context runs; resume is a
+        // no-op when already running and queues behind a gesture otherwise.
+        if (_musicCtx && _musicCtx.state === 'suspended')
+            _musicCtx.resume().catch(() => { });
+    }
+    else {
+        _musicAudio.volume = settings.volume;
+    }
     // Swap src only on a real track change — same-context renavigation
     // (title → New Game) must not restart the song.
     const want = encodeURI(track);
@@ -15369,7 +15445,41 @@ let timeScale = 5.0;
 //   flag/handler changes are scenario-local). strip digest 0/10 moved. Scenario suite
 //   7/7 green. Probe: vein-quiet (inline) — sealed-interval max T 111 °C, no flow
 //   violation, seal Δ T strictly negative.
-const SIM_VERSION = 179;
+//
+// v180 (2026-06-10) — ROUGHTEN GILL TUNE: linarite + leadhillite FIRE. The headline
+//                     azure-blue specimen grows after three versions of absence.
+//
+//   THE DIAGNOSIS THAT CHANGED: v109 called linarite Shape B (σ ~6.5 cleared, but the
+//   nucleation iterator displaced it to pyromorphite + Ag-sulfosalts) and documented it
+//   as structural. Re-probed post-v177/v178 with a per-step GATE CENSUS: the
+//   displacement is GONE — the actual blocker was the CO3:SO4 ≤ 0.30 fork missing by
+//   0.03-0.06 for SEVENTY-FIVE consecutive steps (the v109 AMD surge left the wall
+//   ratio at 0.33-0.36 through the entire designed window). Diagnoses rot with the
+//   architecture under them; re-probe before trusting an old shape.
+//
+//   THE TUNE (trajectory-level, each change the event's own mechanism): AMD pulse S
+//   surge +80 → +110 (pyrite-derived SO4; drops the window ratio to ~0.26 AND lands
+//   caledonite's stage at ~0.8, better inside its 0.3-1.0 sweet spot than the old
+//   marginal 1.06); leadhillite cap CO3 flood +50 → +70, ceiling 110 → 165 (the cap's
+//   σ was 0.774, carbonate-term-limited; the flood also holds the ≥1.5 fork against
+//   the higher residual S — 165/97 ≈ 1.7).
+//
+//   THE ITERATION THAT REVERTED (the discipline holding): V 6 → 12 for mottramite
+//   (literature-plausible; wallrock V ~10-20 ppm) did NOT fire it (V gate 10 cleared;
+//   blocker is elsewhere — likely Zn≥0.5 or the redox·T product) AND rippled
+//   sphalerite 7x → 2x in the primary stage. Reverted per the strictly-improving rule
+//   (v116 lesson). V is now a TWICE-confirmed touchy axis (v109: 6→0; v180: 6→12).
+//   Mottramite stays aspirational pending its own gate-census arc.
+//
+//   SHAPE D: bayldonite removed from expects_species — its engine encodes the
+//   formula's Cu-dominance (PbCu3: Cu≥100 AND Cu/Pb≥2 → Cu≥140 at Pb 70), unreachable
+//   in this Pb-dominant broth (Cu max ~75) without tripling Cu and transforming the
+//   scenario. Minor accessory at the real locality; the catalog keeps the species.
+//
+//   BASELINE (1/31 moved, roughten_gill only): linarite 0→2x (~2.2 mm), leadhillite
+//   0→2x, cerussite 1→4x, caledonite + brochantite + anglesite KEPT and grew,
+//   pyromorphite stable 6x. 26 → 28 species, 75 crystals. Stale list 7 → 4.
+const SIM_VERSION = 180;
 
 // ── 18-constants.js ──
 
@@ -16332,12 +16442,12 @@ const ACTIVITY_CORRECTED_SUPERSAT = true;
 // correction:
 //   damped_factor = 1 - ACTIVITY_DAMPING × (1 - raw_factor)
 //   ACTIVITY_DAMPING = 1.0 → full Davies correction (research mode)
-//   ACTIVITY_DAMPING = 0.5 → half-correction (current shipping default)
 //   ACTIVITY_DAMPING = 0.0 → no correction (= flag off)
-// Calibrated in Phase 2c (May 2026) against v19 baselines: damping
-// = 0.4 brings the sweep-wide RMS delta into the same band as Phase
-// 1c (~10-15%), with all 19 scenarios producing nonzero crystals
-// and tutorials staying intact.
+// History (comment trued 2026-06-10, review §2.4 — the labels below had
+// drifted from the constant): the Phase-2c sweep (May 2026, v19
+// baselines) first landed on 0.4 (sweep-wide RMS delta in the Phase-1c
+// ~10-15% band, all 19 scenarios nonzero, tutorials intact); later
+// calibration settled the SHIPPING value at 0.25 — quarter-correction.
 const ACTIVITY_DAMPING = 0.25;
 // Charge & molar mass for each FluidChemistry species. Charge is the
 // dominant aqueous form at typical vug pH (5-9) and Eh (oxidizing-to-
@@ -16939,10 +17049,13 @@ function carbonateThermoCoverage() {
 // and apply the legacy ratio/threshold against it. This is byte-identical
 // to the old `fluid.O2` path because (a) `_syncRedoxEh` (85c) keeps
 // `fluid.Eh = ehFromO2(fluid.O2)` synced just before the engines read it
-// each step, and (b) `ehFromO2`/`o2FromEh` are exact inverses for
-// O2 ∈ [0.05, 5] — which covers every scenario (max observed O2 ≈ 2.2);
-// above 5 `o2FromEh` saturates gently (no NaN / wild values), so even a
-// pathological high-O2 cell degrades safely rather than breaking.
+// each step, and (b) `ehFromO2`/`o2FromEh` are exact inverses over the
+// whole representable domain (O2 ≥ 1e-6 ppm ⇔ Eh ≥ -620 mV) — since
+// 2026-06-10, when the top saturation slopes were aligned at 1000
+// mV/decade (they had differed 10×, which snapped Eh-canonical
+// movement writes above +500 mV; measured fleet ceiling is O2 = 5.000
+// exactly, AT the top anchor, so the alignment was SIM-neutral — see
+// tools/redox-anchor-probe.mjs for both measurements).
 //
 // `let` + setter (mirrors setCarbonateKspActive): the bundle's closure-
 // scoped binding can't be flipped via globalThis, so tests that want to
@@ -17052,6 +17165,9 @@ function ehFromO2(O2_ppm) {
         return -200;
     // pin three anchors: (0.05, -150), (0.5, +100), (5.0, +500)
     // and interpolate between them in log10(O2) space.
+    // The 1e-6 floor means Eh below -620 mV has no O2 image — the
+    // round trip floors there. Acceptable: -620 at pH 7 is already
+    // beyond the water-stability limit; the methanogenic anchor is -400.
     const logO2 = Math.log10(Math.max(O2_ppm, 1e-6));
     // log10 anchors: -1.30 → -150, -0.30 → +100, +0.70 → +500
     // Slope between them ≈ +250 mV per decade of O₂.
@@ -17061,13 +17177,27 @@ function ehFromO2(O2_ppm) {
         return -150 + (logO2 - (-1.30)) * (250 / 1.0);
     if (logO2 <= 0.70)
         return 100 + (logO2 - (-0.30)) * (400 / 1.0);
-    return 500 + (logO2 - 0.70) * 100; // saturate gently above
+    // Above the top anchor: 1000 mV/decade, the EXACT inverse of
+    // o2FromEh's top branch. Until 2026-06-10 this was 100 — each
+    // function had picked "gentle" in its own output space, leaving a
+    // 10× slope asymmetry that snapped an Eh-canonical movement's
+    // +800 mV write to +530 the step its window closed (the Movements
+    // Phase 1 blocker). 1000 wins over 100 because the inverse keeps
+    // the synthetic O2 image of the whole plausible Eh domain inside
+    // the physical dissolved-O2 ceiling (+900 mV → 12.6 ppm) instead
+    // of handing ratio-form engine sites thousands of ppm. Unreachable
+    // by current content — fleet max O2 is exactly 5.000 (the dripstone
+    // caves sit AT the anchor); see tools/redox-anchor-probe.mjs.
+    return 500 + (logO2 - 0.70) * 1000;
 }
 // Optional: when a scenario sets fluid.Eh directly but legacy engines
 // still read fluid.O2, derive a synthetic O2 so they keep working.
-// Inverse of ehFromO2 — same anchors. Used by Phase 4b migration so
-// scenarios can be written in mV terms and engines that haven't
-// migrated yet see consistent O₂.
+// EXACT inverse of ehFromO2 — same anchors, same slopes in every
+// branch (since 2026-06-10; the top branch was asymmetric before,
+// see ehFromO2's comment). Used by Phase 4b migration so scenarios
+// can be written in mV terms and engines that haven't migrated yet
+// see consistent O₂, and by _syncRedoxEh's Eh-canonical direction
+// (4c.3a) so a movement-driven Eh survives O2 round trips intact.
 function o2FromEh(Eh_mV) {
     if (typeof Eh_mV !== 'number')
         return 0.5;
@@ -41553,7 +41683,13 @@ function event_roughten_gill_pyrite_oxidation(c) {
     // pyromorphite begin nucleating on residual galena. Plumbogummite
     // gates also clear here (Pb 90 + Al 15 + P 8 + pH 4.2 + T 35).
     c.temperature = Math.max(30, c.temperature - 10);
-    c.fluid.S = Math.min(220, c.fluid.S + 80); // SO4 surge from pyrite breakdown (less aggressive, helps caledonite later)
+    // v180: surge +80 → +110. The v109 value left the wall-cell CO3:SO4
+    // ratio at 0.33-0.36 through the ENTIRE linarite window — over the
+    // 0.30 fork by a whisker, for 75 consecutive steps (gate-census
+    // probe). A stronger pyrite-derived SO4 surge is this event's own
+    // mechanism; it also lands the caledonite stage ratio at ~0.8,
+    // BETTER inside its 0.3-1.0 sweet spot than the old marginal 1.06.
+    c.fluid.S = Math.min(220, c.fluid.S + 110); // SO4 surge from pyrite breakdown
     c.fluid.Cu = Math.min(75, c.fluid.Cu + 35); // bump to mottramite + brochantite sweet spot
     c.fluid.Pb = Math.min(95, c.fluid.Pb + 20); // Pb mobilized from galena
     c.fluid.As = Math.min(18, c.fluid.As + 5); // As(V) mobilized but less than v107 (give pyromorphite the win)
@@ -41564,25 +41700,23 @@ function event_roughten_gill_pyrite_oxidation(c) {
     return `Pyrite oxidation pulse — AMD-style acid window. T ${c.temperature.toFixed(0)}°C, pH crashes to ${c.fluid.pH.toFixed(1)}, SO4 surges to ${c.fluid.S.toFixed(0)} ppm. Cu (${c.fluid.Cu.toFixed(0)}) + Pb (${c.fluid.Pb.toFixed(0)}) + As (${c.fluid.As.toFixed(0)}) mobilized. CO3 builds to ${c.fluid.CO3.toFixed(0)} (cerussite gate clears). Plumbogummite gates clear (Pb=${c.fluid.Pb.toFixed(0)}, Al=${c.fluid.Al.toFixed(0)}, P=${c.fluid.P.toFixed(0)}).`;
 }
 function event_roughten_gill_linarite_stage(c) {
-    // v109 iteration 1 (final): conservative pH bump + O2 ease;
-    // observed Shape-B RNG-cascade displacement when overly aggressive
-    // state-pinning was tried in iteration 2 (it actually displaced
-    // ALL Pb-Cu sulfates). Linarite's gates clear in sigma calculation
-    // (sigma ~6.5 per inspection) but per-step nucleation iterator
-    // displaces it to pyromorphite + Ag-sulfosalts that fire first.
-    // Documented as a structural issue (Shape B per vugg-tune-scenario
-    // skill — usually not fixable at tuning layer; the per-scenario
-    // nucleation cap or class-iterator ordering is the limiter).
+    // HISTORY: v109 diagnosed linarite as Shape B (RNG-cascade
+    // displacement — σ ~6.5 cleared but pyromorphite + Ag-sulfosalts
+    // consumed the budget first) and documented it as structural. That
+    // diagnosis predated the per-vertex/per-cell architecture (v160) and
+    // the v177 competition cell-key fix. RE-PROBED v180: the displacement
+    // is GONE — the actual blocker was the CO3:SO4 fork missing 0.30 by
+    // 0.03-0.06 for the entire window (the v109 AMD surge left the wall
+    // ratio at 0.33-0.36). With the v180 surge (+110), LINARITE FIRES
+    // (2x at seed 42, ~2 mm) — the headline azure-blue specimen grows.
     //
     // Linarite window: pH recovers to 5.5-6 (acid neutralized by minor
-    // wallrock dissolution + meteoric mixing), CO3 still low. The
-    // Pb-Cu-SO4 chemistry hits the linarite gate but loses the
-    // nucleation roll-off.
+    // wallrock dissolution + meteoric mixing), CO3 still low.
     c.temperature = Math.max(28, c.temperature - 2);
     c.fluid.pH = Math.min(5.8, c.fluid.pH + 1.5);
     c.fluid.O2 = Math.max(0.8, c.fluid.O2 - 0.3);
     c.flow_rate = 0.2;
-    return `Linarite window: T ${c.temperature.toFixed(0)}°C, pH ${c.fluid.pH.toFixed(1)}, CO3:SO4 = ${(c.fluid.CO3 / Math.max(c.fluid.S, 1)).toFixed(2)} (sulfate-dominant). PbCu(SO4)(OH)2 gates clear but RNG-cascade displaces nucleation to pyromorphite + Ag-sulfosalts.`;
+    return `Linarite window: T ${c.temperature.toFixed(0)}°C, pH ${c.fluid.pH.toFixed(1)}, CO3:SO4 = ${(c.fluid.CO3 / Math.max(c.fluid.S, 1)).toFixed(2)} (sulfate-dominant). PbCu(SO4)(OH)2 — deep azure-blue, THE Roughten Gill collector specimen.`;
 }
 function event_roughten_gill_caledonite_transition(c) {
     // v109 tune: bigger CO3 surge (60 -> 100) so CO3:SO4 lands in
@@ -41611,7 +41745,13 @@ function event_roughten_gill_leadhillite_cap(c) {
     // as the terminal Pb-Cu-CO3 phase. Pyromorphite + mimetite fire
     // alongside as Pb-PO4 and Pb-AsO4 phases on whatever P + As is left.
     c.temperature = Math.max(22, c.temperature - 3);
-    c.fluid.CO3 = Math.min(110, c.fluid.CO3 + 50);
+    // v180: flood +50 → +70, ceiling 110 → 165. Two reasons: (1) the cap's
+    // σ was 0.774 — limited by the carbonate term (co3_f = CO3/100 = 1.1);
+    // (2) the v180 AMD S-surge leaves more residual sulfate, and the
+    // CO3:SO4 ≥ 1.5 leadhillite fork must still hold (165/~97 ≈ 1.7 ✓).
+    // A carbonate FLOOD is this event's whole identity — meteoric CO2 +
+    // lime-stained jointing at pH 7 supports the higher ceiling.
+    c.fluid.CO3 = Math.min(165, c.fluid.CO3 + 70);
     c.fluid.S = Math.max(40, c.fluid.S - 20);
     c.fluid.Cu = Math.max(8, c.fluid.Cu * 0.3); // Cu fully depleted now
     c.fluid.pH = Math.min(7.0, c.fluid.pH + 0.5);
@@ -43340,13 +43480,19 @@ class VugSimulator {
         // steps), so the memory cost of a whole run is trivial.
         this.wall_state_history = [];
         // Phase C of PROPOSAL-3D-SIMULATION: per-ring fluid + temperature.
-        // Phase C v1 hooks up: each ring has its own FluidChemistry, the
-        // growth loop swaps conditions.fluid to ring_fluids[k] for the
-        // engine call, and diffusion at end of step equilibrates them.
-        // The "equator" ring (index ring_count/2) is aliased to
-        // conditions.fluid so events that mutate conditions.fluid hit
-        // the equator's ring_fluids slot, and diffusion then spreads
-        // them outward to floor and ceiling rings.
+        // (Comment trued 2026-06-10 — the Phase C wiring this described has
+        // since moved on: the growth loop swaps conditions.fluid to the
+        // crystal's CELL fluid (Tranche 4c), diffusion runs on the voxel
+        // grid/mesh, and the non-equator ring_fluids slots are a RETIRED
+        // store — frozen after init except the vadose/open-atmosphere
+        // partial writes, read only by mesh-absent fallbacks; the replay
+        // snapshot captures a projection of the cells instead
+        // (_ringFluidMeans, review §1.4).
+        // What remains load-bearing here: the array allocation, the
+        // zone_chemistry init seed below, and the EQUATOR ALIAS — the
+        // "equator" ring (index ring_count/2) IS conditions.fluid, so
+        // events that mutate conditions.fluid hit the equator slot and
+        // the bulk nucleation gate sees them.
         const nRings = this.wall_state.ring_count;
         const equator = Math.floor(nRings / 2);
         this.ring_fluids = [];
@@ -45846,10 +45992,17 @@ Object.assign(VugSimulator.prototype, {
     _snapshotGlobal() {
         return [_cloneFluid(this.conditions.fluid), this.conditions.temperature];
     },
-    // Phase C v1: apply the delta between current conditions and the
-    // pre-block snapshot to all non-equator ring_fluids and
-    // ring_temperatures. The equator ring is aliased to conditions.fluid
-    // so it already reflects the new value — skip it.
+    // Phase C v1 (comment trued 2026-06-10): apply the delta between
+    // current conditions and the pre-block snapshot. FLUID deltas go to
+    // the voxel grid (all wall + interior voxels — canonical since v159)
+    // with a mesh.propagateDelta fallback; TEMPERATURE deltas go to all
+    // non-equator ring_temperatures. The historical per-ring FLUID loop
+    // is gone — the non-equator ring_fluids slots are a retired store
+    // (frozen at init + vadose/open-atmosphere partials, read only by
+    // mesh-absent fallbacks); the replay snapshot, their one live
+    // consumer, now captures a projection of the cells instead
+    // (_ringFluidMeans, review §1.4). The equator ring is aliased to
+    // conditions.fluid so it already reflects the new value.
     _propagateGlobalDelta(snap) {
         const [preFluid, preTemp] = snap;
         const equator = Math.floor(this.wall_state.ring_count / 2);
@@ -46118,10 +46271,12 @@ Object.assign(VugSimulator.prototype, {
     // variable every redox engine actually reads — moved underneath it. So
     // the strip's Eh chip showed a dead flat line at 200 even as the redox
     // state swung. This derives Eh from O2 via the SAME ehFromO2 anchor map
-    // the flag-ON redox helpers (20c) invert, so when EH_DYNAMIC_ENABLED
-    // flips in 4c.2 the engines read back the identical O2 (ehFromO2 /
-    // o2FromEh are exact inverses for O2 ∈ [0.05, 5], which covers every
-    // scenario; the top saturation segment diverges and is clamped in 4c.2).
+    // the flag-ON redox helpers (20c) invert, so the engines read back the
+    // identical O2. (Historical note: the planned 4c.2 clamp for the
+    // diverging top saturation segment was never added — deemed unneeded at
+    // max observed O2 ≈ 2.2 — and on 2026-06-10 the divergence itself was
+    // fixed instead: both functions now saturate at 1000 mV/decade and are
+    // exact inverses over the whole representable domain, Eh ≥ -620 mV.)
     //
     // OBSERVER-ONLY while the flag is OFF: nothing in flag-OFF mode reads
     // fluid.Eh (redoxFraction is uncalled; the per-class helpers read O2),
@@ -46172,6 +46327,102 @@ Object.assign(VugSimulator.prototype, {
                     one(mesh.cells[i] && mesh.cells[i].fluid);
             }
         }
+    },
+    // ====================================================================
+    // REVIEW-THREE-METRICS §1.4 resolution (2026-06-10) — ring_fluids is
+    // RETIRED as a forward chemistry store. The replay snapshot no longer
+    // clones the (frozen) non-equator slots; it captures a PROJECTION of
+    // the canonical per-cell chemistry (mesh.cells[].fluid) computed by
+    // this helper at snapshot time.
+    //
+    // History: Phase C gave each ring its own fluid and
+    // _propagateGlobalDelta kept them fed with event deltas. The cavity-
+    // mesh tranches moved canonical chemistry to per-cell storage and
+    // v159 re-pointed event propagation at the voxel grid — after which
+    // the documented per-ring loop was gone and the non-equator slots
+    // froze at the initial broth for the whole run (review §1.4 probe:
+    // vein seed 42, all 15 non-equator rings 100% divergent on Zn).
+    // Their one LIVE consumer — the replay snapshot capture
+    // (_repaintWallState → snap.ring_fluids), which the helicoid replay
+    // chips read — was therefore showing initial-broth chemistry for 15
+    // of 16 rings: the replay-mode sibling of the v157 live-chip pyramid
+    // artifact.
+    //
+    // The decision (per the review: "retire the store or restore the
+    // loop — not a third partial mirror"): RETIRE. The projection is not
+    // a mirror of event writes — it is a total, unidirectional read-time
+    // computation canon → snapshot, so it cannot rot the way the partial
+    // mirrors did.
+    //
+    // Why SNAPSHOT-time, not every step (the first cut ran in run_step):
+    // measured 1.32 ms/call on roughten_gill (16×120 cells × 45 dynamic-
+    // key fields) ≈ 12% of a 10.7 ms step — enough to push the 32-seed
+    // integration tests (pharmacolite 150 s, roughten-gill 90 s budgets)
+    // over their timeouts under parallel suite load. At snapshot stride
+    // (~63 captures per 200-step run) the same work costs ~80 ms per run.
+    //
+    // The LIVE ring_fluids array is deliberately untouched:
+    //   * ring_fluids[equator] === conditions.fluid (the alias) is the
+    //     BULK view events and the bulk nucleation gate read — load-
+    //     bearing, the Tranche-6 borax lesson.
+    //   * The non-equator slots keep their legacy frozen-at-init values
+    //     (plus the vadose/open-atmosphere partial writes), so the
+    //     mesh-absent fallback readers (_runEngineForCrystal sentinel,
+    //     dehydration, 20d) see EXACTLY what they saw before — byte-
+    //     identical by construction, not by hope. (Census at seed 42:
+    //     tools/cell-resolution-census.mjs measured 0 fallback hits in
+    //     8966+ crystal-step reads — but 0-measured ≠ 0-guaranteed, and
+    //     frozen is what the calibration was tuned against.)
+    //   * `concentration` is carried through from the stored slot, NOT
+    //     averaged (same exclusion as diffusion's _fluidFieldNames): it
+    //     is per-ring evaporative state owned by the vadose mechanic.
+    //
+    // Returns an array shaped like ring_fluids (one fluid-like object per
+    // ring): equator = clone of conditions.fluid (the bulk view, exactly
+    // what the old capture put there via the alias); other rings = clone
+    // of the stored slot with every _fluidFieldNames field overwritten by
+    // the ring's cell mean. Falls back to plain clones when no mesh is
+    // built (headless harness) — the legacy capture, unchanged.
+    _ringFluidMeans() {
+        const rf = this.ring_fluids;
+        if (!rf || !rf.length)
+            return null;
+        const out = new Array(rf.length);
+        const mesh = this.wall_state && this.wall_state.meshFor
+            ? this.wall_state.meshFor(this) : null;
+        const perRing = this.wall_state.cells_per_ring || 0;
+        const haveCells = !!(mesh && mesh.cells && mesh.cells.length && perRing > 0);
+        const equator = Math.floor(this.wall_state.ring_count / 2);
+        const fields = this._fluidFieldNames || [];
+        const nF = fields.length;
+        const sums = new Array(nF);
+        const counts = new Array(nF);
+        for (let r = 0; r < rf.length; r++) {
+            const clone = rf[r] ? _cloneFluid(rf[r]) : null;
+            out[r] = clone;
+            if (!clone || !haveCells || r === equator)
+                continue;
+            sums.fill(0);
+            counts.fill(0);
+            for (let c = 0; c < perRing; c++) {
+                const cell = mesh.cells[r * perRing + c];
+                const f = cell && cell.fluid;
+                if (!f)
+                    continue;
+                for (let i = 0; i < nF; i++) {
+                    const v = f[fields[i]];
+                    if (typeof v === 'number' && isFinite(v)) {
+                        sums[i] += v;
+                        counts[i]++;
+                    }
+                }
+            }
+            for (let i = 0; i < nF; i++) {
+                if (counts[i] > 0)
+                    clone[fields[i]] = sums[i] / counts[i];
+            }
+        }
+        return out;
     },
     _repaintWallState() {
         // Rebuild ring-0 occupancy from the crystal list. Cheap (~120 × ~20)
@@ -46285,7 +46536,14 @@ Object.assign(VugSimulator.prototype, {
             // snap; for a 120-step MVT (stride 9 → ~14 snaps) that's ~90 KB
             // beyond the existing v66 schema. Smaller scenarios cost less;
             // 2400-step pegmatites cost ~190 KB.
-            ring_fluids: this.ring_fluids ? this.ring_fluids.map((f) => _cloneFluid(f)) : null,
+            //
+            // REVIEW §1.4 (2026-06-10): this used to clone the ring_fluids
+            // array directly — whose non-equator slots froze at the initial
+            // broth when v159 removed their event feed, so replay chips showed
+            // day-zero chemistry for 15 of 16 rings. Now captures the per-ring
+            // PROJECTION of the canonical cell chemistry instead; the live
+            // store is untouched. See _ringFluidMeans for the full rationale.
+            ring_fluids: this._ringFluidMeans ? this._ringFluidMeans() : null,
             ring_temperatures: this.ring_temperatures ? this.ring_temperatures.slice() : null,
             // === END HELIX-OVERLAY-FORK ADDITION ==============================
             // === HELIX-OVERLAY-FORK ADDITION (Week 3 carbonate) ===============
@@ -53585,7 +53843,9 @@ Object.assign(VugSimulator.prototype, {
             parts.push(narrative_variant('aragonite', 'twinned_cyclic') || 'Cyclic twin on {110} — three crystals interpenetrating at 120° to produce a pseudo-hexagonal six-pointed prism. This is the diagnostic aragonite habit, easily mistaken for a true hexagonal mineral until the re-entrant angles between the twin lobes give it away.');
         }
         else if (c.habit === 'flos_ferri') {
-            parts.push(narrative_variant('aragonite', 'flos_ferri') || "'Flos ferri' — the iron flower variety. Fe-rich aragonite forms delicate dendritic / coral-like white branches, named for the famous Eisenerz, Austria specimens.");
+            // (2026-06-10 review §2.4: flos ferri is PURE aragonite — named for the
+            // Eisenerz siderite mines it grew in, not for any iron content.)
+            parts.push(narrative_variant('aragonite', 'flos_ferri') || "'Flos ferri' — the 'flower of iron' that contains no iron: pure aragonite in delicate dendritic / coral-like white branches, named for growing in the siderite mines of Eisenerz, Austria.");
         }
         else {
             parts.push(narrative_variant('aragonite', 'columnar_prisms') || 'Columnar prisms — the default low-σ habit. Transparent to white blades easily confused with calcite at first glance, until the chemistry (Mg/Ca, Sr/Pb signatures, lack of perfect rhombohedral cleavage) gives it away.');
@@ -54044,7 +54304,10 @@ Object.assign(VugSimulator.prototype, {
         if (c.position.includes('galena')) {
             const oxidized = c.position.includes('oxidized');
             if (oxidized) {
-                parts.push(narrative_variant('wulfenite', 'on_oxidized_galena') || 'It nucleated on the ghosts of two sulfides — oxidized galena (Pb²⁺) and oxidized molybdenite (MoO₄²⁻). Lead molybdate born from the death of both parents.');
+                // (2026-06-10 review §2.4: wulfenite does NOT require discrete
+                // molybdenite — Red Cloud and Mežica have none; Mo commonly arrives
+                // as trace Mo in galena or the wallrock.)
+                parts.push(narrative_variant('wulfenite', 'on_oxidized_galena') || 'It nucleated on the ghost of oxidized galena — the lead source. The molybdate half needs no molybdenite parent: at famous wulfenite localities like Red Cloud and Mežica there is none, and the Mo arrives as a trace passenger in the galena and wallrock, concentrated by oxidation into MoO₄²⁻.');
             }
             else {
                 parts.push(narrative_variant('wulfenite', 'on_galena') || 'It grew on galena, drawing lead from the same source mineral. A secondary generation claiming the primary mineral as its substrate.');
@@ -54099,7 +54362,9 @@ Object.assign(VugSimulator.prototype, {
     // v64 brief-19 narrators.
     _narrate_scheelite(c) {
         const parts = [`Scheelite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-        parts.push('CaWO₄ — calcium tungstate, scheelite-group lattice. The brilliant blue-white SW UV fluorescence is diagnostic and has been used since the 19th century to prospect for tungsten by lamp at night. Forms in granitic-intrusion-related W-Sn skarns; loses to wolframite when Ca is depleted and Fe+Mn dominate.');
+        // (2026-06-10 review §2.4: UV prospecting is a 1930s–WWII development —
+        // portable UV lamps didn't exist in the 19th century.)
+        parts.push('CaWO₄ — calcium tungstate, scheelite-group lattice. The brilliant blue-white SW UV fluorescence is diagnostic — from the 1930s through the Second World War, prospectors swept hillsides with portable UV lamps at night hunting tungsten for tool steel. Forms in granitic-intrusion-related W-Sn skarns; loses to wolframite when Ca is depleted and Fe+Mn dominate.');
         if (c.habit === 'tabular')
             parts.push('Tabular flat plates — moderate σ habit.');
         else if (c.habit === 'octahedral_pseudo')
@@ -54174,7 +54439,9 @@ Object.assign(VugSimulator.prototype, {
         else {
             parts.push(narrative_variant('native_copper', 'cubic_dodecahedral') || 'Cubic/dodecahedral well-formed crystal — rare for native copper, which usually grows as dendrites.');
         }
-        parts.push(narrative_variant('native_copper', 'statue_of_liberty_tail') || "The Statue of Liberty's iconic green patina is malachite growing on native copper — the mineralogical fate of most surface copper, given enough time and rain.");
+        // (2026-06-10 review §2.4: the Liberty patina is SULFATE chemistry —
+        // brochantite + antlerite (+ atacamite near sea air), not malachite.)
+        parts.push(narrative_variant('native_copper', 'statue_of_liberty_tail') || "The Statue of Liberty's iconic green patina is sulfate chemistry, not carbonate — brochantite and antlerite (with some atacamite near the sea air), grown by a century of acid rain on native copper.");
         return parts.filter(p => p).join(' ');
     },
     _narrate_native_gold(c) {
@@ -54807,7 +55074,9 @@ Object.assign(VugSimulator.prototype, {
             parts.push(narrative_variant('topaz', 'imperial_gold') || 'Imperial golden-orange — Cr³⁺ substituting for Al³⁺ in the topaz structure. The chromium came not from the main fluid but from nearby ultramafic country rock dissolving in trace. This is the signature of Ouro Preto / Capão do Lana — the only place on Earth where it\u2019s a commercial color.');
         }
         else if (pale_blue) {
-            parts.push(narrative_variant('topaz', 'pale_blue') || 'Pale blue, F-rich and Cr-starved. In nature this coloration is often enhanced by subsequent radiation exposure — the sky-blue topaz flooded onto the market after Iapetos-age pegmatites started being deliberately irradiated.');
+            // (2026-06-10 review §2.4: "Iapetos-age pegmatites ... deliberately
+            // irradiated" was a garbled phrase — rewritten to the actual story.)
+            parts.push(narrative_variant('topaz', 'pale_blue') || 'Pale blue, F-rich and Cr-starved. Natural blue topaz owes its color to geologic radiation doses over deep time; the sky-blue that flooded the market since the 1970s is colorless natural topaz deliberately irradiated and heat-treated — nature’s slow recipe, industrialized.');
         }
         else if (pale_yellow) {
             parts.push(narrative_variant('topaz', 'pale_yellow') || "Pale yellow from Fe³⁺ in the Al site — the common 'imperial' knockoff. Without the Cr chromophore, this color is merely pretty, not legendary.");
@@ -54958,7 +55227,9 @@ Object.assign(VugSimulator.prototype, {
         const parts = [`Heliodor #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
         parts.push(narrative_blurb('heliodor') || 'Be₃Al₂Si₆O₁₈ + Fe³⁺ — the yellow variety of beryl. Same iron as aquamarine but oxidized to the Fe³⁺ state; the aquamarine/heliodor split is the cleanest redox record in the gem world.');
         if (c.zones.some(z => (z.note || '').includes('Namibian'))) {
-            parts.push(narrative_variant('heliodor', 'namibian_deep_yellow') || 'Namibian deep-yellow — high-Fe strongly-oxidizing pocket signature. The Volodarsk pegmatite cross-cuts Fe-rich country rock, delivering both the Fe source and the late oxidizing pulse that converts Fe²⁺ to Fe³⁺.');
+            // (2026-06-10 review §2.4: Volodarsk-Volynskii is UKRAINE, not Namibia —
+            // two localities were conflated. Variant KEY kept for back-compat.)
+            parts.push(narrative_variant('heliodor', 'namibian_deep_yellow') || 'Deep-yellow — the high-Fe, strongly-oxidizing pocket signature. The celebrated deep-golden heliodors come from Volodarsk-Volynskii in Ukraine, where the pegmatite cross-cuts Fe-rich country rock — both the iron source and the late oxidizing pulse that converts Fe²⁺ to Fe³⁺. Namibia’s Erongo and Klein Spitzkoppe pockets grow their own, typically paler, version.');
         }
         const inclusion_zones = c.zones.filter(z => z.fluid_inclusion);
         if (inclusion_zones.length) {
@@ -54988,7 +55259,11 @@ Object.assign(VugSimulator.prototype, {
             parts.push(narrative_variant('spodumene', 'kunzite') || "Kunzite — the pink-lilac Mn²⁺ variety, named for George Kunz, Tiffany & Co.'s mineralogist who bought Minas Gerais specimens by the crate in the early 1900s. Kunzite fluoresces strongly pink-orange under SW UV, a diagnostic test no other pink gem material passes. Color depth correlates with growth rate — faster growth traps more color-causing impurity.");
         }
         else if (varieties.has('hiddenite')) {
-            parts.push(narrative_variant('spodumene', 'hiddenite') || 'Hiddenite — the green Cr³⁺ variety, named for William Earl Hidden, who discovered the North Carolina locality in 1879. Much rarer than kunzite because Cr³⁺ needs to diffuse from country rock into the pegmatite fluid at just the right moment. Minas Gerais produces the world\u2019s best hiddenite.');
+            parts.push(narrative_variant('spodumene', 'hiddenite') || 'Hiddenite — the green Cr³⁺ variety, named for William Earl Hidden, who discovered the North Carolina locality in 1879. Much rarer than kunzite because Cr³⁺ needs to diffuse from country rock into the pegmatite fluid at just the right moment. Alexander County, North Carolina remains the classic source of true chromium hiddenite; most Brazilian hiddenite is Fe-colored green spodumene wearing the name.');
+            // (2026-06-10 review \u00a72.4: the old tail credited Minas Gerais with the
+            // world's best hiddenite \u2014 true Cr-hiddenite's classic source is the
+            // North Carolina discovery locality; Brazilian green spodumene is
+            // mostly Fe-colored.)
         }
         else if (varieties.has('triphane')) {
             parts.push(narrative_variant('spodumene', 'triphane') || "Triphane — pale yellow-green or colorless, the iron-trace end-member. The name means 'three-appearing' (Greek), for the dichroism that shifts the hue depending on viewing angle. The default spodumene species when no strong chromophore is present.");
@@ -55399,8 +55674,11 @@ Object.assign(VugSimulator.prototype, {
             parts.push(narrative_variant('wurtzite', 'twinned', { twin_law: c.twin_law }) || `Shows the ${c.twin_law} twin.`);
         if (c.dissolved)
             parts.push(narrative_variant('wurtzite', 'polymorphic_inversion') || 'Polymorphic inversion destroyed the crystal.');
+        // (2026-06-10 review §2.4: the old fallback called 95°C "the" boundary —
+        // the equilibrium inversion is ~1020°C; low-T wurtzite is metastable,
+        // held by S-deficiency/low pH. 95°C stays as a sim GATE, not a fact.)
         else
-            parts.push(narrative_variant('wurtzite', 'kept_hexagonal') || 'Kept hexagonal as long as fluid stayed above 95°C.');
+            parts.push(narrative_variant('wurtzite', 'kept_hexagonal') || 'Kept the metastable hexagonal structure — preserved by sulfur-deficient, acidic fluid, not by equilibrium.');
         return parts.filter(p => p).join(' ');
     },
     _narrate_pyrite(c) {
@@ -55410,7 +55688,9 @@ Object.assign(VugSimulator.prototype, {
             parts.push(narrative_variant('pyrite', 'framboidal') || 'The low temperature produced framboidal pyrite — microscopic raspberry-shaped aggregates of tiny crystallites, a texture common in sedimentary environments.');
         }
         else if (c.habit === 'pyritohedral') {
-            parts.push(narrative_variant('pyrite', 'pyritohedral') || 'The crystal developed the characteristic pyritohedral habit — twelve pentagonal faces, a form unique to pyrite and one of nature\'s few non-crystallographic symmetries.');
+            // (2026-06-10 review §2.4: {210} is fully crystallographic, class m3̄ —
+            // pseudo-fivefold is what the old text meant by "non-crystallographic".)
+            parts.push(narrative_variant('pyrite', 'pyritohedral') || 'The crystal developed the characteristic pyritohedral habit — twelve pentagonal faces of the fully crystallographic {210} form, wearing a pseudo-fivefold look no true crystal symmetry can deliver.');
         }
         else if (c.habit.includes('cubic')) {
             parts.push(narrative_variant('pyrite', 'cubic') || 'Clean cubic habit with bright metallic luster. The striations on each cube face (perpendicular on adjacent faces) are the fingerprint of pyrite\'s lower symmetry disguised as cubic.');
@@ -61296,14 +61576,19 @@ function initSettingsUI() {
             if (typeof musicSetEnabled === 'function')
                 musicSetEnabled(musicEnabled.checked);
         });
-    if (musicVolume)
-        musicVolume.addEventListener('input', () => {
-            const pct = Number(musicVolume.value) || 0;
-            if (musicVolumePct)
-                musicVolumePct.textContent = pct + '%';
-            if (typeof musicSetVolume === 'function')
-                musicSetVolume(pct / 100);
-        });
+    // 'input' fires per-drag-tick on every modern browser; 'change' is the
+    // end-of-drag fallback for the odd embed that only fires the latter.
+    const onVolume = () => {
+        const pct = Number(musicVolume.value) || 0;
+        if (musicVolumePct)
+            musicVolumePct.textContent = pct + '%';
+        if (typeof musicSetVolume === 'function')
+            musicSetVolume(pct / 100);
+    };
+    if (musicVolume) {
+        musicVolume.addEventListener('input', onVolume);
+        musicVolume.addEventListener('change', onVolume);
+    }
     syncFromSettings();
 }
 // Auto-init on DOM ready in the browser; harness DOMs without the panel

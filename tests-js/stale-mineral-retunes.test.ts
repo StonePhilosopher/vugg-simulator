@@ -160,7 +160,12 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
   });
 
   describe('post-retune coverage health', () => {
-    it('zero stale (mineral, scenario) pairs across the canonical 4', { timeout: 90000 }, () => {
+    // 2026-06-10 timeout bump (90s → 150s), same shape as pharmacolite's
+    // v160 bump and roughten-gill's same-day one: passes comfortably in
+    // isolation but rides the 90s line under ~2-3.5× parallel suite load
+    // (it red-lined at 96s the day the §1.4 snapshot projection landed —
+    // the 14th catch in CATCHES.md).
+    it('zero stale (mineral, scenario) pairs across the canonical 4', { timeout: 150000 }, () => {
       // End-to-end: pin that none of the four target minerals shows
       // ever_nucleated=false on the same 3-seed sweep their individual
       // tests above use. Belt-and-suspenders; if a downstream change

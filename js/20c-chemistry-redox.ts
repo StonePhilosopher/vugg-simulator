@@ -23,10 +23,13 @@
 // and apply the legacy ratio/threshold against it. This is byte-identical
 // to the old `fluid.O2` path because (a) `_syncRedoxEh` (85c) keeps
 // `fluid.Eh = ehFromO2(fluid.O2)` synced just before the engines read it
-// each step, and (b) `ehFromO2`/`o2FromEh` are exact inverses for
-// O2 ∈ [0.05, 5] — which covers every scenario (max observed O2 ≈ 2.2);
-// above 5 `o2FromEh` saturates gently (no NaN / wild values), so even a
-// pathological high-O2 cell degrades safely rather than breaking.
+// each step, and (b) `ehFromO2`/`o2FromEh` are exact inverses over the
+// whole representable domain (O2 ≥ 1e-6 ppm ⇔ Eh ≥ -620 mV) — since
+// 2026-06-10, when the top saturation slopes were aligned at 1000
+// mV/decade (they had differed 10×, which snapped Eh-canonical
+// movement writes above +500 mV; measured fleet ceiling is O2 = 5.000
+// exactly, AT the top anchor, so the alignment was SIM-neutral — see
+// tools/redox-anchor-probe.mjs for both measurements).
 //
 // `let` + setter (mirrors setCarbonateKspActive): the bundle's closure-
 // scoped binding can't be flipped via globalThis, so tests that want to
@@ -136,20 +139,37 @@ function ehFromO2(O2_ppm: number): number {
   if (typeof O2_ppm !== 'number' || O2_ppm <= 0) return -200;
   // pin three anchors: (0.05, -150), (0.5, +100), (5.0, +500)
   // and interpolate between them in log10(O2) space.
+  // The 1e-6 floor means Eh below -620 mV has no O2 image — the
+  // round trip floors there. Acceptable: -620 at pH 7 is already
+  // beyond the water-stability limit; the methanogenic anchor is -400.
   const logO2 = Math.log10(Math.max(O2_ppm, 1e-6));
   // log10 anchors: -1.30 → -150, -0.30 → +100, +0.70 → +500
   // Slope between them ≈ +250 mV per decade of O₂.
   if (logO2 <= -1.30) return -150 + (logO2 - (-1.30)) * 100;  // saturate gently below
   if (logO2 <= -0.30) return -150 + (logO2 - (-1.30)) * (250 / 1.0);
   if (logO2 <= 0.70)  return  100 + (logO2 - (-0.30)) * (400 / 1.0);
-  return 500 + (logO2 - 0.70) * 100;  // saturate gently above
+  // Above the top anchor: 1000 mV/decade, the EXACT inverse of
+  // o2FromEh's top branch. Until 2026-06-10 this was 100 — each
+  // function had picked "gentle" in its own output space, leaving a
+  // 10× slope asymmetry that snapped an Eh-canonical movement's
+  // +800 mV write to +530 the step its window closed (the Movements
+  // Phase 1 blocker). 1000 wins over 100 because the inverse keeps
+  // the synthetic O2 image of the whole plausible Eh domain inside
+  // the physical dissolved-O2 ceiling (+900 mV → 12.6 ppm) instead
+  // of handing ratio-form engine sites thousands of ppm. Unreachable
+  // by current content — fleet max O2 is exactly 5.000 (the dripstone
+  // caves sit AT the anchor); see tools/redox-anchor-probe.mjs.
+  return 500 + (logO2 - 0.70) * 1000;
 }
 
 // Optional: when a scenario sets fluid.Eh directly but legacy engines
 // still read fluid.O2, derive a synthetic O2 so they keep working.
-// Inverse of ehFromO2 — same anchors. Used by Phase 4b migration so
-// scenarios can be written in mV terms and engines that haven't
-// migrated yet see consistent O₂.
+// EXACT inverse of ehFromO2 — same anchors, same slopes in every
+// branch (since 2026-06-10; the top branch was asymmetric before,
+// see ehFromO2's comment). Used by Phase 4b migration so scenarios
+// can be written in mV terms and engines that haven't migrated yet
+// see consistent O₂, and by _syncRedoxEh's Eh-canonical direction
+// (4c.3a) so a movement-driven Eh survives O2 round trips intact.
 function o2FromEh(Eh_mV: number): number {
   if (typeof Eh_mV !== 'number') return 0.5;
   if (Eh_mV >= 500)  return Math.pow(10,  0.70 + (Eh_mV - 500) / 1000);

@@ -291,6 +291,11 @@ field). The data now testifies against itself automatically, every run.
 | post-v166 carbonate ΔH sign-flips | Fabricated value (estimate citing absent source) | the verification TOOL (run on the legacy file) |
 | v175 bin-mean recorder (depletion halo) | Plausible fix refuted by measurement, BEFORE shipping | the probe — twice: it DILUTES a one-cell halo ~5×, AND its 5× reads cascaded test timeouts |
 | 2026-06-03 depletion-floor "verification" | Confounded observation + verified code reported against a STALE deploy | the BOSS, correcting the record — invisible to a 1754-green suite and to every passing probe |
+| 2026-06-09 same-length bundle staleness | Guard's diagnostic hid the failure ("diff length: 0 chars" on a red check) | running `npm run ci` COLD at review start |
+| v178 PWP Ea permutation + the test that loved it | Real values, wrong PAIRING; green test pinned to backwards physics | literature audit of the pairing; the corrected physics failing the test exposed the fixture |
+| v177 "load-bearing" that was latent | Review claim ahead of measurement | the probe run BOTH ways (fix stashed/unstashed) — identical binding populations |
+| 2026-06-10 "stale" mirabilite + torbernite | Correct geology mis-filed as failure by end-state-only accounting | the gate census said PASS×242 σ=24.6 — then reading the sim's own log, which narrated the seasonal cycle the checkers couldn't see |
+| 2026-06-10 ring_fluids view sync timeouts | Behaviorally-neutral observer whose COST broke the suite (1.32 ms/step ≈ 12%) — and 4 timeout reds initially read as chemistry regressions | the full suite's time budgets; then the census probe (0 fallback hits) + the timeout text refuting the first theory |
 
 The seventh catch is the most satisfying: the verification tool built from
 the sixth catch's lesson found a backlog of the same failure mode on its
@@ -351,6 +356,98 @@ out loud ("this is on origin; it isn't on the Pages you test until it's promoted
 The verification chain has a human link in it. It is only as true as that link is
 current. I'm grateful for this one — it's a stone like the others, and erosion is
 the formation mechanism, not the destruction.
+
+The TENTH catch (2026-06-09, `81b115b`) is the guard whose own diagnostic hid
+the failure. `npm run ci` had been RED since `c1b161e` — the committed
+`index.html` embedded a pre-final wording of the v176 history comment ("F
+nudged to 12" vs the source's "F raised to 25") because the comment was edited
+AFTER the last build. The edit was the same character count, so `build:check`
+failed with the maximally-misleading message **"diff length: 0 chars"** — a
+length-delta heuristic that reads as "nothing differs" at the exact moment
+something does. Nobody saw the red because nobody runs `ci` cold between
+sessions; every working session starts from its own builds. Caught by: running
+`npm run ci` COLD as the first act of a review sweep. Cure shipped: the rebuild
+itself. Cure to carry: **start every cold session with the full guard, and
+never trust a guard's summary statistic over its verdict** — the verdict was
+right ("out of date") while the statistic lied.
+
+The ELEVENTH catch (v178, `61bef7c`) is two halves of one organism — a wrong
+pairing and the green test that loved it. The PWP activation energies in
+thermo-carbonates.json were all REAL Palandri & Kharaka 2004 calcite values —
+a value-level audit passes them — but paired to the wrong mechanisms (acid
+pathway carried the carbonate Ea, ~12× over-amplified at 150 °C). A
+PERMUTATION, not a reversal: only an audit of the PAIRING, not the numbers,
+catches it. And week-11's "HMC rate accelerates with T (Arrhenius)" test had
+an UNDERSATURATED fixture — both rates negative — so it was actually asserting
+"dissolution decelerates with T," which is backwards physics that ONLY the
+permuted Ea satisfied. The correct physics failed the test; the bug kept it
+green for ~30 versions. **A green assertion cannot tell you which side of it
+is the bug.** Cure: fix the pairing, re-anchor the calibration factor tuned
+under the wrong physics (naive linear rescale OVERSHOT — the factor's response
+is super-linear because growth feeds back into the sampled regime), fix the
+fixture to genuinely supersaturated, and PIN THE PREMISE (`expect(r).toBeGreaterThan(0)`)
+so the test can never silently flip back to dissolution mode.
+
+The TWELFTH catch (v177, `51487a4`) is mine to log against myself: the review
+called the graduated-competition cell-key collapse "HIGH — load-bearing for
+shipped growth allocation." The fix was right (the key degraded to per-ring
+with an insertion-order-dependent budget fluid, since v128c) — but the probe
+built WITH the fix, run BOTH ways via stash, measured the truth: rationing
+binds in 0.25% of allocations, only ever in same-cell stacks, IDENTICALLY
+under both keys. Baselines byte-identical. The bug was structurally real and
+output-LATENT; "load-bearing" was narration ahead of measurement. The review
+doc carries the downgrade in writing. **Measure the blast radius before you
+narrate it — and when the measurement contradicts your finding, the
+correction goes in the same document, at the same prominence.** Sub-lesson
+(instrument rot): the w9 calibration probe's "pwp_um(x1)" column predates the
+v144 tuning it informed — it calls the LIVE conversion, so its printed values
+bake in the current factor and its "recommended factor" lines assume raw.
+The instrument that tuned the constant could no longer measure it honestly.
+Probes are data too; they drift like data.
+
+The THIRTEENTH catch (2026-06-10, the tune-pass session) is the inverse of
+all twelve before it: nothing was wrong with the simulator — the BOOKKEEPING
+mis-filed correct geology as failure, for ~150 versions. "Stale" mirabilite at
+searles_lake turned out to be the textbook Glauber-salt seasonal cycle WORKING:
+winter nights below the 32 °C eutectic nucleate a mirabilite crop (σ 24.6,
+three winters at seed 42), every summer afternoon dehydrates it to thenardite
+with the external form preserved as a pseudomorph — the sim's own log narrates
+the whole cycle. And "stale" torbernite at schneeberg was growing ~30 steps of
+emerald Musonoi-habit plates before dehydrating to metatorbernite per the
+scenario's own vadose-exhumation design (10/10 seeds, 34 crystals, once
+counted honestly; zeunerite went 2/10 → 10/10 the same instant). The hole:
+`mineral_coverage_check` and `geology_check` tallied END-STATE mineral
+identity (`c.mineral === m`), so any species whose whole point is to live
+briefly and transition in place — exactly what DEHYDRATION_TRANSITIONS
+exists to model — could never be counted as having fired. The transition
+code even RECORDS the lineage (`crystal.paramorph_origin`); the checkers
+just never read it. Cure: credit the origin species in both tools. Stale
+list 4 → 2 (both remainders are genuine: jeffrey magnetite is engine-level,
+mottramite needs its own arc). **An instrument that only reads final state
+will mis-file every process whose beauty is in the passing — check whether
+your accounting can see what your simulator can do.**
+
+The FOURTEENTH catch (2026-06-10, the ring_fluids retirement) has two faces.
+First: a change can be perfectly behavior-neutral and still break the suite —
+the first cut synced the derived ring view into the live store at the end of
+every step, measured EXACT zero divergence on the probe, kept seed-42 and the
+strip digests byte-identical… and timed out four 32-seed integration tests,
+because the sync cost 1.32 ms/call (~12% of a 10.7 ms step; 16×120 cells × 45
+dynamic-key fields) and those tests were already running 3× inflated under
+parallel suite load. **Time budgets are part of the contract: an observer
+that costs 12% of a step is not an observer.** Second face, the more
+dangerous one: the four reds were mineral-firing tests (schneeberg
+pharmacolite, roughten_gill sphalerite/brochantite), and the obvious story —
+"the fallback readers saw changed chemistry" — was WRONG. The census probe
+measured 0 fallback hits in 8,966+ crystal-step reads, and the failure text
+said `Test timed out`, not `AssertionError`. Had the first theory been
+trusted, the "fix" would have been a calibration rebake chasing a chemistry
+change that never happened. **Read the failure text before theorizing the
+failure mode — a red mineral test is not necessarily a mineral problem.**
+Cure: move the projection to snapshot-capture time (_ringFluidMeans, ~63
+captures per 200-step run instead of every step), leave the live store
+frozen so the sim path is byte-identical by CONSTRUCTION rather than by
+measurement, and pin the frozen-store contract with its own test.
 
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.

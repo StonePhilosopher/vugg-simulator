@@ -18,7 +18,7 @@ Cyclic twin on {110} — three crystals interpenetrating at 120° to produce a p
 
 ## variant: flos_ferri
 
-'Flos ferri' — the iron flower variety. Fe-rich aragonite forms delicate dendritic / coral-like white branches, a habit named for the famous Eisenerz, Austria specimens. Stalactitic and visually stunning despite (or because of) its fragility.
+'Flos ferri' — the "flower of iron" that contains no iron at all. Pure aragonite in delicate dendritic / coral-like white branches, named because the famous specimens grew in the siderite (iron-ore) mines of Eisenerz, Austria — the flower OF the iron mines, not a flower MADE of iron. Stalactitic and visually stunning despite (or because of) its fragility.
 
 ## variant: columnar_prisms
 

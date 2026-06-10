@@ -48,6 +48,65 @@ let _musicContext: string = 'silent';
 let _musicAudio: HTMLAudioElement | null = null;
 let _musicUnlockArmed = false;
 
+// VOLUME PATH (boss bug report 2026-06-10: "the volume slider doesn't
+// work"). HTMLMediaElement.volume is a SILENT NO-OP on iOS/iPadOS (the
+// setter is hardware-locked) and unreliable in a few other embeds — the
+// element kept playing at full blast while the slider, the stored
+// setting, and the % label all updated correctly. The fix is the same
+// trick the strip sonifier uses: route the element through a Web Audio
+// GainNode and set LOUDNESS on the gain, which works everywhere.
+// The graph is wired on the FIRST USER GESTURE (never earlier: a
+// MediaElementSource captures the element's output, and an AudioContext
+// created without a gesture sits 'suspended' — wiring early would
+// SILENCE autoplay-allowed playback until the first click). Until the
+// gesture, element.volume carries loudness (correct on desktop); after
+// it, gain owns loudness and element.volume pins to 1.0.
+// createMediaElementSource is once-per-element — _musicGraphWired guards.
+let _musicCtx: any = null;
+let _musicGain: any = null;
+let _musicGraphWired = false;
+
+function _musicWireGraphOnGesture(): void {
+  if (_musicGraphWired) return;
+  if (!_musicAudio) return;  // stays armed; retries on the next gesture
+  const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+  if (!AC) return;
+  try {
+    _musicCtx = new AC();
+    const src = _musicCtx.createMediaElementSource(_musicAudio);
+    _musicGain = _musicCtx.createGain();
+    src.connect(_musicGain);
+    _musicGain.connect(_musicCtx.destination);
+    _musicGraphWired = true;
+    _musicGain.gain.value = musicGetSettings().volume;
+    _musicAudio.volume = 1.0;  // gain owns loudness from here on
+    if (_musicCtx.state === 'suspended') _musicCtx.resume().catch(() => { /* retried in _musicApply */ });
+    document.removeEventListener('pointerdown', _musicWireGraphOnGesture);
+    document.removeEventListener('keydown', _musicWireGraphOnGesture);
+  } catch (_) { /* element.volume fallback stays in charge */ }
+}
+
+// Arm the graph-wiring gesture hook at load (separate from the autoplay
+// unlock — that one is one-shot per blocked play; this one persists
+// until the graph is wired).
+if (typeof document !== 'undefined') {
+  document.addEventListener('pointerdown', _musicWireGraphOnGesture);
+  document.addEventListener('keydown', _musicWireGraphOnGesture);
+}
+
+// Debug/probe surface — lets the preview harness and future field
+// debugging see which volume path is live without reaching closures.
+function musicDebugState(): any {
+  return {
+    context: _musicContext,
+    graphWired: _musicGraphWired,
+    ctxState: _musicCtx ? _musicCtx.state : null,
+    gainValue: _musicGain ? _musicGain.gain.value : null,
+    elementVolume: _musicAudio ? _musicAudio.volume : null,
+    playing: _musicAudio ? !_musicAudio.paused : false,
+  };
+}
+
 // ---- settings (root object shared by future settings groups) ----
 
 function _vuggSettingsLoad(): any {
@@ -67,7 +126,9 @@ function musicGetSettings(): { enabled: boolean, volume: number } {
   const m = root.music || {};
   return {
     enabled: (m.enabled !== undefined) ? !!m.enabled : true,
-    volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.5,
+    // Default 0.25 (boss 2026-06-10: half the original 0.5 — the music
+    // sits under the game, not on top of it).
+    volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.25,
   };
 }
 
@@ -83,7 +144,10 @@ function musicSetVolume(v: number): void {
   const root = _vuggSettingsLoad();
   root.music = Object.assign({}, root.music, { volume: vol });
   _vuggSettingsSave(root);
-  if (_musicAudio) _musicAudio.volume = vol;
+  // Gain owns loudness once the graph is wired (iOS ignores
+  // element.volume); element.volume is the pre-gesture desktop path.
+  if (_musicGraphWired && _musicGain) _musicGain.gain.value = vol;
+  else if (_musicAudio) _musicAudio.volume = vol;
 }
 
 // ---- context + playback ----
@@ -115,7 +179,15 @@ function _musicApply(): void {
     _musicAudio = new Audio();
     _musicAudio.loop = true;
   }
-  _musicAudio.volume = settings.volume;
+  if (_musicGraphWired && _musicGain) {
+    _musicGain.gain.value = settings.volume;
+    _musicAudio.volume = 1.0;
+    // The wired graph only sounds while its context runs; resume is a
+    // no-op when already running and queues behind a gesture otherwise.
+    if (_musicCtx && _musicCtx.state === 'suspended') _musicCtx.resume().catch(() => {});
+  } else {
+    _musicAudio.volume = settings.volume;
+  }
 
   // Swap src only on a real track change — same-context renavigation
   // (title → New Game) must not restart the song.
