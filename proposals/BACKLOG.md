@@ -2,6 +2,22 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🎵 UPDATE (2026-06-09, latest) — MUSIC + the settings shell (SIM-NEUTRAL)
+>
+> Boss-directed: two boss-supplied tracks now loop per room — "Vugg
+> Simulator.mp3" on every title-family screen, "salt-circuit.mp3" in every
+> building room (wall-preview modes + Library + Record Player); STRIP VIEW
+> stays silent (the sonifier owns that room). Engine `js/08-music.ts`
+> (context model, one reused <audio>, src swaps only on real track change so
+> renavigation never restarts the song, autoplay-block → one-shot gesture
+> unlock); ⚙ settings overlay `js/98e-ui-settings.ts` + index.html (music
+> enable + volume, persisted under the NEW `vugg-settings-v1` localStorage
+> ROOT — future settings groups go BESIDE music:{} in that key, the first
+> brick of Steam-T1 #4). Verified in a live preview (play/pause call matrix
+> per mode + settings round-trip + zero console errors); BY-EAR acceptance
+> on Pages is the boss's (9th-catch rule — loop seams + relative levels
+> especially). Tests: tests-js/music.test.ts (10).
+>
 > ## ⚒️ UPDATE (2026-06-09, later) — REBAKE ARC SHIPPED: v177 + v178 + v179
 >
 > The three calibration-coupled fixes from the review below are DONE

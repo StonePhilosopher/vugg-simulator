@@ -21,6 +21,8 @@ function showTitleScreen() {
   // hidden Creative-mode controls. No-op if no tutorial running.
   if (typeof endTutorial === 'function') endTutorial();
   currentGameMode = null;
+  // Title family → title theme ('Vugg Simulator.mp3'). See js/08-music.ts.
+  if (typeof musicSetContext === 'function') musicSetContext('title');
   // Home resets the map: with currentGameMode null, topoActiveSim()
   // returns null even if a fortressSim or randomSim is still alive in
   // memory, so a subsequent topoRender paints the placeholder rather

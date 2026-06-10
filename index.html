@@ -1440,6 +1440,70 @@ body.tutorial-active .broth-panel { display: none; }
 body.tutorial-active #mode-toggle { opacity: 0.4; }
 body.tutorial-active #mode-toggle:hover { opacity: 1; }
 
+/* ---- Settings overlay (v-music 2026-06-09) — field-guide styling:
+   small, monospace, low-saturation. Fixed so it rides every screen. ---- */
+#settings-btn {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 4000;
+  background: #1a1a14;
+  color: #6a5a30;
+  border: 1px solid #3a3520;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  opacity: 0.75;
+}
+#settings-btn:hover { opacity: 1; color: #cbb060; }
+#settings-panel {
+  position: fixed;
+  top: 44px;
+  right: 12px;
+  z-index: 4001;
+  width: 240px;
+  background: #14140f;
+  border: 1px solid #3a3520;
+  border-radius: 4px;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.8rem;
+  color: #9a8a50;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.55);
+}
+#settings-panel .settings-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+#settings-panel .settings-row label { flex: 1; }
+#settings-panel .settings-title {
+  justify-content: space-between;
+  color: #cbb060;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #2a2618;
+  margin-bottom: 0.3rem;
+}
+#settings-panel .settings-title button {
+  background: none;
+  border: none;
+  color: #6a5a30;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 0.15rem;
+}
+#settings-panel .settings-title button:hover { color: #cbb060; }
+#settings-panel input[type="range"] { flex: 1.4; accent-color: #8a7430; }
+#settings-panel #settings-music-volume-pct { width: 2.6em; text-align: right; color: #6a5a30; }
+#settings-panel .settings-note {
+  margin-top: 0.35rem;
+  color: #564a28;
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
 .title-more {
   margin-top: 1rem;
   color: #6a5a30;
@@ -2942,6 +3006,29 @@ footer a:hover {
   <button id="mode-home" class="mode-home-btn" onclick="showTitleScreen()">🏠 Home</button>
 </div>
 
+<!-- Settings (v-music 2026-06-09): fixed ⚙ reachable from EVERY screen
+     (title family included — the music toggle has to be reachable where
+     the music plays). Panel is a small fixed overlay, field-guide
+     styling. Wiring in js/98e-ui-settings.ts; music engine in
+     js/08-music.ts. -->
+<button id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
+<div id="settings-panel" style="display:none" role="dialog" aria-label="Settings">
+  <div class="settings-row settings-title">
+    <span>SETTINGS</span>
+    <button id="settings-close" title="Close" aria-label="Close settings">✕</button>
+  </div>
+  <div class="settings-row">
+    <label for="settings-music-enabled">Music</label>
+    <input type="checkbox" id="settings-music-enabled" checked>
+  </div>
+  <div class="settings-row">
+    <label for="settings-music-volume">Music volume</label>
+    <input type="range" id="settings-music-volume" min="0" max="100" step="1" value="50">
+    <span id="settings-music-volume-pct">50%</span>
+  </div>
+  <div class="settings-note">Strip View stays music-free — the rocks sing there.</div>
+</div>
+
 <!-- Legends Mode Controls (positioned above WALL PROFILE; boss
      directive 2026-05-12). Scenario picker / Growth Seed / Shape
      Seed / Time Steps / Grow / Random / Copy live at the top of the
@@ -4349,6 +4436,170 @@ function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, local
             return variants[i];
     }
     return variants[variants.length - 1];
+}
+
+// ── 08-music.js ──
+
+// ============================================================
+// js/08-music.ts — looping background music + persisted audio settings
+// ============================================================
+// Two tracks (boss-supplied 2026-06-09, repo root):
+//
+//   'Vugg Simulator.mp3' — every TITLE-family screen (title screen, the
+//                          New Game menu, the Scenarios picker)
+//   'salt-circuit.mp3'   — every BUILDING screen: anything with the wall
+//                          preview box (Simulation, Creative, Random,
+//                          Zen) plus Library and Record Player
+//
+// STRIP VIEW is deliberately SILENT: the sonifier owns that room — the
+// rocks sing there and the soundtrack steps aside.
+//
+// CONTEXT MODEL. Navigation calls musicSetContext('title' | 'building' |
+// 'silent') — showTitleScreen / openNewGameMenu / openScenariosPicker
+// say 'title', switchMode says 'building' (or 'silent' for stripview).
+// The engine owns ONE reused <audio> element and swaps src only when the
+// target track actually changes, so title → New Game → Scenarios doesn't
+// restart the song, and neither does Creative → Library → Record Player.
+// Tracks loop natively (audio.loop).
+//
+// SETTINGS. {enabled, volume} persist under localStorage
+// 'vugg-settings-v1'. The stored object is a settings ROOT — music lives
+// at .music so future settings (font scale, palette, …) sit beside it
+// in the same key instead of sprawling new keys.
+//
+// AUTOPLAY. Browsers refuse audio before the first user gesture. Every
+// failed play() arms a one-shot pointerdown/keydown unlock that retries
+// the CURRENT context — the title song starts on the first click or
+// keypress, and a context that changed while locked plays the right
+// track, not the stale one.
+//
+// jsdom-SAFE: tests have no real Audio playback — every entry point
+// guards, and play() rejections/throws are swallowed into the unlock
+// path. SIM-NEUTRAL: no engine code touched, no RNG, no baselines.
+const _MUSIC_TRACKS = {
+    title: 'Vugg Simulator.mp3',
+    building: 'salt-circuit.mp3',
+};
+const _VUGG_SETTINGS_KEY = 'vugg-settings-v1';
+// Module state. _musicContext is what navigation last asked for;
+// _musicApply() reconciles the audio element to (context × settings).
+let _musicContext = 'silent';
+let _musicAudio = null;
+let _musicUnlockArmed = false;
+// ---- settings (root object shared by future settings groups) ----
+function _vuggSettingsLoad() {
+    try {
+        const raw = localStorage.getItem(_VUGG_SETTINGS_KEY);
+        if (raw)
+            return JSON.parse(raw);
+    }
+    catch (_) { /* corrupt / unavailable → defaults */ }
+    return {};
+}
+function _vuggSettingsSave(root) {
+    try {
+        localStorage.setItem(_VUGG_SETTINGS_KEY, JSON.stringify(root));
+    }
+    catch (_) { /* quota / private mode */ }
+}
+function musicGetSettings() {
+    const root = _vuggSettingsLoad();
+    const m = root.music || {};
+    return {
+        enabled: (m.enabled !== undefined) ? !!m.enabled : true,
+        volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.5,
+    };
+}
+function musicSetEnabled(on) {
+    const root = _vuggSettingsLoad();
+    root.music = Object.assign({}, root.music, { enabled: !!on });
+    _vuggSettingsSave(root);
+    _musicApply();
+}
+function musicSetVolume(v) {
+    const vol = Math.max(0, Math.min(1, Number(v) || 0));
+    const root = _vuggSettingsLoad();
+    root.music = Object.assign({}, root.music, { volume: vol });
+    _vuggSettingsSave(root);
+    if (_musicAudio)
+        _musicAudio.volume = vol;
+}
+// ---- context + playback ----
+// Which track (filename) should be sounding for a context, or null for
+// silence. Pure — the test suite pins the boss's room→song map here.
+function musicTrackForContext(ctx) {
+    return _MUSIC_TRACKS[ctx] || null;
+}
+function musicSetContext(ctx) {
+    _musicContext = ctx;
+    _musicApply();
+}
+function _musicApply() {
+    if (typeof Audio === 'undefined')
+        return; // jsdom / headless: no-op
+    const settings = musicGetSettings();
+    const track = settings.enabled ? musicTrackForContext(_musicContext) : null;
+    if (!track) {
+        if (_musicAudio && !_musicAudio.paused) {
+            try {
+                _musicAudio.pause();
+            }
+            catch (_) { /* jsdom */ }
+        }
+        return;
+    }
+    if (!_musicAudio) {
+        _musicAudio = new Audio();
+        _musicAudio.loop = true;
+    }
+    _musicAudio.volume = settings.volume;
+    // Swap src only on a real track change — same-context renavigation
+    // (title → New Game) must not restart the song.
+    const want = encodeURI(track);
+    if (!_musicAudio.src || !_musicAudio.src.endsWith(want)) {
+        _musicAudio.src = track;
+    }
+    if (_musicAudio.paused) {
+        let p;
+        try {
+            p = _musicAudio.play();
+        }
+        catch (_) {
+            _musicArmUnlock();
+            return;
+        }
+        if (p && typeof p.catch === 'function')
+            p.catch(() => _musicArmUnlock());
+    }
+}
+// BOOT: the page always opens on the title screen, but it does so via
+// static HTML — showTitleScreen() is NOT called at load, so without
+// this the title theme would only start after the first navigation.
+// (Autoplay is blocked pre-gesture anyway; this arms the unlock so the
+// song starts on the first click/keypress.)
+if (typeof document !== 'undefined' && document.body) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => musicSetContext('title'), { once: true });
+    }
+    else {
+        musicSetContext('title');
+    }
+}
+// One-shot gesture unlock: retry the CURRENT context on the first
+// pointerdown/keydown after a blocked play(). Re-arms itself only via
+// the next blocked play, so it never leaks listeners.
+function _musicArmUnlock() {
+    if (_musicUnlockArmed || typeof document === 'undefined')
+        return;
+    _musicUnlockArmed = true;
+    const retry = () => {
+        _musicUnlockArmed = false;
+        document.removeEventListener('pointerdown', retry);
+        document.removeEventListener('keydown', retry);
+        _musicApply();
+    };
+    document.addEventListener('pointerdown', retry, { once: true });
+    document.addEventListener('keydown', retry, { once: true });
 }
 
 // ── 10-seeded-random.js ──
@@ -53116,6 +53367,9 @@ function showTitleScreen() {
     if (typeof endTutorial === 'function')
         endTutorial();
     currentGameMode = null;
+    // Title family → title theme ('Vugg Simulator.mp3'). See js/08-music.ts.
+    if (typeof musicSetContext === 'function')
+        musicSetContext('title');
     // Home resets the map: with currentGameMode null, topoActiveSim()
     // returns null even if a fortressSim or randomSim is still alive in
     // memory, so a subsequent topoRender paints the placeholder rather
@@ -56079,6 +56333,10 @@ function openNewGameMenu() {
         panel.style.display = 'block';
     idleStop();
     refreshTitleLoadButton();
+    // Still a title-family screen → title theme keeps playing (no restart:
+    // 08-music only swaps src on a real track change).
+    if (typeof musicSetContext === 'function')
+        musicSetContext('title');
 }
 function openScenariosPicker() {
     hideAllMenuAndModePanels();
@@ -56087,6 +56345,8 @@ function openScenariosPicker() {
     if (panel)
         panel.style.display = 'block';
     idleStop();
+    if (typeof musicSetContext === 'function')
+        musicSetContext('title');
 }
 // Router for the New Game menu's non-scenario buttons.
 function menuGo(modeName) { switchMode(modeName); }
@@ -56268,6 +56528,13 @@ function titleLoadGame() {
 let currentGameMode = null;
 const GAME_MODES = ['legends', 'fortress', 'idle', 'random'];
 function switchMode(mode) {
+    // Music routing (js/08-music.ts): every mode is a BUILDING room
+    // (salt-circuit.mp3 looping) EXCEPT Strip View, which is silent —
+    // the sonifier owns that room. Moving between building modes does
+    // not restart the song (08-music swaps src only on track change).
+    if (typeof musicSetContext === 'function') {
+        musicSetContext(mode === 'stripview' ? 'silent' : 'building');
+    }
     const titleScreen = document.getElementById('title-screen');
     const modeToggle = document.getElementById('mode-toggle');
     const legendsControls = document.getElementById('legends-controls');
@@ -60978,6 +61245,75 @@ function renderZoneShapeCanvas(canvas, crystal, opts = {}) {
         // dendritic (branching skeletal)
         default:
             return renderZoneBarCanvas(canvas, zones, opts);
+    }
+}
+
+// ── 98e-ui-settings.js ──
+
+// ============================================================
+// js/98e-ui-settings.ts — the ⚙ settings overlay
+// ============================================================
+// Wires the fixed settings button + panel declared in index.html's body
+// (v-music 2026-06-09). Today the panel holds the MUSIC controls (enable
+// toggle + volume); it is intentionally a general settings surface —
+// future settings (font scale, palette, reduced motion, …) add rows here
+// and persist beside music:{} in the same 'vugg-settings-v1' root (see
+// js/08-music.ts for the storage shape).
+//
+// Auto-inits on DOM ready, same pattern as 99k's initStripView. Tests /
+// harness without the panel elements skip cleanly.
+function initSettingsUI() {
+    const btn = document.getElementById('settings-btn');
+    const panel = document.getElementById('settings-panel');
+    if (!btn || !panel)
+        return; // harness / stub DOM
+    const closeBtn = document.getElementById('settings-close');
+    const musicEnabled = document.getElementById('settings-music-enabled');
+    const musicVolume = document.getElementById('settings-music-volume');
+    const musicVolumePct = document.getElementById('settings-music-volume-pct');
+    // Reflect persisted settings into the controls.
+    const syncFromSettings = () => {
+        if (typeof musicGetSettings !== 'function')
+            return;
+        const s = musicGetSettings();
+        if (musicEnabled)
+            musicEnabled.checked = s.enabled;
+        if (musicVolume)
+            musicVolume.value = String(Math.round(s.volume * 100));
+        if (musicVolumePct)
+            musicVolumePct.textContent = Math.round(s.volume * 100) + '%';
+    };
+    btn.addEventListener('click', () => {
+        const open = panel.style.display !== 'none';
+        panel.style.display = open ? 'none' : 'block';
+        if (!open)
+            syncFromSettings();
+    });
+    if (closeBtn)
+        closeBtn.addEventListener('click', () => { panel.style.display = 'none'; });
+    if (musicEnabled)
+        musicEnabled.addEventListener('change', () => {
+            if (typeof musicSetEnabled === 'function')
+                musicSetEnabled(musicEnabled.checked);
+        });
+    if (musicVolume)
+        musicVolume.addEventListener('input', () => {
+            const pct = Number(musicVolume.value) || 0;
+            if (musicVolumePct)
+                musicVolumePct.textContent = pct + '%';
+            if (typeof musicSetVolume === 'function')
+                musicSetVolume(pct / 100);
+        });
+    syncFromSettings();
+}
+// Auto-init on DOM ready in the browser; harness DOMs without the panel
+// no-op inside initSettingsUI.
+if (typeof document !== 'undefined' && document.body) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSettingsUI, { once: true });
+    }
+    else {
+        initSettingsUI();
     }
 }
 
