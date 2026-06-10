@@ -2,7 +2,36 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🗿 UPDATE (2026-06-10, latest) — SESSION HANDOFF: gates + narrators
+> ## 🌡️ UPDATE (2026-06-10, latest) — T-RECONCILIATION SHIPPED (SIM 181): ambient_cooling subsumed onto a dedicated thermal stream, full-fleet rebake, T-blocked scenarios OPEN
+>
+> The Movements master doc's #1 lever is DONE. `ambient_cooling`'s drift +
+> thermal-pulse draws (~2 shared draws/step in EVERY scenario, +1..6 per
+> pulse with SiO₂/Fe/Mn/flow/pH riders) moved off the shared rng onto
+> `sim._thermalRng` — run-seed-derived (85j `_makeThermalRng`: weather, not
+> geology — contrast the movement stream's shape_seed) and SCRAMBLED (bare
+> XOR left nearby seeds with correlated streams; the probe measured
+> tutorial pulse variance collapse to ±0.00 before the fix shipped). The
+> mechanic itself is UNCHANGED — same drift law, same state-dependent
+> fracture-valve pulse arrival — verified statistically by the new standing
+> instrument `tools/t-reconciliation-probe.mjs` (LIVE-vs-SHADOW fleet sweep
+> + multi-seed sentinel distributions). STAND-DOWN shipped with it: a
+> scenario movement on `temperature` owns T for its window (ambient
+> yields, resumes at endStep) — **naica (19 random pulses/run holding up
+> its "stable pool"!), both pegmatites, marble, porphyry, epithermal,
+> deccan, cooling are now open to declared thermal stories**, each its own
+> per-scenario arc with single-scenario rebake. Full-fleet rebake landed:
+> seed42_v181 + strip_digest_v181, 26/31 scenarios moved, assemblages
+> in-family (worst Jaccard 0.50 on the 3-crystal `pulse` scaffold), stale
+> count UNCHANGED at 2 (jeffrey magnetite + mottramite, the deliberate
+> arcs), dead 35→36 (borderliner flap, tremolite-class). Two
+> realization-lucky test pins converted to widened coverage checks (the
+> v135/v137 pattern): sicily native_sulfur (fires 15/16 seeds, threshold
+> ≥6/8) + sulphur-bank's cooling-event pin (now ambient-off via the knobs,
+> deterministic). New tools: t-reconciliation-probe.mjs +
+> baseline-diff.mjs (the rebake-review companion gen-js-baseline's header
+> always asked for). Tests 1787 → 1794.
+>
+> ## 🗿 UPDATE (2026-06-10, earlier) — SESSION HANDOFF: gates + narrators
 >
 > **`proposals/HANDOFF-GATES-AND-NARRATORS-2026-06-10.md`** is the handoff
 > for the 2026-06-10 second session (the redox round-trip gate, the

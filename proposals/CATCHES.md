@@ -296,6 +296,7 @@ field). The data now testifies against itself automatically, every run.
 | v177 "load-bearing" that was latent | Review claim ahead of measurement | the probe run BOTH ways (fix stashed/unstashed) — identical binding populations |
 | 2026-06-10 "stale" mirabilite + torbernite | Correct geology mis-filed as failure by end-state-only accounting | the gate census said PASS×242 σ=24.6 — then reading the sim's own log, which narrated the seasonal cycle the checkers couldn't see |
 | 2026-06-10 ring_fluids view sync timeouts | Behaviorally-neutral observer whose COST broke the suite (1.32 ms/step ≈ 12%) — and 4 timeout reds initially read as chemistry regressions | the full suite's time budgets; then the census probe (0 fallback hits) + the timeout text refuting the first theory |
+| v181 thermal-stream seed correlation | Distributional bug invisible to any single realization — bare `seed ^ SALT` left nearby seeds with correlated mulberry32 streams (cross-seed pulse variance ±0.00) | the probe's MULTI-SEED sweep, run on the design BEFORE the engine edit — the seed-42 fleet sweep alone was green |
 
 The seventh catch is the most satisfying: the verification tool built from
 the sixth catch's lesson found a backlog of the same failure mode on its
@@ -448,6 +449,28 @@ Cure: move the projection to snapshot-capture time (_ringFluidMeans, ~63
 captures per 200-step run instead of every step), leave the live store
 frozen so the sim path is byte-identical by CONSTRUCTION rather than by
 measurement, and pin the frozen-store contract with its own test.
+
+The FIFTEENTH catch (v181, the T-reconciliation) was caught BEFORE the commit
+by the eighth catch's own rule — run the probe on the fix you're ABOUT to
+ship. The plan was textbook: derive the dedicated thermal stream as
+`mulberry32(runSeed ^ 'HEAT')`, exactly the salt-XOR idiom the movement and
+fluid-spot streams already use. The fleet sweep at seed 42 looked perfect —
+meanT in-family everywhere, pulse counts plausible. The MULTI-SEED sweep told
+the truth: SHADOW cross-seed variance had collapsed (cooling meanT σ 10.8 →
+2.7, tutorial pulse count 1.13±0.33 → 1.00±**0.00** — every seed drew the
+same pulse). Nearby seeds XOR a constant are nearby mulberry32 states, and
+nearby mulberry32 states produce correlated early output — the per-seed
+"thermal weather" was being stamped from nearly the same template. One
+throwaway scramble draw avalanches the states apart (σ recovered to live
+levels); the regression is pinned in thermal-stream.test.ts. Two lessons.
+Narrow: **a seeded stream's QUALITY is part of its contract — when deriving
+streams from related seeds, scramble; and note the existing salt-XOR streams
+get away with it only because their seed (shape_seed) is a designed constant,
+not a swept variable.** Broad, the one that compounds the eighth: a
+single-realization check cannot see a DISTRIBUTIONAL bug. The seed-42 sweep
+was green because any single realization from the correlated family looks
+fine — only asking "do different seeds DIFFER like they used to?" exposed it.
+Probe the moments, not just the mean.
 
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.

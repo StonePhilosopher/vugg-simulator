@@ -10388,5 +10388,38 @@
 //   BASELINE (1/31 moved, roughten_gill only): linarite 0→2x (~2.2 mm), leadhillite
 //   0→2x, cerussite 1→4x, caledonite + brochantite + anglesite KEPT and grew,
 //   pyromorphite stable 6x. 26 → 28 species, 75 crystals. Stale list 7 → 4.
-const SIM_VERSION = 180;
+//
+// v181 (2026-06-10) — T-RECONCILIATION: ambient_cooling's drift + thermal-pulse
+//                     draws move off the shared rng onto a DEDICATED thermal
+//                     stream (Movements sub-project #1; HANDOFF-MOVEMENTS-AND-
+//                     BACKLOG-2026-06-01.md F1: "temperature is already an
+//                     ad-hoc movement — subsume it, don't run alongside it").
+//
+//   THE MECHANIC IS UNCHANGED — same drift law, same state-dependent pulse
+//   arrival (fracturing-as-the-rock-contracts), same riders. Verified
+//   statistically in tools/t-reconciliation-probe.mjs: per-scenario meanT and
+//   pulse-count distributions indistinguishable across seeds (n=8 sentinels).
+//   What changed is WHO PAYS: ~2 shared draws/step (+1..6 per pulse) in every
+//   scenario no longer displace the nucleation cascade, so thermal noise and
+//   crystal outcomes are decoupled streams at last.
+//
+//   THE STREAM (85j _makeThermalRng): seeded from rng.state at sim
+//   construction (run-seed lineage — ambient cooling is WEATHER, varies per
+//   play) — deliberately NOT shape_seed like the movement stream (declared
+//   movements are GEOLOGY, fixed per cavity). Seed is SCRAMBLED through one
+//   throwaway draw: bare XOR left nearby run seeds with correlated early
+//   streams (probe measured tutorial pulse variance collapse to ±0.00).
+//
+//   THE UNLOCK (stand-down): a scenario movement on `temperature` now OWNS T
+//   for its window — ambient drift + pulses yield and resume at endStep.
+//   This opens the ~8 T-blocked scenarios (naica's stable pool currently
+//   rides 15±2 random pulses per run; the pegmatites' 650→300 ramps; marble;
+//   porphyry; epithermal; deccan) to declared thermal stories — each its own
+//   later per-scenario arc.
+//
+//   BASELINE: FULL-FLEET REBAKE (every scenario's shared-rng cascade shifts
+//   by construction). Assemblages stay in-family — fleet sweep at seed 42:
+//   species Jaccard 1.00 on 14/31, ≥0.83 on 29/31, worst 0.50 on the
+//   3-crystal `pulse` scenario (small-set artifact).
+const SIM_VERSION = 181;
 

@@ -19,6 +19,15 @@ class VugSimulator {
   constructor(conditions, events) {
     this.conditions = conditions;
     this._startTemp = conditions.temperature; // remember initial T for thermal pulse ceiling
+    // T-RECONCILIATION (2026-06-10, SIM 181): the ambient drift + thermal-pulse
+    // draws in ambient_cooling (85d) come from this DEDICATED stream, not the
+    // shared `rng` — so the thermal history no longer displaces the nucleation
+    // cascade, and a scenario declaring its own `temperature` movement (85j)
+    // can take over T without ambient pulses fighting it. Seeded from
+    // rng.state (run-seed lineage, read-only — capturing state consumes no
+    // draw); see _makeThermalRng (85j) for the weather-not-geology rationale
+    // and the seed-scramble requirement.
+    this._thermalRng = _makeThermalRng(rng.state);
     this.events = (events || []).slice().sort((a, b) => a.step - b.step);
     this.crystals = [];
     this.crystal_counter = 0;

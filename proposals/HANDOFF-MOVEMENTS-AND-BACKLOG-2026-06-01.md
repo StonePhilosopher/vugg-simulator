@@ -22,6 +22,23 @@ FIXED 2026-06-01 (`083d994`, boss).
 > "exact inverses for O2 ∈ [0.05, 5] → clamp in 4c.2" line is superseded
 > (no clamp was ever added; the divergence itself is gone).
 
+> **STATUS (2026-06-10, second note): F1 is RESOLVED — T-RECONCILIATION
+> SHIPPED (SIM 181).** ambient_cooling's drift + thermal-pulse draws moved
+> off the shared rng onto a dedicated run-seed-derived stream
+> (`sim._thermalRng`, 85j `_makeThermalRng` — seeded from `rng.state` at
+> construction and SCRAMBLED; bare XOR left nearby seeds correlated). The
+> mechanic is statistically unchanged (standing instrument:
+> `tools/t-reconciliation-probe.mjs`, LIVE-vs-SHADOW fleet sweep +
+> multi-seed distributions); what changed is that thermal noise no longer
+> displaces the nucleation cascade. STAND-DOWN is in: a scenario movement
+> on `temperature` owns T for its window (ambient drift + pulses yield,
+> resume at endStep) — the ~8 T-blocked scenarios (§coverage below) are now
+> OPEN to declared thermal stories, each as its own per-scenario arc.
+> "Don't drive T with OU until ambient_cooling is reconciled" still holds
+> for TEXTURE (the chaos warning was about OU feedback, not ownership);
+> deterministic TREND/setpoint movements on T are safe now. Full-fleet
+> rebake landed with the change (seed42_v181 + strip_digest_v181).
+
 ---
 
 ## ★ North Star — follow the science (boss, 2026-06-01)

@@ -15479,7 +15479,40 @@ let timeScale = 5.0;
 //   BASELINE (1/31 moved, roughten_gill only): linarite 0→2x (~2.2 mm), leadhillite
 //   0→2x, cerussite 1→4x, caledonite + brochantite + anglesite KEPT and grew,
 //   pyromorphite stable 6x. 26 → 28 species, 75 crystals. Stale list 7 → 4.
-const SIM_VERSION = 180;
+//
+// v181 (2026-06-10) — T-RECONCILIATION: ambient_cooling's drift + thermal-pulse
+//                     draws move off the shared rng onto a DEDICATED thermal
+//                     stream (Movements sub-project #1; HANDOFF-MOVEMENTS-AND-
+//                     BACKLOG-2026-06-01.md F1: "temperature is already an
+//                     ad-hoc movement — subsume it, don't run alongside it").
+//
+//   THE MECHANIC IS UNCHANGED — same drift law, same state-dependent pulse
+//   arrival (fracturing-as-the-rock-contracts), same riders. Verified
+//   statistically in tools/t-reconciliation-probe.mjs: per-scenario meanT and
+//   pulse-count distributions indistinguishable across seeds (n=8 sentinels).
+//   What changed is WHO PAYS: ~2 shared draws/step (+1..6 per pulse) in every
+//   scenario no longer displace the nucleation cascade, so thermal noise and
+//   crystal outcomes are decoupled streams at last.
+//
+//   THE STREAM (85j _makeThermalRng): seeded from rng.state at sim
+//   construction (run-seed lineage — ambient cooling is WEATHER, varies per
+//   play) — deliberately NOT shape_seed like the movement stream (declared
+//   movements are GEOLOGY, fixed per cavity). Seed is SCRAMBLED through one
+//   throwaway draw: bare XOR left nearby run seeds with correlated early
+//   streams (probe measured tutorial pulse variance collapse to ±0.00).
+//
+//   THE UNLOCK (stand-down): a scenario movement on `temperature` now OWNS T
+//   for its window — ambient drift + pulses yield and resume at endStep.
+//   This opens the ~8 T-blocked scenarios (naica's stable pool currently
+//   rides 15±2 random pulses per run; the pegmatites' 650→300 ramps; marble;
+//   porphyry; epithermal; deccan) to declared thermal stories — each its own
+//   later per-scenario arc.
+//
+//   BASELINE: FULL-FLEET REBAKE (every scenario's shared-rng cascade shifts
+//   by construction). Assemblages stay in-family — fleet sweep at seed 42:
+//   species Jaccard 1.00 on 14/31, ≥0.83 on 29/31, worst 0.50 on the
+//   3-crystal `pulse` scenario (small-set artifact).
+const SIM_VERSION = 181;
 
 // ── 18-constants.js ──
 
@@ -18379,8 +18412,11 @@ class VugWall {
         // seal (step 78) — but an OPEN feeder advects heat, so a vein system
         // holds near brine temperature until the conduit chokes. Slow cooling
         // while open is the geologically honest knob, not scripted reheats.
-        // RNG-NEUTRAL: ambient_cooling draws rng.uniform regardless; the rate
-        // only scales the draw, so unset scenarios stay byte-identical.
+        // (Historical note: through v180 the knob was RNG-NEUTRAL on the SHARED
+        // rng — the uniform draw happened regardless of rate, keeping unset
+        // scenarios byte-identical. Since v181 the thermal draws live on the
+        // dedicated thermal stream (85j _makeThermalRng), where the same
+        // always-draw pattern keeps that stream's cursor rate-independent.)
         this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
             ? opts.cooling_rate : 1.5;
     }
@@ -43423,6 +43459,15 @@ class VugSimulator {
     constructor(conditions, events) {
         this.conditions = conditions;
         this._startTemp = conditions.temperature; // remember initial T for thermal pulse ceiling
+        // T-RECONCILIATION (2026-06-10, SIM 181): the ambient drift + thermal-pulse
+        // draws in ambient_cooling (85d) come from this DEDICATED stream, not the
+        // shared `rng` — so the thermal history no longer displaces the nucleation
+        // cascade, and a scenario declaring its own `temperature` movement (85j)
+        // can take over T without ambient pulses fighting it. Seeded from
+        // rng.state (run-seed lineage, read-only — capturing state consumes no
+        // draw); see _makeThermalRng (85j) for the weather-not-geology rationale
+        // and the seed-scramble requirement.
+        this._thermalRng = _makeThermalRng(rng.state);
         this.events = (events || []).slice().sort((a, b) => a.step - b.step);
         this.crystals = [];
         this.crystal_counter = 0;
@@ -46967,47 +47012,68 @@ Object.assign(VugSimulator.prototype, {
     ambient_cooling(rate = null) {
         // v179: rate resolves wall.cooling_rate (per-scenario knob, default 1.5 —
         // the historical hard-coded value). An explicit argument still wins
-        // (legacy callers / tests). RNG-NEUTRAL: the uniform draw happens
-        // regardless of the rate value, so unset scenarios are byte-identical.
+        // (legacy callers / tests).
+        //
+        // T-RECONCILIATION (2026-06-10, SIM 181): the drift + pulse draws below come
+        // from this._thermalRng — a dedicated run-seed-derived stream (85j
+        // _makeThermalRng) — NOT the shared `rng`. Statistically the same mechanic
+        // (verified in tools/t-reconciliation-probe.mjs: meanT/pulse-count
+        // distributions indistinguishable across seeds), but the thermal history no
+        // longer displaces the nucleation cascade. DELTA semantics throughout: the
+        // drift subtracts and the pulses add to whatever T currently is, so event
+        // shoves (70-events ±15..50°C) compose instead of being clobbered — the
+        // same-field-movement foot-gun documented at scenarios.json5 (supergene
+        // movement note) does not apply here.
         if (rate === null || rate === undefined) {
             const wr = this.conditions.wall?.cooling_rate;
             rate = (typeof wr === 'number' && isFinite(wr) && wr >= 0) ? wr : 1.5;
         }
-        this.conditions.temperature -= rate * rng.uniform(0.8, 1.2);
-        this.conditions.temperature = Math.max(this.conditions.temperature, 25);
-        // ---- Thermal pulses: episodic fluid injection ----
-        // Real hydrothermal systems don't cool monotonically. Hot fluid pulses
-        // arrive through fractures — fast, dramatic, then bleed heat back out.
-        // Probability scales with how far we've cooled (more fractures open as
-        // rock contracts) and inversely with how hot we still are (already-hot
-        // systems don't notice small pulses).
-        const cooledFraction = 1 - (this.conditions.temperature - 25) / Math.max(this._startTemp || 400, 100);
-        const pulseChance = 0.04 + cooledFraction * 0.06; // 4-10% per step
-        // v162 supergene opt-out (LAST && operand so rng.random() is still drawn
-        // first — keeps every non-flagged scenario byte-identical). Scenarios that
-        // model a near-surface / supergene regime set wall.thermal_pulses:false:
-        // there is no magmatic heat source at the surface, so the "hot fluid
-        // injection" pulses (which were reheating bisbee's 25°C azurite/malachite
-        // cascade toward 350°C) must not fire. See VugWall.thermal_pulses (22).
-        const _pulsesOn = (this.conditions.wall?.thermal_pulses !== false);
-        if (rng.random() < pulseChance && this.conditions.temperature < (this._startTemp || 400) * 0.8 && _pulsesOn) {
-            // Spike: 30-150°C above current, but not above original start temp
-            const spike = rng.uniform(30, 150);
-            const newTemp = Math.min(this.conditions.temperature + spike, (this._startTemp || 400) * 0.95);
-            const actualSpike = newTemp - this.conditions.temperature;
-            if (actualSpike > 15) {
-                this.conditions.temperature = newTemp;
-                // Fresh fluid pulse brings chemistry
-                this.conditions.fluid.SiO2 += rng.uniform(50, 300);
-                this.conditions.fluid.Fe += rng.uniform(2, 15);
-                this.conditions.fluid.Mn += rng.uniform(1, 5);
-                this.conditions.flow_rate = rng.uniform(1.5, 3.0);
-                // pH shift from new fluid (slightly acidic hydrothermal)
-                this.conditions.fluid.pH = Math.max(4.0, this.conditions.fluid.pH - rng.uniform(0.3, 1.0));
-                this.log.push(`  🌡️ THERMAL PULSE: +${actualSpike.toFixed(0)}°C — hot fluid injection through fracture! T=${newTemp.toFixed(0)}°C`);
-                this.log.push(`     Fresh fluid: SiO₂↑, Fe↑, Mn↑, pH↓ — new growth expected`);
+        // STAND-DOWN (the T-unlock): when a scenario declares a `temperature`
+        // movement (85j) whose window is active this step, the declared movement
+        // IS the thermal regime — the ambient drift and pulses yield for the
+        // window (naica's stable pool, a pegmatite's 650→300 ramp) and resume
+        // when it closes. Thermal-stream draws are skipped during the window;
+        // that shifts the post-window thermal realization for THAT scenario only
+        // (declaring a movement is a per-scenario rebake anyway).
+        const _mvOwnsT = !!(this._movements && this._movements.drivesFieldAt
+            && this._movements.drivesFieldAt('temperature', this.step));
+        if (!_mvOwnsT) {
+            this.conditions.temperature -= rate * this._thermalRng.uniform(0.8, 1.2);
+            this.conditions.temperature = Math.max(this.conditions.temperature, 25);
+            // ---- Thermal pulses: episodic fluid injection ----
+            // Real hydrothermal systems don't cool monotonically. Hot fluid pulses
+            // arrive through fractures — fast, dramatic, then bleed heat back out.
+            // Probability scales with how far we've cooled (more fractures open as
+            // rock contracts) and inversely with how hot we still are (already-hot
+            // systems don't notice small pulses).
+            const cooledFraction = 1 - (this.conditions.temperature - 25) / Math.max(this._startTemp || 400, 100);
+            const pulseChance = 0.04 + cooledFraction * 0.06; // 4-10% per step
+            // v162 supergene opt-out (LAST && operand so the chance draw still happens
+            // first — keeps the thermal stream's draw pattern uniform). Scenarios that
+            // model a near-surface / supergene regime set wall.thermal_pulses:false:
+            // there is no magmatic heat source at the surface, so the "hot fluid
+            // injection" pulses (which were reheating bisbee's 25°C azurite/malachite
+            // cascade toward 350°C) must not fire. See VugWall.thermal_pulses (22).
+            const _pulsesOn = (this.conditions.wall?.thermal_pulses !== false);
+            if (this._thermalRng.random() < pulseChance && this.conditions.temperature < (this._startTemp || 400) * 0.8 && _pulsesOn) {
+                // Spike: 30-150°C above current, but not above original start temp
+                const spike = this._thermalRng.uniform(30, 150);
+                const newTemp = Math.min(this.conditions.temperature + spike, (this._startTemp || 400) * 0.95);
+                const actualSpike = newTemp - this.conditions.temperature;
+                if (actualSpike > 15) {
+                    this.conditions.temperature = newTemp;
+                    // Fresh fluid pulse brings chemistry
+                    this.conditions.fluid.SiO2 += this._thermalRng.uniform(50, 300);
+                    this.conditions.fluid.Fe += this._thermalRng.uniform(2, 15);
+                    this.conditions.fluid.Mn += this._thermalRng.uniform(1, 5);
+                    this.conditions.flow_rate = this._thermalRng.uniform(1.5, 3.0);
+                    // pH shift from new fluid (slightly acidic hydrothermal)
+                    this.conditions.fluid.pH = Math.max(4.0, this.conditions.fluid.pH - this._thermalRng.uniform(0.3, 1.0));
+                    this.log.push(`  🌡️ THERMAL PULSE: +${actualSpike.toFixed(0)}°C — hot fluid injection through fracture! T=${newTemp.toFixed(0)}°C`);
+                    this.log.push(`     Fresh fluid: SiO₂↑, Fe↑, Mn↑, pH↓ — new growth expected`);
+                }
             }
-        }
+        } // end !_mvOwnsT (ambient drift + pulses)
         // pH recovery toward equilibrium — scaled by flow rate.
         // Fresh fluid flushing through the vug dilutes acid and restores
         // pH; a sealed pocket can't exchange fluid, so acidity persists
@@ -49205,6 +49271,30 @@ const _MOVEMENT_SALT = 0x4d4f5645;
 // independent of the shared `rng` cascade. Returns a () => [0,1) function.
 function _makeMovementRng(vuggSeed, salt = _MOVEMENT_SALT) {
     return _mulberry32((((vuggSeed | 0) ^ salt) >>> 0));
+}
+// Per-purpose salt for the THERMAL stream (ASCII "HEAT") — the ambient
+// drift + thermal-pulse mechanic subsumed off the shared rng (T-reconciliation,
+// 2026-06-10). Distinct from the movement salt so a scenario's declared
+// movement specs never displace the ambient thermal cascade and vice versa.
+const _THERMAL_SALT = 0x48454154;
+// The dedicated thermal stream for ambient_cooling (85d). Two deliberate
+// contrasts with _makeMovementRng above:
+//
+//   1. SEEDED FROM THE RUN, NOT THE CAVITY. Declared movements are GEOLOGY —
+//      same cavity, same trajectory (shape_seed). Ambient cooling is WEATHER —
+//      the default thermal noise a vug happens to experience, which should
+//      vary play-to-play like every other ambient draw. So it derives from
+//      `rng.state` captured at sim construction: a pure function of the run
+//      seed (reproducible — baselines + crystal-cipher safe), zero shared
+//      draws consumed, different per run seed.
+//   2. SCRAMBLED, NOT BARE-XOR. Nearby run seeds XOR a constant give nearby
+//      mulberry32 states whose early outputs correlate — measured in
+//      tools/t-reconciliation-probe.mjs as collapsed cross-seed variance
+//      (tutorial pulse count ±0.00, cooling meanT σ 10.8→2.7). One throwaway
+//      draw avalanches the states apart (σ recovers to live levels).
+function _makeThermalRng(sharedState) {
+    const scramble = new SeededRandom((((sharedState | 0) ^ _THERMAL_SALT) >>> 0));
+    return new SeededRandom(Math.floor(scramble.next() * 4294967296) >>> 0);
 }
 // SPATIAL origin (boss, 2026-06-01): a movement can originate at one
 // semi-random CELL and flow outward via the diffusion that already runs each

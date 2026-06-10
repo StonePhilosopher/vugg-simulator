@@ -242,6 +242,7 @@ const EXPORTS = [
   'EVENT_REGISTRY',
   'rng',
   'setSeed',
+  '_liveRng',  // v181 — live accessor for the inner `let rng` (the snapshot above goes stale after setSeed)
   'ORIENTATION_PREFERENCE',
   'WATER_STATE_PREFERENCE',
   // Phase D habit-bias helper (99i-renderer-three.ts).
@@ -543,6 +544,13 @@ async function loadBundle() {
   const epilogue = `
     function setSeed(seed) {
       rng = new SeededRandom(seed | 0);
+    }
+    // v181 — live handle to the bundle's \`let rng\`. The exported \`rng\`
+    // global is a one-time load snapshot that goes STALE the moment
+    // setSeed reassigns the inner binding; tests asserting shared-stream
+    // neutrality (thermal-stream.test.ts) need the current instance.
+    function _liveRng() {
+      return rng;
     }
   `;
   // EXPORTS ∪ auto-derived names — dedupe via Set. Explicit list comes

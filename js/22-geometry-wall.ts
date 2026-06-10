@@ -249,8 +249,11 @@ class VugWall {
     // seal (step 78) — but an OPEN feeder advects heat, so a vein system
     // holds near brine temperature until the conduit chokes. Slow cooling
     // while open is the geologically honest knob, not scripted reheats.
-    // RNG-NEUTRAL: ambient_cooling draws rng.uniform regardless; the rate
-    // only scales the draw, so unset scenarios stay byte-identical.
+    // (Historical note: through v180 the knob was RNG-NEUTRAL on the SHARED
+    // rng — the uniform draw happened regardless of rate, keeping unset
+    // scenarios byte-identical. Since v181 the thermal draws live on the
+    // dedicated thermal stream (85j _makeThermalRng), where the same
+    // always-draw pattern keeps that stream's cursor rate-independent.)
     this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
       ? opts.cooling_rate : 1.5;
   }

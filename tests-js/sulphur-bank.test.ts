@@ -203,9 +203,20 @@ describe('Sulphur Bank Mine — native_sulfur scenario pins (v79)', () => {
     it('cooling event drops T below 60°C', () => {
       // Step 90 is the first cooling event. Pre-event T is ~75-80°C
       // (held high by h2s_recharge events); cooling subtracts 20.
+      //
+      // v181: ambient thermal noise is SWITCHED OFF for this assertion
+      // (cooling_rate 0 + thermal_pulses false, runtime knobs). The pin is
+      // about EVENT mechanics — under the old shared-stream engine it was
+      // realization-lucky: any seed whose ambient pulse lands on step 90
+      // re-warms +30..150°C straight through the event's −20°C, which is
+      // exactly what the v181 thermal-stream re-roll did at seed 42. With
+      // ambient off, the step-90 drop is the event's alone — deterministic
+      // and seed-independent.
       setSeed(42);
       const { conditions, events } = SCENARIOS['sulphur_bank']();
       const sim = new VugSimulator(conditions, events);
+      sim.conditions.wall.cooling_rate = 0;
+      sim.conditions.wall.thermal_pulses = false;
       for (let i = 0; i < 89; i++) sim.run_step();
       const Tpre = sim.conditions.temperature;
       sim.run_step();   // step 90 — cooling fires
