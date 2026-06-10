@@ -450,6 +450,14 @@ const EXPORTS = [
   'stripSerialize',
   'stripDeserialize',
   'StripRecorder',
+  // v-music (2026-06-09, js/08-music.ts) — background music engine +
+  // persisted audio settings. SIM-NEUTRAL UI subsystem.
+  'musicTrackForContext',
+  'musicGetSettings',
+  'musicSetEnabled',
+  'musicSetVolume',
+  'musicSetContext',
+  'initSettingsUI',
 ];
 
 let _bundleLoaded = false;

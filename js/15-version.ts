@@ -10202,5 +10202,157 @@
 //   Tools: depletion-dip-probe / strip-depletion-probe / strip-floor-probe. FILES: js/85f
 //   (format+codec), js/85g (floor capture), js/85h (storage), js/99k (shadow render).
 //   OPEN: a sonifier depletion voice (hear the sag) is a natural follow-up, not yet built.
-const SIM_VERSION = 175;
+//
+// (interim, SIM-NEUTRAL — no bump): the SONIFIER DEPLETION VOICE shipped (js/85i +
+//   99k, the "hear the sag" follow-up above) — a shadow oscillator at the deepest
+//   depleted pocket's pitch, loudness keyed on RELATIVE drawdown. Reads recorded
+//   floor_data only; no engine output touched → no version bump, baselines untouched.
+//
+// v176 (2026-06-08) — REACTIVATED FLUORITE VEIN scenario: the fluid-spots SEAL →
+//                     BREACH lifecycle (js/85k Phase 2d) gets its first scenario.
+//                     The breach API was wired + tested but UNUSED; this lights it up.
+//
+//   THE STORY (crack-seal fracture reactivation; Ramsay 1980, Nature): a North-
+//   Pennine-style fluorite-galena-barite vug grows a first generation while its
+//   feeder fractures are OPEN, a late cement SEALS the conduit shut (the cavity goes
+//   quiet), then a tectonic pulse BREACHES it open again and a cooler fresh fluid
+//   grows a distinct SECOND generation (gen-2 fluorite + calcite). It demonstrates
+//   that the fluid-spots couplings read spot.open LIVE: the deposition-clustering
+//   halo concentrates gen-1 at the open feeders, switches OFF across the sealed
+//   interval, and switches back ON for gen-2 at the reopened vents.
+//
+//   MECHANISM (no new engine): stage 1 reuses the proven generic fluid_mixing (step
+//   20) + fluid_pulse (step 60) brine events on an mvt-analog NaCl-CaCl2 broth
+//   (F raised to 25, fluorite-forward). New handlers js/70t-reactivated-vein.ts:
+//   event_reactivated_vein_seal (step 78, spots:'seal' — cools to ~150°C, stalls
+//   flow, draws CO3/F down) + event_reactivated_vein_breach (step 118, spots:'breach'
+//   — cooler fresh pulse F+16/CO3+130/Ca+90). fluid_spots:{deposition:true}; wall is
+//   reactive limestone, architecture 'tabular' (vein-bounded). expects_species:
+//   fluorite, galena, barite, calcite, sphalerite. The seal/breach directive is
+//   handled centrally in apply_events (js/85d), logged "🔌 N feeders sealed/breached".
+//
+//   BASELINE: a NEW scenario is purely ADDITIVE — seed42 + strip_digest for every
+//   existing scenario are byte-identical (each runs independently at seed 42); the
+//   baselines just gain the new reactivated_fluorite_vein block. SIM bumps because
+//   it's new gameplay content. CITATIONS kept safe/general (Dunham 1990 BGS Memoir;
+//   Ramsay 1980; Bons et al. 2012) — the broth is DESIGNED (reverse-from-engines,
+//   mvt-analog), honestly framed as a demonstrator archetype, not a measured locality.
+//   FILES: js/70t (handlers), js/70-events.ts (registry), data/scenarios.json5
+//   (spec), index.html (3 menu surfaces), tests-js/reactivated-fluorite-vein.test.ts.
+// v177 (2026-06-09) — GRADUATED COMPETITION: the per-cell group key actually keys
+//                     per-cell now. First fix of the three-metrics-review rebake arc
+//                     (proposals/REVIEW-THREE-METRICS-2026-06-09.md §1.3).
+//
+//   THE BUG (shipping since v128c): _computeGraduatedZones built its competition-group
+//   key from `cell.id ?? cell.idx ?? ringIdx + ':' + cell.vertexIdx` — but WallCell
+//   defines NONE of those fields, so every key degraded to `cell:<ringIdx>:?`. All
+//   crystals in a ring competed in ONE group, rationed against whichever cell's fluid
+//   happened to register first (insertion-order-dependent), while their mass-balance
+//   debits landed on their OWN cells. A ring with N crystals in N separate cells got
+//   each rationed to ~1/N of one arbitrary cell's budget instead of growing freely on
+//   its own; a crystal on a depleted cell could be granted growth funded by a rich
+//   neighbor's budget it never debits. Probe evidence (mvt seed 42, step 40): fluorite
+//   (r7,c39) + willemite (r7,c118) + barite (r7,c20) — three cells, one group key.
+//
+//   THE FIX: key off the resolved anchor, and make group identity always match the
+//   budget being rationed — `cell:${anchor.ringIdx}:${anchor.cellIdx}` when the cell
+//   carries its own fluid (post-Tranche-4a normal case), `ring:${ringIdx}` when the
+//   budget falls back to the shared ring fluid. RNG-neutral (no draws touched); the
+//   change is allocation-only, so drift comes from rationing, not cascade displacement.
+//
+//   THE MEASUREMENT (tools/graduated-binding-probe.mjs — built WITH the fix, reading a
+//   new observer-only _gradCompStats counter in 44): rationing binds RARELY but really —
+//   199/80,649 allocations (0.25%) across all 31 scenarios at seed 42 (porphyry 120,
+//   schneeberg 65, bisbee 11, gem_pegmatite 3; some scalings hit 0.000). The decisive
+//   fact: the BOUND populations are IDENTICAL under the old per-ring key and the fixed
+//   per-cell key (probe run both ways via stash), even though the old key lumped ~4×
+//   more crystals into contention groups (bisbee multi-crystal groups 1692 → 398).
+//   Every allocation that actually binds is a SAME-CELL stack (substrate nucleation
+//   piles crystals onto one anchor cell), which both keys group identically.
+//
+//   BASELINE: seed42 byte-identical to v176, all 31 scenarios (0 moved). The bug was
+//   structurally real but output-LATENT at current MASS_BALANCE_SCALE — cross-cell
+//   lumping never had budget pressure to express itself. It would have started biting
+//   exactly when budgets tighten (the v178 PWP Ea fix, Phase 1e scale rise, per-cell
+//   gating). SIM bumps because allocation-grouping semantics changed (the old key was
+//   insertion-ORDER-DEPENDENT in which budget fluid it rationed against — other seeds /
+//   future scenarios could diverge even though seed 42 doesn't).
+// v178 (2026-06-09) — PWP ACTIVATION ENERGIES paired to the right mechanisms. Second
+//                     fix of the three-metrics-review rebake arc (§2.1).
+//
+//   THE BUG (shipping since the v144 calcite SI promotion): the three Ea values in
+//   data/thermo-carbonates.json + the 52b defaults are real Palandri & Kharaka 2004
+//   calcite numbers, but P&K assign them BY MECHANISM — acid (k1·[H+]) 14.4, carbonate
+//   (k2·[H2CO3*]) 35.4, neutral (k3) 23.5 kJ/mol. The shipped array [35.4, 23.5, 14.4]
+//   gave the acid pathway the carbonate Ea and vice versa (a PERMUTATION, not a simple
+//   reversal — reversing would also be wrong). Effect: Arrhenius over-amplified the
+//   acid term by ~e^2.5 ≈ 12× at 150 °C, so hot acidic scenarios (MVT-style brines)
+//   dissolved/precipitated carbonate on the wrong pathway weighting. Sources: USGS OFR
+//   2004-1068; the PWP-pitfalls preprint (arXiv 2501.05225) documents this exact
+//   mispairing in the wild.
+//
+//   THE FIX: Ea_kJ_mol → [14.4, 35.4, 23.5] in the data file (calcite — the only
+//   per-mineral array; every family-analog mineral inherits the 52b default, fixed to
+//   match) + an Ea_mechanism_map note in the JSON so the pairing is self-documenting.
+//
+//   THE RECALIBRATION (same bump — the global factor's job is absolute scale): the
+//   corrected pairing amplifies k2/k3 at high T, and _PWP_CALIBRATION_FACTOR=5.0e4 was
+//   tuned (v144) under the permuted Ea. Left alone, hot scenarios exploded (w9 probe
+//   median 38 → 234 µm/step printed; seed-42 aragonite hit 70 mm; mvt + the reactivated
+//   vein LOST sphalerite — identity-mineral damage). Naive linear rescale to 8.1e3
+//   overshot (probe median 7.95 — the response is SUPER-linear; growth feeds back into
+//   which steps qualify for the probe's regime). Log-interpolated to 1.9e4 and accepted
+//   on the criterion that matters: fleet drift vs v177.
+//
+//   BASELINE: 13/31 scenarios move, carbonate-centric. mvt + reactivated_fluorite_vein
+//   keep sphalerite/fluorite/galena/barite BYTE-IDENTICAL (only their calcite/aragonite
+//   grow ~+15-45%). Geologically-right newcomers: pectolite at jeffrey_mine (rodingite
+//   suite), diopside at marble_contact. BORAX UN-STALES at searles_lake (stale list
+//   8 → 7 — the first stale-species recovery of the rebake arc). Watch items for
+//   vugg-tune-scenario: jeffrey loses aragonite+siderite (not in expects), deccan gains
+//   a 1-crystal wollastonite (suspect at zeolite T), reactivated vein loses cerussite.
+//   Probes: w9 run pre/post + at both candidate factors; graduated-binding-probe
+//   confirms rationing pressure unchanged (the v177 fix + this one stay independent).
+//
+//   THE TEST THE BUG WAS HOLDING UP: week-11's "HMC rate accelerates with T" used an
+//   UNDERSATURATED fixture — both rates were negative, so it really asserted
+//   "dissolution decelerates with T" (backwards), which only the permuted Ea satisfied.
+//   Fixed the fixture to genuinely supersaturated + pinned the both-positive premise.
+//   A green test was load-bearing for wrong physics — the suite can't tell you WHICH
+//   side of an assertion is the bug.
+//
+// v179 (2026-06-09) — the reactivated vein's SEALED interval is actually QUIET. Third
+//                     fix of the review rebake arc (§1.5).
+//
+//   TWO COUPLED BUGS in the v176 demonstrator: (1) the scenario never set
+//   wall.thermal_pulses:false, so the generic magmatic pulse mechanic fired straight
+//   through the sealed interval (steps 78-118) — seed 42 showed T jumping 156.5 → 171°C
+//   the very step the seal landed, and flow_rate slammed from the seal's 0.05 back to
+//   1.5-3.0, injecting fresh SiO2/Fe/Mn into a supposedly choked conduit. Exactly the
+//   failure mode the v162 flag was created for; it just wasn't applied. (2) both 70t
+//   handlers used the plain Math.max(floor, T-drop) "bounded cooling" form, which HEATS
+//   on seeds where pre-event T is below floor+drop — a cooling event raising T. Both now
+//   use Math.max(Math.min(T, floor), T-drop): cool by the drop, never below the floor,
+//   never above where it started.
+//
+//   THE KNOB THE FLAG EXPOSED: with pulses off, the default 1.5 °C/step cooling had the
+//   180 °C brine at ~44 °C by the seal — the pulses had been doing the LEGITIMATE work
+//   of holding stage-1 temperature as a side effect. But an OPEN feeder advects heat
+//   (a live vein holds near brine T until the conduit chokes), so the honest fix is a
+//   per-scenario cooling rate, not scripted reheats: new opt-in `wall.cooling_rate`
+//   (°C/step, default 1.5 = the historical constant; RNG-NEUTRAL — the uniform draw
+//   happens regardless of rate, unset scenarios byte-identical). The vein sets 0.4.
+//
+//   THE PROFILE NOW (seed 42): 152 °C at the brine event → 129 pre-seal → 119
+//   post-seal (the seal COOLS now) → quiet drift 111→104 across the sealed interval,
+//   flow pinned at 0.05, zero pulse injections → 93 at the breach → gen-2 finishing at
+//   77 °C. North Pennine fluorite fluid-inclusion T is ~90-150 °C — both generations
+//   now sit inside it. All 5 expects fire; cerussite (lost in the v178 rebake) is BACK
+//   and hawleyite joins (Cd following Zn into the cooler gen-2 window).
+//
+//   BASELINE: 1/31 scenarios moved (this one only — cooling_rate is opt-in and the
+//   flag/handler changes are scenario-local). strip digest 0/10 moved. Scenario suite
+//   7/7 green. Probe: vein-quiet (inline) — sealed-interval max T 111 °C, no flow
+//   violation, seal Δ T strictly negative.
+const SIM_VERSION = 179;
 

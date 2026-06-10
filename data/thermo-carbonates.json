@@ -78,13 +78,14 @@
         "k1_25C_mol_cm2_s": 8.91e-5,
         "k2_25C_mol_cm2_s": 4.47e-7,
         "k3_25C_mol_cm2_s": 1.86e-11,
-        "Ea_kJ_mol": [35.4, 23.5, 14.4],
+        "Ea_kJ_mol": [14.4, 35.4, 23.5],
+        "Ea_mechanism_map": "Ea[0]→k1 (acid, H+), Ea[1]→k2 (carbonate, H2CO3*), Ea[2]→k3 (neutral, H2O) — Palandri & Kharaka 2004 calcite: acid 14.4, carbonate 35.4, neutral 23.5 kJ/mol. v178 fix: the array previously shipped [35.4, 23.5, 14.4], pairing the acid pathway with the carbonate Ea — hot acid scenarios over-amplified the k1 term ~e^2.5≈12x at 150C.",
         "rate_form": "r = k1*[H+] + k2*[H2CO3*] + k3 - k4*[Ca2+]*[HCO3-]",
         "k4_via_detailed_balance": true
       },
-      "sources": ["Plummer_Wigley_Parkhurst_1978", "Morse_Mackenzie_1990"],
+      "sources": ["Plummer_Wigley_Parkhurst_1978", "Morse_Mackenzie_1990", "Palandri_Kharaka_2004_USGS_OFR_2004-1068"],
       "confidence_tier": "A",
-      "notes": "PWP 1978 is the canonical calcite rate law and has been the working standard for ~50 years. Reverse rate k4 derived from detailed balance against Ksp. Mg poisoning at high Mg/Ca (Davis 2000) applied as a multiplicative inhibitor (existing sigmoid in 32-supersat-carbonate.ts)."
+      "notes": "PWP 1978 is the canonical calcite rate law and has been the working standard for ~50 years. Activation energies are Palandri & Kharaka 2004's three-mechanism refit (see Ea_mechanism_map). Reverse rate k4 derived from detailed balance against Ksp. Mg poisoning at high Mg/Ca (Davis 2000) applied as a multiplicative inhibitor (existing sigmoid in 32-supersat-carbonate.ts)."
     },
     "metastability": null,
     "habit_polymorph_notes": "Most stable CaCO3 polymorph at all surface T."

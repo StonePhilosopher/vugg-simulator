@@ -26,6 +26,10 @@ declare const stripSonifyUpdateVoices: any;
 declare const buildStripCrystalHits: any;
 declare const stripSonifyGetCrystals: any;
 declare const stripSonifySetCrystals: any;
+declare const stripSonifyGetCrystalVolume: any;
+declare const stripSonifySetCrystalVolume: any;
+declare const stripSonifyGetDepletion: any;
+declare const stripSonifySetDepletion: any;
 declare const stripAllocateData: any;
 declare const stripDataIndex: any;
 
@@ -141,6 +145,16 @@ describe('strip sonify — master volume', () => {
     expect(stripSonifySetMasterVolume(2)).toBe(1);     // clamp high
     expect(stripSonifySetMasterVolume(-1)).toBe(0);    // clamp low
     stripSonifySetMasterVolume(original);              // restore
+  });
+
+  it('crystal volume defaults to full (prior mix) and clamps to [0,1]', () => {
+    const original = stripSonifyGetCrystalVolume();
+    expect(original).toBe(1);                           // default = unchanged prior mix
+    expect(stripSonifySetCrystalVolume(0.3)).toBeCloseTo(0.3, 6);
+    expect(stripSonifyGetCrystalVolume()).toBeCloseTo(0.3, 6);
+    expect(stripSonifySetCrystalVolume(5)).toBe(1);     // clamp high
+    expect(stripSonifySetCrystalVolume(-2)).toBe(0);    // clamp low
+    stripSonifySetCrystalVolume(original);              // restore
   });
 });
 
@@ -419,6 +433,91 @@ describe('strip sonify — continuous (raw rock) honesty dial', () => {
     expect(hits.length).toBe(1);
     expect(Number.isFinite(hits[0].freq)).toBe(true);
     expect(hits[0].freq).toBeGreaterThan(0);
+  });
+});
+
+describe('strip sonify — the depletion voice (audible twin of the floor shadow)', () => {
+  // A v3 dataset with floor_data. The chip's LEVEL is a steady high byte;
+  // when `deplete`, ONE angular bin's FLOOR plunges (a local halo), so the
+  // ring-MIN floor sits well below the level mean → an audible shadow. When
+  // not, floor == level everywhere → no dip → no shadow (self-gating).
+  function makeFloorDataset(steps: number, deplete: boolean, formatVersion = 3, chipColor = 0x66ccff): any {
+    const axes = { steps, angular_indices: 2, height_positions: 2, depth_positions: 1 };
+    const chips = [{ id: 'ion', label: 'Ion', system: 'ion', range: [0, 1], units: 'ppm', color: chipColor }];
+    const data = stripAllocateData(axes, 1);
+    const floor = stripAllocateData(axes, 1);
+    const lvlByte = 200;
+    for (let s = 0; s < steps; s++) {
+      for (let a = 0; a < 2; a++) {
+        for (let h = 0; h < 2; h++) {
+          const i = stripDataIndex(s, a, h, 0, axes, 1, 0);
+          data[i] = lvlByte;
+          floor[i] = deplete && a === 0 ? 80 : lvlByte;   // bin 0 = deep halo; bin 1 = at level
+        }
+      }
+    }
+    const ds: any = {
+      manifest: { format_version: formatVersion, sim_version: 175, scenario_id: 'floor', seed: 42, recorded_at: 0, duration_steps: steps, axes, chips },
+      chip_data: data, nucleation_events: [],
+    };
+    if (formatVersion >= 3) ds.floor_data = floor;   // v1/v2 carry none
+    return ds;
+  }
+
+  it('a depleted ion grows a shadow: floorNotes + shadowGains, the floor at/below the level', () => {
+    const plan = buildStripSonifyPlan(makeFloorDataset(16, true), 'ion', { stepDurationMs: 100 });
+    expect(plan.floorNotes).toBeTruthy();
+    expect(plan.floorNotes.length).toBe(plan.notes.length);
+    expect(plan.shadowGains.length).toBe(plan.notes.length);
+    // The shadow swells to an audible peak (deep halo saturates the gain map).
+    const peak = Math.max(...plan.shadowGains.map((g: any) => g.gain));
+    expect(peak).toBeGreaterThan(0.2);
+    // floor ≤ level pitch at every step (the undertone hangs below the drone).
+    for (let i = 0; i < plan.notes.length; i++) {
+      expect(plan.floorNotes[i].freq).toBeLessThanOrEqual(plan.notes[i].freq);
+    }
+    // And it actually opens a gap somewhere (not a unison shadow).
+    expect(plan.floorNotes.some((n: any, i: number) => n.freq < plan.notes[i].freq)).toBe(true);
+  });
+
+  it('an abundant ion (floor == level) grows NO shadow — it self-gates to silence', () => {
+    const plan = buildStripSonifyPlan(makeFloorDataset(16, false), 'ion', {});
+    expect(plan.floorNotes).toBeUndefined();
+    expect(plan.shadowGains).toBeUndefined();
+  });
+
+  it('a v2 dataset (no floor_data) grows no shadow even if depletion-shaped', () => {
+    const plan = buildStripSonifyPlan(makeFloorDataset(16, true, 2), 'ion', {});
+    expect(plan.floorNotes).toBeUndefined();
+    expect(plan.shadowGains).toBeUndefined();
+  });
+
+  it('the toggle suppresses the shadow without touching the main voice', () => {
+    const original = stripSonifyGetDepletion();
+    expect(typeof original).toBe('boolean');
+    stripSonifySetDepletion(false);
+    const off = buildStripSonifyPlan(makeFloorDataset(16, true), 'ion', {});
+    expect(off.floorNotes).toBeUndefined();
+    expect(off.notes.length).toBe(16);                 // the drone is untouched
+    expect(stripSonifySetDepletion(true)).toBe(true);
+    const on = buildStripSonifyPlan(makeFloorDataset(16, true), 'ion', {});
+    expect(on.floorNotes).toBeTruthy();
+    stripSonifySetDepletion(original);                 // restore
+  });
+
+  it('the shadow snaps to the active scale (a musical interval, not a smear)', () => {
+    const pcOf = (freq: number) => (((Math.round(12 * Math.log2(freq / 440) + 69) % 12) + 12) % 12);
+    const plan = buildStripSonifyPlan(makeFloorDataset(16, true), 'ion', { scaleId: 'major_pentatonic' });
+    const allowed = new Set([0, 2, 4, 7, 9]);
+    for (const n of plan.floorNotes) expect(allowed.has(pcOf(n.freq))).toBe(true);
+  });
+
+  it('continuous (raw rock) mode still gives the shadow a glided floor contour', () => {
+    const plan = buildStripSonifyPlan(makeFloorDataset(16, true), 'ion', { scaleId: 'continuous' });
+    expect(plan.glide).toBe(true);
+    expect(plan.floorNotes).toBeTruthy();
+    expect(plan.floorNotes.length).toBe(plan.notes.length);
+    for (const n of plan.floorNotes) expect(n.freq).toBeGreaterThan(0);
   });
 });
 

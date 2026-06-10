@@ -241,6 +241,18 @@ class VugWall {
     // exposes this as a setup toggle (f-thermal-pulses). Read directly off
     // conditions.wall in ambient_cooling.
     this.thermal_pulses = (opts.thermal_pulses !== undefined) ? !!opts.thermal_pulses : true;
+    // v179 (2026-06-09): per-scenario ambient cooling rate, °C/step (default
+    // 1.5 — the historical hard-coded value in ambient_cooling, 85d). The
+    // reactivated_fluorite_vein exposed the gap: it is the first HOT scenario
+    // to set thermal_pulses:false, and without the pulses' incidental
+    // reheating the default 1.5°C/step had its 180°C brine at ~44°C by the
+    // seal (step 78) — but an OPEN feeder advects heat, so a vein system
+    // holds near brine temperature until the conduit chokes. Slow cooling
+    // while open is the geologically honest knob, not scripted reheats.
+    // RNG-NEUTRAL: ambient_cooling draws rng.uniform regardless; the rate
+    // only scales the draw, so unset scenarios stay byte-identical.
+    this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
+      ? opts.cooling_rate : 1.5;
   }
 
   dissolve(acid_strength, fluid) {

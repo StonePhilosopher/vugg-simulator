@@ -289,6 +289,8 @@ field). The data now testifies against itself automatically, every run.
 | v163 native_bismuth window | Load-bearing spurious mechanism | calibration test failure post-v162 |
 | v164 barite endotherm sign | Fabricated value (memory) | WebFetch verification BEFORE commit |
 | post-v166 carbonate ΔH sign-flips | Fabricated value (estimate citing absent source) | the verification TOOL (run on the legacy file) |
+| v175 bin-mean recorder (depletion halo) | Plausible fix refuted by measurement, BEFORE shipping | the probe — twice: it DILUTES a one-cell halo ~5×, AND its 5× reads cascaded test timeouts |
+| 2026-06-03 depletion-floor "verification" | Confounded observation + verified code reported against a STALE deploy | the BOSS, correcting the record — invisible to a 1754-green suite and to every passing probe |
 
 The seventh catch is the most satisfying: the verification tool built from
 the sixth catch's lesson found a backlog of the same failure mode on its
@@ -300,6 +302,55 @@ died*, and now one by *a tool asking every value to agree with its own
 sources*. The pattern holds: a question asked of existing data in a
 slightly different way returns a surprising answer. Build the instrument
 that asks, and the next catch surfaces itself.
+
+The EIGHTH catch (v175, 2026-06-03) is a different species — not a wrong value
+that shipped, but a wrong APPROACH caught before it could. Boss heard "I don't
+see dips in the broth around crystals"; the obvious fix (have the strip recorder
+AVERAGE each angular bin instead of sampling one midpoint cell) was wired,
+built, and measured — and the measurement refuted it twice: (1) averaging a
+5-cell bin DILUTES a single crystal's ~22% cell-dip to ~4-5%, so the halo still
+didn't surface; (2) the 5× chip-reads cascaded recording-heavy tests into
+timeouts under parallel load. Reverted. The science pointed at the per-bin
+MINIMUM (a depletion-FLOOR channel, format_version 3, ion chips at the wall),
+which recovered the full 19.87% Ag halo with the level kept byte-identical. The
+lesson generalizes the first seven: a probe doesn't only catch values that
+already shipped — run it on a fix you're ABOUT to ship and it tells you whether
+the fix does the thing. The cheapest catch is the one before the commit.
+
+The NINTH catch (2026-06-03, same day) is the one that does NOT show in a green
+suite, and I'm leaving it here most deliberately — the boss told me mistakes are
+how we learn and to save what I value, so this is the stone I'm setting by hand.
+All eight before it were the CODE or the DATA being wrong. This time the code was
+right: 1754 tests passed, every probe confirmed, the depletion-floor channel did
+exactly what its commit claimed. And it was still built on sand.
+
+Two errors, stacked. First, the motivating observation — "I don't see dips in the
+broth around crystals" — was confounded: the boss was testing a deploy that had
+never been rebuilt, so they were reading OLD data the whole time. Second, and
+worse because it's mine: I kept reporting "live on Pages now — give it a listen /
+a look / a drag" after pushing to the Syntaxswine ORIGIN, as if a push to origin
+were a deploy. It is not. The canonical deploy is a separate step, and it hadn't
+run. So every "acceptance" this session — the drones sounding right, the shadow
+looking good — was a read of stale data. Green tests, confirmed probes, and not
+one of the three changes had actually been seen or heard by the person who asked
+for them.
+
+The lesson the first eight can't teach: a probe verifies the CODE. It cannot
+verify that there was a real problem to fix (the PREMISE), and it cannot verify
+what the observer is actually looking at (the CHANNEL). Those are the two most
+upstream assumptions under any "I see X / I don't see X" — and they are exactly
+the two a headless probe runs straight past, because it never touches the browser,
+the deploy, or the human eye. I built a beautiful instrument to prove the recorder
+loses the halo and never checked whether the boss was even looking at the build I
+shipped.
+
+The cure is cheap and belongs in the first exchange, not the last: before you
+treat "I see / I don't see X" as signal, confirm the observer is on the build you
+think they are; and NEVER stamp an origin push as "deployed" — say the boundary
+out loud ("this is on origin; it isn't on the Pages you test until it's promoted").
+The verification chain has a human link in it. It is only as true as that link is
+current. I'm grateful for this one — it's a stone like the others, and erosion is
+the formation mechanism, not the destruction.
 
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.

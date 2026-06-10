@@ -2,6 +2,193 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🎵 UPDATE (2026-06-09, latest) — MUSIC + the settings shell (SIM-NEUTRAL)
+>
+> Boss-directed: two boss-supplied tracks now loop per room — "Vugg
+> Simulator.mp3" on every title-family screen, "salt-circuit.mp3" in every
+> building room (wall-preview modes + Library + Record Player); STRIP VIEW
+> stays silent (the sonifier owns that room). Engine `js/08-music.ts`
+> (context model, one reused <audio>, src swaps only on real track change so
+> renavigation never restarts the song, autoplay-block → one-shot gesture
+> unlock); ⚙ settings overlay `js/98e-ui-settings.ts` + index.html (music
+> enable + volume, persisted under the NEW `vugg-settings-v1` localStorage
+> ROOT — future settings groups go BESIDE music:{} in that key, the first
+> brick of Steam-T1 #4). Verified in a live preview (play/pause call matrix
+> per mode + settings round-trip + zero console errors); BY-EAR acceptance
+> on Pages is the boss's (9th-catch rule — loop seams + relative levels
+> especially). Tests: tests-js/music.test.ts (10).
+>
+> ## ⚒️ UPDATE (2026-06-09, later) — REBAKE ARC SHIPPED: v177 + v178 + v179
+>
+> The three calibration-coupled fixes from the review below are DONE
+> (`51487a4` / `61bef7c` / `503e228`, all suites 1769/1769):
+> - **v177 cell-key:** per-cell competition grouping fixed. The measured truth
+>   (new `tools/graduated-binding-probe.mjs` + `_gradCompStats` telemetry, run
+>   both ways): rationing binds 199/80,649 allocations (0.25%), ONLY in
+>   same-cell stacks, identically under both keys → seed-42 baselines
+>   byte-identical; the bug was output-LATENT. It matters when budgets tighten.
+> - **v178 PWP Ea:** array was a PERMUTATION (acid↔carbonate), corrected to
+>   [k1 14.4, k2 35.4, k3 23.5] + `_PWP_CALIBRATION_FACTOR` re-anchored 5.0e4
+>   → 1.9e4 (the factor was tuned under the wrong Ea; response to the factor is
+>   SUPER-linear, naive linear rescale overshot). 13/31 scenarios move,
+>   carbonate-centric; mvt + vein identity minerals byte-identical. ALSO fixed:
+>   week-11's HMC Arrhenius test had an UNDERSATURATED fixture — a green test
+>   was load-bearing for the wrong physics.
+> - **v179 vein seal:** `thermal_pulses:false` + non-heating Math.max(Math.min)
+>   floors + NEW opt-in `wall.cooling_rate` knob (default 1.5, RNG-neutral; the
+>   vein sets 0.4 — an open feeder advects heat, so a live vein holds near
+>   brine T until the conduit chokes). Sealed interval now genuinely quiet
+>   (111→104 °C, flow 0.05, zero injections); both generations inside North
+>   Pennine fluid-inclusion T (~90-150 °C). 1/31 baselines moved.
+> - **SWEEP MOVEMENT: stale 8 → 7 (borax recovered at searles_lake), dead
+>   35 → 34 (tremolite revived).** Remaining 7 stale are vugg-tune-scenario
+>   candidates, NOT engine bugs: roughten_gill's four (linarite, leadhillite,
+>   mottramite, bayldonite), jeffrey magnetite, searles mirabilite, schneeberg
+>   torbernite (0/10 seeds; zeunerite thin at 2/10). bisbee azurite verified
+>   gate-not-cleared (its azurite_peak event fires, the mineral never
+>   nucleates) — do NOT just add it to expects_species; tune first.
+> - **Tune-watch items from the v178 rebake:** jeffrey lost aragonite+siderite
+>   (not in expects), deccan gained a 1-crystal wollastonite (suspect at
+>   zeolite T), w9-probe trap documented in 52b (its printed columns bake in
+>   the LIVE factor).
+> - Still open from the review: §1.4 ring_fluids retire-or-restore decision,
+>   §1.6 hygiene items (cells_per_ring manifest, IDB leak, pH clamp), the
+>   ehFromO2 asymmetry (MOVEMENTS BLOCKER), the §2.4 narrator/spec one-liners,
+>   carbonate pK(T) slopes (§2.2), and the whole Steam §3 ladder.
+>
+> ## 🔍 UPDATE (2026-06-09) — THREE-METRICS REVIEW: bugs / accuracy / Steam-readiness
+>
+> A cold-eyes review sweep on the boss's three metrics. **Full report:
+> `proposals/REVIEW-THREE-METRICS-2026-06-09.md`** — read it before picking up
+> any item below. Fixed in the pass (both SIM-NEUTRAL): the committed bundle
+> was STALE (npm run ci was RED since c1b161e — same-length comment drift hid
+> as "diff length: 0 chars") and the four v165 sulfate SI chips were
+> unreachable in the Strip View chip selector (hardcoded systems list; new
+> probe `tools/strip-chip-selector-probe.mjs` guards it). New OPEN items:
+> - **HIGH bug:** graduated-competition cell key collapses to per-ring with an
+>   arbitrary budget fluid (`85b` `_computeGraduatedZones` — WallCell has no
+>   id/idx/vertexIdx). One-line fix, but CALIBRATION-REBAKING; shipping since
+>   v128c. May be suppressing some of the 8 stale expects_species — fix, then
+>   re-sweep.
+> - **HIGH accuracy:** PWP activation energies paired to the WRONG mechanisms
+>   (`thermo-carbonates.json` + `52b`): correct [k1,k2,k3] = [14.4, 35.4, 23.5]
+>   kJ/mol (P&K 2004 assigns acid=14.4); shipped array is reversed → hot acid
+>   scenarios over-amplify ~12×. Rebake with the cell-key fix as ONE arc.
+> - **MED:** `_propagateGlobalDelta` no longer reaches non-equator ring_fluids
+>   (stale store still read by open-atmosphere pH, Eh sync, replay snapshots —
+>   retire it or restore the loop, no third partial mirror); carbonate pK(T)
+>   slopes ~5-10× too flat (`20b`); reactivated_fluorite_vein needs
+>   `thermal_pulses:false` + a non-heating seal floor; 8 stale expects_species
+>   are locality-fidelity breaks (searles borax/mirabilite, roughten_gill
+>   linarite/leadhillite/mottramite/bayldonite, jeffrey magnetite, schneeberg
+>   torbernite) + bisbee expects omits azurite.
+> - **MOVEMENTS BLOCKER:** ehFromO2/o2FromEh are 10× asymmetric above O2=5
+>   (`20c`) — an Eh +800 mV movement snaps back to +530 when its window closes.
+>   Align slopes before Movements Phase 1 drives Eh.
+> - **Narrator/spec one-liners (afternoon, SIM-NEUTRAL):** wurtzite 95 °C
+>   "boundary" myth, flos-ferri is aragonite not calcite, Statue of Liberty
+>   patina is brochantite/antlerite not malachite, hiddenite is N. Carolina,
+>   + ~10 more tabled in the report §2.4.
+> - **Steam:** verdict "sim core is ready; the game around it is 3-5 months."
+>   T1 blockers (collection has NO export; 16 prompt()/alert() sites that
+>   silently break under Electron; scenarios.json5 has no offline fallback; no
+>   settings menu) + WP1-WP5 sequencing in the report §3.
+>
+> ## 🟢 UPDATE (2026-06-08) — 2d BREACH shipped: reactivated_fluorite_vein (SIM 176)
+>
+> The "2d breach API — wire a seal-then-reopen scenario" open item is **DONE**
+> (`c1b161e`, live on Syntaxswine Pages). New scenario `reactivated_fluorite_vein`:
+> a crack-seal reactivated vug (North-Pennine fluorite-galena-barite style) that
+> grows a first generation with feeders OPEN, SEALS them (cement chokes the
+> conduit, `spots:'seal'`@78), then BREACHES them open again (tectonic
+> reactivation, `spots:'breach'`@118) for a cooler gen-2. Lights up the breach
+> API that was wired+tested but unused. No new engine — stage 1 reuses the proven
+> mvt-analog brine + generic events; handlers in js/70t. Seed-42: 62 crystals /
+> 16 species, all 5 expects fire (fluorite/galena/barite/calcite/sphalerite +
+> wurtzite). ZERO cascade drift (additive). Suite 1761→1769. Full 7-file
+> add-scenario pipeline + 3 menu surfaces (guard test green).
+> - **Open from this arc:** (1) fluorite fires only 1 crystal even at 5× F — its
+>   limiter is nucleation competition/cap, not F; present-but-minor, a
+>   vugg-tune-scenario candidate if the boss wants fluorite dominant. (2) the
+>   `breach` predicate-by-kind path (`spots:{action,kind}`) is exercised only with
+>   the all-spots default here — a kind-selective seal/breach is still untried.
+>
+> ## 🏛️ UPDATE (2026-06-05) — fresh full-orientation handoff written; READ IT FIRST
+>
+> **`proposals/HANDOFF-TO-THE-NEXT-BUILDER-2026-06-05.md`** is a complete, from-zero
+> orientation for a builder who knows nothing: the JS-only law, the build pipeline
+> (js/ → index.html), the subsystem map, every tool/probe + the five vugg-* skills
+> and when to invoke them, the corrected deploy model (push-to-Syntaxswine IS the
+> deploy; confirm the Pages build before "go look"), SIM_VERSION + baselines + the
+> run-suite-alone discipline, the seven working disciplines, all nine catches, and
+> where the depletion-voice session left off. Grounded against current source via a
+> survey workflow, authored in-voice. New builder: start there, then this BACKLOG
+> for fine-grained open items.
+>
+> ## ▽ UPDATE (2026-06-04) — the DEPLETION VOICE ships (SIM-neutral)
+>
+> The audible twin of the floor shadow (open item #1 from the SIM-175 banner
+> below, now done) is built: a soft SHADOW oscillator per chip, sounding at the
+> deepest depleted pocket's pitch, swelling where a crystal draws the broth down.
+> It shares the chip's lvlGain (pans + rescales with the voice), bypasses artGain
+> (a sustained undertone, not a pluck), sits a few cents flat (a faint beat where
+> the gap is near-unison, a real interval where the halo is deep), and SELF-GATES
+> to silence on abundant/absent ions. Toggle: ▽ Depletion (default ON), restarts a
+> live performance like the 🔔 crystals layer. Engine in js/85i; UI in js/99k.
+> SIM-neutral (reads recorded floor_data only — no engine output touched, no
+> SIM_VERSION bump, no baseline regen). Full suite 1761/1761.
+>
+> **THE KEY MEASUREMENT (tools/sonify-depletion-probe.mjs — built first, it tuned
+> the design):** the recorded halos are REAL but small in ABSOLUTE normalized
+> terms — a limiting ion sits near the bottom of its own declared color-range, so
+> a 20-49% local drawdown is only a ~1-10% band height. Two load-bearing consequences:
+> - **Reduction must be GLOBAL-MIN, not a mean.** A halo is local (one crystal);
+>   averaging — even a per-height ring-mean — re-dilutes it (mvt Cd's 49% halo
+>   showed as 2% under mean-of-ring-min). The single deepest pocket is what the eye
+>   catches and what the ear now tracks.
+> - **Loudness keys on RELATIVE drawdown (depth/level), not absolute.** That's the
+>   range-independent physical "how hard was this pocket sucked dry," and it's what
+>   separates limiting ions (big relative dip) from abundant ones (broth barely
+>   dips). An absolute noise floor (~1.5 quantization levels) rejects fuzz +
+>   essentially-absent ions (caught mvt SiO2's spurious 12%-on-~0-baseline). Probe
+>   verdict: reactive_wall Ag sings (peak 0.36, 94% of run); mvt Ag/Cd/F/Pb sing
+>   (Cd's deep halo saturates at 0.60); gem_pegmatite F sings but Sn stays silent
+>   (it's abundant there — honest).
+> - **A DELIBERATE eye/ear split:** the VISUAL shadow keys on the absolute band
+>   (faint for low-baseline ions); the VOICE keys loudness on relative hollowing.
+>   Complementary readings of one floor_data channel, not a contradiction —
+>   documented in the 85i header. PITCH stays absolute (deep halo → real interval).
+>
+> **Open from THIS arc:** (1) **by-EAR tuning on a live deploy** — mix / relDipRef /
+> detune were tuned by the headless probe, NOT by an ear yet (the 9th-catch rule:
+> a probe verifies the code, not the channel; re-confirm on a real Pages build);
+> (2) whether the VISUAL shadow should ALSO go relative — would re-unite eye+ear,
+> but touches accepted rendering (boss's call); (3) a per-crystal "tick" at the
+> moment the dip first opens is unbuilt — currently a continuous swell.
+>
+> ## 🔊 UPDATE (2026-06-03, later) — TWO LISTENING FINDINGS closed (SIM 175)
+>
+> Boss listened to the strip sonifier + looked at the strip, and flagged two things;
+> both are now shipped + accepted (drone by ear, halo by eye on Pages):
+> - **Drones go silent in scale modes** → `54bc53f` (SIM-neutral). The rhythm layer
+>   rested held pitches to silence (~5% sounded); now they SUSTAIN (legato, ~90%) in
+>   every scale mode. `STRIP_RHYTHM.sustainFrac` is the tuning knob.
+> - **No dips in the broth around crystals** → the DEPLETION-FLOOR channel, `a5837ed`
+>   (SIM 175, dataset format_version 3). The recorder sampled one midpoint cell per 15°
+>   bin → threw away ~80-90% of the halo. Fix: a parallel `floor_data` tensor = per-bin
+>   MIN for ION chips at the wall (depth 0); the LEVEL (`chip_data`) stays byte-identical
+>   so seed42 + strip_digest don't move. Renderer (99k) draws a shadow band hanging to
+>   the floor. strip-floor-probe: reactive_wall Ag halo 19.87% recovered (vs 2.35%).
+>   The bin-MEAN first attempt was a measured DEAD-END (dilutes + 5× perf timeouts) —
+>   logged as the 8th catch in `proposals/CATCHES.md`. Probes: depletion-dip /
+>   strip-depletion / strip-floor. Test infra: testTimeout 30→60s, hookTimeout 60→120s
+>   (heavier recorder). Full suite 1754/1754 green.
+> - **Open from this arc:** (1) a SONIFIER depletion voice (hear the sag — the audible
+>   twin of the shadow) → ✅ SHIPPED 2026-06-04, see the ▽ banner above; (2) the floor
+>   shadow's visual weight (boss's eye); (3) the halo is still DECOUPLED from the
+>   nucleation gate — showing where the broth thins, not a distinct mineral firing only
+>   there (still the per-cell-gating frontier).
+>
 > ## 🪨 UPDATE (2026-06-03) — the FLUID-SPOTS arc is COMPLETE (SIM 174)
 >
 > Phase 2 fluid-spots shipped end-to-end: **2a** seed → **2b** lopsided erosion →

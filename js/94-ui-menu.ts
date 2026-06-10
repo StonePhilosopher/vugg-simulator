@@ -82,6 +82,9 @@ function openNewGameMenu() {
   if (panel) panel.style.display = 'block';
   idleStop();
   refreshTitleLoadButton();
+  // Still a title-family screen → title theme keeps playing (no restart:
+  // 08-music only swaps src on a real track change).
+  if (typeof musicSetContext === 'function') musicSetContext('title');
 }
 
 function openScenariosPicker() {
@@ -90,6 +93,7 @@ function openScenariosPicker() {
   const panel = document.getElementById('scenarios-panel');
   if (panel) panel.style.display = 'block';
   idleStop();
+  if (typeof musicSetContext === 'function') musicSetContext('title');
 }
 
 // Router for the New Game menu's non-scenario buttons.
@@ -270,6 +274,13 @@ let currentGameMode = null;
 const GAME_MODES = ['legends', 'fortress', 'idle', 'random'];
 
 function switchMode(mode) {
+  // Music routing (js/08-music.ts): every mode is a BUILDING room
+  // (salt-circuit.mp3 looping) EXCEPT Strip View, which is silent —
+  // the sonifier owns that room. Moving between building modes does
+  // not restart the song (08-music swaps src only on track change).
+  if (typeof musicSetContext === 'function') {
+    musicSetContext(mode === 'stripview' ? 'silent' : 'building');
+  }
   const titleScreen = document.getElementById('title-screen');
   const modeToggle = document.getElementById('mode-toggle');
   const legendsControls = document.getElementById('legends-controls');

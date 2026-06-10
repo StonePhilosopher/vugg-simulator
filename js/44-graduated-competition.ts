@@ -206,14 +206,36 @@ function _computeSpeciesShares(
 // Output:
 //   Map<crystal_id, GraduatedAllocation>
 //
-// Determinism: this function is pure. Same inputs → same outputs.
-// No RNG, no I/O, no global-state mutation.
+// Determinism: this function is pure in its OUTPUT. Same inputs → same
+// outputs. No RNG, no I/O. The only global it touches is _gradCompStats,
+// an observer-only telemetry counter the engine never reads back.
+
+// v177 observer-only telemetry — how often graduated rationing BINDS.
+// Reset + read by tools/graduated-binding-probe.mjs; never read by the
+// engine, no RNG draws, zero effect on sim output. Added alongside the
+// v177 cell-key fix so "does rationing ever bind at seed 42?" is a
+// measured fact instead of an assumption.
+const _gradCompStats = {
+  calls: 0,               // computeGraduatedAllocations invocations (= groups)
+  multiCrystalGroups: 0,  // groups with 2+ crystals (contention possible)
+  maxGroupSize: 0,
+  allocations: 0,         // per-crystal allocation decisions
+  bound: 0,               // allocations scaled below 0.999 (rationing bit)
+  minScaling: 1.0,
+  reset() {
+    this.calls = 0; this.multiCrystalGroups = 0; this.maxGroupSize = 0;
+    this.allocations = 0; this.bound = 0; this.minScaling = 1.0;
+  },
+};
 
 function computeGraduatedAllocations(
   runs: CrystalDryRun[],
   fluid: Record<string, number>,
 ): Map<number, GraduatedAllocation> {
   const out = new Map<number, GraduatedAllocation>();
+  _gradCompStats.calls++;
+  if (runs.length > 1) _gradCompStats.multiCrystalGroups++;
+  if (runs.length > _gradCompStats.maxGroupSize) _gradCompStats.maxGroupSize = runs.length;
   if (!runs.length) return out;
 
   // Collect species touched by any crystal.
@@ -262,6 +284,11 @@ function computeGraduatedAllocations(
         limiting = sp;
         limitingShare = myShareFrac;
       }
+    }
+    _gradCompStats.allocations++;
+    if (scaling < 0.999) {
+      _gradCompStats.bound++;
+      if (scaling < _gradCompStats.minScaling) _gradCompStats.minScaling = scaling;
     }
     let why: string;
     if (limiting === null) {

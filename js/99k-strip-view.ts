@@ -872,7 +872,7 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
   }));
   selector.appendChild(bulkBar);
 
-  const systems = ['wall', 'special', 'carbonate', 'ion'];
+  const systems = ['wall', 'special', 'carbonate', 'sulfate', 'ion'];
   for (const sys of systems) {
     const inSys = ds.manifest.chips.filter(c => c.system === sys);
     if (!inSys.length) continue;
@@ -1133,6 +1133,8 @@ function initStripView(): void {
             <label class="strip-view-tempo" title="Playback tempo — drag right to speed up, left to slow down (applies on release / next play)" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">⏱<input type="range" id="strip-view-tempo" min="1" max="8" step="0.5" value="3" style="width:72px; vertical-align:middle;"/></label>
             <select class="strip-view-btn" id="strip-view-scale" title="Musical scale / mode — pentatonic never clashes; the modes are tavern/dwarven flavor" style="max-width:185px; font-size:11px;"></select>
             <label class="strip-view-crystals" title="Ring each crystal as it nucleates — a struck bell voiced by its color (note) + size (register/ring), over the chemistry drone" style="display:inline-flex; align-items:center; gap:3px; color:#9ab; font-size:11px; cursor:pointer;"><input type="checkbox" id="strip-view-crystals" checked/>🔔 Crystals</label>
+            <label class="strip-view-cryst-vol" title="Crystal-bell volume — how loud the struck bells ring over the chemistry drone (applies live)" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">🔔🔊<input type="range" id="strip-view-crystal-volume" min="0" max="1" step="0.01" value="1" style="width:56px; vertical-align:middle;"/></label>
+            <label class="strip-view-depletion" title="The depletion voice — a soft undertone that sags beneath a chip's drone where crystals draw the broth down (the audible twin of the depletion shadow). Silent on abundant ions; sings on limiting ones (Ag, Cd, F, Sn)." style="display:inline-flex; align-items:center; gap:3px; color:#9ab; font-size:11px; cursor:pointer;"><input type="checkbox" id="strip-view-depletion" checked/>▽ Depletion</label>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -1283,6 +1285,32 @@ function initStripView(): void {
           if (typeof stripSonifySetCrystals === 'function') stripSonifySetCrystals(crystalsCb.checked);
           if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
             startSonify();   // re-schedule with/without the crystal layer
+          }
+        });
+      }
+      // 🔔🔊 Crystal-bell volume — rides the crystal submix bus, so (unlike the
+      // toggle) it applies LIVE with no re-schedule, exactly like the master.
+      const crystalVolInput = panel.querySelector('#strip-view-crystal-volume') as HTMLInputElement | null;
+      if (crystalVolInput) {
+        if (typeof stripSonifyGetCrystalVolume === 'function') {
+          crystalVolInput.value = String(stripSonifyGetCrystalVolume());
+        }
+        crystalVolInput.addEventListener('input', () => {
+          if (typeof stripSonifySetCrystalVolume === 'function') {
+            stripSonifySetCrystalVolume(parseFloat(crystalVolInput.value));
+          }
+        });
+      }
+      // ▽ Depletion voice — the shadow undertone (one extra oscillator per
+      // chip, at the floor pitch). Adding/removing it is a plan-BUILDING change
+      // (like the crystals layer), so flipping it restarts a live performance.
+      const depletionCb = panel.querySelector('#strip-view-depletion') as HTMLInputElement | null;
+      if (depletionCb) {
+        if (typeof stripSonifyGetDepletion === 'function') depletionCb.checked = stripSonifyGetDepletion();
+        depletionCb.addEventListener('change', () => {
+          if (typeof stripSonifySetDepletion === 'function') stripSonifySetDepletion(depletionCb.checked);
+          if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
+            startSonify();   // re-schedule with/without the shadow sub-voice
           }
         });
       }

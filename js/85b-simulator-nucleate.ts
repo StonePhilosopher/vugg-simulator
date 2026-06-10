@@ -1077,8 +1077,20 @@ _computeGraduatedZones() {
     if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
       const mesh = this.wall_state.meshFor(this);
       const cell = mesh.cellOf(crystal, this.wall_state);
-      cellFluid = (cell && cell.fluid) ? cell.fluid : this.ring_fluids[ringIdx];
-      cellKey = cell ? `cell:${(cell as any).id ?? (cell as any).idx ?? ringIdx + ':' + ((cell as any).vertexIdx ?? '?')}` : `ring:${ringIdx}`;
+      // v177: the key must identify the BUDGET being rationed. WallCell
+      // carries no id/idx/vertexIdx fields, so the old `cell.id ?? …`
+      // chain always degraded to `cell:<ringIdx>:?` — every crystal in a
+      // ring shared ONE group, rationed against whichever cell's fluid
+      // registered first. Key off the anchor (ring, cell) when the cell
+      // has its own fluid; fall back to the ring key when the budget is
+      // the shared ring fluid, so group identity always matches budget.
+      if (cell && cell.fluid) {
+        cellFluid = cell.fluid;
+        cellKey = `cell:${anchor.ringIdx}:${anchor.cellIdx}`;
+      } else {
+        cellFluid = this.ring_fluids[ringIdx];
+        cellKey = `ring:${ringIdx}`;
+      }
     } else {
       cellFluid = this.conditions.fluid;
       cellKey = 'bulk';
