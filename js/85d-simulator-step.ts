@@ -134,7 +134,15 @@ Object.assign(VugSimulator.prototype, {
   }
 },
 
-  ambient_cooling(rate = 1.5) {
+  ambient_cooling(rate = null) {
+  // v179: rate resolves wall.cooling_rate (per-scenario knob, default 1.5 —
+  // the historical hard-coded value). An explicit argument still wins
+  // (legacy callers / tests). RNG-NEUTRAL: the uniform draw happens
+  // regardless of the rate value, so unset scenarios are byte-identical.
+  if (rate === null || rate === undefined) {
+    const wr = this.conditions.wall?.cooling_rate;
+    rate = (typeof wr === 'number' && isFinite(wr) && wr >= 0) ? wr : 1.5;
+  }
   this.conditions.temperature -= rate * rng.uniform(0.8, 1.2);
   this.conditions.temperature = Math.max(this.conditions.temperature, 25);
 

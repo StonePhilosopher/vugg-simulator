@@ -10320,5 +10320,39 @@
 //   Fixed the fixture to genuinely supersaturated + pinned the both-positive premise.
 //   A green test was load-bearing for wrong physics — the suite can't tell you WHICH
 //   side of an assertion is the bug.
-const SIM_VERSION = 178;
+//
+// v179 (2026-06-09) — the reactivated vein's SEALED interval is actually QUIET. Third
+//                     fix of the review rebake arc (§1.5).
+//
+//   TWO COUPLED BUGS in the v176 demonstrator: (1) the scenario never set
+//   wall.thermal_pulses:false, so the generic magmatic pulse mechanic fired straight
+//   through the sealed interval (steps 78-118) — seed 42 showed T jumping 156.5 → 171°C
+//   the very step the seal landed, and flow_rate slammed from the seal's 0.05 back to
+//   1.5-3.0, injecting fresh SiO2/Fe/Mn into a supposedly choked conduit. Exactly the
+//   failure mode the v162 flag was created for; it just wasn't applied. (2) both 70t
+//   handlers used the plain Math.max(floor, T-drop) "bounded cooling" form, which HEATS
+//   on seeds where pre-event T is below floor+drop — a cooling event raising T. Both now
+//   use Math.max(Math.min(T, floor), T-drop): cool by the drop, never below the floor,
+//   never above where it started.
+//
+//   THE KNOB THE FLAG EXPOSED: with pulses off, the default 1.5 °C/step cooling had the
+//   180 °C brine at ~44 °C by the seal — the pulses had been doing the LEGITIMATE work
+//   of holding stage-1 temperature as a side effect. But an OPEN feeder advects heat
+//   (a live vein holds near brine T until the conduit chokes), so the honest fix is a
+//   per-scenario cooling rate, not scripted reheats: new opt-in `wall.cooling_rate`
+//   (°C/step, default 1.5 = the historical constant; RNG-NEUTRAL — the uniform draw
+//   happens regardless of rate, unset scenarios byte-identical). The vein sets 0.4.
+//
+//   THE PROFILE NOW (seed 42): 152 °C at the brine event → 129 pre-seal → 119
+//   post-seal (the seal COOLS now) → quiet drift 111→104 across the sealed interval,
+//   flow pinned at 0.05, zero pulse injections → 93 at the breach → gen-2 finishing at
+//   77 °C. North Pennine fluorite fluid-inclusion T is ~90-150 °C — both generations
+//   now sit inside it. All 5 expects fire; cerussite (lost in the v178 rebake) is BACK
+//   and hawleyite joins (Cd following Zn into the cooler gen-2 window).
+//
+//   BASELINE: 1/31 scenarios moved (this one only — cooling_rate is opt-in and the
+//   flag/handler changes are scenario-local). strip digest 0/10 moved. Scenario suite
+//   7/7 green. Probe: vein-quiet (inline) — sealed-interval max T 111 °C, no flow
+//   violation, seal Δ T strictly negative.
+const SIM_VERSION = 179;
 

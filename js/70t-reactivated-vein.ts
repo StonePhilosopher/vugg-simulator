@@ -30,7 +30,11 @@
 // Paired in scenarios.json5 with `spots: 'seal'`, which shuts the feeders so
 // the deposition-clustering halo switches off during the quiescent interval.
 function event_reactivated_vein_seal(c: any) {
-  c.temperature = Math.max(120, c.temperature - 30);   // cooling as the conduit closes
+  // v179: non-heating floor. The plain Math.max(120, T-30) form HEATS the
+  // vug on any seed where pre-seal T < 150 (pulse timing is random) — a
+  // "cooling" event raising T. Min(T, …) keeps the floor without ever
+  // heating: cool by 30, never below 120, never above where we started.
+  c.temperature = Math.max(Math.min(c.temperature, 120), c.temperature - 30);  // cooling as the conduit closes
   c.flow_rate = 0.05;                                  // plumbing choked → near-stagnant
   c.fluid.CO3 = Math.max(60, c.fluid.CO3 - 40);        // carbonate consumed by the sealing cement
   c.fluid.F = Math.max(2, c.fluid.F - 4);              // residual F drawn down by gen-1 fluorite
@@ -42,7 +46,8 @@ function event_reactivated_vein_seal(c: any) {
 // the CO3 + Ca spike brings late calcite. Paired with `spots: 'breach'`, which
 // reopens the feeders so the second generation clusters at the same vents.
 function event_reactivated_vein_breach(c: any) {
-  c.temperature = Math.max(90, c.temperature - 10);    // the second pulse is cooler than the first
+  // v179: same non-heating floor as the seal (plain max heats below 100°C).
+  c.temperature = Math.max(Math.min(c.temperature, 90), c.temperature - 10);  // the second pulse is cooler than the first
   c.fluid.F = Math.min(30, c.fluid.F + 16);            // fresh fluorine → gen-2 fluorite
   c.fluid.Ca = Math.min(420, c.fluid.Ca + 90);         // Ca for both fluorite + calcite
   c.fluid.CO3 = Math.min(320, c.fluid.CO3 + 130);      // carbonate spike → late calcite

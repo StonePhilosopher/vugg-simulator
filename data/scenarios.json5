@@ -364,7 +364,24 @@
           "architecture": "tabular",
           "primary_bubbles": 2,
           "secondary_bubbles": 6,
-          "shape_seed": 1850
+          "shape_seed": 1850,
+          // v179: the SEALED interval (steps 78-118) is the scenario's whole
+          // point — "the vug goes quiet." The generic magmatic thermal-pulse
+          // mechanic was firing straight through it (seed 42: T jumped
+          // 156.5 → 171°C the very step the seal landed, and flow_rate was
+          // slammed from the seal's 0.05 back to 1.5-3.0), injecting fresh
+          // SiO2/Fe/Mn into a choked conduit. Same flag, same reason as
+          // bisbee / schneeberg / roughten_gill (v162-163): the vein's heat
+          // events are all scripted, no ambient pulses wanted.
+          "thermal_pulses": false,
+          // v179: the pulses were ALSO doing the legitimate work of holding
+          // stage-1 temperature — with them off, the default 1.5°C/step had
+          // the 180°C brine at ~44°C by the seal. An OPEN feeder advects
+          // heat (a live vein system holds near brine T until the conduit
+          // chokes), so the vein cools slowly: 0.4°C/step puts stage-1 end
+          // at ~150°C (the v176 design point — "cools to ~150°C" at the
+          // seal), the sealed interval drifting ~120→104, gen-2 at ~90s.
+          "cooling_rate": 0.4
         }
       },
       "events": [
