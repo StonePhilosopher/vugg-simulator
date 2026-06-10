@@ -10277,5 +10277,48 @@
 //   gating). SIM bumps because allocation-grouping semantics changed (the old key was
 //   insertion-ORDER-DEPENDENT in which budget fluid it rationed against — other seeds /
 //   future scenarios could diverge even though seed 42 doesn't).
-const SIM_VERSION = 177;
+// v178 (2026-06-09) — PWP ACTIVATION ENERGIES paired to the right mechanisms. Second
+//                     fix of the three-metrics-review rebake arc (§2.1).
+//
+//   THE BUG (shipping since the v144 calcite SI promotion): the three Ea values in
+//   data/thermo-carbonates.json + the 52b defaults are real Palandri & Kharaka 2004
+//   calcite numbers, but P&K assign them BY MECHANISM — acid (k1·[H+]) 14.4, carbonate
+//   (k2·[H2CO3*]) 35.4, neutral (k3) 23.5 kJ/mol. The shipped array [35.4, 23.5, 14.4]
+//   gave the acid pathway the carbonate Ea and vice versa (a PERMUTATION, not a simple
+//   reversal — reversing would also be wrong). Effect: Arrhenius over-amplified the
+//   acid term by ~e^2.5 ≈ 12× at 150 °C, so hot acidic scenarios (MVT-style brines)
+//   dissolved/precipitated carbonate on the wrong pathway weighting. Sources: USGS OFR
+//   2004-1068; the PWP-pitfalls preprint (arXiv 2501.05225) documents this exact
+//   mispairing in the wild.
+//
+//   THE FIX: Ea_kJ_mol → [14.4, 35.4, 23.5] in the data file (calcite — the only
+//   per-mineral array; every family-analog mineral inherits the 52b default, fixed to
+//   match) + an Ea_mechanism_map note in the JSON so the pairing is self-documenting.
+//
+//   THE RECALIBRATION (same bump — the global factor's job is absolute scale): the
+//   corrected pairing amplifies k2/k3 at high T, and _PWP_CALIBRATION_FACTOR=5.0e4 was
+//   tuned (v144) under the permuted Ea. Left alone, hot scenarios exploded (w9 probe
+//   median 38 → 234 µm/step printed; seed-42 aragonite hit 70 mm; mvt + the reactivated
+//   vein LOST sphalerite — identity-mineral damage). Naive linear rescale to 8.1e3
+//   overshot (probe median 7.95 — the response is SUPER-linear; growth feeds back into
+//   which steps qualify for the probe's regime). Log-interpolated to 1.9e4 and accepted
+//   on the criterion that matters: fleet drift vs v177.
+//
+//   BASELINE: 13/31 scenarios move, carbonate-centric. mvt + reactivated_fluorite_vein
+//   keep sphalerite/fluorite/galena/barite BYTE-IDENTICAL (only their calcite/aragonite
+//   grow ~+15-45%). Geologically-right newcomers: pectolite at jeffrey_mine (rodingite
+//   suite), diopside at marble_contact. BORAX UN-STALES at searles_lake (stale list
+//   8 → 7 — the first stale-species recovery of the rebake arc). Watch items for
+//   vugg-tune-scenario: jeffrey loses aragonite+siderite (not in expects), deccan gains
+//   a 1-crystal wollastonite (suspect at zeolite T), reactivated vein loses cerussite.
+//   Probes: w9 run pre/post + at both candidate factors; graduated-binding-probe
+//   confirms rationing pressure unchanged (the v177 fix + this one stay independent).
+//
+//   THE TEST THE BUG WAS HOLDING UP: week-11's "HMC rate accelerates with T" used an
+//   UNDERSATURATED fixture — both rates were negative, so it really asserted
+//   "dissolution decelerates with T" (backwards), which only the permuted Ea satisfied.
+//   Fixed the fixture to genuinely supersaturated + pinned the both-positive premise.
+//   A green test was load-bearing for wrong physics — the suite can't tell you WHICH
+//   side of an assertion is the bug.
+const SIM_VERSION = 178;
 

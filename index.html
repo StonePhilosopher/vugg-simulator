@@ -15041,7 +15041,50 @@ let timeScale = 5.0;
 //   gating). SIM bumps because allocation-grouping semantics changed (the old key was
 //   insertion-ORDER-DEPENDENT in which budget fluid it rationed against — other seeds /
 //   future scenarios could diverge even though seed 42 doesn't).
-const SIM_VERSION = 177;
+// v178 (2026-06-09) — PWP ACTIVATION ENERGIES paired to the right mechanisms. Second
+//                     fix of the three-metrics-review rebake arc (§2.1).
+//
+//   THE BUG (shipping since the v144 calcite SI promotion): the three Ea values in
+//   data/thermo-carbonates.json + the 52b defaults are real Palandri & Kharaka 2004
+//   calcite numbers, but P&K assign them BY MECHANISM — acid (k1·[H+]) 14.4, carbonate
+//   (k2·[H2CO3*]) 35.4, neutral (k3) 23.5 kJ/mol. The shipped array [35.4, 23.5, 14.4]
+//   gave the acid pathway the carbonate Ea and vice versa (a PERMUTATION, not a simple
+//   reversal — reversing would also be wrong). Effect: Arrhenius over-amplified the
+//   acid term by ~e^2.5 ≈ 12× at 150 °C, so hot acidic scenarios (MVT-style brines)
+//   dissolved/precipitated carbonate on the wrong pathway weighting. Sources: USGS OFR
+//   2004-1068; the PWP-pitfalls preprint (arXiv 2501.05225) documents this exact
+//   mispairing in the wild.
+//
+//   THE FIX: Ea_kJ_mol → [14.4, 35.4, 23.5] in the data file (calcite — the only
+//   per-mineral array; every family-analog mineral inherits the 52b default, fixed to
+//   match) + an Ea_mechanism_map note in the JSON so the pairing is self-documenting.
+//
+//   THE RECALIBRATION (same bump — the global factor's job is absolute scale): the
+//   corrected pairing amplifies k2/k3 at high T, and _PWP_CALIBRATION_FACTOR=5.0e4 was
+//   tuned (v144) under the permuted Ea. Left alone, hot scenarios exploded (w9 probe
+//   median 38 → 234 µm/step printed; seed-42 aragonite hit 70 mm; mvt + the reactivated
+//   vein LOST sphalerite — identity-mineral damage). Naive linear rescale to 8.1e3
+//   overshot (probe median 7.95 — the response is SUPER-linear; growth feeds back into
+//   which steps qualify for the probe's regime). Log-interpolated to 1.9e4 and accepted
+//   on the criterion that matters: fleet drift vs v177.
+//
+//   BASELINE: 13/31 scenarios move, carbonate-centric. mvt + reactivated_fluorite_vein
+//   keep sphalerite/fluorite/galena/barite BYTE-IDENTICAL (only their calcite/aragonite
+//   grow ~+15-45%). Geologically-right newcomers: pectolite at jeffrey_mine (rodingite
+//   suite), diopside at marble_contact. BORAX UN-STALES at searles_lake (stale list
+//   8 → 7 — the first stale-species recovery of the rebake arc). Watch items for
+//   vugg-tune-scenario: jeffrey loses aragonite+siderite (not in expects), deccan gains
+//   a 1-crystal wollastonite (suspect at zeolite T), reactivated vein loses cerussite.
+//   Probes: w9 run pre/post + at both candidate factors; graduated-binding-probe
+//   confirms rationing pressure unchanged (the v177 fix + this one stay independent).
+//
+//   THE TEST THE BUG WAS HOLDING UP: week-11's "HMC rate accelerates with T" used an
+//   UNDERSATURATED fixture — both rates were negative, so it really asserted
+//   "dissolution decelerates with T" (backwards), which only the permuted Ea satisfied.
+//   Fixed the fixture to genuinely supersaturated + pinned the both-positive premise.
+//   A green test was load-bearing for wrong physics — the suite can't tell you WHICH
+//   side of an assertion is the bug.
+const SIM_VERSION = 178;
 
 // ── 18-constants.js ──
 
@@ -31625,7 +31668,12 @@ function grow_hydrozincite(crystal, conditions, step) {
 // approximation across the practical Ω range (Morse 1983; Lasaga 1998).
 //
 // T-dependence per Arrhenius:  k(T) = k(298)·exp(−Ea/R·(1/T − 1/298))
-// Activation energies from PWP 1978 + Plummer-Busenberg 1982 refits.
+// Activation energies: Palandri & Kharaka 2004 (USGS OFR 2004-1068)
+// three-mechanism calcite refit, paired BY MECHANISM (v178 fix — the
+// array previously shipped permuted, acid↔carbonate):
+//   Ea[0] → k1 (acid, H+ attack)        14.4 kJ/mol
+//   Ea[1] → k2 (carbonate, H2CO3*)      35.4 kJ/mol
+//   Ea[2] → k3 (neutral, H2O)           23.5 kJ/mol
 //
 // UNITS
 //
@@ -31688,7 +31736,9 @@ function _pwpParamsFor(mineralId) {
         k1: 8.91e-5,
         k2: 4.47e-7,
         k3: 1.86e-11,
-        Ea: [35.4, 23.5, 14.4],
+        // v178: paired by mechanism — [k1 acid 14.4, k2 carbonate 35.4,
+        // k3 neutral 23.5] (P&K 2004). Previously permuted (acid↔carbonate).
+        Ea: [14.4, 35.4, 23.5],
         scale: 1.0,
     };
     if (typeof getCarbonateData !== 'function')
@@ -31798,7 +31848,24 @@ function pwpNetRate(mineralId, fluid, T_C, mg_content = 0) {
 // The single-factor compromise: scenarios that drift unacceptably
 // far from their geological intent get re-anchored via the
 // vugg-tune-scenario discipline at v144 baseline regen.
-let _PWP_CALIBRATION_FACTOR = 5.0e+4;
+// v178: re-anchored 5.0e+4 → 8.1e+3 alongside the Ea mechanism-pairing
+// fix. The corrected pairing amplifies the k2 (carbonate) + k3 (neutral)
+// terms at high T (~6× on the w9 probe's sigma-1.5-5 median), and the
+// global factor's job is absolute scale — so it absorbs the inflation,
+// preserving the fleet's growth envelope (w9 p50 ≈ 38 µm/step, the
+// pre-fix level the v145+ scenario calibrations are anchored on) while
+// the RELATIVE pathway weighting (the actual science) stays corrected.
+// Derivation: the naive linear rescale 5.0e4 × (37.92/234.4) ≈ 8.1e3
+// OVERSHOT (probe p50 landed 7.95, not 38 — printed-median responds
+// super-linearly to the factor because growth feeds back into which
+// steps qualify for the sigma-1.5-5 regime). Log-interpolated to 1.9e4
+// and accepted on the fleet-level criterion that actually matters:
+// seed-42 baseline drift vs v177 (see the v178 entry in 15-version.ts).
+// NOTE the w9 probe's "pwp_um(x1)" column predates v144's tuning — it
+// calls the LIVE pwpRateToSimMicronsPerStep, so printed values include
+// this factor; its "recommended calibration_factor" lines assume raw
+// and must be rescaled by the live factor before use.
+let _PWP_CALIBRATION_FACTOR = 1.9e+4;
 function setPWPCalibrationFactor(factor) {
     if (typeof factor === 'number' && isFinite(factor) && factor > 0) {
         _PWP_CALIBRATION_FACTOR = factor;

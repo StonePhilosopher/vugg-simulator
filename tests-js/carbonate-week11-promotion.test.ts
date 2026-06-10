@@ -117,9 +117,18 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — HMC PWP rate sanity', () => {
   });
 
   it('HMC rate accelerates with T (Arrhenius)', () => {
-    const f = new FluidChemistry({ Ca: 400, Mg: 800, CO3: 200, pH: 8.0 });
+    // v178 fixture fix: the original fluid (CO3 200, pH 8.0) was
+    // UNDERSATURATED for HMC at 10 mol% Mg — both rates were negative,
+    // so the assertion was really "dissolution decelerates with T",
+    // which is backwards physics that only the pre-v178 permuted Ea
+    // pairing happened to satisfy. Supersaturated fixture + a pinned
+    // both-positive premise so the test can't silently flip back to
+    // dissolution mode.
+    const f = new FluidChemistry({ Ca: 400, Mg: 800, CO3: 400, pH: 8.2 });
     const r_cool = HMCRate(f, 10, 0.10);
     const r_warm = HMCRate(f, 50, 0.10);
+    expect(r_cool).toBeGreaterThan(0);   // premise: genuinely growing
+    expect(r_warm).toBeGreaterThan(0);
     expect(r_warm).toBeGreaterThan(r_cool);
   });
 

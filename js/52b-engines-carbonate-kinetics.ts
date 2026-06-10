@@ -43,7 +43,12 @@
 // approximation across the practical Ω range (Morse 1983; Lasaga 1998).
 //
 // T-dependence per Arrhenius:  k(T) = k(298)·exp(−Ea/R·(1/T − 1/298))
-// Activation energies from PWP 1978 + Plummer-Busenberg 1982 refits.
+// Activation energies: Palandri & Kharaka 2004 (USGS OFR 2004-1068)
+// three-mechanism calcite refit, paired BY MECHANISM (v178 fix — the
+// array previously shipped permuted, acid↔carbonate):
+//   Ea[0] → k1 (acid, H+ attack)        14.4 kJ/mol
+//   Ea[1] → k2 (carbonate, H2CO3*)      35.4 kJ/mol
+//   Ea[2] → k3 (neutral, H2O)           23.5 kJ/mol
 //
 // UNITS
 //
@@ -112,7 +117,9 @@ function _pwpParamsFor(mineralId: string): {
     k1: 8.91e-5,
     k2: 4.47e-7,
     k3: 1.86e-11,
-    Ea: [35.4, 23.5, 14.4] as [number, number, number],
+    // v178: paired by mechanism — [k1 acid 14.4, k2 carbonate 35.4,
+    // k3 neutral 23.5] (P&K 2004). Previously permuted (acid↔carbonate).
+    Ea: [14.4, 35.4, 23.5] as [number, number, number],
     scale: 1.0,
   };
   if (typeof getCarbonateData !== 'function') return p;
@@ -219,7 +226,24 @@ function pwpNetRate(mineralId: string, fluid: any, T_C: number, mg_content: numb
 // The single-factor compromise: scenarios that drift unacceptably
 // far from their geological intent get re-anchored via the
 // vugg-tune-scenario discipline at v144 baseline regen.
-let _PWP_CALIBRATION_FACTOR = 5.0e+4;
+// v178: re-anchored 5.0e+4 → 8.1e+3 alongside the Ea mechanism-pairing
+// fix. The corrected pairing amplifies the k2 (carbonate) + k3 (neutral)
+// terms at high T (~6× on the w9 probe's sigma-1.5-5 median), and the
+// global factor's job is absolute scale — so it absorbs the inflation,
+// preserving the fleet's growth envelope (w9 p50 ≈ 38 µm/step, the
+// pre-fix level the v145+ scenario calibrations are anchored on) while
+// the RELATIVE pathway weighting (the actual science) stays corrected.
+// Derivation: the naive linear rescale 5.0e4 × (37.92/234.4) ≈ 8.1e3
+// OVERSHOT (probe p50 landed 7.95, not 38 — printed-median responds
+// super-linearly to the factor because growth feeds back into which
+// steps qualify for the sigma-1.5-5 regime). Log-interpolated to 1.9e4
+// and accepted on the fleet-level criterion that actually matters:
+// seed-42 baseline drift vs v177 (see the v178 entry in 15-version.ts).
+// NOTE the w9 probe's "pwp_um(x1)" column predates v144's tuning — it
+// calls the LIVE pwpRateToSimMicronsPerStep, so printed values include
+// this factor; its "recommended calibration_factor" lines assume raw
+// and must be rescaled by the live factor before use.
+let _PWP_CALIBRATION_FACTOR = 1.9e+4;
 function setPWPCalibrationFactor(factor: number): void {
   if (typeof factor === 'number' && isFinite(factor) && factor > 0) {
     _PWP_CALIBRATION_FACTOR = factor;
