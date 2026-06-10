@@ -2,6 +2,24 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 💙 UPDATE (2026-06-10, later) — v180: LINARITE FIRES at roughten_gill
+>
+> First execution of the handoff's tune pass (`12a0b09`): the headline
+> azure-blue specimen grows (0→2x, ~2.2 mm) + leadhillite caps (0→2x).
+> **Stale 7 → 4.** The v109 "Shape B structural" diagnosis had ROTTED — the
+> per-cell architecture (v160) + v177 cell-key fix dissolved the
+> displacement; the real blocker was the CO3:SO4 fork missed by 0.03-0.06
+> for 75 straight steps (gate-census probing found it). Tune: AMD S surge
+> +80→+110 + leadhillite-cap CO3 flood +70/ceiling 165. Bayldonite removed
+> from expects (Shape D — engine encodes PbCu3 Cu-dominance, unreachable in
+> the Pb-dominant broth). **V is a TWICE-confirmed touchy axis** (v109 6→0,
+> v180 6→12 — both reverted); mottramite still stale, needs its own
+> gate-census arc (V gate clears at 12; blocker is Zn≥0.5 or redox·T).
+> Remaining stale: jeffrey magnetite, searles mirabilite, roughten_gill
+> mottramite, schneeberg torbernite. Lesson for the lineage: **diagnoses
+> age with the architecture under them — re-probe before trusting an old
+> shape.**
+>
 > ## 🪨 UPDATE (2026-06-10) — SESSION HANDOFF: review → rebake → soundtrack
 >
 > **`proposals/HANDOFF-REVIEW-REBAKE-MUSIC-2026-06-10.md`** is the handoff for
