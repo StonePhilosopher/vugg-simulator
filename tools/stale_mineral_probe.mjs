@@ -114,6 +114,32 @@ const PROBES = [
     scenario: 'porphyry',  // As=15, S=60 — second probe to confirm pattern
     extras: ['As', 'S', 'Fe', 'O2', 'pH', 'temperature'],
   },
+  // Round 3 (post-v179 tune pass — 2026-06-10): the four roughten_gill
+  // stale expects. v109's diagnosis was Shape B (nucleation-order
+  // displacement: pyromorphite + Ag-sulfosalts consume the budget before
+  // the sulfate iterator reaches linarite) — but that predates the
+  // per-cell architecture (v160), the competition cell-key fix (v177),
+  // and the PWP rebake (v178). Re-probing from zero.
+  {
+    mineral: 'linarite',
+    scenario: 'roughten_gill',  // event literally named linarite_stage
+    extras: ['Pb', 'Cu', 'S', 'CO3', 'O2', 'pH', 'temperature'],
+  },
+  {
+    mineral: 'leadhillite',
+    scenario: 'roughten_gill',  // event literally named leadhillite_cap
+    extras: ['Pb', 'S', 'CO3', 'O2', 'pH', 'temperature'],
+  },
+  {
+    mineral: 'mottramite',
+    scenario: 'roughten_gill',  // Pb-Cu vanadate; V budget suspect post-v109 V=6→? history
+    extras: ['Pb', 'Cu', 'V', 'O2', 'pH', 'temperature'],
+  },
+  {
+    mineral: 'bayldonite',
+    scenario: 'roughten_gill',  // Pb-Cu arsenate
+    extras: ['Pb', 'Cu', 'As', 'O2', 'pH', 'temperature'],
+  },
 ];
 
 function probe({ mineral, scenario, extras }, { seeds = [42, 1, 7] } = {}) {
