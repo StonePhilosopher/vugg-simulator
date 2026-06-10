@@ -6,11 +6,11 @@ description: Fe³⁺-bearing beryl. The yellow variety; oxidized counterpart of 
 
 ## blurb
 
-Be₃Al₂Si₆O₁₈ + Fe³⁺ — the yellow variety of beryl. Same iron as aquamarine but oxidized to the Fe³⁺ state; the aquamarine/heliodor split is the cleanest redox record in the gem world. A zoned crystal with aquamarine core and heliodor rim captures a pocket fluid that went from reducing to oxidizing mid-growth — the iron never left the fluid, but its oxidation state flipped, and the color zoning is the recording. Volodarsk (Namibia) is the type locality for deep-yellow 'Namibian heliodor'; Urals (Russia) historically, Minas Gerais (Brazil) also.
+Be₃Al₂Si₆O₁₈ + Fe³⁺ — the yellow variety of beryl. Same iron as aquamarine but oxidized to the Fe³⁺ state; the aquamarine/heliodor split is the cleanest redox record in the gem world. A zoned crystal with aquamarine core and heliodor rim captures a pocket fluid that went from reducing to oxidizing mid-growth — the iron never left the fluid, but its oxidation state flipped, and the color zoning is the recording. The celebrated deep-golden heliodors come from Volodarsk-Volynskii, Ukraine; Namibia (Erongo, Klein Spitzkoppe, Rössing) grows its own distinct material, with the Urals historically and Minas Gerais also producing.
 
 ## variant: namibian_deep_yellow
 
-Namibian deep-yellow — high-Fe strongly-oxidizing pocket signature. The Volodarsk pegmatite cross-cuts Fe-rich country rock, delivering both the Fe source and the late oxidizing pulse that converts Fe²⁺ to Fe³⁺.
+Deep-yellow — the high-Fe, strongly-oxidizing pocket signature. The celebrated deep-golden heliodors come from Volodarsk-Volynskii in Ukraine, where the pegmatite cross-cuts Fe-rich country rock — both the iron source and the late oxidizing pulse that converts Fe²⁺ to Fe³⁺. Namibia's Erongo and Klein Spitzkoppe pockets grow their own, typically paler, version. (Variant key kept as 'namibian_deep_yellow' for back-compat; the two localities were conflated before 2026-06-10.)
 
 ## variant: fluid_inclusions
 

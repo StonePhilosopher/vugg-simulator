@@ -18,7 +18,7 @@ Imperial golden-orange — Cr³⁺ substituting for Al³⁺ in the topaz structu
 
 ## variant: pale_blue
 
-Pale blue, F-rich and Cr-starved. In nature, this coloration is often enhanced by subsequent radiation exposure producing the sky-blue topaz flooded onto the market after Iapetos-age pegmatites started being deliberately irradiated.
+Pale blue, F-rich and Cr-starved. Natural blue topaz owes its color to geologic radiation doses accumulated over deep time; the sky-blue that flooded the market since the 1970s is colorless natural topaz deliberately irradiated and heat-treated — nature's slow recipe, industrialized.
 
 ## variant: pale_yellow
 

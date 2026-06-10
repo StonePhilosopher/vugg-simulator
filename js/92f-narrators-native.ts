@@ -24,7 +24,9 @@ Object.assign(VugSimulator.prototype, {
   } else {
     parts.push(narrative_variant('native_copper', 'cubic_dodecahedral') || 'Cubic/dodecahedral well-formed crystal — rare for native copper, which usually grows as dendrites.');
   }
-  parts.push(narrative_variant('native_copper', 'statue_of_liberty_tail') || "The Statue of Liberty's iconic green patina is malachite growing on native copper — the mineralogical fate of most surface copper, given enough time and rain.");
+  // (2026-06-10 review §2.4: the Liberty patina is SULFATE chemistry —
+  // brochantite + antlerite (+ atacamite near sea air), not malachite.)
+  parts.push(narrative_variant('native_copper', 'statue_of_liberty_tail') || "The Statue of Liberty's iconic green patina is sulfate chemistry, not carbonate — brochantite and antlerite (with some atacamite near the sea air), grown by a century of acid rain on native copper.");
   return parts.filter(p => p).join(' ');
 },
 

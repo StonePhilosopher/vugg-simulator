@@ -21,7 +21,10 @@ Object.assign(VugSimulator.prototype, {
   if (c.position.includes('galena')) {
     const oxidized = c.position.includes('oxidized');
     if (oxidized) {
-      parts.push(narrative_variant('wulfenite', 'on_oxidized_galena') || 'It nucleated on the ghosts of two sulfides — oxidized galena (Pb²⁺) and oxidized molybdenite (MoO₄²⁻). Lead molybdate born from the death of both parents.');
+      // (2026-06-10 review §2.4: wulfenite does NOT require discrete
+      // molybdenite — Red Cloud and Mežica have none; Mo commonly arrives
+      // as trace Mo in galena or the wallrock.)
+      parts.push(narrative_variant('wulfenite', 'on_oxidized_galena') || 'It nucleated on the ghost of oxidized galena — the lead source. The molybdate half needs no molybdenite parent: at famous wulfenite localities like Red Cloud and Mežica there is none, and the Mo arrives as a trace passenger in the galena and wallrock, concentrated by oxidation into MoO₄²⁻.');
     } else {
       parts.push(narrative_variant('wulfenite', 'on_galena') || 'It grew on galena, drawing lead from the same source mineral. A secondary generation claiming the primary mineral as its substrate.');
     }
@@ -70,7 +73,9 @@ Object.assign(VugSimulator.prototype, {
   // v64 brief-19 narrators.
   _narrate_scheelite(c) {
     const parts = [`Scheelite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-    parts.push('CaWO₄ — calcium tungstate, scheelite-group lattice. The brilliant blue-white SW UV fluorescence is diagnostic and has been used since the 19th century to prospect for tungsten by lamp at night. Forms in granitic-intrusion-related W-Sn skarns; loses to wolframite when Ca is depleted and Fe+Mn dominate.');
+    // (2026-06-10 review §2.4: UV prospecting is a 1930s–WWII development —
+    // portable UV lamps didn't exist in the 19th century.)
+    parts.push('CaWO₄ — calcium tungstate, scheelite-group lattice. The brilliant blue-white SW UV fluorescence is diagnostic — from the 1930s through the Second World War, prospectors swept hillsides with portable UV lamps at night hunting tungsten for tool steel. Forms in granitic-intrusion-related W-Sn skarns; loses to wolframite when Ca is depleted and Fe+Mn dominate.');
     if (c.habit === 'tabular') parts.push('Tabular flat plates — moderate σ habit.');
     else if (c.habit === 'octahedral_pseudo') parts.push('Pseudo-octahedron — looks cubic but is tetragonal. Low-σ habit.');
     if (c.zones.length) {

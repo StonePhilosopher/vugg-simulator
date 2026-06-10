@@ -14,7 +14,7 @@ Kunzite — the pink-lilac Mn²⁺ variety, named for George Kunz, Tiffany & Co.
 
 ## variant: hiddenite
 
-Hiddenite — the green Cr³⁺ variety, named for William Earl Hidden, who discovered the North Carolina locality in 1879. Much rarer than kunzite because Cr³⁺ needs to diffuse from country rock into the pegmatite fluid at just the right moment. Minas Gerais produces the world's best hiddenite.
+Hiddenite — the green Cr³⁺ variety, named for William Earl Hidden, who discovered the North Carolina locality in 1879. Much rarer than kunzite because Cr³⁺ needs to diffuse from country rock into the pegmatite fluid at just the right moment. Alexander County, North Carolina remains the classic source of true chromium hiddenite; most Brazilian 'hiddenite' is Fe-colored green spodumene wearing the name.
 
 ## variant: triphane
 

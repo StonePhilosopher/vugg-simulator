@@ -191,7 +191,16 @@ cuprite) while the scenario bills the azurite↔malachite cascade as its
 centerpiece. Re-run this sweep AFTER the §1.3 fix — the competition-group
 collapse plausibly suppresses exactly these marginal nucleators.
 
-### 2.4 Spec + narrator corrections (small, high-reach)
+### 2.4 ✅ EXECUTED 2026-06-10 (15 of 16 rows, SIM-NEUTRAL) — Spec + narrator corrections (small, high-reach)
+
+> **Outcome note:** all rows shipped except the two engine-coupled ones —
+> the aragonite-vs-calcite Mg/Ca gate (last row below; calibration-coupled,
+> needs its own arc) and the calcite `habit_variants` flos-ferri ENTRY
+> (selectHabitVariant weighted-randoms from that list on the shared rng,
+> so removing it is a fleet-cascade rebake; the flos-ferri TEXT is fixed
+> everywhere). Narrator md + js fallbacks fixed in pairs; engine
+> consumption verified per spec field before editing (thermal_decomp_C /
+> formula display-only; habit_variants engine-coupled).
 
 | Sev | Where | Wrong | Right |
 |-----|-------|-------|-------|

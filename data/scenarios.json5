@@ -790,7 +790,7 @@
 
     "naica_geothermal": {
       "anchor": "Naica, Chihuahua, Mexico — Cueva de los Cristales, 290 m below surface. Lead-Zinc-Silver mine (Industrias Peñoles); the giant selenite cave was breached in April 2000 when a mine drift broke through into the chamber. Selenite blades up to 12 m × 1 m × 55 tonnes.",
-      "description": "Slow geothermal pool that grew the largest crystals on Earth. Anhydrite-saturated water at ~58°C cools by hundredths of a degree per year through the gypsum-anhydrite boundary at 54°C; gypsum reprecipitates from dissolving anhydrite at depth. Stable for ~500,000 years (Garcia-Ruiz et al. 2007). Mining begun 1985 dewatered the cave; pumping stopped 2017 and the cave reflooded.",
+      "description": "Slow geothermal pool that grew the largest crystals on Earth. Anhydrite-saturated water cools by hundredths of a degree per year through the gypsum-anhydrite boundary at ~58°C and holds just below it (~54-57°C), where gypsum reprecipitates from anhydrite dissolving at depth. Stable for ~500,000 years (Garcia-Ruiz et al. 2007). Mining begun 1985 dewatered the cave; pumping stopped 2017 and the cave reflooded.",
       "expects_species": ["selenite"],
       "duration_steps": 320,
       "notes": [

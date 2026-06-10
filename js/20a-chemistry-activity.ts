@@ -65,12 +65,12 @@ const ACTIVITY_CORRECTED_SUPERSAT = true;
 // correction:
 //   damped_factor = 1 - ACTIVITY_DAMPING × (1 - raw_factor)
 //   ACTIVITY_DAMPING = 1.0 → full Davies correction (research mode)
-//   ACTIVITY_DAMPING = 0.5 → half-correction (current shipping default)
 //   ACTIVITY_DAMPING = 0.0 → no correction (= flag off)
-// Calibrated in Phase 2c (May 2026) against v19 baselines: damping
-// = 0.4 brings the sweep-wide RMS delta into the same band as Phase
-// 1c (~10-15%), with all 19 scenarios producing nonzero crystals
-// and tutorials staying intact.
+// History (comment trued 2026-06-10, review §2.4 — the labels below had
+// drifted from the constant): the Phase-2c sweep (May 2026, v19
+// baselines) first landed on 0.4 (sweep-wide RMS delta in the Phase-1c
+// ~10-15% band, all 19 scenarios nonzero, tutorials intact); later
+// calibration settled the SHIPPING value at 0.25 — quarter-correction.
 const ACTIVITY_DAMPING = 0.25;
 
 // Charge & molar mass for each FluidChemistry species. Charge is the

@@ -1,7 +1,7 @@
 ---
 species: pyrite
 formula: FeS2
-description: Iron disulfide. The cubic FeS₂ dimorph (marcasite is the orthorhombic one); pyritohedral habit is its diagnostic non-crystallographic signature.
+description: Iron disulfide. The cubic FeS₂ dimorph (marcasite is the orthorhombic one); the pyritohedron {210} is its diagnostic habit signature.
 ---
 
 ## variant: framboidal
@@ -10,7 +10,7 @@ The low temperature produced framboidal pyrite — microscopic raspberry-shaped 
 
 ## variant: pyritohedral
 
-The crystal developed the characteristic pyritohedral habit — twelve pentagonal faces, a form unique to pyrite and one of nature's few non-crystallographic symmetries.
+The crystal developed the characteristic pyritohedral habit — twelve pentagonal faces of the {210} form, fully crystallographic in pyrite's diploidal class (m3̄) but wearing a teasing PSEUDO-fivefold look: true fivefold symmetry is forbidden to crystals, and the pyritohedron flirts with it without ever breaking the law.
 
 ## variant: cubic
 

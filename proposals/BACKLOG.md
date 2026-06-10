@@ -2,7 +2,30 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🪞 UPDATE (2026-06-10, latest) — ring_fluids RETIRED as a store: replay snapshot now projects cell chemistry (review §1.4, SIM-NEUTRAL) + 14th CATCH
+> ## 📖 UPDATE (2026-06-10, latest) — the §2.4 NARRATOR/SPEC AFTERNOON: 15 corrections, SIM-NEUTRAL
+>
+> Part II's next-step #3 is DONE. All 15 shippable rows of the review's
+> §2.4 table executed — wurtzite's 95°C "boundary" myth (equilibrium
+> inversion is ~1020°C; low-T wurtzite is metastable, 95°C stays as the
+> declared SIM GATE), flos ferri de-ironed (pure aragonite named for the
+> Eisenerz mines), the Liberty patina re-assigned to brochantite+antlerite,
+> hiddenite returned to Alexander Co. NC, scheelite UV prospecting moved to
+> the 1930s-WWII, Volodarsk returned to Ukraine, the pyritohedron made
+> crystallographic again ({210}, pseudo-fivefold), topaz's garbled
+> "Iapetos-age" line rewritten, witherite 811°C re-labeled as the
+> polymorphic transition, selenite dehydration routed via bassanite,
+> aragonite dry inversion 520→450°C, wulfenite freed from needing discrete
+> molybdenite (Red Cloud/Mežica have none), meta-autunite 8→6 H₂O, naica's
+> boundary made internally consistent (~58°C), ACTIVITY_DAMPING comment
+> drift trued (shipping 0.25). Narrator md + js fallback fixed in PAIRS.
+> **DEFERRED as engine-coupled** (each needs a calibration-aware arc):
+> calcite's flos-ferri habit_variants entry (selectHabitVariant RNG-draws
+> from that list — removal shifts the fleet cascade) and the
+> aragonite-vs-calcite Mg/Ca gate (review §2.4 last row). Still open from
+> §2: the 5 unvouched twin-law citations (literature pass) + carbonate
+> pK(T) slopes (§2.2, calibration-coupled).
+>
+> ## 🪞 UPDATE (2026-06-10, earlier) — ring_fluids RETIRED as a store: replay snapshot now projects cell chemistry (review §1.4, SIM-NEUTRAL) + 14th CATCH
 >
 > Part II's next-step #2 is DECIDED AND DONE — retire, not restore (the
 > boss's standing v157 direction: "mesh.cells is the way to go"). The

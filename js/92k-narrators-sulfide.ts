@@ -58,7 +58,10 @@ Object.assign(VugSimulator.prototype, {
   }
   if (c.twinned) parts.push(narrative_variant('wurtzite', 'twinned', { twin_law: c.twin_law }) || `Shows the ${c.twin_law} twin.`);
   if (c.dissolved) parts.push(narrative_variant('wurtzite', 'polymorphic_inversion') || 'Polymorphic inversion destroyed the crystal.');
-  else parts.push(narrative_variant('wurtzite', 'kept_hexagonal') || 'Kept hexagonal as long as fluid stayed above 95°C.');
+  // (2026-06-10 review §2.4: the old fallback called 95°C "the" boundary —
+  // the equilibrium inversion is ~1020°C; low-T wurtzite is metastable,
+  // held by S-deficiency/low pH. 95°C stays as a sim GATE, not a fact.)
+  else parts.push(narrative_variant('wurtzite', 'kept_hexagonal') || 'Kept the metastable hexagonal structure — preserved by sulfur-deficient, acidic fluid, not by equilibrium.');
   return parts.filter(p => p).join(' ');
 },
 
@@ -68,7 +71,9 @@ Object.assign(VugSimulator.prototype, {
   if (c.habit === 'framboidal') {
     parts.push(narrative_variant('pyrite', 'framboidal') || 'The low temperature produced framboidal pyrite — microscopic raspberry-shaped aggregates of tiny crystallites, a texture common in sedimentary environments.');
   } else if (c.habit === 'pyritohedral') {
-    parts.push(narrative_variant('pyrite', 'pyritohedral') || 'The crystal developed the characteristic pyritohedral habit — twelve pentagonal faces, a form unique to pyrite and one of nature\'s few non-crystallographic symmetries.');
+    // (2026-06-10 review §2.4: {210} is fully crystallographic, class m3̄ —
+    // pseudo-fivefold is what the old text meant by "non-crystallographic".)
+    parts.push(narrative_variant('pyrite', 'pyritohedral') || 'The crystal developed the characteristic pyritohedral habit — twelve pentagonal faces of the fully crystallographic {210} form, wearing a pseudo-fivefold look no true crystal symmetry can deliver.');
   } else if (c.habit.includes('cubic')) {
     parts.push(narrative_variant('pyrite', 'cubic') || 'Clean cubic habit with bright metallic luster. The striations on each cube face (perpendicular on adjacent faces) are the fingerprint of pyrite\'s lower symmetry disguised as cubic.');
   }
