@@ -1,5 +1,12 @@
 # HANDOFF — the review, the rebake, and the soundtrack (2026-06-09 → 06-10)
 
+> **ADDENDUM (2026-06-10, end of session) — read this first; the session
+> continued past this handoff and CLOSED its own next-step #1.** See
+> "Part II" at the bottom: v180 (linarite fires), the THIRTEENTH catch
+> (the tune pass's last two "stale" species were correct geology mis-filed
+> by end-state accounting), and the REVISED next-step order (ehFromO2 is
+> now the top item).
+
 To the next builder: I was handed three words — bugs, accuracy, Steam — and a
 codebase at v176 that looked green and wasn't. Two days later it's v179, the
 suite is honestly green (1779/1779, 113 files), the game has a soundtrack the
@@ -190,3 +197,86 @@ are my stones in the wall.
 The rocks sing, the broth is honest about its own activation energies now,
 and the next builder starts on bedrock that testifies against itself.
 Erosion is the formation mechanism. Build well.
+
+---
+---
+
+# PART II — the same day, after the handoff (v180 + the 13th catch)
+
+The boss said "I'm excited to see what grows," and next-step #1 above got
+executed to completion the same day. What follows supersedes the next-step
+ordering in Part I.
+
+## What shipped after Part I
+
+| commit | what |
+|---|---|
+| `2a0c001`/`e8b84cd`/`4f7c91f` | music + settings shell; volume moved to a GainNode (element.volume is a NO-OP on iOS — wire the graph on first gesture, never at load); default volume 0.25. Boss accepted by ear. |
+| `12a0b09` | **v180 — LINARITE FIRES at roughten_gill** (0→2x, ~2.2 mm) + leadhillite (0→2x). Stale 7→4. |
+| `028abfb` | **the 13th catch** — coverage + geology_check now credit `paramorph_origin` lineage. Stale 4→2. THE TUNE PASS IS COMPLETE. |
+
+## The Part-II lessons (these are the ones I'd carve deepest)
+
+**10. Diagnoses rot with the architecture under them.** v109 diagnosed
+linarite as Shape B — "structural, iterator displacement, not fixable at the
+tuning layer" — and that diagnosis sat in the event handler's comments as
+settled truth. Re-probed post-v160/v177, the displacement no longer exists;
+the real blocker was the CO3:SO4 fork missed by 0.03–0.06 for 75 consecutive
+steps. **Re-probe before trusting any old shape**, and when you fix one,
+update the comment that enshrined it (70q's linarite_stage now tells the
+whole story, both eras).
+
+**11. An instrument that only reads final state will mis-file every process
+whose beauty is in the passing.** The last two "stale" species were the
+simulator performing CORRECT geology: mirabilite nucleating every searles
+winter and dehydrating to thenardite pseudomorphs every summer (the textbook
+Glauber-salt cycle, working since v29); torbernite growing emerald Musonoi
+plates at schneeberg before dehydrating to metatorbernite per the scenario's
+own design (10/10 seeds once counted honestly; zeunerite went 2/10→10/10 the
+same instant). The transition code RECORDS the lineage
+(`crystal.paramorph_origin`); the checkers never read it. When a gate census
+says PASS×242 with σ 24.6 and zero crystals, **read the sim's own log next**
+— it narrated the whole seasonal cycle the tools couldn't see.
+
+**12. The revert discipline holds even when the bump is literature-anchored.**
+V 6→12 for mottramite was plausible (the 70q header itself cites wallrock V
+10–20 ppm) — it still didn't fire the mineral and it rippled the primary
+stage. Reverted per the strictly-improving rule. V is now a TWICE-confirmed
+touchy axis (v109: 6→0; v180: 6→12). And when I mis-attributed the sphalerite
+ripple to V (it was actually the S surge), the correction went into the
+commit message — attribution errors get corrected at the same prominence as
+the claim, same as catch twelve.
+
+## The REVISED next steps (Part I's #1 is done)
+
+1. **ehFromO2/o2FromEh asymmetry (20c)** — now the top item. The Movements
+   Phase 1 blocker; align the >O2=5 saturation slopes before any Eh-driving
+   movement lands (HANDOFF-MOVEMENTS-AND-BACKLOG-2026-06-01.md Part II is
+   waiting on exactly this).
+2. **ring_fluids retire-or-restore (review §1.4)** — no third partial mirror.
+3. **Narrator/spec one-liner afternoon (review §2.4)** + the five unvouched
+   twin-law citations.
+4. **Carbonate pK(T) slopes (review §2.2)** — calibration-coupled; carry the
+   v178 factor lesson.
+5. **Steam WP1** — collection export/import + the 16 prompt()/alert() sites
+   (settings shell + music settings already exist as the first bricks).
+6. **Strip hygiene trio (review §1.6).**
+7. **Deliberate arcs, not debt:** jeffrey magnetite (engine-level — its
+   strict-low-O2 is a DESIGN for awaruite, v116-documented), roughten_gill
+   mottramite (own gate-census arc — V gate clears at 12, blocker is Zn≥0.5
+   or the redox·T product; don't retry the naive V bump).
+
+## Coverage truth at session end
+
+SIM_VERSION 180. Suite 1779/1779 (113 files). **Live 134 / stale 2 / dead
+35.** Of the review's original 8 stale: borax recovered by physics (v178),
+linarite + leadhillite grown by tuning (v180), bayldonite honestly retracted
+(Shape D), mirabilite + torbernite vindicated by accounting (13th catch).
+The two that remain are deliberate future arcs. CATCHES.md holds thirteen
+stones. The backlog banners are current through `028abfb`.
+
+I lived in the cathedral of v109's honest failure notes, v29's seasonal
+evaporite cycle, v116's no-tune lesson, and the probe harness — and I leave
+the gate-census pattern, the lineage-crediting checkers, and a linarite that
+finally shows its blue. The vug is more honest than it was this morning, and
+bluer. Build well.
