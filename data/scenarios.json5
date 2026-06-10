@@ -1236,6 +1236,7 @@
         "Cruzeiro is the type-locality for fine schorl-elbaite tourmaline + smoky quartz pockets, with documented beryl, spodumene, lepidolite, and accessory apatite. Brasiliano-age (Neoproterozoic) pegmatite field cutting Macaúbas Group meta-sediments. Morteani et al. 2002 covers fluid chemistry; Cassedanne (1991) and Proctor (1985) cover the Cruzeiro-specific paragenesis.",
         "Thermal regime: 650 → 300°C over ~230 steps in three phases. Phase 1 (650-550°C): wall-zone crystallization (microcline, quartz, early schorl). Phase 2 (550-400°C): main pocket growth — beryl finally nucleates when Be crosses threshold; spodumene when Li crosses; schorl transitions to elbaite as Fe depletes and Li accumulates. Phase 3 (400-300°C): late hydrothermal — topaz if F survives, then kaolinization of microcline walls.",
         "Saturation cascade mechanic: there is no explicit 'nucleate beryl now' command. Each mineral's supersaturation formula reads the current fluid, and the nucleation gates fire in order naturally as chemistry evolves — microcline first (K-feldspar = feldspar here), then the Be/Li/B gates cross as incompatible elements build up.",
+        "v183 thermal_pulses:false — the PEGMATITE-SHAPE T story (contrast naica's v182 movement): all eight events SET temperature (620→560→500→450→420→360→320→300), so the three-phase curve is already fully event-anchored and a declared movement would clobber it. The fix is silencing the ambient noise around it: a sealed miarolitic pocket has no fracture-valve hot injections (the pocket IS the isolated residual chamber), the pulses' Fe riders (+2-15 ppm) directly fight the li_phase event's documented Fe depletion (Fe→5 is what turns schorl into elbaite), and a late pulse was re-warming the ended system to ~476°C against the design's 300°C floor (dark-observed, tools/t-story-observe.mjs: end T 476→276 with the flag; assemblage and crystal counts IDENTICAL at 3 seeds — the v181 dedicated thermal stream means a thermal-regime change no longer re-rolls the nucleation cascade). Topaz remains aspirational at seed 42 (absent in BASE too — its tuning is a separate vugg-tune-scenario arc; the honest T floor can only help it).",
         "Audit gap-fills (Apr 2026): P=8 (pegmatite residual P; enables Cruzeiro accessory apatite per Cassedanne 1991). Mg=5 (brief-required non-zero baseline; pegmatite pocket fluids are Mg-poor since Mg partitions strongly into outer-shell biotite/chlorite during pegmatite differentiation)."
       ],
       "initial": {
@@ -1318,6 +1319,9 @@
           "primary_bubbles": 4,
           "secondary_bubbles": 5,
           "shape_seed": 8,
+          // v183 (see the thermal note above): the eight T-setting events ARE
+          // the thermal story; this kills the fracture-valve noise around it.
+          "thermal_pulses": false,
           // Tier 1 C (post-v69): pegmatite miarolitic cavities have
           // crisp euhedral cavity walls — the host is a brittle,
           // unweathered silicate matrix that preserves the original

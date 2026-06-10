@@ -15546,7 +15546,45 @@ let timeScale = 5.0;
 //
 //   BASELINE: single-scenario rebake (naica_geothermal only — per-scenario
 //   movements are opt-in; the rest of the fleet is byte-identical).
-const SIM_VERSION = 182;
+//
+// v183 (2026-06-10) — GEM_PEGMATITE: thermal_pulses:false — the PEGMATITE-
+//                     SHAPE thermal story, and the rollout's classification.
+//
+//   Mapping the T-unlock rollout found that scenarios carry their thermal
+//   design in two shapes. NAICA-SHAPE: events don't own T → declare a
+//   movement (v182). PEGMATITE-SHAPE: events fully anchor T as absolute
+//   setpoints (gem_pegmatite's eight events: 620→560→500→450→420→360→320→
+//   300 — the documented three-phase curve IS already in the events; the
+//   inter-event ambient drift approximately cooperates) → a movement would
+//   CLOBBER the working design; the story needs only the ambient NOISE
+//   silenced. Most of the "T-blocked ~8" are pegmatite-shape (marble,
+//   deccan, radioactive_pegmatite all carry absolute T-setpoint events).
+//
+//   THE FIX: wall.thermal_pulses:false. A sealed miarolitic pocket is the
+//   isolated residual chamber — no fracture-valve hot injections. The
+//   pulses' Fe riders (+2-15 ppm) were directly fighting the li_phase
+//   event's Fe depletion (Fe→5 is what turns schorl cores into elbaite
+//   rims), and a late pulse re-warmed the ended system to ~476°C against
+//   the design's 300°C floor.
+//
+//   DARK-OBSERVED (tools/t-story-observe.mjs — NEW generalized instrument
+//   for the rollout, supersedes the naica-specific observer): end T
+//   476→276 at seed 42 (the documented floor restored), pulses 8-10→0,
+//   and assemblage + crystal counts IDENTICAL at all 3 seeds — the v181
+//   dedicated thermal stream visibly working (a thermal-regime change no
+//   longer re-rolls the nucleation cascade; pre-v181 this flag would have
+//   been a full single-scenario re-roll). Topaz remains aspirational at
+//   seed 42 (absent in BASE too; separate tune arc).
+//
+//   BASELINE: measured BYTE-IDENTICAL (gem_pegmatite seals before the
+//   late-era T divergence reaches any recorded growth, and gem isn't in
+//   the strip-digest set) — the narration above predicted record movement
+//   and the measurement said no (12th-catch rule: the correction lives at
+//   the same prominence). Bump kept for the LIVE channel: the late-game T
+//   readout players see goes from a spurious ~476°C re-warm to the
+//   documented ~300°C floor (same SIM-bump-for-render-visible pattern as
+//   v173/v174).
+const SIM_VERSION = 183;
 
 // ── 18-constants.js ──
 

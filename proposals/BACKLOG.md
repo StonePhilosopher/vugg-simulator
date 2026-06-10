@@ -22,9 +22,29 @@ Living list of open work items, captured from session conversations so context s
 > Single-scenario rebake (1/31 moved, fleet byte-identical), coverage
 > unchanged (133 live / 2 stale / 36 dead), strip contracts hold and mean
 > more now (the isothermal brine the SI pin always assumed is finally the
-> recorded trajectory). NEXT unlocked candidates: gem_pegmatite +
-> radioactive_pegmatite (650→300 ramps documented in their notes), marble,
-> porphyry, epithermal, deccan, cooling — each its own arc.
+> recorded trajectory).
+>
+> **SAME DAY, v183 — gem_pegmatite + THE ROLLOUT CLASSIFICATION.** Mapping
+> gem_pegmatite found the second shape: its eight events SET temperature
+> (620→…→300 — the documented three-phase curve is already fully
+> event-anchored), so a movement would CLOBBER a working design. Scenarios
+> carry T stories in TWO SHAPES: **naica-shape** (events don't own T →
+> declare a movement) vs **pegmatite-shape** (events anchor T → silence the
+> ambient noise: thermal_pulses:false ± cooling_rate). gem_pegmatite got
+> the flag (sealed miarolitic pocket = no fracture injections; pulse Fe
+> riders were fighting the li_phase Fe-depletion that makes elbaite; a late
+> pulse re-warmed the ended system to 476°C vs the 300°C floor). Measured
+> BYTE-IDENTICAL baseline (seals before the divergence reaches records) —
+> bump for the live T channel. **And the v181 decoupling visibly worked:
+> the flag re-rolled NOTHING** (pre-v181 it would have re-rolled the whole
+> scenario). New general instrument: `tools/t-story-observe.mjs` (BASE vs
+> flags/movement, expects-survival check — supersedes the naica-specific
+> observer). REMAINING CLASSIFICATION (from the T-setter grep): marble
+> (700/500/350), deccan (200→80 ×5), radioactive_pegmatite (450→18 ×11)
+> are pegmatite-shape → observe-then-flag, one arc each, expect
+> near-neutral rebakes. `cooling` (events:[]) is pure naica-shape — a
+> declared Herkimer burial-T story. porphyry + epithermal: mixed/unmapped,
+> observe first.
 >
 > ## 🌡️ UPDATE (2026-06-10, earlier) — T-RECONCILIATION SHIPPED (SIM 181): ambient_cooling subsumed onto a dedicated thermal stream, full-fleet rebake, T-blocked scenarios OPEN
 >
