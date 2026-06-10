@@ -14,9 +14,9 @@ Living list of open work items, captured from session conversations so context s
 > enable + volume, persisted under the NEW `vugg-settings-v1` localStorage
 > ROOT — future settings groups go BESIDE music:{} in that key, the first
 > brick of Steam-T1 #4). Verified in a live preview (play/pause call matrix
-> per mode + settings round-trip + zero console errors); BY-EAR acceptance
-> on Pages is the boss's (9th-catch rule — loop seams + relative levels
-> especially). Tests: tests-js/music.test.ts (10).
+> per mode + settings round-trip + zero console errors); BY-EAR ACCEPTED by
+> the boss on the live deploy 2026-06-10 ("it works well") — the channel is
+> verified, not just the code. Tests: tests-js/music.test.ts (10).
 >
 > ## ⚒️ UPDATE (2026-06-09, later) — REBAKE ARC SHIPPED: v177 + v178 + v179
 >
