@@ -37,10 +37,10 @@ describe('music — settings persistence (vugg-settings-v1)', () => {
     localStorage.removeItem('vugg-settings-v1');
   });
 
-  it('defaults: enabled, volume 0.5', () => {
+  it('defaults: enabled, volume 0.25 (boss 2026-06-10: half the original)', () => {
     const s = musicGetSettings();
     expect(s.enabled).toBe(true);
-    expect(s.volume).toBe(0.5);
+    expect(s.volume).toBe(0.25);
   });
 
   it('disable round-trips through localStorage', () => {
@@ -74,7 +74,7 @@ describe('music — settings persistence (vugg-settings-v1)', () => {
     localStorage.setItem('vugg-settings-v1', '{not json');
     const s = musicGetSettings();
     expect(s.enabled).toBe(true);
-    expect(s.volume).toBe(0.5);
+    expect(s.volume).toBe(0.25);
   });
 });
 

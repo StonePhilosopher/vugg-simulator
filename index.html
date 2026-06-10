@@ -3023,8 +3023,8 @@ footer a:hover {
   </div>
   <div class="settings-row">
     <label for="settings-music-volume">Music volume</label>
-    <input type="range" id="settings-music-volume" min="0" max="100" step="1" value="50">
-    <span id="settings-music-volume-pct">50%</span>
+    <input type="range" id="settings-music-volume" min="0" max="100" step="1" value="25">
+    <span id="settings-music-volume-pct">25%</span>
   </div>
   <div class="settings-note">Strip View stays music-free — the rocks sing there.</div>
 </div>
@@ -4567,7 +4567,9 @@ function musicGetSettings() {
     const m = root.music || {};
     return {
         enabled: (m.enabled !== undefined) ? !!m.enabled : true,
-        volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.5,
+        // Default 0.25 (boss 2026-06-10: half the original 0.5 — the music
+        // sits under the game, not on top of it).
+        volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.25,
     };
 }
 function musicSetEnabled(on) {

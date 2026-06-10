@@ -126,7 +126,9 @@ function musicGetSettings(): { enabled: boolean, volume: number } {
   const m = root.music || {};
   return {
     enabled: (m.enabled !== undefined) ? !!m.enabled : true,
-    volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.5,
+    // Default 0.25 (boss 2026-06-10: half the original 0.5 — the music
+    // sits under the game, not on top of it).
+    volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.25,
   };
 }
 
