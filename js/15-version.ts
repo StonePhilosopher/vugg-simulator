@@ -10421,5 +10421,39 @@
 //   by construction). Assemblages stay in-family — fleet sweep at seed 42:
 //   species Jaccard 1.00 on 14/31, ≥0.83 on 29/31, worst 0.50 on the
 //   3-crystal `pulse` scenario (small-set artifact).
-const SIM_VERSION = 181;
+//
+// v182 (2026-06-10) — NAICA'S THERMAL STORY: the first declared temperature
+//                     movement, consuming the v181 stand-down unlock.
+//
+//   THE PREMISE (measured by the v181 probe): naica's "stable pool" was
+//   ambient noise — drift crashed 56→25°C in ~21 steps, ~19 random thermal
+//   pulses per run bounced T between the floor and the 53°C cap, the
+//   selenite 55-58°C sweet-spot fired ~2 steps per run, and the 54-57°C
+//   García-Ruiz band was occupied 0% of the time. The scenario's designed
+//   thermal arc (six -0.7°C slow_cooling events) never had a chance.
+//
+//   THE STORY: movements:[{temperature, 0→260, base 56, trend -3 smoothstep}]
+//   — no OU texture, deliberately: Naica's fluid-inclusion record shows a
+//   remarkably steady bath, so the no-noise pool IS the science (García-Ruiz
+//   2007; Van Driessche 2011 PNAS). Window ends at 260 because the mining
+//   events (drainage T=35, recharge T=30) own the post-pool era — the
+//   thermal buffer was the WATER. wall.thermal_pulses:false (no fracture-
+//   valve reheats in a conductively buffered system) + cooling_rate 0.1
+//   (gentle post-drainage drift, end T ~27°C). The slow_cooling events keep
+//   their chemistry half (Ca≥280/S≥380 anhydrite resupply); their T-drops
+//   are superseded. Events are the chemistry beats; the movement is the
+//   thermal sentence.
+//
+//   THE RESULT (dark-observed, 3 seeds, tools/naica-thermal-observe.mjs):
+//   band occupancy 0→50%, sweet-spot 0→31%, pulses 13-18→0 — and the
+//   García-Ruiz mechanism EMERGES: total crystal count drops ~40-60%
+//   (27→11, 39→16) while the cavity still seals. Fewer nuclei, larger
+//   individuals — the engines reproduced "old crystals just keep adding
+//   layers" from the T story alone. The low-T noise feeders (opal,
+//   goethite, lepidocrocite, tigers_eye, pyrolusite) drop out; the cave
+//   trends toward its real near-monomineralic selenite character.
+//
+//   BASELINE: single-scenario rebake (naica_geothermal only — per-scenario
+//   movements are opt-in; the rest of the fleet is byte-identical).
+const SIM_VERSION = 182;
 

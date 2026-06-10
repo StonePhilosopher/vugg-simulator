@@ -38,6 +38,11 @@ FIXED 2026-06-01 (`083d994`, boss).
 > for TEXTURE (the chaos warning was about OU feedback, not ownership);
 > deterministic TREND/setpoint movements on T are safe now. Full-fleet
 > rebake landed with the change (seed42_v181 + strip_digest_v181).
+> **First consumer shipped same day (SIM 182): naica's buffered-pool
+> movement** — García-Ruiz band 0→50% occupancy, crystal count −40-60%
+> with the cavity still sealing (the fewer-nuclei-larger-individuals
+> mechanism emerged unscripted). The composition pattern it established:
+> events are the chemistry beats, the movement is the thermal sentence.
 
 ---
 

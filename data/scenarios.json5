@@ -795,9 +795,19 @@
       "duration_steps": 320,
       "notes": [
         "Garcia-Ruiz et al. 2007 (Geology 35:327) — the canonical paper on Naica's growth mechanism. Anhydrite at depth (T > 58°C) dissolves slightly; rising water cools to ~54°C; gypsum reprecipitates. The cooling rate is critical: at hundredths of a degree per year, the brine stays close enough to the boundary that crystals grow over geological timescales without significant nucleation of new seeds. Old crystals just keep adding layers.",
-        "Initial T set to 56°C — barely inside the gypsum stability window so any T-drop event drives selenite growth. Six slow_cooling pulses (steps 30, 70, 110, 150, 190, 230) drop T by ~0.7°C each, bringing the cave to ~52°C by step 230. The selenite engine's 55-58°C sweet-spot bonus (×1.4 growth multiplier) fires on every step until the cave drops below 55.",
-        "Mining-drainage event at step 260 (1985 in real time) fires fluid_surface_ring → 0; selenite stops growing. Recharge event at step 290 (2017) refloods the cavity. Final 30 steps in cooler post-mining water: minor selenite growth resumes, plus any vadose-grown halite from the dry interval re-dissolves.",
+        "v182 THERMAL STORY (the first consumer of the v181 T-unlock): the buffered pool is now a DECLARED temperature movement — base 56°C, smoothstep trend −3 over steps 0-260, no OU texture (Naica's signature is thermal stability; fluid-inclusion work shows a remarkably steady bath, so the no-noise choice IS the science, not a simplification). Ambient drift + pulses stand down for the window (pre-v182 they were bulldozing the design: drift crashed 56→25°C in ~21 steps and ~19 random thermal pulses bounced T between the floor and 53°C — the 55-58°C selenite sweet-spot fired ~2 steps per run and the 54-57 Garcia-Ruiz band was occupied 0% of the time; now 31% and 50%). Dark-observed (tools/naica-thermal-observe.mjs, 3 seeds): total crystal count DROPS ~40-60% (27→11, 39→16) while the cavity still seals — fewer nuclei, larger individuals — which is the Garcia-Ruiz mechanism emerging from the engines rather than being scripted. The low-T noise feeders (opal, goethite, lepidocrocite, tigers_eye, pyrolusite) drop out; the cave trends toward its real near-monomineralic character.",
+        "The six slow_cooling events keep their CHEMISTRY half under the movement — the anhydrite-at-depth resupply (Ca≥280, S≥380 floors) + O2/pH/flow resets are what they contribute now; their -0.7°C drops are superseded by the movement's trend (the handler's T>51 guard goes inert inside the window). Events are the chemistry beats; the movement is the thermal sentence.",
+        "Mining-drainage event at step 260 (1985 in real time) fires fluid_surface_ring → 0 and SETS T=35; recharge at step 290 (2017) refloods at T=30. The movement window deliberately ENDS at 260: the thermal buffer was the WATER, so once the cave drains the pool era is over and the mining events own T. Ambient resumes post-260 with cooling_rate 0.1 (a drained cave at 290 m in warm country rock cools gently — observed end T ~27°C, matching the recharge note's 'cooler bath'), and thermal_pulses:false (no fracture-valve reheats in a conductively buffered system; same flag family as bisbee/roughten_gill/schneeberg/reactivated_vein).",
         "The default vug_diameter_mm of 50 mm grossly understates Naica reality (the chamber is ~30m × 10m × 10m). The simulator's max_size_cm cap on selenite is 2400 cm = 24m, double the real-world record (Garcia-Ruiz). Both are intentional — the sim isn't trying to reproduce Naica scale, it's reproducing Naica chemistry."
+      ],
+      "movements": [
+        {
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 260,
+          "base": 56,
+          "ops": [{ "kind": "trend", "amp": -3, "ease": true }]
+        }
       ],
       "initial": {
         "temperature_C": 56.0,
@@ -832,7 +842,11 @@
           "wall_Mn_ppm": 80.0,
           "primary_bubbles": 2,
           "secondary_bubbles": 3,
-          "shape_seed": 58              // 58°C, the Naica equilibrium T
+          "shape_seed": 58,             // 58°C, the Naica equilibrium T
+          // v182 thermal story (see notes): the declared movement owns T
+          // through step 260; these two govern the post-drainage era only.
+          "thermal_pulses": false,
+          "cooling_rate": 0.1
         }
       },
       "events": [
@@ -848,7 +862,8 @@
       "sources": [
         "Garcia-Ruiz, Villasuso, Ayora, Canals, Otálora 2007 (Geology 35:327) — Formation of natural gypsum megacrystals in Naica, Mexico",
         "Otálora & Garcia-Ruiz 2014 (Chem. Soc. Rev. 43:2013) — Nucleation and growth of the Naica giant gypsum crystals",
-        "Forti & Sanna 2010 (NSS Bull.) — The Naica caves and their crystals: a unique speleological problem"
+        "Forti & Sanna 2010 (NSS Bull.) — The Naica caves and their crystals: a unique speleological problem",
+        "Van Driessche, Garcia-Ruiz, Tsukamoto, Patiño-Lopez, Satoh 2011 (PNAS 108:15721) — Ultraslow growth rates of giant gypsum crystals (the measured stability the v182 thermal movement models: no-noise pool at marginal saturation)"
       ]
     },
 

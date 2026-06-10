@@ -2,7 +2,31 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🌡️ UPDATE (2026-06-10, latest) — T-RECONCILIATION SHIPPED (SIM 181): ambient_cooling subsumed onto a dedicated thermal stream, full-fleet rebake, T-blocked scenarios OPEN
+> ## 💎 UPDATE (2026-06-10, latest) — NAICA'S THERMAL STORY (SIM 182): the first declared temperature movement
+>
+> The first consumer of the v181 unlock, shipped the same day. naica's
+> buffered pool is now a DECLARED movement (base 56°C, smoothstep −3 over
+> steps 0-260, NO OU texture — Naica's fluid-inclusion record shows a
+> steady bath, so no-noise IS the science) + `thermal_pulses:false` +
+> `cooling_rate:0.1` for the post-drainage era (the mining events own T
+> after 260 — the thermal buffer was the WATER). The six slow_cooling
+> events keep their chemistry half (anhydrite Ca/S resupply); their −0.7°C
+> drops are superseded: **events are the chemistry beats, the movement is
+> the thermal sentence.** Dark-observed first (tools/naica-thermal-observe.mjs,
+> 3 seeds): García-Ruiz band occupancy 0→50%, selenite sweet-spot 0→31%,
+> pulses 13-18→0 — and the García-Ruiz mechanism EMERGED rather than being
+> scripted: total crystal count dropped ~40-60% (27→11, 39→16) while the
+> cavity still seals. Fewer nuclei, larger individuals. The low-T noise
+> feeders (opal, goethite, lepidocrocite, tigers_eye, pyrolusite) drop
+> out; the cave trends toward its real near-monomineralic character.
+> Single-scenario rebake (1/31 moved, fleet byte-identical), coverage
+> unchanged (133 live / 2 stale / 36 dead), strip contracts hold and mean
+> more now (the isothermal brine the SI pin always assumed is finally the
+> recorded trajectory). NEXT unlocked candidates: gem_pegmatite +
+> radioactive_pegmatite (650→300 ramps documented in their notes), marble,
+> porphyry, epithermal, deccan, cooling — each its own arc.
+>
+> ## 🌡️ UPDATE (2026-06-10, earlier) — T-RECONCILIATION SHIPPED (SIM 181): ambient_cooling subsumed onto a dedicated thermal stream, full-fleet rebake, T-blocked scenarios OPEN
 >
 > The Movements master doc's #1 lever is DONE. `ambient_cooling`'s drift +
 > thermal-pulse draws (~2 shared draws/step in EVERY scenario, +1..6 per
