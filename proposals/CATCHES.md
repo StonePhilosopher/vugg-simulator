@@ -298,6 +298,7 @@ field). The data now testifies against itself automatically, every run.
 | 2026-06-10 ring_fluids view sync timeouts | Behaviorally-neutral observer whose COST broke the suite (1.32 ms/step ≈ 12%) — and 4 timeout reds initially read as chemistry regressions | the full suite's time budgets; then the census probe (0 fallback hits) + the timeout text refuting the first theory |
 | v181 thermal-stream seed correlation | Distributional bug invisible to any single realization — bare `seed ^ SALT` left nearby seeds with correlated mulberry32 streams (cross-seed pulse variance ±0.00) | the probe's MULTI-SEED sweep, run on the design BEFORE the engine edit — the seed-42 fleet sweep alone was green |
 | v185 expects gate blind to renamed crystals | Green gate over a real kill — expects_species names pre-transition species (torbernite), but vadose dehydration RENAMES the crystal (metatorbernite), so a candidate that killed the type-locality lineage still read ✓ | the observer's headline table (meta- forms watched explicitly), pre-ship; cure = gate LINEAGES (either form counts) |
+| 2026-06-11 calcite morphology mis-ordering | Research-synthesis error — dendritic placed BELOW hopper/skeletal on the σ axis, reversing the Sunagawa progression (hopper = ONSET of diffusional instability, dendrite = the same instability taken further); would have wired backwards physics into the morphology engine | EXTERNAL PEER REVIEW of the fleet-map diagram, before any engine code existed; their "does anything reach dendrite as a stable endpoint?" question was then confirmed by the corrected map (zero stable dendrites — high-σ cases hollow, they don't branch) |
 
 The seventh catch is the most satisfying: the verification tool built from
 the sixth catch's lesson found a backlog of the same failure mode on its
@@ -495,6 +496,30 @@ watching them.** The same class of blindness applies to expects_species
 itself: schneeberg "passes" its torbernite expects today only because
 nothing checks it end-state. (Also logged from the same sweep, BASE-side:
 haidingerite is 0/8 in BASE — a dead expects awaiting its own tune arc.)
+
+The SEVENTEENTH catch (2026-06-11, the calcite morphology research) is the
+first caught by EXTERNAL peer review — the boss passed the draft morphology
+spectrum to another agent, who found the high-σ end reversed: the draft put
+dendritic below hopper/skeletal, when the Sunagawa progression runs
+polyhedral → hopper/skeletal → dendritic (hopper is the ONSET of
+morphological instability — corners and edges outrun the face centers,
+hollowing faces that are still recognizably faceted; dendrites are that
+same instability taken further into branched trunks). The mis-order would
+have claimed branches appear before faces even begin to hollow. Everything
+else in the draft held (spiral→2D→bunching spine, boundary-layer size
+damping, zoning logic) — the error was one ordering, in synthesis, not in
+the sources. The reviewer also asked the perfect empirical question: does
+anything in the sim reach dendrite as a STABLE endpoint, or do high-σ cases
+collapse into hopper hollowing? Corrected map: zero stable dendrites;
+sabkha/dripstone (σ 537–625) land hopper-dominant; dendrite appears only as
+transient peak-σ rim bands — the boundary was misordered, not mislabeled.
+Two lessons. Narrow: when a synthesis ASSEMBLES an ordering from multiple
+sources, the ordering itself is a claim needing its own authority — here
+Sunagawa, which the draft hadn't consulted directly. Broad: research docs
+written to be VERIFIABLE (the boss's standing directive) are what make
+external review this cheap — the reviewer attacked a one-page diagram, not
+an engine. Catch the physics on paper, where the fix is an Edit, not a
+rebake.
 
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.

@@ -2,6 +2,35 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🪜 UPDATE (2026-06-11, latest) — CALCITE MORPHOLOGY ARC OPEN: research + calibration done, build BLOCKED on two boss decisions
+>
+> Boss brief: stepped calcite is their favorite crystal subgroup and they
+> want to WATCH it grow; on morphology choice, "if the data produces
+> multiple morphologies so should the game" — so the deliverable is the
+> full emergent Sunagawa spectrum (smooth spar → mild stepped → STEPPED →
+> hopper/skeletal → dendritic), classified per growth ZONE from σ level +
+> σ history + size damping (+ Mg form axis later), with the Movements
+> layer as the step-bunching driver (the steps are the chemistry curve
+> made solid). NOTHING wired into the engine yet — by design.
+>
+> Done this session: **proposals/RESEARCH-calcite-morphology-2026-06-11.md**
+> (the verifiable oracle, boss-directed save-for-verification) +
+> **tools/calcite-sigma-observe.mjs** (fleet σ during calcite growth:
+> sim units span 1.05–664; bunching signal real, |Δσ| q90 0.5 max 107) +
+> **tools/calcite-morphology-map.mjs** (the candidate classifier, kept in
+> a tool for transparent tuning; fleet map at seed 42: 8 spar / 1 mild /
+> 2 stepped / 2 hopper / 0 stable dendrite — zoned smooth-core→stepped-rim
+> crystals emerge free). **17th catch en route**: the draft had
+> dendrite/hopper REVERSED vs the Sunagawa progression; caught by external
+> peer review of the diagram before any engine code (see CATCHES.md).
+>
+> **⛔ BLOCKING (boss):** (1) size-damping strength — is smooth-spar
+> dominance right for deccan/jeffrey/marble in hand-specimen terms?
+> (2) the stepped-calcite SHOWCASE locality to anchor the watch-it-grow
+> scenario. Full plan + extension points (engine/zone/geometry/render):
+> **proposals/HANDOFF-CALCITE-MORPHOLOGY-2026-06-11.md** — Phase 3
+> (visible terraces built from the zone stack) is the big change.
+
 > ## ⚗️ UPDATE (2026-06-11, latest) — EVENT-SUBSUMPTION COMPLETE (SIM 186): both bisbee + schneeberg redox step-functions retired into declared movements
 >
 > The "EVENT-CONFOUNDED redox" gated class (bisbee/schneeberg) is now
