@@ -33,6 +33,15 @@ Living list of open work items, captured from session conversations so context s
 > elmwood dolomite gangue 0/8 (aspirational — saddle dolomite is real
 > Elmwood gangue); macro-dominant Elmwood deliberately NOT chased (fine
 > mm-scale stepped rim on a massive golden core IS the hand specimen).
+>
+> **OPEN — BOSS HAND-VERIFICATION PASS (the arc's true final gate):**
+> comparing each scenario's morphology claim against real specimens
+> from its locality. The worksheet + knob map for whoever applies the
+> findings: **proposals/TUNING-CALCITE-MORPHOLOGY.md** (per-scenario
+> claims table, disagreement playbook, what's chemistry-coupled vs
+> free). Boldest claims to check first: jeffrey STEPPED-dominant and
+> marble stepped(mild) — both are SIZE_DAMP_CAP_UM consequences; the
+> locality is the authority, the literature was scaffolding.
 
 > ## ⚗️ UPDATE (2026-06-11, latest) — EVENT-SUBSUMPTION COMPLETE (SIM 186): both bisbee + schneeberg redox step-functions retired into declared movements
 >

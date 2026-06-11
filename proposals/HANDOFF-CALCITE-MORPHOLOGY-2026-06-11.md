@@ -233,3 +233,9 @@ and where the plan bent to measurement:
   11 contracts. If the boss's eye disagrees with any band placement:
   the knobs are CALCITE_MORPH_TH in js/52 (mirrored in the map tool),
   and the bench re-judges in one run.
+- **For future builders + the boss's hand-verification pass:**
+  **proposals/TUNING-CALCITE-MORPHOLOGY.md** — the knob map, the
+  adjustment workflow, what's chemistry-coupled vs free, the
+  per-scenario claims-vs-specimen worksheet, and the disagreement
+  playbook. The locality is the authority; the literature was
+  scaffolding.
