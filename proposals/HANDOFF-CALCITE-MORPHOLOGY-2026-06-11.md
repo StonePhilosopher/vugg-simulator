@@ -1,9 +1,14 @@
 # HANDOFF — Calcite morphology arc (stepped calcite & the full Sunagawa spectrum)
 
-*2026-06-11. Status: RESEARCH + CALIBRATION DONE, peer-review-corrected,
-nothing wired into the engine yet. Two boss decisions are BLOCKING the
-build (§5). The boss expects this to be a big change — plan accordingly:
-the render phase is the largest geometry work since the cavity mesh.*
+*2026-06-11. Status: **SHIPPED, ALL SIX PHASES** (same day — see the
+SHIPPED footer for what landed where). The §5 blocking decisions were
+resolved by the boss's goal directive ("complete the calcite morphology
+as described in the handoff. if there are doubts about what path is the
+best you should follow the science"): the size damping went where the
+physics pointed (bounded boundary layer — and the Elmwood build proved
+the original linear proxy wrong at giant scale, see footer §F3), and the
+showcase locality is the one geology nominates — Elmwood, TN, already on
+the future-MVT slate. The original brief below is preserved unchanged.*
 
 ---
 
@@ -160,3 +165,71 @@ classification, not per-crystal.
 - All three artifacts (research + two tools) are sim-neutral; engine
   untouched as of this handoff. Tree state: committed on top of v186
   (`52cab29`).
+
+---
+
+## SHIPPED footer (2026-06-11, the same day — the build session)
+
+The whole arc landed in five commits. What each phase actually became,
+and where the plan bent to measurement:
+
+- **F0 — Phase 0 (`889dfc4`, with Phase 1).** The classifier did NOT end
+  up inside grow_calcite: the brand-new `--engine` agreement mode in the
+  map tool read 0% on stalactite_demo and exposed an in-step vs
+  post-step σ basis mismatch (thin-film scenarios consume their own σ
+  spike within the step). The classifier moved to an end-of-run_step
+  pass on the POST-STEP σ — the calibrated basis AND the more physical
+  one (the interface never sees the transient). Agreement 1598/1598
+  after the move. **The 18th catch** (CATCHES.md): a classifier is
+  (basis + thresholds), not thresholds alone.
+- **F1 — Phase 1 (same commit).** Zone tags official (dissolutionMode
+  precedent), collection records carry them, `calcite_morph` strip chip
+  (Sunagawa ordinal at the anchor, null-sparse by design), zone-modal
+  per-zone regime lines. Sim-neutral, digest-exempt (curated list).
+- **F2 — Phase 2 (`8e9752c`).** Habit alphabet stepped_/hopper_/
+  dendritic_<form>, driven by the recorded regime, manganocalcite
+  precedence intact. THE PLAN PREDICTED A SIM BUMP; measurement said
+  no — aspect-preserving mapping (each σ-regime string carries its
+  parent form's exact _habitAspectRatio) makes a habit RENAME
+  chemistry-invisible. Proof: calibration + digest pass unchanged at
+  v186. This decision later made the Phase-5 damping recalibration
+  free (F3).
+- **F3 — Phase 3 (`295e150`).** calciteTerraceBands (engine,
+  headless-testable, uptoStep = replay truncation → terraces ACCUMULATE
+  as the scrubber advances) + _makeTerracedCalciteGeom (hex-section
+  ziggurat under the parent envelope; mild = fine shallow treads,
+  macro = bold trains, hopper tip = apex funnel). Verified end-to-end
+  in-browser (the ziggurat silhouette screenshot). Satellites inherit
+  the terraced geometry → stepped druse for free.
+- **F4 — Phase 4 (`a13de4f`, SIM 187).** Mg axis: form elongation
+  (Mg:Ca > 0.15 → scalenohedral, smooth spar included) + bunching bias
+  (σ × (1 + 0.4·min(Mg:Ca,1)); k from a {0,0.4,0.8} fleet sweep —
+  jeffrey visibly steps up, dominants hold, k=0.8 rejected for pushing
+  dripstone toward dendrite). Four Mg-dominated waters flip form
+  (sabkha/searles/ultramafic/dripstone); MVT brines stay rhombs.
+  Seed-42 counts + digest did not move (µm crusts), bump honest anyway.
+- **F5 — Phase 5 (the showcase).** `elmwood` scenario (Central TN MVT,
+  Gratz & Misra 1987 brines, Knox paleokarst): sphalerite → fluorite +
+  barite → the golden calcite era, driven by a declared fault-valve
+  pulse train — fluid.CO3 brine slugs + fluid.pH degas spikes sharing
+  five centers (Sibson 1992; one slip, two signatures) over a 120→55°C
+  cooling trend. Headline at 8/8 seeds: ~12.4 mm `stepped_scalenohedral`
+  golden dogtooth ending the run MID-PULSE, fine-stepped rim on a
+  massive core — which is the actual Elmwood specimen (NOT poker-chip
+  pagoda; that's Deccan/China material). Full assemblage 8/8
+  (tools/elmwood-stepped-observe.mjs is the standing judge).
+  **The damping correction this forced:** no sane chemistry can step a
+  19 mm crystal under the linear size proxy (÷240). Wolthers's own
+  model bounds the boundary layer — SIZE_DAMP_CAP_UM=2000 (damping
+  saturates at the hydrodynamic δ scale). Fleet remap, all defensible:
+  marble/deccan → stepped(mild) dominant (sustained ω 60–110 can't be
+  glass-smooth per Sunagawa; Deccan poker-chip is real), jeffrey →
+  STEPPED (its σ-213 spikes were always instability-grade), mvt stays
+  98% smooth (Tri-State spar is rhombs ✓), dramatic bands + dendrite-
+  zero unchanged. Chemistry-invisible by F2's aspect preservation —
+  SIM stays 187, only elmwood entered the baseline.
+- Narrator: stepped/hopper paragraphs in _narrate_calcite (the prose
+  and the terraces tell one story). Tests: calcite-morphology.test.ts,
+  11 contracts. If the boss's eye disagrees with any band placement:
+  the knobs are CALCITE_MORPH_TH in js/52 (mirrored in the map tool),
+  and the bench re-judges in one run.

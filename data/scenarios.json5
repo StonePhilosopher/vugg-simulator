@@ -327,6 +327,103 @@
       ]
     },
 
+    "elmwood": {
+      "anchor": "Elmwood-Gordonsville mines (Carthage, Smith County, TN) — Central Tennessee MVT district; the world-reference stepped golden calcite scalenohedra, on honey sphalerite with purple fluorite + barite, in Knox Group paleokarst breccia",
+      "description": "The stepped-calcite showcase (calcite-morphology arc Phase 5). A waning MVT system: NaCl-CaCl2-MgCl2 basinal brine drops honey sphalerite, then fluorite + barite, and as the system cools, episodic brine expulsions (seismic pumping) drive an oscillating carbonate supply — the sigma curve crosses the stepped band again and again, and the late golden scalenohedral calcite records every pulse as a macrostep terrace. Watch them build.",
+      "expects_species": ["sphalerite", "fluorite", "barite", "calcite"],
+      "duration_steps": 200,
+      "notes": [
+        "Anchor: Elmwood-Gordonsville (Central Tennessee zinc district). Fluid inclusions per Gratz & Misra 1987 (Econ. Geol. 82): sphalerite Th ~90-150°C, NaCl-CaCl2-MgCl2 brines ~20-23 wt% NaCl-eq. Ore in paleokarst/collapse breccias of the upper Knox Group beneath the post-Knox unconformity.",
+        "Paragenesis (Misra & Lu 1992; district consensus): replacement dolomite -> honey-amber sphalerite (main ore) -> purple fluorite + barite (galena minor in Central TN, unlike Tri-State) -> GIANT GOLDEN CALCITE LAST, scalenohedral, stepped faces + phantoms, often perched on sphalerite; bitumen/oil inclusions give the golden body color (the district carries live hydrocarbons).",
+        "Mg:Ca ~0.2 — a dolostone-buffered MgCl2-bearing brine (the host IS dolostone; Gratz & Misra report Mg-rich inclusions). Above the 0.15 elongation threshold (GCA 2015 / Phase 4): the form axis makes the late calcite SCALENOHEDRAL at low T, which is exactly what Elmwood grows. Mn kept at 4 (below the manganocalcite branch's >5 gate) with Fe 8 — Elmwood calcite is golden dogtooth, not botryoidal manganocalcite.",
+        "The movements are the showcase: a naica-shape cooling trend (120 -> 55°C, the waning system) + a fluid.CO3 PULSE TRAIN in the late half (five gaussian brine-expulsion pulses, the MVT seismic-pumping mechanism — Sibson-style fault-valve episodicity). Each pulse pushes calcite sigma up through the stepped band and relaxes back: the oscillation IS the step-bunching driver (research doc §2 — the steps are the chemistry curve made solid)."
+      ],
+      "initial": {
+        "temperature_C": 120.0,
+        "pressure_kbar": 0.2,
+        "fluid": {
+          "SiO2": 60,
+          "Ca": 350,
+          "CO3": 180,
+          "Mg": 70,
+          "Zn": 40,
+          "Pb": 8,
+          "F": 8,
+          "Ba": 18,
+          "Sr": 10,
+          "Fe": 8,
+          "Mn": 4,
+          "Na": 90,
+          "K": 12,
+          "Cl": 260,
+          "S": 0,
+          "O2": 0.25,
+          "pH": 7.1,
+          "salinity": 21.0
+        },
+        "wall": {
+          "architecture": "irregular",
+          "primary_bubbles": 2,
+          "secondary_bubbles": 7,
+          "shape_seed": 11
+        }
+      },
+      "events": [
+        { "step": 15, "type": "fluid_mixing", "name": "Brine Meets Sulfur", "description": "Metal brine meets sulfur-bearing groundwater in the breccia — the honey-sphalerite era begins" },
+        { "step": 70, "type": "tectonic_shock", "name": "Fault Slip", "description": "The fault valve slips — pressure pulse through the breccia run" }
+      ],
+      "movements": [
+        {
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 200,
+          "base": 120,
+          "ops": [{ "kind": "trend", "amp": -65, "ease": true }]
+        },
+        // The fault-valve pulse train (Sibson 1992): each slip is ONE
+        // geological event with TWO coupled fluid signatures — a brine
+        // slug (CO3 supply) and a pressure drop that degasses CO2 (pH
+        // spike — the textbook MVT late-calcite driver). The two
+        // movements share centers because they ARE the same five slips.
+        // Each pulse pushes calcite σ up through the stepped band and
+        // relaxes back: the oscillation is the step-bunching driver
+        // (research §2 — the steps are the chemistry curve made solid).
+        {
+          "field": "fluid.CO3",
+          "startStep": 80,
+          "endStep": 200,
+          "base": 180,
+          "ops": [
+            { "kind": "pulse", "amp": 400, "center": 0.12, "width": 0.06 },
+            { "kind": "pulse", "amp": 450, "center": 0.32, "width": 0.06 },
+            { "kind": "pulse", "amp": 430, "center": 0.52, "width": 0.06 },
+            { "kind": "pulse", "amp": 480, "center": 0.72, "width": 0.06 },
+            { "kind": "pulse", "amp": 400, "center": 0.97, "width": 0.06 }
+          ]
+        },
+        {
+          "field": "fluid.pH",
+          "startStep": 80,
+          "endStep": 200,
+          "base": 7.1,
+          "ops": [
+            { "kind": "pulse", "amp": 1.2, "center": 0.12, "width": 0.06 },
+            { "kind": "pulse", "amp": 1.3, "center": 0.32, "width": 0.06 },
+            { "kind": "pulse", "amp": 1.2, "center": 0.52, "width": 0.06 },
+            { "kind": "pulse", "amp": 1.3, "center": 0.72, "width": 0.06 },
+            { "kind": "pulse", "amp": 1.2, "center": 0.97, "width": 0.06 }
+          ]
+        }
+      ],
+      "sources": [
+        "Gratz & Misra 1987 (Econ. Geol. 82) — Elmwood-Gordonsville fluid-inclusion microthermometry",
+        "Misra & Lu 1992 — Central Tennessee zinc district paragenesis",
+        "Kyle 1976 / district literature — Knox unconformity paleokarst breccia ore control",
+        "RESEARCH-calcite-morphology-2026-06-11.md §2 — oscillatory sigma -> step bunching (Movements as the driver)",
+        "Sibson 1992 fault-valve mechanics — episodic brine expulsion (the pulse-train shape)"
+      ]
+    },
+
     "reactivated_fluorite_vein": {
       "anchor": "North Pennine Orefield style (Weardale district, England) — a fluorite-galena-barite vein on a reactivated fault (Dunham 1990, BGS Economic Memoir).",
       "description": "A crack-seal reactivated vug. An ascending brine grows a first generation (fluorite + galena + barite, with sphalerite + calcite gangue) while its feeder fractures are OPEN; a late cement then seals the conduit shut and the cavity goes quiet; a later tectonic pulse breaches the fracture open again, and a cooler fresh fluid grows a second-generation fluorite + calcite. The demonstrator for the fluid-spots SEAL → BREACH lifecycle: the deposition-clustering halo follows the open feeders, so each generation concentrates at the vents and the sealed interval shows no clustering.",

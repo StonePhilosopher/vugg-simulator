@@ -2938,6 +2938,7 @@ footer a:hover {
   <div class="menu-buttons">
     <button onclick="startScenarioInCreative('cooling')">❄️ Cooling — Herkimer "diamond" pocket (Middleville, NY).</button>
     <button onclick="startScenarioInCreative('mvt')">⚗️ Mississippi Valley-type — Tri-State district (Joplin / Picher, MO-KS-OK).</button>
+    <button onclick="startScenarioInCreative('elmwood')">🪜 Elmwood — Central Tennessee MVT (Carthage, TN): the stepped golden calcite showcase. Watch the terraces build.</button>
     <button onclick="startScenarioInCreative('reactivated_fluorite_vein')">🟢 Reactivated Fluorite Vein — North Pennine style (Weardale): a sealed vug, breached open by tectonic reactivation for a second fluorite generation.</button>
     <button onclick="startScenarioInCreative('reactive_wall')">🪨 Reactive Wall — Sweetwater Mine, Viburnum Trend (MO).</button>
     <button onclick="startScenarioInCreative('porphyry')">🟠 Porphyry Copper — Bingham Canyon (UT).</button>
@@ -3043,6 +3044,7 @@ footer a:hover {
       <option value="cooling">cooling</option>
       <option value="pulse">pulse</option>
       <option value="mvt">mvt</option>
+      <option value="elmwood">elmwood</option>
       <option value="reactivated_fluorite_vein">reactivated_fluorite_vein</option>
       <option value="porphyry">porphyry</option>
       <option value="reactive_wall">reactive_wall</option>
@@ -3879,6 +3881,7 @@ Scenarios:
           <option value="jeffrey_mine">Jeffrey Mine Rodingite</option>
           <option value="marble_contact_metamorphism">Marble Contact (Mogok)</option>
           <option value="mvt">MVT (Tri-State)</option>
+          <option value="elmwood">Elmwood Stepped Calcite</option>
           <option value="naica_geothermal">Naica Selenite Cave</option>
           <option value="ouro_preto">Ouro Preto Topaz</option>
           <option value="porphyry">Porphyry Copper (Bingham)</option>
@@ -31464,6 +31467,25 @@ function grow_tincalconite(_crystal, _conditions, _step) { return null; }
 // thresholds (research doc §5).
 const CALCITE_MORPH_TH = {
     SIZE_HALF_UM: 80,
+    // Phase 5 (2026-06-11): the boundary layer is BOUNDED. The original
+    // proxy let damping grow linearly with crystal size forever, which
+    // divided a 19 mm crystal's σ-excess by ~240 — no geologically sane
+    // chemistry could ever step a cabinet-scale crystal, yet stepped
+    // GIANTS are exactly what Elmwood grows (the locality ground truth
+    // that exposed the flaw). Wolthers 2022's own model parameterizes a
+    // FIXED boundary-layer thickness — δ saturates at the hydrodynamic
+    // scale (~mm in still fluid), it does not track crystal size without
+    // limit. min(size, SIZE_DAMP_CAP_UM) is the faithful proxy: crystals
+    // under 2 mm behave exactly as before; giants damp at the δ ceiling
+    // (factor 26) instead of without bound. Fleet consequence (measured,
+    // recorded in the research doc §1): the sustained-high-σ big-crystal
+    // scenarios (marble, deccan, jeffrey) pick up gentle stepped_mild
+    // shares — Sunagawa-consistent for sustained driving force — while
+    // every dramatic band (macro/hopper/dendrite) and every smooth
+    // low-σ scenario (mvt q75 6.4 → surf 1.2, Tri-State spar stays
+    // glass) holds. Chemistry-invisible by Phase 2's aspect-preserving
+    // design (regime renames carry the parent form's aspect ratio).
+    SIZE_DAMP_CAP_UM: 2000,
     SPIRAL_MAX: 2.0, // < this → smooth spiral spar (BCF lateral growth)
     STEP_MILD_MAX: 8.0, // 2–8 → gentle macrosteps (onset 2D nucleation)
     STEP_MACRO_MAX: 50.0, // 8–50 → pronounced macrostepped (step bunching)
@@ -31494,7 +31516,8 @@ const CALCITE_MORPH_DISPLAY = {
     dendritic: 'dendritic',
 };
 function calciteSurfaceSigma(bulkSigma, sizeUm) {
-    return 1 + (bulkSigma - 1) / (1 + Math.max(0, sizeUm) / CALCITE_MORPH_TH.SIZE_HALF_UM);
+    const effSize = Math.min(Math.max(0, sizeUm), CALCITE_MORPH_TH.SIZE_DAMP_CAP_UM);
+    return 1 + (bulkSigma - 1) / (1 + effSize / CALCITE_MORPH_TH.SIZE_HALF_UM);
 }
 function calciteMorphRegime(surfSigma) {
     if (surfSigma < CALCITE_MORPH_TH.SPIRAL_MAX)
@@ -54467,6 +54490,31 @@ Object.assign(VugSimulator.prototype, {
             }
             else if (mn_zones.length) {
                 parts.push(narrative_variant('calcite', 'mn_only') || `The crystal incorporated manganese throughout growth and would fluoresce orange under shortwave UV — a classic Mn²⁺-activated calcite.`);
+            }
+        }
+        // Calcite-morphology arc Phase 5 (2026-06-11): the growth-regime story,
+        // read from the per-zone tags — the renderer builds these same bands
+        // into visible terraces, so the prose and the geometry tell one story.
+        const morphTagged = c.zones.filter(z => z.morph_regime && z.thickness_um > 0);
+        if (morphTagged.length) {
+            const morphMass = {};
+            for (const z of morphTagged)
+                morphMass[z.morph_regime] = (morphMass[z.morph_regime] || 0) + z.thickness_um;
+            const morphTotal = Object.values(morphMass).reduce((s, x) => s + x, 0);
+            const steppedShare = ((morphMass.stepped_macro || 0) + (morphMass.stepped_mild || 0)) / morphTotal;
+            const hopperShare = (morphMass.hopper_skeletal || 0) / morphTotal;
+            let stepBands = 0, prevRegime = null;
+            for (const z of morphTagged) {
+                const stepped = z.morph_regime === 'stepped_macro' || z.morph_regime === 'stepped_mild';
+                if (stepped && prevRegime !== 'stepped')
+                    stepBands++;
+                prevRegime = stepped ? 'stepped' : z.morph_regime;
+            }
+            if (hopperShare > 0.5) {
+                parts.push(narrative_variant('calcite', 'morph_hopper') || `Growth outran supply: edges and corners sit proud in the diffusion field and kept building while the face centers starved, so the faces hollowed into stepped funnels while the crystal stayed faceted. A hopper calcite is a crystal that grew too fast for its own interior.`);
+            }
+            else if (steppedShare > 0.1 && stepBands > 0) {
+                parts.push(narrative_variant('calcite', 'morph_stepped', { bands: stepBands }) || `The faces are terraced — ${stepBands} distinct macrostep train${stepBands === 1 ? '' : 's'}, each one a stretch of growth when supersaturation surged past the quiet spiral regime and the elementary steps bunched into ledges large enough to see. Read the staircase from base to tip and you are reading the fluid's history in stone.`);
             }
         }
         if (c.twinned) {

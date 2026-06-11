@@ -28,6 +28,25 @@
 // thresholds (research doc §5).
 const CALCITE_MORPH_TH = {
   SIZE_HALF_UM: 80,
+  // Phase 5 (2026-06-11): the boundary layer is BOUNDED. The original
+  // proxy let damping grow linearly with crystal size forever, which
+  // divided a 19 mm crystal's σ-excess by ~240 — no geologically sane
+  // chemistry could ever step a cabinet-scale crystal, yet stepped
+  // GIANTS are exactly what Elmwood grows (the locality ground truth
+  // that exposed the flaw). Wolthers 2022's own model parameterizes a
+  // FIXED boundary-layer thickness — δ saturates at the hydrodynamic
+  // scale (~mm in still fluid), it does not track crystal size without
+  // limit. min(size, SIZE_DAMP_CAP_UM) is the faithful proxy: crystals
+  // under 2 mm behave exactly as before; giants damp at the δ ceiling
+  // (factor 26) instead of without bound. Fleet consequence (measured,
+  // recorded in the research doc §1): the sustained-high-σ big-crystal
+  // scenarios (marble, deccan, jeffrey) pick up gentle stepped_mild
+  // shares — Sunagawa-consistent for sustained driving force — while
+  // every dramatic band (macro/hopper/dendrite) and every smooth
+  // low-σ scenario (mvt q75 6.4 → surf 1.2, Tri-State spar stays
+  // glass) holds. Chemistry-invisible by Phase 2's aspect-preserving
+  // design (regime renames carry the parent form's aspect ratio).
+  SIZE_DAMP_CAP_UM: 2000,
   SPIRAL_MAX: 2.0,      // < this → smooth spiral spar (BCF lateral growth)
   STEP_MILD_MAX: 8.0,   // 2–8 → gentle macrosteps (onset 2D nucleation)
   STEP_MACRO_MAX: 50.0, // 8–50 → pronounced macrostepped (step bunching)
@@ -60,7 +79,8 @@ const CALCITE_MORPH_DISPLAY: Record<string, string> = {
 };
 
 function calciteSurfaceSigma(bulkSigma: number, sizeUm: number): number {
-  return 1 + (bulkSigma - 1) / (1 + Math.max(0, sizeUm) / CALCITE_MORPH_TH.SIZE_HALF_UM);
+  const effSize = Math.min(Math.max(0, sizeUm), CALCITE_MORPH_TH.SIZE_DAMP_CAP_UM);
+  return 1 + (bulkSigma - 1) / (1 + effSize / CALCITE_MORPH_TH.SIZE_HALF_UM);
 }
 
 function calciteMorphRegime(surfSigma: number): string {

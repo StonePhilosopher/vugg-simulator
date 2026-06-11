@@ -265,6 +265,86 @@
       "max_um": 2823.4
     }
   },
+  "elmwood": {
+    "aragonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 7662.8
+    },
+    "barite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 0
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 12448.1
+    },
+    "celestine": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 5.7
+    },
+    "cerussite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 220
+    },
+    "fluorite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 20433.7
+    },
+    "galena": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 565.6
+    },
+    "pyrite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 193.6
+    },
+    "quartz": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 387.4
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 5484
+    },
+    "siderite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 2559.2
+    },
+    "smithsonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 3892.1
+    },
+    "sphalerite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 1017.6
+    }
+  },
   "epithermal_telluride": {
     "albite": {
       "active": 3,

@@ -521,5 +521,33 @@ external review this cheap — the reviewer attacked a one-page diagram, not
 an engine. Catch the physics on paper, where the fix is an Edit, not a
 rebake.
 
+The EIGHTEENTH catch (2026-06-11, the calcite morphology Phase 0 port) was
+caught by an instrument built for the port itself, before anything shipped.
+The plan said "port the classifier into grow_calcite" — and the first draft
+did exactly that, classifying each zone from the IN-STEP σ the engine reads
+when it computes the growth rate. The new `--engine` agreement mode in
+tools/calcite-morphology-map.mjs (engine tags vs the bench's independent
+recompute) read 80.2% overall — and 0/225 on stalactite_demo, with the whole
+dripstone family misbanded DENDRITIC-dominant against the validated map.
+Zero percent is not boundary jitter; it is a basis mismatch. Thin-film
+scenarios inject a σ spike every step that the crystal itself consumes
+within the step: the engine's pre-growth read sees bulk σ in the hundreds
+while the post-step state — the basis every threshold was CALIBRATED and
+ground-truth-validated on — relaxes to the tens. And the post-step number is
+also the more physical proxy: the interface never sees the injected
+transient (boundary-layer buffering — the same Wolthers physics as the size
+damping), so classifying from the spike would double-count what the damping
+already models. Cure: the classifier moved out of grow_calcite into an
+end-of-run_step pass on the post-step σ; agreement went to 1598/1598
+(100.0%) and the engine-tag fleet map reproduced the validated picture
+exactly. Lesson: **a classifier is (basis + thresholds), not thresholds
+alone — port the basis with the numbers or recalibrate; and an agreement
+check between an instrument and its port is cheap to build and catches the
+whole class.** (Same arc, same day, smaller: two RESIDUALS of the
+seventeenth catch's ordering fix survived in the research doc's §5/§6 —
+the §3 table was corrected but the basis list and the §6.1 verification
+hook still carried the reversed order. A correction is not done until
+every restatement of the claim is hunted down.)
+
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.

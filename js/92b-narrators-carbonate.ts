@@ -27,6 +27,28 @@ Object.assign(VugSimulator.prototype, {
       parts.push(narrative_variant('calcite', 'mn_only') || `The crystal incorporated manganese throughout growth and would fluoresce orange under shortwave UV — a classic Mn²⁺-activated calcite.`);
     }
   }
+  // Calcite-morphology arc Phase 5 (2026-06-11): the growth-regime story,
+  // read from the per-zone tags — the renderer builds these same bands
+  // into visible terraces, so the prose and the geometry tell one story.
+  const morphTagged = c.zones.filter(z => z.morph_regime && z.thickness_um > 0);
+  if (morphTagged.length) {
+    const morphMass: Record<string, number> = {};
+    for (const z of morphTagged) morphMass[z.morph_regime] = (morphMass[z.morph_regime] || 0) + z.thickness_um;
+    const morphTotal = Object.values(morphMass).reduce((s: number, x: number) => s + x, 0);
+    const steppedShare = ((morphMass.stepped_macro || 0) + (morphMass.stepped_mild || 0)) / morphTotal;
+    const hopperShare = (morphMass.hopper_skeletal || 0) / morphTotal;
+    let stepBands = 0, prevRegime = null;
+    for (const z of morphTagged) {
+      const stepped = z.morph_regime === 'stepped_macro' || z.morph_regime === 'stepped_mild';
+      if (stepped && prevRegime !== 'stepped') stepBands++;
+      prevRegime = stepped ? 'stepped' : z.morph_regime;
+    }
+    if (hopperShare > 0.5) {
+      parts.push(narrative_variant('calcite', 'morph_hopper') || `Growth outran supply: edges and corners sit proud in the diffusion field and kept building while the face centers starved, so the faces hollowed into stepped funnels while the crystal stayed faceted. A hopper calcite is a crystal that grew too fast for its own interior.`);
+    } else if (steppedShare > 0.1 && stepBands > 0) {
+      parts.push(narrative_variant('calcite', 'morph_stepped', { bands: stepBands }) || `The faces are terraced — ${stepBands} distinct macrostep train${stepBands === 1 ? '' : 's'}, each one a stretch of growth when supersaturation surged past the quiet spiral regime and the elementary steps bunched into ledges large enough to see. Read the staircase from base to tip and you are reading the fluid's history in stone.`);
+    }
+  }
   if (c.twinned) {
     parts.push(narrative_variant('calcite', 'twinned', { twin_law: c.twin_law }) || `The crystal is twinned on ${c.twin_law}, a common deformation twin in calcite that can form during growth or post-crystallization stress.`);
   }

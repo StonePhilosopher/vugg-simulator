@@ -45,6 +45,10 @@ const TH = {
   // boundary-layer size damping (Wolthers 2022 §1): big crystals hold a low
   // SURFACE σ even at high bulk σ → stay spiral. surfσ = 1 + (bulkσ−1)/(1+size/HALF)
   SIZE_HALF_UM: 80,
+  // Phase 5: δ is BOUNDED at the hydrodynamic scale — damping saturates
+  // for crystals above 2 mm (the Elmwood-giant fix; Wolthers's own model
+  // uses a fixed boundary-layer thickness). KEEP IN SYNC with js/52.
+  SIZE_DAMP_CAP_UM: 2000,
   // regime cutoffs on SURFACE σ (sim units), in SUNAGAWA order:
   // polyhedral → hopper/skeletal → dendritic (peer-review correction
   // 2026-06-11 — hopper is the ONSET of instability, dendrite is it taken
@@ -63,7 +67,8 @@ const TH = {
 };
 
 function surfaceSigma(bulkSigma, sizeUm) {
-  return 1 + (bulkSigma - 1) / (1 + Math.max(0, sizeUm) / TH.SIZE_HALF_UM);
+  const effSize = Math.min(Math.max(0, sizeUm), TH.SIZE_DAMP_CAP_UM);
+  return 1 + (bulkSigma - 1) / (1 + effSize / TH.SIZE_HALF_UM);
 }
 
 function regimeOf(surfSigma) {

@@ -87,16 +87,23 @@ describe('calcite morphology classifier (Phase 0)', () => {
     expect(calciteMorphRegime(201)).toBe('dendritic');
   });
 
-  it('boundary-layer damping: surfσ = bulkσ at size 0, decays toward 1 with size', () => {
+  it('boundary-layer damping: surfσ = bulkσ at size 0, decays with size, SATURATES at the δ ceiling', () => {
     expect(calciteSurfaceSigma(100, 0)).toBeCloseTo(100, 6);
     // At SIZE_HALF_UM the excess halves: 1 + 99/2
     expect(calciteSurfaceSigma(100, CALCITE_MORPH_TH.SIZE_HALF_UM)).toBeCloseTo(50.5, 6);
-    // A big crystal at high bulk σ reads spiral — the deccan/jeffrey/
-    // marble smooth-spar story.
-    expect(calciteSurfaceSigma(100, 16000)).toBeLessThan(2.0);
+    // Phase 5: the boundary layer is BOUNDED (Wolthers's own model uses
+    // a fixed δ — it saturates at the hydrodynamic scale, it does not
+    // track crystal size forever). Above SIZE_DAMP_CAP_UM the damping
+    // factor freezes: a 16 mm giant damps exactly like a 2 mm crystal.
+    // This is what lets a cabinet-scale Elmwood calcite step at sane
+    // chemistry — the uncapped proxy divided its σ-excess by ~240.
+    const cap = CALCITE_MORPH_TH.SIZE_DAMP_CAP_UM;
+    expect(calciteSurfaceSigma(100, 16000)).toBeCloseTo(calciteSurfaceSigma(100, cap), 9);
+    expect(calciteSurfaceSigma(100, 16000)).toBeGreaterThan(2.0);   // no longer glass at ω=100
+    expect(calciteSurfaceSigma(100, 16000)).toBeLessThan(8.0);      // but not macro either
     // Monotone in size
     let last = Infinity;
-    for (const um of [0, 40, 80, 200, 800, 4000]) {
+    for (const um of [0, 40, 80, 200, 800, 4000, 40000]) {
       const s = calciteSurfaceSigma(60, um);
       expect(s).toBeLessThanOrEqual(last);
       last = s;
@@ -286,6 +293,51 @@ describe('calcite morphology instruments (Phase 1)', () => {
     for (const c of ultraCal) expect(c.habit).toBe('stepped_scalenohedral');
     // (mvt at Mg:Ca ~0.075 staying plain rhombohedral is pinned in the
     // Phase 2 contract above — Tri-State spar is rhombs, not dogtooth.)
+  });
+
+  it('Phase 5: elmwood — the stepped-calcite showcase contract', () => {
+    // The movements are DECLARED: the cooling trend + the fault-valve
+    // pulse train as TWO coupled signatures (CO3 brine slug + pH degas
+    // spike) sharing five centers — one geological event each.
+    const { conditions } = SCENARIOS.elmwood();
+    const ms = conditions._scenario.movements;
+    expect(Array.isArray(ms)).toBe(true);
+    const co3 = ms.find((m: any) => m.field === 'fluid.CO3');
+    const ph = ms.find((m: any) => m.field === 'fluid.pH');
+    const temp = ms.find((m: any) => m.field === 'temperature');
+    expect(co3 && ph && temp).toBeTruthy();
+    expect(co3.ops.length).toBe(5);
+    expect(ph.ops.length).toBe(5);
+    expect(co3.ops.map((o: any) => o.center)).toEqual(ph.ops.map((o: any) => o.center));
+    // deterministic — no OU texture (re-rolls marginals; 16th-catch era rule)
+    expect(co3.texture).toBeUndefined();
+    expect(ph.texture).toBeUndefined();
+
+    // Seed 42: the full MVT assemblage + the headline golden dogtooth
+    // ending the run MID-PULSE, wearing its stepped habit, with the
+    // pulse train written into its zone stack as renderable terraces.
+    const sim = runScenario('elmwood');
+    for (const sp of ['sphalerite', 'fluorite', 'barite', 'calcite']) {
+      expect(sim.crystals.some((c: any) => c.mineral === sp && !c.dissolved)).toBe(true);
+    }
+    const cals = sim.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c.total_growth_um > 0);
+    let head: any = null;
+    for (const c of cals) if (!head || c.total_growth_um > head.total_growth_um) head = c;
+    expect(head).toBeTruthy();
+    expect(head.total_growth_um).toBeGreaterThan(8000);          // a cabinet crystal, not a crust
+    expect(head.habit).toBe('stepped_scalenohedral');            // golden dogtooth, stepped finish
+    const terr = calciteTerraceBands(head);
+    expect(terr).toBeTruthy();                                    // relief above the 5% floor → terraces render
+    expect(terr.form).toBe('scalene');
+    // The pulse train is in the stone: the raw zone walk shows ~8 regime
+    // runs; the renderable knot list merges same-regime neighbors and
+    // sub-1.5% slivers down to ~4 bands — at least 2 of them relief.
+    expect(terr.knots.length).toBeGreaterThanOrEqual(4);
+    const reliefKnots = terr.knots.filter((k: any) => k.regime.startsWith('stepped') || k.regime === 'hopper_skeletal');
+    expect(reliefKnots.length).toBeGreaterThanOrEqual(2);
+    // The narrator tells the same story the geometry shows.
+    const prose = sim._narrate_calcite(head);
+    expect(/terraced|macrostep/.test(prose)).toBe(true);
   });
 
   it('calcite_morph strip chip: Sunagawa ordinal at the anchor, null in empty rock', () => {
