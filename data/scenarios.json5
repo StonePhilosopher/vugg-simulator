@@ -1607,6 +1607,32 @@
       "description": "Schneeberg / Erzgebirge oxidized uranium-pegmatite vein system (Walpurgis Flacher vein, Weisser Hirsch Mine, Saxony — type locality for torbernite, zeunerite, and uranospinite). A U-bearing pegmatite + chalcopyrite + arsenopyrite primary assemblage weathers under meteoric oxidation; the resulting uranyl + Cu + As fluid plates the autunite-group secondaries in two cation phases — Cu-rich first (torbernite emerald greens then zeunerite as As-pulse arrives), then Ca-dominant after Cu is consumed (autunite + uranospinite, the bright LW-UV fluorescent yellows).",
       "expects_species": ["uraninite", "torbernite", "zeunerite", "autunite", "uranospinite", "native_bismuth", "native_arsenic", "erythrite", "annabergite", "cobaltite", "nickeline", "cassiterite", "pharmacolite", "haidingerite"],
       "duration_steps": 160,
+      "movements": [
+        {
+          // v185 EVENT-SUBSUMPTION — the meteoric front as a declared redox
+          // sentence. Reducing pegmatitic plateau (−200 mV ≡ the ehFromO2
+          // floor at O2:0) holds until the step-85 meteoric flood, then a
+          // ~8-step swing to +290 mV (O2 1.5) — the swing IS sulfide-buffer
+          // exhaustion (pyrite/arsenopyrite eat the first oxygen before Eh
+          // can climb). at 0.8 = step 88/110, soften = 8/110 → ramp 84→92.
+          // The window ends at the step-110 vadose exhumation: a redox
+          // movement lives in GROUNDWATER; once the water table drops, air
+          // owns redox (the vadose O2 floor 1.8 ≡ +322 mV — the flat 322
+          // the strip always showed after 110 was the air, not the broth).
+          // DETERMINISTIC (no texture): measured — OU wobble re-rolls the
+          // 1-crystal marginals (naumannite, metazeunerite) without honest
+          // signal; the buffered plateau doesn't flutter and the As-pulse
+          // EVENTS are the real punctuation. Gate verified at 8 seeds
+          // (tools/eh-subsumption-observe.mjs): every lineage at BASE rate,
+          // reducing-era nucleations byte-identical (naumannite @67,
+          // native_bismuth @70 untouched).
+          "field": "fluid.Eh",
+          "startStep": 0,
+          "endStep": 110,
+          "base": -200,
+          "ops": [{ "kind": "step", "amp": 490, "at": 0.8, "soften": 0.07272727272727272 }]
+        }
+      ],
       "notes": [
         "The mineralogically richest single ore district in Europe — the Erzgebirge had been mined for silver since the 1100s, then bismuth from the 1500s (the very name 'Bismutum' was coined here), then uranium from the 1800s onward. Most autunite-group species were first described from Schneeberg or its sister deposits (Jáchymov, Annaberg). Pinch & Wilson 1977 monographs are the canonical reference.",
         "Mechanic: 6-event lifecycle walking through cation×anion combinatorics. Pegmatite crystallization (step 20): hot reducing fluid grows uraninite + chalcopyrite + arsenopyrite primaries. Cooling (step 70): T drops to ambient. Cu+P phase (step 85): O2 floods, primaries weather, P>As, Cu>Ca → torbernite plates. Cu+As pulse (step 105): As replenishes from arsenopyrite weathering, Cu still high → zeunerite plates. Cu depletion (step 125): Cu consumed by both Cu-cation secondaries; Ca rises from carbonate dissolution → autunite plates. As pulse late (step 145): As replenishes again, Ca dominant → uranospinite plates.",

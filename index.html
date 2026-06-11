@@ -15633,7 +15633,68 @@ let timeScale = 5.0;
 //   BASELINE: 4-scenario rebake (marble, deccan, radioactive_pegmatite,
 //   cooling — porphyry/epithermal untouched, gem-precedent partial
 //   neutrality possible per scenario). Coverage gate: stale must stay 2.
-const SIM_VERSION = 184;
+//
+// v185 (2026-06-11) — SCHNEEBERG EVENT-SUBSUMPTION: the first scripted
+//                     redox swing retired into a declared movement. The
+//                     Movements master doc's "EVENT-CONFOUNDED redox"
+//                     class (bisbee/schneeberg) starts closing.
+//
+//   THE PREMISE: schneeberg's redox was already dynamic — but told as a
+//   step function (O2:0.0 pegmatitic until the step-85 cu_p_phase event
+//   flips O2:1.5 in ONE step). The whole point of movements is that real
+//   vug chemistry is a curve; this is the first scenario where a movement
+//   REPLACES scripted event redox instead of adding a story to a flat
+//   field. Composition pattern is naica's (v182), applied to Eh: events
+//   keep the chemistry beats (P/As/Cu/Ca forks), the movement is the
+//   redox sentence.
+//
+//   THE MOVEMENT: fluid.Eh, window 0→110, base −200 mV (≡ the ehFromO2
+//   floor at O2:0), one step op amp +490 at 0.8 soften 8/110 — reducing
+//   pegmatitic plateau, then a ~8-step swing to +290 mV (O2 1.5) centered
+//   at step 88. The swing IS sulfide-buffer exhaustion: meteoric water
+//   arrives AT the step-85 event and pyrite/arsenopyrite eat the first
+//   oxygen before Eh can climb. WINDOW BOUNDARY IS GEOLOGY: it ends at
+//   the step-110 vadose exhumation because a redox movement lives in
+//   GROUNDWATER — once the water table drops, air owns redox (the vadose
+//   O2 floor 1.8 ≡ the flat +322 mV the strip always showed after 110).
+//   Ending there also keeps the Eh-canonical sync from fighting the
+//   vadose override (the 4c.3a per-cell-ownership issue, dodged by
+//   construction). Eh-canonical flip (4c.3a) + the 2026-06-10 round-trip
+//   slope fix carry the movement's Eh into engine O2 exactly.
+//
+//   MEASUREMENT-DRIVEN SHAPE (tools/eh-subsumption-observe.mjs, NEW
+//   standing instrument — Eh trace by event segment, nucleation steps,
+//   lineage-aware multi-seed rate gate):
+//   • A front centered at 80 (oxidation BEFORE the meteoric arrival —
+//     scientifically backwards) trimmed the reducing era's tail and cost
+//     naumannite 7/8→5/8 + the torbernite lineage 8/8→7/8. The
+//     canon-true front (at 88) keeps every reducing-era nucleation step
+//     BYTE-IDENTICAL to BASE (naumannite @67, native_bismuth @70).
+//   • OU texture ANYWHERE re-rolled 1-crystal marginals (naumannite,
+//     metazeunerite): the rock-buffered plateau doesn't flutter, the
+//     16-step flood-buffered hold is below recorded flutter resolution,
+//     and the As-pulse EVENTS are the punctuation. DETERMINISTIC ships
+//     (naica no-noise precedent).
+//   • 16TH-CATCH CLASS FINDING (instrument, pre-ship): expects_species
+//     is BLIND to renamed crystals — torbernite/zeunerite/autunite live
+//     as their meta- forms after the step-110 vadose dehydration renames
+//     them, so a no-texture variant KILLED metatorbernite at seed 42
+//     while the raw expects gate read ✓. The observer gates LINEAGES
+//     (either form counts); which form survives is a placement coin flip
+//     (which ring → vadose timing), orthogonal to the redox story.
+//   GATE: 8 seeds, every lineage at its BASE fire-rate (torbernite|meta
+//   8/8, zeunerite|meta 8/8, naumannite 7/7, five-element suite 8/8).
+//   Logged pre-existing debt (NOT this change): haidingerite 0/8 in
+//   BASE — a dead expects for a future tune arc.
+//
+//   EVENT WRITES: pegmatite_crystallization's O2:0.0 + cu_p_phase's
+//   O2:1.5 are superseded inside the window (the Eh-canonical sync
+//   re-derives O2 from the movement every step); kept in the handlers
+//   with v185 comments for the narrative record.
+//
+//   BASELINE: single-scenario rebake expected (schneeberg only; per-
+//   scenario movements are opt-in). Coverage gate: stale must stay 2.
+const SIM_VERSION = 185;
 
 // ── 18-constants.js ──
 
@@ -40818,6 +40879,10 @@ function event_radioactive_pegmatite_final_cooling(c) {
 // --- schneeberg (Round 9e mechanic-coverage scenario, May 2026) ---
 function event_schneeberg_pegmatite_crystallization(c) {
     c.temperature = 350;
+    // v185: redox is now the declared fluid.Eh movement's sentence (steps
+    // 0-110); inside that window the Eh-canonical sync re-derives O2 every
+    // step, so this write is superseded (harmlessly — it matches the
+    // movement's −200 mV floor). Events keep the chemistry beats.
     c.fluid.O2 = 0.0;
     c.fluid.SiO2 = Math.max(c.fluid.SiO2, 6000);
     return 'The Schneeberg pegmatite differentiates. A reducing residual fluid floods the pocket with uranium, copper, iron, and arsenic. Uraninite grows as pitch-black masses; chalcopyrite plates as brassy disphenoids; arsenopyrite forms steel-gray rhombs. Bismuth is everywhere — Schneeberg\'s first ore was bismuth, three centuries before pitchblende became uranium.';
@@ -40839,6 +40904,12 @@ function event_schneeberg_cooling(c) {
 }
 function event_schneeberg_cu_p_phase(c) {
     c.temperature = 25;
+    // v185: SUPERSEDED by the declared fluid.Eh movement — the meteoric
+    // front now arrives as a continuous ~8-step sulfide-buffer-exhaustion
+    // swing (steps 84→92) instead of this single-step flip. The event keeps
+    // its chemistry half (the P/As/Cu/Ca fork below); the movement is the
+    // redox sentence. (Inside the window the Eh-canonical sync overwrites
+    // O2 each step, so this write is dead — kept for the narrative record.)
     c.fluid.O2 = 1.5;
     c.fluid.pH = 6.0;
     c.flow_rate = 1.5;

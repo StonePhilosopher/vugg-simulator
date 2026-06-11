@@ -297,6 +297,7 @@ field). The data now testifies against itself automatically, every run.
 | 2026-06-10 "stale" mirabilite + torbernite | Correct geology mis-filed as failure by end-state-only accounting | the gate census said PASS×242 σ=24.6 — then reading the sim's own log, which narrated the seasonal cycle the checkers couldn't see |
 | 2026-06-10 ring_fluids view sync timeouts | Behaviorally-neutral observer whose COST broke the suite (1.32 ms/step ≈ 12%) — and 4 timeout reds initially read as chemistry regressions | the full suite's time budgets; then the census probe (0 fallback hits) + the timeout text refuting the first theory |
 | v181 thermal-stream seed correlation | Distributional bug invisible to any single realization — bare `seed ^ SALT` left nearby seeds with correlated mulberry32 streams (cross-seed pulse variance ±0.00) | the probe's MULTI-SEED sweep, run on the design BEFORE the engine edit — the seed-42 fleet sweep alone was green |
+| v185 expects gate blind to renamed crystals | Green gate over a real kill — expects_species names pre-transition species (torbernite), but vadose dehydration RENAMES the crystal (metatorbernite), so a candidate that killed the type-locality lineage still read ✓ | the observer's headline table (meta- forms watched explicitly), pre-ship; cure = gate LINEAGES (either form counts) |
 
 The seventh catch is the most satisfying: the verification tool built from
 the sixth catch's lesson found a backlog of the same failure mode on its
@@ -471,6 +472,29 @@ single-realization check cannot see a DISTRIBUTIONAL bug. The seed-42 sweep
 was green because any single realization from the correlated family looks
 fine — only asking "do different seeds DIFFER like they used to?" exposed it.
 Probe the moments, not just the mean.
+
+The SIXTEENTH catch (v185, the schneeberg event-subsumption) is the
+quietest kind: a green gate over a real kill. The dark observer's
+expects-survival check read ✓ at every seed for a candidate front shape —
+while that same shape had KILLED metatorbernite at seed 42. The expects
+gate couldn't see it because `expects_species` names the species that
+NUCLEATES (torbernite, the 1772 type-locality headliner), but the step-110
+vadose dehydration RENAMES the crystal in place (torbernite →
+metatorbernite), so by run end neither name matched: 'torbernite' was
+absent in BASE and STORY alike (gate: no change ✓) and 'metatorbernite'
+wasn't in the expects list at all. The kill was visible only in the
+observer's headline table, which had been built to watch the meta- forms
+explicitly. Cure: the gate now checks LINEAGES — torbernite|metatorbernite
+counts as one entity, whole if either form grew — because which form
+survives is a placement coin flip (which ring the plate lands on decides
+whether the vadose front reaches it for 40+ steps), orthogonal to any
+chemistry being judged. Lesson: **a checker is only as honest as its name
+resolution — when the sim TRANSFORMS entities (paramorphs, dehydration,
+pseudomorphs), any gate keyed on pre-transformation names silently stops
+watching them.** The same class of blindness applies to expects_species
+itself: schneeberg "passes" its torbernite expects today only because
+nothing checks it end-state. (Also logged from the same sweep, BASE-side:
+haidingerite is 0/8 in BASE — a dead expects awaiting its own tune arc.)
 
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.

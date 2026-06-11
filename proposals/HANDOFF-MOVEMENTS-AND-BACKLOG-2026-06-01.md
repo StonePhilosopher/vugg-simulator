@@ -54,6 +54,21 @@ FIXED 2026-06-01 (`083d994`, boss).
 > and, for epithermal, load-bearing). The "⛔ T-BLOCKED (~8)" class in the
 > coverage map below NO LONGER EXISTS. Next per the totality verdict:
 > event-subsumption (bisbee/schneeberg).
+>
+> **STATUS 2026-06-11 — EVENT-SUBSUMPTION ARC OPEN (SIM 185).** The
+> "EVENT-CONFOUNDED redox" class below starts closing. **schneeberg
+> SHIPPED**: its scripted redox step function (O2:0.0→1.5 single-step flip
+> at the step-85 flood) is now a declared fluid.Eh movement (window 0→110
+> = the phreatic life before vadose exhumation, base −200 mV, step op +490
+> at u=0.8 → a ~8-step sulfide-buffer-exhaustion swing centered at step
+> 88). First time a movement REPLACES scripted event redox (vs adding a
+> story to a flat field); events keep the P/As/Cu/Ca chemistry beats.
+> Deterministic (texture re-rolls marginals); gate whole at 8 seeds via
+> the NEW tools/eh-subsumption-observe.mjs. 16th catch en route (the
+> expects gate is blind to vadose-renamed crystals → gate lineages).
+> Single-scenario rebake, coverage unchanged. **bisbee = NEXT** (shape
+> observed + locked this session, not yet shipped — see the BACKLOG
+> banner). The "⚠ EVENT-CONFOUNDED redox" entry below is now half-closed.
 
 ---
 
@@ -337,8 +352,11 @@ observe.mjs — observed 7+ candidates, the homework behind "totality").** A cle
 temporal-movement target needs a lever that is (a) FLAT in baseline, (b) the
 load-bearing GEOLOGICAL driver, and (c) assemblage-preserving. Across the roster
 that set is SMALL — most scenarios are gated. The honest map:
-- **✅ CLEAN + SHIPPED (2):** `mvt` (Eh reducing trend), `supergene_oxidation`
-  (pH acid front). These are the scenarios where all three conditions hold.
+- **✅ CLEAN + SHIPPED:** `mvt` (Eh reducing trend), `supergene_oxidation`
+  (pH acid front), the whole T-rollout (naica/cooling movements + the
+  pegmatite-shape flags, SIM 182-184), and now `schneeberg` (Eh
+  subsumption, SIM 185). These are scenarios where all three conditions
+  hold OR where the gating sub-project has since been done.
 - **⛔ T-BLOCKED (the biggest gated class — needs the ambient_cooling reconciliation
   sub-project first):** `cooling`, `naica_geothermal`, `marble_contact_metamorphism`,
   `gem_pegmatite`, `radioactive_pegmatite`, `porphyry`, `epithermal_telluride`
@@ -351,6 +369,13 @@ that set is SMALL — most scenarios are gated. The honest map:
   (Eh −150→322 rollercoaster), `schneeberg` (Eh −200→322). A movement just fights
   the scripted swings. To move these, SUBSUME their redox events into a movement
   (the "movements subsume ad-hoc events" vision) — a per-scenario refactor.
+  **STATUS 2026-06-11: HALF-CLOSED. schneeberg SHIPPED (SIM 185)** — the
+  step function is now a declared fluid.Eh movement (window 0→110, base
+  −200, step +490 at u=0.8; events keep the chemistry beats). **bisbee
+  shape OBSERVED + locked, not yet shipped** (the nine-beat rollercoaster:
+  step front from the step-65 uplift, −60 enrichment sag, −400 reducing
+  pulse at u=0.44 for native copper, +100 late oxidation trend;
+  deterministic, gate whole at 8 seeds via eh-subsumption-observe.mjs).
 - **⚠ BASELINE-DEBT (fails many expects regardless of movement):** `roughten_gill`
   (8 expects missing), `sunnyside_american_tunnel` (4 missing). Calibration debt,
   not a movement target — fix the broth first.

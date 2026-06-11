@@ -2,7 +2,49 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🏁 UPDATE (2026-06-10, latest) — T-ROLLOUT COMPLETE (SIM 184): all eight T-blocked scenarios swept, each by its measured shape
+> ## ⚗️ UPDATE (2026-06-11, latest) — EVENT-SUBSUMPTION BEGINS (SIM 185): schneeberg's scripted redox swing retired into a declared movement
+>
+> The next Movements arc after the T-rollout. The master doc's
+> "EVENT-CONFOUNDED redox" class (bisbee/schneeberg — redox already
+> dynamic, but told as a step function through scripted event O2 writes)
+> starts closing. **schneeberg shipped (SIM 185):** its redox was a step
+> function (O2:0.0 pegmatitic → a single-step flip to O2:1.5 at the
+> step-85 meteoric flood). Now it's a DECLARED fluid.Eh movement (window
+> 0→110, base −200 mV, one step op +490 at u=0.8): reducing pegmatitic
+> plateau, then a ~8-step sulfide-buffer-exhaustion swing to +290 mV
+> centered at step 88. **First scenario where a movement REPLACES scripted
+> event redox** instead of adding a story to a flat field — the naica
+> composition pattern (events keep the P/As/Cu/Ca chemistry beats, the
+> movement is the redox sentence), applied to Eh.
+>
+> * **Window boundary is geology**: ends at the step-110 vadose exhumation
+>   because a redox movement lives in GROUNDWATER — once the water table
+>   drops, air owns redox (the vadose O2 floor 1.8 ≡ the flat +322 mV the
+>   strip always showed after 110). Ending there also keeps the
+>   Eh-canonical sync from fighting the vadose override (dodged by
+>   construction, not patched).
+> * **Measurement chose the shape** (tools/eh-subsumption-observe.mjs, NEW
+>   instrument). A front centered at 80 (oxidation BEFORE the meteoric
+>   arrival — backwards) cost naumannite 7/8→5/8 + torbernite lineage
+>   8/8→7/8; the canon-true front (88) keeps every reducing-era nucleation
+>   BYTE-IDENTICAL to BASE. OU texture anywhere re-rolled 1-crystal
+>   marginals → DETERMINISTIC ships (naica no-noise precedent).
+> * **16th catch** (pre-ship, by the instrument): expects_species is BLIND
+>   to renamed crystals — torbernite→metatorbernite via step-110 vadose
+>   dehydration, so a candidate that killed the type-locality lineage
+>   still read ✓. Cure: the gate checks LINEAGES (either form counts).
+> * Single-scenario rebake (schneeberg only: species 31→31, crystals
+>   77→76, +cuprite −dioptase). Coverage UNCHANGED (133/2/36). Logged
+>   BASE-side debt: haidingerite 0/8 (dead expects, future tune arc).
+>
+> **NEXT in the arc: bisbee** — observed + shape locked this session (the
+> nine-beat rollercoaster: step front at u=0.23 from the step-65 uplift,
+> a −60 enrichment-blanket sag, a deep −400 reducing pulse at u=0.44 for
+> native copper, a +100 late oxidation trend; deterministic; gate whole at
+> 8 seeds). Not yet shipped — a clean stopping point. Then the master
+> doc's remaining: roughten_gill re-survey, carbonate pK(T) slopes.
+>
+> ## 🏁 UPDATE (2026-06-10) — T-ROLLOUT COMPLETE (SIM 184): all eight T-blocked scenarios swept, each by its measured shape
 >
 > The Movements master doc's "biggest lever" sub-project is CLOSED
 > end-to-end in one day: v181 (mechanic: dedicated thermal stream +
