@@ -291,8 +291,16 @@ describe('calcite morphology instruments (Phase 1)', () => {
     const ultraCal = ultra.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);
     expect(ultraCal.length).toBeGreaterThan(0);
     for (const c of ultraCal) expect(c.habit).toBe('stepped_scalenohedral');
-    // (mvt at Mg:Ca ~0.075 staying plain rhombohedral is pinned in the
-    // Phase 2 contract above — Tri-State spar is rhombs, not dogtooth.)
+    // mvt: CORRECTED 2026-06-12 (boss hand-verification, first catch) —
+    // the v187 claim "Tri-State spar is rhombs, not dogtooth" was
+    // backwards: Joplin's iconic calcite IS the golden dogtooth, and
+    // MVT brines are DOLOMITIZING (Mg-rich) fluids. Broth Mg 30→65
+    // (live ratio 0.163 after the fluid-mixing event holds Ca at 400)
+    // → smooth SCALENOHEDRAL: the glassy Joplin dogtooth.
+    const mvtSim = runScenario('mvt');
+    const mvtDogtooth = mvtSim.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c.total_growth_um > 0);
+    expect(mvtDogtooth.length).toBeGreaterThan(0);
+    for (const c of mvtDogtooth) expect(c.habit).toBe('scalenohedral');
   });
 
   it('Phase 5: elmwood — the stepped-calcite showcase contract', () => {

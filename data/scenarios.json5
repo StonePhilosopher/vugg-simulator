@@ -223,7 +223,7 @@
           "Zn": 0,
           "S": 0,
           "F": 5,
-          "Mg": 30,  // realistic Tri-State Mg/Ca ratio
+          "Mg": 65,  // realistic Tri-State Mg/Ca ratio
           // Drift-fix: JS scenario_mvt has carried Pb=40 in init since round 2 but
           // Python had it at default 0. Mirroring JS intent (combined with
           // event_fluid_mixing's +=25, post-event Pb=65 in both runtimes — enables

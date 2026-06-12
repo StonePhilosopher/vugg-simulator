@@ -8,6 +8,21 @@ story. Companion to the Movements research (RESEARCH-vug-fluid-evolution-
 2026-06-01.md): that doc drives the fluid CURVES; this doc says what those
 curves do to crystal SHAPE.*
 
+> **CORRECTION (2026-06-12 — the hand-verification pass's first catch):**
+> §4's Phase-4 claim that "the MVT brines (Mg:Ca ~0.075) correctly stay
+> rhombohedral — Tri-State spar is rhombs, not dogtooth" was BACKWARDS.
+> Boss specimen observation: Joplin's iconic calcite IS the golden
+> dogtooth (scalenohedral). The geology agrees on reflection: MVT brines
+> are DOLOMITIZING fluids — Mg-rich by definition (Tri-State carries
+> dolomite gangue) — and basinal-brine Mg:Ca runs 0.2–0.5; the broth
+> 0.10 was calibration scaffolding, not a locality measurement. Fixed
+> v190: mvt broth Mg 30→65 (live ratio 0.163 — the form reads the LIVE
+> fluid, and the fluid-mixing event holds Ca at 400, which is why the
+> first attempt at Mg 50 silently failed). Result: smooth SCALENOHEDRAL
+> at 4/5 seeds = the glassy Joplin dogtooth. The regime claim (98%
+> smooth) was right all along; only the form was wrong. The §4 text
+> below stays as the record of what v187 said.
+
 ---
 
 ## 0. The boss's framing (the north star for this feature)

@@ -10771,5 +10771,37 @@
 //   BASELINE: rebake. Expected: wittichen additive; schneeberg moves
 //   ONLY in morph tags if at all (band re-pin is below its 1.32 max →
 //   no change predicted); everything else byte-identical.
-const SIM_VERSION = 189;
+//
+// v190 (2026-06-12) — THE JOPLIN DOGTOOTH: mvt broth Mg 30→65. The
+//                     boss hand-verification pass's FIRST CATCH, and
+//                     the two-pass correction pattern running exactly
+//                     as designed.
+//
+//   Boss observation: "my MVT just grew a rhombohedral calcite instead
+//   of a dogtooth." The v187 Mg-axis phase had claimed the opposite
+//   ("Tri-State spar is rhombs, not dogtooth") and calibrated mvt's
+//   broth at Mg:Ca 0.10 — below the MG_SCALENO 0.15 flip. The
+//   specimen is the authority, and the geology agrees on reflection:
+//   Joplin's iconic calcite IS the golden dogtooth, MVT brines are
+//   DOLOMITIZING (Mg-rich) fluids, Tri-State carries dolomite gangue,
+//   and basinal-brine Mg:Ca runs 0.2–0.5. The 0.10 was scaffolding.
+//
+//   THE FIX THAT FAILED FIRST (recorded because it is the lesson):
+//   Mg 30→50 gives initial Mg:Ca 0.167 > 0.15 — and changed NOTHING,
+//   because calciteMorphForm reads the LIVE fluid and the fluid-mixing
+//   event holds Ca at 400 from step ~20 on (live ratio 0.125). The
+//   form rule is broth-TRAJECTORY-driven, not initial-value-driven.
+//   Mg 65 holds the live ratio at 0.163 through the run.
+//
+//   MEASURED (seeds 42-46): smooth SCALENOHEDRAL calcite at 4/5 seeds
+//   — the glassy smooth-faced Joplin dogtooth (regime stays 97-98%
+//   spiral_smooth; the v187 REGIME claim was always right, only the
+//   form was wrong). Seed 44 grows no calcite at EITHER Mg value
+//   (pre-existing marginality, control-checked). No dolomite/HMC
+//   side-effects at Mg 65. Chemistry-coupled bump: scaleno aspect 0.5
+//   vs rhomb 0.8 → volume → fill, plus Mg in the broth feeds the
+//   carbonate engines → mvt rebake.
+//
+//   BASELINE: rebake. Expected mover: mvt only.
+const SIM_VERSION = 190;
 
