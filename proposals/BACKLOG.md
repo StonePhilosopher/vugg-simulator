@@ -4,6 +4,12 @@ Living list of open work items, captured from session conversations so context s
 
 > ## ⚗️ UPDATE (2026-06-12, latest) — CARBONATE pK(T) CORRECTED (SIM 192, `d683a33`): review §2.2's oldest calibration debt CLOSED; its sibling exposed
 >
+> **Session handoff: `HANDOFF-PKT-AND-FIX-SWEEP-2026-06-12.md`** — the
+> next builder's advice doc (consumer-structure blast-radius prediction,
+> mixed-fidelity seams, per-pin verdicts, the richer-claim move, judges
+> rot at the gate, the restore ladder, the ranked queue). Read it before
+> picking up mottramite or the Ksp(T) upgrade.
+>
 > js/20b's linear pK fits → the full PB82 analytic expressions,
 > verified verbatim against canonical wateq4f.dat; clamp 80→250 °C.
 > NEW instrument **tools/pk-t-observe.mjs** (--table science receipt /
