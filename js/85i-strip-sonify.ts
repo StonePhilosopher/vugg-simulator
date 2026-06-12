@@ -693,6 +693,93 @@ function buildStripCrystalHits(
   return hits;
 }
 
+// ============================================================
+// THE DENDRITE BELL — morph-ordinal slams (fix-backlog 2026-06-12)
+// ============================================================
+// The morph chips record each registry tenant's growth-regime ordinal
+// (0 spiral_smooth … 4 dendritic) at its anchor crystal. When the fluid
+// drives a crystal UP that ladder, the strip shows a slam — wittichen's
+// bismuth_morph jumps 0→4 on the reducing Eh pulse. This layer RINGS
+// it: one anvil strike per upward crossing, voiced by severity. The
+// register DROPS as the ordinal climbs (a bigger instability is a
+// bigger bell — the same resonator-physics pole as the nucleation
+// bells' size→register rule), and the strike pitches are the C-root
+// octave ladder so they sit in key under every C-rooted scale mode.
+// The DENDRITE arrival (ordinal 4) adds a second partial detuned one
+// semitone sharp at the same instant — a deliberately dissonant clang
+// that says "interface stability just failed." Healing (downward)
+// crossings are silent: recovery is the drone's story, the bell marks
+// the shock. Strikes ride the crystal-bell submix bus, so the 🔔🔊
+// slider governs all percussion together.
+let _stripSonifyMorphBellsOn = true;
+function stripSonifyGetMorphBells(): boolean { return _stripSonifyMorphBellsOn; }
+function stripSonifySetMorphBells(on: boolean): boolean { _stripSonifyMorphBellsOn = !!on; return _stripSonifyMorphBellsOn; }
+
+// ordinal 1..4 → strike pitch: C5, C4, C3, G2 (the dendrite toll).
+const _STRIP_MORPH_SLAM_FREQ = [0, 523.25, 261.63, 130.81, 98.0];
+
+function buildStripMorphSlamHits(
+  ds: StripDataset,
+  opts: { stepDurationMs?: number } = {}
+): StripCrystalHit[] {
+  if (!ds || !ds.manifest || !ds.manifest.axes || !ds.manifest.chips) return [];
+  const stepMs = opts.stepDurationMs ?? _stripSonifyStepDurationMs;
+  const ax = ds.manifest.axes;
+  const chips = ds.manifest.chips;
+  const C = chips.length;
+  const A = Math.max(1, ax.angular_indices);
+  const hits: StripCrystalHit[] = [];
+  for (let ci = 0; ci < C; ci++) {
+    const meta: any = chips[ci];
+    if (!meta || typeof meta.id !== 'string' || !/_morph$/.test(meta.id)) continue;
+    const lo = (meta.range && meta.range[0]) || 0;
+    const hi = (meta.range && meta.range[1]) || 4;
+    // prevOrd starts at the smooth floor: a crystal APPEARING already
+    // driven (nucleated mid-shock) rings on arrival — that IS the slam.
+    let prevOrd = 0;
+    for (let step = 0; step < ax.steps; step++) {
+      // Sparse-MAX read with position (the strip-digest lesson: morph
+      // chips anchor at points, an angle-average reads all-null; and
+      // the most driven crystal is the one that should ring).
+      let maxV: number | null = null;
+      let bestA = 0;
+      for (let a = 0; a < A; a++) {
+        for (let h = 0; h < ax.height_positions; h++) {
+          const li = stripDataIndex(step, a, h, ci, ax, C, 0);
+          if (li < 0) continue;
+          const v = stripDequantize(ds.chip_data[li], lo, hi);
+          if (v == null) continue;
+          if (maxV === null || v > maxV) { maxV = v; bestA = a; }
+        }
+      }
+      if (maxV === null) continue;   // chip absent this step — hold prevOrd
+      const ord = Math.max(0, Math.min(4, Math.round(maxV)));
+      if (ord > prevOrd) {
+        const tSec = (step * stepMs) / 1000;
+        // pan to where the driven crystal sits (same sin-projection as
+        // the nucleation bells' cell azimuth)
+        const pan = Math.max(-1, Math.min(1, Math.sin((2 * Math.PI * bestA) / A)));
+        const freq = _STRIP_MORPH_SLAM_FREQ[ord];
+        hits.push({
+          tSec, freq,
+          gain: 0.16 + 0.07 * ord,        // deeper slam = harder strike
+          decay: 0.3 + 0.18 * ord,        // ...and a longer ring
+          waveform: 'square',             // clangy — distinct from the sine/triangle bells
+          mineral: meta.id, pan,
+        });
+        if (ord >= 4) {
+          hits.push({
+            tSec, freq: freq * 1.0595,    // +1 semitone — the dissonant dendrite clang
+            gain: 0.12, decay: 0.55, waveform: 'square', mineral: meta.id, pan,
+          });
+        }
+      }
+      prevOrd = ord;
+    }
+  }
+  return hits;
+}
+
 // Build plans for several chips at once (skips any not in the dataset).
 function buildStripSonifyPlans(
   ds: StripDataset, chipIds: string[],
@@ -995,8 +1082,11 @@ function stripSonifyMany(
   const o = _stripSonifyDefaultOpts(opts);
   const plans = buildStripSonifyPlans(ds, chipIds, o);
   const hits = _stripSonifyCrystalsOn ? buildStripCrystalHits(ds, o) : [];
-  if (!plans.length && !hits.length) return null;
-  return playStripSonifyPlans(plans, onEnded, hits);
+  // The dendrite bell — morph-ordinal slam strikes layer onto the same
+  // percussion bus as the nucleation bells (one volume rides both).
+  const slams = _stripSonifyMorphBellsOn ? buildStripMorphSlamHits(ds, o) : [];
+  if (!plans.length && !hits.length && !slams.length) return null;
+  return playStripSonifyPlans(plans, onEnded, hits.concat(slams));
 }
 
 // LIVE: if a performance is playing, update its voice set to exactly
