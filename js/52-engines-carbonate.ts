@@ -63,39 +63,15 @@ function calciteMorphForm(mgRatio: number, temperature: number): string {
 //     hopperTip: boolean }         // last band is hopper_skeletal →
 //                                  // the apex hollows into a funnel
 function calciteTerraceBands(crystal, uptoStep) {
-  if (!crystal || crystal.mineral !== 'calcite' || !crystal.zones || !crystal.zones.length) return null;
-  const RELIEF = { stepped_mild: true, stepped_macro: true, hopper_skeletal: true };
-  const bands: Array<{ regime: string, mass: number }> = [];
-  let total = 0, reliefMass = 0;
-  for (const z of crystal.zones) {
-    if (uptoStep != null && z.step != null && z.step > uptoStep) break;
-    const t = z.thickness_um || 0;
-    if (t <= 0) continue;
-    const regime = z.morph_regime || 'spiral_smooth';
-    total += t;
-    if (RELIEF[regime]) reliefMass += t;
-    const last = bands[bands.length - 1];
-    if (last && last.regime === regime) last.mass += t;
-    else bands.push({ regime, mass: t });
-  }
-  if (total <= 0 || reliefMass / total < 0.05) return null;
-  // Merge sub-1.5% slivers into their predecessor so the knot list stays
-  // renderable (a 200-zone crystal collapses to a handful of bands).
-  const merged: Array<{ regime: string, mass: number }> = [];
-  for (const b of bands) {
-    const prev = merged[merged.length - 1];
-    if (prev && (b.mass / total < 0.015 || prev.regime === b.regime)) prev.mass += b.mass;
-    else merged.push({ regime: b.regime, mass: b.mass });
-  }
-  let acc = 0;
-  const knots = merged.map((b) => {
-    acc += b.mass;
-    return { frac: acc / total, regime: b.regime };
-  });
-  knots[knots.length - 1].frac = 1.0;  // close exactly despite float drift
+  // The band walk itself is mineral-agnostic and moved to js/45
+  // morphTerraceKnots in the halide render wave (2026-06-12) — same
+  // arithmetic verbatim (relief floor 5%, sliver merge 1.5%, replay
+  // truncation). This wrapper keeps calcite's gate + form derivation.
+  if (!crystal || crystal.mineral !== 'calcite') return null;
+  const walk = morphTerraceKnots(crystal, uptoStep);
+  if (!walk) return null;
   const form = String(crystal.habit || '').includes('scalenohedral') ? 'scalene' : 'rhomb';
-  const lastBand = merged[merged.length - 1];
-  return { form, knots, hopperTip: lastBand.regime === 'hopper_skeletal' };
+  return { form, knots: walk.knots, hopperTip: walk.hopperTip };
 }
 
 function grow_calcite(crystal, conditions, step) {

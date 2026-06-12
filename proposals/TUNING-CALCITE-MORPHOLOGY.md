@@ -175,8 +175,15 @@ naive paths both fail:
   const sim = new VugSimulator(def.conditions, def.events);
   for (let i = 0; i < (def.defaultSteps ?? 200); i++) sim.run_step();
   legendsSim = sim;                       // hand the view the real thing
-  topoRender(sim, sim.conditions.wall);   // force the repaint
+  topoRender(sim, sim.wall_state);        // force the repaint
   ```
+
+  **Pass `sim.wall_state`, NOT `sim.conditions.wall`** (corrected
+  2026-06-12 after it cost a session 20 minutes): the conditions wall
+  is a snapshot WITHOUT `_resolveAnchor`, so every crystal silently
+  fails anchor resolution and the 3D view renders an empty cavity —
+  no errors, no crystals, no clue. `sim.wall_state` is the live
+  WallState the renderer needs.
 
   Bundle globals (`rng`, `SCENARIOS`, `legendsSim`, `topoRender`,
   `calciteTerraceBands`…) are top-level `let`s in a classic script —

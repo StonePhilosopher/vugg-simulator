@@ -543,6 +543,14 @@ function _habitGeomToken(habit: string): string {
   if (h.includes('rhombic dodec') || h.includes('rhombic-dodec') || h === 'garnet' || h === 'trapezohedral') return 'rhombic_dodec';
   if (h === 'dodecahedral' || h === 'dodecahedron') return 'dodecahedron';
   if (h === 'cubic' || h === 'cuboid' || h === 'cube') return 'cube';
+  // Halide morphology wave (2026-06-12): the cube regime family falls
+  // through to the parent cube token (terrace geometry overrides at
+  // mesh-sync, same contract as the calcite stepped_/hopper_ families
+  // above). Without this, 'stepped_cube'/'hopper_cube' miss the EXACT
+  // 'cubic' check and land on the default 'prism' — a hex prism. The
+  // legacy 'hopper_growth' string (old halite saves) had been doing
+  // exactly that since v27; routed home as a courtesy.
+  if (h === 'stepped_cube' || h === 'hopper_cube' || h === 'hopper_growth') return 'cube';
   if (h === 'octahedral' || h === 'octahedron') return 'octahedron';
   if (h.includes('rhombohedral')) return 'rhomb';
   if (h.includes('scalenohedral')) return 'scalene';
@@ -1943,18 +1951,135 @@ function _makeTerracedCalciteGeom(terr: any): any {
   return geom;
 }
 
+// Halide render wave (2026-06-12): square-section variant for the cube
+// regime family (halite/sylvite — and any future cubic tenant, fluorite
+// is next on the list). Same band-walk input (halideTerraceBands /
+// morphTerraceKnots in js/45), different silhouette grammar:
+//
+// A cube's envelope is CONSTANT, so calcite's taper-quantizing ledges
+// have nothing to quantize. Instead the bands carve INTO the prism:
+//   stepped_mild  → fine inset grooves (the chevron fluid-inclusion
+//                   banding read — Lowenstein & Hardie's tree rings)
+//   stepped_macro → deeper, coarser setbacks
+//   hopper bands  → deepest inset (cavernous face episode)
+//   smooth bands  → full-width prism
+// A crystal whose LAST band is hopper gets the canonical halite read:
+// the top face sunk into a stepped funnel (rim → sunken apex), instead
+// of a flat cap. DoubleSide material lights the bowl, as with calcite.
+function _makeTerracedCubeGeom(terr: any): any {
+  const SEG = 4;
+  const R0 = 0.42;                       // unit half-extent (corner radius)
+  const INSET: Record<string, number> = {
+    spiral_smooth: 0, stepped_mild: 0.035, stepped_macro: 0.07, hopper_skeletal: 0.11, dendritic: 0.11,
+  };
+  const positions: number[] = [];
+  const mkRing = (y: number, r: number) => {
+    const out: number[][] = [];
+    for (let i = 0; i < SEG; i++) {
+      const a = (i / SEG) * Math.PI * 2 + Math.PI / 4;  // axis-aligned square faces
+      out.push([Math.cos(a) * r, y, Math.sin(a) * r]);
+    }
+    return out;
+  };
+  const band = (r0: number[][], r1: number[][]) => {
+    for (let i = 0; i < SEG; i++) {
+      const a = r0[i], b = r0[(i + 1) % SEG], c = r1[(i + 1) % SEG], d = r1[i];
+      _pushTri(positions, a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+      _pushTri(positions, a[0], a[1], a[2], c[0], c[1], c[2], d[0], d[1], d[2]);
+    }
+  };
+
+  // Base: square bottom cap at y=-0.5, smooth lower half (in the druse).
+  const yStart = 0;
+  const base = mkRing(-0.5, R0);
+  for (let i = 0; i < SEG; i++) {
+    const a = base[i], b = base[(i + 1) % SEG];
+    _pushTri(positions, 0, -0.5, 0, b[0], b[1], b[2], a[0], a[1], a[2]);
+  }
+  let prev = mkRing(yStart, R0);
+  band(base, prev);
+
+  // Upper half — banded prism. Cumulative growth fraction → height; each
+  // band's groove pitch matches the calcite tread grammar (mild = fine
+  // treads 0.022, macro = bold 0.04, hopper = one episode-deep inset).
+  const yTipBase = terr.hopperTip ? 0.46 : 0.5;
+  let yA = yStart;
+  for (const k of terr.knots) {
+    const yB = yStart + k.frac * (yTipBase - yStart);
+    const span = yB - yA;
+    if (span <= 1e-4) continue;
+    const inset = INSET[k.regime] || 0;
+    if (inset > 0) {
+      const stepH = k.regime === 'hopper_skeletal' ? span : (k.regime === 'stepped_mild' ? 0.022 : 0.04);
+      const n = Math.max(1, Math.min(10, Math.round(span / stepH)));
+      const rIn = R0 - inset;
+      for (let s = 0; s < n; s++) {
+        const ya = yA + (s / n) * span;
+        const yb = yA + ((s + 1) / n) * span;
+        // groove: step in, run the recessed riser, step back out
+        const in0 = mkRing(ya, rIn);
+        const in1 = mkRing(yb, rIn);
+        band(prev, in0);
+        band(in0, in1);
+        const out1 = mkRing(yb, R0);
+        band(in1, out1);
+        prev = out1;
+      }
+    } else {
+      // smooth band — full-width prism segment
+      const end = mkRing(yB, R0);
+      band(prev, end);
+      prev = end;
+    }
+    yA = yB;
+  }
+
+  // The top face: flat square cap, or the hopper funnel (rim ledge, then
+  // the apex sunk INTO the cube — the canonical skeletal-halite read).
+  if (terr.hopperTip) {
+    const rim = mkRing(yTipBase, R0);
+    band(prev, rim);
+    const inner = mkRing(yTipBase, R0 * 0.78);
+    band(rim, inner);
+    const sink = yTipBase - 0.30;
+    for (let i = 0; i < SEG; i++) {
+      const a = inner[i], b = inner[(i + 1) % SEG];
+      _pushTri(positions, 0, sink, 0, a[0], a[1], a[2], b[0], b[1], b[2]);
+    }
+  } else {
+    const top = mkRing(0.5, R0);
+    band(prev, top);
+    for (let i = 0; i < SEG; i++) {
+      const a = top[i], b = top[(i + 1) % SEG];
+      _pushTri(positions, 0, 0.5, 0, a[0], a[1], a[2], b[0], b[1], b[2]);
+    }
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Per-crystal terrace-geometry cache. Keyed by crystal_id; the signature
 // (form + knot list + hopper tip) busts the entry the moment a new band
 // forms or the replay scrubber crosses a band boundary — old geometry is
-// disposed, not leaked. Bounded by live calcite count.
+// disposed, not leaked. Bounded by live tagged-crystal count. Dispatches
+// the builder on the form token ('cube' → square ziggurat; otherwise the
+// calcite hex builder).
 function _getTerracedCalciteGeom(state: any, crystal: any, terr: any): any {
   if (!state._terraceGeoms) state._terraceGeoms = new Map();
+  // Sig uses the regime ORDINAL, not regime[0] — three regimes share the
+  // letter 's' (spiral_smooth / stepped_mild / stepped_macro), so the
+  // first-letter sig could fail to bust the cache when a band changes
+  // regime at an unchanged fraction (found during the halide render
+  // verification, 2026-06-12; latent since the calcite arc).
   const sig = `${terr.form}:${terr.hopperTip ? 'H' : 's'}:`
-    + terr.knots.map((k: any) => `${k.regime[0]}${k.frac.toFixed(3)}`).join('|');
+    + terr.knots.map((k: any) => `${MORPH_REGIMES.indexOf(k.regime)}${k.frac.toFixed(3)}`).join('|');
   const hit = state._terraceGeoms.get(crystal.crystal_id);
   if (hit && hit.sig === sig) return hit.geom;
   if (hit && hit.geom && hit.geom.dispose) hit.geom.dispose();
-  const geom = _makeTerracedCalciteGeom(terr);
+  const geom = terr.form === 'cube' ? _makeTerracedCubeGeom(terr) : _makeTerracedCalciteGeom(terr);
   state._terraceGeoms.set(crystal.crystal_id, { sig, geom });
   return geom;
 }
@@ -2758,6 +2883,14 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     if (crystal.mineral === 'calcite' && (token === 'scalene' || token === 'rhomb')
         && typeof calciteTerraceBands === 'function') {
       const terr = calciteTerraceBands(crystal, replayStep);
+      if (terr) geom = _getTerracedCalciteGeom(state, crystal, terr);
+    }
+    // Halide render wave (2026-06-12): banded/hoppered cubes get the
+    // square-section ziggurat (grooved bands + funnel-sunk top face).
+    // Same accumulate-on-replay contract as the calcite terraces.
+    if (!geom && (crystal.mineral === 'halite' || crystal.mineral === 'sylvite')
+        && token === 'cube' && typeof halideTerraceBands === 'function') {
+      const terr = halideTerraceBands(crystal, replayStep);
       if (terr) geom = _getTerracedCalciteGeom(state, crystal, terr);
     }
     if (!geom) {

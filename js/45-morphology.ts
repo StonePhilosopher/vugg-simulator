@@ -221,6 +221,62 @@ function morphRegime(th: any, surfSigma: number): string {
 // each registered mineral's crystals get this step's zone tagged
 // (morph_regime / morph_form / morph_surf_sigma) plus the live
 // crystal._morphology summary that habit dispatch reads next step.
+// Terrace-band knot walk — the mineral-agnostic core of the zone-stack
+// → render-geometry read (extracted from calciteTerraceBands in the
+// halide render wave, 2026-06-12; the walk itself was always pure
+// zone-tag arithmetic). Returns null when the crystal should render
+// smooth (no tags, or relief share < 5% of grown mass — a smooth
+// crystal with a stepped sliver of core stays visually smooth, matching
+// hand specimens). Otherwise { knots: [{frac, regime}] (band END
+// fractions of total grown size, ascending, last === 1.0), hopperTip }.
+// Callers wrap it with the mineral's form token (js/52
+// calciteTerraceBands → 'scalene'/'rhomb'; halideTerraceBands below →
+// 'cube'). uptoStep = replay truncation: terraces ACCUMULATE as the
+// scrubber advances.
+function morphTerraceKnots(crystal: any, uptoStep: any) {
+  if (!crystal || !crystal.zones || !crystal.zones.length) return null;
+  const RELIEF: Record<string, boolean> = { stepped_mild: true, stepped_macro: true, hopper_skeletal: true };
+  const bands: Array<{ regime: string, mass: number }> = [];
+  let total = 0, reliefMass = 0;
+  for (const z of crystal.zones) {
+    if (uptoStep != null && z.step != null && z.step > uptoStep) break;
+    const t = z.thickness_um || 0;
+    if (t <= 0) continue;
+    const regime = z.morph_regime || 'spiral_smooth';
+    total += t;
+    if (RELIEF[regime]) reliefMass += t;
+    const last = bands[bands.length - 1];
+    if (last && last.regime === regime) last.mass += t;
+    else bands.push({ regime, mass: t });
+  }
+  if (total <= 0 || reliefMass / total < 0.05) return null;
+  // Merge sub-1.5% slivers into their predecessor so the knot list stays
+  // renderable (a 200-zone crystal collapses to a handful of bands).
+  const merged: Array<{ regime: string, mass: number }> = [];
+  for (const b of bands) {
+    const prev = merged[merged.length - 1];
+    if (prev && (b.mass / total < 0.015 || prev.regime === b.regime)) prev.mass += b.mass;
+    else merged.push({ regime: b.regime, mass: b.mass });
+  }
+  let acc = 0;
+  const knots = merged.map((b) => {
+    acc += b.mass;
+    return { frac: acc / total, regime: b.regime };
+  });
+  knots[knots.length - 1].frac = 1.0;  // close exactly despite float drift
+  const lastBand = merged[merged.length - 1];
+  return { knots, hopperTip: lastBand.regime === 'hopper_skeletal' };
+}
+
+// Halide wrapper: banded/hoppered cubes (halite + sylvite). The form
+// token routes the renderer to the square-section ziggurat builder.
+function halideTerraceBands(crystal: any, uptoStep: any) {
+  if (!crystal || (crystal.mineral !== 'halite' && crystal.mineral !== 'sylvite')) return null;
+  const walk = morphTerraceKnots(crystal, uptoStep);
+  if (!walk) return null;
+  return { form: 'cube', knots: walk.knots, hopperTip: walk.hopperTip };
+}
+
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];
