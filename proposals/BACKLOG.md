@@ -4,6 +4,15 @@ Living list of open work items, captured from session conversations so context s
 
 > ## ⚗️ UPDATE (2026-06-12, latest) — CARBONATE Ksp(T) ANALYTIC ✅ the pK debt's SIBLING closed in the validated band (SIM 194)
 >
+> **Session handoff: `HANDOFF-VSUITE-AND-KSP-2026-06-12.md`** — the
+> evening session's advice doc (attribution-vs-fact on twice-reverted
+> variables, cloned-engine gate omissions + the proposed redox-gate
+> sweep, validity clamps vs shared-domain clamps, the throwaway rebake
+> as measurement, the gen-baseline version-bump footgun, the observe-
+> tool template, the ranked queue). It extends
+> HANDOFF-PKT-AND-FIX-SWEEP-2026-06-12.md — read both before picking up
+> the hot-band Ksp promotion or the redox sweep.
+>
 > js/20c's constant-ΔH van't Hoff logKsp(T) → the PHREEQC analytic
 > expression (wateq4f.dat verbatim) for the carbonates the database ships
 > one for: **calcite, aragonite, strontianite, witherite**. The mixed-
