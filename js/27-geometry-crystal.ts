@@ -61,6 +61,11 @@ function _habitAspectRatio(habit: string): number {
   // rhombohedral_crystal) always landed on the default 0.5, so the new
   // intermediates carry it explicitly.
   if (habit === 'feathery_bismuth' || habit === 'skeletal_bismuth') return 0.5;
+  // Pyrite striation overlay (2026-06-12): the parent forms (cubic /
+  // pyritohedral / cubo-pyritohedral) all land on the default 0.5 —
+  // the striated_ renames carry it explicitly. Same firewall as above.
+  if (habit === 'striated_cubic' || habit === 'striated_pyritohedral'
+      || habit === 'striated_cubo_pyritohedral') return 0.5;
   return 0.5;
 }
 

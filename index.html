@@ -21621,6 +21621,12 @@ function _habitAspectRatio(habit) {
     // intermediates carry it explicitly.
     if (habit === 'feathery_bismuth' || habit === 'skeletal_bismuth')
         return 0.5;
+    // Pyrite striation overlay (2026-06-12): the parent forms (cubic /
+    // pyritohedral / cubo-pyritohedral) all land on the default 0.5 —
+    // the striated_ renames carry it explicitly. Same firewall as above.
+    if (habit === 'striated_cubic' || habit === 'striated_pyritohedral'
+        || habit === 'striated_cubo_pyritohedral')
+        return 0.5;
     return 0.5;
 }
 // Ellipsoid volume coefficient: V = kVol(aRatio) × c_mm³.
@@ -30938,6 +30944,13 @@ const MORPH_DISPLAY = {
         hopper_skeletal: 'hopper frame',
         dendritic: 'dendritic',
     },
+    pyrite: {
+        spiral_smooth: 'smooth euhedral (Navajún glass)',
+        stepped_mild: 'finely striated',
+        stepped_macro: 'coarsely striated/stepped',
+        hopper_skeletal: 'skeletal',
+        dendritic: 'dendritic crust',
+    },
 };
 function morphDisplayLabel(mineral, regime) {
     return (MORPH_DISPLAY[mineral] && MORPH_DISPLAY[mineral][regime]) || regime;
@@ -31120,6 +31133,41 @@ MORPH_TH.fluorite = {
     sigma(conditions) { return conditions.supersaturation_fluorite(); },
     form(conditions) { return (conditions.fluid.Y > 1.0) ? 'octahedron' : 'cube'; },
 };
+// ---- pyrite — fifth tenant (striations ARE step bunching) ----
+// Survey: 6 scenarios, σ 1.2–3.84, CONTINUOUS within-scenario
+// distributions (unlike the halide plateaus) → pyrite crystals are
+// ZONED smooth↔striated as the fluid wanders. The striations on pyrite
+// faces ({100} and {210} both) are oscillatory combination-growth step
+// bunching — the literal physical phenomenon the stepped bands model
+// (Murowchick & Barnes 1987: T + saturation control pyrite morphology).
+// Claims: sunnyside/elmwood/reactive_wall (σ 1.2–1.5) smooth — small
+// early euhedra; mvt (p50 1.59, max 3.27) MIXED smooth↔striated;
+// reactivated vein (2.44–3.49) + sulphur_bank (2.47–3.84) striated→
+// coarse — vein and hot-spring pyrite is striated, the glassy
+// unstriated cube is the EXCEPTION in nature (Navajún's fame).
+// FORM is T-driven in grow_pyrite (>300 cube / 200–300 pyritohedron /
+// 100–200 combo / <100 framboidal-micro) — the form hook mirrors it;
+// the regime overlays 'striated_' onto the euhedral forms only.
+MORPH_TH.pyrite = {
+    SIZE_HALF_UM: Infinity,
+    SIZE_DAMP_CAP_UM: Infinity,
+    SPIRAL_MAX: 1.6, // < this → smooth euhedra (the Navajún glass)
+    STEP_MILD_MAX: 2.4, // fine striations
+    STEP_MACRO_MAX: 3.2, // coarse striations / stepped composite faces
+    HOPPER_MAX: 4.2, // skeletal pyrite (fleet max 3.84 — just unoccupied)
+    // ≥ 4.2 → dendritic (marcasite-territory crusts; unoccupied)
+    sigma(conditions) { return conditions.supersaturation_pyrite(); },
+    form(conditions) {
+        const T = conditions.temperature;
+        if (T > 300)
+            return 'cube';
+        if (T > 200)
+            return 'pyritohedron';
+        if (T > 100)
+            return 'cubo-pyritohedral';
+        return 'framboidal';
+    },
+};
 function morphSurfaceSigma(th, bulkSigma, sizeUm) {
     const effSize = Math.min(Math.max(0, sizeUm), th.SIZE_DAMP_CAP_UM);
     return 1 + (bulkSigma - 1) / (1 + effSize / th.SIZE_HALF_UM);
@@ -31201,7 +31249,7 @@ function morphTerraceKnots(crystal, uptoStep) {
 // renderer to the square-section ziggurat builder.
 function halideTerraceBands(crystal, uptoStep) {
     if (!crystal || (crystal.mineral !== 'halite' && crystal.mineral !== 'sylvite'
-        && crystal.mineral !== 'fluorite'))
+        && crystal.mineral !== 'fluorite' && crystal.mineral !== 'pyrite'))
         return null;
     const walk = morphTerraceKnots(crystal, uptoStep);
     if (!walk)
@@ -39034,6 +39082,31 @@ function grow_pyrite(crystal, conditions, step) {
         else {
             crystal.habit = 'cubic';
             crystal.dominant_forms = ['{100} cube, microcrystalline'];
+        }
+    }
+    // Morphology-generalization arc (2026-06-12, fifth tenant): the
+    // striation OVERLAY. Form stays T-driven above (Murowchick & Barnes
+    // 1987); the regime (MORPH_TH.pyrite, js/45 — Phase-2 lag pattern)
+    // overlays 'striated_' onto the euhedral forms when the classifier
+    // recorded step bunching — striations ON pyrite faces ARE bunched
+    // growth steps, {100} and {210} alike. Framboids/micro keep their
+    // aggregate habits (texture, not interface morphology). No rng →
+    // sim-neutral.
+    {
+        const regime = (crystal._morphology && crystal._morphology.regime) || null;
+        const striated = regime === 'stepped_mild' || regime === 'stepped_macro'
+            || regime === 'hopper_skeletal' || regime === 'dendritic';
+        if (striated && crystal.habit === 'cubic') {
+            crystal.habit = 'striated_cubic';
+            crystal.dominant_forms = ['{100} cube, striated faces (oscillatory {100}/{210} combination growth)'];
+        }
+        else if (striated && crystal.habit === 'pyritohedral') {
+            crystal.habit = 'striated_pyritohedral';
+            crystal.dominant_forms = ['{210} pyritohedron, striated faces'];
+        }
+        else if (striated && crystal.habit === 'cubo-pyritohedral') {
+            crystal.habit = 'striated_cubo_pyritohedral';
+            crystal.dominant_forms = ['{100} + {210}, striated'];
         }
     }
     let trace_note = 'brassy yellow metallic luster';
@@ -63218,6 +63291,12 @@ const HABIT_TO_TEXTURE = {
     // reads via the 99d dendritic fuzzy.
     'feathery_bismuth': 'acicular',
     'skeletal_bismuth': 'hopper',
+    // Stage 10 — pyrite striation overlay (2026-06-12). The deep stepped
+    // cube-edge texture IS the striation read in the 2D wall view (the
+    // pyrite/galena by-mineral override already used it for 'cubic').
+    'striated_cubic': 'cube_edge_deep',
+    'striated_pyritohedral': 'cube_edge_deep',
+    'striated_cubo_pyritohedral': 'cube_edge_deep',
 };
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
 // wins over HABIT_TO_TEXTURE[habit]. Used when one habit string covers
@@ -65331,6 +65410,11 @@ const HABIT_TO_PRIMITIVE = {
     // already routes via the dendritic fuzzy.
     'feathery_bismuth': PRIM_ACICULAR,
     'skeletal_bismuth': PRIM_ACICULAR,
+    // Pyrite striation overlay (2026-06-12): striated forms keep their
+    // parent primitives.
+    'striated_cubic': PRIM_CUBE,
+    'striated_pyritohedral': PRIM_PYRITOHEDRON,
+    'striated_cubo_pyritohedral': PRIM_PYRITOHEDRON,
     'prismatic': PRIM_HEX_PRISM_TERMINATED,
     'short_prismatic': PRIM_HEX_PRISM,
     'striated_prism': PRIM_HEX_PRISM_TERMINATED,
@@ -68370,6 +68454,12 @@ function _habitGeomToken(habit) {
     // exactly that since v27; routed home as a courtesy.
     if (h === 'stepped_cube' || h === 'hopper_cube' || h === 'hopper_growth')
         return 'cube';
+    // Pyrite striation overlay: striated cubes keep the cube token (the
+    // terrace path renders the striations as fine grooves); the
+    // pyritohedral striated forms follow their parents' existing routing
+    // (which is the pre-existing default — noted wart, see BACKLOG).
+    if (h === 'striated_cubic')
+        return 'cube';
     if (h === 'octahedral' || h === 'octahedron')
         return 'octahedron';
     if (h.includes('rhombohedral'))
@@ -70726,7 +70816,8 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         // Same accumulate-on-replay contract as the calcite terraces.
         // Fluorite joined as the fourth tenant — its REE octahedra resolve
         // to the 'octahedron' token and correctly skip this path.
-        if (!geom && (crystal.mineral === 'halite' || crystal.mineral === 'sylvite' || crystal.mineral === 'fluorite')
+        if (!geom && (crystal.mineral === 'halite' || crystal.mineral === 'sylvite'
+            || crystal.mineral === 'fluorite' || crystal.mineral === 'pyrite')
             && token === 'cube' && typeof halideTerraceBands === 'function') {
             const terr = halideTerraceBands(crystal, replayStep);
             if (terr)
@@ -71414,6 +71505,7 @@ const _HELIX_FULL_NAMES = {
     sylvite_morph: 'Sylvite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded · 2 macrostepped · 3 hopper · 4 dendritic crust)',
     bismuth_morph: 'Native bismuth growth regime at this spot (Sunagawa ordinal: 0 massive/foliated · 1 feathery · 2 feather/skeletal · 3 skeletal frame · 4 arborescent dendrite — the five-element reduction-shock texture)',
     fluorite_morph: 'Fluorite growth regime at this spot (Sunagawa ordinal: 0 glassy cube · 1 growth-banded · 2 composite/stepped · 3 hopper frame · 4 dendritic)',
+    pyrite_morph: 'Pyrite growth regime at this spot (Sunagawa ordinal: 0 smooth euhedral · 1 finely striated · 2 coarsely striated · 3 skeletal · 4 dendritic — striations are bunched growth steps)',
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // v165 — Sulfate System section (PHREEQC wateq4f Ksp via 20d + 40b).
     // Strip is no longer SI-blind on the sulfate/evaporite family
@@ -71798,6 +71890,9 @@ const _HELIX_CHEM_PARAMS = (function () {
     // with calcite_morph on the SAME fault-valve beats — two minerals,
     // one fluid history, two recorded shapes.
     params.push(_morphChipParam('fluorite', 'fluorite_morph', 'fl morph', 0xB890E0, 'halide'));
+    // Pyrite (fifth tenant) opens the 'sulfide' legend group — striation
+    // intensity as a chemistry trace (brassy gold chip).
+    params.push(_morphChipParam('pyrite', 'pyrite_morph', 'py morph', 0xD4B048, 'sulfide'));
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // v165 — SULFATE SYSTEM SI chips. 4 chips consuming the Ksp engine
     // (20d) + SI dispatcher (40b) shipped in v164 as observer-only reads,
@@ -74052,7 +74147,7 @@ function _stripRenderDataset(bodyEl, ds) {
             _stripVisibleChips[chip.id] = false;
     }));
     selector.appendChild(bulkBar);
-    const systems = ['wall', 'special', 'carbonate', 'sulfate', 'halide', 'native', 'ion'];
+    const systems = ['wall', 'special', 'carbonate', 'sulfate', 'halide', 'native', 'sulfide', 'ion'];
     for (const sys of systems) {
         const inSys = ds.manifest.chips.filter(c => c.system === sys);
         if (!inSys.length)

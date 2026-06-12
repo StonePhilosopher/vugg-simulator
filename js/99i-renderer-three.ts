@@ -551,6 +551,11 @@ function _habitGeomToken(habit: string): string {
   // legacy 'hopper_growth' string (old halite saves) had been doing
   // exactly that since v27; routed home as a courtesy.
   if (h === 'stepped_cube' || h === 'hopper_cube' || h === 'hopper_growth') return 'cube';
+  // Pyrite striation overlay: striated cubes keep the cube token (the
+  // terrace path renders the striations as fine grooves); the
+  // pyritohedral striated forms follow their parents' existing routing
+  // (which is the pre-existing default — noted wart, see BACKLOG).
+  if (h === 'striated_cubic') return 'cube';
   if (h === 'octahedral' || h === 'octahedron') return 'octahedron';
   if (h.includes('rhombohedral')) return 'rhomb';
   if (h.includes('scalenohedral')) return 'scalene';
@@ -2890,7 +2895,8 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // Same accumulate-on-replay contract as the calcite terraces.
     // Fluorite joined as the fourth tenant — its REE octahedra resolve
     // to the 'octahedron' token and correctly skip this path.
-    if (!geom && (crystal.mineral === 'halite' || crystal.mineral === 'sylvite' || crystal.mineral === 'fluorite')
+    if (!geom && (crystal.mineral === 'halite' || crystal.mineral === 'sylvite'
+        || crystal.mineral === 'fluorite' || crystal.mineral === 'pyrite')
         && token === 'cube' && typeof halideTerraceBands === 'function') {
       const terr = halideTerraceBands(crystal, replayStep);
       if (terr) geom = _getTerracedCalciteGeom(state, crystal, terr);

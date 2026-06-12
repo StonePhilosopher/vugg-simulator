@@ -153,6 +153,29 @@ function grow_pyrite(crystal, conditions, step) {
       crystal.dominant_forms = ['{100} cube, microcrystalline'];
     }
   }
+  // Morphology-generalization arc (2026-06-12, fifth tenant): the
+  // striation OVERLAY. Form stays T-driven above (Murowchick & Barnes
+  // 1987); the regime (MORPH_TH.pyrite, js/45 — Phase-2 lag pattern)
+  // overlays 'striated_' onto the euhedral forms when the classifier
+  // recorded step bunching — striations ON pyrite faces ARE bunched
+  // growth steps, {100} and {210} alike. Framboids/micro keep their
+  // aggregate habits (texture, not interface morphology). No rng →
+  // sim-neutral.
+  {
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    const striated = regime === 'stepped_mild' || regime === 'stepped_macro'
+      || regime === 'hopper_skeletal' || regime === 'dendritic';
+    if (striated && crystal.habit === 'cubic') {
+      crystal.habit = 'striated_cubic';
+      crystal.dominant_forms = ['{100} cube, striated faces (oscillatory {100}/{210} combination growth)'];
+    } else if (striated && crystal.habit === 'pyritohedral') {
+      crystal.habit = 'striated_pyritohedral';
+      crystal.dominant_forms = ['{210} pyritohedron, striated faces'];
+    } else if (striated && crystal.habit === 'cubo-pyritohedral') {
+      crystal.habit = 'striated_cubo_pyritohedral';
+      crystal.dominant_forms = ['{100} + {210}, striated'];
+    }
+  }
 
   let trace_note = 'brassy yellow metallic luster';
   if (conditions.fluid.Cu > 20) {

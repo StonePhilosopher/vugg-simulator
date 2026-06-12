@@ -415,6 +415,22 @@
               null
             ]
           }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
         }
       }
     },
@@ -831,6 +847,22 @@
               null
             ]
           }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              null,
+              null,
+              null,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
         }
       }
     },
@@ -1233,6 +1265,22 @@
           }
         },
         "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
           "wall": {
             "min": null,
             "max": null,
@@ -1663,6 +1711,22 @@
               0
             ]
           }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 3.008,
+            "samples": [
+              null,
+              null,
+              0,
+              0,
+              1.008,
+              0,
+              0,
+              0
+            ]
+          }
         }
       }
     },
@@ -2065,6 +2129,22 @@
           }
         },
         "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
           "wall": {
             "min": null,
             "max": null,
@@ -2495,6 +2575,22 @@
               null
             ]
           }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
         }
       }
     },
@@ -2897,6 +2993,22 @@
           }
         },
         "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
           "wall": {
             "min": null,
             "max": null,
@@ -3327,6 +3439,22 @@
               0
             ]
           }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              null,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
         }
       }
     },
@@ -3729,6 +3857,22 @@
           }
         },
         "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
           "wall": {
             "min": null,
             "max": null,
@@ -4159,6 +4303,22 @@
               null
             ]
           }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
         }
       }
     },
@@ -4561,6 +4721,22 @@
           }
         },
         "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
           "wall": {
             "min": null,
             "max": null,
@@ -4989,6 +5165,22 @@
               null,
               null,
               null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 3.008,
+            "samples": [
+              null,
+              null,
+              2,
+              1.008,
+              1.008,
+              0,
+              1.008,
+              1.008
             ]
           }
         }

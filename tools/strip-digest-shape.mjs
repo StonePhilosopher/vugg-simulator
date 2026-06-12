@@ -93,6 +93,10 @@ export const STRIP_DIGEST_CHIPS = [
   // fluid history. mvt pins the stays-glassy guard (4.96 just under
   // the 5.0 edge — a drift in either direction trips here).
   'fluorite_morph',
+  // pyrite (fifth tenant): sulphur_bank pins the striation trajectory
+  // (86% striated mass at seed 42 — hot-spring pyrite is the driven
+  // end of the fleet).
+  'pyrite_morph',
 ];
 
 const SAMPLE_COUNT = 8;
@@ -129,7 +133,7 @@ function seriesAt(ds, chipId, depth, deps) {
 // SEVEREST regime visible ANYWHERE per step — max over angle × height —
 // which is the pan pulse itself (banded 1 ↔ hopper 3 on the wet/dry
 // concentration spikes).
-const STRIP_DIGEST_SPARSE_MAX_CHIPS = new Set(['calcite_morph', 'halite_morph', 'sylvite_morph', 'bismuth_morph', 'fluorite_morph']);
+const STRIP_DIGEST_SPARSE_MAX_CHIPS = new Set(['calcite_morph', 'halite_morph', 'sylvite_morph', 'bismuth_morph', 'fluorite_morph', 'pyrite_morph']);
 
 function seriesMaxAt(ds, chipId, depth, deps) {
   const { stripDataIndex, stripDequantize } = deps;

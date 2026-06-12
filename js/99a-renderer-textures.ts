@@ -81,6 +81,12 @@ const HABIT_TO_TEXTURE = {
   // reads via the 99d dendritic fuzzy.
   'feathery_bismuth':        'acicular',
   'skeletal_bismuth':        'hopper',
+  // Stage 10 — pyrite striation overlay (2026-06-12). The deep stepped
+  // cube-edge texture IS the striation read in the 2D wall view (the
+  // pyrite/galena by-mineral override already used it for 'cubic').
+  'striated_cubic':              'cube_edge_deep',
+  'striated_pyritohedral':       'cube_edge_deep',
+  'striated_cubo_pyritohedral':  'cube_edge_deep',
 };
 
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]

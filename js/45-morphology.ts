@@ -95,6 +95,13 @@ const MORPH_DISPLAY: Record<string, Record<string, string>> = {
     hopper_skeletal: 'hopper frame',
     dendritic: 'dendritic',
   },
+  pyrite: {
+    spiral_smooth: 'smooth euhedral (Navajún glass)',
+    stepped_mild: 'finely striated',
+    stepped_macro: 'coarsely striated/stepped',
+    hopper_skeletal: 'skeletal',
+    dendritic: 'dendritic crust',
+  },
 };
 
 function morphDisplayLabel(mineral: string, regime: string): string {
@@ -285,6 +292,39 @@ MORPH_TH.fluorite = {
   form(conditions: any): string { return (conditions.fluid.Y > 1.0) ? 'octahedron' : 'cube'; },
 };
 
+// ---- pyrite — fifth tenant (striations ARE step bunching) ----
+// Survey: 6 scenarios, σ 1.2–3.84, CONTINUOUS within-scenario
+// distributions (unlike the halide plateaus) → pyrite crystals are
+// ZONED smooth↔striated as the fluid wanders. The striations on pyrite
+// faces ({100} and {210} both) are oscillatory combination-growth step
+// bunching — the literal physical phenomenon the stepped bands model
+// (Murowchick & Barnes 1987: T + saturation control pyrite morphology).
+// Claims: sunnyside/elmwood/reactive_wall (σ 1.2–1.5) smooth — small
+// early euhedra; mvt (p50 1.59, max 3.27) MIXED smooth↔striated;
+// reactivated vein (2.44–3.49) + sulphur_bank (2.47–3.84) striated→
+// coarse — vein and hot-spring pyrite is striated, the glassy
+// unstriated cube is the EXCEPTION in nature (Navajún's fame).
+// FORM is T-driven in grow_pyrite (>300 cube / 200–300 pyritohedron /
+// 100–200 combo / <100 framboidal-micro) — the form hook mirrors it;
+// the regime overlays 'striated_' onto the euhedral forms only.
+MORPH_TH.pyrite = {
+  SIZE_HALF_UM: Infinity,
+  SIZE_DAMP_CAP_UM: Infinity,
+  SPIRAL_MAX: 1.6,       // < this → smooth euhedra (the Navajún glass)
+  STEP_MILD_MAX: 2.4,    // fine striations
+  STEP_MACRO_MAX: 3.2,   // coarse striations / stepped composite faces
+  HOPPER_MAX: 4.2,       // skeletal pyrite (fleet max 3.84 — just unoccupied)
+  // ≥ 4.2 → dendritic (marcasite-territory crusts; unoccupied)
+  sigma(conditions: any): number { return conditions.supersaturation_pyrite(); },
+  form(conditions: any): string {
+    const T = conditions.temperature;
+    if (T > 300) return 'cube';
+    if (T > 200) return 'pyritohedron';
+    if (T > 100) return 'cubo-pyritohedral';
+    return 'framboidal';
+  },
+};
+
 function morphSurfaceSigma(th: any, bulkSigma: number, sizeUm: number): number {
   const effSize = Math.min(Math.max(0, sizeUm), th.SIZE_DAMP_CAP_UM);
   return 1 + (bulkSigma - 1) / (1 + effSize / th.SIZE_HALF_UM);
@@ -356,7 +396,7 @@ function morphTerraceKnots(crystal: any, uptoStep: any) {
 // renderer to the square-section ziggurat builder.
 function halideTerraceBands(crystal: any, uptoStep: any) {
   if (!crystal || (crystal.mineral !== 'halite' && crystal.mineral !== 'sylvite'
-      && crystal.mineral !== 'fluorite')) return null;
+      && crystal.mineral !== 'fluorite' && crystal.mineral !== 'pyrite')) return null;
   const walk = morphTerraceKnots(crystal, uptoStep);
   if (!walk) return null;
   return { form: 'cube', knots: walk.knots, hopperTip: walk.hopperTip };

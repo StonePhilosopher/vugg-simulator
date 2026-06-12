@@ -1164,6 +1164,11 @@ const HABIT_TO_PRIMITIVE = {
   // already routes via the dendritic fuzzy.
   'feathery_bismuth':               PRIM_ACICULAR,
   'skeletal_bismuth':               PRIM_ACICULAR,
+  // Pyrite striation overlay (2026-06-12): striated forms keep their
+  // parent primitives.
+  'striated_cubic':                 PRIM_CUBE,
+  'striated_pyritohedral':          PRIM_PYRITOHEDRON,
+  'striated_cubo_pyritohedral':     PRIM_PYRITOHEDRON,
   'prismatic':                      PRIM_HEX_PRISM_TERMINATED,
   'short_prismatic':                PRIM_HEX_PRISM,
   'striated_prism':                 PRIM_HEX_PRISM_TERMINATED,
