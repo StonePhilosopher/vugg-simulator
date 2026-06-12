@@ -551,3 +551,34 @@ every restatement of the claim is hunted down.)
 
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.
+
+## v190 — the Joplin dogtooth (the hand-verification catch + the live-trajectory trap)
+
+**What happened:** the boss's first specimen-verification verdict on the
+morphology system: "my MVT just grew a rhombohedral calcite instead of a
+dogtooth." The v187 Mg-axis phase had written the OPPOSITE claim into
+the research doc ("Tri-State spar is rhombs, not dogtooth") and
+calibrated mvt's broth to match (Mg:Ca 0.10, below the 0.15 form flip).
+The claim survived a literature-calibrated arc, a fleet sweep, and 1861
+tests — and was backwards. Joplin's iconic calcite IS the golden
+dogtooth; MVT brines are DOLOMITIZING (Mg-rich) fluids; Tri-State
+carries dolomite gangue. The broth value was scaffolding wearing a
+citation's clothes.
+
+**The second catch inside the fix:** Mg 30→50 (initial ratio 0.167 >
+0.15) changed NOTHING — calciteMorphForm reads the LIVE fluid, and
+mvt's fluid_mixing event holds Ca at 400 from step ~20, pinning the
+live ratio at 0.125. Thresholds gate on TRAJECTORIES, not initial
+broth values. Mg 65 holds 0.163 through the run → smooth scalenohedral
+at 4/5 seeds (the regime claim was always right; only the form was
+wrong).
+
+**The lessons:** (1) a hand specimen overruling a calibrated threshold
+is the system working as designed — the worksheet's standing principle,
+now exercised once; expect more, welcome them. (2) When tuning any
+broth value toward a threshold (MG_SCALENO, gates, band edges), probe
+the LIVE trajectory after events/movements — never trust the initial
+value; the silent-no-op failure mode costs an iteration every time.
+(3) The verdicts will not land where predicted: the worksheet flagged
+jeffrey + marble as the boldest claims, and the first catch was mvt's
+FORM, which nobody flagged.
