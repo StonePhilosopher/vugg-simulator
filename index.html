@@ -68564,11 +68564,19 @@ function _habitGeomToken(habit) {
     if (h === 'stepped_cube' || h === 'hopper_cube' || h === 'hopper_growth')
         return 'cube';
     // Pyrite striation overlay: striated cubes keep the cube token (the
-    // terrace path renders the striations as fine grooves); the
-    // pyritohedral striated forms follow their parents' existing routing
-    // (which is the pre-existing default — noted wart, see BACKLOG).
+    // terrace path renders the striations as fine grooves).
     if (h === 'striated_cubic')
         return 'cube';
+    // Pyritohedral family → pentagonal dodecahedron (THREE's
+    // DodecahedronGeometry is the regular Platonic form — the closest
+    // primitive to {210}'s twelve pentagons; 99c's 2D path already maps
+    // the whole family to PRIM_PYRITOHEDRON). Substring catches
+    // 'pyritohedral', 'cubo-pyritohedral', 'cubic_or_pyritohedral' and
+    // both striated_ overlays — all of which defaulted to a HEX PRISM
+    // before this. Striated pyritohedra render without grooves (the
+    // terrace path is cube-token-gated); the envelope is the fix.
+    if (h.includes('pyritohedral'))
+        return 'dodecahedron';
     if (h === 'octahedral' || h === 'octahedron')
         return 'octahedron';
     if (h.includes('rhombohedral'))

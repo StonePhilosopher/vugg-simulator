@@ -19,6 +19,7 @@ declare const MORPH_TH: any;
 declare const morphRegime: any;
 declare const morphDisplayLabel: any;
 declare const _habitAspectRatio: any;
+declare const _habitGeomToken: any;
 declare const _HELIX_CHEM_PARAMS: any;
 
 function runScenario(name: string, seed = 42, steps?: number) {
@@ -93,6 +94,19 @@ describe('pyrite morphology registry (fifth tenant)', () => {
     for (const h of ['striated_cubic', 'striated_pyritohedral', 'striated_cubo_pyritohedral', 'cubic', 'pyritohedral']) {
       expect(_habitAspectRatio(h)).toBe(0.5);
     }
+  });
+
+  it('pyritohedral family routes to the dodecahedron 3D token (hex-prism wart fixed)', () => {
+    // Pre-fix, every string here fell through _habitGeomToken's default
+    // and pyritohedra rendered as HEX PRISMS in the topo view. The 2D
+    // path (99c PRIM_PYRITOHEDRON) was always right; this pins the 3D
+    // token to the matching primitive. striated_cubic stays on the cube
+    // token — that's the grooved-ziggurat terrace path, not a wart.
+    for (const h of ['pyritohedral', 'cubo-pyritohedral', 'cubic_or_pyritohedral',
+                     'striated_pyritohedral', 'striated_cubo_pyritohedral']) {
+      expect(_habitGeomToken(h)).toBe('dodecahedron');
+    }
+    expect(_habitGeomToken('striated_cubic')).toBe('cube');
   });
 
   it('pyrite_morph chip opens the sulfide legend group; display speaks pyrite', () => {
