@@ -121,7 +121,25 @@ without deliberation. The instrument IS the method now.
 4. **Weathering-epilogue mechanic** — erythrite (wittichen) is the
    first client; roughten_gill's post-mining dump minerals would be a
    second.
-5. **Boss verification lane** (eyes + ears, all live on Pages now):
+5. **mvt silver de-confabulation** (boss catch, end of session): the
+   boss asked "is there silver in MVT?" — and there ISN'T. Tri-State
+   produced lead and zinc; silver-POOR galena is a DIAGNOSTIC MVT
+   feature (Ag-in-galena rides Sb/Bi substitution — a high-T vein
+   phenomenon; USGS MVT model, Leach & Sangster). The scenario's Apr
+   2026 gap-fill note ("Tri-State galena is documented argentiferous;
+   Ag was historically a meaningful smelter byproduct") is an
+   UNCITED confabulation (v139-adamite family) — the anchor even says
+   "Pb-Zn-Ag". The baseline's acanthite ×4 + native_silver are extras
+   riding that claim (expects promises no silver mineral; greenockite
+   stays — Cd-in-sphalerite IS documented at Tri-State). Fix shape:
+   re-check the cited sources (Roedder 1976 / Ohle 1959 / Hagni 1976 /
+   Stoffell 2008) for any Ag data, then drop broth Ag to 0 or
+   sub-threshold, single-scenario rebake, correct the anchor + note.
+   CAUTIONARY twin of lesson 1: the v194 verdict cited "mvt silver
+   suite PRESERVED" as rebake cleanliness — treating an artifact as a
+   treasure. Per-pin verdicts inherit the baseline's own errors; a
+   preserved wart is not a win.
+6. **Boss verification lane** (eyes + ears, all live on Pages now):
    the mvt phantom core, wittichen barite, dendrite trees, ⚒ Slams by
    ear — PLUS new from tonight: roughten_gill mottramite (dark
    brown-buff rice-grain microcrystals appearing in the supergene

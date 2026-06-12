@@ -34,6 +34,17 @@ Living list of open work items, captured from session conversations so context s
 > WARM (≤~100°C, Folk 1974) scenario + minor cascade re-rolls; calcite
 > stays 1 everywhere, mvt silver PRESERVED, nothing lost fleet-wide.**
 >
+> **NEW OPEN ITEM — mvt silver de-confabulation** (boss catch
+> 2026-06-12): MVT deposits are diagnostically silver-POOR; Tri-State
+> produced Pb+Zn only, yet the scenario's Apr-2026 gap-fill added broth
+> Ag on an uncited "documented argentiferous / meaningful smelter
+> byproduct" claim (v139-adamite family) and the anchor says "Pb-Zn-Ag".
+> Baseline acanthite ×4 + native_silver are artifacts of that claim.
+> Fix: verify the cited sources for Ag data, drop broth Ag to 0/trace,
+> single-scenario rebake, true the anchor + note. Greenockite STAYS
+> (Cd-in-sphalerite is real at Tri-State). Details in the session
+> handoff §7.5.
+>
 > **NEW OPEN ITEM — hot-band carbonate Ksp(T) promotion** (the remaining
 > sliver): activating the analytic above 90°C (where genuine hydrothermal
 > calcite forms, mvt/cooling/epithermal 150-280°C) needs the calcite +
