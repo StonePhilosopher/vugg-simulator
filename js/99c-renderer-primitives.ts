@@ -1169,6 +1169,14 @@ const HABIT_TO_PRIMITIVE = {
   'striated_cubic':                 PRIM_CUBE,
   'striated_pyritohedral':          PRIM_PYRITOHEDRON,
   'striated_cubo_pyritohedral':     PRIM_PYRITOHEDRON,
+  // REE-octahedron regime family (fix-backlog 2026-06-12): explicit
+  // beats fuzzy — the fuzzy fallback's 'hopper' check fires before
+  // 'octahed' and would route hopper_octahedral_REE to a CUBE.
+  // dendritic goes acicular like the other dendritic crusts.
+  'octahedral_REE':                 PRIM_OCTAHEDRON,
+  'stepped_octahedral_REE':         PRIM_OCTAHEDRON,
+  'hopper_octahedral_REE':          PRIM_OCTAHEDRON,
+  'dendritic_octahedral_REE':       PRIM_ACICULAR,
   'prismatic':                      PRIM_HEX_PRISM_TERMINATED,
   'short_prismatic':                PRIM_HEX_PRISM,
   'striated_prism':                 PRIM_HEX_PRISM_TERMINATED,

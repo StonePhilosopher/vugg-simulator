@@ -292,8 +292,10 @@ MORPH_TH.native_bismuth = {
 // nothing for the band structure to gain.
 // FORM: composes with the v103 REE rule — the registry form hook
 // mirrors grow_fluorite's own Y>1 {111} flip (Bosze & Rakovan 2002).
-// Regime HABIT renames apply to the cube path only; REE octahedra keep
-// octahedral_REE (σ-stepped octahedra are a noted debt, not modeled).
+// Regime HABIT renames apply to BOTH paths since 2026-06-12: the cube
+// alphabet AND the REE octahedra (stepped_/hopper_/dendritic_
+// octahedral_REE — fleet-inert today, sunnyside is flat at σ 1.95;
+// fires when a driven Y-fluorite scenario lands).
 MORPH_TH.fluorite = {
   SIZE_HALF_UM: Infinity,
   SIZE_DAMP_CAP_UM: Infinity,

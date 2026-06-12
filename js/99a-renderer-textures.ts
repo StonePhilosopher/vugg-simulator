@@ -87,6 +87,13 @@ const HABIT_TO_TEXTURE = {
   'striated_cubic':              'cube_edge_deep',
   'striated_pyritohedral':       'cube_edge_deep',
   'striated_cubo_pyritohedral':  'cube_edge_deep',
+  // Stage 11 — REE-octahedron regime family (fix-backlog 2026-06-12).
+  // Same texture grammar as every other stepped/hopper/dendritic
+  // family: terraced notch for the driven bands, acicular rasp for the
+  // dendritic crust. Plain octahedral_REE keeps the default (no entry).
+  'stepped_octahedral_REE':      'hopper',
+  'hopper_octahedral_REE':       'hopper',
+  'dendritic_octahedral_REE':    'acicular',
 };
 
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]

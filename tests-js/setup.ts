@@ -257,6 +257,11 @@ const EXPORTS = [
   // exposed so tests can assert the twin token produces the right
   // BufferGeometry vertex count (24 cube faces × 3 = 72 vertex triples).
   '_buildHabitGeom',
+  // Morphology fix-backlog (2026-06-12) — dendrite TREE geometry
+  // (99i): deterministic branching skeleton for dendritic/arborescent
+  // habits + its habit-string gate.
+  '_makeDendriteTreeGeom',
+  '_isDendriticHabit',
   // 2026-05-22 wireframe cluster-spec refactor (99d-renderer-wireframe.ts).
   // Per-habit cluster pattern dispatch; mirrors 99i's _CLUSTER_PATTERNS.
   '_druzyClusterSpec',

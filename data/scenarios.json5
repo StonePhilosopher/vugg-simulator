@@ -223,7 +223,7 @@
           "Zn": 0,
           "S": 0,
           "F": 5,
-          "Mg": 30,  // realistic Tri-State Mg/Ca ratio
+          "Mg": 65,  // realistic Tri-State Mg/Ca ratio
           // Drift-fix: JS scenario_mvt has carried Pb=40 in init since round 2 but
           // Python had it at default 0. Mirroring JS intent (combined with
           // event_fluid_mixing's +=25, post-event Pb=65 in both runtimes — enables
@@ -394,11 +394,20 @@
           "endStep": 200,
           "base": 180,
           "ops": [
-            { "kind": "pulse", "amp": 400, "center": 0.12, "width": 0.06 },
-            { "kind": "pulse", "amp": 450, "center": 0.32, "width": 0.06 },
-            { "kind": "pulse", "amp": 430, "center": 0.52, "width": 0.06 },
-            { "kind": "pulse", "amp": 480, "center": 0.72, "width": 0.06 },
-            { "kind": "pulse", "amp": 400, "center": 0.97, "width": 0.06 }
+            // v192 re-pin: amps ×1.15 + width 0.06→0.08. The corrected
+            // pK(T) (PB82, js/20b) mutes the pulses' recorded σ
+            // excursions at elmwood's 53–120°C — stepped zone share
+            // fell 18%→15% and the band count merged under the sliver
+            // floor. The pulses were calibrated in the OLD constants'
+            // units; the locality claim (stepped golden scalenohedra,
+            // fine mm-scale rim) is the fixed point. Width is the
+            // binding lever: the 16 mm crystal damps hard, so only
+            // time-above-threshold (not peak height) feeds the bands.
+            { "kind": "pulse", "amp": 460, "center": 0.12, "width": 0.08 },
+            { "kind": "pulse", "amp": 518, "center": 0.32, "width": 0.08 },
+            { "kind": "pulse", "amp": 495, "center": 0.52, "width": 0.08 },
+            { "kind": "pulse", "amp": 552, "center": 0.72, "width": 0.08 },
+            { "kind": "pulse", "amp": 460, "center": 0.97, "width": 0.08 }
           ]
         },
         {
@@ -1946,14 +1955,16 @@
     "wittichen": {
       "anchor": "Kloster Wittichen, Schwarzwald (Black Forest), Baden-Württemberg, Germany — the classic Bi-Co-Ni-Ag-As-(Ba) five-element vein district; cobalt-pigment + silver mining boom 1730s–40s around the convent. Sophia and Johann-Georg veins.",
       "description": "A five-element vein in granite basement: hot, saline, SULFUR-STARVED brine carries Bi + Co + Ni + Ag + As. S ~3 ppm is load-bearing — bismuthinite and acanthite never gate open, so the metals stay NATIVE and arsenides are the metal sinks. Hot stage grows skutterudite + nickeline rosettes (320–420°C); cooling brings the fluid into bismuth's window; then the deposit-defining REDUCING SHOCK (hydrocarbon influx along the fault — the declared fluid.Eh pulse) slams native-metal σ to its structural ceiling and bismuth precipitates as ARBORESCENT DENDRITES, safflorite riming the fresh branches (its T window overlaps the shock). Late meteoric water brings oxidized sulfate (barite stage) and carbonate gangue seals the dendrites into the vein — the cross-section hand specimen of the class.",
-      "expects_species": ["skutterudite", "nickeline", "safflorite", "native_bismuth", "native_arsenic", "native_silver", "proustite", "acanthite", "calcite", "aragonite", "erythrite", "barite"],
+      "expects_species": ["skutterudite", "nickeline", "safflorite", "native_bismuth", "native_arsenic", "native_silver", "proustite", "acanthite", "calcite", "aragonite", "barite"],
       "duration_steps": 160,
       "notes": [
         "Anchor + mechanism: Kissin 1992 (Canadian Mineralogist 30) defines the five-element class; Burisch et al. 2017 (Geology 45) ties the native-metal stage to methane/hydrocarbon influx — fluid inclusions in Schwarzwald five-element veins carry CH4 exactly at the dendrite stage, and the reduction is fast (hours-to-days), which is WHY the metals dendrite. Scharrer, Kreissl & Markl 2019 (Ore Geology Reviews) survey the assemblage diversity; Staude et al. 2012 (Mineralium Deposita 47) give the Schwarzwald basement-brine fluid-inclusion record (20–26 wt% NaCl, 150–340°C) this broth is anchored on.",
         "The redox shock is a DECLARED fluid.Eh movement (event-subsumption discipline, v185/v186): base −20 mV (mildly reducing basement brine), ONE deep pulse (amp −320) at u=0.58 (the CH4 influx; width ~8 steps; measured floor ~−253 mV at seed 42), and a late oxidizing trend (+95 ease — meteoric tail, tuned DOWN from +140 which dissolved the arsenide suite; a stronger late-oxidation finger was tried and reverted for the same reason — barite/erythrite are the documented aspirational casualties of arsenide survival). The wittichen_hydrocarbon_influx event at the pulse center is NARRATIVE-ONLY (no fluid writes).",
         "Engine fit: this is the morphology registry's dendrite-band tenant (MORPH_TH.native_bismuth, SIM 188 — RESEARCH-bismuth-morphology-2026-06-12.md). At the shock, Bi σ ≈ bi_f 3.0 × s_mask 0.96 × red_f 1.5 × T_f 1.0 ≈ 4.3 — the dendritic band (≥3.8) of a scale structurally capped at ~4.5. Pre-shock cooling-stage Bi sits in the feathery bands; post-shock regrowth heals feathery over the dendrites, so the zone stack RECORDS the shock (the narrator's healed-over paragraph + the bismuth_morph strip chip slamming 0→4 on the pulse). Skutterudite + safflorite get their FIRST scenario home here (both were expects-orphans fleet-wide).",
         "Wallrock: 'pegmatite' composition as the granite proxy (inert silicate — Wittichen veins cut Triberg granite; the carbonate gangue arrives in the FLUID via the late CO3 event, not from wall dissolution). Architecture tabular (vein-bounded), pocket size class, shape_seed 1736 (the cobalt-boom decade).",
-        "Calibration target: the hand specimen is silver-white dendritic Bi embedded in white carbonate with gray arsenide rims, read in cross-section. MEASURED at seeds 42-45 (calibration session, 2026-06-12): native_bismuth 3-5 alive with 45-49% DENDRITIC zone mass (the shock recorded); skutterudite 2 + safflorite 2 + nickeline 4 + native_arsenic 4 all ALIVE; native_silver grows then sulfidizes to acanthite 4 at the meteoric-sulfate stage (the tarnish story — hand-specimen Wittichen silver is acanthite-coated); proustite 2 (ruby silver); calcite + aragonite gangue. ASPIRATIONAL (v107 honesty): barite + erythrite — both need late oxidation the living arsenide suite cannot survive; vugg-tune-scenario follow-up (a spatially-partial oxidation, or barite as its own vein-top stage). Bi band edges re-pinned against this trajectory (js/45 — the activity correction at salinity 24 compresses the structural ~4.5 ceiling to ~2.4 measured)."
+        "Calibration target: the hand specimen is silver-white dendritic Bi embedded in white carbonate with gray arsenide rims, read in cross-section. MEASURED at seeds 42-45 (calibration session, 2026-06-12): native_bismuth 3-5 alive with 45-49% DENDRITIC zone mass (the shock recorded); skutterudite 2 + safflorite 2 + nickeline 4 + native_arsenic 4 all ALIVE; native_silver grows then sulfidizes to acanthite 4 at the meteoric-sulfate stage (the tarnish story — hand-specimen Wittichen silver is acanthite-coated); proustite 2 (ruby silver); calcite + aragonite gangue. Bi band edges re-pinned against this trajectory (js/45 — the activity correction at salinity 24 compresses the structural ~4.5 ceiling to ~2.4 measured).",
+        "BARITE DELIVERED (v191, gate-census tune): the v189 'aspirational barite' diagnosis was WRONG about the mechanism — the gate census (tools/wittichen-sulfate-probe.mjs) measured every gate component PASSING from step ~133 (Ba✓ S✓ redox✓ pH✓ T✓) with σ plateaued at 0.60: barite never needed more OXIDATION, it needed more BARIUM (ba_f 24/30 × s_f 30/40 × the salinity-24 activity penalty ≈ 0.59 pinned σ under 1 forever). The locality is the authority: Wittichen's veins are literally Barytgänge — barite-gangue veins, the district's defining gangue — so Ba 24 was unjustifiably shy. Ba 75 (still modest for a heavy-spar district) puts the barite stage at σ 1.47–1.55 from the meteoric beat on: barite 2/6/3 crystals at seeds 42/43/44, NO witherite (the BaCO3 competitor never gates), and the living suite intact at all probed seeds. No Eh change — the reverted +100 oxidation finger stays reverted.",
+        "ERYTHRITE DEMOTED from expects (v191, measured): the cobalt bloom's gate needs T ≤ 50°C (MINERAL_GATES_erythrite — weathering-zone physics) and this scenario's T trajectory ends at ~150°C, so erythrite is STRUCTURALLY out-of-window in a sealed-vein story, not tuning-shy. The real Wittichen erythrite the 1730s miners followed formed during post-Variscan exhumation weathering, long after the vein sealed; modeling it honestly needs a vadose/weathering EPILOGUE (drain + cool to ~20°C + spatially-partial oxidation), which contradicts this scenario's closing beat (carbonate seals the vug at ~150°C). If a weathering-epilogue mechanic ever lands (the schneeberg step-110 vadose pattern, made spatially partial), erythrite is its first client — logged in BACKLOG, not in expects."
       ],
       "movements": [
         {
@@ -1991,7 +2002,7 @@
           "Ni": 20,
           "As": 120,
           "Ag": 12,
-          "Ba": 24,
+          "Ba": 75,
           "Sr": 4,
           "S": 3,
           "Na": 120,

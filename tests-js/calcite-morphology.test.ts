@@ -256,12 +256,29 @@ describe('calcite morphology instruments (Phase 1)', () => {
     }
     expect(sawTerraces).toBeGreaterThan(0);
 
-    // mvt's calcite is smooth spar with a sub-5% stepped CORE — below
-    // the relief floor, so it renders smooth (hand-specimen truth).
+    // mvt's calcite: smooth-DOMINANT dogtooth with at most a small
+    // stepped CORE. v192 re-pin (pK(T) correction): the corrected
+    // early-σ trajectory can tag the first zones stepped while the
+    // crystal is still small (damping is weak at small size) — a
+    // stepped core under glassy outer faces, which is the PHANTOM
+    // read Tri-State calcite is collector-famous for. The contract:
+    // terraces may exist, but any relief is confined to the early
+    // stack (≤15% of the walk) and the crystal FINISHES smooth — the
+    // hand-specimen faces are glassy (the boss-verified dogtooth).
     const mvt = runScenario('mvt');
     const mvtCal = mvt.crystals.find((c: any) => c.mineral === 'calcite' && !c.dissolved);
     expect(mvtCal).toBeTruthy();
-    expect(calciteTerraceBands(mvtCal)).toBeNull();
+    const mvtTerr = calciteTerraceBands(mvtCal);
+    if (mvtTerr) {
+      const lastKnot = mvtTerr.knots[mvtTerr.knots.length - 1];
+      expect(lastKnot.regime).toBe('spiral_smooth');             // glassy finish
+      let reliefSpan = 0, prev = 0;
+      for (const k of mvtTerr.knots) {
+        if (k.regime !== 'spiral_smooth') reliefSpan += k.frac - prev;
+        prev = k.frac;
+      }
+      expect(reliefSpan).toBeLessThanOrEqual(0.15);              // phantom core, not a stepped rim
+    }
 
     // sabkha is hopper/skeletal 100%: the apex hollows into a funnel.
     const sabkha = runScenario('sabkha_dolomitization');
@@ -291,8 +308,16 @@ describe('calcite morphology instruments (Phase 1)', () => {
     const ultraCal = ultra.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);
     expect(ultraCal.length).toBeGreaterThan(0);
     for (const c of ultraCal) expect(c.habit).toBe('stepped_scalenohedral');
-    // (mvt at Mg:Ca ~0.075 staying plain rhombohedral is pinned in the
-    // Phase 2 contract above — Tri-State spar is rhombs, not dogtooth.)
+    // mvt: CORRECTED 2026-06-12 (boss hand-verification, first catch) —
+    // the v187 claim "Tri-State spar is rhombs, not dogtooth" was
+    // backwards: Joplin's iconic calcite IS the golden dogtooth, and
+    // MVT brines are DOLOMITIZING (Mg-rich) fluids. Broth Mg 30→65
+    // (live ratio 0.163 after the fluid-mixing event holds Ca at 400)
+    // → smooth SCALENOHEDRAL: the glassy Joplin dogtooth.
+    const mvtSim = runScenario('mvt');
+    const mvtDogtooth = mvtSim.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c.total_growth_um > 0);
+    expect(mvtDogtooth.length).toBeGreaterThan(0);
+    for (const c of mvtDogtooth) expect(c.habit).toBe('scalenohedral');
   });
 
   it('Phase 5: elmwood — the stepped-calcite showcase contract', () => {

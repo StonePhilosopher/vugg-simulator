@@ -73,7 +73,7 @@ Object.assign(VugSimulator.prototype, {
       if (z.morph_regime === 'dendritic') dendr += z.thickness_um;
     }
     if (total > 0 && dendr / total > 0.05 && c.habit !== 'arborescent_dendritic') {
-      parts.push(`The zone stack remembers what the final habit hides: ${Math.round(100 * dendr / total)}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.`);
+      parts.push(narrative_variant('native_bismuth', 'morph_healed_dendrite', { pct: Math.round(100 * dendr / total) }) || `The zone stack remembers what the final habit hides: ${Math.round(100 * dendr / total)}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.`);
     }
   }
   return parts.filter(p => p).join(' ');

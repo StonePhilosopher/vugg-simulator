@@ -42,8 +42,29 @@ function grow_fluorite(crystal, conditions, step) {
   // aging. Silverton / San Juan late hydrothermal fluorite is the
   // canonical natural occurrence.
   if (f.Y > 1.0) {
-    crystal.habit = 'octahedral_REE';
-    crystal.dominant_forms = ['{111} octahedron', 'REE-stabilized faces', 'blue Y³⁺/Eu²⁺ SW UV fluorescence (bleach-stable)'];
+    // σ-stepped REE octahedra (fix-backlog 2026-06-12): the {111} REE
+    // form still outranks the cube alphabet, and the regime now grades
+    // the octahedron's SURFACE the same way it grades the cube's —
+    // Bosze & Rakovan's face stabilization picks the FORM; Sunagawa's
+    // ladder picks the TEXTURE; they compose. FLEET-INERT today by
+    // measurement (sunnyside, the only Y>1 tenant, is flat at σ 1.95 —
+    // deep in the smooth band; morph-sigma-observe re-confirmed at this
+    // commit), so the renames are byte-identical until a driven
+    // Y-fluorite scenario lands. No rng → sim-neutral.
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+      crystal.habit = 'stepped_octahedral_REE';
+      crystal.dominant_forms = ['{111} octahedron with growth-stepped faces', 'REE-stabilized faces', 'blue Y³⁺/Eu²⁺ SW UV fluorescence (bleach-stable)'];
+    } else if (regime === 'hopper_skeletal') {
+      crystal.habit = 'hopper_octahedral_REE';
+      crystal.dominant_forms = ['{111} octahedron, faces hollowed to stepped funnels', 'REE-stabilized faces'];
+    } else if (regime === 'dendritic') {
+      crystal.habit = 'dendritic_octahedral_REE';
+      crystal.dominant_forms = ['dendritic REE-fluorite crust'];
+    } else {
+      crystal.habit = 'octahedral_REE';
+      crystal.dominant_forms = ['{111} octahedron', 'REE-stabilized faces', 'blue Y³⁺/Eu²⁺ SW UV fluorescence (bleach-stable)'];
+    }
     crystal._ree_substitution = true;
     // Photobleaching: F-center visible color fades with light exposure.
     // Display specimens trend pale-blue/colorless even when fresh
@@ -58,8 +79,9 @@ function grow_fluorite(crystal, conditions, step) {
     // fault-valve spikes 5.94 → banded, mvt 4.96 → glassy smooth).
     // Same shared cube alphabet as the halides — render, aspect, and
     // texture routes all pre-exist. The REE octahedral branch above
-    // outranks the regime (form beats roughness; σ-stepped octahedra
-    // are a noted debt). No rng here → sim-neutral.
+    // outranks the regime for FORM, and carries its own regime grading
+    // (σ-stepped octahedra, modeled 2026-06-12). No rng here →
+    // sim-neutral.
     const regime = (crystal._morphology && crystal._morphology.regime) || null;
     if (regime === 'stepped_mild' || regime === 'stepped_macro') {
       crystal.habit = 'stepped_cube';
@@ -116,7 +138,7 @@ function grow_fluorite(crystal, conditions, step) {
     trace_Fe: f.Fe * 0.02,
     trace_Mn: f.Mn * 0.05,
     trace_Y: f.Y * 0.008,
-    note: `color zone: ${color}` + (crystal.habit === 'octahedral_REE' ? ` (octahedral, Y ${f.Y.toFixed(1)} ppm)` : '')
+    note: `color zone: ${color}` + (String(crystal.habit).includes('octahedral_REE') ? ` (octahedral, Y ${f.Y.toFixed(1)} ppm)` : '')
   });
 }
 

@@ -19,3 +19,11 @@ The crystal is twinned on {twin_law}, a common deformation twin in calcite that 
 ## variant: final_size
 
 Final size: {size_desc} ({mm} mm), {habit} habit.
+
+## variant: morph_stepped
+
+The faces are terraced — {bands} distinct macrostep train{bands_s}, each one a stretch of growth when supersaturation surged past the quiet spiral regime and the elementary steps bunched into ledges large enough to see. Read the staircase from base to tip and you are reading the fluid's history in stone.
+
+## variant: morph_hopper
+
+Growth outran supply: edges and corners sit proud in the diffusion field and kept building while the face centers starved, so the faces hollowed into stepped funnels while the crystal stayed faceted. A hopper calcite is a crystal that grew too fast for its own interior.

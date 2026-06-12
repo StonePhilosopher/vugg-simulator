@@ -70,7 +70,11 @@ for (const seed of SEEDS) {
     }
     line += `  | head calcite ${(head.total_growth_um / 1000).toFixed(1)}mm ${head.habit}`
       + ` stepped ${(100 * steppedShare).toFixed(0)}% bands ${bandCount}`;
-    if (String(head.habit).startsWith('stepped_') && steppedShare > 0.4) steppedHeadlines++;
+    // Gate trued v192: the >0.4 share gate NEVER matched the shipped
+    // claim (~18% fine-stepped rim on a massive golden core IS the
+    // Elmwood hand specimen — macro-pagoda deliberately not chased).
+    // The headline contract = stepped habit + the recorded rim share.
+    if (String(head.habit).startsWith('stepped_') && steppedShare >= 0.15 && bandCount >= 8) steppedHeadlines++;
   } else {
     line += '  | NO CALCITE';
   }

@@ -26,6 +26,9 @@ declare const morphRegime: any;
 declare const morphDisplayLabel: any;
 declare const halideTerraceBands: any;
 declare const _HELIX_CHEM_PARAMS: any;
+declare const _habitGeomToken: any;
+declare const _habitAspectRatio: any;
+declare const HABIT_TO_TEXTURE: any;
 
 function runScenario(name: string, seed = 42, steps?: number) {
   setSeed(seed);
@@ -102,6 +105,31 @@ describe('fluorite morphology registry (fourth tenant)', () => {
       const tagged = (c.zones || []).find((z: any) => z.morph_form);
       expect(tagged.morph_form).toBe('octahedron');
     }
+  });
+
+  it('σ-stepped REE octahedra: routes exist end-to-end (fleet-inert — sunnyside is flat at 1.95)', () => {
+    // The compose in grow_fluorite fires only when a Y>1 scenario sees
+    // driven σ — no fleet tenant today, BY MEASUREMENT (the survey
+    // re-confirmed sunnyside flat at 1.95 before this shipped). What
+    // CAN rot silently is the plumbing, so pin every route the renames
+    // will need the day a Y-fluorite scenario lands:
+    // 3D token — stepped/hopper keep the octahedron; dendritic gets the
+    // tree (spike token). Plain octahedral_REE had been a hex-prism
+    // wart since v103 (same family as pyritohedral) — pinned fixed.
+    expect(_habitGeomToken('octahedral_REE')).toBe('octahedron');
+    expect(_habitGeomToken('stepped_octahedral_REE')).toBe('octahedron');
+    expect(_habitGeomToken('hopper_octahedral_REE')).toBe('octahedron');
+    expect(_habitGeomToken('dendritic_octahedral_REE')).toBe('spike');
+    // Aspect firewall — the parent landed on the default 0.5; renames
+    // carry it explicitly (rename must never move volume → chemistry).
+    for (const h of ['octahedral_REE', 'stepped_octahedral_REE',
+                     'hopper_octahedral_REE', 'dendritic_octahedral_REE']) {
+      expect(_habitAspectRatio(h)).toBe(0.5);
+    }
+    // 2D texture — same grammar as every other regime family.
+    expect(HABIT_TO_TEXTURE['stepped_octahedral_REE']).toBe('hopper');
+    expect(HABIT_TO_TEXTURE['hopper_octahedral_REE']).toBe('hopper');
+    expect(HABIT_TO_TEXTURE['dendritic_octahedral_REE']).toBe('acicular');
   });
 
   it('fluorite_morph chip exists under the halide system; display speaks fluorite', () => {

@@ -41,30 +41,54 @@
 const CARBONATE_SPECIATION_ACTIVE = true;
 
 // Carbonate dissociation constants. pK at temperature, returned as
-// -log₁₀(K). Values from Stumm & Morgan, Aquatic Chemistry (3rd ed.),
-// linearized fits valid 0–80 °C, anchor at 25 °C with experimentally-
-// confirmed values:
-//   pK₁ ≈ 6.35  (H₂CO₃* ⇌ H⁺ + HCO₃⁻)
-//   pK₂ ≈ 10.33 (HCO₃⁻ ⇌ H⁺ + CO₃²⁻)
-//   pKH ≈ 1.47  (CO₂(g) ⇌ H₂CO₃* in mol/(kg·atm))
-// T-coefficients linearized from the full Plummer-Busenberg integrals
-// across the natural-water temperature range; departure from the full
-// PB formulas is < 0.05 pK units up to 60 °C.
+// -log₁₀(K).
+//
+// v192 (2026-06-12, review §2.2 calibration debt): the original
+// linear fits ("Stumm & Morgan ... departure < 0.05 pK up to 60 °C")
+// had slopes ~5–10× too flat — pK₁ −0.0007/°C vs real ≈ −0.009 on the
+// cold side, pK₂ −0.0029 vs ≈ −0.009, pKH +0.005 vs ≈ +0.013 — and
+// the "<0.05 pK" comment was wrong by ~4× (measured drift 0.23 pK at
+// 0 °C; tools/pk-t-observe.mjs --table is the standing receipt).
+// Replaced with the FULL Plummer & Busenberg 1982 analytic
+// expressions (GCA 46:1011), the exact coefficients PHREEQC ships —
+// VERIFIED verbatim against canonical wateq4f.dat
+// (usgs-coupled/phreeqc3, fetched 2026-06-12): K1/K2 are the
+// negations of the association entries; KH is the CO2(g) phase entry;
+// internal consistency logK1+logK2 = −16.680 vs the database's
+// combined CO3⁻²+2H⁺ entry 16.681. Anchors at 25 °C are unchanged
+// (pK₁ 6.352, pK₂ 10.329, pKH 1.468) — this corrects the SLOPES and
+// the curvature (pK₁ minimum near 55 °C, pK₂ near 100 °C, both
+// rising steeply into the hydrothermal range).
+//
+//   log K = A1 + A2·T + A3/T + A4·log₁₀(T) + A5/T²   (T in Kelvin)
+//
+// Validity clamp [0, 250 °C] (was [0, 80]): PB82/PHREEQC analytic
+// range. Above 250 °C the whole aqueous model is out of its depth
+// (near-critical water; the sim's pH axis doesn't track the neutral-
+// point shift either) — clamping is the honest extrapolation, and the
+// >250 °C scenarios (marble, pegmatites) treat carbonates as skarn
+// proxies anyway.
+function _pb82pK(A1: number, A2: number, A3: number, A4: number, A5: number, T_celsius: number): number {
+  const T = Math.max(0, Math.min(250, T_celsius));
+  const TK = T + 273.15;
+  return -(A1 + A2 * TK + A3 / TK + A4 * Math.log10(TK) + A5 / (TK * TK));
+}
+
 function pK1Carbonate(T_celsius: number): number {
-  const T = Math.max(0, Math.min(80, T_celsius));
-  return 6.352 - 0.0007 * (T - 25);
+  // H₂CO₃* ⇌ H⁺ + HCO₃⁻ (dissociation = −association entry in wateq4f)
+  return _pb82pK(-356.3094, -0.06091960, 21834.37, 126.8339, -1684915, T_celsius);
 }
 
 function pK2Carbonate(T_celsius: number): number {
-  const T = Math.max(0, Math.min(80, T_celsius));
-  return 10.329 - 0.0029 * (T - 25);
+  // HCO₃⁻ ⇌ H⁺ + CO₃²⁻
+  return _pb82pK(-107.8871, -0.03252849, 5151.79, 38.92561, -563713.9, T_celsius);
 }
 
 // Henry's-Law constant for CO₂ at temperature, mol/(kg·atm).
 // CO₂ solubility decreases with T (gas escapes from warm fluid).
 function pKH_CO2(T_celsius: number): number {
-  const T = Math.max(0, Math.min(80, T_celsius));
-  return 1.464 + 0.005 * (T - 25);
+  // CO₂(g) ⇌ H₂CO₃* — wateq4f CO2(g) phase entry, sign flipped to pK
+  return _pb82pK(108.3865, 0.01985076, -6919.53, -40.45154, 669365, T_celsius);
 }
 
 // Bjerrum partition: given the fluid's total DIC (= fluid.CO3 in ppm)

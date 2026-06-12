@@ -90,14 +90,23 @@ describe('wittichen five-element vein (v189)', () => {
     expect(alive('halite').length).toBe(0);
   });
 
-  it('aspirational expects documented: barite + erythrite declared but not firing at seed 42 (v107 honesty)', () => {
+  it('the barite stage delivers (v191, the Barytgänge correction) and erythrite is honestly absent', () => {
     // _json5_spec is attached to the scenario CALLABLE, not its return
     // value (js/70-events.ts scenario loader convention).
+    //
+    // v191: the gate census (tools/wittichen-sulfate-probe.mjs) proved
+    // barite was BARIUM-limited, not oxidation-limited — Ba 24→75 (the
+    // district is the Barytgänge) opens the stage at σ ~1.5 with the
+    // living arsenide suite untouched. Erythrite is DEMOTED from
+    // expects by measurement: its gate needs T ≤ 50°C and this sealed-
+    // vein story ends at ~150°C — the cobalt bloom is post-exhumation
+    // weathering, a future weathering-epilogue client, not a tune
+    // target.
     const spec = (SCENARIOS.wittichen as any)._json5_spec || {};
     const expects = spec.expects_species || [];
     expect(expects).toContain('barite');
-    expect(expects).toContain('erythrite');
-    expect(alive('barite').length).toBe(0);   // re-pin when the tune lands
+    expect(expects).not.toContain('erythrite');
+    expect(alive('barite').length).toBeGreaterThanOrEqual(1);
     expect(alive('erythrite').length).toBe(0);
   });
 });

@@ -33,9 +33,10 @@
 //      shock step (no fluid writes; the movement owns the redox — the
 //      v185 lesson, never re-confound what subsumption separated).
 //   2. wittichen_meteoric_sulfate — cooled meteoric water brings
-//      oxidized sulfate: S 3 → 40 at T ~165°C. With the Eh trend now
+//      oxidized sulfate: S 3 → 30 at T ~165°C. With the Eh trend now
 //      positive, barite gates open (Ba has been waiting in the broth
-//      since step 0). Geologically the vein-top barite stage.
+//      since step 0 — 75 ppm since v191, the Barytgänge correction).
+//      Geologically the vein-top barite stage.
 //   3. wittichen_carbonate_gangue — CO3 + Ca influx; calcite seals the
 //      vug. The hand-specimen truth of the class: silver-white Bi
 //      dendrites embedded IN white carbonate, read in cross-section.
@@ -52,7 +53,11 @@ function event_wittichen_meteoric_sulfate(c) {
   // silver to acanthite in one stage; 30 leaves the conversion partial,
   // which is the hand-specimen truth (acanthite-coated native silver).
   c.fluid.S = Math.min(30, c.fluid.S + 27);
-  c.fluid.Ba = Math.max(c.fluid.Ba, 22);  // keep the barite budget honest if earlier stages nibbled it
+  // v191: broth Ba is 75 (the Barytgänge correction — the gate census
+  // proved barite was BARIUM-limited, not oxidation-limited; see the
+  // scenario notes). The floor tracks it so earlier-stage nibbling
+  // can't starve the barite stage.
+  c.fluid.Ba = Math.max(c.fluid.Ba, 70);
   c.temperature = Math.min(c.temperature, 170);
   return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over; the silver begins to tarnish.`;
 }

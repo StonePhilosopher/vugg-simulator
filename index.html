@@ -4256,7 +4256,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'autunite', 'uranospinite', 'tyuyamunite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite', 'native_tellurium', 'native_sulfur', 'native_arsenic', 'wurtzite', 'spodumene', 'chrysocolla', 'quartz', 'topaz', 'tourmaline'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'autunite', 'uranospinite', 'tyuyamunite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite', 'native_tellurium', 'native_sulfur', 'native_arsenic', 'wurtzite', 'spodumene', 'chrysocolla', 'quartz', 'topaz', 'tourmaline', 'halite'];
 function _parseNarrative(text) {
     // Strip frontmatter (--- block at top).
     if (text.startsWith('---')) {
@@ -15868,7 +15868,113 @@ let timeScale = 5.0;
 //   BASELINE: rebake. Expected: wittichen additive; schneeberg moves
 //   ONLY in morph tags if at all (band re-pin is below its 1.32 max →
 //   no change predicted); everything else byte-identical.
-const SIM_VERSION = 189;
+//
+// v190 (2026-06-12) — THE JOPLIN DOGTOOTH: mvt broth Mg 30→65. The
+//                     boss hand-verification pass's FIRST CATCH, and
+//                     the two-pass correction pattern running exactly
+//                     as designed.
+//
+//   Boss observation: "my MVT just grew a rhombohedral calcite instead
+//   of a dogtooth." The v187 Mg-axis phase had claimed the opposite
+//   ("Tri-State spar is rhombs, not dogtooth") and calibrated mvt's
+//   broth at Mg:Ca 0.10 — below the MG_SCALENO 0.15 flip. The
+//   specimen is the authority, and the geology agrees on reflection:
+//   Joplin's iconic calcite IS the golden dogtooth, MVT brines are
+//   DOLOMITIZING (Mg-rich) fluids, Tri-State carries dolomite gangue,
+//   and basinal-brine Mg:Ca runs 0.2–0.5. The 0.10 was scaffolding.
+//
+//   THE FIX THAT FAILED FIRST (recorded because it is the lesson):
+//   Mg 30→50 gives initial Mg:Ca 0.167 > 0.15 — and changed NOTHING,
+//   because calciteMorphForm reads the LIVE fluid and the fluid-mixing
+//   event holds Ca at 400 from step ~20 on (live ratio 0.125). The
+//   form rule is broth-TRAJECTORY-driven, not initial-value-driven.
+//   Mg 65 holds the live ratio at 0.163 through the run.
+//
+//   MEASURED (seeds 42-46): smooth SCALENOHEDRAL calcite at 4/5 seeds
+//   — the glassy smooth-faced Joplin dogtooth (regime stays 97-98%
+//   spiral_smooth; the v187 REGIME claim was always right, only the
+//   form was wrong). Seed 44 grows no calcite at EITHER Mg value
+//   (pre-existing marginality, control-checked). No dolomite/HMC
+//   side-effects at Mg 65. Chemistry-coupled bump: scaleno aspect 0.5
+//   vs rhomb 0.8 → volume → fill, plus Mg in the broth feeds the
+//   carbonate engines → mvt rebake.
+//
+//   BASELINE: rebake. Expected mover: mvt only.
+//
+// v191 (2026-06-12) — THE BARYTGÄNGE CORRECTION: wittichen broth Ba
+//                     24→75 (+ the meteoric event's Ba floor 22→70);
+//                     barite joins the real expects, erythrite demoted
+//                     as structurally out-of-window.
+//
+//   The v189 "aspirational barite" diagnosis blamed the missing barite
+//   on oxidation (the reverted +100 Eh finger). The gate census
+//   (tools/wittichen-sulfate-probe.mjs, NEW — the roughten_gill
+//   linarite pattern) measured the truth: from step ~133 EVERY gate
+//   component passes (Ba✓ S✓ redox✓ pH✓ T✓) and σ_barite plateaus at
+//   0.60 — barite was BARIUM-limited: ba_f(24/30)·s_f(30/40)·o2_f·1.2
+//   times the salinity-24 activity penalty (~0.59) can never reach 1.
+//   The locality is the authority: Wittichen's veins are the
+//   Barytgänge — barite IS the district's defining gangue — so Ba 24
+//   was unjustifiably shy. Ba 75 (modest for a heavy-spar district):
+//   σ 1.47–1.55 through the barite stage, barite 2/6/3 crystals at
+//   seeds 42/43/44, NO witherite (BaCO3 never gates), living suite
+//   intact at every probed seed (skutterudite 2, safflorite 2, Bi 3-4,
+//   acanthite 4, calcite 1 — unchanged from the v189 baseline). No Eh
+//   change; the reverted oxidation finger stays reverted.
+//
+//   ERYTHRITE: demoted from expects BY MEASUREMENT, not surrender —
+//   its gate needs T ≤ 50°C (weathering-zone physics) and the
+//   scenario's T trajectory ends at ~150°C. The cobalt bloom is a
+//   post-exhumation weathering product; a sealed-vein story cannot
+//   host it honestly. First client for a future spatially-partial
+//   weathering-epilogue mechanic (BACKLOG).
+//
+//   BASELINE: rebake. Expected mover: wittichen only (additive
+//   +barite; Ba is inert to every other engine in this broth).
+//
+// v192 (2026-06-12) — CARBONATE pK(T) CORRECTION (review §2.2, the
+//                     oldest open calibration debt): js/20b's linear
+//                     pK fits replaced with the full Plummer &
+//                     Busenberg 1982 analytic expressions, verified
+//                     verbatim against canonical wateq4f.dat; clamp
+//                     widened 80→250 °C.
+//
+//   The debt, measured (tools/pk-t-observe.mjs --table): old slopes
+//   5–10× too flat, max drift 0.23 pK at 0 °C, flat-lined above the
+//   80 °C clamp while the real curves bend hard (pK₁ 6.35→7.23 by
+//   200 °C). 25 °C anchors unchanged — slopes + curvature corrected.
+//
+//   Blast radius, dark-observed BEFORE the flip (--fleet): the damped
+//   effectiveCO3 σ-gates barely move at normal pH (the reference-pH
+//   ratio cancels K₂) — EXCEPT hot+alkaline jeffrey (×13 typ) and
+//   marble (×2.6); the UNDAMPED SI lever (calcite/aragonite/dolomite/
+//   HMC are engine-promoted) drops hard at hot scenarios (mvt ×0.44
+//   typ); PWP H₂CO₃ fractions rise ×2–5 hot; pCO₂ degassing shifts.
+//
+//   VERDICT (baseline A/B, 12/33 scenarios moved): the headline loss
+//   is HOT-SCENARIO ARAGONITE (jeffrey/marble/reactivated-vein/
+//   wittichen at seed 42) — geologically CORRECT, the metastable
+//   low-T polymorph never belonged at 150–700°C; those occurrences
+//   were speciation-flattening artifacts. The rest is cascade re-roll
+//   of 1-crystal marginals (celestine/hawleyite/powellite/selenite —
+//   none carbonates). Fleet coverage IMPROVED: live 133→135, dead
+//   36→34, stale unchanged at the 2 deliberate arcs. mvt's dogtooth
+//   calcite survives (now with a small stepped CORE under glassy
+//   faces — the Tri-State PHANTOM read; claims re-pinned ≤15% early
+//   relief + smooth finish). elmwood's showcase re-pinned: the pulse
+//   train was calibrated in the old constants' units, amps ×1.15 +
+//   width 0.06→0.08 restores the recorded story (19% stepped rim,
+//   13 bands, judge 8/8 — gate also trued: the old >0.4 share gate
+//   never matched the shipped ~18% claim). marble aragonite pin
+//   inverted to assert the retirement.
+//
+//   OPEN ITEM EXPOSED (the correction's sibling): carbonate Ksp(T)
+//   is still constant-ΔH van't Hoff — ~1.3 log units too FLAT at
+//   158°C vs PHREEQC's calcite analytic. With the IAP side now
+//   exact, the mixed fidelity flips the cooling-scenario SI drift
+//   mildly positive (re-pinned bounded until the Ksp analytic
+//   upgrade lands — BACKLOG).
+const SIM_VERSION = 192;
 
 // ── 18-constants.js ──
 
@@ -17071,28 +17177,51 @@ function activityCorrectionFactor(fluid, mineral) {
 //     is small; ignore for now.
 const CARBONATE_SPECIATION_ACTIVE = true;
 // Carbonate dissociation constants. pK at temperature, returned as
-// -log₁₀(K). Values from Stumm & Morgan, Aquatic Chemistry (3rd ed.),
-// linearized fits valid 0–80 °C, anchor at 25 °C with experimentally-
-// confirmed values:
-//   pK₁ ≈ 6.35  (H₂CO₃* ⇌ H⁺ + HCO₃⁻)
-//   pK₂ ≈ 10.33 (HCO₃⁻ ⇌ H⁺ + CO₃²⁻)
-//   pKH ≈ 1.47  (CO₂(g) ⇌ H₂CO₃* in mol/(kg·atm))
-// T-coefficients linearized from the full Plummer-Busenberg integrals
-// across the natural-water temperature range; departure from the full
-// PB formulas is < 0.05 pK units up to 60 °C.
+// -log₁₀(K).
+//
+// v192 (2026-06-12, review §2.2 calibration debt): the original
+// linear fits ("Stumm & Morgan ... departure < 0.05 pK up to 60 °C")
+// had slopes ~5–10× too flat — pK₁ −0.0007/°C vs real ≈ −0.009 on the
+// cold side, pK₂ −0.0029 vs ≈ −0.009, pKH +0.005 vs ≈ +0.013 — and
+// the "<0.05 pK" comment was wrong by ~4× (measured drift 0.23 pK at
+// 0 °C; tools/pk-t-observe.mjs --table is the standing receipt).
+// Replaced with the FULL Plummer & Busenberg 1982 analytic
+// expressions (GCA 46:1011), the exact coefficients PHREEQC ships —
+// VERIFIED verbatim against canonical wateq4f.dat
+// (usgs-coupled/phreeqc3, fetched 2026-06-12): K1/K2 are the
+// negations of the association entries; KH is the CO2(g) phase entry;
+// internal consistency logK1+logK2 = −16.680 vs the database's
+// combined CO3⁻²+2H⁺ entry 16.681. Anchors at 25 °C are unchanged
+// (pK₁ 6.352, pK₂ 10.329, pKH 1.468) — this corrects the SLOPES and
+// the curvature (pK₁ minimum near 55 °C, pK₂ near 100 °C, both
+// rising steeply into the hydrothermal range).
+//
+//   log K = A1 + A2·T + A3/T + A4·log₁₀(T) + A5/T²   (T in Kelvin)
+//
+// Validity clamp [0, 250 °C] (was [0, 80]): PB82/PHREEQC analytic
+// range. Above 250 °C the whole aqueous model is out of its depth
+// (near-critical water; the sim's pH axis doesn't track the neutral-
+// point shift either) — clamping is the honest extrapolation, and the
+// >250 °C scenarios (marble, pegmatites) treat carbonates as skarn
+// proxies anyway.
+function _pb82pK(A1, A2, A3, A4, A5, T_celsius) {
+    const T = Math.max(0, Math.min(250, T_celsius));
+    const TK = T + 273.15;
+    return -(A1 + A2 * TK + A3 / TK + A4 * Math.log10(TK) + A5 / (TK * TK));
+}
 function pK1Carbonate(T_celsius) {
-    const T = Math.max(0, Math.min(80, T_celsius));
-    return 6.352 - 0.0007 * (T - 25);
+    // H₂CO₃* ⇌ H⁺ + HCO₃⁻ (dissociation = −association entry in wateq4f)
+    return _pb82pK(-356.3094, -0.06091960, 21834.37, 126.8339, -1684915, T_celsius);
 }
 function pK2Carbonate(T_celsius) {
-    const T = Math.max(0, Math.min(80, T_celsius));
-    return 10.329 - 0.0029 * (T - 25);
+    // HCO₃⁻ ⇌ H⁺ + CO₃²⁻
+    return _pb82pK(-107.8871, -0.03252849, 5151.79, 38.92561, -563713.9, T_celsius);
 }
 // Henry's-Law constant for CO₂ at temperature, mol/(kg·atm).
 // CO₂ solubility decreases with T (gas escapes from warm fluid).
 function pKH_CO2(T_celsius) {
-    const T = Math.max(0, Math.min(80, T_celsius));
-    return 1.464 + 0.005 * (T - 25);
+    // CO₂(g) ⇌ H₂CO₃* — wateq4f CO2(g) phase entry, sign flipped to pK
+    return _pb82pK(108.3865, 0.01985076, -6919.53, -40.45154, 669365, T_celsius);
 }
 // Bjerrum partition: given the fluid's total DIC (= fluid.CO3 in ppm)
 // and pH, return the mole-fraction split among H₂CO₃*, HCO₃⁻, CO₃²⁻.
@@ -21626,6 +21755,12 @@ function _habitAspectRatio(habit) {
     // the striated_ renames carry it explicitly. Same firewall as above.
     if (habit === 'striated_cubic' || habit === 'striated_pyritohedral'
         || habit === 'striated_cubo_pyritohedral')
+        return 0.5;
+    // REE-octahedron regime family (fix-backlog 2026-06-12): the parent
+    // 'octahedral_REE' lands on the default 0.5 — the σ-graded renames
+    // carry it explicitly. Same firewall as above.
+    if (habit === 'stepped_octahedral_REE' || habit === 'hopper_octahedral_REE'
+        || habit === 'dendritic_octahedral_REE')
         return 0.5;
     return 0.5;
 }
@@ -31134,8 +31269,10 @@ MORPH_TH.native_bismuth = {
 // nothing for the band structure to gain.
 // FORM: composes with the v103 REE rule — the registry form hook
 // mirrors grow_fluorite's own Y>1 {111} flip (Bosze & Rakovan 2002).
-// Regime HABIT renames apply to the cube path only; REE octahedra keep
-// octahedral_REE (σ-stepped octahedra are a noted debt, not modeled).
+// Regime HABIT renames apply to BOTH paths since 2026-06-12: the cube
+// alphabet AND the REE octahedra (stepped_/hopper_/dendritic_
+// octahedral_REE — fleet-inert today, sunnyside is flat at σ 1.95;
+// fires when a driven Y-fluorite scenario lands).
 MORPH_TH.fluorite = {
     SIZE_HALF_UM: Infinity,
     SIZE_DAMP_CAP_UM: Infinity,
@@ -33490,8 +33627,32 @@ function grow_fluorite(crystal, conditions, step) {
     // aging. Silverton / San Juan late hydrothermal fluorite is the
     // canonical natural occurrence.
     if (f.Y > 1.0) {
-        crystal.habit = 'octahedral_REE';
-        crystal.dominant_forms = ['{111} octahedron', 'REE-stabilized faces', 'blue Y³⁺/Eu²⁺ SW UV fluorescence (bleach-stable)'];
+        // σ-stepped REE octahedra (fix-backlog 2026-06-12): the {111} REE
+        // form still outranks the cube alphabet, and the regime now grades
+        // the octahedron's SURFACE the same way it grades the cube's —
+        // Bosze & Rakovan's face stabilization picks the FORM; Sunagawa's
+        // ladder picks the TEXTURE; they compose. FLEET-INERT today by
+        // measurement (sunnyside, the only Y>1 tenant, is flat at σ 1.95 —
+        // deep in the smooth band; morph-sigma-observe re-confirmed at this
+        // commit), so the renames are byte-identical until a driven
+        // Y-fluorite scenario lands. No rng → sim-neutral.
+        const regime = (crystal._morphology && crystal._morphology.regime) || null;
+        if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+            crystal.habit = 'stepped_octahedral_REE';
+            crystal.dominant_forms = ['{111} octahedron with growth-stepped faces', 'REE-stabilized faces', 'blue Y³⁺/Eu²⁺ SW UV fluorescence (bleach-stable)'];
+        }
+        else if (regime === 'hopper_skeletal') {
+            crystal.habit = 'hopper_octahedral_REE';
+            crystal.dominant_forms = ['{111} octahedron, faces hollowed to stepped funnels', 'REE-stabilized faces'];
+        }
+        else if (regime === 'dendritic') {
+            crystal.habit = 'dendritic_octahedral_REE';
+            crystal.dominant_forms = ['dendritic REE-fluorite crust'];
+        }
+        else {
+            crystal.habit = 'octahedral_REE';
+            crystal.dominant_forms = ['{111} octahedron', 'REE-stabilized faces', 'blue Y³⁺/Eu²⁺ SW UV fluorescence (bleach-stable)'];
+        }
         crystal._ree_substitution = true;
         // Photobleaching: F-center visible color fades with light exposure.
         // Display specimens trend pale-blue/colorless even when fresh
@@ -33507,8 +33668,9 @@ function grow_fluorite(crystal, conditions, step) {
         // fault-valve spikes 5.94 → banded, mvt 4.96 → glassy smooth).
         // Same shared cube alphabet as the halides — render, aspect, and
         // texture routes all pre-exist. The REE octahedral branch above
-        // outranks the regime (form beats roughness; σ-stepped octahedra
-        // are a noted debt). No rng here → sim-neutral.
+        // outranks the regime for FORM, and carries its own regime grading
+        // (σ-stepped octahedra, modeled 2026-06-12). No rng here →
+        // sim-neutral.
         const regime = (crystal._morphology && crystal._morphology.regime) || null;
         if (regime === 'stepped_mild' || regime === 'stepped_macro') {
             crystal.habit = 'stepped_cube';
@@ -33570,7 +33732,7 @@ function grow_fluorite(crystal, conditions, step) {
         trace_Fe: f.Fe * 0.02,
         trace_Mn: f.Mn * 0.05,
         trace_Y: f.Y * 0.008,
-        note: `color zone: ${color}` + (crystal.habit === 'octahedral_REE' ? ` (octahedral, Y ${f.Y.toFixed(1)} ppm)` : '')
+        note: `color zone: ${color}` + (String(crystal.habit).includes('octahedral_REE') ? ` (octahedral, Y ${f.Y.toFixed(1)} ppm)` : '')
     });
 }
 function grow_halite(crystal, conditions, step) {
@@ -43451,9 +43613,10 @@ function event_reactivated_vein_breach(c) {
 //      shock step (no fluid writes; the movement owns the redox — the
 //      v185 lesson, never re-confound what subsumption separated).
 //   2. wittichen_meteoric_sulfate — cooled meteoric water brings
-//      oxidized sulfate: S 3 → 40 at T ~165°C. With the Eh trend now
+//      oxidized sulfate: S 3 → 30 at T ~165°C. With the Eh trend now
 //      positive, barite gates open (Ba has been waiting in the broth
-//      since step 0). Geologically the vein-top barite stage.
+//      since step 0 — 75 ppm since v191, the Barytgänge correction).
+//      Geologically the vein-top barite stage.
 //   3. wittichen_carbonate_gangue — CO3 + Ca influx; calcite seals the
 //      vug. The hand-specimen truth of the class: silver-white Bi
 //      dendrites embedded IN white carbonate, read in cross-section.
@@ -43468,7 +43631,11 @@ function event_wittichen_meteoric_sulfate(c) {
     // silver to acanthite in one stage; 30 leaves the conversion partial,
     // which is the hand-specimen truth (acanthite-coated native silver).
     c.fluid.S = Math.min(30, c.fluid.S + 27);
-    c.fluid.Ba = Math.max(c.fluid.Ba, 22); // keep the barite budget honest if earlier stages nibbled it
+    // v191: broth Ba is 75 (the Barytgänge correction — the gate census
+    // proved barite was BARIUM-limited, not oxidation-limited; see the
+    // scenario notes). The floor tracks it so earlier-stage nibbling
+    // can't starve the barite stage.
+    c.fluid.Ba = Math.max(c.fluid.Ba, 70);
     c.temperature = Math.min(c.temperature, 170);
     return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over; the silver begins to tarnish.`;
 }
@@ -50051,6 +50218,95 @@ function buildStripCrystalHits(ds, opts = {}, resolvers = {}) {
     }
     return hits;
 }
+// ============================================================
+// THE DENDRITE BELL — morph-ordinal slams (fix-backlog 2026-06-12)
+// ============================================================
+// The morph chips record each registry tenant's growth-regime ordinal
+// (0 spiral_smooth … 4 dendritic) at its anchor crystal. When the fluid
+// drives a crystal UP that ladder, the strip shows a slam — wittichen's
+// bismuth_morph jumps 0→4 on the reducing Eh pulse. This layer RINGS
+// it: one anvil strike per upward crossing, voiced by severity. The
+// register DROPS as the ordinal climbs (a bigger instability is a
+// bigger bell — the same resonator-physics pole as the nucleation
+// bells' size→register rule), and the strike pitches are the C-root
+// octave ladder so they sit in key under every C-rooted scale mode.
+// The DENDRITE arrival (ordinal 4) adds a second partial detuned one
+// semitone sharp at the same instant — a deliberately dissonant clang
+// that says "interface stability just failed." Healing (downward)
+// crossings are silent: recovery is the drone's story, the bell marks
+// the shock. Strikes ride the crystal-bell submix bus, so the 🔔🔊
+// slider governs all percussion together.
+let _stripSonifyMorphBellsOn = true;
+function stripSonifyGetMorphBells() { return _stripSonifyMorphBellsOn; }
+function stripSonifySetMorphBells(on) { _stripSonifyMorphBellsOn = !!on; return _stripSonifyMorphBellsOn; }
+// ordinal 1..4 → strike pitch: C5, C4, C3, G2 (the dendrite toll).
+const _STRIP_MORPH_SLAM_FREQ = [0, 523.25, 261.63, 130.81, 98.0];
+function buildStripMorphSlamHits(ds, opts = {}) {
+    if (!ds || !ds.manifest || !ds.manifest.axes || !ds.manifest.chips)
+        return [];
+    const stepMs = opts.stepDurationMs ?? _stripSonifyStepDurationMs;
+    const ax = ds.manifest.axes;
+    const chips = ds.manifest.chips;
+    const C = chips.length;
+    const A = Math.max(1, ax.angular_indices);
+    const hits = [];
+    for (let ci = 0; ci < C; ci++) {
+        const meta = chips[ci];
+        if (!meta || typeof meta.id !== 'string' || !/_morph$/.test(meta.id))
+            continue;
+        const lo = (meta.range && meta.range[0]) || 0;
+        const hi = (meta.range && meta.range[1]) || 4;
+        // prevOrd starts at the smooth floor: a crystal APPEARING already
+        // driven (nucleated mid-shock) rings on arrival — that IS the slam.
+        let prevOrd = 0;
+        for (let step = 0; step < ax.steps; step++) {
+            // Sparse-MAX read with position (the strip-digest lesson: morph
+            // chips anchor at points, an angle-average reads all-null; and
+            // the most driven crystal is the one that should ring).
+            let maxV = null;
+            let bestA = 0;
+            for (let a = 0; a < A; a++) {
+                for (let h = 0; h < ax.height_positions; h++) {
+                    const li = stripDataIndex(step, a, h, ci, ax, C, 0);
+                    if (li < 0)
+                        continue;
+                    const v = stripDequantize(ds.chip_data[li], lo, hi);
+                    if (v == null)
+                        continue;
+                    if (maxV === null || v > maxV) {
+                        maxV = v;
+                        bestA = a;
+                    }
+                }
+            }
+            if (maxV === null)
+                continue; // chip absent this step — hold prevOrd
+            const ord = Math.max(0, Math.min(4, Math.round(maxV)));
+            if (ord > prevOrd) {
+                const tSec = (step * stepMs) / 1000;
+                // pan to where the driven crystal sits (same sin-projection as
+                // the nucleation bells' cell azimuth)
+                const pan = Math.max(-1, Math.min(1, Math.sin((2 * Math.PI * bestA) / A)));
+                const freq = _STRIP_MORPH_SLAM_FREQ[ord];
+                hits.push({
+                    tSec, freq,
+                    gain: 0.16 + 0.07 * ord, // deeper slam = harder strike
+                    decay: 0.3 + 0.18 * ord, // ...and a longer ring
+                    waveform: 'square', // clangy — distinct from the sine/triangle bells
+                    mineral: meta.id, pan,
+                });
+                if (ord >= 4) {
+                    hits.push({
+                        tSec, freq: freq * 1.0595, // +1 semitone — the dissonant dendrite clang
+                        gain: 0.12, decay: 0.55, waveform: 'square', mineral: meta.id, pan,
+                    });
+                }
+            }
+            prevOrd = ord;
+        }
+    }
+    return hits;
+}
 // Build plans for several chips at once (skips any not in the dataset).
 function buildStripSonifyPlans(ds, chipIds, opts = {}) {
     const out = [];
@@ -50470,9 +50726,12 @@ function stripSonifyMany(ds, chipIds, opts = {}, onEnded) {
     const o = _stripSonifyDefaultOpts(opts);
     const plans = buildStripSonifyPlans(ds, chipIds, o);
     const hits = _stripSonifyCrystalsOn ? buildStripCrystalHits(ds, o) : [];
-    if (!plans.length && !hits.length)
+    // The dendrite bell — morph-ordinal slam strikes layer onto the same
+    // percussion bus as the nucleation bells (one volume rides both).
+    const slams = _stripSonifyMorphBellsOn ? buildStripMorphSlamHits(ds, o) : [];
+    if (!plans.length && !hits.length && !slams.length)
         return null;
-    return playStripSonifyPlans(plans, onEnded, hits);
+    return playStripSonifyPlans(plans, onEnded, hits.concat(slams));
 }
 // LIVE: if a performance is playing, update its voice set to exactly
 // `chipIds` (using the current tempo + scale) — adding/removing voices
@@ -55204,7 +55463,7 @@ Object.assign(VugSimulator.prototype, {
                 parts.push(narrative_variant('calcite', 'morph_hopper') || `Growth outran supply: edges and corners sit proud in the diffusion field and kept building while the face centers starved, so the faces hollowed into stepped funnels while the crystal stayed faceted. A hopper calcite is a crystal that grew too fast for its own interior.`);
             }
             else if (steppedShare > 0.1 && stepBands > 0) {
-                parts.push(narrative_variant('calcite', 'morph_stepped', { bands: stepBands }) || `The faces are terraced — ${stepBands} distinct macrostep train${stepBands === 1 ? '' : 's'}, each one a stretch of growth when supersaturation surged past the quiet spiral regime and the elementary steps bunched into ledges large enough to see. Read the staircase from base to tip and you are reading the fluid's history in stone.`);
+                parts.push(narrative_variant('calcite', 'morph_stepped', { bands: stepBands, bands_s: stepBands === 1 ? '' : 's' }) || `The faces are terraced — ${stepBands} distinct macrostep train${stepBands === 1 ? '' : 's'}, each one a stretch of growth when supersaturation surged past the quiet spiral regime and the elementary steps bunched into ledges large enough to see. Read the staircase from base to tip and you are reading the fluid's history in stone.`);
             }
         }
         if (c.twinned) {
@@ -55543,10 +55802,10 @@ Object.assign(VugSimulator.prototype, {
             }
             const banded = ((mass.stepped_mild || 0) + (mass.stepped_macro || 0)) / Math.max(1, tot);
             if (tot > 0 && banded > 0.6) {
-                parts.push(`The faces are composite — cube regrown on cube, ${Math.round(banded * 100)}% of the mass laid down in the stepped regime. This crystal spent most of its life being pushed.`);
+                parts.push(narrative_variant('fluorite', 'morph_composite', { pct: Math.round(banded * 100) }) || `The faces are composite — cube regrown on cube, ${Math.round(banded * 100)}% of the mass laid down in the stepped regime. This crystal spent most of its life being pushed.`);
             }
             else if (tot > 0 && banded > 0.15) {
-                parts.push(`Growth banding on the cube faces: ${Math.round(banded * 100)}% of the mass went down during driven episodes — read the bands and you are reading the vein's pressure valve.`);
+                parts.push(narrative_variant('fluorite', 'morph_banded', { pct: Math.round(banded * 100) }) || `Growth banding on the cube faces: ${Math.round(banded * 100)}% of the mass went down during driven episodes — read the bands and you are reading the vein's pressure valve.`);
             }
         }
         if (c.twinned)
@@ -55590,10 +55849,10 @@ Object.assign(VugSimulator.prototype, {
             parts.push('Hopper-growth habit — high supersaturation produced a skeletal cube with stepped pyramidal hollows on each face. Edge-growth outraced face-growth and left the centers concave, the signature of a brine driven hard enough to nucleate faster than it could fill in. Searles Lake evaporation ponds make these in summer.');
         }
         else if (c.habit === 'stepped_cube') {
-            parts.push('Growth-banded cube — the chevron habit. At moderate supersaturation the (100) faces advance by visible steps, and each step traps a film of brine as a fluid-inclusion band; stack enough of them and the cube carries the herringbone banding that salt sedimentologists read like tree rings.');
+            parts.push(narrative_variant('halite', 'stepped_cube') || 'Growth-banded cube — the chevron habit. At moderate supersaturation the (100) faces advance by visible steps, and each step traps a film of brine as a fluid-inclusion band; stack enough of them and the cube carries the herringbone banding that salt sedimentologists read like tree rings.');
         }
         else if (c.habit === 'dendritic_cube') {
-            parts.push('Dendritic salt crust — the instability run past hopper. Supersaturation outran even edge-growth and the salt branched into an efflorescent skeleton rather than a crystal. Dry-lake margins do this overnight after a flood retreats.');
+            parts.push(narrative_variant('halite', 'dendritic_cube') || 'Dendritic salt crust — the instability run past hopper. Supersaturation outran even edge-growth and the salt branched into an efflorescent skeleton rather than a crystal. Dry-lake margins do this overnight after a flood retreats.');
         }
         else if (c.habit === 'cubic') {
             parts.push('Clean cubic habit — slow evaporation, low supersaturation. The brine concentrated patiently enough for the (100) faces to fill in flat. This is the Wieliczka habit, the cathedral-cube halite that meter-scale specimens come from.');
@@ -55642,10 +55901,10 @@ Object.assign(VugSimulator.prototype, {
             const hopperShare = ((morphMass.hopper_skeletal || 0) + (morphMass.dendritic || 0)) / morphTotal;
             const bandedShare = ((morphMass.stepped_mild || 0) + (morphMass.stepped_macro || 0)) / morphTotal;
             if (hopperShare > 0.05 && bandedShare > 0.05) {
-                parts.push(`The zone stack is a salt-pan log: ${Math.round(bandedShare * 100)}% of the growth went down as banded cube in patient brine and ${Math.round(hopperShare * 100)}% as hopper during desiccation spikes. Each hopper band is one dry season — read the crystal from core to rim and you are reading the pan's weather.`);
+                parts.push(narrative_variant('halite', 'morph_saltpan_log', { banded_pct: Math.round(bandedShare * 100), hopper_pct: Math.round(hopperShare * 100) }) || `The zone stack is a salt-pan log: ${Math.round(bandedShare * 100)}% of the growth went down as banded cube in patient brine and ${Math.round(hopperShare * 100)}% as hopper during desiccation spikes. Each hopper band is one dry season — read the crystal from core to rim and you are reading the pan's weather.`);
             }
             else if (hopperShare > 0.5) {
-                parts.push(`Almost the whole stack (${Math.round(hopperShare * 100)}%) grew in the hopper regime — this crystal never saw patient brine; it lived its entire life in desiccation conditions.`);
+                parts.push(narrative_variant('halite', 'morph_all_hopper', { pct: Math.round(hopperShare * 100) }) || `Almost the whole stack (${Math.round(hopperShare * 100)}%) grew in the hopper regime — this crystal never saw patient brine; it lived its entire life in desiccation conditions.`);
             }
         }
         if (c.twinned && (c.twin_law || '').includes('spinel')) {
@@ -55926,7 +56185,7 @@ Object.assign(VugSimulator.prototype, {
                     dendr += z.thickness_um;
             }
             if (total > 0 && dendr / total > 0.05 && c.habit !== 'arborescent_dendritic') {
-                parts.push(`The zone stack remembers what the final habit hides: ${Math.round(100 * dendr / total)}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.`);
+                parts.push(narrative_variant('native_bismuth', 'morph_healed_dendrite', { pct: Math.round(100 * dendr / total) }) || `The zone stack remembers what the final habit hides: ${Math.round(100 * dendr / total)}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.`);
             }
         }
         return parts.filter(p => p).join(' ');
@@ -57136,6 +57395,18 @@ Object.assign(VugSimulator.prototype, {
         const parts = [`Pyrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
         if (c.habit === 'framboidal') {
             parts.push(narrative_variant('pyrite', 'framboidal') || 'The low temperature produced framboidal pyrite — microscopic raspberry-shaped aggregates of tiny crystallites, a texture common in sedimentary environments.');
+        }
+        else if (String(c.habit || '').startsWith('striated_')) {
+            // Morphology-generalization arc (2026-06-12): the striated_ overlay
+            // habits had NO narrator branch — striated_cubic fell into the
+            // generic cubic prose via the includes('cubic') check below, and the
+            // pyritohedral overlays fell through silently. The striations are
+            // the regime story (bunched growth steps), so they get their own
+            // sentence carrying the parent form.
+            const parent = c.habit === 'striated_cubic' ? 'cube'
+                : c.habit === 'striated_pyritohedral' ? 'pyritohedron'
+                    : 'cubo-pyritohedral crystal';
+            parts.push(narrative_variant('pyrite', 'striated', { parent }) || `Striated ${parent} — the faces carry parallel grooves, perpendicular on adjacent faces. The striations are not decoration: each groove is a bunched train of growth steps, the {100}/{210} oscillatory combination recorded ledge by ledge. A heavily striated pyrite is a crystal that grew fast and wrote it down.`);
         }
         else if (c.habit === 'pyritohedral') {
             // (2026-06-10 review §2.4: {210} is fully crystallographic, class m3̄ —
@@ -63374,6 +63645,13 @@ const HABIT_TO_TEXTURE = {
     'striated_cubic': 'cube_edge_deep',
     'striated_pyritohedral': 'cube_edge_deep',
     'striated_cubo_pyritohedral': 'cube_edge_deep',
+    // Stage 11 — REE-octahedron regime family (fix-backlog 2026-06-12).
+    // Same texture grammar as every other stepped/hopper/dendritic
+    // family: terraced notch for the driven bands, acicular rasp for the
+    // dendritic crust. Plain octahedral_REE keeps the default (no entry).
+    'stepped_octahedral_REE': 'hopper',
+    'hopper_octahedral_REE': 'hopper',
+    'dendritic_octahedral_REE': 'acicular',
 };
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
 // wins over HABIT_TO_TEXTURE[habit]. Used when one habit string covers
@@ -65492,6 +65770,14 @@ const HABIT_TO_PRIMITIVE = {
     'striated_cubic': PRIM_CUBE,
     'striated_pyritohedral': PRIM_PYRITOHEDRON,
     'striated_cubo_pyritohedral': PRIM_PYRITOHEDRON,
+    // REE-octahedron regime family (fix-backlog 2026-06-12): explicit
+    // beats fuzzy — the fuzzy fallback's 'hopper' check fires before
+    // 'octahed' and would route hopper_octahedral_REE to a CUBE.
+    // dendritic goes acicular like the other dendritic crusts.
+    'octahedral_REE': PRIM_OCTAHEDRON,
+    'stepped_octahedral_REE': PRIM_OCTAHEDRON,
+    'hopper_octahedral_REE': PRIM_OCTAHEDRON,
+    'dendritic_octahedral_REE': PRIM_ACICULAR,
     'prismatic': PRIM_HEX_PRISM_TERMINATED,
     'short_prismatic': PRIM_HEX_PRISM,
     'striated_prism': PRIM_HEX_PRISM_TERMINATED,
@@ -68532,11 +68818,28 @@ function _habitGeomToken(habit) {
     if (h === 'stepped_cube' || h === 'hopper_cube' || h === 'hopper_growth')
         return 'cube';
     // Pyrite striation overlay: striated cubes keep the cube token (the
-    // terrace path renders the striations as fine grooves); the
-    // pyritohedral striated forms follow their parents' existing routing
-    // (which is the pre-existing default — noted wart, see BACKLOG).
+    // terrace path renders the striations as fine grooves).
     if (h === 'striated_cubic')
         return 'cube';
+    // Pyritohedral family → pentagonal dodecahedron (THREE's
+    // DodecahedronGeometry is the regular Platonic form — the closest
+    // primitive to {210}'s twelve pentagons; 99c's 2D path already maps
+    // the whole family to PRIM_PYRITOHEDRON). Substring catches
+    // 'pyritohedral', 'cubo-pyritohedral', 'cubic_or_pyritohedral' and
+    // both striated_ overlays — all of which defaulted to a HEX PRISM
+    // before this. Striated pyritohedra render without grooves (the
+    // terrace path is cube-token-gated); the envelope is the fix.
+    if (h.includes('pyritohedral'))
+        return 'dodecahedron';
+    // REE-octahedron family (incl. the σ-graded stepped_/hopper_ renames,
+    // fix-backlog 2026-06-12): plain 'octahedral_REE' had missed the
+    // exact 'octahedral' check below and fallen to the PRISM default
+    // since v103 — sunnyside's green Y-fluorite octahedra rendered as
+    // hex prisms. Same wart family as pyritohedral, same cure.
+    // ('dendritic_octahedral_REE' is caught by the dendritic_ route at
+    // the top of this function and gets the tree — correct.)
+    if (h.includes('octahedral_ree'))
+        return 'octahedron';
     if (h === 'octahedral' || h === 'octahedron')
         return 'octahedron';
     if (h.includes('rhombohedral'))
@@ -70075,6 +70378,132 @@ function _makeTerracedCubeGeom(terr) {
     geom.computeVertexNormals();
     return geom;
 }
+// Dendrite TREE geometry (morphology fix-backlog, 2026-06-12): the
+// dendritic/arborescent habits had been riding the acicular-spike
+// fallback — a single thin pyramid, which reads as a needle, not a
+// tree. This builds a true branching skeleton in unit space:
+//
+//   * trunk along +Y (the c-axis/substrate-normal contract every other
+//     habit primitive follows), y ∈ [-0.5, 0.5]
+//   * primary branches at nodes up the trunk, azimuth QUANTIZED to 90°
+//     steps with small jitter — native-metal dendrites branch
+//     crystallographically along {100} (the Bisbee/Cornish copper
+//     fishbone), not at random angles like a biological tree
+//   * lower branches longer (the depletion-field taper — the oldest
+//     branches have eaten the most halo), secondaries on the longer
+//     primaries with the same quantized grammar
+//
+// Deterministic per crystal: seeded from crystal_id via _clusterRand
+// (the _crystalYaw idiom) — NO Math.random, replay-stable, satellites
+// inherit the parent's tree. The shape is STATIC per crystal; the
+// watch-it-grow read comes free from envelope scaling (replay scales
+// the mesh by the historical dimensions, so the tree grows out of the
+// wall without per-step geometry churn). Each branch is a 4-sided
+// tapered prism (~10 tris); a full tree lands around 200 tris —
+// cheaper than the hex ziggurat.
+function _makeDendriteTreeGeom(crystalId) {
+    const rand = _clusterRand(((crystalId | 0) * 0x9E3779B1 + 0xD3AD) | 0);
+    const positions = [];
+    // Tapered square-section segment from p along unit dir, with a
+    // pyramidal tip cap. Basis vectors are built around dir so branches
+    // work at any angle.
+    const segment = (p, dir, len, r0, r1) => {
+        let ux = dir[2], uy = 0, uz = -dir[0]; // dir × ŷ (lateral)
+        const ul = Math.sqrt(ux * ux + uz * uz);
+        if (ul < 1e-6) {
+            ux = 1;
+            uy = 0;
+            uz = 0;
+        }
+        else {
+            ux /= ul;
+            uz /= ul;
+        }
+        // v = dir × u
+        const vx = dir[1] * uz - dir[2] * uy;
+        const vy = dir[2] * ux - dir[0] * uz;
+        const vz = dir[0] * uy - dir[1] * ux;
+        const ring = (t, r) => {
+            const cx = p[0] + dir[0] * len * t, cy = p[1] + dir[1] * len * t, cz = p[2] + dir[2] * len * t;
+            const out = [];
+            for (let i = 0; i < 4; i++) {
+                const a = (i + 0.5) / 4 * Math.PI * 2;
+                const ca = Math.cos(a) * r, sa = Math.sin(a) * r;
+                out.push([cx + ux * ca + vx * sa, cy + uy * ca + vy * sa, cz + uz * ca + vz * sa]);
+            }
+            return out;
+        };
+        const b0 = ring(0, r0), b1 = ring(1, Math.max(r1, 0.002));
+        for (let i = 0; i < 4; i++) {
+            const a = b0[i], b = b0[(i + 1) % 4], c = b1[(i + 1) % 4], d = b1[i];
+            _pushTri(positions, a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+            _pushTri(positions, a[0], a[1], a[2], c[0], c[1], c[2], d[0], d[1], d[2]);
+        }
+        // tip cap (small pyramid to the segment end point + a bit beyond)
+        const tip = [p[0] + dir[0] * len * 1.04, p[1] + dir[1] * len * 1.04, p[2] + dir[2] * len * 1.04];
+        for (let i = 0; i < 4; i++) {
+            const a = b1[i], b = b1[(i + 1) % 4];
+            _pushTri(positions, tip[0], tip[1], tip[2], a[0], a[1], a[2], b[0], b[1], b[2]);
+        }
+    };
+    // Trunk: base slightly below anchor plane so it roots in the druse.
+    segment([0, -0.5, 0], [0, 1, 0], 1.0, 0.05, 0.012);
+    // Primary branches. Node fractions run up the trunk; azimuth steps
+    // around the four {100} quadrants with jitter; elevation ~55° off
+    // the trunk. Length tapers toward the tip (lower = older = longer).
+    const nPrim = 6 + Math.floor(rand() * 3);
+    let quadrant = Math.floor(rand() * 4);
+    for (let i = 0; i < nPrim; i++) {
+        const frac = 0.18 + (i / nPrim) * 0.74 + (rand() - 0.5) * 0.04; // 0..1 up the trunk
+        const y = -0.5 + frac;
+        quadrant = (quadrant + 1 + (rand() < 0.25 ? 1 : 0)) % 4;
+        const az = quadrant * (Math.PI / 2) + (rand() - 0.5) * 0.5;
+        const elev = 0.96 + (rand() - 0.5) * 0.25; // ~55° from trunk
+        const dir = [Math.cos(az) * Math.sin(elev), Math.cos(elev), Math.sin(az) * Math.sin(elev)];
+        const len = 0.42 * (1 - frac * 0.72) * (0.85 + rand() * 0.3);
+        if (len < 0.05)
+            continue;
+        const r0 = 0.026 * (1 - frac * 0.4);
+        segment([0, y, 0], dir, len, r0, 0.006);
+        // Secondaries on the longer primaries — same grammar one level down,
+        // forking ±90° in azimuth from the parent (the fishbone rib read).
+        if (len > 0.16) {
+            for (const t of [0.45, 0.75]) {
+                const p2 = [dir[0] * len * t, y + dir[1] * len * t, dir[2] * len * t];
+                const az2 = az + (rand() < 0.5 ? 1 : -1) * (Math.PI / 2) + (rand() - 0.5) * 0.4;
+                const elev2 = elev - 0.25 + (rand() - 0.5) * 0.2;
+                const dir2 = [Math.cos(az2) * Math.sin(elev2), Math.cos(elev2), Math.sin(az2) * Math.sin(elev2)];
+                const len2 = len * (0.45 - 0.15 * t) * (0.8 + rand() * 0.4);
+                if (len2 < 0.04)
+                    continue;
+                segment(p2, dir2, len2, r0 * 0.5, 0.004);
+            }
+        }
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Habit-string gate for the tree path. Token-level 'spike' serves
+// acicular/fibrous/plumose too — those stay needles; only the
+// dendritic/arborescent family gets branches.
+function _isDendriticHabit(habit) {
+    const h = String(habit || '').toLowerCase();
+    return h === 'dendritic' || h.startsWith('dendritic_') || h.includes('arborescent');
+}
+// Per-crystal tree cache (static shape — no sig churn; the entry lives
+// as long as the crystal renders, same lifecycle as the terrace cache).
+function _getDendriteTreeGeom(state, crystal) {
+    if (!state._treeGeoms)
+        state._treeGeoms = new Map();
+    const hit = state._treeGeoms.get(crystal.crystal_id);
+    if (hit)
+        return hit;
+    const geom = _makeDendriteTreeGeom(crystal.crystal_id | 0);
+    state._treeGeoms.set(crystal.crystal_id, geom);
+    return geom;
+}
 // Per-crystal terrace-geometry cache. Keyed by crystal_id; the signature
 // (form + knot list + hopper tip) busts the entry the moment a new band
 // forms or the replay scrubber crosses a band boundary — old geometry is
@@ -70899,6 +71328,17 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
             const terr = halideTerraceBands(crystal, replayStep);
             if (terr)
                 geom = _getTerracedCalciteGeom(state, crystal, terr);
+        }
+        // Dendrite TREE (morphology fix-backlog, 2026-06-12): dendritic /
+        // arborescent habits get the branching skeleton instead of the
+        // acicular-spike fallback. Gated on token === 'spike' so the
+        // dripstone air-mode override and the twin tokens keep their own
+        // geometry, and on the habit string so acicular/fibrous needles
+        // stay needles. Mineral-agnostic by design — wittichen bismuth,
+        // bisbee copper/gold, silver dendrites, and halite's efflorescent
+        // dendritic_cube all read as trees.
+        if (!geom && token === 'spike' && _isDendriticHabit(habitForGeom)) {
+            geom = _getDendriteTreeGeom(state, crystal);
         }
         if (!geom) {
             geom = state.geomCache.get(token);
@@ -74508,6 +74948,7 @@ function initStripView() {
             <label class="strip-view-crystals" title="Ring each crystal as it nucleates — a struck bell voiced by its color (note) + size (register/ring), over the chemistry drone" style="display:inline-flex; align-items:center; gap:3px; color:#9ab; font-size:11px; cursor:pointer;"><input type="checkbox" id="strip-view-crystals" checked/>🔔 Crystals</label>
             <label class="strip-view-cryst-vol" title="Crystal-bell volume — how loud the struck bells ring over the chemistry drone (applies live)" style="display:inline-flex; align-items:center; gap:4px; color:#9ab; font-size:11px;">🔔🔊<input type="range" id="strip-view-crystal-volume" min="0" max="1" step="0.01" value="1" style="width:56px; vertical-align:middle;"/></label>
             <label class="strip-view-depletion" title="The depletion voice — a soft undertone that sags beneath a chip's drone where crystals draw the broth down (the audible twin of the depletion shadow). Silent on abundant ions; sings on limiting ones (Ag, Cd, F, Sn)." style="display:inline-flex; align-items:center; gap:3px; color:#9ab; font-size:11px; cursor:pointer;"><input type="checkbox" id="strip-view-depletion" checked/>▽ Depletion</label>
+            <label class="strip-view-morphbells" title="The dendrite bell — an anvil strike each time a mineral's growth regime slams UP the morphology ladder (deeper slam = lower, harder strike; the dendrite arrival adds a dissonant clang). Healing is silent — the bell marks the shock. Rides the 🔔🔊 volume." style="display:inline-flex; align-items:center; gap:3px; color:#9ab; font-size:11px; cursor:pointer;"><input type="checkbox" id="strip-view-morphbells" checked/>⚒ Slams</label>
             <button class="strip-view-btn" id="strip-view-refresh">Refresh</button>
           </div>
           <input type="file" id="strip-view-upload-input" accept=".stripview,.gz,.bin" style="display:none"/>
@@ -74704,6 +75145,21 @@ function initStripView() {
                         stripSonifySetDepletion(depletionCb.checked);
                     if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
                         startSonify(); // re-schedule with/without the shadow sub-voice
+                    }
+                });
+            }
+            // ⚒ Slams — the dendrite bell (morph-ordinal slam strikes). A
+            // scheduling change like the crystals layer, so flipping it
+            // restarts a live performance.
+            const morphBellsCb = panel.querySelector('#strip-view-morphbells');
+            if (morphBellsCb) {
+                if (typeof stripSonifyGetMorphBells === 'function')
+                    morphBellsCb.checked = stripSonifyGetMorphBells();
+                morphBellsCb.addEventListener('change', () => {
+                    if (typeof stripSonifySetMorphBells === 'function')
+                        stripSonifySetMorphBells(morphBellsCb.checked);
+                    if (typeof stripSonifyIsPlaying === 'function' && stripSonifyIsPlaying()) {
+                        startSonify(); // re-schedule with/without the slam layer
                     }
                 });
             }

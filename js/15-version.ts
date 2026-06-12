@@ -10771,5 +10771,111 @@
 //   BASELINE: rebake. Expected: wittichen additive; schneeberg moves
 //   ONLY in morph tags if at all (band re-pin is below its 1.32 max →
 //   no change predicted); everything else byte-identical.
-const SIM_VERSION = 189;
+//
+// v190 (2026-06-12) — THE JOPLIN DOGTOOTH: mvt broth Mg 30→65. The
+//                     boss hand-verification pass's FIRST CATCH, and
+//                     the two-pass correction pattern running exactly
+//                     as designed.
+//
+//   Boss observation: "my MVT just grew a rhombohedral calcite instead
+//   of a dogtooth." The v187 Mg-axis phase had claimed the opposite
+//   ("Tri-State spar is rhombs, not dogtooth") and calibrated mvt's
+//   broth at Mg:Ca 0.10 — below the MG_SCALENO 0.15 flip. The
+//   specimen is the authority, and the geology agrees on reflection:
+//   Joplin's iconic calcite IS the golden dogtooth, MVT brines are
+//   DOLOMITIZING (Mg-rich) fluids, Tri-State carries dolomite gangue,
+//   and basinal-brine Mg:Ca runs 0.2–0.5. The 0.10 was scaffolding.
+//
+//   THE FIX THAT FAILED FIRST (recorded because it is the lesson):
+//   Mg 30→50 gives initial Mg:Ca 0.167 > 0.15 — and changed NOTHING,
+//   because calciteMorphForm reads the LIVE fluid and the fluid-mixing
+//   event holds Ca at 400 from step ~20 on (live ratio 0.125). The
+//   form rule is broth-TRAJECTORY-driven, not initial-value-driven.
+//   Mg 65 holds the live ratio at 0.163 through the run.
+//
+//   MEASURED (seeds 42-46): smooth SCALENOHEDRAL calcite at 4/5 seeds
+//   — the glassy smooth-faced Joplin dogtooth (regime stays 97-98%
+//   spiral_smooth; the v187 REGIME claim was always right, only the
+//   form was wrong). Seed 44 grows no calcite at EITHER Mg value
+//   (pre-existing marginality, control-checked). No dolomite/HMC
+//   side-effects at Mg 65. Chemistry-coupled bump: scaleno aspect 0.5
+//   vs rhomb 0.8 → volume → fill, plus Mg in the broth feeds the
+//   carbonate engines → mvt rebake.
+//
+//   BASELINE: rebake. Expected mover: mvt only.
+//
+// v191 (2026-06-12) — THE BARYTGÄNGE CORRECTION: wittichen broth Ba
+//                     24→75 (+ the meteoric event's Ba floor 22→70);
+//                     barite joins the real expects, erythrite demoted
+//                     as structurally out-of-window.
+//
+//   The v189 "aspirational barite" diagnosis blamed the missing barite
+//   on oxidation (the reverted +100 Eh finger). The gate census
+//   (tools/wittichen-sulfate-probe.mjs, NEW — the roughten_gill
+//   linarite pattern) measured the truth: from step ~133 EVERY gate
+//   component passes (Ba✓ S✓ redox✓ pH✓ T✓) and σ_barite plateaus at
+//   0.60 — barite was BARIUM-limited: ba_f(24/30)·s_f(30/40)·o2_f·1.2
+//   times the salinity-24 activity penalty (~0.59) can never reach 1.
+//   The locality is the authority: Wittichen's veins are the
+//   Barytgänge — barite IS the district's defining gangue — so Ba 24
+//   was unjustifiably shy. Ba 75 (modest for a heavy-spar district):
+//   σ 1.47–1.55 through the barite stage, barite 2/6/3 crystals at
+//   seeds 42/43/44, NO witherite (BaCO3 never gates), living suite
+//   intact at every probed seed (skutterudite 2, safflorite 2, Bi 3-4,
+//   acanthite 4, calcite 1 — unchanged from the v189 baseline). No Eh
+//   change; the reverted oxidation finger stays reverted.
+//
+//   ERYTHRITE: demoted from expects BY MEASUREMENT, not surrender —
+//   its gate needs T ≤ 50°C (weathering-zone physics) and the
+//   scenario's T trajectory ends at ~150°C. The cobalt bloom is a
+//   post-exhumation weathering product; a sealed-vein story cannot
+//   host it honestly. First client for a future spatially-partial
+//   weathering-epilogue mechanic (BACKLOG).
+//
+//   BASELINE: rebake. Expected mover: wittichen only (additive
+//   +barite; Ba is inert to every other engine in this broth).
+//
+// v192 (2026-06-12) — CARBONATE pK(T) CORRECTION (review §2.2, the
+//                     oldest open calibration debt): js/20b's linear
+//                     pK fits replaced with the full Plummer &
+//                     Busenberg 1982 analytic expressions, verified
+//                     verbatim against canonical wateq4f.dat; clamp
+//                     widened 80→250 °C.
+//
+//   The debt, measured (tools/pk-t-observe.mjs --table): old slopes
+//   5–10× too flat, max drift 0.23 pK at 0 °C, flat-lined above the
+//   80 °C clamp while the real curves bend hard (pK₁ 6.35→7.23 by
+//   200 °C). 25 °C anchors unchanged — slopes + curvature corrected.
+//
+//   Blast radius, dark-observed BEFORE the flip (--fleet): the damped
+//   effectiveCO3 σ-gates barely move at normal pH (the reference-pH
+//   ratio cancels K₂) — EXCEPT hot+alkaline jeffrey (×13 typ) and
+//   marble (×2.6); the UNDAMPED SI lever (calcite/aragonite/dolomite/
+//   HMC are engine-promoted) drops hard at hot scenarios (mvt ×0.44
+//   typ); PWP H₂CO₃ fractions rise ×2–5 hot; pCO₂ degassing shifts.
+//
+//   VERDICT (baseline A/B, 12/33 scenarios moved): the headline loss
+//   is HOT-SCENARIO ARAGONITE (jeffrey/marble/reactivated-vein/
+//   wittichen at seed 42) — geologically CORRECT, the metastable
+//   low-T polymorph never belonged at 150–700°C; those occurrences
+//   were speciation-flattening artifacts. The rest is cascade re-roll
+//   of 1-crystal marginals (celestine/hawleyite/powellite/selenite —
+//   none carbonates). Fleet coverage IMPROVED: live 133→135, dead
+//   36→34, stale unchanged at the 2 deliberate arcs. mvt's dogtooth
+//   calcite survives (now with a small stepped CORE under glassy
+//   faces — the Tri-State PHANTOM read; claims re-pinned ≤15% early
+//   relief + smooth finish). elmwood's showcase re-pinned: the pulse
+//   train was calibrated in the old constants' units, amps ×1.15 +
+//   width 0.06→0.08 restores the recorded story (19% stepped rim,
+//   13 bands, judge 8/8 — gate also trued: the old >0.4 share gate
+//   never matched the shipped ~18% claim). marble aragonite pin
+//   inverted to assert the retirement.
+//
+//   OPEN ITEM EXPOSED (the correction's sibling): carbonate Ksp(T)
+//   is still constant-ΔH van't Hoff — ~1.3 log units too FLAT at
+//   158°C vs PHREEQC's calcite analytic. With the IAP side now
+//   exact, the mixed fidelity flips the cooling-scenario SI drift
+//   mildly positive (re-pinned bounded until the Ksp analytic
+//   upgrade lands — BACKLOG).
+const SIM_VERSION = 192;
 

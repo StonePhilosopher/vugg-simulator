@@ -66,6 +66,11 @@ function _habitAspectRatio(habit: string): number {
   // the striated_ renames carry it explicitly. Same firewall as above.
   if (habit === 'striated_cubic' || habit === 'striated_pyritohedral'
       || habit === 'striated_cubo_pyritohedral') return 0.5;
+  // REE-octahedron regime family (fix-backlog 2026-06-12): the parent
+  // 'octahedral_REE' lands on the default 0.5 — the σ-graded renames
+  // carry it explicitly. Same firewall as above.
+  if (habit === 'stepped_octahedral_REE' || habit === 'hopper_octahedral_REE'
+      || habit === 'dendritic_octahedral_REE') return 0.5;
   return 0.5;
 }
 
