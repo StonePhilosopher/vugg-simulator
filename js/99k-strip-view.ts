@@ -872,7 +872,7 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
   }));
   selector.appendChild(bulkBar);
 
-  const systems = ['wall', 'special', 'carbonate', 'sulfate', 'ion'];
+  const systems = ['wall', 'special', 'carbonate', 'sulfate', 'halide', 'native', 'sulfide', 'ion'];
   for (const sys of systems) {
     const inSys = ds.manifest.chips.filter(c => c.system === sys);
     if (!inSys.length) continue;

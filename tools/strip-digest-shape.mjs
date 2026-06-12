@@ -32,6 +32,16 @@ export const STRIP_DIGEST_SCENARIOS = [
   // reset to 1.0 on the fresh_pulse flood); a regression to the one-way
   // ratchet would move the wall samples and trip this tripwire.
   'searles_lake',
+  // wittichen (v189): the five-element reduction shock. Its digest pins
+  // the bismuth_morph chip slamming the Sunagawa ordinal to 4 on the
+  // CH4 Eh pulse — the dendrite moment as a trajectory tripwire (the
+  // morphology registry's only dendrite-band tenant).
+  'wittichen',
+  // elmwood (the calcite arc's showcase, joined with the fluorite wave
+  // — closing the logged free win): pins BOTH morph chips co-pulsing
+  // on the fault-valve beats (calcite stepped + fluorite banded) plus
+  // the CO3/pH pulse-train chemistry itself.
+  'elmwood',
   // supergene_oxidation (Tsumeb gossan): a clean, cold, oxidizing supergene
   // trajectory — the acid window (pH dip), the carbonate ramp (DIC), calcite
   // undersaturation. NOT bisbee: bisbee's T is contaminated by the ungated
@@ -65,6 +75,28 @@ export const STRIP_DIGEST_CHIPS = [
   // (e.g., SI_barite is NaN where Ba≤0); the digest captures that gap
   // explicitly, which is itself a regression guard.
   'SI_selenite', 'SI_anhydrite', 'SI_barite', 'SI_celestine',
+  // Morphology-generalization arc (2026-06-12): the morph-regime chips
+  // (Sunagawa severity ordinal 0–4, sparse/null where no living tagged
+  // crystal sits in the bin). halite_morph in searles_lake is the
+  // tripwire's sharpest new pin: it must co-pulse with `concentration`
+  // (hopper ordinal 3 exactly on the wet/dry spikes — the σ-plateau
+  // stratification in RESEARCH-halide-morphology-2026-06-12.md §1).
+  // calcite_morph rides along to pin the carbonate regime trajectories
+  // (sabkha hopper, travertine/mvt smooth) that were previously only
+  // test-pinned at end-state.
+  'calcite_morph', 'halite_morph', 'sylvite_morph',
+  // v189: bismuth_morph joins with its first tenant (wittichen) — the
+  // digest pins the ordinal slamming to 4 on the CH4 reduction pulse.
+  'bismuth_morph',
+  // fluorite (fourth tenant): in elmwood, fluorite_morph + calcite_morph
+  // must co-pulse on the same fault-valve beats — two minerals, one
+  // fluid history. mvt pins the stays-glassy guard (4.96 just under
+  // the 5.0 edge — a drift in either direction trips here).
+  'fluorite_morph',
+  // pyrite (fifth tenant): sulphur_bank pins the striation trajectory
+  // (86% striated mass at seed 42 — hot-spring pyrite is the driven
+  // end of the fleet).
+  'pyrite_morph',
 ];
 
 const SAMPLE_COUNT = 8;
@@ -89,6 +121,39 @@ function seriesAt(ds, chipId, depth, deps) {
       if (v != null) { sum += v; n++; }
     }
     out.push(n ? sum / n : null);
+  }
+  return out;
+}
+
+// SPARSE crystal-anchored chips (the morph ordinals): null everywhere
+// except within ±2 cells of a living tagged crystal's anchor, so the
+// mid-ring angle-AVERAGE above digests to all-null (searles halite
+// anchors on the evaporite floor ring, not mid-wall — found at first
+// regen, 2026-06-12). For these, the trajectory worth pinning is the
+// SEVEREST regime visible ANYWHERE per step — max over angle × height —
+// which is the pan pulse itself (banded 1 ↔ hopper 3 on the wet/dry
+// concentration spikes).
+const STRIP_DIGEST_SPARSE_MAX_CHIPS = new Set(['calcite_morph', 'halite_morph', 'sylvite_morph', 'bismuth_morph', 'fluorite_morph', 'pyrite_morph']);
+
+function seriesMaxAt(ds, chipId, depth, deps) {
+  const { stripDataIndex, stripDequantize } = deps;
+  const axes = ds.manifest.axes;
+  const C = ds.manifest.chips.length;
+  const idx = ds.manifest.chips.findIndex((c) => c.id === chipId);
+  if (idx < 0) return null;
+  const meta = ds.manifest.chips[idx];
+  const out = [];
+  for (let step = 0; step < axes.steps; step++) {
+    let best = null;
+    for (let h = 0; h < axes.height_positions; h++) {
+      for (let a = 0; a < axes.angular_indices; a++) {
+        const li = stripDataIndex(step, a, h, idx, axes, C, depth);
+        if (li < 0) continue;
+        const v = stripDequantize(ds.chip_data[li], meta.range[0], meta.range[1]);
+        if (v != null && (best == null || v > best)) best = v;
+      }
+    }
+    out.push(best);
   }
   return out;
 }
@@ -120,10 +185,13 @@ export function stripDigestForDataset(ds, deps) {
     ? ds.manifest.axes.depth_positions : 1;
   const out = { steps: ds.manifest.axes.steps, depth_positions: D, chips: {} };
   for (const chip of STRIP_DIGEST_CHIPS) {
-    const wall = seriesAt(ds, chip, 0, deps);
+    const sparse = STRIP_DIGEST_SPARSE_MAX_CHIPS.has(chip);
+    const wall = sparse ? seriesMaxAt(ds, chip, 0, deps) : seriesAt(ds, chip, 0, deps);
     if (!wall) continue;
     const entry = { wall: reduceSeries(wall) };
-    if (D > 1) {
+    // Sparse chips skip the center read: crystals anchor on the wall;
+    // interior voxels never carry a morph ordinal.
+    if (D > 1 && !sparse) {
       const center = seriesAt(ds, chip, D - 1, deps);
       if (center) entry.center = reduceSeries(center);
     }

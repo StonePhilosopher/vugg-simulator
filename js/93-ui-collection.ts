@@ -68,6 +68,14 @@ function buildCrystalRecord(crystal, meta) {
     inclusion_type: z.inclusion_type || '',
     note: z.note || '',
     is_phantom: !!z.is_phantom,
+    // Calcite-morphology arc Phase 1: per-zone growth-regime tags ride
+    // into the collection so a stepped calcite remembers its terraces.
+    // Conditional spread keeps non-calcite records lean.
+    ...(z.morph_regime ? {
+      morph_regime: z.morph_regime,
+      morph_form: z.morph_form || '',
+      morph_surf_sigma: +(z.morph_surf_sigma || 0).toFixed(2),
+    } : {}),
   }));
 
   return {

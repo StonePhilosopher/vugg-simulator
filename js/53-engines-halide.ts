@@ -52,8 +52,30 @@ function grow_fluorite(crystal, conditions, step) {
     // fluorescence is electronic-transition-based and survives bleaching.
     crystal._photobleachable_color = true;
   } else {
-    crystal.habit = 'cubic';
-    crystal.dominant_forms = ['{100} cube'];
+    // Morphology-generalization arc (2026-06-12, fourth tenant): the
+    // cube path is regime-driven (MORPH_TH.fluorite, js/45 — survey
+    // plateaus: reactivated vein 7.15 → composite/stepped, elmwood
+    // fault-valve spikes 5.94 → banded, mvt 4.96 → glassy smooth).
+    // Same shared cube alphabet as the halides — render, aspect, and
+    // texture routes all pre-exist. The REE octahedral branch above
+    // outranks the regime (form beats roughness; σ-stepped octahedra
+    // are a noted debt). No rng here → sim-neutral.
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+      crystal.habit = 'stepped_cube';
+      crystal.dominant_forms = regime === 'stepped_macro'
+        ? ['{100} cube with composite/stepped faces', 'cube-on-cube regrowth']
+        : ['{100} cube, growth-banded faces'];
+    } else if (regime === 'hopper_skeletal') {
+      crystal.habit = 'hopper_cube';
+      crystal.dominant_forms = ['{100} cube, faces hollowed to stepped funnels'];
+    } else if (regime === 'dendritic') {
+      crystal.habit = 'dendritic_cube';
+      crystal.dominant_forms = ['dendritic fluorite crust'];
+    } else {
+      crystal.habit = 'cubic';
+      crystal.dominant_forms = ['{100} cube'];
+    }
   }
 
   let color;
@@ -116,12 +138,34 @@ function grow_halite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   const rate = 8.0 * excess * (0.85 + rng.random() * 0.30);
   if (rate < 0.1) return null;
-  if (sigma > 5.0) {
-    crystal.habit = 'hopper_growth';
-    crystal.dominant_forms = ['{100} cube with pyramidal hopper hollows'];
-  } else {
-    crystal.habit = 'cubic';
-    crystal.dominant_forms = ['{100} cube'];
+  // Morphology-generalization arc (2026-06-12): habit is driven by the
+  // registry classifier's recorded regime (crystal._morphology, written
+  // by classifyMorphologyStep at the END of last step — the one-step
+  // lag is physical, Phase-2 pattern; MORPH_TH.halite bands in js/45,
+  // survey + ground truth in RESEARCH-halide-morphology-2026-06-12.md).
+  // Replaces the legacy memory-less in-step flip (σ>5 → hopper_growth,
+  // last-writer-wins): the zone stack now REMEMBERS hopper episodes —
+  // a searles crystal is banded cube at baseline, hopper during
+  // concentration spikes, and carries both. Chemistry untouched: rate
+  // is computed above, Na/Cl debits below, and every cube-family habit
+  // string carries the same _habitAspectRatio (aspect firewall).
+  {
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+      crystal.habit = 'stepped_cube';
+      crystal.dominant_forms = regime === 'stepped_macro'
+        ? ['{100} cube with coarse macrostep terraces']
+        : ['{100} cube, chevron growth banding (fluid-inclusion-banded steps)'];
+    } else if (regime === 'hopper_skeletal') {
+      crystal.habit = 'hopper_cube';
+      crystal.dominant_forms = ['{100} cube, faces hollowed to stepped funnels (hopper)', 'raft/skeletal edge frame'];
+    } else if (regime === 'dendritic') {
+      crystal.habit = 'dendritic_cube';
+      crystal.dominant_forms = ['dendritic halite crust — the instability run past hopper'];
+    } else {
+      crystal.habit = 'cubic';
+      crystal.dominant_forms = ['{100} cube'];
+    }
   }
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.05, 0);
   conditions.fluid.Cl = Math.max(conditions.fluid.Cl - rate * 0.08, 0);
@@ -184,8 +228,26 @@ function grow_sylvite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate = 7.0 * excess * rng.uniform(0.85, 1.15);
   if (rate < 0.1) return null;
-  if (sigma > 4.0) { crystal.habit = 'hopper_cube'; crystal.dominant_forms = ['{100} cube with stepped hopper faces']; }
-  else { crystal.habit = 'cubic'; crystal.dominant_forms = ['{100} cube']; }
+  // Morphology-generalization arc (2026-06-12): regime-driven habit,
+  // same pattern as grow_halite above (MORPH_TH.sylvite bands in js/45;
+  // legacy in-step σ>4 flip would have called searles BASELINE zones
+  // hopper — the ladder + memory is strictly more honest).
+  {
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+      crystal.habit = 'stepped_cube';
+      crystal.dominant_forms = ['{100} cube, growth-banded steps'];
+    } else if (regime === 'hopper_skeletal') {
+      crystal.habit = 'hopper_cube';
+      crystal.dominant_forms = ['{100} cube with stepped hopper faces'];
+    } else if (regime === 'dendritic') {
+      crystal.habit = 'dendritic_cube';
+      crystal.dominant_forms = ['dendritic sylvite crust'];
+    } else {
+      crystal.habit = 'cubic';
+      crystal.dominant_forms = ['{100} cube'];
+    }
+  }
   let color_note;
   if (conditions.fluid.Fe > 30) color_note = 'red-orange sylvite (Fe staining — commercial potash aesthetic)';
   else color_note = 'colorless cubic sylvite, vitreous luster';

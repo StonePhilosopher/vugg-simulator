@@ -142,12 +142,13 @@ type ChemParam = {
   // miscategorization smell I introduced when SI_selenite landed in
   // v165 and got lumped under 'carbonate' until I added an explicit fork.
   //   system: which legend group this chip belongs to ('wall'|'special'|
-  //           'carbonate'|'sulfate'|'ion'). Drives the strip-view selector
-  //           and helicoid legend section.
+  //           'carbonate'|'sulfate'|'halide'|'ion'). Drives the strip-view
+  //           selector and helicoid legend section. (Adding a group =
+  //           also add it to the `systems` array in 99k-strip-view.ts.)
   //   units:  display unit (e.g. '°C', 'log Ω', 'mg/L', 'ppm'). Read by
   //           strip-view tooltips + the dataset manifest's per-chip
   //           units field.
-  system?: 'wall' | 'special' | 'carbonate' | 'sulfate' | 'ion',
+  system?: 'wall' | 'special' | 'carbonate' | 'sulfate' | 'halide' | 'native' | 'sulfide' | 'ion',
   units?: string,
   read: (sim: any, wall: any, ringIdx: number, cellIdx: number) => number | null | undefined,
 };
@@ -225,6 +226,14 @@ const _HELIX_FULL_NAMES: { [id: string]: string } = {
   SI_siderite:  'Saturation index — siderite (log Ω)',
   pCO2:         'Equilibrium pCO₂ (bar)',
   f_ord:        'Dolomite ordering fraction (Kim 2023; 0=disordered, 1=ordered)',
+  calcite_morph: 'Calcite growth regime at this spot (Sunagawa ordinal: 0 smooth spar · 1 stepped mild · 2 stepped macrostep · 3 hopper/skeletal · 4 dendritic)',
+  halite_morph: 'Halite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded/chevron · 2 macrostepped · 3 hopper/raft · 4 dendritic crust)',
+  sylvite_morph: 'Sylvite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded · 2 macrostepped · 3 hopper · 4 dendritic crust)',
+  bismuth_morph: 'Native bismuth growth regime at this spot (Sunagawa ordinal: 0 massive/foliated · 1 feathery · 2 feather/skeletal · 3 skeletal frame · 4 arborescent dendrite — the five-element reduction-shock texture)',
+  fluorite_morph: 'Fluorite growth regime at this spot (Sunagawa ordinal: 0 glassy cube · 1 growth-banded · 2 composite/stepped · 3 hopper frame · 4 dendritic)',
+  pyrite_morph: 'Pyrite growth regime at this spot (Sunagawa ordinal: 0 smooth euhedral · 1 finely striated · 2 coarsely striated · 3 skeletal · 4 dendritic — striations are bunched growth steps)',
+  copper_morph: 'Native copper growth regime at this spot (Sunagawa ordinal: 0 crystalline · 1 wire · 2 arborescent onset · 3 skeletal · 4 dendritic trees — spikes on the reducing pulse)',
+  gold_morph: 'Native gold growth regime at this spot (Sunagawa ordinal: 0 octahedral · 1 spongy · 2 dendritic/fishbone · 3 skeletal leaf · 4 wire/arborescent)',
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
   // v165 — Sulfate System section (PHREEQC wateq4f Ksp via 20d + 40b).
   // Strip is no longer SI-blind on the sulfate/evaporite family
@@ -539,6 +548,67 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
       return 1 - Math.exp(-n / _F_ORD_N0);
     },
   });
+  // Calcite-morphology arc Phase 1 (2026-06-11) — the "the rock got
+  // stepped HERE" chip. Records the Sunagawa ordinal of the latest
+  // classified growth regime of the calcite anchored near this
+  // (ring, cell): 0 smooth spar · 1 stepped mild · 2 stepped macrostep ·
+  // 3 hopper/skeletal · 4 dendritic. Reads crystal._morphology written
+  // by classifyCalciteMorphologyStep (js/52) at end of step — observer-
+  // only, no sim change. Null where no living calcite sits within the
+  // 15° bin (±2 native cells of the sampled cell) — sparse BY DESIGN:
+  // morphology is a property of the crystals, not the broth, so the
+  // strip shows golden dashes exactly where stepped rock exists.
+  // Morphology-generalization arc (2026-06-12): the calcite chip's read
+  // logic is now a factory — one morph chip per MORPH_TH-registered
+  // mineral, identical scan semantics (largest living tagged crystal of
+  // that mineral at ringIdx===i within ±2 native cells; severity ordinal
+  // on the SHARED MORPH_REGIMES scale, so chips compare across minerals).
+  const _morphChipParam = (mineral: string, id: string, label: string, color: number, system: any): ChemParam => ({
+    id, label, fullName: (_HELIX_FULL_NAMES as any)[id],
+    min: 0, max: 4, color,
+    system, units: '',
+    read: (s, w, i, c) => {
+      const crys = (s && Array.isArray(s.crystals)) ? s.crystals : null;
+      if (!crys || typeof MORPH_REGIMES === 'undefined') return null;
+      const N = (w && w.cells_per_ring) || 120;
+      let best: any = null, bestSize = -1;
+      for (const cr of crys) {
+        if (!cr || cr.mineral !== mineral || cr.dissolved || !cr._morphology) continue;
+        const a = cr.wall_anchor;
+        if (!a || a.ringIdx !== i) continue;
+        const d = (((a.cellIdx - c) % N) + N) % N;
+        if (Math.min(d, N - d) > 2) continue;
+        if (cr.total_growth_um > bestSize) { bestSize = cr.total_growth_um; best = cr; }
+      }
+      if (!best) return null;
+      const idx = MORPH_REGIMES.indexOf(best._morphology.regime);
+      return idx >= 0 ? idx : null;
+    },
+  });
+  params.push(_morphChipParam('calcite', 'calcite_morph', 'cal morph', 0xF0D898, 'carbonate'));
+  // Halide morph chips (second registry wave). These co-pulse with the
+  // evaporite `concentration` chip by construction — the searles strip
+  // should show hopper ordinals exactly on the wet/dry spikes (the σ
+  // plateaus in RESEARCH-halide-morphology-2026-06-12.md §1).
+  params.push(_morphChipParam('halite', 'halite_morph', 'hal morph', 0xE8E8F8, 'halide'));
+  params.push(_morphChipParam('sylvite', 'sylvite_morph', 'syl morph', 0xF8D8E8, 'halide'));
+  // Native-metal morph chips (third registry wave — bismuth first;
+  // copper/gold will join under the same 'native' legend group). In
+  // wittichen (when it lands) this chip should slam 0→4 exactly on the
+  // reducing Eh pulse — the shock made visible in the strip.
+  params.push(_morphChipParam('native_bismuth', 'bismuth_morph', 'bi morph', 0xD8C8E8, 'native'));
+  // Fluorite (fourth tenant): in elmwood this chip should co-pulse
+  // with calcite_morph on the SAME fault-valve beats — two minerals,
+  // one fluid history, two recorded shapes.
+  params.push(_morphChipParam('fluorite', 'fluorite_morph', 'fl morph', 0xB890E0, 'halide'));
+  // Pyrite (fifth tenant) opens the 'sulfide' legend group — striation
+  // intensity as a chemistry trace (brassy gold chip).
+  params.push(_morphChipParam('pyrite', 'pyrite_morph', 'py morph', 0xD4B048, 'sulfide'));
+  // Copper + gold complete the native group (the conflation sweep). In
+  // bisbee the copper chip should spike on the −400 pulse and then go
+  // null as the trees dissolve into the azurite era.
+  params.push(_morphChipParam('native_copper', 'copper_morph', 'cu morph', 0xE08850, 'native'));
+  params.push(_morphChipParam('native_gold', 'gold_morph', 'au morph', 0xF0C830, 'native'));
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
   // v165 — SULFATE SYSTEM SI chips. 4 chips consuming the Ksp engine

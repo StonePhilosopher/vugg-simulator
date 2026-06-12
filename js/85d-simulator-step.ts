@@ -137,13 +137,33 @@ Object.assign(VugSimulator.prototype, {
   ambient_cooling(rate = null) {
   // v179: rate resolves wall.cooling_rate (per-scenario knob, default 1.5 —
   // the historical hard-coded value). An explicit argument still wins
-  // (legacy callers / tests). RNG-NEUTRAL: the uniform draw happens
-  // regardless of the rate value, so unset scenarios are byte-identical.
+  // (legacy callers / tests).
+  //
+  // T-RECONCILIATION (2026-06-10, SIM 181): the drift + pulse draws below come
+  // from this._thermalRng — a dedicated run-seed-derived stream (85j
+  // _makeThermalRng) — NOT the shared `rng`. Statistically the same mechanic
+  // (verified in tools/t-reconciliation-probe.mjs: meanT/pulse-count
+  // distributions indistinguishable across seeds), but the thermal history no
+  // longer displaces the nucleation cascade. DELTA semantics throughout: the
+  // drift subtracts and the pulses add to whatever T currently is, so event
+  // shoves (70-events ±15..50°C) compose instead of being clobbered — the
+  // same-field-movement foot-gun documented at scenarios.json5 (supergene
+  // movement note) does not apply here.
   if (rate === null || rate === undefined) {
     const wr = this.conditions.wall?.cooling_rate;
     rate = (typeof wr === 'number' && isFinite(wr) && wr >= 0) ? wr : 1.5;
   }
-  this.conditions.temperature -= rate * rng.uniform(0.8, 1.2);
+  // STAND-DOWN (the T-unlock): when a scenario declares a `temperature`
+  // movement (85j) whose window is active this step, the declared movement
+  // IS the thermal regime — the ambient drift and pulses yield for the
+  // window (naica's stable pool, a pegmatite's 650→300 ramp) and resume
+  // when it closes. Thermal-stream draws are skipped during the window;
+  // that shifts the post-window thermal realization for THAT scenario only
+  // (declaring a movement is a per-scenario rebake anyway).
+  const _mvOwnsT = !!(this._movements && this._movements.drivesFieldAt
+    && this._movements.drivesFieldAt('temperature', this.step));
+  if (!_mvOwnsT) {
+  this.conditions.temperature -= rate * this._thermalRng.uniform(0.8, 1.2);
   this.conditions.temperature = Math.max(this.conditions.temperature, 25);
 
   // ---- Thermal pulses: episodic fluid injection ----
@@ -154,31 +174,32 @@ Object.assign(VugSimulator.prototype, {
   // systems don't notice small pulses).
   const cooledFraction = 1 - (this.conditions.temperature - 25) / Math.max(this._startTemp || 400, 100);
   const pulseChance = 0.04 + cooledFraction * 0.06; // 4-10% per step
-  // v162 supergene opt-out (LAST && operand so rng.random() is still drawn
-  // first — keeps every non-flagged scenario byte-identical). Scenarios that
+  // v162 supergene opt-out (LAST && operand so the chance draw still happens
+  // first — keeps the thermal stream's draw pattern uniform). Scenarios that
   // model a near-surface / supergene regime set wall.thermal_pulses:false:
   // there is no magmatic heat source at the surface, so the "hot fluid
   // injection" pulses (which were reheating bisbee's 25°C azurite/malachite
   // cascade toward 350°C) must not fire. See VugWall.thermal_pulses (22).
   const _pulsesOn = (this.conditions.wall?.thermal_pulses !== false);
-  if (rng.random() < pulseChance && this.conditions.temperature < (this._startTemp || 400) * 0.8 && _pulsesOn) {
+  if (this._thermalRng.random() < pulseChance && this.conditions.temperature < (this._startTemp || 400) * 0.8 && _pulsesOn) {
     // Spike: 30-150°C above current, but not above original start temp
-    const spike = rng.uniform(30, 150);
+    const spike = this._thermalRng.uniform(30, 150);
     const newTemp = Math.min(this.conditions.temperature + spike, (this._startTemp || 400) * 0.95);
     const actualSpike = newTemp - this.conditions.temperature;
     if (actualSpike > 15) {
       this.conditions.temperature = newTemp;
       // Fresh fluid pulse brings chemistry
-      this.conditions.fluid.SiO2 += rng.uniform(50, 300);
-      this.conditions.fluid.Fe += rng.uniform(2, 15);
-      this.conditions.fluid.Mn += rng.uniform(1, 5);
-      this.conditions.flow_rate = rng.uniform(1.5, 3.0);
+      this.conditions.fluid.SiO2 += this._thermalRng.uniform(50, 300);
+      this.conditions.fluid.Fe += this._thermalRng.uniform(2, 15);
+      this.conditions.fluid.Mn += this._thermalRng.uniform(1, 5);
+      this.conditions.flow_rate = this._thermalRng.uniform(1.5, 3.0);
       // pH shift from new fluid (slightly acidic hydrothermal)
-      this.conditions.fluid.pH = Math.max(4.0, this.conditions.fluid.pH - rng.uniform(0.3, 1.0));
+      this.conditions.fluid.pH = Math.max(4.0, this.conditions.fluid.pH - this._thermalRng.uniform(0.3, 1.0));
       this.log.push(`  🌡️ THERMAL PULSE: +${actualSpike.toFixed(0)}°C — hot fluid injection through fracture! T=${newTemp.toFixed(0)}°C`);
       this.log.push(`     Fresh fluid: SiO₂↑, Fe↑, Mn↑, pH↓ — new growth expected`);
     }
   }
+  } // end !_mvOwnsT (ambient drift + pulses)
 
   // pH recovery toward equilibrium — scaled by flow rate.
   // Fresh fluid flushing through the vug dilutes acid and restores

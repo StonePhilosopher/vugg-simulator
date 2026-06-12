@@ -254,9 +254,43 @@ function grow_native_bismuth(crystal, conditions, step) {
   if (rate < 0.1) return null;
   const f = conditions.fluid;
   let color_note;
-  if (excess > 1.0) { crystal.habit = 'massive_granular'; crystal.dominant_forms = ['massive granular silver-white']; color_note = 'massive granular native bismuth'; }
-  else if (excess > 0.25 && rng.random() < 0.1) { crystal.habit = 'rhombohedral_crystal'; crystal.dominant_forms = ['{0001} basal pinacoid', 'rhombohedral trigonal']; color_note = 'rhombohedral crystal (rare — well-formed in open vug)'; }
-  else { crystal.habit = 'arborescent_dendritic'; crystal.dominant_forms = ['arborescent branching', 'dendritic fracture fill']; color_note = 'arborescent native bismuth — silver-white tree-like growth, iridescent tarnish expected'; }
+  // Morphology-generalization arc (2026-06-12): regime-driven habit
+  // (MORPH_TH.native_bismuth, js/45; design + survey in
+  // RESEARCH-bismuth-morphology-2026-06-12.md). The old dispatch ran
+  // ANTI-Sunagawa: massive at TOP σ, dendrite at the BOTTOM, and the
+  // rare well-formed crystal at mid-σ — conflating aggregate texture
+  // with interface morphology. Corrected: massive/foliated is the
+  // SMOOTH-band default (a nucleation-density texture, the
+  // mass-dominant natural form), the rare open-vug crystal dice-roll
+  // stays in the smooth band where slow growth actually lives, and
+  // arborescent dendrite is the TOP — the five-element reduction-shock
+  // texture (Kissin 1992; Burisch 2017). NOTE: this rewrite moves the
+  // rng.random() dice-roll's trigger condition → seed-42 cascade
+  // shifts where Bi grows (schneeberg) → SIM bump + rebake commit.
+  {
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    if (regime === 'dendritic') {
+      crystal.habit = 'arborescent_dendritic';
+      crystal.dominant_forms = ['arborescent branching', 'dendritic vein-shoot fill'];
+      color_note = 'arborescent native bismuth — the reduction shock made solid; silver-white branches, iridescent tarnish expected';
+    } else if (regime === 'hopper_skeletal') {
+      crystal.habit = 'skeletal_bismuth';
+      crystal.dominant_forms = ['skeletal edge frames', 'hollow-faced laths'];
+      color_note = 'skeletal native bismuth — edges outracing faces (rarely preserved in nature; the melt-grown funnel is the lab cousin)';
+    } else if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+      crystal.habit = 'feathery_bismuth';
+      crystal.dominant_forms = ['feathery foliated laths', 'growth-banded plates'];
+      color_note = 'feather bismuth — foliated laths recording a driven but not yet unstable fluid';
+    } else if (rng.random() < 0.1) {
+      crystal.habit = 'rhombohedral_crystal';
+      crystal.dominant_forms = ['{0001} basal pinacoid', 'rhombohedral trigonal (pseudocubic)'];
+      color_note = 'rhombohedral crystal (rare — slow near-equilibrium growth in an open vug)';
+    } else {
+      crystal.habit = 'massive_granular';
+      crystal.dominant_forms = ['massive/foliated silver-white veinlet'];
+      color_note = 'massive native bismuth — the quiet workhorse texture of a reducing vein';
+    }
+  }
   f.Bi = Math.max(f.Bi - rate * 0.035, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
@@ -267,19 +301,31 @@ function grow_native_gold(crystal, conditions, step) {
   const excess = sigma - 1.0;
   const rate = 1.5 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.05) return null;
+  // Morphology-generalization arc (2026-06-12, the conflation sweep):
+  // regime-driven (MORPH_TH.native_gold, js/45). The legacy ladder had
+  // octahedral at the bottom (CORRECT — kept) but 'nugget' at the top:
+  // nuggets are PLACER/accretion textures, not growth morphology, and
+  // the sim never models transport — same conflation as bismuth's
+  // massive-at-top. Fleet consequence: bisbee oxide-zone gold (σ
+  // plateau 2.77) reads spongy/dendritic — which Bisbee gold IS; the
+  // nugget string is retired from σ-dispatch (render maps keep it for
+  // old saves). No rng → sim-neutral (aspects all 0.5).
   let habit_note;
-  if (excess > 1.5) {
-    crystal.habit = 'nugget';
-    crystal.dominant_forms = ['rounded nugget', 'massive native gold'];
-    habit_note = 'nugget — rapid precipitation in pocket';
-  } else if (excess > 0.5) {
-    crystal.habit = 'dendritic';
-    crystal.dominant_forms = ['dendritic {111} branching', 'spongy gold'];
-    habit_note = 'dendritic / spongy native gold (the fishbone-and-leaf habit of supergene Au)';
-  } else {
-    crystal.habit = 'octahedral';
-    crystal.dominant_forms = ['{111} octahedron', 'rare well-formed crystal'];
-    habit_note = 'octahedral well-formed native gold (rare — slow growth)';
+  {
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    if (regime === 'hopper_skeletal' || regime === 'dendritic') {
+      crystal.habit = 'dendritic';
+      crystal.dominant_forms = ['skeletal leaf/wire gold', 'arborescent {111}'];
+      habit_note = 'skeletal/wire native gold — the instability end of the ladder';
+    } else if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+      crystal.habit = 'dendritic';
+      crystal.dominant_forms = ['dendritic {111} branching', 'spongy gold'];
+      habit_note = 'dendritic / spongy native gold (the fishbone-and-leaf habit of supergene Au)';
+    } else {
+      crystal.habit = 'octahedral';
+      crystal.dominant_forms = ['{111} octahedron', 'rare well-formed crystal'];
+      habit_note = 'octahedral well-formed native gold (rare — slow growth)';
+    }
   }
   // Alloying note — pick whichever alloying element is dominant.
   if (conditions.fluid.Ag > conditions.fluid.Cu * 0.5 && conditions.fluid.Ag > 5) {
@@ -305,11 +351,35 @@ function grow_native_copper(crystal, conditions, step) {
   const excess = sigma - 1.0;
   const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
+  // Morphology-generalization arc (2026-06-12): regime-driven
+  // (MORPH_TH.native_copper, js/45 — bands on bisbee's measured −400mV
+  // pulse ramp, peak σ 2.09 at the pulse center). The legacy ladder
+  // was ALREADY Sunagawa-ascending (crystal → wire → arborescent);
+  // only 'massive_sheet' at top was the texture conflation — a
+  // Keweenaw fissure-fill AGGREGATE, dead code at current calibration
+  // (needed σ>2.5; fleet max 2.09). Retired from σ-dispatch; a future
+  // Keweenaw scenario can model it as what it is. No rng → sim-neutral.
   let color_note;
-  if (excess > 1.5) { crystal.habit = 'massive_sheet'; crystal.dominant_forms = ['massive sheet copper', 'fills large void']; color_note = 'massive sheet copper (rapid precipitation in open void)'; }
-  else if (excess > 0.6) { crystal.habit = 'arborescent_dendritic'; crystal.dominant_forms = ['arborescent branching growth', 'dendritic {100}']; color_note = 'arborescent dendritic — tree-like branching copper'; }
-  else if (excess > 0.25) { crystal.habit = 'wire_copper'; crystal.dominant_forms = ['wire growth along narrow channel', 'filamentary Cu']; color_note = 'wire copper — filamentary growth in narrow channel'; }
-  else { crystal.habit = 'cubic_dodecahedral'; crystal.dominant_forms = ['{100} cube', '{110} rhombic dodecahedron', 'rare well-formed crystal']; color_note = 'cubic/dodecahedral well-formed native copper (rare)'; }
+  {
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    if (regime === 'hopper_skeletal' || regime === 'dendritic') {
+      crystal.habit = 'arborescent_dendritic';
+      crystal.dominant_forms = ['arborescent branching growth', 'dendritic {100} trees'];
+      color_note = 'arborescent dendritic — the Eh-shock copper trees (Cornish/Keweenaw habit)';
+    } else if (regime === 'stepped_macro') {
+      crystal.habit = 'arborescent_dendritic';
+      crystal.dominant_forms = ['arborescent branching onset', 'dendritic {100}'];
+      color_note = 'arborescent dendritic — tree-like branching copper';
+    } else if (regime === 'stepped_mild') {
+      crystal.habit = 'wire_copper';
+      crystal.dominant_forms = ['wire growth along narrow channel', 'filamentary Cu'];
+      color_note = 'wire copper — filamentary growth in narrow channel';
+    } else {
+      crystal.habit = 'cubic_dodecahedral';
+      crystal.dominant_forms = ['{100} cube', '{110} rhombic dodecahedron', 'rare well-formed crystal'];
+      color_note = 'cubic/dodecahedral well-formed native copper (rare)';
+    }
+  }
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.04, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }

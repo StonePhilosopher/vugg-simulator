@@ -55,6 +55,38 @@ const HABIT_TO_TEXTURE = {
   'skeletal_hopper':     'hopper',  // galena very-high-σ
   'skeletal_fenster':    'hopper',  // quartz "window" skeletal (rapid cooling)
   'hoppered_hexagonal':  'hopper',  // pyromorphite moderate-high σ low T
+  // Stage 7 — calcite σ-regime habits (calcite-morphology arc Phase 2,
+  // 2026-06-11). Stepped + hopper families read as the right-angle
+  // 'hopper' notch texture (terraced, not spiky) in the 2D wall view;
+  // dendritic reads as the acicular rasp (branches = dense spikes at
+  // wall-cell scale).
+  'stepped_scalenohedral':   'hopper',
+  'stepped_rhombohedral':    'hopper',
+  'hopper_scalenohedral':    'hopper',
+  'hopper_rhombohedral':     'hopper',
+  'dendritic_scalenohedral': 'acicular',
+  'dendritic_rhombohedral':  'acicular',
+  // Stage 8 — halide cube family (morphology-generalization arc,
+  // 2026-06-12; 'hopper_cube' already mapped in Stage 6 from the legacy
+  // sylvite string — the regime dispatch now emits it for both
+  // halides). Banded/stepped cubes read as the terraced notch;
+  // dendritic crusts read acicular. The Tanaka 2018 σ³ edge-outpacing
+  // physics in the Stage 6 note is exactly the MORPH_TH.halite hopper
+  // band (js/45).
+  'stepped_cube':            'hopper',
+  'dendritic_cube':          'acicular',
+  // Stage 9 — bismuth regime family (2026-06-12). Feathery laths read
+  // acicular (fans of elongated plates at wall-cell scale); skeletal
+  // frames read as the hopper notch; arborescent_dendritic already
+  // reads via the 99d dendritic fuzzy.
+  'feathery_bismuth':        'acicular',
+  'skeletal_bismuth':        'hopper',
+  // Stage 10 — pyrite striation overlay (2026-06-12). The deep stepped
+  // cube-edge texture IS the striation read in the 2D wall view (the
+  // pyrite/galena by-mineral override already used it for 'cubic').
+  'striated_cubic':              'cube_edge_deep',
+  'striated_pyritohedral':       'cube_edge_deep',
+  'striated_cubo_pyritohedral':  'cube_edge_deep',
 };
 
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]

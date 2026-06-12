@@ -364,12 +364,16 @@ describe('strip chemistry contract — naica_geothermal (selenite slow-growth ch
   it('selenite SI hovers near saturation — the slow-growth window that grows the giant crystals', () => {
     if (!ds) return;
     const si = chipSeries(ds, 'SI_selenite', { depth: 'wall' });
-    // Observed (wall): SI_selenite -0.490…-0.079 across 320 steps, ending
-    // -0.227. Always slightly undersaturated; never any supersat surge.
-    // This is the documented condition (Van Driessche et al. 2011) under
-    // which the Cave of Crystals grew gypsum crystals to >11 m: marginal
-    // saturation maintained for tens of millennia by isothermal-ish brine.
-    // Surge to SI>0 would mean fast nucleation, not giant single crystals.
+    // Observed at v165 (wall): SI_selenite -0.490…-0.079 across 320 steps,
+    // ending -0.227. Always slightly undersaturated; never any supersat
+    // surge. This is the documented condition (Van Driessche et al. 2011)
+    // under which the Cave of Crystals grew gypsum crystals to >11 m:
+    // marginal saturation maintained for tens of millennia by isothermal
+    // brine. Surge to SI>0 would mean fast nucleation, not giant single
+    // crystals. v182 (declared thermal movement, the buffered pool now
+    // actually isothermal instead of noise): the contract holds unchanged
+    // — and means MORE now, since the steady T this assertion always
+    // assumed is finally the trajectory the strip records.
     expect(series.peak(si)).toBeLessThan(0);          // never supersaturated
     expect(series.peak(si)).toBeGreaterThan(-0.6);    // but ALWAYS close
   });
@@ -378,23 +382,31 @@ describe('strip chemistry contract — naica_geothermal (selenite slow-growth ch
     if (!ds) return;
     const gy = chipSeries(ds, 'SI_selenite',  { depth: 'wall' });
     const an = chipSeries(ds, 'SI_anhydrite', { depth: 'wall' });
-    // Observed: SI_selenite peak -0.079, SI_anhydrite peak -0.193.
+    // Observed at v165: SI_selenite peak -0.079, SI_anhydrite peak -0.193.
     // Anhydrite is the LESS-soluble phase only above ~55-60°C (Van
     // Driessche 2016). Below the phase boundary, gypsum is more stable
-    // (higher SI at the same Ca·SO4 product). The chamber sits 25-55°C
-    // (T cycles), squarely in the gypsum field — anhydrite stays the
+    // (higher SI at the same Ca·SO4 product). v182: the buffered-pool
+    // movement holds the chamber at 53-56°C through step 260 (then cooler
+    // post-drainage) — still below the boundary, so anhydrite stays the
     // less-saturated phase throughout, which is exactly correct.
     expect(series.peak(an)).toBeLessThan(series.peak(gy));
   });
 
-  it('T cycles in the gypsum stability field (25–55°C) — no excursion past the anhydrite transition', () => {
+  it('T stays in the gypsum stability field — no excursion past the anhydrite transition', () => {
     if (!ds) return;
     const T = chipSeries(ds, 'T', { depth: 'wall' });
-    // Observed (wall): T 25.0…54.7, ending 35.5. The cooling-from-warm-
-    // groundwater cycle. Crucially never crosses 60°C (the gypsum →
-    // anhydrite phase boundary). If a future edit lets T pulse past 60,
-    // SI_anhydrite would suddenly outpace SI_selenite and the wrong
-    // phase would be favored — this pin guards that.
+    // v182: the T regime CHANGED — the declared thermal movement holds the
+    // buffered pool (56→53°C smoothstep through step 260, the García-Ruiz
+    // band occupied ~50% of steps), then the mining events + gentle ambient
+    // drift take the drained/reflooded cave down to ~27°C by run end. The
+    // pre-v182 "observed" trajectory this comment used to cite (25.0…54.7,
+    // ending 35.5, 'the cooling-from-warm-groundwater cycle') was ambient
+    // NOISE — drift + random pulses bulldozing the scenario's design.
+    // Both assertions survive the regime change on their merits: peak 56.0
+    // never crosses 60°C (gypsum → anhydrite boundary — if a future edit
+    // lets T past 60, SI_anhydrite outpaces SI_selenite and the wrong phase
+    // is favored), and the post-drainage era still provides the sub-30°C
+    // minimum (~27°C, the 2017 reflood bath).
     expect(series.peak(T)).toBeLessThan(60);
     expect(series.min(T)).toBeLessThan(30);
   });

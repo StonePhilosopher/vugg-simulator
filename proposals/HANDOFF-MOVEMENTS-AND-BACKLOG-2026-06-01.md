@@ -22,6 +22,56 @@ FIXED 2026-06-01 (`083d994`, boss).
 > "exact inverses for O2 ∈ [0.05, 5] → clamp in 4c.2" line is superseded
 > (no clamp was ever added; the divergence itself is gone).
 
+> **STATUS (2026-06-10, second note): F1 is RESOLVED — T-RECONCILIATION
+> SHIPPED (SIM 181).** ambient_cooling's drift + thermal-pulse draws moved
+> off the shared rng onto a dedicated run-seed-derived stream
+> (`sim._thermalRng`, 85j `_makeThermalRng` — seeded from `rng.state` at
+> construction and SCRAMBLED; bare XOR left nearby seeds correlated). The
+> mechanic is statistically unchanged (standing instrument:
+> `tools/t-reconciliation-probe.mjs`, LIVE-vs-SHADOW fleet sweep +
+> multi-seed distributions); what changed is that thermal noise no longer
+> displaces the nucleation cascade. STAND-DOWN is in: a scenario movement
+> on `temperature` owns T for its window (ambient drift + pulses yield,
+> resume at endStep) — the ~8 T-blocked scenarios (§coverage below) are now
+> OPEN to declared thermal stories, each as its own per-scenario arc.
+> "Don't drive T with OU until ambient_cooling is reconciled" still holds
+> for TEXTURE (the chaos warning was about OU feedback, not ownership);
+> deterministic TREND/setpoint movements on T are safe now. Full-fleet
+> rebake landed with the change (seed42_v181 + strip_digest_v181).
+> **First consumer shipped same day (SIM 182): naica's buffered-pool
+> movement** — García-Ruiz band 0→50% occupancy, crystal count −40-60%
+> with the cavity still sealing (the fewer-nuclei-larger-individuals
+> mechanism emerged unscripted). The composition pattern it established:
+> events are the chemistry beats, the movement is the thermal sentence.
+> **And by end of day: THE WHOLE T-ROLLOUT IS CLOSED (SIM 184).** v183
+> found the second shape (events-anchor-T → silence the noise, don't
+> movement over it); v184 swept the remaining six by observation — marble/
+> deccan/radioactive flagged, cooling got the Herkimer burial movement
+> (crystal count 3→1, the signature), deccan additionally got the
+> rollout's deep find (a fluid.SiO2 constant-setpoint movement replacing a
+> structural noise-dependence in its silica budget), and porphyry +
+> epithermal KEEP their pulses deliberately (fault-valve pulsing is native
+> and, for epithermal, load-bearing). The "⛔ T-BLOCKED (~8)" class in the
+> coverage map below NO LONGER EXISTS. Next per the totality verdict:
+> event-subsumption (bisbee/schneeberg).
+>
+> **STATUS 2026-06-11 — EVENT-SUBSUMPTION ARC OPEN (SIM 185).** The
+> "EVENT-CONFOUNDED redox" class below starts closing. **schneeberg
+> SHIPPED**: its scripted redox step function (O2:0.0→1.5 single-step flip
+> at the step-85 flood) is now a declared fluid.Eh movement (window 0→110
+> = the phreatic life before vadose exhumation, base −200 mV, step op +490
+> at u=0.8 → a ~8-step sulfide-buffer-exhaustion swing centered at step
+> 88). First time a movement REPLACES scripted event redox (vs adding a
+> story to a flat field); events keep the P/As/Cu/Ca chemistry beats.
+> Deterministic (texture re-rolls marginals); gate whole at 8 seeds via
+> the NEW tools/eh-subsumption-observe.mjs. 16th catch en route (the
+> expects gate is blind to vadose-renamed crystals → gate lineages).
+> Single-scenario rebake, coverage unchanged. **bisbee SHIPPED same
+> session (SIM 186)** — the harder NON-MONOTONIC rollercoaster as a
+> four-op movement (step front + sag pulse + deep −400 reducing pulse for
+> native copper + late trend; window 0→305). The "⚠ EVENT-CONFOUNDED
+> redox" class is now fully CLOSED — both members subsumed.
+
 ---
 
 ## ★ North Star — follow the science (boss, 2026-06-01)
@@ -304,8 +354,11 @@ observe.mjs — observed 7+ candidates, the homework behind "totality").** A cle
 temporal-movement target needs a lever that is (a) FLAT in baseline, (b) the
 load-bearing GEOLOGICAL driver, and (c) assemblage-preserving. Across the roster
 that set is SMALL — most scenarios are gated. The honest map:
-- **✅ CLEAN + SHIPPED (2):** `mvt` (Eh reducing trend), `supergene_oxidation`
-  (pH acid front). These are the scenarios where all three conditions hold.
+- **✅ CLEAN + SHIPPED:** `mvt` (Eh reducing trend), `supergene_oxidation`
+  (pH acid front), the whole T-rollout (naica/cooling movements + the
+  pegmatite-shape flags, SIM 182-184), and now `schneeberg` (Eh
+  subsumption, SIM 185). These are scenarios where all three conditions
+  hold OR where the gating sub-project has since been done.
 - **⛔ T-BLOCKED (the biggest gated class — needs the ambient_cooling reconciliation
   sub-project first):** `cooling`, `naica_geothermal`, `marble_contact_metamorphism`,
   `gem_pegmatite`, `radioactive_pegmatite`, `porphyry`, `epithermal_telluride`
@@ -318,6 +371,14 @@ that set is SMALL — most scenarios are gated. The honest map:
   (Eh −150→322 rollercoaster), `schneeberg` (Eh −200→322). A movement just fights
   the scripted swings. To move these, SUBSUME their redox events into a movement
   (the "movements subsume ad-hoc events" vision) — a per-scenario refactor.
+  **STATUS 2026-06-11: ✅ CLOSED — both subsumed in one session.**
+  schneeberg SHIPPED (SIM 185): step function → declared fluid.Eh movement
+  (window 0→110, base −200, step +490 at u=0.8). bisbee SHIPPED (SIM 186):
+  the harder NON-MONOTONIC rollercoaster → four-op movement (step +330 at
+  u=0.233, pulse −60 sag, deep pulse −400 at u=0.436 for native copper,
+  trend +100; window 0→305, base −150). Both deterministic, both gate
+  whole at 8 seeds via tools/eh-subsumption-observe.mjs; events keep their
+  chemistry beats. This class no longer exists.
 - **⚠ BASELINE-DEBT (fails many expects regardless of movement):** `roughten_gill`
   (8 expects missing), `sunnyside_american_tunnel` (4 missing). Calibration debt,
   not a movement target — fix the broth first.

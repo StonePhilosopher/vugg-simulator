@@ -73,7 +73,21 @@
         "Silica was liberated by pressure solution and hydrocarbon cracking in adjacent shales, then precipitated free-floating crystals in silica-overpressured pockets that were also saturated with petroleum and saline basinal brine — hence the two-phase enhydro + anthraxolite inclusions diagnostic of Herkimer specimens.",
         "All fluid values cite locality_chemistry.json#localities.herkimer_middleville. The sim uses abstracted sim-scale ppm, not raw brine concentrations.",
         "Signature: clear, doubly-terminated quartz. Minimal carbonate competition (most Ca/CO3 has sequestered as dolomite cement in the host rock).",
-        "Data gaps: no widely-indexed modern microthermometry study publishes Th and Tm_ice specifically for Herkimer pocket quartz; the 140-200°C window is inferred from regional Alleghenian thermal maturity (Harris et al. 1978; Friedman & Sanders 1982). LA-ICP-MS of Herkimer fluid inclusions has not appeared in open literature; ratios are imported from Hanor 1994 Appalachian-basin averages."
+        "Data gaps: no widely-indexed modern microthermometry study publishes Th and Tm_ice specifically for Herkimer pocket quartz; the 140-200°C window is inferred from regional Alleghenian thermal maturity (Harris et al. 1978; Friedman & Sanders 1982). LA-ICP-MS of Herkimer fluid inclusions has not appeared in open literature; ratios are imported from Hanor 1994 Appalachian-basin averages.",
+        "v184 BURIAL THERMAL STORY (NAICA-SHAPE — the only events:[] scenario in the T-rollout): the movement below holds peak Alleghenian burial (180°C, smoothstep −20 across the run → ends ~158) instead of the old ambient regime, where the drift fell out of the 140-200°C window and 2-3 random pulses happened to balance it back in (band occupancy 65-86% by ACCIDENT — noise as load-bearing thermal budget, the deccan lesson at a different scenario). With the declared plateau: window occupancy 100%, pulses 0 — and crystal count drops 3→1 at every observed seed. One large doubly-terminated crystal IS the Herkimer signature (sustained low σ → no fresh nucleation → the García-Ruiz fewer-nuclei mechanism, same as naica v182): a 3km-deep Cambrian dolostone in burial diagenesis has no magmatic heat source, hence thermal_pulses:false alongside (the flag matters only past endStep; the movement owns every in-run step)."
+      ],
+      "movements": [
+        {
+          // Peak Alleghenian burial plateau (see v184 note): the dolostone
+          // section sat at ~140-200°C for ~My while the pocket quartz grew;
+          // the gentle -20 decline is the slow onset of post-orogenic
+          // cooling (5-30°C/My basin rates), not an exhumation crash.
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 100,
+          "base": 180,
+          "ops": [{ "kind": "trend", "amp": -20, "ease": true }]
+        }
       ],
       "initial": {
         // T=180°C: Alleghenian peak burial for the Cambrian-Ordovician section
@@ -127,7 +141,10 @@
           "composition": "dolomite",
           "primary_bubbles": 2,
           "secondary_bubbles": 3,
-          "shape_seed": 1
+          "shape_seed": 1,
+          // v184 (see burial-story note): burial diagenesis at 3 km — no
+          // magmatic heat source, no fracture-valve reheats.
+          "thermal_pulses": false
         }
       },
       "events": [],
@@ -310,6 +327,103 @@
       ]
     },
 
+    "elmwood": {
+      "anchor": "Elmwood-Gordonsville mines (Carthage, Smith County, TN) — Central Tennessee MVT district; the world-reference stepped golden calcite scalenohedra, on honey sphalerite with purple fluorite + barite, in Knox Group paleokarst breccia",
+      "description": "The stepped-calcite showcase (calcite-morphology arc Phase 5). A waning MVT system: NaCl-CaCl2-MgCl2 basinal brine drops honey sphalerite, then fluorite + barite, and as the system cools, episodic brine expulsions (seismic pumping) drive an oscillating carbonate supply — the sigma curve crosses the stepped band again and again, and the late golden scalenohedral calcite records every pulse as a macrostep terrace. Watch them build.",
+      "expects_species": ["sphalerite", "fluorite", "barite", "calcite"],
+      "duration_steps": 200,
+      "notes": [
+        "Anchor: Elmwood-Gordonsville (Central Tennessee zinc district). Fluid inclusions per Gratz & Misra 1987 (Econ. Geol. 82): sphalerite Th ~90-150°C, NaCl-CaCl2-MgCl2 brines ~20-23 wt% NaCl-eq. Ore in paleokarst/collapse breccias of the upper Knox Group beneath the post-Knox unconformity.",
+        "Paragenesis (Misra & Lu 1992; district consensus): replacement dolomite -> honey-amber sphalerite (main ore) -> purple fluorite + barite (galena minor in Central TN, unlike Tri-State) -> GIANT GOLDEN CALCITE LAST, scalenohedral, stepped faces + phantoms, often perched on sphalerite; bitumen/oil inclusions give the golden body color (the district carries live hydrocarbons).",
+        "Mg:Ca ~0.2 — a dolostone-buffered MgCl2-bearing brine (the host IS dolostone; Gratz & Misra report Mg-rich inclusions). Above the 0.15 elongation threshold (GCA 2015 / Phase 4): the form axis makes the late calcite SCALENOHEDRAL at low T, which is exactly what Elmwood grows. Mn kept at 4 (below the manganocalcite branch's >5 gate) with Fe 8 — Elmwood calcite is golden dogtooth, not botryoidal manganocalcite.",
+        "The movements are the showcase: a naica-shape cooling trend (120 -> 55°C, the waning system) + a fluid.CO3 PULSE TRAIN in the late half (five gaussian brine-expulsion pulses, the MVT seismic-pumping mechanism — Sibson-style fault-valve episodicity). Each pulse pushes calcite sigma up through the stepped band and relaxes back: the oscillation IS the step-bunching driver (research doc §2 — the steps are the chemistry curve made solid)."
+      ],
+      "initial": {
+        "temperature_C": 120.0,
+        "pressure_kbar": 0.2,
+        "fluid": {
+          "SiO2": 60,
+          "Ca": 350,
+          "CO3": 180,
+          "Mg": 70,
+          "Zn": 40,
+          "Pb": 8,
+          "F": 8,
+          "Ba": 18,
+          "Sr": 10,
+          "Fe": 8,
+          "Mn": 4,
+          "Na": 90,
+          "K": 12,
+          "Cl": 260,
+          "S": 0,
+          "O2": 0.25,
+          "pH": 7.1,
+          "salinity": 21.0
+        },
+        "wall": {
+          "architecture": "irregular",
+          "primary_bubbles": 2,
+          "secondary_bubbles": 7,
+          "shape_seed": 11
+        }
+      },
+      "events": [
+        { "step": 15, "type": "fluid_mixing", "name": "Brine Meets Sulfur", "description": "Metal brine meets sulfur-bearing groundwater in the breccia — the honey-sphalerite era begins" },
+        { "step": 70, "type": "tectonic_shock", "name": "Fault Slip", "description": "The fault valve slips — pressure pulse through the breccia run" }
+      ],
+      "movements": [
+        {
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 200,
+          "base": 120,
+          "ops": [{ "kind": "trend", "amp": -65, "ease": true }]
+        },
+        // The fault-valve pulse train (Sibson 1992): each slip is ONE
+        // geological event with TWO coupled fluid signatures — a brine
+        // slug (CO3 supply) and a pressure drop that degasses CO2 (pH
+        // spike — the textbook MVT late-calcite driver). The two
+        // movements share centers because they ARE the same five slips.
+        // Each pulse pushes calcite σ up through the stepped band and
+        // relaxes back: the oscillation is the step-bunching driver
+        // (research §2 — the steps are the chemistry curve made solid).
+        {
+          "field": "fluid.CO3",
+          "startStep": 80,
+          "endStep": 200,
+          "base": 180,
+          "ops": [
+            { "kind": "pulse", "amp": 400, "center": 0.12, "width": 0.06 },
+            { "kind": "pulse", "amp": 450, "center": 0.32, "width": 0.06 },
+            { "kind": "pulse", "amp": 430, "center": 0.52, "width": 0.06 },
+            { "kind": "pulse", "amp": 480, "center": 0.72, "width": 0.06 },
+            { "kind": "pulse", "amp": 400, "center": 0.97, "width": 0.06 }
+          ]
+        },
+        {
+          "field": "fluid.pH",
+          "startStep": 80,
+          "endStep": 200,
+          "base": 7.1,
+          "ops": [
+            { "kind": "pulse", "amp": 1.2, "center": 0.12, "width": 0.06 },
+            { "kind": "pulse", "amp": 1.3, "center": 0.32, "width": 0.06 },
+            { "kind": "pulse", "amp": 1.2, "center": 0.52, "width": 0.06 },
+            { "kind": "pulse", "amp": 1.3, "center": 0.72, "width": 0.06 },
+            { "kind": "pulse", "amp": 1.2, "center": 0.97, "width": 0.06 }
+          ]
+        }
+      ],
+      "sources": [
+        "Gratz & Misra 1987 (Econ. Geol. 82) — Elmwood-Gordonsville fluid-inclusion microthermometry",
+        "Misra & Lu 1992 — Central Tennessee zinc district paragenesis",
+        "Kyle 1976 / district literature — Knox unconformity paleokarst breccia ore control",
+        "RESEARCH-calcite-morphology-2026-06-11.md §2 — oscillatory sigma -> step bunching (Movements as the driver)",
+        "Sibson 1992 fault-valve mechanics — episodic brine expulsion (the pulse-train shape)"
+      ]
+    },
+
     "reactivated_fluorite_vein": {
       "anchor": "North Pennine Orefield style (Weardale district, England) — a fluorite-galena-barite vein on a reactivated fault (Dunham 1990, BGS Economic Memoir).",
       "description": "A crack-seal reactivated vug. An ascending brine grows a first generation (fluorite + galena + barite, with sphalerite + calcite gangue) while its feeder fractures are OPEN; a late cement then seals the conduit shut and the cavity goes quiet; a later tectonic pulse breaches the fracture open again, and a cooler fresh fluid grows a second-generation fluorite + calcite. The demonstrator for the fluid-spots SEAL → BREACH lifecycle: the deposition-clustering halo follows the open feeders, so each generation concentrates at the vents and the sealed interval shows no clustering.",
@@ -412,7 +526,8 @@
         "Anchor: Bingham Canyon Cu-Mo-Au deposit, Oquirrh Mountains, UT. Late-Eocene (~38 Ma) quartz-monzonite-porphyry intrusion with classic potassic-core / phyllic-shell / propylitic-rim alteration zoning.",
         "Fluid evolution from Landtwing et al. 2010 (Econ. Geol. 105) LA-ICP-MS study: deep central brine ~7 wt% NaCl-eq with subequal Na/K/Fe/Cu, upper brine endmember ~45 wt% NaCl-eq coexisting with a low-density vapor (~0.2 g/cm³). Mo arrives in a distinct later pulse from Cu (Seo et al. 2012; encoded in event_molybdenum_pulse).",
         "Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl, Mg, Ag, Te to populate the brine-element baseline that was missing. Initial Cu and Mo remain zero by design — delivered by event_copper_injection (steps 25, 60) and event_molybdenum_pulse (step 45) respectively, modeling the discrete pulse pattern documented at Bingham.",
-        "Existing values (SiO2, Ca, CO3, Fe, Mn, Pb, Sb, As, Bi, S, F, pH, salinity, O2) were intentional and were not retuned. This is a gap-fill audit, not a rewrite."
+        "Existing values (SiO2, Ca, CO3, Fe, Mn, Pb, Sb, As, Bi, S, F, pH, salinity, O2) were intentional and were not retuned. This is a gap-fill audit, not a rewrite.",
+        "v184 T-rollout verdict: ambient thermal pulses KEPT, deliberately (do not re-litigate without new geology). Porphyry systems are THE textbook episodic magmatic-hydrothermal deposit class — repeated dike/fluid injections over 10⁵-10⁶ yr (Sillitoe 2010) — so the ambient fracture-valve pulses are geologically NATIVE here, modeling the smaller unscripted injections between the big scripted Cu/Mo events. Measured anyway (tools/t-story-observe.mjs, 3 seeds): removal would be harmless to expects (all three intact) and lets late supergene Mo/Cu phases through as the system cools lower — but those belong to a future supergene-blanket arc, not to deleting the deposit class's defining behavior."
       ],
       "initial": {
         "temperature_C": 400.0,
@@ -521,6 +636,7 @@
         "Anchored to the Mogok Stone Tract: dolomitic marble of the Mogok Metamorphic Belt was regionally metamorphosed during the Himalayan orogeny (~30 Ma) to amphibolite-to-granulite grade, then intruded by leucogranite dykes at 17-22 Ma that drove contact metamorphic ruby/sapphire/spinel crystallization in skarn envelopes.",
         "Chemistry signature: SiO2 undersaturation (the defining corundum-family constraint). Al and Ca are high, SiO2 is low — opposite of every other scenario in the sim. When SiO2 is scarce, Al3+ cannot form feldspar/mica/Al2SiO5 polymorphs and instead crystallizes as pure corundum; with Cr trace from adjacent ultramafic country rock, ruby forms; with Fe+Ti, blue sapphire; with Fe alone, yellow sapphire.",
         "Thermal regime: 500 → 700 → 500 → 350°C over 180 steps. Phase 1 (initial warmup): contact metamorphic pulse approaches; marble starts to fluid-saturate. Phase 2 (700°C peak, step 20): corundum family nucleates; Cr partitions to ruby, Fe+Ti to blue sapphire. Phase 3 (retrograde cooling, step 60, 700→500°C): main growth window; fluid migrates along skarn bleaching front. Phase 4 (fracture seal, step 150): system closes.",
+        "v184 thermal_pulses:false (PEGMATITE-SHAPE, T-rollout close-out): the events anchor the single-intrusion arc (700@20, 500@60) and the default ambient drift correctly carries the 500→350 retrograde slope — but the random ambient pulses had no geological home here (the scenario models ONE leucogranite contact episode; designed reheats belong in events) and their Fe riders (+2-15 ppm) poison the chromophore budget this scenario exists to control (Cr→ruby vs Fe/Ti→blue vs Fe-alone→yellow partitioning at a wall with deliberately Fe-poor 200 ppm). Dark-observed clean at 3 seeds (tools/t-story-observe.mjs): expects (calcite, ruby) intact, retrograde end honest (403→303).",
         "Wall composition is 'limestone' as a proxy for dolomitic marble — sim currently models limestone + pegmatite + basalt; marble is the metamorphosed limestone end-member, closest fit available."
       ],
       "initial": {
@@ -567,7 +683,10 @@
           "wall_Mg_ppm": 15000.0,  // dolomite-grade Mg content
           "primary_bubbles": 3,
           "secondary_bubbles": 6,
-          "shape_seed": 11
+          "shape_seed": 11,
+          // v184 (see thermal note): one intrusion, one arc — no ambient
+          // fracture-valve reheats; protects the Cr/Fe chromophore budget.
+          "thermal_pulses": false
         }
       },
       "events": [
@@ -795,9 +914,19 @@
       "duration_steps": 320,
       "notes": [
         "Garcia-Ruiz et al. 2007 (Geology 35:327) — the canonical paper on Naica's growth mechanism. Anhydrite at depth (T > 58°C) dissolves slightly; rising water cools to ~54°C; gypsum reprecipitates. The cooling rate is critical: at hundredths of a degree per year, the brine stays close enough to the boundary that crystals grow over geological timescales without significant nucleation of new seeds. Old crystals just keep adding layers.",
-        "Initial T set to 56°C — barely inside the gypsum stability window so any T-drop event drives selenite growth. Six slow_cooling pulses (steps 30, 70, 110, 150, 190, 230) drop T by ~0.7°C each, bringing the cave to ~52°C by step 230. The selenite engine's 55-58°C sweet-spot bonus (×1.4 growth multiplier) fires on every step until the cave drops below 55.",
-        "Mining-drainage event at step 260 (1985 in real time) fires fluid_surface_ring → 0; selenite stops growing. Recharge event at step 290 (2017) refloods the cavity. Final 30 steps in cooler post-mining water: minor selenite growth resumes, plus any vadose-grown halite from the dry interval re-dissolves.",
+        "v182 THERMAL STORY (the first consumer of the v181 T-unlock): the buffered pool is now a DECLARED temperature movement — base 56°C, smoothstep trend −3 over steps 0-260, no OU texture (Naica's signature is thermal stability; fluid-inclusion work shows a remarkably steady bath, so the no-noise choice IS the science, not a simplification). Ambient drift + pulses stand down for the window (pre-v182 they were bulldozing the design: drift crashed 56→25°C in ~21 steps and ~19 random thermal pulses bounced T between the floor and 53°C — the 55-58°C selenite sweet-spot fired ~2 steps per run and the 54-57 Garcia-Ruiz band was occupied 0% of the time; now 31% and 50%). Dark-observed (tools/naica-thermal-observe.mjs, 3 seeds): total crystal count DROPS ~40-60% (27→11, 39→16) while the cavity still seals — fewer nuclei, larger individuals — which is the Garcia-Ruiz mechanism emerging from the engines rather than being scripted. The low-T noise feeders (opal, goethite, lepidocrocite, tigers_eye, pyrolusite) drop out; the cave trends toward its real near-monomineralic character.",
+        "The six slow_cooling events keep their CHEMISTRY half under the movement — the anhydrite-at-depth resupply (Ca≥280, S≥380 floors) + O2/pH/flow resets are what they contribute now; their -0.7°C drops are superseded by the movement's trend (the handler's T>51 guard goes inert inside the window). Events are the chemistry beats; the movement is the thermal sentence.",
+        "Mining-drainage event at step 260 (1985 in real time) fires fluid_surface_ring → 0 and SETS T=35; recharge at step 290 (2017) refloods at T=30. The movement window deliberately ENDS at 260: the thermal buffer was the WATER, so once the cave drains the pool era is over and the mining events own T. Ambient resumes post-260 with cooling_rate 0.1 (a drained cave at 290 m in warm country rock cools gently — observed end T ~27°C, matching the recharge note's 'cooler bath'), and thermal_pulses:false (no fracture-valve reheats in a conductively buffered system; same flag family as bisbee/roughten_gill/schneeberg/reactivated_vein).",
         "The default vug_diameter_mm of 50 mm grossly understates Naica reality (the chamber is ~30m × 10m × 10m). The simulator's max_size_cm cap on selenite is 2400 cm = 24m, double the real-world record (Garcia-Ruiz). Both are intentional — the sim isn't trying to reproduce Naica scale, it's reproducing Naica chemistry."
+      ],
+      "movements": [
+        {
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 260,
+          "base": 56,
+          "ops": [{ "kind": "trend", "amp": -3, "ease": true }]
+        }
       ],
       "initial": {
         "temperature_C": 56.0,
@@ -832,7 +961,11 @@
           "wall_Mn_ppm": 80.0,
           "primary_bubbles": 2,
           "secondary_bubbles": 3,
-          "shape_seed": 58              // 58°C, the Naica equilibrium T
+          "shape_seed": 58,             // 58°C, the Naica equilibrium T
+          // v182 thermal story (see notes): the declared movement owns T
+          // through step 260; these two govern the post-drainage era only.
+          "thermal_pulses": false,
+          "cooling_rate": 0.1
         }
       },
       "events": [
@@ -848,7 +981,8 @@
       "sources": [
         "Garcia-Ruiz, Villasuso, Ayora, Canals, Otálora 2007 (Geology 35:327) — Formation of natural gypsum megacrystals in Naica, Mexico",
         "Otálora & Garcia-Ruiz 2014 (Chem. Soc. Rev. 43:2013) — Nucleation and growth of the Naica giant gypsum crystals",
-        "Forti & Sanna 2010 (NSS Bull.) — The Naica caves and their crystals: a unique speleological problem"
+        "Forti & Sanna 2010 (NSS Bull.) — The Naica caves and their crystals: a unique speleological problem",
+        "Van Driessche, Garcia-Ruiz, Tsukamoto, Patiño-Lopez, Satoh 2011 (PNAS 108:15721) — Ultraslow growth rates of giant gypsum crystals (the measured stability the v182 thermal movement models: no-noise pool at marginal saturation)"
       ]
     },
 
@@ -935,6 +1069,59 @@
       "description": "Classic copper porphyry with world-class oxidation zone. Complete Cu paragenesis from primary sulfides through supergene enrichment to the cyan-blue chrysocolla finale. Centerpiece mechanic: azurite ↔ malachite ↔ chrysocolla cascade tracking pCO2 evolution.",
       "expects_species": ["chalcopyrite", "malachite", "chrysocolla", "brochantite"],
       "duration_steps": 340,
+      "movements": [
+        {
+          // v186 EVENT-SUBSUMPTION — the supergene rollercoaster as a
+          // declared redox sentence. The second EVENT-CONFOUNDED redox
+          // scenario (after schneeberg v185), and the harder one: bisbee's
+          // redox is NON-MONOTONIC (the nine event O2 writes trace −150 →
+          // +180 → a deep reducing dip → +280), so the movement needs the
+          // full primitive alphabet, not a single front. Composition is
+          // schneeberg's (events keep Cu/S/CO3/pH/T beats; the movement is
+          // the redox sentence). Window 0→305 = the whole phreatic life;
+          // it ends AT the step-305 final_drying event (full drain →
+          // vadose), where air owns redox (the flat +322 mV after 305 is
+          // the vadose O2 floor, not the broth). Same boundary logic as
+          // schneeberg — a redox movement lives in groundwater.
+          //
+          // FOUR OPS, each a measured beat of the Warren-District cascade:
+          //   1. step +330 @ u=0.233 (step 71), soften 12/305 — the
+          //      meteoric oxidation front, rising FROM the step-65 uplift
+          //      event (never before its arrival; schneeberg lesson). A
+          //      12-step ramp (not the 22 first tried) — a slower front
+          //      starved brochantite's acid-flush window.
+          //   2. pulse −60 @ u=0.351 (step 107), width 12/305 — the
+          //      enrichment-blanket POISE: the pocket rides the redox
+          //      interface (~+131 mV, not the full +180) where descending
+          //      Cu²⁺ meets reducing sulfide and chalcocite replaces
+          //      chalcopyrite.
+          //   3. pulse −400 @ u=0.436 (step 133), width 9/305 — the barren
+          //      DEEP REDUCING PULSE (down to ~−185 mV), the brief Eh-below-
+          //      cuprite window that grows the Cornish-style native-copper
+          //      trees. −400 (not −330) is load-bearing: the shallower dip
+          //      dropped native_copper below 5/8 seeds; −400 holds it at 5/5.
+          //   4. trend +100 ease — the long late oxidation climb to the
+          //      +280 mV azurite-era plateau (the Bisbee Blue monsoon).
+          //
+          // DETERMINISTIC (no texture): the monsoon punctuation is the
+          // EVENTS (azurite_peak/co2_drop/silica_seep), and OU re-rolls the
+          // 1-crystal marginals. Gate verified at 8 seeds
+          // (tools/eh-subsumption-observe.mjs): every lineage at BASE rate
+          // (native_copper 5/5, brochantite 8/8, the malachite/chrysocolla
+          // cascade whole). Logged BASE-side debt (NOT this change): azurite
+          // 0/8 — the famous Bisbee Blue isn't nucleating; a future tune arc.
+          "field": "fluid.Eh",
+          "startStep": 0,
+          "endStep": 305,
+          "base": -150,
+          "ops": [
+            { "kind": "step",  "amp": 330,  "at": 0.23278688524590164,  "soften": 0.03934426229508197 },
+            { "kind": "pulse", "amp": -60,  "center": 0.3508196721311475, "width": 0.03934426229508197 },
+            { "kind": "pulse", "amp": -400, "center": 0.4360655737704918, "width": 0.02950819672131148 },
+            { "kind": "trend", "amp": 100,  "ease": true }
+          ]
+        }
+      ],
       "notes": [
         "Anchor: Bisbee, Arizona — Warren Mining District, Cochise County. Host: combo Laramide quartz-monzonite porphyry intruded into Paleozoic Escabrosa Limestone + Abrigo Formation. In the sim this is represented as a limestone wall (the pH buffer, the CO3 source for azurite) with scenario events that inject dissolved SiO2 from the surrounding silicate matrix weathering — the supply path for late chrysocolla.",
         "Centerpiece mechanic: the azurite → malachite → chrysocolla cascade. Azurite dominates at high pCO2 (event 6, CO3 >= 120 ppm). A pCO2-drop event (event 7) dissolves azurite and fires malachite. A silica-seep event (event 8) dissolves malachite-without-silica and fires chrysocolla pseudomorphs on the remaining azurite crystals. Three carbonate/silicate phases recording three different groundwater chemistries, each one freezing a different step of the Cochise County monsoon.",
@@ -1221,6 +1408,7 @@
         "Cruzeiro is the type-locality for fine schorl-elbaite tourmaline + smoky quartz pockets, with documented beryl, spodumene, lepidolite, and accessory apatite. Brasiliano-age (Neoproterozoic) pegmatite field cutting Macaúbas Group meta-sediments. Morteani et al. 2002 covers fluid chemistry; Cassedanne (1991) and Proctor (1985) cover the Cruzeiro-specific paragenesis.",
         "Thermal regime: 650 → 300°C over ~230 steps in three phases. Phase 1 (650-550°C): wall-zone crystallization (microcline, quartz, early schorl). Phase 2 (550-400°C): main pocket growth — beryl finally nucleates when Be crosses threshold; spodumene when Li crosses; schorl transitions to elbaite as Fe depletes and Li accumulates. Phase 3 (400-300°C): late hydrothermal — topaz if F survives, then kaolinization of microcline walls.",
         "Saturation cascade mechanic: there is no explicit 'nucleate beryl now' command. Each mineral's supersaturation formula reads the current fluid, and the nucleation gates fire in order naturally as chemistry evolves — microcline first (K-feldspar = feldspar here), then the Be/Li/B gates cross as incompatible elements build up.",
+        "v183 thermal_pulses:false — the PEGMATITE-SHAPE T story (contrast naica's v182 movement): all eight events SET temperature (620→560→500→450→420→360→320→300), so the three-phase curve is already fully event-anchored and a declared movement would clobber it. The fix is silencing the ambient noise around it: a sealed miarolitic pocket has no fracture-valve hot injections (the pocket IS the isolated residual chamber), the pulses' Fe riders (+2-15 ppm) directly fight the li_phase event's documented Fe depletion (Fe→5 is what turns schorl into elbaite), and a late pulse was re-warming the ended system to ~476°C against the design's 300°C floor (dark-observed, tools/t-story-observe.mjs: end T 476→276 with the flag; assemblage and crystal counts IDENTICAL at 3 seeds — the v181 dedicated thermal stream means a thermal-regime change no longer re-rolls the nucleation cascade). Topaz remains aspirational at seed 42 (absent in BASE too — its tuning is a separate vugg-tune-scenario arc; the honest T floor can only help it).",
         "Audit gap-fills (Apr 2026): P=8 (pegmatite residual P; enables Cruzeiro accessory apatite per Cassedanne 1991). Mg=5 (brief-required non-zero baseline; pegmatite pocket fluids are Mg-poor since Mg partitions strongly into outer-shell biotite/chlorite during pegmatite differentiation)."
       ],
       "initial": {
@@ -1303,6 +1491,9 @@
           "primary_bubbles": 4,
           "secondary_bubbles": 5,
           "shape_seed": 8,
+          // v183 (see the thermal note above): the eight T-setting events ARE
+          // the thermal story; this kills the fracture-valve noise around it.
+          "thermal_pulses": false,
           // Tier 1 C (post-v69): pegmatite miarolitic cavities have
           // crisp euhedral cavity walls — the host is a brittle,
           // unweathered silicate matrix that preserves the original
@@ -1406,7 +1597,23 @@
       "notes": [
         "Per Ottens et al. 2019, the Deccan basalt vesicles fill in stages over tens of millions of years. Stage I (early): silica veneers, chalcedony coating. Stage II: zeolite blades (stilbite, scolecite, heulandite) and early calcite. Stage III: the apophyllite stage — alkaline K-Ca-Si-F fluid percolates through cooled basalt vesicles and crystallizes pseudo-cubic apophyllite blocks, sometimes carrying hematite-needle phantoms (the 'bloody apophyllite' of Nashik).",
         "Compared to the metamorphic / hydrothermal scenarios, this is gentle: no acid pulses, no dramatic T excursions. The story is patient crystallization in alkaline groundwater over geologic time.",
+        "v184 thermal honesty (T-rollout close-out) — THREE coupled changes, dark-observed together (tools/t-story-observe.mjs, 3 seeds): (1) thermal_pulses:false — the note above says 'no dramatic T excursions' and the ambient mechanic was firing 5-8 of them per run; (2) cooling_rate 0.3 — with pulses gone, the default 1.5°C/step crashed the vesicle to the floor between the stage events (a cooling flow stack declines gently over ~37 My, the scenario's own 'patient' thesis); (3) the movements block below — a sustained fluid.SiO2 setpoint (950) through the Stage III window. The dark observation EXPOSED a structural noise-dependence: apophyllite's gate needs SiO2 ≥ 800 and the random pulses' +50-300 SiO2 riders were the scenario's de-facto silica budget (the stage_iii event's one-shot +600 — already bumped from 300 once for exactly this reason — gets eaten by background quartz depletion). Ottens calls Stage III 'the long-lasting late stage' (21-58 Ma): a SUSTAINED groundwater regime is the honest model, and on vesicle timescales the percolating aquifer is an infinite reservoir — so the movement PINS SiO2 at 950 for the window rather than shooting it once. Result: all three expects at all seeds (apophyllite was LOST under flag-only variants), fill IMPROVES 0.07-0.18 → 0.28-0.30, and the noise-fed extras (rhodochrosite = pulse-Mn, wollastonite = a skarn mineral that never belonged in an amygdale) drop out.",
         "Audit gap-fill (Apr 2026): Sr=2 — Deccan zeolites (heulandite, stilbite, mesolite) carry Sr substituting for Ca, sometimes 100s of ppm in the mineral. Sim-scale 2 ppm in the parent fluid documents the source. Brief-required non-zero Mg already covered by Mg=8."
+      ],
+      "movements": [
+        {
+          // Stage III sustained alkaline groundwater (see v184 note): a
+          // constant setpoint (no ops = base held) modeling continuous
+          // silica resupply from the percolating aquifer. Window opens at
+          // the stage_iii event (which still owns K/Ca/F/pH/T + the story);
+          // base is explicit so the movement composes with — rather than
+          // captures — whatever the event just set.
+          "field": "fluid.SiO2",
+          "startStep": 110,
+          "endStep": 200,
+          "base": 950,
+          "ops": []
+        }
       ],
       "initial": {
         "temperature_C": 250.0,    // hot Stage I post-eruption
@@ -1449,7 +1656,11 @@
           "wall_Mn_ppm": 400.0,
           "primary_bubbles": 2,
           "secondary_bubbles": 3,
-          "shape_seed": 21          // Deccan eruption ~66 Ma
+          "shape_seed": 21,         // Deccan eruption ~66 Ma
+          // v184 (see thermal-honesty note): 'no dramatic T excursions',
+          // says the scenario — now enforced; gentle stack-cooling drift.
+          "thermal_pulses": false,
+          "cooling_rate": 0.3
         }
       },
       "events": [
@@ -1473,6 +1684,7 @@
       "notes": [
         "Generic testing scenario — not anchored to a real locality (per the user's clarification on the audit brief). Pegmatitic fluids are silica-saturated melts with abundant K + Na + Al + U.",
         "Mechanic: 4-event lifecycle. Crystallization pulse (step 20): main quartz + uraninite growth. Deep time (step 50): radiation slowly transmutes U → Pb, darkens nearby quartz. Oxidizing meteoric water (step 80): late-stage fracture flow brings O2; sulfides destabilize but uraninite endures. Final cooling (step 100): system approaches ambient, galena precipitates from the radiogenic Pb.",
+        "v184 thermal_pulses:false (PEGMATITE-SHAPE, T-rollout close-out): same sealed-pocket logic as gem_pegmatite's v183 flag — the four events anchor the whole arc (450@20, 300@50, 120@80, 50@100) and a sealed granite pocket has no fracture-valve plumbing. The measured violation was worse here: a late ambient pulse re-warmed the 'approaches ambient' endgame to 541°C at one v180 seed — with autunite (a ≤50°C supergene mineral) in the expects list. Dark-observed at 3 seeds: the post-step-100 autunite window (50→25°C) now opens deterministically every run (under pulses it was destroyed whenever a late re-warm landed); pyrite/goethite drop out (they were pulse-Fe-rider artifacts, not expects); autunite itself remains a pre-existing aspirational miss at the observed seeds (absent in BASE too — chemistry-side, a separate tune arc; it fires elsewhere in the 10-seed coverage sweep).",
         "Audit gap-fill (Apr 2026): Mg=5 — brief-required non-zero Mg baseline. Pegmatite pocket fluids are Mg-poor (Mg partitions into outer-shell biotite/chlorite during pegmatite differentiation), matches the gem_pegmatite scenario's Mg=5 abstraction."
       ],
       "initial": {
@@ -1523,7 +1735,10 @@
         "wall": {
           "primary_bubbles": 4,
           "secondary_bubbles": 5,
-          "shape_seed": 6
+          "shape_seed": 6,
+          // v184 (see thermal note): sealed pocket, events anchor the arc;
+          // protects the deterministic ≤50°C autunite window.
+          "thermal_pulses": false
         }
       },
       "events": [
@@ -1542,6 +1757,32 @@
       "description": "Schneeberg / Erzgebirge oxidized uranium-pegmatite vein system (Walpurgis Flacher vein, Weisser Hirsch Mine, Saxony — type locality for torbernite, zeunerite, and uranospinite). A U-bearing pegmatite + chalcopyrite + arsenopyrite primary assemblage weathers under meteoric oxidation; the resulting uranyl + Cu + As fluid plates the autunite-group secondaries in two cation phases — Cu-rich first (torbernite emerald greens then zeunerite as As-pulse arrives), then Ca-dominant after Cu is consumed (autunite + uranospinite, the bright LW-UV fluorescent yellows).",
       "expects_species": ["uraninite", "torbernite", "zeunerite", "autunite", "uranospinite", "native_bismuth", "native_arsenic", "erythrite", "annabergite", "cobaltite", "nickeline", "cassiterite", "pharmacolite", "haidingerite"],
       "duration_steps": 160,
+      "movements": [
+        {
+          // v185 EVENT-SUBSUMPTION — the meteoric front as a declared redox
+          // sentence. Reducing pegmatitic plateau (−200 mV ≡ the ehFromO2
+          // floor at O2:0) holds until the step-85 meteoric flood, then a
+          // ~8-step swing to +290 mV (O2 1.5) — the swing IS sulfide-buffer
+          // exhaustion (pyrite/arsenopyrite eat the first oxygen before Eh
+          // can climb). at 0.8 = step 88/110, soften = 8/110 → ramp 84→92.
+          // The window ends at the step-110 vadose exhumation: a redox
+          // movement lives in GROUNDWATER; once the water table drops, air
+          // owns redox (the vadose O2 floor 1.8 ≡ +322 mV — the flat 322
+          // the strip always showed after 110 was the air, not the broth).
+          // DETERMINISTIC (no texture): measured — OU wobble re-rolls the
+          // 1-crystal marginals (naumannite, metazeunerite) without honest
+          // signal; the buffered plateau doesn't flutter and the As-pulse
+          // EVENTS are the real punctuation. Gate verified at 8 seeds
+          // (tools/eh-subsumption-observe.mjs): every lineage at BASE rate,
+          // reducing-era nucleations byte-identical (naumannite @67,
+          // native_bismuth @70 untouched).
+          "field": "fluid.Eh",
+          "startStep": 0,
+          "endStep": 110,
+          "base": -200,
+          "ops": [{ "kind": "step", "amp": 490, "at": 0.8, "soften": 0.07272727272727272 }]
+        }
+      ],
       "notes": [
         "The mineralogically richest single ore district in Europe — the Erzgebirge had been mined for silver since the 1100s, then bismuth from the 1500s (the very name 'Bismutum' was coined here), then uranium from the 1800s onward. Most autunite-group species were first described from Schneeberg or its sister deposits (Jáchymov, Annaberg). Pinch & Wilson 1977 monographs are the canonical reference.",
         "Mechanic: 6-event lifecycle walking through cation×anion combinatorics. Pegmatite crystallization (step 20): hot reducing fluid grows uraninite + chalcopyrite + arsenopyrite primaries. Cooling (step 70): T drops to ambient. Cu+P phase (step 85): O2 floods, primaries weather, P>As, Cu>Ca → torbernite plates. Cu+As pulse (step 105): As replenishes from arsenopyrite weathering, Cu still high → zeunerite plates. Cu depletion (step 125): Cu consumed by both Cu-cation secondaries; Ca rises from carbonate dissolution → autunite plates. As pulse late (step 145): As replenishes again, Ca dominant → uranospinite plates.",
@@ -1702,6 +1943,89 @@
       ]
     },
 
+    "wittichen": {
+      "anchor": "Kloster Wittichen, Schwarzwald (Black Forest), Baden-Württemberg, Germany — the classic Bi-Co-Ni-Ag-As-(Ba) five-element vein district; cobalt-pigment + silver mining boom 1730s–40s around the convent. Sophia and Johann-Georg veins.",
+      "description": "A five-element vein in granite basement: hot, saline, SULFUR-STARVED brine carries Bi + Co + Ni + Ag + As. S ~3 ppm is load-bearing — bismuthinite and acanthite never gate open, so the metals stay NATIVE and arsenides are the metal sinks. Hot stage grows skutterudite + nickeline rosettes (320–420°C); cooling brings the fluid into bismuth's window; then the deposit-defining REDUCING SHOCK (hydrocarbon influx along the fault — the declared fluid.Eh pulse) slams native-metal σ to its structural ceiling and bismuth precipitates as ARBORESCENT DENDRITES, safflorite riming the fresh branches (its T window overlaps the shock). Late meteoric water brings oxidized sulfate (barite stage) and carbonate gangue seals the dendrites into the vein — the cross-section hand specimen of the class.",
+      "expects_species": ["skutterudite", "nickeline", "safflorite", "native_bismuth", "native_arsenic", "native_silver", "proustite", "acanthite", "calcite", "aragonite", "erythrite", "barite"],
+      "duration_steps": 160,
+      "notes": [
+        "Anchor + mechanism: Kissin 1992 (Canadian Mineralogist 30) defines the five-element class; Burisch et al. 2017 (Geology 45) ties the native-metal stage to methane/hydrocarbon influx — fluid inclusions in Schwarzwald five-element veins carry CH4 exactly at the dendrite stage, and the reduction is fast (hours-to-days), which is WHY the metals dendrite. Scharrer, Kreissl & Markl 2019 (Ore Geology Reviews) survey the assemblage diversity; Staude et al. 2012 (Mineralium Deposita 47) give the Schwarzwald basement-brine fluid-inclusion record (20–26 wt% NaCl, 150–340°C) this broth is anchored on.",
+        "The redox shock is a DECLARED fluid.Eh movement (event-subsumption discipline, v185/v186): base −20 mV (mildly reducing basement brine), ONE deep pulse (amp −320) at u=0.58 (the CH4 influx; width ~8 steps; measured floor ~−253 mV at seed 42), and a late oxidizing trend (+95 ease — meteoric tail, tuned DOWN from +140 which dissolved the arsenide suite; a stronger late-oxidation finger was tried and reverted for the same reason — barite/erythrite are the documented aspirational casualties of arsenide survival). The wittichen_hydrocarbon_influx event at the pulse center is NARRATIVE-ONLY (no fluid writes).",
+        "Engine fit: this is the morphology registry's dendrite-band tenant (MORPH_TH.native_bismuth, SIM 188 — RESEARCH-bismuth-morphology-2026-06-12.md). At the shock, Bi σ ≈ bi_f 3.0 × s_mask 0.96 × red_f 1.5 × T_f 1.0 ≈ 4.3 — the dendritic band (≥3.8) of a scale structurally capped at ~4.5. Pre-shock cooling-stage Bi sits in the feathery bands; post-shock regrowth heals feathery over the dendrites, so the zone stack RECORDS the shock (the narrator's healed-over paragraph + the bismuth_morph strip chip slamming 0→4 on the pulse). Skutterudite + safflorite get their FIRST scenario home here (both were expects-orphans fleet-wide).",
+        "Wallrock: 'pegmatite' composition as the granite proxy (inert silicate — Wittichen veins cut Triberg granite; the carbonate gangue arrives in the FLUID via the late CO3 event, not from wall dissolution). Architecture tabular (vein-bounded), pocket size class, shape_seed 1736 (the cobalt-boom decade).",
+        "Calibration target: the hand specimen is silver-white dendritic Bi embedded in white carbonate with gray arsenide rims, read in cross-section. MEASURED at seeds 42-45 (calibration session, 2026-06-12): native_bismuth 3-5 alive with 45-49% DENDRITIC zone mass (the shock recorded); skutterudite 2 + safflorite 2 + nickeline 4 + native_arsenic 4 all ALIVE; native_silver grows then sulfidizes to acanthite 4 at the meteoric-sulfate stage (the tarnish story — hand-specimen Wittichen silver is acanthite-coated); proustite 2 (ruby silver); calcite + aragonite gangue. ASPIRATIONAL (v107 honesty): barite + erythrite — both need late oxidation the living arsenide suite cannot survive; vugg-tune-scenario follow-up (a spatially-partial oxidation, or barite as its own vein-top stage). Bi band edges re-pinned against this trajectory (js/45 — the activity correction at salinity 24 compresses the structural ~4.5 ceiling to ~2.4 measured)."
+      ],
+      "movements": [
+        {
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 160,
+          "base": 340,
+          "ops": [
+            { "kind": "trend", "amp": -190, "ease": true }
+          ]
+        },
+        {
+          "field": "fluid.Eh",
+          "startStep": 0,
+          "endStep": 160,
+          "base": -20,
+          "ops": [
+            { "kind": "pulse", "amp": -320, "center": 0.58, "width": 0.05 },
+            { "kind": "trend", "amp": 95, "ease": true }
+          ]
+        }
+      ],
+      "initial": {
+        "temperature_C": 340.0,
+        "pressure_kbar": 0.9,
+        "fluid": {
+          "SiO2": 80,
+          "Ca": 250,
+          "CO3": 45,
+          "Mg": 20,
+          "Fe": 10,
+          "Mn": 3,
+          "Bi": 50,
+          "Co": 35,
+          "Ni": 20,
+          "As": 120,
+          "Ag": 12,
+          "Ba": 24,
+          "Sr": 4,
+          "S": 3,
+          "Na": 120,
+          "K": 40,
+          "Cl": 400,
+          "F": 3,
+          "O2": 0.15,
+          "pH": 6.2,
+          "salinity": 24
+        },
+        "wall": {
+          "composition": "pegmatite",
+          "reactivity": 0,
+          "architecture": "tabular",
+          "size_class": "pocket",
+          "primary_bubbles": 3,
+          "secondary_bubbles": 6,
+          "shape_seed": 1736
+        }
+      },
+      "events": [
+        { "step": 93, "type": "wittichen_hydrocarbon_influx", "name": "Hydrocarbon Influx", "description": "CH4-bearing fluid floods the vein — the reducing shock arrives (narrative marker; the declared Eh movement carries the chemistry)" },
+        { "step": 134, "type": "wittichen_meteoric_sulfate", "name": "Meteoric Sulfate", "description": "Cooled meteoric water brings oxidized sulfate — the barite stage" },
+        { "step": 142, "type": "wittichen_carbonate_gangue", "name": "Carbonate Gangue", "description": "CO3 + Ca influx — calcite seals the dendrites into the vein" }
+      ],
+      "sources": [
+        "Kissin S.A. 1992, Canadian Mineralogist 30 — Five-element (Ni-Co-As-Ag-Bi) veins: the deposit-class review",
+        "Burisch M., Walter B.F., Gerdes A., Lanz M., Markl G. 2017, Geology 45 — Methane and the origin of five-element veins (the hydrocarbon reduction trigger)",
+        "Scharrer M., Kreissl S., Markl G. 2019, Ore Geology Reviews — The mineralogical variability of hydrothermal native element-arsenide associations",
+        "Staude S., Bons P.D., Markl G. 2012, Mineralium Deposita 47 — Schwarzwald hydrothermal veins: fluid inclusion record, 20-26 wt% NaCl basement brines",
+        "Markl G. et al. 2016 — Cobalt (Ontario) arsenide zoning, X_As 0.96-0.99 (the skutterudite engine's anchor citation)",
+        "Kloster Wittichen district history — cobalt-blue pigment + silver boom, 1730s-1740s (shape_seed 1736)"
+      ]
+    },
     "colorado_plateau": {
       "anchor": "Uravan Mineral Belt, Colorado Plateau — sandstone-hosted roll-front uranium-vanadium deposits (Triassic-Jurassic Morrison Formation). Includes the Carnotite-Eldorado, Uravan, and Moab districts; the V+U bonanza that drove the early-twentieth-century uranium industry decades before the Manhattan Project.",
       "description": "Uravan Mineral Belt sandstone roll-front uranium-vanadium deposit (Roc Creek, Montrose County, CO — carnotite type locality, Friedel & Cumenge 1899). Oxidizing groundwater carries U + V + K + Ca through Triassic-Jurassic Morrison Formation sandstones until it meets a reducing barrier (petrified wood, carbonaceous shale), where the metals drop out as bright canary-yellow uranyl-vanadate crusts. Carnotite + tyuyamunite are the two diagnostic species — interconvertible by cation exchange, drawn apart by whichever of K/Ca dominates the local pore fluid.",
@@ -1993,7 +2317,8 @@
       "notes": [
         "Anchor: Cripple Creek mining district — alkalic-igneous diatreme, late-Oligocene (~32-28 Ma), produces high-grade Au-Te ore from low-sulfidation epithermal veins through phonolite + lamprophyre dikes. The world's premier gold-telluride locality and the type area for calaverite (1861, type specimen from Calaveras County CA but the species grows everywhere here), sylvanite, krennerite, petzite, and nagyágite.",
         "Mechanic: gold telluride paragenesis cascades on temperature + Au:Ag ratio. At T > 250°C calaverite (Au-rich end-member) wins; as Ag rises and T drops into 150-250°C, sylvanite (1:1 Au:Ag) takes over; below 150°C hessite (pure Ag) crystallizes from residual fluid. Native gold liberates wherever local Te is depleted by earlier telluride growth. Fluorite + quartz + adularia gangue fills the spaces between.",
-        "Why Au=0.4 and Te=3 here: Cripple Creek fluid inclusion data (Saunders et al. 2008) reports Au 1-10 ppm and Te 1-30 ppm in inclusions across the deposit, with peak Au-Te enrichment in the Cresson Vug bonanza (Au tens of ppm). Sim-scale 0.4 ppm Au keeps the broth above all telluride thresholds while staying below native_gold's 0.5 ppm gate at the start (native_gold fires later as Te depletes and Au accumulates locally). Ag=15 puts sylvanite in the cation-fork window (Ag/Au ~37 — sylvanite-favored)."
+        "Why Au=0.4 and Te=3 here: Cripple Creek fluid inclusion data (Saunders et al. 2008) reports Au 1-10 ppm and Te 1-30 ppm in inclusions across the deposit, with peak Au-Te enrichment in the Cresson Vug bonanza (Au tens of ppm). Sim-scale 0.4 ppm Au keeps the broth above all telluride thresholds while staying below native_gold's 0.5 ppm gate at the start (native_gold fires later as Te depletes and Au accumulates locally). Ag=15 puts sylvanite in the cation-fork window (Ag/Au ~37 — sylvanite-favored).",
+        "v184 T-rollout verdict: ambient thermal pulses KEPT, deliberately — they are LOAD-BEARING AND NATIVE here (do not re-litigate without new geology; measured in tools/t-story-observe.mjs, 3 seeds). Native: fault-valve boiling pulses (Sibson) ARE the low-sulfidation epithermal heat supply — Cripple Creek's system pulsed for ~My, and T excursions back and forth across the 155°C hessite transition are real epithermal behavior. Load-bearing: with pulses off the system crashes from the 150-250°C window to the 25°C floor by mid-run (meanT 226→121, fill 0.01→0.00) — the pulses hold this scenario inside the epithermal window its whole design lives in. Pre-existing aspirational misses logged while measuring: native_gold + fluorite absent at observed BASE seeds (expects-tune arc, separate)."
       ],
       "initial": {
         "temperature_C": 280.0,

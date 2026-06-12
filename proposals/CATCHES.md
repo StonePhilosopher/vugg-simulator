@@ -296,6 +296,9 @@ field). The data now testifies against itself automatically, every run.
 | v177 "load-bearing" that was latent | Review claim ahead of measurement | the probe run BOTH ways (fix stashed/unstashed) — identical binding populations |
 | 2026-06-10 "stale" mirabilite + torbernite | Correct geology mis-filed as failure by end-state-only accounting | the gate census said PASS×242 σ=24.6 — then reading the sim's own log, which narrated the seasonal cycle the checkers couldn't see |
 | 2026-06-10 ring_fluids view sync timeouts | Behaviorally-neutral observer whose COST broke the suite (1.32 ms/step ≈ 12%) — and 4 timeout reds initially read as chemistry regressions | the full suite's time budgets; then the census probe (0 fallback hits) + the timeout text refuting the first theory |
+| v181 thermal-stream seed correlation | Distributional bug invisible to any single realization — bare `seed ^ SALT` left nearby seeds with correlated mulberry32 streams (cross-seed pulse variance ±0.00) | the probe's MULTI-SEED sweep, run on the design BEFORE the engine edit — the seed-42 fleet sweep alone was green |
+| v185 expects gate blind to renamed crystals | Green gate over a real kill — expects_species names pre-transition species (torbernite), but vadose dehydration RENAMES the crystal (metatorbernite), so a candidate that killed the type-locality lineage still read ✓ | the observer's headline table (meta- forms watched explicitly), pre-ship; cure = gate LINEAGES (either form counts) |
+| 2026-06-11 calcite morphology mis-ordering | Research-synthesis error — dendritic placed BELOW hopper/skeletal on the σ axis, reversing the Sunagawa progression (hopper = ONSET of diffusional instability, dendrite = the same instability taken further); would have wired backwards physics into the morphology engine | EXTERNAL PEER REVIEW of the fleet-map diagram, before any engine code existed; their "does anything reach dendrite as a stable endpoint?" question was then confirmed by the corrected map (zero stable dendrites — high-σ cases hollow, they don't branch) |
 
 The seventh catch is the most satisfying: the verification tool built from
 the sixth catch's lesson found a backlog of the same failure mode on its
@@ -448,6 +451,103 @@ Cure: move the projection to snapshot-capture time (_ringFluidMeans, ~63
 captures per 200-step run instead of every step), leave the live store
 frozen so the sim path is byte-identical by CONSTRUCTION rather than by
 measurement, and pin the frozen-store contract with its own test.
+
+The FIFTEENTH catch (v181, the T-reconciliation) was caught BEFORE the commit
+by the eighth catch's own rule — run the probe on the fix you're ABOUT to
+ship. The plan was textbook: derive the dedicated thermal stream as
+`mulberry32(runSeed ^ 'HEAT')`, exactly the salt-XOR idiom the movement and
+fluid-spot streams already use. The fleet sweep at seed 42 looked perfect —
+meanT in-family everywhere, pulse counts plausible. The MULTI-SEED sweep told
+the truth: SHADOW cross-seed variance had collapsed (cooling meanT σ 10.8 →
+2.7, tutorial pulse count 1.13±0.33 → 1.00±**0.00** — every seed drew the
+same pulse). Nearby seeds XOR a constant are nearby mulberry32 states, and
+nearby mulberry32 states produce correlated early output — the per-seed
+"thermal weather" was being stamped from nearly the same template. One
+throwaway scramble draw avalanches the states apart (σ recovered to live
+levels); the regression is pinned in thermal-stream.test.ts. Two lessons.
+Narrow: **a seeded stream's QUALITY is part of its contract — when deriving
+streams from related seeds, scramble; and note the existing salt-XOR streams
+get away with it only because their seed (shape_seed) is a designed constant,
+not a swept variable.** Broad, the one that compounds the eighth: a
+single-realization check cannot see a DISTRIBUTIONAL bug. The seed-42 sweep
+was green because any single realization from the correlated family looks
+fine — only asking "do different seeds DIFFER like they used to?" exposed it.
+Probe the moments, not just the mean.
+
+The SIXTEENTH catch (v185, the schneeberg event-subsumption) is the
+quietest kind: a green gate over a real kill. The dark observer's
+expects-survival check read ✓ at every seed for a candidate front shape —
+while that same shape had KILLED metatorbernite at seed 42. The expects
+gate couldn't see it because `expects_species` names the species that
+NUCLEATES (torbernite, the 1772 type-locality headliner), but the step-110
+vadose dehydration RENAMES the crystal in place (torbernite →
+metatorbernite), so by run end neither name matched: 'torbernite' was
+absent in BASE and STORY alike (gate: no change ✓) and 'metatorbernite'
+wasn't in the expects list at all. The kill was visible only in the
+observer's headline table, which had been built to watch the meta- forms
+explicitly. Cure: the gate now checks LINEAGES — torbernite|metatorbernite
+counts as one entity, whole if either form grew — because which form
+survives is a placement coin flip (which ring the plate lands on decides
+whether the vadose front reaches it for 40+ steps), orthogonal to any
+chemistry being judged. Lesson: **a checker is only as honest as its name
+resolution — when the sim TRANSFORMS entities (paramorphs, dehydration,
+pseudomorphs), any gate keyed on pre-transformation names silently stops
+watching them.** The same class of blindness applies to expects_species
+itself: schneeberg "passes" its torbernite expects today only because
+nothing checks it end-state. (Also logged from the same sweep, BASE-side:
+haidingerite is 0/8 in BASE — a dead expects awaiting its own tune arc.)
+
+The SEVENTEENTH catch (2026-06-11, the calcite morphology research) is the
+first caught by EXTERNAL peer review — the boss passed the draft morphology
+spectrum to another agent, who found the high-σ end reversed: the draft put
+dendritic below hopper/skeletal, when the Sunagawa progression runs
+polyhedral → hopper/skeletal → dendritic (hopper is the ONSET of
+morphological instability — corners and edges outrun the face centers,
+hollowing faces that are still recognizably faceted; dendrites are that
+same instability taken further into branched trunks). The mis-order would
+have claimed branches appear before faces even begin to hollow. Everything
+else in the draft held (spiral→2D→bunching spine, boundary-layer size
+damping, zoning logic) — the error was one ordering, in synthesis, not in
+the sources. The reviewer also asked the perfect empirical question: does
+anything in the sim reach dendrite as a STABLE endpoint, or do high-σ cases
+collapse into hopper hollowing? Corrected map: zero stable dendrites;
+sabkha/dripstone (σ 537–625) land hopper-dominant; dendrite appears only as
+transient peak-σ rim bands — the boundary was misordered, not mislabeled.
+Two lessons. Narrow: when a synthesis ASSEMBLES an ordering from multiple
+sources, the ordering itself is a claim needing its own authority — here
+Sunagawa, which the draft hadn't consulted directly. Broad: research docs
+written to be VERIFIABLE (the boss's standing directive) are what make
+external review this cheap — the reviewer attacked a one-page diagram, not
+an engine. Catch the physics on paper, where the fix is an Edit, not a
+rebake.
+
+The EIGHTEENTH catch (2026-06-11, the calcite morphology Phase 0 port) was
+caught by an instrument built for the port itself, before anything shipped.
+The plan said "port the classifier into grow_calcite" — and the first draft
+did exactly that, classifying each zone from the IN-STEP σ the engine reads
+when it computes the growth rate. The new `--engine` agreement mode in
+tools/calcite-morphology-map.mjs (engine tags vs the bench's independent
+recompute) read 80.2% overall — and 0/225 on stalactite_demo, with the whole
+dripstone family misbanded DENDRITIC-dominant against the validated map.
+Zero percent is not boundary jitter; it is a basis mismatch. Thin-film
+scenarios inject a σ spike every step that the crystal itself consumes
+within the step: the engine's pre-growth read sees bulk σ in the hundreds
+while the post-step state — the basis every threshold was CALIBRATED and
+ground-truth-validated on — relaxes to the tens. And the post-step number is
+also the more physical proxy: the interface never sees the injected
+transient (boundary-layer buffering — the same Wolthers physics as the size
+damping), so classifying from the spike would double-count what the damping
+already models. Cure: the classifier moved out of grow_calcite into an
+end-of-run_step pass on the post-step σ; agreement went to 1598/1598
+(100.0%) and the engine-tag fleet map reproduced the validated picture
+exactly. Lesson: **a classifier is (basis + thresholds), not thresholds
+alone — port the basis with the numbers or recalibrate; and an agreement
+check between an instrument and its port is cheap to build and catches the
+whole class.** (Same arc, same day, smaller: two RESIDUALS of the
+seventeenth catch's ordering fix survived in the research doc's §5/§6 —
+the §3 table was corrected but the basis list and the §6.1 verification
+hook still carried the reversed order. A correction is not done until
+every restatement of the claim is hunted down.)
 
 The bedrock is now laid. The sediment is the next round of work; the truth
 is told in time.

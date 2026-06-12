@@ -10388,5 +10388,388 @@
 //   BASELINE (1/31 moved, roughten_gill only): linarite 0→2x (~2.2 mm), leadhillite
 //   0→2x, cerussite 1→4x, caledonite + brochantite + anglesite KEPT and grew,
 //   pyromorphite stable 6x. 26 → 28 species, 75 crystals. Stale list 7 → 4.
-const SIM_VERSION = 180;
+//
+// v181 (2026-06-10) — T-RECONCILIATION: ambient_cooling's drift + thermal-pulse
+//                     draws move off the shared rng onto a DEDICATED thermal
+//                     stream (Movements sub-project #1; HANDOFF-MOVEMENTS-AND-
+//                     BACKLOG-2026-06-01.md F1: "temperature is already an
+//                     ad-hoc movement — subsume it, don't run alongside it").
+//
+//   THE MECHANIC IS UNCHANGED — same drift law, same state-dependent pulse
+//   arrival (fracturing-as-the-rock-contracts), same riders. Verified
+//   statistically in tools/t-reconciliation-probe.mjs: per-scenario meanT and
+//   pulse-count distributions indistinguishable across seeds (n=8 sentinels).
+//   What changed is WHO PAYS: ~2 shared draws/step (+1..6 per pulse) in every
+//   scenario no longer displace the nucleation cascade, so thermal noise and
+//   crystal outcomes are decoupled streams at last.
+//
+//   THE STREAM (85j _makeThermalRng): seeded from rng.state at sim
+//   construction (run-seed lineage — ambient cooling is WEATHER, varies per
+//   play) — deliberately NOT shape_seed like the movement stream (declared
+//   movements are GEOLOGY, fixed per cavity). Seed is SCRAMBLED through one
+//   throwaway draw: bare XOR left nearby run seeds with correlated early
+//   streams (probe measured tutorial pulse variance collapse to ±0.00).
+//
+//   THE UNLOCK (stand-down): a scenario movement on `temperature` now OWNS T
+//   for its window — ambient drift + pulses yield and resume at endStep.
+//   This opens the ~8 T-blocked scenarios (naica's stable pool currently
+//   rides 15±2 random pulses per run; the pegmatites' 650→300 ramps; marble;
+//   porphyry; epithermal; deccan) to declared thermal stories — each its own
+//   later per-scenario arc.
+//
+//   BASELINE: FULL-FLEET REBAKE (every scenario's shared-rng cascade shifts
+//   by construction). Assemblages stay in-family — fleet sweep at seed 42:
+//   species Jaccard 1.00 on 14/31, ≥0.83 on 29/31, worst 0.50 on the
+//   3-crystal `pulse` scenario (small-set artifact).
+//
+// v182 (2026-06-10) — NAICA'S THERMAL STORY: the first declared temperature
+//                     movement, consuming the v181 stand-down unlock.
+//
+//   THE PREMISE (measured by the v181 probe): naica's "stable pool" was
+//   ambient noise — drift crashed 56→25°C in ~21 steps, ~19 random thermal
+//   pulses per run bounced T between the floor and the 53°C cap, the
+//   selenite 55-58°C sweet-spot fired ~2 steps per run, and the 54-57°C
+//   García-Ruiz band was occupied 0% of the time. The scenario's designed
+//   thermal arc (six -0.7°C slow_cooling events) never had a chance.
+//
+//   THE STORY: movements:[{temperature, 0→260, base 56, trend -3 smoothstep}]
+//   — no OU texture, deliberately: Naica's fluid-inclusion record shows a
+//   remarkably steady bath, so the no-noise pool IS the science (García-Ruiz
+//   2007; Van Driessche 2011 PNAS). Window ends at 260 because the mining
+//   events (drainage T=35, recharge T=30) own the post-pool era — the
+//   thermal buffer was the WATER. wall.thermal_pulses:false (no fracture-
+//   valve reheats in a conductively buffered system) + cooling_rate 0.1
+//   (gentle post-drainage drift, end T ~27°C). The slow_cooling events keep
+//   their chemistry half (Ca≥280/S≥380 anhydrite resupply); their T-drops
+//   are superseded. Events are the chemistry beats; the movement is the
+//   thermal sentence.
+//
+//   THE RESULT (dark-observed, 3 seeds, tools/naica-thermal-observe.mjs):
+//   band occupancy 0→50%, sweet-spot 0→31%, pulses 13-18→0 — and the
+//   García-Ruiz mechanism EMERGES: total crystal count drops ~40-60%
+//   (27→11, 39→16) while the cavity still seals. Fewer nuclei, larger
+//   individuals — the engines reproduced "old crystals just keep adding
+//   layers" from the T story alone. The low-T noise feeders (opal,
+//   goethite, lepidocrocite, tigers_eye, pyrolusite) drop out; the cave
+//   trends toward its real near-monomineralic selenite character.
+//
+//   BASELINE: single-scenario rebake (naica_geothermal only — per-scenario
+//   movements are opt-in; the rest of the fleet is byte-identical).
+//
+// v183 (2026-06-10) — GEM_PEGMATITE: thermal_pulses:false — the PEGMATITE-
+//                     SHAPE thermal story, and the rollout's classification.
+//
+//   Mapping the T-unlock rollout found that scenarios carry their thermal
+//   design in two shapes. NAICA-SHAPE: events don't own T → declare a
+//   movement (v182). PEGMATITE-SHAPE: events fully anchor T as absolute
+//   setpoints (gem_pegmatite's eight events: 620→560→500→450→420→360→320→
+//   300 — the documented three-phase curve IS already in the events; the
+//   inter-event ambient drift approximately cooperates) → a movement would
+//   CLOBBER the working design; the story needs only the ambient NOISE
+//   silenced. Most of the "T-blocked ~8" are pegmatite-shape (marble,
+//   deccan, radioactive_pegmatite all carry absolute T-setpoint events).
+//
+//   THE FIX: wall.thermal_pulses:false. A sealed miarolitic pocket is the
+//   isolated residual chamber — no fracture-valve hot injections. The
+//   pulses' Fe riders (+2-15 ppm) were directly fighting the li_phase
+//   event's Fe depletion (Fe→5 is what turns schorl cores into elbaite
+//   rims), and a late pulse re-warmed the ended system to ~476°C against
+//   the design's 300°C floor.
+//
+//   DARK-OBSERVED (tools/t-story-observe.mjs — NEW generalized instrument
+//   for the rollout, supersedes the naica-specific observer): end T
+//   476→276 at seed 42 (the documented floor restored), pulses 8-10→0,
+//   and assemblage + crystal counts IDENTICAL at all 3 seeds — the v181
+//   dedicated thermal stream visibly working (a thermal-regime change no
+//   longer re-rolls the nucleation cascade; pre-v181 this flag would have
+//   been a full single-scenario re-roll). Topaz remains aspirational at
+//   seed 42 (absent in BASE too; separate tune arc).
+//
+//   BASELINE: measured BYTE-IDENTICAL (gem_pegmatite seals before the
+//   late-era T divergence reaches any recorded growth, and gem isn't in
+//   the strip-digest set) — the narration above predicted record movement
+//   and the measurement said no (12th-catch rule: the correction lives at
+//   the same prominence). Bump kept for the LIVE channel: the late-game T
+//   readout players see goes from a spurious ~476°C re-warm to the
+//   documented ~300°C floor (same SIM-bump-for-render-visible pattern as
+//   v173/v174).
+//
+// v184 (2026-06-10) — T-ROLLOUT CLOSE-OUT: the remaining six scenarios,
+//                     each by its measured shape. The "~8 T-blocked"
+//                     class is now FULLY SWEPT (181 mechanic → 182/183
+//                     the two shapes → 184 the rest).
+//
+//   marble (flag): one leucogranite intrusion, one arc — events anchor
+//   700@20/500@60, default drift carries the 500→350 retrograde
+//   correctly; the pulses' Fe riders poisoned the Cr-vs-Fe chromophore
+//   budget that decides ruby vs sapphire. Clean at 3 seeds.
+//
+//   deccan (flag + cooling_rate 0.3 + a fluid.SiO2 MOVEMENT): the deep
+//   find of the sweep. Flag-only KILLED apophyllite (an expects) at every
+//   seed — the random pulses' SiO2 riders were the scenario's de-facto
+//   silica budget (gate needs ≥800; the stage-III event's one-shot +600
+//   gets eaten by quartz depletion). Ottens calls Stage III "the
+//   long-lasting late stage" (21-58 Ma) — a SUSTAINED groundwater regime,
+//   which is exactly what a constant-setpoint movement models: fluid.SiO2
+//   pinned at 950 for steps 110-200 (the percolating aquifer is an
+//   infinite reservoir on vesicle timescales). First non-temperature
+//   movement of the rollout, first ops:[] constant setpoint. All three
+//   expects at all seeds; fill IMPROVES 0.07-0.18 → 0.28-0.30;
+//   wollastonite (a skarn mineral in an amygdale!) and pulse-Mn
+//   rhodochrosite drop out.
+//
+//   radioactive_pegmatite (flag): sealed pocket like gem; a late pulse
+//   had re-warmed the "approaches ambient" endgame to 541°C with autunite
+//   (T_max 50!) in the expects. The ≤50°C autunite window now opens
+//   deterministically; pyrite/goethite were pulse-Fe artifacts.
+//
+//   cooling (MOVEMENT + flag): the only events:[] scenario — pure
+//   naica-shape. Old regime: drift fell out of the Herkimer 140-200°C
+//   window and 2-3 random pulses balanced it back by ACCIDENT (band
+//   65-86%). New: declared burial plateau (base 180, smoothstep −20 —
+//   peak Alleghenian burial, Harris et al. 1978) → band 100%, and
+//   crystal count 3→1 at every seed. ONE large doubly-terminated quartz
+//   is the literal Herkimer signature — the fewer-nuclei mechanism
+//   (García-Ruiz, naica v182) emerging at a second locality.
+//
+//   porphyry + epithermal (KEPT, documented in their notes): episodic
+//   injection IS the porphyry deposit class (Sillitoe 2010), and
+//   epithermal's pulses are load-bearing AND native — fault-valve boiling
+//   (Sibson) is the heat supply; without them the system crashes from the
+//   epithermal window to the floor (meanT 226→121, fill →0.00). The rare
+//   case where the random mechanic is the geology.
+//
+//   BASELINE: 4-scenario rebake (marble, deccan, radioactive_pegmatite,
+//   cooling — porphyry/epithermal untouched, gem-precedent partial
+//   neutrality possible per scenario). Coverage gate: stale must stay 2.
+//
+// v185 (2026-06-11) — SCHNEEBERG EVENT-SUBSUMPTION: the first scripted
+//                     redox swing retired into a declared movement. The
+//                     Movements master doc's "EVENT-CONFOUNDED redox"
+//                     class (bisbee/schneeberg) starts closing.
+//
+//   THE PREMISE: schneeberg's redox was already dynamic — but told as a
+//   step function (O2:0.0 pegmatitic until the step-85 cu_p_phase event
+//   flips O2:1.5 in ONE step). The whole point of movements is that real
+//   vug chemistry is a curve; this is the first scenario where a movement
+//   REPLACES scripted event redox instead of adding a story to a flat
+//   field. Composition pattern is naica's (v182), applied to Eh: events
+//   keep the chemistry beats (P/As/Cu/Ca forks), the movement is the
+//   redox sentence.
+//
+//   THE MOVEMENT: fluid.Eh, window 0→110, base −200 mV (≡ the ehFromO2
+//   floor at O2:0), one step op amp +490 at 0.8 soften 8/110 — reducing
+//   pegmatitic plateau, then a ~8-step swing to +290 mV (O2 1.5) centered
+//   at step 88. The swing IS sulfide-buffer exhaustion: meteoric water
+//   arrives AT the step-85 event and pyrite/arsenopyrite eat the first
+//   oxygen before Eh can climb. WINDOW BOUNDARY IS GEOLOGY: it ends at
+//   the step-110 vadose exhumation because a redox movement lives in
+//   GROUNDWATER — once the water table drops, air owns redox (the vadose
+//   O2 floor 1.8 ≡ the flat +322 mV the strip always showed after 110).
+//   Ending there also keeps the Eh-canonical sync from fighting the
+//   vadose override (the 4c.3a per-cell-ownership issue, dodged by
+//   construction). Eh-canonical flip (4c.3a) + the 2026-06-10 round-trip
+//   slope fix carry the movement's Eh into engine O2 exactly.
+//
+//   MEASUREMENT-DRIVEN SHAPE (tools/eh-subsumption-observe.mjs, NEW
+//   standing instrument — Eh trace by event segment, nucleation steps,
+//   lineage-aware multi-seed rate gate):
+//   • A front centered at 80 (oxidation BEFORE the meteoric arrival —
+//     scientifically backwards) trimmed the reducing era's tail and cost
+//     naumannite 7/8→5/8 + the torbernite lineage 8/8→7/8. The
+//     canon-true front (at 88) keeps every reducing-era nucleation step
+//     BYTE-IDENTICAL to BASE (naumannite @67, native_bismuth @70).
+//   • OU texture ANYWHERE re-rolled 1-crystal marginals (naumannite,
+//     metazeunerite): the rock-buffered plateau doesn't flutter, the
+//     16-step flood-buffered hold is below recorded flutter resolution,
+//     and the As-pulse EVENTS are the punctuation. DETERMINISTIC ships
+//     (naica no-noise precedent).
+//   • 16TH-CATCH CLASS FINDING (instrument, pre-ship): expects_species
+//     is BLIND to renamed crystals — torbernite/zeunerite/autunite live
+//     as their meta- forms after the step-110 vadose dehydration renames
+//     them, so a no-texture variant KILLED metatorbernite at seed 42
+//     while the raw expects gate read ✓. The observer gates LINEAGES
+//     (either form counts); which form survives is a placement coin flip
+//     (which ring → vadose timing), orthogonal to the redox story.
+//   GATE: 8 seeds, every lineage at its BASE fire-rate (torbernite|meta
+//   8/8, zeunerite|meta 8/8, naumannite 7/7, five-element suite 8/8).
+//   Logged pre-existing debt (NOT this change): haidingerite 0/8 in
+//   BASE — a dead expects for a future tune arc.
+//
+//   EVENT WRITES: pegmatite_crystallization's O2:0.0 + cu_p_phase's
+//   O2:1.5 are superseded inside the window (the Eh-canonical sync
+//   re-derives O2 from the movement every step); kept in the handlers
+//   with v185 comments for the narrative record.
+//
+//   BASELINE: single-scenario rebake expected (schneeberg only; per-
+//   scenario movements are opt-in). Coverage gate: stale must stay 2.
+//
+// v186 (2026-06-11) — BISBEE EVENT-SUBSUMPTION: the supergene rollercoaster
+//                     as a declared movement. The EVENT-CONFOUNDED redox
+//                     class (bisbee/schneeberg) is now CLOSED.
+//
+//   The second and harder subsumption (after schneeberg v185). bisbee's
+//   redox is NON-MONOTONIC — the nine scripted event O2 writes trace
+//   −150 → +180 → a deep reducing dip → +280, a true rollercoaster — so
+//   the movement needs the full primitive alphabet (step + two pulses +
+//   trend), not schneeberg's single front. Composition is identical:
+//   events keep the Cu/S/CO3/pH/T cascade beats, the movement is the
+//   redox sentence. Window 0→305 = the whole phreatic life, ending AT the
+//   step-305 final_drying (full drain → vadose; air owns redox after, the
+//   flat +322 mV the strip showed past 305 was always the vadose floor).
+//
+//   THE FOUR OPS, each a measured beat of the Warren-District cascade:
+//   (1) step +330 at u=0.233 (step 71, the meteoric front rising FROM the
+//   step-65 uplift — never before its arrival, the schneeberg lesson; a
+//   12-step ramp, because the 22-step ramp first tried starved
+//   brochantite's acid-flush window); (2) pulse −60 at u=0.351 (step 107,
+//   the enrichment-blanket poise — the pocket rides the redox interface
+//   ~+131 mV where chalcocite replaces chalcopyrite); (3) pulse −400 at
+//   u=0.436 (step 133, the barren DEEP REDUCING PULSE to ~−185 mV — the
+//   brief Eh-below-cuprite window that grows the Cornish-style
+//   native-copper trees; −400 not −330 is load-bearing, the shallower dip
+//   dropped native_copper below 5/8 seeds); (4) trend +100 ease (the long
+//   late oxidation climb to the +280 mV azurite-era plateau).
+//
+//   DETERMINISTIC (no texture): the monsoon punctuation is the EVENTS
+//   (azurite_peak/co2_drop/silica_seep); OU re-rolls 1-crystal marginals.
+//   Gate verified at 8 seeds (tools/eh-subsumption-observe.mjs): every
+//   lineage at BASE fire-rate — native_copper 5/5, brochantite 8/8, the
+//   malachite/chrysocolla cascade whole. Event O2 writes (primary_cooling
+//   0.08 → silica_seep 1.3) superseded inside the window; kept in the
+//   handlers with a v186 header note for the narrative record.
+//
+//   Logged BASE-side debt (NOT this change): azurite 0/8 in BASE — the
+//   famous "Bisbee Blue" isn't nucleating in the sim; a future tune arc
+//   (its own follow-the-science problem, independent of the redox shape).
+//
+//   CALIBRATION-TEST CONVERSION (the v135/v137/v181 widen-the-brittle-pin
+//   pattern): calibration-assertions.test.ts Assertion 1 pinned "graduated
+//   competition lets dioptase fire" to a single seed-42 bisbee crystal
+//   that was a 10.7µm knife-edge marginal. The movement tipped seed 42
+//   specifically to a 0µm nucleation — but dioptase still grows in 4/8
+//   bisbee seeds (and bisbee is its ONLY home, measured: schneeberg +
+//   supergene never grow it at any seed, pre- OR post-v186). The
+//   cascade-fix INTENT is intact; the brittle single-seed pin became an
+//   8-seed coverage check (floor ≥2/8, measured 4/8). Distribution
+//   measured BEFORE touching the test — not a test loosened to pass.
+//
+//   BASELINE: single-scenario rebake (bisbee only). Coverage gate: stale
+//   must stay 2. With this, the master doc's "EVENT-CONFOUNDED redox"
+//   gated class no longer exists — both members subsumed.
+//
+// v187 (2026-06-11) — CALCITE MORPHOLOGY Phase 4: the Mg axis. The σ axis
+//                     (Phases 0-3, all sim-neutral: post-step classifier,
+//                     zone tags + strip chip, σ-regime habit strings,
+//                     zone-stack TERRACE render) set smooth↔stepped↔
+//                     hopper; Mg now sets the FORM the steps build into.
+//
+//   TWO COUPLED KNOBS, both per GCA 2015 ("Evolution of calcite growth
+//   morphology in the presence of magnesium") + the AFM growth-inhibition
+//   literature, thresholds calibrated by fleet observation (the probe
+//   sweep recorded in RESEARCH-calcite-morphology-2026-06-11.md §4):
+//
+//   (1) FORM ELONGATION — habit form is the full calciteMorphForm:
+//   Mg:Ca > 0.15 elongates toward scalenohedral/dogtooth alongside the
+//   old T>200 trigger, for BOTH smooth spar and the σ-regime habits.
+//   This is the chemistry coupling that forced the bump: scaleno aspect
+//   0.5 vs rhomb 0.8 → _volume_mm3 → fill, in exactly the four
+//   Mg-dominated waters (sabkha Mg:Ca 3.3, searles 1.6, ultramafic 10,
+//   zoned_dripstone 0.75). The MVT brines (~0.075) correctly stay
+//   rhombohedral — Tri-State spar is rhombs, not dogtooth.
+//
+//   (2) BUNCHING BIAS — Mg pins step edges, so the same σ bunches
+//   harder: effective σ × (1 + 0.4·min(Mg:Ca,1)) before the regime cut
+//   (engine + map tool in sync). k=0.4 chosen from the k∈{0,0.4,0.8}
+//   sweep: Jeffrey Mine (Mg:Ca 0.84 serpentinite water) shifts toward
+//   stepped — the research §6.3 Mg-elongation hook observable in the
+//   fleet — while every scenario's DOMINANT regime stays the validated
+//   one (dripstone stays hopper; dendrite stays transient-rims-only).
+//   k=0.8 over-steepened the dripstone family toward dendrite, against
+//   ground truth — rejected.
+//
+//   BASELINE: rebake. Expected movers are the four form-flip scenarios
+//   (+ jeffrey via regime drift feeding habit); everything else should
+//   hold byte-identical — inspect the diff against that prediction.
+//
+// v188 (2026-06-12) — MORPHOLOGY GENERALIZATION, tenant three: native
+//                     bismuth's corrected Sunagawa ladder. (Tenants one
+//                     and two were sim-neutral: the registry hoist —
+//                     calcite byte-identical under MORPH_TH — and the
+//                     halite/sylvite salt-pan wave, aspect-firewalled.)
+//
+//   The old grow_native_bismuth dispatch ran ANTI-Sunagawa: massive at
+//   TOP σ, dendrite at the BOTTOM, the rare well-formed crystal at
+//   mid-σ — conflating aggregate texture (nucleation density) with
+//   interface morphology. Corrected via MORPH_TH.native_bismuth (bands
+//   1.5/2.2/3.0/3.8 in Bi's own σ units — the scale is structurally
+//   CAPPED at ~4.5 by bi_f≤3.0 × red_f≤1.5 in js/36): massive/foliated
+//   is the SMOOTH-band default, the rare open-vug rhombohedral
+//   dice-roll stays in the smooth band where slow growth actually
+//   lives, feathery/skeletal intermediates, arborescent dendrite at
+//   the TOP — the five-element reduction-shock texture (Kissin 1992;
+//   Burisch 2017). Survey + design:
+//   RESEARCH-bismuth-morphology-2026-06-12.md.
+//
+//   WHY THE BUMP: the dice-roll's rng.random() moved from a
+//   mid-σ-excess condition to the smooth-band branch → rng cascade
+//   shifts wherever Bi grows. Fleet truth: that is schneeberg ONLY
+//   (1 short-lived crystal/seed at σ ≤ 1.32, correctly destroyed by
+//   the v185 oxidation swing — the weathering stage doing its job).
+//   Upper bands are deliberately UNOCCUPIED until the five-element
+//   scenario (`wittichen`, designed in the research doc §4) gives the
+//   dendrite band its tenant + de-orphans skutterudite/safflorite.
+//
+//   BASELINE: rebake. Expected mover: schneeberg only — inspect the
+//   diff against that prediction.
+//
+// v189 (2026-06-12) — WITTICHEN: the five-element vein, the dendrite
+//                     band's first tenant. New scenario (33rd) +
+//                     measured Bi band-edge re-pin. The morphology
+//                     generalization arc's bismuth payoff.
+//
+//   Kloster Wittichen, Schwarzwald — the classic Bi-Co-Ni-Ag-As-(Ba)
+//   association (Kissin 1992), cobalt-pigment + silver boom 1730s–40s.
+//   S-STARVED basement brine (S 3 ppm — load-bearing: bismuthinite +
+//   acanthite never gate open, metals stay NATIVE, arsenides are the
+//   metal sinks — the deposit class's existence condition writes
+//   itself out of the engine gates). Declared movements: T trend
+//   340→150 ease; fluid.Eh base −20 with ONE deep pulse (amp −320 @
+//   u 0.58, ~8 steps — the Burisch 2017 CH4 influx) + late +95 ease
+//   meteoric tail (tuned DOWN from +140, which dissolved the arsenide
+//   suite; a +100 late-oxidation finger was tried and reverted for the
+//   same reason — barite + erythrite ship as documented-aspirational
+//   casualties of arsenide survival, vugg-tune-scenario follow-up).
+//
+//   PARAGENESIS (measured at seeds 42–45, stable):
+//     hot stage (340–280°C) — skutterudite ×2 + nickeline ×4 rosettes
+//     cooling (280–230)     — safflorite ×2; Bi enters its T window,
+//                             feathery bands (σ 1.6–2.1)
+//     THE SHOCK (u 0.58, T~222) — Eh floor −253 mV measured; Bi σ
+//                             plateaus at 2.27 for ~8 steps → DENDRITE
+//                             zones; native_silver rides the shock
+//     meteoric tail         — S 30 sulfidizes the silver → acanthite
+//                             ×4 (the tarnish story; hand-specimen
+//                             Wittichen silver is acanthite-coated);
+//                             proustite ×2 (ruby silver); CO3 + pH 7.3
+//                             event → calcite + aragonite gangue seal
+//   Result: native_bismuth 3–5 alive carrying 45–49% DENDRITIC zone
+//   mass — the reduction shock recorded in crystal shape, readable in
+//   the zone modal, the bismuth_morph strip chip (digest-pinned: the
+//   ordinal slams 0→4 on the pulse), and the narrator's healed-over
+//   paragraph. Skutterudite + safflorite DE-ORPHANED (first scenario
+//   home fleet-wide).
+//
+//   BAND-EDGE RE-PIN (the research doc §5 calibration pass): Bi's
+//   structural σ cap (~4.5 dilute) compresses to ~2.4 MEASURED under
+//   the salinity-24 activity correction. Edges moved from provisional
+//   1.5/2.2/3.0/3.8 to measured 1.4/1.8/2.1/2.25 — schneeberg's quiet
+//   plateau (≤1.32) stays smooth, wittichen's cooling ramp is the
+//   feathery band, the shock plateau is the dendrite. The locality is
+//   the authority; the provisional numbers were scaffolding.
+//
+//   BASELINE: rebake. Expected: wittichen additive; schneeberg moves
+//   ONLY in morph tags if at all (band re-pin is below its 1.32 max →
+//   no change predicted); everything else byte-identical.
+const SIM_VERSION = 189;
 

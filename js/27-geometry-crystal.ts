@@ -36,6 +36,36 @@ function _habitAspectRatio(habit: string): number {
   if (habit === 'acicular') return 0.15;
   if (habit === 'rhombohedral') return 0.8;
   if (habit === 'snowball') return 1.0;
+  // Calcite-morphology arc Phase 2 (2026-06-11): the σ-regime habit
+  // strings carry their PARENT FORM's exact aspect ratio — rhombohedral
+  // family 0.8, scalenohedral family 0.5 (= the default 'scalenohedral'
+  // always landed on). This is the byte-identity keystone: a habit
+  // RENAME must not move _volume_mm3 → a_width → vug fill → chemistry.
+  // (Verified by the calibration suite passing unchanged at v186.)
+  if (habit === 'stepped_rhombohedral' || habit === 'hopper_rhombohedral'
+      || habit === 'dendritic_rhombohedral') return 0.8;
+  if (habit === 'stepped_scalenohedral' || habit === 'hopper_scalenohedral'
+      || habit === 'dendritic_scalenohedral') return 0.5;
+  // Morphology-generalization arc (2026-06-12): the halide cube family.
+  // 'cubic' (and the legacy 'hopper_growth'/'hopper_cube' it replaces in
+  // the engines) always landed on the DEFAULT 0.5 — so the regime
+  // renames carry 0.5 EXPLICITLY, not the geometric cube's 1.0. Same
+  // keystone as the calcite families above: a habit rename must not
+  // move _volume_mm3 → a_width → vug fill → chemistry. (If cube aspect
+  // is ever corrected to 1.0, 'cubic' and this family must move
+  // TOGETHER, with a SIM bump + rebake.)
+  if (habit === 'stepped_cube' || habit === 'hopper_cube'
+      || habit === 'dendritic_cube') return 0.5;
+  // Bismuth regime family (2026-06-12): same firewall — the legacy
+  // strings (massive_granular / arborescent_dendritic /
+  // rhombohedral_crystal) always landed on the default 0.5, so the new
+  // intermediates carry it explicitly.
+  if (habit === 'feathery_bismuth' || habit === 'skeletal_bismuth') return 0.5;
+  // Pyrite striation overlay (2026-06-12): the parent forms (cubic /
+  // pyritohedral / cubo-pyritohedral) all land on the default 0.5 —
+  // the striated_ renames carry it explicitly. Same firewall as above.
+  if (habit === 'striated_cubic' || habit === 'striated_pyritohedral'
+      || habit === 'striated_cubo_pyritohedral') return 0.5;
   return 0.5;
 }
 
@@ -73,6 +103,23 @@ class GrowthZone {
     // single-mode (legacy) entries don't need it; the wrapper falls
     // through to the first declared mode when missing.
     if (opts.dissolutionMode) this.dissolutionMode = opts.dissolutionMode;
+    // Calcite-morphology arc Phase 1 (2026-06-11): per-zone growth-regime
+    // tags — the SHAPE history recorded alongside the chemistry history.
+    //   morph_regime:     'spiral_smooth' | 'stepped_mild' | 'stepped_macro'
+    //                     | 'hopper_skeletal' | 'dendritic' (Sunagawa order)
+    //   morph_form:       crystallographic form token ('rhombohedral' |
+    //                     'scalenohedral' | 'cube' | …, per mineral)
+    //   morph_surf_sigma: (damped) surface σ the regime was classified
+    //                     from (post-step basis — 18th catch)
+    // Optional like dissolutionMode: written post-hoc by
+    // classifyMorphologyStep (js/45 registry — calcite was the first
+    // tenant, halite/sylvite the second wave) at end of run_step; only
+    // MORPH_TH-registered minerals' zones carry them. Zone-stack
+    // consumers (strip chips, zone modal, terrace geometry) read them
+    // when present.
+    if (opts.morph_regime) this.morph_regime = opts.morph_regime;
+    if (opts.morph_form) this.morph_form = opts.morph_form;
+    if (opts.morph_surf_sigma != null) this.morph_surf_sigma = opts.morph_surf_sigma;
   }
 }
 

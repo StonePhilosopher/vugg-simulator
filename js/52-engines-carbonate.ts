@@ -9,6 +9,71 @@
 //
 // Phase B8 of PROPOSAL-MODULAR-REFACTOR.
 
+// ============================================================
+// Calcite morphology (calcite-morphology arc, 2026-06-11) — the
+// classification machinery + threshold table were HOISTED to
+// js/45-morphology.ts in the registry hoist (morphology-generalization
+// arc, 2026-06-12): calcite is MORPH_TH.calcite, the registry's first
+// tenant, and the threshold values + their physics rationale live
+// there now (Sunagawa ladder, Wolthers bounded boundary layer, Mg
+// step-edge pinning). These aliases keep this file's grow_calcite, the
+// tests, the UI surfaces, and the bench mirror
+// (tools/calcite-morphology-map.mjs) on their existing names.
+const CALCITE_MORPH_TH = MORPH_TH.calcite;
+
+// Severity-ordinal regime list + display flavor = the shared registry
+// (js/45 MORPH_REGIMES / MORPH_DISPLAY.calcite — display moved there
+// with the halide wave so the zone modal can speak each mineral's
+// field language via morphDisplayLabel).
+const CALCITE_MORPH_REGIMES = MORPH_REGIMES;
+const CALCITE_MORPH_DISPLAY = MORPH_DISPLAY.calcite;
+
+// Thin wrappers over the js/45 generics (kept: tests + bench bind to
+// these names; calciteMorphForm below is REAL calcite physics — the
+// registry's form hook calls it).
+function calciteSurfaceSigma(bulkSigma: number, sizeUm: number): number {
+  return morphSurfaceSigma(MORPH_TH.calcite, bulkSigma, sizeUm);
+}
+
+function calciteMorphRegime(surfSigma: number): string {
+  return morphRegime(MORPH_TH.calcite, surfSigma);
+}
+
+function calciteMorphForm(mgRatio: number, temperature: number): string {
+  if (mgRatio > CALCITE_MORPH_TH.MG_SCALENO || temperature > 200) return 'scalenohedral';
+  return 'rhombohedral';
+}
+
+// Calcite-morphology arc Phase 3 (2026-06-11): TERRACE BANDS from the
+// zone stack — the geometry-side read of the per-zone regime tags. The
+// renderer (99i _topoSyncCrystalMeshes) calls this to decide whether a
+// calcite crystal renders as the smooth parent form or as zone-stack
+// terraces, and where the ledges sit. Lives in the ENGINE file (not the
+// renderer) so it is headless-testable and replay-correct: pass
+// uptoStep to truncate the walk at a replay frame — terraces ACCUMULATE
+// as the scrubber advances, which is the watch-it-grow deliverable.
+//
+// Returns null when the crystal should render smooth (no tags, or the
+// relief share is below 5% of grown mass — a smooth-spar crystal with a
+// stepped sliver of core stays visually smooth, matching hand
+// specimens). Otherwise:
+//   { form: 'scalene' | 'rhomb',
+//     knots: [{ frac, regime }],   // band END fractions of total grown
+//                                  // size, ascending, last === 1.0
+//     hopperTip: boolean }         // last band is hopper_skeletal →
+//                                  // the apex hollows into a funnel
+function calciteTerraceBands(crystal, uptoStep) {
+  // The band walk itself is mineral-agnostic and moved to js/45
+  // morphTerraceKnots in the halide render wave (2026-06-12) — same
+  // arithmetic verbatim (relief floor 5%, sliver merge 1.5%, replay
+  // truncation). This wrapper keeps calcite's gate + form derivation.
+  if (!crystal || crystal.mineral !== 'calcite') return null;
+  const walk = morphTerraceKnots(crystal, uptoStep);
+  if (!walk) return null;
+  const form = String(crystal.habit || '').includes('scalenohedral') ? 'scalene' : 'rhomb';
+  return { form, knots: walk.knots, hopperTip: walk.hopperTip };
+}
+
 function grow_calcite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_calcite();
   if (sigma < 1.0) {
@@ -88,13 +153,57 @@ function grow_calcite(crystal, conditions, step) {
   // Per Pohl 2011 Economic Geology of Mineral Deposits + observed
   // Silverton specimen aesthetic.
   const is_manganocalcite = (conditions.fluid.Mn > 5 && conditions.fluid.Fe < 2);
+  // Calcite-morphology arc Phase 2 (2026-06-11): the habit string is now
+  // driven by the classifier's recorded regime (crystal._morphology,
+  // written by classifyCalciteMorphologyStep at the END of last step —
+  // the one-step lag is physical: it is the rock's recorded state, on
+  // the calibrated post-step basis, 18th catch). Precedence preserved:
+  // manganocalcite (chemistry variety) outranks the σ regime, exactly
+  // as it outranked the old T ladder.
+  // Phase 4 (SIM 187): the form axis is the FULL calciteMorphForm —
+  // Mg:Ca > 0.15 elongates toward scalenohedral (GCA 2015) alongside
+  // the T>200 trigger. This IS a chemistry change (scaleno aspect 0.5
+  // vs rhomb 0.8 → volume → fill) for the four Mg-dominated waters
+  // (sabkha 3.3, searles 1.6, ultramafic 10, zoned_dripstone 0.75);
+  // the MVT brines (Mg:Ca ~0.075) correctly stay rhombohedral.
+  const morphMgRatio = (conditions.fluid.Mg || 0) / Math.max(1e-6, conditions.fluid.Ca || 0);
+  const morphFormT = calciteMorphForm(morphMgRatio, conditions.temperature);
+  const morphRegime = (crystal._morphology && crystal._morphology.regime) || null;
   if (is_manganocalcite && excess < 0.4) {
     crystal.habit = 'botryoidal_manganocalcite';
     crystal.dominant_forms = ['cauliflower botryoidal mass', 'mammillary surface', 'cryptocrystalline interior'];
     crystal._variety = 'manganocalcite';
-  } else if (conditions.temperature > 200) {
+  } else if (morphRegime === 'stepped_mild' || morphRegime === 'stepped_macro') {
+    const macro = morphRegime === 'stepped_macro';
+    crystal.habit = `stepped_${morphFormT}`;
+    if (morphFormT === 'scalenohedral') {
+      crystal.dominant_forms = macro
+        ? ['v{211} scalenohedron with macrostep terraces', 'stepped dog-tooth']
+        : ['v{211} scalenohedron, gentle growth steps', 'dog-tooth'];
+    } else {
+      crystal.dominant_forms = macro
+        ? ['e{104} rhombohedron with macrostep terraces', 'pagoda-stacked faces']
+        : ['e{104} rhombohedron, gentle growth steps'];
+    }
+    if (is_manganocalcite) crystal._variety = 'manganocalcite';
+  } else if (morphRegime === 'hopper_skeletal') {
+    crystal.habit = `hopper_${morphFormT}`;
+    crystal.dominant_forms = morphFormT === 'scalenohedral'
+      ? ['v{211} scalenohedron, faces hollowed to funnels (hopper)', 'skeletal edge frame']
+      : ['e{104} rhombohedron, faces hollowed to funnels (hopper)', 'skeletal edge frame'];
+    if (is_manganocalcite) crystal._variety = 'manganocalcite';
+  } else if (morphRegime === 'dendritic') {
+    crystal.habit = `dendritic_${morphFormT}`;
+    crystal.dominant_forms = ['branched dendritic calcite', 'the instability run past hopper — trunks with side arms'];
+    if (is_manganocalcite) crystal._variety = 'manganocalcite';
+  } else if (morphFormT === 'scalenohedral') {
+    // Smooth growth, scalenohedral form — T>200 (the original ladder)
+    // OR Mg:Ca>0.15 (Phase 4: GCA 2015 elongation is form-level
+    // physics, regime-independent — Mg-rich smooth spar elongates too).
     crystal.habit = 'scalenohedral';
-    crystal.dominant_forms = ['v{211} scalenohedron', 'dog-tooth'];
+    crystal.dominant_forms = conditions.temperature > 200
+      ? ['v{211} scalenohedron', 'dog-tooth']
+      : ['v{211} scalenohedron', 'dog-tooth (Mg-elongated)'];
     if (is_manganocalcite) crystal._variety = 'manganocalcite';
   } else if (conditions.temperature > 100) {
     crystal.habit = 'rhombohedral';
@@ -143,6 +252,14 @@ function grow_calcite(crystal, conditions, step) {
     ca_from_fluid: ca_fluid_fraction,
   });
 }
+
+// The end-of-step morphology classification pass (with its 18th-catch
+// post-step-basis rationale) moved to js/45-morphology.ts in the
+// registry hoist — classifyMorphologyStep iterates MORPH_TH, of which
+// calcite was the first tenant. The Mg-bunching multiplier and the
+// Mg/T form rule ride along as the calcite entry's effSigmaMult/form
+// hooks (the form hook calls calciteMorphForm above — the physics
+// stays in this file).
 
 function grow_aragonite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_aragonite();

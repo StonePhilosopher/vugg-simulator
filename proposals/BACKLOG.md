@@ -2,7 +2,312 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 📖 UPDATE (2026-06-10, latest) — the §2.4 NARRATOR/SPEC AFTERNOON: 15 corrections, SIM-NEUTRAL
+> ## 🌳 UPDATE (2026-06-12, latest) — MORPHOLOGY GENERALIZATION: registry + three tenants + WITTICHEN (SIM 189)
+>
+> The calcite arc's classifier became the MORPHOLOGY REGISTRY
+> (js/45-morphology.ts) and the boss's wish-list started shipping the
+> same night, eight commits: **registry hoist** (`b6ba453`,
+> byte-identical — calcite is MORPH_TH.calcite, 100% map agreement,
+> baselines untouched); **morph-sigma-observe** (`a07b87d`) the GENERIC
+> per-mineral post-step σ survey instrument (one tool now serves every
+> list item); **halite + sylvite** (`90fac90`, sim-neutral) — the
+> salt-pan log (searles 67% banded / 33% hopper, 8/8-seed judge
+> tools/halide-hopper-observe.mjs; the ladder CORRECTED the legacy
+> in-step rule, which called bisbee's smooth supergene cubes hopper) +
+> NO-damping physics (convective brine, Berg effect — per-mineral knob)
+> + sparse-max digest reduction (first regen exposed the all-null
+> mid-ring averaging bug); **halide 3D render** (`2bbfd19`) grooved
+> cube ziggurats + funnel tops, with two verification catches (cube
+> habits token-routed to HEX PRISMS pre-fix — 'hopper_growth' had done
+> that silently since v27; terrace cache sig regime[0] collision);
+> **bismuth corrected ladder** (`adffa68`, SIM 188 — the old dispatch
+> ran ANTI-Sunagawa, massive at top σ / dendrite at bottom; rng-cascade
+> bump, measured 0/32 movers); **wittichen** (SIM 189) — the
+> five-element vein (Kissin 1992; Burisch 2017 CH4 reduction trigger):
+> declared Eh pulse −320 @ u 0.58, Bi σ plateaus at its
+> activity-compressed ceiling (2.27 measured vs ~4.5 dilute — band
+> edges re-pinned to the MEASURED trajectory), native Bi carries 39–49%
+> DENDRITIC zone mass at 8/8 seeds (tools/wittichen-dendrite-observe),
+> skutterudite + safflorite DE-ORPHANED (first scenario home),
+> native_silver→acanthite tarnish story, bismuth_morph chip
+> digest-pinned slamming 0→4 on the pulse. Research docs:
+> RESEARCH-halide-morphology-2026-06-12.md +
+> RESEARCH-bismuth-morphology-2026-06-12.md (the latter records the
+> overturned premise: schneeberg's v185 movement is the WEATHERING
+> direction — it correctly DESTROYS Bi; the shock needed a new
+> scenario).
+>
+> **THE LIST IS COMPLETE (same session, continued):** fluorite
+> (sim-neutral — elmwood is now the TWO-MINERAL showcase, calcite_morph
+> + fluorite_morph digest-pinned co-pulsing on the fault-valve beats;
+> mvt pins the stays-glassy guard; the REE octahedra compose untouched);
+> pyrite striations (sim-neutral — striations ARE bunched steps;
+> sulphur_bank 86% striated, mvt zoned 51/49, sunnyside smooth
+> Navajún-glass euhedra; form stays T-driven, the regime OVERLAYS
+> striated_; 'sulfide' legend group opened); native copper + gold (the
+> conflation sweep — nugget + massive_sheet retired from σ-dispatch as
+> placer/fissure TEXTURES; bisbee gold reads spongy/fishbone as it
+> should, and bisbee's copper tree records 33% dendritic mass on the
+> −400 pulse then dissolves into the azurite era — THE CAST STORY);
+> quartz = RESEARCH-quartz-morphology-2026-06-12.md (deliberately a
+> design doc: quartz needs a ZONE-STACK PATTERN classifier for sceptres
+> — hiatus-then-renewal, the registry's second classifier KIND — plus a
+> fenster σ-top band and a Tessin form rule gated on a future
+> alpine-cleft scenario; splitting/faden named out of scope).
+>
+> **Registry census at arc close: 8 minerals** (calcite, halite,
+> sylvite, native_bismuth, fluorite, pyrite, native_copper,
+> native_gold), 6 morph chips digest-pinned, 3 standing judges
+> (elmwood/halide/wittichen), 1 generic survey instrument.
+>
+> **OPEN follow-ups:** wittichen barite + erythrite aspirational (need
+> late oxidation the living arsenide suite can't survive — a
+> spatially-partial oxidation or vein-top barite stage,
+> vugg-tune-scenario); arborescent 3D render is the acicular-spike
+> fallback (a true dendrite TREE geometry is its own render piece — the
+> sceptre two-body builder in the quartz doc is the natural sibling);
+> plain 'pyritohedral' 3D token defaults to 'prism' (pre-existing wart,
+> renders pyritohedra as hex prisms — render item); σ-stepped REE
+> octahedra (fluorite) unmodeled; morph severity → sonifier (a dendrite
+> bell on the ordinal slam?) — needs the boss's ear like all sonifier
+> work.
+
+> ## 🪜✅ UPDATE (2026-06-11, latest) — CALCITE MORPHOLOGY ARC SHIPPED, ALL SIX PHASES (SIM 187 + elmwood)
+>
+> The boss unblocked via goal directive ("follow the science") and the
+> whole arc landed the same day, five commits: **Phase 0+1** (`889dfc4`)
+> post-step classifier in the engine (the 18TH CATCH moved it out of
+> grow_calcite — in-step vs post-step σ basis mismatch, 0% agreement on
+> stalactite, 1598/1598 after; see CATCHES.md) + zone tags + the
+> `calcite_morph` strip chip + zone-modal lines, sim-neutral; **Phase 2**
+> (`8e9752c`) the stepped_/hopper_/dendritic_<form> habit alphabet,
+> aspect-preserving so the predicted SIM bump WASN'T needed; **Phase 3**
+> (`295e150`) VISIBLE TERRACES from the zone stack (calciteTerraceBands +
+> hex-ziggurat geometry, replay-truncating so terraces accumulate as you
+> scrub — the watch-it-grow ask, verified in-browser); **Phase 4**
+> (`a13de4f`, SIM 187) the Mg axis (form elongation Mg:Ca>0.15 + bunching
+> bias k=0.4, calibrated by fleet sweep); **Phase 5** the `elmwood`
+> showcase (Central TN MVT, Gratz & Misra brines; fault-valve CO3+pH
+> pulse-train movements; 12.4 mm golden stepped_scalenohedral at 8/8
+> seeds, full assemblage 8/8 — tools/elmwood-stepped-observe.mjs is the
+> standing judge) + the SIZE_DAMP_CAP_UM=2000 bounded-boundary-layer
+> correction the showcase forced (Wolthers's δ is fixed, not
+> size-proportional; marble/deccan→mild, jeffrey→stepped, mvt stays
+> smooth, all defensible — and it answered the old ⛔ decision (1) by
+> physics: the damping WAS too hard at giant scale). Master doc's
+> SHIPPED footer has the full ledger:
+> **proposals/HANDOFF-CALCITE-MORPHOLOGY-2026-06-11.md**.
+>
+> Residual debts (small, non-blocking): narratives/calcite.md md-side
+> variants for morph_stepped/morph_hopper (inline fallbacks ship);
+> elmwood dolomite gangue 0/8 (aspirational — saddle dolomite is real
+> Elmwood gangue); macro-dominant Elmwood deliberately NOT chased (fine
+> mm-scale stepped rim on a massive golden core IS the hand specimen).
+>
+> **OPEN — BOSS HAND-VERIFICATION PASS (the arc's true final gate):**
+> comparing each scenario's morphology claim against real specimens
+> from its locality. The worksheet + knob map for whoever applies the
+> findings: **proposals/TUNING-CALCITE-MORPHOLOGY.md** (per-scenario
+> claims table, disagreement playbook, what's chemistry-coupled vs
+> free). Boldest claims to check first: jeffrey STEPPED-dominant and
+> marble stepped(mild) — both are SIZE_DAMP_CAP_UM consequences; the
+> locality is the authority, the literature was scaffolding.
+
+> ## ⚗️ UPDATE (2026-06-11, latest) — EVENT-SUBSUMPTION COMPLETE (SIM 186): both bisbee + schneeberg redox step-functions retired into declared movements
+>
+> The "EVENT-CONFOUNDED redox" gated class (bisbee/schneeberg) is now
+> CLOSED — both members subsumed in one session. **bisbee shipped (SIM
+> 186):** the harder of the two, because its redox is NON-MONOTONIC (nine
+> event O2 writes trace −150 → +180 → a deep reducing dip → +280, a true
+> rollercoaster), so the movement uses the full primitive alphabet — a
+> `step` front (+330 at u=0.233, rising from the step-65 uplift), a `pulse`
+> sag (−60, the enrichment-blanket poise), a deep `pulse` (−400 at u=0.436,
+> the barren reducing window that grows the Cornish-style native-copper
+> trees), and a late `trend` (+100, the azurite-era oxidation climb).
+> Window 0→305 = the phreatic life, ending at the step-305 final_drying
+> drain (air owns redox after). Deterministic; gate whole at 8 seeds
+> (native_copper 5/5 — the −400 pulse is load-bearing, −330 dropped it
+> below 5/8; brochantite 8/8; malachite/chrysocolla cascade whole).
+> Single-scenario rebake (bisbee: species 30→29, crystals 74→71,
+> −jarosite, a seed-42 marginal still live fleet-wide). Coverage UNCHANGED
+> 133/2/36. Logged BASE-side debt: azurite 0/8 — the famous Bisbee Blue
+> isn't nucleating; its own future tune arc.
+>
+> **NEXT (Movements):** roughten_gill baseline-debt re-survey (v180 partly
+> cleared it), carbonate pK(T) slopes (§2.2 pure follow-the-science debt).
+> The "biggest lever" (T-reconciliation) and the redox-confound class are
+> both now done — what remains is calibration debt + specialized gated
+> classes (assemblage-cost, concentration-confounded), not engine work.
+>
+> ## ⚗️ UPDATE (2026-06-11) — EVENT-SUBSUMPTION BEGINS (SIM 185): schneeberg's scripted redox swing retired into a declared movement
+>
+> The first of the arc. The master doc's
+> "EVENT-CONFOUNDED redox" class (bisbee/schneeberg — redox already
+> dynamic, but told as a step function through scripted event O2 writes)
+> starts closing. **schneeberg shipped (SIM 185):** its redox was a step
+> function (O2:0.0 pegmatitic → a single-step flip to O2:1.5 at the
+> step-85 meteoric flood). Now it's a DECLARED fluid.Eh movement (window
+> 0→110, base −200 mV, one step op +490 at u=0.8): reducing pegmatitic
+> plateau, then a ~8-step sulfide-buffer-exhaustion swing to +290 mV
+> centered at step 88. **First scenario where a movement REPLACES scripted
+> event redox** instead of adding a story to a flat field — the naica
+> composition pattern (events keep the P/As/Cu/Ca chemistry beats, the
+> movement is the redox sentence), applied to Eh.
+>
+> * **Window boundary is geology**: ends at the step-110 vadose exhumation
+>   because a redox movement lives in GROUNDWATER — once the water table
+>   drops, air owns redox (the vadose O2 floor 1.8 ≡ the flat +322 mV the
+>   strip always showed after 110). Ending there also keeps the
+>   Eh-canonical sync from fighting the vadose override (dodged by
+>   construction, not patched).
+> * **Measurement chose the shape** (tools/eh-subsumption-observe.mjs, NEW
+>   instrument). A front centered at 80 (oxidation BEFORE the meteoric
+>   arrival — backwards) cost naumannite 7/8→5/8 + torbernite lineage
+>   8/8→7/8; the canon-true front (88) keeps every reducing-era nucleation
+>   BYTE-IDENTICAL to BASE. OU texture anywhere re-rolled 1-crystal
+>   marginals → DETERMINISTIC ships (naica no-noise precedent).
+> * **16th catch** (pre-ship, by the instrument): expects_species is BLIND
+>   to renamed crystals — torbernite→metatorbernite via step-110 vadose
+>   dehydration, so a candidate that killed the type-locality lineage
+>   still read ✓. Cure: the gate checks LINEAGES (either form counts).
+> * Single-scenario rebake (schneeberg only: species 31→31, crystals
+>   77→76, +cuprite −dioptase). Coverage UNCHANGED (133/2/36). Logged
+>   BASE-side debt: haidingerite 0/8 (dead expects, future tune arc).
+>
+> **NEXT in the arc: bisbee** — observed + shape locked this session (the
+> nine-beat rollercoaster: step front at u=0.23 from the step-65 uplift,
+> a −60 enrichment-blanket sag, a deep −400 reducing pulse at u=0.44 for
+> native copper, a +100 late oxidation trend; deterministic; gate whole at
+> 8 seeds). Not yet shipped — a clean stopping point. Then the master
+> doc's remaining: roughten_gill re-survey, carbonate pK(T) slopes.
+>
+> ## 🏁 UPDATE (2026-06-10) — T-ROLLOUT COMPLETE (SIM 184): all eight T-blocked scenarios swept, each by its measured shape
+>
+> The Movements master doc's "biggest lever" sub-project is CLOSED
+> end-to-end in one day: v181 (mechanic: dedicated thermal stream +
+> stand-down) → v182 (naica-shape demonstrated) → v183 (pegmatite-shape
+> demonstrated + the classification) → **v184 (the remaining six, each by
+> observation)**. Per-scenario verdicts, all dark-observed
+> (tools/t-story-observe.mjs, 3 seeds each):
+>
+> * **marble** — flag (one intrusion, one arc; pulse-Fe poisoned the
+>   ruby-vs-sapphire chromophore budget). Byte-identical at seed 42.
+> * **deccan** — flag + cooling_rate 0.3 + a **fluid.SiO2 constant-setpoint
+>   MOVEMENT** (950, steps 110-200): the sweep's deep find — the pulses'
+>   SiO2 riders were the scenario's de-facto silica budget (apophyllite
+>   gate ≥800; flag-only KILLED an expects at every seed). Ottens' "long-
+>   lasting late stage" = a sustained groundwater regime = exactly what a
+>   constant-setpoint movement models. First non-T movement; first ops:[]
+>   setpoint. Fill IMPROVES 0.07-0.18 → 0.28-0.30; wollastonite (a skarn
+>   mineral in an amygdale) correctly exits.
+> * **radioactive_pegmatite** — flag (sealed pocket; a late pulse had
+>   re-warmed the endgame to 541°C with autunite T_max=50 in expects; the
+>   ≤50°C window now opens deterministically every run).
+> * **cooling** — declared BURIAL MOVEMENT (base 180, −20 smoothstep; peak
+>   Alleghenian plateau) + flag. Old regime was noise-as-thermal-budget
+>   (2-3 random pulses accidentally balancing the drift, band 65-86%).
+>   Now: band 100% and crystal count 3→1 — ONE large doubly-terminated
+>   quartz, the literal Herkimer signature (fewer-nuclei mechanism, second
+>   locality).
+> * **porphyry + epithermal** — pulses KEPT, deliberately, documented in
+>   their notes (do not re-litigate): episodic injection IS the porphyry
+>   class; epithermal's pulses are load-bearing AND native (fault-valve
+>   boiling is the heat supply — without them it crashes to the floor,
+>   fill →0.00).
+>
+> Rebake: 3/31 moved (cooling/deccan/radioactive; marble byte-identical),
+> coverage UNCHANGED (133/2/36). Logged aspirational misses for future
+> tune arcs: epithermal native_gold + fluorite, radioactive autunite at
+> seed 42, gem topaz. NEXT Movements work: event-subsumption
+> (bisbee/schneeberg) per the master doc's queue.
+>
+> ## 💎 UPDATE (2026-06-10, earlier) — NAICA'S THERMAL STORY (SIM 182): the first declared temperature movement
+>
+> The first consumer of the v181 unlock, shipped the same day. naica's
+> buffered pool is now a DECLARED movement (base 56°C, smoothstep −3 over
+> steps 0-260, NO OU texture — Naica's fluid-inclusion record shows a
+> steady bath, so no-noise IS the science) + `thermal_pulses:false` +
+> `cooling_rate:0.1` for the post-drainage era (the mining events own T
+> after 260 — the thermal buffer was the WATER). The six slow_cooling
+> events keep their chemistry half (anhydrite Ca/S resupply); their −0.7°C
+> drops are superseded: **events are the chemistry beats, the movement is
+> the thermal sentence.** Dark-observed first (tools/naica-thermal-observe.mjs,
+> 3 seeds): García-Ruiz band occupancy 0→50%, selenite sweet-spot 0→31%,
+> pulses 13-18→0 — and the García-Ruiz mechanism EMERGED rather than being
+> scripted: total crystal count dropped ~40-60% (27→11, 39→16) while the
+> cavity still seals. Fewer nuclei, larger individuals. The low-T noise
+> feeders (opal, goethite, lepidocrocite, tigers_eye, pyrolusite) drop
+> out; the cave trends toward its real near-monomineralic character.
+> Single-scenario rebake (1/31 moved, fleet byte-identical), coverage
+> unchanged (133 live / 2 stale / 36 dead), strip contracts hold and mean
+> more now (the isothermal brine the SI pin always assumed is finally the
+> recorded trajectory).
+>
+> **SAME DAY, v183 — gem_pegmatite + THE ROLLOUT CLASSIFICATION.** Mapping
+> gem_pegmatite found the second shape: its eight events SET temperature
+> (620→…→300 — the documented three-phase curve is already fully
+> event-anchored), so a movement would CLOBBER a working design. Scenarios
+> carry T stories in TWO SHAPES: **naica-shape** (events don't own T →
+> declare a movement) vs **pegmatite-shape** (events anchor T → silence the
+> ambient noise: thermal_pulses:false ± cooling_rate). gem_pegmatite got
+> the flag (sealed miarolitic pocket = no fracture injections; pulse Fe
+> riders were fighting the li_phase Fe-depletion that makes elbaite; a late
+> pulse re-warmed the ended system to 476°C vs the 300°C floor). Measured
+> BYTE-IDENTICAL baseline (seals before the divergence reaches records) —
+> bump for the live T channel. **And the v181 decoupling visibly worked:
+> the flag re-rolled NOTHING** (pre-v181 it would have re-rolled the whole
+> scenario). New general instrument: `tools/t-story-observe.mjs` (BASE vs
+> flags/movement, expects-survival check — supersedes the naica-specific
+> observer). REMAINING CLASSIFICATION (from the T-setter grep): marble
+> (700/500/350), deccan (200→80 ×5), radioactive_pegmatite (450→18 ×11)
+> are pegmatite-shape → observe-then-flag, one arc each, expect
+> near-neutral rebakes. `cooling` (events:[]) is pure naica-shape — a
+> declared Herkimer burial-T story. porphyry + epithermal: mixed/unmapped,
+> observe first.
+>
+> ## 🌡️ UPDATE (2026-06-10, earlier) — T-RECONCILIATION SHIPPED (SIM 181): ambient_cooling subsumed onto a dedicated thermal stream, full-fleet rebake, T-blocked scenarios OPEN
+>
+> The Movements master doc's #1 lever is DONE. `ambient_cooling`'s drift +
+> thermal-pulse draws (~2 shared draws/step in EVERY scenario, +1..6 per
+> pulse with SiO₂/Fe/Mn/flow/pH riders) moved off the shared rng onto
+> `sim._thermalRng` — run-seed-derived (85j `_makeThermalRng`: weather, not
+> geology — contrast the movement stream's shape_seed) and SCRAMBLED (bare
+> XOR left nearby seeds with correlated streams; the probe measured
+> tutorial pulse variance collapse to ±0.00 before the fix shipped). The
+> mechanic itself is UNCHANGED — same drift law, same state-dependent
+> fracture-valve pulse arrival — verified statistically by the new standing
+> instrument `tools/t-reconciliation-probe.mjs` (LIVE-vs-SHADOW fleet sweep
+> + multi-seed sentinel distributions). STAND-DOWN shipped with it: a
+> scenario movement on `temperature` owns T for its window (ambient
+> yields, resumes at endStep) — **naica (19 random pulses/run holding up
+> its "stable pool"!), both pegmatites, marble, porphyry, epithermal,
+> deccan, cooling are now open to declared thermal stories**, each its own
+> per-scenario arc with single-scenario rebake. Full-fleet rebake landed:
+> seed42_v181 + strip_digest_v181, 26/31 scenarios moved, assemblages
+> in-family (worst Jaccard 0.50 on the 3-crystal `pulse` scaffold), stale
+> count UNCHANGED at 2 (jeffrey magnetite + mottramite, the deliberate
+> arcs), dead 35→36 (borderliner flap, tremolite-class). Two
+> realization-lucky test pins converted to widened coverage checks (the
+> v135/v137 pattern): sicily native_sulfur (fires 15/16 seeds, threshold
+> ≥6/8) + sulphur-bank's cooling-event pin (now ambient-off via the knobs,
+> deterministic). New tools: t-reconciliation-probe.mjs +
+> baseline-diff.mjs (the rebake-review companion gen-js-baseline's header
+> always asked for). Tests 1787 → 1794.
+>
+> ## 🗿 UPDATE (2026-06-10, earlier) — SESSION HANDOFF: gates + narrators
+>
+> **`proposals/HANDOFF-GATES-AND-NARRATORS-2026-06-10.md`** is the handoff
+> for the 2026-06-10 second session (the redox round-trip gate, the
+> ring_fluids retirement + 14th catch, the §2.4 narrator afternoon, the
+> concurrent-session commit-title collision, and the Movements
+> re-orientation — the mvt pilot was ALREADY shipped+accepted; next real
+> Movements work is the T-RECONCILIATION sub-project, fresh session, fleet
+> rebake). Lessons 13–18 continue the prior handoff's twelve. CATCHES.md
+> holds FOURTEEN. Next builder: prior session's handoff first if cold
+> (HANDOFF-REVIEW-REBAKE-MUSIC-2026-06-10.md), then that one, then the
+> banners below.
+>
+> ## 📖 UPDATE (2026-06-10, earlier) — the §2.4 NARRATOR/SPEC AFTERNOON: 15 corrections, SIM-NEUTRAL
 >
 > Part II's next-step #3 is DONE. All 15 shippable rows of the review's
 > §2.4 table executed — wurtzite's 95°C "boundary" myth (equilibrium

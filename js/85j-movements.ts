@@ -50,6 +50,32 @@ function _makeMovementRng(vuggSeed: number, salt: number = _MOVEMENT_SALT): () =
   return _mulberry32((((vuggSeed | 0) ^ salt) >>> 0));
 }
 
+// Per-purpose salt for the THERMAL stream (ASCII "HEAT") — the ambient
+// drift + thermal-pulse mechanic subsumed off the shared rng (T-reconciliation,
+// 2026-06-10). Distinct from the movement salt so a scenario's declared
+// movement specs never displace the ambient thermal cascade and vice versa.
+const _THERMAL_SALT = 0x48454154;
+
+// The dedicated thermal stream for ambient_cooling (85d). Two deliberate
+// contrasts with _makeMovementRng above:
+//
+//   1. SEEDED FROM THE RUN, NOT THE CAVITY. Declared movements are GEOLOGY —
+//      same cavity, same trajectory (shape_seed). Ambient cooling is WEATHER —
+//      the default thermal noise a vug happens to experience, which should
+//      vary play-to-play like every other ambient draw. So it derives from
+//      `rng.state` captured at sim construction: a pure function of the run
+//      seed (reproducible — baselines + crystal-cipher safe), zero shared
+//      draws consumed, different per run seed.
+//   2. SCRAMBLED, NOT BARE-XOR. Nearby run seeds XOR a constant give nearby
+//      mulberry32 states whose early outputs correlate — measured in
+//      tools/t-reconciliation-probe.mjs as collapsed cross-seed variance
+//      (tutorial pulse count ±0.00, cooling meanT σ 10.8→2.7). One throwaway
+//      draw avalanches the states apart (σ recovers to live levels).
+function _makeThermalRng(sharedState: number): SeededRandom {
+  const scramble = new SeededRandom((((sharedState | 0) ^ _THERMAL_SALT) >>> 0));
+  return new SeededRandom(Math.floor(scramble.next() * 4294967296) >>> 0);
+}
+
 // SPATIAL origin (boss, 2026-06-01): a movement can originate at one
 // semi-random CELL and flow outward via the diffusion that already runs each
 // step (_diffuseRingState over mesh.cells[].fluid) — instead of applying

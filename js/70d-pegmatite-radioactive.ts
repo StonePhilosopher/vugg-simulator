@@ -35,6 +35,10 @@ function event_radioactive_pegmatite_final_cooling(c) {
 // --- schneeberg (Round 9e mechanic-coverage scenario, May 2026) ---
 function event_schneeberg_pegmatite_crystallization(c) {
   c.temperature = 350;
+  // v185: redox is now the declared fluid.Eh movement's sentence (steps
+  // 0-110); inside that window the Eh-canonical sync re-derives O2 every
+  // step, so this write is superseded (harmlessly — it matches the
+  // movement's −200 mV floor). Events keep the chemistry beats.
   c.fluid.O2 = 0.0;
   c.fluid.SiO2 = Math.max(c.fluid.SiO2, 6000);
   return 'The Schneeberg pegmatite differentiates. A reducing residual fluid floods the pocket with uranium, copper, iron, and arsenic. Uraninite grows as pitch-black masses; chalcopyrite plates as brassy disphenoids; arsenopyrite forms steel-gray rhombs. Bismuth is everywhere — Schneeberg\'s first ore was bismuth, three centuries before pitchblende became uranium.';
@@ -58,6 +62,12 @@ function event_schneeberg_cooling(c) {
 
 function event_schneeberg_cu_p_phase(c) {
   c.temperature = 25;
+  // v185: SUPERSEDED by the declared fluid.Eh movement — the meteoric
+  // front now arrives as a continuous ~8-step sulfide-buffer-exhaustion
+  // swing (steps 84→92) instead of this single-step flip. The event keeps
+  // its chemistry half (the P/As/Cu/Ca fork below); the movement is the
+  // redox sentence. (Inside the window the Eh-canonical sync overwrites
+  // O2 each step, so this write is dead — kept for the narrative record.)
   c.fluid.O2 = 1.5;
   c.fluid.pH = 6.0;
   c.flow_rate = 1.5;

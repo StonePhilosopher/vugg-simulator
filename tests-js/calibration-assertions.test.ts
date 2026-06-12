@@ -43,22 +43,32 @@ function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): 
 
 describe('v128 calibration assertions (proposal §4.1)', () => {
   describe('Assertion 1 — dioptase under graduated competition', () => {
-    it('dioptase fires somewhere under v128 (was 0 firings under fixed-order v125-v126)', () => {
-      // Proposal predicted schneeberg; v129 reality is bisbee (Cu-rich
-      // supergene scenario, geologically the more dioptase-appropriate
-      // setting). The qualitative claim — graduated competition lets
-      // dioptase fire at all — is what matters. v125 fixed-order probe
-      // produced zero firings (dioptase cascade displaced everything).
-      const targets = ['bisbee', 'schneeberg', 'supergene_oxidation'];
-      const firingScenarios: string[] = [];
-      for (const s of targets) {
-        const { species } = speciesIn(s);
-        if (species.has('dioptase')) firingScenarios.push(s);
-      }
+    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 120000 }, () => {
+      // The qualitative claim — graduated competition lets dioptase fire at
+      // ALL (v125 fixed-order produced zero firings, the cascade displaced
+      // everything) — is what matters; the proposal predicted schneeberg,
+      // v129 reality was bisbee (the geologically dioptase-appropriate
+      // Cu-supergene setting, and the ONLY scenario that ever grows it —
+      // measured: schneeberg + supergene_oxidation never fire it at any
+      // seed, both pre- and post-v186).
+      //
+      // v186 RETUNE (the v135/v137/v181 widen-the-brittle-pin pattern):
+      // the bisbee Eh-subsumption movement (the redox rollercoaster as a
+      // declared movement) shifted seed 42 specifically from a knife-edge
+      // 10.7µm dioptase crystal to a 0µm nucleation — dioptase had always
+      // been a single marginal crystal here, and seed 42 sat right on the
+      // grow/no-grow line. The CASCADE-FIX INTENT is unchanged: dioptase
+      // still fires in 4/8 bisbee seeds (13, 99, 2024, 3 at ~10-12µm) under
+      // v186. So assert the DISTRIBUTION (which encodes "graduated
+      // competition unblocked dioptase"), not seed 42's lucky realization.
+      // Floor ≥2/8 with measured headroom 4/8 — a real cascade re-block
+      // (the failure this guards) would zero ALL seeds, as v125 did.
+      const seeds = [42, 1, 7, 13, 99, 2024, 17, 3];
+      const fired = seeds.filter((seed) => speciesIn('bisbee', { seed }).species.has('dioptase'));
       expect(
-        firingScenarios.length,
-        `dioptase should fire in at least one Cu-rich supergene scenario. Fired in: ${firingScenarios.join(', ') || 'none'}`,
-      ).toBeGreaterThan(0);
+        fired.length,
+        `dioptase should grow in ≥2/8 bisbee seeds under graduated competition (v186 measured 4/8: 13,99,2024,3). Fired in: ${fired.join(', ') || 'none'} — zero would mean the v125 cascade re-blocked it`,
+      ).toBeGreaterThanOrEqual(2);
     });
   });
 

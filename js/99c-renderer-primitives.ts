@@ -1140,6 +1140,35 @@ const HABIT_TO_PRIMITIVE = {
   'botryoidal_or_rhombohedral':     PRIM_BOTRYOIDAL,
   'scalenohedral':                  PRIM_SCALENOHEDRON,
   'scalenohedral_or_rhombohedral':  PRIM_SCALENOHEDRON,
+  // Calcite-morphology arc Phase 2 (2026-06-11): σ-regime habit strings
+  // route to their parent-form primitives. EXPLICIT entries are load-
+  // bearing for the hopper pair: the 99d fuzzy fallback checks 'hopper'
+  // BEFORE 'rhomb'/'scalenohed' and would route calcite hoppers to
+  // PRIM_CUBE (cubic skeletal — wrong system for a carbonate).
+  'stepped_rhombohedral':           PRIM_RHOMBOHEDRON,
+  'stepped_scalenohedral':          PRIM_SCALENOHEDRON,
+  'hopper_rhombohedral':            PRIM_RHOMBOHEDRON,
+  'hopper_scalenohedral':           PRIM_SCALENOHEDRON,
+  'dendritic_rhombohedral':         PRIM_ACICULAR,
+  'dendritic_scalenohedral':        PRIM_ACICULAR,
+  // Morphology-generalization arc (2026-06-12): the halide cube family
+  // (halite/sylvite regime habits). stepped/hopper keep the CUBE parent
+  // primitive (here the 99d 'hopper'→cube fuzzy would actually be
+  // right, but explicit beats fuzzy); dendritic crusts go acicular like
+  // the calcite dendrites.
+  'stepped_cube':                   PRIM_CUBE,
+  'hopper_cube':                    PRIM_CUBE,
+  'dendritic_cube':                 PRIM_ACICULAR,
+  // Bismuth regime family (2026-06-12): lath fans + skeletal frames
+  // both read as spikes at primitive scale; arborescent_dendritic
+  // already routes via the dendritic fuzzy.
+  'feathery_bismuth':               PRIM_ACICULAR,
+  'skeletal_bismuth':               PRIM_ACICULAR,
+  // Pyrite striation overlay (2026-06-12): striated forms keep their
+  // parent primitives.
+  'striated_cubic':                 PRIM_CUBE,
+  'striated_pyritohedral':          PRIM_PYRITOHEDRON,
+  'striated_cubo_pyritohedral':     PRIM_PYRITOHEDRON,
   'prismatic':                      PRIM_HEX_PRISM_TERMINATED,
   'short_prismatic':                PRIM_HEX_PRISM,
   'striated_prism':                 PRIM_HEX_PRISM_TERMINATED,

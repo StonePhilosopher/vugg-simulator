@@ -19,6 +19,15 @@ class VugSimulator {
   constructor(conditions, events) {
     this.conditions = conditions;
     this._startTemp = conditions.temperature; // remember initial T for thermal pulse ceiling
+    // T-RECONCILIATION (2026-06-10, SIM 181): the ambient drift + thermal-pulse
+    // draws in ambient_cooling (85d) come from this DEDICATED stream, not the
+    // shared `rng` — so the thermal history no longer displaces the nucleation
+    // cascade, and a scenario declaring its own `temperature` movement (85j)
+    // can take over T without ambient pulses fighting it. Seeded from
+    // rng.state (run-seed lineage, read-only — capturing state consumes no
+    // draw); see _makeThermalRng (85j) for the weather-not-geology rationale
+    // and the seed-scramble requirement.
+    this._thermalRng = _makeThermalRng(rng.state);
     this.events = (events || []).slice().sort((a, b) => a.step - b.step);
     this.crystals = [];
     this.crystal_counter = 0;
@@ -726,6 +735,14 @@ class VugSimulator {
     // fluid.Eh (so the movement's Eh is what the strip shows).
     this._syncRedoxEh(this._movements
       ? this._movements.drivesFieldAt('Eh', this.step) : false);
+
+    // Morphology classification (registry hoist 2026-06-12; calcite arc
+    // Phase 0 originally) — tag this step's zones for every mineral in
+    // MORPH_TH from the POST-STEP σ (the calibrated basis; see
+    // js/45-morphology.ts for the 18th-catch sampling-basis note).
+    // Pure metadata pass: no rng, no fluid mutation — byte-identical
+    // chemistry.
+    classifyMorphologyStep(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

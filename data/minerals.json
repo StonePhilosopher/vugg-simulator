@@ -424,7 +424,8 @@
         "porphyry",
         "reactive_wall",
         "radioactive_pegmatite",
-        "supergene_oxidation"
+        "supergene_oxidation",
+        "elmwood"
       ],
       "T_range_C": [
         0,

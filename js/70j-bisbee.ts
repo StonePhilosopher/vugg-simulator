@@ -8,6 +8,16 @@
 
 
 // --- bisbee (Warren Mining District, AZ — Cu porphyry + supergene + azurite/malachite/chrysocolla cascade) ---
+//
+// v186 EVENT-SUBSUMPTION: redox is now the declared fluid.Eh movement's
+// sentence (steps 0→305, see scenarios.json5). Inside that window the
+// Eh-canonical sync re-derives O2 from the movement every step, so EVERY
+// `c.fluid.O2 = …` write in the handlers below (primary_cooling 0.08
+// through silica_seep 1.3) is SUPERSEDED — kept for the narrative record
+// + as the post-window fallback shape. The events still own their
+// chemistry beats (Cu/S/CO3/pH/T/fluid_surface_ring); only O2 is the
+// movement's. final_drying (step 305) is the window's END — its O2:1.0 +
+// full drain are the vadose handoff, where air takes redox back.
 function event_bisbee_primary_cooling(c) {
   c.temperature = 320;
   c.fluid.SiO2 += 100;
