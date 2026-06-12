@@ -1943,6 +1943,89 @@
       ]
     },
 
+    "wittichen": {
+      "anchor": "Kloster Wittichen, Schwarzwald (Black Forest), Baden-Württemberg, Germany — the classic Bi-Co-Ni-Ag-As-(Ba) five-element vein district; cobalt-pigment + silver mining boom 1730s–40s around the convent. Sophia and Johann-Georg veins.",
+      "description": "A five-element vein in granite basement: hot, saline, SULFUR-STARVED brine carries Bi + Co + Ni + Ag + As. S ~3 ppm is load-bearing — bismuthinite and acanthite never gate open, so the metals stay NATIVE and arsenides are the metal sinks. Hot stage grows skutterudite + nickeline rosettes (320–420°C); cooling brings the fluid into bismuth's window; then the deposit-defining REDUCING SHOCK (hydrocarbon influx along the fault — the declared fluid.Eh pulse) slams native-metal σ to its structural ceiling and bismuth precipitates as ARBORESCENT DENDRITES, safflorite riming the fresh branches (its T window overlaps the shock). Late meteoric water brings oxidized sulfate (barite stage) and carbonate gangue seals the dendrites into the vein — the cross-section hand specimen of the class.",
+      "expects_species": ["skutterudite", "nickeline", "safflorite", "native_bismuth", "native_arsenic", "native_silver", "proustite", "acanthite", "calcite", "aragonite", "erythrite", "barite"],
+      "duration_steps": 160,
+      "notes": [
+        "Anchor + mechanism: Kissin 1992 (Canadian Mineralogist 30) defines the five-element class; Burisch et al. 2017 (Geology 45) ties the native-metal stage to methane/hydrocarbon influx — fluid inclusions in Schwarzwald five-element veins carry CH4 exactly at the dendrite stage, and the reduction is fast (hours-to-days), which is WHY the metals dendrite. Scharrer, Kreissl & Markl 2019 (Ore Geology Reviews) survey the assemblage diversity; Staude et al. 2012 (Mineralium Deposita 47) give the Schwarzwald basement-brine fluid-inclusion record (20–26 wt% NaCl, 150–340°C) this broth is anchored on.",
+        "The redox shock is a DECLARED fluid.Eh movement (event-subsumption discipline, v185/v186): base −20 mV (mildly reducing basement brine), ONE deep pulse (amp −320) at u=0.58 (the CH4 influx; width ~8 steps; measured floor ~−253 mV at seed 42), and a late oxidizing trend (+95 ease — meteoric tail, tuned DOWN from +140 which dissolved the arsenide suite; a stronger late-oxidation finger was tried and reverted for the same reason — barite/erythrite are the documented aspirational casualties of arsenide survival). The wittichen_hydrocarbon_influx event at the pulse center is NARRATIVE-ONLY (no fluid writes).",
+        "Engine fit: this is the morphology registry's dendrite-band tenant (MORPH_TH.native_bismuth, SIM 188 — RESEARCH-bismuth-morphology-2026-06-12.md). At the shock, Bi σ ≈ bi_f 3.0 × s_mask 0.96 × red_f 1.5 × T_f 1.0 ≈ 4.3 — the dendritic band (≥3.8) of a scale structurally capped at ~4.5. Pre-shock cooling-stage Bi sits in the feathery bands; post-shock regrowth heals feathery over the dendrites, so the zone stack RECORDS the shock (the narrator's healed-over paragraph + the bismuth_morph strip chip slamming 0→4 on the pulse). Skutterudite + safflorite get their FIRST scenario home here (both were expects-orphans fleet-wide).",
+        "Wallrock: 'pegmatite' composition as the granite proxy (inert silicate — Wittichen veins cut Triberg granite; the carbonate gangue arrives in the FLUID via the late CO3 event, not from wall dissolution). Architecture tabular (vein-bounded), pocket size class, shape_seed 1736 (the cobalt-boom decade).",
+        "Calibration target: the hand specimen is silver-white dendritic Bi embedded in white carbonate with gray arsenide rims, read in cross-section. MEASURED at seeds 42-45 (calibration session, 2026-06-12): native_bismuth 3-5 alive with 45-49% DENDRITIC zone mass (the shock recorded); skutterudite 2 + safflorite 2 + nickeline 4 + native_arsenic 4 all ALIVE; native_silver grows then sulfidizes to acanthite 4 at the meteoric-sulfate stage (the tarnish story — hand-specimen Wittichen silver is acanthite-coated); proustite 2 (ruby silver); calcite + aragonite gangue. ASPIRATIONAL (v107 honesty): barite + erythrite — both need late oxidation the living arsenide suite cannot survive; vugg-tune-scenario follow-up (a spatially-partial oxidation, or barite as its own vein-top stage). Bi band edges re-pinned against this trajectory (js/45 — the activity correction at salinity 24 compresses the structural ~4.5 ceiling to ~2.4 measured)."
+      ],
+      "movements": [
+        {
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 160,
+          "base": 340,
+          "ops": [
+            { "kind": "trend", "amp": -190, "ease": true }
+          ]
+        },
+        {
+          "field": "fluid.Eh",
+          "startStep": 0,
+          "endStep": 160,
+          "base": -20,
+          "ops": [
+            { "kind": "pulse", "amp": -320, "center": 0.58, "width": 0.05 },
+            { "kind": "trend", "amp": 95, "ease": true }
+          ]
+        }
+      ],
+      "initial": {
+        "temperature_C": 340.0,
+        "pressure_kbar": 0.9,
+        "fluid": {
+          "SiO2": 80,
+          "Ca": 250,
+          "CO3": 45,
+          "Mg": 20,
+          "Fe": 10,
+          "Mn": 3,
+          "Bi": 50,
+          "Co": 35,
+          "Ni": 20,
+          "As": 120,
+          "Ag": 12,
+          "Ba": 24,
+          "Sr": 4,
+          "S": 3,
+          "Na": 120,
+          "K": 40,
+          "Cl": 400,
+          "F": 3,
+          "O2": 0.15,
+          "pH": 6.2,
+          "salinity": 24
+        },
+        "wall": {
+          "composition": "pegmatite",
+          "reactivity": 0,
+          "architecture": "tabular",
+          "size_class": "pocket",
+          "primary_bubbles": 3,
+          "secondary_bubbles": 6,
+          "shape_seed": 1736
+        }
+      },
+      "events": [
+        { "step": 93, "type": "wittichen_hydrocarbon_influx", "name": "Hydrocarbon Influx", "description": "CH4-bearing fluid floods the vein — the reducing shock arrives (narrative marker; the declared Eh movement carries the chemistry)" },
+        { "step": 134, "type": "wittichen_meteoric_sulfate", "name": "Meteoric Sulfate", "description": "Cooled meteoric water brings oxidized sulfate — the barite stage" },
+        { "step": 142, "type": "wittichen_carbonate_gangue", "name": "Carbonate Gangue", "description": "CO3 + Ca influx — calcite seals the dendrites into the vein" }
+      ],
+      "sources": [
+        "Kissin S.A. 1992, Canadian Mineralogist 30 — Five-element (Ni-Co-As-Ag-Bi) veins: the deposit-class review",
+        "Burisch M., Walter B.F., Gerdes A., Lanz M., Markl G. 2017, Geology 45 — Methane and the origin of five-element veins (the hydrocarbon reduction trigger)",
+        "Scharrer M., Kreissl S., Markl G. 2019, Ore Geology Reviews — The mineralogical variability of hydrothermal native element-arsenide associations",
+        "Staude S., Bons P.D., Markl G. 2012, Mineralium Deposita 47 — Schwarzwald hydrothermal veins: fluid inclusion record, 20-26 wt% NaCl basement brines",
+        "Markl G. et al. 2016 — Cobalt (Ontario) arsenide zoning, X_As 0.96-0.99 (the skutterudite engine's anchor citation)",
+        "Kloster Wittichen district history — cobalt-blue pigment + silver boom, 1730s-1740s (shape_seed 1736)"
+      ]
+    },
     "colorado_plateau": {
       "anchor": "Uravan Mineral Belt, Colorado Plateau — sandstone-hosted roll-front uranium-vanadium deposits (Triassic-Jurassic Morrison Formation). Includes the Carnotite-Eldorado, Uravan, and Moab districts; the V+U bonanza that drove the early-twentieth-century uranium industry decades before the Manhattan Project.",
       "description": "Uravan Mineral Belt sandstone roll-front uranium-vanadium deposit (Roc Creek, Montrose County, CO — carnotite type locality, Friedel & Cumenge 1899). Oxidizing groundwater carries U + V + K + Ca through Triassic-Jurassic Morrison Formation sandstones until it meets a reducing barrier (petrified wood, carbonaceous shale), where the metals drop out as bright canary-yellow uranyl-vanadate crusts. Carnotite + tyuyamunite are the two diagnostic species — interconvertible by cation exchange, drawn apart by whichever of K/Ca dominates the local pore fluid.",

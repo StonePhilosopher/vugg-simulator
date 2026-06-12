@@ -67,13 +67,13 @@ describe('bismuth morphology registry (tenant three)', () => {
     expect(morphSurfaceSigma(th, 4.2, 50000)).toBeCloseTo(4.2, 9);
   });
 
-  it('band placement: fleet truth + the shock band', () => {
+  it('band placement: fleet truth + the shock band (re-pinned to wittichen measured trajectory)', () => {
     const th = MORPH_TH.native_bismuth;
-    expect(morphRegime(th, 1.32)).toBe('spiral_smooth');   // schneeberg plateau max
-    expect(morphRegime(th, 2.0)).toBe('stepped_mild');     // feathery
-    expect(morphRegime(th, 2.6)).toBe('stepped_macro');    // feather/skeletal
-    expect(morphRegime(th, 3.4)).toBe('hopper_skeletal');  // melt territory
-    expect(morphRegime(th, 4.2)).toBe('dendritic');        // the reduction shock
+    expect(morphRegime(th, 1.32)).toBe('spiral_smooth');   // schneeberg plateau max — unchanged claim
+    expect(morphRegime(th, 1.7)).toBe('stepped_mild');     // wittichen cooling ramp → feathery
+    expect(morphRegime(th, 2.0)).toBe('stepped_macro');    // the ramp's driven top → feather bismuth
+    expect(morphRegime(th, 2.2)).toBe('hopper_skeletal');  // the transition sliver
+    expect(morphRegime(th, 2.27)).toBe('dendritic');       // the CH4-shock plateau (measured σ ceiling under brine activity)
   });
 });
 

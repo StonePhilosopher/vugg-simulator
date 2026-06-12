@@ -2,6 +2,53 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🌳 UPDATE (2026-06-12, latest) — MORPHOLOGY GENERALIZATION: registry + three tenants + WITTICHEN (SIM 189)
+>
+> The calcite arc's classifier became the MORPHOLOGY REGISTRY
+> (js/45-morphology.ts) and the boss's wish-list started shipping the
+> same night, eight commits: **registry hoist** (`b6ba453`,
+> byte-identical — calcite is MORPH_TH.calcite, 100% map agreement,
+> baselines untouched); **morph-sigma-observe** (`a07b87d`) the GENERIC
+> per-mineral post-step σ survey instrument (one tool now serves every
+> list item); **halite + sylvite** (`90fac90`, sim-neutral) — the
+> salt-pan log (searles 67% banded / 33% hopper, 8/8-seed judge
+> tools/halide-hopper-observe.mjs; the ladder CORRECTED the legacy
+> in-step rule, which called bisbee's smooth supergene cubes hopper) +
+> NO-damping physics (convective brine, Berg effect — per-mineral knob)
+> + sparse-max digest reduction (first regen exposed the all-null
+> mid-ring averaging bug); **halide 3D render** (`2bbfd19`) grooved
+> cube ziggurats + funnel tops, with two verification catches (cube
+> habits token-routed to HEX PRISMS pre-fix — 'hopper_growth' had done
+> that silently since v27; terrace cache sig regime[0] collision);
+> **bismuth corrected ladder** (`adffa68`, SIM 188 — the old dispatch
+> ran ANTI-Sunagawa, massive at top σ / dendrite at bottom; rng-cascade
+> bump, measured 0/32 movers); **wittichen** (SIM 189) — the
+> five-element vein (Kissin 1992; Burisch 2017 CH4 reduction trigger):
+> declared Eh pulse −320 @ u 0.58, Bi σ plateaus at its
+> activity-compressed ceiling (2.27 measured vs ~4.5 dilute — band
+> edges re-pinned to the MEASURED trajectory), native Bi carries 39–49%
+> DENDRITIC zone mass at 8/8 seeds (tools/wittichen-dendrite-observe),
+> skutterudite + safflorite DE-ORPHANED (first scenario home),
+> native_silver→acanthite tarnish story, bismuth_morph chip
+> digest-pinned slamming 0→4 on the pulse. Research docs:
+> RESEARCH-halide-morphology-2026-06-12.md +
+> RESEARCH-bismuth-morphology-2026-06-12.md (the latter records the
+> overturned premise: schneeberg's v185 movement is the WEATHERING
+> direction — it correctly DESTROYS Bi; the shock needed a new
+> scenario).
+>
+> **OPEN (the rest of the boss's list, in order):** fluorite σ-ladder
+> riding elmwood (the REE {111} flip is the form axis already; makes
+> elmwood a two-mineral showcase); pyrite striations (terrace bands as
+> {100} face striations); copper dendrites (bisbee's −400 pulse) + the
+> gold nugget-at-top-σ conflation fix; quartz research doc (sceptre/
+> fenster/phantom — needs its own design pass). **Wittichen follow-ups:**
+> barite + erythrite aspirational (need late oxidation the living
+> arsenide suite can't survive — a spatially-partial oxidation or a
+> vein-top barite stage, vugg-tune-scenario); arborescent 3D render is
+> the acicular-spike fallback (a true dendrite tree geometry is its own
+> piece); morph-chip severity could join the sonifier (a dendrite bell?).
+
 > ## 🪜✅ UPDATE (2026-06-11, latest) — CALCITE MORPHOLOGY ARC SHIPPED, ALL SIX PHASES (SIM 187 + elmwood)
 >
 > The boss unblocked via goal directive ("follow the science") and the

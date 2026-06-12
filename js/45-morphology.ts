@@ -224,14 +224,24 @@ MORPH_TH.sylvite = {
 // BIGGEST masses (kg-scale Wismut sheets) — the halite inverse-argument
 // again. Hopper band kept for ladder completeness but expected empty:
 // the rainbow funnel is MELT growth (271°C mp), not hydrothermal.
+// Edges RE-PINNED 2026-06-12 against wittichen's measured seed-42
+// trajectory (the §5 calibration pass, same session): the ~4.5
+// structural cap is the DILUTE ceiling — at a real five-element
+// basement brine (salinity 24, Staude 2012) the ACTIVITY CORRECTION
+// compresses it to ~2.4 in practice. Measured: cooling-ramp Bi runs
+// 1.6–2.0 (feathery), the CH4-shock plateau sits flat at 2.27 for ~8
+// steps (the σ ceiling under brine activity = the dendrite moment),
+// schneeberg's quiet plateau stays ≤1.32 (smooth — unchanged claim).
+// Original provisional edges (1.5/2.2/3.0/3.8) were placed before any
+// scenario could occupy the upper bands; these are the measured ones.
 MORPH_TH.native_bismuth = {
   SIZE_HALF_UM: Infinity,
   SIZE_DAMP_CAP_UM: Infinity,
-  SPIRAL_MAX: 1.5,       // < this → massive/foliated (+ rare crystal dice-roll)
-  STEP_MILD_MAX: 2.2,    // feathery laths, growth-banded foliation
-  STEP_MACRO_MAX: 3.0,   // coarsely skeletal ("feather bismuth")
-  HOPPER_MAX: 3.8,       // skeletal frames (expected unoccupied — melt territory)
-  // ≥ 3.8 → arborescent dendritic — THE five-element reduction-shock texture
+  SPIRAL_MAX: 1.4,       // < this → massive/foliated (+ rare crystal dice-roll); schneeberg ≤1.32 lives here
+  STEP_MILD_MAX: 1.8,    // feathery laths (wittichen cooling ramp 1.6–1.8)
+  STEP_MACRO_MAX: 2.1,   // feather bismuth (the ramp's driven top, 1.8–2.1)
+  HOPPER_MAX: 2.25,      // skeletal sliver (transition into the shock)
+  // ≥ 2.25 → arborescent dendritic — the CH4-shock plateau (2.27 measured)
   sigma(conditions: any): number { return conditions.supersaturation_native_bismuth(); },
   form(_conditions: any): string { return 'native'; },
 };

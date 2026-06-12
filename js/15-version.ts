@@ -10722,5 +10722,54 @@
 //
 //   BASELINE: rebake. Expected mover: schneeberg only — inspect the
 //   diff against that prediction.
-const SIM_VERSION = 188;
+//
+// v189 (2026-06-12) — WITTICHEN: the five-element vein, the dendrite
+//                     band's first tenant. New scenario (33rd) +
+//                     measured Bi band-edge re-pin. The morphology
+//                     generalization arc's bismuth payoff.
+//
+//   Kloster Wittichen, Schwarzwald — the classic Bi-Co-Ni-Ag-As-(Ba)
+//   association (Kissin 1992), cobalt-pigment + silver boom 1730s–40s.
+//   S-STARVED basement brine (S 3 ppm — load-bearing: bismuthinite +
+//   acanthite never gate open, metals stay NATIVE, arsenides are the
+//   metal sinks — the deposit class's existence condition writes
+//   itself out of the engine gates). Declared movements: T trend
+//   340→150 ease; fluid.Eh base −20 with ONE deep pulse (amp −320 @
+//   u 0.58, ~8 steps — the Burisch 2017 CH4 influx) + late +95 ease
+//   meteoric tail (tuned DOWN from +140, which dissolved the arsenide
+//   suite; a +100 late-oxidation finger was tried and reverted for the
+//   same reason — barite + erythrite ship as documented-aspirational
+//   casualties of arsenide survival, vugg-tune-scenario follow-up).
+//
+//   PARAGENESIS (measured at seeds 42–45, stable):
+//     hot stage (340–280°C) — skutterudite ×2 + nickeline ×4 rosettes
+//     cooling (280–230)     — safflorite ×2; Bi enters its T window,
+//                             feathery bands (σ 1.6–2.1)
+//     THE SHOCK (u 0.58, T~222) — Eh floor −253 mV measured; Bi σ
+//                             plateaus at 2.27 for ~8 steps → DENDRITE
+//                             zones; native_silver rides the shock
+//     meteoric tail         — S 30 sulfidizes the silver → acanthite
+//                             ×4 (the tarnish story; hand-specimen
+//                             Wittichen silver is acanthite-coated);
+//                             proustite ×2 (ruby silver); CO3 + pH 7.3
+//                             event → calcite + aragonite gangue seal
+//   Result: native_bismuth 3–5 alive carrying 45–49% DENDRITIC zone
+//   mass — the reduction shock recorded in crystal shape, readable in
+//   the zone modal, the bismuth_morph strip chip (digest-pinned: the
+//   ordinal slams 0→4 on the pulse), and the narrator's healed-over
+//   paragraph. Skutterudite + safflorite DE-ORPHANED (first scenario
+//   home fleet-wide).
+//
+//   BAND-EDGE RE-PIN (the research doc §5 calibration pass): Bi's
+//   structural σ cap (~4.5 dilute) compresses to ~2.4 MEASURED under
+//   the salinity-24 activity correction. Edges moved from provisional
+//   1.5/2.2/3.0/3.8 to measured 1.4/1.8/2.1/2.25 — schneeberg's quiet
+//   plateau (≤1.32) stays smooth, wittichen's cooling ramp is the
+//   feathery band, the shock plateau is the dendrite. The locality is
+//   the authority; the provisional numbers were scaffolding.
+//
+//   BASELINE: rebake. Expected: wittichen additive; schneeberg moves
+//   ONLY in morph tags if at all (band re-pin is below its 1.32 max →
+//   no change predicted); everything else byte-identical.
+const SIM_VERSION = 189;
 

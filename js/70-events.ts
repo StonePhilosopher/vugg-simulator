@@ -335,6 +335,14 @@ const EVENT_REGISTRY = {
   // directive (handled centrally in apply_events). See js/70t-reactivated-vein.ts.
   reactivated_vein_seal: event_reactivated_vein_seal,
   reactivated_vein_breach: event_reactivated_vein_breach,
+  // 2026-06-12 — wittichen five-element vein (v189): the reduction-shock
+  // dendrite showcase. The redox shock itself is a DECLARED fluid.Eh
+  // movement (event-subsumption discipline — handlers carry only the
+  // non-redox late-stage beats + one narrative-only shock marker). See
+  // js/70u-wittichen.ts for the paragenesis header.
+  wittichen_hydrocarbon_influx: event_wittichen_hydrocarbon_influx,
+  wittichen_meteoric_sulfate: event_wittichen_meteoric_sulfate,
+  wittichen_carbonate_gangue: event_wittichen_carbonate_gangue,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and

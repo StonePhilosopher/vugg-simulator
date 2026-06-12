@@ -32,6 +32,11 @@ export const STRIP_DIGEST_SCENARIOS = [
   // reset to 1.0 on the fresh_pulse flood); a regression to the one-way
   // ratchet would move the wall samples and trip this tripwire.
   'searles_lake',
+  // wittichen (v189): the five-element reduction shock. Its digest pins
+  // the bismuth_morph chip slamming the Sunagawa ordinal to 4 on the
+  // CH4 Eh pulse — the dendrite moment as a trajectory tripwire (the
+  // morphology registry's only dendrite-band tenant).
+  'wittichen',
   // supergene_oxidation (Tsumeb gossan): a clean, cold, oxidizing supergene
   // trajectory — the acid window (pH dip), the carbonate ramp (DIC), calcite
   // undersaturation. NOT bisbee: bisbee's T is contaminated by the ungated
@@ -75,6 +80,9 @@ export const STRIP_DIGEST_CHIPS = [
   // (sabkha hopper, travertine/mvt smooth) that were previously only
   // test-pinned at end-state.
   'calcite_morph', 'halite_morph', 'sylvite_morph',
+  // v189: bismuth_morph joins with its first tenant (wittichen) — the
+  // digest pins the ordinal slamming to 4 on the CH4 reduction pulse.
+  'bismuth_morph',
 ];
 
 const SAMPLE_COUNT = 8;
@@ -111,7 +119,7 @@ function seriesAt(ds, chipId, depth, deps) {
 // SEVEREST regime visible ANYWHERE per step — max over angle × height —
 // which is the pan pulse itself (banded 1 ↔ hopper 3 on the wet/dry
 // concentration spikes).
-const STRIP_DIGEST_SPARSE_MAX_CHIPS = new Set(['calcite_morph', 'halite_morph', 'sylvite_morph']);
+const STRIP_DIGEST_SPARSE_MAX_CHIPS = new Set(['calcite_morph', 'halite_morph', 'sylvite_morph', 'bismuth_morph']);
 
 function seriesMaxAt(ds, chipId, depth, deps) {
   const { stripDataIndex, stripDequantize } = deps;

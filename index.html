@@ -2949,6 +2949,7 @@ footer a:hover {
     <button onclick="startScenarioInCreative('deccan_zeolite')">🔷 Deccan Apophyllite Vesicle — Nashik / Aurangabad (Maharashtra, India).</button>
     <button onclick="startScenarioInCreative('sabkha_dolomitization')">🌊 Coorong Cycled Dolomite (Kim 2023) — Coorong lagoon (South Australia).</button>
     <button onclick="startScenarioInCreative('schneeberg')">☢️ Schneeberg Oxidized U-Pegmatite — Erzgebirge (Saxony, Germany). Type locality for torbernite + zeunerite + uranospinite.</button>
+    <button onclick="startScenarioInCreative('wittichen')">🌳 Wittichen Five-Element Vein — Schwarzwald (Germany). A hydrocarbon reducing shock grows dendritic native bismuth; arsenides rim the trees.</button>
     <button onclick="startScenarioInCreative('colorado_plateau')">🌵 Colorado Plateau Roll-Front — Uravan Mineral Belt (Roc Creek, Montrose Co., CO). Carnotite + tyuyamunite type chemistry.</button>
     <button onclick="startScenarioInCreative('sulphur_bank')">🌋 Sulphur Bank Hg Hot Spring — Clear Lake (Lake County, CA). Active hot-spring mercury-sulfur deposit per White &amp; Roberson 1962.</button>
     <button onclick="startScenarioInCreative('sicily_solfifera')">🟡 Sicily Solfifera Sulfur — Cianciana / Caltanissetta (Agrigento, Italy). Messinian bacterially-mediated sedimentary sulfur.</button>
@@ -3056,6 +3057,7 @@ footer a:hover {
       <option value="deccan_zeolite">deccan_zeolite</option>
       <option value="sabkha_dolomitization">sabkha_dolomitization</option>
       <option value="schneeberg">schneeberg</option>
+      <option value="wittichen">wittichen</option>
       <option value="colorado_plateau">colorado_plateau</option>
       <option value="sulphur_bank">sulphur_bank</option>
       <option value="sicily_solfifera">sicily_solfifera</option>
@@ -3900,6 +3902,7 @@ Scenarios:
           <option value="supergene_oxidation">Supergene Oxidation (Tsumeb)</option>
           <option value="tn457_barite_pulses">TN457 Barite Pulses (Cumbria)</option>
           <option value="ultramafic_supergene">Marlborough Ultramafic Supergene</option>
+          <option value="wittichen">Wittichen Five-Element Vein</option>
           <option value="zoned_dripstone_cave">Zoned Dripstone Cave</option>
         </select>
       </div>
@@ -15816,7 +15819,56 @@ let timeScale = 5.0;
 //
 //   BASELINE: rebake. Expected mover: schneeberg only — inspect the
 //   diff against that prediction.
-const SIM_VERSION = 188;
+//
+// v189 (2026-06-12) — WITTICHEN: the five-element vein, the dendrite
+//                     band's first tenant. New scenario (33rd) +
+//                     measured Bi band-edge re-pin. The morphology
+//                     generalization arc's bismuth payoff.
+//
+//   Kloster Wittichen, Schwarzwald — the classic Bi-Co-Ni-Ag-As-(Ba)
+//   association (Kissin 1992), cobalt-pigment + silver boom 1730s–40s.
+//   S-STARVED basement brine (S 3 ppm — load-bearing: bismuthinite +
+//   acanthite never gate open, metals stay NATIVE, arsenides are the
+//   metal sinks — the deposit class's existence condition writes
+//   itself out of the engine gates). Declared movements: T trend
+//   340→150 ease; fluid.Eh base −20 with ONE deep pulse (amp −320 @
+//   u 0.58, ~8 steps — the Burisch 2017 CH4 influx) + late +95 ease
+//   meteoric tail (tuned DOWN from +140, which dissolved the arsenide
+//   suite; a +100 late-oxidation finger was tried and reverted for the
+//   same reason — barite + erythrite ship as documented-aspirational
+//   casualties of arsenide survival, vugg-tune-scenario follow-up).
+//
+//   PARAGENESIS (measured at seeds 42–45, stable):
+//     hot stage (340–280°C) — skutterudite ×2 + nickeline ×4 rosettes
+//     cooling (280–230)     — safflorite ×2; Bi enters its T window,
+//                             feathery bands (σ 1.6–2.1)
+//     THE SHOCK (u 0.58, T~222) — Eh floor −253 mV measured; Bi σ
+//                             plateaus at 2.27 for ~8 steps → DENDRITE
+//                             zones; native_silver rides the shock
+//     meteoric tail         — S 30 sulfidizes the silver → acanthite
+//                             ×4 (the tarnish story; hand-specimen
+//                             Wittichen silver is acanthite-coated);
+//                             proustite ×2 (ruby silver); CO3 + pH 7.3
+//                             event → calcite + aragonite gangue seal
+//   Result: native_bismuth 3–5 alive carrying 45–49% DENDRITIC zone
+//   mass — the reduction shock recorded in crystal shape, readable in
+//   the zone modal, the bismuth_morph strip chip (digest-pinned: the
+//   ordinal slams 0→4 on the pulse), and the narrator's healed-over
+//   paragraph. Skutterudite + safflorite DE-ORPHANED (first scenario
+//   home fleet-wide).
+//
+//   BAND-EDGE RE-PIN (the research doc §5 calibration pass): Bi's
+//   structural σ cap (~4.5 dilute) compresses to ~2.4 MEASURED under
+//   the salinity-24 activity correction. Edges moved from provisional
+//   1.5/2.2/3.0/3.8 to measured 1.4/1.8/2.1/2.25 — schneeberg's quiet
+//   plateau (≤1.32) stays smooth, wittichen's cooling ramp is the
+//   feathery band, the shock plateau is the dendrite. The locality is
+//   the authority; the provisional numbers were scaffolding.
+//
+//   BASELINE: rebake. Expected: wittichen additive; schneeberg moves
+//   ONLY in morph tags if at all (band re-pin is below its 1.32 max →
+//   no change predicted); everything else byte-identical.
+const SIM_VERSION = 189;
 
 // ── 18-constants.js ──
 
@@ -31009,14 +31061,24 @@ MORPH_TH.sylvite = {
 // BIGGEST masses (kg-scale Wismut sheets) — the halite inverse-argument
 // again. Hopper band kept for ladder completeness but expected empty:
 // the rainbow funnel is MELT growth (271°C mp), not hydrothermal.
+// Edges RE-PINNED 2026-06-12 against wittichen's measured seed-42
+// trajectory (the §5 calibration pass, same session): the ~4.5
+// structural cap is the DILUTE ceiling — at a real five-element
+// basement brine (salinity 24, Staude 2012) the ACTIVITY CORRECTION
+// compresses it to ~2.4 in practice. Measured: cooling-ramp Bi runs
+// 1.6–2.0 (feathery), the CH4-shock plateau sits flat at 2.27 for ~8
+// steps (the σ ceiling under brine activity = the dendrite moment),
+// schneeberg's quiet plateau stays ≤1.32 (smooth — unchanged claim).
+// Original provisional edges (1.5/2.2/3.0/3.8) were placed before any
+// scenario could occupy the upper bands; these are the measured ones.
 MORPH_TH.native_bismuth = {
     SIZE_HALF_UM: Infinity,
     SIZE_DAMP_CAP_UM: Infinity,
-    SPIRAL_MAX: 1.5, // < this → massive/foliated (+ rare crystal dice-roll)
-    STEP_MILD_MAX: 2.2, // feathery laths, growth-banded foliation
-    STEP_MACRO_MAX: 3.0, // coarsely skeletal ("feather bismuth")
-    HOPPER_MAX: 3.8, // skeletal frames (expected unoccupied — melt territory)
-    // ≥ 3.8 → arborescent dendritic — THE five-element reduction-shock texture
+    SPIRAL_MAX: 1.4, // < this → massive/foliated (+ rare crystal dice-roll); schneeberg ≤1.32 lives here
+    STEP_MILD_MAX: 1.8, // feathery laths (wittichen cooling ramp 1.6–1.8)
+    STEP_MACRO_MAX: 2.1, // feather bismuth (the ramp's driven top, 1.8–2.1)
+    HOPPER_MAX: 2.25, // skeletal sliver (transition into the shock)
+    // ≥ 2.25 → arborescent dendritic — the CH4-shock plateau (2.27 measured)
     sigma(conditions) { return conditions.supersaturation_native_bismuth(); },
     form(_conditions) { return 'native'; },
 };
@@ -41176,6 +41238,14 @@ const EVENT_REGISTRY = {
     // directive (handled centrally in apply_events). See js/70t-reactivated-vein.ts.
     reactivated_vein_seal: event_reactivated_vein_seal,
     reactivated_vein_breach: event_reactivated_vein_breach,
+    // 2026-06-12 — wittichen five-element vein (v189): the reduction-shock
+    // dendrite showcase. The redox shock itself is a DECLARED fluid.Eh
+    // movement (event-subsumption discipline — handlers carry only the
+    // non-redox late-stage beats + one narrative-only shock marker). See
+    // js/70u-wittichen.ts for the paragenesis header.
+    wittichen_hydrocarbon_influx: event_wittichen_hydrocarbon_influx,
+    wittichen_meteoric_sulfate: event_wittichen_meteoric_sulfate,
+    wittichen_carbonate_gangue: event_wittichen_carbonate_gangue,
 };
 // Minimal JSONC parser — strips // line + /* */ block comments and
 // trailing commas, then JSON.parse. Sufficient for our spec files; not
@@ -43126,6 +43196,73 @@ function event_reactivated_vein_breach(c) {
     c.fluid.CO3 = Math.min(320, c.fluid.CO3 + 130); // carbonate spike → late calcite
     c.flow_rate = 0.4; // plumbing reopened, flow resumes
     return `Tectonic reactivation breaches the feeder — a cooler fresh pulse (F +16, CO3 +130) at T ${c.temperature.toFixed(0)}°C; gen-2 fluorite + calcite.`;
+}
+
+// ── 70u-wittichen.js ──
+
+// ============================================================
+// js/70u-wittichen.ts — Wittichen five-element vein event handlers
+// ============================================================
+// Scenario: `wittichen` (v189) — Kloster Wittichen, Schwarzwald, Germany.
+// The classic Bi-Co-Ni-Ag-As-(Ba) "five-element" vein association
+// (Kissin 1992's class), mined for cobalt pigment + silver in the
+// 1730s–40s boom around the convent. Markl-group home turf — the
+// skutterudite engine's own Cobalt-Canada/Markl citation describes the
+// texture this scenario exists to grow: zoned arsenide rosettes ON
+// native Bi-Ag cores.
+//
+// THE MECHANISM (why this deposit class exists at all): a hot, saline,
+// S-STARVED basement brine carries Bi/Co/Ni/Ag/As. Sulfur starvation is
+// load-bearing — with S ~3 ppm, bismuthinite and acanthite never gate
+// open, so the metals stay NATIVE and the arsenides (not sulfides) are
+// the metal sinks. The deposit-defining moment is a REDUCING SHOCK:
+// hydrocarbon/methane influx along the fault (Burisch et al. 2017 —
+// fluid inclusions in Schwarzwald five-element veins carry CH4 exactly
+// at the native-metal stage; Scharrer, Kreissl & Markl 2019) crashes Eh
+// in hours-to-days. Native-metal σ slams to its structural ceiling and
+// the metals precipitate as DENDRITES — fast, branching, extreme-
+// disequilibrium growth that the morphology registry (js/45,
+// MORPH_TH.native_bismuth, SIM 188) now classifies and renders. The
+// arsenides rim the fresh dendrites (safflorite's T window overlaps the
+// shock), then carbonate + barite gangue seal the vein as cooling
+// meteoric water arrives.
+//
+// In the sim the shock is a DECLARED fluid.Eh movement (the
+// event-subsumption alphabet, v185/v186 — base mildly reducing, one
+// deep pulse, late oxidizing trend); the handlers below carry only the
+// LATE-STAGE chemistry beats that aren't redox:
+//   1. wittichen_hydrocarbon_influx — NARRATIVE-ONLY log marker at the
+//      shock step (no fluid writes; the movement owns the redox — the
+//      v185 lesson, never re-confound what subsumption separated).
+//   2. wittichen_meteoric_sulfate — cooled meteoric water brings
+//      oxidized sulfate: S 3 → 40 at T ~165°C. With the Eh trend now
+//      positive, barite gates open (Ba has been waiting in the broth
+//      since step 0). Geologically the vein-top barite stage.
+//   3. wittichen_carbonate_gangue — CO3 + Ca influx; calcite seals the
+//      vug. The hand-specimen truth of the class: silver-white Bi
+//      dendrites embedded IN white carbonate, read in cross-section.
+function event_wittichen_hydrocarbon_influx(c) {
+    // No chemistry — the declared fluid.Eh movement carries the shock.
+    // This marker exists so the step log narrates what the strip's Eh
+    // chip + bismuth_morph chip are about to show.
+    return `Hydrocarbon influx along the fault — CH₄-bearing fluid floods the vein. Eh is crashing (the declared redox movement); native-metal σ heads for its structural ceiling. Watch the bismuth.`;
+}
+function event_wittichen_meteoric_sulfate(c) {
+    // S +27 (not the +37 first tried): 40 ppm sulfidized ALL the native
+    // silver to acanthite in one stage; 30 leaves the conversion partial,
+    // which is the hand-specimen truth (acanthite-coated native silver).
+    c.fluid.S = Math.min(30, c.fluid.S + 27);
+    c.fluid.Ba = Math.max(c.fluid.Ba, 22); // keep the barite budget honest if earlier stages nibbled it
+    c.temperature = Math.min(c.temperature, 170);
+    return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over; the silver begins to tarnish.`;
+}
+function event_wittichen_carbonate_gangue(c) {
+    c.fluid.CO3 = Math.min(140, c.fluid.CO3 + 95);
+    c.fluid.Ca = Math.min(420, c.fluid.Ca + 160);
+    // Carbonate-buffered late water — without the pH shift calcite never
+    // opened at the first observation (pH 6.2 throughout the run).
+    c.fluid.pH = Math.min(7.4, c.fluid.pH + 1.1);
+    return `Carbonate gangue stage — CO₃ ${c.fluid.CO3.toFixed(0)}, Ca ${c.fluid.Ca.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. Calcite seals the dendrites into the vein: the cross-section specimen assembles itself.`;
 }
 
 // ── 75-transitions.js ──
