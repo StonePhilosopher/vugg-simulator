@@ -2,7 +2,7 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🌳 UPDATE (2026-06-12, latest) — MORPHOLOGY GENERALIZATION: registry + three tenants + WITTICHEN (SIM 189)
+> ## 🌳 UPDATE (2026-06-12, latest) — MORPHOLOGY GENERALIZATION ✅ COMPLETE (SIM 190) — master doc: **HANDOFF-MORPHOLOGY-GENERALIZATION-2026-06-12.md** (the ALL-MINERAL claims table §2 = the boss's verification worksheet; ninth-tenant recipe §3; traps §4). v190 = the verification pass's FIRST CATCH (mvt Joplin dogtooth — boss's eye beat 1861 tests; CATCHES v190).
 >
 > The calcite arc's classifier became the MORPHOLOGY REGISTRY
 > (js/45-morphology.ts) and the boss's wish-list started shipping the
