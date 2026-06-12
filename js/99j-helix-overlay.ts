@@ -142,12 +142,13 @@ type ChemParam = {
   // miscategorization smell I introduced when SI_selenite landed in
   // v165 and got lumped under 'carbonate' until I added an explicit fork.
   //   system: which legend group this chip belongs to ('wall'|'special'|
-  //           'carbonate'|'sulfate'|'ion'). Drives the strip-view selector
-  //           and helicoid legend section.
+  //           'carbonate'|'sulfate'|'halide'|'ion'). Drives the strip-view
+  //           selector and helicoid legend section. (Adding a group =
+  //           also add it to the `systems` array in 99k-strip-view.ts.)
   //   units:  display unit (e.g. '°C', 'log Ω', 'mg/L', 'ppm'). Read by
   //           strip-view tooltips + the dataset manifest's per-chip
   //           units field.
-  system?: 'wall' | 'special' | 'carbonate' | 'sulfate' | 'ion',
+  system?: 'wall' | 'special' | 'carbonate' | 'sulfate' | 'halide' | 'ion',
   units?: string,
   read: (sim: any, wall: any, ringIdx: number, cellIdx: number) => number | null | undefined,
 };
@@ -226,6 +227,8 @@ const _HELIX_FULL_NAMES: { [id: string]: string } = {
   pCO2:         'Equilibrium pCO₂ (bar)',
   f_ord:        'Dolomite ordering fraction (Kim 2023; 0=disordered, 1=ordered)',
   calcite_morph: 'Calcite growth regime at this spot (Sunagawa ordinal: 0 smooth spar · 1 stepped mild · 2 stepped macrostep · 3 hopper/skeletal · 4 dendritic)',
+  halite_morph: 'Halite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded/chevron · 2 macrostepped · 3 hopper/raft · 4 dendritic crust)',
+  sylvite_morph: 'Sylvite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded · 2 macrostepped · 3 hopper · 4 dendritic crust)',
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
   // v165 — Sulfate System section (PHREEQC wateq4f Ksp via 20d + 40b).
   // Strip is no longer SI-blind on the sulfate/evaporite family
@@ -550,17 +553,22 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   // 15° bin (±2 native cells of the sampled cell) — sparse BY DESIGN:
   // morphology is a property of the crystals, not the broth, so the
   // strip shows golden dashes exactly where stepped rock exists.
-  params.push({
-    id: 'calcite_morph', label: 'cal morph', fullName: _HELIX_FULL_NAMES.calcite_morph,
-    min: 0, max: 4, color: 0xF0D898,
-    system: 'carbonate', units: '',
+  // Morphology-generalization arc (2026-06-12): the calcite chip's read
+  // logic is now a factory — one morph chip per MORPH_TH-registered
+  // mineral, identical scan semantics (largest living tagged crystal of
+  // that mineral at ringIdx===i within ±2 native cells; severity ordinal
+  // on the SHARED MORPH_REGIMES scale, so chips compare across minerals).
+  const _morphChipParam = (mineral: string, id: string, label: string, color: number, system: any): ChemParam => ({
+    id, label, fullName: (_HELIX_FULL_NAMES as any)[id],
+    min: 0, max: 4, color,
+    system, units: '',
     read: (s, w, i, c) => {
       const crys = (s && Array.isArray(s.crystals)) ? s.crystals : null;
-      if (!crys || typeof CALCITE_MORPH_REGIMES === 'undefined') return null;
+      if (!crys || typeof MORPH_REGIMES === 'undefined') return null;
       const N = (w && w.cells_per_ring) || 120;
       let best: any = null, bestSize = -1;
       for (const cr of crys) {
-        if (!cr || cr.mineral !== 'calcite' || cr.dissolved || !cr._morphology) continue;
+        if (!cr || cr.mineral !== mineral || cr.dissolved || !cr._morphology) continue;
         const a = cr.wall_anchor;
         if (!a || a.ringIdx !== i) continue;
         const d = (((a.cellIdx - c) % N) + N) % N;
@@ -568,10 +576,17 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
         if (cr.total_growth_um > bestSize) { bestSize = cr.total_growth_um; best = cr; }
       }
       if (!best) return null;
-      const idx = CALCITE_MORPH_REGIMES.indexOf(best._morphology.regime);
+      const idx = MORPH_REGIMES.indexOf(best._morphology.regime);
       return idx >= 0 ? idx : null;
     },
   });
+  params.push(_morphChipParam('calcite', 'calcite_morph', 'cal morph', 0xF0D898, 'carbonate'));
+  // Halide morph chips (second registry wave). These co-pulse with the
+  // evaporite `concentration` chip by construction — the searles strip
+  // should show hopper ordinals exactly on the wet/dry spikes (the σ
+  // plateaus in RESEARCH-halide-morphology-2026-06-12.md §1).
+  params.push(_morphChipParam('halite', 'halite_morph', 'hal morph', 0xE8E8F8, 'halide'));
+  params.push(_morphChipParam('sylvite', 'sylvite_morph', 'syl morph', 0xF8D8E8, 'halide'));
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
   // v165 — SULFATE SYSTEM SI chips. 4 chips consuming the Ksp engine

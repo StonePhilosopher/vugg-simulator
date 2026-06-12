@@ -46,6 +46,16 @@ function _habitAspectRatio(habit: string): number {
       || habit === 'dendritic_rhombohedral') return 0.8;
   if (habit === 'stepped_scalenohedral' || habit === 'hopper_scalenohedral'
       || habit === 'dendritic_scalenohedral') return 0.5;
+  // Morphology-generalization arc (2026-06-12): the halide cube family.
+  // 'cubic' (and the legacy 'hopper_growth'/'hopper_cube' it replaces in
+  // the engines) always landed on the DEFAULT 0.5 — so the regime
+  // renames carry 0.5 EXPLICITLY, not the geometric cube's 1.0. Same
+  // keystone as the calcite families above: a habit rename must not
+  // move _volume_mm3 → a_width → vug fill → chemistry. (If cube aspect
+  // is ever corrected to 1.0, 'cubic' and this family must move
+  // TOGETHER, with a SIM bump + rebake.)
+  if (habit === 'stepped_cube' || habit === 'hopper_cube'
+      || habit === 'dendritic_cube') return 0.5;
   return 0.5;
 }
 
@@ -87,13 +97,16 @@ class GrowthZone {
     // tags — the SHAPE history recorded alongside the chemistry history.
     //   morph_regime:     'spiral_smooth' | 'stepped_mild' | 'stepped_macro'
     //                     | 'hopper_skeletal' | 'dendritic' (Sunagawa order)
-    //   morph_form:       'rhombohedral' | 'scalenohedral'
-    //   morph_surf_sigma: boundary-layer-damped surface σ the regime was
-    //                     classified from (post-step basis — 18th catch)
+    //   morph_form:       crystallographic form token ('rhombohedral' |
+    //                     'scalenohedral' | 'cube' | …, per mineral)
+    //   morph_surf_sigma: (damped) surface σ the regime was classified
+    //                     from (post-step basis — 18th catch)
     // Optional like dissolutionMode: written post-hoc by
-    // classifyCalciteMorphologyStep (js/52) at end of run_step; only
-    // calcite zones carry them today. Zone-stack consumers (strip chip,
-    // zone modal, the Phase 3 terrace geometry) read them when present.
+    // classifyMorphologyStep (js/45 registry — calcite was the first
+    // tenant, halite/sylvite the second wave) at end of run_step; only
+    // MORPH_TH-registered minerals' zones carry them. Zone-stack
+    // consumers (strip chips, zone modal, terrace geometry) read them
+    // when present.
     if (opts.morph_regime) this.morph_regime = opts.morph_regime;
     if (opts.morph_form) this.morph_form = opts.morph_form;
     if (opts.morph_surf_sigma != null) this.morph_surf_sigma = opts.morph_surf_sigma;

@@ -21521,6 +21521,17 @@ function _habitAspectRatio(habit) {
     if (habit === 'stepped_scalenohedral' || habit === 'hopper_scalenohedral'
         || habit === 'dendritic_scalenohedral')
         return 0.5;
+    // Morphology-generalization arc (2026-06-12): the halide cube family.
+    // 'cubic' (and the legacy 'hopper_growth'/'hopper_cube' it replaces in
+    // the engines) always landed on the DEFAULT 0.5 — so the regime
+    // renames carry 0.5 EXPLICITLY, not the geometric cube's 1.0. Same
+    // keystone as the calcite families above: a habit rename must not
+    // move _volume_mm3 → a_width → vug fill → chemistry. (If cube aspect
+    // is ever corrected to 1.0, 'cubic' and this family must move
+    // TOGETHER, with a SIM bump + rebake.)
+    if (habit === 'stepped_cube' || habit === 'hopper_cube'
+        || habit === 'dendritic_cube')
+        return 0.5;
     return 0.5;
 }
 // Ellipsoid volume coefficient: V = kVol(aRatio) × c_mm³.
@@ -21559,13 +21570,16 @@ class GrowthZone {
         // tags — the SHAPE history recorded alongside the chemistry history.
         //   morph_regime:     'spiral_smooth' | 'stepped_mild' | 'stepped_macro'
         //                     | 'hopper_skeletal' | 'dendritic' (Sunagawa order)
-        //   morph_form:       'rhombohedral' | 'scalenohedral'
-        //   morph_surf_sigma: boundary-layer-damped surface σ the regime was
-        //                     classified from (post-step basis — 18th catch)
+        //   morph_form:       crystallographic form token ('rhombohedral' |
+        //                     'scalenohedral' | 'cube' | …, per mineral)
+        //   morph_surf_sigma: (damped) surface σ the regime was classified
+        //                     from (post-step basis — 18th catch)
         // Optional like dissolutionMode: written post-hoc by
-        // classifyCalciteMorphologyStep (js/52) at end of run_step; only
-        // calcite zones carry them today. Zone-stack consumers (strip chip,
-        // zone modal, the Phase 3 terrace geometry) read them when present.
+        // classifyMorphologyStep (js/45 registry — calcite was the first
+        // tenant, halite/sylvite the second wave) at end of run_step; only
+        // MORPH_TH-registered minerals' zones carry them. Zone-stack
+        // consumers (strip chips, zone modal, terrace geometry) read them
+        // when present.
         if (opts.morph_regime)
             this.morph_regime = opts.morph_regime;
         if (opts.morph_form)
@@ -30795,6 +30809,36 @@ function buildCrystalDryRun(crystal_id, mineral, sigma, initiative, desired_thic
 // record this ordinal; shared by every registered mineral so ordinals
 // stay comparable across chips).
 const MORPH_REGIMES = ['spiral_smooth', 'stepped_mild', 'stepped_macro', 'hopper_skeletal', 'dendritic'];
+// Player-facing display flavor per mineral (zone modal, strip-chip
+// hovertext, library cards). The REGIME tokens are shared physics
+// vocabulary; the display strings speak each mineral's field language
+// ("smooth spar" vs "smooth cube"). Fallback = the raw token.
+const MORPH_DISPLAY = {
+    calcite: {
+        spiral_smooth: 'smooth spar',
+        stepped_mild: 'stepped (mild)',
+        stepped_macro: 'stepped (macrostep)',
+        hopper_skeletal: 'hopper/skeletal',
+        dendritic: 'dendritic',
+    },
+    halite: {
+        spiral_smooth: 'smooth cube',
+        stepped_mild: 'banded cube (chevron)',
+        stepped_macro: 'macrostepped cube',
+        hopper_skeletal: 'hopper/raft',
+        dendritic: 'dendritic crust',
+    },
+    sylvite: {
+        spiral_smooth: 'smooth cube',
+        stepped_mild: 'banded cube',
+        stepped_macro: 'macrostepped cube',
+        hopper_skeletal: 'hopper',
+        dendritic: 'dendritic crust',
+    },
+};
+function morphDisplayLabel(mineral, regime) {
+    return (MORPH_DISPLAY[mineral] && MORPH_DISPLAY[mineral][regime]) || regime;
+}
 const MORPH_TH = {};
 // ---- calcite — first tenant (the arc that built this machinery) ----
 // Surface σ lags bulk σ on big slow crystals (boundary-layer damping,
@@ -30853,6 +30897,59 @@ MORPH_TH.calcite = {
         const mgRatio = (f.Mg || 0) / Math.max(1e-6, f.Ca || 0);
         return calciteMorphForm(mgRatio, conditions.temperature); // physics in js/52 (hoisted bundle-wide)
     },
+};
+// ---- halite + sylvite — second tenant (the upgrade-in-place; bands
+// from proposals/RESEARCH-halide-morphology-2026-06-12.md) ----
+// Survey facts (tools/morph-sigma-observe.mjs, seed 42): post-step σ ==
+// in-step σ to 3 figures (concentration-driven; growth barely dents the
+// Na/Cl pool — calcite's 18th-catch thin-film gap does NOT recur), and
+// σ history is QUANTIZED into plateaus by the evaporite concentration
+// driver (searles halite: 42.6 baseline ↔ 385 spike) — so zone tags
+// stratify by wet/dry pulse phase and the crystal records the pan log.
+//
+// NO boundary-layer damping (SIZE_HALF_UM = Infinity → surfσ = bulk σ):
+// calcite's damping models DIFFUSION-limited growth in still vug fluid
+// (Wolthers fixed-δ); evaporite brines convect at the growth front
+// (NaCl removal lightens the boundary fluid → density currents), and
+// hopper morphology IS the Berg effect — corners fed by fresher brine
+// than face centers. Ground truth seals it: the biggest natural halite
+// (rafts, chevron beds) is the MOST hoppered/banded — the inverse of
+// the damped-giant prediction. Damping would smooth searles' 54 mm
+// crystals into glass. Per-mineral knob by construction.
+//
+// Band edges in HALITE's own post-step sim units (registry contract:
+// never compare across minerals), placed against locality ground truth:
+// searles spikes (385) → hopper rafts, searles baseline (42.6) →
+// chevron/fluid-inclusion-banded cube (Lowenstein & Hardie 1985,
+// Sedimentology 32 — the salt-pan texture canon); bisbee (8.28) /
+// sicily (4.55) / tn457 (3.84) / travertine (1.15) → smooth cubes.
+// Dendrite band (efflorescence crusts) deliberately unoccupied in the
+// fleet, like calcite's.
+MORPH_TH.halite = {
+    SIZE_HALF_UM: Infinity,
+    SIZE_DAMP_CAP_UM: Infinity,
+    SPIRAL_MAX: 10.0, // < this → smooth {100} cube
+    STEP_MILD_MAX: 60.0, // 10–60 → growth-banded cube (chevron banding)
+    STEP_MACRO_MAX: 150.0, // 60–150 → coarse macrostepped cube
+    HOPPER_MAX: 800.0, // 150–800 → hopper/skeletal (cavernous faces, rafts)
+    // ≥ HOPPER_MAX → dendritic (efflorescence crust)
+    sigma(conditions) { return conditions.supersaturation_halite(); },
+    form(_conditions) { return 'cube'; },
+};
+// Sylvite: same physics, its own σ units (searles spikes 20.0 → hopper
+// — the old engine's own 'hopper_cube' call, now banded + remembered;
+// searles baseline 2.22 / bisbee 1.72 → smooth). Legacy in-step flip
+// (>4.0) would have called searles BASELINE zones hopper; the ladder is
+// strictly more honest.
+MORPH_TH.sylvite = {
+    SIZE_HALF_UM: Infinity,
+    SIZE_DAMP_CAP_UM: Infinity,
+    SPIRAL_MAX: 3.0,
+    STEP_MILD_MAX: 8.0,
+    STEP_MACRO_MAX: 16.0,
+    HOPPER_MAX: 60.0,
+    sigma(conditions) { return conditions.supersaturation_sylvite(); },
+    form(_conditions) { return 'cube'; },
 };
 function morphSurfaceSigma(th, bulkSigma, sizeUm) {
     const effSize = Math.min(Math.max(0, sizeUm), th.SIZE_DAMP_CAP_UM);
@@ -31628,18 +31725,12 @@ function grow_tincalconite(_crystal, _conditions, _step) { return null; }
 // tests, the UI surfaces, and the bench mirror
 // (tools/calcite-morphology-map.mjs) on their existing names.
 const CALCITE_MORPH_TH = MORPH_TH.calcite;
-// Severity-ordinal regime list = the shared MORPH_REGIMES (js/45); the
-// player-facing display names below are calcite-flavored ("spar") and
-// stay here (shared by the zone modal, strip chip hovertext, and
-// library card text).
+// Severity-ordinal regime list + display flavor = the shared registry
+// (js/45 MORPH_REGIMES / MORPH_DISPLAY.calcite — display moved there
+// with the halide wave so the zone modal can speak each mineral's
+// field language via morphDisplayLabel).
 const CALCITE_MORPH_REGIMES = MORPH_REGIMES;
-const CALCITE_MORPH_DISPLAY = {
-    spiral_smooth: 'smooth spar',
-    stepped_mild: 'stepped (mild)',
-    stepped_macro: 'stepped (macrostep)',
-    hopper_skeletal: 'hopper/skeletal',
-    dendritic: 'dendritic',
-};
+const CALCITE_MORPH_DISPLAY = MORPH_DISPLAY.calcite;
 // Thin wrappers over the js/45 generics (kept: tests + bench bind to
 // these names; calciteMorphForm below is REAL calcite physics — the
 // registry's form hook calls it).
@@ -33168,13 +33259,37 @@ function grow_halite(crystal, conditions, step) {
     const rate = 8.0 * excess * (0.85 + rng.random() * 0.30);
     if (rate < 0.1)
         return null;
-    if (sigma > 5.0) {
-        crystal.habit = 'hopper_growth';
-        crystal.dominant_forms = ['{100} cube with pyramidal hopper hollows'];
-    }
-    else {
-        crystal.habit = 'cubic';
-        crystal.dominant_forms = ['{100} cube'];
+    // Morphology-generalization arc (2026-06-12): habit is driven by the
+    // registry classifier's recorded regime (crystal._morphology, written
+    // by classifyMorphologyStep at the END of last step — the one-step
+    // lag is physical, Phase-2 pattern; MORPH_TH.halite bands in js/45,
+    // survey + ground truth in RESEARCH-halide-morphology-2026-06-12.md).
+    // Replaces the legacy memory-less in-step flip (σ>5 → hopper_growth,
+    // last-writer-wins): the zone stack now REMEMBERS hopper episodes —
+    // a searles crystal is banded cube at baseline, hopper during
+    // concentration spikes, and carries both. Chemistry untouched: rate
+    // is computed above, Na/Cl debits below, and every cube-family habit
+    // string carries the same _habitAspectRatio (aspect firewall).
+    {
+        const regime = (crystal._morphology && crystal._morphology.regime) || null;
+        if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+            crystal.habit = 'stepped_cube';
+            crystal.dominant_forms = regime === 'stepped_macro'
+                ? ['{100} cube with coarse macrostep terraces']
+                : ['{100} cube, chevron growth banding (fluid-inclusion-banded steps)'];
+        }
+        else if (regime === 'hopper_skeletal') {
+            crystal.habit = 'hopper_cube';
+            crystal.dominant_forms = ['{100} cube, faces hollowed to stepped funnels (hopper)', 'raft/skeletal edge frame'];
+        }
+        else if (regime === 'dendritic') {
+            crystal.habit = 'dendritic_cube';
+            crystal.dominant_forms = ['dendritic halite crust — the instability run past hopper'];
+        }
+        else {
+            crystal.habit = 'cubic';
+            crystal.dominant_forms = ['{100} cube'];
+        }
     }
     conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.05, 0);
     conditions.fluid.Cl = Math.max(conditions.fluid.Cl - rate * 0.08, 0);
@@ -33246,13 +33361,28 @@ function grow_sylvite(crystal, conditions, step) {
     let rate = 7.0 * excess * rng.uniform(0.85, 1.15);
     if (rate < 0.1)
         return null;
-    if (sigma > 4.0) {
-        crystal.habit = 'hopper_cube';
-        crystal.dominant_forms = ['{100} cube with stepped hopper faces'];
-    }
-    else {
-        crystal.habit = 'cubic';
-        crystal.dominant_forms = ['{100} cube'];
+    // Morphology-generalization arc (2026-06-12): regime-driven habit,
+    // same pattern as grow_halite above (MORPH_TH.sylvite bands in js/45;
+    // legacy in-step σ>4 flip would have called searles BASELINE zones
+    // hopper — the ladder + memory is strictly more honest).
+    {
+        const regime = (crystal._morphology && crystal._morphology.regime) || null;
+        if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+            crystal.habit = 'stepped_cube';
+            crystal.dominant_forms = ['{100} cube, growth-banded steps'];
+        }
+        else if (regime === 'hopper_skeletal') {
+            crystal.habit = 'hopper_cube';
+            crystal.dominant_forms = ['{100} cube with stepped hopper faces'];
+        }
+        else if (regime === 'dendritic') {
+            crystal.habit = 'dendritic_cube';
+            crystal.dominant_forms = ['dendritic sylvite crust'];
+        }
+        else {
+            crystal.habit = 'cubic';
+            crystal.dominant_forms = ['{100} cube'];
+        }
     }
     let color_note;
     if (conditions.fluid.Fe > 30)
@@ -54957,6 +55087,12 @@ Object.assign(VugSimulator.prototype, {
         if (c.habit === 'hopper_growth' || c.habit === 'hopper_cube') {
             parts.push('Hopper-growth habit — high supersaturation produced a skeletal cube with stepped pyramidal hollows on each face. Edge-growth outraced face-growth and left the centers concave, the signature of a brine driven hard enough to nucleate faster than it could fill in. Searles Lake evaporation ponds make these in summer.');
         }
+        else if (c.habit === 'stepped_cube') {
+            parts.push('Growth-banded cube — the chevron habit. At moderate supersaturation the (100) faces advance by visible steps, and each step traps a film of brine as a fluid-inclusion band; stack enough of them and the cube carries the herringbone banding that salt sedimentologists read like tree rings.');
+        }
+        else if (c.habit === 'dendritic_cube') {
+            parts.push('Dendritic salt crust — the instability run past hopper. Supersaturation outran even edge-growth and the salt branched into an efflorescent skeleton rather than a crystal. Dry-lake margins do this overnight after a flood retreats.');
+        }
         else if (c.habit === 'cubic') {
             parts.push('Clean cubic habit — slow evaporation, low supersaturation. The brine concentrated patiently enough for the (100) faces to fill in flat. This is the Wieliczka habit, the cathedral-cube halite that meter-scale specimens come from.');
         }
@@ -54987,6 +55123,28 @@ Object.assign(VugSimulator.prototype, {
         }
         if (colors.has('red_hematite_inclusion')) {
             parts.push('Red coloration from hematite inclusions — micron-scale Fe-oxide platelets entrained as the halite grew through an oxidized brine. The "red salt" of the Khewra and Punjab mines.');
+        }
+        // Zone-stack morphology read (morphology-generalization arc,
+        // 2026-06-12 — the calcite narrator's pattern, salt-pan flavored).
+        // The registry classifier tags every zone with its regime, so a
+        // crystal that lived through wet/dry cycling carries the whole log.
+        const morphMass = {};
+        let morphTotal = 0;
+        for (const z of (c.zones || [])) {
+            if (!z.morph_regime || !(z.thickness_um > 0))
+                continue;
+            morphMass[z.morph_regime] = (morphMass[z.morph_regime] || 0) + z.thickness_um;
+            morphTotal += z.thickness_um;
+        }
+        if (morphTotal > 0) {
+            const hopperShare = ((morphMass.hopper_skeletal || 0) + (morphMass.dendritic || 0)) / morphTotal;
+            const bandedShare = ((morphMass.stepped_mild || 0) + (morphMass.stepped_macro || 0)) / morphTotal;
+            if (hopperShare > 0.05 && bandedShare > 0.05) {
+                parts.push(`The zone stack is a salt-pan log: ${Math.round(bandedShare * 100)}% of the growth went down as banded cube in patient brine and ${Math.round(hopperShare * 100)}% as hopper during desiccation spikes. Each hopper band is one dry season — read the crystal from core to rim and you are reading the pan's weather.`);
+            }
+            else if (hopperShare > 0.5) {
+                parts.push(`Almost the whole stack (${Math.round(hopperShare * 100)}%) grew in the hopper regime — this crystal never saw patient brine; it lived its entire life in desiccation conditions.`);
+            }
         }
         if (c.twinned && (c.twin_law || '').includes('spinel')) {
             parts.push(`Spinel-law twin (${c.twin_law}) — extremely rare for halite. The two cubes interpenetrate on a (111) plane, a habit much more familiar from fluorite and magnetite. A field-grade halite specimen with a verified spinel-law twin is a museum piece.`);
@@ -60602,7 +60760,8 @@ function showZoneHistory(crystal) {
             if (z.fluid_inclusion)
                 html += `💧 ${z.inclusion_type}<br>`;
             if (z.morph_regime) {
-                const label = (typeof CALCITE_MORPH_DISPLAY !== 'undefined' && CALCITE_MORPH_DISPLAY[z.morph_regime]) || z.morph_regime;
+                const label = (typeof morphDisplayLabel === 'function')
+                    ? morphDisplayLabel(crystal.mineral, z.morph_regime) : z.morph_regime;
                 html += `🪜 ${label} (σ_surf ${(+z.morph_surf_sigma || 0).toFixed(1)})<br>`;
             }
             if (z.note)
@@ -60651,7 +60810,8 @@ function showZoneHistory(crystal) {
             if (z.fluid_inclusion)
                 html += ` · <span class="z-fi">FI: ${z.inclusion_type}</span>`;
             if (z.morph_regime) {
-                const label = (typeof CALCITE_MORPH_DISPLAY !== 'undefined' && CALCITE_MORPH_DISPLAY[z.morph_regime]) || z.morph_regime;
+                const label = (typeof morphDisplayLabel === 'function')
+                    ? morphDisplayLabel(crystal.mineral, z.morph_regime) : z.morph_regime;
                 html += ` · <span style="color:#8a7a40">🪜 ${label}</span>`;
             }
             if (z.note)
@@ -62671,6 +62831,15 @@ const HABIT_TO_TEXTURE = {
     'hopper_rhombohedral': 'hopper',
     'dendritic_scalenohedral': 'acicular',
     'dendritic_rhombohedral': 'acicular',
+    // Stage 8 — halide cube family (morphology-generalization arc,
+    // 2026-06-12; 'hopper_cube' already mapped in Stage 6 from the legacy
+    // sylvite string — the regime dispatch now emits it for both
+    // halides). Banded/stepped cubes read as the terraced notch;
+    // dendritic crusts read acicular. The Tanaka 2018 σ³ edge-outpacing
+    // physics in the Stage 6 note is exactly the MORPH_TH.halite hopper
+    // band (js/45).
+    'stepped_cube': 'hopper',
+    'dendritic_cube': 'acicular',
 };
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
 // wins over HABIT_TO_TEXTURE[habit]. Used when one habit string covers
@@ -64771,6 +64940,14 @@ const HABIT_TO_PRIMITIVE = {
     'hopper_scalenohedral': PRIM_SCALENOHEDRON,
     'dendritic_rhombohedral': PRIM_ACICULAR,
     'dendritic_scalenohedral': PRIM_ACICULAR,
+    // Morphology-generalization arc (2026-06-12): the halide cube family
+    // (halite/sylvite regime habits). stepped/hopper keep the CUBE parent
+    // primitive (here the 99d 'hopper'→cube fuzzy would actually be
+    // right, but explicit beats fuzzy); dendritic crusts go acicular like
+    // the calcite dendrites.
+    'stepped_cube': PRIM_CUBE,
+    'hopper_cube': PRIM_CUBE,
+    'dendritic_cube': PRIM_ACICULAR,
     'prismatic': PRIM_HEX_PRISM_TERMINATED,
     'short_prismatic': PRIM_HEX_PRISM,
     'striated_prism': PRIM_HEX_PRISM_TERMINATED,
@@ -70715,6 +70892,8 @@ const _HELIX_FULL_NAMES = {
     pCO2: 'Equilibrium pCO₂ (bar)',
     f_ord: 'Dolomite ordering fraction (Kim 2023; 0=disordered, 1=ordered)',
     calcite_morph: 'Calcite growth regime at this spot (Sunagawa ordinal: 0 smooth spar · 1 stepped mild · 2 stepped macrostep · 3 hopper/skeletal · 4 dendritic)',
+    halite_morph: 'Halite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded/chevron · 2 macrostepped · 3 hopper/raft · 4 dendritic crust)',
+    sylvite_morph: 'Sylvite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded · 2 macrostepped · 3 hopper · 4 dendritic crust)',
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // v165 — Sulfate System section (PHREEQC wateq4f Ksp via 20d + 40b).
     // Strip is no longer SI-blind on the sulfate/evaporite family
@@ -71048,18 +71227,23 @@ const _HELIX_CHEM_PARAMS = (function () {
     // 15° bin (±2 native cells of the sampled cell) — sparse BY DESIGN:
     // morphology is a property of the crystals, not the broth, so the
     // strip shows golden dashes exactly where stepped rock exists.
-    params.push({
-        id: 'calcite_morph', label: 'cal morph', fullName: _HELIX_FULL_NAMES.calcite_morph,
-        min: 0, max: 4, color: 0xF0D898,
-        system: 'carbonate', units: '',
+    // Morphology-generalization arc (2026-06-12): the calcite chip's read
+    // logic is now a factory — one morph chip per MORPH_TH-registered
+    // mineral, identical scan semantics (largest living tagged crystal of
+    // that mineral at ringIdx===i within ±2 native cells; severity ordinal
+    // on the SHARED MORPH_REGIMES scale, so chips compare across minerals).
+    const _morphChipParam = (mineral, id, label, color, system) => ({
+        id, label, fullName: _HELIX_FULL_NAMES[id],
+        min: 0, max: 4, color,
+        system, units: '',
         read: (s, w, i, c) => {
             const crys = (s && Array.isArray(s.crystals)) ? s.crystals : null;
-            if (!crys || typeof CALCITE_MORPH_REGIMES === 'undefined')
+            if (!crys || typeof MORPH_REGIMES === 'undefined')
                 return null;
             const N = (w && w.cells_per_ring) || 120;
             let best = null, bestSize = -1;
             for (const cr of crys) {
-                if (!cr || cr.mineral !== 'calcite' || cr.dissolved || !cr._morphology)
+                if (!cr || cr.mineral !== mineral || cr.dissolved || !cr._morphology)
                     continue;
                 const a = cr.wall_anchor;
                 if (!a || a.ringIdx !== i)
@@ -71074,10 +71258,17 @@ const _HELIX_CHEM_PARAMS = (function () {
             }
             if (!best)
                 return null;
-            const idx = CALCITE_MORPH_REGIMES.indexOf(best._morphology.regime);
+            const idx = MORPH_REGIMES.indexOf(best._morphology.regime);
             return idx >= 0 ? idx : null;
         },
     });
+    params.push(_morphChipParam('calcite', 'calcite_morph', 'cal morph', 0xF0D898, 'carbonate'));
+    // Halide morph chips (second registry wave). These co-pulse with the
+    // evaporite `concentration` chip by construction — the searles strip
+    // should show hopper ordinals exactly on the wet/dry spikes (the σ
+    // plateaus in RESEARCH-halide-morphology-2026-06-12.md §1).
+    params.push(_morphChipParam('halite', 'halite_morph', 'hal morph', 0xE8E8F8, 'halide'));
+    params.push(_morphChipParam('sylvite', 'sylvite_morph', 'syl morph', 0xF8D8E8, 'halide'));
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // v165 — SULFATE SYSTEM SI chips. 4 chips consuming the Ksp engine
     // (20d) + SI dispatcher (40b) shipped in v164 as observer-only reads,
@@ -73332,7 +73523,7 @@ function _stripRenderDataset(bodyEl, ds) {
             _stripVisibleChips[chip.id] = false;
     }));
     selector.appendChild(bulkBar);
-    const systems = ['wall', 'special', 'carbonate', 'sulfate', 'ion'];
+    const systems = ['wall', 'special', 'carbonate', 'sulfate', 'halide', 'ion'];
     for (const sys of systems) {
         const inSys = ds.manifest.chips.filter(c => c.system === sys);
         if (!inSys.length)

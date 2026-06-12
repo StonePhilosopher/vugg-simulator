@@ -65,6 +65,16 @@ export const STRIP_DIGEST_CHIPS = [
   // (e.g., SI_barite is NaN where Ba≤0); the digest captures that gap
   // explicitly, which is itself a regression guard.
   'SI_selenite', 'SI_anhydrite', 'SI_barite', 'SI_celestine',
+  // Morphology-generalization arc (2026-06-12): the morph-regime chips
+  // (Sunagawa severity ordinal 0–4, sparse/null where no living tagged
+  // crystal sits in the bin). halite_morph in searles_lake is the
+  // tripwire's sharpest new pin: it must co-pulse with `concentration`
+  // (hopper ordinal 3 exactly on the wet/dry spikes — the σ-plateau
+  // stratification in RESEARCH-halide-morphology-2026-06-12.md §1).
+  // calcite_morph rides along to pin the carbonate regime trajectories
+  // (sabkha hopper, travertine/mvt smooth) that were previously only
+  // test-pinned at end-state.
+  'calcite_morph', 'halite_morph', 'sylvite_morph',
 ];
 
 const SAMPLE_COUNT = 8;
@@ -89,6 +99,39 @@ function seriesAt(ds, chipId, depth, deps) {
       if (v != null) { sum += v; n++; }
     }
     out.push(n ? sum / n : null);
+  }
+  return out;
+}
+
+// SPARSE crystal-anchored chips (the morph ordinals): null everywhere
+// except within ±2 cells of a living tagged crystal's anchor, so the
+// mid-ring angle-AVERAGE above digests to all-null (searles halite
+// anchors on the evaporite floor ring, not mid-wall — found at first
+// regen, 2026-06-12). For these, the trajectory worth pinning is the
+// SEVEREST regime visible ANYWHERE per step — max over angle × height —
+// which is the pan pulse itself (banded 1 ↔ hopper 3 on the wet/dry
+// concentration spikes).
+const STRIP_DIGEST_SPARSE_MAX_CHIPS = new Set(['calcite_morph', 'halite_morph', 'sylvite_morph']);
+
+function seriesMaxAt(ds, chipId, depth, deps) {
+  const { stripDataIndex, stripDequantize } = deps;
+  const axes = ds.manifest.axes;
+  const C = ds.manifest.chips.length;
+  const idx = ds.manifest.chips.findIndex((c) => c.id === chipId);
+  if (idx < 0) return null;
+  const meta = ds.manifest.chips[idx];
+  const out = [];
+  for (let step = 0; step < axes.steps; step++) {
+    let best = null;
+    for (let h = 0; h < axes.height_positions; h++) {
+      for (let a = 0; a < axes.angular_indices; a++) {
+        const li = stripDataIndex(step, a, h, idx, axes, C, depth);
+        if (li < 0) continue;
+        const v = stripDequantize(ds.chip_data[li], meta.range[0], meta.range[1]);
+        if (v != null && (best == null || v > best)) best = v;
+      }
+    }
+    out.push(best);
   }
   return out;
 }
@@ -120,10 +163,13 @@ export function stripDigestForDataset(ds, deps) {
     ? ds.manifest.axes.depth_positions : 1;
   const out = { steps: ds.manifest.axes.steps, depth_positions: D, chips: {} };
   for (const chip of STRIP_DIGEST_CHIPS) {
-    const wall = seriesAt(ds, chip, 0, deps);
+    const sparse = STRIP_DIGEST_SPARSE_MAX_CHIPS.has(chip);
+    const wall = sparse ? seriesMaxAt(ds, chip, 0, deps) : seriesAt(ds, chip, 0, deps);
     if (!wall) continue;
     const entry = { wall: reduceSeries(wall) };
-    if (D > 1) {
+    // Sparse chips skip the center read: crystals anchor on the wall;
+    // interior voxels never carry a morph ordinal.
+    if (D > 1 && !sparse) {
       const center = seriesAt(ds, chip, D - 1, deps);
       if (center) entry.center = reduceSeries(center);
     }

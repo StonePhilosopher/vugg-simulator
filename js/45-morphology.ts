@@ -55,6 +55,38 @@
 // stay comparable across chips).
 const MORPH_REGIMES = ['spiral_smooth', 'stepped_mild', 'stepped_macro', 'hopper_skeletal', 'dendritic'];
 
+// Player-facing display flavor per mineral (zone modal, strip-chip
+// hovertext, library cards). The REGIME tokens are shared physics
+// vocabulary; the display strings speak each mineral's field language
+// ("smooth spar" vs "smooth cube"). Fallback = the raw token.
+const MORPH_DISPLAY: Record<string, Record<string, string>> = {
+  calcite: {
+    spiral_smooth: 'smooth spar',
+    stepped_mild: 'stepped (mild)',
+    stepped_macro: 'stepped (macrostep)',
+    hopper_skeletal: 'hopper/skeletal',
+    dendritic: 'dendritic',
+  },
+  halite: {
+    spiral_smooth: 'smooth cube',
+    stepped_mild: 'banded cube (chevron)',
+    stepped_macro: 'macrostepped cube',
+    hopper_skeletal: 'hopper/raft',
+    dendritic: 'dendritic crust',
+  },
+  sylvite: {
+    spiral_smooth: 'smooth cube',
+    stepped_mild: 'banded cube',
+    stepped_macro: 'macrostepped cube',
+    hopper_skeletal: 'hopper',
+    dendritic: 'dendritic crust',
+  },
+};
+
+function morphDisplayLabel(mineral: string, regime: string): string {
+  return (MORPH_DISPLAY[mineral] && MORPH_DISPLAY[mineral][regime]) || regime;
+}
+
 const MORPH_TH: Record<string, any> = {};
 
 // ---- calcite — first tenant (the arc that built this machinery) ----
@@ -114,6 +146,61 @@ MORPH_TH.calcite = {
     const mgRatio = (f.Mg || 0) / Math.max(1e-6, f.Ca || 0);
     return calciteMorphForm(mgRatio, conditions.temperature); // physics in js/52 (hoisted bundle-wide)
   },
+};
+
+// ---- halite + sylvite — second tenant (the upgrade-in-place; bands
+// from proposals/RESEARCH-halide-morphology-2026-06-12.md) ----
+// Survey facts (tools/morph-sigma-observe.mjs, seed 42): post-step σ ==
+// in-step σ to 3 figures (concentration-driven; growth barely dents the
+// Na/Cl pool — calcite's 18th-catch thin-film gap does NOT recur), and
+// σ history is QUANTIZED into plateaus by the evaporite concentration
+// driver (searles halite: 42.6 baseline ↔ 385 spike) — so zone tags
+// stratify by wet/dry pulse phase and the crystal records the pan log.
+//
+// NO boundary-layer damping (SIZE_HALF_UM = Infinity → surfσ = bulk σ):
+// calcite's damping models DIFFUSION-limited growth in still vug fluid
+// (Wolthers fixed-δ); evaporite brines convect at the growth front
+// (NaCl removal lightens the boundary fluid → density currents), and
+// hopper morphology IS the Berg effect — corners fed by fresher brine
+// than face centers. Ground truth seals it: the biggest natural halite
+// (rafts, chevron beds) is the MOST hoppered/banded — the inverse of
+// the damped-giant prediction. Damping would smooth searles' 54 mm
+// crystals into glass. Per-mineral knob by construction.
+//
+// Band edges in HALITE's own post-step sim units (registry contract:
+// never compare across minerals), placed against locality ground truth:
+// searles spikes (385) → hopper rafts, searles baseline (42.6) →
+// chevron/fluid-inclusion-banded cube (Lowenstein & Hardie 1985,
+// Sedimentology 32 — the salt-pan texture canon); bisbee (8.28) /
+// sicily (4.55) / tn457 (3.84) / travertine (1.15) → smooth cubes.
+// Dendrite band (efflorescence crusts) deliberately unoccupied in the
+// fleet, like calcite's.
+MORPH_TH.halite = {
+  SIZE_HALF_UM: Infinity,
+  SIZE_DAMP_CAP_UM: Infinity,
+  SPIRAL_MAX: 10.0,      // < this → smooth {100} cube
+  STEP_MILD_MAX: 60.0,   // 10–60 → growth-banded cube (chevron banding)
+  STEP_MACRO_MAX: 150.0, // 60–150 → coarse macrostepped cube
+  HOPPER_MAX: 800.0,     // 150–800 → hopper/skeletal (cavernous faces, rafts)
+  // ≥ HOPPER_MAX → dendritic (efflorescence crust)
+  sigma(conditions: any): number { return conditions.supersaturation_halite(); },
+  form(_conditions: any): string { return 'cube'; },
+};
+
+// Sylvite: same physics, its own σ units (searles spikes 20.0 → hopper
+// — the old engine's own 'hopper_cube' call, now banded + remembered;
+// searles baseline 2.22 / bisbee 1.72 → smooth). Legacy in-step flip
+// (>4.0) would have called searles BASELINE zones hopper; the ladder is
+// strictly more honest.
+MORPH_TH.sylvite = {
+  SIZE_HALF_UM: Infinity,
+  SIZE_DAMP_CAP_UM: Infinity,
+  SPIRAL_MAX: 3.0,
+  STEP_MILD_MAX: 8.0,
+  STEP_MACRO_MAX: 16.0,
+  HOPPER_MAX: 60.0,
+  sigma(conditions: any): number { return conditions.supersaturation_sylvite(); },
+  form(_conditions: any): string { return 'cube'; },
 };
 
 function morphSurfaceSigma(th: any, bulkSigma: number, sizeUm: number): number {

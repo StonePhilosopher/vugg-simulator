@@ -64,6 +64,10 @@ Object.assign(VugSimulator.prototype, {
 
     if (c.habit === 'hopper_growth' || c.habit === 'hopper_cube') {
       parts.push('Hopper-growth habit — high supersaturation produced a skeletal cube with stepped pyramidal hollows on each face. Edge-growth outraced face-growth and left the centers concave, the signature of a brine driven hard enough to nucleate faster than it could fill in. Searles Lake evaporation ponds make these in summer.');
+    } else if (c.habit === 'stepped_cube') {
+      parts.push('Growth-banded cube — the chevron habit. At moderate supersaturation the (100) faces advance by visible steps, and each step traps a film of brine as a fluid-inclusion band; stack enough of them and the cube carries the herringbone banding that salt sedimentologists read like tree rings.');
+    } else if (c.habit === 'dendritic_cube') {
+      parts.push('Dendritic salt crust — the instability run past hopper. Supersaturation outran even edge-growth and the salt branched into an efflorescent skeleton rather than a crystal. Dry-lake margins do this overnight after a flood retreats.');
     } else if (c.habit === 'cubic') {
       parts.push('Clean cubic habit — slow evaporation, low supersaturation. The brine concentrated patiently enough for the (100) faces to fill in flat. This is the Wieliczka habit, the cathedral-cube halite that meter-scale specimens come from.');
     } else if (c.habit === 'fibrous_coating') {
@@ -93,6 +97,27 @@ Object.assign(VugSimulator.prototype, {
     }
     if (colors.has('red_hematite_inclusion')) {
       parts.push('Red coloration from hematite inclusions — micron-scale Fe-oxide platelets entrained as the halite grew through an oxidized brine. The "red salt" of the Khewra and Punjab mines.');
+    }
+
+    // Zone-stack morphology read (morphology-generalization arc,
+    // 2026-06-12 — the calcite narrator's pattern, salt-pan flavored).
+    // The registry classifier tags every zone with its regime, so a
+    // crystal that lived through wet/dry cycling carries the whole log.
+    const morphMass: Record<string, number> = {};
+    let morphTotal = 0;
+    for (const z of (c.zones || [])) {
+      if (!z.morph_regime || !(z.thickness_um > 0)) continue;
+      morphMass[z.morph_regime] = (morphMass[z.morph_regime] || 0) + z.thickness_um;
+      morphTotal += z.thickness_um;
+    }
+    if (morphTotal > 0) {
+      const hopperShare = ((morphMass.hopper_skeletal || 0) + (morphMass.dendritic || 0)) / morphTotal;
+      const bandedShare = ((morphMass.stepped_mild || 0) + (morphMass.stepped_macro || 0)) / morphTotal;
+      if (hopperShare > 0.05 && bandedShare > 0.05) {
+        parts.push(`The zone stack is a salt-pan log: ${Math.round(bandedShare * 100)}% of the growth went down as banded cube in patient brine and ${Math.round(hopperShare * 100)}% as hopper during desiccation spikes. Each hopper band is one dry season — read the crystal from core to rim and you are reading the pan's weather.`);
+      } else if (hopperShare > 0.5) {
+        parts.push(`Almost the whole stack (${Math.round(hopperShare * 100)}%) grew in the hopper regime — this crystal never saw patient brine; it lived its entire life in desiccation conditions.`);
+      }
     }
 
     if (c.twinned && (c.twin_law || '').includes('spinel')) {

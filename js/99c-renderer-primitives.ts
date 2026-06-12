@@ -1151,6 +1151,14 @@ const HABIT_TO_PRIMITIVE = {
   'hopper_scalenohedral':           PRIM_SCALENOHEDRON,
   'dendritic_rhombohedral':         PRIM_ACICULAR,
   'dendritic_scalenohedral':        PRIM_ACICULAR,
+  // Morphology-generalization arc (2026-06-12): the halide cube family
+  // (halite/sylvite regime habits). stepped/hopper keep the CUBE parent
+  // primitive (here the 99d 'hopper'→cube fuzzy would actually be
+  // right, but explicit beats fuzzy); dendritic crusts go acicular like
+  // the calcite dendrites.
+  'stepped_cube':                   PRIM_CUBE,
+  'hopper_cube':                    PRIM_CUBE,
+  'dendritic_cube':                 PRIM_ACICULAR,
   'prismatic':                      PRIM_HEX_PRISM_TERMINATED,
   'short_prismatic':                PRIM_HEX_PRISM,
   'striated_prism':                 PRIM_HEX_PRISM_TERMINATED,

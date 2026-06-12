@@ -239,7 +239,8 @@ function showZoneHistory(crystal) {
       html += `<span style="color:#88cc88">Ti: ${z.trace_Ti.toFixed(3)}</span><br>`;
       if (z.fluid_inclusion) html += `💧 ${z.inclusion_type}<br>`;
       if (z.morph_regime) {
-        const label = (typeof CALCITE_MORPH_DISPLAY !== 'undefined' && CALCITE_MORPH_DISPLAY[z.morph_regime]) || z.morph_regime;
+        const label = (typeof morphDisplayLabel === 'function')
+          ? morphDisplayLabel(crystal.mineral, z.morph_regime) : z.morph_regime;
         html += `🪜 ${label} (σ_surf ${(+z.morph_surf_sigma || 0).toFixed(1)})<br>`;
       }
       if (z.note) html += `<span style="color:#8a7a40">${z.note}</span>`;
@@ -283,7 +284,8 @@ function showZoneHistory(crystal) {
 
       if (z.fluid_inclusion) html += ` · <span class="z-fi">FI: ${z.inclusion_type}</span>`;
       if (z.morph_regime) {
-        const label = (typeof CALCITE_MORPH_DISPLAY !== 'undefined' && CALCITE_MORPH_DISPLAY[z.morph_regime]) || z.morph_regime;
+        const label = (typeof morphDisplayLabel === 'function')
+          ? morphDisplayLabel(crystal.mineral, z.morph_regime) : z.morph_regime;
         html += ` · <span style="color:#8a7a40">🪜 ${label}</span>`;
       }
       if (z.note) html += `<div class="z-note">${z.note}</div>`;

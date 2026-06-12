@@ -21,18 +21,12 @@
 // (tools/calcite-morphology-map.mjs) on their existing names.
 const CALCITE_MORPH_TH = MORPH_TH.calcite;
 
-// Severity-ordinal regime list = the shared MORPH_REGIMES (js/45); the
-// player-facing display names below are calcite-flavored ("spar") and
-// stay here (shared by the zone modal, strip chip hovertext, and
-// library card text).
+// Severity-ordinal regime list + display flavor = the shared registry
+// (js/45 MORPH_REGIMES / MORPH_DISPLAY.calcite — display moved there
+// with the halide wave so the zone modal can speak each mineral's
+// field language via morphDisplayLabel).
 const CALCITE_MORPH_REGIMES = MORPH_REGIMES;
-const CALCITE_MORPH_DISPLAY: Record<string, string> = {
-  spiral_smooth: 'smooth spar',
-  stepped_mild: 'stepped (mild)',
-  stepped_macro: 'stepped (macrostep)',
-  hopper_skeletal: 'hopper/skeletal',
-  dendritic: 'dendritic',
-};
+const CALCITE_MORPH_DISPLAY = MORPH_DISPLAY.calcite;
 
 // Thin wrappers over the js/45 generics (kept: tests + bench bind to
 // these names; calciteMorphForm below is REAL calcite physics — the

@@ -66,6 +66,15 @@ const HABIT_TO_TEXTURE = {
   'hopper_rhombohedral':     'hopper',
   'dendritic_scalenohedral': 'acicular',
   'dendritic_rhombohedral':  'acicular',
+  // Stage 8 — halide cube family (morphology-generalization arc,
+  // 2026-06-12; 'hopper_cube' already mapped in Stage 6 from the legacy
+  // sylvite string — the regime dispatch now emits it for both
+  // halides). Banded/stepped cubes read as the terraced notch;
+  // dendritic crusts read acicular. The Tanaka 2018 σ³ edge-outpacing
+  // physics in the Stage 6 note is exactly the MORPH_TH.halite hopper
+  // band (js/45).
+  'stepped_cube':            'hopper',
+  'dendritic_cube':          'acicular',
 };
 
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]

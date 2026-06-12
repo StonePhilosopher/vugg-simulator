@@ -335,6 +335,54 @@
               1.197
             ]
           }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 3.008,
+            "max": 3.008,
+            "samples": [
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
         }
       }
     },
@@ -669,6 +717,54 @@
               -0.252,
               -0.315,
               -0.378
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 1.008,
+            "samples": [
+              1.008,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
             ]
           }
         }
@@ -1007,6 +1103,54 @@
               -8
             ]
           }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
         }
       }
     },
@@ -1341,6 +1485,54 @@
               -1.008,
               -8,
               -7.992
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 2,
+            "samples": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
             ]
           }
         }
@@ -1679,6 +1871,54 @@
               -8
             ]
           }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 1.008,
+            "samples": [
+              null,
+              null,
+              0,
+              0,
+              0,
+              1.008,
+              0,
+              0
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              null,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
         }
       }
     },
@@ -2013,6 +2253,54 @@
               -0.126,
               -0.126,
               -0.063
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 1.008,
+            "max": 1.008,
+            "samples": [
+              1.008,
+              1.008,
+              1.008,
+              1.008,
+              1.008,
+              1.008,
+              1.008,
+              1.008
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": 1.008,
+            "max": 3.008,
+            "samples": [
+              null,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 3.008,
+            "samples": [
+              null,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008
             ]
           }
         }
@@ -2351,6 +2639,54 @@
               -8
             ]
           }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
         }
       }
     },
@@ -2685,6 +3021,54 @@
               -0.063,
               -0.063,
               -0.126
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
             ]
           }
         }
@@ -3023,6 +3407,54 @@
               0.882
             ]
           }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              null,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
         }
       }
     },
@@ -3357,6 +3789,54 @@
               -8,
               -8,
               -8
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
             ]
           }
         }
