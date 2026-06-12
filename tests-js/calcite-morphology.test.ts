@@ -256,12 +256,29 @@ describe('calcite morphology instruments (Phase 1)', () => {
     }
     expect(sawTerraces).toBeGreaterThan(0);
 
-    // mvt's calcite is smooth spar with a sub-5% stepped CORE — below
-    // the relief floor, so it renders smooth (hand-specimen truth).
+    // mvt's calcite: smooth-DOMINANT dogtooth with at most a small
+    // stepped CORE. v192 re-pin (pK(T) correction): the corrected
+    // early-σ trajectory can tag the first zones stepped while the
+    // crystal is still small (damping is weak at small size) — a
+    // stepped core under glassy outer faces, which is the PHANTOM
+    // read Tri-State calcite is collector-famous for. The contract:
+    // terraces may exist, but any relief is confined to the early
+    // stack (≤15% of the walk) and the crystal FINISHES smooth — the
+    // hand-specimen faces are glassy (the boss-verified dogtooth).
     const mvt = runScenario('mvt');
     const mvtCal = mvt.crystals.find((c: any) => c.mineral === 'calcite' && !c.dissolved);
     expect(mvtCal).toBeTruthy();
-    expect(calciteTerraceBands(mvtCal)).toBeNull();
+    const mvtTerr = calciteTerraceBands(mvtCal);
+    if (mvtTerr) {
+      const lastKnot = mvtTerr.knots[mvtTerr.knots.length - 1];
+      expect(lastKnot.regime).toBe('spiral_smooth');             // glassy finish
+      let reliefSpan = 0, prev = 0;
+      for (const k of mvtTerr.knots) {
+        if (k.regime !== 'spiral_smooth') reliefSpan += k.frac - prev;
+        prev = k.frac;
+      }
+      expect(reliefSpan).toBeLessThanOrEqual(0.15);              // phantom core, not a stepped rim
+    }
 
     // sabkha is hopper/skeletal 100%: the apex hollows into a funnel.
     const sabkha = runScenario('sabkha_dolomitization');

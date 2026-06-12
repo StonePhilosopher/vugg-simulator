@@ -10834,5 +10834,48 @@
 //
 //   BASELINE: rebake. Expected mover: wittichen only (additive
 //   +barite; Ba is inert to every other engine in this broth).
-const SIM_VERSION = 191;
+//
+// v192 (2026-06-12) — CARBONATE pK(T) CORRECTION (review §2.2, the
+//                     oldest open calibration debt): js/20b's linear
+//                     pK fits replaced with the full Plummer &
+//                     Busenberg 1982 analytic expressions, verified
+//                     verbatim against canonical wateq4f.dat; clamp
+//                     widened 80→250 °C.
+//
+//   The debt, measured (tools/pk-t-observe.mjs --table): old slopes
+//   5–10× too flat, max drift 0.23 pK at 0 °C, flat-lined above the
+//   80 °C clamp while the real curves bend hard (pK₁ 6.35→7.23 by
+//   200 °C). 25 °C anchors unchanged — slopes + curvature corrected.
+//
+//   Blast radius, dark-observed BEFORE the flip (--fleet): the damped
+//   effectiveCO3 σ-gates barely move at normal pH (the reference-pH
+//   ratio cancels K₂) — EXCEPT hot+alkaline jeffrey (×13 typ) and
+//   marble (×2.6); the UNDAMPED SI lever (calcite/aragonite/dolomite/
+//   HMC are engine-promoted) drops hard at hot scenarios (mvt ×0.44
+//   typ); PWP H₂CO₃ fractions rise ×2–5 hot; pCO₂ degassing shifts.
+//
+//   VERDICT (baseline A/B, 12/33 scenarios moved): the headline loss
+//   is HOT-SCENARIO ARAGONITE (jeffrey/marble/reactivated-vein/
+//   wittichen at seed 42) — geologically CORRECT, the metastable
+//   low-T polymorph never belonged at 150–700°C; those occurrences
+//   were speciation-flattening artifacts. The rest is cascade re-roll
+//   of 1-crystal marginals (celestine/hawleyite/powellite/selenite —
+//   none carbonates). Fleet coverage IMPROVED: live 133→135, dead
+//   36→34, stale unchanged at the 2 deliberate arcs. mvt's dogtooth
+//   calcite survives (now with a small stepped CORE under glassy
+//   faces — the Tri-State PHANTOM read; claims re-pinned ≤15% early
+//   relief + smooth finish). elmwood's showcase re-pinned: the pulse
+//   train was calibrated in the old constants' units, amps ×1.15 +
+//   width 0.06→0.08 restores the recorded story (19% stepped rim,
+//   13 bands, judge 8/8 — gate also trued: the old >0.4 share gate
+//   never matched the shipped ~18% claim). marble aragonite pin
+//   inverted to assert the retirement.
+//
+//   OPEN ITEM EXPOSED (the correction's sibling): carbonate Ksp(T)
+//   is still constant-ΔH van't Hoff — ~1.3 log units too FLAT at
+//   158°C vs PHREEQC's calcite analytic. With the IAP side now
+//   exact, the mixed fidelity flips the cooling-scenario SI drift
+//   mildly positive (re-pinned bounded until the Ksp analytic
+//   upgrade lands — BACKLOG).
+const SIM_VERSION = 192;
 

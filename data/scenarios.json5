@@ -394,11 +394,20 @@
           "endStep": 200,
           "base": 180,
           "ops": [
-            { "kind": "pulse", "amp": 400, "center": 0.12, "width": 0.06 },
-            { "kind": "pulse", "amp": 450, "center": 0.32, "width": 0.06 },
-            { "kind": "pulse", "amp": 430, "center": 0.52, "width": 0.06 },
-            { "kind": "pulse", "amp": 480, "center": 0.72, "width": 0.06 },
-            { "kind": "pulse", "amp": 400, "center": 0.97, "width": 0.06 }
+            // v192 re-pin: amps ×1.15 + width 0.06→0.08. The corrected
+            // pK(T) (PB82, js/20b) mutes the pulses' recorded σ
+            // excursions at elmwood's 53–120°C — stepped zone share
+            // fell 18%→15% and the band count merged under the sliver
+            // floor. The pulses were calibrated in the OLD constants'
+            // units; the locality claim (stepped golden scalenohedra,
+            // fine mm-scale rim) is the fixed point. Width is the
+            // binding lever: the 16 mm crystal damps hard, so only
+            // time-above-threshold (not peak height) feeds the bands.
+            { "kind": "pulse", "amp": 460, "center": 0.12, "width": 0.08 },
+            { "kind": "pulse", "amp": 518, "center": 0.32, "width": 0.08 },
+            { "kind": "pulse", "amp": 495, "center": 0.52, "width": 0.08 },
+            { "kind": "pulse", "amp": 552, "center": 0.72, "width": 0.08 },
+            { "kind": "pulse", "amp": 460, "center": 0.97, "width": 0.08 }
           ]
         },
         {

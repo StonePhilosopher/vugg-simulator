@@ -196,15 +196,20 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — scenario firings on v147 baseli
     expect(active).toBeGreaterThan(0);
   });
 
-  it('marble_contact_metamorphism aragonite still forms but is bounded by T_max (T=698°C now caps it)', () => {
-    // v146: 1 active 9373 µm + 1 dissolved. v147 with T_max=400:
-    // 1 active 1051 µm + 1 dissolved. Aragonite still forms at the
-    // earliest (cooler) stages but the late-stage hot equilibration
-    // can't sustain it.
+  it('marble_contact_metamorphism aragonite RETIRED by the pK(T) correction (v192)', () => {
+    // History: v146 grew 1 active 9373 µm + 1 dissolved; v147's
+    // T_max=400 bounded it to the early stages; v192's corrected
+    // carbonate speciation (PB82 pK(T), js/20b) finishes the job —
+    // at marble's 303–699°C the CO3²⁻ fraction collapses (pK2 climbs
+    // steeply past 100°C) and aragonite never gates. This is the
+    // CORRECT direction: aragonite is the metastable LOW-T polymorph
+    // (inverts above ~100°C on geologically-short timescales); a
+    // skarn aureole growing aragonite was always a speciation-
+    // flattening artifact. The pin now asserts the retirement.
     const sim = runScenario('marble_contact_metamorphism');
     if (!sim) return;
     const { active, dissolved } = aragoniteCount(sim);
-    expect(active + dissolved).toBeGreaterThan(0);
+    expect(active + dissolved).toBe(0);
   });
 
   it('stalactite_demo now nucleates aragonite (cave aragonite is real per Hill & Forti 1997)', () => {
