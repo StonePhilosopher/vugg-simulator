@@ -2073,6 +2073,127 @@ function _makeTerracedCubeGeom(terr: any): any {
   return geom;
 }
 
+// Dendrite TREE geometry (morphology fix-backlog, 2026-06-12): the
+// dendritic/arborescent habits had been riding the acicular-spike
+// fallback — a single thin pyramid, which reads as a needle, not a
+// tree. This builds a true branching skeleton in unit space:
+//
+//   * trunk along +Y (the c-axis/substrate-normal contract every other
+//     habit primitive follows), y ∈ [-0.5, 0.5]
+//   * primary branches at nodes up the trunk, azimuth QUANTIZED to 90°
+//     steps with small jitter — native-metal dendrites branch
+//     crystallographically along {100} (the Bisbee/Cornish copper
+//     fishbone), not at random angles like a biological tree
+//   * lower branches longer (the depletion-field taper — the oldest
+//     branches have eaten the most halo), secondaries on the longer
+//     primaries with the same quantized grammar
+//
+// Deterministic per crystal: seeded from crystal_id via _clusterRand
+// (the _crystalYaw idiom) — NO Math.random, replay-stable, satellites
+// inherit the parent's tree. The shape is STATIC per crystal; the
+// watch-it-grow read comes free from envelope scaling (replay scales
+// the mesh by the historical dimensions, so the tree grows out of the
+// wall without per-step geometry churn). Each branch is a 4-sided
+// tapered prism (~10 tris); a full tree lands around 200 tris —
+// cheaper than the hex ziggurat.
+function _makeDendriteTreeGeom(crystalId: number): any {
+  const rand = _clusterRand(((crystalId | 0) * 0x9E3779B1 + 0xD3AD) | 0);
+  const positions: number[] = [];
+
+  // Tapered square-section segment from p along unit dir, with a
+  // pyramidal tip cap. Basis vectors are built around dir so branches
+  // work at any angle.
+  const segment = (p: number[], dir: number[], len: number, r0: number, r1: number) => {
+    let ux = dir[2], uy = 0, uz = -dir[0];           // dir × ŷ (lateral)
+    const ul = Math.sqrt(ux * ux + uz * uz);
+    if (ul < 1e-6) { ux = 1; uy = 0; uz = 0; } else { ux /= ul; uz /= ul; }
+    // v = dir × u
+    const vx = dir[1] * uz - dir[2] * uy;
+    const vy = dir[2] * ux - dir[0] * uz;
+    const vz = dir[0] * uy - dir[1] * ux;
+    const ring = (t: number, r: number): number[][] => {
+      const cx = p[0] + dir[0] * len * t, cy = p[1] + dir[1] * len * t, cz = p[2] + dir[2] * len * t;
+      const out: number[][] = [];
+      for (let i = 0; i < 4; i++) {
+        const a = (i + 0.5) / 4 * Math.PI * 2;
+        const ca = Math.cos(a) * r, sa = Math.sin(a) * r;
+        out.push([cx + ux * ca + vx * sa, cy + uy * ca + vy * sa, cz + uz * ca + vz * sa]);
+      }
+      return out;
+    };
+    const b0 = ring(0, r0), b1 = ring(1, Math.max(r1, 0.002));
+    for (let i = 0; i < 4; i++) {
+      const a = b0[i], b = b0[(i + 1) % 4], c = b1[(i + 1) % 4], d = b1[i];
+      _pushTri(positions, a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+      _pushTri(positions, a[0], a[1], a[2], c[0], c[1], c[2], d[0], d[1], d[2]);
+    }
+    // tip cap (small pyramid to the segment end point + a bit beyond)
+    const tip = [p[0] + dir[0] * len * 1.04, p[1] + dir[1] * len * 1.04, p[2] + dir[2] * len * 1.04];
+    for (let i = 0; i < 4; i++) {
+      const a = b1[i], b = b1[(i + 1) % 4];
+      _pushTri(positions, tip[0], tip[1], tip[2], a[0], a[1], a[2], b[0], b[1], b[2]);
+    }
+  };
+
+  // Trunk: base slightly below anchor plane so it roots in the druse.
+  segment([0, -0.5, 0], [0, 1, 0], 1.0, 0.05, 0.012);
+
+  // Primary branches. Node fractions run up the trunk; azimuth steps
+  // around the four {100} quadrants with jitter; elevation ~55° off
+  // the trunk. Length tapers toward the tip (lower = older = longer).
+  const nPrim = 6 + Math.floor(rand() * 3);
+  let quadrant = Math.floor(rand() * 4);
+  for (let i = 0; i < nPrim; i++) {
+    const frac = 0.18 + (i / nPrim) * 0.74 + (rand() - 0.5) * 0.04;  // 0..1 up the trunk
+    const y = -0.5 + frac;
+    quadrant = (quadrant + 1 + (rand() < 0.25 ? 1 : 0)) % 4;
+    const az = quadrant * (Math.PI / 2) + (rand() - 0.5) * 0.5;
+    const elev = 0.96 + (rand() - 0.5) * 0.25;                        // ~55° from trunk
+    const dir = [Math.cos(az) * Math.sin(elev), Math.cos(elev), Math.sin(az) * Math.sin(elev)];
+    const len = 0.42 * (1 - frac * 0.72) * (0.85 + rand() * 0.3);
+    if (len < 0.05) continue;
+    const r0 = 0.026 * (1 - frac * 0.4);
+    segment([0, y, 0], dir, len, r0, 0.006);
+    // Secondaries on the longer primaries — same grammar one level down,
+    // forking ±90° in azimuth from the parent (the fishbone rib read).
+    if (len > 0.16) {
+      for (const t of [0.45, 0.75]) {
+        const p2 = [dir[0] * len * t, y + dir[1] * len * t, dir[2] * len * t];
+        const az2 = az + (rand() < 0.5 ? 1 : -1) * (Math.PI / 2) + (rand() - 0.5) * 0.4;
+        const elev2 = elev - 0.25 + (rand() - 0.5) * 0.2;
+        const dir2 = [Math.cos(az2) * Math.sin(elev2), Math.cos(elev2), Math.sin(az2) * Math.sin(elev2)];
+        const len2 = len * (0.45 - 0.15 * t) * (0.8 + rand() * 0.4);
+        if (len2 < 0.04) continue;
+        segment(p2, dir2, len2, r0 * 0.5, 0.004);
+      }
+    }
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// Habit-string gate for the tree path. Token-level 'spike' serves
+// acicular/fibrous/plumose too — those stay needles; only the
+// dendritic/arborescent family gets branches.
+function _isDendriticHabit(habit: string): boolean {
+  const h = String(habit || '').toLowerCase();
+  return h === 'dendritic' || h.startsWith('dendritic_') || h.includes('arborescent');
+}
+
+// Per-crystal tree cache (static shape — no sig churn; the entry lives
+// as long as the crystal renders, same lifecycle as the terrace cache).
+function _getDendriteTreeGeom(state: any, crystal: any): any {
+  if (!state._treeGeoms) state._treeGeoms = new Map();
+  const hit = state._treeGeoms.get(crystal.crystal_id);
+  if (hit) return hit;
+  const geom = _makeDendriteTreeGeom(crystal.crystal_id | 0);
+  state._treeGeoms.set(crystal.crystal_id, geom);
+  return geom;
+}
+
 // Per-crystal terrace-geometry cache. Keyed by crystal_id; the signature
 // (form + knot list + hopper tip) busts the entry the moment a new band
 // forms or the replay scrubber crosses a band boundary — old geometry is
@@ -2907,6 +3028,17 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         && token === 'cube' && typeof halideTerraceBands === 'function') {
       const terr = halideTerraceBands(crystal, replayStep);
       if (terr) geom = _getTerracedCalciteGeom(state, crystal, terr);
+    }
+    // Dendrite TREE (morphology fix-backlog, 2026-06-12): dendritic /
+    // arborescent habits get the branching skeleton instead of the
+    // acicular-spike fallback. Gated on token === 'spike' so the
+    // dripstone air-mode override and the twin tokens keep their own
+    // geometry, and on the habit string so acicular/fibrous needles
+    // stay needles. Mineral-agnostic by design — wittichen bismuth,
+    // bisbee copper/gold, silver dendrites, and halite's efflorescent
+    // dendritic_cube all read as trees.
+    if (!geom && token === 'spike' && _isDendriticHabit(habitForGeom)) {
+      geom = _getDendriteTreeGeom(state, crystal);
     }
     if (!geom) {
       geom = state.geomCache.get(token);
