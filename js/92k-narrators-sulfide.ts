@@ -70,6 +70,17 @@ Object.assign(VugSimulator.prototype, {
   const parts = [`Pyrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
   if (c.habit === 'framboidal') {
     parts.push(narrative_variant('pyrite', 'framboidal') || 'The low temperature produced framboidal pyrite — microscopic raspberry-shaped aggregates of tiny crystallites, a texture common in sedimentary environments.');
+  } else if (String(c.habit || '').startsWith('striated_')) {
+    // Morphology-generalization arc (2026-06-12): the striated_ overlay
+    // habits had NO narrator branch — striated_cubic fell into the
+    // generic cubic prose via the includes('cubic') check below, and the
+    // pyritohedral overlays fell through silently. The striations are
+    // the regime story (bunched growth steps), so they get their own
+    // sentence carrying the parent form.
+    const parent = c.habit === 'striated_cubic' ? 'cube'
+      : c.habit === 'striated_pyritohedral' ? 'pyritohedron'
+      : 'cubo-pyritohedral crystal';
+    parts.push(narrative_variant('pyrite', 'striated', { parent }) || `Striated ${parent} — the faces carry parallel grooves, perpendicular on adjacent faces. The striations are not decoration: each groove is a bunched train of growth steps, the {100}/{210} oscillatory combination recorded ledge by ledge. A heavily striated pyrite is a crystal that grew fast and wrote it down.`);
   } else if (c.habit === 'pyritohedral') {
     // (2026-06-10 review §2.4: {210} is fully crystallographic, class m3̄ —
     // pseudo-fivefold is what the old text meant by "non-crystallographic".)

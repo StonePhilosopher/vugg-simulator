@@ -4256,7 +4256,7 @@ const _NARRATIVE_CACHE = {};
 // Phase-1 manifest — extend as more species migrate. When all 89 are
 // extracted the manifest can become a generated index file fetched
 // once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'autunite', 'uranospinite', 'tyuyamunite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite', 'native_tellurium', 'native_sulfur', 'native_arsenic', 'wurtzite', 'spodumene', 'chrysocolla', 'quartz', 'topaz', 'tourmaline'];
+const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'autunite', 'uranospinite', 'tyuyamunite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite', 'native_tellurium', 'native_sulfur', 'native_arsenic', 'wurtzite', 'spodumene', 'chrysocolla', 'quartz', 'topaz', 'tourmaline', 'halite'];
 function _parseNarrative(text) {
     // Strip frontmatter (--- block at top).
     if (text.startsWith('---')) {
@@ -55236,7 +55236,7 @@ Object.assign(VugSimulator.prototype, {
                 parts.push(narrative_variant('calcite', 'morph_hopper') || `Growth outran supply: edges and corners sit proud in the diffusion field and kept building while the face centers starved, so the faces hollowed into stepped funnels while the crystal stayed faceted. A hopper calcite is a crystal that grew too fast for its own interior.`);
             }
             else if (steppedShare > 0.1 && stepBands > 0) {
-                parts.push(narrative_variant('calcite', 'morph_stepped', { bands: stepBands }) || `The faces are terraced — ${stepBands} distinct macrostep train${stepBands === 1 ? '' : 's'}, each one a stretch of growth when supersaturation surged past the quiet spiral regime and the elementary steps bunched into ledges large enough to see. Read the staircase from base to tip and you are reading the fluid's history in stone.`);
+                parts.push(narrative_variant('calcite', 'morph_stepped', { bands: stepBands, bands_s: stepBands === 1 ? '' : 's' }) || `The faces are terraced — ${stepBands} distinct macrostep train${stepBands === 1 ? '' : 's'}, each one a stretch of growth when supersaturation surged past the quiet spiral regime and the elementary steps bunched into ledges large enough to see. Read the staircase from base to tip and you are reading the fluid's history in stone.`);
             }
         }
         if (c.twinned) {
@@ -55575,10 +55575,10 @@ Object.assign(VugSimulator.prototype, {
             }
             const banded = ((mass.stepped_mild || 0) + (mass.stepped_macro || 0)) / Math.max(1, tot);
             if (tot > 0 && banded > 0.6) {
-                parts.push(`The faces are composite — cube regrown on cube, ${Math.round(banded * 100)}% of the mass laid down in the stepped regime. This crystal spent most of its life being pushed.`);
+                parts.push(narrative_variant('fluorite', 'morph_composite', { pct: Math.round(banded * 100) }) || `The faces are composite — cube regrown on cube, ${Math.round(banded * 100)}% of the mass laid down in the stepped regime. This crystal spent most of its life being pushed.`);
             }
             else if (tot > 0 && banded > 0.15) {
-                parts.push(`Growth banding on the cube faces: ${Math.round(banded * 100)}% of the mass went down during driven episodes — read the bands and you are reading the vein's pressure valve.`);
+                parts.push(narrative_variant('fluorite', 'morph_banded', { pct: Math.round(banded * 100) }) || `Growth banding on the cube faces: ${Math.round(banded * 100)}% of the mass went down during driven episodes — read the bands and you are reading the vein's pressure valve.`);
             }
         }
         if (c.twinned)
@@ -55622,10 +55622,10 @@ Object.assign(VugSimulator.prototype, {
             parts.push('Hopper-growth habit — high supersaturation produced a skeletal cube with stepped pyramidal hollows on each face. Edge-growth outraced face-growth and left the centers concave, the signature of a brine driven hard enough to nucleate faster than it could fill in. Searles Lake evaporation ponds make these in summer.');
         }
         else if (c.habit === 'stepped_cube') {
-            parts.push('Growth-banded cube — the chevron habit. At moderate supersaturation the (100) faces advance by visible steps, and each step traps a film of brine as a fluid-inclusion band; stack enough of them and the cube carries the herringbone banding that salt sedimentologists read like tree rings.');
+            parts.push(narrative_variant('halite', 'stepped_cube') || 'Growth-banded cube — the chevron habit. At moderate supersaturation the (100) faces advance by visible steps, and each step traps a film of brine as a fluid-inclusion band; stack enough of them and the cube carries the herringbone banding that salt sedimentologists read like tree rings.');
         }
         else if (c.habit === 'dendritic_cube') {
-            parts.push('Dendritic salt crust — the instability run past hopper. Supersaturation outran even edge-growth and the salt branched into an efflorescent skeleton rather than a crystal. Dry-lake margins do this overnight after a flood retreats.');
+            parts.push(narrative_variant('halite', 'dendritic_cube') || 'Dendritic salt crust — the instability run past hopper. Supersaturation outran even edge-growth and the salt branched into an efflorescent skeleton rather than a crystal. Dry-lake margins do this overnight after a flood retreats.');
         }
         else if (c.habit === 'cubic') {
             parts.push('Clean cubic habit — slow evaporation, low supersaturation. The brine concentrated patiently enough for the (100) faces to fill in flat. This is the Wieliczka habit, the cathedral-cube halite that meter-scale specimens come from.');
@@ -55674,10 +55674,10 @@ Object.assign(VugSimulator.prototype, {
             const hopperShare = ((morphMass.hopper_skeletal || 0) + (morphMass.dendritic || 0)) / morphTotal;
             const bandedShare = ((morphMass.stepped_mild || 0) + (morphMass.stepped_macro || 0)) / morphTotal;
             if (hopperShare > 0.05 && bandedShare > 0.05) {
-                parts.push(`The zone stack is a salt-pan log: ${Math.round(bandedShare * 100)}% of the growth went down as banded cube in patient brine and ${Math.round(hopperShare * 100)}% as hopper during desiccation spikes. Each hopper band is one dry season — read the crystal from core to rim and you are reading the pan's weather.`);
+                parts.push(narrative_variant('halite', 'morph_saltpan_log', { banded_pct: Math.round(bandedShare * 100), hopper_pct: Math.round(hopperShare * 100) }) || `The zone stack is a salt-pan log: ${Math.round(bandedShare * 100)}% of the growth went down as banded cube in patient brine and ${Math.round(hopperShare * 100)}% as hopper during desiccation spikes. Each hopper band is one dry season — read the crystal from core to rim and you are reading the pan's weather.`);
             }
             else if (hopperShare > 0.5) {
-                parts.push(`Almost the whole stack (${Math.round(hopperShare * 100)}%) grew in the hopper regime — this crystal never saw patient brine; it lived its entire life in desiccation conditions.`);
+                parts.push(narrative_variant('halite', 'morph_all_hopper', { pct: Math.round(hopperShare * 100) }) || `Almost the whole stack (${Math.round(hopperShare * 100)}%) grew in the hopper regime — this crystal never saw patient brine; it lived its entire life in desiccation conditions.`);
             }
         }
         if (c.twinned && (c.twin_law || '').includes('spinel')) {
@@ -55958,7 +55958,7 @@ Object.assign(VugSimulator.prototype, {
                     dendr += z.thickness_um;
             }
             if (total > 0 && dendr / total > 0.05 && c.habit !== 'arborescent_dendritic') {
-                parts.push(`The zone stack remembers what the final habit hides: ${Math.round(100 * dendr / total)}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.`);
+                parts.push(narrative_variant('native_bismuth', 'morph_healed_dendrite', { pct: Math.round(100 * dendr / total) }) || `The zone stack remembers what the final habit hides: ${Math.round(100 * dendr / total)}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.`);
             }
         }
         return parts.filter(p => p).join(' ');
@@ -57168,6 +57168,18 @@ Object.assign(VugSimulator.prototype, {
         const parts = [`Pyrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
         if (c.habit === 'framboidal') {
             parts.push(narrative_variant('pyrite', 'framboidal') || 'The low temperature produced framboidal pyrite — microscopic raspberry-shaped aggregates of tiny crystallites, a texture common in sedimentary environments.');
+        }
+        else if (String(c.habit || '').startsWith('striated_')) {
+            // Morphology-generalization arc (2026-06-12): the striated_ overlay
+            // habits had NO narrator branch — striated_cubic fell into the
+            // generic cubic prose via the includes('cubic') check below, and the
+            // pyritohedral overlays fell through silently. The striations are
+            // the regime story (bunched growth steps), so they get their own
+            // sentence carrying the parent form.
+            const parent = c.habit === 'striated_cubic' ? 'cube'
+                : c.habit === 'striated_pyritohedral' ? 'pyritohedron'
+                    : 'cubo-pyritohedral crystal';
+            parts.push(narrative_variant('pyrite', 'striated', { parent }) || `Striated ${parent} — the faces carry parallel grooves, perpendicular on adjacent faces. The striations are not decoration: each groove is a bunched train of growth steps, the {100}/{210} oscillatory combination recorded ledge by ledge. A heavily striated pyrite is a crystal that grew fast and wrote it down.`);
         }
         else if (c.habit === 'pyritohedral') {
             // (2026-06-10 review §2.4: {210} is fully crystallographic, class m3̄ —

@@ -41,9 +41,9 @@ Object.assign(VugSimulator.prototype, {
     }
     const banded = ((mass.stepped_mild || 0) + (mass.stepped_macro || 0)) / Math.max(1, tot);
     if (tot > 0 && banded > 0.6) {
-      parts.push(`The faces are composite — cube regrown on cube, ${Math.round(banded * 100)}% of the mass laid down in the stepped regime. This crystal spent most of its life being pushed.`);
+      parts.push(narrative_variant('fluorite', 'morph_composite', { pct: Math.round(banded * 100) }) || `The faces are composite — cube regrown on cube, ${Math.round(banded * 100)}% of the mass laid down in the stepped regime. This crystal spent most of its life being pushed.`);
     } else if (tot > 0 && banded > 0.15) {
-      parts.push(`Growth banding on the cube faces: ${Math.round(banded * 100)}% of the mass went down during driven episodes — read the bands and you are reading the vein's pressure valve.`);
+      parts.push(narrative_variant('fluorite', 'morph_banded', { pct: Math.round(banded * 100) }) || `Growth banding on the cube faces: ${Math.round(banded * 100)}% of the mass went down during driven episodes — read the bands and you are reading the vein's pressure valve.`);
     }
   }
   if (c.twinned) parts.push(narrative_variant('fluorite', 'twinned', { twin_law: c.twin_law }) || `Shows ${c.twin_law} twinning — two interpenetrating cubes.`);
@@ -83,9 +83,9 @@ Object.assign(VugSimulator.prototype, {
     if (c.habit === 'hopper_growth' || c.habit === 'hopper_cube') {
       parts.push('Hopper-growth habit — high supersaturation produced a skeletal cube with stepped pyramidal hollows on each face. Edge-growth outraced face-growth and left the centers concave, the signature of a brine driven hard enough to nucleate faster than it could fill in. Searles Lake evaporation ponds make these in summer.');
     } else if (c.habit === 'stepped_cube') {
-      parts.push('Growth-banded cube — the chevron habit. At moderate supersaturation the (100) faces advance by visible steps, and each step traps a film of brine as a fluid-inclusion band; stack enough of them and the cube carries the herringbone banding that salt sedimentologists read like tree rings.');
+      parts.push(narrative_variant('halite', 'stepped_cube') || 'Growth-banded cube — the chevron habit. At moderate supersaturation the (100) faces advance by visible steps, and each step traps a film of brine as a fluid-inclusion band; stack enough of them and the cube carries the herringbone banding that salt sedimentologists read like tree rings.');
     } else if (c.habit === 'dendritic_cube') {
-      parts.push('Dendritic salt crust — the instability run past hopper. Supersaturation outran even edge-growth and the salt branched into an efflorescent skeleton rather than a crystal. Dry-lake margins do this overnight after a flood retreats.');
+      parts.push(narrative_variant('halite', 'dendritic_cube') || 'Dendritic salt crust — the instability run past hopper. Supersaturation outran even edge-growth and the salt branched into an efflorescent skeleton rather than a crystal. Dry-lake margins do this overnight after a flood retreats.');
     } else if (c.habit === 'cubic') {
       parts.push('Clean cubic habit — slow evaporation, low supersaturation. The brine concentrated patiently enough for the (100) faces to fill in flat. This is the Wieliczka habit, the cathedral-cube halite that meter-scale specimens come from.');
     } else if (c.habit === 'fibrous_coating') {
@@ -132,9 +132,9 @@ Object.assign(VugSimulator.prototype, {
       const hopperShare = ((morphMass.hopper_skeletal || 0) + (morphMass.dendritic || 0)) / morphTotal;
       const bandedShare = ((morphMass.stepped_mild || 0) + (morphMass.stepped_macro || 0)) / morphTotal;
       if (hopperShare > 0.05 && bandedShare > 0.05) {
-        parts.push(`The zone stack is a salt-pan log: ${Math.round(bandedShare * 100)}% of the growth went down as banded cube in patient brine and ${Math.round(hopperShare * 100)}% as hopper during desiccation spikes. Each hopper band is one dry season — read the crystal from core to rim and you are reading the pan's weather.`);
+        parts.push(narrative_variant('halite', 'morph_saltpan_log', { banded_pct: Math.round(bandedShare * 100), hopper_pct: Math.round(hopperShare * 100) }) || `The zone stack is a salt-pan log: ${Math.round(bandedShare * 100)}% of the growth went down as banded cube in patient brine and ${Math.round(hopperShare * 100)}% as hopper during desiccation spikes. Each hopper band is one dry season — read the crystal from core to rim and you are reading the pan's weather.`);
       } else if (hopperShare > 0.5) {
-        parts.push(`Almost the whole stack (${Math.round(hopperShare * 100)}%) grew in the hopper regime — this crystal never saw patient brine; it lived its entire life in desiccation conditions.`);
+        parts.push(narrative_variant('halite', 'morph_all_hopper', { pct: Math.round(hopperShare * 100) }) || `Almost the whole stack (${Math.round(hopperShare * 100)}%) grew in the hopper regime — this crystal never saw patient brine; it lived its entire life in desiccation conditions.`);
       }
     }
 

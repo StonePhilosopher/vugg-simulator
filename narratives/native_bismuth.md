@@ -19,3 +19,15 @@ Rhombohedral crystal — RARE. Bismuth crystallizes in trigonal symmetry with {0
 ## variant: massive_default
 
 Massive granular — silver-white metallic blob, iridescent within days of exposure to air.
+
+## variant: feathery_bismuth
+
+Feather bismuth — foliated laths stacked like plumage, the record of a fluid driven hard but not yet unstable.
+
+## variant: skeletal_bismuth
+
+Skeletal frames — edges outracing faces. The melt-grown rainbow funnel is this regime's laboratory cousin; nature rarely holds bismuth here long enough to preserve it.
+
+## variant: morph_healed_dendrite
+
+The zone stack remembers what the final habit hides: {pct}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.

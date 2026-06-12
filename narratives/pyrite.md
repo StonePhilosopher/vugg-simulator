@@ -23,3 +23,7 @@ Twinned as an {twin_law} — two crystals interpenetrating at 90°, one of the m
 ## variant: acid_oxidation
 
 Late-stage oxidation attacked the pyrite — in nature this would produce a limonite/goethite boxwork pseudomorph, the rusty ghost of the original crystal.
+
+## variant: striated
+
+Striated {parent} — the faces carry parallel grooves, perpendicular on adjacent faces. The striations are not decoration: each groove is a bunched train of growth steps, the {100}/{210} oscillatory combination recorded ledge by ledge (Murowchick & Barnes 1987). A heavily striated pyrite is a crystal that grew fast and wrote it down.
