@@ -10803,5 +10803,36 @@
 //   carbonate engines → mvt rebake.
 //
 //   BASELINE: rebake. Expected mover: mvt only.
-const SIM_VERSION = 190;
+//
+// v191 (2026-06-12) — THE BARYTGÄNGE CORRECTION: wittichen broth Ba
+//                     24→75 (+ the meteoric event's Ba floor 22→70);
+//                     barite joins the real expects, erythrite demoted
+//                     as structurally out-of-window.
+//
+//   The v189 "aspirational barite" diagnosis blamed the missing barite
+//   on oxidation (the reverted +100 Eh finger). The gate census
+//   (tools/wittichen-sulfate-probe.mjs, NEW — the roughten_gill
+//   linarite pattern) measured the truth: from step ~133 EVERY gate
+//   component passes (Ba✓ S✓ redox✓ pH✓ T✓) and σ_barite plateaus at
+//   0.60 — barite was BARIUM-limited: ba_f(24/30)·s_f(30/40)·o2_f·1.2
+//   times the salinity-24 activity penalty (~0.59) can never reach 1.
+//   The locality is the authority: Wittichen's veins are the
+//   Barytgänge — barite IS the district's defining gangue — so Ba 24
+//   was unjustifiably shy. Ba 75 (modest for a heavy-spar district):
+//   σ 1.47–1.55 through the barite stage, barite 2/6/3 crystals at
+//   seeds 42/43/44, NO witherite (BaCO3 never gates), living suite
+//   intact at every probed seed (skutterudite 2, safflorite 2, Bi 3-4,
+//   acanthite 4, calcite 1 — unchanged from the v189 baseline). No Eh
+//   change; the reverted oxidation finger stays reverted.
+//
+//   ERYTHRITE: demoted from expects BY MEASUREMENT, not surrender —
+//   its gate needs T ≤ 50°C (weathering-zone physics) and the
+//   scenario's T trajectory ends at ~150°C. The cobalt bloom is a
+//   post-exhumation weathering product; a sealed-vein story cannot
+//   host it honestly. First client for a future spatially-partial
+//   weathering-epilogue mechanic (BACKLOG).
+//
+//   BASELINE: rebake. Expected mover: wittichen only (additive
+//   +barite; Ba is inert to every other engine in this broth).
+const SIM_VERSION = 191;
 

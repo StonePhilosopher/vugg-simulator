@@ -15900,7 +15900,38 @@ let timeScale = 5.0;
 //   carbonate engines → mvt rebake.
 //
 //   BASELINE: rebake. Expected mover: mvt only.
-const SIM_VERSION = 190;
+//
+// v191 (2026-06-12) — THE BARYTGÄNGE CORRECTION: wittichen broth Ba
+//                     24→75 (+ the meteoric event's Ba floor 22→70);
+//                     barite joins the real expects, erythrite demoted
+//                     as structurally out-of-window.
+//
+//   The v189 "aspirational barite" diagnosis blamed the missing barite
+//   on oxidation (the reverted +100 Eh finger). The gate census
+//   (tools/wittichen-sulfate-probe.mjs, NEW — the roughten_gill
+//   linarite pattern) measured the truth: from step ~133 EVERY gate
+//   component passes (Ba✓ S✓ redox✓ pH✓ T✓) and σ_barite plateaus at
+//   0.60 — barite was BARIUM-limited: ba_f(24/30)·s_f(30/40)·o2_f·1.2
+//   times the salinity-24 activity penalty (~0.59) can never reach 1.
+//   The locality is the authority: Wittichen's veins are the
+//   Barytgänge — barite IS the district's defining gangue — so Ba 24
+//   was unjustifiably shy. Ba 75 (modest for a heavy-spar district):
+//   σ 1.47–1.55 through the barite stage, barite 2/6/3 crystals at
+//   seeds 42/43/44, NO witherite (BaCO3 never gates), living suite
+//   intact at every probed seed (skutterudite 2, safflorite 2, Bi 3-4,
+//   acanthite 4, calcite 1 — unchanged from the v189 baseline). No Eh
+//   change; the reverted oxidation finger stays reverted.
+//
+//   ERYTHRITE: demoted from expects BY MEASUREMENT, not surrender —
+//   its gate needs T ≤ 50°C (weathering-zone physics) and the
+//   scenario's T trajectory ends at ~150°C. The cobalt bloom is a
+//   post-exhumation weathering product; a sealed-vein story cannot
+//   host it honestly. First client for a future spatially-partial
+//   weathering-epilogue mechanic (BACKLOG).
+//
+//   BASELINE: rebake. Expected mover: wittichen only (additive
+//   +barite; Ba is inert to every other engine in this broth).
+const SIM_VERSION = 191;
 
 // ── 18-constants.js ──
 
@@ -43516,9 +43547,10 @@ function event_reactivated_vein_breach(c) {
 //      shock step (no fluid writes; the movement owns the redox — the
 //      v185 lesson, never re-confound what subsumption separated).
 //   2. wittichen_meteoric_sulfate — cooled meteoric water brings
-//      oxidized sulfate: S 3 → 40 at T ~165°C. With the Eh trend now
+//      oxidized sulfate: S 3 → 30 at T ~165°C. With the Eh trend now
 //      positive, barite gates open (Ba has been waiting in the broth
-//      since step 0). Geologically the vein-top barite stage.
+//      since step 0 — 75 ppm since v191, the Barytgänge correction).
+//      Geologically the vein-top barite stage.
 //   3. wittichen_carbonate_gangue — CO3 + Ca influx; calcite seals the
 //      vug. The hand-specimen truth of the class: silver-white Bi
 //      dendrites embedded IN white carbonate, read in cross-section.
@@ -43533,7 +43565,11 @@ function event_wittichen_meteoric_sulfate(c) {
     // silver to acanthite in one stage; 30 leaves the conversion partial,
     // which is the hand-specimen truth (acanthite-coated native silver).
     c.fluid.S = Math.min(30, c.fluid.S + 27);
-    c.fluid.Ba = Math.max(c.fluid.Ba, 22); // keep the barite budget honest if earlier stages nibbled it
+    // v191: broth Ba is 75 (the Barytgänge correction — the gate census
+    // proved barite was BARIUM-limited, not oxidation-limited; see the
+    // scenario notes). The floor tracks it so earlier-stage nibbling
+    // can't starve the barite stage.
+    c.fluid.Ba = Math.max(c.fluid.Ba, 70);
     c.temperature = Math.min(c.temperature, 170);
     return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over; the silver begins to tarnish.`;
 }

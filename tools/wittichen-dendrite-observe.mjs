@@ -11,6 +11,8 @@
  *   - silver tarnish story: acanthite present (native_silver grows on
  *     the shock, sulfidizes at the meteoric stage)
  *   - carbonate gangue: calcite or aragonite present
+ *   - barite gangue (v191, the Barytgänge correction): ≥1 barite —
+ *     the vein-top stage the district is named for
  *
  * Usage: node tools/wittichen-dendrite-observe.mjs [--seeds 8]
  */
@@ -34,7 +36,7 @@ const pct = (x) => `${Math.round(x * 100)}%`;
 let pass = 0;
 
 console.log(`\n### WITTICHEN FIVE-ELEMENT JUDGE — ${N_SEEDS} seeds`);
-console.log('  seed  Bi alive  dendr%  skut  saff  nick  acanthite  gangue   verdict');
+console.log('  seed  Bi alive  dendr%  skut  saff  nick  acanthite  gangue  barite   verdict');
 for (let i = 0; i < N_SEEDS; i++) {
   const seed = 42 + i;
   const sim = run(seed);
@@ -48,8 +50,9 @@ for (let i = 0; i < N_SEEDS; i++) {
   const skut = alive('skutterudite'), saff = alive('safflorite'), nick = alive('nickeline');
   const acan = alive('acanthite');
   const gangue = alive('calcite') + alive('aragonite');
-  const ok = bi.length >= 2 && dendr >= 0.25 && skut >= 1 && saff >= 1 && gangue >= 1;
+  const brt = alive('barite');
+  const ok = bi.length >= 2 && dendr >= 0.25 && skut >= 1 && saff >= 1 && gangue >= 1 && brt >= 1;
   if (ok) pass++;
-  console.log(`  ${String(seed).padEnd(5)} ${String(bi.length).padStart(3)}       ${pct(dendr).padStart(4)}   ${String(skut).padStart(3)}  ${String(saff).padStart(4)}  ${String(nick).padStart(4)}  ${String(acan).padStart(6)}     ${String(gangue).padStart(3)}      ${ok ? 'SHOCK RECORDED ✓' : 'MISS ✗'}`);
+  console.log(`  ${String(seed).padEnd(5)} ${String(bi.length).padStart(3)}       ${pct(dendr).padStart(4)}   ${String(skut).padStart(3)}  ${String(saff).padStart(4)}  ${String(nick).padStart(4)}  ${String(acan).padStart(6)}     ${String(gangue).padStart(3)}     ${String(brt).padStart(3)}      ${ok ? 'SHOCK RECORDED ✓' : 'MISS ✗'}`);
 }
-console.log(`\n  ${pass}/${N_SEEDS} seeds satisfy the five-element contract (Bi≥2 alive, dendritic ≥25%, skutterudite+safflorite alive, gangue sealed)`);
+console.log(`\n  ${pass}/${N_SEEDS} seeds satisfy the five-element contract (Bi≥2 alive, dendritic ≥25%, skutterudite+safflorite alive, gangue sealed, barite stage open)`);
