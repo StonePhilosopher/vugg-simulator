@@ -1159,6 +1159,11 @@ const HABIT_TO_PRIMITIVE = {
   'stepped_cube':                   PRIM_CUBE,
   'hopper_cube':                    PRIM_CUBE,
   'dendritic_cube':                 PRIM_ACICULAR,
+  // Bismuth regime family (2026-06-12): lath fans + skeletal frames
+  // both read as spikes at primitive scale; arborescent_dendritic
+  // already routes via the dendritic fuzzy.
+  'feathery_bismuth':               PRIM_ACICULAR,
+  'skeletal_bismuth':               PRIM_ACICULAR,
   'prismatic':                      PRIM_HEX_PRISM_TERMINATED,
   'short_prismatic':                PRIM_HEX_PRISM,
   'striated_prism':                 PRIM_HEX_PRISM_TERMINATED,

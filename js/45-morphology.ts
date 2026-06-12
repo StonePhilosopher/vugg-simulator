@@ -81,6 +81,13 @@ const MORPH_DISPLAY: Record<string, Record<string, string>> = {
     hopper_skeletal: 'hopper',
     dendritic: 'dendritic crust',
   },
+  native_bismuth: {
+    spiral_smooth: 'massive/foliated',
+    stepped_mild: 'feathery laths',
+    stepped_macro: 'feather bismuth (skeletal)',
+    hopper_skeletal: 'skeletal frame',
+    dendritic: 'arborescent dendrite',
+  },
 };
 
 function morphDisplayLabel(mineral: string, regime: string): string {
@@ -201,6 +208,32 @@ MORPH_TH.sylvite = {
   HOPPER_MAX: 60.0,
   sigma(conditions: any): number { return conditions.supersaturation_sylvite(); },
   form(_conditions: any): string { return 'cube'; },
+};
+
+// ---- native bismuth — third tenant (the corrected ladder) ----
+// Survey + design: proposals/RESEARCH-bismuth-morphology-2026-06-12.md.
+// σ is STRUCTURALLY CAPPED at ~4.5 (js/36: bi_f≤3.0 × red_f≤1.5) — the
+// whole ladder fits in [1, 4.5]; edges are PROVISIONAL until the
+// five-element scenario (`wittichen`) gives the upper bands a tenant,
+// then re-pin against its measured σ trajectory. Current fleet truth:
+// schneeberg's brief primary Bi (σ ≤ 1.32) lives in the smooth band as
+// massive/foliated veinlet Bi, then the v185 oxidation swing destroys
+// it — both halves correct geology.
+// No damping (Infinity): redox-shock precipitation in a vein shoot is
+// advection/reaction-controlled, and the natural dendrites are the
+// BIGGEST masses (kg-scale Wismut sheets) — the halite inverse-argument
+// again. Hopper band kept for ladder completeness but expected empty:
+// the rainbow funnel is MELT growth (271°C mp), not hydrothermal.
+MORPH_TH.native_bismuth = {
+  SIZE_HALF_UM: Infinity,
+  SIZE_DAMP_CAP_UM: Infinity,
+  SPIRAL_MAX: 1.5,       // < this → massive/foliated (+ rare crystal dice-roll)
+  STEP_MILD_MAX: 2.2,    // feathery laths, growth-banded foliation
+  STEP_MACRO_MAX: 3.0,   // coarsely skeletal ("feather bismuth")
+  HOPPER_MAX: 3.8,       // skeletal frames (expected unoccupied — melt territory)
+  // ≥ 3.8 → arborescent dendritic — THE five-element reduction-shock texture
+  sigma(conditions: any): number { return conditions.supersaturation_native_bismuth(); },
+  form(_conditions: any): string { return 'native'; },
 };
 
 function morphSurfaceSigma(th: any, bulkSigma: number, sizeUm: number): number {

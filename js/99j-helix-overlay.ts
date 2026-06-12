@@ -148,7 +148,7 @@ type ChemParam = {
   //   units:  display unit (e.g. '°C', 'log Ω', 'mg/L', 'ppm'). Read by
   //           strip-view tooltips + the dataset manifest's per-chip
   //           units field.
-  system?: 'wall' | 'special' | 'carbonate' | 'sulfate' | 'halide' | 'ion',
+  system?: 'wall' | 'special' | 'carbonate' | 'sulfate' | 'halide' | 'native' | 'ion',
   units?: string,
   read: (sim: any, wall: any, ringIdx: number, cellIdx: number) => number | null | undefined,
 };
@@ -229,6 +229,7 @@ const _HELIX_FULL_NAMES: { [id: string]: string } = {
   calcite_morph: 'Calcite growth regime at this spot (Sunagawa ordinal: 0 smooth spar · 1 stepped mild · 2 stepped macrostep · 3 hopper/skeletal · 4 dendritic)',
   halite_morph: 'Halite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded/chevron · 2 macrostepped · 3 hopper/raft · 4 dendritic crust)',
   sylvite_morph: 'Sylvite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded · 2 macrostepped · 3 hopper · 4 dendritic crust)',
+  bismuth_morph: 'Native bismuth growth regime at this spot (Sunagawa ordinal: 0 massive/foliated · 1 feathery · 2 feather/skeletal · 3 skeletal frame · 4 arborescent dendrite — the five-element reduction-shock texture)',
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
   // v165 — Sulfate System section (PHREEQC wateq4f Ksp via 20d + 40b).
   // Strip is no longer SI-blind on the sulfate/evaporite family
@@ -587,6 +588,11 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   // plateaus in RESEARCH-halide-morphology-2026-06-12.md §1).
   params.push(_morphChipParam('halite', 'halite_morph', 'hal morph', 0xE8E8F8, 'halide'));
   params.push(_morphChipParam('sylvite', 'sylvite_morph', 'syl morph', 0xF8D8E8, 'halide'));
+  // Native-metal morph chips (third registry wave — bismuth first;
+  // copper/gold will join under the same 'native' legend group). In
+  // wittichen (when it lands) this chip should slam 0→4 exactly on the
+  // reducing Eh pulse — the shock made visible in the strip.
+  params.push(_morphChipParam('native_bismuth', 'bismuth_morph', 'bi morph', 0xD8C8E8, 'native'));
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
   // v165 — SULFATE SYSTEM SI chips. 4 chips consuming the Ksp engine

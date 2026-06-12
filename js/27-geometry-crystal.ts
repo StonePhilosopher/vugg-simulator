@@ -56,6 +56,11 @@ function _habitAspectRatio(habit: string): number {
   // TOGETHER, with a SIM bump + rebake.)
   if (habit === 'stepped_cube' || habit === 'hopper_cube'
       || habit === 'dendritic_cube') return 0.5;
+  // Bismuth regime family (2026-06-12): same firewall — the legacy
+  // strings (massive_granular / arborescent_dendritic /
+  // rhombohedral_crystal) always landed on the default 0.5, so the new
+  // intermediates carry it explicitly.
+  if (habit === 'feathery_bismuth' || habit === 'skeletal_bismuth') return 0.5;
   return 0.5;
 }
 

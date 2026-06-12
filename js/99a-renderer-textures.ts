@@ -75,6 +75,12 @@ const HABIT_TO_TEXTURE = {
   // band (js/45).
   'stepped_cube':            'hopper',
   'dendritic_cube':          'acicular',
+  // Stage 9 — bismuth regime family (2026-06-12). Feathery laths read
+  // acicular (fans of elongated plates at wall-cell scale); skeletal
+  // frames read as the hopper notch; arborescent_dendritic already
+  // reads via the 99d dendritic fuzzy.
+  'feathery_bismuth':        'acicular',
+  'skeletal_bismuth':        'hopper',
 };
 
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]

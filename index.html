@@ -15785,7 +15785,38 @@ let timeScale = 5.0;
 //   BASELINE: rebake. Expected movers are the four form-flip scenarios
 //   (+ jeffrey via regime drift feeding habit); everything else should
 //   hold byte-identical — inspect the diff against that prediction.
-const SIM_VERSION = 187;
+//
+// v188 (2026-06-12) — MORPHOLOGY GENERALIZATION, tenant three: native
+//                     bismuth's corrected Sunagawa ladder. (Tenants one
+//                     and two were sim-neutral: the registry hoist —
+//                     calcite byte-identical under MORPH_TH — and the
+//                     halite/sylvite salt-pan wave, aspect-firewalled.)
+//
+//   The old grow_native_bismuth dispatch ran ANTI-Sunagawa: massive at
+//   TOP σ, dendrite at the BOTTOM, the rare well-formed crystal at
+//   mid-σ — conflating aggregate texture (nucleation density) with
+//   interface morphology. Corrected via MORPH_TH.native_bismuth (bands
+//   1.5/2.2/3.0/3.8 in Bi's own σ units — the scale is structurally
+//   CAPPED at ~4.5 by bi_f≤3.0 × red_f≤1.5 in js/36): massive/foliated
+//   is the SMOOTH-band default, the rare open-vug rhombohedral
+//   dice-roll stays in the smooth band where slow growth actually
+//   lives, feathery/skeletal intermediates, arborescent dendrite at
+//   the TOP — the five-element reduction-shock texture (Kissin 1992;
+//   Burisch 2017). Survey + design:
+//   RESEARCH-bismuth-morphology-2026-06-12.md.
+//
+//   WHY THE BUMP: the dice-roll's rng.random() moved from a
+//   mid-σ-excess condition to the smooth-band branch → rng cascade
+//   shifts wherever Bi grows. Fleet truth: that is schneeberg ONLY
+//   (1 short-lived crystal/seed at σ ≤ 1.32, correctly destroyed by
+//   the v185 oxidation swing — the weathering stage doing its job).
+//   Upper bands are deliberately UNOCCUPIED until the five-element
+//   scenario (`wittichen`, designed in the research doc §4) gives the
+//   dendrite band its tenant + de-orphans skutterudite/safflorite.
+//
+//   BASELINE: rebake. Expected mover: schneeberg only — inspect the
+//   diff against that prediction.
+const SIM_VERSION = 188;
 
 // ── 18-constants.js ──
 
@@ -21531,6 +21562,12 @@ function _habitAspectRatio(habit) {
     // TOGETHER, with a SIM bump + rebake.)
     if (habit === 'stepped_cube' || habit === 'hopper_cube'
         || habit === 'dendritic_cube')
+        return 0.5;
+    // Bismuth regime family (2026-06-12): same firewall — the legacy
+    // strings (massive_granular / arborescent_dendritic /
+    // rhombohedral_crystal) always landed on the default 0.5, so the new
+    // intermediates carry it explicitly.
+    if (habit === 'feathery_bismuth' || habit === 'skeletal_bismuth')
         return 0.5;
     return 0.5;
 }
@@ -30835,6 +30872,13 @@ const MORPH_DISPLAY = {
         hopper_skeletal: 'hopper',
         dendritic: 'dendritic crust',
     },
+    native_bismuth: {
+        spiral_smooth: 'massive/foliated',
+        stepped_mild: 'feathery laths',
+        stepped_macro: 'feather bismuth (skeletal)',
+        hopper_skeletal: 'skeletal frame',
+        dendritic: 'arborescent dendrite',
+    },
 };
 function morphDisplayLabel(mineral, regime) {
     return (MORPH_DISPLAY[mineral] && MORPH_DISPLAY[mineral][regime]) || regime;
@@ -30950,6 +30994,31 @@ MORPH_TH.sylvite = {
     HOPPER_MAX: 60.0,
     sigma(conditions) { return conditions.supersaturation_sylvite(); },
     form(_conditions) { return 'cube'; },
+};
+// ---- native bismuth — third tenant (the corrected ladder) ----
+// Survey + design: proposals/RESEARCH-bismuth-morphology-2026-06-12.md.
+// σ is STRUCTURALLY CAPPED at ~4.5 (js/36: bi_f≤3.0 × red_f≤1.5) — the
+// whole ladder fits in [1, 4.5]; edges are PROVISIONAL until the
+// five-element scenario (`wittichen`) gives the upper bands a tenant,
+// then re-pin against its measured σ trajectory. Current fleet truth:
+// schneeberg's brief primary Bi (σ ≤ 1.32) lives in the smooth band as
+// massive/foliated veinlet Bi, then the v185 oxidation swing destroys
+// it — both halves correct geology.
+// No damping (Infinity): redox-shock precipitation in a vein shoot is
+// advection/reaction-controlled, and the natural dendrites are the
+// BIGGEST masses (kg-scale Wismut sheets) — the halite inverse-argument
+// again. Hopper band kept for ladder completeness but expected empty:
+// the rainbow funnel is MELT growth (271°C mp), not hydrothermal.
+MORPH_TH.native_bismuth = {
+    SIZE_HALF_UM: Infinity,
+    SIZE_DAMP_CAP_UM: Infinity,
+    SPIRAL_MAX: 1.5, // < this → massive/foliated (+ rare crystal dice-roll)
+    STEP_MILD_MAX: 2.2, // feathery laths, growth-banded foliation
+    STEP_MACRO_MAX: 3.0, // coarsely skeletal ("feather bismuth")
+    HOPPER_MAX: 3.8, // skeletal frames (expected unoccupied — melt territory)
+    // ≥ 3.8 → arborescent dendritic — THE five-element reduction-shock texture
+    sigma(conditions) { return conditions.supersaturation_native_bismuth(); },
+    form(_conditions) { return 'native'; },
 };
 function morphSurfaceSigma(th, bulkSigma, sizeUm) {
     const effSize = Math.min(Math.max(0, sizeUm), th.SIZE_DAMP_CAP_UM);
@@ -34050,20 +34119,46 @@ function grow_native_bismuth(crystal, conditions, step) {
         return null;
     const f = conditions.fluid;
     let color_note;
-    if (excess > 1.0) {
-        crystal.habit = 'massive_granular';
-        crystal.dominant_forms = ['massive granular silver-white'];
-        color_note = 'massive granular native bismuth';
-    }
-    else if (excess > 0.25 && rng.random() < 0.1) {
-        crystal.habit = 'rhombohedral_crystal';
-        crystal.dominant_forms = ['{0001} basal pinacoid', 'rhombohedral trigonal'];
-        color_note = 'rhombohedral crystal (rare — well-formed in open vug)';
-    }
-    else {
-        crystal.habit = 'arborescent_dendritic';
-        crystal.dominant_forms = ['arborescent branching', 'dendritic fracture fill'];
-        color_note = 'arborescent native bismuth — silver-white tree-like growth, iridescent tarnish expected';
+    // Morphology-generalization arc (2026-06-12): regime-driven habit
+    // (MORPH_TH.native_bismuth, js/45; design + survey in
+    // RESEARCH-bismuth-morphology-2026-06-12.md). The old dispatch ran
+    // ANTI-Sunagawa: massive at TOP σ, dendrite at the BOTTOM, and the
+    // rare well-formed crystal at mid-σ — conflating aggregate texture
+    // with interface morphology. Corrected: massive/foliated is the
+    // SMOOTH-band default (a nucleation-density texture, the
+    // mass-dominant natural form), the rare open-vug crystal dice-roll
+    // stays in the smooth band where slow growth actually lives, and
+    // arborescent dendrite is the TOP — the five-element reduction-shock
+    // texture (Kissin 1992; Burisch 2017). NOTE: this rewrite moves the
+    // rng.random() dice-roll's trigger condition → seed-42 cascade
+    // shifts where Bi grows (schneeberg) → SIM bump + rebake commit.
+    {
+        const regime = (crystal._morphology && crystal._morphology.regime) || null;
+        if (regime === 'dendritic') {
+            crystal.habit = 'arborescent_dendritic';
+            crystal.dominant_forms = ['arborescent branching', 'dendritic vein-shoot fill'];
+            color_note = 'arborescent native bismuth — the reduction shock made solid; silver-white branches, iridescent tarnish expected';
+        }
+        else if (regime === 'hopper_skeletal') {
+            crystal.habit = 'skeletal_bismuth';
+            crystal.dominant_forms = ['skeletal edge frames', 'hollow-faced laths'];
+            color_note = 'skeletal native bismuth — edges outracing faces (rarely preserved in nature; the melt-grown funnel is the lab cousin)';
+        }
+        else if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+            crystal.habit = 'feathery_bismuth';
+            crystal.dominant_forms = ['feathery foliated laths', 'growth-banded plates'];
+            color_note = 'feather bismuth — foliated laths recording a driven but not yet unstable fluid';
+        }
+        else if (rng.random() < 0.1) {
+            crystal.habit = 'rhombohedral_crystal';
+            crystal.dominant_forms = ['{0001} basal pinacoid', 'rhombohedral trigonal (pseudocubic)'];
+            color_note = 'rhombohedral crystal (rare — slow near-equilibrium growth in an open vug)';
+        }
+        else {
+            crystal.habit = 'massive_granular';
+            crystal.dominant_forms = ['massive/foliated silver-white veinlet'];
+            color_note = 'massive native bismuth — the quiet workhorse texture of a reducing vein';
+        }
     }
     f.Bi = Math.max(f.Bi - rate * 0.035, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
@@ -55436,11 +55531,31 @@ Object.assign(VugSimulator.prototype, {
         const parts = [`Native bismuth #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
         parts.push(narrative_blurb('native_bismuth') || "Bi — elemental bismuth.");
         if (c.habit === 'arborescent_dendritic')
-            parts.push(narrative_variant('native_bismuth', 'arborescent_dendritic') || 'Arborescent dendritic.');
+            parts.push(narrative_variant('native_bismuth', 'arborescent_dendritic') || 'Arborescent dendritic — silver-white branches filling the vein shoot. This is how the five-element veins announce a reduction shock: the fluid lost its oxidation state in hours and dumped its metal budget as branching trees.');
+        else if (c.habit === 'feathery_bismuth')
+            parts.push(narrative_variant('native_bismuth', 'feathery_bismuth') || 'Feather bismuth — foliated laths stacked like plumage, the record of a fluid driven hard but not yet unstable.');
+        else if (c.habit === 'skeletal_bismuth')
+            parts.push(narrative_variant('native_bismuth', 'skeletal_bismuth') || 'Skeletal frames — edges outracing faces. The melt-grown rainbow funnel is this regime’s laboratory cousin; nature rarely holds bismuth here long enough to preserve it.');
         else if (c.habit === 'rhombohedral_crystal')
             parts.push(narrative_variant('native_bismuth', 'rhombohedral_crystal') || 'Rhombohedral crystal — RARE.');
         else
             parts.push(narrative_variant('native_bismuth', 'massive_default') || 'Massive granular.');
+        // Zone-stack morphology read (morphology-generalization arc,
+        // 2026-06-12): a stack carrying a dendritic episode recorded a redox
+        // shock — say so even if quieter fluid later healed the habit over.
+        {
+            let dendr = 0, total = 0;
+            for (const z of (c.zones || [])) {
+                if (!(z.thickness_um > 0))
+                    continue;
+                total += z.thickness_um;
+                if (z.morph_regime === 'dendritic')
+                    dendr += z.thickness_um;
+            }
+            if (total > 0 && dendr / total > 0.05 && c.habit !== 'arborescent_dendritic') {
+                parts.push(`The zone stack remembers what the final habit hides: ${Math.round(100 * dendr / total)}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.`);
+            }
+        }
         return parts.filter(p => p).join(' ');
     },
     _narrate_native_tellurium(c) {
@@ -62874,6 +62989,12 @@ const HABIT_TO_TEXTURE = {
     // band (js/45).
     'stepped_cube': 'hopper',
     'dendritic_cube': 'acicular',
+    // Stage 9 — bismuth regime family (2026-06-12). Feathery laths read
+    // acicular (fans of elongated plates at wall-cell scale); skeletal
+    // frames read as the hopper notch; arborescent_dendritic already
+    // reads via the 99d dendritic fuzzy.
+    'feathery_bismuth': 'acicular',
+    'skeletal_bismuth': 'hopper',
 };
 // Mineral-specific overrides: HABIT_TO_TEXTURE_BY_MINERAL[mineral][habit]
 // wins over HABIT_TO_TEXTURE[habit]. Used when one habit string covers
@@ -64982,6 +65103,11 @@ const HABIT_TO_PRIMITIVE = {
     'stepped_cube': PRIM_CUBE,
     'hopper_cube': PRIM_CUBE,
     'dendritic_cube': PRIM_ACICULAR,
+    // Bismuth regime family (2026-06-12): lath fans + skeletal frames
+    // both read as spikes at primitive scale; arborescent_dendritic
+    // already routes via the dendritic fuzzy.
+    'feathery_bismuth': PRIM_ACICULAR,
+    'skeletal_bismuth': PRIM_ACICULAR,
     'prismatic': PRIM_HEX_PRISM_TERMINATED,
     'short_prismatic': PRIM_HEX_PRISM,
     'striated_prism': PRIM_HEX_PRISM_TERMINATED,
@@ -71061,6 +71187,7 @@ const _HELIX_FULL_NAMES = {
     calcite_morph: 'Calcite growth regime at this spot (Sunagawa ordinal: 0 smooth spar · 1 stepped mild · 2 stepped macrostep · 3 hopper/skeletal · 4 dendritic)',
     halite_morph: 'Halite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded/chevron · 2 macrostepped · 3 hopper/raft · 4 dendritic crust)',
     sylvite_morph: 'Sylvite growth regime at this spot (Sunagawa ordinal: 0 smooth cube · 1 banded · 2 macrostepped · 3 hopper · 4 dendritic crust)',
+    bismuth_morph: 'Native bismuth growth regime at this spot (Sunagawa ordinal: 0 massive/foliated · 1 feathery · 2 feather/skeletal · 3 skeletal frame · 4 arborescent dendrite — the five-element reduction-shock texture)',
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // v165 — Sulfate System section (PHREEQC wateq4f Ksp via 20d + 40b).
     // Strip is no longer SI-blind on the sulfate/evaporite family
@@ -71436,6 +71563,11 @@ const _HELIX_CHEM_PARAMS = (function () {
     // plateaus in RESEARCH-halide-morphology-2026-06-12.md §1).
     params.push(_morphChipParam('halite', 'halite_morph', 'hal morph', 0xE8E8F8, 'halide'));
     params.push(_morphChipParam('sylvite', 'sylvite_morph', 'syl morph', 0xF8D8E8, 'halide'));
+    // Native-metal morph chips (third registry wave — bismuth first;
+    // copper/gold will join under the same 'native' legend group). In
+    // wittichen (when it lands) this chip should slam 0→4 exactly on the
+    // reducing Eh pulse — the shock made visible in the strip.
+    params.push(_morphChipParam('native_bismuth', 'bismuth_morph', 'bi morph', 0xD8C8E8, 'native'));
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // v165 — SULFATE SYSTEM SI chips. 4 chips consuming the Ksp engine
     // (20d) + SI dispatcher (40b) shipped in v164 as observer-only reads,
@@ -73690,7 +73822,7 @@ function _stripRenderDataset(bodyEl, ds) {
             _stripVisibleChips[chip.id] = false;
     }));
     selector.appendChild(bulkBar);
-    const systems = ['wall', 'special', 'carbonate', 'sulfate', 'halide', 'ion'];
+    const systems = ['wall', 'special', 'carbonate', 'sulfate', 'halide', 'native', 'ion'];
     for (const sys of systems) {
         const inSys = ds.manifest.chips.filter(c => c.system === sys);
         if (!inSys.length)

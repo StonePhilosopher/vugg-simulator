@@ -254,9 +254,43 @@ function grow_native_bismuth(crystal, conditions, step) {
   if (rate < 0.1) return null;
   const f = conditions.fluid;
   let color_note;
-  if (excess > 1.0) { crystal.habit = 'massive_granular'; crystal.dominant_forms = ['massive granular silver-white']; color_note = 'massive granular native bismuth'; }
-  else if (excess > 0.25 && rng.random() < 0.1) { crystal.habit = 'rhombohedral_crystal'; crystal.dominant_forms = ['{0001} basal pinacoid', 'rhombohedral trigonal']; color_note = 'rhombohedral crystal (rare — well-formed in open vug)'; }
-  else { crystal.habit = 'arborescent_dendritic'; crystal.dominant_forms = ['arborescent branching', 'dendritic fracture fill']; color_note = 'arborescent native bismuth — silver-white tree-like growth, iridescent tarnish expected'; }
+  // Morphology-generalization arc (2026-06-12): regime-driven habit
+  // (MORPH_TH.native_bismuth, js/45; design + survey in
+  // RESEARCH-bismuth-morphology-2026-06-12.md). The old dispatch ran
+  // ANTI-Sunagawa: massive at TOP σ, dendrite at the BOTTOM, and the
+  // rare well-formed crystal at mid-σ — conflating aggregate texture
+  // with interface morphology. Corrected: massive/foliated is the
+  // SMOOTH-band default (a nucleation-density texture, the
+  // mass-dominant natural form), the rare open-vug crystal dice-roll
+  // stays in the smooth band where slow growth actually lives, and
+  // arborescent dendrite is the TOP — the five-element reduction-shock
+  // texture (Kissin 1992; Burisch 2017). NOTE: this rewrite moves the
+  // rng.random() dice-roll's trigger condition → seed-42 cascade
+  // shifts where Bi grows (schneeberg) → SIM bump + rebake commit.
+  {
+    const regime = (crystal._morphology && crystal._morphology.regime) || null;
+    if (regime === 'dendritic') {
+      crystal.habit = 'arborescent_dendritic';
+      crystal.dominant_forms = ['arborescent branching', 'dendritic vein-shoot fill'];
+      color_note = 'arborescent native bismuth — the reduction shock made solid; silver-white branches, iridescent tarnish expected';
+    } else if (regime === 'hopper_skeletal') {
+      crystal.habit = 'skeletal_bismuth';
+      crystal.dominant_forms = ['skeletal edge frames', 'hollow-faced laths'];
+      color_note = 'skeletal native bismuth — edges outracing faces (rarely preserved in nature; the melt-grown funnel is the lab cousin)';
+    } else if (regime === 'stepped_mild' || regime === 'stepped_macro') {
+      crystal.habit = 'feathery_bismuth';
+      crystal.dominant_forms = ['feathery foliated laths', 'growth-banded plates'];
+      color_note = 'feather bismuth — foliated laths recording a driven but not yet unstable fluid';
+    } else if (rng.random() < 0.1) {
+      crystal.habit = 'rhombohedral_crystal';
+      crystal.dominant_forms = ['{0001} basal pinacoid', 'rhombohedral trigonal (pseudocubic)'];
+      color_note = 'rhombohedral crystal (rare — slow near-equilibrium growth in an open vug)';
+    } else {
+      crystal.habit = 'massive_granular';
+      crystal.dominant_forms = ['massive/foliated silver-white veinlet'];
+      color_note = 'massive native bismuth — the quiet workhorse texture of a reducing vein';
+    }
+  }
   f.Bi = Math.max(f.Bi - rate * 0.035, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }

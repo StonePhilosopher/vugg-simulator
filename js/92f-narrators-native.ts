@@ -57,9 +57,25 @@ Object.assign(VugSimulator.prototype, {
   // Prose lives in narratives/native_bismuth.md.
   const parts = [`Native bismuth #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
   parts.push(narrative_blurb('native_bismuth') || "Bi — elemental bismuth.");
-  if (c.habit === 'arborescent_dendritic') parts.push(narrative_variant('native_bismuth', 'arborescent_dendritic') || 'Arborescent dendritic.');
+  if (c.habit === 'arborescent_dendritic') parts.push(narrative_variant('native_bismuth', 'arborescent_dendritic') || 'Arborescent dendritic — silver-white branches filling the vein shoot. This is how the five-element veins announce a reduction shock: the fluid lost its oxidation state in hours and dumped its metal budget as branching trees.');
+  else if (c.habit === 'feathery_bismuth') parts.push(narrative_variant('native_bismuth', 'feathery_bismuth') || 'Feather bismuth — foliated laths stacked like plumage, the record of a fluid driven hard but not yet unstable.');
+  else if (c.habit === 'skeletal_bismuth') parts.push(narrative_variant('native_bismuth', 'skeletal_bismuth') || 'Skeletal frames — edges outracing faces. The melt-grown rainbow funnel is this regime’s laboratory cousin; nature rarely holds bismuth here long enough to preserve it.');
   else if (c.habit === 'rhombohedral_crystal') parts.push(narrative_variant('native_bismuth', 'rhombohedral_crystal') || 'Rhombohedral crystal — RARE.');
   else parts.push(narrative_variant('native_bismuth', 'massive_default') || 'Massive granular.');
+  // Zone-stack morphology read (morphology-generalization arc,
+  // 2026-06-12): a stack carrying a dendritic episode recorded a redox
+  // shock — say so even if quieter fluid later healed the habit over.
+  {
+    let dendr = 0, total = 0;
+    for (const z of (c.zones || [])) {
+      if (!(z.thickness_um > 0)) continue;
+      total += z.thickness_um;
+      if (z.morph_regime === 'dendritic') dendr += z.thickness_um;
+    }
+    if (total > 0 && dendr / total > 0.05 && c.habit !== 'arborescent_dendritic') {
+      parts.push(`The zone stack remembers what the final habit hides: ${Math.round(100 * dendr / total)}% of this crystal went down as dendrite during a redox excursion before the branches were healed over.`);
+    }
+  }
   return parts.filter(p => p).join(' ');
 },
 

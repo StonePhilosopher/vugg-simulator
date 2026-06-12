@@ -10691,5 +10691,36 @@
 //   BASELINE: rebake. Expected movers are the four form-flip scenarios
 //   (+ jeffrey via regime drift feeding habit); everything else should
 //   hold byte-identical — inspect the diff against that prediction.
-const SIM_VERSION = 187;
+//
+// v188 (2026-06-12) — MORPHOLOGY GENERALIZATION, tenant three: native
+//                     bismuth's corrected Sunagawa ladder. (Tenants one
+//                     and two were sim-neutral: the registry hoist —
+//                     calcite byte-identical under MORPH_TH — and the
+//                     halite/sylvite salt-pan wave, aspect-firewalled.)
+//
+//   The old grow_native_bismuth dispatch ran ANTI-Sunagawa: massive at
+//   TOP σ, dendrite at the BOTTOM, the rare well-formed crystal at
+//   mid-σ — conflating aggregate texture (nucleation density) with
+//   interface morphology. Corrected via MORPH_TH.native_bismuth (bands
+//   1.5/2.2/3.0/3.8 in Bi's own σ units — the scale is structurally
+//   CAPPED at ~4.5 by bi_f≤3.0 × red_f≤1.5 in js/36): massive/foliated
+//   is the SMOOTH-band default, the rare open-vug rhombohedral
+//   dice-roll stays in the smooth band where slow growth actually
+//   lives, feathery/skeletal intermediates, arborescent dendrite at
+//   the TOP — the five-element reduction-shock texture (Kissin 1992;
+//   Burisch 2017). Survey + design:
+//   RESEARCH-bismuth-morphology-2026-06-12.md.
+//
+//   WHY THE BUMP: the dice-roll's rng.random() moved from a
+//   mid-σ-excess condition to the smooth-band branch → rng cascade
+//   shifts wherever Bi grows. Fleet truth: that is schneeberg ONLY
+//   (1 short-lived crystal/seed at σ ≤ 1.32, correctly destroyed by
+//   the v185 oxidation swing — the weathering stage doing its job).
+//   Upper bands are deliberately UNOCCUPIED until the five-element
+//   scenario (`wittichen`, designed in the research doc §4) gives the
+//   dendrite band its tenant + de-orphans skutterudite/safflorite.
+//
+//   BASELINE: rebake. Expected mover: schneeberg only — inspect the
+//   diff against that prediction.
+const SIM_VERSION = 188;
 
