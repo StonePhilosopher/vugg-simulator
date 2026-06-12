@@ -116,21 +116,60 @@ locality is the authority; the literature was scaffolding.
 
 ## §5 Open threads, ranked
 
+> **FIX-BACKLOG SWEEP (2026-06-12, same night, SIM 190→191, six
+> commits): items 2, 3-first-half, 4, 5, and both of 7 are ✅ DONE.**
+> The ledger:
+> - **wittichen barite ✅ (SIM 191, `f030f67`)** — the v189 diagnosis
+>   was WRONG about the mechanism: the new gate census
+>   (tools/wittichen-sulfate-probe.mjs) measured every gate component
+>   passing with σ pinned at 0.60 — barite was BARIUM-limited, never
+>   oxidation-limited. Ba 24→75 (the district is the *Barytgänge*) →
+>   8/8 seeds, suite intact, no witherite, no Eh change. **erythrite
+>   DEMOTED by measurement**: its gate needs T ≤ 50 °C; the sealed
+>   vein ends at ~150 °C — the bloom is post-exhumation weathering,
+>   first client for a future spatially-partial weathering-epilogue
+>   mechanic (stays on BACKLOG).
+> - **Dendrite TREE render ✅ (`a7a3b35`)** — _makeDendriteTreeGeom:
+>   deterministic per-crystal branching skeletons ({100}-quantized
+>   fishbone azimuths), token==='spike' + habit gate; verified live
+>   (bisbee gold trees at 381–477%). Static shape — replay growth
+>   comes free from envelope scaling. The sceptre two-body stays with
+>   the quartz arc.
+> - **Sonifier dendrite bell ✅ (`22154a6`)** — ⚒ Slams layer: anvil
+>   strike per upward morph-ordinal crossing (C5→G2 severity ladder,
+>   +1-semitone clang on the dendrite arrival, healing silent); a
+>   recorded wittichen strip rings the 98 Hz toll in tests. jsdom is
+>   deaf — THE EAR VERDICT IS STILL THE BOSS'S.
+> - **pyritohedral token wart ✅ (`0a3a465`)** — whole family →
+>   dodecahedron token; and the SAME wart family turned up again:
+>   plain `octahedral_REE` had hex-prismed since v103, fixed in
+>   `6624713`. Lesson: token fallthrough is a FAMILY of bugs — when
+>   you fix one string, grep for its siblings.
+> - **σ-stepped REE octahedra ✅ (`6624713`)** — the fluorite ladder
+>   now grades both forms (stepped_/hopper_/dendritic_octahedral_REE),
+>   FLEET-INERT by measurement (sunnyside flat at 1.95) — fires when a
+>   driven Y-fluorite scenario lands; the terraced-octahedron geometry
+>   deliberately NOT built (per-vertex-placement lesson: no inert
+>   renders without a tenant).
+> - **narratives md variants ✅ (`50553e7`)** — all new morph prose
+>   md-backed (halite.md is NEW, manifest 92→93); plus a found prose
+>   bug: pyrite's striated_ habits had NO narrator branch.
+
 1. **Boss verification continues** (§2 is the instrument; mvt was
-   verdict #1).
-2. **wittichen barite + erythrite** (vugg-tune-scenario): need late
-   oxidation the living arsenide suite can't survive — spatially
-   partial oxidation, or barite as a vein-top stage.
-3. **Dendrite TREE + sceptre two-body renders** (siblings — the first
-   non-single-envelope geometries; quartz doc §3 has the sceptre
-   sketch).
-4. **Sonifier**: a dendrite bell on the morph-ordinal slam? Composes
-   with the ongoing make-it-more-musical thread — needs the boss's ear.
-5. **'pyritohedral' 3D token wart** (pre-existing): pyritohedra render
-   as hex prisms in the topo view.
-6. **Quartz arc** (RESEARCH-quartz-morphology-2026-06-12.md): hiatus
+   verdict #1). NEW rows to verify: wittichen barite gangue (2–6
+   crystals, vein-top stage) + the dendrite TREE silhouettes + the ⚒
+   Slams layer by ear.
+2. **Quartz arc** (RESEARCH-quartz-morphology-2026-06-12.md): hiatus
    census first; fenster band is nearly free; sceptres are the real
-   work; Tessin needs an alpine-cleft scenario (its own add-scenario
-   arc — wish-list candidate).
-7. Small debts: σ-stepped REE octahedra unmodeled; narratives/*.md
-   variants for the new morph prose (inline fallbacks ship).
+   work (the two-body builder — the dendrite tree was its warm-up);
+   Tessin needs an alpine-cleft scenario (its own add-scenario arc —
+   wish-list candidate).
+3. **Weathering-epilogue mechanic** (new, from the erythrite
+   measurement): a spatially-partial vadose stage (the schneeberg
+   step-110 pattern made partial — above-meniscus oxidation already
+   exists in the Drain mechanic). First clients: wittichen erythrite,
+   maybe bisbee azurite-zone refinements.
+4. Small debts: 'pyritohedral' striated forms render WITHOUT grooves
+   (terrace path is cube-token-gated — cosmetic); replay-historical
+   habits (a healed dendrite shows its tree DURING the shock era)
+   needs per-step habit history the sim doesn't record.

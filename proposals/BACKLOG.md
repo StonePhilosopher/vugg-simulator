@@ -2,7 +2,65 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🌳 UPDATE (2026-06-12, latest) — MORPHOLOGY GENERALIZATION ✅ COMPLETE (SIM 190) — master doc: **HANDOFF-MORPHOLOGY-GENERALIZATION-2026-06-12.md** (the ALL-MINERAL claims table §2 = the boss's verification worksheet; ninth-tenant recipe §3; traps §4). v190 = the verification pass's FIRST CATCH (mvt Joplin dogtooth — boss's eye beat 1861 tests; CATCHES v190).
+> ## 🔧 UPDATE (2026-06-12, latest) — FIX-BACKLOG SWEEP ✅ COMPLETE (SIM 190→191, six commits): every open follow-up from the morphology arc closed in one session
+>
+> The 🌳 banner's "OPEN follow-ups" list below is now ✅ DONE end to
+> end (ledger with commits in
+> **HANDOFF-MORPHOLOGY-GENERALIZATION-2026-06-12.md §5**, updated in
+> this pass):
+> - **wittichen barite (SIM 191, `f030f67`)** — the *Barytgänge*
+>   correction. The v189 "needs oxidation" diagnosis was WRONG: the
+>   new gate census (**tools/wittichen-sulfate-probe.mjs**) measured
+>   σ pinned at 0.60 with every gate component passing — barite was
+>   BARIUM-limited (ba_f 24/30 × s_f 30/40 × salinity-24 activity
+>   ≈ 0.59 can't reach 1 at ANY Eh). Ba 24→75 (the district's veins
+>   are literally barite-gangue veins): σ 1.47–1.55, barite 8/8 seeds
+>   (2–6 crystals), NO witherite, living arsenide suite intact, no Eh
+>   change. Judge gained the barite column (8/8). Rebake: 1/33
+>   baselines moved (wittichen, +barite only), 1/12 digest.
+>   **erythrite DEMOTED from expects by measurement** — its gate needs
+>   T ≤ 50 °C, the sealed vein ends at ~150 °C; the cobalt bloom is
+>   post-exhumation weathering. NEW open item: a spatially-partial
+>   **weathering-epilogue mechanic** (schneeberg's step-110 vadose
+>   pattern made partial; the Drain above-meniscus oxidation is the
+>   existing half) — erythrite is its first client.
+> - **dendrite TREE 3D render (`a7a3b35`, sim-neutral)** —
+>   _makeDendriteTreeGeom: deterministic per-crystal branching
+>   skeleton ({100}-quantized fishbone azimuths, lower-branches-longer
+>   depletion taper, ~200 tris), dispatched on token 'spike' +
+>   dendritic/arborescent habit; acicular/fibrous needles untouched.
+>   Verified in live preview: bisbee's four dendritic gold render as
+>   branching golden trees. Watch-it-grow comes free from envelope
+>   scaling (static shape, no per-step churn).
+> - **⚒ Slams — the sonifier dendrite bell (`22154a6`, sim-neutral)** —
+>   anvil strike per UPWARD morph-ordinal crossing (severity ladder
+>   C5→C4→C3→G2; the dendrite arrival adds a +1-semitone dissonant
+>   partner; healing is silent; sparse-MAX read pans to the driven
+>   crystal). Rides the 🔔🔊 bus; toggle next to ▽ Depletion. A
+>   recorded wittichen strip rings the 98 Hz toll in tests (5 new).
+>   jsdom is deaf — needs the boss's EAR like all sonifier work.
+> - **pyritohedral token wart (`0a3a465`)** + **octahedral_REE sibling
+>   (`6624713`)** — BOTH had hex-prismed in the 3D view (since v27 and
+>   v103). Token-fallthrough is a FAMILY: fixing one string, grep for
+>   the siblings. Pyritohedral family → dodecahedron token; REE family
+>   → octahedron.
+> - **σ-stepped REE octahedra (`6624713`, byte-identical)** — fluorite's
+>   ladder grades BOTH forms now; fleet-inert by measurement (sunnyside
+>   flat at σ 1.95) until a driven Y-fluorite scenario lands; the
+>   terraced-octahedron geometry deliberately NOT built (per-vertex
+>   lesson — no inert renders without a tenant).
+> - **narratives md variants (`50553e7`)** — all new morph prose
+>   md-backed (halite.md NEW, manifest 92→93 — loads clean in-browser);
+>   found+fixed: pyrite's striated_ habits had NO narrator branch.
+>
+> Remaining open from the morphology line: the **quartz arc** (design
+> doc ready; sceptre two-body = the dendrite tree's sibling), the
+> **weathering-epilogue mechanic** (new), the boss's hand-verification
+> pass (now including wittichen barite + the tree silhouettes + the
+> slams by ear), and two cosmetic debts (striated pyritohedra render
+> groove-less; replay-historical habits need per-step habit history).
+
+> ## 🌳 UPDATE (2026-06-12, earlier) — MORPHOLOGY GENERALIZATION ✅ COMPLETE (SIM 190) — master doc: **HANDOFF-MORPHOLOGY-GENERALIZATION-2026-06-12.md** (the ALL-MINERAL claims table §2 = the boss's verification worksheet; ninth-tenant recipe §3; traps §4). v190 = the verification pass's FIRST CATCH (mvt Joplin dogtooth — boss's eye beat 1861 tests; CATCHES v190).
 >
 > The calcite arc's classifier became the MORPHOLOGY REGISTRY
 > (js/45-morphology.ts) and the boss's wish-list started shipping the
@@ -60,17 +118,13 @@ Living list of open work items, captured from session conversations so context s
 > native_gold), 6 morph chips digest-pinned, 3 standing judges
 > (elmwood/halide/wittichen), 1 generic survey instrument.
 >
-> **OPEN follow-ups:** wittichen barite + erythrite aspirational (need
-> late oxidation the living arsenide suite can't survive — a
-> spatially-partial oxidation or vein-top barite stage,
-> vugg-tune-scenario); arborescent 3D render is the acicular-spike
-> fallback (a true dendrite TREE geometry is its own render piece — the
-> sceptre two-body builder in the quartz doc is the natural sibling);
-> plain 'pyritohedral' 3D token defaults to 'prism' (pre-existing wart,
-> renders pyritohedra as hex prisms — render item); σ-stepped REE
-> octahedra (fluorite) unmodeled; morph severity → sonifier (a dendrite
-> bell on the ordinal slam?) — needs the boss's ear like all sonifier
-> work.
+> **OPEN follow-ups: ✅ ALL CLOSED same day — see the 🔧 FIX-BACKLOG
+> SWEEP banner above (SIM 190→191, six commits).** The original list,
+> for the record: wittichen barite + erythrite (shipped/demoted-by-
+> measurement, SIM 191); dendrite TREE render (shipped); pyritohedral
+> token wart (shipped, + the octahedral_REE sibling it exposed);
+> σ-stepped REE octahedra (shipped, fleet-inert by design); sonifier
+> dendrite bell (shipped — ear verdict pending).
 
 > ## 🪜✅ UPDATE (2026-06-11, latest) — CALCITE MORPHOLOGY ARC SHIPPED, ALL SIX PHASES (SIM 187 + elmwood)
 >
