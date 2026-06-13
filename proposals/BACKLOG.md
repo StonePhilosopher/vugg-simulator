@@ -2,7 +2,46 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🥈 UPDATE (2026-06-12, latest) — MVT SILVER DE-CONFABULATION ✅ SHIPPED (SIM 195) + STRIP-STORY ARCHIVE (boss directive)
+> ## 🔬 UPDATE (2026-06-13, latest) — REDOX-GATE OMISSION SWEEP: census DONE (2 real catches), fix HELD on an RNG prerequisite
+>
+> **Task #59.** The vanadinite catch (v193 — a redox-sensitive species whose
+> engine was cloned without its redox gate) prompted a systematic census.
+> **NEW: tools/redox-gate-census.mjs** — 166 supersaturation engines swept; a
+> curated redox-class map (the geology: which oxidation state each diagnostic
+> ion sits in) × mechanical gate-detection. It found EXACTLY two HIGH
+> structural omissions: **sphalerite + wurtzite** — ZnS sulfides with no
+> `sulfideRedoxAnoxic` gate, the last siblings of the omission galena carried
+> until v13 ("a clear physics bug"). (native_gold was the lone INFO flag —
+> gold is redox-robust, intentionally ungated; left as-is.)
+>
+> **The fix is correct physics but HELD — here's why (the science led here).**
+> Dark-observe (**tools/sulfide-redox-omission-probe.mjs**): the gate bites
+> ONLY supergene_oxidation (sphalerite σ>0 at O2 up to 2.2 in the Tsumeb
+> gossan; everywhere else sphalerite/wurtzite fire only in reducing fluid, so
+> the gate is inert). But adding it re-rolls supergene's shared-RNG cascade
+> and demotes **mottramite 96% → 47% of seeds** (**tools/mottramite-frequency-
+> sweep.mjs**, pre/post paired, 100 seeds). mottramite shares NO ion with ZnS
+> → this is pure RNG-sequencing displacement, not chemistry. Confirmed: a
+> Tsumeb-justified V-seep bump (+6→+13) raised mottramite's mean count but NOT
+> its frequency (still 47%) — no chemistry lever can restore an RNG artifact.
+> mottramite is a genuine abundant Tsumeb phase (Boni 2007), so 47% is a real
+> under-representation. Net: shipping the gate now trades a modest gain (one
+> sphalerite's overgrowth, 804→241µm) for a larger artifact-driven regression.
+>
+> **PREREQUISITE for the gate to land: per-mineral derived nucleation seeds**
+> (the 15th-catch "scramble derived seeds" class) so gating one mineral can't
+> scramble another's draws. Once that exists, the sphalerite/wurtzite gate
+> lands clean. RIDER: Tsumeb's V-seep IS under-cooked (it reaches 7.5 vs
+> minor-occurrence Caldbeck's 14; Tsumeb is a world-class vanadate locality) —
+> a standalone V-richness correction (vanadinite stayed healthy at mean 6.0,
+> arsenates intact in the experiment) to pair with the gate when it lands.
+> The vugg-canary nightly sweep (PROPOSAL drafted) is the instrument that
+> would validate the gate+RNG-derivation lands without regressions.
+>
+> **Shipped this session (pure tooling, no engine change, no SIM bump):** the
+> three tools above. The census is the durable deliverable; the fix is scoped.
+>
+> ## 🥈 UPDATE (2026-06-12) — MVT SILVER DE-CONFABULATION ✅ SHIPPED (SIM 195) + STRIP-STORY ARCHIVE (boss directive)
 >
 > **The boss-catch item below is CLOSED.** Source re-verification confirmed
 > the fabrication: none of mvt's own references report district Ag; the
