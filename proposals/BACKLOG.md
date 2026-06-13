@@ -41,6 +41,38 @@ Living list of open work items, captured from session conversations so context s
 > **Shipped this session (pure tooling, no engine change, no SIM bump):** the
 > three tools above. The census is the durable deliverable; the fix is scoped.
 >
+> **⭐ QUEUED NEXT — THE KEYSTONE ARC: per-mineral derived nucleation seeds.**
+> This session promoted it from a footnote to the bottleneck. The held
+> sphalerite/wurtzite gate isn't a one-off: because nucleation draws from one
+> shared RNG stream, ANY gate change / engine retune to a high-traffic mineral
+> re-rolls the whole cascade and can knock out unrelated abundant phases
+> (mottramite 96→47% was the demonstrator). So a whole CLASS of correct
+> physics fixes is currently unshippable. The fix: derive each mineral's
+> nucleation RNG per-(mineral, cell) — the 15th-catch "scramble derived seeds"
+> idea (already done for the MOVEMENT stream) extended to NUCLEATION. Natural
+> sequence for the next stretch: **build vugg-canary → land RNG-derivation →
+> then the held gate + future redox fixes land clean AND auto-validated.** The
+> canary is what makes the RNG-derivation arc safe to attempt (it catches a
+> regression at 04:00 instead of needing a hand-run sweep).
+>
+> **⚠️ THE TUNING TRAP (lesson, keep visible):** when a high-traffic engine
+> moves and displaces a phase, the reflex is to chemistry-tune it back. That
+> reflex is wrong when the displacement is RNG-sequencing — proven here, the
+> Tsumeb V-bump raised mottramite's COUNT but not its FREQUENCY. Measure
+> (frequency sweep) before tuning; the structural answer is RNG-derivation, not
+> broth nudges.
+>
+> **SESSION-STATE NOTE (for the next builder, transient):** every commit since
+> the CI-green `12833b9` (the redox-census tools commit + this BACKLOG edit) is
+> DOCS/TOOLING ONLY — CODE-IDENTICAL to `12833b9`, no engine/test change. The
+> `.ci-stamp.json` will read stale and vugg-session-start will want a 9-min
+> cold-CI run; it's SAFE TO SKIP — the engine is byte-for-byte the
+> verified-green tree (confirm with `git diff 12833b9 HEAD -- js tests-js` =
+> empty). Stops vouching the moment the next engine commit lands. Also:
+> `tools/strip-story-diff.mjs`
+> is untracked = a concurrent session's WIP (duplicate of the shipped
+> `strip-archive-diff.mjs`); leave it, don't `git add -A`.
+>
 > ## 🥈 UPDATE (2026-06-12) — MVT SILVER DE-CONFABULATION ✅ SHIPPED (SIM 195) + STRIP-STORY ARCHIVE (boss directive)
 >
 > **The boss-catch item below is CLOSED.** Source re-verification confirmed
