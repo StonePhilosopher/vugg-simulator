@@ -121,7 +121,20 @@ without deliberation. The instrument IS the method now.
 4. **Weathering-epilogue mechanic** — erythrite (wittichen) is the
    first client; roughten_gill's post-mining dump minerals would be a
    second.
-5. **mvt silver de-confabulation** (boss catch, end of session): the
+5. ~~**mvt silver de-confabulation**~~ ✅ SHIPPED SIM 195 (same night,
+   next session): sources re-verified (Leach et al. 2010 "generally
+   absent in most deposits"; district record Pb+Zn only), broth Ag 5→0,
+   anchor + notes trued in scenarios.json5 AND locality_chemistry.json
+   (including viburnum's backwards "less argentiferous than Tri-State"
+   comparison — viburnum's own Ag=3 is REAL and stays), inverted pins in
+   tests-js/mvt-silver-deconfab.test.ts. Rebake 1/33 moved: mvt 44→34,
+   exactly −acanthite −native_silver (+celestine 3→1 re-roll); the
+   boss-verified dogtooth survived 39.50→39.38 mm. ALSO shipped on the
+   boss's directive the same session: **archive/strips/** — the
+   canonical seed-42 strip-story archive (tools/gen-strip-archive.mjs;
+   v194 backfilled BEFORE the correction so the last
+   confabulated-silver story is preserved as part of the record).
+   Original item text kept as written below: the
    boss asked "is there silver in MVT?" — and there ISN'T. Tri-State
    produced lead and zinc; silver-POOR galena is a DIAGNOSTIC MVT
    feature (Ag-in-galena rides Sb/Bi substitution — a high-T vein

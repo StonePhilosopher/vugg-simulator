@@ -199,13 +199,14 @@
     },
 
     "mvt": {
-      "anchor": "Tri-State district (Joplin / Picher / Galena MO-KS-OK) — Pb-Zn-Ag in Mississippian Boone Formation cherty limestone",
+      "anchor": "Tri-State district (Joplin / Picher / Galena MO-KS-OK) — Pb-Zn in Mississippian Boone Formation cherty limestone",
       "description": "Mississippi Valley-type Pb-Zn deposit. NaCl-CaCl2 basinal brine, sphalerite + galena + barite + fluorite paragenesis.",
       "expects_species": ["sphalerite", "galena", "fluorite", "barite", "calcite"],
       "duration_steps": 120,
       "notes": [
-        "Anchor: Tri-State Pb-Zn-Ag mining district. Brines per Roedder 1976, Ohle 1959, Hagni 1976, and the Stoffell et al. 2008 LA-ICP-MS fluid-inclusion study: NaCl-CaCl2 basinal brine, 18-24 wt% NaCl-eq total salinity, 150-200,000 ppm Cl raw, Mg/Ca ~0.05-0.1 (low-Mg → favors calcite over aragonite). Tri-State galena is documented argentiferous; Ag was historically a meaningful smelter byproduct alongside Pb-Zn.",
-        "Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl (the NaCl-CaCl2 brine baseline), Ag (argentiferous-galena signature), Ba (barite documented locally), Sr (basinal-brine tracer + minor celestine), Cu (trace chalcopyrite). Also drift-fixed Pb=40 from JS-side intent into Python init.",
+        "Anchor: Tri-State Pb-Zn mining district. Brines per Roedder 1976, Ohle 1959, Hagni 1976, and the Stoffell et al. 2008 LA-ICP-MS fluid-inclusion study: NaCl-CaCl2 basinal brine, 18-24 wt% NaCl-eq total salinity, 150-200,000 ppm Cl raw, Mg/Ca ~0.05-0.1 (low-Mg → favors calcite over aragonite). Tri-State is diagnostically silver-POOR: the district produced lead and zinc only, and low-Ag galena is an MVT fingerprint — Ag-in-galena rides Sb/Bi substitution, a high-temperature vein phenomenon absent from a ~150°C basinal brine (Leach et al. 2010 USGS MVT deposit model: Ag 'generally absent in most deposits').",
+        "Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl (the NaCl-CaCl2 brine baseline), Ag (argentiferous-galena signature — an UNCITED confabulation, removed v195, see next note), Ba (barite documented locally), Sr (basinal-brine tracer + minor celestine), Cu (trace chalcopyrite). Also drift-fixed Pb=40 from JS-side intent into Python init.",
+        "Silver de-confabulation (v195, boss catch 2026-06-12): the Apr-2026 gap-fill claim 'Tri-State galena is documented argentiferous; Ag was historically a meaningful smelter byproduct' cited no source because none exists — none of this scenario's references (Roedder/Ohle/Hagni/Stoffell) report district Ag, and the district record is Pb+Zn only. The claim was a v139-adamite-family fabrication that survived two rebake reviews because per-pin verdicts inherited it as ground truth. Broth Ag 5 → 0; the baseline's acanthite + native_silver were artifacts riding it (expects_species never promised a silver mineral). Greenockite STAYS — Cd-in-sphalerite is genuinely documented at Tri-State (Schwartz 2000).",
         "Existing values (SiO2, Ca, CO3, Fe, Mn, F, Mg, pH, salinity) and the event sequence (fluid_mixing step 20, fluid_pulse step 60, tectonic_shock step 80) preserved untouched — gap-fill only."
       ],
       "initial": {
@@ -236,13 +237,15 @@
           "Na": 80,
           "K": 15,
           // Cl=200: paired with Na+K. Tri-State raw brine is 120-220,000 ppm Cl.
-          // Free-trace Cl lets pyromorphite (Pb-Cl) and chlorargyrite (Ag-Cl)
-          // chemistry engage where Pb+Ag are present.
+          // Free-trace Cl lets pyromorphite (Pb-Cl) chemistry engage where Pb
+          // is present.
           "Cl": 200,
-          // Ag=5: argentiferous-galena signature. Tri-State galena commonly
-          // carries 50-300 ppm Ag in the mineral; brine-stage fluid Ag is much
-          // lower but non-zero. Historical Joplin smelters recovered Ag as Pb byproduct.
-          "Ag": 5,
+          // Ag=0 (v195, was 5): the Apr-2026 "argentiferous-galena signature"
+          // was an uncited confabulation — Tri-State is diagnostically
+          // silver-POOR (Pb+Zn only; Leach et al. 2010 USGS MVT model). The
+          // Ag=5 had been feeding 8 phantom crystals (acanthite ×4 +
+          // native_silver ×4) into the canonical seed-42 record. Boss catch.
+          "Ag": 0,
           // Ba=20: Tri-State has barite as a local late-stage gangue. Brine Ba
           // moderate (sulfate-buffered when S delivered by event_fluid_mixing —
           // barite then nucleates).
@@ -719,7 +722,7 @@
         "Anchor: Sweetwater Mine, Viburnum Trend MVT district (high-Ba endmember vs Tri-State, distinguished by Stoffell et al. 2008 LA-ICP-MS).",
         "Mechanic: acid entering a carbonate vug doesn't just dissolve crystals — it dissolves the WALL. The wall neutralizes the acid AND releases Ca2+/CO3 2- back into solution. When pH recovers, that dissolved carbonate supersaturates and precipitates as rapid growth bands on existing crystals. The acid is both destroyer and creator. The vug enlarges as the crystals grow.",
         "Repeated acid pulses (steps 15/40/70) model the Viburnum dissolution → supersaturation → growth burst cycle. Final fracture seal at step 90 closes the system.",
-        "Chemistry-audit gap-fill pass (Apr 2026): Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (Viburnum galena, less argentiferous than Tri-State), Sr (basinal-brine tracer + minor celestine documented in Viburnum). v5 gap-fill: O2=0.25 to allow barite + galena coexistence per the MVT-Eh window."
+        "Chemistry-audit gap-fill pass (Apr 2026): Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (Viburnum galena carries minor Ag — the Trend is one of the 'some deposits' where Leach et al. 2010 allow a byproduct Ag credit, UNLIKE silver-poor Tri-State whose Ag was de-confabulated v195), Sr (basinal-brine tracer + minor celestine documented in Viburnum). v5 gap-fill: O2=0.25 to allow barite + galena coexistence per the MVT-Eh window."
       ],
       "initial": {
         "temperature_C": 140.0,
@@ -752,7 +755,11 @@
           // Cl=200: brine anion paired with Na+K. Free Cl enables Pb-Cl
           // (pyromorphite-laurionite) chemistry where Pb is present.
           "Cl": 200,
-          // Ag=3: Viburnum galena Ag (lower than Tri-State Ag=5 per Stoffell 2008).
+          // Ag=3: Viburnum galena carries minor recoverable Ag (SE Missouri
+          // is a documented byproduct-Ag MVT district — Leach et al. 2010's
+          // "some deposits"). The old comparison "lower than Tri-State Ag=5"
+          // died with the v195 de-confabulation: Tri-State Ag is 0, and
+          // Viburnum is the MORE argentiferous of the two in reality.
           "Ag": 3,
           // Sr=12: basinal-brine tracer (Hanor 1994); minor celestine in Viburnum gangue.
           "Sr": 12,

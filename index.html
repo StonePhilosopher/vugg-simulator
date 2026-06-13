@@ -16076,7 +16076,48 @@ let timeScale = 5.0;
 //
 //   strontianite + witherite also upgraded to analytic — observer-only
 //   (not engine-promoted, no strip chip), zero baseline footprint.
-const SIM_VERSION = 194;
+//
+// v195 (2026-06-12) — MVT SILVER DE-CONFABULATION (boss catch). The boss
+//                     asked "is there silver in MVT?" — and there ISN'T.
+//                     Tri-State produced lead and zinc ONLY; silver-POOR
+//                     galena is a diagnostic MVT feature (Ag-in-galena
+//                     rides Sb/Bi substitution, a high-T vein phenomenon
+//                     absent from a ~150°C basinal brine; Leach et al.
+//                     2010 USGS MVT model: Ag "generally absent in most
+//                     deposits"). The mvt broth's Ag=5 + its
+//                     "argentiferous galena / smelter byproduct" note
+//                     were an UNCITED Apr-2026 gap-fill fabrication
+//                     (v139-adamite family) — none of the scenario's own
+//                     sources (Roedder/Ohle/Hagni/Stoffell) report
+//                     district Ag. It fed 8 phantom crystals (acanthite
+//                     ×4 + native_silver ×4) into the canonical seed-42
+//                     record for ~190 versions, and survived two rebake
+//                     reviews because per-pin verdicts inherited the
+//                     baseline's own claim as ground truth — the v194
+//                     block above even cites "mvt silver suite PRESERVED"
+//                     as evidence of rebake cleanliness. A preserved wart
+//                     is not a win; that text stays as written because
+//                     the record's errors are part of the record.
+//
+//   THE FIX: mvt broth Ag 5 → 0; anchor trued "Pb-Zn-Ag" → "Pb-Zn";
+//   confabulated notes corrected in scenarios.json5 + the
+//   locality_chemistry.json audit doc (tri_state entry, the bisbee
+//   cross-reference, and viburnum's now-backwards "less argentiferous
+//   than Tri-State" comparison — Viburnum/SE-Missouri is a DOCUMENTED
+//   byproduct-Ag district, the more argentiferous of the two; its Ag=3
+//   stays). greenockite STAYS at mvt — Cd-in-sphalerite is genuinely
+//   documented at Tri-State (Schwartz 2000). Single-scenario blast
+//   radius: only mvt's broth changed; the 8 freed crystal slots re-roll
+//   the scenario's RNG cascade (watch the boss-verified glassy dogtooth
+//   + phantom core through the diff).
+//
+//   ALSO THIS VERSION: archive/strips/ — the canonical seed-42 strip
+//   STORY archive (boss directive). tools/gen-strip-archive.mjs writes
+//   every scenario's full per-step chip trajectories + nucleation
+//   events to archive/strips/v<N>/ at each rebake; v194 was backfilled
+//   BEFORE this correction so the last confabulated-silver story is
+//   preserved as part of the record.
+const SIM_VERSION = 195;
 
 // ── 18-constants.js ──
 

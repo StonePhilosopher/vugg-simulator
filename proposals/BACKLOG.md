@@ -2,7 +2,37 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## ⚗️ UPDATE (2026-06-12, latest) — CARBONATE Ksp(T) ANALYTIC ✅ the pK debt's SIBLING closed in the validated band (SIM 194)
+> ## 🥈 UPDATE (2026-06-12, latest) — MVT SILVER DE-CONFABULATION ✅ SHIPPED (SIM 195) + STRIP-STORY ARCHIVE (boss directive)
+>
+> **The boss-catch item below is CLOSED.** Source re-verification confirmed
+> the fabrication: none of mvt's own references report district Ag; the
+> Leach et al. 2010 USGS MVT model lists Ag "generally absent in most
+> deposits"; the district record is Pb+Zn only. Broth Ag 5→0, anchor trued
+> "Pb-Zn-Ag"→"Pb-Zn", confabulated notes corrected in scenarios.json5 AND
+> data/locality_chemistry.json (tri_state entry + the bisbee cross-ref +
+> viburnum's now-backwards "less argentiferous than Tri-State" — Viburnum
+> is the documented byproduct-Ag district, its Ag=3 STAYS; greenockite
+> STAYS at mvt, Cd-in-sphalerite per Schwartz 2000). Rebake: **1/33 moved
+> — mvt 44→34 crystals, exactly −acanthite −native_silver (+celestine
+> 3→1 cascade re-roll); the boss-verified glassy dogtooth survived
+> 39.50→39.38 mm.** Inverted pins in tests-js/mvt-silver-deconfab.test.ts
+> (the marble-aragonite retirement pattern).
+>
+> **NEW STANDING SUBSYSTEM — archive/strips/ (boss directive 2026-06-12):
+> "we should be keeping them as a record of the story of the canonical
+> seed 42 vugg."** tools/gen-strip-archive.mjs writes EVERY scenario's
+> full per-step chip trajectories + nucleation events (the bells) to
+> archive/strips/v<N>/ — ~2.5 MB per version, readable JSON. v194 was
+> backfilled BEFORE the silver correction so the last confabulated-silver
+> story is preserved as part of the record. Part of the standard rebake
+> ritual now (bump FIRST — the tool refuses to overwrite an existing
+> version folder; the gen-baseline footgun is guarded here). The
+> session-start skill's step-4 ritual list was updated. OPEN SLIVER:
+> backfill of pre-v194 versions is possible by checking out old commits
+> and running the tool — do it opportunistically if a session has idle
+> CPU; oldest stories are the most erosion-prone.
+>
+> ## ⚗️ UPDATE (2026-06-12, earlier) — CARBONATE Ksp(T) ANALYTIC ✅ the pK debt's SIBLING closed in the validated band (SIM 194)
 >
 > **Session handoff: `HANDOFF-VSUITE-AND-KSP-2026-06-12.md`** — the
 > evening session's advice doc (attribution-vs-fact on twice-reverted
@@ -34,16 +64,9 @@ Living list of open work items, captured from session conversations so context s
 > WARM (≤~100°C, Folk 1974) scenario + minor cascade re-rolls; calcite
 > stays 1 everywhere, mvt silver PRESERVED, nothing lost fleet-wide.**
 >
-> **NEW OPEN ITEM — mvt silver de-confabulation** (boss catch
-> 2026-06-12): MVT deposits are diagnostically silver-POOR; Tri-State
-> produced Pb+Zn only, yet the scenario's Apr-2026 gap-fill added broth
-> Ag on an uncited "documented argentiferous / meaningful smelter
-> byproduct" claim (v139-adamite family) and the anchor says "Pb-Zn-Ag".
-> Baseline acanthite ×4 + native_silver are artifacts of that claim.
-> Fix: verify the cited sources for Ag data, drop broth Ag to 0/trace,
-> single-scenario rebake, true the anchor + note. Greenockite STAYS
-> (Cd-in-sphalerite is real at Tri-State). Details in the session
-> handoff §7.5.
+> ~~**NEW OPEN ITEM — mvt silver de-confabulation** (boss catch
+> 2026-06-12)~~ ✅ SHIPPED SIM 195 — see the 🥈 banner above. Greenockite
+> stayed; the dogtooth survived; 1/33 moved.
 >
 > **NEW OPEN ITEM — hot-band carbonate Ksp(T) promotion** (the remaining
 > sliver): activating the analytic above 90°C (where genuine hydrothermal

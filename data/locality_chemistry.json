@@ -288,10 +288,10 @@
     "tri_state": {
       "scenario_id": "mvt",
       "audit_status": "anchored",
-      "display_name": "Tri-State Pb-Zn-Ag district (Joplin / Picher / Galena, MO-KS-OK)",
+      "display_name": "Tri-State Pb-Zn district (Joplin / Picher / Galena, MO-KS-OK)",
       "host_formation": "Mississippian Boone Formation cherty limestone (and Reeds Spring / St. Joe formations locally)",
-      "fluid_event_summary": "Late Pennsylvanian-Early Permian basinal brine expulsion; NaCl-CaCl2 brines, 18-24 wt% NaCl-eq, 90-150 C ore stage. Stoffell et al. 2008 LA-ICP-MS shows Tri-State and Northern Arkansas brines were chemically distinct from Viburnum Trend, with Tri-State having higher Pb-Zn-Ag and lower Ba relative to the Viburnum brines. Ore deposition by sulfide saturation when metal-bearing brine met sulfur-bearing groundwater.",
-      "audit_pass": "gap-fill (Apr 2026) — added Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (argentiferous-galena), Ba (local barite gangue), Sr (basinal-brine tracer), Cu (trace chalcopyrite). Drift-fix: Pb=40 mirrored from JS init into Python init. Existing chemistry preserved (no retuning). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite. | v5-gap-fill (Apr 2026) — O2 bumped 0.0 → 0.25 to match real MVT mildly-reducing chemistry at the SO₄/H₂S boundary. Activates dormant Ba/Sr pools for barite + celestine. Plus supersat O2 saturation retuned to /0.4 (matches the SO₄/H₂S boundary).",
+      "fluid_event_summary": "Late Pennsylvanian-Early Permian basinal brine expulsion; NaCl-CaCl2 brines, 18-24 wt% NaCl-eq, 90-150 C ore stage. Stoffell et al. 2008 LA-ICP-MS shows Tri-State and Northern Arkansas brines were chemically distinct from Viburnum Trend, with Tri-State having higher Pb-Zn and lower Ba relative to the Viburnum brines. Ore deposition by sulfide saturation when metal-bearing brine met sulfur-bearing groundwater.",
+      "audit_pass": "gap-fill (Apr 2026) — added Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (argentiferous-galena — uncited confabulation, removed v195), Ba (local barite gangue), Sr (basinal-brine tracer), Cu (trace chalcopyrite). Drift-fix: Pb=40 mirrored from JS init into Python init. Existing chemistry preserved (no retuning). | v3-expansion (Apr 2026) — added arsenopyrite + scorodite + ferrimolybdite engine activations. No fluid chemistry changed; per-locality mineral_realizations_v3_expansion block added documenting expected behavior given existing chemistry. One documented gap: tsumeb scorodite is geologically real but blocked by current pH=6.8 (would need early-acidic-phase event to unlock). | v4-sulfate-expansion (Apr 2026) — added barite + celestine + jarosite + alunite + brochantite + antlerite + anhydrite engines (Round 5). Per-locality mineral_realizations_v4_sulfate_expansion block added documenting expected behavior. SIM_VERSION 3→4 bump driven by Coorong sabkha celestine + anhydrite activation (textbook sabkha-evaporite assemblage now models). Two documented gap families: (1) Tri-State + Sweetwater O2=0.0 blocks barite + celestine despite Ba/Sr present — bumping to mildly-reducing O2=0.2 would unlock both; (2) Tsumeb pH=6.8 blocks jarosite alongside the existing scorodite pH gap — same fix (early event_supergene_acidification) would unlock all three plus alunite. | v5-gap-fill (Apr 2026) — O2 bumped 0.0 → 0.25 to match real MVT mildly-reducing chemistry at the SO₄/H₂S boundary. Activates dormant Ba/Sr pools for barite + celestine. Plus supersat O2 saturation retuned to /0.4 (matches the SO₄/H₂S boundary).",
       "fluid": {
         "Na": {
           "value": 80,
@@ -303,11 +303,11 @@
         },
         "Cl": {
           "value": 200,
-          "note": "Brine anion paired with Na+K. Tri-State raw fluid 120-220,000 ppm Cl. salinity=15 wt% NaCl-eq remains bulk indicator; free Cl enables pyromorphite/chlorargyrite."
+          "note": "Brine anion paired with Na+K. Tri-State raw fluid 120-220,000 ppm Cl. salinity=15 wt% NaCl-eq remains bulk indicator; free Cl enables pyromorphite."
         },
         "Ag": {
-          "value": 5,
-          "note": "Argentiferous-galena signature. Tri-State galena 50-300 ppm Ag in mineral; brine Ag much lower. Historical Joplin smelters recovered Ag as Pb byproduct."
+          "value": 0,
+          "note": "v195 de-confabulation (boss catch 2026-06-12): the Apr-2026 'argentiferous-galena signature / smelter byproduct' note was an uncited fabrication — Tri-State is diagnostically silver-POOR (district produced Pb+Zn only; Leach et al. 2010 USGS MVT model lists Ag as 'generally absent'; Ag-in-galena rides Sb/Bi substitution, a high-T vein phenomenon). Was 5, fed 8 phantom silver crystals into the seed-42 record."
         },
         "Ba": {
           "value": 20,
@@ -538,7 +538,7 @@
       "fluid": {
         "Ag": {
           "value": 40,
-          "note": "Warren District produced ~25 Moz Ag historically — argentiferous galena + tetrahedrite + argentite + minor native Ag. Higher than the prior MVT scenarios (Tri-State Ag=5, Sweetwater Ag=3) reflecting Bisbee's Ag-rich character."
+          "note": "Warren District produced ~25 Moz Ag historically — argentiferous galena + tetrahedrite + argentite + minor native Ag. Far higher than the MVT scenarios (Viburnum/Sweetwater Ag=3 — a documented byproduct district; Tri-State Ag=0 after the v195 de-confabulation — silver-poor is the MVT norm) reflecting Bisbee's genuinely Ag-rich character."
         },
         "Mg": {
           "value": 50,
