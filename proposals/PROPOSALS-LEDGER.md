@@ -21,12 +21,16 @@ is the one-time reconciliation. Keep it current when a handoff lands.
 🚫 rejected/moot (deliberate) · ⚠ absence-claim, confirm before building.
 
 > **A caution this very audit earned:** automated readers OVER-REPORT orphans.
-> A first code-grep pass called botryoidal growth, `late_stage_propensity`,
-> host-rock architecture, and volatile gases "zero code" — all four had shipped
-> under different names (288 / test-backed / v60 / piecemeal). A git-diff reader
-> called T-reconciliation "still-open" — it shipped at SIM 181/184. **A
-> subagent's "X was never built" is a hypothesis; confirm with a grep/SHA before
-> treating it as debt.** ([[feedback_verify_before_asserting_state]])
+> Across five readers, FIVE confident "zero code" calls were false — botryoidal
+> growth (288 hits), `late_stage_propensity` (test-backed), host-rock
+> architecture (v60), volatile gases (piecemeal), and cavity-interior-voxels
+> (`js/24-geometry-voxel-grid.ts`, 223 hits — shipped via the multidim merge the
+> reader didn't know about). A git-diff reader called T-reconciliation
+> "still-open" — it shipped at SIM 181/184. **A subagent's "X was never built" is
+> a hypothesis; confirm with a grep/SHA before treating it as debt.**
+> ([[feedback_verify_before_asserting_state]]) The one reader that was accurate
+> end-to-end was the MINERAL sweep — because its ground truth (a name is/ isn't a
+> `minerals.json` key) is binary and checkable, not vocabulary-fuzzy.
 
 ---
 
@@ -36,8 +40,8 @@ is the one-time reconciliation. Keep it current when a handoff lands.
 |---|------|-------|-----------------|
 | 1 | **Gibbs-Thompson crystal-quality mechanic** (`PROPOSAL-GIBBS-THOMPSON`) | 🅾 orphan | 5-phase design (quality field improves w/ dissolution, gates habit). **0 code hits** on every pattern; not in BACKLOG. The one truly-lost design. Pre-fork. |
 | 2 | **Strip-contract campaign — 4 scenarios** | ◐ partial | Promised gem_pegmatite/naica/searles/sabkha/supergene/bisbee/marble; commits `b8d541c`+`d5fe7f2` pinned **supergene/bisbee/naica** only → **gem_pegmatite, searles, sabkha, marble dropped**. |
-| 3 | **Per-vertex chip-selector UI** | ◐ partial ⚠ | Data accessors (`fluidAtMeshVertex`) shipped; player-facing vertex picker not built. Also needs per-vertex spatial-chemistry expansion to be meaningful. **[UI]** |
-| 4 | **Strip filter-rule engine + record mode UI** | ◐ partial ⚠ | Recording infra shipped (v149+); the filter-rule backend + form-builder UI never built. **[UI]** |
+| 3 | **Per-vertex chip-selector UI** | ◐ partial | VERIFIED: data accessors (`fluidAtMeshVertex`, resolvers) present; player-facing vertex picker absent. Needs per-vertex spatial-chemistry depth to be meaningful. **[UI]** |
+| 4 | **Strip filter-rule engine + record mode UI** | ◐ partial | VERIFIED absent (2 incidental hits only): recording infra shipped (v149+), filter-rule backend + UI never built. **[UI]** |
 | 5 | **Sonifier "more musical"** (looping, reverb/space, melody-over-drone, moving harmony) | ◐ open thread | Rhythm + bells shipped; the four enrichments are an explicitly-LIVE design thread (boss: "keep discussing"). [[project_vugg_sonifier]] |
 | 6 | **Thermo ΔH tail** — dolomite ΔH (engine-promoted), siderite ΔH (verify Bénézeth 2009), witherite ΔGf drift | ⏳ open | Flagged in-data, NOT urgent. [[project_vugg_thermo_verification]] |
 | 7 | **Hot-band Ksp(T) > 90 °C promotion** | ⏳ tracked | Needs SUPCRT/llnl hi-T coefficients + calcite/aragonite gate recalibration + aragonite metastability hardening. |
@@ -46,6 +50,14 @@ is the one-time reconciliation. Keep it current when a handoff lands.
 | 10 | **Stale `expects_species` — 3 to diagnose** | ◐ partial ⚠ | bisbee azurite (gate not cleared despite event firing), searles mirabilite, schneeberg torbernite (0/10). (jeffrey magnetite + roughten_gill bayldonite are deliberate, not debt.) Confirm each. |
 | 11 | **Redox-gate omission sweep — follow-up fixes** | ⏳ held | Census shipped (`b81cf7d`); sphalerite/wurtzite gate held on the keystone (RNG artifact, not chemistry). [[project_vugg_redox_census]] |
 | 12 | **Per-mineral derived nucleation seeds (THE KEYSTONE)** | ⏳ tracked | The bottleneck unblocking #11 and a whole class of correct-physics fixes. |
+| 13 | **Mineral catalog orphans (6)** — franklinite, staurolite, epidote, titanite (=sphene), stilbite, heulandite | 🅾 never-added | Round-5/6 metamorphic + zeolite cohort. VERIFIED absent (only comments/`dominant_forms` strings). See §G. The build-candidate bucket. |
+| 14 | **deccan_zeolite Stage-II narrative gap** | ◐ content | step-70 event "Zeolite Stage II" describes *"Stilbite + heulandite + calcite blades"* — but those minerals don't exist → narration promises blades that can't grow. De-confab candidate (cf. mvt silver). |
+| 15 | **Edge-textures: 11 of 17 unbuilt** | ◐ partial | smooth/dogtooth/cube/botryoidal/saddle_rhomb shipped; prismatic_hex, octahedral, bladed, tabular, spherulitic, dendritic, fibrous, drusy, flos_ferri, cyclic_twin_hex, pyritohedron_edge fall back to a fuzzy substring match. |
+| 16 | **Broth-control fortress UI verbs** | ◐ partial | Advance/Warm/Cool/Shock shipped; Seep/Flood/Drain + standalone Replenish buttons not built. **[UI]** |
+| 17 | **Specimen-object Phases B–E** | ◐ partial ⚠ | Phase A (derive-only) shipped; narrator/inventory/library/record-player UI status unaudited. **[UI]** |
+| 18 | **Chemical-proximity nucleation bonus** | 🅾 orphan ⚠ | shared-cation competition modifier (distinct from the shipped epitaxy σ-discount). Research-first; no engine hooks. |
+| 19 | **Evaporite meniscus-concentration gate** | ◐ partial | `fluid_surface_ring` + per-ring chemistry shipped; the meniscus-zone evaporite bonus is not gated. |
+| 20 | **Crystal-cipher Phase 0** | ◐ partial | recipe-URL infra unshipped (conceptual); strip dataset + recorder exist (v149+). |
 
 **The genuinely-forgotten count is small:** exactly one clean orphan (#1) plus one
 half-dropped batch (#2). Everything else is either consciously sequenced (⏳) or a
@@ -109,4 +121,50 @@ UI pass wants ready-scoped targets:
   chemistry chip-trail. (Backend partly there; needs spatial-chem depth + the picker.)
 - **#4 Strip filter / record mode** — filter-rule UI over the strip recorder.
 
-(Both ⚠ — confirm current state in-code before building; absence was reader-reported.)
+(#3 #4 since VERIFIED in-code — see §A. The other UI candidates: #16 broth-control verbs, #17 specimen-object B–E.)
+
+---
+
+## §F — Standalone feature proposals (code-grep, ~30 docs)
+
+Beyond the handoffs. ~30 `PROPOSAL-*` / `TASK-BRIEF-*` / `TUTORIAL-*` docs traced
+against `js/15-version.ts` + code. **Most shipped.** Notable verdicts:
+
+- ✅ **Shipped** (corrected from reader over-reports): cavity-interior-voxels
+  (`js/24-geometry-voxel-grid.ts`), botryoidal-growth, host-rock architecture,
+  3d-topo-vug / 3d-simulation (3D is the default view), wireframe-crystals,
+  habit-bias, narrative-tempo (5/5), structure-as-fact-check (Tier 1),
+  agent-friendly-interface (URL contract), the four TASK-BRIEFs, initiative-variable.
+- 🅾 **Orphan:** gibbs-thompson crystal-quality (confirmed, §A #1); chemical-proximity
+  (probable, §A #18).
+- ◐ **Partial:** edge-textures 6/17 (§A #15), broth-control UI (§A #16),
+  specimen-object B–E (§A #17), evaporite-water-levels meniscus (§A #19),
+  crystal-cipher Phase 0 (§A #20), event-driven-precipitation (movements +
+  fluid-spots cover the spirit; discrete mass-nucleation events not built),
+  crystal-growth-visualization (terraces + strip view partly cover; internal
+  growth-band render unbuilt).
+- 🚫 **Moot/NA:** modular-refactor Python phases (Python deleted);
+  dump-simulator (a separate project — wasteland-crystals).
+
+## §G — Mineral catalog orphans (verified against `data/minerals.json` + engines)
+
+**~96% of proposed minerals shipped** (≈159/165 distinct proposals). The unbuilt
+tail is one cohort: **Round-5/6 metamorphic + zeolite silicates.**
+
+**🅾 Never-added (verified — present only in comments / narrative, no spec/engine):**
+- **franklinite** (Franklin/Sterling Hill Zn-Mn spinel) — named only in willemite's `dominant_forms`
+- **staurolite** (cruciform fairy-cross twins) — wholly absent
+- **epidote** (+ zoisite group) — Jeffrey notes flag it explicitly as a "future add-mineral candidate"
+- **titanite / sphene** — only a competition comment in `37-supersat-oxide`
+- **stilbite**, **heulandite** (Deccan zeolite blades) — narrated, not modeled
+
+**Also scenario-named-but-unbuilt** (associate/future mentions, lower priority):
+scolecite, mesolite (deccan Stage II), zoisite, perovskite, titanian-clinohumite,
+antigorite, lizardite (Jeffrey "future candidates"), zincite (willemite associate).
+
+**Content gap (§A #14):** `deccan_zeolite` step-70 promises stilbite + heulandite
+blades that can't form — either build the zeolites or true the event text.
+
+**If the UI work wants a "build something real" detour:** the zeolite pair
+(stilbite + heulandite) would *both* fill the deccan Stage-II gap AND retire the
+narrative over-promise — the highest-leverage mineral add on this list.
