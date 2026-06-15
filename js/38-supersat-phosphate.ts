@@ -22,25 +22,41 @@ const MINERAL_GATES_plumbogummite: MineralGates = {
   _notes: 'PbAl3(PO4)2(OH)5·H2O alunite-supergroup. Cl > 30 mildly suppresses (pyromorphite stability).',
 };
 
+// v193 descloizite-group V-economics correction: V_min 10 → 4 (and v_f
+// normalization /20 → /8 in the σ methods) for BOTH group members. The
+// old thresholds made the descloizite group need 5× vanadinite's V
+// (gate 10 vs 2, v_f /20 vs /6) — backwards against the deposits: the
+// descloizite-group vanadates are the ABUNDANT supergene V ores
+// (Otavi Mountainland — once the world's largest V deposits — is
+// descloizite/mottramite country; Boni et al. 2007, Econ Geol 102:441:
+// mottramite around Cu-sulfide Tsumeb-type bodies, descloizite around
+// sphalerite Berg Aukas-type), while vanadinite is the locality-special
+// collector phase. Census evidence at v192: mottramite + descloizite
+// fired NOWHERE in the 33-scenario fleet (dead-species pair) while
+// vanadinite fired in 2. The correction brings the group to vanadinite-
+// COMPARABLE V economics (gate 4 vs 2, v_f /8 vs /6), not privileged —
+// the Cu/Zn cation forks remain the group's distinctive routing.
+// Caldbeck V suite (vanadinite + mottramite + descloizite): Kingsbury
+// & Hartley 1956 MinMag; Stanley, Symes & Jones 1991 MinMag 55:121.
 const MINERAL_GATES_descloizite: MineralGates = {
   sigma_crit: 1.0,
   T_optimal: 40,
-  fluid_min: { Pb: 40, Zn: 50, V: 10, Cu: 0.5 },
+  fluid_min: { Pb: 40, Zn: 50, V: 4, Cu: 0.5 },
   O2_min: 0.5,
   pH_min: 4, pH_max: 8,
   surface_energy: 'medium',
-  _sources: ['descloizite engine v17+'],
+  _sources: ['descloizite engine v17+', 'Boni et al. 2007 Econ Geol 102:441 (v193 V-economics)'],
   _notes: 'PbZn(VO4)(OH) — Zn-dominant Pb-Zn-V (Zn/(Zn+Cu) ≥ 0.5).',
 };
 
 const MINERAL_GATES_mottramite: MineralGates = {
   sigma_crit: 1.0,
   T_optimal: 40,
-  fluid_min: { Pb: 40, Cu: 50, V: 10, Zn: 0.5 },
+  fluid_min: { Pb: 40, Cu: 50, V: 4, Zn: 0.5 },
   O2_min: 0.5,
   pH_min: 4, pH_max: 8,
   surface_energy: 'medium',
-  _sources: ['mottramite engine v17+'],
+  _sources: ['mottramite engine v17+', 'Boni et al. 2007 Econ Geol 102:441 (v193 V-economics)'],
   _notes: 'PbCu(VO4)(OH) — Cu-dominant Pb-Cu-V (Cu/(Cu+Zn) ≥ 0.5).',
 };
 
@@ -69,6 +85,16 @@ const MINERAL_GATES_vanadinite: MineralGates = {
   sigma_crit: 1.3,
   T_optimal: 40,
   fluid_min: { Pb: 20, V: 2, Cl: 5 },
+  // v193: O2_min added — the MISSING vanadate redox gate. Vanadinite is
+  // Pb5(VO4)3Cl, a V⁵⁺ vanadate exactly like its siblings descloizite/
+  // mottramite (O2_min 0.5) and clinobisvanite (1.0), but its formula
+  // was cloned from pyromorphite (PO4 — P is always +5, needs no gate)
+  // and the redox requirement never came along. Census evidence: at
+  // roughten_gill v192 all 6 vanadinite crystals nucleated in steps
+  // 30-70 at O2 0.20 — reducing-ish fluid where V⁵⁺ isn't mobile
+  // (roll-front V geochemistry: V³⁺/V⁴⁺ immobile, V⁵⁺ vanadate needs
+  // oxidizing conditions). Same family as the v92 As-state split.
+  O2_min: 0.5,
   pH_min: 2.5,
   surface_energy: 'medium',
   _sources: ['vanadinite engine v17+'],
@@ -228,7 +254,7 @@ Object.assign(VugConditions.prototype, {
   if (zn_fraction < 0.5) return 0;
   const pb_f = Math.min(this.fluid.Pb / 80.0, 2.5);
   const zn_f = Math.min(this.fluid.Zn / 80.0, 2.5);
-  const v_f  = Math.min(this.fluid.V  / 20.0, 2.5);
+  const v_f  = Math.min(this.fluid.V  / 8.0, 2.5);   // v193: /20 → /8 (V-economics, see gates comment)
   const ox_f = phosphateRedoxFactor(this.fluid, 1.0, 2.0);
   let sigma = pb_f * zn_f * v_f * ox_f;
   if (zn_fraction >= 0.55 && zn_fraction <= 0.85) sigma *= 1.3;
@@ -256,7 +282,7 @@ Object.assign(VugConditions.prototype, {
   if (cu_fraction < 0.5) return 0;
   const pb_f = Math.min(this.fluid.Pb / 80.0, 2.5);
   const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
-  const v_f  = Math.min(this.fluid.V  / 20.0, 2.5);
+  const v_f  = Math.min(this.fluid.V  / 8.0, 2.5);   // v193: /20 → /8 (V-economics, see gates comment)
   const ox_f = phosphateRedoxFactor(this.fluid, 1.0, 2.0);
   let sigma = pb_f * cu_f * v_f * ox_f;
   if (cu_fraction >= 0.55 && cu_fraction <= 0.85) sigma *= 1.3;
@@ -303,6 +329,10 @@ Object.assign(VugConditions.prototype, {
   supersaturation_vanadinite() {
   const g = MINERAL_GATES_vanadinite;
   if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.V < g.fluid_min!.V || this.fluid.Cl < g.fluid_min!.Cl) return 0;
+  // v193: the missing vanadate redox gate (see MINERAL_GATES_vanadinite
+  // comment). V⁵⁺ mobility requires oxidizing fluid; without this gate
+  // vanadinite fired at roughten_gill steps 30-70 at O2 0.20.
+  if (!phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   const pb_f = Math.min(this.fluid.Pb / 30.0, 1.8);
   const v_f  = Math.min(this.fluid.V / 6.0, 2.0);
   const cl_f = Math.min(this.fluid.Cl / 15.0, 1.3);

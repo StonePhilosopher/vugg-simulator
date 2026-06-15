@@ -63,14 +63,18 @@
       "S_J_mol_K": 91.71,
       "logKsp_25C": -8.48,
       "logKsp_fit": {
-        "form": "vanthoff",
-        "deltaH_diss_kJ_mol": -10.5
+        "form": "analytic",
+        "analytic": [-171.9065, -0.077993, 2839.319, 71.595, 0],
+        "analytic_form": "logK(T) = A1 + A2*TK + A3/TK + A4*log10(TK) + A5/TK^2 (TK Kelvin)",
+        "deltaH_diss_kJ_mol": -9.611,
+        "_deltaH_note": "v194: -10.5 -> -9.611 (wateq4f Calcite delta_h -2.297 kcal). Now that logKsp(T) comes from the analytic, this field is ONLY the coverage-check cross-validation anchor and SHOULD equal the analytic's implied ΔH = the wateq4f delta_h. Zero runtime effect (the analytic array drives the curve). The old -10.5 was an unverified estimate.",
+        "_form_history": "v194: form vanthoff(-10.5) -> analytic. Coefficients VERBATIM from canonical wateq4f.dat 'Calcite 12' -analytical line (fetched 2026-06-12). Reproduces logKsp_25C -8.48 at 298.15K (computed -8.480). The constant-ΔH van't Hoff was ~1.3 log too FLAT at 158°C (gave -9.05 vs analytic -10.32 — the full retrograde curvature); deltaH_diss_kJ_mol kept for the coverage-check ΔH cross-validation only. CLAMPED to the PB82 fit validity (~90°C, js/20c _THERMO_ANALYTIC_CLAMP_C) and held flat above: extrapolating the curvature into the 150-700°C scenarios over-steepens to +3.4 SI, overwhelms the old-SI-calibrated gates, and reanimates hot aragonite v192 retired. Hot-band promotion (calcite/aragonite gate re-calibration) is a separate BACKLOG arc."
       },
       "valid_T_range_C": [0, 90],
-      "sources": ["Plummer_Busenberg_1982", "Robie_Hemingway_1995"],
+      "sources": ["Plummer_Busenberg_1982", "Robie_Hemingway_1995", "PHREEQC_wateq4f"],
       "databases_agree": ["PHREEQC_wateq4f", "PHREEQC_llnl", "Robie_Hemingway_1995"],
       "confidence_tier": "A",
-      "notes": "Best-measured carbonate. ΔGf agreement across all major databases within 0.5 kJ/mol. Plummer-Busenberg 1982 is the canonical solubility study. Retrograde solubility (-10.5 kJ/mol exothermic dissolution) — less soluble at higher T."
+      "notes": "Best-measured carbonate. ΔGf agreement across all major databases within 0.5 kJ/mol. Plummer-Busenberg 1982 is the canonical solubility study. Retrograde solubility — less soluble at higher T. v194: logKsp(T) now uses the PHREEQC analytic expression (the FULL retrograde curve) instead of constant-ΔH van't Hoff, closing the mixed-fidelity seam the v192 pK(T) correction exposed (IAP side exact, Ksp side was flat)."
     },
     "kinetics": {
       "rate_law": "plummer_wigley_parkhurst_1978",
@@ -99,14 +103,18 @@
       "S_J_mol_K": 88.99,
       "logKsp_25C": -8.336,
       "logKsp_fit": {
-        "form": "vanthoff",
-        "deltaH_diss_kJ_mol": -10.0
+        "form": "analytic",
+        "analytic": [-171.9773, -0.077993, 2903.293, 71.595, 0],
+        "analytic_form": "logK(T) = A1 + A2*TK + A3/TK + A4*log10(TK) + A5/TK^2 (TK Kelvin)",
+        "deltaH_diss_kJ_mol": -10.832,
+        "_deltaH_note": "v194: -10.0 -> -10.832 (wateq4f Aragonite delta_h -2.589 kcal). Coverage-check anchor only; matches the analytic's implied ΔH. Zero runtime effect.",
+        "_form_history": "v194: form vanthoff(-10.0) -> analytic. Coefficients VERBATIM from wateq4f.dat 'Aragonite 21' -analytical line. Reproduces logKsp_25C -8.336 at 298.15K. Aragonite tracks calcite's retrograde curvature (near-identical A2/A4; A3 differs by the 1.32 kJ/mol stability gap). Clamped to PB82 fit validity (~90°C) like calcite — the analytic only sharpens its low-T SI where it actually forms; the rebake's +aragonite appearances are all warm (≤~100°C, Folk 1974 warm-aragonite regime) single-crystal marginals, NOT the 150-700°C hot aragonite v192 retired (which the clamp keeps suppressed)."
       },
       "valid_T_range_C": [0, 90],
-      "sources": ["Plummer_Busenberg_1982", "Robie_Hemingway_1995"],
+      "sources": ["Plummer_Busenberg_1982", "Robie_Hemingway_1995", "PHREEQC_wateq4f"],
       "databases_agree": ["PHREEQC_wateq4f", "PHREEQC_llnl", "Robie_Hemingway_1995"],
       "confidence_tier": "A",
-      "notes": "1.32 kJ/mol less stable than calcite at 25C — metastable at all surface T. ΔGf well-measured. Same Plummer-Busenberg 1982 solubility study as calcite."
+      "notes": "1.32 kJ/mol less stable than calcite at 25C — metastable at all surface T. ΔGf well-measured. Same Plummer-Busenberg 1982 solubility study as calcite. v194: logKsp(T) now analytic (wateq4f), matching calcite's upgrade."
     },
     "kinetics": {
       "rate_law": "calcite_pwp_scaled",
@@ -295,10 +303,13 @@
       "S_J_mol_K": 112.1,
       "logKsp_25C": -8.562,
       "logKsp_fit": {
-        "form": "vanthoff",
-        "deltaH_diss_kJ_mol": 2.94
+        "form": "analytic",
+        "analytic": [607.642, 0.121098, -20011.25, -236.4948, 0],
+        "analytic_form": "logK(T) = A1 + A2*TK + A3/TK + A4*log10(TK) + A5/TK^2 (TK Kelvin)",
+        "deltaH_diss_kJ_mol": 2.94,
+        "_form_history": "v194: form vanthoff(+2.94) -> analytic, VERBATIM from wateq4f.dat 'Witherite 145' -analytical line (reproduces -8.562 at 298.15K). Observer-only (not engine-promoted, no strip chip) so zero baseline footprint — a free correctness win for the SI library/helicoid display. The PROGRADE branch above ~150°C now carries real curvature instead of the flat van't Hoff slope."
       },
-      "valid_T_range_C": [0, 800],
+      "valid_T_range_C": [0, 250],
       "sources": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
       "databases_agree": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
       "confidence_tier": "A",
@@ -324,10 +335,13 @@
       "S_J_mol_K": 97.2,
       "logKsp_25C": -9.271,
       "logKsp_fit": {
-        "form": "vanthoff",
-        "deltaH_diss_kJ_mol": -1.67
+        "form": "analytic",
+        "analytic": [155.0305, 0, -7239.594, -56.58638, 0],
+        "analytic_form": "logK(T) = A1 + A2*TK + A3/TK + A4*log10(TK) + A5/TK^2 (TK Kelvin)",
+        "deltaH_diss_kJ_mol": -1.67,
+        "_form_history": "v194: form vanthoff(-1.67) -> analytic, VERBATIM from wateq4f.dat 'Strontianite 142' -analytical line (reproduces -9.271 at 298.15K; A2=0, a 3-term fit). Observer-only (not engine-promoted, no strip chip) — zero baseline footprint, free SI-library correctness win."
       },
-      "valid_T_range_C": [0, 900],
+      "valid_T_range_C": [0, 250],
       "sources": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
       "databases_agree": ["PHREEQC_wateq4f", "Robie_Hemingway_1995"],
       "confidence_tier": "A",

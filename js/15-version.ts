@@ -10877,5 +10877,148 @@
 //   exact, the mixed fidelity flips the cooling-scenario SI drift
 //   mildly positive (re-pinned bounded until the Ksp analytic
 //   upgrade lands — BACKLOG).
-const SIM_VERSION = 192;
+//
+// v193 (2026-06-12) — THE CALDBECK V-SUITE: mottramite delivered at
+//                     roughten_gill (task #55, the twice-deferred V-axis
+//                     arc), via TWO engine corrections + one event leach.
+//                     The gate-census pattern again — measure, don't bump.
+//
+//   THE CENSUS (tools/roughten-gill-mottramite-probe.mjs, NEW): at v192
+//   mottramite fired NOWHERE in the 33-scenario fleet (dead-species pair
+//   with descloizite), while its V-gate sat at 10 — FIVE TIMES
+//   vanadinite's 2 — with v_f normalized /20 vs vanadinite's /6. That is
+//   BACKWARDS against the deposits: the descloizite-group vanadates
+//   (mottramite/descloizite) are the ABUNDANT supergene V ores (Otavi
+//   Mountainland, once the world's largest; Boni et al. 2007 Econ Geol
+//   102:441), vanadinite the locality-special collector phase. Two bugs
+//   compounded the misweighting, plus a missing scenario mechanic:
+//
+//   FIX 1 — vanadinite's MISSING redox gate. Pb5(VO4)3Cl is a V⁵⁺
+//   vanadate exactly like its O2_min-0.5 siblings, but its engine was
+//   cloned from pyromorphite (PO4 — P is always +5, no redox gate) and
+//   the O2 requirement never came along. Census proof: all 6 roughten_gill
+//   vanadinite nucleated at O2 0.20 (reducing — where V⁵⁺ isn't mobile).
+//   Added O2_min 0.5 + phosphateRedoxAvailable gate (the v92 As-state
+//   family). Vanadinite now waits for the oxidation pulse; still 6 at
+//   both tenants (supergene scenarios are oxidizing).
+//
+//   FIX 2 — descloizite-group V-economics. V_min 10→4, v_f /20→/8 for
+//   BOTH group members — bringing them to vanadinite-COMPARABLE V economy
+//   (not privileged; the Cu/Zn cation forks remain their distinctive
+//   routing). FREE WIN: mottramite now also fires at supergene_oxidation
+//   (Tsumeb, 0→2) — its own type-abundance locality.
+//
+//   FIX 3 — roughten_gill supergene V-leach. The scenario's own header
+//   said Caldbeck wallrock carries V 10-20 ppm that "leaches in the
+//   supergene window," yet fluid.V sat STATIC at 6 — described, never
+//   modelled. Added V 6→14 to the pyrite-oxidation event (step 70, where
+//   O2 jumps 0.05→1.2 — V⁵⁺ mobilizes at oxidation onset). Fires AFTER
+//   the step-25 primary lockup, so it CANNOT reproduce the v180 failure
+//   (an INITIAL-broth V bump from step 0 that re-rolled the primary RNG
+//   and halved sphalerite). The V axis was never the problem — its
+//   PLACEMENT in time was. mottramite 5 at seed 42; primaries intact
+//   (sphalerite 2→3, galena 4 unchanged). Kingsbury & Hartley 1956 +
+//   Stanley et al. 1991 document the Caldbeck V suite.
+//
+//   BASELINE: rebake. Expected movers: roughten_gill (+mottramite,
+//   vanadinite re-timed) + supergene_oxidation (+mottramite); vanadinite
+//   redox gate is inert everywhere else (no other tenant). Any cascade
+//   re-roll from the v_f σ-magnitude change is reviewed in the diff.
+//
+// v194 (2026-06-12) — CARBONATE Ksp(T) ANALYTIC UPGRADE: the pK(T)
+//                     debt's SIBLING, closing the mixed-fidelity seam
+//                     SIM 192 exposed. js/20c's constant-ΔH van't Hoff
+//                     logKsp(T) → the PHREEQC analytic expression
+//                     (wateq4f.dat verbatim) for every carbonate the
+//                     database ships one: calcite, aragonite,
+//                     strontianite, witherite. Clamp [0,250] matches the
+//                     pK side so IAP and Ksp share a T-domain.
+//
+//   THE DEBT, measured (tools/ksp-t-observe.mjs --table): the van't Hoff
+//   form reproduced the 25°C anchor but ran ~1.3 log too FLAT at 158°C
+//   (calcite −9.05 vs analytic −10.32) — the full retrograde curvature
+//   was missing. Analytic reproduces every 25°C anchor to ±0.0002 and
+//   bends correctly hot. SI = logIAP − logKsp, so the more-negative hot
+//   Ksp RAISES calcite/aragonite SI (more supersaturated — the correct
+//   retrograde direction). dolomite/siderite/rhodochrosite/smithsonite/
+//   cerussite have NO wateq4f analytic → stay van't Hoff (honest mixed
+//   fidelity); strontianite + witherite upgraded too (observer-only,
+//   zero baseline footprint — free SI-library correctness).
+//
+//   Blast radius dark-observed (--fleet) BEFORE the rebake: the SI shift
+//   is + (raises SI) and grows with T. A FIRST rebake at a [0,250] clamp
+//   (matching the pK side) was a RUNAWAY — +3.37 SI at the cap overwhelmed
+//   the old-SI-calibrated calcite/aragonite gates: sunnyside calcite
+//   DOUBLED (41→88), mvt LOST its silver suite (43→20, −acanthite/
+//   cerussite/greenockite/native_silver), and the metastable HOT aragonite
+//   v192 correctly retired REANIMATED across jeffrey/marble/pulse. That
+//   exposed the real boundary: the PB82 calcite/aragonite -analytical are
+//   SOLUBILITY FITS to ~90°C; their curvature must NOT be extrapolated into
+//   the 150-700°C scenarios.
+//
+//   THE CLAMP DECISION (js/20c _THERMO_ANALYTIC_CLAMP_C = [0,90]): hold the
+//   analytic to its fit validity, frozen flat above 90°C. This closes the
+//   seam where carbonates dominantly form AND where the data supports it,
+//   without the hot runaway. Rebake at clamp-90 = CLEAN: 9/33 moved, every
+//   move a single-crystal +aragonite in a WARM scenario (reactive_wall,
+//   tutorial_mn_calcite, travertine — the Folk 1974 warm-aragonite regime,
+//   ≤~100°C, defensible) plus minor cascade re-rolls (mvt +celestine/
+//   hawleyite −anhydrite). calcite stays 1 crystal everywhere (no runaway);
+//   mvt silver suite PRESERVED; nothing lost fleet-wide (anhydrite still at
+//   porphyry/sabkha, cerussite at elmwood/mvt/roughten_gill/supergene).
+//
+//   THE COOLING PIN stays bounded-drift (NOT restored to directional). With
+//   the analytic flat above 90°C the cooling scenario (158-180°C) gets a
+//   constant Ksp, so its retrograde must come from the IAP term alone —
+//   not enough to flip the v192 mild-positive drift. The DIRECTIONAL
+//   retrograde pin's restoration needs the analytic ACTIVE in the hot band,
+//   which is exactly the runaway — so it waits on the hot-band promotion
+//   (calcite/aragonite gate re-calibration + aragonite metastability
+//   hardening). Logged as the remaining sliver. observer SI/strip chips
+//   now carry correct curvature ≤90°C.
+//
+//   strontianite + witherite also upgraded to analytic — observer-only
+//   (not engine-promoted, no strip chip), zero baseline footprint.
+//
+// v195 (2026-06-12) — MVT SILVER DE-CONFABULATION (boss catch). The boss
+//                     asked "is there silver in MVT?" — and there ISN'T.
+//                     Tri-State produced lead and zinc ONLY; silver-POOR
+//                     galena is a diagnostic MVT feature (Ag-in-galena
+//                     rides Sb/Bi substitution, a high-T vein phenomenon
+//                     absent from a ~150°C basinal brine; Leach et al.
+//                     2010 USGS MVT model: Ag "generally absent in most
+//                     deposits"). The mvt broth's Ag=5 + its
+//                     "argentiferous galena / smelter byproduct" note
+//                     were an UNCITED Apr-2026 gap-fill fabrication
+//                     (v139-adamite family) — none of the scenario's own
+//                     sources (Roedder/Ohle/Hagni/Stoffell) report
+//                     district Ag. It fed 8 phantom crystals (acanthite
+//                     ×4 + native_silver ×4) into the canonical seed-42
+//                     record for ~190 versions, and survived two rebake
+//                     reviews because per-pin verdicts inherited the
+//                     baseline's own claim as ground truth — the v194
+//                     block above even cites "mvt silver suite PRESERVED"
+//                     as evidence of rebake cleanliness. A preserved wart
+//                     is not a win; that text stays as written because
+//                     the record's errors are part of the record.
+//
+//   THE FIX: mvt broth Ag 5 → 0; anchor trued "Pb-Zn-Ag" → "Pb-Zn";
+//   confabulated notes corrected in scenarios.json5 + the
+//   locality_chemistry.json audit doc (tri_state entry, the bisbee
+//   cross-reference, and viburnum's now-backwards "less argentiferous
+//   than Tri-State" comparison — Viburnum/SE-Missouri is a DOCUMENTED
+//   byproduct-Ag district, the more argentiferous of the two; its Ag=3
+//   stays). greenockite STAYS at mvt — Cd-in-sphalerite is genuinely
+//   documented at Tri-State (Schwartz 2000). Single-scenario blast
+//   radius: only mvt's broth changed; the 8 freed crystal slots re-roll
+//   the scenario's RNG cascade (watch the boss-verified glassy dogtooth
+//   + phantom core through the diff).
+//
+//   ALSO THIS VERSION: archive/strips/ — the canonical seed-42 strip
+//   STORY archive (boss directive). tools/gen-strip-archive.mjs writes
+//   every scenario's full per-step chip trajectories + nucleation
+//   events to archive/strips/v<N>/ at each rebake; v194 was backfilled
+//   BEFORE this correction so the last confabulated-silver story is
+//   preserved as part of the record.
+const SIM_VERSION = 195;
 

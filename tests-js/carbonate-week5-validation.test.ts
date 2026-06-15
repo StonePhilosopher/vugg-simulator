@@ -94,20 +94,28 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 5 — cooling scenario', () => {
     }
   });
 
-  it('SI under cooling: bounded drift (re-pinned v192 — the mixed-fidelity seam)', () => {
+  it('SI under cooling: bounded drift (v192 seam; v194 narrowed it but the directional pin still awaits hot-band promotion)', () => {
     // PRE-v192 this pinned "SI drops as T drops" (retrograde). The
     // pK(T) correction (PB82, js/20b) exposed a MIXED-FIDELITY seam:
-    // the IAP side now carries exact speciation curvature (cooling
-    // 180→158°C lowers pK2 → more CO3²⁻ → log IAP up ~0.17) while the
-    // Ksp(T) side is still constant-ΔH van't Hoff — which is ~1.3 log
-    // units too FLAT at 158°C vs PHREEQC's calcite analytic, so the
-    // under-curved lattice term no longer outruns the corrected ion
-    // term and SI drifts mildly UP on cooling in this window
-    // (measured −1.53 → −1.31 at seed 42). The retrograde DIRECTION
-    // pin returns when the Ksp side gets its own analytic expressions
-    // (BACKLOG: carbonate Ksp(T) analytic upgrade — the pK debt's
-    // sibling). Until then the honest pin: finite SI, small bounded
-    // drift, no runaway.
+    // the IAP side carries exact speciation curvature while the Ksp(T)
+    // side was constant-ΔH van't Hoff (~1.3 log too FLAT at 158°C), so
+    // the under-curved lattice term no longer outran the corrected ion
+    // term and SI drifted mildly UP on cooling (measured −1.53 → −1.31).
+    //
+    // v194 (carbonate Ksp(T) analytic upgrade — the pK debt's sibling):
+    // js/20c now uses the PHREEQC analytic (wateq4f) for calcite/aragonite.
+    // BUT the PB82 -analytical is a ~90°C solubility fit; extrapolating its
+    // curvature into the 150-700°C scenarios was a RUNAWAY (over-grew
+    // calcite, reanimated hot aragonite), so the analytic is clamped to its
+    // fit validity (js/20c _THERMO_ANALYTIC_CLAMP_C [0,90]) and frozen flat
+    // above. The cooling scenario runs 158-180°C — ABOVE the clamp — so its
+    // Ksp is constant here and the retrograde still can't outrun the IAP
+    // term. The DIRECTIONAL pin's full restoration needs the analytic active
+    // in the hot band, which requires the calcite/aragonite gate
+    // re-calibration arc (BACKLOG: hot-band carbonate Ksp(T) promotion).
+    // Until then the honest pin holds: finite SI, small bounded drift, no
+    // runaway. The seam is now CLOSED below 90°C (where carbonates
+    // dominantly form); only the hot tail awaits the gate re-tune.
     const trace = runAndProbeSI('cooling', 'calcite', 5);
     if (trace.length < 2) return;
     const T_start = trace[0].T;

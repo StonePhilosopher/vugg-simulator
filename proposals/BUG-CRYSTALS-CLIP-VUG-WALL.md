@@ -3,7 +3,64 @@
 **Filed:** 2026-05-06
 **Reporter:** boss (visual catch — "I mistook the vug for an overgrowth")
 **Severity:** content + visual; not a crash
-**Status:** open
+**Status:** ✅ RESOLVED (by-design) as of 2026-06-15 — see the resolution
+banner immediately below. The original lateral-burst case is gone; what
+remains (crystals exceeding the wall in the *model*) is intentional
+post-v61 "defer to geology" and handled visually by the per-cell clip.
+
+---
+
+## ✅ RESOLUTION — 2026-06-15 (re-verification; boss: "much less noticeable these days")
+
+The body of this doc (everything below this banner) is preserved as the
+historical record, but the bug as filed is **resolved**. Three
+independent lines of evidence:
+
+**1. The fix shipped, then the sim half was deliberately reverted.**
+- **v59** added the exact per-crystal cavity cap this doc requested
+  (`add_zone` capped `c_length ≤ vug_radius`, `a_width ≤ vug_diameter`).
+- **v60** added the **renderer per-cell cavity clip** (commit `4fb128f`),
+  replacing the single-scalar `uVugRadius` whose equatorial-only bound
+  caused the polar-gap leak documented in the 2026-05-06 stress-test
+  update below.
+- **v61** then **removed the v59 cap** per the boss directive *"when in
+  doubt, defer to the actual geology"*: real crystals in tight cavities
+  compete, deform, or push into host rock — they don't magically halt at
+  a wall. So the sim now renders chemistry-true sizes and the per-cell
+  clip slices whatever's past the local wall. Calibration drift was
+  **zero** (the cap only ever touched rendered `c_length_mm`/`a_width_mm`;
+  mass balance uses `zone.thickness_um`). See `js/15-version.ts` v59–v61.
+
+So a crystal *exceeding* the wall in the model is now **intentional**,
+not a bug.
+
+**2. Headless measurement (SIM 195, seed 42, all 33 scenarios).**
+47/1143 crystals (4.1%) exceed the wall in the model, across 18/33
+scenarios — all by design. Crucially, **the originally-reported failure
+is gone**: it was a *lateral* tabular burst (feldspar a-axis = 1.5×c
+punching sideways). Today gem_pegmatite's feldspar is a platy
+cleavelandite at **lateral 0.95×** the radius — right at the wall, not
+through it. Every remaining overshoot is **axial** — long acicular /
+fibrous / rosette habits (selenite, aragonite columnar) extending along
+their *length* (c-length 2–3× radius), exactly the "selenite sword" case
+this doc flagged as the hard one.
+
+**3. Visual confirmation (browser, supergene_oxidation seed 42, 3D view).**
+The two worst offenders fleet-wide — selenite rosettes at 144 mm and
+132 mm c-length in a 62 mm vug radius (2.3× / 2.1×) — render as
+**wall-coating rosettes** (`vector: coating`), spread over the cavity
+surface, NOT as single wall-piercing swords. No crystal dominates or
+engulfs the cavity; the "I mistook the vug for an overgrowth" effect is
+absent. At most a few crystal tips graze slightly past the hull at the
+edges (the known polar-gap limitation from the renderer's spherical
+bound), nothing like the filed report.
+
+**Remaining open sliver (minor, deferred):** the renderer's polar-gap
+leak — Options A/B in the 2026-05-06 stress-test update below
+(per-ring `uVugRadiusByRing` or a cavity SDF). It only affects
+sub-equatorial crystal fragments at non-spherical hulls and is a
+documented limitation, not the filed bug. Low priority unless a boss
+visual catch resurfaces it.
 
 ---
 

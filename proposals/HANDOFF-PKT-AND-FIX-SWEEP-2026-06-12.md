@@ -93,16 +93,35 @@ ever. (Memory: feedback_file_corruption_recovery.)
 
 ## 8. What's actually next, ranked
 
-1. **roughten_gill mottramite gate-census** (task open, queued
-   deliberately AFTER this arc so it tunes on stable chemistry).
-   Probe the Zn≥0.5 / redox·T blockers first; V clears at 12 and is
-   TWICE-confirmed touchy — treat V as read-only until the census
-   says otherwise. Fresh session recommended; the gate-census pattern
-   from the linarite arc (and wittichen-sulfate-probe) is the
-   template.
-2. **Carbonate Ksp(T) analytic upgrade** (§2) — thermo-carbonates.json
-   + 20c, clone pk-t-observe, restore the retrograde pin. Composes
-   with the open dolomite/siderite ΔH items in the thermo memory.
+1. ~~**roughten_gill mottramite gate-census**~~ ✅ DONE (SIM 193).
+   The census found the V axis was never the problem — its PLACEMENT
+   IN TIME was. Two engine bugs (vanadinite's missing redox gate;
+   descloizite-group V-gate 10→4 backwards vs the deposits) + a
+   supergene V-leach moved to the step-70 oxidation event (after the
+   primary lockup, so no sphalerite ripple — the exact failure mode
+   v109/v180 hit by bumping the INITIAL broth). mottramite 5 at seed
+   42 + a free win at Tsumeb (its type-abundance locality). New
+   instrument tools/roughten-gill-mottramite-probe.mjs; pins in
+   vanadate-v-economics.test.ts. THE LESSON, added to the kit: when a
+   variable has been reverted twice and blamed, suspect the
+   intervention's TIMING/PLACEMENT before declaring the variable
+   forbidden (sibling to lesson 4's richer-claim move — both say "the
+   obvious read of a failure is often wrong about WHAT failed").
+2. ~~**Carbonate Ksp(T) analytic upgrade**~~ ✅ DONE in the validated
+   band (SIM 194). PHREEQC analytic (wateq4f verbatim) for calcite/
+   aragonite/strontianite/witherite, CLAMPED to the PB82 ~90°C fit
+   validity. The clamp is the lesson: a first [0,250] attempt (matching
+   the pK side) was a RUNAWAY — extrapolating a 90°C solubility fit into
+   the 150-700°C scenarios over-grew calcite and reanimated the hot
+   aragonite v192 retired. "Match the other term's clamp" was WRONG
+   here precisely because the two fits have different validity ranges
+   (lesson 2's mixed-fidelity seam has a TWIN: a shared *domain* is only
+   right when both terms are *valid* across it). REMAINING SLIVER —
+   hot-band promotion: activate the analytic >90°C with calcite/aragonite
+   gate re-calibration + aragonite metastability hardening + high-T
+   (llnl/SUPCRT) coefficients; THAT restores the cooling directional
+   retrograde pin (still bounded-drift). tools/ksp-t-observe.mjs is the
+   reusable instrument; pins in carbonate-ksp-analytic.test.ts.
 3. **Quartz arc** — unchanged from the morphology handoff; hiatus
    census first.
 4. **Boss verification additions** from tonight: the mvt phantom-core

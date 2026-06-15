@@ -1,0 +1,2318 @@
+{
+  "bisbee": {
+    "acanthite": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 233
+    },
+    "albite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 7416.8
+    },
+    "annabergite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 741.9
+    },
+    "arsenopyrite": {
+      "active": 1,
+      "dissolved": 1,
+      "total": 2,
+      "max_um": 1.4
+    },
+    "atacamite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 18547.7
+    },
+    "bornite": {
+      "active": 0,
+      "dissolved": 2,
+      "total": 2,
+      "max_um": 202.5
+    },
+    "brochantite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 9451
+    },
+    "chalcocite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 266.7
+    },
+    "chalcopyrite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 582.1
+    },
+    "chrysocolla": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 82.6
+    },
+    "covellite": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 1194.1
+    },
+    "cuprite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 381.2
+    },
+    "dioptase": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "erythrite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1239.1
+    },
+    "feldspar": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 3148
+    },
+    "goethite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 12.9
+    },
+    "halite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 8834.9
+    },
+    "malachite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 18605.7
+    },
+    "mimetite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 340.1
+    },
+    "native_copper": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 154.2
+    },
+    "native_gold": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 2341.7
+    },
+    "native_silver": {
+      "active": 0,
+      "dissolved": 5,
+      "total": 5,
+      "max_um": 480.3
+    },
+    "pyrite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 235.6
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 5848.6
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 28473.8
+    },
+    "sylvite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 826.8
+    },
+    "tennantite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "tetrahedrite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "turquoise": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 1579.6
+    }
+  },
+  "colorado_plateau": {
+    "carnotite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 748.1
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 2300.2
+    },
+    "tyuyamunite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 3873
+    },
+    "uranophane": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 662.8
+    }
+  },
+  "cooling": {
+    "quartz": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 480.6
+    }
+  },
+  "deccan_zeolite": {
+    "albite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 557.5
+    },
+    "apophyllite": {
+      "active": 10,
+      "dissolved": 0,
+      "total": 10,
+      "max_um": 1564
+    },
+    "aragonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 26641.7
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 20598.8
+    },
+    "goethite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 10078.2
+    },
+    "hematite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 3969.6
+    },
+    "opal": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 2719.8
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 36234.2
+    },
+    "tigers_eye": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 2759.1
+    }
+  },
+  "elmwood": {
+    "aragonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 49646.3
+    },
+    "barite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 0
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 18825.3
+    },
+    "celestine": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 13.9
+    },
+    "cerussite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 213.5
+    },
+    "fluorite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 20515.7
+    },
+    "galena": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 495.7
+    },
+    "pyrite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 200.8
+    },
+    "quartz": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 385.2
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 5329.7
+    },
+    "siderite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 3159.3
+    },
+    "smithsonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 5412.9
+    },
+    "sphalerite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1009
+    }
+  },
+  "epithermal_telluride": {
+    "albite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1574
+    },
+    "calaverite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 315.5
+    },
+    "feldspar": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 6763.9
+    },
+    "hessite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 2073.4
+    },
+    "native_silver": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 6162.2
+    },
+    "native_tellurium": {
+      "active": 8,
+      "dissolved": 0,
+      "total": 8,
+      "max_um": 200.8
+    },
+    "quartz": {
+      "active": 0,
+      "dissolved": 3,
+      "total": 3,
+      "max_um": 4219.8
+    },
+    "sylvanite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1695.4
+    }
+  },
+  "gem_pegmatite": {
+    "albite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 14005.7
+    },
+    "cassiterite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 65.2
+    },
+    "emerald": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 108.5
+    },
+    "feldspar": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 31830.7
+    },
+    "lepidolite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 4.9
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1852.5
+    },
+    "spodumene": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 239.4
+    },
+    "tourmaline": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 453.3
+    }
+  },
+  "jeffrey_mine": {
+    "actinolite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 15563.2
+    },
+    "albite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 10595.7
+    },
+    "awaruite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1023.3
+    },
+    "brucite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 176.1
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 5500.9
+    },
+    "chrysotile": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 814.8
+    },
+    "datolite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 514
+    },
+    "diopside": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 7146.5
+    },
+    "dolomite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 3812.9
+    },
+    "fluorite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 814.5
+    },
+    "grossular": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 3392.7
+    },
+    "pectolite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 36.3
+    },
+    "prehnite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 2379.1
+    },
+    "rhodochrosite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 72.4
+    },
+    "siderite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 2031.8
+    },
+    "vesuvianite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 6510.5
+    },
+    "wollastonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 898.7
+    }
+  },
+  "marble_contact_metamorphism": {
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 40178.7
+    },
+    "ruby": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 160.6
+    }
+  },
+  "mvt": {
+    "acanthite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1679.3
+    },
+    "aragonite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 20618.8
+    },
+    "barite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 24.4
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 39503.6
+    },
+    "celestine": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 15.1
+    },
+    "cerussite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 20
+    },
+    "fluorite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 11608.3
+    },
+    "galena": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 5964
+    },
+    "greenockite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 2071.1
+    },
+    "hawleyite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 16.2
+    },
+    "native_silver": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1003.8
+    },
+    "pyrite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 861.8
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 2504
+    },
+    "rhodochrosite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 5621.1
+    },
+    "siderite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 3345.9
+    },
+    "sphalerite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 154.4
+    },
+    "willemite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1.2
+    },
+    "wurtzite": {
+      "active": 1,
+      "dissolved": 1,
+      "total": 2,
+      "max_um": 115.1
+    }
+  },
+  "naica_geothermal": {
+    "celestine": {
+      "active": 7,
+      "dissolved": 0,
+      "total": 7,
+      "max_um": 127.3
+    },
+    "quartz": {
+      "active": 17,
+      "dissolved": 0,
+      "total": 17,
+      "max_um": 80.8
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 66254.9
+    },
+    "thenardite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 0
+    }
+  },
+  "ouro_preto": {
+    "albite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 26508.6
+    },
+    "feldspar": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 12814.6
+    },
+    "goethite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 577.1
+    },
+    "lepidocrocite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 83.8
+    },
+    "opal": {
+      "active": 0,
+      "dissolved": 5,
+      "total": 5,
+      "max_um": 17.8
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 3,
+      "total": 6,
+      "max_um": 7409.7
+    },
+    "tigers_eye": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 92.1
+    },
+    "topaz": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 4542.1
+    }
+  },
+  "porphyry": {
+    "albite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 2161.3
+    },
+    "anhydrite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 462.3
+    },
+    "argentite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 5496
+    },
+    "arsenopyrite": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 4211.9
+    },
+    "bismuthinite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1253.2
+    },
+    "bornite": {
+      "active": 0,
+      "dissolved": 3,
+      "total": 3,
+      "max_um": 179.7
+    },
+    "calaverite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1571
+    },
+    "chalcopyrite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 1147.7
+    },
+    "feldspar": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 3347.3
+    },
+    "galena": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 9225.1
+    },
+    "malachite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "mimetite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 618.5
+    },
+    "molybdenite": {
+      "active": 0,
+      "dissolved": 3,
+      "total": 3,
+      "max_um": 17971.9
+    },
+    "native_gold": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 51.5
+    },
+    "pyrite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 754.9
+    },
+    "quartz": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 179.6
+    },
+    "stibnite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 4.9
+    },
+    "sylvanite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 881
+    },
+    "tennantite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "tetrahedrite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    }
+  },
+  "pulse": {
+    "quartz": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 380.6
+    },
+    "rhodochrosite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 22.2
+    },
+    "siderite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 270.1
+    }
+  },
+  "radioactive_pegmatite": {
+    "albite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 46540.2
+    },
+    "cassiterite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 308.8
+    },
+    "feldspar": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 56939.6
+    },
+    "lepidolite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1105.9
+    },
+    "morganite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1580.5
+    },
+    "opal": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 3.6
+    },
+    "plumbogummite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 0
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 29668.1
+    },
+    "spodumene": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1662.2
+    },
+    "tigers_eye": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 10.2
+    },
+    "topaz": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 538.4
+    },
+    "tourmaline": {
+      "active": 8,
+      "dissolved": 0,
+      "total": 8,
+      "max_um": 1616.5
+    },
+    "uraninite": {
+      "active": 0,
+      "dissolved": 3,
+      "total": 3,
+      "max_um": 11239.5
+    }
+  },
+  "reactivated_fluorite_vein": {
+    "acanthite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 855.5
+    },
+    "aragonite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 52533.3
+    },
+    "barite": {
+      "active": 21,
+      "dissolved": 0,
+      "total": 21,
+      "max_um": 25
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 51754.6
+    },
+    "celestine": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 35.7
+    },
+    "fluorite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 6172.6
+    },
+    "galena": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 3927.8
+    },
+    "greenockite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1102.8
+    },
+    "native_silver": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 24
+    },
+    "pyrite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 282.2
+    },
+    "quartz": {
+      "active": 7,
+      "dissolved": 0,
+      "total": 7,
+      "max_um": 23.6
+    },
+    "rhodochrosite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1857.7
+    },
+    "siderite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 843.7
+    },
+    "sphalerite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "wurtzite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 531.9
+    }
+  },
+  "reactive_wall": {
+    "acanthite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1942.7
+    },
+    "aragonite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 4070.7
+    },
+    "barite": {
+      "active": 12,
+      "dissolved": 0,
+      "total": 12,
+      "max_um": 370.3
+    },
+    "calcite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 16375.7
+    },
+    "celestine": {
+      "active": 12,
+      "dissolved": 0,
+      "total": 12,
+      "max_um": 95.7
+    },
+    "dolomite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 5091.3
+    },
+    "galena": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 247.2
+    },
+    "marcasite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 8.8
+    },
+    "pyrite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 192.1
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 2188.5
+    },
+    "rhodochrosite": {
+      "active": 1,
+      "dissolved": 1,
+      "total": 2,
+      "max_um": 920.4
+    },
+    "selenite": {
+      "active": 0,
+      "dissolved": 2,
+      "total": 2,
+      "max_um": 229
+    },
+    "siderite": {
+      "active": 4,
+      "dissolved": 1,
+      "total": 5,
+      "max_um": 603.7
+    },
+    "sphalerite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1358.9
+    },
+    "wurtzite": {
+      "active": 1,
+      "dissolved": 1,
+      "total": 2,
+      "max_um": 56.8
+    }
+  },
+  "roughten_gill": {
+    "acanthite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1429.6
+    },
+    "anglesite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 3217.9
+    },
+    "arsenopyrite": {
+      "active": 0,
+      "dissolved": 2,
+      "total": 2,
+      "max_um": 6.4
+    },
+    "aurichalcite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 105.9
+    },
+    "brochantite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 3563.1
+    },
+    "caledonite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 4853.5
+    },
+    "cerussite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 567.5
+    },
+    "chalcocite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 88.8
+    },
+    "covellite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 2181.3
+    },
+    "galena": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 12219.9
+    },
+    "leadhillite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 97.3
+    },
+    "linarite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1489
+    },
+    "mottramite": {
+      "active": 7,
+      "dissolved": 0,
+      "total": 7,
+      "max_um": 646.3
+    },
+    "olivenite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 0
+    },
+    "orpiment": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 39
+    },
+    "pararealgar": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 399.8
+    },
+    "plumbogummite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1773.6
+    },
+    "proustite": {
+      "active": 0,
+      "dissolved": 2,
+      "total": 2,
+      "max_um": 379.9
+    },
+    "pyrite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 227.7
+    },
+    "pyromorphite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 4592.6
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1406.4
+    },
+    "rosasite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 115.5
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 17727.6
+    },
+    "sphalerite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 390.3
+    },
+    "tennantite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 1083.2
+    },
+    "tetrahedrite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 9.7
+    },
+    "turquoise": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 233.9
+    },
+    "vanadinite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 5450.4
+    }
+  },
+  "sabkha_dolomitization": {
+    "HMC": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 0.5
+    },
+    "anhydrite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 251.4
+    },
+    "aragonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 7.3
+    },
+    "calcite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 0.5
+    },
+    "celestine": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 5.1
+    },
+    "dolomite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 1.4
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 65.2
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 91305.9
+    },
+    "sylvite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 0
+    }
+  },
+  "schneeberg": {
+    "acanthite": {
+      "active": 3,
+      "dissolved": 1,
+      "total": 4,
+      "max_um": 1111.7
+    },
+    "annabergite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 273.3
+    },
+    "arsenopyrite": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 1895.1
+    },
+    "autunite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1036.6
+    },
+    "bismuthinite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 279.2
+    },
+    "brochantite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 373.7
+    },
+    "cassiterite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 190.3
+    },
+    "chrysocolla": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 40.2
+    },
+    "cobaltite": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 449.4
+    },
+    "cuprite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 4.2
+    },
+    "erythrite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 680.9
+    },
+    "feldspar": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 18322.9
+    },
+    "goethite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 5.7
+    },
+    "metatorbernite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 735.1
+    },
+    "metazeunerite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 680.8
+    },
+    "morganite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 7
+    },
+    "native_arsenic": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 239.1
+    },
+    "native_bismuth": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 62.3
+    },
+    "naumannite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 113.7
+    },
+    "nickeline": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 1727.9
+    },
+    "pararealgar": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "pharmacolite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 856.2
+    },
+    "proustite": {
+      "active": 0,
+      "dissolved": 2,
+      "total": 2,
+      "max_um": 844
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 27147.6
+    },
+    "selenite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 2075.2
+    },
+    "spodumene": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 105.6
+    },
+    "tennantite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "topaz": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 17.6
+    },
+    "turquoise": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 496.7
+    },
+    "uraninite": {
+      "active": 0,
+      "dissolved": 3,
+      "total": 3,
+      "max_um": 8953.5
+    },
+    "uranospinite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 487.8
+    }
+  },
+  "searles_lake": {
+    "calcite": {
+      "active": 16,
+      "dissolved": 0,
+      "total": 16,
+      "max_um": 1.3
+    },
+    "celestine": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 66.3
+    },
+    "halite": {
+      "active": 9,
+      "dissolved": 0,
+      "total": 9,
+      "max_um": 54151.4
+    },
+    "quartz": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 450.6
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 10662.1
+    },
+    "sylvite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1456.9
+    },
+    "thenardite": {
+      "active": 15,
+      "dissolved": 0,
+      "total": 15,
+      "max_um": 0
+    },
+    "tincalconite": {
+      "active": 8,
+      "dissolved": 0,
+      "total": 8,
+      "max_um": 0
+    }
+  },
+  "sicily_solfifera": {
+    "celestine": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 748.2
+    },
+    "fluorite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "halite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1015.6
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 194.8
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 38411.6
+    }
+  },
+  "stalactite_demo": {
+    "aragonite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 3274.1
+    },
+    "calcite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1105.1
+    },
+    "quartz": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 499.7
+    }
+  },
+  "sulphur_bank": {
+    "arsenopyrite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 5127.1
+    },
+    "cinnabar": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 10955.5
+    },
+    "marcasite": {
+      "active": 0,
+      "dissolved": 2,
+      "total": 2,
+      "max_um": 6120.6
+    },
+    "metacinnabar": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 18394
+    },
+    "native_sulfur": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 2772.4
+    },
+    "orpiment": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 3047.5
+    },
+    "pararealgar": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 1581.5
+    },
+    "pyrite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 4164.2
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 6,
+      "total": 9,
+      "max_um": 4155.7
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 45221.8
+    }
+  },
+  "sunnyside_american_tunnel": {
+    "acanthite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 11960.6
+    },
+    "albite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 5.1
+    },
+    "arsenopyrite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 496.4
+    },
+    "fluorite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 986.7
+    },
+    "galena": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 50233.6
+    },
+    "proustite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1889.7
+    },
+    "pyrite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 153.7
+    },
+    "quartz": {
+      "active": 8,
+      "dissolved": 0,
+      "total": 8,
+      "max_um": 1367.3
+    },
+    "realgar": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "rhodochrosite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 2897.1
+    },
+    "siderite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 582
+    },
+    "tennantite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 2804.1
+    },
+    "tetrahedrite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 376
+    },
+    "wurtzite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 5040.9
+    }
+  },
+  "supergene_oxidation": {
+    "adamite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 600
+    },
+    "alunite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 2.3
+    },
+    "anglesite": {
+      "active": 0,
+      "dissolved": 8,
+      "total": 8,
+      "max_um": 1951.4
+    },
+    "annabergite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 296.1
+    },
+    "aurichalcite": {
+      "active": 0,
+      "dissolved": 5,
+      "total": 5,
+      "max_um": 1081.5
+    },
+    "azurite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 101.1
+    },
+    "bornite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 67.1
+    },
+    "brochantite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 9618.5
+    },
+    "caledonite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 942.7
+    },
+    "cerussite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 2793.1
+    },
+    "chalcocite": {
+      "active": 0,
+      "dissolved": 5,
+      "total": 5,
+      "max_um": 237.1
+    },
+    "conichalcite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 5029.2
+    },
+    "covellite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 3187.8
+    },
+    "cuprite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 87.9
+    },
+    "duftite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 2292
+    },
+    "erythrite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 164.2
+    },
+    "ferrimolybdite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 15528.7
+    },
+    "galena": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 6927.3
+    },
+    "goethite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 56.7
+    },
+    "jarosite": {
+      "active": 0,
+      "dissolved": 2,
+      "total": 2,
+      "max_um": 2.2
+    },
+    "koettigite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 82.6
+    },
+    "malachite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 17026.5
+    },
+    "mimetite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1773.2
+    },
+    "molybdenite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 705.7
+    },
+    "mottramite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 86.7
+    },
+    "olivenite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1508.9
+    },
+    "pararealgar": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "pharmacolite": {
+      "active": 5,
+      "dissolved": 0,
+      "total": 5,
+      "max_um": 1643.1
+    },
+    "plumbogummite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 1007.3
+    },
+    "powellite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 14923.8
+    },
+    "pyromorphite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 853.5
+    },
+    "quartz": {
+      "active": 4,
+      "dissolved": 2,
+      "total": 6,
+      "max_um": 584.3
+    },
+    "raspite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 1193.2
+    },
+    "scorodite": {
+      "active": 1,
+      "dissolved": 5,
+      "total": 6,
+      "max_um": 506.7
+    },
+    "selenite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 144051.5
+    },
+    "smithsonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 18
+    },
+    "sphalerite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 804.5
+    },
+    "stolzite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 2119
+    },
+    "vanadinite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 826.7
+    },
+    "wulfenite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 12005.9
+    }
+  },
+  "tn457_barite_pulses": {
+    "barite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 3736
+    },
+    "halite": {
+      "active": 12,
+      "dissolved": 0,
+      "total": 12,
+      "max_um": 7875
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 2857.2
+    },
+    "sphalerite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 1780.7
+    },
+    "willemite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 143.2
+    },
+    "wurtzite": {
+      "active": 0,
+      "dissolved": 1,
+      "total": 1,
+      "max_um": 41.1
+    }
+  },
+  "tutorial_first_crystal": {
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 2349
+    }
+  },
+  "tutorial_mn_calcite": {
+    "aragonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 4563.5
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 3386.3
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 989.5
+    },
+    "rhodochrosite": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 553.8
+    }
+  },
+  "tutorial_travertine": {
+    "aragonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 1150.9
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 2009.1
+    },
+    "halite": {
+      "active": 6,
+      "dissolved": 0,
+      "total": 6,
+      "max_um": 334.9
+    },
+    "quartz": {
+      "active": 2,
+      "dissolved": 2,
+      "total": 4,
+      "max_um": 217.8
+    }
+  },
+  "ultramafic_supergene": {
+    "HMC": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 0
+    },
+    "calcite": {
+      "active": 9,
+      "dissolved": 0,
+      "total": 9,
+      "max_um": 0.3
+    },
+    "chrysoprase": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 9.8
+    },
+    "dolomite": {
+      "active": 28,
+      "dissolved": 0,
+      "total": 28,
+      "max_um": 4.2
+    },
+    "goethite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 113.5
+    },
+    "opal": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 6.3
+    },
+    "pyrolusite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 288.2
+    },
+    "quartz": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 3073
+    }
+  },
+  "wittichen": {
+    "acanthite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 411.9
+    },
+    "aragonite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 19069
+    },
+    "barite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 179.5
+    },
+    "calcite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 7557.5
+    },
+    "native_arsenic": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1797.5
+    },
+    "native_bismuth": {
+      "active": 3,
+      "dissolved": 0,
+      "total": 3,
+      "max_um": 621
+    },
+    "native_silver": {
+      "active": 0,
+      "dissolved": 4,
+      "total": 4,
+      "max_um": 1503.3
+    },
+    "nickeline": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 1686.7
+    },
+    "proustite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 169.3
+    },
+    "realgar": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 0
+    },
+    "safflorite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 711
+    },
+    "skutterudite": {
+      "active": 2,
+      "dissolved": 0,
+      "total": 2,
+      "max_um": 87.8
+    }
+  },
+  "zoned_dripstone_cave": {
+    "HMC": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 800.2
+    },
+    "aragonite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 2158.8
+    },
+    "calcite": {
+      "active": 4,
+      "dissolved": 0,
+      "total": 4,
+      "max_um": 827.4
+    },
+    "dolomite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 451.1
+    },
+    "fluorite": {
+      "active": 1,
+      "dissolved": 0,
+      "total": 1,
+      "max_um": 625.6
+    }
+  }
+}

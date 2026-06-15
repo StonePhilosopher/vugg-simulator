@@ -24,3 +24,7 @@ dist/
 # Cold-CI verdict stamp (tools/cold-ci.mjs) — per-machine, per-run state;
 # committing it would churn every run and vouch for trees it never saw
 .ci-stamp.json
+
+# strip-archive-diff.mjs --html scratch output (ad-hoc visual overlays);
+# the COMMITTED record is archive/strips/v<N>/, not these throwaway diffs
+.strip-diffs/

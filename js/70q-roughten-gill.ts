@@ -99,11 +99,27 @@ function event_roughten_gill_pyrite_oxidation(c) {
   c.fluid.Cu = Math.min(75, c.fluid.Cu + 35);           // bump to mottramite + brochantite sweet spot
   c.fluid.Pb = Math.min(95, c.fluid.Pb + 20);           // Pb mobilized from galena
   c.fluid.As = Math.min(18, c.fluid.As + 5);            // As(V) mobilized but less than v107 (give pyromorphite the win)
+  // v193: SUPERGENE V-LEACH — the missing half of the mottramite story.
+  // This scenario's own header (and the v180 V-axis note) say Caldbeck
+  // wallrock carries V ~10-20 ppm that "leaches in the supergene window,"
+  // yet fluid.V sat STATIC at 6 the entire run — the leach was described
+  // but never modelled. V⁵⁺ vanadate mobilizes precisely at oxidation
+  // onset (this event is where O2 jumps 0.05→1.2), so the leach belongs
+  // HERE, not in the initial broth. Critically it fires at step 70 —
+  // AFTER the step-25 primary lockup — so it canNOT reproduce the v180
+  // failure (that was an INITIAL-broth V bump from step 0 that re-rolled
+  // the primary-suite RNG and halved sphalerite). 6→14 lands inside the
+  // header's 10-20 ppm wallrock range; with the v193 descloizite-group
+  // V-economics correction (gate 10→4, v_f /20→/8) this clears mottramite
+  // honestly. Same supergene-leach shape as supergene_v_bearing_seep
+  // (Tsumeb). Kingsbury & Hartley 1956 + Stanley et al. 1991 document
+  // the Caldbeck vanadinite-mottramite-descloizite V suite.
+  c.fluid.V = Math.min(14, c.fluid.V + 8);              // red-bed/wallrock V⁵⁺ leach at oxidation onset
   c.fluid.O2 = Math.min(1.4, c.fluid.O2 + 1.0);         // full atmospheric oxidation
   c.fluid.pH = Math.max(4.2, c.fluid.pH - 1.3);         // acid pulse (gentler than v107 to keep linarite pH window in range)
   c.fluid.CO3 = Math.min(40, c.fluid.CO3 + 15);         // CO3 builds — bigger early input helps cerussite + caledonite
   c.flow_rate = 0.4;
-  return `Pyrite oxidation pulse — AMD-style acid window. T ${c.temperature.toFixed(0)}°C, pH crashes to ${c.fluid.pH.toFixed(1)}, SO4 surges to ${c.fluid.S.toFixed(0)} ppm. Cu (${c.fluid.Cu.toFixed(0)}) + Pb (${c.fluid.Pb.toFixed(0)}) + As (${c.fluid.As.toFixed(0)}) mobilized. CO3 builds to ${c.fluid.CO3.toFixed(0)} (cerussite gate clears). Plumbogummite gates clear (Pb=${c.fluid.Pb.toFixed(0)}, Al=${c.fluid.Al.toFixed(0)}, P=${c.fluid.P.toFixed(0)}).`;
+  return `Pyrite oxidation pulse — AMD-style acid window. T ${c.temperature.toFixed(0)}°C, pH crashes to ${c.fluid.pH.toFixed(1)}, SO4 surges to ${c.fluid.S.toFixed(0)} ppm. Cu (${c.fluid.Cu.toFixed(0)}) + Pb (${c.fluid.Pb.toFixed(0)}) + As (${c.fluid.As.toFixed(0)}) + V (${c.fluid.V.toFixed(0)}, wallrock leach) mobilized. CO3 builds to ${c.fluid.CO3.toFixed(0)} (cerussite gate clears). Plumbogummite gates clear (Pb=${c.fluid.Pb.toFixed(0)}, Al=${c.fluid.Al.toFixed(0)}, P=${c.fluid.P.toFixed(0)}).`;
 }
 
 function event_roughten_gill_linarite_stage(c) {

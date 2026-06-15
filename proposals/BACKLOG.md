@@ -2,7 +2,190 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## ⚗️ UPDATE (2026-06-12, latest) — CARBONATE pK(T) CORRECTED (SIM 192, `d683a33`): review §2.2's oldest calibration debt CLOSED; its sibling exposed
+> ## 🔬 UPDATE (2026-06-13, latest) — REDOX-GATE OMISSION SWEEP: census DONE (2 real catches), fix HELD on an RNG prerequisite
+>
+> **Task #59.** The vanadinite catch (v193 — a redox-sensitive species whose
+> engine was cloned without its redox gate) prompted a systematic census.
+> **NEW: tools/redox-gate-census.mjs** — 166 supersaturation engines swept; a
+> curated redox-class map (the geology: which oxidation state each diagnostic
+> ion sits in) × mechanical gate-detection. It found EXACTLY two HIGH
+> structural omissions: **sphalerite + wurtzite** — ZnS sulfides with no
+> `sulfideRedoxAnoxic` gate, the last siblings of the omission galena carried
+> until v13 ("a clear physics bug"). (native_gold was the lone INFO flag —
+> gold is redox-robust, intentionally ungated; left as-is.)
+>
+> **The fix is correct physics but HELD — here's why (the science led here).**
+> Dark-observe (**tools/sulfide-redox-omission-probe.mjs**): the gate bites
+> ONLY supergene_oxidation (sphalerite σ>0 at O2 up to 2.2 in the Tsumeb
+> gossan; everywhere else sphalerite/wurtzite fire only in reducing fluid, so
+> the gate is inert). But adding it re-rolls supergene's shared-RNG cascade
+> and demotes **mottramite 96% → 47% of seeds** (**tools/mottramite-frequency-
+> sweep.mjs**, pre/post paired, 100 seeds). mottramite shares NO ion with ZnS
+> → this is pure RNG-sequencing displacement, not chemistry. Confirmed: a
+> Tsumeb-justified V-seep bump (+6→+13) raised mottramite's mean count but NOT
+> its frequency (still 47%) — no chemistry lever can restore an RNG artifact.
+> mottramite is a genuine abundant Tsumeb phase (Boni 2007), so 47% is a real
+> under-representation. Net: shipping the gate now trades a modest gain (one
+> sphalerite's overgrowth, 804→241µm) for a larger artifact-driven regression.
+>
+> **PREREQUISITE for the gate to land: per-mineral derived nucleation seeds**
+> (the 15th-catch "scramble derived seeds" class) so gating one mineral can't
+> scramble another's draws. Once that exists, the sphalerite/wurtzite gate
+> lands clean. RIDER: Tsumeb's V-seep IS under-cooked (it reaches 7.5 vs
+> minor-occurrence Caldbeck's 14; Tsumeb is a world-class vanadate locality) —
+> a standalone V-richness correction (vanadinite stayed healthy at mean 6.0,
+> arsenates intact in the experiment) to pair with the gate when it lands.
+> The vugg-canary nightly sweep (PROPOSAL drafted) is the instrument that
+> would validate the gate+RNG-derivation lands without regressions.
+>
+> **Shipped this session (pure tooling, no engine change, no SIM bump):** the
+> three tools above. The census is the durable deliverable; the fix is scoped.
+>
+> **⭐ QUEUED NEXT — THE KEYSTONE ARC: per-mineral derived nucleation seeds.**
+> This session promoted it from a footnote to the bottleneck. The held
+> sphalerite/wurtzite gate isn't a one-off: because nucleation draws from one
+> shared RNG stream, ANY gate change / engine retune to a high-traffic mineral
+> re-rolls the whole cascade and can knock out unrelated abundant phases
+> (mottramite 96→47% was the demonstrator). So a whole CLASS of correct
+> physics fixes is currently unshippable. The fix: derive each mineral's
+> nucleation RNG per-(mineral, cell) — the 15th-catch "scramble derived seeds"
+> idea (already done for the MOVEMENT stream) extended to NUCLEATION. Natural
+> sequence for the next stretch: **build vugg-canary → land RNG-derivation →
+> then the held gate + future redox fixes land clean AND auto-validated.** The
+> canary is what makes the RNG-derivation arc safe to attempt (it catches a
+> regression at 04:00 instead of needing a hand-run sweep).
+>
+> **⚠️ THE TUNING TRAP (lesson, keep visible):** when a high-traffic engine
+> moves and displaces a phase, the reflex is to chemistry-tune it back. That
+> reflex is wrong when the displacement is RNG-sequencing — proven here, the
+> Tsumeb V-bump raised mottramite's COUNT but not its FREQUENCY. Measure
+> (frequency sweep) before tuning; the structural answer is RNG-derivation, not
+> broth nudges.
+>
+> **SESSION-STATE NOTE (for the next builder, transient):** every commit since
+> the CI-green `12833b9` (the redox-census tools commit + this BACKLOG edit) is
+> DOCS/TOOLING ONLY — CODE-IDENTICAL to `12833b9`, no engine/test change. The
+> `.ci-stamp.json` will read stale and vugg-session-start will want a 9-min
+> cold-CI run; it's SAFE TO SKIP — the engine is byte-for-byte the
+> verified-green tree (confirm with `git diff 12833b9 HEAD -- js tests-js` =
+> empty). Stops vouching the moment the next engine commit lands. Also:
+> `tools/strip-story-diff.mjs`
+> is untracked = a concurrent session's WIP (duplicate of the shipped
+> `strip-archive-diff.mjs`); leave it, don't `git add -A`.
+>
+> ## 🥈 UPDATE (2026-06-12) — MVT SILVER DE-CONFABULATION ✅ SHIPPED (SIM 195) + STRIP-STORY ARCHIVE (boss directive)
+>
+> **The boss-catch item below is CLOSED.** Source re-verification confirmed
+> the fabrication: none of mvt's own references report district Ag; the
+> Leach et al. 2010 USGS MVT model lists Ag "generally absent in most
+> deposits"; the district record is Pb+Zn only. Broth Ag 5→0, anchor trued
+> "Pb-Zn-Ag"→"Pb-Zn", confabulated notes corrected in scenarios.json5 AND
+> data/locality_chemistry.json (tri_state entry + the bisbee cross-ref +
+> viburnum's now-backwards "less argentiferous than Tri-State" — Viburnum
+> is the documented byproduct-Ag district, its Ag=3 STAYS; greenockite
+> STAYS at mvt, Cd-in-sphalerite per Schwartz 2000). Rebake: **1/33 moved
+> — mvt 44→34 crystals, exactly −acanthite −native_silver (+celestine
+> 3→1 cascade re-roll); the boss-verified glassy dogtooth survived
+> 39.50→39.38 mm.** Inverted pins in tests-js/mvt-silver-deconfab.test.ts
+> (the marble-aragonite retirement pattern).
+>
+> **NEW STANDING SUBSYSTEM — archive/strips/ (boss directive 2026-06-12):
+> "we should be keeping them as a record of the story of the canonical
+> seed 42 vugg."** tools/gen-strip-archive.mjs writes EVERY scenario's
+> full per-step chip trajectories + nucleation events (the bells) to
+> archive/strips/v<N>/ — ~2.5 MB per version, readable JSON. v194 was
+> backfilled BEFORE the silver correction so the last confabulated-silver
+> story is preserved as part of the record. Part of the standard rebake
+> ritual now (bump FIRST — the tool refuses to overwrite an existing
+> version folder; the gen-baseline footgun is guarded here). The
+> session-start skill's step-4 ritual list was updated. OPEN SLIVER:
+> backfill of pre-v194 versions is possible by checking out old commits
+> and running the tool — do it opportunistically if a session has idle
+> CPU; oldest stories are the most erosion-prone.
+>
+> ## ⚗️ UPDATE (2026-06-12, earlier) — CARBONATE Ksp(T) ANALYTIC ✅ the pK debt's SIBLING closed in the validated band (SIM 194)
+>
+> **Session handoff: `HANDOFF-VSUITE-AND-KSP-2026-06-12.md`** — the
+> evening session's advice doc (attribution-vs-fact on twice-reverted
+> variables, cloned-engine gate omissions + the proposed redox-gate
+> sweep, validity clamps vs shared-domain clamps, the throwaway rebake
+> as measurement, the gen-baseline version-bump footgun, the observe-
+> tool template, the ranked queue). It extends
+> HANDOFF-PKT-AND-FIX-SWEEP-2026-06-12.md — read both before picking up
+> the hot-band Ksp promotion or the redox sweep.
+>
+> js/20c's constant-ΔH van't Hoff logKsp(T) → the PHREEQC analytic
+> expression (wateq4f.dat verbatim) for the carbonates the database ships
+> one for: **calcite, aragonite, strontianite, witherite**. The mixed-
+> fidelity seam the v192 pK fix exposed (IAP exact, Ksp flat — ~1.3 log
+> too flat at 158°C) is now CLOSED below 90°C. NEW instrument
+> **tools/ksp-t-observe.mjs** (--table science pin / --fleet dark-observe).
+> --verify improved 7→9 (calcite + aragonite now match wateq4f on both
+> logKsp AND ΔH; the vestigial deltaH_diss was trued to the analytic's
+> implied value).
+>
+> **THE CLAMP DECISION (the load-bearing judgment):** the PB82 calcite/
+> aragonite -analytical are ~90°C SOLUBILITY FITS. A first rebake at a
+> [0,250] clamp (matching the pK side) was a RUNAWAY — +3.4 SI at the cap
+> overwhelmed the old-SI-calibrated gates: sunnyside calcite DOUBLED, mvt
+> LOST its silver suite, and the metastable HOT aragonite v192 retired
+> REANIMATED. So the analytic is held to its fit validity
+> (_THERMO_ANALYTIC_CLAMP_C [0,90]) and frozen flat above. Clean rebake
+> at clamp-90: **9/33 moved, every move a single-crystal +aragonite in a
+> WARM (≤~100°C, Folk 1974) scenario + minor cascade re-rolls; calcite
+> stays 1 everywhere, mvt silver PRESERVED, nothing lost fleet-wide.**
+>
+> ~~**NEW OPEN ITEM — mvt silver de-confabulation** (boss catch
+> 2026-06-12)~~ ✅ SHIPPED SIM 195 — see the 🥈 banner above. Greenockite
+> stayed; the dogtooth survived; 1/33 moved.
+>
+> **NEW OPEN ITEM — hot-band carbonate Ksp(T) promotion** (the remaining
+> sliver): activating the analytic above 90°C (where genuine hydrothermal
+> calcite forms, mvt/cooling/epithermal 150-280°C) needs the calcite +
+> aragonite GATE re-calibration for the new SI scale + aragonite
+> metastability HARDENING (a hard T-gate so raw SI can't reanimate the hot
+> polymorph). That is what restores the cooling DIRECTIONAL retrograde pin
+> (still bounded-drift). It also wants high-T Ksp coefficients (llnl/SUPCRT,
+> fitted to 300°C) rather than extrapolating PB82. Composes with the open
+> dolomite/siderite/rhodochrosite/smithsonite ΔH items (still --verify
+> mismatches; this arc cleared calcite+aragonite).
+>
+> ## 🔴 UPDATE (2026-06-12, earlier) — CALDBECK V-SUITE ✅ mottramite DELIVERED (SIM 193): the twice-deferred roughten_gill V-axis arc, closed by measurement
+>
+> **Task #55 CLOSED.** mottramite was a dead-species pair with descloizite
+> fleet-wide while its V-gate sat at 10 — 5× vanadinite's 2 — backwards
+> against the deposits (the descloizite group ARE the abundant supergene
+> V ores; Boni et al. 2007 Econ Geol 102:441). The gate census
+> (**tools/roughten-gill-mottramite-probe.mjs**, NEW) found three faults,
+> each fixed and pinned:
+> - **FIX 1 — vanadinite's MISSING redox gate.** Pb5(VO4)3Cl is a V⁵⁺
+>   vanadate like its O2_min-0.5 siblings, but its engine was cloned from
+>   pyromorphite (PO4 — no redox gate) and the requirement never came
+>   along. Census proof: all 6 roughten_gill vanadinite nucleated at
+>   O2 0.20 (reducing). Added O2_min 0.5 + phosphateRedoxAvailable.
+> - **FIX 2 — descloizite-group V-economics.** V_min 10→4, v_f /20→/8 for
+>   both members → vanadinite-comparable V economy. FREE WIN: mottramite
+>   now also fires at supergene_oxidation (Tsumeb, 0→2) — its own
+>   type-abundance locality.
+> - **FIX 3 — roughten_gill supergene V-leach.** The scenario's own header
+>   said wallrock V 10-20 ppm "leaches in the supergene window," yet
+>   fluid.V sat STATIC at 6. Added V 6→14 to the step-70 oxidation event
+>   (where O2 jumps 0.05→1.2 — V⁵⁺ mobilizes at oxidation onset). Fires
+>   AFTER the step-25 primary lockup, so it CANNOT reproduce the v109/v180
+>   failures (those bumped INITIAL-broth V from step 0 and halved
+>   sphalerite). **The V axis was never the problem — its PLACEMENT IN
+>   TIME was.** mottramite 5 at seed 42; primaries intact (sphalerite
+>   2→3, galena 4 unchanged).
+>
+> Rebake 2/33 (roughten_gill +mottramite −duftite [the As-vs-V fork
+> routing Pb-Cu to the vanadate — correct]; supergene_oxidation
+> +mottramite). duftite still lives at supergene_oxidation. Coverage:
+> mottramite dead→live. NEW test **vanadate-v-economics.test.ts** (10).
+> Lesson for the queue: a "touchy axis" reverted twice may be a
+> mis-PLACED intervention, not a forbidden one — census WHERE in the run
+> a change lands before blaming the variable.
+>
+> ## ⚗️ UPDATE (2026-06-12, earlier) — CARBONATE pK(T) CORRECTED (SIM 192, `d683a33`): review §2.2's oldest calibration debt CLOSED; its sibling exposed
 >
 > **Session handoff: `HANDOFF-PKT-AND-FIX-SWEEP-2026-06-12.md`** — the
 > next builder's advice doc (consumer-structure blast-radius prediction,
@@ -31,10 +214,9 @@ Living list of open work items, captured from session conversations so context s
 > retrograde-direction pin. Composes with the open dolomite/siderite ΔH
 > items in the thermo-verification note.
 >
-> **STILL QUEUED from the calibration-debt arc:** roughten_gill
-> mottramite gate-census (post-pK(T) chemistry is now the stable base
-> it was waiting for; V axis twice-confirmed touchy — probe the Zn/
-> redox·T blockers first, per the memory note).
+> **STILL QUEUED from the calibration-debt arc:** ~~roughten_gill
+> mottramite gate-census~~ ✅ DONE (SIM 193, the 🔴 banner above) —
+> Ksp(T) analytic upgrade is now the front of the queue.
 >
 > ## 🔧 UPDATE (2026-06-12, earlier) — FIX-BACKLOG SWEEP ✅ COMPLETE (SIM 190→191, six commits): every open follow-up from the morphology arc closed in one session
 >

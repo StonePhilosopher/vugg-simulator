@@ -12,12 +12,35 @@
 //   - listCarbonatesAtTier(tier)             → array of mineralIds (filter UI)
 //   - thermoCarbonatesReady(cb)              → notify when fetch completes
 //
-// T-dependence uses van't Hoff:
-//   logKsp(T) = logKsp_25C - (deltaH_diss / (2.303·R))·(1/T_K - 1/298.15)
-// where R = 8.31446e-3 kJ/(mol·K). Exact within ~0.1 log units across
-// 0-100°C for most carbonates. Falls back to the 25°C value if data
-// for the mineral is missing — never throws, always returns a number,
-// so consumers don't have to defensive-code around incomplete data.
+// T-dependence — TWO forms, picked per-mineral by logKsp_fit.form:
+//
+//   form 'analytic' (v194, the preferred form where data exists):
+//     logKsp(T) = A1 + A2·TK + A3/TK + A4·log10(TK) + A5/TK²
+//   the PHREEQC `-analytical_expression`, carried verbatim from
+//   canonical wateq4f.dat. This is the FULL retrograde curvature; the
+//   analytic gives logKsp(T) directly (logKsp_25C is ignored for the
+//   T-curve, only used as a sanity anchor). Available for the carbonates
+//   wateq4f ships an -analytical line for: calcite, aragonite,
+//   strontianite, witherite.
+//
+//   form 'vanthoff' (the fallback where wateq4f gives only log_k+ΔH):
+//     logKsp(T) = logKsp_25C - (deltaH_diss / (2.303·R))·(1/T_K - 1/298.15)
+//   constant-ΔH. Exact within ~0.1 log units across 0-60°C but ~1.3 log
+//   too FLAT at 158°C vs the analytic (the seam the pK(T) fix exposed).
+//   Kept for dolomite/siderite/rhodochrosite/smithsonite/cerussite +
+//   the OH-bearing Cu/Zn carbonates — wateq4f has no -analytical for
+//   these, so van't Hoff is the honest best available.
+//
+// MIXED-FIDELITY, BY DESIGN: analytic where the database provides it,
+// van't Hoff where it doesn't. R = 8.31446e-3 kJ/(mol·K). Falls back to
+// the 25°C value if data for the mineral is missing — never throws,
+// always returns a number, so consumers don't have to defensive-code
+// around incomplete data.
+//
+// T-CLAMP [0, 250] °C matches js/20b's pK(T) clamp exactly: the carbonate
+// IAP (pK-driven CO3²⁻) and the carbonate Ksp must share a T-domain so
+// SI = logIAP − logKsp has no fidelity seam at the edges. Above 250°C
+// both hold their 250°C value (bounded extrapolation, not runaway).
 //
 // HMC is special: its logKsp_25C is mg_content-dependent, not a
 // constant. Callers pass mg_content as a second argument; the formula
@@ -27,6 +50,32 @@
 const _THERMO_GAS_CONSTANT_kJ_mol_K = 8.31446e-3;  // R
 const _THERMO_T_REF_K = 298.15;                     // 25°C reference
 const _THERMO_LN10 = Math.LN10;                     // for 2.303 conversion
+const _THERMO_T_CLAMP_C: [number, number] = [0, 250]; // van't Hoff clamp — matches js/20b pK(T)
+
+// The PHREEQC carbonate -analytical expressions (PB82 calcite/aragonite,
+// the wateq4f strontianite/witherite) are SOLUBILITY fits to roughly
+// 0–90 °C. Extrapolating their curvature into the 150–700 °C scenarios
+// is NOT physics — it over-steepens the retrograde to +3.4 SI at the
+// 250 °C clamp, overwhelms the (old-SI-calibrated) calcite/aragonite
+// gates, and reanimates the metastable hot aragonite v192 correctly
+// retired. So the analytic is held to its FIT VALIDITY and frozen flat
+// above it: full curvature where it's measured (the band carbonates
+// dominantly form in + the cooling-pin window's lower edge), a bounded
+// constant above. This is the honest "don't extrapolate past the data"
+// rule — distinct from the van't Hoff [0,250] clamp because the two
+// forms have different validated ranges. Promoting the analytic into
+// the >90 °C growth band is its own arc (calcite/aragonite gate
+// re-calibration + aragonite metastability hardening — BACKLOG).
+const _THERMO_ANALYTIC_CLAMP_C: [number, number] = [0, 90];
+
+// PHREEQC analytic expression: logK(T) = A1 + A2·TK + A3/TK +
+// A4·log10(TK) + A5/TK²  (TK in Kelvin). Same form as js/20b's PB82 pK
+// fits. T clamped to the analytic's fit-validity range (held flat above).
+function _carbonateAnalyticLogK(coef: number[], T_celsius: number): number {
+  const Tc = Math.max(_THERMO_ANALYTIC_CLAMP_C[0], Math.min(_THERMO_ANALYTIC_CLAMP_C[1], T_celsius));
+  const TK = Tc + 273.15;
+  return coef[0] + coef[1] * TK + coef[2] / TK + coef[3] * Math.log10(TK) + (coef[4] || 0) / (TK * TK);
+}
 
 type ThermoTier = 'A' | 'B' | 'C' | 'D' | 'conflict' | 'unknown';
 
@@ -68,7 +117,7 @@ const THERMO_CARBONATES_FALLBACK: ThermoCarbonatesDoc = {
     formula: 'CaCO3',
     thermodynamics: {
       logKsp_25C: -8.48,
-      logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -10.5 },
+      logKsp_fit: { form: 'analytic', analytic: [-171.9065, -0.077993, 2839.319, 71.595, 0], deltaH_diss_kJ_mol: -10.5 },
       confidence_tier: 'A',
     },
   },
@@ -76,7 +125,7 @@ const THERMO_CARBONATES_FALLBACK: ThermoCarbonatesDoc = {
     formula: 'CaCO3',
     thermodynamics: {
       logKsp_25C: -8.336,
-      logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -10.0 },
+      logKsp_fit: { form: 'analytic', analytic: [-171.9773, -0.077993, 2903.293, 71.595, 0], deltaH_diss_kJ_mol: -10.0 },
       confidence_tier: 'A',
     },
   },
@@ -184,10 +233,25 @@ function getCarbonateLogKsp(mineralId: string, T_celsius: number, mg_content: nu
     return NaN;
   }
 
-  // T-correction via van't Hoff
   const fit = thermo.logKsp_fit;
+
+  // T-correction via the PHREEQC analytic expression (v194 — the
+  // preferred form). The analytic gives the full logKsp(T) curve
+  // directly (the logKsp_25C base computed above is the sanity anchor,
+  // not used in the curve). HMC never reaches here — its logKsp_25C is
+  // the mg_content-linear string, and it carries no 'analytic' fit, so
+  // it falls through to its existing (T-flat) behavior in its valid
+  // 0-60°C window where analytic≈van't Hoff anyway.
+  if (fit && fit.form === 'analytic' && Array.isArray(fit.analytic) && fit.analytic.length >= 4) {
+    return _carbonateAnalyticLogK(fit.analytic, T_celsius);
+  }
+
+  // T-correction via van't Hoff (the fallback where wateq4f gives no
+  // analytic line). Clamp T to the shared [0,250] domain so the seam
+  // with the analytic minerals + the pK side stays closed at the edges.
   if (fit && fit.form === 'vanthoff' && typeof fit.deltaH_diss_kJ_mol === 'number') {
-    const T_K = T_celsius + 273.15;
+    const Tc = Math.max(_THERMO_T_CLAMP_C[0], Math.min(_THERMO_T_CLAMP_C[1], T_celsius));
+    const T_K = Tc + 273.15;
     if (T_K <= 0) return logKsp_25C;
     const exponent = -(fit.deltaH_diss_kJ_mol / (_THERMO_LN10 * _THERMO_GAS_CONSTANT_kJ_mol_K)) * (1 / T_K - 1 / _THERMO_T_REF_K);
     return logKsp_25C + exponent;
