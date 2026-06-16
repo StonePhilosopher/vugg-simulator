@@ -77,17 +77,28 @@ via a competition artifact — "follow the science → don't ship."
 
 ## NEXT (the real unblocker — a separate arc)
 
-1. **Characterize the cascade**: is it jitter-through-competition (try per-crystal
-   derived growth streams around the growth-engine call — note the graduated path
-   calls the engine in `_computeGraduatedZones` pass 1, the non-graduated in
-   `_runEngineForCrystal`) or pure rationing (per-cell allocation independent of
-   RNG)? A quick discriminator: force `setGraduatedCompetitionEnabled(false)` and
-   re-run the sweep — if the drop shrinks, competition is the driver.
-2. If jitter-driven → extend the keystone to growth (per-(crystal,step) streams),
-   rebake, re-test the gate.
-3. If rationing-driven → the gate has a real competition cost; decide accept-and-
-   tune (mottramite is rare-but-real; 49% may be defensible) vs a competition-aware
-   fix. Either way it's a design call for the boss, not an auto-ship.
+**Discriminator RUN 2026-06-16 — competition is RULED OUT.** Re-ran the gated-vs-
+ungated mottramite A/B (N=40) with `setGraduatedCompetitionEnabled` ON vs OFF
+(toggle verified to actually change the sim: n/Σµm differ per seed). The drop is
+IDENTICAL both ways — **98%→45%, −53 pts, regardless of competition**. So the
+cascade is NOT per-cell rationing. With fluid + fill endpoints already identical,
+the only remaining cross-crystal coupling is the **shared growth-jitter RNG**
+(`rng.uniform` in the grow engines; its stream phase shifts when the nuclei count
+changes).
+
+**This is good news for the gate** — it's the SAME RNG-isolation problem the
+keystone already solved, one layer down (nucleation → growth), not an inherent
+competition cost. So:
+
+1. **Extend the keystone to growth**: wrap each crystal's growth-engine call in a
+   per-`(crystal_id, step)` derived stream (mirror `_runNuc`). Both paths need it:
+   the graduated path calls the engine in `_computeGraduatedZones` pass 1, the
+   non-graduated in `_runEngineForCrystal`. This is the larger surgery but the
+   technique is proven.
+2. **Self-testing**: rebuild, re-run this exact A/B — if growth-jitter was the
+   coupling, mottramite holds ungated≈gated, and the ZnS gate ships clean.
+3. Only if it does NOT hold (residual coupling) does accept-and-tune come back on
+   the table. Current evidence says it will hold.
 
 ## SESSION LESSONS
 

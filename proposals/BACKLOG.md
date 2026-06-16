@@ -10,14 +10,14 @@ Living list of open work items, captured from session conversations so context s
 > is proven (`tests-js/nuc-seed-isolation.test.ts`). Full-fleet rebake, 1916 tests
 > green.
 >
-> **KEY FINDING (corrected):** the keystone did NOT unblock the held sphalerite/
-> wurtzite redox gate (ledger #11). Measurement after shipping showed gating ZnS
-> STILL drops mottramite 98→49 — the displacement was NEVER nucleation-RNG. The
-> blocker is the **growth/competition layer** (`GRADUATED_COMPETITION_ENABLED=true`,
-> v128c, per-cell rationing + shared growth-jitter `rng.uniform`). The gate was
-> reverted; HEAD is clean v198. Its real unblocker is a separate growth/competition
-> arc (or accept-and-tune) — see the handoff's NEXT section. The memory
-> [[project_vugg_redox_census]] is corrected.
+> **KEY FINDING (corrected, then refined):** the keystone did NOT unblock the held
+> sphalerite/wurtzite redox gate (ledger #11). Measurement after shipping showed
+> gating ZnS STILL drops mottramite 98→49 — never nucleation-RNG. A discriminator
+> then RULED OUT graduated competition (toggle ON/OFF → identical drop), pinning the
+> blocker on the **shared growth-jitter RNG**. So the gate IS fixable — extend the
+> keystone to per-(crystal,step) GROWTH streams (same technique, one layer down),
+> self-testing via the mottramite A/B. The gate was reverted; HEAD is clean v198.
+> See the handoff's NEXT section; memory [[project_vugg_redox_census]] corrected.
 >
 > ## 🫒 UPDATE (2026-06-15) — EPIDOTE + TORMIQ SHIPPED · PROPOSALS-LEDGER built · canary hardened
 >
