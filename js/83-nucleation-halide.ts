@@ -50,8 +50,8 @@ function _nuc_sylvite(sim) {
 }
 
 function _nucleateClass_halide(sim) {
-  _nuc_fluorite(sim);
-  _nuc_halite(sim);
-  _nuc_atacamite(sim);
-  _nuc_sylvite(sim);
+  _runNuc(sim, _nuc_fluorite);
+  _runNuc(sim, _nuc_halite);
+  _runNuc(sim, _nuc_atacamite);
+  _runNuc(sim, _nuc_sylvite);
 }

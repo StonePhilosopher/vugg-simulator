@@ -770,31 +770,31 @@ function _nuc_datolite(sim) {
 }
 
 function _nucleateClass_silicate(sim) {
-  _nuc_quartz(sim);
-  _nuc_apophyllite(sim);
-  _nuc_feldspar(sim);
-  _nuc_albite(sim);
-  _nuc_chrysocolla(sim);
-  _nuc_spodumene(sim);
-  _nuc_tourmaline(sim);
-  _nuc_topaz(sim);
-  _nuc_chrysoprase(sim);
-  _nuc_lepidolite(sim);
-  _nuc_dioptase(sim);
-  _nuc_shattuckite(sim);
-  _nuc_hemimorphite(sim);
-  _nuc_willemite(sim);
-  _nuc_coffinite(sim);
-  _nuc_uranophane(sim);
-  _nuc_opal(sim);
-  _nuc_datolite(sim);
-  _nuc_vesuvianite(sim);
-  _nuc_grossular(sim);
-  _nuc_diopside(sim);
-  _nuc_pectolite(sim);
-  _nuc_wollastonite(sim);
-  _nuc_prehnite(sim);
-  _nuc_epidote(sim);
-  _nuc_chrysotile(sim);
-  _nuc_tigers_eye(sim);
+  _runNuc(sim, _nuc_quartz);
+  _runNuc(sim, _nuc_apophyllite);
+  _runNuc(sim, _nuc_feldspar);
+  _runNuc(sim, _nuc_albite);
+  _runNuc(sim, _nuc_chrysocolla);
+  _runNuc(sim, _nuc_spodumene);
+  _runNuc(sim, _nuc_tourmaline);
+  _runNuc(sim, _nuc_topaz);
+  _runNuc(sim, _nuc_chrysoprase);
+  _runNuc(sim, _nuc_lepidolite);
+  _runNuc(sim, _nuc_dioptase);
+  _runNuc(sim, _nuc_shattuckite);
+  _runNuc(sim, _nuc_hemimorphite);
+  _runNuc(sim, _nuc_willemite);
+  _runNuc(sim, _nuc_coffinite);
+  _runNuc(sim, _nuc_uranophane);
+  _runNuc(sim, _nuc_opal);
+  _runNuc(sim, _nuc_datolite);
+  _runNuc(sim, _nuc_vesuvianite);
+  _runNuc(sim, _nuc_grossular);
+  _runNuc(sim, _nuc_diopside);
+  _runNuc(sim, _nuc_pectolite);
+  _runNuc(sim, _nuc_wollastonite);
+  _runNuc(sim, _nuc_prehnite);
+  _runNuc(sim, _nuc_epidote);
+  _runNuc(sim, _nuc_chrysotile);
+  _runNuc(sim, _nuc_tigers_eye);
 }

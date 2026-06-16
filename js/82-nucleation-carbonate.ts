@@ -316,19 +316,19 @@ function _nuc_hydrozincite(sim) {
 }
 
 function _nucleateClass_carbonate(sim) {
-  _nuc_calcite(sim);
-  _nuc_aragonite(sim);
-  _nuc_dolomite(sim);
+  _runNuc(sim, _nuc_calcite);
+  _runNuc(sim, _nuc_aragonite);
+  _runNuc(sim, _nuc_dolomite);
   _nuc_HMC(sim);  // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
-  _nuc_siderite(sim);
-  _nuc_rhodochrosite(sim);
-  _nuc_malachite(sim);
-  _nuc_smithsonite(sim);
-  _nuc_azurite(sim);
-  _nuc_cerussite(sim);
-  _nuc_rosasite(sim);
-  _nuc_aurichalcite(sim);
-  _nuc_strontianite(sim);
-  _nuc_witherite(sim);
-  _nuc_hydrozincite(sim);
+  _runNuc(sim, _nuc_siderite);
+  _runNuc(sim, _nuc_rhodochrosite);
+  _runNuc(sim, _nuc_malachite);
+  _runNuc(sim, _nuc_smithsonite);
+  _runNuc(sim, _nuc_azurite);
+  _runNuc(sim, _nuc_cerussite);
+  _runNuc(sim, _nuc_rosasite);
+  _runNuc(sim, _nuc_aurichalcite);
+  _runNuc(sim, _nuc_strontianite);
+  _runNuc(sim, _nuc_witherite);
+  _runNuc(sim, _nuc_hydrozincite);
 }

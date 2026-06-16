@@ -51,6 +51,6 @@ function _nuc_lepidocrocite(sim) {
 }
 
 function _nucleateClass_hydroxide(sim) {
-  _nuc_goethite(sim);
-  _nuc_lepidocrocite(sim);
+  _runNuc(sim, _nuc_goethite);
+  _runNuc(sim, _nuc_lepidocrocite);
 }

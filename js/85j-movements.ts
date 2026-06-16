@@ -76,6 +76,76 @@ function _makeThermalRng(sharedState: number): SeededRandom {
   return new SeededRandom(Math.floor(scramble.next() * 4294967296) >>> 0);
 }
 
+// ----------------------------------------------------------------
+// THE KEYSTONE — per-(mineral, step) derived nucleation streams.
+// PROPOSAL-PER-MINERAL-NUC-SEEDS.md, 2026-06-16. Closes LEDGER §A #12,
+// unblocks #11 (held sphalerite/wurtzite redox gate).
+// ----------------------------------------------------------------
+// Per-purpose salt for the NUCLEATION streams (ASCII "NUC" + 0x01). Distinct
+// from the movement + thermal salts so the three never alias.
+const _NUC_SALT = 0x4e554301;
+
+// THE FLAG. ON (default) is the keystone: each mineral nucleates from its OWN
+// derived stream, so gating/adding one mineral can no longer displace another's
+// nucleation cascade (the mottramite 96→47% class of bug). OFF reverts to the
+// legacy single shared-`rng` cascade — kept ONLY for the dark-observe A/B probe
+// (tools/nuc-seed-isolation-probe.mjs) and reversibility, NOT a player option.
+let NUC_DERIVED_SEEDS = true;
+
+// A fresh deterministic PRNG for ONE (mineral, step) pair. Mirrors
+// _makeThermalRng's two deliberate choices (see its header), extended with the
+// mineral identity + the step:
+//
+//   1. RUN-SEED LINEAGE, not the cavity. Nucleation realization is WEATHER —
+//      it should vary play-to-play (the 200-seed canary sweep wants 200 distinct
+//      realizations), so the base is `sharedState` = rng.state captured at sim
+//      construction (a pure function of the run seed, zero shared draws).
+//   2. SCRAMBLED, not bare-XOR (the 15th catch). The FNV-1a fold of the mineral
+//      key + step already avalanches far more than the thermal bare-XOR did, but
+//      adjacent steps of one mineral still differ by a single int — so we keep
+//      the same one-throwaway-draw scramble _makeThermalRng uses, belt-and-braces.
+//
+// The KEY is the nucleation function's own name ("_nuc_<mineral>") — stable,
+// unique per nucleation function, and free of 140 hand-typed mineral strings.
+// The seed need only be unique+deterministic per nuc-function; it does NOT have
+// to match the minerals.json key, so fn.name is the ideal handle.
+function _makeNucRng(sharedState: number, mineralKey: string, step: number): SeededRandom {
+  let h = (((sharedState | 0) ^ _NUC_SALT) >>> 0);
+  for (let i = 0; i < mineralKey.length; i++) {
+    h = (Math.imul(h ^ mineralKey.charCodeAt(i), 0x01000193)) >>> 0;   // FNV-1a fold
+  }
+  h = (Math.imul(h ^ (step | 0), 0x01000193)) >>> 0;
+  const scramble = new SeededRandom(h >>> 0);                          // scramble — avalanche
+  return new SeededRandom(Math.floor(scramble.next() * 4294967296) >>> 0);
+}
+
+// The dispatch wrapper the 14 _nucleateClass_* iterators route every
+// _nuc_<mineral> call through. Swaps the shared global `rng` to that mineral's
+// private (mineral, step) stream for the WHOLE call — capturing both the
+// substrate-pick draws in the _nuc_ body AND the cell/ring/twin/fill-dampener
+// draws inside sim.nucleate() — then restores. Restoring means nucleation no
+// longer advances the shared stream at all (the growth loop's rng.uniform jitter
+// then reads a position independent of nucleation count — a free extra decoupling).
+//
+// fn.name is "_nuc_<mineral>"; the build is a non-minifying concat (148 modules)
+// and tsc/vitest preserve names, so the key is stable across runtimes.
+function _runNuc(sim: any, fn: (sim: any) => void): void {
+  if (!NUC_DERIVED_SEEDS) { fn(sim); return; }
+  const saved = rng;
+  rng = _makeNucRng(sim._nucSharedState | 0, fn.name, sim.step | 0);
+  try { fn(sim); } finally { rng = saved; }
+}
+
+// Setter so the dark-observe A/B probe (tools/nuc-seed-isolation-probe.mjs) and
+// the permanent isolation regression test can flip the keystone at runtime —
+// mirrors the harness's setSeed pattern for the bundle-scoped `rng`. Not a
+// player control. Returns the previous value so callers can restore it.
+function _setNucDerivedSeeds(on: boolean): boolean {
+  const prev = NUC_DERIVED_SEEDS;
+  NUC_DERIVED_SEEDS = !!on;
+  return prev;
+}
+
 // SPATIAL origin (boss, 2026-06-01): a movement can originate at one
 // semi-random CELL and flow outward via the diffusion that already runs each
 // step (_diffuseRingState over mesh.cells[].fluid) — instead of applying

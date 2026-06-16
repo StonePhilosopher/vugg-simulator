@@ -21,5 +21,5 @@ function _nuc_borax(sim) {
 }
 
 function _nucleateClass_borate(sim) {
-  _nuc_borax(sim);
+  _runNuc(sim, _nuc_borax);
 }

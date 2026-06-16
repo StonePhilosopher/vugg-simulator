@@ -28,6 +28,11 @@ class VugSimulator {
     // draw); see _makeThermalRng (85j) for the weather-not-geology rationale
     // and the seed-scramble requirement.
     this._thermalRng = _makeThermalRng(rng.state);
+    // THE KEYSTONE (2026-06-16, PROPOSAL-PER-MINERAL-NUC-SEEDS): same run-seed
+    // lineage capture as _thermalRng (read-only — consumes no draw). _runNuc (85j)
+    // derives a private per-(mineral, step) stream off this, so gating one mineral
+    // can't displace another's nucleation cascade. Closes LEDGER §A #12.
+    this._nucSharedState = rng.state;
     this.events = (events || []).slice().sort((a, b) => a.step - b.step);
     this.crystals = [];
     this.crystal_counter = 0;

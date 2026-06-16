@@ -16184,7 +16184,41 @@ let timeScale = 5.0;
 //        feldspar calcite] is first-pass aspirational; seed-42 firing +
 //        any tune-scenario follow-ups documented in the commit message.
 //        Additive scenario — zero drift to the other 33. Scenarios 33->34.
-const SIM_VERSION = 197;
+//   v198 — THE KEYSTONE: per-(mineral, step) derived nucleation seeds
+//        (2026-06-16, PROPOSAL-PER-MINERAL-NUC-SEEDS.md). Closes the
+//        structural bottleneck the redox-gate census (b81cf7d) hit: every
+//        nucleation draw used to thread through ONE continuous shared `rng`
+//        for the whole run, so any change in a mineral's draw-count re-phased
+//        every later (mineral, step) pair — adding the sphalerite/wurtzite
+//        redox gate displaced mottramite 96->47% though they share no ion
+//        (pure RNG-sequence drift; chemistry can't fix an RNG displacement).
+//
+//        FIX: each _nuc_<mineral> now nucleates from its OWN derived stream,
+//        seeded by _makeNucRng(sharedState, fn.name, step) (js/85j) and routed
+//        through _runNuc (the 13 _nucleateClass_* iterators call it for all 156
+//        sites). Mirrors the v181 _makeThermalRng decoupling one level finer:
+//        run-seed lineage (this._nucSharedState = rng.state at construction) +
+//        FNV-fold of the mineral key + step + the 15th-catch SCRAMBLE (one
+//        throwaway draw — bare folds leave nearby seeds correlated). The swap
+//        wraps the WHOLE _nuc_ call, so both the substrate-pick draws AND the
+//        cell/ring/twin/fill-dampener draws inside nucleate() come from the
+//        mineral's private stream; restoring leaves the shared stream untouched
+//        by nucleation (growth jitter decouples too, for free).
+//
+//        DELIBERATE FULL REBAKE — there is no byte-identical path; every
+//        nucleation draw changes source, so every scenario's seed-42 signature
+//        + every baseline re-realizes ONCE. Validated by ASSEMBLAGE
+//        PLAUSIBILITY (tools/nuc-seed-isolation-probe.mjs, OFF-vs-ON N=40:
+//        roster holds, no scenario loses an expects_species), not byte-identity
+//        — exactly how v181 was validated. The keystone PROPERTY (perturbing
+//        one mineral changes nothing else; OFF it does) is pinned in
+//        tests-js/nuc-seed-isolation.test.ts.
+//
+//        Flag NUC_DERIVED_SEEDS (default ON) reverts to the legacy single
+//        stream for the A/B probe only — NOT a player control. UNBLOCKS the
+//        held sphalerite/wurtzite redox gate (LEDGER §A #11): gating ZnS can
+//        no longer displace mottramite. SIM 197 -> 198.
+const SIM_VERSION = 198;
 
 // ── 18-constants.js ──
 
@@ -44773,20 +44807,20 @@ function _nuc_bayldonite(sim) {
     sim.log.push(`  ✦ NUCLEATION: 🟩 Bayldonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, Cu:Pb=${(sim.conditions.fluid.Cu / Math.max(sim.conditions.fluid.Pb, 0.1)).toFixed(1)}) — apple-green Cu-enriched Pb-Cu arsenate`);
 }
 function _nucleateClass_arsenate(sim) {
-    _nuc_scorodite(sim);
-    _nuc_adamite(sim);
-    _nuc_mimetite(sim);
-    _nuc_erythrite(sim);
-    _nuc_annabergite(sim);
-    _nuc_olivenite(sim);
-    _nuc_conichalcite(sim);
-    _nuc_pharmacolite(sim);
+    _runNuc(sim, _nuc_scorodite);
+    _runNuc(sim, _nuc_adamite);
+    _runNuc(sim, _nuc_mimetite);
+    _runNuc(sim, _nuc_erythrite);
+    _runNuc(sim, _nuc_annabergite);
+    _runNuc(sim, _nuc_olivenite);
+    _runNuc(sim, _nuc_conichalcite);
+    _runNuc(sim, _nuc_pharmacolite);
     // v97 (2026-05-19): Tsumeb suite — order encodes paragenetic sequence
-    _nuc_austinite(sim);
-    _nuc_legrandite(sim);
-    _nuc_koettigite(sim);
-    _nuc_duftite(sim);
-    _nuc_bayldonite(sim);
+    _runNuc(sim, _nuc_austinite);
+    _runNuc(sim, _nuc_legrandite);
+    _runNuc(sim, _nuc_koettigite);
+    _runNuc(sim, _nuc_duftite);
+    _runNuc(sim, _nuc_bayldonite);
 }
 
 // ── 81-nucleation-borate.js ──
@@ -44811,7 +44845,7 @@ function _nuc_borax(sim) {
     // Feldspar nucleation — needs sigma > 1.0, K or Na + Al + Si
 }
 function _nucleateClass_borate(sim) {
-    _nuc_borax(sim);
+    _runNuc(sim, _nuc_borax);
 }
 
 // ── 82-nucleation-carbonate.js ──
@@ -45150,21 +45184,21 @@ function _nuc_hydrozincite(sim) {
     sim.log.push(`  ✦ NUCLEATION: ⚪ Hydrozincite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Zn=${sim.conditions.fluid.Zn.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — chalk-white Zn-carbonate-hydroxide, pale-blue SW-UV fluorescent`);
 }
 function _nucleateClass_carbonate(sim) {
-    _nuc_calcite(sim);
-    _nuc_aragonite(sim);
-    _nuc_dolomite(sim);
+    _runNuc(sim, _nuc_calcite);
+    _runNuc(sim, _nuc_aragonite);
+    _runNuc(sim, _nuc_dolomite);
     _nuc_HMC(sim); // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
-    _nuc_siderite(sim);
-    _nuc_rhodochrosite(sim);
-    _nuc_malachite(sim);
-    _nuc_smithsonite(sim);
-    _nuc_azurite(sim);
-    _nuc_cerussite(sim);
-    _nuc_rosasite(sim);
-    _nuc_aurichalcite(sim);
-    _nuc_strontianite(sim);
-    _nuc_witherite(sim);
-    _nuc_hydrozincite(sim);
+    _runNuc(sim, _nuc_siderite);
+    _runNuc(sim, _nuc_rhodochrosite);
+    _runNuc(sim, _nuc_malachite);
+    _runNuc(sim, _nuc_smithsonite);
+    _runNuc(sim, _nuc_azurite);
+    _runNuc(sim, _nuc_cerussite);
+    _runNuc(sim, _nuc_rosasite);
+    _runNuc(sim, _nuc_aurichalcite);
+    _runNuc(sim, _nuc_strontianite);
+    _runNuc(sim, _nuc_witherite);
+    _runNuc(sim, _nuc_hydrozincite);
 }
 
 // ── 83-nucleation-halide.js ──
@@ -45216,10 +45250,10 @@ function _nuc_sylvite(sim) {
     }
 }
 function _nucleateClass_halide(sim) {
-    _nuc_fluorite(sim);
-    _nuc_halite(sim);
-    _nuc_atacamite(sim);
-    _nuc_sylvite(sim);
+    _runNuc(sim, _nuc_fluorite);
+    _runNuc(sim, _nuc_halite);
+    _runNuc(sim, _nuc_atacamite);
+    _runNuc(sim, _nuc_sylvite);
 }
 
 // ── 84-nucleation-hydroxide.js ──
@@ -45277,8 +45311,8 @@ function _nuc_lepidocrocite(sim) {
     // Stibnite nucleation — Sb + S + moderate T + reducing.
 }
 function _nucleateClass_hydroxide(sim) {
-    _nuc_goethite(sim);
-    _nuc_lepidocrocite(sim);
+    _runNuc(sim, _nuc_goethite);
+    _runNuc(sim, _nuc_lepidocrocite);
 }
 
 // ── 85-nucleation-molybdate.js ──
@@ -45406,12 +45440,12 @@ function _nuc_wolframite(sim) {
     }
 }
 function _nucleateClass_molybdate(sim) {
-    _nuc_wulfenite(sim);
-    _nuc_ferrimolybdite(sim);
-    _nuc_stolzite(sim);
-    _nuc_scheelite(sim);
-    _nuc_powellite(sim);
-    _nuc_wolframite(sim);
+    _runNuc(sim, _nuc_wulfenite);
+    _runNuc(sim, _nuc_ferrimolybdite);
+    _runNuc(sim, _nuc_stolzite);
+    _runNuc(sim, _nuc_scheelite);
+    _runNuc(sim, _nuc_powellite);
+    _runNuc(sim, _nuc_wolframite);
 }
 
 // ── 85-simulator.js ──
@@ -45443,6 +45477,11 @@ class VugSimulator {
         // draw); see _makeThermalRng (85j) for the weather-not-geology rationale
         // and the seed-scramble requirement.
         this._thermalRng = _makeThermalRng(rng.state);
+        // THE KEYSTONE (2026-06-16, PROPOSAL-PER-MINERAL-NUC-SEEDS): same run-seed
+        // lineage capture as _thermalRng (read-only — consumes no draw). _runNuc (85j)
+        // derives a private per-(mineral, step) stream off this, so gating one mineral
+        // can't displace another's nucleation cascade. Closes LEDGER §A #12.
+        this._nucSharedState = rng.state;
         this.events = (events || []).slice().sort((a, b) => a.step - b.step);
         this.crystals = [];
         this.crystal_counter = 0;
@@ -51370,6 +51409,79 @@ function _makeThermalRng(sharedState) {
     const scramble = new SeededRandom((((sharedState | 0) ^ _THERMAL_SALT) >>> 0));
     return new SeededRandom(Math.floor(scramble.next() * 4294967296) >>> 0);
 }
+// ----------------------------------------------------------------
+// THE KEYSTONE — per-(mineral, step) derived nucleation streams.
+// PROPOSAL-PER-MINERAL-NUC-SEEDS.md, 2026-06-16. Closes LEDGER §A #12,
+// unblocks #11 (held sphalerite/wurtzite redox gate).
+// ----------------------------------------------------------------
+// Per-purpose salt for the NUCLEATION streams (ASCII "NUC" + 0x01). Distinct
+// from the movement + thermal salts so the three never alias.
+const _NUC_SALT = 0x4e554301;
+// THE FLAG. ON (default) is the keystone: each mineral nucleates from its OWN
+// derived stream, so gating/adding one mineral can no longer displace another's
+// nucleation cascade (the mottramite 96→47% class of bug). OFF reverts to the
+// legacy single shared-`rng` cascade — kept ONLY for the dark-observe A/B probe
+// (tools/nuc-seed-isolation-probe.mjs) and reversibility, NOT a player option.
+let NUC_DERIVED_SEEDS = true;
+// A fresh deterministic PRNG for ONE (mineral, step) pair. Mirrors
+// _makeThermalRng's two deliberate choices (see its header), extended with the
+// mineral identity + the step:
+//
+//   1. RUN-SEED LINEAGE, not the cavity. Nucleation realization is WEATHER —
+//      it should vary play-to-play (the 200-seed canary sweep wants 200 distinct
+//      realizations), so the base is `sharedState` = rng.state captured at sim
+//      construction (a pure function of the run seed, zero shared draws).
+//   2. SCRAMBLED, not bare-XOR (the 15th catch). The FNV-1a fold of the mineral
+//      key + step already avalanches far more than the thermal bare-XOR did, but
+//      adjacent steps of one mineral still differ by a single int — so we keep
+//      the same one-throwaway-draw scramble _makeThermalRng uses, belt-and-braces.
+//
+// The KEY is the nucleation function's own name ("_nuc_<mineral>") — stable,
+// unique per nucleation function, and free of 140 hand-typed mineral strings.
+// The seed need only be unique+deterministic per nuc-function; it does NOT have
+// to match the minerals.json key, so fn.name is the ideal handle.
+function _makeNucRng(sharedState, mineralKey, step) {
+    let h = (((sharedState | 0) ^ _NUC_SALT) >>> 0);
+    for (let i = 0; i < mineralKey.length; i++) {
+        h = (Math.imul(h ^ mineralKey.charCodeAt(i), 0x01000193)) >>> 0; // FNV-1a fold
+    }
+    h = (Math.imul(h ^ (step | 0), 0x01000193)) >>> 0;
+    const scramble = new SeededRandom(h >>> 0); // scramble — avalanche
+    return new SeededRandom(Math.floor(scramble.next() * 4294967296) >>> 0);
+}
+// The dispatch wrapper the 14 _nucleateClass_* iterators route every
+// _nuc_<mineral> call through. Swaps the shared global `rng` to that mineral's
+// private (mineral, step) stream for the WHOLE call — capturing both the
+// substrate-pick draws in the _nuc_ body AND the cell/ring/twin/fill-dampener
+// draws inside sim.nucleate() — then restores. Restoring means nucleation no
+// longer advances the shared stream at all (the growth loop's rng.uniform jitter
+// then reads a position independent of nucleation count — a free extra decoupling).
+//
+// fn.name is "_nuc_<mineral>"; the build is a non-minifying concat (148 modules)
+// and tsc/vitest preserve names, so the key is stable across runtimes.
+function _runNuc(sim, fn) {
+    if (!NUC_DERIVED_SEEDS) {
+        fn(sim);
+        return;
+    }
+    const saved = rng;
+    rng = _makeNucRng(sim._nucSharedState | 0, fn.name, sim.step | 0);
+    try {
+        fn(sim);
+    }
+    finally {
+        rng = saved;
+    }
+}
+// Setter so the dark-observe A/B probe (tools/nuc-seed-isolation-probe.mjs) and
+// the permanent isolation regression test can flip the keystone at runtime —
+// mirrors the harness's setSeed pattern for the bundle-scoped `rng`. Not a
+// player control. Returns the previous value so callers can restore it.
+function _setNucDerivedSeeds(on) {
+    const prev = NUC_DERIVED_SEEDS;
+    NUC_DERIVED_SEEDS = !!on;
+    return prev;
+}
 // SPATIAL origin (boss, 2026-06-01): a movement can originate at one
 // semi-random CELL and flow outward via the diffusion that already runs each
 // step (_diffuseRingState over mesh.cells[].fluid) — instead of applying
@@ -52150,14 +52262,14 @@ function _nuc_awaruite(sim) {
     }
 }
 function _nucleateClass_native(sim) {
-    _nuc_native_bismuth(sim);
-    _nuc_native_tellurium(sim);
-    _nuc_native_sulfur(sim);
-    _nuc_native_arsenic(sim);
-    _nuc_native_silver(sim);
-    _nuc_native_copper(sim);
-    _nuc_native_gold(sim);
-    _nuc_awaruite(sim);
+    _runNuc(sim, _nuc_native_bismuth);
+    _runNuc(sim, _nuc_native_tellurium);
+    _runNuc(sim, _nuc_native_sulfur);
+    _runNuc(sim, _nuc_native_arsenic);
+    _runNuc(sim, _nuc_native_silver);
+    _runNuc(sim, _nuc_native_copper);
+    _runNuc(sim, _nuc_native_gold);
+    _runNuc(sim, _nuc_awaruite);
 }
 
 // ── 87-nucleation-oxide.js ──
@@ -52389,15 +52501,15 @@ function _nuc_brucite(sim) {
     }
 }
 function _nucleateClass_oxide(sim) {
-    _nuc_hematite(sim);
-    _nuc_uraninite(sim);
-    _nuc_magnetite(sim);
-    _nuc_cuprite(sim);
-    _nuc_rutile(sim);
-    _nuc_chromite(sim);
-    _nuc_cassiterite(sim);
-    _nuc_pyrolusite(sim);
-    _nuc_brucite(sim);
+    _runNuc(sim, _nuc_hematite);
+    _runNuc(sim, _nuc_uraninite);
+    _runNuc(sim, _nuc_magnetite);
+    _runNuc(sim, _nuc_cuprite);
+    _runNuc(sim, _nuc_rutile);
+    _runNuc(sim, _nuc_chromite);
+    _runNuc(sim, _nuc_cassiterite);
+    _runNuc(sim, _nuc_pyrolusite);
+    _runNuc(sim, _nuc_brucite);
 }
 
 // ── 88-nucleation-phosphate.js ──
@@ -52717,20 +52829,20 @@ function _nuc_plumbogummite(sim) {
     }
 }
 function _nucleateClass_phosphate(sim) {
-    _nuc_descloizite(sim);
-    _nuc_mottramite(sim);
-    _nuc_clinobisvanite(sim);
-    _nuc_pyromorphite(sim);
-    _nuc_vanadinite(sim);
-    _nuc_torbernite(sim);
-    _nuc_zeunerite(sim);
-    _nuc_carnotite(sim);
-    _nuc_autunite(sim);
-    _nuc_uranospinite(sim);
-    _nuc_tyuyamunite(sim);
-    _nuc_apatite(sim);
-    _nuc_plumbogummite(sim);
-    _nuc_turquoise(sim);
+    _runNuc(sim, _nuc_descloizite);
+    _runNuc(sim, _nuc_mottramite);
+    _runNuc(sim, _nuc_clinobisvanite);
+    _runNuc(sim, _nuc_pyromorphite);
+    _runNuc(sim, _nuc_vanadinite);
+    _runNuc(sim, _nuc_torbernite);
+    _runNuc(sim, _nuc_zeunerite);
+    _runNuc(sim, _nuc_carnotite);
+    _runNuc(sim, _nuc_autunite);
+    _runNuc(sim, _nuc_uranospinite);
+    _runNuc(sim, _nuc_tyuyamunite);
+    _runNuc(sim, _nuc_apatite);
+    _runNuc(sim, _nuc_plumbogummite);
+    _runNuc(sim, _nuc_turquoise);
 }
 
 // ── 89-nucleation-silicate.js ──
@@ -53619,33 +53731,33 @@ function _nuc_datolite(sim) {
     }
 }
 function _nucleateClass_silicate(sim) {
-    _nuc_quartz(sim);
-    _nuc_apophyllite(sim);
-    _nuc_feldspar(sim);
-    _nuc_albite(sim);
-    _nuc_chrysocolla(sim);
-    _nuc_spodumene(sim);
-    _nuc_tourmaline(sim);
-    _nuc_topaz(sim);
-    _nuc_chrysoprase(sim);
-    _nuc_lepidolite(sim);
-    _nuc_dioptase(sim);
-    _nuc_shattuckite(sim);
-    _nuc_hemimorphite(sim);
-    _nuc_willemite(sim);
-    _nuc_coffinite(sim);
-    _nuc_uranophane(sim);
-    _nuc_opal(sim);
-    _nuc_datolite(sim);
-    _nuc_vesuvianite(sim);
-    _nuc_grossular(sim);
-    _nuc_diopside(sim);
-    _nuc_pectolite(sim);
-    _nuc_wollastonite(sim);
-    _nuc_prehnite(sim);
-    _nuc_epidote(sim);
-    _nuc_chrysotile(sim);
-    _nuc_tigers_eye(sim);
+    _runNuc(sim, _nuc_quartz);
+    _runNuc(sim, _nuc_apophyllite);
+    _runNuc(sim, _nuc_feldspar);
+    _runNuc(sim, _nuc_albite);
+    _runNuc(sim, _nuc_chrysocolla);
+    _runNuc(sim, _nuc_spodumene);
+    _runNuc(sim, _nuc_tourmaline);
+    _runNuc(sim, _nuc_topaz);
+    _runNuc(sim, _nuc_chrysoprase);
+    _runNuc(sim, _nuc_lepidolite);
+    _runNuc(sim, _nuc_dioptase);
+    _runNuc(sim, _nuc_shattuckite);
+    _runNuc(sim, _nuc_hemimorphite);
+    _runNuc(sim, _nuc_willemite);
+    _runNuc(sim, _nuc_coffinite);
+    _runNuc(sim, _nuc_uranophane);
+    _runNuc(sim, _nuc_opal);
+    _runNuc(sim, _nuc_datolite);
+    _runNuc(sim, _nuc_vesuvianite);
+    _runNuc(sim, _nuc_grossular);
+    _runNuc(sim, _nuc_diopside);
+    _runNuc(sim, _nuc_pectolite);
+    _runNuc(sim, _nuc_wollastonite);
+    _runNuc(sim, _nuc_prehnite);
+    _runNuc(sim, _nuc_epidote);
+    _runNuc(sim, _nuc_chrysotile);
+    _runNuc(sim, _nuc_tigers_eye);
 }
 
 // ── 89a-nucleation-amphibole.js ──
@@ -53799,11 +53911,11 @@ function _nuc_crocidolite(sim) {
     }
 }
 function _nucleateClass_amphibole(sim) {
-    _nuc_tremolite(sim);
-    _nuc_actinolite(sim);
-    _nuc_anthophyllite(sim);
-    _nuc_amosite(sim);
-    _nuc_crocidolite(sim);
+    _runNuc(sim, _nuc_tremolite);
+    _runNuc(sim, _nuc_actinolite);
+    _runNuc(sim, _nuc_anthophyllite);
+    _runNuc(sim, _nuc_amosite);
+    _runNuc(sim, _nuc_crocidolite);
 }
 
 // ── 90-nucleation-sulfate.js ──
@@ -54147,22 +54259,22 @@ function _nuc_leadhillite(sim) {
     sim.log.push(`  ✦ NUCLEATION: ⬜ Leadhillite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}) — pearly hexagonal-looking Pb sulfate-carbonate`);
 }
 function _nucleateClass_sulfate(sim) {
-    _nuc_barite(sim);
-    _nuc_celestine(sim);
-    _nuc_jarosite(sim);
-    _nuc_alunite(sim);
-    _nuc_brochantite(sim);
-    _nuc_antlerite(sim);
-    _nuc_anhydrite(sim);
-    _nuc_selenite(sim);
-    _nuc_mirabilite(sim);
-    _nuc_thenardite(sim);
-    _nuc_chalcanthite(sim);
-    _nuc_anglesite(sim);
+    _runNuc(sim, _nuc_barite);
+    _runNuc(sim, _nuc_celestine);
+    _runNuc(sim, _nuc_jarosite);
+    _runNuc(sim, _nuc_alunite);
+    _runNuc(sim, _nuc_brochantite);
+    _runNuc(sim, _nuc_antlerite);
+    _runNuc(sim, _nuc_anhydrite);
+    _runNuc(sim, _nuc_selenite);
+    _runNuc(sim, _nuc_mirabilite);
+    _runNuc(sim, _nuc_thenardite);
+    _runNuc(sim, _nuc_chalcanthite);
+    _runNuc(sim, _nuc_anglesite);
     // v100 Pb-Cu sulfate trio — late-stage Pb-Cu oxidation cycle
-    _nuc_linarite(sim);
-    _nuc_caledonite(sim);
-    _nuc_leadhillite(sim);
+    _runNuc(sim, _nuc_linarite);
+    _runNuc(sim, _nuc_caledonite);
+    _runNuc(sim, _nuc_leadhillite);
 }
 
 // ── 91-nucleation-sulfide.js ──
@@ -54797,48 +54909,48 @@ function _nuc_enargite(sim) {
     sim.log.push(`  ✦ NUCLEATION: ⬛ Enargite #${c.crystal_id} (${polymorph_label}) on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — high-sulfidation primary Cu-As-S`);
 }
 function _nucleateClass_sulfide(sim) {
-    _nuc_sphalerite(sim);
-    _nuc_wurtzite(sim);
-    _nuc_pyrite(sim);
-    _nuc_marcasite(sim);
-    _nuc_chalcopyrite(sim);
-    _nuc_tetrahedrite(sim);
-    _nuc_tennantite(sim);
-    _nuc_enargite(sim);
+    _runNuc(sim, _nuc_sphalerite);
+    _runNuc(sim, _nuc_wurtzite);
+    _runNuc(sim, _nuc_pyrite);
+    _runNuc(sim, _nuc_marcasite);
+    _runNuc(sim, _nuc_chalcopyrite);
+    _runNuc(sim, _nuc_tetrahedrite);
+    _runNuc(sim, _nuc_tennantite);
+    _runNuc(sim, _nuc_enargite);
     // v95 diarsenide quartet — order matters: rammelsbergite (Ni-rich
     // innermost) → skutterudite (Co-Ni core on natives) → safflorite
     // (Co mantle on Ni cores) → loellingite (Fe-rich outermost rim)
-    _nuc_rammelsbergite(sim);
-    _nuc_skutterudite(sim);
-    _nuc_safflorite(sim);
-    _nuc_loellingite(sim);
-    _nuc_arsenopyrite(sim);
-    _nuc_galena(sim);
-    _nuc_molybdenite(sim);
-    _nuc_stibnite(sim);
-    _nuc_cinnabar(sim);
-    _nuc_metacinnabar(sim);
-    _nuc_realgar(sim);
-    _nuc_orpiment(sim);
-    _nuc_bismuthinite(sim);
-    _nuc_argentite(sim);
-    _nuc_nickeline(sim);
-    _nuc_millerite(sim);
-    _nuc_cobaltite(sim);
-    _nuc_acanthite(sim);
+    _runNuc(sim, _nuc_rammelsbergite);
+    _runNuc(sim, _nuc_skutterudite);
+    _runNuc(sim, _nuc_safflorite);
+    _runNuc(sim, _nuc_loellingite);
+    _runNuc(sim, _nuc_arsenopyrite);
+    _runNuc(sim, _nuc_galena);
+    _runNuc(sim, _nuc_molybdenite);
+    _runNuc(sim, _nuc_stibnite);
+    _runNuc(sim, _nuc_cinnabar);
+    _runNuc(sim, _nuc_metacinnabar);
+    _runNuc(sim, _nuc_realgar);
+    _runNuc(sim, _nuc_orpiment);
+    _runNuc(sim, _nuc_bismuthinite);
+    _runNuc(sim, _nuc_argentite);
+    _runNuc(sim, _nuc_nickeline);
+    _runNuc(sim, _nuc_millerite);
+    _runNuc(sim, _nuc_cobaltite);
+    _runNuc(sim, _nuc_acanthite);
     // v96 ruby silvers — late epithermal Ag, post-arsenide/post-acanthite
-    _nuc_proustite(sim);
-    _nuc_pyrargyrite(sim);
-    _nuc_bornite(sim);
-    _nuc_chalcocite(sim);
-    _nuc_covellite(sim);
-    _nuc_calaverite(sim);
-    _nuc_sylvanite(sim);
-    _nuc_hessite(sim);
-    _nuc_naumannite(sim);
-    _nuc_clausthalite(sim);
-    _nuc_greenockite(sim);
-    _nuc_hawleyite(sim);
+    _runNuc(sim, _nuc_proustite);
+    _runNuc(sim, _nuc_pyrargyrite);
+    _runNuc(sim, _nuc_bornite);
+    _runNuc(sim, _nuc_chalcocite);
+    _runNuc(sim, _nuc_covellite);
+    _runNuc(sim, _nuc_calaverite);
+    _runNuc(sim, _nuc_sylvanite);
+    _runNuc(sim, _nuc_hessite);
+    _runNuc(sim, _nuc_naumannite);
+    _runNuc(sim, _nuc_clausthalite);
+    _runNuc(sim, _nuc_greenockite);
+    _runNuc(sim, _nuc_hawleyite);
 }
 // v63 brief-19: telluride / selenide / Cd-sulfide nucleation gates.
 function _nuc_calaverite(sim) {

@@ -304,18 +304,18 @@ function _nuc_plumbogummite(sim) {
 }
 
 function _nucleateClass_phosphate(sim) {
-  _nuc_descloizite(sim);
-  _nuc_mottramite(sim);
-  _nuc_clinobisvanite(sim);
-  _nuc_pyromorphite(sim);
-  _nuc_vanadinite(sim);
-  _nuc_torbernite(sim);
-  _nuc_zeunerite(sim);
-  _nuc_carnotite(sim);
-  _nuc_autunite(sim);
-  _nuc_uranospinite(sim);
-  _nuc_tyuyamunite(sim);
-  _nuc_apatite(sim);
-  _nuc_plumbogummite(sim);
-  _nuc_turquoise(sim);
+  _runNuc(sim, _nuc_descloizite);
+  _runNuc(sim, _nuc_mottramite);
+  _runNuc(sim, _nuc_clinobisvanite);
+  _runNuc(sim, _nuc_pyromorphite);
+  _runNuc(sim, _nuc_vanadinite);
+  _runNuc(sim, _nuc_torbernite);
+  _runNuc(sim, _nuc_zeunerite);
+  _runNuc(sim, _nuc_carnotite);
+  _runNuc(sim, _nuc_autunite);
+  _runNuc(sim, _nuc_uranospinite);
+  _runNuc(sim, _nuc_tyuyamunite);
+  _runNuc(sim, _nuc_apatite);
+  _runNuc(sim, _nuc_plumbogummite);
+  _runNuc(sim, _nuc_turquoise);
 }

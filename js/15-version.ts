@@ -11084,5 +11084,39 @@
 //        feldspar calcite] is first-pass aspirational; seed-42 firing +
 //        any tune-scenario follow-ups documented in the commit message.
 //        Additive scenario — zero drift to the other 33. Scenarios 33->34.
-const SIM_VERSION = 197;
+//   v198 — THE KEYSTONE: per-(mineral, step) derived nucleation seeds
+//        (2026-06-16, PROPOSAL-PER-MINERAL-NUC-SEEDS.md). Closes the
+//        structural bottleneck the redox-gate census (b81cf7d) hit: every
+//        nucleation draw used to thread through ONE continuous shared `rng`
+//        for the whole run, so any change in a mineral's draw-count re-phased
+//        every later (mineral, step) pair — adding the sphalerite/wurtzite
+//        redox gate displaced mottramite 96->47% though they share no ion
+//        (pure RNG-sequence drift; chemistry can't fix an RNG displacement).
+//
+//        FIX: each _nuc_<mineral> now nucleates from its OWN derived stream,
+//        seeded by _makeNucRng(sharedState, fn.name, step) (js/85j) and routed
+//        through _runNuc (the 13 _nucleateClass_* iterators call it for all 156
+//        sites). Mirrors the v181 _makeThermalRng decoupling one level finer:
+//        run-seed lineage (this._nucSharedState = rng.state at construction) +
+//        FNV-fold of the mineral key + step + the 15th-catch SCRAMBLE (one
+//        throwaway draw — bare folds leave nearby seeds correlated). The swap
+//        wraps the WHOLE _nuc_ call, so both the substrate-pick draws AND the
+//        cell/ring/twin/fill-dampener draws inside nucleate() come from the
+//        mineral's private stream; restoring leaves the shared stream untouched
+//        by nucleation (growth jitter decouples too, for free).
+//
+//        DELIBERATE FULL REBAKE — there is no byte-identical path; every
+//        nucleation draw changes source, so every scenario's seed-42 signature
+//        + every baseline re-realizes ONCE. Validated by ASSEMBLAGE
+//        PLAUSIBILITY (tools/nuc-seed-isolation-probe.mjs, OFF-vs-ON N=40:
+//        roster holds, no scenario loses an expects_species), not byte-identity
+//        — exactly how v181 was validated. The keystone PROPERTY (perturbing
+//        one mineral changes nothing else; OFF it does) is pinned in
+//        tests-js/nuc-seed-isolation.test.ts.
+//
+//        Flag NUC_DERIVED_SEEDS (default ON) reverts to the legacy single
+//        stream for the A/B probe only — NOT a player control. UNBLOCKS the
+//        held sphalerite/wurtzite redox gate (LEDGER §A #11): gating ZnS can
+//        no longer displace mottramite. SIM 197 -> 198.
+const SIM_VERSION = 198;
 

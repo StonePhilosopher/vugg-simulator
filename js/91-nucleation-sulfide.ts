@@ -582,48 +582,48 @@ function _nuc_enargite(sim) {
 }
 
 function _nucleateClass_sulfide(sim) {
-  _nuc_sphalerite(sim);
-  _nuc_wurtzite(sim);
-  _nuc_pyrite(sim);
-  _nuc_marcasite(sim);
-  _nuc_chalcopyrite(sim);
-  _nuc_tetrahedrite(sim);
-  _nuc_tennantite(sim);
-  _nuc_enargite(sim);
+  _runNuc(sim, _nuc_sphalerite);
+  _runNuc(sim, _nuc_wurtzite);
+  _runNuc(sim, _nuc_pyrite);
+  _runNuc(sim, _nuc_marcasite);
+  _runNuc(sim, _nuc_chalcopyrite);
+  _runNuc(sim, _nuc_tetrahedrite);
+  _runNuc(sim, _nuc_tennantite);
+  _runNuc(sim, _nuc_enargite);
   // v95 diarsenide quartet — order matters: rammelsbergite (Ni-rich
   // innermost) → skutterudite (Co-Ni core on natives) → safflorite
   // (Co mantle on Ni cores) → loellingite (Fe-rich outermost rim)
-  _nuc_rammelsbergite(sim);
-  _nuc_skutterudite(sim);
-  _nuc_safflorite(sim);
-  _nuc_loellingite(sim);
-  _nuc_arsenopyrite(sim);
-  _nuc_galena(sim);
-  _nuc_molybdenite(sim);
-  _nuc_stibnite(sim);
-  _nuc_cinnabar(sim);
-  _nuc_metacinnabar(sim);
-  _nuc_realgar(sim);
-  _nuc_orpiment(sim);
-  _nuc_bismuthinite(sim);
-  _nuc_argentite(sim);
-  _nuc_nickeline(sim);
-  _nuc_millerite(sim);
-  _nuc_cobaltite(sim);
-  _nuc_acanthite(sim);
+  _runNuc(sim, _nuc_rammelsbergite);
+  _runNuc(sim, _nuc_skutterudite);
+  _runNuc(sim, _nuc_safflorite);
+  _runNuc(sim, _nuc_loellingite);
+  _runNuc(sim, _nuc_arsenopyrite);
+  _runNuc(sim, _nuc_galena);
+  _runNuc(sim, _nuc_molybdenite);
+  _runNuc(sim, _nuc_stibnite);
+  _runNuc(sim, _nuc_cinnabar);
+  _runNuc(sim, _nuc_metacinnabar);
+  _runNuc(sim, _nuc_realgar);
+  _runNuc(sim, _nuc_orpiment);
+  _runNuc(sim, _nuc_bismuthinite);
+  _runNuc(sim, _nuc_argentite);
+  _runNuc(sim, _nuc_nickeline);
+  _runNuc(sim, _nuc_millerite);
+  _runNuc(sim, _nuc_cobaltite);
+  _runNuc(sim, _nuc_acanthite);
   // v96 ruby silvers — late epithermal Ag, post-arsenide/post-acanthite
-  _nuc_proustite(sim);
-  _nuc_pyrargyrite(sim);
-  _nuc_bornite(sim);
-  _nuc_chalcocite(sim);
-  _nuc_covellite(sim);
-  _nuc_calaverite(sim);
-  _nuc_sylvanite(sim);
-  _nuc_hessite(sim);
-  _nuc_naumannite(sim);
-  _nuc_clausthalite(sim);
-  _nuc_greenockite(sim);
-  _nuc_hawleyite(sim);
+  _runNuc(sim, _nuc_proustite);
+  _runNuc(sim, _nuc_pyrargyrite);
+  _runNuc(sim, _nuc_bornite);
+  _runNuc(sim, _nuc_chalcocite);
+  _runNuc(sim, _nuc_covellite);
+  _runNuc(sim, _nuc_calaverite);
+  _runNuc(sim, _nuc_sylvanite);
+  _runNuc(sim, _nuc_hessite);
+  _runNuc(sim, _nuc_naumannite);
+  _runNuc(sim, _nuc_clausthalite);
+  _runNuc(sim, _nuc_greenockite);
+  _runNuc(sim, _nuc_hawleyite);
 }
 
 // v63 brief-19: telluride / selenide / Cd-sulfide nucleation gates.
