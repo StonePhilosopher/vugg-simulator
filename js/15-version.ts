@@ -11056,5 +11056,33 @@
 //        add-mineral default it fires at seed-42 wherever an oxidized
 //        Ca-Al-Fe-Si fluid hits the window — calibration drift documented
 //        in the seed42_v196 regen + commit message. Coverage 171 -> 172.
-const SIM_VERSION = 196;
+//   v197 — tormiq_alpine_cleft scenario (2026-06-15, this commit) — the
+//        anchor for epidote (v196). Tormiq Valley, Haramosh Mts.,
+//        Gilgit-Baltistan, PAKISTAN: the world's premier alpine-cleft
+//        epidote locality (Handbook of Mineralogy names it type-quality,
+//        rivaling Knappenwand). An amphibolite-hosted Himalayan fissure
+//        (Main Karakoram Thrust) filled by a low-salinity, OXIDIZED,
+//        meteoric-metamorphic fluid — the oxidized character keeps iron
+//        ferric so the cleft grows green Fe3+ epidote, not clinozoisite.
+//
+//        Boss-requested ("an Afghanistan/Pakistan location scenario to
+//        test" epidote). Explicitly NOT the region's pegmatite type (no
+//        tourmaline/beryl) — the metamorphic-fissure Ca-Al-Fe3+ assemblage.
+//
+//        6-stage event paragenesis (js/70v-tormiq.ts): quartz lining (420C)
+//        -> Ti-Fe oxides (380C) -> EPIDOTE main stage (350->290C, Fe3+
+//        pulse, strongly oxidizing) -> byssolite/actinolite sprays (260C)
+//        -> adularia/feldspar (230C) -> late calcite (<200C). The cooling
+//        sweep is owned by the event handlers (chunky), carrying the fluid
+//        through epidote's 250-400 sweet spot for most of the run. Titanite/
+//        clinozoisite/zoisite/adularia/byssolite not yet in catalog —
+//        magnetite/feldspar/actinolite stand in.
+//
+//        Substitutes broth: Ca 600 Al 12 Fe 40 SiO2 320 Mg 40 K 120 O2 1.5
+//        pH 7 salinity 3, basalt(amphibolite proxy) wall, pocket cleft,
+//        shape_seed 1990. expects_species [epidote quartz actinolite
+//        feldspar calcite] is first-pass aspirational; seed-42 firing +
+//        any tune-scenario follow-ups documented in the commit message.
+//        Additive scenario — zero drift to the other 33. Scenarios 33->34.
+const SIM_VERSION = 197;
 

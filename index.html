@@ -2950,6 +2950,7 @@ footer a:hover {
     <button onclick="startScenarioInCreative('sabkha_dolomitization')">🌊 Coorong Cycled Dolomite (Kim 2023) — Coorong lagoon (South Australia).</button>
     <button onclick="startScenarioInCreative('schneeberg')">☢️ Schneeberg Oxidized U-Pegmatite — Erzgebirge (Saxony, Germany). Type locality for torbernite + zeunerite + uranospinite.</button>
     <button onclick="startScenarioInCreative('wittichen')">🌳 Wittichen Five-Element Vein — Schwarzwald (Germany). A hydrocarbon reducing shock grows dendritic native bismuth; arsenides rim the trees.</button>
+    <button onclick="startScenarioInCreative('tormiq_alpine_cleft')">🫒 Tormiq Valley Alpine Cleft — Gilgit-Baltistan (Pakistan). An oxidized Himalayan fissure fluid grows lustrous pistachio-green epidote swords on quartz.</button>
     <button onclick="startScenarioInCreative('colorado_plateau')">🌵 Colorado Plateau Roll-Front — Uravan Mineral Belt (Roc Creek, Montrose Co., CO). Carnotite + tyuyamunite type chemistry.</button>
     <button onclick="startScenarioInCreative('sulphur_bank')">🌋 Sulphur Bank Hg Hot Spring — Clear Lake (Lake County, CA). Active hot-spring mercury-sulfur deposit per White &amp; Roberson 1962.</button>
     <button onclick="startScenarioInCreative('sicily_solfifera')">🟡 Sicily Solfifera Sulfur — Cianciana / Caltanissetta (Agrigento, Italy). Messinian bacterially-mediated sedimentary sulfur.</button>
@@ -3058,6 +3059,7 @@ footer a:hover {
       <option value="sabkha_dolomitization">sabkha_dolomitization</option>
       <option value="schneeberg">schneeberg</option>
       <option value="wittichen">wittichen</option>
+      <option value="tormiq_alpine_cleft">tormiq_alpine_cleft</option>
       <option value="colorado_plateau">colorado_plateau</option>
       <option value="sulphur_bank">sulphur_bank</option>
       <option value="sicily_solfifera">sicily_solfifera</option>
@@ -3902,6 +3904,7 @@ Scenarios:
           <option value="supergene_oxidation">Supergene Oxidation (Tsumeb)</option>
           <option value="tn457_barite_pulses">TN457 Barite Pulses (Cumbria)</option>
           <option value="ultramafic_supergene">Marlborough Ultramafic Supergene</option>
+          <option value="tormiq_alpine_cleft">Tormiq Valley Alpine-Cleft Epidote</option>
           <option value="wittichen">Wittichen Five-Element Vein</option>
           <option value="zoned_dripstone_cave">Zoned Dripstone Cave</option>
         </select>
@@ -16153,7 +16156,35 @@ let timeScale = 5.0;
 //        add-mineral default it fires at seed-42 wherever an oxidized
 //        Ca-Al-Fe-Si fluid hits the window — calibration drift documented
 //        in the seed42_v196 regen + commit message. Coverage 171 -> 172.
-const SIM_VERSION = 196;
+//   v197 — tormiq_alpine_cleft scenario (2026-06-15, this commit) — the
+//        anchor for epidote (v196). Tormiq Valley, Haramosh Mts.,
+//        Gilgit-Baltistan, PAKISTAN: the world's premier alpine-cleft
+//        epidote locality (Handbook of Mineralogy names it type-quality,
+//        rivaling Knappenwand). An amphibolite-hosted Himalayan fissure
+//        (Main Karakoram Thrust) filled by a low-salinity, OXIDIZED,
+//        meteoric-metamorphic fluid — the oxidized character keeps iron
+//        ferric so the cleft grows green Fe3+ epidote, not clinozoisite.
+//
+//        Boss-requested ("an Afghanistan/Pakistan location scenario to
+//        test" epidote). Explicitly NOT the region's pegmatite type (no
+//        tourmaline/beryl) — the metamorphic-fissure Ca-Al-Fe3+ assemblage.
+//
+//        6-stage event paragenesis (js/70v-tormiq.ts): quartz lining (420C)
+//        -> Ti-Fe oxides (380C) -> EPIDOTE main stage (350->290C, Fe3+
+//        pulse, strongly oxidizing) -> byssolite/actinolite sprays (260C)
+//        -> adularia/feldspar (230C) -> late calcite (<200C). The cooling
+//        sweep is owned by the event handlers (chunky), carrying the fluid
+//        through epidote's 250-400 sweet spot for most of the run. Titanite/
+//        clinozoisite/zoisite/adularia/byssolite not yet in catalog —
+//        magnetite/feldspar/actinolite stand in.
+//
+//        Substitutes broth: Ca 600 Al 12 Fe 40 SiO2 320 Mg 40 K 120 O2 1.5
+//        pH 7 salinity 3, basalt(amphibolite proxy) wall, pocket cleft,
+//        shape_seed 1990. expects_species [epidote quartz actinolite
+//        feldspar calcite] is first-pass aspirational; seed-42 firing +
+//        any tune-scenario follow-ups documented in the commit message.
+//        Additive scenario — zero drift to the other 33. Scenarios 33->34.
+const SIM_VERSION = 197;
 
 // ── 18-constants.js ──
 
@@ -42037,6 +42068,14 @@ const EVENT_REGISTRY = {
     wittichen_hydrocarbon_influx: event_wittichen_hydrocarbon_influx,
     wittichen_meteoric_sulfate: event_wittichen_meteoric_sulfate,
     wittichen_carbonate_gangue: event_wittichen_carbonate_gangue,
+    // 2026-06-15 — Tormiq Valley alpine-cleft epidote (Gilgit-Baltistan,
+    // Pakistan), the v197 anchor for epidote. See js/70v-tormiq.ts (6 handlers).
+    tormiq_quartz_lining: event_tormiq_quartz_lining,
+    tormiq_oxide_stage: event_tormiq_oxide_stage,
+    tormiq_epidote_main: event_tormiq_epidote_main,
+    tormiq_byssolite: event_tormiq_byssolite,
+    tormiq_adularia: event_tormiq_adularia,
+    tormiq_late_calcite: event_tormiq_late_calcite,
 };
 // Minimal JSONC parser — strips // line + /* */ block comments and
 // trailing commas, then JSON.parse. Sufficient for our spec files; not
@@ -44075,6 +44114,86 @@ function event_wittichen_carbonate_gangue(c) {
     // opened at the first observation (pH 6.2 throughout the run).
     c.fluid.pH = Math.min(7.4, c.fluid.pH + 1.1);
     return `Carbonate gangue stage — CO₃ ${c.fluid.CO3.toFixed(0)}, Ca ${c.fluid.Ca.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. Calcite seals the dendrites into the vein: the cross-section specimen assembles itself.`;
+}
+
+// ── 70v-tormiq.js ──
+
+// ============================================================
+// js/70v-tormiq.ts — Tormiq Valley alpine-cleft epidote
+// ============================================================
+// TORMIQ VALLEY, Haramosh Mts., Roundu/Skardu District, Gilgit-Baltistan,
+// PAKISTAN — the world's premier alpine-cleft EPIDOTE locality (Anthony et
+// al. Handbook of Mineralogy 2001 names Tormiq type-quality, rivaling
+// Knappenwand, Austria). The v197 anchor scenario for epidote (added v196).
+//
+// SETTING (NOT a pegmatite). Gilgit-Baltistan hosts three distinct deposit
+// types: (1) Li-B-Be GEM PEGMATITES (Nuristan/Shigar tourmaline, kunzite,
+// aquamarine — magmatic), (2) ALPINE-TYPE CLEFTS (epidote, titanite, zoisite,
+// axinite, quartz, adularia — metamorphic fissure, aqueous fluid — THIS
+// SCENARIO), (3) metamorphosed marble (ruby/spinel — contact). Tormiq is type
+// (2): fractures opened by Main Karakoram Thrust activity in amphibolite /
+// metabasite / gneiss, then filled by a LOW-SALINITY, OXIDIZED, meteoric-
+// metamorphic fluid in brittle channelized flow (<450°C, retrograde to
+// <200°C; Central-Alps analogue per Mullis 1994, Bergemann et al. 2017).
+// The OXIDIZED character is what makes Fe³⁺-rich green epidote (not the
+// Fe-poor clinozoisite) — see the epidote engine v196.
+//
+// PARAGENESIS (cleft opening, higher T → cooling):
+//   1. quartz lining (cleft walls)              ~420°C
+//   2. Ti–Fe oxides — magnetite (+ titanite,    ~380°C
+//      not yet modelled) on the walls
+//   3. EPIDOTE main stage — pistachio prisms,    350→290°C  (the star)
+//      doubly-terminated Tormiq swords, oxidized
+//   4. byssolite (fibrous actinolite) sprays,    ~270°C
+//      epidote nucleates on the mats as fans
+//   5. adularia (K-feldspar), low-T cleft        ~250°C
+//   6. calcite + late zeolites, cooling stops    <200°C
+//
+// REFERENCES:
+//   * Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy
+//     (epidote sheet — names Tormiq, Pakistan as type-quality)
+//   * Deer Howie Zussman 1986, Rock-Forming Minerals v.1B pp.44-134
+//   * Liebscher & Franz eds. 2004, Reviews in Mineralogy v.56 Epidotes
+//   * Mullis J 1994, GCA 58:2239 (alpine-fissure quartz fluid inclusions)
+//   * Bergemann et al. 2017, Swiss J. Geosci. (alpine fissure T/fluid)
+//   * mindat loc-5734 (Tormiq geology: Main Karakoram Thrust clefts)
+function event_tormiq_quartz_lining(c) {
+    c.temperature = Math.max(380, c.temperature - 40);
+    c.fluid.SiO2 = Math.min(420, c.fluid.SiO2 + 40);
+    c.fluid.O2 = Math.max(1.3, c.fluid.O2); // hold the cleft oxidizing (Fe³⁺)
+    c.flow_rate = 1.0;
+    return `A cleft opens along a Main Karakoram Thrust fracture; low-salinity, oxidized metamorphic fluid floods the fissure and lines the walls with quartz. T ${c.temperature.toFixed(0)}°C, oxidizing (O₂ ${c.fluid.O2.toFixed(1)}).`;
+}
+function event_tormiq_oxide_stage(c) {
+    c.temperature = Math.max(340, c.temperature - 40);
+    c.fluid.Fe = Math.min(60, c.fluid.Fe + 10); // amphibolite yields Fe
+    c.fluid.Ti = (c.fluid.Ti || 0) + 1.0;
+    return `Ti–Fe oxides crust the cleft walls — magnetite (and titanite, not yet modelled) — as the amphibolite host yields Fe and Ti. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_tormiq_epidote_main(c) {
+    c.temperature = Math.max(290, c.temperature - 50);
+    c.fluid.Fe = Math.min(75, c.fluid.Fe + 15); // Fe³⁺ pulse from amphibolite leaching
+    c.fluid.Al = Math.min(20, c.fluid.Al + 4);
+    c.fluid.Ca = Math.min(900, c.fluid.Ca + 100);
+    c.fluid.O2 = Math.max(1.5, c.fluid.O2); // strongly oxidizing → Fe³⁺ → deep green
+    c.flow_rate = 1.3;
+    return `THE EPIDOTE STAGE: oxidized Ca–Al–Fe³⁺ fluid in an open cleft at T ${c.temperature.toFixed(0)}°C — lustrous pistachio-green prisms strike out from the quartz, the doubly-terminated Tormiq gem swords. Fe³⁺ ${c.fluid.Fe.toFixed(0)} ppm, strongly oxidizing.`;
+}
+function event_tormiq_byssolite(c) {
+    c.temperature = Math.max(260, c.temperature - 30);
+    c.fluid.Mg = Math.min(48, c.fluid.Mg + 20); // modest Mg → byssolite stays secondary to epidote
+    return `Byssolite — fibrous actinolite — sprays through the cleft, and epidote nucleates on the amphibole mats as radiating fans. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_tormiq_adularia(c) {
+    c.temperature = Math.max(230, c.temperature - 30);
+    c.fluid.K = Math.min(280, c.fluid.K + 90); // low-T cleft K-feldspar
+    return `Lower-temperature cleft feldspar: adularia (K-feldspar) crystallizes as the fluid cools and K builds up. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_tormiq_late_calcite(c) {
+    c.temperature = Math.max(170, c.temperature - 50);
+    c.fluid.CO3 = Math.min(220, c.fluid.CO3 + 90);
+    c.flow_rate = 0.2;
+    return `The cleft cools below ~200°C: calcite + late zeolites close the paragenesis and growth winds down. T ${c.temperature.toFixed(0)}°C.`;
 }
 
 // ── 75-transitions.js ──

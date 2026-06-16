@@ -2044,6 +2044,67 @@
         "Kloster Wittichen district history — cobalt-blue pigment + silver boom, 1730s-1740s (shape_seed 1736)"
       ]
     },
+    "tormiq_alpine_cleft": {
+      "anchor": "Tormiq Valley, Haramosh Mts., Roundu/Skardu District, Gilgit-Baltistan, Pakistan — the world's premier ALPINE-CLEFT epidote locality (Anthony et al. Handbook of Mineralogy 2001 names Tormiq type-quality, rivaling Knappenwand, Austria). The anchor scenario for epidote (added v196).",
+      "description": "A Himalayan alpine-type cleft: fractures opened by Main Karakoram Thrust activity in AMPHIBOLITE / metabasite, then filled by a LOW-SALINITY, OXIDIZED, meteoric-metamorphic fluid in brittle channelized flow (<450°C, cooling to <200°C). The oxidized character is load-bearing — it keeps iron FERRIC, so the cleft grows lustrous pistachio-green EPIDOTE (the Fe³⁺ phase) rather than Fe-poor clinozoisite, with the doubly-terminated 'Tormiq sword' habit in the open fissure. Paragenesis: quartz lining → Ti-Fe oxides → the epidote main stage → byssolite (fibrous actinolite) sprays → adularia (K-feldspar) → late calcite. NOT a pegmatite (the region's other deposit type) — no tourmaline/beryl/spodumene; this is the metamorphic-fissure Ca-Al-Fe³⁺ assemblage.",
+      "expects_species": ["epidote", "actinolite", "quartz", "feldspar", "albite", "fluorite"],
+      "duration_steps": 200,
+      "notes": [
+        "Anchor: Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy (epidote sheet), which names Tormiq, Pakistan as a type-quality locality. Geology per mindat loc-5734: Tormiq lower valley = granite + amphibolite + ultramafic, central/upper = metasedimentary + metavolcanic; the epidote clefts are tied to the amphibolite/metabasite (the Ca-Al-Fe³⁺ source). Tectonic driver = Main Karakoram Thrust fracturing near the Nanga Parbat-Haramosh massif. Sub-localities Alchuri + Hashupa (Shigar) share the model.",
+        "Fluid: alpine-cleft fissures carry a LOW-SALINITY (~1-3 wt% NaCl eq), OXIDIZED, meteoric-metamorphic fluid in brittle channelized flow at <450°C, retrograde to <200°C (Central-Alps analogue; Mullis 1994 GCA 58:2239 fluid inclusions; Bergemann et al. 2017 Swiss J. Geosci. fissure formation episodes). No published Tormiq fluid-inclusion ppm dataset exists — the broth is an order-of-magnitude design target inferred from alpine-cleft fluid character + epidote stoichiometry, to be calibrated against seed-42 per the tune-scenario loop.",
+        "Engine fit: epidote's discriminator is REDOX (engine v196) — it gates on oxideRedoxAvailable O2>=0.5 on top of Ca/Al/Fe/Si + T 200-450. This broth holds O2 ~1.5 (strongly oxidizing → Fe³⁺ → deep pistachio green) across the run, with an Fe³⁺ pulse at the epidote_main stage. The cooling sweep (420→170°C via the event handlers) carries the fluid through epidote's 250-400 sweet spot for most of the run. byssolite = the actinolite engine (Mg+Fe+Ca+Si, no redox gate); adularia = feldspar (K+Al+Si); the cleft lining = quartz; late = calcite. Titanite, clinozoisite, and zoisite (true Tormiq associates) are not yet in the catalog — magnetite stands in for the Ti-Fe oxide stage; feldspar for adularia; actinolite for byssolite.",
+        "Wallrock: 'basalt' composition as the amphibolite proxy (inert silicate — amphibolite is metamorphosed basalt; the Ca-Al-Fe³⁺ arrives in the FLUID, not from wall dissolution). Architecture pocket (alpine cleft), pocket size class, shape_seed 1990 (the decade Tormiq epidote reached the international market).",
+        "Calibration target: the hand specimen is a lustrous dark-pistachio-green doubly-terminated epidote prism (or a divergent spray on byssolite) perched on a quartz-lined cleft wall, sometimes with adularia + calcite. Epidote IS the star. MEASURED at seed 42 (16 crystals, 6 species): epidote 5 (the most abundant — capped at max_nucleation 5), actinolite/byssolite 4 (secondary, as intended), albite 2 + adularia/feldspar 2 + quartz 2 + fluorite 1. This is a textbook alpine-cleft suite — epidote + byssolite + adularia + albite + quartz + pink fluorite are all genuine Tormiq/alpine-fissure associates. CALCITE is aspirational (the late_calcite event raises CO3 but calcite did not nucleate in the final ~30 steps at seed 42) — a vugg-tune-scenario follow-up candidate (bump late CO3 / extend the cooling tail), not shipped as a false expects entry."
+      ],
+      "initial": {
+        "temperature_C": 420.0,
+        "pressure_kbar": 4.0,
+        "fluid": {
+          "SiO2": 320,
+          "Ca": 600,
+          "Al": 12,
+          "Fe": 40,
+          "Mg": 25,
+          "Mn": 2,
+          "K": 120,
+          "CO3": 50,
+          "Na": 200,
+          "Cl": 300,
+          "Sr": 2,
+          "Ti": 1,
+          "P": 1,
+          "O2": 1.5,
+          "pH": 7.0,
+          "salinity": 3
+        },
+        "wall": {
+          "composition": "basalt",
+          "reactivity": 0,
+          "architecture": "pocket",
+          "size_class": "pocket",
+          "primary_bubbles": 3,
+          "secondary_bubbles": 5,
+          "shape_seed": 1990
+        }
+      },
+      "events": [
+        { "step": 25,  "type": "tormiq_quartz_lining", "name": "Cleft Opens — Quartz Lining", "description": "A Karakoram-Thrust fracture opens; oxidized metamorphic fluid lines the walls with quartz" },
+        { "step": 50,  "type": "tormiq_oxide_stage",   "name": "Ti-Fe Oxide Stage",          "description": "Magnetite (+ titanite, not modelled) crust the cleft walls from amphibolite-leached Fe + Ti" },
+        { "step": 80,  "type": "tormiq_epidote_main",  "name": "The Epidote Stage",          "description": "Oxidized Ca-Al-Fe³⁺ fluid grows the pistachio-green Tormiq gem swords" },
+        { "step": 110, "type": "tormiq_byssolite",     "name": "Byssolite Sprays",           "description": "Fibrous actinolite sprays; epidote nucleates on the amphibole mats as fans" },
+        { "step": 140, "type": "tormiq_adularia",      "name": "Adularia Stage",             "description": "Lower-T cleft K-feldspar (adularia) crystallizes" },
+        { "step": 170, "type": "tormiq_late_calcite",  "name": "Late Calcite — Cooling",     "description": "Below ~200°C, calcite seals the paragenesis and growth winds down" }
+      ],
+      "sources": [
+        "Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy (epidote sheet — names Tormiq, Pakistan as type-quality)",
+        "Deer, Howie & Zussman 1986, Rock-Forming Minerals 2nd ed. v.1B, pp.44-134 (epidote group)",
+        "Liebscher A. & Franz G. eds. 2004, Reviews in Mineralogy & Geochemistry v.56 Epidotes (MSA)",
+        "Mullis J. 1994, Geochim. Cosmochim. Acta 58:2239 — alpine fissure quartz fluid inclusions (low-salinity, oxidized, meteoric)",
+        "Bergemann C. et al. 2017, Swiss J. Geosci. — alpine fissure formation episodes (T/fluid regime)",
+        "Holdaway M.J. 1972, Contrib. Mineral. Petrol. 37:307; Liou J.G. 1973, J. Petrol. 14:381 — epidote stability vs fO2 (why oxidized = Fe³⁺ green epidote)",
+        "mindat locality 5734 — Tormiq Valley geology (Main Karakoram Thrust clefts in amphibolite)"
+      ]
+    },
     "colorado_plateau": {
       "anchor": "Uravan Mineral Belt, Colorado Plateau — sandstone-hosted roll-front uranium-vanadium deposits (Triassic-Jurassic Morrison Formation). Includes the Carnotite-Eldorado, Uravan, and Moab districts; the V+U bonanza that drove the early-twentieth-century uranium industry decades before the Manhattan Project.",
       "description": "Uravan Mineral Belt sandstone roll-front uranium-vanadium deposit (Roc Creek, Montrose County, CO — carnotite type locality, Friedel & Cumenge 1899). Oxidizing groundwater carries U + V + K + Ca through Triassic-Jurassic Morrison Formation sandstones until it meets a reducing barrier (petrified wood, carbonaceous shale), where the metals drop out as bright canary-yellow uranyl-vanadate crusts. Carnotite + tyuyamunite are the two diagnostic species — interconvertible by cation exchange, drawn apart by whichever of K/Ca dominates the local pore fluid.",

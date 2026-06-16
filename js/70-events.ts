@@ -343,6 +343,14 @@ const EVENT_REGISTRY = {
   wittichen_hydrocarbon_influx: event_wittichen_hydrocarbon_influx,
   wittichen_meteoric_sulfate: event_wittichen_meteoric_sulfate,
   wittichen_carbonate_gangue: event_wittichen_carbonate_gangue,
+  // 2026-06-15 — Tormiq Valley alpine-cleft epidote (Gilgit-Baltistan,
+  // Pakistan), the v197 anchor for epidote. See js/70v-tormiq.ts (6 handlers).
+  tormiq_quartz_lining: event_tormiq_quartz_lining,
+  tormiq_oxide_stage: event_tormiq_oxide_stage,
+  tormiq_epidote_main: event_tormiq_epidote_main,
+  tormiq_byssolite: event_tormiq_byssolite,
+  tormiq_adularia: event_tormiq_adularia,
+  tormiq_late_calcite: event_tormiq_late_calcite,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and
