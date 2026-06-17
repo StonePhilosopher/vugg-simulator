@@ -8,6 +8,17 @@ corrected reason.
 
 HEAD at handoff: `68edacd` (SIM 198), pushed, Pages built.
 
+> **✅ EPILOGUE — THE GATE SHIPPED, SIM 199 (`9887ddd`).** The "RESOLVED" section
+> below ended with a fluid-pathway-trace recommendation. It was done, and it found
+> a one-line BUG, not an intractable coupling: supersaturation_mottramite (js/38)
+> had a spurious `if (Zn<0.5) return 0` — but mottramite is PbCu(VO4)(OH), the Cu
+> ENDMEMBER (no Zn). Gating ZnS drained Zn→0 at ~half the seeds, tripping it
+> (98→49). Removed the bug + shipped the ZnS redox gate together (v199): mottramite
+> holds **98→84%**, clean 1/34 rebake (supergene only), coverage unchanged, CI
+> 1916/1916. LEDGER §A #11 closed. The growth keystone stays reverted (it was a
+> real but minor slice); the actual blocker was the chemistry bug, found by the
+> trace.
+
 ---
 
 ## SHIPPED — the keystone (SIM 198, `68edacd`)
