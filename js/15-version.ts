@@ -11115,8 +11115,31 @@
 //        tests-js/nuc-seed-isolation.test.ts.
 //
 //        Flag NUC_DERIVED_SEEDS (default ON) reverts to the legacy single
-//        stream for the A/B probe only — NOT a player control. UNBLOCKS the
-//        held sphalerite/wurtzite redox gate (LEDGER §A #11): gating ZnS can
-//        no longer displace mottramite. SIM 197 -> 198.
-const SIM_VERSION = 198;
+//        stream for the A/B probe only — NOT a player control. (v198 CLAIMED to
+//        unblock the held ZnS redox gate; it did NOT — see v199, the real fix
+//        was a mottramite gate bug, not RNG.) SIM 197 -> 198.
+//   v199 — THE HELD ZnS REDOX GATE, FINALLY SHIPPED + the mottramite Zn-gate
+//        bug it was blocked on (2026-06-16). Two coupled changes:
+//        (1) BUG FIX — supersaturation_mottramite (38-supersat-phosphate) had a
+//        spurious `if (Zn < 0.5) return 0` hard gate. mottramite is PbCu(VO4)(OH),
+//        the Cu ENDMEMBER of the mottramite-descloizite series — it contains NO
+//        Zn. The gate (a descloizite-template copy) blocked mottramite precisely
+//        when the fluid was purest-Cu (Zn->0, cu_fraction->1.0), i.e. when it
+//        should MOST form. Removed; the cu_fraction>=0.5 line remains as the
+//        correct series discriminator (Zn=0 -> cu_fraction=1.0, Cu-dominant ✓).
+//        (2) THE GATE — sulfideRedoxAnoxic(1.5) added to sphalerite + wurtzite
+//        (the last siblings of galena's v13 O2-gate omission; census b81cf7d).
+//        WHY COUPLED: the gate was HELD for two sessions because adding it
+//        dropped mottramite 98->49%. The held-gate arc proved (three probes) it
+//        was NOT nucleation-RNG (v198 keystone), NOT graduated competition
+//        (toggle identical), and only partly growth-jitter (a reverted growth
+//        keystone got 60->43). The fluid-pathway trace found the truth: gating
+//        oxidized-zone sphalerite redirects Zn into the correct sinks
+//        (smithsonite/aurichalcite), draining it to 0 at ~half the seeds, which
+//        tripped the spurious Zn-gate. Fix (1) removes that coupling; with it,
+//        the gate drops mottramite only 98->84% (mild, real — one Zn sink fewer).
+//        FULL REBAKE: mottramite can now fire in pure-Cu fluids + ZnS excluded
+//        from oxidizing zones; baselines re-realize where those bite. SIM 198 ->
+//        199. Closes LEDGER §A #11.
+const SIM_VERSION = 199;
 
