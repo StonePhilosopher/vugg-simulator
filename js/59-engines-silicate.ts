@@ -1654,6 +1654,471 @@ function grow_prehnite(crystal, conditions, step) {
   });
 }
 
+// v200 (2026-06-17): Stilbite NaCa4(Si27Al9)O72·28H2O — monoclinic C2/m, the
+// cooler/more-hydrated member of the Deccan Stage-II zeolite couple. Habits:
+//   sheaf (default) — wheatsheaf/sheaf bundles splaying from a constricted waist
+//   bowtie (high excess) — twinned sheaves meeting at the waist ({001} cruciform)
+//   spherulitic (very high excess / high nucleation density) — radiating globules
+//   tabular (low excess) — thin {010} plates, pearly on {010}
+// Ca-dominant = peach/salmon (the Deccan aesthetic); Na-dominant = stilbite-Na
+// (white, uncommon). Dissolves in acid (releases Ca+Al+Si).
+function grow_stilbite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_stilbite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — stilbite releases Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.8 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — the wheatsheaf/bowtie family is stilbite's signature.
+  if (excess > 1.8) {
+    crystal.habit = 'spherulitic';
+    crystal.dominant_forms = ['radiating globular aggregate', 'high-nucleation-density druse'];
+  } else if (excess > 1.0) {
+    crystal.habit = 'bowtie';
+    crystal.dominant_forms = ['{001} cruciform penetration twin', 'bowtie / hourglass meeting at the waist', 'twinned sheaves'];
+  } else if (excess < 0.3) {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['thin tabular {010} plate', 'pearly {010} cleavage'];
+  } else {
+    crystal.habit = 'sheaf';
+    crystal.dominant_forms = ['wheatsheaf bundle splaying from a constricted waist', 'divergent tabular sheaf'];
+  }
+
+  // Variety dispatch — Ca-dominant = peach (Deccan); Na-dominant = stilbite-Na.
+  const na_dominant = conditions.fluid.Na > conditions.fluid.Ca;
+  const color_note = na_dominant
+    ? 'white stilbite-Na (Na > Ca — uncommon)'
+    : 'peach-to-salmon stilbite-Ca (the Nashik/Deccan aesthetic; colorless when Fe-free)';
+
+  // Substrate flavor
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('chalcedony') || pos.includes('quartz')) substrate_flavor = ' on the silica lining — the Deccan vug-wall veneer';
+  else if (pos.includes('scolecite') || pos.includes('mesolite')) substrate_flavor = ' over the fibrous Ca-zeolite sprays';
+  else if (pos.includes('heulandite')) substrate_flavor = ' intergrown with heulandite';
+  else if (pos.includes('apophyllite')) substrate_flavor = ' with apophyllite';
+
+  // Mass-balance debits — Na Ca4 Al9 Si27 (silica-heavy framework)
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.018, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.012, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.050, 0);
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.004, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+    note: `stilbite ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic Ca-zeolite, H 3.5-4, vitreous/pearly`,
+  });
+}
+
+// v200 (2026-06-17): Heulandite (Ca,Na)Al2Si7O18·6H2O — monoclinic C2/m, the
+// warmer/dehydrated member (the dehydration product of stilbite). Habits:
+//   coffin (default) — tabular ∥{010}, widest at the centre (the diagnostic shape)
+//   tabular (low excess) — thin {010} plates, pearly
+//   stout (high excess) — trapezoidal/diamond-section stout crystals
+//   granular (very low excess) — coarse-to-fine massive
+// Ca-dominant. Distinguished from stilbite by the isolated coffin habit (vs
+// sheaves) + warmer/higher-silica window. Dissolves in acid.
+function grow_heulandite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_heulandite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — heulandite releases Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.8 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — the coffin-shaped {010} tablet is heulandite's signature.
+  if (excess > 1.8) {
+    crystal.habit = 'stout';
+    crystal.dominant_forms = ['trapezoidal/diamond-section stout crystal', 'the coffin cross-section'];
+  } else if (excess < 0.25) {
+    crystal.habit = 'granular';
+    crystal.dominant_forms = ['coarse-to-fine granular mass'];
+  } else if (excess < 0.6) {
+    crystal.habit = 'tabular';
+    crystal.dominant_forms = ['thin tabular {010} plate', 'pearly {010} cleavage'];
+  } else {
+    crystal.habit = 'coffin';
+    crystal.dominant_forms = ['coffin-shaped tablet ∥{010}, widest at the centre', 'elongated trapezoidal outline'];
+  }
+
+  // Variety — Ca-dominant (heulandite-Ca); colour from trace Fe.
+  const color_note = conditions.fluid.Fe > 20
+    ? 'red-to-orange heulandite-Ca (Fe-stained — the classic Berufjord/Deccan look)'
+    : 'colorless-to-white heulandite-Ca (pearly {010})';
+
+  // Substrate flavor
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('chalcedony') || pos.includes('quartz')) substrate_flavor = ' on the silica lining';
+  else if (pos.includes('scolecite') || pos.includes('mesolite')) substrate_flavor = ' over the fibrous Ca-zeolite sprays';
+  else if (pos.includes('stilbite')) substrate_flavor = ' intergrown with stilbite';
+  else if (pos.includes('apophyllite')) substrate_flavor = ' with apophyllite';
+
+  // Mass-balance debits — Ca Al2 Si7 (very silica-heavy framework)
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.055, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+    trace_Fe: conditions.fluid.Fe > 10 ? conditions.fluid.Fe * 0.004 : 0,
+    note: `heulandite ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic Ca-zeolite, H 3.5-4, vitreous/pearly`,
+  });
+}
+
+// v201 (2026-06-17): Scolecite CaAl2Si3O10·3H2O — monoclinic Cc, the Ca-
+// endmember fibrous natrolite-group zeolite. Habits:
+//   spray (default) — radiating acicular needle sprays (the signature)
+//   puffball (very high excess) — dense divergent needle bursts from a point
+//   prismatic (low excess / clean substrate) — slender square-section prisms ∥[001]
+//   fibrous (lowest) — silky fibrous mass
+// Forms BEFORE the sheet zeolites; later stilbite/heulandite drape over the
+// sprays. White/colorless. Dissolves in acid.
+function grow_scolecite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_scolecite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — scolecite releases Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.7 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — radiating acicular sprays are scolecite's signature.
+  if (excess > 1.6) {
+    crystal.habit = 'puffball';
+    crystal.dominant_forms = ['dense divergent needle burst from a point', 'radiating acicular puffball'];
+  } else if (excess < 0.3) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['slender square-section prism ∥[001]', 'striated single blade'];
+  } else if (excess < 0.15) {
+    crystal.habit = 'fibrous';
+    crystal.dominant_forms = ['silky fibrous mass'];
+  } else {
+    crystal.habit = 'spray';
+    crystal.dominant_forms = ['radiating acicular needle spray', 'divergent fibrous bundle'];
+  }
+
+  // Substrate flavor
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('chalcedony') || pos.includes('quartz')) substrate_flavor = ' on the silica lining';
+  else if (pos.includes('mesolite')) substrate_flavor = ' intergrown with mesolite';
+  else if (pos.includes('calcite')) substrate_flavor = ' on calcite';
+
+  // Mass-balance debits — Ca Al2 Si3 (low-Si framework)
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.016, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+    note: `scolecite ${crystal.habit}, white-colorless Ca-zeolite${substrate_flavor}; monoclinic, H 5-5.5, vitreous/silky, twinned {100}`,
+  });
+}
+
+// v201 (2026-06-17): Mesolite Na2Ca2Al6Si9O30·8H2O — orthorhombic Fdd2, the
+// ordered Na-Ca intermediate. Habits:
+//   tuft (default) — the finest hair-like / cottony fibrous tufts (diagnostic)
+//   acicular (mid) — divergent acicular sprays (finer than scolecite)
+//   prismatic (high excess) — slender prisms ∥[001] (the coarse, rarer mode)
+//   porcelaneous (lowest) — compact porcelaneous mass
+// Co-deposits with scolecite; needs BOTH Na and Ca. White/colorless.
+function grow_mesolite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_mesolite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — mesolite releases Na + Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.6 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — the finest hair-like tufts are mesolite's signature.
+  if (excess > 1.6) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['slender prism ∥[001] (the coarse rarer mode)'];
+  } else if (excess < 0.2) {
+    crystal.habit = 'porcelaneous';
+    crystal.dominant_forms = ['compact porcelaneous mass'];
+  } else if (excess > 0.8) {
+    crystal.habit = 'acicular';
+    crystal.dominant_forms = ['divergent acicular spray (finer than scolecite)'];
+  } else {
+    crystal.habit = 'tuft';
+    crystal.dominant_forms = ['hair-like cottony fibrous tuft (the finest fiber)', 'silky white tuft'];
+  }
+
+  // Substrate flavor
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('chalcedony') || pos.includes('quartz')) substrate_flavor = ' on the silica lining';
+  else if (pos.includes('scolecite')) substrate_flavor = ' intergrown with scolecite';
+  else if (pos.includes('calcite')) substrate_flavor = ' on calcite';
+
+  // Mass-balance debits — Na2 Ca2 Al6 Si9 (low-Si framework, Na+Ca)
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.012, 0);
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.012, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.018, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+    note: `mesolite ${crystal.habit}, white-colorless Na-Ca zeolite${substrate_flavor}; orthorhombic, H 5, vitreous/silky`,
+  });
+}
+
+// v202 (2026-06-17): Thomsonite NaCa2Al5Si5O20·6H2O — orthorhombic Pncn, the
+// earliest, most-aluminous (Si/Al~1) amygdule zeolite. Habits:
+//   eye (default) — radiating spherical botryoidal nodule, concentric colour
+//        banding ("thomsonite eye" / lintonite — the Lake Superior gem)
+//   spray (mid) — radiating columnar/bladed sprays + rosettes, blades ∥{010}
+//   acicular (high excess) — fine fibrous needle tufts
+//   columnar (low excess) — slender prisms ∥[001] / compact columnar
+//   massive (lowest) — porcelaneous crust
+// Lintonite (green) when Fe trace present. White/pink/yellow otherwise.
+function grow_thomsonite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_thomsonite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — thomsonite releases Na + Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.6 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — the concentric "eye" nodule is thomsonite's signature.
+  // High nucleation density + confined growth → spheres; open growth → blades.
+  if (excess > 1.4) {
+    crystal.habit = 'acicular';
+    crystal.dominant_forms = ['fine fibrous needle tuft'];
+  } else if (excess < 0.25) {
+    crystal.habit = 'columnar';
+    crystal.dominant_forms = ['slender prism ∥[001], flattened on {010}', 'compact columnar'];
+  } else if (excess > 0.8) {
+    crystal.habit = 'spray';
+    crystal.dominant_forms = ['radiating columnar/bladed spray', 'rosette of blades ∥{010}'];
+  } else {
+    crystal.habit = 'eye';
+    crystal.dominant_forms = ['radiating spherical botryoidal nodule', 'concentric colour-banded "thomsonite eye"'];
+  }
+
+  // Colour dispatch — lintonite (green) with Fe trace; else white/pink.
+  const color_note = conditions.fluid.Fe > 15
+    ? 'green lintonite variety (Fe trace — the Lake Superior gem)'
+    : 'white-to-pink thomsonite, concentrically zoned';
+
+  // Substrate flavor — thomsonite is EARLY, on the fresh cavity surface.
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('calcite')) substrate_flavor = ' on early calcite';
+  else if (pos.includes('chalcedony') || pos.includes('quartz')) substrate_flavor = ' on the silica veneer';
+  else if (pos.includes('wall')) substrate_flavor = ' direct on the smectite-lined vug wall';
+
+  // Mass-balance debits — Na Ca2 Al5 Si5 (most-aluminous, low-Si framework)
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.008, 0);
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.020, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.025, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.015 : 0,
+    trace_Fe: conditions.fluid.Fe > 10 ? conditions.fluid.Fe * 0.003 : 0,
+    note: `thomsonite ${crystal.habit}, ${color_note}${substrate_flavor}; orthorhombic Na-Ca zeolite (Si/Al~1), H 5-5.5, vitreous/pearly, twin {110}`,
+  });
+}
+
+// v203 (2026-06-17): Chabazite Ca2Al2Si4O12·6H2O — trigonal R-3m, the late,
+// intermediate-Si (Si/Al~2) amygdule zeolite. Habits:
+//   rhomb (default) — rhombohedral pseudo-cube (the near-90° rhombohedron that
+//        mimics a cube — the signature, easily mistaken for calcite)
+//   phacolite (high excess) — lens/disc-shaped penetration-twinned aggregate
+//   herschelite (Na-dominant) — thin tabular/platy hexagonal-looking plates
+//   botryoidal (high nucleation / low excess) — radiating spheroidal aggregate
+// Cation-flexible (Ca>Na>K); Na-dominance flips habit to herschelite.
+function grow_chabazite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_chabazite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — chabazite releases Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.7 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch. Na-dominant → herschelite tablet; else rhomb/phacolite.
+  const na_dominant = conditions.fluid.Na > conditions.fluid.Ca;
+  if (na_dominant) {
+    crystal.habit = 'herschelite';
+    crystal.dominant_forms = ['thin tabular hexagonal-looking plate (Na-rich herschelite)'];
+  } else if (excess > 1.3) {
+    crystal.habit = 'phacolite';
+    crystal.dominant_forms = ['lens/disc-shaped penetration twin ({0001})', 'phacolite twinned aggregate'];
+  } else if (excess < 0.25) {
+    crystal.habit = 'botryoidal';
+    crystal.dominant_forms = ['radiating spheroidal aggregate', 'crystal-ball rosette'];
+  } else {
+    crystal.habit = 'rhomb';
+    crystal.dominant_forms = ['rhombohedral pseudo-cube ({101̄1}, near-90° — mimics a cube)', 'simple rhombohedron'];
+  }
+
+  // Substrate flavor — chabazite is LATE, perching on the earlier zeolites.
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('stilbite') || pos.includes('heulandite')) substrate_flavor = ' perched on the sheet-zeolite lining';
+  else if (pos.includes('scolecite') || pos.includes('mesolite') || pos.includes('thomsonite')) substrate_flavor = ' perched on the earlier fibrous zeolites';
+  else if (pos.includes('calcite')) substrate_flavor = ' with calcite';
+
+  // Mass-balance debits — Ca Al2 Si4 (per-Ca, intermediate-Si framework)
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.004, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+    note: `chabazite ${crystal.habit}, white-to-flesh Ca-zeolite${substrate_flavor}; trigonal (Si/Al~2), H 4-5, vitreous — poor {101̄1} cleavage + no effervescence vs calcite`,
+  });
+}
+
+// v196 (2026-06-15): Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — monoclinic
+// P2_1/m sorosilicate, the Fe3+ endmember of the clinozoisite-epidote
+// series. Alpine-cleft / greenschist mineral; lustrous pistachio-green
+// prisms striated ∥b (the Tormiq, Gilgit-Baltistan gem swords). Habits:
+//   striated_prismatic (default) — elongated prisms striated ∥[010]
+//   gem_prismatic (high σ) — doubly-terminated Tormiq/Knappenwand swords
+//   divergent_spray (on byssolite/actinolite substrate) — radiating fans
+//   granular (low excess) — coarse-to-fine massive / saussurite replacement
+// Green deepens with Fe3+/oxidation (the pistacite content); Fe-poor →
+// pale yellow-green toward clinozoisite.
+function grow_epidote(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_epidote();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.05);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — epidote releases Ca + Al + Fe + Si`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — substrate first (sprays on byssolite), then σ
+  const pos = crystal.position || '';
+  const on_amphibole = pos.includes('actinolite') || pos.includes('tremolite');
+  if (on_amphibole) {
+    crystal.habit = 'divergent_spray';
+    crystal.dominant_forms = ['radiating prismatic fans', 'epidote sprays interwoven with byssolite fibers', 'striated ∥b'];
+  } else if (excess > 1.3) {
+    crystal.habit = 'gem_prismatic';
+    crystal.dominant_forms = ['doubly-terminated lustrous prisms', 'the Tormiq / Knappenwand gem sword', 'striated ∥[010]'];
+  } else if (excess < 0.3) {
+    crystal.habit = 'granular';
+    crystal.dominant_forms = ['coarse-to-fine granular aggregate', 'vein-fill / saussurite replacement'];
+  } else {
+    crystal.habit = 'striated_prismatic';
+    crystal.dominant_forms = ['elongated prisms striated parallel b [010]', 'perfect {001} basal cleavage'];
+  }
+
+  // Color dispatch — green deepens with Fe³⁺ (pistacite) + oxidation
+  let color_note;
+  const o2 = conditions.fluid.O2 ?? 0;
+  if (conditions.fluid.Fe > 20 && o2 > 1.0) color_note = 'deep pistachio-to-blackish-green (high Fe³⁺, strongly oxidized — pistacite-rich)';
+  else if (conditions.fluid.Fe > 8) color_note = 'classic pistachio-green (Fe³⁺ at M3 — the Tormiq aesthetic)';
+  else color_note = 'pale yellow-green (Fe³⁺-poor, toward clinozoisite)';
+
+  // Substrate flavor
+  let substrate_flavor = '';
+  if (pos.includes('quartz')) substrate_flavor = ' perched on quartz — the alpine-cleft signature';
+  else if (pos.includes('feldspar')) substrate_flavor = ' with adularia — low-T cleft feldspar stage';
+  else if (pos.includes('magnetite')) substrate_flavor = ' on magnetite — the Fe-oxide redox partner';
+  else if (pos.includes('calcite')) substrate_flavor = ' with calcite — late cooling stage';
+
+  // Mass-balance debits — Ca2 (Al,Fe)3 Si3
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.022, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.012, 0);
+  conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.010, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.035, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe > 5 ? conditions.fluid.Fe * 0.006 : 0,
+    note: `epidote ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic Ca-Al-Fe³⁺ sorosilicate, H 6-7, vitreous, {001} perfect`,
+  });
+}
+
 // v112 (2026-05-20): Grossular garnet Ca3Al2(SiO4)3 — cubic Ia-3d
 // Ca-Al endmember of the garnet group. Three settings:
 //   - Rodingite metasomatism (Jeffrey + Italian Alps + Asbestos Hill NL).

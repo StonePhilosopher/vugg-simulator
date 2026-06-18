@@ -319,20 +319,20 @@ function _nuc_leadhillite(sim) {
 }
 
 function _nucleateClass_sulfate(sim) {
-  _nuc_barite(sim);
-  _nuc_celestine(sim);
-  _nuc_jarosite(sim);
-  _nuc_alunite(sim);
-  _nuc_brochantite(sim);
-  _nuc_antlerite(sim);
-  _nuc_anhydrite(sim);
-  _nuc_selenite(sim);
-  _nuc_mirabilite(sim);
-  _nuc_thenardite(sim);
-  _nuc_chalcanthite(sim);
-  _nuc_anglesite(sim);
+  _runNuc(sim, _nuc_barite);
+  _runNuc(sim, _nuc_celestine);
+  _runNuc(sim, _nuc_jarosite);
+  _runNuc(sim, _nuc_alunite);
+  _runNuc(sim, _nuc_brochantite);
+  _runNuc(sim, _nuc_antlerite);
+  _runNuc(sim, _nuc_anhydrite);
+  _runNuc(sim, _nuc_selenite);
+  _runNuc(sim, _nuc_mirabilite);
+  _runNuc(sim, _nuc_thenardite);
+  _runNuc(sim, _nuc_chalcanthite);
+  _runNuc(sim, _nuc_anglesite);
   // v100 Pb-Cu sulfate trio — late-stage Pb-Cu oxidation cycle
-  _nuc_linarite(sim);
-  _nuc_caledonite(sim);
-  _nuc_leadhillite(sim);
+  _runNuc(sim, _nuc_linarite);
+  _runNuc(sim, _nuc_caledonite);
+  _runNuc(sim, _nuc_leadhillite);
 }

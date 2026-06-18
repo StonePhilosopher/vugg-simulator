@@ -2,7 +2,183 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🔬 UPDATE (2026-06-13, latest) — REDOX-GATE OMISSION SWEEP: census DONE (2 real catches), fix HELD on an RNG prerequisite
+> ## 🔵 UPDATE (2026-06-18) — BISBEE AZURITE FIX (SIM 204) + stale-expects §A #10 RESOLVED
+>
+> PROPOSALS-LEDGER §A #10 ("stale expects_species — 3 to diagnose") is **CLOSED**.
+> Diagnosed all three; **only one was real debt**. **azurite/bisbee**: the
+> "Bisbee Blue" never nucleated because `event_bisbee_azurite_peak` did
+> `CO3 += 80` off a CO3 base depleted to ~20 (earlier carbonate draw) → ~100,
+> under azurite's **effectiveCO3 ≥ 120** gate (pH-7 Bjerrum speciation pulls
+> effective below raw). FIX (js/70j, TWO coupled event edits): azurite_peak CO3
+> **floor 260** + pH **7.4** (monsoon CO2-charged limestone dissolution → high DIC
+> + buffered near-neutral, Vink 1986); AND co2_drop deepened **−120→−210** so the
+> higher floor draws back down (260→50→20) and the step-265 low-CO3 phases keep
+> their CO3≤50 windows. Result is **SURGICAL**: whole-fleet seed-42 diff is exactly
+> ONE line — bisbee **azurite 0→4** — zero other drift (dioptase/halite/chrysocolla/
+> malachite/brochantite all unchanged from v203). azurite added to bisbee
+> expects_species. (First pass with floor-only left residual CO3 ~110 at step 265
+> and killed dioptase/halite/1× chrysocolla via their CO3≤50 gates — the co2_drop
+> deepening is what made it clean.) **mirabilite/searles + torbernite/schneeberg
+> were FALSE POSITIVES** — both nucleate then DEHYDRATE (paramorph) to thenardite /
+> metatorbernite (correct geology); the coverage tool already credits
+> `paramorph_origin` so they read Live (azurite was likewise already Live fleet-wide
+> via supergene_oxidation — the flag was the per-(mineral,SCENARIO) bisbee pair).
+> SIM 203→204, bisbee-only rebake.
+>
+> ## 🔦 UPDATE (2026-06-18) — ZEOLITE FLUORESCENCE ENRICHMENT (SIM-NEUTRAL) + a cross-check catch
+>
+> Enriched the `fluorescence` fields of the six Deccan zeolites + apophyllite from
+> the boss's `ZEOLITE_RESEARCH.md` table — but cross-checked every claim against the
+> primary fluorescence DB (fluomin.org + FOMS) first, per the standing "verify
+> disagreements" directive. **The table was the LESS-reliable pass**: its blanket
+> "uranyl/Mn²⁺" across stilbite/heulandite/scolecite/thomsonite is over-generalized
+> (uranyl zeolite fluorescence is real *in kind* but wrongly *distributed*).
+> **THE CATCH: chabazite** — the best-documented fluorescent case of the group
+> (uranyl, bright green SW; Sterling Hill + Paterson) — was MISSED by BOTH passes
+> (table omitted it; my v203 had it non-fluorescent). Corrected attributions:
+> stilbite + thomsonite = ORGANIC-impurity (not uranyl/Mn²⁺); mesolite = uranyl +
+> organic (two-channel); heulandite = activator undetermined / color contradictory
+> (not pinned); scolecite = no record (stays non-fluorescent, my prior pass was
+> right); apophyllite (was null) = multi-activator uranyl/Mn²⁺/Ce³⁺ reference.
+> SIM-NEUTRAL (fluorescence is Library-card-only, not an engine input): seed42_v203
+> baseline BYTE-IDENTICAL after rebuild + gen-js-baseline; only data/minerals.json
+> changed; no SIM bump, no rebake. The app fetches data/minerals.json at runtime so
+> the deployed Library card picks up the enrichment. CI green.
+>
+> ## 🪟 SESSION HANDOFF (2026-06-17) — DECCAN ZEOLITE SUITE COMPLETE (SIM 200→203) + research cross-check
+>
+> Read **`proposals/HANDOFF-ZEOLITE-SUITE-2026-06-17.md`**. Built the full Deccan
+> basalt-amygdule zeolite paragenesis end-to-end — SIX zeolites: thomsonite →
+> scolecite/mesolite → stilbite/heulandite → chabazite (SIM 200-203), all firing
+> 20/20 in deccan, all in expects, coverage Live 137→143. Then cross-checked the
+> boss's `ZEOLITE_RESEARCH.md` (canonical fork) against my six dossiers, web-
+> verified the disagreements, and **de-confabulated a fabricated citation I'd
+> shipped** in v200 ("Fridriksson Bish & Navrotsky 2001 Am.Mineral. 86:448" →
+> actually **Kiseleva et al. 2001**; SIM-neutral fix `74fd595`, baseline byte-
+> identical). The handoff carries the reusable zeolite-engine pattern, the
+> silica-floor-not-ceiling rule, the two calibration judgment calls (deccan Na
+> 40→80, thomsonite spherulite re-nucleation), and the cross-check lessons.
+> NEXT: natrolite/mordenite (candidates), or fluorescence enrichment from the
+> boss's table. HEAD `74fd595`.
+>
+> ## ⬜ UPDATE (2026-06-17) — CHABAZITE SHIPPED (SIM 203) · DECCAN ZEOLITE SUITE COMPLETE
+>
+> **chabazite** added — the LATE, intermediate-Si (Si/Al≈2) amygdule zeolite, the
+> SIXTH and final zeolite of the Deccan suite (thomsonite → scolecite/mesolite →
+> stilbite/heulandite → chabazite). Ca2Al2Si4O12·6H2O; the signature rhombohedral
+> pseudo-cubes + phacolite penetration twins ({0001}). **Cation-FLEXIBLE**: the
+> extra-framework cation runs Ca>Na>K and **K is NOT required** (chabazite-Ca is
+> the amygdule default — the engine gates on a joint Ca+Na+K charge with Ca
+> dominant; Na-dominance shifts habit to herschelite, not failure). LATE perching
+> phase: nucleates on the earlier zeolite lining (wired LAST in the silicate
+> iterator). The minerals.json carries the classic calcite-lookalike discriminator
+> (poor {1011} cleavage + no effervescence + harder + lighter). twin {0001} ✓ PASS.
+> baseline-diff: **1/34 moved (deccan only), +chabazite, zero losses**; fires 20/20
+> (5-12 nodules, added to expects); coverage Live 142→143. SIM 202→203. The Deccan
+> cavity now grows all SIX zeolites end-to-end. Remaining amygdule candidates if
+> ever wanted: analcime, natrolite (Na endmember), mordenite, gmelinite, levyne.
+>
+> ## 👁️ UPDATE (2026-06-17) — THOMSONITE SHIPPED (SIM 202)
+>
+> **thomsonite** added — the EARLIEST + most-aluminous (Si/Al≈1) amygdule zeolite,
+> completing the Deccan early-zeolite suite (thomsonite → scolecite/mesolite →
+> stilbite/heulandite). NaCa2Al5Si5O20·6H2O; the famous "thomsonite eyes" —
+> concentric botryoidal nodules (the Lake Superior gem / green lintonite) are the
+> default habit. **The discriminator is SILICA ACTIVITY, not Na/Ca**: thomsonite
+> (Si/Al≈1) vs the natrolite group (Si/Al≈1.5) is a sharp line, but thomsonite vs
+> mesolite on Na/Ca is not (both Na-Ca) — so a SOFT low-silica preference (boost
+> when Al-rich-relative-to-Si, attenuate when silica-flooded; si_f saturates at the
+> low floor so the preference dominates) over a low floor (120), NOT a hard ceiling
+> (Deccan/Lake Superior are silica-rich yet thomsonite-bearing). Nucleates FIRST on
+> the fresh cavity wall; the later zeolites overgrow it (wired into _nuc_scolecite/
+> _mesolite). One science-grounded tweak: a LOWER re-nucleation σ threshold for its
+> spherulitic eyes (Wise & Tschernich 1978) — took it from 1-2 to 5-11 nodules.
+> twin {110} ✓ PASS. baseline-diff: **1/34 moved (deccan only), +thomsonite, zero
+> losses**; coverage Live 141→142; fires 20/20 (added to expects). SIM 201→202. The
+> Deccan zeolite paragenesis is now FIVE species deep. NEXT: analcime, natrolite
+> (the Na endmember), chabazite.
+>
+> ## 🧵 UPDATE (2026-06-17) — FIBROUS NATROLITE-GROUP ZEOLITES SHIPPED (SIM 201)
+>
+> **scolecite + mesolite** added — the companion pair to v200's stilbite/
+> heulandite, completing the Deccan zeolite paragenesis END-TO-END (the fibrous
+> low-Si Ca-(Na) zeolites that form FIRST: scolecite/mesolite sprays → stilbite/
+> heulandite sheets drape over them). They are the natrolite Na↔Ca coupled-
+> substitution series: **scolecite** the Ca endmember (Na/(Na+Ca)≤0.5, radiating
+> acicular sprays, {100} twin), **mesolite** the ordered Na-Ca intermediate (needs
+> BOTH cations, 0.2≤Na/(Na+Ca)≤0.8, finest hair-like tufts). The **Na/Ca FORK** is
+> the discriminator. Gated on a LOW silica FLOOR (150, not a low-Si ceiling —
+> Deccan is THE scolecite locality despite silica-rich fluid). **Deccan tune:**
+> initial Na 40→80 opened mesolite's mixed-cation window (also unlocked pectolite,
+> a legit basalt-amygdule Na-Ca silicate). All FOUR Deccan zeolites now fire 20/20
+> seeds; scolecite/mesolite added to expects_species. baseline-diff: **1/34 moved
+> (deccan only), +[scolecite, mesolite, pectolite], zero losses**; coverage Live
+> 139→141; twin-check scolecite {100} PASS, mesolite {010} FLAG (expected — Fdd2
+> giant-b defeats the heuristic, real Handbook citation). SIM 200→201. Closes the
+> §G fibrous-zeolite gap. NEXT zeolite candidates: thomsonite, analcime, natrolite
+> (the Na endmember).
+>
+> ## 🪨 UPDATE (2026-06-17) — DECCAN STAGE-II ZEOLITE COUPLE SHIPPED (SIM 200)
+>
+> **stilbite + heulandite** added (the highest-leverage mineral add on the
+> PROPOSALS-LEDGER, §A #14 + §G): two new silicate-class zeolites that BOTH fill
+> the deccan_zeolite Stage-II mineral gap AND retire its narrative over-promise —
+> the step-70 event narrated *"Stilbite + heulandite + calcite blades"* while
+> neither mineral existed (the mvt-silver-deconfab discipline applied to a positive
+> over-promise). They are the stilbite/heulandite DEHYDRATION COUPLE
+> (Ca-stilbite = Ca-heulandite + H₂O, Kiseleva et al. 2001): stilbite the cooler/
+> more-hydrated member (T sweet 60-110°C, peach sheaves), heulandite the warmer
+> dehydration product (higher silica, T sweet 120-180°C, coffin tablets). Both fire
+> 20/20 seeds in deccan (added to expects_species); twin laws ✓ PASS twin-law-check.
+> baseline-diff: **1/34 moved (deccan only), zero losses**; coverage Live 137→139;
+> CI **1931/1931**. SIM 199 → 200. Closes LEDGER §A #14 + the zeolite half of §G.
+> Stoichiometry entries added (kept the DEFERRED list empty). NEXT zeolite candidate:
+> scolecite + mesolite (the fibrous Ca-zeolites; step-70 names them as unmodelled).
+>
+> ## 🔑 UPDATE (2026-06-16) — THE KEYSTONE SHIPPED (SIM 198) · but it did NOT unblock the held ZnS gate
+>
+> Read **`proposals/HANDOFF-KEYSTONE-2026-06-16.md`**. SHIPPED the keystone
+> (`68edacd`): per-(mineral,step) derived nucleation seeds (`_makeNucRng`/`_runNuc`
+> in js/85j) — each mineral's nucleation RNG is now isolated; the isolation property
+> is proven (`tests-js/nuc-seed-isolation.test.ts`). Full-fleet rebake, 1916 tests
+> green.
+>
+> **✅ RESOLVED + SHIPPED v199 (`9887ddd`).** The held sphalerite/wurtzite redox
+> gate (ledger #11) is in. Four probes (nucleation-RNG / competition / growth-jitter
+> all ruled out or partial) → the fluid-pathway trace found the real blocker: a
+> spurious `if (Zn<0.5) return 0` in supersaturation_mottramite — but mottramite is
+> the Cu ENDMEMBER (no Zn). Gating ZnS drained Zn→0 at ~half the seeds, tripping
+> that bug (98→49). Removed it + shipped the gate together: mottramite holds
+> **98→84%**, clean 1/34 rebake, CI 1916/1916. The 3-session blocker was a
+> copy-paste bug in a different mineral, not RNG. (v198 nucleation keystone shipped
+> as infra; the growth keystone was built + reverted — see the handoff.)
+>
+> ## 🫒 UPDATE (2026-06-15) — EPIDOTE + TORMIQ SHIPPED · PROPOSALS-LEDGER built · canary hardened
+>
+> **Master open-work map is now `proposals/PROPOSALS-LEDGER.md` §A** (a verified
+> delivered-vs-promised reconciliation of the whole proposals corpus). The
+> session narrative + ranked next-steps live in
+> **`proposals/HANDOFF-EPIDOTE-LEDGER-CANARY-2026-06-15.md`** — read that for the
+> full bugs-and-holes list. Highlights:
+>
+> **SHIPPED:** epidote (SIM 196, `a3c1cb5`) — first alpine-cleft Fe³⁺ silicate,
+> redox-gated, closes the ledger's #1 mineral orphan; tormiq_alpine_cleft scenario
+> (SIM 197, `5043d57`) — the Pakistan epidote showcase, epidote the star. Plus the
+> clip-bug doc resolved (`c343f71`), the PROPOSALS-LEDGER (`1d4857f`/`cab1e63`), and
+> three vugg-canary fixes (scheduler/dirt-scope/status) with the first real sweep.
+>
+> **TOP OPEN ITEMS (ranked, full detail in the handoff):**
+> 1. ⭐ KEYSTONE — per-mineral derived nucleation seeds (unblocks the held redox gate).
+> 2. Canary heartbeat (self-monitoring) + dirt-scope-by-hash — harden the instrument first.
+> 3. Hot-band Ksp(T) >90°C; thermo ΔH tail (dolomite/siderite/witherite).
+> 4. Build-candidates: quartz arc, weathering-epilogue, **stilbite+heulandite** (fills
+>    the deccan_zeolite Stage-II narrative gap — a de-confab candidate), Gibbs-Thompson.
+> 5. UI/partials: strip filter-rule UI, per-vertex chip-selector, broth-control verbs,
+>    specimen-object B–E, edge-textures 11/17, sonifier musicality.
+> 6. epidote loose ends: tormiq calcite aspirational (tune late CO3); swap the
+>    clinozoisite/titanite/zoisite/adularia/byssolite stand-ins when those land.
+>
+> ## 🔬 UPDATE (2026-06-13) — REDOX-GATE OMISSION SWEEP: census DONE (2 real catches), fix HELD on an RNG prerequisite
 >
 > **Task #59.** The vanadinite catch (v193 — a redox-sensitive species whose
 > engine was cloned without its redox gate) prompted a systematic census.

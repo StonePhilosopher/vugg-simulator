@@ -339,6 +339,24 @@ const MINERAL_ENGINES = {
   pectolite: grow_pectolite,
   wollastonite: grow_wollastonite,
   prehnite: grow_prehnite,
+  // v196 (2026-06-15): epidote — Fe3+ alpine-cleft sorosilicate (Tormiq, Pakistan).
+  epidote: grow_epidote,
+  // v200 (2026-06-17): the Deccan Stage-II zeolite couple. stilbite (cooler,
+  // 28 H2O, peach sheaves) + heulandite (warmer dehydration product, 6 H2O,
+  // coffin tablets). Fills the deccan_zeolite Stage-II narrative gap.
+  stilbite: grow_stilbite,
+  heulandite: grow_heulandite,
+  // v201 (2026-06-17): the fibrous natrolite-group Ca-(Na) zeolites — scolecite
+  // (Ca endmember) + mesolite (ordered Na-Ca intermediate). Form before the
+  // sheet zeolites in the Deccan amygdale paragenesis.
+  scolecite: grow_scolecite,
+  mesolite: grow_mesolite,
+  // v202 (2026-06-17): thomsonite — the earliest, most-aluminous amygdule
+  // zeolite (Si/Al~1); the "thomsonite eyes" of Lake Superior.
+  thomsonite: grow_thomsonite,
+  // v203 (2026-06-17): chabazite — the late, intermediate-Si amygdule zeolite
+  // (Si/Al~2); rhombohedral pseudo-cubes + phacolite penetration twins.
+  chabazite: grow_chabazite,
   // v114 (2026-05-20): Mg-matrix family completing the Jeffrey Mine
   // rodingite assemblage. Three minerals in three different chemistry
   // classes:

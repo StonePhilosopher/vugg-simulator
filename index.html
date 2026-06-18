@@ -2950,6 +2950,7 @@ footer a:hover {
     <button onclick="startScenarioInCreative('sabkha_dolomitization')">🌊 Coorong Cycled Dolomite (Kim 2023) — Coorong lagoon (South Australia).</button>
     <button onclick="startScenarioInCreative('schneeberg')">☢️ Schneeberg Oxidized U-Pegmatite — Erzgebirge (Saxony, Germany). Type locality for torbernite + zeunerite + uranospinite.</button>
     <button onclick="startScenarioInCreative('wittichen')">🌳 Wittichen Five-Element Vein — Schwarzwald (Germany). A hydrocarbon reducing shock grows dendritic native bismuth; arsenides rim the trees.</button>
+    <button onclick="startScenarioInCreative('tormiq_alpine_cleft')">🫒 Tormiq Valley Alpine Cleft — Gilgit-Baltistan (Pakistan). An oxidized Himalayan fissure fluid grows lustrous pistachio-green epidote swords on quartz.</button>
     <button onclick="startScenarioInCreative('colorado_plateau')">🌵 Colorado Plateau Roll-Front — Uravan Mineral Belt (Roc Creek, Montrose Co., CO). Carnotite + tyuyamunite type chemistry.</button>
     <button onclick="startScenarioInCreative('sulphur_bank')">🌋 Sulphur Bank Hg Hot Spring — Clear Lake (Lake County, CA). Active hot-spring mercury-sulfur deposit per White &amp; Roberson 1962.</button>
     <button onclick="startScenarioInCreative('sicily_solfifera')">🟡 Sicily Solfifera Sulfur — Cianciana / Caltanissetta (Agrigento, Italy). Messinian bacterially-mediated sedimentary sulfur.</button>
@@ -3058,6 +3059,7 @@ footer a:hover {
       <option value="sabkha_dolomitization">sabkha_dolomitization</option>
       <option value="schneeberg">schneeberg</option>
       <option value="wittichen">wittichen</option>
+      <option value="tormiq_alpine_cleft">tormiq_alpine_cleft</option>
       <option value="colorado_plateau">colorado_plateau</option>
       <option value="sulphur_bank">sulphur_bank</option>
       <option value="sicily_solfifera">sicily_solfifera</option>
@@ -3902,6 +3904,7 @@ Scenarios:
           <option value="supergene_oxidation">Supergene Oxidation (Tsumeb)</option>
           <option value="tn457_barite_pulses">TN457 Barite Pulses (Cumbria)</option>
           <option value="ultramafic_supergene">Marlborough Ultramafic Supergene</option>
+          <option value="tormiq_alpine_cleft">Tormiq Valley Alpine-Cleft Epidote</option>
           <option value="wittichen">Wittichen Five-Element Vein</option>
           <option value="zoned_dripstone_cave">Zoned Dripstone Cave</option>
         </select>
@@ -16117,7 +16120,293 @@ let timeScale = 5.0;
 //   events to archive/strips/v<N>/ at each rebake; v194 was backfilled
 //   BEFORE this correction so the last confabulated-silver story is
 //   preserved as part of the record.
-const SIM_VERSION = 195;
+//   v196 — Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) (2026-06-15, this
+//        commit). The first ALPINE-CLEFT Fe3+ silicate in the catalog;
+//        retires the longest-deferred orphan in PROPOSALS-LEDGER §G (the
+//        Round-6 metamorphic-silicate gap). Monoclinic P2_1/m sorosilicate,
+//        the Fe3+ endmember of the clinozoisite-epidote series — lustrous
+//        pistachio-green prisms striated ∥b, the world-best Tormiq
+//        (Gilgit-Baltistan, Pakistan) gem swords.
+//
+//        THE DISCRIMINATOR IS REDOX. Epidote requires ferric iron, so the
+//        engine gates on an OXIDIZING fluid (oxideRedoxAvailable O2>=0.5,
+//        the same proxy hematite + vanadinite use) on top of Ca/Al/Fe/Si +
+//        T 200-450 (sweet 250-400) + pH 6.5-9.0. Under reducing conditions
+//        the gate returns 0 — geologically, Fe partitions into magnetite +
+//        actinolite (Fe2+) and clinozoisite forms instead of green epidote
+//        (Holdaway 1972 CMP 37:307; Liou 1973 J.Petrol 14:381; the
+//        Fe3+>=0.5 apfu epidote/clinozoisite boundary is Armbruster et al.
+//        2006 EJM 18:551). sigma scales with oxidation (more O2 -> more Fe3+
+//        -> deeper green). This cleanly separates epidote from its catalog
+//        cousins actinolite (Mg+Fe2+) and the Ca-Al silicates prehnite/
+//        grossular (no redox gate).
+//
+//        Habit dispatch: striated_prismatic (default, ∥[010] + {001}
+//        cleavage) | gem_prismatic (excess>1.3, doubly-terminated Tormiq
+//        sword) | divergent_spray (on byssolite/actinolite substrate) |
+//        granular (excess<0.3, replacement). Substrate priority: quartz
+//        (cleft lining) > byssolite/actinolite (sprays) > adularia/feldspar
+//        > magnetite (Fe-oxide redox partner) > calcite > wall.
+//
+//        8-file add (supersat 39 + grow 59 + nucleation 89 + MINERAL_ENGINES
+//        65 + minerals.json + structural.json epidote cell for twin-law-
+//        check + this version block + tests-js/epidote.test.ts). Twin {100}
+//        lamellar p=0.12 (Handbook 'common'). DESIGNED for the
+//        tormiq_alpine_cleft scenario shipping next (v197); per the
+//        add-mineral default it fires at seed-42 wherever an oxidized
+//        Ca-Al-Fe-Si fluid hits the window — calibration drift documented
+//        in the seed42_v196 regen + commit message. Coverage 171 -> 172.
+//   v197 — tormiq_alpine_cleft scenario (2026-06-15, this commit) — the
+//        anchor for epidote (v196). Tormiq Valley, Haramosh Mts.,
+//        Gilgit-Baltistan, PAKISTAN: the world's premier alpine-cleft
+//        epidote locality (Handbook of Mineralogy names it type-quality,
+//        rivaling Knappenwand). An amphibolite-hosted Himalayan fissure
+//        (Main Karakoram Thrust) filled by a low-salinity, OXIDIZED,
+//        meteoric-metamorphic fluid — the oxidized character keeps iron
+//        ferric so the cleft grows green Fe3+ epidote, not clinozoisite.
+//
+//        Boss-requested ("an Afghanistan/Pakistan location scenario to
+//        test" epidote). Explicitly NOT the region's pegmatite type (no
+//        tourmaline/beryl) — the metamorphic-fissure Ca-Al-Fe3+ assemblage.
+//
+//        6-stage event paragenesis (js/70v-tormiq.ts): quartz lining (420C)
+//        -> Ti-Fe oxides (380C) -> EPIDOTE main stage (350->290C, Fe3+
+//        pulse, strongly oxidizing) -> byssolite/actinolite sprays (260C)
+//        -> adularia/feldspar (230C) -> late calcite (<200C). The cooling
+//        sweep is owned by the event handlers (chunky), carrying the fluid
+//        through epidote's 250-400 sweet spot for most of the run. Titanite/
+//        clinozoisite/zoisite/adularia/byssolite not yet in catalog —
+//        magnetite/feldspar/actinolite stand in.
+//
+//        Substitutes broth: Ca 600 Al 12 Fe 40 SiO2 320 Mg 40 K 120 O2 1.5
+//        pH 7 salinity 3, basalt(amphibolite proxy) wall, pocket cleft,
+//        shape_seed 1990. expects_species [epidote quartz actinolite
+//        feldspar calcite] is first-pass aspirational; seed-42 firing +
+//        any tune-scenario follow-ups documented in the commit message.
+//        Additive scenario — zero drift to the other 33. Scenarios 33->34.
+//   v198 — THE KEYSTONE: per-(mineral, step) derived nucleation seeds
+//        (2026-06-16, PROPOSAL-PER-MINERAL-NUC-SEEDS.md). Closes the
+//        structural bottleneck the redox-gate census (b81cf7d) hit: every
+//        nucleation draw used to thread through ONE continuous shared `rng`
+//        for the whole run, so any change in a mineral's draw-count re-phased
+//        every later (mineral, step) pair — adding the sphalerite/wurtzite
+//        redox gate displaced mottramite 96->47% though they share no ion
+//        (pure RNG-sequence drift; chemistry can't fix an RNG displacement).
+//
+//        FIX: each _nuc_<mineral> now nucleates from its OWN derived stream,
+//        seeded by _makeNucRng(sharedState, fn.name, step) (js/85j) and routed
+//        through _runNuc (the 13 _nucleateClass_* iterators call it for all 156
+//        sites). Mirrors the v181 _makeThermalRng decoupling one level finer:
+//        run-seed lineage (this._nucSharedState = rng.state at construction) +
+//        FNV-fold of the mineral key + step + the 15th-catch SCRAMBLE (one
+//        throwaway draw — bare folds leave nearby seeds correlated). The swap
+//        wraps the WHOLE _nuc_ call, so both the substrate-pick draws AND the
+//        cell/ring/twin/fill-dampener draws inside nucleate() come from the
+//        mineral's private stream; restoring leaves the shared stream untouched
+//        by nucleation (growth jitter decouples too, for free).
+//
+//        DELIBERATE FULL REBAKE — there is no byte-identical path; every
+//        nucleation draw changes source, so every scenario's seed-42 signature
+//        + every baseline re-realizes ONCE. Validated by ASSEMBLAGE
+//        PLAUSIBILITY (tools/nuc-seed-isolation-probe.mjs, OFF-vs-ON N=40:
+//        roster holds, no scenario loses an expects_species), not byte-identity
+//        — exactly how v181 was validated. The keystone PROPERTY (perturbing
+//        one mineral changes nothing else; OFF it does) is pinned in
+//        tests-js/nuc-seed-isolation.test.ts.
+//
+//        Flag NUC_DERIVED_SEEDS (default ON) reverts to the legacy single
+//        stream for the A/B probe only — NOT a player control. (v198 CLAIMED to
+//        unblock the held ZnS redox gate; it did NOT — see v199, the real fix
+//        was a mottramite gate bug, not RNG.) SIM 197 -> 198.
+//   v199 — THE HELD ZnS REDOX GATE, FINALLY SHIPPED + the mottramite Zn-gate
+//        bug it was blocked on (2026-06-16). Two coupled changes:
+//        (1) BUG FIX — supersaturation_mottramite (38-supersat-phosphate) had a
+//        spurious `if (Zn < 0.5) return 0` hard gate. mottramite is PbCu(VO4)(OH),
+//        the Cu ENDMEMBER of the mottramite-descloizite series — it contains NO
+//        Zn. The gate (a descloizite-template copy) blocked mottramite precisely
+//        when the fluid was purest-Cu (Zn->0, cu_fraction->1.0), i.e. when it
+//        should MOST form. Removed; the cu_fraction>=0.5 line remains as the
+//        correct series discriminator (Zn=0 -> cu_fraction=1.0, Cu-dominant ✓).
+//        (2) THE GATE — sulfideRedoxAnoxic(1.5) added to sphalerite + wurtzite
+//        (the last siblings of galena's v13 O2-gate omission; census b81cf7d).
+//        WHY COUPLED: the gate was HELD for two sessions because adding it
+//        dropped mottramite 98->49%. The held-gate arc proved (three probes) it
+//        was NOT nucleation-RNG (v198 keystone), NOT graduated competition
+//        (toggle identical), and only partly growth-jitter (a reverted growth
+//        keystone got 60->43). The fluid-pathway trace found the truth: gating
+//        oxidized-zone sphalerite redirects Zn into the correct sinks
+//        (smithsonite/aurichalcite), draining it to 0 at ~half the seeds, which
+//        tripped the spurious Zn-gate. Fix (1) removes that coupling; with it,
+//        the gate drops mottramite only 98->84% (mild, real — one Zn sink fewer).
+//        FULL REBAKE: mottramite can now fire in pure-Cu fluids + ZnS excluded
+//        from oxidizing zones; baselines re-realize where those bite. SIM 198 ->
+//        199. Closes LEDGER §A #11.
+//   v200 — THE DECCAN STAGE-II ZEOLITE COUPLE: stilbite + heulandite
+//        (2026-06-17). Two new silicate-class minerals that fill the
+//        deccan_zeolite Stage-II NARRATIVE GAP — the step-70 event narrated
+//        "Stilbite + heulandite + calcite blades" while neither mineral
+//        existed in the catalog (PROPOSALS-LEDGER §A #14 + §G; the highest-
+//        leverage mineral add on that list because it ALSO retires a
+//        confabulation, the mvt-silver-deconfab discipline applied to a
+//        positive over-promise). The step-70 event text is trued in the same
+//        ship.
+//
+//        THE SCIENCE — they are the stilbite/heulandite DEHYDRATION COUPLE:
+//        Ca-stilbite = Ca-heulandite + H2O (Kiseleva, Navrotsky, Belitsky &
+//        Fursenko 2001, Am. Mineral. 86:448, measured by calorimetry). So:
+//          • stilbite — NaCa4Si27Al9O72·28H2O, the COOLER, more-hydrated
+//            member; moderate silica; T sweet 60-110C; sheaf/bowtie/{001}
+//            cruciform habit (the wheatsheaf); Deccan peach.
+//          • heulandite — (Ca,Na)Al2Si7O18·6H2O, the WARMER dehydration
+//            product; HIGHER silica activity (SiO2 gate 400 vs stilbite 250);
+//            T sweet 120-180C; coffin-shaped {010} tablets.
+//        DISCRIMINATOR = two axes: temperature window + silica activity. Both
+//        Ca-dominant (engine uses Ca+Na as the exchangeable budget so the -Na
+//        varieties can fire), alkaline (pH 7.0-10.5), and REDOX-INSENSITIVE
+//        (framework silicates, no redox-active ion -> no redox gate, like
+//        prehnite). Si/Al>=4 clinoptilolite endmember intentionally NOT
+//        modelled: that boundary is COMPOSITIONAL (Coombs et al. 1997
+//        Can.Mineral. 35:1571), not a fluid gate, and the sim's SiO2 ppm is
+//        dissolved silica not framework Si/Al.
+//
+//        Engines: supersaturation_{stilbite,heulandite} (js/39) +
+//        grow_{stilbite,heulandite} (js/59) + _nuc_{stilbite,heulandite}
+//        (js/89, RNG-cascade-guarded, wired into _nucleateClass_silicate via
+//        _runNuc) + MINERAL_GATES_{stilbite,heulandite} (registry js/42) +
+//        MINERAL_ENGINES (js/65) + minerals.json specs + structural.json
+//        cells (both twin laws ✓ PASS twin-law-check: stilbite {001}
+//        cruciform p=0.35, heulandite {100} p=0.05).
+//
+//        Substrate priority (the amygdale paragenesis): the chalcedony/quartz
+//        SILICA LINING is the primary nucleation surface (Pune/turnstone:
+//        stilbite "crystallized on a microcrystalline silicate layer already
+//        deposited on the basalt host"), then mutual zeolite intergrowth, then
+//        calcite/apophyllite, then bare wall. CALIBRATION DRIFT: both fire in
+//        deccan_zeolite (the anchor) — heulandite in the Stage-II/III warm
+//        window, stilbite in the cool tail; full-fleet rebake re-realizes any
+//        alkaline-Ca-Al-silica-rich scenario where the gates also bite (see
+//        baseline-diff). SIM 199 -> 200. Coverage +2 live.
+//   v201 — THE FIBROUS NATROLITE-GROUP ZEOLITES: scolecite + mesolite
+//        (2026-06-17). The companion pair to v200's stilbite/heulandite — the
+//        LOW-Si fibrous Ca-(Na) zeolites that form EARLIER in the Deccan
+//        amygdule sequence (...natrolite -> analcime -> scolecite/mesolite ->
+//        stilbite -> heulandite -> apophyllite). Closes the §G fibrous-zeolite
+//        gap; the v200 step-70 text named them as honestly-unmodelled, now
+//        trued (they form first; the sheet zeolites drape over their sprays).
+//
+//        THE SCIENCE — the natrolite group is a Na<->Ca COUPLED-SUBSTITUTION
+//        series (Na+ + 1/2-vacancy <-> Ca2+ + 1/2 H2O, which is why the Ca
+//        member carries extra channel water), all built from the same low-Si
+//        (Si/Al~1.5) "natrolite chain":
+//          * scolecite — CaAl2Si3O10·3H2O, monoclinic Cc, the Ca ENDMEMBER;
+//            radiating acicular sprays/puffballs + square prisms; {100} twin
+//            (axis [001]) near-ubiquitous. Deccan (Poona/Nashik) premier.
+//          * mesolite — Na2Ca2Al6Si9O30·8H2O, orthorhombic Fdd2 with a GIANT
+//            b-axis (~56.6A = ordered 1-natrolite:2-scolecite layer stack); the
+//            ordered Na-Ca intermediate; finest hair-like fibrous tufts.
+//        DISCRIMINATOR = the Na/Ca FORK: scolecite fires Ca-dominant
+//        (Na/(Na+Ca)<=0.5); mesolite fires only in the MIXED band
+//        (0.2<=Na/(Na+Ca)<=0.8, needs BOTH cations — sigma uses the geometric
+//        mean of the Na+Ca factors); natrolite (Na endmember) is not wired.
+//        Gated on a LOW silica FLOOR (150, vs stilbite's 250) NOT a low-Si
+//        ceiling — Deccan is THE scolecite locality despite its silica-rich
+//        fluid (fluid SiO2 ppm != framework Si/Al; the group coexists with the
+//        sheet zeolites, just earlier). Alkaline, redox-insensitive (no gate).
+//
+//        Engines: supersaturation_{scolecite,mesolite} (js/39) +
+//        grow_{scolecite,mesolite} (js/59) + _nuc_{scolecite,mesolite} (js/89,
+//        RNG-cascade-guarded, wired into _nucleateClass_silicate BEFORE the
+//        sheet zeolites) + MINERAL_GATES (js/42) + MINERAL_ENGINES (js/65) +
+//        MINERAL_STOICHIOMETRY (js/19: scolecite {Ca1Al2Si3}, mesolite
+//        {Na2Ca2Al6Si9}) + minerals.json + structural.json cells. twin-law-
+//        check: scolecite {100} PASS; mesolite {010} FLAG (expected — the Fdd2
+//        giant-b cell defeats the simple-cell heuristic; real Handbook
+//        citation, ships per the citation-conservatism rule).
+//
+//        DECCAN TUNE: initial Na 40 -> 80. At Na=40 the fluid sat at
+//        Na/(Na+Ca)~0.15 (pure-scolecite regime) and mesolite never cleared its
+//        mixed-cation gate; 80 opens the window (Na-Ca amygdule fluid is
+//        geologically correct — mesolite is the Poona/Pashan classic). The bump
+//        also unlocked pectolite (NaCa2Si3O8(OH), a real basalt-amygdule Na-Ca
+//        silicate — legitimate). CALIBRATION: deccan now fires all four zeolites
+//        at seed 42 (scolecite 6, mesolite 5, stilbite 5, heulandite 5);
+//        full-fleet rebake re-realizes where the Na bump + new engines bite (see
+//        baseline-diff). SIM 200 -> 201. Coverage +2 live (scolecite, mesolite).
+//   v202 — THOMSONITE: the earliest, most-aluminous amygdule zeolite
+//        (2026-06-17). NaCa2Al5Si5O20·6H2O, Si/Al~1 — the LOWEST silica of the
+//        common amygdule zeolites. Completes the Deccan early-zeolite suite:
+//        thomsonite (v202) -> scolecite/mesolite (v201) -> stilbite/heulandite
+//        (v200). First in the cavity sequence (smectite -> calcite ->
+//        THOMSONITE -> natrolite -> analcime -> scolecite/mesolite -> sheets);
+//        the later zeolites nucleate ON it (wired into _nuc_scolecite/_mesolite).
+//
+//        THE DISCRIMINATOR is SILICA ACTIVITY, not Na/Ca. Thomsonite (Si/Al~1)
+//        vs the natrolite group (Si/Al~1.5) is a sharp line; thomsonite vs
+//        mesolite on Na/Ca is NOT (both are Na-Ca, thomsonite just more-Ca +
+//        lower-Si). So the engine gives thomsonite a SOFT low-silica preference
+//        (sigma boosted when Al-rich-relative-to-Si, mildly attenuated when
+//        silica-flooded) over a low floor (120) — NOT a hard low-Si ceiling
+//        (Deccan + Lake Superior are silica-rich yet thomsonite-bearing; fluid
+//        SiO2 ppm != framework Si/Al). Ca-dominant + Na-essential-minor (NaCa2,
+//        blocks Na/(Na+Ca)>0.6), high Al demand, alkaline, redox-insensitive.
+//
+//        Habits — the famous "thomsonite eyes": eye (default, concentric
+//        spherical botryoidal nodule, the Lake Superior gem / green lintonite) /
+//        spray (bladed rosettes) / acicular / columnar. Engines:
+//        supersaturation_thomsonite (js/39) + grow_thomsonite (js/59) +
+//        _nuc_thomsonite (js/89, RNG-guarded, wired FIRST in the silicate
+//        iterator) + MINERAL_GATES (js/42) + MINERAL_ENGINES (js/65) +
+//        MINERAL_STOICHIOMETRY (js/19: {Na1Ca2Al5Si5}) + minerals.json +
+//        structural.json (Pncn ordered; Pbmn disordered noted). twin-law-check:
+//        {110} PASS (pseudo-tetragonal a~=b). SIM 201 -> 202. Coverage +1 live.
+//   v203 — CHABAZITE: the late, intermediate-Si amygdule zeolite (2026-06-17).
+//        Ca2Al2Si4O12·6H2O, Si/Al~2 — intermediate between thomsonite/natrolite-
+//        group (~1-1.5) and the sheet zeolites (~2.7-3.5). The LAST amygdule
+//        zeolite (...stilbite -> heulandite -> apophyllite -> CHABAZITE ->
+//        mordenite -> late calcite). Completes the Deccan zeolite suite begun in
+//        v200 (six zeolites now: thomsonite, scolecite, mesolite, stilbite,
+//        heulandite, chabazite).
+//
+//        CATION-FLEXIBLE — the discriminator from the Ca-zeolites is NOT a
+//        cation fork but the late/cool slot + intermediate silica + the trigonal
+//        rhombohedral habit. The extra-framework cation runs Ca > Na > K and K is
+//        NOT required (Passaglia & Sheppard 2001); chabazite-Ca is the basalt-
+//        amygdule default, so the engine gates on a JOINT (Ca+Na+K) charge
+//        budget with Ca dominant -> chabazite-Ca. High Na shifts HABIT to
+//        herschelite (tabular), not species failure. Confirmed firing in the
+//        Ca-dominant Deccan fluid (Ca 180-310, Na 80, K 2 — "a textbook
+//        chabazite-Ca amygdule fluid").
+//
+//        Habits: rhomb (default — the rhombohedral pseudo-cube that mimics a
+//        cube, the calcite-lookalike) / phacolite (penetration twins, lens) /
+//        herschelite (Na-dominant tabular) / botryoidal. Engines:
+//        supersaturation_chabazite (js/39) + grow_chabazite (js/59) +
+//        _nuc_chabazite (js/89, RNG-guarded, wired LAST — late perching phase,
+//        nucleates on the earlier zeolite lining) + MINERAL_GATES (js/42) +
+//        MINERAL_ENGINES (js/65) + MINERAL_STOICHIOMETRY (js/19: {Ca1Al2Si4}) +
+//        minerals.json (incl. the calcite field-discriminator: poor {1011}
+//        cleavage + no effervescence + harder + lighter) + structural.json
+//        (R-3m hexagonal a13.83 c15.02). twin-law-check: {0001} PASS (basal,
+//        the phacolite penetration twin). SIM 202 -> 203. Coverage +1 live.
+//   v204 — BISBEE AZURITE FIX — the "Bisbee Blue" finally nucleates (2026-06-18).
+//        PROPOSALS-LEDGER §A #10 stale-expects diagnosis. Of the 3 flagged stale
+//        (mineral,scenario) pairs, TWO were FALSE POSITIVES: mirabilite/searles_lake
+//        and torbernite/schneeberg both nucleate then DEHYDRATE (paramorph) to
+//        thenardite / metatorbernite respectively — correct geology, and the
+//        coverage tool already credits paramorph_origin (they read Live). Only
+//        azurite/bisbee was a real miss: event_bisbee_azurite_peak did `CO3 += 80`
+//        off a CO3 base depleted to ~20 (earlier carbonate draw) → landed ~100,
+//        under azurite's effectiveCO3 >= 120 gate (and pH-7 Bjerrum speciation
+//        pulls effective BELOW raw). Flagged "azurite 0/8" debt at v186. FIX: two
+//        coupled event edits — (1) azurite_peak sets a CO3 FLOOR (260) + pH 7.4
+//        (the monsoon's CO2-charged rainwater aggressively dissolving Escabrosa
+//        limestone drives high DIC + a near-neutral-mild-alkaline buffered pocket,
+//        Vink 1986); (2) co2_drop deepened -120 -> -210 so the higher floor draws
+//        back down (260 -> 50 -> 20) and the step-265 low-CO3 phases keep their
+//        CO3<=50 windows (floor-only first pass had killed dioptase/halite). azurite
+//        now fires (σ peak ~2.3); whole-fleet seed-42 diff = EXACTLY one line,
+//        bisbee azurite 0->4, zero other drift. SIM 203 -> 204.
+const SIM_VERSION = 204;
 
 // ── 18-constants.js ──
 
@@ -16416,6 +16705,13 @@ const MINERAL_STOICHIOMETRY = {
     vesuvianite: { Ca: 10, Mg: 1, Fe: 1, Al: 4, SiO2: 9 }, // Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4 — Bernardini 1981 cyprine host
     wollastonite: { Ca: 1, SiO2: 1 }, // CaSiO3
     prehnite: { Ca: 2, Al: 2, SiO2: 3 }, // Ca2Al2Si3O10(OH)2 — zeolite-facies sorosilicate (Liou 1971)
+    epidote: { Ca: 2, Al: 2, Fe: 1, SiO2: 3 }, // Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — Fe3+ endmember (2 Al + 1 Fe at M-sites), alpine-cleft (v196)
+    stilbite: { Na: 1, Ca: 4, Al: 9, SiO2: 27 }, // NaCa4Si27Al9O72·28H2O — Deccan Stage-II zeolite, cooler member (v200)
+    heulandite: { Ca: 1, Al: 2, SiO2: 7 }, // (Ca,Na)Al2Si7O18·6H2O — Deccan Stage-II zeolite, warmer dehydration product (v200)
+    scolecite: { Ca: 1, Al: 2, SiO2: 3 }, // CaAl2Si3O10·3H2O — fibrous natrolite-group, Ca endmember (v201)
+    mesolite: { Na: 2, Ca: 2, Al: 6, SiO2: 9 }, // Na2Ca2Al6Si9O30·8H2O — fibrous natrolite-group, ordered Na-Ca intermediate (v201)
+    thomsonite: { Na: 1, Ca: 2, Al: 5, SiO2: 5 }, // NaCa2Al5Si5O20·6H2O — earliest, most-aluminous amygdule zeolite, Si/Al~1 (v202)
+    chabazite: { Ca: 1, Al: 2, SiO2: 4 }, // Ca2Al2Si4O12·6H2O (per-Ca) — late intermediate-Si amygdule zeolite, Si/Al~2 (v203)
     datolite: { Ca: 1, B: 1, SiO2: 1 }, // CaB(SiO4)(OH) — terminal-stage cabinet aesthetic
     tremolite: { Ca: 2, Mg: 5, SiO2: 8 }, // Ca2Mg5Si8O22(OH)2 — Mg-end calcic amphibole
     actinolite: { Ca: 2, Mg: 4, Fe: 1, SiO2: 8 }, // Ca2(Mg,Fe)5Si8O22(OH)2 — Mg:Fe mid-range 4:1
@@ -26104,10 +26400,17 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (!phosphateRedoxAvailable(this.fluid, g.O2_min))
             return 0;
-        if (this.fluid.Zn < g.fluid_min.Zn)
-            return 0;
+        // NOTE (2026-06-16): NO hard Zn-minimum gate. mottramite is PbCu(VO4)(OH) —
+        // the Cu ENDMEMBER of the mottramite–descloizite series; it contains no Zn.
+        // The old `if (Zn < 0.5) return 0` was spurious (a descloizite-template
+        // copy): it blocked mottramite precisely when the fluid was purest-Cu
+        // (Zn→0, cu_fraction→1.0), which is when mottramite should MOST form. It
+        // also coupled mottramite to any Zn-consumer — gating oxidized-zone
+        // sphalerite drained Zn to 0 at ~half the seeds and falsely killed
+        // mottramite (the ZnS-redox-gate held-gate finding, ledger #11). The
+        // cu_fraction discriminator below is the correct series gate.
         const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
-        const cu_fraction = this.fluid.Cu / cu_zn_total;
+        const cu_fraction = cu_zn_total > 0 ? this.fluid.Cu / cu_zn_total : 1.0;
         if (cu_fraction < 0.5)
             return 0;
         const pb_f = Math.min(this.fluid.Pb / 80.0, 2.5);
@@ -26826,6 +27129,125 @@ const MINERAL_GATES_datolite = {
     surface_energy: 'medium',
     _sources: ['datolite engine v110+', 'Hawthorne Burns Grice 1996', 'Bornhorst 2017'],
     _notes: 'CaB(SiO4)(OH) — Lake Superior basalt amygdale + Jeffrey rodingite. Gemmy colorless.',
+};
+const MINERAL_GATES_epidote = {
+    sigma_crit: 1.0,
+    T_min: 200, T_max: 450, T_optimal: 320,
+    fluid_min: { Ca: 80, Al: 4, Fe: 5, SiO2: 100 },
+    pH_min: 6.5, pH_max: 9.0,
+    O2_min: 0.5,
+    surface_energy: 'medium',
+    _sources: ['epidote engine v196', 'Anthony et al. Handbook of Mineralogy 2001', 'Armbruster et al. 2006 EJM 18:551', 'Holdaway 1972 CMP 37:307', 'Liou 1973 J.Petrol 14:381'],
+    _notes: 'Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) sorosilicate, monoclinic P2_1/m. Fe3+ endmember of clinozoisite-epidote series — needs OXIDIZED fluid (near HM buffer) for the pistachio-green Fe3+; reducing sends Fe to magnetite/actinolite (Fe2+). Al-rich Ca-silicate, alpine-cleft Tormiq/Knappenwand. The O2_min gate is the discriminator. Twin {100} lamellar.',
+};
+// v200 (2026-06-17): the Deccan Stage-II zeolite pair. stilbite + heulandite
+// are the stilbite/heulandite dehydration couple (Kiseleva, Navrotsky,
+// Belitsky & Fursenko 2001, Am.Mineral. 86:448: Ca-stilbite = Ca-heulandite + H2O).
+// Stilbite is the COOLER, more-hydrated member (28 H2O, moderate silica);
+// heulandite is the WARMER dehydration product (6 H2O, higher silica
+// activity). Both: Ca-dominant exchangeable cation, alkaline basalt-buffered
+// fluid, low-T zeolite facies, redox-insensitive (no redox-active ion → no
+// redox gate, like prehnite). The T-window + silica-activity split is the
+// discriminator. fluid_min.Ca is the essential-cation gate; the supersat
+// uses (Ca+Na) as the exchangeable budget so stilbite-Na can still fire in
+// Na-dominant brines (the Deccan endmember is overwhelmingly the -Ca form).
+const MINERAL_GATES_stilbite = {
+    sigma_crit: 1.0,
+    T_min: 40, T_max: 150, T_optimal: 90,
+    fluid_min: { Ca: 60, Al: 4, SiO2: 250 },
+    pH_min: 7.0, pH_max: 10.5,
+    surface_energy: 'low',
+    _sources: ['stilbite engine v200', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Kiseleva Navrotsky Belitsky & Fursenko 2001 Am.Mineral. 86:448', 'Ottens et al. 2019 (Deccan paragenesis)'],
+    _notes: 'Stilbite-Ca NaCa4(Si27Al9)O72·28H2O — monoclinic C2/m. The cooler, more-hydrated member of the stilbite/heulandite couple; dehydrates to heulandite as T rises. Deccan amygdale Stage-II peach sheaves/bowties (twinned {001} cruciform). Moderate silica (lower-Si than heulandite). Redox-insensitive framework silicate.',
+};
+const MINERAL_GATES_heulandite = {
+    sigma_crit: 1.0,
+    T_min: 95, T_max: 210, T_optimal: 150,
+    fluid_min: { Ca: 60, Al: 4, SiO2: 400 },
+    pH_min: 7.0, pH_max: 10.5,
+    surface_energy: 'low',
+    _sources: ['heulandite engine v200', 'Coombs et al. 1997 Can.Mineral. 35:1571 (Si/Al=4.0 boundary)', 'Kiseleva Navrotsky Belitsky & Fursenko 2001 Am.Mineral. 86:448', 'Anthony et al. Handbook of Mineralogy 2001'],
+    _notes: 'Heulandite-Ca (Ca,Na)Al2Si7O18·6H2O — monoclinic C2/m. The warmer, dehydrated member (the dehydration product of stilbite). Higher silica activity than stilbite; Si/Al<4 (Si/Al>=4 is clinoptilolite, not wired — the boundary is compositional per Coombs 1997, not modeled as a hard fluid gate because the sim SiO2 ppm is dissolved silica, not framework Si/Al). Coffin-shaped tabular {010}. Twin {100}.',
+};
+// v201 (2026-06-17): the FIBROUS natrolite-group zeolites — scolecite + mesolite.
+// They form EARLIER in the Deccan amygdale paragenesis than the sheet zeolites
+// (sequence: ...natrolite -> analcime -> scolecite/mesolite -> stilbite ->
+// heulandite -> apophyllite). The natrolite group is LOW-Si (Si/Al~1.5), so in
+// nature it forms at lower silica activity than stilbite/heulandite — BUT the
+// sim's SiO2 ppm is dissolved silica, not framework Si/Al, and Deccan (a silica-
+// rich fluid) is THE world locality for scolecite, so the group is gated on a
+// LOW silica FLOOR (150, vs stilbite's 250), NOT a low-Si ceiling. The
+// discriminator within the group is the Na/Ca FORK (the Na<->Ca coupled
+// substitution): scolecite = Ca endmember (Na/(Na+Ca)<=0.5), mesolite = the
+// ordered Na-Ca intermediate (needs BOTH Na and Ca, 0.2<=Na/(Na+Ca)<=0.8;
+// natrolite, the Na endmember, is not wired). Both alkaline + redox-insensitive
+// (no redox gate). Refs: Anthony et al. Handbook of Mineralogy (scolecite +
+// mesolite sheets); Alberti Pongiluppi & Vezzalini 1982 N.Jb.Min.Abh. 143:231
+// (natrolite/mesolite/scolecite crystal chemistry); Coombs et al. 1997.
+const MINERAL_GATES_scolecite = {
+    sigma_crit: 1.0,
+    T_min: 40, T_max: 150, T_optimal: 95,
+    fluid_min: { Ca: 60, Al: 4, SiO2: 150 },
+    pH_min: 7.0, pH_max: 10.5,
+    surface_energy: 'low',
+    _sources: ['scolecite engine v201', 'Anthony et al. Handbook of Mineralogy', 'Alberti Pongiluppi & Vezzalini 1982 N.Jb.Min.Abh. 143:231', 'Smith & Walls 1971 Mineral.Mag. 38:72'],
+    _notes: 'CaAl2Si3O10·3H2O — monoclinic Cc, the Ca endmember of the fibrous natrolite group. Radiating acicular sprays/puffballs + square prisms. Twin {100} (axis [001]) near-ubiquitous. Deccan (Poona/Nashik) is the premier locality. Na/(Na+Ca)<=0.5 fork suppresses it in Na-rich (mesolite/natrolite) fluid.',
+};
+const MINERAL_GATES_mesolite = {
+    sigma_crit: 1.0,
+    T_min: 40, T_max: 140, T_optimal: 90,
+    fluid_min: { Ca: 60, Na: 40, Al: 4, SiO2: 150 },
+    pH_min: 7.0, pH_max: 10.5,
+    surface_energy: 'low',
+    _sources: ['mesolite engine v201', 'Anthony et al. Handbook of Mineralogy', 'Artioli Smith & Pluth 1986 Acta Cryst. C42:937', 'Alberti Pongiluppi & Vezzalini 1982'],
+    _notes: 'Na2Ca2Al6Si9O30·8H2O — orthorhombic Fdd2 with a GIANT b-axis (~56.6 A, the ordered 1-natrolite:2-scolecite layer stack). The ordered Na-Ca intermediate — needs BOTH Na and Ca (0.2<=Na/(Na+Ca)<=0.8). Finest hair-like/cottony fibrous tufts. Twin {010}/{100} (secondary vs scolecite). The mixed-cation gate is the discriminator from scolecite (Ca-only) + natrolite (Na-only).',
+};
+// v202 (2026-06-17): Thomsonite — the EARLIEST, most-aluminous amygdule zeolite.
+// NaCa2Al5Si5O20·6H2O, Si/Al~1 (the LOWEST silica of the common amygdule
+// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). First zeolite in
+// the Deccan cavity sequence (smectite -> calcite -> THOMSONITE -> natrolite ->
+// analcime -> scolecite/mesolite -> sheets). THE DISCRIMINATOR is SILICA
+// ACTIVITY, not Na/Ca: thomsonite is favored at LOW silica (high Al relative to
+// Si); the natrolite-group Na/Ca fork does NOT cleanly separate it from mesolite
+// (both are Na-Ca; thomsonite is just more-Ca + lower-Si). So the engine gives
+// thomsonite a SOFT low-silica preference (boost when Al-rich-relative-to-Si,
+// mild attenuation when silica-flooded) over a low floor — NOT a hard low-Si
+// ceiling (Deccan + Lake Superior are silica-rich yet thomsonite-bearing; the
+// fluid SiO2 ppm is dissolved silica, not framework Si/Al). Ca-dominant, Na
+// essential-minor (NaCa2), alkaline, redox-insensitive. Refs: Anthony et al.
+// Handbook of Mineralogy (thomsonite-Ca); Wise & Tschernich 1978 Can.Mineral.
+// 16:487 (habits); Coombs et al. 1997; Gatta et al. 2010 Am.Mineral. 95:495.
+const MINERAL_GATES_thomsonite = {
+    sigma_crit: 1.0,
+    T_min: 40, T_max: 150, T_optimal: 90,
+    fluid_min: { Ca: 60, Na: 20, Al: 4, SiO2: 120 },
+    pH_min: 7.0, pH_max: 10.5,
+    surface_energy: 'low',
+    _sources: ['thomsonite engine v202', 'Anthony et al. Handbook of Mineralogy (thomsonite-Ca)', 'Wise & Tschernich 1978 Can.Mineral. 16:487', 'Coombs et al. 1997 Can.Mineral. 35:1571'],
+    _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. The most-aluminous (Si/Al~1) + earliest amygdule zeolite. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
+};
+// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// Ca2Al2Si4O12·6H2O (chabazite-Ca), Si/Al~2 — intermediate between the fibrous
+// group/thomsonite (~1-1.5) and the sheet zeolites stilbite/heulandite
+// (~2.7-3.5). A LATE perching phase in the cavity sequence (...stilbite ->
+// heulandite -> apophyllite -> CHABAZITE -> mordenite -> late calcite). Cation-
+// FLEXIBLE: the extra-framework cation runs Ca > Na > K in frequency, and K is
+// NOT required (chabazite-Ca is the basalt-amygdule default; K-dominance is a
+// rare special case). So the engine gates on a JOINT (Ca+Na+K) charge budget
+// with Ca dominant -> chabazite-Ca; high Na shifts HABIT toward herschelite/
+// phacolite, not species failure. Famous for the rhombohedral pseudo-cube (the
+// near-90 rhombohedron that mimics a cube) + phacolite penetration twins
+// ({0001}). Alkaline, redox-insensitive. Refs: Passaglia & Sheppard 2001 RiMG
+// 45:69 (crystal chemistry, Ca-DEC, R=0.67); Coombs et al. 1997 (chabazite-Ca/
+// -Na/-K series); Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning).
+const MINERAL_GATES_chabazite = {
+    sigma_crit: 1.0,
+    T_min: 40, T_max: 150, T_optimal: 80,
+    fluid_min: { Ca: 60, Al: 4, SiO2: 200 },
+    pH_min: 7.0, pH_max: 10.5,
+    surface_energy: 'low',
+    _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
+    _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; LATE perching amygdule phase. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
 };
 Object.assign(VugConditions.prototype, {
     supersaturation_quartz() {
@@ -27719,6 +28141,297 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 10.0) * 0.3);
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'prehnite');
+        return Math.max(sigma, 0);
+    },
+    // v200 (2026-06-17): Stilbite — the COOLER, more-hydrated member of the
+    // Deccan Stage-II zeolite couple. Ca-dominant, alkaline, moderate silica.
+    // T sweet spot 60-110°C (stilbite precedes heulandite on a cooling path).
+    // Redox-insensitive: no redox gate. See MINERAL_GATES_stilbite.
+    supersaturation_stilbite() {
+        const g = MINERAL_GATES_stilbite;
+        const exch = this.fluid.Ca + this.fluid.Na; // exchangeable cation budget
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Al < g.fluid_min.Al
+            || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        const ca_f = Math.min(exch / 200.0, 2.0);
+        const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+        const si_f = Math.min(this.fluid.SiO2 / 600.0, 1.5);
+        let sigma = ca_f * al_f * si_f;
+        // T sweet spot 60-110°C (the cool member)
+        const T = this.temperature;
+        if (T >= 60 && T <= 110)
+            sigma *= 1.3;
+        else if (T < 60)
+            sigma *= Math.max(0.4, (T - 40) / 20 * 0.6 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+        // pH sweet spot 8-9.5 (alkaline basalt groundwater)
+        const pH = this.fluid.pH;
+        if (pH >= 8.0 && pH <= 9.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'stilbite');
+        return Math.max(sigma, 0);
+    },
+    // v200 (2026-06-17): Heulandite — the WARMER, dehydrated member (the
+    // dehydration product of stilbite). Higher silica activity (SiO2 gate 400
+    // vs stilbite's 250); T sweet spot 120-180°C. Ca-dominant, alkaline,
+    // redox-insensitive. See MINERAL_GATES_heulandite.
+    supersaturation_heulandite() {
+        const g = MINERAL_GATES_heulandite;
+        const exch = this.fluid.Ca + this.fluid.Na;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Al < g.fluid_min.Al
+            || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        const ca_f = Math.min(exch / 200.0, 2.0);
+        const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+        const si_f = Math.min(this.fluid.SiO2 / 700.0, 1.6); // higher-silica member
+        let sigma = ca_f * al_f * si_f;
+        // T sweet spot 120-180°C (the warm member — the dehydration product)
+        const T = this.temperature;
+        if (T >= 120 && T <= 180)
+            sigma *= 1.3;
+        else if (T < 120)
+            sigma *= Math.max(0.4, (T - 95) / 25 * 0.6 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 180) / 30);
+        // pH sweet spot 8-9.5
+        const pH = this.fluid.pH;
+        if (pH >= 8.0 && pH <= 9.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'heulandite');
+        return Math.max(sigma, 0);
+    },
+    // v201 (2026-06-17): Scolecite — the Ca-endmember fibrous natrolite-group
+    // zeolite. Na/(Na+Ca)<=0.5 fork (Ca-dominant). Low-Si floor (150), broad
+    // low-T window, alkaline, redox-insensitive. See MINERAL_GATES_scolecite.
+    supersaturation_scolecite() {
+        const g = MINERAL_GATES_scolecite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Al < g.fluid_min.Al
+            || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        // Na/Ca fork — scolecite is the Ca ENDMEMBER; suppress when Na approaches
+        // dominance (that's mesolite -> natrolite territory).
+        const naFrac = this.fluid.Na / (this.fluid.Na + this.fluid.Ca);
+        if (naFrac > 0.5)
+            return 0;
+        const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
+        const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+        const si_f = Math.min(this.fluid.SiO2 / 400.0, 1.5); // low-Si zeolite saturates lower
+        let sigma = ca_f * al_f * si_f;
+        // Ca-purity bonus: the most-Ca fluids favor scolecite most strongly.
+        sigma *= Math.max(0.7, 1.3 - naFrac);
+        // T sweet spot 70-120 (low-T fibrous zeolite)
+        const T = this.temperature;
+        if (T >= 70 && T <= 120)
+            sigma *= 1.3;
+        else if (T < 70)
+            sigma *= Math.max(0.4, (T - 40) / 30 * 0.6 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 120) / 40);
+        // pH sweet spot 8-9.5
+        const pH = this.fluid.pH;
+        if (pH >= 8.0 && pH <= 9.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'scolecite');
+        return Math.max(sigma, 0);
+    },
+    // v201 (2026-06-17): Mesolite — the ordered Na-Ca intermediate of the
+    // natrolite group. Needs BOTH Na and Ca (0.2<=Na/(Na+Ca)<=0.8). Finest
+    // fibrous tufts. See MINERAL_GATES_mesolite.
+    supersaturation_mesolite() {
+        const g = MINERAL_GATES_mesolite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Na < g.fluid_min.Na
+            || this.fluid.Al < g.fluid_min.Al || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        // Na/Ca fork — mesolite is the MIXED member; below 0.2 it's scolecite,
+        // above 0.8 it's natrolite (not wired).
+        const naFrac = this.fluid.Na / (this.fluid.Na + this.fluid.Ca);
+        if (naFrac < 0.2 || naFrac > 0.8)
+            return 0;
+        const ca_f = Math.min(this.fluid.Ca / 200.0, 1.8);
+        const na_f = Math.min(this.fluid.Na / 80.0, 1.8);
+        const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+        const si_f = Math.min(this.fluid.SiO2 / 400.0, 1.5);
+        let sigma = Math.sqrt(ca_f * na_f) * al_f * si_f; // geometric mean — needs BOTH
+        // intermediate-fraction bonus: strongest near the ordered Na2Ca2 (~0.45)
+        sigma *= Math.max(0.6, 1.2 - Math.abs(naFrac - 0.45) * 1.5);
+        // T sweet spot 70-110
+        const T = this.temperature;
+        if (T >= 70 && T <= 110)
+            sigma *= 1.3;
+        else if (T < 70)
+            sigma *= Math.max(0.4, (T - 40) / 30 * 0.6 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 110) / 30);
+        // pH sweet spot 8-9.5
+        const pH = this.fluid.pH;
+        if (pH >= 8.0 && pH <= 9.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'mesolite');
+        return Math.max(sigma, 0);
+    },
+    // v202 (2026-06-17): Thomsonite — the earliest, most-aluminous amygdule
+    // zeolite. Ca-dominant + Na-essential-minor + high Al; the discriminator from
+    // the natrolite group is a SOFT low-silica preference (not Na/Ca, not a hard
+    // ceiling). See MINERAL_GATES_thomsonite.
+    supersaturation_thomsonite() {
+        const g = MINERAL_GATES_thomsonite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Na < g.fluid_min.Na
+            || this.fluid.Al < g.fluid_min.Al || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        // Ca-dominant gate (NaCa2): suppress strongly Na-dominant fluids.
+        const naFrac = this.fluid.Na / (this.fluid.Na + this.fluid.Ca);
+        if (naFrac > 0.6)
+            return 0;
+        const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
+        const al_f = Math.min(this.fluid.Al / 10.0, 2.0); // most-aluminous zeolite
+        // Low-Si zeolite: silica need saturates at the low floor (~200), so beyond
+        // it more silica does NOT favor thomsonite — the siAlPref penalty below then
+        // cleanly expresses the low-silica preference.
+        const si_f = Math.min(this.fluid.SiO2 / 200.0, 1.0);
+        let sigma = ca_f * al_f * si_f;
+        // LOW-silica preference — thomsonite (Si/Al~1) is favored when Al is plentiful
+        // relative to Si; attenuated when the fluid is silica-flooded (the hand-off to
+        // the higher-Si zeolites). SOFT, not a hard ceiling — Deccan/Lake Superior are
+        // silica-rich yet thomsonite-bearing.
+        const siAlPref = Math.max(0.5, Math.min(1.4, 1.6 - this.fluid.SiO2 / 600.0));
+        sigma *= siAlPref;
+        // T sweet spot 60-110 (low-T, early)
+        const T = this.temperature;
+        if (T >= 60 && T <= 110)
+            sigma *= 1.3;
+        else if (T < 60)
+            sigma *= Math.max(0.4, (T - 40) / 20 * 0.6 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+        // pH sweet spot 8-9.5
+        const pH = this.fluid.pH;
+        if (pH >= 8.0 && pH <= 9.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'thomsonite');
+        return Math.max(sigma, 0);
+    },
+    // v203 (2026-06-17): Chabazite — the late, intermediate-Si amygdule zeolite.
+    // Cation-flexible (Ca>Na>K, K NOT required); Ca-dominant chabazite-Ca is the
+    // amygdule default. Late/cool T sweet spot. See MINERAL_GATES_chabazite.
+    supersaturation_chabazite() {
+        const g = MINERAL_GATES_chabazite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Al < g.fluid_min.Al
+            || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        // Extra-framework cation: Ca > Na > K, K NOT required (Passaglia & Sheppard
+        // 2001). Joint (Ca+Na+K) charge budget; Ca-dominant selects chabazite-Ca.
+        const exch = this.fluid.Ca + this.fluid.Na + (this.fluid.K || 0);
+        const ca_f = Math.min(exch / 220.0, 2.0);
+        const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+        const si_f = Math.min(this.fluid.SiO2 / 500.0, 1.5); // intermediate Si/Al~2
+        let sigma = ca_f * al_f * si_f;
+        // T sweet spot 50-110 (LATE, cool amygdule phase)
+        const T = this.temperature;
+        if (T >= 50 && T <= 110)
+            sigma *= 1.3;
+        else if (T < 50)
+            sigma *= Math.max(0.4, (T - 40) / 10 * 0.6 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+        // pH sweet spot 8-9.5
+        const pH = this.fluid.pH;
+        if (pH >= 8.0 && pH <= 9.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'chabazite');
+        return Math.max(sigma, 0);
+    },
+    // v196 (2026-06-15): Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — the Fe3+
+    // endmember of the clinozoisite-epidote sorosilicate series, monoclinic
+    // P2_1/m. The classic alpine-cleft / greenschist-facies mineral: lustrous
+    // pistachio-green prisms striated ∥b, the famous Tormiq (Gilgit-Baltistan,
+    // Pakistan) gem swords (Handbook of Mineralogy, Anthony et al. 2001 — which
+    // names Tormiq as type-quality, rivaling Knappenwand). THE GATE THAT MATTERS
+    // is redox: epidote needs FERRIC iron, so an OXIDIZING fluid near the
+    // hematite-magnetite buffer — under reducing conditions Fe partitions into
+    // magnetite + actinolite (Fe2+) and you get clinozoisite, not green epidote
+    // (Holdaway 1972 CMP 37:307; Liou 1973 J.Petrol 14:381; the Fe3+>=0.5 apfu
+    // boundary is Armbruster et al. 2006 EJM 18:551). Ca-Al-Si backbone like
+    // prehnite/grossular; the oxidizing + Al-bearing + moderate-T window is the
+    // discriminator. More oxidizing = more Fe3+ = deeper-green epidote.
+    supersaturation_epidote() {
+        const g = MINERAL_GATES_epidote;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Al < g.fluid_min.Al
+            || this.fluid.Fe < g.fluid_min.Fe || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        // Fe3+ gate — epidote needs OXIDIZED iron (near HM buffer). Reducing
+        // fluid → magnetite + clinozoisite/actinolite instead. THE discriminator.
+        if (!oxideRedoxAvailable(this.fluid, g.O2_min))
+            return 0;
+        const ca_f = Math.min(this.fluid.Ca / 400.0, 2.0);
+        const al_f = Math.min(this.fluid.Al / 8.0, 2.0);
+        const fe_f = Math.min(this.fluid.Fe / 20.0, 1.8);
+        const si_f = Math.min(this.fluid.SiO2 / 250.0, 1.5);
+        let sigma = ca_f * al_f * fe_f * si_f;
+        // more oxidizing → more Fe3+ → stronger (deeper-green) epidote vs clinozoisite
+        sigma *= Math.max(0.6, Math.min(oxideRedoxFactor(this.fluid, 1.0), 1.6));
+        // T sweet spot 250-400°C (alpine-cleft main stage)
+        const T = this.temperature;
+        if (T >= 250 && T <= 400)
+            sigma *= 1.3;
+        else if (T < 250)
+            sigma *= Math.max(0.4, (T - 200) / 50 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 400) / 50);
+        // pH sweet spot 6.5-8.5 (near-neutral; coexists with calcite + adularia)
+        const pH = this.fluid.pH;
+        if (pH >= 6.5 && pH <= 8.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.5) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'epidote');
         return Math.max(sigma, 0);
     },
     // v112 (2026-05-20): Grossular garnet Ca3Al2(SiO4)3 — Ca-Al endmember
@@ -29184,6 +29897,13 @@ Object.assign(VugConditions.prototype, {
     supersaturation_sphalerite() {
         if (this.fluid.Zn < 10 || this.fluid.S < 10)
             return 0;
+        // v199: sulfide redox gate — ZnS can't survive oxidation (the last sibling of
+        // galena's v13 O2-gate omission; redox-gate census b81cf7d). Shippable now that
+        // the spurious mottramite Zn-minimum gate (38-supersat-phosphate) was removed:
+        // before, gating sphalerite drained Zn to 0 at ~half the seeds and falsely
+        // killed mottramite via that bug (98→49); post-fix mottramite holds (98→84).
+        if (!sulfideRedoxAnoxic(this.fluid, 1.5))
+            return 0;
         const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
         // Below 95°C: full sigma. Above: accelerated decay (wurtzite field).
         const T_factor = this.temperature <= 95
@@ -29200,6 +29920,11 @@ Object.assign(VugConditions.prototype, {
         // schalenblende and AMD wurtzite. See
         // research/research-broth-ratio-sphalerite-wurtzite.md.
         if (this.fluid.Zn < 10 || this.fluid.S < 10)
+            return 0;
+        // v199: sulfide redox gate (see supersaturation_sphalerite). Both branches —
+        // the high-T dimorph and the low-T AMD/schalenblende metastable branch — are
+        // sulfide environments and require anoxic conditions.
+        if (!sulfideRedoxAnoxic(this.fluid, 1.5))
             return 0;
         const T = this.temperature;
         const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
@@ -30576,6 +31301,13 @@ const MINERAL_GATES_REGISTRY = {
     pectolite: MINERAL_GATES_pectolite,
     wollastonite: MINERAL_GATES_wollastonite,
     prehnite: MINERAL_GATES_prehnite,
+    epidote: MINERAL_GATES_epidote,
+    stilbite: MINERAL_GATES_stilbite,
+    heulandite: MINERAL_GATES_heulandite,
+    scolecite: MINERAL_GATES_scolecite,
+    mesolite: MINERAL_GATES_mesolite,
+    thomsonite: MINERAL_GATES_thomsonite,
+    chabazite: MINERAL_GATES_chabazite,
     grossular: MINERAL_GATES_grossular,
     diopside: MINERAL_GATES_diopside,
     vesuvianite: MINERAL_GATES_vesuvianite,
@@ -38039,6 +38771,487 @@ function grow_prehnite(crystal, conditions, step) {
         note: `prehnite ${crystal.habit}, ${color_note}${substrate_flavor}; orthorhombic Ca-Al phyllosilicate, H 6-6.5, vitreous`,
     });
 }
+// v200 (2026-06-17): Stilbite NaCa4(Si27Al9)O72·28H2O — monoclinic C2/m, the
+// cooler/more-hydrated member of the Deccan Stage-II zeolite couple. Habits:
+//   sheaf (default) — wheatsheaf/sheaf bundles splaying from a constricted waist
+//   bowtie (high excess) — twinned sheaves meeting at the waist ({001} cruciform)
+//   spherulitic (very high excess / high nucleation density) — radiating globules
+//   tabular (low excess) — thin {010} plates, pearly on {010}
+// Ca-dominant = peach/salmon (the Deccan aesthetic); Na-dominant = stilbite-Na
+// (white, uncommon). Dissolves in acid (releases Ca+Al+Si).
+function grow_stilbite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_stilbite();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — stilbite releases Ca + Al + Si to fluid`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 1.8 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    // Habit dispatch — the wheatsheaf/bowtie family is stilbite's signature.
+    if (excess > 1.8) {
+        crystal.habit = 'spherulitic';
+        crystal.dominant_forms = ['radiating globular aggregate', 'high-nucleation-density druse'];
+    }
+    else if (excess > 1.0) {
+        crystal.habit = 'bowtie';
+        crystal.dominant_forms = ['{001} cruciform penetration twin', 'bowtie / hourglass meeting at the waist', 'twinned sheaves'];
+    }
+    else if (excess < 0.3) {
+        crystal.habit = 'tabular';
+        crystal.dominant_forms = ['thin tabular {010} plate', 'pearly {010} cleavage'];
+    }
+    else {
+        crystal.habit = 'sheaf';
+        crystal.dominant_forms = ['wheatsheaf bundle splaying from a constricted waist', 'divergent tabular sheaf'];
+    }
+    // Variety dispatch — Ca-dominant = peach (Deccan); Na-dominant = stilbite-Na.
+    const na_dominant = conditions.fluid.Na > conditions.fluid.Ca;
+    const color_note = na_dominant
+        ? 'white stilbite-Na (Na > Ca — uncommon)'
+        : 'peach-to-salmon stilbite-Ca (the Nashik/Deccan aesthetic; colorless when Fe-free)';
+    // Substrate flavor
+    const pos = crystal.position || '';
+    let substrate_flavor = '';
+    if (pos.includes('chalcedony') || pos.includes('quartz'))
+        substrate_flavor = ' on the silica lining — the Deccan vug-wall veneer';
+    else if (pos.includes('scolecite') || pos.includes('mesolite'))
+        substrate_flavor = ' over the fibrous Ca-zeolite sprays';
+    else if (pos.includes('heulandite'))
+        substrate_flavor = ' intergrown with heulandite';
+    else if (pos.includes('apophyllite'))
+        substrate_flavor = ' with apophyllite';
+    // Mass-balance debits — Na Ca4 Al9 Si27 (silica-heavy framework)
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.018, 0);
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.012, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.050, 0);
+    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.004, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+        note: `stilbite ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic Ca-zeolite, H 3.5-4, vitreous/pearly`,
+    });
+}
+// v200 (2026-06-17): Heulandite (Ca,Na)Al2Si7O18·6H2O — monoclinic C2/m, the
+// warmer/dehydrated member (the dehydration product of stilbite). Habits:
+//   coffin (default) — tabular ∥{010}, widest at the centre (the diagnostic shape)
+//   tabular (low excess) — thin {010} plates, pearly
+//   stout (high excess) — trapezoidal/diamond-section stout crystals
+//   granular (very low excess) — coarse-to-fine massive
+// Ca-dominant. Distinguished from stilbite by the isolated coffin habit (vs
+// sheaves) + warmer/higher-silica window. Dissolves in acid.
+function grow_heulandite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_heulandite();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — heulandite releases Ca + Al + Si to fluid`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 1.8 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    // Habit dispatch — the coffin-shaped {010} tablet is heulandite's signature.
+    if (excess > 1.8) {
+        crystal.habit = 'stout';
+        crystal.dominant_forms = ['trapezoidal/diamond-section stout crystal', 'the coffin cross-section'];
+    }
+    else if (excess < 0.25) {
+        crystal.habit = 'granular';
+        crystal.dominant_forms = ['coarse-to-fine granular mass'];
+    }
+    else if (excess < 0.6) {
+        crystal.habit = 'tabular';
+        crystal.dominant_forms = ['thin tabular {010} plate', 'pearly {010} cleavage'];
+    }
+    else {
+        crystal.habit = 'coffin';
+        crystal.dominant_forms = ['coffin-shaped tablet ∥{010}, widest at the centre', 'elongated trapezoidal outline'];
+    }
+    // Variety — Ca-dominant (heulandite-Ca); colour from trace Fe.
+    const color_note = conditions.fluid.Fe > 20
+        ? 'red-to-orange heulandite-Ca (Fe-stained — the classic Berufjord/Deccan look)'
+        : 'colorless-to-white heulandite-Ca (pearly {010})';
+    // Substrate flavor
+    const pos = crystal.position || '';
+    let substrate_flavor = '';
+    if (pos.includes('chalcedony') || pos.includes('quartz'))
+        substrate_flavor = ' on the silica lining';
+    else if (pos.includes('scolecite') || pos.includes('mesolite'))
+        substrate_flavor = ' over the fibrous Ca-zeolite sprays';
+    else if (pos.includes('stilbite'))
+        substrate_flavor = ' intergrown with stilbite';
+    else if (pos.includes('apophyllite'))
+        substrate_flavor = ' with apophyllite';
+    // Mass-balance debits — Ca Al2 Si7 (very silica-heavy framework)
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.055, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+        trace_Fe: conditions.fluid.Fe > 10 ? conditions.fluid.Fe * 0.004 : 0,
+        note: `heulandite ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic Ca-zeolite, H 3.5-4, vitreous/pearly`,
+    });
+}
+// v201 (2026-06-17): Scolecite CaAl2Si3O10·3H2O — monoclinic Cc, the Ca-
+// endmember fibrous natrolite-group zeolite. Habits:
+//   spray (default) — radiating acicular needle sprays (the signature)
+//   puffball (very high excess) — dense divergent needle bursts from a point
+//   prismatic (low excess / clean substrate) — slender square-section prisms ∥[001]
+//   fibrous (lowest) — silky fibrous mass
+// Forms BEFORE the sheet zeolites; later stilbite/heulandite drape over the
+// sprays. White/colorless. Dissolves in acid.
+function grow_scolecite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_scolecite();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — scolecite releases Ca + Al + Si to fluid`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 1.7 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    // Habit dispatch — radiating acicular sprays are scolecite's signature.
+    if (excess > 1.6) {
+        crystal.habit = 'puffball';
+        crystal.dominant_forms = ['dense divergent needle burst from a point', 'radiating acicular puffball'];
+    }
+    else if (excess < 0.3) {
+        crystal.habit = 'prismatic';
+        crystal.dominant_forms = ['slender square-section prism ∥[001]', 'striated single blade'];
+    }
+    else if (excess < 0.15) {
+        crystal.habit = 'fibrous';
+        crystal.dominant_forms = ['silky fibrous mass'];
+    }
+    else {
+        crystal.habit = 'spray';
+        crystal.dominant_forms = ['radiating acicular needle spray', 'divergent fibrous bundle'];
+    }
+    // Substrate flavor
+    const pos = crystal.position || '';
+    let substrate_flavor = '';
+    if (pos.includes('chalcedony') || pos.includes('quartz'))
+        substrate_flavor = ' on the silica lining';
+    else if (pos.includes('mesolite'))
+        substrate_flavor = ' intergrown with mesolite';
+    else if (pos.includes('calcite'))
+        substrate_flavor = ' on calcite';
+    // Mass-balance debits — Ca Al2 Si3 (low-Si framework)
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.016, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+        note: `scolecite ${crystal.habit}, white-colorless Ca-zeolite${substrate_flavor}; monoclinic, H 5-5.5, vitreous/silky, twinned {100}`,
+    });
+}
+// v201 (2026-06-17): Mesolite Na2Ca2Al6Si9O30·8H2O — orthorhombic Fdd2, the
+// ordered Na-Ca intermediate. Habits:
+//   tuft (default) — the finest hair-like / cottony fibrous tufts (diagnostic)
+//   acicular (mid) — divergent acicular sprays (finer than scolecite)
+//   prismatic (high excess) — slender prisms ∥[001] (the coarse, rarer mode)
+//   porcelaneous (lowest) — compact porcelaneous mass
+// Co-deposits with scolecite; needs BOTH Na and Ca. White/colorless.
+function grow_mesolite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_mesolite();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — mesolite releases Na + Ca + Al + Si to fluid`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 1.6 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    // Habit dispatch — the finest hair-like tufts are mesolite's signature.
+    if (excess > 1.6) {
+        crystal.habit = 'prismatic';
+        crystal.dominant_forms = ['slender prism ∥[001] (the coarse rarer mode)'];
+    }
+    else if (excess < 0.2) {
+        crystal.habit = 'porcelaneous';
+        crystal.dominant_forms = ['compact porcelaneous mass'];
+    }
+    else if (excess > 0.8) {
+        crystal.habit = 'acicular';
+        crystal.dominant_forms = ['divergent acicular spray (finer than scolecite)'];
+    }
+    else {
+        crystal.habit = 'tuft';
+        crystal.dominant_forms = ['hair-like cottony fibrous tuft (the finest fiber)', 'silky white tuft'];
+    }
+    // Substrate flavor
+    const pos = crystal.position || '';
+    let substrate_flavor = '';
+    if (pos.includes('chalcedony') || pos.includes('quartz'))
+        substrate_flavor = ' on the silica lining';
+    else if (pos.includes('scolecite'))
+        substrate_flavor = ' intergrown with scolecite';
+    else if (pos.includes('calcite'))
+        substrate_flavor = ' on calcite';
+    // Mass-balance debits — Na2 Ca2 Al6 Si9 (low-Si framework, Na+Ca)
+    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.012, 0);
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.012, 0);
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.018, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+        note: `mesolite ${crystal.habit}, white-colorless Na-Ca zeolite${substrate_flavor}; orthorhombic, H 5, vitreous/silky`,
+    });
+}
+// v202 (2026-06-17): Thomsonite NaCa2Al5Si5O20·6H2O — orthorhombic Pncn, the
+// earliest, most-aluminous (Si/Al~1) amygdule zeolite. Habits:
+//   eye (default) — radiating spherical botryoidal nodule, concentric colour
+//        banding ("thomsonite eye" / lintonite — the Lake Superior gem)
+//   spray (mid) — radiating columnar/bladed sprays + rosettes, blades ∥{010}
+//   acicular (high excess) — fine fibrous needle tufts
+//   columnar (low excess) — slender prisms ∥[001] / compact columnar
+//   massive (lowest) — porcelaneous crust
+// Lintonite (green) when Fe trace present. White/pink/yellow otherwise.
+function grow_thomsonite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_thomsonite();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — thomsonite releases Na + Ca + Al + Si to fluid`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 1.6 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    // Habit dispatch — the concentric "eye" nodule is thomsonite's signature.
+    // High nucleation density + confined growth → spheres; open growth → blades.
+    if (excess > 1.4) {
+        crystal.habit = 'acicular';
+        crystal.dominant_forms = ['fine fibrous needle tuft'];
+    }
+    else if (excess < 0.25) {
+        crystal.habit = 'columnar';
+        crystal.dominant_forms = ['slender prism ∥[001], flattened on {010}', 'compact columnar'];
+    }
+    else if (excess > 0.8) {
+        crystal.habit = 'spray';
+        crystal.dominant_forms = ['radiating columnar/bladed spray', 'rosette of blades ∥{010}'];
+    }
+    else {
+        crystal.habit = 'eye';
+        crystal.dominant_forms = ['radiating spherical botryoidal nodule', 'concentric colour-banded "thomsonite eye"'];
+    }
+    // Colour dispatch — lintonite (green) with Fe trace; else white/pink.
+    const color_note = conditions.fluid.Fe > 15
+        ? 'green lintonite variety (Fe trace — the Lake Superior gem)'
+        : 'white-to-pink thomsonite, concentrically zoned';
+    // Substrate flavor — thomsonite is EARLY, on the fresh cavity surface.
+    const pos = crystal.position || '';
+    let substrate_flavor = '';
+    if (pos.includes('calcite'))
+        substrate_flavor = ' on early calcite';
+    else if (pos.includes('chalcedony') || pos.includes('quartz'))
+        substrate_flavor = ' on the silica veneer';
+    else if (pos.includes('wall'))
+        substrate_flavor = ' direct on the smectite-lined vug wall';
+    // Mass-balance debits — Na Ca2 Al5 Si5 (most-aluminous, low-Si framework)
+    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.008, 0);
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.020, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.025, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.015 : 0,
+        trace_Fe: conditions.fluid.Fe > 10 ? conditions.fluid.Fe * 0.003 : 0,
+        note: `thomsonite ${crystal.habit}, ${color_note}${substrate_flavor}; orthorhombic Na-Ca zeolite (Si/Al~1), H 5-5.5, vitreous/pearly, twin {110}`,
+    });
+}
+// v203 (2026-06-17): Chabazite Ca2Al2Si4O12·6H2O — trigonal R-3m, the late,
+// intermediate-Si (Si/Al~2) amygdule zeolite. Habits:
+//   rhomb (default) — rhombohedral pseudo-cube (the near-90° rhombohedron that
+//        mimics a cube — the signature, easily mistaken for calcite)
+//   phacolite (high excess) — lens/disc-shaped penetration-twinned aggregate
+//   herschelite (Na-dominant) — thin tabular/platy hexagonal-looking plates
+//   botryoidal (high nucleation / low excess) — radiating spheroidal aggregate
+// Cation-flexible (Ca>Na>K); Na-dominance flips habit to herschelite.
+function grow_chabazite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_chabazite();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — chabazite releases Ca + Al + Si to fluid`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 1.7 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    // Habit dispatch. Na-dominant → herschelite tablet; else rhomb/phacolite.
+    const na_dominant = conditions.fluid.Na > conditions.fluid.Ca;
+    if (na_dominant) {
+        crystal.habit = 'herschelite';
+        crystal.dominant_forms = ['thin tabular hexagonal-looking plate (Na-rich herschelite)'];
+    }
+    else if (excess > 1.3) {
+        crystal.habit = 'phacolite';
+        crystal.dominant_forms = ['lens/disc-shaped penetration twin ({0001})', 'phacolite twinned aggregate'];
+    }
+    else if (excess < 0.25) {
+        crystal.habit = 'botryoidal';
+        crystal.dominant_forms = ['radiating spheroidal aggregate', 'crystal-ball rosette'];
+    }
+    else {
+        crystal.habit = 'rhomb';
+        crystal.dominant_forms = ['rhombohedral pseudo-cube ({101̄1}, near-90° — mimics a cube)', 'simple rhombohedron'];
+    }
+    // Substrate flavor — chabazite is LATE, perching on the earlier zeolites.
+    const pos = crystal.position || '';
+    let substrate_flavor = '';
+    if (pos.includes('stilbite') || pos.includes('heulandite'))
+        substrate_flavor = ' perched on the sheet-zeolite lining';
+    else if (pos.includes('scolecite') || pos.includes('mesolite') || pos.includes('thomsonite'))
+        substrate_flavor = ' perched on the earlier fibrous zeolites';
+    else if (pos.includes('calcite'))
+        substrate_flavor = ' with calcite';
+    // Mass-balance debits — Ca Al2 Si4 (per-Ca, intermediate-Si framework)
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
+    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.004, 0);
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+        note: `chabazite ${crystal.habit}, white-to-flesh Ca-zeolite${substrate_flavor}; trigonal (Si/Al~2), H 4-5, vitreous — poor {101̄1} cleavage + no effervescence vs calcite`,
+    });
+}
+// v196 (2026-06-15): Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — monoclinic
+// P2_1/m sorosilicate, the Fe3+ endmember of the clinozoisite-epidote
+// series. Alpine-cleft / greenschist mineral; lustrous pistachio-green
+// prisms striated ∥b (the Tormiq, Gilgit-Baltistan gem swords). Habits:
+//   striated_prismatic (default) — elongated prisms striated ∥[010]
+//   gem_prismatic (high σ) — doubly-terminated Tormiq/Knappenwand swords
+//   divergent_spray (on byssolite/actinolite substrate) — radiating fans
+//   granular (low excess) — coarse-to-fine massive / saussurite replacement
+// Green deepens with Fe3+/oxidation (the pistacite content); Fe-poor →
+// pale yellow-green toward clinozoisite.
+function grow_epidote(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_epidote();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.05);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — epidote releases Ca + Al + Fe + Si`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 2.0 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    // Habit dispatch — substrate first (sprays on byssolite), then σ
+    const pos = crystal.position || '';
+    const on_amphibole = pos.includes('actinolite') || pos.includes('tremolite');
+    if (on_amphibole) {
+        crystal.habit = 'divergent_spray';
+        crystal.dominant_forms = ['radiating prismatic fans', 'epidote sprays interwoven with byssolite fibers', 'striated ∥b'];
+    }
+    else if (excess > 1.3) {
+        crystal.habit = 'gem_prismatic';
+        crystal.dominant_forms = ['doubly-terminated lustrous prisms', 'the Tormiq / Knappenwand gem sword', 'striated ∥[010]'];
+    }
+    else if (excess < 0.3) {
+        crystal.habit = 'granular';
+        crystal.dominant_forms = ['coarse-to-fine granular aggregate', 'vein-fill / saussurite replacement'];
+    }
+    else {
+        crystal.habit = 'striated_prismatic';
+        crystal.dominant_forms = ['elongated prisms striated parallel b [010]', 'perfect {001} basal cleavage'];
+    }
+    // Color dispatch — green deepens with Fe³⁺ (pistacite) + oxidation
+    let color_note;
+    const o2 = conditions.fluid.O2 ?? 0;
+    if (conditions.fluid.Fe > 20 && o2 > 1.0)
+        color_note = 'deep pistachio-to-blackish-green (high Fe³⁺, strongly oxidized — pistacite-rich)';
+    else if (conditions.fluid.Fe > 8)
+        color_note = 'classic pistachio-green (Fe³⁺ at M3 — the Tormiq aesthetic)';
+    else
+        color_note = 'pale yellow-green (Fe³⁺-poor, toward clinozoisite)';
+    // Substrate flavor
+    let substrate_flavor = '';
+    if (pos.includes('quartz'))
+        substrate_flavor = ' perched on quartz — the alpine-cleft signature';
+    else if (pos.includes('feldspar'))
+        substrate_flavor = ' with adularia — low-T cleft feldspar stage';
+    else if (pos.includes('magnetite'))
+        substrate_flavor = ' on magnetite — the Fe-oxide redox partner';
+    else if (pos.includes('calcite'))
+        substrate_flavor = ' with calcite — late cooling stage';
+    // Mass-balance debits — Ca2 (Al,Fe)3 Si3
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.022, 0);
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.012, 0);
+    conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.010, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.035, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Fe: conditions.fluid.Fe > 5 ? conditions.fluid.Fe * 0.006 : 0,
+        note: `epidote ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic Ca-Al-Fe³⁺ sorosilicate, H 6-7, vitreous, {001} perfect`,
+    });
+}
 // v112 (2026-05-20): Grossular garnet Ca3Al2(SiO4)3 — cubic Ia-3d
 // Ca-Al endmember of the garnet group. Three settings:
 //   - Rodingite metasomatism (Jeffrey + Italian Alps + Asbestos Hill NL).
@@ -41487,6 +42700,24 @@ const MINERAL_ENGINES = {
     pectolite: grow_pectolite,
     wollastonite: grow_wollastonite,
     prehnite: grow_prehnite,
+    // v196 (2026-06-15): epidote — Fe3+ alpine-cleft sorosilicate (Tormiq, Pakistan).
+    epidote: grow_epidote,
+    // v200 (2026-06-17): the Deccan Stage-II zeolite couple. stilbite (cooler,
+    // 28 H2O, peach sheaves) + heulandite (warmer dehydration product, 6 H2O,
+    // coffin tablets). Fills the deccan_zeolite Stage-II narrative gap.
+    stilbite: grow_stilbite,
+    heulandite: grow_heulandite,
+    // v201 (2026-06-17): the fibrous natrolite-group Ca-(Na) zeolites — scolecite
+    // (Ca endmember) + mesolite (ordered Na-Ca intermediate). Form before the
+    // sheet zeolites in the Deccan amygdale paragenesis.
+    scolecite: grow_scolecite,
+    mesolite: grow_mesolite,
+    // v202 (2026-06-17): thomsonite — the earliest, most-aluminous amygdule
+    // zeolite (Si/Al~1); the "thomsonite eyes" of Lake Superior.
+    thomsonite: grow_thomsonite,
+    // v203 (2026-06-17): chabazite — the late, intermediate-Si amygdule zeolite
+    // (Si/Al~2); rhombohedral pseudo-cubes + phacolite penetration twins.
+    chabazite: grow_chabazite,
     // v114 (2026-05-20): Mg-matrix family completing the Jeffrey Mine
     // rodingite assemblage. Three minerals in three different chemistry
     // classes:
@@ -41858,6 +43089,14 @@ const EVENT_REGISTRY = {
     wittichen_hydrocarbon_influx: event_wittichen_hydrocarbon_influx,
     wittichen_meteoric_sulfate: event_wittichen_meteoric_sulfate,
     wittichen_carbonate_gangue: event_wittichen_carbonate_gangue,
+    // 2026-06-15 — Tormiq Valley alpine-cleft epidote (Gilgit-Baltistan,
+    // Pakistan), the v197 anchor for epidote. See js/70v-tormiq.ts (6 handlers).
+    tormiq_quartz_lining: event_tormiq_quartz_lining,
+    tormiq_oxide_stage: event_tormiq_oxide_stage,
+    tormiq_epidote_main: event_tormiq_epidote_main,
+    tormiq_byssolite: event_tormiq_byssolite,
+    tormiq_adularia: event_tormiq_adularia,
+    tormiq_late_calcite: event_tormiq_late_calcite,
 };
 // Minimal JSONC parser — strips // line + /* */ block comments and
 // trailing commas, then JSON.parse. Sufficient for our spec files; not
@@ -42560,7 +43799,7 @@ function event_deccan_zeolite_stage_ii(c) {
     c.fluid.SiO2 += 200;
     c.fluid.pH = 8.5;
     c.temperature = 130;
-    return 'Stage II — zeolite blades begin to fill the vesicle. Stilbite, scolecite, heulandite (modeled here as the zeolite paragenesis pH/Si signature). Calcite forms as a late-stage carbonate. The vug is filling slowly.';
+    return 'Stage II — zeolite blades fill the vesicle, lowest-silica first. Thomsonite came earliest: concentric botryoidal "eyes" (Si/Al≈1, the most aluminous zeolite, the Lake Superior gem) on the fresh cavity wall. Then the fibrous natrolite-group: radiating scolecite sprays (the Ca endmember) and the finest hair-like mesolite tufts (the ordered Na-Ca intermediate), overgrowing the thomsonite. Now the higher-silica sheet zeolites take over — heulandite (the warmer, dehydrated member) as coffin-shaped tablets, stilbite (the cooler, more-hydrated member) as peach wheatsheaf sheaves draping over the earlier fibrous sprays — the stilbite/heulandite dehydration couple (Ca-stilbite = Ca-heulandite + H₂O, Kiseleva et al. 2001). Calcite forms as a late-stage carbonate. The vug is filling slowly, silica activity climbing through the sequence.';
 }
 function event_deccan_zeolite_apophyllite_stage_iii(c) {
     c.fluid.K += 25;
@@ -42575,7 +43814,7 @@ function event_deccan_zeolite_late_cooling(c) {
     c.temperature = 80;
     c.fluid.pH = 8.0;
     c.flow_rate = 0.1;
-    return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. Time, not chemistry, becomes the limiting reagent.';
+    return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. This is also when chabazite arrives — rhombohedral pseudo-cubes (and lens-shaped phacolite penetration twins) perching on the earlier zeolite lining, the last zeolite of the cavity. Time, not chemistry, becomes the limiting reagent.';
 }
 
 // ── 70i-supergene.js ──
@@ -42724,15 +43963,32 @@ function event_bisbee_oxidation_zone(c) {
     return 'The water table drops another 50 meters. The enrichment blanket is now in the unsaturated zone — oxygen reaches it directly. Cuprite forms where the Eh is still low; native copper sheets grow in the fractures where reducing pockets survive. The limestone walls are finally participating — pH climbs toward neutral, and CO₃ rises with it.';
 }
 function event_bisbee_azurite_peak(c) {
-    c.fluid.CO3 += 80;
+    // v204 azurite fix: the old `CO3 += 80` ran off a CO3 base depleted to ~20
+    // by the earlier carbonate/calcite draw, landing ~100 — under azurite's
+    // effectiveCO3 ≥ 120 gate (and the pH-7 Bjerrum speciation pulls effective
+    // BELOW raw, so even ~100 raw was nowhere near). The famous "Bisbee Blue"
+    // never nucleated (0/8 seeds, flagged as debt at v186). FIX: deliver a CO3
+    // FLOOR high enough that effectiveCO3 clears 120 at pH ~7.4 — geologically
+    // the monsoon's CO2-charged rainwater aggressively dissolving the Escabrosa
+    // limestone DOES drive both high DIC and a near-neutral-to-mild-alkaline
+    // buffered pocket (Vink 1986). The later co2_drop event (CO3 -= 120) still
+    // pulls effective CO3 back under the gate → azurite reverts to malachite.
+    c.fluid.CO3 = Math.max(c.fluid.CO3 + 80, 260);
     c.fluid.Cu += 30;
     c.fluid.O2 = 1.3;
-    c.fluid.pH = 7.0;
+    c.fluid.pH = 7.4;
     c.flow_rate = 0.9;
     return "A monsoon season — the first in many. CO₂-charged rainwater infiltrates fast, dissolves limestone aggressively, and hits the copper pocket at pH 7 with CO₃ at 110+ ppm. Azurite — deep midnight-blue monoclinic prisms and radiating rosettes — nucleates from the supersaturated brine. This phase produces the showpiece 'Bisbee Blue' specimens.";
 }
 function event_bisbee_co2_drop(c) {
-    c.fluid.CO3 = Math.max(c.fluid.CO3 - 120, 50);
+    // v204: deepened the pCO2 crash (−120 → −210, floor 50 → 40) so that after the
+    // higher azurite_peak CO3 floor (260), the late carbonate draws down far enough
+    // that the step-265 silica_seep stage clears dioptase's CO3 ≤ 50 gate (raw CO3
+    // 260 → co2_drop 50 → silica_seep 20). Geologically this IS the monsoon's end —
+    // pCO2 falling below azurite stability — so a deeper drop fits the story, and it
+    // still reverts azurite to malachite. Without it, the v204 azurite floor left
+    // residual CO3 ~110 at step 265 and killed the Bisbee dioptase.
+    c.fluid.CO3 = Math.max(c.fluid.CO3 - 210, 40);
     c.fluid.O2 = 1.4;
     c.fluid.pH = 6.8;
     c.flow_rate = 0.7;
@@ -43898,6 +45154,86 @@ function event_wittichen_carbonate_gangue(c) {
     return `Carbonate gangue stage — CO₃ ${c.fluid.CO3.toFixed(0)}, Ca ${c.fluid.Ca.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. Calcite seals the dendrites into the vein: the cross-section specimen assembles itself.`;
 }
 
+// ── 70v-tormiq.js ──
+
+// ============================================================
+// js/70v-tormiq.ts — Tormiq Valley alpine-cleft epidote
+// ============================================================
+// TORMIQ VALLEY, Haramosh Mts., Roundu/Skardu District, Gilgit-Baltistan,
+// PAKISTAN — the world's premier alpine-cleft EPIDOTE locality (Anthony et
+// al. Handbook of Mineralogy 2001 names Tormiq type-quality, rivaling
+// Knappenwand, Austria). The v197 anchor scenario for epidote (added v196).
+//
+// SETTING (NOT a pegmatite). Gilgit-Baltistan hosts three distinct deposit
+// types: (1) Li-B-Be GEM PEGMATITES (Nuristan/Shigar tourmaline, kunzite,
+// aquamarine — magmatic), (2) ALPINE-TYPE CLEFTS (epidote, titanite, zoisite,
+// axinite, quartz, adularia — metamorphic fissure, aqueous fluid — THIS
+// SCENARIO), (3) metamorphosed marble (ruby/spinel — contact). Tormiq is type
+// (2): fractures opened by Main Karakoram Thrust activity in amphibolite /
+// metabasite / gneiss, then filled by a LOW-SALINITY, OXIDIZED, meteoric-
+// metamorphic fluid in brittle channelized flow (<450°C, retrograde to
+// <200°C; Central-Alps analogue per Mullis 1994, Bergemann et al. 2017).
+// The OXIDIZED character is what makes Fe³⁺-rich green epidote (not the
+// Fe-poor clinozoisite) — see the epidote engine v196.
+//
+// PARAGENESIS (cleft opening, higher T → cooling):
+//   1. quartz lining (cleft walls)              ~420°C
+//   2. Ti–Fe oxides — magnetite (+ titanite,    ~380°C
+//      not yet modelled) on the walls
+//   3. EPIDOTE main stage — pistachio prisms,    350→290°C  (the star)
+//      doubly-terminated Tormiq swords, oxidized
+//   4. byssolite (fibrous actinolite) sprays,    ~270°C
+//      epidote nucleates on the mats as fans
+//   5. adularia (K-feldspar), low-T cleft        ~250°C
+//   6. calcite + late zeolites, cooling stops    <200°C
+//
+// REFERENCES:
+//   * Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy
+//     (epidote sheet — names Tormiq, Pakistan as type-quality)
+//   * Deer Howie Zussman 1986, Rock-Forming Minerals v.1B pp.44-134
+//   * Liebscher & Franz eds. 2004, Reviews in Mineralogy v.56 Epidotes
+//   * Mullis J 1994, GCA 58:2239 (alpine-fissure quartz fluid inclusions)
+//   * Bergemann et al. 2017, Swiss J. Geosci. (alpine fissure T/fluid)
+//   * mindat loc-5734 (Tormiq geology: Main Karakoram Thrust clefts)
+function event_tormiq_quartz_lining(c) {
+    c.temperature = Math.max(380, c.temperature - 40);
+    c.fluid.SiO2 = Math.min(420, c.fluid.SiO2 + 40);
+    c.fluid.O2 = Math.max(1.3, c.fluid.O2); // hold the cleft oxidizing (Fe³⁺)
+    c.flow_rate = 1.0;
+    return `A cleft opens along a Main Karakoram Thrust fracture; low-salinity, oxidized metamorphic fluid floods the fissure and lines the walls with quartz. T ${c.temperature.toFixed(0)}°C, oxidizing (O₂ ${c.fluid.O2.toFixed(1)}).`;
+}
+function event_tormiq_oxide_stage(c) {
+    c.temperature = Math.max(340, c.temperature - 40);
+    c.fluid.Fe = Math.min(60, c.fluid.Fe + 10); // amphibolite yields Fe
+    c.fluid.Ti = (c.fluid.Ti || 0) + 1.0;
+    return `Ti–Fe oxides crust the cleft walls — magnetite (and titanite, not yet modelled) — as the amphibolite host yields Fe and Ti. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_tormiq_epidote_main(c) {
+    c.temperature = Math.max(290, c.temperature - 50);
+    c.fluid.Fe = Math.min(75, c.fluid.Fe + 15); // Fe³⁺ pulse from amphibolite leaching
+    c.fluid.Al = Math.min(20, c.fluid.Al + 4);
+    c.fluid.Ca = Math.min(900, c.fluid.Ca + 100);
+    c.fluid.O2 = Math.max(1.5, c.fluid.O2); // strongly oxidizing → Fe³⁺ → deep green
+    c.flow_rate = 1.3;
+    return `THE EPIDOTE STAGE: oxidized Ca–Al–Fe³⁺ fluid in an open cleft at T ${c.temperature.toFixed(0)}°C — lustrous pistachio-green prisms strike out from the quartz, the doubly-terminated Tormiq gem swords. Fe³⁺ ${c.fluid.Fe.toFixed(0)} ppm, strongly oxidizing.`;
+}
+function event_tormiq_byssolite(c) {
+    c.temperature = Math.max(260, c.temperature - 30);
+    c.fluid.Mg = Math.min(48, c.fluid.Mg + 20); // modest Mg → byssolite stays secondary to epidote
+    return `Byssolite — fibrous actinolite — sprays through the cleft, and epidote nucleates on the amphibole mats as radiating fans. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_tormiq_adularia(c) {
+    c.temperature = Math.max(230, c.temperature - 30);
+    c.fluid.K = Math.min(280, c.fluid.K + 90); // low-T cleft K-feldspar
+    return `Lower-temperature cleft feldspar: adularia (K-feldspar) crystallizes as the fluid cools and K builds up. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_tormiq_late_calcite(c) {
+    c.temperature = Math.max(170, c.temperature - 50);
+    c.fluid.CO3 = Math.min(220, c.fluid.CO3 + 90);
+    c.flow_rate = 0.2;
+    return `The cleft cools below ~200°C: calcite + late zeolites close the paragenesis and growth winds down. T ${c.temperature.toFixed(0)}°C.`;
+}
+
 // ── 75-transitions.js ──
 
 // ============================================================
@@ -44475,20 +45811,20 @@ function _nuc_bayldonite(sim) {
     sim.log.push(`  ✦ NUCLEATION: 🟩 Bayldonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, Cu:Pb=${(sim.conditions.fluid.Cu / Math.max(sim.conditions.fluid.Pb, 0.1)).toFixed(1)}) — apple-green Cu-enriched Pb-Cu arsenate`);
 }
 function _nucleateClass_arsenate(sim) {
-    _nuc_scorodite(sim);
-    _nuc_adamite(sim);
-    _nuc_mimetite(sim);
-    _nuc_erythrite(sim);
-    _nuc_annabergite(sim);
-    _nuc_olivenite(sim);
-    _nuc_conichalcite(sim);
-    _nuc_pharmacolite(sim);
+    _runNuc(sim, _nuc_scorodite);
+    _runNuc(sim, _nuc_adamite);
+    _runNuc(sim, _nuc_mimetite);
+    _runNuc(sim, _nuc_erythrite);
+    _runNuc(sim, _nuc_annabergite);
+    _runNuc(sim, _nuc_olivenite);
+    _runNuc(sim, _nuc_conichalcite);
+    _runNuc(sim, _nuc_pharmacolite);
     // v97 (2026-05-19): Tsumeb suite — order encodes paragenetic sequence
-    _nuc_austinite(sim);
-    _nuc_legrandite(sim);
-    _nuc_koettigite(sim);
-    _nuc_duftite(sim);
-    _nuc_bayldonite(sim);
+    _runNuc(sim, _nuc_austinite);
+    _runNuc(sim, _nuc_legrandite);
+    _runNuc(sim, _nuc_koettigite);
+    _runNuc(sim, _nuc_duftite);
+    _runNuc(sim, _nuc_bayldonite);
 }
 
 // ── 81-nucleation-borate.js ──
@@ -44513,7 +45849,7 @@ function _nuc_borax(sim) {
     // Feldspar nucleation — needs sigma > 1.0, K or Na + Al + Si
 }
 function _nucleateClass_borate(sim) {
-    _nuc_borax(sim);
+    _runNuc(sim, _nuc_borax);
 }
 
 // ── 82-nucleation-carbonate.js ──
@@ -44852,21 +46188,21 @@ function _nuc_hydrozincite(sim) {
     sim.log.push(`  ✦ NUCLEATION: ⚪ Hydrozincite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Zn=${sim.conditions.fluid.Zn.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — chalk-white Zn-carbonate-hydroxide, pale-blue SW-UV fluorescent`);
 }
 function _nucleateClass_carbonate(sim) {
-    _nuc_calcite(sim);
-    _nuc_aragonite(sim);
-    _nuc_dolomite(sim);
+    _runNuc(sim, _nuc_calcite);
+    _runNuc(sim, _nuc_aragonite);
+    _runNuc(sim, _nuc_dolomite);
     _nuc_HMC(sim); // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
-    _nuc_siderite(sim);
-    _nuc_rhodochrosite(sim);
-    _nuc_malachite(sim);
-    _nuc_smithsonite(sim);
-    _nuc_azurite(sim);
-    _nuc_cerussite(sim);
-    _nuc_rosasite(sim);
-    _nuc_aurichalcite(sim);
-    _nuc_strontianite(sim);
-    _nuc_witherite(sim);
-    _nuc_hydrozincite(sim);
+    _runNuc(sim, _nuc_siderite);
+    _runNuc(sim, _nuc_rhodochrosite);
+    _runNuc(sim, _nuc_malachite);
+    _runNuc(sim, _nuc_smithsonite);
+    _runNuc(sim, _nuc_azurite);
+    _runNuc(sim, _nuc_cerussite);
+    _runNuc(sim, _nuc_rosasite);
+    _runNuc(sim, _nuc_aurichalcite);
+    _runNuc(sim, _nuc_strontianite);
+    _runNuc(sim, _nuc_witherite);
+    _runNuc(sim, _nuc_hydrozincite);
 }
 
 // ── 83-nucleation-halide.js ──
@@ -44918,10 +46254,10 @@ function _nuc_sylvite(sim) {
     }
 }
 function _nucleateClass_halide(sim) {
-    _nuc_fluorite(sim);
-    _nuc_halite(sim);
-    _nuc_atacamite(sim);
-    _nuc_sylvite(sim);
+    _runNuc(sim, _nuc_fluorite);
+    _runNuc(sim, _nuc_halite);
+    _runNuc(sim, _nuc_atacamite);
+    _runNuc(sim, _nuc_sylvite);
 }
 
 // ── 84-nucleation-hydroxide.js ──
@@ -44979,8 +46315,8 @@ function _nuc_lepidocrocite(sim) {
     // Stibnite nucleation — Sb + S + moderate T + reducing.
 }
 function _nucleateClass_hydroxide(sim) {
-    _nuc_goethite(sim);
-    _nuc_lepidocrocite(sim);
+    _runNuc(sim, _nuc_goethite);
+    _runNuc(sim, _nuc_lepidocrocite);
 }
 
 // ── 85-nucleation-molybdate.js ──
@@ -45108,12 +46444,12 @@ function _nuc_wolframite(sim) {
     }
 }
 function _nucleateClass_molybdate(sim) {
-    _nuc_wulfenite(sim);
-    _nuc_ferrimolybdite(sim);
-    _nuc_stolzite(sim);
-    _nuc_scheelite(sim);
-    _nuc_powellite(sim);
-    _nuc_wolframite(sim);
+    _runNuc(sim, _nuc_wulfenite);
+    _runNuc(sim, _nuc_ferrimolybdite);
+    _runNuc(sim, _nuc_stolzite);
+    _runNuc(sim, _nuc_scheelite);
+    _runNuc(sim, _nuc_powellite);
+    _runNuc(sim, _nuc_wolframite);
 }
 
 // ── 85-simulator.js ──
@@ -45145,6 +46481,11 @@ class VugSimulator {
         // draw); see _makeThermalRng (85j) for the weather-not-geology rationale
         // and the seed-scramble requirement.
         this._thermalRng = _makeThermalRng(rng.state);
+        // THE KEYSTONE (2026-06-16, PROPOSAL-PER-MINERAL-NUC-SEEDS): same run-seed
+        // lineage capture as _thermalRng (read-only — consumes no draw). _runNuc (85j)
+        // derives a private per-(mineral, step) stream off this, so gating one mineral
+        // can't displace another's nucleation cascade. Closes LEDGER §A #12.
+        this._nucSharedState = rng.state;
         this.events = (events || []).slice().sort((a, b) => a.step - b.step);
         this.crystals = [];
         this.crystal_counter = 0;
@@ -51072,6 +52413,79 @@ function _makeThermalRng(sharedState) {
     const scramble = new SeededRandom((((sharedState | 0) ^ _THERMAL_SALT) >>> 0));
     return new SeededRandom(Math.floor(scramble.next() * 4294967296) >>> 0);
 }
+// ----------------------------------------------------------------
+// THE KEYSTONE — per-(mineral, step) derived nucleation streams.
+// PROPOSAL-PER-MINERAL-NUC-SEEDS.md, 2026-06-16. Closes LEDGER §A #12,
+// unblocks #11 (held sphalerite/wurtzite redox gate).
+// ----------------------------------------------------------------
+// Per-purpose salt for the NUCLEATION streams (ASCII "NUC" + 0x01). Distinct
+// from the movement + thermal salts so the three never alias.
+const _NUC_SALT = 0x4e554301;
+// THE FLAG. ON (default) is the keystone: each mineral nucleates from its OWN
+// derived stream, so gating/adding one mineral can no longer displace another's
+// nucleation cascade (the mottramite 96→47% class of bug). OFF reverts to the
+// legacy single shared-`rng` cascade — kept ONLY for the dark-observe A/B probe
+// (tools/nuc-seed-isolation-probe.mjs) and reversibility, NOT a player option.
+let NUC_DERIVED_SEEDS = true;
+// A fresh deterministic PRNG for ONE (mineral, step) pair. Mirrors
+// _makeThermalRng's two deliberate choices (see its header), extended with the
+// mineral identity + the step:
+//
+//   1. RUN-SEED LINEAGE, not the cavity. Nucleation realization is WEATHER —
+//      it should vary play-to-play (the 200-seed canary sweep wants 200 distinct
+//      realizations), so the base is `sharedState` = rng.state captured at sim
+//      construction (a pure function of the run seed, zero shared draws).
+//   2. SCRAMBLED, not bare-XOR (the 15th catch). The FNV-1a fold of the mineral
+//      key + step already avalanches far more than the thermal bare-XOR did, but
+//      adjacent steps of one mineral still differ by a single int — so we keep
+//      the same one-throwaway-draw scramble _makeThermalRng uses, belt-and-braces.
+//
+// The KEY is the nucleation function's own name ("_nuc_<mineral>") — stable,
+// unique per nucleation function, and free of 140 hand-typed mineral strings.
+// The seed need only be unique+deterministic per nuc-function; it does NOT have
+// to match the minerals.json key, so fn.name is the ideal handle.
+function _makeNucRng(sharedState, mineralKey, step) {
+    let h = (((sharedState | 0) ^ _NUC_SALT) >>> 0);
+    for (let i = 0; i < mineralKey.length; i++) {
+        h = (Math.imul(h ^ mineralKey.charCodeAt(i), 0x01000193)) >>> 0; // FNV-1a fold
+    }
+    h = (Math.imul(h ^ (step | 0), 0x01000193)) >>> 0;
+    const scramble = new SeededRandom(h >>> 0); // scramble — avalanche
+    return new SeededRandom(Math.floor(scramble.next() * 4294967296) >>> 0);
+}
+// The dispatch wrapper the 14 _nucleateClass_* iterators route every
+// _nuc_<mineral> call through. Swaps the shared global `rng` to that mineral's
+// private (mineral, step) stream for the WHOLE call — capturing both the
+// substrate-pick draws in the _nuc_ body AND the cell/ring/twin/fill-dampener
+// draws inside sim.nucleate() — then restores. Restoring means nucleation no
+// longer advances the shared stream at all (the growth loop's rng.uniform jitter
+// then reads a position independent of nucleation count — a free extra decoupling).
+//
+// fn.name is "_nuc_<mineral>"; the build is a non-minifying concat (148 modules)
+// and tsc/vitest preserve names, so the key is stable across runtimes.
+function _runNuc(sim, fn) {
+    if (!NUC_DERIVED_SEEDS) {
+        fn(sim);
+        return;
+    }
+    const saved = rng;
+    rng = _makeNucRng(sim._nucSharedState | 0, fn.name, sim.step | 0);
+    try {
+        fn(sim);
+    }
+    finally {
+        rng = saved;
+    }
+}
+// Setter so the dark-observe A/B probe (tools/nuc-seed-isolation-probe.mjs) and
+// the permanent isolation regression test can flip the keystone at runtime —
+// mirrors the harness's setSeed pattern for the bundle-scoped `rng`. Not a
+// player control. Returns the previous value so callers can restore it.
+function _setNucDerivedSeeds(on) {
+    const prev = NUC_DERIVED_SEEDS;
+    NUC_DERIVED_SEEDS = !!on;
+    return prev;
+}
 // SPATIAL origin (boss, 2026-06-01): a movement can originate at one
 // semi-random CELL and flow outward via the diffusion that already runs each
 // step (_diffuseRingState over mesh.cells[].fluid) — instead of applying
@@ -51852,14 +53266,14 @@ function _nuc_awaruite(sim) {
     }
 }
 function _nucleateClass_native(sim) {
-    _nuc_native_bismuth(sim);
-    _nuc_native_tellurium(sim);
-    _nuc_native_sulfur(sim);
-    _nuc_native_arsenic(sim);
-    _nuc_native_silver(sim);
-    _nuc_native_copper(sim);
-    _nuc_native_gold(sim);
-    _nuc_awaruite(sim);
+    _runNuc(sim, _nuc_native_bismuth);
+    _runNuc(sim, _nuc_native_tellurium);
+    _runNuc(sim, _nuc_native_sulfur);
+    _runNuc(sim, _nuc_native_arsenic);
+    _runNuc(sim, _nuc_native_silver);
+    _runNuc(sim, _nuc_native_copper);
+    _runNuc(sim, _nuc_native_gold);
+    _runNuc(sim, _nuc_awaruite);
 }
 
 // ── 87-nucleation-oxide.js ──
@@ -52091,15 +53505,15 @@ function _nuc_brucite(sim) {
     }
 }
 function _nucleateClass_oxide(sim) {
-    _nuc_hematite(sim);
-    _nuc_uraninite(sim);
-    _nuc_magnetite(sim);
-    _nuc_cuprite(sim);
-    _nuc_rutile(sim);
-    _nuc_chromite(sim);
-    _nuc_cassiterite(sim);
-    _nuc_pyrolusite(sim);
-    _nuc_brucite(sim);
+    _runNuc(sim, _nuc_hematite);
+    _runNuc(sim, _nuc_uraninite);
+    _runNuc(sim, _nuc_magnetite);
+    _runNuc(sim, _nuc_cuprite);
+    _runNuc(sim, _nuc_rutile);
+    _runNuc(sim, _nuc_chromite);
+    _runNuc(sim, _nuc_cassiterite);
+    _runNuc(sim, _nuc_pyrolusite);
+    _runNuc(sim, _nuc_brucite);
 }
 
 // ── 88-nucleation-phosphate.js ──
@@ -52419,20 +53833,20 @@ function _nuc_plumbogummite(sim) {
     }
 }
 function _nucleateClass_phosphate(sim) {
-    _nuc_descloizite(sim);
-    _nuc_mottramite(sim);
-    _nuc_clinobisvanite(sim);
-    _nuc_pyromorphite(sim);
-    _nuc_vanadinite(sim);
-    _nuc_torbernite(sim);
-    _nuc_zeunerite(sim);
-    _nuc_carnotite(sim);
-    _nuc_autunite(sim);
-    _nuc_uranospinite(sim);
-    _nuc_tyuyamunite(sim);
-    _nuc_apatite(sim);
-    _nuc_plumbogummite(sim);
-    _nuc_turquoise(sim);
+    _runNuc(sim, _nuc_descloizite);
+    _runNuc(sim, _nuc_mottramite);
+    _runNuc(sim, _nuc_clinobisvanite);
+    _runNuc(sim, _nuc_pyromorphite);
+    _runNuc(sim, _nuc_vanadinite);
+    _runNuc(sim, _nuc_torbernite);
+    _runNuc(sim, _nuc_zeunerite);
+    _runNuc(sim, _nuc_carnotite);
+    _runNuc(sim, _nuc_autunite);
+    _runNuc(sim, _nuc_uranospinite);
+    _runNuc(sim, _nuc_tyuyamunite);
+    _runNuc(sim, _nuc_apatite);
+    _runNuc(sim, _nuc_plumbogummite);
+    _runNuc(sim, _nuc_turquoise);
 }
 
 // ── 89-nucleation-silicate.js ──
@@ -53120,6 +54534,46 @@ function _nuc_prehnite(sim) {
         }
     }
 }
+// v196 (2026-06-15): Epidote — the Fe3+ alpine-cleft sorosilicate. Substrate
+// priority follows the Tormiq paragenesis: quartz (cleft lining) > adularia
+// (feldspar) > byssolite (actinolite, → divergent sprays) > magnetite (the
+// Fe-oxide redox partner) > calcite (late) > wall. RNG-cascade-guarded at
+// sigma < 1.0 early-out (the supersat already carries the oxidizing O2 gate,
+// so this only consumes RNG in oxidized Ca-Al-Fe-Si fluids).
+function _nuc_epidote(sim) {
+    const sigma = sim.conditions.supersaturation_epidote();
+    if (sigma < MINERAL_GATES_epidote.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('epidote'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'epidote' && c.active);
+    if (existing.length >= 5)
+        return;
+    let pos = 'vug wall';
+    const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    const active_fsp = sim.crystals.filter(c => c.mineral === 'feldspar' && c.active);
+    const active_act = sim.crystals.filter(c => c.mineral === 'actinolite' && c.active);
+    const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    if (active_qz.length && rng.random() < 0.55)
+        pos = `perched on quartz #${active_qz[0].crystal_id}`;
+    else if (active_act.length && rng.random() < 0.45)
+        pos = `as sprays on byssolite (actinolite #${active_act[0].crystal_id})`;
+    else if (active_fsp.length && rng.random() < 0.40)
+        pos = `with adularia (feldspar #${active_fsp[0].crystal_id})`;
+    else if (active_mag.length && rng.random() < 0.30)
+        pos = `on magnetite #${active_mag[0].crystal_id}`;
+    else if (active_cal.length && rng.random() < 0.25)
+        pos = `with calcite #${active_cal[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('epidote', pos);
+    if (sigma > 1.2 * discount) {
+        if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+            const c = sim.nucleate('epidote', pos, sigma);
+            const o2 = sim.conditions.fluid.O2 ?? 0;
+            sim.log.push(`  ✦ NUCLEATION: 🫒 Epidote #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, Fe=${sim.conditions.fluid.Fe.toFixed(1)}, O₂=${o2.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — pistachio-green Fe³⁺ alpine-cleft sorosilicate`);
+        }
+    }
+}
 // v112 (2026-05-20): Paired Ca-Al-Mg calc-silicates for the Jeffrey
 // Mine rodingite arc. Both early-stage rodingite + skarn (T ~300-450°C,
 // alkaline). Grossular substrate priority: diopside > wollastonite >
@@ -53280,33 +54734,238 @@ function _nuc_datolite(sim) {
         }
     }
 }
+// v200 (2026-06-17): Stilbite — the cooler Deccan Stage-II zeolite. Substrate
+// priority follows the amygdale paragenesis: the silica lining (chalcedony/
+// quartz veneer) is the primary nucleation surface (turnstone/Pune: stilbite
+// "crystallized on a microcrystalline silicate layer already deposited on the
+// basalt host"), then intergrowth with heulandite, then late calcite /
+// apophyllite. RNG-cascade-guarded at sigma < sigma_crit.
+function _nuc_stilbite(sim) {
+    const sigma = sim.conditions.supersaturation_stilbite();
+    if (sigma < MINERAL_GATES_stilbite.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('stilbite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'stilbite' && c.active);
+    if (existing.length >= 5)
+        return;
+    let pos = 'vug wall';
+    const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    const active_heu = sim.crystals.filter(c => c.mineral === 'heulandite' && c.active);
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    const active_apo = sim.crystals.filter(c => c.mineral === 'apophyllite' && c.active);
+    if (active_qz.length && rng.random() < 0.55)
+        pos = `on the silica lining (quartz #${active_qz[0].crystal_id})`;
+    else if (active_heu.length && rng.random() < 0.35)
+        pos = `intergrown with heulandite #${active_heu[0].crystal_id}`;
+    else if (active_cal.length && rng.random() < 0.30)
+        pos = `with calcite #${active_cal[0].crystal_id}`;
+    else if (active_apo.length && rng.random() < 0.25)
+        pos = `with apophyllite #${active_apo[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('stilbite', pos);
+    if (sigma > 1.2 * discount) {
+        if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+            const c = sim.nucleate('stilbite', pos, sigma);
+            sim.log.push(`  ✦ NUCLEATION: 🌾 Stilbite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — peach wheatsheaf zeolite, Deccan Stage-II`);
+        }
+    }
+}
+// v200 (2026-06-17): Heulandite — the warmer Deccan Stage-II zeolite (the
+// dehydration product of stilbite). Same silica-lining-first substrate
+// priority; intergrows with stilbite. RNG-cascade-guarded.
+function _nuc_heulandite(sim) {
+    const sigma = sim.conditions.supersaturation_heulandite();
+    if (sigma < MINERAL_GATES_heulandite.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('heulandite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'heulandite' && c.active);
+    if (existing.length >= 5)
+        return;
+    let pos = 'vug wall';
+    const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    const active_stb = sim.crystals.filter(c => c.mineral === 'stilbite' && c.active);
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    const active_apo = sim.crystals.filter(c => c.mineral === 'apophyllite' && c.active);
+    if (active_qz.length && rng.random() < 0.55)
+        pos = `on the silica lining (quartz #${active_qz[0].crystal_id})`;
+    else if (active_stb.length && rng.random() < 0.35)
+        pos = `intergrown with stilbite #${active_stb[0].crystal_id}`;
+    else if (active_cal.length && rng.random() < 0.30)
+        pos = `with calcite #${active_cal[0].crystal_id}`;
+    else if (active_apo.length && rng.random() < 0.25)
+        pos = `with apophyllite #${active_apo[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('heulandite', pos);
+    if (sigma > 1.2 * discount) {
+        if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+            const c = sim.nucleate('heulandite', pos, sigma);
+            sim.log.push(`  ✦ NUCLEATION: ⚰️ Heulandite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — coffin-tablet zeolite, Deccan Stage-II`);
+        }
+    }
+}
+// v202 (2026-06-17): Thomsonite — the EARLIEST amygdule zeolite (most aluminous,
+// Si/Al~1). Nucleates on the fresh cavity surface: early calcite > silica veneer
+// > smectite-lined wall. The later natrolite group + sheet zeolites nucleate ON
+// thomsonite. RNG-cascade-guarded.
+function _nuc_thomsonite(sim) {
+    const sigma = sim.conditions.supersaturation_thomsonite();
+    if (sigma < MINERAL_GATES_thomsonite.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('thomsonite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'thomsonite' && c.active);
+    if (existing.length >= 5)
+        return;
+    let pos = 'vug wall';
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    if (active_cal.length && rng.random() < 0.45)
+        pos = `on early calcite #${active_cal[0].crystal_id}`;
+    else if (active_qz.length && rng.random() < 0.40)
+        pos = `on the silica veneer (quartz #${active_qz[0].crystal_id})`;
+    const discount = sim._sigmaDiscountForPosition('thomsonite', pos);
+    if (sigma > 1.2 * discount) {
+        // Spherulitic high-nucleation-density habit (the radiating "eyes" form from
+        // MANY close centers — Wise & Tschernich 1978), so thomsonite re-nucleates
+        // at a LOWER sigma threshold than the projecting zeolites.
+        if (!existing.length || (sigma > 1.4 && rng.random() < 0.30)) {
+            const c = sim.nucleate('thomsonite', pos, sigma);
+            sim.log.push(`  ✦ NUCLEATION: 👁️ Thomsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — concentric "eye" Na-Ca zeolite, earliest Deccan cavity phase`);
+        }
+    }
+}
+// v201 (2026-06-17): Scolecite — the Ca-endmember fibrous natrolite-group
+// zeolite, forms BEFORE the sheet zeolites. Substrate priority: silica lining
+// (chalcedony/quartz) > thomsonite/mesolite intergrowth > calcite > wall. RNG-
+// cascade-guarded. (Later stilbite/heulandite nucleate ON these sprays — see
+// their substrate logic.)
+function _nuc_scolecite(sim) {
+    const sigma = sim.conditions.supersaturation_scolecite();
+    if (sigma < MINERAL_GATES_scolecite.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('scolecite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'scolecite' && c.active);
+    if (existing.length >= 5)
+        return;
+    let pos = 'vug wall';
+    const active_thom = sim.crystals.filter(c => c.mineral === 'thomsonite' && c.active);
+    const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    const active_mes = sim.crystals.filter(c => c.mineral === 'mesolite' && c.active);
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    if (active_thom.length && rng.random() < 0.50)
+        pos = `overgrowing thomsonite #${active_thom[0].crystal_id}`;
+    else if (active_qz.length && rng.random() < 0.55)
+        pos = `on the silica lining (quartz #${active_qz[0].crystal_id})`;
+    else if (active_mes.length && rng.random() < 0.40)
+        pos = `intergrown with mesolite #${active_mes[0].crystal_id}`;
+    else if (active_cal.length && rng.random() < 0.30)
+        pos = `on calcite #${active_cal[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('scolecite', pos);
+    if (sigma > 1.2 * discount) {
+        if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+            const c = sim.nucleate('scolecite', pos, sigma);
+            sim.log.push(`  ✦ NUCLEATION: 🪮 Scolecite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — radiating fibrous Ca-zeolite, Deccan pre-Stage-II`);
+        }
+    }
+}
+// v201 (2026-06-17): Mesolite — the ordered Na-Ca intermediate. Same fibrous-
+// group substrate priority; co-deposits with scolecite. RNG-cascade-guarded.
+function _nuc_mesolite(sim) {
+    const sigma = sim.conditions.supersaturation_mesolite();
+    if (sigma < MINERAL_GATES_mesolite.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('mesolite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'mesolite' && c.active);
+    if (existing.length >= 5)
+        return;
+    let pos = 'vug wall';
+    const active_thom = sim.crystals.filter(c => c.mineral === 'thomsonite' && c.active);
+    const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    const active_sco = sim.crystals.filter(c => c.mineral === 'scolecite' && c.active);
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    if (active_thom.length && rng.random() < 0.50)
+        pos = `overgrowing thomsonite #${active_thom[0].crystal_id}`;
+    else if (active_qz.length && rng.random() < 0.55)
+        pos = `on the silica lining (quartz #${active_qz[0].crystal_id})`;
+    else if (active_sco.length && rng.random() < 0.40)
+        pos = `intergrown with scolecite #${active_sco[0].crystal_id}`;
+    else if (active_cal.length && rng.random() < 0.30)
+        pos = `on calcite #${active_cal[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('mesolite', pos);
+    if (sigma > 1.2 * discount) {
+        if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+            const c = sim.nucleate('mesolite', pos, sigma);
+            sim.log.push(`  ✦ NUCLEATION: 🧵 Mesolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — hair-like Na-Ca zeolite tuft, Deccan pre-Stage-II`);
+        }
+    }
+}
+// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// A perching phase: nucleates on the earlier zeolite lining (sheet zeolites
+// stilbite/heulandite, then the fibrous group), then calcite, then wall.
+// RNG-cascade-guarded. (Last in the silicate iterator — paragenetically late.)
+function _nuc_chabazite(sim) {
+    const sigma = sim.conditions.supersaturation_chabazite();
+    if (sigma < MINERAL_GATES_chabazite.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('chabazite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'chabazite' && c.active);
+    if (existing.length >= 5)
+        return;
+    let pos = 'vug wall';
+    const active_sheet = sim.crystals.filter(c => (c.mineral === 'stilbite' || c.mineral === 'heulandite') && c.active);
+    const active_fib = sim.crystals.filter(c => (c.mineral === 'scolecite' || c.mineral === 'mesolite' || c.mineral === 'thomsonite') && c.active);
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    if (active_sheet.length && rng.random() < 0.50)
+        pos = `perched on ${active_sheet[0].mineral} #${active_sheet[0].crystal_id}`;
+    else if (active_fib.length && rng.random() < 0.40)
+        pos = `perched on ${active_fib[0].mineral} #${active_fib[0].crystal_id}`;
+    else if (active_cal.length && rng.random() < 0.30)
+        pos = `with calcite #${active_cal[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('chabazite', pos);
+    if (sigma > 1.2 * discount) {
+        if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+            const c = sim.nucleate('chabazite', pos, sigma);
+            sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite, late Deccan cavity phase`);
+        }
+    }
+}
 function _nucleateClass_silicate(sim) {
-    _nuc_quartz(sim);
-    _nuc_apophyllite(sim);
-    _nuc_feldspar(sim);
-    _nuc_albite(sim);
-    _nuc_chrysocolla(sim);
-    _nuc_spodumene(sim);
-    _nuc_tourmaline(sim);
-    _nuc_topaz(sim);
-    _nuc_chrysoprase(sim);
-    _nuc_lepidolite(sim);
-    _nuc_dioptase(sim);
-    _nuc_shattuckite(sim);
-    _nuc_hemimorphite(sim);
-    _nuc_willemite(sim);
-    _nuc_coffinite(sim);
-    _nuc_uranophane(sim);
-    _nuc_opal(sim);
-    _nuc_datolite(sim);
-    _nuc_vesuvianite(sim);
-    _nuc_grossular(sim);
-    _nuc_diopside(sim);
-    _nuc_pectolite(sim);
-    _nuc_wollastonite(sim);
-    _nuc_prehnite(sim);
-    _nuc_chrysotile(sim);
-    _nuc_tigers_eye(sim);
+    _runNuc(sim, _nuc_quartz);
+    _runNuc(sim, _nuc_apophyllite);
+    _runNuc(sim, _nuc_feldspar);
+    _runNuc(sim, _nuc_albite);
+    _runNuc(sim, _nuc_chrysocolla);
+    _runNuc(sim, _nuc_spodumene);
+    _runNuc(sim, _nuc_tourmaline);
+    _runNuc(sim, _nuc_topaz);
+    _runNuc(sim, _nuc_chrysoprase);
+    _runNuc(sim, _nuc_lepidolite);
+    _runNuc(sim, _nuc_dioptase);
+    _runNuc(sim, _nuc_shattuckite);
+    _runNuc(sim, _nuc_hemimorphite);
+    _runNuc(sim, _nuc_willemite);
+    _runNuc(sim, _nuc_coffinite);
+    _runNuc(sim, _nuc_uranophane);
+    _runNuc(sim, _nuc_opal);
+    _runNuc(sim, _nuc_datolite);
+    _runNuc(sim, _nuc_vesuvianite);
+    _runNuc(sim, _nuc_grossular);
+    _runNuc(sim, _nuc_diopside);
+    _runNuc(sim, _nuc_pectolite);
+    _runNuc(sim, _nuc_wollastonite);
+    _runNuc(sim, _nuc_prehnite);
+    _runNuc(sim, _nuc_epidote);
+    _runNuc(sim, _nuc_thomsonite);
+    _runNuc(sim, _nuc_scolecite);
+    _runNuc(sim, _nuc_mesolite);
+    _runNuc(sim, _nuc_stilbite);
+    _runNuc(sim, _nuc_heulandite);
+    _runNuc(sim, _nuc_chabazite);
+    _runNuc(sim, _nuc_chrysotile);
+    _runNuc(sim, _nuc_tigers_eye);
 }
 
 // ── 89a-nucleation-amphibole.js ──
@@ -53460,11 +55119,11 @@ function _nuc_crocidolite(sim) {
     }
 }
 function _nucleateClass_amphibole(sim) {
-    _nuc_tremolite(sim);
-    _nuc_actinolite(sim);
-    _nuc_anthophyllite(sim);
-    _nuc_amosite(sim);
-    _nuc_crocidolite(sim);
+    _runNuc(sim, _nuc_tremolite);
+    _runNuc(sim, _nuc_actinolite);
+    _runNuc(sim, _nuc_anthophyllite);
+    _runNuc(sim, _nuc_amosite);
+    _runNuc(sim, _nuc_crocidolite);
 }
 
 // ── 90-nucleation-sulfate.js ──
@@ -53808,22 +55467,22 @@ function _nuc_leadhillite(sim) {
     sim.log.push(`  ✦ NUCLEATION: ⬜ Leadhillite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}) — pearly hexagonal-looking Pb sulfate-carbonate`);
 }
 function _nucleateClass_sulfate(sim) {
-    _nuc_barite(sim);
-    _nuc_celestine(sim);
-    _nuc_jarosite(sim);
-    _nuc_alunite(sim);
-    _nuc_brochantite(sim);
-    _nuc_antlerite(sim);
-    _nuc_anhydrite(sim);
-    _nuc_selenite(sim);
-    _nuc_mirabilite(sim);
-    _nuc_thenardite(sim);
-    _nuc_chalcanthite(sim);
-    _nuc_anglesite(sim);
+    _runNuc(sim, _nuc_barite);
+    _runNuc(sim, _nuc_celestine);
+    _runNuc(sim, _nuc_jarosite);
+    _runNuc(sim, _nuc_alunite);
+    _runNuc(sim, _nuc_brochantite);
+    _runNuc(sim, _nuc_antlerite);
+    _runNuc(sim, _nuc_anhydrite);
+    _runNuc(sim, _nuc_selenite);
+    _runNuc(sim, _nuc_mirabilite);
+    _runNuc(sim, _nuc_thenardite);
+    _runNuc(sim, _nuc_chalcanthite);
+    _runNuc(sim, _nuc_anglesite);
     // v100 Pb-Cu sulfate trio — late-stage Pb-Cu oxidation cycle
-    _nuc_linarite(sim);
-    _nuc_caledonite(sim);
-    _nuc_leadhillite(sim);
+    _runNuc(sim, _nuc_linarite);
+    _runNuc(sim, _nuc_caledonite);
+    _runNuc(sim, _nuc_leadhillite);
 }
 
 // ── 91-nucleation-sulfide.js ──
@@ -54458,48 +56117,48 @@ function _nuc_enargite(sim) {
     sim.log.push(`  ✦ NUCLEATION: ⬛ Enargite #${c.crystal_id} (${polymorph_label}) on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — high-sulfidation primary Cu-As-S`);
 }
 function _nucleateClass_sulfide(sim) {
-    _nuc_sphalerite(sim);
-    _nuc_wurtzite(sim);
-    _nuc_pyrite(sim);
-    _nuc_marcasite(sim);
-    _nuc_chalcopyrite(sim);
-    _nuc_tetrahedrite(sim);
-    _nuc_tennantite(sim);
-    _nuc_enargite(sim);
+    _runNuc(sim, _nuc_sphalerite);
+    _runNuc(sim, _nuc_wurtzite);
+    _runNuc(sim, _nuc_pyrite);
+    _runNuc(sim, _nuc_marcasite);
+    _runNuc(sim, _nuc_chalcopyrite);
+    _runNuc(sim, _nuc_tetrahedrite);
+    _runNuc(sim, _nuc_tennantite);
+    _runNuc(sim, _nuc_enargite);
     // v95 diarsenide quartet — order matters: rammelsbergite (Ni-rich
     // innermost) → skutterudite (Co-Ni core on natives) → safflorite
     // (Co mantle on Ni cores) → loellingite (Fe-rich outermost rim)
-    _nuc_rammelsbergite(sim);
-    _nuc_skutterudite(sim);
-    _nuc_safflorite(sim);
-    _nuc_loellingite(sim);
-    _nuc_arsenopyrite(sim);
-    _nuc_galena(sim);
-    _nuc_molybdenite(sim);
-    _nuc_stibnite(sim);
-    _nuc_cinnabar(sim);
-    _nuc_metacinnabar(sim);
-    _nuc_realgar(sim);
-    _nuc_orpiment(sim);
-    _nuc_bismuthinite(sim);
-    _nuc_argentite(sim);
-    _nuc_nickeline(sim);
-    _nuc_millerite(sim);
-    _nuc_cobaltite(sim);
-    _nuc_acanthite(sim);
+    _runNuc(sim, _nuc_rammelsbergite);
+    _runNuc(sim, _nuc_skutterudite);
+    _runNuc(sim, _nuc_safflorite);
+    _runNuc(sim, _nuc_loellingite);
+    _runNuc(sim, _nuc_arsenopyrite);
+    _runNuc(sim, _nuc_galena);
+    _runNuc(sim, _nuc_molybdenite);
+    _runNuc(sim, _nuc_stibnite);
+    _runNuc(sim, _nuc_cinnabar);
+    _runNuc(sim, _nuc_metacinnabar);
+    _runNuc(sim, _nuc_realgar);
+    _runNuc(sim, _nuc_orpiment);
+    _runNuc(sim, _nuc_bismuthinite);
+    _runNuc(sim, _nuc_argentite);
+    _runNuc(sim, _nuc_nickeline);
+    _runNuc(sim, _nuc_millerite);
+    _runNuc(sim, _nuc_cobaltite);
+    _runNuc(sim, _nuc_acanthite);
     // v96 ruby silvers — late epithermal Ag, post-arsenide/post-acanthite
-    _nuc_proustite(sim);
-    _nuc_pyrargyrite(sim);
-    _nuc_bornite(sim);
-    _nuc_chalcocite(sim);
-    _nuc_covellite(sim);
-    _nuc_calaverite(sim);
-    _nuc_sylvanite(sim);
-    _nuc_hessite(sim);
-    _nuc_naumannite(sim);
-    _nuc_clausthalite(sim);
-    _nuc_greenockite(sim);
-    _nuc_hawleyite(sim);
+    _runNuc(sim, _nuc_proustite);
+    _runNuc(sim, _nuc_pyrargyrite);
+    _runNuc(sim, _nuc_bornite);
+    _runNuc(sim, _nuc_chalcocite);
+    _runNuc(sim, _nuc_covellite);
+    _runNuc(sim, _nuc_calaverite);
+    _runNuc(sim, _nuc_sylvanite);
+    _runNuc(sim, _nuc_hessite);
+    _runNuc(sim, _nuc_naumannite);
+    _runNuc(sim, _nuc_clausthalite);
+    _runNuc(sim, _nuc_greenockite);
+    _runNuc(sim, _nuc_hawleyite);
 }
 // v63 brief-19: telluride / selenide / Cd-sulfide nucleation gates.
 function _nuc_calaverite(sim) {

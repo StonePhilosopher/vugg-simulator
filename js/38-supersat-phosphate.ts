@@ -276,9 +276,17 @@ Object.assign(VugConditions.prototype, {
   const g = MINERAL_GATES_mottramite;
   if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Cu < g.fluid_min!.Cu || this.fluid.V < g.fluid_min!.V) return 0;
   if (!phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
-  if (this.fluid.Zn < g.fluid_min!.Zn) return 0;
+  // NOTE (2026-06-16): NO hard Zn-minimum gate. mottramite is PbCu(VO4)(OH) —
+  // the Cu ENDMEMBER of the mottramite–descloizite series; it contains no Zn.
+  // The old `if (Zn < 0.5) return 0` was spurious (a descloizite-template
+  // copy): it blocked mottramite precisely when the fluid was purest-Cu
+  // (Zn→0, cu_fraction→1.0), which is when mottramite should MOST form. It
+  // also coupled mottramite to any Zn-consumer — gating oxidized-zone
+  // sphalerite drained Zn to 0 at ~half the seeds and falsely killed
+  // mottramite (the ZnS-redox-gate held-gate finding, ledger #11). The
+  // cu_fraction discriminator below is the correct series gate.
   const cu_zn_total = this.fluid.Cu + this.fluid.Zn;
-  const cu_fraction = this.fluid.Cu / cu_zn_total;
+  const cu_fraction = cu_zn_total > 0 ? this.fluid.Cu / cu_zn_total : 1.0;
   if (cu_fraction < 0.5) return 0;
   const pb_f = Math.min(this.fluid.Pb / 80.0, 2.5);
   const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);

@@ -122,10 +122,10 @@ function _nuc_wolframite(sim) {
 }
 
 function _nucleateClass_molybdate(sim) {
-  _nuc_wulfenite(sim);
-  _nuc_ferrimolybdite(sim);
-  _nuc_stolzite(sim);
-  _nuc_scheelite(sim);
-  _nuc_powellite(sim);
-  _nuc_wolframite(sim);
+  _runNuc(sim, _nuc_wulfenite);
+  _runNuc(sim, _nuc_ferrimolybdite);
+  _runNuc(sim, _nuc_stolzite);
+  _runNuc(sim, _nuc_scheelite);
+  _runNuc(sim, _nuc_powellite);
+  _runNuc(sim, _nuc_wolframite);
 }

@@ -202,9 +202,9 @@ describe('fluid-spots — 2c.2b deposition CLUSTERING (per-cell, render-visible)
   // Distance is the lat-long graph distance using the anchor's RING (a.ringIdx) and
   // COLUMN (a.cellIdx) — they are SEPARATE fields (a.cellIdx is 0..N-1, not a full
   // mesh index), the subtlety that bit the first clustering probe.
-  function runPlacement(depositionOn: boolean) {
+  function runPlacement(depositionOn: boolean, seed = 42) {
     setFluidSpotsDepositionEnabled(depositionOn);
-    setSeed(42);
+    setSeed(seed);
     const { conditions, events, defaultSteps } = SCENARIOS['gem_pegmatite']();
     const sim = new VugSimulator(conditions, events);
     const steps = defaultSteps ?? 120;
@@ -232,11 +232,25 @@ describe('fluid-spots — 2c.2b deposition CLUSTERING (per-cell, render-visible)
   }
 
   it('ON CLUSTERS more crystals within 2 cells of a feeder than OFF (the visible payoff)', () => {
-    const off = runPlacement(false);
-    const on = runPlacement(true);
-    expect(on.feeders.length).toBeGreaterThan(0);                   // there ARE supply-feeders
-    expect(on.nearFeeder).toBeGreaterThan(off.nearFeeder);          // crystals concentrate at the vents
-  });
+    // Clustering is a STATISTICAL placement effect; per-seed it's noisy (a given
+    // seed's free-wall nuclei may not land near the 3 feeders). The v198 keystone
+    // re-realized placement, so seed 42 alone now shows 0 near-feeder in BOTH
+    // modes — but aggregated across a seed set the signal is loud (verified
+    // OFF≈2 vs ON≈14 over these 6 contiguous seeds, ~7×). Pin the aggregate, not
+    // the fragile single seed. 6 seeds × 2 modes keeps the test well under the
+    // timeout given the keystone's per-mineral-stream overhead (explicit 120s
+    // bump for headroom under full-suite CPU contention).
+    const seeds = [1, 2, 3, 4, 5, 6];
+    let onSum = 0, offSum = 0, feedersSeen = 0;
+    for (const s of seeds) {
+      offSum += runPlacement(false, s).nearFeeder;
+      const on = runPlacement(true, s);
+      onSum += on.nearFeeder;
+      feedersSeen += on.feeders.length;
+    }
+    expect(feedersSeen).toBeGreaterThan(0);     // there ARE supply-feeders
+    expect(onSum).toBeGreaterThan(offSum);      // crystals concentrate at the vents (aggregate)
+  }, 120_000);
 
   it('ON preserves the assemblage (species set unchanged — clustering, not chemistry)', () => {
     const off = runPlacement(false);

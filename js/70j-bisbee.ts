@@ -71,16 +71,33 @@ function event_bisbee_oxidation_zone(c) {
 }
 
 function event_bisbee_azurite_peak(c) {
-  c.fluid.CO3 += 80;
+  // v204 azurite fix: the old `CO3 += 80` ran off a CO3 base depleted to ~20
+  // by the earlier carbonate/calcite draw, landing ~100 — under azurite's
+  // effectiveCO3 ≥ 120 gate (and the pH-7 Bjerrum speciation pulls effective
+  // BELOW raw, so even ~100 raw was nowhere near). The famous "Bisbee Blue"
+  // never nucleated (0/8 seeds, flagged as debt at v186). FIX: deliver a CO3
+  // FLOOR high enough that effectiveCO3 clears 120 at pH ~7.4 — geologically
+  // the monsoon's CO2-charged rainwater aggressively dissolving the Escabrosa
+  // limestone DOES drive both high DIC and a near-neutral-to-mild-alkaline
+  // buffered pocket (Vink 1986). The later co2_drop event (CO3 -= 120) still
+  // pulls effective CO3 back under the gate → azurite reverts to malachite.
+  c.fluid.CO3 = Math.max(c.fluid.CO3 + 80, 260);
   c.fluid.Cu += 30;
   c.fluid.O2 = 1.3;
-  c.fluid.pH = 7.0;
+  c.fluid.pH = 7.4;
   c.flow_rate = 0.9;
   return "A monsoon season — the first in many. CO₂-charged rainwater infiltrates fast, dissolves limestone aggressively, and hits the copper pocket at pH 7 with CO₃ at 110+ ppm. Azurite — deep midnight-blue monoclinic prisms and radiating rosettes — nucleates from the supersaturated brine. This phase produces the showpiece 'Bisbee Blue' specimens.";
 }
 
 function event_bisbee_co2_drop(c) {
-  c.fluid.CO3 = Math.max(c.fluid.CO3 - 120, 50);
+  // v204: deepened the pCO2 crash (−120 → −210, floor 50 → 40) so that after the
+  // higher azurite_peak CO3 floor (260), the late carbonate draws down far enough
+  // that the step-265 silica_seep stage clears dioptase's CO3 ≤ 50 gate (raw CO3
+  // 260 → co2_drop 50 → silica_seep 20). Geologically this IS the monsoon's end —
+  // pCO2 falling below azurite stability — so a deeper drop fits the story, and it
+  // still reverts azurite to malachite. Without it, the v204 azurite floor left
+  // residual CO3 ~110 at step 265 and killed the Bisbee dioptase.
+  c.fluid.CO3 = Math.max(c.fluid.CO3 - 210, 40);
   c.fluid.O2 = 1.4;
   c.fluid.pH = 6.8;
   c.flow_rate = 0.7;

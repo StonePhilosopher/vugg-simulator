@@ -11020,5 +11020,291 @@
 //   events to archive/strips/v<N>/ at each rebake; v194 was backfilled
 //   BEFORE this correction so the last confabulated-silver story is
 //   preserved as part of the record.
-const SIM_VERSION = 195;
+//   v196 — Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) (2026-06-15, this
+//        commit). The first ALPINE-CLEFT Fe3+ silicate in the catalog;
+//        retires the longest-deferred orphan in PROPOSALS-LEDGER §G (the
+//        Round-6 metamorphic-silicate gap). Monoclinic P2_1/m sorosilicate,
+//        the Fe3+ endmember of the clinozoisite-epidote series — lustrous
+//        pistachio-green prisms striated ∥b, the world-best Tormiq
+//        (Gilgit-Baltistan, Pakistan) gem swords.
+//
+//        THE DISCRIMINATOR IS REDOX. Epidote requires ferric iron, so the
+//        engine gates on an OXIDIZING fluid (oxideRedoxAvailable O2>=0.5,
+//        the same proxy hematite + vanadinite use) on top of Ca/Al/Fe/Si +
+//        T 200-450 (sweet 250-400) + pH 6.5-9.0. Under reducing conditions
+//        the gate returns 0 — geologically, Fe partitions into magnetite +
+//        actinolite (Fe2+) and clinozoisite forms instead of green epidote
+//        (Holdaway 1972 CMP 37:307; Liou 1973 J.Petrol 14:381; the
+//        Fe3+>=0.5 apfu epidote/clinozoisite boundary is Armbruster et al.
+//        2006 EJM 18:551). sigma scales with oxidation (more O2 -> more Fe3+
+//        -> deeper green). This cleanly separates epidote from its catalog
+//        cousins actinolite (Mg+Fe2+) and the Ca-Al silicates prehnite/
+//        grossular (no redox gate).
+//
+//        Habit dispatch: striated_prismatic (default, ∥[010] + {001}
+//        cleavage) | gem_prismatic (excess>1.3, doubly-terminated Tormiq
+//        sword) | divergent_spray (on byssolite/actinolite substrate) |
+//        granular (excess<0.3, replacement). Substrate priority: quartz
+//        (cleft lining) > byssolite/actinolite (sprays) > adularia/feldspar
+//        > magnetite (Fe-oxide redox partner) > calcite > wall.
+//
+//        8-file add (supersat 39 + grow 59 + nucleation 89 + MINERAL_ENGINES
+//        65 + minerals.json + structural.json epidote cell for twin-law-
+//        check + this version block + tests-js/epidote.test.ts). Twin {100}
+//        lamellar p=0.12 (Handbook 'common'). DESIGNED for the
+//        tormiq_alpine_cleft scenario shipping next (v197); per the
+//        add-mineral default it fires at seed-42 wherever an oxidized
+//        Ca-Al-Fe-Si fluid hits the window — calibration drift documented
+//        in the seed42_v196 regen + commit message. Coverage 171 -> 172.
+//   v197 — tormiq_alpine_cleft scenario (2026-06-15, this commit) — the
+//        anchor for epidote (v196). Tormiq Valley, Haramosh Mts.,
+//        Gilgit-Baltistan, PAKISTAN: the world's premier alpine-cleft
+//        epidote locality (Handbook of Mineralogy names it type-quality,
+//        rivaling Knappenwand). An amphibolite-hosted Himalayan fissure
+//        (Main Karakoram Thrust) filled by a low-salinity, OXIDIZED,
+//        meteoric-metamorphic fluid — the oxidized character keeps iron
+//        ferric so the cleft grows green Fe3+ epidote, not clinozoisite.
+//
+//        Boss-requested ("an Afghanistan/Pakistan location scenario to
+//        test" epidote). Explicitly NOT the region's pegmatite type (no
+//        tourmaline/beryl) — the metamorphic-fissure Ca-Al-Fe3+ assemblage.
+//
+//        6-stage event paragenesis (js/70v-tormiq.ts): quartz lining (420C)
+//        -> Ti-Fe oxides (380C) -> EPIDOTE main stage (350->290C, Fe3+
+//        pulse, strongly oxidizing) -> byssolite/actinolite sprays (260C)
+//        -> adularia/feldspar (230C) -> late calcite (<200C). The cooling
+//        sweep is owned by the event handlers (chunky), carrying the fluid
+//        through epidote's 250-400 sweet spot for most of the run. Titanite/
+//        clinozoisite/zoisite/adularia/byssolite not yet in catalog —
+//        magnetite/feldspar/actinolite stand in.
+//
+//        Substitutes broth: Ca 600 Al 12 Fe 40 SiO2 320 Mg 40 K 120 O2 1.5
+//        pH 7 salinity 3, basalt(amphibolite proxy) wall, pocket cleft,
+//        shape_seed 1990. expects_species [epidote quartz actinolite
+//        feldspar calcite] is first-pass aspirational; seed-42 firing +
+//        any tune-scenario follow-ups documented in the commit message.
+//        Additive scenario — zero drift to the other 33. Scenarios 33->34.
+//   v198 — THE KEYSTONE: per-(mineral, step) derived nucleation seeds
+//        (2026-06-16, PROPOSAL-PER-MINERAL-NUC-SEEDS.md). Closes the
+//        structural bottleneck the redox-gate census (b81cf7d) hit: every
+//        nucleation draw used to thread through ONE continuous shared `rng`
+//        for the whole run, so any change in a mineral's draw-count re-phased
+//        every later (mineral, step) pair — adding the sphalerite/wurtzite
+//        redox gate displaced mottramite 96->47% though they share no ion
+//        (pure RNG-sequence drift; chemistry can't fix an RNG displacement).
+//
+//        FIX: each _nuc_<mineral> now nucleates from its OWN derived stream,
+//        seeded by _makeNucRng(sharedState, fn.name, step) (js/85j) and routed
+//        through _runNuc (the 13 _nucleateClass_* iterators call it for all 156
+//        sites). Mirrors the v181 _makeThermalRng decoupling one level finer:
+//        run-seed lineage (this._nucSharedState = rng.state at construction) +
+//        FNV-fold of the mineral key + step + the 15th-catch SCRAMBLE (one
+//        throwaway draw — bare folds leave nearby seeds correlated). The swap
+//        wraps the WHOLE _nuc_ call, so both the substrate-pick draws AND the
+//        cell/ring/twin/fill-dampener draws inside nucleate() come from the
+//        mineral's private stream; restoring leaves the shared stream untouched
+//        by nucleation (growth jitter decouples too, for free).
+//
+//        DELIBERATE FULL REBAKE — there is no byte-identical path; every
+//        nucleation draw changes source, so every scenario's seed-42 signature
+//        + every baseline re-realizes ONCE. Validated by ASSEMBLAGE
+//        PLAUSIBILITY (tools/nuc-seed-isolation-probe.mjs, OFF-vs-ON N=40:
+//        roster holds, no scenario loses an expects_species), not byte-identity
+//        — exactly how v181 was validated. The keystone PROPERTY (perturbing
+//        one mineral changes nothing else; OFF it does) is pinned in
+//        tests-js/nuc-seed-isolation.test.ts.
+//
+//        Flag NUC_DERIVED_SEEDS (default ON) reverts to the legacy single
+//        stream for the A/B probe only — NOT a player control. (v198 CLAIMED to
+//        unblock the held ZnS redox gate; it did NOT — see v199, the real fix
+//        was a mottramite gate bug, not RNG.) SIM 197 -> 198.
+//   v199 — THE HELD ZnS REDOX GATE, FINALLY SHIPPED + the mottramite Zn-gate
+//        bug it was blocked on (2026-06-16). Two coupled changes:
+//        (1) BUG FIX — supersaturation_mottramite (38-supersat-phosphate) had a
+//        spurious `if (Zn < 0.5) return 0` hard gate. mottramite is PbCu(VO4)(OH),
+//        the Cu ENDMEMBER of the mottramite-descloizite series — it contains NO
+//        Zn. The gate (a descloizite-template copy) blocked mottramite precisely
+//        when the fluid was purest-Cu (Zn->0, cu_fraction->1.0), i.e. when it
+//        should MOST form. Removed; the cu_fraction>=0.5 line remains as the
+//        correct series discriminator (Zn=0 -> cu_fraction=1.0, Cu-dominant ✓).
+//        (2) THE GATE — sulfideRedoxAnoxic(1.5) added to sphalerite + wurtzite
+//        (the last siblings of galena's v13 O2-gate omission; census b81cf7d).
+//        WHY COUPLED: the gate was HELD for two sessions because adding it
+//        dropped mottramite 98->49%. The held-gate arc proved (three probes) it
+//        was NOT nucleation-RNG (v198 keystone), NOT graduated competition
+//        (toggle identical), and only partly growth-jitter (a reverted growth
+//        keystone got 60->43). The fluid-pathway trace found the truth: gating
+//        oxidized-zone sphalerite redirects Zn into the correct sinks
+//        (smithsonite/aurichalcite), draining it to 0 at ~half the seeds, which
+//        tripped the spurious Zn-gate. Fix (1) removes that coupling; with it,
+//        the gate drops mottramite only 98->84% (mild, real — one Zn sink fewer).
+//        FULL REBAKE: mottramite can now fire in pure-Cu fluids + ZnS excluded
+//        from oxidizing zones; baselines re-realize where those bite. SIM 198 ->
+//        199. Closes LEDGER §A #11.
+//   v200 — THE DECCAN STAGE-II ZEOLITE COUPLE: stilbite + heulandite
+//        (2026-06-17). Two new silicate-class minerals that fill the
+//        deccan_zeolite Stage-II NARRATIVE GAP — the step-70 event narrated
+//        "Stilbite + heulandite + calcite blades" while neither mineral
+//        existed in the catalog (PROPOSALS-LEDGER §A #14 + §G; the highest-
+//        leverage mineral add on that list because it ALSO retires a
+//        confabulation, the mvt-silver-deconfab discipline applied to a
+//        positive over-promise). The step-70 event text is trued in the same
+//        ship.
+//
+//        THE SCIENCE — they are the stilbite/heulandite DEHYDRATION COUPLE:
+//        Ca-stilbite = Ca-heulandite + H2O (Kiseleva, Navrotsky, Belitsky &
+//        Fursenko 2001, Am. Mineral. 86:448, measured by calorimetry). So:
+//          • stilbite — NaCa4Si27Al9O72·28H2O, the COOLER, more-hydrated
+//            member; moderate silica; T sweet 60-110C; sheaf/bowtie/{001}
+//            cruciform habit (the wheatsheaf); Deccan peach.
+//          • heulandite — (Ca,Na)Al2Si7O18·6H2O, the WARMER dehydration
+//            product; HIGHER silica activity (SiO2 gate 400 vs stilbite 250);
+//            T sweet 120-180C; coffin-shaped {010} tablets.
+//        DISCRIMINATOR = two axes: temperature window + silica activity. Both
+//        Ca-dominant (engine uses Ca+Na as the exchangeable budget so the -Na
+//        varieties can fire), alkaline (pH 7.0-10.5), and REDOX-INSENSITIVE
+//        (framework silicates, no redox-active ion -> no redox gate, like
+//        prehnite). Si/Al>=4 clinoptilolite endmember intentionally NOT
+//        modelled: that boundary is COMPOSITIONAL (Coombs et al. 1997
+//        Can.Mineral. 35:1571), not a fluid gate, and the sim's SiO2 ppm is
+//        dissolved silica not framework Si/Al.
+//
+//        Engines: supersaturation_{stilbite,heulandite} (js/39) +
+//        grow_{stilbite,heulandite} (js/59) + _nuc_{stilbite,heulandite}
+//        (js/89, RNG-cascade-guarded, wired into _nucleateClass_silicate via
+//        _runNuc) + MINERAL_GATES_{stilbite,heulandite} (registry js/42) +
+//        MINERAL_ENGINES (js/65) + minerals.json specs + structural.json
+//        cells (both twin laws ✓ PASS twin-law-check: stilbite {001}
+//        cruciform p=0.35, heulandite {100} p=0.05).
+//
+//        Substrate priority (the amygdale paragenesis): the chalcedony/quartz
+//        SILICA LINING is the primary nucleation surface (Pune/turnstone:
+//        stilbite "crystallized on a microcrystalline silicate layer already
+//        deposited on the basalt host"), then mutual zeolite intergrowth, then
+//        calcite/apophyllite, then bare wall. CALIBRATION DRIFT: both fire in
+//        deccan_zeolite (the anchor) — heulandite in the Stage-II/III warm
+//        window, stilbite in the cool tail; full-fleet rebake re-realizes any
+//        alkaline-Ca-Al-silica-rich scenario where the gates also bite (see
+//        baseline-diff). SIM 199 -> 200. Coverage +2 live.
+//   v201 — THE FIBROUS NATROLITE-GROUP ZEOLITES: scolecite + mesolite
+//        (2026-06-17). The companion pair to v200's stilbite/heulandite — the
+//        LOW-Si fibrous Ca-(Na) zeolites that form EARLIER in the Deccan
+//        amygdule sequence (...natrolite -> analcime -> scolecite/mesolite ->
+//        stilbite -> heulandite -> apophyllite). Closes the §G fibrous-zeolite
+//        gap; the v200 step-70 text named them as honestly-unmodelled, now
+//        trued (they form first; the sheet zeolites drape over their sprays).
+//
+//        THE SCIENCE — the natrolite group is a Na<->Ca COUPLED-SUBSTITUTION
+//        series (Na+ + 1/2-vacancy <-> Ca2+ + 1/2 H2O, which is why the Ca
+//        member carries extra channel water), all built from the same low-Si
+//        (Si/Al~1.5) "natrolite chain":
+//          * scolecite — CaAl2Si3O10·3H2O, monoclinic Cc, the Ca ENDMEMBER;
+//            radiating acicular sprays/puffballs + square prisms; {100} twin
+//            (axis [001]) near-ubiquitous. Deccan (Poona/Nashik) premier.
+//          * mesolite — Na2Ca2Al6Si9O30·8H2O, orthorhombic Fdd2 with a GIANT
+//            b-axis (~56.6A = ordered 1-natrolite:2-scolecite layer stack); the
+//            ordered Na-Ca intermediate; finest hair-like fibrous tufts.
+//        DISCRIMINATOR = the Na/Ca FORK: scolecite fires Ca-dominant
+//        (Na/(Na+Ca)<=0.5); mesolite fires only in the MIXED band
+//        (0.2<=Na/(Na+Ca)<=0.8, needs BOTH cations — sigma uses the geometric
+//        mean of the Na+Ca factors); natrolite (Na endmember) is not wired.
+//        Gated on a LOW silica FLOOR (150, vs stilbite's 250) NOT a low-Si
+//        ceiling — Deccan is THE scolecite locality despite its silica-rich
+//        fluid (fluid SiO2 ppm != framework Si/Al; the group coexists with the
+//        sheet zeolites, just earlier). Alkaline, redox-insensitive (no gate).
+//
+//        Engines: supersaturation_{scolecite,mesolite} (js/39) +
+//        grow_{scolecite,mesolite} (js/59) + _nuc_{scolecite,mesolite} (js/89,
+//        RNG-cascade-guarded, wired into _nucleateClass_silicate BEFORE the
+//        sheet zeolites) + MINERAL_GATES (js/42) + MINERAL_ENGINES (js/65) +
+//        MINERAL_STOICHIOMETRY (js/19: scolecite {Ca1Al2Si3}, mesolite
+//        {Na2Ca2Al6Si9}) + minerals.json + structural.json cells. twin-law-
+//        check: scolecite {100} PASS; mesolite {010} FLAG (expected — the Fdd2
+//        giant-b cell defeats the simple-cell heuristic; real Handbook
+//        citation, ships per the citation-conservatism rule).
+//
+//        DECCAN TUNE: initial Na 40 -> 80. At Na=40 the fluid sat at
+//        Na/(Na+Ca)~0.15 (pure-scolecite regime) and mesolite never cleared its
+//        mixed-cation gate; 80 opens the window (Na-Ca amygdule fluid is
+//        geologically correct — mesolite is the Poona/Pashan classic). The bump
+//        also unlocked pectolite (NaCa2Si3O8(OH), a real basalt-amygdule Na-Ca
+//        silicate — legitimate). CALIBRATION: deccan now fires all four zeolites
+//        at seed 42 (scolecite 6, mesolite 5, stilbite 5, heulandite 5);
+//        full-fleet rebake re-realizes where the Na bump + new engines bite (see
+//        baseline-diff). SIM 200 -> 201. Coverage +2 live (scolecite, mesolite).
+//   v202 — THOMSONITE: the earliest, most-aluminous amygdule zeolite
+//        (2026-06-17). NaCa2Al5Si5O20·6H2O, Si/Al~1 — the LOWEST silica of the
+//        common amygdule zeolites. Completes the Deccan early-zeolite suite:
+//        thomsonite (v202) -> scolecite/mesolite (v201) -> stilbite/heulandite
+//        (v200). First in the cavity sequence (smectite -> calcite ->
+//        THOMSONITE -> natrolite -> analcime -> scolecite/mesolite -> sheets);
+//        the later zeolites nucleate ON it (wired into _nuc_scolecite/_mesolite).
+//
+//        THE DISCRIMINATOR is SILICA ACTIVITY, not Na/Ca. Thomsonite (Si/Al~1)
+//        vs the natrolite group (Si/Al~1.5) is a sharp line; thomsonite vs
+//        mesolite on Na/Ca is NOT (both are Na-Ca, thomsonite just more-Ca +
+//        lower-Si). So the engine gives thomsonite a SOFT low-silica preference
+//        (sigma boosted when Al-rich-relative-to-Si, mildly attenuated when
+//        silica-flooded) over a low floor (120) — NOT a hard low-Si ceiling
+//        (Deccan + Lake Superior are silica-rich yet thomsonite-bearing; fluid
+//        SiO2 ppm != framework Si/Al). Ca-dominant + Na-essential-minor (NaCa2,
+//        blocks Na/(Na+Ca)>0.6), high Al demand, alkaline, redox-insensitive.
+//
+//        Habits — the famous "thomsonite eyes": eye (default, concentric
+//        spherical botryoidal nodule, the Lake Superior gem / green lintonite) /
+//        spray (bladed rosettes) / acicular / columnar. Engines:
+//        supersaturation_thomsonite (js/39) + grow_thomsonite (js/59) +
+//        _nuc_thomsonite (js/89, RNG-guarded, wired FIRST in the silicate
+//        iterator) + MINERAL_GATES (js/42) + MINERAL_ENGINES (js/65) +
+//        MINERAL_STOICHIOMETRY (js/19: {Na1Ca2Al5Si5}) + minerals.json +
+//        structural.json (Pncn ordered; Pbmn disordered noted). twin-law-check:
+//        {110} PASS (pseudo-tetragonal a~=b). SIM 201 -> 202. Coverage +1 live.
+//   v203 — CHABAZITE: the late, intermediate-Si amygdule zeolite (2026-06-17).
+//        Ca2Al2Si4O12·6H2O, Si/Al~2 — intermediate between thomsonite/natrolite-
+//        group (~1-1.5) and the sheet zeolites (~2.7-3.5). The LAST amygdule
+//        zeolite (...stilbite -> heulandite -> apophyllite -> CHABAZITE ->
+//        mordenite -> late calcite). Completes the Deccan zeolite suite begun in
+//        v200 (six zeolites now: thomsonite, scolecite, mesolite, stilbite,
+//        heulandite, chabazite).
+//
+//        CATION-FLEXIBLE — the discriminator from the Ca-zeolites is NOT a
+//        cation fork but the late/cool slot + intermediate silica + the trigonal
+//        rhombohedral habit. The extra-framework cation runs Ca > Na > K and K is
+//        NOT required (Passaglia & Sheppard 2001); chabazite-Ca is the basalt-
+//        amygdule default, so the engine gates on a JOINT (Ca+Na+K) charge
+//        budget with Ca dominant -> chabazite-Ca. High Na shifts HABIT to
+//        herschelite (tabular), not species failure. Confirmed firing in the
+//        Ca-dominant Deccan fluid (Ca 180-310, Na 80, K 2 — "a textbook
+//        chabazite-Ca amygdule fluid").
+//
+//        Habits: rhomb (default — the rhombohedral pseudo-cube that mimics a
+//        cube, the calcite-lookalike) / phacolite (penetration twins, lens) /
+//        herschelite (Na-dominant tabular) / botryoidal. Engines:
+//        supersaturation_chabazite (js/39) + grow_chabazite (js/59) +
+//        _nuc_chabazite (js/89, RNG-guarded, wired LAST — late perching phase,
+//        nucleates on the earlier zeolite lining) + MINERAL_GATES (js/42) +
+//        MINERAL_ENGINES (js/65) + MINERAL_STOICHIOMETRY (js/19: {Ca1Al2Si4}) +
+//        minerals.json (incl. the calcite field-discriminator: poor {1011}
+//        cleavage + no effervescence + harder + lighter) + structural.json
+//        (R-3m hexagonal a13.83 c15.02). twin-law-check: {0001} PASS (basal,
+//        the phacolite penetration twin). SIM 202 -> 203. Coverage +1 live.
+//   v204 — BISBEE AZURITE FIX — the "Bisbee Blue" finally nucleates (2026-06-18).
+//        PROPOSALS-LEDGER §A #10 stale-expects diagnosis. Of the 3 flagged stale
+//        (mineral,scenario) pairs, TWO were FALSE POSITIVES: mirabilite/searles_lake
+//        and torbernite/schneeberg both nucleate then DEHYDRATE (paramorph) to
+//        thenardite / metatorbernite respectively — correct geology, and the
+//        coverage tool already credits paramorph_origin (they read Live). Only
+//        azurite/bisbee was a real miss: event_bisbee_azurite_peak did `CO3 += 80`
+//        off a CO3 base depleted to ~20 (earlier carbonate draw) → landed ~100,
+//        under azurite's effectiveCO3 >= 120 gate (and pH-7 Bjerrum speciation
+//        pulls effective BELOW raw). Flagged "azurite 0/8" debt at v186. FIX: two
+//        coupled event edits — (1) azurite_peak sets a CO3 FLOOR (260) + pH 7.4
+//        (the monsoon's CO2-charged rainwater aggressively dissolving Escabrosa
+//        limestone drives high DIC + a near-neutral-mild-alkaline buffered pocket,
+//        Vink 1986); (2) co2_drop deepened -120 -> -210 so the higher floor draws
+//        back down (260 -> 50 -> 20) and the step-265 low-CO3 phases keep their
+//        CO3<=50 windows (floor-only first pass had killed dioptase/halite). azurite
+//        now fires (σ peak ~2.3); whole-fleet seed-42 diff = EXACTLY one line,
+//        bisbee azurite 0->4, zero other drift. SIM 203 -> 204.
+const SIM_VERSION = 204;
 

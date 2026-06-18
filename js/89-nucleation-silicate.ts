@@ -604,6 +604,39 @@ function _nuc_prehnite(sim) {
   }
 }
 
+// v196 (2026-06-15): Epidote — the Fe3+ alpine-cleft sorosilicate. Substrate
+// priority follows the Tormiq paragenesis: quartz (cleft lining) > adularia
+// (feldspar) > byssolite (actinolite, → divergent sprays) > magnetite (the
+// Fe-oxide redox partner) > calcite (late) > wall. RNG-cascade-guarded at
+// sigma < 1.0 early-out (the supersat already carries the oxidizing O2 gate,
+// so this only consumes RNG in oxidized Ca-Al-Fe-Si fluids).
+function _nuc_epidote(sim) {
+  const sigma = sim.conditions.supersaturation_epidote();
+  if (sigma < MINERAL_GATES_epidote.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('epidote')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'epidote' && c.active);
+  if (existing.length >= 5) return;
+  let pos = 'vug wall';
+  const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+  const active_fsp = sim.crystals.filter(c => c.mineral === 'feldspar' && c.active);
+  const active_act = sim.crystals.filter(c => c.mineral === 'actinolite' && c.active);
+  const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  if (active_qz.length && rng.random() < 0.55) pos = `perched on quartz #${active_qz[0].crystal_id}`;
+  else if (active_act.length && rng.random() < 0.45) pos = `as sprays on byssolite (actinolite #${active_act[0].crystal_id})`;
+  else if (active_fsp.length && rng.random() < 0.40) pos = `with adularia (feldspar #${active_fsp[0].crystal_id})`;
+  else if (active_mag.length && rng.random() < 0.30) pos = `on magnetite #${active_mag[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.25) pos = `with calcite #${active_cal[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('epidote', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('epidote', pos, sigma);
+      const o2 = sim.conditions.fluid.O2 ?? 0;
+      sim.log.push(`  ✦ NUCLEATION: 🫒 Epidote #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, Fe=${sim.conditions.fluid.Fe.toFixed(1)}, O₂=${o2.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — pistachio-green Fe³⁺ alpine-cleft sorosilicate`);
+    }
+  }
+}
+
 // v112 (2026-05-20): Paired Ca-Al-Mg calc-silicates for the Jeffrey
 // Mine rodingite arc. Both early-stage rodingite + skarn (T ~300-450°C,
 // alkaline). Grossular substrate priority: diopside > wollastonite >
@@ -736,31 +769,203 @@ function _nuc_datolite(sim) {
   }
 }
 
+// v200 (2026-06-17): Stilbite — the cooler Deccan Stage-II zeolite. Substrate
+// priority follows the amygdale paragenesis: the silica lining (chalcedony/
+// quartz veneer) is the primary nucleation surface (turnstone/Pune: stilbite
+// "crystallized on a microcrystalline silicate layer already deposited on the
+// basalt host"), then intergrowth with heulandite, then late calcite /
+// apophyllite. RNG-cascade-guarded at sigma < sigma_crit.
+function _nuc_stilbite(sim) {
+  const sigma = sim.conditions.supersaturation_stilbite();
+  if (sigma < MINERAL_GATES_stilbite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('stilbite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'stilbite' && c.active);
+  if (existing.length >= 5) return;
+  let pos = 'vug wall';
+  const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+  const active_heu = sim.crystals.filter(c => c.mineral === 'heulandite' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  const active_apo = sim.crystals.filter(c => c.mineral === 'apophyllite' && c.active);
+  if (active_qz.length && rng.random() < 0.55) pos = `on the silica lining (quartz #${active_qz[0].crystal_id})`;
+  else if (active_heu.length && rng.random() < 0.35) pos = `intergrown with heulandite #${active_heu[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.30) pos = `with calcite #${active_cal[0].crystal_id}`;
+  else if (active_apo.length && rng.random() < 0.25) pos = `with apophyllite #${active_apo[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('stilbite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('stilbite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: 🌾 Stilbite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — peach wheatsheaf zeolite, Deccan Stage-II`);
+    }
+  }
+}
+
+// v200 (2026-06-17): Heulandite — the warmer Deccan Stage-II zeolite (the
+// dehydration product of stilbite). Same silica-lining-first substrate
+// priority; intergrows with stilbite. RNG-cascade-guarded.
+function _nuc_heulandite(sim) {
+  const sigma = sim.conditions.supersaturation_heulandite();
+  if (sigma < MINERAL_GATES_heulandite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('heulandite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'heulandite' && c.active);
+  if (existing.length >= 5) return;
+  let pos = 'vug wall';
+  const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+  const active_stb = sim.crystals.filter(c => c.mineral === 'stilbite' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  const active_apo = sim.crystals.filter(c => c.mineral === 'apophyllite' && c.active);
+  if (active_qz.length && rng.random() < 0.55) pos = `on the silica lining (quartz #${active_qz[0].crystal_id})`;
+  else if (active_stb.length && rng.random() < 0.35) pos = `intergrown with stilbite #${active_stb[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.30) pos = `with calcite #${active_cal[0].crystal_id}`;
+  else if (active_apo.length && rng.random() < 0.25) pos = `with apophyllite #${active_apo[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('heulandite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('heulandite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: ⚰️ Heulandite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — coffin-tablet zeolite, Deccan Stage-II`);
+    }
+  }
+}
+
+// v202 (2026-06-17): Thomsonite — the EARLIEST amygdule zeolite (most aluminous,
+// Si/Al~1). Nucleates on the fresh cavity surface: early calcite > silica veneer
+// > smectite-lined wall. The later natrolite group + sheet zeolites nucleate ON
+// thomsonite. RNG-cascade-guarded.
+function _nuc_thomsonite(sim) {
+  const sigma = sim.conditions.supersaturation_thomsonite();
+  if (sigma < MINERAL_GATES_thomsonite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('thomsonite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'thomsonite' && c.active);
+  if (existing.length >= 5) return;
+  let pos = 'vug wall';
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+  if (active_cal.length && rng.random() < 0.45) pos = `on early calcite #${active_cal[0].crystal_id}`;
+  else if (active_qz.length && rng.random() < 0.40) pos = `on the silica veneer (quartz #${active_qz[0].crystal_id})`;
+  const discount = sim._sigmaDiscountForPosition('thomsonite', pos);
+  if (sigma > 1.2 * discount) {
+    // Spherulitic high-nucleation-density habit (the radiating "eyes" form from
+    // MANY close centers — Wise & Tschernich 1978), so thomsonite re-nucleates
+    // at a LOWER sigma threshold than the projecting zeolites.
+    if (!existing.length || (sigma > 1.4 && rng.random() < 0.30)) {
+      const c = sim.nucleate('thomsonite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: 👁️ Thomsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — concentric "eye" Na-Ca zeolite, earliest Deccan cavity phase`);
+    }
+  }
+}
+
+// v201 (2026-06-17): Scolecite — the Ca-endmember fibrous natrolite-group
+// zeolite, forms BEFORE the sheet zeolites. Substrate priority: silica lining
+// (chalcedony/quartz) > thomsonite/mesolite intergrowth > calcite > wall. RNG-
+// cascade-guarded. (Later stilbite/heulandite nucleate ON these sprays — see
+// their substrate logic.)
+function _nuc_scolecite(sim) {
+  const sigma = sim.conditions.supersaturation_scolecite();
+  if (sigma < MINERAL_GATES_scolecite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('scolecite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'scolecite' && c.active);
+  if (existing.length >= 5) return;
+  let pos = 'vug wall';
+  const active_thom = sim.crystals.filter(c => c.mineral === 'thomsonite' && c.active);
+  const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+  const active_mes = sim.crystals.filter(c => c.mineral === 'mesolite' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  if (active_thom.length && rng.random() < 0.50) pos = `overgrowing thomsonite #${active_thom[0].crystal_id}`;
+  else if (active_qz.length && rng.random() < 0.55) pos = `on the silica lining (quartz #${active_qz[0].crystal_id})`;
+  else if (active_mes.length && rng.random() < 0.40) pos = `intergrown with mesolite #${active_mes[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.30) pos = `on calcite #${active_cal[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('scolecite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('scolecite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: 🪮 Scolecite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — radiating fibrous Ca-zeolite, Deccan pre-Stage-II`);
+    }
+  }
+}
+
+// v201 (2026-06-17): Mesolite — the ordered Na-Ca intermediate. Same fibrous-
+// group substrate priority; co-deposits with scolecite. RNG-cascade-guarded.
+function _nuc_mesolite(sim) {
+  const sigma = sim.conditions.supersaturation_mesolite();
+  if (sigma < MINERAL_GATES_mesolite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('mesolite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'mesolite' && c.active);
+  if (existing.length >= 5) return;
+  let pos = 'vug wall';
+  const active_thom = sim.crystals.filter(c => c.mineral === 'thomsonite' && c.active);
+  const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+  const active_sco = sim.crystals.filter(c => c.mineral === 'scolecite' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  if (active_thom.length && rng.random() < 0.50) pos = `overgrowing thomsonite #${active_thom[0].crystal_id}`;
+  else if (active_qz.length && rng.random() < 0.55) pos = `on the silica lining (quartz #${active_qz[0].crystal_id})`;
+  else if (active_sco.length && rng.random() < 0.40) pos = `intergrown with scolecite #${active_sco[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.30) pos = `on calcite #${active_cal[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('mesolite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('mesolite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: 🧵 Mesolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — hair-like Na-Ca zeolite tuft, Deccan pre-Stage-II`);
+    }
+  }
+}
+
+// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// A perching phase: nucleates on the earlier zeolite lining (sheet zeolites
+// stilbite/heulandite, then the fibrous group), then calcite, then wall.
+// RNG-cascade-guarded. (Last in the silicate iterator — paragenetically late.)
+function _nuc_chabazite(sim) {
+  const sigma = sim.conditions.supersaturation_chabazite();
+  if (sigma < MINERAL_GATES_chabazite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('chabazite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'chabazite' && c.active);
+  if (existing.length >= 5) return;
+  let pos = 'vug wall';
+  const active_sheet = sim.crystals.filter(c => (c.mineral === 'stilbite' || c.mineral === 'heulandite') && c.active);
+  const active_fib = sim.crystals.filter(c => (c.mineral === 'scolecite' || c.mineral === 'mesolite' || c.mineral === 'thomsonite') && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  if (active_sheet.length && rng.random() < 0.50) pos = `perched on ${active_sheet[0].mineral} #${active_sheet[0].crystal_id}`;
+  else if (active_fib.length && rng.random() < 0.40) pos = `perched on ${active_fib[0].mineral} #${active_fib[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.30) pos = `with calcite #${active_cal[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('chabazite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('chabazite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite, late Deccan cavity phase`);
+    }
+  }
+}
+
 function _nucleateClass_silicate(sim) {
-  _nuc_quartz(sim);
-  _nuc_apophyllite(sim);
-  _nuc_feldspar(sim);
-  _nuc_albite(sim);
-  _nuc_chrysocolla(sim);
-  _nuc_spodumene(sim);
-  _nuc_tourmaline(sim);
-  _nuc_topaz(sim);
-  _nuc_chrysoprase(sim);
-  _nuc_lepidolite(sim);
-  _nuc_dioptase(sim);
-  _nuc_shattuckite(sim);
-  _nuc_hemimorphite(sim);
-  _nuc_willemite(sim);
-  _nuc_coffinite(sim);
-  _nuc_uranophane(sim);
-  _nuc_opal(sim);
-  _nuc_datolite(sim);
-  _nuc_vesuvianite(sim);
-  _nuc_grossular(sim);
-  _nuc_diopside(sim);
-  _nuc_pectolite(sim);
-  _nuc_wollastonite(sim);
-  _nuc_prehnite(sim);
-  _nuc_chrysotile(sim);
-  _nuc_tigers_eye(sim);
+  _runNuc(sim, _nuc_quartz);
+  _runNuc(sim, _nuc_apophyllite);
+  _runNuc(sim, _nuc_feldspar);
+  _runNuc(sim, _nuc_albite);
+  _runNuc(sim, _nuc_chrysocolla);
+  _runNuc(sim, _nuc_spodumene);
+  _runNuc(sim, _nuc_tourmaline);
+  _runNuc(sim, _nuc_topaz);
+  _runNuc(sim, _nuc_chrysoprase);
+  _runNuc(sim, _nuc_lepidolite);
+  _runNuc(sim, _nuc_dioptase);
+  _runNuc(sim, _nuc_shattuckite);
+  _runNuc(sim, _nuc_hemimorphite);
+  _runNuc(sim, _nuc_willemite);
+  _runNuc(sim, _nuc_coffinite);
+  _runNuc(sim, _nuc_uranophane);
+  _runNuc(sim, _nuc_opal);
+  _runNuc(sim, _nuc_datolite);
+  _runNuc(sim, _nuc_vesuvianite);
+  _runNuc(sim, _nuc_grossular);
+  _runNuc(sim, _nuc_diopside);
+  _runNuc(sim, _nuc_pectolite);
+  _runNuc(sim, _nuc_wollastonite);
+  _runNuc(sim, _nuc_prehnite);
+  _runNuc(sim, _nuc_epidote);
+  _runNuc(sim, _nuc_thomsonite);
+  _runNuc(sim, _nuc_scolecite);
+  _runNuc(sim, _nuc_mesolite);
+  _runNuc(sim, _nuc_stilbite);
+  _runNuc(sim, _nuc_heulandite);
+  _runNuc(sim, _nuc_chabazite);
+  _runNuc(sim, _nuc_chrysotile);
+  _runNuc(sim, _nuc_tigers_eye);
 }

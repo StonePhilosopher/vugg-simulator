@@ -176,12 +176,12 @@ function _nuc_awaruite(sim) {
 }
 
 function _nucleateClass_native(sim) {
-  _nuc_native_bismuth(sim);
-  _nuc_native_tellurium(sim);
-  _nuc_native_sulfur(sim);
-  _nuc_native_arsenic(sim);
-  _nuc_native_silver(sim);
-  _nuc_native_copper(sim);
-  _nuc_native_gold(sim);
-  _nuc_awaruite(sim);
+  _runNuc(sim, _nuc_native_bismuth);
+  _runNuc(sim, _nuc_native_tellurium);
+  _runNuc(sim, _nuc_native_sulfur);
+  _runNuc(sim, _nuc_native_arsenic);
+  _runNuc(sim, _nuc_native_silver);
+  _runNuc(sim, _nuc_native_copper);
+  _runNuc(sim, _nuc_native_gold);
+  _runNuc(sim, _nuc_awaruite);
 }

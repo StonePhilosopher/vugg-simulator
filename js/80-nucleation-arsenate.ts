@@ -302,18 +302,18 @@ function _nuc_bayldonite(sim) {
 }
 
 function _nucleateClass_arsenate(sim) {
-  _nuc_scorodite(sim);
-  _nuc_adamite(sim);
-  _nuc_mimetite(sim);
-  _nuc_erythrite(sim);
-  _nuc_annabergite(sim);
-  _nuc_olivenite(sim);
-  _nuc_conichalcite(sim);
-  _nuc_pharmacolite(sim);
+  _runNuc(sim, _nuc_scorodite);
+  _runNuc(sim, _nuc_adamite);
+  _runNuc(sim, _nuc_mimetite);
+  _runNuc(sim, _nuc_erythrite);
+  _runNuc(sim, _nuc_annabergite);
+  _runNuc(sim, _nuc_olivenite);
+  _runNuc(sim, _nuc_conichalcite);
+  _runNuc(sim, _nuc_pharmacolite);
   // v97 (2026-05-19): Tsumeb suite — order encodes paragenetic sequence
-  _nuc_austinite(sim);
-  _nuc_legrandite(sim);
-  _nuc_koettigite(sim);
-  _nuc_duftite(sim);
-  _nuc_bayldonite(sim);
+  _runNuc(sim, _nuc_austinite);
+  _runNuc(sim, _nuc_legrandite);
+  _runNuc(sim, _nuc_koettigite);
+  _runNuc(sim, _nuc_duftite);
+  _runNuc(sim, _nuc_bayldonite);
 }

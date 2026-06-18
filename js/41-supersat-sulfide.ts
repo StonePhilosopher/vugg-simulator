@@ -243,6 +243,12 @@ const MINERAL_GATES_enargite: MineralGates = {
 Object.assign(VugConditions.prototype, {
   supersaturation_sphalerite() {
   if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
+  // v199: sulfide redox gate — ZnS can't survive oxidation (the last sibling of
+  // galena's v13 O2-gate omission; redox-gate census b81cf7d). Shippable now that
+  // the spurious mottramite Zn-minimum gate (38-supersat-phosphate) was removed:
+  // before, gating sphalerite drained Zn to 0 at ~half the seeds and falsely
+  // killed mottramite via that bug (98→49); post-fix mottramite holds (98→84).
+  if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
   const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
   // Below 95°C: full sigma. Above: accelerated decay (wurtzite field).
   const T_factor = this.temperature <= 95
@@ -260,6 +266,10 @@ Object.assign(VugConditions.prototype, {
   // schalenblende and AMD wurtzite. See
   // research/research-broth-ratio-sphalerite-wurtzite.md.
   if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
+  // v199: sulfide redox gate (see supersaturation_sphalerite). Both branches —
+  // the high-T dimorph and the low-T AMD/schalenblende metastable branch — are
+  // sulfide environments and require anoxic conditions.
+  if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
   const T = this.temperature;
   const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
   if (T > 95) {

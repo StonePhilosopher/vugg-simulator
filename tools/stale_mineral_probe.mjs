@@ -74,71 +74,28 @@ const PROBES = [
   // the same structural defect: a hard `if (fluid.X > Y) return 0` on
   // a species that depletes locally (via sulfides, arsenides, etc.) but
   // the σ engine reads the bulk-view fluid at the equator ring.
+  // Round 2 (Path C cascade-gate audit — May 2026) + Round 3 (roughten_gill
+  // tune pass — 2026-06-10) entries are RESOLVED and removed for signal
+  // cleanliness (native-element S-gates shipped; roughten_gill V-suite + ZnS
+  // shipped v193/v199). See git history of this file for the prior PROBES.
+  //
+  // Round 4 (PROPOSALS-LEDGER §A #10 — "stale expects_species, 3 to diagnose",
+  // 2026-06-18): the three remaining stale (mineral, scenario) pairs flagged
+  // by the ledger as needing per-target confirmation.
   {
-    mineral: 'native_arsenic',
-    scenario: 'schneeberg',  // Bi-Co-Ni-Ag-As five-element vein, S=30 trips gate
-    extras: ['As', 'S', 'Fe', 'O2', 'pH', 'temperature'],
+    mineral: 'azurite',
+    scenario: 'bisbee',  // ledger note: "gate not cleared despite event firing"
+    extras: ['Cu', 'CO3', 'S', 'O2', 'pH', 'temperature'],
   },
   {
-    mineral: 'native_bismuth',
-    scenario: 'schneeberg',  // scenario notes explicitly call out native_bismuth
-    extras: ['Bi', 'S', 'O2', 'pH', 'temperature'],
+    mineral: 'mirabilite',
+    scenario: 'searles_lake',  // Na2SO4·10H2O evaporite — low-T sodium sulfate
+    extras: ['Na', 'S', 'concentration', 'O2', 'pH', 'temperature'],
   },
   {
-    mineral: 'native_silver',
-    scenario: 'epithermal_telluride',  // Ag=15, S=8
-    extras: ['Ag', 'S', 'O2', 'pH', 'temperature'],
-  },
-  {
-    mineral: 'native_silver',
-    scenario: 'bisbee',  // Ag=40, S=50
-    extras: ['Ag', 'S', 'O2', 'pH', 'temperature'],
-  },
-  {
-    mineral: 'native_copper',
-    scenario: 'bisbee',  // Cu=400, S=50
-    extras: ['Cu', 'S', 'O2', 'pH', 'temperature'],
-  },
-  {
-    mineral: 'stibnite',
-    scenario: 'porphyry',  // Sb=25, S=60
-    extras: ['Sb', 'S', 'O2', 'pH', 'temperature'],
-  },
-  {
-    mineral: 'native_bismuth',
-    scenario: 'porphyry',  // Bi=30, S=60 — second probe to confirm pattern
-    extras: ['Bi', 'S', 'O2', 'pH', 'temperature'],
-  },
-  {
-    mineral: 'native_arsenic',
-    scenario: 'porphyry',  // As=15, S=60 — second probe to confirm pattern
-    extras: ['As', 'S', 'Fe', 'O2', 'pH', 'temperature'],
-  },
-  // Round 3 (post-v179 tune pass — 2026-06-10): the four roughten_gill
-  // stale expects. v109's diagnosis was Shape B (nucleation-order
-  // displacement: pyromorphite + Ag-sulfosalts consume the budget before
-  // the sulfate iterator reaches linarite) — but that predates the
-  // per-cell architecture (v160), the competition cell-key fix (v177),
-  // and the PWP rebake (v178). Re-probing from zero.
-  {
-    mineral: 'linarite',
-    scenario: 'roughten_gill',  // event literally named linarite_stage
-    extras: ['Pb', 'Cu', 'S', 'CO3', 'O2', 'pH', 'temperature'],
-  },
-  {
-    mineral: 'leadhillite',
-    scenario: 'roughten_gill',  // event literally named leadhillite_cap
-    extras: ['Pb', 'S', 'CO3', 'O2', 'pH', 'temperature'],
-  },
-  {
-    mineral: 'mottramite',
-    scenario: 'roughten_gill',  // Pb-Cu vanadate; V budget suspect post-v109 V=6→? history
-    extras: ['Pb', 'Cu', 'V', 'O2', 'pH', 'temperature'],
-  },
-  {
-    mineral: 'bayldonite',
-    scenario: 'roughten_gill',  // Pb-Cu arsenate
-    extras: ['Pb', 'Cu', 'As', 'O2', 'pH', 'temperature'],
+    mineral: 'torbernite',
+    scenario: 'schneeberg',  // Cu(UO2)2(PO4)2 uranyl phosphate; ledger: 0/10
+    extras: ['Cu', 'U', 'P', 'O2', 'pH', 'temperature'],
   },
 ];
 

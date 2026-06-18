@@ -110,8 +110,15 @@ describe('Lepidolite — Li-mica engine (v86)', () => {
 
     it.each([42, 1, 7])('seed %d: lepidolite respects cap=3', (seed) => {
       const { sim } = runGemPegmatite(seed);
-      const lep = sim.crystals.filter((c: any) => c.mineral === 'lepidolite');
-      expect(lep.length, `seed ${seed}: ${lep.length} lepidolite > cap`)
+      // The nucleation cap is on EXPOSED crystals (enclosed/dissolved ones free
+      // a slot — the documented inclusion mechanic in _atNucleationCap), so the
+      // cap-respect check must count the same population the engine caps. Post-
+      // v198 keystone, seed 1 grows 4 total lepidolite but only 3 are exposed
+      // (1 enclosed) — the cap (3) holds; total > 3 is by-design, not a breach.
+      const lep = sim.crystals.filter(
+        (c: any) => c.mineral === 'lepidolite' && c.enclosed_by == null && !c.dissolved,
+      );
+      expect(lep.length, `seed ${seed}: ${lep.length} exposed lepidolite > cap`)
         .toBeLessThanOrEqual(3);
     });
 

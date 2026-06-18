@@ -323,6 +323,132 @@ const MINERAL_GATES_datolite: MineralGates = {
   _notes: 'CaB(SiO4)(OH) — Lake Superior basalt amygdale + Jeffrey rodingite. Gemmy colorless.',
 };
 
+const MINERAL_GATES_epidote: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 200, T_max: 450, T_optimal: 320,
+  fluid_min: { Ca: 80, Al: 4, Fe: 5, SiO2: 100 },
+  pH_min: 6.5, pH_max: 9.0,
+  O2_min: 0.5,
+  surface_energy: 'medium',
+  _sources: ['epidote engine v196', 'Anthony et al. Handbook of Mineralogy 2001', 'Armbruster et al. 2006 EJM 18:551', 'Holdaway 1972 CMP 37:307', 'Liou 1973 J.Petrol 14:381'],
+  _notes: 'Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) sorosilicate, monoclinic P2_1/m. Fe3+ endmember of clinozoisite-epidote series — needs OXIDIZED fluid (near HM buffer) for the pistachio-green Fe3+; reducing sends Fe to magnetite/actinolite (Fe2+). Al-rich Ca-silicate, alpine-cleft Tormiq/Knappenwand. The O2_min gate is the discriminator. Twin {100} lamellar.',
+};
+
+// v200 (2026-06-17): the Deccan Stage-II zeolite pair. stilbite + heulandite
+// are the stilbite/heulandite dehydration couple (Kiseleva, Navrotsky,
+// Belitsky & Fursenko 2001, Am.Mineral. 86:448: Ca-stilbite = Ca-heulandite + H2O).
+// Stilbite is the COOLER, more-hydrated member (28 H2O, moderate silica);
+// heulandite is the WARMER dehydration product (6 H2O, higher silica
+// activity). Both: Ca-dominant exchangeable cation, alkaline basalt-buffered
+// fluid, low-T zeolite facies, redox-insensitive (no redox-active ion → no
+// redox gate, like prehnite). The T-window + silica-activity split is the
+// discriminator. fluid_min.Ca is the essential-cation gate; the supersat
+// uses (Ca+Na) as the exchangeable budget so stilbite-Na can still fire in
+// Na-dominant brines (the Deccan endmember is overwhelmingly the -Ca form).
+const MINERAL_GATES_stilbite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 40, T_max: 150, T_optimal: 90,
+  fluid_min: { Ca: 60, Al: 4, SiO2: 250 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'low',
+  _sources: ['stilbite engine v200', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Kiseleva Navrotsky Belitsky & Fursenko 2001 Am.Mineral. 86:448', 'Ottens et al. 2019 (Deccan paragenesis)'],
+  _notes: 'Stilbite-Ca NaCa4(Si27Al9)O72·28H2O — monoclinic C2/m. The cooler, more-hydrated member of the stilbite/heulandite couple; dehydrates to heulandite as T rises. Deccan amygdale Stage-II peach sheaves/bowties (twinned {001} cruciform). Moderate silica (lower-Si than heulandite). Redox-insensitive framework silicate.',
+};
+
+const MINERAL_GATES_heulandite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 95, T_max: 210, T_optimal: 150,
+  fluid_min: { Ca: 60, Al: 4, SiO2: 400 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'low',
+  _sources: ['heulandite engine v200', 'Coombs et al. 1997 Can.Mineral. 35:1571 (Si/Al=4.0 boundary)', 'Kiseleva Navrotsky Belitsky & Fursenko 2001 Am.Mineral. 86:448', 'Anthony et al. Handbook of Mineralogy 2001'],
+  _notes: 'Heulandite-Ca (Ca,Na)Al2Si7O18·6H2O — monoclinic C2/m. The warmer, dehydrated member (the dehydration product of stilbite). Higher silica activity than stilbite; Si/Al<4 (Si/Al>=4 is clinoptilolite, not wired — the boundary is compositional per Coombs 1997, not modeled as a hard fluid gate because the sim SiO2 ppm is dissolved silica, not framework Si/Al). Coffin-shaped tabular {010}. Twin {100}.',
+};
+
+// v201 (2026-06-17): the FIBROUS natrolite-group zeolites — scolecite + mesolite.
+// They form EARLIER in the Deccan amygdale paragenesis than the sheet zeolites
+// (sequence: ...natrolite -> analcime -> scolecite/mesolite -> stilbite ->
+// heulandite -> apophyllite). The natrolite group is LOW-Si (Si/Al~1.5), so in
+// nature it forms at lower silica activity than stilbite/heulandite — BUT the
+// sim's SiO2 ppm is dissolved silica, not framework Si/Al, and Deccan (a silica-
+// rich fluid) is THE world locality for scolecite, so the group is gated on a
+// LOW silica FLOOR (150, vs stilbite's 250), NOT a low-Si ceiling. The
+// discriminator within the group is the Na/Ca FORK (the Na<->Ca coupled
+// substitution): scolecite = Ca endmember (Na/(Na+Ca)<=0.5), mesolite = the
+// ordered Na-Ca intermediate (needs BOTH Na and Ca, 0.2<=Na/(Na+Ca)<=0.8;
+// natrolite, the Na endmember, is not wired). Both alkaline + redox-insensitive
+// (no redox gate). Refs: Anthony et al. Handbook of Mineralogy (scolecite +
+// mesolite sheets); Alberti Pongiluppi & Vezzalini 1982 N.Jb.Min.Abh. 143:231
+// (natrolite/mesolite/scolecite crystal chemistry); Coombs et al. 1997.
+const MINERAL_GATES_scolecite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 40, T_max: 150, T_optimal: 95,
+  fluid_min: { Ca: 60, Al: 4, SiO2: 150 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'low',
+  _sources: ['scolecite engine v201', 'Anthony et al. Handbook of Mineralogy', 'Alberti Pongiluppi & Vezzalini 1982 N.Jb.Min.Abh. 143:231', 'Smith & Walls 1971 Mineral.Mag. 38:72'],
+  _notes: 'CaAl2Si3O10·3H2O — monoclinic Cc, the Ca endmember of the fibrous natrolite group. Radiating acicular sprays/puffballs + square prisms. Twin {100} (axis [001]) near-ubiquitous. Deccan (Poona/Nashik) is the premier locality. Na/(Na+Ca)<=0.5 fork suppresses it in Na-rich (mesolite/natrolite) fluid.',
+};
+
+const MINERAL_GATES_mesolite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 40, T_max: 140, T_optimal: 90,
+  fluid_min: { Ca: 60, Na: 40, Al: 4, SiO2: 150 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'low',
+  _sources: ['mesolite engine v201', 'Anthony et al. Handbook of Mineralogy', 'Artioli Smith & Pluth 1986 Acta Cryst. C42:937', 'Alberti Pongiluppi & Vezzalini 1982'],
+  _notes: 'Na2Ca2Al6Si9O30·8H2O — orthorhombic Fdd2 with a GIANT b-axis (~56.6 A, the ordered 1-natrolite:2-scolecite layer stack). The ordered Na-Ca intermediate — needs BOTH Na and Ca (0.2<=Na/(Na+Ca)<=0.8). Finest hair-like/cottony fibrous tufts. Twin {010}/{100} (secondary vs scolecite). The mixed-cation gate is the discriminator from scolecite (Ca-only) + natrolite (Na-only).',
+};
+
+// v202 (2026-06-17): Thomsonite — the EARLIEST, most-aluminous amygdule zeolite.
+// NaCa2Al5Si5O20·6H2O, Si/Al~1 (the LOWEST silica of the common amygdule
+// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). First zeolite in
+// the Deccan cavity sequence (smectite -> calcite -> THOMSONITE -> natrolite ->
+// analcime -> scolecite/mesolite -> sheets). THE DISCRIMINATOR is SILICA
+// ACTIVITY, not Na/Ca: thomsonite is favored at LOW silica (high Al relative to
+// Si); the natrolite-group Na/Ca fork does NOT cleanly separate it from mesolite
+// (both are Na-Ca; thomsonite is just more-Ca + lower-Si). So the engine gives
+// thomsonite a SOFT low-silica preference (boost when Al-rich-relative-to-Si,
+// mild attenuation when silica-flooded) over a low floor — NOT a hard low-Si
+// ceiling (Deccan + Lake Superior are silica-rich yet thomsonite-bearing; the
+// fluid SiO2 ppm is dissolved silica, not framework Si/Al). Ca-dominant, Na
+// essential-minor (NaCa2), alkaline, redox-insensitive. Refs: Anthony et al.
+// Handbook of Mineralogy (thomsonite-Ca); Wise & Tschernich 1978 Can.Mineral.
+// 16:487 (habits); Coombs et al. 1997; Gatta et al. 2010 Am.Mineral. 95:495.
+const MINERAL_GATES_thomsonite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 40, T_max: 150, T_optimal: 90,
+  fluid_min: { Ca: 60, Na: 20, Al: 4, SiO2: 120 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'low',
+  _sources: ['thomsonite engine v202', 'Anthony et al. Handbook of Mineralogy (thomsonite-Ca)', 'Wise & Tschernich 1978 Can.Mineral. 16:487', 'Coombs et al. 1997 Can.Mineral. 35:1571'],
+  _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. The most-aluminous (Si/Al~1) + earliest amygdule zeolite. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
+};
+
+// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// Ca2Al2Si4O12·6H2O (chabazite-Ca), Si/Al~2 — intermediate between the fibrous
+// group/thomsonite (~1-1.5) and the sheet zeolites stilbite/heulandite
+// (~2.7-3.5). A LATE perching phase in the cavity sequence (...stilbite ->
+// heulandite -> apophyllite -> CHABAZITE -> mordenite -> late calcite). Cation-
+// FLEXIBLE: the extra-framework cation runs Ca > Na > K in frequency, and K is
+// NOT required (chabazite-Ca is the basalt-amygdule default; K-dominance is a
+// rare special case). So the engine gates on a JOINT (Ca+Na+K) charge budget
+// with Ca dominant -> chabazite-Ca; high Na shifts HABIT toward herschelite/
+// phacolite, not species failure. Famous for the rhombohedral pseudo-cube (the
+// near-90 rhombohedron that mimics a cube) + phacolite penetration twins
+// ({0001}). Alkaline, redox-insensitive. Refs: Passaglia & Sheppard 2001 RiMG
+// 45:69 (crystal chemistry, Ca-DEC, R=0.67); Coombs et al. 1997 (chabazite-Ca/
+// -Na/-K series); Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning).
+const MINERAL_GATES_chabazite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 40, T_max: 150, T_optimal: 80,
+  fluid_min: { Ca: 60, Al: 4, SiO2: 200 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'low',
+  _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
+  _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; LATE perching amygdule phase. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
+};
+
 Object.assign(VugConditions.prototype, {
   supersaturation_quartz() {
   const eq = this.silica_equilibrium(this.effectiveTemperature);
@@ -1022,6 +1148,237 @@ Object.assign(VugConditions.prototype, {
     if (pH >= 9.0 && pH <= 11.0) sigma *= 1.2;
     else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 10.0) * 0.3);
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'prehnite');
+    return Math.max(sigma, 0);
+  },
+
+  // v200 (2026-06-17): Stilbite — the COOLER, more-hydrated member of the
+  // Deccan Stage-II zeolite couple. Ca-dominant, alkaline, moderate silica.
+  // T sweet spot 60-110°C (stilbite precedes heulandite on a cooling path).
+  // Redox-insensitive: no redox gate. See MINERAL_GATES_stilbite.
+  supersaturation_stilbite() {
+    const g = MINERAL_GATES_stilbite;
+    const exch = this.fluid.Ca + this.fluid.Na;   // exchangeable cation budget
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Al < g.fluid_min!.Al
+        || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    const ca_f = Math.min(exch / 200.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 600.0, 1.5);
+    let sigma = ca_f * al_f * si_f;
+    // T sweet spot 60-110°C (the cool member)
+    const T = this.temperature;
+    if (T >= 60 && T <= 110) sigma *= 1.3;
+    else if (T < 60) sigma *= Math.max(0.4, (T - 40) / 20 * 0.6 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+    // pH sweet spot 8-9.5 (alkaline basalt groundwater)
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'stilbite');
+    return Math.max(sigma, 0);
+  },
+
+  // v200 (2026-06-17): Heulandite — the WARMER, dehydrated member (the
+  // dehydration product of stilbite). Higher silica activity (SiO2 gate 400
+  // vs stilbite's 250); T sweet spot 120-180°C. Ca-dominant, alkaline,
+  // redox-insensitive. See MINERAL_GATES_heulandite.
+  supersaturation_heulandite() {
+    const g = MINERAL_GATES_heulandite;
+    const exch = this.fluid.Ca + this.fluid.Na;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Al < g.fluid_min!.Al
+        || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    const ca_f = Math.min(exch / 200.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 700.0, 1.6);   // higher-silica member
+    let sigma = ca_f * al_f * si_f;
+    // T sweet spot 120-180°C (the warm member — the dehydration product)
+    const T = this.temperature;
+    if (T >= 120 && T <= 180) sigma *= 1.3;
+    else if (T < 120) sigma *= Math.max(0.4, (T - 95) / 25 * 0.6 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 180) / 30);
+    // pH sweet spot 8-9.5
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'heulandite');
+    return Math.max(sigma, 0);
+  },
+
+  // v201 (2026-06-17): Scolecite — the Ca-endmember fibrous natrolite-group
+  // zeolite. Na/(Na+Ca)<=0.5 fork (Ca-dominant). Low-Si floor (150), broad
+  // low-T window, alkaline, redox-insensitive. See MINERAL_GATES_scolecite.
+  supersaturation_scolecite() {
+    const g = MINERAL_GATES_scolecite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Al < g.fluid_min!.Al
+        || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    // Na/Ca fork — scolecite is the Ca ENDMEMBER; suppress when Na approaches
+    // dominance (that's mesolite -> natrolite territory).
+    const naFrac = this.fluid.Na / (this.fluid.Na + this.fluid.Ca);
+    if (naFrac > 0.5) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 400.0, 1.5);   // low-Si zeolite saturates lower
+    let sigma = ca_f * al_f * si_f;
+    // Ca-purity bonus: the most-Ca fluids favor scolecite most strongly.
+    sigma *= Math.max(0.7, 1.3 - naFrac);
+    // T sweet spot 70-120 (low-T fibrous zeolite)
+    const T = this.temperature;
+    if (T >= 70 && T <= 120) sigma *= 1.3;
+    else if (T < 70) sigma *= Math.max(0.4, (T - 40) / 30 * 0.6 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 120) / 40);
+    // pH sweet spot 8-9.5
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'scolecite');
+    return Math.max(sigma, 0);
+  },
+
+  // v201 (2026-06-17): Mesolite — the ordered Na-Ca intermediate of the
+  // natrolite group. Needs BOTH Na and Ca (0.2<=Na/(Na+Ca)<=0.8). Finest
+  // fibrous tufts. See MINERAL_GATES_mesolite.
+  supersaturation_mesolite() {
+    const g = MINERAL_GATES_mesolite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Na < g.fluid_min!.Na
+        || this.fluid.Al < g.fluid_min!.Al || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    // Na/Ca fork — mesolite is the MIXED member; below 0.2 it's scolecite,
+    // above 0.8 it's natrolite (not wired).
+    const naFrac = this.fluid.Na / (this.fluid.Na + this.fluid.Ca);
+    if (naFrac < 0.2 || naFrac > 0.8) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 200.0, 1.8);
+    const na_f = Math.min(this.fluid.Na / 80.0, 1.8);
+    const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 400.0, 1.5);
+    let sigma = Math.sqrt(ca_f * na_f) * al_f * si_f;   // geometric mean — needs BOTH
+    // intermediate-fraction bonus: strongest near the ordered Na2Ca2 (~0.45)
+    sigma *= Math.max(0.6, 1.2 - Math.abs(naFrac - 0.45) * 1.5);
+    // T sweet spot 70-110
+    const T = this.temperature;
+    if (T >= 70 && T <= 110) sigma *= 1.3;
+    else if (T < 70) sigma *= Math.max(0.4, (T - 40) / 30 * 0.6 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 110) / 30);
+    // pH sweet spot 8-9.5
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'mesolite');
+    return Math.max(sigma, 0);
+  },
+
+  // v202 (2026-06-17): Thomsonite — the earliest, most-aluminous amygdule
+  // zeolite. Ca-dominant + Na-essential-minor + high Al; the discriminator from
+  // the natrolite group is a SOFT low-silica preference (not Na/Ca, not a hard
+  // ceiling). See MINERAL_GATES_thomsonite.
+  supersaturation_thomsonite() {
+    const g = MINERAL_GATES_thomsonite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Na < g.fluid_min!.Na
+        || this.fluid.Al < g.fluid_min!.Al || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    // Ca-dominant gate (NaCa2): suppress strongly Na-dominant fluids.
+    const naFrac = this.fluid.Na / (this.fluid.Na + this.fluid.Ca);
+    if (naFrac > 0.6) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 10.0, 2.0);     // most-aluminous zeolite
+    // Low-Si zeolite: silica need saturates at the low floor (~200), so beyond
+    // it more silica does NOT favor thomsonite — the siAlPref penalty below then
+    // cleanly expresses the low-silica preference.
+    const si_f = Math.min(this.fluid.SiO2 / 200.0, 1.0);
+    let sigma = ca_f * al_f * si_f;
+    // LOW-silica preference — thomsonite (Si/Al~1) is favored when Al is plentiful
+    // relative to Si; attenuated when the fluid is silica-flooded (the hand-off to
+    // the higher-Si zeolites). SOFT, not a hard ceiling — Deccan/Lake Superior are
+    // silica-rich yet thomsonite-bearing.
+    const siAlPref = Math.max(0.5, Math.min(1.4, 1.6 - this.fluid.SiO2 / 600.0));
+    sigma *= siAlPref;
+    // T sweet spot 60-110 (low-T, early)
+    const T = this.temperature;
+    if (T >= 60 && T <= 110) sigma *= 1.3;
+    else if (T < 60) sigma *= Math.max(0.4, (T - 40) / 20 * 0.6 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+    // pH sweet spot 8-9.5
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'thomsonite');
+    return Math.max(sigma, 0);
+  },
+
+  // v203 (2026-06-17): Chabazite — the late, intermediate-Si amygdule zeolite.
+  // Cation-flexible (Ca>Na>K, K NOT required); Ca-dominant chabazite-Ca is the
+  // amygdule default. Late/cool T sweet spot. See MINERAL_GATES_chabazite.
+  supersaturation_chabazite() {
+    const g = MINERAL_GATES_chabazite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Al < g.fluid_min!.Al
+        || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    // Extra-framework cation: Ca > Na > K, K NOT required (Passaglia & Sheppard
+    // 2001). Joint (Ca+Na+K) charge budget; Ca-dominant selects chabazite-Ca.
+    const exch = this.fluid.Ca + this.fluid.Na + (this.fluid.K || 0);
+    const ca_f = Math.min(exch / 220.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 500.0, 1.5);   // intermediate Si/Al~2
+    let sigma = ca_f * al_f * si_f;
+    // T sweet spot 50-110 (LATE, cool amygdule phase)
+    const T = this.temperature;
+    if (T >= 50 && T <= 110) sigma *= 1.3;
+    else if (T < 50) sigma *= Math.max(0.4, (T - 40) / 10 * 0.6 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+    // pH sweet spot 8-9.5
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chabazite');
+    return Math.max(sigma, 0);
+  },
+
+  // v196 (2026-06-15): Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — the Fe3+
+  // endmember of the clinozoisite-epidote sorosilicate series, monoclinic
+  // P2_1/m. The classic alpine-cleft / greenschist-facies mineral: lustrous
+  // pistachio-green prisms striated ∥b, the famous Tormiq (Gilgit-Baltistan,
+  // Pakistan) gem swords (Handbook of Mineralogy, Anthony et al. 2001 — which
+  // names Tormiq as type-quality, rivaling Knappenwand). THE GATE THAT MATTERS
+  // is redox: epidote needs FERRIC iron, so an OXIDIZING fluid near the
+  // hematite-magnetite buffer — under reducing conditions Fe partitions into
+  // magnetite + actinolite (Fe2+) and you get clinozoisite, not green epidote
+  // (Holdaway 1972 CMP 37:307; Liou 1973 J.Petrol 14:381; the Fe3+>=0.5 apfu
+  // boundary is Armbruster et al. 2006 EJM 18:551). Ca-Al-Si backbone like
+  // prehnite/grossular; the oxidizing + Al-bearing + moderate-T window is the
+  // discriminator. More oxidizing = more Fe3+ = deeper-green epidote.
+  supersaturation_epidote() {
+    const g = MINERAL_GATES_epidote;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Al < g.fluid_min!.Al
+        || this.fluid.Fe < g.fluid_min!.Fe || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    // Fe3+ gate — epidote needs OXIDIZED iron (near HM buffer). Reducing
+    // fluid → magnetite + clinozoisite/actinolite instead. THE discriminator.
+    if (!oxideRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 400.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 8.0, 2.0);
+    const fe_f = Math.min(this.fluid.Fe / 20.0, 1.8);
+    const si_f = Math.min(this.fluid.SiO2 / 250.0, 1.5);
+    let sigma = ca_f * al_f * fe_f * si_f;
+    // more oxidizing → more Fe3+ → stronger (deeper-green) epidote vs clinozoisite
+    sigma *= Math.max(0.6, Math.min(oxideRedoxFactor(this.fluid, 1.0), 1.6));
+    // T sweet spot 250-400°C (alpine-cleft main stage)
+    const T = this.temperature;
+    if (T >= 250 && T <= 400) sigma *= 1.3;
+    else if (T < 250) sigma *= Math.max(0.4, (T - 200) / 50 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 400) / 50);
+    // pH sweet spot 6.5-8.5 (near-neutral; coexists with calcite + adularia)
+    const pH = this.fluid.pH;
+    if (pH >= 6.5 && pH <= 8.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.5) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'epidote');
     return Math.max(sigma, 0);
   },
 

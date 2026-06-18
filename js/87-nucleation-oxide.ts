@@ -215,13 +215,13 @@ function _nuc_brucite(sim) {
 }
 
 function _nucleateClass_oxide(sim) {
-  _nuc_hematite(sim);
-  _nuc_uraninite(sim);
-  _nuc_magnetite(sim);
-  _nuc_cuprite(sim);
-  _nuc_rutile(sim);
-  _nuc_chromite(sim);
-  _nuc_cassiterite(sim);
-  _nuc_pyrolusite(sim);
-  _nuc_brucite(sim);
+  _runNuc(sim, _nuc_hematite);
+  _runNuc(sim, _nuc_uraninite);
+  _runNuc(sim, _nuc_magnetite);
+  _runNuc(sim, _nuc_cuprite);
+  _runNuc(sim, _nuc_rutile);
+  _runNuc(sim, _nuc_chromite);
+  _runNuc(sim, _nuc_cassiterite);
+  _runNuc(sim, _nuc_pyrolusite);
+  _runNuc(sim, _nuc_brucite);
 }

@@ -126,9 +126,9 @@ function _nuc_crocidolite(sim) {
 }
 
 function _nucleateClass_amphibole(sim) {
-  _nuc_tremolite(sim);
-  _nuc_actinolite(sim);
-  _nuc_anthophyllite(sim);
-  _nuc_amosite(sim);
-  _nuc_crocidolite(sim);
+  _runNuc(sim, _nuc_tremolite);
+  _runNuc(sim, _nuc_actinolite);
+  _runNuc(sim, _nuc_anthophyllite);
+  _runNuc(sim, _nuc_amosite);
+  _runNuc(sim, _nuc_crocidolite);
 }

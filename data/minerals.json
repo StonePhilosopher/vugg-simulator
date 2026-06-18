@@ -4327,7 +4327,13 @@
         "SiO2": 0.4,
         "F": 0.2
       },
-      "fluorescence": null,
+      "fluorescence": {
+        "activator": "U/Mn/Ce",
+        "threshold_ppm": 0,
+        "color": "greenish-yellow (uranyl); orange-red (Mn²⁺); blue (Ce³⁺)",
+        "quencher": null,
+        "status": "Specimen-dependent, genuinely multi-activator (fluomin id=126, fluorapophyllite): uranyl gives greenish-yellow with banded emission (504/522/544 nm), Mn²⁺ orange-red (~600-625 nm), Ce³⁺ blue. The best-characterised fluorescent species of the Deccan amygdule suite and the legitimate uranyl reference case — the zeolites should NOT be cloned from it wholesale (they are weaker, mostly organic-impurity, mostly single-channel). Still activator/locality-driven, not intrinsic. cross-check 2026-06-18."
+      },
       "twin_laws": [
         {
           "name": "contact_111",
@@ -16585,6 +16591,795 @@
       "late_stage_propensity": 0.65,
       "_late_stage_note": "Mid-to-late stage in the rodingite paragenesis. Prehnite forms after grossular + diopside + vesuvianite but before terminal datolite + zeolites. In Lake Superior amygdales, prehnite is one of the EARLY-to-mid amygdale fillings (with calcite + analcime + native_copper); the rodingite paragenesis pushes it later.",
       "class_color": "#a8e0a0"
+    },
+    "stilbite": {
+      "formula": "NaCa4Si27Al9O72·28H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 12,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "sheaf",
+          "wall_spread": 0.5,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — wheatsheaf/sheaf bundle of divergent tabular crystals splaying from a constricted waist. The signature stilbite habit."
+        },
+        {
+          "name": "bowtie",
+          "wall_spread": 0.45,
+          "void_reach": 0.65,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.0) — twinned sheaves meeting at the waist ({001} cruciform penetration twin); the bowtie / hourglass."
+        },
+        {
+          "name": "spherulitic",
+          "wall_spread": 0.7,
+          "void_reach": 0.35,
+          "vector": "coating",
+          "trigger": "very high supersaturation (excess > 1.8) / high nucleation density — radiating globular aggregates."
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess < 0.3) — thin tabular {010} plates, pearly on {010}."
+        }
+      ],
+      "class": "silicate",
+      "description": "NaCa₄Si₂₇Al₉O₇₂·28H₂O (stilbite-Ca) — monoclinic (C2/m) framework silicate of the zeolite group. H 3.5-4, density 2.12-2.22, vitreous luster, pearly on {010}; the Deccan endmember is the famous peach-to-salmon colour. The COOLER, more-hydrated member of the stilbite/heulandite dehydration couple: calorimetry (Kiseleva, Navrotsky, Belitsky & Fursenko 2001) gives the reaction Ca-stilbite = Ca-heulandite + H₂O, so stilbite is stable on the cooler/wetter side and dehydrates to heulandite as temperature rises. Signature habit is the wheatsheaf/bowtie sheaf bundle — twinning on {001} is 'extremely common' (Wikipedia/Mindat/IZA), producing the cruciform/hourglass aggregates. Type expression for collectors is the Deccan Traps basalt amygdule (Nashik, Pune, Mumbai, Maharashtra) — the world's premier locality — where peach stilbite perches on a chalcedony/quartz silica veneer with apophyllite, scolecite, mesolite, heulandite and calcite. Field discriminator: stilbite = sheaves/bowties; heulandite = isolated coffin-shaped {010} tablets; stellerite is the orthorhombic (Fmmm) Na-poor analog lacking the bowtie habit; epistilbite rarely forms the large sheaf clusters. Refs: Coombs et al. 1997 Can. Mineral. 35:1571 (nomenclature, stilbite-Ca/-Na); Kiseleva Navrotsky Belitsky & Fursenko 2001 Am. Mineral. 86:448; Anthony et al. Handbook of Mineralogy; Ottens et al. 2019 (Deccan paragenesis); Sukheswala Avasia & Gangopadhyay 1974 Mineral. Mag. (Deccan zonation).",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        40,
+        150
+      ],
+      "T_optimum_C": [
+        60,
+        110
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Al": 4,
+        "SiO2": 250
+      },
+      "_ingredients_note": "Ca ≥ 60 (essential exchangeable cation; the engine uses Ca+Na as the exchangeable budget so stilbite-Na can fire in Na-dominant brines) + Al ≥ 4 (framework) + SiO2 ≥ 250 (moderate silica — lower than heulandite's 400). T 40-150°C, sweet spot 60-110°C (the COOL member). pH 7.0-10.5 alkaline, sweet spot 8.0-9.5. Redox-insensitive — no redox gate. The T-window + silica-activity split discriminates stilbite from heulandite. Activity correction applied.",
+      "trace_ingredients": {
+        "Na": "Na > Ca shifts the variety to stilbite-Na (white; uncommon — the Deccan endmember is stilbite-Ca)",
+        "Sr": "Sr substitutes for Ca, often 100s of ppm in Deccan zeolites (the scenario carries Sr=2 in the parent fluid to document the source)",
+        "Fe": "Fe staining gives deeper salmon/orange tones"
+      },
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Reversible zeolitic dehydration begins below ~150°C; sustained heating toward ~200°C drives the Ca-stilbite → Ca-heulandite + H₂O dehydration (Kiseleva et al. 2001) and ultimately framework collapse. No ionic release to the fluid (water loss only).",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": "organic",
+        "threshold_ppm": 0,
+        "color": "yellowish-white",
+        "quencher": null,
+        "status": "Locality-only, ORGANIC-impurity luminescence (singlet-triplet) — NOT uranyl: pale yellowish-white, SW≈LW (fluomin id=686; Upper New Street, Paterson NJ; Pashan/Nashik, India). A few localities only; pure stilbite is inert. The compiled ZEOLITE_RESEARCH.md table's 'uranyl ion' attribution is not supported by the primary fluorescence database (fluomin classes the emission as organic, same bucket as gypsum) — cross-check 2026-06-18."
+      },
+      "twin_laws": [
+        {
+          "name": "cruciform_001",
+          "miller_indices": "{001}",
+          "trigger": "growth",
+          "probability": 0.35,
+          "status": "newly_added",
+          "_source": "Cruciform / penetration twinning on {001} is 'extremely common' in stilbite (Wikipedia/Stilbite; corroborated by the IZA-Online stilbite datasheet and Mindat) — it produces the diagnostic bowtie/hourglass aggregates. Conservative-but-high p=0.35 reflecting that the twin is a near-defining feature of the habit. General references only per the citation-conservatism rule (no synthesized page cite)."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Stilbite dissolves below pH 6, releasing Ca + Al + Si to the fluid. Zeolites are reactive in acidic groundwater.",
+        "products": {
+          "Ca": 0.018,
+          "Al": 0.012,
+          "SiO2": 0.05
+        }
+      },
+      "habit": "sheaf",
+      "color_rules": {
+        "peach_salmon": {
+          "default": true,
+          "trigger": "Ca-dominant (the Nashik/Deccan aesthetic); colourless when Fe-free"
+        },
+        "white": {
+          "trigger": "Na > Ca — stilbite-Na (uncommon)"
+        },
+        "orange_salmon": {
+          "trigger": "Fe staining > deeper salmon/orange"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v200 (2026-06-17). Monoclinic C2/m Ca-zeolite, the cooler member of the Deccan Stage-II zeolite couple (with heulandite). Fills the deccan_zeolite Stage-II narrative gap (the step-70 event narrated 'stilbite + heulandite + calcite blades' that could not grow). Substrate priority: silica lining (chalcedony/quartz veneer) > heulandite intergrowth > calcite > apophyllite > wall. Discriminated from heulandite by the cooler T-window (sweet 60-110 vs 120-180°C) + moderate silica (gate 250 vs 400) per the Kiseleva et al. 2001 dehydration thermochemistry. Per Coombs et al. 1997 + Ottens et al. 2019.",
+      "late_stage_propensity": 0.75,
+      "_late_stage_note": "Late zeolite stage — stilbite fills the cooled basalt vesicle after the early silica veneer + fibrous Ca-zeolites (scolecite/mesolite), on a cooling/dehydrating path. The cooler member precedes heulandite on that path.",
+      "class_color": "#f0c8a8"
+    },
+    "heulandite": {
+      "formula": "(Ca,Na)Al2Si7O18·6H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 10,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "coffin",
+          "wall_spread": 0.5,
+          "void_reach": 0.55,
+          "vector": "projecting",
+          "trigger": "default — coffin-shaped tablet ∥{010}, elongated and widest at the centre. The diagnostic heulandite shape (Handbook of Mineralogy)."
+        },
+        {
+          "name": "stout",
+          "wall_spread": 0.45,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.8) — trapezoidal / diamond-section stout crystals (the coffin cross-section)."
+        },
+        {
+          "name": "tabular",
+          "wall_spread": 0.6,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess < 0.6) — thin tabular {010} plates, pearly on {010}."
+        },
+        {
+          "name": "granular",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "very low supersaturation (excess < 0.25) — coarse-to-fine granular mass."
+        }
+      ],
+      "class": "silicate",
+      "description": "(Ca,Na)Al₂Si₇O₁₈·6H₂O (heulandite-Ca) — monoclinic (C2/m) framework silicate of the zeolite group. H 3.5-4, density 2.10-2.20, vitreous, pearly on {010}; colourless/white/grey or red-orange when Fe-stained (the classic Berufjord, Iceland and Deccan look). The WARMER, dehydrated member of the stilbite/heulandite couple — the dehydration product of stilbite (Ca-stilbite = Ca-heulandite + H₂O, Kiseleva Navrotsky Belitsky & Fursenko 2001) — so it forms at higher silica activity and the warmer end of the zeolite window. Signature habit is the 'coffin-shaped' tablet parallel to {010}, widest at the centre (Handbook of Mineralogy). The heulandite/clinoptilolite boundary is COMPOSITIONAL: Si/Al < 4.0 = heulandite, ≥ 4.0 = clinoptilolite (Coombs et al. 1997) — clinoptilolite is not modelled here, and the boundary is not a hard fluid gate because the sim's SiO2 ppm is dissolved silica, not framework Si/Al. Deccan Traps amygdule Stage-II classic (Nashik, Poona, Bombay — the Handbook lists large Deccan crystals) on a chalcedony/quartz veneer with stilbite, apophyllite, scolecite, mesolite and calcite. Field discriminator: heulandite = isolated coffin tablets; stilbite = sheaves/bowties; clinoptilolite needs Si/Al ≥ 4 + is far more thermally stable. Refs: Anthony et al. Handbook of Mineralogy (formula, cell, twin {100}); Coombs et al. 1997 Can. Mineral. 35:1571 (Si/Al=4.0 boundary); Kiseleva Navrotsky Belitsky & Fursenko 2001 Am. Mineral. 86:448; Ottens et al. 2019 (Deccan).",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        95,
+        210
+      ],
+      "T_optimum_C": [
+        120,
+        180
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Al": 4,
+        "SiO2": 400
+      },
+      "_ingredients_note": "Ca ≥ 60 (essential; engine uses Ca+Na as the exchangeable budget) + Al ≥ 4 (framework) + SiO2 ≥ 400 (HIGHER silica than stilbite's 250 — the silica-activity discriminator). T 95-210°C, sweet spot 120-180°C (the WARM member — the dehydration product). pH 7.0-10.5 alkaline, sweet spot 8.0-9.5. Redox-insensitive — no redox gate. Activity correction applied.",
+      "trace_ingredients": {
+        "Na": "Na substitutes for Ca (heulandite-Na varieties); the Deccan endmember is heulandite-Ca",
+        "Sr": "Sr substitutes for Ca, often 100s of ppm in Deccan zeolites",
+        "Fe": "Fe staining gives the diagnostic red-to-orange Berufjord/Deccan colour"
+      },
+      "thermal_decomp_C": 250,
+      "thermal_decomp_reaction": "Reversible zeolitic dehydration; the heulandite framework collapses near ~200-300°C (the low thermal stability that historically distinguished it from clinoptilolite, which is stable >500°C — Coombs et al. 1997 demoted this to a derivative aid). Water loss only; no ionic release to the fluid.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Weak/variable locality reports only (fluomin id=393 heulandite-Ca, id=1132 heulandite-Na): emission color is contradictory across localities (greenish-yellow / greenish-blue LW / red SW) and the activator is undetermined — deliberately NOT pinned. Treated as effectively non-fluorescent; pure heulandite is inert. (The compiled table's 'uranyl + Mn²⁺' is unverified.) cross-check 2026-06-18."
+      },
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.05,
+          "status": "newly_added",
+          "_source": "Handbook of Mineralogy (heulandite): '{100} as twin and contact plane.' Far less conspicuous than stilbite's cruciform twinning — conservative p=0.05. General reference per the citation-conservatism rule."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Heulandite dissolves below pH 6, releasing Ca + Al + Si to the fluid.",
+        "products": {
+          "Ca": 0.02,
+          "Al": 0.014,
+          "SiO2": 0.055
+        }
+      },
+      "habit": "coffin",
+      "color_rules": {
+        "colorless_white": {
+          "default": true,
+          "trigger": "Fe-free heulandite-Ca, pearly on {010}"
+        },
+        "red_orange": {
+          "trigger": "Fe staining > 20 ppm — the classic Berufjord/Deccan colour"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v200 (2026-06-17). Monoclinic C2/m Ca-zeolite, the warmer member of the Deccan Stage-II zeolite couple (with stilbite); the dehydration product of stilbite per Kiseleva et al. 2001. Fills the deccan_zeolite Stage-II narrative gap with stilbite. Substrate priority: silica lining > stilbite intergrowth > calcite > apophyllite > wall. Discriminated from stilbite by the warmer T-window (sweet 120-180 vs 60-110°C) + higher silica (gate 400 vs 250). Si/Al≥4 clinoptilolite endmember intentionally not modelled (Coombs 1997 compositional boundary, not a fluid gate). Per Anthony Handbook + Coombs et al. 1997 + Ottens et al. 2019.",
+      "late_stage_propensity": 0.7,
+      "_late_stage_note": "Late zeolite stage — the warmer/earlier end of the Stage-II zeolite window relative to stilbite, on the cooling/dehydrating path in the basalt vesicle.",
+      "class_color": "#e8d4b0"
+    },
+    "scolecite": {
+      "formula": "CaAl2Si3O10·3H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 30,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "spray",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "default — radiating acicular needle spray / divergent fibrous bundle. The signature scolecite habit."
+        },
+        {
+          "name": "puffball",
+          "wall_spread": 0.5,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "very high supersaturation (excess > 1.6) — dense divergent needle burst from a point."
+        },
+        {
+          "name": "prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.75,
+          "vector": "projecting",
+          "trigger": "low supersaturation (excess < 0.3) — slender square-section prism ∥[001], striated single blade."
+        },
+        {
+          "name": "fibrous",
+          "wall_spread": 0.7,
+          "void_reach": 0.3,
+          "vector": "coating",
+          "trigger": "lowest supersaturation (excess < 0.15) — silky fibrous mass."
+        }
+      ],
+      "class": "silicate",
+      "description": "CaAl₂Si₃O₁₀·3H₂O — monoclinic (Cc, β≈90.64° pseudo-orthorhombic) framework silicate, the Ca-endmember of the fibrous natrolite-group zeolites (natrolite Na → mesolite Na-Ca → scolecite Ca, a coupled Na⁺+½□ ↔ Ca²⁺+½H₂O substitution — the Ca member carries the extra channel water). H 5-5.5, density 2.25-2.29, vitreous/silky, white to colorless; pyroelectric + piezoelectric. The signature habit is radiating acicular sprays and 'puffball' needle bursts, plus slender square-section prisms to 30 cm. Twinning on {100} (twin axis [001]) is near-ubiquitous — it makes the monoclinic crystal mimic tetragonal symmetry. A LOW-silica zeolite (Si/Al≈1.5) that forms EARLIER in the basalt-amygdule paragenesis than the higher-Si sheet zeolites stilbite + heulandite (which drape over the scolecite sprays); the Deccan Traps (Poona/Nashik/Mumbai, Maharashtra) + Teigarhorn, Berufjord, Iceland are the premier localities. Field discriminator: scolecite is the monoclinic member → OBLIQUE (inclined) extinction, vs the parallel extinction of orthorhombic natrolite + mesolite; coarser needles than mesolite. Refs: Anthony et al. Handbook of Mineralogy (scolecite); Alberti, Pongiluppi & Vezzalini 1982 N.Jb.Min.Abh. 143:231 (natrolite-group crystal chemistry); Smith & Walls 1971 Mineral.Mag. 38:72; Ottens et al. 2019 (Deccan).",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        40,
+        150
+      ],
+      "T_optimum_C": [
+        70,
+        120
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Al": 4,
+        "SiO2": 150
+      },
+      "_ingredients_note": "Ca ≥ 60 + Al ≥ 4 + SiO2 ≥ 150 (LOW-Si floor — lower than stilbite's 250, reflecting the low-Si natrolite framework). T 40-150°C, sweet spot 70-120°C. pH 7.0-10.5 alkaline. Redox-insensitive (no redox gate). Na/Ca FORK: scolecite fires when Na/(Na+Ca) ≤ 0.5 (Ca-dominant); above that it's mesolite/natrolite territory. Activity correction applied.",
+      "trace_ingredients": {
+        "Na": "minor Na substitution; Na/(Na+Ca) > 0.5 shifts the chemistry to mesolite (the Na-Ca intermediate)",
+        "Sr": "Sr substitutes for Ca, common in Deccan zeolites"
+      },
+      "thermal_decomp_C": 250,
+      "thermal_decomp_reaction": "Reversible zeolitic dehydration; the fibrous framework collapses near ~200-300°C. Water loss only; no ionic release to the fluid.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "No documented species fluorescence — absent from fluomin and the Fluorescent Mineral Society common lists; at most an occasional weak, non-diagnostic response. Treated as non-fluorescent, which matches the primary sources. (The compiled table's 'Mn²⁺/uranyl, creamy white to pale orange' is unverified — no scolecite fluorescence record was found.) cross-check 2026-06-18."
+      },
+      "twin_laws": [
+        {
+          "name": "contact_penetration_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.4,
+          "status": "newly_added",
+          "_source": "Handbook of Mineralogy (scolecite): twinning on {100}, twin axis [001], very common as contact OR penetration twins (it is what makes the monoclinic crystal mimic tetragonal/orthorhombic symmetry optically — 'nearly all scolecite is twinned' is a fair design default). High p=0.4. General reference per the citation-conservatism rule."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Scolecite dissolves below pH 6, releasing Ca + Al + Si to the fluid.",
+        "products": {
+          "Ca": 0.020,
+          "Al": 0.016,
+          "SiO2": 0.030
+        }
+      },
+      "habit": "spray",
+      "color_rules": {
+        "white_colorless": {
+          "default": true,
+          "trigger": "Ca-zeolite, white to colorless, silky when fibrous"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v201 (2026-06-17). Monoclinic Cc Ca-endmember fibrous natrolite-group zeolite. Forms before the sheet zeolites (stilbite/heulandite) in the Deccan amygdule sequence; closes the scolecite half of the PROPOSALS-LEDGER §G fibrous-zeolite gap (the deccan step-70 text named scolecite+mesolite as unmodelled). Substrate priority: silica lining > mesolite intergrowth > calcite > wall. Na/Ca fork (Na/(Na+Ca)≤0.5) discriminates it from mesolite. Per Anthony Handbook + Alberti et al. 1982.",
+      "late_stage_propensity": 0.55,
+      "_late_stage_note": "Mid-stage zeolite — forms after the early Ca-zeolites + analcime but before the sheet zeolites stilbite/heulandite + apophyllite. Scolecite is generally the most Ca-evolved (latest) of the natrolite-group trio.",
+      "class_color": "#e8e0d0"
+    },
+    "mesolite": {
+      "formula": "Na2Ca2Al6Si9O30·8H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 20,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "tuft",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "default — hair-like cottony fibrous tuft (the finest fiber of the group). The diagnostic mesolite habit."
+        },
+        {
+          "name": "acicular",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "mid supersaturation (excess 0.8-1.6) — divergent acicular spray, finer than scolecite."
+        },
+        {
+          "name": "prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.75,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.6) — slender prism ∥[001] (the coarse, rarer mode)."
+        },
+        {
+          "name": "porcelaneous",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "lowest supersaturation (excess < 0.2) — compact porcelaneous mass."
+        }
+      ],
+      "class": "silicate",
+      "description": "Na₂Ca₂Al₆Si₉O₃₀·8H₂O — orthorhombic (Fdd2) framework silicate, the ORDERED Na-Ca intermediate of the fibrous natrolite group. Its giant b-axis (~56.6 Å) is the structural signature: an ordered stack of one natrolite-type (Na) layer to two scolecite-type (Ca) layers along b, giving the ideal Na₂Ca₂ per 30-O formula — this is why mesolite needs BOTH Na and Ca present, unlike Ca-only scolecite or Na-only natrolite. H 5, density 2.26, vitreous/silky, white to colorless; pyroelectric. The diagnostic habit is the finest hair-like / cottony fibrous tufts (finer than scolecite). Low-Si (Si/Al≈1.5), forms with scolecite earlier than the sheet zeolites; first described from the Cyclopean Islands, Sicily (1816), superb at Poona/Pashan Hills (Deccan) and Nova Scotia. Field discriminator: orthorhombic → PARALLEL extinction (vs scolecite's oblique), finer fiber than both scolecite and natrolite, biaxial (+). Refs: Anthony et al. Handbook of Mineralogy (mesolite); Artioli, Smith & Pluth 1986 Acta Cryst. C42:937 (Fdd2, giant b, layer-ordering); Alberti, Pongiluppi & Vezzalini 1982 N.Jb.Min.Abh. 143:231.",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        40,
+        140
+      ],
+      "T_optimum_C": [
+        70,
+        110
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Na": 40,
+        "Al": 4,
+        "SiO2": 150
+      },
+      "_ingredients_note": "Ca ≥ 60 AND Na ≥ 40 (BOTH essential — the ordered Na-Ca intermediate) + Al ≥ 4 + SiO2 ≥ 150 (low-Si floor). T 40-140°C, sweet spot 70-110°C. pH 7.0-10.5 alkaline. Redox-insensitive. Na/Ca FORK: mesolite fires only in the MIXED band 0.2 ≤ Na/(Na+Ca) ≤ 0.8 (below = scolecite, above = natrolite); strongest near the ordered Na₂Ca₂ (~0.45). The sigma uses the geometric mean of the Na and Ca factors, so it needs both. Activity correction applied.",
+      "trace_ingredients": {
+        "Sr": "Sr substitutes for Ca, common in Deccan zeolites",
+        "K": "minor K substitution for Na"
+      },
+      "thermal_decomp_C": 250,
+      "thermal_decomp_reaction": "Reversible zeolitic dehydration; framework collapses near ~200-300°C. Water loss only; no ionic release to the fluid.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": "U",
+        "threshold_ppm": 0,
+        "color": "green-yellow (SW); white (LW)",
+        "quencher": null,
+        "status": "Locality-only, two-channel: the green-yellow SW emission is consistent with trace uranyl ('most probably uranyl contamination', fluomin id=496), and a separate chalky-white LW emission is organic/defect luminescence. Trace/locality-driven, not intrinsic; pure mesolite is inert. (The one species where the compiled table's uranyl attribution holds up — but it is uranyl + organic, not uranyl + organic-via-'organics' alone.) cross-check 2026-06-18."
+      },
+      "twin_laws": [
+        {
+          "name": "contact_010",
+          "miller_indices": "{010}",
+          "trigger": "growth",
+          "probability": 0.08,
+          "status": "newly_added",
+          "_source": "Handbook of Mineralogy (mesolite): 'characteristically twinned' on {010} or {100}. Less emphasized than scolecite's ubiquitous {100} twinning — conservative p=0.08. NOTE: twin-law-check.mjs ⚠ FLAGs this (no cell-heuristic prediction matches) — an expected genuinely-subtle case: the Fdd2 framework with its giant b≈56.6Å (ordered 1-natrolite:2-scolecite layer stack) defeats the simple-cell twin predictor (cf. the pyrite/marcasite Tier-2 class). The citation is the real, web-verified Handbook entry, so per the citation-conservatism rule the entry ships. General reference only (no synthesized page cite)."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Mesolite dissolves below pH 6, releasing Na + Ca + Al + Si to the fluid.",
+        "products": {
+          "Na": 0.012,
+          "Ca": 0.012,
+          "Al": 0.018,
+          "SiO2": 0.030
+        }
+      },
+      "habit": "tuft",
+      "color_rules": {
+        "white_colorless": {
+          "default": true,
+          "trigger": "Na-Ca zeolite, white to colorless, silky/cottony fibrous"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v201 (2026-06-17). Orthorhombic Fdd2 ordered Na-Ca intermediate of the natrolite group. Needs BOTH Na and Ca (the mixed-cation gate is the discriminator from Ca-only scolecite + Na-only natrolite). Co-deposits with scolecite, before the sheet zeolites. Closes the mesolite half of PROPOSALS-LEDGER §G. Deccan Na bumped 40→80 so the mixed-cation window opens. Substrate priority: silica lining > scolecite intergrowth > calcite > wall. Per Anthony Handbook + Artioli et al. 1986 + Alberti et al. 1982.",
+      "late_stage_propensity": 0.5,
+      "_late_stage_note": "Mid-stage zeolite — co-deposits with scolecite (natrolite → mesolite → scolecite cation-evolution order; mesolite forms before the most-Ca-evolved scolecite), before the sheet zeolites.",
+      "class_color": "#ece4d8"
+    },
+    "thomsonite": {
+      "formula": "NaCa2Al5Si5O20·6H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 12,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "eye",
+          "wall_spread": 0.55,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "default — radiating spherical botryoidal nodule with concentric colour banding (the 'thomsonite eye' / lintonite, the Lake Superior gem). High nucleation density in a confined cavity."
+        },
+        {
+          "name": "spray",
+          "wall_spread": 0.45,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "mid supersaturation (excess 0.8-1.4) — radiating columnar/bladed sprays + rosettes, blades flattened on {010}."
+        },
+        {
+          "name": "acicular",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.4) — fine fibrous needle tufts."
+        },
+        {
+          "name": "columnar",
+          "wall_spread": 0.35,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low supersaturation (excess < 0.25) — slender prisms ∥[001], flattened on {010} / compact columnar."
+        }
+      ],
+      "class": "silicate",
+      "description": "NaCa₂Al₅Si₅O₂₀·6H₂O — orthorhombic (Pncn, pseudotetragonal) framework silicate, the EARLIEST and most-aluminous (Si/Al≈1) of the common basalt-amygdule zeolites. H 5-5.5, density 2.23-2.39, vitreous-pearly; white/yellow/pink/green, often concentrically zoned. The famous 'thomsonite eyes' — radiating spherical botryoidal nodules with concentric colour banding — are the Lake Superior (Isle Royale, Grand Marais MN) gem/lapidary material (the green variety is 'lintonite'). First zeolite in the Deccan cavity sequence (smectite → calcite → THOMSONITE → natrolite → analcime → scolecite/mesolite → stilbite → heulandite → apophyllite); later zeolites nucleate ON it. Being Si/Al≈1, it is favored at LOW silica activity — the clean discriminator from the higher-Si natrolite group (Si/Al≈1.5); the engine uses a soft low-silica preference (Na/Ca does NOT cleanly separate thomsonite from mesolite — both are Na-Ca, thomsonite just more-Ca + lower-Si). Type locality Old Kilpatrick, Dunbartonshire, Scotland (named for Dr Thomas Thomson). Field discriminator: the concentric spherical eyes are diagnostic; biaxial (+); orthorhombic (vs monoclinic scolecite/mesolite); much of Lake Superior 'thomsonite' is actually prehnite/mesolite by XRD — distinguish by hardness + optics. Refs: Anthony et al. Handbook of Mineralogy (thomsonite-Ca); Wise & Tschernich 1978 Can.Mineral. 16:487; Coombs et al. 1997; Gatta et al. 2010 Am.Mineral. 95:495.",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        40,
+        150
+      ],
+      "T_optimum_C": [
+        60,
+        110
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Na": 20,
+        "Al": 4,
+        "SiO2": 120
+      },
+      "_ingredients_note": "Ca ≥ 60 (dominant) + Na ≥ 20 (essential-minor, NaCa2) + Al ≥ 4 (HIGHEST demand — most-aluminous zeolite) + SiO2 ≥ 120 (lowest floor of the suite). T 40-150°C, sweet spot 60-110°C. pH 7.0-10.5 alkaline. Redox-insensitive. DISCRIMINATOR: a SOFT low-silica preference (sigma boosted when Al-rich-relative-to-Si, mildly attenuated when silica-flooded — NOT a hard ceiling, since Deccan + Lake Superior are silica-rich yet thomsonite-bearing). Strongly Na-dominant fluid (Na/(Na+Ca) > 0.6) blocks. Activity correction applied.",
+      "trace_ingredients": {
+        "Fe": "Fe trace > 15 ppm gives the green 'lintonite' variety (the Lake Superior gem)",
+        "Sr": "Sr substitutes for Ca; the Sr-dominant endmember is thomsonite-Sr (rare)"
+      },
+      "thermal_decomp_C": 300,
+      "thermal_decomp_reaction": "Reversible zeolitic dehydration / Si-Al order-disorder (Gatta et al. 2010); framework breaks down toward anorthite above ~300°C (the zeolite-facies ceiling). Water loss only; no ionic release to the fluid.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": "organic",
+        "threshold_ppm": 0,
+        "color": "bluish-white",
+        "quencher": null,
+        "status": "Locality-only and weak: bluish-white emission (SW weak; LW yellowish + bluish-white) indicates organic/defect luminescence, NOT Mn²⁺ — the bluish color is the wrong direction for Mn²⁺, which emits green-to-orange (fluomin id=706, Paterson NJ / Franklin). Trace/locality-driven; pure thomsonite is inert. (The compiled table's 'Mn²⁺' attribution is not supported.) cross-check 2026-06-18."
+      },
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.06,
+          "status": "newly_added",
+          "_source": "Handbook of Mineralogy (thomsonite-Ca): twinning on {110}. The only law given in the Handbook sheet — conservative p=0.06. General reference per the citation-conservatism rule (no synthesized page cite)."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Thomsonite dissolves below pH 6, releasing Na + Ca + Al + Si to the fluid.",
+        "products": {
+          "Na": 0.008,
+          "Ca": 0.016,
+          "Al": 0.020,
+          "SiO2": 0.025
+        }
+      },
+      "habit": "eye",
+      "color_rules": {
+        "white_pink_zoned": {
+          "default": true,
+          "trigger": "Na-Ca zeolite, white-to-pink, concentrically colour-banded"
+        },
+        "green_lintonite": {
+          "trigger": "Fe trace > 15 ppm — the green lintonite gem variety"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v202 (2026-06-17). Orthorhombic Pncn, the earliest + most-aluminous (Si/Al~1) basalt-amygdule zeolite. Completes the Deccan early-zeolite suite with scolecite/mesolite (v201) + stilbite/heulandite (v200). The clean discriminator from the natrolite group is a soft LOW-silica preference (not Na/Ca — both are Na-Ca). Substrate priority: early calcite > silica veneer > smectite-lined wall; the later natrolite group + sheet zeolites nucleate ON thomsonite (wired into _nuc_scolecite/_nuc_mesolite). Deccan Na=80 (from v201) supplies the essential-minor Na. Per Anthony Handbook + Wise & Tschernich 1978.",
+      "late_stage_propensity": 0.4,
+      "_late_stage_note": "EARLIEST zeolite — forms on the fresh cavity surface after the smectite clay lining + early calcite, before natrolite/analcime/scolecite/mesolite and the sheet zeolites. The low late-stage propensity reflects its early paragenetic slot.",
+      "class_color": "#e0d8cc"
+    },
+    "chabazite": {
+      "formula": "Ca2Al2Si4O12·6H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 8,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "rhomb",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — rhombohedral pseudo-cube ({101̄1}, interfacial angle near 90° so it mimics a cube). The signature chabazite habit."
+        },
+        {
+          "name": "phacolite",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.3) — lens/disc-shaped penetration-twinned aggregate (the phacolite twin variety, twin axis [0001])."
+        },
+        {
+          "name": "herschelite",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "Na-dominant fluid (Na > Ca) — thin tabular hexagonal-looking plates (the Na-rich herschelite habit)."
+        },
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.7,
+          "void_reach": 0.35,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess < 0.25) / high nucleation density — radiating spheroidal aggregate, crystal-ball rosette."
+        }
+      ],
+      "class": "silicate",
+      "description": "Ca₂Al₂Si₄O₁₂·6H₂O (chabazite-Ca, per-Ca CaAl₂Si₄O₁₂·6H₂O) — trigonal (R-3m) framework silicate, the LATE, intermediate-silica (Si/Al≈2) member of the basalt-amygdule zeolite suite. H 4-5, density 2.05-2.16 (conspicuously light), vitreous; colorless/white/flesh-pink. Very hydrous (12 H₂O per cell). The signature habit is the rhombohedral pseudo-cube — a near-90° rhombohedron that mimics a cube — plus the famous phacolite penetration twins (lens-shaped twinned aggregates, twin axis [0001]) and the Na-rich tabular herschelite. A chabazite-group SERIES (chabazite-Ca/-Na/-K/-Sr by dominant extra-framework cation, Coombs et al. 1997); the cation runs Ca > Na > K in frequency and K is NOT required — chabazite-Ca is the basalt-amygdule default. A LATE perching phase: forms after the sheet zeolites + apophyllite (with mordenite, before/with late calcite), nucleating on the earlier zeolite lining. Field discriminator vs CALCITE (the classic trap — the pseudo-cube rhomb looks like a calcite rhomb/cube): chabazite's {101̄1} cleavage is POOR (calcite's is perfect, three directions), it does NOT effervesce in acid, it is harder (4-5 vs 3) and notably lighter (2.1 vs 2.71); optically weakly birefringent + anomalously biaxial/sectored. Type area Sicily (Aci Castello / Cyclopean Isles, historical); famous from Bohemia (Aussig/Ústí), Nova Scotia (Wasson Bluff), the Deccan (Pune), Iceland. Refs: Passaglia & Sheppard 2001 RiMG 45:69 (crystal chemistry, R=0.67, Ca-DEC); Coombs et al. 1997 Can.Mineral. 35:1571; Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning); Calligaris et al. 1982 Zeolites (R-3m).",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        40,
+        150
+      ],
+      "T_optimum_C": [
+        50,
+        110
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Al": 4,
+        "SiO2": 200
+      },
+      "_ingredients_note": "Ca ≥ 60 + Al ≥ 4 + SiO2 ≥ 200 (intermediate-Si floor, Si/Al~2 — above thomsonite's 120 + the natrolite group's 150, below the high-Si demand of the sheet zeolites). T 40-150°C, sweet spot 50-110°C (LATE, cool). pH 7.0-10.5 alkaline. Redox-insensitive. CATION-FLEXIBLE: the supersat uses a joint (Ca+Na+K) extra-framework charge budget — Ca dominant selects chabazite-Ca; K is NOT required (K-dominance is a rare special case); Na-dominance shifts HABIT to herschelite, not species failure. Activity correction applied.",
+      "trace_ingredients": {
+        "Na": "secondary extra-framework cation; Na > Ca shifts the habit to tabular herschelite (chabazite-Na)",
+        "K": "optional extra-framework cation; K-dominance = chabazite-K (rare)",
+        "Sr": "minor substituent (chabazite-Sr is a rare endmember)"
+      },
+      "thermal_decomp_C": 300,
+      "thermal_decomp_reaction": "Reversible zeolitic dehydration (very hydrous, 12 H2O); framework breaks down above ~300°C (zeolite-facies ceiling). Water loss only; no ionic release to the fluid.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": "U",
+        "threshold_ppm": 0,
+        "color": "green",
+        "quencher": null,
+        "status": "Locality-only, uranyl-activated: uranium-bearing chabazite fluoresces bright green under SW UV (strongest), weak under MW/LW — Sterling Hill NJ (colorless crystals, 'very bright green SW', FOMS) and Paterson NJ (fluomin id=283), two concordant sources. The BEST-documented fluorescent case of the basalt-amygdule zeolite suite, yet still trace/locality-driven, not intrinsic — pure chabazite-Ca is inert. NOTE: both research passes MISSED this (the compiled ZEOLITE_RESEARCH.md table omitted chabazite entirely; my v203 ship had it non-fluorescent). cross-check 2026-06-18."
+      },
+      "twin_laws": [
+        {
+          "name": "phacolite_penetration_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.3,
+          "status": "newly_added",
+          "_source": "Penetration twinning on/about {0001} (twin axis [0001]) — the phacolite twin variety, COMMON in amygdule chabazite (the lens/disc-shaped twinned aggregates). Akizuki & Konno 1987 Mineral.Mag. 51:427 (growth twinning in phacolite); Passaglia & Sheppard 2001 RiMG 45. High p=0.3 reflecting how common phacolite is. The literature pins the twin to the c-axis/{0001}, not a more specific plane. General references per the citation-conservatism rule."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Chabazite dissolves below pH 6, releasing Ca + Al + Si to the fluid. (Note: unlike calcite it does NOT effervesce — silicate dissolution, not carbonate.)",
+        "products": {
+          "Ca": 0.016,
+          "Al": 0.014,
+          "SiO2": 0.040
+        }
+      },
+      "habit": "rhomb",
+      "color_rules": {
+        "white_flesh": {
+          "default": true,
+          "trigger": "Ca-zeolite, colorless to white to flesh-pink"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v203 (2026-06-17). Trigonal R-3m, the late + intermediate-Si (Si/Al~2) basalt-amygdule zeolite. Completes the Deccan zeolite suite (thomsonite/natrolite-group/sheet zeolites already shipped v200-202). Cation-flexible (Ca>Na>K, K not required — chabazite-Ca is the amygdule default, confirmed firing in the Ca-dominant Deccan fluid). LATE perching phase: substrate priority earlier zeolites (sheet > fibrous) > calcite > wall; wired LAST in the silicate nucleation iterator. The rhombohedral pseudo-cube + phacolite twins are the signature; the calcite-lookalike trap is documented in the field-discriminator note. Per Passaglia & Sheppard 2001 + Coombs et al. 1997.",
+      "late_stage_propensity": 0.8,
+      "_late_stage_note": "LATE zeolite — forms after the sheet zeolites + apophyllite, with mordenite, before/with the late calcite. High late-stage propensity reflects its perching position near the end of the cavity-fill sequence.",
+      "class_color": "#dcd4c8"
+    },
+    "epidote": {
+      "formula": "Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH)",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 35,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "striated_prismatic",
+          "wall_spread": 0.35,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "default — elongated prisms striated parallel to b [010], perfect {001} basal cleavage, pistachio-green. The alpine-cleft classic."
+        },
+        {
+          "name": "gem_prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.85,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.3) in open cavity — doubly-terminated lustrous prisms, the Tormiq / Knappenwand gem 'sword'."
+        },
+        {
+          "name": "divergent_spray",
+          "wall_spread": 0.55,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "nucleation on byssolite/actinolite fibers — radiating prismatic fans interwoven with the amphibole mat."
+        },
+        {
+          "name": "granular",
+          "wall_spread": 0.8,
+          "void_reach": 0.2,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess < 0.3) — coarse-to-fine granular aggregate, vein-fill / saussurite replacement."
+        }
+      ],
+      "class": "silicate",
+      "description": "Ca₂(Al,Fe³⁺)₃(SiO₄)(Si₂O₇)O(OH) — monoclinic (P2₁/m) sorosilicate, the Fe³⁺ endmember of the clinozoisite–epidote series (epidote sensu stricto = Fe³⁺ ≥ 0.5 apfu at the M3 site, Armbruster et al. 2006 EJM 18:551). H 6-7, density 3.38-3.49, vitreous luster, perfect {001} cleavage, strong pleochroism, the diagnostic PISTACHIO-GREEN from Fe³⁺ (the green deepens with pistacite content). The classic ALPINE-CLEFT / greenschist-facies mineral: lustrous prisms striated ∥b in low-salinity oxidized metamorphic fissures. World-best gem prisms from Tormiq Valley (Haramosh Mts., Gilgit-Baltistan, Pakistan — named type-quality in the Handbook of Mineralogy, rivaling Knappenwand, Austria). THE LOAD-BEARING CONTROL IS REDOX: epidote requires ferric iron, so an OXIDIZING fluid near the hematite-magnetite buffer; under reducing conditions Fe partitions into magnetite + actinolite (Fe²⁺) and clinozoisite forms instead of green epidote (Holdaway 1972 CMP 37:307; Liou 1973 J.Petrol 14:381). Discriminator from catalog cousins: vs actinolite (amphibole, Mg + Fe²⁺, cleavage 56°/124°); vs prehnite (botryoidal, no striated prisms); vs diopside (pyroxene, 87°/93° cleavage); vs grossular (isometric, isotropic); vs vesuvianite (tetragonal, weak birefringence). Refs: Anthony et al. Handbook of Mineralogy 2001 (epidote sheet, names Tormiq); Deer Howie Zussman Rock-Forming Minerals v.1B (1986) pp.44-134; Liebscher & Franz eds. 2004 Reviews in Mineralogy v.56 Epidotes; Armbruster et al. 2006 EJM 18:551 (nomenclature).",
+      "scenarios": [
+        "tormiq_alpine_cleft"
+      ],
+      "T_range_C": [
+        200,
+        450
+      ],
+      "T_optimum_C": [
+        250,
+        400
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 5.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": {
+        "Ca": 80,
+        "Al": 4,
+        "Fe": 5,
+        "SiO2": 100
+      },
+      "_ingredients_note": "Ca ≥ 80 + Al ≥ 4 + Fe ≥ 5 + SiO2 ≥ 100, AND oxidizing fluid (oxideRedoxAvailable O2 ≥ 0.5 — the Fe³⁺ gate, THE discriminator). T 200-450°C, sweet spot 250-400°C (alpine-cleft main stage). pH 6.5-9.0 near-neutral. σ scales with oxidation (more O2 → more Fe³⁺ → deeper green). Reducing fluid blocks it entirely (→ magnetite/clinozoisite). Al is the rate-limiter (low solubility, wall-rock leached). Activity correction applied.",
+      "trace_ingredients": {
+        "Fe": "the defining cation — 5-30 ppm + oxidized gives pistachio-green; >20 ppm + O2>1 gives deep pistachio-to-blackish-green (pistacite-rich); <8 ppm trends pale yellow-green toward clinozoisite",
+        "Mn": "rare trace gives the pink-red piemontite variety (not modeled separately)",
+        "Sr": "minor substitution for Ca in some alpine-cleft epidote"
+      },
+      "thermal_decomp_C": 650,
+      "thermal_decomp_reaction": "Above ~635-750°C (fO2-dependent, HM buffer; Liou 1973): epidote breaks down to grandite garnet + anorthite + magnetite/hematite + quartz + H2O. Upper-T limit of the greenschist-amphibolite epidote window.",
+      "thermal_decomp_products": {
+        "Ca": 0.22,
+        "Al": 0.12,
+        "Fe": 0.1,
+        "SiO2": 0.35
+      },
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": "Fe",
+        "status": "Non-fluorescent — the high Fe³⁺ content quenches any luminescence. Not diagnostic."
+      },
+      "twin_laws": [
+        {
+          "name": "lamellar_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.12,
+          "status": "newly_added",
+          "_source": "Anthony et al. Handbook of Mineralogy 2001 (epidote sheet: 'Twinning: on {100}, lamellar, common'); Deer Howie Zussman v.1B epidote group. Polysynthetic lamellar twinning on {100} is the common epidote-group twin; conservative p=0.12 for the 'common' qualifier."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 5.5,
+        "reaction": "Ca2(Al,Fe)3Si3O12(OH) + H⁺ → 2Ca²⁺ + Al³⁺/Fe³⁺ + H4SiO4 — releases Ca + Al + Fe + Si below pH 5.5. Slow kinetics; epidote is fairly resistant.",
+        "products": {
+          "Ca": 0.22,
+          "Al": 0.12,
+          "Fe": 0.1,
+          "SiO2": 0.35
+        }
+      },
+      "habit": "striated_prismatic",
+      "color_rules": {
+        "pistachio_green": {
+          "default": true,
+          "trigger": "Fe > 8 ppm + oxidizing — the classic Tormiq Fe³⁺ aesthetic"
+        },
+        "deep_blackish_green": {
+          "trigger": "Fe > 20 ppm + O2 > 1.0 — pistacite-rich, strongly oxidized"
+        },
+        "pale_yellow_green": {
+          "trigger": "Fe < 8 ppm — Fe³⁺-poor, toward clinozoisite"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v196 (2026-06-15). Monoclinic Ca-Al-Fe³⁺ sorosilicate; the first alpine-cleft Fe³⁺ silicate in the catalog. THE GATE is oxidizing (oxideRedoxAvailable O2≥0.5, like hematite/vanadinite) — the geochemical discriminator vs actinolite (Fe²⁺+Mg) and clinozoisite (Fe-poor) per Holdaway 1972 + Liou 1973. Substrate priority: quartz (cleft lining) > byssolite/actinolite (sprays) > adularia/feldspar > magnetite (Fe-oxide redox partner) > calcite > wall. Designed for the tormiq_alpine_cleft scenario (v197). Fills the long-deferred Round-6 metamorphic-silicate gap (PROPOSALS-LEDGER §G). Clinozoisite/titanite/zoisite remain future adds. Per Handbook of Mineralogy 2001 (Tormiq) + Armbruster 2006 + Liebscher & Franz RiMG 56.",
+      "late_stage_propensity": 0.5,
+      "_late_stage_note": "Main-stage in the alpine-cleft paragenesis — epidote forms after the early quartz lining + Ti-Fe oxides, alongside byssolite, and before the late adularia + calcite. Mid-sequence, not terminal.",
+      "class_color": "#84a82c"
     },
     "chrysotile": {
       "formula": "Mg3Si2O5(OH)4",

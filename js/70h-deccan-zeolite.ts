@@ -29,7 +29,7 @@ function event_deccan_zeolite_stage_ii(c) {
   c.fluid.SiO2 += 200;
   c.fluid.pH = 8.5;
   c.temperature = 130;
-  return 'Stage II — zeolite blades begin to fill the vesicle. Stilbite, scolecite, heulandite (modeled here as the zeolite paragenesis pH/Si signature). Calcite forms as a late-stage carbonate. The vug is filling slowly.';
+  return 'Stage II — zeolite blades fill the vesicle, lowest-silica first. Thomsonite came earliest: concentric botryoidal "eyes" (Si/Al≈1, the most aluminous zeolite, the Lake Superior gem) on the fresh cavity wall. Then the fibrous natrolite-group: radiating scolecite sprays (the Ca endmember) and the finest hair-like mesolite tufts (the ordered Na-Ca intermediate), overgrowing the thomsonite. Now the higher-silica sheet zeolites take over — heulandite (the warmer, dehydrated member) as coffin-shaped tablets, stilbite (the cooler, more-hydrated member) as peach wheatsheaf sheaves draping over the earlier fibrous sprays — the stilbite/heulandite dehydration couple (Ca-stilbite = Ca-heulandite + H₂O, Kiseleva et al. 2001). Calcite forms as a late-stage carbonate. The vug is filling slowly, silica activity climbing through the sequence.';
 }
 
 function event_deccan_zeolite_apophyllite_stage_iii(c) {
@@ -46,5 +46,5 @@ function event_deccan_zeolite_late_cooling(c) {
   c.temperature = 80;
   c.fluid.pH = 8.0;
   c.flow_rate = 0.1;
-  return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. Time, not chemistry, becomes the limiting reagent.';
+  return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. This is also when chabazite arrives — rhombohedral pseudo-cubes (and lens-shaped phacolite penetration twins) perching on the earlier zeolite lining, the last zeolite of the cavity. Time, not chemistry, becomes the limiting reagent.';
 }
