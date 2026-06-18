@@ -2,7 +2,23 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## ⬜ UPDATE (2026-06-17, latest) — CHABAZITE SHIPPED (SIM 203) · DECCAN ZEOLITE SUITE COMPLETE
+> ## 🪟 SESSION HANDOFF (2026-06-17) — DECCAN ZEOLITE SUITE COMPLETE (SIM 200→203) + research cross-check
+>
+> Read **`proposals/HANDOFF-ZEOLITE-SUITE-2026-06-17.md`**. Built the full Deccan
+> basalt-amygdule zeolite paragenesis end-to-end — SIX zeolites: thomsonite →
+> scolecite/mesolite → stilbite/heulandite → chabazite (SIM 200-203), all firing
+> 20/20 in deccan, all in expects, coverage Live 137→143. Then cross-checked the
+> boss's `ZEOLITE_RESEARCH.md` (canonical fork) against my six dossiers, web-
+> verified the disagreements, and **de-confabulated a fabricated citation I'd
+> shipped** in v200 ("Fridriksson Bish & Navrotsky 2001 Am.Mineral. 86:448" →
+> actually **Kiseleva et al. 2001**; SIM-neutral fix `74fd595`, baseline byte-
+> identical). The handoff carries the reusable zeolite-engine pattern, the
+> silica-floor-not-ceiling rule, the two calibration judgment calls (deccan Na
+> 40→80, thomsonite spherulite re-nucleation), and the cross-check lessons.
+> NEXT: natrolite/mordenite (candidates), or fluorescence enrichment from the
+> boss's table. HEAD `74fd595`.
+>
+> ## ⬜ UPDATE (2026-06-17) — CHABAZITE SHIPPED (SIM 203) · DECCAN ZEOLITE SUITE COMPLETE
 >
 > **chabazite** added — the LATE, intermediate-Si (Si/Al≈2) amygdule zeolite, the
 > SIXTH and final zeolite of the Deccan suite (thomsonite → scolecite/mesolite →
