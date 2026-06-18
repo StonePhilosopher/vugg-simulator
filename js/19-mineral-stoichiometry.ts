@@ -206,6 +206,7 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   heulandite:     { Ca: 1, Al: 2, SiO2: 7 },          // (Ca,Na)Al2Si7O18·6H2O — Deccan Stage-II zeolite, warmer dehydration product (v200)
   scolecite:      { Ca: 1, Al: 2, SiO2: 3 },          // CaAl2Si3O10·3H2O — fibrous natrolite-group, Ca endmember (v201)
   mesolite:       { Na: 2, Ca: 2, Al: 6, SiO2: 9 },   // Na2Ca2Al6Si9O30·8H2O — fibrous natrolite-group, ordered Na-Ca intermediate (v201)
+  thomsonite:     { Na: 1, Ca: 2, Al: 5, SiO2: 5 },   // NaCa2Al5Si5O20·6H2O — earliest, most-aluminous amygdule zeolite, Si/Al~1 (v202)
   datolite:       { Ca: 1, B: 1, SiO2: 1 },          // CaB(SiO4)(OH) — terminal-stage cabinet aesthetic
   tremolite:      { Ca: 2, Mg: 5, SiO2: 8 },         // Ca2Mg5Si8O22(OH)2 — Mg-end calcic amphibole
   actinolite:     { Ca: 2, Mg: 4, Fe: 1, SiO2: 8 }, // Ca2(Mg,Fe)5Si8O22(OH)2 — Mg:Fe mid-range 4:1

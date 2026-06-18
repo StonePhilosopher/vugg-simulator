@@ -351,6 +351,9 @@ const MINERAL_ENGINES = {
   // sheet zeolites in the Deccan amygdale paragenesis.
   scolecite: grow_scolecite,
   mesolite: grow_mesolite,
+  // v202 (2026-06-17): thomsonite — the earliest, most-aluminous amygdule
+  // zeolite (Si/Al~1); the "thomsonite eyes" of Lake Superior.
+  thomsonite: grow_thomsonite,
   // v114 (2026-05-20): Mg-matrix family completing the Jeffrey Mine
   // rodingite assemblage. Three minerals in three different chemistry
   // classes:

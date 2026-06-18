@@ -17031,6 +17031,119 @@
       "_late_stage_note": "Mid-stage zeolite — co-deposits with scolecite (natrolite → mesolite → scolecite cation-evolution order; mesolite forms before the most-Ca-evolved scolecite), before the sheet zeolites.",
       "class_color": "#ece4d8"
     },
+    "thomsonite": {
+      "formula": "NaCa2Al5Si5O20·6H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 12,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "eye",
+          "wall_spread": 0.55,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "default — radiating spherical botryoidal nodule with concentric colour banding (the 'thomsonite eye' / lintonite, the Lake Superior gem). High nucleation density in a confined cavity."
+        },
+        {
+          "name": "spray",
+          "wall_spread": 0.45,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "mid supersaturation (excess 0.8-1.4) — radiating columnar/bladed sprays + rosettes, blades flattened on {010}."
+        },
+        {
+          "name": "acicular",
+          "wall_spread": 0.4,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.4) — fine fibrous needle tufts."
+        },
+        {
+          "name": "columnar",
+          "wall_spread": 0.35,
+          "void_reach": 0.7,
+          "vector": "projecting",
+          "trigger": "low supersaturation (excess < 0.25) — slender prisms ∥[001], flattened on {010} / compact columnar."
+        }
+      ],
+      "class": "silicate",
+      "description": "NaCa₂Al₅Si₅O₂₀·6H₂O — orthorhombic (Pncn, pseudotetragonal) framework silicate, the EARLIEST and most-aluminous (Si/Al≈1) of the common basalt-amygdule zeolites. H 5-5.5, density 2.23-2.39, vitreous-pearly; white/yellow/pink/green, often concentrically zoned. The famous 'thomsonite eyes' — radiating spherical botryoidal nodules with concentric colour banding — are the Lake Superior (Isle Royale, Grand Marais MN) gem/lapidary material (the green variety is 'lintonite'). First zeolite in the Deccan cavity sequence (smectite → calcite → THOMSONITE → natrolite → analcime → scolecite/mesolite → stilbite → heulandite → apophyllite); later zeolites nucleate ON it. Being Si/Al≈1, it is favored at LOW silica activity — the clean discriminator from the higher-Si natrolite group (Si/Al≈1.5); the engine uses a soft low-silica preference (Na/Ca does NOT cleanly separate thomsonite from mesolite — both are Na-Ca, thomsonite just more-Ca + lower-Si). Type locality Old Kilpatrick, Dunbartonshire, Scotland (named for Dr Thomas Thomson). Field discriminator: the concentric spherical eyes are diagnostic; biaxial (+); orthorhombic (vs monoclinic scolecite/mesolite); much of Lake Superior 'thomsonite' is actually prehnite/mesolite by XRD — distinguish by hardness + optics. Refs: Anthony et al. Handbook of Mineralogy (thomsonite-Ca); Wise & Tschernich 1978 Can.Mineral. 16:487; Coombs et al. 1997; Gatta et al. 2010 Am.Mineral. 95:495.",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        40,
+        150
+      ],
+      "T_optimum_C": [
+        60,
+        110
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Na": 20,
+        "Al": 4,
+        "SiO2": 120
+      },
+      "_ingredients_note": "Ca ≥ 60 (dominant) + Na ≥ 20 (essential-minor, NaCa2) + Al ≥ 4 (HIGHEST demand — most-aluminous zeolite) + SiO2 ≥ 120 (lowest floor of the suite). T 40-150°C, sweet spot 60-110°C. pH 7.0-10.5 alkaline. Redox-insensitive. DISCRIMINATOR: a SOFT low-silica preference (sigma boosted when Al-rich-relative-to-Si, mildly attenuated when silica-flooded — NOT a hard ceiling, since Deccan + Lake Superior are silica-rich yet thomsonite-bearing). Strongly Na-dominant fluid (Na/(Na+Ca) > 0.6) blocks. Activity correction applied.",
+      "trace_ingredients": {
+        "Fe": "Fe trace > 15 ppm gives the green 'lintonite' variety (the Lake Superior gem)",
+        "Sr": "Sr substitutes for Ca; the Sr-dominant endmember is thomsonite-Sr (rare)"
+      },
+      "thermal_decomp_C": 300,
+      "thermal_decomp_reaction": "Reversible zeolitic dehydration / Si-Al order-disorder (Gatta et al. 2010); framework breaks down toward anorthite above ~300°C (the zeolite-facies ceiling). Water loss only; no ionic release to the fluid.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Generally non-fluorescent."
+      },
+      "twin_laws": [
+        {
+          "name": "contact_110",
+          "miller_indices": "{110}",
+          "trigger": "growth",
+          "probability": 0.06,
+          "status": "newly_added",
+          "_source": "Handbook of Mineralogy (thomsonite-Ca): twinning on {110}. The only law given in the Handbook sheet — conservative p=0.06. General reference per the citation-conservatism rule (no synthesized page cite)."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Thomsonite dissolves below pH 6, releasing Na + Ca + Al + Si to the fluid.",
+        "products": {
+          "Na": 0.008,
+          "Ca": 0.016,
+          "Al": 0.020,
+          "SiO2": 0.025
+        }
+      },
+      "habit": "eye",
+      "color_rules": {
+        "white_pink_zoned": {
+          "default": true,
+          "trigger": "Na-Ca zeolite, white-to-pink, concentrically colour-banded"
+        },
+        "green_lintonite": {
+          "trigger": "Fe trace > 15 ppm — the green lintonite gem variety"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v202 (2026-06-17). Orthorhombic Pncn, the earliest + most-aluminous (Si/Al~1) basalt-amygdule zeolite. Completes the Deccan early-zeolite suite with scolecite/mesolite (v201) + stilbite/heulandite (v200). The clean discriminator from the natrolite group is a soft LOW-silica preference (not Na/Ca — both are Na-Ca). Substrate priority: early calcite > silica veneer > smectite-lined wall; the later natrolite group + sheet zeolites nucleate ON thomsonite (wired into _nuc_scolecite/_nuc_mesolite). Deccan Na=80 (from v201) supplies the essential-minor Na. Per Anthony Handbook + Wise & Tschernich 1978.",
+      "late_stage_propensity": 0.4,
+      "_late_stage_note": "EARLIEST zeolite — forms on the fresh cavity surface after the smectite clay lining + early calcite, before natrolite/analcime/scolecite/mesolite and the sheet zeolites. The low late-stage propensity reflects its early paragenetic slot.",
+      "class_color": "#e0d8cc"
+    },
     "epidote": {
       "formula": "Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH)",
       "nucleation_sigma": 1.2,

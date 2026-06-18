@@ -400,6 +400,31 @@ const MINERAL_GATES_mesolite: MineralGates = {
   _notes: 'Na2Ca2Al6Si9O30·8H2O — orthorhombic Fdd2 with a GIANT b-axis (~56.6 A, the ordered 1-natrolite:2-scolecite layer stack). The ordered Na-Ca intermediate — needs BOTH Na and Ca (0.2<=Na/(Na+Ca)<=0.8). Finest hair-like/cottony fibrous tufts. Twin {010}/{100} (secondary vs scolecite). The mixed-cation gate is the discriminator from scolecite (Ca-only) + natrolite (Na-only).',
 };
 
+// v202 (2026-06-17): Thomsonite — the EARLIEST, most-aluminous amygdule zeolite.
+// NaCa2Al5Si5O20·6H2O, Si/Al~1 (the LOWEST silica of the common amygdule
+// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). First zeolite in
+// the Deccan cavity sequence (smectite -> calcite -> THOMSONITE -> natrolite ->
+// analcime -> scolecite/mesolite -> sheets). THE DISCRIMINATOR is SILICA
+// ACTIVITY, not Na/Ca: thomsonite is favored at LOW silica (high Al relative to
+// Si); the natrolite-group Na/Ca fork does NOT cleanly separate it from mesolite
+// (both are Na-Ca; thomsonite is just more-Ca + lower-Si). So the engine gives
+// thomsonite a SOFT low-silica preference (boost when Al-rich-relative-to-Si,
+// mild attenuation when silica-flooded) over a low floor — NOT a hard low-Si
+// ceiling (Deccan + Lake Superior are silica-rich yet thomsonite-bearing; the
+// fluid SiO2 ppm is dissolved silica, not framework Si/Al). Ca-dominant, Na
+// essential-minor (NaCa2), alkaline, redox-insensitive. Refs: Anthony et al.
+// Handbook of Mineralogy (thomsonite-Ca); Wise & Tschernich 1978 Can.Mineral.
+// 16:487 (habits); Coombs et al. 1997; Gatta et al. 2010 Am.Mineral. 95:495.
+const MINERAL_GATES_thomsonite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 40, T_max: 150, T_optimal: 90,
+  fluid_min: { Ca: 60, Na: 20, Al: 4, SiO2: 120 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'low',
+  _sources: ['thomsonite engine v202', 'Anthony et al. Handbook of Mineralogy (thomsonite-Ca)', 'Wise & Tschernich 1978 Can.Mineral. 16:487', 'Coombs et al. 1997 Can.Mineral. 35:1571'],
+  _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. The most-aluminous (Si/Al~1) + earliest amygdule zeolite. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
+};
+
 Object.assign(VugConditions.prototype, {
   supersaturation_quartz() {
   const eq = this.silica_equilibrium(this.effectiveTemperature);
@@ -1220,6 +1245,45 @@ Object.assign(VugConditions.prototype, {
     if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
     else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'mesolite');
+    return Math.max(sigma, 0);
+  },
+
+  // v202 (2026-06-17): Thomsonite — the earliest, most-aluminous amygdule
+  // zeolite. Ca-dominant + Na-essential-minor + high Al; the discriminator from
+  // the natrolite group is a SOFT low-silica preference (not Na/Ca, not a hard
+  // ceiling). See MINERAL_GATES_thomsonite.
+  supersaturation_thomsonite() {
+    const g = MINERAL_GATES_thomsonite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Na < g.fluid_min!.Na
+        || this.fluid.Al < g.fluid_min!.Al || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    // Ca-dominant gate (NaCa2): suppress strongly Na-dominant fluids.
+    const naFrac = this.fluid.Na / (this.fluid.Na + this.fluid.Ca);
+    if (naFrac > 0.6) return 0;
+    const ca_f = Math.min(this.fluid.Ca / 200.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 10.0, 2.0);     // most-aluminous zeolite
+    // Low-Si zeolite: silica need saturates at the low floor (~200), so beyond
+    // it more silica does NOT favor thomsonite — the siAlPref penalty below then
+    // cleanly expresses the low-silica preference.
+    const si_f = Math.min(this.fluid.SiO2 / 200.0, 1.0);
+    let sigma = ca_f * al_f * si_f;
+    // LOW-silica preference — thomsonite (Si/Al~1) is favored when Al is plentiful
+    // relative to Si; attenuated when the fluid is silica-flooded (the hand-off to
+    // the higher-Si zeolites). SOFT, not a hard ceiling — Deccan/Lake Superior are
+    // silica-rich yet thomsonite-bearing.
+    const siAlPref = Math.max(0.5, Math.min(1.4, 1.6 - this.fluid.SiO2 / 600.0));
+    sigma *= siAlPref;
+    // T sweet spot 60-110 (low-T, early)
+    const T = this.temperature;
+    if (T >= 60 && T <= 110) sigma *= 1.3;
+    else if (T < 60) sigma *= Math.max(0.4, (T - 40) / 20 * 0.6 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+    // pH sweet spot 8-9.5
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'thomsonite');
     return Math.max(sigma, 0);
   },
 

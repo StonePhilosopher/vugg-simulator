@@ -11232,5 +11232,32 @@
 //        at seed 42 (scolecite 6, mesolite 5, stilbite 5, heulandite 5);
 //        full-fleet rebake re-realizes where the Na bump + new engines bite (see
 //        baseline-diff). SIM 200 -> 201. Coverage +2 live (scolecite, mesolite).
-const SIM_VERSION = 201;
+//   v202 — THOMSONITE: the earliest, most-aluminous amygdule zeolite
+//        (2026-06-17). NaCa2Al5Si5O20·6H2O, Si/Al~1 — the LOWEST silica of the
+//        common amygdule zeolites. Completes the Deccan early-zeolite suite:
+//        thomsonite (v202) -> scolecite/mesolite (v201) -> stilbite/heulandite
+//        (v200). First in the cavity sequence (smectite -> calcite ->
+//        THOMSONITE -> natrolite -> analcime -> scolecite/mesolite -> sheets);
+//        the later zeolites nucleate ON it (wired into _nuc_scolecite/_mesolite).
+//
+//        THE DISCRIMINATOR is SILICA ACTIVITY, not Na/Ca. Thomsonite (Si/Al~1)
+//        vs the natrolite group (Si/Al~1.5) is a sharp line; thomsonite vs
+//        mesolite on Na/Ca is NOT (both are Na-Ca, thomsonite just more-Ca +
+//        lower-Si). So the engine gives thomsonite a SOFT low-silica preference
+//        (sigma boosted when Al-rich-relative-to-Si, mildly attenuated when
+//        silica-flooded) over a low floor (120) — NOT a hard low-Si ceiling
+//        (Deccan + Lake Superior are silica-rich yet thomsonite-bearing; fluid
+//        SiO2 ppm != framework Si/Al). Ca-dominant + Na-essential-minor (NaCa2,
+//        blocks Na/(Na+Ca)>0.6), high Al demand, alkaline, redox-insensitive.
+//
+//        Habits — the famous "thomsonite eyes": eye (default, concentric
+//        spherical botryoidal nodule, the Lake Superior gem / green lintonite) /
+//        spray (bladed rosettes) / acicular / columnar. Engines:
+//        supersaturation_thomsonite (js/39) + grow_thomsonite (js/59) +
+//        _nuc_thomsonite (js/89, RNG-guarded, wired FIRST in the silicate
+//        iterator) + MINERAL_GATES (js/42) + MINERAL_ENGINES (js/65) +
+//        MINERAL_STOICHIOMETRY (js/19: {Na1Ca2Al5Si5}) + minerals.json +
+//        structural.json (Pncn ordered; Pbmn disordered noted). twin-law-check:
+//        {110} PASS (pseudo-tetragonal a~=b). SIM 201 -> 202. Coverage +1 live.
+const SIM_VERSION = 202;
 

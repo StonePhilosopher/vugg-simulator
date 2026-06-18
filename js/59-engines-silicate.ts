@@ -1913,6 +1913,76 @@ function grow_mesolite(crystal, conditions, step) {
   });
 }
 
+// v202 (2026-06-17): Thomsonite NaCa2Al5Si5O20·6H2O — orthorhombic Pncn, the
+// earliest, most-aluminous (Si/Al~1) amygdule zeolite. Habits:
+//   eye (default) — radiating spherical botryoidal nodule, concentric colour
+//        banding ("thomsonite eye" / lintonite — the Lake Superior gem)
+//   spray (mid) — radiating columnar/bladed sprays + rosettes, blades ∥{010}
+//   acicular (high excess) — fine fibrous needle tufts
+//   columnar (low excess) — slender prisms ∥[001] / compact columnar
+//   massive (lowest) — porcelaneous crust
+// Lintonite (green) when Fe trace present. White/pink/yellow otherwise.
+function grow_thomsonite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_thomsonite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — thomsonite releases Na + Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.6 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch — the concentric "eye" nodule is thomsonite's signature.
+  // High nucleation density + confined growth → spheres; open growth → blades.
+  if (excess > 1.4) {
+    crystal.habit = 'acicular';
+    crystal.dominant_forms = ['fine fibrous needle tuft'];
+  } else if (excess < 0.25) {
+    crystal.habit = 'columnar';
+    crystal.dominant_forms = ['slender prism ∥[001], flattened on {010}', 'compact columnar'];
+  } else if (excess > 0.8) {
+    crystal.habit = 'spray';
+    crystal.dominant_forms = ['radiating columnar/bladed spray', 'rosette of blades ∥{010}'];
+  } else {
+    crystal.habit = 'eye';
+    crystal.dominant_forms = ['radiating spherical botryoidal nodule', 'concentric colour-banded "thomsonite eye"'];
+  }
+
+  // Colour dispatch — lintonite (green) with Fe trace; else white/pink.
+  const color_note = conditions.fluid.Fe > 15
+    ? 'green lintonite variety (Fe trace — the Lake Superior gem)'
+    : 'white-to-pink thomsonite, concentrically zoned';
+
+  // Substrate flavor — thomsonite is EARLY, on the fresh cavity surface.
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('calcite')) substrate_flavor = ' on early calcite';
+  else if (pos.includes('chalcedony') || pos.includes('quartz')) substrate_flavor = ' on the silica veneer';
+  else if (pos.includes('wall')) substrate_flavor = ' direct on the smectite-lined vug wall';
+
+  // Mass-balance debits — Na Ca2 Al5 Si5 (most-aluminous, low-Si framework)
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.008, 0);
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.020, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.025, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.015 : 0,
+    trace_Fe: conditions.fluid.Fe > 10 ? conditions.fluid.Fe * 0.003 : 0,
+    note: `thomsonite ${crystal.habit}, ${color_note}${substrate_flavor}; orthorhombic Na-Ca zeolite (Si/Al~1), H 5-5.5, vitreous/pearly, twin {110}`,
+  });
+}
+
 // v196 (2026-06-15): Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — monoclinic
 // P2_1/m sorosilicate, the Fe3+ endmember of the clinozoisite-epidote
 // series. Alpine-cleft / greenschist mineral; lustrous pistachio-green

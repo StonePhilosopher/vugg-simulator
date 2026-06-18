@@ -164,8 +164,12 @@ fibrous natrolite-group Ca-(Na) zeolites (Na/Ca fork: scolecite Ca-endmember,
 mesolite ordered Na-Ca intermediate); deccan Na 40→80 opened mesolite's mixed-
 cation window; all four Deccan zeolites now fire 20/20. zoisite, perovskite,
 titanian-clinohumite, antigorite, lizardite (Jeffrey "future candidates"),
-zincite (willemite associate) remain. The full Deccan zeolite paragenesis
-(scolecite/mesolite → stilbite/heulandite) is now modelled end-to-end.
+zincite (willemite associate) remain. ~~thomsonite~~ **✅ SHIPPED v202**
+(2026-06-17) — the earliest + most-aluminous (Si/Al≈1) amygdule zeolite, the
+"thomsonite eyes"; discriminated from the natrolite group by a soft low-silica
+preference. The full Deccan zeolite paragenesis is now modelled FIVE species
+deep (thomsonite → scolecite/mesolite → stilbite/heulandite). NEXT amygdule-
+zeolite candidates: analcime, natrolite (the Na endmember), chabazite.
 
 **Content gap (§A #14):** `deccan_zeolite` step-70 promises stilbite + heulandite
 blades that can't form — either build the zeolites or true the event text.

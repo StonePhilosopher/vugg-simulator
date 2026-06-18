@@ -1608,7 +1608,7 @@
       // magnetite stopped firing under sim_version 20 (Phase C v1).
       // Same drift cause as bornite/porphyry — see that note. Restore
       // when chemistry tunes for the new sim version.
-      "expects_species": ["hematite", "quartz", "apophyllite", "stilbite", "heulandite", "scolecite", "mesolite"],
+      "expects_species": ["hematite", "quartz", "apophyllite", "stilbite", "heulandite", "scolecite", "mesolite", "thomsonite"],
       "duration_steps": 200,
       "notes": [
         "Per Ottens et al. 2019, the Deccan basalt vesicles fill in stages over tens of millions of years. Stage I (early): silica veneers, chalcedony coating. Stage II: zeolite blades (stilbite, scolecite, heulandite) and early calcite. Stage III: the apophyllite stage — alkaline K-Ca-Si-F fluid percolates through cooled basalt vesicles and crystallizes pseudo-cubic apophyllite blocks, sometimes carrying hematite-needle phantoms (the 'bloody apophyllite' of Nashik).",

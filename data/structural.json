@@ -159,6 +159,12 @@
     "lattice": { "a": 18.4049, "b": 56.655, "c": 6.5443 },
     "_source": "Anthony et al. Handbook of Mineralogy (mesolite sheet); Artioli Smith & Pluth 1986 Acta Cryst. C42:937 (giant b≈56.6Å = 1-natrolite:2-scolecite layer stack)"
   },
+  "thomsonite": {
+    "system": "orthorhombic",
+    "space_group": "Pncn",
+    "lattice": { "a": 13.088, "b": 13.052, "c": 13.229 },
+    "_source": "Anthony et al. Handbook of Mineralogy (thomsonite-Ca sheet, Z=4, pseudotetragonal); Gatta et al. 2010 Am.Mineral. 95:495. NOTE: Pncn is the ordered setting; the DISORDERED variant is Pbmn (ordering-dependent, not an error — Gatta et al. 2010 refines the disordered structure)."
+  },
   "orthoclase": {
     "system": "monoclinic",
     "space_group": "C2/m",

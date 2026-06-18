@@ -2,7 +2,27 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🧵 UPDATE (2026-06-17, latest) — FIBROUS NATROLITE-GROUP ZEOLITES SHIPPED (SIM 201)
+> ## 👁️ UPDATE (2026-06-17, latest) — THOMSONITE SHIPPED (SIM 202)
+>
+> **thomsonite** added — the EARLIEST + most-aluminous (Si/Al≈1) amygdule zeolite,
+> completing the Deccan early-zeolite suite (thomsonite → scolecite/mesolite →
+> stilbite/heulandite). NaCa2Al5Si5O20·6H2O; the famous "thomsonite eyes" —
+> concentric botryoidal nodules (the Lake Superior gem / green lintonite) are the
+> default habit. **The discriminator is SILICA ACTIVITY, not Na/Ca**: thomsonite
+> (Si/Al≈1) vs the natrolite group (Si/Al≈1.5) is a sharp line, but thomsonite vs
+> mesolite on Na/Ca is not (both Na-Ca) — so a SOFT low-silica preference (boost
+> when Al-rich-relative-to-Si, attenuate when silica-flooded; si_f saturates at the
+> low floor so the preference dominates) over a low floor (120), NOT a hard ceiling
+> (Deccan/Lake Superior are silica-rich yet thomsonite-bearing). Nucleates FIRST on
+> the fresh cavity wall; the later zeolites overgrow it (wired into _nuc_scolecite/
+> _mesolite). One science-grounded tweak: a LOWER re-nucleation σ threshold for its
+> spherulitic eyes (Wise & Tschernich 1978) — took it from 1-2 to 5-11 nodules.
+> twin {110} ✓ PASS. baseline-diff: **1/34 moved (deccan only), +thomsonite, zero
+> losses**; coverage Live 141→142; fires 20/20 (added to expects). SIM 201→202. The
+> Deccan zeolite paragenesis is now FIVE species deep. NEXT: analcime, natrolite
+> (the Na endmember), chabazite.
+>
+> ## 🧵 UPDATE (2026-06-17) — FIBROUS NATROLITE-GROUP ZEOLITES SHIPPED (SIM 201)
 >
 > **scolecite + mesolite** added — the companion pair to v200's stilbite/
 > heulandite, completing the Deccan zeolite paragenesis END-TO-END (the fibrous
