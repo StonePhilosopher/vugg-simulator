@@ -354,6 +354,9 @@ const MINERAL_ENGINES = {
   // v202 (2026-06-17): thomsonite — the earliest, most-aluminous amygdule
   // zeolite (Si/Al~1); the "thomsonite eyes" of Lake Superior.
   thomsonite: grow_thomsonite,
+  // v203 (2026-06-17): chabazite — the late, intermediate-Si amygdule zeolite
+  // (Si/Al~2); rhombohedral pseudo-cubes + phacolite penetration twins.
+  chabazite: grow_chabazite,
   // v114 (2026-05-20): Mg-matrix family completing the Jeffrey Mine
   // rodingite assemblage. Three minerals in three different chemistry
   // classes:

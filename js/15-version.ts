@@ -11259,5 +11259,34 @@
 //        MINERAL_STOICHIOMETRY (js/19: {Na1Ca2Al5Si5}) + minerals.json +
 //        structural.json (Pncn ordered; Pbmn disordered noted). twin-law-check:
 //        {110} PASS (pseudo-tetragonal a~=b). SIM 201 -> 202. Coverage +1 live.
-const SIM_VERSION = 202;
+//   v203 — CHABAZITE: the late, intermediate-Si amygdule zeolite (2026-06-17).
+//        Ca2Al2Si4O12·6H2O, Si/Al~2 — intermediate between thomsonite/natrolite-
+//        group (~1-1.5) and the sheet zeolites (~2.7-3.5). The LAST amygdule
+//        zeolite (...stilbite -> heulandite -> apophyllite -> CHABAZITE ->
+//        mordenite -> late calcite). Completes the Deccan zeolite suite begun in
+//        v200 (six zeolites now: thomsonite, scolecite, mesolite, stilbite,
+//        heulandite, chabazite).
+//
+//        CATION-FLEXIBLE — the discriminator from the Ca-zeolites is NOT a
+//        cation fork but the late/cool slot + intermediate silica + the trigonal
+//        rhombohedral habit. The extra-framework cation runs Ca > Na > K and K is
+//        NOT required (Passaglia & Sheppard 2001); chabazite-Ca is the basalt-
+//        amygdule default, so the engine gates on a JOINT (Ca+Na+K) charge
+//        budget with Ca dominant -> chabazite-Ca. High Na shifts HABIT to
+//        herschelite (tabular), not species failure. Confirmed firing in the
+//        Ca-dominant Deccan fluid (Ca 180-310, Na 80, K 2 — "a textbook
+//        chabazite-Ca amygdule fluid").
+//
+//        Habits: rhomb (default — the rhombohedral pseudo-cube that mimics a
+//        cube, the calcite-lookalike) / phacolite (penetration twins, lens) /
+//        herschelite (Na-dominant tabular) / botryoidal. Engines:
+//        supersaturation_chabazite (js/39) + grow_chabazite (js/59) +
+//        _nuc_chabazite (js/89, RNG-guarded, wired LAST — late perching phase,
+//        nucleates on the earlier zeolite lining) + MINERAL_GATES (js/42) +
+//        MINERAL_ENGINES (js/65) + MINERAL_STOICHIOMETRY (js/19: {Ca1Al2Si4}) +
+//        minerals.json (incl. the calcite field-discriminator: poor {1011}
+//        cleavage + no effervescence + harder + lighter) + structural.json
+//        (R-3m hexagonal a13.83 c15.02). twin-law-check: {0001} PASS (basal,
+//        the phacolite penetration twin). SIM 202 -> 203. Coverage +1 live.
+const SIM_VERSION = 203;
 

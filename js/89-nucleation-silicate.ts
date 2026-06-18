@@ -908,6 +908,32 @@ function _nuc_mesolite(sim) {
   }
 }
 
+// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// A perching phase: nucleates on the earlier zeolite lining (sheet zeolites
+// stilbite/heulandite, then the fibrous group), then calcite, then wall.
+// RNG-cascade-guarded. (Last in the silicate iterator — paragenetically late.)
+function _nuc_chabazite(sim) {
+  const sigma = sim.conditions.supersaturation_chabazite();
+  if (sigma < MINERAL_GATES_chabazite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('chabazite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'chabazite' && c.active);
+  if (existing.length >= 5) return;
+  let pos = 'vug wall';
+  const active_sheet = sim.crystals.filter(c => (c.mineral === 'stilbite' || c.mineral === 'heulandite') && c.active);
+  const active_fib = sim.crystals.filter(c => (c.mineral === 'scolecite' || c.mineral === 'mesolite' || c.mineral === 'thomsonite') && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  if (active_sheet.length && rng.random() < 0.50) pos = `perched on ${active_sheet[0].mineral} #${active_sheet[0].crystal_id}`;
+  else if (active_fib.length && rng.random() < 0.40) pos = `perched on ${active_fib[0].mineral} #${active_fib[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.30) pos = `with calcite #${active_cal[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('chabazite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('chabazite', pos, sigma);
+      sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite, late Deccan cavity phase`);
+    }
+  }
+}
+
 function _nucleateClass_silicate(sim) {
   _runNuc(sim, _nuc_quartz);
   _runNuc(sim, _nuc_apophyllite);
@@ -939,6 +965,7 @@ function _nucleateClass_silicate(sim) {
   _runNuc(sim, _nuc_mesolite);
   _runNuc(sim, _nuc_stilbite);
   _runNuc(sim, _nuc_heulandite);
+  _runNuc(sim, _nuc_chabazite);
   _runNuc(sim, _nuc_chrysotile);
   _runNuc(sim, _nuc_tigers_eye);
 }

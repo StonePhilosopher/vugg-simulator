@@ -16359,7 +16359,36 @@ let timeScale = 5.0;
 //        MINERAL_STOICHIOMETRY (js/19: {Na1Ca2Al5Si5}) + minerals.json +
 //        structural.json (Pncn ordered; Pbmn disordered noted). twin-law-check:
 //        {110} PASS (pseudo-tetragonal a~=b). SIM 201 -> 202. Coverage +1 live.
-const SIM_VERSION = 202;
+//   v203 — CHABAZITE: the late, intermediate-Si amygdule zeolite (2026-06-17).
+//        Ca2Al2Si4O12·6H2O, Si/Al~2 — intermediate between thomsonite/natrolite-
+//        group (~1-1.5) and the sheet zeolites (~2.7-3.5). The LAST amygdule
+//        zeolite (...stilbite -> heulandite -> apophyllite -> CHABAZITE ->
+//        mordenite -> late calcite). Completes the Deccan zeolite suite begun in
+//        v200 (six zeolites now: thomsonite, scolecite, mesolite, stilbite,
+//        heulandite, chabazite).
+//
+//        CATION-FLEXIBLE — the discriminator from the Ca-zeolites is NOT a
+//        cation fork but the late/cool slot + intermediate silica + the trigonal
+//        rhombohedral habit. The extra-framework cation runs Ca > Na > K and K is
+//        NOT required (Passaglia & Sheppard 2001); chabazite-Ca is the basalt-
+//        amygdule default, so the engine gates on a JOINT (Ca+Na+K) charge
+//        budget with Ca dominant -> chabazite-Ca. High Na shifts HABIT to
+//        herschelite (tabular), not species failure. Confirmed firing in the
+//        Ca-dominant Deccan fluid (Ca 180-310, Na 80, K 2 — "a textbook
+//        chabazite-Ca amygdule fluid").
+//
+//        Habits: rhomb (default — the rhombohedral pseudo-cube that mimics a
+//        cube, the calcite-lookalike) / phacolite (penetration twins, lens) /
+//        herschelite (Na-dominant tabular) / botryoidal. Engines:
+//        supersaturation_chabazite (js/39) + grow_chabazite (js/59) +
+//        _nuc_chabazite (js/89, RNG-guarded, wired LAST — late perching phase,
+//        nucleates on the earlier zeolite lining) + MINERAL_GATES (js/42) +
+//        MINERAL_ENGINES (js/65) + MINERAL_STOICHIOMETRY (js/19: {Ca1Al2Si4}) +
+//        minerals.json (incl. the calcite field-discriminator: poor {1011}
+//        cleavage + no effervescence + harder + lighter) + structural.json
+//        (R-3m hexagonal a13.83 c15.02). twin-law-check: {0001} PASS (basal,
+//        the phacolite penetration twin). SIM 202 -> 203. Coverage +1 live.
+const SIM_VERSION = 203;
 
 // ── 18-constants.js ──
 
@@ -16664,6 +16693,7 @@ const MINERAL_STOICHIOMETRY = {
     scolecite: { Ca: 1, Al: 2, SiO2: 3 }, // CaAl2Si3O10·3H2O — fibrous natrolite-group, Ca endmember (v201)
     mesolite: { Na: 2, Ca: 2, Al: 6, SiO2: 9 }, // Na2Ca2Al6Si9O30·8H2O — fibrous natrolite-group, ordered Na-Ca intermediate (v201)
     thomsonite: { Na: 1, Ca: 2, Al: 5, SiO2: 5 }, // NaCa2Al5Si5O20·6H2O — earliest, most-aluminous amygdule zeolite, Si/Al~1 (v202)
+    chabazite: { Ca: 1, Al: 2, SiO2: 4 }, // Ca2Al2Si4O12·6H2O (per-Ca) — late intermediate-Si amygdule zeolite, Si/Al~2 (v203)
     datolite: { Ca: 1, B: 1, SiO2: 1 }, // CaB(SiO4)(OH) — terminal-stage cabinet aesthetic
     tremolite: { Ca: 2, Mg: 5, SiO2: 8 }, // Ca2Mg5Si8O22(OH)2 — Mg-end calcic amphibole
     actinolite: { Ca: 2, Mg: 4, Fe: 1, SiO2: 8 }, // Ca2(Mg,Fe)5Si8O22(OH)2 — Mg:Fe mid-range 4:1
@@ -27178,6 +27208,29 @@ const MINERAL_GATES_thomsonite = {
     _sources: ['thomsonite engine v202', 'Anthony et al. Handbook of Mineralogy (thomsonite-Ca)', 'Wise & Tschernich 1978 Can.Mineral. 16:487', 'Coombs et al. 1997 Can.Mineral. 35:1571'],
     _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. The most-aluminous (Si/Al~1) + earliest amygdule zeolite. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
 };
+// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// Ca2Al2Si4O12·6H2O (chabazite-Ca), Si/Al~2 — intermediate between the fibrous
+// group/thomsonite (~1-1.5) and the sheet zeolites stilbite/heulandite
+// (~2.7-3.5). A LATE perching phase in the cavity sequence (...stilbite ->
+// heulandite -> apophyllite -> CHABAZITE -> mordenite -> late calcite). Cation-
+// FLEXIBLE: the extra-framework cation runs Ca > Na > K in frequency, and K is
+// NOT required (chabazite-Ca is the basalt-amygdule default; K-dominance is a
+// rare special case). So the engine gates on a JOINT (Ca+Na+K) charge budget
+// with Ca dominant -> chabazite-Ca; high Na shifts HABIT toward herschelite/
+// phacolite, not species failure. Famous for the rhombohedral pseudo-cube (the
+// near-90 rhombohedron that mimics a cube) + phacolite penetration twins
+// ({0001}). Alkaline, redox-insensitive. Refs: Passaglia & Sheppard 2001 RiMG
+// 45:69 (crystal chemistry, Ca-DEC, R=0.67); Coombs et al. 1997 (chabazite-Ca/
+// -Na/-K series); Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning).
+const MINERAL_GATES_chabazite = {
+    sigma_crit: 1.0,
+    T_min: 40, T_max: 150, T_optimal: 80,
+    fluid_min: { Ca: 60, Al: 4, SiO2: 200 },
+    pH_min: 7.0, pH_max: 10.5,
+    surface_energy: 'low',
+    _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
+    _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; LATE perching amygdule phase. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
+};
 Object.assign(VugConditions.prototype, {
     supersaturation_quartz() {
         const eq = this.silica_equilibrium(this.effectiveTemperature);
@@ -28273,6 +28326,43 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'thomsonite');
+        return Math.max(sigma, 0);
+    },
+    // v203 (2026-06-17): Chabazite — the late, intermediate-Si amygdule zeolite.
+    // Cation-flexible (Ca>Na>K, K NOT required); Ca-dominant chabazite-Ca is the
+    // amygdule default. Late/cool T sweet spot. See MINERAL_GATES_chabazite.
+    supersaturation_chabazite() {
+        const g = MINERAL_GATES_chabazite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Al < g.fluid_min.Al
+            || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        // Extra-framework cation: Ca > Na > K, K NOT required (Passaglia & Sheppard
+        // 2001). Joint (Ca+Na+K) charge budget; Ca-dominant selects chabazite-Ca.
+        const exch = this.fluid.Ca + this.fluid.Na + (this.fluid.K || 0);
+        const ca_f = Math.min(exch / 220.0, 2.0);
+        const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+        const si_f = Math.min(this.fluid.SiO2 / 500.0, 1.5); // intermediate Si/Al~2
+        let sigma = ca_f * al_f * si_f;
+        // T sweet spot 50-110 (LATE, cool amygdule phase)
+        const T = this.temperature;
+        if (T >= 50 && T <= 110)
+            sigma *= 1.3;
+        else if (T < 50)
+            sigma *= Math.max(0.4, (T - 40) / 10 * 0.6 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+        // pH sweet spot 8-9.5
+        const pH = this.fluid.pH;
+        if (pH >= 8.0 && pH <= 9.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'chabazite');
         return Math.max(sigma, 0);
     },
     // v196 (2026-06-15): Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — the Fe3+
@@ -31199,6 +31289,7 @@ const MINERAL_GATES_REGISTRY = {
     scolecite: MINERAL_GATES_scolecite,
     mesolite: MINERAL_GATES_mesolite,
     thomsonite: MINERAL_GATES_thomsonite,
+    chabazite: MINERAL_GATES_chabazite,
     grossular: MINERAL_GATES_grossular,
     diopside: MINERAL_GATES_diopside,
     vesuvianite: MINERAL_GATES_vesuvianite,
@@ -39000,6 +39091,71 @@ function grow_thomsonite(crystal, conditions, step) {
         note: `thomsonite ${crystal.habit}, ${color_note}${substrate_flavor}; orthorhombic Na-Ca zeolite (Si/Al~1), H 5-5.5, vitreous/pearly, twin {110}`,
     });
 }
+// v203 (2026-06-17): Chabazite Ca2Al2Si4O12·6H2O — trigonal R-3m, the late,
+// intermediate-Si (Si/Al~2) amygdule zeolite. Habits:
+//   rhomb (default) — rhombohedral pseudo-cube (the near-90° rhombohedron that
+//        mimics a cube — the signature, easily mistaken for calcite)
+//   phacolite (high excess) — lens/disc-shaped penetration-twinned aggregate
+//   herschelite (Na-dominant) — thin tabular/platy hexagonal-looking plates
+//   botryoidal (high nucleation / low excess) — radiating spheroidal aggregate
+// Cation-flexible (Ca>Na>K); Na-dominance flips habit to herschelite.
+function grow_chabazite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_chabazite();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — chabazite releases Ca + Al + Si to fluid`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 1.7 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    // Habit dispatch. Na-dominant → herschelite tablet; else rhomb/phacolite.
+    const na_dominant = conditions.fluid.Na > conditions.fluid.Ca;
+    if (na_dominant) {
+        crystal.habit = 'herschelite';
+        crystal.dominant_forms = ['thin tabular hexagonal-looking plate (Na-rich herschelite)'];
+    }
+    else if (excess > 1.3) {
+        crystal.habit = 'phacolite';
+        crystal.dominant_forms = ['lens/disc-shaped penetration twin ({0001})', 'phacolite twinned aggregate'];
+    }
+    else if (excess < 0.25) {
+        crystal.habit = 'botryoidal';
+        crystal.dominant_forms = ['radiating spheroidal aggregate', 'crystal-ball rosette'];
+    }
+    else {
+        crystal.habit = 'rhomb';
+        crystal.dominant_forms = ['rhombohedral pseudo-cube ({101̄1}, near-90° — mimics a cube)', 'simple rhombohedron'];
+    }
+    // Substrate flavor — chabazite is LATE, perching on the earlier zeolites.
+    const pos = crystal.position || '';
+    let substrate_flavor = '';
+    if (pos.includes('stilbite') || pos.includes('heulandite'))
+        substrate_flavor = ' perched on the sheet-zeolite lining';
+    else if (pos.includes('scolecite') || pos.includes('mesolite') || pos.includes('thomsonite'))
+        substrate_flavor = ' perched on the earlier fibrous zeolites';
+    else if (pos.includes('calcite'))
+        substrate_flavor = ' with calcite';
+    // Mass-balance debits — Ca Al2 Si4 (per-Ca, intermediate-Si framework)
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
+    conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.004, 0);
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+        note: `chabazite ${crystal.habit}, white-to-flesh Ca-zeolite${substrate_flavor}; trigonal (Si/Al~2), H 4-5, vitreous — poor {101̄1} cleavage + no effervescence vs calcite`,
+    });
+}
 // v196 (2026-06-15): Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — monoclinic
 // P2_1/m sorosilicate, the Fe3+ endmember of the clinozoisite-epidote
 // series. Alpine-cleft / greenschist mineral; lustrous pistachio-green
@@ -42541,6 +42697,9 @@ const MINERAL_ENGINES = {
     // v202 (2026-06-17): thomsonite — the earliest, most-aluminous amygdule
     // zeolite (Si/Al~1); the "thomsonite eyes" of Lake Superior.
     thomsonite: grow_thomsonite,
+    // v203 (2026-06-17): chabazite — the late, intermediate-Si amygdule zeolite
+    // (Si/Al~2); rhombohedral pseudo-cubes + phacolite penetration twins.
+    chabazite: grow_chabazite,
     // v114 (2026-05-20): Mg-matrix family completing the Jeffrey Mine
     // rodingite assemblage. Three minerals in three different chemistry
     // classes:
@@ -43637,7 +43796,7 @@ function event_deccan_zeolite_late_cooling(c) {
     c.temperature = 80;
     c.fluid.pH = 8.0;
     c.flow_rate = 0.1;
-    return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. Time, not chemistry, becomes the limiting reagent.';
+    return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. This is also when chabazite arrives — rhombohedral pseudo-cubes (and lens-shaped phacolite penetration twins) perching on the earlier zeolite lining, the last zeolite of the cavity. Time, not chemistry, becomes the limiting reagent.';
 }
 
 // ── 70i-supergene.js ──
@@ -54707,6 +54866,37 @@ function _nuc_mesolite(sim) {
         }
     }
 }
+// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// A perching phase: nucleates on the earlier zeolite lining (sheet zeolites
+// stilbite/heulandite, then the fibrous group), then calcite, then wall.
+// RNG-cascade-guarded. (Last in the silicate iterator — paragenetically late.)
+function _nuc_chabazite(sim) {
+    const sigma = sim.conditions.supersaturation_chabazite();
+    if (sigma < MINERAL_GATES_chabazite.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('chabazite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'chabazite' && c.active);
+    if (existing.length >= 5)
+        return;
+    let pos = 'vug wall';
+    const active_sheet = sim.crystals.filter(c => (c.mineral === 'stilbite' || c.mineral === 'heulandite') && c.active);
+    const active_fib = sim.crystals.filter(c => (c.mineral === 'scolecite' || c.mineral === 'mesolite' || c.mineral === 'thomsonite') && c.active);
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    if (active_sheet.length && rng.random() < 0.50)
+        pos = `perched on ${active_sheet[0].mineral} #${active_sheet[0].crystal_id}`;
+    else if (active_fib.length && rng.random() < 0.40)
+        pos = `perched on ${active_fib[0].mineral} #${active_fib[0].crystal_id}`;
+    else if (active_cal.length && rng.random() < 0.30)
+        pos = `with calcite #${active_cal[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('chabazite', pos);
+    if (sigma > 1.2 * discount) {
+        if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+            const c = sim.nucleate('chabazite', pos, sigma);
+            sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite, late Deccan cavity phase`);
+        }
+    }
+}
 function _nucleateClass_silicate(sim) {
     _runNuc(sim, _nuc_quartz);
     _runNuc(sim, _nuc_apophyllite);
@@ -54738,6 +54928,7 @@ function _nucleateClass_silicate(sim) {
     _runNuc(sim, _nuc_mesolite);
     _runNuc(sim, _nuc_stilbite);
     _runNuc(sim, _nuc_heulandite);
+    _runNuc(sim, _nuc_chabazite);
     _runNuc(sim, _nuc_chrysotile);
     _runNuc(sim, _nuc_tigers_eye);
 }

@@ -2,7 +2,24 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 👁️ UPDATE (2026-06-17, latest) — THOMSONITE SHIPPED (SIM 202)
+> ## ⬜ UPDATE (2026-06-17, latest) — CHABAZITE SHIPPED (SIM 203) · DECCAN ZEOLITE SUITE COMPLETE
+>
+> **chabazite** added — the LATE, intermediate-Si (Si/Al≈2) amygdule zeolite, the
+> SIXTH and final zeolite of the Deccan suite (thomsonite → scolecite/mesolite →
+> stilbite/heulandite → chabazite). Ca2Al2Si4O12·6H2O; the signature rhombohedral
+> pseudo-cubes + phacolite penetration twins ({0001}). **Cation-FLEXIBLE**: the
+> extra-framework cation runs Ca>Na>K and **K is NOT required** (chabazite-Ca is
+> the amygdule default — the engine gates on a joint Ca+Na+K charge with Ca
+> dominant; Na-dominance shifts habit to herschelite, not failure). LATE perching
+> phase: nucleates on the earlier zeolite lining (wired LAST in the silicate
+> iterator). The minerals.json carries the classic calcite-lookalike discriminator
+> (poor {1011} cleavage + no effervescence + harder + lighter). twin {0001} ✓ PASS.
+> baseline-diff: **1/34 moved (deccan only), +chabazite, zero losses**; fires 20/20
+> (5-12 nodules, added to expects); coverage Live 142→143. SIM 202→203. The Deccan
+> cavity now grows all SIX zeolites end-to-end. Remaining amygdule candidates if
+> ever wanted: analcime, natrolite (Na endmember), mordenite, gmelinite, levyne.
+>
+> ## 👁️ UPDATE (2026-06-17) — THOMSONITE SHIPPED (SIM 202)
 >
 > **thomsonite** added — the EARLIEST + most-aluminous (Si/Al≈1) amygdule zeolite,
 > completing the Deccan early-zeolite suite (thomsonite → scolecite/mesolite →

@@ -1983,6 +1983,69 @@ function grow_thomsonite(crystal, conditions, step) {
   });
 }
 
+// v203 (2026-06-17): Chabazite Ca2Al2Si4O12·6H2O — trigonal R-3m, the late,
+// intermediate-Si (Si/Al~2) amygdule zeolite. Habits:
+//   rhomb (default) — rhombohedral pseudo-cube (the near-90° rhombohedron that
+//        mimics a cube — the signature, easily mistaken for calcite)
+//   phacolite (high excess) — lens/disc-shaped penetration-twinned aggregate
+//   herschelite (Na-dominant) — thin tabular/platy hexagonal-looking plates
+//   botryoidal (high nucleation / low excess) — radiating spheroidal aggregate
+// Cation-flexible (Ca>Na>K); Na-dominance flips habit to herschelite.
+function grow_chabazite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_chabazite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 6.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.06);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — chabazite releases Ca + Al + Si to fluid`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.7 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  // Habit dispatch. Na-dominant → herschelite tablet; else rhomb/phacolite.
+  const na_dominant = conditions.fluid.Na > conditions.fluid.Ca;
+  if (na_dominant) {
+    crystal.habit = 'herschelite';
+    crystal.dominant_forms = ['thin tabular hexagonal-looking plate (Na-rich herschelite)'];
+  } else if (excess > 1.3) {
+    crystal.habit = 'phacolite';
+    crystal.dominant_forms = ['lens/disc-shaped penetration twin ({0001})', 'phacolite twinned aggregate'];
+  } else if (excess < 0.25) {
+    crystal.habit = 'botryoidal';
+    crystal.dominant_forms = ['radiating spheroidal aggregate', 'crystal-ball rosette'];
+  } else {
+    crystal.habit = 'rhomb';
+    crystal.dominant_forms = ['rhombohedral pseudo-cube ({101̄1}, near-90° — mimics a cube)', 'simple rhombohedron'];
+  }
+
+  // Substrate flavor — chabazite is LATE, perching on the earlier zeolites.
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('stilbite') || pos.includes('heulandite')) substrate_flavor = ' perched on the sheet-zeolite lining';
+  else if (pos.includes('scolecite') || pos.includes('mesolite') || pos.includes('thomsonite')) substrate_flavor = ' perched on the earlier fibrous zeolites';
+  else if (pos.includes('calcite')) substrate_flavor = ' with calcite';
+
+  // Mass-balance debits — Ca Al2 Si4 (per-Ca, intermediate-Si framework)
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
+  conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.004, 0);
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Sr: conditions.fluid.Sr > 1 ? conditions.fluid.Sr * 0.01 : 0,
+    note: `chabazite ${crystal.habit}, white-to-flesh Ca-zeolite${substrate_flavor}; trigonal (Si/Al~2), H 4-5, vitreous — poor {101̄1} cleavage + no effervescence vs calcite`,
+  });
+}
+
 // v196 (2026-06-15): Epidote Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — monoclinic
 // P2_1/m sorosilicate, the Fe3+ endmember of the clinozoisite-epidote
 // series. Alpine-cleft / greenschist mineral; lustrous pistachio-green

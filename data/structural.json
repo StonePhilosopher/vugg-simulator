@@ -165,6 +165,12 @@
     "lattice": { "a": 13.088, "b": 13.052, "c": 13.229 },
     "_source": "Anthony et al. Handbook of Mineralogy (thomsonite-Ca sheet, Z=4, pseudotetragonal); Gatta et al. 2010 Am.Mineral. 95:495. NOTE: Pncn is the ordered setting; the DISORDERED variant is Pbmn (ordering-dependent, not an error — Gatta et al. 2010 refines the disordered structure)."
   },
+  "chabazite": {
+    "system": "trigonal",
+    "space_group": "R-3m",
+    "lattice": { "a": 13.83, "c": 15.02 },
+    "_source": "Calligaris et al. 1982 Zeolites (R-3m, rhombohedral a≈9.42Å α≈94.2°); chabazite-K refinement (hexagonal a=13.831(3) c=15.023(5), Z=3). Hexagonal setting stored. NOTE: webmineral's P1 triclinic cell is a distorted real-crystal refinement, not the species symmetry."
+  },
   "orthoclase": {
     "system": "monoclinic",
     "space_group": "C2/m",

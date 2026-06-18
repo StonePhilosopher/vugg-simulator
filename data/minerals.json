@@ -17144,6 +17144,115 @@
       "_late_stage_note": "EARLIEST zeolite — forms on the fresh cavity surface after the smectite clay lining + early calcite, before natrolite/analcime/scolecite/mesolite and the sheet zeolites. The low late-stage propensity reflects its early paragenetic slot.",
       "class_color": "#e0d8cc"
     },
+    "chabazite": {
+      "formula": "Ca2Al2Si4O12·6H2O",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 8,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "rhomb",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — rhombohedral pseudo-cube ({101̄1}, interfacial angle near 90° so it mimics a cube). The signature chabazite habit."
+        },
+        {
+          "name": "phacolite",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.3) — lens/disc-shaped penetration-twinned aggregate (the phacolite twin variety, twin axis [0001])."
+        },
+        {
+          "name": "herschelite",
+          "wall_spread": 0.5,
+          "void_reach": 0.5,
+          "vector": "projecting",
+          "trigger": "Na-dominant fluid (Na > Ca) — thin tabular hexagonal-looking plates (the Na-rich herschelite habit)."
+        },
+        {
+          "name": "botryoidal",
+          "wall_spread": 0.7,
+          "void_reach": 0.35,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess < 0.25) / high nucleation density — radiating spheroidal aggregate, crystal-ball rosette."
+        }
+      ],
+      "class": "silicate",
+      "description": "Ca₂Al₂Si₄O₁₂·6H₂O (chabazite-Ca, per-Ca CaAl₂Si₄O₁₂·6H₂O) — trigonal (R-3m) framework silicate, the LATE, intermediate-silica (Si/Al≈2) member of the basalt-amygdule zeolite suite. H 4-5, density 2.05-2.16 (conspicuously light), vitreous; colorless/white/flesh-pink. Very hydrous (12 H₂O per cell). The signature habit is the rhombohedral pseudo-cube — a near-90° rhombohedron that mimics a cube — plus the famous phacolite penetration twins (lens-shaped twinned aggregates, twin axis [0001]) and the Na-rich tabular herschelite. A chabazite-group SERIES (chabazite-Ca/-Na/-K/-Sr by dominant extra-framework cation, Coombs et al. 1997); the cation runs Ca > Na > K in frequency and K is NOT required — chabazite-Ca is the basalt-amygdule default. A LATE perching phase: forms after the sheet zeolites + apophyllite (with mordenite, before/with late calcite), nucleating on the earlier zeolite lining. Field discriminator vs CALCITE (the classic trap — the pseudo-cube rhomb looks like a calcite rhomb/cube): chabazite's {101̄1} cleavage is POOR (calcite's is perfect, three directions), it does NOT effervesce in acid, it is harder (4-5 vs 3) and notably lighter (2.1 vs 2.71); optically weakly birefringent + anomalously biaxial/sectored. Type area Sicily (Aci Castello / Cyclopean Isles, historical); famous from Bohemia (Aussig/Ústí), Nova Scotia (Wasson Bluff), the Deccan (Pune), Iceland. Refs: Passaglia & Sheppard 2001 RiMG 45:69 (crystal chemistry, R=0.67, Ca-DEC); Coombs et al. 1997 Can.Mineral. 35:1571; Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning); Calligaris et al. 1982 Zeolites (R-3m).",
+      "scenarios": [
+        "deccan_zeolite"
+      ],
+      "T_range_C": [
+        40,
+        150
+      ],
+      "T_optimum_C": [
+        50,
+        110
+      ],
+      "T_behavior": "narrow",
+      "pH_dissolution_below": 6.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 60,
+        "Al": 4,
+        "SiO2": 200
+      },
+      "_ingredients_note": "Ca ≥ 60 + Al ≥ 4 + SiO2 ≥ 200 (intermediate-Si floor, Si/Al~2 — above thomsonite's 120 + the natrolite group's 150, below the high-Si demand of the sheet zeolites). T 40-150°C, sweet spot 50-110°C (LATE, cool). pH 7.0-10.5 alkaline. Redox-insensitive. CATION-FLEXIBLE: the supersat uses a joint (Ca+Na+K) extra-framework charge budget — Ca dominant selects chabazite-Ca; K is NOT required (K-dominance is a rare special case); Na-dominance shifts HABIT to herschelite, not species failure. Activity correction applied.",
+      "trace_ingredients": {
+        "Na": "secondary extra-framework cation; Na > Ca shifts the habit to tabular herschelite (chabazite-Na)",
+        "K": "optional extra-framework cation; K-dominance = chabazite-K (rare)",
+        "Sr": "minor substituent (chabazite-Sr is a rare endmember)"
+      },
+      "thermal_decomp_C": 300,
+      "thermal_decomp_reaction": "Reversible zeolitic dehydration (very hydrous, 12 H2O); framework breaks down above ~300°C (zeolite-facies ceiling). Water loss only; no ionic release to the fluid.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "Generally non-fluorescent."
+      },
+      "twin_laws": [
+        {
+          "name": "phacolite_penetration_0001",
+          "miller_indices": "{0001}",
+          "trigger": "growth",
+          "probability": 0.3,
+          "status": "newly_added",
+          "_source": "Penetration twinning on/about {0001} (twin axis [0001]) — the phacolite twin variety, COMMON in amygdule chabazite (the lens/disc-shaped twinned aggregates). Akizuki & Konno 1987 Mineral.Mag. 51:427 (growth twinning in phacolite); Passaglia & Sheppard 2001 RiMG 45. High p=0.3 reflecting how common phacolite is. The literature pins the twin to the c-axis/{0001}, not a more specific plane. General references per the citation-conservatism rule."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 6.0,
+        "reaction": "Chabazite dissolves below pH 6, releasing Ca + Al + Si to the fluid. (Note: unlike calcite it does NOT effervesce — silicate dissolution, not carbonate.)",
+        "products": {
+          "Ca": 0.016,
+          "Al": 0.014,
+          "SiO2": 0.040
+        }
+      },
+      "habit": "rhomb",
+      "color_rules": {
+        "white_flesh": {
+          "default": true,
+          "trigger": "Ca-zeolite, colorless to white to flesh-pink"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v203 (2026-06-17). Trigonal R-3m, the late + intermediate-Si (Si/Al~2) basalt-amygdule zeolite. Completes the Deccan zeolite suite (thomsonite/natrolite-group/sheet zeolites already shipped v200-202). Cation-flexible (Ca>Na>K, K not required — chabazite-Ca is the amygdule default, confirmed firing in the Ca-dominant Deccan fluid). LATE perching phase: substrate priority earlier zeolites (sheet > fibrous) > calcite > wall; wired LAST in the silicate nucleation iterator. The rhombohedral pseudo-cube + phacolite twins are the signature; the calcite-lookalike trap is documented in the field-discriminator note. Per Passaglia & Sheppard 2001 + Coombs et al. 1997.",
+      "late_stage_propensity": 0.8,
+      "_late_stage_note": "LATE zeolite — forms after the sheet zeolites + apophyllite, with mordenite, before/with the late calcite. High late-stage propensity reflects its perching position near the end of the cavity-fill sequence.",
+      "class_color": "#dcd4c8"
+    },
     "epidote": {
       "formula": "Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH)",
       "nucleation_sigma": 1.2,

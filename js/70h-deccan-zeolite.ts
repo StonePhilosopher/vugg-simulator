@@ -46,5 +46,5 @@ function event_deccan_zeolite_late_cooling(c) {
   c.temperature = 80;
   c.fluid.pH = 8.0;
   c.flow_rate = 0.1;
-  return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. Time, not chemistry, becomes the limiting reagent.';
+  return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. This is also when chabazite arrives — rhombohedral pseudo-cubes (and lens-shaped phacolite penetration twins) perching on the earlier zeolite lining, the last zeolite of the cavity. Time, not chemistry, becomes the limiting reagent.';
 }

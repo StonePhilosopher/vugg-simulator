@@ -425,6 +425,30 @@ const MINERAL_GATES_thomsonite: MineralGates = {
   _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. The most-aluminous (Si/Al~1) + earliest amygdule zeolite. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
 };
 
+// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// Ca2Al2Si4O12·6H2O (chabazite-Ca), Si/Al~2 — intermediate between the fibrous
+// group/thomsonite (~1-1.5) and the sheet zeolites stilbite/heulandite
+// (~2.7-3.5). A LATE perching phase in the cavity sequence (...stilbite ->
+// heulandite -> apophyllite -> CHABAZITE -> mordenite -> late calcite). Cation-
+// FLEXIBLE: the extra-framework cation runs Ca > Na > K in frequency, and K is
+// NOT required (chabazite-Ca is the basalt-amygdule default; K-dominance is a
+// rare special case). So the engine gates on a JOINT (Ca+Na+K) charge budget
+// with Ca dominant -> chabazite-Ca; high Na shifts HABIT toward herschelite/
+// phacolite, not species failure. Famous for the rhombohedral pseudo-cube (the
+// near-90 rhombohedron that mimics a cube) + phacolite penetration twins
+// ({0001}). Alkaline, redox-insensitive. Refs: Passaglia & Sheppard 2001 RiMG
+// 45:69 (crystal chemistry, Ca-DEC, R=0.67); Coombs et al. 1997 (chabazite-Ca/
+// -Na/-K series); Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning).
+const MINERAL_GATES_chabazite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 40, T_max: 150, T_optimal: 80,
+  fluid_min: { Ca: 60, Al: 4, SiO2: 200 },
+  pH_min: 7.0, pH_max: 10.5,
+  surface_energy: 'low',
+  _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
+  _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; LATE perching amygdule phase. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
+};
+
 Object.assign(VugConditions.prototype, {
   supersaturation_quartz() {
   const eq = this.silica_equilibrium(this.effectiveTemperature);
@@ -1284,6 +1308,35 @@ Object.assign(VugConditions.prototype, {
     if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
     else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'thomsonite');
+    return Math.max(sigma, 0);
+  },
+
+  // v203 (2026-06-17): Chabazite — the late, intermediate-Si amygdule zeolite.
+  // Cation-flexible (Ca>Na>K, K NOT required); Ca-dominant chabazite-Ca is the
+  // amygdule default. Late/cool T sweet spot. See MINERAL_GATES_chabazite.
+  supersaturation_chabazite() {
+    const g = MINERAL_GATES_chabazite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Al < g.fluid_min!.Al
+        || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    // Extra-framework cation: Ca > Na > K, K NOT required (Passaglia & Sheppard
+    // 2001). Joint (Ca+Na+K) charge budget; Ca-dominant selects chabazite-Ca.
+    const exch = this.fluid.Ca + this.fluid.Na + (this.fluid.K || 0);
+    const ca_f = Math.min(exch / 220.0, 2.0);
+    const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
+    const si_f = Math.min(this.fluid.SiO2 / 500.0, 1.5);   // intermediate Si/Al~2
+    let sigma = ca_f * al_f * si_f;
+    // T sweet spot 50-110 (LATE, cool amygdule phase)
+    const T = this.temperature;
+    if (T >= 50 && T <= 110) sigma *= 1.3;
+    else if (T < 50) sigma *= Math.max(0.4, (T - 40) / 10 * 0.6 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 110) / 40);
+    // pH sweet spot 8-9.5
+    const pH = this.fluid.pH;
+    if (pH >= 8.0 && pH <= 9.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 8.75) * 0.3);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chabazite');
     return Math.max(sigma, 0);
   },
 

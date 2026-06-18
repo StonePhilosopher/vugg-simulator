@@ -167,9 +167,13 @@ titanian-clinohumite, antigorite, lizardite (Jeffrey "future candidates"),
 zincite (willemite associate) remain. ~~thomsonite~~ **✅ SHIPPED v202**
 (2026-06-17) — the earliest + most-aluminous (Si/Al≈1) amygdule zeolite, the
 "thomsonite eyes"; discriminated from the natrolite group by a soft low-silica
-preference. The full Deccan zeolite paragenesis is now modelled FIVE species
-deep (thomsonite → scolecite/mesolite → stilbite/heulandite). NEXT amygdule-
-zeolite candidates: analcime, natrolite (the Na endmember), chabazite.
+preference. ~~chabazite~~ **✅ SHIPPED v203** (2026-06-17) — the late,
+intermediate-Si (Si/Al≈2) zeolite, rhombohedral pseudo-cubes + phacolite twins,
+cation-flexible (Ca>Na>K, K not required). The full Deccan zeolite paragenesis
+is now modelled SIX species deep (thomsonite → scolecite/mesolite →
+stilbite/heulandite → chabazite), end-to-end. NEXT amygdule-zeolite candidates
+if ever wanted: analcime, natrolite (the Na endmember), mordenite, gmelinite,
+levyne.
 
 **Content gap (§A #14):** `deccan_zeolite` step-70 promises stilbite + heulandite
 blades that can't form — either build the zeolites or true the event text.
