@@ -4327,7 +4327,13 @@
         "SiO2": 0.4,
         "F": 0.2
       },
-      "fluorescence": null,
+      "fluorescence": {
+        "activator": "U/Mn/Ce",
+        "threshold_ppm": 0,
+        "color": "greenish-yellow (uranyl); orange-red (Mn²⁺); blue (Ce³⁺)",
+        "quencher": null,
+        "status": "Specimen-dependent, genuinely multi-activator (fluomin id=126, fluorapophyllite): uranyl gives greenish-yellow with banded emission (504/522/544 nm), Mn²⁺ orange-red (~600-625 nm), Ce³⁺ blue. The best-characterised fluorescent species of the Deccan amygdule suite and the legitimate uranyl reference case — the zeolites should NOT be cloned from it wholesale (they are weaker, mostly organic-impurity, mostly single-channel). Still activator/locality-driven, not intrinsic. cross-check 2026-06-18."
+      },
       "twin_laws": [
         {
           "name": "contact_111",
@@ -16654,11 +16660,11 @@
       "thermal_decomp_reaction": "Reversible zeolitic dehydration begins below ~150°C; sustained heating toward ~200°C drives the Ca-stilbite → Ca-heulandite + H₂O dehydration (Kiseleva et al. 2001) and ultimately framework collapse. No ionic release to the fluid (water loss only).",
       "thermal_decomp_products": {},
       "fluorescence": {
-        "activator": null,
+        "activator": "organic",
         "threshold_ppm": 0,
-        "color": null,
+        "color": "yellowish-white",
         "quencher": null,
-        "status": "Generally non-fluorescent."
+        "status": "Locality-only, ORGANIC-impurity luminescence (singlet-triplet) — NOT uranyl: pale yellowish-white, SW≈LW (fluomin id=686; Upper New Street, Paterson NJ; Pashan/Nashik, India). A few localities only; pure stilbite is inert. The compiled ZEOLITE_RESEARCH.md table's 'uranyl ion' attribution is not supported by the primary fluorescence database (fluomin classes the emission as organic, same bucket as gypsum) — cross-check 2026-06-18."
       },
       "twin_laws": [
         {
@@ -16773,7 +16779,7 @@
         "threshold_ppm": 0,
         "color": null,
         "quencher": null,
-        "status": "Generally non-fluorescent."
+        "status": "Weak/variable locality reports only (fluomin id=393 heulandite-Ca, id=1132 heulandite-Na): emission color is contradictory across localities (greenish-yellow / greenish-blue LW / red SW) and the activator is undetermined — deliberately NOT pinned. Treated as effectively non-fluorescent; pure heulandite is inert. (The compiled table's 'uranyl + Mn²⁺' is unverified.) cross-check 2026-06-18."
       },
       "twin_laws": [
         {
@@ -16884,7 +16890,7 @@
         "threshold_ppm": 0,
         "color": null,
         "quencher": null,
-        "status": "May fluoresce weak yellow-brown under SW/LW UV; not diagnostic."
+        "status": "No documented species fluorescence — absent from fluomin and the Fluorescent Mineral Society common lists; at most an occasional weak, non-diagnostic response. Treated as non-fluorescent, which matches the primary sources. (The compiled table's 'Mn²⁺/uranyl, creamy white to pale orange' is unverified — no scolecite fluorescence record was found.) cross-check 2026-06-18."
       },
       "twin_laws": [
         {
@@ -16989,11 +16995,11 @@
       "thermal_decomp_reaction": "Reversible zeolitic dehydration; framework collapses near ~200-300°C. Water loss only; no ionic release to the fluid.",
       "thermal_decomp_products": {},
       "fluorescence": {
-        "activator": null,
+        "activator": "U",
         "threshold_ppm": 0,
-        "color": null,
+        "color": "green-yellow (SW); white (LW)",
         "quencher": null,
-        "status": "Generally non-fluorescent."
+        "status": "Locality-only, two-channel: the green-yellow SW emission is consistent with trace uranyl ('most probably uranyl contamination', fluomin id=496), and a separate chalky-white LW emission is organic/defect luminescence. Trace/locality-driven, not intrinsic; pure mesolite is inert. (The one species where the compiled table's uranyl attribution holds up — but it is uranyl + organic, not uranyl + organic-via-'organics' alone.) cross-check 2026-06-18."
       },
       "twin_laws": [
         {
@@ -17099,11 +17105,11 @@
       "thermal_decomp_reaction": "Reversible zeolitic dehydration / Si-Al order-disorder (Gatta et al. 2010); framework breaks down toward anorthite above ~300°C (the zeolite-facies ceiling). Water loss only; no ionic release to the fluid.",
       "thermal_decomp_products": {},
       "fluorescence": {
-        "activator": null,
+        "activator": "organic",
         "threshold_ppm": 0,
-        "color": null,
+        "color": "bluish-white",
         "quencher": null,
-        "status": "Generally non-fluorescent."
+        "status": "Locality-only and weak: bluish-white emission (SW weak; LW yellowish + bluish-white) indicates organic/defect luminescence, NOT Mn²⁺ — the bluish color is the wrong direction for Mn²⁺, which emits green-to-orange (fluomin id=706, Paterson NJ / Franklin). Trace/locality-driven; pure thomsonite is inert. (The compiled table's 'Mn²⁺' attribution is not supported.) cross-check 2026-06-18."
       },
       "twin_laws": [
         {
@@ -17212,11 +17218,11 @@
       "thermal_decomp_reaction": "Reversible zeolitic dehydration (very hydrous, 12 H2O); framework breaks down above ~300°C (zeolite-facies ceiling). Water loss only; no ionic release to the fluid.",
       "thermal_decomp_products": {},
       "fluorescence": {
-        "activator": null,
+        "activator": "U",
         "threshold_ppm": 0,
-        "color": null,
+        "color": "green",
         "quencher": null,
-        "status": "Generally non-fluorescent."
+        "status": "Locality-only, uranyl-activated: uranium-bearing chabazite fluoresces bright green under SW UV (strongest), weak under MW/LW — Sterling Hill NJ (colorless crystals, 'very bright green SW', FOMS) and Paterson NJ (fluomin id=283), two concordant sources. The BEST-documented fluorescent case of the basalt-amygdule zeolite suite, yet still trace/locality-driven, not intrinsic — pure chabazite-Ca is inert. NOTE: both research passes MISSED this (the compiled ZEOLITE_RESEARCH.md table omitted chabazite entirely; my v203 ship had it non-fluorescent). cross-check 2026-06-18."
       },
       "twin_laws": [
         {

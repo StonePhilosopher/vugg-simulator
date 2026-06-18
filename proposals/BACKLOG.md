@@ -2,6 +2,26 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🔦 UPDATE (2026-06-18) — ZEOLITE FLUORESCENCE ENRICHMENT (SIM-NEUTRAL) + a cross-check catch
+>
+> Enriched the `fluorescence` fields of the six Deccan zeolites + apophyllite from
+> the boss's `ZEOLITE_RESEARCH.md` table — but cross-checked every claim against the
+> primary fluorescence DB (fluomin.org + FOMS) first, per the standing "verify
+> disagreements" directive. **The table was the LESS-reliable pass**: its blanket
+> "uranyl/Mn²⁺" across stilbite/heulandite/scolecite/thomsonite is over-generalized
+> (uranyl zeolite fluorescence is real *in kind* but wrongly *distributed*).
+> **THE CATCH: chabazite** — the best-documented fluorescent case of the group
+> (uranyl, bright green SW; Sterling Hill + Paterson) — was MISSED by BOTH passes
+> (table omitted it; my v203 had it non-fluorescent). Corrected attributions:
+> stilbite + thomsonite = ORGANIC-impurity (not uranyl/Mn²⁺); mesolite = uranyl +
+> organic (two-channel); heulandite = activator undetermined / color contradictory
+> (not pinned); scolecite = no record (stays non-fluorescent, my prior pass was
+> right); apophyllite (was null) = multi-activator uranyl/Mn²⁺/Ce³⁺ reference.
+> SIM-NEUTRAL (fluorescence is Library-card-only, not an engine input): seed42_v203
+> baseline BYTE-IDENTICAL after rebuild + gen-js-baseline; only data/minerals.json
+> changed; no SIM bump, no rebake. The app fetches data/minerals.json at runtime so
+> the deployed Library card picks up the enrichment. CI green.
+>
 > ## 🪟 SESSION HANDOFF (2026-06-17) — DECCAN ZEOLITE SUITE COMPLETE (SIM 200→203) + research cross-check
 >
 > Read **`proposals/HANDOFF-ZEOLITE-SUITE-2026-06-17.md`**. Built the full Deccan
