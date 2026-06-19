@@ -89,3 +89,60 @@ Split/artichoke growth (lattice-mismatch instability — no engine
 concept for accumulated strain); chalcedony/agate banding (already a
 texture habit, different mechanism); faden quartz (tectonic
 crack-seal — would ride a fissure scenario's events, not σ).
+
+## §6 SCOUTING FINDINGS (2026-06-19) — the arc is CONTENT-BLOCKED
+
+Step 1 (§4.1) ran. Three new benches (all reusable, in tools/):
+`morph-sigma-observe.mjs --minerals quartz` (the σ survey),
+`quartz-hiatus-census.mjs` (the sceptre signature probe), and
+`quartz-morphology-map.mjs` (the candidate-band calibration bench, the
+`--engine` analog). The finding is decisive and INVERTS §4's premise:
+every quartz habit needs purpose-built scenario content; none can be
+honestly calibrated against the current fleet.
+
+**Fenster (§4.2) — NO honest calibration target.** The σ survey
+confirms quartz σ spans an enormous range (fleet p50 14.2, p99 284, max
+316), so a band *edge* is placeable. But the calibration bench shows the
+ranking is geologically BACKWARDS: under pure σ the only scenario
+reading ≥25% fenster is `radioactive_pegmatite` (33%), then `schneeberg`
+(24% hopper), then `bisbee` — the SLOW GIANT-EUHEDRAL settings (pegmatite
+quartz is 18 mm massive crystals; size p50 18 553 µm), while the
+genuinely-skeletal-plausible gel/supergene scenarios (`ultramafic_
+supergene`, `colorado_plateau`, `supergene_oxidation`; size p50
+0.9–1.2 mm) read smooth→stepped. Calcite-style boundary-layer damping
+(half 80 / cap 2000) empties the band entirely (everyone smooths). There
+is no σ edge that puts the gel/supergene set in fenster while keeping the
+pegmatites out — the pegmatites have the HIGHER σ. Growth-RATE inverts
+the same way (pegmatite quartz deposits ~126 µm/zone vs gel ~5 µm/zone).
+Root cause: the engine's σ is a silica-ABUNDANCE signal; real fenster is
+a rapid-quench/gel-medium habit the fleet doesn't encode. An occupied
+fenster band would be a CONFABULATED label (the mvt-silver / deccan-
+narrative "preserved wart" anti-pattern). DO NOT ship one on this fleet.
+
+**Sceptre (§4.3) — machinery buildable, signature ABSENT.** The hiatus
+census: growth hiatuses DO occur naturally (pulse, supergene_oxidation,
+schneeberg show multi-step gaps; resorption/dissolution zones common),
+so the zone stack records interruptions as predicted. BUT zero scenarios
+show the sceptre signature — every hiatus is followed by SLOWER growth
+(renewal/rim ratio 0.14–0.87, fleet max 0.87, never the ≥1.3 a sceptre
+needs). Geologically sensible: these hiatuses are WANING-σ events (fluid
+running out / cooling), so growth resumes weaker — the opposite of a
+fresh pulse overgrowing the tip wider. A sceptre classifier would tag
+NOTHING without an engineered seal/breach or water-table-drop→reflood
+scenario that delivers a fresh HIGH-σ pulse after the gap.
+
+**Tessin (§4.4) — still needs the Alpine-cleft scenario** (none exists),
+as already noted.
+
+**Conclusion / fork.** The arc is gated on SCENARIO content, not on
+classifier code. Three honest paths: (a) PAUSE quartz, take a clean
+content win elsewhere (catalog orphans #13); (b) build an Alpine-cleft /
+fissure scenario FIRST (retrograde-T, crack-seal events) — the natural
+single home for Tessin + faden + sceptre + skeletal quartz, turning the
+blocked arc into real content with a live calibration target, then ride
+the morphology on it; (c) ship MORPH_TH.quartz + a hex-prism terrace
+render path as inert ladder-completeness infra (bands above the fleet,
+fires when a future skeletal scenario lands — the fluorite-REE-octahedra
+precedent) — honest but zero current payoff and real render work for it.
+Recommendation: (a) now or (b) when an Alpine-cleft arc is wanted; NOT
+(c) by itself. The benches are kept so any of these can resume cold.
