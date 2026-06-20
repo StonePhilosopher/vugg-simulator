@@ -2111,6 +2111,79 @@
         "mindat locality 5734 — Tormiq Valley geology (Main Karakoram Thrust clefts in amphibolite)"
       ]
     },
+    "grimsel_alpine_cleft": {
+      "anchor": "Grimsel Pass / central Aar massif, Bernese-Uri Alps, Switzerland — the type region of the Swiss alpine-cleft (Zerrkluft) SMOKY-QUARTZ suite (with Göscheneralp, Furka, Gotthard analogues). The granite-hosted counterpart to the amphibolite-hosted epidote cleft (tormiq_alpine_cleft); the content home for the quartz-morphology arc (sceptre / Tessin / fenster / gwindel).",
+      "description": "A Swiss Central-Alps tension fissure (Zerrkluft) in the Variscan Aar granite, opened and RE-OPENED episodically during late-Alpine collision and retrograde exhumation. A dilute (~1-3 wt% NaCl eq), OXIDIZING, CO2-bearing, near-neutral meteoric-metamorphic fluid lines the walls; smoky quartz nucleates at ~450C and grows down the retrograde path, stopping near 200C at 0.3-0.45 GPa. The crack-seal cycle is the signature: each tectonic re-opening seals (silica supply cut, growth halts) then breaches (a fresh silica-charged pulse at a now-cooler temperature), and because quartz solubility falls as the cleft cools, each breach drives a HIGHER supersaturation than the hot first-generation stem — overgrowing the tip with a wider second-generation cap (the alpine SCEPTRE). Paragenesis: adularia + chlorite coatings -> smoky quartz (the volumetric main stage) -> hematite iron-roses (the Fe3+ oxidizing marker) -> wedge titanite + apatite + pink fluorite -> late calcite. The oxidizing character (hematite, not pyrite) is the Aar redox tell, distinct from the reducing CH4 fissure zone to the north.",
+      "expects_species": ["quartz", "feldspar", "titanite", "hematite", "fluorite", "apatite", "calcite"],
+      "duration_steps": 200,
+      "notes": [
+        "Anchor: Mullis, Dubessy, Poty & O'Neil 1994 (Geochim. Cosmochim. Acta 58:2239-2267) — fissure-quartz fluid inclusions along a Central-Alps geotraverse (dilute, oxidizing, H2O-CO2 epizone). Retrograde P-T-t: Mullis 1996 (Schweiz. Mineral. Petrogr. Mitt. 76:159-164) quartz forms ~450-550C cooling to ~200C at 0.3-0.45 GPa; Gnos, Mullis & Bergemann 2025 (Swiss J. Geosci. 118:12) tie the Grimsel cleft path to D1 (~450C/440MPa, ~14.6 Ma) -> D2 (~385C/325MPa) -> D3 (~330->300C/230MPa) deformation stages. Poty 1969 (PhD thesis, Univ. Nancy) measured fissure quartz at 350-420C. Citations web-verified 2026-06-19 per the cross-check discipline.",
+        "T story = a DECLARED temperature movement (retrograde 450->200C trend, no texture, the naica v182 idiom) + thermal_pulses:false + cooling_rate:0.4 (an open feeder advects heat -> slow cooling, not random magmatic re-warm pulses). The events are the chemistry BEATS that compose with it (SiO2 sawtooth + Fe/CO3 stage pulses on different fields -> no same-field clobber).",
+        "The SCEPTRE mechanism: sigma_quartz = SiO2 / silica_equilibrium(T), and eq(T) falls from ~1400 ppm at 450C to ~300 at 200C. A crack-seal SEAL drops SiO2 below eq (sigma<1 -> a growth HIATUS); the following BREACH re-floods fresh silica at a cooler temperature, so the same SiO2 load gives a HIGHER sigma than the hot first-generation stem -> a wider cap nucleates on the tip. Caps grow cooler than stems (the documented alpine-sceptre habit) falls straight out of the engine. Two seal/breach cycles -> two sceptre generations; verified by tools/quartz-hiatus-census.mjs.",
+        "Wallrock: pegmatite (the granite/granitoid inert-silicate proxy — the Aar granite host; the Ca-Al-Fe-Ti-F-P arrive in the FLUID, not from wall dissolution, reactivity 0). Architecture pocket (alpine cleft = the canonical pocket archetype), pocket size class, shape_seed 1932 (the Grimsel hydroelectric era that opened the cleft tunnels to strahlers).",
+        "Calibration target: a free-grown cleft druse — cream blocky adularia + dark-green chlorite coatings, from which rise lustrous SMOKY quartz crystals (Tessin-habit prisms or smoky sceptres with wider darker caps), accented by metallic hematite iron-roses, honey-brown wedge titanite, small apatite prisms, and a late calcite lining. expects_species declared aspirationally where needed; observe seed-42 firing + the hiatus census, then tune (vugg-tune-scenario) before the quartz-morphology work (#109). Smoky quartz color + the sceptre/Tessin/fenster/gwindel morphology are the follow-on tasks #110/#109."
+      ],
+      "movements": [
+        {
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 200,
+          "base": 450,
+          "ops": [{ "kind": "trend", "amp": -250, "ease": true }]
+        }
+      ],
+      "initial": {
+        "temperature_C": 450.0,
+        "pressure_kbar": 4.4,
+        "fluid": {
+          "SiO2": 1550,
+          "K": 30,
+          "Al": 6,
+          "Ca": 200,
+          "Fe": 30,
+          "Mg": 10,
+          "F": 12,
+          "P": 40,
+          "Ti": 1,
+          "CO3": 30,
+          "Na": 25,
+          "Cl": 25,
+          "Sr": 2,
+          "O2": 1.5,
+          "pH": 7.0,
+          "salinity": 2
+        },
+        "wall": {
+          "composition": "pegmatite",
+          "reactivity": 0,
+          "architecture": "pocket",
+          "size_class": "pocket",
+          "primary_bubbles": 3,
+          "secondary_bubbles": 5,
+          "shape_seed": 1932,
+          "thermal_pulses": false,
+          "cooling_rate": 0.4,
+          "alpine_cleft": true
+        }
+      },
+      "events": [
+        { "step": 15,  "type": "grimsel_cleft_open",     "name": "Cleft Opens (D1)",        "description": "Oxidized Aar-granite fluid lines the walls; gen-1 smoky quartz + adularia" },
+        { "step": 45,  "type": "grimsel_seal_1",         "name": "Fissure Seals",           "description": "Silica supply cut; SiO2 drops below saturation; gen-1 growth halts (hiatus)" },
+        { "step": 65,  "type": "grimsel_breach_1",       "name": "Cleft Re-opens (D2)",     "description": "Fresh silica pulse at cooler T; supersaturation surges; wider sceptre cap" },
+        { "step": 90,  "type": "grimsel_oxide_roses",    "name": "Iron-Rose Stage",         "description": "Hematite Fe3+ rosettes (Eisenrosen) perch on the quartz" },
+        { "step": 115, "type": "grimsel_seal_2",         "name": "Fissure Re-seals",        "description": "Second seal; silica drops; second growth hiatus" },
+        { "step": 135, "type": "grimsel_breach_2",       "name": "Cleft Re-opens (D3)",     "description": "Coolest fresh pulse; highest supersaturation; tallest sceptre cap" },
+        { "step": 165, "type": "grimsel_late_carbonate", "name": "Late Carbonate Stage",    "description": "CO2 + Ca close the cleft: calcite + fluorite + apatite + titanite wedges" }
+      ],
+      "sources": [
+        "Mullis, Dubessy, Poty & O'Neil 1994, Geochim. Cosmochim. Acta 58(10):2239-2267 — fissure-quartz fluid inclusions, Central Alps geotraverse",
+        "Mullis 1996, Schweiz. Mineral. Petrogr. Mitt. 76:159-164 — P-T-t path of quartz formation in extensional veins of the Central Alps",
+        "Gnos, Mullis & Bergemann 2025, Swiss J. Geosci. 118(1):12 — P-T-t of successive deformation stages, Aar Massif (the D1/D2/D3 crack-seal spine)",
+        "Poty 1969, PhD thesis Univ. Nancy — La croissance des cristaux de quartz dans les filons (La Gardette + Mont-Blanc; fissure quartz 350-420C)",
+        "Rossman 1994, Reviews in Mineralogy 29:433-467 (MSA) — the colored varieties of silica (smoky-quartz Al + irradiation color-center mechanism)",
+        "quartzpage.de — alpine-type fissures, quartz habits (Tessin / sceptre / gwindel), smoky quartz (careful secondary synthesis)"
+      ]
+    },
     "colorado_plateau": {
       "anchor": "Uravan Mineral Belt, Colorado Plateau — sandstone-hosted roll-front uranium-vanadium deposits (Triassic-Jurassic Morrison Formation). Includes the Carnotite-Eldorado, Uravan, and Moab districts; the V+U bonanza that drove the early-twentieth-century uranium industry decades before the Manhattan Project.",
       "description": "Uravan Mineral Belt sandstone roll-front uranium-vanadium deposit (Roc Creek, Montrose County, CO — carnotite type locality, Friedel & Cumenge 1899). Oxidizing groundwater carries U + V + K + Ca through Triassic-Jurassic Morrison Formation sandstones until it meets a reducing barrier (petrified wood, carbonaceous shale), where the metals drop out as bright canary-yellow uranyl-vanadate crusts. Carnotite + tyuyamunite are the two diagnostic species — interconvertible by cation exchange, drawn apart by whichever of K/Ca dominates the local pore fluid.",

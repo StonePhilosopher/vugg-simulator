@@ -89,3 +89,123 @@ Split/artichoke growth (lattice-mismatch instability — no engine
 concept for accumulated strain); chalcedony/agate banding (already a
 texture habit, different mechanism); faden quartz (tectonic
 crack-seal — would ride a fissure scenario's events, not σ).
+
+## §6 SCOUTING FINDINGS (2026-06-19) — the arc is CONTENT-BLOCKED
+
+Step 1 (§4.1) ran. Three new benches (all reusable, in tools/):
+`morph-sigma-observe.mjs --minerals quartz` (the σ survey),
+`quartz-hiatus-census.mjs` (the sceptre signature probe), and
+`quartz-morphology-map.mjs` (the candidate-band calibration bench, the
+`--engine` analog). The finding is decisive and INVERTS §4's premise:
+every quartz habit needs purpose-built scenario content; none can be
+honestly calibrated against the current fleet.
+
+**Fenster (§4.2) — NO honest calibration target.** The σ survey
+confirms quartz σ spans an enormous range (fleet p50 14.2, p99 284, max
+316), so a band *edge* is placeable. But the calibration bench shows the
+ranking is geologically BACKWARDS: under pure σ the only scenario
+reading ≥25% fenster is `radioactive_pegmatite` (33%), then `schneeberg`
+(24% hopper), then `bisbee` — the SLOW GIANT-EUHEDRAL settings (pegmatite
+quartz is 18 mm massive crystals; size p50 18 553 µm), while the
+genuinely-skeletal-plausible gel/supergene scenarios (`ultramafic_
+supergene`, `colorado_plateau`, `supergene_oxidation`; size p50
+0.9–1.2 mm) read smooth→stepped. Calcite-style boundary-layer damping
+(half 80 / cap 2000) empties the band entirely (everyone smooths). There
+is no σ edge that puts the gel/supergene set in fenster while keeping the
+pegmatites out — the pegmatites have the HIGHER σ. Growth-RATE inverts
+the same way (pegmatite quartz deposits ~126 µm/zone vs gel ~5 µm/zone).
+Root cause: the engine's σ is a silica-ABUNDANCE signal; real fenster is
+a rapid-quench/gel-medium habit the fleet doesn't encode. An occupied
+fenster band would be a CONFABULATED label (the mvt-silver / deccan-
+narrative "preserved wart" anti-pattern). DO NOT ship one on this fleet.
+
+**Sceptre (§4.3) — machinery buildable, signature ABSENT.** The hiatus
+census: growth hiatuses DO occur naturally (pulse, supergene_oxidation,
+schneeberg show multi-step gaps; resorption/dissolution zones common),
+so the zone stack records interruptions as predicted. BUT zero scenarios
+show the sceptre signature — every hiatus is followed by SLOWER growth
+(renewal/rim ratio 0.14–0.87, fleet max 0.87, never the ≥1.3 a sceptre
+needs). Geologically sensible: these hiatuses are WANING-σ events (fluid
+running out / cooling), so growth resumes weaker — the opposite of a
+fresh pulse overgrowing the tip wider. A sceptre classifier would tag
+NOTHING without an engineered seal/breach or water-table-drop→reflood
+scenario that delivers a fresh HIGH-σ pulse after the gap.
+
+**Tessin (§4.4) — still needs the Alpine-cleft scenario** (none exists),
+as already noted.
+
+**Conclusion / fork.** The arc is gated on SCENARIO content, not on
+classifier code. Three honest paths: (a) PAUSE quartz, take a clean
+content win elsewhere (catalog orphans #13); (b) build an Alpine-cleft /
+fissure scenario FIRST (retrograde-T, crack-seal events) — the natural
+single home for Tessin + faden + sceptre + skeletal quartz, turning the
+blocked arc into real content with a live calibration target, then ride
+the morphology on it; (c) ship MORPH_TH.quartz + a hex-prism terrace
+render path as inert ladder-completeness infra (bands above the fleet,
+fires when a future skeletal scenario lands — the fluorite-REE-octahedra
+precedent) — honest but zero current payoff and real render work for it.
+Recommendation: (a) now or (b) when an Alpine-cleft arc is wanted; NOT
+(c) by itself. The benches are kept so any of these can resume cold.
+
+**RESOLVED (2026-06-19): path (b) chosen** — building a Swiss Central-Alps
+(Grimsel / Aar massif) alpine-cleft scenario as the content home (dossier:
+research-grimsel-alpine-cleft.md). Quartz habits the cleft homes: Tessin
+(steep rhomb, high-T+CO2+slow), sceptre (crack-seal hiatus→fresh pulse),
+fenster (rapid-pulse moment), and — boss add — GWINDEL: the twisted
+en-echelon plate column that is EXCLUSIVE to alpine-type fissures and forms
+in weakly-metamorphosed igneous rock (the Aar granite is a type setting),
+always with macromosaic normal-habit quartz. Mechanism = cumulative c-axis
+rotation during slow continuous cleft opening → driven by the D2/D3
+strike-slip reactivation (rotating stress field), a FORM/render axis not a
+σ band. Arc tasks #106–111; titanite (#106, de-orphans §A #13) first.
+
+**SHIPPED (2026-06-19, SIM 206) — what homed honestly, and what didn't.**
+The Grimsel cleft (grimsel_alpine_cleft) shipped with THREE honest quartz
+variants and TWO documented honest gaps:
+
+- **SCEPTRE ✓ (the headline).** The §108 finding reframed the whole feature:
+  grow_quartz DISSOLVES at σ<1 (it does not pause), so a crack-seal SEAL
+  CORRODES the gen-1 tip and the BREACH regenerates a wider gen-2 cap on the
+  SAME crystal — corrosion→regeneration, the documented natural sceptre
+  trigger. The signature is therefore RESORPTION→RENEWAL across a phantom
+  boundary, NOT the step-gap the old quartz-hiatus-census looked for (wrong
+  instrument). And it is EXTENT not RATE: the cooler cap grows SLOWER per-step
+  (Arrhenius) yet ends LARGER by cumulative extent — so the handoff's
+  "renewal-rate ≥1.3" guess was wrong; the right metric is cumulative cap vs
+  stem. New right instrument: tools/quartz-sceptre-scan.mjs (promoted into the
+  engine as js/45 classifyQuartzSceptre). 3 robust sceptres/seed. Two-body
+  stem+cap render in js/99i. THE blocker en route was geological, not the σ
+  math: the dilute-cleft broth correction (K 120→30, Na 80→25, Al 12→6) — the
+  prior broth grew an 18 mm feldspar / 7 mm albite that ENCLOSED and killed the
+  quartz, the inverse of a real cleft where quartz is the large main stage.
+- **SMOKY / MORION ✓.** Al precursor + a γ-dose from the radiogenic FELSIC host
+  (pegmatite/granite), Rossman 1994 — a fleet-wide engine fix: the prior model
+  only dosed quartz beside a uraninite crystal, so granite-hosted morion (the
+  iconic Aar specimen) was impossible. Colour only; zero assemblage churn in
+  the baseline-diff.
+- **TESSIN ✓ (face form).** Steep-rhombohedron z{011} dominance on cleft quartz.
+
+- **FENSTER ✗ — NOT shipped (the §6 content-block stands, confirmed at ship).**
+  This §6 (above) had hoped fenster was "THE one that IS the ladder." It is
+  not, in THIS engine: quartz σ is silica ABUNDANCE, so an occupied fenster
+  band tags the slow giant-euhedral pegmatites as skeletal — backwards. We did
+  NOT register MORPH_TH.quartz; faking the band would be a confabulated label
+  (same discipline as the mvt-silver de-confabulation). Honest gap: fenster
+  needs a genuine growth-rate-instability driver the σ proxy can't isolate.
+- **GWINDEL ✓ — SHIPPED v207 (2026-06-20).** The v206 deferral reasoning had a
+  FLAW, caught when the boss pushed "put it in the Swiss scenario": I assumed a
+  gwindel must be distinguished from a sceptre by FLUID history, but all the
+  crystals in one cleft share the same fluid (same seals/breaches) — so
+  "continuous vs resorbed" is geologically wrong. A gwindel's distinction is
+  CRYSTALLOGRAPHIC (the a-axis twist), independent of its crack-seal record. So
+  it ships as a habit variant (the way the sim treats twinning): js/45
+  classifyQuartzGwindel designates the LARGEST, longest-grown cleft showpiece
+  (twist deg ∝ growth duration), gated on a new wall.alpine_cleft flag (js/22),
+  rendered as a flattened twisted column (js/99i _makeGwindelGeom), taking render
+  precedence over its sceptre tag. The boss's geological point holds: gwindels
+  are alpine-fissure-EXCLUSIVE and Grimsel/Aar is the world type locality, while
+  sceptres have many homes — so Grimsel showing 1 gwindel showpiece + 2 smoky
+  sceptres costs the sceptre nothing and is the real co-occurrence. The shear
+  micro-driver stays abstracted (no stress field); a true deformation-field
+  mechanic remains a possible future arc (it would also give bent/curved crystals).
+  Baseline-diff v206→v207: 0/35 moved (habit/render tag, no chemistry shift).

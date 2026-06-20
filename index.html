@@ -2951,6 +2951,7 @@ footer a:hover {
     <button onclick="startScenarioInCreative('schneeberg')">☢️ Schneeberg Oxidized U-Pegmatite — Erzgebirge (Saxony, Germany). Type locality for torbernite + zeunerite + uranospinite.</button>
     <button onclick="startScenarioInCreative('wittichen')">🌳 Wittichen Five-Element Vein — Schwarzwald (Germany). A hydrocarbon reducing shock grows dendritic native bismuth; arsenides rim the trees.</button>
     <button onclick="startScenarioInCreative('tormiq_alpine_cleft')">🫒 Tormiq Valley Alpine Cleft — Gilgit-Baltistan (Pakistan). An oxidized Himalayan fissure fluid grows lustrous pistachio-green epidote swords on quartz.</button>
+    <button onclick="startScenarioInCreative('grimsel_alpine_cleft')">🔮 Grimsel Alpine Cleft — Aar massif (Switzerland). A granite Zerrkluft whose crack-seal cycle grows smoky, Tessin-habit SCEPTRE quartz, with hematite iron-roses and titanite wedges.</button>
     <button onclick="startScenarioInCreative('colorado_plateau')">🌵 Colorado Plateau Roll-Front — Uravan Mineral Belt (Roc Creek, Montrose Co., CO). Carnotite + tyuyamunite type chemistry.</button>
     <button onclick="startScenarioInCreative('sulphur_bank')">🌋 Sulphur Bank Hg Hot Spring — Clear Lake (Lake County, CA). Active hot-spring mercury-sulfur deposit per White &amp; Roberson 1962.</button>
     <button onclick="startScenarioInCreative('sicily_solfifera')">🟡 Sicily Solfifera Sulfur — Cianciana / Caltanissetta (Agrigento, Italy). Messinian bacterially-mediated sedimentary sulfur.</button>
@@ -3060,6 +3061,7 @@ footer a:hover {
       <option value="schneeberg">schneeberg</option>
       <option value="wittichen">wittichen</option>
       <option value="tormiq_alpine_cleft">tormiq_alpine_cleft</option>
+      <option value="grimsel_alpine_cleft">grimsel_alpine_cleft</option>
       <option value="colorado_plateau">colorado_plateau</option>
       <option value="sulphur_bank">sulphur_bank</option>
       <option value="sicily_solfifera">sicily_solfifera</option>
@@ -3905,6 +3907,7 @@ Scenarios:
           <option value="tn457_barite_pulses">TN457 Barite Pulses (Cumbria)</option>
           <option value="ultramafic_supergene">Marlborough Ultramafic Supergene</option>
           <option value="tormiq_alpine_cleft">Tormiq Valley Alpine-Cleft Epidote</option>
+          <option value="grimsel_alpine_cleft">Grimsel Smoky Sceptre Quartz</option>
           <option value="wittichen">Wittichen Five-Element Vein</option>
           <option value="zoned_dripstone_cave">Zoned Dripstone Cave</option>
         </select>
@@ -16406,7 +16409,77 @@ let timeScale = 5.0;
 //        CO3<=50 windows (floor-only first pass had killed dioptase/halite). azurite
 //        now fires (σ peak ~2.3); whole-fleet seed-42 diff = EXACTLY one line,
 //        bisbee azurite 0->4, zero other drift. SIM 203 -> 204.
-const SIM_VERSION = 204;
+//   v205 — TITANITE (sphene) CaTiSiO5 — de-orphans PROPOSALS-LEDGER §A #13, and
+//        the first piece of the ALPINE-CLEFT arc (the quartz-morphology arc's
+//        content home; the scouting at 644b267 proved quartz morphology is
+//        content-blocked, so we build the Grimsel/Aar Swiss cleft to home it).
+//        New silicate engine: MINERAL_GATES_titanite + supersaturation_titanite
+//        (js/39), grow_titanite wedge/sphenoid + Cr/Fe color dispatch (js/59),
+//        _nuc_titanite + iterator (js/89), MINERAL_ENGINES (js/65), stoichiometry
+//        (js/19), structural.json, minerals.json. Ti is the LIMITING ingredient
+//        (the discriminator — rare in broths); NO redox gate (Ti4+ fO2-insensitive);
+//        green=Cr / brown=Fe is a trace COLOR dispatch in grow, not a gate. Alpine
+//        titanite = low-T near-end-member Ca-Ti-Si, late on quartz (Handbook of
+//        Mineralogy 2001 Göschener Alp analysis; Oberti et al. 1991 EJM 3:777).
+//        Footprint: fires in tormiq_alpine_cleft (Ti=1 broth — replaces the
+//        magnetite stand-in for the Ti-Fe oxide stage) + any other Ca-Ti-Si fluid
+//        the baseline-diff surfaces. Cap 3 (minor accessory). SIM 204 -> 205.
+//   v206 — GRIMSEL ALPINE CLEFT + QUARTZ MORPHOLOGY & VARIANTS (2026-06-19) —
+//        the alpine-cleft arc's payload: the Grimsel/Aar Swiss Zerrkluft scenario
+//        + the honest quartz variants it homes.
+//        SCENARIO grimsel_alpine_cleft (data/scenarios.json5 + js/70u-grimsel.ts
+//        crack-seal events + js/70-events registry): declared retrograde T
+//        movement 450->200C (naica idiom, thermal_pulses:false, cooling_rate 0.4)
+//        + a crack-seal SiO2 sawtooth (seal corrodes the tip, breach re-floods at
+//        cooler T -> higher sigma). DILUTE felsic broth (K 30, Al 6, Na 25) so
+//        adularia/albite stay the MINOR early coatings they are in nature — the
+//        prior K=120/Na=80 grew an 18mm feldspar / 7mm albite that ENCLOSED and
+//        killed the quartz (geologically inverted: cleft quartz is the large main
+//        stage). Late chemistry (P 40, F 12 + the late_carbonate pulse) fires the
+//        full assemblage: quartz, feldspar, titanite, hematite (iron-roses),
+//        fluorite, apatite, calcite (+ epidote).
+//        SCEPTRE (js/45 classifyQuartzSceptre + js/99i two-body render): grow_quartz
+//        DISSOLVES at sigma<1 (it does not pause), so a seal CORRODES the gen-1 tip
+//        and the breach regenerates a wider gen-2 cap on the SAME crystal — the
+//        resorption->renewal phantom-boundary signature (3 robust sceptres/seed;
+//        the rate-ratio guess was the wrong instrument, extent is the right one —
+//        the cooler cap grows SLOWER per-step yet LARGER by extent. tools/
+//        quartz-sceptre-scan.mjs). habit='scepter_overgrowth' + cap-zone tags.
+//        SMOKY/MORION (grow_quartz): Al-precursor + a gamma-dose from the radiogenic
+//        FELSIC HOST (pegmatite/granite K-40/U/Th), clamped <0.8 (Rossman 1994). The
+//        Aar morion is granite-hosted, not uraninite-driven — the prior model only
+//        dosed quartz beside a uraninite crystal, missing every granite cleft. THIS
+//        IS A FLEET-WIDE CHANGE: pegmatite-hosted quartz now develops smoky colour
+//        (gem_pegmatite, radioactive_pegmatite, etc.) — geologically correct, colour
+//        only (radiation_damage), no assemblage shift. morion color_rule added.
+//        TESSIN (grow_quartz, alpine-gated): the steep-rhombohedron z{011} face
+//        development (Tessiner Habitus) on cleft quartz. + narrators (js/92i).
+//        FENSTER + GWINDEL deliberately NOT shipped: fenster has no honest fleet home
+//        (quartz sigma is silica ABUNDANCE not a skeletalization driver — an occupied
+//        band would mislabel slow pegmatites; the 644b267 content-block finding
+//        stands), and gwindel needs a tectonic-shear field the sim lacks (forcing it
+//        would cannibalize the sceptre showcase). Both honest gaps. SIM 205 -> 206.
+//   v207 — GWINDEL — the alpine-fissure twisted quartz column (2026-06-20).
+//        Closes the gwindel gap left honest-open in v206. THE REFRAME: a gwindel
+//        is NOT distinguished from a sceptre/ordinary cleft quartz by FLUID
+//        history — all crystals in one cleft share the same fluid (same
+//        seals/breaches), so a v206-style "continuous vs resorbed" discriminator
+//        is geologically wrong. The gwindel's distinction is CRYSTALLOGRAPHIC: a
+//        progressive a-axis TWIST accumulated over prolonged growth under the
+//        cleft's syn-growth tectonic shear (D2/D3). The sim has no shear FIELD,
+//        so — exactly as it treats twinning — gwindel is a habit variant:
+//        js/45 classifyQuartzGwindel designates the LARGEST, longest-grown cleft
+//        showpiece (twist deg ∝ growth duration), independent of and taking
+//        render precedence over its sceptre record. js/99i _makeGwindelGeom =
+//        a flattened prism twisted up its long axis. Gated on a new
+//        wall.alpine_cleft flag (js/22) so ONLY the cleft is affected — grimsel
+//        shows 1 gwindel showpiece + 2 smoky sceptres, deterministic/seed (the
+//        real Grimsel/Aar co-occurrence; that region is the world gwindel type
+//        locality). Sceptres lose nothing — they have many other localities.
+//        Single-scenario change (grimsel only); the rest of the fleet is
+//        byte-identical (alpine_cleft defaults false). + narrator (js/92i) +
+//        minerals.json habit_variant. SIM 206 -> 207.
+const SIM_VERSION = 207;
 
 // ── 18-constants.js ──
 
@@ -16706,6 +16779,7 @@ const MINERAL_STOICHIOMETRY = {
     wollastonite: { Ca: 1, SiO2: 1 }, // CaSiO3
     prehnite: { Ca: 2, Al: 2, SiO2: 3 }, // Ca2Al2Si3O10(OH)2 — zeolite-facies sorosilicate (Liou 1971)
     epidote: { Ca: 2, Al: 2, Fe: 1, SiO2: 3 }, // Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) — Fe3+ endmember (2 Al + 1 Fe at M-sites), alpine-cleft (v196)
+    titanite: { Ca: 1, Ti: 1, SiO2: 1 }, // CaTiSiO5 — Aar/Grimsel + Tormiq alpine-cleft Ti-nesosilicate (v205)
     stilbite: { Na: 1, Ca: 4, Al: 9, SiO2: 27 }, // NaCa4Si27Al9O72·28H2O — Deccan Stage-II zeolite, cooler member (v200)
     heulandite: { Ca: 1, Al: 2, SiO2: 7 }, // (Ca,Na)Al2Si7O18·6H2O — Deccan Stage-II zeolite, warmer dehydration product (v200)
     scolecite: { Ca: 1, Al: 2, SiO2: 3 }, // CaAl2Si3O10·3H2O — fibrous natrolite-group, Ca endmember (v201)
@@ -19403,6 +19477,10 @@ class VugWall {
         // always-draw pattern keeps that stream's cursor rate-independent.)
         this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
             ? opts.cooling_rate : 1.5;
+        // Alpine-cleft (Zerrkluft) flag — Grimsel/Aar Swiss tension fissures. Opts
+        // in to the quartz GWINDEL habit (js/45 classifyQuartzGwindel; SIM 207) and
+        // the Tessin/sceptre cleft idiom. Default false (no effect elsewhere).
+        this.alpine_cleft = (opts.alpine_cleft !== undefined) ? !!opts.alpine_cleft : false;
     }
     dissolve(acid_strength, fluid) {
         // Gate by composition first — silicate walls are inert regardless
@@ -27140,6 +27218,28 @@ const MINERAL_GATES_epidote = {
     _sources: ['epidote engine v196', 'Anthony et al. Handbook of Mineralogy 2001', 'Armbruster et al. 2006 EJM 18:551', 'Holdaway 1972 CMP 37:307', 'Liou 1973 J.Petrol 14:381'],
     _notes: 'Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) sorosilicate, monoclinic P2_1/m. Fe3+ endmember of clinozoisite-epidote series — needs OXIDIZED fluid (near HM buffer) for the pistachio-green Fe3+; reducing sends Fe to magnetite/actinolite (Fe2+). Al-rich Ca-silicate, alpine-cleft Tormiq/Knappenwand. The O2_min gate is the discriminator. Twin {100} lamellar.',
 };
+// v205 (2026-06-19): titanite (sphene) CaTiSiO5 — the Aar-massif / Grimsel
+// alpine-cleft Ti-nesosilicate, the new mineral that de-orphans PROPOSALS-
+// LEDGER §A #13 and joins BOTH the new grimsel cleft AND the existing tormiq
+// cleft (where magnetite had stood in for the Ti-Fe oxide stage). Ti is the
+// LIMITING (rare) nutrient — most broths carry no Ti, so the Ti floor is the
+// discriminator; Ca + Si are abundant in cleft fluids. Redox-INSENSITIVE
+// (Ti4+ regardless of fO2 — unlike epidote, NO redox gate; the green vs brown
+// variety is a Cr/Fe COLOR dispatch in grow, not a gate). Alpine-cleft titanite
+// is the LOW-T hydrothermal end (late on quartz, ≤~400°C), near-end-member
+// Ca-Ti-Si, low-F (Göschener Alp: Ca1.00(Ti0.97Fe0.03)Si1.00O4.96 — Handbook of
+// Mineralogy 2001; Oberti et al. 1991 EJM 3:777). Magmatic/metamorphic titanite
+// runs hotter (690-740°C) — the broad T window covers both, the sweet spot
+// favors the cleft band.
+const MINERAL_GATES_titanite = {
+    sigma_crit: 1.0,
+    T_min: 150, T_max: 700, T_optimal: 350,
+    fluid_min: { Ca: 40, Ti: 0.5, SiO2: 80 },
+    pH_min: 6.0, pH_max: 9.5,
+    surface_energy: 'medium',
+    _sources: ['titanite engine v205', 'Anthony et al. Handbook of Mineralogy 2001 (titanite sheet — Göschener Alp alpine-cleft analysis)', 'Deer Howie Zussman 1982 RFM v.1A:443-466', 'Oberti Smith Rossi & Caucia 1991 EJM 3:777-792'],
+    _notes: 'CaTiSiO5 (CaTiO[SiO4]) nesosilicate, monoclinic P2_1/a. Wedge-shaped (sphenoid) — the classic alpine-cleft habit. Ti is the rare ingredient (the discriminator); Ca+Si abundant. Redox-INSENSITIVE (no redox gate; green=Cr, brown=Fe color dispatch in grow). Alpine-cleft = low-T near-end-member Ca-Ti-Si (late on quartz). Twin {100} contact/penetration.',
+};
 // v200 (2026-06-17): the Deccan Stage-II zeolite pair. stilbite + heulandite
 // are the stilbite/heulandite dehydration couple (Kiseleva, Navrotsky,
 // Belitsky & Fursenko 2001, Am.Mineral. 86:448: Ca-stilbite = Ca-heulandite + H2O).
@@ -28432,6 +28532,45 @@ Object.assign(VugConditions.prototype, {
             sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.5) * 0.3);
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'epidote');
+        return Math.max(sigma, 0);
+    },
+    // v205 (2026-06-19): titanite (sphene) CaTiSiO5 — Aar/Grimsel alpine-cleft
+    // Ti-nesosilicate (gate MINERAL_GATES_titanite above). Ti is the LIMITING
+    // nutrient (rare in broths → the discriminator); Ca + Si are abundant in
+    // cleft fluids. No redox gate (Ti4+ is fO2-insensitive). T sweet spot is the
+    // alpine-cleft / hydrothermal band 250-450°C (late, low-T on quartz); the
+    // wide [150,700] window also admits the hotter magmatic/metamorphic type at
+    // attenuated σ. Mass balance debits Ti, so a Ti-trace fluid self-limits to a
+    // few crystals — the correct "minor accessory" footprint.
+    supersaturation_titanite() {
+        const g = MINERAL_GATES_titanite;
+        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Ti < g.fluid_min.Ti
+            || this.fluid.SiO2 < g.fluid_min.SiO2)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        const ti_f = Math.min(this.fluid.Ti / 1.0, 2.5); // Ti=1 → 1.0; the rare ingredient
+        const ca_f = Math.min(this.fluid.Ca / 200.0, 1.8);
+        const si_f = Math.min(this.fluid.SiO2 / 200.0, 1.5);
+        let sigma = ti_f * ca_f * si_f;
+        // T sweet spot: alpine-cleft / hydrothermal titanite 250-450°C (late on quartz)
+        const T = this.temperature;
+        if (T >= 250 && T <= 450)
+            sigma *= 1.3;
+        else if (T < 250)
+            sigma *= Math.max(0.4, (T - 150) / 100 + 0.4);
+        else
+            sigma *= Math.max(0.4, 1.0 - (T - 450) / 250);
+        // pH sweet spot near-neutral (coexists with adularia + calcite + epidote)
+        const pH = this.fluid.pH;
+        if (pH >= 6.5 && pH <= 8.5)
+            sigma *= 1.2;
+        else
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.5) * 0.25);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'titanite');
         return Math.max(sigma, 0);
     },
     // v112 (2026-05-20): Grossular garnet Ca3Al2(SiO4)3 — Ca-Al endmember
@@ -31302,6 +31441,7 @@ const MINERAL_GATES_REGISTRY = {
     wollastonite: MINERAL_GATES_wollastonite,
     prehnite: MINERAL_GATES_prehnite,
     epidote: MINERAL_GATES_epidote,
+    titanite: MINERAL_GATES_titanite,
     stilbite: MINERAL_GATES_stilbite,
     heulandite: MINERAL_GATES_heulandite,
     scolecite: MINERAL_GATES_scolecite,
@@ -32412,6 +32552,105 @@ function halideTerraceBands(crystal, uptoStep) {
     if (!walk)
         return null;
     return { form: 'cube', knots: walk.knots, hopperTip: walk.hopperTip };
+}
+// ---- Quartz sceptre — a CRYSTAL-LEVEL structural classifier ----
+// A sceptre is gen-2 quartz overgrowing the RESORBED tip of gen-1: ONE
+// continuous crystal with a corrosion surface (phantom boundary) between a
+// real stem and a real, wider cap. grow_quartz DISSOLVES at σ<1 (it does not
+// pause), so an alpine crack-seal SEAL corrodes the tip (negative zones) and
+// the following BREACH regenerates the cap — corrosion-then-regeneration, the
+// documented natural sceptre trigger (mindat; quartzpage.de). The cooler cap
+// grows at a LOWER linear rate (Arrhenius) yet ends LARGER by extent, so the
+// signature is cumulative growth on BOTH sides of the phantom boundary, NOT a
+// rate spike — the §108 finding (the rate-ratio guess was the wrong instrument;
+// tools/quartz-sceptre-scan.mjs is the right one, and this is it promoted into
+// the engine). PURE tagging: no rng, no fluid mutation. Runs after the growth
+// loop so it reads completed zones; recomputed each step so capFrac tracks the
+// growing cap and the LAST pass (the saved state) carries the final geometry.
+const QZ_SCEPTRE_STEM_MIN = 200; // µm (timeScale-applied) — a real gen-1 stem
+const QZ_SCEPTRE_CAP_MIN = 200; // µm — a real gen-2 cap before we call it a sceptre
+function classifyQuartzSceptre(sim) {
+    for (const c of sim.crystals) {
+        if (!c || c.mineral !== 'quartz' || !c.zones || c.zones.length < 4)
+            continue;
+        const zones = c.zones;
+        let i = 0;
+        while (i < zones.length) {
+            if ((zones[i].thickness_um || 0) < 0) {
+                const start = i;
+                while (i < zones.length && (zones[i].thickness_um || 0) < 0)
+                    i++;
+                const endIdx = i - 1;
+                let stem = 0;
+                for (let k = 0; k < start; k++) {
+                    const t = zones[k].thickness_um || 0;
+                    if (t > 0)
+                        stem += t;
+                }
+                let cap = 0;
+                for (let k = endIdx + 1; k < zones.length; k++) {
+                    const t = zones[k].thickness_um || 0;
+                    if (t > 0)
+                        cap += t;
+                }
+                if (stem >= QZ_SCEPTRE_STEM_MIN && cap >= QZ_SCEPTRE_CAP_MIN) {
+                    const capFrac = cap / (stem + cap); // gen-2 share of grown length — render widens the top capFrac
+                    c._sceptre = { boundaryStep: zones[endIdx].step, stemUm: stem, capUm: cap, capFrac };
+                    c.habit = 'scepter_overgrowth';
+                    for (let k = endIdx + 1; k < zones.length; k++)
+                        if ((zones[k].thickness_um || 0) > 0)
+                            zones[k].morph_sceptre = 'cap';
+                    break; // first qualifying phantom boundary defines the sceptre
+                }
+            }
+            else
+                i++;
+        }
+    }
+}
+// ---- Quartz gwindel — the alpine-fissure-EXCLUSIVE twisted column ----
+// A gwindel is a stack of subparallel quartz individuals progressively rotated
+// about the a-axis — a flattened, twisted lamellar column, essentially exclusive
+// to alpine-type tension fissures (the Swiss Central Alps / Grimsel / Furka are
+// the world type region). KEY: a gwindel is NOT distinguished from an ordinary
+// (or sceptre) cleft quartz by its FLUID history — all the crystals in one cleft
+// share the same fluid, so they all record the same seals/breaches. The gwindel's
+// distinction is CRYSTALLOGRAPHIC: a progressive a-axis TWIST that accumulates
+// over prolonged growth under the cleft's syn-growth tectonic shear (the D2/D3
+// rotating stress field). The sim has no shear FIELD, so — exactly as it treats
+// twinning — we designate the gwindel as a habit variant: the LARGEST, longest-
+// grown cleft showpiece (twist ∝ its growth duration), independent of and taking
+// render precedence over its crack-seal sceptre record. PURE tagging; runs AFTER
+// the sceptre pass. A Grimsel cleft thus shows a twisted gwindel showpiece beside
+// smaller smoky sceptres — the real co-occurrence.
+const QZ_GWINDEL_MIN_UM = 1000; // µm (timeScale-applied) — a substantial showpiece column
+function classifyQuartzGwindel(sim) {
+    if (!sim.conditions.wall || !sim.conditions.wall.alpine_cleft)
+        return;
+    const qz = sim.crystals.filter((c) => c && c.mineral === 'quartz'
+        && (c.total_growth_um || 0) >= QZ_GWINDEL_MIN_UM);
+    // The pick can migrate as crystals grow; clear and re-pick each step so the
+    // final-step largest is the stable gwindel (pure tagging — the saved state wins).
+    for (const c of sim.crystals)
+        if (c && c.mineral === 'quartz' && c._gwindel)
+            c._gwindel = null;
+    if (!qz.length)
+        return;
+    // Deterministic pick: the largest, tie-broken by lowest crystal_id (no RNG).
+    qz.sort((a, b) => (b.total_growth_um - a.total_growth_um) || (a.crystal_id - b.crystal_id));
+    const g = qz[0];
+    let firstStep = null, lastStep = null;
+    for (const z of g.zones) {
+        const t = z.thickness_um || 0;
+        if (t > 0) {
+            if (firstStep == null)
+                firstStep = z.step;
+            lastStep = z.step;
+        }
+    }
+    const span = (lastStep != null && firstStep != null) ? (lastStep - firstStep) : 0;
+    g._gwindel = { twistDeg: Math.max(45, Math.min(120, span * 0.7)), lengthUm: g.total_growth_um, span };
+    g.habit = 'gwindel';
 }
 function classifyMorphologyStep(sim) {
     for (const mineral in MORPH_TH) {
@@ -37045,6 +37284,25 @@ function grow_turquoise(crystal, conditions, step) {
 // Phase B8 of PROPOSAL-MODULAR-REFACTOR.
 function grow_quartz(crystal, conditions, step) {
     const sigma = conditions.supersaturation_quartz();
+    // Smoky / morion colour centres (Rossman 1994, Rev. Mineral. 29:433) —
+    // Al³⁺→Si⁴⁺ substitution PLUS a natural γ-dose from the radiogenic felsic
+    // host rock (granite / pegmatite K-40 + U + Th background) creates [AlO₄]⁰
+    // colour centres: clear → smoky → morion (black). Al is the necessary
+    // precursor — no Al, no centre even under dose. The famous Aar/Grimsel
+    // morion is GRANITE-hosted, not uraninite-driven; the js/85 radiation path
+    // only doses quartz adjacent to a uraninite crystal, so it missed every
+    // granite-cleft smoky quartz. Dose accrues with residence (every step the
+    // crystal sits in the host), scaled by available Al; clamped at 0.7 so
+    // background dose tips quartz to morion but never to metamict (>0.8 — quartz
+    // is radiation-hard; that branch is for zircon-like phases).
+    {
+        const wallComp = (conditions.wall && conditions.wall.composition) || '';
+        const radHost = wallComp === 'pegmatite' ? 1.0 : wallComp === 'phonolite' ? 0.5 : 0;
+        if (radHost > 0 && conditions.fluid.Al > 1) {
+            const dose = 0.006 * radHost * Math.min(conditions.fluid.Al / 10, 1.2);
+            crystal.radiation_damage = Math.min((crystal.radiation_damage || 0) + dose, 0.7);
+        }
+    }
     if (sigma < 1.0) {
         if (crystal.total_growth_um > 10) {
             crystal.dissolved = true;
@@ -37161,6 +37419,22 @@ function grow_quartz(crystal, conditions, step) {
                 crystal.twinned = true;
                 crystal.twin_law = 'Dauphiné (thermal stress)';
             }
+        }
+    }
+    // Tessin habit (Tessiner Habitus) — the alpine-cleft face development: the
+    // steep rhombohedron z{011}/{h0hl} dominates the prism m{100}, giving
+    // slender, sharply-tapered, pseudo-pyramidal terminations. Set for granite-
+    // cleft α-quartz (pegmatite host + CO₂, cooler than ~360 °C). The sceptre
+    // classifier (js/45) may later re-label the OVERALL habit to
+    // scepter_overgrowth, but these Tessin terminations stay the face-form
+    // descriptor — a Grimsel crystal is faithfully "a Tessin-habit smoky
+    // sceptre." (quartzpage.de; Stalder et al., Alpine fissure quartz.)
+    {
+        const wc = (conditions.wall && conditions.wall.composition) || '';
+        if (polymorph === 'alpha-quartz' && wc === 'pegmatite'
+            && (conditions.fluid.CO3 || 0) > 15 && conditions.temperature < 360) {
+            crystal.habit = 'Tessin';
+            crystal.dominant_forms = ['z{011} steep rhombohedron dominant', 'subordinate m{100} prism', 'slender tapered termination'];
         }
     }
     let note = '';
@@ -39250,6 +39524,74 @@ function grow_epidote(crystal, conditions, step) {
         thickness_um: rate, growth_rate: rate,
         trace_Fe: conditions.fluid.Fe > 5 ? conditions.fluid.Fe * 0.006 : 0,
         note: `epidote ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic Ca-Al-Fe³⁺ sorosilicate, H 6-7, vitreous, {001} perfect`,
+    });
+}
+// v205 (2026-06-19): titanite (sphene) CaTiSiO5 — Aar/Grimsel alpine-cleft
+// Ti-nesosilicate. Habit dispatch: wedge-shaped sphenoid (the classic, the
+// default cleft look) ↔ prismatic [110] (high excess) ↔ flattened-tabular
+// ∥{001} (low excess). COLOR is a trace-cation dispatch (NOT a σ gate, per the
+// vugg-add-mineral trace pattern): Cr → the prized chrome-green alpine variety;
+// Fe-rich → brown-black common type; else honey-yellow with the adamantine
+// "fire" (high dispersion). Mass balance CaTiSiO5 (1:1:1) — Ti debit self-limits.
+function grow_titanite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_titanite();
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.04);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — titanite releases Ca + Ti + Si`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 1.4 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    if (excess > 1.4) {
+        crystal.habit = 'prismatic';
+        crystal.dominant_forms = ['prismatic [110] elongation', 'wedge terminations'];
+    }
+    else if (excess < 0.4) {
+        crystal.habit = 'flattened_tabular';
+        crystal.dominant_forms = ['tabular ∥{001}', 'platy sphenoid'];
+    }
+    else {
+        crystal.habit = 'sphenoid_wedge';
+        crystal.dominant_forms = ['classic wedge-shaped sphenoid', 'flattened ∥{001}', '{100} contact twin'];
+    }
+    // Color dispatch — trace-cation, NOT a sigma gate (titanite fires regardless)
+    let color_note;
+    const cr = conditions.fluid.Cr ?? 0;
+    if (cr > 0.5)
+        color_note = 'chrome-green (Cr³⁺→Ti — the prized alpine-cleft variety)';
+    else if (conditions.fluid.Fe > 15)
+        color_note = 'brown-to-black (Fe-rich — common igneous/metamorphic type)';
+    else
+        color_note = 'honey-yellow to brown, adamantine with high dispersion (the gem "fire")';
+    // Substrate flavor
+    const pos = crystal.position || '';
+    let substrate_flavor = '';
+    if (pos.includes('quartz'))
+        substrate_flavor = ' perched on quartz — the alpine-cleft signature';
+    else if (pos.includes('feldspar'))
+        substrate_flavor = ' with adularia — low-T cleft feldspar';
+    else if (pos.includes('epidote'))
+        substrate_flavor = ' with epidote — the Ca-Ti-Fe cleft suite';
+    else if (pos.includes('calcite'))
+        substrate_flavor = ' with calcite — late cooling stage';
+    // Mass-balance debits — CaTiSiO5 (1:1:1); Ti is trace so this self-limits
+    conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.015, 0);
+    conditions.fluid.Ti = Math.max(conditions.fluid.Ti - rate * 0.015, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.020, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Cr: cr > 0.5 ? cr * 0.005 : 0,
+        note: `titanite ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic CaTiSiO₅, H 5-5.5, adamantine-resinous, {110} cleavage`,
     });
 }
 // v112 (2026-05-20): Grossular garnet Ca3Al2(SiO4)3 — cubic Ia-3d
@@ -42702,6 +43044,8 @@ const MINERAL_ENGINES = {
     prehnite: grow_prehnite,
     // v196 (2026-06-15): epidote — Fe3+ alpine-cleft sorosilicate (Tormiq, Pakistan).
     epidote: grow_epidote,
+    // v205 (2026-06-19): titanite (sphene) — Aar/Grimsel alpine-cleft Ti-nesosilicate.
+    titanite: grow_titanite,
     // v200 (2026-06-17): the Deccan Stage-II zeolite couple. stilbite (cooler,
     // 28 H2O, peach sheaves) + heulandite (warmer dehydration product, 6 H2O,
     // coffin tablets). Fills the deccan_zeolite Stage-II narrative gap.
@@ -43097,6 +43441,16 @@ const EVENT_REGISTRY = {
     tormiq_byssolite: event_tormiq_byssolite,
     tormiq_adularia: event_tormiq_adularia,
     tormiq_late_calcite: event_tormiq_late_calcite,
+    // 2026-06-19 — Grimsel / Aar-massif alpine cleft (the quartz-morphology
+    // content home). T is a declared movement; these are the crack-seal SiO₂
+    // sawtooth + Fe/CO₃ chemistry beats. See js/70u-grimsel.ts.
+    grimsel_cleft_open: event_grimsel_cleft_open,
+    grimsel_seal_1: event_grimsel_seal_1,
+    grimsel_breach_1: event_grimsel_breach_1,
+    grimsel_oxide_roses: event_grimsel_oxide_roses,
+    grimsel_seal_2: event_grimsel_seal_2,
+    grimsel_breach_2: event_grimsel_breach_2,
+    grimsel_late_carbonate: event_grimsel_late_carbonate,
 };
 // Minimal JSONC parser — strips // line + /* */ block comments and
 // trailing commas, then JSON.parse. Sufficient for our spec files; not
@@ -45080,6 +45434,110 @@ function event_reactivated_vein_breach(c) {
     c.fluid.CO3 = Math.min(320, c.fluid.CO3 + 130); // carbonate spike → late calcite
     c.flow_rate = 0.4; // plumbing reopened, flow resumes
     return `Tectonic reactivation breaches the feeder — a cooler fresh pulse (F +16, CO3 +130) at T ${c.temperature.toFixed(0)}°C; gen-2 fluorite + calcite.`;
+}
+
+// ── 70u-grimsel.js ──
+
+// ============================================================
+// js/70u-grimsel.ts — Grimsel / Aar-massif alpine-cleft (Zerrkluft) events
+// ============================================================
+// The Swiss Central-Alps quartz-cleft showcase (SIM 206, 2026-06-19) — the
+// content home for the quartz-morphology arc (RESEARCH-quartz-morphology
+// §6: the arc is content-blocked; this cleft manufactures the σ-signatures).
+// Research: research-grimsel-alpine-cleft.md.
+//
+// GEOLOGY. Zerrklüfte = extensional tension fissures in the Variscan Aar
+// granite (Central Aar Granite / Grimsel Granodiorite), opened + RE-OPENED
+// episodically during late-Alpine collision + retrograde exhumation. The
+// fissure fluid is DILUTE (~1-3 wt% NaCl eq), OXIDIZING (hematite "iron
+// roses" = Fe³⁺), CO₂-bearing, near-neutral; quartz nucleates ~450 °C and
+// grows down the retrograde path, stopping ~200 °C, at 0.3-0.45 GPa
+// (Mullis, Dubessy, Poty & O'Neil 1994 GCA 58:2239; Mullis 1996 Schweiz.
+// Mineral. Petrogr. Mitt. 76:159; Gnos, Mullis & Bergemann 2025 Swiss J.
+// Geosci. 118:12 — the D1/D2/D3 deformation-stage crack-seal spine).
+//
+// THE T SENTENCE IS A MOVEMENT, NOT EVENTS. Per the v181 T-reconciliation
+// idiom (naica v182), the retrograde 450→200 °C decline is a declared
+// `temperature` movement (scenarios.json5) with thermal_pulses:false +
+// cooling_rate:0.4. These EVENTS are the chemistry BEATS that compose with
+// it (different fields → no same-field clobber): the crack-seal SiO₂
+// sawtooth + the Fe/CO₃ stage pulses.
+//
+// THE SCEPTRE MECHANISM (the point). σ_quartz = SiO₂ / silica_equilibrium(T),
+// and eq(T) FALLS as the cleft cools (1400 ppm @450 °C → 300 @200 °C). The
+// seal/breach SiO₂ targets are written RELATIVE to the live eq(T) (the engine
+// exposes silica_equilibrium) so the σ targets hold as the cleft cools:
+//   stem σ≈1.15 (a SLOW gen-1 termination) → SEAL σ≈0.5 (deep HIATUS held
+//   through the cooling) → BREACH σ≈1.8 (a FAST, wide cap). Because the cap's
+//   growth rate (∝ excess σ ~0.8) far exceeds the stem's (~0.15), the renewal
+//   overgrows the tip wider = the alpine SCEPTRE (caps grow cooler + faster
+//   than stems; mindat / quartzpage.de). Two cycles → two sceptre generations.
+//   The slow-stem / fast-cap split is what makes the census renewal ratio
+//   clear ≥1.3; a fast stem (the first dark-observe) made the bar unbeatable.
+//   Verified by tools/quartz-hiatus-census.mjs (#108).
+// SiO₂ target = factor × the silica solubility at the current temperature,
+// so a σ target holds as eq(T) falls through the run. eq is read on the same
+// basis the supersat engine uses (effectiveTemperature when present).
+function _grimselSiO2ForSigma(c, sigmaTarget) {
+    const T = (c.effectiveTemperature != null) ? c.effectiveTemperature : c.temperature;
+    const eq = c.silica_equilibrium(T);
+    return Math.max(1, Math.round(sigmaTarget * eq));
+}
+function event_grimsel_cleft_open(c) {
+    // D1 (~450 °C): the first fissure opens; oxidized metamorphic fluid lines
+    // the walls with a SLOW gen-1 smoky-quartz stem (σ≈1.15) + early adularia.
+    c.fluid.SiO2 = _grimselSiO2ForSigma(c, 1.15);
+    c.flow_rate = 0.5;
+    return `Cleft opens (D1) — oxidized Aar-granite fluid; slow gen-1 smoky quartz stem + adularia. SiO₂ ${c.fluid.SiO2.toFixed(0)} (σ≈1.15), T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_grimsel_seal_1(c) {
+    // The fissure seals: silica supply cut → SiO₂ → 0.5×eq (σ≈0.5, well below
+    // saturation) → the gen-1 termination HALTS (the hiatus the cap overgrows).
+    c.fluid.SiO2 = _grimselSiO2ForSigma(c, 0.88);
+    c.flow_rate = 0.1;
+    return `Fissure seals — SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈0.88, a gentle pause that the stem SURVIVES) → quartz growth halts (hiatus 1). T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_grimsel_breach_1(c) {
+    // D2 re-opening (~395 °C): a fresh silica-charged pulse, SiO₂ → 1.8×eq
+    // (σ≈1.8) → a FAST, wide cap nucleates on the gen-1 tip = SCEPTRE gen-2.
+    c.fluid.SiO2 = _grimselSiO2ForSigma(c, 1.8);
+    c.fluid.Fe = Math.min(c.fluid.Fe + 10, 40); // the oxidized pulse also seeds Fe³⁺
+    c.flow_rate = 0.5;
+    return `Cleft re-opens (D2) — fresh silica pulse, SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈1.8) → fast wide sceptre cap. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_grimsel_oxide_roses(c) {
+    // Mid-stage oxidizing pulse: Fe³⁺ rosettes (hematite "Eisenrosen") perch on
+    // the quartz. O₂ held high — the Aar redox tell (Mullis et al. 1994: H₂O-CO₂
+    // epizone, NOT the reducing CH₄ zone).
+    c.fluid.Fe = Math.min(c.fluid.Fe + 170, 200); // a concentrated Fe³⁺ accumulation — the iron-rose pulse
+    c.fluid.O2 = Math.max(c.fluid.O2, 1.5);
+    return `Iron-rose stage — hematite Fe³⁺ rosettes (Eisenrosen) on quartz; Fe ${c.fluid.Fe.toFixed(0)}, O₂ ${c.fluid.O2.toFixed(1)} (oxidizing). T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_grimsel_seal_2(c) {
+    // Second seal (~321 °C): SiO₂ → 0.5×eq → σ≈0.5 → hiatus 2.
+    c.fluid.SiO2 = _grimselSiO2ForSigma(c, 0.88);
+    c.flow_rate = 0.1;
+    return `Fissure re-seals — SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈0.88, gentle pause) → second growth hiatus. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_grimsel_breach_2(c) {
+    // D3 re-opening (~289 °C): the coolest fresh pulse, SiO₂ → 1.9×eq (σ≈1.9) →
+    // the tallest cap (gen-3). Slightly stronger than breach 1 — the coolest
+    // pulse is the most supersaturated (the cap-grows-cooler rule).
+    c.fluid.SiO2 = _grimselSiO2ForSigma(c, 1.9);
+    c.flow_rate = 0.4;
+    return `Cleft re-opens (D3) — coolest fresh pulse, SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈1.9) → tallest sceptre cap. T ${c.temperature.toFixed(0)}°C.`;
+}
+function event_grimsel_late_carbonate(c) {
+    // Late, low-T (~241 °C → 200 °C): the fissure fluid turns carbonate-bearing;
+    // CO₂ + Ca → calcite seals the paragenesis, with late fluorite + apatite +
+    // the wedge titanite (Ca-Ti-Si) that have been waiting on the cooling tail.
+    // SiO₂ left at the breach-2 level (no seal) so a final quartz generation
+    // grows out as it cools.
+    c.fluid.CO3 = Math.min(c.fluid.CO3 + 120, 160);
+    c.fluid.F = Math.min(c.fluid.F + 14, 28);
+    c.fluid.pH = Math.min(c.fluid.pH + 1.3, 8.3); // CO₂ degassing drives the late fluid alkaline → calcite
+    c.flow_rate = 0.2;
+    return `Late carbonate stage — CO₃ → ${c.fluid.CO3.toFixed(0)}, F → ${c.fluid.F.toFixed(0)}, pH → ${c.fluid.pH.toFixed(1)}: calcite + fluorite + apatite + titanite wedges close the cleft. T ${c.temperature.toFixed(0)}°C.`;
 }
 
 // ── 70u-wittichen.js ──
@@ -47184,6 +47642,13 @@ class VugSimulator {
         // Pure metadata pass: no rng, no fluid mutation — byte-identical
         // chemistry.
         classifyMorphologyStep(this);
+        // Quartz sceptre — crystal-level structural classifier (alpine-cleft arc
+        // SIM 206). Reads completed zones for the resorption→renewal phantom
+        // boundary (gen-1 stem + gen-2 cap). Pure tagging; see js/45.
+        classifyQuartzSceptre(this);
+        // Quartz gwindel — alpine-cleft slow-continuous twisted column (SIM 207).
+        // Runs AFTER the sceptre pass (mutually exclusive). Pure tagging; see js/45.
+        classifyQuartzGwindel(this);
         // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
         // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).
         // When a StripRecorder is attached to the sim, capture one step's
@@ -54574,6 +55039,42 @@ function _nuc_epidote(sim) {
         }
     }
 }
+// v205 (2026-06-19): titanite (sphene) — Aar/Grimsel alpine-cleft Ti-nesosilicate.
+// LATE phase: substrate priority quartz > adularia(feldspar) > epidote > calcite
+// > wall (the alpine-cleft paragenesis — wedge crystals perched on the quartz
+// druse). Cap 3 (minor accessory). RNG-cascade-guarded at sigma < sigma_crit.
+function _nuc_titanite(sim) {
+    const sigma = sim.conditions.supersaturation_titanite();
+    if (sigma < MINERAL_GATES_titanite.sigma_crit)
+        return; // RNG-cascade guard — DO NOT MOVE
+    if (sim._atNucleationCap('titanite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'titanite' && c.active);
+    if (existing.length >= 3)
+        return;
+    let pos = 'vug wall';
+    const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    const active_fsp = sim.crystals.filter(c => c.mineral === 'feldspar' && c.active);
+    const active_epi = sim.crystals.filter(c => c.mineral === 'epidote' && c.active);
+    const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+    if (active_qz.length && rng.random() < 0.50)
+        pos = `perched on quartz #${active_qz[0].crystal_id}`;
+    else if (active_fsp.length && rng.random() < 0.40)
+        pos = `with adularia (feldspar #${active_fsp[0].crystal_id})`;
+    else if (active_epi.length && rng.random() < 0.35)
+        pos = `with epidote #${active_epi[0].crystal_id}`;
+    else if (active_cal.length && rng.random() < 0.25)
+        pos = `with calcite #${active_cal[0].crystal_id}`;
+    const discount = sim._sigmaDiscountForPosition('titanite', pos);
+    if (sigma > 1.2 * discount) {
+        if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+            const c = sim.nucleate('titanite', pos, sigma);
+            const cr = sim.conditions.fluid.Cr ?? 0;
+            const variety = cr > 0.5 ? 'CHROME-GREEN' : 'honey-brown';
+            sim.log.push(`  ✦ NUCLEATION: 🔶 Titanite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Ti=${sim.conditions.fluid.Ti.toFixed(2)}, Si=${sim.conditions.fluid.SiO2.toFixed(0)}) — ${variety} wedge sphenoid`);
+        }
+    }
+}
 // v112 (2026-05-20): Paired Ca-Al-Mg calc-silicates for the Jeffrey
 // Mine rodingite arc. Both early-stage rodingite + skarn (T ~300-450°C,
 // alkaline). Grossular substrate priority: diopside > wollastonite >
@@ -54958,6 +55459,7 @@ function _nucleateClass_silicate(sim) {
     _runNuc(sim, _nuc_wollastonite);
     _runNuc(sim, _nuc_prehnite);
     _runNuc(sim, _nuc_epidote);
+    _runNuc(sim, _nuc_titanite);
     _runNuc(sim, _nuc_thomsonite);
     _runNuc(sim, _nuc_scolecite);
     _runNuc(sim, _nuc_mesolite);
@@ -58616,6 +59118,31 @@ Object.assign(VugSimulator.prototype, {
         }
         if (c.twinned) {
             parts.push(narrative_variant('quartz', 'twinned', { twin_law: c.twin_law }) || `A ${c.twin_law} twin formed during growth.`);
+        }
+        // Gwindel — the alpine-fissure twisted column (js/45 classifyQuartzGwindel).
+        // Takes narrative precedence over the sceptre (it is the showpiece habit).
+        if (c._gwindel) {
+            parts.push(narrative_variant('quartz', 'gwindel', { twist: c._gwindel.twistDeg.toFixed(0) })
+                || `A GWINDEL — the alpine-fissure twisted column: a stack of subparallel individuals rotated ~${c._gwindel.twistDeg.toFixed(0)}° about the a-axis under the cleft's syn-growth shear. The Grimsel/Aar Zerrklüfte are the world type locality.`);
+        }
+        // Sceptre — the alpine crack-seal structural signature (gen-1 stem resorbed,
+        // gen-2 cap regenerated; see js/45 classifyQuartzSceptre).
+        if (c._sceptre && !c._gwindel) {
+            parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
+                || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);
+        }
+        // Tessin (Tessiner Habitus) — the alpine face development.
+        if ((c.dominant_forms || []).some(f => f.includes('steep rhombohedron'))) {
+            parts.push(narrative_variant('quartz', 'tessin')
+                || `Tessiner Habitus — the steep rhombohedron z{011} dominates the prism, giving slender, sharply-tapered terminations.`);
+        }
+        // Smoky / morion colour centres (Rossman 1994 — Al + radiogenic-host γ-dose).
+        const rd = c.radiation_damage || 0;
+        if (rd > 0.3) {
+            parts.push(narrative_variant('quartz', rd > 0.6 ? 'morion' : 'smoky', { dose: rd.toFixed(2) })
+                || (rd > 0.6
+                    ? `Morion — near-black smoky quartz: Al³⁺ colour-centre precursors plus a heavy γ-dose from the radiogenic granite host (radiation damage ${rd.toFixed(2)}).`
+                    : `Smoky — Al³⁺-for-Si⁴⁺ substitution activated by the host granite's natural γ-dose creates [AlO₄]⁰ colour centres (radiation damage ${rd.toFixed(2)}).`));
         }
         const fast_zones = c.zones.filter(z => z.growth_rate > 15);
         const slow_zones = c.zones.filter(z => z.growth_rate > 0 && z.growth_rate < 2);
@@ -70969,6 +71496,79 @@ function _makeHexPrismWithPyramid() {
     geom.computeVertexNormals();
     return geom;
 }
+// Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
+// tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
+// the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
+// NARROW stem (r 0.30) for the lower (1−capFrac) of the height, a WIDER cap
+// (r 0.50) with a pyramidal tip for the upper capFrac, joined by a horizontal
+// shoulder ring — the corrosion surface the cap overgrew, the defining sceptre
+// silhouette. Same unit box (y −0.5..+0.5) as _makeHexPrismWithPyramid so the
+// per-crystal transform scales it identically.
+function _makeSceptreHexPrism(capFrac) {
+    const cf = Math.max(0.25, Math.min(0.7, capFrac || 0.5));
+    const rStem = 0.30, rCap = 0.50;
+    const yBase = -0.50, yApex = 0.50;
+    const yBound = yBase + (1 - cf); // top of stem / base of cap
+    const yShoulder = yBound + cf * 0.62; // cap prism top / start of tip pyramid
+    const positions = [];
+    for (let i = 0; i < 6; i++) {
+        const a0 = (i / 6) * Math.PI * 2, a1 = ((i + 1) / 6) * Math.PI * 2;
+        const sx0 = Math.cos(a0) * rStem, sz0 = Math.sin(a0) * rStem, sx1 = Math.cos(a1) * rStem, sz1 = Math.sin(a1) * rStem;
+        const cx0 = Math.cos(a0) * rCap, cz0 = Math.sin(a0) * rCap, cx1 = Math.cos(a1) * rCap, cz1 = Math.sin(a1) * rCap;
+        // stem side face
+        _pushTri(positions, sx0, yBase, sz0, sx1, yBase, sz1, sx1, yBound, sz1);
+        _pushTri(positions, sx0, yBase, sz0, sx1, yBound, sz1, sx0, yBound, sz0);
+        // shoulder ring (stem radius → cap radius) — the resorbed corrosion surface
+        _pushTri(positions, sx0, yBound, sz0, sx1, yBound, sz1, cx1, yBound, cz1);
+        _pushTri(positions, sx0, yBound, sz0, cx1, yBound, cz1, cx0, yBound, cz0);
+        // cap side face
+        _pushTri(positions, cx0, yBound, cz0, cx1, yBound, cz1, cx1, yShoulder, cz1);
+        _pushTri(positions, cx0, yBound, cz0, cx1, yShoulder, cz1, cx0, yShoulder, cz0);
+        // cap pyramid tip
+        _pushTri(positions, cx0, yShoulder, cz0, cx1, yShoulder, cz1, 0, yApex, 0);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// Quartz GWINDEL — the alpine-fissure twisted column (SIM 207; sim tags
+// crystal._gwindel.twistDeg). A FLATTENED prism (wide a-axis, thin b-axis)
+// extruded vertically with each level progressively rotated about the long axis
+// — the stack-of-rotated-individuals silhouette. Same unit box (y -0.5..+0.5) as
+// the other quartz primitives so the per-crystal transform scales it identically.
+function _makeGwindelGeom(twistDeg) {
+    const tw = (Math.max(30, Math.min(150, twistDeg || 75))) * Math.PI / 180;
+    const ra = 0.46, rb = 0.17; // flattened rectangular cross-section (a >> b)
+    const yBase = -0.50, yTop = 0.50;
+    const SEG = 14;
+    const corner = (i, ang) => {
+        const cx = (i === 0 || i === 3) ? ra : -ra; // ±a
+        const cz = (i < 2) ? rb : -rb; // ±b
+        return [cx * Math.cos(ang) - cz * Math.sin(ang), cx * Math.sin(ang) + cz * Math.cos(ang)];
+    };
+    const positions = [];
+    for (let s = 0; s < SEG; s++) {
+        const y0 = yBase + (yTop - yBase) * (s / SEG);
+        const y1 = yBase + (yTop - yBase) * ((s + 1) / SEG);
+        const a0 = tw * (s / SEG), a1 = tw * ((s + 1) / SEG);
+        for (let i = 0; i < 4; i++) {
+            const j = (i + 1) % 4;
+            const [x0i, z0i] = corner(i, a0), [x0j, z0j] = corner(j, a0);
+            const [x1i, z1i] = corner(i, a1), [x1j, z1j] = corner(j, a1);
+            _pushTri(positions, x0i, y0, z0i, x0j, y0, z0j, x1j, y1, z1j);
+            _pushTri(positions, x0i, y0, z0i, x1j, y1, z1j, x1i, y1, z1i);
+        }
+    }
+    // flat-cap the top quad (two triangles) at the final twist
+    const tc = [0, 1, 2, 3].map((i) => corner(i, tw));
+    _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[1][0], yTop, tc[1][1], tc[2][0], yTop, tc[2][1]);
+    _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[2][0], yTop, tc[2][1], tc[3][0], yTop, tc[3][1]);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Calcite cleavage rhombohedron — 6 rhombic faces, 8 vertices, 3-fold
 // symmetric around the c-axis. Two apex vertices on the c-axis at
 // y=±h; 6 equatorial vertices in two staggered triangles at y=±t,
@@ -73248,6 +73848,31 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         // dendritic_cube all read as trees.
         if (!geom && token === 'spike' && _isDendriticHabit(habitForGeom)) {
             geom = _getDendriteTreeGeom(state, crystal);
+        }
+        // Quartz GWINDEL (alpine-cleft arc SIM 207): the twisted column showpiece.
+        // Takes render precedence over the sceptre (the crystal may carry both tags;
+        // the twist is the dominant visual). Gated on the prism token.
+        if (!geom && crystal.mineral === 'quartz' && crystal._gwindel && token === 'prism') {
+            const td = Math.round((crystal._gwindel.twistDeg || 75) / 5) * 5; // quantize for cache reuse
+            if (crystal._gwindelGeomTd !== td) {
+                crystal._gwindelGeom = _makeGwindelGeom(td);
+                crystal._gwindelGeomTd = td;
+            }
+            geom = crystal._gwindelGeom;
+        }
+        // Quartz SCEPTRE (alpine-cleft arc SIM 206): a crystal the sim tagged with
+        // _sceptre renders as the two-body stem+cap silhouette. Gated on the prism
+        // token so twins / air-mode dripstone keep their own geometry, and skipped
+        // when the crystal is also a gwindel (twist wins). Replay guard: before the
+        // resorption boundary step the crystal is still a plain gen-1 prism.
+        if (!geom && crystal.mineral === 'quartz' && crystal._sceptre && !crystal._gwindel && token === 'prism'
+            && (replayStep == null || replayStep >= crystal._sceptre.boundaryStep)) {
+            const cf = Math.round((crystal._sceptre.capFrac || 0.5) * 20) / 20; // quantize for cache reuse
+            if (crystal._sceptreGeomCf !== cf) {
+                crystal._sceptreGeom = _makeSceptreHexPrism(cf);
+                crystal._sceptreGeomCf = cf;
+            }
+            geom = crystal._sceptreGeom;
         }
         if (!geom) {
             geom = state.geomCache.get(token);

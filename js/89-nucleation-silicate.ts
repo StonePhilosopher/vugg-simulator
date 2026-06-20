@@ -637,6 +637,36 @@ function _nuc_epidote(sim) {
   }
 }
 
+// v205 (2026-06-19): titanite (sphene) — Aar/Grimsel alpine-cleft Ti-nesosilicate.
+// LATE phase: substrate priority quartz > adularia(feldspar) > epidote > calcite
+// > wall (the alpine-cleft paragenesis — wedge crystals perched on the quartz
+// druse). Cap 3 (minor accessory). RNG-cascade-guarded at sigma < sigma_crit.
+function _nuc_titanite(sim) {
+  const sigma = sim.conditions.supersaturation_titanite();
+  if (sigma < MINERAL_GATES_titanite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sim._atNucleationCap('titanite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'titanite' && c.active);
+  if (existing.length >= 3) return;
+  let pos = 'vug wall';
+  const active_qz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
+  const active_fsp = sim.crystals.filter(c => c.mineral === 'feldspar' && c.active);
+  const active_epi = sim.crystals.filter(c => c.mineral === 'epidote' && c.active);
+  const active_cal = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
+  if (active_qz.length && rng.random() < 0.50) pos = `perched on quartz #${active_qz[0].crystal_id}`;
+  else if (active_fsp.length && rng.random() < 0.40) pos = `with adularia (feldspar #${active_fsp[0].crystal_id})`;
+  else if (active_epi.length && rng.random() < 0.35) pos = `with epidote #${active_epi[0].crystal_id}`;
+  else if (active_cal.length && rng.random() < 0.25) pos = `with calcite #${active_cal[0].crystal_id}`;
+  const discount = sim._sigmaDiscountForPosition('titanite', pos);
+  if (sigma > 1.2 * discount) {
+    if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
+      const c = sim.nucleate('titanite', pos, sigma);
+      const cr = sim.conditions.fluid.Cr ?? 0;
+      const variety = cr > 0.5 ? 'CHROME-GREEN' : 'honey-brown';
+      sim.log.push(`  ✦ NUCLEATION: 🔶 Titanite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Ti=${sim.conditions.fluid.Ti.toFixed(2)}, Si=${sim.conditions.fluid.SiO2.toFixed(0)}) — ${variety} wedge sphenoid`);
+    }
+  }
+}
+
 // v112 (2026-05-20): Paired Ca-Al-Mg calc-silicates for the Jeffrey
 // Mine rodingite arc. Both early-stage rodingite + skarn (T ~300-450°C,
 // alkaline). Grossular substrate priority: diopside > wollastonite >
@@ -960,6 +990,7 @@ function _nucleateClass_silicate(sim) {
   _runNuc(sim, _nuc_wollastonite);
   _runNuc(sim, _nuc_prehnite);
   _runNuc(sim, _nuc_epidote);
+  _runNuc(sim, _nuc_titanite);
   _runNuc(sim, _nuc_thomsonite);
   _runNuc(sim, _nuc_scolecite);
   _runNuc(sim, _nuc_mesolite);

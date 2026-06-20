@@ -12,6 +12,26 @@
 function grow_quartz(crystal, conditions, step) {
   const sigma = conditions.supersaturation_quartz();
 
+  // Smoky / morion colour centres (Rossman 1994, Rev. Mineral. 29:433) —
+  // Al³⁺→Si⁴⁺ substitution PLUS a natural γ-dose from the radiogenic felsic
+  // host rock (granite / pegmatite K-40 + U + Th background) creates [AlO₄]⁰
+  // colour centres: clear → smoky → morion (black). Al is the necessary
+  // precursor — no Al, no centre even under dose. The famous Aar/Grimsel
+  // morion is GRANITE-hosted, not uraninite-driven; the js/85 radiation path
+  // only doses quartz adjacent to a uraninite crystal, so it missed every
+  // granite-cleft smoky quartz. Dose accrues with residence (every step the
+  // crystal sits in the host), scaled by available Al; clamped at 0.7 so
+  // background dose tips quartz to morion but never to metamict (>0.8 — quartz
+  // is radiation-hard; that branch is for zircon-like phases).
+  {
+    const wallComp = (conditions.wall && conditions.wall.composition) || '';
+    const radHost = wallComp === 'pegmatite' ? 1.0 : wallComp === 'phonolite' ? 0.5 : 0;
+    if (radHost > 0 && conditions.fluid.Al > 1) {
+      const dose = 0.006 * radHost * Math.min(conditions.fluid.Al / 10, 1.2);
+      crystal.radiation_damage = Math.min((crystal.radiation_damage || 0) + dose, 0.7);
+    }
+  }
+
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 10) {
       crystal.dissolved = true;
@@ -122,6 +142,23 @@ function grow_quartz(crystal, conditions, step) {
         crystal.twinned = true;
         crystal.twin_law = 'Dauphiné (thermal stress)';
       }
+    }
+  }
+
+  // Tessin habit (Tessiner Habitus) — the alpine-cleft face development: the
+  // steep rhombohedron z{011}/{h0hl} dominates the prism m{100}, giving
+  // slender, sharply-tapered, pseudo-pyramidal terminations. Set for granite-
+  // cleft α-quartz (pegmatite host + CO₂, cooler than ~360 °C). The sceptre
+  // classifier (js/45) may later re-label the OVERALL habit to
+  // scepter_overgrowth, but these Tessin terminations stay the face-form
+  // descriptor — a Grimsel crystal is faithfully "a Tessin-habit smoky
+  // sceptre." (quartzpage.de; Stalder et al., Alpine fissure quartz.)
+  {
+    const wc = (conditions.wall && conditions.wall.composition) || '';
+    if (polymorph === 'alpha-quartz' && wc === 'pegmatite'
+        && (conditions.fluid.CO3 || 0) > 15 && conditions.temperature < 360) {
+      crystal.habit = 'Tessin';
+      crystal.dominant_forms = ['z{011} steep rhombohedron dominant', 'subordinate m{100} prism', 'slender tapered termination'];
     }
   }
 
@@ -2116,6 +2153,70 @@ function grow_epidote(crystal, conditions, step) {
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe > 5 ? conditions.fluid.Fe * 0.006 : 0,
     note: `epidote ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic Ca-Al-Fe³⁺ sorosilicate, H 6-7, vitreous, {001} perfect`,
+  });
+}
+
+// v205 (2026-06-19): titanite (sphene) CaTiSiO5 — Aar/Grimsel alpine-cleft
+// Ti-nesosilicate. Habit dispatch: wedge-shaped sphenoid (the classic, the
+// default cleft look) ↔ prismatic [110] (high excess) ↔ flattened-tabular
+// ∥{001} (low excess). COLOR is a trace-cation dispatch (NOT a σ gate, per the
+// vugg-add-mineral trace pattern): Cr → the prized chrome-green alpine variety;
+// Fe-rich → brown-black common type; else honey-yellow with the adamantine
+// "fire" (high dispersion). Mass balance CaTiSiO5 (1:1:1) — Ti debit self-limits.
+function grow_titanite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_titanite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.04);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — titanite releases Ca + Ti + Si`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.4 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  if (excess > 1.4) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['prismatic [110] elongation', 'wedge terminations'];
+  } else if (excess < 0.4) {
+    crystal.habit = 'flattened_tabular';
+    crystal.dominant_forms = ['tabular ∥{001}', 'platy sphenoid'];
+  } else {
+    crystal.habit = 'sphenoid_wedge';
+    crystal.dominant_forms = ['classic wedge-shaped sphenoid', 'flattened ∥{001}', '{100} contact twin'];
+  }
+
+  // Color dispatch — trace-cation, NOT a sigma gate (titanite fires regardless)
+  let color_note;
+  const cr = conditions.fluid.Cr ?? 0;
+  if (cr > 0.5) color_note = 'chrome-green (Cr³⁺→Ti — the prized alpine-cleft variety)';
+  else if (conditions.fluid.Fe > 15) color_note = 'brown-to-black (Fe-rich — common igneous/metamorphic type)';
+  else color_note = 'honey-yellow to brown, adamantine with high dispersion (the gem "fire")';
+
+  // Substrate flavor
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('quartz')) substrate_flavor = ' perched on quartz — the alpine-cleft signature';
+  else if (pos.includes('feldspar')) substrate_flavor = ' with adularia — low-T cleft feldspar';
+  else if (pos.includes('epidote')) substrate_flavor = ' with epidote — the Ca-Ti-Fe cleft suite';
+  else if (pos.includes('calcite')) substrate_flavor = ' with calcite — late cooling stage';
+
+  // Mass-balance debits — CaTiSiO5 (1:1:1); Ti is trace so this self-limits
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.015, 0);
+  conditions.fluid.Ti = Math.max(conditions.fluid.Ti - rate * 0.015, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.020, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Cr: cr > 0.5 ? cr * 0.005 : 0,
+    note: `titanite ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic CaTiSiO₅, H 5-5.5, adamantine-resinous, {110} cleavage`,
   });
 }
 

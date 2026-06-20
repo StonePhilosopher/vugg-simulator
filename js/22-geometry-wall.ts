@@ -256,6 +256,10 @@ class VugWall {
     // always-draw pattern keeps that stream's cursor rate-independent.)
     this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
       ? opts.cooling_rate : 1.5;
+    // Alpine-cleft (Zerrkluft) flag — Grimsel/Aar Swiss tension fissures. Opts
+    // in to the quartz GWINDEL habit (js/45 classifyQuartzGwindel; SIM 207) and
+    // the Tessin/sceptre cleft idiom. Default false (no effect elsewhere).
+    this.alpine_cleft = (opts.alpine_cleft !== undefined) ? !!opts.alpine_cleft : false;
   }
 
   dissolve(acid_strength, fluid) {

@@ -11306,5 +11306,75 @@
 //        CO3<=50 windows (floor-only first pass had killed dioptase/halite). azurite
 //        now fires (σ peak ~2.3); whole-fleet seed-42 diff = EXACTLY one line,
 //        bisbee azurite 0->4, zero other drift. SIM 203 -> 204.
-const SIM_VERSION = 204;
+//   v205 — TITANITE (sphene) CaTiSiO5 — de-orphans PROPOSALS-LEDGER §A #13, and
+//        the first piece of the ALPINE-CLEFT arc (the quartz-morphology arc's
+//        content home; the scouting at 644b267 proved quartz morphology is
+//        content-blocked, so we build the Grimsel/Aar Swiss cleft to home it).
+//        New silicate engine: MINERAL_GATES_titanite + supersaturation_titanite
+//        (js/39), grow_titanite wedge/sphenoid + Cr/Fe color dispatch (js/59),
+//        _nuc_titanite + iterator (js/89), MINERAL_ENGINES (js/65), stoichiometry
+//        (js/19), structural.json, minerals.json. Ti is the LIMITING ingredient
+//        (the discriminator — rare in broths); NO redox gate (Ti4+ fO2-insensitive);
+//        green=Cr / brown=Fe is a trace COLOR dispatch in grow, not a gate. Alpine
+//        titanite = low-T near-end-member Ca-Ti-Si, late on quartz (Handbook of
+//        Mineralogy 2001 Göschener Alp analysis; Oberti et al. 1991 EJM 3:777).
+//        Footprint: fires in tormiq_alpine_cleft (Ti=1 broth — replaces the
+//        magnetite stand-in for the Ti-Fe oxide stage) + any other Ca-Ti-Si fluid
+//        the baseline-diff surfaces. Cap 3 (minor accessory). SIM 204 -> 205.
+//   v206 — GRIMSEL ALPINE CLEFT + QUARTZ MORPHOLOGY & VARIANTS (2026-06-19) —
+//        the alpine-cleft arc's payload: the Grimsel/Aar Swiss Zerrkluft scenario
+//        + the honest quartz variants it homes.
+//        SCENARIO grimsel_alpine_cleft (data/scenarios.json5 + js/70u-grimsel.ts
+//        crack-seal events + js/70-events registry): declared retrograde T
+//        movement 450->200C (naica idiom, thermal_pulses:false, cooling_rate 0.4)
+//        + a crack-seal SiO2 sawtooth (seal corrodes the tip, breach re-floods at
+//        cooler T -> higher sigma). DILUTE felsic broth (K 30, Al 6, Na 25) so
+//        adularia/albite stay the MINOR early coatings they are in nature — the
+//        prior K=120/Na=80 grew an 18mm feldspar / 7mm albite that ENCLOSED and
+//        killed the quartz (geologically inverted: cleft quartz is the large main
+//        stage). Late chemistry (P 40, F 12 + the late_carbonate pulse) fires the
+//        full assemblage: quartz, feldspar, titanite, hematite (iron-roses),
+//        fluorite, apatite, calcite (+ epidote).
+//        SCEPTRE (js/45 classifyQuartzSceptre + js/99i two-body render): grow_quartz
+//        DISSOLVES at sigma<1 (it does not pause), so a seal CORRODES the gen-1 tip
+//        and the breach regenerates a wider gen-2 cap on the SAME crystal — the
+//        resorption->renewal phantom-boundary signature (3 robust sceptres/seed;
+//        the rate-ratio guess was the wrong instrument, extent is the right one —
+//        the cooler cap grows SLOWER per-step yet LARGER by extent. tools/
+//        quartz-sceptre-scan.mjs). habit='scepter_overgrowth' + cap-zone tags.
+//        SMOKY/MORION (grow_quartz): Al-precursor + a gamma-dose from the radiogenic
+//        FELSIC HOST (pegmatite/granite K-40/U/Th), clamped <0.8 (Rossman 1994). The
+//        Aar morion is granite-hosted, not uraninite-driven — the prior model only
+//        dosed quartz beside a uraninite crystal, missing every granite cleft. THIS
+//        IS A FLEET-WIDE CHANGE: pegmatite-hosted quartz now develops smoky colour
+//        (gem_pegmatite, radioactive_pegmatite, etc.) — geologically correct, colour
+//        only (radiation_damage), no assemblage shift. morion color_rule added.
+//        TESSIN (grow_quartz, alpine-gated): the steep-rhombohedron z{011} face
+//        development (Tessiner Habitus) on cleft quartz. + narrators (js/92i).
+//        FENSTER + GWINDEL deliberately NOT shipped: fenster has no honest fleet home
+//        (quartz sigma is silica ABUNDANCE not a skeletalization driver — an occupied
+//        band would mislabel slow pegmatites; the 644b267 content-block finding
+//        stands), and gwindel needs a tectonic-shear field the sim lacks (forcing it
+//        would cannibalize the sceptre showcase). Both honest gaps. SIM 205 -> 206.
+//   v207 — GWINDEL — the alpine-fissure twisted quartz column (2026-06-20).
+//        Closes the gwindel gap left honest-open in v206. THE REFRAME: a gwindel
+//        is NOT distinguished from a sceptre/ordinary cleft quartz by FLUID
+//        history — all crystals in one cleft share the same fluid (same
+//        seals/breaches), so a v206-style "continuous vs resorbed" discriminator
+//        is geologically wrong. The gwindel's distinction is CRYSTALLOGRAPHIC: a
+//        progressive a-axis TWIST accumulated over prolonged growth under the
+//        cleft's syn-growth tectonic shear (D2/D3). The sim has no shear FIELD,
+//        so — exactly as it treats twinning — gwindel is a habit variant:
+//        js/45 classifyQuartzGwindel designates the LARGEST, longest-grown cleft
+//        showpiece (twist deg ∝ growth duration), independent of and taking
+//        render precedence over its sceptre record. js/99i _makeGwindelGeom =
+//        a flattened prism twisted up its long axis. Gated on a new
+//        wall.alpine_cleft flag (js/22) so ONLY the cleft is affected — grimsel
+//        shows 1 gwindel showpiece + 2 smoky sceptres, deterministic/seed (the
+//        real Grimsel/Aar co-occurrence; that region is the world gwindel type
+//        locality). Sceptres lose nothing — they have many other localities.
+//        Single-scenario change (grimsel only); the rest of the fleet is
+//        byte-identical (alpine_cleft defaults false). + narrator (js/92i) +
+//        minerals.json habit_variant. SIM 206 -> 207.
+const SIM_VERSION = 207;
 

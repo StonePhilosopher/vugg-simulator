@@ -29,6 +29,31 @@ Object.assign(VugSimulator.prototype, {
   if (c.twinned) {
     parts.push(narrative_variant('quartz', 'twinned', { twin_law: c.twin_law }) || `A ${c.twin_law} twin formed during growth.`);
   }
+  // Gwindel — the alpine-fissure twisted column (js/45 classifyQuartzGwindel).
+  // Takes narrative precedence over the sceptre (it is the showpiece habit).
+  if (c._gwindel) {
+    parts.push(narrative_variant('quartz', 'gwindel', { twist: c._gwindel.twistDeg.toFixed(0) })
+      || `A GWINDEL — the alpine-fissure twisted column: a stack of subparallel individuals rotated ~${c._gwindel.twistDeg.toFixed(0)}° about the a-axis under the cleft's syn-growth shear. The Grimsel/Aar Zerrklüfte are the world type locality.`);
+  }
+  // Sceptre — the alpine crack-seal structural signature (gen-1 stem resorbed,
+  // gen-2 cap regenerated; see js/45 classifyQuartzSceptre).
+  if (c._sceptre && !c._gwindel) {
+    parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
+      || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);
+  }
+  // Tessin (Tessiner Habitus) — the alpine face development.
+  if ((c.dominant_forms || []).some(f => f.includes('steep rhombohedron'))) {
+    parts.push(narrative_variant('quartz', 'tessin')
+      || `Tessiner Habitus — the steep rhombohedron z{011} dominates the prism, giving slender, sharply-tapered terminations.`);
+  }
+  // Smoky / morion colour centres (Rossman 1994 — Al + radiogenic-host γ-dose).
+  const rd = c.radiation_damage || 0;
+  if (rd > 0.3) {
+    parts.push(narrative_variant('quartz', rd > 0.6 ? 'morion' : 'smoky', { dose: rd.toFixed(2) })
+      || (rd > 0.6
+        ? `Morion — near-black smoky quartz: Al³⁺ colour-centre precursors plus a heavy γ-dose from the radiogenic granite host (radiation damage ${rd.toFixed(2)}).`
+        : `Smoky — Al³⁺-for-Si⁴⁺ substitution activated by the host granite's natural γ-dose creates [AlO₄]⁰ colour centres (radiation damage ${rd.toFixed(2)}).`));
+  }
   const fast_zones = c.zones.filter(z => z.growth_rate > 15);
   const slow_zones = c.zones.filter(z => z.growth_rate > 0 && z.growth_rate < 2);
   if (fast_zones.length && slow_zones.length) {

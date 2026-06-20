@@ -351,6 +351,16 @@ const EVENT_REGISTRY = {
   tormiq_byssolite: event_tormiq_byssolite,
   tormiq_adularia: event_tormiq_adularia,
   tormiq_late_calcite: event_tormiq_late_calcite,
+  // 2026-06-19 — Grimsel / Aar-massif alpine cleft (the quartz-morphology
+  // content home). T is a declared movement; these are the crack-seal SiO₂
+  // sawtooth + Fe/CO₃ chemistry beats. See js/70u-grimsel.ts.
+  grimsel_cleft_open: event_grimsel_cleft_open,
+  grimsel_seal_1: event_grimsel_seal_1,
+  grimsel_breach_1: event_grimsel_breach_1,
+  grimsel_oxide_roses: event_grimsel_oxide_roses,
+  grimsel_seal_2: event_grimsel_seal_2,
+  grimsel_breach_2: event_grimsel_breach_2,
+  grimsel_late_carbonate: event_grimsel_late_carbonate,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and

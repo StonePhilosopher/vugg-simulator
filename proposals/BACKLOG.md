@@ -2,6 +2,46 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## ⛰️ SESSION HANDOFF (2026-06-19) — THE ALPINE-CLEFT ARC ✅ SHIPPED (Grimsel SIM 206)
+>
+> **Master doc: `proposals/HANDOFF-ALPINE-CLEFT-2026-06-19.md`** (read it). The
+> quartz-morphology arc (§A #8) was reshaped — scouting proved fenster
+> content-blocked (quartz σ = silica-abundance), so we built the content home: a
+> Grimsel/Aar Swiss alpine cleft, and rode the honest variants on it.
+>
+> **✅ SHIPPED v206 — `grimsel_alpine_cleft` + quartz morphology & variants.**
+> - **SCEPTRE** (the headline): `grow_quartz` dissolves at σ<1, so a crack-seal
+>   SEAL corrodes the gen-1 tip and the BREACH regenerates a wider gen-2 cap on
+>   ONE crystal — resorption→renewal across a phantom boundary (NOT a step-gap;
+>   EXTENT not rate — the cooler cap is slower/step yet larger). js/45
+>   classifyQuartzSceptre + js/99i two-body render + `tools/quartz-sceptre-scan.mjs`.
+>   3 robust sceptres/seed.
+> - **SMOKY/MORION**: radiogenic-host γ-dose + Al (Rossman 1994) — a FLEET-WIDE
+>   colour fix (granite/pegmatite quartz now smoky; the prior model only dosed
+>   quartz beside a uraninite crystal). Colour only, zero assemblage churn.
+> - **TESSIN**: steep-rhomb face form on cleft quartz.
+> - **Blocker fixed**: dilute-broth correction (K 120→30, Na 80→25, Al 12→6) — the
+>   prior broth grew an 18 mm feldspar / 7 mm albite that ENCLOSED the quartz
+>   (geologically inverted). Full assemblage now fires (quartz/feldspar/titanite/
+>   hematite/fluorite/apatite/calcite + epidote).
+> - **GWINDEL ✅ SHIPPED v207** (2026-06-20): the alpine-fissure twisted column —
+>   Grimsel/Aar is the world type locality. The boss corrected the v206 deferral:
+>   a gwindel is distinguished CRYSTALLOGRAPHICALLY (the a-axis twist), not by
+>   fluid history (cleft crystals share the fluid), so it ships as a habit variant
+>   — the largest cleft showpiece, twist ∝ growth duration (js/45 + js/99i +
+>   wall.alpine_cleft flag js/22). 1 gwindel + 2 sceptres in grimsel; 0/35
+>   baseline drift (habit/render tag).
+> - **NOT shipped (one honest gap left):** FENSTER — quartz σ is silica abundance,
+>   so an occupied band would mislabel slow pegmatites (the content-block stands).
+>   Needs a genuine growth-rate-instability driver. Documented in
+>   RESEARCH-quartz-morphology §6.
+> - **titanite** (SIM 205, `6f5627a`) was the prerequisite (de-orphans §A #13).
+>
+> Baselines: v206 only grimsel moved (0→11 species, smoky colour-only fleet-wide);
+> v207 gwindel = 0/35 drift. NEXT open quartz work = fenster (growth-rate driver)
+> + the optional deformation/shear-field mechanic (would give true gwindel torsion
+> + bent/curved crystals).
+
 > ## 🔵 UPDATE (2026-06-18) — BISBEE AZURITE FIX (SIM 204) + stale-expects §A #10 RESOLVED
 >
 > PROPOSALS-LEDGER §A #10 ("stale expects_species — 3 to diagnose") is **CLOSED**.

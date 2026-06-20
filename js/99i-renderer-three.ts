@@ -786,6 +786,81 @@ function _makeHexPrismWithPyramid(): any {
   return geom;
 }
 
+// Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
+// tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
+// the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
+// NARROW stem (r 0.30) for the lower (1−capFrac) of the height, a WIDER cap
+// (r 0.50) with a pyramidal tip for the upper capFrac, joined by a horizontal
+// shoulder ring — the corrosion surface the cap overgrew, the defining sceptre
+// silhouette. Same unit box (y −0.5..+0.5) as _makeHexPrismWithPyramid so the
+// per-crystal transform scales it identically.
+function _makeSceptreHexPrism(capFrac: number): any {
+  const cf = Math.max(0.25, Math.min(0.7, capFrac || 0.5));
+  const rStem = 0.30, rCap = 0.50;
+  const yBase = -0.50, yApex = 0.50;
+  const yBound = yBase + (1 - cf);          // top of stem / base of cap
+  const yShoulder = yBound + cf * 0.62;     // cap prism top / start of tip pyramid
+  const positions: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const a0 = (i / 6) * Math.PI * 2, a1 = ((i + 1) / 6) * Math.PI * 2;
+    const sx0 = Math.cos(a0) * rStem, sz0 = Math.sin(a0) * rStem, sx1 = Math.cos(a1) * rStem, sz1 = Math.sin(a1) * rStem;
+    const cx0 = Math.cos(a0) * rCap, cz0 = Math.sin(a0) * rCap, cx1 = Math.cos(a1) * rCap, cz1 = Math.sin(a1) * rCap;
+    // stem side face
+    _pushTri(positions, sx0, yBase, sz0, sx1, yBase, sz1, sx1, yBound, sz1);
+    _pushTri(positions, sx0, yBase, sz0, sx1, yBound, sz1, sx0, yBound, sz0);
+    // shoulder ring (stem radius → cap radius) — the resorbed corrosion surface
+    _pushTri(positions, sx0, yBound, sz0, sx1, yBound, sz1, cx1, yBound, cz1);
+    _pushTri(positions, sx0, yBound, sz0, cx1, yBound, cz1, cx0, yBound, cz0);
+    // cap side face
+    _pushTri(positions, cx0, yBound, cz0, cx1, yBound, cz1, cx1, yShoulder, cz1);
+    _pushTri(positions, cx0, yBound, cz0, cx1, yShoulder, cz1, cx0, yShoulder, cz0);
+    // cap pyramid tip
+    _pushTri(positions, cx0, yShoulder, cz0, cx1, yShoulder, cz1, 0, yApex, 0);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// Quartz GWINDEL — the alpine-fissure twisted column (SIM 207; sim tags
+// crystal._gwindel.twistDeg). A FLATTENED prism (wide a-axis, thin b-axis)
+// extruded vertically with each level progressively rotated about the long axis
+// — the stack-of-rotated-individuals silhouette. Same unit box (y -0.5..+0.5) as
+// the other quartz primitives so the per-crystal transform scales it identically.
+function _makeGwindelGeom(twistDeg: number): any {
+  const tw = (Math.max(30, Math.min(150, twistDeg || 75))) * Math.PI / 180;
+  const ra = 0.46, rb = 0.17;     // flattened rectangular cross-section (a >> b)
+  const yBase = -0.50, yTop = 0.50;
+  const SEG = 14;
+  const corner = (i: number, ang: number): [number, number] => {
+    const cx = (i === 0 || i === 3) ? ra : -ra;   // ±a
+    const cz = (i < 2) ? rb : -rb;                 // ±b
+    return [cx * Math.cos(ang) - cz * Math.sin(ang), cx * Math.sin(ang) + cz * Math.cos(ang)];
+  };
+  const positions: number[] = [];
+  for (let s = 0; s < SEG; s++) {
+    const y0 = yBase + (yTop - yBase) * (s / SEG);
+    const y1 = yBase + (yTop - yBase) * ((s + 1) / SEG);
+    const a0 = tw * (s / SEG), a1 = tw * ((s + 1) / SEG);
+    for (let i = 0; i < 4; i++) {
+      const j = (i + 1) % 4;
+      const [x0i, z0i] = corner(i, a0), [x0j, z0j] = corner(j, a0);
+      const [x1i, z1i] = corner(i, a1), [x1j, z1j] = corner(j, a1);
+      _pushTri(positions, x0i, y0, z0i, x0j, y0, z0j, x1j, y1, z1j);
+      _pushTri(positions, x0i, y0, z0i, x1j, y1, z1j, x1i, y1, z1i);
+    }
+  }
+  // flat-cap the top quad (two triangles) at the final twist
+  const tc = [0, 1, 2, 3].map((i) => corner(i, tw));
+  _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[1][0], yTop, tc[1][1], tc[2][0], yTop, tc[2][1]);
+  _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[2][0], yTop, tc[2][1], tc[3][0], yTop, tc[3][1]);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Calcite cleavage rhombohedron — 6 rhombic faces, 8 vertices, 3-fold
 // symmetric around the c-axis. Two apex vertices on the c-axis at
 // y=±h; 6 equatorial vertices in two staggered triangles at y=±t,
@@ -3047,6 +3122,25 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // dendritic_cube all read as trees.
     if (!geom && token === 'spike' && _isDendriticHabit(habitForGeom)) {
       geom = _getDendriteTreeGeom(state, crystal);
+    }
+    // Quartz GWINDEL (alpine-cleft arc SIM 207): the twisted column showpiece.
+    // Takes render precedence over the sceptre (the crystal may carry both tags;
+    // the twist is the dominant visual). Gated on the prism token.
+    if (!geom && crystal.mineral === 'quartz' && crystal._gwindel && token === 'prism') {
+      const td = Math.round((crystal._gwindel.twistDeg || 75) / 5) * 5;  // quantize for cache reuse
+      if (crystal._gwindelGeomTd !== td) { crystal._gwindelGeom = _makeGwindelGeom(td); crystal._gwindelGeomTd = td; }
+      geom = crystal._gwindelGeom;
+    }
+    // Quartz SCEPTRE (alpine-cleft arc SIM 206): a crystal the sim tagged with
+    // _sceptre renders as the two-body stem+cap silhouette. Gated on the prism
+    // token so twins / air-mode dripstone keep their own geometry, and skipped
+    // when the crystal is also a gwindel (twist wins). Replay guard: before the
+    // resorption boundary step the crystal is still a plain gen-1 prism.
+    if (!geom && crystal.mineral === 'quartz' && crystal._sceptre && !crystal._gwindel && token === 'prism'
+        && (replayStep == null || replayStep >= crystal._sceptre.boundaryStep)) {
+      const cf = Math.round((crystal._sceptre.capFrac || 0.5) * 20) / 20;  // quantize for cache reuse
+      if (crystal._sceptreGeomCf !== cf) { crystal._sceptreGeom = _makeSceptreHexPrism(cf); crystal._sceptreGeomCf = cf; }
+      geom = crystal._sceptreGeom;
     }
     if (!geom) {
       geom = state.geomCache.get(token);

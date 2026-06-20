@@ -129,6 +129,12 @@
     "lattice": { "a": 8.8877, "b": 5.6275, "c": 10.1517, "beta": 115.383 },
     "_source": "Dollase 1971 (Am. Min. 56:447-464) epidote structure refinement; Anthony et al. Handbook of Mineralogy 2001 (epidote sheet)"
   },
+  "titanite": {
+    "system": "monoclinic",
+    "space_group": "P2_1/a",
+    "lattice": { "a": 7.057, "b": 8.707, "c": 6.555, "beta": 113.81 },
+    "_source": "Oberti, Smith, Rossi & Caucia 1991 (Eur. J. Mineral. 3:777-792) titanite structure; Anthony et al. Handbook of Mineralogy 2001 (titanite sheet)"
+  },
   "gypsum": {
     "system": "monoclinic",
     "space_group": "C2/c",
