@@ -500,6 +500,40 @@ function classifyQuartzSceptre(sim: any) {
   }
 }
 
+// ---- Quartz gwindel — the alpine-fissure-EXCLUSIVE twisted column ----
+// A gwindel is a stack of subparallel quartz individuals progressively rotated
+// about the a-axis — a flattened, twisted lamellar column, essentially exclusive
+// to alpine-type tension fissures (the Swiss Central Alps / Grimsel / Furka are
+// the world type region). KEY: a gwindel is NOT distinguished from an ordinary
+// (or sceptre) cleft quartz by its FLUID history — all the crystals in one cleft
+// share the same fluid, so they all record the same seals/breaches. The gwindel's
+// distinction is CRYSTALLOGRAPHIC: a progressive a-axis TWIST that accumulates
+// over prolonged growth under the cleft's syn-growth tectonic shear (the D2/D3
+// rotating stress field). The sim has no shear FIELD, so — exactly as it treats
+// twinning — we designate the gwindel as a habit variant: the LARGEST, longest-
+// grown cleft showpiece (twist ∝ its growth duration), independent of and taking
+// render precedence over its crack-seal sceptre record. PURE tagging; runs AFTER
+// the sceptre pass. A Grimsel cleft thus shows a twisted gwindel showpiece beside
+// smaller smoky sceptres — the real co-occurrence.
+const QZ_GWINDEL_MIN_UM = 1000;   // µm (timeScale-applied) — a substantial showpiece column
+function classifyQuartzGwindel(sim: any) {
+  if (!sim.conditions.wall || !sim.conditions.wall.alpine_cleft) return;
+  const qz = sim.crystals.filter((c: any) => c && c.mineral === 'quartz'
+    && (c.total_growth_um || 0) >= QZ_GWINDEL_MIN_UM);
+  // The pick can migrate as crystals grow; clear and re-pick each step so the
+  // final-step largest is the stable gwindel (pure tagging — the saved state wins).
+  for (const c of sim.crystals) if (c && c.mineral === 'quartz' && c._gwindel) c._gwindel = null;
+  if (!qz.length) return;
+  // Deterministic pick: the largest, tie-broken by lowest crystal_id (no RNG).
+  qz.sort((a: any, b: any) => (b.total_growth_um - a.total_growth_um) || (a.crystal_id - b.crystal_id));
+  const g = qz[0];
+  let firstStep: any = null, lastStep: any = null;
+  for (const z of g.zones) { const t = z.thickness_um || 0; if (t > 0) { if (firstStep == null) firstStep = z.step; lastStep = z.step; } }
+  const span = (lastStep != null && firstStep != null) ? (lastStep - firstStep) : 0;
+  g._gwindel = { twistDeg: Math.max(45, Math.min(120, span * 0.7)), lengthUm: g.total_growth_um, span };
+  g.habit = 'gwindel';
+}
+
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];

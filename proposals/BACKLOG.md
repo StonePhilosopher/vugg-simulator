@@ -24,14 +24,23 @@ Living list of open work items, captured from session conversations so context s
 >   prior broth grew an 18 mm feldspar / 7 mm albite that ENCLOSED the quartz
 >   (geologically inverted). Full assemblage now fires (quartz/feldspar/titanite/
 >   hematite/fluorite/apatite/calcite + epidote).
-> - **NOT shipped (honest gaps):** FENSTER (no honest σ home — would confabulate)
->   + GWINDEL (needs a tectonic-shear field the sim lacks; would cannibalize the
->   sceptre showcase). Both documented in RESEARCH-quartz-morphology §6.
+> - **GWINDEL ✅ SHIPPED v207** (2026-06-20): the alpine-fissure twisted column —
+>   Grimsel/Aar is the world type locality. The boss corrected the v206 deferral:
+>   a gwindel is distinguished CRYSTALLOGRAPHICALLY (the a-axis twist), not by
+>   fluid history (cleft crystals share the fluid), so it ships as a habit variant
+>   — the largest cleft showpiece, twist ∝ growth duration (js/45 + js/99i +
+>   wall.alpine_cleft flag js/22). 1 gwindel + 2 sceptres in grimsel; 0/35
+>   baseline drift (habit/render tag).
+> - **NOT shipped (one honest gap left):** FENSTER — quartz σ is silica abundance,
+>   so an occupied band would mislabel slow pegmatites (the content-block stands).
+>   Needs a genuine growth-rate-instability driver. Documented in
+>   RESEARCH-quartz-morphology §6.
 > - **titanite** (SIM 205, `6f5627a`) was the prerequisite (de-orphans §A #13).
 >
-> Baseline-diff v205→v206: only grimsel moved (0→11 species); smoky is colour-only
-> fleet-wide. NEXT open quartz work = gwindel (needs a shear mechanic) + fenster
-> (needs a growth-rate-instability driver) — both new-mechanic backlog items.
+> Baselines: v206 only grimsel moved (0→11 species, smoky colour-only fleet-wide);
+> v207 gwindel = 0/35 drift. NEXT open quartz work = fenster (growth-rate driver)
+> + the optional deformation/shear-field mechanic (would give true gwindel torsion
+> + bent/curved crystals).
 
 > ## 🔵 UPDATE (2026-06-18) — BISBEE AZURITE FIX (SIM 204) + stale-expects §A #10 RESOLVED
 >

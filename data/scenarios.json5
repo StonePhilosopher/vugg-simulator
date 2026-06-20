@@ -2162,7 +2162,8 @@
           "secondary_bubbles": 5,
           "shape_seed": 1932,
           "thermal_pulses": false,
-          "cooling_rate": 0.4
+          "cooling_rate": 0.4,
+          "alpine_cleft": true
         }
       },
       "events": [

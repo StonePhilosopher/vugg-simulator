@@ -29,9 +29,15 @@ Object.assign(VugSimulator.prototype, {
   if (c.twinned) {
     parts.push(narrative_variant('quartz', 'twinned', { twin_law: c.twin_law }) || `A ${c.twin_law} twin formed during growth.`);
   }
+  // Gwindel — the alpine-fissure twisted column (js/45 classifyQuartzGwindel).
+  // Takes narrative precedence over the sceptre (it is the showpiece habit).
+  if (c._gwindel) {
+    parts.push(narrative_variant('quartz', 'gwindel', { twist: c._gwindel.twistDeg.toFixed(0) })
+      || `A GWINDEL — the alpine-fissure twisted column: a stack of subparallel individuals rotated ~${c._gwindel.twistDeg.toFixed(0)}° about the a-axis under the cleft's syn-growth shear. The Grimsel/Aar Zerrklüfte are the world type locality.`);
+  }
   // Sceptre — the alpine crack-seal structural signature (gen-1 stem resorbed,
   // gen-2 cap regenerated; see js/45 classifyQuartzSceptre).
-  if (c._sceptre) {
+  if (c._sceptre && !c._gwindel) {
     parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
       || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);
   }

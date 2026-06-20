@@ -752,6 +752,9 @@ class VugSimulator {
     // SIM 206). Reads completed zones for the resorption→renewal phantom
     // boundary (gen-1 stem + gen-2 cap). Pure tagging; see js/45.
     classifyQuartzSceptre(this);
+    // Quartz gwindel — alpine-cleft slow-continuous twisted column (SIM 207).
+    // Runs AFTER the sceptre pass (mutually exclusive). Pure tagging; see js/45.
+    classifyQuartzGwindel(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

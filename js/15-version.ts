@@ -11356,5 +11356,25 @@
 //        band would mislabel slow pegmatites; the 644b267 content-block finding
 //        stands), and gwindel needs a tectonic-shear field the sim lacks (forcing it
 //        would cannibalize the sceptre showcase). Both honest gaps. SIM 205 -> 206.
-const SIM_VERSION = 206;
+//   v207 — GWINDEL — the alpine-fissure twisted quartz column (2026-06-20).
+//        Closes the gwindel gap left honest-open in v206. THE REFRAME: a gwindel
+//        is NOT distinguished from a sceptre/ordinary cleft quartz by FLUID
+//        history — all crystals in one cleft share the same fluid (same
+//        seals/breaches), so a v206-style "continuous vs resorbed" discriminator
+//        is geologically wrong. The gwindel's distinction is CRYSTALLOGRAPHIC: a
+//        progressive a-axis TWIST accumulated over prolonged growth under the
+//        cleft's syn-growth tectonic shear (D2/D3). The sim has no shear FIELD,
+//        so — exactly as it treats twinning — gwindel is a habit variant:
+//        js/45 classifyQuartzGwindel designates the LARGEST, longest-grown cleft
+//        showpiece (twist deg ∝ growth duration), independent of and taking
+//        render precedence over its sceptre record. js/99i _makeGwindelGeom =
+//        a flattened prism twisted up its long axis. Gated on a new
+//        wall.alpine_cleft flag (js/22) so ONLY the cleft is affected — grimsel
+//        shows 1 gwindel showpiece + 2 smoky sceptres, deterministic/seed (the
+//        real Grimsel/Aar co-occurrence; that region is the world gwindel type
+//        locality). Sceptres lose nothing — they have many other localities.
+//        Single-scenario change (grimsel only); the rest of the fleet is
+//        byte-identical (alpine_cleft defaults false). + narrator (js/92i) +
+//        minerals.json habit_variant. SIM 206 -> 207.
+const SIM_VERSION = 207;
 

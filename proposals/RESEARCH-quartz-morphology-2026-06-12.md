@@ -192,9 +192,20 @@ variants and TWO documented honest gaps:
   NOT register MORPH_TH.quartz; faking the band would be a confabulated label
   (same discipline as the mvt-silver de-confabulation). Honest gap: fenster
   needs a genuine growth-rate-instability driver the σ proxy can't isolate.
-- **GWINDEL ✗ — NOT shipped (honest deferral).** The twist's physical driver is
-  syn-growth tectonic SHEAR (the D2/D3 rotating stress field), and the sim has
-  no shear/deformation field. Worse, in grimsel every surviving quartz becomes
-  a SCEPTRE (the crack-seal design), so forcing a gwindel would cannibalize the
-  sceptre showcase. Deferred honestly: gwindel needs a shear-field mechanic
-  (a real new-mechanic backlog item), not a faked random habit flag.
+- **GWINDEL ✓ — SHIPPED v207 (2026-06-20).** The v206 deferral reasoning had a
+  FLAW, caught when the boss pushed "put it in the Swiss scenario": I assumed a
+  gwindel must be distinguished from a sceptre by FLUID history, but all the
+  crystals in one cleft share the same fluid (same seals/breaches) — so
+  "continuous vs resorbed" is geologically wrong. A gwindel's distinction is
+  CRYSTALLOGRAPHIC (the a-axis twist), independent of its crack-seal record. So
+  it ships as a habit variant (the way the sim treats twinning): js/45
+  classifyQuartzGwindel designates the LARGEST, longest-grown cleft showpiece
+  (twist deg ∝ growth duration), gated on a new wall.alpine_cleft flag (js/22),
+  rendered as a flattened twisted column (js/99i _makeGwindelGeom), taking render
+  precedence over its sceptre tag. The boss's geological point holds: gwindels
+  are alpine-fissure-EXCLUSIVE and Grimsel/Aar is the world type locality, while
+  sceptres have many homes — so Grimsel showing 1 gwindel showpiece + 2 smoky
+  sceptres costs the sceptre nothing and is the real co-occurrence. The shear
+  micro-driver stays abstracted (no stress field); a true deformation-field
+  mechanic remains a possible future arc (it would also give bent/curved crystals).
+  Baseline-diff v206→v207: 0/35 moved (habit/render tag, no chemistry shift).

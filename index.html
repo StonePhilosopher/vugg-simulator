@@ -16459,7 +16459,27 @@ let timeScale = 5.0;
 //        band would mislabel slow pegmatites; the 644b267 content-block finding
 //        stands), and gwindel needs a tectonic-shear field the sim lacks (forcing it
 //        would cannibalize the sceptre showcase). Both honest gaps. SIM 205 -> 206.
-const SIM_VERSION = 206;
+//   v207 — GWINDEL — the alpine-fissure twisted quartz column (2026-06-20).
+//        Closes the gwindel gap left honest-open in v206. THE REFRAME: a gwindel
+//        is NOT distinguished from a sceptre/ordinary cleft quartz by FLUID
+//        history — all crystals in one cleft share the same fluid (same
+//        seals/breaches), so a v206-style "continuous vs resorbed" discriminator
+//        is geologically wrong. The gwindel's distinction is CRYSTALLOGRAPHIC: a
+//        progressive a-axis TWIST accumulated over prolonged growth under the
+//        cleft's syn-growth tectonic shear (D2/D3). The sim has no shear FIELD,
+//        so — exactly as it treats twinning — gwindel is a habit variant:
+//        js/45 classifyQuartzGwindel designates the LARGEST, longest-grown cleft
+//        showpiece (twist deg ∝ growth duration), independent of and taking
+//        render precedence over its sceptre record. js/99i _makeGwindelGeom =
+//        a flattened prism twisted up its long axis. Gated on a new
+//        wall.alpine_cleft flag (js/22) so ONLY the cleft is affected — grimsel
+//        shows 1 gwindel showpiece + 2 smoky sceptres, deterministic/seed (the
+//        real Grimsel/Aar co-occurrence; that region is the world gwindel type
+//        locality). Sceptres lose nothing — they have many other localities.
+//        Single-scenario change (grimsel only); the rest of the fleet is
+//        byte-identical (alpine_cleft defaults false). + narrator (js/92i) +
+//        minerals.json habit_variant. SIM 206 -> 207.
+const SIM_VERSION = 207;
 
 // ── 18-constants.js ──
 
@@ -19457,6 +19477,10 @@ class VugWall {
         // always-draw pattern keeps that stream's cursor rate-independent.)
         this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
             ? opts.cooling_rate : 1.5;
+        // Alpine-cleft (Zerrkluft) flag — Grimsel/Aar Swiss tension fissures. Opts
+        // in to the quartz GWINDEL habit (js/45 classifyQuartzGwindel; SIM 207) and
+        // the Tessin/sceptre cleft idiom. Default false (no effect elsewhere).
+        this.alpine_cleft = (opts.alpine_cleft !== undefined) ? !!opts.alpine_cleft : false;
     }
     dissolve(acid_strength, fluid) {
         // Gate by composition first — silicate walls are inert regardless
@@ -32583,6 +32607,50 @@ function classifyQuartzSceptre(sim) {
                 i++;
         }
     }
+}
+// ---- Quartz gwindel — the alpine-fissure-EXCLUSIVE twisted column ----
+// A gwindel is a stack of subparallel quartz individuals progressively rotated
+// about the a-axis — a flattened, twisted lamellar column, essentially exclusive
+// to alpine-type tension fissures (the Swiss Central Alps / Grimsel / Furka are
+// the world type region). KEY: a gwindel is NOT distinguished from an ordinary
+// (or sceptre) cleft quartz by its FLUID history — all the crystals in one cleft
+// share the same fluid, so they all record the same seals/breaches. The gwindel's
+// distinction is CRYSTALLOGRAPHIC: a progressive a-axis TWIST that accumulates
+// over prolonged growth under the cleft's syn-growth tectonic shear (the D2/D3
+// rotating stress field). The sim has no shear FIELD, so — exactly as it treats
+// twinning — we designate the gwindel as a habit variant: the LARGEST, longest-
+// grown cleft showpiece (twist ∝ its growth duration), independent of and taking
+// render precedence over its crack-seal sceptre record. PURE tagging; runs AFTER
+// the sceptre pass. A Grimsel cleft thus shows a twisted gwindel showpiece beside
+// smaller smoky sceptres — the real co-occurrence.
+const QZ_GWINDEL_MIN_UM = 1000; // µm (timeScale-applied) — a substantial showpiece column
+function classifyQuartzGwindel(sim) {
+    if (!sim.conditions.wall || !sim.conditions.wall.alpine_cleft)
+        return;
+    const qz = sim.crystals.filter((c) => c && c.mineral === 'quartz'
+        && (c.total_growth_um || 0) >= QZ_GWINDEL_MIN_UM);
+    // The pick can migrate as crystals grow; clear and re-pick each step so the
+    // final-step largest is the stable gwindel (pure tagging — the saved state wins).
+    for (const c of sim.crystals)
+        if (c && c.mineral === 'quartz' && c._gwindel)
+            c._gwindel = null;
+    if (!qz.length)
+        return;
+    // Deterministic pick: the largest, tie-broken by lowest crystal_id (no RNG).
+    qz.sort((a, b) => (b.total_growth_um - a.total_growth_um) || (a.crystal_id - b.crystal_id));
+    const g = qz[0];
+    let firstStep = null, lastStep = null;
+    for (const z of g.zones) {
+        const t = z.thickness_um || 0;
+        if (t > 0) {
+            if (firstStep == null)
+                firstStep = z.step;
+            lastStep = z.step;
+        }
+    }
+    const span = (lastStep != null && firstStep != null) ? (lastStep - firstStep) : 0;
+    g._gwindel = { twistDeg: Math.max(45, Math.min(120, span * 0.7)), lengthUm: g.total_growth_um, span };
+    g.habit = 'gwindel';
 }
 function classifyMorphologyStep(sim) {
     for (const mineral in MORPH_TH) {
@@ -47578,6 +47646,9 @@ class VugSimulator {
         // SIM 206). Reads completed zones for the resorption→renewal phantom
         // boundary (gen-1 stem + gen-2 cap). Pure tagging; see js/45.
         classifyQuartzSceptre(this);
+        // Quartz gwindel — alpine-cleft slow-continuous twisted column (SIM 207).
+        // Runs AFTER the sceptre pass (mutually exclusive). Pure tagging; see js/45.
+        classifyQuartzGwindel(this);
         // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
         // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).
         // When a StripRecorder is attached to the sim, capture one step's
@@ -59048,9 +59119,15 @@ Object.assign(VugSimulator.prototype, {
         if (c.twinned) {
             parts.push(narrative_variant('quartz', 'twinned', { twin_law: c.twin_law }) || `A ${c.twin_law} twin formed during growth.`);
         }
+        // Gwindel — the alpine-fissure twisted column (js/45 classifyQuartzGwindel).
+        // Takes narrative precedence over the sceptre (it is the showpiece habit).
+        if (c._gwindel) {
+            parts.push(narrative_variant('quartz', 'gwindel', { twist: c._gwindel.twistDeg.toFixed(0) })
+                || `A GWINDEL — the alpine-fissure twisted column: a stack of subparallel individuals rotated ~${c._gwindel.twistDeg.toFixed(0)}° about the a-axis under the cleft's syn-growth shear. The Grimsel/Aar Zerrklüfte are the world type locality.`);
+        }
         // Sceptre — the alpine crack-seal structural signature (gen-1 stem resorbed,
         // gen-2 cap regenerated; see js/45 classifyQuartzSceptre).
-        if (c._sceptre) {
+        if (c._sceptre && !c._gwindel) {
             parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
                 || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);
         }
@@ -71455,6 +71532,43 @@ function _makeSceptreHexPrism(capFrac) {
     geom.computeVertexNormals();
     return geom;
 }
+// Quartz GWINDEL — the alpine-fissure twisted column (SIM 207; sim tags
+// crystal._gwindel.twistDeg). A FLATTENED prism (wide a-axis, thin b-axis)
+// extruded vertically with each level progressively rotated about the long axis
+// — the stack-of-rotated-individuals silhouette. Same unit box (y -0.5..+0.5) as
+// the other quartz primitives so the per-crystal transform scales it identically.
+function _makeGwindelGeom(twistDeg) {
+    const tw = (Math.max(30, Math.min(150, twistDeg || 75))) * Math.PI / 180;
+    const ra = 0.46, rb = 0.17; // flattened rectangular cross-section (a >> b)
+    const yBase = -0.50, yTop = 0.50;
+    const SEG = 14;
+    const corner = (i, ang) => {
+        const cx = (i === 0 || i === 3) ? ra : -ra; // ±a
+        const cz = (i < 2) ? rb : -rb; // ±b
+        return [cx * Math.cos(ang) - cz * Math.sin(ang), cx * Math.sin(ang) + cz * Math.cos(ang)];
+    };
+    const positions = [];
+    for (let s = 0; s < SEG; s++) {
+        const y0 = yBase + (yTop - yBase) * (s / SEG);
+        const y1 = yBase + (yTop - yBase) * ((s + 1) / SEG);
+        const a0 = tw * (s / SEG), a1 = tw * ((s + 1) / SEG);
+        for (let i = 0; i < 4; i++) {
+            const j = (i + 1) % 4;
+            const [x0i, z0i] = corner(i, a0), [x0j, z0j] = corner(j, a0);
+            const [x1i, z1i] = corner(i, a1), [x1j, z1j] = corner(j, a1);
+            _pushTri(positions, x0i, y0, z0i, x0j, y0, z0j, x1j, y1, z1j);
+            _pushTri(positions, x0i, y0, z0i, x1j, y1, z1j, x1i, y1, z1i);
+        }
+    }
+    // flat-cap the top quad (two triangles) at the final twist
+    const tc = [0, 1, 2, 3].map((i) => corner(i, tw));
+    _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[1][0], yTop, tc[1][1], tc[2][0], yTop, tc[2][1]);
+    _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[2][0], yTop, tc[2][1], tc[3][0], yTop, tc[3][1]);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Calcite cleavage rhombohedron — 6 rhombic faces, 8 vertices, 3-fold
 // symmetric around the c-axis. Two apex vertices on the c-axis at
 // y=±h; 6 equatorial vertices in two staggered triangles at y=±t,
@@ -73735,12 +73849,23 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         if (!geom && token === 'spike' && _isDendriticHabit(habitForGeom)) {
             geom = _getDendriteTreeGeom(state, crystal);
         }
+        // Quartz GWINDEL (alpine-cleft arc SIM 207): the twisted column showpiece.
+        // Takes render precedence over the sceptre (the crystal may carry both tags;
+        // the twist is the dominant visual). Gated on the prism token.
+        if (!geom && crystal.mineral === 'quartz' && crystal._gwindel && token === 'prism') {
+            const td = Math.round((crystal._gwindel.twistDeg || 75) / 5) * 5; // quantize for cache reuse
+            if (crystal._gwindelGeomTd !== td) {
+                crystal._gwindelGeom = _makeGwindelGeom(td);
+                crystal._gwindelGeomTd = td;
+            }
+            geom = crystal._gwindelGeom;
+        }
         // Quartz SCEPTRE (alpine-cleft arc SIM 206): a crystal the sim tagged with
         // _sceptre renders as the two-body stem+cap silhouette. Gated on the prism
-        // token so twins / air-mode dripstone keep their own geometry. Replay
-        // guard: before the resorption boundary step the crystal is still a plain
-        // gen-1 prism (the cap appears as the scrubber crosses the boundary).
-        if (!geom && crystal.mineral === 'quartz' && crystal._sceptre && token === 'prism'
+        // token so twins / air-mode dripstone keep their own geometry, and skipped
+        // when the crystal is also a gwindel (twist wins). Replay guard: before the
+        // resorption boundary step the crystal is still a plain gen-1 prism.
+        if (!geom && crystal.mineral === 'quartz' && crystal._sceptre && !crystal._gwindel && token === 'prism'
             && (replayStep == null || replayStep >= crystal._sceptre.boundaryStep)) {
             const cf = Math.round((crystal._sceptre.capFrac || 0.5) * 20) / 20; // quantize for cache reuse
             if (crystal._sceptreGeomCf !== cf) {

@@ -76,8 +76,21 @@ describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', () => {
     for (const c of sceptres) {
       expect(c._sceptre.stemUm).toBeGreaterThan(150);
       expect(c._sceptre.capUm).toBeGreaterThan(150);
-      expect(c.habit).toBe('scepter_overgrowth');
+      // habit reads scepter_overgrowth UNLESS this crystal is also the gwindel
+      // showpiece, where the twist takes render precedence (habit='gwindel').
+      if (!c._gwindel) expect(c.habit).toBe('scepter_overgrowth');
     }
+  });
+
+  it('GWINDEL: the largest cleft quartz is the twisted showpiece (the Grimsel type habit)', () => {
+    const gwindels = quartz42().filter((c) => c._gwindel);
+    expect(gwindels.length).toBe(1);                       // one showpiece, deterministic
+    const g = gwindels[0];
+    expect(g.habit).toBe('gwindel');                       // render precedence over sceptre
+    expect(g._gwindel.twistDeg).toBeGreaterThanOrEqual(45);
+    // the gwindel is the LARGEST quartz (the long-grown showpiece)
+    const maxUm = Math.max(...quartz42().map((c) => c.total_growth_um || 0));
+    expect(g.total_growth_um).toBe(maxUm);
   });
 
   it('SMOKY: ≥1 quartz develops colour centres from the radiogenic granite host', () => {
