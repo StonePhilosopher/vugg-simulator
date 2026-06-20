@@ -2,6 +2,34 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## ⛰️ SESSION HANDOFF (2026-06-19) — THE ALPINE-CLEFT ARC (titanite SIM 205 shipped; Grimsel scenario WIP)
+>
+> **Master doc: `proposals/HANDOFF-ALPINE-CLEFT-2026-06-19.md`** (the current
+> handoff — read it). The quartz-morphology arc (§A #8) was found CONTENT-blocked
+> by its own scouting (no fleet scenario honestly earns a fenster band — quartz σ
+> is a silica-abundance signal, so the highest-σ scenarios are the slow euhedral
+> pegmatites; sceptre signal absent; Tessin/gwindel need a cleft that didn't
+> exist). Benches committed `644b267`. Pivot (boss): build a Swiss Central-Alps
+> (Grimsel / Aar massif) alpine cleft as the content HOME, then ride the morphology.
+>
+> **✅ SHIPPED: titanite (sphene) CaTiSiO₅, SIM 205, `6f5627a`** — de-orphans §A #13
+> AND is the cleft's first assemblage piece. Ti = the discriminator, no redox gate,
+> Cr/Fe colour dispatch; clean 4-scenario footprint (tormiq/porphyry/jeffrey/
+> sunnyside), zero collateral; upgrades the tormiq cleft (real titanite replaces
+> the magnetite stand-in). CI 1982/1982, Pages live.
+>
+> **🚧 WIP (uncommitted, NOT baked): `grimsel_alpine_cleft`** — `js/70u-grimsel.ts`
+> + `js/70-events.ts` + `data/scenarios.json5`. Declared retrograde T movement
+> (450→200, thermal_pulses:false) + crack-seal SiO₂ sawtooth events; compiles,
+> fires quartz. **KEY FINDING:** `grow_quartz` dissolves at σ<1 (doesn't pause), so
+> the seal CORRODES the gen-1 tip → the sceptre signature is RESORPTION→fast-renewal
+> on one crystal, NOT a step-gap (that IS how alpine sceptres form). NEXT (#108):
+> build the resorption-aware sceptre scan (= the #109 classifier brought forward),
+> tune the seal to corrode-not-destroy (σ≈0.92–0.97) + slow stem + fast breach,
+> verify ratio≥1.3, THEN bake (SIM 206 + menus + baseline + test + CI + commit).
+> Then #109 morphology (incl. gwindel), #110 smoky-quartz colour, #111 close.
+> Tree: titanite is the last clean+live commit; grimsel WIP will fail CI until baked.
+
 > ## 🔵 UPDATE (2026-06-18) — BISBEE AZURITE FIX (SIM 204) + stale-expects §A #10 RESOLVED
 >
 > PROPOSALS-LEDGER §A #10 ("stale expects_species — 3 to diagnose") is **CLOSED**.
