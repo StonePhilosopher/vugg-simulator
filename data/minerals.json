@@ -17381,6 +17381,115 @@
       "_late_stage_note": "Main-stage in the alpine-cleft paragenesis — epidote forms after the early quartz lining + Ti-Fe oxides, alongside byssolite, and before the late adularia + calcite. Mid-sequence, not terminal.",
       "class_color": "#84a82c"
     },
+    "titanite": {
+      "formula": "CaTiSiO5",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 3,
+      "max_size_cm": 16,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "sphenoid_wedge",
+          "wall_spread": 0.4,
+          "void_reach": 0.6,
+          "vector": "projecting",
+          "trigger": "default — the classic wedge-shaped (sphenoid) crystal flattened ∥{001}, often a {100} contact twin. The alpine-cleft look."
+        },
+        {
+          "name": "prismatic",
+          "wall_spread": 0.3,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "high supersaturation (excess > 1.4) — prismatic crystals elongated along [110] with wedge terminations."
+        },
+        {
+          "name": "flattened_tabular",
+          "wall_spread": 0.6,
+          "void_reach": 0.35,
+          "vector": "coating",
+          "trigger": "low supersaturation (excess < 0.4) — platy crystals tabular parallel to {001}."
+        }
+      ],
+      "class": "silicate",
+      "description": "CaTiSiO₅ (CaTiO[SiO₄]) — monoclinic (P2₁/a) nesosilicate, the mineral once called sphene. H 5-5.5, density 3.48-3.60, adamantine-to-resinous luster with very high dispersion (the gem 'fire'). The diagnostic habit is the WEDGE-SHAPED (sphenoid) crystal, flattened ∥{001}, commonly a {100} contact or penetration twin; good {110} cleavage, {221} parting from lamellar twinning. Color runs brown / yellow / gray / black / green / red / colorless: brown-to-yellow is the common igneous-metamorphic accessory, while the prized CHROME-GREEN variety (Cr³⁺ → Ti) is the alpine-cleft gem (Tormiq/Alchuri, Pakistan; Tavetsch + St. Gotthard + Zermatt + Göschener Alp, Switzerland). ALPINE-CLEFT titanite is the LOW-T hydrothermal/fissure end of the species — near-end-member Ca-Ti-Si, low-F (Göschener Alp: Ca₁.₀₀(Ti₀.₉₇Fe³⁺₀.₀₃)Si₁.₀₀O₄.₉₆, the Handbook reference analysis), grown LATE on the quartz druse from the cooling cleft fluid (≤~400°C), versus the higher-T (690-740°C magmatic / 250-670°C hydrothermal) disseminated accessory titanite. Common substitutions Al³⁺/Fe³⁺ → Ti⁴⁺ (charge-balanced by F⁻/OH⁻ → O), minor Nb + REE. Discriminator from cousins: adamantine-resinous luster + wedge/sphenoid habit + high dispersion + monoclinic flattening; vs epidote (prismatic, pistachio-green, {001} cleavage); vs olivine/chondrodite (different habit); the brown wedge with 'fire' is unmistakable. Refs: Anthony et al. Handbook of Mineralogy 2001 (titanite sheet — Göschener Alp alpine-cleft analysis); Deer Howie Zussman 1982 Rock-Forming Minerals v.1A pp.443-466; Oberti, Smith, Rossi & Caucia 1991 EJM 3:777-792.",
+      "scenarios": [
+        "tormiq_alpine_cleft"
+      ],
+      "T_range_C": [
+        150,
+        700
+      ],
+      "T_optimum_C": [
+        250,
+        450
+      ],
+      "T_behavior": "wide",
+      "pH_dissolution_below": 5.0,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Ca": 40,
+        "Ti": 0.5,
+        "SiO2": 80
+      },
+      "_ingredients_note": "Ca ≥ 40 + Ti ≥ 0.5 + SiO2 ≥ 80. Ti is the LIMITING (rare) ingredient — most broths carry no Ti, so the Ti floor is the discriminator; Ca + Si are abundant in cleft fluids. NO redox gate (Ti⁴⁺ is fO2-insensitive — fires oxidizing or reducing). T 150-700°C (covers magmatic-to-hydrothermal), sweet spot 250-450°C (the alpine-cleft / low-T hydrothermal band, late on quartz). pH 6.0-9.5 near-neutral. Mass balance debits Ti 1:1, so a Ti-trace fluid self-limits to a few crystals (the correct minor-accessory footprint). Activity correction applied.",
+      "trace_ingredients": {
+        "Cr": "Cr³⁺ → Ti gives the prized CHROME-GREEN alpine-cleft variety (>0.5 ppm in this model)",
+        "Fe": "Fe³⁺ → Ti (charge-balanced by OH/F) gives the common brown-to-black igneous/metamorphic type (>15 ppm)",
+        "Nb": "minor Nb⁵⁺ + REE substitution at the Ti site (not modeled separately)"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": "INERT in the simulated range — titanite is refractory (stable to ~1100°C; melts ~1382°C), well above any vug-fluid temperature.",
+      "thermal_decomp_products": {},
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": "Fe",
+        "status": "Generally non-fluorescent — Ti + Fe quench any luminescence; rare REE-bearing titanite may show a weak response, not diagnostic."
+      },
+      "twin_laws": [
+        {
+          "name": "contact_100",
+          "miller_indices": "{100}",
+          "trigger": "growth",
+          "probability": 0.15,
+          "status": "newly_added",
+          "_source": "Anthony et al. Handbook of Mineralogy 2001 (titanite sheet: 'Twinning: on {100}, contact and penetration twins'); Deer Howie Zussman 1982 v.1A:443-466. The {100} contact twin is the classic titanite twin; p=0.15 for the 'common' qualifier. Lamellar {221} (the parting law) not modeled separately."
+        }
+      ],
+      "acid_dissolution": {
+        "pH_threshold": 5.0,
+        "reaction": "CaTiSiO5 + H⁺ → Ca²⁺ + Ti(OH)4 + H4SiO4 — releases Ca + Ti + Si below pH 5.0. Slow kinetics; titanite is fairly resistant.",
+        "products": {
+          "Ca": 0.015,
+          "Ti": 0.015,
+          "SiO2": 0.02
+        }
+      },
+      "habit": "sphenoid_wedge",
+      "_scenarios_note": "Live at seed 42 in tormiq_alpine_cleft (3, robust — the alpine-cleft showcase, replaces the magnetite Ti-Fe-oxide stand-in) + porphyry (3 — the classic igneous-accessory titanite). Trace 1-crystal marginals in jeffrey_mine (rodingite accessory) + sunnyside. grimsel_alpine_cleft added when that scenario ships.",
+      "color_rules": {
+        "honey_brown": {
+          "default": true,
+          "trigger": "no Cr/low Fe — honey-yellow to brown, adamantine with high dispersion (the gem 'fire')"
+        },
+        "chrome_green": {
+          "trigger": "Cr > 0.5 ppm — Cr³⁺ → Ti, the prized alpine-cleft green variety"
+        },
+        "brown_black": {
+          "trigger": "Fe > 15 ppm — Fe³⁺-rich, the common igneous/metamorphic type"
+        }
+      },
+      "narrate_function": null,
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new v205 (2026-06-19). Monoclinic Ca-Ti-Si nesosilicate (sphene); de-orphans PROPOSALS-LEDGER §A #13. The first Ti-essential silicate in the catalog — Ti is the discriminator (the rare ingredient), no redox gate (Ti⁴⁺ fO2-insensitive), color is a Cr/Fe trace dispatch in grow (chrome-green alpine vs brown common). Substrate priority: quartz (cleft druse) > adularia/feldspar > epidote > calcite > wall. Built for the forthcoming grimsel_alpine_cleft scenario AND now fires in tormiq_alpine_cleft (Ti=1 broth — replaces the magnetite stand-in for the Ti-Fe oxide stage noted in that scenario). Twin {100} contact (Handbook 2001). Cell from Oberti et al. 1991 EJM 3:777.",
+      "late_stage_propensity": 0.6,
+      "_late_stage_note": "Late in the alpine-cleft paragenesis — titanite wedges grow on the quartz druse after the main quartz/epidote stages, with apatite + calcite, as the fissure fluid cools below ~400°C.",
+      "class_color": "#c89a4e"
+    },
     "chrysotile": {
       "formula": "Mg3Si2O5(OH)4",
       "nucleation_sigma": 1.2,

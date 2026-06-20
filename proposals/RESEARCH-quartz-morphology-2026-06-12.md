@@ -146,3 +146,15 @@ fires when a future skeletal scenario lands — the fluorite-REE-octahedra
 precedent) — honest but zero current payoff and real render work for it.
 Recommendation: (a) now or (b) when an Alpine-cleft arc is wanted; NOT
 (c) by itself. The benches are kept so any of these can resume cold.
+
+**RESOLVED (2026-06-19): path (b) chosen** — building a Swiss Central-Alps
+(Grimsel / Aar massif) alpine-cleft scenario as the content home (dossier:
+research-grimsel-alpine-cleft.md). Quartz habits the cleft homes: Tessin
+(steep rhomb, high-T+CO2+slow), sceptre (crack-seal hiatus→fresh pulse),
+fenster (rapid-pulse moment), and — boss add — GWINDEL: the twisted
+en-echelon plate column that is EXCLUSIVE to alpine-type fissures and forms
+in weakly-metamorphosed igneous rock (the Aar granite is a type setting),
+always with macromosaic normal-habit quartz. Mechanism = cumulative c-axis
+rotation during slow continuous cleft opening → driven by the D2/D3
+strike-slip reactivation (rotating stress field), a FORM/render axis not a
+σ band. Arc tasks #106–111; titanite (#106, de-orphans §A #13) first.

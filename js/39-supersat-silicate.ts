@@ -334,6 +334,29 @@ const MINERAL_GATES_epidote: MineralGates = {
   _notes: 'Ca2(Al,Fe3+)3(SiO4)(Si2O7)O(OH) sorosilicate, monoclinic P2_1/m. Fe3+ endmember of clinozoisite-epidote series — needs OXIDIZED fluid (near HM buffer) for the pistachio-green Fe3+; reducing sends Fe to magnetite/actinolite (Fe2+). Al-rich Ca-silicate, alpine-cleft Tormiq/Knappenwand. The O2_min gate is the discriminator. Twin {100} lamellar.',
 };
 
+// v205 (2026-06-19): titanite (sphene) CaTiSiO5 — the Aar-massif / Grimsel
+// alpine-cleft Ti-nesosilicate, the new mineral that de-orphans PROPOSALS-
+// LEDGER §A #13 and joins BOTH the new grimsel cleft AND the existing tormiq
+// cleft (where magnetite had stood in for the Ti-Fe oxide stage). Ti is the
+// LIMITING (rare) nutrient — most broths carry no Ti, so the Ti floor is the
+// discriminator; Ca + Si are abundant in cleft fluids. Redox-INSENSITIVE
+// (Ti4+ regardless of fO2 — unlike epidote, NO redox gate; the green vs brown
+// variety is a Cr/Fe COLOR dispatch in grow, not a gate). Alpine-cleft titanite
+// is the LOW-T hydrothermal end (late on quartz, ≤~400°C), near-end-member
+// Ca-Ti-Si, low-F (Göschener Alp: Ca1.00(Ti0.97Fe0.03)Si1.00O4.96 — Handbook of
+// Mineralogy 2001; Oberti et al. 1991 EJM 3:777). Magmatic/metamorphic titanite
+// runs hotter (690-740°C) — the broad T window covers both, the sweet spot
+// favors the cleft band.
+const MINERAL_GATES_titanite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 150, T_max: 700, T_optimal: 350,
+  fluid_min: { Ca: 40, Ti: 0.5, SiO2: 80 },
+  pH_min: 6.0, pH_max: 9.5,
+  surface_energy: 'medium',
+  _sources: ['titanite engine v205', 'Anthony et al. Handbook of Mineralogy 2001 (titanite sheet — Göschener Alp alpine-cleft analysis)', 'Deer Howie Zussman 1982 RFM v.1A:443-466', 'Oberti Smith Rossi & Caucia 1991 EJM 3:777-792'],
+  _notes: 'CaTiSiO5 (CaTiO[SiO4]) nesosilicate, monoclinic P2_1/a. Wedge-shaped (sphenoid) — the classic alpine-cleft habit. Ti is the rare ingredient (the discriminator); Ca+Si abundant. Redox-INSENSITIVE (no redox gate; green=Cr, brown=Fe color dispatch in grow). Alpine-cleft = low-T near-end-member Ca-Ti-Si (late on quartz). Twin {100} contact/penetration.',
+};
+
 // v200 (2026-06-17): the Deccan Stage-II zeolite pair. stilbite + heulandite
 // are the stilbite/heulandite dehydration couple (Kiseleva, Navrotsky,
 // Belitsky & Fursenko 2001, Am.Mineral. 86:448: Ca-stilbite = Ca-heulandite + H2O).
@@ -1379,6 +1402,37 @@ Object.assign(VugConditions.prototype, {
     if (pH >= 6.5 && pH <= 8.5) sigma *= 1.2;
     else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.5) * 0.3);
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'epidote');
+    return Math.max(sigma, 0);
+  },
+
+  // v205 (2026-06-19): titanite (sphene) CaTiSiO5 — Aar/Grimsel alpine-cleft
+  // Ti-nesosilicate (gate MINERAL_GATES_titanite above). Ti is the LIMITING
+  // nutrient (rare in broths → the discriminator); Ca + Si are abundant in
+  // cleft fluids. No redox gate (Ti4+ is fO2-insensitive). T sweet spot is the
+  // alpine-cleft / hydrothermal band 250-450°C (late, low-T on quartz); the
+  // wide [150,700] window also admits the hotter magmatic/metamorphic type at
+  // attenuated σ. Mass balance debits Ti, so a Ti-trace fluid self-limits to a
+  // few crystals — the correct "minor accessory" footprint.
+  supersaturation_titanite() {
+    const g = MINERAL_GATES_titanite;
+    if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Ti < g.fluid_min!.Ti
+        || this.fluid.SiO2 < g.fluid_min!.SiO2) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    const ti_f = Math.min(this.fluid.Ti / 1.0, 2.5);   // Ti=1 → 1.0; the rare ingredient
+    const ca_f = Math.min(this.fluid.Ca / 200.0, 1.8);
+    const si_f = Math.min(this.fluid.SiO2 / 200.0, 1.5);
+    let sigma = ti_f * ca_f * si_f;
+    // T sweet spot: alpine-cleft / hydrothermal titanite 250-450°C (late on quartz)
+    const T = this.temperature;
+    if (T >= 250 && T <= 450) sigma *= 1.3;
+    else if (T < 250) sigma *= Math.max(0.4, (T - 150) / 100 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 450) / 250);
+    // pH sweet spot near-neutral (coexists with adularia + calcite + epidote)
+    const pH = this.fluid.pH;
+    if (pH >= 6.5 && pH <= 8.5) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.5) * 0.25);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'titanite');
     return Math.max(sigma, 0);
   },
 

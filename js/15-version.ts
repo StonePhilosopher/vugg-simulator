@@ -11306,5 +11306,20 @@
 //        CO3<=50 windows (floor-only first pass had killed dioptase/halite). azurite
 //        now fires (σ peak ~2.3); whole-fleet seed-42 diff = EXACTLY one line,
 //        bisbee azurite 0->4, zero other drift. SIM 203 -> 204.
-const SIM_VERSION = 204;
+//   v205 — TITANITE (sphene) CaTiSiO5 — de-orphans PROPOSALS-LEDGER §A #13, and
+//        the first piece of the ALPINE-CLEFT arc (the quartz-morphology arc's
+//        content home; the scouting at 644b267 proved quartz morphology is
+//        content-blocked, so we build the Grimsel/Aar Swiss cleft to home it).
+//        New silicate engine: MINERAL_GATES_titanite + supersaturation_titanite
+//        (js/39), grow_titanite wedge/sphenoid + Cr/Fe color dispatch (js/59),
+//        _nuc_titanite + iterator (js/89), MINERAL_ENGINES (js/65), stoichiometry
+//        (js/19), structural.json, minerals.json. Ti is the LIMITING ingredient
+//        (the discriminator — rare in broths); NO redox gate (Ti4+ fO2-insensitive);
+//        green=Cr / brown=Fe is a trace COLOR dispatch in grow, not a gate. Alpine
+//        titanite = low-T near-end-member Ca-Ti-Si, late on quartz (Handbook of
+//        Mineralogy 2001 Göschener Alp analysis; Oberti et al. 1991 EJM 3:777).
+//        Footprint: fires in tormiq_alpine_cleft (Ti=1 broth — replaces the
+//        magnetite stand-in for the Ti-Fe oxide stage) + any other Ca-Ti-Si fluid
+//        the baseline-diff surfaces. Cap 3 (minor accessory). SIM 204 -> 205.
+const SIM_VERSION = 205;
 

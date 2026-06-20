@@ -2119,6 +2119,70 @@ function grow_epidote(crystal, conditions, step) {
   });
 }
 
+// v205 (2026-06-19): titanite (sphene) CaTiSiO5 — Aar/Grimsel alpine-cleft
+// Ti-nesosilicate. Habit dispatch: wedge-shaped sphenoid (the classic, the
+// default cleft look) ↔ prismatic [110] (high excess) ↔ flattened-tabular
+// ∥{001} (low excess). COLOR is a trace-cation dispatch (NOT a σ gate, per the
+// vugg-add-mineral trace pattern): Cr → the prized chrome-green alpine variety;
+// Fe-rich → brown-black common type; else honey-yellow with the adamantine
+// "fire" (high dispersion). Mass balance CaTiSiO5 (1:1:1) — Ti debit self-limits.
+function grow_titanite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_titanite();
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.04);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — titanite releases Ca + Ti + Si`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 1.4 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  if (excess > 1.4) {
+    crystal.habit = 'prismatic';
+    crystal.dominant_forms = ['prismatic [110] elongation', 'wedge terminations'];
+  } else if (excess < 0.4) {
+    crystal.habit = 'flattened_tabular';
+    crystal.dominant_forms = ['tabular ∥{001}', 'platy sphenoid'];
+  } else {
+    crystal.habit = 'sphenoid_wedge';
+    crystal.dominant_forms = ['classic wedge-shaped sphenoid', 'flattened ∥{001}', '{100} contact twin'];
+  }
+
+  // Color dispatch — trace-cation, NOT a sigma gate (titanite fires regardless)
+  let color_note;
+  const cr = conditions.fluid.Cr ?? 0;
+  if (cr > 0.5) color_note = 'chrome-green (Cr³⁺→Ti — the prized alpine-cleft variety)';
+  else if (conditions.fluid.Fe > 15) color_note = 'brown-to-black (Fe-rich — common igneous/metamorphic type)';
+  else color_note = 'honey-yellow to brown, adamantine with high dispersion (the gem "fire")';
+
+  // Substrate flavor
+  const pos = crystal.position || '';
+  let substrate_flavor = '';
+  if (pos.includes('quartz')) substrate_flavor = ' perched on quartz — the alpine-cleft signature';
+  else if (pos.includes('feldspar')) substrate_flavor = ' with adularia — low-T cleft feldspar';
+  else if (pos.includes('epidote')) substrate_flavor = ' with epidote — the Ca-Ti-Fe cleft suite';
+  else if (pos.includes('calcite')) substrate_flavor = ' with calcite — late cooling stage';
+
+  // Mass-balance debits — CaTiSiO5 (1:1:1); Ti is trace so this self-limits
+  conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.015, 0);
+  conditions.fluid.Ti = Math.max(conditions.fluid.Ti - rate * 0.015, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.020, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Cr: cr > 0.5 ? cr * 0.005 : 0,
+    note: `titanite ${crystal.habit}, ${color_note}${substrate_flavor}; monoclinic CaTiSiO₅, H 5-5.5, adamantine-resinous, {110} cleavage`,
+  });
+}
+
 // v112 (2026-05-20): Grossular garnet Ca3Al2(SiO4)3 — cubic Ia-3d
 // Ca-Al endmember of the garnet group. Three settings:
 //   - Rodingite metasomatism (Jeffrey + Italian Alps + Asbestos Hill NL).

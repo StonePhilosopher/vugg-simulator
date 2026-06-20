@@ -341,6 +341,8 @@ const MINERAL_ENGINES = {
   prehnite: grow_prehnite,
   // v196 (2026-06-15): epidote — Fe3+ alpine-cleft sorosilicate (Tormiq, Pakistan).
   epidote: grow_epidote,
+  // v205 (2026-06-19): titanite (sphene) — Aar/Grimsel alpine-cleft Ti-nesosilicate.
+  titanite: grow_titanite,
   // v200 (2026-06-17): the Deccan Stage-II zeolite couple. stilbite (cooler,
   // 28 H2O, peach sheaves) + heulandite (warmer dehydration product, 6 H2O,
   // coffin tablets). Fills the deccan_zeolite Stage-II narrative gap.
