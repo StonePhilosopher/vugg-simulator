@@ -223,6 +223,21 @@ enclosure mechanic and an over-fed accessory before you suspect the headline.**
 
 ## 8. THE NEXT ARC — a real deformation / shear field (boss-requested, 2026-06-20)
 
+> **⚠ SUPERSEDED 2026-06-20 by `proposals/RESEARCH-deformation-shear-2026-06-20.md`.**
+> Before building, the science was checked (boss directive) — and the §8 design
+> below does NOT survive it. The "one shear field crystals integrate as they
+> grow" conflated three categories; NONE of the four named tenants is driven by
+> an external tectonic shear field integrated during growth (gwindel = spiral-
+> growth Eshelby twist; saddle dolomite = T-roughening growth-defect; bent
+> crystals + mech twins = POST-GROWTH overprints). The honest reframe is THREE
+> separate mechanics (research doc §5). **Step 1 SHIPPED:** saddle dolomite
+> curved-face render (`5a6e52d`, render-only, SIM-neutral). **Step 2 (gwindel):**
+> the shear re-pin in §8.5 is STRUCK — leave the v207 growth-duration proxy
+> (it's closer to the real Eshelby-twist physics than a shear field would be).
+> **Step 3:** the genuine "deformation" arc is a POST-GROWTH OVERPRINT pass (bent
+> crystals, mechanical twins) keyed to a scenario deformation event — NOT a
+> grow-integrate field. Read the research doc, not the design below.
+
 Gwindel shipped as an **abstraction**: with no stress field in the sim, js/45
 `classifyQuartzGwindel` just designates the largest cleft quartz as the twisted
 showpiece (twist° ∝ growth duration), gated on `wall.alpine_cleft`. It reads

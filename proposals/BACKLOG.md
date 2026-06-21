@@ -2,6 +2,33 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🪨 SESSION HANDOFF (2026-06-20) — DEFORMATION ARC, science-verified + step 1 shipped
+>
+> **Master doc: `proposals/RESEARCH-deformation-shear-2026-06-20.md`.** Boss asked
+> to "research + double-check the science before building." Did — and the handoff
+> §8 "one shear field" design does NOT survive it (4 cross-checked passes,
+> citations verified). NONE of §8's four tenants is an external shear field
+> integrated during growth: gwindel = spiral-growth Eshelby twist (Cordier &
+> Heidelbach 2013); saddle dolomite = T-roughening growth-defect (Gregg & Sibley
+> 1984); bent crystals + mech twins = POST-GROWTH overprints. Honest reframe =
+> THREE separate mechanics (research §5). Boss chose "both, in sequence."
+>
+> - **✅ STEP 1 SHIPPED — saddle (baroque) dolomite curved-face render** (`5a6e52d`,
+>   render-only, SIM-NEUTRAL, baseline byte-identical seed42_v207). `js/99i
+>   _makeSaddleRhomb` bows the 6 {104} faces convexly (watertight, 576-vert), gated
+>   on the saddle_rhomb habit + keyed to growth T. Fixes the saddle_rhomb→hex-prism
+>   token wart. Engine classifier already science-correct (probe: saddle only in
+>   warm reactive_wall; ambient stays massive). Preview-verified, 3 test pins.
+> - **STEP 2 (gwindel) — DECIDED, no build:** the §8.5 shear re-pin is STRUCK. Leave
+>   the v207 growth-duration proxy (closer to real Eshelby physics than shear).
+> - **⏭ STEP 3 (the real "deformation" arc) — NOT STARTED:** a POST-GROWTH OVERPRINT
+>   pass keyed to a scenario deformation event (bent quartz/stibnite, calcite
+>   mechanical e-twins, deformation lamellae). Architecturally NEW (deform a
+>   FINISHED crystal), not a grow-integrate field. The _makeSaddleRhomb face-perturb
+>   + the gwindel SEG-loop twist are the render groundwork. Design in research §5.3.
+>
+> ---
+>
 > ## ⛰️ SESSION HANDOFF (2026-06-19) — THE ALPINE-CLEFT ARC ✅ SHIPPED (Grimsel SIM 206)
 >
 > **Master doc: `proposals/HANDOFF-ALPINE-CLEFT-2026-06-19.md`** (read it). The
