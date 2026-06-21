@@ -4,6 +4,9 @@ Living list of open work items, captured from session conversations so context s
 
 > ## ✚ SESSION HANDOFF (2026-06-21, later) — ANDALUSITE + CHIASTOLITE CROSS ✅ SHIPPED (SIM 209)
 >
+> **Current handoff doc: `proposals/HANDOFF-CRYSTAL-FACE-REALISM-2026-06-21.md`** (read
+> it first — full state, the ranked next-builder menu, the traps, + the maker's mark).
+>
 > The second sector-zoning tenant, and the iconic one — boss directive "add the
 > mineral (researched) → continue the arc." Master doc: PROPOSALS-crystal-face-
 > realism-2026-06-21.md §1 (second SHIPPED footer). Research-first verified to
