@@ -284,6 +284,60 @@ fleet until a scenario opts in); render verified in the preview (jsdom can't).
 
 ---
 
+## 5.6 Note to the next builder (speak my truth — 2026-06-21)
+
+You are inheriting a face that is finally *specimen-specific* — saddle dolomite
+bows, gwindel twists, quartz bends where the thrust sheared it. Here is what the
+work taught, beyond the code:
+
+**Research-first is the work, not a delay before it.** The §8 design at the top of
+this file was wrong, and the only reason it never became code is we read the
+literature before writing a line. "Just build what the handoff says" would have
+re-pinned gwindel onto a shear field the science doesn't support — a confabulation
+in a lab coat, shipped. The cheapest bug is the one caught in a citation. When a
+prior handoff hands you a *mechanism*, verify the mechanism, not just the plan.
+
+**The one question that organizes this whole space:** does the feature get recorded
+WHILE the crystal grows (integrate it per-zone), or stamped on a FINISHED crystal
+(a post-growth overprint pass)? §8 conflated the two and it poisoned the design.
+Growth-defect (saddle, gwindel) and syn-growth integrate; bent crystals, mechanical
+twins, deformation lamellae are overprints. Ask this first of any new realism idea.
+
+**Render-only is a real, liberating category — don't reflexively bump+rebake.**
+Saddle and bent both shipped SIM-neutral, byte-identical, because curvature and a
+late bend are *display facts, not chemistry facts*. The engine/render separation is
+clean; lean on it. Always ask whether determinism actually moved (baseline-diff
+0/35) before paying for a rebake. When it didn't, a SIM bump is provenance only —
+and a render-only change can honestly be SIM-neutral (the saddle/sonifier line).
+
+**A trick you'll want:** to verify module-scoped render geometry you can't reach
+from the console, temp-expose the builder on `window`, inject it into the live
+THREE scene, screenshot, then REMOVE before commit. It's how saddle and bent were
+both proven decisively — necessary because creative-mode free-play does NOT apply a
+scenario's scripted events, so a scenario-gated feature (the tormiq shear) won't
+appear there.
+
+**An honest gap beats a dishonest band.** Fenster stayed unbuilt; α-factor and BFDH
+are written up as probable non-builds. Writing down *why you didn't build* is as
+much the job as building — it stops the next builder re-deriving a dead end, and it
+keeps the cabinet true.
+
+**The frontier is the architecture, not a mineral.** Faces are per-*zone* and the
+render is one-material-per-crystal. The next era of realism (sector/hourglass
+zoning — see PROPOSALS-crystal-face-realism) is the first thing that genuinely needs
+*per-face* state and spatially-varying surface colour. That fault line, not any one
+species, is what gates what comes next.
+
+**Last:** today was fast because of yesterday's bedding planes — the morphology
+registry, the gwindel SEG-loop and saddle face-perturb that the bend render reused
+verbatim, the `spots` directive pattern the deformation event copied wholesale.
+None of this was solo speed; it was diagenesis. Leave the next layer the same
+favor: a render hook that generalizes, a directive that mirrors an existing one, a
+gap labelled honestly. Every specimen should survive a geologist picking it up —
+true down to why the prism is bent. That standard is slow and it is the point.
+
+— still the builder, signing off this arc.
+
 ## 6. Carry-forward gotchas (from §9 + this pass)
 - VugWall silently drops unknown wall fields (js/22 whitelist) — any new
   `deformation_event` / roughening flag must be added there.
