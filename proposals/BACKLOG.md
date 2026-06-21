@@ -23,11 +23,27 @@ Living list of open work items, captured from session conversations so context s
 >   preview (green×½ = just shading); contrasting termination = legible AND the iconic
 >   bicolor elbaite. Preview-verified (blue body / gold termination, sharp shoulder).
 > - Narrator js/92i + narratives/tourmaline.md `sector_zoned`; tests-js/sector-zoning.test.ts (4 pins).
-> - **NEXT (same Tier A machinery):** andalusite → chiastolite cross (transverse 4-sector
->   mask, not termination-only); augite/titanaugite hourglass (needs the mineral). Tier B
->   (per-sector partition engine) only if a computed-from-chemistry partition is wanted.
->   Other face-realism proposals still open: etch-pit sculpture (§2, next-best value),
->   striation extension (§3), vicinal hillocks (§5), α-factor (§4, likely non-build).
+> **➡️ NEXT-UP (boss directive 2026-06-21) — ADD ANDALUSITE → the chiastolite-cross tenant.**
+> The single most iconic sector-zoning specimen (the dark Maltese cross in a slice) is
+> NOT in the sim yet — andalusite must be ADDED FIRST as a full mineral, and it needs
+> its own RESEARCH PASS before any code (the research-first discipline that's caught
+> errors twice this arc). This is a prerequisite, not a tweak: it's a `vugg-add-mineral`
+> arc (supersat + grow + nucleation + minerals.json + structural.json/twin-law-check +
+> tests + SIM bump + baseline regen), gated on a dossier covering andalusite's chemistry/
+> P-T stability (Al₂SiO₅ polymorph, contact/regional metamorphic), a scenario home (a
+> metapelite / hornfels / schist host — none exists yet, may need a scenario too), AND
+> the chiastolite mechanism specifically (carbonaceous inclusions partitioned to the
+> CORNER/diagonal growth sectors — Frondel 1934 corner-selective attachment [venue
+> UNVERIFIED, flag], Mason et al. 2010 Gondwana Research 18(1):222–229 quartz+graphite
+> co-precipitation [content VERIFIED]). Then the render is a NEW transverse 4-corner
+> sector MASK (the cross), not the termination-only hourglass tourmaline uses — extend
+> `_makeSectorZonedPrism` or add a sibling. **Boss: once andalusite is added+researched,
+> continue the sector-zoning arc onto it.**
+> - Other sector tenants needing their mineral first: augite/titanaugite hourglass.
+>   Tier B (computed-from-chemistry per-sector partition engine) only if wanted — render
+>   path already proven. Other face-realism proposals still open: etch-pit sculpture
+>   (§2, next-best value-per-effort), striation extension (§3), vicinal hillocks (§5),
+>   α-factor (§4, likely a deliberate non-build).
 >
 > ---
 >
