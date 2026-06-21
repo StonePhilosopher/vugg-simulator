@@ -190,6 +190,10 @@ Object.assign(VugSimulator.prototype, {
   } else if (varieties.has('achroite')) {
     parts.push(narrative_variant('tourmaline', 'achroite') || 'Achroite — colorless elbaite.');
   }
+  if (c._sectorZoned) {
+    parts.push(narrative_variant('tourmaline', 'sector_zoned')
+      || 'Sector (hourglass) zoning — the prism faces and the pyramidal termination grew at different rates and trapped trace elements differently, so colour partitions by growth SECTOR with a sharp, geometry-locked boundary (Dowty 1976). Elbaite/liddicoatite slices show this as the famous radial colour wedges.');
+  }
   parts.push(narrative_closing('tourmaline') || 'The cross-section reads like a tree-ring record.');
   return parts.filter(p => p).join(' ');
 },

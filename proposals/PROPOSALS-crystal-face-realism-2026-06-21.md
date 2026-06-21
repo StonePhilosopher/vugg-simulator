@@ -81,6 +81,37 @@ vertex-colour hourglass on one mesh before committing to Tier B.
 - Render spike: can js/99i's BufferGeometry carry per-vertex colour cleanly through
   the existing material path? (decides Tier B feasibility.)
 
+### ✅ SHIPPED — Tier A, 2026-06-21 (render-only, SIM-neutral, byte-identical)
+Built as the boss-chosen first crystal-face-realism pickup. Render spike answered
+YES: the cavity mesh already uses a `vertexColors` MeshStandardMaterial (js/99i:105),
+so per-vertex colour rides the existing material path cleanly — Tier B is de-risked
+for whenever it's wanted. Tier A wiring (mirrors saddle/bent):
+- **Science verified first** (research-first discipline): Dowty 1976 Am.Min.
+  61:460–469 (the protosite model, Part I+II both VERIFIED to the MSA archive),
+  Ferguson 1973 Min.Mag. 39:321 (titanaugite hourglass, Al-for-Si + Ti, VERIFIED),
+  chiastolite corner-sector geometry VERIFIED. Tourmaline is the only sector-zoned
+  mineral in the catalogue → first tenant; chiastolite (andalusite) is THE iconic
+  cross but needs andalusite added first (future add-mineral tenant, documented).
+- **classifySectorZoning** (js/45, post-growth like gwindel/sceptre/deformation):
+  tags `crystal._sectorZoned = {kind:'hourglass'}` on registered sector minerals
+  (`SECTOR_ZONED_MINERALS = {tourmaline}`) that grew past `SECTOR_ZONED_MIN_UM`.
+  PURE tagging, no rng/fluid → baseline byte-identical (0/35 diff), no SIM bump.
+- **`_makeSectorZonedPrism(bodyRGB, termRGB)`** (js/99i): hex-prism-with-pyramid
+  carrying ABSOLUTE per-vertex colours — prism body = class_color, termination =
+  `class_color.offsetHSL(0.45, 0.12, -0.04)` (hue-rotated contrast). A pure darken-
+  MULTIPLIER was tried first and **failed the preview** — green×½ just reads as
+  shading (hue-dependent dead end); the contrasting termination is both more legible
+  AND geologically the iconic bicolor elbaite. Material: `color=white` +
+  `vertexColors`. Cached per base colour. Hook gated on `_sectorZoned` + prism token.
+- Narrator `js/92i` + `narratives/tourmaline.md` `sector_zoned` variant; test
+  `tests-js/sector-zoning.test.ts` (4 pins). Preview-verified via standalone-scene
+  injection (blue body / gold termination, sharp shoulder boundary).
+- **NEXT (same Tier A machinery):** add andalusite → chiastolite cross (transverse
+  4-sector pattern, needs a corner-sector colour mask rather than termination-only);
+  augite/titanaugite hourglass (needs the mineral). Tier B (per-sector partition
+  engine) only if a computed-from-chemistry partition is wanted — the render path is
+  proven, the cost is the per-face engine state + a dark-observe pass.
+
 ---
 
 ## 2. ETCH-PIT / DISSOLUTION SCULPTURE — best value-per-effort

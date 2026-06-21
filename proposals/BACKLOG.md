@@ -2,6 +2,35 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 💎 SESSION HANDOFF (2026-06-21) — SECTOR (HOURGLASS) ZONING ✅ SHIPPED (Tier A)
+>
+> **Master doc: `proposals/PROPOSALS-crystal-face-realism-2026-06-21.md` §1** (SHIPPED
+> footer). Boss: "lets start with the hourglass zoning" → the first crystal-face-realism
+> pickup. Research-first verified the science (Dowty 1976 Am.Min. 61:460–469 protosite
+> model — Part I+II both VERIFIED to MSA archive; Ferguson 1973 Min.Mag. 39:321
+> titanaugite hourglass; chiastolite corner-sector geometry).
+>
+> **✅ SHIPPED — sector zoning Tier A, render-only, SIM-NEUTRAL, byte-identical (0/35).**
+> No SIM bump (still 208). Mirrors the saddle precedent:
+> - `classifySectorZoning` (js/45, post-growth) tags `crystal._sectorZoned={kind:'hourglass'}`
+>   on `SECTOR_ZONED_MINERALS={tourmaline}` past `SECTOR_ZONED_MIN_UM`. Pure tagging.
+> - `js/99i _makeSectorZonedPrism(bodyRGB,termRGB)` — hex-prism-with-pyramid with ABSOLUTE
+>   per-vertex colours: body=class_color, termination=`offsetHSL(0.45,0.12,-0.04)`
+>   (hue-rotated contrast). Material color=white + vertexColors; gated on prism token,
+>   cached per base colour. **The render spike (the proposal's gating unknown) PASSED:**
+>   the cavity mesh already uses a vertexColors material, so per-vertex colour rides the
+>   existing path — Tier B de-risked. A pure darken-MULTIPLIER was tried first and FAILED
+>   preview (green×½ = just shading); contrasting termination = legible AND the iconic
+>   bicolor elbaite. Preview-verified (blue body / gold termination, sharp shoulder).
+> - Narrator js/92i + narratives/tourmaline.md `sector_zoned`; tests-js/sector-zoning.test.ts (4 pins).
+> - **NEXT (same Tier A machinery):** andalusite → chiastolite cross (transverse 4-sector
+>   mask, not termination-only); augite/titanaugite hourglass (needs the mineral). Tier B
+>   (per-sector partition engine) only if a computed-from-chemistry partition is wanted.
+>   Other face-realism proposals still open: etch-pit sculpture (§2, next-best value),
+>   striation extension (§3), vicinal hillocks (§5), α-factor (§4, likely non-build).
+>
+> ---
+>
 > ## 🪨 SESSION HANDOFF (2026-06-20) — DEFORMATION ARC, science-verified + step 1 shipped
 >
 > **Master doc: `proposals/RESEARCH-deformation-shear-2026-06-20.md`.** Boss asked

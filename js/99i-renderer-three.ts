@@ -786,6 +786,49 @@ function _makeHexPrismWithPyramid(): any {
   return geom;
 }
 
+// SECTOR-ZONED PRISM — sector (hourglass) zoning render (crystal-face realism arc
+// 2026-06-21, PROPOSALS-crystal-face-realism §1). Same hex-prism-with-pyramid
+// silhouette as _makeHexPrismWithPyramid, but carrying a baked per-VERTEX COLOUR
+// attribute that paints the PYRAMID (termination) sector a different colour from the
+// PRISM (side body) sector — the augite/titanaugite hourglass read (Ferguson 1973):
+// different growth faces incorporate trace elements at different rates (Dowty 1976),
+// so composition/colour partitions by growth SECTOR with a SHARP, geometry-locked
+// boundary (here the prism/pyramid shoulder ring — non-indexed verts keep it sharp).
+// Colours are ABSOLUTE (the material runs vertexColors with color=white, so the
+// vertex colour IS the final colour): body = the mineral's class_color, termination
+// = a hue-rotated contrast. A pure darken-MULTIPLIER was tried first and read as mere
+// shading (a hue-dependent dead end — green×½ is just darker green); the contrasting
+// termination is both more legible AND geologically the iconic bicolor elbaite
+// ("watermelon" green prism / pink tip — itself a sector/stage colour zoning). A
+// Tier A render abstraction — says "habit variant", not a computed per-element
+// partition. `bodyRGB`/`termRGB` are linear-space [r,g,b]; cached per base colour.
+function _makeSectorZonedPrism(bodyRGB: number[], termRGB: number[]): any {
+  const r = 0.50;             // prism / pyramid base radius (a-axis)
+  const yBase = -0.50;        // anchored at the wall
+  const yShoulder = 0.20;     // top of prism / start of pyramid
+  const yApex = 0.50;         // free tip
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const pc = () => colors.push(bodyRGB[0], bodyRGB[1], bodyRGB[2]);  // prism sector
+  const tc = () => colors.push(termRGB[0], termRGB[1], termRGB[2]);  // termination sector
+  for (let i = 0; i < 6; i++) {
+    const a0 = (i / 6) * Math.PI * 2;
+    const a1 = ((i + 1) / 6) * Math.PI * 2;
+    const x0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r;
+    const x1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
+    // prism side face — two triangles, all six verts in the prism (body) sector
+    _pushTri(positions, x0, yBase, z0, x1, yBase, z1, x1, yShoulder, z1); pc(); pc(); pc();
+    _pushTri(positions, x0, yBase, z0, x1, yShoulder, z1, x0, yShoulder, z0); pc(); pc(); pc();
+    // pyramid face — one triangle to the apex, termination sector
+    _pushTri(positions, x0, yShoulder, z0, x1, yShoulder, z1, 0, yApex, 0); tc(); tc(); tc();
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
 // tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
 // the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
@@ -3193,6 +3236,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // prism/spike/rhomb/scalene/botryoidal habit).
     const token = _resolveCrystalGeomToken(crystal, habitForGeom);
     let geom: any = null;
+    let isSectorZoned = false;   // sector (hourglass) zoning → vertexColors material
     // Calcite-morphology arc Phase 3: a calcite crystal whose zone stack
     // carries real stepped/hopper relief renders zone-stack TERRACES
     // instead of the smooth parent form. Gated on the parent-form tokens
@@ -3279,6 +3323,29 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       if (crystal._bentGeomAmt !== q) { crystal._bentGeom = _makeBentPrism(q); crystal._bentGeomAmt = q; }
       geom = crystal._bentGeom;
     }
+    // SECTOR (HOURGLASS) ZONING — crystals tagged by js/45 classifySectorZoning
+    // (tourmaline + future sector minerals) render with the pyramid termination
+    // sector painted a contrasting colour from the prism body (Dowty 1976 / Ferguson
+    // 1973 hourglass; for tourmaline this IS the iconic bicolor elbaite). Gated on
+    // the prism token so twins / dripstone keep their geometry. The geom bakes
+    // ABSOLUTE per-vertex colours (body = class_color, termination = hue-rotated
+    // contrast); the matOpts block below sets color=white + vertexColors so the baked
+    // colours render directly. Cached per base colour.
+    if (!geom && crystal._sectorZoned && token === 'prism') {
+      const szSpec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[crystal.mineral] : null;
+      const szBase = (szSpec && szSpec.class_color) || '#2f9e5e';
+      const key = '__sectorzoned_' + szBase;
+      geom = state.geomCache.get(key);
+      if (!geom) {
+        const body = new THREE.Color(szBase);
+        // termination sector: rotate hue ~160° + lift saturation, slight darken —
+        // a clear contrast for any base (green body → pink/magenta tip).
+        const term = body.clone().offsetHSL(0.45, 0.12, -0.04);
+        geom = _makeSectorZonedPrism([body.r, body.g, body.b], [term.r, term.g, term.b]);
+        state.geomCache.set(key, geom);
+      }
+      isSectorZoned = true;
+    }
     if (!geom) {
       geom = state.geomCache.get(token);
       if (!geom) {
@@ -3349,6 +3416,12 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       matOpts.transparent = true;
       matOpts.opacity = 0.42;
     }
+    // Sector (hourglass) zoning — the geom bakes ABSOLUTE per-vertex colours (body =
+    // class_color, termination = hue-rotated contrast). Set color=white so the
+    // material doesn't tint them and flip vertexColors so the baked colours render
+    // directly (the two sectors read as distinct colours, sharp boundary at the
+    // prism/pyramid shoulder).
+    if (isSectorZoned) { matOpts.color = 0xffffff; matOpts.vertexColors = true; }
     const mat = new THREE.MeshStandardMaterial(matOpts);
     _applyCavityClip(mat, state.clipUniforms);
 

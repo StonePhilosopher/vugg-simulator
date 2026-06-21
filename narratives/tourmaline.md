@@ -36,6 +36,10 @@ Schorl — the black Fe²⁺-dominant end-member that dominates the early phases
 
 Achroite — colorless elbaite. All trace elements muted or absent; the pure lithium-aluminum end-member looking through. Rare in the field, beautiful under UV sometimes from structural defects.
 
+## variant: sector_zoned
+
+Sector (hourglass) zoning — the prism faces and the pyramidal termination grew at different rates and trapped trace elements differently, so the color is partitioned not by growth STAGE but by growth SECTOR: each face carries the composition it preferred while it was advancing, with a sharp boundary where two sectors meet (Dowty 1976's protosite model). It is the same physics behind the dark titanaugite hourglass and the chiastolite cross; in elbaite/liddicoatite it shows as the famous radial color wedges of a sliced crystal — and as the bicolor "watermelon" prism, one end green, the other pink.
+
 ## closing
 
 The cross-section, if you sliced this crystal perpendicular to its c-axis, would read like a tree ring record — concentric zones of color marking each fluid event the vug witnessed.

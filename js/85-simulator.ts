@@ -760,6 +760,11 @@ class VugSimulator {
     // deformation directive (sim._deformationEvents). Pure tagging; no-op unless
     // a scenario declares one → byte-identical fleet. See js/45.
     classifyDeformation(this);
+    // Sector (hourglass) ZONING (crystal-face realism arc 2026-06-21) — tags
+    // sector-zoned minerals (tourmaline) so the renderer tints the termination
+    // sector apart from the prism body. Pure tagging, no-op unless a sector
+    // mineral grew → byte-identical fleet, SIM-neutral. See js/45.
+    classifySectorZoning(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

@@ -570,6 +570,40 @@ function classifyDeformation(sim: any) {
   }
 }
 
+// SECTOR (HOURGLASS) ZONING — different growth sectors (crystal faces) incorporate
+// trace elements at different rates, so composition (and colour) partitions by
+// GROWTH SECTOR rather than by concentric growth zone (Dowty 1976, Am.Min.
+// 61:460–469 — the protosite model: each growing face exposes a different partial-
+// coordination surface, so the same ion partitions differently per face, and
+// lateral step growth metastably BURIES that face-characteristic composition). The
+// visual signature is a SHARP, geometry-locked boundary between sectors — distinct
+// from the gradational boundary of oscillatory/concentric zoning. Iconic cases:
+// titanaugite hourglass (Ferguson 1973, Min.Mag. 39:321 — Al-for-Si + Ti darkens
+// the basal sectors), chiastolite andalusite (carbon to the corner sectors → the
+// Maltese cross), elbaite/liddicoatite radial colour sectors.
+//
+// Tier A render-only abstraction (PROPOSALS-crystal-face-realism-2026-06-21 §1):
+// this pass — run post-growth like the gwindel/sceptre/deformation classifiers —
+// just TAGS the well-documented sector-zoned minerals so the renderer draws a per-
+// sector tint (the termination sector ≠ the prism body sector, the augite hourglass
+// read). PURE tagging (no rng, no fluid) → render reads crystal._sectorZoned; the
+// engine baseline is untouched (gen-baseline serialises only counts/sizes), so this
+// is SIM-NEUTRAL & byte-identical, the saddle-dolomite precedent. Tag-once
+// (idempotent across the per-step calls). Tourmaline is the first tenant — the only
+// sector-zoned mineral in the catalogue (elbaite/liddicoatite colour sectors are
+// collector-iconic). Chiastolite (andalusite) — THE iconic sector-cross — needs
+// andalusite added first, a future add-mineral tenant.
+const SECTOR_ZONED_MINERALS: any = { tourmaline: true };
+const SECTOR_ZONED_MIN_UM = 50;   // need a real body + termination to partition
+function classifySectorZoning(sim: any) {
+  for (const c of sim.crystals) {
+    if (!c || c.dissolved || c._sectorZoned) continue;
+    if (!SECTOR_ZONED_MINERALS[c.mineral]) continue;
+    if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM) continue;
+    c._sectorZoned = { kind: 'hourglass' };
+  }
+}
+
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];

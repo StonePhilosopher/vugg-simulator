@@ -32720,6 +32720,42 @@ function classifyDeformation(sim) {
         }
     }
 }
+// SECTOR (HOURGLASS) ZONING — different growth sectors (crystal faces) incorporate
+// trace elements at different rates, so composition (and colour) partitions by
+// GROWTH SECTOR rather than by concentric growth zone (Dowty 1976, Am.Min.
+// 61:460–469 — the protosite model: each growing face exposes a different partial-
+// coordination surface, so the same ion partitions differently per face, and
+// lateral step growth metastably BURIES that face-characteristic composition). The
+// visual signature is a SHARP, geometry-locked boundary between sectors — distinct
+// from the gradational boundary of oscillatory/concentric zoning. Iconic cases:
+// titanaugite hourglass (Ferguson 1973, Min.Mag. 39:321 — Al-for-Si + Ti darkens
+// the basal sectors), chiastolite andalusite (carbon to the corner sectors → the
+// Maltese cross), elbaite/liddicoatite radial colour sectors.
+//
+// Tier A render-only abstraction (PROPOSALS-crystal-face-realism-2026-06-21 §1):
+// this pass — run post-growth like the gwindel/sceptre/deformation classifiers —
+// just TAGS the well-documented sector-zoned minerals so the renderer draws a per-
+// sector tint (the termination sector ≠ the prism body sector, the augite hourglass
+// read). PURE tagging (no rng, no fluid) → render reads crystal._sectorZoned; the
+// engine baseline is untouched (gen-baseline serialises only counts/sizes), so this
+// is SIM-NEUTRAL & byte-identical, the saddle-dolomite precedent. Tag-once
+// (idempotent across the per-step calls). Tourmaline is the first tenant — the only
+// sector-zoned mineral in the catalogue (elbaite/liddicoatite colour sectors are
+// collector-iconic). Chiastolite (andalusite) — THE iconic sector-cross — needs
+// andalusite added first, a future add-mineral tenant.
+const SECTOR_ZONED_MINERALS = { tourmaline: true };
+const SECTOR_ZONED_MIN_UM = 50; // need a real body + termination to partition
+function classifySectorZoning(sim) {
+    for (const c of sim.crystals) {
+        if (!c || c.dissolved || c._sectorZoned)
+            continue;
+        if (!SECTOR_ZONED_MINERALS[c.mineral])
+            continue;
+        if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM)
+            continue;
+        c._sectorZoned = { kind: 'hourglass' };
+    }
+}
 function classifyMorphologyStep(sim) {
     for (const mineral in MORPH_TH) {
         const th = MORPH_TH[mineral];
@@ -47742,6 +47778,11 @@ class VugSimulator {
         // deformation directive (sim._deformationEvents). Pure tagging; no-op unless
         // a scenario declares one → byte-identical fleet. See js/45.
         classifyDeformation(this);
+        // Sector (hourglass) ZONING (crystal-face realism arc 2026-06-21) — tags
+        // sector-zoned minerals (tourmaline) so the renderer tints the termination
+        // sector apart from the prism body. Pure tagging, no-op unless a sector
+        // mineral grew → byte-identical fleet, SIM-neutral. See js/45.
+        classifySectorZoning(this);
         // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
         // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).
         // When a StripRecorder is attached to the sim, capture one step's
@@ -59414,6 +59455,10 @@ Object.assign(VugSimulator.prototype, {
         }
         else if (varieties.has('achroite')) {
             parts.push(narrative_variant('tourmaline', 'achroite') || 'Achroite — colorless elbaite.');
+        }
+        if (c._sectorZoned) {
+            parts.push(narrative_variant('tourmaline', 'sector_zoned')
+                || 'Sector (hourglass) zoning — the prism faces and the pyramidal termination grew at different rates and trapped trace elements differently, so colour partitions by growth SECTOR with a sharp, geometry-locked boundary (Dowty 1976). Elbaite/liddicoatite slices show this as the famous radial colour wedges.');
         }
         parts.push(narrative_closing('tourmaline') || 'The cross-section reads like a tree-ring record.');
         return parts.filter(p => p).join(' ');
@@ -71616,6 +71661,57 @@ function _makeHexPrismWithPyramid() {
     geom.computeVertexNormals();
     return geom;
 }
+// SECTOR-ZONED PRISM — sector (hourglass) zoning render (crystal-face realism arc
+// 2026-06-21, PROPOSALS-crystal-face-realism §1). Same hex-prism-with-pyramid
+// silhouette as _makeHexPrismWithPyramid, but carrying a baked per-VERTEX COLOUR
+// attribute that paints the PYRAMID (termination) sector a different colour from the
+// PRISM (side body) sector — the augite/titanaugite hourglass read (Ferguson 1973):
+// different growth faces incorporate trace elements at different rates (Dowty 1976),
+// so composition/colour partitions by growth SECTOR with a SHARP, geometry-locked
+// boundary (here the prism/pyramid shoulder ring — non-indexed verts keep it sharp).
+// Colours are ABSOLUTE (the material runs vertexColors with color=white, so the
+// vertex colour IS the final colour): body = the mineral's class_color, termination
+// = a hue-rotated contrast. A pure darken-MULTIPLIER was tried first and read as mere
+// shading (a hue-dependent dead end — green×½ is just darker green); the contrasting
+// termination is both more legible AND geologically the iconic bicolor elbaite
+// ("watermelon" green prism / pink tip — itself a sector/stage colour zoning). A
+// Tier A render abstraction — says "habit variant", not a computed per-element
+// partition. `bodyRGB`/`termRGB` are linear-space [r,g,b]; cached per base colour.
+function _makeSectorZonedPrism(bodyRGB, termRGB) {
+    const r = 0.50; // prism / pyramid base radius (a-axis)
+    const yBase = -0.50; // anchored at the wall
+    const yShoulder = 0.20; // top of prism / start of pyramid
+    const yApex = 0.50; // free tip
+    const positions = [];
+    const colors = [];
+    const pc = () => colors.push(bodyRGB[0], bodyRGB[1], bodyRGB[2]); // prism sector
+    const tc = () => colors.push(termRGB[0], termRGB[1], termRGB[2]); // termination sector
+    for (let i = 0; i < 6; i++) {
+        const a0 = (i / 6) * Math.PI * 2;
+        const a1 = ((i + 1) / 6) * Math.PI * 2;
+        const x0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r;
+        const x1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
+        // prism side face — two triangles, all six verts in the prism (body) sector
+        _pushTri(positions, x0, yBase, z0, x1, yBase, z1, x1, yShoulder, z1);
+        pc();
+        pc();
+        pc();
+        _pushTri(positions, x0, yBase, z0, x1, yShoulder, z1, x0, yShoulder, z0);
+        pc();
+        pc();
+        pc();
+        // pyramid face — one triangle to the apex, termination sector
+        _pushTri(positions, x0, yShoulder, z0, x1, yShoulder, z1, 0, yApex, 0);
+        tc();
+        tc();
+        tc();
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
 // tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
 // the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
@@ -74053,6 +74149,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         // prism/spike/rhomb/scalene/botryoidal habit).
         const token = _resolveCrystalGeomToken(crystal, habitForGeom);
         let geom = null;
+        let isSectorZoned = false; // sector (hourglass) zoning → vertexColors material
         // Calcite-morphology arc Phase 3: a calcite crystal whose zone stack
         // carries real stepped/hopper relief renders zone-stack TERRACES
         // instead of the smooth parent form. Gated on the parent-form tokens
@@ -74158,6 +74255,29 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
             }
             geom = crystal._bentGeom;
         }
+        // SECTOR (HOURGLASS) ZONING — crystals tagged by js/45 classifySectorZoning
+        // (tourmaline + future sector minerals) render with the pyramid termination
+        // sector painted a contrasting colour from the prism body (Dowty 1976 / Ferguson
+        // 1973 hourglass; for tourmaline this IS the iconic bicolor elbaite). Gated on
+        // the prism token so twins / dripstone keep their geometry. The geom bakes
+        // ABSOLUTE per-vertex colours (body = class_color, termination = hue-rotated
+        // contrast); the matOpts block below sets color=white + vertexColors so the baked
+        // colours render directly. Cached per base colour.
+        if (!geom && crystal._sectorZoned && token === 'prism') {
+            const szSpec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[crystal.mineral] : null;
+            const szBase = (szSpec && szSpec.class_color) || '#2f9e5e';
+            const key = '__sectorzoned_' + szBase;
+            geom = state.geomCache.get(key);
+            if (!geom) {
+                const body = new THREE.Color(szBase);
+                // termination sector: rotate hue ~160° + lift saturation, slight darken —
+                // a clear contrast for any base (green body → pink/magenta tip).
+                const term = body.clone().offsetHSL(0.45, 0.12, -0.04);
+                geom = _makeSectorZonedPrism([body.r, body.g, body.b], [term.r, term.g, term.b]);
+                state.geomCache.set(key, geom);
+            }
+            isSectorZoned = true;
+        }
         if (!geom) {
             geom = state.geomCache.get(token);
             if (!geom) {
@@ -74225,6 +74345,15 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         if (isPerimorphCast) {
             matOpts.transparent = true;
             matOpts.opacity = 0.42;
+        }
+        // Sector (hourglass) zoning — the geom bakes ABSOLUTE per-vertex colours (body =
+        // class_color, termination = hue-rotated contrast). Set color=white so the
+        // material doesn't tint them and flip vertexColors so the baked colours render
+        // directly (the two sectors read as distinct colours, sharp boundary at the
+        // prism/pyramid shoulder).
+        if (isSectorZoned) {
+            matOpts.color = 0xffffff;
+            matOpts.vertexColors = true;
         }
         const mat = new THREE.MeshStandardMaterial(matOpts);
         _applyCavityClip(mat, state.clipUniforms);
