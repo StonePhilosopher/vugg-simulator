@@ -198,6 +198,22 @@ Object.assign(VugSimulator.prototype, {
   return parts.filter(p => p).join(' ');
 },
 
+  _narrate_andalusite(c) {
+  // Prose lives in narratives/andalusite.md.
+  const parts = [`Andalusite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+  parts.push(narrative_blurb('andalusite') || 'Al₂SiO₅ — the low-pressure aluminosilicate polymorph, a near-square contact-metamorphic prism.');
+  if (c._sectorZoned && c._sectorZoned.kind === 'cross') {
+    parts.push(narrative_variant('andalusite', 'chiastolite')
+      || 'CHIASTOLITE — the cross stone: carbonaceous matter from the graphitic metapelite host was swept into the rapidly-growing CORNER growth sectors, so a section cut perpendicular to c shows a dark Maltese cross. This is growth-SECTOR zoning (each face traps a different composition), not concentric banding — Dowty 1976; the quartz+graphite co-precipitation of Mason et al. 2010.');
+  } else {
+    const notes = c.zones.map(z => (z.note || '').toLowerCase());
+    if (notes.some(n => n.includes('viridine'))) parts.push(narrative_variant('andalusite', 'viridine') || 'Viridine — the Mn³⁺-rich green andalusite.');
+    else if (notes.some(n => n.includes('pink'))) parts.push(narrative_variant('andalusite', 'pink') || 'Pink-rose from a trace of Mn³⁺.');
+  }
+  parts.push(narrative_closing('andalusite') || 'An index mineral of low-pressure metamorphism — its presence pins the rock below the kyanite field, in the aureole of a shallow intrusion.');
+  return parts.filter(p => p).join(' ');
+},
+
   _narrate_beryl(c) {
   // Prose lives in narratives/beryl.md. Goshenite / generic colorless
   // fallback; variety crystals are emerald/aquamarine/morganite/heliodor.

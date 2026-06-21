@@ -139,6 +139,7 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   magnetite:      { Fe: 3 },                         // Fe3O4
   cuprite:        { Cu: 2 },                         // Cu2O
   corundum:       { Al: 2 },                         // Al2O3
+  andalusite:     { Al: 2, SiO2: 1 },                // Al2SiO5 (the silica-saturated Al2SiO5 polymorph)
   ruby:           { Al: 2, Cr: 0.01 },               // Al2O3 + trace Cr (chromophore)
   sapphire:       { Al: 2, Fe: 0.01, Ti: 0.01 },     // Al2O3 + Fe/Ti
   uraninite:      { U: 1 },                          // UO2

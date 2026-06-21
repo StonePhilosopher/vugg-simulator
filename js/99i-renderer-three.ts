@@ -829,6 +829,65 @@ function _makeSectorZonedPrism(bodyRGB: number[], termRGB: number[]): any {
   return geom;
 }
 
+// CHIASTOLITE PRISM — the carbon-cross variety of andalusite (crystal-face realism
+// arc 2026-06-21). A near-SQUARE {110} prism (andalusite is orthorhombic, ~square
+// section) carrying a baked per-VERTEX COLOUR attribute that paints the dark
+// carbonaceous CROSS: chiastolite concentrates graphite into the corner/diagonal
+// growth SECTORS, so a transverse section shows the Maltese cross (Mason et al.
+// 2010, Gondwana Res. 18(1):222-229; Dowty 1976 sector-zoning). ONE rule does it —
+// a cross-section point (x,z) is in the carbon sector when it lies near a diagonal,
+// |‖x‖−‖z‖| < BAND: on a side face that darkens the two edge-columns (the 4 vertical
+// corner columns of the prism), and on the top cap it draws the X. Colours are
+// ABSOLUTE (material runs vertexColors with color=white): body = class_color (pale
+// metapelite grey-tan), cross = near-black graphite. Per-CELL flat colouring keeps
+// the sector boundaries crisp. Cached per base colour.
+function _makeChiastolitePrism(bodyRGB: number[], crossRGB: number[]): any {
+  const r = 0.50;             // half-width (square a-b section)
+  const yBase = -0.50, yTop = 0.50;
+  const BAND = 0.17;          // diagonal half-width of the dark cross
+  const N = 12;               // subdivision (crisp blocky sectors)
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const isCross = (x: number, z: number) => Math.abs(Math.abs(x) - Math.abs(z)) < BAND;
+  const pushQuad = (
+    ax: number, ay: number, az: number, bx: number, by: number, bz: number,
+    cx: number, cy: number, cz: number, dx: number, dy: number, dz: number,
+    col: number[],
+  ) => {
+    _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+    _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+    for (let k = 0; k < 6; k++) colors.push(col[0], col[1], col[2]);
+  };
+  // 4 side faces — each subdivided into N horizontal strips; colour depends only
+  // on the cross-section position (constant up the c-axis → vertical columns).
+  for (let f = 0; f < 4; f++) {
+    for (let i = 0; i < N; i++) {
+      const t0 = -r + (2 * r) * (i / N), t1 = -r + (2 * r) * ((i + 1) / N);
+      const tc = (t0 + t1) / 2;
+      let x0, z0, x1, z1, col;
+      if (f === 0) { x0 = r;  z0 = t0; x1 = r;  z1 = t1; col = isCross(r, tc); }       // +x face
+      else if (f === 1) { x0 = -r; z0 = t0; x1 = -r; z1 = t1; col = isCross(-r, tc); }  // -x face
+      else if (f === 2) { x0 = t0; z0 = r;  x1 = t1; z1 = r;  col = isCross(tc, r); }   // +z face
+      else { x0 = t0; z0 = -r; x1 = t1; z1 = -r; col = isCross(tc, -r); }               // -z face
+      pushQuad(x0, yBase, z0, x1, yBase, z1, x1, yTop, z1, x0, yTop, z0, col ? crossRGB : bodyRGB);
+    }
+  }
+  // top cap (y = yTop) — N×N grid, the X reads here
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const x0 = -r + (2 * r) * (i / N), x1 = -r + (2 * r) * ((i + 1) / N);
+      const z0 = -r + (2 * r) * (j / N), z1 = -r + (2 * r) * ((j + 1) / N);
+      const col = isCross((x0 + x1) / 2, (z0 + z1) / 2) ? crossRGB : bodyRGB;
+      pushQuad(x0, yTop, z0, x1, yTop, z0, x1, yTop, z1, x0, yTop, z1, col);
+    }
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
 // tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
 // the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
@@ -3334,15 +3393,27 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     if (!geom && crystal._sectorZoned && token === 'prism') {
       const szSpec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[crystal.mineral] : null;
       const szBase = (szSpec && szSpec.class_color) || '#2f9e5e';
-      const key = '__sectorzoned_' + szBase;
-      geom = state.geomCache.get(key);
-      if (!geom) {
-        const body = new THREE.Color(szBase);
-        // termination sector: rotate hue ~160° + lift saturation, slight darken —
-        // a clear contrast for any base (green body → pink/magenta tip).
-        const term = body.clone().offsetHSL(0.45, 0.12, -0.04);
-        geom = _makeSectorZonedPrism([body.r, body.g, body.b], [term.r, term.g, term.b]);
-        state.geomCache.set(key, geom);
+      const body = new THREE.Color(szBase);
+      if (crystal._sectorZoned.kind === 'cross') {
+        // CHIASTOLITE — square prism + dark carbon cross (the corner growth sectors).
+        const key = '__chiastolite_' + szBase;
+        geom = state.geomCache.get(key);
+        if (!geom) {
+          const cross = new THREE.Color('#161410');   // graphite near-black
+          geom = _makeChiastolitePrism([body.r, body.g, body.b], [cross.r, cross.g, cross.b]);
+          state.geomCache.set(key, geom);
+        }
+      } else {
+        // HOURGLASS (tourmaline) — hex prism + tinted termination sector. The
+        // termination is a hue-rotated contrast of the mineral colour (green body
+        // → pink/magenta tip — the iconic bicolor elbaite).
+        const key = '__sectorzoned_' + szBase;
+        geom = state.geomCache.get(key);
+        if (!geom) {
+          const term = body.clone().offsetHSL(0.45, 0.12, -0.04);
+          geom = _makeSectorZonedPrism([body.r, body.g, body.b], [term.r, term.g, term.b]);
+          state.geomCache.set(key, geom);
+        }
       }
       isSectorZoned = true;
     }

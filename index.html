@@ -2961,6 +2961,7 @@ footer a:hover {
     <button onclick="startScenarioInCreative('sunnyside_american_tunnel')">⛰️ Sunnyside / American Tunnel — Silverton caldera (San Juan Co., CO). Rhodochrosite + REE-fluorite display specimens.</button>
     <button onclick="startScenarioInCreative('roughten_gill')">🔷 Roughten Gill Pb-Cu Supergene — Caldbeck Fells (Cumbria, UK). Type locality for plumbogummite (Hartley 1882); linarite + caledonite + leadhillite trio.</button>
     <button onclick="startScenarioInCreative('marble_contact_metamorphism')">🏛️ Marble Contact Metamorphism — Mogok Stone Tract (Mandalay, Burma). Pigeon's-blood ruby + skarn calc-silicates.</button>
+    <button onclick="startScenarioInCreative('chiastolite_hornfels')">✚ Chiastolite Hornfels — Bimbowrie / Mt Howden (South Australia). Andalusite porphyroblasts with the dark carbon cross in a graphitic contact aureole.</button>
     <button onclick="startScenarioInCreative('ultramafic_supergene')">🟢 Marlborough Ultramafic Supergene — Queensland (Australia). Apple-green chrysoprase + magnesite over serpentinized peridotite.</button>
     <button onclick="startScenarioInCreative('jeffrey_mine')">⚙️ Jeffrey Mine Rodingite Contact — Val-des-Sources (Quebec, Canada). World-reference cyprine vesuvianite + grossular + datolite + chrysotile asbestos. Per Bernardini 1981.</button>
     <button onclick="startScenarioInCreative('tn457_barite_pulses')">💗 TN457 Barite Pulses — Cumbria, England (Caldbeck Fells / North Pennines). 50 episodic Ba+Mn fluid pulses over a sphalerite substrate. Tests event-driven precipitation per Putnis &amp; Perthuisot 2001.</button>
@@ -3071,6 +3072,7 @@ footer a:hover {
       <option value="sunnyside_american_tunnel">sunnyside_american_tunnel</option>
       <option value="roughten_gill">roughten_gill</option>
       <option value="marble_contact_metamorphism">marble_contact_metamorphism</option>
+      <option value="chiastolite_hornfels">chiastolite_hornfels</option>
       <option value="ultramafic_supergene">ultramafic_supergene</option>
       <option value="jeffrey_mine">jeffrey_mine</option>
       <option value="tn457_barite_pulses">tn457_barite_pulses</option>
@@ -3886,6 +3888,7 @@ Scenarios:
           <option value="gem_pegmatite">Gem Pegmatite (Cruzeiro)</option>
           <option value="jeffrey_mine">Jeffrey Mine Rodingite</option>
           <option value="marble_contact_metamorphism">Marble Contact (Mogok)</option>
+          <option value="chiastolite_hornfels">Chiastolite Hornfels (Bimbowrie)</option>
           <option value="mvt">MVT (Tri-State)</option>
           <option value="elmwood">Elmwood Stepped Calcite</option>
           <option value="naica_geothermal">Naica Selenite Cave</option>
@@ -16502,7 +16505,32 @@ let timeScale = 5.0;
 //        spared. + narrator (js/92i 'bent'). The §8.5 gwindel shear re-pin is
 //        STRUCK (gwindel = spiral-growth Eshelby twist, not shear — research §1).
 //        SIM 207 -> 208 (provenance; baseline-diff 207↔208 = 0 drift).
-const SIM_VERSION = 208;
+//   v209 — ANDALUSITE + the CHIASTOLITE CROSS (crystal-face realism arc, 2026-06-21;
+//        continues the sector-zoning arc from §1 of PROPOSALS-crystal-face-realism).
+//        NEW MINERAL andalusite (Al₂SiO₅) — the LOW-PRESSURE aluminosilicate
+//        polymorph, the SILICA-SATURATED complement of corundum (where corundum's
+//        _corundum_base_sigma blocks above SiO2>50, andalusite REQUIRES SiO2). js/39
+//        supersaturation_andalusite + MINERAL_GATES_andalusite (js/42), js/59
+//        grow_andalusite, js/89 _nuc_andalusite + iterator, js/65 engine, js/19
+//        stoich, minerals.json + structural.json (Pnnm) + twin-law-check (empty +
+//        note — andalusite twinning not diagnostically established). PERALUMINOUS
+//        GATE (Al≥15 + SiO2≥50 + Na/K<30 + B<1 + T 400-700): in a pegmatite Al is
+//        consumed by feldspar/tourmaline/mica, so andalusite is a metasediment
+//        mineral — and that gate returns 0 for EVERY existing scenario, so the
+//        RNG-cascade guard in _nuc_andalusite never fires elsewhere → the whole
+//        fleet is BYTE-IDENTICAL (probe-confirmed: andalusite fires ONLY in the new
+//        chiastolite_hornfels). NEW SCENARIO chiastolite_hornfels — a graphitic
+//        contact-metamorphic hornfels (Bimbowrie/Zhoukoudian); 5 chiastolite prisms
+//        @ seed 42. CHIASTOLITE: the carbon-cross variety. A new wall.graphitic flag
+//        (js/22) marks the carbonaceous host; classifySectorZoning (js/45) tags
+//        andalusite _sectorZoned kind 'cross' there (vs tourmaline 'hourglass'), and
+//        js/99i _makeChiastolitePrism renders a SQUARE prism with a baked transverse
+//        carbon CROSS (one rule |‖x‖−‖z‖|<band paints both the dark corner columns
+//        and the top X — Dowty 1976 sector zoning; Mason et al. 2010 Gondwana Res.
+//        18(1):222-229). + narrator (js/92i) + narratives/andalusite.md. Only the new
+//        scenario changes the fleet baseline (one scenario added); all prior
+//        scenarios byte-identical. SIM 208 -> 209.
+const SIM_VERSION = 209;
 
 // ── 18-constants.js ──
 
@@ -16741,6 +16769,7 @@ const MINERAL_STOICHIOMETRY = {
     magnetite: { Fe: 3 }, // Fe3O4
     cuprite: { Cu: 2 }, // Cu2O
     corundum: { Al: 2 }, // Al2O3
+    andalusite: { Al: 2, SiO2: 1 }, // Al2SiO5 (the silica-saturated Al2SiO5 polymorph)
     ruby: { Al: 2, Cr: 0.01 }, // Al2O3 + trace Cr (chromophore)
     sapphire: { Al: 2, Fe: 0.01, Ti: 0.01 }, // Al2O3 + Fe/Ti
     uraninite: { U: 1 }, // UO2
@@ -19485,6 +19514,12 @@ class VugWall {
         // exposes this as a setup toggle (f-thermal-pulses). Read directly off
         // conditions.wall in ambient_cooling.
         this.thermal_pulses = (opts.thermal_pulses !== undefined) ? !!opts.thermal_pulses : true;
+        // graphitic — the host is a carbonaceous/graphitic metapelite (crystal-face
+        // realism arc 2026-06-21). Read by grow_andalusite + classifySectorZoning to
+        // render the CHIASTOLITE carbon cross (carbonaceous matter swept into the
+        // andalusite corner growth sectors). Default false — only a contact-hornfels
+        // scenario sets it; inert for every other scenario.
+        this.graphitic = !!opts.graphitic;
         // v179 (2026-06-09): per-scenario ambient cooling rate, °C/step (default
         // 1.5 — the historical hard-coded value in ambient_cooling, 85d). The
         // reactivated_fluorite_vein exposed the gap: it is the first HOT scenario
@@ -27070,6 +27105,15 @@ const MINERAL_GATES_topaz = {
     _sources: ['topaz engine v17+'],
     _notes: 'Al2SiO4(F,OH)2 — F-bearing pegmatite/greisen. Imperial topaz (Cr trace) gold-orange variety.',
 };
+const MINERAL_GATES_andalusite = {
+    sigma_crit: 1.2,
+    T_min: 400, T_max: 700, T_optimal: 575,
+    fluid_min: { Al: 15, SiO2: 50 },
+    pH_min: 4.0, pH_max: 9.0,
+    surface_energy: 'high',
+    _sources: ['andalusite engine (crystal-face realism arc 2026-06-21)', 'Holdaway 1971 Am.J.Sci 271:97 (Al2SiO5 triple point ~500°C/0.4GPa)', 'research-andalusite dossier'],
+    _notes: 'Al2SiO5 — orthorhombic LOW-PRESSURE polymorph (Pnnm; kyanite=HP, sillimanite=HT). The SILICA-SATURATED complement of corundum. Index mineral of low-P contact-metamorphic aluminous metapelites (hornfels). Peraluminous gate (Na+K low, B<1) keeps it out of pegmatite/skarn scenarios → fleet byte-identical. Chiastolite (the carbon-cross variety) when the host is graphitic.',
+};
 const MINERAL_GATES_opal = {
     sigma_crit: 0.8, // v131 (2026-05-21): literature value per Iler 1979 — heterogeneous σ_crit range 0.5-1.0, midpoint 0.8. Was 1.0 (v101 engine-matched calibration); v127 engine-gates refactor surfaced the engine/literature mismatch as a v129 calibration target.
     T_min: 5, T_max: 100, T_optimal: 40,
@@ -27672,6 +27716,47 @@ Object.assign(VugConditions.prototype, {
         // don't move I).
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'corundum');
+        return Math.max(sigma, 0);
+    },
+    // Al₂SiO₅ — orthorhombic, the LOW-PRESSURE polymorph (Pnnm; kyanite=HP,
+    // sillimanite=HT). The SILICA-SATURATED complement of _corundum_base_sigma:
+    // corundum (Al₂O₃) blocks above SiO2>50 (Al²O₃ forms only when silica is
+    // scarce, the marble_contact note), whereas Al₂SiO₅ REQUIRES SiO2. Index
+    // mineral of LOW-P contact-metamorphic aluminous metapelites (hornfels
+    // around an intrusion; Holdaway 1971 triple point ~500°C/0.4 GPa — andalusite
+    // sits below it at low P). The PERALUMINOUS gate (Na+K low, B<1) is load-
+    // bearing: in a pegmatite Al is consumed by feldspar / tourmaline / mica, so
+    // andalusite is a metasediment mineral, not a pegmatite one — and that gate
+    // is exactly what returns 0 for every existing (pegmatite + skarn) scenario,
+    // so the RNG-cascade guard in _nuc_andalusite never fires elsewhere → fleet
+    // baseline byte-identical. Chiastolite (the carbon-cross variety) is a RENDER
+    // distinction keyed to a graphitic host, not a separate σ.
+    supersaturation_andalusite() {
+        const f = this.fluid;
+        if (f.Al < 15 || f.SiO2 < 50)
+            return 0; // peraluminous + silica-saturated
+        if (f.Na > 30 || f.K > 30 || f.B > 1)
+            return 0; // NOT a pegmatite (Al→feldspar/tourmaline/mica)
+        if (f.pH < 4 || f.pH > 9)
+            return 0;
+        const T = this.temperature;
+        if (T < 400 || T > 700)
+            return 0; // low-P contact-metamorphic window
+        const al_f = Math.min(f.Al / 30.0, 2.0);
+        const si_f = Math.min(f.SiO2 / 200.0, 1.5);
+        let sigma = al_f * si_f;
+        let T_factor;
+        if (T >= 500 && T <= 650)
+            T_factor = 1.0; // andalusite stability sweet spot (sub-triple-point)
+        else if (T >= 400 && T < 500)
+            T_factor = 0.4 + 0.006 * (T - 400);
+        else
+            T_factor = Math.max(0.3, 1.0 - 0.006 * (T - 650));
+        sigma *= T_factor;
+        const pH_factor = (f.pH >= 5 && f.pH <= 8) ? 1.0 : 0.6;
+        sigma *= pH_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'andalusite');
         return Math.max(sigma, 0);
     },
     supersaturation_tourmaline() {
@@ -31450,6 +31535,7 @@ const MINERAL_GATES_REGISTRY = {
     heliodor: MINERAL_GATES_heliodor,
     tourmaline: MINERAL_GATES_tourmaline,
     topaz: MINERAL_GATES_topaz,
+    andalusite: MINERAL_GATES_andalusite,
     opal: MINERAL_GATES_opal,
     coffinite: MINERAL_GATES_coffinite,
     uranophane: MINERAL_GATES_uranophane,
@@ -32743,17 +32829,29 @@ function classifyDeformation(sim) {
 // sector-zoned mineral in the catalogue (elbaite/liddicoatite colour sectors are
 // collector-iconic). Chiastolite (andalusite) — THE iconic sector-cross — needs
 // andalusite added first, a future add-mineral tenant.
-const SECTOR_ZONED_MINERALS = { tourmaline: true };
-const SECTOR_ZONED_MIN_UM = 50; // need a real body + termination to partition
+// Per-mineral sector-zoning config. `kind` selects the render: 'hourglass' (the
+// termination-sector tint — tourmaline/augite read) vs 'cross' (the transverse
+// 4-corner carbon mask — chiastolite). `requiresGraphitic` gates a tenant on a
+// carbonaceous host: andalusite is sector-zoned-as-chiastolite ONLY in a graphitic
+// metapelite (wall.graphitic); a non-graphitic andalusite is a plain square prism.
+const SECTOR_ZONED_MINERALS = {
+    tourmaline: { kind: 'hourglass' },
+    andalusite: { kind: 'cross', requiresGraphitic: true }, // chiastolite — the carbon cross
+};
+const SECTOR_ZONED_MIN_UM = 50; // need a real body + termination/sectors to partition
 function classifySectorZoning(sim) {
+    const graphitic = !!(sim.conditions && sim.conditions.wall && sim.conditions.wall.graphitic);
     for (const c of sim.crystals) {
         if (!c || c.dissolved || c._sectorZoned)
             continue;
-        if (!SECTOR_ZONED_MINERALS[c.mineral])
+        const cfg = SECTOR_ZONED_MINERALS[c.mineral];
+        if (!cfg)
+            continue;
+        if (cfg.requiresGraphitic && !graphitic)
             continue;
         if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM)
             continue;
-        c._sectorZoned = { kind: 'hourglass' };
+        c._sectorZoned = { kind: cfg.kind };
     }
 }
 function classifyMorphologyStep(sim) {
@@ -38711,6 +38809,62 @@ function grow_topaz(crystal, conditions, step) {
         note: parts.join(', '),
     });
 }
+function grow_andalusite(crystal, conditions, step) {
+    // Al₂SiO₅ — orthorhombic, near-SQUARE {110} prism. The LOW-PRESSURE polymorph,
+    // a low-P contact-metamorphic porphyroblast (the sim's fluid abstraction stands
+    // in for the metamorphic medium, as it does for ruby in marble_contact). The
+    // CHIASTOLITE variety grows in a GRAPHITIC metapelite host (wall.graphitic),
+    // where carbonaceous matter is swept into the corner/diagonal growth sectors →
+    // the dark cross (Mason et al. 2010, Gondwana Res. 18(1):222-229). The cross is
+    // a RENDER concern (js/99i _makeChiastolitePrism via classifySectorZoning); here
+    // we just flag the habit and a colour note.
+    const sigma = conditions.supersaturation_andalusite();
+    if (sigma < 1.0) {
+        // Aluminosilicate — extremely resistant; only strong acid touches it slowly.
+        if (crystal.total_growth_um > 10 && conditions.fluid.pH < 2.5) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.04);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d,
+                note: `strong-acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Al³⁺, SiO₂ released`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 2.6 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    const graphitic = !!(conditions.wall && conditions.wall.graphitic);
+    let color_note;
+    if (graphitic) {
+        crystal.habit = 'chiastolite_prism';
+        crystal.dominant_forms = ['m{110} square prism', 'graphite cross sectors', 'c{001} basal'];
+        color_note = 'chiastolite — carbonaceous inclusions swept to the corner sectors (the dark cross)';
+    }
+    else {
+        crystal.habit = 'andalusite_prism';
+        crystal.dominant_forms = ['m{110} square prism', 'c{001} basal'];
+        const Mn = conditions.fluid.Mn;
+        if (Mn > 5)
+            color_note = 'viridine green (Mn³⁺ substitution)';
+        else if (Mn > 0.5)
+            color_note = 'pink-rose (Mn³⁺ trace)';
+        else
+            color_note = 'pinkish-brown to grey';
+    }
+    const trace_Fe = conditions.fluid.Fe * 0.004;
+    const trace_Al = conditions.fluid.Al * 0.02;
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.02, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.012, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Fe, trace_Al,
+        note: `andalusite — ${crystal.habit}, ${color_note}`,
+    });
+}
 function grow_apophyllite(crystal, conditions, step) {
     const sigma = conditions.supersaturation_apophyllite();
     if (sigma < 1.0) {
@@ -42864,6 +43018,7 @@ const MINERAL_ENGINES = {
     goethite: grow_goethite,
     albite: grow_albite,
     topaz: grow_topaz,
+    andalusite: grow_andalusite, // Al2SiO5 low-P contact-metamorphic; chiastolite (carbon cross) in graphitic host
     tourmaline: grow_tourmaline,
     beryl: grow_beryl, // goshenite / generic colorless (post-R7)
     emerald: grow_emerald, // Cr/V chromophore variety
@@ -54739,6 +54894,27 @@ function _nuc_topaz(sim) {
     // preference: weathering chalcopyrite (Cu source) or weathering
     // sphalerite (Zn co-source), or bare wall.
 }
+function _nuc_andalusite(sim) {
+    // Al₂SiO₅ contact-metamorphic porphyroblast (the silica-saturated Al₂SiO₅,
+    // complement of corundum). RNG-CASCADE GUARD: bail BEFORE any rng.random()
+    // when σ ≤ crit. The peraluminous gate in supersaturation_andalusite returns 0
+    // for every existing pegmatite/skarn scenario, so no rng is drawn there → the
+    // whole fleet stays byte-identical; only a graphitic-metapelite hornfels (the
+    // new scenario) clears the gate.
+    const sigma_and = sim.conditions.supersaturation_andalusite();
+    if (sigma_and <= MINERAL_GATES_andalusite.sigma_crit)
+        return; // guard — no rng above this line
+    if (sim._atNucleationCap('andalusite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'andalusite' && c.active);
+    if (existing.length && !(sigma_and > MINERAL_GATES_andalusite.sigma_crit + 0.5 && rng.random() < 0.25))
+        return;
+    const c = sim.nucleate('andalusite', 'vug wall', sigma_and);
+    const f = sim.conditions.fluid;
+    const graphitic = !!(sim.conditions.wall && sim.conditions.wall.graphitic);
+    const tag = graphitic ? ' ✚ chiastolite (graphitic host → carbon-cross sectors)' : '';
+    sim.log.push(`  ✦ NUCLEATION: Andalusite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_and.toFixed(2)}, Al=${f.Al.toFixed(0)}, SiO2=${f.SiO2.toFixed(0)})${tag}`);
+}
 function _nuc_lepidolite(sim) {
     // Lepidolite K(Li,Al)₃(Al,Si)₄O₁₀(F,OH)₂ — Li-mica, late-pegmatite
     // (research-lepidolite.md). Nucleates after the quartz/feldspar
@@ -55595,6 +55771,7 @@ function _nucleateClass_silicate(sim) {
     _runNuc(sim, _nuc_spodumene);
     _runNuc(sim, _nuc_tourmaline);
     _runNuc(sim, _nuc_topaz);
+    _runNuc(sim, _nuc_andalusite);
     _runNuc(sim, _nuc_chrysoprase);
     _runNuc(sim, _nuc_lepidolite);
     _runNuc(sim, _nuc_dioptase);
@@ -59461,6 +59638,24 @@ Object.assign(VugSimulator.prototype, {
                 || 'Sector (hourglass) zoning — the prism faces and the pyramidal termination grew at different rates and trapped trace elements differently, so colour partitions by growth SECTOR with a sharp, geometry-locked boundary (Dowty 1976). Elbaite/liddicoatite slices show this as the famous radial colour wedges.');
         }
         parts.push(narrative_closing('tourmaline') || 'The cross-section reads like a tree-ring record.');
+        return parts.filter(p => p).join(' ');
+    },
+    _narrate_andalusite(c) {
+        // Prose lives in narratives/andalusite.md.
+        const parts = [`Andalusite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+        parts.push(narrative_blurb('andalusite') || 'Al₂SiO₅ — the low-pressure aluminosilicate polymorph, a near-square contact-metamorphic prism.');
+        if (c._sectorZoned && c._sectorZoned.kind === 'cross') {
+            parts.push(narrative_variant('andalusite', 'chiastolite')
+                || 'CHIASTOLITE — the cross stone: carbonaceous matter from the graphitic metapelite host was swept into the rapidly-growing CORNER growth sectors, so a section cut perpendicular to c shows a dark Maltese cross. This is growth-SECTOR zoning (each face traps a different composition), not concentric banding — Dowty 1976; the quartz+graphite co-precipitation of Mason et al. 2010.');
+        }
+        else {
+            const notes = c.zones.map(z => (z.note || '').toLowerCase());
+            if (notes.some(n => n.includes('viridine')))
+                parts.push(narrative_variant('andalusite', 'viridine') || 'Viridine — the Mn³⁺-rich green andalusite.');
+            else if (notes.some(n => n.includes('pink')))
+                parts.push(narrative_variant('andalusite', 'pink') || 'Pink-rose from a trace of Mn³⁺.');
+        }
+        parts.push(narrative_closing('andalusite') || 'An index mineral of low-pressure metamorphism — its presence pins the rock below the kyanite field, in the aureole of a shallow intrusion.');
         return parts.filter(p => p).join(' ');
     },
     _narrate_beryl(c) {
@@ -71712,6 +71907,85 @@ function _makeSectorZonedPrism(bodyRGB, termRGB) {
     geom.computeVertexNormals();
     return geom;
 }
+// CHIASTOLITE PRISM — the carbon-cross variety of andalusite (crystal-face realism
+// arc 2026-06-21). A near-SQUARE {110} prism (andalusite is orthorhombic, ~square
+// section) carrying a baked per-VERTEX COLOUR attribute that paints the dark
+// carbonaceous CROSS: chiastolite concentrates graphite into the corner/diagonal
+// growth SECTORS, so a transverse section shows the Maltese cross (Mason et al.
+// 2010, Gondwana Res. 18(1):222-229; Dowty 1976 sector-zoning). ONE rule does it —
+// a cross-section point (x,z) is in the carbon sector when it lies near a diagonal,
+// |‖x‖−‖z‖| < BAND: on a side face that darkens the two edge-columns (the 4 vertical
+// corner columns of the prism), and on the top cap it draws the X. Colours are
+// ABSOLUTE (material runs vertexColors with color=white): body = class_color (pale
+// metapelite grey-tan), cross = near-black graphite. Per-CELL flat colouring keeps
+// the sector boundaries crisp. Cached per base colour.
+function _makeChiastolitePrism(bodyRGB, crossRGB) {
+    const r = 0.50; // half-width (square a-b section)
+    const yBase = -0.50, yTop = 0.50;
+    const BAND = 0.17; // diagonal half-width of the dark cross
+    const N = 12; // subdivision (crisp blocky sectors)
+    const positions = [];
+    const colors = [];
+    const isCross = (x, z) => Math.abs(Math.abs(x) - Math.abs(z)) < BAND;
+    const pushQuad = (ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col) => {
+        _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+        _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+        for (let k = 0; k < 6; k++)
+            colors.push(col[0], col[1], col[2]);
+    };
+    // 4 side faces — each subdivided into N horizontal strips; colour depends only
+    // on the cross-section position (constant up the c-axis → vertical columns).
+    for (let f = 0; f < 4; f++) {
+        for (let i = 0; i < N; i++) {
+            const t0 = -r + (2 * r) * (i / N), t1 = -r + (2 * r) * ((i + 1) / N);
+            const tc = (t0 + t1) / 2;
+            let x0, z0, x1, z1, col;
+            if (f === 0) {
+                x0 = r;
+                z0 = t0;
+                x1 = r;
+                z1 = t1;
+                col = isCross(r, tc);
+            } // +x face
+            else if (f === 1) {
+                x0 = -r;
+                z0 = t0;
+                x1 = -r;
+                z1 = t1;
+                col = isCross(-r, tc);
+            } // -x face
+            else if (f === 2) {
+                x0 = t0;
+                z0 = r;
+                x1 = t1;
+                z1 = r;
+                col = isCross(tc, r);
+            } // +z face
+            else {
+                x0 = t0;
+                z0 = -r;
+                x1 = t1;
+                z1 = -r;
+                col = isCross(tc, -r);
+            } // -z face
+            pushQuad(x0, yBase, z0, x1, yBase, z1, x1, yTop, z1, x0, yTop, z0, col ? crossRGB : bodyRGB);
+        }
+    }
+    // top cap (y = yTop) — N×N grid, the X reads here
+    for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+            const x0 = -r + (2 * r) * (i / N), x1 = -r + (2 * r) * ((i + 1) / N);
+            const z0 = -r + (2 * r) * (j / N), z1 = -r + (2 * r) * ((j + 1) / N);
+            const col = isCross((x0 + x1) / 2, (z0 + z1) / 2) ? crossRGB : bodyRGB;
+            pushQuad(x0, yTop, z0, x1, yTop, z0, x1, yTop, z1, x0, yTop, z1, col);
+        }
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
 // tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
 // the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
@@ -74266,15 +74540,28 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         if (!geom && crystal._sectorZoned && token === 'prism') {
             const szSpec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[crystal.mineral] : null;
             const szBase = (szSpec && szSpec.class_color) || '#2f9e5e';
-            const key = '__sectorzoned_' + szBase;
-            geom = state.geomCache.get(key);
-            if (!geom) {
-                const body = new THREE.Color(szBase);
-                // termination sector: rotate hue ~160° + lift saturation, slight darken —
-                // a clear contrast for any base (green body → pink/magenta tip).
-                const term = body.clone().offsetHSL(0.45, 0.12, -0.04);
-                geom = _makeSectorZonedPrism([body.r, body.g, body.b], [term.r, term.g, term.b]);
-                state.geomCache.set(key, geom);
+            const body = new THREE.Color(szBase);
+            if (crystal._sectorZoned.kind === 'cross') {
+                // CHIASTOLITE — square prism + dark carbon cross (the corner growth sectors).
+                const key = '__chiastolite_' + szBase;
+                geom = state.geomCache.get(key);
+                if (!geom) {
+                    const cross = new THREE.Color('#161410'); // graphite near-black
+                    geom = _makeChiastolitePrism([body.r, body.g, body.b], [cross.r, cross.g, cross.b]);
+                    state.geomCache.set(key, geom);
+                }
+            }
+            else {
+                // HOURGLASS (tourmaline) — hex prism + tinted termination sector. The
+                // termination is a hue-rotated contrast of the mineral colour (green body
+                // → pink/magenta tip — the iconic bicolor elbaite).
+                const key = '__sectorzoned_' + szBase;
+                geom = state.geomCache.get(key);
+                if (!geom) {
+                    const term = body.clone().offsetHSL(0.45, 0.12, -0.04);
+                    geom = _makeSectorZonedPrism([body.r, body.g, body.b], [term.r, term.g, term.b]);
+                    state.geomCache.set(key, geom);
+                }
             }
             isSectorZoned = true;
         }

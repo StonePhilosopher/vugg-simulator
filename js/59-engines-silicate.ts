@@ -1269,6 +1269,62 @@ function grow_topaz(crystal, conditions, step) {
   });
 }
 
+function grow_andalusite(crystal, conditions, step) {
+  // Al₂SiO₅ — orthorhombic, near-SQUARE {110} prism. The LOW-PRESSURE polymorph,
+  // a low-P contact-metamorphic porphyroblast (the sim's fluid abstraction stands
+  // in for the metamorphic medium, as it does for ruby in marble_contact). The
+  // CHIASTOLITE variety grows in a GRAPHITIC metapelite host (wall.graphitic),
+  // where carbonaceous matter is swept into the corner/diagonal growth sectors →
+  // the dark cross (Mason et al. 2010, Gondwana Res. 18(1):222-229). The cross is
+  // a RENDER concern (js/99i _makeChiastolitePrism via classifySectorZoning); here
+  // we just flag the habit and a colour note.
+  const sigma = conditions.supersaturation_andalusite();
+  if (sigma < 1.0) {
+    // Aluminosilicate — extremely resistant; only strong acid touches it slowly.
+    if (crystal.total_growth_um > 10 && conditions.fluid.pH < 2.5) {
+      crystal.dissolved = true;
+      const d = Math.min(2.0, crystal.total_growth_um * 0.04);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d,
+        note: `strong-acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Al³⁺, SiO₂ released`,
+      });
+    }
+    return null;
+  }
+  const excess = sigma - 1.0;
+  const rate = 2.6 * excess * rng.uniform(0.8, 1.2);
+  if (rate < 0.1) return null;
+
+  const graphitic = !!(conditions.wall && conditions.wall.graphitic);
+  let color_note;
+  if (graphitic) {
+    crystal.habit = 'chiastolite_prism';
+    crystal.dominant_forms = ['m{110} square prism', 'graphite cross sectors', 'c{001} basal'];
+    color_note = 'chiastolite — carbonaceous inclusions swept to the corner sectors (the dark cross)';
+  } else {
+    crystal.habit = 'andalusite_prism';
+    crystal.dominant_forms = ['m{110} square prism', 'c{001} basal'];
+    const Mn = conditions.fluid.Mn;
+    if (Mn > 5) color_note = 'viridine green (Mn³⁺ substitution)';
+    else if (Mn > 0.5) color_note = 'pink-rose (Mn³⁺ trace)';
+    else color_note = 'pinkish-brown to grey';
+  }
+
+  const trace_Fe = conditions.fluid.Fe * 0.004;
+  const trace_Al = conditions.fluid.Al * 0.02;
+
+  conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.02, 0);
+  conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.012, 0);
+
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Fe, trace_Al,
+    note: `andalusite — ${crystal.habit}, ${color_note}`,
+  });
+}
+
 function grow_apophyllite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_apophyllite();
   if (sigma < 1.0) {

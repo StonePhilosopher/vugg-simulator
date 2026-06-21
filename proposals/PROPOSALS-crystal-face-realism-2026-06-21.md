@@ -112,6 +112,34 @@ for whenever it's wanted. Tier A wiring (mirrors saddle/bent):
   engine) only if a computed-from-chemistry partition is wanted — the render path is
   proven, the cost is the per-face engine state + a dark-observe pass.
 
+### ✅ SHIPPED — ANDALUSITE + the CHIASTOLITE CROSS, SIM 209 (2026-06-21)
+The second sector tenant, and the iconic one. Research-first (dossier verified to
+publisher pages): Mason et al. 2010 *Gondwana Res.* 18(1):222–229 (VERIFIED — quartz
++ graphite co-precipitation into the andalusite growth sectors); Dowty 1976; Holdaway
+1971 triple point. (The everyday "Frondel 1934" chiastolite cite is shaky — likely
+Novitates no. 759 ≈ 1935, and no. 695/1934 is a *different* incrustation paper — so it
+was NOT used.) Built:
+- **NEW MINERAL andalusite** (Al₂SiO₅) — the low-P polymorph, the SILICA-SATURATED
+  complement of corundum (corundum blocks above SiO2>50; andalusite requires it).
+  Full vugg-add-mineral pass (js/39 supersat + gate, js/59 grow, js/89 nuc + iterator,
+  js/65 engine, js/19 stoich, minerals.json + structural.json Pnnm + twin-law-check
+  empty-with-note). The **peraluminous gate** (Al≥15 + SiO2≥50 + Na/K<30 + B<1 +
+  T 400–700) is load-bearing: in a pegmatite Al goes to feldspar/tourmaline, so
+  andalusite is a metasediment mineral — and that gate returns 0 for EVERY existing
+  scenario → fleet byte-identical (probe + baseline-diff confirmed: 1/36 moved, only
+  the new scenario; the RNG-cascade guard never fires elsewhere).
+- **NEW SCENARIO chiastolite_hornfels** — a graphitic contact-metamorphic hornfels
+  (Bimbowrie/Zhoukoudian); 5 chiastolite prisms @ seed 42 (+ feldspar/albite).
+- **The cross IS a new render**, not the termination hourglass: a `wall.graphitic`
+  flag (js/22) marks the carbonaceous host; classifySectorZoning (js/45) tags
+  andalusite `_sectorZoned` kind **'cross'** there; js/99i **`_makeChiastolitePrism`**
+  draws a SQUARE prism with a baked transverse carbon cross — ONE rule
+  `|‖x‖−‖z‖| < band` paints both the dark corner columns (sides) and the X (top).
+  Preview-verified (side: dark corner columns; top-down: the dark Maltese cross with
+  tan quadrants). Narrator js/92i + narratives/andalusite.md + 4 test pins.
+- **STILL OPEN after this:** augite/titanaugite hourglass (needs the mineral); Tier B
+  partition engine (optional); the other §2–§5 face-realism candidates.
+
 ---
 
 ## 2. ETCH-PIT / DISSOLUTION SCULPTURE — best value-per-effort

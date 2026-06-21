@@ -2,6 +2,37 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## ✚ SESSION HANDOFF (2026-06-21, later) — ANDALUSITE + CHIASTOLITE CROSS ✅ SHIPPED (SIM 209)
+>
+> The second sector-zoning tenant, and the iconic one — boss directive "add the
+> mineral (researched) → continue the arc." Master doc: PROPOSALS-crystal-face-
+> realism-2026-06-21.md §1 (second SHIPPED footer). Research-first verified to
+> publisher pages (Mason et al. 2010 Gondwana Res. 18(1):222-229 VERIFIED; Dowty 1976;
+> Holdaway 1971 — the shaky "Frondel 1934" cite was NOT used: likely Novitates 759 ≈
+> 1935, and 695/1934 is a different paper).
+>
+> **✅ SHIPPED SIM 209:**
+> - **NEW MINERAL andalusite** (Al₂SiO₅), the low-P polymorph = the SILICA-SATURATED
+>   complement of corundum (corundum blocks SiO2>50; andalusite requires it). Full
+>   add-mineral pass (js/39+42+59+65+89, js/19 stoich, minerals.json, structural.json
+>   Pnnm, twin-check empty+note). **Peraluminous gate** (Al≥15+SiO2≥50+Na/K<30+B<1+T
+>   400-700) → returns 0 for every existing scenario, so the RNG-cascade guard never
+>   fires elsewhere → **fleet byte-identical** (baseline-diff: 1/36 moved, only the new
+>   scenario; tools/andalusite-probe.mjs confirms andalusite fires ONLY there).
+> - **NEW SCENARIO chiastolite_hornfels** — graphitic contact hornfels (Bimbowrie/
+>   Zhoukoudian); 5 chiastolite prisms @ seed42 (+feldspar/albite; quartz didn't fire,
+>   SiO2 not supersaturated at 600°C — expects=[andalusite,feldspar]).
+> - **CHIASTOLITE CROSS render** (new, not the hourglass): `wall.graphitic` flag
+>   (js/22) → classifySectorZoning (js/45) tags andalusite `_sectorZoned` kind 'cross'
+>   → js/99i `_makeChiastolitePrism` square prism + baked transverse carbon cross (one
+>   rule |‖x‖−‖z‖|<band paints the dark corner columns AND the top X). Preview-verified.
+>   Narrator js/92i + narratives/andalusite.md + 4 test pins (andalusite-chiastolite.test.ts).
+> - **NEXT in the arc:** augite/titanaugite hourglass (needs the mineral); Tier B
+>   per-sector partition engine (optional); §2 etch-pit sculpture remains the next-best
+>   non-sector face-realism pickup.
+>
+> ---
+>
 > ## 💎 SESSION HANDOFF (2026-06-21) — SECTOR (HOURGLASS) ZONING ✅ SHIPPED (Tier A)
 >
 > **Master doc: `proposals/PROPOSALS-crystal-face-realism-2026-06-21.md` §1** (SHIPPED

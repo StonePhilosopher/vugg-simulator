@@ -11399,5 +11399,30 @@
 //        spared. + narrator (js/92i 'bent'). The §8.5 gwindel shear re-pin is
 //        STRUCK (gwindel = spiral-growth Eshelby twist, not shear — research §1).
 //        SIM 207 -> 208 (provenance; baseline-diff 207↔208 = 0 drift).
-const SIM_VERSION = 208;
+//   v209 — ANDALUSITE + the CHIASTOLITE CROSS (crystal-face realism arc, 2026-06-21;
+//        continues the sector-zoning arc from §1 of PROPOSALS-crystal-face-realism).
+//        NEW MINERAL andalusite (Al₂SiO₅) — the LOW-PRESSURE aluminosilicate
+//        polymorph, the SILICA-SATURATED complement of corundum (where corundum's
+//        _corundum_base_sigma blocks above SiO2>50, andalusite REQUIRES SiO2). js/39
+//        supersaturation_andalusite + MINERAL_GATES_andalusite (js/42), js/59
+//        grow_andalusite, js/89 _nuc_andalusite + iterator, js/65 engine, js/19
+//        stoich, minerals.json + structural.json (Pnnm) + twin-law-check (empty +
+//        note — andalusite twinning not diagnostically established). PERALUMINOUS
+//        GATE (Al≥15 + SiO2≥50 + Na/K<30 + B<1 + T 400-700): in a pegmatite Al is
+//        consumed by feldspar/tourmaline/mica, so andalusite is a metasediment
+//        mineral — and that gate returns 0 for EVERY existing scenario, so the
+//        RNG-cascade guard in _nuc_andalusite never fires elsewhere → the whole
+//        fleet is BYTE-IDENTICAL (probe-confirmed: andalusite fires ONLY in the new
+//        chiastolite_hornfels). NEW SCENARIO chiastolite_hornfels — a graphitic
+//        contact-metamorphic hornfels (Bimbowrie/Zhoukoudian); 5 chiastolite prisms
+//        @ seed 42. CHIASTOLITE: the carbon-cross variety. A new wall.graphitic flag
+//        (js/22) marks the carbonaceous host; classifySectorZoning (js/45) tags
+//        andalusite _sectorZoned kind 'cross' there (vs tourmaline 'hourglass'), and
+//        js/99i _makeChiastolitePrism renders a SQUARE prism with a baked transverse
+//        carbon CROSS (one rule |‖x‖−‖z‖|<band paints both the dark corner columns
+//        and the top X — Dowty 1976 sector zoning; Mason et al. 2010 Gondwana Res.
+//        18(1):222-229). + narrator (js/92i) + narratives/andalusite.md. Only the new
+//        scenario changes the fleet baseline (one scenario added); all prior
+//        scenarios byte-identical. SIM 208 -> 209.
+const SIM_VERSION = 209;
 

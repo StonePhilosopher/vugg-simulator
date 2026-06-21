@@ -252,6 +252,25 @@ function _nuc_topaz(sim) {
   // sphalerite (Zn co-source), or bare wall.
 }
 
+function _nuc_andalusite(sim) {
+  // Al₂SiO₅ contact-metamorphic porphyroblast (the silica-saturated Al₂SiO₅,
+  // complement of corundum). RNG-CASCADE GUARD: bail BEFORE any rng.random()
+  // when σ ≤ crit. The peraluminous gate in supersaturation_andalusite returns 0
+  // for every existing pegmatite/skarn scenario, so no rng is drawn there → the
+  // whole fleet stays byte-identical; only a graphitic-metapelite hornfels (the
+  // new scenario) clears the gate.
+  const sigma_and = sim.conditions.supersaturation_andalusite();
+  if (sigma_and <= MINERAL_GATES_andalusite.sigma_crit) return;   // guard — no rng above this line
+  if (sim._atNucleationCap('andalusite')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'andalusite' && c.active);
+  if (existing.length && !(sigma_and > MINERAL_GATES_andalusite.sigma_crit + 0.5 && rng.random() < 0.25)) return;
+  const c = sim.nucleate('andalusite', 'vug wall', sigma_and);
+  const f = sim.conditions.fluid;
+  const graphitic = !!(sim.conditions.wall && sim.conditions.wall.graphitic);
+  const tag = graphitic ? ' ✚ chiastolite (graphitic host → carbon-cross sectors)' : '';
+  sim.log.push(`  ✦ NUCLEATION: Andalusite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_and.toFixed(2)}, Al=${f.Al.toFixed(0)}, SiO2=${f.SiO2.toFixed(0)})${tag}`);
+}
+
 function _nuc_lepidolite(sim) {
   // Lepidolite K(Li,Al)₃(Al,Si)₄O₁₀(F,OH)₂ — Li-mica, late-pegmatite
   // (research-lepidolite.md). Nucleates after the quartz/feldspar
@@ -973,6 +992,7 @@ function _nucleateClass_silicate(sim) {
   _runNuc(sim, _nuc_spodumene);
   _runNuc(sim, _nuc_tourmaline);
   _runNuc(sim, _nuc_topaz);
+  _runNuc(sim, _nuc_andalusite);
   _runNuc(sim, _nuc_chrysoprase);
   _runNuc(sim, _nuc_lepidolite);
   _runNuc(sim, _nuc_dioptase);

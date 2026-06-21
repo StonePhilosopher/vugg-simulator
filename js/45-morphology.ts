@@ -593,14 +593,25 @@ function classifyDeformation(sim: any) {
 // sector-zoned mineral in the catalogue (elbaite/liddicoatite colour sectors are
 // collector-iconic). Chiastolite (andalusite) — THE iconic sector-cross — needs
 // andalusite added first, a future add-mineral tenant.
-const SECTOR_ZONED_MINERALS: any = { tourmaline: true };
-const SECTOR_ZONED_MIN_UM = 50;   // need a real body + termination to partition
+// Per-mineral sector-zoning config. `kind` selects the render: 'hourglass' (the
+// termination-sector tint — tourmaline/augite read) vs 'cross' (the transverse
+// 4-corner carbon mask — chiastolite). `requiresGraphitic` gates a tenant on a
+// carbonaceous host: andalusite is sector-zoned-as-chiastolite ONLY in a graphitic
+// metapelite (wall.graphitic); a non-graphitic andalusite is a plain square prism.
+const SECTOR_ZONED_MINERALS: any = {
+  tourmaline: { kind: 'hourglass' },
+  andalusite: { kind: 'cross', requiresGraphitic: true },   // chiastolite — the carbon cross
+};
+const SECTOR_ZONED_MIN_UM = 50;   // need a real body + termination/sectors to partition
 function classifySectorZoning(sim: any) {
+  const graphitic = !!(sim.conditions && sim.conditions.wall && sim.conditions.wall.graphitic);
   for (const c of sim.crystals) {
     if (!c || c.dissolved || c._sectorZoned) continue;
-    if (!SECTOR_ZONED_MINERALS[c.mineral]) continue;
+    const cfg = SECTOR_ZONED_MINERALS[c.mineral];
+    if (!cfg) continue;
+    if (cfg.requiresGraphitic && !graphitic) continue;
     if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM) continue;
-    c._sectorZoned = { kind: 'hourglass' };
+    c._sectorZoned = { kind: cfg.kind };
   }
 }
 
