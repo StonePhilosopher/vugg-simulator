@@ -905,6 +905,64 @@ function _makeRhombohedron(): any {
   return geom;
 }
 
+// Saddle (baroque) dolomite — CURVED-FACE rhombohedron. Deformation/shear arc
+// (proposals/RESEARCH-deformation-shear-2026-06-20.md §2): the saddle curvature
+// is a GROWTH-DEFECT — Ca-excess lattice strain + surface roughening above the
+// ~50–60 °C critical roughening temperature (Gregg & Sibley 1984; Barber,
+// Reeder & Smith 1985 TEM) — NOT external tectonic shear. The {104} faces bow
+// convexly into the diagnostic "saddle"/baroque silhouette. Same 8-vertex
+// topology as _makeRhombohedron, but each of the 6 rhombic faces is grid-
+// subdivided and bulged OUTWARD along its normal, pinned to zero at the four
+// edges (bump = 16·s(1-s)·t(1-t)) so adjacent faces still share exact edges and
+// the solid stays watertight. `curvature` (≈0.06–0.20) is the bow amplitude;
+// the mesh-sync hook keys it gently to growth T (the literature gives no
+// quantitative curvature law, so the scaling is mild + clamped).
+function _makeSaddleRhomb(curvature: number): any {
+  const amp = Math.max(0.0, Math.min(0.30, curvature || 0.12));
+  const h = 0.50, t = 0.18, r = 0.42;   // matches _makeRhombohedron
+  const upper: any[] = [0, 1, 2].map(i => { const a = (i / 3) * Math.PI * 2 + Math.PI / 6; return [Math.cos(a) * r, t, Math.sin(a) * r]; });
+  const lower: any[] = [0, 1, 2].map(i => { const a = (i / 3) * Math.PI * 2 + Math.PI / 6 + Math.PI / 3; return [Math.cos(a) * r, -t, Math.sin(a) * r]; });
+  const apexT = [0, h, 0], apexB = [0, -h, 0];
+  // 6 rhombic faces as perimeter-ordered quads [A,B,C,D] (A→B→C→D→A). Top 3
+  // hang off the upper apex, bottom 3 off the lower — mirror of the triangle
+  // split in _makeRhombohedron, but kept as quads so bilinear gridding works.
+  const faces: any[] = [];
+  for (let i = 0; i < 3; i++) faces.push([apexT, upper[i], lower[i], upper[(i + 1) % 3]]);
+  for (let i = 0; i < 3; i++) faces.push([apexB, lower[(i + 1) % 3], upper[(i + 1) % 3], lower[i]]);
+  const positions: number[] = [];
+  const G = 4;
+  for (const f of faces) {
+    const A = f[0], B = f[1], C = f[2], D = f[3];
+    // flat-face normal (edges A→B, A→D), flipped to point outward from origin
+    let nx = (B[1] - A[1]) * (D[2] - A[2]) - (B[2] - A[2]) * (D[1] - A[1]);
+    let ny = (B[2] - A[2]) * (D[0] - A[0]) - (B[0] - A[0]) * (D[2] - A[2]);
+    let nz = (B[0] - A[0]) * (D[1] - A[1]) - (B[1] - A[1]) * (D[0] - A[0]);
+    const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+    const cx = (A[0] + B[0] + C[0] + D[0]) / 4, cy = (A[1] + B[1] + C[1] + D[1]) / 4, cz = (A[2] + B[2] + C[2] + D[2]) / 4;
+    if (nx * cx + ny * cy + nz * cz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+    const P = (s: number, tt: number): number[] => {
+      const w00 = (1 - s) * (1 - tt), w10 = s * (1 - tt), w11 = s * tt, w01 = (1 - s) * tt;
+      const x = w00 * A[0] + w10 * B[0] + w11 * C[0] + w01 * D[0];
+      const y = w00 * A[1] + w10 * B[1] + w11 * C[1] + w01 * D[1];
+      const z = w00 * A[2] + w10 * B[2] + w11 * C[2] + w01 * D[2];
+      const bump = amp * 16 * s * (1 - s) * tt * (1 - tt);
+      return [x + nx * bump, y + ny * bump, z + nz * bump];
+    };
+    for (let si = 0; si < G; si++) {
+      for (let ti = 0; ti < G; ti++) {
+        const p00 = P(si / G, ti / G), p10 = P((si + 1) / G, ti / G);
+        const p11 = P((si + 1) / G, (ti + 1) / G), p01 = P(si / G, (ti + 1) / G);
+        _pushTri(positions, p00[0], p00[1], p00[2], p10[0], p10[1], p10[2], p11[0], p11[1], p11[2]);
+        _pushTri(positions, p00[0], p00[1], p00[2], p11[0], p11[1], p11[2], p01[0], p01[1], p01[2]);
+      }
+    }
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Calcite scalenohedron ("dogtooth") — 12 scalene triangle faces, two
 // pointed apices on the c-axis. Geometrically a tall stretched
 // bipyramid where the equatorial belt is two staggered triangles
@@ -3141,6 +3199,25 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       const cf = Math.round((crystal._sceptre.capFrac || 0.5) * 20) / 20;  // quantize for cache reuse
       if (crystal._sceptreGeomCf !== cf) { crystal._sceptreGeom = _makeSceptreHexPrism(cf); crystal._sceptreGeomCf = cf; }
       geom = crystal._sceptreGeom;
+    }
+    // Saddle (baroque) DOLOMITE curved-face rhombohedron (deformation arc
+    // 2026-06-20). Gated on the habit string 'saddle_rhomb' — mineral-agnostic
+    // so a future saddle siderite/rhodochrosite inherits it for free. RENDER-
+    // ONLY: the engine already assigns this habit, and only to warm hydrothermal
+    // dolomite (tools/saddle-dolomite-observe.mjs confirms ambient scenarios
+    // stay 'massive', so the science gate is in grow_dolomite, not here).
+    // Before this hook 'saddle_rhomb' missed the 'rhombohedral' substring in
+    // _habitGeomToken and fell to the default hex prism — a token wart.
+    if (!geom && typeof crystal.habit === 'string' && crystal.habit.indexOf('saddle') >= 0) {
+      let tSum = 0, tN = 0;
+      for (const z of (crystal.zones || [])) { if (z.thickness_um > 0 && isFinite(z.temperature)) { tSum += z.temperature; tN++; } }
+      const tRep = tN ? tSum / tN : 90;  // representative growth T
+      // bow amplitude rises gently with T above the ~60 °C roughening band
+      // (Gregg & Sibley 1984) — qualitative in the literature, so clamped.
+      const amp = Math.max(0.06, Math.min(0.20, 0.06 + 0.0016 * (tRep - 60)));
+      const q = Math.round(amp * 100) / 100;  // quantize for cache reuse
+      if (crystal._saddleGeomAmp !== q) { crystal._saddleGeom = _makeSaddleRhomb(q); crystal._saddleGeomAmp = q; }
+      geom = crystal._saddleGeom;
     }
     if (!geom) {
       geom = state.geomCache.get(token);

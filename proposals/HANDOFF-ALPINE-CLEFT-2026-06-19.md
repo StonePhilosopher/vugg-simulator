@@ -190,3 +190,200 @@ a named instrument to build. That's the most a layer can leave the one above it:
 not a finished face, but a clean bedding plane to grow from.
 
 — left for whoever comes next.
+
+---
+
+## 7. UPDATE — what actually shipped (2026-06-19 → 06-20)
+
+The §1–6 above were written mid-arc, with grimsel still uncommitted WIP. It all
+landed. For the record:
+
+- **titanite** — SIM 205 `6f5627a` (the prereq; §2).
+- **Grimsel cleft + sceptre + smoky/morion + Tessin** — SIM 206 `2d1abc1`. The
+  sceptre verified exactly as §3 predicted (resorption→renewal phantom boundary),
+  with one correction the bench forced: the signature is **cumulative EXTENT, not
+  rate** — the cooler gen-2 cap grows *slower* per step (Arrhenius) yet ends
+  *larger*, so the "renewal-rate ≥1.3" guess in §4 was the wrong metric. The right
+  instrument is `tools/quartz-sceptre-scan.mjs`, promoted into the engine as
+  `js/45 classifyQuartzSceptre`. Smoky is a fleet-wide fix (radiogenic host + Al,
+  Rossman 1994); the prior model could only make smoky quartz next to a uraninite
+  crystal, so granite morion — the iconic Aar specimen — was impossible.
+- **Gwindel** — SIM 207 `795035c`. See §8; it is the part most worth reading.
+- **Fenster** — still not shipped, on purpose. The only honest gap left.
+
+The blocker that taught the most (not in the original plan): the first grimsel
+broth (K 120 / Na 80 / Al 12) grew an **18 mm feldspar and a 7 mm albite that
+enclosed and killed the quartz** at the first seal. That is geologically
+upside-down — alpine adularia/periklin are minor wall coatings; quartz is the
+large main stage. Diluting to a true cleft fluid (K 30 / Na 25 / Al 6) righted it.
+If a future cleft's headline mineral mysteriously caps out small, **suspect the
+enclosure mechanic and an over-fed accessory before you suspect the headline.**
+
+---
+
+## 8. THE NEXT ARC — a real deformation / shear field (boss-requested, 2026-06-20)
+
+> **⚠ SUPERSEDED 2026-06-20 by `proposals/RESEARCH-deformation-shear-2026-06-20.md`.**
+> Before building, the science was checked (boss directive) — and the §8 design
+> below does NOT survive it. The "one shear field crystals integrate as they
+> grow" conflated three categories; NONE of the four named tenants is driven by
+> an external tectonic shear field integrated during growth (gwindel = spiral-
+> growth Eshelby twist; saddle dolomite = T-roughening growth-defect; bent
+> crystals + mech twins = POST-GROWTH overprints). The honest reframe is THREE
+> separate mechanics (research doc §5). **Step 1 SHIPPED:** saddle dolomite
+> curved-face render (`5a6e52d`, render-only, SIM-neutral). **Step 2 (gwindel):**
+> the shear re-pin in §8.5 is STRUCK — leave the v207 growth-duration proxy
+> (it's closer to the real Eshelby-twist physics than a shear field would be).
+> **Step 3:** the genuine "deformation" arc is a POST-GROWTH OVERPRINT pass (bent
+> crystals, mechanical twins) keyed to a scenario deformation event — NOT a
+> grow-integrate field. Read the research doc, not the design below.
+
+Gwindel shipped as an **abstraction**: with no stress field in the sim, js/45
+`classifyQuartzGwindel` just designates the largest cleft quartz as the twisted
+showpiece (twist° ∝ growth duration), gated on `wall.alpine_cleft`. It reads
+right and it's honest about being a habit-variant the way twinning is. But the
+boss wants the real thing, and the real thing is bigger and better: **a deformation
+field that crystals integrate as they grow.** This section is the knowledge dump
+for that arc. Read it before designing.
+
+### 8.1 Why it's worth doing (what it unlocks beyond gwindel)
+A shear/stress field is not a one-feature mechanic. Once crystals can stamp
+accumulated deformation, you get, from one piece of infrastructure:
+- **Gwindel — true torsion** (twist driven by the field's rotation rate over the
+  crystal's actual growth interval, with handedness), replacing the "largest =
+  gwindel" proxy.
+- **Bent / curved crystals** — "bent" quartz, the curved gwindel relatives,
+  curved gypsum/selenite (ram's-horn), curved stibnite/cylindrite — a whole
+  morphology family the sim can't express today.
+- **Saddle (curved-face) habits** — saddle dolomite is the canonical one; its
+  curvature is a real crystallographic effect the engine currently fakes as a
+  flat rhomb.
+- **Deformation lamellae / strain bands** as a zone tag (a structural-geology
+  storytelling axis the strip has never had).
+It is the first mechanic that is about the *physical environment deforming the
+crystal*, not the *fluid chemistry feeding it*. That's new ground.
+
+### 8.2 The pattern to copy — declared movements (this is the spine)
+Do NOT invent a new subsystem. A shear field is a **declared movement field**,
+exactly like the temperature and Eh movements already shipped (T-reconciliation
+v181, Eh-subsumption v185/186). The machinery is in `js/85j` (the movements
+engine) and the `movements` block in `data/scenarios.json5`. Schema (verbatim
+from grimsel's T movement):
+```
+movements: [{ field, startStep, endStep, base, ops:[{kind:'trend'|'pulse'|'step', amp, ease}], texture? }]
+```
+A `shear` (or `strain_rate`) field slots straight in: a scenario declares a shear
+pulse during D2/D3 reactivation; the field has a value per step like T does.
+Naica's precedent says **no `texture` on the new field at first** (OU noise
+diverges chaotically on a freshly-added channel — T learned this the hard way).
+Read `project_vugg_movements` (memory) for the full idiom and the `drivesFieldAt`
+clobber rule (a movement owns its field; same-field events yield via stand-down).
+
+### 8.3 How a crystal integrates it (the real design)
+The deformation must **accumulate per crystal over its growth interval**, not be a
+global instantaneous value — two crystals growing in the same cleft at different
+times must end up twisted/bent by different amounts (that's the whole point;
+it's why the v207 proxy used growth *duration*). The faithful path:
+- In the growth loop (js/85, where `grow_*` is called per active crystal), stamp
+  each crystal each step with `crystal._strain += shearRate(step) * dt`, or record
+  the field value onto the **zone** (`zone.shear`) so the per-zone history carries
+  it (this also feeds the strip + replay-accurate render). Zones already carry
+  `temperature`; add `shear` the same way.
+- The crystal's total twist/bend = an integral over its zones' stamped shear.
+  Handedness = sign of the field (left/right gwindel).
+- This is PURE per-crystal state — no RNG, no fluid mutation — so it's a clean
+  determinism story (mirrors how the morphology classifiers are pure tagging).
+
+### 8.4 The render (generalize what v207 built)
+`js/99i _makeGwindelGeom(twistDeg)` already twists a flattened prism up its long
+axis — that's the seed. Generalize to a **deformation transform** the renderer
+applies per crystal from the stamped strain:
+- **twist** (about long axis) → gwindel (have this).
+- **bend** (progressive lateral offset / arc of the long axis) → bent/curved
+  crystals (new; a per-segment translation in the same SEG loop).
+- **face curvature** → saddle habits (perturb face normals; harder, do last).
+The mesh-sync hook pattern (js/99i ~line 3040, `if (!geom && ...) geom = _makeX`)
+is where it plugs in; gate on the token + the `_strain`/`_gwindel` tag. Verify in
+the **default Three.js renderer** (`topo-canvas-three`; toggle is `topo-three-btn`;
+js/99i line 27 says three is default) — preview-drive: `startScenarioInCreative(...)`
+then click Grow then the ⬚ button. jsdom CI has no WebGL, so the render is the one
+thing CI can't catch — a human eye (or preview screenshot) is mandatory.
+
+### 8.5 Scope / sequencing recommendation
+1. Add the `shear` movement field + per-zone/per-crystal strain stamping (engine
+   only, byte-identical with shear=0 everywhere — ship that infra commit first,
+   the way v103's Y-field shipped inert before the scenario used it).
+2. Re-pin gwindel onto real strain (replace the "largest=" proxy in
+   classifyQuartzGwindel) + grimsel declares its D2/D3 shear pulse.
+3. Bent crystals as the second tenant (pick a real locality — bent quartz, or
+   curved stibnite) to prove the field generalizes beyond one habit.
+4. Saddle dolomite last (face curvature is the hard render).
+Each step is its own SIM bump + rebake. Expect grimsel to re-pin (gwindel will
+choose differently under real strain than "largest") — that's a one-scenario diff,
+fine. The new field defaults to 0 so the fleet stays byte-identical until a
+scenario opts in (verify with baseline-diff: only the opted-in scenarios move).
+
+---
+
+## 9. Field notes for the next builder (gotchas this arc paid for)
+
+- **VugWall silently drops unknown fields.** `wall.alpine_cleft` did *nothing*
+  until I whitelisted it in the `VugWall` constructor (js/22). Any new wall flag
+  (and a `shear` driver might want one) must be added there or it vanishes. The
+  split probe showing 0 gwindels is what caught it — *probes characterize, traces
+  find* (the enclosure bug, by contrast, only fell to a per-step LOG trace).
+- **The wrong-instrument trap, twice.** The hiatus census looked for step-gaps;
+  sceptres are resorption zones. The rate-ratio looked for fast caps; sceptres are
+  large-by-extent caps. Both times the *measurement* was wrong, not the feature.
+  When a real phenomenon "isn't there," question the probe before the engine.
+- **quartz σ is silica ABUNDANCE, not a skeletalization driver.** This is why
+  fenster has no honest σ home and MORPH_TH.quartz is deliberately unregistered.
+  The honest fenster path (when someone wants it) is to classify on the per-zone
+  `growth_rate` the engine already records (the Berg effect is a *rate* effect),
+  plus a flash-growth scenario beat — NOT a σ band.
+- **Cleft crystals share one fluid history.** This was the v206→v207 reframe: you
+  cannot distinguish gwindel from sceptre by growth/resorption history because the
+  seals hit every active crystal at once. Habit distinctions in a shared-fluid
+  cavity are *crystallographic / environmental*, not fluid-historical. Carry this
+  into the shear arc — it's why deformation must be a separate field, not inferred
+  from the chemistry.
+- **Mechanics: `baseline-diff.mjs` takes version NUMBERS, not file paths** (`206
+  207`). `gen-strip-archive` refuses to overwrite — bump SIM first. **Never run CI
+  concurrently with the strip-archive** (load contention timed pharmacolite out at
+  157s once — it's not a regression, it's the overlap). Stage explicit paths, never
+  `-A` (a concurrent session's `tools/strip-story-diff.mjs` lives untracked in this
+  tree — leave it). Crystallographic-twist render verify needs the preview, not CI.
+
+---
+
+## 10. Speak my truth — for whoever comes next
+
+You will be tempted, as I was, to treat "I can't model the real driver" as
+permission to fake it or to skip it. Resist both. The honest move is the third
+one: ship the *abstraction that's true about what it is* (gwindel as a habit
+variant, the way twinning already is) and write down — loudly, in the version
+history and here — exactly which part is real and which is stand-in. The boss does
+not mind a stand-in that knows it's a stand-in. The boss minds a confabulation
+wearing a lab coat. That distinction is the whole job. Fenster stays unbuilt not
+because it's hard but because the only quick way to build it would have lied about
+which scenarios are skeletal; an honest gap is worth more than a dishonest band.
+
+Twice this arc I was simply **wrong**, and both times being corrected was the
+mechanism of getting it right, not a detour from it. The engine corrected me (the
+dissolution zones I read as failure were the corrosion that *makes* a sceptre).
+The boss corrected me (I deferred gwindel on a premise — "it needs a shear field
+to tell it from a sceptre" — that dissolved the moment I remembered cleft crystals
+share their fluid). If you are doing this work right, you will be wrong in front of
+the rocks and in front of the builder who set the goal, often, and the speed at
+which you *update* is worth more than the polish of your first plan. Follow the
+science is not a slogan here; it is the thing that does the correcting, and it
+works even when no one names it.
+
+Last: the catalog is a cabinet, and every specimen in it should be able to survive
+a geologist picking it up. Not "looks plausible in a screenshot" — *true down to
+why the tip dissolved before it crowned.* That standard is slow and it is the
+point. Build the shear field that way: infra first and inert, one honest tenant at
+a time, each one provable on the bench before it's dressed for the cabinet. Leave
+the next layer a clean bedding plane, as this one tried to.
+
+— still the builder, signing off this arc.
