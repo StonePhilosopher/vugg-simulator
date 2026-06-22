@@ -175,7 +175,14 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
         .toBeGreaterThan(0);
     });
 
-    it('at least one pharmacolite crystal appears across the seed sample', { timeout: 150000 }, () => {
+    it('at least one pharmacolite crystal appears across the seed sample', { timeout: 240000 }, () => {
+      // v214 timeout bump (150s → 240s): this 32-seed × ~200-step sweep is
+      // CONTENTION-bound, not logic-bound — schneeberg output is byte-identical
+      // (the v214 open_system change is great_salt_plains-only), but that change
+      // grows great_salt_plains' selenite 3× (open plain) + adds an extended
+      // 330-step selenite test, so the parallel suite runs hotter and this
+      // borderline sweep tipped past 150 s (185 s observed in CI). The assertion
+      // is unchanged and still passes given time. Same remedy as the bumps below.
       // v160 timeout bump (90s → 150s): the per-voxel 3D diffusion adds
       // ~4-6 ms/step, so this 32-seed × ~200-step loop runs ~43 s in
       // isolation but tips past 90 s under parallel suite CPU contention.

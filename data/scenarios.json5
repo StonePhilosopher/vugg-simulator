@@ -1191,6 +1191,12 @@
           // as inert silicate — no Ca/CO3 dissolution; the Ca comes from the
           // gypsum-saturated groundwater, not the wall). High wall_Fe = the red beds.
           "architecture": "basin",
+          // OPEN evaporite surface — a salt plain is not a sealed pocket that fills and
+          // closes; it is an open flat where brine cycles wet/dry over a surface that never
+          // runs out of room. open_system (js/22 + js/85) reads the cavity fill as 0 so the
+          // plain never seals, keeps nucleating fresh selenite blades, and keeps growing as
+          // the seasons cycle (boss directive 2026-06-22 — defer to the real geology).
+          "open_system": true,
           "composition": "sandstone",
           "thickness_mm": 500.0,
           "vug_diameter_mm": 120.0,
@@ -1212,7 +1218,14 @@
         { "step": 195, "type": "gsp_dry",         "name": "Dry Season #4",    "description": "Fourth dry burst" },
         { "step": 215, "type": "gsp_wet",        "name": "Spring Rain #5",   "description": "Final flood" },
         { "step": 235, "type": "gsp_dry",         "name": "Dry Season #5",    "description": "Fifth dry burst — the deepest iron flooding" },
-        { "step": 245, "type": "gsp_crust_seal",  "name": "Crust Seal",       "description": "The salt crust hardens; cycling stops" }
+        { "step": 245, "type": "gsp_crust_seal",  "name": "Crust Seal",       "description": "The salt crust hardens; cycling stops" },
+        // FLOODED VARIANT (boss directive 2026-06-22): a late RED-MUD FLOOD that overgrows
+        // the hourglass to solid chocolate brown. At step 265, PAST duration_steps (250),
+        // so the canonical seed-42 baseline stops at the amber stepped hourglass and never
+        // reaches the flood. It WORKS because the plain is open_system (the cavity never
+        // sealed, so the blades keep growing) — fires only when the run CONTINUES past 250
+        // (creative-mode Wait / extended viewing). Run ~330 steps to see the flooded blade.
+        { "step": 265, "type": "gsp_flood",       "name": "Red-Mud Flood",    "description": "An exceptional flood year buries the still-growing blades in iron-rich slurry — the hourglass overgrows to solid brown (fires only past the canonical 250-step run)" }
       ],
       "sources": [
         "U.S. Fish & Wildlife Service — Salt Plains National Wildlife Refuge, selenite crystal digging (formation mechanism: gypsum-saturated groundwater evaporating under a salt crust; clay/sand/iron-oxide inclusions form the hourglass)",

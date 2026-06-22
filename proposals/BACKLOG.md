@@ -28,6 +28,28 @@ Living list of open work items, captured from session conversations so context s
 > defer-to-geology, image-corpus method). Full goal text in
 > `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
+> ## 🏞️ SESSION (2026-06-22, later) — OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite ✅ SHIPPED (SIM 214)
+>
+> Boss directive: "the salt plain shape should be its own unique shape that should not be
+> something that can fill up and close — it's an evaporite plain." A defer-to-geology fix.
+> **Diagnosis:** the earlier flooded-selenite attempt failed because great_salt_plains'
+> selenite PACKED the 120mm basin by ~step 250 → the growth loop closed it (currentFill≥1.0
+> → dissolution-only); a late flood saw σ=85 but had no room → flooded nothing. The real bug
+> was the MODEL — a salt plain is an OPEN surface, not a sealed pocket. (The flat-playa
+> GEOMETRY was already right: architecture:'basin'; only the fill-close was wrong.)
+> **Fix:** new `wall.open_system` flag — js/22 WallState.open_system (default false); js/85
+> reads cavity fill as 0 when set, so the plain never SEALS, keeps NUCLEATING, and never hits
+> the fill-halt/dampener (growth stays rate-limited by chemistry, not pocket space). Default
+> false → **baseline-diff 213↔214 = great_salt_plains ONLY** (crystals 30→28, species 5→5;
+> 36 others byte-identical). Selenite now grows through ALL the cycles (30→95mm, terraces
+> 3→5) instead of packing+halting. **+ flooded variant** (the original ask, now unblocked):
+> gsp_flood red-mud iron event at step 265 (PAST the 250 baseline) — canonical 250-step run
+> stays AMBER stepped (intensity 0.55, flooded 0); extended/creative run (330) → iron lands
+> on the still-growing open plain → intensity 0.95 → both blades flooded chocolate-brown.
+> The boss's "flood after the test length" plan, made to work by the open-system shape fix.
+> + tests (canonical-amber + extended-flooded pins) + probe STEPS override. NEXT (open):
+> open_system could suit other true open-surface scenarios (sabkha, searles playa) if wanted.
+>
 > ## ⟂ SESSION (2026-06-22, later) — CALCITE MECHANICAL e-TWIN OVERPRINT ✅ SHIPPED (SIM 213)
 >
 > Deformation/shear arc §5.3 next tenant — the calcite sibling of the v208 bent-quartz

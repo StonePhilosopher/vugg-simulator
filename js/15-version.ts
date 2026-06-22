@@ -11524,5 +11524,28 @@
 //        scalenohedron). + narrator (calcite 'e_twinned') + tests (etwin-overprint.test.ts)
 //        + tools/etwin-probe.mjs. Standalone-render verified (parallel lamellae vs the
 //        smooth reference). SIM 212 -> 213 (provenance; baseline-diff 212↔213 = 0 drift).
-const SIM_VERSION = 213;
+//   v214 — OPEN-SYSTEM evaporite plain + flooded-selenite variant (crystal-face realism,
+//        2026-06-22; boss directive "the salt plain shape should be its own unique shape
+//        that should not fill up and close — it's an evaporite plain"). THE FIX, defer-to-
+//        geology: a salt plain is an OPEN surface, not a sealed pocket. great_salt_plains
+//        already used architecture:'basin' (the flat-playa geometry) but the growth loop
+//        still closed it at currentFill≥1.0 — the 2 selenite blades packed the 120mm vug by
+//        ~step 250 and growth halted (σ=85 but no room; the flooded-variant attempt was
+//        blocked by exactly this). NEW wall.open_system flag (js/22): when set, js/85 reads
+//        the cavity fill as 0 throughout the step, so the plain never SEALS (line 259),
+//        keeps NUCLEATING (check_nucleation), and never hits the fill-halt / high-fill
+//        dampener — growth stays rate-limited by chemistry, not pocket space. Default false
+//        → every other scenario byte-identical (baseline-diff 213↔214 = great_salt_plains
+//        ONLY). Effect at seed 42: selenite grows through ALL the wet/dry cycles (30→95mm,
+//        stepped terraces 3→5) instead of packing+halting — the open-plain model. + the
+//        FLOODED VARIANT: a gsp_flood red-mud iron event (js/70k) at step 265, PAST
+//        duration_steps (250), so the canonical 250-step baseline stays the AMBER stepped
+//        hourglass (intensity 0.55, flooded 0); the flood fires only when the run CONTINUES
+//        (creative-mode Wait / extended viewing) — now functional because the open plain
+//        keeps growing, so the iron lands on live crystal → intensity 0.95 → flooded (both
+//        blades chocolate-brown at 330 steps). This is the boss's own "flood after the test
+//        length" plan, unblocked by the open-system shape fix. + tests + tools/gypsum-
+//        hourglass-probe.mjs STEPS override. SIM 213 -> 214 (great_salt_plains single-
+//        scenario rebake).
+const SIM_VERSION = 214;
 

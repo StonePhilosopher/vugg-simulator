@@ -22,13 +22,13 @@ declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
-function run(scenarioName: string, seed = 42) {
+function run(scenarioName: string, seed = 42, stepsOverride?: number) {
   setSeed(seed);
   const scen = SCENARIOS[scenarioName];
   if (!scen) return null;
   const { conditions, events, defaultSteps } = scen();
   const sim = new VugSimulator(conditions, events);
-  const steps = defaultSteps ?? 200;
+  const steps = stepsOverride ?? defaultSteps ?? 200;
   for (let i = 0; i < steps; i++) sim.run_step();
   return sim;
 }
@@ -73,5 +73,28 @@ describe('hourglass selenite (Great Salt Plains clay/Fe sector zoning)', () => {
     expect(Math.max(...hg.map((c: any) => c._sectorZoned.steps))).toBeGreaterThanOrEqual(2);
     // Red-bed iron stains it a real brown (not the faint-amber low-iron end).
     expect(Math.max(...hg.map((c: any) => c._sectorZoned.intensity))).toBeGreaterThan(0.4);
+  });
+
+  // OPEN-SYSTEM evaporite plain + flooded variant (SIM 214, boss directive: a salt plain
+  // is an open surface, not a sealed pocket that fills and closes). wall.open_system makes
+  // the basin never seal, so selenite keeps growing through the cycles instead of packing
+  // the vug and halting; the red-mud gsp_flood (step 265, PAST the 250 baseline) then
+  // overgrows the still-growing blades to solid brown — only reachable because the plain
+  // stayed open. The canonical 250-step run stays the AMBER stepped hourglass.
+  it('open salt plain: canonical 250-step run is the AMBER stepped hourglass (not flooded)', () => {
+    const sim = run('great_salt_plains', 42);   // defaultSteps = 250
+    const hg = hourglass(sim);
+    expect(hg.length).toBeGreaterThan(0);
+    expect(hg.some((c: any) => c._sectorZoned.flooded)).toBe(false);   // amber, not flooded at 250
+    // Open system: the blades grow through every cycle (never sealed) → richer stepping.
+    expect(Math.max(...hg.map((c: any) => c._sectorZoned.steps))).toBeGreaterThanOrEqual(3);
+  });
+
+  it('open salt plain: an extended run reaches the RED-MUD FLOOD → blades overgrow to solid brown', () => {
+    const sim = run('great_salt_plains', 42, 330);   // past the gsp_flood at step 265
+    const hg = hourglass(sim);
+    expect(hg.length).toBeGreaterThan(0);
+    expect(hg.some((c: any) => c._sectorZoned.flooded)).toBe(true);    // flooded variant
+    expect(Math.max(...hg.map((c: any) => c._sectorZoned.intensity))).toBeGreaterThan(0.9);
   });
 });
