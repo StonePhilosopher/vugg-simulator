@@ -888,13 +888,13 @@ function _makeChiastolitePrism(bodyRGB: number[], crossRGB: number[]): any {
   return geom;
 }
 
-// GREEN POONA APOPHYLLITE — a tetragonal square prism: green PRISM {100} side
-// sectors, a pale-pearly BASAL {001} top (the clear "waist" where growth slowed),
-// and intermediate {101} pyramidal shoulders. The Poona green is V⁴⁺ (Rossman
-// 1974) concentrated in the faster-growing prism sectors; the water-rich basal
-// sector stays clearer — the growth-sector-partitioning model (apophyllite is a
-// genuine anomalous-birefringence / growth-sector-zoned mineral; which sector
-// carries the colour is a reasoned model, not a measured map — see js/45). Per-
+// GREEN POONA APOPHYLLITE — a tetragonal square prism rendered as a UNIFORM V⁴⁺
+// green body (Rossman 1974), the {101} pyramidal tips a hair lighter from
+// transparency and the {001} basal face a pearly green-white LUSTER. Image-corpus
+// verified (Pune specimens, 2026-06-21): the green is a uniform body colour with NO
+// visible prism-vs-pyramid sector partition. Apophyllite IS genuinely sector-zoned,
+// but only OPTICALLY (anomalous birefringence, crossed-polars) — it does not show as
+// visible colour, so this is NOT a colour hourglass (see js/45). Per-
 // CELL flat ABSOLUTE vertex colours (material runs vertexColors with color=white). Same unit box (y −0.5..+0.5) as the other prism builders
 // so the per-crystal transform scales it identically.
 function _makeApophyllitePrism(prismRGB: number[], pyramidRGB: number[], basalRGB: number[]): any {
@@ -3457,20 +3457,24 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
           state.geomCache.set(key, geom);
         }
       } else if (crystal._sectorZoned.kind === 'apophyllite_green') {
-        // GREEN POONA APOPHYLLITE — a tetragonal square prism: green PRISM {100} side
-        // sectors, a pale-pearly BASAL {001} top "waist", intermediate {101} shoulders.
-        // Apophyllite is a genuine growth-sector-zoned mineral (anomalous birefringence
-        // from per-sector F/OH + hydration); the V⁴⁺ green (Rossman 1974, Am.Min. 59:621)
-        // is the dichroic chromophore, here modeled in the faster-growing prism sectors
-        // (which sector carries it is a reasoned model, not a measured map — see js/45).
+        // GREEN POONA APOPHYLLITE — a tetragonal square prism, UNIFORM V⁴⁺ green body
+        // (Rossman 1974, Am.Min. 59:621), tips a hair lighter (transparency), {001}
+        // basal face a pearly green-white luster. Image-corpus verified (Pune, 2026-06-21):
+        // green is a uniform body colour, NO visible prism-vs-pyramid sector partition.
+        // Apophyllite's sector zoning is real but OPTICAL-only (anomalous birefringence,
+        // crossed-polars) — not visible colour, so NOT a colour hourglass (see js/45).
         // Fixed baked vertex colours (NOT class_color, a placeholder blue). One geom for
         // all green apophyllite.
         const key = '__apophyllite_green';
         geom = state.geomCache.get(key);
         if (!geom) {
-          const prism = new THREE.Color('#5fb87a');    // V⁴⁺ green prism {100} sectors (fast growth)
-          const pyramid = new THREE.Color('#9fd0ad');   // intermediate {101} pyramidal shoulders
-          const basal = new THREE.Color('#e6efe9');     // pale-pearly basal {001} "waist" (water-rich)
+          // UNIFORM V⁴⁺ green body (image-corpus verified: Pune apophyllite green is
+          // a uniform body colour, NOT a visible colour-sector partition). Tips read
+          // slightly lighter from TRANSPARENCY; the basal {001} face is the one real
+          // visible face contrast — a pearly (green-tinted, not white) LUSTER.
+          const prism = new THREE.Color('#5fb87a');    // green prism body
+          const pyramid = new THREE.Color('#74c191');   // same green, a hair lighter (transparent tips)
+          const basal = new THREE.Color('#cfe6d6');     // pearly green-white {001} basal-face luster
           geom = _makeApophyllitePrism([prism.r, prism.g, prism.b], [pyramid.r, pyramid.g, pyramid.b], [basal.r, basal.g, basal.b]);
           state.geomCache.set(key, geom);
         }

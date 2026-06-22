@@ -598,8 +598,8 @@ function classifyDeformation(sim: any) {
 // andalusite added first, a future add-mineral tenant.
 // Per-mineral sector-zoning config. `kind` selects the render: 'hourglass' (the
 // termination-sector tint — the tourmaline bicolor-elbaite read) vs 'cross' (the
-// transverse 4-corner carbon mask — chiastolite) vs 'apophyllite_green' (V⁴⁺ green
-// in the prism sectors, pale basal waist — the Poona read). `requiresGraphitic`
+// transverse 4-corner carbon mask — chiastolite) vs 'apophyllite_green' (UNIFORM V⁴⁺
+// green body + pearly basal-face luster — the Poona read). `requiresGraphitic`
 // gates a tenant on a carbonaceous host: andalusite is sector-zoned-as-chiastolite
 // ONLY in a graphitic metapelite (wall.graphitic); a non-graphitic andalusite is a
 // plain square prism. `requiresGreen` gates apophyllite's green render on a crystal
@@ -609,16 +609,19 @@ function classifyDeformation(sim: any) {
 // anomalous birefringence (optic sign varies within one crystal) arises from per-
 // sector differences in F/OH ratio + structural water + strain (Dowty-type growth-
 // sector zoning, confirmed against optical-mineralogy sources). The prized Poona
-// green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622) — DICHROIC — and is modeled
-// here as concentrated in the faster-growing PRISM {100} sectors, the water-rich
-// basal {001} sector staying clearer (the green "waist"). WHICH sector carries the
-// green is a reasoned model (fast-sector impurity-trapping + documented green↔clear
-// zoning), not a measured sector map — settled 2026-06-21 by cross-checking the boss
-// research disagreement (Cu→V corrected; sector-zoning-is-real confirmed).
+// green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622) — DICHROIC. BUT that sector
+// zoning is OPTICAL-only (anomalous birefringence, crossed-polars/thin-section). The
+// VISIBLE green is a UNIFORM body colour: a provenance-locked image corpus of Pune
+// specimens (2026-06-21) shows NO prism-vs-pyramid colour partition — only a
+// transparency gradient (thin tips lighter) + faint concentric banding. So the render
+// is UNIFORM green + a pearly {001} basal-face LUSTER (the one real visible face
+// contrast), NOT a colour hourglass. (Correction trail: boss handoff said "Cu" →
+// corrected to V; my "not real sector zoning" → corrected, the zoning is real but
+// optical; the image corpus then corrected the visible-colour model to uniform.)
 const SECTOR_ZONED_MINERALS: any = {
   tourmaline: { kind: 'hourglass' },
   andalusite: { kind: 'cross', requiresGraphitic: true },   // chiastolite — the carbon cross
-  apophyllite: { kind: 'apophyllite_green', requiresGreen: true },  // Poona V⁴⁺ green caps — colour-zoning, NOT protosite (see note above)
+  apophyllite: { kind: 'apophyllite_green', requiresGreen: true },  // Poona V⁴⁺ UNIFORM green body + pearly basal (sector zoning is optical-only — see note)
 };
 const SECTOR_ZONED_MIN_UM = 50;   // need a real body + termination/sectors to partition
 function classifySectorZoning(sim: any) {

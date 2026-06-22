@@ -358,7 +358,7 @@ Object.assign(VugSimulator.prototype, {
   else if (c.habit === 'druzy_crust') parts.push(narrative_variant('apophyllite', 'druzy_crust') || 'Fine-grained drusy coating — the very-high-σ form.');
   else parts.push(narrative_variant('apophyllite', 'chalcedony_pseudomorph') || "Chalcedony pseudomorph — at low σ the crystal grew over an earlier zeolite blade.");
   if (c._apophylliteGreen) {
-    parts.push(narrative_variant('apophyllite', 'poona_green') || "Pastel green — the prized Poona/Pune variety, coloured by V⁴⁺ (~1600 ppm in the lattice; Rossman 1974). The colour is dichroic; apophyllite is a genuine growth-sector-zoned mineral (its anomalous birefringence is per-sector F/OH + hydration zoning), and the V⁴⁺ green is modeled in the faster-growing prism sectors over a pale basal 'waist'.");
+    parts.push(narrative_variant('apophyllite', 'poona_green') || "Pastel green — the prized Poona/Pune variety, coloured by V⁴⁺ (~1600 ppm in the lattice; Rossman 1974). The colour is dichroic and forms a UNIFORM green body — apophyllite IS genuinely sector-zoned, but only optically (anomalous birefringence: the green deepens and pales by direction, and a polarizing microscope sees patchy sector extinction, yet the body colour itself stays even). So the eye sees a uniform green prism, not a colour hourglass.");
   }
   const hematite_zones = c.zones.filter(z => z.note && z.note.includes('hematite needle phantom'));
   if (hematite_zones.length) {

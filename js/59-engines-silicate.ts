@@ -1368,11 +1368,11 @@ function grow_apophyllite(crystal, conditions, step) {
   // 59(5-6):621-622: ~1600 ppm V, tetravalent vanadium drives the colour AND
   // the dichroism). V is a COLOUR DISPATCHER here, NOT a supersaturation gate —
   // apophyllite grows colourless/pearly with or without V (the §4b trace-cation
-  // pattern). The green is growth-sector-zoned — modeled as concentrated in the
-  // faster-growing prism sectors (the green Poona habit on white stilbite),
-  // recorded as a render hint the js/45 classifier reads. Apophyllite IS a genuine
-  // growth-sector-zoned mineral (anomalous birefringence from per-sector F/OH +
-  // hydration); the V⁴⁺ green is its dichroic chromophore — see js/45.
+  // pattern). The green is a UNIFORM V⁴⁺ body colour (image-corpus verified, Pune
+  // 2026-06-21: NO visible sector partition — the green Poona habit on white
+  // stilbite), recorded as a render hint the js/45 classifier reads. Apophyllite's
+  // genuine sector zoning is OPTICAL-only (anomalous birefringence, crossed-polars)
+  // — not visible colour — see js/45.
   let color_note = ' — transparent to pearly colourless';
   if (conditions.fluid.V > 0.5) {
     crystal._apophylliteGreen = true;

@@ -11433,14 +11433,16 @@
 //        The prized Pune/Poona green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622 —
 //        ~1600 ppm V, V⁴⁺ drives colour + dichroism; VERIFIED to the Caltech/MSA
 //        archive) — the handoff's "Cu green" was a confabulation, corrected to V.
-//        Modeled as concentrated in the faster-growing PRISM {100} sectors with a
-//        pale-pearly BASAL {001} "waist" (which sector carries the green = a reasoned
-//        model, not a measured map). grow_apophyllite (js/59) reads fluid.V > 0.5 as
-//        a COLOUR DISPATCHER (never a growth gate — the §4b pattern), setting
+//        SECTOR-MODEL CORRECTED (same-day, SIM-neutral render fix): a provenance-
+//        locked image corpus of Pune specimens shows the green is a UNIFORM body
+//        colour with NO visible prism-vs-pyramid partition. Apophyllite's sector
+//        zoning is real but OPTICAL-only (anomalous birefringence, crossed-polars) —
+//        it does not show as visible colour. grow_apophyllite (js/59) reads fluid.V >
+//        0.5 as a COLOUR DISPATCHER (never a growth gate — the §4b pattern), setting
 //        crystal._apophylliteGreen; classifySectorZoning (js/45) tags it _sectorZoned
 //        kind 'apophyllite_green' (requiresGreen); js/99i _makeApophyllitePrism
-//        renders a tetragonal square prism — green prism sides, pale basal top,
-//        intermediate {101} shoulders (the green Poona habit). deccan_zeolite gains
+//        renders a tetragonal square prism — UNIFORM green body, lighter transparent
+//        tips, pearly green-white {001} basal-face luster. deccan_zeolite gains
 //        a modest V=3 trace (basalt-weathering groundwater); assemblage-NEUTRAL (no
 //        Pb/Cu/U → no V-mineral can fire). Baseline-diff v209→v210: deccan 60→59
 //        crystals, species 17→17 — one marginal nucleation flipped by the V trace's
