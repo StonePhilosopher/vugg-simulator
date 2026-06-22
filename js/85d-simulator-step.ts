@@ -84,6 +84,24 @@ Object.assign(VugSimulator.prototype, {
           this.log.push(`     🔌 ${toggled.length} fluid feeder${toggled.length === 1 ? '' : 's'} ${verb} (${kinds}) — plumbing changed`);
         }
       }
+      // POST-GROWTH DEFORMATION (deformation/shear arc 2026-06-20) — an event may
+      // carry a `deformation` directive {style,magnitude,minerals}. It records a
+      // shear event onto the sim WITH the step it fired (classifyDeformation,
+      // post-growth in js/45, then bends crystals that had grown by this step).
+      // Chemically inert by design: deformation is MECHANICAL and POST-growth, so
+      // apply_fn must not touch fluid/T — the assemblage stays byte-identical.
+      if (event.deformation) {
+        if (!this._deformationEvents) this._deformationEvents = [];
+        const d = event.deformation;
+        this._deformationEvents.push({
+          step: this.step,
+          style: d.style || 'bend',
+          magnitude: (typeof d.magnitude === 'number') ? d.magnitude : 0.5,
+          minerals: d.minerals || null,
+        });
+        const ms = d.minerals ? d.minerals.join(', ') : 'all grown crystals';
+        this.log.push(`     ⟁ DEFORMATION: ${d.style || 'bend'} overprint on ${ms} — a post-growth tectonic shear bends what already grew`);
+      }
       this.log.push('');
     }
   }

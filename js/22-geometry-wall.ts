@@ -241,6 +241,12 @@ class VugWall {
     // exposes this as a setup toggle (f-thermal-pulses). Read directly off
     // conditions.wall in ambient_cooling.
     this.thermal_pulses = (opts.thermal_pulses !== undefined) ? !!opts.thermal_pulses : true;
+    // graphitic — the host is a carbonaceous/graphitic metapelite (crystal-face
+    // realism arc 2026-06-21). Read by grow_andalusite + classifySectorZoning to
+    // render the CHIASTOLITE carbon cross (carbonaceous matter swept into the
+    // andalusite corner growth sectors). Default false — only a contact-hornfels
+    // scenario sets it; inert for every other scenario.
+    this.graphitic = !!opts.graphitic;
     // v179 (2026-06-09): per-scenario ambient cooling rate, °C/step (default
     // 1.5 — the historical hard-coded value in ambient_cooling, 85d). The
     // reactivated_fluorite_vein exposed the gap: it is the first HOT scenario

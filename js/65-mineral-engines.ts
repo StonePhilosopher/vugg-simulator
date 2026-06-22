@@ -57,6 +57,7 @@ const MINERAL_ENGINES = {
   goethite: grow_goethite,
   albite: grow_albite,
   topaz: grow_topaz,
+  andalusite: grow_andalusite,   // Al2SiO5 low-P contact-metamorphic; chiastolite (carbon cross) in graphitic host
   tourmaline: grow_tourmaline,
   beryl: grow_beryl,          // goshenite / generic colorless (post-R7)
   emerald: grow_emerald,      // Cr/V chromophore variety

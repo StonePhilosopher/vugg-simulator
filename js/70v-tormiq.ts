@@ -81,3 +81,17 @@ function event_tormiq_late_calcite(c) {
   c.flow_rate = 0.2;
   return `The cleft cools below ~200°C: calcite + late zeolites close the paragenesis and growth winds down. T ${c.temperature.toFixed(0)}°C.`;
 }
+
+// LATE KARAKORAM-THRUST SHEARING (deformation/shear arc 2026-06-20). The cleft
+// is sealed and its quartz lining is fully grown, but the Main Karakoram Thrust
+// is still active — continued shearing of the rock mass plastically BENDS the
+// early quartz (post-growth bend-gliding / undulose strain; the literature is
+// unambiguous that bent quartz is a post-growth overprint, NOT a growth habit —
+// see RESEARCH-deformation-shear-2026-06-20.md §3). The epidote swords grew
+// later and are spared here (the directive targets quartz only). CHEMICALLY
+// INERT: deformation is mechanical and post-growth, so this handler touches no
+// fluid/T — the assemblage stays byte-identical. The bend is carried by the
+// event's `deformation` directive (handled in apply_events → classifyDeformation).
+function event_tormiq_late_shear(c) {
+  return `Continued Main Karakoram Thrust shearing wracks the sealed cleft: the early quartz lining, long since grown, is plastically BENT — its prisms curve and go undulose. (A post-growth tectonic overprint; the later epidote is spared.)`;
+}

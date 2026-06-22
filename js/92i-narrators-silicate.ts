@@ -41,6 +41,14 @@ Object.assign(VugSimulator.prototype, {
     parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
       || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);
   }
+  // Bent — POST-GROWTH deformation overprint (deformation/shear arc; js/45
+  // classifyDeformation). The crystal grew straight, then a later tectonic shear
+  // plastically bent it (bent quartz = post-growth bend-gliding, undulose strain
+  // — NOT a growth habit). Distinct from the gwindel twist (a growth feature).
+  if (c._deformation && c._deformation.kind === 'bend') {
+    parts.push(narrative_variant('quartz', 'bent')
+      || `BENT — the prism is plastically curved: it grew straight, then a later tectonic shear (still-active thrusting) bent the finished crystal, leaving undulose strain. A post-growth overprint, not a growth habit.`);
+  }
   // Tessin (Tessiner Habitus) — the alpine face development.
   if ((c.dominant_forms || []).some(f => f.includes('steep rhombohedron'))) {
     parts.push(narrative_variant('quartz', 'tessin')
@@ -182,7 +190,27 @@ Object.assign(VugSimulator.prototype, {
   } else if (varieties.has('achroite')) {
     parts.push(narrative_variant('tourmaline', 'achroite') || 'Achroite — colorless elbaite.');
   }
+  if (c._sectorZoned) {
+    parts.push(narrative_variant('tourmaline', 'sector_zoned')
+      || 'Sector (hourglass) zoning — the prism faces and the pyramidal termination grew at different rates and trapped trace elements differently, so colour partitions by growth SECTOR with a sharp, geometry-locked boundary (Dowty 1976). Elbaite/liddicoatite slices show this as the famous radial colour wedges.');
+  }
   parts.push(narrative_closing('tourmaline') || 'The cross-section reads like a tree-ring record.');
+  return parts.filter(p => p).join(' ');
+},
+
+  _narrate_andalusite(c) {
+  // Prose lives in narratives/andalusite.md.
+  const parts = [`Andalusite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+  parts.push(narrative_blurb('andalusite') || 'Al₂SiO₅ — the low-pressure aluminosilicate polymorph, a near-square contact-metamorphic prism.');
+  if (c._sectorZoned && c._sectorZoned.kind === 'cross') {
+    parts.push(narrative_variant('andalusite', 'chiastolite')
+      || 'CHIASTOLITE — the cross stone: carbonaceous matter from the graphitic metapelite host was swept into the rapidly-growing CORNER growth sectors, so a section cut perpendicular to c shows a dark Maltese cross. This is growth-SECTOR zoning (each face traps a different composition), not concentric banding — Dowty 1976; the quartz+graphite co-precipitation of Mason et al. 2010.');
+  } else {
+    const notes = c.zones.map(z => (z.note || '').toLowerCase());
+    if (notes.some(n => n.includes('viridine'))) parts.push(narrative_variant('andalusite', 'viridine') || 'Viridine — the Mn³⁺-rich green andalusite.');
+    else if (notes.some(n => n.includes('pink'))) parts.push(narrative_variant('andalusite', 'pink') || 'Pink-rose from a trace of Mn³⁺.');
+  }
+  parts.push(narrative_closing('andalusite') || 'An index mineral of low-pressure metamorphism — its presence pins the rock below the kyanite field, in the aureole of a shallow intrusion.');
   return parts.filter(p => p).join(' ');
 },
 
@@ -329,6 +357,9 @@ Object.assign(VugSimulator.prototype, {
   else if (c.habit === 'hopper_growth') parts.push(narrative_variant('apophyllite', 'hopper_growth') || 'Stepped/terraced faces — high-supersaturation hopper habit.');
   else if (c.habit === 'druzy_crust') parts.push(narrative_variant('apophyllite', 'druzy_crust') || 'Fine-grained drusy coating — the very-high-σ form.');
   else parts.push(narrative_variant('apophyllite', 'chalcedony_pseudomorph') || "Chalcedony pseudomorph — at low σ the crystal grew over an earlier zeolite blade.");
+  if (c._apophylliteGreen) {
+    parts.push(narrative_variant('apophyllite', 'poona_green') || "Pastel green — the prized Poona/Pune variety, coloured by V⁴⁺ (~1600 ppm in the lattice; Rossman 1974). The colour is dichroic and forms a UNIFORM green body — apophyllite IS genuinely sector-zoned, but only optically (anomalous birefringence: the green deepens and pales by direction, and a polarizing microscope sees patchy sector extinction, yet the body colour itself stays even). So the eye sees a uniform green prism, not a colour hourglass.");
+  }
   const hematite_zones = c.zones.filter(z => z.note && z.note.includes('hematite needle phantom'));
   if (hematite_zones.length) {
     parts.push(narrative_variant('apophyllite', 'bloody_phantoms', { count: hematite_zones.length }) || `${hematite_zones.length} growth zones carry hematite needle phantoms — this is the 'bloody apophyllite' variety from Nashik.`);

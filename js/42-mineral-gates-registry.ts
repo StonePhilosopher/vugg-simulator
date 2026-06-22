@@ -132,6 +132,7 @@ const MINERAL_GATES_REGISTRY: Record<string, MineralGates> = {
   heliodor: MINERAL_GATES_heliodor,
   tourmaline: MINERAL_GATES_tourmaline,
   topaz: MINERAL_GATES_topaz,
+  andalusite: MINERAL_GATES_andalusite,
   opal: MINERAL_GATES_opal,
   coffinite: MINERAL_GATES_coffinite,
   uranophane: MINERAL_GATES_uranophane,

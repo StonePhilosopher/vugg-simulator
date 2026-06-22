@@ -713,6 +713,58 @@
       ]
     },
 
+    "chiastolite_hornfels": {
+      "anchor": "Bimbowrie / Mount Howden, Olary district, South Australia — classic chiastolite (the 'cross stone') in contact-metamorphic hornfels; the Zhoukoudian aureole (Beijing) of Mason et al. 2010 is the peer-reviewed analogue.",
+      "description": "Low-pressure CONTACT-METAMORPHIC hornfels — a graphitic aluminous metapelite baked in the aureole of a shallow intrusion. Andalusite (Al₂SiO₅) porphyroblasts grow with quartz; because the metapelite carries reduced organic carbon, the andalusite grows as CHIASTOLITE — carbonaceous matter swept into the corner growth sectors → the dark cross.",
+      "expects_species": ["andalusite", "feldspar"],
+      "duration_steps": 120,
+      "notes": [
+        "Anchor: chiastolite is the variety of andalusite with a sector-zoned carbonaceous cross. South Australian (Bimbowrie/Mt Howden) hornfels is the classic collector locality; Mason, Burton, Yuan & She (2010, Gondwana Research 18(1):222-229) is the peer-reviewed mechanism study (Zhoukoudian aureole, Beijing): quartz + graphite inclusions co-precipitate into the andalusite growth sectors from an internally graphite-buffered H₂O–CO₂ fluid.",
+        "Chemistry signature: PERALUMINOUS and SILICA-SATURATED (the opposite of marble_contact's SiO2-undersaturated corundum field). Al high + SiO2 high → Al₂SiO₅ (andalusite), NOT corundum. Alkalis (Na, K) and B are kept LOW — in a pegmatite Al would be locked into feldspar/tourmaline/mica, so andalusite is diagnostic of an alkali-poor metasediment. That alkali/B gate is also what keeps andalusite out of every other scenario.",
+        "wall.graphitic:true — the host is a carbonaceous metapelite. grow_andalusite + classifySectorZoning read this flag to render the CHIASTOLITE carbon cross (a transverse 4-corner sector mask, js/99i _makeChiastolitePrism). Without it, andalusite renders as a plain square prism.",
+        "Thermal regime: contact-metamorphic peak ~600°C cooling gently through the andalusite stability window (400-700°C, below the Holdaway 1971 Al₂SiO₅ triple point ~500°C/0.4 GPa at low P). thermal_pulses:false — one intrusive episode, no magmatic fracture-valve reheats (PEGMATITE-SHAPE, the marble_contact idiom).",
+        "Wall composition 'pegmatite' is the inert aluminous-silicate proxy (the sim branches dissolution only on limestone/dolomite); a true metapelite host is not modeled, this is the closest aluminous silicate flavor.",
+        "O2 low / pH near-neutral — graphite-buffered reducing fluid (Mason et al. 2010)."
+      ],
+      "initial": {
+        "temperature_C": 600.0,
+        "pressure_kbar": 2.5,
+        "fluid": {
+          "Al": 45,       // Al-rich aluminous metapelite — peraluminous
+          "SiO2": 350,    // silica-saturated → Al₂SiO₅ (andalusite), not corundum
+          "Na": 10,       // low alkali (below the andalusite Na<30 gate) — not a pegmatite
+          "K": 15,        // low alkali (below the K<30 gate)
+          "B": 0,         // no boron — no tourmaline to scavenge Al
+          "Ca": 30,
+          "Mg": 40,       // metapelite Fe-Mg
+          "Fe": 20,
+          "Mn": 1,        // low — chiastolite is grey, not pink viridine
+          "CO3": 20,
+          "pH": 6.5,      // graphite-buffered, near-neutral
+          "salinity": 1.0,
+          "O2": 0.05      // reducing — graphite buffer
+        },
+        "wall": {
+          "composition": "pegmatite",
+          "thickness_mm": 800.0,
+          "vug_diameter_mm": 35.0,
+          "wall_Fe_ppm": 800.0,
+          "wall_Mn_ppm": 100.0,
+          "primary_bubbles": 3,
+          "secondary_bubbles": 5,
+          "shape_seed": 1888,
+          "thermal_pulses": false,
+          "graphitic": true
+        }
+      },
+      "events": [],
+      "sources": [
+        "Mason, Burton, Yuan & She 2010 (Gondwana Research 18(1):222-229) — Chiastolite: quartz+graphite co-precipitation into andalusite growth sectors, graphite-buffered H₂O–CO₂ fluid (Zhoukoudian aureole)",
+        "Dowty 1976 (American Mineralogist 61:460-469) — Crystal structure and crystal growth II: sector zoning in minerals (the protosite model)",
+        "Holdaway 1971 (American Journal of Science 271:97-131) — Stability of andalusite and the aluminum silicate phase diagram (the Al₂SiO₅ triple point)"
+      ]
+    },
+
     "reactive_wall": {
       "anchor": "Sweetwater Mine (Reynolds County, MO), Viburnum Trend Pb-Zn district. Host: Cambrian Bonneterre Formation dolomitic limestone.",
       "description": "Acid-into-carbonate paragenesis — repeated acid pulses dissolve the limestone wall, then pH recovery drives supersaturation and growth bursts. Sphalerite-galena-marcasite ± barite, dolomite-calcite gangue.",
@@ -1077,6 +1129,72 @@
         "Smith & Pratt 1957 USGS Bull. 1045-A — Hanksite from Searles Lake",
         "Eugster 1980 Annu. Rev. Earth Planet. Sci. 8:35 — Lake Magadi-Searles brine geochemistry",
         "Boron, CA + Death Valley — adjacent commercially-active borate localities in the same basin family"
+      ]
+    },
+
+    "great_salt_plains": {
+      "anchor": "Salt Plains National Wildlife Refuge, Alfalfa County, Oklahoma — a 65-km² salt flat on the Permian red beds (Flowerpot Shale / Cedar Hills Sandstone). The ONLY place on Earth selenite grows the iron-stained 'hourglass' habit. The hourglass selenite is the Oklahoma state crystal; the refuge is the public crystal-digging locality.",
+      "description": "Gypsum-saturated, salt-saturated groundwater wicks up through red-bed sand and evaporates just under a thin salt crust. Wet/dry seasonal cycling grows selenite in fast bursts that trap clay, sand, and Permian iron oxide on the terminal growth sectors — the visible hourglass — and step the blade outward each dry season. The iron-flooded crystals go solid reddish-to-chocolate brown.",
+      "expects_species": ["selenite", "halite", "anhydrite", "celestine", "quartz"],
+      "duration_steps": 250,
+      "notes": [
+        "USFWS Salt Plains NWR + Oklahoma Geological Survey: selenite forms just under a wafer-thin salt crust where gypsum-saturated saline groundwater reaches the surface and evaporates. Fine sand + clay are mechanically included on the fast-growing sectors, producing the hourglass shape; iron oxide in the red-bed soil gives the reddish-to-chocolate-brown colour. This hourglass habit is found NOWHERE else in the world.",
+        "Showcase for the crystal-face-realism arc's hourglass-selenite render (2026-06-22): low-T (<45°C) sediment-laden fast growth → js/45 _seleniteHourglassParams tags the blade gypsum_hourglass; the repeated wet/dry fast-growth pulses drive the stepped-growth ziggurat (steps≥2); accumulated trace_Fe deepens the amber → chocolate brown and floods the heavily-included blades to solid brown. The render machinery already shipped SIM-neutral; this scenario is where it is the centerpiece.",
+        "Initial broth: gypsum-saturated (Ca 120, S 120) salt-saturated (Na 700, Cl 700) oxidized surface brine at 28°C, near-neutral pH 7.6, iron-bearing (Fe 4) with suspended silt (SiO2 30). The DRY events (gsp_dry) spike Ca/S to 150 + concentrate Fe → fast selenite bursts that trap sediment; the WET events (gsp_wet) dilute to Ca/S 35 (σ<1) so growth pauses between pulses. Five wet/dry cycles over 250 steps.",
+        "Halite is a co-product (the literal salt crust of the Salt Plains); minor goethite/iron-oxide staining is geologically the same iron that colours the hourglass. The star is selenite."
+      ],
+      "initial": {
+        "temperature_C": 28.0,
+        "pressure_kbar": 0.05,
+        "fluid": {
+          "SiO2": 30,            // suspended clay + red-bed silt (the inclusion source)
+          "Ca": 120,             // gypsum-saturated groundwater
+          "Na": 700,             // salt-saturated sand → the crust
+          "Mg": 20,
+          "S": 120,              // sulfate — the gypsum half
+          "Cl": 700,
+          "CO3": 15,             // low — clastic red beds, not carbonate
+          "Fe": 8,               // Permian red-bed iron oxide — intense (the red beds ARE red)
+          "Mn": 0.5,
+          "Sr": 4,
+          "O2": 1.6,             // oxidized playa surface
+          "pH": 7.6,             // near-neutral
+          "salinity": 150.0
+        },
+        "wall": {
+          // Salt flat over Permian red-bed sand — flat, floor-biased basin (no
+          // ceiling), like the sabkha + searles sisters. 'sandstone' is an inert
+          // clastic host (the engine treats any non-limestone/dolomite composition
+          // as inert silicate — no Ca/CO3 dissolution; the Ca comes from the
+          // gypsum-saturated groundwater, not the wall). High wall_Fe = the red beds.
+          "architecture": "basin",
+          "composition": "sandstone",
+          "thickness_mm": 500.0,
+          "vug_diameter_mm": 120.0,
+          "wall_Fe_ppm": 3000.0,
+          "wall_Mn_ppm": 40.0,
+          "primary_bubbles": 3,
+          "secondary_bubbles": 6,
+          "shape_seed": 1930     // Salt Plains established as a NWR, 1930
+        }
+      },
+      "events": [
+        { "step":  25, "type": "gsp_wet",        "name": "Spring Rain #1",   "description": "Water table rises; brine dilutes below gypsum saturation" },
+        { "step":  45, "type": "gsp_dry",         "name": "Dry Season #1",    "description": "Sun bakes the flat; selenite burst traps clay + iron" },
+        { "step":  75, "type": "gsp_wet",        "name": "Spring Rain #2",   "description": "Rain floods the flat again" },
+        { "step":  95, "type": "gsp_dry",         "name": "Dry Season #2",    "description": "Second fast burst — the blade steps out" },
+        { "step": 125, "type": "gsp_wet",        "name": "Spring Rain #3",   "description": "Mid-season flood" },
+        { "step": 145, "type": "gsp_dry",         "name": "Dry Season #3",    "description": "Third dry burst" },
+        { "step": 175, "type": "gsp_wet",        "name": "Spring Rain #4",   "description": "Late flood" },
+        { "step": 195, "type": "gsp_dry",         "name": "Dry Season #4",    "description": "Fourth dry burst" },
+        { "step": 215, "type": "gsp_wet",        "name": "Spring Rain #5",   "description": "Final flood" },
+        { "step": 235, "type": "gsp_dry",         "name": "Dry Season #5",    "description": "Fifth dry burst — the deepest iron flooding" },
+        { "step": 245, "type": "gsp_crust_seal",  "name": "Crust Seal",       "description": "The salt crust hardens; cycling stops" }
+      ],
+      "sources": [
+        "U.S. Fish & Wildlife Service — Salt Plains National Wildlife Refuge, selenite crystal digging (formation mechanism: gypsum-saturated groundwater evaporating under a salt crust; clay/sand/iron-oxide inclusions form the hourglass)",
+        "Oklahoma Geological Survey / Oklahoma Historical Society — Great Salt Plains; hourglass selenite as the Oklahoma state crystal",
+        "Ham W.E. (1961) Oklahoma Geological Survey — geology of the Salt Plains / Permian red-bed evaporites of northwestern Oklahoma"
       ]
     },
 
@@ -1659,6 +1777,12 @@
           // classic; Na-Ca fluid is geologically correct here.)
           "Na": 80,
           "F": 1,
+          // V 3 (v210): basalt-weathering vanadium in the percolating groundwater —
+          // the chromophore for the prized Poona/Pune GREEN apophyllite (V⁴⁺ drives
+          // the colour + dichroism; Rossman 1974, Am.Min. 59(5-6):621-622). A COLOUR
+          // dispatcher only — grow_apophyllite reads it for the green-capped render;
+          // no V-mineral can fire here (no Pb/Cu/U) so the assemblage is unchanged.
+          "V": 3,
           // Audit gap-fill: zeolites carry Sr substituting for Ca.
           "Sr": 2,
           "O2": 1.5,
@@ -2099,7 +2223,9 @@
         { "step": 80,  "type": "tormiq_epidote_main",  "name": "The Epidote Stage",          "description": "Oxidized Ca-Al-Fe³⁺ fluid grows the pistachio-green Tormiq gem swords" },
         { "step": 110, "type": "tormiq_byssolite",     "name": "Byssolite Sprays",           "description": "Fibrous actinolite sprays; epidote nucleates on the amphibole mats as fans" },
         { "step": 140, "type": "tormiq_adularia",      "name": "Adularia Stage",             "description": "Lower-T cleft K-feldspar (adularia) crystallizes" },
-        { "step": 170, "type": "tormiq_late_calcite",  "name": "Late Calcite — Cooling",     "description": "Below ~200°C, calcite seals the paragenesis and growth winds down" }
+        { "step": 170, "type": "tormiq_late_calcite",  "name": "Late Calcite — Cooling",     "description": "Below ~200°C, calcite seals the paragenesis and growth winds down" },
+        { "step": 188, "type": "tormiq_late_shear",     "name": "Late Karakoram-Thrust Shearing", "description": "Continued thrust motion plastically bends the sealed cleft's early quartz lining — a post-growth tectonic overprint",
+          "deformation": { "style": "bend", "magnitude": 0.55, "minerals": ["quartz"] } }
       ],
       "sources": [
         "Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy (epidote sheet — names Tormiq, Pakistan as type-quality)",

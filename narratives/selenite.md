@@ -43,3 +43,15 @@ Acid or warmer water attacked the selenite — gypsum is one of the more soluble
 ## variant: epilogue_tail
 
 Selenite forms in the last stage of a vug's life — when the fluid cools, the sulfides oxidize, and the water begins to evaporate. It is the epilogue crystal.
+
+## variant: hourglass
+
+An hourglass inside the blade — fine clay and sand, stained amber by soil iron oxide, trapped on the fast-growing terminal sectors as a sandglass of inclusions pinched at the waist. The signature of the Great Salt Plains of Oklahoma, the only place on Earth selenite grows this way. The interior records which faces were growing, and keeps that order even as the outer shape changes.
+
+## variant: hourglass_flooded
+
+Sediment-flooded — clay, sand, and iron oxide swept into the growing crystal so densely that later overgrowth buried the interior in solid reddish-to-chocolate brown. The hourglass is still in there, lost under the flood. The Great Salt Plains way: a crystal grown through wet, iron-stained soil.
+
+## variant: hourglass_stepped
+
+It grew in pulses — flood and evaporation, season after season — so the blade steps down toward its tip in terraces, like a stepped pyramid, while the hourglass within holds its ordered shape through every step.

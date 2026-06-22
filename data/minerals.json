@@ -4302,7 +4302,7 @@
         }
       ],
       "class": "silicate",
-      "description": "KCa₄Si₈O₂₀(F,OH)·8H₂O — a tetragonal sheet silicate (technically phyllosilicate) classed with the zeolites for its hydrated, low-T vesicle-filling behavior. Stage III Deccan Traps mineral per Ottens et al. 2019: forms 21–58 Ma post-eruption when alkaline groundwater finally percolates through cooled basalt vesicles. Pseudo-cubic tabular blocks with perfect {001} cleavage. Hematite-needle phantom inclusions produce the prized 'bloody apophyllite' variety from Nashik.",
+      "description": "KCa₄Si₈O₂₀(F,OH)·8H₂O — a tetragonal sheet silicate (technically phyllosilicate) classed with the zeolites for its hydrated, low-T vesicle-filling behavior. Stage III Deccan Traps mineral per Ottens et al. 2019: forms 21–58 Ma post-eruption when alkaline groundwater finally percolates through cooled basalt vesicles. Pseudo-cubic tabular blocks with perfect {001} cleavage. Hematite-needle phantom inclusions produce the prized 'bloody apophyllite' variety from Nashik. The Pune/Pashan GREEN variety owes its colour to V⁴⁺ (~1600 ppm in the lattice; Rossman 1974, Am.Min. 59:621-622), dichroic and, to the eye, a uniform green body colour — a provenance-locked image corpus of Pune specimens (2026-06-21) shows no visible prism-vs-pyramid sector partition. Apophyllite IS genuinely sector-zoned, but only optically (anomalous birefringence, crossed-polars); the visible green is even, so it is rendered uniform with a pearly {001} basal-face luster, not a colour hourglass. The name (Greek apo + phylliso, 'to flake apart') records the perfect {001} basal cleavage and the way crystals exfoliate and whiten on heating as they lose zeolitic water.",
       "scenarios": [
         "deccan_zeolite"
       ],
@@ -4327,6 +4327,7 @@
       "trace_ingredients": {
         "Na": "trace substitution for K",
         "Fe": "hematite needle phantom inclusions ('bloody apophyllite' from Nashik)",
+        "V": "V⁴⁺ chromophore — the prized green Poona/Pune apophyllite (~1600 ppm V in the lattice; Rossman 1974). A colour dispatcher, not a growth gate; the green is a uniform body colour, dichroic (the genuine sector zoning is optical-only — anomalous birefringence, not visible colour; image-corpus verified, Pune).",
         "OH": "OH/F substitution at the F site"
       },
       "thermal_decomp_C": 350,
@@ -4369,6 +4370,9 @@
         "transparent_pearly": {
           "default": true
         },
+        "poona_green": {
+          "trigger": "V⁴⁺ chromophore (fluid V > 0.5; ~1600 ppm V in the lattice) — the prized green Poona/Pune apophyllite, dichroic; a UNIFORM green body colour (image-corpus verified, Pune: no visible prism-vs-pyramid partition). Apophyllite's genuine sector zoning is OPTICAL-only (anomalous birefringence, crossed-polars), not visible colour; the V⁴⁺ green is its dichroic chromophore (Rossman 1974, Am.Min. 59(5-6):621-622)"
+        },
         "bloody_apophyllite": {
           "trigger": "hematite needle phantom inclusions (Fe>8 + O2>0.2 during growth)"
         }
@@ -4383,11 +4387,10 @@
       },
       "narrate_function": "_narrate_apophyllite",
       "runtimes_present": [
-        "vugg.py",
-        "index.html"
+        "js"
       ],
-      "audit_status": "ok (round-2 add: zeolite-facies basalt vesicle filling, hematite phantom inclusion mechanic, deccan_zeolite scenario added).",
-      "class_color": "#1313eb"
+      "audit_status": "ok. v210 (2026-06-21): added the prized green Poona/Pune V⁴⁺ variety (Rossman 1974, Am.Min. 59:621-622) — a COLOUR dispatcher in grow_apophyllite (fluid V>0.5, never a growth gate) rendered as a UNIFORM green body + pearly {001} basal-face luster (js/45 classifySectorZoning kind 'apophyllite_green' + js/99i _makeApophyllitePrism). Two cross-checks shaped this: the boss-handoff's 'Cu green' was corrected to V (Rossman 1974); and a provenance-locked image corpus of Pune specimens corrected the colour model — apophyllite IS genuinely sector-zoned but only OPTICALLY (anomalous birefringence), the visible green is a uniform body colour, NOT a visible sector partition. class_color trued from a placeholder blue to pearly near-colourless; runtimes_present trued to js (Python tree retired).",
+      "class_color": "#dfe7e3"
     },
     "feldspar": {
       "formula": "KAlSi3O8",
@@ -4754,19 +4757,24 @@
       "habit": "tabular_or_prismatic_or_fibrous",
       "color_rules": {
         "colorless": {
-          "default": true
+          "default": true,
+          "trigger": "clear blade, no trapped sediment (most settings — Naica, alpine)"
         },
         "white": {
-          "trigger": "inclusions"
+          "trigger": "fine inclusions / satin spar chatoyancy"
+        },
+        "amber_hourglass": {
+          "trigger": "clay + sand trapped on the fast-growing terminal growth SECTORS at low T (<45°C), light iron staining — the VISIBLE hourglass (Great Salt Plains, Oklahoma; USFWS Salt Plains NWR). Render: js/45 _seleniteHourglassParams → js/99i _makeHourglassSeleniteBlade."
+        },
+        "chocolate_brown": {
+          "trigger": "heavy iron-oxide-stained sediment load; later overgrowth floods the blade to solid reddish-to-chocolate brown and the hourglass is lost (the overgrown variant). USFWS: soil iron oxide gives the reddish-to-chocolate-brown colour."
         }
       },
       "narrate_function": "_narrate_selenite",
       "runtimes_present": [
-        "vugg.py",
-        "index.html",
-        "agent-api/vugg-agent.js"
+        "js"
       ],
-      "audit_status": "ok — all 3 runtimes (phase-3). Naica giant crystals at T~58°C for 500,000 years; above 60°C anhydrite wins.",
+      "audit_status": "js-only (Python tree deleted 2026-05-07). Naica giant crystals at T~58°C for 500,000 years; above 60°C anhydrite wins. 2026-06-22: VISIBLE hourglass-sector render added (crystal-face-realism arc) — clay/Fe sediment trapped on low-T fast-growth sectors forms the Great Salt Plains hourglass; clear→amber-hourglass→flooded-brown spectrum + stepped-growth chisel blade; SIM-neutral (reads existing engine inclusion zones, no chemistry change).",
       "class_color": "#eb137f"
     },
     "goethite": {
@@ -4893,6 +4901,95 @@
       "late_stage_propensity": 0.6,
       "_late_stage_note": "Proposal C (2026-05): propensity:0.6. Supergene Fe oxyhydroxide; the typical weathering rind / botryoidal final coat on oxidized sulfides.",
       "class_color": "#13ebeb"
+    },
+    "andalusite": {
+      "formula": "Al2SiO5",
+      "nucleation_sigma": 1.2,
+      "max_nucleation_count": 5,
+      "max_size_cm": 30,
+      "growth_rate_mult": 0.3,
+      "habit_variants": [
+        {
+          "name": "andalusite_prism",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "default — near-square {110} prism"
+        },
+        {
+          "name": "chiastolite_prism",
+          "wall_spread": 0.2,
+          "void_reach": 0.8,
+          "vector": "projecting",
+          "trigger": "graphitic metapelite host — carbonaceous cross sectors"
+        }
+      ],
+      "class": "silicate",
+      "description": "Al₂SiO₅ — orthorhombic (Pnnm), the LOW-PRESSURE aluminosilicate polymorph (kyanite is the high-pressure form, sillimanite the high-temperature; the three meet at the Al₂SiO₅ triple point, ~500°C / 0.4 GPa, Holdaway 1971 Am.J.Sci 271:97). Coarse near-SQUARE {110} prisms — the two {110} cleavages intersect at ~89°. The index mineral of low-pressure contact-metamorphic aluminous metapelites — hornfels in the aureole of a shallow intrusion — and of low-P regional (Buchan / Abukuma) terranes. Pink-rose to pinkish-brown from Mn³⁺ (the green viridine variety is Mn-rich); chrome-green where Cr substitutes. CHIASTOLITE is the variety grown in a GRAPHITIC (carbon-bearing) metapelite: carbonaceous matter is swept into the rapidly-growing CORNER growth sectors of the square prism, so a cross-section shows a dark Maltese cross — growth-SECTOR zoning, not concentric banding (Dowty 1976 Am.Min. 61:460; Mason et al. 2010 Gondwana Research 18(1):222-229, quartz+graphite co-precipitation in a graphite-buffered H₂O–CO₂ fluid). Also a member of the hottest advanced-argillic alteration (quartz-andalusite, ~360-400°C) in porphyry lithocaps (Sillitoe 2010).",
+      "scenarios": [
+        "chiastolite_hornfels"
+      ],
+      "T_range_C": [
+        400,
+        700
+      ],
+      "T_optimum_C": [
+        500,
+        650
+      ],
+      "T_behavior": "window",
+      "pH_dissolution_below": 2.5,
+      "pH_dissolution_above": null,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "Al": 15,
+        "SiO2": 50
+      },
+      "trace_ingredients": {
+        "Mn": "pink-rose (Mn³⁺ >0.5 ppm), viridine green (>5 ppm)",
+        "Fe": "grey-brown tint",
+        "C": "chiastolite carbon cross — host graphite (wall.graphitic), not a fluid species"
+      },
+      "thermal_decomp_C": null,
+      "thermal_decomp_reaction": "INERT (inverts to sillimanite/mullite only at very high T; not modeled)",
+      "thermal_decomp_products": null,
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "not fluorescent"
+      },
+      "twin_laws": [],
+      "_twin_laws_note": "Andalusite twinning is rare and not diagnostically established; no canonical twin law in the literature (cf. Deer-Howie-Zussman Al₂SiO₅ chapter). Left empty deliberately — passes tools/twin-law-check.mjs since nothing is declared.",
+      "acid_dissolution": {
+        "pH_threshold": 2.5,
+        "reaction": "extremely resistant aluminosilicate — only strong acid slowly attacks",
+        "products": null
+      },
+      "habit": "andalusite_prism",
+      "color_rules": {
+        "chiastolite_cross": {
+          "trigger": "graphitic host (wall.graphitic) — carbonaceous cross sectors"
+        },
+        "viridine_green": {
+          "trigger": "Mn > 5 (Mn³⁺-rich)"
+        },
+        "pink_rose": {
+          "trigger": "Mn 0.5-5 (Mn³⁺ trace)"
+        },
+        "pinkish_brown": {
+          "default": true
+        }
+      },
+      "narrate_function": "_narrate_andalusite",
+      "runtimes_present": [
+        "js"
+      ],
+      "audit_status": "new (crystal-face realism arc 2026-06-21). Al₂SiO₅ low-P polymorph; the silica-saturated complement of corundum. First tenant of the chiastolite-cross sector render. Peraluminous gate (alkali-poor Na/K, B<1) keeps it out of pegmatite/skarn scenarios → fleet byte-identical. Scenario home: chiastolite_hornfels.",
+      "late_stage_propensity": 0.2,
+      "_late_stage_note": "Prograde contact-metamorphic porphyroblast — grows through the thermal peak, not a late vug phase.",
+      "class_color": "#a89878"
     },
     "topaz": {
       "formula": "Al2SiO4(F,OH)2",

@@ -2,6 +2,148 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🏜️ SESSION HANDOFF (2026-06-22, later) — HOURGLASS SELENITE ✅ SHIPPED (render SIM-neutral `50f4c51` + great_salt_plains SIM 211)
+>
+> The crystal-face-realism arc's first GENUINELY VISIBLE sector tenant — and the one
+> apophyllite turned out NOT to be. Boss opened by sharing four of his own provenance-
+> locked specimens (the image-corpus method, but firsthand): radiating brown rosette
+> sprays + a stepped translucent hourglass blade.
+>
+> **✅ STEP 1 — visible hourglass render, SIM-neutral (`50f4c51`, Pages-verified).**
+> Selenite was already in the catalogue. js/45 classifySectorZoning + _seleniteHourglassParams
+> tag a blade `gypsum_hourglass` from the engine's EXISTING hourglass-inclusion zones
+> (no new RNG/chemistry → baseline byte-identical); js/99i _makeHourglassSeleniteBlade
+> renders the amber→chocolate sandglass (|zn|<|yn|: wide at the tips, pinched at the
+> waist) on a tapering chisel blade. DEFER-TO-GEOLOGY gate (<45°C) keeps Naica's hot
+> clean pool water-CLEAR (the probe caught Naica wrongly flooded-brown first). +color_rules
+> +narrator +tests +tools/gypsum-hourglass-probe.mjs. Standalone-scene render verified.
+>
+> **✅ STEP 2 — great_salt_plains showcase (SIM 211).** Salt Plains NWR, Oklahoma — the
+> ONLY place on Earth selenite grows the iron-stained hourglass (the state crystal).
+> Wet/dry seasonal cycling on Permian red beds: dry bursts wick gypsum+iron brine up
+> and evaporate fast (trap sediment + a growth burst), wet pauses dilute below gypsum
+> saturation → the blade grows in gap-separated bursts → STEPPED ziggurat (steps 3 @
+> seed42), red-bed iron stains it deep brown (intensity ~0.53). Boss asked for chisel
+> tips WITH stepped-growth (per his pic 4); both shipped. Classifier refined to re-eval
+> each step (the hourglass evolves with growth) + decoupled intensity (iron-driven brown)
+> from flooded (trapped-fraction). Baseline-diff v210→v211: 36 prior scenarios BYTE-
+> IDENTICAL, great_salt_plains the one new entry (5 species, 30 crystals).
+>
+> **Arc symmetry worth keeping:** apophyllite's sector zoning was OPTICAL-only → uniform
+> render; selenite's is genuinely VISIBLE → sector-partitioned render. The arc finally
+> has its visible-sector tenant. NEXT (open): the in-app great_salt_plains showcase
+> screenshot for the boss's eye; possible chisel/spear polish + a flooded-variant seed.
+
+> ## 🟢 SESSION HANDOFF (2026-06-22) — GREEN APOPHYLLITE ✅ SHIPPED (SIM 210) · hourglass GYPSUM QUEUED
+>
+> **Current handoff doc: `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md`**
+> (read it first — the cross-check trail, the reusable image-corpus method, the gypsum
+> sub-arc plan + the boss's design envelope, the traps, + the maker's mark).
+>
+> **✅ STEP 3 SHIPPED — green apophyllite.** Arc went augite → apophyllite (augite
+> REJECTED: magmatic phenocryst, breaks the vug premise). `1710ac0` SIM 210 (V⁴⁺ green
+> dispatcher + deccan V=3, 60→59 crystals/species 17→17, 35 scenarios byte-identical)
+> + `45ca65c` SIM-neutral (uniform-green render correction). Both Pages-verified.
+> THREE cross-check corrections, an error caught at each: chromophore Cu→**V⁴⁺**
+> (Rossman 1974, the handoff's Cu was a confabulation); my "not real sector zoning"→
+> it IS, but **optically only** (anomalous birefringence); and an **image corpus** of
+> Pune specimens proved the visible green is a **UNIFORM body colour** (no visible
+> sector partition) → render corrected from two-tone to uniform green + pearly basal
+> luster. Apophyllite is a uniform-green COLOUR variety, NOT a visible-sector tenant.
+>
+> **○ NEXT QUEUED — hourglass GYPSUM (selenite)**, the real VISIBLE-sector vug tenant.
+> Clay/anhydrite-inclusion growth sectors → a genuine visible hourglass ("hourglass
+> selenite"). Boss design envelope (firsthand): visible even near-clear; VARIABLE (not
+> every specimen) → model as a variant (clear-with-hourglass ↔ inclusion-flooded brown
+> via overgrowth). Preflight: gypsum/selenite is likely already in the catalogue (a
+> habit-variant + render + scenario job, not a new mineral). Research-first + image-
+> corpus the visible geometry before rendering. **Fresh session recommended.**
+>
+> **Reusable method captured this session — the IMAGE-CORPUS check:** when the
+> literature won't pin a VISUAL detail, gather a provenance-locked specimen-image
+> corpus (agent finds direct URLs; curl to temp; VIEW yourself; filter by provenance;
+> never commit the images) and report the pattern even when it contradicts what you
+> shipped. It caught the apophyllite render error.
+
+> ## ✚ SESSION HANDOFF (2026-06-21, later) — ANDALUSITE + CHIASTOLITE CROSS ✅ SHIPPED (SIM 209)
+>
+> **Current handoff doc: `proposals/HANDOFF-CRYSTAL-FACE-REALISM-2026-06-21.md`** (read
+> it first — full state, the ranked next-builder menu, the traps, + the maker's mark).
+>
+> The second sector-zoning tenant, and the iconic one — boss directive "add the
+> mineral (researched) → continue the arc." Master doc: PROPOSALS-crystal-face-
+> realism-2026-06-21.md §1 (second SHIPPED footer). Research-first verified to
+> publisher pages (Mason et al. 2010 Gondwana Res. 18(1):222-229 VERIFIED; Dowty 1976;
+> Holdaway 1971 — the shaky "Frondel 1934" cite was NOT used: likely Novitates 759 ≈
+> 1935, and 695/1934 is a different paper).
+>
+> **✅ SHIPPED SIM 209:**
+> - **NEW MINERAL andalusite** (Al₂SiO₅), the low-P polymorph = the SILICA-SATURATED
+>   complement of corundum (corundum blocks SiO2>50; andalusite requires it). Full
+>   add-mineral pass (js/39+42+59+65+89, js/19 stoich, minerals.json, structural.json
+>   Pnnm, twin-check empty+note). **Peraluminous gate** (Al≥15+SiO2≥50+Na/K<30+B<1+T
+>   400-700) → returns 0 for every existing scenario, so the RNG-cascade guard never
+>   fires elsewhere → **fleet byte-identical** (baseline-diff: 1/36 moved, only the new
+>   scenario; tools/andalusite-probe.mjs confirms andalusite fires ONLY there).
+> - **NEW SCENARIO chiastolite_hornfels** — graphitic contact hornfels (Bimbowrie/
+>   Zhoukoudian); 5 chiastolite prisms @ seed42 (+feldspar/albite; quartz didn't fire,
+>   SiO2 not supersaturated at 600°C — expects=[andalusite,feldspar]).
+> - **CHIASTOLITE CROSS render** (new, not the hourglass): `wall.graphitic` flag
+>   (js/22) → classifySectorZoning (js/45) tags andalusite `_sectorZoned` kind 'cross'
+>   → js/99i `_makeChiastolitePrism` square prism + baked transverse carbon cross (one
+>   rule |‖x‖−‖z‖|<band paints the dark corner columns AND the top X). Preview-verified.
+>   Narrator js/92i + narratives/andalusite.md + 4 test pins (andalusite-chiastolite.test.ts).
+> - **NEXT in the arc:** augite/titanaugite hourglass (needs the mineral); Tier B
+>   per-sector partition engine (optional); §2 etch-pit sculpture remains the next-best
+>   non-sector face-realism pickup.
+>
+> ---
+>
+> ## 💎 SESSION HANDOFF (2026-06-21) — SECTOR (HOURGLASS) ZONING ✅ SHIPPED (Tier A)
+>
+> **Master doc: `proposals/PROPOSALS-crystal-face-realism-2026-06-21.md` §1** (SHIPPED
+> footer). Boss: "lets start with the hourglass zoning" → the first crystal-face-realism
+> pickup. Research-first verified the science (Dowty 1976 Am.Min. 61:460–469 protosite
+> model — Part I+II both VERIFIED to MSA archive; Ferguson 1973 Min.Mag. 39:321
+> titanaugite hourglass; chiastolite corner-sector geometry).
+>
+> **✅ SHIPPED — sector zoning Tier A, render-only, SIM-NEUTRAL, byte-identical (0/35).**
+> No SIM bump (still 208). Mirrors the saddle precedent:
+> - `classifySectorZoning` (js/45, post-growth) tags `crystal._sectorZoned={kind:'hourglass'}`
+>   on `SECTOR_ZONED_MINERALS={tourmaline}` past `SECTOR_ZONED_MIN_UM`. Pure tagging.
+> - `js/99i _makeSectorZonedPrism(bodyRGB,termRGB)` — hex-prism-with-pyramid with ABSOLUTE
+>   per-vertex colours: body=class_color, termination=`offsetHSL(0.45,0.12,-0.04)`
+>   (hue-rotated contrast). Material color=white + vertexColors; gated on prism token,
+>   cached per base colour. **The render spike (the proposal's gating unknown) PASSED:**
+>   the cavity mesh already uses a vertexColors material, so per-vertex colour rides the
+>   existing path — Tier B de-risked. A pure darken-MULTIPLIER was tried first and FAILED
+>   preview (green×½ = just shading); contrasting termination = legible AND the iconic
+>   bicolor elbaite. Preview-verified (blue body / gold termination, sharp shoulder).
+> - Narrator js/92i + narratives/tourmaline.md `sector_zoned`; tests-js/sector-zoning.test.ts (4 pins).
+> **➡️ NEXT-UP (boss directive 2026-06-21) — ADD ANDALUSITE → the chiastolite-cross tenant.**
+> The single most iconic sector-zoning specimen (the dark Maltese cross in a slice) is
+> NOT in the sim yet — andalusite must be ADDED FIRST as a full mineral, and it needs
+> its own RESEARCH PASS before any code (the research-first discipline that's caught
+> errors twice this arc). This is a prerequisite, not a tweak: it's a `vugg-add-mineral`
+> arc (supersat + grow + nucleation + minerals.json + structural.json/twin-law-check +
+> tests + SIM bump + baseline regen), gated on a dossier covering andalusite's chemistry/
+> P-T stability (Al₂SiO₅ polymorph, contact/regional metamorphic), a scenario home (a
+> metapelite / hornfels / schist host — none exists yet, may need a scenario too), AND
+> the chiastolite mechanism specifically (carbonaceous inclusions partitioned to the
+> CORNER/diagonal growth sectors — Frondel 1934 corner-selective attachment [venue
+> UNVERIFIED, flag], Mason et al. 2010 Gondwana Research 18(1):222–229 quartz+graphite
+> co-precipitation [content VERIFIED]). Then the render is a NEW transverse 4-corner
+> sector MASK (the cross), not the termination-only hourglass tourmaline uses — extend
+> `_makeSectorZonedPrism` or add a sibling. **Boss: once andalusite is added+researched,
+> continue the sector-zoning arc onto it.**
+> - Other sector tenants needing their mineral first: augite/titanaugite hourglass.
+>   Tier B (computed-from-chemistry per-sector partition engine) only if wanted — render
+>   path already proven. Other face-realism proposals still open: etch-pit sculpture
+>   (§2, next-best value-per-effort), striation extension (§3), vicinal hillocks (§5),
+>   α-factor (§4, likely a deliberate non-build).
+>
+> ---
+>
 > ## 🪨 SESSION HANDOFF (2026-06-20) — DEFORMATION ARC, science-verified + step 1 shipped
 >
 > **Master doc: `proposals/RESEARCH-deformation-shear-2026-06-20.md`.** Boss asked
@@ -21,11 +163,18 @@ Living list of open work items, captured from session conversations so context s
 >   warm reactive_wall; ambient stays massive). Preview-verified, 3 test pins.
 > - **STEP 2 (gwindel) — DECIDED, no build:** the §8.5 shear re-pin is STRUCK. Leave
 >   the v207 growth-duration proxy (closer to real Eshelby physics than shear).
-> - **⏭ STEP 3 (the real "deformation" arc) — NOT STARTED:** a POST-GROWTH OVERPRINT
->   pass keyed to a scenario deformation event (bent quartz/stibnite, calcite
->   mechanical e-twins, deformation lamellae). Architecturally NEW (deform a
->   FINISHED crystal), not a grow-integrate field. The _makeSaddleRhomb face-perturb
->   + the gwindel SEG-loop twist are the render groundwork. Design in research §5.3.
+> - **✅ STEP 3 TENANT 1 SHIPPED — the real "deformation" arc, bent quartz @ tormiq**
+>   (SIM 208). The POST-GROWTH OVERPRINT pass: a scenario event carries a
+>   `deformation` directive (mirrors `spots`); apply_events (js/85d) records it on
+>   sim._deformationEvents w/ the fired step; classifyDeformation (js/45) bends
+>   crystals that already grew by that step; js/99i _makeBentPrism arcs the long
+>   axis (generalizes the gwindel SEG loop). CHEMICALLY INERT → fleet byte-identical
+>   (baseline-diff 207↔208 = 0/35); only tormiq's strip gains the shear log + the
+>   quartz a render tag. tormiq late Karakoram-Thrust shear (step 188) bends the
+>   early quartz lining; epidote spared. Preview-verified, 5 test pins. Research §5.3.
+>   **NEXT TENANTS (same pass):** calcite mechanical e-twins (lamellae render, density
+>   ↔ Ferrill Type I–IV); bent stibnite (add stibnite to a scenario first); undulose
+>   overlay. Optional: syntectonic snowball garnet (research §5.4, contested physics).
 >
 > ---
 >

@@ -657,6 +657,12 @@
     "lattice": { "a": 4.650, "b": 8.795, "c": 8.392 },
     "_source": "Anthony Handbook v.II topaz entry; Al2(SiO4)(F,OH)2 (Ribbe & Gibbs 1971 Amer. Mineral. 56:24)"
   },
+  "andalusite": {
+    "system": "orthorhombic",
+    "space_group": "Pnnm",
+    "lattice": { "a": 7.798, "b": 7.903, "c": 5.557 },
+    "_source": "Anthony Handbook v.II andalusite entry; Al2SiO5 (Winter & Ghose 1979 Amer. Mineral. 64:573); the LOW-PRESSURE Al2SiO5 polymorph, near-square {110} prism"
+  },
   "tourmaline": {
     "system": "trigonal",
     "space_group": "R3m",

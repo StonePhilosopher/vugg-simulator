@@ -189,6 +189,19 @@ Object.assign(VugSimulator.prototype, {
   if (c.c_length_mm > 10) {
     parts.push(narrative_variant('selenite', 'giant_naica') || 'Large selenite crystals are among the biggest in nature — the Cave of Crystals in Naica, Mexico holds selenite beams 11 meters long, grown over 500,000 years in water just 2°C above saturation. Patience beyond patience.');
   }
+  // Hourglass selenite — clay/sand/iron trapped on the low-T fast-growing sectors
+  // (js/45 _seleniteHourglassParams; render js/99i). The Great Salt Plains signature.
+  if (c._sectorZoned && c._sectorZoned.kind === 'gypsum_hourglass') {
+    const hg = c._sectorZoned;
+    if (hg.flooded) {
+      parts.push(narrative_variant('selenite', 'hourglass_flooded') || 'Sediment-flooded — clay, sand, and iron oxide swept into the growing crystal so densely that later overgrowth buried the interior in solid reddish-to-chocolate brown. The hourglass is still in there, lost under the flood. The Great Salt Plains way: a crystal grown through wet, iron-stained soil.');
+    } else {
+      parts.push(narrative_variant('selenite', 'hourglass') || 'An hourglass inside the blade — fine clay and sand, stained amber by soil iron oxide, trapped on the fast-growing terminal sectors as a sandglass of inclusions pinched at the waist. The signature of the Great Salt Plains of Oklahoma, the only place on Earth selenite grows this way. The interior records which faces were growing, and keeps that order even as the outer shape changes.');
+    }
+    if (hg.steps >= 2) {
+      parts.push(narrative_variant('selenite', 'hourglass_stepped') || 'It grew in pulses — flood and evaporation, season after season — so the blade steps down toward its tip in terraces, like a stepped pyramid, while the hourglass within holds its ordered shape through every step.');
+    }
+  }
   if (c.dissolved) {
     parts.push(narrative_variant('selenite', 'dissolved'));
   }

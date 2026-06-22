@@ -145,6 +145,16 @@ const MINERAL_GATES_topaz: MineralGates = {
   _notes: 'Al2SiO4(F,OH)2 — F-bearing pegmatite/greisen. Imperial topaz (Cr trace) gold-orange variety.',
 };
 
+const MINERAL_GATES_andalusite: MineralGates = {
+  sigma_crit: 1.2,
+  T_min: 400, T_max: 700, T_optimal: 575,
+  fluid_min: { Al: 15, SiO2: 50 },
+  pH_min: 4.0, pH_max: 9.0,
+  surface_energy: 'high',
+  _sources: ['andalusite engine (crystal-face realism arc 2026-06-21)', 'Holdaway 1971 Am.J.Sci 271:97 (Al2SiO5 triple point ~500°C/0.4GPa)', 'research-andalusite dossier'],
+  _notes: 'Al2SiO5 — orthorhombic LOW-PRESSURE polymorph (Pnnm; kyanite=HP, sillimanite=HT). The SILICA-SATURATED complement of corundum. Index mineral of low-P contact-metamorphic aluminous metapelites (hornfels). Peraluminous gate (Na+K low, B<1) keeps it out of pegmatite/skarn scenarios → fleet byte-identical. Chiastolite (the carbon-cross variety) when the host is graphitic.',
+};
+
 const MINERAL_GATES_opal: MineralGates = {
   sigma_crit: 0.8,                          // v131 (2026-05-21): literature value per Iler 1979 — heterogeneous σ_crit range 0.5-1.0, midpoint 0.8. Was 1.0 (v101 engine-matched calibration); v127 engine-gates refactor surfaced the engine/literature mismatch as a v129 calibration target.
   T_min: 5, T_max: 100, T_optimal: 40,
@@ -712,6 +722,40 @@ Object.assign(VugConditions.prototype, {
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'corundum');
   return Math.max(sigma, 0);
 },
+
+  // Al₂SiO₅ — orthorhombic, the LOW-PRESSURE polymorph (Pnnm; kyanite=HP,
+  // sillimanite=HT). The SILICA-SATURATED complement of _corundum_base_sigma:
+  // corundum (Al₂O₃) blocks above SiO2>50 (Al²O₃ forms only when silica is
+  // scarce, the marble_contact note), whereas Al₂SiO₅ REQUIRES SiO2. Index
+  // mineral of LOW-P contact-metamorphic aluminous metapelites (hornfels
+  // around an intrusion; Holdaway 1971 triple point ~500°C/0.4 GPa — andalusite
+  // sits below it at low P). The PERALUMINOUS gate (Na+K low, B<1) is load-
+  // bearing: in a pegmatite Al is consumed by feldspar / tourmaline / mica, so
+  // andalusite is a metasediment mineral, not a pegmatite one — and that gate
+  // is exactly what returns 0 for every existing (pegmatite + skarn) scenario,
+  // so the RNG-cascade guard in _nuc_andalusite never fires elsewhere → fleet
+  // baseline byte-identical. Chiastolite (the carbon-cross variety) is a RENDER
+  // distinction keyed to a graphitic host, not a separate σ.
+  supersaturation_andalusite() {
+    const f = this.fluid;
+    if (f.Al < 15 || f.SiO2 < 50) return 0;          // peraluminous + silica-saturated
+    if (f.Na > 30 || f.K > 30 || f.B > 1) return 0;  // NOT a pegmatite (Al→feldspar/tourmaline/mica)
+    if (f.pH < 4 || f.pH > 9) return 0;
+    const T = this.temperature;
+    if (T < 400 || T > 700) return 0;                // low-P contact-metamorphic window
+    const al_f = Math.min(f.Al / 30.0, 2.0);
+    const si_f = Math.min(f.SiO2 / 200.0, 1.5);
+    let sigma = al_f * si_f;
+    let T_factor;
+    if (T >= 500 && T <= 650) T_factor = 1.0;        // andalusite stability sweet spot (sub-triple-point)
+    else if (T >= 400 && T < 500) T_factor = 0.4 + 0.006 * (T - 400);
+    else T_factor = Math.max(0.3, 1.0 - 0.006 * (T - 650));
+    sigma *= T_factor;
+    const pH_factor = (f.pH >= 5 && f.pH <= 8) ? 1.0 : 0.6;
+    sigma *= pH_factor;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'andalusite');
+    return Math.max(sigma, 0);
+  },
 
   supersaturation_tourmaline() {
   if (this.fluid.Na < 3 || this.fluid.B < 6 || this.fluid.Al < 8 || this.fluid.SiO2 < 60) return 0;

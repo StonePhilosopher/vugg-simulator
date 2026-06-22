@@ -11376,5 +11376,105 @@
 //        Single-scenario change (grimsel only); the rest of the fleet is
 //        byte-identical (alpine_cleft defaults false). + narrator (js/92i) +
 //        minerals.json habit_variant. SIM 206 -> 207.
-const SIM_VERSION = 207;
+//   v208 — POST-GROWTH DEFORMATION OVERPRINT — the genuine "deformation" mechanic
+//        (deformation/shear arc, 2026-06-20; research dossier RESEARCH-deformation-
+//        shear-2026-06-20.md). FIRST TENANT: bent quartz at Tormiq. THE SCIENCE
+//        (4 cross-checked passes): the handoff §8 "one shear field crystals
+//        integrate as they grow" FAILED the literature — bent quartz/stibnite/mica
+//        + mechanical twins are NOT recorded during growth; they are imposed on a
+//        FINISHED lattice by later tectonic gliding (post-growth crystal-plastic
+//        deformation, unambiguous in the literature). So this is an OVERPRINT pass,
+//        not a grow-integrate field: a scenario event carries a `deformation`
+//        directive {style,magnitude,minerals}; apply_events (js/85d) records it on
+//        sim._deformationEvents WITH the step it fired; classifyDeformation (js/45,
+//        post-growth like the gwindel/sceptre passes) bends crystals that had
+//        ALREADY grown by that step (firstZone.step < event.step). PURE tagging —
+//        crystal._deformation is a RENDER tag; js/99i _makeBentPrism arcs the long
+//        axis (generalizes the gwindel SEG loop: lateral cantilever offset instead
+//        of twist). CHEMICALLY INERT: deformation is mechanical + post-growth, so
+//        the handler mutates no fluid/T → the FLEET (incl. tormiq) is BYTE-IDENTICAL
+//        (gen-baseline serialises only counts/sizes; the bend is a render tag + a
+//        log line). Tenant: tormiq_alpine_cleft late Karakoram-Thrust shear (step
+//        188) bends the early quartz lining; the epidote swords grew later and are
+//        spared. + narrator (js/92i 'bent'). The §8.5 gwindel shear re-pin is
+//        STRUCK (gwindel = spiral-growth Eshelby twist, not shear — research §1).
+//        SIM 207 -> 208 (provenance; baseline-diff 207↔208 = 0 drift).
+//   v209 — ANDALUSITE + the CHIASTOLITE CROSS (crystal-face realism arc, 2026-06-21;
+//        continues the sector-zoning arc from §1 of PROPOSALS-crystal-face-realism).
+//        NEW MINERAL andalusite (Al₂SiO₅) — the LOW-PRESSURE aluminosilicate
+//        polymorph, the SILICA-SATURATED complement of corundum (where corundum's
+//        _corundum_base_sigma blocks above SiO2>50, andalusite REQUIRES SiO2). js/39
+//        supersaturation_andalusite + MINERAL_GATES_andalusite (js/42), js/59
+//        grow_andalusite, js/89 _nuc_andalusite + iterator, js/65 engine, js/19
+//        stoich, minerals.json + structural.json (Pnnm) + twin-law-check (empty +
+//        note — andalusite twinning not diagnostically established). PERALUMINOUS
+//        GATE (Al≥15 + SiO2≥50 + Na/K<30 + B<1 + T 400-700): in a pegmatite Al is
+//        consumed by feldspar/tourmaline/mica, so andalusite is a metasediment
+//        mineral — and that gate returns 0 for EVERY existing scenario, so the
+//        RNG-cascade guard in _nuc_andalusite never fires elsewhere → the whole
+//        fleet is BYTE-IDENTICAL (probe-confirmed: andalusite fires ONLY in the new
+//        chiastolite_hornfels). NEW SCENARIO chiastolite_hornfels — a graphitic
+//        contact-metamorphic hornfels (Bimbowrie/Zhoukoudian); 5 chiastolite prisms
+//        @ seed 42. CHIASTOLITE: the carbon-cross variety. A new wall.graphitic flag
+//        (js/22) marks the carbonaceous host; classifySectorZoning (js/45) tags
+//        andalusite _sectorZoned kind 'cross' there (vs tourmaline 'hourglass'), and
+//        js/99i _makeChiastolitePrism renders a SQUARE prism with a baked transverse
+//        carbon CROSS (one rule |‖x‖−‖z‖|<band paints both the dark corner columns
+//        and the top X — Dowty 1976 sector zoning; Mason et al. 2010 Gondwana Res.
+//        18(1):222-229). + narrator (js/92i) + narratives/andalusite.md. Only the new
+//        scenario changes the fleet baseline (one scenario added); all prior
+//        scenarios byte-identical. SIM 208 -> 209.
+//   v210 — GREEN POONA APOPHYLLITE — the V⁴⁺ green growth-sector-zoning variety +
+//        render (crystal-face realism arc, 2026-06-21). NOT a new mineral:
+//        apophyllite was already in the catalogue. THE SCIENCE (a boss-handoff
+//        research doc disagreed; cross-checked per "follow the science"): apophyllite
+//        IS a genuine growth-sector-zoned mineral — its anomalous birefringence
+//        (optic sign varies within one crystal) is per-sector F/OH + hydration zoning.
+//        The prized Pune/Poona green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622 —
+//        ~1600 ppm V, V⁴⁺ drives colour + dichroism; VERIFIED to the Caltech/MSA
+//        archive) — the handoff's "Cu green" was a confabulation, corrected to V.
+//        SECTOR-MODEL CORRECTED (same-day, SIM-neutral render fix): a provenance-
+//        locked image corpus of Pune specimens shows the green is a UNIFORM body
+//        colour with NO visible prism-vs-pyramid partition. Apophyllite's sector
+//        zoning is real but OPTICAL-only (anomalous birefringence, crossed-polars) —
+//        it does not show as visible colour. grow_apophyllite (js/59) reads fluid.V >
+//        0.5 as a COLOUR DISPATCHER (never a growth gate — the §4b pattern), setting
+//        crystal._apophylliteGreen; classifySectorZoning (js/45) tags it _sectorZoned
+//        kind 'apophyllite_green' (requiresGreen); js/99i _makeApophyllitePrism
+//        renders a tetragonal square prism — UNIFORM green body, lighter transparent
+//        tips, pearly green-white {001} basal-face luster. deccan_zeolite gains
+//        a modest V=3 trace (basalt-weathering groundwater); assemblage-NEUTRAL (no
+//        Pb/Cu/U → no V-mineral can fire). Baseline-diff v209→v210: deccan 60→59
+//        crystals, species 17→17 — one marginal nucleation flipped by the V trace's
+//        ionic-strength contribution (NO V-mineral fires, no species gained/lost);
+//        all 35 other scenarios byte-identical. Also trued: apophyllite class_color
+//        (placeholder blue →
+//        pearly near-colourless), runtimes_present (→ js), + the BACKWARDS
+//        titanaugite comment in js/45 (Ti enriches the PRISM sectors, not the basal
+//        — Ferguson 1973 + Ubide 2019). + narrator (js/92i) + narratives/
+//        apophyllite.md poona_green. SIM 209 -> 210.
+//   v211 — GREAT SALT PLAINS hourglass-selenite SHOWCASE (crystal-face realism arc,
+//        2026-06-22). The visible hourglass-selenite RENDER shipped SIM-neutral the
+//        same day (50f4c51): js/45 classifySectorZoning + _seleniteHourglassParams tag
+//        a selenite blade gypsum_hourglass when it trapped clay/sand on its low-T
+//        (<45°C) fast-growth SECTORS (the engine's existing inclusion flag); js/99i
+//        _makeHourglassSeleniteBlade renders the amber→chocolate sandglass (|zn|<|yn|,
+//        wide at the tips, pinched at the waist) on a tapering chisel blade that STEPS
+//        into a ziggurat when growth was pulsed. Brown DEPTH is iron-driven (USFWS:
+//        soil iron oxide → reddish-to-chocolate), trapped FRACTION decides flooding
+//        (solid-brown overgrown variant). Geology gate keeps Naica's hot clean pool
+//        water-CLEAR. THIS bump adds the SHOWCASE scenario `great_salt_plains` (Salt
+//        Plains NWR, Oklahoma — the only place on Earth selenite grows the hourglass):
+//        a salt flat on Permian red beds, wet/dry seasonal cycling (gsp_wet dilutes
+//        below gypsum saturation → growth pauses; gsp_dry wicks gypsum-saturated iron-
+//        rich brine up and evaporates → fast burst traps sediment), 5 cycles over 250
+//        steps. Selenite grows in gap-separated bursts → stepped ziggurat (steps 3 at
+//        seed 42), red-bed iron stains it deep brown (intensity ~0.53), halite is the
+//        co-product crust. ALSO refined the classifier to re-evaluate each step (the
+//        hourglass evolves with growth; tagging once froze it at segments=1) +
+//        decoupled intensity (iron-driven) from flooded (trapped-fraction-driven) —
+//        render-only, _sectorZoned is not in the baseline. Baseline-diff v210→v211:
+//        the 36 prior scenarios byte-identical; great_salt_plains is the one new entry.
+//        SIM 210 -> 211.
+const SIM_VERSION = 211;
 

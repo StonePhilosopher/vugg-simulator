@@ -24,6 +24,10 @@ Fine-grained drusy coating — the very-high-σ form, microcrystals carpeting th
 
 Chalcedony pseudomorph — at low σ the crystal grew over an earlier zeolite blade (stilbite or scolecite typically) and replaced its habit, producing massive milky chalcedony shapes that preserve the predecessor's blade outlines.
 
+## variant: poona_green
+
+Pastel green — the prized Poona/Pune variety, the one collectors picture when they hear "apophyllite". The colour is V⁴⁺ (Rossman 1974 measured ~1600 ppm vanadium in the Poona crystals), and it is dichroic: the green deepens or pales as the crystal is turned, because the V⁴⁺ absorption is keyed to the tetragonal optic axis. Here is the honest subtlety. Apophyllite IS a famously sector-zoned mineral — but only to the polarizing microscope: it is a classic case of anomalous birefringence, its optic character flickering sector to sector because the growth faces trap different amounts of structural water and F/OH. To the naked eye, though, the green is a single even body colour. A corpus of provenance-locked Pune specimens settles it — gemmy prisms, blocky crystals, an emerald rosette, a frosted druse — and not one shows a prism-versus-pyramid colour split; just a uniform green that lightens at the thin transparent tips and, on rare pieces, thins to a green skin over a white core. So the sector hourglass is real but invisible, and we render what the eye sees: a uniform green prism with a pearly sheen on its basal face. (Gathering those images also corrected two inherited mistakes — the common attribution of the green to copper is wrong, it is vanadium; and the green is not, as first drafted here, partitioned by growth sector.)
+
 ## variant: bloody_phantoms
 
 {count} growth zones carry hematite needle phantoms — this is the 'bloody apophyllite' variety from Nashik. The needles trapped during growth give the otherwise colorless crystal a distinct reddish ghost zone visible by transmitted light.

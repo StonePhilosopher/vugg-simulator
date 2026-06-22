@@ -786,6 +786,243 @@ function _makeHexPrismWithPyramid(): any {
   return geom;
 }
 
+// SECTOR-ZONED PRISM — sector (hourglass) zoning render (crystal-face realism arc
+// 2026-06-21, PROPOSALS-crystal-face-realism §1). Same hex-prism-with-pyramid
+// silhouette as _makeHexPrismWithPyramid, but carrying a baked per-VERTEX COLOUR
+// attribute that paints the PYRAMID (termination) sector a different colour from the
+// PRISM (side body) sector — the augite/titanaugite hourglass read (Ferguson 1973):
+// different growth faces incorporate trace elements at different rates (Dowty 1976),
+// so composition/colour partitions by growth SECTOR with a SHARP, geometry-locked
+// boundary (here the prism/pyramid shoulder ring — non-indexed verts keep it sharp).
+// Colours are ABSOLUTE (the material runs vertexColors with color=white, so the
+// vertex colour IS the final colour): body = the mineral's class_color, termination
+// = a hue-rotated contrast. A pure darken-MULTIPLIER was tried first and read as mere
+// shading (a hue-dependent dead end — green×½ is just darker green); the contrasting
+// termination is both more legible AND geologically the iconic bicolor elbaite
+// ("watermelon" green prism / pink tip — itself a sector/stage colour zoning). A
+// Tier A render abstraction — says "habit variant", not a computed per-element
+// partition. `bodyRGB`/`termRGB` are linear-space [r,g,b]; cached per base colour.
+function _makeSectorZonedPrism(bodyRGB: number[], termRGB: number[]): any {
+  const r = 0.50;             // prism / pyramid base radius (a-axis)
+  const yBase = -0.50;        // anchored at the wall
+  const yShoulder = 0.20;     // top of prism / start of pyramid
+  const yApex = 0.50;         // free tip
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const pc = () => colors.push(bodyRGB[0], bodyRGB[1], bodyRGB[2]);  // prism sector
+  const tc = () => colors.push(termRGB[0], termRGB[1], termRGB[2]);  // termination sector
+  for (let i = 0; i < 6; i++) {
+    const a0 = (i / 6) * Math.PI * 2;
+    const a1 = ((i + 1) / 6) * Math.PI * 2;
+    const x0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r;
+    const x1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
+    // prism side face — two triangles, all six verts in the prism (body) sector
+    _pushTri(positions, x0, yBase, z0, x1, yBase, z1, x1, yShoulder, z1); pc(); pc(); pc();
+    _pushTri(positions, x0, yBase, z0, x1, yShoulder, z1, x0, yShoulder, z0); pc(); pc(); pc();
+    // pyramid face — one triangle to the apex, termination sector
+    _pushTri(positions, x0, yShoulder, z0, x1, yShoulder, z1, 0, yApex, 0); tc(); tc(); tc();
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// CHIASTOLITE PRISM — the carbon-cross variety of andalusite (crystal-face realism
+// arc 2026-06-21). A near-SQUARE {110} prism (andalusite is orthorhombic, ~square
+// section) carrying a baked per-VERTEX COLOUR attribute that paints the dark
+// carbonaceous CROSS: chiastolite concentrates graphite into the corner/diagonal
+// growth SECTORS, so a transverse section shows the Maltese cross (Mason et al.
+// 2010, Gondwana Res. 18(1):222-229; Dowty 1976 sector-zoning). ONE rule does it —
+// a cross-section point (x,z) is in the carbon sector when it lies near a diagonal,
+// |‖x‖−‖z‖| < BAND: on a side face that darkens the two edge-columns (the 4 vertical
+// corner columns of the prism), and on the top cap it draws the X. Colours are
+// ABSOLUTE (material runs vertexColors with color=white): body = class_color (pale
+// metapelite grey-tan), cross = near-black graphite. Per-CELL flat colouring keeps
+// the sector boundaries crisp. Cached per base colour.
+function _makeChiastolitePrism(bodyRGB: number[], crossRGB: number[]): any {
+  const r = 0.50;             // half-width (square a-b section)
+  const yBase = -0.50, yTop = 0.50;
+  const BAND = 0.17;          // diagonal half-width of the dark cross
+  const N = 12;               // subdivision (crisp blocky sectors)
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const isCross = (x: number, z: number) => Math.abs(Math.abs(x) - Math.abs(z)) < BAND;
+  const pushQuad = (
+    ax: number, ay: number, az: number, bx: number, by: number, bz: number,
+    cx: number, cy: number, cz: number, dx: number, dy: number, dz: number,
+    col: number[],
+  ) => {
+    _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+    _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+    for (let k = 0; k < 6; k++) colors.push(col[0], col[1], col[2]);
+  };
+  // 4 side faces — each subdivided into N horizontal strips; colour depends only
+  // on the cross-section position (constant up the c-axis → vertical columns).
+  for (let f = 0; f < 4; f++) {
+    for (let i = 0; i < N; i++) {
+      const t0 = -r + (2 * r) * (i / N), t1 = -r + (2 * r) * ((i + 1) / N);
+      const tc = (t0 + t1) / 2;
+      let x0, z0, x1, z1, col;
+      if (f === 0) { x0 = r;  z0 = t0; x1 = r;  z1 = t1; col = isCross(r, tc); }       // +x face
+      else if (f === 1) { x0 = -r; z0 = t0; x1 = -r; z1 = t1; col = isCross(-r, tc); }  // -x face
+      else if (f === 2) { x0 = t0; z0 = r;  x1 = t1; z1 = r;  col = isCross(tc, r); }   // +z face
+      else { x0 = t0; z0 = -r; x1 = t1; z1 = -r; col = isCross(tc, -r); }               // -z face
+      pushQuad(x0, yBase, z0, x1, yBase, z1, x1, yTop, z1, x0, yTop, z0, col ? crossRGB : bodyRGB);
+    }
+  }
+  // top cap (y = yTop) — N×N grid, the X reads here
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const x0 = -r + (2 * r) * (i / N), x1 = -r + (2 * r) * ((i + 1) / N);
+      const z0 = -r + (2 * r) * (j / N), z1 = -r + (2 * r) * ((j + 1) / N);
+      const col = isCross((x0 + x1) / 2, (z0 + z1) / 2) ? crossRGB : bodyRGB;
+      pushQuad(x0, yTop, z0, x1, yTop, z0, x1, yTop, z1, x0, yTop, z1, col);
+    }
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// GREEN POONA APOPHYLLITE — a tetragonal square prism rendered as a UNIFORM V⁴⁺
+// green body (Rossman 1974), the {101} pyramidal tips a hair lighter from
+// transparency and the {001} basal face a pearly green-white LUSTER. Image-corpus
+// verified (Pune specimens, 2026-06-21): the green is a uniform body colour with NO
+// visible prism-vs-pyramid sector partition. Apophyllite IS genuinely sector-zoned,
+// but only OPTICALLY (anomalous birefringence, crossed-polars) — it does not show as
+// visible colour, so this is NOT a colour hourglass (see js/45). Per-
+// CELL flat ABSOLUTE vertex colours (material runs vertexColors with color=white). Same unit box (y −0.5..+0.5) as the other prism builders
+// so the per-crystal transform scales it identically.
+function _makeApophyllitePrism(prismRGB: number[], pyramidRGB: number[], basalRGB: number[]): any {
+  const r = 0.50;             // prism half-width (a-axis)
+  const rTop = 0.24;          // flat {001} top half-width
+  const yBase = -0.50;        // anchored at the wall
+  const yShoulder = 0.14;     // top of prism / base of the {101} pyramidal shoulders
+  const yTop = 0.50;          // flat top
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const pushQuad = (
+    ax: number, ay: number, az: number, bx: number, by: number, bz: number,
+    cx: number, cy: number, cz: number, dx: number, dy: number, dz: number,
+    col: number[],
+  ) => {
+    _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+    _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+    for (let k = 0; k < 6; k++) colors.push(col[0], col[1], col[2]);
+  };
+  const corn = [[r, r], [-r, r], [-r, -r], [r, -r]];          // square prism corners (CCW)
+  const top = [[rTop, rTop], [-rTop, rTop], [-rTop, -rTop], [rTop, -rTop]];  // flat-top corners
+  for (let i = 0; i < 4; i++) {
+    const j = (i + 1) % 4;
+    // prism side face (green {100} prism sector) — yBase..yShoulder
+    pushQuad(
+      corn[i][0], yBase, corn[i][1], corn[j][0], yBase, corn[j][1],
+      corn[j][0], yShoulder, corn[j][1], corn[i][0], yShoulder, corn[i][1], prismRGB,
+    );
+    // {101} pyramidal shoulder face (intermediate sector) — yShoulder(r) -> yTop(rTop)
+    pushQuad(
+      corn[i][0], yShoulder, corn[i][1], corn[j][0], yShoulder, corn[j][1],
+      top[j][0], yTop, top[j][1], top[i][0], yTop, top[i][1], pyramidRGB,
+    );
+  }
+  // flat {001} basal pinacoid top — pale-pearly clear "waist" sector
+  pushQuad(
+    top[0][0], yTop, top[0][1], top[1][0], yTop, top[1][1],
+    top[2][0], yTop, top[2][1], top[3][0], yTop, top[3][1], basalRGB,
+  );
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// GYPSUM HOURGLASS BLADE — the genuinely VISIBLE sector tenant (crystal-face-realism
+// arc 2026-06-22). A tabular selenite blade (thin in x, wide in z, elongated up the
+// c-axis y) carrying the iconic "hourglass selenite" of the Great Salt Plains: clay +
+// sand stained chocolate-brown by soil iron oxide, mechanically trapped on the fast-
+// growing terminal growth SECTORS, forming a sandglass of inclusions inside an
+// otherwise water-clear blade (USFWS Salt Plains NWR; Oklahoma state crystal). ONE
+// rule paints it, chiastolite-style: on each broad {010} face, a cell at normalized
+// (yn, zn) is in the inclusion sector when |zn| < |yn| — two cones meeting apex-to-apex
+// at the crystal centre (wide at both terminations, pinched to a clear waist). The apex
+// sits at the geometric centre so the hourglass is self-similar along the c-axis — the
+// boss's stepped-growth specimen, where the internal order survives the outer envelope
+// changing. `flooded` collapses the whole blade to solid brown (the overgrown variant —
+// heavy inclusion load buries the contrast; boss: "the brown ones are overgrown").
+// Colours are ABSOLUTE per-CELL (material runs vertexColors with color=white): body =
+// pale clear gypsum, sector = amber→chocolate by trapped-load intensity. Same unit box
+// (y −0.5..+0.5) as the other prism builders so the per-crystal transform scales it.
+function _makeHourglassSeleniteBlade(bodyRGB: number[], sectorRGB: number[], flooded: boolean, steps: number): any {
+  const a = 0.09;             // half-thickness (x) — tabular blade, constant thin
+  const bMax = 0.34;          // max half-width (z) at the base/body
+  const yBase = -0.50, yTop = 0.50;
+  const yShoulder = 0.02;     // body below (full width); tapering chisel tip above
+  const Nz = 14;              // z-cells across the broad face (the hourglass)
+  const Ny = 26;              // y-slices up the c-axis
+  const positions: number[] = [];
+  const colors: number[] = [];
+  // Inclusion sector: |zn| < |yn| — the sandglass (apex at centre, wide at the tips).
+  // Normalized against the FULL bMax so the bowtie stays geometrically fixed as the
+  // outer envelope tapers/steps — the boss's "internal hourglass survives the envelope".
+  const isSector = (yn: number, zn: number) => flooded || Math.abs(zn) < Math.abs(yn);
+  const pushQuad = (
+    ax: number, ay: number, az: number, bx: number, by: number, bz: number,
+    cx: number, cy: number, cz: number, dx: number, dy: number, dz: number,
+    col: number[],
+  ) => {
+    _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+    _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+    for (let k = 0; k < 6; k++) colors.push(col[0], col[1], col[2]);
+  };
+  const edgeCol = flooded ? sectorRGB : bodyRGB;
+  // Half-width at a given y: full below the shoulder, then taper to a chisel tip. When
+  // `steps` ≥ 2 the taper is quantized into discrete narrowing terraces (the stepped-
+  // growth ziggurat); otherwise it is a fine smooth chisel.
+  const halfWidth = (y: number): number => {
+    if (y <= yShoulder) return bMax;
+    let t = (y - yShoulder) / (yTop - yShoulder);        // 0..1 up the tip
+    if (steps >= 2) { const lvl = Math.min(steps - 1, Math.floor(t * steps)); t = lvl / (steps - 1); }
+    return bMax * (1 - 0.9 * t);                          // 1.0 → 0.1 (a thin tip, not a degenerate point)
+  };
+  let prevBB = -1;
+  for (let i = 0; i < Ny; i++) {
+    const y0 = yBase + (yTop - yBase) * (i / Ny), y1 = yBase + (yTop - yBase) * ((i + 1) / Ny);
+    const yc = (y0 + y1) / 2, yn = yc / 0.5;
+    const bb = halfWidth(yc);
+    // Broad faces (x = ±a) — z-cells across −bb..bb, coloured by the fixed hourglass rule.
+    for (let j = 0; j < Nz; j++) {
+      const z0 = -bb + (2 * bb) * (j / Nz), z1 = -bb + (2 * bb) * ((j + 1) / Nz);
+      const zn = ((z0 + z1) / 2) / bMax;
+      const col = isSector(yn, zn) ? sectorRGB : bodyRGB;
+      pushQuad(a, y0, z0, a, y1, z0, a, y1, z1, a, y0, z1, col);        // +x face
+      pushQuad(-a, y0, z0, -a, y0, z1, -a, y1, z1, -a, y1, z0, col);   // −x face
+    }
+    // Side faces at z = ±bb for this slice.
+    pushQuad(-a, y0, bb, a, y0, bb, a, y1, bb, -a, y1, bb, edgeCol);          // +z side
+    pushQuad(-a, y0, -bb, -a, y1, -bb, a, y1, -bb, a, y0, -bb, edgeCol);      // −z side
+    // Step tread (horizontal ledge facing up) where the width shrank from the slice below.
+    if (prevBB > bb + 1e-6) {
+      pushQuad(-a, y0, bb, -a, y0, prevBB, a, y0, prevBB, a, y0, bb, edgeCol);        // +z ledge
+      pushQuad(-a, y0, -prevBB, -a, y0, -bb, a, y0, -bb, a, y0, -prevBB, edgeCol);    // −z ledge
+    }
+    prevBB = bb;
+  }
+  // Base cap (full width, sits on the matrix) + thin tip cap.
+  const bTip = halfWidth(yTop - 1e-4);
+  pushQuad(-a, yBase, -bMax, a, yBase, -bMax, a, yBase, bMax, -a, yBase, bMax, sectorRGB);   // base
+  pushQuad(-a, yTop, -bTip, -a, yTop, bTip, a, yTop, bTip, a, yTop, -bTip, sectorRGB);       // tip
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
 // tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
 // the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
@@ -855,6 +1092,51 @@ function _makeGwindelGeom(twistDeg: number): any {
   const tc = [0, 1, 2, 3].map((i) => corner(i, tw));
   _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[1][0], yTop, tc[1][1], tc[2][0], yTop, tc[2][1]);
   _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[2][0], yTop, tc[2][1], tc[3][0], yTop, tc[3][1]);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// BENT PRISM — post-growth deformation overprint (deformation/shear arc
+// 2026-06-20, RESEARCH-deformation-shear §5.3). A hexagonal prism whose long
+// axis arcs sideways: the crystal grew straight, then a later tectonic shear
+// bent it (bent quartz = post-growth bend-gliding, NOT a growth habit). Built
+// like _makeGwindelGeom's SEG loop, but each ring is TRANSLATED laterally along
+// a cantilever arc (offsetX ∝ t², base fixed, tip swung) instead of twisted —
+// the generic "deformation transform on a finished mesh" the arc was after. The
+// pyramidal termination follows the bend so the tip stays on-axis with its ring.
+// `bend` is the lateral tip offset (unit box). Gated in the mesh-sync hook on
+// crystal._deformation.kind === 'bend'.
+function _makeBentPrism(bend: number): any {
+  const b = Math.max(0.0, Math.min(0.6, bend || 0.3));
+  const r = 0.26;                       // columnar (quartz-like) cross-section
+  const yBase = -0.5, yShoulder = 0.32, yApex = 0.5;
+  const SEG = 14, N = 6;
+  const offX = (y: number): number => { const t = (y - yBase) / (yApex - yBase); return b * t * t; };
+  const ring = (y: number): number[][] => {
+    const cx = offX(y); const out: number[][] = [];
+    for (let k = 0; k < N; k++) { const a = (k / N) * Math.PI * 2; out.push([cx + r * Math.cos(a), y, r * Math.sin(a)]); }
+    return out;
+  };
+  const positions: number[] = [];
+  for (let s = 0; s < SEG; s++) {
+    const y0 = yBase + (yShoulder - yBase) * (s / SEG);
+    const y1 = yBase + (yShoulder - yBase) * ((s + 1) / SEG);
+    const r0 = ring(y0), r1 = ring(y1);
+    for (let k = 0; k < N; k++) {
+      const j = (k + 1) % N;
+      _pushTri(positions, r0[k][0], r0[k][1], r0[k][2], r0[j][0], r0[j][1], r0[j][2], r1[j][0], r1[j][1], r1[j][2]);
+      _pushTri(positions, r0[k][0], r0[k][1], r0[k][2], r1[j][0], r1[j][1], r1[j][2], r1[k][0], r1[k][1], r1[k][2]);
+    }
+  }
+  // pyramidal termination (apex rides the bend)
+  const rs = ring(yShoulder);
+  const apex = [offX(yApex), yApex, 0];
+  for (let k = 0; k < N; k++) { const j = (k + 1) % N; _pushTri(positions, rs[k][0], rs[k][1], rs[k][2], rs[j][0], rs[j][1], rs[j][2], apex[0], apex[1], apex[2]); }
+  // base cap (fan)
+  const rb = ring(yBase);
+  for (let k = 1; k < N - 1; k++) { _pushTri(positions, rb[0][0], rb[0][1], rb[0][2], rb[k + 1][0], rb[k + 1][1], rb[k + 1][2], rb[k][0], rb[k][1], rb[k][2]); }
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geom.computeVertexNormals();
@@ -3148,6 +3430,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // prism/spike/rhomb/scalene/botryoidal habit).
     const token = _resolveCrystalGeomToken(crystal, habitForGeom);
     let geom: any = null;
+    let isSectorZoned = false;   // sector (hourglass) zoning → vertexColors material
     // Calcite-morphology arc Phase 3: a calcite crystal whose zone stack
     // carries real stepped/hopper relief renders zone-stack TERRACES
     // instead of the smooth parent form. Gated on the parent-form tokens
@@ -3219,6 +3502,107 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       if (crystal._saddleGeomAmp !== q) { crystal._saddleGeom = _makeSaddleRhomb(q); crystal._saddleGeomAmp = q; }
       geom = crystal._saddleGeom;
     }
+    // BENT crystal — post-growth deformation overprint (deformation/shear arc
+    // 2026-06-20). The sim tags crystal._deformation when a scenario shear event
+    // bent a crystal that had already grown (js/45 classifyDeformation). Gated on
+    // the prism token (the quartz tenant); the bend transform replaces the
+    // straight prism with an arced one. Takes precedence over gwindel/sceptre is
+    // unnecessary — those are quartz-cleft features and the bend tenant (tormiq)
+    // shares none of them, so order doesn't collide; placed last among the quartz
+    // hooks. (A replay before the shear step keeps the straight prism.)
+    if (!geom && crystal._deformation && crystal._deformation.kind === 'bend' && token === 'prism'
+        && (replayStep == null || replayStep >= crystal._deformation.atStep)) {
+      const bend = Math.max(0.15, Math.min(0.6, 0.15 + (crystal._deformation.amount || 0.5) * 0.45));
+      const q = Math.round(bend * 100) / 100;  // quantize for cache reuse
+      if (crystal._bentGeomAmt !== q) { crystal._bentGeom = _makeBentPrism(q); crystal._bentGeomAmt = q; }
+      geom = crystal._bentGeom;
+    }
+    // GYPSUM HOURGLASS (selenite) — the visible sandglass of trapped clay/Fe sediment
+    // inside a water-clear blade (Great Salt Plains; js/45 _seleniteHourglassParams).
+    // NOT gated on the prism token: selenite has its own bladed geometry. The body is
+    // pale clear gypsum, the inclusion sector amber→chocolate by trapped-load intensity;
+    // `flooded` buries the contrast to solid brown (the overgrown variant). Bucketed
+    // cache key (intensity rounded to 0.1) keeps the geom cache small.
+    let isGypsumHourglass = false;
+    if (!geom && crystal._sectorZoned && crystal._sectorZoned.kind === 'gypsum_hourglass') {
+      const hg = crystal._sectorZoned;
+      const inten = Math.max(0.15, Math.min(1, hg.intensity || 0.5));
+      const bucket = Math.round(inten * 10) / 10;
+      const flooded = !!hg.flooded;
+      const steps = hg.steps | 0;                   // 0 = smooth chisel tip; ≥2 = stepped ziggurat
+      const key = '__gypsum_hg_' + bucket + (flooded ? '_f' : '') + '_s' + steps;
+      geom = state.geomCache.get(key);
+      if (!geom) {
+        // amber (#c89a5b, light load) → chocolate (#5a3621, heavy load), per USFWS
+        // "reddish to chocolate brown" iron-oxide staining.
+        const sector = new THREE.Color('#c89a5b').lerp(new THREE.Color('#5a3621'), bucket);
+        const clear = new THREE.Color('#e8e2d4');     // pale water-clear gypsum body
+        // Flooded: body collapses most of the way toward the sector colour (solid brown).
+        const bodyCol = flooded ? clear.clone().lerp(sector, 0.8) : clear;
+        geom = _makeHourglassSeleniteBlade(
+          [bodyCol.r, bodyCol.g, bodyCol.b], [sector.r, sector.g, sector.b], flooded, steps);
+        state.geomCache.set(key, geom);
+      }
+      isSectorZoned = true;
+      isGypsumHourglass = !crystal._sectorZoned.flooded;   // clear blade reads translucent; flooded reads opaque
+    }
+    // SECTOR (HOURGLASS) ZONING — crystals tagged by js/45 classifySectorZoning
+    // (tourmaline + future sector minerals) render with the pyramid termination
+    // sector painted a contrasting colour from the prism body (Dowty 1976 / Ferguson
+    // 1973 hourglass; for tourmaline this IS the iconic bicolor elbaite). Gated on
+    // the prism token so twins / dripstone keep their geometry. The geom bakes
+    // ABSOLUTE per-vertex colours (body = class_color, termination = hue-rotated
+    // contrast); the matOpts block below sets color=white + vertexColors so the baked
+    // colours render directly. Cached per base colour.
+    if (!geom && crystal._sectorZoned && token === 'prism') {
+      const szSpec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[crystal.mineral] : null;
+      const szBase = (szSpec && szSpec.class_color) || '#2f9e5e';
+      const body = new THREE.Color(szBase);
+      if (crystal._sectorZoned.kind === 'cross') {
+        // CHIASTOLITE — square prism + dark carbon cross (the corner growth sectors).
+        const key = '__chiastolite_' + szBase;
+        geom = state.geomCache.get(key);
+        if (!geom) {
+          const cross = new THREE.Color('#161410');   // graphite near-black
+          geom = _makeChiastolitePrism([body.r, body.g, body.b], [cross.r, cross.g, cross.b]);
+          state.geomCache.set(key, geom);
+        }
+      } else if (crystal._sectorZoned.kind === 'apophyllite_green') {
+        // GREEN POONA APOPHYLLITE — a tetragonal square prism, UNIFORM V⁴⁺ green body
+        // (Rossman 1974, Am.Min. 59:621), tips a hair lighter (transparency), {001}
+        // basal face a pearly green-white luster. Image-corpus verified (Pune, 2026-06-21):
+        // green is a uniform body colour, NO visible prism-vs-pyramid sector partition.
+        // Apophyllite's sector zoning is real but OPTICAL-only (anomalous birefringence,
+        // crossed-polars) — not visible colour, so NOT a colour hourglass (see js/45).
+        // Fixed baked vertex colours (NOT class_color, a placeholder blue). One geom for
+        // all green apophyllite.
+        const key = '__apophyllite_green';
+        geom = state.geomCache.get(key);
+        if (!geom) {
+          // UNIFORM V⁴⁺ green body (image-corpus verified: Pune apophyllite green is
+          // a uniform body colour, NOT a visible colour-sector partition). Tips read
+          // slightly lighter from TRANSPARENCY; the basal {001} face is the one real
+          // visible face contrast — a pearly (green-tinted, not white) LUSTER.
+          const prism = new THREE.Color('#5fb87a');    // green prism body
+          const pyramid = new THREE.Color('#74c191');   // same green, a hair lighter (transparent tips)
+          const basal = new THREE.Color('#cfe6d6');     // pearly green-white {001} basal-face luster
+          geom = _makeApophyllitePrism([prism.r, prism.g, prism.b], [pyramid.r, pyramid.g, pyramid.b], [basal.r, basal.g, basal.b]);
+          state.geomCache.set(key, geom);
+        }
+      } else {
+        // HOURGLASS (tourmaline) — hex prism + tinted termination sector. The
+        // termination is a hue-rotated contrast of the mineral colour (green body
+        // → pink/magenta tip — the iconic bicolor elbaite).
+        const key = '__sectorzoned_' + szBase;
+        geom = state.geomCache.get(key);
+        if (!geom) {
+          const term = body.clone().offsetHSL(0.45, 0.12, -0.04);
+          geom = _makeSectorZonedPrism([body.r, body.g, body.b], [term.r, term.g, term.b]);
+          state.geomCache.set(key, geom);
+        }
+      }
+      isSectorZoned = true;
+    }
     if (!geom) {
       geom = state.geomCache.get(token);
       if (!geom) {
@@ -3289,6 +3673,15 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       matOpts.transparent = true;
       matOpts.opacity = 0.42;
     }
+    // Sector (hourglass) zoning — the geom bakes ABSOLUTE per-vertex colours (body =
+    // class_color, termination = hue-rotated contrast). Set color=white so the
+    // material doesn't tint them and flip vertexColors so the baked colours render
+    // directly (the two sectors read as distinct colours, sharp boundary at the
+    // prism/pyramid shoulder).
+    if (isSectorZoned) { matOpts.color = 0xffffff; matOpts.vertexColors = true; }
+    // A clear (non-flooded) hourglass blade reads as glassy gypsum — translucent so the
+    // internal sandglass of inclusions shows through; flooded blades stay opaque brown.
+    if (isGypsumHourglass) { matOpts.transparent = true; matOpts.opacity = 0.82; }
     const mat = new THREE.MeshStandardMaterial(matOpts);
     _applyCavityClip(mat, state.clipUniforms);
 

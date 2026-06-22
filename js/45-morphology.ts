@@ -534,6 +534,183 @@ function classifyQuartzGwindel(sim: any) {
   g.habit = 'gwindel';
 }
 
+// POST-GROWTH DEFORMATION OVERPRINT — the genuine "deformation" mechanic
+// (deformation/shear arc, RESEARCH-deformation-shear-2026-06-20.md §5.3). This
+// is the category the handoff §8 conflated: bent quartz / stibnite / mica kink
+// bands + mechanical twins are NOT recorded as the crystal grows — they are
+// imposed on a FINISHED lattice by a later tectonic event (post-growth crystal-
+// plastic gliding; the literature is unambiguous, research §3–4). So this is an
+// OVERPRINT, not a grow-integrate field: a scenario declares a `deformation`
+// directive on a late event (apply_events records it onto sim._deformationEvents
+// with the step it fired), and this pass — run post-growth like the gwindel/
+// sceptre classifiers — tags crystals that had ALREADY GROWN by that step
+// (firstZone.step < event.step) so the bend is stamped on a crystal that existed
+// to be bent. PURE tagging (no rng, no fluid) → the render reads crystal._defor-
+// mation; the engine baseline is untouched (gen-baseline serialises only counts/
+// sizes). Tag-once (idempotent across the per-step calls). minerals=null → any.
+const DEFORM_MIN_UM = 100;   // skip nucleation-only specks — need a body to bend
+function classifyDeformation(sim: any) {
+  const evs = sim._deformationEvents;
+  if (!evs || !evs.length) return;
+  for (const ev of evs) {
+    const mins = (ev && ev.minerals) || null;
+    const style = (ev && ev.style) || 'bend';
+    const amount = (ev && typeof ev.amount === 'number') ? ev.amount
+      : (ev && typeof ev.magnitude === 'number') ? ev.magnitude : 0.5;
+    for (const c of sim.crystals) {
+      if (!c || c.dissolved || c._deformation) continue;
+      if (mins && mins.indexOf(c.mineral) < 0) continue;
+      if ((c.total_growth_um || 0) < DEFORM_MIN_UM) continue;
+      // must have existed (grown) BEFORE the shear fired
+      let firstStep: any = null;
+      for (const z of (c.zones || [])) { if ((z.thickness_um || 0) > 0) { firstStep = z.step; break; } }
+      if (firstStep == null || firstStep >= ev.step) continue;
+      c._deformation = { kind: style, amount, atStep: ev.step };
+    }
+  }
+}
+
+// SECTOR (HOURGLASS) ZONING — different growth sectors (crystal faces) incorporate
+// trace elements at different rates, so composition (and colour) partitions by
+// GROWTH SECTOR rather than by concentric growth zone (Dowty 1976, Am.Min.
+// 61:460–469 — the protosite model: each growing face exposes a different partial-
+// coordination surface, so the same ion partitions differently per face, and
+// lateral step growth metastably BURIES that face-characteristic composition). The
+// visual signature is a SHARP, geometry-locked boundary between sectors — distinct
+// from the gradational boundary of oscillatory/concentric zoning. Iconic cases:
+// titanaugite hourglass (Ferguson 1973, Min.Mag. 39:321 — Al-for-Si + Ti enriches +
+// darkens the PRISM sectors {100}/{110}/{010}; the {-111} hourglass-interior
+// sectors are Ti-DEPLETED and PALE — Ferguson 1973 + Ubide et al. 2019, GCA
+// 251:265; the common "Ti darkens the basal sectors" mnemonic is BACKWARDS),
+// chiastolite andalusite (carbon to the corner sectors → the
+// Maltese cross), elbaite/liddicoatite radial colour sectors.
+//
+// Tier A render-only abstraction (PROPOSALS-crystal-face-realism-2026-06-21 §1):
+// this pass — run post-growth like the gwindel/sceptre/deformation classifiers —
+// just TAGS the well-documented sector-zoned minerals so the renderer draws a per-
+// sector tint (the termination sector ≠ the prism body sector, the augite hourglass
+// read). PURE tagging (no rng, no fluid) → render reads crystal._sectorZoned; the
+// engine baseline is untouched (gen-baseline serialises only counts/sizes), so this
+// is SIM-NEUTRAL & byte-identical, the saddle-dolomite precedent. Tag-once
+// (idempotent across the per-step calls). Tourmaline is the first tenant — the only
+// sector-zoned mineral in the catalogue (elbaite/liddicoatite colour sectors are
+// collector-iconic). Chiastolite (andalusite) — THE iconic sector-cross — needs
+// andalusite added first, a future add-mineral tenant.
+// Per-mineral sector-zoning config. `kind` selects the render: 'hourglass' (the
+// termination-sector tint — the tourmaline bicolor-elbaite read) vs 'cross' (the
+// transverse 4-corner carbon mask — chiastolite) vs 'apophyllite_green' (UNIFORM V⁴⁺
+// green body + pearly basal-face luster — the Poona read). `requiresGraphitic`
+// gates a tenant on a carbonaceous host: andalusite is sector-zoned-as-chiastolite
+// ONLY in a graphitic metapelite (wall.graphitic); a non-graphitic andalusite is a
+// plain square prism. `requiresGreen` gates apophyllite's green render on a crystal
+// that actually grew V⁴⁺-green (grow_apophyllite sets c._apophylliteGreen when
+// fluid.V > 0.5).
+// SECTOR-ZONING NOTE: apophyllite IS a genuine growth-sector-zoned mineral — its
+// anomalous birefringence (optic sign varies within one crystal) arises from per-
+// sector differences in F/OH ratio + structural water + strain (Dowty-type growth-
+// sector zoning, confirmed against optical-mineralogy sources). The prized Poona
+// green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622) — DICHROIC. BUT that sector
+// zoning is OPTICAL-only (anomalous birefringence, crossed-polars/thin-section). The
+// VISIBLE green is a UNIFORM body colour: a provenance-locked image corpus of Pune
+// specimens (2026-06-21) shows NO prism-vs-pyramid colour partition — only a
+// transparency gradient (thin tips lighter) + faint concentric banding. So the render
+// is UNIFORM green + a pearly {001} basal-face LUSTER (the one real visible face
+// contrast), NOT a colour hourglass. (Correction trail: boss handoff said "Cu" →
+// corrected to V; my "not real sector zoning" → corrected, the zoning is real but
+// optical; the image corpus then corrected the visible-colour model to uniform.)
+//
+// GYPSUM HOURGLASS (selenite) — the arc's first GENUINELY VISIBLE sector tenant
+// (2026-06-22). Where apophyllite's sector zoning is optical-only, selenite's is the
+// classic VISIBLE "hourglass selenite" of the Great Salt Plains, Oklahoma (the state
+// crystal; USFWS Salt Plains NWR): fine clay + sand particles, stained reddish-to-
+// chocolate-brown by soil iron oxide, are mechanically trapped on the fast-growing
+// terminal growth SECTORS, forming a bowtie/hourglass of inclusions inside an
+// otherwise water-clear blade. It is a true growth-sector phenomenon (boss-confirmed
+// firsthand; corpus = boss's own provenance-locked specimens 2026-06-22): the apex
+// tracks the c-axis growth direction, so the internal hourglass stays self-similar
+// even as the outer envelope changes (the stepped-growth specimen). `requiresInclusion`
+// reads the engine's EXISTING hourglass-inclusion zones (grow_selenite already tags a
+// growth zone inclusion_type='hourglass (sand inclusions)' when rate>5 + a 30% roll) —
+// no new RNG, no chemistry: this is a pure render classification (SIM-neutral). The
+// derived `intensity` (trapped-zone fraction × accumulated trace_Fe) drives the brown
+// depth, and `flooded` (heavy inclusion load) collapses the contrast to a solid-brown
+// overgrown crystal — the boss's clear↔flooded variant spectrum in one knob.
+const SECTOR_ZONED_MINERALS: any = {
+  tourmaline: { kind: 'hourglass' },
+  andalusite: { kind: 'cross', requiresGraphitic: true },   // chiastolite — the carbon cross
+  apophyllite: { kind: 'apophyllite_green', requiresGreen: true },  // Poona V⁴⁺ UNIFORM green body + pearly basal (sector zoning is optical-only — see note)
+  selenite: { kind: 'gypsum_hourglass', requiresInclusion: true },  // Great Salt Plains clay/Fe sector hourglass — genuinely VISIBLE (see note)
+};
+const SECTOR_ZONED_MIN_UM = 50;   // need a real body + termination/sectors to partition
+// Read-only scan of a selenite crystal's growth zones for the engine's trapped-
+// sediment record. Returns null if no hourglass inclusions were trapped (a water-
+// clear blade — most specimens), else the visible-render parameters. SIM-NEUTRAL:
+// only reads zone fields the engine already wrote.
+// Hourglass selenite is a COOL near-surface, sediment-laden phenomenon (wet soil /
+// evaporite playa — Great Salt Plains). A hot, clean, slow geothermal pool (Naica,
+// ~54°C) grows water-CLEAR blades and traps no soil sediment, so an inclusion zone
+// only counts toward the visible hourglass if it grew below this temperature. This is
+// the defer-to-geology gate that keeps Naica's iconic clear crystals clear.
+const HOURGLASS_MAX_T = 45;
+const HOURGLASS_HIATUS_STEPS = 4;   // a gap larger than this between recorded growth zones = a hiatus
+function _seleniteHourglassParams(c: any): any {
+  const zones = (c && c.zones) || [];
+  let growth = 0, hgCount = 0, feLoad = 0, segments = 0, prevStep = -999;
+  for (const z of zones) {
+    const t = z.thickness_um || 0;
+    if (t <= 0) continue;
+    growth++;
+    if (typeof z.inclusion_type === 'string' && z.inclusion_type.indexOf('hourglass') >= 0
+        && (z.temperature == null || z.temperature < HOURGLASS_MAX_T)) hgCount++;
+    feLoad += z.trace_Fe || 0;
+    // Count distinct growth SEGMENTS — bursts of growth separated by hiatuses. A pulsed
+    // evaporite setting (playa wet/dry, sabkha flood/evap) grows the blade only during the
+    // dry/evap bursts; the wet pause records NO zone, leaving a step-gap. Each gap-separated
+    // burst steps the outer envelope out another terrace while the internal hourglass holds
+    // its order (the boss's stepped-growth specimen / quartz sceptre / calcite ziggurat).
+    // SIM-neutral: reads the zone step numbers the engine already wrote.
+    if (z.step - prevStep > HOURGLASS_HIATUS_STEPS) segments++;
+    prevStep = z.step;
+  }
+  if (hgCount === 0 || growth === 0) return null;
+  const hgFrac = hgCount / growth;                        // 0..1 — share of growth that trapped sediment
+  const avgFe = feLoad / growth;                          // mean iron staining per growth increment
+  // Brown DEPTH is iron-driven (USFWS: soil iron oxide gives the reddish-to-chocolate
+  // colour) — an iron-rich red-bed setting stains deep brown even where the hourglass is
+  // sharp; the trapped FRACTION adds a little. Capped below full saturation so there is
+  // visible range across the fleet (light-amber low-Fe → chocolate red-bed).
+  const intensity = Math.max(0.18, Math.min(0.95, 0.25 + avgFe * 16 + hgFrac * 0.25));
+  // Flooded = solid-brown overgrown blade, hourglass lost: pervasive sediment trapping
+  // OR a saturating iron coating (the boss's "totally brown" overgrown specimens).
+  const flooded = hgFrac > 0.5 || intensity >= 0.92;
+  const steps = segments >= 2 ? Math.min(5, segments) : 0;  // 0 = smooth chisel; ≥2 = stepped ziggurat (one terrace per burst)
+  return { kind: 'gypsum_hourglass', intensity, flooded, hgFrac, steps };
+}
+function classifySectorZoning(sim: any) {
+  const graphitic = !!(sim.conditions && sim.conditions.wall && sim.conditions.wall.graphitic);
+  for (const c of sim.crystals) {
+    if (!c || c.dissolved) continue;
+    const cfg = SECTOR_ZONED_MINERALS[c.mineral];
+    if (!cfg) continue;
+    if (cfg.requiresInclusion) {
+      // Selenite hourglass EVOLVES as the blade grows (intensity, flooded, and the
+      // stepped-growth segment count all depend on the full zone stack), so RE-evaluate
+      // every step rather than tagging once — otherwise it freezes at the early-growth
+      // state (segments=1) before the wet/dry hiatuses that step the blade out have
+      // happened. Refresh-in-place; render reads the final state. SIM-neutral.
+      if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM) continue;
+      const hg = _seleniteHourglassParams(c);
+      if (hg) c._sectorZoned = hg;
+      continue;
+    }
+    if (c._sectorZoned) continue;                              // others tag once (kind is fixed)
+    if (cfg.requiresGraphitic && !graphitic) continue;
+    if (cfg.requiresGreen && !c._apophylliteGreen) continue;   // V⁴⁺ green only (grow_apophyllite)
+    if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM) continue;
+    c._sectorZoned = { kind: cfg.kind };
+  }
+}
+
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];

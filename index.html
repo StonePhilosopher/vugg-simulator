@@ -2958,9 +2958,11 @@ footer a:hover {
     <button onclick="startScenarioInCreative('naica_geothermal')">💎 Naica Selenite Mega-Cave — Chihuahua (Mexico). Cueva de los Cristales, 12-meter gypsum blades.</button>
     <button onclick="startScenarioInCreative('epithermal_telluride')">🪙 Cripple Creek Au-Te Bonanza — Cresson Mine (Teller Co., CO). Type district for gold tellurides (calaverite + sylvanite + krennerite).</button>
     <button onclick="startScenarioInCreative('searles_lake')">🟦 Searles Lake Evaporite — San Bernardino Co., CA. Type locality for hanksite + sulfohalite + commercial borax.</button>
+    <button onclick="startScenarioInCreative('great_salt_plains')">🏜️ Great Salt Plains — Salt Plains NWR, OK. The only place on Earth selenite grows the iron-brown hourglass (Oklahoma state crystal).</button>
     <button onclick="startScenarioInCreative('sunnyside_american_tunnel')">⛰️ Sunnyside / American Tunnel — Silverton caldera (San Juan Co., CO). Rhodochrosite + REE-fluorite display specimens.</button>
     <button onclick="startScenarioInCreative('roughten_gill')">🔷 Roughten Gill Pb-Cu Supergene — Caldbeck Fells (Cumbria, UK). Type locality for plumbogummite (Hartley 1882); linarite + caledonite + leadhillite trio.</button>
     <button onclick="startScenarioInCreative('marble_contact_metamorphism')">🏛️ Marble Contact Metamorphism — Mogok Stone Tract (Mandalay, Burma). Pigeon's-blood ruby + skarn calc-silicates.</button>
+    <button onclick="startScenarioInCreative('chiastolite_hornfels')">✚ Chiastolite Hornfels — Bimbowrie / Mt Howden (South Australia). Andalusite porphyroblasts with the dark carbon cross in a graphitic contact aureole.</button>
     <button onclick="startScenarioInCreative('ultramafic_supergene')">🟢 Marlborough Ultramafic Supergene — Queensland (Australia). Apple-green chrysoprase + magnesite over serpentinized peridotite.</button>
     <button onclick="startScenarioInCreative('jeffrey_mine')">⚙️ Jeffrey Mine Rodingite Contact — Val-des-Sources (Quebec, Canada). World-reference cyprine vesuvianite + grossular + datolite + chrysotile asbestos. Per Bernardini 1981.</button>
     <button onclick="startScenarioInCreative('tn457_barite_pulses')">💗 TN457 Barite Pulses — Cumbria, England (Caldbeck Fells / North Pennines). 50 episodic Ba+Mn fluid pulses over a sphalerite substrate. Tests event-driven precipitation per Putnis &amp; Perthuisot 2001.</button>
@@ -3068,9 +3070,11 @@ footer a:hover {
       <option value="naica_geothermal">naica_geothermal</option>
       <option value="epithermal_telluride">epithermal_telluride</option>
       <option value="searles_lake">searles_lake</option>
+      <option value="great_salt_plains">great_salt_plains</option>
       <option value="sunnyside_american_tunnel">sunnyside_american_tunnel</option>
       <option value="roughten_gill">roughten_gill</option>
       <option value="marble_contact_metamorphism">marble_contact_metamorphism</option>
+      <option value="chiastolite_hornfels">chiastolite_hornfels</option>
       <option value="ultramafic_supergene">ultramafic_supergene</option>
       <option value="jeffrey_mine">jeffrey_mine</option>
       <option value="tn457_barite_pulses">tn457_barite_pulses</option>
@@ -3886,6 +3890,7 @@ Scenarios:
           <option value="gem_pegmatite">Gem Pegmatite (Cruzeiro)</option>
           <option value="jeffrey_mine">Jeffrey Mine Rodingite</option>
           <option value="marble_contact_metamorphism">Marble Contact (Mogok)</option>
+          <option value="chiastolite_hornfels">Chiastolite Hornfels (Bimbowrie)</option>
           <option value="mvt">MVT (Tri-State)</option>
           <option value="elmwood">Elmwood Stepped Calcite</option>
           <option value="naica_geothermal">Naica Selenite Cave</option>
@@ -3899,6 +3904,7 @@ Scenarios:
           <option value="sabkha_dolomitization">Coorong Sabkha Dolomite</option>
           <option value="schneeberg">Schneeberg U-Pegmatite</option>
           <option value="searles_lake">Searles Lake Evaporite</option>
+          <option value="great_salt_plains">Great Salt Plains Hourglass Selenite</option>
           <option value="sicily_solfifera">Sicily Solfifera Sulfur</option>
           <option value="stalactite_demo">Stalactite Cave Demo</option>
           <option value="sulphur_bank">Sulphur Bank Hg Hot Spring</option>
@@ -16479,7 +16485,107 @@ let timeScale = 5.0;
 //        Single-scenario change (grimsel only); the rest of the fleet is
 //        byte-identical (alpine_cleft defaults false). + narrator (js/92i) +
 //        minerals.json habit_variant. SIM 206 -> 207.
-const SIM_VERSION = 207;
+//   v208 — POST-GROWTH DEFORMATION OVERPRINT — the genuine "deformation" mechanic
+//        (deformation/shear arc, 2026-06-20; research dossier RESEARCH-deformation-
+//        shear-2026-06-20.md). FIRST TENANT: bent quartz at Tormiq. THE SCIENCE
+//        (4 cross-checked passes): the handoff §8 "one shear field crystals
+//        integrate as they grow" FAILED the literature — bent quartz/stibnite/mica
+//        + mechanical twins are NOT recorded during growth; they are imposed on a
+//        FINISHED lattice by later tectonic gliding (post-growth crystal-plastic
+//        deformation, unambiguous in the literature). So this is an OVERPRINT pass,
+//        not a grow-integrate field: a scenario event carries a `deformation`
+//        directive {style,magnitude,minerals}; apply_events (js/85d) records it on
+//        sim._deformationEvents WITH the step it fired; classifyDeformation (js/45,
+//        post-growth like the gwindel/sceptre passes) bends crystals that had
+//        ALREADY grown by that step (firstZone.step < event.step). PURE tagging —
+//        crystal._deformation is a RENDER tag; js/99i _makeBentPrism arcs the long
+//        axis (generalizes the gwindel SEG loop: lateral cantilever offset instead
+//        of twist). CHEMICALLY INERT: deformation is mechanical + post-growth, so
+//        the handler mutates no fluid/T → the FLEET (incl. tormiq) is BYTE-IDENTICAL
+//        (gen-baseline serialises only counts/sizes; the bend is a render tag + a
+//        log line). Tenant: tormiq_alpine_cleft late Karakoram-Thrust shear (step
+//        188) bends the early quartz lining; the epidote swords grew later and are
+//        spared. + narrator (js/92i 'bent'). The §8.5 gwindel shear re-pin is
+//        STRUCK (gwindel = spiral-growth Eshelby twist, not shear — research §1).
+//        SIM 207 -> 208 (provenance; baseline-diff 207↔208 = 0 drift).
+//   v209 — ANDALUSITE + the CHIASTOLITE CROSS (crystal-face realism arc, 2026-06-21;
+//        continues the sector-zoning arc from §1 of PROPOSALS-crystal-face-realism).
+//        NEW MINERAL andalusite (Al₂SiO₅) — the LOW-PRESSURE aluminosilicate
+//        polymorph, the SILICA-SATURATED complement of corundum (where corundum's
+//        _corundum_base_sigma blocks above SiO2>50, andalusite REQUIRES SiO2). js/39
+//        supersaturation_andalusite + MINERAL_GATES_andalusite (js/42), js/59
+//        grow_andalusite, js/89 _nuc_andalusite + iterator, js/65 engine, js/19
+//        stoich, minerals.json + structural.json (Pnnm) + twin-law-check (empty +
+//        note — andalusite twinning not diagnostically established). PERALUMINOUS
+//        GATE (Al≥15 + SiO2≥50 + Na/K<30 + B<1 + T 400-700): in a pegmatite Al is
+//        consumed by feldspar/tourmaline/mica, so andalusite is a metasediment
+//        mineral — and that gate returns 0 for EVERY existing scenario, so the
+//        RNG-cascade guard in _nuc_andalusite never fires elsewhere → the whole
+//        fleet is BYTE-IDENTICAL (probe-confirmed: andalusite fires ONLY in the new
+//        chiastolite_hornfels). NEW SCENARIO chiastolite_hornfels — a graphitic
+//        contact-metamorphic hornfels (Bimbowrie/Zhoukoudian); 5 chiastolite prisms
+//        @ seed 42. CHIASTOLITE: the carbon-cross variety. A new wall.graphitic flag
+//        (js/22) marks the carbonaceous host; classifySectorZoning (js/45) tags
+//        andalusite _sectorZoned kind 'cross' there (vs tourmaline 'hourglass'), and
+//        js/99i _makeChiastolitePrism renders a SQUARE prism with a baked transverse
+//        carbon CROSS (one rule |‖x‖−‖z‖|<band paints both the dark corner columns
+//        and the top X — Dowty 1976 sector zoning; Mason et al. 2010 Gondwana Res.
+//        18(1):222-229). + narrator (js/92i) + narratives/andalusite.md. Only the new
+//        scenario changes the fleet baseline (one scenario added); all prior
+//        scenarios byte-identical. SIM 208 -> 209.
+//   v210 — GREEN POONA APOPHYLLITE — the V⁴⁺ green growth-sector-zoning variety +
+//        render (crystal-face realism arc, 2026-06-21). NOT a new mineral:
+//        apophyllite was already in the catalogue. THE SCIENCE (a boss-handoff
+//        research doc disagreed; cross-checked per "follow the science"): apophyllite
+//        IS a genuine growth-sector-zoned mineral — its anomalous birefringence
+//        (optic sign varies within one crystal) is per-sector F/OH + hydration zoning.
+//        The prized Pune/Poona green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622 —
+//        ~1600 ppm V, V⁴⁺ drives colour + dichroism; VERIFIED to the Caltech/MSA
+//        archive) — the handoff's "Cu green" was a confabulation, corrected to V.
+//        SECTOR-MODEL CORRECTED (same-day, SIM-neutral render fix): a provenance-
+//        locked image corpus of Pune specimens shows the green is a UNIFORM body
+//        colour with NO visible prism-vs-pyramid partition. Apophyllite's sector
+//        zoning is real but OPTICAL-only (anomalous birefringence, crossed-polars) —
+//        it does not show as visible colour. grow_apophyllite (js/59) reads fluid.V >
+//        0.5 as a COLOUR DISPATCHER (never a growth gate — the §4b pattern), setting
+//        crystal._apophylliteGreen; classifySectorZoning (js/45) tags it _sectorZoned
+//        kind 'apophyllite_green' (requiresGreen); js/99i _makeApophyllitePrism
+//        renders a tetragonal square prism — UNIFORM green body, lighter transparent
+//        tips, pearly green-white {001} basal-face luster. deccan_zeolite gains
+//        a modest V=3 trace (basalt-weathering groundwater); assemblage-NEUTRAL (no
+//        Pb/Cu/U → no V-mineral can fire). Baseline-diff v209→v210: deccan 60→59
+//        crystals, species 17→17 — one marginal nucleation flipped by the V trace's
+//        ionic-strength contribution (NO V-mineral fires, no species gained/lost);
+//        all 35 other scenarios byte-identical. Also trued: apophyllite class_color
+//        (placeholder blue →
+//        pearly near-colourless), runtimes_present (→ js), + the BACKWARDS
+//        titanaugite comment in js/45 (Ti enriches the PRISM sectors, not the basal
+//        — Ferguson 1973 + Ubide 2019). + narrator (js/92i) + narratives/
+//        apophyllite.md poona_green. SIM 209 -> 210.
+//   v211 — GREAT SALT PLAINS hourglass-selenite SHOWCASE (crystal-face realism arc,
+//        2026-06-22). The visible hourglass-selenite RENDER shipped SIM-neutral the
+//        same day (50f4c51): js/45 classifySectorZoning + _seleniteHourglassParams tag
+//        a selenite blade gypsum_hourglass when it trapped clay/sand on its low-T
+//        (<45°C) fast-growth SECTORS (the engine's existing inclusion flag); js/99i
+//        _makeHourglassSeleniteBlade renders the amber→chocolate sandglass (|zn|<|yn|,
+//        wide at the tips, pinched at the waist) on a tapering chisel blade that STEPS
+//        into a ziggurat when growth was pulsed. Brown DEPTH is iron-driven (USFWS:
+//        soil iron oxide → reddish-to-chocolate), trapped FRACTION decides flooding
+//        (solid-brown overgrown variant). Geology gate keeps Naica's hot clean pool
+//        water-CLEAR. THIS bump adds the SHOWCASE scenario `great_salt_plains` (Salt
+//        Plains NWR, Oklahoma — the only place on Earth selenite grows the hourglass):
+//        a salt flat on Permian red beds, wet/dry seasonal cycling (gsp_wet dilutes
+//        below gypsum saturation → growth pauses; gsp_dry wicks gypsum-saturated iron-
+//        rich brine up and evaporates → fast burst traps sediment), 5 cycles over 250
+//        steps. Selenite grows in gap-separated bursts → stepped ziggurat (steps 3 at
+//        seed 42), red-bed iron stains it deep brown (intensity ~0.53), halite is the
+//        co-product crust. ALSO refined the classifier to re-evaluate each step (the
+//        hourglass evolves with growth; tagging once froze it at segments=1) +
+//        decoupled intensity (iron-driven) from flooded (trapped-fraction-driven) —
+//        render-only, _sectorZoned is not in the baseline. Baseline-diff v210→v211:
+//        the 36 prior scenarios byte-identical; great_salt_plains is the one new entry.
+//        SIM 210 -> 211.
+const SIM_VERSION = 211;
 
 // ── 18-constants.js ──
 
@@ -16718,6 +16824,7 @@ const MINERAL_STOICHIOMETRY = {
     magnetite: { Fe: 3 }, // Fe3O4
     cuprite: { Cu: 2 }, // Cu2O
     corundum: { Al: 2 }, // Al2O3
+    andalusite: { Al: 2, SiO2: 1 }, // Al2SiO5 (the silica-saturated Al2SiO5 polymorph)
     ruby: { Al: 2, Cr: 0.01 }, // Al2O3 + trace Cr (chromophore)
     sapphire: { Al: 2, Fe: 0.01, Ti: 0.01 }, // Al2O3 + Fe/Ti
     uraninite: { U: 1 }, // UO2
@@ -19462,6 +19569,12 @@ class VugWall {
         // exposes this as a setup toggle (f-thermal-pulses). Read directly off
         // conditions.wall in ambient_cooling.
         this.thermal_pulses = (opts.thermal_pulses !== undefined) ? !!opts.thermal_pulses : true;
+        // graphitic — the host is a carbonaceous/graphitic metapelite (crystal-face
+        // realism arc 2026-06-21). Read by grow_andalusite + classifySectorZoning to
+        // render the CHIASTOLITE carbon cross (carbonaceous matter swept into the
+        // andalusite corner growth sectors). Default false — only a contact-hornfels
+        // scenario sets it; inert for every other scenario.
+        this.graphitic = !!opts.graphitic;
         // v179 (2026-06-09): per-scenario ambient cooling rate, °C/step (default
         // 1.5 — the historical hard-coded value in ambient_cooling, 85d). The
         // reactivated_fluorite_vein exposed the gap: it is the first HOT scenario
@@ -27047,6 +27160,15 @@ const MINERAL_GATES_topaz = {
     _sources: ['topaz engine v17+'],
     _notes: 'Al2SiO4(F,OH)2 — F-bearing pegmatite/greisen. Imperial topaz (Cr trace) gold-orange variety.',
 };
+const MINERAL_GATES_andalusite = {
+    sigma_crit: 1.2,
+    T_min: 400, T_max: 700, T_optimal: 575,
+    fluid_min: { Al: 15, SiO2: 50 },
+    pH_min: 4.0, pH_max: 9.0,
+    surface_energy: 'high',
+    _sources: ['andalusite engine (crystal-face realism arc 2026-06-21)', 'Holdaway 1971 Am.J.Sci 271:97 (Al2SiO5 triple point ~500°C/0.4GPa)', 'research-andalusite dossier'],
+    _notes: 'Al2SiO5 — orthorhombic LOW-PRESSURE polymorph (Pnnm; kyanite=HP, sillimanite=HT). The SILICA-SATURATED complement of corundum. Index mineral of low-P contact-metamorphic aluminous metapelites (hornfels). Peraluminous gate (Na+K low, B<1) keeps it out of pegmatite/skarn scenarios → fleet byte-identical. Chiastolite (the carbon-cross variety) when the host is graphitic.',
+};
 const MINERAL_GATES_opal = {
     sigma_crit: 0.8, // v131 (2026-05-21): literature value per Iler 1979 — heterogeneous σ_crit range 0.5-1.0, midpoint 0.8. Was 1.0 (v101 engine-matched calibration); v127 engine-gates refactor surfaced the engine/literature mismatch as a v129 calibration target.
     T_min: 5, T_max: 100, T_optimal: 40,
@@ -27649,6 +27771,47 @@ Object.assign(VugConditions.prototype, {
         // don't move I).
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'corundum');
+        return Math.max(sigma, 0);
+    },
+    // Al₂SiO₅ — orthorhombic, the LOW-PRESSURE polymorph (Pnnm; kyanite=HP,
+    // sillimanite=HT). The SILICA-SATURATED complement of _corundum_base_sigma:
+    // corundum (Al₂O₃) blocks above SiO2>50 (Al²O₃ forms only when silica is
+    // scarce, the marble_contact note), whereas Al₂SiO₅ REQUIRES SiO2. Index
+    // mineral of LOW-P contact-metamorphic aluminous metapelites (hornfels
+    // around an intrusion; Holdaway 1971 triple point ~500°C/0.4 GPa — andalusite
+    // sits below it at low P). The PERALUMINOUS gate (Na+K low, B<1) is load-
+    // bearing: in a pegmatite Al is consumed by feldspar / tourmaline / mica, so
+    // andalusite is a metasediment mineral, not a pegmatite one — and that gate
+    // is exactly what returns 0 for every existing (pegmatite + skarn) scenario,
+    // so the RNG-cascade guard in _nuc_andalusite never fires elsewhere → fleet
+    // baseline byte-identical. Chiastolite (the carbon-cross variety) is a RENDER
+    // distinction keyed to a graphitic host, not a separate σ.
+    supersaturation_andalusite() {
+        const f = this.fluid;
+        if (f.Al < 15 || f.SiO2 < 50)
+            return 0; // peraluminous + silica-saturated
+        if (f.Na > 30 || f.K > 30 || f.B > 1)
+            return 0; // NOT a pegmatite (Al→feldspar/tourmaline/mica)
+        if (f.pH < 4 || f.pH > 9)
+            return 0;
+        const T = this.temperature;
+        if (T < 400 || T > 700)
+            return 0; // low-P contact-metamorphic window
+        const al_f = Math.min(f.Al / 30.0, 2.0);
+        const si_f = Math.min(f.SiO2 / 200.0, 1.5);
+        let sigma = al_f * si_f;
+        let T_factor;
+        if (T >= 500 && T <= 650)
+            T_factor = 1.0; // andalusite stability sweet spot (sub-triple-point)
+        else if (T >= 400 && T < 500)
+            T_factor = 0.4 + 0.006 * (T - 400);
+        else
+            T_factor = Math.max(0.3, 1.0 - 0.006 * (T - 650));
+        sigma *= T_factor;
+        const pH_factor = (f.pH >= 5 && f.pH <= 8) ? 1.0 : 0.6;
+        sigma *= pH_factor;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'andalusite');
         return Math.max(sigma, 0);
     },
     supersaturation_tourmaline() {
@@ -31427,6 +31590,7 @@ const MINERAL_GATES_REGISTRY = {
     heliodor: MINERAL_GATES_heliodor,
     tourmaline: MINERAL_GATES_tourmaline,
     topaz: MINERAL_GATES_topaz,
+    andalusite: MINERAL_GATES_andalusite,
     opal: MINERAL_GATES_opal,
     coffinite: MINERAL_GATES_coffinite,
     uranophane: MINERAL_GATES_uranophane,
@@ -32651,6 +32815,203 @@ function classifyQuartzGwindel(sim) {
     const span = (lastStep != null && firstStep != null) ? (lastStep - firstStep) : 0;
     g._gwindel = { twistDeg: Math.max(45, Math.min(120, span * 0.7)), lengthUm: g.total_growth_um, span };
     g.habit = 'gwindel';
+}
+// POST-GROWTH DEFORMATION OVERPRINT — the genuine "deformation" mechanic
+// (deformation/shear arc, RESEARCH-deformation-shear-2026-06-20.md §5.3). This
+// is the category the handoff §8 conflated: bent quartz / stibnite / mica kink
+// bands + mechanical twins are NOT recorded as the crystal grows — they are
+// imposed on a FINISHED lattice by a later tectonic event (post-growth crystal-
+// plastic gliding; the literature is unambiguous, research §3–4). So this is an
+// OVERPRINT, not a grow-integrate field: a scenario declares a `deformation`
+// directive on a late event (apply_events records it onto sim._deformationEvents
+// with the step it fired), and this pass — run post-growth like the gwindel/
+// sceptre classifiers — tags crystals that had ALREADY GROWN by that step
+// (firstZone.step < event.step) so the bend is stamped on a crystal that existed
+// to be bent. PURE tagging (no rng, no fluid) → the render reads crystal._defor-
+// mation; the engine baseline is untouched (gen-baseline serialises only counts/
+// sizes). Tag-once (idempotent across the per-step calls). minerals=null → any.
+const DEFORM_MIN_UM = 100; // skip nucleation-only specks — need a body to bend
+function classifyDeformation(sim) {
+    const evs = sim._deformationEvents;
+    if (!evs || !evs.length)
+        return;
+    for (const ev of evs) {
+        const mins = (ev && ev.minerals) || null;
+        const style = (ev && ev.style) || 'bend';
+        const amount = (ev && typeof ev.amount === 'number') ? ev.amount
+            : (ev && typeof ev.magnitude === 'number') ? ev.magnitude : 0.5;
+        for (const c of sim.crystals) {
+            if (!c || c.dissolved || c._deformation)
+                continue;
+            if (mins && mins.indexOf(c.mineral) < 0)
+                continue;
+            if ((c.total_growth_um || 0) < DEFORM_MIN_UM)
+                continue;
+            // must have existed (grown) BEFORE the shear fired
+            let firstStep = null;
+            for (const z of (c.zones || [])) {
+                if ((z.thickness_um || 0) > 0) {
+                    firstStep = z.step;
+                    break;
+                }
+            }
+            if (firstStep == null || firstStep >= ev.step)
+                continue;
+            c._deformation = { kind: style, amount, atStep: ev.step };
+        }
+    }
+}
+// SECTOR (HOURGLASS) ZONING — different growth sectors (crystal faces) incorporate
+// trace elements at different rates, so composition (and colour) partitions by
+// GROWTH SECTOR rather than by concentric growth zone (Dowty 1976, Am.Min.
+// 61:460–469 — the protosite model: each growing face exposes a different partial-
+// coordination surface, so the same ion partitions differently per face, and
+// lateral step growth metastably BURIES that face-characteristic composition). The
+// visual signature is a SHARP, geometry-locked boundary between sectors — distinct
+// from the gradational boundary of oscillatory/concentric zoning. Iconic cases:
+// titanaugite hourglass (Ferguson 1973, Min.Mag. 39:321 — Al-for-Si + Ti enriches +
+// darkens the PRISM sectors {100}/{110}/{010}; the {-111} hourglass-interior
+// sectors are Ti-DEPLETED and PALE — Ferguson 1973 + Ubide et al. 2019, GCA
+// 251:265; the common "Ti darkens the basal sectors" mnemonic is BACKWARDS),
+// chiastolite andalusite (carbon to the corner sectors → the
+// Maltese cross), elbaite/liddicoatite radial colour sectors.
+//
+// Tier A render-only abstraction (PROPOSALS-crystal-face-realism-2026-06-21 §1):
+// this pass — run post-growth like the gwindel/sceptre/deformation classifiers —
+// just TAGS the well-documented sector-zoned minerals so the renderer draws a per-
+// sector tint (the termination sector ≠ the prism body sector, the augite hourglass
+// read). PURE tagging (no rng, no fluid) → render reads crystal._sectorZoned; the
+// engine baseline is untouched (gen-baseline serialises only counts/sizes), so this
+// is SIM-NEUTRAL & byte-identical, the saddle-dolomite precedent. Tag-once
+// (idempotent across the per-step calls). Tourmaline is the first tenant — the only
+// sector-zoned mineral in the catalogue (elbaite/liddicoatite colour sectors are
+// collector-iconic). Chiastolite (andalusite) — THE iconic sector-cross — needs
+// andalusite added first, a future add-mineral tenant.
+// Per-mineral sector-zoning config. `kind` selects the render: 'hourglass' (the
+// termination-sector tint — the tourmaline bicolor-elbaite read) vs 'cross' (the
+// transverse 4-corner carbon mask — chiastolite) vs 'apophyllite_green' (UNIFORM V⁴⁺
+// green body + pearly basal-face luster — the Poona read). `requiresGraphitic`
+// gates a tenant on a carbonaceous host: andalusite is sector-zoned-as-chiastolite
+// ONLY in a graphitic metapelite (wall.graphitic); a non-graphitic andalusite is a
+// plain square prism. `requiresGreen` gates apophyllite's green render on a crystal
+// that actually grew V⁴⁺-green (grow_apophyllite sets c._apophylliteGreen when
+// fluid.V > 0.5).
+// SECTOR-ZONING NOTE: apophyllite IS a genuine growth-sector-zoned mineral — its
+// anomalous birefringence (optic sign varies within one crystal) arises from per-
+// sector differences in F/OH ratio + structural water + strain (Dowty-type growth-
+// sector zoning, confirmed against optical-mineralogy sources). The prized Poona
+// green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622) — DICHROIC. BUT that sector
+// zoning is OPTICAL-only (anomalous birefringence, crossed-polars/thin-section). The
+// VISIBLE green is a UNIFORM body colour: a provenance-locked image corpus of Pune
+// specimens (2026-06-21) shows NO prism-vs-pyramid colour partition — only a
+// transparency gradient (thin tips lighter) + faint concentric banding. So the render
+// is UNIFORM green + a pearly {001} basal-face LUSTER (the one real visible face
+// contrast), NOT a colour hourglass. (Correction trail: boss handoff said "Cu" →
+// corrected to V; my "not real sector zoning" → corrected, the zoning is real but
+// optical; the image corpus then corrected the visible-colour model to uniform.)
+//
+// GYPSUM HOURGLASS (selenite) — the arc's first GENUINELY VISIBLE sector tenant
+// (2026-06-22). Where apophyllite's sector zoning is optical-only, selenite's is the
+// classic VISIBLE "hourglass selenite" of the Great Salt Plains, Oklahoma (the state
+// crystal; USFWS Salt Plains NWR): fine clay + sand particles, stained reddish-to-
+// chocolate-brown by soil iron oxide, are mechanically trapped on the fast-growing
+// terminal growth SECTORS, forming a bowtie/hourglass of inclusions inside an
+// otherwise water-clear blade. It is a true growth-sector phenomenon (boss-confirmed
+// firsthand; corpus = boss's own provenance-locked specimens 2026-06-22): the apex
+// tracks the c-axis growth direction, so the internal hourglass stays self-similar
+// even as the outer envelope changes (the stepped-growth specimen). `requiresInclusion`
+// reads the engine's EXISTING hourglass-inclusion zones (grow_selenite already tags a
+// growth zone inclusion_type='hourglass (sand inclusions)' when rate>5 + a 30% roll) —
+// no new RNG, no chemistry: this is a pure render classification (SIM-neutral). The
+// derived `intensity` (trapped-zone fraction × accumulated trace_Fe) drives the brown
+// depth, and `flooded` (heavy inclusion load) collapses the contrast to a solid-brown
+// overgrown crystal — the boss's clear↔flooded variant spectrum in one knob.
+const SECTOR_ZONED_MINERALS = {
+    tourmaline: { kind: 'hourglass' },
+    andalusite: { kind: 'cross', requiresGraphitic: true }, // chiastolite — the carbon cross
+    apophyllite: { kind: 'apophyllite_green', requiresGreen: true }, // Poona V⁴⁺ UNIFORM green body + pearly basal (sector zoning is optical-only — see note)
+    selenite: { kind: 'gypsum_hourglass', requiresInclusion: true }, // Great Salt Plains clay/Fe sector hourglass — genuinely VISIBLE (see note)
+};
+const SECTOR_ZONED_MIN_UM = 50; // need a real body + termination/sectors to partition
+// Read-only scan of a selenite crystal's growth zones for the engine's trapped-
+// sediment record. Returns null if no hourglass inclusions were trapped (a water-
+// clear blade — most specimens), else the visible-render parameters. SIM-NEUTRAL:
+// only reads zone fields the engine already wrote.
+// Hourglass selenite is a COOL near-surface, sediment-laden phenomenon (wet soil /
+// evaporite playa — Great Salt Plains). A hot, clean, slow geothermal pool (Naica,
+// ~54°C) grows water-CLEAR blades and traps no soil sediment, so an inclusion zone
+// only counts toward the visible hourglass if it grew below this temperature. This is
+// the defer-to-geology gate that keeps Naica's iconic clear crystals clear.
+const HOURGLASS_MAX_T = 45;
+const HOURGLASS_HIATUS_STEPS = 4; // a gap larger than this between recorded growth zones = a hiatus
+function _seleniteHourglassParams(c) {
+    const zones = (c && c.zones) || [];
+    let growth = 0, hgCount = 0, feLoad = 0, segments = 0, prevStep = -999;
+    for (const z of zones) {
+        const t = z.thickness_um || 0;
+        if (t <= 0)
+            continue;
+        growth++;
+        if (typeof z.inclusion_type === 'string' && z.inclusion_type.indexOf('hourglass') >= 0
+            && (z.temperature == null || z.temperature < HOURGLASS_MAX_T))
+            hgCount++;
+        feLoad += z.trace_Fe || 0;
+        // Count distinct growth SEGMENTS — bursts of growth separated by hiatuses. A pulsed
+        // evaporite setting (playa wet/dry, sabkha flood/evap) grows the blade only during the
+        // dry/evap bursts; the wet pause records NO zone, leaving a step-gap. Each gap-separated
+        // burst steps the outer envelope out another terrace while the internal hourglass holds
+        // its order (the boss's stepped-growth specimen / quartz sceptre / calcite ziggurat).
+        // SIM-neutral: reads the zone step numbers the engine already wrote.
+        if (z.step - prevStep > HOURGLASS_HIATUS_STEPS)
+            segments++;
+        prevStep = z.step;
+    }
+    if (hgCount === 0 || growth === 0)
+        return null;
+    const hgFrac = hgCount / growth; // 0..1 — share of growth that trapped sediment
+    const avgFe = feLoad / growth; // mean iron staining per growth increment
+    // Brown DEPTH is iron-driven (USFWS: soil iron oxide gives the reddish-to-chocolate
+    // colour) — an iron-rich red-bed setting stains deep brown even where the hourglass is
+    // sharp; the trapped FRACTION adds a little. Capped below full saturation so there is
+    // visible range across the fleet (light-amber low-Fe → chocolate red-bed).
+    const intensity = Math.max(0.18, Math.min(0.95, 0.25 + avgFe * 16 + hgFrac * 0.25));
+    // Flooded = solid-brown overgrown blade, hourglass lost: pervasive sediment trapping
+    // OR a saturating iron coating (the boss's "totally brown" overgrown specimens).
+    const flooded = hgFrac > 0.5 || intensity >= 0.92;
+    const steps = segments >= 2 ? Math.min(5, segments) : 0; // 0 = smooth chisel; ≥2 = stepped ziggurat (one terrace per burst)
+    return { kind: 'gypsum_hourglass', intensity, flooded, hgFrac, steps };
+}
+function classifySectorZoning(sim) {
+    const graphitic = !!(sim.conditions && sim.conditions.wall && sim.conditions.wall.graphitic);
+    for (const c of sim.crystals) {
+        if (!c || c.dissolved)
+            continue;
+        const cfg = SECTOR_ZONED_MINERALS[c.mineral];
+        if (!cfg)
+            continue;
+        if (cfg.requiresInclusion) {
+            // Selenite hourglass EVOLVES as the blade grows (intensity, flooded, and the
+            // stepped-growth segment count all depend on the full zone stack), so RE-evaluate
+            // every step rather than tagging once — otherwise it freezes at the early-growth
+            // state (segments=1) before the wet/dry hiatuses that step the blade out have
+            // happened. Refresh-in-place; render reads the final state. SIM-neutral.
+            if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM)
+                continue;
+            const hg = _seleniteHourglassParams(c);
+            if (hg)
+                c._sectorZoned = hg;
+            continue;
+        }
+        if (c._sectorZoned)
+            continue; // others tag once (kind is fixed)
+        if (cfg.requiresGraphitic && !graphitic)
+            continue;
+        if (cfg.requiresGreen && !c._apophylliteGreen)
+            continue; // V⁴⁺ green only (grow_apophyllite)
+        if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM)
+            continue;
+        c._sectorZoned = { kind: cfg.kind };
+    }
 }
 function classifyMorphologyStep(sim) {
     for (const mineral in MORPH_TH) {
@@ -38607,6 +38968,62 @@ function grow_topaz(crystal, conditions, step) {
         note: parts.join(', '),
     });
 }
+function grow_andalusite(crystal, conditions, step) {
+    // Al₂SiO₅ — orthorhombic, near-SQUARE {110} prism. The LOW-PRESSURE polymorph,
+    // a low-P contact-metamorphic porphyroblast (the sim's fluid abstraction stands
+    // in for the metamorphic medium, as it does for ruby in marble_contact). The
+    // CHIASTOLITE variety grows in a GRAPHITIC metapelite host (wall.graphitic),
+    // where carbonaceous matter is swept into the corner/diagonal growth sectors →
+    // the dark cross (Mason et al. 2010, Gondwana Res. 18(1):222-229). The cross is
+    // a RENDER concern (js/99i _makeChiastolitePrism via classifySectorZoning); here
+    // we just flag the habit and a colour note.
+    const sigma = conditions.supersaturation_andalusite();
+    if (sigma < 1.0) {
+        // Aluminosilicate — extremely resistant; only strong acid touches it slowly.
+        if (crystal.total_growth_um > 10 && conditions.fluid.pH < 2.5) {
+            crystal.dissolved = true;
+            const d = Math.min(2.0, crystal.total_growth_um * 0.04);
+            return new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d,
+                note: `strong-acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Al³⁺, SiO₂ released`,
+            });
+        }
+        return null;
+    }
+    const excess = sigma - 1.0;
+    const rate = 2.6 * excess * rng.uniform(0.8, 1.2);
+    if (rate < 0.1)
+        return null;
+    const graphitic = !!(conditions.wall && conditions.wall.graphitic);
+    let color_note;
+    if (graphitic) {
+        crystal.habit = 'chiastolite_prism';
+        crystal.dominant_forms = ['m{110} square prism', 'graphite cross sectors', 'c{001} basal'];
+        color_note = 'chiastolite — carbonaceous inclusions swept to the corner sectors (the dark cross)';
+    }
+    else {
+        crystal.habit = 'andalusite_prism';
+        crystal.dominant_forms = ['m{110} square prism', 'c{001} basal'];
+        const Mn = conditions.fluid.Mn;
+        if (Mn > 5)
+            color_note = 'viridine green (Mn³⁺ substitution)';
+        else if (Mn > 0.5)
+            color_note = 'pink-rose (Mn³⁺ trace)';
+        else
+            color_note = 'pinkish-brown to grey';
+    }
+    const trace_Fe = conditions.fluid.Fe * 0.004;
+    const trace_Al = conditions.fluid.Al * 0.02;
+    conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.02, 0);
+    conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.012, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Fe, trace_Al,
+        note: `andalusite — ${crystal.habit}, ${color_note}`,
+    });
+}
 function grow_apophyllite(crystal, conditions, step) {
     const sigma = conditions.supersaturation_apophyllite();
     if (sigma < 1.0) {
@@ -38645,11 +39062,25 @@ function grow_apophyllite(crystal, conditions, step) {
     if (conditions.fluid.Fe > 8 && conditions.fluid.O2 > 0.2 && rng.random() < 0.4) {
         hematite_note = " (hematite needle phantoms — bloody apophyllite zone)";
     }
+    // V⁴⁺ green dispatch — the prized Poona/Pune green (Rossman 1974, Am.Min.
+    // 59(5-6):621-622: ~1600 ppm V, tetravalent vanadium drives the colour AND
+    // the dichroism). V is a COLOUR DISPATCHER here, NOT a supersaturation gate —
+    // apophyllite grows colourless/pearly with or without V (the §4b trace-cation
+    // pattern). The green is a UNIFORM V⁴⁺ body colour (image-corpus verified, Pune
+    // 2026-06-21: NO visible sector partition — the green Poona habit on white
+    // stilbite), recorded as a render hint the js/45 classifier reads. Apophyllite's
+    // genuine sector zoning is OPTICAL-only (anomalous birefringence, crossed-polars)
+    // — not visible colour — see js/45.
+    let color_note = ' — transparent to pearly colourless';
+    if (conditions.fluid.V > 0.5) {
+        crystal._apophylliteGreen = true;
+        color_note = ` — pastel green (V⁴⁺ ${conditions.fluid.V.toFixed(1)} ppm, dichroic; Poona)`;
+    }
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe: conditions.fluid.Fe * 0.05,
-        note: `${crystal.habit} K-Ca-Si zeolite${hematite_note}`
+        note: `${crystal.habit} K-Ca-Si zeolite${color_note}${hematite_note}`
     });
 }
 // v63 brief-19: chrysoprase — Ni-bearing chalcedony (microfibrous SiO2 +
@@ -42760,6 +43191,7 @@ const MINERAL_ENGINES = {
     goethite: grow_goethite,
     albite: grow_albite,
     topaz: grow_topaz,
+    andalusite: grow_andalusite, // Al2SiO5 low-P contact-metamorphic; chiastolite (carbon cross) in graphitic host
     tourmaline: grow_tourmaline,
     beryl: grow_beryl, // goshenite / generic colorless (post-R7)
     emerald: grow_emerald, // Cr/V chromophore variety
@@ -43340,6 +43772,11 @@ const EVENT_REGISTRY = {
     searles_winter_freeze: event_searles_winter_freeze,
     searles_summer_bake: event_searles_summer_bake,
     searles_fresh_pulse: event_searles_fresh_pulse,
+    // 2026-06-22 — Great Salt Plains (Oklahoma) hourglass-selenite showcase.
+    // See js/70k-evaporite.ts for the 3 wet/dry handlers.
+    gsp_wet: event_gsp_wet,
+    gsp_dry: event_gsp_dry,
+    gsp_crust_seal: event_gsp_crust_seal,
     // Round 9e mechanic-coverage scenarios (May 2026):
     schneeberg_pegmatite_crystallization: event_schneeberg_pegmatite_crystallization,
     schneeberg_cooling: event_schneeberg_cooling,
@@ -43441,6 +43878,7 @@ const EVENT_REGISTRY = {
     tormiq_byssolite: event_tormiq_byssolite,
     tormiq_adularia: event_tormiq_adularia,
     tormiq_late_calcite: event_tormiq_late_calcite,
+    tormiq_late_shear: event_tormiq_late_shear,
     // 2026-06-19 — Grimsel / Aar-massif alpine cleft (the quartz-morphology
     // content home). T is a declared movement; these are the crack-seal SiO₂
     // sawtooth + Fe/CO₃ chemistry beats. See js/70u-grimsel.ts.
@@ -43531,6 +43969,12 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             // declare "this fracture-seal event shuts the plumbing" without touching
             // the shared event handler.
             spots: ev.spots,
+            // POST-GROWTH DEFORMATION (deformation/shear arc 2026-06-20) — optional
+            // directive {style,magnitude,minerals}. apply_events records it onto
+            // sim._deformationEvents with the step it fired; classifyDeformation (js/45)
+            // bends/twins crystals that already grew. Absent → no overprint → byte-
+            // identical. Mechanical + post-growth, so it does NOT mutate the fluid.
+            deformation: ev.deformation,
         }));
         return { conditions, events, defaultSteps: duration };
     };
@@ -44450,6 +44894,55 @@ function event_searles_fresh_pulse(c) {
     c.flow_rate = 1.5;
     c.temperature = 20;
     return "Sierra snowmelt pulse — fresh meteoric water arrives at Searles Lake. The brine dilutes, salt crusts begin to redissolve, and the basin briefly resembles a real lake. Within weeks the heat returns and the cycle starts over.";
+}
+// --- great_salt_plains (Salt Plains NWR, Oklahoma — hourglass selenite showcase) ---
+// Wet/dry seasonal cycling over salt-saturated red-bed sand. The DRY pulse wicks
+// gypsum-saturated groundwater up under the salt crust and evaporates it fast, so
+// selenite grows in a rapid burst that traps clay + sand + Permian iron oxide on its
+// terminal growth sectors — the visible "hourglass selenite" (USFWS Salt Plains NWR;
+// Oklahoma state crystal). The WET pulse (rain / rising water table) dilutes the brine
+// below gypsum saturation so growth pauses — and the next dry burst steps the blade
+// outward again, building the stepped-growth ziggurat while the internal hourglass
+// holds its order. The repeated fast pulses are what the js/45 step-counter reads.
+function event_gsp_wet(c) {
+    // Spring rain / rising groundwater floods the flat — brine drops well below gypsum
+    // saturation (σ_selenite < 1 even with the cool-T ×1.5 + redox bonuses), so growth
+    // pauses without dissolving the blade. The hiatus leaves the step-gap that the js/45
+    // segment counter reads as one stepped-growth terrace boundary.
+    c.fluid.Ca = 15;
+    c.fluid.S = 15;
+    c.fluid.Fe = 2;
+    c.fluid.pH = 7.6;
+    c.fluid.O2 = 1.5;
+    c.temperature = 22;
+    c.flow_rate = 1.4;
+    c.fluid_surface_ring = 1.0e6;
+    return 'Rain on the Salt Plains — the water table rises and floods the flat. The brine dilutes below gypsum saturation; selenite growth pauses and the salt crust softens. The clay and red Permian silt stay suspended, waiting for the dry.';
+}
+function event_gsp_dry(c) {
+    // Oklahoma sun bakes the flat — gypsum-saturated groundwater wicks up and evaporates
+    // just under the salt crust. σ_selenite ≫ 1 → a fast growth burst that traps clay/
+    // sand + iron oxide on the terminal sectors (the hourglass) and stains it brown.
+    c.fluid.Ca = 150;
+    c.fluid.S = 150;
+    c.fluid.Fe = Math.min(16, (c.fluid.Fe || 2) + 6); // red-bed iron oxide concentrates with evaporation
+    c.fluid.Na = Math.max(c.fluid.Na || 0, 700);
+    c.fluid.Cl = Math.max(c.fluid.Cl || 0, 700);
+    c.fluid.SiO2 = Math.max(c.fluid.SiO2 || 0, 30); // suspended clay / silt
+    c.fluid.pH = 7.6;
+    c.fluid.O2 = 1.6;
+    c.temperature = 33; // warm but < 45°C (hourglass gate)
+    c.flow_rate = 0.1;
+    c.fluid_surface_ring = 0.0;
+    return `Summer sun bakes the Salt Plains. T=${c.temperature.toFixed(0)}°C; gypsum-saturated groundwater wicks up under the crust and evaporates fast. Selenite grows in a burst, sweeping clay, sand, and red iron oxide into its terminal sectors — the hourglass. Each dry season steps the blade out another notch.`;
+}
+function event_gsp_crust_seal(c) {
+    c.flow_rate = 0.05;
+    c.temperature = 25;
+    c.fluid_surface_ring = 0.5;
+    c.fluid.Ca = 90;
+    c.fluid.S = 90;
+    return 'The salt crust hardens and the cycling slows. What remains just beneath the crust is the harvest of a dozen wet-and-dry seasons: amber blades with an hourglass of trapped sediment inside, the iron-stained ones flooded to chocolate brown. The only place on Earth selenite grows this way.';
 }
 
 // ── 70l-co2-events.js ──
@@ -45690,6 +46183,19 @@ function event_tormiq_late_calcite(c) {
     c.fluid.CO3 = Math.min(220, c.fluid.CO3 + 90);
     c.flow_rate = 0.2;
     return `The cleft cools below ~200°C: calcite + late zeolites close the paragenesis and growth winds down. T ${c.temperature.toFixed(0)}°C.`;
+}
+// LATE KARAKORAM-THRUST SHEARING (deformation/shear arc 2026-06-20). The cleft
+// is sealed and its quartz lining is fully grown, but the Main Karakoram Thrust
+// is still active — continued shearing of the rock mass plastically BENDS the
+// early quartz (post-growth bend-gliding / undulose strain; the literature is
+// unambiguous that bent quartz is a post-growth overprint, NOT a growth habit —
+// see RESEARCH-deformation-shear-2026-06-20.md §3). The epidote swords grew
+// later and are spared here (the directive targets quartz only). CHEMICALLY
+// INERT: deformation is mechanical and post-growth, so this handler touches no
+// fluid/T — the assemblage stays byte-identical. The bend is carried by the
+// event's `deformation` directive (handled in apply_events → classifyDeformation).
+function event_tormiq_late_shear(c) {
+    return `Continued Main Karakoram Thrust shearing wracks the sealed cleft: the early quartz lining, long since grown, is plastically BENT — its prisms curve and go undulose. (A post-growth tectonic overprint; the later epidote is spared.)`;
 }
 
 // ── 75-transitions.js ──
@@ -47649,6 +48155,16 @@ class VugSimulator {
         // Quartz gwindel — alpine-cleft slow-continuous twisted column (SIM 207).
         // Runs AFTER the sceptre pass (mutually exclusive). Pure tagging; see js/45.
         classifyQuartzGwindel(this);
+        // Post-growth DEFORMATION overprint (deformation arc 2026-06-20) — bends
+        // crystals that had ALREADY grown when a scenario event recorded a
+        // deformation directive (sim._deformationEvents). Pure tagging; no-op unless
+        // a scenario declares one → byte-identical fleet. See js/45.
+        classifyDeformation(this);
+        // Sector (hourglass) ZONING (crystal-face realism arc 2026-06-21) — tags
+        // sector-zoned minerals (tourmaline) so the renderer tints the termination
+        // sector apart from the prism body. Pure tagging, no-op unless a sector
+        // mineral grew → byte-identical fleet, SIM-neutral. See js/45.
+        classifySectorZoning(this);
         // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
         // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).
         // When a StripRecorder is attached to the sim, capture one step's
@@ -50454,6 +50970,25 @@ Object.assign(VugSimulator.prototype, {
                         const kinds = toggled.map(s => s.kind).join(', ');
                         this.log.push(`     🔌 ${toggled.length} fluid feeder${toggled.length === 1 ? '' : 's'} ${verb} (${kinds}) — plumbing changed`);
                     }
+                }
+                // POST-GROWTH DEFORMATION (deformation/shear arc 2026-06-20) — an event may
+                // carry a `deformation` directive {style,magnitude,minerals}. It records a
+                // shear event onto the sim WITH the step it fired (classifyDeformation,
+                // post-growth in js/45, then bends crystals that had grown by this step).
+                // Chemically inert by design: deformation is MECHANICAL and POST-growth, so
+                // apply_fn must not touch fluid/T — the assemblage stays byte-identical.
+                if (event.deformation) {
+                    if (!this._deformationEvents)
+                        this._deformationEvents = [];
+                    const d = event.deformation;
+                    this._deformationEvents.push({
+                        step: this.step,
+                        style: d.style || 'bend',
+                        magnitude: (typeof d.magnitude === 'number') ? d.magnitude : 0.5,
+                        minerals: d.minerals || null,
+                    });
+                    const ms = d.minerals ? d.minerals.join(', ') : 'all grown crystals';
+                    this.log.push(`     ⟁ DEFORMATION: ${d.style || 'bend'} overprint on ${ms} — a post-growth tectonic shear bends what already grew`);
                 }
                 this.log.push('');
             }
@@ -54586,6 +55121,27 @@ function _nuc_topaz(sim) {
     // preference: weathering chalcopyrite (Cu source) or weathering
     // sphalerite (Zn co-source), or bare wall.
 }
+function _nuc_andalusite(sim) {
+    // Al₂SiO₅ contact-metamorphic porphyroblast (the silica-saturated Al₂SiO₅,
+    // complement of corundum). RNG-CASCADE GUARD: bail BEFORE any rng.random()
+    // when σ ≤ crit. The peraluminous gate in supersaturation_andalusite returns 0
+    // for every existing pegmatite/skarn scenario, so no rng is drawn there → the
+    // whole fleet stays byte-identical; only a graphitic-metapelite hornfels (the
+    // new scenario) clears the gate.
+    const sigma_and = sim.conditions.supersaturation_andalusite();
+    if (sigma_and <= MINERAL_GATES_andalusite.sigma_crit)
+        return; // guard — no rng above this line
+    if (sim._atNucleationCap('andalusite'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'andalusite' && c.active);
+    if (existing.length && !(sigma_and > MINERAL_GATES_andalusite.sigma_crit + 0.5 && rng.random() < 0.25))
+        return;
+    const c = sim.nucleate('andalusite', 'vug wall', sigma_and);
+    const f = sim.conditions.fluid;
+    const graphitic = !!(sim.conditions.wall && sim.conditions.wall.graphitic);
+    const tag = graphitic ? ' ✚ chiastolite (graphitic host → carbon-cross sectors)' : '';
+    sim.log.push(`  ✦ NUCLEATION: Andalusite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_and.toFixed(2)}, Al=${f.Al.toFixed(0)}, SiO2=${f.SiO2.toFixed(0)})${tag}`);
+}
 function _nuc_lepidolite(sim) {
     // Lepidolite K(Li,Al)₃(Al,Si)₄O₁₀(F,OH)₂ — Li-mica, late-pegmatite
     // (research-lepidolite.md). Nucleates after the quartz/feldspar
@@ -55442,6 +55998,7 @@ function _nucleateClass_silicate(sim) {
     _runNuc(sim, _nuc_spodumene);
     _runNuc(sim, _nuc_tourmaline);
     _runNuc(sim, _nuc_topaz);
+    _runNuc(sim, _nuc_andalusite);
     _runNuc(sim, _nuc_chrysoprase);
     _runNuc(sim, _nuc_lepidolite);
     _runNuc(sim, _nuc_dioptase);
@@ -59131,6 +59688,14 @@ Object.assign(VugSimulator.prototype, {
             parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
                 || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);
         }
+        // Bent — POST-GROWTH deformation overprint (deformation/shear arc; js/45
+        // classifyDeformation). The crystal grew straight, then a later tectonic shear
+        // plastically bent it (bent quartz = post-growth bend-gliding, undulose strain
+        // — NOT a growth habit). Distinct from the gwindel twist (a growth feature).
+        if (c._deformation && c._deformation.kind === 'bend') {
+            parts.push(narrative_variant('quartz', 'bent')
+                || `BENT — the prism is plastically curved: it grew straight, then a later tectonic shear (still-active thrusting) bent the finished crystal, leaving undulose strain. A post-growth overprint, not a growth habit.`);
+        }
         // Tessin (Tessiner Habitus) — the alpine face development.
         if ((c.dominant_forms || []).some(f => f.includes('steep rhombohedron'))) {
             parts.push(narrative_variant('quartz', 'tessin')
@@ -59295,7 +59860,29 @@ Object.assign(VugSimulator.prototype, {
         else if (varieties.has('achroite')) {
             parts.push(narrative_variant('tourmaline', 'achroite') || 'Achroite — colorless elbaite.');
         }
+        if (c._sectorZoned) {
+            parts.push(narrative_variant('tourmaline', 'sector_zoned')
+                || 'Sector (hourglass) zoning — the prism faces and the pyramidal termination grew at different rates and trapped trace elements differently, so colour partitions by growth SECTOR with a sharp, geometry-locked boundary (Dowty 1976). Elbaite/liddicoatite slices show this as the famous radial colour wedges.');
+        }
         parts.push(narrative_closing('tourmaline') || 'The cross-section reads like a tree-ring record.');
+        return parts.filter(p => p).join(' ');
+    },
+    _narrate_andalusite(c) {
+        // Prose lives in narratives/andalusite.md.
+        const parts = [`Andalusite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
+        parts.push(narrative_blurb('andalusite') || 'Al₂SiO₅ — the low-pressure aluminosilicate polymorph, a near-square contact-metamorphic prism.');
+        if (c._sectorZoned && c._sectorZoned.kind === 'cross') {
+            parts.push(narrative_variant('andalusite', 'chiastolite')
+                || 'CHIASTOLITE — the cross stone: carbonaceous matter from the graphitic metapelite host was swept into the rapidly-growing CORNER growth sectors, so a section cut perpendicular to c shows a dark Maltese cross. This is growth-SECTOR zoning (each face traps a different composition), not concentric banding — Dowty 1976; the quartz+graphite co-precipitation of Mason et al. 2010.');
+        }
+        else {
+            const notes = c.zones.map(z => (z.note || '').toLowerCase());
+            if (notes.some(n => n.includes('viridine')))
+                parts.push(narrative_variant('andalusite', 'viridine') || 'Viridine — the Mn³⁺-rich green andalusite.');
+            else if (notes.some(n => n.includes('pink')))
+                parts.push(narrative_variant('andalusite', 'pink') || 'Pink-rose from a trace of Mn³⁺.');
+        }
+        parts.push(narrative_closing('andalusite') || 'An index mineral of low-pressure metamorphism — its presence pins the rock below the kyanite field, in the aureole of a shallow intrusion.');
         return parts.filter(p => p).join(' ');
     },
     _narrate_beryl(c) {
@@ -59447,6 +60034,9 @@ Object.assign(VugSimulator.prototype, {
             parts.push(narrative_variant('apophyllite', 'druzy_crust') || 'Fine-grained drusy coating — the very-high-σ form.');
         else
             parts.push(narrative_variant('apophyllite', 'chalcedony_pseudomorph') || "Chalcedony pseudomorph — at low σ the crystal grew over an earlier zeolite blade.");
+        if (c._apophylliteGreen) {
+            parts.push(narrative_variant('apophyllite', 'poona_green') || "Pastel green — the prized Poona/Pune variety, coloured by V⁴⁺ (~1600 ppm in the lattice; Rossman 1974). The colour is dichroic and forms a UNIFORM green body — apophyllite IS genuinely sector-zoned, but only optically (anomalous birefringence: the green deepens and pales by direction, and a polarizing microscope sees patchy sector extinction, yet the body colour itself stays even). So the eye sees a uniform green prism, not a colour hourglass.");
+        }
         const hematite_zones = c.zones.filter(z => z.note && z.note.includes('hematite needle phantom'));
         if (hematite_zones.length) {
             parts.push(narrative_variant('apophyllite', 'bloody_phantoms', { count: hematite_zones.length }) || `${hematite_zones.length} growth zones carry hematite needle phantoms — this is the 'bloody apophyllite' variety from Nashik.`);
@@ -59699,6 +60289,20 @@ Object.assign(VugSimulator.prototype, {
         }
         if (c.c_length_mm > 10) {
             parts.push(narrative_variant('selenite', 'giant_naica') || 'Large selenite crystals are among the biggest in nature — the Cave of Crystals in Naica, Mexico holds selenite beams 11 meters long, grown over 500,000 years in water just 2°C above saturation. Patience beyond patience.');
+        }
+        // Hourglass selenite — clay/sand/iron trapped on the low-T fast-growing sectors
+        // (js/45 _seleniteHourglassParams; render js/99i). The Great Salt Plains signature.
+        if (c._sectorZoned && c._sectorZoned.kind === 'gypsum_hourglass') {
+            const hg = c._sectorZoned;
+            if (hg.flooded) {
+                parts.push(narrative_variant('selenite', 'hourglass_flooded') || 'Sediment-flooded — clay, sand, and iron oxide swept into the growing crystal so densely that later overgrowth buried the interior in solid reddish-to-chocolate brown. The hourglass is still in there, lost under the flood. The Great Salt Plains way: a crystal grown through wet, iron-stained soil.');
+            }
+            else {
+                parts.push(narrative_variant('selenite', 'hourglass') || 'An hourglass inside the blade — fine clay and sand, stained amber by soil iron oxide, trapped on the fast-growing terminal sectors as a sandglass of inclusions pinched at the waist. The signature of the Great Salt Plains of Oklahoma, the only place on Earth selenite grows this way. The interior records which faces were growing, and keeps that order even as the outer shape changes.');
+            }
+            if (hg.steps >= 2) {
+                parts.push(narrative_variant('selenite', 'hourglass_stepped') || 'It grew in pulses — flood and evaporation, season after season — so the blade steps down toward its tip in terraces, like a stepped pyramid, while the hourglass within holds its ordered shape through every step.');
+            }
         }
         if (c.dissolved) {
             parts.push(narrative_variant('selenite', 'dissolved'));
@@ -71496,6 +72100,258 @@ function _makeHexPrismWithPyramid() {
     geom.computeVertexNormals();
     return geom;
 }
+// SECTOR-ZONED PRISM — sector (hourglass) zoning render (crystal-face realism arc
+// 2026-06-21, PROPOSALS-crystal-face-realism §1). Same hex-prism-with-pyramid
+// silhouette as _makeHexPrismWithPyramid, but carrying a baked per-VERTEX COLOUR
+// attribute that paints the PYRAMID (termination) sector a different colour from the
+// PRISM (side body) sector — the augite/titanaugite hourglass read (Ferguson 1973):
+// different growth faces incorporate trace elements at different rates (Dowty 1976),
+// so composition/colour partitions by growth SECTOR with a SHARP, geometry-locked
+// boundary (here the prism/pyramid shoulder ring — non-indexed verts keep it sharp).
+// Colours are ABSOLUTE (the material runs vertexColors with color=white, so the
+// vertex colour IS the final colour): body = the mineral's class_color, termination
+// = a hue-rotated contrast. A pure darken-MULTIPLIER was tried first and read as mere
+// shading (a hue-dependent dead end — green×½ is just darker green); the contrasting
+// termination is both more legible AND geologically the iconic bicolor elbaite
+// ("watermelon" green prism / pink tip — itself a sector/stage colour zoning). A
+// Tier A render abstraction — says "habit variant", not a computed per-element
+// partition. `bodyRGB`/`termRGB` are linear-space [r,g,b]; cached per base colour.
+function _makeSectorZonedPrism(bodyRGB, termRGB) {
+    const r = 0.50; // prism / pyramid base radius (a-axis)
+    const yBase = -0.50; // anchored at the wall
+    const yShoulder = 0.20; // top of prism / start of pyramid
+    const yApex = 0.50; // free tip
+    const positions = [];
+    const colors = [];
+    const pc = () => colors.push(bodyRGB[0], bodyRGB[1], bodyRGB[2]); // prism sector
+    const tc = () => colors.push(termRGB[0], termRGB[1], termRGB[2]); // termination sector
+    for (let i = 0; i < 6; i++) {
+        const a0 = (i / 6) * Math.PI * 2;
+        const a1 = ((i + 1) / 6) * Math.PI * 2;
+        const x0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r;
+        const x1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
+        // prism side face — two triangles, all six verts in the prism (body) sector
+        _pushTri(positions, x0, yBase, z0, x1, yBase, z1, x1, yShoulder, z1);
+        pc();
+        pc();
+        pc();
+        _pushTri(positions, x0, yBase, z0, x1, yShoulder, z1, x0, yShoulder, z0);
+        pc();
+        pc();
+        pc();
+        // pyramid face — one triangle to the apex, termination sector
+        _pushTri(positions, x0, yShoulder, z0, x1, yShoulder, z1, 0, yApex, 0);
+        tc();
+        tc();
+        tc();
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// CHIASTOLITE PRISM — the carbon-cross variety of andalusite (crystal-face realism
+// arc 2026-06-21). A near-SQUARE {110} prism (andalusite is orthorhombic, ~square
+// section) carrying a baked per-VERTEX COLOUR attribute that paints the dark
+// carbonaceous CROSS: chiastolite concentrates graphite into the corner/diagonal
+// growth SECTORS, so a transverse section shows the Maltese cross (Mason et al.
+// 2010, Gondwana Res. 18(1):222-229; Dowty 1976 sector-zoning). ONE rule does it —
+// a cross-section point (x,z) is in the carbon sector when it lies near a diagonal,
+// |‖x‖−‖z‖| < BAND: on a side face that darkens the two edge-columns (the 4 vertical
+// corner columns of the prism), and on the top cap it draws the X. Colours are
+// ABSOLUTE (material runs vertexColors with color=white): body = class_color (pale
+// metapelite grey-tan), cross = near-black graphite. Per-CELL flat colouring keeps
+// the sector boundaries crisp. Cached per base colour.
+function _makeChiastolitePrism(bodyRGB, crossRGB) {
+    const r = 0.50; // half-width (square a-b section)
+    const yBase = -0.50, yTop = 0.50;
+    const BAND = 0.17; // diagonal half-width of the dark cross
+    const N = 12; // subdivision (crisp blocky sectors)
+    const positions = [];
+    const colors = [];
+    const isCross = (x, z) => Math.abs(Math.abs(x) - Math.abs(z)) < BAND;
+    const pushQuad = (ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col) => {
+        _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+        _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+        for (let k = 0; k < 6; k++)
+            colors.push(col[0], col[1], col[2]);
+    };
+    // 4 side faces — each subdivided into N horizontal strips; colour depends only
+    // on the cross-section position (constant up the c-axis → vertical columns).
+    for (let f = 0; f < 4; f++) {
+        for (let i = 0; i < N; i++) {
+            const t0 = -r + (2 * r) * (i / N), t1 = -r + (2 * r) * ((i + 1) / N);
+            const tc = (t0 + t1) / 2;
+            let x0, z0, x1, z1, col;
+            if (f === 0) {
+                x0 = r;
+                z0 = t0;
+                x1 = r;
+                z1 = t1;
+                col = isCross(r, tc);
+            } // +x face
+            else if (f === 1) {
+                x0 = -r;
+                z0 = t0;
+                x1 = -r;
+                z1 = t1;
+                col = isCross(-r, tc);
+            } // -x face
+            else if (f === 2) {
+                x0 = t0;
+                z0 = r;
+                x1 = t1;
+                z1 = r;
+                col = isCross(tc, r);
+            } // +z face
+            else {
+                x0 = t0;
+                z0 = -r;
+                x1 = t1;
+                z1 = -r;
+                col = isCross(tc, -r);
+            } // -z face
+            pushQuad(x0, yBase, z0, x1, yBase, z1, x1, yTop, z1, x0, yTop, z0, col ? crossRGB : bodyRGB);
+        }
+    }
+    // top cap (y = yTop) — N×N grid, the X reads here
+    for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+            const x0 = -r + (2 * r) * (i / N), x1 = -r + (2 * r) * ((i + 1) / N);
+            const z0 = -r + (2 * r) * (j / N), z1 = -r + (2 * r) * ((j + 1) / N);
+            const col = isCross((x0 + x1) / 2, (z0 + z1) / 2) ? crossRGB : bodyRGB;
+            pushQuad(x0, yTop, z0, x1, yTop, z0, x1, yTop, z1, x0, yTop, z1, col);
+        }
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// GREEN POONA APOPHYLLITE — a tetragonal square prism rendered as a UNIFORM V⁴⁺
+// green body (Rossman 1974), the {101} pyramidal tips a hair lighter from
+// transparency and the {001} basal face a pearly green-white LUSTER. Image-corpus
+// verified (Pune specimens, 2026-06-21): the green is a uniform body colour with NO
+// visible prism-vs-pyramid sector partition. Apophyllite IS genuinely sector-zoned,
+// but only OPTICALLY (anomalous birefringence, crossed-polars) — it does not show as
+// visible colour, so this is NOT a colour hourglass (see js/45). Per-
+// CELL flat ABSOLUTE vertex colours (material runs vertexColors with color=white). Same unit box (y −0.5..+0.5) as the other prism builders
+// so the per-crystal transform scales it identically.
+function _makeApophyllitePrism(prismRGB, pyramidRGB, basalRGB) {
+    const r = 0.50; // prism half-width (a-axis)
+    const rTop = 0.24; // flat {001} top half-width
+    const yBase = -0.50; // anchored at the wall
+    const yShoulder = 0.14; // top of prism / base of the {101} pyramidal shoulders
+    const yTop = 0.50; // flat top
+    const positions = [];
+    const colors = [];
+    const pushQuad = (ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col) => {
+        _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+        _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+        for (let k = 0; k < 6; k++)
+            colors.push(col[0], col[1], col[2]);
+    };
+    const corn = [[r, r], [-r, r], [-r, -r], [r, -r]]; // square prism corners (CCW)
+    const top = [[rTop, rTop], [-rTop, rTop], [-rTop, -rTop], [rTop, -rTop]]; // flat-top corners
+    for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4;
+        // prism side face (green {100} prism sector) — yBase..yShoulder
+        pushQuad(corn[i][0], yBase, corn[i][1], corn[j][0], yBase, corn[j][1], corn[j][0], yShoulder, corn[j][1], corn[i][0], yShoulder, corn[i][1], prismRGB);
+        // {101} pyramidal shoulder face (intermediate sector) — yShoulder(r) -> yTop(rTop)
+        pushQuad(corn[i][0], yShoulder, corn[i][1], corn[j][0], yShoulder, corn[j][1], top[j][0], yTop, top[j][1], top[i][0], yTop, top[i][1], pyramidRGB);
+    }
+    // flat {001} basal pinacoid top — pale-pearly clear "waist" sector
+    pushQuad(top[0][0], yTop, top[0][1], top[1][0], yTop, top[1][1], top[2][0], yTop, top[2][1], top[3][0], yTop, top[3][1], basalRGB);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// GYPSUM HOURGLASS BLADE — the genuinely VISIBLE sector tenant (crystal-face-realism
+// arc 2026-06-22). A tabular selenite blade (thin in x, wide in z, elongated up the
+// c-axis y) carrying the iconic "hourglass selenite" of the Great Salt Plains: clay +
+// sand stained chocolate-brown by soil iron oxide, mechanically trapped on the fast-
+// growing terminal growth SECTORS, forming a sandglass of inclusions inside an
+// otherwise water-clear blade (USFWS Salt Plains NWR; Oklahoma state crystal). ONE
+// rule paints it, chiastolite-style: on each broad {010} face, a cell at normalized
+// (yn, zn) is in the inclusion sector when |zn| < |yn| — two cones meeting apex-to-apex
+// at the crystal centre (wide at both terminations, pinched to a clear waist). The apex
+// sits at the geometric centre so the hourglass is self-similar along the c-axis — the
+// boss's stepped-growth specimen, where the internal order survives the outer envelope
+// changing. `flooded` collapses the whole blade to solid brown (the overgrown variant —
+// heavy inclusion load buries the contrast; boss: "the brown ones are overgrown").
+// Colours are ABSOLUTE per-CELL (material runs vertexColors with color=white): body =
+// pale clear gypsum, sector = amber→chocolate by trapped-load intensity. Same unit box
+// (y −0.5..+0.5) as the other prism builders so the per-crystal transform scales it.
+function _makeHourglassSeleniteBlade(bodyRGB, sectorRGB, flooded, steps) {
+    const a = 0.09; // half-thickness (x) — tabular blade, constant thin
+    const bMax = 0.34; // max half-width (z) at the base/body
+    const yBase = -0.50, yTop = 0.50;
+    const yShoulder = 0.02; // body below (full width); tapering chisel tip above
+    const Nz = 14; // z-cells across the broad face (the hourglass)
+    const Ny = 26; // y-slices up the c-axis
+    const positions = [];
+    const colors = [];
+    // Inclusion sector: |zn| < |yn| — the sandglass (apex at centre, wide at the tips).
+    // Normalized against the FULL bMax so the bowtie stays geometrically fixed as the
+    // outer envelope tapers/steps — the boss's "internal hourglass survives the envelope".
+    const isSector = (yn, zn) => flooded || Math.abs(zn) < Math.abs(yn);
+    const pushQuad = (ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col) => {
+        _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+        _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+        for (let k = 0; k < 6; k++)
+            colors.push(col[0], col[1], col[2]);
+    };
+    const edgeCol = flooded ? sectorRGB : bodyRGB;
+    // Half-width at a given y: full below the shoulder, then taper to a chisel tip. When
+    // `steps` ≥ 2 the taper is quantized into discrete narrowing terraces (the stepped-
+    // growth ziggurat); otherwise it is a fine smooth chisel.
+    const halfWidth = (y) => {
+        if (y <= yShoulder)
+            return bMax;
+        let t = (y - yShoulder) / (yTop - yShoulder); // 0..1 up the tip
+        if (steps >= 2) {
+            const lvl = Math.min(steps - 1, Math.floor(t * steps));
+            t = lvl / (steps - 1);
+        }
+        return bMax * (1 - 0.9 * t); // 1.0 → 0.1 (a thin tip, not a degenerate point)
+    };
+    let prevBB = -1;
+    for (let i = 0; i < Ny; i++) {
+        const y0 = yBase + (yTop - yBase) * (i / Ny), y1 = yBase + (yTop - yBase) * ((i + 1) / Ny);
+        const yc = (y0 + y1) / 2, yn = yc / 0.5;
+        const bb = halfWidth(yc);
+        // Broad faces (x = ±a) — z-cells across −bb..bb, coloured by the fixed hourglass rule.
+        for (let j = 0; j < Nz; j++) {
+            const z0 = -bb + (2 * bb) * (j / Nz), z1 = -bb + (2 * bb) * ((j + 1) / Nz);
+            const zn = ((z0 + z1) / 2) / bMax;
+            const col = isSector(yn, zn) ? sectorRGB : bodyRGB;
+            pushQuad(a, y0, z0, a, y1, z0, a, y1, z1, a, y0, z1, col); // +x face
+            pushQuad(-a, y0, z0, -a, y0, z1, -a, y1, z1, -a, y1, z0, col); // −x face
+        }
+        // Side faces at z = ±bb for this slice.
+        pushQuad(-a, y0, bb, a, y0, bb, a, y1, bb, -a, y1, bb, edgeCol); // +z side
+        pushQuad(-a, y0, -bb, -a, y1, -bb, a, y1, -bb, a, y0, -bb, edgeCol); // −z side
+        // Step tread (horizontal ledge facing up) where the width shrank from the slice below.
+        if (prevBB > bb + 1e-6) {
+            pushQuad(-a, y0, bb, -a, y0, prevBB, a, y0, prevBB, a, y0, bb, edgeCol); // +z ledge
+            pushQuad(-a, y0, -prevBB, -a, y0, -bb, a, y0, -bb, a, y0, -prevBB, edgeCol); // −z ledge
+        }
+        prevBB = bb;
+    }
+    // Base cap (full width, sits on the matrix) + thin tip cap.
+    const bTip = halfWidth(yTop - 1e-4);
+    pushQuad(-a, yBase, -bMax, a, yBase, -bMax, a, yBase, bMax, -a, yBase, bMax, sectorRGB); // base
+    pushQuad(-a, yTop, -bTip, -a, yTop, bTip, a, yTop, bTip, a, yTop, -bTip, sectorRGB); // tip
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
 // tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
 // the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
@@ -71564,6 +72420,59 @@ function _makeGwindelGeom(twistDeg) {
     const tc = [0, 1, 2, 3].map((i) => corner(i, tw));
     _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[1][0], yTop, tc[1][1], tc[2][0], yTop, tc[2][1]);
     _pushTri(positions, tc[0][0], yTop, tc[0][1], tc[2][0], yTop, tc[2][1], tc[3][0], yTop, tc[3][1]);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
+// BENT PRISM — post-growth deformation overprint (deformation/shear arc
+// 2026-06-20, RESEARCH-deformation-shear §5.3). A hexagonal prism whose long
+// axis arcs sideways: the crystal grew straight, then a later tectonic shear
+// bent it (bent quartz = post-growth bend-gliding, NOT a growth habit). Built
+// like _makeGwindelGeom's SEG loop, but each ring is TRANSLATED laterally along
+// a cantilever arc (offsetX ∝ t², base fixed, tip swung) instead of twisted —
+// the generic "deformation transform on a finished mesh" the arc was after. The
+// pyramidal termination follows the bend so the tip stays on-axis with its ring.
+// `bend` is the lateral tip offset (unit box). Gated in the mesh-sync hook on
+// crystal._deformation.kind === 'bend'.
+function _makeBentPrism(bend) {
+    const b = Math.max(0.0, Math.min(0.6, bend || 0.3));
+    const r = 0.26; // columnar (quartz-like) cross-section
+    const yBase = -0.5, yShoulder = 0.32, yApex = 0.5;
+    const SEG = 14, N = 6;
+    const offX = (y) => { const t = (y - yBase) / (yApex - yBase); return b * t * t; };
+    const ring = (y) => {
+        const cx = offX(y);
+        const out = [];
+        for (let k = 0; k < N; k++) {
+            const a = (k / N) * Math.PI * 2;
+            out.push([cx + r * Math.cos(a), y, r * Math.sin(a)]);
+        }
+        return out;
+    };
+    const positions = [];
+    for (let s = 0; s < SEG; s++) {
+        const y0 = yBase + (yShoulder - yBase) * (s / SEG);
+        const y1 = yBase + (yShoulder - yBase) * ((s + 1) / SEG);
+        const r0 = ring(y0), r1 = ring(y1);
+        for (let k = 0; k < N; k++) {
+            const j = (k + 1) % N;
+            _pushTri(positions, r0[k][0], r0[k][1], r0[k][2], r0[j][0], r0[j][1], r0[j][2], r1[j][0], r1[j][1], r1[j][2]);
+            _pushTri(positions, r0[k][0], r0[k][1], r0[k][2], r1[j][0], r1[j][1], r1[j][2], r1[k][0], r1[k][1], r1[k][2]);
+        }
+    }
+    // pyramidal termination (apex rides the bend)
+    const rs = ring(yShoulder);
+    const apex = [offX(yApex), yApex, 0];
+    for (let k = 0; k < N; k++) {
+        const j = (k + 1) % N;
+        _pushTri(positions, rs[k][0], rs[k][1], rs[k][2], rs[j][0], rs[j][1], rs[j][2], apex[0], apex[1], apex[2]);
+    }
+    // base cap (fan)
+    const rb = ring(yBase);
+    for (let k = 1; k < N - 1; k++) {
+        _pushTri(positions, rb[0][0], rb[0][1], rb[0][2], rb[k + 1][0], rb[k + 1][1], rb[k + 1][2], rb[k][0], rb[k][1], rb[k][2]);
+    }
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geom.computeVertexNormals();
@@ -73880,6 +74789,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         // prism/spike/rhomb/scalene/botryoidal habit).
         const token = _resolveCrystalGeomToken(crystal, habitForGeom);
         let geom = null;
+        let isSectorZoned = false; // sector (hourglass) zoning → vertexColors material
         // Calcite-morphology arc Phase 3: a calcite crystal whose zone stack
         // carries real stepped/hopper relief renders zone-stack TERRACES
         // instead of the smooth parent form. Gated on the parent-form tokens
@@ -73967,6 +74877,111 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
             }
             geom = crystal._saddleGeom;
         }
+        // BENT crystal — post-growth deformation overprint (deformation/shear arc
+        // 2026-06-20). The sim tags crystal._deformation when a scenario shear event
+        // bent a crystal that had already grown (js/45 classifyDeformation). Gated on
+        // the prism token (the quartz tenant); the bend transform replaces the
+        // straight prism with an arced one. Takes precedence over gwindel/sceptre is
+        // unnecessary — those are quartz-cleft features and the bend tenant (tormiq)
+        // shares none of them, so order doesn't collide; placed last among the quartz
+        // hooks. (A replay before the shear step keeps the straight prism.)
+        if (!geom && crystal._deformation && crystal._deformation.kind === 'bend' && token === 'prism'
+            && (replayStep == null || replayStep >= crystal._deformation.atStep)) {
+            const bend = Math.max(0.15, Math.min(0.6, 0.15 + (crystal._deformation.amount || 0.5) * 0.45));
+            const q = Math.round(bend * 100) / 100; // quantize for cache reuse
+            if (crystal._bentGeomAmt !== q) {
+                crystal._bentGeom = _makeBentPrism(q);
+                crystal._bentGeomAmt = q;
+            }
+            geom = crystal._bentGeom;
+        }
+        // GYPSUM HOURGLASS (selenite) — the visible sandglass of trapped clay/Fe sediment
+        // inside a water-clear blade (Great Salt Plains; js/45 _seleniteHourglassParams).
+        // NOT gated on the prism token: selenite has its own bladed geometry. The body is
+        // pale clear gypsum, the inclusion sector amber→chocolate by trapped-load intensity;
+        // `flooded` buries the contrast to solid brown (the overgrown variant). Bucketed
+        // cache key (intensity rounded to 0.1) keeps the geom cache small.
+        let isGypsumHourglass = false;
+        if (!geom && crystal._sectorZoned && crystal._sectorZoned.kind === 'gypsum_hourglass') {
+            const hg = crystal._sectorZoned;
+            const inten = Math.max(0.15, Math.min(1, hg.intensity || 0.5));
+            const bucket = Math.round(inten * 10) / 10;
+            const flooded = !!hg.flooded;
+            const steps = hg.steps | 0; // 0 = smooth chisel tip; ≥2 = stepped ziggurat
+            const key = '__gypsum_hg_' + bucket + (flooded ? '_f' : '') + '_s' + steps;
+            geom = state.geomCache.get(key);
+            if (!geom) {
+                // amber (#c89a5b, light load) → chocolate (#5a3621, heavy load), per USFWS
+                // "reddish to chocolate brown" iron-oxide staining.
+                const sector = new THREE.Color('#c89a5b').lerp(new THREE.Color('#5a3621'), bucket);
+                const clear = new THREE.Color('#e8e2d4'); // pale water-clear gypsum body
+                // Flooded: body collapses most of the way toward the sector colour (solid brown).
+                const bodyCol = flooded ? clear.clone().lerp(sector, 0.8) : clear;
+                geom = _makeHourglassSeleniteBlade([bodyCol.r, bodyCol.g, bodyCol.b], [sector.r, sector.g, sector.b], flooded, steps);
+                state.geomCache.set(key, geom);
+            }
+            isSectorZoned = true;
+            isGypsumHourglass = !crystal._sectorZoned.flooded; // clear blade reads translucent; flooded reads opaque
+        }
+        // SECTOR (HOURGLASS) ZONING — crystals tagged by js/45 classifySectorZoning
+        // (tourmaline + future sector minerals) render with the pyramid termination
+        // sector painted a contrasting colour from the prism body (Dowty 1976 / Ferguson
+        // 1973 hourglass; for tourmaline this IS the iconic bicolor elbaite). Gated on
+        // the prism token so twins / dripstone keep their geometry. The geom bakes
+        // ABSOLUTE per-vertex colours (body = class_color, termination = hue-rotated
+        // contrast); the matOpts block below sets color=white + vertexColors so the baked
+        // colours render directly. Cached per base colour.
+        if (!geom && crystal._sectorZoned && token === 'prism') {
+            const szSpec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[crystal.mineral] : null;
+            const szBase = (szSpec && szSpec.class_color) || '#2f9e5e';
+            const body = new THREE.Color(szBase);
+            if (crystal._sectorZoned.kind === 'cross') {
+                // CHIASTOLITE — square prism + dark carbon cross (the corner growth sectors).
+                const key = '__chiastolite_' + szBase;
+                geom = state.geomCache.get(key);
+                if (!geom) {
+                    const cross = new THREE.Color('#161410'); // graphite near-black
+                    geom = _makeChiastolitePrism([body.r, body.g, body.b], [cross.r, cross.g, cross.b]);
+                    state.geomCache.set(key, geom);
+                }
+            }
+            else if (crystal._sectorZoned.kind === 'apophyllite_green') {
+                // GREEN POONA APOPHYLLITE — a tetragonal square prism, UNIFORM V⁴⁺ green body
+                // (Rossman 1974, Am.Min. 59:621), tips a hair lighter (transparency), {001}
+                // basal face a pearly green-white luster. Image-corpus verified (Pune, 2026-06-21):
+                // green is a uniform body colour, NO visible prism-vs-pyramid sector partition.
+                // Apophyllite's sector zoning is real but OPTICAL-only (anomalous birefringence,
+                // crossed-polars) — not visible colour, so NOT a colour hourglass (see js/45).
+                // Fixed baked vertex colours (NOT class_color, a placeholder blue). One geom for
+                // all green apophyllite.
+                const key = '__apophyllite_green';
+                geom = state.geomCache.get(key);
+                if (!geom) {
+                    // UNIFORM V⁴⁺ green body (image-corpus verified: Pune apophyllite green is
+                    // a uniform body colour, NOT a visible colour-sector partition). Tips read
+                    // slightly lighter from TRANSPARENCY; the basal {001} face is the one real
+                    // visible face contrast — a pearly (green-tinted, not white) LUSTER.
+                    const prism = new THREE.Color('#5fb87a'); // green prism body
+                    const pyramid = new THREE.Color('#74c191'); // same green, a hair lighter (transparent tips)
+                    const basal = new THREE.Color('#cfe6d6'); // pearly green-white {001} basal-face luster
+                    geom = _makeApophyllitePrism([prism.r, prism.g, prism.b], [pyramid.r, pyramid.g, pyramid.b], [basal.r, basal.g, basal.b]);
+                    state.geomCache.set(key, geom);
+                }
+            }
+            else {
+                // HOURGLASS (tourmaline) — hex prism + tinted termination sector. The
+                // termination is a hue-rotated contrast of the mineral colour (green body
+                // → pink/magenta tip — the iconic bicolor elbaite).
+                const key = '__sectorzoned_' + szBase;
+                geom = state.geomCache.get(key);
+                if (!geom) {
+                    const term = body.clone().offsetHSL(0.45, 0.12, -0.04);
+                    geom = _makeSectorZonedPrism([body.r, body.g, body.b], [term.r, term.g, term.b]);
+                    state.geomCache.set(key, geom);
+                }
+            }
+            isSectorZoned = true;
+        }
         if (!geom) {
             geom = state.geomCache.get(token);
             if (!geom) {
@@ -74034,6 +75049,21 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         if (isPerimorphCast) {
             matOpts.transparent = true;
             matOpts.opacity = 0.42;
+        }
+        // Sector (hourglass) zoning — the geom bakes ABSOLUTE per-vertex colours (body =
+        // class_color, termination = hue-rotated contrast). Set color=white so the
+        // material doesn't tint them and flip vertexColors so the baked colours render
+        // directly (the two sectors read as distinct colours, sharp boundary at the
+        // prism/pyramid shoulder).
+        if (isSectorZoned) {
+            matOpts.color = 0xffffff;
+            matOpts.vertexColors = true;
+        }
+        // A clear (non-flooded) hourglass blade reads as glassy gypsum — translucent so the
+        // internal sandglass of inclusions shows through; flooded blades stay opaque brown.
+        if (isGypsumHourglass) {
+            matOpts.transparent = true;
+            matOpts.opacity = 0.82;
         }
         const mat = new THREE.MeshStandardMaterial(matOpts);
         _applyCavityClip(mat, state.clipUniforms);
