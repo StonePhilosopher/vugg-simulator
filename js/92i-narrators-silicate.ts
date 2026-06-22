@@ -357,6 +357,9 @@ Object.assign(VugSimulator.prototype, {
   else if (c.habit === 'hopper_growth') parts.push(narrative_variant('apophyllite', 'hopper_growth') || 'Stepped/terraced faces — high-supersaturation hopper habit.');
   else if (c.habit === 'druzy_crust') parts.push(narrative_variant('apophyllite', 'druzy_crust') || 'Fine-grained drusy coating — the very-high-σ form.');
   else parts.push(narrative_variant('apophyllite', 'chalcedony_pseudomorph') || "Chalcedony pseudomorph — at low σ the crystal grew over an earlier zeolite blade.");
+  if (c._apophylliteGreen) {
+    parts.push(narrative_variant('apophyllite', 'poona_green') || "Pastel green — the prized Poona/Pune variety, coloured by V⁴⁺ (~1600 ppm in the lattice; Rossman 1974). The colour is dichroic; apophyllite is a genuine growth-sector-zoned mineral (its anomalous birefringence is per-sector F/OH + hydration zoning), and the V⁴⁺ green is modeled in the faster-growing prism sectors over a pale basal 'waist'.");
+  }
   const hematite_zones = c.zones.filter(z => z.note && z.note.includes('hematite needle phantom'));
   if (hematite_zones.length) {
     parts.push(narrative_variant('apophyllite', 'bloody_phantoms', { count: hematite_zones.length }) || `${hematite_zones.length} growth zones carry hematite needle phantoms — this is the 'bloody apophyllite' variety from Nashik.`);

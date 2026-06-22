@@ -1364,11 +1364,26 @@ function grow_apophyllite(crystal, conditions, step) {
     hematite_note = " (hematite needle phantoms — bloody apophyllite zone)";
   }
 
+  // V⁴⁺ green dispatch — the prized Poona/Pune green (Rossman 1974, Am.Min.
+  // 59(5-6):621-622: ~1600 ppm V, tetravalent vanadium drives the colour AND
+  // the dichroism). V is a COLOUR DISPATCHER here, NOT a supersaturation gate —
+  // apophyllite grows colourless/pearly with or without V (the §4b trace-cation
+  // pattern). The green is growth-sector-zoned — modeled as concentrated in the
+  // faster-growing prism sectors (the green Poona habit on white stilbite),
+  // recorded as a render hint the js/45 classifier reads. Apophyllite IS a genuine
+  // growth-sector-zoned mineral (anomalous birefringence from per-sector F/OH +
+  // hydration); the V⁴⁺ green is its dichroic chromophore — see js/45.
+  let color_note = ' — transparent to pearly colourless';
+  if (conditions.fluid.V > 0.5) {
+    crystal._apophylliteGreen = true;
+    color_note = ` — pastel green (V⁴⁺ ${conditions.fluid.V.toFixed(1)} ppm, dichroic; Poona)`;
+  }
+
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.05,
-    note: `${crystal.habit} K-Ca-Si zeolite${hematite_note}`
+    note: `${crystal.habit} K-Ca-Si zeolite${color_note}${hematite_note}`
   });
 }
 

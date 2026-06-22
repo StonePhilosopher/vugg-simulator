@@ -4302,7 +4302,7 @@
         }
       ],
       "class": "silicate",
-      "description": "KCa₄Si₈O₂₀(F,OH)·8H₂O — a tetragonal sheet silicate (technically phyllosilicate) classed with the zeolites for its hydrated, low-T vesicle-filling behavior. Stage III Deccan Traps mineral per Ottens et al. 2019: forms 21–58 Ma post-eruption when alkaline groundwater finally percolates through cooled basalt vesicles. Pseudo-cubic tabular blocks with perfect {001} cleavage. Hematite-needle phantom inclusions produce the prized 'bloody apophyllite' variety from Nashik.",
+      "description": "KCa₄Si₈O₂₀(F,OH)·8H₂O — a tetragonal sheet silicate (technically phyllosilicate) classed with the zeolites for its hydrated, low-T vesicle-filling behavior. Stage III Deccan Traps mineral per Ottens et al. 2019: forms 21–58 Ma post-eruption when alkaline groundwater finally percolates through cooled basalt vesicles. Pseudo-cubic tabular blocks with perfect {001} cleavage. Hematite-needle phantom inclusions produce the prized 'bloody apophyllite' variety from Nashik. The Pune/Pashan GREEN variety owes its colour to V⁴⁺ (~1600 ppm in the lattice; Rossman 1974, Am.Min. 59:621-622), dichroic and growth-sector-zoned (modeled in the faster-growing prism sectors with a pale basal 'waist' — genuine anomalous-birefringence sector zoning, the V⁴⁺ green its dichroic chromophore). The name (Greek apo + phylliso, 'to flake apart') records the perfect {001} basal cleavage and the way crystals exfoliate and whiten on heating as they lose zeolitic water.",
       "scenarios": [
         "deccan_zeolite"
       ],
@@ -4327,6 +4327,7 @@
       "trace_ingredients": {
         "Na": "trace substitution for K",
         "Fe": "hematite needle phantom inclusions ('bloody apophyllite' from Nashik)",
+        "V": "V⁴⁺ chromophore — the prized green Poona/Pune apophyllite (~1600 ppm V in the lattice; Rossman 1974). A colour dispatcher, not a growth gate; green modeled in the faster-growing prism sectors, dichroic (genuine growth-sector / anomalous-birefringence zoning).",
         "OH": "OH/F substitution at the F site"
       },
       "thermal_decomp_C": 350,
@@ -4369,6 +4370,9 @@
         "transparent_pearly": {
           "default": true
         },
+        "poona_green": {
+          "trigger": "V⁴⁺ chromophore (fluid V > 0.5; ~1600 ppm V in the lattice) — the prized green Poona/Pune apophyllite, dichroic; growth-sector-zoned, modeled in the faster-growing prism sectors with a pale-pearly basal 'waist'. Apophyllite IS a genuine growth-sector-zoned mineral (anomalous birefringence from per-sector F/OH + hydration); the V⁴⁺ green is its dichroic chromophore (Rossman 1974, Am.Min. 59(5-6):621-622)"
+        },
         "bloody_apophyllite": {
           "trigger": "hematite needle phantom inclusions (Fe>8 + O2>0.2 during growth)"
         }
@@ -4383,11 +4387,10 @@
       },
       "narrate_function": "_narrate_apophyllite",
       "runtimes_present": [
-        "vugg.py",
-        "index.html"
+        "js"
       ],
-      "audit_status": "ok (round-2 add: zeolite-facies basalt vesicle filling, hematite phantom inclusion mechanic, deccan_zeolite scenario added).",
-      "class_color": "#1313eb"
+      "audit_status": "ok. v210 (2026-06-21): added the prized green Poona/Pune V⁴⁺ variety (Rossman 1974, Am.Min. 59:621-622) — a COLOUR dispatcher in grow_apophyllite (fluid V>0.5, never a growth gate) rendered with the green in the prism sectors over a pale basal 'waist' (js/45 classifySectorZoning kind 'apophyllite_green' + js/99i _makeApophyllitePrism). Apophyllite IS a genuine growth-sector-zoned mineral (anomalous birefringence from per-sector F/OH + hydration); the V⁴⁺ green is its dichroic chromophore. The boss-handoff's 'Cu green' was cross-checked and corrected to V (Rossman 1974). class_color trued from a placeholder blue to pearly near-colourless; runtimes_present trued to js (Python tree retired).",
+      "class_color": "#dfe7e3"
     },
     "feldspar": {
       "formula": "KAlSi3O8",

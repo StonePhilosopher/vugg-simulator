@@ -578,8 +578,11 @@ function classifyDeformation(sim: any) {
 // lateral step growth metastably BURIES that face-characteristic composition). The
 // visual signature is a SHARP, geometry-locked boundary between sectors — distinct
 // from the gradational boundary of oscillatory/concentric zoning. Iconic cases:
-// titanaugite hourglass (Ferguson 1973, Min.Mag. 39:321 — Al-for-Si + Ti darkens
-// the basal sectors), chiastolite andalusite (carbon to the corner sectors → the
+// titanaugite hourglass (Ferguson 1973, Min.Mag. 39:321 — Al-for-Si + Ti enriches +
+// darkens the PRISM sectors {100}/{110}/{010}; the {-111} hourglass-interior
+// sectors are Ti-DEPLETED and PALE — Ferguson 1973 + Ubide et al. 2019, GCA
+// 251:265; the common "Ti darkens the basal sectors" mnemonic is BACKWARDS),
+// chiastolite andalusite (carbon to the corner sectors → the
 // Maltese cross), elbaite/liddicoatite radial colour sectors.
 //
 // Tier A render-only abstraction (PROPOSALS-crystal-face-realism-2026-06-21 §1):
@@ -594,13 +597,28 @@ function classifyDeformation(sim: any) {
 // collector-iconic). Chiastolite (andalusite) — THE iconic sector-cross — needs
 // andalusite added first, a future add-mineral tenant.
 // Per-mineral sector-zoning config. `kind` selects the render: 'hourglass' (the
-// termination-sector tint — tourmaline/augite read) vs 'cross' (the transverse
-// 4-corner carbon mask — chiastolite). `requiresGraphitic` gates a tenant on a
-// carbonaceous host: andalusite is sector-zoned-as-chiastolite ONLY in a graphitic
-// metapelite (wall.graphitic); a non-graphitic andalusite is a plain square prism.
+// termination-sector tint — the tourmaline bicolor-elbaite read) vs 'cross' (the
+// transverse 4-corner carbon mask — chiastolite) vs 'apophyllite_green' (V⁴⁺ green
+// in the prism sectors, pale basal waist — the Poona read). `requiresGraphitic`
+// gates a tenant on a carbonaceous host: andalusite is sector-zoned-as-chiastolite
+// ONLY in a graphitic metapelite (wall.graphitic); a non-graphitic andalusite is a
+// plain square prism. `requiresGreen` gates apophyllite's green render on a crystal
+// that actually grew V⁴⁺-green (grow_apophyllite sets c._apophylliteGreen when
+// fluid.V > 0.5).
+// SECTOR-ZONING NOTE: apophyllite IS a genuine growth-sector-zoned mineral — its
+// anomalous birefringence (optic sign varies within one crystal) arises from per-
+// sector differences in F/OH ratio + structural water + strain (Dowty-type growth-
+// sector zoning, confirmed against optical-mineralogy sources). The prized Poona
+// green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622) — DICHROIC — and is modeled
+// here as concentrated in the faster-growing PRISM {100} sectors, the water-rich
+// basal {001} sector staying clearer (the green "waist"). WHICH sector carries the
+// green is a reasoned model (fast-sector impurity-trapping + documented green↔clear
+// zoning), not a measured sector map — settled 2026-06-21 by cross-checking the boss
+// research disagreement (Cu→V corrected; sector-zoning-is-real confirmed).
 const SECTOR_ZONED_MINERALS: any = {
   tourmaline: { kind: 'hourglass' },
   andalusite: { kind: 'cross', requiresGraphitic: true },   // chiastolite — the carbon cross
+  apophyllite: { kind: 'apophyllite_green', requiresGreen: true },  // Poona V⁴⁺ green caps — colour-zoning, NOT protosite (see note above)
 };
 const SECTOR_ZONED_MIN_UM = 50;   // need a real body + termination/sectors to partition
 function classifySectorZoning(sim: any) {
@@ -610,6 +628,7 @@ function classifySectorZoning(sim: any) {
     const cfg = SECTOR_ZONED_MINERALS[c.mineral];
     if (!cfg) continue;
     if (cfg.requiresGraphitic && !graphitic) continue;
+    if (cfg.requiresGreen && !c._apophylliteGreen) continue;   // V⁴⁺ green only (grow_apophyllite)
     if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM) continue;
     c._sectorZoned = { kind: cfg.kind };
   }

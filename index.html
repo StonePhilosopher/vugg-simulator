@@ -16530,7 +16530,34 @@ let timeScale = 5.0;
 //        18(1):222-229). + narrator (js/92i) + narratives/andalusite.md. Only the new
 //        scenario changes the fleet baseline (one scenario added); all prior
 //        scenarios byte-identical. SIM 208 -> 209.
-const SIM_VERSION = 209;
+//   v210 — GREEN POONA APOPHYLLITE — the V⁴⁺ green growth-sector-zoning variety +
+//        render (crystal-face realism arc, 2026-06-21). NOT a new mineral:
+//        apophyllite was already in the catalogue. THE SCIENCE (a boss-handoff
+//        research doc disagreed; cross-checked per "follow the science"): apophyllite
+//        IS a genuine growth-sector-zoned mineral — its anomalous birefringence
+//        (optic sign varies within one crystal) is per-sector F/OH + hydration zoning.
+//        The prized Pune/Poona green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622 —
+//        ~1600 ppm V, V⁴⁺ drives colour + dichroism; VERIFIED to the Caltech/MSA
+//        archive) — the handoff's "Cu green" was a confabulation, corrected to V.
+//        Modeled as concentrated in the faster-growing PRISM {100} sectors with a
+//        pale-pearly BASAL {001} "waist" (which sector carries the green = a reasoned
+//        model, not a measured map). grow_apophyllite (js/59) reads fluid.V > 0.5 as
+//        a COLOUR DISPATCHER (never a growth gate — the §4b pattern), setting
+//        crystal._apophylliteGreen; classifySectorZoning (js/45) tags it _sectorZoned
+//        kind 'apophyllite_green' (requiresGreen); js/99i _makeApophyllitePrism
+//        renders a tetragonal square prism — green prism sides, pale basal top,
+//        intermediate {101} shoulders (the green Poona habit). deccan_zeolite gains
+//        a modest V=3 trace (basalt-weathering groundwater); assemblage-NEUTRAL (no
+//        Pb/Cu/U → no V-mineral can fire). Baseline-diff v209→v210: deccan 60→59
+//        crystals, species 17→17 — one marginal nucleation flipped by the V trace's
+//        ionic-strength contribution (NO V-mineral fires, no species gained/lost);
+//        all 35 other scenarios byte-identical. Also trued: apophyllite class_color
+//        (placeholder blue →
+//        pearly near-colourless), runtimes_present (→ js), + the BACKWARDS
+//        titanaugite comment in js/45 (Ti enriches the PRISM sectors, not the basal
+//        — Ferguson 1973 + Ubide 2019). + narrator (js/92i) + narratives/
+//        apophyllite.md poona_green. SIM 209 -> 210.
+const SIM_VERSION = 210;
 
 // ── 18-constants.js ──
 
@@ -32814,8 +32841,11 @@ function classifyDeformation(sim) {
 // lateral step growth metastably BURIES that face-characteristic composition). The
 // visual signature is a SHARP, geometry-locked boundary between sectors — distinct
 // from the gradational boundary of oscillatory/concentric zoning. Iconic cases:
-// titanaugite hourglass (Ferguson 1973, Min.Mag. 39:321 — Al-for-Si + Ti darkens
-// the basal sectors), chiastolite andalusite (carbon to the corner sectors → the
+// titanaugite hourglass (Ferguson 1973, Min.Mag. 39:321 — Al-for-Si + Ti enriches +
+// darkens the PRISM sectors {100}/{110}/{010}; the {-111} hourglass-interior
+// sectors are Ti-DEPLETED and PALE — Ferguson 1973 + Ubide et al. 2019, GCA
+// 251:265; the common "Ti darkens the basal sectors" mnemonic is BACKWARDS),
+// chiastolite andalusite (carbon to the corner sectors → the
 // Maltese cross), elbaite/liddicoatite radial colour sectors.
 //
 // Tier A render-only abstraction (PROPOSALS-crystal-face-realism-2026-06-21 §1):
@@ -32830,13 +32860,28 @@ function classifyDeformation(sim) {
 // collector-iconic). Chiastolite (andalusite) — THE iconic sector-cross — needs
 // andalusite added first, a future add-mineral tenant.
 // Per-mineral sector-zoning config. `kind` selects the render: 'hourglass' (the
-// termination-sector tint — tourmaline/augite read) vs 'cross' (the transverse
-// 4-corner carbon mask — chiastolite). `requiresGraphitic` gates a tenant on a
-// carbonaceous host: andalusite is sector-zoned-as-chiastolite ONLY in a graphitic
-// metapelite (wall.graphitic); a non-graphitic andalusite is a plain square prism.
+// termination-sector tint — the tourmaline bicolor-elbaite read) vs 'cross' (the
+// transverse 4-corner carbon mask — chiastolite) vs 'apophyllite_green' (V⁴⁺ green
+// in the prism sectors, pale basal waist — the Poona read). `requiresGraphitic`
+// gates a tenant on a carbonaceous host: andalusite is sector-zoned-as-chiastolite
+// ONLY in a graphitic metapelite (wall.graphitic); a non-graphitic andalusite is a
+// plain square prism. `requiresGreen` gates apophyllite's green render on a crystal
+// that actually grew V⁴⁺-green (grow_apophyllite sets c._apophylliteGreen when
+// fluid.V > 0.5).
+// SECTOR-ZONING NOTE: apophyllite IS a genuine growth-sector-zoned mineral — its
+// anomalous birefringence (optic sign varies within one crystal) arises from per-
+// sector differences in F/OH ratio + structural water + strain (Dowty-type growth-
+// sector zoning, confirmed against optical-mineralogy sources). The prized Poona
+// green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622) — DICHROIC — and is modeled
+// here as concentrated in the faster-growing PRISM {100} sectors, the water-rich
+// basal {001} sector staying clearer (the green "waist"). WHICH sector carries the
+// green is a reasoned model (fast-sector impurity-trapping + documented green↔clear
+// zoning), not a measured sector map — settled 2026-06-21 by cross-checking the boss
+// research disagreement (Cu→V corrected; sector-zoning-is-real confirmed).
 const SECTOR_ZONED_MINERALS = {
     tourmaline: { kind: 'hourglass' },
     andalusite: { kind: 'cross', requiresGraphitic: true }, // chiastolite — the carbon cross
+    apophyllite: { kind: 'apophyllite_green', requiresGreen: true }, // Poona V⁴⁺ green caps — colour-zoning, NOT protosite (see note above)
 };
 const SECTOR_ZONED_MIN_UM = 50; // need a real body + termination/sectors to partition
 function classifySectorZoning(sim) {
@@ -32849,6 +32894,8 @@ function classifySectorZoning(sim) {
             continue;
         if (cfg.requiresGraphitic && !graphitic)
             continue;
+        if (cfg.requiresGreen && !c._apophylliteGreen)
+            continue; // V⁴⁺ green only (grow_apophyllite)
         if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM)
             continue;
         c._sectorZoned = { kind: cfg.kind };
@@ -38903,11 +38950,25 @@ function grow_apophyllite(crystal, conditions, step) {
     if (conditions.fluid.Fe > 8 && conditions.fluid.O2 > 0.2 && rng.random() < 0.4) {
         hematite_note = " (hematite needle phantoms — bloody apophyllite zone)";
     }
+    // V⁴⁺ green dispatch — the prized Poona/Pune green (Rossman 1974, Am.Min.
+    // 59(5-6):621-622: ~1600 ppm V, tetravalent vanadium drives the colour AND
+    // the dichroism). V is a COLOUR DISPATCHER here, NOT a supersaturation gate —
+    // apophyllite grows colourless/pearly with or without V (the §4b trace-cation
+    // pattern). The green is growth-sector-zoned — modeled as concentrated in the
+    // faster-growing prism sectors (the green Poona habit on white stilbite),
+    // recorded as a render hint the js/45 classifier reads. Apophyllite IS a genuine
+    // growth-sector-zoned mineral (anomalous birefringence from per-sector F/OH +
+    // hydration); the V⁴⁺ green is its dichroic chromophore — see js/45.
+    let color_note = ' — transparent to pearly colourless';
+    if (conditions.fluid.V > 0.5) {
+        crystal._apophylliteGreen = true;
+        color_note = ` — pastel green (V⁴⁺ ${conditions.fluid.V.toFixed(1)} ppm, dichroic; Poona)`;
+    }
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe: conditions.fluid.Fe * 0.05,
-        note: `${crystal.habit} K-Ca-Si zeolite${hematite_note}`
+        note: `${crystal.habit} K-Ca-Si zeolite${color_note}${hematite_note}`
     });
 }
 // v63 brief-19: chrysoprase — Ni-bearing chalcedony (microfibrous SiO2 +
@@ -59807,6 +59868,9 @@ Object.assign(VugSimulator.prototype, {
             parts.push(narrative_variant('apophyllite', 'druzy_crust') || 'Fine-grained drusy coating — the very-high-σ form.');
         else
             parts.push(narrative_variant('apophyllite', 'chalcedony_pseudomorph') || "Chalcedony pseudomorph — at low σ the crystal grew over an earlier zeolite blade.");
+        if (c._apophylliteGreen) {
+            parts.push(narrative_variant('apophyllite', 'poona_green') || "Pastel green — the prized Poona/Pune variety, coloured by V⁴⁺ (~1600 ppm in the lattice; Rossman 1974). The colour is dichroic; apophyllite is a genuine growth-sector-zoned mineral (its anomalous birefringence is per-sector F/OH + hydration zoning), and the V⁴⁺ green is modeled in the faster-growing prism sectors over a pale basal 'waist'.");
+        }
         const hematite_zones = c.zones.filter(z => z.note && z.note.includes('hematite needle phantom'));
         if (hematite_zones.length) {
             parts.push(narrative_variant('apophyllite', 'bloody_phantoms', { count: hematite_zones.length }) || `${hematite_zones.length} growth zones carry hematite needle phantoms — this is the 'bloody apophyllite' variety from Nashik.`);
@@ -71986,6 +72050,46 @@ function _makeChiastolitePrism(bodyRGB, crossRGB) {
     geom.computeVertexNormals();
     return geom;
 }
+// GREEN POONA APOPHYLLITE — a tetragonal square prism: green PRISM {100} side
+// sectors, a pale-pearly BASAL {001} top (the clear "waist" where growth slowed),
+// and intermediate {101} pyramidal shoulders. The Poona green is V⁴⁺ (Rossman
+// 1974) concentrated in the faster-growing prism sectors; the water-rich basal
+// sector stays clearer — the growth-sector-partitioning model (apophyllite is a
+// genuine anomalous-birefringence / growth-sector-zoned mineral; which sector
+// carries the colour is a reasoned model, not a measured map — see js/45). Per-
+// CELL flat ABSOLUTE vertex colours (material runs vertexColors with color=white). Same unit box (y −0.5..+0.5) as the other prism builders
+// so the per-crystal transform scales it identically.
+function _makeApophyllitePrism(prismRGB, pyramidRGB, basalRGB) {
+    const r = 0.50; // prism half-width (a-axis)
+    const rTop = 0.24; // flat {001} top half-width
+    const yBase = -0.50; // anchored at the wall
+    const yShoulder = 0.14; // top of prism / base of the {101} pyramidal shoulders
+    const yTop = 0.50; // flat top
+    const positions = [];
+    const colors = [];
+    const pushQuad = (ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col) => {
+        _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+        _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+        for (let k = 0; k < 6; k++)
+            colors.push(col[0], col[1], col[2]);
+    };
+    const corn = [[r, r], [-r, r], [-r, -r], [r, -r]]; // square prism corners (CCW)
+    const top = [[rTop, rTop], [-rTop, rTop], [-rTop, -rTop], [rTop, -rTop]]; // flat-top corners
+    for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4;
+        // prism side face (green {100} prism sector) — yBase..yShoulder
+        pushQuad(corn[i][0], yBase, corn[i][1], corn[j][0], yBase, corn[j][1], corn[j][0], yShoulder, corn[j][1], corn[i][0], yShoulder, corn[i][1], prismRGB);
+        // {101} pyramidal shoulder face (intermediate sector) — yShoulder(r) -> yTop(rTop)
+        pushQuad(corn[i][0], yShoulder, corn[i][1], corn[j][0], yShoulder, corn[j][1], top[j][0], yTop, top[j][1], top[i][0], yTop, top[i][1], pyramidRGB);
+    }
+    // flat {001} basal pinacoid top — pale-pearly clear "waist" sector
+    pushQuad(top[0][0], yTop, top[0][1], top[1][0], yTop, top[1][1], top[2][0], yTop, top[2][1], top[3][0], yTop, top[3][1], basalRGB);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.computeVertexNormals();
+    return geom;
+}
 // Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
 // tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
 // the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
@@ -74548,6 +74652,25 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
                 if (!geom) {
                     const cross = new THREE.Color('#161410'); // graphite near-black
                     geom = _makeChiastolitePrism([body.r, body.g, body.b], [cross.r, cross.g, cross.b]);
+                    state.geomCache.set(key, geom);
+                }
+            }
+            else if (crystal._sectorZoned.kind === 'apophyllite_green') {
+                // GREEN POONA APOPHYLLITE — a tetragonal square prism: green PRISM {100} side
+                // sectors, a pale-pearly BASAL {001} top "waist", intermediate {101} shoulders.
+                // Apophyllite is a genuine growth-sector-zoned mineral (anomalous birefringence
+                // from per-sector F/OH + hydration); the V⁴⁺ green (Rossman 1974, Am.Min. 59:621)
+                // is the dichroic chromophore, here modeled in the faster-growing prism sectors
+                // (which sector carries it is a reasoned model, not a measured map — see js/45).
+                // Fixed baked vertex colours (NOT class_color, a placeholder blue). One geom for
+                // all green apophyllite.
+                const key = '__apophyllite_green';
+                geom = state.geomCache.get(key);
+                if (!geom) {
+                    const prism = new THREE.Color('#5fb87a'); // V⁴⁺ green prism {100} sectors (fast growth)
+                    const pyramid = new THREE.Color('#9fd0ad'); // intermediate {101} pyramidal shoulders
+                    const basal = new THREE.Color('#e6efe9'); // pale-pearly basal {001} "waist" (water-rich)
+                    geom = _makeApophyllitePrism([prism.r, prism.g, prism.b], [pyramid.r, pyramid.g, pyramid.b], [basal.r, basal.g, basal.b]);
                     state.geomCache.set(key, geom);
                 }
             }

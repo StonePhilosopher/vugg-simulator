@@ -888,6 +888,59 @@ function _makeChiastolitePrism(bodyRGB: number[], crossRGB: number[]): any {
   return geom;
 }
 
+// GREEN POONA APOPHYLLITE — a tetragonal square prism: green PRISM {100} side
+// sectors, a pale-pearly BASAL {001} top (the clear "waist" where growth slowed),
+// and intermediate {101} pyramidal shoulders. The Poona green is V⁴⁺ (Rossman
+// 1974) concentrated in the faster-growing prism sectors; the water-rich basal
+// sector stays clearer — the growth-sector-partitioning model (apophyllite is a
+// genuine anomalous-birefringence / growth-sector-zoned mineral; which sector
+// carries the colour is a reasoned model, not a measured map — see js/45). Per-
+// CELL flat ABSOLUTE vertex colours (material runs vertexColors with color=white). Same unit box (y −0.5..+0.5) as the other prism builders
+// so the per-crystal transform scales it identically.
+function _makeApophyllitePrism(prismRGB: number[], pyramidRGB: number[], basalRGB: number[]): any {
+  const r = 0.50;             // prism half-width (a-axis)
+  const rTop = 0.24;          // flat {001} top half-width
+  const yBase = -0.50;        // anchored at the wall
+  const yShoulder = 0.14;     // top of prism / base of the {101} pyramidal shoulders
+  const yTop = 0.50;          // flat top
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const pushQuad = (
+    ax: number, ay: number, az: number, bx: number, by: number, bz: number,
+    cx: number, cy: number, cz: number, dx: number, dy: number, dz: number,
+    col: number[],
+  ) => {
+    _pushTri(positions, ax, ay, az, bx, by, bz, cx, cy, cz);
+    _pushTri(positions, ax, ay, az, cx, cy, cz, dx, dy, dz);
+    for (let k = 0; k < 6; k++) colors.push(col[0], col[1], col[2]);
+  };
+  const corn = [[r, r], [-r, r], [-r, -r], [r, -r]];          // square prism corners (CCW)
+  const top = [[rTop, rTop], [-rTop, rTop], [-rTop, -rTop], [rTop, -rTop]];  // flat-top corners
+  for (let i = 0; i < 4; i++) {
+    const j = (i + 1) % 4;
+    // prism side face (green {100} prism sector) — yBase..yShoulder
+    pushQuad(
+      corn[i][0], yBase, corn[i][1], corn[j][0], yBase, corn[j][1],
+      corn[j][0], yShoulder, corn[j][1], corn[i][0], yShoulder, corn[i][1], prismRGB,
+    );
+    // {101} pyramidal shoulder face (intermediate sector) — yShoulder(r) -> yTop(rTop)
+    pushQuad(
+      corn[i][0], yShoulder, corn[i][1], corn[j][0], yShoulder, corn[j][1],
+      top[j][0], yTop, top[j][1], top[i][0], yTop, top[i][1], pyramidRGB,
+    );
+  }
+  // flat {001} basal pinacoid top — pale-pearly clear "waist" sector
+  pushQuad(
+    top[0][0], yTop, top[0][1], top[1][0], yTop, top[1][1],
+    top[2][0], yTop, top[2][1], top[3][0], yTop, top[3][1], basalRGB,
+  );
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Quartz SCEPTRE — gen-1 stem + a wider gen-2 cap grown over the resorbed
 // tip (alpine-cleft arc SIM 206; the sim tags crystal._sceptre.capFrac after
 // the resorption→renewal phantom boundary). Two stacked hexagonal prisms: a
@@ -3401,6 +3454,24 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         if (!geom) {
           const cross = new THREE.Color('#161410');   // graphite near-black
           geom = _makeChiastolitePrism([body.r, body.g, body.b], [cross.r, cross.g, cross.b]);
+          state.geomCache.set(key, geom);
+        }
+      } else if (crystal._sectorZoned.kind === 'apophyllite_green') {
+        // GREEN POONA APOPHYLLITE — a tetragonal square prism: green PRISM {100} side
+        // sectors, a pale-pearly BASAL {001} top "waist", intermediate {101} shoulders.
+        // Apophyllite is a genuine growth-sector-zoned mineral (anomalous birefringence
+        // from per-sector F/OH + hydration); the V⁴⁺ green (Rossman 1974, Am.Min. 59:621)
+        // is the dichroic chromophore, here modeled in the faster-growing prism sectors
+        // (which sector carries it is a reasoned model, not a measured map — see js/45).
+        // Fixed baked vertex colours (NOT class_color, a placeholder blue). One geom for
+        // all green apophyllite.
+        const key = '__apophyllite_green';
+        geom = state.geomCache.get(key);
+        if (!geom) {
+          const prism = new THREE.Color('#5fb87a');    // V⁴⁺ green prism {100} sectors (fast growth)
+          const pyramid = new THREE.Color('#9fd0ad');   // intermediate {101} pyramidal shoulders
+          const basal = new THREE.Color('#e6efe9');     // pale-pearly basal {001} "waist" (water-rich)
+          geom = _makeApophyllitePrism([prism.r, prism.g, prism.b], [pyramid.r, pyramid.g, pyramid.b], [basal.r, basal.g, basal.b]);
           state.geomCache.set(key, geom);
         }
       } else {

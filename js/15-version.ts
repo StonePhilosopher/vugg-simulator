@@ -11424,5 +11424,32 @@
 //        18(1):222-229). + narrator (js/92i) + narratives/andalusite.md. Only the new
 //        scenario changes the fleet baseline (one scenario added); all prior
 //        scenarios byte-identical. SIM 208 -> 209.
-const SIM_VERSION = 209;
+//   v210 — GREEN POONA APOPHYLLITE — the V⁴⁺ green growth-sector-zoning variety +
+//        render (crystal-face realism arc, 2026-06-21). NOT a new mineral:
+//        apophyllite was already in the catalogue. THE SCIENCE (a boss-handoff
+//        research doc disagreed; cross-checked per "follow the science"): apophyllite
+//        IS a genuine growth-sector-zoned mineral — its anomalous birefringence
+//        (optic sign varies within one crystal) is per-sector F/OH + hydration zoning.
+//        The prized Pune/Poona green is V⁴⁺ (Rossman 1974, Am.Min. 59(5-6):621-622 —
+//        ~1600 ppm V, V⁴⁺ drives colour + dichroism; VERIFIED to the Caltech/MSA
+//        archive) — the handoff's "Cu green" was a confabulation, corrected to V.
+//        Modeled as concentrated in the faster-growing PRISM {100} sectors with a
+//        pale-pearly BASAL {001} "waist" (which sector carries the green = a reasoned
+//        model, not a measured map). grow_apophyllite (js/59) reads fluid.V > 0.5 as
+//        a COLOUR DISPATCHER (never a growth gate — the §4b pattern), setting
+//        crystal._apophylliteGreen; classifySectorZoning (js/45) tags it _sectorZoned
+//        kind 'apophyllite_green' (requiresGreen); js/99i _makeApophyllitePrism
+//        renders a tetragonal square prism — green prism sides, pale basal top,
+//        intermediate {101} shoulders (the green Poona habit). deccan_zeolite gains
+//        a modest V=3 trace (basalt-weathering groundwater); assemblage-NEUTRAL (no
+//        Pb/Cu/U → no V-mineral can fire). Baseline-diff v209→v210: deccan 60→59
+//        crystals, species 17→17 — one marginal nucleation flipped by the V trace's
+//        ionic-strength contribution (NO V-mineral fires, no species gained/lost);
+//        all 35 other scenarios byte-identical. Also trued: apophyllite class_color
+//        (placeholder blue →
+//        pearly near-colourless), runtimes_present (→ js), + the BACKWARDS
+//        titanaugite comment in js/45 (Ti enriches the PRISM sectors, not the basal
+//        — Ferguson 1973 + Ubide 2019). + narrator (js/92i) + narratives/
+//        apophyllite.md poona_green. SIM 209 -> 210.
+const SIM_VERSION = 210;
 
