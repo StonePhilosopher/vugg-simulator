@@ -760,6 +760,11 @@ class VugSimulator {
     // deformation directive (sim._deformationEvents). Pure tagging; no-op unless
     // a scenario declares one → byte-identical fleet. See js/45.
     classifyDeformation(this);
+    // Post-growth ETCH overprint (crystal-face realism arc §2, 2026-06-22) — rounds/
+    // frosts crystals that had ALREADY grown when a scenario event recorded an `etch`
+    // directive (sim._etchEvents). Same post-growth-overprint shape as deformation.
+    // Pure tagging; no-op unless a scenario declares one → byte-identical fleet. See js/45.
+    classifyEtch(this);
     // Sector (hourglass) ZONING (crystal-face realism arc 2026-06-21) — tags
     // sector-zoned minerals (tourmaline) so the renderer tints the termination
     // sector apart from the prism body. Pure tagging, no-op unless a sector

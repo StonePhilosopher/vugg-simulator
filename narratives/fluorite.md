@@ -27,3 +27,7 @@ The faces are composite — cube regrown on cube, {pct}% of the mass laid down i
 ## variant: morph_banded
 
 Growth banding on the cube faces: {pct}% of the mass went down during driven episodes — read the bands and you are reading the vein's pressure valve.
+
+## variant: etched
+
+ETCHED — the cube is corroded: a later undersaturated fluid (the reopened vein) dissolved its edges and corners to a rounded, frosted form before the next generation overgrew it. A dissolution overprint, not a growth habit.

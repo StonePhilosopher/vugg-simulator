@@ -39,3 +39,17 @@ function event_marble_fracture_seal(c) {
   c.fluid.pH = Math.min(c.fluid.pH + 0.3, 9.0);
   return "The feeding fracture seals. The Mogok pocket is now a closed system. Whatever corundum family crystals are still undersaturated will continue to consume the remaining Al pool until equilibrium. Everything else is frozen.";
 }
+
+// POST-GROWTH ETCH/DEFORMATION overprint (crystal-face-realism arc §2 sibling, the
+// calcite e-twin tenant, 2026-06-22). The Mogok Stone Tract marble was REGIONALLY
+// deformed during the Himalayan orogeny (~30 Ma) — continued orogenic strain glides on
+// the calcite e-twin plane {01-12}, leaving the parallel mechanical-twin lamellae that
+// are the textbook calcite paleo-strain/temperature gauge (Ferrill et al. 2004 Type I-IV;
+// Burkhard 1993; Turner 1953). This is a POST-growth crystal-plastic OVERPRINT imposed
+// on the already-grown marble calcite — NOT a growth habit (research §3-4, all citations
+// verified). CHEMICALLY INERT: deformation is mechanical + post-growth, so this handler
+// touches no fluid/T (the assemblage stays byte-identical). The twinning is carried by
+// the event's `deformation` directive {style:'etwin',...} (apply_events → classifyDeformation).
+function event_marble_tectonic_strain(c) {
+  return "Long after the pocket sealed, the Himalayan collision keeps shortening the Mogok belt: the marble's calcite, already grown, glides on its e-twin plane {01-12} and fills with parallel mechanical-twin lamellae — a post-growth strain overprint, the textbook calcite paleostress gauge. (The ruby, twin-resistant corundum, is spared.)";
+}

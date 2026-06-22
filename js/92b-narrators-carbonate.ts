@@ -52,6 +52,14 @@ Object.assign(VugSimulator.prototype, {
   if (c.twinned) {
     parts.push(narrative_variant('calcite', 'twinned', { twin_law: c.twin_law }) || `The crystal is twinned on ${c.twin_law}, a common deformation twin in calcite that can form during growth or post-crystallization stress.`);
   }
+  // MECHANICAL e-TWIN lamellae — post-growth crystal-plastic overprint (deformation arc
+  // §5.3). Tectonic strain glided the finished crystal on its e-twin plane {01-12},
+  // leaving the parallel mechanical-twin lamellae that gauge paleostress + temperature
+  // (Ferrill 2004 Type I-IV; Burkhard 1993). A POST-growth overprint, not a growth habit.
+  if (c._deformation && c._deformation.kind === 'etwin') {
+    parts.push(narrative_variant('calcite', 'e_twinned')
+      || `Crossed by parallel e-twin lamellae on {01-12}: after it finished growing, tectonic strain glided the lattice, filling the crystal with mechanical twins. Their abundance and thickness gauge how hard and how hot the rock was squeezed (the Ferrill Type I-IV calcite geothermometer) — a post-growth overprint written into the stone, not a growth habit.`);
+  }
   const size_desc = c.c_length_mm < 0.5 ? 'microscopic' : c.c_length_mm < 2 ? 'small' : 'well-developed';
   parts.push(narrative_variant('calcite', 'final_size', { size_desc, mm: c.c_length_mm.toFixed(1), habit: c.habit }) || `Final size: ${size_desc} (${c.c_length_mm.toFixed(1)} mm), ${c.habit} habit.`);
   return parts.filter(p => p).join(' ');

@@ -186,6 +186,7 @@ const EVENT_REGISTRY = {
   marble_peak_metamorphism: event_marble_peak_metamorphism,
   marble_retrograde_cooling: event_marble_retrograde_cooling,
   marble_fracture_seal: event_marble_fracture_seal,
+  marble_tectonic_strain: event_marble_tectonic_strain,
   // Phase 2 — reactive_wall
   reactive_wall_acid_pulse_1: event_reactive_wall_acid_pulse_1,
   reactive_wall_acid_pulse_2: event_reactive_wall_acid_pulse_2,
@@ -455,6 +456,12 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // bends/twins crystals that already grew. Absent → no overprint → byte-
       // identical. Mechanical + post-growth, so it does NOT mutate the fluid.
       deformation: ev.deformation,
+      // POST-GROWTH ETCH (crystal-face-realism arc §2, 2026-06-22) — optional directive
+      // {amount,minerals,style}. apply_events records it onto sim._etchEvents with the
+      // step it fired; classifyEtch (js/45) rounds/frosts crystals that already grew.
+      // Absent → no overprint → byte-identical. Chemical corrosion is post-growth, so it
+      // does NOT mutate the fluid.
+      etch: ev.etch,
     }));
     return { conditions, events, defaultSteps: duration };
   };

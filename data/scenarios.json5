@@ -514,7 +514,18 @@
         { "step": 20,  "type": "fluid_mixing",            "name": "Ascending Brine",   "description": "Stage-1 brine meets groundwater — fluorite + galena + barite at the open feeders" },
         { "step": 60,  "type": "fluid_pulse",             "name": "Second Pulse",       "description": "More stage-1 growth" },
         { "step": 78,  "type": "reactivated_vein_seal",   "name": "Feeder Sealed",      "description": "Cement chokes the fracture — the vug goes quiet", "spots": "seal" },
-        { "step": 118, "type": "reactivated_vein_breach", "name": "Reactivation",       "description": "Tectonic uplift breaches the feeder — a cooler fresh pulse grows gen-2 fluorite + calcite", "spots": "breach" }
+        { "step": 118, "type": "reactivated_vein_breach", "name": "Reactivation",       "description": "Tectonic uplift breaches the feeder — a cooler fresh pulse grows gen-2 fluorite + calcite, and the returning undersaturated fluid ETCHES the gen-1 fluorite (rounded, frosted edges) before the overgrowth", "spots": "breach",
+          // POST-GROWTH ETCH overprint (crystal-face-realism arc §2). A reopened vein's
+          // first returning fluid is undersaturated w.r.t. the early fluorite it meets:
+          // it corrodes/rounds the gen-1 cubes (steps 0-78) before gen-2 fluorite + calcite
+          // overgrow them — the classic etched-then-overgrown texture of reactivated
+          // North-Pennine fluorite veins. minerals:['fluorite'] so only the early fluorite
+          // is etched; gen-2 fluorite (grown after step 118) stays sharp. Galena is
+          // included — the early galena cubes corrode the same way when the vein reopens
+          // (cubic galena → the etched-cube render; octahedral galena keeps its form).
+          // INERT directive: records sim._etchEvents only (no fluid/T change) → byte-identical.
+          "etch": { "minerals": ["fluorite", "galena"], "amount": 0.6, "style": "rounded" }
+        }
       ],
       "sources": [
         "Dunham, K.C. (1990) — Geology of the Northern Pennine Orefield, Vol. 1 (2nd ed.), British Geological Survey Economic Memoir.",
@@ -704,9 +715,21 @@
       "events": [
         { "step": 20,  "type": "marble_peak_metamorphism", "name": "Peak Metamorphism", "description": "Leucogranite intrusion at contact" },
         { "step": 60,  "type": "marble_retrograde_cooling", "name": "Retrograde Cooling", "description": "Slow cooling, main ruby growth window" },
-        { "step": 150, "type": "marble_fracture_seal", "name": "Fracture Seal", "description": "System closes" }
+        { "step": 150, "type": "marble_fracture_seal", "name": "Fracture Seal", "description": "System closes" },
+        { "step": 165, "type": "marble_tectonic_strain", "name": "Orogenic Strain — e-twin Lamellae", "description": "Continued Himalayan shortening glides the already-grown marble calcite on its e-twin plane {01-12} — parallel mechanical-twin lamellae, the Ferrill paleostress gauge; the ruby is spared",
+          // POST-GROWTH e-twin OVERPRINT (crystal-face-realism arc, calcite e-twin tenant).
+          // Mogok marble was regionally deformed in the Himalayan orogeny (~30 Ma); the
+          // calcite (grown by the step-150 seal) twins on {01-12} (Ferrill 2004 Type I-IV;
+          // Burkhard 1993; Turner 1953). minerals:['calcite'] — only the calcite twins;
+          // corundum (ruby) is twin-resistant and spared. INERT directive (no fluid/T
+          // change) → assemblage byte-identical. style:'etwin' → classifyDeformation tags
+          // _deformation.kind='etwin'; js/99i renders the parallel lamellae.
+          "deformation": { "style": "etwin", "magnitude": 0.7, "minerals": ["calcite"] }
+        }
       ],
       "sources": [
+        "Ferrill D.A. et al. 2004 (J. Struct. Geol. 26:1521) — calcite twin morphology Type I-IV geothermometer",
+        "Burkhard M. 1993 (J. Struct. Geol. 15:351) — calcite twins as strain/T gauge; Turner 1953 (Am. J. Sci. 251:276)",
         "Garnier et al. 2008 (Ore Geology Reviews 34:169-191) — Marble-hosted ruby deposits from Central and Southeast Asia",
         "Peretti et al. 2018 (Gems & Gemology special issue) — Update on corundum and its gem varieties",
         "Searle et al. 2007 (Journal of Geology 115:1-23) — Tectonic evolution of the Mogok metamorphic belt, Burma (Myanmar)"

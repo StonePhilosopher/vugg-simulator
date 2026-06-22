@@ -326,6 +326,13 @@ Object.assign(VugSimulator.prototype, {
   if (c.dissolved) {
     parts.push(narrative_variant('galena', 'oxidative_breakdown') || 'Oxidation attacked the galena — Pb²⁺ went into solution and can reprecipitate as cerussite (PbCO₃), anglesite (PbSO₄), or — if Mo is present — wulfenite (PbMoO₄).');
   }
+  // ETCHED — post-growth dissolution overprint (crystal-face realism arc §2). When a
+  // reactivated vein reopens, the returning undersaturated fluid corrodes the early galena
+  // cubes — edges + corners round, the metallic faces frost — before the next generation.
+  if (c._etch) {
+    parts.push(narrative_variant('galena', 'etched')
+      || 'ETCHED — the cube is corroded: a later undersaturated fluid rounded its edges and frosted its metallic faces after it had finished growing. A dissolution overprint, not a habit.');
+  }
   return parts.filter(p => p).join(' ');
 },
 

@@ -102,6 +102,32 @@ Object.assign(VugSimulator.prototype, {
         const ms = d.minerals ? d.minerals.join(', ') : 'all grown crystals';
         this.log.push(`     ⟁ DEFORMATION: ${d.style || 'bend'} overprint on ${ms} — a post-growth tectonic shear bends what already grew`);
       }
+      // POST-GROWTH ETCH overprint (crystal-face-realism arc §2, 2026-06-22) — an
+      // event may carry an `etch` directive {amount,minerals,style}. Like the
+      // deformation overprint, etching is a POST-growth phenomenon: a returning
+      // UNDERSATURATED fluid corrodes a crystal that has ALREADY grown (rounds its
+      // edges/corners, frosts its faces — the classic etched/dissolved habit of
+      // reactivated veins). It records an etch event onto the sim WITH the step it
+      // fired (classifyEtch, post-growth in js/45, then tags crystals that grew
+      // before this step). NOTE this is the DECLARATIVE driver, not a passive read
+      // of accidental resorption: the engine's dissolution is binary (a crystal
+      // either survives ~intact or fully dissolves and drops from the scene — the
+      // etch-pit-probe census found NO population of substantially-etched survivors),
+      // so the etched look is declared as an overprint exactly like deformation.
+      // Chemically INERT by design: apply_fn must not touch fluid/T (the assemblage
+      // stays byte-identical; the etch is a render tag + a log line).
+      if (event.etch) {
+        if (!this._etchEvents) this._etchEvents = [];
+        const e = event.etch;
+        this._etchEvents.push({
+          step: this.step,
+          amount: (typeof e.amount === 'number') ? e.amount : 0.5,
+          minerals: e.minerals || null,
+          style: e.style || 'rounded',
+        });
+        const ems = e.minerals ? e.minerals.join(', ') : 'all grown crystals';
+        this.log.push(`     ⚗ ETCH: ${e.style || 'rounded'} dissolution overprint on ${ems} — a returning undersaturated fluid corrodes/rounds what already grew`);
+      }
       this.log.push('');
     }
   }

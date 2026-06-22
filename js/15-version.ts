@@ -11476,5 +11476,53 @@
 //        render-only, _sectorZoned is not in the baseline. Baseline-diff v210→v211:
 //        the 36 prior scenarios byte-identical; great_salt_plains is the one new entry.
 //        SIM 210 -> 211.
-const SIM_VERSION = 211;
+//   v212 — POST-GROWTH ETCH OVERPRINT — the etched / dissolution-sculpture mechanic
+//        (crystal-face realism arc §2, 2026-06-22; PROPOSALS-crystal-face-realism §2).
+//        THE FINDING THAT SHAPED IT: the §2 proposal assumed the etched look was a
+//        passive read of existing resorption ("the state is there, only the render is
+//        missing"). A census (tools/etch-pit-probe.mjs) FALSIFIED that — the engine's
+//        dissolution is BINARY: a crystal either survives ~intact (resorbed frac ~0.00)
+//        or fully dissolves and DROPS from the scene (js/99i culls dissolved crystals),
+//        so there is NO population of substantially-etched survivors to render (163
+//        crystals fully dissolve fleet-wide; the "survivors" with resorption zones are
+//        all frac ≤0.01 or degenerate net ≈0). So etching ships as a DECLARED overprint,
+//        the same shape as the v208 deformation overprint: a scenario event carries an
+//        `etch` directive {amount,minerals,style}; apply_events (js/85d) records it on
+//        sim._etchEvents WITH the step it fired; classifyEtch (js/45, post-growth) tags
+//        surviving crystals that had ALREADY grown by that step. js/99i _makeEtchedCube
+//        rounds a SUBDIVIDED box toward a sphere (corners — the highest-energy sites —
+//        round most; a low-poly cube can't round, its 8 corners are equidistant) +
+//        frosts the material (Sangwal 1987, Etching of Crystals; lead-with-rounding per
+//        §2). Runs BEFORE the terrace/hopper render — corrosion rounds AWAY growth relief.
+//        Gated on the cube token (the isometric fluorite/galena tenant; octahedron is a
+//        future extension). TENANT: reactivated_fluorite_vein's breach (step 118) — the
+//        reopened conduit's undersaturated fluid etches the gen-1 fluorite + galena cubes
+//        (grown steps 0-78) before gen-2 fluorite overgrows them, the classic etched-
+//        then-overgrown texture of reactivated North-Pennine veins (Dunham 1990).
+//        CHEMICALLY INERT: the etch directive mutates no fluid/T → the FLEET (incl. the
+//        vein) is BYTE-IDENTICAL (gen-baseline serialises only counts/sizes; the etch is
+//        a render tag + a log line). 5 crystals tagged at seed 42 (fluorite×1 6.2mm,
+//        galena×4). + narrator (js/92 'etched'). SIM 211 -> 212 (provenance;
+//        baseline-diff 211↔212 = 0 drift, the v208 deformation precedent).
+//   v213 — CALCITE MECHANICAL e-TWIN overprint (deformation/shear arc §5.3 next tenant,
+//        2026-06-22; the calcite sibling of the v208 bent-quartz overprint). Calcite
+//        e-twins {01-12} are POST-growth crystal-plastic glide lamellae imposed on a
+//        FINISHED lattice by later tectonic strain — the textbook calcite paleostress/
+//        paleotemperature gauge (Ferrill et al. 2004 J.Struct.Geol. 26:1521 Type I-IV;
+//        Burkhard 1993; Turner 1953 — all VERIFIED, research §4). Ships on the EXISTING
+//        deformation directive plumbing: a scenario event carries deformation
+//        {style:'etwin',magnitude,minerals}; classifyDeformation (js/45) already tags any
+//        style → _deformation.kind='etwin' (no classifier change); js/99i _makeTwinnedCalcite
+//        SUBDIVIDES the scalenohedron (3 levels) and bakes parallel dark lamella stripes
+//        into vertex colours along an oblique-to-c normal (the chiastolite/sector idiom),
+//        magnitude → lamella count + thickness (Ferrill Type I few → IV many). TENANT:
+//        marble_contact_metamorphism — the Mogok Stone Tract marble was regionally
+//        deformed in the Himalayan orogeny (~30 Ma); a new step-165 orogenic-strain event
+//        (post-seal) twins the already-grown marble calcite. minerals:['calcite'] — the
+//        ruby (twin-resistant corundum) is spared. CHEMICALLY INERT (no-op handler, no
+//        fluid/T) → BYTE-IDENTICAL fleet. 1 calcite tagged at seed 42 (40mm dogtooth
+//        scalenohedron). + narrator (calcite 'e_twinned') + tests (etwin-overprint.test.ts)
+//        + tools/etwin-probe.mjs. Standalone-render verified (parallel lamellae vs the
+//        smooth reference). SIM 212 -> 213 (provenance; baseline-diff 212↔213 = 0 drift).
+const SIM_VERSION = 213;
 

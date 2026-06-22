@@ -47,6 +47,13 @@ Object.assign(VugSimulator.prototype, {
     }
   }
   if (c.twinned) parts.push(narrative_variant('fluorite', 'twinned', { twin_law: c.twin_law }) || `Shows ${c.twin_law} twinning — two interpenetrating cubes.`);
+  // ETCHED — post-growth dissolution overprint (crystal-face realism arc §2). A returning
+  // undersaturated fluid (the reopened vein) corroded the finished cube: edges + corners
+  // round first (highest-energy sites), faces frost. A post-growth overprint, not a habit.
+  if (c._etch) {
+    parts.push(narrative_variant('fluorite', 'etched')
+      || `ETCHED — the cube is corroded: a later undersaturated fluid (the reopened vein) dissolved its edges and corners to a rounded, frosted form before the next generation overgrew it. A dissolution overprint, not a growth habit.`);
+  }
   const fl = c.predict_fluorescence();
   if (fl !== 'non-fluorescent') parts.push(narrative_variant('fluorite', 'fluorescence', { fl }) || `Would show ${fl} under UV excitation.`);
   return parts.filter(p => p).join(' ');

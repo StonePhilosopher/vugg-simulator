@@ -27,3 +27,7 @@ The faces are terraced — {bands} distinct macrostep train{bands_s}, each one a
 ## variant: morph_hopper
 
 Growth outran supply: edges and corners sit proud in the diffusion field and kept building while the face centers starved, so the faces hollowed into stepped funnels while the crystal stayed faceted. A hopper calcite is a crystal that grew too fast for its own interior.
+
+## variant: e_twinned
+
+Crossed by parallel e-twin lamellae on {01-12}: after it finished growing, tectonic strain glided the lattice, filling the crystal with mechanical twins. Their abundance and thickness gauge how hard and how hot the rock was squeezed (the Ferrill Type I-IV calcite geothermometer) — a post-growth overprint written into the stone, not a growth habit.

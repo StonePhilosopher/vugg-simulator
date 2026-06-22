@@ -277,3 +277,40 @@ truth isn't the one you scrape. It's the one a collaborator hands you, still war
 says *look*. Build so that someone wants to do that.
 
 — the builder. The rocks are in the picker now (🏜️ Great Salt Plains). Go grow one.
+
+## ➕ NEW GOAL (boss directive, 2026-06-22) — realistic crystal TRANSPARENCY & COLOUR
+
+A standing visual-realism goal for the whole render layer, not a one-scenario job. Right
+now optical properties are ad-hoc: most habits paint a flat `class_color` on an opaque
+material, and transparency is set by hand per-tenant (the selenite blade got
+`opacity 0.82` inline; the giant Naica crystals *should* read water-clear but don't). The
+ask is to make a crystal LOOK like what it physically is.
+
+What "realistic" means here, roughly (research-first before building — this needs a
+mineral-optics dossier the way every arc this month did):
+- **Diaphaneity** as a real per-mineral property: transparent (quartz, fluorite, gypsum/
+  selenite, calcite optical) → translucent (most) → opaque (galena, pyrite, magnetite).
+  Drive material `transparent`/`opacity`/(transmission) from a mineral field, not inline
+  per-tenant constants. Selenite's `0.82` should come from this, not a magic number.
+- **Lustre**: vitreous vs adamantine (cerussite, anglesite, diamond-like sparkle) vs
+  metallic (sulfides) vs pearly (apophyllite basal, already noted) vs greasy/resinous
+  (sphalerite, opal). Maps to roughness/metalness/specular in the material.
+- **Body colour fidelity**: the chromophore work is already partly here (V⁴⁺ apophyllite,
+  smoky quartz γ-dose, Cr/Mn/Fe garnet dispatch, Y-fluorite). Goal is to make the COLOUR
+  the render shows match the real specimen — saturation, depth, and where colour sits with
+  transparency (a transparent amethyst is purple *and* see-through; a flat purple opaque
+  block is wrong). Compose with the existing trace-cation colour dispatchers.
+- **Optional depth cues** if cheap: colour zoning visible *through* a transparent crystal
+  (phantoms, the sceptre boundary), and the way transparency makes internal sector zoning
+  (selenite, the optical apophyllite birefringence) actually legible.
+
+Discipline reminders that apply: render-layer changes can be SIM-NEUTRAL (byte-identical
+baseline) if they read existing data — keep them so where possible. Defer-to-geology and
+the specimen-as-authority terminal check (`feedback_terminal_verification_specimens`) both
+bear hard on this one — colour and clarity are exactly what a real specimen falsifies
+fastest. The image-corpus method is the instrument when the literature won't pin a hue.
+
+This is a GOAL, not a scoped task yet — it wants its own research pass + a design doc
+(probably `proposals/RESEARCH-optical-realism-*.md`) before code. Likely a per-mineral
+`optics` block in minerals.json (diaphaneity + lustre + colour notes) feeding a single
+material-builder in js/99i, replacing the scattered inline constants.

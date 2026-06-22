@@ -19,3 +19,7 @@ The fluid carried silver — argentiferous galena, the historic source of most o
 ## variant: oxidative_breakdown
 
 Oxidation attacked the galena — Pb²⁺ went into solution and can reprecipitate as cerussite (PbCO₃), anglesite (PbSO₄), or — if Mo is present — wulfenite (PbMoO₄).
+
+## variant: etched
+
+ETCHED — the cube is corroded: a later undersaturated fluid rounded its edges and frosted its metallic faces after it had finished growing. A dissolution overprint, not a habit.

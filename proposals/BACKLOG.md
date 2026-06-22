@@ -2,6 +2,83 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer)
+>
+> Boss directive. A whole-render-layer realism goal, NOT a one-scenario job. Today optical
+> properties are ad-hoc: habits paint a flat `class_color` on an opaque material and
+> transparency is hand-set per tenant (selenite blade `opacity 0.82` inline; Naica's giant
+> crystals should read water-CLEAR but don't). Make a crystal LOOK like what it physically is:
+> - **Diaphaneity** as a real per-mineral field: transparent (quartz/fluorite/gypsum/calcite)
+>   → translucent → opaque (galena/pyrite/magnetite). Drive material transparent/opacity/
+>   transmission from data, not inline constants.
+> - **Lustre**: vitreous / adamantine (cerussite, anglesite) / metallic (sulfides) / pearly
+>   (apophyllite basal) / greasy (sphalerite) → roughness/metalness/specular.
+> - **Body-colour fidelity**: make the rendered hue/saturation/depth match the real specimen,
+>   and sit colour correctly WITH transparency (transparent amethyst = purple AND see-through).
+>   Compose with the existing trace-cation colour dispatchers (V⁴⁺ apophyllite, smoky quartz,
+>   Cr/Mn/Fe garnet, Y-fluorite).
+> - **Optional**: colour visible THROUGH a transparent crystal (phantoms, sceptre boundary,
+>   internal sector zoning legibility).
+>
+> Likely shape: a per-mineral `optics` block in minerals.json (diaphaneity + lustre + colour
+> notes) feeding ONE material-builder in js/99i, replacing scattered inline constants. Can be
+> SIM-NEUTRAL where it reads existing data — keep it so. **Wants its own research pass +
+> design doc (`proposals/RESEARCH-optical-realism-*.md`) before code** — colour & clarity are
+> exactly what a real specimen falsifies fastest ([[feedback_terminal_verification_specimens]],
+> defer-to-geology, image-corpus method). Full goal text in
+> `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
+>
+> ## ⟂ SESSION (2026-06-22, later) — CALCITE MECHANICAL e-TWIN OVERPRINT ✅ SHIPPED (SIM 213)
+>
+> Deformation/shear arc §5.3 next tenant — the calcite sibling of the v208 bent-quartz
+> overprint, the second of the boss's "both in sequence" pickups. Calcite e-twins {01-12}
+> are POST-growth crystal-plastic glide lamellae imposed on a finished lattice by later
+> tectonic strain (the textbook Ferrill Type I-IV paleostress/temperature gauge; citations
+> verified in RESEARCH-deformation-shear §4). Ships on the EXISTING deformation-directive
+> plumbing — no classifier change: a scenario event carries deformation {style:'etwin',...};
+> classifyDeformation (js/45) already tags any style → `_deformation.kind='etwin'`; js/99i
+> `_makeTwinnedCalcite` SUBDIVIDES the scalenohedron (3 levels) and bakes parallel dark
+> lamella stripes into vertex colours (the chiastolite/sector idiom), magnitude → lamella
+> count + thickness (Ferrill I few → IV many). **TENANT: marble_contact_metamorphism** —
+> the Mogok Stone Tract marble was regionally deformed in the Himalayan orogeny (~30 Ma); a
+> new step-165 orogenic-strain event (post-seal) twins the already-grown calcite.
+> minerals:['calcite'] — the ruby (twin-resistant corundum) is spared. (tormiq was the
+> elegant first choice — its step-188 thrust already bends quartz — but its calcite is
+> aspirational and doesn't fire at seed 42, so marble, the textbook e-twin host, is the
+> home.) CHEMICALLY INERT (no-op handler) → baseline-diff 212↔213 = **0/37 drift**
+> (provenance bump). 1 calcite tagged @seed42 (40mm dogtooth). + narrator (calcite
+> 'e_twinned') + tests (etwin-overprint.test.ts, 4 pins) + tools/etwin-probe.mjs +
+> standalone-render verified (parallel lamellae vs smooth reference). NEXT overprint
+> tenants (same pass): bent stibnite (needs stibnite in a scenario); undulose/strain-band
+> overlay. Deformation arc §5.3 now has TWO tenants (bent quartz + calcite e-twins).
+>
+> ## 🪓 SESSION (2026-06-22, later) — ETCH-PIT / DISSOLUTION SCULPTURE ✅ SHIPPED (SIM 212)
+>
+> Crystal-face-realism arc §2, the flagged best value-per-effort. The §2 premise was that
+> the etched look was a PASSIVE read of existing resorption ("the state is there, only the
+> render is missing"). **A census (tools/etch-pit-probe.mjs) FALSIFIED that** — the engine's
+> dissolution is BINARY: a crystal either survives ~intact (resorbed frac ~0.00) or fully
+> dissolves and DROPS from the scene (js/99i culls dissolved crystals). 163 crystals fully
+> dissolve fleet-wide; the "survivors" with resorption zones are all frac ≤0.01 or net ≈0.
+> There is NO population of substantially-etched survivors to render.
+>
+> So etching ships as a **DECLARED post-growth overprint** — the same shape as the v208
+> deformation/bent mechanic, geologically honest (a returning undersaturated fluid corrodes
+> a FINISHED crystal): a scenario event carries an `etch` directive {amount,minerals,style};
+> apply_events (js/85d) records it on `sim._etchEvents`; classifyEtch (js/45) tags surviving
+> crystals that grew before that step; js/99i `_makeEtchedCube` rounds a SUBDIVIDED box
+> toward a sphere (corners round most — a low-poly cube can't round) + frosts the material
+> (Sangwal 1987; lead-with-rounding per §2). Runs BEFORE the terrace render (corrosion
+> rounds AWAY growth relief). Gated on the cube token (fluorite/galena; octahedron a future
+> extension). **TENANT: reactivated_fluorite_vein** — the breach (step 118) reopens the
+> conduit, the returning fluid etches the gen-1 fluorite + galena cubes before gen-2
+> overgrows them (etched-then-overgrown texture of reactivated North-Pennine veins). 5
+> crystals tagged @seed42 (fluorite×1 6.2mm, galena×4). CHEMICALLY INERT → baseline-diff
+> 211↔212 = **0/37 drift** (provenance bump, v208 precedent). + narrator (fluorite/galena
+> 'etched') + tests (etch-overprint.test.ts) + standalone-render verified (rounded, frosted
+> dissolved cubes). NEXT (open): etched OCTAHEDRON render; etch as a general optical state
+> feeding the new optics goal.
+>
 > ## 🏜️ SESSION HANDOFF (2026-06-22, later) — HOURGLASS SELENITE ✅ SHIPPED (render SIM-neutral `50f4c51` + great_salt_plains SIM 211)
 >
 > The crystal-face-realism arc's first GENUINELY VISIBLE sector tenant — and the one

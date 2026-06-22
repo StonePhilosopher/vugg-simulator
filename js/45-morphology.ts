@@ -570,6 +570,43 @@ function classifyDeformation(sim: any) {
   }
 }
 
+// POST-GROWTH ETCH overprint (crystal-face-realism arc §2, 2026-06-22) — the etched/
+// dissolved habit (rounded edges + corners, frosted faces, in the limit a negative
+// crystal; Sangwal 1987 Etching of Crystals) is imposed on a FINISHED crystal by a
+// later UNDERSATURATED fluid — the same post-growth-overprint shape as deformation, not
+// a grow-integrate field. WHY declarative and not a passive read of existing resorption:
+// the etch-pit-probe census (tools/etch-pit-probe.mjs) found the engine's dissolution
+// is BINARY — a crystal either survives ~intact (resorbed frac ~0.00) or fully
+// dissolves and DROPS from the scene (js/99i: dissolved crystals aren't rendered) — so
+// there is NO population of substantially-etched survivors to read. The etched look is
+// therefore declared as an overprint: a scenario event carries an `etch` directive
+// {amount,minerals,style}; apply_events (js/85d) records it on sim._etchEvents WITH the
+// step it fired; this pass (post-growth, like classifyDeformation) tags surviving
+// crystals that had ALREADY grown by that step. PURE tagging — crystal._etch is a RENDER
+// tag; the engine baseline is untouched (gen-baseline serialises only counts/sizes), so
+// this is byte-identical. Tag-once (idempotent). Geologically: reactivated veins corrode
+// their early generation when a cooler fresh fluid reopens the conduit.
+const ETCH_MIN_UM = 100;   // skip nucleation-only specks — need a body to round
+function classifyEtch(sim: any) {
+  const evs = sim._etchEvents;
+  if (!evs || !evs.length) return;
+  for (const ev of evs) {
+    const mins = (ev && ev.minerals) || null;
+    const style = (ev && ev.style) || 'rounded';
+    const amount = (ev && typeof ev.amount === 'number') ? ev.amount : 0.5;
+    for (const c of sim.crystals) {
+      if (!c || c.dissolved || c._etch) continue;
+      if (mins && mins.indexOf(c.mineral) < 0) continue;
+      if ((c.total_growth_um || 0) < ETCH_MIN_UM) continue;
+      // must have existed (grown) BEFORE the etching fluid returned
+      let firstStep: any = null;
+      for (const z of (c.zones || [])) { if ((z.thickness_um || 0) > 0) { firstStep = z.step; break; } }
+      if (firstStep == null || firstStep >= ev.step) continue;
+      c._etch = { kind: style, amount, atStep: ev.step };
+    }
+  }
+}
+
 // SECTOR (HOURGLASS) ZONING — different growth sectors (crystal faces) incorporate
 // trace elements at different rates, so composition (and colour) partitions by
 // GROWTH SECTOR rather than by concentric growth zone (Dowty 1976, Am.Min.
