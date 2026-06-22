@@ -250,6 +250,11 @@ const EVENT_REGISTRY = {
   searles_winter_freeze: event_searles_winter_freeze,
   searles_summer_bake: event_searles_summer_bake,
   searles_fresh_pulse: event_searles_fresh_pulse,
+  // 2026-06-22 — Great Salt Plains (Oklahoma) hourglass-selenite showcase.
+  // See js/70k-evaporite.ts for the 3 wet/dry handlers.
+  gsp_wet: event_gsp_wet,
+  gsp_dry: event_gsp_dry,
+  gsp_crust_seal: event_gsp_crust_seal,
   // Round 9e mechanic-coverage scenarios (May 2026):
   schneeberg_pegmatite_crystallization: event_schneeberg_pegmatite_crystallization,
   schneeberg_cooling: event_schneeberg_cooling,

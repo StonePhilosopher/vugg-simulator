@@ -652,10 +652,10 @@ const SECTOR_ZONED_MIN_UM = 50;   // need a real body + termination/sectors to p
 // only counts toward the visible hourglass if it grew below this temperature. This is
 // the defer-to-geology gate that keeps Naica's iconic clear crystals clear.
 const HOURGLASS_MAX_T = 45;
-const HOURGLASS_FAST_RATE = 5;   // µm/step — the engine's "fast growth traps inclusions" threshold
+const HOURGLASS_HIATUS_STEPS = 4;   // a gap larger than this between recorded growth zones = a hiatus
 function _seleniteHourglassParams(c: any): any {
   const zones = (c && c.zones) || [];
-  let growth = 0, hgCount = 0, feLoad = 0, pulses = 0, prevFast = false;
+  let growth = 0, hgCount = 0, feLoad = 0, segments = 0, prevStep = -999;
   for (const z of zones) {
     const t = z.thickness_um || 0;
     if (t <= 0) continue;
@@ -663,38 +663,50 @@ function _seleniteHourglassParams(c: any): any {
     if (typeof z.inclusion_type === 'string' && z.inclusion_type.indexOf('hourglass') >= 0
         && (z.temperature == null || z.temperature < HOURGLASS_MAX_T)) hgCount++;
     feLoad += z.trace_Fe || 0;
-    // Count distinct FAST-growth pulses (rate crossing up through the threshold) — the
-    // stepped-growth driver. Pulsed evaporite settings (sabkha flood/evap, playa wet/dry)
-    // grow the blade in episodes, so the outer envelope steps down between pulses while the
-    // internal hourglass stays self-similar (the boss's stepped-growth specimen / quartz
-    // sceptre / calcite ziggurat). SIM-neutral: reads growth_rate the engine already wrote.
-    const fast = (z.growth_rate || 0) > HOURGLASS_FAST_RATE;
-    if (fast && !prevFast) pulses++;
-    prevFast = fast;
+    // Count distinct growth SEGMENTS — bursts of growth separated by hiatuses. A pulsed
+    // evaporite setting (playa wet/dry, sabkha flood/evap) grows the blade only during the
+    // dry/evap bursts; the wet pause records NO zone, leaving a step-gap. Each gap-separated
+    // burst steps the outer envelope out another terrace while the internal hourglass holds
+    // its order (the boss's stepped-growth specimen / quartz sceptre / calcite ziggurat).
+    // SIM-neutral: reads the zone step numbers the engine already wrote.
+    if (z.step - prevStep > HOURGLASS_HIATUS_STEPS) segments++;
+    prevStep = z.step;
   }
   if (hgCount === 0 || growth === 0) return null;
   const hgFrac = hgCount / growth;                        // 0..1 — share of growth that trapped sediment
-  // Brown depth: trapped fraction sets the sharpness, iron load sets the hue depth.
-  const intensity = Math.max(0.15, Math.min(1, hgFrac * (0.6 + Math.min(1, feLoad * 4))));
-  const flooded = hgFrac > 0.6;                           // heavy load → overgrown solid brown, hourglass lost
-  const steps = pulses >= 2 ? Math.min(5, pulses) : 0;    // 0 = smooth chisel tip; ≥2 = stepped ziggurat tip
+  const avgFe = feLoad / growth;                          // mean iron staining per growth increment
+  // Brown DEPTH is iron-driven (USFWS: soil iron oxide gives the reddish-to-chocolate
+  // colour) — an iron-rich red-bed setting stains deep brown even where the hourglass is
+  // sharp; the trapped FRACTION adds a little. Capped below full saturation so there is
+  // visible range across the fleet (light-amber low-Fe → chocolate red-bed).
+  const intensity = Math.max(0.18, Math.min(0.95, 0.25 + avgFe * 16 + hgFrac * 0.25));
+  // Flooded = solid-brown overgrown blade, hourglass lost: pervasive sediment trapping
+  // OR a saturating iron coating (the boss's "totally brown" overgrown specimens).
+  const flooded = hgFrac > 0.5 || intensity >= 0.92;
+  const steps = segments >= 2 ? Math.min(5, segments) : 0;  // 0 = smooth chisel; ≥2 = stepped ziggurat (one terrace per burst)
   return { kind: 'gypsum_hourglass', intensity, flooded, hgFrac, steps };
 }
 function classifySectorZoning(sim: any) {
   const graphitic = !!(sim.conditions && sim.conditions.wall && sim.conditions.wall.graphitic);
   for (const c of sim.crystals) {
-    if (!c || c.dissolved || c._sectorZoned) continue;
+    if (!c || c.dissolved) continue;
     const cfg = SECTOR_ZONED_MINERALS[c.mineral];
     if (!cfg) continue;
+    if (cfg.requiresInclusion) {
+      // Selenite hourglass EVOLVES as the blade grows (intensity, flooded, and the
+      // stepped-growth segment count all depend on the full zone stack), so RE-evaluate
+      // every step rather than tagging once — otherwise it freezes at the early-growth
+      // state (segments=1) before the wet/dry hiatuses that step the blade out have
+      // happened. Refresh-in-place; render reads the final state. SIM-neutral.
+      if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM) continue;
+      const hg = _seleniteHourglassParams(c);
+      if (hg) c._sectorZoned = hg;
+      continue;
+    }
+    if (c._sectorZoned) continue;                              // others tag once (kind is fixed)
     if (cfg.requiresGraphitic && !graphitic) continue;
     if (cfg.requiresGreen && !c._apophylliteGreen) continue;   // V⁴⁺ green only (grow_apophyllite)
     if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM) continue;
-    if (cfg.requiresInclusion) {                                // selenite — only blades that trapped sediment
-      const hg = _seleniteHourglassParams(c);
-      if (!hg) continue;
-      c._sectorZoned = hg;
-      continue;
-    }
     c._sectorZoned = { kind: cfg.kind };
   }
 }

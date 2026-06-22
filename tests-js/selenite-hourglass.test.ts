@@ -50,8 +50,10 @@ describe('hourglass selenite (Great Salt Plains clay/Fe sector zoning)', () => {
     }
   });
 
-  it('a sediment-flooded playa produces the solid-brown flooded variant', () => {
-    const sim = run('sicily_solfifera', 42);
+  it('an iron-rich oxidation setting floods the blade to solid brown (the overgrown variant)', () => {
+    // supergene_oxidation: abundant iron from sulfide oxidation saturates the stain →
+    // intensity maxes → the hourglass is buried in solid brown (flooded).
+    const sim = run('supergene_oxidation', 42);
     const flooded = hourglass(sim).filter((c: any) => c._sectorZoned.flooded);
     expect(flooded.length).toBeGreaterThan(0);
   });
@@ -61,5 +63,15 @@ describe('hourglass selenite (Great Salt Plains clay/Fe sector zoning)', () => {
     const sel = sim.crystals.filter((c: any) => c.mineral === 'selenite' && !c.dissolved);
     expect(sel.length).toBeGreaterThan(0);            // Naica does grow selenite…
     expect(hourglass(sim).length).toBe(0);            // …but none is tagged hourglass (stays water-clear)
+  });
+
+  it('great_salt_plains is the showcase — pulsed wet/dry growth steps the iron-brown hourglass', () => {
+    const sim = run('great_salt_plains', 42);
+    const hg = hourglass(sim);
+    expect(hg.length).toBeGreaterThan(0);
+    // The wet/dry cycling grows the blade in gap-separated bursts → stepped-growth ziggurat.
+    expect(Math.max(...hg.map((c: any) => c._sectorZoned.steps))).toBeGreaterThanOrEqual(2);
+    // Red-bed iron stains it a real brown (not the faint-amber low-iron end).
+    expect(Math.max(...hg.map((c: any) => c._sectorZoned.intensity))).toBeGreaterThan(0.4);
   });
 });

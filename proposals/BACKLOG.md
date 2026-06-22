@@ -2,6 +2,38 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🏜️ SESSION HANDOFF (2026-06-22, later) — HOURGLASS SELENITE ✅ SHIPPED (render SIM-neutral `50f4c51` + great_salt_plains SIM 211)
+>
+> The crystal-face-realism arc's first GENUINELY VISIBLE sector tenant — and the one
+> apophyllite turned out NOT to be. Boss opened by sharing four of his own provenance-
+> locked specimens (the image-corpus method, but firsthand): radiating brown rosette
+> sprays + a stepped translucent hourglass blade.
+>
+> **✅ STEP 1 — visible hourglass render, SIM-neutral (`50f4c51`, Pages-verified).**
+> Selenite was already in the catalogue. js/45 classifySectorZoning + _seleniteHourglassParams
+> tag a blade `gypsum_hourglass` from the engine's EXISTING hourglass-inclusion zones
+> (no new RNG/chemistry → baseline byte-identical); js/99i _makeHourglassSeleniteBlade
+> renders the amber→chocolate sandglass (|zn|<|yn|: wide at the tips, pinched at the
+> waist) on a tapering chisel blade. DEFER-TO-GEOLOGY gate (<45°C) keeps Naica's hot
+> clean pool water-CLEAR (the probe caught Naica wrongly flooded-brown first). +color_rules
+> +narrator +tests +tools/gypsum-hourglass-probe.mjs. Standalone-scene render verified.
+>
+> **✅ STEP 2 — great_salt_plains showcase (SIM 211).** Salt Plains NWR, Oklahoma — the
+> ONLY place on Earth selenite grows the iron-stained hourglass (the state crystal).
+> Wet/dry seasonal cycling on Permian red beds: dry bursts wick gypsum+iron brine up
+> and evaporate fast (trap sediment + a growth burst), wet pauses dilute below gypsum
+> saturation → the blade grows in gap-separated bursts → STEPPED ziggurat (steps 3 @
+> seed42), red-bed iron stains it deep brown (intensity ~0.53). Boss asked for chisel
+> tips WITH stepped-growth (per his pic 4); both shipped. Classifier refined to re-eval
+> each step (the hourglass evolves with growth) + decoupled intensity (iron-driven brown)
+> from flooded (trapped-fraction). Baseline-diff v210→v211: 36 prior scenarios BYTE-
+> IDENTICAL, great_salt_plains the one new entry (5 species, 30 crystals).
+>
+> **Arc symmetry worth keeping:** apophyllite's sector zoning was OPTICAL-only → uniform
+> render; selenite's is genuinely VISIBLE → sector-partitioned render. The arc finally
+> has its visible-sector tenant. NEXT (open): the in-app great_salt_plains showcase
+> screenshot for the boss's eye; possible chisel/spear polish + a flooded-variant seed.
+
 > ## 🟢 SESSION HANDOFF (2026-06-22) — GREEN APOPHYLLITE ✅ SHIPPED (SIM 210) · hourglass GYPSUM QUEUED
 >
 > **Current handoff doc: `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md`**

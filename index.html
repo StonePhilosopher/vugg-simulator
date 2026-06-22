@@ -2958,6 +2958,7 @@ footer a:hover {
     <button onclick="startScenarioInCreative('naica_geothermal')">💎 Naica Selenite Mega-Cave — Chihuahua (Mexico). Cueva de los Cristales, 12-meter gypsum blades.</button>
     <button onclick="startScenarioInCreative('epithermal_telluride')">🪙 Cripple Creek Au-Te Bonanza — Cresson Mine (Teller Co., CO). Type district for gold tellurides (calaverite + sylvanite + krennerite).</button>
     <button onclick="startScenarioInCreative('searles_lake')">🟦 Searles Lake Evaporite — San Bernardino Co., CA. Type locality for hanksite + sulfohalite + commercial borax.</button>
+    <button onclick="startScenarioInCreative('great_salt_plains')">🏜️ Great Salt Plains — Salt Plains NWR, OK. The only place on Earth selenite grows the iron-brown hourglass (Oklahoma state crystal).</button>
     <button onclick="startScenarioInCreative('sunnyside_american_tunnel')">⛰️ Sunnyside / American Tunnel — Silverton caldera (San Juan Co., CO). Rhodochrosite + REE-fluorite display specimens.</button>
     <button onclick="startScenarioInCreative('roughten_gill')">🔷 Roughten Gill Pb-Cu Supergene — Caldbeck Fells (Cumbria, UK). Type locality for plumbogummite (Hartley 1882); linarite + caledonite + leadhillite trio.</button>
     <button onclick="startScenarioInCreative('marble_contact_metamorphism')">🏛️ Marble Contact Metamorphism — Mogok Stone Tract (Mandalay, Burma). Pigeon's-blood ruby + skarn calc-silicates.</button>
@@ -3069,6 +3070,7 @@ footer a:hover {
       <option value="naica_geothermal">naica_geothermal</option>
       <option value="epithermal_telluride">epithermal_telluride</option>
       <option value="searles_lake">searles_lake</option>
+      <option value="great_salt_plains">great_salt_plains</option>
       <option value="sunnyside_american_tunnel">sunnyside_american_tunnel</option>
       <option value="roughten_gill">roughten_gill</option>
       <option value="marble_contact_metamorphism">marble_contact_metamorphism</option>
@@ -3902,6 +3904,7 @@ Scenarios:
           <option value="sabkha_dolomitization">Coorong Sabkha Dolomite</option>
           <option value="schneeberg">Schneeberg U-Pegmatite</option>
           <option value="searles_lake">Searles Lake Evaporite</option>
+          <option value="great_salt_plains">Great Salt Plains Hourglass Selenite</option>
           <option value="sicily_solfifera">Sicily Solfifera Sulfur</option>
           <option value="stalactite_demo">Stalactite Cave Demo</option>
           <option value="sulphur_bank">Sulphur Bank Hg Hot Spring</option>
@@ -16559,7 +16562,30 @@ let timeScale = 5.0;
 //        titanaugite comment in js/45 (Ti enriches the PRISM sectors, not the basal
 //        — Ferguson 1973 + Ubide 2019). + narrator (js/92i) + narratives/
 //        apophyllite.md poona_green. SIM 209 -> 210.
-const SIM_VERSION = 210;
+//   v211 — GREAT SALT PLAINS hourglass-selenite SHOWCASE (crystal-face realism arc,
+//        2026-06-22). The visible hourglass-selenite RENDER shipped SIM-neutral the
+//        same day (50f4c51): js/45 classifySectorZoning + _seleniteHourglassParams tag
+//        a selenite blade gypsum_hourglass when it trapped clay/sand on its low-T
+//        (<45°C) fast-growth SECTORS (the engine's existing inclusion flag); js/99i
+//        _makeHourglassSeleniteBlade renders the amber→chocolate sandglass (|zn|<|yn|,
+//        wide at the tips, pinched at the waist) on a tapering chisel blade that STEPS
+//        into a ziggurat when growth was pulsed. Brown DEPTH is iron-driven (USFWS:
+//        soil iron oxide → reddish-to-chocolate), trapped FRACTION decides flooding
+//        (solid-brown overgrown variant). Geology gate keeps Naica's hot clean pool
+//        water-CLEAR. THIS bump adds the SHOWCASE scenario `great_salt_plains` (Salt
+//        Plains NWR, Oklahoma — the only place on Earth selenite grows the hourglass):
+//        a salt flat on Permian red beds, wet/dry seasonal cycling (gsp_wet dilutes
+//        below gypsum saturation → growth pauses; gsp_dry wicks gypsum-saturated iron-
+//        rich brine up and evaporates → fast burst traps sediment), 5 cycles over 250
+//        steps. Selenite grows in gap-separated bursts → stepped ziggurat (steps 3 at
+//        seed 42), red-bed iron stains it deep brown (intensity ~0.53), halite is the
+//        co-product crust. ALSO refined the classifier to re-evaluate each step (the
+//        hourglass evolves with growth; tagging once froze it at segments=1) +
+//        decoupled intensity (iron-driven) from flooded (trapped-fraction-driven) —
+//        render-only, _sectorZoned is not in the baseline. Baseline-diff v210→v211:
+//        the 36 prior scenarios byte-identical; great_salt_plains is the one new entry.
+//        SIM 210 -> 211.
+const SIM_VERSION = 211;
 
 // ── 18-constants.js ──
 
@@ -32917,10 +32943,10 @@ const SECTOR_ZONED_MIN_UM = 50; // need a real body + termination/sectors to par
 // only counts toward the visible hourglass if it grew below this temperature. This is
 // the defer-to-geology gate that keeps Naica's iconic clear crystals clear.
 const HOURGLASS_MAX_T = 45;
-const HOURGLASS_FAST_RATE = 5; // µm/step — the engine's "fast growth traps inclusions" threshold
+const HOURGLASS_HIATUS_STEPS = 4; // a gap larger than this between recorded growth zones = a hiatus
 function _seleniteHourglassParams(c) {
     const zones = (c && c.zones) || [];
-    let growth = 0, hgCount = 0, feLoad = 0, pulses = 0, prevFast = false;
+    let growth = 0, hgCount = 0, feLoad = 0, segments = 0, prevStep = -999;
     for (const z of zones) {
         const t = z.thickness_um || 0;
         if (t <= 0)
@@ -32930,46 +32956,60 @@ function _seleniteHourglassParams(c) {
             && (z.temperature == null || z.temperature < HOURGLASS_MAX_T))
             hgCount++;
         feLoad += z.trace_Fe || 0;
-        // Count distinct FAST-growth pulses (rate crossing up through the threshold) — the
-        // stepped-growth driver. Pulsed evaporite settings (sabkha flood/evap, playa wet/dry)
-        // grow the blade in episodes, so the outer envelope steps down between pulses while the
-        // internal hourglass stays self-similar (the boss's stepped-growth specimen / quartz
-        // sceptre / calcite ziggurat). SIM-neutral: reads growth_rate the engine already wrote.
-        const fast = (z.growth_rate || 0) > HOURGLASS_FAST_RATE;
-        if (fast && !prevFast)
-            pulses++;
-        prevFast = fast;
+        // Count distinct growth SEGMENTS — bursts of growth separated by hiatuses. A pulsed
+        // evaporite setting (playa wet/dry, sabkha flood/evap) grows the blade only during the
+        // dry/evap bursts; the wet pause records NO zone, leaving a step-gap. Each gap-separated
+        // burst steps the outer envelope out another terrace while the internal hourglass holds
+        // its order (the boss's stepped-growth specimen / quartz sceptre / calcite ziggurat).
+        // SIM-neutral: reads the zone step numbers the engine already wrote.
+        if (z.step - prevStep > HOURGLASS_HIATUS_STEPS)
+            segments++;
+        prevStep = z.step;
     }
     if (hgCount === 0 || growth === 0)
         return null;
     const hgFrac = hgCount / growth; // 0..1 — share of growth that trapped sediment
-    // Brown depth: trapped fraction sets the sharpness, iron load sets the hue depth.
-    const intensity = Math.max(0.15, Math.min(1, hgFrac * (0.6 + Math.min(1, feLoad * 4))));
-    const flooded = hgFrac > 0.6; // heavy load → overgrown solid brown, hourglass lost
-    const steps = pulses >= 2 ? Math.min(5, pulses) : 0; // 0 = smooth chisel tip; ≥2 = stepped ziggurat tip
+    const avgFe = feLoad / growth; // mean iron staining per growth increment
+    // Brown DEPTH is iron-driven (USFWS: soil iron oxide gives the reddish-to-chocolate
+    // colour) — an iron-rich red-bed setting stains deep brown even where the hourglass is
+    // sharp; the trapped FRACTION adds a little. Capped below full saturation so there is
+    // visible range across the fleet (light-amber low-Fe → chocolate red-bed).
+    const intensity = Math.max(0.18, Math.min(0.95, 0.25 + avgFe * 16 + hgFrac * 0.25));
+    // Flooded = solid-brown overgrown blade, hourglass lost: pervasive sediment trapping
+    // OR a saturating iron coating (the boss's "totally brown" overgrown specimens).
+    const flooded = hgFrac > 0.5 || intensity >= 0.92;
+    const steps = segments >= 2 ? Math.min(5, segments) : 0; // 0 = smooth chisel; ≥2 = stepped ziggurat (one terrace per burst)
     return { kind: 'gypsum_hourglass', intensity, flooded, hgFrac, steps };
 }
 function classifySectorZoning(sim) {
     const graphitic = !!(sim.conditions && sim.conditions.wall && sim.conditions.wall.graphitic);
     for (const c of sim.crystals) {
-        if (!c || c.dissolved || c._sectorZoned)
+        if (!c || c.dissolved)
             continue;
         const cfg = SECTOR_ZONED_MINERALS[c.mineral];
         if (!cfg)
             continue;
+        if (cfg.requiresInclusion) {
+            // Selenite hourglass EVOLVES as the blade grows (intensity, flooded, and the
+            // stepped-growth segment count all depend on the full zone stack), so RE-evaluate
+            // every step rather than tagging once — otherwise it freezes at the early-growth
+            // state (segments=1) before the wet/dry hiatuses that step the blade out have
+            // happened. Refresh-in-place; render reads the final state. SIM-neutral.
+            if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM)
+                continue;
+            const hg = _seleniteHourglassParams(c);
+            if (hg)
+                c._sectorZoned = hg;
+            continue;
+        }
+        if (c._sectorZoned)
+            continue; // others tag once (kind is fixed)
         if (cfg.requiresGraphitic && !graphitic)
             continue;
         if (cfg.requiresGreen && !c._apophylliteGreen)
             continue; // V⁴⁺ green only (grow_apophyllite)
         if ((c.total_growth_um || 0) < SECTOR_ZONED_MIN_UM)
             continue;
-        if (cfg.requiresInclusion) { // selenite — only blades that trapped sediment
-            const hg = _seleniteHourglassParams(c);
-            if (!hg)
-                continue;
-            c._sectorZoned = hg;
-            continue;
-        }
         c._sectorZoned = { kind: cfg.kind };
     }
 }
@@ -43732,6 +43772,11 @@ const EVENT_REGISTRY = {
     searles_winter_freeze: event_searles_winter_freeze,
     searles_summer_bake: event_searles_summer_bake,
     searles_fresh_pulse: event_searles_fresh_pulse,
+    // 2026-06-22 — Great Salt Plains (Oklahoma) hourglass-selenite showcase.
+    // See js/70k-evaporite.ts for the 3 wet/dry handlers.
+    gsp_wet: event_gsp_wet,
+    gsp_dry: event_gsp_dry,
+    gsp_crust_seal: event_gsp_crust_seal,
     // Round 9e mechanic-coverage scenarios (May 2026):
     schneeberg_pegmatite_crystallization: event_schneeberg_pegmatite_crystallization,
     schneeberg_cooling: event_schneeberg_cooling,
@@ -44849,6 +44894,55 @@ function event_searles_fresh_pulse(c) {
     c.flow_rate = 1.5;
     c.temperature = 20;
     return "Sierra snowmelt pulse — fresh meteoric water arrives at Searles Lake. The brine dilutes, salt crusts begin to redissolve, and the basin briefly resembles a real lake. Within weeks the heat returns and the cycle starts over.";
+}
+// --- great_salt_plains (Salt Plains NWR, Oklahoma — hourglass selenite showcase) ---
+// Wet/dry seasonal cycling over salt-saturated red-bed sand. The DRY pulse wicks
+// gypsum-saturated groundwater up under the salt crust and evaporates it fast, so
+// selenite grows in a rapid burst that traps clay + sand + Permian iron oxide on its
+// terminal growth sectors — the visible "hourglass selenite" (USFWS Salt Plains NWR;
+// Oklahoma state crystal). The WET pulse (rain / rising water table) dilutes the brine
+// below gypsum saturation so growth pauses — and the next dry burst steps the blade
+// outward again, building the stepped-growth ziggurat while the internal hourglass
+// holds its order. The repeated fast pulses are what the js/45 step-counter reads.
+function event_gsp_wet(c) {
+    // Spring rain / rising groundwater floods the flat — brine drops well below gypsum
+    // saturation (σ_selenite < 1 even with the cool-T ×1.5 + redox bonuses), so growth
+    // pauses without dissolving the blade. The hiatus leaves the step-gap that the js/45
+    // segment counter reads as one stepped-growth terrace boundary.
+    c.fluid.Ca = 15;
+    c.fluid.S = 15;
+    c.fluid.Fe = 2;
+    c.fluid.pH = 7.6;
+    c.fluid.O2 = 1.5;
+    c.temperature = 22;
+    c.flow_rate = 1.4;
+    c.fluid_surface_ring = 1.0e6;
+    return 'Rain on the Salt Plains — the water table rises and floods the flat. The brine dilutes below gypsum saturation; selenite growth pauses and the salt crust softens. The clay and red Permian silt stay suspended, waiting for the dry.';
+}
+function event_gsp_dry(c) {
+    // Oklahoma sun bakes the flat — gypsum-saturated groundwater wicks up and evaporates
+    // just under the salt crust. σ_selenite ≫ 1 → a fast growth burst that traps clay/
+    // sand + iron oxide on the terminal sectors (the hourglass) and stains it brown.
+    c.fluid.Ca = 150;
+    c.fluid.S = 150;
+    c.fluid.Fe = Math.min(16, (c.fluid.Fe || 2) + 6); // red-bed iron oxide concentrates with evaporation
+    c.fluid.Na = Math.max(c.fluid.Na || 0, 700);
+    c.fluid.Cl = Math.max(c.fluid.Cl || 0, 700);
+    c.fluid.SiO2 = Math.max(c.fluid.SiO2 || 0, 30); // suspended clay / silt
+    c.fluid.pH = 7.6;
+    c.fluid.O2 = 1.6;
+    c.temperature = 33; // warm but < 45°C (hourglass gate)
+    c.flow_rate = 0.1;
+    c.fluid_surface_ring = 0.0;
+    return `Summer sun bakes the Salt Plains. T=${c.temperature.toFixed(0)}°C; gypsum-saturated groundwater wicks up under the crust and evaporates fast. Selenite grows in a burst, sweeping clay, sand, and red iron oxide into its terminal sectors — the hourglass. Each dry season steps the blade out another notch.`;
+}
+function event_gsp_crust_seal(c) {
+    c.flow_rate = 0.05;
+    c.temperature = 25;
+    c.fluid_surface_ring = 0.5;
+    c.fluid.Ca = 90;
+    c.fluid.S = 90;
+    return 'The salt crust hardens and the cycling slows. What remains just beneath the crust is the harvest of a dozen wet-and-dry seasons: amber blades with an hourglass of trapped sediment inside, the iron-stained ones flooded to chocolate brown. The only place on Earth selenite grows this way.';
 }
 
 // ── 70l-co2-events.js ──

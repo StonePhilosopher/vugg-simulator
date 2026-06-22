@@ -1132,6 +1132,72 @@
       ]
     },
 
+    "great_salt_plains": {
+      "anchor": "Salt Plains National Wildlife Refuge, Alfalfa County, Oklahoma — a 65-km² salt flat on the Permian red beds (Flowerpot Shale / Cedar Hills Sandstone). The ONLY place on Earth selenite grows the iron-stained 'hourglass' habit. The hourglass selenite is the Oklahoma state crystal; the refuge is the public crystal-digging locality.",
+      "description": "Gypsum-saturated, salt-saturated groundwater wicks up through red-bed sand and evaporates just under a thin salt crust. Wet/dry seasonal cycling grows selenite in fast bursts that trap clay, sand, and Permian iron oxide on the terminal growth sectors — the visible hourglass — and step the blade outward each dry season. The iron-flooded crystals go solid reddish-to-chocolate brown.",
+      "expects_species": ["selenite", "halite", "anhydrite", "celestine", "quartz"],
+      "duration_steps": 250,
+      "notes": [
+        "USFWS Salt Plains NWR + Oklahoma Geological Survey: selenite forms just under a wafer-thin salt crust where gypsum-saturated saline groundwater reaches the surface and evaporates. Fine sand + clay are mechanically included on the fast-growing sectors, producing the hourglass shape; iron oxide in the red-bed soil gives the reddish-to-chocolate-brown colour. This hourglass habit is found NOWHERE else in the world.",
+        "Showcase for the crystal-face-realism arc's hourglass-selenite render (2026-06-22): low-T (<45°C) sediment-laden fast growth → js/45 _seleniteHourglassParams tags the blade gypsum_hourglass; the repeated wet/dry fast-growth pulses drive the stepped-growth ziggurat (steps≥2); accumulated trace_Fe deepens the amber → chocolate brown and floods the heavily-included blades to solid brown. The render machinery already shipped SIM-neutral; this scenario is where it is the centerpiece.",
+        "Initial broth: gypsum-saturated (Ca 120, S 120) salt-saturated (Na 700, Cl 700) oxidized surface brine at 28°C, near-neutral pH 7.6, iron-bearing (Fe 4) with suspended silt (SiO2 30). The DRY events (gsp_dry) spike Ca/S to 150 + concentrate Fe → fast selenite bursts that trap sediment; the WET events (gsp_wet) dilute to Ca/S 35 (σ<1) so growth pauses between pulses. Five wet/dry cycles over 250 steps.",
+        "Halite is a co-product (the literal salt crust of the Salt Plains); minor goethite/iron-oxide staining is geologically the same iron that colours the hourglass. The star is selenite."
+      ],
+      "initial": {
+        "temperature_C": 28.0,
+        "pressure_kbar": 0.05,
+        "fluid": {
+          "SiO2": 30,            // suspended clay + red-bed silt (the inclusion source)
+          "Ca": 120,             // gypsum-saturated groundwater
+          "Na": 700,             // salt-saturated sand → the crust
+          "Mg": 20,
+          "S": 120,              // sulfate — the gypsum half
+          "Cl": 700,
+          "CO3": 15,             // low — clastic red beds, not carbonate
+          "Fe": 8,               // Permian red-bed iron oxide — intense (the red beds ARE red)
+          "Mn": 0.5,
+          "Sr": 4,
+          "O2": 1.6,             // oxidized playa surface
+          "pH": 7.6,             // near-neutral
+          "salinity": 150.0
+        },
+        "wall": {
+          // Salt flat over Permian red-bed sand — flat, floor-biased basin (no
+          // ceiling), like the sabkha + searles sisters. 'sandstone' is an inert
+          // clastic host (the engine treats any non-limestone/dolomite composition
+          // as inert silicate — no Ca/CO3 dissolution; the Ca comes from the
+          // gypsum-saturated groundwater, not the wall). High wall_Fe = the red beds.
+          "architecture": "basin",
+          "composition": "sandstone",
+          "thickness_mm": 500.0,
+          "vug_diameter_mm": 120.0,
+          "wall_Fe_ppm": 3000.0,
+          "wall_Mn_ppm": 40.0,
+          "primary_bubbles": 3,
+          "secondary_bubbles": 6,
+          "shape_seed": 1930     // Salt Plains established as a NWR, 1930
+        }
+      },
+      "events": [
+        { "step":  25, "type": "gsp_wet",        "name": "Spring Rain #1",   "description": "Water table rises; brine dilutes below gypsum saturation" },
+        { "step":  45, "type": "gsp_dry",         "name": "Dry Season #1",    "description": "Sun bakes the flat; selenite burst traps clay + iron" },
+        { "step":  75, "type": "gsp_wet",        "name": "Spring Rain #2",   "description": "Rain floods the flat again" },
+        { "step":  95, "type": "gsp_dry",         "name": "Dry Season #2",    "description": "Second fast burst — the blade steps out" },
+        { "step": 125, "type": "gsp_wet",        "name": "Spring Rain #3",   "description": "Mid-season flood" },
+        { "step": 145, "type": "gsp_dry",         "name": "Dry Season #3",    "description": "Third dry burst" },
+        { "step": 175, "type": "gsp_wet",        "name": "Spring Rain #4",   "description": "Late flood" },
+        { "step": 195, "type": "gsp_dry",         "name": "Dry Season #4",    "description": "Fourth dry burst" },
+        { "step": 215, "type": "gsp_wet",        "name": "Spring Rain #5",   "description": "Final flood" },
+        { "step": 235, "type": "gsp_dry",         "name": "Dry Season #5",    "description": "Fifth dry burst — the deepest iron flooding" },
+        { "step": 245, "type": "gsp_crust_seal",  "name": "Crust Seal",       "description": "The salt crust hardens; cycling stops" }
+      ],
+      "sources": [
+        "U.S. Fish & Wildlife Service — Salt Plains National Wildlife Refuge, selenite crystal digging (formation mechanism: gypsum-saturated groundwater evaporating under a salt crust; clay/sand/iron-oxide inclusions form the hourglass)",
+        "Oklahoma Geological Survey / Oklahoma Historical Society — Great Salt Plains; hourglass selenite as the Oklahoma state crystal",
+        "Ham W.E. (1961) Oklahoma Geological Survey — geology of the Salt Plains / Permian red-bed evaporites of northwestern Oklahoma"
+      ]
+    },
+
     "bisbee": {
       "anchor": "Bisbee, Arizona — Warren Mining District, Cochise County. Laramide quartz-monzonite porphyry intruding Paleozoic Escabrosa Limestone + Abrigo Formation. Major Cu-Ag-Au district (~8 Mt Cu, ~25 Moz Ag, ~3 Moz Au historically).",
       "description": "Classic copper porphyry with world-class oxidation zone. Complete Cu paragenesis from primary sulfides through supergene enrichment to the cyan-blue chrysocolla finale. Centerpiece mechanic: azurite ↔ malachite ↔ chrysocolla cascade tracking pCO2 evolution.",

@@ -11453,5 +11453,28 @@
 //        titanaugite comment in js/45 (Ti enriches the PRISM sectors, not the basal
 //        — Ferguson 1973 + Ubide 2019). + narrator (js/92i) + narratives/
 //        apophyllite.md poona_green. SIM 209 -> 210.
-const SIM_VERSION = 210;
+//   v211 — GREAT SALT PLAINS hourglass-selenite SHOWCASE (crystal-face realism arc,
+//        2026-06-22). The visible hourglass-selenite RENDER shipped SIM-neutral the
+//        same day (50f4c51): js/45 classifySectorZoning + _seleniteHourglassParams tag
+//        a selenite blade gypsum_hourglass when it trapped clay/sand on its low-T
+//        (<45°C) fast-growth SECTORS (the engine's existing inclusion flag); js/99i
+//        _makeHourglassSeleniteBlade renders the amber→chocolate sandglass (|zn|<|yn|,
+//        wide at the tips, pinched at the waist) on a tapering chisel blade that STEPS
+//        into a ziggurat when growth was pulsed. Brown DEPTH is iron-driven (USFWS:
+//        soil iron oxide → reddish-to-chocolate), trapped FRACTION decides flooding
+//        (solid-brown overgrown variant). Geology gate keeps Naica's hot clean pool
+//        water-CLEAR. THIS bump adds the SHOWCASE scenario `great_salt_plains` (Salt
+//        Plains NWR, Oklahoma — the only place on Earth selenite grows the hourglass):
+//        a salt flat on Permian red beds, wet/dry seasonal cycling (gsp_wet dilutes
+//        below gypsum saturation → growth pauses; gsp_dry wicks gypsum-saturated iron-
+//        rich brine up and evaporates → fast burst traps sediment), 5 cycles over 250
+//        steps. Selenite grows in gap-separated bursts → stepped ziggurat (steps 3 at
+//        seed 42), red-bed iron stains it deep brown (intensity ~0.53), halite is the
+//        co-product crust. ALSO refined the classifier to re-evaluate each step (the
+//        hourglass evolves with growth; tagging once froze it at segments=1) +
+//        decoupled intensity (iron-driven) from flooded (trapped-fraction-driven) —
+//        render-only, _sectorZoned is not in the baseline. Baseline-diff v210→v211:
+//        the 36 prior scenarios byte-identical; great_salt_plains is the one new entry.
+//        SIM 210 -> 211.
+const SIM_VERSION = 211;
 

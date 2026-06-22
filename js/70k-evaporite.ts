@@ -91,3 +91,47 @@ function event_searles_fresh_pulse(c) {
   c.temperature = 20;
   return "Sierra snowmelt pulse — fresh meteoric water arrives at Searles Lake. The brine dilutes, salt crusts begin to redissolve, and the basin briefly resembles a real lake. Within weeks the heat returns and the cycle starts over.";
 }
+
+// --- great_salt_plains (Salt Plains NWR, Oklahoma — hourglass selenite showcase) ---
+// Wet/dry seasonal cycling over salt-saturated red-bed sand. The DRY pulse wicks
+// gypsum-saturated groundwater up under the salt crust and evaporates it fast, so
+// selenite grows in a rapid burst that traps clay + sand + Permian iron oxide on its
+// terminal growth sectors — the visible "hourglass selenite" (USFWS Salt Plains NWR;
+// Oklahoma state crystal). The WET pulse (rain / rising water table) dilutes the brine
+// below gypsum saturation so growth pauses — and the next dry burst steps the blade
+// outward again, building the stepped-growth ziggurat while the internal hourglass
+// holds its order. The repeated fast pulses are what the js/45 step-counter reads.
+function event_gsp_wet(c) {
+  // Spring rain / rising groundwater floods the flat — brine drops well below gypsum
+  // saturation (σ_selenite < 1 even with the cool-T ×1.5 + redox bonuses), so growth
+  // pauses without dissolving the blade. The hiatus leaves the step-gap that the js/45
+  // segment counter reads as one stepped-growth terrace boundary.
+  c.fluid.Ca = 15; c.fluid.S = 15;
+  c.fluid.Fe = 2;
+  c.fluid.pH = 7.6; c.fluid.O2 = 1.5;
+  c.temperature = 22;
+  c.flow_rate = 1.4;
+  c.fluid_surface_ring = 1.0e6;
+  return 'Rain on the Salt Plains — the water table rises and floods the flat. The brine dilutes below gypsum saturation; selenite growth pauses and the salt crust softens. The clay and red Permian silt stay suspended, waiting for the dry.';
+}
+
+function event_gsp_dry(c) {
+  // Oklahoma sun bakes the flat — gypsum-saturated groundwater wicks up and evaporates
+  // just under the salt crust. σ_selenite ≫ 1 → a fast growth burst that traps clay/
+  // sand + iron oxide on the terminal sectors (the hourglass) and stains it brown.
+  c.fluid.Ca = 150; c.fluid.S = 150;
+  c.fluid.Fe = Math.min(16, (c.fluid.Fe || 2) + 6);  // red-bed iron oxide concentrates with evaporation
+  c.fluid.Na = Math.max(c.fluid.Na || 0, 700); c.fluid.Cl = Math.max(c.fluid.Cl || 0, 700);
+  c.fluid.SiO2 = Math.max(c.fluid.SiO2 || 0, 30);    // suspended clay / silt
+  c.fluid.pH = 7.6; c.fluid.O2 = 1.6;
+  c.temperature = 33;                                 // warm but < 45°C (hourglass gate)
+  c.flow_rate = 0.1;
+  c.fluid_surface_ring = 0.0;
+  return `Summer sun bakes the Salt Plains. T=${c.temperature.toFixed(0)}°C; gypsum-saturated groundwater wicks up under the crust and evaporates fast. Selenite grows in a burst, sweeping clay, sand, and red iron oxide into its terminal sectors — the hourglass. Each dry season steps the blade out another notch.`;
+}
+
+function event_gsp_crust_seal(c) {
+  c.flow_rate = 0.05; c.temperature = 25; c.fluid_surface_ring = 0.5;
+  c.fluid.Ca = 90; c.fluid.S = 90;
+  return 'The salt crust hardens and the cycling slows. What remains just beneath the crust is the harvest of a dozen wet-and-dry seasons: amber blades with an hourglass of trapped sediment inside, the iron-stained ones flooded to chocolate brown. The only place on Earth selenite grows this way.';
+}
