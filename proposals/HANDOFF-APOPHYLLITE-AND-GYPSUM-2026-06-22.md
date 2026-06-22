@@ -198,3 +198,82 @@ overgrown). So when you build it: look at the specimens first. They're waiting t
 tell you something you don't yet believe.
 
 — the builder, signing off this step. Go look at the rocks.
+
+---
+
+## ✅ GYPSUM SHIPPED (same day, later session) — the arc got its visible-sector tenant
+
+The "NEXT — queued" plan above is now DONE. Two commits, both Pages-verified:
+
+- **`50f4c51` — visible hourglass render, SIM-NEUTRAL.** js/45 `_seleniteHourglassParams`
+  reads the engine's EXISTING hourglass-inclusion zones (no new RNG/chemistry → baseline
+  byte-identical) → `_sectorZoned` kind `'gypsum_hourglass'`; js/99i
+  `_makeHourglassSeleniteBlade` paints the amber→chocolate sandglass (`|zn|<|yn|`) on a
+  tapering chisel blade. Defer-to-geology <45°C gate keeps Naica's giant crystals clear.
+- **`1d04600` — `great_salt_plains` showcase, SIM 211.** Salt Plains NWR, Oklahoma — the
+  only place on Earth selenite grows this. Wet/dry cycling → gap-separated growth bursts
+  → stepped ziggurat (steps 3 @seed42), red-bed iron → deep brown. Baseline-diff v210→
+  v211: 36 prior scenarios byte-identical, great_salt_plains the one new entry. Wired
+  into all three UI menus.
+
+The boss opened the session by handing over **four of his own specimens** — the
+image-corpus method from the apophyllite mark, except firsthand, from his own shelf. He
+asked for chisel tips WITH stepped growth (his pic-4 read); both shipped.
+
+**Arc symmetry, now closed:** apophyllite's sector zoning is optical-only → uniform
+render; selenite's is genuinely visible → sector-partitioned render. Apophyllite was the
+negative result that aimed this shot. The arc set out for a visible-hourglass tenant; it
+found it here.
+
+## A second maker's mark — on lighting up the dark, and on signals that live in the gaps
+
+The apophyllite mark was about the specimen being the authority. This one is about what
+happens *after* you decide to trust a specimen and go build for it. Three things I'd
+hand the next builder, learned the hard way this session:
+
+**1. Making inert data visible is taking responsibility for whether it was ever right.**
+The engine had been tagging selenite growth zones `inclusion_type: 'hourglass (sand
+inclusions)'` for who-knows-how-many versions — a dead note, written and never read. The
+instant I rendered it, *Naica went brown* — and Naica's entire fame is its water-clear
+giant crystals. The data didn't change. The **exposure** did. A latent error is patient;
+it sleeps in the dark until someone lights it, and then it's suddenly, embarrassingly
+obvious. So when you build a renderer, a report, a chart — anything that lifts buried
+data into sight — you are not "displaying" it, you are *vouching* for it, and you inherit
+every wrong assumption that was safe only because nobody looked. The flip side is the
+gift: **building the lens is the best audit you'll ever run.** I didn't find the missing
+low-T geology gate by auditing the engine. I found it by drawing the engine and flinching
+at what I saw.
+
+**2. The signal usually lives in the absence, not the presence.** I tried to detect
+stepped growth three times and failed twice, always for the same reason: I reached for
+the *positive* signal and the truth was in the negative space. "Count fast-growth zones"
+— wrong, because a wet pause records NO zone, so the bursts run together; the signal was
+the **gaps** between them, not the zones themselves. "Tag the crystal once" — wrong,
+because the hourglass *evolves*, so the truth only exists at the **end**, not when the
+crystal first crosses a size threshold. "Brown depth = how much sediment got trapped" —
+wrong, because the brown is **iron**, a different variable entirely; the trapped fraction
+decides flooding, not hue. Each time, the obvious quantity was adjacent to the real one.
+This is the boss's own *timing, not the variable* lesson wearing new clothes: before you
+decide WHAT to measure, census WHERE and WHEN it happens — and check whether the thing
+you care about even gets **written into the state you're reading.** A pause leaves no
+trace in a list of what grew. If you only look at what's recorded, you will never see
+what was skipped.
+
+**3. The speed was borrowed.** A two-step arc — render plus a full showcase scenario with
+a SIM bump and a 37-scenario rebake — landed in one session not because I'm fast but
+because I stood on a cathedral. The chisel-and-ziggurat blade is the calcite-terrace
+machinery's child. The sector registry was already there from the apophyllite and
+chiastolite tenants. The baseline-diff that *proved* 36 scenarios untouched is a rebake
+ritual refined across 200-odd SIM versions. Name that when you write the velocity down.
+It isn't yours; it's the sediment of everyone who built before, and the only way to honor
+it is to leave the next builder a thicker layer than you found.
+
+And the small human thing, the one I'll actually remember: the work changed the moment the
+boss handed me his own rocks. Last session we *invented* the image-corpus method to stand
+in for his eye. This session he just gave me his eye directly — four photographs off his
+own shelf, the stepped one chosen on purpose because it taught the thing I didn't yet
+believe (the hourglass holds its order even as the crystal shrinks). The best ground
+truth isn't the one you scrape. It's the one a collaborator hands you, still warm, and
+says *look*. Build so that someone wants to do that.
+
+— the builder. The rocks are in the picker now (🏜️ Great Salt Plains). Go grow one.
