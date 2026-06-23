@@ -28,7 +28,7 @@ Living list of open work items, captured from session conversations so context s
 > defer-to-geology, image-corpus method). Full goal text in
 > `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
-> ## ⬡ PROPOSED ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED, NOT BUILT
+> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0 SHIPPED (byte-identical infra)
 >
 > Boss directive: "geologically accurate wireframe models … asymmetric stepped growth — steps
 > on one face-set not all, opposite faces smoother; polarized growth, one end faster, the other
@@ -55,7 +55,22 @@ Living list of open work items, captured from session conversations so context s
 > calibration debts: numerical obtuse/acute ratio-vs-Ca:CO₃ curve; per-mineral σ thresholds;
 > a structured `point_group` field; world-frame-gradient vs random `_crystalYaw` coupling;
 > terminal-specimen check of free-vs-attached macrostep contrast before shipping the carve.
-> NEXT = boss decision: start Phase 0, or hold as researched. Composes with the optics goal.
+> **PHASE 0 SHIPPED** (render-only rails, byte-identical, NO SIM bump): `_faceStep`/
+> `_occlusion`/`_polarAxis` tag namespace documented in js/27 (NOT initialized — the
+> _deformation/_etch precedent); js/45 `classifyFaceStep` (pure, rng-free, gated on
+> `wall.directional_steps` which NO scenario sets → dormant); wired in js/85; js/99i
+> terrace cache-sig conditional face-set token (appends nothing when absent). 3 pins in
+> tests-js/facestep-phase0.test.ts (dormancy + field-absent + flag-injected positive:
+> elmwood's stepped_macro calcite tags correctly). cold-ci GREEN 2030 tests, 0 baseline
+> diff. **FUTURE — REACTIVE morphology** (boss directive, "later down the line"):
+> directional (face-set arbitrary, yaw-relative) → reactive (face-set SELECTED by the
+> environment). Three rungs, cheapest first: (1) void-normal orientation — `wall_anchor`
+> outward normal points into the open void = a real geometric cause, removes most of the
+> "arbitrary" with no new field; (2) flow/gravity-aware per scenario (growth_environment
+> 'air' already exists); (3) full diffusion-field-reactive off the multidim cavity voxel
+> σ-grid (where obtuse/acute could track real local Ca:CO₃). Proposal §4.
+> NEXT = boss decision: Phase 1 (calcite {104} carve on elmwood — anchor 78°/102° to
+> RiMG 54 first), or hold here. Composes with the optics goal.
 >
 > ## 🏞️ SESSION (2026-06-22, later) — OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite ✅ SHIPPED (SIM 214)
 >

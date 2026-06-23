@@ -183,6 +183,22 @@ class Crystal {
     // sets it yet). Companion: σ=12° Gaussian c-axis scatter in
     // _renderCrystalWireframe (geometric-selection literature).
     this.growth_environment = opts.growth_environment ?? 'fluid';
+    // DIRECTIONAL / POLAR / STEPPED GROWTH render tags (central-distance arc
+    // Phase 0, 2026-06-22; proposals/PROPOSAL-DIRECTIONAL-GROWTH-2026-06-22.md).
+    // These are crystal-level RENDER overprint tags, NOT initialized here — set
+    // ad-hoc by their post-growth classifiers ONLY when a crystal qualifies,
+    // exactly like _deformation / _etch / _sectorZoned. Documented here for
+    // discoverability; never assigned in the constructor so they stay absent
+    // (undefined) for untagged crystals and never widen any serialized output:
+    //   _faceStep   { steppedFaceSet, atStep }   — js/45 classifyFaceStep:
+    //               directional macrostep relief on one face-SET (calcite {104}
+    //               obtuse/acute anisotropy). Phase 1 renders it.
+    //   _occlusion  { attachedFraction }          — DEFERRED to Phase 2: the
+    //               frozen substrate-attached end (extrinsic, universal driver).
+    //   _polarAxis  { plusC_rate, minusC_rate }   — DEFERRED to Phase 3: TRUE
+    //               crystallographic polarity, the 10 polar point groups only
+    //               (hemimorphite/wurtzite/tourmaline/greenockite). Kept DISTINCT
+    //               from _occlusion — the science forbids one scalar for both.
     this.zones = [];
     this.total_growth_um = 0;
     this.active = true;
