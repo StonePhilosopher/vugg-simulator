@@ -38,6 +38,8 @@ Living list of open work items, captured from session conversations so context s
 > (`total_growth_um` → c_length/a_width, symmetric `mesh.scale.set(aWid,cLen,aWid)`); there is
 > NO per-face distance, no second termination, no frozen-attached-end. Everything anisotropic
 > we've shipped (gwindel, saddle, bent, sceptre) is a bespoke mesh, not per-face growth.
+> **Handoff: `proposals/HANDOFF-DIRECTIONAL-GROWTH-2026-06-22.md`** (the current arc handoff — read
+> it first; commits, data model, the float-vs-embed correction, where to pick up).
 > **Full design doc: `proposals/PROPOSAL-DIRECTIONAL-GROWTH-2026-06-22.md`** (multi-agent
 > research, 40+ citations verified, zero fabrications; physics cross-checked; catalog audit
 > EXECUTED). **The destination = the central-distance / Wulff model** (crystal = ⋂ half-spaces
