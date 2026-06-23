@@ -48,6 +48,16 @@ Object.assign(VugSimulator.prototype, {
     } else if (steppedShare > 0.1 && stepBands > 0) {
       parts.push(narrative_variant('calcite', 'morph_stepped', { bands: stepBands, bands_s: stepBands === 1 ? '' : 's' }) || `The faces are terraced — ${stepBands} distinct macrostep train${stepBands === 1 ? '' : 's'}, each one a stretch of growth when supersaturation surged past the quiet spiral regime and the elementary steps bunched into ledges large enough to see. Read the staircase from base to tip and you are reading the fluid's history in stone.`);
     }
+    // DIRECTIONAL {104} stepping (central-distance arc Phase 1, 2026-06-22): when the
+    // scenario opted in (wall.directional_steps → crystal._faceStep), the macrostep
+    // relief is one-sided. Calcite is centrosymmetric, so this is NOT polarity — the
+    // (104) rhomb surface carries two non-equivalent step families (obtuse ~102° /
+    // acute ~78°) that advance at different rates, and a cavity feed gradient makes
+    // only the up-gradient faces bunch their steps into visible ledges.
+    if (c._faceStep && steppedShare > 0.1) {
+      parts.push(narrative_variant('calcite', 'directional_stepped')
+        || `And the staircase climbs one side: the terraces crowd onto a single set of faces while the opposite faces stay glassy-smooth. The {104} rhomb surface carries two non-equivalent step directions — an obtuse and an acute step that advance at different rates — and with the feed arriving from one side of the cavity, only the up-gradient faces bunched their steps into ledges large enough to see. The asymmetry is the growth environment written into the crystal's own two faces.`);
+    }
   }
   if (c.twinned) {
     parts.push(narrative_variant('calcite', 'twinned', { twin_law: c.twin_law }) || `The crystal is twinned on ${c.twin_law}, a common deformation twin in calcite that can form during growth or post-crystallization stress.`);

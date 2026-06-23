@@ -28,6 +28,10 @@ The faces are terraced — {bands} distinct macrostep train{bands_s}, each one a
 
 Growth outran supply: edges and corners sit proud in the diffusion field and kept building while the face centers starved, so the faces hollowed into stepped funnels while the crystal stayed faceted. A hopper calcite is a crystal that grew too fast for its own interior.
 
+## variant: directional_stepped
+
+And the staircase climbs one side: the terraces crowd onto a single set of faces while the opposite faces stay glassy-smooth. The {104} rhomb surface carries two non-equivalent step directions — an obtuse and an acute step that advance at different rates — and with the feed arriving from one side of the cavity, only the up-gradient faces bunched their steps into ledges large enough to see. The asymmetry is the growth environment written into the crystal's own two faces.
+
 ## variant: e_twinned
 
 Crossed by parallel e-twin lamellae on {01-12}: after it finished growing, tectonic strain glided the lattice, filling the crystal with mechanical twins. Their abundance and thickness gauge how hard and how hot the rock was squeezed (the Ferrill Type I-IV calcite geothermometer) — a post-growth overprint written into the stone, not a growth habit.

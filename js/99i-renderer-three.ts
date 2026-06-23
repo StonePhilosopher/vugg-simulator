@@ -2466,6 +2466,130 @@ function _makeTerracedCalciteGeom(terr: any): any {
   return geom;
 }
 
+// DIRECTIONAL calcite {104} stepping — central-distance arc Phase 1 (2026-06-22;
+// proposals/PROPOSAL-DIRECTIONAL-GROWTH-2026-06-22.md). Identical band-walk to
+// _makeTerracedCalciteGeom, but the macrostep relief is carved onto ONE face-SET
+// (terr.steppedSet) while the opposite set follows the smooth envelope — so the
+// crystal reads stepped on one side, smooth on the other, instead of the
+// azimuthally-uniform ziggurat.
+//
+// THE SCIENCE. The calcite (104) rhomb surface has twofold site symmetry (lower than
+// the crystal's threefold), so its monolayer steps split into two NON-equivalent
+// counter-propagating families: an ACUTE (~78°) and an OBTUSE (~102°) step — the 78°/
+// 102° pair is the cleavage-rhomb diamond angle — which propagate at different
+// velocities (anisotropy reverses with the Ca²⁺:CO₃²⁻ activity ratio; Teng & Dove 1998
+// Science 282:724, 2000 GCA 64:2255). Anchor for the {104} step framework: De Yoreo &
+// Vekilov 2003, Rev. Mineral. Geochem. 54:57. Calcite is CENTROSYMMETRIC (R-3c) so this
+// is NOT polarity — it is intrinsic surface-step anisotropy + a cavity σ gradient
+// (up-gradient faces step-bunch, sheltered/attached stay smooth).
+//
+// CAVEAT (honest, render-only). terr.steppedSet is a face-SET selector, not a world
+// direction — the renderer applies a random per-crystal yaw (_crystalYaw), so which
+// physical side carries the relief is arbitrary: directional-LOOKING without the
+// directional CAUSE. Acceptable for the {104} aesthetic read; the reactive-morphology
+// arc (proposal Phase 4: void-normal → flow/gravity → diffusion field) is the fix.
+function _makeDirectionalTerracedCalciteGeom(terr: any): any {
+  const form = terr.form === 'rhomb' ? 'rhomb' : 'scalene';
+  const R = (y: number) => _calciteEnvelopeR(form, y);
+  const SEG = 6;
+  const set: number[] = terr.steppedSet && terr.steppedSet.length ? terr.steppedSet : [0, 1, 2];
+  const stepped: boolean[] = [];
+  for (let i = 0; i < SEG; i++) stepped.push(set.indexOf(i) >= 0);
+  const positions: number[] = [];
+  // Per-segment radius: stepped segments take rStep (the bold held ledge), smooth
+  // segments take rSmooth (the envelope at the true height → no riser). The transition
+  // segment between the two sets carries the gradient boundary as a diagonal face.
+  const mkRingDir = (y: number, rStep: number, rSmooth: number) => {
+    const out: number[][] = [];
+    for (let i = 0; i < SEG; i++) {
+      const a = (i / SEG) * Math.PI * 2 + Math.PI / 6;
+      const r = stepped[i] ? rStep : rSmooth;
+      out.push([Math.cos(a) * r, y, Math.sin(a) * r]);
+    }
+    return out;
+  };
+  const mkRing = (y: number, r: number) => mkRingDir(y, r, r);   // uniform fallback
+  const band = (r0: number[][], r1: number[][]) => {
+    for (let i = 0; i < SEG; i++) {
+      const a = r0[i], b = r0[(i + 1) % SEG], c = r1[(i + 1) % SEG], d = r1[i];
+      _pushTri(positions, a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+      _pushTri(positions, a[0], a[1], a[2], c[0], c[1], c[2], d[0], d[1], d[2]);
+    }
+  };
+
+  // Lower half — smooth both sides (sits in the wall / druse carpet).
+  const yWaist = form === 'rhomb' ? -0.18 : 0.0;
+  let prev = mkRing(yWaist, R(yWaist));
+  for (let i = 0; i < SEG; i++) {
+    const a = prev[i], b = prev[(i + 1) % SEG];
+    _pushTri(positions, 0, -0.5, 0, b[0], b[1], b[2], a[0], a[1], a[2]);
+  }
+  if (form === 'rhomb') {
+    const r0 = mkRing(0, R(0));
+    band(prev, r0);
+    prev = r0;
+  }
+
+  // Upper half — the terraced stack, carved directionally.
+  const yStart = 0;
+  const yTipBase = terr.hopperTip ? 0.44 : 0.40;
+  let yA = yStart;
+  for (const k of terr.knots) {
+    const yB = yStart + k.frac * (yTipBase - yStart);
+    const span = yB - yA;
+    if (span <= 1e-4) continue;
+    if (k.regime === 'stepped_macro' || k.regime === 'hopper_skeletal' || k.regime === 'stepped_mild') {
+      const mild = k.regime === 'stepped_mild';
+      const stepH = k.regime === 'hopper_skeletal' ? span : (mild ? 0.022 : 0.04);
+      const n = Math.max(1, Math.min(10, Math.round(span / stepH)));
+      for (let s = 0; s < n; s++) {
+        const ya = yA + (s / n) * span;
+        const yb = yA + ((s + 1) / n) * span;
+        const rTread = mild ? (R(ya) + R(yb)) / 2 : R(ya);
+        // stepped set holds rTread across the riser (the bold ledge); smooth set
+        // follows R(y) so it has no riser — the one-sided carve.
+        const riser0 = mkRingDir(ya, rTread, R(ya));
+        const riser1 = mkRingDir(yb, rTread, R(yb));
+        band(prev, riser0);          // ledge in/out (flat on the smooth set)
+        band(riser0, riser1);        // vertical riser (stepped set only)
+        prev = riser1;
+      }
+      const closeRing = mkRing(yB, R(yB));
+      band(prev, closeRing);
+      prev = closeRing;
+    } else {
+      const mid = mkRing((yA + yB) / 2, R((yA + yB) / 2));
+      const end = mkRing(yB, R(yB));
+      band(prev, mid);
+      band(mid, end);
+      prev = end;
+    }
+    yA = yB;
+  }
+
+  // Tip — solid apex or hopper funnel (uniform; the directional carve is a face-set
+  // sidewall feature, not a tip one).
+  if (terr.hopperTip) {
+    const rim = mkRing(yTipBase + 0.03, R(yTipBase) * 0.92);
+    band(prev, rim);
+    const sink = yTipBase - 0.14;
+    for (let i = 0; i < SEG; i++) {
+      const a = rim[i], b = rim[(i + 1) % SEG];
+      _pushTri(positions, 0, sink, 0, a[0], a[1], a[2], b[0], b[1], b[2]);
+    }
+  } else {
+    for (let i = 0; i < SEG; i++) {
+      const a = prev[i], b = prev[(i + 1) % SEG];
+      _pushTri(positions, 0, 0.5, 0, a[0], a[1], a[2], b[0], b[1], b[2]);
+    }
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Halide render wave (2026-06-12): square-section variant for the cube
 // regime family (halite/sylvite — and any future cubic tenant, fluorite
 // is next on the list). Same band-walk input (halideTerraceBands /
@@ -2719,7 +2843,8 @@ function _getTerracedCalciteGeom(state: any, crystal: any, terr: any): any {
   const hit = state._terraceGeoms.get(crystal.crystal_id);
   if (hit && hit.sig === sig) return hit.geom;
   if (hit && hit.geom && hit.geom.dispose) hit.geom.dispose();
-  const geom = terr.form === 'cube' ? _makeTerracedCubeGeom(terr) : _makeTerracedCalciteGeom(terr);
+  const geom = terr.form === 'cube' ? _makeTerracedCubeGeom(terr)
+    : (terr.steppedSet ? _makeDirectionalTerracedCalciteGeom(terr) : _makeTerracedCalciteGeom(terr));
   state._terraceGeoms.set(crystal.crystal_id, { sig, geom });
   return geom;
 }
@@ -3559,7 +3684,15 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     if (crystal.mineral === 'calcite' && (token === 'scalene' || token === 'rhomb')
         && typeof calciteTerraceBands === 'function') {
       const terr = calciteTerraceBands(crystal, replayStep);
-      if (terr) geom = _getTerracedCalciteGeom(state, crystal, terr);
+      if (terr) {
+        // Directional {104} stepping (central-distance arc Phase 1): a crystal the
+        // sim tagged with _faceStep (js/45 classifyFaceStep, gated on
+        // wall.directional_steps) carves its macrosteps onto ONE face-set. SEG=6, so
+        // the 'up' set is the contiguous half {0,1,2}; the opposite half stays smooth.
+        // The set is yaw-arbitrary (see _makeDirectionalTerracedCalciteGeom caveat).
+        if (crystal._faceStep) (terr as any).steppedSet = [0, 1, 2];
+        geom = _getTerracedCalciteGeom(state, crystal, terr);
+      }
     }
     // Halide render wave (2026-06-12): banded/hoppered cubes get the
     // square-section ziggurat (grooved bands + funnel-sunk top face).

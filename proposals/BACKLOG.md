@@ -28,7 +28,7 @@ Living list of open work items, captured from session conversations so context s
 > defer-to-geology, image-corpus method). Full goal text in
 > `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
-> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0 SHIPPED (byte-identical infra)
+> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1 SHIPPED (byte-identical, render-only)
 >
 > Boss directive: "geologically accurate wireframe models … asymmetric stepped growth — steps
 > on one face-set not all, opposite faces smoother; polarized growth, one end faster, the other
@@ -58,19 +58,32 @@ Living list of open work items, captured from session conversations so context s
 > **PHASE 0 SHIPPED** (render-only rails, byte-identical, NO SIM bump): `_faceStep`/
 > `_occlusion`/`_polarAxis` tag namespace documented in js/27 (NOT initialized — the
 > _deformation/_etch precedent); js/45 `classifyFaceStep` (pure, rng-free, gated on
-> `wall.directional_steps` which NO scenario sets → dormant); wired in js/85; js/99i
-> terrace cache-sig conditional face-set token (appends nothing when absent). 3 pins in
-> tests-js/facestep-phase0.test.ts (dormancy + field-absent + flag-injected positive:
-> elmwood's stepped_macro calcite tags correctly). cold-ci GREEN 2030 tests, 0 baseline
-> diff. **FUTURE — REACTIVE morphology** (boss directive, "later down the line"):
+> `wall.directional_steps`); wired in js/85; js/99i terrace cache-sig conditional
+> face-set token (appends nothing when absent).
+> **PHASE 1 SHIPPED** (the visible payoff, render-only, byte-identical, NO SIM bump):
+> elmwood opts in via `wall.directional_steps`; js/99i `_makeDirectionalTerracedCalciteGeom`
+> (clone of the terrace builder with a per-segment radius — stepped face-set {0,1,2} holds
+> the bold ledge, opposite set follows the smooth envelope), dispatched when `_faceStep`
+> present. + js/92b/narratives directional_stepped prose + tests-js/facestep.test.ts (3 pins:
+> dormancy via marble, field-absent, real elmwood opt-in). BROWSER-VERIFIED: side-view render
+> of the real bundled builder shows one face-set staircased, opposite smooth (vs symmetric =
+> stepped all around). elmwood seed-42 summary == committed v214 baseline (render-only). cold-ci
+> GREEN. **CAUGHT:** WallState whitelists every flag → `directional_steps` was silently dropped
+> until added to js/22 (the Phase-0 flag-injection test set it AFTER construction so missed it).
+> **SPECIMEN-DEBT (owed):** shipped literature-anchored (78°/102° De Yoreo-Vekilov RiMG 54); a
+> real calcite specimen showing free-vs-attached macrostep contrast is the terminal check, not
+> yet done. **Honest caveats:** reads from the SIDE (stepped/smooth split is front/back, not
+> head-on silhouette); face-set is yaw-arbitrary (→ reactive-morphology arc).
+> **FUTURE — REACTIVE morphology** (boss directive, "later down the line"):
 > directional (face-set arbitrary, yaw-relative) → reactive (face-set SELECTED by the
 > environment). Three rungs, cheapest first: (1) void-normal orientation — `wall_anchor`
 > outward normal points into the open void = a real geometric cause, removes most of the
 > "arbitrary" with no new field; (2) flow/gravity-aware per scenario (growth_environment
 > 'air' already exists); (3) full diffusion-field-reactive off the multidim cavity voxel
 > σ-grid (where obtuse/acute could track real local Ca:CO₃). Proposal §4.
-> NEXT = boss decision: Phase 1 (calcite {104} carve on elmwood — anchor 78°/102° to
-> RiMG 54 first), or hold here. Composes with the optics goal.
+> NEXT = boss decision: Phase 2 (substrate occlusion — the buried-attached-end / single-
+> termination drusy read, the DOMINANT universal vug driver, its own `_occlusion` field), or
+> the cheap reactive rung 1 (void-normal orientation), or hold here. Composes with the optics goal.
 >
 > ## 🏞️ SESSION (2026-06-22, later) — OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite ✅ SHIPPED (SIM 214)
 >

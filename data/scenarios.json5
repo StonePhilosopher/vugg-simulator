@@ -368,7 +368,15 @@
           "architecture": "irregular",
           "primary_bubbles": 2,
           "secondary_bubbles": 7,
-          "shape_seed": 11
+          "shape_seed": 11,
+          // Directional {104} stepping (central-distance arc Phase 1, 2026-06-22):
+          // opts the golden scalenohedral calcite into one-sided macrostep relief —
+          // the stepped face-set carries the bunched terraces while the opposite set
+          // stays smooth (js/45 classifyFaceStep → js/99i directional carve). RENDER-
+          // ONLY: the tag does not touch counts/sizes/chemistry → baseline byte-
+          // identical, no SIM bump. The carved face-set is yaw-arbitrary for now (the
+          // reactive-morphology arc, proposal Phase 4, makes it gradient-driven).
+          "directional_steps": true
         }
       },
       "events": [

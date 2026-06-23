@@ -276,6 +276,16 @@ class VugWall {
     // in to the quartz GWINDEL habit (js/45 classifyQuartzGwindel; SIM 207) and
     // the Tessin/sceptre cleft idiom. Default false (no effect elsewhere).
     this.alpine_cleft = (opts.alpine_cleft !== undefined) ? !!opts.alpine_cleft : false;
+    // directional_steps — DIRECTIONAL {104} macrostepping (central-distance arc
+    // Phase 1, 2026-06-22). Opts a scenario's stepped calcite into one-sided
+    // macrostep relief (js/45 classifyFaceStep tags _faceStep; js/99i carves the
+    // stepped face-set, leaving the opposite set smooth). RENDER-ONLY — the tag
+    // never touches counts/sizes/chemistry, so the baseline stays byte-identical.
+    // Default false → every existing scenario unaffected. (Like the flags above,
+    // WallState whitelists each opt explicitly — an unlisted flag from scenarios.json5
+    // is silently dropped, which is exactly why this line is required for the elmwood
+    // opt-in to reach the classifier.)
+    this.directional_steps = !!opts.directional_steps;
   }
 
   dissolve(acid_strength, fluid) {
