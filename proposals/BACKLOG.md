@@ -92,18 +92,22 @@ Living list of open work items, captured from session conversations so context s
 > "Hemimorphic hexagonal pyramid, different terminations top and bottom," so prose and geometry
 > now AGREE (no narrator change needed). tests-js/polar-axis.test.ts (3 pins). BROWSER-VERIFIED
 > greenockite: generic prism → pyramid-dominant hemimorphic form. cold-ci GREEN.
-> **KEY FINDING — Phase 2 (occlusion) DEMOTED, Phase 3 reduced to a wart-fix:** the
-> termination-asymmetry family (Phase 2 occlusion + Phase 3 polarity) is LOW visible-value IN A
-> VUG, because the attached base is buried in the wall and only the FREE termination shows — and
-> the existing render already approximates the single-termination/buried-base read (wall-attached
-> placement + the prism builders' pyramid-top/open-base). So Phase 1 (azimuthal stepping on the
-> VISIBLE sidewall) was the real win, and **Phase 4 (full per-face form on the visible crystal)
-> is the remaining prize.** CAVEAT: "base is buried → occlusion invisible" is reasoned from the
-> placement code + builders, NOT yet confirmed in the live 3D scene (the app's groove-canvas
-> pipeline was deeper than a quick eval). If crystals actually FLOAT (base visible), Phase 2
-> regains value — a float-vs-embed check in the live app settles it. NEXT = boss decision:
-> Phase 4 (the real prize), or the float-vs-embed check to re-rank Phase 2, or hold. Composes
-> with the optics goal.
+> **FLOAT-VS-EMBED CHECK DONE (2026-06-22) — Phase 2 RE-PROMOTED; my earlier "demoted" call was
+> WRONG.** I had hypothesised the attached base is buried in the wall (→ termination features
+> invisible → Phase 2/3 low-value). The check falsified it. The placement code (js/99i:4070-4081)
+> floats the WHOLE crystal into the cavity: `offsetMm = cLen*0.5; position = anchor + cAxis·offset`
+> with the comment "position the BASE at the anchor … so the crystal projects into the cavity
+> rather than half-buried in the wall." Crystals do NOT embed — the base sits ON the surface and
+> the full crystal (both terminations) is visible (confirmed by a live render: full free-standing
+> prism perched base-on-surface). CONSEQUENCES: (a) Phase 3 polarity (just shipped) IS genuinely
+> visible — both terminations show — so it was worth it; (b) **Phase 2 occlusion is a REAL visible
+> improvement**, not marginal: real drusy crystals emerge single-terminated with the base merged
+> into the matrix, but the sim shows the full free-standing crystal — embedding the attached
+> fraction (sink ~40% into the wall, render the buried half short of full) is the fix. The error
+> was reasoning from the BUILDERS (open/flat base) without reading the PLACEMENT (floats it out);
+> the boss's "look before you assert" check corrected it. NEXT = boss decision: **Phase 2
+> (occlusion, re-promoted)** or **Phase 4 (full per-face form)**. Phase 1 (azimuthal stepping) +
+> Phase 3 (polarity) are the visible wins so far. Composes with the optics goal.
 >
 > ## 🏞️ SESSION (2026-06-22, later) — OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite ✅ SHIPPED (SIM 214)
 >
