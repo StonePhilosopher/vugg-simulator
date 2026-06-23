@@ -30,7 +30,7 @@ Growth outran supply: edges and corners sit proud in the diffusion field and kep
 
 ## variant: directional_stepped
 
-And the staircase climbs one side: the terraces crowd onto a single set of faces while the opposite faces stay glassy-smooth. The {104} rhomb surface carries two non-equivalent step directions — an obtuse and an acute step that advance at different rates — and with the feed arriving from one side of the cavity, only the up-gradient faces bunched their steps into ledges large enough to see. The asymmetry is the growth environment written into the crystal's own two faces.
+And the staircase climbs one side: the terraces crowd onto one set of faces while the opposite faces stay glassy-smooth. The six {104} faces are identical by symmetry, so the lopsidedness is the cavity's doing, not the crystal's — fed from one side, only the better-supplied faces bunched their steps into ledges large enough to see, while the sheltered faces stayed quiet. (The finer 78°/102° obtuse-and-acute step kinetics ride underneath, too small to read by eye.) The asymmetry is the growth environment written into the stone.
 
 ## variant: e_twinned
 
