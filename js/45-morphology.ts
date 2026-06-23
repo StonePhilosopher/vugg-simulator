@@ -748,6 +748,57 @@ function classifySectorZoning(sim: any) {
   }
 }
 
+// DIRECTIONAL (ANISOTROPIC) STEPPED GROWTH — Phase 0 of the central-distance arc
+// (2026-06-22; proposals/PROPOSAL-DIRECTIONAL-GROWTH-2026-06-22.md). The first
+// per-face-AWARE tag: it marks a crystal whose macrostep relief should be carved
+// onto ONE face-set (directional), not smeared symmetrically around the ring like
+// the existing terrace ziggurat.
+//
+// THE SCIENCE. Calcite is CENTROSYMMETRIC (point group -3m, space group R-3c
+// No.167 — has an inversion centre; confirmed Materials Project mp-3953), so its
+// {104} directional stepping is NOT crystallographic polarity. It is the sum of
+// (a) the INTRINSIC surface-step anisotropy of the rhomb face — the (104) surface
+// has twofold site symmetry, lower than the crystal's threefold, so its monolayer
+// steps split into two NON-equivalent counter-propagating families: an ACUTE
+// (~78°) and an OBTUSE (~102°) step (the 78°/102° pair is the cleavage-rhomb
+// diamond angle), which propagate at different velocities and whose anisotropy
+// reverses with the Ca2+:CO3^2- activity ratio (Teng & Dove 1998/2000) — and
+// (b) ENVIRONMENTAL drivers: a supersaturation/feed gradient across the cavity
+// makes the up-gradient faces step-bunch while sheltered/attached faces stay
+// smooth. Anchor for the {104} step framework: De Yoreo & Vekilov (2003),
+// Rev. Mineral. Geochem. 54, 57-93. Visible relief = macrostep bunching, so we
+// key off the SAME 'stepped_macro' zone regime the terrace render already uses.
+//
+// HONEST FIDELITY CAVEAT (Phase-4 debt). steppedFaceSet:'up' is a face-set
+// SELECTOR, not a world-direction. The renderer applies a random per-crystal yaw
+// (_crystalYaw, js/99i), so the chosen face-set is crystallographically arbitrary
+// and will NOT correlate with any real σ/flow gradient — this yields directional-
+// LOOKING relief without the directional CAUSE. Acceptable for the {104} aesthetic
+// read; true world-frame-gradient → face coupling is deferred to Phase 4.
+//
+// PURE tagging (no rng, no fluid), gated on the wall.directional_steps OPT-IN that
+// NO scenario sets yet (Phase 0) → no-op across all 37 scenarios → byte-identical,
+// SIM-neutral, the saddle-dolomite / sector-zoning precedent. Phase 1 opts elmwood
+// in and adds the one-sided render carve. Tag-once (idempotent). Mirrors
+// classifyDeformation / classifyEtch.
+const FACESTEP_MIN_UM = 100;   // skip nucleation-only specks — need a body to step
+function classifyFaceStep(sim: any) {
+  const wall = sim.conditions && sim.conditions.wall;
+  if (!wall || !wall.directional_steps) return;   // opt-in gate — Phase 0: unset everywhere
+  const mins = wall.directional_steps_minerals || ['calcite'];
+  for (const c of sim.crystals) {
+    if (!c || c.dissolved || c._faceStep) continue;
+    if (mins.indexOf(c.mineral) < 0) continue;
+    if ((c.total_growth_um || 0) < FACESTEP_MIN_UM) continue;
+    // need visible macrostep relief in the zone stack (the same 'stepped_macro'
+    // regime the terrace geometry keys on); a smooth (spiral) crystal doesn't step
+    let stepped = false;
+    for (const z of (c.zones || [])) { if (z.morph_regime === 'stepped_macro') { stepped = true; break; } }
+    if (!stepped) continue;
+    c._faceStep = { steppedFaceSet: 'up', atStep: c.nucleation_step };
+  }
+}
+
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];

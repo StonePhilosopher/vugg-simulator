@@ -777,6 +777,11 @@ class VugSimulator {
     // sector apart from the prism body. Pure tagging, no-op unless a sector
     // mineral grew → byte-identical fleet, SIM-neutral. See js/45.
     classifySectorZoning(this);
+    // DIRECTIONAL stepped growth (central-distance arc Phase 0, 2026-06-22) — tags
+    // calcite whose macrostep relief should carve onto one face-SET ({104}
+    // obtuse/acute anisotropy). Pure tagging; gated on wall.directional_steps
+    // which NO scenario sets yet → no-op → byte-identical fleet. See js/45.
+    classifyFaceStep(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

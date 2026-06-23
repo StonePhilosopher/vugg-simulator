@@ -2711,7 +2711,11 @@ function _getTerracedCalciteGeom(state: any, crystal: any, terr: any): any {
   // regime at an unchanged fraction (found during the halide render
   // verification, 2026-06-12; latent since the calcite arc).
   const sig = `${terr.form}:${terr.hopperTip ? 'H' : 's'}:`
-    + terr.knots.map((k: any) => `${MORPH_REGIMES.indexOf(k.regime)}${k.frac.toFixed(3)}`).join('|');
+    + terr.knots.map((k: any) => `${MORPH_REGIMES.indexOf(k.regime)}${k.frac.toFixed(3)}`).join('|')
+    // Directional-stepping discriminator (central-distance arc Phase 0, 2026-06-22):
+    // appends NOTHING when _faceStep is absent → existing sigs byte-identical; busts
+    // the cache only once a crystal carries a directional face-set tag (Phase 1 carve).
+    + (crystal._faceStep ? `:FS${crystal._faceStep.steppedFaceSet}` : '');
   const hit = state._terraceGeoms.get(crystal.crystal_id);
   if (hit && hit.sig === sig) return hit.geom;
   if (hit && hit.geom && hit.geom.dispose) hit.geom.dispose();
