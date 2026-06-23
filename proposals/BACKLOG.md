@@ -28,6 +28,35 @@ Living list of open work items, captured from session conversations so context s
 > defer-to-geology, image-corpus method). Full goal text in
 > `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
+> ## ⬡ PROPOSED ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED, NOT BUILT
+>
+> Boss directive: "geologically accurate wireframe models … asymmetric stepped growth — steps
+> on one face-set not all, opposite faces smoother; polarized growth, one end faster, the other
+> slower or not at all; calcite {104} face stepping as a DETERMINISTIC growth feature." The
+> bigger axis than the optics goal — morphology emerging from ANISOTROPIC growth, the physics.
+> **Root problem (verified in code):** a crystal's whole shape is two scalars + a habit string
+> (`total_growth_um` → c_length/a_width, symmetric `mesh.scale.set(aWid,cLen,aWid)`); there is
+> NO per-face distance, no second termination, no frozen-attached-end. Everything anisotropic
+> we've shipped (gwindel, saddle, bent, sceptre) is a bespoke mesh, not per-face growth.
+> **Full design doc: `proposals/PROPOSAL-DIRECTIONAL-GROWTH-2026-06-22.md`** (multi-agent
+> research, 40+ citations verified, zero fabrications; physics cross-checked; catalog audit
+> EXECUTED). **The destination = the central-distance / Wulff model** (crystal = ⋂ half-spaces
+> {nᵢ·x ≤ dᵢ}, normals fixed by point group + lattice, only the distances dᵢ grow; "slow faces
+> win"). **Staged, render-only first:** Phase 0 infra (3 null tags + pure classifiers,
+> byte-identical) → Phase 1 first tenant = **calcite {104} directional macrostepping on
+> elmwood** (anchor the 78°/102° obtuse-acute step pair to De Yoreo-Vekilov RiMG 54 first;
+> calcite is centrosymmetric so this is ENVIRONMENTAL + surface-step anisotropy, NOT polarity)
+> → Phase 2 substrate occlusion (the DOMINANT universal vug driver, its own field) → Phase 3
+> intrinsic polarity for the FOUR real polar tenants (hemimorphite/wurtzite/tourmaline/
+> **greenockite** — audit done; quartz cleared as enantiomorphic) → Phase 4 full Wulff
+> ConvexGeometry. **Two design fixes baked in:** split `_occlusion` (extrinsic, all minerals)
+> from `_polarAxis` (intrinsic, 10-class only) — never one scalar; and the convex model CANNOT
+> do hopper/skeletal concavity → decide nested-shells primitive before generalizing. Open
+> calibration debts: numerical obtuse/acute ratio-vs-Ca:CO₃ curve; per-mineral σ thresholds;
+> a structured `point_group` field; world-frame-gradient vs random `_crystalYaw` coupling;
+> terminal-specimen check of free-vs-attached macrostep contrast before shipping the carve.
+> NEXT = boss decision: start Phase 0, or hold as researched. Composes with the optics goal.
+>
 > ## 🏞️ SESSION (2026-06-22, later) — OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite ✅ SHIPPED (SIM 214)
 >
 > Boss directive: "the salt plain shape should be its own unique shape that should not be
