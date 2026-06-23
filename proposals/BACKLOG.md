@@ -28,7 +28,7 @@ Living list of open work items, captured from session conversations so context s
 > defer-to-geology, image-corpus method). Full goal text in
 > `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
-> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1 SHIPPED (byte-identical, render-only)
+> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+3 SHIPPED (byte-identical, render-only)
 >
 > Boss directive: "geologically accurate wireframe models … asymmetric stepped growth — steps
 > on one face-set not all, opposite faces smoother; polarized growth, one end faster, the other
@@ -81,9 +81,29 @@ Living list of open work items, captured from session conversations so context s
 > "arbitrary" with no new field; (2) flow/gravity-aware per scenario (growth_environment
 > 'air' already exists); (3) full diffusion-field-reactive off the multidim cavity voxel
 > σ-grid (where obtuse/acute could track real local Ca:CO₃). Proposal §4.
-> NEXT = boss decision: Phase 2 (substrate occlusion — the buried-attached-end / single-
-> termination drusy read, the DOMINANT universal vug driver, its own `_occlusion` field), or
-> the cheap reactive rung 1 (void-normal orientation), or hold here. Composes with the optics goal.
+> **PHASE 3 SHIPPED** (intrinsic crystallographic polarity, render-only, byte-identical, NO SIM
+> bump): js/45 `classifyPolarAxis` tags the four audited polar tenants (tourmaline 3m,
+> hemimorphite mm2, wurtzite/greenockite 6mm) with `_polarAxis` — ALWAYS-ON (intrinsic, not
+> opt-in), pure, byte-identical; quartz (class 32, enantiomorphic) correctly excluded. js/99i
+> `_makeHemimorphicPrism` (dominant +c pyramid / flat -c pinacoid) dispatched on `_polarAxis` +
+> prism/spike token, !geom so tourmaline's sector-zoned hourglass still wins. **This is mostly a
+> BUG FIX:** greenockite's declared `hexagonal_pyramidal` habit fell through to a generic hex
+> prism (the pyritohedral/octahedral_REE token-wart family) — and its narrator already promised
+> "Hemimorphic hexagonal pyramid, different terminations top and bottom," so prose and geometry
+> now AGREE (no narrator change needed). tests-js/polar-axis.test.ts (3 pins). BROWSER-VERIFIED
+> greenockite: generic prism → pyramid-dominant hemimorphic form. cold-ci GREEN.
+> **KEY FINDING — Phase 2 (occlusion) DEMOTED, Phase 3 reduced to a wart-fix:** the
+> termination-asymmetry family (Phase 2 occlusion + Phase 3 polarity) is LOW visible-value IN A
+> VUG, because the attached base is buried in the wall and only the FREE termination shows — and
+> the existing render already approximates the single-termination/buried-base read (wall-attached
+> placement + the prism builders' pyramid-top/open-base). So Phase 1 (azimuthal stepping on the
+> VISIBLE sidewall) was the real win, and **Phase 4 (full per-face form on the visible crystal)
+> is the remaining prize.** CAVEAT: "base is buried → occlusion invisible" is reasoned from the
+> placement code + builders, NOT yet confirmed in the live 3D scene (the app's groove-canvas
+> pipeline was deeper than a quick eval). If crystals actually FLOAT (base visible), Phase 2
+> regains value — a float-vs-embed check in the live app settles it. NEXT = boss decision:
+> Phase 4 (the real prize), or the float-vs-embed check to re-rank Phase 2, or hold. Composes
+> with the optics goal.
 >
 > ## 🏞️ SESSION (2026-06-22, later) — OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite ✅ SHIPPED (SIM 214)
 >

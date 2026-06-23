@@ -782,6 +782,11 @@ class VugSimulator {
     // obtuse/acute anisotropy). Pure tagging; gated on wall.directional_steps
     // which NO scenario sets yet → no-op → byte-identical fleet. See js/45.
     classifyFaceStep(this);
+    // Intrinsic crystallographic polarity (central-distance arc Phase 3, 2026-06-22) — tags
+    // the polar tenants (tourmaline/hemimorphite/wurtzite/greenockite) so the renderer draws
+    // a hemimorphic +c-pyramid / -c-pinacoid termination. Pure tagging, always-on for those
+    // minerals → byte-identical fleet. See js/45.
+    classifyPolarAxis(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

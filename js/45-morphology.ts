@@ -799,6 +799,30 @@ function classifyFaceStep(sim: any) {
   }
 }
 
+// INTRINSIC CRYSTALLOGRAPHIC POLARITY — central-distance arc Phase 3 (2026-06-22). The 10
+// polar point groups (1,2,m,mm2,3,3m,4,4mm,6,6mm — exactly the pyroelectric classes) have a
+// unique polar axis with STRUCTURALLY INEQUIVALENT +c/-c ends, so a polar crystal terminates
+// DIFFERENTLY top vs bottom — INDEPENDENT of environment (unlike the extrinsic occlusion /
+// stepping drivers; the science forbids conflating them, so this is its own field, NOT folded
+// into _faceStep/_occlusion). Catalog point-group audit (2026-06-22) found four polar tenants:
+// hemimorphite (Imm2/mm2), wurtzite (P6_3mc/6mm), tourmaline (3m), greenockite (6mm); quartz
+// is class 32 (enantiomorphic, NOT polar) — correctly excluded. ALWAYS-ON for these minerals
+// (intrinsic, not scenario-opt-in): PURE tagging (no rng/fluid) → render reads crystal._polarAxis
+// → byte-identical baseline (gen-baseline serialises only counts/sizes). The renderer draws a
+// dominant +c pyramid + flat -c pinacoid (js/99i _makeHemimorphicPrism); tourmaline keeps its
+// sector-zoned hourglass (already pyramid-top/flat-base). Mirrors the saddle-dolomite precedent.
+const POLAR_MINERALS: Record<string, string> = {
+  hemimorphite: 'mm2', wurtzite: '6mm', tourmaline: '3m', greenockite: '6mm',
+};
+function classifyPolarAxis(sim: any) {
+  for (const c of sim.crystals) {
+    if (!c || c.dissolved || c._polarAxis) continue;
+    const pg = POLAR_MINERALS[c.mineral];
+    if (!pg) continue;
+    c._polarAxis = { pointGroup: pg };
+  }
+}
+
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];

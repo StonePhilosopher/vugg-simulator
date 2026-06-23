@@ -1479,6 +1479,43 @@ function _makeHexPyramid(): any {
   return geom;
 }
 
+// HEMIMORPHIC PRISM — intrinsic crystallographic polarity (central-distance arc Phase 3,
+// 2026-06-22; proposals/PROPOSAL-DIRECTIONAL-GROWTH-2026-06-22.md). The 10 polar point
+// groups have a unique polar axis with structurally INEQUIVALENT ends, so a polar crystal
+// terminates DIFFERENTLY at +c vs -c — independent of environment (unlike the extrinsic
+// occlusion/stepping drivers). Tenants (catalog audit 2026-06-22): tourmaline (3m),
+// hemimorphite (mm2 / Imm2), wurtzite & greenockite (6mm). Render: a dominant pointed
+// PYRAMID at the antilogous +c pole and a flat PINACOID cap at the analogous -c pole
+// (pyramid-DOMINANT, so the silhouette differs sharply from the prism-dominant generic
+// hex prism — _makeHexPrismWithPyramid is 70% prism / 30% tip; this is the inverse).
+// Also CORRECTS the greenockite token wart: 'hexagonal_pyramidal' mapped to 'prism' and
+// rendered as a generic hex prism (the pyritohedral/octahedral_REE wart family). Tourmaline
+// keeps its sector-zoned hourglass (already pyramid-top/flat-base); this catches the others.
+function _makeHemimorphicPrism(): any {
+  const r = 0.42;
+  const yBase = -0.50;        // analogous -c pole — flat pinacoid (a single basal face)
+  const yShoulder = -0.05;    // short prism body (~45%), then a tall pyramid (~55%): polar
+  const yApex = 0.50;         // antilogous +c pole — the dominant pyramid termination
+  const positions: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const a0 = (i / 6) * Math.PI * 2;
+    const a1 = ((i + 1) / 6) * Math.PI * 2;
+    const x0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r;
+    const x1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
+    // short prism side
+    _pushTri(positions, x0, yBase, z0, x1, yBase, z1, x1, yShoulder, z1);
+    _pushTri(positions, x0, yBase, z0, x1, yShoulder, z1, x0, yShoulder, z0);
+    // tall pyramid to the +c apex (the dominant termination)
+    _pushTri(positions, x0, yShoulder, z0, x1, yShoulder, z1, 0, yApex, 0);
+    // flat -c pinacoid cap (the distinct analogous pole; fan from base centre)
+    _pushTri(positions, 0, yBase, 0, x1, yBase, z1, x0, yBase, z0);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Phase 1c (v156, 2026-05-27): aragonite cave frostwork — radiating
 // spray of acicular needles from a central anchor. Real cave aragonite
 // morphology per Hill & Forti 1997 (Cave Minerals of the World §5.3.4,
@@ -3854,6 +3891,17 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         }
       }
       isSectorZoned = true;
+    }
+    // HEMIMORPHIC polar termination (central-distance arc Phase 3, 2026-06-22) — the polar
+    // tenants (tourmaline/hemimorphite/wurtzite/greenockite, tagged _polarAxis by js/45
+    // classifyPolarAxis) render with DIFFERENT terminations: a dominant +c pyramid + flat -c
+    // pinacoid. Gated on a prism/spike token + !geom so tourmaline's sector-zoned hourglass
+    // (set above, already pyramid-top/flat-base) wins and other specials are untouched. Also
+    // fixes the greenockite 'hexagonal_pyramidal' → 'prism' token wart (it fell to a generic
+    // hex prism). Render-only; one cached geom for all polar prisms.
+    if (!geom && crystal._polarAxis && (token === 'prism' || token === 'spike')) {
+      geom = state.geomCache.get('__hemimorphic');
+      if (!geom) { geom = _makeHemimorphicPrism(); state.geomCache.set('__hemimorphic', geom); }
     }
     if (!geom) {
       geom = state.geomCache.get(token);
