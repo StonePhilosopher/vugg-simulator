@@ -247,6 +247,16 @@ class VugWall {
     // andalusite corner growth sectors). Default false — only a contact-hornfels
     // scenario sets it; inert for every other scenario.
     this.graphitic = !!opts.graphitic;
+    // open_system — an OPEN evaporite surface (salt plain / playa), not a sealed
+    // cavity (crystal-face realism, 2026-06-22). A salt plain is not a pocket that
+    // fills and closes: it is an open flat where brine cycles wet/dry over a surface
+    // that never "runs out of room." When true, the growth loop (js/85) treats the
+    // cavity as perpetually open (vug fill read as 0) so the plain never seals, keeps
+    // nucleating fresh blades, and keeps growing as the seasons cycle — instead of
+    // packing the basin and halting. Pairs with architecture:'basin' (the flat-playa
+    // geometry). Default false → every existing scenario keeps its fill-and-seal
+    // behaviour (byte-identical).
+    this.open_system = !!opts.open_system;
     // v179 (2026-06-09): per-scenario ambient cooling rate, °C/step (default
     // 1.5 — the historical hard-coded value in ambient_cooling, 85d). The
     // reactivated_fluorite_vein exposed the gap: it is the first HOT scenario

@@ -135,3 +135,25 @@ function event_gsp_crust_seal(c) {
   c.fluid.Ca = 90; c.fluid.S = 90;
   return 'The salt crust hardens and the cycling slows. What remains just beneath the crust is the harvest of a dozen wet-and-dry seasons: amber blades with an hourglass of trapped sediment inside, the iron-stained ones flooded to chocolate brown. The only place on Earth selenite grows this way.';
 }
+
+// RED-MUD FLOOD — the flooded-selenite variant (crystal-face realism, 2026-06-22). Years
+// after the seasonal cycling sealed (step 245), an exceptional wet year breaches the crust
+// and a sediment-choked, IRON-SATURATED red-bed slurry buries the blades: selenite resumes
+// fast low-T growth but now sweeps in so much red iron oxide that the hourglass is OVERGROWN
+// to solid chocolate brown (_seleniteHourglassParams intensity → 0.95 cap → flooded). This
+// only WORKS because the salt plain is an OPEN system (wall.open_system) — the cavity never
+// sealed, so the blades keep growing and the iron flood lands on live growth. PLACED at step
+// 265, PAST duration_steps (250): the canonical seed-42 baseline run stops at the amber
+// stepped hourglass and never reaches the flood, so the 250-step story stays amber; the
+// flood fires only when the run CONTINUES (creative-mode Wait / extended viewing).
+function event_gsp_flood(c) {
+  c.fluid.Ca = 250; c.fluid.S = 250;
+  c.fluid.Fe = 120;                                   // red-mud iron flood — buries the hourglass
+  c.fluid.Na = Math.max(c.fluid.Na || 0, 700); c.fluid.Cl = Math.max(c.fluid.Cl || 0, 700);
+  c.fluid.SiO2 = Math.max(c.fluid.SiO2 || 0, 60);     // heavy suspended red silt
+  c.fluid.pH = 7.6; c.fluid.O2 = 1.6;
+  c.temperature = 30;                                 // < 45°C hourglass gate stays open
+  c.flow_rate = 0.1;
+  c.fluid_surface_ring = 0.0;
+  return 'An exceptional flood year breaches the salt crust and a sediment-choked, iron-saturated red-bed slurry buries the Salt Plains. The selenite — still growing on the open flat — sweeps in so much red iron oxide that the hourglass drowns: the blades overgrow to solid chocolate brown, the flooded variant.';
+}

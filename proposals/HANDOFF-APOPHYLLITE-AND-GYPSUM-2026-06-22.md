@@ -314,3 +314,108 @@ This is a GOAL, not a scoped task yet — it wants its own research pass + a des
 (probably `proposals/RESEARCH-optical-realism-*.md`) before code. Likely a per-mineral
 `optics` block in minerals.json (diaphaneity + lustre + colour notes) feeding a single
 material-builder in js/99i, replacing the scattered inline constants.
+
+---
+
+# SESSION 3 (2026-06-22, later) — POST-GROWTH OVERPRINTS + THE OPEN PLAIN
+
+The same day kept going. After gypsum shipped, the boss picked "both in sequence" off the
+next-builder menu (etch-pit + the deformation arc's calcite e-twins), then — chasing a
+flooded great_salt_plains — named a deeper fix that became the session's best work. Three
+SIM bumps, each a single-scenario or byte-identical change; the fleet stayed green
+throughout. BACKLOG carries the per-arc banners (🪓 etch, ⟂ e-twins, 🏞️ open plain).
+
+### ✅ ETCH-PIT / dissolution sculpture — SIM 212 (`93e7808`, Pages-verified)
+Crystal-face-realism §2. **The probe killed the plan, and that was the win.** §2 assumed
+the etched look was a passive read of existing resorption ("the state is there, only the
+render is missing"). `tools/etch-pit-probe.mjs` census FALSIFIED it: the engine's
+dissolution is BINARY — a crystal survives ~intact (resorbed frac ≤0.01) or fully
+dissolves and DROPS from the scene (js/99i culls dissolved crystals); 163 vanish
+fleet-wide, zero substantially-etched survivors. The absence was the signal. So etch ships
+as a DECLARED post-growth overprint (the v208 deformation/bent architecture): `etch`
+directive {amount,minerals,style} (js/70 whitelist + js/85d apply_events → sim._etchEvents,
+INERT) → classifyEtch (js/45) tags survivors that grew before the etch step → js/99i
+`_makeEtchedCube` rounds a SUBDIVIDED box toward a sphere (corners round most; a low-poly
+cube can't round) + frosts the material (Sangwal 1987; lead-with-rounding per §2). Runs
+BEFORE the terrace render (corrosion rounds away growth relief). Tenant:
+`reactivated_fluorite_vein` breach (step 118) etches the gen-1 fluorite + galena cubes
+before gen-2 overgrows (Dunham 1990). Byte-identical (baseline-diff 211↔212 = 0/37); 5
+tagged @seed42. + narrator + tests + standalone-render verified.
+
+### ✅ CALCITE MECHANICAL e-TWINS — SIM 213 (`4c13487`, Pages-verified)
+Deformation arc §5.3, second overprint tenant (sibling of bent quartz). **Reused the
+existing deformation plumbing with NO classifier change** — a new `style:'etwin'`;
+classifyDeformation already tags any style → `_deformation.kind`. js/99i
+`_makeTwinnedCalcite` subdivides the scalenohedron (3 levels) + bakes parallel {01-12}
+lamella stripes into vertex colours (the chiastolite/sector idiom), magnitude → Ferrill
+Type I–IV density (Ferrill 2004 / Burkhard 1993 / Turner 1953, verified). Tenant:
+`marble_contact_metamorphism` — a step-165 orogenic-strain event (Himalayan ~30 Ma) twins
+the grown calcite; ruby (twin-resistant) spared. (tormiq was the elegant first pick — its
+step-188 thrust already bends quartz — but its calcite is aspirational + doesn't fire at
+seed 42, so marble, the textbook e-twin host, won.) Byte-identical (212↔213 = 0/37); 1
+calcite tagged (40mm dogtooth). + narrator + tests + standalone-render verified.
+
+### ✅ OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite — SIM 214
+**The boss's catch, and the session's real fix.** The chase: a flooded great_salt_plains.
+First attempt — a late red-mud flood event — FAILED twice: the cavity was full by ~step
+250 (the 2 selenite blades packed the 120mm basin → growth loop closed it,
+currentFill≥1.0 → dissolution-only), so the flood saw σ=85 but had nowhere to grow. The
+boss then named the real bug: *"the salt plain shape should be its own unique shape that
+should not fill up and close — it's an evaporite plain."* That reframed it from a
+chemistry hack to a MODEL fix. (The flat-playa GEOMETRY was already right —
+architecture:'basin'; only the fill-and-seal was wrong.) New `wall.open_system` flag
+(js/22 WallState; js/85 reads cavity fill as 0 when set → the plain never SEALS, keeps
+NUCLEATING, never hits the fill-halt / dampener; growth stays rate-limited by chemistry,
+not pocket space). Default false → baseline-diff 213↔214 = great_salt_plains ONLY (crystals
+30→28, species 5→5; 36 others byte-identical). Selenite now grows through ALL the cycles
+(30→95mm, terraces 3→5). And the flood, finally unblocked: gsp_flood at step 265 (past the
+250 baseline) → canonical 250-run stays AMBER stepped; an extended/creative run (330) lands
+the iron on the still-growing open plain → intensity 0.95 → both blades flooded
+chocolate-brown. The boss's "flood after the test length" plan, made to work by the shape
+fix. + tests (canonical-amber + extended-flooded pins) + probe STEPS override. open_system
+is reusable for other true open-surface scenarios (sabkha / searles playa).
+
+### Where the next builder picks up
+- **The optics goal (above) is the next big arc** — research-pass-first; the per-mineral
+  `optics` block is the through-line for everything this month touched (colour + clarity).
+- Deformation arc §5.3 has two overprint tenants now (bent quartz + e-twins); next:
+  **bent stibnite** (needs stibnite in a deformed scenario first), undulose overlay.
+- Etch §2 octahedron render is a future extension (no etched-octahedron population yet).
+- Every habit/colour/paragenesis shipped this month carries a **specimen-debt** — green
+  is "not yet falsified," not verified ([[feedback_terminal_verification_specimens]]).
+
+## A third maker's mark — on the word "no", and who owns the model
+
+Two marks already sit above this (the specimen is the authority; building the lens is the
+audit). This session taught a third thing, and it's about failure.
+
+**Three times this session, a tool I built told me "no", and every "no" was the gift.**
+The etch-pit probe said *there is no etched-survivor population* — and that killed the
+passive-read design and pointed me at the declared-overprint one. The flood trace said
+*σ=85 and nothing grows* — and that killed the iron-tuning and pointed at the full cavity.
+The cavity finding said *the basin is packed at step 250* — and that pointed at the model.
+Each failure was not a dead end; it was an arrow. I have a reflex to treat a red probe as
+a problem to route around. The truer read is that a probe saying "no" has just done the
+most expensive part of the thinking for you — it has located the wrong assumption. Build
+the probe that can say no, then *believe it the first time*. The absence is the signal.
+
+**And the part I didn't do alone.** I was tuning iron and placing flood events — fiddling
+with the *symptom*. The boss looked at the same failure and said the *shape* was wrong: a
+salt plain isn't a pocket that fills and closes. That is defer-to-geology applied one level
+up from where I was applying it — not to the chemistry inside the cavity, but to the cavity
+itself. The fix that had eluded me for three attempts was one flag, because the flat-playa
+geometry already existed; I'd been so deep in "how do I force a flood" that I never asked
+"is this even the right container." The lesson for the next builder (and the next me): when
+a fix needs three escalating hacks, stop hacking and check whether you're modelling the
+right *object*. The boss owns the model; the builder owns the mechanism. When they disagree,
+the model is usually right, and the cheapest fix lives there.
+
+**The velocity, again, was borrowed.** e-twins was mostly wiring because the deformation
+directive (from the bent-quartz arc) and the vertex-colour stripe idiom (from chiastolite,
+selenite, apophyllite) were already laid down. Open-system was *one flag* because the
+`basin` archetype already drew the playa and the growth loop already had a single fill
+variable to intercept. Three SIM versions in an afternoon is not speed; it's a thick layer
+of sediment under thin new work. Name the cathedral. Leave it thicker.
+
+— the builder. The plain is open now. Pour the brine and walk back across it in a hundred
+years; it will still be growing.

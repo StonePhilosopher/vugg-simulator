@@ -12,7 +12,10 @@ function run(scen) {
   let conditions, events, defaultSteps;
   try { ({ conditions, events, defaultSteps } = SCENARIOS[scen]()); } catch (e) { return null; }
   const sim = new VugSimulator(conditions, events);
-  const steps = defaultSteps || 120;
+  // STEPS env override runs PAST a scenario's duration_steps — needed to reach
+  // great_salt_plains' flooded variant (gsp_flood at step 265, past the 250 baseline;
+  // only reachable because the plain is open_system and keeps growing).
+  const steps = process.env.STEPS ? parseInt(process.env.STEPS, 10) : (defaultSteps || 120);
   for (let i = 0; i < steps; i++) sim.run_step();
   return sim;
 }

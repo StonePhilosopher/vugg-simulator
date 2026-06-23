@@ -253,8 +253,15 @@ class VugSimulator {
     this.dissolve_wall();
     this._propagateGlobalDelta(snap);
 
-    // Calculate vug fill percentage — stop growth when full
-    const vugFill = this.get_vug_fill();
+    // Calculate vug fill percentage — stop growth when full.
+    // OPEN-SYSTEM (salt plain / evaporite playa, 2026-06-22): an open surface never
+    // "fills up and closes" — it is not a sealed pocket. When wall.open_system is set
+    // the cavity fill is read as 0 throughout the step, so the plain never seals
+    // (below), keeps nucleating fresh blades (check_nucleation), and never hits the
+    // fill-halt / high-fill dampener in the growth loop — growth stays rate-limited by
+    // chemistry, not by pocket space. Default false → every other scenario unchanged.
+    const openSystem = !!(this.conditions.wall && this.conditions.wall.open_system);
+    const vugFill = openSystem ? 0 : this.get_vug_fill();
 
     if (vugFill >= 1.0 && !this._vug_sealed) {
       this._vug_sealed = true;
@@ -336,7 +343,7 @@ class VugSimulator {
         const zone = this._runEngineForCrystal(engine, crystal);
         if (zone && zone.thickness_um < 0) {
           crystal.add_zone(zone);
-          currentFill = this.get_vug_fill();
+          currentFill = openSystem ? 0 : this.get_vug_fill();
           this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
         }
         continue;
@@ -520,10 +527,10 @@ class VugSimulator {
         crystal.add_zone(zone);
         // Re-check fill after each crystal grows to prevent >100% overshoot
         if (zone.thickness_um > 0) {
-          currentFill = this.get_vug_fill();
+          currentFill = openSystem ? 0 : this.get_vug_fill();
         }
         if (zone.thickness_um < 0) {
-          currentFill = this.get_vug_fill();
+          currentFill = openSystem ? 0 : this.get_vug_fill();
           this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
         } else if (Math.abs(zone.thickness_um) > 0.5) {
           this.log.push(`  ▲ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: ${crystal.describe_latest_zone()}`);
