@@ -6,6 +6,28 @@
 
 ---
 
+## ADDENDUM (2026-06-23) — specimen-debt verification pass (Phases 1+3 falsified against the literature)
+
+The owed terminal-verification debt got paid. Two citation-verified research passes (calcite {104}
+directional stepping; greenockite/wurtzite/tourmaline hemimorphism) were cross-checked against what
+the renderer ACTUALLY draws. Four render-only / doc corrections shipped — **byte-identical, NO SIM
+bump (still v214)**, cold-ci GREEN, tourmaline browser-verified.
+
+| Finding | Verdict | Action |
+|---|---|---|
+| **Tourmaline drawn as a HEXAGONAL prism** | WRONG (HIGH conf.) — point group 3m, the prism zone is DITRIGONAL; the real cross-section is a rounded triangle with convex sides ("no other common mineral has three sides"; Handbook of Mineralogy / dravite). A hexagon erases the species' single most diagnostic feature and implies the wrong symmetry. | **FIXED** — `_makeSectorZonedPrism` (js/99i; the tourmaline-ONLY sector-zoning builder) now uses a 3-fold cos(3θ) ring radius. Browser-verified: top-down = rounded triangle; 3/4 = bicolor elbaite prism + pink pyramid + flat hemimorphic base. |
+| **Calcite Phase 1 mechanism** | MIS-ATTRIBUTED — the visible one-sided macrostepping is TRANSPORT-driven (the six {104} faces are symmetry-equivalent; Berg 1938; Wang/Gilbert 2022 Science 376:abm1748, "solely controlled by the diffusion of ions"). The obtuse/acute {104} anisotropy is a finer WITHIN-face AFM effect (→ intrasectoral zoning), NOT the whole-face carve. | **CORRECTED** (comment + narrator; render unchanged) — js/99i science comment, js/92b, narratives/calcite.md. The carve reads right; only the WHY was wrong. |
+| **Greenockite + wurtzite hemimorphic hex prism** | VERIFIED FAITHFUL — both genuinely 6mm (Handbook of Mineralogy verbatim; euhedral crystals are the minority habit but the prized form is faithful). | No geometry change. Softened the over-confident +c/−c pole LABELS in `_makeHemimorphicPrism` — the analogous/antilogous → ±c mapping is reported inconsistently, so the render shows the two-different-ends FACT, not a sign. |
+| **Hemimorphite** | NEW FLAG (not fixed) — routes to the same hex prism but is ORTHORHOMBIC (mm2); a hex cross-section is wrong (real habit: thin tabular crystals in fan-shaped sheaves / botryoidal crusts). | Scoped OUT of this pass's research → flagged for its own verification, NOT guess-fixed. **The next morphology-fidelity sliver.** |
+
+**Lesson (adds to the float-vs-embed headline):** "green = not yet falsified" is literal. Two shapes
+shipped on literature alone; the verification falsified one render (tourmaline hexagon) and one
+mechanism claim (calcite obtuse/acute → whole-face) and confirmed two (greenockite/wurtzite). The
+catalog + image-corpus is still the apex instrument — a real calcite specimen for free-vs-attached
+macrostep contrast, and a real greenockite/tourmaline termination, remain owed.
+
+---
+
 ## What shipped (commit by commit)
 
 | Commit | Phase | What | Verify |

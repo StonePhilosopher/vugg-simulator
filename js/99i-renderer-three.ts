@@ -786,37 +786,50 @@ function _makeHexPrismWithPyramid(): any {
   return geom;
 }
 
-// SECTOR-ZONED PRISM — sector (hourglass) zoning render (crystal-face realism arc
-// 2026-06-21, PROPOSALS-crystal-face-realism §1). Same hex-prism-with-pyramid
-// silhouette as _makeHexPrismWithPyramid, but carrying a baked per-VERTEX COLOUR
-// attribute that paints the PYRAMID (termination) sector a different colour from the
-// PRISM (side body) sector — the augite/titanaugite hourglass read (Ferguson 1973):
-// different growth faces incorporate trace elements at different rates (Dowty 1976),
-// so composition/colour partitions by growth SECTOR with a SHARP, geometry-locked
-// boundary (here the prism/pyramid shoulder ring — non-indexed verts keep it sharp).
-// Colours are ABSOLUTE (the material runs vertexColors with color=white, so the
-// vertex colour IS the final colour): body = the mineral's class_color, termination
-// = a hue-rotated contrast. A pure darken-MULTIPLIER was tried first and read as mere
-// shading (a hue-dependent dead end — green×½ is just darker green); the contrasting
-// termination is both more legible AND geologically the iconic bicolor elbaite
-// ("watermelon" green prism / pink tip — itself a sector/stage colour zoning). A
-// Tier A render abstraction — says "habit variant", not a computed per-element
-// partition. `bodyRGB`/`termRGB` are linear-space [r,g,b]; cached per base colour.
+// SECTOR-ZONED PRISM — TOURMALINE (the only tenant routed here: js/45 SECTOR_ZONING
+// registers tourmaline as kind 'hourglass'; andalusite/apophyllite/selenite branch to
+// their own builders). Crystal-face realism arc 2026-06-21, PROPOSALS-crystal-face-realism
+// §1; cross-section CORRECTED 2026-06-23 (specimen-debt verification pass).
+//
+// MORPHOLOGY. Tourmaline is point group 3m, so the prism zone is DITRIGONAL — the
+// cross-section is a ROUNDED TRIANGLE with convex sides, NOT a hexagon: "cross sections
+// typically triangular with curved convex sides" (Handbook of Mineralogy, dravite, after
+// Dana). The species is famous precisely because no other common mineral has three sides;
+// a regular hexagon (the render before 2026-06-23) implied 6-fold prism symmetry and
+// erased that diagnostic feature, so the ring radius now carries a 3-fold cos(3θ)
+// modulation (corners at rMax, convex sides pulled in to rMax·kEdge). 3m is POLAR, so the
+// two c-axis ends differ: a pyramid apex over a flat basal pedion (anchored in the wall)
+// — qualitatively hemimorphic. (Which physical pole carries the steep pyramid is left
+// UNLABELLED: the analogous/antilogous → ±c mapping is reported inconsistently across
+// sources, so the render shows the two-different-ends fact without asserting a sign.)
+//
+// COLOUR. A baked per-VERTEX colour paints the PYRAMID (termination) sector a hue-rotated
+// contrast of the PRISM body, with a SHARP geometry-locked boundary at the shoulder ring
+// (non-indexed verts keep it sharp) — different growth sectors take up trace elements at
+// different rates (Dowty 1976, Am.Min. 61:460; Ferguson 1973 hourglass). For tourmaline
+// this IS the iconic bicolor elbaite (green prism / pink tip). Colours are ABSOLUTE (the
+// material runs vertexColors with color=white): body = class_color, termination = the
+// hue-rotated contrast. A Tier A render abstraction — says "habit variant", not a computed
+// per-element partition. `bodyRGB`/`termRGB` linear-space [r,g,b]; cached per base colour.
 function _makeSectorZonedPrism(bodyRGB: number[], termRGB: number[]): any {
-  const r = 0.50;             // prism / pyramid base radius (a-axis)
-  const yBase = -0.50;        // anchored at the wall
+  const SEG = 18;             // smooth rounded-triangle ring (÷3 → clean 3-fold)
+  const rMax = 0.50;          // corner radius (a-axis max)
+  const kEdge = 0.58;         // edge-midpoint radius = rMax·kEdge → convex-sided triangle
+  const rho = (a: number) => rMax * (kEdge + (1 - kEdge) * (0.5 + 0.5 * Math.cos(3 * a)));
+  const yBase = -0.50;        // flat basal pedion (anchored at the wall)
   const yShoulder = 0.20;     // top of prism / start of pyramid
-  const yApex = 0.50;         // free tip
+  const yApex = 0.50;         // pyramid apex (free tip)
   const positions: number[] = [];
   const colors: number[] = [];
   const pc = () => colors.push(bodyRGB[0], bodyRGB[1], bodyRGB[2]);  // prism sector
   const tc = () => colors.push(termRGB[0], termRGB[1], termRGB[2]);  // termination sector
-  for (let i = 0; i < 6; i++) {
-    const a0 = (i / 6) * Math.PI * 2;
-    const a1 = ((i + 1) / 6) * Math.PI * 2;
-    const x0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r;
-    const x1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
-    // prism side face — two triangles, all six verts in the prism (body) sector
+  for (let i = 0; i < SEG; i++) {
+    const a0 = (i / SEG) * Math.PI * 2;
+    const a1 = ((i + 1) / SEG) * Math.PI * 2;
+    const r0 = rho(a0), r1 = rho(a1);
+    const x0 = Math.cos(a0) * r0, z0 = Math.sin(a0) * r0;
+    const x1 = Math.cos(a1) * r1, z1 = Math.sin(a1) * r1;
+    // prism side face — two triangles, all verts in the prism (body) sector
     _pushTri(positions, x0, yBase, z0, x1, yBase, z1, x1, yShoulder, z1); pc(); pc(); pc();
     _pushTri(positions, x0, yBase, z0, x1, yShoulder, z1, x0, yShoulder, z0); pc(); pc(); pc();
     // pyramid face — one triangle to the apex, termination sector
@@ -1485,17 +1498,26 @@ function _makeHexPyramid(): any {
 // terminates DIFFERENTLY at +c vs -c — independent of environment (unlike the extrinsic
 // occlusion/stepping drivers). Tenants (catalog audit 2026-06-22): tourmaline (3m),
 // hemimorphite (mm2 / Imm2), wurtzite & greenockite (6mm). Render: a dominant pointed
-// PYRAMID at the antilogous +c pole and a flat PINACOID cap at the analogous -c pole
-// (pyramid-DOMINANT, so the silhouette differs sharply from the prism-dominant generic
-// hex prism — _makeHexPrismWithPyramid is 70% prism / 30% tip; this is the inverse).
-// Also CORRECTS the greenockite token wart: 'hexagonal_pyramidal' mapped to 'prism' and
-// rendered as a generic hex prism (the pyritohedral/octahedral_REE wart family). Tourmaline
-// keeps its sector-zoned hourglass (already pyramid-top/flat-base); this catches the others.
+// PYRAMID at one polar end and a flat PINACOID cap at the other (pyramid-DOMINANT, so the
+// silhouette differs sharply from the prism-dominant generic hex prism —
+// _makeHexPrismWithPyramid is 70% prism / 30% tip; this is the inverse). Which physical
+// pole carries the pyramid (the analogous/antilogous → ±c mapping) is reported
+// inconsistently across sources, so it is deliberately NOT asserted here — the render shows
+// the two-different-ends FACT, not a sign. Also CORRECTS the greenockite token wart:
+// 'hexagonal_pyramidal' mapped to 'prism' and rendered as a generic hex prism (the
+// pyritohedral/octahedral_REE wart family). Specimen-debt pass 2026-06-23 VERIFIED the hex
+// prism + pyramid/flat schematic against the Handbook of Mineralogy for the two 6mm
+// wurtzite-structure sulfides (greenockite, wurtzite — both genuinely hexagonal; euhedral
+// crystals are the minority habit, coatings/fibrous masses dominate, but the prized form is
+// faithful). CAVEAT: hemimorphite is ORTHORHOMBIC (mm2), NOT hexagonal — a hex cross-section
+// is wrong for it (real habit: thin tabular crystals in fan-shaped sheaves / botryoidal
+// crusts); flagged for its own verification pass. Tourmaline keeps its (now ditrigonal)
+// sector-zoned hourglass; this builder catches the others.
 function _makeHemimorphicPrism(): any {
   const r = 0.42;
-  const yBase = -0.50;        // analogous -c pole — flat pinacoid (a single basal face)
+  const yBase = -0.50;        // one polar end — flat basal pinacoid (anchored in the wall)
   const yShoulder = -0.05;    // short prism body (~45%), then a tall pyramid (~55%): polar
-  const yApex = 0.50;         // antilogous +c pole — the dominant pyramid termination
+  const yApex = 0.50;         // the other polar end — the dominant pyramid termination
   const positions: number[] = [];
   for (let i = 0; i < 6; i++) {
     const a0 = (i / 6) * Math.PI * 2;
@@ -2510,15 +2532,19 @@ function _makeTerracedCalciteGeom(terr: any): any {
 // crystal reads stepped on one side, smooth on the other, instead of the
 // azimuthally-uniform ziggurat.
 //
-// THE SCIENCE. The calcite (104) rhomb surface has twofold site symmetry (lower than
-// the crystal's threefold), so its monolayer steps split into two NON-equivalent
-// counter-propagating families: an ACUTE (~78°) and an OBTUSE (~102°) step — the 78°/
-// 102° pair is the cleavage-rhomb diamond angle — which propagate at different
-// velocities (anisotropy reverses with the Ca²⁺:CO₃²⁻ activity ratio; Teng & Dove 1998
-// Science 282:724, 2000 GCA 64:2255). Anchor for the {104} step framework: De Yoreo &
-// Vekilov 2003, Rev. Mineral. Geochem. 54:57. Calcite is CENTROSYMMETRIC (R-3c) so this
-// is NOT polarity — it is intrinsic surface-step anisotropy + a cavity σ gradient
-// (up-gradient faces step-bunch, sheltered/attached stay smooth).
+// THE SCIENCE (corrected 2026-06-23 vs. the literature — specimen-debt verification pass).
+// The VISIBLE one-sidedness — one set of faces step-bunched into macro ledges, the
+// opposite set glassy — is TRANSPORT-driven, NOT an intrinsic property of the faces: the
+// six {104} faces are symmetry-equivalent, but under diffusion-limited growth their feed
+// is not (Berg 1938, Proc.R.Soc.A 164:79; Wang/Gilbert et al. 2022 Science 376:abm1748
+// found symmetry-related {104} facets break symmetry "solely controlled by the diffusion
+// of ions"). Better-fed / up-gradient faces step-bunch; sheltered or substrate-shadowed
+// faces stay smooth. The famous calcite (104) ACUTE(~78°)/OBTUSE(~102°) step anisotropy
+// (Teng & Dove 1998 Science 282:724, 2000 GCA 64:2255; De Yoreo & Vekilov 2003 RiMG 54:57)
+// is a DIFFERENT, finer-scale effect — it distinguishes the two step DIRECTIONS within a
+// SINGLE {104} face at the AFM/vicinal scale and surfaces as intrasectoral trace-element
+// zoning; it does NOT by itself make one whole face step while the opposite stays smooth.
+// Calcite is CENTROSYMMETRIC (R-3c), so none of this is polarity.
 //
 // CAVEAT (honest, render-only). terr.steppedSet is a face-SET selector, not a world
 // direction — the renderer applies a random per-crystal yaw (_crystalYaw), so which

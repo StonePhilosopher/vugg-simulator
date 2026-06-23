@@ -111,6 +111,38 @@ Living list of open work items, captured from session conversations so context s
 > (occlusion, re-promoted)** or **Phase 4 (full per-face form)**. Phase 1 (azimuthal stepping) +
 > Phase 3 (polarity) are the visible wins so far. Composes with the optics goal.
 >
+> **SPECIMEN-DEBT VERIFICATION PASS DONE (2026-06-23) — Phases 1+3 falsified against the
+> literature; shipped 4 render-only/doc corrections, byte-identical, NO SIM bump (still v214).**
+> Paid the owed terminal-verification debt the right way ([[feedback_terminal_verification_specimens]]):
+> two citation-verified research passes (calcite {104} stepping; greenockite/wurtzite/tourmaline
+> hemimorphism) cross-checked vs. what the code ACTUALLY renders. Findings:
+> - **TOURMALINE was rendered as a HEXAGONAL prism — WRONG (now FIXED).** Point group 3m → the
+>   prism zone is DITRIGONAL; the cross-section is a ROUNDED TRIANGLE with convex sides ("no other
+>   common mineral has three sides"; Handbook of Mineralogy/dravite). A hexagon erased the species'
+>   single most diagnostic feature and implied the wrong symmetry. `_makeSectorZonedPrism` (js/99i —
+>   the tourmaline-ONLY sector-zoning builder; andalusite/apophyllite/selenite branch elsewhere) now
+>   carries a 3-fold cos(3θ) ring radius. BROWSER-VERIFIED (top-down = rounded triangle; 3/4 = bicolor
+>   elbaite prism + pink pyramid + flat hemimorphic base).
+> - **CALCITE Phase 1 mechanism was MIS-ATTRIBUTED — comment + narrator CORRECTED (render unchanged).**
+>   The visible one-sided macrostepping is TRANSPORT-driven (the six {104} faces are symmetry-
+>   equivalent; Berg 1938; Wang/Gilbert 2022 Science 376:abm1748 — symmetry-related {104} facets
+>   break symmetry "solely controlled by the diffusion of ions"). The obtuse/acute {104} anisotropy
+>   is a DIFFERENT finer WITHIN-face AFM-scale effect (→ intrasectoral zoning), NOT the whole-face
+>   carve. The carve still reads right; only the WHY was wrong. js/99i science comment + js/92b +
+>   narratives/calcite.md.
+> - **GREENOCKITE + WURTZITE hemimorphic hex prism — VERIFIED FAITHFUL** (both genuinely 6mm,
+>   Handbook of Mineralogy verbatim; euhedral crystals are the minority habit but the prized form is
+>   faithful). No geometry change. The over-confident +c/−c pole LABELS in `_makeHemimorphicPrism`
+>   were softened — the analogous/antilogous → ±c mapping is reported inconsistently, so the render
+>   shows the two-different-ends FACT, not a sign.
+> - **HEMIMORPHITE — NEW FLAG (not fixed; the next morphology-fidelity sliver).** It routes to the
+>   same hex prism, but it is ORTHORHOMBIC (mm2), not hexagonal — a hex cross-section is wrong (real
+>   habit: thin tabular crystals in fan-shaped sheaves / botryoidal crusts). Scoped OUT of this pass's
+>   research, so flagged for its own verification rather than guess-fixed.
+> Remaining specimen-debt: a real calcite specimen for the free-vs-attached macrostep contrast is
+> still owed; greenockite/tourmaline terminations are now literature-verified but a real-specimen
+> look is still the apex check ([[feedback_terminal_verification_specimens]]).
+>
 > ## 🏞️ SESSION (2026-06-22, later) — OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite ✅ SHIPPED (SIM 214)
 >
 > Boss directive: "the salt plain shape should be its own unique shape that should not be
