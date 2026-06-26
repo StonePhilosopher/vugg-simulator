@@ -95,3 +95,49 @@ This arc moved fast because the ground was already laid: the **classifier-overpr
 The shape of this session was research → propose → stage → ship → **correct**. The correction is the part I'd underline. I demoted Phase 2 on a confident-sounding hypothesis built from reading half the system (the builders) and not the other half (the placement). It would have shipped a wrong conclusion into the backlog and cost the next builder a wrong start — except the boss asked me to *look* instead of *argue*, and looking falsified it in one render. The lesson isn't "I was wrong"; it's that **a claim about what the user sees is only as good as having looked at what the user sees** — code-reasoning is a hypothesis, the rendered pixel is the evidence. The whole arc stayed byte-identical and SIM-neutral on purpose, so none of it risked the chemistry that months of calibration earned; morphology is a layer you can rebuild without disturbing the foundation. That separation — visible form on top of stable science — is what made it safe to be wrong and cheap to correct.
 
 — the builder
+
+---
+
+## Closing thoughts before compact (2026-06-23, later)
+
+Three render-only fixes shipped this session, all byte-identical (SIM 214 unchanged), all one thread —
+the specimen-debt pass that began as "verify Phases 1 + 3" became "find the bug *underneath* them":
+
+- `74611ab` — tourmaline ditrigonal cross-section (+ calcite stepping-mechanism correction)
+- `af81720` — hemimorphite fan/sheaf (orthorhombic, was hexagonal)
+- `f0c99eb` — **system-aware prism cross-section** (the generalization) + `tools/morph-fidelity-audit.mjs`
+
+**The shape of the lesson.** Tourmaline and hemimorphite each *looked* like a one-off "this mineral is
+drawn wrong." They weren't. The renderer's default habit token is `prism`, and the prism primitive is a
+HEXAGON — so the real bug was *every non-hexagonal prismatic mineral at once*; the two I happened to check
+were the visible tip. The audit tool is the thing to reach for first next time: a deterministic habit→token
+vs. crystal-system join, it found 72. **When you fix a "this one renders wrong" case, ask whether the
+mechanism that produced it is shared.** It usually is.
+
+**The honest scar.** I tried to verify the 72 crystal systems with a Workflow and it ran away to the
+1000-agent cap — ~14.9M tokens, tripped the session usage limit (reset 11:10pm ET). Cause: `args` reached
+the script as a STRING, my `chunk()` sliced the ~10KB JSON into ~950 fragments, one agent each. Two lessons:
+*mechanical* — guard any fan-out against a non-array input; never trust args to arrive parsed. *Judgmental
+(the real one)* — **I fanned out to verify data that was already verified.** `structural.json` carries
+citation-backed crystal systems; the whole fix was a deterministic data join. The workflow wasn't just
+buggy, it was the wrong tool. Reach for agents when the answer needs judgment or the web — not when a file
+already holds it.
+
+**Deferred (none blocking):** `spike` needles still render hexagonal (cross-section invisible at needle
+scale — `_makeSystemPrism` already has the shapes if you ever want them routed through); some audit-flagged
+minerals are non-euhedral aggregates (earthy/scaly/crust) that shouldn't be a single prism *at all* — a
+HABIT problem, not a cross-section one, and a harder separate fix; the cubic prism-token entries are
+habit-string artifacts (grow engines set cube/octahedral at runtime — false positives). The original arc's
+debts still stand: **Phase 2 substrate occlusion** (the re-promoted next phase) and real-specimen
+verification of the calcite macrostep + the hemimorphic terminations.
+
+**State:** HEAD `f0c99eb`, origin synced, Pages building at it; SIM 214 unchanged across all three fixes;
+cold-ci green (2033 tests). `tools/morph-fidelity-audit.mjs` is the reusable instrument (`--json`,
+`--systemmap`). Stray `_minlist.json` at repo root is runaway-agent debris (not mine, left untracked —
+safe to delete).
+
+Three real fidelity wins on stable infrastructure, each checked against a real rock or a real screenshot
+before shipping — and one real misstep, which was far cheaper to make on a render-only arc than anywhere
+near the chemistry. That's the same separation the note above is about, earning its keep again.
+
+— the builder
