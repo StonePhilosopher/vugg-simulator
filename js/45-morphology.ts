@@ -823,6 +823,59 @@ function classifyPolarAxis(sim: any) {
   }
 }
 
+// SUBSTRATE OCCLUSION — central-distance arc Phase 2 (2026-06-22). The DOMINANT, UNIVERSAL
+// extrinsic driver of the singly-terminated drusy habit: a wall-nucleated crystal is sealed
+// against the host over its attachment footprint, so that interface is feed-starved and frozen
+// (flux ≈ 0) while only the void-facing termination grows (proposal §1.3). Unlike intrinsic
+// polarity (_polarAxis — the 10 polar point groups only) this applies to ANY mineral regardless
+// of point group, and typically SWAMPS intrinsic polarity in magnitude — so it is its own field
+// (§1.3 forbids one scalar for both; a wall-nucleated tourmaline can carry BOTH _occlusion AND
+// _polarAxis). Sets crystal._occlusion = { attachedFraction } = how much of the anchored (-c)
+// half is buried in the matrix; the renderer (js/99i) sinks that fraction below the wall surface
+// so only the emergent termination shows. PURE tagging (no rng/fluid) → byte-identical baseline
+// (gen-baseline serialises only counts/sizes). Gated on wall.occlusion — Phase 2 opts mvt in
+// (the canonical drusy cavity); every other scenario stays dormant → byte-identical fleet.
+// Re-evaluated each step (NOT tag-once): a stale tag is cleared if a crystal later becomes a
+// non-euhedral aggregate, so the end-state reflects its FINAL habit. Mirrors classifyFaceStep.
+const OCCLUSION_MIN_UM = 50;       // skip nucleation specks — need a body to embed
+// Occlusion is the read for a single EUHEDRAL crystal emerging from its wall footprint. These
+// habits are NOT that — a buried base is meaningless or wrong for them, so they keep the
+// base-on-surface float: crusts / coatings / films, massive-earthy aggregates, dendrites /
+// wires, fibrous / scaly micas, sprays / tufts / rosettes (cluster-from-a-point forms), and
+// rounded masses / placer grains / chatoyant pseudomorphs (no crystal footprint at all). The
+// trailing terms (nugget|grains|placer|chatoyant|hawks_eye|tiger) were added after the
+// occlusion-coverage census flagged native_gold(nugget), awaruite(grains/placer) and tigers_eye
+// (all varieties — a fibrous silica pseudomorph, never euhedral) rooting as if they were crystals.
+const OCCLUSION_SKIP_HABIT = /botryoid|mammillary|reniform|colloform|crust|coat|encrust|drusy|druze|sinter|nodular|cauliflower|massive|earthy|sooty|powder|granular|disseminat|chalcedony|banded|dendrit|arborescent|wire|reticulat|fibrous|scaly|micaceous|capillary|cotton|spherulit|spray|rosette|radiat|sheaf|tuft|frostwork|stalactit|stellate|sixling|fiveling|plush|film|nugget|grains|placer|chatoyant|hawks_eye|tiger/i;
+function classifyOcclusion(sim: any) {
+  const wall = sim.conditions && sim.conditions.wall;
+  if (!wall || !wall.occlusion) return;            // opt-in gate — dormant unless a scenario sets it
+  const base = (typeof wall.occlusion_fraction === 'number') ? wall.occlusion_fraction : 0.40;
+  const only = (wall.occlusion_minerals && wall.occlusion_minerals.length) ? wall.occlusion_minerals : null;
+  for (const c of sim.crystals) {
+    if (!c || c.dissolved) continue;
+    // Re-evaluate EVERY step — a crystal's habit/size/environment evolve over its life, and one
+    // that LATER becomes a non-euhedral aggregate (quartz → chalcedony, wurtzite → platy_massive)
+    // must lose a stale tag so the end-state reflects its FINAL form. Deterministic (no rng) ⇒ the
+    // seed-42 result is identical run-to-run; _occlusion is render-only either way.
+    const disqualified =
+         (only && only.indexOf(c.mineral) < 0)               // occlusion_minerals restriction (null = universal)
+      || (c.total_growth_um || 0) < OCCLUSION_MIN_UM         // nucleation speck — no body to embed
+      || c.growth_environment === 'air'                      // stalactite/stalagmite c-axis is gravity-set, not substrate-rooted
+      || OCCLUSION_SKIP_HABIT.test(c.habit || '');           // not a discrete euhedral crystal — keep the float
+    if (disqualified) { if (c._occlusion) delete c._occlusion; continue; }
+    if (c._occlusion) continue;                              // already tagged and still qualifies
+    // Deterministic per-crystal embed depth: a golden-ratio hash of the id spreads the druse
+    // across a natural range of burial depths instead of one uniform sink — and uses NO rng, so
+    // the seed-42 baseline stays byte-identical (the hard gate). ±0.12 around the scenario mean,
+    // clamped so a crystal is never buried past 60% (always ≥40% emergent to read as a crystal).
+    const h = (((c.crystal_id || 0) * 0.6180339887498949) % 1 + 1) % 1;
+    let f = base + (h - 0.5) * 0.24;
+    f = Math.max(0.10, Math.min(0.60, f));
+    c._occlusion = { attachedFraction: f };
+  }
+}
+
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];

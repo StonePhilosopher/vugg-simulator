@@ -1538,6 +1538,60 @@ function _makeHemimorphicPrism(): any {
   return geom;
 }
 
+// HEMIMORPHITE FAN — the signature divergent fan / sheaf of thin tabular blades (the Tsumeb
+// "bowtie"). Hemimorphite is ORTHORHOMBIC (Imm2, mm2) — NOT hexagonal: single crystals are thin
+// tabular on {010}, elongated on c, and hemimorphic (a pointed pyramidal/chisel free end, a flat
+// pedion base). Here several blades radiate from a low common attachment — flat ends converge,
+// pointed ends splay out and up — the recognizable crystalline habit (Handbook of Mineralogy:
+// "sheaflike or fan-shaped aggregates"; thin tabular {010} striated ∥ [001]). Replaces the WRONG
+// hexagonal _makeHemimorphicPrism for hemimorphite (greenockite/wurtzite are genuinely 6mm and
+// keep that one). Specimen-debt verification pass 2026-06-23. Deterministic (index-varied, no RNG).
+function _makeHemimorphiteFan(): any {
+  const positions: number[] = [];
+  // one thin tabular blade: base point o, unit long axis a, unit broad-face normal n; width dir
+  // e = a×n. Rectangular section (hw along e, ht along n) base→shoulder, then a chisel ridge (a
+  // thin tabular crystal terminates as a roof-edge, not a 4-faced point). Flat pedion base cap.
+  const blade = (o: number[], a: number[], n: number[], len: number, hw: number, ht: number) => {
+    const e = [a[1]*n[2]-a[2]*n[1], a[2]*n[0]-a[0]*n[2], a[0]*n[1]-a[1]*n[0]];
+    const P = (t: number, u: number, v: number) => [
+      o[0] + a[0]*t*len + e[0]*u + n[0]*v,
+      o[1] + a[1]*t*len + e[1]*u + n[1]*v,
+      o[2] + a[2]*t*len + e[2]*u + n[2]*v,
+    ];
+    const tS = 0.78, hwT = hw * 0.35;
+    const B = [P(0,-hw,-ht), P(0,hw,-ht), P(0,hw,ht), P(0,-hw,ht)];      // base ring (pedion)
+    const S = [P(tS,-hw,-ht), P(tS,hw,-ht), P(tS,hw,ht), P(tS,-hw,ht)];  // shoulder ring
+    for (let i = 0; i < 4; i++) {
+      const j = (i + 1) % 4;
+      _pushTri(positions, B[i][0],B[i][1],B[i][2], B[j][0],B[j][1],B[j][2], S[j][0],S[j][1],S[j][2]);
+      _pushTri(positions, B[i][0],B[i][1],B[i][2], S[j][0],S[j][1],S[j][2], S[i][0],S[i][1],S[i][2]);
+    }
+    _pushTri(positions, B[0][0],B[0][1],B[0][2], B[2][0],B[2][1],B[2][2], B[1][0],B[1][1],B[1][2]);  // flat pedion base
+    _pushTri(positions, B[0][0],B[0][1],B[0][2], B[3][0],B[3][1],B[3][2], B[2][0],B[2][1],B[2][2]);
+    const t0 = P(1,-hwT,0), t1 = P(1,hwT,0);                             // chisel ridge edge (ht→0)
+    _pushTri(positions, S[3][0],S[3][1],S[3][2], S[2][0],S[2][1],S[2][2], t1[0],t1[1],t1[2]);        // +n broad face → ridge
+    _pushTri(positions, S[3][0],S[3][1],S[3][2], t1[0],t1[1],t1[2], t0[0],t0[1],t0[2]);
+    _pushTri(positions, S[0][0],S[0][1],S[0][2], t0[0],t0[1],t0[2], t1[0],t1[1],t1[2]);              // -n broad face → ridge
+    _pushTri(positions, S[0][0],S[0][1],S[0][2], t1[0],t1[1],t1[2], S[1][0],S[1][1],S[1][2]);
+    _pushTri(positions, S[1][0],S[1][1],S[1][2], t1[0],t1[1],t1[2], S[2][0],S[2][1],S[2][2]);        // +e chisel end
+    _pushTri(positions, S[0][0],S[0][1],S[0][2], S[3][0],S[3][1],S[3][2], t0[0],t0[1],t0[2]);        // -e chisel end
+  };
+  const N = 6;
+  for (let k = 0; k < N; k++) {
+    const f = k / (N - 1);                          // 0..1 across the fan
+    const ang = -0.80 + 1.60 * f;                   // ~ -46°..+46° from vertical, splayed in x-y
+    const a = [Math.sin(ang), Math.cos(ang), 0];    // unit long axis (fans in the x-y plane)
+    const n = [0, 0, 1];                            // broad face ≈ ±z → a flat bowtie spray
+    const len = 0.74 + 0.09 * Math.cos(k * 1.7);    // slight deterministic length variation
+    const o = [(f - 0.5) * 0.05, -0.5, (k % 2 === 0 ? 0.015 : -0.015)];
+    blade(o, a, n, len, 0.10, 0.03);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 // Phase 1c (v156, 2026-05-27): aragonite cave frostwork — radiating
 // spray of acicular needles from a central anchor. Real cave aragonite
 // morphology per Hill & Forti 1997 (Cave Minerals of the World §5.3.4,
@@ -2912,6 +2966,82 @@ function _getTerracedCalciteGeom(state: any, crystal: any, terr: any): any {
   return geom;
 }
 
+// CRYSTAL_SYSTEM — citation-backed crystal systems (from data/structural.json `system`, NON-
+// hexagonal only; regenerate with `node tools/morph-fidelity-audit.mjs --systemmap`). Drives the
+// system-aware prism cross-section. The default 'prism' primitive is a HEXAGONAL prism
+// (_makeHexPrismWithPyramid) — faithful ONLY for hexagonal/trigonal minerals; a tetragonal
+// mineral must read SQUARE, orthorhombic RECTANGULAR, monoclinic/triclinic SHEARED. Specimen-debt
+// fidelity arc 2026-06-23 (the audit found 72 non-hex minerals rendered hexagonal — tourmaline &
+// hemimorphite were the first two caught + fixed). Only minerals that resolve to the 'prism' token
+// are redirected (below); entries that render via other tokens (tablet/botryoidal/rhomb/spike/
+// special) are inert. Render-only / byte-identical — gen-baseline serialises only counts/sizes.
+const CRYSTAL_SYSTEM: Record<string, string> = {
+  acanthite: 'monoclinic', actinolite: 'monoclinic', adamite: 'orthorhombic', albite: 'triclinic',
+  andalusite: 'orthorhombic', anglesite: 'orthorhombic', anhydrite: 'orthorhombic', annabergite: 'monoclinic',
+  antlerite: 'orthorhombic', apophyllite: 'tetragonal', aragonite: 'orthorhombic', arsenopyrite: 'monoclinic',
+  atacamite: 'orthorhombic', aurichalcite: 'monoclinic', austinite: 'orthorhombic', autunite: 'tetragonal',
+  azurite: 'monoclinic', barite: 'orthorhombic', bismuthinite: 'orthorhombic', borax: 'monoclinic',
+  brochantite: 'monoclinic', calaverite: 'monoclinic', caledonite: 'orthorhombic', carnotite: 'monoclinic',
+  cassiterite: 'tetragonal', celestine: 'orthorhombic', cerussite: 'orthorhombic', chalcanthite: 'triclinic',
+  chalcocite: 'monoclinic', chalcopyrite: 'tetragonal', clinobisvanite: 'monoclinic', conichalcite: 'orthorhombic',
+  datolite: 'monoclinic', descloizite: 'orthorhombic', diopside: 'monoclinic', enargite: 'orthorhombic',
+  epidote: 'monoclinic', erythrite: 'monoclinic', feldspar: 'monoclinic', ferrimolybdite: 'orthorhombic',
+  gypsum: 'monoclinic', haidingerite: 'orthorhombic', hemimorphite: 'orthorhombic', hessite: 'monoclinic',
+  heulandite: 'monoclinic', koettigite: 'monoclinic', leadhillite: 'monoclinic', legrandite: 'monoclinic',
+  lepidocrocite: 'orthorhombic', lepidolite: 'monoclinic', linarite: 'monoclinic', loellingite: 'orthorhombic',
+  malachite: 'monoclinic', marcasite: 'orthorhombic', mesolite: 'orthorhombic', mirabilite: 'monoclinic',
+  mottramite: 'orthorhombic', native_sulfur: 'orthorhombic', naumannite: 'orthorhombic', olivenite: 'monoclinic',
+  orpiment: 'monoclinic', orthoclase: 'monoclinic', pectolite: 'triclinic', pharmacolite: 'monoclinic',
+  powellite: 'tetragonal', prehnite: 'orthorhombic', pyrolusite: 'tetragonal', rammelsbergite: 'orthorhombic',
+  raspite: 'monoclinic', realgar: 'monoclinic', rosasite: 'monoclinic', rutile: 'tetragonal',
+  safflorite: 'orthorhombic', scheelite: 'tetragonal', scolecite: 'monoclinic', scorodite: 'orthorhombic',
+  selenite: 'monoclinic', shattuckite: 'orthorhombic', spodumene: 'monoclinic', staurolite: 'monoclinic',
+  stibnite: 'orthorhombic', stilbite: 'monoclinic', stolzite: 'tetragonal', strontianite: 'orthorhombic',
+  sylvanite: 'monoclinic', thenardite: 'orthorhombic', thomsonite: 'orthorhombic', titanite: 'monoclinic',
+  topaz: 'orthorhombic', torbernite: 'tetragonal', tremolite: 'monoclinic', uranophane: 'monoclinic',
+  uranospinite: 'tetragonal', vesuvianite: 'tetragonal', witherite: 'orthorhombic', wolframite: 'monoclinic',
+  wollastonite: 'triclinic', wulfenite: 'tetragonal', zeunerite: 'tetragonal',
+};
+
+// SYSTEM-AWARE prism+pyramid — a 4-faced cross-section matching the crystal system: SQUARE
+// (tetragonal), RECTANGULAR (orthorhombic), or rectangular with an oblique/leaning character
+// (monoclinic = beta-inclined termination; triclinic = leaning column + skewed apex). Replaces the
+// hexagonal prism for non-hex minerals. Deterministic; cached per system. Hex/trigonal minerals
+// never reach here (not in CRYSTAL_SYSTEM) so they keep _makeHexPrismWithPyramid -> byte-identical.
+function _makeSystemPrism(system: string): any {
+  const yBase = -0.5, yShoulder = 0.2, yApex = 0.5;
+  let rx = 0.40, rz = 0.40;     // tetragonal default = square section
+  let apexX = 0, apexZ = 0;     // oblique termination (monoclinic / triclinic)
+  let shearX = 0, shearZ = 0;   // leaning column (triclinic)
+  if (system === 'orthorhombic') { rx = 0.48; rz = 0.30; }
+  else if (system === 'monoclinic') { rx = 0.46; rz = 0.32; apexX = 0.24; }
+  else if (system === 'triclinic') { rx = 0.46; rz = 0.32; apexX = 0.22; apexZ = 0.14; shearX = 0.10; }
+  // 4-corner rectangular cross-section (flat faces toward +-x and +-z); shear leans upper rings.
+  const ring = (y: number, s: number) => {
+    const dx = shearX * s, dz = shearZ * s;
+    return [[rx + dx, y, rz + dz], [-rx + dx, y, rz + dz], [-rx + dx, y, -rz + dz], [rx + dx, y, -rz + dz]];
+  };
+  const positions: number[] = [];
+  const B = ring(yBase, 0);
+  const S = ring(yShoulder, (yShoulder - yBase) / (yApex - yBase));
+  const apex = [apexX + shearX, yApex, apexZ + shearZ];
+  for (let i = 0; i < 4; i++) {     // prism walls
+    const j = (i + 1) % 4;
+    _pushTri(positions, B[i][0], B[i][1], B[i][2], B[j][0], B[j][1], B[j][2], S[j][0], S[j][1], S[j][2]);
+    _pushTri(positions, B[i][0], B[i][1], B[i][2], S[j][0], S[j][1], S[j][2], S[i][0], S[i][1], S[i][2]);
+  }
+  for (let i = 0; i < 4; i++) {     // pyramid to the (possibly offset) apex
+    const j = (i + 1) % 4;
+    _pushTri(positions, S[i][0], S[i][1], S[i][2], S[j][0], S[j][1], S[j][2], apex[0], apex[1], apex[2]);
+  }
+  _pushTri(positions, B[0][0], B[0][1], B[0][2], B[2][0], B[2][1], B[2][2], B[1][0], B[1][1], B[1][2]); // base cap
+  _pushTri(positions, B[0][0], B[0][1], B[0][2], B[3][0], B[3][1], B[3][2], B[2][0], B[2][1], B[2][2]);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 function _buildHabitGeom(token: string): any {
   switch (token) {
     case 'spike':
@@ -3918,16 +4048,39 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       }
       isSectorZoned = true;
     }
-    // HEMIMORPHIC polar termination (central-distance arc Phase 3, 2026-06-22) — the polar
-    // tenants (tourmaline/hemimorphite/wurtzite/greenockite, tagged _polarAxis by js/45
-    // classifyPolarAxis) render with DIFFERENT terminations: a dominant +c pyramid + flat -c
-    // pinacoid. Gated on a prism/spike token + !geom so tourmaline's sector-zoned hourglass
-    // (set above, already pyramid-top/flat-base) wins and other specials are untouched. Also
-    // fixes the greenockite 'hexagonal_pyramidal' → 'prism' token wart (it fell to a generic
-    // hex prism). Render-only; one cached geom for all polar prisms.
+    // HEMIMORPHITE — orthorhombic (mm2), NOT hexagonal: render the signature divergent fan /
+    // sheaf of thin tabular hemimorphic blades (the Tsumeb "bowtie"), pointed free ends / flat
+    // pedion bases. Catches hemimorphite BEFORE the generic hexagonal hemimorphic-prism below
+    // (which is right only for the genuinely 6mm tenants greenockite/wurtzite). It still carries
+    // _polarAxis (correctly — mm2 is polar); only the geometry differs. Specimen-debt fix
+    // 2026-06-23. Render-only; one cached geom.
+    if (!geom && crystal.mineral === 'hemimorphite') {
+      geom = state.geomCache.get('__hemimorphite_fan');
+      if (!geom) { geom = _makeHemimorphiteFan(); state.geomCache.set('__hemimorphite_fan', geom); }
+    }
+    // HEMIMORPHIC polar termination (central-distance arc Phase 3, 2026-06-22) — the hexagonal
+    // polar tenants (wurtzite/greenockite 6mm, tagged _polarAxis by js/45 classifyPolarAxis;
+    // hemimorphite is caught above) render with DIFFERENT terminations: a dominant +c pyramid +
+    // flat -c pinacoid. Gated on a prism/spike token + !geom so tourmaline's sector-zoned
+    // hourglass (set above, already pyramid-top/flat-base) wins and other specials are untouched.
+    // Also fixes the greenockite 'hexagonal_pyramidal' → 'prism' token wart (it fell to a generic
+    // hex prism). Render-only; one cached geom for the polar hexagonal prisms.
     if (!geom && crystal._polarAxis && (token === 'prism' || token === 'spike')) {
       geom = state.geomCache.get('__hemimorphic');
       if (!geom) { geom = _makeHemimorphicPrism(); state.geomCache.set('__hemimorphic', geom); }
+    }
+    // SYSTEM-AWARE prism cross-section (specimen-debt fidelity arc 2026-06-23): a NON-hexagonal
+    // mineral that resolves to the generic 'prism' token must not render as a hexagonal prism.
+    // Redirect by crystal system (square / rectangular / sheared) before the hex fallback below.
+    // Hex/trigonal/unknown minerals aren't in CRYSTAL_SYSTEM → they keep the hex builder
+    // (byte-identical). Gated on !geom so all the special builders above still win.
+    if (!geom && token === 'prism') {
+      const sys = CRYSTAL_SYSTEM[crystal.mineral];
+      if (sys) {
+        const skey = '__sysprism_' + sys;
+        geom = state.geomCache.get(skey);
+        if (!geom) { geom = _makeSystemPrism(sys); state.geomCache.set(skey, geom); }
+      }
     }
     if (!geom) {
       geom = state.geomCache.get(token);
@@ -4099,7 +4252,17 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // direction by half the c-length — for fluid crystals this is
     // substrate-normal; for air-mode crystals it's gravity-aligned
     // (so stalactites drop straight down from the ceiling anchor).
-    const offsetMm = cLen * 0.5;
+    //
+    // SUBSTRATE OCCLUSION (central-distance arc Phase 2, 2026-06-22): a wall-nucleated crystal
+    // is sealed against the host over its attachment footprint, so the buried -c fraction does
+    // NOT project into the cavity. When js/45 classifyOcclusion (gated on wall.occlusion) tags
+    // _occlusion, sink the base by attachedFraction·cLen — pulling the centroid back toward the
+    // wall by the same amount — so only the emergent (1-attachedFraction) length + the free
+    // termination show: the singly-terminated drusy read. occF=0 (unset) ⇒ offsetMm = cLen·0.5,
+    // the EXACT base-at-anchor float (byte-identical placement for every non-opted scenario).
+    const occF = (crystal._occlusion && typeof crystal._occlusion.attachedFraction === 'number')
+      ? crystal._occlusion.attachedFraction : 0;
+    const offsetMm = cLen * (0.5 - occF);
     mesh.position.set(
       ax + cAxisX * offsetMm,
       ay + cAxisY * offsetMm,

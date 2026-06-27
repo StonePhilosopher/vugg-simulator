@@ -285,7 +285,16 @@
           "architecture": "irregular",
           "primary_bubbles": 3,
           "secondary_bubbles": 8,
-          "shape_seed": 3
+          "shape_seed": 3,
+          // Substrate occlusion (central-distance arc Phase 2, 2026-06-22). MVT cavities are
+          // the canonical DRUSE: sphalerite, galena, fluorite, calcite + barite line the vug,
+          // each crystal sealed against the host over its nucleation footprint and growing only
+          // into the void. Opting in renders that singly-terminated drusy read — the renderer
+          // (js/45 classifyOcclusion → js/99i) sinks each crystal's buried -c fraction below the
+          // wall surface. The universal extrinsic driver's first showcase (applies across all the
+          // species here, not just one — unlike elmwood's calcite-only directional_steps).
+          // RENDER-ONLY: the tag never touches counts/sizes/chemistry → baseline byte-identical.
+          "occlusion": true
         }
       },
       "events": [
@@ -376,7 +385,13 @@
           // ONLY: the tag does not touch counts/sizes/chemistry → baseline byte-
           // identical, no SIM bump. The carved face-set is yaw-arbitrary for now (the
           // reactive-morphology arc, proposal Phase 4, makes it gradient-driven).
-          "directional_steps": true
+          "directional_steps": true,
+          // Substrate occlusion (central-distance arc Phase 2, 2026-06-26). The golden
+          // scalenohedra perch on the sphalerite/breccia matrix — opting in roots them: the
+          // renderer sinks each crystal's buried -c fraction below the wall (js/45
+          // classifyOcclusion → js/99i). Compounds with directional_steps above (stepped
+          // scalenohedra now also EMERGE from the matrix). RENDER-ONLY → byte-identical.
+          "occlusion": true
         }
       },
       "events": [
@@ -1680,7 +1695,16 @@
           // miarolitic cavities show sharp dihedral creases between
           // primary and satellite voids. 'sharp' surfaces those
           // creases on the cavity mesh.
-          "cavity_render": "sharp"
+          "cavity_render": "sharp",
+          // Substrate occlusion (central-distance arc Phase 2, 2026-06-26). Pocket crystals
+          // are attached to the miarolitic cavity wall, but famously well-terminated — they
+          // emerge FREER than a tight druse, so a shallower mean embed (0.30 vs the 0.40
+          // default) is the faithful read (London 2008 pocket photos: long euhedral prisms
+          // standing proud of the wall). Exercises occlusion_fraction. The habit guard skips
+          // lepidolite's scaly aggregate; tourmaline/beryl/spodumene/topaz prisms root.
+          // RENDER-ONLY → byte-identical, NO SIM bump.
+          "occlusion": true,
+          "occlusion_fraction": 0.30
         }
       },
       "events": [

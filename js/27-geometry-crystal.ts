@@ -193,12 +193,15 @@ class Crystal {
     //   _faceStep   { steppedFaceSet, atStep }   — js/45 classifyFaceStep:
     //               directional macrostep relief on one face-SET (calcite {104}
     //               obtuse/acute anisotropy). Phase 1 renders it.
-    //   _occlusion  { attachedFraction }          — DEFERRED to Phase 2: the
-    //               frozen substrate-attached end (extrinsic, universal driver).
-    //   _polarAxis  { plusC_rate, minusC_rate }   — DEFERRED to Phase 3: TRUE
+    //   _occlusion  { attachedFraction }          — js/45 classifyOcclusion: the
+    //               frozen substrate-attached -c fraction (extrinsic, UNIVERSAL driver
+    //               of the singly-terminated drusy habit). Phase 2 renders it (js/99i
+    //               sinks the base offset). Gated on wall.occlusion (opt-in).
+    //   _polarAxis  { pointGroup }                — js/45 classifyPolarAxis: TRUE
     //               crystallographic polarity, the 10 polar point groups only
-    //               (hemimorphite/wurtzite/tourmaline/greenockite). Kept DISTINCT
-    //               from _occlusion — the science forbids one scalar for both.
+    //               (hemimorphite/wurtzite/tourmaline/greenockite). Phase 3 renders it.
+    //               Kept DISTINCT from _occlusion — the science forbids one scalar for
+    //               both, and a wall crystal can carry BOTH (buried base + polar +c).
     this.zones = [];
     this.total_growth_um = 0;
     this.active = true;

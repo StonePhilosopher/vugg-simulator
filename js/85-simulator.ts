@@ -787,6 +787,11 @@ class VugSimulator {
     // a hemimorphic +c-pyramid / -c-pinacoid termination. Pure tagging, always-on for those
     // minerals → byte-identical fleet. See js/45.
     classifyPolarAxis(this);
+    // Substrate occlusion (central-distance arc Phase 2, 2026-06-22) — tags wall-nucleated
+    // crystals with the buried -c attachment fraction (the UNIVERSAL extrinsic driver of the
+    // singly-terminated drusy habit). The renderer sinks that fraction below the wall surface.
+    // Pure tagging; gated on wall.occlusion (only mvt opts in) → byte-identical fleet. See js/45.
+    classifyOcclusion(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

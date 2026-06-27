@@ -286,6 +286,18 @@ class VugWall {
     // is silently dropped, which is exactly why this line is required for the elmwood
     // opt-in to reach the classifier.)
     this.directional_steps = !!opts.directional_steps;
+    // occlusion — SUBSTRATE OCCLUSION (central-distance arc Phase 2, 2026-06-22). Opts a
+    // scenario's wall-nucleated crystals into the singly-terminated drusy render: js/45
+    // classifyOcclusion tags _occlusion, js/99i sinks the buried -c attachment fraction below
+    // the wall surface so only the emergent termination shows. The UNIVERSAL extrinsic driver
+    // (every wall crystal is partly sealed against the host), staged opt-in first. RENDER-ONLY
+    // — the tag never touches counts/sizes/chemistry, so the baseline stays byte-identical.
+    // occlusion_fraction (default 0.40) = mean embed depth; occlusion_minerals (default all)
+    // can restrict it. Like the flags above, WallState whitelists each opt explicitly — an
+    // unlisted flag from scenarios.json5 is silently dropped, so these three lines are required.
+    this.occlusion = !!opts.occlusion;
+    this.occlusion_fraction = (typeof opts.occlusion_fraction === 'number') ? opts.occlusion_fraction : undefined;
+    this.occlusion_minerals = Array.isArray(opts.occlusion_minerals) ? opts.occlusion_minerals : undefined;
   }
 
   dissolve(acid_strength, fluid) {

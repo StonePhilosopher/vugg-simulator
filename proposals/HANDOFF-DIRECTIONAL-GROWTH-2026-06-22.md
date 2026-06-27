@@ -18,13 +18,27 @@ bump (still v214)**, cold-ci GREEN, tourmaline browser-verified.
 | **Tourmaline drawn as a HEXAGONAL prism** | WRONG (HIGH conf.) — point group 3m, the prism zone is DITRIGONAL; the real cross-section is a rounded triangle with convex sides ("no other common mineral has three sides"; Handbook of Mineralogy / dravite). A hexagon erases the species' single most diagnostic feature and implies the wrong symmetry. | **FIXED** — `_makeSectorZonedPrism` (js/99i; the tourmaline-ONLY sector-zoning builder) now uses a 3-fold cos(3θ) ring radius. Browser-verified: top-down = rounded triangle; 3/4 = bicolor elbaite prism + pink pyramid + flat hemimorphic base. |
 | **Calcite Phase 1 mechanism** | MIS-ATTRIBUTED — the visible one-sided macrostepping is TRANSPORT-driven (the six {104} faces are symmetry-equivalent; Berg 1938; Wang/Gilbert 2022 Science 376:abm1748, "solely controlled by the diffusion of ions"). The obtuse/acute {104} anisotropy is a finer WITHIN-face AFM effect (→ intrasectoral zoning), NOT the whole-face carve. | **CORRECTED** (comment + narrator; render unchanged) — js/99i science comment, js/92b, narratives/calcite.md. The carve reads right; only the WHY was wrong. |
 | **Greenockite + wurtzite hemimorphic hex prism** | VERIFIED FAITHFUL — both genuinely 6mm (Handbook of Mineralogy verbatim; euhedral crystals are the minority habit but the prized form is faithful). | No geometry change. Softened the over-confident +c/−c pole LABELS in `_makeHemimorphicPrism` — the analogous/antilogous → ±c mapping is reported inconsistently, so the render shows the two-different-ends FACT, not a sign. |
-| **Hemimorphite** | NEW FLAG (not fixed) — routes to the same hex prism but is ORTHORHOMBIC (mm2); a hex cross-section is wrong (real habit: thin tabular crystals in fan-shaped sheaves / botryoidal crusts). | Scoped OUT of this pass's research → flagged for its own verification, NOT guess-fixed. **The next morphology-fidelity sliver.** |
+| **Hemimorphite** | **FIXED (same session, 2026-06-23)** — was routed to the hexagonal prism but is ORTHORHOMBIC (Imm2, mm2). | Researched (Handbook of Mineralogy) + built `_makeHemimorphiteFan` (js/99i): a divergent fan/sheaf of thin tabular blades, pointed free ends / flat pedion bases (the Tsumeb bowtie); caught before the hexagonal prism (greenockite/wurtzite keep it). Keeps its `_polarAxis` tag (mm2 is polar); geometry only. Browser-verified (bowtie splay). Remaining: the `botryoidal_blue` crust variant also renders as the fan — a true blob builder is a future refinement. |
 
 **Lesson (adds to the float-vs-embed headline):** "green = not yet falsified" is literal. Two shapes
 shipped on literature alone; the verification falsified one render (tourmaline hexagon) and one
 mechanism claim (calcite obtuse/acute → whole-face) and confirmed two (greenockite/wurtzite). The
 catalog + image-corpus is still the apex instrument — a real calcite specimen for free-vs-attached
 macrostep contrast, and a real greenockite/tourmaline termination, remain owed.
+
+---
+
+## ADDENDUM (2026-06-26) — Phase 2 substrate occlusion SHIPPED (the re-promoted next phase, byte-identical)
+
+The DOMINANT, UNIVERSAL extrinsic driver is now built — render-only, **NO SIM bump (still v214)**, cold-ci GREEN, browser-verified.
+
+- **What:** js/45 `classifyOcclusion` (pure, rng-free, gated on `wall.occlusion`) tags every wall-nucleated crystal `_occlusion = { attachedFraction }`; the renderer sinks the buried fraction: `offsetMm = cLen*(0.5 − attachedFraction)` (js/99i, the universal placement path). attachedFraction = scenario mean (`wall.occlusion_fraction`, default 0.40) ± a deterministic golden-ratio hash of crystal_id (±0.12, clamped [0.10,0.60]) — a natural spread of embed depths with **no rng** (the byte-identity gate). UNIVERSAL: all minerals, any point group (unlike intrinsic `_polarAxis`). A wall crystal can carry BOTH — `_occlusion` (buried base) AND `_polarAxis` (polar +c).
+- **Opt-in: mvt** (`wall.occlusion: true`) — the canonical druse, so occlusion spans sphalerite/galena/fluorite/calcite/barite (demonstrates the universal nature better than a single-species scenario). js/22 whitelists occlusion + occlusion_fraction + occlusion_minerals (the WallState-drops-unlisted-flags catch); js/27 field doc marked shipped (+ corrected the stale `_polarAxis {plusC_rate,minusC_rate}` → `{pointGroup}`); tests-js/occlusion.test.ts (5 pins: dormancy, opt-in sane fraction, UNIVERSAL >1 mineral, determinism, no-widen). occF=0 (every non-opted scenario) ⇒ the EXACT base-at-anchor float ⇒ byte-identical placement fleet-wide.
+- **The flagged risk resolved FAVORABLY.** The proposal warned "watch the offset math" because the cavity wall is translucent (BackSide, opacity 0.40) — a sunk base could ghost through it. Browser-verify (offscreen: real `_buildHabitGeom` + a faithful 0.40 translucent wall + the real offset math) showed the opposite: the translucent matrix **VEILS** the buried base (reads as rooted in rock), with the emergent termination crisp. No ghost.
+- **Honest read note:** occlusion reads strongest on FAR-wall crystals (the translucent matrix sits between camera and the dimmed base); NEAR-wall crystals projecting at the camera show it less (their base sinks into the culled near hemisphere). Net-positive, render-only, reversible.
+- **Broadened same day (habit guard + 2 more scenarios).** Occlusion is universal, so it shouldn't live on one scenario. Added a HABIT GUARD: `classifyOcclusion` now skips non-euhedral forms (crusts / massive-earthy / dendrite / fibrous / scaly / spray-tuft-rosette via `OCCLUSION_SKIP_HABIT`) and air-mode crystals, and **re-evaluates each step** to CLEAR a stale tag when a crystal's habit later flips to an aggregate — caught `quartz→chalcedony` and `wurtzite→platy_massive` in mvt (habit evolves after tag-time; end-state now reflects the FINAL habit, still byte-identical, no longer tag-once). Opted in **elmwood** (0.40 — scalenohedra now emerge from matrix, compounding with Phase 1 stepping) and **gem_pegmatite** (`occlusion_fraction: 0.30` — pocket crystals emerge freer; London 2008; guard skips lepidolite's scaly aggregate). occlusion.test.ts → 8 pins. The path to a **fleet-wide default** is now: a few more habit-diverse looks, then flip the default (guard proven) — or keep opt-in if per-scenario `occlusion_fraction` tuning is wanted.
+- **Census + guard refinement same day.** Built `tools/occlusion-coverage.mjs` — forces occlusion ON for every scenario and reports what the real classifier roots vs guard-skips (the occlusion analog of `morph-fidelity-audit.mjs`; a fleet-coverage instrument + guard bug-finder). Census (seed 42): **496/730 eligible crystals root across 37 scenarios**, every guard-skip a genuine non-euhedral form, air-mode dripstone + microcrystalline-only correctly root nothing, NO false-positives. It surfaced + fixed three borderline false-negatives (native_gold nugget, awaruite grains/placer, tigers_eye all varieties → `OCCLUSION_SKIP_HABIT` gained `nugget|grains|placer|chatoyant|hawks_eye|tiger`, fleet 504→496). **The guard is now logically sound fleet-wide; the only remaining gate for a fleet-wide default is the AESTHETIC sink read (eyes, not the census).** Recommend: eyeball a default-on build, then flip occlusion to opt-OUT (keep `occlusion_fraction` for tuning).
+- **Next:** the arc's remaining big lift is **Phase 4** (full per-face central-distance / Wulff form) — needs the concavity-primitive decision first (proposal §2.3). Cheaper adjacent wins: broader occlusion rollout (it's universal — a fleet-wide default after a multi-scenario look), and the **reactive-morphology** rungs (face-set selected by the void normal / flow / diffusion field, not yaw-arbitrary). Owed terminal checks unchanged: a real drusy specimen (Phase 2), free-vs-attached macrostep calcite (Phase 1), a real hemimorphic termination (Phase 3).
 
 ---
 
@@ -48,7 +62,7 @@ Three crystal-level RENDER tags, each its own field (the science forbids conflat
 
 - **`_faceStep`** `{ steppedFaceSet, atStep }` — directional macrostep relief on ONE face-set (calcite {104} obtuse/acute anisotropy). **SHIPPED** (Phase 1, elmwood). Gated on `wall.directional_steps` (opt-in).
 - **`_polarAxis`** `{ pointGroup }` — intrinsic crystallographic polarity, the 10 polar point groups only. **SHIPPED** (Phase 3). ALWAYS-ON for the 4 tenants (intrinsic, not opt-in).
-- **`_occlusion`** `{ attachedFraction }` — the buried substrate-attached end (extrinsic, universal). **NOT BUILT** (Phase 2, re-promoted — see below).
+- **`_occlusion`** `{ attachedFraction }` — the buried substrate-attached end (extrinsic, universal). **SHIPPED** (Phase 2, 2026-06-26; mvt opts in via `wall.occlusion`). js/45 classifyOcclusion → js/99i sinks the base offset. See the 2026-06-26 addendum.
 
 The classifier-dispatch pattern (mirror `classifyDeformation`/`classifyEtch`/`classifySectorZoning`): a pure function in js/45, wired into the js/85 post-step dispatch, no-op unless its gate fires → byte-identical fleet. This is the cheapest way to add render-only morphology in this codebase, and it's the spine of the whole arc.
 
@@ -70,7 +84,7 @@ The classifier-dispatch pattern (mirror `classifyDeformation`/`classifyEtch`/`cl
 
 ## Where the next builder picks up (ranked)
 
-1. **Phase 2 — substrate occlusion (RE-PROMOTED, recommended next).** The dominant universal driver, now confirmed visible. Real drusy crystals emerge single-terminated with the base embedded in the matrix; the sim shows the full free-standing crystal perched base-on-surface. **Approach** (proposal §2, Phase 2 row): add `_occlusion = { attachedFraction }` (classifier in js/45, gated on a `wall.occlusion` opt-in + the js/22 whitelist line); in js/99i shift the base offset so the lower `attachedFraction` of the crystal sinks below the wall surface (render the buried portion short / clipped). Render-only → byte-identical. **CAVEAT:** this is the UNIVERSAL placement path (`offsetMm`/`mesh.position` at js/99i:4076) — the proposal flagged "watch the offset math"; browser-verify across several scenarios (elmwood, a pegmatite, mvt). The float-vs-embed screenshot in this session shows exactly the target read (lower ~40% embedded, single free termination).
+1. **Phase 2 — substrate occlusion. ✅ SHIPPED (2026-06-26)** — see the addendum at the top; the description below was the plan, and is what shipped. The dominant universal driver, now confirmed visible. Real drusy crystals emerge single-terminated with the base embedded in the matrix; the sim shows the full free-standing crystal perched base-on-surface. **Approach** (proposal §2, Phase 2 row): add `_occlusion = { attachedFraction }` (classifier in js/45, gated on a `wall.occlusion` opt-in + the js/22 whitelist line); in js/99i shift the base offset so the lower `attachedFraction` of the crystal sinks below the wall surface (render the buried portion short / clipped). Render-only → byte-identical. **CAVEAT:** this is the UNIVERSAL placement path (`offsetMm`/`mesh.position` at js/99i:4076) — the proposal flagged "watch the offset math"; browser-verify across several scenarios (elmwood, a pegmatite, mvt). The float-vs-embed screenshot in this session shows exactly the target read (lower ~40% embedded, single free termination).
 
 2. **Phase 4 — the full central-distance (Wulff) model.** The destination: replace the (c_length, a_width, habit) triple with a per-crystal face set `[{normal, d, regime}]`, render via half-space intersection → `ConvexGeometry`. Reshapes the VISIBLE crystal per-face. Big lift; **decide the concavity primitive (nested convex shells, recommended) BEFORE generalizing stepped/skeletal** — neither the convex MVP nor the convex Wulff body can render hopper/skeletal concavity (proposal §2.3). Validate with the cube+octahedron fixture (equal d → cuboctahedron; shrink {111} → cube). Δd must be deterministic (per-(mineral,step) derived RNG, not the shared stream).
 
@@ -93,5 +107,51 @@ This arc moved fast because the ground was already laid: the **classifier-overpr
 ## Builder's note
 
 The shape of this session was research → propose → stage → ship → **correct**. The correction is the part I'd underline. I demoted Phase 2 on a confident-sounding hypothesis built from reading half the system (the builders) and not the other half (the placement). It would have shipped a wrong conclusion into the backlog and cost the next builder a wrong start — except the boss asked me to *look* instead of *argue*, and looking falsified it in one render. The lesson isn't "I was wrong"; it's that **a claim about what the user sees is only as good as having looked at what the user sees** — code-reasoning is a hypothesis, the rendered pixel is the evidence. The whole arc stayed byte-identical and SIM-neutral on purpose, so none of it risked the chemistry that months of calibration earned; morphology is a layer you can rebuild without disturbing the foundation. That separation — visible form on top of stable science — is what made it safe to be wrong and cheap to correct.
+
+— the builder
+
+---
+
+## Closing thoughts before compact (2026-06-23, later)
+
+Three render-only fixes shipped this session, all byte-identical (SIM 214 unchanged), all one thread —
+the specimen-debt pass that began as "verify Phases 1 + 3" became "find the bug *underneath* them":
+
+- `74611ab` — tourmaline ditrigonal cross-section (+ calcite stepping-mechanism correction)
+- `af81720` — hemimorphite fan/sheaf (orthorhombic, was hexagonal)
+- `f0c99eb` — **system-aware prism cross-section** (the generalization) + `tools/morph-fidelity-audit.mjs`
+
+**The shape of the lesson.** Tourmaline and hemimorphite each *looked* like a one-off "this mineral is
+drawn wrong." They weren't. The renderer's default habit token is `prism`, and the prism primitive is a
+HEXAGON — so the real bug was *every non-hexagonal prismatic mineral at once*; the two I happened to check
+were the visible tip. The audit tool is the thing to reach for first next time: a deterministic habit→token
+vs. crystal-system join, it found 72. **When you fix a "this one renders wrong" case, ask whether the
+mechanism that produced it is shared.** It usually is.
+
+**The honest scar.** I tried to verify the 72 crystal systems with a Workflow and it ran away to the
+1000-agent cap — ~14.9M tokens, tripped the session usage limit (reset 11:10pm ET). Cause: `args` reached
+the script as a STRING, my `chunk()` sliced the ~10KB JSON into ~950 fragments, one agent each. Two lessons:
+*mechanical* — guard any fan-out against a non-array input; never trust args to arrive parsed. *Judgmental
+(the real one)* — **I fanned out to verify data that was already verified.** `structural.json` carries
+citation-backed crystal systems; the whole fix was a deterministic data join. The workflow wasn't just
+buggy, it was the wrong tool. Reach for agents when the answer needs judgment or the web — not when a file
+already holds it.
+
+**Deferred (none blocking):** `spike` needles still render hexagonal (cross-section invisible at needle
+scale — `_makeSystemPrism` already has the shapes if you ever want them routed through); some audit-flagged
+minerals are non-euhedral aggregates (earthy/scaly/crust) that shouldn't be a single prism *at all* — a
+HABIT problem, not a cross-section one, and a harder separate fix; the cubic prism-token entries are
+habit-string artifacts (grow engines set cube/octahedral at runtime — false positives). The original arc's
+debts still stand: **Phase 2 substrate occlusion** (the re-promoted next phase) and real-specimen
+verification of the calcite macrostep + the hemimorphic terminations.
+
+**State:** HEAD `f0c99eb`, origin synced, Pages building at it; SIM 214 unchanged across all three fixes;
+cold-ci green (2033 tests). `tools/morph-fidelity-audit.mjs` is the reusable instrument (`--json`,
+`--systemmap`). Stray `_minlist.json` at repo root is runaway-agent debris (not mine, left untracked —
+safe to delete).
+
+Three real fidelity wins on stable infrastructure, each checked against a real rock or a real screenshot
+before shipping — and one real misstep, which was far cheaper to make on a render-only arc than anywhere
+near the chemistry. That's the same separation the note above is about, earning its keep again.
 
 — the builder
