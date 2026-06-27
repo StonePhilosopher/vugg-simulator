@@ -841,8 +841,12 @@ const OCCLUSION_MIN_UM = 50;       // skip nucleation specks — need a body to 
 // Occlusion is the read for a single EUHEDRAL crystal emerging from its wall footprint. These
 // habits are NOT that — a buried base is meaningless or wrong for them, so they keep the
 // base-on-surface float: crusts / coatings / films, massive-earthy aggregates, dendrites /
-// wires, fibrous / scaly micas, and sprays / tufts / rosettes (cluster-from-a-point forms).
-const OCCLUSION_SKIP_HABIT = /botryoid|mammillary|reniform|colloform|crust|coat|encrust|drusy|druze|sinter|nodular|cauliflower|massive|earthy|sooty|powder|granular|disseminat|chalcedony|banded|dendrit|arborescent|wire|reticulat|fibrous|scaly|micaceous|capillary|cotton|spherulit|spray|rosette|radiat|sheaf|tuft|frostwork|stalactit|stellate|sixling|fiveling|plush|film/i;
+// wires, fibrous / scaly micas, sprays / tufts / rosettes (cluster-from-a-point forms), and
+// rounded masses / placer grains / chatoyant pseudomorphs (no crystal footprint at all). The
+// trailing terms (nugget|grains|placer|chatoyant|hawks_eye|tiger) were added after the
+// occlusion-coverage census flagged native_gold(nugget), awaruite(grains/placer) and tigers_eye
+// (all varieties — a fibrous silica pseudomorph, never euhedral) rooting as if they were crystals.
+const OCCLUSION_SKIP_HABIT = /botryoid|mammillary|reniform|colloform|crust|coat|encrust|drusy|druze|sinter|nodular|cauliflower|massive|earthy|sooty|powder|granular|disseminat|chalcedony|banded|dendrit|arborescent|wire|reticulat|fibrous|scaly|micaceous|capillary|cotton|spherulit|spray|rosette|radiat|sheaf|tuft|frostwork|stalactit|stellate|sixling|fiveling|plush|film|nugget|grains|placer|chatoyant|hawks_eye|tiger/i;
 function classifyOcclusion(sim: any) {
   const wall = sim.conditions && sim.conditions.wall;
   if (!wall || !wall.occlusion) return;            // opt-in gate — dormant unless a scenario sets it

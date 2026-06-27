@@ -151,6 +151,20 @@ Living list of open work items, captured from session conversations so context s
 > **NEXT toward fleet-wide default:** a few more habit-diverse looks, then flip occlusion ON by default
 > (the guard is now proven) — or keep opt-in if per-scenario occlusion_fraction tuning is wanted.
 >
+> **OCCLUSION FLEET CENSUS + GUARD REFINEMENTS (2026-06-26, same day).** Built `tools/occlusion-coverage.mjs`
+> (the occlusion analog of morph-fidelity-audit.mjs): forces occlusion ON for every scenario and reports,
+> per scenario, what the real classifier ROOTS vs guard-SKIPS — evidence for the fleet-wide default + a guard
+> bug-finder. Census (seed 42): **496/730 eligible crystals root across 37 scenarios**; every guard-skip is a
+> genuine non-euhedral form; air-mode dripstone (stalactite_demo, zoned_dripstone_cave) + microcrystalline-only
+> (cooling) correctly root NOTHING; NO false-positives (no prism/cube/scalenohedron wrongly skipped). The
+> census surfaced + fixed three borderline false-NEGATIVES (rooted as if euhedral): native_gold(nugget),
+> awaruite(grains/placer), tigers_eye (all varieties — a fibrous silica pseudomorph, never a crystal);
+> OCCLUSION_SKIP_HABIT gained nugget|grains|placer|chatoyant|hawks_eye|tiger (fleet 504→496). **The guard is
+> now logically sound fleet-wide — the ONLY remaining gate for a fleet-wide default is the AESTHETIC sink read
+> across scenarios (needs the boss's eyes / a live look, not the headless census).** Recommendation: eyeball a
+> default-on build on a few diverse scenarios, then flip occlusion to opt-OUT (keep occlusion_fraction for
+> tuning). cold-ci GREEN.
+>
 > **SPECIMEN-DEBT VERIFICATION PASS DONE (2026-06-23) — Phases 1+3 falsified against the
 > literature; shipped 4 render-only/doc corrections, byte-identical, NO SIM bump (still v214).**
 > Paid the owed terminal-verification debt the right way ([[feedback_terminal_verification_specimens]]):
