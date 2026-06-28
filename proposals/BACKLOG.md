@@ -28,7 +28,7 @@ Living list of open work items, captured from session conversations so context s
 > defer-to-geology, image-corpus method). Full goal text in
 > `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
-> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED (byte-identical, render-only)
+> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED · PHASE 4 DESIGN + 4a.0 KERNEL SHIPPED (byte-identical, render-only)
 >
 > Boss directive: "geologically accurate wireframe models … asymmetric stepped growth — steps
 > on one face-set not all, opposite faces smoother; polarized growth, one end faster, the other
@@ -42,6 +42,7 @@ Living list of open work items, captured from session conversations so context s
 > Phase 2 occlusion SHIPPED on mvt/elmwood/gem_pegmatite + habit guard + the `occlusion-coverage.mjs`
 > fleet census + the fork: fleet-wide default ⭐ / Phase 4 Wulff / aggregate-geometry arc. Full Phase
 > 0/1/3 + specimen-debt backstory in `proposals/HANDOFF-DIRECTIONAL-GROWTH-2026-06-22.md`).
+> **Phase 4 (the Wulff destination): design pass + 4a.0 kernel = `proposals/DESIGN-WULFF-PHASE-4-2026-06-28.md`.**
 > **Full design doc: `proposals/PROPOSAL-DIRECTIONAL-GROWTH-2026-06-22.md`** (multi-agent
 > research, 40+ citations verified, zero fabrications; physics cross-checked; catalog audit
 > EXECUTED). **The destination = the central-distance / Wulff model** (crystal = ⋂ half-spaces
@@ -228,6 +229,8 @@ Living list of open work items, captured from session conversations so context s
 > limit) — `args` arrived as a STRING and the script's `chunk()` sliced it into ~950 fragments. The
 > verification was never needed: structural.json is the citation-backed source; the fix is
 > deterministic. Guard `chunk()` against non-arrays; don't fan out what a data join can do.**
+>
+> **PHASE 4 DESIGN PASS + 4a.0 KERNEL SHIPPED (2026-06-28) — the full per-face central-distance (Wulff) model begins (render-only, byte-identical, NO SIM bump, still v214).** The arc's destination, parked behind a design pass + greenlight. **Design doc: `proposals/DESIGN-WULFF-PHASE-4-2026-06-28.md`** resolves the six gating decisions: (D1) concavity primitive = **nested convex shells** (confirm the proposal's rec; the convex body is the base layer either way, so NOT on the 4a critical path — none of the first tenants are concave); (D2) render via **direct triple-plane half-space intersection → hand-rolled BufferGeometry, NO ConvexGeometry / new Three.js dep** (none exists in the bundle; the ≤24-face direct method is trivially correct + matches the ~30 sibling `_make*Geom` builders); (D3) crystallography data = a curated **`WULFF_FORM_GEOMETRY` registry** (per-tenant point group + forms {hkl} + BFDH-seed rates) over the existing `data/structural.json` cell metric (fluorite/galena/calcite all present); (D4) growth law `dᵢ(g)=dᵢ⁰+g·Rᵢ`, **fully rng-free** (fixed Rᵢ + golden-ratio crystal-id hash — purer than the proposal's "derived stream", zero cascade risk); (D5) **Phase 4a render-only** (Wulff mesh scaled into the c_length×a_width envelope → engine math stays on the scalars → byte-identical, NO rebake) vs **Phase 4b engine-coupled** (true polyhedron volume → vugFill; per-scenario SIM bump + single-scenario rebake; DEFERRED until a tenant needs it); (D6) first tenant = **fluorite** (cubic m3m {100}+{111}, the textbook cube↔octahedron transition we already drive by REE/Y) after the fixture validates the kernel. **4a.0 SHIPPED:** `js/46-wulff-geometry.ts` — `wulffCubicNormals` (cubic symmetry expansion), `wulffPolyhedron` (triple-plane intersection + interior test + dedup + face grouping + automatic face self-elimination), `wulffFaceSetForMineral` (registry → dynamic face set), `_makeWulffGeom` (→ BufferGeometry, normalized to ±0.5, **null-clamp on degenerate → symmetric-primitive fallback**). tests-js/wulff-geometry.test.ts — **14 pins**: the cube+octahedron fixture (equal d → cuboctahedron 12v/14f = {3:8,4:6}; shrink {111} → cube 8v/6f; shrink {100} → octahedron 6v/8f; degenerate → <4v), BufferGeometry triangle counts (60/36/24), bias separation (pure cube vs pure octahedron), rng-free determinism. **NOTHING DISPATCHES IT YET** — pure infra, byte-identical across all 37 scenarios (the Phase-0 lane); the fixture proves the math. cold-ci GREEN. **NEXT = rung 4a.1 (fluorite tenant opt-in) — GREENLIGHT-GATED: the first visible change, an aesthetic call only the boss's eye can sign (same gate as the occlusion fleet-wide default). Pick the fluorite scenario (sunnyside / gem_pegmatite / elmwood) at the checkpoint.**
 >
 > ## 🏞️ SESSION (2026-06-22, later) — OPEN-SYSTEM EVAPORITE PLAIN + flooded selenite ✅ SHIPPED (SIM 214)
 >

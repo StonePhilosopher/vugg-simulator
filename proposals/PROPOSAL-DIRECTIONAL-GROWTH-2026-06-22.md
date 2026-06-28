@@ -171,6 +171,8 @@ The genuinely new code is small; the rest is forking proven infrastructure:
 
 Each phase is independently shippable. Phases 0–3 are render-only and byte-identical; only Phase 4 touches engine math, and then only per opting scenario.
 
+**Phase 4 UPDATE (2026-06-28) — design pass done + rung 4a.0 SHIPPED (byte-identical).** Full design pass in `proposals/DESIGN-WULFF-PHASE-4-2026-06-28.md`. Decisions made vs. this row: render via **direct triple-plane half-space intersection → hand-rolled BufferGeometry, NOT `ConvexGeometry`** (none in the bundle; the ≤24-face direct method is trivially correct); Δd is **fully rng-free** (fixed BFDH-seed Rᵢ + a golden-ratio crystal-id hash — purer than a derived RNG stream); and the "engine math may change" is split into **Phase 4a render-only** (Wulff mesh scaled into the existing c_length×a_width envelope → byte-identical, NO rebake) vs **Phase 4b engine-coupled** (true polyhedron volume → fill; per-scenario SIM bump + rebake; deferred). Concavity primitive = **nested convex shells** (confirmed; the convex body is the base layer, so this is NOT on the 4a critical path — none of the first tenants are concave). **4a.0 = `js/46-wulff-geometry.ts`** (`wulffCubicNormals`/`wulffPolyhedron`/`wulffFaceSetForMineral`/`_makeWulffGeom`, degenerate→null clamp) + `tests-js/wulff-geometry.test.ts` (14 pins incl. the cube+octahedron fixture). Nothing dispatches it yet; cold-ci GREEN. NEXT = rung 4a.1 (fluorite tenant opt-in), greenlight-gated.
+
 ---
 
 ## 4. Open questions & risks
