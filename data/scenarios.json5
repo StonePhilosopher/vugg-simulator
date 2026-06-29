@@ -3383,7 +3383,12 @@
           "architecture": "pocket",
           "primary_bubbles": 4,
           "secondary_bubbles": 6,
-          "shape_seed": 1959
+          "shape_seed": 1959,
+          // Central-distance (Wulff) FORM, Phase 4 rung 4a.1 — render the Stage VI REE-fluorite
+          // as the TRUE {100}/{111} polyhedron (cube↔cuboctahedron↔octahedron, driven by the Y
+          // the Stage VI pulse leaches; Bosze & Rakovan 2002, cited below) instead of a fixed
+          // octahedron primitive. Render-only (js/45 classifyWulffForm → js/99i): byte-identical.
+          "wulff_fluorite": true
         }
       },
       "events": [

@@ -134,12 +134,12 @@ function wulffCubicNormals(hkl: any): any {
 
 // ------------------------------------------------------------
 // Build the dynamic face set for a registry mineral at a given scalar growth.
-//   dᵢ(g) = baseD + g·Rᵢ_effective   (here normalized: baseD + spanFrac·(R/Rmax))
+//   dᵢ(g) = SEED + SPAN·g·Rᵢ_effective   (proposal §1.2, normalized units)
 // growthFrac ∈ [0,1] is how developed the crystal is (maps the engine's growth
-// scalar into a unit envelope — the mesh is scaled to c_length×a_width at
-// dispatch, so the kernel works in normalized distances ~0.5). biasC raises the
-// {100}:{111} ratio (REE/Y → more octahedral); a golden-ratio hash of crystalId
-// adds rng-free per-crystal variation. Returns [{n,d}] ready for wulffPolyhedron.
+// scalar into a unit envelope — absolute distance is normalized away in
+// _makeWulffGeom's ±0.5 envelope). biasC>1 slows {100} → cube; biasC<1 →
+// octahedral (the REE/Y bias); a golden-ratio hash of crystalId adds rng-free
+// per-crystal variation. Returns [{n,d}] ready for wulffPolyhedron.
 // ------------------------------------------------------------
 function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: number, biasC: number): any {
   const reg = WULFF_FORM_GEOMETRY[mineral];
@@ -155,11 +155,16 @@ function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: 
     const isCube = (Math.abs(form.hkl[0]) + Math.abs(form.hkl[1]) + Math.abs(form.hkl[2])) === 1;
     if (isCube && biasC) R = R / biasC;
     R *= jitter;
-    // central distance advances dᵢ(g) = baseD + g·Rᵢ (proposal §1.2): a FAST face
-    // (large R) recedes outward and is cut off by its slower neighbours
+    // central distance advances dᵢ(g) = SEED + SPAN·g·Rᵢ (proposal §1.2): a FAST
+    // face (large R) recedes outward and is cut off by its slower neighbours
     // (self-elimination — "slow faces win"); a SLOW face stays close and dominates
     // the habit. So {100} R=1.0 < {111} R=1.7 ⇒ {100} dominates ⇒ cube default.
-    const d = 0.30 + 0.40 * g * R;
+    // SEED (0.05) is the tiny nucleus; SPAN (1.0) lets the RATE RATIO — not the
+    // seed — drive the form, so the full cube↔cuboctahedron↔octahedron range is
+    // reachable across the biasC the tenants emit (rung 4a.1 swept the topology to
+    // place its ranges: a 0.30 seed pinned everything to cuboctahedron). Absolute
+    // scale is normalized away in _makeWulffGeom (±0.5 envelope).
+    const d = 0.05 + 1.0 * g * R;
     for (const n of wulffCubicNormals(form.hkl)) faces.push({ n, d });
   }
   return faces;

@@ -792,6 +792,12 @@ class VugSimulator {
     // singly-terminated drusy habit). The renderer sinks that fraction below the wall surface.
     // Pure tagging; gated on wall.occlusion (only mvt opts in) → byte-identical fleet. See js/45.
     classifyOcclusion(this);
+    // Central-distance (Wulff) FORM (central-distance arc Phase 4 rung 4a.1, 2026-06-28) — the
+    // arc's destination: tags fluorite with the {100}/{111} central-distance bias so the renderer
+    // draws the geometrically-true cube↔cuboctahedron↔octahedron form instead of a fixed primitive.
+    // Pure tagging; gated on wall.wulff_fluorite (only sunnyside opts in) → byte-identical fleet,
+    // token unchanged so the size scale is untouched (no SIM bump, no rebake). See js/45.
+    classifyWulffForm(this);
 
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Helicoid-as-recorder hook (Shy's 2026-05-26 design reframe).

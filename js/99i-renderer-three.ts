@@ -3898,6 +3898,32 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       const terr = halideTerraceBands(crystal, replayStep);
       if (terr) geom = _getTerracedCalciteGeom(state, crystal, terr);
     }
+    // CENTRAL-DISTANCE (Wulff) FORM (central-distance arc Phase 4 rung 4a.1, 2026-06-28): the
+    // arc's DESTINATION. A fluorite crystal the sim tagged _wulffForm (js/45 classifyWulffForm,
+    // gated on wall.wulff_fluorite) renders as the TRUE {100}/{111} convex polyhedron (js/46
+    // wulffFaceSetForMineral → _makeWulffGeom) instead of the fixed OctahedronGeometry/BoxGeometry
+    // — the cube↔cuboctahedron↔octahedron transition fluid.Y drives in grow_fluorite (Bosze &
+    // Rakovan 2002 GCA 66:997, REE-stabilized {111}). Gated on the isometric cube/octahedron
+    // tokens so the penetration-twin / etched-cube / stepped-cube / dendrite paths above keep
+    // their own geometry, and on !geom so they all win. The geom is normalized to ±0.5 and the
+    // token is UNCHANGED, so the downstream isometric scale (mesh.scale.set(cLen,cLen,cLen)) is
+    // identical → same SIZE, new SHAPE → byte-identical baseline (no SIM bump, no rebake).
+    // Cached by quantized (form, biasC, growth) so each distinct population form builds once;
+    // _makeWulffGeom null-clamps a degenerate polyhedron → fall through to the primitive below.
+    if (!geom && crystal._wulffForm && (token === 'cube' || token === 'octahedron')
+        && typeof wulffFaceSetForMineral === 'function') {
+      const wf = crystal._wulffForm;
+      const key = '__wulff_fluorite_' + (wf.octahedral ? 'o' : 'c')
+        + '_' + Math.round(wf.biasC * 100) + '_' + Math.round(wf.growthFrac * 10);
+      geom = state.geomCache.get(key);
+      if (!geom) {
+        // crystalId 0 → the kernel's internal jitter is a harmless constant (the per-crystal
+        // spread already lives in biasC), so the quantized cache key dedupes cleanly.
+        const faces = wulffFaceSetForMineral('fluorite', wf.growthFrac, 0, wf.biasC);
+        const g2 = faces ? _makeWulffGeom(faces) : null;
+        if (g2) { geom = g2; state.geomCache.set(key, geom); }
+      }
+    }
     // Dendrite TREE (morphology fix-backlog, 2026-06-12): dendritic /
     // arborescent habits get the branching skeleton instead of the
     // acicular-spike fallback. Gated on token === 'spike' so the

@@ -298,6 +298,19 @@ class VugWall {
     this.occlusion = !!opts.occlusion;
     this.occlusion_fraction = (typeof opts.occlusion_fraction === 'number') ? opts.occlusion_fraction : undefined;
     this.occlusion_minerals = Array.isArray(opts.occlusion_minerals) ? opts.occlusion_minerals : undefined;
+    // wulff_fluorite — CENTRAL-DISTANCE (Wulff) FORM, Phase 4 rung 4a.1 (2026-06-28).
+    // Opts a scenario's fluorite into the true {100}/{111} central-distance polyhedron
+    // (js/46 wulffFaceSetForMineral → js/99i _makeWulffGeom) instead of the fixed
+    // OctahedronGeometry/BoxGeometry primitive — so the cube↔cuboctahedron↔octahedron
+    // habit transition that fluid.Y drives in grow_fluorite (>1 ppm REE → octahedral)
+    // becomes a geometrically TRUE form (Bosze & Rakovan 2002). js/45 classifyWulffForm
+    // tags _wulffForm; the renderer builds the mesh. RENDER-ONLY — the tag never touches
+    // counts/sizes/chemistry and the token stays cube/octahedron (so the existing
+    // isometric scale path is unchanged), so the baseline stays byte-identical (no SIM
+    // bump, no rebake — the Phase 0-3 discipline). Default false → every other scenario
+    // dormant. Like the flags above, WallState whitelists each opt explicitly — an
+    // unlisted flag from scenarios.json5 is silently dropped, so this line is required.
+    this.wulff_fluorite = !!opts.wulff_fluorite;
   }
 
   dissolve(acid_strength, fluid) {
