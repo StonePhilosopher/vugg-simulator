@@ -17,6 +17,7 @@
 import { describe, expect, it } from 'vitest';
 
 declare const wulffCubicNormals: any;
+declare const wulffTrigonalNormals: any;
 declare const wulffPolyhedron: any;
 declare const wulffFaceSetForMineral: any;
 declare const _makeWulffGeom: any;
@@ -130,5 +131,61 @@ describe('Wulff geometry kernel — registry face-set builder (the tenant path)'
   it('unregistered mineral → null (no Wulff path, symmetric fallback)', () => {
     expect(WULFF_FORM_GEOMETRY.fluorite).toBeTruthy();
     expect(wulffFaceSetForMineral('quartz', 0.5, 1, 1.0)).toBeNull();
+  });
+});
+
+// The FIRST non-cubic crystal system (rung 4a.2) — calcite, trigonal R-3c / point
+// group -3m, hexagonal cell a=4.99 c=17.06. Unlike cubic, {hkl} is NOT the real-space
+// direction: the normal is the reciprocal vector g=(h/a,(h+2k)/(a√3),l/c), expanded by
+// the -3m orbit (built once via generator closure). Pins the orbit sizes (the
+// crystallographic check), the registry 18-plane face set, and the rhombohedron↔
+// scalenohedron habit knob. Validated against a standalone prototype before porting.
+describe('Wulff geometry kernel — trigonal/hexagonal-R (calcite) symmetry', () => {
+  it('{10-14}=(104) rhombohedron → 6 face normals', () => {
+    expect(wulffTrigonalNormals([1, 0, 4], 4.99, 17.06).length).toBe(6);
+  });
+  it('{21-31}=(211) scalenohedron → 12 face normals', () => {
+    expect(wulffTrigonalNormals([2, 1, 1], 4.99, 17.06).length).toBe(12);
+  });
+  it('{10-10}=(100) prism → 6; {0001}=(001) pinacoid → 2', () => {
+    expect(wulffTrigonalNormals([1, 0, 0], 4.99, 17.06).length).toBe(6);
+    expect(wulffTrigonalNormals([0, 0, 1], 4.99, 17.06).length).toBe(2);
+  });
+  it('every trigonal normal is unit length', () => {
+    for (const n of [...wulffTrigonalNormals([1, 0, 4], 4.99, 17.06), ...wulffTrigonalNormals([2, 1, 1], 4.99, 17.06)]) {
+      expect(Math.hypot(n[0], n[1], n[2])).toBeCloseTo(1, 9);
+    }
+  });
+});
+
+describe('Wulff geometry kernel — calcite via the registry (rung 4a.2)', () => {
+  // face set is built [6 rhombohedron planes (idx 0-5), 12 scalenohedron planes (idx 6-17)]
+  const rhombFaces = (p: any) => p.faces.filter((f: any) => f.plane < 6).length;
+  const scalenoFaces = (p: any) => p.faces.filter((f: any) => f.plane >= 6).length;
+
+  it('calcite yields the 18-plane face set (6 rhombohedron + 12 scalenohedron) + builds a solid', () => {
+    const faces = wulffFaceSetForMineral('calcite', 0.5, 7, 1.0);
+    expect(faces).toBeTruthy();
+    expect(faces.length).toBe(18);
+    expect(_makeWulffGeom(faces)).toBeTruthy();
+  });
+
+  it('biasC>1 → rhombohedron (nailhead): the scalenohedron self-eliminates', () => {
+    const p = wulffPolyhedron(wulffFaceSetForMineral('calcite', 0.6, 7, 2.0));
+    expect(rhombFaces(p)).toBe(6);     // all 6 rhombohedron faces dominate
+    expect(scalenoFaces(p)).toBe(0);   // the 12 scalenohedron faces grew out
+  });
+
+  it('biasC<1 brings the scalenohedron in (dogtooth modified by rhombohedron caps)', () => {
+    const lo = wulffPolyhedron(wulffFaceSetForMineral('calcite', 0.6, 7, 0.5));
+    const hi = wulffPolyhedron(wulffFaceSetForMineral('calcite', 0.6, 7, 2.0));
+    expect(scalenoFaces(lo)).toBeGreaterThan(scalenoFaces(hi));   // 12 > 0
+    expect(rhombFaces(lo)).toBeGreaterThan(0);                    // rhomb caps persist (a real composite habit)
+  });
+
+  it('determinism — identical calcite inputs give byte-identical face sets (rng-free)', () => {
+    const a = wulffFaceSetForMineral('calcite', 0.5, 11, 0.6);
+    const b = wulffFaceSetForMineral('calcite', 0.5, 11, 0.6);
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 });

@@ -54,19 +54,37 @@
 // more important form — which is why fluorite/galena default to cubes). Real
 // values are hand-tuned per tenant against the specimen record, BFDH-seeded.
 // ------------------------------------------------------------
+// Each form: { hkl, R (relative advance rate; only ratios matter), bias? }. The
+// optional `bias: true` flag marks the form whose rate biasC divides (R/biasC) —
+// the habit knob: biasC>1 slows that form so it dominates, biasC<1 speeds it so it
+// recedes and its competitor takes over. (Generalizes the old cubic-only isCube
+// test so trigonal tenants get the same knob.) `cell` carries the metric a lower-
+// symmetry system needs to turn {hkl} into a real-space normal.
 const WULFF_FORM_GEOMETRY: any = {
-  // First tenant (rung 4a.1) — the textbook cube↔octahedron mineral. R_111 > R_100
-  // means the octahedron faces advance faster (shrink in area), so the default
-  // habit is the cube; an REE/Y bias raises R_100:R_111 toward octahedral (the
-  // existing octahedral_REE token dispatch, made geometrically true).
+  // rung 4a.1 — the textbook cube↔octahedron mineral. R_111 > R_100 means the
+  // octahedron faces advance faster (shrink in area), so the default habit is the
+  // cube; biasC<1 raises R_100 toward octahedral (the existing octahedral_REE token
+  // dispatch, made geometrically true). bias flag on {100}.
   fluorite: { system: 'cubic', forms: [
-    { hkl: [1, 0, 0], R: 1.0 },
+    { hkl: [1, 0, 0], R: 1.0, bias: true },
     { hkl: [1, 1, 1], R: 1.7 },
   ] },
   // Worked cubic sibling (galena cube ± octahedron) — ready, not yet dispatched.
   galena: { system: 'cubic', forms: [
-    { hkl: [1, 0, 0], R: 1.0 },
+    { hkl: [1, 0, 0], R: 1.0, bias: true },
     { hkl: [1, 1, 1], R: 1.5 },
+  ] },
+  // rung 4a.2 — the FIRST non-cubic tenant: calcite, trigonal R-3c, point group -3m
+  // (hexagonal cell a=4.99 c=17.06 from data/structural.json). Forms: the cleavage
+  // rhombohedron r {10-14}=(104) and the dogtooth scalenohedron v {21-31}=(211).
+  // BFDH (R ∝ 1/d_hkl): d_104=3.03Å > d_211=1.63Å ⇒ R_211≈1.87·R_104, so the
+  // rhombohedron (nailhead) is the default; biasC<1 slows the scalenohedron's
+  // competitor and the dogtooth takes over (the kinetic high-σ / Mg habit). bias on
+  // the rhombohedron {104}. This is the proof the central-distance model is a GENERAL
+  // framework, not a cubic special case — a second crystal system from one equation.
+  calcite: { system: 'trigonalR', cell: { a: 4.99, c: 17.06 }, forms: [
+    { hkl: [1, 0, 4], R: 1.0, bias: true },
+    { hkl: [2, 1, 1], R: 1.87 },
   ] },
 };
 
@@ -133,6 +151,70 @@ function wulffCubicNormals(hkl: any): any {
 }
 
 // ------------------------------------------------------------
+// Trigonal / hexagonal-R symmetry expansion (calcite -3m, rung 4a.2). Unlike cubic,
+// {hkl} is NOT the real-space direction — the face normal is the RECIPROCAL vector
+// g = h·a* + k·b* + l·c*. For the hexagonal metric (a=b, γ=120°, c) the reciprocal
+// basis works out to a*=(1/a, 1/(a√3), 0), b*=(0, 2/(a√3), 0), c*=(0,0,1/c), so
+//   g(h,k,l) = ( h/a , (h+2k)/(a√3) , l/c )   [3-index Miller; i = -(h+k) dropped].
+// The orbit is then the point group -3m (D3d, order 12) acting on g — built once by
+// closure of its generators { C3(z), C2(x), inversion } (validated: 12 ops;
+// {104}→6 rhombohedron faces, {21-31}→12 scalenohedron faces). a-axis C2 ⇒ -3m1,
+// the calcite setting.
+// ------------------------------------------------------------
+function _wulffMatVec(M: any, v: any): any {
+  return [
+    M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+    M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+    M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2],
+  ];
+}
+function _wulffMatMul(A: any, B: any): any {
+  const R = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+    let s = 0; for (let k = 0; k < 3; k++) s += A[i][k] * B[k][j]; R[i][j] = s;
+  }
+  return R;
+}
+function _wulffMatKey(M: any): string {
+  return [].concat(...M).map((x: number) => (Math.abs(x) < 1e-9 ? 0 : x).toFixed(5)).join(',');
+}
+// Build a point group by closure over its generator matrices (BFS to fixpoint).
+function _wulffBuildGroup(gens: any[]): any[] {
+  const I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  const mats = [I]; const seen: any = { [_wulffMatKey(I)]: true };
+  let added = true;
+  while (added) {
+    added = false;
+    for (const M of mats.slice()) for (const G of gens) {
+      const P = _wulffMatMul(M, G); const key = _wulffMatKey(P);
+      if (!seen[key]) { seen[key] = true; mats.push(P); added = true; }
+    }
+  }
+  return mats;
+}
+const _WULFF_S3 = Math.sqrt(3) / 2;
+// -3m1 generators (Cartesian, hexagonal setting, 3-fold along z, 2-fold along a1=x):
+const _WULFF_TRIGONAL_GROUP = _wulffBuildGroup([
+  [[-0.5, -_WULFF_S3, 0], [_WULFF_S3, -0.5, 0], [0, 0, 1]],   // C3 about z
+  [[1, 0, 0], [0, -1, 0], [0, 0, -1]],                         // C2 about x (a1 axis)
+  [[-1, 0, 0], [0, -1, 0], [0, 0, -1]],                        // inversion centre
+]);
+function wulffTrigonalNormals(hkl: any, a: number, c: number): any {
+  const h = hkl[0], k = hkl[1], l = hkl[2];
+  const seed = _wulffNorm([h / a, (h + 2 * k) / (a * Math.sqrt(3)), l / c]);
+  const out: any[] = [];
+  const found: any = {};
+  for (const M of _WULFF_TRIGONAL_GROUP) {
+    const u = _wulffMatVec(M, seed);
+    const key = u.map((x: number) => (Math.abs(x) < 1e-12 ? 0 : x).toFixed(6)).join(',');
+    if (found[key]) continue;
+    found[key] = true;
+    out.push(u);
+  }
+  return out;
+}
+
+// ------------------------------------------------------------
 // Build the dynamic face set for a registry mineral at a given scalar growth.
 //   dᵢ(g) = SEED + SPAN·g·Rᵢ_effective   (proposal §1.2, normalized units)
 // growthFrac ∈ [0,1] is how developed the crystal is (maps the engine's growth
@@ -143,7 +225,7 @@ function wulffCubicNormals(hkl: any): any {
 // ------------------------------------------------------------
 function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: number, biasC: number): any {
   const reg = WULFF_FORM_GEOMETRY[mineral];
-  if (!reg || reg.system !== 'cubic') return null;
+  if (!reg) return null;
   const g = Math.max(0.05, Math.min(1.0, growthFrac || 0.5));
   // rng-free per-crystal jitter on the relative-rate spread (±12%, clamped).
   const hsh = (((crystalId || 0) * 0.6180339887498949) % 1 + 1) % 1;
@@ -151,9 +233,11 @@ function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: 
   const faces: any[] = [];
   for (const form of reg.forms) {
     let R = form.R;
-    // biasC (≥1) slows {100} relative to {111} → cubic; (≤1) → octahedral.
-    const isCube = (Math.abs(form.hkl[0]) + Math.abs(form.hkl[1]) + Math.abs(form.hkl[2])) === 1;
-    if (isCube && biasC) R = R / biasC;
+    // biasC divides the bias-flagged form's rate: biasC>1 slows it so it dominates,
+    // biasC<1 speeds it so it recedes and its competitor wins. Fluorite: bias on
+    // {100} → biasC>1 cube, biasC<1 octahedron. Calcite: bias on the rhombohedron
+    // {104} → biasC>1 nailhead, biasC<1 dogtooth scalenohedron.
+    if (form.bias && biasC) R = R / biasC;
     R *= jitter;
     // central distance advances dᵢ(g) = SEED + SPAN·g·Rᵢ (proposal §1.2): a FAST
     // face (large R) recedes outward and is cut off by its slower neighbours
@@ -165,7 +249,11 @@ function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: 
     // place its ranges: a 0.30 seed pinned everything to cuboctahedron). Absolute
     // scale is normalized away in _makeWulffGeom (±0.5 envelope).
     const d = 0.05 + 1.0 * g * R;
-    for (const n of wulffCubicNormals(form.hkl)) faces.push({ n, d });
+    const normals = reg.system === 'cubic' ? wulffCubicNormals(form.hkl)
+      : reg.system === 'trigonalR' ? wulffTrigonalNormals(form.hkl, reg.cell.a, reg.cell.c)
+      : null;
+    if (!normals) return null;          // unknown crystal system — no Wulff path
+    for (const n of normals) faces.push({ n, d });
   }
   return faces;
 }
