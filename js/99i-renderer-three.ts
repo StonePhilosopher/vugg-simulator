@@ -3835,6 +3835,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     let isSectorZoned = false;   // sector (hourglass) zoning → vertexColors material
     let isWulffCalcite = false;  // calcite Wulff polyhedron → isotropic scale (geom carries c-elongation)
     let isWulffWulfenite = false;  // wulfenite Wulff tabular plate → isotropic scale by plate diameter (rung 4a.3)
+    let isWulffBarite = false;  // barite Wulff RECTANGULAR tabular plate → isotropic scale by plate diameter (rung 4a.4)
     // ETCHED crystal — post-growth dissolution overprint (crystal-face realism arc §2,
     // 2026-06-22). The sim tags crystal._etch when a scenario etch event corroded a
     // crystal that had ALREADY grown (js/45 classifyEtch; reactivated_fluorite_vein's
@@ -3920,9 +3921,10 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       const isFlWulff = crystal.mineral === 'fluorite' && (token === 'cube' || token === 'octahedron');
       const isCalWulff = crystal.mineral === 'calcite' && (token === 'rhomb' || token === 'scalene');
       const isWfWulff = crystal.mineral === 'wulfenite' && token === 'tablet';   // rung 4a.3 (tetragonal)
-      if (isFlWulff || isCalWulff || isWfWulff) {
+      const isBaWulff = crystal.mineral === 'barite' && token === 'tablet';      // rung 4a.4 (orthorhombic) — tabular/bladed only
+      if (isFlWulff || isCalWulff || isWfWulff || isBaWulff) {
         const formKey = isFlWulff ? (wf.octahedral ? 'o' : 'c')
-          : isCalWulff ? (wf.scaleno ? 's' : 'r') : 't';   // wulfenite is tabular-only
+          : isCalWulff ? (wf.scaleno ? 's' : 'r') : 't';   // wulfenite + barite are tablet-only → 't' (mineral is in the key)
         const key = '__wulff_' + crystal.mineral + '_' + formKey
           + '_' + Math.round(wf.biasC * 100) + '_' + Math.round(wf.growthFrac * 10);
         geom = state.geomCache.get(key);
@@ -3935,6 +3937,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         }
         if (isCalWulff && geom) isWulffCalcite = true;     // signal the isotropic scale below
         if (isWfWulff && geom) isWulffWulfenite = true;    // signal the isotropic-by-diameter scale below
+        if (isBaWulff && geom) isWulffBarite = true;       // signal the isotropic-by-diameter scale below (rung 4a.4)
       }
     }
     // Dendrite TREE (morphology fix-backlog, 2026-06-12): dendritic /
@@ -4274,12 +4277,15 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       // UNIFORMLY by cLen — the geom's own aspect gives the nailhead-vs-dogtooth shape. Applying
       // the token's anisotropic (aWid,cLen,aWid) here would double-stretch the already-elongated geom.
       mesh.scale.set(cLen, cLen, cLen);
-    } else if (isWulffWulfenite) {
-      // isWulffWulfenite (rung 4a.3): the wulfenite Wulff plate already carries its true c<a TABULAR
-      // aspect (kernel builds c on Y, normalized to ±0.5 → the plate diameter is the max extent), so
-      // it scales ISOTROPICALLY by that diameter = max(aWid, cLen) (aWid for a 'tablet' token). The
-      // token's (aWid,cLen,aWid) would re-flatten the already-thin geom; scaling by cLen alone (the
-      // calcite path) would shrink the whole plate to its thickness. Opposite of calcite: c is SHORT.
+    } else if (isWulffWulfenite || isWulffBarite) {
+      // isWulffWulfenite (4a.3, tetragonal) + isWulffBarite (4a.4, orthorhombic): both are TABULAR
+      // Wulff plates with c the SHORT axis (opposite calcite). The kernel builds c on Y, normalized to
+      // ±0.5, so the plate diameter is the max extent — scale ISOTROPICALLY by that diameter =
+      // max(aWid, cLen) (aWid for a 'tablet' token). The token's (aWid,cLen,aWid) would re-flatten the
+      // already-thin geom; scaling by cLen alone (the calcite path) would shrink the whole plate to its
+      // thickness. The plates differ only in the geom's own aspect: wulfenite is SQUARE (a=b), barite
+      // is RECTANGULAR (a≠b ≈ 1.28:1) — both carried internally by the polyhedron, so one scale rule
+      // serves both.
       const s = Math.max(aWid, cLen);
       mesh.scale.set(s, s, s);
     } else if (token === 'botryoidal') {

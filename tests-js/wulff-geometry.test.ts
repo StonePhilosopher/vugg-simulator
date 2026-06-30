@@ -19,6 +19,7 @@ import { describe, expect, it } from 'vitest';
 declare const wulffCubicNormals: any;
 declare const wulffTrigonalNormals: any;
 declare const wulffTetragonalNormals: any;
+declare const wulffOrthorhombicNormals: any;
 declare const wulffPolyhedron: any;
 declare const wulffFaceSetForMineral: any;
 declare const _makeWulffGeom: any;
@@ -252,6 +253,80 @@ describe('Wulff geometry kernel — wulfenite via the registry (rung 4a.3)', () 
   it('determinism — identical wulfenite inputs give byte-identical face sets (rng-free)', () => {
     const a = wulffFaceSetForMineral('wulfenite', 0.5, 11, 1.86);
     const b = wulffFaceSetForMineral('wulfenite', 0.5, 11, 1.86);
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+});
+
+// The FOURTH crystal system (rung 4a.4) — barite, orthorhombic Pnma (barite-group BaSO4) / point
+// group mmm, cell a=8.879 b=5.450 c=7.152. The normal is the reciprocal vector g=(h/a, l/c, k/b)
+// with c on Y, expanded by the mmm orbit (order 8, sign-flips only — NO permutations, the three
+// axes are inequivalent). {111}→8 confirms the order-8 group. The first cell with THREE UNEQUAL axes,
+// so the {001} tabular plate is RECTANGULAR (X≈a > Z≈b ≈ 1.25:1), not square like wulfenite's.
+// Validated against a standalone prototype (wulff-orthorhombic-proto.mjs).
+describe('Wulff geometry kernel — orthorhombic mmm (barite) symmetry', () => {
+  it('c{001} basal pinacoid → 2 face normals', () => {
+    expect(wulffOrthorhombicNormals([0, 0, 1], 8.879, 5.450, 7.152).length).toBe(2);
+  });
+  it('{111} bipyramid → 8 face normals (the full mmm orbit ⇒ group order 8)', () => {
+    expect(wulffOrthorhombicNormals([1, 1, 1], 8.879, 5.450, 7.152).length).toBe(8);
+  });
+  it('o{011} dome → 4; m{210} prism → 4 (a zero index collapses the orbit to 4)', () => {
+    expect(wulffOrthorhombicNormals([0, 1, 1], 8.879, 5.450, 7.152).length).toBe(4);
+    expect(wulffOrthorhombicNormals([2, 1, 0], 8.879, 5.450, 7.152).length).toBe(4);
+  });
+  it('the three pinacoids a{100}, b{010}, c{001} each → 2 (the unequal axes are independent)', () => {
+    expect(wulffOrthorhombicNormals([1, 0, 0], 8.879, 5.450, 7.152).length).toBe(2);
+    expect(wulffOrthorhombicNormals([0, 1, 0], 8.879, 5.450, 7.152).length).toBe(2);
+    expect(wulffOrthorhombicNormals([0, 0, 1], 8.879, 5.450, 7.152).length).toBe(2);
+  });
+  it('every orthorhombic normal is unit length', () => {
+    for (const n of [...wulffOrthorhombicNormals([0, 1, 1], 8.879, 5.450, 7.152), ...wulffOrthorhombicNormals([1, 1, 1], 8.879, 5.450, 7.152)]) {
+      expect(Math.hypot(n[0], n[1], n[2])).toBeCloseTo(1, 9);
+    }
+  });
+  it('c on Y — the basal pinacoid normals point along ±Y, so the tabular plate lies flat', () => {
+    for (const n of wulffOrthorhombicNormals([0, 0, 1], 8.879, 5.450, 7.152)) {
+      expect(Math.abs(n[1])).toBeCloseTo(1, 9);
+    }
+  });
+});
+
+describe('Wulff geometry kernel — barite via the registry (rung 4a.4)', () => {
+  // face set is built [2 basal-pinacoid planes (idx 0-1), 4 dome planes (idx 2-5), 4 prism planes (idx 6-9)]
+  const pinacoidFaces = (p: any) => p.faces.filter((f: any) => f.plane < 2).length;
+  const extent = (p: any, ax: number) => {
+    let mn = Infinity, mx = -Infinity;
+    for (const v of p.vertices) { mn = Math.min(mn, v[ax]); mx = Math.max(mx, v[ax]); }
+    return mx - mn;
+  };
+
+  it('barite yields the 10-plane face set (2 pinacoid + 4 dome + 4 prism) + builds a solid', () => {
+    const faces = wulffFaceSetForMineral('barite', 0.5, 7, 2.5);
+    expect(faces).toBeTruthy();
+    expect(faces.length).toBe(10);                       // 2 c{001} + 4 o{011} + 4 m{210}
+    expect(_makeWulffGeom(faces)).toBeTruthy();
+  });
+
+  it('a representative wittichen-bladed value (biasC 2.5 — mid of the live 2.24–2.82 band — at g 0.15) → a RECTANGULAR tabular plate: 2 pinacoid, wider than thick, and longer along a than b', () => {
+    const p = wulffPolyhedron(wulffFaceSetForMineral('barite', 0.15, 0, 2.5));
+    expect(pinacoidFaces(p)).toBe(2);                    // the flat plate faces, top + bottom
+    expect(p.faces.length).toBe(10);                     // the full pinacoid+dome+prism rim survives
+    expect(extent(p, 0)).toBeGreaterThan(extent(p, 1));  // diameter (X) > thickness (Y) — a plate, not a column
+    // THE orthorhombic signature: a≠b → the in-plane outline is rectangular, X (≈a) clearly > Z (≈b).
+    // Wulfenite's tetragonal plate is square (X≈Z); barite's is ~1.25:1. Jitter scales X and Z
+    // equally, so the ratio is jitter-invariant.
+    expect(extent(p, 0)).toBeGreaterThan(extent(p, 2) * 1.15);
+  });
+
+  it('higher biasC → thinner plate (the tabular thinness knob; bias on {001})', () => {
+    const thin = extent(wulffPolyhedron(wulffFaceSetForMineral('barite', 0.5, 7, 3.0)), 1);
+    const thick = extent(wulffPolyhedron(wulffFaceSetForMineral('barite', 0.5, 7, 1.3)), 1);
+    expect(thin).toBeLessThan(thick);                    // slowing {001} (higher biasC) flattens the plate
+  });
+
+  it('determinism — identical barite inputs give byte-identical face sets (rng-free)', () => {
+    const a = wulffFaceSetForMineral('barite', 0.5, 11, 2.5);
+    const b = wulffFaceSetForMineral('barite', 0.5, 11, 2.5);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 });

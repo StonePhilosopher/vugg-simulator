@@ -99,6 +99,23 @@ const WULFF_FORM_GEOMETRY: any = {
     { hkl: [0, 0, 1], R: 1.0, bias: true },
     { hkl: [1, 0, 1], R: 2.44 },
   ] },
+  // rung 4a.4 — the FOURTH crystal system: barite, orthorhombic Pnma (barite-group BaSO4), point
+  // group mmm (D2h, order 8). a=8.879 b=5.450 c=7.152 (data/structural.json) — the FIRST cell with
+  // THREE UNEQUAL axes (a≠b≠c), so the c{001} tabular plate is RECTANGULAR (longer along a than b),
+  // not square like wulfenite's — a habit NO cubic/trigonal/tetragonal cell can express. Forms: the
+  // basal pinacoid c{001} (the flat tabular face), the dome o{011} (the bevelled edge) and the prism
+  // m{210} (the lozenge outline) — the textbook barite c/o/m triple. BFDH (R ∝ 1/d_hkl):
+  // d_001=c=7.15Å > d_011=4.34Å > d_210=3.44Å ⇒ R_011≈1.65, R_210≈2.08 vs R_001=1.0, so {001} is the
+  // slowest form ⇒ TABULAR by default — exactly barite's nature. bias on {001}: biasC>1 slows the
+  // pinacoid → thinner plate/blade; biasC<1 speeds it → the prism/dome take over (prismatic). The
+  // barite group (celestine a=8.359 c=6.866, anglesite a=8.482 c=6.959) is isostructural — same forms,
+  // different cell — so this entry is a one-line clone away from those siblings. One equation, four
+  // crystal systems.
+  barite: { system: 'orthorhombic', cell: { a: 8.879, b: 5.450, c: 7.152 }, forms: [
+    { hkl: [0, 0, 1], R: 1.0, bias: true },
+    { hkl: [0, 1, 1], R: 1.65 },
+    { hkl: [2, 1, 0], R: 2.08 },
+  ] },
 };
 
 // ------------------------------------------------------------
@@ -263,6 +280,43 @@ function wulffTetragonalNormals(hkl: any, a: number, c: number): any {
 }
 
 // ------------------------------------------------------------
+// Orthorhombic symmetry expansion (barite, rung 4a.4). Barite-group Pnma → point group mmm
+// (D2h, order 8). Like calcite/wulfenite the face normal is the RECIPROCAL vector g, and like
+// tetragonal the cell is ORTHOGONAL — but with THREE UNEQUAL axes (a*=1/a, b*=1/b, c*=1/c all
+// distinct). With the crystallographic c-axis (the {001} flattening axis) on the renderer's Y:
+//   g(h,k,l) = ( h/a , l/c , k/b ).
+// The orbit is the point group mmm acting on g — built once by closure of its three mirrors
+// { m⊥a, m⊥c, m⊥b } (8 ops; validated: {001}→2 pinacoid, {011}→4 dome, {210}→4 prism, {111}→8
+// bipyramid confirms the order-8 group). Because a≠b the in-plane extents differ — X is governed by a,
+// Z by b — so the tabular plate is RECTANGULAR, the new capability this fourth crystal system brings.
+// (The *rendered* plate ratio is ~1.25:1, NOT the bare cell ratio a/b=1.63: the o{011} dome and m{210}
+// prism rim cut both the X and Z extents, so the lozenge is gentler than the raw axial ratio. Swap a↔b
+// and the ratio inverts — that's the proof X tracks a and Z tracks b.) Unlike cubic (m3m) there are NO
+// axis permutations here: the three axes are inequivalent, so the orbit is sign-flips only (the 8
+// diagonal ±1 matrices), deduped — zeros in g collapse a form to a 2- or 4-face pinacoid/prism, a
+// general {hkl} opens to the full 8.
+// ------------------------------------------------------------
+const _WULFF_ORTHORHOMBIC_GROUP = _wulffBuildGroup([
+  [[-1, 0, 0], [0, 1, 0], [0, 0, 1]],    // m⊥X — mirror perpendicular to renderer-X (crystal a-axis)
+  [[1, 0, 0], [0, -1, 0], [0, 0, 1]],    // m⊥Y — mirror perpendicular to renderer-Y (crystal c, the flattening axis)
+  [[1, 0, 0], [0, 1, 0], [0, 0, -1]],    // m⊥Z — mirror perpendicular to renderer-Z (crystal b-axis)
+]);
+function wulffOrthorhombicNormals(hkl: any, a: number, b: number, c: number): any {
+  const h = hkl[0], k = hkl[1], l = hkl[2];
+  const seed = _wulffNorm([h / a, l / c, k / b]);   // g = (h/a, l/c, k/b) — c on Y, a on X, b on Z
+  const out: any[] = [];
+  const found: any = {};
+  for (const M of _WULFF_ORTHORHOMBIC_GROUP) {
+    const u = _wulffMatVec(M, seed);
+    const key = u.map((x: number) => (Math.abs(x) < 1e-12 ? 0 : x).toFixed(6)).join(',');
+    if (found[key]) continue;
+    found[key] = true;
+    out.push(u);
+  }
+  return out;
+}
+
+// ------------------------------------------------------------
 // Build the dynamic face set for a registry mineral at a given scalar growth.
 //   dᵢ(g) = SEED + SPAN·g·Rᵢ_effective   (proposal §1.2, normalized units)
 // growthFrac ∈ [0,1] is how developed the crystal is (maps the engine's growth
@@ -300,6 +354,7 @@ function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: 
     const normals = reg.system === 'cubic' ? wulffCubicNormals(form.hkl)
       : reg.system === 'trigonalR' ? wulffTrigonalNormals(form.hkl, reg.cell.a, reg.cell.c)
       : reg.system === 'tetragonal' ? wulffTetragonalNormals(form.hkl, reg.cell.a, reg.cell.c)
+      : reg.system === 'orthorhombic' ? wulffOrthorhombicNormals(form.hkl, reg.cell.a, reg.cell.b, reg.cell.c)
       : null;
     if (!normals) return null;          // unknown crystal system — no Wulff path
     for (const n of normals) faces.push({ n, d });

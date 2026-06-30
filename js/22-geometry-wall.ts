@@ -329,6 +329,16 @@ class VugWall {
     // Default false → every other scenario dormant. Whitelisted explicitly (an unlisted flag from
     // scenarios.json5 is silently dropped).
     this.wulff_wulfenite = !!opts.wulff_wulfenite;
+    // wulff_barite — CENTRAL-DISTANCE (Wulff) FORM rung 4a.4 (2026-06-29): the FOURTH crystal system
+    // (orthorhombic mmm, barite-group BaSO4 — the first cell with THREE UNEQUAL axes). Opts a
+    // scenario's barite into the true c{001} pinacoid / o{011} dome / m{210} prism polyhedron (js/46
+    // wulffOrthorhombicNormals) — a RECTANGULAR tabular plate (longer along a than b). Only the
+    // tabular + bladed habits (token 'tablet') become the plate; prismatic/cockscomb/snowball keep
+    // their geometry. Token stays 'tablet', scaled isotropically by the plate DIAMETER (c is the SHORT
+    // axis, like wulfenite). RENDER-ONLY — byte-identical (no SIM bump, no rebake). Default false →
+    // every other scenario dormant. Whitelisted explicitly (an unlisted flag from scenarios.json5 is
+    // silently dropped).
+    this.wulff_barite = !!opts.wulff_barite;
   }
 
   dissolve(acid_strength, fluid) {

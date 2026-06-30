@@ -2239,7 +2239,13 @@
           "size_class": "pocket",
           "primary_bubbles": 3,
           "secondary_bubbles": 6,
-          "shape_seed": 1736
+          "shape_seed": 1736,
+          // rung 4a.4 (2026-06-29) — opt the late-stage (wittichen_meteoric_sulfate, step 134) BLADED
+          // barite into the orthorhombic-mmm Wulff RECTANGULAR tabular plate (js/46
+          // wulffOrthorhombicNormals). Render-only, byte-identical — the bladed vein barite renders as
+          // a true c{001}/o{011}/m{210} lozenge instead of the flat 'tablet' box. The FOURTH crystal
+          // system on the live arc. (prismatic/cockscomb/snowball barite, if any, keep their geometry.)
+          "wulff_barite": true
         }
       },
       "events": [

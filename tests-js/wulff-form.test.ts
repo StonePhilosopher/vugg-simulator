@@ -48,6 +48,7 @@ const wulffed = (sim: any) => sim.crystals.filter((c: any) => c._wulffForm && !c
 const mkSim = (flag: boolean, crystals: any[]) => ({ conditions: { wall: { wulff_fluorite: flag } }, crystals });
 const mkSimC = (flag: boolean, crystals: any[]) => ({ conditions: { wall: { wulff_calcite: flag } }, crystals });
 const mkSimW = (flag: boolean, crystals: any[]) => ({ conditions: { wall: { wulff_wulfenite: flag } }, crystals });
+const mkSimB = (flag: boolean, crystals: any[]) => ({ conditions: { wall: { wulff_barite: flag } }, crystals });
 const mkCrystal = (over: any) => Object.assign({ mineral: 'fluorite', habit: 'octahedral_REE', total_growth_um: 200, crystal_id: 5, dissolved: false }, over);
 
 describe('Wulff form tag (central-distance arc Phase 4 rung 4a.1)', () => {
@@ -246,5 +247,84 @@ describe('Wulff form tag — wulfenite tenant (rung 4a.3)', () => {
     classifyWulffForm(mkSimW(true, [wulf]));             // now wulff_wulfenite on
     expect(wulf._wulffForm).toBeTruthy();
     expect(wulf._wulffForm.tabular).toBe(true);
+  });
+});
+
+// rung 4a.4 — the barite tenant (the FOURTH crystal system, orthorhombic mmm). barite's habit is
+// σ-driven; ONLY tabular + bladed (token 'tablet') become the Wulff RECTANGULAR plate, so the
+// classifier reads the habit string: BLADED (the Cumberland/Wittichen divergent vein blade) gets a
+// thinner band [1.9,3.0] than flat TABULAR [1.3,2.2]. wittichen is the ONLY scenario that opts barite
+// in; its late-stage (wittichen_meteoric_sulfate) barite grows bladed. The a≠b rectangle is a kernel
+// property (wulff-geometry.test.ts), not a classifier one.
+describe('Wulff form tag — barite tenant (rung 4a.4)', () => {
+  it('wittichen (wall.wulff_barite) tags its bladed vein barite, biasC in the bladed band', () => {
+    const sim = run('wittichen');
+    expect(sim).toBeTruthy();
+    const tagged = wulffed(sim).filter((c: any) => c.mineral === 'barite');
+    expect(tagged.length).toBeGreaterThan(0);            // the late-oxidation bladed barite
+    for (const c of tagged) {
+      expect(c._wulffForm.tabular).toBe(true);           // tabular-family plate (signals the diameter scale)
+      // bladed band [1.9,3.0] (aspect ≈ 4.5–6.9 — a thin divergent blade; from the orthorhombic sweep)
+      expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.9);
+      expect(c._wulffForm.biasC).toBeLessThanOrEqual(3.0);
+      expect(_makeWulffGeom(wulffFaceSetForMineral('barite', c._wulffForm.growthFrac, 0, c._wulffForm.biasC))).toBeTruthy();
+    }
+  });
+
+  it('wittichen tenant scoping — only barite is Wulff-tagged, though calcite (a registered tenant) also grows there', () => {
+    const sim = run('wittichen');
+    // the five-element vein grows a rich assemblage (skutterudite, nickeline, native bismuth/silver,
+    // proustite, CALCITE, aragonite, …); calcite is itself a Wulff-registered mineral, so under the
+    // barite-only flag it must STAY untagged — a strong, non-vacuous scope check.
+    const species = new Set(sim.crystals.filter((c: any) => !c.dissolved).map((c: any) => c.mineral));
+    expect(species.size).toBeGreaterThan(3);
+    expect(sim.crystals.some((c: any) => c.mineral === 'calcite')).toBe(true);   // the foil is present
+    for (const c of wulffed(sim)) expect(c.mineral).toBe('barite');
+  });
+
+  // NOTE: the bands OVERLAP in [1.9,2.2] by design (a thin tabular and a thick blade can land at similar
+  // thickness); the invariant is the PER-CRYSTAL ordering — at a fixed crystal_id (same golden-ratio
+  // jitter) bladed always lands thinner than tabular. That's what the final assert pins.
+  it('unit — bladed barite → bladed band [1.9,3.0]; tabular → tabular band [1.3,2.2]; at a fixed id, bladed is thinner', () => {
+    const bla = mkCrystal({ mineral: 'barite', habit: 'bladed', crystal_id: 5 });
+    const tab = mkCrystal({ mineral: 'barite', habit: 'tabular', crystal_id: 5 });
+    classifyWulffForm(mkSimB(true, [bla]));
+    classifyWulffForm(mkSimB(true, [tab]));
+    expect(bla._wulffForm.bladed).toBe(true);
+    expect(bla._wulffForm.tabular).toBe(true);
+    expect(bla._wulffForm.biasC).toBeGreaterThanOrEqual(1.9);
+    expect(bla._wulffForm.biasC).toBeLessThanOrEqual(3.0);
+    expect(tab._wulffForm.bladed).toBe(false);
+    expect(tab._wulffForm.tabular).toBe(true);
+    expect(tab._wulffForm.biasC).toBeGreaterThanOrEqual(1.3);
+    expect(tab._wulffForm.biasC).toBeLessThanOrEqual(2.2);
+    expect(bla._wulffForm.biasC).toBeGreaterThan(tab._wulffForm.biasC);   // bladed is thinner (higher biasC)
+  });
+
+  it('unit — flag-off / twinned (cockscomb) / speck barite are skipped', () => {
+    const off = mkCrystal({ mineral: 'barite', habit: 'bladed', crystal_id: 5 });
+    classifyWulffForm(mkSimB(false, [off]));
+    expect(off._wulffForm).toBeUndefined();              // opt-in gate
+
+    // cockscomb barite is a CYCLIC TWIN (it owns its own crested geometry) and a sub-30µm speck has no
+    // body to read a form on — neither may be Wulff-tagged.
+    const twin = mkCrystal({ mineral: 'barite', habit: 'cockscomb', twinned: true, crystal_id: 5 });
+    const speck = mkCrystal({ mineral: 'barite', habit: 'bladed', total_growth_um: 10, crystal_id: 5 });
+    classifyWulffForm(mkSimB(true, [twin, speck]));
+    expect(twin._wulffForm).toBeUndefined();             // the cyclic twin owns its geometry
+    expect(speck._wulffForm).toBeUndefined();            // need a body to read a form on
+  });
+
+  it('unit — the wulff_barite flag is independent of the fluorite/calcite/wulfenite flags', () => {
+    const bar = mkCrystal({ mineral: 'barite', habit: 'bladed', crystal_id: 7 });
+    classifyWulffForm(mkSim(true, [bar]));               // only wulff_fluorite on
+    expect(bar._wulffForm).toBeUndefined();
+    classifyWulffForm(mkSimC(true, [bar]));              // only wulff_calcite on
+    expect(bar._wulffForm).toBeUndefined();
+    classifyWulffForm(mkSimW(true, [bar]));              // only wulff_wulfenite on
+    expect(bar._wulffForm).toBeUndefined();
+    classifyWulffForm(mkSimB(true, [bar]));              // now wulff_barite on
+    expect(bar._wulffForm).toBeTruthy();
+    expect(bar._wulffForm.bladed).toBe(true);
   });
 });

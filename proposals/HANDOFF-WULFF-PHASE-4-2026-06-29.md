@@ -3,10 +3,15 @@
 **2026-06-29 · SIM_VERSION 214 (unchanged — the whole arc is render-only) · live on Syntaxswine/main + Pages**
 
 > **Update (later 2026-06-29):** rung **4a.3** added a THIRD crystal system — **wulfenite, tetragonal 4/m**
-> (`supergene_oxidation`, Tsumeb), rendering as the true tabular plate. Still byte-identical (SIM 214). See
-> the new commit-table row, the wulfenite addendum to **Trap §3**, and **what's-next #3** (a *fourth*,
-> genuinely-new-symmetry system — orthorhombic / monoclinic — is the prize now; the cheap same-system
-> path is galena).
+> (`supergene_oxidation`, Tsumeb), rendering as the true tabular plate.
+>
+> **Update (2026-06-29, same day):** rung **4a.4** added the **FOURTH** crystal system — **barite,
+> orthorhombic *mmm*** (`wittichen`, the Black Forest five-element vein), rendering its bladed late-stage
+> vein barite as the true **RECTANGULAR** tabular plate. This is the first cell with **three UNEQUAL axes**
+> (a≠b≠c), so the {001} plate is a lozenge (longer along *a* than *b*, ~1.25:1) — a habit no cubic/trigonal/
+> tetragonal cell can express (wulfenite's plate is *square*). Still byte-identical (SIM 214). See the new
+> commit-table row, the barite addendum to **Trap §3**, and **what's-next** (the prize is now the FIFTH
+> system — **monoclinic gypsum 2/m**, the first *oblique* cell; the cheap same-system path is still galena).
 
 You're reading this because you're about to extend the way vugg decides what a crystal *looks like*.
 Sit with the model for ten minutes before you touch a file — it is small, and once it clicks the
@@ -35,8 +40,8 @@ literal* — and only the central distances **dᵢ grow**. Habit falls out of th
 its slower neighbours — it self-eliminates). Equal rates → cuboctahedron; shrink {111} → cube;
 shrink {100} → octahedron. Cube↔octahedron and nailhead↔dogtooth are not two pieces of code. They
 are *the same equation* solved against different face-normal sets. That is the whole point: it is a
-**general framework**, not a pile of special cases. Fluorite (cubic), calcite (trigonal), and wulfenite
-(tetragonal) are just three unit cells plugged into one machine.
+**general framework**, not a pile of special cases. Fluorite (cubic), calcite (trigonal), wulfenite
+(tetragonal), and barite (orthorhombic) are just four unit cells plugged into one machine.
 
 The kernel is `js/46-wulff-geometry.ts`. Read it top to bottom — it's ~290 lines and it's the spine.
 
@@ -44,7 +49,7 @@ The kernel is `js/46-wulff-geometry.ts`. Read it top to bottom — it's ~290 lin
 
 ## What is shipped (and what each commit bought)
 
-All five rungs are **render-only and byte-identical** — the seed-42 calibration baseline
+All six rungs are **render-only and byte-identical** — the seed-42 calibration baseline
 (`tests-js/baselines/seed42_v214.json`) never moved, so there was **no SIM bump and no rebake**.
 That is the load-bearing discipline (see Traps §1).
 
@@ -54,28 +59,34 @@ That is the load-bearing discipline (see Traps §1).
 | `57a5aae` | **4a.1** | first tenant — **fluorite**, the cube↔octahedron transition, on `sunnyside_american_tunnel`. |
 | `c555f21` | **4a.2 kernel** | **hex-R** support — the first NON-cubic system. `wulffTrigonalNormals` + calcite registry. |
 | `770ec7a` | **4a.2 tenant** | **calcite** renders as a true dogtooth on `mvt`. Two crystal systems now live. |
-| *(this commit)* | **4a.3** | **wulfenite** — the THIRD system (**tetragonal 4/m**, scheelite-type). `wulffTetragonalNormals` + the `_WULFF_TETRAGONAL_GROUP` closure + registry + classifier + the tabular-plate render on `supergene_oxidation`. A new crystal system *and* its tenant in one commit. |
+| `821b7ce` | **4a.3** | **wulfenite** — the THIRD system (**tetragonal 4/m**, scheelite-type). `wulffTetragonalNormals` + the `_WULFF_TETRAGONAL_GROUP` closure + registry + classifier + the tabular *square* plate on `supergene_oxidation`. A new crystal system *and* its tenant in one commit. |
+| *(this commit)* | **4a.4** | **barite** — the FOURTH system (**orthorhombic *mmm***, barite-group). `wulffOrthorhombicNormals` + the `_WULFF_ORTHORHOMBIC_GROUP` closure (3 mirrors) + registry + classifier (bladed/tabular bands) + the **RECTANGULAR** tabular plate on `wittichen`. First cell with three *unequal* axes → the lozenge plate. |
 
 **File map (where the pieces live):**
 - `js/46-wulff-geometry.ts` — the kernel: the `WULFF_FORM_GEOMETRY` registry, `wulffCubicNormals`,
-  `wulffTrigonalNormals` (-3m) + `wulffTetragonalNormals` (4/m) and their `_WULFF_*_GROUP` point-group
-  closures, `wulffFaceSetForMineral` (registry → `[{n,d}]`), `wulffPolyhedron` (the triple-plane
-  intersection), `_makeWulffGeom` (→ `THREE.BufferGeometry`, normalized to ±0.5, **null-clamp on a
-  degenerate solid**).
+  `wulffTrigonalNormals` (-3m) + `wulffTetragonalNormals` (4/m) + `wulffOrthorhombicNormals` (mmm) and
+  their `_WULFF_*_GROUP` point-group closures, `wulffFaceSetForMineral` (registry → `[{n,d}]`),
+  `wulffPolyhedron` (the triple-plane intersection), `_makeWulffGeom` (→ `THREE.BufferGeometry`,
+  normalized to ±0.5, **null-clamp on a degenerate solid**).
 - `js/45-morphology.ts` — `classifyWulffForm(sim)`: the post-growth classifier that tags
-  `crystal._wulffForm = { biasC, growthFrac, octahedral, scaleno, tabular }`. Gated per-tenant on
-  `wall.wulff_fluorite` / `wall.wulff_calcite` / `wall.wulff_wulfenite`. Mirrors `classifyOcclusion`.
+  `crystal._wulffForm = { biasC, growthFrac, octahedral, scaleno, tabular, bladed }`. Gated per-tenant on
+  `wall.wulff_fluorite` / `wall.wulff_calcite` / `wall.wulff_wulfenite` / `wall.wulff_barite`. Mirrors
+  `classifyOcclusion`. (Barite is the one tenant that reads its habit string to *split a band*: bladed →
+  thinner [1.9,3.0] vs tabular [1.3,2.2], because grow_barite emits both.)
 - `js/85-simulator.ts` — calls `classifyWulffForm(this)` in the step loop (after `classifyOcclusion`).
 - `js/22-geometry-wall.ts` — the `wall.wulff_*` whitelist (an unlisted wall flag is silently dropped).
-- `js/99i-renderer-three.ts` — the dispatch branch (~line 3900, gated `!geom` after the
-  etched/terrace/e-twin/twin paths) + the isotropic-scale branches (~line 4267): `isWulffCalcite`
-  (scale by `cLen`, the c-elongated case) and `isWulffWulfenite` (scale by the plate diameter
-  `max(aWid,cLen)`, the tabular case).
+- `js/99i-renderer-three.ts` — the dispatch branch (~line 3918, gated `!geom` after the
+  etched/terrace/e-twin/twin paths) + the isotropic-scale branches (~line 4271): `isWulffCalcite`
+  (scale by `cLen`, the c-elongated case) and `isWulffWulfenite || isWulffBarite` (scale by the plate
+  diameter `max(aWid,cLen)`, the tabular case — both tetragonal *square* and orthorhombic *rectangular*
+  plates share this one rule; the geom carries the aspect).
 - `js/27-geometry-crystal.ts` — the `_wulffForm` tag is documented in the render-tag block.
 - `data/scenarios.json5` — `sunnyside_american_tunnel.wall.wulff_fluorite`, `mvt.wall.wulff_calcite`,
-  `supergene_oxidation.wall.wulff_wulfenite`.
-- `tests-js/wulff-geometry.test.ts` (31 kernel pins) + `tests-js/wulff-form.test.ts` (17 classifier pins);
-  `tools/wulfenite-wulff-probe.mjs` — the tenant-survival probe (display-size, untwinned, in-band).
+  `supergene_oxidation.wall.wulff_wulfenite`, `wittichen.wall.wulff_barite`.
+- `tests-js/wulff-geometry.test.ts` (kernel pins, +9 orthorhombic) + `tests-js/wulff-form.test.ts`
+  (classifier pins, +5 barite); `npx vitest run wulff` → 63 green. `tools/wulfenite-wulff-probe.mjs` +
+  `tools/barite-wulff-probe.mjs` — the tenant-survival probes (display-size, untwinned, in-band; the
+  barite probe also reports the habit histogram, since only tabular/bladed are tablet-token).
 - `proposals/DESIGN-WULFF-PHASE-4-2026-06-28.md` — the design pass (the six decisions D1–D6 + the
   rolling UPDATE log). Read it for the *why* behind the architecture choices.
 
@@ -104,13 +115,17 @@ The framework is built so a new tenant in an existing crystal system is a few li
 
 A **new crystal system** is more: it needs its own `wulff<System>Normals(hkl, cell)` — the reciprocal-
 metric normal generator + the point-group orbit, modelled on `wulffTrigonalNormals`. **Wulfenite (4a.3)
-is the worked example**: tetragonal 4/m, `g = (h/a, l/c, k/a)` (orthogonal cell, c on Y), the order-8
-group from the closure of `{ C4(y), σh, inversion }`. The two parts that took care were (i) using the
-mineral's *true* point group — **4/m, not the convenient 4/mmm** (for `{001}+{101}` both give the same
-faces, but the honest group won't silently lie when someone adds a skew form), and (ii) the tabular
-scale (Trap §3). That's the interesting work, and the proof the framework keeps generalizing. Prototype
-the crystallography in a scratchpad first (see Instruments) — validate the orbit sizes and a bbox
-(which axis is long?) before porting a single line.
+and barite (4a.4) are the two worked examples**, both *orthogonal*-cell systems so the reciprocal vector
+is trivial: wulfenite tetragonal 4/m, `g = (h/a, l/c, k/a)` (order-8 group from `{ C4(y), σh, inversion }`);
+barite orthorhombic *mmm*, `g = (h/a, l/c, k/b)` (order-8 group from the **3 mirrors** — sign-flips only,
+**no axis permutations** because a≠b≠c are inequivalent). The parts that took care: (i) using the
+mineral's *true* point group — wulfenite **4/m not 4/mmm**; barite **mmm**, and note the orbit is
+sign-flips-only, NOT the cubic sign×permutation; (ii) the tabular scale (Trap §3 — both fold into the
+shared `max(aWid,cLen)` branch); (iii) the genuinely-new payoff: barite's unequal axes give the first
+**rectangular** plate. The next system, **monoclinic gypsum 2/m**, is the harder one: the first *oblique*
+cell (β≠90°), so `g` needs the full reciprocal-metric tensor — the trivial `(h/a,k/b,l/c)` no longer holds.
+Prototype the crystallography in a scratchpad first (see Instruments) — validate the orbit sizes and a bbox
+(which axis is long? is the in-plane outline square or rectangular?) before porting a single line.
 
 ---
 
@@ -147,6 +162,26 @@ non-isometric tenant inherits both of these.
   physical axis** — `cLen` for a c-elongated tenant, `aWid` for a tabular one. Keep the existing
   tenants' branches untouched so they stay byte-identical (don't fold them into one `max()` — calcite's
   `rhomb` nailhead can have `aWid ≳ cLen`, which would change its render).
+
+  *Barite (4a.4) is the case where folding IS correct:* it is also **tabular** with `c` short, so the
+  scale rule (`max(aWid,cLen)`) is **literally the same** as wulfenite's — so the branch is
+  `else if (isWulffWulfenite || isWulffBarite)`, one rule serving both. They differ only in the geom's
+  own internal aspect, which the kernel already carries: wulfenite's plate is **square** (a=b), barite's
+  is **rectangular** (a≠b, ~1.25:1 — the new orthorhombic capability). The lesson refines §3: fold tenants
+  into one scale branch **only when the scale rule is identical** (both tabular-c-short), and keep the
+  *form* difference where it belongs — inside the polyhedron, not the scale. (So: wulfenite+barite share;
+  calcite stays separate because c is its *long* axis.) The orthorhombic kernel also drops the cubic
+  axis-permutations — the three axes are inequivalent, so `wulffOrthorhombicNormals`' orbit is sign-flips
+  only (`g = (h/a, l/c, k/b)`, c on Y, a on X, b on Z; the 8 diagonal ±1 matrices from 3 mirrors).
+
+  *Known pre-existing minor (surfaced by the 4a.4 review, NOT a 4a.4 regression):* cluster **satellites**
+  of any tabular Wulff plate are scaled *anisotropically* (`_emitClusterSatellites`, js/99i ~3515, keys
+  isotropic scale off `cube/octahedron/snowball` only — a `tablet` token falls to the `else` anisotropic
+  branch and re-flattens the already-thin geom along Y), while the *parent* plate scales isotropically.
+  This is shared identically by calcite (4a.2) and wulfenite (4a.3) — any `tablet`/anisotropic Wulff
+  parent has it. Visual impact is minor (the `tablet` cluster is the rosette — geologically apt for barite
+  desert roses). The clean fix would teach the satellite dispatch the same `isWulff*` signal the parent
+  uses; deferred because it touches three tenants and is cosmetic.
 
 **4 — A render upgrade must be visibly BETTER, not just different — and you can't tell without
 looking.** The fluorite "obvious" mapping (high-Y → biasC 0.28) produced a *perfect* octahedron —
@@ -211,12 +246,16 @@ run. Diagnose by shape: all-timeouts + zero assertion failures + slow total = co
 2. **A nailhead (rhombohedral) calcite showcase.** Only the *dogtooth* (biasC<1) branch is live; the
    nailhead band (biasC≥1) is implemented + tested but never eye-checked in a scenario. A
    rhombohedral-calcite locality would exercise it and is a cheap, satisfying win.
-3. **A FOURTH crystal system** (the third — tetragonal — shipped as 4a.3, wulfenite). Barite/celestine
-   (orthorhombic *mmm*) or gypsum (monoclinic *2/m*) are the cleanest next extensions — each a new
-   `wulff<System>Normals`, prototyped in a scratchpad first. Quartz (enantiomorphic 32, its own orbit)
-   is the trophy but must *compose* with quartz's rich bespoke render (sceptre/gwindel/smoky), not
-   replace it — more delicate. Wulfenite (4a.3) is the template for the mechanical part: build the true
-   point group, put the symmetry axis on Y, scale isotropically by the longest physical axis.
+3. **A FIFTH crystal system** (orthorhombic — barite — shipped as 4a.4). The clean next extension is
+   **gypsum, monoclinic *2/m*** — and it's the genuinely-new *math*: the first **oblique** cell (β≈113.8°),
+   so `wulffMonoclinicNormals` can't use the trivial `g=(h/a,k/b,l/c)` — it needs the full reciprocal-
+   metric tensor (a* is no longer ∥ a). Once monoclinic works, **triclinic** is the same tensor with even
+   less symmetry. Gypsum is iconic (selenite/desert-rose/swallowtail) — but the swallowtail is a *twin*
+   (its own subsystem) and gypsum already has a bespoke hourglass-blade render to *compose* with, so scope
+   it carefully. Quartz (enantiomorphic 32) is the trophy but must compose with sceptre/gwindel/smoky —
+   most delicate. Wulfenite (4a.3) + barite (4a.4) are the template for the mechanical part: build the
+   true point group, put the symmetry axis on Y, scale isotropically by the longest physical axis, and
+   eye-check that the in-plane outline matches the system (square for tetragonal, rectangular for ortho).
 4. **The concavity primitive.** Decided in the design pass (D1: nested convex shells) but NOT built —
    no tenant is concave yet (hoppers/skeletal forms are the eventual customers). The convex body is
    the base layer either way, so it's not blocking anything.
