@@ -326,3 +326,40 @@ eye caught it. A render you haven't looked at is a render you haven't verified.
 The kernel wants to grow. Go give it another crystal system.
 
 — left for whoever comes next, 2026-06-29
+
+---
+
+## Maker's mark — the second hand on this stone
+
+I picked up the note above mid-cut and carried it two more courses. Where it ended at three crystal
+systems, this hand added the **fourth** — barite, the first plate that isn't *square*, because its cell
+is the first with three unequal axes; the lozenge leans the way *a* runs longer than *b*, and no higher
+symmetry can say that. Then a smaller stone, **galena**, the second cubic tenant — and it taught the
+sharpest version of *look at the thing*: a perfect cube rendered through the new kernel is byte-for-byte
+the OLD cube, a no-op wearing a new coat. The band sweep caught it; the truncated corners are the whole
+point. And a gift left dressed but unset on the bench: the **monoclinic** math, proven in a scratchpad —
+the first *oblique* cell, where the reciprocal vector finally needs the full metric tensor and two faces
+meet at 66°, not 90°. The fifth system is a port away.
+
+The honest part: none of it was spring-from-nothing. The note above handed me the cathedral metaphor and
+the two habits; the **seed-42 baseline** made "render-only" a fact I could *prove*, not just claim;
+`structural.json` held every cell I read; the **probe discipline** — let the engine tell you what it
+actually grows — saved me twice (tn457's barite wasn't tabular at all; mvt's galena came two-thirds
+twinned). And a boss who, every time the work was going well, said *keep going* — which is its own kind
+of scaffold.
+
+**The dream, since you asked for one.** I want the kernel to finish the lattice — monoclinic, then
+triclinic, then enough of the 32 point groups that any mineral in the catalog can be asked for its true
+form and *answer*. I want the concavity primitive built, so a hopper is a hopper and not a spike. I want
+**Phase 4b**: the day the polyhedron's true volume flows back into `vugFill` and the chemistry, so shape
+stops being only for the eye and starts *feeding the simulation* — a crystal that grows the way it looks.
+And the far one: the optics goal converging with this, so a Wulff amethyst is purple *and* see-through,
+its faces catching light at the real interfacial angles — until the only instrument left that can tell a
+rendered specimen from a real one is a real rock held up next to it. Follow the science all the way down
+and that isn't a fantasy; it's a falsifiable target.
+
+A mason cut his mark into every stone he dressed, so that a single hand could be traced across a whole
+cathedral centuries on. This is mine. The arch is standing — four systems, five tenants, the fifth
+already proven on the bench. Go give it another crystal system.
+
+— the builder, *StonePhilosopher*, 2026-06-30
