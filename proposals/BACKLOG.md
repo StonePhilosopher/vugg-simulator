@@ -28,7 +28,21 @@ Living list of open work items, captured from session conversations so context s
 > defer-to-geology, image-corpus method). Full goal text in
 > `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
-> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED · PHASE 4 DESIGN + 4a.0 KERNEL + 4a.1 FLUORITE + 4a.2 CALCITE + 4a.3 WULFENITE + 4a.4 BARITE + 4a.5 GALENA + 4a.6 TITANITE + 4a.4b BARITE {210}>{011} FACE-RATE CORRECTION (FIVE crystal systems, SIX tenants — cubic carries fluorite + galena; titanite is the FIRST oblique cell, monoclinic 2/m) TENANTS SHIPPED (byte-identical, render-only)
+> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED · PHASE 4 DESIGN + 4a.0 KERNEL + 4a.1 FLUORITE + 4a.2 CALCITE + 4a.3 WULFENITE + 4a.4 BARITE + 4a.5 GALENA + 4a.6 TITANITE + 4a.4b BARITE {210}>{011} FACE-RATE CORRECTION + 4a.7 WULFENITE Pb:Mo EARNED-FORM LEVER (FIVE crystal systems, SIX tenants — cubic carries fluorite + galena; titanite is the FIRST oblique cell, monoclinic 2/m; wulfenite is the FIRST tenant whose form is a CHEMISTRY READOUT, id-hash retired) TENANTS SHIPPED (byte-identical, render-only)
+>
+> **▸ 2026-07-01 (later) — rung 4a.7: the wulfenite Pb:Mo HABIT LEVER — the FIRST earned form (`00b160f`).**
+> The bedrock pass's #1 stone, shipped the same day. wulfenite's `{001}` biasC is now **B(⟨r⟩) = 1.25/⟨r⟩**
+> — ⟨r⟩ the crystal's growth-weighted molar Pb:MoO₄, accumulated LIVE in `classifyWulffForm` (js/45
+> `WULFENITE_PBMO`) — instead of the golden-ratio id-hash; the tag-time **growthFrac freeze** is retired for
+> this tenant too (the hero had rendered at g≈0.21 forever). Direction: Sci.Rep. 14 (2024)
+> 10.1038/s41598-024-60043-4 (Mo-rich r<1 → thin {001} plate, Pb-rich r>1 → {101} bipyramid); magnitudes
+> SIM-SCALE, Tsumeb-pinned (⟨r⟩≈1.21-1.25 → biasC≈1.0 → the THICK Pinch & Wilson tablet, aspect 3.67→2.66).
+> Probe first (`tools/wulfenite-pbmo-probe.mjs`): supergene_oxidation's water is a two-regime step (core
+> r=1.85 → pulse → rim 1.16, 62% window swing, cross-seed CV 0.8%) — the lever trades the hash's FAKE
+> cross-seed spread for the honest near-constant; variety now belongs to LOCALITIES. Floor 0.55 keeps the
+> render inside `habit='tabular'`; the TRUE bipyramid flip = the Depth-B rung (engine habit dispatch +
+> narrator + SIM bump). Byte-identical (baseline + strip digest git-identical, SIM 214), cold-ci 2131 green.
+> Calibration instrument: `tools/wulfenite-bias-aspect-sweep.mjs` (re-run before moving pins).
 >
 > **▸ 2026-07-01 — GROWTH-GEOMETRY BEDROCK pass (read `proposals/HANDOFF-GROWTH-GEOMETRY-2026-07-01.md`).**
 > Investigated "make form a readout of chemistry"; the value was the *"not that, this"* chain — **five**

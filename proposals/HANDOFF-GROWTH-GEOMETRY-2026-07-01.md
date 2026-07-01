@@ -2,6 +2,18 @@
 
 **2026-07-01 · SIM_VERSION 214 (unchanged — everything here is render-only or design) · barite fix live on Syntaxswine `bad547e`**
 
+> **Update (2026-07-01, later): "What I'd do next" #1 is SHIPPED — rung 4a.7, the wulfenite Pb:Mo habit
+> lever (`00b160f`).** The probe said YES with a twist: supergene_oxidation's water is a two-regime step
+> function (core r=1.852 → the step-40 Pb+Mo pulse → rim 1.158; 62% within-window swing, cross-seed CV
+> 0.8%). So the lever INTEGRATES: **biasC = B(⟨r⟩) = 1.25/⟨r⟩** over the crystal's growth-weighted molar
+> Pb:MoO₄, accumulated live in `classifyWulffForm` — and #2 (zone-integrated growthFrac) fell out of the
+> same accumulator for this tenant (the hero had been rendering at its tag-step g≈0.21 forever). Both fakes
+> retired for wulfenite; byte-identical (SIM 214); instruments on the bench (`tools/wulfenite-pbmo-probe.mjs`,
+> `tools/wulfenite-bias-aspect-sweep.mjs`). One honest note: the earned form trades the hash's fake
+> cross-seed variety for a near-constant — Tsumeb's water says one thing, and now the crystal says it too.
+> Variety belongs to LOCALITIES (a Mo-rich Red-Cloud-style scenario renders thin plates with zero new code)
+> and to Depth-B (engine habit dispatch, the true bipyramid flip) when a Pb-extreme scenario lands.
+
 You're reading this because you're about to make vugg's crystals *grow the way real crystals grow* —
 form as a readout of chemistry, not a shape decoded from a habit label. This session did NOT build that.
 It did something more useful first: it *found the honest path* by killing five plausible-but-wrong ones.
@@ -116,10 +128,12 @@ shape-invariance proof), `erythrite-wulff-probe.mjs`.
 
 ## What I'd do next (value-per-effort)
 
-1. **wulfenite Pb:Mo habit lever** — the strongest earned-form stone: a real, 2024-paper-backed chemistry→habit
-   drive, render-only if it reads the recorded fluid, and it retires the hash for one tenant *honestly*. Probe
-   first: does `supergene_oxidation`'s Pb:Mo ratio actually swing across the run at seed 42?
-2. **Zone-integrated growthFrac** — cheap render-only development win; measure the frozen-g population first.
+1. ~~**wulfenite Pb:Mo habit lever**~~ ✅ **SHIPPED — rung 4a.7 (`00b160f`, same day; see the Update at the
+   top).** The probe answered: two-regime swing within the run (62%), near-constant integral across seeds
+   (CV 0.8%) — real signal, integrated honestly.
+2. **Zone-integrated growthFrac** — ✅ retired for the WULFENITE tenant inside 4a.7 (the same accumulator
+   un-freezes g). STILL OPEN fleet-wide: the other five tenants tag-freeze growthFrac at ~30µm (heroes render
+   at g≈0.2 wherever they tag small — measure each tenant's frozen-g population before claiming the payoff).
 3. **Optics: plain % translucency** — the boss's fixed decision (a per-mineral diaphaneity field → one
    `MeshPhysicalMaterial` builder, NO faked refraction). Forward-compatible with later zoning. See the STANDING
    GOAL banner in `BACKLOG.md`.
