@@ -30,6 +30,8 @@ declare const setSeed: any;
 declare const classifyWulffForm: any;
 declare const wulffFaceSetForMineral: any;
 declare const _makeWulffGeom: any;
+declare const wulffWulfenitePbMoBias: any;
+declare const WULFENITE_PBMO: any;
 
 function run(scenarioName: string, seed = 42) {
   setSeed(seed);
@@ -196,21 +198,35 @@ describe('Wulff form tag — calcite tenant (rung 4a.2)', () => {
 });
 
 // rung 4a.3 — the wulfenite tenant (the THIRD crystal system, tetragonal 4/m). grow_wulfenite
-// hardcodes habit='tabular', so the classifier spreads the plate THICKNESS across the tabular
-// family by the per-crystal hash (biasC [1.4,2.8]) rather than splitting on a habit the engine never
-// emits. supergene_oxidation is the ONLY scenario that grows wulfenite (so it carries the opt-in);
+// hardcodes habit='tabular' (no habit split for the classifier to read). rung 4a.7 (2026-07-01)
+// retired the per-crystal hash for this tenant: biasC is now the EARNED Pb:Mo lever — B(⟨r⟩) from
+// the crystal's growth-weighted molar Pb:Mo integral (js/45 WULFENITE_PBMO; Sci. Rep. 14 (2024),
+// DOI 10.1038/s41598-024-60043-4 — Mo-rich r<1 → {001} tabular, Pb-rich r>1 → {101} bipyramid).
+// supergene_oxidation is the ONLY scenario that grows wulfenite (so it carries the opt-in);
 // dormancy is pinned by the flag-off + cross-flag unit tests rather than a grows-but-not-opted scenario.
-describe('Wulff form tag — wulfenite tenant (rung 4a.3)', () => {
-  it('supergene_oxidation (wall.wulff_wulfenite) tags its tabular wulfenite, biasC in the tabular band', () => {
+describe('Wulff form tag — wulfenite tenant (rung 4a.3 + 4a.7)', () => {
+  it('supergene_oxidation tags its tabular wulfenite; biasC IS the earned Pb:Mo integral (4a.7), not the hash', () => {
     const sim = run('supergene_oxidation');
     expect(sim).toBeTruthy();
     const tagged = wulffed(sim).filter((c: any) => c.mineral === 'wulfenite');
-    expect(tagged.length).toBeGreaterThan(0);            // the honey-yellow square plate
+    expect(tagged.length).toBeGreaterThan(0);            // the honey plate — now a THICK Tsumeb tablet
     for (const c of tagged) {
       expect(c._wulffForm.tabular).toBe(true);
-      // tabular thickness band [1.4,2.8] (aspect ≈ 3.4–6.1 — a thin square plate; eye-checked)
-      expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.4);
-      expect(c._wulffForm.biasC).toBeLessThanOrEqual(2.8);
+      // the growth integral exists and covers (essentially) the whole growth history
+      expect(c._wulffPbMo).toBeTruthy();
+      expect(c._wulffPbMo.G).toBeGreaterThan(c.total_growth_um * 0.95);
+      // seed-42 water story: core r=1.852 (pre-pulse) → rim r=1.158 → integrates to ≈1.25
+      // (wulfenite-pbmo probe 2026-07-01; cross-seed CV 0.8%, so the window is generous)
+      const rInt = c._wulffPbMo.rG / c._wulffPbMo.G;
+      expect(rInt).toBeGreaterThan(1.15);
+      expect(rInt).toBeLessThan(1.35);
+      // biasC IS B(⟨r⟩) — the lever exactly, no hash residue…
+      expect(c._wulffForm.biasC).toBeCloseTo(wulffWulfenitePbMoBias(rInt), 10);
+      // …landing near the Tsumeb pin (stout tablet), OUTSIDE the retired hash band [1.4,2.8]
+      expect(c._wulffForm.biasC).toBeGreaterThan(0.9);
+      expect(c._wulffForm.biasC).toBeLessThan(1.15);
+      // and growthFrac is UN-frozen: a >10mm hero is fully developed, not stuck at tag-step g≈0.21
+      expect(c._wulffForm.growthFrac).toBe(1.0);
       expect(_makeWulffGeom(wulffFaceSetForMineral('wulfenite', c._wulffForm.growthFrac, 0, c._wulffForm.biasC))).toBeTruthy();
     }
   });
@@ -225,12 +241,12 @@ describe('Wulff form tag — wulfenite tenant (rung 4a.3)', () => {
     for (const c of wulffed(sim)) expect(c.mineral).toBe('wulfenite');
   });
 
-  it('unit — tabular wulfenite → tabular band [1.4,2.8]; flag-off / twinned / speck are skipped', () => {
+  it('unit — tabular wulfenite with no growth history → the Tsumeb fallback pin (hash-free); flag-off / twinned / speck are skipped', () => {
     const tab = mkCrystal({ mineral: 'wulfenite', habit: 'tabular', crystal_id: 5 });
     classifyWulffForm(mkSimW(true, [tab]));
     expect(tab._wulffForm.tabular).toBe(true);
-    expect(tab._wulffForm.biasC).toBeGreaterThanOrEqual(1.4);
-    expect(tab._wulffForm.biasC).toBeLessThanOrEqual(2.8);
+    // no zones → no integral → B(R_TSUMEB) = the Tsumeb pin, deterministic for EVERY crystal_id
+    expect(tab._wulffForm.biasC).toBeCloseTo(WULFENITE_PBMO.BIAS_TSUMEB, 10);
 
     const off = mkCrystal({ mineral: 'wulfenite', habit: 'tabular', crystal_id: 5 });
     classifyWulffForm(mkSimW(false, [off]));
@@ -254,6 +270,60 @@ describe('Wulff form tag — wulfenite tenant (rung 4a.3)', () => {
     classifyWulffForm(mkSimW(true, [wulf]));             // now wulff_wulfenite on
     expect(wulf._wulffForm).toBeTruthy();
     expect(wulf._wulffForm.tabular).toBe(true);
+  });
+});
+
+// rung 4a.7 — the Pb:Mo HABIT LEVER law + live growth integral (the first EARNED form; the
+// id-hash retired for the wulfenite tenant). B(r) = BIAS_TSUMEB·(R_TSUMEB/r) clamped [0.55,2.8]:
+// direction from Sci. Rep. 14 (2024) DOI 10.1038/s41598-024-60043-4 (Pb-rich → {101} bipyramid,
+// Mo-rich → {001} thin plate), magnitudes sim-scale calibrated (g=1.0 kernel sweep 2026-07-01).
+describe('wulfenite Pb:Mo habit lever (rung 4a.7)', () => {
+  it('B(r) law — both calibration pins, the paper direction (monotone decreasing), both clamps', () => {
+    expect(wulffWulfenitePbMoBias(1.25)).toBeCloseTo(1.0, 10);   // pin 1: Tsumeb integrated ⟨r⟩ → the stout tablet
+    expect(wulffWulfenitePbMoBias(0.5)).toBeCloseTo(2.5, 10);    // pin 2: Mo-rich water → the thin plate (aspect ~6)
+    expect(wulffWulfenitePbMoBias(0.8)).toBeGreaterThan(wulffWulfenitePbMoBias(1.0));   // Pb-richer → blockier, always
+    expect(wulffWulfenitePbMoBias(1.0)).toBeGreaterThan(wulffWulfenitePbMoBias(1.5));
+    expect(wulffWulfenitePbMoBias(0.05)).toBe(WULFENITE_PBMO.MAX);   // extreme Mo-rich clamps at the thin end
+    expect(wulffWulfenitePbMoBias(50)).toBe(WULFENITE_PBMO.MIN);     // extreme Pb-rich floors while still 'tabular' — the bipyramid flip is Depth-B
+  });
+
+  it('the molar ratio of the seed-42 broth (Pb 60 / Mo 15 ppm) is 1.852 — the probe core-water value', () => {
+    const r = (60 / WULFENITE_PBMO.M_PB) / (15 / WULFENITE_PBMO.M_MO);
+    expect(r).toBeCloseTo(1.852, 3);
+  });
+
+  it('live integral — a two-water history integrates growth-weighted; biasC + growthFrac update in place after tag', () => {
+    const r1 = (60 / WULFENITE_PBMO.M_PB) / (15 / WULFENITE_PBMO.M_MO);    // Pb-rich core water, 1.852
+    const r2 = (100 / WULFENITE_PBMO.M_PB) / (40 / WULFENITE_PBMO.M_MO);   // near-balanced rim water, 1.158
+    const c = mkCrystal({ mineral: 'wulfenite', habit: 'tabular', crystal_id: 5, total_growth_um: 40,
+      zones: [{ step: 3, thickness_um: 40 }] });
+    const water = (Pb: number, Mo: number, step: number) =>
+      ({ step, conditions: { wall: { wulff_wulfenite: true }, fluid: { Pb, Mo } }, crystals: [c] });
+    classifyWulffForm(water(60, 15, 3));                 // grows 40µm in the core water, tags this step
+    expect(c._wulffPbMo.G).toBe(40);
+    expect(c._wulffForm.biasC).toBeCloseTo(wulffWulfenitePbMoBias(r1), 10);   // tag reads the integral so far
+    c.zones.push({ step: 9, thickness_um: 60 });         // then 60µm in the post-pulse water
+    c.total_growth_um = 100;
+    classifyWulffForm(water(100, 40, 9));
+    expect(c._wulffPbMo.G).toBe(100);
+    const rInt = c._wulffPbMo.rG / c._wulffPbMo.G;
+    expect(rInt).toBeCloseTo((r1 * 40 + r2 * 60) / 100, 10);                  // the growth-weighted mean
+    expect(c._wulffForm.biasC).toBeCloseTo(wulffWulfenitePbMoBias(rInt), 10); // LIVE update — not frozen at tag
+    expect(c._wulffForm.growthFrac).toBeCloseTo(100 / 250, 10);               // g un-froze too (was locked at tag-time)
+  });
+
+  it('the integral skips dissolution steps and non-growth steps (thickness ≤ 0 or a stale zone)', () => {
+    const c = mkCrystal({ mineral: 'wulfenite', habit: 'tabular', crystal_id: 5, total_growth_um: 40,
+      zones: [{ step: 3, thickness_um: 40 }] });
+    const water = (Pb: number, Mo: number, step: number) =>
+      ({ step, conditions: { wall: { wulff_wulfenite: true }, fluid: { Pb, Mo } }, crystals: [c] });
+    classifyWulffForm(water(60, 15, 3));
+    expect(c._wulffPbMo.G).toBe(40);
+    c.zones.push({ step: 7, thickness_um: -3 });         // acid dissolution zone — must NOT enter
+    classifyWulffForm(water(60, 15, 7));
+    expect(c._wulffPbMo.G).toBe(40);
+    classifyWulffForm(water(60, 15, 12));                // no zone this step (stale last zone) — must NOT enter
+    expect(c._wulffPbMo.G).toBe(40);
   });
 });
 

@@ -238,11 +238,21 @@ describe('Wulff geometry kernel — wulfenite via the registry (rung 4a.3)', () 
     expect(_makeWulffGeom(faces)).toBeTruthy();
   });
 
-  it('the live supergene values (biasC 1.86, g 0.21) → a truncated-bipyramid TABLET: 2 pinacoid + 8 bipyramid, wider than thick', () => {
-    const p = wulffPolyhedron(wulffFaceSetForMineral('wulfenite', 0.21, 7, 1.86));
+  it('the live supergene values (rung 4a.7: biasC B(1.25)=1.0, g 1.0) → a truncated-bipyramid TABLET: 2 pinacoid + 8 bipyramid, wider than thick', () => {
+    const p = wulffPolyhedron(wulffFaceSetForMineral('wulfenite', 1.0, 0, 1.0));
     expect(pinacoidFaces(p)).toBe(2);                    // the flat plate faces, top + bottom
     expect(bipyramidFaces(p)).toBe(8);                   // the bevelled square edge
     expect(extent(p, 0)).toBeGreaterThan(extent(p, 1));  // diameter (X) > thickness (Y) — a plate, not a column
+  });
+
+  it('rung 4a.7 visible-change pin — the earned Tsumeb body is decisively STOUTER than the retired hash render (biasC 1.86 @ frozen g 0.21)', () => {
+    const aspect = (g: number, b: number) => {
+      const p = wulffPolyhedron(wulffFaceSetForMineral('wulfenite', g, 0, b));
+      return extent(p, 0) / extent(p, 1);
+    };
+    // ≈2.6 (earned, thick Tsumeb tablet w/ prominent {101} bevel) vs ≈3.7 (old hash @ frozen g):
+    // the render upgrade is not a silent no-op.
+    expect(aspect(1.0, 1.0)).toBeLessThan(aspect(0.21, 1.86) * 0.85);
   });
 
   it('higher biasC → thinner plate (the tabular thinness knob; bias on {001})', () => {

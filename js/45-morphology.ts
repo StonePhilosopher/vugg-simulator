@@ -883,9 +883,13 @@ function classifyOcclusion(sim: any) {
 // only sets the RENDER bias so js/99i draws the geometrically-true form, with a golden-ratio
 // crystal-id hash spreading the population across the form continuum (the per-zone trace that
 // would give a chemically-exact bias is not persisted — the GrowthZone constructor drops it — so
-// the hash stands in for that unrecorded local variation, the classifyOcclusion idiom). PURE
-// tagging (NO rng, NO fluid) → byte-identical baseline (gen-baseline serialises only counts/sizes);
-// render-only, no SIM bump, no rebake (the Phase 0-3 discipline). Per-tenant opt-in:
+// the hash stands in for that unrecorded local variation, the classifyOcclusion idiom).
+//   EXCEPT wulfenite (rung 4a.7, 2026-07-01): its bias IS chemically exact now — a growth-weighted
+//   Pb:Mo integral accumulated live from sim.conditions.fluid each grown step (WULFENITE_PBMO
+//   below); the id-hash is RETIRED for that tenant, the first of the six. PURE tagging (NO rng;
+//   fluid is READ for the integral, never written) → byte-identical baseline (gen-baseline
+//   serialises only counts/sizes); render-only, no SIM bump, no rebake (the Phase 0-3 discipline).
+// Per-tenant opt-in:
 //   fluorite (wall.wulff_fluorite; Bosze & Rakovan 2002, REE-stabilized {111}): octahedral_REE
 //     habit → biasC [0.32,0.52] (octahedron-DOMINANT with small {100} truncations — NOT a perfect
 //     octahedron: a Y-stabilized fluorite has {100} reduced not absent, the faithful render AND
@@ -900,6 +904,41 @@ function classifyOcclusion(sim: any) {
 // or twins loses its tag (twins own their own geometry). biasC>1 slows the bias-flagged form so it
 // dominates; biasC<1 speeds it so its competitor takes over (js/46 wulffFaceSetForMineral).
 const WULFF_MIN_UM = 30;            // skip nucleation specks — need a body to read a form on
+
+// rung 4a.7 — the wulfenite Pb:Mo HABIT LEVER: the first EARNED form (growth-geometry handoff
+// 2026-07-01 "what I'd do next" #1). Sci. Rep. 14 (2024), DOI 10.1038/s41598-024-60043-4 (resolved
+// + READ in the 2026-07-01 verification pass): the solution ratio r = C_Pb/C_MoO4 sets the PbMoO4
+// growth habit — Mo-rich (r<1) grows the {001} TABULAR plate, Pb-rich (r>1) grows the {101}
+// BIPYRAMID. So wulfenite's {001} bias is DERIVED from the crystal's own recorded water instead of
+// the golden-ratio id-hash:
+//   ⟨r⟩   = Σ(r_step·ΔG_step)/Σ(ΔG_step) — the growth-weighted molar Pb:Mo over the crystal's
+//           WHOLE history, growth zones only (a tag-time point-sample would read ONLY the pre-pulse
+//           core water: supergene_oxidation's step-40 Pb+Mo pulse moves r 1.852→1.158, and the
+//           seed-42 hero integrates to ⟨r⟩≈1.25 — wulfenite-pbmo probe, 2026-07-01)
+//   biasC = B(⟨r⟩) = BIAS_TSUMEB·(R_TSUMEB/⟨r⟩), clamped to [MIN, MAX]
+// i.e. the {001} rate R_001_eff ∝ ⟨r⟩ — the SIMPLEST monotone law matching the paper's direction
+// (fitting the two calibration pins gives exponent 1.04 ≈ 1; g=1.0 kernel sweep 2026-07-01).
+// MAGNITUDES ARE SIM-SCALE CALIBRATION, not literature values (the barite 4a.4b lesson: direction
+// from the literature, magnitudes calibrated against locality ground truth):
+//   pin 1  Tsumeb ⟨r⟩≈1.25 → biasC 1.0 → aspect 2.6, top face 0.83 of the equator — the classic
+//          THICK Tsumeb tablet with a prominent {101} bevel (Pinch & Wilson 1977 blocky-tabular),
+//          visibly stouter than the retired hash band (1.4–2.8 → aspect 3.4–6.1 at the frozen g)
+//   pin 2  Mo-rich extrapolation r=0.5 → biasC 2.5 → aspect 6.0 — the paper's r<1 thin-plate
+//          regime (no in-fleet scenario drives it yet; a Red-Cloud-style locality would)
+//   floor  MIN 0.55 → aspect ≈1.45 — the blockiest body still honestly inside the engine's
+//          habit='tabular' word; the true bipyramid flip ({001} self-eliminates at biasC <~0.41)
+//          is reserved for the Depth-B rung (engine habit dispatch + narrator + SIM bump)
+const WULFENITE_PBMO = {
+  M_PB: 207.2, M_MO: 95.95,        // g/mol — r is MOLAR: (Pb_ppm/M_PB)/(Mo_ppm/M_MO)
+  R_TSUMEB: 1.25, BIAS_TSUMEB: 1.0,
+  MIN: 0.55, MAX: 2.8,
+};
+function wulffWulfenitePbMoBias(rInt: number): number {
+  const p = WULFENITE_PBMO;
+  const b = p.BIAS_TSUMEB * (p.R_TSUMEB / Math.max(rInt, 1e-9));
+  return Math.max(p.MIN, Math.min(p.MAX, b));
+}
+
 function classifyWulffForm(sim: any) {
   const wall = sim.conditions && sim.conditions.wall;
   if (!wall) return;
@@ -910,6 +949,25 @@ function classifyWulffForm(sim: any) {
   for (const c of sim.crystals) {
     if (!c || c.dissolved) continue;
     const m = c.mineral;
+    // rung 4a.7 — wulfenite Pb:Mo growth integral. Accumulated BEFORE the size/tag gates so the
+    // sub-30µm nucleus growth is in ⟨r⟩ from zone one, and RE-derived for already-tagged crystals
+    // so the form keeps integrating its water history (js/99i re-reads biasC + growthFrac through
+    // its quantized cache key each frame → the plate visibly stoutens as the post-pulse water
+    // integrates in). Growth zones only (thickness>0): dissolution steps don't enter the integral
+    // (first-order simplification at this refinement level). growthFrac un-freezes for this tenant
+    // too — the tag-time freeze had the seed-42 hero rendering at its tag-step g≈0.21 forever
+    // (the frozen-g crutch, growth-geometry handoff item 3; retired here for wulfenite only).
+    if (m === 'wulfenite' && wulfeniteOn) {
+      const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
+      const f = sim.conditions.fluid;
+      if (z && z.step === sim.step && z.thickness_um > 0 && f && f.Mo > 0) {
+        const r = (f.Pb / WULFENITE_PBMO.M_PB) / (f.Mo / WULFENITE_PBMO.M_MO);   // molar Pb:MoO4
+        const acc = c._wulffPbMo || (c._wulffPbMo = { rG: 0, G: 0 });
+        acc.rG += r * z.thickness_um; acc.G += z.thickness_um;
+        if (c._wulffForm) c._wulffForm.biasC = wulffWulfenitePbMoBias(acc.rG / acc.G);
+      }
+      if (c._wulffForm) c._wulffForm.growthFrac = Math.max(0.15, Math.min(1.0, (c.total_growth_um || 0) / 250));
+    }
     const tenant = (m === 'fluorite' && fluoriteOn) || (m === 'calcite' && calciteOn)
       || (m === 'wulfenite' && wulfeniteOn) || (m === 'barite' && bariteOn) || (m === 'galena' && galenaOn)
       || (m === 'titanite' && titaniteOn);
@@ -931,15 +989,18 @@ function classifyWulffForm(sim: any) {
       // sharp {21-31} scalenohedron terminations, capped by minor {104} rhombs (the real dogtooth).
       // [0.34,0.50] read as a stubby block (NOT a tooth); ≤0.10 thinned to an unnatural spike.
       biasC = scaleno ? (0.15 + h * 0.11) : (1.30 + h * 0.90);
-    } else if (m === 'wulfenite') {                   // rung 4a.3 (tetragonal 4/m)
-      // grow_wulfenite hardcodes habit='tabular' (the iconic honey-yellow square plate), so there
-      // is no pyramidal/pseudo-octahedral habit to split on — driving one would render a form the
-      // engine never chose. Instead spread the plate THICKNESS across the tabular family by the
-      // per-crystal hash: biasC [1.4,2.8] → diameter/thickness aspect ≈ 3.4–6.1, a natural drusy of
-      // thin honey plates and thicker tablets. bias is on {001}: higher biasC slows the basal
-      // pinacoid → thinner plate. (Band placed from the wulff-tetragonal aspect sweep; eye-checked.)
+    } else if (m === 'wulfenite') {                   // rung 4a.3 (tetragonal 4/m) + 4a.7 (Pb:Mo lever)
+      // EARNED FORM (rung 4a.7, 2026-07-01): biasC = B(⟨r⟩) from the crystal's own growth-weighted
+      // Pb:Mo — the id-hash is RETIRED for this tenant (it was the documented stand-in for exactly
+      // this then-unrecorded chemistry; law + calibration pins in WULFENITE_PBMO above). The engine
+      // still hardcodes habit='tabular', and B's floor keeps the render inside that word (blocky
+      // tablet at the Pb-rich end) — the full {101} bipyramid flip is the Depth-B rung (engine
+      // habit dispatch + narrator + SIM bump). bias stays on {001}: higher biasC slows the basal
+      // pinacoid → thinner plate. Fallback: a crystal that somehow tags with zero accumulated
+      // growth reads the Tsumeb pin.
       tabular = true;
-      biasC = 1.4 + h * 1.4;
+      const acc = c._wulffPbMo;
+      biasC = wulffWulfenitePbMoBias(acc && acc.G > 0 ? acc.rG / acc.G : WULFENITE_PBMO.R_TSUMEB);
     } else if (m === 'barite') {                      // barite (rung 4a.4, orthorhombic mmm)
       // barite's habit is σ-driven (grow_barite: prismatic/cockscomb/bladed/tabular/snowball). ONLY
       // tabular + bladed map to the renderer's 'tablet' token (js/99i geomTokenForHabit: h.includes

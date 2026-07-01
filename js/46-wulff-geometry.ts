@@ -94,7 +94,8 @@ const WULFF_FORM_GEOMETRY: any = {
   // so {001} is by far the slowest form ⇒ TABULAR by default — exactly wulfenite's nature, no knob
   // needed. bias on {001}: biasC>1 slows the pinacoid further → thinner plate; biasC<1 speeds it →
   // the {101} bipyramid takes over (pyramidal → pseudo-octahedral). One equation, three crystal
-  // systems.
+  // systems. rung 4a.7 (2026-07-01): this tenant's biasC is now the Pb:Mo EARNED-FORM lever —
+  // derived from the crystal's growth-weighted fluid ratio, not the id-hash (js/45 WULFENITE_PBMO).
   wulfenite: { system: 'tetragonal', cell: { a: 5.4347, c: 12.110 }, forms: [
     { hkl: [0, 0, 1], R: 1.0, bias: true },
     { hkl: [1, 0, 1], R: 2.44 },
