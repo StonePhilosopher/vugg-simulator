@@ -294,7 +294,22 @@
           // wall surface. The universal extrinsic driver's first showcase (applies across all the
           // species here, not just one — unlike elmwood's calcite-only directional_steps).
           // RENDER-ONLY: the tag never touches counts/sizes/chemistry → baseline byte-identical.
-          "occlusion": true
+          "occlusion": true,
+          // Central-distance (Wulff) FORM rung 4a.2 — the FIRST non-cubic Wulff tenant. MVT's
+          // scalenohedral calcite renders as the TRUE {104}+{21-31} polyhedron (the dogtooth, with
+          // {104} rhombohedron caps) instead of the _makeScalenohedron primitive. MVT is the clean
+          // showcase: a quiet basin (no orogenic strain → no e-twin overprint, unlike marble), so
+          // the dogtooth stands at the final frame, and occlusion above roots it in the matrix → a
+          // drusy dogtooth. js/45 classifyWulffForm → js/99i (isotropic scale; the geom carries the
+          // true c-elongation). RENDER-ONLY → baseline byte-identical.
+          "wulff_calcite": true,
+          // Wulff rung 4a.5 (2026-06-30) — galena, the SECOND cubic tenant. MVT galena is the textbook
+          // cube; render it as the TRUE {100}+{111} polyhedron — a cube-DOMINANT body with visible
+          // {111} corner truncations (js/45 band [1.0,1.15] keeps the truncations alive, not a perfect
+          // cube = no-op). Pairs with the calcite dogtooth above → a TWO-tenant Wulff druse, the
+          // canonical MVT specimen (galena cubes + golden dogtooth calcite). Cubic = isometric, token
+          // stays 'cube' → the cube scale path is unchanged → baseline byte-identical.
+          "wulff_galena": true
         }
       },
       "events": [
@@ -1489,7 +1504,13 @@
           "architecture": "irregular",
           "primary_bubbles": 3,
           "secondary_bubbles": 7,
-          "shape_seed": 7
+          "shape_seed": 7,
+          // rung 4a.3 — opt Tsumeb's wulfenite into the central-distance TABULAR PLATE (tetragonal
+          // 4/m, c{001} pinacoid + {101} bipyramid) instead of the flat 'tablet' box. Render-only:
+          // the engine grows the same crystals (one 12.3 mm honey plate at seed 42, biasC 1.86 →
+          // aspect ≈ 3.8), the baseline stays byte-identical. The THIRD crystal system in the Wulff
+          // family — cubic (fluorite) + trigonal (calcite) + tetragonal (wulfenite).
+          "wulff_wulfenite": true
         }
       },
       "events": [
@@ -2225,7 +2246,13 @@
           "size_class": "pocket",
           "primary_bubbles": 3,
           "secondary_bubbles": 6,
-          "shape_seed": 1736
+          "shape_seed": 1736,
+          // rung 4a.4 (2026-06-29) — opt the late-stage (wittichen_meteoric_sulfate, step 134) BLADED
+          // barite into the orthorhombic-mmm Wulff RECTANGULAR tabular plate (js/46
+          // wulffOrthorhombicNormals). Render-only, byte-identical — the bladed vein barite renders as
+          // a true c{001}/o{011}/m{210} lozenge instead of the flat 'tablet' box. The FOURTH crystal
+          // system on the live arc. (prismatic/cockscomb/snowball barite, if any, keep their geometry.)
+          "wulff_barite": true
         }
       },
       "events": [
@@ -2357,7 +2384,8 @@
           "shape_seed": 1932,
           "thermal_pulses": false,
           "cooling_rate": 0.4,
-          "alpine_cleft": true
+          "alpine_cleft": true,
+          "wulff_titanite": true
         }
       },
       "events": [
@@ -3383,7 +3411,12 @@
           "architecture": "pocket",
           "primary_bubbles": 4,
           "secondary_bubbles": 6,
-          "shape_seed": 1959
+          "shape_seed": 1959,
+          // Central-distance (Wulff) FORM, Phase 4 rung 4a.1 — render the Stage VI REE-fluorite
+          // as the TRUE {100}/{111} polyhedron (cube↔cuboctahedron↔octahedron, driven by the Y
+          // the Stage VI pulse leaches; Bosze & Rakovan 2002, cited below) instead of a fixed
+          // octahedron primitive. Render-only (js/45 classifyWulffForm → js/99i): byte-identical.
+          "wulff_fluorite": true
         }
       },
       "events": [

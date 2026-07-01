@@ -3833,6 +3833,10 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     const token = _resolveCrystalGeomToken(crystal, habitForGeom);
     let geom: any = null;
     let isSectorZoned = false;   // sector (hourglass) zoning → vertexColors material
+    let isWulffCalcite = false;  // calcite Wulff polyhedron → isotropic scale (geom carries c-elongation)
+    let isWulffWulfenite = false;  // wulfenite Wulff tabular plate → isotropic scale by plate diameter (rung 4a.3)
+    let isWulffBarite = false;  // barite Wulff RECTANGULAR tabular plate → isotropic scale by plate diameter (rung 4a.4)
+    let isWulffTitanite = false;  // titanite Wulff monoclinic sphenoid WEDGE → isotropic scale by diameter (rung 4a.6)
     // ETCHED crystal — post-growth dissolution overprint (crystal-face realism arc §2,
     // 2026-06-22). The sim tags crystal._etch when a scenario etch event corroded a
     // crystal that had ALREADY grown (js/45 classifyEtch; reactivated_fluorite_vein's
@@ -3897,6 +3901,48 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         && token === 'cube' && typeof halideTerraceBands === 'function') {
       const terr = halideTerraceBands(crystal, replayStep);
       if (terr) geom = _getTerracedCalciteGeom(state, crystal, terr);
+    }
+    // CENTRAL-DISTANCE (Wulff) FORM (central-distance arc Phase 4, 2026-06-28): the arc's
+    // DESTINATION. A crystal the sim tagged _wulffForm (js/45 classifyWulffForm) renders as the
+    // TRUE convex polyhedron of its growing form faces (js/46 wulffFaceSetForMineral →
+    // _makeWulffGeom) instead of a fixed primitive:
+    //   fluorite (4a.1, token cube/octahedron) — the cube↔octahedron transition fluid.Y drives
+    //     (Bosze & Rakovan 2002, REE-stabilized {111}). ISOMETRIC: token stays cube/octahedron, so
+    //     the downstream uniform scale is unchanged → byte-identical.
+    //   calcite (4a.2, token rhomb/scalene) — the {104} rhombohedron↔{21-31} scalenohedron
+    //     (nailhead↔dogtooth), the first NON-cubic tenant. ANISOTROPIC: the Wulff geom already
+    //     carries the true c-elongation (kernel builds c on Y), so the scale block below treats it
+    //     ISOTROPICALLY (isWulffCalcite) instead of the token's mesh.scale.set(aWid,cLen,aWid),
+    //     which would DOUBLE-stretch it.
+    // Gated on the matching tokens so the twin / etched / terrace / e-twin / dendrite paths above
+    // keep their geometry, and on !geom so they all win. Cached by quantized (mineral, form, biasC,
+    // growth); _makeWulffGeom null-clamps a degenerate polyhedron → fall through to the primitive.
+    if (!geom && crystal._wulffForm && typeof wulffFaceSetForMineral === 'function') {
+      const wf = crystal._wulffForm;
+      const isFlWulff = crystal.mineral === 'fluorite' && (token === 'cube' || token === 'octahedron');
+      const isCalWulff = crystal.mineral === 'calcite' && (token === 'rhomb' || token === 'scalene');
+      const isWfWulff = crystal.mineral === 'wulfenite' && token === 'tablet';   // rung 4a.3 (tetragonal)
+      const isBaWulff = crystal.mineral === 'barite' && token === 'tablet';      // rung 4a.4 (orthorhombic) — tabular/bladed only
+      const isGlWulff = crystal.mineral === 'galena' && (token === 'cube' || token === 'octahedron');   // rung 4a.5 (cubic, like fluorite — isometric, no new scale branch)
+      const isTiWulff = crystal.mineral === 'titanite' && (token === 'prism' || token === 'tablet');   // rung 4a.6 (monoclinic) — sphenoid_wedge/prismatic→prism, flattened_tabular→tablet
+      if (isFlWulff || isCalWulff || isWfWulff || isBaWulff || isGlWulff || isTiWulff) {
+        const formKey = (isFlWulff || isGlWulff) ? (wf.octahedral ? 'o' : 'c')   // cubic cube↔octahedron (galena octahedral is always false → 'c')
+          : isCalWulff ? (wf.scaleno ? 's' : 'r') : 't';   // wulfenite + barite + titanite are single-body → 't' (mineral is in the key)
+        const key = '__wulff_' + crystal.mineral + '_' + formKey
+          + '_' + Math.round(wf.biasC * 100) + '_' + Math.round(wf.growthFrac * 10);
+        geom = state.geomCache.get(key);
+        if (!geom) {
+          // crystalId 0 → the kernel's internal jitter is a harmless constant (the per-crystal
+          // spread already lives in biasC), so the quantized cache key dedupes cleanly.
+          const faces = wulffFaceSetForMineral(crystal.mineral, wf.growthFrac, 0, wf.biasC);
+          const g2 = faces ? _makeWulffGeom(faces) : null;
+          if (g2) { geom = g2; state.geomCache.set(key, geom); }
+        }
+        if (isCalWulff && geom) isWulffCalcite = true;     // signal the isotropic scale below
+        if (isWfWulff && geom) isWulffWulfenite = true;    // signal the isotropic-by-diameter scale below
+        if (isBaWulff && geom) isWulffBarite = true;       // signal the isotropic-by-diameter scale below (rung 4a.4)
+        if (isTiWulff && geom) isWulffTitanite = true;     // signal the isotropic-by-diameter scale below (rung 4a.6)
+      }
     }
     // Dendrite TREE (morphology fix-backlog, 2026-06-12): dendritic /
     // arborescent habits get the branching skeleton instead of the
@@ -4229,8 +4275,22 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         cLen = Math.max(cLen, aWid / targetRatio);
       }
     }
-    if (token === 'cube' || token === 'octahedron' || token === 'rhombic_dodec' || token === 'dodecahedron' || token === 'snowball') {
+    if (token === 'cube' || token === 'octahedron' || token === 'rhombic_dodec' || token === 'dodecahedron' || token === 'snowball' || isWulffCalcite) {
+      // isWulffCalcite (rung 4a.2): the calcite Wulff polyhedron already carries its true
+      // crystallographic c-elongation (kernel builds c on Y, normalized to ±0.5), so it scales
+      // UNIFORMLY by cLen — the geom's own aspect gives the nailhead-vs-dogtooth shape. Applying
+      // the token's anisotropic (aWid,cLen,aWid) here would double-stretch the already-elongated geom.
       mesh.scale.set(cLen, cLen, cLen);
+    } else if (isWulffWulfenite || isWulffBarite || isWulffTitanite) {
+      // isWulffWulfenite (4a.3, tetragonal) + isWulffBarite (4a.4, orthorhombic) + isWulffTitanite (4a.6,
+      // MONOCLINIC): all carry their full shape INTERNALLY in the normalized ±0.5 polyhedron, so they
+      // scale ISOTROPICALLY by the max extent = max(aWid, cLen). The token's (aWid,cLen,aWid) would
+      // re-flatten the geom; scaling by cLen alone (the calcite path) would shrink it to one axis. The
+      // bodies differ only in the geom's own aspect: wulfenite is a SQUARE tabular plate (a=b), barite a
+      // RECTANGULAR one (a≠b ≈ 1.28:1), and titanite the OBLIQUE SPHENOID WEDGE (b the long axis, the
+      // {100}∧{001}=66.19° lean baked into the faces) — one scale rule serves all three.
+      const s = Math.max(aWid, cLen);
+      mesh.scale.set(s, s, s);
     } else if (token === 'botryoidal') {
       // Botryoidal crusts spread laterally on the wall — the c-axis (along
       // the substrate normal) should be SHORTER than the a-axis. Sim-side

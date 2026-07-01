@@ -298,6 +298,65 @@ class VugWall {
     this.occlusion = !!opts.occlusion;
     this.occlusion_fraction = (typeof opts.occlusion_fraction === 'number') ? opts.occlusion_fraction : undefined;
     this.occlusion_minerals = Array.isArray(opts.occlusion_minerals) ? opts.occlusion_minerals : undefined;
+    // wulff_fluorite — CENTRAL-DISTANCE (Wulff) FORM, Phase 4 rung 4a.1 (2026-06-28).
+    // Opts a scenario's fluorite into the true {100}/{111} central-distance polyhedron
+    // (js/46 wulffFaceSetForMineral → js/99i _makeWulffGeom) instead of the fixed
+    // OctahedronGeometry/BoxGeometry primitive — so the cube↔cuboctahedron↔octahedron
+    // habit transition that fluid.Y drives in grow_fluorite (>1 ppm REE → octahedral)
+    // becomes a geometrically TRUE form (Bosze & Rakovan 2002). js/45 classifyWulffForm
+    // tags _wulffForm; the renderer builds the mesh. RENDER-ONLY — the tag never touches
+    // counts/sizes/chemistry and the token stays cube/octahedron (so the existing
+    // isometric scale path is unchanged), so the baseline stays byte-identical (no SIM
+    // bump, no rebake — the Phase 0-3 discipline). Default false → every other scenario
+    // dormant. Like the flags above, WallState whitelists each opt explicitly — an
+    // unlisted flag from scenarios.json5 is silently dropped, so this line is required.
+    this.wulff_fluorite = !!opts.wulff_fluorite;
+    // wulff_calcite — CENTRAL-DISTANCE (Wulff) FORM rung 4a.2 (2026-06-28). Opts a scenario's
+    // calcite into the true {104} rhombohedron / {21-31} scalenohedron polyhedron (js/46
+    // wulffTrigonalNormals — the first NON-cubic tenant) instead of the _makeRhombohedron /
+    // _makeScalenohedron primitive. js/45 classifyWulffForm tags _wulffForm; js/99i builds the
+    // mesh AFTER the terrace/e-twin paths (gated on !geom so those still win) and scales it
+    // ISOTROPICALLY (the geom carries the true c-elongation). RENDER-ONLY — byte-identical (no SIM
+    // bump, no rebake). Default false → every other scenario dormant. Whitelisted explicitly (an
+    // unlisted flag from scenarios.json5 is silently dropped).
+    this.wulff_calcite = !!opts.wulff_calcite;
+    // wulff_wulfenite — CENTRAL-DISTANCE (Wulff) FORM rung 4a.3 (2026-06-29): the THIRD crystal
+    // system (tetragonal 4/m, scheelite-type). Opts a scenario's wulfenite into the true c{001}
+    // pinacoid + {101} bipyramid tabular plate (js/46 wulffTetragonalNormals) instead of the flat
+    // 'tablet' box primitive. js/45 classifyWulffForm tags _wulffForm; js/99i builds the mesh after
+    // the twin/etch paths (gated !geom) and scales it ISOTROPICALLY by the plate diameter (the geom
+    // carries the true c<a tabular aspect). RENDER-ONLY — byte-identical (no SIM bump, no rebake).
+    // Default false → every other scenario dormant. Whitelisted explicitly (an unlisted flag from
+    // scenarios.json5 is silently dropped).
+    this.wulff_wulfenite = !!opts.wulff_wulfenite;
+    // wulff_barite — CENTRAL-DISTANCE (Wulff) FORM rung 4a.4 (2026-06-29): the FOURTH crystal system
+    // (orthorhombic mmm, barite-group BaSO4 — the first cell with THREE UNEQUAL axes). Opts a
+    // scenario's barite into the true c{001} pinacoid / o{011} dome / m{210} prism polyhedron (js/46
+    // wulffOrthorhombicNormals) — a RECTANGULAR tabular plate (longer along a than b). Only the
+    // tabular + bladed habits (token 'tablet') become the plate; prismatic/cockscomb/snowball keep
+    // their geometry. Token stays 'tablet', scaled isotropically by the plate DIAMETER (c is the SHORT
+    // axis, like wulfenite). RENDER-ONLY — byte-identical (no SIM bump, no rebake). Default false →
+    // every other scenario dormant. Whitelisted explicitly (an unlisted flag from scenarios.json5 is
+    // silently dropped).
+    this.wulff_barite = !!opts.wulff_barite;
+    // wulff_galena — CENTRAL-DISTANCE (Wulff) FORM rung 4a.5 (2026-06-30): the SECOND cubic tenant
+    // (after fluorite — galena's registry entry already existed). Opts a scenario's galena into the
+    // true {100} cube + {111} octahedron polyhedron (js/46 wulffCubicNormals) — rendered as a cube-
+    // DOMINANT body with VISIBLE {111} corner truncations (galena is hardcoded habit='cubic', so the
+    // band is low [1.0,1.15] to keep the truncations alive, NOT a perfect cube = no-op). Isometric:
+    // token stays 'cube', so the existing cube scale path is unchanged → byte-identical (no SIM bump,
+    // no rebake). Default false → every other scenario dormant. Whitelisted explicitly (an unlisted
+    // flag from scenarios.json5 is silently dropped).
+    this.wulff_galena = !!opts.wulff_galena;
+    // wulff_titanite — CENTRAL-DISTANCE (Wulff) FORM rung 4a.6 (2026-06-30): the FIFTH crystal system,
+    // monoclinic 2/m (titanite/sphene CaTiSiO₅). The FIRST OBLIQUE cell (β=113.81°≠90°), so its
+    // reciprocal vector carries the metric-tensor h↔l cross-term (js/46 wulffMonoclinicNormals) — and
+    // its a{100}∧c{001} faces meet at 180−β = 66.19°, the first NON-perpendicular face pair: the oblique
+    // titanite WEDGE (the "sphene" sphenoid). Opts a scenario's titanite into that body; rendered
+    // isotropically-by-diameter like wulfenite/barite (the wedge aspect is in the geometry). Opt-in:
+    // grimsel_alpine_cleft (the alpine-cleft wedge titanite, late on the smoky quartz). Render-only,
+    // byte-identical (no SIM bump, no rebake). Default false; whitelisted explicitly.
+    this.wulff_titanite = !!opts.wulff_titanite;
   }
 
   dissolve(acid_strength, fluid) {

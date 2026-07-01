@@ -876,6 +876,113 @@ function classifyOcclusion(sim: any) {
   }
 }
 
+// CENTRAL-DISTANCE (Wulff) FORM — Phase 4 (rung 4a.1 fluorite + 4a.2 calcite; 2026-06-28). The
+// DESTINATION of the central-distance arc: render a crystal's external shape as the true convex
+// polyhedron of its growing form faces (js/46 P = ⋂ᵢ{x:nᵢ·x≤dᵢ}) instead of a fixed primitive.
+// The END-MEMBER is the habit the grow engine ALREADY persisted from the fluid; this classifier
+// only sets the RENDER bias so js/99i draws the geometrically-true form, with a golden-ratio
+// crystal-id hash spreading the population across the form continuum (the per-zone trace that
+// would give a chemically-exact bias is not persisted — the GrowthZone constructor drops it — so
+// the hash stands in for that unrecorded local variation, the classifyOcclusion idiom). PURE
+// tagging (NO rng, NO fluid) → byte-identical baseline (gen-baseline serialises only counts/sizes);
+// render-only, no SIM bump, no rebake (the Phase 0-3 discipline). Per-tenant opt-in:
+//   fluorite (wall.wulff_fluorite; Bosze & Rakovan 2002, REE-stabilized {111}): octahedral_REE
+//     habit → biasC [0.32,0.52] (octahedron-DOMINANT with small {100} truncations — NOT a perfect
+//     octahedron: a Y-stabilized fluorite has {100} reduced not absent, the faithful render AND
+//     visibly distinct from the old primitive); cubic → [1.15,2.40] (sharp {100} cube). Token stays
+//     cube/octahedron → the isometric scale path is unchanged.
+//   calcite (wall.wulff_calcite): scalenohedral habit (dogtooth) → biasC [0.34,0.50] (the {21-31}
+//     scalenohedron comes in, capped by the {104} rhombohedron — a real composite habit);
+//     rhombohedral (nailhead) → [1.30,2.20] (the rhombohedron dominates). Token stays rhomb/scalene;
+//     js/99i scales the calcite Wulff geom ISOTROPICALLY (it already carries the true c-elongation,
+//     so the token's mesh.scale.set(aWid,cLen,aWid) would DOUBLE-stretch it).
+// Re-evaluated each step (mirrors classifyOcclusion): a crystal that drops below the body threshold
+// or twins loses its tag (twins own their own geometry). biasC>1 slows the bias-flagged form so it
+// dominates; biasC<1 speeds it so its competitor takes over (js/46 wulffFaceSetForMineral).
+const WULFF_MIN_UM = 30;            // skip nucleation specks — need a body to read a form on
+function classifyWulffForm(sim: any) {
+  const wall = sim.conditions && sim.conditions.wall;
+  if (!wall) return;
+  const fluoriteOn = !!wall.wulff_fluorite, calciteOn = !!wall.wulff_calcite,
+        wulfeniteOn = !!wall.wulff_wulfenite, bariteOn = !!wall.wulff_barite, galenaOn = !!wall.wulff_galena,
+        titaniteOn = !!wall.wulff_titanite;
+  if (!fluoriteOn && !calciteOn && !wulfeniteOn && !bariteOn && !galenaOn && !titaniteOn) return;   // opt-in gate — dormant unless a scenario sets one
+  for (const c of sim.crystals) {
+    if (!c || c.dissolved) continue;
+    const m = c.mineral;
+    const tenant = (m === 'fluorite' && fluoriteOn) || (m === 'calcite' && calciteOn)
+      || (m === 'wulfenite' && wulfeniteOn) || (m === 'barite' && bariteOn) || (m === 'galena' && galenaOn)
+      || (m === 'titanite' && titaniteOn);
+    // Disqualify: not an opted tenant, a nucleation speck, or a twin (twins resolve to their own
+    // geometry token, never the cube/octahedron/rhomb/scalene the Wulff path needs).
+    if (!tenant || (c.total_growth_um || 0) < WULFF_MIN_UM || !!c.twinned) {
+      if (c._wulffForm) delete c._wulffForm; continue;
+    }
+    if (c._wulffForm) continue;                      // already tagged and still qualifies
+    const habit = String(c.habit || '');
+    const h = (((c.crystal_id || 0) * 0.6180339887498949) % 1 + 1) % 1;   // rng-free per-crystal spread
+    let biasC: number, octahedral = false, scaleno = false, tabular = false, bladed = false, wedge = false;
+    if (m === 'fluorite') {
+      octahedral = habit.indexOf('octahedral') >= 0;  // octahedral_REE + stepped_/hopper_/dendritic_
+      biasC = octahedral ? (0.32 + h * 0.20) : (1.15 + h * 1.25);
+    } else if (m === 'calcite') {
+      scaleno = habit.indexOf('scaleno') >= 0;        // scalenohedral (dogtooth) vs rhombohedral (nailhead)
+      // dogtooth band [0.15,0.26] eye-checked in the live renderer: an elongated prism body with
+      // sharp {21-31} scalenohedron terminations, capped by minor {104} rhombs (the real dogtooth).
+      // [0.34,0.50] read as a stubby block (NOT a tooth); ≤0.10 thinned to an unnatural spike.
+      biasC = scaleno ? (0.15 + h * 0.11) : (1.30 + h * 0.90);
+    } else if (m === 'wulfenite') {                   // rung 4a.3 (tetragonal 4/m)
+      // grow_wulfenite hardcodes habit='tabular' (the iconic honey-yellow square plate), so there
+      // is no pyramidal/pseudo-octahedral habit to split on — driving one would render a form the
+      // engine never chose. Instead spread the plate THICKNESS across the tabular family by the
+      // per-crystal hash: biasC [1.4,2.8] → diameter/thickness aspect ≈ 3.4–6.1, a natural drusy of
+      // thin honey plates and thicker tablets. bias is on {001}: higher biasC slows the basal
+      // pinacoid → thinner plate. (Band placed from the wulff-tetragonal aspect sweep; eye-checked.)
+      tabular = true;
+      biasC = 1.4 + h * 1.4;
+    } else if (m === 'barite') {                      // barite (rung 4a.4, orthorhombic mmm)
+      // barite's habit is σ-driven (grow_barite: prismatic/cockscomb/bladed/tabular/snowball). ONLY
+      // tabular + bladed map to the renderer's 'tablet' token (js/99i geomTokenForHabit: h.includes
+      // 'tabular'||'blade'), so only those become the Wulff RECTANGULAR plate; prismatic→prism token,
+      // cockscomb is a cyclic twin (the !twinned guard skips it), snowball→its own aggregate token —
+      // all keep their existing geometry. The plate's a≠b rectangle (X≈a > Z≈b, ~1.28:1) comes from
+      // the kernel's unequal cell, independent of biasC. bias on c{001}: higher biasC slows the basal
+      // pinacoid → thinner. A BLADED barite (the Cumberland/Wittichen divergent vein blade) reads
+      // thinner + sharper than a flat TABULAR plate, so it gets a higher band. (Bands from the
+      // wulff-orthorhombic aspect sweep: tabular [1.3,2.2]→aspect ~3.1–5.0, bladed [1.9,3.0]→~4.5–6.9.)
+      tabular = true;
+      bladed = habit.indexOf('blade') >= 0;
+      biasC = bladed ? (1.9 + h * 1.1) : (1.3 + h * 0.9);
+    } else if (m === 'galena') {                      // galena (rung 4a.5 — second CUBIC tenant after fluorite)
+      // grow_galena hardcodes habit='cubic' (galena is the textbook cube; the engine emits no
+      // octahedral/skeletal habit to split on — like wulfenite's hardcoded tabular). Render a cube-
+      // DOMINANT body with VISIBLE {111} corner truncations (the cuboctahedron-leaning cube real
+      // galena shows) — NOT a perfect cube, which is pixel-identical to the old cube primitive (the
+      // render-upgrade-visible no-op). bias on {100}: the band [1.0,1.15] keeps the {111} faces alive
+      // (truncFrac ≈ 0.11–0.38 from the wulff-galena-band sweep); biasC ≳ 1.2 self-eliminates {111}
+      // → a featureless perfect cube. (galena registry R_111=1.5 sits BELOW BFDH's √3≈1.73 — galena
+      // IS more octahedral-prone than fluorite, which is why its truncation window is low + narrow.)
+      octahedral = false;   // galena is cube-habit only; the {111} only TRUNCATES, never dominates
+      biasC = 1.0 + h * 0.15;
+    } else {                                          // titanite (rung 4a.6 — monoclinic 2/m, the FIFTH crystal system)
+      // grow_titanite emits sphenoid_wedge (the default cleft look) / prismatic / flattened_tabular;
+      // all opt into the one monoclinic WEDGE body (the registry forms ARE the sphenoid — like
+      // wulfenite's hardcoded tabular and galena's hardcoded cube). The β-lean ({100}∧{001}=66.19°)
+      // lives in the FACES, invariant of biasC; biasC only sets how flattened-on-{100} the wedge is.
+      // Band [1.3,2.3] eye-checked: flattened-to-chunky wedges with the 66° oblique edge prominent —
+      // unmistakably NOT the old render (sphenoid_wedge had been falling through _habitGeomToken to the
+      // 'prism' default = a HEX COLUMN, the token-wart class fixed for pyritohedral/octahedral_REE).
+      // bias on a{100}: higher biasC → flatter wedge. (Band from the wulff-titanite aspect sweep.)
+      wedge = true;
+      biasC = 1.3 + h * 1.0;
+    }
+    // growthFrac maps the engine's growth scalar into the kernel's [0,1] envelope (topology is
+    // largely g-insensitive in these bias ranges; bigger crystals trend a hair sharper).
+    const growthFrac = Math.max(0.15, Math.min(1.0, (c.total_growth_um || 0) / 250));
+    c._wulffForm = { biasC, growthFrac, octahedral, scaleno, tabular, bladed, wedge };
+  }
+}
+
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];
