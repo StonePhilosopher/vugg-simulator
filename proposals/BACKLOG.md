@@ -22,11 +22,16 @@ Living list of open work items, captured from session conversations so context s
 >
 > Likely shape: a per-mineral `optics` block in minerals.json (diaphaneity + lustre + colour
 > notes) feeding ONE material-builder in js/99i, replacing scattered inline constants. Can be
-> SIM-NEUTRAL where it reads existing data — keep it so. **Wants its own research pass +
-> design doc (`proposals/RESEARCH-optical-realism-*.md`) before code** — colour & clarity are
-> exactly what a real specimen falsifies fastest ([[feedback_terminal_verification_specimens]],
-> defer-to-geology, image-corpus method). Full goal text in
-> `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
+> SIM-NEUTRAL where it reads existing data — keep it so. **The research pass + Depth-A design
+> doc EXISTS (2026-07-02): `proposals/RESEARCH-optical-realism-2026-07-02.md`** — status-quo
+> audit (one material site, the per-tenant hack table), verified 30-species diaphaneity/lustre
+> core (mindat+webmineral fetched), prominence tiers over the 104 expected species, the optics
+> schema + ONE-builder design honoring the fixed decision (plain % translucency, NO faked
+> refraction), the composition contract (sweep/naturalOpacity, sector-zoning vertexColors,
+> state modifiers), staged plan A1 data → A2 builder → Depth-B lustre → Depth-C colour.
+> Colour & clarity are exactly what a real specimen falsifies fastest
+> ([[feedback_terminal_verification_specimens]], defer-to-geology, image-corpus method).
+> Full goal text in `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
 > ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED · PHASE 4 DESIGN + 4a.0 KERNEL + 4a.1 FLUORITE + 4a.2 CALCITE + 4a.3 WULFENITE + 4a.4 BARITE + 4a.5 GALENA + 4a.6 TITANITE + 4a.4b BARITE {210}>{011} FACE-RATE CORRECTION + 4a.7 WULFENITE Pb:Mo EARNED-FORM LEVER + 4a.8 FROZEN-g RETIREMENT FLEET-WIDE (FIVE crystal systems, SIX tenants — cubic carries fluorite + galena; titanite is the FIRST oblique cell, monoclinic 2/m; wulfenite is the FIRST tenant whose form is a CHEMISTRY READOUT, id-hash retired; since 4a.8 every tenant's body MATURES live with growth) TENANTS SHIPPED (byte-identical, render-only)
 >
