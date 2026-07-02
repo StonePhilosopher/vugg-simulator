@@ -77,11 +77,15 @@ describe('Wulff form tag (central-distance arc Phase 4 rung 4a.1)', () => {
     for (const c of tagged) {
       expect(c.habit.indexOf('octahedral')).toBeGreaterThanOrEqual(0);
       expect(c._wulffForm.octahedral).toBe(true);
-      // octahedron-DOMINANT with small {100} truncations — the swept + eye-checked band [0.32, 0.52]
-      expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(0.32);
-      expect(c._wulffForm.biasC).toBeLessThanOrEqual(0.52);
+      // octahedron-DOMINANT with small {100} truncations — the band [0.38,0.46], re-placed at
+      // earned g (rung 4a.8; the old [0.32,0.52] low half collapsed to a PERFECT octahedron at g=1)
+      expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(0.38);
+      expect(c._wulffForm.biasC).toBeLessThanOrEqual(0.46);
       expect(c._wulffForm.growthFrac).toBeGreaterThanOrEqual(0.15);
       expect(c._wulffForm.growthFrac).toBeLessThanOrEqual(1.0);
+      // rung 4a.8 — growthFrac is LIVE, not frozen at the ~30µm tag step: a fully-grown crystal
+      // (≥250µm) must render fully developed (the census hero: 1095µm, frozen g was 0.15)
+      if ((c.total_growth_um || 0) >= 250) expect(c._wulffForm.growthFrac).toBe(1.0);
     }
   });
 
@@ -111,14 +115,14 @@ describe('Wulff form tag (central-distance arc Phase 4 rung 4a.1)', () => {
     expect(fa).toEqual(fb);
   });
 
-  it('unit — octahedral habit → octahedral bias band (<1, [0.32,0.52]); cubic habit → cube band (>1)', () => {
+  it('unit — octahedral habit → octahedral bias band (<1, [0.38,0.46]); cubic habit → cube band (>1)', () => {
     const oct = mkCrystal({ habit: 'octahedral_REE', crystal_id: 5 });
     const cube = mkCrystal({ habit: 'cubic', crystal_id: 5 });
     classifyWulffForm(mkSim(true, [oct]));
     classifyWulffForm(mkSim(true, [cube]));
     expect(oct._wulffForm.octahedral).toBe(true);
-    expect(oct._wulffForm.biasC).toBeGreaterThanOrEqual(0.32);
-    expect(oct._wulffForm.biasC).toBeLessThanOrEqual(0.52);
+    expect(oct._wulffForm.biasC).toBeGreaterThanOrEqual(0.38);
+    expect(oct._wulffForm.biasC).toBeLessThanOrEqual(0.46);
     expect(cube._wulffForm.octahedral).toBe(false);
     expect(cube._wulffForm.biasC).toBeGreaterThan(1.0);   // biasC>1 slows {100} → cube
     // the σ-graded renames still read as octahedral
@@ -419,10 +423,14 @@ describe('Wulff form tag — galena tenant (rung 4a.5, cubic fleet-out)', () => 
     expect(tagged.length).toBeGreaterThan(0);            // the lead-grey cubes
     for (const c of tagged) {
       expect(c._wulffForm.octahedral).toBe(false);       // galena never goes octahedron-dominant
-      // band [1.0,1.15] — cube with visible {111} corner truncations (NOT a perfect-cube no-op)
-      expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.0);
-      expect(c._wulffForm.biasC).toBeLessThanOrEqual(1.15);
+      // band [0.88,1.02] — cube with visible {111} corner truncations (NOT a perfect-cube no-op);
+      // re-placed at earned g (rung 4a.8: the old [1.0,1.15] hi edge cut corners at depth 0.03
+      // at g=1.0 — a near-perfect cube)
+      expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(0.88);
+      expect(c._wulffForm.biasC).toBeLessThanOrEqual(1.02);
       expect(_makeWulffGeom(wulffFaceSetForMineral('galena', c._wulffForm.growthFrac, 0, c._wulffForm.biasC))).toBeTruthy();
+      // rung 4a.8 — the mvt cubes are fully grown (census: 4571-5156µm) → live g, not the tag-step ~0.7
+      if ((c.total_growth_um || 0) >= 250) expect(c._wulffForm.growthFrac).toBe(1.0);
     }
   });
 
@@ -435,12 +443,12 @@ describe('Wulff form tag — galena tenant (rung 4a.5, cubic fleet-out)', () => 
     for (const c of tagged) expect(['calcite', 'galena']).toContain(c.mineral);   // and NOTHING else
   });
 
-  it('unit — cubic galena → cube band [1.0,1.15], octahedral always false; flag-off / twinned (spinel) / speck skip', () => {
+  it('unit — cubic galena → cube band [0.88,1.02], octahedral always false; flag-off / twinned (spinel) / speck skip', () => {
     const cube = mkCrystal({ mineral: 'galena', habit: 'cubic', crystal_id: 5 });
     classifyWulffForm(mkSimG(true, [cube]));
     expect(cube._wulffForm.octahedral).toBe(false);
-    expect(cube._wulffForm.biasC).toBeGreaterThanOrEqual(1.0);
-    expect(cube._wulffForm.biasC).toBeLessThanOrEqual(1.15);
+    expect(cube._wulffForm.biasC).toBeGreaterThanOrEqual(0.88);
+    expect(cube._wulffForm.biasC).toBeLessThanOrEqual(1.02);
 
     const off = mkCrystal({ mineral: 'galena', habit: 'cubic', crystal_id: 5 });
     classifyWulffForm(mkSimG(false, [off]));
@@ -473,10 +481,11 @@ describe('Wulff form tag — galena tenant (rung 4a.5, cubic fleet-out)', () => 
 // wedge titanite late on the smoky quartz (the alpine-cleft suite). All titanite habits (sphenoid_wedge /
 // prismatic / flattened_tabular) opt into the one monoclinic WEDGE body; the band [1.3,2.3] sets how
 // flattened-on-{100} the wedge is, and the β-lean ({100}∧{001}=66.19°) is in the FACES, invariant of
-// biasC. grimsel's seed-42 titanite grows flattened_tabular on the cooling tail (token 'tablet') — the
-// frozen growthFrac (0.15) MUST still build a real wedge (these pins guard against the hex-prism fallback).
+// biasC. grimsel's seed-42 titanite grows flattened_tabular on the cooling tail (token 'tablet') — its
+// LIVE growthFrac (rung 4a.8: 0.15 young → 1.0 grown) MUST build a real wedge at every point on that
+// path (these pins guard against the hex-prism fallback).
 describe('Wulff form tag — titanite tenant (rung 4a.6, monoclinic)', () => {
-  it('grimsel_alpine_cleft (wall.wulff_titanite) tags its wedge titanite, biasC in band + wedge flag, and builds a real solid at the frozen growthFrac', () => {
+  it('grimsel_alpine_cleft (wall.wulff_titanite) tags its wedge titanite, biasC in band + wedge flag, and builds a real solid at its live growthFrac', () => {
     const sim = run('grimsel_alpine_cleft');
     expect(sim).toBeTruthy();
     const tagged = wulffed(sim).filter((c: any) => c.mineral === 'titanite');
@@ -485,9 +494,11 @@ describe('Wulff form tag — titanite tenant (rung 4a.6, monoclinic)', () => {
       expect(c._wulffForm.wedge).toBe(true);
       expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.3);
       expect(c._wulffForm.biasC).toBeLessThanOrEqual(2.3);
-      // the render contract: the tag must build a non-degenerate wedge at ITS OWN frozen growthFrac —
+      // the render contract: the tag must build a non-degenerate wedge at ITS OWN live growthFrac —
       // else the renderer silently falls back to the old hex prism (the no-op trap).
       expect(_makeWulffGeom(wulffFaceSetForMineral('titanite', c._wulffForm.growthFrac, 0, c._wulffForm.biasC))).toBeTruthy();
+      // rung 4a.8 — grimsel's wedges are fully grown (census: 610-945µm) → live g=1.0, not the frozen 0.15
+      if ((c.total_growth_um || 0) >= 250) expect(c._wulffForm.growthFrac).toBe(1.0);
     }
   });
 
@@ -533,5 +544,51 @@ describe('Wulff form tag — titanite tenant (rung 4a.6, monoclinic)', () => {
     classifyWulffForm(mkSimT(true, [ti]));              // now wulff_titanite on
     expect(ti._wulffForm).toBeTruthy();
     expect(ti._wulffForm.wedge).toBe(true);
+  });
+});
+
+// rung 4a.8 — the frozen-g retirement, FLEET-WIDE (2026-07-02). The 4a.7 wulfenite pattern
+// generalized: growthFrac re-derives from the CURRENT growth scalar on every classify pass, so a
+// crystal's rendered body matures as it grows instead of freezing at its ~30µm tag-step form
+// (frozen-g census: fluorite hero rendered g=0.15 with 1095µm earned; titanite 0.15 vs 1.0;
+// barite 0.15 vs 0.64; galena ~0.7 vs 1.0). biasC stays TAG-FIXED for the hash tenants (only
+// wulfenite's is live — the 4a.7 Pb:Mo integral); growthFrac is the only live field here.
+describe('Wulff growthFrac is live, fleet-wide (rung 4a.8)', () => {
+  it('a tagged crystal that keeps growing re-derives growthFrac on the next pass; biasC stays tag-fixed', () => {
+    const gal = mkCrystal({ mineral: 'galena', habit: 'cubic', crystal_id: 5, total_growth_um: 50 });
+    classifyWulffForm(mkSimG(true, [gal]));              // tags at 50µm → g = 0.2
+    expect(gal._wulffForm.growthFrac).toBeCloseTo(50 / 250, 10);
+    const biasAtTag = gal._wulffForm.biasC;
+    gal.total_growth_um = 180;                           // grows on
+    classifyWulffForm(mkSimG(true, [gal]));
+    expect(gal._wulffForm.growthFrac).toBeCloseTo(180 / 250, 10);   // LIVE — the freeze is retired
+    gal.total_growth_um = 400;                           // past the 250µm envelope
+    classifyWulffForm(mkSimG(true, [gal]));
+    expect(gal._wulffForm.growthFrac).toBe(1.0);         // clamps at fully-developed
+    expect(gal._wulffForm.biasC).toBe(biasAtTag);        // the hash bias does NOT wander
+  });
+
+  it('the live re-derivation floors at 0.15 and never exceeds 1.0 (the kernel envelope)', () => {
+    const ti = mkCrystal({ mineral: 'titanite', habit: 'sphenoid_wedge', crystal_id: 9, total_growth_um: 31 });
+    classifyWulffForm(mkSimT(true, [ti]));               // tags just past the 30µm gate
+    expect(ti._wulffForm.growthFrac).toBe(0.15);         // 31/250 = 0.124 → floored
+    ti.total_growth_um = 32;
+    classifyWulffForm(mkSimT(true, [ti]));
+    expect(ti._wulffForm.growthFrac).toBe(0.15);         // still under the floor — no jitter
+  });
+
+  it('every tenant is covered — a grown fluorite/calcite/barite tag also reads live g', () => {
+    for (const [mk, over] of [
+      [mkSim,  { mineral: 'fluorite', habit: 'octahedral_REE' }],
+      [mkSimC, { mineral: 'calcite', habit: 'scalenohedral' }],
+      [mkSimB, { mineral: 'barite', habit: 'bladed' }],
+    ] as any[]) {
+      const c = mkCrystal(Object.assign({ crystal_id: 5, total_growth_um: 60 }, over));
+      classifyWulffForm(mk(true, [c]));
+      expect(c._wulffForm.growthFrac).toBeCloseTo(60 / 250, 10);
+      c.total_growth_um = 300;
+      classifyWulffForm(mk(true, [c]));
+      expect(c._wulffForm.growthFrac).toBe(1.0);         // matured
+    }
   });
 });

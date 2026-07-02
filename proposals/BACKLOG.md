@@ -28,7 +28,22 @@ Living list of open work items, captured from session conversations so context s
 > defer-to-geology, image-corpus method). Full goal text in
 > `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
-> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED · PHASE 4 DESIGN + 4a.0 KERNEL + 4a.1 FLUORITE + 4a.2 CALCITE + 4a.3 WULFENITE + 4a.4 BARITE + 4a.5 GALENA + 4a.6 TITANITE + 4a.4b BARITE {210}>{011} FACE-RATE CORRECTION + 4a.7 WULFENITE Pb:Mo EARNED-FORM LEVER (FIVE crystal systems, SIX tenants — cubic carries fluorite + galena; titanite is the FIRST oblique cell, monoclinic 2/m; wulfenite is the FIRST tenant whose form is a CHEMISTRY READOUT, id-hash retired) TENANTS SHIPPED (byte-identical, render-only)
+> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED · PHASE 4 DESIGN + 4a.0 KERNEL + 4a.1 FLUORITE + 4a.2 CALCITE + 4a.3 WULFENITE + 4a.4 BARITE + 4a.5 GALENA + 4a.6 TITANITE + 4a.4b BARITE {210}>{011} FACE-RATE CORRECTION + 4a.7 WULFENITE Pb:Mo EARNED-FORM LEVER + 4a.8 FROZEN-g RETIREMENT FLEET-WIDE (FIVE crystal systems, SIX tenants — cubic carries fluorite + galena; titanite is the FIRST oblique cell, monoclinic 2/m; wulfenite is the FIRST tenant whose form is a CHEMISTRY READOUT, id-hash retired; since 4a.8 every tenant's body MATURES live with growth) TENANTS SHIPPED (byte-identical, render-only)
+>
+> **▸ 2026-07-02 — rung 4a.8: the FROZEN-g RETIREMENT, fleet-wide — every Wulff body now matures live.**
+> The 4a.7 accumulator's growthFrac half generalized to all six tenants (js/45, the shared tagged-crystal
+> site): g re-derives from the current growth scalar each step instead of freezing at the ~30µm tag step.
+> Probe first (`tools/wulff-frozen-g-census.mjs`): 4/6 tenants rendered understated — fluorite hero g 0.15
+> vs 1.00 earned (1095µm), titanite 0.15→1.00 ×3, barite 0.15→0.64, galena ~0.7→1.00; calcite + wulfenite
+> already honest. The sweep guard (`tools/wulff-frozen-g-aspect-sweep.mjs`, committed) caught TWO bands
+> breaking genre at earned g — the bands had been eye-checked at the FROZEN g: **galena [1.0,1.15]→[0.88,1.02]**
+> (old hi edge = near-perfect cube at g=1.0, trunc 0.03 — the no-op by the side door; new band holds 0.11–0.17)
+> and **fluorite octahedral [0.32,0.52]→[0.38,0.46]** (old low half = PERFECT octahedron at g≥0.4, a Bosze &
+> Rakovan violation; new band keeps the {100} facet 13–34% of eq radius). Barite needed nothing — earned g
+> moves it INTO its documented aspect targets. Byte-identical (baseline + strip digest git-identical, SIM 214),
+> wulff suites 95 green (+5 pins incl. both band-edge guards at g=1.0), cold-ci 2136 green, before/after
+> THREE-overlay eye-check (galena corner triangles vs near-cube is the money shot). Post-fix census: Δ=0.00
+> on all 11 tagged crystals.
 >
 > **▸ 2026-07-01 (later) — rung 4a.7: the wulfenite Pb:Mo HABIT LEVER — the FIRST earned form (`00b160f`).**
 > The bedrock pass's #1 stone, shipped the same day. wulfenite's `{001}` biasC is now **B(⟨r⟩) = 1.25/⟨r⟩**

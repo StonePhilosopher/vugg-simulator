@@ -889,12 +889,16 @@ function classifyOcclusion(sim: any) {
 //   below); the id-hash is RETIRED for that tenant, the first of the six. PURE tagging (NO rng;
 //   fluid is READ for the integral, never written) → byte-identical baseline (gen-baseline
 //   serialises only counts/sizes); render-only, no SIM bump, no rebake (the Phase 0-3 discipline).
+//   AND rung 4a.8 (2026-07-02): growthFrac is LIVE for all six tenants — re-derived each step at
+//   the shared tagged-crystal site below (the tag-time freeze is retired fleet-wide; crystals
+//   visibly mature as they grow).
 // Per-tenant opt-in:
 //   fluorite (wall.wulff_fluorite; Bosze & Rakovan 2002, REE-stabilized {111}): octahedral_REE
-//     habit → biasC [0.32,0.52] (octahedron-DOMINANT with small {100} truncations — NOT a perfect
+//     habit → biasC [0.38,0.46] (octahedron-DOMINANT with small {100} truncations — NOT a perfect
 //     octahedron: a Y-stabilized fluorite has {100} reduced not absent, the faithful render AND
-//     visibly distinct from the old primitive); cubic → [1.15,2.40] (sharp {100} cube). Token stays
-//     cube/octahedron → the isometric scale path is unchanged.
+//     visibly distinct from the old primitive; band re-placed at earned g, rung 4a.8); cubic →
+//     [1.15,2.40] (sharp {100} cube). Token stays cube/octahedron → the isometric scale path is
+//     unchanged.
 //   calcite (wall.wulff_calcite): scalenohedral habit (dogtooth) → biasC [0.34,0.50] (the {21-31}
 //     scalenohedron comes in, capped by the {104} rhombohedron — a real composite habit);
 //     rhombohedral (nailhead) → [1.30,2.20] (the rhombohedron dominates). Token stays rhomb/scalene;
@@ -954,9 +958,8 @@ function classifyWulffForm(sim: any) {
     // so the form keeps integrating its water history (js/99i re-reads biasC + growthFrac through
     // its quantized cache key each frame → the plate visibly stoutens as the post-pulse water
     // integrates in). Growth zones only (thickness>0): dissolution steps don't enter the integral
-    // (first-order simplification at this refinement level). growthFrac un-freezes for this tenant
-    // too — the tag-time freeze had the seed-42 hero rendering at its tag-step g≈0.21 forever
-    // (the frozen-g crutch, growth-geometry handoff item 3; retired here for wulfenite only).
+    // (first-order simplification at this refinement level). (growthFrac un-froze here for
+    // wulfenite first; rung 4a.8 moved that to the shared tagged-crystal site below, fleet-wide.)
     if (m === 'wulfenite' && wulfeniteOn) {
       const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
       const f = sim.conditions.fluid;
@@ -966,7 +969,6 @@ function classifyWulffForm(sim: any) {
         acc.rG += r * z.thickness_um; acc.G += z.thickness_um;
         if (c._wulffForm) c._wulffForm.biasC = wulffWulfenitePbMoBias(acc.rG / acc.G);
       }
-      if (c._wulffForm) c._wulffForm.growthFrac = Math.max(0.15, Math.min(1.0, (c.total_growth_um || 0) / 250));
     }
     const tenant = (m === 'fluorite' && fluoriteOn) || (m === 'calcite' && calciteOn)
       || (m === 'wulfenite' && wulfeniteOn) || (m === 'barite' && bariteOn) || (m === 'galena' && galenaOn)
@@ -976,13 +978,32 @@ function classifyWulffForm(sim: any) {
     if (!tenant || (c.total_growth_um || 0) < WULFF_MIN_UM || !!c.twinned) {
       if (c._wulffForm) delete c._wulffForm; continue;
     }
-    if (c._wulffForm) continue;                      // already tagged and still qualifies
+    if (c._wulffForm) {                              // already tagged and still qualifies —
+      // rung 4a.8 (2026-07-02): the FROZEN-g RETIREMENT, fleet-wide. Re-derive growthFrac from
+      // the CURRENT growth scalar every step (the 4a.7 wulfenite pattern generalized to all six
+      // tenants). The tag-time freeze had heroes rendering at their ~30µm tag-step g forever
+      // (frozen-g census 2026-07-02: fluorite hero g .15 vs earned 1.0, titanite .15→1.0, barite
+      // .15→.64, galena ~.7→1.0; calcite + wulfenite already honest). d=SEED+g·R sharpens with g,
+      // so a crystal now MATURES on screen: young bodies read seed-rounded (form-rich), grown ones
+      // express the habit — form simplification with size, the Sunagawa direction. Render-only:
+      // js/99i re-reads growthFrac through its quantized cache key; gen-baseline never serialises
+      // the tag. The biasC bands are re-placed at earned g where the frozen placement broke genre
+      // (galena + fluorite-octahedral below; tools/wulff-frozen-g-aspect-sweep.mjs is the guard).
+      c._wulffForm.growthFrac = Math.max(0.15, Math.min(1.0, (c.total_growth_um || 0) / 250));
+      continue;
+    }
     const habit = String(c.habit || '');
     const h = (((c.crystal_id || 0) * 0.6180339887498949) % 1 + 1) % 1;   // rng-free per-crystal spread
     let biasC: number, octahedral = false, scaleno = false, tabular = false, bladed = false, wedge = false;
     if (m === 'fluorite') {
       octahedral = habit.indexOf('octahedral') >= 0;  // octahedral_REE + stepped_/hopper_/dendritic_
-      biasC = octahedral ? (0.32 + h * 0.20) : (1.15 + h * 1.25);
+      // octahedral band [0.38,0.46] — RE-PLACED at earned g (rung 4a.8; was [0.32,0.52], placed at
+      // the frozen tag-g). At g=1.0 the old low half collapses to a PERFECT octahedron (8 faces,
+      // {100} eliminated — the render-upgrade-visible no-op AND a Bosze & Rakovan violation: a
+      // Y-stabilized fluorite has {100} REDUCED, not absent). New band keeps the {100} facet at
+      // 13–34% of the equatorial radius across g (wulff-frozen-g-aspect-sweep fine pass).
+      // Cubic band unchanged: a sharp {100} cube IS its genre (all-6f at earned g is in-genre).
+      biasC = octahedral ? (0.38 + h * 0.08) : (1.15 + h * 1.25);
     } else if (m === 'calcite') {
       scaleno = habit.indexOf('scaleno') >= 0;        // scalenohedral (dogtooth) vs rhombohedral (nailhead)
       // dogtooth band [0.15,0.26] eye-checked in the live renderer: an elongated prism body with
@@ -1019,12 +1040,15 @@ function classifyWulffForm(sim: any) {
       // octahedral/skeletal habit to split on — like wulfenite's hardcoded tabular). Render a cube-
       // DOMINANT body with VISIBLE {111} corner truncations (the cuboctahedron-leaning cube real
       // galena shows) — NOT a perfect cube, which is pixel-identical to the old cube primitive (the
-      // render-upgrade-visible no-op). bias on {100}: the band [1.0,1.15] keeps the {111} faces alive
-      // (truncFrac ≈ 0.11–0.38 from the wulff-galena-band sweep); biasC ≳ 1.2 self-eliminates {111}
-      // → a featureless perfect cube. (galena registry R_111=1.5 sits BELOW BFDH's √3≈1.73 — galena
-      // IS more octahedral-prone than fluorite, which is why its truncation window is low + narrow.)
+      // render-upgrade-visible no-op). bias on {100}. Band [0.88,1.02] — RE-PLACED at earned g
+      // (rung 4a.8; was [1.0,1.15], placed at the frozen tag-g): at g=1.0 the old hi edge gave
+      // corner-cut depth 0.03 — a near-perfect cube, the no-op back by the side door. The new band
+      // holds truncFrac 0.11–0.17 at g=1.0 (the same visible window the old band showed at its
+      // tag-g); {111} self-eliminates at biasC ≈ 1.19 at earned g — stay well below. (galena
+      // registry R_111=1.5 sits BELOW BFDH's √3≈1.73 — galena IS more octahedral-prone than
+      // fluorite, which is why its truncation window is low + narrow.)
       octahedral = false;   // galena is cube-habit only; the {111} only TRUNCATES, never dominates
-      biasC = 1.0 + h * 0.15;
+      biasC = 0.88 + h * 0.14;
     } else {                                          // titanite (rung 4a.6 — monoclinic 2/m, the FIFTH crystal system)
       // grow_titanite emits sphenoid_wedge (the default cleft look) / prismatic / flattened_tabular;
       // all opt into the one monoclinic WEDGE body (the registry forms ARE the sphenoid — like
@@ -1037,8 +1061,10 @@ function classifyWulffForm(sim: any) {
       wedge = true;
       biasC = 1.3 + h * 1.0;
     }
-    // growthFrac maps the engine's growth scalar into the kernel's [0,1] envelope (topology is
-    // largely g-insensitive in these bias ranges; bigger crystals trend a hair sharper).
+    // growthFrac maps the engine's growth scalar into the kernel's [0,1] envelope. This is only
+    // the INITIAL tag value — the per-step re-derivation above (rung 4a.8) keeps it live from
+    // here on, so the body sharpens as the crystal grows (d=SEED+g·R: the seed rounds young
+    // crystals, the rate ratio expresses in mature ones).
     const growthFrac = Math.max(0.15, Math.min(1.0, (c.total_growth_um || 0) / 250));
     c._wulffForm = { biasC, growthFrac, octahedral, scaleno, tabular, bladed, wedge };
   }

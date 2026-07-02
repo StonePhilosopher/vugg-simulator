@@ -2,6 +2,12 @@
 
 **2026-07-01 · SIM_VERSION 214 (unchanged — everything here is render-only or design) · barite fix live on Syntaxswine `bad547e`**
 
+> **Update (2026-07-02): "What I'd do next" #2 is SHIPPED FLEET-WIDE — rung 4a.8, the frozen-g
+> retirement** (all six tenants' growthFrac live; galena + fluorite-octahedral bands re-placed at
+> earned g — the census + sweep instruments are committed). Details in item #2 below and rung 4a.8
+> in `HANDOFF-WULFF-PHASE-4-2026-06-29.md`. Next per the list: #3 optics %-translucency (research
+> pass first), then the calcite σ/Ca:CO₃ lever.
+
 > **Update (2026-07-01, later): "What I'd do next" #1 is SHIPPED — rung 4a.7, the wulfenite Pb:Mo habit
 > lever (`00b160f`).** The probe said YES with a twist: supergene_oxidation's water is a two-regime step
 > function (core r=1.852 → the step-40 Pb+Mo pulse → rim 1.158; 62% within-window swing, cross-seed CV
@@ -131,9 +137,13 @@ shape-invariance proof), `erythrite-wulff-probe.mjs`.
 1. ~~**wulfenite Pb:Mo habit lever**~~ ✅ **SHIPPED — rung 4a.7 (`00b160f`, same day; see the Update at the
    top).** The probe answered: two-regime swing within the run (62%), near-constant integral across seeds
    (CV 0.8%) — real signal, integrated honestly.
-2. **Zone-integrated growthFrac** — ✅ retired for the WULFENITE tenant inside 4a.7 (the same accumulator
-   un-freezes g). STILL OPEN fleet-wide: the other five tenants tag-freeze growthFrac at ~30µm (heroes render
-   at g≈0.2 wherever they tag small — measure each tenant's frozen-g population before claiming the payoff).
+2. ~~**Zone-integrated growthFrac**~~ ✅ **SHIPPED FLEET-WIDE — rung 4a.8 (2026-07-02).** The census the
+   NB below asked for ran first (`tools/wulff-frozen-g-census.mjs`): 4/6 tenants understated (fluorite hero
+   g 0.15 vs 1.00 earned; titanite 0.15→1.00; barite 0.15→0.64; galena ~0.7→1.00; calcite + wulfenite already
+   honest) — the payoff was real. The un-freeze surfaced a corollary worth the price of the whole rung: two
+   biasC bands had been placed AT the frozen g and broke genre at earned g (galena → near-perfect-cube no-op,
+   fluorite-octahedral → perfect octahedron); both re-placed, guard committed
+   (`tools/wulff-frozen-g-aspect-sweep.mjs`). See rung 4a.8 in `HANDOFF-WULFF-PHASE-4-2026-06-29.md`.
 3. **Optics: plain % translucency** — the boss's fixed decision (a per-mineral diaphaneity field → one
    `MeshPhysicalMaterial` builder, NO faked refraction). Forward-compatible with later zoning. See the STANDING
    GOAL banner in `BACKLOG.md`.
