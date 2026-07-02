@@ -36,6 +36,19 @@
 > Stage-3 "swap BFDH for measured E_att" is mostly a MIRAGE (fluorite/calcite cite real papers for rates they
 > don't report); the honest "earned form" bedrock is **chemistry levers** (wulfenite Pb:Mo, calcite σ/Ca:CO₃),
 > not swapped constants. **Full record + the corrected roadmap: `HANDOFF-GROWTH-GEOMETRY-2026-07-01.md`.**
+>
+> **Update (2026-07-01, later):** rung **4a.7** — the **wulfenite Pb:Mo habit lever** (`00b160f`), the FIRST
+> earned form: this tenant's biasC is now **B(⟨r⟩)=1.25/⟨r⟩** from the crystal's growth-weighted molar Pb:MoO₄,
+> accumulated live in `classifyWulffForm` (js/45 `WULFENITE_PBMO`) — the golden-ratio id-hash AND the tag-time
+> growthFrac freeze BOTH retired for wulfenite. Direction: Sci.Rep. 14 (2024) 10.1038/s41598-024-60043-4;
+> magnitudes sim-scale, Tsumeb-pinned (the seed-42 hero: biasC 1.857→1.030, g 0.21→1.0, aspect 3.67→2.66 —
+> the THICK Pinch & Wilson blocky-tabular). Probe-gated (`tools/wulfenite-pbmo-probe.mjs`: two-regime water,
+> core r=1.85 → step-40 Pb+Mo pulse → rim 1.16, 62% window swing, cross-seed CV 0.8% — the hash's fake spread
+> traded for the honest near-constant; variety belongs to LOCALITIES now). Still byte-identical (SIM 214).
+> **The add-a-tenant recipe gains a step:** an earned-form tenant needs its water story probed + a
+> B(chemistry) law calibrated at the renderer's TRUE g (`tools/wulfenite-bias-aspect-sweep.mjs` — the old
+> band had been eye-checked at the frozen g≈0.21). The full {101} bipyramid flip (biasC<0.41) stays reserved
+> for Depth-B: engine habit dispatch + narrator + SIM bump.
 
 You're reading this because you're about to extend the way vugg decides what a crystal *looks like*.
 Sit with the model for ten minutes before you touch a file — it is small, and once it clicks the
