@@ -224,9 +224,12 @@ buildCrystalMaterial(spec, crystal, state) -> THREE.MeshPhysicalMaterial
   4. grow-in sweep multiplies LAST against `naturalOpacity` (already the satellite pattern —
      promote it to the parent path so the sweep never fights the diaphaneity value)
 - **Transparency sorting**: many overlapping transparent crystals invite draw-order artifacts.
-  Mitigations that keep Depth-A cheap: opacity floor 0.30, `depthWrite: true` for opacity ≥ 0.5,
-  accept minor blend-order softness below that (druse crystals rarely stack deep); revisit only
-  if the eye-check objects.
+  Mitigations that keep Depth-A cheap: opacity floor 0.30, `depthWrite` stays default TRUE at
+  every opacity, accept minor blend-order softness (druse crystals rarely stack deep); revisit
+  only if the eye-check objects. *(A2 implementation note: the original ≥0.5 depthWrite gate was
+  dropped — the helix overlay's restore path (js/99j `_helixRestoreCrystalOpacity`) imposes
+  depthWrite=true on every crystal material whenever it runs, including at init, and true was
+  the shipped behavior for the perimorph/hourglass transparents. One policy, no divergence.)*
 
 ### 4.3 What Depth-A explicitly does NOT do
 - No lustre consumption (data recorded, class heuristics still drive metalness/roughness).
