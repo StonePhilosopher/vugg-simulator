@@ -51,14 +51,18 @@ genuinely novel territory, built on well-verified 75-year-old mathematics.
 | **Hopper/recovery** | above σ* the face center starves (Berg effect) while rims advance → hopper/skeletal; when σ drops below σ*, centers infill — recovery | Desarnaud et al. 2018 JPCL (✓ fetched; the recovery half rests on Sunagawa's framework, flagged) |
 | **Engulfment classes** | inert embedded grains are passively overgrown, host stays ONE optically-continuous crystal (poikilotopic; sand calcite = 60% quartz in one rhomb); front-COATING reactive films interrupt the lattice → phantom/renewal branch. One boolean (`coats_front`) separates the physics | carbonate-cement literature (✓ fetched) |
 | **Texture vocabulary** | comb / crustiform / colloform / zonal — the classification a druse simulator's OUTPUT should be labeled with | Dong, Morrison & Jaireth 1995 Econ. Geol. 90(6):1841-1856 (✓ confirmed) |
-| **Cockade** | same selection law on an isolated/rotating interior clast instead of the wall | Frenzel & Woodcock 2014 JSG 68:194-206 [from-memory, verify at build] |
+| **Cockade** | same selection law on an isolated interior clast instead of the wall; cockades form where cement growth is SLOW relative to dilational fault slip (episodic, seismic-cycle-paced) | Frenzel & Woodcock 2014 JSG 68(A):194-206, doi:10.1016/j.jsg.2014.09.001 (✓ verified 2026-07-03, post-review — review point #6 closed as VERIFIED, not downgraded) |
 
 **Negative results worth keeping** (they prevent future wrong turns): gravity settling is NOT an
 independent face-rate law — it acts through convection (fold into the flow driver) and through
 particle DELIVERY for inclusions (the hourglass path), never as a direct face-rate hack. Equal-
-weight Voronoi is the WRONG shortcut for unequal-speed neighbors. "Interpenetration" has no
-third mechanism: it is either competitive contact (induction) or lattice-controlled (epitaxy,
-misfit ≲8%) — nothing in between.
+weight Voronoi is the WRONG shortcut for unequal-speed neighbors. "Interpenetration" resolves,
+FOR THIS SIM'S SCOPE, to two mechanisms: competitive contact (induction) or lattice-controlled
+(epitaxy, misfit ≲8%). Real edge cases exist OUTSIDE that scope and are declared out of scope,
+not nonexistent (review point #3, accepted): simultaneous co-crystallization intergrowths
+(graphic-granite-like textures) and interface-coupled dissolution-reprecipitation replacement
+(Putnis 2002 Min. Mag. 66:689 / 2009 RiMG 70:87 [from-memory, verify if ever built]) — if a
+specimen presents one, the scope boundary yields, not the specimen.
 
 ## 2. What the tree already holds (census, file:line verified)
 
@@ -146,6 +150,60 @@ ground truth. The boss's drawers are full of induction surfaces.
    labeled as fits.
 
 ---
+
+## 6. Review response — rockbot 🪨✍️, 2026-07-03 (`REVIEW-ONTOGENY-rockbot-2026-07-03.md`, mirrored in-tree)
+
+The review's verdict was APPROVED, ship as-is, address in the first rung's design doc; its
+ranked "might actually matter" list was #1, #8, #2, #4. Evaluation, point by point — accepted
+fixes folded in the same day rather than deferred, since they were documentary:
+
+- **#1 O1–C1 interface (ACCEPTED, with one refinement).** The multiplicative composition is
+  right; the refinement is WHERE it applies: modifiers act on the instantaneous per-face RATE,
+  inside the accumulation — `h_i = SEED + Σ_steps g_step·R_i·f_geo(step)·g_chem(step)` — never
+  on the finished h_i (a current-conditions multiplier applied to accumulated growth re-commits
+  the frozen-param sin in mirror image: it back-dates today's environment onto yesterday's
+  layers). Consequence, stated honestly: O1's render-only first cut evaluates f_geo at RENDER
+  time from current geometry — an approximation that back-dates by construction. It ships
+  labeled as such; the exact per-step accumulation arrives when C1 gives per-direction σ state,
+  with `g_chem = identity` until then. O1's tests pin the f_geo-only path at g_chem ≡ 1, and
+  the C1-era re-sweep is pre-registered NOW (the 4a.8 converse lesson, applied prospectively).
+- **#2 O2 render-only scrutiny (ACCEPTED — option C, hybrid).** The review is right that
+  integrated growth is history, not visible state. The error budget has a pleasing structure:
+  current-size ratio equals integrated-growth ratio EXACTLY when the rate ratio was constant —
+  which (Diggle) is exactly when the true boundary is planar; so the plane-from-current-sizes
+  approximation is self-consistent at first order, and its error is concentrated in
+  drifted-ratio pairs, where the true surface is curved and ANY single plane is wrong. Ship A,
+  instrument the drift population, upgrade to exact weights when O3/O5's SIM state lands.
+- **#3 "no third mechanism" too absolute (ACCEPTED).** Rephrased above as a scope boundary
+  with the edge cases named. One terminology note: the review's "syn-epitaxy" is non-standard —
+  the phenomena it points at are simultaneous co-crystallization intergrowth and
+  dissolution-reprecipitation replacement (Putnis), now cited as such.
+- **#4 O3 RNG sketch (ACCEPTED).** The per-mineral nucleation-seed pattern (SIM 198, js/85j)
+  extends: orientation draws from a dedicated stream keyed (seed, mineral, nucleation_index,
+  ORIENTATION_BRANCH), consuming ZERO numbers from existing streams. The pinnable invariant is
+  sharper than the review's: with selection DISABLED, enabling the orientation DRAW must be
+  byte-identical fleet-wide (the draw exists, is recorded, and is unused). Selection ENABLED is
+  a SIM bump and baselines move by design — the invariant test is what makes that move
+  attributable to selection alone.
+- **#5 W-A cross-reference (ACCEPTED).** The four ontogeny metrics are now in the roadmap's A3
+  row with a W-F cross-reference; A3 re-sized M→M-L.
+- **#6 Frenzel & Woodcock (DONE — verified same day).** JSG 68(A):194-206,
+  doi:10.1016/j.jsg.2014.09.001, mechanism as claimed (cement growth slow relative to episodic
+  dilational slip). Flag upgraded to verified; O8's cockade needs no downgrade.
+- **#7 O8 classifier sizing (PUSHED BACK, scope clarified).** The labeler classifies SIM STATE,
+  not photographs: nucleation density, survivor count vs height, band count, orientation
+  variance are all kernel-truth quantities the sim can read directly, and Dong et al.'s
+  categories map to rule thresholds on them — the same shape as classifyWulffForm/classifyEtch.
+  No training data, no ML; S+M stands. The review's deeper concern is real and lands elsewhere:
+  whether the labels match what a geologist would say is BENCH work (A5 contact sheets), and
+  photo-side classification — which WOULD be ML — is deferred exactly as the review suggests
+  (its "W-H"), unscheduled.
+- **#8 fidelity budget (ACCEPTED — the review's best point).** Adopted into the roadmap §0
+  with credit, including the T4 stop condition verbatim: "adding a new specimen doesn't require
+  a new fitted parameter." That is the correct generalization criterion for the whole project
+  and the ladder was incomplete without it.
+- **W-G atomistic parameterization (ACCEPTED).** Named in the roadmap as a future-research
+  stub — the door where open kinetics tables or interlibrary access would plug into C2.
 
 The maker's-mark dream said the only difference left should be which one casts a shadow. The
 rocks in the drawers grew crowded, starved on one side, dusted mid-life, and grown together —

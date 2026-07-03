@@ -40,6 +40,17 @@ Living list of open work items, captured from session conversations so context s
 > reads `enclosed_by`) → O5 ELO phantom/sceptre + split-growth ladder → O6–O8. Prior-art check:
 > NO published druse competitive-polyhedra simulator exists — novel territory. Also: the catalog
 > is ~1/5th of the collection the boss can access (bench ceiling ~5× higher).
+>
+> **▸ REVIEWED — rockbot 🪨✍️ APPROVED (`REVIEW-ONTOGENY-rockbot-2026-07-03.md`, mirrored
+> in-tree from StonePhilosopher); response = proposal §6.** 7 of 8 points + W-G accepted and
+> folded in same-day (O1–C1 interface sketch w/ rate-inside-the-accumulation refinement; O2 =
+> hybrid approximation w/ the constant-ratio⇔planar self-consistency bound; scope-boundary
+> rephrase; O3 orientation-stream sketch + the draw-without-selection byte-identity invariant;
+> A3 gains the ontogeny metrics, M→M-L; Frenzel & Woodcock VERIFIED not downgraded; **fidelity
+> budget per tier + the T4 stop condition adopted into the roadmap §0**; W-G atomistic-
+> parameterization stub named). One push-back: #7 — the O8 texture labeler classifies SIM STATE
+> (rule thresholds on kernel-truth stats, classifyEtch-shaped), not photos; S+M stands, photo-
+> side ML deferred as the review's own W-H.
 
 > ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
 >

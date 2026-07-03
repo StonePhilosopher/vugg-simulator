@@ -47,6 +47,22 @@ stays "not yet falsified"; the bench is where falsification gets teeth
 (`feedback_terminal_verification_specimens` — the boss: "the final end of checking will be
 verifying everything against the real minerals").
 
+**Fidelity budget per tier** (added 2026-07-03 from the rockbot review, point #8 — "how close
+is close enough" so effort allocates correctly; don't spend T4 precision on T0 phenomena):
+
+| tier | error budget | how measured |
+|---|---|---|
+| T0 | expert consensus (formally: >2 blind identifications agree; practical proxy today: the boss + a field guide) | blind survey / the confrontation ritual (A5) |
+| T1 | "same field-guide page" — locality named or shortlisted | image-corpus method against provenance-locked photos |
+| T2 | within the bench measurement's OWN error bars (each A3 row carries them) | A4 harness |
+| T3 | inverse-fitted fluid history stays inside geologic plausibility bounds (T, pH, fO₂ ranges) | PHREEQC cross-check (B2) + literature ranges |
+| T4 | forward prediction inside the parameter-uncertainty envelope (ensemble runs, 95% CI) | ensemble + bench |
+
+**T4 stop condition** (the review's phrasing, adopted verbatim): *"adding a new specimen doesn't
+require a new fitted parameter — the existing physics-constrained ensemble predicts it within
+bench error bars."* Generalization, applied to geological simulation. That is what "done"
+means at the top of the ladder.
+
 ---
 
 ## 1. The gap census — what nature does that the sim doesn't yet
@@ -91,7 +107,7 @@ live host unreachable today — recount when it's back):
 |---|---|---|---|
 | **A1 — bridge + anchors** | `data/specimen-anchors.json` + the species bridge table | Map catalog labels→sim keys (the 4 bridges above + a full pass over the 150 unmatched labels). Select ~24 ANCHOR specimens spanning the scenario space (MVT: fluorite/galena/sphalerite/barite; alpine: quartz; supergene: azurite/malachite/wulfenite/vanadinite; evaporite: selenite/halite; carbonate: calcite dogtooth AND nailhead, rhodochrosite). Anchor = catalog id + species + locality + which scenario claims it. **Privacy rule: the public repo carries id/species/locality/measurements ONLY — never valuations, dealers, provenance notes; photos never leave the LAN** (the harness resolves catalog ids against the local snapshot/host via env var). | S — read-only on the snapshot, one session |
 | **A2 — capture protocol** | `proposals/SPECIMEN-CAPTURE-PROTOCOL.md` + per-anchor shot list | Standardized re-shoots the boss can run with the existing iPhone pipeline: scale reference in frame, grey/white card under a fixed illuminant for colour truth, 3 canonical angles + a face-on macro per measurable face, UV set where relevant. Agents write the protocol + shot lists; the boss's hands do the shooting at his pace. Archive photos serve where they already carry scale cues. | S to write; capture is ongoing |
-| **A3 — metric extraction** | `tools/specimen-metrics.mjs` + measured rows in specimen-anchors.json | From protocol photos: aspect ratios, interfacial angles (photogrammetry-lite: face-on shots + known geometry class beat full 3D reconstruction), CIELAB colour off the grey card, druse crystal-size counts off plate shots. Each value stored WITH error bars and the photo id it came from — a measurement column, same discipline as the optics `source` column. | M |
+| **A3 — metric extraction** | `tools/specimen-metrics.mjs` + measured rows in specimen-anchors.json | From protocol photos: aspect ratios, interfacial angles (photogrammetry-lite: face-on shots + known geometry class beat full 3D reconstruction), CIELAB colour off the grey card, druse crystal-size counts off plate shots. **Plus the W-F ontogeny metrics (added 2026-07-03, review point #5): contact fraction, asymmetry index (h_i variance within a form), survivor density vs height, intergrowth count** — see `PROPOSAL-ONTOGENY-2026-07-03.md` §4. Each value stored WITH error bars and the photo id it came from — a measurement column, same discipline as the optics `source` column. | M–L (re-sized with the ontogeny metrics) |
 | **A4 — the bench harness** | `tools/specimen-bench.mjs` | For each anchor: run its claimed scenario headless (agent-api/gen-baseline idiom), extract THE SAME metrics from the rendered mesh (kernel-truth path — the wulff sweep tools already read mesh geometry), compare within the anchor's error bars. **PASSIVE first** (`feedback_passive_instrument_not_gate`): it accretes a per-anchor record like canary; individual metrics get promoted to pinned tests only once stable. Wire a nightly row into vugg-canary. | M |
 | **A5 — the confrontation ritual** | `tools/specimen-contact-sheet.mjs` + a standing session ritual | Render-vs-photo side-by-side sheets per anchor for the boss's eye — his geometric intuition is the best detector in the loop; the sheet is the tool that feeds it. Ritual: every shipped habit/colour/paragenesis names its specimen-debt in the commit; the bench pays debts down; the sheet is how a debt gets marked paid. | S |
 
@@ -164,6 +180,16 @@ change, not kernel surgery). Rungs in brief:
 **Prior-art note:** no published simulator applies competitive faceted-polyhedra growth to
 druses (closest: crack-seal vein models, Bons 2001 / Nollet 2005). This workstream is novel
 territory on 75-year-old verified mathematics.
+
+## 6c. W-G — atomistic parameterization (future research stub, named 2026-07-03 per the rockbot review)
+
+Not scheduled; named so the door exists. C2's face-specific rate laws take parameters that
+atomistic theory (BCF, Kossel-site kinetics) predicts and paywalled experiments measure. The
+bench substitutes for now (fit to anchors). If open kinetics tables appear, an interlibrary
+channel opens, or author copies land, **this is the plug point**: replace bench-fitted C2
+parameters with measured/derived ones, tenant by tenant, and re-run the same sweeps. Each
+substitution moves that tenant from T2-calibrated toward T4-predicted — the fidelity budget's
+top tier is reached exactly here.
 
 ---
 
