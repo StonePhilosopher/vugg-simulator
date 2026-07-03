@@ -2,6 +2,18 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🔍 SESSION (2026-07-02/03) — 4a.8 FROZEN-g RETIREMENT + OPTICS DEPTH-A SHIPPED — **CURRENT HANDOFF: `HANDOFF-FROZEN-G-AND-OPTICS-A-2026-07-02.md`** (read it first)
+>
+> Five commits live (`3981a0d` 4a.8 · `525e289` research · `524d9ea` A1 · `6c748d0` A2 · `8490f8a`
+> A3), Pages verified built == HEAD, tree clean, SIM 214 unchanged. Every Wulff body now matures
+> with growth (two biasC bands re-placed at earned g — the frozen-param CONVERSE lesson);
+> diaphaneity is per-species verified data driving plain % translucency through ONE
+> `buildCrystalMaterial` (Naica water-clear, 94/180 species verified two-source). **Boss
+> priorities set 2026-07-03: Depth-B lustre = LOW PRIORITY (the data existing in text form is
+> enough — don't build unprompted); next stones = the calcite σ/Ca:CO₃ lever, then the local-σ
+> depletion field (EV check first); Depth-C body colour when called.** Traps + instruments + the
+> full map in the handoff.
+
 > ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
 >
 > **▸ 2026-07-02 — Depth-A COMPLETE (research `525e289` → A1 data `524d9ea` → A2 builder `6c748d0` → A3 data).**
@@ -13,11 +25,13 @@ Living list of open work items, captured from session conversations so context s
 > while **Naica selenite now renders water-clear (0.335)** — the goal's named failure, fixed +
 > eye-checked (grid-through-the-blade overlay; galena/pyrite pixel-identical opaque, the
 > no-regression leg). Instruments: `tools/optics-audit.mjs` (52% verified, 138 translucent, 0
-> anomalies) + `tests-js/mineral-optics.test.ts` lint. **REMAINING in the goal: Depth-B lustre**
-> (data already recorded per-species — vitreous/adamantine/metallic/pearly + face-notes — nothing
-> consumes it yet) **and Depth-C body-colour fidelity** (class_color is still the CLASS-taxonomy
-> palette: galena and sphalerite share #7feb13 — the flat-green-galena problem is Depth-C, and
-> per-crystal smoky/amethyst/milky modulation with it).
+> anomalies) + `tests-js/mineral-optics.test.ts` lint. **REMAINING in the goal: Depth-B lustre —
+> DEPRIORITIZED by the boss 2026-07-03** ("really low priority… I'm fine with that data just
+> existing in text form" — the terms + face-notes are recorded per-species; do NOT build the
+> consumer unprompted, even though it's easy) **and Depth-C body-colour fidelity** (class_color
+> is still the CLASS-taxonomy palette: galena and sphalerite share #7feb13 — the flat-green-galena
+> problem is Depth-C, and per-crystal smoky/amethyst/milky modulation with it; unscheduled, on
+> boss call).
 >
 > Boss directive. A whole-render-layer realism goal, NOT a one-scenario job. Before Depth-A,
 > optical properties were ad-hoc: habits painted a flat `class_color` on an opaque material and
