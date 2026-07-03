@@ -160,6 +160,48 @@ metallic" + fast tarnish: the dullest of the five metallics when Depth-B lands. 
 anchors: topaz 0.93 ≥ quartz 0.92; celestine 0.80 > barite 0.70; feldspars/micas cluster
 0.45–0.55 (milky-typical despite transparent endpoints); cassiterite 0.15 < sphalerite 0.40.
 
+**Batch 3 (A3 execution, 2026-07-02 — the remaining render-reachable tier-3 species, two parallel
+sub-batches, same two-source method; 45 species + the ruby/corundum/sapphire split = 47 blocks;
+no unverified rows):**
+
+*3a zeolites + silicates (22):* stilbite 0.62 (pearly {010} — the name MEANS lustre) ·
+heulandite 0.60 · scolecite 0.60 (silky fibrous) · mesolite 0.50 · thomsonite 0.45 ·
+chabazite 0.70 · chrysoprase 0.40 (variety-level verification — no species page exists) ·
+chrysocolla 0.10 · chrysotile 0.20 (silky) · tourmaline 0.80 (the pegmatite ELBAITE reading;
+schorl reads opaque-black ~0.04 — split if a schorl locality lands) · spodumene 0.80 (WM page
+lacks the fields; HOM+mindat row) · andalusite 0.40 · epidote 0.35 · actinolite 0.35 ·
+grossular 0.72 · diopside 0.58 · vesuvianite 0.55 (WM subtransparent-only rejected vs Jeffrey-
+mine reality) · pectolite 0.35 (silky) · wollastonite 0.30 (pearly {100} + silky fibrous, both
+kept by habit) · prehnite 0.52 · datolite 0.78 · brucite 0.55 (waxy body — HOM over WM).
+
+*3b oxidation-zone / uranyl / As-sulfides (23 + the corundum split):* ruby 0.60 / corundum 0.55
+/ sapphire 0.65 (species-page verification, variety readings) · borax 0.55 (WM "greasy"
+rejected) · mirabilite 0.75 fresh · thenardite 0.50 · tincalconite 0.10 (the chalky pseudomorph
+IS the typical form — form-dependent, both sources true) · adamite 0.65 · conichalcite 0.20 ·
+torbernite/zeunerite 0.55 · uranospinite 0.50 (waxy) · annabergite 0.45 · apatite 0.80 ·
+carnotite 0.05 (aggregate = opaque powder; WM "pearly" is a micro-flake face reading) ·
+tyuyamunite 0.15 · cinnabar 0.55 (adamantine, inclining metallic when dark) · realgar 0.60
+(transparent WHEN FRESH — light degrades toward pararealgar; WM "submetallic" rejected) ·
+orpiment 0.55 (pearly {010}) · pararealgar 0.12 (HOM-only row) · linarite 0.50 ·
+caledonite 0.45 · leadhillite 0.60 (pearly {001}) · pyromorphite 0.55 · mottramite 0.08.
+
+*Batch-3 family-consistency checks (the agents ran them unprompted — kept):* uranyl-phosphates
+(torbernite/zeunerite/autunite 0.55) ≫ uranyl-vanadates (tyuyamunite 0.15, carnotite 0.05) —
+the vanadate sheet minerals really are muddier; phosphate>arsenate>vanadate ordering holds
+(pyromorphite 0.55 = mimetite > vanadinite 0.45); As-sulfides realgar 0.60 > cinnabar/orpiment
+0.55 > proustite 0.50; mottramite 0.08 = malachite (velvety near-opaque druse).
+
+*Batch-3 methodology note:* rruff HOM zeolite filenames are inconsistent (stilbiteca.pdf but
+heulandite.pdf unsplit; the -Ca/-1A forms 404) and every HOM PDF arrives with 5 junk bytes
+before %PDF- — strip before strict parsing. mindat remains bot-blocked.
+
+**After batch 3: 94/180 species verified (52%); every scenario-expected species that is not a
+confident opaque-metallic carries a fetched row — the class defaults are now a true tail
+safety-net, not load-bearing** (the 14 skipped expects-species are opaque metallics where the
+sulfide/native default of 0 is the verified answer by class: molybdenite, cobaltite,
+skutterudite, safflorite, acanthite, calaverite, sylvanite, hessite, native_tellurium,
+marcasite, arsenopyrite, tetrahedrite, tennantite, awaruite).
+
 **Prominence tiers** (union of `expects_species` across the 37-scenario fleet, 104 distinct):
 - **Tier 1 (≥4 scenarios, 10 species)**: calcite 16, quartz 13, sphalerite 7, fluorite 7,
   barite 6, pyrite 5, feldspar 5, selenite 5, galena 4, chalcopyrite 4.

@@ -2,12 +2,27 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer)
+> ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
 >
-> Boss directive. A whole-render-layer realism goal, NOT a one-scenario job. Today optical
-> properties are ad-hoc: habits paint a flat `class_color` on an opaque material and
-> transparency is hand-set per tenant (selenite blade `opacity 0.82` inline; Naica's giant
-> crystals should read water-CLEAR but don't). Make a crystal LOOK like what it physically is:
+> **▸ 2026-07-02 — Depth-A COMPLETE (research `525e289` → A1 data `524d9ea` → A2 builder `6c748d0` → A3 data).**
+> Diaphaneity is REAL now: 94/180 species carry a two-source-verified optics block (webmineral +
+> Handbook-of-Mineralogy PDFs, fetched; every render-reachable non-metallic species covered across
+> three research batches), ONE `buildCrystalMaterial` in js/99i replaces the inline assembly
+> (MeshPhysicalMaterial, transmission 0 — plain % translucency per the fixed decision, opacity =
+> 1−0.70·clarity), the selenite 0.82 magic number retired into the hourglass inclusion-body cap
+> while **Naica selenite now renders water-clear (0.335)** — the goal's named failure, fixed +
+> eye-checked (grid-through-the-blade overlay; galena/pyrite pixel-identical opaque, the
+> no-regression leg). Instruments: `tools/optics-audit.mjs` (52% verified, 138 translucent, 0
+> anomalies) + `tests-js/mineral-optics.test.ts` lint. **REMAINING in the goal: Depth-B lustre**
+> (data already recorded per-species — vitreous/adamantine/metallic/pearly + face-notes — nothing
+> consumes it yet) **and Depth-C body-colour fidelity** (class_color is still the CLASS-taxonomy
+> palette: galena and sphalerite share #7feb13 — the flat-green-galena problem is Depth-C, and
+> per-crystal smoky/amethyst/milky modulation with it).
+>
+> Boss directive. A whole-render-layer realism goal, NOT a one-scenario job. Before Depth-A,
+> optical properties were ad-hoc: habits painted a flat `class_color` on an opaque material and
+> transparency was hand-set per tenant (selenite blade `opacity 0.82` inline; Naica's giant
+> crystals should have read water-CLEAR but didn't). Make a crystal LOOK like what it physically is:
 > - **Diaphaneity** as a real per-mineral field: transparent (quartz/fluorite/gypsum/calcite)
 >   → translucent → opaque (galena/pyrite/magnetite). Drive material transparent/opacity/
 >   transmission from data, not inline constants.
