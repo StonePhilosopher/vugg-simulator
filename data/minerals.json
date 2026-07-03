@@ -6,9 +6,10 @@
     "index.html",
     "agent-api/vugg-agent.js"
   ],
-  "_source_of_truth_note": "This file is the canonical mineral spec for all three runtimes. vugg.py is the dev/test harness (where pytest runs). index.html is the shipped product (GitHub Pages serves repo root; runtime fetches data/minerals.json and overwrites the inline MINERAL_SPEC_FALLBACK). agent-api/vugg-agent.js is intentionally kept simple and reads this file via require(). Cross-runtime drift is caught by tools/sync-spec.js.",
+  "_source_of_truth_note": "This file is the canonical mineral spec. index.html is the shipped product (GitHub Pages serves repo root; runtime fetches data/minerals.json and overwrites the inline MINERAL_SPEC_FALLBACK). agent-api/vugg-agent.js is intentionally kept simple and reads this file via require(). (Historical note: vugg.py and tools/sync-spec.js are retired — Python deleted 2026-05-07; the JS runtime is the only consumer pair now. source_of_truth_for below kept for the record.)",
   "_schema": {
     "formula": "Chemical formula.",
+    "optics": "RENDER-LAYER optical data (proposals/RESEARCH-optical-realism-2026-07-02.md). diaphaneity: category enum (transparent | transparent_to_translucent | transparent_to_opaque | translucent | translucent_to_opaque | opaque). clarity: [0,1] for a TYPICAL fine display specimen (1.0 = water-clear gem, 0 = opaque) — the Depth-A consumer (js/99i buildCrystalMaterial → opacity). lustre: term array (Depth-B consumer, recorded ahead of use). notes: face-specific lustre fame + specimen nuance. source: how the row was verified ('webmineral+HOM <date>' = two fetched sources; disagreement record in the research doc). OPTIONAL — species without it get class defaults in the builder. Lint: tests-js/mineral-optics.test.ts.",
     "nucleation_sigma": "Minimum supersaturation for nucleation.",
     "max_nucleation_count": "Maximum number of crystals of this species that can ever nucleate in a single run. Counted across the whole simulation (active + dissolved). Keeps common minerals like wulfenite from producing microcrystalline swarms that get immediately swallowed by other phases.",
     "max_size_cm": "Hard cap on crystal size — 2x world record per research/mineral-accuracy-audit.md. Growth halts when reached; this is the fix for the 321248% bug.",
@@ -219,6 +220,13 @@
   },
   "minerals": {
     "quartz": {
+      "optics": {
+        "diaphaneity": "transparent",
+        "clarity": 0.92,
+        "lustre": ["vitreous"],
+        "notes": "to nearly opaque when massive (waxy-dull)",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "SiO2",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 10,
@@ -376,6 +384,13 @@
       "class_color": "#1313eb"
     },
     "calcite": {
+      "optics": {
+        "diaphaneity": "transparent_to_opaque",
+        "clarity": 0.85,
+        "lustre": ["vitreous"],
+        "notes": "typical crystal transparent; pearly on cleavages and {0001}",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaCO3",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 10,
@@ -511,6 +526,13 @@
       "class_color": "#eb7f13"
     },
     "aragonite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.70,
+        "lustre": ["vitreous"],
+        "notes": "resinous on fracture",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaCO3",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -648,6 +670,13 @@
       "class_color": "#eb7f13"
     },
     "dolomite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.55,
+        "lustre": ["vitreous"],
+        "notes": "may be pearly",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaMg(CO3)2",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -880,6 +909,13 @@
       "class_color": "#eb7f13"
     },
     "siderite": {
+      "optics": {
+        "diaphaneity": "translucent",
+        "clarity": 0.45,
+        "lustre": ["vitreous"],
+        "notes": "translucent-only in all three sources; transparent exceptional; may be pearly or silky",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "FeCO3",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -1002,6 +1038,13 @@
       "class_color": "#eb7f13"
     },
     "rhodochrosite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.70,
+        "lustre": ["vitreous"],
+        "notes": "pearly in aggregates",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "MnCO3",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -1131,6 +1174,13 @@
       "class_color": "#eb7f13"
     },
     "sphalerite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.40,
+        "lustre": ["resinous","adamantine"],
+        "notes": "opaque when Fe-rich (marmatite, submetallic)",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "ZnS",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
@@ -1372,6 +1422,13 @@
       "class_color": "#7feb13"
     },
     "fluorite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.85,
+        "lustre": ["vitreous"],
+        "notes": "dull when massive",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaF2",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
@@ -1491,6 +1548,13 @@
       "class_color": "#7f13eb"
     },
     "pyrite": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": "splendent",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "FeS2",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 3,
@@ -1721,6 +1785,13 @@
       "class_color": "#7feb13"
     },
     "chalcopyrite": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": null,
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CuFeS2",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
@@ -1820,6 +1891,13 @@
       "class_color": "#7feb13"
     },
     "hematite": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.02,
+        "lustre": ["metallic","submetallic"],
+        "notes": "thin-edge deep blood-red internal reflections; earthy variety dull",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Fe2O3",
       "nucleation_sigma": 1.5,
       "max_nucleation_count": 3,
@@ -1929,6 +2007,13 @@
       "class_color": "#eb1313"
     },
     "malachite": {
+      "optics": {
+        "diaphaneity": "translucent_to_opaque",
+        "clarity": 0.08,
+        "lustre": ["adamantine","vitreous"],
+        "notes": "typically opaque, translucent only in thin fibres/films; silky fibrous; dull-earthy massive",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Cu2(CO3)(OH)2",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 3,
@@ -2041,6 +2126,13 @@
       "class_color": "#eb7f13"
     },
     "uraninite": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["submetallic","greasy","dull"],
+        "notes": "steel-black to velvet-black; greasy-dull = pitchblende botryoids; thin-fragment transmission is thin-section-scale, invisible at display scale",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "UO2",
       "nucleation_sigma": 1.5,
       "max_nucleation_count": 3,
@@ -2134,6 +2226,13 @@
       "class_color": "#eb1313"
     },
     "galena": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": null,
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "PbS",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -2238,6 +2337,13 @@
       "class_color": "#7feb13"
     },
     "smithsonite": {
+      "optics": {
+        "diaphaneity": "translucent",
+        "clarity": 0.50,
+        "lustre": ["vitreous"],
+        "notes": "to subtransparent; satiny-pearly on botryoidal",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "ZnCO3",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 3,
@@ -2356,6 +2462,13 @@
       "class_color": "#eb7f13"
     },
     "wulfenite": {
+      "optics": {
+        "diaphaneity": "transparent_to_opaque",
+        "clarity": 0.70,
+        "lustre": ["resinous","subadamantine","adamantine"],
+        "notes": "typical specimen transparent-translucent",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "PbMoO4",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
@@ -2656,6 +2769,13 @@
       "class_color": "#c8c0b8"
     },
     "barite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.70,
+        "lustre": ["vitreous","resinous"],
+        "notes": "may be pearly on cleavage",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "BaSO4",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 6,
@@ -2763,6 +2883,13 @@
       "class_color": "#eb137f"
     },
     "celestine": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.80,
+        "lustre": ["vitreous"],
+        "notes": "pearly on cleavages",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "SrSO4",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 6,
@@ -3084,6 +3211,13 @@
       "class_color": "#eb137f"
     },
     "brochantite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.45,
+        "lustre": ["vitreous"],
+        "notes": "somewhat pearly on cleavages",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Cu4(SO4)(OH)6",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
@@ -3293,6 +3427,13 @@
       "class_color": "#eb137f"
     },
     "anhydrite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.75,
+        "lustre": ["vitreous"],
+        "notes": "HOM face-specific: pearly on {010}, vitreous-to-greasy on {001}, vitreous on {100}",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaSO4",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 8,
@@ -3693,6 +3834,13 @@
       "class_color": "#ebeb13"
     },
     "mimetite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.55,
+        "lustre": ["resinous","subadamantine"],
+        "notes": "subtransparent end",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Pb5(AsO4)3Cl",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 3,
@@ -3799,6 +3947,13 @@
       "class_color": "#ebeb13"
     },
     "erythrite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.60,
+        "lustre": ["subadamantine"],
+        "notes": "pearly on {010}",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Co3(AsO4)2·8H2O",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -4266,6 +4421,13 @@
       "class_color": "#7feb13"
     },
     "apophyllite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.80,
+        "lustre": ["vitreous"],
+        "notes": "pearly on {001} basal — the classic",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "KCa4Si8O20(F,OH)·8H2O",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -4393,6 +4555,13 @@
       "class_color": "#dfe7e3"
     },
     "feldspar": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.55,
+        "lustre": ["vitreous"],
+        "notes": "orthoclase + microcline HOM identical — one generic set is safe; pearly on cleavages; typical specimen milky-translucent",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "KAlSi3O8",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 2,
@@ -4534,6 +4703,13 @@
       "class_color": "#1313eb"
     },
     "albite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.50,
+        "lustre": ["vitreous"],
+        "notes": "typically pearly on cleavages; typical specimen milky",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "NaAlSi3O8",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 2,
@@ -4655,6 +4831,13 @@
       "class_color": "#1313eb"
     },
     "selenite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.95,
+        "lustre": ["subvitreous"],
+        "notes": "pearly on {010} cleavage; silky when fibrous (satin spar); Naica water-clear benchmark",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaSO4·2H2O",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 10,
@@ -4992,6 +5175,13 @@
       "class_color": "#a89878"
     },
     "topaz": {
+      "optics": {
+        "diaphaneity": "transparent",
+        "clarity": 0.93,
+        "lustre": ["vitreous"],
+        "notes": "opaque only with inclusions",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Al2SiO4(F,OH)2",
       "nucleation_sigma": 1.4,
       "max_nucleation_count": 6,
@@ -5453,6 +5643,13 @@
       "class_color": "#1313eb"
     },
     "lepidolite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.45,
+        "lustre": ["pearly","vitreous"],
+        "notes": "thin cleavage flakes genuinely transparent; books read translucent",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "K(Li,Al)3(Al,Si)4O10(F,OH)2",
       "nucleation_sigma": 1.2,
       "max_nucleation_count": 3,
@@ -5590,6 +5787,13 @@
       "class_color": "#b07ad1"
     },
     "anglesite": {
+      "optics": {
+        "diaphaneity": "transparent_to_opaque",
+        "clarity": 0.75,
+        "lustre": ["adamantine"],
+        "notes": "resinous to vitreous; typical specimen transparent-translucent",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "PbSO4",
       "nucleation_sigma": 1.1,
       "max_nucleation_count": 4,
@@ -5700,6 +5904,13 @@
       "class_color": "#eb137f"
     },
     "cerussite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.80,
+        "lustre": ["adamantine"],
+        "notes": "tending vitreous/resinous",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "PbCO3",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -5928,6 +6139,13 @@
       "class_color": "#13eb7f"
     },
     "vanadinite": {
+      "optics": {
+        "diaphaneity": "translucent_to_opaque",
+        "clarity": 0.45,
+        "lustre": ["subresinous","subadamantine"],
+        "notes": "subtransparent end exists",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Pb5(VO4)3Cl",
       "nucleation_sigma": 1.3,
       "max_nucleation_count": 6,
@@ -6566,6 +6784,13 @@
       "class_color": "#eb1313"
     },
     "azurite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.35,
+        "lustre": ["vitreous","subadamantine"],
+        "notes": "body colour nearly opaque-dark at display thickness",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Cu3(CO3)2(OH)2",
       "nucleation_sigma": 1.4,
       "max_nucleation_count": 4,
@@ -6779,6 +7004,13 @@
       "class_color": "#eb13eb"
     },
     "native_gold": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": null,
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Au",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -6876,6 +7108,13 @@
       "class_color": "#ffd700"
     },
     "magnetite": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic","submetallic"],
+        "notes": "may be dull; thin-edge translucency only",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Fe3O4",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
@@ -7082,6 +7321,13 @@
       "class_color": "#13ebeb"
     },
     "stibnite": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": "splendent on cleavage",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Sb2S3",
       "nucleation_sigma": 1.2,
       "max_nucleation_count": 4,
@@ -7284,6 +7530,13 @@
       "class_color": "#7feb13"
     },
     "native_bismuth": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": "silver-white with reddish hue; tarnishes iridescent",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Bi",
       "nucleation_sigma": 1.4,
       "max_nucleation_count": 3,
@@ -8317,6 +8570,13 @@
       "class_color": "#7feb13"
     },
     "native_silver": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": "tarnishes gray to black",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Ag",
       "nucleation_sigma": 1.2,
       "max_nucleation_count": 4,
@@ -8406,6 +8666,13 @@
       "class_color": "#eb13eb"
     },
     "native_arsenic": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": "nearly-metallic fresh, tarnishes fast to dull dark gray — render at the dull end",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "As",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -8487,6 +8754,13 @@
       "class_color": "#eb13eb"
     },
     "native_sulfur": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.70,
+        "lustre": ["resinous","greasy"],
+        "notes": null,
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "S",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -8652,6 +8926,13 @@
       "class_color": "#eb13eb"
     },
     "nickeline": {
+      "optics": {
+        "diaphaneity": "opaque",
+        "clarity": 0.00,
+        "lustre": ["metallic"],
+        "notes": "pale copper-red; tarnishes gray to blackish",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "NiAs",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 4,
@@ -9405,6 +9686,13 @@
       "class_color": "#1eb86c"
     },
     "pharmacolite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.60,
+        "lustre": ["vitreous"],
+        "notes": "pearly on cleavages; silky in fibrous habit; WM opaque endpoint rejected (outlier vs HOM+mindat)",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaHAsO4·2H2O",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
@@ -9525,6 +9813,13 @@
       "class_color": "#e8e8d4"
     },
     "haidingerite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.65,
+        "lustre": ["vitreous"],
+        "notes": "pearly on cleavage; WM adamantine rejected (unsupported by HOM+mindat)",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaHAsO4·H2O",
       "nucleation_sigma": 99.0,
       "max_nucleation_count": 0,
@@ -10711,6 +11006,13 @@
       ]
     },
     "autunite": {
+      "optics": {
+        "diaphaneity": "transparent_to_translucent",
+        "clarity": 0.55,
+        "lustre": ["vitreous"],
+        "notes": "pearly on {001} — the broad basal face of the square plates",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Ca(UO2)2(PO4)2·11H2O",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
@@ -11359,6 +11661,13 @@
       ]
     },
     "halite": {
+      "optics": {
+        "diaphaneity": "transparent",
+        "clarity": 0.85,
+        "lustre": ["vitreous"],
+        "notes": null,
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "NaCl",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 12,
@@ -12551,6 +12860,13 @@
       "class_color": "#eb1313"
     },
     "cassiterite": {
+      "optics": {
+        "diaphaneity": "transparent_to_opaque",
+        "clarity": 0.15,
+        "lustre": ["adamantine"],
+        "notes": "adamantine-metallic splendent; greasy on fractures; dark body — thin-edge red-brown internal reflections only, commonly zoned",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "SnO2",
       "nucleation_sigma": 1.2,
       "max_nucleation_count": 4,
@@ -13397,6 +13713,13 @@
       "_late_stage_note": "Late Tsumeb supergene — forms after duftite as fluid becomes Cu-enriched; sequence conichalcite → duftite → bayldonite → olivenite/cornubite."
     },
     "proustite": {
+      "optics": {
+        "diaphaneity": "translucent",
+        "clarity": 0.50,
+        "lustre": ["adamantine"],
+        "notes": "to transparent; darkens on light exposure (ruby silver)",
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "Ag3AsS3",
       "nucleation_sigma": 1.2,
       "max_nucleation_count": 2,
@@ -17489,6 +17812,13 @@
       "class_color": "#84a82c"
     },
     "titanite": {
+      "optics": {
+        "diaphaneity": "transparent_to_opaque",
+        "clarity": 0.60,
+        "lustre": ["adamantine","resinous"],
+        "notes": null,
+        "source": "webmineral+HOM 2026-07-02"
+      },
       "formula": "CaTiSiO5",
       "nucleation_sigma": 1.2,
       "max_nucleation_count": 3,

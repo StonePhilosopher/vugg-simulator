@@ -129,6 +129,37 @@ is not volatility but transcription confabulation, hence fetched-not-remembered 
    despite "transparent" endpoints (body colour nearly opaque-dark at display thickness);
    malachite 0.08 per the opaque-to-thin-film guidance.
 
+**Batch 2 (A1 execution, 2026-07-02 — the remaining tier-1/2 species, same two-source method;
+all 17 fetched, none unverified):**
+
+| # | Mineral (catalog key) | Diaphaneity | clarity | Lustre | Note |
+|---|---|---|---|---|---|
+| 31 | feldspar (orthoclase; microcline HOM identical) | transparent to translucent | 0.55 | vitreous, pearly on cleavages | one generic set safe |
+| 32 | cassiterite | transparent to nearly opaque (dark) | 0.15 | adamantine(-metallic), splendent | thin-edge red-brown glints; zoned |
+| 33 | anhydrite | transparent to translucent | 0.75 | HOM face-specific: pearly {010}, vitreous-greasy {001}, vitreous {100} | |
+| 34 | celestine | transparent to translucent | 0.80 | vitreous, pearly on cleavages | clearer than barite 0.70 |
+| 35 | brochantite | transparent to translucent | 0.45 | vitreous, somewhat pearly | above azurite 0.35 |
+| 36 | pharmacolite | transparent to translucent | 0.60 | vitreous, pearly on cleavages; silky fibrous | flag B1 |
+| 37 | haidingerite | transparent to translucent | 0.65 | vitreous, pearly on cleavage | flag B2 — NOT adamantine |
+| 38 | topaz | transparent | 0.93 | vitreous | gem-clear typical |
+| 39 | albite | transparent to translucent | 0.50 | vitreous, typically pearly on cleavages | |
+| 40 | lepidolite | transparent to translucent | 0.45 | pearly to vitreous | flag B3 |
+| 41 | uraninite | opaque | 0.00 | submetallic, greasy, dull | 0.00 not 0.02: thin-fragment transmission is thin-section-scale |
+| 42 | autunite | transparent to translucent | 0.55 | vitreous, pearly on {001} basal plates | |
+| 43 | native_bismuth | opaque | 0.00 | metallic | reddish hue, iridescent tarnish |
+| 44 | native_arsenic | opaque | 0.00 | metallic (nearly-metallic fresh) | flag B4 — render at the dull end |
+| 45 | native_silver | opaque | 0.00 | metallic | tarnishes gray-black |
+| 46 | native_gold | opaque | 0.00 | metallic | |
+| 47 | nickeline | opaque | 0.00 | metallic | pale copper-red |
+
+**Batch-2 flags**: B1 pharmacolite — WM "translucent to opaque" is the outlier; HOM+mindat
+transparent side adopted. B2 haidingerite — WM's "adamantine" unsupported by HOM+mindat; do not
+render it adamantine. B3 lepidolite — WM "translucent" only; HOM transparent end adopted (thin
+flakes ARE transparent; 0.45 reflects the typical book). B4 native arsenic — HOM "nearly
+metallic" + fast tarnish: the dullest of the five metallics when Depth-B lands. Batch-2 clarity
+anchors: topaz 0.93 ≥ quartz 0.92; celestine 0.80 > barite 0.70; feldspars/micas cluster
+0.45–0.55 (milky-typical despite transparent endpoints); cassiterite 0.15 < sphalerite 0.40.
+
 **Prominence tiers** (union of `expects_species` across the 37-scenario fleet, 104 distinct):
 - **Tier 1 (≥4 scenarios, 10 species)**: calcite 16, quartz 13, sphalerite 7, fluorite 7,
   barite 6, pyrite 5, feldspar 5, selenite 5, galena 4, chalcopyrite 4.
