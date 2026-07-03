@@ -191,6 +191,69 @@ parameters with measured/derived ones, tenant by tenant, and re-run the same swe
 substitution moves that tenant from T2-calibrated toward T4-predicted — the fidelity budget's
 top tier is reached exactly here.
 
+## 6d–6f. The horizon ladders (added 2026-07-03, proposed by rockbot 🪨✍️, evaluated + accepted)
+
+Post-Phase-5+ directions that are genuinely new architecture, not more rungs. Named now so the
+ledger has letters for them; NOT scheduled. (Letter bookkeeping: the review's passing mention
+of "W-H: texture classification" is superseded — photo-side texture ML stays unnamed until it
+is ever real; the letters below are canonical.)
+
+### 6d. W-H — the inverse solver (specimen → scenario; the T3→T4 bridge)
+
+Given a specimen's bench measurements, SEARCH the scenario space for the fluid history that
+produces it — constrained by geology, verified on held-out metrics. rockbot is right that this
+is a new tool class (`tools/vugg-inverse.mjs`), and it has both a modern method family and a
+geological precedent, both verified today:
+
+- **Method class: simulation-based inference** — vugg is exactly the setting SBI exists for (a
+  high-fidelity forward simulator with no tractable likelihood): Cranmer, Brehmer & Louppe
+  2020, PNAS 117(48):30055-30062, doi:10.1073/pnas.1912789117 (✓ verified). ABC/Bayesian
+  search produces posterior DISTRIBUTIONS over histories, not point fits — which is the T3
+  overfit guard (roadmap risk #2) made structural, and makes W-H and W-I siblings.
+- **Geological precedent: petrology has inverted growth records since 1983** — Spear &
+  Selverstone, "Quantitative P-T paths from zoned minerals," CMP 1983 (✓ verified; modern kin:
+  brute-force P-T inversion CMP 2014, MRF inversion CMP 2011). T3 is that method generalized
+  from a P-T path to a full fluid history, from one zoning profile to the whole crystal record.
+
+Design cautions recorded now: (i) parameterize over SCENARIO INPUTS (initial fluid, event
+sequence, timings) — NOT derived quantities like σ, which the thermo engine computes; rockbot's
+"(T, pH, σ, …)" sketch would search a dependent variable. (ii) The space is mixed
+discrete/continuous (event sequences are combinatorial) — coarse-to-fine over event templates,
+continuous refinement within. (iii) Defer-to-geology becomes a PRIOR, formally: B2's
+plausibility bounds are the prior's support. (iv) Hold the seed fixed during search or
+marginalize over seeds — which is W-I's machinery. Depends on: A3/A4 (something to condition
+on), cheap headless forward runs (exists), W-I.
+
+### 6e. W-I — ensemble + uncertainty propagation (T4 made statistical)
+
+Accepted as the IMPLEMENTATION of what the fidelity budget's T4 row already promises (ensemble
+runs, 95% CI — rockbot's own review point #8): without ensembles T4 is a point claim. Two
+distinct uncertainty sources to propagate, and the tree is unusually well prepared for both:
+**parameter uncertainty** (draws within bench error bars on fitted params) × **realization
+uncertainty** (seed variation — the per-mineral seed streams, SIM 198, make seed
+marginalization clean and attributable). vugg-canary is the natural host: nightly, PASSIVE,
+accreting envelopes per scenario the way it accretes regressions now. Probe per-run cost
+before architecture — ensembles multiply compute; overnight-batch scale is the budget.
+
+### 6f. W-J — paragenetic sequences (the deposit above the vug)
+
+Accepted, with an honest census first: more of W-J exists in embryo than the pitch implies —
+events already sequence fluid changes within a scenario (the movements arc + event
+subsumption), substrate-affinity/paragenesis tables (js/26) already stack generations, and
+gen-1→etch→gen-2 (reactivated_fluorite_vein), paramorphs, and perimorphs are shipped
+multi-generation tenants. The genuinely NEW architecture is three things:
+
+1. **Geometry-modifying events** — fracture/brecciation that changes the WALL and breaks
+   existing crystals (ties to the census's cleavage/fracture gap and the deformation arc; O8's
+   cockade clasts live at this boundary).
+2. **Scenario composition as syntax** — `then:` chains in scenarios.json5 (scenario A → 
+   transition event → scenario B), with prior generations persisting as substrate.
+3. **Multi-vug correlation** — several cavities driven by ONE regional fluid timeline. And
+   here the bench connection is exact: **the catalog's LOT entity is W-J's ground truth** — a
+   flat of specimens from one pocket must be predicted by the SAME fluid history, specimen by
+   specimen. The boss's lot-based ingestion design and this workstream are the same idea seen
+   from opposite ends.
+
 ---
 
 ## 7. The data-availability map (the boss's stated worry, answered)

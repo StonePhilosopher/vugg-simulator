@@ -51,6 +51,17 @@ Living list of open work items, captured from session conversations so context s
 > parameterization stub named). One push-back: #7 — the O8 texture labeler classifies SIM STATE
 > (rule thresholds on kernel-truth stats, classifyEtch-shaped), not photos; S+M stands, photo-
 > side ML deferred as the review's own W-H.
+>
+> **▸ HORIZON LADDERS (rockbot round 2, evaluated + accepted → roadmap §6d–6f):** **W-H inverse
+> solver** (specimen→scenario via simulation-based inference — Cranmer et al. 2020 PNAS ✓; the
+> geological precedent is Spear & Selverstone 1983 P–T-paths-from-zoning ✓, i.e. petrology has
+> done T3 since 1983; caution: search SCENARIO INPUTS, not derived σ) · **W-I ensemble/UQ**
+> (implements the fidelity budget's T4 row; parameter draws × seed realizations; canary is the
+> host) · **W-J paragenetic sequences** (honest census: events/substrate-affinity/gen-1→gen-2
+> already exist; NEW = fracture-as-geometry-event, `then:` scenario composition, multi-vug
+> correlation — **the catalog's LOT entity is W-J's ground truth**: one pocket, one fluid
+> history, every specimen predicted together). Post-Phase-5+ — named, not scheduled. (W-H
+> letter now canonical for the inverse solver; the review's passing "texture W-H" superseded.)
 
 > ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
 >
