@@ -14,6 +14,20 @@ Living list of open work items, captured from session conversations so context s
 > depletion field (EV check first); Depth-C body colour when called.** Traps + instruments + the
 > full map in the handoff.
 
+> ## 🧭 ROADMAP (2026-07-03) — BYTE-IDENTICAL TO NATURE — **the convergence master plan: `ROADMAP-BYTE-IDENTICAL-NATURE-2026-07-03.md`**
+>
+> Boss directive 2026-07-03: detailed actionable plans from current fidelity to "a true byte
+> identical reproduction of nature," anchored on his primary sources — the 1,217-specimen catalog
+> (census on the 2026-05-11 snapshot: 1,044/1,217 specimens = 86% match a sim species; 98/180 sim
+> species have a real-rock bench; calcite 153, quartz 179, fluorite 44). Convergence ladder T0
+> genre → T4 process-identity, measured by the **SPECIMEN BENCH** (workstream W-A, the missing apex
+> instrument — `feedback_terminal_verification_specimens` made falsifiable). Workstreams: **A**
+> specimen bench · **B** aqueous bedrock (PHREEQC cross-check → Pitzer → speciation solver) · **C**
+> kinetics+form (the boss stones C0 calcite lever / C1 depletion field sit here UNCHANGED) · **D**
+> optics completion (D0 lustre stays parked; D1 colour jumps the queue on boss call) · **E** worlds.
+> Key insight: the only truly paywalled data class (face step-kinetics) is exactly what the catalog
+> substitutes — fit rate laws to measured anchor specimens. **Changes NO priorities — it frames them.**
+
 > ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
 >
 > **▸ 2026-07-02 — Depth-A COMPLETE (research `525e289` → A1 data `524d9ea` → A2 builder `6c748d0` → A3 data).**
