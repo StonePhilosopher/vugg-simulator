@@ -27,6 +27,19 @@ Living list of open work items, captured from session conversations so context s
 > optics completion (D0 lustre stays parked; D1 colour jumps the queue on boss call) · **E** worlds.
 > Key insight: the only truly paywalled data class (face step-kinetics) is exactly what the catalog
 > substitutes — fit rate laws to measured anchor specimens. **Changes NO priorities — it frames them.**
+>
+> **▸ AMENDED same day — THE BIG ASK (boss): W-F ONTOGENY added** — *"the strange interpenetrations
+> of crystals growing together, the way one side of a crystal may grow differently than another
+> side, how uneven mineral inclusions can alter later layers of growth… the sim is focused on
+> idealized geometric forms rather than the complex and incomplete way they form in nature."*
+> Full researched arc (15-agent research+census, citations adversarially verified):
+> **`PROPOSAL-ONTOGENY-2026-07-03.md`** — rungs O0 half-forms → O1 unequal face development
+> (census: the Wulff kernel already stores d PER FACE; js/46:431 is the single broadcast point)
+> → O2 induction/contact surfaces → O3 earned geometric selection (Kolmogorov 1949; analytic
+> d^(−1/2) oracle) → O4 engulfment render (the enclosure mechanic exists sim-side, renderer never
+> reads `enclosed_by`) → O5 ELO phantom/sceptre + split-growth ladder → O6–O8. Prior-art check:
+> NO published druse competitive-polyhedra simulator exists — novel territory. Also: the catalog
+> is ~1/5th of the collection the boss can access (bench ceiling ~5× higher).
 
 > ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
 >

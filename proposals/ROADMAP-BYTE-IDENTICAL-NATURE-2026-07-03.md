@@ -12,6 +12,17 @@ call, Depth-B lustre parked) remain exactly as recorded in
 the workstreams behind them, and the answer to the data problem — which turns out to live in a
 drawer cabinet, not a journal paywall.
 
+> **AMENDED 2026-07-03 (same day, boss follow-up — "the big ask"):** *"the strange
+> interpenetrations of crystals growing together, the way one side of a crystal may grow
+> differently than another side. how uneven mineral inclusions can alter later layers of growth.
+> right now the sim is focused on creating the idealized geometric forms rather than the complex
+> and incomplete way they form in nature."* That field has a name — MINERAL ONTOGENY — and it is
+> now **workstream W-F** (§6b) with its own researched, citation-verified arc proposal:
+> **`PROPOSAL-ONTOGENY-2026-07-03.md`**. Two more corrections from the same message: the catalog
+> is only **~1/5th of the collection the boss has access to** (the W-A bench ceiling is ~5×
+> higher than §2's census), and T0 below now reads honestly — held for isolated individuals,
+> idealized at the aggregate.
+
 ---
 
 ## 0. What "byte-identical to nature" means here — the convergence ladder
@@ -25,7 +36,7 @@ sharpens the instrument that measures it. The ladder, so progress is falsifiable
 
 | tier | claim | who/what falsifies it | status today |
 |---|---|---|---|
-| **T0 — genre** | a mineralogist names the SPECIES from the render alone | the boss's eye; any field guide | largely held for the shipped tenants (Wulff forms, calcite morphology, sceptres, hourglass selenite, diaphaneity) |
+| **T0 — genre** | a mineralogist names the SPECIES from the render alone | the boss's eye; any field guide | held for shipped tenants **as isolated individuals**; the AGGREGATE is idealized — real druses are contact faces, buried losers, asymmetric individuals (boss call 2026-07-03 → W-F) |
 | **T1 — locality** | they name the LOCALITY (Elmwood vs Naica vs Grimsel habit+colour+association) | provenance-known specimens; the image-corpus method | partial — scenario-tuned habits exist; colour is still the class palette |
 | **T2 — specimen-metric** | rendered metrics match a SPECIFIC catalog specimen within measured tolerance (interfacial angles, aspect ratios, size distribution, CIELAB colour under a known illuminant) | `tools/specimen-bench.mjs` (§2, to be built) against catalog measurements | **does not exist — the keystone gap** |
 | **T3 — specimen twin** | given a specimen, the sim grows ITS digital twin: a fluid history is inverse-fitted within geologic plausibility and the twin passes T2 on held-out metrics | held-out metrics + defer-to-geology constraints | far |
@@ -50,6 +61,7 @@ Grounded in the tree as of `69203ad` (SIM 214). "Have" means shipped and tested,
 | **surface** | calcite terraces; pyrite striations; etch overprint (SIM 212); CDR/frost states | growth hillocks + vicinal faces from the same kinetic params; striation generalization (quartz m-face transverse striations); cleavage/fracture on broken faces | **W-C** |
 | **optics** | Depth-A diaphaneity SHIPPED (94/180 two-source verified → % translucency); lustre data recorded (parked, boss call); trace-cation colour dispatchers (V⁴⁺, smoky, garnet Cr/Mn/Fe) | Depth-C body colour (class palette → species/chemistry colour); zoned colour + phantoms; inclusions (chlorite/rutile/two-phase); fluorescence render (chemistry-side UV exists in zone bars; no emissive render) | **W-D** |
 | **context** | 37 scenarios; paragenesis/substrate affinity (js/26); open_system walls; wall composition classes | host-rock lithology as a rendered material (the vug sits in a rock, not a void); matrix/gangue textures; more locality scenarios (Sweetwater, Elmwood slated) | **W-E** |
+| **ontogeny (individual + aggregate)** | ideal convex Wulff bodies (full polyhedra, base-at-anchor); enclosure/liberation bookkeeping the renderer never reads (js/85c:672-751); spontaneous-twin roll; sceptre/etch as DECLARED overprints; c-axis hard-coded wall-normal | attachment half-forms; unequal face development (per-face h_i — the kernel already stores {n,d} per face; js/46:431 is the single broadcast point); induction/contact surfaces (neighbor meshes interpenetrate freely today); EARNED geometric selection; engulfment render; ELO phantoms/sceptres; hopper+recovery | **W-F** |
 | **verification** | cold-ci; canary; seed-42 baselines + strip archive/differ; probe/census/sweep idiom; optics-audit; image-corpus method | **the specimen bench — NOTHING today verifies against a real rock quantitatively.** The apex instrument is missing; everything else is proxies | **W-A** |
 
 ---
@@ -130,6 +142,29 @@ chemistry, depletion) reads the fluid. In-tree comments already name B1 as the k
 | **E2 — locality scenarios** | Sweetwater snowball barite + Elmwood perimorph (already slated in memory) and successors — **new rule from this roadmap: every new scenario names its bench anchor** (a catalog specimen or an explicit "no specimen yet" debt) | M each |
 | **E3 — replacement textures** | pseudomorph/perimorph surface fidelity (the cast exists; the granular replacement texture doesn't) | M |
 
+## 6b. W-F — ontogeny: the imperfect real (added 2026-07-03 — THE BIG ASK)
+
+The full arc lives in **`PROPOSAL-ONTOGENY-2026-07-03.md`** (researched + citation-verified the
+same day: Kolmogorov 1949 geometric selection, Self & Hill 2003 induction surfaces, Takahashi
+et al. 2004 ELO sceptre mechanism, Shtukenberg et al. 2012 splitting grades, Sizaret et al.
+2006 flow asymmetry, Norris & Watson 2009 kinematics — plus the census that found the Wulff
+kernel already stores d per individual face, so unequal development is a data-generation
+change, not kernel surgery). Rungs in brief:
+
+| rung | one line | SIM |
+|---|---|---|
+| **O0** | attached crystals become HALF-FORMS clipped at the wall with a real contact scar | render-only |
+| **O1** | unequal face development: per-face h_i from real exposure geometry (Steno pin: never tilt a normal) | render-only, C1 upgrades the driver |
+| **O2** | induction/contact surfaces between neighbors at growth-rate-weighted meeting planes — kills mesh interpenetration, births druse texture | render-only candidate |
+| **O3** | EARNED geometric selection: random nucleation tilt + competitive burial; analytic oracle = Gray's d^(−1/2) survivor law | SIM bump |
+| **O4** | engulfment made visible (the enclosure mechanic EXISTS sim-side, renderer never reads `enclosed_by`) + coats_front/embedded inclusion classes | render + adjacency fix |
+| **O5** | inclusion-perturbed regrowth: ELO phantom/sceptre earned from per-face-class masking; split-growth ladder to spherulite | SIM bump |
+| **O6–O8** | flow one-sidedness (Sizaret) · hopper+recovery (Berg/σ*) · texture classifier + cockade substrates | mixed |
+
+**Prior-art note:** no published simulator applies competitive faceted-polyhedra growth to
+druses (closest: crack-seal vein models, Bons 2001 / Nollet 2005). This workstream is novel
+territory on 75-year-old verified mathematics.
+
 ---
 
 ## 7. The data-availability map (the boss's stated worry, answered)
@@ -154,10 +189,16 @@ start; interlibrary/author-copy requests are a nice-to-have for C2, not a blocke
 
 **Phase 1 (next sessions):** C0 calcite lever (boss stone) + A1 bridge/anchors + A2 protocol.
 C0 ships with the first T2 acceptance pair; A1/A2 are cheap and unlock everything.
+**Phase 1.5 (the big ask's visible foundation, amended 2026-07-03):** O0 half-forms → O1
+unequal development → O2 induction surfaces — the render-only ontogeny core; each is a
+byte-identity candidate shipped by the standing ritual.
 **Phase 2:** A3 metrics + A4 bench (passive) + B2 PHREEQC instrument + B3 debt closure.
-**Phase 3:** C1 depletion field (boss stone, EV check first) · then B1 Pitzer against B2's table.
-**Phase 4:** B5 speciation solver · C2 face-rate laws bench-calibrated, tenant by tenant · C4 twins.
-**Phase 5+:** C3 microtopography · C5 CSD · D2/D3/D4 · E rungs interleaved.
+**Phase 3:** C1 depletion field (boss stone, EV check first — **now doubly load-bearing: it is
+the bedrock driver of W-F's one-sidedness**) · O3 geometric selection · then B1 Pitzer against
+B2's table.
+**Phase 4:** B5 speciation solver · C2 face-rate laws bench-calibrated, tenant by tenant · C4
+twins · O4 engulfment + O5 perturbed regrowth (share C1-era rebake windows).
+**Phase 5+:** C3 microtopography · C5 CSD · O6–O8 · D2/D3/D4 · E rungs interleaved.
 **Any time the boss calls it:** D1 colour (render-only, jumps the queue). **Never unprompted:** D0.
 
 Every rung ships by the standing ritual — probe first, law with a source column, calibrate at the
