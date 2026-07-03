@@ -221,6 +221,9 @@ class Crystal {
     //               {-111} the oblique sphenoid WEDGE; the FIRST non-orthogonal cell (β=113.81°), so
     //               {100}∧{001}=66.19°≠90° (the wedge flag); token prism/tablet, scaled isotropically
     //               by diameter like wulfenite/barite (b is the long axis, internal to the body).
+    //               growthFrac is LIVE (rung 4a.8): re-derived each step, so the body matures on
+    //               screen instead of freezing at its ~30µm tag-step form (biasC stays tag-fixed
+    //               except wulfenite's Pb:Mo integral, 4a.7).
     //               All render-only → size scalars untouched, byte-identical (no SIM bump, no rebake).
     this.zones = [];
     this.total_growth_um = 0;

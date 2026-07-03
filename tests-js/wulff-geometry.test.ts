@@ -125,6 +125,13 @@ describe('Wulff geometry kernel — registry face-set builder (the tenant path)'
     expect(octFaces(octal)).toBeGreaterThan(octFaces(cubic));     // pure oct (8) > pure cube (0)
   });
 
+  it('rung 4a.8 band-edge guard — BOTH octahedral band edges [0.38,0.46] keep the {100} truncations at g=1.0 (the old low edge 0.32 collapsed to a perfect octahedron there)', () => {
+    for (const biasC of [0.38, 0.46]) {
+      const p = wulffPolyhedron(wulffFaceSetForMineral('fluorite', 1.0, 0, biasC));
+      expect(p.faces.length).toBe(14);   // 8 octahedron + 6 {100} facets — reduced, NOT absent (Bosze & Rakovan)
+    }
+  });
+
   it('determinism — identical inputs give byte-identical face sets (rng-free)', () => {
     const a = wulffFaceSetForMineral('fluorite', 0.5, 11, 1.0);
     const b = wulffFaceSetForMineral('fluorite', 0.5, 11, 1.0);
@@ -318,16 +325,20 @@ describe('Wulff geometry kernel — barite via the registry (rung 4a.4)', () => 
     expect(_makeWulffGeom(faces)).toBeTruthy();
   });
 
-  it('a representative wittichen-bladed value (biasC 2.5 — mid of the live 2.24–2.82 band — at g 0.15) → a RECTANGULAR tabular plate: 2 pinacoid, wider than thick, elongated along b (the {210}>{011} face-rate correction, 2026-07-01)', () => {
-    const p = wulffPolyhedron(wulffFaceSetForMineral('barite', 0.15, 0, 2.5));
-    expect(pinacoidFaces(p)).toBe(2);                    // the flat plate faces, top + bottom
-    expect(p.faces.length).toBe(10);                     // the full pinacoid+dome+prism rim survives (o{011} does NOT self-eliminate)
-    expect(extent(p, 0)).toBeGreaterThan(extent(p, 1));  // diameter (X) > thickness (Y) — a plate, not a column
-    // THE orthorhombic signature: a≠b → the in-plane outline is RECTANGULAR, not square (wulfenite's is
-    // square, X≈Z). Since the {210}>{011} correction the prominent m{210} prism makes the plate longer
-    // along b (Z≈b) than a (X≈a) — the a-vs-b direction is locality-dependent + was never ground-truth-
-    // verified; only the rectangular-ness (Z≠X) is invariant. Jitter scales X and Z ~equally.
-    expect(extent(p, 2)).toBeGreaterThan(extent(p, 0) * 1.1);
+  it('a representative wittichen-bladed value (biasC 2.5 — mid of the live 2.24–2.82 band) → a RECTANGULAR tabular plate at BOTH ends of its live-g path (tag-time 0.15 → earned 0.64, rung 4a.8): 2 pinacoid, wider than thick, elongated along b (the {210}>{011} face-rate correction, 2026-07-01)', () => {
+    // g runs LIVE since rung 4a.8: a wittichen blade tags near 0.15 and matures to ~0.64 (the census
+    // hero, 161µm). The plate must hold its genre at every point on that path.
+    for (const g of [0.15, 0.64]) {
+      const p = wulffPolyhedron(wulffFaceSetForMineral('barite', g, 0, 2.5));
+      expect(pinacoidFaces(p)).toBe(2);                    // the flat plate faces, top + bottom
+      expect(p.faces.length).toBe(10);                     // the full pinacoid+dome+prism rim survives (o{011} does NOT self-eliminate)
+      expect(extent(p, 0)).toBeGreaterThan(extent(p, 1));  // diameter (X) > thickness (Y) — a plate, not a column
+      // THE orthorhombic signature: a≠b → the in-plane outline is RECTANGULAR, not square (wulfenite's is
+      // square, X≈Z). Since the {210}>{011} correction the prominent m{210} prism makes the plate longer
+      // along b (Z≈b) than a (X≈a) — the a-vs-b direction is locality-dependent + was never ground-truth-
+      // verified; only the rectangular-ness (Z≠X) is invariant. Jitter scales X and Z ~equally.
+      expect(extent(p, 2)).toBeGreaterThan(extent(p, 0) * 1.1);
+    }
   });
 
   it('higher biasC → thinner plate (the tabular thinness knob; bias on {001})', () => {
@@ -345,9 +356,11 @@ describe('Wulff geometry kernel — barite via the registry (rung 4a.4)', () => 
 
 // rung 4a.5 — galena, the SECOND cubic tenant (after fluorite). No new kernel: it reuses
 // wulffCubicNormals + the registry's {100}+{111}. grow_galena hardcodes habit='cubic', so the
-// classifier renders a cube-DOMINANT body with VISIBLE {111} corner truncations — the band [1.0,1.15]
-// is chosen to KEEP those truncations alive; a perfect cube (biasC ≳ 1.25) would be pixel-identical to
-// the old cube primitive (the render-upgrade-visible no-op). These pins guard exactly that property.
+// classifier renders a cube-DOMINANT body with VISIBLE {111} corner truncations — the band
+// [0.88,1.02] (re-placed at earned g, rung 4a.8; was [1.0,1.15] at the frozen tag-g) is chosen to
+// KEEP those truncations alive AT g=1.0, where the mvt heroes now render; {111} self-eliminates at
+// biasC ≈ 1.19 there — a perfect cube pixel-identical to the old primitive (the render-upgrade-
+// visible no-op). These pins guard exactly that property.
 describe('Wulff geometry kernel — galena via the registry (rung 4a.5, cubic)', () => {
   it('galena yields the 14-plane cube+octahedron face set (like fluorite) + builds a solid', () => {
     const faces = wulffFaceSetForMineral('galena', 0.5, 7, 1.1);
@@ -356,13 +369,22 @@ describe('Wulff geometry kernel — galena via the registry (rung 4a.5, cubic)',
     expect(_makeWulffGeom(faces)).toBeTruthy();
   });
 
-  it('the cube band (biasC 1.1) is a TRUNCATED cube — all 8 {111} corner triangles survive, the 6 {100} faces become octagons', () => {
-    // crystalId 0 = the renderer's actual call (its internal jitter is then a fixed 0.88)
-    const p = wulffPolyhedron(wulffFaceSetForMineral('galena', 0.5, 0, 1.1));
+  it('the cube band at the EARNED params (biasC 0.95 mid-band, g=1.0 — the live mvt hero) is a TRUNCATED cube — all 8 {111} corner triangles survive, the 6 {100} faces become octagons', () => {
+    // crystalId 0 = the renderer's actual call (its internal jitter is then a fixed 0.88); g=1.0 =
+    // the live growthFrac of a fully-grown crystal since the rung-4a.8 un-freeze
+    const p = wulffPolyhedron(wulffFaceSetForMineral('galena', 1.0, 0, 0.95));
     const tri = p.faces.filter((f: any) => f.verts.length === 3).length;   // {111} truncation triangles
     const oct = p.faces.filter((f: any) => f.verts.length > 4).length;     // {100} faces, now octagonal
     expect(tri).toBe(8);     // every corner truncated → the visible upgrade over a perfect cube
     expect(oct).toBe(6);
+  });
+
+  it('rung 4a.8 band-edge guard — BOTH new band edges keep all 8 truncations at g=1.0 (the old hi edge 1.15 was a near-no-op there)', () => {
+    for (const biasC of [0.88, 1.02]) {
+      const p = wulffPolyhedron(wulffFaceSetForMineral('galena', 1.0, 0, biasC));
+      expect(p.faces.length).toBe(14);
+      expect(p.faces.filter((f: any) => f.verts.length === 3).length).toBe(8);
+    }
   });
 
   it('biasC ≳ 1.25 self-eliminates {111} → a PERFECT cube (the no-op galena must avoid — render-upgrade-visible)', () => {
@@ -426,13 +448,16 @@ describe('Wulff geometry kernel — titanite via the registry (rung 4a.6, monocl
     expect(_makeWulffGeom(faces)).toBeTruthy();
   });
 
-  it('at the live runtime params (g 0.15 frozen, biasC ≈ 2.0) → a 16-face oblique WEDGE: no degeneration (no hex-prism fallback), b (Y) the long axis', () => {
-    // g 0.15 is the frozen growthFrac the classifier tags at ~30µm; the renderer calls with crystalId 0
-    // (jitter a fixed 0.88). This is the EXACT body grimsel renders — it must be a real wedge, not null.
-    const p = wulffPolyhedron(wulffFaceSetForMineral('titanite', 0.15, 0, 2.0));
-    expect(p.faces.length).toBe(16);                      // all forms survive → the full sphenoid, not a fallback
-    expect(extent(p, 1)).toBeGreaterThan(extent(p, 0));   // b (Y) longer than a (X) — the elongate sphenoid
-    expect(extent(p, 1)).toBeGreaterThan(extent(p, 2));   // b (Y) longer than c-ish (Z)
+  it('at the live runtime params (g 0.15 tag-time → 1.0 earned since rung 4a.8, biasC ≈ 2.0) → a 16-face oblique WEDGE: no degeneration (no hex-prism fallback), b (Y) the long axis', () => {
+    // g runs live now: a grimsel wedge tags near 0.15 and matures to 1.0 (the census heroes,
+    // 610-945µm). The renderer calls with crystalId 0 (jitter a fixed 0.88). These are the EXACT
+    // bodies grimsel renders across a crystal's life — each must be a real wedge, not null.
+    for (const g of [0.15, 1.0]) {
+      const p = wulffPolyhedron(wulffFaceSetForMineral('titanite', g, 0, 2.0));
+      expect(p.faces.length).toBe(16);                      // all forms survive → the full sphenoid, not a fallback
+      expect(extent(p, 1)).toBeGreaterThan(extent(p, 0));   // b (Y) longer than a (X) — the elongate sphenoid
+      expect(extent(p, 1)).toBeGreaterThan(extent(p, 2));   // b (Y) longer than c-ish (Z)
+    }
   });
 
   it('higher biasC → flatter wedge on a{100} (the flattening knob; bias on {100})', () => {

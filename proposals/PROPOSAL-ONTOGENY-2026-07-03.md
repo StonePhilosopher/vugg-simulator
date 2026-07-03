@@ -1,0 +1,152 @@
+# PROPOSAL — THE ONTOGENY ARC: from ideal forms to grown individuals
+
+**2026-07-03 · workstream W-F of `ROADMAP-BYTE-IDENTICAL-NATURE-2026-07-03.md` · research pass
+run + citation-verified this session (15 agents; every load-bearing citation adversarially
+checked, one translation detail corrected)**
+
+Boss, 2026-07-03: *"the big ask is to mirror the complex realities of nature, the strange
+interpenetrations of crystals growing together, the way one side of a crystal may grow
+differently than another side. how uneven mineral inclusions can alter later layers of growth.
+right now the sim is focused on creating the idealized geometric forms rather than the complex
+and incomplete way they form in nature."*
+
+---
+
+## 0. The reframe
+
+The field this ask names has a name: **the ontogeny of minerals** — Grigor'ev's discipline
+(Grigor'ev 1965; Grigor'ev & Zhabin 1975): the life history of the mineral INDIVIDUAL
+(nucleation → growth → interference → arrest/alteration) and of the AGGREGATE whose texture —
+druse, crust, palisade, spherulite — is an emergent property of a population competing on a
+shared substrate, not a field authored on any one crystal. Crystallography describes the ideal
+form; ontogeny describes the biography. The sim currently ships the ideal form.
+
+The Wulff arc is not wasted — it is the substrate the biography acts on. You cannot starve,
+clip, or distort a form you cannot construct, and the census found the kernel is already the
+right data structure (§2). The discipline that keeps distortion honest is **Steno's law**:
+interfacial ANGLES are fixed by the lattice; face DEVELOPMENT is not. A "distorted" crystal is
+the same normal set with unequal central distances. *Never tilt a normal to fake asymmetry* —
+the classic beginner error, and this arc's first test pin.
+
+**Prior-art headline** (from the computational survey): competitive-growth simulation exists
+for thin films (van der Drift) and crack-seal VEINS (Bons 2001; Nollet et al. 2005 — the
+closest engine), and Gray (1984) did generic 2-D aggregates — but **no published simulator
+applies competitive faceted-polyhedra growth to mineral druses/vug linings.** This arc is
+genuinely novel territory, built on well-verified 75-year-old mathematics.
+
+## 1. The science (citations verified this session unless flagged)
+
+| phenomenon | the law | source (status) |
+|---|---|---|
+| **Kinetic form** | h_i(t) = ∫R_i dt per face; slow faces dominate; habit = RATIO of face rates; a face dies when neighbors clip it out | kinetic Wulff construction; Sunagawa 2005 CUP (✓ confirmed); the in-tree model already implements the symmetric case |
+| **Distortion** | angles invariant, areas free; asymmetry = per-face perturbation of h_i only | Steno 1669 / IUCr dictionary (✓ fetched) |
+| **Attachment** | wall crystals are euhedral only toward open space; the substrate side is an anhedral scar; free-floaters are doubly terminated | descriptive mineralogy (✓ fetched) |
+| **Geometric selection** | random-orientation seeds + equal rates → survivors are those whose fast axis is most wall-normal; density thins as a power law (d^(−1/2) in Gray's 2-D Monte Carlo; t^(−1/2)…t^(−4/3) analytic in Krapivsky) | **Kolmogorov 1949** Dokl. AN SSSR 65(5):681-684 (✓ confirmed; Engl. transl. = CRREL Draft Translation 1976, DTIC ADA019158 — NOT "AMS No. 53", corrected by the verifier); van der Drift 1967 Philips Res. Repts 22:267-288 (✓ confirmed); Gray 1984 Math. Geol. 16(1):91-100 (✓ fetched); Krapivsky, Nazarov & Tamm 2019 J. Stat. Mech. 073206 (✓ fetched) |
+| **Induction surfaces** | the mutual boundary of two simultaneously-growing crystals is a CONTACT FACE, not a crystal face: "contact faces when in direct competition, true crystal faces when in indirect competition"; it sits at the equal-TIME meeting locus of the two fronts — a growth-rate-WEIGHTED surface, planar for constant rate ratio, curved when the ratio drifts (NOT the perpendicular bisector unless rates are equal) | Self & Hill 2003 J. Cave & Karst Studies 65(2):130-151, open-access PDF (✓ fetched); boundary-orientation ∝ velocity ratio: Diggle et al. 2020 (✓ fetched); weighted-Voronoi formalization: Schaudt & Drysdale 1991 SCG'91 (✓ fetched). The clean Apollonius closed form (dist/v = const) is a modeling synthesis, flagged honestly |
+| **Facet-death events** | a moving intersection-of-half-spaces surface needs explicit topological handling when a facet shrinks to zero — the one correctness pitfall of the representation | Norris & Watson 2009 arXiv:0910.2207 (✓ fetched); Frank 1958 lineage |
+| **Vein regime switch** | R = growth rate / space-supply rate: R≫1 + smooth wall → blocky euhedral + wedging (open vug); R≲1 or rough wall → fibrous tracking growth | Ankit et al. 2013 CMP 166:1709-1723 phase-field (✓ fetched) |
+| **Flow one-sidedness** | face rate ∝ 1/δ_c (concentration boundary layer): upstream faces grow faster, leeward faces starve — the crystal records the flow direction | Sizaret et al. 2006 GJI 167(2):1027-1034 (✓ fetched) |
+| **Scepter/phantom mechanism** | hiatus dusting masks faces; renewed growth = Epitaxial Lateral Overgrowth where unmasked: thin/permeable film → buried phantom in lattice continuity; masked prism + free termination → scepter cap wider than trunk; reproduced experimentally | Takahashi, Imai, Hosaka, Kawasaki & **Sunagawa** 2004 Eur. J. Mineral. 16(6):1009-1017 (✓ confirmed exact) |
+| **Splitting grades** | single crystal → split → sheaf/bowtie → spherulite; split count and divergence angle rise monotonically with σ × impurity load; saddle dolomite = low-grade splitting (strain-rotation: Barber, Reeder & Smith 1985) | Shtukenberg, Punin, Gunn & Kahr 2012 Chem. Rev. 112(3):1805-1838 (✓ confirmed); Grigor'ev 1965 (✓ confirmed) |
+| **Hopper/recovery** | above σ* the face center starves (Berg effect) while rims advance → hopper/skeletal; when σ drops below σ*, centers infill — recovery | Desarnaud et al. 2018 JPCL (✓ fetched; the recovery half rests on Sunagawa's framework, flagged) |
+| **Engulfment classes** | inert embedded grains are passively overgrown, host stays ONE optically-continuous crystal (poikilotopic; sand calcite = 60% quartz in one rhomb); front-COATING reactive films interrupt the lattice → phantom/renewal branch. One boolean (`coats_front`) separates the physics | carbonate-cement literature (✓ fetched) |
+| **Texture vocabulary** | comb / crustiform / colloform / zonal — the classification a druse simulator's OUTPUT should be labeled with | Dong, Morrison & Jaireth 1995 Econ. Geol. 90(6):1841-1856 (✓ confirmed) |
+| **Cockade** | same selection law on an isolated/rotating interior clast instead of the wall | Frenzel & Woodcock 2014 JSG 68:194-206 [from-memory, verify at build] |
+
+**Negative results worth keeping** (they prevent future wrong turns): gravity settling is NOT an
+independent face-rate law — it acts through convection (fold into the flow driver) and through
+particle DELIVERY for inclusions (the hourglass path), never as a direct face-rate hack. Equal-
+weight Voronoi is the WRONG shortcut for unequal-speed neighbors. "Interpenetration" has no
+third mechanism: it is either competitive contact (induction) or lattice-controlled (epitaxy,
+misfit ≲8%) — nothing in between.
+
+## 2. What the tree already holds (census, file:line verified)
+
+The census's headline surprises, in the arc's favor:
+
+1. **The Wulff kernel is already per-face.** `wulffPolyhedron` (js/46:443-477) consumes a flat
+   `[{n,d}]` list with NO symmetry assumption; the per-family d is broadcast at exactly ONE
+   point (js/46:431, inside `wulffFaceSetForMineral`). Unequal face development is a
+   data-generation variant, zero kernel-math changes.
+2. **Zones can already carry morphology.** GrowthZone has per-zone `morph_regime/morph_form/
+   morph_surf_sigma` (js/27:125-127, calcite arc) and `inclusion_type` (js/27:98). Zoned-habit
+   and phantom-horizon data models are ready; only render paths are missing.
+3. **Engulfment EXISTS sim-side and is invisible.** `_check_enclosure`/`_check_liberation`
+   (js/85c:672-751, the Sweetwater mechanism) tag `enclosed_by`, stop the guest — and the
+   renderer never reads it (zero matches in js/99i). A whole shipped mechanic with no face.
+   (Caveat: its adjacency test is a position-STRING comparison, js/85c:690-693, not geometry.)
+4. **Bodies are full ideal polyhedra.** Base-at-anchor, optional occlusion sink, and a
+   fragment-shader discard past the wall (js/99i:4355-4376, 195-219) — no contact face, no cap
+   at the cut, buried halves still exist as geometry. Neighbors interpenetrate freely; the only
+   "intersection" in the file is deliberate twin geometry.
+5. **Geometric selection's OUTCOME is hard-coded.** Every crystal's c-axis is forced along the
+   wall normal (js/99i:3742-3750) + hash yaw. No crystal is ever mis-oriented, so no selection
+   ever happens — the comb texture is painted, not earned.
+6. **Neighbor queries are nearly free.** wall_anchor + ring/cell occupancy grid + WallMesh's
+   precomputed 4-neighbor adjacency (js/23:257-267, built for diffusion) compose into a
+   crystal-neighborhood API in a few lines. Gravity/up already exists (floor/wall/ceiling
+   orientation per vertex, air-mode stalactites).
+
+The design consequence: **all six of the boss's phenomena reduce to ONE representational
+upgrade — per-face central distances h_i with per-face modifiers (exposure, contact, coverage),
+integrated per step — plus an aggregate layer that resolves neighbor collisions.** The kernel
+speaks the language already; the sim just never says anything asymmetric in it.
+
+## 3. The rungs
+
+Ordered so each ships alone, byte-identical where marked, and every later rung consumes the
+earlier ones' state. Sizes: S/M/L per the roadmap convention.
+
+| rung | what ships | science | SIM impact | size |
+|---|---|---|---|---|
+| **O0 — attached-crystal truth** | Wall crystals become HALF-FORMS: clip the Wulff polyhedron at the attachment plane, generate a real cap face (the anhedral scar), stop h-integration on buried-hemisphere faces. Doubly-terminated only for floater/clast contexts. | euhedral-toward-cavity (✓) | render-only, byte-identical candidate | M |
+| **O1 — unequal development** | Per-face h_i via a `wulffFaceSetForMineral` variant. First modifiers are REAL and already computable: exposure (n_i · wall-outward, cavity solid angle) + neighbor shadow (occupancy grid + adjacency). Steno pin: normals identical to the species table, asserted in tests. | Steno (✓); kinetic Wulff (✓) | render-only first; C1 depletion field later upgrades the modifier from geometry to per-direction chemistry | M |
+| **O2 — induction surfaces** | Pairwise neighbor clipping: for each close pair, add a half-space at the growth-rate-weighted meeting surface (weights = the two crystals' integrated growth, NOT the midplane); retag clipped facets `contact` (matte/striated material, no euhedral gloss). Kills mesh interpenetration and births real druse texture in one rung. | Self & Hill (✓); Diggle (✓); Schaudt & Drysdale (✓) | render-only candidate (derived from existing positions/sizes) | L |
+| **O3 — geometric selection** | Nucleation gets a REAL orientation draw (tilt distribution); growth arrest when a neighbor's front overtakes (the Kolmogorov rule); survivors converge to wall-normal. The palisade is EARNED, and the base of a druse shows buried tilted losers — exactly what real plates show. Instruments first: survivor-density-vs-height probe checked against Gray's d^(−1/2) and Krapivsky's bounds — an analytic oracle before any render ships. | Kolmogorov (✓); van der Drift (✓); Gray (✓); Krapivsky (✓) | SIM bump + rebake (orientation becomes state) | L |
+| **O4 — engulfment made visible** | Renderer reads `enclosed_by`: guest renders inside host, host translucency (Depth-A) reveals it. Inclusion classes split by `coats_front`: embedded-inert (sand calcite, host stays one crystal) vs front-coating (routes to O5). Upgrade enclosure adjacency from string-compare to the O1 neighborhood query. | poikilotopic enclosure (✓) | render + one sim fix (adjacency); the fix moves baselines → bump | M |
+| **O5 — perturbed regrowth** | Per-face-class inhibitor coverage φ written by hiatus events: φ<φ_crit → phantom horizon in lattice continuity (zones already record it; renders via D2 rails); masked prism + free termination → the scepter EARNED by ELO (the alpine arc's declared sceptres gain their mechanism); σ×impurity above threshold → split-growth fans (sheaf → spherulite ladder; saddle dolomite is the shipped low-grade case). | Takahashi/ELO (✓); Shtukenberg grades (✓) | SIM bump (event schema + per-face state) | L |
+| **O6 — flow one-sidedness** | Per-vug flow vector; R_i scaled by upstream-ness (dot(n_i, −flow) through a boundary-layer factor). Feeds through O1's machinery unchanged. Gravity enters ONLY as convection/delivery per the negative result. | Sizaret (✓) | SIM bump (flow becomes scenario state) | M |
+| **O7 — hopper + recovery** | Berg-effect σ* threshold: rim-vs-center velocity within a face → hopper cavities; later low-σ zones infill (recovery generation in the zone record). Needs within-face relief — the biggest render lift; last. | Desarnaud (✓, recovery flagged) | SIM bump | L |
+| **O8 — texture classifier + cockade** | Post-hoc aggregate labeler (comb/crustiform/colloform/zonal — Dong et al. vocabulary) for narrator + bench; free interior clasts as substrates (cockade) reusing O3's machinery. | Dong et al. (✓); Frenzel & Woodcock [verify] | classifier render-only; cockade = scenario content | S+M |
+
+**Sequencing.** O0 → O1 → O2 is the visible foundation and stays render-only (byte-identity
+discipline holds; the probe/sweep/eye-check ritual per rung). O3 is the first SIM bump and the
+arc's scientific heart — its analytic oracle (survivor-density power law) is the cheapest
+strongest verification this project has ever had available. O4/O5 ride the C1 depletion field's
+era (same rebake windows where possible). This arc does NOT displace the boss stones: C0
+calcite lever ships first as planned; **C1 depletion field is the bedrock half of O1/O5-O6 —
+the boss's "one side grows differently" ask is exactly what C1's local σ exists to drive.**
+
+## 4. The bench closes the loop
+
+Ontogeny is what the specimen bench (W-A) will falsify FIRST: real druse plates are mostly
+contact faces, buried losers, and asymmetric individuals — the idealized render fails T2
+against nearly any real plate today. New A3 metrics this arc needs: **contact fraction** (facet
+area that is induction surface vs euhedral), **asymmetry index** (variance of h_i within a
+form), **survivor density vs height** on plate cross-sections, **intergrowth count**. The
+catalog being ~1/5th of the accessible collection raises the ceiling: intergrown, imperfect,
+"uncatalogable" specimens — the ones a dealer photographs least — are precisely this arc's
+ground truth. The boss's drawers are full of induction surfaces.
+
+## 5. Risks + blind spots
+
+1. **Geometry cost.** O2's pairwise clipping is O(pairs) with small constants (druses are
+   sparse; the occupancy grid prunes), but facet-death events (Norris & Watson) must be handled
+   explicitly or they will surface as render bugs. Budget a probe before committing.
+2. **Legibility.** A fully honest druse is a wall of contact faces — the field-guide aesthetic
+   must keep the hero termination readable. Tuning knob: scenario-level nucleation density.
+3. **RNG discipline.** O3's orientation draw touches the nucleation RNG cascade — the
+   redox-census/nuc-seed lessons apply in full (per-mineral seeds isolate the draw).
+4. **The verified-vs-synthesized line.** The Apollonius closed form and the hopper-recovery
+   half are modeling syntheses flagged above; if a specimen or probe contradicts them, the
+   synthesis yields first.
+5. **What I couldn't check:** Grigor'ev 1965's full text (attribution rests on fetched
+   secondary sources + catalog records); Frenzel & Woodcock from memory; per-mineral splitting
+   thresholds have NO literature constants — they will be bench-fitted per tenant, honestly
+   labeled as fits.
+
+---
+
+The maker's-mark dream said the only difference left should be which one casts a shadow. The
+rocks in the drawers grew crowded, starved on one side, dusted mid-life, and grown together —
+this arc is where the sim learns those verbs. The ideal polyhedron was the noun.

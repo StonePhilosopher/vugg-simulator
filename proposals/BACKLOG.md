@@ -2,12 +2,68 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer)
+> ## 🔍 SESSION (2026-07-02/03) — 4a.8 FROZEN-g RETIREMENT + OPTICS DEPTH-A SHIPPED — **CURRENT HANDOFF: `HANDOFF-FROZEN-G-AND-OPTICS-A-2026-07-02.md`** (read it first)
 >
-> Boss directive. A whole-render-layer realism goal, NOT a one-scenario job. Today optical
-> properties are ad-hoc: habits paint a flat `class_color` on an opaque material and
-> transparency is hand-set per tenant (selenite blade `opacity 0.82` inline; Naica's giant
-> crystals should read water-CLEAR but don't). Make a crystal LOOK like what it physically is:
+> Five commits live (`3981a0d` 4a.8 · `525e289` research · `524d9ea` A1 · `6c748d0` A2 · `8490f8a`
+> A3), Pages verified built == HEAD, tree clean, SIM 214 unchanged. Every Wulff body now matures
+> with growth (two biasC bands re-placed at earned g — the frozen-param CONVERSE lesson);
+> diaphaneity is per-species verified data driving plain % translucency through ONE
+> `buildCrystalMaterial` (Naica water-clear, 94/180 species verified two-source). **Boss
+> priorities set 2026-07-03: Depth-B lustre = LOW PRIORITY (the data existing in text form is
+> enough — don't build unprompted); next stones = the calcite σ/Ca:CO₃ lever, then the local-σ
+> depletion field (EV check first); Depth-C body colour when called.** Traps + instruments + the
+> full map in the handoff.
+
+> ## 🧭 ROADMAP (2026-07-03) — BYTE-IDENTICAL TO NATURE — **the convergence master plan: `ROADMAP-BYTE-IDENTICAL-NATURE-2026-07-03.md`**
+>
+> Boss directive 2026-07-03: detailed actionable plans from current fidelity to "a true byte
+> identical reproduction of nature," anchored on his primary sources — the 1,217-specimen catalog
+> (census on the 2026-05-11 snapshot: 1,044/1,217 specimens = 86% match a sim species; 98/180 sim
+> species have a real-rock bench; calcite 153, quartz 179, fluorite 44). Convergence ladder T0
+> genre → T4 process-identity, measured by the **SPECIMEN BENCH** (workstream W-A, the missing apex
+> instrument — `feedback_terminal_verification_specimens` made falsifiable). Workstreams: **A**
+> specimen bench · **B** aqueous bedrock (PHREEQC cross-check → Pitzer → speciation solver) · **C**
+> kinetics+form (the boss stones C0 calcite lever / C1 depletion field sit here UNCHANGED) · **D**
+> optics completion (D0 lustre stays parked; D1 colour jumps the queue on boss call) · **E** worlds.
+> Key insight: the only truly paywalled data class (face step-kinetics) is exactly what the catalog
+> substitutes — fit rate laws to measured anchor specimens. **Changes NO priorities — it frames them.**
+>
+> **▸ AMENDED same day — THE BIG ASK (boss): W-F ONTOGENY added** — *"the strange interpenetrations
+> of crystals growing together, the way one side of a crystal may grow differently than another
+> side, how uneven mineral inclusions can alter later layers of growth… the sim is focused on
+> idealized geometric forms rather than the complex and incomplete way they form in nature."*
+> Full researched arc (15-agent research+census, citations adversarially verified):
+> **`PROPOSAL-ONTOGENY-2026-07-03.md`** — rungs O0 half-forms → O1 unequal face development
+> (census: the Wulff kernel already stores d PER FACE; js/46:431 is the single broadcast point)
+> → O2 induction/contact surfaces → O3 earned geometric selection (Kolmogorov 1949; analytic
+> d^(−1/2) oracle) → O4 engulfment render (the enclosure mechanic exists sim-side, renderer never
+> reads `enclosed_by`) → O5 ELO phantom/sceptre + split-growth ladder → O6–O8. Prior-art check:
+> NO published druse competitive-polyhedra simulator exists — novel territory. Also: the catalog
+> is ~1/5th of the collection the boss can access (bench ceiling ~5× higher).
+
+> ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
+>
+> **▸ 2026-07-02 — Depth-A COMPLETE (research `525e289` → A1 data `524d9ea` → A2 builder `6c748d0` → A3 data).**
+> Diaphaneity is REAL now: 94/180 species carry a two-source-verified optics block (webmineral +
+> Handbook-of-Mineralogy PDFs, fetched; every render-reachable non-metallic species covered across
+> three research batches), ONE `buildCrystalMaterial` in js/99i replaces the inline assembly
+> (MeshPhysicalMaterial, transmission 0 — plain % translucency per the fixed decision, opacity =
+> 1−0.70·clarity), the selenite 0.82 magic number retired into the hourglass inclusion-body cap
+> while **Naica selenite now renders water-clear (0.335)** — the goal's named failure, fixed +
+> eye-checked (grid-through-the-blade overlay; galena/pyrite pixel-identical opaque, the
+> no-regression leg). Instruments: `tools/optics-audit.mjs` (52% verified, 138 translucent, 0
+> anomalies) + `tests-js/mineral-optics.test.ts` lint. **REMAINING in the goal: Depth-B lustre —
+> DEPRIORITIZED by the boss 2026-07-03** ("really low priority… I'm fine with that data just
+> existing in text form" — the terms + face-notes are recorded per-species; do NOT build the
+> consumer unprompted, even though it's easy) **and Depth-C body-colour fidelity** (class_color
+> is still the CLASS-taxonomy palette: galena and sphalerite share #7feb13 — the flat-green-galena
+> problem is Depth-C, and per-crystal smoky/amethyst/milky modulation with it; unscheduled, on
+> boss call).
+>
+> Boss directive. A whole-render-layer realism goal, NOT a one-scenario job. Before Depth-A,
+> optical properties were ad-hoc: habits painted a flat `class_color` on an opaque material and
+> transparency was hand-set per tenant (selenite blade `opacity 0.82` inline; Naica's giant
+> crystals should have read water-CLEAR but didn't). Make a crystal LOOK like what it physically is:
 > - **Diaphaneity** as a real per-mineral field: transparent (quartz/fluorite/gypsum/calcite)
 >   → translucent → opaque (galena/pyrite/magnetite). Drive material transparent/opacity/
 >   transmission from data, not inline constants.
@@ -22,13 +78,33 @@ Living list of open work items, captured from session conversations so context s
 >
 > Likely shape: a per-mineral `optics` block in minerals.json (diaphaneity + lustre + colour
 > notes) feeding ONE material-builder in js/99i, replacing scattered inline constants. Can be
-> SIM-NEUTRAL where it reads existing data — keep it so. **Wants its own research pass +
-> design doc (`proposals/RESEARCH-optical-realism-*.md`) before code** — colour & clarity are
-> exactly what a real specimen falsifies fastest ([[feedback_terminal_verification_specimens]],
-> defer-to-geology, image-corpus method). Full goal text in
-> `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
+> SIM-NEUTRAL where it reads existing data — keep it so. **The research pass + Depth-A design
+> doc EXISTS (2026-07-02): `proposals/RESEARCH-optical-realism-2026-07-02.md`** — status-quo
+> audit (one material site, the per-tenant hack table), verified 30-species diaphaneity/lustre
+> core (mindat+webmineral fetched), prominence tiers over the 104 expected species, the optics
+> schema + ONE-builder design honoring the fixed decision (plain % translucency, NO faked
+> refraction), the composition contract (sweep/naturalOpacity, sector-zoning vertexColors,
+> state modifiers), staged plan A1 data → A2 builder → Depth-B lustre → Depth-C colour.
+> Colour & clarity are exactly what a real specimen falsifies fastest
+> ([[feedback_terminal_verification_specimens]], defer-to-geology, image-corpus method).
+> Full goal text in `proposals/HANDOFF-APOPHYLLITE-AND-GYPSUM-2026-06-22.md` (➕ NEW GOAL section).
 >
-> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED · PHASE 4 DESIGN + 4a.0 KERNEL + 4a.1 FLUORITE + 4a.2 CALCITE + 4a.3 WULFENITE + 4a.4 BARITE + 4a.5 GALENA + 4a.6 TITANITE + 4a.4b BARITE {210}>{011} FACE-RATE CORRECTION + 4a.7 WULFENITE Pb:Mo EARNED-FORM LEVER (FIVE crystal systems, SIX tenants — cubic carries fluorite + galena; titanite is the FIRST oblique cell, monoclinic 2/m; wulfenite is the FIRST tenant whose form is a CHEMISTRY READOUT, id-hash retired) TENANTS SHIPPED (byte-identical, render-only)
+> ## ⬡ ARC (2026-06-22) — DIRECTIONAL / POLAR / STEPPED GROWTH (the central-distance model) — RESEARCHED · PHASE 0+1+2+3 SHIPPED · PHASE 4 DESIGN + 4a.0 KERNEL + 4a.1 FLUORITE + 4a.2 CALCITE + 4a.3 WULFENITE + 4a.4 BARITE + 4a.5 GALENA + 4a.6 TITANITE + 4a.4b BARITE {210}>{011} FACE-RATE CORRECTION + 4a.7 WULFENITE Pb:Mo EARNED-FORM LEVER + 4a.8 FROZEN-g RETIREMENT FLEET-WIDE (FIVE crystal systems, SIX tenants — cubic carries fluorite + galena; titanite is the FIRST oblique cell, monoclinic 2/m; wulfenite is the FIRST tenant whose form is a CHEMISTRY READOUT, id-hash retired; since 4a.8 every tenant's body MATURES live with growth) TENANTS SHIPPED (byte-identical, render-only)
+>
+> **▸ 2026-07-02 — rung 4a.8: the FROZEN-g RETIREMENT, fleet-wide — every Wulff body now matures live.**
+> The 4a.7 accumulator's growthFrac half generalized to all six tenants (js/45, the shared tagged-crystal
+> site): g re-derives from the current growth scalar each step instead of freezing at the ~30µm tag step.
+> Probe first (`tools/wulff-frozen-g-census.mjs`): 4/6 tenants rendered understated — fluorite hero g 0.15
+> vs 1.00 earned (1095µm), titanite 0.15→1.00 ×3, barite 0.15→0.64, galena ~0.7→1.00; calcite + wulfenite
+> already honest. The sweep guard (`tools/wulff-frozen-g-aspect-sweep.mjs`, committed) caught TWO bands
+> breaking genre at earned g — the bands had been eye-checked at the FROZEN g: **galena [1.0,1.15]→[0.88,1.02]**
+> (old hi edge = near-perfect cube at g=1.0, trunc 0.03 — the no-op by the side door; new band holds 0.11–0.17)
+> and **fluorite octahedral [0.32,0.52]→[0.38,0.46]** (old low half = PERFECT octahedron at g≥0.4, a Bosze &
+> Rakovan violation; new band keeps the {100} facet 13–34% of eq radius). Barite needed nothing — earned g
+> moves it INTO its documented aspect targets. Byte-identical (baseline + strip digest git-identical, SIM 214),
+> wulff suites 95 green (+5 pins incl. both band-edge guards at g=1.0), cold-ci 2136 green, before/after
+> THREE-overlay eye-check (galena corner triangles vs near-cube is the money shot). Post-fix census: Δ=0.00
+> on all 11 tagged crystals.
 >
 > **▸ 2026-07-01 (later) — rung 4a.7: the wulfenite Pb:Mo HABIT LEVER — the FIRST earned form (`00b160f`).**
 > The bedrock pass's #1 stone, shipped the same day. wulfenite's `{001}` biasC is now **B(⟨r⟩) = 1.25/⟨r⟩**

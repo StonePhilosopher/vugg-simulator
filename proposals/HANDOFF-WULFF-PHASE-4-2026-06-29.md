@@ -49,6 +49,21 @@
 > B(chemistry) law calibrated at the renderer's TRUE g (`tools/wulfenite-bias-aspect-sweep.mjs` — the old
 > band had been eye-checked at the frozen g≈0.21). The full {101} bipyramid flip (biasC<0.41) stays reserved
 > for Depth-B: engine habit dispatch + narrator + SIM bump.
+>
+> **Update (2026-07-02):** rung **4a.8** — the **frozen-g retirement, fleet-wide**: growthFrac re-derives
+> live for ALL six tenants (the 4a.7 pattern generalized to the shared tagged-crystal site in js/45), so a
+> body matures on screen instead of freezing at its ~30µm tag-step form. Probe-gated
+> (`tools/wulff-frozen-g-census.mjs`: 4/6 tenants understated — fluorite hero rendered g 0.15 with 1.00
+> earned, titanite 0.15→1.00, barite 0.15→0.64, galena ~0.7→1.00). The sweep guard
+> (`tools/wulff-frozen-g-aspect-sweep.mjs`) caught two bands breaking genre at earned g and RE-PLACED them:
+> **galena [1.0,1.15]→[0.88,1.02]** (the old hi edge was a near-perfect cube at g=1.0 — Trap §4's no-op by
+> the side door; {111} self-eliminates at ≈1.19 there) and **fluorite octahedral [0.32,0.52]→[0.38,0.46]**
+> (the old low half collapsed to a perfect octahedron at g≥0.4 — the Bosze & Rakovan violation). Barite
+> unchanged — earned g moves it INTO its documented aspect range; the un-freeze fixes its calibration.
+> **Trap §4 gains a corollary:** a band eye-checked at the frozen g is only eye-checked AT that g — verify
+> the kernel across the whole live-g path [tag-time 0.15, earned 1.0], not one point (both new band-edge
+> guards are pinned in the tests at g=1.0). Still byte-identical (SIM 214); wulff suites 95 green;
+> before/after THREE-overlay eye-checked.
 
 You're reading this because you're about to extend the way vugg decides what a crystal *looks like*.
 Sit with the model for ten minutes before you touch a file — it is small, and once it clicks the

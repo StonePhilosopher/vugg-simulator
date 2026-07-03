@@ -3557,6 +3557,105 @@ function _emitClusterSatellites(
 
 // Convert a #RRGGBB or rgb(...) string to THREE.Color. Falls back to
 // the bare-wall amber so unknown minerals don't render as black.
+// ============================================================
+// OPTICS Depth-A — the ONE crystal-material builder (the STANDING GOAL's
+// first consuming rung; design + verified data: proposals/RESEARCH-
+// optical-realism-2026-07-02.md §4). Diaphaneity → plain % translucency,
+// the boss's fixed decision: opacity = 1 − SPAN·clarity (clarity 1 →
+// 0.30, water-clear but present; clarity 0 → the exact opaque pipeline
+// this replaced, transparent flag off). transmission stays 0 — NO faked
+// refraction ever without a new decision. clarity comes from the
+// per-mineral optics block (data/minerals.json — 47 verified species
+// after research batches 1-2, more en route) else the class default.
+// Lustre is IN the data but NOT consumed (Depth-B); metalness/roughness
+// keep the class heuristics so the opaque path is bit-stable.
+// MeshPhysicalMaterial (the named builder): a strict superset of
+// Standard at transmission 0, so Depth-B lustre (clearcoat, sheen)
+// lands in the same object without a second migration.
+// _applyCavityClip's chunk anchors (#include <common> / begin_vertex /
+// void main) exist identically in the physical shaders.
+const OPTICS_TRANSLUCENCY_SPAN = 0.70;
+// Class-default clarity for species WITHOUT a verified optics block —
+// the safety net for the never-showcased tail + future species (every
+// scenario-expected species is getting a verified row; tools/
+// optics-audit.mjs exposes every resolved value for opportunistic
+// verification). Values lean on the verified table's class means;
+// bimodal classes (sulfide carries both galena 0 and sphalerite 0.40)
+// default to their OPAQUE-majority end because the translucent members
+// are exactly the famous ones that carry verified rows.
+const _OPTICS_CLASS_CLARITY: Record<string, number> = {
+  sulfide: 0.0, native: 0.0,               // metallic-opaque majorities
+  oxide: 0.10, hydroxide: 0.10,            // dark-translucent lean (Fe oxides verified 0 individually)
+  amphibole: 0.30,                          // fibrous/bladed aggregates
+  silicate: 0.45,
+  arsenate: 0.45, phosphate: 0.45, molybdate: 0.45,
+  carbonate: 0.55, sulfate: 0.55,
+  halide: 0.60, borate: 0.60,
+};
+function opticsClarityFor(spec: any): number {
+  if (spec && spec.optics && typeof spec.optics.clarity === 'number') {
+    return Math.max(0, Math.min(1, spec.optics.clarity));
+  }
+  const d = spec ? _OPTICS_CLASS_CLARITY[spec.class] : undefined;
+  return typeof d === 'number' ? d : 0.35;  // unknown class: cautious translucent lean
+}
+// The single assembly point for every crystal mesh material. Everything
+// the old inline block did (class_color, class metalness/roughness, the
+// CDR-porosity/etched/perimorph/sector-zoned/hourglass state modifiers)
+// plus the Depth-A translucency. State modifiers also DAMP clarity —
+// a corroded or porous surface scatters (physically right, and it keeps
+// the etched read distinct from the pristine one):
+//   etched ×0.35 · CDR pseudomorph ×0.5 · hourglass min(·,0.30) (the
+//   retired 0.82 magic number lives HERE now: 1−0.70·0.30 ≈ 0.79, the
+//   shipped inclusion-sandglass legibility — while pristine selenite is
+//   free to read water-clear, the goal's named fix).
+// Perimorph casts keep their shipped 0.42 ceiling (hollow-shell read).
+// depthWrite stays at the default TRUE for every opacity — the helix
+// overlay's restore path (js/99j _helixRestoreCrystalOpacity) imposes
+// exactly that on all crystal materials whenever it runs (incl. at
+// init), and it was the shipped behavior for the perimorph/hourglass
+// transparents; one policy, no divergence. Accept minor blend-order
+// softness in deep druses (doc §4.2 mitigation note updated).
+function buildCrystalMaterial(crystal: any, spec: any, f: any): any {
+  const colorStr = (spec && spec.class_color) || '#d2691e';
+  const klass = spec && spec.class;
+  const metalness = (klass === 'sulfide' || klass === 'native') ? 0.45 : 0.08;
+  let roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
+  // Q3a porosity boost for CDR pseudomorphs — Putnis 2009: CDR products are typically porous
+  // (volume-mismatch accommodation). Boss directive 2026-05-06 #4: renderer-roughness is the
+  // right fidelity level; the visual cue (less lustre, more matte) is what reads.
+  if (f.isCdrPseudomorph) roughness = Math.min(1.0, roughness + 0.18);
+  // Etched crystal — a corroded/dissolved surface is matte, not lustrous (face-realism arc §2).
+  if (f.isEtched) roughness = Math.min(1.0, roughness + 0.30);
+  let clarity = opticsClarityFor(spec);
+  if (f.isEtched) clarity *= 0.35;
+  if (f.isCdrPseudomorph) clarity *= 0.5;
+  if (f.isGypsumHourglass) clarity = Math.min(clarity, 0.30);
+  const matOpts: any = {
+    color: _topoParseColor(colorStr),
+    roughness: f.isPerimorphCast ? Math.min(1.0, roughness + 0.25) : roughness,
+    metalness: f.isPerimorphCast ? 0.0 : metalness,
+    // DoubleSide for every crystal — inside-the-cavity camera angles cull front-side-only
+    // meshes into hollow outlines; both faces keep terminations solid from any view. Perimorph
+    // casts additionally need it for the translucent-shell read.
+    side: THREE.DoubleSide,
+  };
+  const opacity = 1 - OPTICS_TRANSLUCENCY_SPAN * clarity;
+  if (f.isPerimorphCast) {
+    // Q4 perimorph cast — the hollow shell after dissolution: translucent + matte, the viewer
+    // reads the void inside. Diaphaneity can only make it MORE see-through, never less.
+    matOpts.transparent = true;
+    matOpts.opacity = Math.min(opacity, 0.42);
+  } else if (clarity > 0) {
+    matOpts.transparent = true;
+    matOpts.opacity = opacity;
+  }
+  // Sector (hourglass) zoning — the geom bakes ABSOLUTE per-vertex colours; colour=white so the
+  // material doesn't tint them. Composes with translucency (opacity applies over vertex colours).
+  if (f.isSectorZoned) { matOpts.color = 0xffffff; matOpts.vertexColors = true; }
+  return new THREE.MeshPhysicalMaterial(matOpts);
+}
+
 function _topoParseColor(s: string): any {
   if (!s) return new THREE.Color(0xd2691e);
   try {
@@ -4150,70 +4249,17 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       effectiveMineral = crystal.paramorph_origin;
     }
 
-    // Material — class_color from the mineral spec. Crystals lit by
-    // the same scene lights as the cavity, with a touch more
-    // metalness for sulfides / native elements (rough heuristic — E4
-    // can read a per-mineral material spec if needed).
+    // Material — the ONE optics builder (Depth-A, RESEARCH-optical-realism-2026-07-02.md §4.2).
+    // All the former inline assembly (class_color, class metalness/roughness heuristics, the
+    // CDR/etched/perimorph/sector-zoned/hourglass state modifiers) lives in
+    // buildCrystalMaterial now, PLUS the new per-mineral diaphaneity → % translucency (clarity
+    // from the verified optics blocks; class default for the tail). The hourglass 0.82 magic
+    // number retired into the builder's inclusion-body clarity cap.
     const spec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[effectiveMineral] : null;
-    const colorStr = (spec && spec.class_color) || '#d2691e';
-    const klass = spec && spec.class;
-    const metalness = (klass === 'sulfide' || klass === 'native') ? 0.45 : 0.08;
-    let roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
-    // Q3a porosity boost for CDR pseudomorphs — Putnis 2009 emphasizes
-    // that CDR products are typically porous (volume mismatch
-    // accommodation between parent and child phases). Boss directive
-    // 2026-05-06 #4: renderer-roughness boost is the right level of
-    // fidelity rather than a separate sim field; real pseudomorphs
-    // vary widely between dense and porous, and the visual cue (less
-    // metallic luster, more matte surface) is what reads to the
-    // viewer.
-    if (isCdrPseudomorph) {
-      roughness = Math.min(1.0, roughness + 0.18);
-    }
-    // Etched crystal — a corroded/dissolved surface is matte, not lustrous. Frost the
-    // material (crystal-face realism arc §2): higher roughness reads as the dull etched
-    // skin of a re-dissolved face. Geometry rounding (above) + frost together sell it.
-    if (isEtched) {
-      roughness = Math.min(1.0, roughness + 0.30);
-    }
-    // Q4 — perimorph cast. When a perimorph_eligible crystal has
-    // dissolved, it persists as a hollow shell (Cumbria/Cornwall
-    // quartz-after-fluorite type, Cave-in-Rock calcite-after-fluorite).
-    // The mesh body is the inherited (Q3a) outline; the material is
-    // translucent + double-sided so the viewer reads the void inside.
-    // metalness goes to 0 (luster is gone), roughness pushes to nearly
-    // matte (etched cast surface).
     const isPerimorphCast = crystal.dissolved && crystal.perimorph_eligible;
-    const matOpts: any = {
-      color: _topoParseColor(colorStr),
-      roughness: isPerimorphCast ? Math.min(1.0, roughness + 0.25) : roughness,
-      metalness: isPerimorphCast ? 0.0 : metalness,
-      // DoubleSide for every crystal — when the camera is INSIDE the
-      // cavity (zoomed in past the wall, orbiting from a vantage near
-      // the center) the front-side-only default culls the camera-
-      // facing back of each crystal mesh, leaving the user looking at
-      // the inside of the far wall and reading the crystal as a
-      // hollow outline. With DoubleSide both faces draw and the cube/
-      // prism termination stays solid from any view angle. Perimorph
-      // casts already needed this for the translucent-shell read; now
-      // every habit gets it. Per-fragment cost is small relative to
-      // the cavity-clip discard test that already runs anyway.
-      side: THREE.DoubleSide,
-    };
-    if (isPerimorphCast) {
-      matOpts.transparent = true;
-      matOpts.opacity = 0.42;
-    }
-    // Sector (hourglass) zoning — the geom bakes ABSOLUTE per-vertex colours (body =
-    // class_color, termination = hue-rotated contrast). Set color=white so the
-    // material doesn't tint them and flip vertexColors so the baked colours render
-    // directly (the two sectors read as distinct colours, sharp boundary at the
-    // prism/pyramid shoulder).
-    if (isSectorZoned) { matOpts.color = 0xffffff; matOpts.vertexColors = true; }
-    // A clear (non-flooded) hourglass blade reads as glassy gypsum — translucent so the
-    // internal sandglass of inclusions shows through; flooded blades stay opaque brown.
-    if (isGypsumHourglass) { matOpts.transparent = true; matOpts.opacity = 0.82; }
-    const mat = new THREE.MeshStandardMaterial(matOpts);
+    const mat = buildCrystalMaterial(crystal, spec, {
+      isCdrPseudomorph, isEtched, isPerimorphCast, isSectorZoned, isGypsumHourglass,
+    });
     _applyCavityClip(mat, state.clipUniforms);
 
     const mesh = new THREE.Mesh(geom, mat);
@@ -4360,10 +4406,12 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
       // breadcrumb. Sweep-writes-crystals mode: the helix overlay
       // multiplies this mesh's material opacity by a 0→1 sweep factor
-      // as the leading edge passes this anchor. naturalOpacity (1.0
-      // for ordinary crystals, 0.42 for perimorph casts) is captured
-      // here so the overlay-off restore path doesn't have to re-derive.
-      naturalOpacity: isPerimorphCast ? 0.42 : 1.0,
+      // as the leading edge passes this anchor. naturalOpacity is the
+      // builder's RESOLVED opacity (Depth-A: diaphaneity translucency,
+      // perimorph 0.42 ceiling, …) so the overlay-off restore path
+      // returns exactly what buildCrystalMaterial decided — the same
+      // generic capture the satellites already used.
+      naturalOpacity: mat.transparent ? mat.opacity : 1.0,
       // === END HELIX-OVERLAY-FORK ADDITION ===========================
     };
 
