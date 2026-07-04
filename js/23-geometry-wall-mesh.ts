@@ -570,8 +570,19 @@ class WallMesh {
       }
       return sum / N;
     };
-    const southR = meanRingRadius(0) * Math.cos(Math.PI / (2 * ringCount));
-    const northR = meanRingRadius(ringCount - 1) * Math.cos(Math.PI / (2 * ringCount));
+    // W-K V0 fix (2026-07-03): the caps must honor the polar profile like
+    // every ring vertex does (line ~519), or a flattened/collapsed cavity
+    // grows a full-radius NEEDLE at each pole: the cleft lens (polar factor
+    // q ≈ 0.22 at the poles) would spike through both flat faces, and the
+    // basin archetype has quietly carried the same wart at its pinched
+    // north pole (sigmoid ≈ 0.05 at φ=π, cap at ~full mean radius). For
+    // every legacy scenario the 3D builder zeroes the Fourier amplitudes,
+    // so polarProfileFactor(0) = polarProfileFactor(π) = 1.0 — caps
+    // byte-identical.
+    const southPolar = wall.polarProfileFactor ? wall.polarProfileFactor(0) : 1.0;
+    const northPolar = wall.polarProfileFactor ? wall.polarProfileFactor(Math.PI) : 1.0;
+    const southR = meanRingRadius(0) * Math.cos(Math.PI / (2 * ringCount)) * southPolar;
+    const northR = meanRingRadius(ringCount - 1) * Math.cos(Math.PI / (2 * ringCount)) * northPolar;
     positions[this.southIdx * 3 + 0] = 0;
     positions[this.southIdx * 3 + 1] = -southR;
     positions[this.southIdx * 3 + 2] = 0;

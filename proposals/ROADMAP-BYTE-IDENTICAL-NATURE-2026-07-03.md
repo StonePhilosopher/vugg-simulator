@@ -170,8 +170,8 @@ change, not kernel surgery). Rungs in brief:
 
 | rung | one line | SIM |
 |---|---|---|
-| **O0** | attached crystals become HALF-FORMS clipped at the wall with a real contact scar | render-only |
-| **O1** | unequal face development: per-face h_i from real exposure geometry (Steno pin: never tilt a normal) | render-only, C1 upgrades the driver |
+| **O0** ✅ SIM 215 (2026-07-03) | attached crystals become HALF-FORMS clipped at the wall with a real contact scar | render-only |
+| **O1** ◐ O1a exposure tranche ✅ 2026-07-04 (render-only) | unequal face development: per-face h_i from real exposure geometry (Steno pin held: never tilt a normal); O1b neighbor-shadow (occupancy grid) OPEN | render-only, C1 upgrades the driver |
 | **O2** | induction/contact surfaces between neighbors at growth-rate-weighted meeting planes — kills mesh interpenetration, births druse texture | render-only candidate |
 | **O3** | EARNED geometric selection: random nucleation tilt + competitive burial; analytic oracle = Gray's d^(−1/2) survivor law | SIM bump |
 | **O4** | engulfment made visible (the enclosure mechanic EXISTS sim-side, renderer never reads `enclosed_by`) + coats_front/embedded inclusion classes | render + adjacency fix |
@@ -264,7 +264,7 @@ is Self & Hill's substrate selection, fetched verbatim). Rungs in brief:
 
 | rung | one line | SIM |
 |---|---|---|
-| **V0** | archetype truth: give the cleft scenarios a real planar cleft (grimsel/tormiq are round 'pocket' cavities today); audit all 38 wall blocks against the genesis taxonomy | bump, per-scenario staged |
+| **V0** ✅ SIM 215 cleft tranche (2026-07-03) | archetype truth: the cleft scenarios have a real planar cleft (grimsel/tormiq re-genred off 'pocket'); the all-38 wall-block audit against the genesis taxonomy stays OPEN as V0's remaining tranche | bump, per-scenario staged |
 | **V1** | wall microtexture per genesis: Blumberg-Curl scallops (flow-velocity-parameterized), cleft fracture steps, sediment rind, vesicle glass | render-only |
 | **V2** | primer coats (Deccan green celadonite Stage-0) + substrate-conditioning decay s(d)=exp(−d/d₀) in nucleation | bump |
 | **V3** | substrate-aware botryoidal/colloform (convexity-biased hemispheres, contour-then-relax banding, Roedder crystalline anchor) — **retires the 4-blob** | render-first |

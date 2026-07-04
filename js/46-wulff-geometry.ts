@@ -395,13 +395,28 @@ function wulffMonoclinicNormals(hkl: any, a: number, b: number, c: number, betaD
 // octahedral (the REE/Y bias); a golden-ratio hash of crystalId adds rng-free
 // per-crystal variation. Returns [{n,d}] ready for wulffPolyhedron.
 // ------------------------------------------------------------
-function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: number, biasC: number): any {
+function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: number, biasC: number, exposureK?: number): any {
   const reg = WULFF_FORM_GEOMETRY[mineral];
   if (!reg) return null;
   const g = Math.max(0.05, Math.min(1.0, growthFrac || 0.5));
   // rng-free per-crystal jitter on the relative-rate spread (±12%, clamped).
   const hsh = (((crystalId || 0) * 0.6180339887498949) % 1 + 1) % 1;
   const jitter = 1.0 + (hsh - 0.5) * 0.24;
+  // W-F O1a — unequal development, exposure tranche (2026-07-04, review-r1
+  // interface). kExp > 0 breaks the per-family broadcast: each face's RATE is
+  // multiplied by f_geo = 1 + kExp·(n_i·û), û = local +Y = toward the cavity
+  // (a SPATIAL direction — after the renderer aligns local Y to the substrate
+  // normal it means "toward open fluid" for every tenant regardless of which
+  // crystallographic axis sits on Y). Up-facing faces are fed → advance →
+  // grow themselves smaller (the termination tightens toward the pocket);
+  // wall-facing faces starve → stay close → stay broad (the blunt base O0
+  // clips). Steno holds by construction: the modifier scales d, never bends n.
+  // Per review #1 the modifier acts on the RATE inside the accumulation —
+  // here the accumulation is the single-step d(g) product, and this
+  // render-time f_geo is the DECLARED APPROXIMATION (back-dates by
+  // construction); the C1-era per-step upgrade is pre-registered in the
+  // proposal. kExp absent/0 ⇒ bitwise-identical to the 4-arg call.
+  const kExp = exposureK || 0;
   const faces: any[] = [];
   for (const form of reg.forms) {
     let R = form.R;
@@ -420,7 +435,7 @@ function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: 
     // reachable across the biasC the tenants emit (rung 4a.1 swept the topology to
     // place its ranges: a 0.30 seed pinned everything to cuboctahedron). Absolute
     // scale is normalized away in _makeWulffGeom (±0.5 envelope).
-    const d = 0.05 + 1.0 * g * R;
+    const d0 = 0.05 + 1.0 * g * R;
     const normals = reg.system === 'cubic' ? wulffCubicNormals(form.hkl)
       : reg.system === 'trigonalR' ? wulffTrigonalNormals(form.hkl, reg.cell.a, reg.cell.c)
       : reg.system === 'tetragonal' ? wulffTetragonalNormals(form.hkl, reg.cell.a, reg.cell.c)
@@ -428,7 +443,18 @@ function wulffFaceSetForMineral(mineral: string, growthFrac: number, crystalId: 
       : reg.system === 'monoclinic' ? wulffMonoclinicNormals(form.hkl, reg.cell.a, reg.cell.b, reg.cell.c, reg.cell.beta)
       : null;
     if (!normals) return null;          // unknown crystal system — no Wulff path
-    for (const n of normals) faces.push({ n, d });
+    for (const n of normals) {
+      // O1a: the exposure factor is PER FACE (n[1] = n·û) — the first time two
+      // symmetry-equivalent faces of one form get different central distances.
+      // The modifier multiplies the GROWTH term only (SEED stays outside — the
+      // nucleus predates the gradient), with a 0.15 floor so a fully
+      // wall-facing face keeps a sliver of growth even at aggressive kExp.
+      //   d_i = SEED + SPAN·g·R · max(0.15, 1 + kExp·n_y)
+      const d = kExp !== 0
+        ? 0.05 + 1.0 * g * R * Math.max(0.15, 1 + kExp * n[1])
+        : d0;
+      faces.push({ n, d });
+    }
   }
   return faces;
 }
@@ -507,6 +533,14 @@ function _makeWulffGeom(faces: any): any {
   let maxAbs = 0;
   for (const v of poly.vertices) maxAbs = Math.max(maxAbs, Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2]));
   const s = maxAbs > 1e-9 ? 0.5 / maxAbs : 1;
+  return _wulffPolyToGeom(poly, s);
+}
+
+// Shared emission tail of the Wulff geometry builders: polyhedron + scale →
+// BufferGeometry (fan-triangulated, vertex normals). Split out of
+// _makeWulffGeom so the O0 half-form builder can emit with the FULL form's
+// normalization scale rather than its own.
+function _wulffPolyToGeom(poly: any, s: number): any {
   const positions: number[] = [];
   for (const f of poly.faces) {
     const vs = f.verts;
@@ -521,4 +555,52 @@ function _makeWulffGeom(faces: any): any {
   geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geom.computeVertexNormals();
   return geom;
+}
+
+// ------------------------------------------------------------
+// W-F O0 — attached-crystal truth (ontogeny arc, 2026-07-03). A wall-nucleated
+// crystal is euhedral only toward open space; the substrate side is an anhedral
+// scar, and the buried fraction of the ideal form NEVER EXISTED (Grigor'ev's
+// half-form). Build the polyhedron with ONE MORE half-space — the attachment
+// plane, perpendicular to the growth axis (kernel Y), at the attachFrac
+// quantile of the full form's Y-extent. The kernel then does everything:
+// vertices below the plane are culled and the plane's own polygon emerges as a
+// real face — the scar cap — angle-sorted and triangulated like any crystal
+// face. This is the exact mechanism O2 (induction surfaces) extends to
+// NEIGHBOR half-spaces; O0 is deliberately its one-plane special case so the
+// representation is proven before the aggregate layer consumes it.
+//
+// Steno pin: the crystal faces' normals are untouched — the clip adds a plane,
+// never tilts one (asserted in tests-js/cleft-halfform.test.ts).
+//
+// Normalization uses the FULL form's maxAbs, so the surviving half is
+// geometrically identical to the corresponding region of _makeWulffGeom's
+// body — the renderer's occlusion sink (offset cLen·(0.5−occF)) then puts the
+// scar cap at the anchor, flush with the wall. Returns null when the clip
+// degenerates (attachFrac ~1, vanishing form) — callers fall back to the full
+// polyhedron, then to the primitive (the D2 robustness ladder).
+// ------------------------------------------------------------
+function _makeWulffHalfFormGeom(faces: any, attachFrac: number, cutAtNucleus?: boolean): any {
+  if (!faces || !faces.length) return null;
+  const full = wulffPolyhedron(faces);
+  if (!full || full.vertices.length < 4 || full.faces.length === 0) return null;
+  let maxAbs = 0, ymin = Infinity, ymax = -Infinity;
+  for (const v of full.vertices) {
+    maxAbs = Math.max(maxAbs, Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2]));
+    if (v[1] < ymin) ymin = v[1];
+    if (v[1] > ymax) ymax = v[1];
+  }
+  if (!(ymax > ymin) || maxAbs <= 1e-9) return null;
+  const f = Math.max(0.05, Math.min(0.95, attachFrac || 0.5));
+  // The default cut is the NUCLEUS PLANE y = 0 (the kernel origin — where the
+  // crystal seeded on the wall), not the extent midpoint. The two coincide for
+  // symmetric forms, but O1a's exposure stretch moves the extent midpoint off
+  // the nucleus, and Grigor'ev's half-form is defined by where growth STARTED.
+  // Sim-declared attachedFraction keeps quantile semantics (cutAtNucleus false).
+  const yCut = (cutAtNucleus && ymin < 0 && ymax > 0) ? 0 : ymin + f * (ymax - ymin);
+  // keep y ≥ yCut: with n = [0,−1,0], n·v ≤ d ⇔ −y ≤ d, so d = −yCut.
+  const clipped = wulffPolyhedron(faces.concat([{ n: [0, -1, 0], d: -yCut }]));
+  if (!clipped || clipped.vertices.length < 4 || clipped.faces.length === 0) return null;
+  const s = 0.5 / maxAbs;   // FULL-form scale — see header comment
+  return _wulffPolyToGeom(clipped, s);
 }

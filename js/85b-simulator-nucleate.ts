@@ -911,6 +911,11 @@ _assignWallRing(position, mineral) {
         archBias === 'walls_only'   ? (orient === 'wall') :
         archBias === 'floor_only'   ? (orient === 'floor') :
         archBias === 'ceiling_only' ? (orient === 'ceiling') :
+        // W-K V0 — cleft archetype: druses grow on BOTH flat faces
+        // (footwall + hangingwall), not on the thin rim. Excluding the
+        // rim keeps crystals off the lens edge where the real cleft's
+        // aperture pinches shut.
+        archBias === 'floor_ceiling' ? (orient === 'floor' || orient === 'ceiling') :
         true;
       if (!allowed) weights[k] = 0;
       total += weights[k];

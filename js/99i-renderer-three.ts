@@ -3391,6 +3391,11 @@ function _emitClusterSatellites(
   parentCLen: number, parentAWid: number,
   geomToken: string,
   wall: any, ringCount: number, N: number, initR: number,
+  // W-F O0: the parent's attachment fraction. Satellites share the parent's
+  // GEOM — for a half-form (clipped) geom the scar cap sits at the mesh
+  // origin, so the satellite offset must sink by the same fraction or the
+  // cap floats visibly above the wall. 0 / undefined = legacy base-at-anchor.
+  parentOccF?: number,
 ) {
   const pattern = _CLUSTER_PATTERNS[geomToken] || _CLUSTER_PATTERN_DEFAULT;
   const n = _clusterSatelliteCount(crystal, pattern, parentCLen);
@@ -3511,7 +3516,7 @@ function _emitClusterSatellites(
     let sNz = baseNz * cosT + (tax * baseNy - tay * baseNx) * sinT + taz * kDotN * (1 - cosT);
     const nLen = Math.sqrt(sNx * sNx + sNy * sNy + sNz * sNz) || 1;
     sNx /= nLen; sNy /= nLen; sNz /= nLen;
-    const sOffset = sCLen * 0.5;
+    const sOffset = sCLen * (0.5 - (parentOccF || 0));   // W-F O0 — see param doc
     const satMesh = new THREE.Mesh(geom, mat);
     if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron' || geomToken === 'snowball') {
       satMesh.scale.set(sCLen, sCLen, sCLen);
@@ -3930,6 +3935,28 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // (canonical → 'dripstone' for ceiling/floor crystals on a
     // prism/spike/rhomb/scalene/botryoidal habit).
     const token = _resolveCrystalGeomToken(crystal, habitForGeom);
+
+    // W-F O0 — attached-crystal truth (ontogeny arc, 2026-07-03). A wall-
+    // nucleated EQUANT CLOSED form grew FROM the substrate, not ON it: its
+    // growth center sits at the nucleation site, so the buried half of the
+    // ideal polyhedron never existed (Grigor'ev's half-form) and the old
+    // base-at-anchor float rendered a museum figurine set down on the wall.
+    // Default the attachment fraction to 0.5 for those forms; a sim-declared
+    // _occlusion.attachedFraction (classifyOcclusion, occlusion-opted
+    // scenarios) stays authoritative when present. Prism/spike/needle
+    // families keep base-at-anchor — their growth is unidirectional along c
+    // and the flat base IS the scar. Snowball (clast-grown floater — the one
+    // doubly-terminated-by-right context), the crafted twin composites,
+    // air-mode dripstone, and the special builders keep their own contracts.
+    // Render-only: SIM state and baselines are untouched by construction.
+    const _simOccF = (crystal._occlusion && typeof crystal._occlusion.attachedFraction === 'number')
+      ? crystal._occlusion.attachedFraction : null;
+    const _o0Equant = token === 'cube' || token === 'octahedron' || token === 'rhomb'
+      || token === 'scalene' || token === 'tablet' || token === 'rhombic_dodec'
+      || token === 'dodecahedron';
+    let occF = _simOccF != null ? _simOccF
+      : (_o0Equant && crystal.growth_environment !== 'air' ? 0.5 : 0);
+
     let geom: any = null;
     let isSectorZoned = false;   // sector (hourglass) zoning → vertexColors material
     let isWulffCalcite = false;  // calcite Wulff polyhedron → isotropic scale (geom carries c-elongation)
@@ -4025,16 +4052,38 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       const isGlWulff = crystal.mineral === 'galena' && (token === 'cube' || token === 'octahedron');   // rung 4a.5 (cubic, like fluorite — isometric, no new scale branch)
       const isTiWulff = crystal.mineral === 'titanite' && (token === 'prism' || token === 'tablet');   // rung 4a.6 (monoclinic) — sphenoid_wedge/prismatic→prism, flattened_tabular→tablet
       if (isFlWulff || isCalWulff || isWfWulff || isBaWulff || isGlWulff || isTiWulff) {
+        // O0: the titanite sphenoid resolves to the prism token (outside the
+        // equant sink set above) but is an equant closed Wulff body — same
+        // half-form default as its tablet-token sibling.
+        if (isTiWulff && _simOccF == null && crystal.growth_environment !== 'air') occF = 0.5;
+        // W-F O1a — exposure tranche (2026-07-04): wall-anchored fluid crystals
+        // grow their fed (cavity-facing) faces ahead of their starved
+        // (wall-facing) faces — the kernel's f_geo = 1 + k·(n·û) per-face rate
+        // modifier (js/46). One constant for the whole fleet in this tranche;
+        // O1b upgrades it to per-crystal neighbor shadow, C1's depletion field
+        // eventually feeds the real per-direction σ. Air-mode keeps k = 0
+        // (dripstone delivery is a different physics — gravity film, not an
+        // isotropic bath gradient).
+        const kExp = crystal.growth_environment === 'air' ? 0 : 0.18;
         const formKey = (isFlWulff || isGlWulff) ? (wf.octahedral ? 'o' : 'c')   // cubic cube↔octahedron (galena octahedral is always false → 'c')
           : isCalWulff ? (wf.scaleno ? 's' : 'r') : 't';   // wulfenite + barite + titanite are single-body → 't' (mineral is in the key)
         const key = '__wulff_' + crystal.mineral + '_' + formKey
-          + '_' + Math.round(wf.biasC * 100) + '_' + Math.round(wf.growthFrac * 10);
+          + '_' + Math.round(wf.biasC * 100) + '_' + Math.round(wf.growthFrac * 10)
+          + '_h' + Math.round(occF * 20)    // O0 attachment-fraction bucket (0.05 steps)
+          + '_e' + Math.round(kExp * 100);  // O1a exposure bucket
         geom = state.geomCache.get(key);
         if (!geom) {
           // crystalId 0 → the kernel's internal jitter is a harmless constant (the per-crystal
           // spread already lives in biasC), so the quantized cache key dedupes cleanly.
-          const faces = wulffFaceSetForMineral(crystal.mineral, wf.growthFrac, 0, wf.biasC);
-          const g2 = faces ? _makeWulffGeom(faces) : null;
+          const faces = wulffFaceSetForMineral(crystal.mineral, wf.growthFrac, 0, wf.biasC, kExp);
+          // O0 half-form: clip at the attachment plane + real scar cap
+          // (js/46 _makeWulffHalfFormGeom). Degenerate clip → full
+          // polyhedron → primitive: the D2 robustness ladder, one rung longer.
+          const g2 = faces
+            ? (occF > 0
+                ? (_makeWulffHalfFormGeom(faces, occF, _simOccF == null) || _makeWulffGeom(faces))
+                : _makeWulffGeom(faces))
+            : null;
           if (g2) { geom = g2; state.geomCache.set(key, geom); }
         }
         if (isCalWulff && geom) isWulffCalcite = true;     // signal the isotropic scale below
@@ -4361,13 +4410,11 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     //
     // SUBSTRATE OCCLUSION (central-distance arc Phase 2, 2026-06-22): a wall-nucleated crystal
     // is sealed against the host over its attachment footprint, so the buried -c fraction does
-    // NOT project into the cavity. When js/45 classifyOcclusion (gated on wall.occlusion) tags
-    // _occlusion, sink the base by attachedFraction·cLen — pulling the centroid back toward the
-    // wall by the same amount — so only the emergent (1-attachedFraction) length + the free
-    // termination show: the singly-terminated drusy read. occF=0 (unset) ⇒ offsetMm = cLen·0.5,
-    // the EXACT base-at-anchor float (byte-identical placement for every non-opted scenario).
-    const occF = (crystal._occlusion && typeof crystal._occlusion.attachedFraction === 'number')
-      ? crystal._occlusion.attachedFraction : 0;
+    // NOT project into the cavity. Sink the base by occF·cLen — pulling the centroid back toward
+    // the wall by the same amount — so only the emergent (1-occF) length + the free termination
+    // show: the singly-terminated drusy read. occF comes from the W-F O0 block above the geom
+    // chain: sim-declared _occlusion.attachedFraction when present, the 0.5 half-form default
+    // for equant closed forms, 0 (exact base-at-anchor float) for everything else.
     const offsetMm = cLen * (0.5 - occF);
     mesh.position.set(
       ax + cAxisX * offsetMm,
@@ -4422,7 +4469,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // resolve a satellite click back to the parent crystal. The
     // geomToken selects a per-habit cluster pattern (acicular spray,
     // tabular rosette, prismatic forest, cubic carpet, etc.).
-    _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, cLen, aWid, token, wall, ringCount, N, initR);
+    _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, cLen, aWid, token, wall, ringCount, N, initR, occF);
   }
 }
 

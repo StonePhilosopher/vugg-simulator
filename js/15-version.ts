@@ -11547,5 +11547,45 @@
 //        length" plan, unblocked by the open-system shape fix. + tests + tools/gypsum-
 //        hourglass-probe.mjs STEPS override. SIM 213 -> 214 (great_salt_plains single-
 //        scenario rebake).
-const SIM_VERSION = 214;
+//   v215 — THE FOUNDATION RUNGS: W-K V0 cleft-truth + W-F O0 half-forms, co-staged
+//        (2026-07-03; the first code of the byte-identical-nature roadmap — entry points
+//        from HANDOFF-FOUNDATIONS-2026-07-03.md; co-evolution staging rule honored:
+//        both rungs touch grimsel/tormiq, ONE re-genre commit).
+//        V0 (SIM, two scenarios): new 'cleft' archetype (js/22) — planar-lens fissure via
+//        polar_flatten 0.22 (exact oblate profile q/√(q²sin²φ+cos²φ) in polarProfileFactor,
+//        the basin-precedent consumer-side mechanic) + in-plane elongation 0.35 → in-plane:
+//        aperture ~4.5-6:1 (Ricchi 2021 cleft geometry, scaled to pocket class); cleft-aware
+//        ringOrientation (two rim rings 'wall', faces = footwall 'floor' / hangingwall
+//        'ceiling') + new floor_ceiling nucleation bias → OPPOSED DRUSES meeting at the
+//        median seam (Self & Hill 2003), the alpine-cleft signature the round 'pocket'
+//        could never show. grimsel_alpine_cleft + tormiq move off 'pocket' (the census's
+//        worst-case shape lie, PROPOSAL-VUG-GENESIS §1.1); their pocket-tuned 3/5 bubble
+//        overrides retire (cleft default 2/4 — fracture smooth at cavity scale, angular
+//        steps are V1's microtexture layer). + pole-cap fix (js/23): caps now honor
+//        polarProfileFactor like every ring vertex — kills the full-radius pole NEEDLE the
+//        cleft would have grown AND the latent basin north-pole spike (legacy scenarios:
+//        factor = 1.0 exactly, caps byte-identical).
+//        O0 (render-only, fleet): attached-crystal truth (PROPOSAL-ONTOGENY §3 rung O0).
+//        Wall-nucleated EQUANT CLOSED forms (cube/octahedron/rhomb/scalene/tablet/dodec
+//        tokens + the 6 Wulff-branch tenants) default attachment fraction 0.5 — the
+//        Grigor'ev half-form: the buried half of the ideal polyhedron never existed; the
+//        museum-figurine base-at-anchor float retires. Sim-declared _occlusion.
+//        attachedFraction stays authoritative; prisms/spikes (unidirectional growth, base
+//        IS the scar), snowball (clast floater — doubly-terminated by right), twins,
+//        air-mode dripstone, special builders keep their contracts. Wulff-branch bodies
+//        get the TRUE kernel clip: the attachment plane enters wulffPolyhedron as ONE MORE
+//        HALF-SPACE (js/46 _makeWulffHalfFormGeom) and the scar cap emerges as a real face
+//        — the exact mechanism O2's neighbor induction surfaces will extend. Full-form
+//        normalization scale → visible half pixel-identical to the sunk full form; satellite
+//        offsets inherit the parent's occF so shared half-form geoms don't float. Steno pin
+//        asserted in tests (clip adds a plane, never tilts a normal). SIM 214 -> 215
+//        (V0 provenance). MEASURED baseline-diff 214↔215 = 0/37 — STRONGER than the
+//        predicted grimsel+tormiq-only: the ring draw consumes ONE rng number regardless
+//        of weights (parity by design), elongation renormalizes to the same mean radius,
+//        and cleft chemistry reads uniform ring fluids → every crystal's GROWTH HISTORY
+//        is bit-identical while its ANCHOR moved ring (structural re-genre, zero
+//        assemblage churn — the v207 gwindel idiom). The anchor-side change is pinned by
+//        tests instead (floor_ceiling occupancy at seed 42; the baseline instrument
+//        serializes counts/sizes and is blind to anchors BY DESIGN).
+const SIM_VERSION = 215;
 

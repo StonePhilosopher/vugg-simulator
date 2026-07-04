@@ -44,10 +44,12 @@
 //                     Explicit `vug_diameter_mm` always wins. See
 //                     js/22-geometry-wall.ts SIZE_CLASS_RANGES.
 //                     Optional `architecture: 'spherical' | 'irregular' |
-//                     'tabular' | 'pocket' | 'basin'` — cavity shape
-//                     archetype (PROPOSAL-HOST-ROCK Mechanic 5). Orthogonal
-//                     to size_class; a cave-sized basin or a vug-sized
-//                     tabular fracture pocket are both expressible.
+//                     'tabular' | 'pocket' | 'basin' | 'cleft'` — cavity
+//                     shape archetype (PROPOSAL-HOST-ROCK Mechanic 5;
+//                     'cleft' = W-K V0 planar-lens fissure, PROPOSAL-VUG-
+//                     GENESIS-2026-07-03 §6). Orthogonal to size_class; a
+//                     cave-sized basin or a vug-sized tabular fracture
+//                     pocket are both expressible.
 //   events:         — array of {step, type, name, description}
 //                     where `type` is the event-handler string identifier
 //   sources         — array of citation strings
@@ -2278,7 +2280,7 @@
         "Anchor: Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy (epidote sheet), which names Tormiq, Pakistan as a type-quality locality. Geology per mindat loc-5734: Tormiq lower valley = granite + amphibolite + ultramafic, central/upper = metasedimentary + metavolcanic; the epidote clefts are tied to the amphibolite/metabasite (the Ca-Al-Fe³⁺ source). Tectonic driver = Main Karakoram Thrust fracturing near the Nanga Parbat-Haramosh massif. Sub-localities Alchuri + Hashupa (Shigar) share the model.",
         "Fluid: alpine-cleft fissures carry a LOW-SALINITY (~1-3 wt% NaCl eq), OXIDIZED, meteoric-metamorphic fluid in brittle channelized flow at <450°C, retrograde to <200°C (Central-Alps analogue; Mullis 1994 GCA 58:2239 fluid inclusions; Bergemann et al. 2017 Swiss J. Geosci. fissure formation episodes). No published Tormiq fluid-inclusion ppm dataset exists — the broth is an order-of-magnitude design target inferred from alpine-cleft fluid character + epidote stoichiometry, to be calibrated against seed-42 per the tune-scenario loop.",
         "Engine fit: epidote's discriminator is REDOX (engine v196) — it gates on oxideRedoxAvailable O2>=0.5 on top of Ca/Al/Fe/Si + T 200-450. This broth holds O2 ~1.5 (strongly oxidizing → Fe³⁺ → deep pistachio green) across the run, with an Fe³⁺ pulse at the epidote_main stage. The cooling sweep (420→170°C via the event handlers) carries the fluid through epidote's 250-400 sweet spot for most of the run. byssolite = the actinolite engine (Mg+Fe+Ca+Si, no redox gate); adularia = feldspar (K+Al+Si); the cleft lining = quartz; late = calcite. Titanite, clinozoisite, and zoisite (true Tormiq associates) are not yet in the catalog — magnetite stands in for the Ti-Fe oxide stage; feldspar for adularia; actinolite for byssolite.",
-        "Wallrock: 'basalt' composition as the amphibolite proxy (inert silicate — amphibolite is metamorphosed basalt; the Ca-Al-Fe³⁺ arrives in the FLUID, not from wall dissolution). Architecture pocket (alpine cleft), pocket size class, shape_seed 1990 (the decade Tormiq epidote reached the international market).",
+        "Wallrock: 'basalt' composition as the amphibolite proxy (inert silicate — amphibolite is metamorphosed basalt; the Ca-Al-Fe³⁺ arrives in the FLUID, not from wall dissolution). Architecture CLEFT (W-K V0, SIM 215): the planar-lens Zerrkluft shape — opposed footwall/hangingwall druses, thin rim — replacing the round 'pocket' the scenario wore before the vug-genesis arc. Pocket size class, shape_seed 1990 (the decade Tormiq epidote reached the international market). Growth histories measured bit-identical across the re-genre (0/37 baseline drift), so the seed-42 census below still stands.",
         "Calibration target: the hand specimen is a lustrous dark-pistachio-green doubly-terminated epidote prism (or a divergent spray on byssolite) perched on a quartz-lined cleft wall, sometimes with adularia + calcite. Epidote IS the star. MEASURED at seed 42 (16 crystals, 6 species): epidote 5 (the most abundant — capped at max_nucleation 5), actinolite/byssolite 4 (secondary, as intended), albite 2 + adularia/feldspar 2 + quartz 2 + fluorite 1. This is a textbook alpine-cleft suite — epidote + byssolite + adularia + albite + quartz + pink fluorite are all genuine Tormiq/alpine-fissure associates. CALCITE is aspirational (the late_calcite event raises CO3 but calcite did not nucleate in the final ~30 steps at seed 42) — a vugg-tune-scenario follow-up candidate (bump late CO3 / extend the cooling tail), not shipped as a false expects entry."
       ],
       "initial": {
@@ -2305,10 +2307,11 @@
         "wall": {
           "composition": "basalt",
           "reactivity": 0,
-          "architecture": "pocket",
+          // W-K V0 (2026-07-03): Karakoram-Thrust cleft gets the planar-lens
+          // cleft archetype (see grimsel_alpine_cleft note; bubble counts
+          // from the archetype now, pocket-tuned 3/5 overrides retired).
+          "architecture": "cleft",
           "size_class": "pocket",
-          "primary_bubbles": 3,
-          "secondary_bubbles": 5,
           "shape_seed": 1990
         }
       },
@@ -2341,7 +2344,7 @@
         "Anchor: Mullis, Dubessy, Poty & O'Neil 1994 (Geochim. Cosmochim. Acta 58:2239-2267) — fissure-quartz fluid inclusions along a Central-Alps geotraverse (dilute, oxidizing, H2O-CO2 epizone). Retrograde P-T-t: Mullis 1996 (Schweiz. Mineral. Petrogr. Mitt. 76:159-164) quartz forms ~450-550C cooling to ~200C at 0.3-0.45 GPa; Gnos, Mullis & Bergemann 2025 (Swiss J. Geosci. 118:12) tie the Grimsel cleft path to D1 (~450C/440MPa, ~14.6 Ma) -> D2 (~385C/325MPa) -> D3 (~330->300C/230MPa) deformation stages. Poty 1969 (PhD thesis, Univ. Nancy) measured fissure quartz at 350-420C. Citations web-verified 2026-06-19 per the cross-check discipline.",
         "T story = a DECLARED temperature movement (retrograde 450->200C trend, no texture, the naica v182 idiom) + thermal_pulses:false + cooling_rate:0.4 (an open feeder advects heat -> slow cooling, not random magmatic re-warm pulses). The events are the chemistry BEATS that compose with it (SiO2 sawtooth + Fe/CO3 stage pulses on different fields -> no same-field clobber).",
         "The SCEPTRE mechanism: sigma_quartz = SiO2 / silica_equilibrium(T), and eq(T) falls from ~1400 ppm at 450C to ~300 at 200C. A crack-seal SEAL drops SiO2 below eq (sigma<1 -> a growth HIATUS); the following BREACH re-floods fresh silica at a cooler temperature, so the same SiO2 load gives a HIGHER sigma than the hot first-generation stem -> a wider cap nucleates on the tip. Caps grow cooler than stems (the documented alpine-sceptre habit) falls straight out of the engine. Two seal/breach cycles -> two sceptre generations; verified by tools/quartz-hiatus-census.mjs.",
-        "Wallrock: pegmatite (the granite/granitoid inert-silicate proxy — the Aar granite host; the Ca-Al-Fe-Ti-F-P arrive in the FLUID, not from wall dissolution, reactivity 0). Architecture pocket (alpine cleft = the canonical pocket archetype), pocket size class, shape_seed 1932 (the Grimsel hydroelectric era that opened the cleft tunnels to strahlers).",
+        "Wallrock: pegmatite (the granite/granitoid inert-silicate proxy — the Aar granite host; the Ca-Al-Fe-Ti-F-P arrive in the FLUID, not from wall dissolution, reactivity 0). Architecture CLEFT (W-K V0, SIM 215): the planar-lens Zerrkluft — a flat slab ~4.5-6:1 against its aperture, opposed druses on the two fissure walls — replacing the round 'pocket' stand-in (the vug-genesis census's worst-case shape lie, now closed). Pocket size class, shape_seed 1932 (the Grimsel hydroelectric era that opened the cleft tunnels to strahlers). Growth histories measured bit-identical across the re-genre (0/37 baseline drift; sceptre scan still 3 robust sceptres at seed 42).",
         "Calibration target: a free-grown cleft druse — cream blocky adularia + dark-green chlorite coatings, from which rise lustrous SMOKY quartz crystals (Tessin-habit prisms or smoky sceptres with wider darker caps), accented by metallic hematite iron-roses, honey-brown wedge titanite, small apatite prisms, and a late calcite lining. expects_species declared aspirationally where needed; observe seed-42 firing + the hiatus census, then tune (vugg-tune-scenario) before the quartz-morphology work (#109). Smoky quartz color + the sceptre/Tessin/fenster/gwindel morphology are the follow-on tasks #110/#109."
       ],
       "movements": [
@@ -2377,10 +2380,13 @@
         "wall": {
           "composition": "pegmatite",
           "reactivity": 0,
-          "architecture": "pocket",
+          // W-K V0 (2026-07-03): the Zerrkluft finally SHAPED like one — the
+          // planar-lens cleft archetype (polar_flatten 0.22, in-plane
+          // elongation, opposed footwall/hangingwall druses). Bubble counts
+          // now come from the archetype (2/4 — a fracture is smooth at
+          // cavity scale); the old pocket-tuned 3/5 overrides retired.
+          "architecture": "cleft",
           "size_class": "pocket",
-          "primary_bubbles": 3,
-          "secondary_bubbles": 5,
           "shape_seed": 1932,
           "thermal_pulses": false,
           "cooling_rate": 0.4,
