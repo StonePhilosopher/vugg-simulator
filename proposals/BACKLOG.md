@@ -62,6 +62,19 @@ Living list of open work items, captured from session conversations so context s
 > correlation — **the catalog's LOT entity is W-J's ground truth**: one pocket, one fluid
 > history, every specimen predicted together). Post-Phase-5+ — named, not scheduled. (W-H
 > letter now canonical for the inverse solver; the review's passing "texture W-H" superseded.)
+>
+> **▸ DIGITIZATION TEMPLATE SHIPPED (boss ask, 2026-07-03) — A2 DELIVERED:**
+> `SPECIMEN-DIGITIZATION-TEMPLATE-2026-07-03.md` — the template for turning crystal images into
+> sim-growable data at thousands-of-rocks scale. 5-block record w/ evidence levels; 3 tiers
+> (S/D/B — the Smithsonian IDIF lesson: mass 2D, selective 3D); the ~20-shot SLOT MANIFEST;
+> dialogue compression (3-4 rounds → ONE gap list per LOT); UV answered (eye-read per λ +
+> afterglow IS the datum per FMDB practice; photos = exciter-on-lamp + non-fluorescing barrier-
+> on-lens, solved); hardware ladder D0→D3 → **🪨's Eyes rose engine (design mirrored in-tree,
+> `ROSE-ENGINE-MICROSCOPE-2026-03-11.md`)** with 4 research-backed refinements (ring ON the arm
+> per OpenScan Mini — the validated OSS precedent; strobe at swing APEX; indexed rotatable
+> polarizers; SKIP the laser scanner — translucency is its documented failure mode). NO coating
+> sprays ever; cross-pol is the optical fix. NEXT CONCRETE STEP: pilot the agent batch pass on
+> the Thompsonite flat (ids 1200-1223) before any new shooting is asked.
 
 > ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
 >
