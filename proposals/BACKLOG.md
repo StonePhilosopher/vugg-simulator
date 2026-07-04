@@ -2,17 +2,20 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🔍 SESSION (2026-07-02/03) — 4a.8 FROZEN-g RETIREMENT + OPTICS DEPTH-A SHIPPED — **CURRENT HANDOFF: `HANDOFF-FROZEN-G-AND-OPTICS-A-2026-07-02.md`** (read it first)
+> ## 🔍 SESSION (2026-07-03, the planning day) — ROADMAP + THREE ARCS + THE BENCH'S FIRST MEASUREMENTS — **CURRENT HANDOFF: `HANDOFF-FOUNDATIONS-2026-07-03.md`** (read it first)
 >
-> Five commits live (`3981a0d` 4a.8 · `525e289` research · `524d9ea` A1 · `6c748d0` A2 · `8490f8a`
-> A3), Pages verified built == HEAD, tree clean, SIM 214 unchanged. Every Wulff body now matures
-> with growth (two biasC bands re-placed at earned g — the frozen-param CONVERSE lesson);
-> diaphaneity is per-species verified data driving plain % translucency through ONE
-> `buildCrystalMaterial` (Naica water-clear, 94/180 species verified two-source). **Boss
-> priorities set 2026-07-03: Depth-B lustre = LOW PRIORITY (the data existing in text form is
-> enough — don't build unprompted); next stones = the calcite σ/Ca:CO₃ lever, then the local-σ
-> depletion field (EV check first); Depth-C body colour when called.** Traps + instruments + the
-> full map in the handoff.
+> Seven docs-only commits (`dfca3cf` roadmap · `cc9eca3` W-F ontogeny · `34fc0a7` review r1 ·
+> `c5a3b75` W-H/I/J horizons · `4840186` A2 digitization · `f9b87c1` W-K vug genesis ·
+> `5a97613` pilot), all Pages-verified; SIM 214 unchanged; cold-ci GREEN stamped at `69203ad`.
+> The convergence ladder T0–T4 + fidelity budget frame everything; both boss intuitions
+> literature-verified (Chowns & Elkins geodes; substrate selection); the digitization pilot
+> read 19 real rocks (84% slot rate, 0/306 scale refs → the D1 jig is the project's best $40)
+> and found six bench anchors incl. **1298 Elmwood = C0's anchor**. **Boss stones UNCHANGED:
+> C0 calcite lever → C1 depletion field (now doubly load-bearing) → Depth-C on call; lustre
+> parked.** New entry points: O0-O2 · V0-V1 (co-stage with O0 on grimsel — the co-evolution
+> rule) · A1 · the gap-checklist sitting · pilot batch 1224-1258. Traps + the maker's mark in
+> the handoff. (Prior session's arcs — 4a.8 frozen-g + optics Depth-A — live in
+> `HANDOFF-FROZEN-G-AND-OPTICS-A-2026-07-02.md`.)
 
 > ## 🧭 ROADMAP (2026-07-03) — BYTE-IDENTICAL TO NATURE — **the convergence master plan: `ROADMAP-BYTE-IDENTICAL-NATURE-2026-07-03.md`**
 >
