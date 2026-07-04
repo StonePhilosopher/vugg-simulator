@@ -177,6 +177,18 @@ fetched unless noted):
 | **V6 — whole-wall dynamics** | erodeCells beyond ring 0 (retire the dynamically-2D limitation); dissolution re-sculpting anywhere acid reaches | SIM bump | M |
 | **V7 — topology breakers** | True fissure-with-two-walls, multi-chamber, standing boxwork fins — requires leaving the one-radius-per-direction representation (SDF/marching-cubes successor). HONESTLY DEFERRED; the `bubbles` array and clip-texture are the prepared substrates when it's time | architectural | XL, unscheduled |
 
+> **V0 ✅ SHIPPED SIM 215, cleft tranche (2026-07-03)** — new `'cleft'` archetype (js/22):
+> exact oblate lens `q/√(q²sin²φ+cos²φ)` at polar_flatten 0.22 in `polarProfileFactor` (the
+> basin-precedent consumer-side mechanic) + in-plane elongation 0.35 → slab aspect ~4.5–6:1;
+> cleft-aware `ringOrientation` (faces = footwall/hangingwall, two rim rings = 'wall') + new
+> `floor_ceiling` nucleation bias → the opposed druses meeting at the median seam. grimsel +
+> tormiq re-genred off 'pocket' (§1 gap 1 closed); pole caps now honor the polar profile
+> (js/23 — kills the lens needle AND the latent basin north-pole spike). Growth histories
+> measured bit-identical (0/37 baseline drift — anchor-geometry re-genre, zero assemblage
+> churn); the structural change is pinned in tests-js/cleft-halfform.test.ts. REMAINING V0
+> TRANCHE: the all-38 wall-block audit against §2's taxonomy (vesicle equant-vs-pipe, MVT
+> bedding-lens, miarolitic core-pocket).
+
 **Sequencing.** V0+V1 are the visible foundation (the cleft fix alone re-genres two scenarios).
 V2 is cheap bedrock with immediate Deccan character. V3/V4 pair naturally with W-F's O2/O3 —
 same induction-surface and selection mathematics, shared oracle; build them in the same era.

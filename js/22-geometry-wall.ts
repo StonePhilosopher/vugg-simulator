@@ -517,8 +517,8 @@ const PRIMARY_SPREAD = 0.3;
 // dedicated builders (Slice B). Default archetype is 'pocket' with
 // scales = 1.0 / bubbles = (3, 6) so legacy scenarios that don't set
 // architecture produce byte-identical output.
-type Archetype = 'spherical' | 'irregular' | 'tabular' | 'pocket' | 'basin';
-type NucleationBias = 'uniform' | 'walls_only' | 'floor_only' | 'ceiling_only';
+type Archetype = 'spherical' | 'irregular' | 'tabular' | 'pocket' | 'basin' | 'cleft';
+type NucleationBias = 'uniform' | 'walls_only' | 'floor_only' | 'ceiling_only' | 'floor_ceiling';
 interface ArchetypeConfig {
   primary_bubbles: number;
   secondary_bubbles: number;
@@ -534,25 +534,50 @@ interface ArchetypeConfig {
   // (north) are pinched to ~5% of equator, the south half stays full.
   // 0 keeps the legacy Fourier-only polar profile.
   polar_collapse: number;
+  // W-K V0 (vug-genesis arc, 2026-07-03): planar-lens flattening for the
+  // 'cleft' archetype. >0 enables the oblate-spheroid override in
+  // polarProfileFactor — the value IS the aperture ratio q (polar radius /
+  // equatorial radius), so 0.22 turns the cavity into a flat lens ~4.5:1
+  // wide against its opening. Real alpine clefts (Zerrkluft) are planar
+  // slabs — aperture cm–1.2 m against in-plane extents to metres (Ricchi
+  // 2021 SJG; PROPOSAL-VUG-GENESIS §2) — and the round 'pocket' the cleft
+  // scenarios wore until now was the census's worst-case shape lie. Within
+  // the star-convex ceiling the lens IS the honest cleft: the two flat
+  // faces are the opposed druse walls meeting at the median seam. 0 keeps
+  // the legacy profile untouched.
+  polar_flatten: number;
   nucleation_bias: NucleationBias;
 }
 const ARCHETYPE_DEFAULTS: Record<Archetype, ArchetypeConfig> = {
   // Basalt — degassed lava bubble. Smooth sphere, low irregularity.
-  spherical: { primary_bubbles: 1, secondary_bubbles: 0, polar_amp_scale: 0.20, twist_amp_scale: 0.10, elongation: 0.0, polar_collapse: 0.0, nucleation_bias: 'uniform' },
+  spherical: { primary_bubbles: 1, secondary_bubbles: 0, polar_amp_scale: 0.20, twist_amp_scale: 0.10, elongation: 0.0, polar_collapse: 0.0, polar_flatten: 0.0, nucleation_bias: 'uniform' },
   // Limestone — karst dissolution cave. High bubble count + strong polar
   // variance for the cathedral feel.
-  irregular: { primary_bubbles: 4, secondary_bubbles: 12, polar_amp_scale: 1.40, twist_amp_scale: 1.20, elongation: 0.0, polar_collapse: 0.0, nucleation_bias: 'uniform' },
+  irregular: { primary_bubbles: 4, secondary_bubbles: 12, polar_amp_scale: 1.40, twist_amp_scale: 1.20, elongation: 0.0, polar_collapse: 0.0, polar_flatten: 0.0, nucleation_bias: 'uniform' },
   // Granite — fracture pocket. Anisotropic stretch (3:1 long axis to
   // short axis) reads as a tabular fracture cross-section. walls_only
   // nucleation keeps crystals on the long flat faces.
-  tabular:   { primary_bubbles: 2, secondary_bubbles: 4, polar_amp_scale: 0.80, twist_amp_scale: 0.50, elongation: 0.55, polar_collapse: 0.0, nucleation_bias: 'walls_only' },
+  tabular:   { primary_bubbles: 2, secondary_bubbles: 4, polar_amp_scale: 0.80, twist_amp_scale: 0.50, elongation: 0.55, polar_collapse: 0.0, polar_flatten: 0.0, nucleation_bias: 'walls_only' },
   // Pegmatite — large crystallisation pocket. Identity transform on
   // legacy defaults so byte-equality holds when scenarios don't opt in.
-  pocket:    { primary_bubbles: 3, secondary_bubbles: 6, polar_amp_scale: 1.00, twist_amp_scale: 1.00, elongation: 0.0, polar_collapse: 0.0, nucleation_bias: 'uniform' },
+  pocket:    { primary_bubbles: 3, secondary_bubbles: 6, polar_amp_scale: 1.00, twist_amp_scale: 1.00, elongation: 0.0, polar_collapse: 0.0, polar_flatten: 0.0, nucleation_bias: 'uniform' },
   // Evaporite playa — flat basin. Top hemisphere collapses to ~5% of
   // equator radius via a sigmoid override on polarProfileFactor; floor_only
   // nucleation puts crystals on the playa floor.
-  basin:     { primary_bubbles: 1, secondary_bubbles: 0, polar_amp_scale: 0.10, twist_amp_scale: 0.05, elongation: 0.0, polar_collapse: 1.0, nucleation_bias: 'floor_only' },
+  basin:     { primary_bubbles: 1, secondary_bubbles: 0, polar_amp_scale: 0.10, twist_amp_scale: 0.05, elongation: 0.0, polar_collapse: 1.0, polar_flatten: 0.0, nucleation_bias: 'floor_only' },
+  // W-K V0 (2026-07-03) — alpine cleft (Zerrkluft) / tension-fissure slab.
+  // polar_flatten 0.22 = the oblate-lens aperture ratio; elongation 0.35
+  // stretches the lens in-plane along strike, so the in-plane : aperture
+  // aspect lands ~4.5–6:1 (aperture cm–1.2 m vs extent to metres, Ricchi
+  // 2021 — scaled into pocket class). The two flat faces (footwall /
+  // hangingwall) are the substrate — ringOrientation tags them floor /
+  // ceiling and the thin rim 'wall', so floor_ceiling nucleation grows the
+  // OPPOSED DRUSES meeting at the median seam (the alpine-cleft signature;
+  // Self & Hill 2003). Fewer bubbles than pocket: a fracture is smooth at
+  // cavity scale — the angular step microtexture is V1's layer, not lumps.
+  // polar/twist amp scales are dead in the 3D-builder path (amplitudes are
+  // zeroed post-build) — 0.0 for honesty.
+  cleft:     { primary_bubbles: 2, secondary_bubbles: 4, polar_amp_scale: 0.0, twist_amp_scale: 0.0, elongation: 0.35, polar_collapse: 0.0, polar_flatten: 0.22, nucleation_bias: 'floor_ceiling' },
 };
 
 // Raycast the bubble union at angle theta, honouring origin
@@ -644,6 +669,7 @@ class WallState {
     this.twist_amp_scale = arc.twist_amp_scale;
     this.elongation = arc.elongation;
     this.polar_collapse = arc.polar_collapse;
+    this.polar_flatten = arc.polar_flatten ?? 0;
     // Phase-1 two-stage bubble-merge parameters (see VugWall). Scenario
     // overrides take precedence over archetype defaults.
     this.primary_bubbles = opts.primary_bubbles ?? arc.primary_bubbles;
@@ -1025,6 +1051,23 @@ class WallState {
     for (let n = 0; n < this.polar_amplitudes.length; n++) {
       fourier += this.polar_amplitudes[n] * Math.cos((n + 1) * phi + this.polar_phases[n]);
     }
+    // W-K V0: planar-lens flattening (cleft archetype). The exact
+    // oblate-spheroid radial profile normalized to equator = 1:
+    //   f(φ) = q / sqrt(q²·sin²φ + cos²φ),  q = polar_flatten
+    // f(π/2) = 1 (equatorial rim untouched), f(0) = f(π) = q (the two
+    // flat faces at q× the in-plane radius). Bypasses the 0.5 legacy
+    // floor deliberately — the lens NEEDS to go below it; its own floor
+    // only guards a degenerate q. Applied at consumers (mesh, renderers,
+    // clip texture, anchors) like polar_collapse, so SIM-side ring-0
+    // radii keep the unflattened chemistry geometry — same contract as
+    // basin.
+    const flatten = this.polar_flatten ?? 0;
+    if (flatten > 0) {
+      const q = Math.max(0.05, Math.min(1.0, flatten));
+      const s = Math.sin(phi), c = Math.cos(phi);
+      const lens = q / Math.sqrt(q * q * s * s + c * c);
+      return Math.max(0.03, fourier * lens);
+    }
     const collapse = this.polar_collapse ?? 0;
     if (collapse > 0) {
       // Sigmoid: 1.0 at south (phi=0), ~0.05 at north (phi=π),
@@ -1221,6 +1264,19 @@ class WallState {
   ringOrientation(ringIdx) {
     const n = this.ring_count;
     if (n <= 1) return 'wall';
+    // W-K V0 — cleft archetype: on a flattened lens the sphere-quarter
+    // tags are geometrically wrong. In DIRECTION space nearly every ray
+    // lands on one of the two flat faces (for q = 0.22 the rim occupies
+    // only |φ−90°| ≲ 12°), so: the two equator-straddling rings are the
+    // rim ('wall'), everything below is the footwall druse ('floor'),
+    // everything above the hangingwall druse ('ceiling'). n=16 → floor
+    // 0–6, wall 7–8, ceiling 9–15.
+    if (this.architecture === 'cleft') {
+      const rim0 = Math.floor(n / 2) - 1;
+      const rim1 = Math.floor(n / 2);
+      if (ringIdx === rim0 || ringIdx === rim1) return 'wall';
+      return ringIdx < rim0 ? 'floor' : 'ceiling';
+    }
     if (ringIdx < Math.floor(n / 4)) return 'floor';
     if (ringIdx >= Math.floor(3 * n / 4)) return 'ceiling';
     return 'wall';

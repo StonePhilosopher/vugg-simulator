@@ -113,6 +113,16 @@ earlier ones' state. Sizes: S/M/L per the roadmap convention.
 | **O7 — hopper + recovery** | Berg-effect σ* threshold: rim-vs-center velocity within a face → hopper cavities; later low-σ zones infill (recovery generation in the zone record). Needs within-face relief — the biggest render lift; last. | Desarnaud (✓, recovery flagged) | SIM bump | L |
 | **O8 — texture classifier + cockade** | Post-hoc aggregate labeler (comb/crustiform/colloform/zonal — Dong et al. vocabulary) for narrator + bench; free interior clasts as substrates (cockade) reusing O3's machinery. | Dong et al. (✓); Frenzel & Woodcock [verify] | classifier render-only; cockade = scenario content | S+M |
 
+> **O0 ✅ SHIPPED SIM 215 (2026-07-03)** — the half-form kernel clip: the attachment plane
+> enters `wulffPolyhedron` as ONE MORE HALF-SPACE (js/46 `_makeWulffHalfFormGeom`) and the
+> scar cap emerges as a real kernel face — O2's induction mechanism, proven at one plane
+> before the aggregate layer consumes it. Render default attachedFraction 0.5 (Grigor'ev)
+> for equant closed tokens; sim `_occlusion` stays authoritative; satellites inherit the
+> parent's fraction; prisms/snowball/twins/air-mode keep their contracts. Steno pin +
+> cap-face reality + buried-half-gone asserted per tenant (tests-js/cleft-halfform.test.ts).
+> Co-staged with W-K V0 on grimsel/tormiq per the co-evolution rule; SIM-byte-identity held
+> (measured 0/37 baseline drift).
+
 **Sequencing.** O0 → O1 → O2 is the visible foundation and stays render-only (byte-identity
 discipline holds; the probe/sweep/eye-check ritual per rung). O3 is the first SIM bump and the
 arc's scientific heart — its analytic oracle (survivor-density power law) is the cheapest

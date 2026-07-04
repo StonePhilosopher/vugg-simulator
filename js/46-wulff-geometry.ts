@@ -507,6 +507,14 @@ function _makeWulffGeom(faces: any): any {
   let maxAbs = 0;
   for (const v of poly.vertices) maxAbs = Math.max(maxAbs, Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2]));
   const s = maxAbs > 1e-9 ? 0.5 / maxAbs : 1;
+  return _wulffPolyToGeom(poly, s);
+}
+
+// Shared emission tail of the Wulff geometry builders: polyhedron + scale →
+// BufferGeometry (fan-triangulated, vertex normals). Split out of
+// _makeWulffGeom so the O0 half-form builder can emit with the FULL form's
+// normalization scale rather than its own.
+function _wulffPolyToGeom(poly: any, s: number): any {
   const positions: number[] = [];
   for (const f of poly.faces) {
     const vs = f.verts;
@@ -521,4 +529,47 @@ function _makeWulffGeom(faces: any): any {
   geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geom.computeVertexNormals();
   return geom;
+}
+
+// ------------------------------------------------------------
+// W-F O0 — attached-crystal truth (ontogeny arc, 2026-07-03). A wall-nucleated
+// crystal is euhedral only toward open space; the substrate side is an anhedral
+// scar, and the buried fraction of the ideal form NEVER EXISTED (Grigor'ev's
+// half-form). Build the polyhedron with ONE MORE half-space — the attachment
+// plane, perpendicular to the growth axis (kernel Y), at the attachFrac
+// quantile of the full form's Y-extent. The kernel then does everything:
+// vertices below the plane are culled and the plane's own polygon emerges as a
+// real face — the scar cap — angle-sorted and triangulated like any crystal
+// face. This is the exact mechanism O2 (induction surfaces) extends to
+// NEIGHBOR half-spaces; O0 is deliberately its one-plane special case so the
+// representation is proven before the aggregate layer consumes it.
+//
+// Steno pin: the crystal faces' normals are untouched — the clip adds a plane,
+// never tilts one (asserted in tests-js/cleft-halfform.test.ts).
+//
+// Normalization uses the FULL form's maxAbs, so the surviving half is
+// geometrically identical to the corresponding region of _makeWulffGeom's
+// body — the renderer's occlusion sink (offset cLen·(0.5−occF)) then puts the
+// scar cap at the anchor, flush with the wall. Returns null when the clip
+// degenerates (attachFrac ~1, vanishing form) — callers fall back to the full
+// polyhedron, then to the primitive (the D2 robustness ladder).
+// ------------------------------------------------------------
+function _makeWulffHalfFormGeom(faces: any, attachFrac: number): any {
+  if (!faces || !faces.length) return null;
+  const full = wulffPolyhedron(faces);
+  if (!full || full.vertices.length < 4 || full.faces.length === 0) return null;
+  let maxAbs = 0, ymin = Infinity, ymax = -Infinity;
+  for (const v of full.vertices) {
+    maxAbs = Math.max(maxAbs, Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2]));
+    if (v[1] < ymin) ymin = v[1];
+    if (v[1] > ymax) ymax = v[1];
+  }
+  if (!(ymax > ymin) || maxAbs <= 1e-9) return null;
+  const f = Math.max(0.05, Math.min(0.95, attachFrac || 0.5));
+  const yCut = ymin + f * (ymax - ymin);
+  // keep y ≥ yCut: with n = [0,−1,0], n·v ≤ d ⇔ −y ≤ d, so d = −yCut.
+  const clipped = wulffPolyhedron(faces.concat([{ n: [0, -1, 0], d: -yCut }]));
+  if (!clipped || clipped.vertices.length < 4 || clipped.faces.length === 0) return null;
+  const s = 0.5 / maxAbs;   // FULL-form scale — see header comment
+  return _wulffPolyToGeom(clipped, s);
 }
