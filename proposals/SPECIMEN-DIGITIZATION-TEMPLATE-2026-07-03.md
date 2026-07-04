@@ -8,6 +8,18 @@ thousands of crystals to document we need a way to streamline processing… talk
 usually takes 3-4 rounds of back and forth and usually 20ish pictures… UV light doesn't show
 up well on camera."**
 
+> **v1.1 (same day): THE PILOT RAN — 19 specimens (1291–1309), 306 archive photos viewed and
+> classified by 19 agents. Verdict: 84% slot rate on legacy photos, dialogue compression
+> works (103 gaps → one clustered checklist), and 0/306 photos carry a scale reference — the
+> `measured` tier is unreachable archive-wide, which makes the D1 jig the project's best $40.
+> Ten amendments distilled from 133 friction notes are in `PILOT-DIGITIZATION-2026-07-03.md`
+> §2 (headlines: OV-n open-ended; NEW TRANS-n transmitted-light slot; NEW LABEL-1 provenance
+> slot; HERO redefined for texture-first specimens; container-as-scale enum; BASE
+> `inaccessible_mounted` state; UV tested-negative state + per-λ labeling; MICRO subject
+> tags + dup_of; tier-relative completeness; record-vs-disk reconciliation). Also finding #0:
+> the Thompsonite flat has ZERO photos — it becomes the CAPTURE protocol's first test
+> instead.**
+
 ## 0. The problem, sized honestly
 
 Today's per-rock cost: ~20 photos (macro + micro + UV) and **3–4 rounds of dialogue** — and the
