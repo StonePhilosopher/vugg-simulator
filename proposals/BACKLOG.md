@@ -2,7 +2,32 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🔍 SESSION (2026-07-03, the planning day) — ROADMAP + THREE ARCS + THE BENCH'S FIRST MEASUREMENTS — **CURRENT HANDOFF: `HANDOFF-FOUNDATIONS-2026-07-03.md`** (read it first)
+> ## 🧱 SESSION (2026-07-03→04, the foundation-laying night) — THE FIRST CODE OF THE ROADMAP: V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE — **CURRENT HANDOFF: `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated third-act addendum)**
+>
+> Boss: *"we just worked on a nice foundation in the handoff, lets lay that foundation."* Two
+> code commits, both Pages-verified built==HEAD, both cold-ci stamped GREEN:
+> **`21dfb50` SIM 215** — W-K V0 cleft tranche + W-F O0, co-staged per the co-evolution rule's
+> first exercise: new `'cleft'` archetype (exact oblate lens q=0.22 in polarProfileFactor +
+> elongation 0.35 + `floor_ceiling` bias + cleft-aware ringOrientation → footwall/hangingwall
+> OPPOSED DRUSES; grimsel+tormiq off 'pocket'; pole caps now honor the polar profile — killed
+> the latent basin north-pole spike too); O0 = equant closed forms half-sink 0.5 (Grigor'ev)
+> and the six Wulff tenants get the TRUE kernel clip — the attachment plane enters
+> `wulffPolyhedron` as one more half-space, the scar cap emerges as a real face (O2's exact
+> mechanism at one plane). **Two-instrument confinement proof:** baseline-diff 0/37 (growth
+> histories bit-identical — anchors are invisible to it BY DESIGN) + strip-story diff 2/37,
+> WALL CHIPS ONLY (grimsel Δ5.97mm, tormiq Δ9.67mm, zero bells). Sceptres still 3/seed-42.
+> **`09d2a30`** — W-F O1a exposure tranche (render-only, no bump): per-face
+> `d_i = SEED + SPAN·g·R_i·max(0.15, 1+k·n_y)` — the rate-inside-the-accumulation interface
+> from review #1, k=0.18 fleet / 0 air; the per-family broadcast broken PER FACE for the first
+> time; O0's default cut moved to the NUCLEUS PLANE (the stretch separates it from extent-mid).
+> CI 153 files / 2164 tests (22 new pins incl. Steno bitwise + the closed-form per-face
+> relation). Eye-checked: grimsel slab+median seam, elmwood unchanged-irregular, basin
+> needle-free, zero console errors. **OPEN foundation tranches:** V0's all-38 taxonomy audit ·
+> V1 microtexture (scallop knobs need scenario fields — mind the VugWall whitelist trap) ·
+> O1b neighbor shadow (occupancy grid, per-crystal cache) · O2 induction surfaces (the
+> half-space call is proven — extend it with neighbor planes). Boss stones UNCHANGED.
+
+> ## 🔍 SESSION (2026-07-03, the planning day) — ROADMAP + THREE ARCS + THE BENCH'S FIRST MEASUREMENTS — **prior handoff: `HANDOFF-FOUNDATIONS-2026-07-03.md`** (read it first)
 >
 > Seven docs-only commits (`dfca3cf` roadmap · `cc9eca3` W-F ontogeny · `34fc0a7` review r1 ·
 > `c5a3b75` W-H/I/J horizons · `4840186` A2 digitization · `f9b87c1` W-K vug genesis ·
