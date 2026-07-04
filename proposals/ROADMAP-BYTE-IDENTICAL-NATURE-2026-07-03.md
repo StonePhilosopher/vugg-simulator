@@ -78,6 +78,7 @@ Grounded in the tree as of `69203ad` (SIM 214). "Have" means shipped and tested,
 | **optics** | Depth-A diaphaneity SHIPPED (94/180 two-source verified → % translucency); lustre data recorded (parked, boss call); trace-cation colour dispatchers (V⁴⁺, smoky, garnet Cr/Mn/Fe) | Depth-C body colour (class palette → species/chemistry colour); zoned colour + phantoms; inclusions (chlorite/rutile/two-phase); fluorescence render (chemistry-side UV exists in zone bars; no emissive render) | **W-D** |
 | **context** | 37 scenarios; paragenesis/substrate affinity (js/26); open_system walls; wall composition classes | host-rock lithology as a rendered material (the vug sits in a rock, not a void); matrix/gangue textures; more locality scenarios (Sweetwater, Elmwood slated) | **W-E** |
 | **ontogeny (individual + aggregate)** | ideal convex Wulff bodies (full polyhedra, base-at-anchor); enclosure/liberation bookkeeping the renderer never reads (js/85c:672-751); spontaneous-twin roll; sceptre/etch as DECLARED overprints; c-axis hard-coded wall-normal | attachment half-forms; unequal face development (per-face h_i — the kernel already stores {n,d} per face; js/46:431 is the single broadcast point); induction/contact surfaces (neighbor meshes interpenetrate freely today); EARNED geometric selection; engulfment render; ELO phantoms/sceptres; hopper+recovery | **W-F** |
+| **cavity (the stage itself)** | sphere-union profile builder + 5 architecture archetypes + per-scenario knobs (js/22); per-cell dissolution recession (ring 0 ONLY — dynamically 2D); star-convex topology ceiling | genesis-shaped cavities (the alpine-cleft scenarios are round 'pocket' cavities today); 3D wall microtexture (zero exists); primer coats + substrate conditioning; substrate-aware botryoidal (the 4-blob ignores the wall); precursor-dissolution genesis (Chowns & Elkins ✓) | **W-K** |
 | **verification** | cold-ci; canary; seed-42 baselines + strip archive/differ; probe/census/sweep idiom; optics-audit; image-corpus method | **the specimen bench — NOTHING today verifies against a real rock quantitatively.** The apex instrument is missing; everything else is proxies | **W-A** |
 
 ---
@@ -106,7 +107,7 @@ live host unreachable today — recount when it's back):
 | rung | deliverable | detail | size |
 |---|---|---|---|
 | **A1 — bridge + anchors** | `data/specimen-anchors.json` + the species bridge table | Map catalog labels→sim keys (the 4 bridges above + a full pass over the 150 unmatched labels). Select ~24 ANCHOR specimens spanning the scenario space (MVT: fluorite/galena/sphalerite/barite; alpine: quartz; supergene: azurite/malachite/wulfenite/vanadinite; evaporite: selenite/halite; carbonate: calcite dogtooth AND nailhead, rhodochrosite). Anchor = catalog id + species + locality + which scenario claims it. **Privacy rule: the public repo carries id/species/locality/measurements ONLY — never valuations, dealers, provenance notes; photos never leave the LAN** (the harness resolves catalog ids against the local snapshot/host via env var). | S — read-only on the snapshot, one session |
-| **A2 — capture protocol** | `proposals/SPECIMEN-CAPTURE-PROTOCOL.md` + per-anchor shot list | Standardized re-shoots the boss can run with the existing iPhone pipeline: scale reference in frame, grey/white card under a fixed illuminant for colour truth, 3 canonical angles + a face-on macro per measurable face, UV set where relevant. Agents write the protocol + shot lists; the boss's hands do the shooting at his pace. Archive photos serve where they already carry scale cues. | S to write; capture is ongoing |
+| **A2 — capture protocol** | **✅ DELIVERED 2026-07-03 as `SPECIMEN-DIGITIZATION-TEMPLATE-2026-07-03.md`** (boss ask, same day) — the full data contract: 5-block record (identity/capture-slots/measurements/grow/biography) with evidence levels, 3 tiers (S survey / D document / B bench), the ~20-shot slot manifest, verified UV practice (exciter+barrier filters; FMDB-style per-λ eye-reads ARE the datum), hardware ladder D0→D3 ending at 🪨's Eyes (the rose-engine design, mirrored in-tree; OpenScan Mini is the validated open-source precedent). Pilot before protocol-final: agent batch pass on the Thompsonite flat. | delivered; capture is ongoing |
 | **A3 — metric extraction** | `tools/specimen-metrics.mjs` + measured rows in specimen-anchors.json | From protocol photos: aspect ratios, interfacial angles (photogrammetry-lite: face-on shots + known geometry class beat full 3D reconstruction), CIELAB colour off the grey card, druse crystal-size counts off plate shots. **Plus the W-F ontogeny metrics (added 2026-07-03, review point #5): contact fraction, asymmetry index (h_i variance within a form), survivor density vs height, intergrowth count** — see `PROPOSAL-ONTOGENY-2026-07-03.md` §4. Each value stored WITH error bars and the photo id it came from — a measurement column, same discipline as the optics `source` column. | M–L (re-sized with the ontogeny metrics) |
 | **A4 — the bench harness** | `tools/specimen-bench.mjs` | For each anchor: run its claimed scenario headless (agent-api/gen-baseline idiom), extract THE SAME metrics from the rendered mesh (kernel-truth path — the wulff sweep tools already read mesh geometry), compare within the anchor's error bars. **PASSIVE first** (`feedback_passive_instrument_not_gate`): it accretes a per-anchor record like canary; individual metrics get promoted to pinned tests only once stable. Wire a nightly row into vugg-canary. | M |
 | **A5 — the confrontation ritual** | `tools/specimen-contact-sheet.mjs` + a standing session ritual | Render-vs-photo side-by-side sheets per anchor for the boss's eye — his geometric intuition is the best detector in the loop; the sheet is the tool that feeds it. Ritual: every shipped habit/colour/paragenesis names its specimen-debt in the commit; the bench pays debts down; the sheet is how a debt gets marked paid. | S |
@@ -191,6 +192,86 @@ parameters with measured/derived ones, tenant by tenant, and re-run the same swe
 substitution moves that tenant from T2-calibrated toward T4-predicted — the fidelity budget's
 top tier is reached exactly here.
 
+## 6d–6f. The horizon ladders (added 2026-07-03, proposed by rockbot 🪨✍️, evaluated + accepted)
+
+Post-Phase-5+ directions that are genuinely new architecture, not more rungs. Named now so the
+ledger has letters for them; NOT scheduled. (Letter bookkeeping: the review's passing mention
+of "W-H: texture classification" is superseded — photo-side texture ML stays unnamed until it
+is ever real; the letters below are canonical.)
+
+### 6d. W-H — the inverse solver (specimen → scenario; the T3→T4 bridge)
+
+Given a specimen's bench measurements, SEARCH the scenario space for the fluid history that
+produces it — constrained by geology, verified on held-out metrics. rockbot is right that this
+is a new tool class (`tools/vugg-inverse.mjs`), and it has both a modern method family and a
+geological precedent, both verified today:
+
+- **Method class: simulation-based inference** — vugg is exactly the setting SBI exists for (a
+  high-fidelity forward simulator with no tractable likelihood): Cranmer, Brehmer & Louppe
+  2020, PNAS 117(48):30055-30062, doi:10.1073/pnas.1912789117 (✓ verified). ABC/Bayesian
+  search produces posterior DISTRIBUTIONS over histories, not point fits — which is the T3
+  overfit guard (roadmap risk #2) made structural, and makes W-H and W-I siblings.
+- **Geological precedent: petrology has inverted growth records since 1983** — Spear &
+  Selverstone, "Quantitative P-T paths from zoned minerals," CMP 1983 (✓ verified; modern kin:
+  brute-force P-T inversion CMP 2014, MRF inversion CMP 2011). T3 is that method generalized
+  from a P-T path to a full fluid history, from one zoning profile to the whole crystal record.
+
+Design cautions recorded now: (i) parameterize over SCENARIO INPUTS (initial fluid, event
+sequence, timings) — NOT derived quantities like σ, which the thermo engine computes; rockbot's
+"(T, pH, σ, …)" sketch would search a dependent variable. (ii) The space is mixed
+discrete/continuous (event sequences are combinatorial) — coarse-to-fine over event templates,
+continuous refinement within. (iii) Defer-to-geology becomes a PRIOR, formally: B2's
+plausibility bounds are the prior's support. (iv) Hold the seed fixed during search or
+marginalize over seeds — which is W-I's machinery. Depends on: A3/A4 (something to condition
+on), cheap headless forward runs (exists), W-I.
+
+### 6e. W-I — ensemble + uncertainty propagation (T4 made statistical)
+
+Accepted as the IMPLEMENTATION of what the fidelity budget's T4 row already promises (ensemble
+runs, 95% CI — rockbot's own review point #8): without ensembles T4 is a point claim. Two
+distinct uncertainty sources to propagate, and the tree is unusually well prepared for both:
+**parameter uncertainty** (draws within bench error bars on fitted params) × **realization
+uncertainty** (seed variation — the per-mineral seed streams, SIM 198, make seed
+marginalization clean and attributable). vugg-canary is the natural host: nightly, PASSIVE,
+accreting envelopes per scenario the way it accretes regressions now. Probe per-run cost
+before architecture — ensembles multiply compute; overnight-batch scale is the budget.
+
+### 6f. W-J — paragenetic sequences (the deposit above the vug)
+
+Accepted, with an honest census first: more of W-J exists in embryo than the pitch implies —
+events already sequence fluid changes within a scenario (the movements arc + event
+subsumption), substrate-affinity/paragenesis tables (js/26) already stack generations, and
+gen-1→etch→gen-2 (reactivated_fluorite_vein), paramorphs, and perimorphs are shipped
+multi-generation tenants. The genuinely NEW architecture is three things:
+
+1. **Geometry-modifying events** — fracture/brecciation that changes the WALL and breaks
+   existing crystals (ties to the census's cleavage/fracture gap and the deformation arc; O8's
+   cockade clasts live at this boundary).
+2. **Scenario composition as syntax** — `then:` chains in scenarios.json5 (scenario A → 
+   transition event → scenario B), with prior generations persisting as substrate.
+3. **Multi-vug correlation** — several cavities driven by ONE regional fluid timeline. And
+   here the bench connection is exact: **the catalog's LOT entity is W-J's ground truth** — a
+   flat of specimens from one pocket must be predicted by the SAME fluid history, specimen by
+   specimen. The boss's lot-based ingestion design and this workstream are the same idea seen
+   from opposite ends.
+
+## 6g. W-K — vug genesis: the cavity's own ontogeny (added 2026-07-03 — boss ask, researched same day)
+
+Full arc: **`PROPOSAL-VUG-GENESIS-2026-07-03.md`** (8-agent census + research, citations
+verified — both boss claims CONFIRMED in the literature: precursor-dissolution genesis is
+Chowns & Elkins 1974's canonical geode model, Crossref-verified; botryoids-on-modeled-surfaces
+is Self & Hill's substrate selection, fetched verbatim). Rungs in brief:
+
+| rung | one line | SIM |
+|---|---|---|
+| **V0** | archetype truth: give the cleft scenarios a real planar cleft (grimsel/tormiq are round 'pocket' cavities today); audit all 38 wall blocks against the genesis taxonomy | bump, per-scenario staged |
+| **V1** | wall microtexture per genesis: Blumberg-Curl scallops (flow-velocity-parameterized), cleft fracture steps, sediment rind, vesicle glass | render-only |
+| **V2** | primer coats (Deccan green celadonite Stage-0) + substrate-conditioning decay s(d)=exp(−d/d₀) in nucleation | bump |
+| **V3** | substrate-aware botryoidal/colloform (convexity-biased hemispheres, contour-then-relax banding, Roedder crystalline anchor) — **retires the 4-blob** | render-first |
+| **V4** | geometry-aware nucleation (curvature input; unifies with W-F O3; shared Krapivsky oracle) | bump |
+| **V5** | precursor-dissolution genesis: precursor-shape × two-clock rigidity × fill_fraction; first tenant = the Tennessee silicified-anhydrite geode. **W-J's first paying customer** | bump + scenarios |
+| **V6–V7** | whole-wall dissolution dynamics · topology breakers (two-wall fissures, boxwork — needs a successor representation, honestly deferred) | bump / XL unscheduled |
+
 ---
 
 ## 7. The data-availability map (the boss's stated worry, answered)
@@ -218,7 +299,9 @@ C0 ships with the first T2 acceptance pair; A1/A2 are cheap and unlock everythin
 **Phase 1.5 (the big ask's visible foundation, amended 2026-07-03):** O0 half-forms → O1
 unequal development → O2 induction surfaces — the render-only ontogeny core; each is a
 byte-identity candidate shipped by the standing ritual.
-**Phase 2:** A3 metrics + A4 bench (passive) + B2 PHREEQC instrument + B3 debt closure.
+**Phase 2:** A3 metrics + A4 bench (passive) + B2 PHREEQC instrument + B3 debt closure · W-K's
+visible foundation (V0 cleft truth + V1 wall microtexture; V3/V4 later share W-F O2/O3's era —
+same induction-surface and selection mathematics, one oracle).
 **Phase 3:** C1 depletion field (boss stone, EV check first — **now doubly load-bearing: it is
 the bedrock driver of W-F's one-sidedness**) · O3 geometric selection · then B1 Pitzer against
 B2's table.

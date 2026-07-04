@@ -51,6 +51,45 @@ Living list of open work items, captured from session conversations so context s
 > parameterization stub named). One push-back: #7 — the O8 texture labeler classifies SIM STATE
 > (rule thresholds on kernel-truth stats, classifyEtch-shaped), not photos; S+M stands, photo-
 > side ML deferred as the review's own W-H.
+>
+> **▸ HORIZON LADDERS (rockbot round 2, evaluated + accepted → roadmap §6d–6f):** **W-H inverse
+> solver** (specimen→scenario via simulation-based inference — Cranmer et al. 2020 PNAS ✓; the
+> geological precedent is Spear & Selverstone 1983 P–T-paths-from-zoning ✓, i.e. petrology has
+> done T3 since 1983; caution: search SCENARIO INPUTS, not derived σ) · **W-I ensemble/UQ**
+> (implements the fidelity budget's T4 row; parameter draws × seed realizations; canary is the
+> host) · **W-J paragenetic sequences** (honest census: events/substrate-affinity/gen-1→gen-2
+> already exist; NEW = fracture-as-geometry-event, `then:` scenario composition, multi-vug
+> correlation — **the catalog's LOT entity is W-J's ground truth**: one pocket, one fluid
+> history, every specimen predicted together). Post-Phase-5+ — named, not scheduled. (W-H
+> letter now canonical for the inverse solver; the review's passing "texture W-H" superseded.)
+>
+> **▸ W-K VUG GENESIS (boss ask, 2026-07-03) — the cavity's own ontogeny:**
+> `PROPOSAL-VUG-GENESIS-2026-07-03.md` — BOTH boss claims literature-CONFIRMED: precursor
+> dissolution ("starts as a vein of other material that gets worn away") = Chowns & Elkins 1974
+> geode genesis, Crossref-verified; botryoids-on-modeled-surfaces = Self & Hill SUBSTRATE
+> SELECTION verbatim. Census headlines: all 38 scenarios share ONE sphere-union path;
+> **grimsel/tormiq alpine CLEFTS are round 'pocket' cavities**; dissolution sculpts RING 0 ONLY
+> (dynamically-2D cavity); zero 3D wall microtexture; the 4-blob botryoid ignores the wall;
+> nucleation is geometry-blind (promontory == alcove). Rungs V0 cleft-truth → V1 microtexture
+> (Blumberg-Curl scallop LAW: L32=2200ν/v — one paleo-velocity scalar) → V2 primer coats +
+> s(d)=exp(−d/d₀) conditioning → V3 substrate-aware botryoidal (Roedder: colloform is
+> CRYSTALLINE — the 4-blob retires onto the Wulff-fiber kernel) → V4 geometry-aware nucleation
+> (shares W-F O3's Krapivsky oracle) → V5 precursor-dissolution (two-clock rigidity;
+> fill_fraction geode↔pseudomorph; first tenant = the TENNESSEE silicified-anhydrite geode;
+> W-J's first customer) → V6 whole-wall dynamics → V7 topology breakers (honestly deferred).
+>
+> **▸ DIGITIZATION TEMPLATE SHIPPED (boss ask, 2026-07-03) — A2 DELIVERED:**
+> `SPECIMEN-DIGITIZATION-TEMPLATE-2026-07-03.md` — the template for turning crystal images into
+> sim-growable data at thousands-of-rocks scale. 5-block record w/ evidence levels; 3 tiers
+> (S/D/B — the Smithsonian IDIF lesson: mass 2D, selective 3D); the ~20-shot SLOT MANIFEST;
+> dialogue compression (3-4 rounds → ONE gap list per LOT); UV answered (eye-read per λ +
+> afterglow IS the datum per FMDB practice; photos = exciter-on-lamp + non-fluorescing barrier-
+> on-lens, solved); hardware ladder D0→D3 → **🪨's Eyes rose engine (design mirrored in-tree,
+> `ROSE-ENGINE-MICROSCOPE-2026-03-11.md`)** with 4 research-backed refinements (ring ON the arm
+> per OpenScan Mini — the validated OSS precedent; strobe at swing APEX; indexed rotatable
+> polarizers; SKIP the laser scanner — translucency is its documented failure mode). NO coating
+> sprays ever; cross-pol is the optical fix. NEXT CONCRETE STEP: pilot the agent batch pass on
+> the Thompsonite flat (ids 1200-1223) before any new shooting is asked.
 
 > ## 🔮 STANDING GOAL (2026-06-22) — realistic crystal TRANSPARENCY & COLOUR (render layer) — **DEPTH-A SHIPPED 2026-07-02**
 >
