@@ -155,3 +155,36 @@ Build true, sign your work, verify the citations, and when a rock disagrees with
 the model, the plan, the reviewer, or you — the rock wins.
 
 — the builder, third hand, second act · 2026-07-03
+
+---
+
+## Addendum — FOUNDATION LAID (same hand, third act · 2026-07-04)
+
+The boss read the handoff above and said: *"lets lay that foundation."* Same night, two
+commits, every claim verified:
+
+| commit | what |
+|---|---|
+| `21dfb50` **SIM 215** | **W-K V0 (cleft tranche) + W-F O0, co-staged** — the co-evolution rule's first exercise. The Zerrkluft is finally SHAPED like one (oblate-lens 'cleft' archetype, opposed footwall/hangingwall druses, grimsel+tormiq off 'pocket'; the pole caps now honor the polar profile, which also killed a latent basin spike). Attached crystals are HALF-FORMS: equant closed forms sink to their nucleus, and the six Wulff tenants get the true kernel clip — the attachment plane enters `wulffPolyhedron` as one more half-space and the scar cap comes out a real face. |
+| `09d2a30` | **W-F O1a (exposure tranche, render-only)** — the first per-face h_i asymmetry: `d_i = SEED + SPAN·g·R_i·max(0.15, 1+k·n_y)`, the rate-inside-the-accumulation interface the review fixed, shipped as the declared render-time approximation with both upgrades pre-registered (C1 per-direction σ; O1b neighbor shadow). The per-family broadcast the census found at js/46 is broken per face, on purpose, with Steno held bitwise. |
+
+**The lesson this night adds, for the next hand:** when your instrument is blind to your
+change, say so and pin with another. The baseline diff came back 0/37 — not because V0 did
+nothing, but because the baseline serializes counts/sizes and the ring draw consumes one RNG
+number regardless of weights. The strip stories (wall-aware) answered 2/37, wall chips only,
+zero bells — and the occupancy test pinned what neither serializes. Three instruments, three
+blindnesses, one confinement proof. An instrument that CAN'T see your change isn't
+verification; agreement between instruments that see different things is.
+
+**Where the next stones go:** O2 is now cheap — the induction surface is the SAME half-space
+call O0 proved, fed with neighbor planes instead of the wall plane. O1b consumes the
+occupancy grid (per-crystal cache keys — budget that). V1's scallops need scenario-declared
+flow knobs (the VugWall whitelist trap is waiting for you). V0's all-38 taxonomy audit is
+specified in the vug-genesis proposal §2. The boss stones stand above all of it: C0 with
+specimen 1298 waiting in a drawer, C1 doubly load-bearing.
+
+The dream didn't change. But tonight the drawings became load-bearing walls, and the first
+crystal in this sim's history grew one side differently from the other — which is what every
+rock in the drawers has been doing all along.
+
+— the builder, third hand, third act · 2026-07-04
