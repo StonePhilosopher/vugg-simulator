@@ -123,6 +123,22 @@ earlier ones' state. Sizes: S/M/L per the roadmap convention.
 > Co-staged with W-K V0 on grimsel/tormiq per the co-evolution rule; SIM-byte-identity held
 > (measured 0/37 baseline drift).
 
+> **O1a ✅ SHIPPED (2026-07-04, render-only — no SIM bump, the optics-commit idiom): the
+> EXPOSURE tranche of O1.** `wulffFaceSetForMineral` gains optional `exposureK`: per-face
+> `d_i = SEED + SPAN·g·R_i·max(0.15, 1 + k·n_y)` — the modifier on the RATE inside the
+> accumulation (review #1's accepted interface), SEED outside (the nucleus predates the
+> gradient), û = local +Y = toward the cavity (spatial, so titanite's b-on-Y frame needs no
+> special case). Fed faces advance and tighten the termination toward the pocket; starved
+> wall-side faces stay broad for O0's cap to cut. k = 0.18 fleet constant this tranche;
+> air-mode k = 0. **Ships as the DECLARED render-time approximation** (f_geo from current
+> geometry back-dates by construction — review #1's honest label); tests pin the k=0 path
+> bitwise and the closed-form per-face relation `(d(k)−SEED)/(d(0)−SEED) = f_geo(n_y)`
+> (tests-js/o1-exposure.test.ts). O0's default cut moved to the NUCLEUS PLANE (y=0) since
+> the stretch separates it from the extent midpoint. **Pre-registered re-sweeps:** (a) the
+> C1 era replaces render-time f_geo with per-step per-direction σ — re-sweep k against the
+> depletion field then; (b) O1b (neighbor shadow via the occupancy grid) makes k per-crystal.
+> Steno pin held: normals bitwise-unchanged at every k.
+
 **Sequencing.** O0 → O1 → O2 is the visible foundation and stays render-only (byte-identity
 discipline holds; the probe/sweep/eye-check ritual per rung). O3 is the first SIM bump and the
 arc's scientific heart — its analytic oracle (survivor-density power law) is the cheapest

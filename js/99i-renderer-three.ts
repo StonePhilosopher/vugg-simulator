@@ -4056,22 +4056,32 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         // equant sink set above) but is an equant closed Wulff body — same
         // half-form default as its tablet-token sibling.
         if (isTiWulff && _simOccF == null && crystal.growth_environment !== 'air') occF = 0.5;
+        // W-F O1a — exposure tranche (2026-07-04): wall-anchored fluid crystals
+        // grow their fed (cavity-facing) faces ahead of their starved
+        // (wall-facing) faces — the kernel's f_geo = 1 + k·(n·û) per-face rate
+        // modifier (js/46). One constant for the whole fleet in this tranche;
+        // O1b upgrades it to per-crystal neighbor shadow, C1's depletion field
+        // eventually feeds the real per-direction σ. Air-mode keeps k = 0
+        // (dripstone delivery is a different physics — gravity film, not an
+        // isotropic bath gradient).
+        const kExp = crystal.growth_environment === 'air' ? 0 : 0.18;
         const formKey = (isFlWulff || isGlWulff) ? (wf.octahedral ? 'o' : 'c')   // cubic cube↔octahedron (galena octahedral is always false → 'c')
           : isCalWulff ? (wf.scaleno ? 's' : 'r') : 't';   // wulfenite + barite + titanite are single-body → 't' (mineral is in the key)
         const key = '__wulff_' + crystal.mineral + '_' + formKey
           + '_' + Math.round(wf.biasC * 100) + '_' + Math.round(wf.growthFrac * 10)
-          + '_h' + Math.round(occF * 20);   // O0 attachment-fraction bucket (0.05 steps)
+          + '_h' + Math.round(occF * 20)    // O0 attachment-fraction bucket (0.05 steps)
+          + '_e' + Math.round(kExp * 100);  // O1a exposure bucket
         geom = state.geomCache.get(key);
         if (!geom) {
           // crystalId 0 → the kernel's internal jitter is a harmless constant (the per-crystal
           // spread already lives in biasC), so the quantized cache key dedupes cleanly.
-          const faces = wulffFaceSetForMineral(crystal.mineral, wf.growthFrac, 0, wf.biasC);
+          const faces = wulffFaceSetForMineral(crystal.mineral, wf.growthFrac, 0, wf.biasC, kExp);
           // O0 half-form: clip at the attachment plane + real scar cap
           // (js/46 _makeWulffHalfFormGeom). Degenerate clip → full
           // polyhedron → primitive: the D2 robustness ladder, one rung longer.
           const g2 = faces
             ? (occF > 0
-                ? (_makeWulffHalfFormGeom(faces, occF) || _makeWulffGeom(faces))
+                ? (_makeWulffHalfFormGeom(faces, occF, _simOccF == null) || _makeWulffGeom(faces))
                 : _makeWulffGeom(faces))
             : null;
           if (g2) { geom = g2; state.geomCache.set(key, geom); }

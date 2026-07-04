@@ -171,7 +171,7 @@ change, not kernel surgery). Rungs in brief:
 | rung | one line | SIM |
 |---|---|---|
 | **O0** ✅ SIM 215 (2026-07-03) | attached crystals become HALF-FORMS clipped at the wall with a real contact scar | render-only |
-| **O1** | unequal face development: per-face h_i from real exposure geometry (Steno pin: never tilt a normal) | render-only, C1 upgrades the driver |
+| **O1** ◐ O1a exposure tranche ✅ 2026-07-04 (render-only) | unequal face development: per-face h_i from real exposure geometry (Steno pin held: never tilt a normal); O1b neighbor-shadow (occupancy grid) OPEN | render-only, C1 upgrades the driver |
 | **O2** | induction/contact surfaces between neighbors at growth-rate-weighted meeting planes — kills mesh interpenetration, births druse texture | render-only candidate |
 | **O3** | EARNED geometric selection: random nucleation tilt + competitive burial; analytic oracle = Gray's d^(−1/2) survivor law | SIM bump |
 | **O4** | engulfment made visible (the enclosure mechanic EXISTS sim-side, renderer never reads `enclosed_by`) + coats_front/embedded inclusion classes | render + adjacency fix |
