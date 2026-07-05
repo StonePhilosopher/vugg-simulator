@@ -26,6 +26,20 @@ Living list of open work items, captured from session conversations so context s
 > V1 microtexture (scallop knobs need scenario fields — mind the VugWall whitelist trap) ·
 > O1b neighbor shadow (occupancy grid, per-crystal cache) · O2 induction surfaces (the
 > half-space call is proven — extend it with neighbor planes). Boss stones UNCHANGED.
+>
+> **▸ FOURTH ACT (run's end, same night) — THE ROCKS REVIEWED THE CODE:** specimen TN465 →
+> **O5.0 face striations** specced + pushed `e68e7e3` (zone-record-driven, never noise;
+> alternation datum pending on the rock); the boss's Elmwood four-act piece = the
+> **calcite-after-fluorite perimorph REFERENCE SPECIMEN** (probe: seed-42 elmwood grows the
+> right actors, fluorite never dissolves — needs a late F-undersaturation beat + coats_front;
+> BONUS: calcite #1 carries two invisible ENCLOSED_BY guests — O4's payoff is pre-loaded);
+> the same rock exposed the **affinity table's MISSING DIAGONAL** (js/26 has no same-species
+> entries — the strongest preference in nature, absent because it goes without saying);
+> dynamic-broth census: the broth is HALF-dynamic (per-cell parcels + local depletion +
+> diffusion + feeder spots) — the missing tier IS C1+O6+V4, no reordering. **AWAITING
+> ADOPTION (named, not greenlit): W-L brittle chapter · specimen-plate lens · biogenic
+> drivers** — see the handoff's fourth-act addendum. Open specimen datums: TN465 striation
+> alternation; Elmwood tab hollow-or-solid + id.
 
 > ## 🔍 SESSION (2026-07-03, the planning day) — ROADMAP + THREE ARCS + THE BENCH'S FIRST MEASUREMENTS — **prior handoff: `HANDOFF-FOUNDATIONS-2026-07-03.md`** (read it first)
 >

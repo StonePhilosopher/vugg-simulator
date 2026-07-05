@@ -188,3 +188,63 @@ crystal in this sim's history grew one side differently from the other — which
 rock in the drawers has been doing all along.
 
 — the builder, third hand, third act · 2026-07-04
+
+---
+
+## Addendum — THE ROCKS REVIEW THE CODE (same hand, fourth act · 2026-07-04, run's end)
+
+After the code shipped, the boss started handing me rocks, and every rock changed the plan.
+The late-night yields, all committed:
+
+| yield | source | state |
+|---|---|---|
+| **O5.0 face striations** — new W-F rung: striations as the zone record's face-side rendering, data-driven from each crystal's own σ history, never a noise texture | specimen **TN465** (Lemurian-type quartz, boss's own mechanism read) | specced + pushed `e68e7e3`; open datum: does striated/smooth ALTERNATE around the prism? (r/z hypothesis — the rock arbitrates) |
+| **Calcite-after-fluorite perimorph reference specimen** — the future-MVT note's exact predicted content, now in hand: sphalerite base → photobleached fluorite → two side-attached DT dogtooth → cubic tab in gen-2 druse coat | the boss's Elmwood four-act piece | memory updated; probe measured seed-42 elmwood: right actors (19.2mm stepped dogtooth + 20.5mm cubic fluorite), fluorite NEVER dissolves — motif needs a late F-undersaturation beat + the coats_front half. Open datums: hollow-or-solid; specimen id |
+| **The affinity table's MISSING DIAGONAL** — SUBSTRATE_NUCLEATION_DISCOUNT (js/26) has no same-species entries; calcite-on-calcite, the strongest substrate preference in nature (zero barrier — syntaxial), isn't in the table | the same Elmwood piece, walked through the table act by act (4/4 pairs present, diagonal absent) | named for the O4/O5 era — one-table addendum, strongest tier |
+| **Elmwood's invisible guests** — calcite #1 already carries ENCLOSED_BY pyrite + cerussite at seed 42; the O4 render gap is LIVE in the showcase scenario | perimorph probe | free O4 payoff, no scenario work needed |
+| **Dynamic-broth census** — the broth is HALF-dynamic already: 1,920 per-cell fluid parcels, growth reads AND depletes its own cell, real diffusion pass, seeded feeder spots (deposition clustering measured 0-2%→11-18%). Missing tier = the drawdown FIELD (C1, boss stone #2), direction (O6), interior voxels (js/24's dark phase), nucleation reading the field (V4) | boss question; verified in code, not asserted | C1 unchanged in queue — "not laying pipe; turning on the pressure" |
+
+**Named at run's end, AWAITING ADOPTION (change no priorities; take to the next
+boss/rockbot round):** **W-L the brittle chapter** — fracture/cleavage/detachment/healing;
+the deformation arc did ductile only, and the digitization template already tags
+`healed_fracture` — the bench is about to measure what the sim can't express (the
+instrument-ahead-of-model smell). Pocket-rupture floor-fall + reheal is where many real DT
+"floaters" come from. · **The specimen-plate lens (W-A)** — render a broken-out plate posed
+like a HERO shot, so bench comparisons stop being cavity-interior vs velvet-plate; the rose
+engine's sim twin. · **Biogenic drivers** — microbial H₂S source term for MVT (W-B family)
++ biofilm primer fabrics (V2 family); the Deccan research already brushed it. · Minor: name
+"sanded" internal-sediment dust zones in O5's film family so they aren't forgotten.
+
+### The mark — what this act adds
+
+**The rocks review the code.** Cold-ci checks that the tree didn't break; the strips check
+that the fleet didn't drift; but the instrument that found a missing rung, a missing table
+diagonal, and a wrong nucleation order — in one evening — was a specific rock in a specific
+hand while the sim state sat open beside it. The bench formalizes this; the DIALOGUE is
+already the highest-bandwidth version of it. End every arc by giving the relevant drawer a
+chance to object.
+
+**The obvious is where censuses fail.** The affinity table holds thirty-odd researched,
+cited, cross-checked pairs — and omits same-on-same, the strongest substrate preference
+there is, because nobody writes down what goes without saying. When you audit a table, audit
+its diagonal; when you census a system, census the assumptions too obvious to type.
+
+**Build the mechanism, not a picture of it.** O0's clip entered the kernel as one more
+half-space — so O2 is now "the same call, more planes," and O5.0 arrived pre-paid because
+the zone record already existed. Every rung that ships as the smallest TRUE case of a
+general mechanism makes the next rung cheaper. Every rung that ships as a special effect
+makes it dearer. That is the whole difference between a foundation and a facade.
+
+**The dream, fourth telling.** The second act dreamed that nothing true about these rocks
+would be lost. The third act laid stones. Tonight a rock photographed at midnight had its
+mechanism specced into the ladder by one — the loop between drawer and engine closed to
+under an hour. The dream now: that the loop closes all the way — every specimen a pull
+request against the physics, the collection as the living test suite, until the sim is not
+a portrait of the drawers but their other voice. When that day comes, "byte-identical to
+nature" won't be a finish line we crossed; it will be a conversation that stopped needing
+a translator.
+
+Build true, check the diagonal, and let the rocks interrupt you — they know the schedule
+better than the roadmap does.
+
+— the builder, third hand, fourth act · 2026-07-04
