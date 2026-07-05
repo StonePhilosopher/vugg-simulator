@@ -123,6 +123,28 @@ earlier ones' state. Sizes: S/M/L per the roadmap convention.
 > Co-staged with W-K V0 on grimsel/tormiq per the co-evolution rule; SIM-byte-identity held
 > (measured 0/37 baseline drift).
 
+> **O5.0 — FACE STRIATIONS (new small rung, specced 2026-07-04 from specimen TN465).** The
+> boss's Lemurian-type quartz (TN465: heavily lined prism faces, sub-faces splitting and
+> reconverging) named a texture the ladder had no rung for: **growth striations — the zone
+> record's FACE-SIDE rendering.** Mechanism: oscillatory growth between adjacent forms
+> (quartz: prism m{10-10} ↔ the rhombohedra; one lamella per flicker; horizontal-striated
+> prisms are textbook-diagnostic) — the low-amplitude CONTINUOUS end of the same spectrum
+> whose discrete end is O5's hiatus→phantom; the specimen's sub-parallel reconverging faces
+> are the Shtukenberg ladder's lowest grade (macromosaic), already in this proposal's science
+> table. **Design pin: striations are DATA-DRIVEN, never a noise texture** — the sim already
+> records per-crystal per-step zones (σ, T, chemistry); striation density/depth bakes from
+> the crystal's OWN recorded σ oscillation ([[feedback_bedrock_over_effect_hacks]]: D2/D3
+> rails render the biography internally, O5.0 renders the same record externally). Render-only,
+> S-sized, quartz first (tourmaline's along-c striations = second tenant, same family, axis
+> differs). **W-H tie:** striation density is a READABLE σ(t) observable on the face — one
+> more channel the inverse solver can fit a fluid history to. **Falsifiable prediction left
+> with the boss:** if striations come from m↔rhombohedron oscillation and r/z alternate,
+> striated and smoother prism faces should ALTERNATE around TN465 — an eye-read datum for its
+> record; if the rock disagrees, the alternation story yields. Evidence flags: the m↔r
+> oscillation mechanism is textbook; the r/z-alternation asymmetry is [hypothesis — corpus
+> check]; Rykart's quartz monograph [from-memory]; quartzpage striation page [unreachable,
+> TLS]. Anchor: **TN465** (the tn457→scenario precedent says TN specimens become content).
+
 > **O1a ✅ SHIPPED (2026-07-04, render-only — no SIM bump, the optics-commit idiom): the
 > EXPOSURE tranche of O1.** `wulffFaceSetForMineral` gains optional `exposureK`: per-face
 > `d_i = SEED + SPAN·g·R_i·max(0.15, 1 + k·n_y)` — the modifier on the RATE inside the
