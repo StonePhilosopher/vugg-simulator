@@ -2513,12 +2513,12 @@
 
     "tutorial_first_crystal": {
       "anchor": "(tutorial scaffold — generic silica-rich broth)",
-      "description": "Tutorial 1: First Crystal. Grow a quartz, then watch what happens when conditions drift out of its growth window.",
+      "description": "Tutorial 1: The Grand Tour + First Crystal. A guided top-down walk of the whole interface, then grow a quartz and watch what happens when conditions drift out of its growth window.",
       "expects_species": ["quartz"],
       "duration_steps": 30,
       "notes": [
-        "Tutorial scenario. Designed for the guided first-time-player experience: simple silica-rich broth, quartz nucleates within a few steps at 180°C, then a scripted temperature drop at step 8 pulls T well out of quartz's growth window. The intended player learning is: (1) clicking Advance moves time, (2) crystals need conditions in the right range, (3) when the conditions drift, growth stops.",
-        "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario without the callout overlay UI that ships in a follow-up.",
+        "Tutorial scenario. Designed for the guided first-time-player experience. REWORKED 2026-07-04 (the Grand Tour): the overlay script now opens with a top-down tour of the screen (title, quick-nav, Wall Profile viewers ending on the helicoid manifold, the σ nucleating/dormant readout, action panel, log, inventory) before handing off to the original arc — simple silica-rich broth, quartz nucleates within a few steps at 180°C, then a scripted temperature drop at step 8 pulls T well out of quartz's growth window. The intended player learning is: (1) what every part of the screen is, (2) clicking Advance moves time, (3) crystals need conditions in the right range, (4) when the conditions drift, growth stops.",
+        "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario (the overlay only engages via startTutorial).",
         "Broth shape mirrors FLUID_PRESETS.silica (the existing 'Silica-rich' starter fluid) so the lesson generalizes to that picker entry."
       ],
       "initial": {
@@ -2552,17 +2552,122 @@
       "events": [
         { "step": 8, "type": "tutorial_temperature_drop", "name": "Temperature Drops", "description": "Conditions drift out of quartz's growth window — the crystal stops growing" }
       ],
-      // Tutorial overlay script consumed by the JS tutorial state machine
-      // (window.startTutorial). Each step fires when fortressSim.step
-      // reaches its `step` value. Authors should put one callout per
-      // sim-step trigger (later steps replace earlier ones immediately).
+      // Tutorial overlay script — ENGINE v2 (the Grand Tour rework,
+      // 2026-07-04). Consumed by the state machine in
+      // js/70a-tutorial-overlay.ts (full schema documented there).
+      // Three trigger types: `step: N` fires when fortressSim.step
+      // reaches N (one callout per trigger — bursts keep only the
+      // last); `action: {event, selector, checked?}` waits for the
+      // player to do the thing; neither = a Continue step (button /
+      // Enter / Space). `unlock` arrays grant .tutorial-allow;
+      // `spotlight` un-dims the mode-toggle bar.
+      //
+      // Structure: a top-down SCREEN TOUR (title → quick-nav → Wall
+      // Profile viewers ending on the helicoid → status bar + the
+      // nucleating/dormant σ readout → action buttons → log →
+      // inventory), then the original first-crystal NARRATIVE ARC
+      // (grow quartz, lose the growth window at step 8, read the
+      // lesson) — which is where the tour's "we'll circle back to
+      // Advance" promise lands.
       "tutorial": {
+        // Nothing whitelisted at start — the tour unlocks controls as
+        // it reaches them (Advance at the handoff step, everything at
+        // the finale).
+        "unlock": [],
         "steps": [
-          { "step": 0,  "anchor": "#f-advance",       "side": "top",   "text": "Welcome. This is your vug — an empty pocket inside rock, waiting for a crystal to grow. The broth around it is silica-rich and warm enough for quartz. Press 'Advance Step' to move time forward by ~50,000 years." },
-          { "step": 4,  "anchor": "#fortress-status", "side": "right", "text": "Quartz is forming on the wall. Each press of Advance grows it a little more. Notice the temperature sitting around 180°C — that's right in quartz's comfort window." },
-          { "step": 9,  "anchor": "#fortress-status", "side": "right", "text": "The temperature just dropped sharply. Watch what happens to growth as you keep pressing Advance — the broth got colder, and cold silica wants to stay in solution rather than crystallize out." },
-          { "step": 16, "anchor": "#fortress-log",    "side": "left",  "text": "Notice the log: 'no growth this step' is starting to appear. Your crystal is still there, beautiful, but no new layers are forming. The broth doesn't want to give up its silica anymore." },
-          { "step": 25, "anchor": "#fortress-log",    "side": "left",  "text": "That's the lesson: conditions control whether a crystal grows. Same broth, same crystal, different temperature — different outcome. Everything else in the game is just elaborations on this idea. (Press Home when ready, or keep going.)" }
+          // ---- THE TOUR: top of the screen, working down ----
+          { "anchor": "h1", "side": "bottom",
+            "text": "Welcome to Vugg Simulator — a realistic crystal growing and collecting game. You are inside a vug: a pocket in rock, flooded with hot mineral broth. Given conditions and time, crystals grow here — the same way every museum specimen grew. This tour walks the screen top to bottom.",
+            "hint": "press Enter or Space (or click Continue) to step through" },
+          { "anchor": "#mode-toggle", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "The quick-nav bar. Five doors, always at the top of the screen. Left to right: your running game, two instruments for reading finished crystals, the field guide, and Home." },
+          { "anchor": "#mode-current", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "▶ Current Game — jumps back to whatever run is live. Wander off to any other screen and this returns you to your vug, mid-story." },
+          { "anchor": "#mode-groove", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "📀 Record Player — spins a collected crystal like vinyl. Every growth zone is a groove, and the needle reads the chemistry back out of it. Crystals really are records; this just plays them." },
+          { "anchor": "#mode-stripview", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "📼 Strip View — the vug's flight recorder. Every step of a run is captured as a strip of chip readings; laid side by side they show the whole history at a glance." },
+          { "anchor": "#mode-library", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "📚 Library — the field guide. Every mineral species the simulator knows, with habits, chemistry, and the real localities they come from." },
+          { "anchor": "#mode-home", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "🏠 Home — back to the title screen. It also ends this tutorial, so save it for when you're done." },
+
+          // ---- Wall Profile: the viewer stack ----
+          { "anchor": "#topo-panel", "side": "top",
+            "text": "The Wall Profile — your window into the vug. Everything that nucleates, grows, dissolves, or gets buried happens on this wall. It has several viewers; we'll flip through them." },
+          { "anchor": "#topo-canvas-three", "side": "top",
+            "text": "The default viewer: the cavity as a 3D model. Drag to orbit it — go ahead, the tour will wait. Crystals appear on the wall as they grow, at true relative scale." },
+          { "anchor": ".topo-zoom-ctrls", "side": "right",
+            "text": "Zoom. − and + step the magnification; the label shows where you are." },
+          { "anchor": ".topo-slice-ctrls", "side": "right",
+            "text": "Slices. The cavity is read in horizontal rings — ◀ and ▶ page through them one at a time, or show all at once. Useful when a crust hides what's underneath." },
+          { "anchor": ".topo-camera-ctrls", "side": "right",
+            "text": "Camera. ↻ makes dragging orbit, ✥ makes dragging pan, ⊙ recenters everything. The last two buttons — ⬚ and ⌇ — switch viewers. Let's try them." },
+          { "action": { "event": "click", "selector": "#topo-three-btn" },
+            "anchor": "#topo-three-btn", "side": "right",
+            "text": "Click ⬚ to switch to the flat viewer.",
+            "hint": "click the highlighted ⬚ button" },
+          { "anchor": "#topo-canvas", "side": "top",
+            "text": "The unwrapped wall: the whole cavity surface peeled flat into one map. Amber is bare rock; colors are crystal classes. When a run finishes, a ▶ appears here to replay the wall's entire history like a film." },
+          { "action": { "event": "click", "selector": "#topo-three-btn" },
+            "anchor": "#topo-three-btn", "side": "right",
+            "text": "Click ⬚ again to return to the 3D model.",
+            "hint": "click the highlighted ⬚ button" },
+          { "action": { "event": "click", "selector": "#helix-overlay-btn" },
+            "anchor": "#helix-overlay-btn", "side": "right",
+            "text": "Now the strangest instrument on the panel. Click ⌇ to open the Helicoid Manifold.",
+            "hint": "click the highlighted ⌇ button" },
+          { "anchor": "#topo-canvas-three", "side": "top",
+            "text": "The Helicoid Manifold. A radar sweeps through the vug — one full rotation is one moment of time, advancing as it turns. The spiral trails it leaves are the vug's parameters traced through space: a shape you read the way you'd read an instrument, not a picture." },
+          { "anchor": "#helix-legend", "side": "bottom",
+            "text": "The banner above the vug decodes it. Each row is one parameter the radar listens to — temperature, pH, saturation — with its live value each revolution. Toggle rows on and off to choose what the trails trace. More information lives up here than anywhere else on the screen; come back to it when a run confuses you." },
+          { "action": { "event": "click", "selector": "#helix-overlay-btn" },
+            "anchor": "#helix-overlay-btn", "side": "right",
+            "text": "Click ⌇ again to put the radar away — it'll be here when you're ready for it.",
+            "hint": "click the highlighted ⌇ button" },
+
+          // ---- Status bar: vitals + the σ readout ----
+          { "anchor": "#fortress-status", "side": "bottom",
+            "text": "The status bar: the vital signs of the broth. Step counts time (~50,000 years each). Temp, Press, pH, and Flow are the conditions every mineral in the game answers to." },
+          { "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "Below the vitals: every mineral this broth could grow, sorted by supersaturation (σ). σ ≥ 1 — NUCLEATING: the fluid holds more of that mineral's ingredients than it can keep dissolved, and seeds can form. σ < 1 — DORMANT: the ingredients are present but content to stay in solution. Watch this list — it's the forecast." },
+          { "action": { "event": "change", "selector": "#sat-filter-dormant", "checked": false },
+            "anchor": ".sat-filter-row", "side": "bottom",
+            "text": "These checkboxes filter the readout. Most of the list is dormant most of the time — uncheck 'dormant' to focus on what's actually live.",
+            "hint": "uncheck the dormant checkbox" },
+
+          // ---- Action panel, log, inventory ----
+          { "anchor": ".action-grid", "side": "top",
+            "text": "The instrument panel — every verb that touches the physics. Warm and cool the broth, flood and drain the water, push the pH, shake the rock. They're dimmed during the tour; all of them unlock at the end." },
+          { "anchor": "#f-advance", "side": "top",
+            "text": "⏳ Advance — the most important button in the game. One press moves time forward ~50,000 years and lets the chemistry act. We'll circle back to it in a moment." },
+          { "anchor": ".btn-finish", "side": "top",
+            "text": "📜 Finish & Narrate ends the run and writes the vug's whole story as prose. ↩️ Reset starts the pocket over. Copy to clipboard exports the log for keeping." },
+          { "anchor": "#fortress-log", "side": "left",
+            "text": "The log. Every step prints here, newest at the top: step headers, growth per crystal, ✦ nucleations, ⚡ events arriving in the broth, 🧱 changes to the wall itself. When something surprises you, the explanation is usually in here." },
+          { "anchor": "#fortress-inventory", "side": "left",
+            "text": "The Crystal Inventory. Every crystal that seeds on the wall gets a card — species, size, habit, zone count — and a 💎 Collect button for keeping the good ones. You'll tap a card shortly." },
+
+          // ---- Handoff into the narrative arc ----
+          { "anchor": "#f-advance", "side": "top", "unlock": ["#f-advance", ".act-wait"],
+            "text": "Time to grow something. This broth is 180°C and loaded with silica — quartz country. Advance is unlocked (⏩ Advance 10 too, for the impatient). Press it and watch the wall.",
+            "buttonLabel": "Begin ⏎" },
+
+          // ---- THE ARC: first crystal, and losing the window ----
+          { "step": 4,  "anchor": "#fortress-status", "side": "bottom",
+            "text": "Quartz is forming on the wall. Each press of Advance grows it a little more. Notice the temperature sitting around 180°C — that's right in quartz's comfort window." },
+          { "step": 9,  "anchor": "#f-stat-temp", "side": "bottom",
+            "text": "The temperature just dropped sharply. Watch what happens to growth as you keep pressing Advance — the broth got colder, and cold silica wants to stay in solution rather than crystallize out." },
+          { "action": { "event": "click", "selector": ".inv-crystal" },
+            "anchor": "#fortress-inventory", "side": "left",
+            "text": "Your quartz has a card in the inventory now. Tap it.",
+            "hint": "tap the quartz card (if there's no card yet, Advance a few more steps first)" },
+          { "anchor": "#zone-modal", "side": "left",
+            "text": "The zone history. Every band is one growth zone — a time-stamped record of the broth at the moment it grew: temperature, chemistry, UV response. This is how real collectors read real crystals, and everything you do to the broth is being written down in here. Close it when you've had a look." },
+          { "step": 16, "anchor": "#fortress-log", "side": "left",
+            "text": "Notice the log: 'no growth this step' is starting to appear. Your crystal is still there, beautiful, but no new layers are forming. The broth doesn't want to give up its silica anymore." },
+          { "step": 25, "anchor": "#fortress-log", "side": "left", "unlock": [".action-btn"],
+            "text": "That's the lesson: conditions control whether a crystal grows. Same broth, same crystal, different temperature — different outcome. Everything else in the game is elaborations on this idea. The whole instrument panel is now unlocked — try to warm the broth back into quartz's window, or finish up and keep the crystal." }
         ]
       },
       "sources": [

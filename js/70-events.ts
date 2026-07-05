@@ -136,27 +136,23 @@ window.showCallout = showCallout;
 window.hideCallout = hideCallout;
 
 // ============================================================
-// Tutorial state machine (slice 3 of TUTORIAL-SYSTEM)
+// Tutorial state machine (slice 3 of TUTORIAL-SYSTEM — engine v2)
 // ============================================================
 // Walks the `tutorial.steps` array attached to a scenario spec in
-// data/scenarios.json5, firing the appropriate callout as the
-// fortress-mode sim step counter advances. Source of truth for
-// "current step" is fortressSim.step (only fortressStep('wait')
-// advances it; modifier actions like Heat/Cool don't).
-//
-// Schema (per step in tutorial.steps):
-//   step    — int. fortressSim.step value at which this callout fires
-//             (any step whose .step <= fortressSim.step that hasn't
-//             fired yet will fire on the next advance)
-//   anchor  — CSS selector OR HTMLElement. Where the callout points.
-//   text    — tooltip body
-//   side    — 'top' | 'bottom' | 'left' | 'right' | 'auto' (optional)
+// data/scenarios.json5. Engine v2 (2026-07-04, the Grand Tour rework)
+// supports THREE trigger types per step — sim-step (legacy `step: N`,
+// fires as fortressSim.step advances), action (`action: {event,
+// selector, checked?}` — waits for the player to do a thing), and
+// continue (neither field — Continue button / Enter / Space). Full
+// schema documentation lives at the top of 70a-tutorial-overlay.ts.
 //
 // Control-locking: when active, body has `.tutorial-active` class.
-// CSS hides all .action-btn except those marked `.tutorial-allow`
-// (currently just the Advance button) and the broth panel.
+// CSS dims + inerts all .action-btn except those marked
+// `.tutorial-allow`; steps unlock controls progressively via their
+// `unlock` arrays (tutorial-level `unlock` defaults to ['#f-advance']
+// for the legacy sim-step tutorials).
 
-let _tutorialState = null; // { steps: [...], stepIdx: 0 } | null
+let _tutorialState = null; // { steps: [...], stepIdx, renderedIdx } | null (engine v2 — see 70a)
 
 window.startTutorial = startTutorial;
 window.endTutorial = endTutorial;
