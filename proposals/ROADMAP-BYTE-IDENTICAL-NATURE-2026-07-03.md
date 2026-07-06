@@ -172,7 +172,7 @@ change, not kernel surgery). Rungs in brief:
 |---|---|---|
 | **O0** ✅ SIM 215 (2026-07-03) | attached crystals become HALF-FORMS clipped at the wall with a real contact scar | render-only |
 | **O1** ◐ O1a exposure tranche ✅ 2026-07-04 (render-only) | unequal face development: per-face h_i from real exposure geometry (Steno pin held: never tilt a normal); O1b neighbor-shadow (occupancy grid) OPEN | render-only, C1 upgrades the driver |
-| **O2** | induction/contact surfaces between neighbors at growth-rate-weighted meeting planes — kills mesh interpenetration, births druse texture | render-only candidate |
+| **O2** ✅ 2026-07-06 (`eea52bc`, render-only) | induction/contact surfaces: crystals clipped at growth-rate-weighted meeting planes, cuts capped MATTE. The probe (`tools/o2-contact-probe.mjs`) reshaped it — the Wulff face-space clip reached only 7 crystals, so O2 ships a GENERIC convex-mesh clipper (`_clipConvexGeom`, js/46) reaching 622 contacted convex crystals fleet-wide. Concave (hopper/botryoidal/twin, ~174) + current-size→integrated-growth weights DEFERRED. 0/38 drift | render-only |
 | **O3** | EARNED geometric selection: random nucleation tilt + competitive burial; analytic oracle = Gray's d^(−1/2) survivor law | SIM bump |
 | **O4** | engulfment made visible (the enclosure mechanic EXISTS sim-side, renderer never reads `enclosed_by`) + coats_front/embedded inclusion classes | render + adjacency fix |
 | **O5** | inclusion-perturbed regrowth: ELO phantom/sceptre earned from per-face-class masking; split-growth ladder to spherulite | SIM bump |
@@ -298,7 +298,9 @@ start; interlibrary/author-copy requests are a nice-to-have for C2, not a blocke
 C0 ships with the first T2 acceptance pair; A1/A2 are cheap and unlock everything.
 **Phase 1.5 (the big ask's visible foundation, amended 2026-07-03):** O0 half-forms → O1
 unequal development → O2 induction surfaces — the render-only ontogeny core; each is a
-byte-identity candidate shipped by the standing ritual.
+byte-identity candidate shipped by the standing ritual. **✅ O0 (SIM 215) + O1a + O2
+(`eea52bc`) SHIPPED — the render-only core stands; OPEN within it: O1b neighbor-shadow, O2
+concave forms + integrated-growth weights.**
 **Phase 2:** A3 metrics + A4 bench (passive) + B2 PHREEQC instrument + B3 debt closure · W-K's
 visible foundation (V0 cleft truth + V1 wall microtexture; V3/V4 later share W-F O2/O3's era —
 same induction-surface and selection mathematics, one oracle).

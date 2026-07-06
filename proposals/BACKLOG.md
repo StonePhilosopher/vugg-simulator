@@ -33,7 +33,18 @@ Living list of open work items, captured from session conversations so context s
 > surfaces should auto-generate from SCENARIOS (vugg-add-scenario §10.5 TODO). Traps in the
 > handoff (native prompt() hangs preview; v116 picker guard; fortress RNG non-determinism).
 
-> ## 🧱 SESSION (2026-07-03→04, the foundation-laying night) — THE FIRST CODE OF THE ROADMAP: V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated third-act addendum)**
+> ## 🧱 SESSION (2026-07-03→06, the foundation) — THE ROADMAP'S RENDER-ONLY ONTOGENY CORE: V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated addenda through the O2 act 2026-07-06)**
+>
+> **O2 UPDATE (`eea52bc`, 2026-07-06, render-only, 0/38 drift, CI 156/2196):** induction
+> surfaces — crystals clipped at growth-rate-weighted meeting planes, cuts capped MATTE. The
+> probe reshaped the rung: the Wulff face-space clip (`_makeWulffContactGeom`) reached only 7
+> crystals fleet-wide, so O2 ships a GENERIC convex-mesh clipper (`_clipConvexGeom`, js/46 —
+> Sutherland–Hodgman, linear in triangles) reaching **622 contacted convex crystals**
+> fleet-wide. Renderer wiring in js/99i (neighbour pre-pass, convex-token gate, world→local
+> plane inversion, `[euhedral, matte-contact]` material array; helix opacity flip made
+> array-aware). `tools/o2-contact-probe.mjs` is the re-runnable instrument. **O2 OPEN:** concave
+> forms (hopper/botryoidal/twin, ~174) deferred; current-size→integrated-growth weights when C1
+> lands; the legibility/aggressiveness knob is a boss eye-check on the live deploy.
 >
 > Boss: *"we just worked on a nice foundation in the handoff, lets lay that foundation."* Two
 > code commits, both Pages-verified built==HEAD, both cold-ci stamped GREEN:
@@ -55,8 +66,9 @@ Living list of open work items, captured from session conversations so context s
 > relation). Eye-checked: grimsel slab+median seam, elmwood unchanged-irregular, basin
 > needle-free, zero console errors. **OPEN foundation tranches:** V0's all-38 taxonomy audit ·
 > V1 microtexture (scallop knobs need scenario fields — mind the VugWall whitelist trap) ·
-> O1b neighbor shadow (occupancy grid, per-crystal cache) · O2 induction surfaces (the
-> half-space call is proven — extend it with neighbor planes). Boss stones UNCHANGED.
+> O1b neighbor shadow (occupancy grid, per-crystal cache) · ~~O2 induction surfaces~~ ✅ SHIPPED
+> `eea52bc` 2026-07-06 (generic convex clipper; concave forms + integrated-growth weights still
+> open — see the O2 UPDATE above). Boss stones UNCHANGED.
 >
 > **▸ FOURTH ACT (run's end, same night) — THE ROCKS REVIEWED THE CODE:** specimen TN465 →
 > **O5.0 face striations** specced + pushed `e68e7e3` (zone-record-driven, never noise;

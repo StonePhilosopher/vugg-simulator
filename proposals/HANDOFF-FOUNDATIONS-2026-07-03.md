@@ -248,3 +248,64 @@ Build true, check the diagonal, and let the rocks interrupt you — they know th
 better than the roadmap does.
 
 — the builder, third hand, fourth act · 2026-07-04
+
+---
+
+## Addendum — O2 INDUCTION SURFACES (a new hand, back on the roadmap · 2026-07-06)
+
+The boss came off the tutorial detour, read this handoff, and said *"the handoff foundations
+is the next segment… pick our next move."* We picked **O2** — the third stone of the
+render-only ontogeny core (O0 → O1a → O2). Shipped `eea52bc`, render-only, 0/38 drift,
+Pages-verified built==HEAD, full CI 156 files / 2196 tests.
+
+**What shipped.** When crystals grow into each other they share a flat CONTACT facet, not
+interpenetrating ideal forms. O2 clips each crystal at the growth-rate-weighted meeting plane
+with its neighbours and caps the cut matte. Two paths in `js/46`: `_makeWulffContactGeom` (the
+face-space clip O0's header promised — neighbour planes as more half-spaces) and, the
+fleet-wide one, `_clipConvexGeom` (Sutherland–Hodgman on any convex emitted mesh, LINEAR in
+triangles). Renderer wiring in `js/99i`: a neighbour pre-pass, a convex-token gate, the
+world→local plane inversion, a `[euhedral, matte-contact]` material array (the helix opacity
+flip in `js/99j` made array-aware). `tools/o2-contact-probe.mjs` is the instrument; re-run it
+as more minerals become convex/Wulff to re-size the reach.
+
+**OPEN, pre-registered:** concave forms (hopper/botryoidal/twin, ~174 crystals) need a later
+treatment — a plane cut of a concave body has no single convex cap. Current-size meeting-plane
+weights are the render-only approximation (Diggle first-order exact); the drift population
+upgrades to integrated-growth weights when **C1** lands (already the 4a.8 converse debt). O1b
+neighbour-shadow still open. And the legibility knob — full honest druse vs restrained — is a
+boss eye-check on the live deploy, deliberately left for the eye that owns it.
+
+### The mark — what this act adds
+
+**The probe is allowed to rewrite the rung.** I scoped O2 as an afternoon of render wiring on
+the Wulff kernel. The probe said the Wulff path reaches SEVEN crystals fleet-wide — a near-
+no-op — because the interpenetration lives in the primitive meshes, not the six Wulff tenants.
+That single measurement turned "extend the kernel" into "build a generic convex-mesh clipper,"
+a different and larger thing. Had I trusted the plan over the instrument I'd have shipped a
+change nobody could see. Measure the size of the work before you believe your estimate of it —
+and when the measurement disagrees with the plan, the measurement is the new plan.
+
+**Build the mechanism, not a picture of it** (the third hand's line, load-bearing again). The
+clipper caps its own cuts, preserves euhedral-vs-contact tags through re-clips, and works on
+Wulff geoms and BoxGeometry alike — so O4 engulfment, O5 regrowth, and every future mineral
+that becomes convex inherit contact faces for free. The smallest TRUE clipper was more work
+than the Wulff special-case and worth every line: the next rung is now cheaper, not dearer.
+
+**Three instruments, three blindnesses.** The baseline (0/38) proved render-only. The kernel
+tests proved the clip math. The end-to-end wiring test proved the pipeline FIRES — because a
+perfect clipper never reached is the exact silent no-op the third hand's strips warned about.
+No single one of them would have caught a clip that was correct but unwired, or wired but
+wrong. Verification is agreement between instruments that fail differently.
+
+**The dream.** O0 gave a crystal one side different from the other; O2 gives it the memory of
+its neighbours — the flat face where another crystal stood is a fossil of a competition that
+happened in the dark. The dream the third hand wrote was that a null-locality rock could get
+its history back from physics. Add this: that the CONTACT FACES themselves become readable —
+that the inverse solver, someday, looks at where a crystal's euhedral faces stop and its matte
+contacts begin, and reconstructs not just the fluid but the CROWD: how many neighbours, how
+big, who won the race for the wall. A druse is a frozen tournament. We just taught the sim to
+draw the brackets; one day it will read them back.
+
+Measure before you estimate, cap your own cuts, and let the crowd leave its mark on the stone.
+
+— the builder, fifth hand, the induction-surfaces act · 2026-07-06
