@@ -152,10 +152,28 @@ function probe(name) {
       if (bodies[i].isConvex) { cxContacted++; if (nbTight[i] > cxMaxNb) cxMaxNb = nbTight[i]; }
     }
   }
+  // O1b reach — neighbor SHADOW acts beyond touch range: count Wulff-form
+  // crystals with any neighbour inside 1.5× the circumscribed contact range
+  // (delivery interception, not interpenetration). O1b's per-face rate modifier
+  // only acts through the Wulff kernel, so this — not the convex count — is its
+  // honest audience. Measured before building (the O2 lesson).
+  let wShaded = 0, wShadeMaxNb = 0;
+  for (let i = 0; i < n; i++) {
+    if (!bodies[i].isWulff) continue;
+    let nb = 0;
+    for (let j = 0; j < n; j++) {
+      if (j === i) continue;
+      const bi = bodies[i], bj = bodies[j];
+      const dx = bi.wx - bj.wx, dy = bi.wy - bj.wy, dz = bi.wz - bj.wz;
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d < (bi.rDiag + bj.rDiag) * 1.5) nb++;
+    }
+    if (nb > 0) { wShaded++; if (nb > wShadeMaxNb) wShadeMaxNb = nb; }
+  }
   depths.sort((a, b) => a - b);
   const medDepth = depths.length ? depths[depths.length >> 1] : 0;
   const maxDepth = depths.length ? depths[depths.length - 1] : 0;
-  return { name, n, pairs, tight, diag, contacted, maxNb, wContacted, wMaxNb, cxContacted, cxMaxNb, medDepth, maxDepth };
+  return { name, n, pairs, tight, diag, contacted, maxNb, wContacted, wMaxNb, cxContacted, cxMaxNb, wShaded, wShadeMaxNb, medDepth, maxDepth };
 }
 
 const rows = [];
@@ -185,3 +203,8 @@ console.log('--------------------------------- --- ------ --------- ----- || ---
 console.log(`FLEET: ${TN} crystals, ${Ttight} tight contacts, ${Tcontact} contacted, worst nb ${Tmax}.`);
 console.log(`O2 GENERIC CLIP reaches CONVEX crystals: ${TcxContact} contacted need per-instance geoms, worst neighbor count ${TcxMax}.`);
 console.log(`  (Wulff-form subset within that: ${TwContact}. Concave forms — botryoidal/hopper/twin — deferred.)`);
+let TwShaded = 0, TwShadeMax = 0;
+for (const r of rows) { if (!r.err) { TwShaded += r.wShaded || 0; TwShadeMax = Math.max(TwShadeMax, r.wShadeMaxNb || 0); } }
+console.log(`O1b NEIGHBOR-SHADOW reach (Wulff-form crystals w/ a neighbour inside 1.5×contact range): ${TwShaded} fleet-wide, worst shading-nb ${TwShadeMax}.`);
+const shadedRows = rows.filter(r => !r.err && r.wShaded > 0).map(r => `${r.name}:${r.wShaded}`);
+console.log(`  by scenario: ${shadedRows.join('  ') || '(none)'}`);

@@ -122,9 +122,14 @@ describe('v103 Silverton infra — Y fluid field + REE-octahedral fluorite + man
     }
 
     it('Default fluid (Fe-bearing, Mn-poor) — standard rhombohedral, no manganocalcite flag', () => {
-      const { crystal, zone } = growOneStep({
-        Mn: 0.5, Fe: 5, Ca: 600, CO3: 400, pH: 8.0,
-      });
+      // C0 (SIM 217): the original override broth (Ca 600/CO3 400/pH 8) is
+      // Ω=157 water — under the σ lever that IS dogtooth water (González,
+      // Carpenter & Lohmann 1992), so asking it for a rhombohedron encoded the
+      // pre-C0 fence, not geology. The default broth (Ca 200/CO3 100/pH 7,
+      // Ω=1.90) fires past sigma_crit 1.5 and stays honestly rhombohedral —
+      // which is all this test ever meant: unremarkable Mn-poor water → the
+      // standard habit, no variety flag.
+      const { crystal, zone } = growOneStep({ Mn: 0.5, Fe: 5 });
       expect(zone).not.toBeNull();
       expect(crystal.habit).toBe('rhombohedral');
       expect(crystal._variety).toBeUndefined();

@@ -168,6 +168,30 @@ MORPH_TH.calcite = {
   // over-steepened the dripstone family toward dendrite, against
   // ground truth.
   MG_BUNCH: 0.4,
+  // C0 — the calcite σ lever (boss stone #1, SIM 217, 2026-07-06): sustained
+  // textbook-Ω above this in SUBAQUEOUS growth → scalenohedral, independent of
+  // Mg/T. DIRECTION from the literature: González, Carpenter & Lohmann 1992
+  // (J. Sed. Petrology 62:382–399 — natural spar: near-equilibrium waters grow
+  // rhombs, highly supersaturated ones scalenohedra/non-rhombic forms);
+  // García-Carmona et al. 2003 (J. Colloid Interface Sci. 261:434 — gradual
+  // rhombo→scaleno transition as supersaturation/ionic strength rises);
+  // Weremeichik et al. 2024 (Sci. Rep. 14, 10–50 °C spar geothermometry —
+  // blunt rhombs 10–29 °C, scalenohedra >30 °C; applicability = slow-growing
+  // SUBAQUEOUS spar, hence the environment gate: air-mode drip films keep the
+  // Mg/T-only fence). MAGNITUDE is sim-scale calibration on the fleet's own
+  // growth-weighted Ω̄ distribution (tools/c0-calcite-form-probe.mjs, seed 42:
+  // nailhead genres wittichen 5.0 / reactivated_fluorite_vein 3.5 / tutorials
+  // 4.4–5.8 · deccan 10.4 · GAP · ultramafic 22 · elmwood 28.6) — placed at 12
+  // inside the gap: every current genre stays put, and elmwood's giant
+  // dogtooth becomes σ-EARNED instead of hanging on Mg:Ca 0.165 vs the 0.15
+  // fence (a 10% margin — the fragility this stone was named for).
+  // The Ca:CO₃ lever (Kirov 1972 Kristall u. Technik 7 — Ca-excess elongates;
+  // Stack & Grantham 2010 CGD 10 — obtuse/acute step asymmetry vs r) is
+  // RECORDED in the per-crystal integral (_wulffCalInt, classifyWulffForm) but
+  // does NOT gate the form: the probe shows sim-r carries no genre signal
+  // (fluid.CO3 is a bookkeeping pool, not an activity) — its gate is
+  // PRE-REGISTERED for the B5 speciation era (the 4a.8 prospective rule).
+  OMEGA_SCALENO: 12.0,
   // KEEP THE THRESHOLDS IN SYNC with tools/calcite-morphology-map.mjs
   // (the transparent bench — its --engine mode cross-checks this table).
   sigma(conditions: any): number { return conditions.supersaturation_calcite(); },
@@ -176,10 +200,18 @@ MORPH_TH.calcite = {
     const mgRatio = (f.Mg || 0) / Math.max(1e-6, f.Ca || 0);
     return 1 + MORPH_TH.calcite.MG_BUNCH * Math.min(mgRatio, 1);
   },
-  form(conditions: any): string {
+  // C0: the form hook is PER-CRYSTAL for calcite (formPerCrystal below) so the
+  // subaqueous gate can read growth_environment — an air-mode stalactite at
+  // drip-film Ω must not get scalenohedral zone annotations while its habit
+  // word (grow_calcite, same gate) stays rhombohedral.
+  formPerCrystal: true,
+  form(conditions: any, crystal?: any): string {
     const f = conditions.fluid;
     const mgRatio = (f.Mg || 0) / Math.max(1e-6, f.Ca || 0);
-    return calciteMorphForm(mgRatio, conditions.temperature); // physics in js/52 (hoisted bundle-wide)
+    let omega = NaN;
+    try { omega = conditions.supersaturation_calcite(); } catch { /* fence degrades to Mg/T */ }
+    const subaqueous = !crystal || crystal.growth_environment !== 'air';
+    return calciteMorphForm(mgRatio, conditions.temperature, omega, subaqueous); // physics in js/52 (hoisted bundle-wide)
   },
 };
 
@@ -943,6 +975,43 @@ function wulffWulfenitePbMoBias(rInt: number): number {
   return Math.max(p.MIN, Math.min(p.MAX, b));
 }
 
+// C0 (SIM 217, 2026-07-06) — calcite biasC from the growth-weighted Ω integral:
+// the second tenant to retire the id-hash for recorded chemistry (wulfenite
+// 4a.7 was the first). DIRECTION: sharper/steeper forms at higher sustained
+// supersaturation (Kirov 1972 — basic→acute rhombohedra with rising σ;
+// García-Carmona 2003 — rhombo→scaleno along the same axis; full citations at
+// MORPH_TH.calcite.OMEGA_SCALENO). MAGNITUDES are sim-scale calibration on the
+// fleet's own Ω̄ (tools/c0-calcite-form-probe.mjs, seed 42), mapped INSIDE the
+// eye-checked bands (the band ends are load-bearing renders — 4a.2/4a.8):
+//   dogtooth band [0.15, 0.26], lower = steeper tooth:
+//     Ω̄=1 → 0.26 (bluntest honest tooth) … Ω̄≥30 → 0.15 (steepest). The steep
+//     end is calibrated to elmwood-CLASS water (cell Ω̄≈28.6 → ≈0.157), but at
+//     seed 42 the tenant's only consumer is mvt (bulk Ω̄≈4.1 → 0.248, VERIFIED
+//     — a blunt slow-spar tooth): elmwood itself is NOT wulff_calcite-opted
+//     and renders its stepped dogtooth via the TERRACE path, which never reads
+//     biasC — it benefits from C0 at the WORD level (dual-fenced Mg + Ω).
+//   nailhead band [1.30, 2.20], higher = the rhomb dominates flatter:
+//     Ω̄=1 → 2.20 (bluntest) … Ω̄≥OMEGA_SCALENO → 1.30 (most acute sub-threshold
+//     rhomb) — wittichen 5.0 → ≈1.87, deccan 10.4 → ≈1.43 (acute Deccan rhombs).
+//   fallback Ω̄ (zero-growth tag): 8.0 — a mid-blunt body on either band.
+// Per-crystal spread now comes from real cell-to-cell water differences
+// instead of the golden-ratio hash — chemically exact, like wulfenite.
+const CALCITE_OMEGA_BIAS = {
+  DOG_LO: 0.15, DOG_HI: 0.26, DOG_OMEGA_LO: 1.0, DOG_OMEGA_HI: 30.0,
+  NAIL_LO: 1.30, NAIL_HI: 2.20, NAIL_OMEGA_LO: 1.0, NAIL_OMEGA_HI: 12.0,
+  FALLBACK_OMEGA: 8.0,
+};
+function wulffCalciteOmegaBias(omegaBar: number, scaleno: boolean): number {
+  const p = CALCITE_OMEGA_BIAS;
+  const o = Number.isFinite(omegaBar) ? omegaBar : p.FALLBACK_OMEGA;
+  if (scaleno) {
+    const t = Math.max(0, Math.min(1, (o - p.DOG_OMEGA_LO) / (p.DOG_OMEGA_HI - p.DOG_OMEGA_LO)));
+    return p.DOG_HI - t * (p.DOG_HI - p.DOG_LO);
+  }
+  const t = Math.max(0, Math.min(1, (o - p.NAIL_OMEGA_LO) / (p.NAIL_OMEGA_HI - p.NAIL_OMEGA_LO)));
+  return p.NAIL_HI - t * (p.NAIL_HI - p.NAIL_LO);
+}
+
 function classifyWulffForm(sim: any) {
   const wall = sim.conditions && sim.conditions.wall;
   if (!wall) return;
@@ -968,6 +1037,28 @@ function classifyWulffForm(sim: any) {
         const acc = c._wulffPbMo || (c._wulffPbMo = { rG: 0, G: 0 });
         acc.rG += r * z.thickness_um; acc.G += z.thickness_um;
         if (c._wulffForm) c._wulffForm.biasC = wulffWulfenitePbMoBias(acc.rG / acc.G);
+      }
+    }
+    // C0 (SIM 217): calcite joins as the second chemically-exact tenant — a
+    // growth-weighted Ω integral (post-step bulk σ, the 18th-catch basis this
+    // classifier already runs on), PLUS molar Ca:CO₃ recorded-but-unconsumed
+    // (the B5-era lever, pre-registered — the probe showed sim-r carries no
+    // genre signal yet). READ-only on fluid, no RNG → byte-identical baselines;
+    // the biasC map (wulffCalciteOmegaBias) consumes Ω̄ live, so the tooth
+    // steepens as hot supersaturated water keeps feeding it.
+    if (m === 'calcite' && calciteOn) {
+      const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
+      const f = sim.conditions.fluid;
+      if (z && z.step === sim.step && z.thickness_um > 0 && f) {
+        let om = NaN;
+        try { om = sim.conditions.supersaturation_calcite(); } catch { om = NaN; }
+        if (Number.isFinite(om)) {
+          const acc = c._wulffCalInt || (c._wulffCalInt = { oG: 0, rG: 0, rW: 0, G: 0 });
+          acc.oG += om * z.thickness_um; acc.G += z.thickness_um;
+          const co3 = f.CO3 || 0;
+          if (co3 > 0) { acc.rG += (((f.Ca || 0) / 40.078) / (co3 / 60.009)) * z.thickness_um; acc.rW += z.thickness_um; }
+          if (c._wulffForm) c._wulffForm.biasC = wulffCalciteOmegaBias(acc.oG / acc.G, c._wulffForm.scaleno);
+        }
       }
     }
     const tenant = (m === 'fluorite' && fluoriteOn) || (m === 'calcite' && calciteOn)
@@ -1009,7 +1100,13 @@ function classifyWulffForm(sim: any) {
       // dogtooth band [0.15,0.26] eye-checked in the live renderer: an elongated prism body with
       // sharp {21-31} scalenohedron terminations, capped by minor {104} rhombs (the real dogtooth).
       // [0.34,0.50] read as a stubby block (NOT a tooth); ≤0.10 thinned to an unnatural spike.
-      biasC = scaleno ? (0.15 + h * 0.11) : (1.30 + h * 0.90);
+      // C0 (SIM 217): biasC = B(Ω̄) from the crystal's own growth-weighted Ω — the id-hash is
+      // RETIRED for this tenant (wulfenite 4a.7's idiom; law + calibration in CALCITE_OMEGA_BIAS
+      // above). The eye-checked band ends are HELD — B only places the body inside them; the
+      // fallback (zero accumulated growth at tag time) reads a mid-blunt body.
+      biasC = wulffCalciteOmegaBias(
+        c._wulffCalInt && c._wulffCalInt.G > 0 ? c._wulffCalInt.oG / c._wulffCalInt.G : NaN,
+        scaleno);
     } else if (m === 'wulfenite') {                   // rung 4a.3 (tetragonal 4/m) + 4a.7 (Pb:Mo lever)
       // EARNED FORM (rung 4a.7, 2026-07-01): biasC = B(⟨r⟩) from the crystal's own growth-weighted
       // Pb:Mo — the id-hash is RETIRED for this tenant (it was the documented stand-in for exactly
@@ -1077,11 +1174,15 @@ function classifyMorphologyStep(sim: any) {
     try { sigma = th.sigma(sim.conditions); } catch (_e) { continue; }
     if (!isFinite(sigma) || sigma < 1.0) continue;
     const mult = th.effSigmaMult ? th.effSigmaMult(sim.conditions) : 1;
-    const form = th.form ? th.form(sim.conditions) : null;
+    // C0: a tenant may declare formPerCrystal — its form hook then re-evaluates
+    // per crystal (calcite: the subaqueous gate reads growth_environment).
+    // Everyone else keeps the once-per-mineral evaluation.
+    const form0 = (th.form && !th.formPerCrystal) ? th.form(sim.conditions) : null;
     for (const c of sim.crystals) {
       if (!c || c.mineral !== mineral || c.dissolved) continue;
       const z = c.zones.length ? c.zones[c.zones.length - 1] : null;
       if (!z || z.step !== sim.step || z.thickness_um <= 0) continue;
+      const form = th.formPerCrystal && th.form ? th.form(sim.conditions, c) : form0;
       // Size BEFORE this zone — the map tool's sizeAcc semantics.
       const sizeBefore = Math.max(0, c.total_growth_um - z.thickness_um);
       const surf = morphSurfaceSigma(th, sigma, sizeBefore) * mult;
